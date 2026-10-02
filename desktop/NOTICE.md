@@ -44,6 +44,9 @@ trademark, third-party dependency and service-terms obligations.
 - File icons: `brand/file-icons/NOTICE.md` (vscode-icons, MIT).
 - App logos: `brand/app-logos/` (Simple Icons, CC0; other marks belong to
   their owners).
+- Suravaram (SIL Open Font License 1.1, Silicon Andhra and Vernon Adams):
+  the sign-in wordmark's face, its Latin subset from @fontsource/suravaram
+  5.3.0, at `brand/fonts/` with its licence (`Suravaram-OFL.txt`).
 - npm dependencies keep their own licences in `node_modules`.
 - playwright-core (Apache-2.0, Microsoft Corporation): the host program
   carries a packed copy (`source/host/runner/tools/sand-browser-playwright.gen.ts`)

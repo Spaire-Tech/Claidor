@@ -903,7 +903,7 @@ export function patchOriginalLogos(source, names) {
   return out;
 }
 
-const MIME = { ".svg": "image/svg+xml", ".webp": "image/webp", ".png": "image/png" };
+const MIME = { ".svg": "image/svg+xml", ".webp": "image/webp", ".png": "image/png", ".woff2": "font/woff2" };
 const dataUrl = (bytes, file) => `data:${MIME[path.extname(file)]};base64,${Buffer.from(bytes).toString("base64")}`;
 
 export async function readLogoAssets(brandDir = BRAND_DIR) {
@@ -911,7 +911,22 @@ export async function readLogoAssets(brandDir = BRAND_DIR) {
   const manifest = JSON.parse(await readFile(path.join(brandDir, APP_MENTIONS_MANIFEST), "utf8"));
   const mentions = await Promise.all(manifest.map(async (app) => ({ ...app, logo: dataUrl(await readFile(path.join(brandDir, "app-logos", app.logo)), app.logo) })));
   const tiles = await Promise.all(Object.entries(TILE_LOGO_SOURCES).map(async ([key, { file, pathStart }]) => ({ key, pathStart, logo: dataUrl(await readFile(path.join(brandDir, file)), file) })));
-  return { files: await read(FILE_ICON_SOURCES), apps: await read(APP_LOGO_SOURCES), mentions, tiles };
+  return { files: await read(FILE_ICON_SOURCES), apps: await read(APP_LOGO_SOURCES), mentions, tiles, wordmarkFont: dataUrl(await readFile(path.join(brandDir, WORDMARK_FONT)), WORDMARK_FONT) };
+}
+
+/**
+ * The sign-in wordmark in Suravaram (3 October 2026, the founder: "'Simeon'
+ * logo is Suravaram font"), the face simeonlabs.com sets its name in. The
+ * font travels inside the stylesheet (Latin subset, 16 KB, SIL Open Font
+ * License, brand/fonts/Suravaram-OFL.txt), so the screen never waits on a
+ * network. It is the `<h1>` of the onboarding landing, the only one there.
+ */
+export const WORDMARK_FONT = "fonts/suravaram-latin-400.woff2";
+export const WORDMARK_MARKER = "/* Simeon: the sign-in wordmark in Suravaram";
+export function patchOriginalWordmarkStylesheet(css, fontUrl) {
+  if (css.includes(WORDMARK_MARKER)) throw new Error("Original renderer wordmark block is already present.");
+  if (typeof fontUrl !== "string" || !fontUrl.startsWith("data:font/woff2;base64,")) throw new Error("The wordmark font did not load.");
+  return `${css}\n${WORDMARK_MARKER} */\n@font-face{font-family:"Simeon Suravaram";src:url("${fontUrl}") format("woff2");font-weight:400;font-style:normal;font-display:block}\n.sand-onboarding__landing h1{font-family:"Simeon Suravaram",Georgia,serif!important;font-weight:400!important;letter-spacing:0!important}\n`;
 }
 
 const rgbOf = (hex) => [1, 3, 5].map((i) => Number.parseInt(hex.slice(i, i + 2), 16) / 255);
@@ -1447,7 +1462,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     if (css.includes(BUBBLE_CSS_REPLACEMENT[1])) bubbleSheets.push({ target, css });
   }
   if (bubbleSheets.length !== 1) throw new Error(`Expected one stylesheet carrying the user bubble default, found ${bubbleSheets.length}.`);
-  const stylesheetPatched = patchOriginalFlightsStylesheet(patchOriginalHandoffStylesheet(patchOriginalAgentPaneStylesheet(patchOriginalVoiceCallStylesheet(patchOriginalLogosStylesheet(patchOriginalShapePickerStylesheet(patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)))), logoAssets)))));
+  const stylesheetPatched = patchOriginalWordmarkStylesheet(patchOriginalFlightsStylesheet(patchOriginalHandoffStylesheet(patchOriginalAgentPaneStylesheet(patchOriginalVoiceCallStylesheet(patchOriginalLogosStylesheet(patchOriginalShapePickerStylesheet(patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)))), logoAssets))))), logoAssets.wordmarkFont);
   const chunkSources = [];
   for (const target of markCandidates) chunkSources.push(await readFile(target, "utf8"));
   const styleAnchors = {
@@ -1522,7 +1537,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "flight-results"],
+    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "flight-results"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");

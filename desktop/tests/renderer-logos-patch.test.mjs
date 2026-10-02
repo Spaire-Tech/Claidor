@@ -118,3 +118,14 @@ test("the message step marks app names with their logo, leaves links and code al
   plugin()(bare);
   assert.equal(bare.children[0].type, "text", "text with no structure tag above it is not touched");
 });
+
+test("the sign-in wordmark is set in Suravaram, carried inside the stylesheet", async () => {
+  const { patchOriginalWordmarkStylesheet, readLogoAssets, WORDMARK_MARKER } = await import("../scripts/lib/router-renderer-patch.mjs");
+  const { wordmarkFont } = await readLogoAssets();
+  assert.match(wordmarkFont, /^data:font\/woff2;base64,/);
+  const css = patchOriginalWordmarkStylesheet(".a{}", wordmarkFont);
+  assert.ok(css.includes(WORDMARK_MARKER));
+  assert.match(css, /\.sand-onboarding__landing h1\{font-family:"Simeon Suravaram"/);
+  assert.throws(() => patchOriginalWordmarkStylesheet(css, wordmarkFont), /already present/);
+  assert.throws(() => patchOriginalWordmarkStylesheet(".a{}", ""), /did not load/);
+});
