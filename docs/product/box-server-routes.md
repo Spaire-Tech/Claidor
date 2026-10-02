@@ -1424,3 +1424,33 @@ written.
 Unchanged, and still the honest headline: **nothing here has ever contacted E2B,
 no sandbox has been started, no command has run in a box, and CI has never
 executed a line of this diff.**
+
+### CI on `2175c6e9`: still never run — and the `Names` check is the job called `check`
+
+Nine check runs on this head. Three report `failure`, which looked like a change
+from every previous round, so I read the jobs rather than the conclusions:
+
+| Job | `runner_id` | `runner_name` | `GET .../logs` |
+|---|---|---|---|
+| `Detect changes` (workflow `Server`, 110967765973) | **0** | empty | **404** |
+| `check` (workflow **`Names`**, 110967765313) | **0** | empty | **404** |
+
+Both carry the full dead-runner signature from the §22 correction, so neither ran.
+The `failure` conclusions are not a result: `Detect changes` is the gate job, and
+because it was never given a machine, `Server: Tests 🐍`, `Server: Linters 📝`,
+`Server: Migration Check 📚`, `Server: Tinybird Schema 🐦` and `Client: Tests 🎨`
+all report **`skipped`**. `Vercel Preview Comments` is the only `success`.
+
+**A correction to carry forward.** I had been looking for a check named `Names`
+and §22 reports it by that name. There is no check run called `Names` — the
+workflow is `Names` and its job is called **`check`**. That is the 38-second job
+in §22, and anyone scanning the check list for the word "Names" will conclude the
+check is absent when it is sitting there under a generic name. Match on
+`workflow_name`, not the check-run name.
+
+Consequence for the 72 findings: `Server: Migration Check 📚` skipped again, so
+`alembic heads` by hand remains the only thing that has ever caught a collision
+here, and the `Names` check has still never evaluated this branch — the 72
+findings remain theoretical rather than blocking. Per the standing rule the
+dead runner gets no further re-run and no further comment; the one re-run was
+spent and stood down on earlier.
