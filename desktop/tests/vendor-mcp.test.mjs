@@ -37,13 +37,17 @@ test("the store is vendor MCPs that can Connect, then Coming soon for the rest",
       isVendorMcpComingSoon,
     } = loaded.module;
     // 28 September 2026: the eighteen Coming soon cards are apps Simeon Labs' server serves (`appsToolkit`), and thirteen more were appended.
-    assert.equal(VENDOR_MCP_CONNECTORS.length, 52);
+    // 3 October 2026: fourteen more for founders, appended (twelve served by our apps service, Mercury and PostHog by their own MCP).
+    assert.equal(VENDOR_MCP_CONNECTORS.length, 66);
     const ids = VENDOR_MCP_CONNECTORS.map((item) => item.id);
-    assert.equal(new Set(ids).size, 52);
+    assert.equal(new Set(ids).size, 66);
+    assert.deepEqual(ids.slice(52), ["google-analytics", "google-search-console", "youtube", "kit", "instagram", "facebook", "calendly", "cal-com", "attio", "zendesk", "microsoft-teams", "discord", "mercury", "posthog"]);
+    assert.equal(vendorMcpConnectorById("cal-com")?.appsToolkit, "cal");
+    assert.equal(vendorMcpConnectorById("mercury")?.url, "https://mcp.mercury.com/mcp");
     const vendors = VENDOR_MCP_CONNECTORS.filter((item) => item.appsToolkit == null);
     const apps = VENDOR_MCP_CONNECTORS.filter((item) => item.appsToolkit != null);
-    assert.equal(vendors.length, 21);
-    assert.equal(apps.length, 31);
+    assert.equal(vendors.length, 23);
+    assert.equal(apps.length, 43);
     assert.equal(VENDOR_MCP_CONNECTORS.some((item) => item.comingSoon === true), false);
     assert.ok(VENDOR_MCP_CONNECTORS.every((item) => typeof item.url === "string" && item.url.startsWith("https://")));
     assert.ok(apps.every((item) => item.url.endsWith(`/desktop/api/apps/mcp/${item.appsToolkit}`)));
@@ -56,7 +60,8 @@ test("the store is vendor MCPs that can Connect, then Coming soon for the rest",
     assert.equal(vendorMcpConnectorById("slack")?.appsToolkit, "slack");
     assert.equal(vendorMcpConnectorById("github")?.appsToolkit, "github");
     assert.equal(isVendorMcpPluginId("999"), false);
-    assert.equal(VENDOR_MCP_CONNECTORS.some((item) => /fathom|mercury|composio/i.test(`${item.id} ${item.name}`)), false);
+    // Mercury's MCP advertised dynamic registration and S256 when measured on 3 October 2026, so it is a card now.
+    assert.equal(VENDOR_MCP_CONNECTORS.some((item) => /fathom|composio/i.test(`${item.id} ${item.name}`)), false);
   } finally {
     await loaded.dispose();
   }
@@ -89,7 +94,7 @@ test("the marketplace listing is our store, including Coming soon cards", async 
     assert.equal(gmail.vendorMcpUrl, undefined);
 
     const signedOut = await marketplace.module.fetchVendorMarketplacePlugins(async () => null);
-    assert.equal(signedOut.plugins.length, 52);
+    assert.equal(signedOut.plugins.length, 66);
     assert.equal(signedOut.includesPrivateMarketplaces, false);
     assert.ok(signedOut.plugins.some((plugin) => plugin.pluginId === "notion" && plugin.vendorMcpUrl === "https://mcp.notion.com/mcp"));
     // Signed out, the server cannot be asked: an app stays Coming soon, with no address.
@@ -259,7 +264,7 @@ test("getCatalog lists our store; live Connect goes to the vendor, Coming soon d
     });
 
     const views = await flow.getCatalog(async () => "simeon_da_test");
-    assert.equal(views.length, 52);
+    assert.equal(views.length, 66);
     assert.ok(views.some((view) => view.id === "notion" && view.vendorMcpUrl === "https://mcp.notion.com/mcp"));
     assert.ok(views.some((view) => view.id === "gmail" && view.comingSoon == null && view.vendorMcpUrl.endsWith("/desktop/api/apps/mcp/gmail")));
     assert.equal(views.some((view) => view.comingSoon === true), false);
@@ -309,7 +314,7 @@ test("every store card has a logo, and in-repo data marks skip a network fetch",
   const marketplace = await load("source/shared/node/vendor-mcp/marketplace.ts", "vendor-logos");
   try {
     const listing = await marketplace.module.fetchVendorMarketplacePlugins();
-    assert.equal(listing.plugins.length, 52);
+    assert.equal(listing.plugins.length, 66);
     assert.ok(listing.plugins.every((plugin) => typeof plugin.logoUrl === "string" && plugin.logoUrl.length > 0));
     const notion = listing.plugins.find((plugin) => plugin.pluginId === "notion");
     assert.match(notion.logoUrl, /^data:image\//);

@@ -55,7 +55,21 @@ const FAVICON_DOMAINS: Readonly<Record<string, string>> = {
   "gusto": "gusto.com",
   "canva": "canva.com",
   "salesforce": "salesforce.com",
-  "mailchimp": "mailchimp.com"
+  "mailchimp": "mailchimp.com",
+  "google-analytics": "analytics.google.com",
+  "google-search-console": "search.google.com",
+  "youtube": "youtube.com",
+  "kit": "kit.com",
+  "instagram": "instagram.com",
+  "facebook": "facebook.com",
+  "calendly": "calendly.com",
+  "cal-com": "cal.com",
+  "attio": "attio.com",
+  "zendesk": "zendesk.com",
+  "microsoft-teams": "teams.microsoft.com",
+  "discord": "discord.com",
+  "mercury": "mercury.com",
+  "posthog": "posthog.com"
 };
 
 export function vendorFaviconUrl(domain: string): string {

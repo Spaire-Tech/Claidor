@@ -1,13 +1,11 @@
 # simeonlabs.com
 
-The public website: the Framer design, exported and made static, with the
-Simeon app-window demo playing in the hero.
+The public website, with the Simeon app-window demo playing in the hero.
 
 - `public/` is the site Vercel serves, as built. Nothing in it links anywhere:
   it is a site to try, every button leads nowhere.
-- `source/` is how it is made: `build.py`, the Framer export
-  (`framer-export.html`), the agents' faces, the Simeon mark and the demo's
-  scroll guard.
+- `source/` is how it is made: `page.html`, `build.py`, the paintings and
+  wordmark (`img/`), the agents' faces and the demo's scroll guard.
 - `vercel.json` tells Vercel there is no install or build step, to serve
   `public/`, and to skip a deploy when nothing under this folder changed.
 
@@ -21,37 +19,28 @@ cd sites/simeonlabs.com/source
 python3 build.py ../../../desktop/dist/demo
 ```
 
-The script needs Playwright's Chromium and network access to
-framerusercontent.com (it fetches the fonts and pictures once). It rewrites
-`public/` from scratch; commit what it writes.
+The script needs Playwright's Chromium (it captures the stills the hero shows
+while the app loads). It rewrites `public/` from scratch; commit what it writes.
 
 ## What is in the page
 
-The hero runs the real patched app window (`public/app/<digest>/`) in an iframe inside
-the hero box, scaled from the box's own size, with `scroll-guard.js` so the
-app never scrolls the page. The app in the window takes no pointer, so the
-wheel and a finger over it scroll the page on the browser's own scroll
-thread; a click on the window is handed to the part of the app under the
-pointer, and the cursor shows what is clickable, and the app's frame loop is paused while the
-page scrolls or the window is out of sight. The app's
-code is about 6 MB, so the page first shows a still of its opening screen
-(`app-poster-{wide,tall,phone}.jpg`, captured by `build.py` from the app
-itself) and fades the live app in over it once the app has drawn its sidebar.
-On a laptop (at least 1024 × 620, and Reduce Motion off) the hero is a scroll
-scene instead: the painting spans the page with Simeon's wordmark, narrows
-into the card as you scroll, the card pins under the nav, the wordmark fades
-and the app window rises onto the painting; the demo's story starts only
-then (`source/demo-gate.js` holds it until the page calls it). Smaller
-screens keep the window in the card from the start. Phones (under 600 px) show no live app at all: the hero is a still of
-the window drawn by the page (a Simeon thread with both sides talking), so
-there is nothing to load and the page scrolls natively over it. The site is light only: Framer's dark-scheme colour block is removed at
-build time. Each animation below the hero starts when it scrolls into view (and runs
-whatever the Reduce Motion setting; only the laptop hero's scroll scene honours it) and starts
-over when you come back to it. The four
-feature boxes are drawn by the page itself: connectors behind the Simeon
-glass tile, Iris, Otto and Nova talking, Otto's computer asking you to sign
-in, Iris asking before she sends an email. Pricing is Standard $20, Pro $60
-and Max $100 a month, 20% less yearly, 7-day trial on each.
+The page is written by hand in `source/page.html`, light only, on one left
+edge shared by the wordmark, the headline and the demo.
+
+- **Bar**: the wordmark, Sign in, Download.
+- **Hero**: "Create a team of agents for any part of your business." in the
+  serif, then Download for Mac and Request a demo.
+- **The app**: the real app window, playing a founder's morning.
+- **Statement**: one centred sentence, the key words in black.
+- **Gallery**: six cards, light grey and dusk blue in turn, moved with back
+  and next: message an agent, a computer of its own, connect your apps, agents
+  working together, call an agent, stay in control.
+- **Security and integrations**: a serif title beside a paragraph, then two
+  pale panels of icon rows. A blue dot marks what is still in progress.
+- **Pricing** (Standard $20, Pro $60, Max $100, 20% less yearly, a free week),
+  **Questions and answers**, and the closing line.
+
+Nothing links outside the page.
 
 **`public/app/` is the app's window: the upstream 0.18.0 renderer with Simeon's patches (see `desktop/NOTICE.md`).** The
 founder chose on 28 September 2026 to publish it with the site, knowing the

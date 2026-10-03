@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { copyFile, readdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -854,7 +855,7 @@ export const COO_REPLACEMENTS = Object.freeze([
  *   COO is that job, and there is one.
  */
 export const SIMEON_COO_PROFILE = Object.freeze({ name: "Simeon", title: "COO", description: "Your COO: manages your other Agents and pulls you in for decisions.", avatarColor: "blue", avatarShape: "cloud", templateId: "chief-of-staff" });
-const COO_PIN_SOURCE = "var __simeonCooId=null;function __simeonFindCoo(n){let c=null;for(const a of n??[]){if(a!=null&&typeof a.title===\"string\"&&a.title.trim().toLowerCase()===\"coo\"&&(c==null||(a.createdAt??0)<(c.createdAt??0)))c=a}return c}function __simeonPinCoo(n,e){const c=__simeonFindCoo(n);__simeonCooId=c?.id??null;return c==null?e:[c.id,...(e??[]).filter(x=>x!==c.id)]}";
+const COO_PIN_SOURCE = "var __simeonCooId=null;function __simeonFindCoo(n){let c=null;for(const a of n??[]){if(a!=null&&typeof a.title===\"string\"&&a.title.trim().toLowerCase()===\"coo\"&&(c==null||(a.createdAt??0)<(c.createdAt??0)))c=a}return c}function __simeonPinCoo(n,e){const c=__simeonFindCoo(n);__simeonCooId=c?.id??null;typeof __simeonNoteAgents===\"function\"&&__simeonNoteAgents(n);return c==null?e:[c.id,...(e??[]).filter(x=>x!==c.id)]}";
 /**
  * "What should your agents call you?" as a step of the flow, after the
  * computer (3 October 2026, the founder: "have their a step … that's the
@@ -1056,6 +1057,50 @@ export function appMentionsPluginSource(names) {
   return `const __simeonAppMentions=(()=>{const A=${JSON.stringify(names)},R=new RegExp(${JSON.stringify(pattern)},"g"),S=new Set(["a","code","pre","kbd","script","style"]);const w=n=>{if(!n||!Array.isArray(n.children)||S.has(n.tagName))return;const o=[];let c=!1;const d=n.data&&n.data.sandMarkdown;for(const k of n.children){if(k.type!=="text"||d===void 0){w(k);o.push(k);continue}const v=k.value;let i=0,m;R.lastIndex=0;while((m=R.exec(v))!==null){c=!0;m.index>i&&o.push({type:"text",value:v.slice(i,m.index)});o.push({type:"element",tagName:"span",properties:{className:["simeon-app"],dataApp:A[m[0]]},data:{sandMarkdown:d},children:[{type:"element",tagName:"span",properties:{className:["simeon-app__logo"],ariaHidden:"true"},data:{sandMarkdown:d},children:[]},{type:"text",value:m[0]}]});i=m.index+m[0].length}i===0?o.push(k):i<v.length&&o.push({type:"text",value:v.slice(i)})}c&&(n.children=o)};return()=>t=>{w(t)}})();`;
 }
 
+/**
+ * An agent named in a message wears its face and its colour, the way the
+ * website's phone still draws Scout and Yodo (3 October 2026, the founder: "i
+ * want the color of the agents and logo when mentioned like in mobile"). The
+ * window's colour resolver (`Cee`, an agent's palette, or the one its id
+ * falls on) is followed by `__simeonNoteAgents`, which the roster sort
+ * (`__simeonPinCoo`, run by the sidebar on every agent) calls to keep a
+ * name → palette map on `globalThis.__simeonAgentColors`. A second rehype
+ * step, after the app step, reads that map each time a message is drawn and
+ * wraps each name in `span.simeon-agent[data-agent-color]` with an empty
+ * mark span before it, under the same rules as the app step (text under
+ * `a`, `code`, `pre`, `kbd` left alone, the structure tag shared with the
+ * parent). The mark is the cloud: the palette's three stops as a gradient,
+ * masked by the cloud's outline, with the two eyes on top, both read from
+ * `source/shared/voice-call/agent-mark.ts`, in the app logo's box: as tall
+ * (1.05em), as far from the name, on the same baseline ("not proportionate
+ * with their text … use the same logic as the connectors"). The name takes the palette's top
+ * stop, nudged to 3:1 on the message grey (4.5:1 on the dark bubble).
+ */
+const AGENT_COLOR_RESOLVER = "function Cee(n){return PQ.find(t=>t.id===n.avatarColor)?.id??sle(n.id)}";
+const AGENT_NOTE_SOURCE = "function __simeonNoteAgents(n){const m={};for(const a of n??[]){const k=typeof a?.name===\"string\"?a.name.trim():\"\";k.length>1&&(m[k]=Cee(a))}globalThis.__simeonAgentColors=m}";
+export const AGENT_MENTIONS_PLUGIN_SOURCE = "const __simeonAgentMentions=(()=>{let K=null,R=null,A={};const S=new Set([\"a\",\"code\",\"pre\",\"kbd\",\"script\",\"style\"]);const e=x=>x.replace(/[.*+?^${}()|[\\]\\\\]/g,\"\\\\$&\");const sync=()=>{const m=globalThis.__simeonAgentColors||{},k=Object.keys(m).sort().join(\"\\n\");if(k===K)return;K=k;A=m;const l=Object.keys(m).sort((a,b)=>b.length-a.length).map(e);R=l.length?new RegExp(\"(?<![\\\\w@/.-])(?:\"+l.join(\"|\")+\")(?![\\\\w-])\",\"g\"):null};const w=n=>{if(!n||!Array.isArray(n.children)||S.has(n.tagName))return;const o=[];let c=!1;const d=n.data&&n.data.sandMarkdown;for(const k of n.children){if(k.type!==\"text\"||d===void 0){w(k);o.push(k);continue}const v=k.value;let i=0,m;R.lastIndex=0;while((m=R.exec(v))!==null){c=!0;m.index>i&&o.push({type:\"text\",value:v.slice(i,m.index)});o.push({type:\"element\",tagName:\"span\",properties:{className:[\"simeon-agent\"],dataAgentColor:A[m[0]]},data:{sandMarkdown:d},children:[{type:\"element\",tagName:\"span\",properties:{className:[\"simeon-agent__mark\"],ariaHidden:\"true\"},data:{sandMarkdown:d},children:[]},{type:\"text\",value:m[0]}]});i=m.index+m[0].length}i===0?o.push(k):i<v.length&&o.push({type:\"text\",value:v.slice(i)})}c&&(n.children=o)};return()=>t=>{sync();R&&w(t)}})();";
+
+export const AGENT_MENTION_VIEWBOX = "0 22 229 185";
+const AGENT_MARK_SOURCE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../source/shared/voice-call/agent-mark.ts");
+/** The cloud's outline (the mask) and its two eyes, as SVG data URLs, from the mark the call banner draws. */
+export function agentMentionMarks(markSource = readFileSync(AGENT_MARK_SOURCE, "utf8")) {
+  const svg = JSON.parse(markSource.match(/export const CLOUD_MARK_SVG = ("(?:[^"\\]|\\.)*");/)[1]);
+  const outline = svg.match(/<clipPath id="MARKID"><path d="([^"]+)"/)[1];
+  const eyes = svg.match(/<g clip-path="url\(#MARKID\)">([\s\S]*?)<\/g>/)[1].replaceAll("var(--eye,#fcfcfc)", "#fcfcfc");
+  // Cropped to the cloud itself (it spans x 0–228.5, y 22–206 of the mark's square), so it fills its box the way an app's logo does.
+  const url = (body) => `data:image/svg+xml;base64,${Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${AGENT_MENTION_VIEWBOX}">${body}</svg>`).toString("base64")}`;
+  return { cloud: url(`<path d="${outline}"/>`), eyes: url(eyes) };
+}
+
+export function agentMentionsCss({ cloud, eyes } = agentMentionMarks()) {
+  return `.simeon-agent{color:var(--simeon-agent-color,inherit);font-weight:500;white-space:nowrap}
+.simeon-agent__mark{display:inline-block;width:1.3em;height:1.05em;margin:0 .26em 0 .04em;vertical-align:-.18em;background:url("${eyes}") center/contain no-repeat,linear-gradient(172deg,var(--simeon-agent-top),var(--simeon-agent-mid) 55%,var(--simeon-agent-bottom));-webkit-mask:url("${cloud}") center/contain no-repeat;mask:url("${cloud}") center/contain no-repeat}
+.sand-mvmkjj .simeon-agent{color:inherit}
+strong .simeon-agent,b .simeon-agent,h1 .simeon-agent,h2 .simeon-agent,h3 .simeon-agent{font-weight:inherit}
+${AGENT_PALETTES.map(({ id, top, mid, bottom }) => `.simeon-agent[data-agent-color="${id}"]{--simeon-agent-color:light-dark(${readableOn(top, MESSAGE_GREY_LIGHT, "#000000")},${readableOn(top, MESSAGE_GREY_DARK, "#ffffff", 4.5)});--simeon-agent-top:${top};--simeon-agent-mid:${mid};--simeon-agent-bottom:${bottom}}`).join("\n")}
+`;
+}
+
 export const LOGO_REPLACEMENTS = Object.freeze([
   ["connect-apps-button", PLUGINS_BUTTON_BEFORE, PLUGINS_BUTTON_AFTER],
   ["file-kind-slides", 'return r!=null&&A6n.has(r)?"archive":null', 'return r==="pptx"||r==="ppt"?"slides":r==="doc"||r==="rtf"?"document":r!=null&&A6n.has(r)?"archive":null'],
@@ -1063,7 +1108,8 @@ export const LOGO_REPLACEMENTS = Object.freeze([
   ["notion-tile-light", 'notion:{kind:"brand",hex:"#0F0F10",path:', 'notion:{kind:"brand",hex:"#FFFFFF",path:'],
   ["slack-tile-light", 'slack:{kind:"brand",hex:"#4A154B",path:', 'slack:{kind:"brand",hex:"#FFFFFF",path:'],
   ["approval-badge-marker", 'p.jsxs("span",{...Fe(lc.badge,N?lc.badgePending:FAn[y.kind]),role:"status",children:[N?p.jsx(bt,{"aria-hidden":!0,color:"yellow"', 'p.jsxs("span",{...Fe(lc.badge,N?lc.badgePending:FAn[y.kind]),"data-simeon-approval":N?"pending":void 0,role:"status",children:[N?p.jsx(bt,{"aria-hidden":!0,color:"yellow"'],
-  ["message-app-mentions", MESSAGE_REHYPE_BEFORE, (names) => `${appMentionsPluginSource(names)}${MESSAGE_REHYPE_BEFORE.replace("syntheticProseCards:n}]]}", "syntheticProseCards:n}],__simeonAppMentions]}")}`],
+  ["message-app-mentions", MESSAGE_REHYPE_BEFORE, (names) => `${appMentionsPluginSource(names)}${AGENT_MENTIONS_PLUGIN_SOURCE}${MESSAGE_REHYPE_BEFORE.replace("syntheticProseCards:n}]]}", "syntheticProseCards:n}],__simeonAppMentions,__simeonAgentMentions]}")}`],
+  ["agent-mention-colours", AGENT_COLOR_RESOLVER, `${AGENT_COLOR_RESOLVER}${AGENT_NOTE_SOURCE}`],
 ]);
 
 /** Spelling → app key for every name the messages mark. */
@@ -1325,7 +1371,7 @@ ${CHOICE_RADIO_CSS()}${AGENT_SHEET_CSS()}${SWITCH_AND_TILES_CSS()}.sand-agent-it
 
 export function patchOriginalLogosStylesheet(css, assets) {
   if (css.includes(LOGOS_MARKER)) throw new Error("Original renderer logos block is already present.");
-  return `${css}\n${logosCss(assets)}${cardBlueCss()}`;
+  return `${css}\n${logosCss(assets)}${agentMentionsCss()}${cardBlueCss()}`;
 }
 
 export const SHAPE_PICKER_MARKER = "/* Simeon: one shape, the cloud";
@@ -1715,7 +1761,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "flight-results"],
+    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "agent-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "flight-results"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");
