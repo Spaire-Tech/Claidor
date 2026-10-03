@@ -84,7 +84,7 @@
           bottom: "8px",
           "z-index": "3",
           font: "12px/1.35 -apple-system, system-ui, sans-serif",
-          color: "#8a1c1c",
+          color: "light-dark(#8a1c1c, #ff8a80)",
           background: "rgba(255,255,255,0.92)",
           "border-radius": "8px",
           padding: "6px 8px",
@@ -128,7 +128,7 @@
         if (notice == null) {
           notice = doc.createElement("div");
           notice.setAttribute(COMPUTER_STREAM_NOTICE_ATTR, "1");
-          setStyle(notice, { font: "12px/1.35 -apple-system, system-ui, sans-serif", color: "#8a1c1c", "text-align": "center", "max-width": "36em", margin: "6px auto 0", "word-break": "break-word" });
+          setStyle(notice, { font: "12px/1.35 -apple-system, system-ui, sans-serif", color: "light-dark(#8a1c1c, #ff8a80)", "text-align": "center", "max-width": "36em", margin: "6px auto 0", "word-break": "break-word" });
           placeholder.append(notice);
         }
         const text = noticeText(reason, filePath, "The computer's status could not be read.");
@@ -306,6 +306,7 @@
     cancelCursorLogin: { args: "none" },
     logoutCursor: { args: "none" },
     updateCursorAccountName: { args: "object" },
+    getCursorNamePrompt: { args: "none" },
     getCursorAvatar: { args: "none" },
     getCursorWeeklyUsage: { args: "none" },
     getCursorUsageSummary: { args: "none" },
@@ -354,7 +355,16 @@
     removeMcpAccount: { args: "object" },
     setMcpCustomInstructions: { args: "object" },
     listMcpServerTools: { args: "object" },
-    toggleMcpToolDisabled: { args: "object" }
+    toggleMcpToolDisabled: { args: "object" },
+    // Voice calls (30 September 2026): electron-main/voice/voice-call-service.ts.
+    getVoiceCallAvailability: { args: "none" },
+    startVoiceCall: { args: "object" },
+    noteVoiceCallAgent: { args: "object" },
+    listVoiceCallVoices: { args: "none" },
+    getAgentVoice: { args: "object" },
+    setAgentVoice: { args: "object" },
+    getVoicePreviewUrl: { args: "object" },
+    rateVoiceCall: { args: "object" }
   };
 
   // source/electron-preload/rpc-edge-runtime.ts
@@ -537,12 +547,28 @@
       onWidgetGallery: (listener) => subscribeIpc(ipc, "sand:dev-widget-gallery", listener),
       onForceOnboarding: (listener) => subscribe("force-onboarding", () => listener()),
       transcribeAudio: (audio, mimeType, language) => edge("transcribeAudio", { audio, mimeType, language }),
+      // Voice calls (30 September 2026): the chat header's phone button and the
+      // voice picker in the agent's character settings, patched into the
+      // pinned window by scripts/lib/router-renderer-patch.mjs.
+      voiceCall: {
+        getAvailability: () => edge("getVoiceCallAvailability"),
+        start: (agentId, agentName) => edge("startVoiceCall", { agentId, agentName }),
+        noteAgent: (agentId, agentName) => edge("noteVoiceCallAgent", { agentId, agentName }),
+        listVoices: () => edge("listVoiceCallVoices"),
+        getAgentVoice: (agentId) => edge("getAgentVoice", { agentId }),
+        setAgentVoice: (agentId, voiceId) => edge("setAgentVoice", { agentId, voiceId }),
+        previewUrl: (voiceId) => edge("getVoicePreviewUrl", { voiceId }),
+        // The thumbs on a finished call's card in the chat (2 October 2026).
+        rateCall: (conversationId, like) => edge("rateVoiceCall", { conversationId, like })
+      },
       cursorAccount: {
         getStatus: () => edge("getCursorAuthStatus"),
         login: () => edge("loginCursor"),
         cancelLogin: () => edge("cancelCursorLogin"),
         logout: () => edge("logoutCursor"),
         updateName: (name) => edge("updateCursorAccountName", { name }),
+        // The name sheet after onboarding (1 October 2026): whether to ask, and Google's first name to offer.
+        getNamePrompt: () => edge("getCursorNamePrompt"),
         getAvatar: () => edge("getCursorAvatar"),
         getWeeklyUsage: () => edge("getCursorWeeklyUsage"),
         getUsageSummary: () => edge("getCursorUsageSummary"),
@@ -933,42 +959,96 @@
     ...extra
   });
   var file = (id, minutesAgo, path) => card(id, minutesAgo, { type: "attachment", url: `file:///home/box/${encodeURI(path)}` });
+  var toTeammate = (id, minutesAgo, peer, content) => ({
+    kind: "message",
+    id,
+    role: "assistant",
+    content,
+    isStreaming: false,
+    timestampMs: at(minutesAgo),
+    toAgent: { ...peer, kind: "agent" }
+  });
+  var fromTeammate = (id, minutesAgo, peer, content) => ({
+    kind: "message",
+    id,
+    role: "user",
+    content,
+    isStreaming: false,
+    timestampMs: at(minutesAgo),
+    fromAgent: peer
+  });
+  var voiceCall = (id, minutesAgo, callId, seconds, lines) => ({
+    kind: "event",
+    id,
+    timestampMs: at(minutesAgo),
+    event: { type: "voice-call", callId, status: "ended", seconds, lines: lines.map(([speaker, text]) => ({ speaker: speaker === "you" ? "user" : "agent", text })) }
+  });
+  var earlierCall = (prefix, minutesAgo, callId, seconds, lines) => {
+    const peer = { id: `voice-call:${callId}:${seconds}`, name: "Bass" };
+    return lines.map(([speaker, content], index) => speaker === "you" ? fromTeammate(`${prefix}${index}`, minutesAgo, peer, content) : toTeammate(`${prefix}${index}`, minutesAgo, peer, content));
+  };
   var AGENTS = [
-    { id: "simeon", name: "Simeon", title: "Chief of staff", description: "Runs your day and keeps the team pointed at what matters.", color: "blue", minutesAgo: 0 },
-    { id: "yodo", name: "Yodo", title: "Delivery", description: "Keeps the launch on track in Linear and Slack.", color: "red", minutesAgo: 95 },
-    { id: "scout", name: "Scout", title: "Research", description: "Reads what customers say and brings back what matters.", color: "cyan", minutesAgo: 60 * 26 }
+    { id: "simeon", name: "Simeon", title: "Chief of Staff", description: "Runs your day and hands work to the rest of the team.", color: "blue", minutesAgo: 0 },
+    { id: "mila", name: "Mila", title: "Inbox and calendar", description: "Answers what she can and keeps your mornings free.", color: "violet", minutesAgo: 25 },
+    { id: "iris", name: "Iris", title: "Customer support", description: "Answers tickets from your help docs and flags the hard ones.", color: "cyan", minutesAgo: 70 },
+    { id: "theo", name: "Theo", title: "Bookkeeping", description: "Keeps the books, the runway and the invoices straight.", color: "green", minutesAgo: 60 * 3 },
+    { id: "felix", name: "Felix", title: "Hiring", description: "Finds candidates and books the interviews.", color: "orange", minutesAgo: 60 * 6 },
+    { id: "nora", name: "Nora", title: "Investor relations", description: "Writes the monthly update and follows up with investors.", color: "magenta", minutesAgo: 60 * 26 }
   ];
   var GROUP = {
-    id: "launch-squad",
-    name: "Launch squad",
-    description: "Thursday's launch, with Simeon, Scout and Yodo.",
-    memberIds: ["simeon", "scout", "yodo"],
-    minutesAgo: 40
+    id: "seed-round",
+    name: "Seed round",
+    description: "Getting ready to raise in November, with Simeon, Theo and Nora.",
+    memberIds: ["simeon", "theo", "nora"],
+    minutesAgo: 45
   };
   var TRANSCRIPTS = {
     simeon: [],
-    scout: [
-      you("s0u", 60 * 27, "What are customers saying about onboarding since the redesign?"),
-      says("s0a", 60 * 26 + 30, 'I read the 14 interview notes in **Notion** and 212 **Intercom** conversations from the last 30 days. Three things stand out:\n\n1. **Setup takes too long.** 9 of 14 people stalled at the workspace step.\n2. **Templates work.** People who picked one were twice as likely to invite a teammate.\n3. **The words confuse.** "Workspace" and "project" get mixed up in 31 tickets.'),
-      file("s0f", 60 * 26 + 29, "research/Onboarding research, September.pdf"),
-      says("s0b", 60 * 26 + 29, "The quotes behind each theme are on page 3.")
+    mila: [
+      you("l0u", 60 * 30, "Keep my mornings free for deep work. Nothing before 11."),
+      says("l0a", 60 * 30 - 1, "Done. I moved four meetings this week to the afternoon, and I'll suggest later times when someone asks for a morning."),
+      says("l1a", 25, "Overnight: 38 emails. I wrote replies to 6 and filed the rest. Two need you, both about the **Acme** renewal.")
     ],
-    yodo: [
-      you("y0u", 60 * 50, "Keep the launch on track. Post a standup in Slack every morning."),
-      says("y0a", 60 * 50 - 1, "I'll need **Linear** and **Slack** for that."),
-      card("y0c", 60 * 50 - 1, { type: "connectors", connectors: ["Linear", "Slack"] }),
-      says("y0b", 60 * 50 - 3, "Both connected. Every morning at 9:00 I'll post the launch board in #launch and flag anything stuck for more than a day."),
-      says("y1a", 95, "Today's standup is up in #launch:\n\n- **12 of 15** launch tickets done\n- 2 waiting on design review with Dana\n- **LIN-482**, the pricing page bug, is in code review"),
-      file("y1f", 95, "launch/Launch tracker.xlsx")
+    iris: [
+      you("i0u", 60 * 48, "Answer the support tickets you're sure about. Send me anything with a refund or an unhappy customer."),
+      says("i0a", 60 * 48 - 1, "I'll answer from your help docs, so I need **Intercom** and **Notion**."),
+      card("i0c", 60 * 48 - 1, { type: "connectors", connectors: ["Intercom", "Notion"] }),
+      says("i0b", 60 * 48 - 3, "Both connected. I'll leave refunds and anything unhappy for you."),
+      says("i1a", 70, "Yesterday: 23 tickets answered, a median of 4 minutes to reply. One is yours: **Brightline** is asking for a $960 refund for September.")
+    ],
+    theo: [
+      you("t0u", 60 * 5, "What's our runway?"),
+      says("t0a", 60 * 5 - 1, "**19 months** at September's spend of $41,200. Revenue was **$48,200**, up 12% on August. That's from **Stripe** and **QuickBooks**, closed through 30 September."),
+      file("t0f", 60 * 5 - 1, "finance/September close.xlsx"),
+      // A call from before calls were written as one line: the window still draws it as a call.
+      ...earlierCall("t1c", 60 * 4, "call-demo-theo", 71, [
+        ["you", "Theo, are any invoices late?"],
+        ["agent", "Two. Acme Health owes $4,200, 34 days late, and Halden & Co $1,800."],
+        ["you", "Send them both a polite reminder."],
+        ["agent", "Will do, from your Gmail."]
+      ]),
+      says("t1a", 60 * 3, "Both reminders went out from **Gmail**. I'll tell you when they pay.")
+    ],
+    felix: [
+      you("f0u", 60 * 30, "We need a founding engineer. Find me five people worth talking to."),
+      says("f0a", 60 * 29, "I went through 140 applicants and your LinkedIn network. Five stand out, and two of them have built payments products before. My notes on each are in the doc."),
+      file("f0f", 60 * 29, "hiring/Founding engineer shortlist.pdf"),
+      says("f1a", 60 * 6, "Priya Shah said yes to a first call. She's on your calendar today at 2 pm.")
+    ],
+    nora: [
+      you("n0u", 60 * 27, "Draft the September investor update. Same format as last month."),
+      says("n0a", 60 * 26 + 40, "The draft is in **Notion**. Revenue $48.2k, up 12%. Two enterprise pilots signed. The founding engineer search has started. The ask: intros to finance teams who'd try us."),
+      file("n0f", 60 * 26 + 40, "investors/September update.docx"),
+      says("n1a", 60 * 26, "Three investors replied asking for a call. I offered them times next week.")
     ]
   };
   var GROUP_TRANSCRIPT = [
-    { author: null, entry: you("g0u", 58, "Honest check: can we still ship Thursday?") },
-    { author: "yodo", entry: says("g0y", 56, "Engineering says yes if **LIN-482** merges by Wednesday noon. It's in review now.") },
-    { author: "scout", entry: says("g0s", 55, "From the research, what customers care about is the new setup flow. The pricing page change can wait.") },
-    { author: "simeon", entry: says("g0m", 54, "Then keep Thursday. I'll move the pricing page to the fast-follow list and let Dana and Marcus know.") },
-    { author: null, entry: you("g1u", 45, "Do it.") },
-    { author: "simeon", entry: says("g1m", 40, "Done. Moved in **Linear** and posted in #launch on **Slack**.") }
+    { author: null, entry: you("g0u", 60, "I want to start raising in November. Are we ready?") },
+    { author: "theo", entry: says("g0t", 58, "The numbers are. 19 months of runway and revenue up 12% a month for four months. The data room has everything but the cap table.") },
+    { author: "nora", entry: says("g0n", 57, "Eleven investors have opened every update since March. I'd start with them.") },
+    { author: "simeon", entry: says("g0m", 55, "Then here's the plan. Theo updates the cap table this week, Nora writes to those eleven, and I keep two mornings a week free in November for meetings.") },
+    { author: null, entry: you("g1u", 50, "Go.") },
+    { author: "simeon", entry: says("g1m", 45, "On it. I'll post where we are here every Friday.") }
   ];
   var step = (at2, id, name, doing, done, ms, detail, target) => [
     { at: at2, kind: "step", agent: "simeon", id, name, summary: doing, status: "running", ...detail == null ? {} : { detail }, ...target == null ? {} : { target } },
@@ -976,26 +1056,99 @@
   ];
   function openingScript() {
     return [
-      { at: 900, kind: "user", agent: "simeon", entry: you("m0u", 0, "Morning. Where are we on Thursday's launch?") },
+      { at: 900, kind: "user", agent: "simeon", entry: you("m0u", 0, "Morning. What needs me today?") },
       { at: 1500, kind: "typing", agent: "simeon", on: true },
-      ...step(2100, "m1", "CallMcpTool", "Checking Linear", "Checked Linear", 1300, "Linear"),
-      ...step(3500, "m2", "CallMcpTool", "Reading #launch in Slack", "Read #launch in Slack", 1200, "Slack"),
-      ...step(4800, "m3", "CallMcpTool", "Checking your calendar", "Checked your calendar", 1e3, "Google Calendar"),
-      { at: 6e3, kind: "append", agent: "simeon", entry: says("m0a", 0, "Thursday is on track: 12 of 15 launch tickets are done in **Linear**, and the review is Thursday at 2 pm.") },
-      ...step(6800, "m4", "SendToAgent", "Asking Scout for customer quotes", "Messages from Scout", 1500, void 0, "scout"),
-      ...step(8500, "m5", "SendToAgent", "Asking Yodo about the last tickets", "Messages from Yodo", 1300, void 0, "yodo"),
-      { at: 1e4, kind: "append", agent: "simeon", entry: says("m1a", 0, "Scout pulled three customer quotes and Yodo closed the last two tickets. The review doc is ready.") },
-      { at: 10300, kind: "append", agent: "simeon", entry: file("m1f", 0, "docs/Launch review.docx") },
-      { at: 10400, kind: "typing", agent: "simeon", on: false },
-      { at: 12600, kind: "user", agent: "simeon", entry: you("m2u", 0, "Looks great. Send the agenda to Dana and Marcus, and check in like this every Monday.") },
-      { at: 13300, kind: "react", agent: "simeon", entryId: "m2u", emoji: "\u{1F44D}", by: "simeon" },
-      { at: 13600, kind: "typing", agent: "simeon", on: true },
-      ...step(14e3, "m6", "CallMcpTool", "Sending the agenda from Gmail", "Sent the agenda from Gmail", 1300, "Gmail"),
-      ...step(15500, "m7", "UpdateState", "Creating routine Monday launch check", "Created routine Monday launch check", 1e3),
-      { at: 16800, kind: "append", agent: "simeon", entry: says("m2a", 0, "Done. The agenda went out from **Gmail**.") },
-      { at: 16900, kind: "typing", agent: "simeon", on: false }
+      ...step(2100, "m1", "CallMcpTool", "Checking your calendar", "Checked your calendar", 1100, "Google Calendar"),
+      ...step(3300, "m2", "CallMcpTool", "Reading your inbox", "Read your inbox", 1200, "Gmail"),
+      ...step(4600, "m3", "SendToAgent", "Asking Theo about cash", "Messages from Theo", 1300, void 0, "theo"),
+      ...step(6e3, "m4", "SendToAgent", "Asking Iris about support", "Messages from Iris", 1200, void 0, "iris"),
+      { at: 7400, kind: "append", agent: "simeon", entry: says("m0a", 0, "Three things today:\n\n1. **Acme's renewal.** Their lawyers want 60-day payment terms. Mila wrote a reply that agrees if they sign for two years.\n2. **Brightline's refund**, $960. Iris checked: our sync was down for them for two days. I'd approve it.\n3. **Priya Shah at 2 pm**, for the founding engineer role. Felix's notes are attached.") },
+      { at: 7700, kind: "append", agent: "simeon", entry: file("m0f", 0, "hiring/Priya Shah, notes.pdf") },
+      { at: 7800, kind: "typing", agent: "simeon", on: false },
+      { at: 10200, kind: "user", agent: "simeon", entry: you("m1u", 0, "Approve the refund and send Acme the reply. And send me this every morning.") },
+      { at: 10900, kind: "react", agent: "simeon", entryId: "m1u", emoji: "\u{1F44D}", by: "simeon" },
+      { at: 11200, kind: "typing", agent: "simeon", on: true },
+      ...step(11600, "m5", "CallMcpTool", "Refunding Brightline in Stripe", "Refunded Brightline in Stripe", 1200, "Stripe"),
+      ...step(13e3, "m6", "CallMcpTool", "Sending the reply from Gmail", "Sent the reply from Gmail", 1100, "Gmail"),
+      ...step(14300, "m7", "UpdateState", "Creating routine Morning brief", "Created routine Morning brief", 900),
+      { at: 15400, kind: "append", agent: "simeon", entry: says("m1a", 0, "Done. Brightline has its refund, Acme has the reply, and you'll get this brief at 8 every morning.") },
+      { at: 15500, kind: "typing", agent: "simeon", on: false },
+      // The agent hands the computer to the person: a SendMessage carrying the box request (the window's take-over card).
+      { at: 18e3, kind: "user", agent: "simeon", entry: you("m2u", 0, "Can you post Felix's job ad on our LinkedIn page?") },
+      { at: 18600, kind: "typing", agent: "simeon", on: true },
+      ...step(19e3, "m8", "Computer", "Opening LinkedIn on the computer", "Opened LinkedIn on the computer", 1600),
+      { at: 21e3, kind: "append", agent: "simeon", entry: card("m2h", 0, { type: "text", content: "LinkedIn wants you to sign in." }, { boxRequestId: "demo-take-over", boxInstruction: "LinkedIn is asking for your password and a code from your phone. Take over to sign in, then hand it back and I'll post the ad.", boxResolution: "waiting" }) },
+      { at: 21100, kind: "typing", agent: "simeon", on: false },
+      // A call: its line sits where the call began, the work it asked for below it, then the written
+      // follow-up, the way a text would read.
+      { at: 24e3, kind: "append", agent: "simeon", entry: voiceCall("m3c", 0, "call-demo-simeon", 58, [
+        ["you", "Hey Simeon, can you move Priya to four? My investor call is running long."],
+        ["agent", "Sure. I'll ask Felix to check with her."],
+        ["you", "Thanks."]
+      ]) },
+      { at: 24300, kind: "typing", agent: "simeon", on: true },
+      ...step(24600, "m9", "SendToAgent", "Asking Felix to move Priya's call", "Messages from Felix", 1300, void 0, "felix"),
+      ...step(26100, "m10", "CallMcpTool", "Updating your calendar", "Updated your calendar", 900, "Google Calendar"),
+      { at: 27200, kind: "append", agent: "simeon", entry: says("m3a", 0, "As we said on the call: Priya is now at 4, Felix checked with her, and your calendar is updated.") },
+      { at: 27300, kind: "typing", agent: "simeon", on: false }
     ];
   }
+  function onboardingScript(agent, stage) {
+    const typing = (at2, on) => ({ at: at2, kind: "typing", agent, on });
+    const append = (at2, entry) => ({ at: at2, kind: "append", agent, entry });
+    const question = (id, prompt, labels, helpText) => card(id, 0, { type: "widget", widget: { prompt, ...helpText == null ? {} : { helpText }, options: labels.map((label) => ({ label })), allowCustom: true } });
+    if (stage === 0) {
+      return [
+        typing(700, true),
+        append(2600, says("o0a", 0, "Hi Bass, I'm Simeon, your COO. Before I start staffing your team, I'd like to know where you want me first.")),
+        append(3600, question("o0q", "What should I mainly help you with?", ["Run my day: calendar and inbox", "Keep my projects moving", "Prepare me for meetings", "Lead my other agents"], "Pick one, or type your own. You can hand me a real task instead, and I'll just start on it.")),
+        typing(3700, false)
+      ];
+    }
+    if (stage === 1) {
+      return [
+        typing(500, true),
+        append(2200, says("o1a", 0, "Good. For that I need to see your calendar and your email.")),
+        append(2600, card("o1c", 0, { type: "connector", connector: "Google Calendar", variant: "connect", reason: "To know your day and protect your time" })),
+        append(2800, card("o1g", 0, { type: "connector", connector: "Gmail", variant: "connect", reason: "To sort what needs you and draft replies" })),
+        append(3800, question("o1q", "How should I check in with you?", ["A short brief every morning", "Only when something needs me", "A recap at the end of the day"])),
+        typing(3900, false)
+      ];
+    }
+    return [
+      typing(500, true),
+      append(2e3, says("o2a", 0, "Got it. Connect those two and I'll send your first brief tomorrow at 8. Until then, hand me anything and I'll start on it.")),
+      typing(2100, false)
+    ];
+  }
+
+  // source/shared/channels.ts
+  var DISCORD_PLATFORM = "discord";
+  var SLACK_PLATFORM = "slack";
+  var CONNECTOR_MANIFESTS = [
+    {
+      platform: DISCORD_PLATFORM,
+      displayName: "Discord",
+      blurb: "Message in Discord servers and DMs through a bot the user owns.",
+      credentialLabel: "bot token",
+      availability: "available",
+      connectGuide: [
+        "The user creates an application at discord.com/developers, adds a Bot, turns on the Message Content Intent under Privileged Gateway Intents, and invites the bot to their server with the bot scope and the Send Messages and Read Message History permissions.",
+        'Ask for the bot token with a secret-request (connector "discord", field "token"); the connection opens within a few seconds of it being stored. A DM to the bot or a message in a channel it can read wakes you; the address is discord:<channel id>.'
+      ].join("\n")
+    },
+    {
+      platform: SLACK_PLATFORM,
+      displayName: "Slack",
+      blurb: "Message in Slack channels and DMs through a Socket Mode app the user owns.",
+      credentialLabel: "app token and bot token",
+      availability: "available",
+      connectGuide: [
+        "The user creates an app at api.slack.com/apps, enables Socket Mode (which issues an app-level token, xapp-\u2026, with connections:write), subscribes the bot to the message.channels, message.groups, message.im and reaction_added events, gives it the chat:write, channels:history, groups:history, im:history, users:read and files:write scopes, and installs it to the workspace (which issues the bot token, xoxb-\u2026).",
+        'Two tokens are needed: ask for the app token with a secret-request (connector "slack", field "token") and the bot token with a second one (connector "slack", field "botToken"). The connection opens once both are stored. A DM to the app or a message in a channel it is a member of wakes you; the address is slack:<channel id>.'
+      ].join("\n")
+    }
+  ];
 
   // demo/backend.ts
   var ok = (value) => ({ status: "ok", value });
@@ -1003,9 +1156,10 @@
   var CONNECTED = [
     { id: "900001", name: "Gmail", identifier: "gmail", url: "https://gmailmcp.googleapis.com/mcp/v1" },
     { id: "900002", name: "Google Calendar", identifier: "google-calendar", url: "https://calendarmcp.googleapis.com/mcp/v1" },
-    { id: "900003", name: "Slack", identifier: "slack", url: "https://mcp.slack.com/mcp" },
-    { id: "900004", name: "Linear", identifier: "linear", url: "https://mcp.linear.app/mcp" },
-    { id: "900005", name: "Notion", identifier: "notion", url: "https://mcp.notion.com/mcp" }
+    { id: "900003", name: "Stripe", identifier: "stripe", url: "https://mcp.stripe.com" },
+    { id: "900004", name: "QuickBooks", identifier: "quickbooks", url: "https://api.simeonlabs.com/v1/desktop/apps/quickbooks/mcp" },
+    { id: "900005", name: "Notion", identifier: "notion", url: "https://mcp.notion.com/mcp" },
+    { id: "900006", name: "Intercom", identifier: "intercom", url: "https://mcp.intercom.com/mcp" }
   ];
   var connectedServer = (s) => ({
     id: s.id,
@@ -1023,8 +1177,16 @@
   });
   function createDemoBackend(hooks) {
     const scale = hooks.timeScale ?? 1;
-    const dark = typeof location !== "undefined" && new URLSearchParams(location.search).get("theme") === "dark";
+    const asked = typeof location !== "undefined" ? new URLSearchParams(location.search).get("theme") : null;
+    const dark = asked === "dark" || asked !== "light" && typeof matchMedia !== "undefined" && matchMedia("(prefers-color-scheme: dark)").matches;
     const theme = dark ? { preference: "dark", resolved: "dark" } : { preference: "light", resolved: "light" };
+    const params = typeof location !== "undefined" ? new URLSearchParams(location.search) : new URLSearchParams();
+    const fresh = params.has("onboarding");
+    let onboardingSeen = !fresh;
+    let personName = fresh ? null : "Bass";
+    let onboardingStage = 0;
+    const signedIn = { kind: "logged-in", authId: "demo|bass", email: "bass@simeonlabs.com", displayName: "Bass F", freshness: 1 };
+    let authStatus = fresh ? { kind: "logged-out" } : signedIn;
     const persisted = /* @__PURE__ */ new Map();
     const epoch = "demo-" + Math.random().toString(36).slice(2);
     const sequences = /* @__PURE__ */ new Map();
@@ -1034,7 +1196,7 @@
       return { replicaKey, epoch, sequence };
     };
     const group = { id: GROUP.id, name: GROUP.name, title: "", description: GROUP.description, color: "blue", minutesAgo: GROUP.minutesAgo, isGroup: true, memberIds: GROUP.memberIds };
-    const rows = new Map([...AGENTS.map((a) => [a.id, a]), [group.id, group]]);
+    const rows = new Map(fresh ? [] : [...AGENTS.map((a) => [a.id, a]), [group.id, group]]);
     const nameOf = (id) => rows.get(id)?.name ?? id;
     const transcripts = new Map(Object.entries(TRANSCRIPTS).map(([id, entries]) => [id, [...entries]]));
     transcripts.set(group.id, GROUP_TRANSCRIPT.map(({ author, entry }) => author == null ? entry : { ...entry, author: { id: author, name: nameOf(author) } }));
@@ -1175,13 +1337,32 @@
     const main = {
       getThemeState: () => theme,
       setThemePreference: () => theme,
-      getOnboardingSeen: () => true,
-      setOnboardingSeen: () => void 0,
+      getOnboardingSeen: () => onboardingSeen,
+      setOnboardingSeen: (args) => {
+        onboardingSeen = args?.seen ?? args?.value ?? true;
+        return void 0;
+      },
       getWindowState: () => ({ isFullScreen: false, isMaximized: false, isFocused: true }),
       getTimeZone: () => ({ timeZone: "Europe/Zurich", override: null }),
       getSidebarCollapsed: () => false,
       markDeepLinksReady: () => void 0,
-      getCursorAuthStatus: () => ({ kind: "logged-in", authId: "demo|bass", email: "bass@simeonlabs.com", displayName: "Bass F", freshness: 1 }),
+      getCursorAuthStatus: () => authStatus,
+      // In the app, Sign in opens the browser on app.simeonlabs.com and the window waits; here the browser step passes by itself.
+      loginCursor: () => {
+        authStatus = { kind: "logging-in" };
+        hooks.pushMainEvent("cursor-auth-changed", authStatus);
+        setTimeout(() => {
+          authStatus = signedIn;
+          hooks.pushMainEvent("cursor-auth-changed", authStatus);
+        }, 1800);
+        setTimeout(() => hooks.reconnectCoordinator?.(), 8e3);
+        return authStatus;
+      },
+      cancelCursorLogin: () => {
+        authStatus = { kind: "logged-out" };
+        hooks.pushMainEvent("cursor-auth-changed", authStatus);
+        return authStatus;
+      },
       getSandAccess: () => ({ state: "granted", reason: "none" }),
       getSandAccessFresh: () => ({ state: "granted", reason: "none" }),
       getEgressTunnelStatus: () => null,
@@ -1195,7 +1376,23 @@
       getHostPinnedAgents: () => [],
       getHostSidebarSections: () => [],
       getAgentDefaultModel: () => null,
+      // Voice calls are on in the app, so the demo draws the phone button and the
+      // voice picker. The call itself needs the Mac, a microphone and the
+      // server's voice key, so pressing the button here starts nothing.
+      getVoiceCallAvailability: () => ({ enabled: true, inCall: false }),
+      noteVoiceCallAgent: () => void 0,
+      startVoiceCall: () => ({ started: false }),
+      listVoiceCallVoices: () => [{ id: "demo-aria", name: "Aria" }, { id: "demo-james", name: "James" }, { id: "demo-sarah", name: "Sarah" }],
+      getAgentVoice: () => ({ voiceId: "demo-aria", isDefault: true }),
+      setAgentVoice: (args) => ({ voiceId: args?.voiceId ?? null, isDefault: false }),
+      getVoicePreviewUrl: () => null,
       getCursorAvatar: () => null,
+      // A new account has not said what to call them yet: the window's name sheet.
+      getCursorNamePrompt: () => ({ needed: personName == null, suggested: "Bass" }),
+      updateCursorAccountName: (args) => {
+        personName = typeof args?.name === "string" ? args.name : "Bass";
+        return { ok: true };
+      },
       resolveAttachmentMedia: () => null,
       getLinkMetadata: () => null,
       openExternal: () => void 0
@@ -1226,8 +1423,23 @@
         const agentId = args.agentId ?? activeAgentId;
         const updated = update(agentId, args.entryId, (e) => ({ ...e, respondedValue: args.value }));
         if (updated == null) return { accepted: false };
+        if (fresh && onboardingStage < 2) void play(onboardingScript(agentId, ++onboardingStage));
         return { accepted: true };
       },
+      createAgent: (args) => {
+        const id = `agent-${rows.size + 1}`;
+        const row = { id, name: String(args?.name ?? "New Agent"), title: String(args?.title ?? ""), description: String(args?.description ?? ""), color: args?.avatarColor ?? "blue", minutesAgo: 0 };
+        rows.set(id, row);
+        transcripts.set(id, []);
+        lastActivity.set(id, Date.now());
+        const previous = activeAgentId;
+        activeAgentId = id;
+        pushAgent(previous);
+        pushAgent(id);
+        if (args?.isKickstartRequested === true) void play(onboardingScript(id, 0));
+        return { agent: summary(row) };
+      },
+      kickstartAgent: () => ({ isIntroductionInFlight: false }),
       dismissWidget: (args) => {
         update(args.agentId ?? activeAgentId, args.entryId, (e) => ({ ...e, widgetDismissed: true }));
         return {};
@@ -1256,13 +1468,13 @@
       getAgentAutomations: () => [],
       listAllAutomations: () => [],
       getAgentMemories: () => [],
-      getAgentChannels: () => ({ channels: [] }),
+      getAgentChannels: () => ({ manifests: CONNECTOR_MANIFESTS, connections: [] }),
       getForeverBoxStatus: () => ({ state: "ready" })
     };
     return {
       /** Simeon's conversation plays by itself as soon as the window is up. */
       onServing() {
-        if (openingStarted) return;
+        if (openingStarted || fresh) return;
         openingStarted = true;
         void play(openingScript());
       },
@@ -1304,7 +1516,7 @@
         }
         if (channel === "sand:client-persistence-list-keys") return [...persisted.keys()].filter((k) => k.startsWith(payload?.prefix ?? ""));
         if (channel === "sand:client-persistence-migrate") return void 0;
-        if (channel === "sand:mcp-list") return { servers: CONNECTED.map(connectedServer) };
+        if (channel === "sand:mcp-list") return { servers: fresh ? [] : CONNECTED.map(connectedServer) };
         if (channel === "sand:mcp-catalog") return { entries: [] };
         unanswered.ipc.add(channel);
         console.warn("[demo] ipc unanswered", channel, payload);
@@ -1326,7 +1538,8 @@
     // Twice the scripted pace: at 1x Simeon read as slow to think and answer (the founder, 28 September 2026).
     timeScale: 0.5,
     pushCoordinatorEvent: (family, payload) => server?.postEvent(family, payload),
-    pushMainEvent: (event, payload) => emit(`sand-rpc:main:e:${event}`, {}, payload)
+    pushMainEvent: (event, payload) => emit(`sand-rpc:main:e:${event}`, {}, payload),
+    reconnectCoordinator: () => openCoordinatorPort()
   });
   var server = null;
   Reflect.set(window, "__simeonDemo", backend);

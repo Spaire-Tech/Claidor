@@ -54,11 +54,9 @@ for key in ("notion", "gmail", "google-docs", "stripe", "quickbooks", "xero", "h
     logo(key)
 shutil.copy(f"{HERE}/simeon-mark.svg", f"{OUT}/logos/simeon.svg")
 for name in re.findall(r'src="(logos/[^"]+)"', open(f"{HERE}/page.html").read()):
-    assert os.path.exists(f"{OUT}/{name}") or name in ("logos/linear.svg", "logos/word.webp"), name
+    assert os.path.exists(f"{OUT}/{name}") or name == "logos/pdf.svg", name
 
-# The phone hero: a still of the app, drawn by the page, nothing to load, scroll or touch.
-# Simeon's thread with both sides talking, the agents down the left as the window shows them.
-shutil.copy(f"{REPO}/desktop/brand/file-icons/word.webp", f"{OUT}/logos/word.webp")
+shutil.copy(f"{REPO}/desktop/brand/file-icons/pdf.svg", f"{OUT}/logos/pdf.svg")
 def mface(f, tint=""):
     return f'<img src="faces/{f}.png" alt="" style="{"filter:" + tint if tint else ""}">'
 def tag(f, name, color):
@@ -66,21 +64,24 @@ def tag(f, name, color):
 PLUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>'
 MIC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>'
 CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>'
-rail = "".join(f'<span class="sd-m-av{" sd-m-on" if i == 0 else ""}">{mface(f, t)}</span>' for i, (f, t) in enumerate([
-    ("simeon", ""), ("scout", ""), ("yodo", ""), ("scout", "hue-rotate(90deg)"), ("yodo", "hue-rotate(60deg)"), ("yodo", "hue-rotate(300deg)")]))
-group = '<span class="sd-m-av sd-m-group">' + mface("simeon") + mface("scout") + mface("yodo") + '</span>'
-MOBILE_HTML = ('<div class="sd-mob" aria-label="Simeon, a chief of staff agent, talking with you about a launch">'
-  '<div class="sd-m-rail"><span class="sd-m-lights"><i></i><i></i><i></i></span>' + rail + group
+# The phone hero: a still of the app, drawn by the page, telling the demo's opening (desktop/demo/scenario.ts):
+# the founder's morning brief. The faces are the app's own, captured from the demo (source/faces/agent-*.png).
+# Name colours are the top colour of each agent's palette (desktop/source/shared/voice-call/agent-mark.ts).
+rail = "".join(f'<span class="sd-m-av{" sd-m-on" if i == 0 else ""}">{mface("agent-" + f)}</span>' for i, f in enumerate(["simeon", "mila"]))
+group = '<span class="sd-m-av sd-m-group">' + mface("agent-simeon") + mface("agent-theo") + mface("agent-nora") + '</span>'
+rail += group + "".join(f'<span class="sd-m-av">{mface("agent-" + f)}</span>' for f in ["iris", "theo", "felix", "nora"])
+MOBILE_HTML = ('<div class="sd-mob" aria-label="Simeon, the chief of staff, giving a founder the morning brief">'
+  '<div class="sd-m-rail"><span class="sd-m-lights"><i></i><i></i><i></i></span>' + rail
   + '<span class="sd-m-fill"></span><span class="sd-m-new">' + PLUS + '</span><span class="sd-m-me">BF</span></div>'
-  '<div class="sd-m-main"><div class="sd-m-head">' + mface("simeon") + '<b>Simeon</b><span class="sd-m-role">Chief of staff</span></div>'
+  '<div class="sd-m-main"><div class="sd-m-head">' + mface("agent-simeon") + '<b>Simeon</b><span class="sd-m-role">Chief of Staff</span></div>'
   '<div class="sd-m-thread"><div class="sd-m-feed">'
-  f'<div class="sd-m-in">Thursday is on track: 12 of 15 launch tickets are done in {chip("linear")}, and the review is Thursday at 2 pm.</div>'
-  '<div class="sd-m-sys">Messages from ' + tag("scout", "Scout", "#3f7f78") + ' and ' + tag("yodo", "Yodo", "#b0603c") + '</div>'
-  '<div class="sd-m-in">' + tag("scout", "Scout", "#3f7f78") + ' pulled three customer quotes and ' + tag("yodo", "Yodo", "#b0603c") + ' closed the last two tickets. The review doc is ready.</div>'
-  '<div class="sd-m-file"><img src="logos/word.webp" alt="">Launch review.docx</div>'
-  '<div class="sd-m-out">Looks great. Send the agenda to Dana and Marcus, and check in like this every Monday.<span class="sd-m-react">&#128077;</span></div>'
-  '<div class="sd-m-sys">Created routine <span class="sd-m-clock">' + CLOCK + '</span><b>Monday launch check</b></div>'
-  f'<div class="sd-m-in">Done. The agenda went out from {chip("gmail")}.</div>'
+  '<div class="sd-m-out">Morning. What needs me today?</div>'
+  '<div class="sd-m-sys">Messages from ' + tag("agent-theo", "Theo", "#6f8f4f") + ' and ' + tag("agent-iris", "Iris", "#2f6f72") + '</div>'
+  '<div class="sd-m-in">Three things today: <b>Acme’s renewal</b>, <b>Brightline’s $960 refund</b>, and <b>Priya Shah at 2 pm</b> for the founding engineer role.</div>'
+  '<div class="sd-m-file"><img src="logos/pdf.svg" alt="">Priya Shah, notes.pdf</div>'
+  '<div class="sd-m-out">Approve the refund and send Acme the reply. And send me this every morning.<span class="sd-m-react">&#128077;</span></div>'
+  '<div class="sd-m-sys">Created routine <span class="sd-m-clock">' + CLOCK + '</span><b>Morning brief</b></div>'
+  '<div class="sd-m-in">Done. Brightline has its refund, Acme has the reply, and you’ll get this brief at 8 every morning.</div>'
   '</div></div>'
   '<div class="sd-m-compose"><span class="sd-m-plus">' + PLUS + '</span><span class="sd-m-ph">Message Simeon</span><span class="sd-m-mic">' + MIC + '</span></div>'
   '</div></div>')
@@ -155,13 +156,15 @@ FIT = """<script>
     const fw = w - 2 * side, fh = h - top - bottom;
     // Zoom: the app is laid out 1150 px wide in the laptop scene (its card is wide and short), 880 on
     // other computers and tablets, 440 on a phone, then scaled to the window.
-    const s = fw / (phone ? 440 : document.documentElement.classList.contains('sd-scrolly') ? 1150 : 880);
-    const barH = Math.round(Math.max(22, 30 * s));
-    px(frame, { left: side, top, width: fw, height: fh, borderRadius: Math.round(11 * Math.min(1.2, s)) });
+    // The app is laid out at a real Mac window's width (1200) and scaled to the box; a phone gets 440.
+    const s = fw / (phone ? 440 : 1200);
+    // No title bar of its own: like a Mac app with a hidden title bar, the lights sit on the sidebar.
+    const barH = 0;
+    px(frame, { left: side, top, width: fw, height: fh, borderRadius: Math.round(14 * Math.min(1.3, s)) });
     px(bar, { height: barH, fontSize: Math.max(11, 13 * Math.min(1.1, s)) });
-    px(dots, { left: 12 * Math.min(1.2, s), gap: 7 * Math.min(1.2, s) });
-    for (const i of dots.children) px(i, { width: 11 * Math.min(1.2, s), height: 11 * Math.min(1.2, s) });
-    const sh = fh - barH - 1;
+    px(dots, { left: 18 * Math.min(1.2, s), top: 18 * Math.min(1.2, s), gap: 8 * Math.min(1.2, s) });
+    for (const i of dots.children) px(i, { width: 12 * Math.min(1.2, s), height: 12 * Math.min(1.2, s) });
+    const sh = fh - barH - 2;
     px(screen, { width: fw - 2, height: sh });
     px(win, { width: (fw - 2) / s, height: sh / s, transform: 'scale(' + s + ')' });
     frame.classList.add('sd-ready');
@@ -256,7 +259,7 @@ async def posters(app_path):
             b = await p.chromium.launch(executable_path=exe, args=["--no-sandbox"])
             # "held" is the laptop scene's still: the app before its story starts, as the page holds it
             # until the window is up (demo-gate.js reads the iframe's data-hold through frameElement).
-            for name, w, h in (("wide", 880, 530), ("tall", 880, 1110)):
+            for name, w, h in (("wide", 1200, 700), ("tall", 880, 1110)):
                 pg = await b.new_page(viewport={"width": w, "height": h}, device_scale_factor=2)
                 if name == "held":
                     await pg.add_init_script("Object.defineProperty(window, 'frameElement', { get: () => ({ hasAttribute: () => true, removeAttribute() {} }) })")

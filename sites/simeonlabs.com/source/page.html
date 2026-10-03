@@ -343,27 +343,28 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .allteam .ico img{width:74%;height:74%}
 @container slide (max-width:700px){.allteam{top:60%;gap:6cqw 8cqw}.allteam .ico{width:20cqw}.allteam li{font-size:3.4cqw}}
 
-/* The app itself, edge to edge on the painting. */
-.moment{padding-top:160px;text-align:center}
-.moment .lbl{font-size:21px;font-weight:600;letter-spacing:-.01em}
-.moment h2{margin-top:6px;font-size:clamp(40px,5.6vw,72px);line-height:1.05;letter-spacing:-.04em}
-.stagebox{position:relative;margin-top:64px;width:100%;aspect-ratio:1440/820;max-height:92vh;overflow:hidden;isolation:isolate}
-.stagebox>.paint{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.sd-stage{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(1180px,88%);aspect-ratio:1180/700;max-height:90%;z-index:5}
-.sd-frame{position:absolute;visibility:hidden;overflow:hidden;background:#fbfbfa;border:1px solid rgba(0,0,0,.12);box-shadow:0 1px 2px rgba(0,0,0,.06),0 40px 100px -30px rgba(10,20,50,.55)}
+/* The app itself: the real window on white, as a Mac app is shown (the founder, 3 October 2026),
+   with a soft wash of Simeon's blue painting behind its top edge. */
+.moment{padding-top:clamp(48px,6vw,80px)}
+.stagebox{position:relative;width:min(1440px,100%);margin:0 auto;aspect-ratio:1440/860;isolation:isolate}
+.wash{position:absolute;left:-4%;right:-4%;top:-14%;height:70%;z-index:-1;background:url(img/paint-blue.jpg) 30% 20%/cover;filter:blur(48px) saturate(1.05);opacity:.75;
+  -webkit-mask-image:radial-gradient(52% 42% at 28% 62%,#000 0%,#0000 100%);mask-image:radial-gradient(52% 42% at 28% 62%,#000 0%,#0000 100%)}
+.sd-stage{position:absolute;inset:0;z-index:5}
+.sd-frame{position:absolute;visibility:hidden;overflow:hidden;background:#fff;border:1px solid rgba(0,0,0,.1);box-shadow:0 2px 6px rgba(0,0,0,.04),0 40px 90px -30px rgba(20,30,60,.28)}
 .sd-frame.sd-ready{visibility:visible}
-.sd-bar{position:relative;display:flex;align-items:center;justify-content:center;background:#f3f3f2;border-bottom:1px solid rgba(0,0,0,.08);font:500 13px/1 var(--font);color:#3c3c3c}
-.sd-dots{position:absolute;display:flex;left:0;top:50%;transform:translateY(-50%)}
-.sd-dots i{display:block;border-radius:50%;background:#dcdcda;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.1)}
+.sd-bar{display:none}
+.sd-dots{position:absolute;z-index:6;display:flex}
+.sd-dots i{display:block;border-radius:50%;background:#ff5f57;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.12)}
+.sd-dots i:nth-child(2){background:#febc2e}.sd-dots i:nth-child(3){background:#28c840}
 .sd-screen{position:relative;overflow:hidden;background:#f5f5f7}
 .sd-window{position:absolute;left:0;top:0;transform-origin:0 0;overflow:hidden}
 .sd-window iframe{position:absolute;inset:0;display:block;width:100%;height:100%;border:0;opacity:0;transition:opacity .35s ease;pointer-events:none}
 .sd-window.sd-live iframe{opacity:1}
 .sd-poster,.sd-poster img{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;object-position:0 0}
 .sd-window.sd-live.sd-settled .sd-poster{display:none}
-@media (max-width:809.98px){.stagebox{aspect-ratio:4/5;max-height:none}.sd-stage{width:92%;aspect-ratio:3/4.4}}
+@media (max-width:809.98px){.stagebox{aspect-ratio:4/5}}
+@media (max-width:599.98px){.sd-stage{inset:0 var(--gutter)}.sd-stage .sd-mob{border-radius:20px;box-shadow:0 0 0 1px rgba(0,0,0,.08),0 30px 60px -30px rgba(20,30,60,.3)}}
 %MOBILE_CSS%
-@media (max-width:599.98px){.sd-stage{width:90%;aspect-ratio:3/5}}
 
 /* You stay in charge: one quiet grey box. */
 .yes{background:var(--soft);border-radius:28px;padding:clamp(56px,7vw,96px) clamp(24px,6vw,96px);text-align:center}
@@ -424,7 +425,7 @@ footer nav{display:flex;gap:18px}
 <header class="bar">
   <div class="wrap">
     <span class="wordmark" role="img" aria-label="Simeon"></span>
-    <nav aria-label="Sections"><a href="#team">Team</a><a href="#app">The app</a><a href="#pricing">Pricing</a><a href="#questions">Questions</a></nav>
+    <nav aria-label="Sections"><a href="#app">The app</a><a href="#team">Team</a><a href="#pricing">Pricing</a><a href="#questions">Questions</a></nav>
     <span class="btn">Try it free</span>
   </div>
 </header>
@@ -435,6 +436,17 @@ footer nav{display:flex;gap:18px}
     <h1>Build an AI team that runs your operations.</h1>
     <p class="lede">Create agents for any part of your business, from your inbox and invoices to sales and reporting. They work together in the tools you already use, on computers of their own, and check with you before anything important.</p>
     <div class="ctas"><span class="btn">Download for Mac</span><a class="btn ghost" href="#app">See it work</a></div>
+  </div>
+</section>
+
+<section class="moment" id="app" aria-label="The Simeon app, playing a founder's morning">
+  <div class="stagebox">
+    <div class="wash" aria-hidden="true"></div>
+    <div class="sd-stage"><div class="sd-frame"><span class="sd-dots"><i></i><i></i><i></i></span><div class="sd-bar"><span class="sd-title">Simeon</span></div>
+      <div class="sd-screen"><div class="sd-window"><picture class="sd-poster"><source media="(max-width:599.98px)" srcset="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="><source media="(max-width:809.98px)" srcset="app-poster-tall.jpg"><img src="app-poster-wide.jpg" alt="" fetchpriority="high"></picture>
+      <iframe data-hold data-src="%APP%/index.html" title="Simeon, playing a founder's morning" loading="eager"></iframe></div></div></div>
+      %MOBILE_HTML%
+    </div>
   </div>
 </section>
 
@@ -571,17 +583,7 @@ footer nav{display:flex;gap:18px}
 
 </section>
 
-<section class="moment" id="app">
-  <div class="wrap"><p class="lbl">The app</p><h2>One window.<br>Your whole team.</h2></div>
-  <div class="stagebox">
-    <img class="paint" src="img/paint-blue.jpg" alt="" loading="lazy">
-    <div class="sd-stage"><div class="sd-frame"><div class="sd-bar"><span class="sd-dots"><i></i><i></i><i></i></span><span class="sd-title">Simeon</span></div>
-      <div class="sd-screen"><div class="sd-window"><picture class="sd-poster"><source media="(max-width:599.98px)" srcset="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="><source media="(max-width:809.98px)" srcset="app-poster-tall.jpg"><img src="app-poster-wide.jpg" alt="" loading="lazy"></picture>
-      <iframe data-hold data-src="%APP%/index.html" title="Simeon, playing a launch week" loading="lazy"></iframe></div></div></div>
-      %MOBILE_HTML%
-    </div>
-  </div>
-</section>
+
 
 <!-- Chief of Staff -->
 <section class="sec anat" style="--c:var(--c-cos)">

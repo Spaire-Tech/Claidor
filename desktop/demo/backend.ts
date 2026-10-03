@@ -27,20 +27,21 @@ const ok = (value: unknown): Outcome => ({ status: "ok", value });
 
 export const unanswered = { main: new Set<string>(), coordinator: new Set<string>(), ipc: new Set<string>() };
 
-/** The tools a product manager connects, shown as connected. */
+/** The tools the founder in the story connects, shown as connected. */
 const CONNECTED = [
   { id: "900001", name: "Gmail", identifier: "gmail", url: "https://gmailmcp.googleapis.com/mcp/v1" },
   { id: "900002", name: "Google Calendar", identifier: "google-calendar", url: "https://calendarmcp.googleapis.com/mcp/v1" },
-  { id: "900003", name: "Slack", identifier: "slack", url: "https://mcp.slack.com/mcp" },
-  { id: "900004", name: "Linear", identifier: "linear", url: "https://mcp.linear.app/mcp" },
+  { id: "900003", name: "Stripe", identifier: "stripe", url: "https://mcp.stripe.com" },
+  { id: "900004", name: "QuickBooks", identifier: "quickbooks", url: "https://api.simeonlabs.com/v1/desktop/apps/quickbooks/mcp" },
   { id: "900005", name: "Notion", identifier: "notion", url: "https://mcp.notion.com/mcp" },
+  { id: "900006", name: "Intercom", identifier: "intercom", url: "https://mcp.intercom.com/mcp" },
 ] as const;
 const connectedServer = (s: (typeof CONNECTED)[number]) => ({
   id: s.id, name: s.name, serverIdentifier: s.identifier, accountKey: "default", rowServerIdentifier: s.identifier,
   transport: "http", url: s.url, toolCount: 12, customInstructions: "", isTeamServer: false, pluginId: s.identifier, status: "connected",
 });
 
-/** A roster row: one of the three agents, or the group they share with you. */
+/** A roster row: one of the agents, or the group they share with you. */
 type Row = DemoAgent & { readonly isGroup?: boolean; readonly memberIds?: readonly string[] };
 
 export function createDemoBackend(hooks: DemoBackendHooks) {
