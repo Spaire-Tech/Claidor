@@ -24,29 +24,23 @@ while the app loads). It rewrites `public/` from scratch; commit what it writes.
 
 ## What is in the page
 
-The page is written by hand in `source/page.html`, laid out by the rules of
-Apple's product pages (apple.com/apple-creator-studio, /apps, /apple-vision-pro
-and /apple-intelligence; the founder, 3 October 2026): one left edge, one
-section anatomy repeated, pictures without words on them and captions under
-them, light only.
+The page is written by hand in `source/page.html`, light only, on one left
+edge shared by the wordmark, the headline and the demo.
 
-- **Product bar**: the wordmark, four section links, "Try it free".
-- **Hero**, centred: the wordmark, "Your AI operations team.", the six agents
-  as icons, one paragraph, Try it free.
-- **Meet your team**: a gallery of big cards (the whole team, then one card
-  per agent with one moment on an iPhone or a Mac drawn in CSS). It plays by
-  itself while on screen and stops when you swipe or press pause.
-- **The app**: the real app window, edge to edge on the blue painting (`FIT` in
-  `build.py` scales it from its box). Phones under 600 px see a still of it.
-- **One section per agent**, each the same: face and coloured name, a two-line
-  headline, a grey paragraph led by a bold sentence, then a row of three square
-  cards (a window of the app it works in) with a caption under each. Rows
-  scroll sideways with arrows when they do not fit.
-- **Nothing goes out without your yes** (a grey box), two tiles (a computer of
-  its own, talk to it), **pricing** (Standard $20, Pro $60, Max $100, 20% less
-  yearly, a free week), **Questions? Answers.**, and the closing line.
+- **Bar**: the wordmark, Sign in, Download.
+- **Hero**: "Create a team of agents for any part of your business." in the
+  serif, then Download for Mac and Request a demo.
+- **The app**: the real app window, playing a founder's morning.
+- **Statement**: one centred sentence, the key words in black.
+- **Gallery**: six cards, light grey and dusk blue in turn, moved with back
+  and next: message an agent, a computer of its own, connect your apps, agents
+  working together, call an agent, stay in control.
+- **Security and integrations**: a serif title beside a paragraph, then two
+  pale panels of icon rows. A blue dot marks what is still in progress.
+- **Pricing** (Standard $20, Pro $60, Max $100, 20% less yearly, a free week),
+  **Questions and answers**, and the closing line.
 
-No counts, tables or logo walls. Nothing links outside the page.
+Nothing links outside the page.
 
 **`public/app/` is the app's window: the upstream 0.18.0 renderer with Simeon's patches (see `desktop/NOTICE.md`).** The
 founder chose on 28 September 2026 to publish it with the site, knowing the

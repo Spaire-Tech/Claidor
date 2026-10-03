@@ -422,7 +422,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 /* The first card: messaging an agent like a teammate (the founder, 3 October 2026, with Apple's
    Messages card as the model): a phone cut off by the card's top edge, one exchange with Theo in
    the app's own bubbles and blue, two suggestion chips, the composer, the caption underneath. */
-#team{background:var(--page);padding-top:0;padding-bottom:120px}
+#team{background:var(--page);padding-top:0;padding-bottom:0}
 .slide.msg-slide{background:var(--soft)}
 /* Pricing, questions and the closing call: the same serif headline and pale panels as the trust section. */
 .plans3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin-top:clamp(40px,4vw,80px)}
@@ -459,6 +459,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 
 /* Security and integrations: a serif headline beside the promise, then two grey panels of icon rows. */
 .trust{padding:clamp(100px,9vw,170px) 0 clamp(40px,4vw,80px)}
+#team+.trust{padding-top:clamp(56px,4.4vw,88px)}
 .trust-top{display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,5vw,96px);align-items:start}
 .trust h2{margin:0;font-family:"Newsreader",Georgia,"Times New Roman",serif;font-weight:400;font-size:clamp(36px,2.9vw,58px);line-height:1.04;letter-spacing:-.02em;max-width:11em;text-wrap:balance}
 .trust-top p{margin:clamp(4px,.45vw,9px) 0 0;max-width:30em;font-size:clamp(17px,1.2vw,23px);line-height:1.5;letter-spacing:-.01em;color:var(--ink2)}
