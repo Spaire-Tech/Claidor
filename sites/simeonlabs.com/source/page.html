@@ -341,6 +341,27 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 @container slide (max-width:700px){.s-sales .mac{width:150cqw;right:auto;left:6%;top:39%}.s-sales .note{display:none}}
 
 
+/* The second card: every agent on a computer of its own, the app's onboarding step drawn again
+   ("Your agents have their own computer and work just like you"): the app's own desktop picture,
+   one window, and the agent's cursor and cloud going from tile to tile and clicking, on black. */
+.pc-screen{position:absolute;left:50%;top:58%;transform:translate(-50%,-50%);width:58cqw;aspect-ratio:440/300;border-radius:2.2cqw;overflow:hidden;background:url(img/computer-wallpaper.jpg) center/cover;box-shadow:0 0 0 1px rgba(255,255,255,.12),0 3cqw 8cqw rgba(0,0,0,.5)}
+.pc-win{position:absolute;left:7%;top:11%;width:68%;height:61%;border-radius:1.2cqw;overflow:visible;background:#f2f2f5;box-shadow:0 .8cqw 2.4cqw rgba(20,40,90,.28)}
+.pc-bar{display:flex;gap:.6cqw;align-items:center;height:12%;padding:0 2.4%;border-radius:1.2cqw 1.2cqw 0 0;background:#dcdce0}
+.pc-bar i{width:1cqw;height:1cqw;border-radius:50%;background:#ff5f57}.pc-bar i:nth-child(2){background:#febc2e}.pc-bar i:nth-child(3){background:#28c840}
+.pc-tiles{position:absolute;left:4.5%;right:4.5%;top:17%;height:24%;display:grid;grid-template-columns:repeat(4,1fr);gap:4%}
+.pc-tiles span{border-radius:.8cqw;background:#fff;animation:pc-tile 8s ease-in-out infinite}
+.pc-tiles span:nth-child(2){animation-delay:-.7s}.pc-tiles span:nth-child(4){animation-delay:-6.7s}.pc-tiles span:nth-child(1){animation-delay:-2.7s}.pc-tiles span:nth-child(3){animation:none}
+.pc-pane{position:absolute;left:4.5%;right:4.5%;top:47%;bottom:0;border-radius:.8cqw .8cqw 0 0;background:#fff;animation:pc-tile 8s ease-in-out -4.7s infinite}
+.pc-agent{position:absolute;left:0;top:0;width:0;height:0;animation:pc-move 8s cubic-bezier(.45,0,.2,1) infinite}
+.pc-cursor{position:absolute;left:-.3cqw;top:-.2cqw;width:2.2cqw;filter:drop-shadow(0 .2cqw .3cqw rgba(0,0,0,.25))}
+.pc-agent img{position:absolute;left:.6cqw;top:1.2cqw;width:6.4cqw;max-width:none;animation:pc-bob 1.6s ease-in-out infinite}
+.pc-click{position:absolute;left:-1.6cqw;top:-1.6cqw;width:3.2cqw;height:3.2cqw;border-radius:50%;border:.25cqw solid rgba(37,90,147,.7);opacity:0;animation:pc-ring 2s ease-out -.46s infinite}
+@keyframes pc-move{0%,10%{left:38%;top:28%}25%,35%{left:84%;top:27%}50%,60%{left:46%;top:68%}75%,85%{left:16%;top:29%}100%{left:38%;top:28%}}
+@keyframes pc-ring{0%,40%{opacity:0;transform:scale(.4)}48%{opacity:1}70%,100%{opacity:0;transform:scale(1.4)}}
+@keyframes pc-tile{0%,8%,22%,100%{background:#fff}12%,18%{background:#dfe8f4}}
+@keyframes pc-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-.3cqw)}}
+@container slide (max-width:700px){.pc-screen{width:90cqw;top:60%}.pc-cursor{width:3.6cqw}.pc-agent img{width:10cqw;top:2cqw}.pc-bar i{width:1.6cqw;height:1.6cqw}}
+@media (prefers-reduced-motion:reduce){.pc-agent,.pc-agent img,.pc-click,.pc-tiles span,.pc-pane{animation:none}.pc-agent{left:38%;top:28%}}
 /* The first card: messaging an agent like a teammate (the founder, 3 October 2026, with Apple's
    Messages card as the model): a phone cut off by the card's top edge, one exchange with Theo in
    the app's own bubbles and blue, two suggestion chips, the composer, the caption underneath. */
@@ -483,16 +504,16 @@ footer nav{display:flex;gap:18px}
       </article>
 
 
-      <article class="slide dark s-cos" aria-label="Chief of Staff">
-        <p class="cap top"><span class="who"><img class="face" src="faces/simeon.png" alt="">Chief of Staff</span>Every Friday at five, the week in a few lines. What moved, what’s stuck, and the one thing that needs you.</p>
-        <div class="phone"><div class="pb"><div class="scr"><div class="island"></div>
-          <div class="lock">
-            <div class="date">Friday 3 October</div>
-            <div class="time">5:00</div>
-            <div class="ntf"><div class="h"><img src="faces/simeon.png" alt="">Chief of Staff<span>now</span></div>
-              <b>Your week</b><p>Revenue up 12%. Both hires signed. Acme’s renewal is stuck with their legal team and needs a call from you on Monday.</p></div>
-            <div class="ntf back"><div class="h"><img class="f-money" src="faces/yodo.png" alt="">Money<span>2h ago</span></div><p>Payroll is approved and goes out Monday.</p></div>
-          </div></div></div></div>
+      <article class="slide dark pc-slide" aria-label="A computer for every agent">
+        <p class="cap top">Every agent works on a computer of its own, just like you.</p>
+        <div class="pc-screen" aria-hidden="true">
+          <div class="pc-win">
+            <div class="pc-bar"><i></i><i></i><i></i></div>
+            <div class="pc-tiles"><span></span><span></span><span></span><span></span></div>
+            <div class="pc-pane"></div>
+            <div class="pc-agent"><svg class="pc-cursor" viewBox="0 0 20 20"><path d="M3 2l13 6.2-5.6 1.5L8 15.4z" fill="#000" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/></svg><img src="faces/agent-simeon.png" alt=""><i class="pc-click"></i></div>
+          </div>
+        </div>
       </article>
 
       <article class="slide light s-inbox" aria-label="Inbox">
