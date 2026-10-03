@@ -977,12 +977,6 @@
     timestampMs: at(minutesAgo),
     fromAgent: peer
   });
-  var voiceCall = (id, minutesAgo, callId, seconds, lines) => ({
-    kind: "event",
-    id,
-    timestampMs: at(minutesAgo),
-    event: { type: "voice-call", callId, status: "ended", seconds, lines: lines.map(([speaker, text]) => ({ speaker: speaker === "you" ? "user" : "agent", text })) }
-  });
   var earlierCall = (prefix, minutesAgo, callId, seconds, lines) => {
     const peer = { id: `voice-call:${callId}:${seconds}`, name: "Bass" };
     return lines.map(([speaker, content], index) => speaker === "you" ? fromTeammate(`${prefix}${index}`, minutesAgo, peer, content) : toTeammate(`${prefix}${index}`, minutesAgo, peer, content));
@@ -993,16 +987,14 @@
     { id: "yodo", name: "Yodo", title: "Launch manager", description: "Keeps the launch on track in Linear and Slack.", color: "red", minutesAgo: 95 },
     { id: "iris", name: "Iris", title: "Customer support", description: "Answers tickets from your help docs and flags the hard ones.", color: "mint", minutesAgo: 70 },
     { id: "theo", name: "Theo", title: "Bookkeeping", description: "Keeps the books, the runway and the invoices straight.", color: "green", minutesAgo: 60 * 3 },
-    { id: "felix", name: "Felix", title: "Hiring", description: "Finds candidates and books the interviews.", color: "orange", minutesAgo: 60 * 6 },
-    { id: "nora", name: "Nora", title: "Investor relations", description: "Writes the monthly update and follows up with investors.", color: "magenta", minutesAgo: 60 * 26 },
     { id: "scout", name: "Scout", title: "Customer research", description: "Reads what customers say and brings back what matters.", color: "cyan", minutesAgo: 60 * 26 }
   ];
   var GROUP = {
-    id: "seed-round",
-    name: "Seed round",
-    description: "Getting ready to raise in November, with Simeon, Theo and Nora.",
-    memberIds: ["simeon", "theo", "nora"],
-    minutesAgo: 45
+    id: "launch-squad",
+    name: "Launch squad",
+    description: "Thursday's launch, with Simeon, Scout and Yodo.",
+    memberIds: ["simeon", "scout", "yodo"],
+    minutesAgo: 40
   };
   var TRANSCRIPTS = {
     simeon: [],
@@ -1063,27 +1055,15 @@
       ]),
       says("y1a", 95, "Today's standup is up in #launch:\n\n- **12 of 15** launch tickets done\n- 2 waiting on design review with Dana\n- **LIN-482**, the pricing page bug, is in code review"),
       file("y1f", 95, "launch/Launch tracker.xlsx")
-    ],
-    felix: [
-      you("f0u", 60 * 30, "We need a founding engineer. Find me five people worth talking to."),
-      says("f0a", 60 * 29, "I went through 140 applicants and your LinkedIn network. Five stand out, and two of them have built payments products before. My notes on each are in the doc."),
-      file("f0f", 60 * 29, "hiring/Founding engineer shortlist.pdf"),
-      says("f1a", 60 * 6, "Priya Shah said yes to a first call. She's on your calendar today at 2 pm.")
-    ],
-    nora: [
-      you("n0u", 60 * 27, "Draft the September investor update. Same format as last month."),
-      says("n0a", 60 * 26 + 40, "The draft is in **Notion**. Revenue $48.2k, up 12%. Two enterprise pilots signed. The founding engineer search has started. The ask: intros to finance teams who'd try us."),
-      file("n0f", 60 * 26 + 40, "investors/September update.docx"),
-      says("n1a", 60 * 26, "Three investors replied asking for a call. I offered them times next week.")
     ]
   };
   var GROUP_TRANSCRIPT = [
-    { author: null, entry: you("g0u", 60, "I want to start raising in November. Are we ready?") },
-    { author: "theo", entry: says("g0t", 58, "The numbers are. 19 months of runway and revenue up 12% a month for four months. The data room has everything but the cap table.") },
-    { author: "nora", entry: says("g0n", 57, "Eleven investors have opened every update since March. I'd start with them.") },
-    { author: "simeon", entry: says("g0m", 55, "Then here's the plan. Theo updates the cap table this week, Nora writes to those eleven, and I keep two mornings a week free in November for meetings.") },
-    { author: null, entry: you("g1u", 50, "Go.") },
-    { author: "simeon", entry: says("g1m", 45, "On it. I'll post where we are here every Friday.") }
+    { author: null, entry: you("g0u", 58, "Honest check: can we still ship Thursday?") },
+    { author: "yodo", entry: says("g0y", 56, "Engineering says yes if **LIN-482** merges by Wednesday noon. It's in review now.") },
+    { author: "scout", entry: says("g0s", 55, "From the research, what customers care about is the new setup flow. The pricing page change can wait.") },
+    { author: "simeon", entry: says("g0m", 54, "Then keep Thursday. I'll move the pricing page to the fast-follow list and let Dana and Marcus know.") },
+    { author: null, entry: you("g1u", 45, "Do it.") },
+    { author: "simeon", entry: says("g1m", 40, "Done. Moved in **Linear** and posted in #launch on **Slack**.") }
   ];
   var step = (at2, id, name, doing, done, ms, detail, target) => [
     { at: at2, kind: "step", agent: "simeon", id, name, summary: doing, status: "running", ...detail == null ? {} : { detail }, ...target == null ? {} : { target } },
@@ -1094,11 +1074,13 @@
       { at: 900, kind: "user", agent: "simeon", entry: you("m0u", 0, "Morning. Where are we on Thursday's launch?") },
       { at: 1500, kind: "typing", agent: "simeon", on: true },
       ...step(2100, "m1", "CallMcpTool", "Checking Linear", "Checked Linear", 1300, "Linear"),
-      ...step(3500, "m2", "CallMcpTool", "Reading #launch in Slack", "Read #launch in Slack", 1200, "Slack"),
-      ...step(4800, "m3", "CallMcpTool", "Checking your calendar", "Checked your calendar", 1e3, "Google Calendar"),
-      { at: 6e3, kind: "append", agent: "simeon", entry: says("m0a", 0, "Thursday is on track: 12 of 15 launch tickets are done in **Linear**, and the review is Thursday at 2 pm.") },
+      { at: 4e3, kind: "append", agent: "simeon", entry: says("m0a", 0, "Thursday is on track: 12 of 15 launch tickets are done in **Linear**, and the review is Thursday at 2 pm.") },
       ...step(6800, "m4", "SendToAgent", "Asking Scout for customer quotes", "Messages from Scout", 1500, void 0, "scout"),
+      { at: 7200, kind: "append", agent: "simeon", entry: toTeammate("m4t", 0, { id: "scout", name: "Scout" }, "Can you pull three customer quotes for Thursday's review?") },
+      { at: 8100, kind: "append", agent: "simeon", entry: fromTeammate("m4f", 0, { id: "scout", name: "Scout" }, "Here are three, all about the new setup flow. They're in the review doc.") },
       ...step(8500, "m5", "SendToAgent", "Asking Yodo about the last tickets", "Messages from Yodo", 1300, void 0, "yodo"),
+      { at: 8800, kind: "append", agent: "simeon", entry: toTeammate("m5t", 0, { id: "yodo", name: "Yodo" }, "Where are the last launch tickets?") },
+      { at: 9600, kind: "append", agent: "simeon", entry: fromTeammate("m5f", 0, { id: "yodo", name: "Yodo" }, "Both closed this morning. 14 of 15 are done; the last one is the pricing page, after launch.") },
       { at: 1e4, kind: "append", agent: "simeon", entry: says("m1a", 0, "Scout pulled three customer quotes and Yodo closed the last two tickets. The review doc is ready.") },
       { at: 10300, kind: "append", agent: "simeon", entry: file("m1f", 0, "docs/Launch review.docx") },
       { at: 10400, kind: "typing", agent: "simeon", on: false },
@@ -1108,27 +1090,7 @@
       ...step(14e3, "m6", "CallMcpTool", "Sending the agenda from Gmail", "Sent the agenda from Gmail", 1300, "Gmail"),
       ...step(15500, "m7", "UpdateState", "Creating routine Monday launch check", "Created routine Monday launch check", 1e3),
       { at: 16800, kind: "append", agent: "simeon", entry: says("m2a", 0, "Done. The agenda went out from **Gmail**.") },
-      { at: 16900, kind: "typing", agent: "simeon", on: false },
-      // The agent hands the computer to the person: a SendMessage carrying the box request (the window's take-over card).
-      { at: 19e3, kind: "user", agent: "simeon", entry: you("m3u", 0, "Can you post the launch note on our LinkedIn page too?") },
-      { at: 19600, kind: "typing", agent: "simeon", on: true },
-      ...step(2e4, "m8", "Computer", "Opening LinkedIn on the computer", "Opened LinkedIn on the computer", 1600),
-      { at: 22e3, kind: "append", agent: "simeon", entry: card("m3h", 0, { type: "text", content: "LinkedIn wants you to sign in." }, { boxRequestId: "demo-take-over", boxInstruction: "LinkedIn is asking for your password and a code from your phone. Take over to sign in, then hand it back and I'll post the note.", boxResolution: "waiting" }) },
-      { at: 22100, kind: "typing", agent: "simeon", on: false },
-      // A call: its line sits where the call began, the work it asked for below it, then the written
-      // follow-up, the way a text would read.
-      { at: 25e3, kind: "append", agent: "simeon", entry: voiceCall("m4c", 0, "call-demo-simeon", 94, [
-        ["you", "Hey Simeon, can we move the launch review to Friday morning?"],
-        ["agent", "Sure. Friday at ten works for Dana and Marcus. I'll ask Yodo to move it."],
-        ["you", "Perfect. And tell the team in Slack."],
-        ["agent", "Will do. I'll post it in #launch once Yodo confirms."],
-        ["you", "Thanks, bye."]
-      ]) },
-      { at: 25300, kind: "typing", agent: "simeon", on: true },
-      ...step(25600, "m9", "SendToAgent", "Asking Yodo to move the review", "Messages to Yodo", 1200, void 0, "yodo"),
-      ...step(27e3, "m10", "CallMcpTool", "Posting in #launch on Slack", "Posted in #launch on Slack", 1e3, "Slack"),
-      { at: 28400, kind: "append", agent: "simeon", entry: says("m4a", 0, "As we said on the call: the review is now Friday at 10, Yodo moved it, and I posted it in #launch on **Slack**.") },
-      { at: 28500, kind: "typing", agent: "simeon", on: false }
+      { at: 16900, kind: "typing", agent: "simeon", on: false }
     ];
   }
   function onboardingScript(agent, stage) {

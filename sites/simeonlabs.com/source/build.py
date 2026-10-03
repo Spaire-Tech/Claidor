@@ -68,8 +68,8 @@ CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width
 # Simeon's launch check. The faces are the app's own, captured from the demo (source/faces/agent-*.png).
 # Name colours are the top colour of each agent's palette (desktop/source/shared/voice-call/agent-mark.ts).
 rail = "".join(f'<span class="sd-m-av{" sd-m-on" if i == 0 else ""}">{mface("agent-" + f)}</span>' for i, f in enumerate(["simeon", "mila"]))
-group = '<span class="sd-m-av sd-m-group">' + mface("agent-simeon") + mface("agent-theo") + mface("agent-nora") + '</span>'
-rail += group + "".join(f'<span class="sd-m-av">{mface("agent-" + f)}</span>' for f in ["iris", "yodo", "theo"])
+group = '<span class="sd-m-av sd-m-group">' + mface("agent-simeon") + mface("agent-scout") + mface("agent-yodo") + '</span>'
+rail += group + "".join(f'<span class="sd-m-av">{mface("agent-" + f)}</span>' for f in ["scout", "yodo", "iris", "theo"])
 # The words are the original phone still's, which the founder asked to keep and to show on the
 # laptop too (28 September and 3 October 2026); the laptop's demo plays the same thread.
 MOBILE_HTML = ('<div class="sd-mob" aria-label="Simeon, the chief of staff, talking with you about a launch">'
