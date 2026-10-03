@@ -104,3 +104,17 @@ test("a small server still comes with its schemas in one call", async () => {
     await dispose();
   }
 });
+
+test("a pattern search gives each tool's arguments too, so it is called straight from the result", async () => {
+  const { module, dispose } = await load();
+  try {
+    const tool = module.createGetMcpToolsTool(gmail(module, 3));
+    const result = await call(module, tool, { server: "gmail", pattern: "PROFILE" });
+    assert.equal(result.ok, true, result.text);
+    const match = JSON.parse(result.text).matches.find((row) => row.tool === "GMAIL_GET_PROFILE");
+    assert.equal(match.args, "query?: string, max_results?: integer");
+    assert.doesNotMatch(tool.descriptionGenerator({}), /Always call this tool to discover/);
+  } finally {
+    await dispose();
+  }
+});

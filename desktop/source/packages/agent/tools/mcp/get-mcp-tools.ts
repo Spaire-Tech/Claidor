@@ -113,7 +113,7 @@ function toModelFacingServerPayload(payload: Record<string, unknown>, dynamic: b
 
 function toModelFacingSearchResult(payload: Record<string, unknown>, dynamic: boolean): Record<string, unknown> {
   if (!dynamic) return payload;
-  return { namespace: payload.server, tool: payload.tool, description: payload.description, namespaceStatus: payload.serverStatus, namespaceError: payload.serverError };
+  return { namespace: payload.server, tool: payload.tool, description: payload.description, ...(payload.args === undefined ? {} : { args: payload.args }), namespaceStatus: payload.serverStatus, namespaceError: payload.serverError };
 }
 
 function toModelFacingSingleToolPayload(server: Record<string, unknown>, tool: Record<string, unknown>, dynamic: boolean): Record<string, unknown> {
@@ -373,7 +373,7 @@ export function createGetMcpToolsTool(mcpMetaToolOptions: McpMetaToolOptions, op
             const tools = server.descriptor.tools.filter(tool => serverMatches || regex.test(tool.toolName));
             if (serverMatches) matches.push({ server: metadata.server, description: metadata.serverDescription, serverStatus: metadata.serverStatus, serverError: metadata.serverError });
             for (const tool of tools) {
-              const row: Record<string, unknown> = { server: server.descriptor.serverIdentifier, tool: tool.toolName, description: sanitizeAndTruncateDescription(tool.description) };
+              const row: Record<string, unknown> = { server: server.descriptor.serverIdentifier, tool: tool.toolName, description: sanitizeAndTruncateDescription(tool.description), args: argumentSignature(mcpInputSchemaToJson(tool)) };
               if (metadata.serverStatus !== undefined && metadata.serverStatus !== "ready" && !serverMatches) { row.serverStatus = metadata.serverStatus; row.serverError = metadata.serverError; }
               matches.push(row);
             }
@@ -455,7 +455,7 @@ export function createGetMcpToolsTool(mcpMetaToolOptions: McpMetaToolOptions, op
           "No arguments: returns the full catalog. Prefer a namespace or pattern when possible.", "",
           `Pattern-search and catalog results shorten long descriptions to 200 characters, ending with "${TRUNCATED_DESCRIPTION_SUFFIX}". Namespace and single-tool lookups always return the complete description, so fetch the tool directly when you need the full text.`,
           'The response includes namespaceStatus for MCP-backed namespaces; do not treat namespaces in "needsAuth", "error", or "loading" states as usable.',
-          `Always call this tool to discover a tool's schema before calling it with ${callName}.`, ...builtinLines, ...authLines,
+          `Call a tool with ${callName} straight from a listing or search here (each tool comes with its arguments); fetch one tool's full schema only when an argument needs its description, or after a call failed on its arguments.`, ...builtinLines, ...authLines,
         ]
         : [
           "Discover and inspect MCP tools. There are 5 ways to call this tool. Prefer fetching by server or pattern over listing the full catalog.", "",
@@ -466,7 +466,7 @@ export function createGetMcpToolsTool(mcpMetaToolOptions: McpMetaToolOptions, op
           "No arguments: returns a catalog of all servers with tool names and short descriptions. Use only as a last resort.", "",
           `Pattern-search and catalog results shorten long descriptions to 200 characters, ending with "${TRUNCATED_DESCRIPTION_SUFFIX}". Server and single-tool lookups always return the complete description, so fetch the tool directly when you need the full text.`,
           `The response includes each server's serverStatus; do not treat servers in "needsAuth", "error", or "loading" states as usable.`,
-          `Always call this tool to discover a tool's schema before calling it with ${callName}.`, ...builtinLines, ...authLines,
+          `Call a tool with ${callName} straight from a listing or search here (each tool comes with its arguments); fetch one tool's full schema only when an argument needs its description, or after a call failed on its arguments.`, ...builtinLines, ...authLines,
         ];
       return description.join("\n");
     },
