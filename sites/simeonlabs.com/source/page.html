@@ -424,6 +424,37 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
    the app's own bubbles and blue, two suggestion chips, the composer, the caption underneath. */
 #team{background:var(--page);padding-top:0;padding-bottom:120px}
 .slide.msg-slide{background:var(--soft)}
+/* Pricing, questions and the closing call: the same serif headline and pale panels as the trust section. */
+.plans3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin-top:clamp(40px,4vw,80px)}
+.plan3{display:flex;flex-direction:column;padding:clamp(28px,2.6vw,48px);border-radius:28px;background:#fafafb}
+.plan3 h3{margin:0;font-size:clamp(20px,1.35vw,26px);font-weight:500;letter-spacing:-.02em;color:#3a3a3c}
+.plan3 .pr{margin-top:clamp(18px,1.6vw,30px);font-family:"Newsreader",Georgia,"Times New Roman",serif;font-size:clamp(44px,3.4vw,68px);line-height:1;letter-spacing:-.02em}
+.plan3 .pr small{font-family:var(--font);font-size:clamp(15px,.95vw,18px);letter-spacing:-.01em;color:var(--ink2);margin-left:4px}
+.plan3 .per{margin-top:10px;font-size:clamp(14px,.9vw,17px);color:var(--ink3)}
+.plan3 .use{margin:clamp(20px,1.8vw,34px) 0 clamp(24px,2.2vw,40px);padding-top:clamp(18px,1.6vw,28px);border-top:1px solid #ececef;font-size:clamp(16px,1.02vw,19.5px);color:#3a3a3c;flex:1}
+.plan3 .btn{align-self:flex-start}
+.plan3 .btn.ghost{background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.06)}
+.plan3 .btn.ghost:hover{background:#f2f2f4}
+.bill3{display:inline-flex;gap:4px;padding:4px;margin-top:22px;border-radius:99px;background:#f2f2f4}
+.bill3 button{appearance:none;border:0;background:none;border-radius:99px;padding:9px 16px;font:inherit;font-size:15px;color:var(--ink2);cursor:pointer}
+.bill3 button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.bill3 button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.pricing3 .y{display:none}.pricing3.yearly .y{display:inline}.pricing3.yearly .m{display:none}
+.qa3{margin-top:clamp(40px,4vw,80px);padding:clamp(12px,1.2vw,24px) clamp(28px,3vw,56px);border-radius:28px;background:#fafafb}
+.qa3 details{border-top:1px solid #ececef}
+.qa3 details:first-child{border-top:0}
+.qa3 summary{list-style:none;display:flex;justify-content:space-between;align-items:center;gap:24px;padding:clamp(20px,1.7vw,30px) 0;cursor:pointer;font-size:clamp(18px,1.2vw,23px);letter-spacing:-.015em;color:#1d1d1f}
+.qa3 summary::-webkit-details-marker{display:none}
+.qa3 summary::after{content:"";flex:none;width:clamp(28px,1.8vw,34px);height:clamp(28px,1.8vw,34px);border-radius:50%;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d1d1f' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M12 6v12M6 12h12'/%3E%3C/svg%3E") center/50% no-repeat;box-shadow:0 0 0 1px rgba(0,0,0,.05);transition:transform .25s}
+.qa3 details[open] summary::after{transform:rotate(45deg)}
+.qa3 summary:focus-visible{outline:2px solid var(--blue);outline-offset:4px;border-radius:6px}
+.qa3 details p{margin:0;padding:0 0 clamp(22px,1.8vw,32px);max-width:46em;font-size:clamp(16px,1.02vw,19.5px);line-height:1.6;color:var(--ink2)}
+.close3{padding:clamp(120px,10vw,200px) 0 clamp(120px,10vw,200px);text-align:center}
+.close3 h2{margin:0 auto;font-family:"Newsreader",Georgia,"Times New Roman",serif;font-weight:400;font-size:clamp(44px,4.4vw,88px);line-height:1;letter-spacing:-.02em}
+.close3 .ctas{display:flex;justify-content:center;gap:clamp(10px,.7vw,14px);flex-wrap:wrap;margin-top:clamp(28px,2.4vw,44px)}
+.close3 .btn{height:clamp(44px,3.05vw,61px);padding:0 clamp(20px,1.6vw,32px);font-size:clamp(16px,1.15vw,23px)}
+@media (max-width:860px){.plans3{grid-template-columns:1fr}}
+
 /* Security and integrations: a serif headline beside the promise, then two grey panels of icon rows. */
 .trust{padding:clamp(100px,9vw,170px) 0 clamp(40px,4vw,80px)}
 .trust-top{display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,5vw,96px);align-items:start}
@@ -751,6 +782,35 @@ footer nav{display:flex;gap:18px}
   </div>
 </section>
 
+<section class="trust pricing3" id="pricing" aria-label="Pricing">
+  <div class="wrap">
+    <div class="trust-top">
+      <h2>Pricing</h2>
+      <div><p>Every agent, on every plan. The plans differ only in how much work your team can do each week.</p>
+      <div class="bill3" role="group" aria-label="Billing"><button type="button" class="on" data-bill="m">Monthly</button><button type="button" data-bill="y">Yearly, save 20%</button></div></div>
+    </div>
+    <div class="plans3"><div class="plan3"><h3>Standard</h3><div class="pr"><span class="m">$20</span><span class="y">$16</span><small>/ month</small></div><div class="per"><span class="m">Billed monthly. 7 days free.</span><span class="y">$192 billed yearly. 7 days free.</span></div><p class="use">For a light week of work.</p><span class="btn ghost">Try it free</span></div><div class="plan3"><h3>Pro</h3><div class="pr"><span class="m">$60</span><span class="y">$48</span><small>/ month</small></div><div class="per"><span class="m">Billed monthly. 7 days free.</span><span class="y">$576 billed yearly. 7 days free.</span></div><p class="use">Five times the weekly work of Standard.</p><span class="btn">Try it free</span></div><div class="plan3"><h3>Max</h3><div class="pr"><span class="m">$100</span><span class="y">$80</span><small>/ month</small></div><div class="per"><span class="m">Billed monthly. 7 days free.</span><span class="y">$960 billed yearly. 7 days free.</span></div><p class="use">Twenty times the weekly work of Standard.</p><span class="btn ghost">Try it free</span></div></div>
+  </div>
+</section>
+
+<section class="trust" id="questions" aria-label="Questions">
+  <div class="wrap">
+    <div class="trust-top">
+      <h2>Questions and answers</h2>
+      <p>The short version of what people ask before they start.</p>
+    </div>
+    <div class="qa3"><details><summary>What is Simeon?</summary><p>A team of AI agents for your business. Each agent has a job you give it, a computer of its own in the cloud, and access to the apps you already use. You ask in plain words, and they do the work.</p></details><details><summary>Do I need to set anything up?</summary><p>No. There are no workflows to build. Tell an agent what you need. When it needs one of your apps, it asks you to sign in once, on that app&#8217;s own page.</p></details><details><summary>Where does the work happen?</summary><p>On each agent&#8217;s own computer in the cloud, with a browser and files. You can watch it work or take over at any time, and routines keep running when your Mac is closed.</p></details><details><summary>Will an agent act without asking?</summary><p>Not on anything that matters. Before it sends an email, makes a payment or publishes something, it asks you in the chat, and you allow or refuse it.</p></details><details><summary>Is my data safe?</summary><p>Your data is encrypted, kept apart from every other customer, and never used to train a model.</p></details><details><summary>What do I need?</summary><p>A Mac with Apple silicon. Every plan starts with a free week.</p></details></div>
+  </div>
+</section>
+
+<section class="close3" aria-label="Get started">
+  <div class="wrap">
+    <h2>Your team is ready<br>when you are.</h2>
+    <div class="ctas"><span class="btn"><svg class="apl" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>Download for Mac</span><a class="btn ghost" href="#app">Request a demo&nbsp;&#8594;</a></div>
+  </div>
+</section>
+
+
 
 </main>
 
@@ -834,6 +894,11 @@ footer nav{display:flex;gap:18px}
   sync();
 })();
 
+// Monthly or yearly.
+(() => {
+  const sw = document.querySelector('.bill3'), sec = document.getElementById('pricing'); if (!sw) return;
+  sw.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; sw.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b)); sec.classList.toggle('yearly', b.dataset.bill === 'y'); });
+})();
 </script>
 </body>
 </html>
