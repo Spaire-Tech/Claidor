@@ -161,9 +161,9 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 /* Meet your team: Apple's gallery. One agent per card, neighbours at the edges. */
 .gallery{position:relative;margin-top:40px}
 .track{--cw:min(var(--col),calc((100vh - 220px) * 1260 / 760),1000px);display:flex;gap:24px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;
-  padding-inline:calc((100vw - var(--cw)) / 2);scroll-padding-inline:calc((100vw - var(--cw)) / 2);padding-bottom:4px;overscroll-behavior-x:contain}
+  --ge:calc((100vw - var(--col)) / 2);padding-inline:var(--ge) calc(100vw - var(--ge) - var(--cw));scroll-padding-inline:var(--ge);padding-bottom:4px;overscroll-behavior-x:contain}
 .track::-webkit-scrollbar{display:none}
-.slide{position:relative;flex:none;width:var(--cw);aspect-ratio:1260/760;border-radius:28px;overflow:hidden;scroll-snap-align:center;container:slide/inline-size;isolation:isolate}
+.slide{position:relative;flex:none;width:var(--cw);aspect-ratio:1260/760;border-radius:28px;overflow:hidden;scroll-snap-align:start;container:slide/inline-size;isolation:isolate}
 .slide.dark{background:var(--night);color:#f5f5f7}
 .slide.light{background:#fff;color:var(--ink)}
 .cap{position:absolute;z-index:6;font-size:2.5cqw;line-height:1.24;font-weight:600;letter-spacing:-.02em;text-wrap:balance}
@@ -1234,7 +1234,7 @@ footer nav{display:flex;gap:18px}
     bs.forEach((b, k) => { b.classList.toggle('on', k === i); b.setAttribute('aria-selected', String(k === i)); const f = b.firstChild; f.style.animation = 'none'; void f.offsetWidth; f.style.animation = ''; });
     schedule();
   };
-  const go = (i) => { const s = slides[i]; track.scrollTo({ left: s.offsetLeft - (track.clientWidth - s.offsetWidth) / 2, behavior: still ? 'auto' : 'smooth' }); mark(i); };
+  const go = (i) => { const s = slides[i]; track.scrollTo({ left: s.offsetLeft - slides[0].offsetLeft, behavior: still ? 'auto' : 'smooth' }); mark(i); };
   const schedule = () => { clearTimeout(timer); gal.classList.toggle('paused', !(playing && seen)); if (playing && seen) timer = setTimeout(() => go((cur + 1) % slides.length), DUR); };
   const setPlay = (on) => {
     playing = on; play.setAttribute('aria-label', on ? 'Pause' : 'Play');
@@ -1244,9 +1244,13 @@ footer nav{display:flex;gap:18px}
     schedule();
   };
   play.addEventListener('click', () => setPlay(!playing));
-  // Whichever card is centred is the current one, however it got there.
-  const io = new IntersectionObserver((es) => { for (const e of es) if (e.isIntersecting) mark(slides.indexOf(e.target)); }, { root: track, threshold: 0.6 });
-  slides.forEach((s) => io.observe(s));
+  // Whichever card sits at the left edge is the current one, however it got there.
+  let raf = 0;
+  track.addEventListener('scroll', () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => {
+    const x = track.scrollLeft + slides[0].offsetLeft; let best = 0;
+    slides.forEach((s, k) => { if (Math.abs(s.offsetLeft - x) < Math.abs(slides[best].offsetLeft - x)) best = k; });
+    mark(best);
+  }); }, { passive: true });
   // A swipe or a scroll by hand stops the slideshow.
   for (const ev of ['pointerdown', 'wheel', 'touchstart']) track.addEventListener(ev, () => { if (playing) setPlay(false); }, { passive: true });
   track.addEventListener('keydown', (e) => { const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if (d) { e.preventDefault(); setPlay(false); go(Math.max(0, Math.min(slides.length - 1, cur + d))); } });
