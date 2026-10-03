@@ -54,9 +54,9 @@ for key in ("notion", "gmail", "google-docs", "stripe", "quickbooks", "xero", "h
     logo(key)
 shutil.copy(f"{HERE}/simeon-mark.svg", f"{OUT}/logos/simeon.svg")
 for name in re.findall(r'src="(logos/[^"]+)"', open(f"{HERE}/page.html").read()):
-    assert os.path.exists(f"{OUT}/{name}") or name == "logos/pdf.svg", name
+    assert os.path.exists(f"{OUT}/{name}") or name == "logos/powerpoint.webp", name
 
-shutil.copy(f"{REPO}/desktop/brand/file-icons/pdf.svg", f"{OUT}/logos/pdf.svg")
+shutil.copy(f"{REPO}/desktop/brand/file-icons/powerpoint.webp", f"{OUT}/logos/powerpoint.webp")
 def mface(f, tint=""):
     return f'<img src="faces/{f}.png" alt="" style="{"filter:" + tint if tint else ""}">'
 def tag(f, name, color):
@@ -65,23 +65,23 @@ PLUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width=
 MIC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>'
 CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>'
 # The phone hero: a still of the app, drawn by the page, telling the demo's opening (desktop/demo/scenario.ts):
-# the founder's morning brief. The faces are the app's own, captured from the demo (source/faces/agent-*.png).
+# the board-meeting check, the founder's favourite. The faces are the app's own, captured from the demo (source/faces/agent-*.png).
 # Name colours are the top colour of each agent's palette (desktop/source/shared/voice-call/agent-mark.ts).
 rail = "".join(f'<span class="sd-m-av{" sd-m-on" if i == 0 else ""}">{mface("agent-" + f)}</span>' for i, f in enumerate(["simeon", "mila"]))
 group = '<span class="sd-m-av sd-m-group">' + mface("agent-simeon") + mface("agent-theo") + mface("agent-nora") + '</span>'
 rail += group + "".join(f'<span class="sd-m-av">{mface("agent-" + f)}</span>' for f in ["iris", "theo", "felix", "nora"])
-MOBILE_HTML = ('<div class="sd-mob" aria-label="Simeon, the chief of staff, giving a founder the morning brief">'
+MOBILE_HTML = ('<div class="sd-mob" aria-label="Simeon, the chief of staff, getting a founder ready for the board meeting">'
   '<div class="sd-m-rail"><span class="sd-m-lights"><i></i><i></i><i></i></span>' + rail
   + '<span class="sd-m-fill"></span><span class="sd-m-new">' + PLUS + '</span><span class="sd-m-me">BF</span></div>'
   '<div class="sd-m-main"><div class="sd-m-head">' + mface("agent-simeon") + '<b>Simeon</b><span class="sd-m-role">Chief of Staff</span></div>'
   '<div class="sd-m-thread"><div class="sd-m-feed">'
-  '<div class="sd-m-out">Morning. What needs me today?</div>'
-  '<div class="sd-m-sys">Messages from ' + tag("agent-theo", "Theo", "#6f8f4f") + ' and ' + tag("agent-iris", "Iris", "#2f6f72") + '</div>'
-  '<div class="sd-m-in">Three things today: <b>Acme’s renewal</b>, <b>Brightline’s $960 refund</b>, and <b>Priya Shah at 2 pm</b> for the founding engineer role.</div>'
-  '<div class="sd-m-file"><img src="logos/pdf.svg" alt="">Priya Shah, notes.pdf</div>'
-  '<div class="sd-m-out">Approve the refund and send Acme the reply. And send me this every morning.<span class="sd-m-react">&#128077;</span></div>'
-  '<div class="sd-m-sys">Created routine <span class="sd-m-clock">' + CLOCK + '</span><b>Morning brief</b></div>'
-  '<div class="sd-m-in">Done. Brightline has its refund, Acme has the reply, and you’ll get this brief at 8 every morning.</div>'
+  f'<div class="sd-m-in">Thursday is on track: September closed at $48,200 in {chip("stripe")}, up 12%, and the board meets Thursday at 10.</div>'
+  '<div class="sd-m-sys">Messages from ' + tag("agent-theo", "Theo", "#6f8f4f") + ' and ' + tag("agent-nora", "Nora", "#3e2a7a") + '</div>'
+  '<div class="sd-m-in">' + tag("agent-theo", "Theo", "#6f8f4f") + ' closed September’s books and ' + tag("agent-nora", "Nora", "#3e2a7a") + ' finished the board deck. It’s ready for you.</div>'
+  '<div class="sd-m-file"><img src="logos/powerpoint.webp" alt="">Board deck, September.pptx</div>'
+  '<div class="sd-m-out">Looks great. Send it to the board, and check in like this every Monday.<span class="sd-m-react">&#128077;</span></div>'
+  '<div class="sd-m-sys">Created routine <span class="sd-m-clock">' + CLOCK + '</span><b>Monday check-in</b></div>'
+  f'<div class="sd-m-in">Done. The deck went out from {chip("gmail")}.</div>'
   '</div></div>'
   '<div class="sd-m-compose"><span class="sd-m-plus">' + PLUS + '</span><span class="sd-m-ph">Message Simeon</span><span class="sd-m-mic">' + MIC + '</span></div>'
   '</div></div>')

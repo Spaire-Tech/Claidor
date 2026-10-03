@@ -94,6 +94,7 @@ export function createDemoBackend(hooks: DemoBackendHooks) {
         if (m?.type === "connector") return { id: e.id, text: m.variant === "connected" ? `${m.connector} connected` : `Connect ${m.connector}` };
         if (m?.type === "connectors") return { id: e.id, text: `Connected ${m.connectors.join(" and ")}` };
         if (m?.type === "attachment") return { id: e.id, text: decodeURIComponent(String(m.url).split("/").pop() ?? "Sent a file") };
+        if (m?.type === "email-draft") return { id: e.id, text: `Draft: ${m.draft.subject}` };
       }
     }
     return null;

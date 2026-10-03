@@ -57,7 +57,7 @@ test("six agents and their group, every conversation a well-formed transcript wi
   }
 });
 
-test("Simeon's morning brief plays through on its own", async (t) => {
+test("Simeon's board-meeting check plays through on its own, the pattern of the website's phone still", async (t) => {
   const { module, dispose } = await loadModule("demo/backend.ts", "demo-backend-story");
   t.after(dispose);
   const events = [];
@@ -65,18 +65,19 @@ test("Simeon's morning brief plays through on its own", async (t) => {
   const appended = () => events.filter((e) => e.family === "transcript" && e.payload.type === "appended" && e.payload.agentId === "simeon").map((e) => e.payload.entry);
   backend.onServing();
   backend.onServing();
-  await until(() => appended().some((e) => e.id === "m1a"));
+  await until(() => appended().some((e) => e.id === "m2a"));
   const said = appended().map((e) => e.role === "user" ? `you: ${e.content}` : e.message?.type === "text" ? e.message.content : e.message?.type);
   assert.deepEqual(said, [
-    "you: Morning. What needs me today?",
-    "Three things today:\n\n1. **Acme's renewal.** Their lawyers want 60-day payment terms. Mila wrote a reply that agrees if they sign for two years.\n2. **Brightline's refund**, $960. Iris checked: our sync was down for them for two days. I'd approve it.\n3. **Priya Shah at 2 pm**, for the founding engineer role. Felix's notes are attached.",
+    "you: Morning. Where are we on Thursday's board meeting?",
+    "Thursday is on track: September closed at $48,200 in **Stripe**, up 12%, and the board meets Thursday at 10.",
+    "Theo closed September's books and Nora finished the board deck. It's ready for you.",
     "attachment",
-    "you: Approve the refund and send Acme the reply. And send me this every morning.",
-    "Done. Brightline has its refund, Acme has the reply, and you'll get this brief at 8 every morning.",
+    "you: Looks great. Send it to the board, and check in like this every Monday.",
+    "Done. The deck went out from **Gmail**.",
   ], "the whole story, once, in order, with no question to answer");
   const summaries = events.filter((e) => e.family === "outline" && e.payload.item.status === "completed").map((e) => e.payload.item.summary);
-  for (const line of ["Checked your calendar", "Messages from Theo", "Messages from Iris", "Created routine Morning brief"]) assert.ok(summaries.includes(line), line);
-  const reacted = events.find((e) => e.family === "transcript" && e.payload.type === "updated" && e.payload.entry.id === "m1u");
+  for (const line of ["Checked Stripe", "Messages from Theo", "Messages from Nora", "Created routine Monday check-in"]) assert.ok(summaries.includes(line), line);
+  const reacted = events.find((e) => e.family === "transcript" && e.payload.type === "updated" && e.payload.entry.id === "m2u");
   assert.deepEqual(reacted?.payload.entry.reactions, [{ emoji: "\u{1F44D}", by: "simeon" }], "Simeon gives your reply a thumbs up");
 });
 

@@ -1007,12 +1007,14 @@
     mila: [
       you("l0u", 60 * 30, "Keep my mornings free for deep work. Nothing before 11."),
       says("l0a", 60 * 30 - 1, "Done. I moved four meetings this week to the afternoon, and I'll suggest later times when someone asks for a morning."),
-      says("l1a", 25, "Overnight: 38 emails. I wrote replies to 6 and filed the rest. Two need you, both about the **Acme** renewal.")
+      says("l1a", 26, "Overnight: 38 emails. I answered 6 and filed the rest. One needs you: **Acme**'s lawyers sent redlines on the renewal."),
+      says("l1b", 25, "Here's a reply that agrees to their payment terms if they sign for two years. Change anything, then send."),
+      card("l1d", 25, { type: "email-draft", draft: { from: "bass@northbeam.com", to: ["jordan.lee@acmehealth.com"], subject: "Re: Renewal terms", body: "Hi Jordan,\n\nThanks for the redlines. We can agree to 60-day payment terms if Acme renews for two years. Everything else in the draft stands.\n\nIf that works for you, I'll send the updated contract today.\n\nBest,\nBass" } }, { draftSendState: "editable" })
     ],
     iris: [
       you("i0u", 60 * 48, "Answer the support tickets you're sure about. Send me anything with a refund or an unhappy customer."),
-      says("i0a", 60 * 48 - 1, "I'll answer from your help docs, so I need **Intercom** and **Notion**."),
-      card("i0c", 60 * 48 - 1, { type: "connectors", connectors: ["Intercom", "Notion"] }),
+      says("i0a", 60 * 48 - 1, "I'll answer from your help docs, so I need your support inbox in **Gmail** and the docs in **Notion**."),
+      card("i0c", 60 * 48 - 1, { type: "connectors", connectors: ["Gmail", "Notion"] }),
       says("i0b", 60 * 48 - 3, "Both connected. I'll leave refunds and anything unhappy for you."),
       says("i1a", 70, "Yesterday: 23 tickets answered, a median of 4 minutes to reply. One is yours: **Brightline** is asking for a $960 refund for September.")
     ],
@@ -1056,40 +1058,40 @@
   ];
   function openingScript() {
     return [
-      { at: 900, kind: "user", agent: "simeon", entry: you("m0u", 0, "Morning. What needs me today?") },
+      { at: 900, kind: "user", agent: "simeon", entry: you("m0u", 0, "Morning. Where are we on Thursday's board meeting?") },
       { at: 1500, kind: "typing", agent: "simeon", on: true },
-      ...step(2100, "m1", "CallMcpTool", "Checking your calendar", "Checked your calendar", 1100, "Google Calendar"),
-      ...step(3300, "m2", "CallMcpTool", "Reading your inbox", "Read your inbox", 1200, "Gmail"),
-      ...step(4600, "m3", "SendToAgent", "Asking Theo about cash", "Messages from Theo", 1300, void 0, "theo"),
-      ...step(6e3, "m4", "SendToAgent", "Asking Iris about support", "Messages from Iris", 1200, void 0, "iris"),
-      { at: 7400, kind: "append", agent: "simeon", entry: says("m0a", 0, "Three things today:\n\n1. **Acme's renewal.** Their lawyers want 60-day payment terms. Mila wrote a reply that agrees if they sign for two years.\n2. **Brightline's refund**, $960. Iris checked: our sync was down for them for two days. I'd approve it.\n3. **Priya Shah at 2 pm**, for the founding engineer role. Felix's notes are attached.") },
-      { at: 7700, kind: "append", agent: "simeon", entry: file("m0f", 0, "hiring/Priya Shah, notes.pdf") },
-      { at: 7800, kind: "typing", agent: "simeon", on: false },
-      { at: 10200, kind: "user", agent: "simeon", entry: you("m1u", 0, "Approve the refund and send Acme the reply. And send me this every morning.") },
-      { at: 10900, kind: "react", agent: "simeon", entryId: "m1u", emoji: "\u{1F44D}", by: "simeon" },
-      { at: 11200, kind: "typing", agent: "simeon", on: true },
-      ...step(11600, "m5", "CallMcpTool", "Refunding Brightline in Stripe", "Refunded Brightline in Stripe", 1200, "Stripe"),
-      ...step(13e3, "m6", "CallMcpTool", "Sending the reply from Gmail", "Sent the reply from Gmail", 1100, "Gmail"),
-      ...step(14300, "m7", "UpdateState", "Creating routine Morning brief", "Created routine Morning brief", 900),
-      { at: 15400, kind: "append", agent: "simeon", entry: says("m1a", 0, "Done. Brightline has its refund, Acme has the reply, and you'll get this brief at 8 every morning.") },
+      ...step(2100, "m1", "CallMcpTool", "Checking Stripe", "Checked Stripe", 1200, "Stripe"),
+      ...step(3400, "m2", "CallMcpTool", "Checking your calendar", "Checked your calendar", 1e3, "Google Calendar"),
+      { at: 4600, kind: "append", agent: "simeon", entry: says("m0a", 0, "Thursday is on track: September closed at $48,200 in **Stripe**, up 12%, and the board meets Thursday at 10.") },
+      ...step(5400, "m3", "SendToAgent", "Asking Theo for the September numbers", "Messages from Theo", 1500, void 0, "theo"),
+      ...step(7100, "m4", "SendToAgent", "Asking Nora for the board deck", "Messages from Nora", 1300, void 0, "nora"),
+      { at: 8600, kind: "append", agent: "simeon", entry: says("m1a", 0, "Theo closed September's books and Nora finished the board deck. It's ready for you.") },
+      { at: 8900, kind: "append", agent: "simeon", entry: file("m1f", 0, "board/Board deck, September.pptx") },
+      { at: 9e3, kind: "typing", agent: "simeon", on: false },
+      { at: 11200, kind: "user", agent: "simeon", entry: you("m2u", 0, "Looks great. Send it to the board, and check in like this every Monday.") },
+      { at: 11900, kind: "react", agent: "simeon", entryId: "m2u", emoji: "\u{1F44D}", by: "simeon" },
+      { at: 12200, kind: "typing", agent: "simeon", on: true },
+      ...step(12600, "m5", "CallMcpTool", "Sending the deck from Gmail", "Sent the deck from Gmail", 1300, "Gmail"),
+      ...step(14100, "m6", "UpdateState", "Creating routine Monday check-in", "Created routine Monday check-in", 1e3),
+      { at: 15400, kind: "append", agent: "simeon", entry: says("m2a", 0, "Done. The deck went out from **Gmail**.") },
       { at: 15500, kind: "typing", agent: "simeon", on: false },
       // The agent hands the computer to the person: a SendMessage carrying the box request (the window's take-over card).
-      { at: 18e3, kind: "user", agent: "simeon", entry: you("m2u", 0, "Can you post Felix's job ad on our LinkedIn page?") },
+      { at: 18e3, kind: "user", agent: "simeon", entry: you("m3u", 0, "Can you post Felix's job ad on our LinkedIn page?") },
       { at: 18600, kind: "typing", agent: "simeon", on: true },
-      ...step(19e3, "m8", "Computer", "Opening LinkedIn on the computer", "Opened LinkedIn on the computer", 1600),
-      { at: 21e3, kind: "append", agent: "simeon", entry: card("m2h", 0, { type: "text", content: "LinkedIn wants you to sign in." }, { boxRequestId: "demo-take-over", boxInstruction: "LinkedIn is asking for your password and a code from your phone. Take over to sign in, then hand it back and I'll post the ad.", boxResolution: "waiting" }) },
+      ...step(19e3, "m7", "Computer", "Opening LinkedIn on the computer", "Opened LinkedIn on the computer", 1600),
+      { at: 21e3, kind: "append", agent: "simeon", entry: card("m3h", 0, { type: "text", content: "LinkedIn wants you to sign in." }, { boxRequestId: "demo-take-over", boxInstruction: "LinkedIn is asking for your password and a code from your phone. Take over to sign in, then hand it back and I'll post the ad.", boxResolution: "waiting" }) },
       { at: 21100, kind: "typing", agent: "simeon", on: false },
       // A call: its line sits where the call began, the work it asked for below it, then the written
       // follow-up, the way a text would read.
-      { at: 24e3, kind: "append", agent: "simeon", entry: voiceCall("m3c", 0, "call-demo-simeon", 58, [
-        ["you", "Hey Simeon, can you move Priya to four? My investor call is running long."],
-        ["agent", "Sure. I'll ask Felix to check with her."],
-        ["you", "Thanks."]
+      { at: 24e3, kind: "append", agent: "simeon", entry: voiceCall("m4c", 0, "call-demo-simeon", 74, [
+        ["you", "Hey Simeon, can we move the board meeting to Friday morning?"],
+        ["agent", "Sure. Friday at ten works for everyone. I'll ask Nora to tell the board."],
+        ["you", "Perfect, thanks."]
       ]) },
       { at: 24300, kind: "typing", agent: "simeon", on: true },
-      ...step(24600, "m9", "SendToAgent", "Asking Felix to move Priya's call", "Messages from Felix", 1300, void 0, "felix"),
-      ...step(26100, "m10", "CallMcpTool", "Updating your calendar", "Updated your calendar", 900, "Google Calendar"),
-      { at: 27200, kind: "append", agent: "simeon", entry: says("m3a", 0, "As we said on the call: Priya is now at 4, Felix checked with her, and your calendar is updated.") },
+      ...step(24600, "m8", "SendToAgent", "Asking Nora to tell the board", "Messages from Nora", 1300, void 0, "nora"),
+      ...step(26100, "m9", "CallMcpTool", "Updating your calendar", "Updated your calendar", 900, "Google Calendar"),
+      { at: 27200, kind: "append", agent: "simeon", entry: says("m4a", 0, "As we said on the call: the board meeting is now Friday at 10, Nora told the board, and your calendar is updated.") },
       { at: 27300, kind: "typing", agent: "simeon", on: false }
     ];
   }
@@ -1219,6 +1221,7 @@
           if (m?.type === "connector") return { id: e.id, text: m.variant === "connected" ? `${m.connector} connected` : `Connect ${m.connector}` };
           if (m?.type === "connectors") return { id: e.id, text: `Connected ${m.connectors.join(" and ")}` };
           if (m?.type === "attachment") return { id: e.id, text: decodeURIComponent(String(m.url).split("/").pop() ?? "Sent a file") };
+          if (m?.type === "email-draft") return { id: e.id, text: `Draft: ${m.draft.subject}` };
         }
       }
       return null;
