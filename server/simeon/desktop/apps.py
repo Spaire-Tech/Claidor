@@ -79,6 +79,13 @@ NOT_CONFIGURED = "Apps are not switched on for this server yet."
 
 _tools_cache: dict[str, tuple[float, list[dict[str, Any]]]] = {}
 _sessions: dict[str, str] = {}
+# Which accounts a person has connected, per app, for the agent's tool calls.
+# Every tools/list and tools/call asked the provider again before doing the
+# work: one more round trip on each Gmail step. A connected answer is kept a
+# minute; "not connected" is never kept, so an app connected a moment ago
+# works at once, and disconnecting forgets it.
+_ACCOUNTS_TTL_S = 60.0
+_accounts_cache: dict[tuple[str, str], tuple[float, list[str]]] = {}
 
 
 def scrub(text: str) -> str:
@@ -150,6 +157,20 @@ def _upstream_message(payload: Any) -> str:
         if isinstance(payload.get("message"), str):
             return scrub(payload["message"])
     return "The app did not answer."
+
+
+async def connected_account_ids(user: User, toolkit: str) -> list[str]:
+    """active_account_ids, kept a minute when the app is connected."""
+    key = (composio_user_id(user), toolkit)
+    cached = _accounts_cache.get(key)
+    if cached is not None and time.monotonic() - cached[0] < _ACCOUNTS_TTL_S:
+        return cached[1]
+    accounts = await active_account_ids(user, toolkit)
+    if accounts:
+        _accounts_cache[key] = (time.monotonic(), accounts)
+    else:
+        _accounts_cache.pop(key, None)
+    return accounts
 
 
 async def active_account_ids(user: User, toolkit: str) -> list[str]:
@@ -347,7 +368,7 @@ async def _handle(
     if method == "ping":
         return _rpc_result(request_id, {})
     if method == "tools/list":
-        if not await active_account_ids(user, toolkit):
+        if not await connected_account_ids(user, toolkit):
             return _error("This app is not connected yet.", 401)
         return _rpc_result(request_id, {"tools": await toolkit_tools(toolkit)})
     if method == "tools/call":
@@ -359,7 +380,7 @@ async def _handle(
         known = {tool["name"] for tool in await toolkit_tools(toolkit)}
         if name not in known and not name.upper().startswith(f"{toolkit.upper()}_"):
             return _rpc_error(request_id, -32602, f"{name} is not a tool of this app.")
-        accounts = await active_account_ids(user, toolkit)
+        accounts = await connected_account_ids(user, toolkit)
         if not accounts:
             return _error("This app is not connected yet.", 401)
         status, payload = await _call(
@@ -485,6 +506,7 @@ async def apps_disconnect(
     refused = _guard(toolkit)
     if refused is not None:
         return refused
+    _accounts_cache.pop((composio_user_id(desktop_session.user), toolkit), None)
     try:
         accounts = await active_account_ids(desktop_session.user, toolkit)
         for account in accounts:

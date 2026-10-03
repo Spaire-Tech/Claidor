@@ -284,11 +284,26 @@ async function maybeWriteToFile(ctx: Context, accessor: ResourceAccessor<RemoteE
 // nothing spills to a file), and paid again by every later call of the turn.
 // Over the threshold, a server listing is names and short descriptions; the
 // model then fetches the one schema it needs with {server, toolName}.
+// "query: string, max_results?: integer, label?: INBOX|SENT": enough to call
+// the tool without a second lookup of its schema.
+function argumentSignature(schema: unknown): string {
+  if (schema == null || typeof schema !== "object") return "";
+  const record = schema as { properties?: Record<string, { type?: unknown; enum?: unknown }>; required?: unknown };
+  const required = new Set(Array.isArray(record.required) ? record.required.map(String) : []);
+  return Object.entries(record.properties ?? {}).map(([name, property]) => {
+    const values = Array.isArray(property?.enum) && property.enum.length <= 6 ? property.enum.map(String).join("|") : undefined;
+    const type = values ?? (Array.isArray(property?.type) ? property.type.join("|") : typeof property?.type === "string" ? property.type : "any");
+    return `${name}${required.has(name) ? "" : "?"}: ${type}`;
+  }).join(", ");
+}
+
 function compactIfLarge(full: Record<string, unknown>, server: ResolvedServer, allowAuth: boolean, dynamic: boolean, options: CreateGetMcpToolsToolOptions): Record<string, unknown> {
   if (options.projectDir !== undefined || Buffer.byteLength(JSON.stringify(full), "utf8") <= FILE_OUTPUT_THRESHOLD_BYTES) return full;
   const short = descriptorToServerPayload(server, allowAuth);
+  const signatures = new Map(server.descriptor.tools.map(tool => [tool.toolName, argumentSignature(mcpInputSchemaToJson(tool))]));
+  if (Array.isArray(short.tools)) short.tools = short.tools.map(entry => ({ ...entry, args: signatures.get(String(entry.tool)) ?? "" }));
   const container = dynamic ? "namespace" : "server";
-  const note = `${Array.isArray(short.tools) ? short.tools.length : 0} tools, listed by name. Fetch the one you need with {"${container}":"${server.descriptor.serverIdentifier}","toolName":"<name>"} to read its input schema, then call it.`;
+  const note = `${Array.isArray(short.tools) ? short.tools.length : 0} tools. Each one's args read name: type, with ? for optional. Call a tool straight from this list; fetch {"${container}":"${server.descriptor.serverIdentifier}","toolName":"<name>"} only when an argument needs its full description.`;
   return dynamic ? { mode: "namespace", note, ...toModelFacingServerPayload(short, true) } : { mode: "server", note, ...short };
 }
 

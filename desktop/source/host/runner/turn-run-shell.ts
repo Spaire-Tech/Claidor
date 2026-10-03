@@ -118,7 +118,12 @@ export interface TurnAgentRunContextInput<ContextValue> {
       typeof import("./system-prompt-assembly.js").createSystemPromptAssembly
     >,
     "prepareAgentProfilePromptSnapshot" | "getAgentProfileUpdateForTurn"
-  >;
+  > & Partial<Pick<
+    ReturnType<
+      typeof import("./system-prompt-assembly.js").createSystemPromptAssembly
+    >,
+    "getPromptUpdateForTurn"
+  >>;
   readonly profilePromptSnapshotStore?: PromptSnapshotStore;
   readonly onProfileUpdateAppended?: (identity: {
     readonly name: string;
@@ -205,9 +210,18 @@ export async function createTurnAgentRunContext<ContextValue>(
     ?? input.systemPromptAssembly?.prepareAgentProfilePromptSnapshot(
       input.profilePromptSnapshotStore,
     );
-  const profileUpdateForTurn = input.systemPromptAssembly?.getAgentProfileUpdateForTurn(
+  const profileUpdate = input.systemPromptAssembly?.getAgentProfileUpdateForTurn(
     profilePromptSnapshot,
   );
+  // The teammates, routines, channels and connector notes are frozen in the
+  // brief for the conversation; what changed since rides on this message.
+  const promptUpdate = input.systemPromptAssembly?.getPromptUpdateForTurn?.() ?? null;
+  const profileUpdateForTurn = promptUpdate == null
+    ? profileUpdate
+    : {
+      text: [profileUpdate?.text, promptUpdate].filter((part): part is string => part != null && part.length > 0).join("\n\n"),
+      identity: profileUpdate?.identity ?? { name: "", description: "" },
+    };
   const baseExecutor = (): PromptExecutor => agent.getExecutor();
   const toolSession = {
     getExecutor: () => {

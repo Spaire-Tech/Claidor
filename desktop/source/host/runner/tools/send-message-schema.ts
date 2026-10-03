@@ -66,6 +66,11 @@ const TYPE_FIELDS: readonly { field: keyof SendMessageInput; types: readonly Sen
   { field: "content", types: ["text"] }, { field: "url", types: ["attachment"] }, { field: "alt", types: ["attachment"] },
   { field: "widget", types: ["widget"] }, { field: "bcId", types: ["cursor-agent"] }, { field: "secret", types: ["secret-request"] },
 ];
+// GPT-6 fills every property it is offered. For a string it writes "", but an
+// object field had no empty value to write, so every text message carried
+// {"prompt":"x","options":[{"label":"x"…}]} and {"label":"x","connector":"x"…}:
+// about seventy output tokens a message, the dearest kind (OpenAI log,
+// 2 October 2026). widget and secret now take null, which is one token.
 // `type` decides which fields count. GPT-5.6, 23 September 2026, fills every
 // property of the schema on every call — first with empty strings, then,
 // once told the widget was blank, with "x" in every slot of the widget and
@@ -111,6 +116,19 @@ function isMessagingConnector(connector: unknown): boolean {
   return typeof connector === "string" && CONNECTOR_MANIFESTS.some((manifest) => manifest.platform === connector.trim().toLowerCase());
 }
 
+// A step whose every call is a delivered SendMessage the model marked final
+// (or a question or secret request, which wait on the person) ends the turn
+// there. Before, the loop asked the model once more and it answered nothing:
+// one full paid call after every reply (OpenAI log, 2 October 2026: about
+// one "no output" row per turn). A call without the flag keeps the old way.
+export function sendMessageEndsTurn(args: unknown): boolean {
+  let value = args;
+  if (typeof value === "string") { try { value = JSON.parse(value); } catch { return false; } }
+  if (value == null || typeof value !== "object") return false;
+  const record = value as { final?: unknown; type?: unknown };
+  return record.final === true || record.type === "widget" || record.type === "secret-request";
+}
+
 export function refineSendMessage(value: SendMessageInput, env: NodeJS.ProcessEnv = process.env): SendMessageIssue[] {
   const issues: SendMessageIssue[] = [];
   if (value.type === "cursor-agent" && !isCloudAgentsServed(env)) issues.push({ path: ["type"], message: CLOUD_AGENTS_COMING_SOON_SENTENCE });
@@ -136,15 +154,16 @@ const objectSchema = z.object({
     alt: z.string().trim().optional().describe("Optional short description of this image, shown on hover and as its fullscreen caption."),
   })).optional()).describe("Optional, only for type:text. Image(s) that belong with this message; they render inside the same chat bubble, below your text \u2014 one image full width, several as a compact gallery. Use whenever you're showing something you're talking about; use type:attachment only for an image that IS the whole message."),
   alt: z.string().trim().optional().describe("Optional. A short description (alt text) of the image for type:attachment \u2014 what the image shows. Shown to the user on hover and in the fullscreen viewer."),
+  final: z.boolean().optional().describe("Always set. true when this message finishes your turn: what you were asked is done (or you are now waiting on the person) and you will not call another tool; the turn ends with it. false for an acknowledgement or update you follow with more work."),
   reply_to: z.string().trim().optional().describe("Optional. Short address of the prior message this reply threads to (e.g. t3u for the user message in turn 3, t3s1 for your second SendMessage in turn 3). Omit when not threading."),
   channel: z.string().trim().optional().describe(isAnyChannelAvailable() ? "Optional. A connected messaging channel address to deliver this to instead of the in-app Simeon chat, shaped platform:chat, the address shown to you in an [inbound] wake. Omit to send to the in-app chat (the default). Only valid with type:text or type:attachment." : "Only to answer an open voice call: set it to the call's voice:<call> address, as the call's [inbound] message says. Messaging channels are coming soon in Simeon; otherwise omit it and the message goes to the in-app chat."),
-  widget: z.preprocess(widgetOrUndefined, sandWidgetSchema.optional()).describe("Required when type is widget. A question with selectable options: { prompt, helpText?, options: [{ label, value?, description?, style? }], allowCustom?, dismissOnMoveOn? }. The user picks one option; its value comes back as their reply, and the chat shows the resolved card with their selection checked under your prompt \u2014 so phrase the prompt as a natural question, not a menu instruction. The user can also dismiss the question without answering; you'll be told on your next turn, so treat that as a decline and don't re-ask. Set allowCustom: true to also let the user type their own free-text answer instead of picking an option. Set dismissOnMoveOn: true only for low-stakes questions that become moot if the user moves on (it auto-dismisses once they send a newer message without answering); leave it off for real decisions you still need answered."),
+  widget: z.preprocess(widgetOrUndefined, sandWidgetSchema.nullable().optional()).describe("Required when type is widget; null for every other type. A question with selectable options: { prompt, helpText?, options: [{ label, value?, description?, style? }], allowCustom?, dismissOnMoveOn? }. The user picks one option; its value comes back as their reply, and the chat shows the resolved card with their selection checked under your prompt \u2014 so phrase the prompt as a natural question, not a menu instruction. The user can also dismiss the question without answering; you'll be told on your next turn, so treat that as a decline and don't re-ask. Set allowCustom: true to also let the user type their own free-text answer instead of picking an option. Set dismissOnMoveOn: true only for low-stakes questions that become moot if the user moves on (it auto-dismisses once they send a newer message without answering); leave it off for real decisions you still need answered."),
   bcId: z.string().trim().optional().describe("Required when type is cursor-agent. The bcId of the cloud agent to reference (e.g. bc-xxxxxxxx-...)."),
   secret: z.preprocess(secretOrUndefined, z.object({
     label: z.string().trim().min(1).describe('What credential to ask for, shown as the card title and echoed in the field placeholder ("Paste your \u2026"), e.g. "Slack bot token".'),
     description: z.string().trim().optional().describe("Optional short help shown under the label."),
     connector: z.string().trim().min(1).describe("The connector/platform the secret is for. The value is written to that connector's per-agent credential file."),
     field: z.string().trim().min(1).describe('The credential field name to store the value under, e.g. "token".'),
-  }).optional()).describe("Required when type is secret-request. Asks the user for a credential through a masked secure input; the value goes straight to the connector's credential file and never reaches you or the chat. You only learn that it was provided."),
+  }).nullable().optional()).describe("Required when type is secret-request; null for every other type. Asks the user for a credential through a masked secure input; the value goes straight to the connector's credential file and never reaches you or the chat. You only learn that it was provided."),
 });
 export const sendMessageParameters = z.preprocess(stripFieldsOfOtherTypes, objectSchema).superRefine((value, ctx) => { for (const issue of refineSendMessage(value)) ctx.addIssue({ code: "custom", path: [...issue.path], message: issue.message }); });

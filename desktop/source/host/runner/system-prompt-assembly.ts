@@ -122,7 +122,24 @@ function profileSection(profile: AgentProfileForPrompt | null, sharedRoom: boole
   return lines.length === 0 ? null : ["Agent profile:", ...lines].join("\n");
 }
 
+interface VolatileSection { readonly name: string; readonly text: string }
+interface FrozenVolatileTail { readonly epoch: number; readonly sections: readonly VolatileSection[]; readonly announced: readonly VolatileSection[] }
+
+export function renderVolatileSectionsUpdate(announced: readonly VolatileSection[], live: readonly VolatileSection[]): string | null {
+  const before = new Map(announced.map((section) => [section.name, section.text]));
+  const after = new Map(live.map((section) => [section.name, section.text]));
+  const parts: string[] = [];
+  for (const section of live) if (before.get(section.name) !== section.text) parts.push(`## ${section.name}, now\n${section.text}`);
+  for (const section of announced) if (!after.has(section.name)) parts.push(`## ${section.name}\nNo longer applies.`);
+  if (parts.length === 0) return null;
+  return ["<system_reminder>", "Part of your instructions changed since this conversation began. What follows replaces the matching section of your instructions and any earlier such update.", ...parts, "</system_reminder>"].join("\n");
+}
+
+// Per conversation: the session's own snapshot store is the key.
+const frozenTails = new WeakMap<object, FrozenVolatileTail>();
+
 export function createSystemPromptAssembly(deps: SystemPromptAssemblyDependencies) {
+  let localFrozenTail: FrozenVolatileTail | null = null;
   let inMemoryProfilePromptSnapshot: AgentProfilePromptSnapshot | null = null;
 
   function resolveProfileForPrompt(): AgentProfileForPrompt | null {
@@ -279,17 +296,58 @@ export function createSystemPromptAssembly(deps: SystemPromptAssemblyDependencie
     add(deps.remoteBoxSection()); add(deps.computerSection());
     // Last, the sections that change while a conversation goes on: the
     // channels connected, the teammates, the routines, the connected apps'
-    // instructions and whether discovering them failed this turn. OpenAI
-    // caches a prompt by its longest unchanged start, so with these at the
-    // end a new teammate or routine no longer sends the whole guide above
-    // back at full price (2 October 2026; it was in the middle until then).
-    add(getChannelsSection()); add(getAgentDirectorySection()); add(getAutomationListSection());
-    add(deps.mcpCustomInstructionsSection()); add(deps.mcpDiscoveryStatusSection());
+    // instructions. They are frozen for the conversation (until its next
+    // summary), like memory: the
+    // brief comes before the whole history, so any change to it sent the
+    // whole conversation back at full price, once for every agent, on every
+    // new teammate or routine. A change reaches the model as a note on the
+    // next message instead (getPromptUpdateForTurn).
+    for (const section of frozenVolatileSections()) add(section.text);
+    // Whether discovering the connectors failed is decided during the turn,
+    // after a note would have been written, so it stays live (and rare).
+    add(deps.mcpDiscoveryStatusSection());
     return sections.join("\n\n");
   }
 
+  function liveVolatileSections(): VolatileSection[] {
+    const named: [string, string | null][] = [
+      ["Channels", getChannelsSection()], ["Teammates", getAgentDirectorySection()], ["Routines", getAutomationListSection()],
+      ["Connector instructions", deps.mcpCustomInstructionsSection()],
+    ];
+    return named.flatMap(([name, text]) => text != null && text.length > 0 ? [{ name, text }] : []);
+  }
+
+  function readFrozenTail(): FrozenVolatileTail | null {
+    const key = deps.memorySnapshots();
+    return key == null ? localFrozenTail : frozenTails.get(key) ?? null;
+  }
+
+  function writeFrozenTail(tail: FrozenVolatileTail): void {
+    const key = deps.memorySnapshots();
+    if (key == null) localFrozenTail = tail; else frozenTails.set(key, tail);
+  }
+
+  function frozenVolatileSections(): readonly VolatileSection[] {
+    const epoch = deps.compactionEpoch();
+    const frozen = readFrozenTail();
+    if (frozen != null && frozen.epoch === epoch) return frozen.sections;
+    const live = liveVolatileSections();
+    writeFrozenTail({ epoch, sections: live, announced: live });
+    return live;
+  }
+
+  /** The note for this turn's message when a frozen section changed since it was last told; null when nothing did. */
+  function getPromptUpdateForTurn(): string | null {
+    const frozen = readFrozenTail();
+    if (frozen == null || frozen.epoch !== deps.compactionEpoch()) return null;
+    const live = liveVolatileSections();
+    const note = renderVolatileSectionsUpdate(frozen.announced, live);
+    if (note != null) writeFrozenTail({ ...frozen, announced: live });
+    return note;
+  }
+
   return {
-    getSystemPrompt, prepareAgentProfilePromptSnapshot, getAgentProfileUpdateForTurn, persistAnnouncedAgentProfile,
+    getSystemPrompt, prepareAgentProfilePromptSnapshot, getAgentProfileUpdateForTurn, persistAnnouncedAgentProfile, getPromptUpdateForTurn,
     resetProfileSnapshotFallback() { inMemoryProfilePromptSnapshot = null; },
   };
 }

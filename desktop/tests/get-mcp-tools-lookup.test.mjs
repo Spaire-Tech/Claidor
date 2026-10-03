@@ -82,6 +82,8 @@ test("a large server is listed by name; one tool's schema is fetched on its own"
     assert.equal(parsed.tools.length, 60);
     assert.equal(parsed.tools.some((entry) => entry.inputSchema !== undefined), false);
     assert.match(parsed.note, /"toolName":"<name>"/);
+    // Each tool carries its arguments, so it can be called without a second lookup.
+    assert.equal(parsed.tools[0].args, "query?: string, max_results?: integer");
     assert.ok(Buffer.byteLength(listing.text) < 20_000, `listing is ${Buffer.byteLength(listing.text)} bytes`);
     const one = await call(module, tool, { server: "gmail", toolName: "GMAIL_GET_PROFILE" });
     assert.equal(one.ok, true, one.text);

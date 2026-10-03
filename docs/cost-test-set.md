@@ -80,8 +80,10 @@ deciding: one run is noisy.
   turn's first call, `low` after tool results and for the helpers, `high`
   after a tool failed. If answers after research read thin, set
   `SAND_SIMEON_TOOL_RESULT_EFFORT=medium` and run the set again.
-- **Calls per task.** Tasks 1–8 should take two or three calls each. A greeting
-  that takes ten is a bug.
+- **Calls per task.** A greeting is one call (its SendMessage is final and ends
+  the turn). Tasks 2–8 should take one to three. A connector question (list the
+  app's tools, call one, answer) should take two or three; one that takes ten is
+  a bug, and the `tools=` on the `[simeon] model=` lines shows which call repeated.
 
 ## Results
 

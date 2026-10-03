@@ -8,7 +8,12 @@ import type { SynthesisChange, SynthesisSnapshot } from "./memory-service.js";
 
 export const MEMORY_SYNTHESIS_PROMPT_MARKER = "<<SAND_MEMORY_SYNTHESIS_V1>>";
 export const MEMORY_SYNTHESIS_VERIFICATION_PROMPT_MARKER = "<<SAND_MEMORY_SYNTHESIS_VERIFICATION_V1>>";
-export const MEMORY_SYNTHESIS_DEBOUNCE_MS = 15_000;
+// Memory upkeep waits for a quiet minute, so a conversation's burst of
+// messages is read in one pass (a proposal and a check) instead of one pass per
+// message (OpenAI log, 2 October 2026: two cheap calls after every message).
+// Nothing is lost by waiting: the memory in the brief is frozen until the
+// conversation's next summary anyway.
+export const MEMORY_SYNTHESIS_DEBOUNCE_MS = 60_000;
 export const MEMORY_SYNTHESIS_DEADLINE_MS = 90_000;
 export const MEMORY_SYNTHESIS_POLL_INTERVAL_MS = 3_600_000;
 export const MEMORY_SYNTHESIS_REFRESH_INTERVAL_MS = 86_400_000;

@@ -280,6 +280,39 @@ Three more limits on work nobody asked for (2 October 2026):
 - **Reply nudges:** one, when a turn the person started ends without a reply
   (`MAX_REPLY_NUDGES`; three until then).
 
+How a turn stays short (3 October 2026, from the OpenAI log of a Gmail
+question that took about twenty calls; replayed offline in
+`desktop/tests/connector-replay.test.mjs`, 21 calls before, 2 after):
+
+- **A final message ends the turn.** Every SendMessage carries `final`. A
+  step whose calls are all delivered SendMessages marked final (or a question
+  widget, or a secret request) ends the turn there (`stepEndsTurn`,
+  `host/runner/turn-shape.ts`). Before, the loop asked the model once more
+  after every reply, and it answered nothing: a full paid call per turn.
+  Without the flag the old way holds; a message that failed to deliver never
+  ends the turn.
+- **Blank arguments are no arguments.** For every tool, an optional field the
+  model filled with `""` or `null` is dropped before the tool reads it
+  (`withoutBlankOptionalArgs`, `packages/agent/tools/common.ts`). SendMessage's
+  `widget` and `secret` take `null`, which the model writes instead of
+  `{"prompt":"x",…}`.
+- **The brief does not change mid-conversation.** The teammates, routines,
+  channels and connector instructions are frozen with the
+  conversation, like memory, until its next summary. A change reaches the
+  model as a note on the next message (`getPromptUpdateForTurn`,
+  `host/runner/system-prompt-assembly.ts`). The provider caches a request by
+  its unchanged start, and the brief comes before the whole history: one new
+  teammate used to send every agent's whole conversation back at full price.
+- **The reminder on each message is short.** It rides on every message the
+  person sends and stays in the history.
+- **Memory upkeep** waits for a quiet minute and reads the burst in one pass;
+  a refused proposal is not retried; the assistant's own claims about its
+  setup are not remembered.
+
+Check a run with the `[simeon] model=` lines in `/tmp/sand-host.log`: a
+greeting is one line, a connector question two or three, and the `prefix=sys:`
+hash stays the same across a conversation's turns.
+
 **Stopping the box on quit.** This applies only to the Docker box on the Mac,
 which is a testing path (`SAND_BOX_RUNTIME=local-docker`). When Simeon quits,
 it asks the box whether any routine is enabled. If none is, it stops the box.

@@ -79,6 +79,7 @@ def _keyed(mocker: MockerFixture) -> None:
     mocker.patch.object(settings, "COMPOSIO_API_KEY", "ck-test")
     apps_module._tools_cache.clear()
     apps_module._sessions.clear()
+    apps_module._accounts_cache.clear()
 
 
 @pytest.mark.asyncio
@@ -197,6 +198,51 @@ class TestTheAppsMcpServer:
                 json=_rpc("tools/call", {"name": "GITHUB_DELETE_REPO"}),
             )
         assert response.json()["error"]["code"] == -32602
+
+    async def test_connected_accounts_are_asked_once_for_back_to_back_calls(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _signed_in(client, session, user)
+        with respx.mock() as mock:
+            accounts = mock.get(f"{API}/api/v3.1/connected_accounts").mock(
+                return_value=_accounts("ca_1")
+            )
+            mock.get(f"{API}/api/v3.1/tools").mock(
+                return_value=httpx.Response(200, json=TOOLS)
+            )
+            mock.post(f"{API}/api/v3.1/tools/execute/GMAIL_TOOL_1").mock(
+                return_value=httpx.Response(
+                    200, json={"data": {"id": "m1"}, "successful": True}
+                )
+            )
+            for n in range(3):
+                response = await client.post(
+                    "/desktop/api/apps/mcp/gmail",
+                    headers=headers,
+                    json=_rpc("tools/call", {"name": "GMAIL_TOOL_1"}, id=n),
+                )
+                assert response.json()["result"]["isError"] is False
+        assert accounts.call_count == 1
+
+    async def test_not_connected_is_never_kept(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _signed_in(client, session, user)
+        with respx.mock() as mock:
+            mock.get(f"{API}/api/v3.1/connected_accounts").mock(
+                side_effect=[_accounts(), _accounts("ca_1")]
+            )
+            mock.get(f"{API}/api/v3.1/tools").mock(
+                return_value=httpx.Response(200, json=TOOLS)
+            )
+            first = await client.post(
+                "/desktop/api/apps/mcp/gmail", headers=headers, json=_rpc("tools/list")
+            )
+            second = await client.post(
+                "/desktop/api/apps/mcp/gmail", headers=headers, json=_rpc("tools/list")
+            )
+        assert first.status_code == 401
+        assert second.status_code == 200
 
     async def test_a_timeout_is_answered_and_logged(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User
