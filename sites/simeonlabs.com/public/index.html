@@ -425,17 +425,17 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 #team{background:var(--page);padding-top:0;padding-bottom:120px}
 .slide.msg-slide{background:var(--soft)}
 /* Card 6: an agent asks before it acts. Iris's permission sheet in glass over a painting; Allow is pressed, then it confirms. */
-.slide.ok-slide{background:#c9b8a8 url(img/paint-pastel.jpg) center/cover;color:var(--ink)}
-.ok-sheet{position:absolute;left:50%;top:57%;transform:translate(-50%,-50%);width:36cqw;display:flex;flex-direction:column;align-items:center;text-align:center;gap:1.1cqw;padding:3cqw 2.6cqw 2.4cqw;border-radius:3.2cqw;
-  background:rgba(255,255,255,.8);-webkit-backdrop-filter:blur(30px) saturate(1.6);backdrop-filter:blur(30px) saturate(1.6);box-shadow:0 0 0 .5px rgba(255,255,255,.7),0 30px 70px -30px rgba(20,30,60,.5)}
+.slide.ok-slide{background:#8a7c6e url(img/room-day.jpg) center/cover}
+.slide.ok-slide::before{content:"";position:absolute;inset:0;background:linear-gradient(rgba(30,24,18,.5),rgba(30,24,18,.12) 38%,rgba(30,24,18,.08));pointer-events:none}
+.ok-sheet{position:absolute;left:50%;top:57%;transform:translate(-50%,-50%);width:36cqw;display:flex;flex-direction:column;align-items:center;text-align:center;gap:1.1cqw;padding:3cqw 2.6cqw 2.4cqw;border-radius:3.2cqw}
 .ok-av{width:6cqw;height:auto;filter:drop-shadow(0 .4cqw .8cqw rgba(0,0,0,.16))}
 .ok-h{margin:.4cqw 0 0;font-size:1.8cqw;font-weight:500;letter-spacing:-.01em}
-.ok-b{margin:0;font-size:1.4cqw;line-height:1.5;color:var(--ink2);max-width:92%}
-.ok-app{display:inline-flex;align-items:center;gap:.3em;color:#0078D4;white-space:nowrap}
+.ok-b{margin:0;font-size:1.4cqw;line-height:1.5;color:rgba(255,255,255,.72);max-width:92%}
+.ok-app{display:inline-flex;align-items:center;gap:.3em;color:#fff;font-weight:500;white-space:nowrap}
 .ok-app img{width:1.1em;height:1.1em}
 .ok-btns{display:grid;grid-template-columns:1fr 1fr;gap:1cqw;width:100%;margin-top:1.3cqw}
 .ok-deny,.ok-allow{height:4.1cqw;display:grid;place-items:center;border-radius:99px;font-size:1.45cqw;transition:transform .2s,opacity .2s}
-.ok-deny{background:rgba(120,120,128,.14);color:#1d1d1f}
+.ok-deny{background:rgba(255,255,255,.14);color:#fff;box-shadow:inset 0 0 0 .08cqw rgba(255,255,255,.12)}
 .ok-allow{background:var(--app-blue);color:#fff}
 .ok-allow.press{transform:scale(.94);opacity:.85}
 .ok-done{display:none;align-items:center;justify-content:center;gap:.7cqw;height:4.1cqw;margin:1.3cqw 0 0;font-size:1.4cqw}
@@ -751,9 +751,9 @@ footer nav{display:flex;gap:18px}
         </div>
       </article>
 
-      <article class="slide ok-slide" aria-label="Stay in control">
-        <p class="cap top">Stay in control of what your agents do.</p>
-        <div class="ok-sheet" aria-hidden="true">
+      <article class="slide dark ok-slide" aria-label="Stay in control">
+        <p class="cap top vo-cap">Stay in control of what your agents do.</p>
+        <div class="ok-sheet glass" aria-hidden="true">
           <img class="ok-av" src="faces/agent-iris.png" alt="">
           <p class="ok-h">Iris would like to send an email</p>
           <p class="ok-b">The spring launch email, from <span class="ok-app"><img src="logos/outlook.webp" alt="">Outlook</span>, to 2,408 subscribers on Monday at 9:00.</p>
