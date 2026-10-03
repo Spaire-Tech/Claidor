@@ -360,6 +360,13 @@ and Ashby connect through Simeon. The provider behind them is never named in the
   a tool not found names the ones that exist. Clicking Add waits up to 8 s for the install to
   reach the cloud computer, and a proposal card's sign-in resumes the agent that proposed it
   (it was never told before, and went on saying the app "isn't installed").
+* **Checking an account's apps for real.** On the API service's shell on Render:
+  `uv run python -m scripts.desktop_apps_check someone@example.com` lists every app sign-in the
+  provider holds for the account (with the date it was made: one older than an account reset is
+  why Add then asks for no sign-in) and makes one read-only call per app through the agent's own
+  path (Gmail's address, LinkedIn's name), saying `works` or `FAILED` with the provider's
+  sentence. `--disconnect gmail` removes that app's sign-ins, so the next Add asks again. Notion
+  is not one of these apps: it is served by Notion's own MCP server, signed in on the Mac.
 * **The provider round trips.** Which accounts a person has connected is asked once a minute at
   most for the agent's tool calls (`connected_account_ids`); "not connected" is never kept, and
   disconnecting forgets it.
