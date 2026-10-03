@@ -1071,26 +1071,30 @@ export function appMentionsPluginSource(names) {
  * `a`, `code`, `pre`, `kbd` left alone, the structure tag shared with the
  * parent). The mark is the cloud: the palette's three stops as a gradient,
  * masked by the cloud's outline, with the two eyes on top, both read from
- * `source/shared/voice-call/agent-mark.ts`. The name takes the palette's top
+ * `source/shared/voice-call/agent-mark.ts`, in the app logo's box: as tall
+ * (1.05em), as far from the name, on the same baseline ("not proportionate
+ * with their text … use the same logic as the connectors"). The name takes the palette's top
  * stop, nudged to 3:1 on the message grey (4.5:1 on the dark bubble).
  */
 const AGENT_COLOR_RESOLVER = "function Cee(n){return PQ.find(t=>t.id===n.avatarColor)?.id??sle(n.id)}";
 const AGENT_NOTE_SOURCE = "function __simeonNoteAgents(n){const m={};for(const a of n??[]){const k=typeof a?.name===\"string\"?a.name.trim():\"\";k.length>1&&(m[k]=Cee(a))}globalThis.__simeonAgentColors=m}";
 export const AGENT_MENTIONS_PLUGIN_SOURCE = "const __simeonAgentMentions=(()=>{let K=null,R=null,A={};const S=new Set([\"a\",\"code\",\"pre\",\"kbd\",\"script\",\"style\"]);const e=x=>x.replace(/[.*+?^${}()|[\\]\\\\]/g,\"\\\\$&\");const sync=()=>{const m=globalThis.__simeonAgentColors||{},k=Object.keys(m).sort().join(\"\\n\");if(k===K)return;K=k;A=m;const l=Object.keys(m).sort((a,b)=>b.length-a.length).map(e);R=l.length?new RegExp(\"(?<![\\\\w@/.-])(?:\"+l.join(\"|\")+\")(?![\\\\w-])\",\"g\"):null};const w=n=>{if(!n||!Array.isArray(n.children)||S.has(n.tagName))return;const o=[];let c=!1;const d=n.data&&n.data.sandMarkdown;for(const k of n.children){if(k.type!==\"text\"||d===void 0){w(k);o.push(k);continue}const v=k.value;let i=0,m;R.lastIndex=0;while((m=R.exec(v))!==null){c=!0;m.index>i&&o.push({type:\"text\",value:v.slice(i,m.index)});o.push({type:\"element\",tagName:\"span\",properties:{className:[\"simeon-agent\"],dataAgentColor:A[m[0]]},data:{sandMarkdown:d},children:[{type:\"element\",tagName:\"span\",properties:{className:[\"simeon-agent__mark\"],ariaHidden:\"true\"},data:{sandMarkdown:d},children:[]},{type:\"text\",value:m[0]}]});i=m.index+m[0].length}i===0?o.push(k):i<v.length&&o.push({type:\"text\",value:v.slice(i)})}c&&(n.children=o)};return()=>t=>{sync();R&&w(t)}})();";
 
+export const AGENT_MENTION_VIEWBOX = "0 22 229 185";
 const AGENT_MARK_SOURCE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../source/shared/voice-call/agent-mark.ts");
 /** The cloud's outline (the mask) and its two eyes, as SVG data URLs, from the mark the call banner draws. */
 export function agentMentionMarks(markSource = readFileSync(AGENT_MARK_SOURCE, "utf8")) {
   const svg = JSON.parse(markSource.match(/export const CLOUD_MARK_SVG = ("(?:[^"\\]|\\.)*");/)[1]);
   const outline = svg.match(/<clipPath id="MARKID"><path d="([^"]+)"/)[1];
   const eyes = svg.match(/<g clip-path="url\(#MARKID\)">([\s\S]*?)<\/g>/)[1].replaceAll("var(--eye,#fcfcfc)", "#fcfcfc");
-  const url = (body) => `data:image/svg+xml;base64,${Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="-15 -15 259 259">${body}</svg>`).toString("base64")}`;
+  // Cropped to the cloud itself (it spans x 0–228.5, y 22–206 of the mark's square), so it fills its box the way an app's logo does.
+  const url = (body) => `data:image/svg+xml;base64,${Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${AGENT_MENTION_VIEWBOX}">${body}</svg>`).toString("base64")}`;
   return { cloud: url(`<path d="${outline}"/>`), eyes: url(eyes) };
 }
 
 export function agentMentionsCss({ cloud, eyes } = agentMentionMarks()) {
   return `.simeon-agent{color:var(--simeon-agent-color,inherit);font-weight:500;white-space:nowrap}
-.simeon-agent__mark{display:inline-block;width:1.5em;height:1.5em;margin:-.2em .12em -.2em -.08em;vertical-align:-.42em;background:url("${eyes}") center/contain no-repeat,linear-gradient(172deg,var(--simeon-agent-top),var(--simeon-agent-mid) 55%,var(--simeon-agent-bottom));-webkit-mask:url("${cloud}") center/contain no-repeat;mask:url("${cloud}") center/contain no-repeat}
+.simeon-agent__mark{display:inline-block;width:1.3em;height:1.05em;margin:0 .26em 0 .04em;vertical-align:-.18em;background:url("${eyes}") center/contain no-repeat,linear-gradient(172deg,var(--simeon-agent-top),var(--simeon-agent-mid) 55%,var(--simeon-agent-bottom));-webkit-mask:url("${cloud}") center/contain no-repeat;mask:url("${cloud}") center/contain no-repeat}
 .sand-mvmkjj .simeon-agent{color:inherit}
 strong .simeon-agent,b .simeon-agent,h1 .simeon-agent,h2 .simeon-agent,h3 .simeon-agent{font-weight:inherit}
 ${AGENT_PALETTES.map(({ id, top, mid, bottom }) => `.simeon-agent[data-agent-color="${id}"]{--simeon-agent-color:light-dark(${readableOn(top, MESSAGE_GREY_LIGHT, "#000000")},${readableOn(top, MESSAGE_GREY_DARK, "#ffffff", 4.5)});--simeon-agent-top:${top};--simeon-agent-mid:${mid};--simeon-agent-bottom:${bottom}}`).join("\n")}
