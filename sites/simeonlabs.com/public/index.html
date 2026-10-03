@@ -424,18 +424,31 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
    the app's own bubbles and blue, two suggestion chips, the composer, the caption underneath. */
 #team{background:var(--page);padding-top:0;padding-bottom:120px}
 .slide.msg-slide{background:var(--soft)}
-/* Card 5: calling an agent. A grainy orb that drifts and breathes as it talks, the call button set into its edge. */
+/* Card 5: calling an agent. An iPhone rising from the bottom of the card, mid-call with Theo. */
 .slide.call-slide{background:var(--soft);color:var(--ink)}
-.co{position:absolute;left:50%;top:28%;width:34cqw;aspect-ratio:1;transform:translateX(-50%)}
-.co-orb{position:absolute;inset:0;border-radius:50%;overflow:hidden;animation:co-breathe 3.4s ease-in-out infinite}
-.co-orb img{width:100%;height:100%;display:block;animation:co-spin 26s linear infinite}
-.co-orb::after{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 70% 26%,rgba(255,255,255,.28),transparent 42%),radial-gradient(circle at 50% 50%,transparent 62%,rgba(20,40,40,.16) 100%)}
-.co-btn{position:absolute;left:50%;bottom:0;transform:translate(-50%,42%);width:7.6cqw;height:7.6cqw;border-radius:50%;background:#000;color:#fff;display:grid;place-items:center;box-shadow:0 0 0 1.2cqw var(--soft)}
-.co-btn svg{width:2.5cqw;height:2.5cqw}
-@keyframes co-spin{to{transform:rotate(360deg)}}
-@keyframes co-breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
-@container slide (max-width:700px){.co{top:auto;bottom:17%;width:62cqw}.co-btn{width:16cqw;height:16cqw;box-shadow:0 0 0 2.4cqw var(--soft)}.co-btn svg{width:5.2cqw;height:5.2cqw}}
-@media (prefers-reduced-motion:reduce){.co-orb,.co-orb img{animation:none}}
+.cl-phone{position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:34cqw;height:79%;border:1.15cqw solid #111;border-bottom:0;border-radius:6.2cqw 6.2cqw 0 0;box-shadow:0 0 0 .32cqw #9a9aa0,0 0 0 .5cqw #d8d8dc;overflow:hidden;background:radial-gradient(120% 70% at 50% 18%,rgb(136,167,105),rgb(52,66,38) 62%,rgb(24,30,18));color:#fff;text-align:center}
+.cl-island{display:block;width:10.5cqw;height:3cqw;margin:1.4cqw auto 0;border-radius:99px;background:#000}
+.cl-name{margin:2.8cqw 0 0;font-size:3.6cqw;font-weight:600;letter-spacing:-.02em;line-height:1.1}
+.cl-time{margin:.5cqw 0 0;font-size:1.6cqw;color:rgba(255,255,255,.7);font-variant-numeric:tabular-nums}
+.cl-av{display:block;width:10.4cqw;margin:2cqw auto 0;filter:drop-shadow(0 1cqw 2cqw rgba(0,0,0,.25))}
+.cl-keys{display:grid;grid-template-columns:repeat(3,6cqw);justify-content:center;gap:1.3cqw 2.8cqw;margin-top:2.8cqw;font-size:1.15cqw;color:rgba(255,255,255,.85)}
+.cl-key{display:flex;flex-direction:column;align-items:center;gap:.6cqw}
+.cl-key i{width:6cqw;height:6cqw;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.18);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.cl-key.on i{background:#fff;color:#1d1d1f}
+.cl-key.hang{grid-column:2}
+.cl-key.hang i{background:var(--red)}
+.cl-key svg{width:2.7cqw;height:2.7cqw}
+.cl-time b{font-weight:400;display:inline-block;width:.6em;animation:cl-dot 1s steps(1) infinite}
+@keyframes cl-dot{50%{opacity:.35}}
+@container slide (max-width:700px){
+  .cl-phone{width:76cqw;height:76%;border-width:1.8cqw;border-radius:12cqw 12cqw 0 0}
+  .cl-island{width:23cqw;height:6.6cqw;margin-top:3cqw}
+  .cl-name{margin-top:5.6cqw;font-size:8cqw}.cl-time{font-size:3.6cqw;margin-top:1cqw}
+  .cl-av{width:23cqw;margin-top:4.6cqw}
+  .cl-keys{grid-template-columns:repeat(3,13cqw);gap:2.6cqw 6cqw;margin-top:5.4cqw;font-size:2.6cqw}
+  .cl-key{gap:1.3cqw}.cl-key i{width:13cqw;height:13cqw}.cl-key svg{width:6cqw;height:6cqw}
+}
+@media (prefers-reduced-motion:reduce){.cl-time b{animation:none}}
 
 /* Card 4: agents passing work between them, on a grainy dusk ground. */
 .slide.tw-slide{background:#262a44 url(img/dusk-grain.jpg) center/cover;color:#fff}
@@ -699,10 +712,13 @@ footer nav{display:flex;gap:18px}
       </article>
 
       <article class="slide call-slide" aria-label="Call your agents">
-        <p class="cap top">Call Theo on the way to a meeting. It has the real numbers, and answers like it was in the room.</p>
-        <div class="co" aria-hidden="true">
-          <div class="co-orb"><img src="img/call-orb.webp" alt=""></div>
-          <span class="co-btn"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M6.6 10.8a15.2 15.2 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg></span>
+        <p class="cap top">Call any agent, and talk it through.</p>
+        <div class="cl-phone" aria-hidden="true">
+          <span class="cl-island"></span>
+          <p class="cl-name">Theo</p>
+          <p class="cl-time">02<b>:</b>14</p>
+          <img class="cl-av" src="faces/agent-theo.png" alt="">
+          <div class="cl-keys"><span class="cl-key "><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg></i>Speaker</span><span class="cl-key "><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="13" height="12" rx="2.5"/><path d="m15.5 10.5 6-3.5v10l-6-3.5"/></svg></i>FaceTime</span><span class="cl-key on"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 9v3a3 3 0 0 0 5.1 2.1M15 9.3V5a3 3 0 0 0-5.9-.7M5 11a7 7 0 0 0 11.9 5M19 11a7 7 0 0 1-.6 2.8M12 18v3M3 3l18 18"/></svg></i>Mute</span><span class="cl-key hang"><i><svg viewBox="0 0 24 24"><path fill="#fff" d="M12 9c-2.6 0-5 .6-7.1 1.7-.6.3-.9.9-.9 1.6v2.3c0 .7.7 1.2 1.4 1l3-1c.5-.2.8-.6.8-1.1v-1.6a12 12 0 0 1 5.6 0v1.6c0 .5.3.9.8 1.1l3 1c.7.2 1.4-.3 1.4-1v-2.3c0-.7-.3-1.3-.9-1.6A15.6 15.6 0 0 0 12 9z"/></svg></i>End</span></div>
         </div>
       </article>
 
