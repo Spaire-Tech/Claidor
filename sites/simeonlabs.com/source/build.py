@@ -67,9 +67,9 @@ CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width
 # The phone hero: a still of the app, drawn by the page, telling the demo's opening (desktop/demo/scenario.ts):
 # Simeon's launch check. The faces are the app's own, captured from the demo (source/faces/agent-*.png).
 # Name colours are the top colour of each agent's palette (desktop/source/shared/voice-call/agent-mark.ts).
-rail = "".join(f'<span class="sd-m-av{" sd-m-on" if i == 0 else ""}">{mface("agent-" + f)}</span>' for i, f in enumerate(["simeon", "mila"]))
-group = '<span class="sd-m-av sd-m-group">' + mface("agent-simeon") + mface("agent-scout") + mface("agent-yodo") + '</span>'
-rail += group + "".join(f'<span class="sd-m-av">{mface("agent-" + f)}</span>' for f in ["scout", "yodo", "iris", "theo"])
+rail = "".join(f'<span class="sd-m-av{" sd-m-on" if i == 0 else ""}">{mface("agent-" + f)}</span>' for i, f in enumerate(["simeon"]))
+group = '<span class="sd-m-av sd-m-group">' + mface("agent-simeon") + mface("agent-scout") + mface("agent-iris") + '</span>'
+rail += group + "".join(f'<span class="sd-m-av">{mface("agent-" + f)}</span>' for f in ["iris", "theo", "scout"])
 # The words are the original phone still's, which the founder asked to keep and to show on the
 # laptop too (28 September and 3 October 2026); the laptop's demo plays the same thread.
 MOBILE_HTML = ('<div class="sd-mob" aria-label="Simeon, the chief of staff, talking with you about a launch">'
@@ -78,8 +78,8 @@ MOBILE_HTML = ('<div class="sd-mob" aria-label="Simeon, the chief of staff, talk
   '<div class="sd-m-main"><div class="sd-m-head">' + mface("agent-simeon") + '<b>Simeon</b><span class="sd-m-role">Chief of Staff</span></div>'
   '<div class="sd-m-thread"><div class="sd-m-feed">'
   f'<div class="sd-m-in">Thursday is on track: 12 of 15 launch tickets are done in {chip("linear")}, and the review is Thursday at 2 pm.</div>'
-  '<div class="sd-m-sys">Messages from ' + tag("agent-scout", "Scout", "#3f7f78") + ' and ' + tag("agent-yodo", "Yodo", "#b0603c") + '</div>'
-  '<div class="sd-m-in">' + tag("agent-scout", "Scout", "#3f7f78") + ' pulled three customer quotes and ' + tag("agent-yodo", "Yodo", "#b0603c") + ' closed the last two tickets. The review doc is ready.</div>'
+  '<div class="sd-m-sys">Messages from ' + tag("agent-scout", "Scout", "#3f7f78") + ' and ' + tag("agent-iris", "Iris", "#69847c") + '</div>'
+  '<div class="sd-m-in">' + tag("agent-scout", "Scout", "#3f7f78") + ' pulled three customer quotes and ' + tag("agent-iris", "Iris", "#69847c") + ' closed the last two tickets. The review doc is ready.</div>'
   '<div class="sd-m-file"><img src="logos/word.webp" alt="">Launch review.docx</div>'
   '<div class="sd-m-out">Looks great. Send the agenda to Dana and Marcus, and check in like this every Monday.<span class="sd-m-react">&#128077;</span></div>'
   '<div class="sd-m-sys">Created routine <span class="sd-m-clock">' + CLOCK + '</span><b>Monday launch check</b></div>'

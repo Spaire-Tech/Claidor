@@ -2,8 +2,8 @@
  * The demo's story, for a founder running a small company (the founder, 3
  * October 2026: "redesign it for a founder … dont forget to have a group chat
  * too … a compelling one, not bloated"). Each agent is named like a person and
- * has a job a founder would hand to someone: the inbox and calendar, the
- * launch, customer research, support, the books. One conversation plays by itself when the page
+ * has a job a founder would hand to someone: customer research, support, the
+ * books. One conversation plays by itself when the page
  * opens (Simeon's morning brief), everything else is already written, and the
  * person never types.
  *
@@ -77,29 +77,20 @@ const earlierCall = (prefix: string, minutesAgo: number, callId: string, seconds
 
 export const AGENTS: readonly DemoAgent[] = [
   { id: "simeon", name: "Simeon", title: "Chief of Staff", description: "Runs your day and hands work to the rest of the team.", color: "blue", minutesAgo: 0 },
-  { id: "mila", name: "Mila", title: "Inbox and calendar", description: "Answers what she can and keeps your mornings free.", color: "violet", minutesAgo: 25 },
-  { id: "yodo", name: "Yodo", title: "Launch manager", description: "Keeps the launch on track in Linear and Slack.", color: "red", minutesAgo: 95 },
   { id: "iris", name: "Iris", title: "Customer support", description: "Answers tickets from your help docs and flags the hard ones.", color: "mint", minutesAgo: 70 },
   { id: "theo", name: "Theo", title: "Bookkeeping", description: "Keeps the books, the runway and the invoices straight.", color: "green", minutesAgo: 60 * 3 },
   { id: "scout", name: "Scout", title: "Customer research", description: "Reads what customers say and brings back what matters.", color: "cyan", minutesAgo: 60 * 26 },
 ];
 
-/** The group the phone still shows: Thursday's launch, with Simeon, Scout and Yodo. */
+/** The group the phone still shows: Thursday's launch, with Simeon, Scout and Iris. */
 export const GROUP: DemoGroup = {
-  id: "launch-squad", name: "Launch squad", description: "Thursday's launch, with Simeon, Scout and Yodo.",
-  memberIds: ["simeon", "scout", "yodo"], minutesAgo: 40,
+  id: "launch-squad", name: "Launch squad", description: "Thursday's launch, with Simeon, Scout and Iris.",
+  memberIds: ["simeon", "scout", "iris"], minutesAgo: 40,
 };
 
 /** Already written: what happened before the page opened. */
 export const TRANSCRIPTS: Record<string, Entry[]> = {
   simeon: [],
-  mila: [
-    you("l0u", 60 * 30, "Keep my mornings free for deep work. Nothing before 11."),
-    says("l0a", 60 * 30 - 1, "Done. I moved four meetings this week to the afternoon, and I'll suggest later times when someone asks for a morning."),
-    says("l1a", 26, "Overnight: 38 emails. I answered 6 and filed the rest. One needs you: **Acme**'s lawyers sent redlines on the renewal."),
-    says("l1b", 25, "Here's a reply that agrees to their payment terms if they sign for two years. Change anything, then send."),
-    card("l1d", 25, { type: "email-draft", draft: { from: "bass@northbeam.com", to: ["jordan.lee@acmehealth.com"], subject: "Re: Renewal terms", body: "Hi Jordan,\n\nThanks for the redlines. We can agree to 60-day payment terms if Acme renews for two years. Everything else in the draft stands.\n\nIf that works for you, I'll send the updated contract today.\n\nBest,\nBass" } }, { draftSendState: "editable" }),
-  ],
   iris: [
     you("i0u", 60 * 48, "Answer the support tickets you're sure about. Send me anything with a refund or an unhappy customer."),
     says("i0a", 60 * 48 - 1, "I'll answer from your help docs, so I need your support inbox in **Gmail** and the docs in **Notion**."),
@@ -133,30 +124,12 @@ export const TRANSCRIPTS: Record<string, Entry[]> = {
       ["agent", "Done, it's the first slide now."],
     ]),
   ],
-  yodo: [
-    you("y0u", 60 * 50, "Keep the launch on track. Post a standup in Slack every morning."),
-    says("y0a", 60 * 50 - 1, "I'll need **Linear** and **Slack** for that."),
-    card("y0c", 60 * 50 - 1, { type: "connectors", connectors: ["Linear", "Slack"] }),
-    says("y0b", 60 * 50 - 3, "Both connected. Every morning at 9:00 I'll post the launch board in #launch and flag anything stuck for more than a day."),
-    // A call during which Yodo asked Scout something: the teammate exchange and the call's lines
-    // sit side by side in the chat.
-    toTeammate("y2t", 60 * 3, { id: "scout", name: "Scout" }, "Bass asked for the latest NPS for the launch review. Can you send it?"),
-    fromTeammate("y2f", 60 * 3, { id: "scout", name: "Scout" }, "NPS is 41, up from 34 last month."),
-    ...earlierCall("y2c", 60 * 3, "call-demo-yodo", 92, [
-      ["you", "Yodo, can you get the latest NPS from Scout for the review?"],
-      ["agent", "Asking Scout now."],
-      ["agent", "It's 41, up from 34 last month."],
-      ["you", "Great, thanks."],
-    ]),
-    says("y1a", 95, "Today's standup is up in #launch:\n\n- **12 of 15** launch tickets done\n- 2 waiting on design review with Dana\n- **LIN-482**, the pricing page bug, is in code review"),
-    file("y1f", 95, "launch/Launch tracker.xlsx"),
-  ],
 };
 
 /** The group's conversation, already written. `author` is the member who spoke. */
 export const GROUP_TRANSCRIPT: readonly { readonly author: string | null; readonly entry: Entry }[] = [
   { author: null, entry: you("g0u", 58, "Honest check: can we still ship Thursday?") },
-  { author: "yodo", entry: says("g0y", 56, "Engineering says yes if **LIN-482** merges by Wednesday noon. It's in review now.") },
+  { author: "iris", entry: says("g0y", 56, "Engineering says yes if **LIN-482** merges by Wednesday noon. It's in review now.") },
   { author: "scout", entry: says("g0s", 55, "From the research, what customers care about is the new setup flow. The pricing page change can wait.") },
   { author: "simeon", entry: says("g0m", 54, "Then keep Thursday. I'll move the pricing page to the fast-follow list and let Dana and Marcus know.") },
   { author: null, entry: you("g1u", 45, "Do it.") },
@@ -169,7 +142,7 @@ export const GROUP_TRANSCRIPT: readonly { readonly author: string | null; readon
  * text for simeon in the laptop", and again on 3 October: "i liked what we
  * originally had in mobile … bring it to desktop. thats what a chief is").
  * You ask where Thursday's launch stands, Simeon checks your tools and
- * answers, hears from Scout and Yodo, hands you the review doc, and when you
+ * answers, hears from Scout and Iris, hands you the review doc, and when you
  * reply, sends the agenda and sets up a Monday routine. It stops there, where
  * the phone still stops. Nobody chooses anything; it plays through once.
  */
@@ -194,10 +167,10 @@ export function openingScript(): Beat[] {
     ...step(6800, "m4", "SendToAgent", "Asking Scout for customer quotes", "Messages from Scout", 1500, undefined, "scout"),
     { at: 7200, kind: "append", agent: "simeon", entry: toTeammate("m4t", 0, { id: "scout", name: "Scout" }, "Can you pull three customer quotes for Thursday's review?") },
     { at: 8100, kind: "append", agent: "simeon", entry: fromTeammate("m4f", 0, { id: "scout", name: "Scout" }, "Here are three, all about the new setup flow. They're in the review doc.") },
-    ...step(8500, "m5", "SendToAgent", "Asking Yodo about the last tickets", "Messages from Yodo", 1300, undefined, "yodo"),
-    { at: 8800, kind: "append", agent: "simeon", entry: toTeammate("m5t", 0, { id: "yodo", name: "Yodo" }, "Where are the last launch tickets?") },
-    { at: 9600, kind: "append", agent: "simeon", entry: fromTeammate("m5f", 0, { id: "yodo", name: "Yodo" }, "Both closed this morning. 14 of 15 are done; the last one is the pricing page, after launch.") },
-    { at: 10000, kind: "append", agent: "simeon", entry: says("m1a", 0, "Scout pulled three customer quotes and Yodo closed the last two tickets. The review doc is ready.") },
+    ...step(8500, "m5", "SendToAgent", "Asking Iris about the last tickets", "Messages from Iris", 1300, undefined, "iris"),
+    { at: 8800, kind: "append", agent: "simeon", entry: toTeammate("m5t", 0, { id: "iris", name: "Iris" }, "Where are the last launch tickets?") },
+    { at: 9600, kind: "append", agent: "simeon", entry: fromTeammate("m5f", 0, { id: "iris", name: "Iris" }, "Both closed this morning. 14 of 15 are done; the last one is the pricing page, after launch.") },
+    { at: 10000, kind: "append", agent: "simeon", entry: says("m1a", 0, "Scout pulled three customer quotes and Iris closed the last two tickets. The review doc is ready.") },
     { at: 10300, kind: "append", agent: "simeon", entry: file("m1f", 0, "docs/Launch review.docx") },
     { at: 10400, kind: "typing", agent: "simeon", on: false },
     { at: 12600, kind: "user", agent: "simeon", entry: you("m2u", 0, "Looks great. Send the agenda to Dana and Marcus, and check in like this every Monday.") },
