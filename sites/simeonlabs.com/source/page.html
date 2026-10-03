@@ -359,32 +359,32 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .sp-cap{z-index:6;color:var(--ink)}
 .sp{position:absolute;inset:0;z-index:2}
 /* Simeon's computer: the task list beside a live desktop, a placeholder window on it. */
-.mb{position:absolute;left:6%;right:6%;top:21%;bottom:-2cqw;border:1.1cqw solid #111;border-bottom:0;border-radius:2.4cqw 2.4cqw 0 0;background:#111;box-shadow:0 0 0 .3cqw #a3a3a8,0 0 0 .48cqw #dcdce0,0 2.6cqw 6cqw rgba(0,0,0,.18)}
+.mb{position:absolute;left:11%;right:11%;top:25%;bottom:-2cqw;border:1.1cqw solid #111;border-bottom:0;border-radius:2.4cqw 2.4cqw 0 0;background:#111;box-shadow:0 0 0 .3cqw #a3a3a8,0 0 0 .48cqw #dcdce0,0 2.6cqw 6cqw rgba(0,0,0,.18)}
 .mb::before{content:"";position:absolute;z-index:5;left:50%;top:-.05cqw;transform:translateX(-50%);width:9cqw;height:1.25cqw;border-radius:0 0 .7cqw .7cqw;background:#111}
-.pc{position:absolute;inset:0;display:flex;gap:1.2cqw;padding:1.4cqw;border-radius:1.3cqw 1.3cqw 0 0;overflow:hidden;background:#6f8a58 url(img/wall-hills.jpg) center/cover;color:#1d1d1f}
-.pc-side{flex:none;width:24%;padding:1.6cqw 1.2cqw;border-radius:1.4cqw;font-size:1.15cqw;background:rgba(255,255,255,.40);-webkit-backdrop-filter:blur(20px) saturate(1.9);backdrop-filter:blur(20px) saturate(1.9);border:1px solid rgba(255,255,255,.9);box-shadow:0 18px 50px -12px rgba(0,0,0,.18)}
+.pc{position:absolute;inset:0;display:flex;border-radius:1.3cqw 1.3cqw 0 0;overflow:hidden;background:#fff;color:#1d1d1f}
+.pc-side{flex:none;width:24%;padding:2cqw 1.2cqw;border-right:1px solid #e6e4df;font-size:1cqw}
 .pc-side>img{display:block;width:2cqw;height:auto;margin:0 0 1.4cqw .4cqw}
-.pc-side h6{margin:1.2cqw .4cqw .5cqw;font-size:1cqw;font-weight:500;color:rgba(29,29,31,.55)}
+.pc-side h6{margin:1.1cqw .4cqw .4cqw;font-size:.9cqw;font-weight:400;color:#9a978f}
 .pc-side ul{margin:0;padding:0;list-style:none}
 .pc-side li{display:flex;align-items:center;gap:.7cqw;padding:.6cqw .5cqw;border-radius:.6cqw;white-space:nowrap;overflow:hidden;color:#3a3a3c;-webkit-mask-image:linear-gradient(90deg,#000 82%,transparent);mask-image:linear-gradient(90deg,#000 82%,transparent)}
-.pc-side li.on{background:rgba(255,255,255,.55)}
+.pc-side li.on{background:#ebe9e4}
 .pc-side li i{flex:none;width:.5cqw;height:.5cqw;border-radius:50%;background:#c9c6be}
 .pc-side li.on i{width:.8cqw;height:.8cqw;background:none;border:.15cqw solid #9a978f;border-right-color:transparent;animation:pc-spin 1s linear infinite}
-.pc-main{flex:1;display:flex;flex-direction:column;gap:1cqw;padding:0 0 1.8cqw;min-width:0}
-.pc-tabs{align-self:flex-start;display:flex;gap:.4cqw;padding:.4cqw;border-radius:99px;font-size:1.05cqw;color:#3a3a3c;background:rgba(255,255,255,.40);-webkit-backdrop-filter:blur(20px) saturate(1.9);backdrop-filter:blur(20px) saturate(1.9);border:1px solid rgba(255,255,255,.9);box-shadow:0 18px 50px -12px rgba(0,0,0,.18)}
+.pc-main{flex:1;display:flex;flex-direction:column;padding:1.6cqw 1.2cqw 3.2cqw;min-width:0}
+.pc-tabs{display:flex;gap:.4cqw;font-size:.95cqw;color:#9a978f;margin-bottom:.9cqw}
 .pc-tabs span{padding:.35cqw .8cqw;border-radius:99px}
-.pc-tabs span.on{background:rgba(255,255,255,.65);color:#1d1d1f}
-.pc-desk{position:relative;flex:1}
-.pc-take{position:absolute;right:0;top:-3.2cqw;display:inline-flex;align-items:center;gap:.5cqw;padding:.5cqw 1.1cqw;border-radius:99px;background:rgba(20,22,26,.72);color:#fff;font-size:.95cqw;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.pc-tabs span.on{background:#ebe9e4;color:#1d1d1f}
+.pc-desk{position:relative;flex:1;border-radius:1cqw;overflow:hidden;background:#6f8a58 url(img/wall-hills.jpg) center/cover}
+.pc-take{position:absolute;right:1.2cqw;top:1.1cqw;display:inline-flex;align-items:center;gap:.5cqw;padding:.5cqw 1.1cqw;border-radius:99px;background:rgba(20,22,26,.72);color:#fff;font-size:.95cqw;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 .pc-take svg{width:1cqw;height:1cqw}
-.pc-app{position:absolute;left:26%;right:4%;top:6%;bottom:16%;border-radius:1.4cqw;padding:1.2cqw 1.6cqw;background:rgba(255,255,255,.40);-webkit-backdrop-filter:blur(20px) saturate(1.9);backdrop-filter:blur(20px) saturate(1.9);border:1px solid rgba(255,255,255,.9);box-shadow:0 18px 50px -12px rgba(0,0,0,.18)}
+.pc-app{position:absolute;left:30%;right:9%;top:22%;bottom:20%;border-radius:.7cqw;background:#f7f6f3;box-shadow:0 1.2cqw 3cqw rgba(0,0,0,.28);padding:.8cqw 1.2cqw}
 .pc-dots{display:flex;gap:.35cqw;margin-bottom:1cqw}
-.pc-dots i{width:.6cqw;height:.6cqw;border-radius:50%;background:rgba(0,0,0,.18)}
-.pc-ln{height:.5cqw;border-radius:99px;background:rgba(0,0,0,.14);margin-bottom:.45cqw}
+.pc-dots i{width:.55cqw;height:.55cqw;border-radius:50%;background:#d5d2cb}
+.pc-ln{height:.45cqw;border-radius:99px;background:#dddad3;margin-bottom:.45cqw}
 .pc-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:.9cqw;margin-top:2.4cqw}
-.pc-cards span{height:7.6cqw;border-radius:1cqw;background:rgba(255,255,255,.45);box-shadow:inset 0 0 0 1px rgba(255,255,255,.8);padding:1.1cqw}
-.pc-cards b{display:block;width:2cqw;height:2cqw;border-radius:50%;background:rgba(0,0,0,.12);margin-bottom:1.1cqw}
-.pc-dock{position:absolute;left:50%;bottom:-1cqw;transform:translateX(-50%);display:flex;gap:.6cqw;padding:.5cqw;border-radius:1.1cqw;background:rgba(30,32,28,.45);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.pc-cards span{height:6.6cqw;border-radius:.6cqw;border:.12cqw solid #e2dfd8;background:#f1efea;padding:1cqw}
+.pc-cards b{display:block;width:1.8cqw;height:1.8cqw;border-radius:50%;background:#dcd9d2;margin-bottom:1.1cqw}
+.pc-dock{position:absolute;left:50%;bottom:1.1cqw;transform:translateX(-50%);display:flex;gap:.6cqw;padding:.5cqw;border-radius:1.1cqw;background:rgba(30,32,28,.45);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
 .pc-dock span{display:grid;place-items:center;width:2.6cqw;height:2.6cqw;border-radius:.7cqw;background:rgba(255,255,255,.14);color:#fff}
 .pc-dock span.on{background:rgba(255,255,255,.3)}
 .pc-dock svg{width:1.3cqw;height:1.3cqw}
@@ -394,10 +394,10 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 @keyframes pc-move{0%,15%{left:12%;top:52%}45%,60%{left:58%;top:70%}85%,100%{left:12%;top:52%}}
 @keyframes pc-spin{to{transform:rotate(360deg)}}
 @container slide (max-width:700px){
-  .mb{left:3%;right:3%;top:32%;border-width:2cqw;border-radius:5cqw 5cqw 0 0;box-shadow:0 0 0 .5cqw #a3a3a8,0 0 0 .8cqw #dcdce0}.mb::before{width:18cqw;height:2.4cqw;border-radius:0 0 1.4cqw 1.4cqw}
+  .mb{left:5%;right:5%;top:33%;border-width:2cqw;border-radius:5cqw 5cqw 0 0;box-shadow:0 0 0 .5cqw #a3a3a8,0 0 0 .8cqw #dcdce0}.mb::before{width:18cqw;height:2.4cqw;border-radius:0 0 1.4cqw 1.4cqw}
   .pc{border-radius:3cqw 3cqw 0 0}
   .pc-side{display:none}
-  .pc{padding:2.6cqw}.pc-main{padding:0 0 4cqw;gap:2cqw}
+  .pc-main{padding:3.6cqw 2.4cqw 6cqw}
   .pc-tabs{font-size:2.6cqw;gap:1cqw;margin-bottom:2cqw}.pc-tabs span{padding:.9cqw 2cqw}
   .pc-desk{border-radius:2.6cqw}
   .pc-take{font-size:2.4cqw;padding:1.2cqw 2.4cqw;right:2.4cqw;top:2.4cqw;gap:1.2cqw}.pc-take svg{width:2.6cqw;height:2.6cqw}
