@@ -160,7 +160,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 
 /* Meet your team: Apple's gallery. One agent per card, neighbours at the edges. */
 .gallery{position:relative;margin-top:40px}
-.track{--cw:var(--col);display:flex;gap:24px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;
+.track{--cw:min(var(--col),calc((100vh - 220px) * 1260 / 760),1000px);display:flex;gap:24px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;
   padding-inline:calc((100vw - var(--cw)) / 2);scroll-padding-inline:calc((100vw - var(--cw)) / 2);padding-bottom:4px;overscroll-behavior-x:contain}
 .track::-webkit-scrollbar{display:none}
 .slide{position:relative;flex:none;width:var(--cw);aspect-ratio:1260/760;border-radius:28px;overflow:hidden;scroll-snap-align:center;container:slide/inline-size;isolation:isolate}
@@ -344,8 +344,8 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 /* The first card: messaging an agent like a teammate (the founder, 3 October 2026, with Apple's
    Messages card as the model): a phone cut off by the card's top edge, one exchange with Theo in
    the app's own bubbles and blue, two suggestion chips, the composer, the caption underneath. */
-#team{background:var(--soft);padding-top:clamp(72px,6vw,120px);padding-bottom:120px}
-.slide.msg-slide{background:#fff}
+#team{background:var(--page);padding-top:clamp(72px,6vw,120px);padding-bottom:120px}
+.slide.msg-slide{background:var(--soft)}
 .msg-phone{position:absolute;left:50%;top:0;transform:translateX(-50%);width:54cqw;height:64%;border:1.15cqw solid #111;border-top:0;border-radius:0 0 8.6cqw 8.6cqw;box-shadow:0 0 0 .32cqw #9a9aa0,0 0 0 .5cqw #d8d8dc;overflow:hidden;background:#fff}
 .msg-screen{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;gap:1.4cqw;padding:0 3.2cqw 3cqw;font-size:2.25cqw;line-height:1.28;letter-spacing:-.01em;color:#000}
 .msg-name{margin:0 0 -.4cqw 8.4cqw;font-size:.62em;color:#86868b}
