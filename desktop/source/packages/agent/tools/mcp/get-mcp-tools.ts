@@ -79,6 +79,21 @@ function isGetMcpToolsArgs(value: unknown): value is GetMcpToolsArgsInput {
   return isRecord(value) && (value.server === undefined || typeof value.server === "string") && (value.toolName === undefined || typeof value.toolName === "string") && (value.pattern === undefined || typeof value.pattern === "string");
 }
 
+// GPT-6 fills every property it is offered: {"server":"gmail","toolName":"",
+// "pattern":""} meant "list gmail's tools", and was read as a lookup of a tool
+// named "" (OpenAI log, 2 October 2026). The "not found" that followed sent the
+// model guessing names, about twenty calls for one question. A blank argument
+// is no argument.
+export function withoutBlankArgs(raw: Record<string, unknown>): Record<string, unknown> {
+  const kept: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(raw)) {
+    if (value == null) continue;
+    if (typeof value === "string" && value.trim().length === 0) continue;
+    kept[key] = typeof value === "string" ? value.trim() : value;
+  }
+  return kept;
+}
+
 function isProjectWorkspaceState(value: unknown): value is Parameters<typeof isProjectWorkspaceConversation>[1] {
   return isRecord(value);
 }
@@ -264,6 +279,34 @@ async function maybeWriteToFile(ctx: Context, accessor: ResourceAccessor<RemoteE
   return { result: success(text), payloadBytes, wroteToFile: false };
 }
 
+// Gmail's server answers with about sixty tools, each with its full input
+// schema: tens of thousands of tokens, inline (the host sets no projectDir, so
+// nothing spills to a file), and paid again by every later call of the turn.
+// Over the threshold, a server listing is names and short descriptions; the
+// model then fetches the one schema it needs with {server, toolName}.
+// "query: string, max_results?: integer, label?: INBOX|SENT": enough to call
+// the tool without a second lookup of its schema.
+function argumentSignature(schema: unknown): string {
+  if (schema == null || typeof schema !== "object") return "";
+  const record = schema as { properties?: Record<string, { type?: unknown; enum?: unknown }>; required?: unknown };
+  const required = new Set(Array.isArray(record.required) ? record.required.map(String) : []);
+  return Object.entries(record.properties ?? {}).map(([name, property]) => {
+    const values = Array.isArray(property?.enum) && property.enum.length <= 6 ? property.enum.map(String).join("|") : undefined;
+    const type = values ?? (Array.isArray(property?.type) ? property.type.join("|") : typeof property?.type === "string" ? property.type : "any");
+    return `${name}${required.has(name) ? "" : "?"}: ${type}`;
+  }).join(", ");
+}
+
+function compactIfLarge(full: Record<string, unknown>, server: ResolvedServer, allowAuth: boolean, dynamic: boolean, options: CreateGetMcpToolsToolOptions): Record<string, unknown> {
+  if (options.projectDir !== undefined || Buffer.byteLength(JSON.stringify(full), "utf8") <= FILE_OUTPUT_THRESHOLD_BYTES) return full;
+  const short = descriptorToServerPayload(server, allowAuth);
+  const signatures = new Map(server.descriptor.tools.map(tool => [tool.toolName, argumentSignature(mcpInputSchemaToJson(tool))]));
+  if (Array.isArray(short.tools)) short.tools = short.tools.map(entry => ({ ...entry, args: signatures.get(String(entry.tool)) ?? "" }));
+  const container = dynamic ? "namespace" : "server";
+  const note = `${Array.isArray(short.tools) ? short.tools.length : 0} tools. Each one's args read name: type, with ? for optional. Call a tool straight from this list; fetch {"${container}":"${server.descriptor.serverIdentifier}","toolName":"<name>"} only when an argument needs its full description.`;
+  return dynamic ? { mode: "namespace", note, ...toModelFacingServerPayload(short, true) } : { mode: "server", note, ...short };
+}
+
 export function createGetMcpToolsTool(mcpMetaToolOptions: McpMetaToolOptions, options: CreateGetMcpToolsToolOptions = {}): Record<string, unknown> {
   const dynamic = options.dynamicToolRegistry !== undefined;
   const name = options.toolName ?? DEFAULT_GET_MCP_TOOLS_NAME;
@@ -281,8 +324,8 @@ export function createGetMcpToolsTool(mcpMetaToolOptions: McpMetaToolOptions, op
   });
   const modelParameters = dynamic ? namespaceParameters : serverParameters;
   const parsingParameters = z.preprocess(raw => {
-    if (!dynamic || !isRecord(raw)) return raw;
-    return { ...raw, server: raw.namespace };
+    if (!isRecord(raw)) return raw;
+    return withoutBlankArgs(dynamic ? { ...raw, server: raw.namespace } : raw);
   }, z.object({ server: z.string().optional(), toolName: z.string().optional(), pattern: z.string().optional() }));
   const execute = async (parentCtx: Context, interactionHandler: unknown, rawArgs: unknown, meta: GetMcpToolsExecutionMeta): Promise<GetMcpToolsAgentResult> => {
     if (!isGetMcpToolsInteractionHandler(interactionHandler) || !isGetMcpToolsArgs(rawArgs)) throw new Error("GetMcpTools execution requires valid arguments and an interaction handler");
@@ -355,7 +398,8 @@ export function createGetMcpToolsTool(mcpMetaToolOptions: McpMetaToolOptions, op
         }
         const payload = descriptorToServerPayload(server, allowAuth, { includeSchema: true, trustedFirstParty: options.dynamicToolRegistry !== undefined && isReservedDynamicToolsNamespace(args.server), ...(args.toolName === undefined ? {} : { toolName: args.toolName }) });
         if (args.toolName === undefined) {
-          const output = dynamic ? { mode: "namespace", ...toModelFacingServerPayload(payload, true) } : { mode: "server", ...payload };
+          const full = dynamic ? { mode: "namespace", ...toModelFacingServerPayload(payload, true) } : { mode: "server", ...payload };
+          const output = compactIfLarge(full, server, allowAuth, dynamic, options);
           const prepared = await maybeWriteToFile(ctx, options.resourceAccessor, options.projectDir, meta.toolCallId, output);
           reportSuccess(ctx, prepared.result, { resultCount: Array.isArray(payload.tools) ? payload.tools.length : 0, payloadBytes: prepared.payloadBytes, wroteToFile: prepared.wroteToFile });
           return prepared.result;
@@ -373,7 +417,10 @@ export function createGetMcpToolsTool(mcpMetaToolOptions: McpMetaToolOptions, op
             const error = metaError(message, ToolErrorClassification.UNEXPECTED_ENVIRONMENT);
             reportError(ctx, GET_MCP_TOOLS_FAILURE_REASONS.TOOL_NOT_FOUND, error); throw error;
           }
-          const message = dynamic ? `Tool "${args.toolName}" not found in namespace "${args.server}".` : `MCP tool "${args.toolName}" not found on server "${args.server}".`;
+          // The names it does have, so the next call is a pick and not a guess.
+          const available = server.descriptor.tools.map(candidate => candidate.toolName).sort((left, right) => left.localeCompare(right));
+          const known = available.length === 0 ? " It has no tools right now." : ` Its tools: ${available.join(", ")}.`;
+          const message = (dynamic ? `Tool "${args.toolName}" not found in namespace "${args.server}".` : `MCP tool "${args.toolName}" not found on server "${args.server}".`) + known;
           const error = metaError(message, ToolErrorClassification.UNEXPECTED_ENVIRONMENT);
           reportError(ctx, GET_MCP_TOOLS_FAILURE_REASONS.TOOL_NOT_FOUND, error); throw error;
         }
@@ -401,7 +448,7 @@ export function createGetMcpToolsTool(mcpMetaToolOptions: McpMetaToolOptions, op
       const description = dynamic
         ? [
           "Discover and inspect tools available through dynamic namespaces, e.g. MCP servers.", "",
-          '{"namespace":"<id>"}: returns full input schemas and full descriptions for every tool in that namespace.',
+          '{"namespace":"<id>"}: lists every tool in that namespace, with full schemas when it is small and by name only when it is large.',
           '{"namespace":"<id>","toolName":"<name>"}: returns the full schema and full description for one tool.',
           '{"pattern":"<regex>"}: searches namespace and tool names across all namespaces using RE2 syntax.',
           '{"namespace":"<id>","pattern":"<regex>"}: searches tool names within that namespace.',
@@ -412,7 +459,7 @@ export function createGetMcpToolsTool(mcpMetaToolOptions: McpMetaToolOptions, op
         ]
         : [
           "Discover and inspect MCP tools. There are 5 ways to call this tool. Prefer fetching by server or pattern over listing the full catalog.", "",
-          '{"server":"<id>"}: returns full input schemas and full descriptions for every tool on that server. Preferred when you know the server.',
+          '{"server":"<id>"}: lists every tool on that server, with full schemas when the server is small and by name only when it is large. Preferred when you know the server. Leave out the fields you do not use; never send an empty toolName or pattern.',
           '{"server":"<id>","toolName":"<name>"}: returns the full schema and full description for one tool.',
           '{"pattern":"<regex>"}: searches tool and server names across all servers using RE2 syntax.',
           '{"server":"<id>","pattern":"<regex>"}: searches tool names on that server using RE2 syntax.',

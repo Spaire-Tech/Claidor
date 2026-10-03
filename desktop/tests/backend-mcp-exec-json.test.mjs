@@ -201,3 +201,31 @@ test("host MCP auth completion falls back to wait registry when watch returns vo
     await loaded.dispose();
   }
 });
+
+// 3 October 2026. ProposeConnector tells the agent "you're resumed when they
+// connect", but a proposal card registered no wait: after Add and sign-in on
+// the card (whose requesting agent is the "connector_card" sentinel, dropped),
+// nobody was resumed, and the agent kept saying Gmail "isn't installed".
+test("a proposal card's wait resumes the proposing agent when the card's sign-in completes", async () => {
+  const loaded = await loadModule("source/host/mcp-auth/host-mcp-auth-completion.ts");
+  try {
+    const { HostMcpAuthCompletion } = loaded.module;
+    const resumed = [];
+    const completion = new HostMcpAuthCompletion({
+      getMcp: () => ({ noteAuthCompletedElsewhere: () => undefined, management: { restart: async () => {} } }),
+      getTranscript: () => ({ resumeAfterMcpAuth: async (agentId, serverName) => { resumed.push({ agentId, serverName }); } }),
+    });
+    // What turn-runtime registers for a propose card: the display name, no server row yet.
+    completion.registerConnectCard({ agentId: "email-agent", connector: "Gmail" });
+    completion.resolve({ serverId: "gmail", serverName: "gmail", accountKey: "default", outcome: "ok", requestingAgentId: "connector_card" });
+    assert.deepEqual(resumed, [{ agentId: "email-agent", serverName: "gmail" }]);
+  } finally {
+    await loaded.dispose();
+  }
+});
+
+test("turn-runtime registers a wait for proposal cards as well as connect cards", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const source = await readFile(path.join(repoRoot, "source/host/extensions/transcript/turn-runtime.ts"), "utf8");
+  assert.match(source, /incoming\.variant === "connect" \|\| incoming\.variant === "propose"\)\)\s*\n\s*this\.notifyConnectorConnect/);
+});

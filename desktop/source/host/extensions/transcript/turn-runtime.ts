@@ -738,7 +738,12 @@ export class TurnRuntime {
         if (isVoiceAddress(incoming.channel)) return undefined;
         if (incoming.type === "listener-connect")
           this.notifyListenerConnect(runSession, incoming);
-        if (incoming.type === "connector" && incoming.variant === "connect")
+        // A proposal waits on the person too: ProposeConnector tells the agent
+        // "you're resumed when they connect", and only connect cards were
+        // registered, so after Add and sign-in nobody was told. The agent
+        // went on believing the app was missing ("Gmail isn't installed",
+        // OpenAI log, 2 October 2026).
+        if (incoming.type === "connector" && (incoming.variant === "connect" || incoming.variant === "propose"))
           this.notifyConnectorConnect(runSession, incoming);
         const entries =
           isForActiveAgent || runSession == null

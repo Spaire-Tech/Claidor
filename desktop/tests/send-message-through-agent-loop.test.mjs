@@ -259,3 +259,68 @@ test("the greeting GPT-5.6 actually sends — a text with every other field padd
     await loaded.dispose();
   }
 });
+
+// 3 October 2026. Every turn cost one model call more than it needed: after
+// the reply, the loop asked the model again and it answered nothing (the
+// OpenAI log's "no output" row after each "Message sent to user"). A
+// SendMessage the model marks final now ends the turn where it lands.
+test("a final SendMessage ends the turn in one model call", async () => {
+  const loaded = await loadHarness();
+  const previousFetch = globalThis.fetch;
+  const console_ = captureConsole();
+  try {
+    pin(loaded.dataDir);
+    const written = [];
+    const turn = await runTurn(loaded, {
+      ingest: (update) => { if (update.type === "send-message") { written.push(update.message); return `t1s${written.length}`; } return undefined; },
+      firstCallArgs: { type: "text", content: GREETING, final: true },
+    });
+    assert.equal(turn.requests.length, 1, "the greeting was the whole turn");
+    assert.deepEqual(written, [{ type: "text", content: GREETING }]);
+  } finally {
+    console_.restore();
+    globalThis.fetch = previousFetch;
+    unpin();
+    await loaded.dispose();
+  }
+});
+
+test("a final SendMessage that was not delivered does not end the turn: the model hears why", async () => {
+  const loaded = await loadHarness();
+  const previousFetch = globalThis.fetch;
+  const console_ = captureConsole();
+  try {
+    pin(loaded.dataDir);
+    const turn = await runTurn(loaded, {
+      ingest: (update) => { if (update.type === "send-message") throw new Error("the transcript hop broke"); return undefined; },
+      firstCallArgs: { type: "text", content: GREETING, final: true },
+    });
+    assert.equal(turn.requests.length, 2);
+    assert.deepEqual(toolOutputs(turn.requests[1]), ["Failed to send the message to the user: the transcript hop broke"]);
+  } finally {
+    console_.restore();
+    globalThis.fetch = previousFetch;
+    unpin();
+    await loaded.dispose();
+  }
+});
+
+test("an acknowledgement marked final:false keeps the turn going", async () => {
+  const loaded = await loadHarness();
+  const previousFetch = globalThis.fetch;
+  const console_ = captureConsole();
+  try {
+    pin(loaded.dataDir);
+    const written = [];
+    const turn = await runTurn(loaded, {
+      ingest: (update) => { if (update.type === "send-message") { written.push(update.message); return `t1s${written.length}`; } return undefined; },
+      firstCallArgs: { type: "text", content: "On it.", final: false },
+    });
+    assert.equal(turn.requests.length, 2);
+  } finally {
+    console_.restore();
+    globalThis.fetch = previousFetch;
+    unpin();
+    await loaded.dispose();
+  }
+});

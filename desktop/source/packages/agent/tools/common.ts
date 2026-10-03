@@ -182,6 +182,36 @@ export class RetryableToolEnvironmentOrchestrationError extends RetryableToolOrc
   }
 }
 
+function objectShapeOf(schema: ZodTypeAny): Record<string, ZodTypeAny> | undefined {
+  let current: unknown = schema;
+  for (let depth = 0; depth < 8 && current != null; depth++) {
+    const def = (current as { _def?: { typeName?: string; schema?: unknown; innerType?: unknown; shape?: () => Record<string, ZodTypeAny> } })._def;
+    if (def?.typeName === "ZodObject" && typeof def.shape === "function") return def.shape();
+    current = def?.schema ?? def?.innerType;
+  }
+  return undefined;
+}
+
+// GPT-6 fills every property a tool offers, writing "" or null into the ones
+// it means to leave out: GetMcpTools({"server":"gmail","toolName":"",
+// "pattern":""}), GetMcpServerStatus({"server_id":""}) (OpenAI log, 2 October
+// 2026). Read as given, "" is a lookup of nothing and the call fails, and the
+// model guesses. For every tool, an optional property holding "" or null is a
+// property left out; a required one is passed through untouched.
+export function withoutBlankOptionalArgs(value: unknown, schema: ZodTypeAny): unknown {
+  if (value == null || typeof value !== "object" || Array.isArray(value)) return value;
+  const shape = objectShapeOf(schema);
+  if (shape === undefined) return value;
+  let changed = false;
+  const kept: Record<string, unknown> = {};
+  for (const [key, field] of Object.entries(value as Record<string, unknown>)) {
+    const blank = field === null || field === "";
+    if (blank && shape[key] !== undefined && shape[key].isOptional()) { changed = true; continue; }
+    kept[key] = field;
+  }
+  return changed ? kept : value;
+}
+
 function parseJsonArgsWithZodSchema(args: string, schema: ZodTypeAny): unknown {
   let parsedJson: unknown;
   try { parsedJson = JSON.parse(args); }
@@ -189,7 +219,7 @@ function parseJsonArgsWithZodSchema(args: string, schema: ZodTypeAny): unknown {
     const message = error instanceof Error ? error.message : "Invalid arguments";
     throw new ToolCallArgParseError(`Tool call arguments were not valid JSON (${message}). Re-issue the call with arguments as a single well-formed JSON object.`);
   }
-  const parsed = schema.safeParse(parsedJson);
+  const parsed = schema.safeParse(withoutBlankOptionalArgs(parsedJson, schema));
   if (!parsed.success) {
     const messages = parsed.error.errors.map(error => `${error.path.length > 0 ? error.path.join(".") : "argument"}: ${error.message}`);
     throw new ToolCallArgParseError(`Invalid arguments:\n${messages.join("\n")}`);

@@ -131,9 +131,14 @@ test("a SendMessage the model calls lands, and the model is told it landed", asy
     assert.ok(Array.isArray(wireTool.parameters.properties.type.enum));
     assert.equal(JSON.stringify(wireTool.parameters).includes("$ref"), false, "no $ref in the wire schema");
     // The blank-field preprocessing must not hide the widget's shape from the model.
-    assert.equal(wireTool.parameters.properties.widget.properties.prompt.type, "string");
-    assert.deepEqual(wireTool.parameters.properties.widget.required, ["prompt", "options"]);
-    assert.equal(wireTool.parameters.properties.secret.properties.connector.type, "string");
+    // widget and secret take null on the wire, so a model that fills every
+    // field writes null rather than {"prompt":"x",…} (3 October 2026).
+    const widget = wireTool.parameters.properties.widget.anyOf.find((option) => option.type === "object");
+    assert.ok(wireTool.parameters.properties.widget.anyOf.some((option) => option.type === "null"));
+    assert.ok(wireTool.parameters.properties.secret.anyOf.some((option) => option.type === "null"));
+    assert.equal(widget.properties.prompt.type, "string");
+    assert.deepEqual(widget.required, ["prompt", "options"]);
+    assert.equal(wireTool.parameters.properties.secret.anyOf.find((option) => option.type === "object").properties.connector.type, "string");
     assert.equal(wireTool.parameters.properties.images.items.properties.url.type, "string");
 
     const second = await runStep(executor, ctx, tool);

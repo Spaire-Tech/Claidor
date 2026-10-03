@@ -346,8 +346,23 @@ and Ashby connect through Simeon. The provider behind them is never named in the
 * **Settings on Render.** `SIMEON_COMPOSIO_API_KEY` (optional `SIMEON_COMPOSIO_BASE_URL`). To
   show Simeon's own name on a provider's consent screen, register Simeon's own OAuth app with
   that provider, with redirect URI `https://api.simeonlabs.com/desktop/apps/oauth/callback`.
-* **Log lines.** Server: `desktop.apps.sign_in_started`, `desktop.apps.upstream_refused`. Mac:
+* **Log lines.** Server: `desktop.apps.sign_in_started`, `desktop.apps.upstream_refused`,
+  `desktop.apps.upstream_unreachable` (a timeout or dropped connection: `path`, `error`,
+  `elapsed_ms`; the app then reads "could not be reached" and Render shows a 200) and
+  `desktop.apps.upstream_slow` (a provider call over 5 s). Mac:
   `<app> sign-in started through Simeon's apps service` in `~/.simeon/vendor-mcp-signin.log`.
+  Box: `[simeon] tool=GetMcpTools` and `tool=CallMcpTool` lines in `/tmp/sand-host.log`; a
+  question that takes more than three of them is worth reading.
+* **What the model is shown.** `GetMcpTools` with `{"server":"gmail"}` lists a large app's
+  tools by name, short description and arguments (`query: string, max_results?: integer`), so
+  the model calls one straight from the list (every schema inline was tens of thousands of
+  tokens, paid again by each later call). A blank `toolName` or `pattern` counts as absent, and
+  a tool not found names the ones that exist. Clicking Add waits up to 8 s for the install to
+  reach the cloud computer, and a proposal card's sign-in resumes the agent that proposed it
+  (it was never told before, and went on saying the app "isn't installed").
+* **The provider round trips.** Which accounts a person has connected is asked once a minute at
+  most for the agent's tool calls (`connected_account_ids`); "not connected" is never kept, and
+  disconnecting forgets it.
 * **Known limits.** Google's consent screen shows the provider's name until Simeon Labs uses its
   own Google OAuth app.
 * **Not yet verified.** No sign-in or tool call against the live provider, and nothing on a Mac.

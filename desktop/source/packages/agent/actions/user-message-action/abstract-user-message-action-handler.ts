@@ -900,6 +900,8 @@ interface UserMessageActionHandlerConfigLike {
   readonly fireAndForgetCheckpoints?: boolean | undefined;
   readonly immediatelyUpdateStateOnNewTurn?: boolean | undefined;
   readonly doNotFailOnMaxSteps?: boolean | undefined;
+  /** True when the step just run ended the turn by itself (Simeon: a final SendMessage), so no further model call is made. */
+  readonly stepEndsTurn?: ((responseMessages: readonly CoreMessageLike[]) => boolean) | undefined;
   readonly skipErrorStateCheckpoint?: boolean | undefined;
   readonly enableExecuteHookExec?: boolean | undefined;
 }
@@ -2282,7 +2284,10 @@ export class AbstractUserMessageActionHandler {
         if (turnBudgetExhausted) logger.warn(ctx, "nal.empty_response.turn_budget_exceeded", { ...emptyResponseAttrs, retryInfo });
         logger.warn(ctx, "nal.empty_response.did_not_retry", { ...emptyResponseAttrs, retryInfo });
       }
-      return { hasToolCall, responseMessages: response.messages };
+      // A step that ended the turn by itself (a final SendMessage, delivered)
+      // reads to the loop as one without tool calls: no further model call.
+      const endedByStep = hasToolCall && this.config.stepEndsTurn?.(response.messages) === true;
+      return { hasToolCall: hasToolCall && !endedByStep, responseMessages: response.messages };
   }
 
   async runWithMaxTokensRetry<T>(

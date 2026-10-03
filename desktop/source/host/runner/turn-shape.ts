@@ -151,3 +151,31 @@ export function turnEndedOnSilentToolCalls(
   }
   return ackedFirst;
 }
+
+// The model's step ended its turn when every call in it is a SendMessage that
+// says so (final, a question, a secret request; `sendMessageEndsTurn`) and
+// every one was delivered. Then the loop stops without asking the model once
+// more: that last call read the whole conversation to answer nothing.
+export function stepEndsTurn(
+  responseMessages: readonly unknown[],
+  endsTurn: (args: unknown) => boolean,
+): boolean {
+  const messages = responseMessages.map(asCoreMessage);
+  const calls: { readonly id: string; readonly args: unknown }[] = [];
+  for (const message of messages) {
+    if (message === undefined || message.role !== "assistant" || typeof message.content === "string") continue;
+    for (const part of message.content) {
+      if (part.type !== "tool-call") continue;
+      if (part.toolName !== SAND_SEND_MESSAGE_TOOL_NAME || part.toolCallId == null) return false;
+      calls.push({ id: part.toolCallId, args: (part as { readonly args?: unknown }).args });
+    }
+  }
+  if (calls.length === 0 || !calls.every((call) => endsTurn(call.args))) return false;
+  const answered = new Set<string>();
+  for (const message of messages) {
+    if (message === undefined || message.role !== "tool" || typeof message.content === "string") continue;
+    for (const part of message.content) if (part.type === "tool-result" && part.toolCallId != null) answered.add(part.toolCallId);
+  }
+  const errored = erroredToolResultIds(messages);
+  return calls.every((call) => answered.has(call.id) && !errored.has(call.id));
+}
