@@ -414,6 +414,44 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
    the app's own bubbles and blue, two suggestion chips, the composer, the caption underneath. */
 #team{background:var(--page);padding-top:0;padding-bottom:0}
 .slide.msg-slide{background:var(--soft)}
+/* Some of the agents people create: Apple's "Get to know" rail. Tall black cards, a kicker and a bold title, a plus; each opens a sheet. */
+.ex{padding:clamp(80px,7vw,130px) 0 clamp(40px,4vw,80px)}
+.ex h2{margin:0;font-size:clamp(32px,2.6vw,52px);line-height:1.08;font-weight:600;letter-spacing:-.025em}
+.exrail{--ch:clamp(440px,38vw,780px);display:flex;gap:20px;margin-top:clamp(36px,3vw,56px);overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain;
+  --ge:calc((100vw - var(--col)) / 2);padding-inline:var(--ge);scroll-padding-inline:var(--ge)}
+.exrail::-webkit-scrollbar{display:none}
+.exc{position:relative;flex:none;height:var(--ch);width:calc(var(--ch) * .523);border-radius:28px;overflow:hidden;scroll-snap-align:start;container-type:size;background:#000;color:#fff;text-align:left;padding:0;border:0;cursor:pointer;font:inherit;letter-spacing:inherit}
+.exc.lt{background:#f5f5f7;color:var(--ink)}
+.exc:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+.exc-t{position:absolute;left:9cqw;right:9cqw;top:9cqw;margin:0;font-size:4.9cqw;line-height:1.3;font-weight:600;letter-spacing:-.01em}
+.exc-t b{display:block;margin-top:1.4cqw;font-size:7.4cqw;line-height:1.14;letter-spacing:-.02em;text-wrap:balance}
+.exc-p{position:absolute;right:8cqw;bottom:8cqw;width:10cqw;height:10cqw;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.18);color:#fff;font-size:7cqw;line-height:1;font-weight:300;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.exc.lt .exc-p{background:rgba(0,0,0,.08);color:#1d1d1f}
+.exc-ask{position:absolute;left:9cqw;right:9cqw;bottom:22cqw;margin:0;font-size:4.4cqw;line-height:1.4;color:var(--ink2)}
+.exctl{display:flex;justify-content:flex-end;gap:18px;width:var(--col);margin:28px auto 0}
+.exctl button{appearance:none;border:0;width:56px;height:56px;border-radius:50%;background:#d2d2d7;color:#424245;display:grid;place-items:center;cursor:pointer;transition:background .2s}
+.exctl button:hover{background:#c7c7cc}
+.exctl button:disabled{background:#e8e8ed;color:#bcbcc0;cursor:default}
+.exctl svg{width:24px;height:24px}
+.exctl button:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+/* The sheet behind a card. */
+.exs{border:0;padding:0;margin:0;width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;background:transparent;overflow:hidden}
+.exs::backdrop{background:rgba(0,0,0,.4);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
+.exs-in{position:absolute;inset:clamp(12px,2.4vw,40px) clamp(12px,3.6vw,72px);background:#fff;border-radius:28px;overflow:auto;color:var(--ink);padding:clamp(40px,4.4vw,88px) clamp(28px,5.5vw,110px) clamp(48px,5vw,100px)}
+.exs-x{position:absolute;right:clamp(16px,1.8vw,36px);top:clamp(16px,1.8vw,36px);width:48px;height:48px;border-radius:50%;border:0;background:#e8e8ed;color:#1d1d1f;display:grid;place-items:center;cursor:pointer}
+.exs-x svg{width:18px;height:18px}
+.exs-k{margin:0;font-size:clamp(17px,1.15vw,23px);font-weight:600;letter-spacing:-.01em}
+.exs-h{margin:clamp(14px,1.2vw,24px) 0 0;font-size:clamp(40px,3.65vw,74px);line-height:1.04;font-weight:600;letter-spacing:-.025em;text-wrap:balance}
+.exs-b{margin-top:clamp(40px,4vw,80px);border-radius:28px;background:#f5f5f7;padding:clamp(32px,4.4vw,88px) clamp(24px,6vw,120px) 0;overflow:hidden}
+.exs-b p{margin:0;max-width:34em;font-size:clamp(20px,1.6vw,32px);line-height:1.38;letter-spacing:-.015em;color:var(--ink2)}
+.exs-b p b{color:var(--ink)}
+.exs-pic{height:clamp(240px,26vw,520px);margin-top:clamp(32px,3.6vw,72px);border-radius:20px 20px 0 0;background:#e3e3e8}
+@media (max-width:734px){
+  .exrail{--ch:480px;gap:14px}
+  .exctl{gap:14px;margin-top:22px}.exctl button{width:44px;height:44px}.exctl svg{width:20px;height:20px}
+  .exs-x{width:40px;height:40px}
+}
+
 /* Pricing, questions and the closing call: the same serif headline and pale panels as the trust section. */
 .plans3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin-top:clamp(40px,4vw,80px)}
 .plan3{display:flex;flex-direction:column;padding:clamp(28px,2.6vw,48px);border-radius:28px;background:#fafafb}
@@ -755,6 +793,24 @@ footer nav{display:flex;gap:18px}
   </div>
 </section>
 
+<section class="ex" aria-label="Some of the agents people create">
+  <div class="wrap"><h2>Some of the agents people create.</h2></div>
+  <div class="exrail">
+    <button class="exc" type="button" data-k="For the founder" data-t="Chief of Staff" data-lead="Your COO." data-body="Tell it what is slipping and it staffs an agent for the job, runs the team, and comes to you only with the decisions." aria-haspopup="dialog"><p class="exc-t">For the founder<b>Chief of Staff</b></p><span class="exc-p" aria-hidden="true">+</span></button>
+    <button class="exc" type="button" data-k="For your email" data-t="Inbox Manager" data-lead="Email, handled." data-body="Sorts what came in overnight, drafts replies in your voice, unsubscribes you from the junk, and leaves you the three that need you." aria-haspopup="dialog"><p class="exc-t">For your email<b>Inbox Manager</b></p><span class="exc-p" aria-hidden="true">+</span></button>
+    <button class="exc" type="button" data-k="For your week" data-t="Executive Assistant" data-lead="Your calendar, kept." data-body="Books meetings, moves them when things collide, preps you before each one, books the travel, and writes up the notes after." aria-haspopup="dialog"><p class="exc-t">For your week<b>Executive Assistant</b></p><span class="exc-p" aria-hidden="true">+</span></button>
+    <button class="exc" type="button" data-k="For the launch" data-t="Marketing Manager" data-lead="Campaigns that report back." data-body="Owns the newsletter, the launch plan and the ads, and tells you what worked in plain numbers." aria-haspopup="dialog"><p class="exc-t">For the launch<b>Marketing Manager</b></p><span class="exc-p" aria-hidden="true">+</span></button>
+    <button class="exc" type="button" data-k="For the creator" data-t="Content Producer" data-lead="One recording, a week of posts." data-body="Turns one recording or one idea into the clips, the captions, the thread and the newsletter, in your voice, on schedule." aria-haspopup="dialog"><p class="exc-t">For the creator<b>Content Producer</b></p><span class="exc-p" aria-hidden="true">+</span></button>
+    <button class="exc" type="button" data-k="For the pipeline" data-t="Sales Rep" data-lead="No lead goes cold." data-body="Follows up every lead, keeps the CRM honest, and books the call. For a creator, the same job with brand deals." aria-haspopup="dialog"><p class="exc-t">For the pipeline<b>Sales Rep</b></p><span class="exc-p" aria-hidden="true">+</span></button>
+    <button class="exc" type="button" data-k="For the customers" data-t="Support" data-lead="Answered in minutes, at any hour." data-body="Replies to customers, comments and DMs, and hands you the one that needs a person." aria-haspopup="dialog"><p class="exc-t">For the customers<b>Support</b></p><span class="exc-p" aria-hidden="true">+</span></button>
+    <button class="exc" type="button" data-k="For the books" data-t="Bookkeeper" data-lead="The month, closed." data-body="Matches every transaction, chases the missing receipts, sends the invoices and chases the late ones." aria-haspopup="dialog"><p class="exc-t">For the books<b>Bookkeeper</b></p><span class="exc-p" aria-hidden="true">+</span></button>
+    <div class="exc lt" role="note"><p class="exc-t">Or anything you can describe<b>Tell Simeon the job in a sentence.</b></p><p class="exc-ask">It staffs the agent.</p></div>
+  </div>
+  <div class="exctl"><button type="button" aria-label="Previous"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 6 8.5 12l6 6"/></svg></button><button type="button" aria-label="Next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 6 6 6-6 6"/></svg></button></div>
+  <dialog class="exs" aria-labelledby="exs-h"><div class="exs-in"><button class="exs-x" type="button" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button><p class="exs-k"></p><h2 class="exs-h" id="exs-h"></h2><div class="exs-b"><p><b></b> <span></span></p><div class="exs-pic" aria-hidden="true"></div></div></div></dialog>
+</section>
+
+
 <section class="trust pricing3" id="pricing" aria-label="Pricing">
   <div class="wrap">
     <div class="trust-top">
@@ -844,6 +900,35 @@ footer nav{display:flex;gap:18px}
       timer = setTimeout(() => { sheet.classList.add('agreed'); timer = setTimeout(loop, 3200); }, 260); }, 2200);
   };
   new IntersectionObserver(([e]) => { clearTimeout(timer); if (e.isIntersecting) loop(); else { sheet.classList.remove('agreed'); btn.classList.remove('press'); } }, { threshold: .5 }).observe(sheet.closest('.slide'));
+})();
+
+// Some of the agents people create: the rail moves one card at a time; a card opens its sheet.
+(() => {
+  const rail = document.querySelector('.exrail'); if (!rail) return;
+  const [prev, next] = document.querySelectorAll('.exctl button');
+  const cards = [...rail.children];
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const sync = () => { const max = rail.scrollWidth - rail.clientWidth; prev.disabled = rail.scrollLeft < 4; next.disabled = rail.scrollLeft > max - 4; };
+  const step = (d) => {
+    const x = rail.scrollLeft + cards[0].offsetLeft;
+    const i = cards.findIndex((c) => c.offsetLeft > x + 4);
+    const cur = i < 0 ? cards.length - 1 : Math.max(0, i - 1);
+    const to = cards[Math.max(0, Math.min(cards.length - 1, cur + d))];
+    rail.scrollTo({ left: to.offsetLeft - cards[0].offsetLeft, behavior: still ? 'auto' : 'smooth' });
+  };
+  prev.addEventListener('click', () => step(-1)); next.addEventListener('click', () => step(1));
+  rail.addEventListener('scroll', sync, { passive: true }); new ResizeObserver(sync).observe(rail); sync();
+  const dlg = document.querySelector('.exs');
+  const open = (c) => {
+    dlg.querySelector('.exs-k').textContent = c.dataset.k; dlg.querySelector('.exs-h').textContent = c.dataset.t;
+    dlg.querySelector('.exs-b b').textContent = c.dataset.lead; dlg.querySelector('.exs-b span').textContent = c.dataset.body;
+    dlg.querySelector('.exs-in').scrollTop = 0; dlg.showModal(); document.documentElement.style.overflow = 'hidden';
+  };
+  for (const c of cards) if (c.dataset.t) c.addEventListener('click', () => open(c));
+  const close = () => { dlg.close(); };
+  dlg.querySelector('.exs-x').addEventListener('click', close);
+  dlg.addEventListener('click', (e) => { if (e.target === dlg) close(); });
+  dlg.addEventListener('close', () => { document.documentElement.style.overflow = ''; });
 })();
 
 // The team gallery: back and next move one card at a time, and grey out at either end.
