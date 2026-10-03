@@ -440,100 +440,86 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .job-plus.dk{background:#1d1d1f;color:#fff}
 .job-paint{position:absolute;inset:0;z-index:-2;background:center/cover}
 .job:not(.lt) .job-paint::after{content:"";position:absolute;inset:0;background:linear-gradient(rgba(0,0,0,.4),rgba(0,0,0,0) 45%)}
-/* The glass note an agent leaves on a photo. */
-.jnote{position:absolute;z-index:4;right:5.4cqh;width:52cqh;bottom:11cqh;padding:2.4cqh 2.6cqh;border-radius:3cqh;font-size:2.2cqh;line-height:1.36;color:#fff;
-  background:rgba(60,56,52,.42);-webkit-backdrop-filter:blur(22px) saturate(1.6);backdrop-filter:blur(22px) saturate(1.6);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 0 0 1px rgba(255,255,255,.1),0 2cqh 5cqh rgba(0,0,0,.3)}
-.jnote-h{display:flex;align-items:center;gap:1.2cqh;margin-bottom:1cqh;font-weight:600}
-.jnote-h img{width:4cqh;height:auto}
-.jnote-h small{margin-left:auto;font-weight:400;color:rgba(255,255,255,.6);font-size:.9em}
 .japp{display:inline-flex;align-items:center;gap:.3em;font-weight:600;white-space:nowrap}
 .japp img{width:1.05em;height:1.05em;object-fit:contain}
-/* Chief of Staff: the apps it reads, in a ring around Simeon. */
-.jorbit{position:absolute;right:9cqh;top:50%;width:46cqh;height:46cqh;transform:translateY(-50%)}
-.jorbit .ring{position:absolute;inset:6cqh;border-radius:50%;border:.15cqh dashed rgba(255,255,255,.28)}
-.jorbit .hub{position:absolute;left:50%;top:50%;width:15cqh;height:15cqh;transform:translate(-50%,-50%);border-radius:50%;display:grid;place-items:center;
-  background:rgba(255,255,255,.14);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),inset 0 0 0 1px rgba(255,255,255,.14),0 2cqh 5cqh rgba(0,0,0,.25)}
-.jorbit .hub img{width:9.5cqh;height:auto}
-.jorbit span{--a:calc(var(--i) * 45deg - 90deg);position:absolute;left:50%;top:50%;width:8.6cqh;display:flex;flex-direction:column;align-items:center;gap:.9cqh;font-size:1.6cqh;color:rgba(255,255,255,.82);
-  transform:translate(-50%,-50%) rotate(var(--a)) translate(17cqh) rotate(calc(var(--a) * -1)) translateY(1.4cqh)}
-.jorbit span img{width:7.2cqh;height:7.2cqh;padding:1.5cqh;border-radius:1.9cqh;object-fit:contain;background:rgba(255,255,255,.9);box-shadow:0 1cqh 2.4cqh rgba(0,0,0,.22)}
-/* Chief of Staff: you ask, and Simeon staffs the job. */
-.jcos-chat{position:absolute;left:5.4cqh;width:50cqh;bottom:7cqh;display:flex;flex-direction:column;gap:1.3cqh;font-size:2.15cqh;line-height:1.38}
-.jcos-chat p{margin:0;padding:1.4cqh 2cqh;border-radius:2.6cqh;max-width:88%}
-.jcos-chat .me{align-self:flex-end;background:var(--app-blue);color:#fff}
-.jcos-chat .sim{align-self:flex-start;background:rgba(255,255,255,.14);color:#fff;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
-.jcos-chat .who{display:flex;align-items:center;gap:1cqh;font-size:1.75cqh;color:rgba(255,255,255,.62);margin-bottom:-.5cqh}
-.jcos-chat .who img{width:3cqh;height:auto}
-/* Inbox Manager: Iris's tools beside the reply she drafted, as Apple's writing tools sit beside Mail. */
-.jmail{position:absolute;left:58cqh;top:13cqh;right:-8cqh;bottom:-8cqh;border-radius:3cqh 0 0 0;background:#fff;color:#1d1d1f;box-shadow:0 3cqh 8cqh rgba(20,40,90,.28);font-size:2.2cqh}
-.jmail-bar{display:flex;align-items:center;gap:1.2cqh;padding:2.6cqh 3cqh}
-.jmail-bar i{width:2.2cqh;height:2.2cqh;border-radius:50%;background:#ff5f57}.jmail-bar i+i{background:#febc2e}.jmail-bar i+i+i{background:#28c840}
-.jmail-tools{margin-left:auto;margin-right:8cqh;display:flex;align-items:center;gap:1.6cqh;padding:.9cqh 1.8cqh;border-radius:99px;background:#f2f2f4;color:#86868b}
-.jmail-tools svg{width:2.4cqh;height:2.4cqh}
-.jmail-f{margin-left:4cqh;padding:1.6cqh 0;border-top:1px solid #e8e8ed;color:#86868b}
-.jmail-f b{font-weight:400;color:#1d1d1f;margin-left:.6em}
-.jmail-f .to{background:#d6e6fb;border-radius:.35em;padding:.15em .45em}
-.jmail-body{margin-left:4cqh;margin-right:8cqh;padding:2cqh 0;border-top:1px solid #e8e8ed;font-family:Helvetica,Arial,sans-serif;font-size:2cqh;line-height:1.5}
-.jmail-body span{background:#dcdce0;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+/* Every job card is built the same way: the agent's real work in a Mac window bleeding off the right,
+   and the agent's own tools in a glass panel against it, as Apple's writing tools sit beside Mail. */
+.jwin{position:absolute;left:58cqh;top:13cqh;right:-8cqh;bottom:-8cqh;border-radius:3cqh 0 0 0;background:#fff;color:#1d1d1f;box-shadow:0 3cqh 8cqh rgba(0,0,0,.28);font-size:2.1cqh;overflow:hidden}
+.jwin-bar{display:flex;align-items:center;gap:1.2cqh;padding:2.6cqh 3cqh 2cqh}
+.jwin-bar i{width:2.2cqh;height:2.2cqh;border-radius:50%;background:#ff5f57}.jwin-bar i+i{background:#febc2e}.jwin-bar i+i+i{background:#28c840}
+.jwin-bar b{margin-left:2cqh;font-weight:600}
+.jwin-tools{margin-left:auto;margin-right:8cqh;display:flex;align-items:center;gap:1.6cqh;padding:.9cqh 1.8cqh;border-radius:99px;background:#f2f2f4;color:#86868b;font-size:1.9cqh}
+.jwin-tools svg{width:2.4cqh;height:2.4cqh}
+.jwin-in{margin:0 8cqh 0 4cqh}
+.jf{padding:1.6cqh 0;border-top:1px solid #e8e8ed;color:#86868b}
+.jf b{font-weight:400;color:#1d1d1f;margin-left:.6em}
+.jf .to{background:#d6e6fb;border-radius:.35em;padding:.15em .45em}
+.jsel{padding:2cqh 0;border-top:1px solid #e8e8ed;font-family:Helvetica,Arial,sans-serif;font-size:2cqh;line-height:1.5}
+.jsel span{background:#dcdce0;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.jh{font-size:3cqh;font-weight:600;letter-spacing:-.02em;margin:.4cqh 0 .4cqh}
+.jsub{color:#86868b;font-size:1.8cqh;margin-bottom:2cqh}
+/* Calendar */
+.jcal{display:grid;grid-template-columns:7cqh 1fr;border-top:1px solid #e8e8ed}
+.jcal>span{height:6.4cqh;border-bottom:1px solid #f0f0f2;color:#86868b;font-size:1.7cqh;padding-top:.6cqh}
+.jcal>div{position:relative;border-left:1px solid #e8e8ed;grid-row:1 / span 8;grid-column:2}
+.jev{position:absolute;left:1.2cqh;right:1.2cqh;padding:.8cqh 1.4cqh;border-radius:1cqh;font-size:1.85cqh;line-height:1.3;background:#e3edf9;border-left:.5cqh solid var(--app-blue)}
+.jev small{display:block;color:#6e6e73;font-size:1.6cqh}
+.jev.g{background:#e6f2df;border-color:#6f8f4f}.jev.p{background:#fbe6ea;border-color:#e07aa8}
+/* Ledger, candidates */
+.jtbl{width:100%;border-collapse:collapse;font-size:1.95cqh}
+.jtbl th{text-align:left;font-weight:500;color:#86868b;font-size:1.7cqh;padding:1.2cqh 0;border-top:1px solid #e8e8ed}
+.jtbl td{padding:1.35cqh 1cqh 1.35cqh 0;border-top:1px solid #f0f0f2;white-space:nowrap}
+.jtbl .num{text-align:right;font-variant-numeric:tabular-nums;padding-right:2cqh}
+.jtbl .in{color:#248a3d}
+.jok,.jwait{display:inline-flex;align-items:center;gap:.6cqh;font-size:1.7cqh}
+.jok::before{content:"";width:1.4cqh;height:1.4cqh;border-radius:50%;background:var(--green)}
+.jwait{color:#b4532a}.jwait::before{content:"";width:1.4cqh;height:1.4cqh;border-radius:50%;background:#e8833a}
+.jtbl tr.hi td{background:#fff6ec}
+.jini{display:inline-grid;place-items:center;width:3.4cqh;height:3.4cqh;border-radius:50%;font-size:1.4cqh;font-weight:600;margin-right:1.2cqh;vertical-align:middle}
+.jchip{display:inline-block;padding:.4cqh 1.2cqh;border-radius:99px;background:#e3edf9;color:var(--app-blue);font-size:1.65cqh}
+.jchip.n{background:#f2f2f4;color:#86868b}
+/* Pipeline */
+.jpipe{display:grid;grid-template-columns:repeat(3,25cqh);gap:1.4cqh;padding-top:1.6cqh;border-top:1px solid #e8e8ed;font-size:1.85cqh}
+.jcol{background:#f5f5f7;border-radius:1.8cqh;padding:1.3cqh;display:flex;flex-direction:column;gap:1cqh}
+.jcol-h{display:flex;justify-content:space-between;color:#86868b;font-weight:500;font-size:1.7cqh;padding:0 .3cqh .2cqh}
+.jdeal{background:#fff;border-radius:1.3cqh;padding:1.2cqh 1.4cqh;box-shadow:0 .2cqh .8cqh rgba(0,0,0,.08)}
+.jdeal b{display:block;font-weight:600}
+.jdeal small{display:block;margin-top:.4cqh;color:#86868b;font-size:1.6cqh}
+.jdeal.won{box-shadow:0 0 0 .22cqh var(--green)}
+.jdeal.won small{color:#248a3d}
+/* Help desk thread */
+.jthread{display:flex;flex-direction:column;gap:1.4cqh;padding-top:2cqh;border-top:1px solid #e8e8ed;font-size:2cqh;line-height:1.42}
+.jthread p{margin:0;padding:1.4cqh 1.9cqh;border-radius:2.2cqh;max-width:78%}
+.jthread .them{align-self:flex-start;background:#e9e9eb}
+.jthread .us{align-self:flex-end;background:var(--app-blue);color:#fff}
+.jthread small{color:#86868b;font-size:1.6cqh}
+.jthread small.r{align-self:flex-end}
+/* Post */
+.jpost-h{display:flex;align-items:center;gap:1.2cqh;padding:2cqh 0 1.6cqh;border-top:1px solid #e8e8ed}
+.jpost-h i{width:4.6cqh;height:4.6cqh;border-radius:50%;background:linear-gradient(135deg,#ffd1a6,#e56f8f);flex:none}
+.jpost-h b{display:block;font-weight:600}.jpost-h small{color:#86868b;font-size:1.6cqh}
+.jpost-t{line-height:1.5;font-size:2cqh}
+.jpost-img{height:17cqh;margin-top:1.8cqh;border-radius:1.6cqh;background:url(img/paint-pastel.jpg) center/cover}
+/* Doc */
+.jdoc ul{margin:0;padding:0 0 0 2.4cqh;line-height:1.55;font-size:2cqh}
+.jdoc li+li{margin-top:.6cqh}
+.jdoc .jtbl{margin-top:2.2cqh}
+/* The agent's tools. */
 .jws{position:absolute;z-index:3;left:21cqh;top:37cqh;width:39cqh;padding:1.8cqh;border-radius:3.2cqh;font-size:2.15cqh;color:#1d1d1f;
   background:linear-gradient(165deg,rgba(255,255,255,.96),rgba(242,247,255,.94) 55%,rgba(226,240,255,.94));-webkit-backdrop-filter:blur(26px) saturate(1.8);backdrop-filter:blur(26px) saturate(1.8);
-  box-shadow:inset 0 0 0 .12cqh rgba(255,255,255,.95),0 3cqh 7cqh rgba(20,40,90,.3)}
-.jws::before{content:"";position:absolute;inset:-.25cqh;border-radius:inherit;z-index:-1;background:conic-gradient(from 200deg,#ff8fd8,#a48bff,#5fb8ff,#6fe3d0,#ffd88a,#ff8fd8);filter:blur(1.4cqh);opacity:.4}
+  box-shadow:inset 0 0 0 .12cqh rgba(255,255,255,.95),0 3cqh 7cqh rgba(0,0,0,.3)}
+.jws::before{content:"";position:absolute;inset:-.25cqh;border-radius:inherit;z-index:-1;background:conic-gradient(from 200deg,#ff8fd8,#a48bff,#5fb8ff,#6fe3d0,#ffd88a,#ff8fd8);filter:blur(1.4cqh);opacity:.32}
 .jws::after{content:"";position:absolute;right:-1.3cqh;top:44%;width:2.6cqh;height:2.6cqh;transform:rotate(45deg);background:rgba(240,246,255,.95);border-radius:.3cqh}
 .jws-in{display:flex;align-items:center;gap:1.1cqh;padding:1.2cqh 1.6cqh;border-radius:99px;background:rgba(255,255,255,.75);color:#86868b;box-shadow:0 0 0 .14cqh rgba(164,139,255,.35),0 0 1.4cqh rgba(95,184,255,.35)}
 .jws-in img{width:2.8cqh;height:auto}
 .jws-tiles{display:grid;grid-template-columns:1fr 1fr;gap:1.2cqh;margin-top:1.6cqh}
 .jws-tiles span{display:flex;flex-direction:column;align-items:center;gap:.7cqh;padding:1.5cqh 0;border-radius:1.8cqh;background:rgba(120,130,150,.12)}
 .jws ul{list-style:none;margin:1.4cqh 0 0;padding:1.2cqh 0 0;border-top:1px solid rgba(0,0,0,.08)}
-.jws li{display:flex;align-items:center;gap:1.4cqh;padding:.95cqh .8cqh}
+.jws li{display:flex;align-items:center;gap:1.4cqh;padding:.95cqh .8cqh;white-space:nowrap}
 .jws li em{margin-left:auto;font-style:normal;font-size:1.75cqh;color:#fff;background:var(--app-blue);border-radius:99px;padding:.15cqh 1.1cqh}
+.jws li small{margin-left:auto;color:#86868b;font-size:1.75cqh}
 .jws svg{width:2.5cqh;height:2.5cqh;flex:none;color:#3a3a3c}
-/* Sales Rep: a pipeline that moves itself. */
-.jpipe{position:absolute;left:5.4cqh;right:-4cqh;top:30cqh;bottom:9cqh;display:grid;grid-template-columns:repeat(3,1fr);gap:1.6cqh;font-size:1.9cqh}
-.jcol{background:rgba(255,255,255,.12);border-radius:2.2cqh;padding:1.6cqh;display:flex;flex-direction:column;gap:1.2cqh}
-.jcol-h{display:flex;justify-content:space-between;color:rgba(255,255,255,.75);font-weight:500;padding:0 .4cqh .4cqh}
-.jdeal{background:#fff;color:#1d1d1f;border-radius:1.6cqh;padding:1.4cqh 1.6cqh;box-shadow:0 .3cqh 1cqh rgba(0,0,0,.07)}
-.jdeal b{display:block;font-weight:600}
-.jdeal small{display:flex;align-items:center;gap:.6cqh;margin-top:.5cqh;color:#86868b;font-size:1.7cqh}
-.jdeal small img{width:2.4cqh;height:auto}
-.jdeal.won{box-shadow:0 0 0 .25cqh var(--green),0 .6cqh 2cqh rgba(52,199,89,.25)}
-.jdeal.won small{color:#248a3d}
-/* Customer Support: a customer answered in two minutes. */
-.jchat{position:absolute;right:6cqh;width:56cqh;bottom:11cqh;display:flex;flex-direction:column;gap:1.4cqh;font-size:2.2cqh;line-height:1.36}
-.jchat p{margin:0;padding:1.5cqh 2cqh;border-radius:2.6cqh;max-width:86%}
-.jchat .cust{align-self:flex-start;background:rgba(255,255,255,.7);color:#1d1d1f;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
-.jchat .agent{align-self:flex-end;background:#fff;color:#1d1d1f;box-shadow:0 1cqh 3cqh rgba(0,0,0,.12)}
-.jchat .who{display:flex;align-items:center;gap:1cqh;font-size:1.7cqh;color:rgba(255,255,255,.82);margin:0 0 -.6cqh;text-shadow:0 1px 6px rgba(0,0,0,.25)}
-.jchat .who.r{align-self:flex-end}
-.jchat .who img{width:2.8cqh;height:auto}
-.jchat .fast{align-self:flex-end;display:inline-flex;align-items:center;gap:.8cqh;font-size:1.7cqh;color:#1d1d1f;background:rgba(255,255,255,.7);border-radius:99px;padding:.6cqh 1.4cqh}
-.jchat .fast i{width:1.9cqh;height:1.9cqh;border-radius:50%;background:var(--green);position:relative}
-.jchat .fast i::after{content:"";position:absolute;left:35%;top:19%;width:22%;height:44%;border:solid #fff;border-width:0 .28cqh .28cqh 0;transform:rotate(45deg)}
-/* Marketing Manager: one post, and the week it becomes. */
-.jpost{position:absolute;left:5.4cqh;top:30cqh;width:46cqh;bottom:-5cqh;background:#fff;border-radius:2.4cqh;padding:2.4cqh;font-size:1.9cqh;line-height:1.45;color:#1d1d1f;box-shadow:0 2cqh 6cqh rgba(80,40,20,.22)}
-.jpost-h{display:flex;align-items:center;gap:1.2cqh;margin-bottom:1.6cqh}
-.jpost-h i{width:4.6cqh;height:4.6cqh;border-radius:50%;background:linear-gradient(135deg,#e8a87c,#c2786f);flex:none}
-.jpost-h b{display:block;font-weight:600}.jpost-h small{color:#86868b;font-size:1.6cqh}
-.jpost-h img{width:2.8cqh;margin-left:auto}
-.jpost-img{height:16cqh;margin-top:1.8cqh;border-radius:1.6cqh;background:url(img/paint-pastel.jpg) center/cover}
-.jweek{position:absolute;left:calc(5.4cqh + 49cqh);right:4cqh;top:30cqh;display:flex;flex-direction:column;gap:1.2cqh;font-size:1.9cqh;color:#1d1d1f}
-.jday{display:flex;align-items:center;gap:1.4cqh;padding:1.4cqh 1.8cqh;border-radius:1.8cqh;background:rgba(255,255,255,.72);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
-.jday b{width:4.4cqh;font-weight:600;color:#6e6e73}
-.jday img{width:2.6cqh;height:2.6cqh;object-fit:contain}
-.jday span{margin-left:auto;font-size:1.6cqh;color:#248a3d}
-/* Research Analyst: the short version, with where it came from. */
-.jdoc{position:absolute;right:3.6cqh;bottom:11cqh;width:48cqh;padding:2.6cqh 2.8cqh;border-radius:2.6cqh;font-size:2cqh;line-height:1.45;color:#1d1d1f;
-  background:rgba(255,255,255,.84);-webkit-backdrop-filter:blur(24px) saturate(1.6);backdrop-filter:blur(24px) saturate(1.6);box-shadow:0 2cqh 6cqh rgba(0,0,0,.3)}
-.jdoc h4{margin:0 0 .6cqh;font-size:2.5cqh;letter-spacing:-.01em}
-.jdoc .by{display:flex;align-items:center;gap:.8cqh;font-size:1.7cqh;color:#86868b;margin-bottom:1.4cqh}
-.jdoc .by img{width:2.6cqh;height:auto}
-.jdoc ul{margin:0;padding-left:2.4cqh}
-.jdoc li+li{margin-top:.8cqh}
-.jdoc .src{display:flex;gap:1cqh;margin-top:1.8cqh}
-.jdoc .src img{width:2.8cqh;height:2.8cqh;object-fit:contain;padding:.6cqh;border-radius:.8cqh;background:#f2f2f4}
-/* Recruiter: the shortlist, as faces. */
-.jfaces{display:flex;margin-top:1.4cqh}
-.jfaces i{width:4.2cqh;height:4.2cqh;border-radius:50%;margin-right:-1cqh;border:.3cqh solid rgba(80,74,68,.9);display:grid;place-items:center;font-style:normal;font-size:1.6cqh;font-weight:600}
+.jws li img{width:2.5cqh;height:2.5cqh;object-fit:contain;flex:none}
 .jctl{display:flex;justify-content:flex-end;gap:18px;width:var(--col);margin:28px auto 0}
 .jctl button{appearance:none;border:0;width:56px;height:56px;border-radius:50%;background:#d2d2d7;color:#424245;display:grid;place-items:center;cursor:pointer;transition:background .2s,color .2s}
 .jctl button:hover{background:#c7c7cc}
@@ -544,14 +530,8 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
   .jrail{--jh:540px;gap:14px}
   .job{width:min(84vw,360px)}
   .job-t{right:5.4cqh;max-width:none}
-  .jcos-chat{display:none}
-  .jorbit{right:auto;left:50%;top:auto;bottom:6cqh;transform:translateX(-50%) scale(.9);transform-origin:50% 100%}
-  .jmail{left:34cqh;top:42cqh}
-  .jws{left:3.6cqh;top:40cqh;width:40cqh}.jws ul+ul{display:none}
-  .jpipe{top:30cqh;grid-template-columns:repeat(3,46%)}
-  .jpost{top:30cqh}
-  .jweek{display:none}.jpost{width:auto;right:5.4cqh}
-  .jdoc{left:3.6cqh;width:auto}
+  .jwin{left:34cqh;top:40cqh}
+  .jws{left:3.6cqh;top:38cqh;width:40cqh}.jws ul+ul{display:none}
   .jctl{gap:14px;margin-top:22px}.jctl button{width:44px;height:44px}.jctl svg{width:20px;height:20px}
 }
 
@@ -855,103 +835,59 @@ footer nav{display:flex;gap:18px}
   <div class="jrail">
     <article class="job">
       <span class="job-paint" style="background-image:url(img/dusk-grain.jpg)"></span>
-      <p class="job-t">Chief of Staff<b>Always on. Reads your Slack, email, calendar and meeting notes, tells you what changed and what matters to your priorities, chases the threads that went quiet, and keeps schedules and deliverables on track.</b></p>
-      <div class="jcos-chat" aria-hidden="true">
-        <p class="me">Sales follow-ups keep slipping. Can you help?</p>
-        <span class="who"><img src="faces/agent-simeon.png" alt="">Simeon</span>
-        <p class="sim">I&#8217;ll staff a Sales Rep for you. Felix will follow up on every lead in HubSpot and book the calls.</p>
-        <p class="sim">Here he is. Create him and he starts today.</p>
-      </div>
-      <div class="jorbit" aria-hidden="true"><i class="ring"></i><div class="hub"><img src="faces/agent-simeon.png" alt=""></div><span style="--i:0"><img src="logos/slack.webp" alt="">Slack</span><span style="--i:1"><img src="logos/gmail.webp" alt="">Gmail</span><span style="--i:2"><img src="logos/google-calendar.webp" alt="">Calendar</span><span style="--i:3"><img src="logos/notion.svg" alt="">Notion</span><span style="--i:4"><img src="logos/zoom.webp" alt="">Zoom</span><span style="--i:5"><img src="logos/google-drive.svg" alt="">Drive</span><span style="--i:6"><img src="logos/hubspot.svg" alt="">HubSpot</span><span style="--i:7"><img src="logos/linear.svg" alt="">Linear</span></div>
-      <span class="job-plus" aria-hidden="true">+</span>
+      <p class="job-t">Chief of Staff<b>Always on. Reads your Slack, email and calendar, and tells you what matters today.</b></p>
+      <div class="jwin" aria-hidden="true"><div class="jwin-bar"><i></i><i></i><i></i><b>Calendar</b><span class="jwin-tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Day</span></div><div class="jwin-in"><div class="jh">Thursday</div><div class="jsub">October 9</div><div class="jcal"><span>9 AM</span><span>10</span><span>11</span><span>12 PM</span><span>1</span><span>2</span><span>3</span><span>4</span><div><div class="jev" style="top:.4cqh;height:4.6cqh">Team standup</div><div class="jev g" style="top:13.2cqh;height:5.4cqh">Investor update<small>Simeon put your notes in the invite</small></div><div class="jev p" style="top:32.4cqh;height:5.4cqh">Northwind demo<small>Booked by Felix</small></div><div class="jev" style="top:45.2cqh;height:5.4cqh">Design review<small>Moved from 1:00 so you can prep</small></div></div></div></div></div>
+      <div class="jws" aria-hidden="true"><div class="jws-in"><img src="faces/agent-simeon.png" alt="">Ask Simeon anything</div><div class="jws-tiles"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14M5 12h10M5 17h7"/></svg>Brief me</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Plan my week</span></div><ul><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16h.01"/></svg>Needs you<em>3</em></li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Sign the Halden contract</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16v13H4zM2 3h20v4H2zM10 12h4"/></svg>Pick an offsite venue</li></ul><ul><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>Handled overnight<small>27</small></li></ul></div>
+      <span class="job-plus dk" aria-hidden="true">+</span>
     </article>
     <article class="job">
       <span class="job-paint" style="background-image:url(img/job-ocean.jpg)"></span>
-      <p class="job-t">Inbox Manager<b>Reads everything that comes in, answers what it can in your voice, and only brings you what needs you.</b></p>
-      <div class="jmail" aria-hidden="true">
-        <div class="jmail-bar"><i></i><i></i><i></i><span class="jmail-tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 9 5 13l5 4"/><path d="M5 13h9a5 5 0 0 1 5 5v1"/></svg><b style="font-weight:500;color:#3a3a3c">Aa</b></span></div>
-        <div class="jmail-f">To:<b class="to">Maya Chen &#8964;</b></div>
-        <div class="jmail-f">Cc:</div>
-        <div class="jmail-f">Subject:<b>Re: Partnership terms</b></div>
-        <div class="jmail-f">From:<b>Jordan Lee</b></div>
-        <div class="jmail-body"><span>Hi Maya,<br><br>Thanks for sending the terms. We&#8217;re happy with the revenue share, and I&#8217;d like to move the start to November 1 so our team can onboard properly. Could we confirm on a call Thursday at 2?<br><br>Best,<br>Jordan</span></div>
-      </div>
-      <div class="jws" aria-hidden="true">
-        <div class="jws-in"><img src="faces/agent-iris.png" alt="">Tell Iris what to change</div>
-        <div class="jws-tiles"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Draft reply</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14M5 12h10M5 17h7"/></svg>Summarize</span></div>
-        <ul>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0M9 9.5h.01M15 9.5h.01"/></svg>Friendly</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5h6v2M3 12h18"/></svg>Professional</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16M12 3v5M9 5l3 3 3-3M12 21v-5M9 19l3-3 3 3"/></svg>Concise</li>
-        </ul>
-        <ul>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16h.01"/></svg>Needs you<em>3</em></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Follow up Friday</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16v13H4zM2 3h20v4H2zM10 12h4"/></svg>Archive the rest</li>
-        </ul>
-      </div>
+      <p class="job-t">Inbox Manager<b>Answers what it can in your voice, and only brings you what needs you.</b></p>
+      <div class="jwin" aria-hidden="true"><div class="jwin-bar"><i></i><i></i><i></i><span class="jwin-tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 9 5 13l5 4"/><path d="M5 13h9a5 5 0 0 1 5 5v1"/></svg><b style="font-weight:500;color:#3a3a3c">Aa</b></span></div><div class="jwin-in"><div class="jf">To:<b class="to">Maya Chen &#8964;</b></div><div class="jf">Cc:</div><div class="jf">Subject:<b>Re: Partnership terms</b></div><div class="jf">From:<b>Jordan Lee</b></div><div class="jsel"><span>Hi Maya,<br><br>Thanks for sending the terms. We&#8217;re happy with the revenue share, and I&#8217;d like to move the start to November 1 so our team can onboard properly. Could we confirm on a call Thursday at 2?<br><br>Best,<br>Jordan</span></div></div></div>
+      <div class="jws" aria-hidden="true"><div class="jws-in"><img src="faces/agent-iris.png" alt="">Tell Iris what to change</div><div class="jws-tiles"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Draft reply</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14M5 12h10M5 17h7"/></svg>Summarize</span></div><ul><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0M9 9.5h.01M15 9.5h.01"/></svg>Friendly</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5h6v2M3 12h18"/></svg>Professional</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16M12 3v5M9 5l3 3 3-3M12 21v-5M9 19l3-3 3 3"/></svg>Concise</li></ul><ul><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16h.01"/></svg>Needs you<em>3</em></li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Follow up Friday</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16v13H4zM2 3h20v4H2zM10 12h4"/></svg>Archive the rest</li></ul></div>
       <span class="job-plus dk" aria-hidden="true">+</span>
     </article>
     <article class="job">
       <span class="job-paint" style="background-image:url(img/job-moss.jpg)"></span>
-      <p class="job-t">Bookkeeper<b>Matches every sale and expense, chases missing receipts, and closes the books each month.</b></p>
-      <div class="jnote"><div class="jnote-h"><img src="faces/agent-theo.png" alt="">Theo<small>Oct 1</small></div>September is closed in <span class="japp"><img src="logos/quickbooks.svg" alt="">QuickBooks</span>. 214 sales matched to <span class="japp"><img src="logos/stripe.svg" alt="">Stripe</span>, and 3 need a receipt from you.</div>
-      <span class="job-plus" aria-hidden="true">+</span>
+      <p class="job-t">Bookkeeper<b>Matches every transaction, chases the receipts, and closes the month.</b></p>
+      <div class="jwin" aria-hidden="true"><div class="jwin-bar"><i></i><i></i><i></i><b>QuickBooks</b></div><div class="jwin-in"><div class="jh">September</div><div class="jsub">214 of 217 matched</div><table class="jtbl"><tr><th>Date</th><th>Payee</th><th class="num">Amount</th><th></th></tr><tr><td>Sep 28</td><td>Stripe payout</td><td class="num in">+$4,210.00</td><td><span class="jok">Matched</span></td></tr><tr><td>Sep 27</td><td>Figma</td><td class="num ">&minus;$45.00</td><td><span class="jok">Matched</span></td></tr><tr class="hi"><td>Sep 26</td><td>WeWork</td><td class="num ">&minus;$1,200.00</td><td><span class="jwait">Receipt</span></td></tr><tr><td>Sep 25</td><td>Shopify payout</td><td class="num in">+$2,880.40</td><td><span class="jok">Matched</span></td></tr><tr><td>Sep 24</td><td>Google Workspace</td><td class="num ">&minus;$72.00</td><td><span class="jok">Matched</span></td></tr><tr class="hi"><td>Sep 24</td><td>Delta Air Lines</td><td class="num ">&minus;$412.30</td><td><span class="jwait">Receipt</span></td></tr><tr><td>Sep 23</td><td>AWS</td><td class="num ">&minus;$318.66</td><td><span class="jok">Matched</span></td></tr></table></div></div>
+      <div class="jws" aria-hidden="true"><div class="jws-in"><img src="faces/agent-theo.png" alt="">Ask Theo about your books</div><div class="jws-tiles"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>Close September</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>Find receipts</span></div><ul><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>Matched<small>214</small></li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16h.01"/></svg>Needs a receipt<em>3</em></li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16v13H4zM2 3h20v4H2zM10 12h4"/></svg>Duplicate charge<small>1</small></li></ul><ul><li><img src="logos/quickbooks.svg" alt="">QuickBooks<small>Synced</small></li><li><img src="logos/stripe.svg" alt="">Stripe<small>Synced</small></li></ul></div>
+      <span class="job-plus dk" aria-hidden="true">+</span>
     </article>
     <article class="job">
       <span class="job-paint" style="background-image:url(img/job-sand.jpg)"></span>
-      <p class="job-t">Sales Rep<b>Follows up with every lead, keeps your pipeline current, and books the call.</b></p>
-      <div class="jpipe" aria-hidden="true">
-        <div class="jcol"><div class="jcol-h">New<span>2</span></div><div class="jdeal"><b>Brightline</b>$6,000<small>From your website</small></div><div class="jdeal"><b>Juniper Labs</b>$14,500<small>Intro from Maya</small></div></div>
-        <div class="jcol"><div class="jcol-h">Followed up<span>2</span></div><div class="jdeal"><b>Fieldstone</b>$9,800<small><img src="faces/agent-felix.png" alt="">Second email, today</small></div><div class="jdeal"><b>Halden &amp; Co</b>$22,000<small><img src="faces/agent-felix.png" alt="">Sent the case study</small></div></div>
-        <div class="jcol"><div class="jcol-h">Call booked<span>1</span></div><div class="jdeal won"><b>Northwind</b>$31,000<small><img src="faces/agent-felix.png" alt="">Thursday, 2:00 PM</small></div></div>
-      </div>
-      <span class="job-plus" aria-hidden="true">+</span>
+      <p class="job-t">Sales Rep<b>Follows up with every lead and books the call.</b></p>
+      <div class="jwin" aria-hidden="true"><div class="jwin-bar"><i></i><i></i><i></i><b>HubSpot</b></div><div class="jwin-in"><div class="jh">Pipeline</div><div class="jsub">$83,300 open</div><div class="jpipe"><div class="jcol"><div class="jcol-h">New<span>2</span></div><div class="jdeal"><b>Brightline</b>$6,000<small>From your website</small></div><div class="jdeal"><b>Juniper Labs</b>$14,500<small>Intro from Maya</small></div></div><div class="jcol"><div class="jcol-h">Followed up<span>2</span></div><div class="jdeal"><b>Fieldstone</b>$9,800<small>Second email today</small></div><div class="jdeal"><b>Halden &amp; Co</b>$22,000<small>Sent the case study</small></div></div><div class="jcol"><div class="jcol-h">Call booked<span>1</span></div><div class="jdeal won"><b>Northwind</b>$31,000<small>Thursday, 2:00 PM</small></div></div></div></div></div>
+      <div class="jws" aria-hidden="true"><div class="jws-in"><img src="faces/agent-felix.png" alt="">Tell Felix who to chase</div><div class="jws-tiles"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 9 5 13l5 4"/><path d="M5 13h9a5 5 0 0 1 5 5v1"/></svg>Follow up</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>Book a call</span></div><ul><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Northwind<small>Thu 2:00</small></li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Fieldstone<small>Emailed</small></li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></svg>Halden &amp; Co<small>Case study</small></li></ul><ul><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16h.01"/></svg>Waiting on you<em>1</em></li></ul></div>
+      <span class="job-plus dk" aria-hidden="true">+</span>
     </article>
     <article class="job">
       <span class="job-paint" style="background-image:url(img/job-sage.jpg)"></span>
-      <p class="job-t">Customer Support<b>Answers every customer in minutes, at any hour, and hands you the ones that need a person.</b></p>
-      <div class="jchat" aria-hidden="true">
-        <span class="who">Sam, a customer &#183; 11:48 PM</span>
-        <p class="cust">Hi, my order hasn&#8217;t arrived yet. It&#8217;s #4471.</p>
-        <span class="who r"><img src="faces/agent-nora.png" alt="">Nora</span>
-        <p class="agent">Sorry about the wait, Sam. It&#8217;s out for delivery today, and I&#8217;ve refunded your shipping.</p>
-        <span class="fast"><i></i>Answered in 2 minutes</span>
-      </div>
-      <span class="job-plus" aria-hidden="true">+</span>
+      <p class="job-t">Customer Support<b>Answers customers in minutes, at any hour.</b></p>
+      <div class="jwin" aria-hidden="true"><div class="jwin-bar"><i></i><i></i><i></i><b>Inbox</b></div><div class="jwin-in"><div class="jh">Sam Patel</div><div class="jsub">Order #4471 &#183; 11:48 PM</div><div class="jthread"><p class="them">Hi, my order hasn&#8217;t arrived yet. It was meant to come Tuesday.</p><p class="us">Sorry about the wait, Sam. It&#8217;s out for delivery today, and I&#8217;ve refunded your shipping.</p><small class="r">Sent by Nora &#183; 2 min later</small><p class="them">Oh, that&#8217;s kind. Thank you!</p></div></div></div>
+      <div class="jws" aria-hidden="true"><div class="jws-in"><img src="faces/agent-nora.png" alt="">Tell Nora how to answer</div><div class="jws-tiles"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 9 5 13l5 4"/><path d="M5 13h9a5 5 0 0 1 5 5v1"/></svg>Reply</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.3-5.7L4 8.6M4 4v4.6h4.6"/></svg>Refund</span></div><ul><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>Answered tonight<small>18</small></li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Average reply<small>2 min</small></li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16h.01"/></svg>Needs a person<em>1</em></li></ul><ul><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0M9 9.5h.01M15 9.5h.01"/></svg>Warm and short</li></ul></div>
+      <span class="job-plus dk" aria-hidden="true">+</span>
     </article>
     <article class="job">
       <span class="job-paint" style="background-image:url(img/job-berry.jpg)"></span>
-      <p class="job-t">Marketing Manager<b>Turns one idea into a week of posts, newsletters and short videos, in your voice.</b></p>
-      <div class="jpost" aria-hidden="true">
-        <div class="jpost-h"><i></i><div><b>Jordan Lee</b><small>Founder at Fieldstone</small></div><img src="logos/linkedin.svg" alt=""></div>
-        We shipped a new pricing page on Tuesday. Signups are up 31% since. Here are the three things we changed, and the one we almost didn&#8217;t.
-        <div class="jpost-img"></div>
-      </div>
-      <div class="jweek" aria-hidden="true">
-        <div class="jday"><b>Mon</b><img src="logos/linkedin.svg" alt="">The full post<span>Scheduled</span></div>
-        <div class="jday"><b>Tue</b><img src="logos/instagram.svg" alt="">Three slides<span>Scheduled</span></div>
-        <div class="jday"><b>Wed</b><img src="logos/substack.svg" alt="">Newsletter<span>Scheduled</span></div>
-        <div class="jday"><b>Thu</b><img src="logos/tiktok.svg" alt="">A 30-second cut<span>Scheduled</span></div>
-      </div>
-      <span class="job-plus" aria-hidden="true">+</span>
+      <p class="job-t">Marketing Manager<b>Turns one idea into a week of posts, in your voice.</b></p>
+      <div class="jwin" aria-hidden="true"><div class="jwin-bar"><i></i><i></i><i></i><b>LinkedIn</b><span class="jwin-tools">Scheduled</span></div><div class="jwin-in"><div class="jpost-h"><i></i><div><b>Jordan Lee</b><small>Founder at Fieldstone &#183; Mon 9:00</small></div></div><div class="jpost-t">We shipped a new pricing page on Tuesday. Signups are up 31% since. Here are the three things we changed, and the one we almost didn&#8217;t.</div><div class="jpost-img"></div></div></div>
+      <div class="jws" aria-hidden="true"><div class="jws-in"><img src="faces/agent-nora.png" alt="" style="filter:hue-rotate(-40deg) saturate(1.2)">Describe the post you want</div><div class="jws-tiles"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Write post</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="13" height="12" rx="2.5"/><path d="m15.5 10.5 6-3.5v10l-6-3.5"/></svg>Cut a video</span></div><ul><li><img src="logos/linkedin.svg" alt="">The full post<small>Mon</small></li><li><img src="logos/instagram.svg" alt="">Three slides<small>Tue</small></li><li><img src="logos/substack.svg" alt="">Newsletter<small>Wed</small></li><li><img src="logos/tiktok.svg" alt="">30 seconds<small>Thu</small></li></ul><ul></ul></div>
+      <span class="job-plus dk" aria-hidden="true">+</span>
     </article>
     <article class="job">
       <span class="job-paint" style="background-image:url(img/job-ember.jpg)"></span>
-      <p class="job-t">Recruiter<b>Reads every application, shortlists the best, and books the interviews.</b></p>
-      <div class="jnote"><div class="jnote-h">Shortlist ready<small><span class="japp"><img src="logos/greenhouse.svg" alt="">Greenhouse</span></small></div>Four of 86 applicants are worth a call. Interviews are set for Tuesday.<div class="jfaces"><i style="background:#c9d7f0;color:#2b4a7a">AK</i><i style="background:#f0d5c9;color:#7a3f2b">RM</i><i style="background:#d3ecd9;color:#2b6a3d">JP</i><i style="background:#eadcf3;color:#5b3a7a">LS</i></div></div>
-      <span class="job-plus" aria-hidden="true">+</span>
+      <p class="job-t">Recruiter<b>Reads every application and books the best for interviews.</b></p>
+      <div class="jwin" aria-hidden="true"><div class="jwin-bar"><i></i><i></i><i></i><b>Greenhouse</b></div><div class="jwin-in"><div class="jh">Founding engineer</div><div class="jsub">86 applied &#183; 4 shortlisted</div><table class="jtbl"><tr><th>Applicant</th><th>Interview</th></tr><tr><td><span class="jini" style="background:#c9d7f0;color:#2b4a7a">AK</span>Aisha Khan</td><td><span class="jchip">Tue 10:00</span></td></tr><tr><td><span class="jini" style="background:#f0d5c9;color:#7a3f2b">RM</span>Rafael Mendes</td><td><span class="jchip">Tue 2:00</span></td></tr><tr><td><span class="jini" style="background:#d3ecd9;color:#2b6a3d">JP</span>Jun Park</td><td><span class="jchip">Wed 11:00</span></td></tr><tr><td><span class="jini" style="background:#eadcf3;color:#5b3a7a">LS</span>Lena Schmidt</td><td><span class="jchip">Wed 3:00</span></td></tr><tr><td><span class="jini" style="background:#f2f2f4;color:#86868b">TO</span>Tom Okafor</td><td><span class="jchip n">Not a fit</span></td></tr><tr><td><span class="jini" style="background:#f2f2f4;color:#86868b">EB</span>Emma Brooks</td><td><span class="jchip n">Not a fit</span></td></tr></table></div></div>
+      <div class="jws" aria-hidden="true"><div class="jws-in"><img src="faces/agent-theo.png" alt="" style="filter:hue-rotate(150deg) saturate(1.1)">Describe who you&#8217;re hiring</div><div class="jws-tiles"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"/></svg>Shortlist</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Schedule</span></div><ul><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16v13H4zM2 3h20v4H2zM10 12h4"/></svg>Applied<small>86</small></li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>Shortlisted<em>4</em></li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Interviews<small>Tue, Wed</small></li></ul><ul><li><img src="logos/greenhouse.svg" alt="">Greenhouse<small>Synced</small></li></ul></div>
+      <span class="job-plus dk" aria-hidden="true">+</span>
     </article>
     <article class="job">
       <span class="job-paint" style="background-image:url(img/job-slate.jpg)"></span>
-      <p class="job-t">Research Analyst<b>Reads the market, your competitors and your customers, and brings you the short version.</b></p>
-      <div class="jdoc" aria-hidden="true">
-        <h4>Competitor pricing, in short</h4>
-        <div class="by"><img src="faces/agent-scout.png" alt="">Scout &#183; 14 sources &#183; this morning</div>
-        <ul><li>Two of your three rivals raised prices this quarter.</li><li>Annual plans now average 18% off monthly.</li><li>Nobody offers a free tier above three seats.</li></ul>
-        <div class="src"><img src="logos/notion.svg" alt=""><img src="logos/google-sheets.webp" alt=""><img src="logos/linkedin.svg" alt=""><img src="logos/reddit.svg" alt=""></div>
-      </div>
-      <span class="job-plus" aria-hidden="true">+</span>
+      <p class="job-t">Research Analyst<b>Reads the market and brings you the short version.</b></p>
+      <div class="jwin" aria-hidden="true"><div class="jwin-bar"><i></i><i></i><i></i><b>Notion</b><span class="jwin-tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></svg>Share</span></div><div class="jwin-in"><div class="jh">Competitor pricing, in short</div><div class="jsub">Scout &#183; 14 sources &#183; this morning</div><div class="jdoc"><ul><li>Two of your three rivals raised prices this quarter.</li><li>Annual plans now average 18% off monthly.</li><li>Nobody offers a free tier above three seats.</li></ul><table class="jtbl"><tr><th>Company</th><th class="num">Monthly</th><th class="num">Annual</th></tr><tr><td>Brightline</td><td class="num">$29</td><td class="num">$24</td></tr><tr><td>Northwind</td><td class="num">$39</td><td class="num">$32</td></tr><tr><td>Juniper</td><td class="num">$25</td><td class="num">$21</td></tr></table></div></div></div>
+      <div class="jws" aria-hidden="true"><div class="jws-in"><img src="faces/agent-scout.png" alt="">Ask Scout anything</div><div class="jws-tiles"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>Dig deeper</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M3 15h18M10 5v14"/></svg>Make a table</span></div><ul><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16v13H4zM2 3h20v4H2zM10 12h4"/></svg>Sources<small>14</small></li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Updated<small>This morning</small></li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"/></svg>Watching<small>3 rivals</small></li></ul><ul><li><img src="logos/notion.svg" alt="">Saved to Notion</li></ul></div>
+      <span class="job-plus dk" aria-hidden="true">+</span>
     </article>
   </div>
   <div class="jctl"><button type="button" aria-label="Previous"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 6 8.5 12l6 6"/></svg></button><button type="button" aria-label="Next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 6 6 6-6 6"/></svg></button></div>
