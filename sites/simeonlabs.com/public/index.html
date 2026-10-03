@@ -341,48 +341,62 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 @container slide (max-width:700px){.s-sales .mac{width:150cqw;right:auto;left:6%;top:39%}.s-sales .note{display:none}}
 
 
-/* The second card: every agent on a computer of its own, set like Apple's device cards (the
-   founder, 3 October 2026: "redesign the whole box, more apple style"): a Mac screen on black,
-   Theo's own browser open on the invoices he is chasing, dimmed, and the app's panel in front of
-   it showing what he is doing, with Take over and Watch. */
-.mc-mac{position:absolute;left:50%;top:27%;transform:translateX(-50%);width:66cqw;aspect-ratio:16/10.3;padding:1cqw;border-radius:2.4cqw;background:#0b0b0c;box-shadow:0 0 0 .18cqw #3a3a3e,0 0 0 .3cqw #1c1c1e,0 4cqw 9cqw rgba(0,0,0,.6)}
-.mc-notch{position:absolute;left:50%;top:1cqw;transform:translateX(-50%);width:8cqw;height:1.4cqw;border-radius:0 0 .7cqw .7cqw;background:#0b0b0c}
-.mc-screen{position:relative;width:100%;height:100%;border-radius:1.3cqw;overflow:hidden;background:url(img/computer-silk.jpg) center/cover;container-type:size}
-.mc-menubar{position:absolute;inset:0 0 auto;height:3.6cqh;display:flex;align-items:center;gap:2.32cqw;padding:0 2.32cqw;background:rgba(20,18,16,.35);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);font-size:1.81cqw;color:rgba(255,255,255,.88)}
-.mc-menubar i{flex:1}
-.mc-browser{position:absolute;left:8%;top:9%;width:84%;height:86%;border-radius:1.2cqw;overflow:hidden;background:#fff;box-shadow:0 1.6cqw 4cqw rgba(0,0,0,.35)}
-.mc-chrome{display:flex;align-items:center;gap:2.9cqw;height:7%;padding:0 2.32cqw;background:#f3f3f5;border-bottom:1px solid #e3e3e6}
-.mc-lights{display:flex;gap:0.87cqw}.mc-lights i{width:1.59cqw;height:1.59cqw;border-radius:50%;background:#ff5f57}.mc-lights i:nth-child(2){background:#febc2e}.mc-lights i:nth-child(3){background:#28c840}
-.mc-url{margin:0 auto;padding:0.58cqw 8.7cqw;border-radius:1.01cqw;background:#e6e6ea;font-size:1.67cqw;color:#6e6e73}
-.mc-page{display:flex;height:93%}
-.mc-side{display:flex;flex-direction:column;gap:1.89cqw;width:17%;padding:2.9cqw 2.32cqw;background:#fafafa;border-right:1px solid #ececef;font-size:1.81cqw;color:#6e6e73}
-.mc-side b{margin-bottom:1.45cqw;color:#1d1d1f;font-size:2.1cqw}
-.mc-side .on{color:#1d1d1f;font-weight:600}
-.mc-main{flex:1;padding:2.9cqw 3.77cqw}
-.mc-h{margin:0 0 2.61cqw;font-size:3.48cqw;font-weight:600;color:#1d1d1f}
-.mc-th,.mc-tr{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;align-items:center;gap:1.45cqw;padding:1.59cqw 0;border-bottom:1px solid #efeff2;font-size:1.89cqw;color:#1d1d1f}
-.mc-th{font-size:1.59cqw;color:#86868b;padding-top:0}
-.mc-st{justify-self:start;padding:0.43cqw 1.3cqw;border-radius:99px;font-size:1.52cqw;font-weight:600}
-.mc-st.late{background:#fde8e6;color:#b4271b}.mc-st.paid{background:#e6f4ea;color:#1e7a3c}.mc-st.due{background:#eef0f4;color:#4a5568}
-.mc-dim{position:absolute;inset:0;background:rgba(0,0,0,.42)}
-.mc-panel{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);width:50%;padding:3.2cqw;border-radius:2.8cqw;background:#fbfbfd;box-shadow:0 2cqw 6cqw rgba(0,0,0,.45)}
-.mc-ph{display:flex;align-items:center;gap:2.03cqw;margin-bottom:2.9cqw}
-.mc-ph img{width:7.25cqw;height:auto}
-.mc-ph b{display:block;font-size:2.75cqw;color:#1d1d1f}
-.mc-ph span{display:flex;align-items:center;gap:0.87cqw;font-size:1.89cqw;color:#6e6e73}
-.mc-live{width:1.3cqw;height:1.3cqw;border-radius:50%;background:#34c759;box-shadow:0 0 0 0.43cqw rgba(52,199,89,.22);animation:mc-pulse 1.6s ease-in-out infinite}
-.mc-steps{display:flex;flex-direction:column;gap:1.89cqw;margin:0;padding:0;list-style:none}
-.mc-steps li{display:flex;align-items:center;gap:1.59cqw;font-size:2.1cqw;color:#1d1d1f}
-.mc-steps svg{width:2.75cqw;height:2.75cqw;flex:none}
-.mc-steps .now{color:#6e6e73}
-.mc-spin{animation:mc-spin 1s linear infinite}
-.mc-acts{display:flex;gap:1.45cqw;margin-top:3.48cqw}
-.mc-acts span{flex:1;display:grid;place-items:center;height:6.09cqw;border-radius:99px;font-size:2.03cqw}
-.mc-take{background:#000;color:#fff}.mc-watch{background:#ececf0;color:#1d1d1f}
+/* The second card: every agent on a computer of its own, set the way Apple shows visionOS
+   (apple.com/apple-vision-pro, visionOS 26: the founder's references, 3 October 2026): a real room
+   in evening light (an Unsplash photograph, graded warm and low), and over it Apple's glass, a warm
+   frosted material with a bright top edge, large corner radii and white type: one window with
+   Theo's books open, the address bar floating above it, the toolbar as an ornament below with its
+   grab bar, and his note to you on a panel to the right. */
+.slide.vo-slide{background:#1b1712 url(img/room-evening.jpg) center/cover}
+.vo-slide::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,8,6,.55) 0%,rgba(10,8,6,0) 32%,rgba(10,8,6,0) 78%,rgba(10,8,6,.35) 100%)}
+.vo-cap{text-shadow:0 1px 18px rgba(0,0,0,.35)}
+.vo-scene{position:absolute;inset:0}
+.glass{background:rgba(116,104,92,.34);-webkit-backdrop-filter:blur(28px) saturate(1.5);backdrop-filter:blur(28px) saturate(1.5);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),inset 0 0 0 1px rgba(255,255,255,.1),0 2.2cqw 5cqw rgba(0,0,0,.28);color:#fff}
+.vo-btn{display:grid;place-items:center;width:3.4cqw;height:3.4cqw;border-radius:50%;background:rgba(116,104,92,.42);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);box-shadow:inset 0 1px 0 rgba(255,255,255,.28);color:#fff}
+.vo-btn svg{width:1.6cqw;height:1.6cqw}
+.vo-btn.on{background:#fff;color:#1d1d1f}.vo-btn.dim{color:rgba(255,255,255,.4)}
+.vo-btn.sm{width:2.4cqw;height:2.4cqw}.vo-btn.sm svg{width:1.1cqw;height:1.1cqw}
+.vo-addr{position:absolute;left:16%;top:25.5%;display:flex;align-items:center;gap:.9cqw;padding:.8cqw;border-radius:99px;background:rgba(116,104,92,.26);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);box-shadow:inset 0 1px 0 rgba(255,255,255,.25)}
+.vo-url{display:flex;align-items:center;gap:1cqw;width:24cqw;height:3.4cqw;padding:0 1.6cqw;border-radius:99px;background:rgba(116,104,92,.42);box-shadow:inset 0 1px 0 rgba(255,255,255,.22);font-size:1.45cqw;color:#fff;letter-spacing:-.01em}
+.vo-mic svg{width:1.4cqw;height:1.4cqw;opacity:.7}
+.vo-win{position:absolute;left:16%;top:35%;width:50%;height:44%;display:flex;gap:1.2cqw;padding:1.2cqw;border-radius:3cqw}
+.vo-side{width:36%;padding:1cqw .6cqw}
+.vo-title{margin:0 0 1.4cqw;font-size:2cqw;font-weight:600;letter-spacing:-.01em}
+.vo-search{display:flex;align-items:center;gap:.8cqw;height:3cqw;padding:0 1.2cqw;border-radius:99px;background:rgba(0,0,0,.16);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);font-size:1.2cqw;color:rgba(255,255,255,.62)}
+.vo-search svg{width:1.3cqw;height:1.3cqw}
+.vo-tiles{display:grid;grid-template-columns:1fr 1fr;gap:.9cqw;margin-top:1.4cqw}
+.vo-tiles span{display:flex;flex-direction:column;gap:.3cqw;padding:1.1cqw;border-radius:1.4cqw;background:rgba(255,255,255,.1);font-size:1.05cqw;color:rgba(255,255,255,.78)}
+.vo-tiles b{font-size:1.9cqw;font-weight:600;color:#fff}
+.vo-page{flex:1;border-radius:2cqw;background:#faf9f7;padding:2cqw 2.2cqw;color:#1d1d1f;overflow:hidden}
+.vo-ph{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 1.6cqw;font-family:Georgia,"Times New Roman",serif;font-size:2.1cqw}
+.vo-ph span{font-family:var(--font);font-size:1.15cqw;color:#86868b}
+.vo-tr{display:grid;grid-template-columns:1.5fr 1fr 1.1fr;align-items:center;padding:1cqw 0;border-top:1px solid #ebe8e3;font-size:1.25cqw}
+.vo-st{justify-self:start;padding:.25cqw .8cqw;border-radius:99px;font-size:1cqw;font-weight:600}
+.vo-st.late{background:#fbe6e3;color:#a8291c}.vo-st.paid{background:#e5f2e8;color:#226b3a}.vo-st.due{background:#eceef2;color:#4a5568}
+.vo-grab{position:absolute;left:calc(16% + 25% - 3.5cqw);top:80.6%;width:7cqw;height:.55cqw;border-radius:99px;background:rgba(255,255,255,.55)}
+.vo-bar{position:absolute;left:calc(16% + 25%);top:83.2%;transform:translateX(-50%);display:flex;align-items:center;gap:1cqw;padding:.8cqw 1.2cqw .8cqw .9cqw;border-radius:99px;white-space:nowrap}
+.vo-bar img{width:3cqw;height:auto}
+.vo-name{font-size:1.35cqw;font-weight:500;margin-right:.4cqw}
+.vo-sep{width:1px;height:2.2cqw;background:rgba(255,255,255,.22)}
+.vo-tool{display:grid;place-items:center;width:3.2cqw;height:3.2cqw;border-radius:50%;color:#fff}
+.vo-tool svg{width:1.6cqw;height:1.6cqw}
+.vo-tool.on{background:#fff;color:#1d1d1f}
+.vo-note{position:absolute;left:69%;top:36%;width:20%;padding:1.2cqw 1.6cqw 1.8cqw;border-radius:2.4cqw;transform:perspective(60cqw) rotateY(-9deg);transform-origin:left center}
+.vo-note-top{display:flex;justify-content:space-between;margin-bottom:1.2cqw}
+.vo-note p{margin:0 0 1.2cqw;font-size:1.3cqw;line-height:1.4;font-weight:500}
+.vo-note ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:.7cqw}
+.vo-note li{position:relative;padding-left:1.7cqw;font-size:1.15cqw;color:rgba(255,255,255,.78)}
+.vo-note li::before{content:"";position:absolute;left:0;top:.3cqw;width:1cqw;height:1cqw;border-radius:50%;background:rgba(255,255,255,.9)}
+.vo-note li.now::before{background:none;border:.18cqw solid rgba(255,255,255,.9);border-right-color:transparent;width:.7cqw;height:.7cqw;animation:mc-spin 1s linear infinite}
 @keyframes mc-spin{to{transform:rotate(360deg)}}
-@keyframes mc-pulse{50%{opacity:.45}}
-@container slide (max-width:700px){.mc-mac{width:94cqw;top:36%}.mc-panel{width:62%}}
-@media (prefers-reduced-motion:reduce){.mc-spin,.mc-live{animation:none}}
+@container slide (max-width:700px){
+  .slide.vo-slide{background-position:62% center}
+  .vo-addr{left:5%;top:30%}.vo-url{width:44cqw;height:6cqw;font-size:2.6cqw}.vo-btn{width:6cqw;height:6cqw}.vo-btn svg{width:2.8cqw;height:2.8cqw}.vo-addr .vo-btn:nth-child(2),.vo-addr .vo-btn:nth-child(3){display:none}
+  .vo-win{left:5%;top:39%;width:90%;height:34%;border-radius:5cqw}.vo-side{display:none}.vo-page{border-radius:4cqw;padding:3.6cqw}.vo-ph{font-size:4cqw}.vo-ph span{font-size:2.4cqw}.vo-tr{font-size:2.6cqw;padding:1.8cqw 0}.vo-st{font-size:2.1cqw}
+  .vo-grab{left:calc(50% - 6cqw);top:74.5%;width:12cqw;height:1cqw}.vo-bar{left:50%;top:77%;gap:2cqw;padding:1.4cqw 2cqw}.vo-bar img{width:5.4cqw}.vo-name{font-size:2.6cqw}.vo-tool{width:6cqw;height:6cqw}.vo-tool svg{width:3cqw;height:3cqw}.vo-sep{height:4cqw}
+  .vo-note{display:none}
+}
+@media (prefers-reduced-motion:reduce){.vo-note li.now::before{animation:none}}
 
 /* The first card: messaging an agent like a teammate (the founder, 3 October 2026, with Apple's
    Messages card as the model): a phone cut off by the card's top edge, one exchange with Theo in
@@ -578,30 +592,25 @@ footer nav{display:flex;gap:18px}
       </article>
 
 
-      <article class="slide dark mac-slide" aria-label="A computer for every agent">
-        <p class="cap top">Every agent works on a computer of its own. Watch it work, or take over whenever you like.</p>
-        <div class="mc-mac" aria-hidden="true">
-          <div class="mc-screen">
-            <div class="mc-menubar"><b>Safari</b><span>File</span><span>Edit</span><span>View</span><span>History</span><i></i><span>Thu 9:41 AM</span></div>
-            <div class="mc-browser">
-              <div class="mc-chrome"><span class="mc-lights"><i></i><i></i><i></i></span><span class="mc-url">books.northbeam.com/invoices</span></div>
-              <div class="mc-page">
-                <div class="mc-side"><b>Northbeam</b><span>Overview</span><span class="on">Invoices</span><span>Customers</span><span>Reports</span></div>
-                <div class="mc-main"><p class="mc-h">Invoices</p><div class="mc-th"><span>Customer</span><span>Invoice</span><span>Amount</span><span>Status</span></div><div class="mc-tr"><span>Acme Health</span><span>INV-2041</span><span>$4,200.00</span><span class="mc-st late">34 days late</span></div><div class="mc-tr"><span>Halden &amp; Co</span><span>INV-2038</span><span>$1,800.00</span><span class="mc-st late">12 days late</span></div><div class="mc-tr"><span>Brightline</span><span>INV-2052</span><span>$960.00</span><span class="mc-st paid">Paid</span></div><div class="mc-tr"><span>Northwind</span><span>INV-2050</span><span>$2,350.00</span><span class="mc-st paid">Paid</span></div><div class="mc-tr"><span>Okafor Studio</span><span>INV-2049</span><span>$1,120.00</span><span class="mc-st due">Due Oct 9</span></div><div class="mc-tr"><span>Pellam Labs</span><span>INV-2047</span><span>$3,400.00</span><span class="mc-st paid">Paid</span></div></div>
-              </div>
+      <article class="slide dark vo-slide" aria-label="A computer for every agent">
+        <p class="cap top vo-cap">Every agent works on a computer of its own. Watch it work, or take over whenever you like.</p>
+        <div class="vo-scene" aria-hidden="true">
+          <div class="vo-addr"><span class="vo-btn on"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM9 5v14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="vo-btn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="vo-btn dim"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="vo-url"><span class="vo-mic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3 3 0 0 0 3-3V7a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3zM6 11a6 6 0 0 0 12 0M12 17v3" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>books.northbeam.com</span></div>
+          <div class="vo-win glass">
+            <div class="vo-side">
+              <p class="vo-title">Invoices</p>
+              <div class="vo-search"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14zM20 20l-4-4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>Search invoices</div>
+              <div class="vo-tiles"><span><b>2</b>Past due</span><span><b>1</b>Due soon</span><span><b>12</b>Paid</span><span><b>$6,000</b>Owed</span></div>
             </div>
-            <div class="mc-dim"></div>
-            <div class="mc-panel">
-              <div class="mc-ph"><img src="faces/agent-theo.png" alt=""><div><b>Theo</b><span><i class="mc-live"></i>Working on its computer</span></div></div>
-              <ul class="mc-steps">
-                <li><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="7.2" fill="#255a93"/><path d="M4.8 8.3l2.1 2.1 4.3-4.6" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Opened the invoices in the books</li>
-                <li><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="7.2" fill="#255a93"/><path d="M4.8 8.3l2.1 2.1 4.3-4.6" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Found 2 invoices past due</li>
-                <li class="now"><svg viewBox="0 0 16 16" class="mc-spin"><circle cx="8" cy="8" r="6.4" fill="none" stroke="#d6d6db" stroke-width="1.8"/><path d="M8 1.6a6.4 6.4 0 0 1 6.4 6.4" fill="none" stroke="#255a93" stroke-width="1.8" stroke-linecap="round"/></svg>Writing a reminder to Acme Health</li>
-              </ul>
-              <div class="mc-acts"><span class="mc-take">Take over</span><span class="mc-watch">Watch</span></div>
-            </div>
+            <div class="vo-page"><p class="vo-ph">Northbeam<span>Invoices</span></p><div class="vo-tr"><span>Acme Health</span><span>$4,200</span><span class="vo-st late">34 days late</span></div><div class="vo-tr"><span>Halden &amp; Co</span><span>$1,800</span><span class="vo-st late">12 days late</span></div><div class="vo-tr"><span>Brightline</span><span>$960</span><span class="vo-st paid">Paid</span></div><div class="vo-tr"><span>Northwind</span><span>$2,350</span><span class="vo-st paid">Paid</span></div><div class="vo-tr"><span>Okafor Studio</span><span>$1,120</span><span class="vo-st due">Due Oct 9</span></div></div>
           </div>
-          <div class="mc-notch"></div>
+          <span class="vo-grab"></span>
+          <div class="vo-bar glass"><img src="faces/agent-theo.png" alt=""><span class="vo-name">Theo&#8217;s computer</span><i class="vo-sep"></i><span class="vo-tool"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="vo-tool on"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 13V6.5a1.5 1.5 0 0 1 3 0V12M11 11V5a1.5 1.5 0 0 1 3 0v6M14 11V6.5a1.5 1.5 0 0 1 3 0V14a6 6 0 0 1-6 6h-.5A5.5 5.5 0 0 1 6 17.4L4.2 14a1.5 1.5 0 0 1 2.6-1.5L8 14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="vo-tool"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="vo-tool"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h.01M12 12h.01M18 12h.01" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
+          <div class="vo-note glass">
+            <div class="vo-note-top"><span class="vo-btn sm"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="vo-btn sm"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v5M10 19H5v-5M19 5l-6 6M5 19l6-6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
+            <p>Two invoices are past due. I&#8217;m writing to Acme Health first, from your Gmail, the way you asked.</p>
+            <ul><li class="ok">Opened the invoices</li><li class="ok">Found 2 past due</li><li class="now">Writing to Acme Health</li></ul>
+          </div>
         </div>
       </article>
 
