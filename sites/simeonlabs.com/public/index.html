@@ -179,19 +179,14 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
   .cap .who,.cap.top .who{justify-content:flex-start}
 }
 @media (max-width:809.98px){.track{gap:12px}.slide{aspect-ratio:4/5.4;border-radius:24px}}
-/* The gallery's controls: dots with a filling bar for the current card, and play/pause. */
-.gctl{display:flex;justify-content:center;gap:12px;margin-top:24px}
-.dots,.playbtn{display:flex;align-items:center;height:56px;border-radius:99px;background:rgba(210,210,215,.64);-webkit-backdrop-filter:saturate(1.8) blur(20px);backdrop-filter:saturate(1.8) blur(20px)}
-.dots{gap:14px;padding:0 22px}
-.dots button{appearance:none;border:0;padding:0;width:8px;height:8px;border-radius:99px;background:rgba(0,0,0,.42);cursor:pointer;position:relative;overflow:hidden;transition:width .4s ease}
-.dots button.on{width:48px;background:rgba(0,0,0,.24)}
-.dots button i{position:absolute;inset:0;border-radius:inherit;background:rgba(0,0,0,.6);transform-origin:0 50%;transform:scaleX(0)}
-.dots button.on i{animation:fill var(--dur,6s) linear forwards}
-.paused .dots button.on i{animation-play-state:paused}
-@keyframes fill{to{transform:scaleX(1)}}
-.playbtn{appearance:none;border:0;width:56px;justify-content:center;cursor:pointer;color:var(--ink)}
-.playbtn svg{width:20px;height:20px}
-.dots button:focus-visible,.playbtn:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+/* The gallery's controls: back and next, round, at the right edge of the column. */
+.gctl{display:flex;justify-content:flex-end;gap:18px;width:var(--col);margin:28px auto 0}
+.gbtn{appearance:none;border:0;width:56px;height:56px;border-radius:50%;background:#d2d2d7;color:#424245;display:grid;place-items:center;cursor:pointer;transition:background .2s,color .2s}
+.gbtn:hover{background:#c7c7cc}
+.gbtn:disabled{background:#e8e8ed;color:#bcbcc0;cursor:default}
+.gbtn svg{width:24px;height:24px}
+.gbtn:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+@media (max-width:734px){.gctl{gap:14px;margin-top:22px}.gbtn{width:44px;height:44px}.gbtn svg{width:20px;height:20px}}
 
 /* Devices. Every size inside a device is a share of the device's own width (cqw). */
 .phone{position:absolute;container-type:inline-size}
@@ -763,8 +758,8 @@ footer nav{display:flex;gap:18px}
 
     </div>
     <div class="gctl">
-      <div class="dots" role="tablist" aria-label="Choose an agent"></div>
-      <button class="playbtn" type="button" aria-label="Pause"><svg viewBox="0 0 20 20" fill="currentColor"><rect x="5" y="4" width="3.4" height="12" rx="1"/><rect x="11.6" y="4" width="3.4" height="12" rx="1"/></svg></button>
+      <button class="gbtn" type="button" aria-label="Previous"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 6 8.5 12l6 6"/></svg></button>
+      <button class="gbtn" type="button" aria-label="Next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 6 6 6-6 6"/></svg></button>
     </div>
   </div>
 
@@ -1179,47 +1174,25 @@ footer nav{display:flex;gap:18px}
   new ResizeObserver(() => frame(0)(performance.now())).observe(orbit);
   new IntersectionObserver(([e]) => { if (e.isIntersecting) { t0 = null; requestAnimationFrame(frame(++run)); } else run++; }, { threshold: 0.1 }).observe(orbit);
 })();
-// The team gallery: one card at a time, the next one every few seconds, paused when you take over.
+// The team gallery: back and next move one card at a time, and grey out at either end.
 (() => {
   const gal = document.querySelector('.gallery'), track = gal.querySelector('.track'), slides = [...track.children];
-  const dots = gal.querySelector('.dots'), play = gal.querySelector('.playbtn');
-  const DUR = 6500, still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  gal.style.setProperty('--dur', DUR + 'ms');
-  slides.forEach((s, i) => {
-    const b = document.createElement('button');
-    b.type = 'button'; b.setAttribute('role', 'tab'); b.setAttribute('aria-label', s.getAttribute('aria-label'));
-    b.innerHTML = '<i></i>'; b.addEventListener('click', () => { go(i); });
-    dots.appendChild(b);
-  });
-  const bs = [...dots.children];
-  let cur = -1, timer = 0, playing = !still, seen = false;
-  const mark = (i) => {
-    if (i === cur) return; cur = i;
-    bs.forEach((b, k) => { b.classList.toggle('on', k === i); b.setAttribute('aria-selected', String(k === i)); const f = b.firstChild; f.style.animation = 'none'; void f.offsetWidth; f.style.animation = ''; });
-    schedule();
-  };
-  const go = (i) => { const s = slides[i]; track.scrollTo({ left: s.offsetLeft - slides[0].offsetLeft, behavior: still ? 'auto' : 'smooth' }); mark(i); };
-  const schedule = () => { clearTimeout(timer); gal.classList.toggle('paused', !(playing && seen)); if (playing && seen) timer = setTimeout(() => go((cur + 1) % slides.length), DUR); };
-  const setPlay = (on) => {
-    playing = on; play.setAttribute('aria-label', on ? 'Pause' : 'Play');
-    play.innerHTML = on ? '<svg viewBox="0 0 20 20" fill="currentColor"><rect x="5" y="4" width="3.4" height="12" rx="1"/><rect x="11.6" y="4" width="3.4" height="12" rx="1"/></svg>'
-                        : '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M6 3.8v12.4a.8.8 0 0 0 1.2.7l10-6.2a.8.8 0 0 0 0-1.4l-10-6.2a.8.8 0 0 0-1.2.7z"/></svg>';
-    if (on) { const b = bs[cur] && bs[cur].firstChild; if (b) { b.style.animation = 'none'; void b.offsetWidth; b.style.animation = ''; } }
-    schedule();
-  };
-  play.addEventListener('click', () => setPlay(!playing));
+  const [prev, next] = gal.querySelectorAll('.gbtn');
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let cur = 0;
+  const sync = () => { prev.disabled = cur === 0; next.disabled = cur === slides.length - 1; };
+  const go = (i) => { cur = Math.max(0, Math.min(slides.length - 1, i)); track.scrollTo({ left: slides[cur].offsetLeft - slides[0].offsetLeft, behavior: still ? 'auto' : 'smooth' }); sync(); };
+  prev.addEventListener('click', () => go(cur - 1));
+  next.addEventListener('click', () => go(cur + 1));
   // Whichever card sits at the left edge is the current one, however it got there.
   let raf = 0;
   track.addEventListener('scroll', () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => {
     const x = track.scrollLeft + slides[0].offsetLeft; let best = 0;
     slides.forEach((s, k) => { if (Math.abs(s.offsetLeft - x) < Math.abs(slides[best].offsetLeft - x)) best = k; });
-    mark(best);
+    cur = best; sync();
   }); }, { passive: true });
-  // A swipe or a scroll by hand stops the slideshow.
-  for (const ev of ['pointerdown', 'wheel', 'touchstart']) track.addEventListener(ev, () => { if (playing) setPlay(false); }, { passive: true });
-  track.addEventListener('keydown', (e) => { const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if (d) { e.preventDefault(); setPlay(false); go(Math.max(0, Math.min(slides.length - 1, cur + d))); } });
-  new IntersectionObserver(([e]) => { seen = e.isIntersecting; schedule(); }, { threshold: 0.35 }).observe(track);
-  setPlay(playing); mark(0);
+  track.addEventListener('keydown', (e) => { const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if (d) { e.preventDefault(); go(cur + d); } });
+  sync();
 })();
 
 // Each row of cards: the arrows scroll it a card at a time, and hide when everything fits.
