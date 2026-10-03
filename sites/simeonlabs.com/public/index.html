@@ -424,31 +424,32 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
    the app's own bubbles and blue, two suggestion chips, the composer, the caption underneath. */
 #team{background:var(--page);padding-top:0;padding-bottom:120px}
 .slide.msg-slide{background:var(--soft)}
-/* Card 5: calling an agent. An iPhone rising from the bottom of the card, mid-call with Theo. */
-.slide.call-slide{background:var(--soft);color:var(--ink)}
-.cl-phone{position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:34cqw;height:79%;border:1.15cqw solid #111;border-bottom:0;border-radius:6.2cqw 6.2cqw 0 0;box-shadow:0 0 0 .32cqw #9a9aa0,0 0 0 .5cqw #d8d8dc;overflow:hidden;background:radial-gradient(120% 70% at 50% 18%,rgb(136,167,105),rgb(52,66,38) 62%,rgb(24,30,18));color:#fff;text-align:center}
-.cl-island{display:block;width:10.5cqw;height:3cqw;margin:1.4cqw auto 0;border-radius:99px;background:#000}
-.cl-name{margin:2.8cqw 0 0;font-size:3.6cqw;font-weight:600;letter-spacing:-.02em;line-height:1.1}
-.cl-time{margin:.5cqw 0 0;font-size:1.6cqw;color:rgba(255,255,255,.7);font-variant-numeric:tabular-nums}
-.cl-av{display:block;width:10.4cqw;margin:2cqw auto 0;filter:drop-shadow(0 1cqw 2cqw rgba(0,0,0,.25))}
-.cl-keys{display:grid;grid-template-columns:repeat(3,6cqw);justify-content:center;gap:1.3cqw 2.8cqw;margin-top:2.8cqw;font-size:1.15cqw;color:rgba(255,255,255,.85)}
-.cl-key{display:flex;flex-direction:column;align-items:center;gap:.6cqw}
-.cl-key i{width:6cqw;height:6cqw;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.18);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
-.cl-key.on i{background:#fff;color:#1d1d1f}
-.cl-key.hang{grid-column:2}
-.cl-key.hang i{background:var(--red)}
-.cl-key svg{width:2.7cqw;height:2.7cqw}
-.cl-time b{font-weight:400;display:inline-block;width:.6em;animation:cl-dot 1s steps(1) infinite}
-@keyframes cl-dot{50%{opacity:.35}}
+/* Card 5: calling an agent. The call window in liquid glass over a painting: the agent, its live voice, the controls, and the conversation so far. */
+.slide.call-slide{background:#c9b8a8 url(img/paint-pastel.jpg) center/cover;color:var(--ink)}
+.cw{position:absolute;left:50%;top:24.5%;width:48cqw;transform:translateX(-50%);border-radius:3.4cqw;overflow:hidden;
+  background:linear-gradient(160deg,rgba(255,255,255,.42),rgba(255,255,255,.2));-webkit-backdrop-filter:blur(28px) saturate(1.8);backdrop-filter:blur(28px) saturate(1.8);
+  box-shadow:inset 0 0 0 .1cqw rgba(255,255,255,.75),inset 0 .25cqw .5cqw rgba(255,255,255,.55),0 2.4cqw 5cqw -1.6cqw rgba(40,30,60,.28);font-size:1.5cqw;line-height:1.32;letter-spacing:-.01em}
+.cw-top{display:flex;align-items:center;gap:1.2cqw;padding:1.5cqw 1.6cqw;border-bottom:.08cqw solid rgba(255,255,255,.6)}
+.cw-av{width:4.4cqw;height:auto;flex:none;filter:drop-shadow(0 .3cqw .6cqw rgba(60,30,80,.2))}
+.cw-wave{display:flex;align-items:center;gap:.36cqw;height:3.6cqw;margin-right:auto}
+.cw-wave i{width:.3cqw;height:30%;border-radius:99px;background:#8e5aa0;animation:cw-talk 1.1s ease-in-out infinite}
+.cw-wave i:nth-child(3n){animation-duration:.8s}.cw-wave i:nth-child(4n+1){animation-duration:1.4s}.cw-wave i:nth-child(5n+2){animation-delay:-.4s}.cw-wave i:nth-child(odd){animation-delay:-.7s}
+.cw-btn{flex:none;width:4.6cqw;height:4.6cqw;border-radius:50%;display:grid;place-items:center;color:#3a3a3c;background:rgba(255,255,255,.38);box-shadow:inset 0 0 0 .08cqw rgba(255,255,255,.8),0 .3cqw .8cqw -.3cqw rgba(0,0,0,.15)}
+.cw-btn.on{background:rgba(255,255,255,.85);color:#1d1d1f}
+.cw-btn.hang{background:var(--red);color:#fff;box-shadow:0 .4cqw 1cqw -.3cqw rgba(255,59,48,.6)}
+.cw-btn svg{width:2.1cqw;height:2.1cqw}
+.cw-log{display:flex;flex-direction:column;gap:1cqw;padding:1.6cqw}
+.cw-log p{margin:0;max-width:80%;padding:1cqw 1.5cqw;border-radius:1.9cqw}
+.cw-log .them{align-self:flex-start;background:rgba(255,255,255,.62);color:#1d1d1f}
+.cw-log .you{align-self:flex-end;background:var(--app-blue);color:#fff}
+@keyframes cw-talk{0%,100%{height:22%}50%{height:100%}}
 @container slide (max-width:700px){
-  .cl-phone{width:76cqw;height:76%;border-width:1.8cqw;border-radius:12cqw 12cqw 0 0}
-  .cl-island{width:23cqw;height:6.6cqw;margin-top:3cqw}
-  .cl-name{margin-top:5.6cqw;font-size:8cqw}.cl-time{font-size:3.6cqw;margin-top:1cqw}
-  .cl-av{width:23cqw;margin-top:4.6cqw}
-  .cl-keys{grid-template-columns:repeat(3,13cqw);gap:2.6cqw 6cqw;margin-top:5.4cqw;font-size:2.6cqw}
-  .cl-key{gap:1.3cqw}.cl-key i{width:13cqw;height:13cqw}.cl-key svg{width:6cqw;height:6cqw}
+  .cw{top:auto;bottom:6%;width:88cqw;border-radius:6.4cqw;font-size:3.3cqw}
+  .cw-top{gap:1.8cqw;padding:2.8cqw}.cw-av{width:8cqw}.cw-wave{gap:.6cqw;height:6cqw}.cw-wave i{width:.55cqw}.cw-wave i:nth-child(n+9){display:none}
+  .cw-btn{width:8.6cqw;height:8.6cqw}.cw-btn svg{width:4cqw;height:4cqw}
+  .cw-log{gap:2cqw;padding:2.8cqw}.cw-log p{padding:2cqw 3cqw;border-radius:4cqw;max-width:86%}
 }
-@media (prefers-reduced-motion:reduce){.cl-time b{animation:none}}
+@media (prefers-reduced-motion:reduce){.cw-wave i{animation:none;height:60%}}
 
 /* Card 4: agents passing work between them, on a grainy dusk ground. */
 .slide.tw-slide{background:#262a44 url(img/dusk-grain.jpg) center/cover;color:#fff}
@@ -713,12 +714,14 @@ footer nav{display:flex;gap:18px}
 
       <article class="slide call-slide" aria-label="Call your agents">
         <p class="cap top">Call any agent, and talk it through.</p>
-        <div class="cl-phone" aria-hidden="true">
-          <span class="cl-island"></span>
-          <p class="cl-name">Theo</p>
-          <p class="cl-time">02<b>:</b>14</p>
-          <img class="cl-av" src="faces/agent-theo.png" alt="">
-          <div class="cl-keys"><span class="cl-key "><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg></i>Speaker</span><span class="cl-key "><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="13" height="12" rx="2.5"/><path d="m15.5 10.5 6-3.5v10l-6-3.5"/></svg></i>FaceTime</span><span class="cl-key on"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 9v3a3 3 0 0 0 5.1 2.1M15 9.3V5a3 3 0 0 0-5.9-.7M5 11a7 7 0 0 0 11.9 5M19 11a7 7 0 0 1-.6 2.8M12 18v3M3 3l18 18"/></svg></i>Mute</span><span class="cl-key hang"><i><svg viewBox="0 0 24 24"><path fill="#fff" d="M12 9c-2.6 0-5 .6-7.1 1.7-.6.3-.9.9-.9 1.6v2.3c0 .7.7 1.2 1.4 1l3-1c.5-.2.8-.6.8-1.1v-1.6a12 12 0 0 1 5.6 0v1.6c0 .5.3.9.8 1.1l3 1c.7.2 1.4-.3 1.4-1v-2.3c0-.7-.3-1.3-.9-1.6A15.6 15.6 0 0 0 12 9z"/></svg></i>End</span></div>
+        <div class="cw" aria-hidden="true">
+          <div class="cw-top"><img class="cw-av" src="faces/agent-nora.png" alt=""><span class="cw-wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="cw-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></span><span class="cw-btn on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-12.2 7.5L3 21l2-5.6A8.4 8.4 0 1 1 21 11.5z"/><path d="M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01"/></svg></span><span class="cw-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span><span class="cw-btn hang"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg></span></div>
+          <div class="cw-log">
+            <p class="you">Nora, what&#8217;s left before Friday?</p>
+            <p class="them">Two things. The Halden contract is waiting on your signature, and the offsite still needs a venue.</p>
+            <p class="you">Find somewhere for twelve, close to the office.</p>
+            <p class="them">On it. You&#8217;ll have three options in your inbox before lunch.</p>
+          </div>
         </div>
       </article>
 
