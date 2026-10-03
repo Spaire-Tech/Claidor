@@ -356,70 +356,61 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .vo-cap{text-shadow:0 1px 18px rgba(0,0,0,.35)}
 .glass{background:linear-gradient(160deg,rgba(255,255,255,.22),rgba(255,255,255,.08));-webkit-backdrop-filter:blur(28px) saturate(1.6);backdrop-filter:blur(28px) saturate(1.6);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 0 0 1px rgba(255,255,255,.16),0 2.2cqw 5cqw rgba(10,20,50,.25);color:#fff}
 .slide.sp-slide{background:#cbb9a5 url(img/room-vision.jpg) center/cover}
-.sp-slide::before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(rgba(40,28,18,.42),rgba(40,28,18,0) 30%);pointer-events:none;transition:opacity .9s}
+.sp-slide::before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(rgba(40,28,18,.42),rgba(40,28,18,0) 30%);pointer-events:none}
 .sp-cap{z-index:6;text-shadow:0 1px 18px rgba(0,0,0,.3);color:#fff}
 .sp{position:absolute;inset:0;z-index:2}
-/* visionOS glass: windows float in the room. */
 .sp-glass{background:linear-gradient(160deg,rgba(255,255,255,.26),rgba(255,255,255,.1));-webkit-backdrop-filter:blur(26px) saturate(1.5);backdrop-filter:blur(26px) saturate(1.5);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 0 0 1px rgba(255,255,255,.14),0 2cqw 5cqw rgba(40,24,10,.22)}
-.sp-side{position:absolute;top:31%;bottom:22%;width:17%;border-radius:2.4cqw;overflow:hidden;opacity:.85;transition:opacity .9s,transform .9s}
-.sp-side.l{left:2.5%}.sp-side.r{right:2.5%}
-.sp-side i{position:absolute;inset:9% 10%;border-radius:1.4cqw;background:center/cover;filter:blur(.5cqw) saturate(.8);opacity:.75}
-.sp-tabs{position:absolute;left:50%;top:22%;transform:translateX(-50%);display:flex;gap:.4cqw;padding:.45cqw;border-radius:99px;font-size:1.15cqw;font-weight:500;transition:opacity .6s}
-.sp-tabs span{padding:.55cqw 1.5cqw;border-radius:99px;color:rgba(255,255,255,.7)}
-.sp-tabs span.on{background:rgba(255,255,255,.28);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.4)}
-.sp-win{position:absolute;left:22%;right:22%;top:30%;bottom:17%;border-radius:2.8cqw;overflow:hidden;background:#3a2a1e;box-shadow:inset 0 0 0 1px rgba(255,255,255,.22),0 2.4cqw 6cqw rgba(40,24,10,.32);transition:left .9s cubic-bezier(.4,0,.2,1),right .9s cubic-bezier(.4,0,.2,1),top .9s cubic-bezier(.4,0,.2,1),bottom .9s cubic-bezier(.4,0,.2,1),border-radius .9s}
-.sp-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scale(1.02);transition:transform 6s ease-out}
-.sp-win::after{content:"";position:absolute;inset:0;background:linear-gradient(rgba(0,0,0,.28),rgba(0,0,0,0) 28%,rgba(0,0,0,0) 48%,rgba(0,0,0,.62));transition:background .9s}
-.sp-head{position:absolute;z-index:2;left:2cqw;top:1.7cqw;display:flex;align-items:center;gap:.8cqw;font-size:1.2cqw;font-weight:600;color:#fff;transition:opacity .5s}
-.sp-head img{width:2.6cqw;height:auto;filter:drop-shadow(0 .2cqw .4cqw rgba(0,0,0,.3))}
-.sp-icons{position:absolute;z-index:2;right:1.8cqw;top:1.5cqw;display:flex;gap:1.3cqw;color:#fff;transition:opacity .5s}
-.sp-icons svg{width:1.6cqw;height:1.6cqw}
-.sp-text{position:absolute;z-index:2;left:2cqw;bottom:1.9cqw;width:52%;color:#fff;transition:opacity .5s}
-.sp-text p{margin:0;font-size:1.25cqw;line-height:1.38;font-weight:500}
-.sp-text small{display:block;margin-top:.6cqw;font-size:.85cqw;font-weight:600;letter-spacing:.08em;color:#7fb6f0}
-.sp-status{position:absolute;z-index:2;right:1.8cqw;bottom:1.9cqw;display:inline-flex;align-items:center;gap:.7cqw;padding:.6cqw 1.2cqw;border-radius:99px;font-size:1.1cqw;color:#fff;transition:opacity .5s}
-.sp-status i{width:1cqw;height:1cqw;border-radius:50%;border:.18cqw solid #fff;border-right-color:transparent;animation:sp-spin 1s linear infinite}
-/* Immersive: the window opens to fill the room. */
-.sp-ctl{position:absolute;z-index:3;left:50%;top:22%;transform:translateX(-50%);display:flex;align-items:center;gap:.7cqw;opacity:0;transition:opacity .6s}
-.sp-ctl span{display:inline-flex;align-items:center;gap:.6cqw;height:2.8cqw;padding:0 1.2cqw;border-radius:99px;font-size:1.1cqw;font-weight:500;color:#fff}
-.sp-ctl span.c{width:2.8cqw;padding:0;justify-content:center}
-.sp-ctl img{width:1.8cqw;height:auto}
-.sp-ctl svg{width:1.3cqw;height:1.3cqw}
-.sp-big{position:absolute;z-index:3;left:50%;bottom:16%;width:46%;transform:translateX(-50%);text-align:center;color:#fff;opacity:0;transition:opacity .6s}
-.sp-big p{margin:0;font-family:"Newsreader",Georgia,"Times New Roman",serif;font-size:2.3cqw;line-height:1.22;text-shadow:0 .2cqw 1.6cqw rgba(0,0,0,.35)}
-.sp-big small{display:block;margin-top:1cqw;font-size:.95cqw;font-weight:600;letter-spacing:.1em;color:#8fc2f5}
-.sp-big span{display:inline-block;margin-top:1.4cqw;padding:.6cqw 1.4cqw;border-radius:99px;font-size:1.05cqw;font-weight:500}
-.sp.imm .sp-win{left:0;right:0;top:0;bottom:0;border-radius:0}
-.sp.imm .sp-img{transform:scale(1.1)}
-.sp.imm .sp-win::after{background:linear-gradient(rgba(0,0,0,.38),rgba(0,0,0,.08) 35%,rgba(0,0,0,.5))}
-.sp.imm .sp-side{opacity:0;transform:scale(.94)}
-.sp.imm .sp-tabs,.sp.imm .sp-head,.sp.imm .sp-icons,.sp.imm .sp-text,.sp.imm .sp-status{opacity:0}
-.sp.imm .sp-ctl,.sp.imm .sp-big{opacity:1;transition-delay:.5s}
-.sp-slide:has(.sp.imm)::before{opacity:0}
-/* Pause, with the time to the next view as a ring. */
-.sp-play{position:absolute;z-index:7;right:2.4%;bottom:3.8%;width:4.6cqw;height:4.6cqw;padding:0;border:0;border-radius:50%;display:grid;place-items:center;color:#fff;cursor:pointer;background:rgba(30,22,16,.28);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
-.sp-play svg.ring{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
-.sp-play .trk{fill:none;stroke:rgba(255,255,255,.35);stroke-width:2}
-.sp-play .prg{fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-dasharray:138.2;stroke-dashoffset:138.2}
-.sp-play.run .prg{animation:sp-ring var(--sp-dur,5s) linear forwards}
-.sp-play.hold .prg{animation-play-state:paused}
-.sp-play svg.ic{width:38%;height:38%}
-.sp-play:focus-visible{outline:2px solid #fff;outline-offset:3px}
-@keyframes sp-ring{to{stroke-dashoffset:0}}
-@keyframes sp-spin{to{transform:rotate(360deg)}}
+/* Apple TV on visionOS: one window in the room, a glass tab bar beside it, a grabber under it. */
+.sp-tabs{position:absolute;left:8.5%;top:39%;display:flex;flex-direction:column;gap:1.1cqw;padding:.9cqw;border-radius:99px}
+.sp-tabs img{display:block;width:3cqw;height:3cqw;object-fit:contain;padding:.35cqw;border-radius:50%;opacity:.8}
+.sp-tabs img.on{background:rgba(255,255,255,.34);opacity:1;box-shadow:inset 0 1px 0 rgba(255,255,255,.5)}
+.sp-win{position:absolute;left:14%;right:9%;top:25%;bottom:13%;border-radius:2.8cqw;overflow:hidden;color:#fff;
+  background:radial-gradient(70% 90% at 78% 30%,rgba(124,160,220,.35),transparent 60%),linear-gradient(150deg,#2b3550,#1a2033 55%,#151a28);box-shadow:inset 0 0 0 1px rgba(255,255,255,.2),0 2.4cqw 6cqw rgba(40,24,10,.32)}
+.sp-win::before{content:"";position:absolute;inset:0;background:url(img/dusk-grain.jpg) center/cover;opacity:.35;mix-blend-mode:screen}
+.sp-top{position:absolute;z-index:2;left:1.8cqw;right:1.8cqw;top:1.6cqw;display:flex;justify-content:space-between}
+.sp-top span{display:grid;place-items:center;width:2.6cqw;height:2.6cqw;border-radius:50%;color:#fff}
+.sp-top svg{width:1.3cqw;height:1.3cqw}
+.sp-info{position:absolute;z-index:2;left:3cqw;top:18%;width:44%}
+.sp-kick{display:flex;align-items:center;gap:.7cqw;font-size:1.05cqw;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.75)}
+.sp-kick img{width:2cqw;height:auto}
+.sp-title{margin:.9cqw 0 0;font-family:"Newsreader",Georgia,"Times New Roman",serif;font-size:3.6cqw;line-height:1;font-weight:400;letter-spacing:-.02em}
+.sp-meta{display:flex;align-items:center;gap:.6cqw;margin-top:1.1cqw;font-size:1.05cqw;color:rgba(255,255,255,.72)}
+.sp-meta img{width:1.3cqw;height:1.3cqw;object-fit:contain}
+.sp-meta b{font-weight:500;padding:.05cqw .45cqw;border:1px solid rgba(255,255,255,.5);border-radius:.3cqw;font-size:.85cqw}
+.sp-desc{margin:1.1cqw 0 0;font-size:1.15cqw;line-height:1.45;color:rgba(255,255,255,.82)}
+.sp-btns{display:flex;gap:.8cqw;margin-top:1.6cqw}
+.sp-btns span{display:inline-flex;align-items:center;gap:.6cqw;height:3.2cqw;padding:0 1.6cqw;border-radius:99px;font-size:1.15cqw;font-weight:500}
+.sp-btns span.c{width:3.2cqw;padding:0;justify-content:center;font-size:1.6cqw;font-weight:400}
+.sp-btns svg{width:1.1cqw;height:1.1cqw}
+.sp-by{position:absolute;z-index:2;right:3cqw;top:63%;width:22%;font-size:1cqw;line-height:1.4;color:rgba(255,255,255,.66)}
+/* The slide Simeon is writing, on the right. */
+.sp-slideprev{position:absolute;z-index:1;right:3cqw;top:15%;width:34%;aspect-ratio:16/10;border-radius:1.2cqw;background:#fbfaf8;color:#1d1d1f;padding:1.4cqw;box-shadow:0 1.6cqw 4cqw rgba(0,0,0,.35);transform:perspective(60cqw) rotateY(-8deg);transform-origin:right center}
+.sp-slideprev h5{margin:0;font-size:1.25cqw;font-weight:600;letter-spacing:-.01em}
+.sp-slideprev p{margin:.3cqw 0 0;font-size:.85cqw;color:#6e6e73}
+.sp-slideprev svg{display:block;width:100%;margin-top:1cqw}
+.sp-slideprev .cur{display:inline-block;width:.12cqw;height:1em;background:var(--app-blue);vertical-align:-.15em;margin-left:.1cqw;animation:sp-blink 1s steps(1) infinite}
+.sp-row{position:absolute;z-index:2;left:3cqw;right:3cqw;bottom:-1.2cqw;display:grid;grid-template-columns:repeat(4,1fr);gap:1.2cqw}
+.sp-row span{height:6.4cqw;border-radius:1cqw;background:#f5f4f1;color:#1d1d1f;padding:.8cqw 1cqw;font-size:.8cqw;font-weight:600;overflow:hidden;opacity:.92}
+.sp-row span i{display:block;margin-top:.5cqw;height:.45cqw;border-radius:99px;background:#d9d9de;width:70%}
+.sp-row span i+i{width:45%}
+.sp-row span.now{box-shadow:0 0 0 .2cqw var(--app-blue)}
+.sp-row span.todo{background:rgba(255,255,255,.14);color:rgba(255,255,255,.6)}
+.sp-row span.todo i{background:rgba(255,255,255,.18)}
+.sp-grab{position:absolute;left:calc(14% + (100% - 14% - 9%) / 2 - 3.5cqw);bottom:9.6%;width:7cqw;height:.55cqw;border-radius:99px;background:rgba(255,255,255,.75)}
+@keyframes sp-blink{50%{opacity:0}}
 @container slide (max-width:700px){
-  .sp-side{display:none}
-  .sp-tabs{top:30%;font-size:2.8cqw;padding:1cqw}.sp-tabs span{padding:1.2cqw 3cqw}
-  .sp-win{left:5%;right:5%;top:38%;bottom:14%;border-radius:5.4cqw}
-  .sp-head{left:4cqw;top:3.4cqw;font-size:3cqw;gap:1.6cqw}.sp-head img{width:6cqw}
-  .sp-icons{right:4cqw;top:3.4cqw;gap:3cqw}.sp-icons svg{width:3.8cqw;height:3.8cqw}
-  .sp-text{left:4cqw;bottom:4cqw;width:84%}.sp-text p{font-size:3.3cqw}.sp-text small{font-size:2.3cqw;margin-top:1.4cqw}
-  .sp-status{display:none}
-  .sp-ctl{top:30%;gap:1.6cqw}.sp-ctl span{height:7cqw;padding:0 3cqw;font-size:2.8cqw;gap:1.4cqw}.sp-ctl span.c{width:7cqw}.sp-ctl img{width:4.4cqw}.sp-ctl svg{width:3.2cqw;height:3.2cqw}
-  .sp-big{width:86%;bottom:14%}.sp-big p{font-size:5.4cqw}.sp-big small{font-size:2.4cqw;margin-top:2.4cqw}.sp-big span{font-size:2.6cqw;padding:1.4cqw 3cqw;margin-top:3cqw}
-  .sp-play{width:11cqw;height:11cqw;right:5%;bottom:3%}
+  .sp-tabs{left:50%;top:auto;bottom:4%;transform:translateX(-50%);flex-direction:row;gap:2.4cqw;padding:1.8cqw}.sp-tabs img{width:7cqw;height:7cqw;padding:.8cqw}
+  .sp-win{left:5%;right:5%;top:31%;bottom:17%;border-radius:5.4cqw}
+  .sp-top{left:3.6cqw;right:3.6cqw;top:3.4cqw}.sp-top span{width:6cqw;height:6cqw}.sp-top svg{width:3cqw;height:3cqw}
+  .sp-info{left:5cqw;right:5cqw;width:auto;top:16%}
+  .sp-kick{font-size:2.4cqw;gap:1.4cqw}.sp-kick img{width:4.6cqw}
+  .sp-title{font-size:7.4cqw;margin-top:2cqw}
+  .sp-meta{font-size:2.4cqw;gap:1.4cqw;margin-top:2.2cqw}.sp-meta img{width:3cqw;height:3cqw}.sp-meta b{font-size:2cqw}
+  .sp-desc{font-size:2.9cqw;margin-top:2.2cqw}
+  .sp-btns{gap:2cqw;margin-top:3.4cqw}.sp-btns span{height:8cqw;padding:0 4cqw;font-size:3cqw;gap:1.4cqw}.sp-btns span.c{width:8cqw;font-size:4cqw}.sp-btns svg{width:2.8cqw;height:2.8cqw}
+  .sp-slideprev,.sp-by,.sp-row,.sp-grab{display:none}
 }
-@media (prefers-reduced-motion:reduce){.sp-win,.sp-img,.sp-side,.sp-status i{transition:none;animation:none}}
+@media (prefers-reduced-motion:reduce){.sp-slideprev .cur{animation:none}}
 
 /* The first card: messaging an agent like a teammate (the founder, 3 October 2026, with Apple's
    Messages card as the model): a phone cut off by the card's top edge, one exchange with Theo in
@@ -705,20 +696,22 @@ footer nav{display:flex;gap:18px}
       <article class="slide sp-slide" aria-label="A computer for every agent">
         <p class="cap top sp-cap">Every agent works on a computer of its own. Watch it work, or take over whenever you like.</p>
         <div class="sp" aria-hidden="true">
-          <div class="sp-side l sp-glass"><i style="background-image:url(img/paint-green.jpg)"></i></div>
-          <div class="sp-side r sp-glass"><i style="background-image:url(img/paint-pastel.jpg)"></i></div>
-          <div class="sp-tabs sp-glass"><span class="on">Simeon</span><span>Iris</span><span>Theo</span></div>
+          <div class="sp-tabs sp-glass"><img class="on" src="faces/agent-simeon.png" alt=""><img src="faces/agent-iris.png" alt=""><img src="faces/agent-theo.png" alt=""><img src="faces/agent-scout.png" alt=""><img src="faces/agent-nora.png" alt=""></div>
           <div class="sp-win">
-            <img class="sp-img" src="img/dinner.jpg" alt="">
-            <div class="sp-head"><img src="faces/agent-simeon.png" alt="">Simeon&#8217;s computer</div>
-            <div class="sp-icons"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V6.5a1.5 1.5 0 0 1 3 0V12M11 11V5a1.5 1.5 0 0 1 3 0v6M14 11V6.5a1.5 1.5 0 0 1 3 0V14a6 6 0 0 1-6 6h-.5A5.5 5.5 0 0 1 6 17.4L4.2 14a1.5 1.5 0 0 1 2.6-1.5L8 14"/></svg></div>
-            <div class="sp-text"><p>Booking dinner for the launch team: a table for 6 on Thursday at 7:30, five minutes from the office.</p><small>THU 9 &#183; OSTERIA LUCE</small></div>
-            <span class="sp-status sp-glass"><i></i>Reserving 7:30</span>
+            <div class="sp-top"><span class="sp-glass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 6l-6 6 6 6"/></svg></span><span class="sp-glass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></svg></span></div>
+            <div class="sp-slideprev"><h5>Revenue, up 31%<span class="cur"></span></h5><p>July to September &#183; from Stripe</p><svg viewBox="0 0 200 80" aria-hidden="true"><path d="M0 70 L25 64 L50 66 L75 55 L100 52 L125 40 L150 34 L175 20 L200 12" fill="none" stroke="#255a93" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M0 70 L25 64 L50 66 L75 55 L100 52 L125 40 L150 34 L175 20 L200 12 V80 H0z" fill="rgba(37,90,147,.1)"/><line x1="0" y1="79.5" x2="200" y2="79.5" stroke="#e5e5ea"/></svg></div>
+            <div class="sp-info">
+              <div class="sp-kick"><img src="faces/agent-simeon.png" alt="">Simeon&#8217;s computer</div>
+              <p class="sp-title">Q3 Investor Update</p>
+              <div class="sp-meta"><img src="logos/google-slides.webp" alt="">Google Slides &#183; 12 slides &#183; Writing slide 4 <b>DRAFT</b></div>
+              <p class="sp-desc">Simeon pulled revenue from Stripe, the pipeline from HubSpot and this quarter&#8217;s wins from Slack, and is writing the summary now.</p>
+              <div class="sp-btns"><span class="sp-glass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>Watch it work</span><span class="c sp-glass">+</span></div>
+            </div>
+            <p class="sp-by">Using Stripe, HubSpot and Slack. Ready for your review by 4 PM.</p>
+            <div class="sp-row"><span>Highlights<i></i><i></i></span><span>Revenue<i></i><i></i></span><span class="now">Pipeline<i></i><i></i></span><span class="todo">Hiring<i></i><i></i></span></div>
           </div>
-          <div class="sp-ctl"><span class="c sp-glass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 6l-6 6 6 6"/></svg></span><span class="sp-glass"><img src="faces/agent-simeon.png" alt="">Simeon</span><span class="c sp-glass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></span></div>
-          <div class="sp-big"><p>A table for 6 at Osteria Luce, Thursday at 7:30. Simeon is booking it now, five minutes from the office.</p><small>THU 9 &#183; OSTERIA LUCE</small><span class="sp-glass">Take over</span></div>
+          <span class="sp-grab"></span>
         </div>
-        <button class="sp-play run" type="button" aria-label="Pause"><svg class="ring" viewBox="0 0 48 48" aria-hidden="true"><circle class="trk" cx="24" cy="24" r="22"/><circle class="prg" cx="24" cy="24" r="22"/></svg><svg class="ic" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><rect x="5" y="4" width="3.4" height="12" rx="1"/><rect x="11.6" y="4" width="3.4" height="12" rx="1"/></svg></button>
       </article>
 
       <article class="slide apps-slide" aria-label="Connect your apps">
@@ -867,21 +860,6 @@ footer nav{display:flex;gap:18px}
   new IntersectionObserver(([e]) => { clearTimeout(timer); if (e.isIntersecting) loop(); else { sheet.classList.remove('agreed'); btn.classList.remove('press'); } }, { threshold: .5 }).observe(sheet.closest('.slide'));
 })();
 
-// The computer card: the window opens to fill the room and returns, every few seconds while in view; pause stops it.
-(() => {
-  const sc = document.querySelector('.sp'), btn = document.querySelector('.sp-play');
-  if (!sc || !btn) return;
-  const DUR = 5000, still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let playing = !still, seen = false, t = 0;
-  btn.style.setProperty('--sp-dur', DUR + 'ms');
-  const ring = () => { btn.classList.remove('run'); void btn.offsetWidth; if (playing && seen) btn.classList.add('run'); };
-  const tick = () => { clearTimeout(t); if (!(playing && seen)) return; t = setTimeout(() => { sc.classList.toggle('imm'); ring(); tick(); }, DUR); };
-  const icon = (on) => on ? '<rect x="5" y="4" width="3.4" height="12" rx="1"/><rect x="11.6" y="4" width="3.4" height="12" rx="1"/>' : '<path d="M6 3.8v12.4a.8.8 0 0 0 1.2.7l10-6.2a.8.8 0 0 0 0-1.4l-10-6.2a.8.8 0 0 0-1.2.7z"/>';
-  const set = (on) => { playing = on; btn.setAttribute('aria-label', on ? 'Pause' : 'Play'); btn.querySelector('.ic').innerHTML = icon(on); ring(); tick(); };
-  btn.addEventListener('click', () => set(!playing));
-  new IntersectionObserver(([e]) => { seen = e.isIntersecting; ring(); tick(); }, { threshold: .5 }).observe(sc.closest('.slide'));
-  set(playing);
-})();
 // The team gallery: back and next move one card at a time, and grey out at either end.
 (() => {
   const gal = document.querySelector('.gallery'), track = gal.querySelector('.track'), slides = [...track.children];
