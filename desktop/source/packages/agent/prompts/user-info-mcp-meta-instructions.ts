@@ -50,7 +50,7 @@ If the user mentions a product or service represented by an available namespace,
 
 Pattern-search and catalog results shorten long descriptions, marked by a trailing "${TRUNCATED_DESCRIPTION_SUFFIX}"; namespace and single-tool lookups always return the complete description.
 
-Always inspect a tool's schema before invoking it with \`${toolNames.invocationToolName}\`.
+Listings and searches give each tool's arguments: invoke it with \`${toolNames.invocationToolName}\` straight from there, and look up one tool's full schema only when an argument needs its description.
 ${dynamicToolFallbackLine}
 
 ${serverListSection}
@@ -77,7 +77,7 @@ If the user mentions, references, or links to a product or service that correspo
 
 Pattern-search and catalog results shorten long descriptions, marked by a trailing "${TRUNCATED_DESCRIPTION_SUFFIX}"; server and single-tool lookups always return the complete description.
 
-MANDATORY - Always call \`${toolNames.discoveryToolName}\` to discover a tool's schema before invoking it with \`${toolNames.invocationToolName}\`. If you already know the server, go directly to it rather than listing the full catalog first.
+List a server's tools once with \`${toolNames.discoveryToolName}\` (each comes with its arguments), then invoke the one you need with \`${toolNames.invocationToolName}\` straight from that list; never guess a tool name. If you already know the server, go directly to it rather than listing the full catalog first. Look up one tool's full schema only when an argument needs its description, or after a call failed on its arguments.
 ${mcpCapabilityFallbackLine}
 
 ${serverListSection}
