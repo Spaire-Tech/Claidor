@@ -341,6 +341,17 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 @container slide (max-width:700px){.s-sales .mac{width:150cqw;right:auto;left:6%;top:39%}.s-sales .note{display:none}}
 
 
+/* The third card: connect your apps, the connector scene from simeonlabs.com as it is live (the
+   founder, 3 October 2026): the Simeon mark on a frosted glass tile over our painting, the apps
+   sliding behind it one place at a time; the logo resting behind the glass swells so the tile takes
+   its colour. */
+.slide.apps-slide{background:url(img/paint-teal.jpg) center/cover}
+.apps-slide .cap{text-shadow:0 1px 18px rgba(0,0,0,.25)}
+.sd-orbit{position:absolute;left:0;right:0;top:22%;bottom:0;overflow:hidden}
+.sd-orb{position:absolute;left:0;top:50%;object-fit:contain;will-change:transform,filter,opacity}
+.sd-tile{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:grid;place-items:center;background:rgba(255,255,255,.40);-webkit-backdrop-filter:blur(20px) saturate(1.9);backdrop-filter:blur(20px) saturate(1.9);border:1px solid rgba(255,255,255,.9)}
+.sd-tile img{width:68%;height:68%}
+
 /* The second card: every agent on a computer of its own, set the way Apple shows visionOS
    (apple.com/apple-vision-pro, visionOS 26: the founder's references, 3 October 2026): a real room
    in evening light (an Unsplash photograph, graded warm and low), and over it Apple's glass, a warm
@@ -638,28 +649,9 @@ footer nav{display:flex;gap:18px}
         </div>
       </article>
 
-      <article class="slide light s-inbox" aria-label="Inbox">
-        <p class="cap top"><span class="who"><img class="face" src="faces/scout.png" alt="">Inbox</span>Inbox works through your email overnight. You wake up to replies already written.</p>
-        <div class="mac"><div class="lid"><div class="scr"><div class="notch"></div>
-          <div class="menubar"><b>Mail</b><span>File</span><span>Edit</span><span>View</span><span>Message</span><span class="r"><span>Fri 3 Oct</span><span>7:02</span></span></div>
-          <div class="win mail">
-            <div class="list"><div class="tl"><i></i><i></i><i></i></div>
-              <div class="row sel"><b>Dana Whitfield<small>6:48</small></b><p>Re: Pilot pricing</p><span class="tag">Reply ready</span></div>
-              <div class="row"><b>Priya Shah<small>Yesterday</small></b><p>Still on for Thursday?</p><span class="tag">Reply ready</span></div>
-              <div class="row"><b>Marcus Lee<small>Yesterday</small></b><p>Intro: Northwind and you</p><span class="tag">Reply ready</span></div>
-              <div class="row"><b>Stripe<small>Wed</small></b><p>Your payout is on its way</p></div>
-              <div class="row"><b>Gusto<small>Wed</small></b><p>Payroll summary for September</p></div>
-            </div>
-            <div class="read">
-              <div class="from"><span class="av">DW</span><div><b>Dana Whitfield</b><span>to Sam</span></div></div>
-              <div class="subj">Re: Pilot pricing</div>
-              <p class="theirs">Hi Sam, the team liked the demo. If we can start at $1,800 a month for three months, we’re ready to sign this week.</p>
-              <div class="draft"><span class="by"><img class="face" src="faces/scout.png" alt="">Written by Inbox</span>
-                <p>Hi Dana, that works for us. $1,800 a month for the first three months, then we’ll review together. I’ve sent an invite for Thursday at 2 to sign it off. Sam</p>
-                <div class="acts"><span>Edit</span><span>Send</span></div></div>
-            </div>
-          </div>
-        </div></div></div>
+      <article class="slide dark apps-slide" aria-label="Connect your apps">
+        <p class="cap top">Connect your apps. Your agents work in the tools you already use.</p>
+        <div class="sd-orbit" aria-hidden="true"><img class="sd-orb" src="logos/slack.webp" alt=""><img class="sd-orb" src="logos/gmail.webp" alt=""><img class="sd-orb" src="logos/notion.svg" alt=""><img class="sd-orb" src="logos/figma.svg" alt=""><img class="sd-orb" src="logos/linear.svg" alt=""><img class="sd-orb" src="logos/google-drive.svg" alt=""><img class="sd-orb" src="logos/hubspot.svg" alt=""><img class="sd-orb" src="logos/zoom.webp" alt=""><img class="sd-orb" src="logos/linkedin.svg" alt=""><img class="sd-orb" src="logos/google-calendar.webp" alt=""><img class="sd-orb" src="logos/stripe.svg" alt=""><img class="sd-orb" src="logos/salesforce.svg" alt=""><div class="sd-tile"><img src="logos/simeon.svg" alt=""></div></div>
       </article>
 
       <article class="slide dark s-money" aria-label="Money">
@@ -1110,6 +1102,47 @@ footer nav{display:flex;gap:18px}
 })();
 </script>
 <script>
+// The connector scene, as simeonlabs.com runs it: the row slides one place in 0.55 s, then holds
+// about a second with a logo resting behind the glass. It runs only while it is on screen.
+(() => {
+  const orbit = document.querySelector('.sd-orbit');
+  if (!orbit) return;
+  const tile = orbit.querySelector('.sd-tile'), orbs = [...orbit.querySelectorAll('.sd-orb')];
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let t0 = null, run = 0;
+  const frame = (id) => (now) => {
+    if (id !== run) return;
+    const W = orbit.clientWidth, H = orbit.clientHeight;
+    if (W && H) {
+      const t = Math.min(W * 0.36, H * 0.44), size = t * 0.5, gap = t * 1.05, lane = gap * orbs.length;
+      tile.style.width = tile.style.height = t + 'px';
+      tile.style.borderRadius = t * 0.235 + 'px';
+      const rim = Math.max(3, t * 0.04);
+      tile.style.boxShadow = 'inset 0 0 0 ' + rim + 'px rgba(255,255,255,.72),inset 0 ' + rim * 0.6 + 'px ' + rim * 0.8 + 'px rgba(255,255,255,.95),'
+        + 'inset 0 -' + rim * 0.8 + 'px ' + rim * 2.2 + 'px rgba(60,70,90,.14),0 ' + t * 0.1 + 'px ' + t * 0.24 + 'px -' + t * 0.06 + 'px rgba(30,40,60,.38),0 2px 5px rgba(30,40,60,.10)';
+      if (t0 == null) t0 = now;
+      const period = 1600, move = 550, k = still ? 0 : (now - t0) / period, step = Math.floor(k), f = Math.min(1, (k - step) * period / move);
+      const ease = f < 0.5 ? 4 * f * f * f : 1 - Math.pow(-2 * f + 2, 3) / 2;
+      const shift = (step + ease) * gap;
+      orbs.forEach((orb, i) => {
+        let x = (i * gap - shift) % lane;
+        if (x < -lane / 2) x += lane;
+        if (x > lane / 2) x -= lane;
+        const d = Math.abs(x) / (W / 2);
+        const grow = 1 + 0.6 * Math.max(0, 1 - Math.abs(x) / (gap * 0.6));
+        const sz = size * grow;
+        orb.style.width = orb.style.height = sz + 'px';
+        orb.style.transform = 'translate(' + (W / 2 + x - sz / 2) + 'px,-50%)';
+        orb.style.filter = 'blur(' + Math.max(0, (d - 0.8) * 22).toFixed(1) + 'px)';
+        orb.style.opacity = Math.max(0, Math.min(1, 1.9 - d)).toFixed(2);
+      });
+    }
+    if (id > 0 && !still) requestAnimationFrame(frame(id));
+  };
+  frame(0)(performance.now()); t0 = null;
+  new ResizeObserver(() => frame(0)(performance.now())).observe(orbit);
+  new IntersectionObserver(([e]) => { if (e.isIntersecting) { t0 = null; requestAnimationFrame(frame(++run)); } else run++; }, { threshold: 0.1 }).observe(orbit);
+})();
 // The team gallery: one card at a time, the next one every few seconds, paused when you take over.
 (() => {
   const gal = document.querySelector('.gallery'), track = gal.querySelector('.track'), slides = [...track.children];
