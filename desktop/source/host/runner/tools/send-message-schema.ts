@@ -22,7 +22,8 @@ export interface SendMessageInput {
   readonly type: SendMessageType; readonly content?: string | undefined; readonly url?: string | undefined;
   readonly images?: readonly { readonly url: string; readonly alt?: string | undefined }[] | undefined; readonly alt?: string | undefined;
   readonly reply_to?: string | undefined; readonly channel?: string | undefined; readonly widget?: unknown; readonly bcId?: string | undefined;
-  readonly secret?: { readonly label: string; readonly description?: string | undefined; readonly connector: string; readonly field: string } | undefined;
+  readonly secret?: { readonly label: string; readonly description?: string | undefined; readonly connector: string; readonly field: string } | null | undefined;
+  readonly final?: boolean | undefined;
 }
 export interface SendMessageIssue { readonly path: readonly (string | number)[]; readonly message: string }
 export function isValidAttachmentUrl(value: string): boolean { try { return ["file:", "https:"].includes(new URL(value).protocol); } catch { return false; } }
