@@ -156,8 +156,8 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 
 /* Meet your team: Apple's gallery. One agent per card, neighbours at the edges. */
 .gallery{position:relative;margin-top:40px}
-.track{--cw:min(1260px,calc(100vw - 2 * var(--gutter) - 120px));display:flex;gap:24px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;
-  padding-inline:calc((100vw - var(--cw)) / 2);padding-bottom:4px;overscroll-behavior-x:contain}
+.track{--cw:var(--col);display:flex;gap:24px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;
+  padding-inline:calc((100vw - var(--cw)) / 2);scroll-padding-inline:calc((100vw - var(--cw)) / 2);padding-bottom:4px;overscroll-behavior-x:contain}
 .track::-webkit-scrollbar{display:none}
 .slide{position:relative;flex:none;width:var(--cw);aspect-ratio:1260/760;border-radius:28px;overflow:hidden;scroll-snap-align:center;container:slide/inline-size;isolation:isolate}
 .slide.dark{background:var(--night);color:#f5f5f7}
@@ -174,7 +174,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
   .cap,.cap.top,.cap.side{left:7%;right:7%;top:6%;transform:none;width:auto;text-align:left;font-size:5.7cqw}
   .cap .who,.cap.top .who{justify-content:flex-start}
 }
-@media (max-width:809.98px){.track{--cw:calc(100vw - 2 * var(--gutter) - 16px);gap:12px}.slide{aspect-ratio:4/5.4;border-radius:24px}}
+@media (max-width:809.98px){.track{gap:12px}.slide{aspect-ratio:4/5.4;border-radius:24px}}
 /* The gallery's controls: dots with a filling bar for the current card, and play/pause. */
 .gctl{display:flex;justify-content:center;gap:12px;margin-top:24px}
 .dots,.playbtn{display:flex;align-items:center;height:56px;border-radius:99px;background:rgba(210,210,215,.64);-webkit-backdrop-filter:saturate(1.8) blur(20px);backdrop-filter:saturate(1.8) blur(20px)}
@@ -337,12 +337,32 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 @container slide (max-width:700px){.s-sales .mac{width:150cqw;right:auto;left:6%;top:39%}.s-sales .note{display:none}}
 
 
-.slide.team-slide{background:var(--soft)}
-.allteam{position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);display:grid;grid-template-columns:repeat(3,auto);gap:4cqw 7cqw;margin:0;padding:0;list-style:none}
-.allteam li{display:flex;flex-direction:column;align-items:center;gap:1.4cqw;font-size:1.5cqw;font-weight:600;color:var(--ink2);letter-spacing:-.01em}
-.allteam .ico{width:10cqw;aspect-ratio:1;border-radius:24%;display:grid;place-items:center;background:linear-gradient(180deg,#fff,#f0f0f3);box-shadow:0 0 0 .1cqw rgba(0,0,0,.05),0 1.6cqw 3cqw -1.4cqw rgba(0,0,0,.25)}
-.allteam .ico img{width:74%;height:74%}
-@container slide (max-width:700px){.allteam{top:60%;gap:6cqw 8cqw}.allteam .ico{width:20cqw}.allteam li{font-size:3.4cqw}}
+/* The first card: Simeon as your COO, staffing agents around him, drawn after the app's own
+   onboarding step (router-renderer-patch.mjs, simeon-coo): the same six seats on a 640 x 440 field,
+   the same hairlines and pulse, each agent leaving Simeon small and settling into its seat, then
+   floating. It plays when the card comes into view. */
+.slide.coo-slide{background:var(--soft)}
+.coo-cap{font-size:2.4cqw}
+.coo-cap span{display:block;margin-top:.5em;font-size:.62em;font-weight:500;color:rgba(60,60,67,.6);letter-spacing:-.01em}
+.coo-stage{position:absolute;left:50%;top:60%;width:64cqw;aspect-ratio:640/440;transform:translate(-50%,-50%);container-type:size}
+.coo-web{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.coo-line{stroke:rgba(60,60,67,.18);stroke-width:1;stroke-linecap:round;fill:none;stroke-dasharray:1;stroke-dashoffset:1;vector-effect:non-scaling-stroke}
+.coo-pulse{fill:none;stroke:rgba(60,60,67,.18);stroke-width:1;vector-effect:non-scaling-stroke;transform-box:fill-box;transform-origin:center;opacity:0}
+.coo-hero,.coo-seat{position:absolute;transform:translate(-50%,-50%)}
+.coo-hero img{width:16cqw;display:block}
+.coo-seat{display:flex;flex-direction:column;align-items:center;gap:1.4cqw;opacity:0}
+.coo-seat img{width:9.5cqw;display:block}
+.coo-seat b{font-size:2.6cqw;line-height:1.3;font-weight:500;letter-spacing:-.01em;color:rgba(60,60,67,.6);white-space:nowrap}
+.coo-slide.play .coo-line{animation:coo-draw .8s cubic-bezier(.16,1,.3,1) both}
+.coo-slide.play .coo-pulse{animation:coo-pulse 1.8s cubic-bezier(.2,.7,.2,1) .7s both}
+.coo-slide.play .coo-seat{animation:coo-arrive 1.15s cubic-bezier(.16,1,.3,1) both;animation-delay:var(--d)}
+.coo-slide.play .coo-float{display:block;animation:coo-float 4.8s ease-in-out infinite both;animation-delay:calc(var(--d) + 900ms)}
+@keyframes coo-draw{to{stroke-dashoffset:0}}
+@keyframes coo-pulse{0%{opacity:.9;transform:scale(1)}100%{opacity:0;transform:scale(3.6)}}
+@keyframes coo-arrive{from{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(.3)}14%{opacity:0}42%{opacity:1}to{opacity:1;transform:translate(-50%,-50%)}}
+@keyframes coo-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@container slide (max-width:700px){.coo-cap{font-size:5.4cqw}.coo-stage{width:94cqw;top:62%}}
+@media (prefers-reduced-motion:reduce){.coo-seat{opacity:1}.coo-line{stroke-dashoffset:0}.coo-slide.play .coo-line,.coo-slide.play .coo-seat,.coo-slide.play .coo-float,.coo-slide.play .coo-pulse{animation:none}}
 
 /* The app itself: the real window on white, as a Mac app is shown (the founder, 3 October 2026), on plain white. */
 .moment{padding-top:clamp(32px,3.95vw,79px)}
@@ -449,16 +469,13 @@ footer nav{display:flex;gap:18px}
   <div class="wrap"><h2 class="lead-title">Ask in plain words, and your team does the rest.</h2></div>
   <div class="gallery">
     <div class="track" tabindex="0">
-      <article class="slide light team-slide" aria-label="The team">
-        <p class="cap top"><span class="who"><img class="face" src="faces/simeon.png" alt="">Simeon</span>One team for the work that keeps a business running. Each with its own job.</p>
-        <ul class="allteam">
-          <li><span class="ico"><img class="face" src="faces/simeon.png" alt=""></span>Chief of Staff</li>
-          <li><span class="ico"><img class="face" src="faces/scout.png" alt=""></span>Inbox</li>
-          <li><span class="ico"><img class="face" src="faces/yodo.png" alt=""></span>Money</li>
-          <li><span class="ico"><img class="face f-growth" src="faces/scout.png" alt=""></span>Growth</li>
-          <li><span class="ico"><img class="face f-content" src="faces/yodo.png" alt=""></span>Content</li>
-          <li><span class="ico"><img class="face f-sales" src="faces/yodo.png" alt=""></span>Sales</li>
-        </ul>
+      <article class="slide light coo-slide" aria-label="Simeon, your COO">
+        <p class="cap top coo-cap">Your personal COO<span>Simeon staffs an agent for whatever needs doing.</span></p>
+        <div class="coo-stage" aria-hidden="true">
+          <svg class="coo-web" viewBox="-320 -220 640 440"><circle class="coo-pulse" cx="0" cy="-40" r="64"/><line class="coo-line" x1="-72" y1="-59" x2="-205" y2="-94" pathLength="1" style="animation-delay:960ms"/><line class="coo-line" x1="-70" y1="-16" x2="-188" y2="23" pathLength="1" style="animation-delay:1110ms"/><line class="coo-line" x1="-36" y1="24" x2="-66" y2="77" pathLength="1" style="animation-delay:1260ms"/><line class="coo-line" x1="36" y1="24" x2="66" y2="77" pathLength="1" style="animation-delay:1410ms"/><line class="coo-line" x1="70" y1="-16" x2="188" y2="23" pathLength="1" style="animation-delay:1560ms"/><line class="coo-line" x1="72" y1="-59" x2="205" y2="-94" pathLength="1" style="animation-delay:1710ms"/></svg>
+          <span class="coo-hero" style="left:50.00%;top:40.91%"><img src="faces/agent-simeon.png" alt=""></span>
+          <span class="coo-seat" style="left:11.88%;top:26.36%;--dx:38.12cqw;--dy:14.55cqh;--d:820ms"><span class="coo-float"><img src="faces/agent-mila.png" alt=""></span><b>Inbox</b></span><span class="coo-seat" style="left:14.69%;top:58.18%;--dx:35.31cqw;--dy:-17.27cqh;--d:970ms"><span class="coo-float"><img src="faces/agent-yodo.png" alt=""></span><b>Research</b></span><span class="coo-seat" style="left:36.56%;top:75.45%;--dx:13.44cqw;--dy:-34.55cqh;--d:1120ms"><span class="coo-float"><img src="faces/agent-theo.png" alt=""></span><b>Travel</b></span><span class="coo-seat" style="left:63.44%;top:75.45%;--dx:-13.44cqw;--dy:-34.55cqh;--d:1270ms"><span class="coo-float"><img src="faces/agent-nora.png" alt=""></span><b>Finance</b></span><span class="coo-seat" style="left:85.31%;top:58.18%;--dx:-35.31cqw;--dy:-17.27cqh;--d:1420ms"><span class="coo-float"><img src="faces/agent-felix.png" alt=""></span><b>Sales</b></span><span class="coo-seat" style="left:88.12%;top:26.36%;--dx:-38.12cqw;--dy:14.55cqh;--d:1570ms"><span class="coo-float"><img src="faces/agent-iris.png" alt=""></span><b>Content</b></span>
+        </div>
       </article>
 
 
@@ -843,6 +860,8 @@ footer nav{display:flex;gap:18px}
 
 %FIT%
 <script>
+// The COO card plays its arrival once it is mostly in view.
+(() => { const c = document.querySelector('.coo-slide'); if (!c) return; new IntersectionObserver((es, io) => { for (const e of es) if (e.isIntersecting) { c.classList.add('play'); io.disconnect(); } }, { threshold: 0.5 }).observe(c); })();
 // The team gallery: one card at a time, the next one every few seconds, paused when you take over.
 (() => {
   const gal = document.querySelector('.gallery'), track = gal.querySelector('.track'), slides = [...track.children];
