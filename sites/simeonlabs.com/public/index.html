@@ -804,62 +804,6 @@ footer nav{display:flex;gap:18px}
 </section>
 
 
-<section class="sec">
-  <div class="wrap">
-    <div class="yes">
-      <svg class="mark" viewBox="0 0 56 56" fill="none" stroke="#1d1d1f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M28 5 9 12v14c0 12 8 21 19 25 11-4 19-13 19-25V12z"/><path d="m19.5 28 6 6 11-12"/></svg>
-      <h2>Nothing goes out<br>without your yes.</h2>
-      <p class="lede"><b>You stay in charge.</b> Before an agent sends an email, pays someone, publishes a post or deletes anything, it asks. You answer with one tap, and every action stays in the conversation for you to see.</p>
-      <ul class="ticks">
-        <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="8.5"/><path d="m6.3 10.2 2.5 2.5 5-5.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Asks before sending</li>
-        <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="8.5"/><path d="m6.3 10.2 2.5 2.5 5-5.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Asks before paying</li>
-        <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="8.5"/><path d="m6.3 10.2 2.5 2.5 5-5.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Asks before publishing</li>
-      </ul>
-    </div>
-  </div>
-</section>
-
-<section class="sec" style="padding-top:20px">
-  <div class="wrap duo">
-    <div class="a"><svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="9" width="36" height="24" rx="3"/><path d="M18 39h12M24 33v6"/></svg>
-      <h3>A computer of its own.</h3><p>Each agent works on its own computer in the cloud, with a browser and files. Close your laptop and the work keeps going.</p></div>
-    <div class="b"><svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><rect x="18" y="6" width="12" height="22" rx="6"/><path d="M11 22a13 13 0 0 0 26 0M24 35v7"/></svg>
-      <h3>Talk to it.</h3><p>Call any agent from your Mac and ask how things are going. It answers with your real numbers.</p></div>
-  </div>
-</section>
-
-<section class="sec" id="pricing">
-  <div class="wrap">
-    <h2 class="h2">Pricing.<br><span>The whole team on every plan.</span></h2>
-    <div class="bill" role="group" aria-label="Billing"><button type="button" class="on" data-bill="m">Monthly</button><button type="button" data-bill="y">Yearly, save 20%</button></div>
-    <div class="plans">
-      <div class="plan"><span class="nm">Standard</span><span class="pr">7 days free, then <span class="m">$20/month</span><span class="y">$16/month</span></span><span class="per"><span class="m">Billed monthly.</span><span class="y">$192 billed yearly.</span></span><p class="use">For a light week of work.</p><span class="btn">Try it free</span></div>
-      <div class="plan"><span class="nm">Pro</span><span class="pr">7 days free, then <span class="m">$60/month</span><span class="y">$48/month</span></span><span class="per"><span class="m">Billed monthly.</span><span class="y">$576 billed yearly.</span></span><p class="use">Five times the weekly usage of Standard.</p><span class="btn">Try it free</span></div>
-      <div class="plan"><span class="nm">Max</span><span class="pr">7 days free, then <span class="m">$100/month</span><span class="y">$80/month</span></span><span class="per"><span class="m">Billed monthly.</span><span class="y">$960 billed yearly.</span></span><p class="use">Twenty times the weekly usage of Standard.</p><span class="btn">Try it free</span></div>
-    </div>
-  </div>
-</section>
-
-<section class="sec" id="questions">
-  <div class="wrap">
-    <h2 class="h2">Questions? Answers.</h2>
-    <div class="faq">
-      <details><summary>What is Simeon?</summary><p>A team of AI agents for people who run a business. Each one has a job, like your inbox, your money or your sales, a computer of its own in the cloud, and access to the tools you already use. You tell them what you need and they do the work.</p></details>
-      <details><summary>Do I have to set anything up?</summary><p>No workflows to build. Ask for what you need in plain words. When an agent needs one of your apps, it shows you a card, and you sign in on that app’s own page.</p></details>
-      <details><summary>Where do the agents work?</summary><p>On computers of their own in the cloud, each with a browser and files. You talk to them from the Simeon app on your Mac, and routines keep running when your Mac is closed.</p></details>
-      <details><summary>Will they do anything without asking?</summary><p>Not anything that matters. Before an agent sends an email, makes a payment or publishes something, it asks, and you allow or refuse it in the chat.</p></details>
-      <details><summary>What do I need?</summary><p>A Mac with Apple silicon. Every plan starts with a free week.</p></details>
-    </div>
-  </div>
-</section>
-
-<section class="end">
-  <div class="wrap">
-    <span class="wordmark" role="img" aria-label="Simeon"></span>
-    <h2>Your team is ready<br>when you are.</h2>
-    <span class="btn">Try it free</span>
-  </div>
-</section>
 </main>
 
 <footer><div class="wrap"><span>Copyright © 2026 Simeon Labs, Inc. All rights reserved.</span><nav><span>Privacy</span><span>Terms</span><span>Contact</span></nav></div></footer>
@@ -1045,28 +989,6 @@ footer nav{display:flex;gap:18px}
   sync();
 })();
 
-// Each row of cards: the arrows scroll it a card at a time, and hide when everything fits.
-(() => {
-  for (const row of document.querySelectorAll('.rail')) {
-    const ctl = row.nextElementSibling.querySelector('.rowctl');
-    const [prev, next] = ctl.querySelectorAll('button');
-    const step = () => row.querySelector('.card').offsetWidth + 20;
-    const sync = () => {
-      const max = row.scrollWidth - row.clientWidth;
-      ctl.hidden = max < 4;
-      prev.disabled = row.scrollLeft < 4; next.disabled = row.scrollLeft > max - 4;
-    };
-    prev.addEventListener('click', () => row.scrollBy({ left: -step(), behavior: 'smooth' }));
-    next.addEventListener('click', () => row.scrollBy({ left: step(), behavior: 'smooth' }));
-    row.addEventListener('scroll', sync, { passive: true });
-    new ResizeObserver(sync).observe(row); sync();
-  }
-})();
-// Monthly or yearly.
-(() => {
-  const sw = document.querySelector('.bill'), sec = document.getElementById('pricing');
-  sw.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; sw.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b)); sec.classList.toggle('yearly', b.dataset.bill === 'y'); });
-})();
 </script>
 </body>
 </html>
