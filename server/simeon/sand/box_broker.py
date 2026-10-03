@@ -162,6 +162,16 @@ async def ensure_sand_box(call: ConnectCall) -> dict[str, Any]:
             "sand.box.ensure.refused", user=str(call.caller.user_id), error=str(error)
         )
         raise connect_error_for(error)
+    except TimeoutError:
+        # The box is still starting (a new host bundle, a cold image): the
+        # app retries an unavailable answer. It used to reach the app as an
+        # internal error and the log as an unhandled exception.
+        log.warning("sand.box.ensure.timeout", user=str(call.caller.user_id))
+        raise ConnectError(
+            "unavailable",
+            "Simeon's cloud computer is still starting. Try again in a moment.",
+            headers={"retry-after": "5"},
+        )
     return {
         "cluster": "simeon",
         "tenantId": str(call.caller.user_id),

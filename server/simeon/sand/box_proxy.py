@@ -35,7 +35,7 @@ import structlog
 from fastapi import Depends, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 from starlette.background import BackgroundTask
-from starlette.requests import HTTPConnection
+from starlette.requests import ClientDisconnect, HTTPConnection
 from websockets.asyncio.client import ClientConnection, connect
 from websockets.exceptions import ConnectionClosed
 from websockets.typing import Subprotocol
@@ -198,6 +198,12 @@ async def _proxy_http(
     )
     try:
         response = await client.send(upstream, stream=True)
+    except ClientDisconnect:
+        # The app hung up before its request was forwarded (its health and
+        # event polls do this all the time). Nothing to answer; it used to
+        # land in the log as an unhandled exception, dozens a minute.
+        await client.aclose()
+        return Response(status_code=499)
     except httpx.HTTPError as error:
         await client.aclose()
         log.warning(
@@ -235,6 +241,16 @@ async def _proxy_http(
         try:
             async for chunk in response.aiter_raw():
                 yield chunk
+        except httpx.HTTPError as error:
+            # The box closed a long poll mid-answer (it restarts on a new
+            # host bundle, for one): the app's request simply ends.
+            log.info(
+                "sand.box.proxy.stream_ended",
+                box=str(box.id),
+                port=port,
+                path=path[:120],
+                error=type(error).__name__,
+            )
         finally:
             attached.cancel()
             await response.aclose()

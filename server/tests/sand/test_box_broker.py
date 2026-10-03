@@ -24,6 +24,7 @@ import pytest
 import pytest_asyncio
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, StreamingResponse
+from pytest_mock import MockerFixture
 from starlette.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
 from websockets.asyncio.server import serve
@@ -301,6 +302,22 @@ class TestEnsureSandBox:
             "code": "unavailable",
             "message": BOX_HOST_UNAVAILABLE_SENTENCE,
         }
+
+    async def test_a_box_still_starting_is_unavailable_with_a_retry(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        # Render, 3 October 2026: a box restarting on a new host bundle made
+        # EnsureSandBox raise TimeoutError, answered as an internal error.
+        access, _ = await _signed_in(client, session, user)
+        mocker.patch.object(box_service.broker, "ensure", side_effect=TimeoutError())
+        response = await _ensure(client, access)
+        assert response.status_code == 503
+        assert response.json()["code"] == "unavailable"
+        assert response.headers["retry-after"] == "5"
 
     async def test_a_blocked_box_carries_the_hint_the_retry_after_and_the_details(
         self,
