@@ -341,27 +341,49 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 @container slide (max-width:700px){.s-sales .mac{width:150cqw;right:auto;left:6%;top:39%}.s-sales .note{display:none}}
 
 
-/* The second card: every agent on a computer of its own, the app's onboarding step drawn again
-   ("Your agents have their own computer and work just like you") on a warm silk desktop picture (the founder's macOS reference, drawn here),
-   one window, and the agent's cursor and cloud going from tile to tile and clicking, on black. */
-.pc-screen{position:absolute;left:50%;top:58%;transform:translate(-50%,-50%);width:58cqw;aspect-ratio:440/300;border-radius:2.2cqw;overflow:hidden;background:url(img/computer-silk.jpg) center/cover;box-shadow:0 0 0 1px rgba(255,255,255,.12),0 3cqw 8cqw rgba(0,0,0,.5)}
-.pc-win{position:absolute;left:7%;top:11%;width:68%;height:61%;border-radius:1.2cqw;overflow:visible;background:#f2f2f5;box-shadow:0 .8cqw 2.4cqw rgba(20,40,90,.28)}
-.pc-bar{display:flex;gap:.6cqw;align-items:center;height:12%;padding:0 2.4%;border-radius:1.2cqw 1.2cqw 0 0;background:#dcdce0}
-.pc-bar i{width:1cqw;height:1cqw;border-radius:50%;background:#ff5f57}.pc-bar i:nth-child(2){background:#febc2e}.pc-bar i:nth-child(3){background:#28c840}
-.pc-tiles{position:absolute;left:4.5%;right:4.5%;top:17%;height:24%;display:grid;grid-template-columns:repeat(4,1fr);gap:4%}
-.pc-tiles span{border-radius:.8cqw;background:#fff;animation:pc-tile 8s ease-in-out infinite}
-.pc-tiles span:nth-child(2){animation-delay:-.7s}.pc-tiles span:nth-child(4){animation-delay:-6.7s}.pc-tiles span:nth-child(1){animation-delay:-2.7s}.pc-tiles span:nth-child(3){animation:none}
-.pc-pane{position:absolute;left:4.5%;right:4.5%;top:47%;bottom:0;border-radius:.8cqw .8cqw 0 0;background:#fff;animation:pc-tile 8s ease-in-out -4.7s infinite}
-.pc-agent{position:absolute;left:0;top:0;width:0;height:0;animation:pc-move 8s cubic-bezier(.45,0,.2,1) infinite}
-.pc-cursor{position:absolute;left:-.3cqw;top:-.2cqw;width:2.2cqw;filter:drop-shadow(0 .2cqw .3cqw rgba(0,0,0,.25))}
-.pc-agent img{position:absolute;left:.6cqw;top:1.2cqw;width:6.4cqw;max-width:none;animation:pc-bob 1.6s ease-in-out infinite}
-.pc-click{position:absolute;left:-1.6cqw;top:-1.6cqw;width:3.2cqw;height:3.2cqw;border-radius:50%;border:.25cqw solid rgba(37,90,147,.7);opacity:0;animation:pc-ring 2s ease-out -.46s infinite}
-@keyframes pc-move{0%,10%{left:38%;top:28%}25%,35%{left:84%;top:27%}50%,60%{left:46%;top:68%}75%,85%{left:16%;top:29%}100%{left:38%;top:28%}}
-@keyframes pc-ring{0%,40%{opacity:0;transform:scale(.4)}48%{opacity:1}70%,100%{opacity:0;transform:scale(1.4)}}
-@keyframes pc-tile{0%,8%,22%,100%{background:#fff}12%,18%{background:#dfe8f4}}
-@keyframes pc-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-.3cqw)}}
-@container slide (max-width:700px){.pc-screen{width:90cqw;top:60%}.pc-cursor{width:3.6cqw}.pc-agent img{width:10cqw;top:2cqw}.pc-bar i{width:1.6cqw;height:1.6cqw}}
-@media (prefers-reduced-motion:reduce){.pc-agent,.pc-agent img,.pc-click,.pc-tiles span,.pc-pane{animation:none}.pc-agent{left:38%;top:28%}}
+/* The second card: every agent on a computer of its own, set like Apple's device cards (the
+   founder, 3 October 2026: "redesign the whole box, more apple style"): a Mac screen on black,
+   Theo's own browser open on the invoices he is chasing, dimmed, and the app's panel in front of
+   it showing what he is doing, with Take over and Watch. */
+.mc-mac{position:absolute;left:50%;top:27%;transform:translateX(-50%);width:66cqw;aspect-ratio:16/10.3;padding:1cqw;border-radius:2.4cqw;background:#0b0b0c;box-shadow:0 0 0 .18cqw #3a3a3e,0 0 0 .3cqw #1c1c1e,0 4cqw 9cqw rgba(0,0,0,.6)}
+.mc-notch{position:absolute;left:50%;top:1cqw;transform:translateX(-50%);width:8cqw;height:1.4cqw;border-radius:0 0 .7cqw .7cqw;background:#0b0b0c}
+.mc-screen{position:relative;width:100%;height:100%;border-radius:1.3cqw;overflow:hidden;background:url(img/computer-silk.jpg) center/cover;container-type:size}
+.mc-menubar{position:absolute;inset:0 0 auto;height:3.6cqh;display:flex;align-items:center;gap:2.32cqw;padding:0 2.32cqw;background:rgba(20,18,16,.35);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);font-size:1.81cqw;color:rgba(255,255,255,.88)}
+.mc-menubar i{flex:1}
+.mc-browser{position:absolute;left:8%;top:9%;width:84%;height:86%;border-radius:1.2cqw;overflow:hidden;background:#fff;box-shadow:0 1.6cqw 4cqw rgba(0,0,0,.35)}
+.mc-chrome{display:flex;align-items:center;gap:2.9cqw;height:7%;padding:0 2.32cqw;background:#f3f3f5;border-bottom:1px solid #e3e3e6}
+.mc-lights{display:flex;gap:0.87cqw}.mc-lights i{width:1.59cqw;height:1.59cqw;border-radius:50%;background:#ff5f57}.mc-lights i:nth-child(2){background:#febc2e}.mc-lights i:nth-child(3){background:#28c840}
+.mc-url{margin:0 auto;padding:0.58cqw 8.7cqw;border-radius:1.01cqw;background:#e6e6ea;font-size:1.67cqw;color:#6e6e73}
+.mc-page{display:flex;height:93%}
+.mc-side{display:flex;flex-direction:column;gap:1.89cqw;width:17%;padding:2.9cqw 2.32cqw;background:#fafafa;border-right:1px solid #ececef;font-size:1.81cqw;color:#6e6e73}
+.mc-side b{margin-bottom:1.45cqw;color:#1d1d1f;font-size:2.1cqw}
+.mc-side .on{color:#1d1d1f;font-weight:600}
+.mc-main{flex:1;padding:2.9cqw 3.77cqw}
+.mc-h{margin:0 0 2.61cqw;font-size:3.48cqw;font-weight:600;color:#1d1d1f}
+.mc-th,.mc-tr{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;align-items:center;gap:1.45cqw;padding:1.59cqw 0;border-bottom:1px solid #efeff2;font-size:1.89cqw;color:#1d1d1f}
+.mc-th{font-size:1.59cqw;color:#86868b;padding-top:0}
+.mc-st{justify-self:start;padding:0.43cqw 1.3cqw;border-radius:99px;font-size:1.52cqw;font-weight:600}
+.mc-st.late{background:#fde8e6;color:#b4271b}.mc-st.paid{background:#e6f4ea;color:#1e7a3c}.mc-st.due{background:#eef0f4;color:#4a5568}
+.mc-dim{position:absolute;inset:0;background:rgba(0,0,0,.42)}
+.mc-panel{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);width:50%;padding:3.2cqw;border-radius:2.8cqw;background:#fbfbfd;box-shadow:0 2cqw 6cqw rgba(0,0,0,.45)}
+.mc-ph{display:flex;align-items:center;gap:2.03cqw;margin-bottom:2.9cqw}
+.mc-ph img{width:7.25cqw;height:auto}
+.mc-ph b{display:block;font-size:2.75cqw;color:#1d1d1f}
+.mc-ph span{display:flex;align-items:center;gap:0.87cqw;font-size:1.89cqw;color:#6e6e73}
+.mc-live{width:1.3cqw;height:1.3cqw;border-radius:50%;background:#34c759;box-shadow:0 0 0 0.43cqw rgba(52,199,89,.22);animation:mc-pulse 1.6s ease-in-out infinite}
+.mc-steps{display:flex;flex-direction:column;gap:1.89cqw;margin:0;padding:0;list-style:none}
+.mc-steps li{display:flex;align-items:center;gap:1.59cqw;font-size:2.1cqw;color:#1d1d1f}
+.mc-steps svg{width:2.75cqw;height:2.75cqw;flex:none}
+.mc-steps .now{color:#6e6e73}
+.mc-spin{animation:mc-spin 1s linear infinite}
+.mc-acts{display:flex;gap:1.45cqw;margin-top:3.48cqw}
+.mc-acts span{flex:1;display:grid;place-items:center;height:6.09cqw;border-radius:99px;font-size:2.03cqw}
+.mc-take{background:#000;color:#fff}.mc-watch{background:#ececf0;color:#1d1d1f}
+@keyframes mc-spin{to{transform:rotate(360deg)}}
+@keyframes mc-pulse{50%{opacity:.45}}
+@container slide (max-width:700px){.mc-mac{width:94cqw;top:36%}.mc-panel{width:62%}}
+@media (prefers-reduced-motion:reduce){.mc-spin,.mc-live{animation:none}}
+
 /* The first card: messaging an agent like a teammate (the founder, 3 October 2026, with Apple's
    Messages card as the model): a phone cut off by the card's top edge, one exchange with Theo in
    the app's own bubbles and blue, two suggestion chips, the composer, the caption underneath. */
@@ -504,15 +526,30 @@ footer nav{display:flex;gap:18px}
       </article>
 
 
-      <article class="slide dark pc-slide" aria-label="A computer for every agent">
-        <p class="cap top">Every agent works on a computer of its own, just like you.</p>
-        <div class="pc-screen" aria-hidden="true">
-          <div class="pc-win">
-            <div class="pc-bar"><i></i><i></i><i></i></div>
-            <div class="pc-tiles"><span></span><span></span><span></span><span></span></div>
-            <div class="pc-pane"></div>
-            <div class="pc-agent"><svg class="pc-cursor" viewBox="0 0 20 20"><path d="M3 2l13 6.2-5.6 1.5L8 15.4z" fill="#000" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/></svg><img src="faces/agent-simeon.png" alt=""><i class="pc-click"></i></div>
+      <article class="slide dark mac-slide" aria-label="A computer for every agent">
+        <p class="cap top">Every agent works on a computer of its own. Watch it work, or take over whenever you like.</p>
+        <div class="mc-mac" aria-hidden="true">
+          <div class="mc-screen">
+            <div class="mc-menubar"><b>Safari</b><span>File</span><span>Edit</span><span>View</span><span>History</span><i></i><span>Thu 9:41 AM</span></div>
+            <div class="mc-browser">
+              <div class="mc-chrome"><span class="mc-lights"><i></i><i></i><i></i></span><span class="mc-url">books.northbeam.com/invoices</span></div>
+              <div class="mc-page">
+                <div class="mc-side"><b>Northbeam</b><span>Overview</span><span class="on">Invoices</span><span>Customers</span><span>Reports</span></div>
+                <div class="mc-main"><p class="mc-h">Invoices</p><div class="mc-th"><span>Customer</span><span>Invoice</span><span>Amount</span><span>Status</span></div><div class="mc-tr"><span>Acme Health</span><span>INV-2041</span><span>$4,200.00</span><span class="mc-st late">34 days late</span></div><div class="mc-tr"><span>Halden &amp; Co</span><span>INV-2038</span><span>$1,800.00</span><span class="mc-st late">12 days late</span></div><div class="mc-tr"><span>Brightline</span><span>INV-2052</span><span>$960.00</span><span class="mc-st paid">Paid</span></div><div class="mc-tr"><span>Northwind</span><span>INV-2050</span><span>$2,350.00</span><span class="mc-st paid">Paid</span></div><div class="mc-tr"><span>Okafor Studio</span><span>INV-2049</span><span>$1,120.00</span><span class="mc-st due">Due Oct 9</span></div><div class="mc-tr"><span>Pellam Labs</span><span>INV-2047</span><span>$3,400.00</span><span class="mc-st paid">Paid</span></div></div>
+              </div>
+            </div>
+            <div class="mc-dim"></div>
+            <div class="mc-panel">
+              <div class="mc-ph"><img src="faces/agent-theo.png" alt=""><div><b>Theo</b><span><i class="mc-live"></i>Working on its computer</span></div></div>
+              <ul class="mc-steps">
+                <li><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="7.2" fill="#255a93"/><path d="M4.8 8.3l2.1 2.1 4.3-4.6" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Opened the invoices in the books</li>
+                <li><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="7.2" fill="#255a93"/><path d="M4.8 8.3l2.1 2.1 4.3-4.6" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Found 2 invoices past due</li>
+                <li class="now"><svg viewBox="0 0 16 16" class="mc-spin"><circle cx="8" cy="8" r="6.4" fill="none" stroke="#d6d6db" stroke-width="1.8"/><path d="M8 1.6a6.4 6.4 0 0 1 6.4 6.4" fill="none" stroke="#255a93" stroke-width="1.8" stroke-linecap="round"/></svg>Writing a reminder to Acme Health</li>
+              </ul>
+              <div class="mc-acts"><span class="mc-take">Take over</span><span class="mc-watch">Watch</span></div>
+            </div>
           </div>
+          <div class="mc-notch"></div>
         </div>
       </article>
 
