@@ -50,7 +50,7 @@ def chip(key):
     return f'<span class="sd-app"><span class="sd-app-ico"><img src="{src}" alt=""></span><span style="color:{readable(color)}">{name}</span></span>'
 
 # The apps the agents' cards show, in the app's own logos.
-for key in ("notion", "gmail", "google-docs", "stripe", "quickbooks", "xero", "hubspot", "google-sheets", "mailchimp", "canva", "linkedin", "salesforce", "slack", "figma", "linear", "google-drive", "zoom", "google-calendar"):
+for key in ("notion", "gmail", "google-docs", "stripe", "quickbooks", "xero", "hubspot", "google-sheets", "mailchimp", "canva", "linkedin", "salesforce", "slack", "figma", "linear", "google-drive", "zoom", "google-calendar", "google-slides"):
     logo(key)
 shutil.copy(f"{HERE}/simeon-mark.svg", f"{OUT}/logos/simeon.svg")
 for name in re.findall(r'src="(logos/[^"]+)"', open(f"{HERE}/page.html").read()):
