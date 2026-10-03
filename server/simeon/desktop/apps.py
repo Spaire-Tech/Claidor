@@ -58,6 +58,8 @@ router = APIRouter(include_in_schema=False)
 
 _TOOLKIT = re.compile(r"^[a-z0-9_]{1,64}$")
 _TIMEOUT = httpx.Timeout(60.0, connect=10.0)
+# A Composio call slower than this is logged, so "it takes forever" has a line.
+_SLOW_CALL_MS = 5_000
 _PROTOCOL_VERSION = "2025-06-18"
 _TOOLS_TTL_S = 600.0
 # Every app is served its whole tool list, featured ("important") tools
@@ -105,10 +107,25 @@ async def _call(
     body: dict[str, Any] | None = None,
 ) -> tuple[int, Any]:
     headers = {"x-api-key": settings.COMPOSIO_API_KEY, "accept": "application/json"}
-    async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
-        response = await client.request(
-            method, _api_url(path), headers=headers, params=params, json=body
+    started = time.monotonic()
+    # A timeout or a dropped connection used to leave no line at all: the
+    # caller answers the app "could not be reached" and Render showed a 200.
+    try:
+        async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
+            response = await client.request(
+                method, _api_url(path), headers=headers, params=params, json=body
+            )
+    except httpx.HTTPError as error:
+        log.warning(
+            "desktop.apps.upstream_unreachable",
+            path=path,
+            error=type(error).__name__,
+            elapsed_ms=round((time.monotonic() - started) * 1000),
         )
+        raise
+    elapsed_ms = round((time.monotonic() - started) * 1000)
+    if elapsed_ms >= _SLOW_CALL_MS:
+        log.info("desktop.apps.upstream_slow", path=path, elapsed_ms=elapsed_ms)
     try:
         payload: Any = response.json()
     except ValueError:

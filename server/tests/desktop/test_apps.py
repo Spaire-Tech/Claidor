@@ -8,6 +8,7 @@ import httpx
 import pytest
 import respx
 from pytest_mock import MockerFixture
+from structlog.testing import capture_logs
 
 from simeon.config import settings
 from simeon.desktop import apps as apps_module
@@ -196,6 +197,34 @@ class TestTheAppsMcpServer:
                 json=_rpc("tools/call", {"name": "GITHUB_DELETE_REPO"}),
             )
         assert response.json()["error"]["code"] == -32602
+
+    async def test_a_timeout_is_answered_and_logged(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _signed_in(client, session, user)
+        with respx.mock() as mock, capture_logs() as logs:
+            mock.get(f"{API}/api/v3.1/connected_accounts").mock(
+                return_value=_accounts("ca_1")
+            )
+            mock.get(f"{API}/api/v3.1/tools").mock(
+                return_value=httpx.Response(200, json=TOOLS)
+            )
+            mock.post(f"{API}/api/v3.1/tools/execute/GMAIL_TOOL_1").mock(
+                side_effect=httpx.ReadTimeout("slow")
+            )
+            response = await client.post(
+                "/desktop/api/apps/mcp/gmail",
+                headers=headers,
+                json=_rpc("tools/call", {"name": "GMAIL_TOOL_1"}),
+            )
+        assert response.json()["error"]["code"] == -32000
+        unreachable = [
+            line
+            for line in logs
+            if line["event"] == "desktop.apps.upstream_unreachable"
+        ]
+        assert unreachable[0]["path"] == "api/v3.1/tools/execute/GMAIL_TOOL_1"
+        assert unreachable[0]["error"] == "ReadTimeout"
 
     async def test_every_tool_is_served_featured_first_with_its_name(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User

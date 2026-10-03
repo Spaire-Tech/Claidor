@@ -70,7 +70,7 @@ If the user mentions, references, or links to a product or service that correspo
 
 \`${toolNames.discoveryToolName}\` supports four modes:
 
-1. \`{"server":"<id>"}\`: returns full input schemas and full descriptions for every tool on that server. Preferred when you know which server to use.
+1. \`{"server":"<id>"}\`: lists every tool on that server, with full schemas when the server is small and by name only when it is large. Preferred when you know which server to use. Leave out fields you do not use; never send an empty toolName or pattern.
 2. \`{"server":"<id>","toolName":"<name>"}\`: returns the full schema and full description for one tool.
 3. \`{"pattern":"<regex>"}\`: searches tool and server names across all servers using RE2 syntax (no backreferences, lookahead, or lookbehind). Use when you're unsure which server has the tool you need.
 4. No arguments: returns a catalog of all servers with tool names and short descriptions. Only use this if you have no idea which server or tool to look for — in most cases, prefer fetching by server or pattern instead.
