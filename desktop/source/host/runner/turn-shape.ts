@@ -2,9 +2,16 @@ import { isInjectedReminderMessage } from "./send-message-reminder-middleware.js
 import { SAND_REACT_TO_MESSAGE_TOOL_NAME } from "./tools/sand-reaction-tool.js";
 import { SAND_SEND_MESSAGE_TOOL_NAME } from "./tools/send-message-tool.js";
 
+// What reaches the person. A proposal card is one: ProposeConnector tells
+// the agent to end its turn once the card is shown, and the closing nudge
+// read that as a silent turn and ran a whole hidden turn more ("Your previous
+// turn acknowledged the user and then ran tool calls…"), two paid calls on
+// every connector proposal (OpenAI log, 2 October 2026).
+export const SAND_PROPOSE_CONNECTOR_TOOL_NAME = "ProposeConnector";
 export const DELIVERY_TOOL_NAMES = new Set([
   SAND_SEND_MESSAGE_TOOL_NAME,
   SAND_REACT_TO_MESSAGE_TOOL_NAME,
+  SAND_PROPOSE_CONNECTOR_TOOL_NAME,
 ]);
 
 export interface CorePart {
