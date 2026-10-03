@@ -81,8 +81,10 @@ test("the button says Connect apps and PowerPoint gets its own kind, on anchors 
   const chunk = await readFile(path.join(assets, names.find((name) => name === "index-UbX-y3il.js") ?? names.find((name) => /^index-.*\.js$/.test(name))), "utf8");
   for (const [label, before] of LOGO_REPLACEMENTS) assert.equal(chunk.split(before).length - 1, 1, `${label} occurs once`);
   const patched = patchOriginalLogos(chunk, appMentionNames((await readLogoAssets()).mentions));
-  assert.ok(patched.includes("syntheticProseCards:n}],__simeonAppMentions]}"), "the message pipeline ends with the app step");
+  assert.ok(patched.includes("syntheticProseCards:n}],__simeonAppMentions,__simeonAgentMentions]}"), "the message pipeline ends with the app step, then the agent step");
   assert.equal(patched.split("const __simeonAppMentions=").length - 1, 1);
+  assert.equal(patched.split("const __simeonAgentMentions=").length - 1, 1);
+  assert.ok(patched.includes("?.id??sle(n.id)}function __simeonNoteAgents(n){"), "the roster note follows the window's own colour resolver");
   assert.ok(patched.includes('children:"Connect apps"'));
   assert.ok(patched.includes('notion:{kind:"brand",hex:"#FFFFFF",path:'), "Notion draws its light-mode logo");
   assert.ok(patched.includes('slack:{kind:"brand",hex:"#FFFFFF",path:"M5.042 15.165'), "Slack's tile is white under its colour mark, and the glyph the stylesheet keys on is still there");
@@ -186,4 +188,27 @@ test("Simeon's profile is read only: fields, commit and avatar", async () => {
   assert.match(by["coo-readonly-commit"], /^y=_=>\{if\(n\.readOnly===!0\)\{m\(s\);return\}/, "a read-only field never commits");
   for (const label of ["coo-readonly-avatar", "coo-readonly-pane-avatar"]) assert.match(by[label], /t\.id===__simeonCooId\?p\.jsx\("div",\{className:"simeon-coo-avatar"/);
   assert.match(COO_LOCK_CSS, /\.simeon-coo-avatar\{pointer-events:none\}/);
+});
+
+test("an agent named in a message wears its face and its palette's colour, only where the name stands alone", async () => {
+  const { AGENT_MENTIONS_PLUGIN_SOURCE, agentMentionMarks, agentMentionsCss, AGENT_PALETTES } = await import(patchModule);
+  const plugin = new Function(`${AGENT_MENTIONS_PLUGIN_SOURCE}return __simeonAgentMentions;`)();
+  const tree = () => ({ type: "root", children: [{ type: "element", tagName: "p", data: { sandMarkdown: 1 }, children: [{ type: "text", value: "Scout pulled quotes, Yodo closed tickets. Scouts and @Scout stay." }] }, { type: "element", tagName: "code", data: { sandMarkdown: 1 }, children: [{ type: "text", value: "Scout" }] }] });
+  delete globalThis.__simeonAgentColors;
+  const bare = tree();
+  plugin()(bare);
+  assert.equal(bare.children[0].children.length, 1, "no roster yet, nothing is marked");
+  globalThis.__simeonAgentColors = { Scout: "cyan", Yodo: "red" };
+  const marked = tree();
+  plugin()(marked);
+  const parts = marked.children[0].children.map((node) => node.type === "text" ? node.value : `[${node.properties.dataAgentColor}:${node.children[1].value}]`);
+  assert.deepEqual(parts, ["[cyan:Scout]", " pulled quotes, ", "[red:Yodo]", " closed tickets. Scouts and @Scout stay."]);
+  assert.equal(marked.children[1].children[0].type, "text", "code is left alone");
+  assert.deepEqual(marked.children[0].children[0].children[0].properties.className, ["simeon-agent__mark"]);
+  delete globalThis.__simeonAgentColors;
+  const { cloud, eyes } = agentMentionMarks();
+  assert.match(cloud, /^data:image\/svg\+xml;base64,/);
+  assert.match(Buffer.from(eyes.split(",")[1], "base64").toString(), /fill: #fcfcfc/);
+  const css = agentMentionsCss();
+  for (const { id } of AGENT_PALETTES) assert.ok(css.includes(`.simeon-agent[data-agent-color="${id}"]`), id);
 });
