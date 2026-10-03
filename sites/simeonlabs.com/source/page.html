@@ -73,7 +73,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .h2{font-size:clamp(32px,4vw,48px);line-height:1.08;letter-spacing:-.03em}
 .h2 span{color:var(--ink3)}
 /* A section title set like the hero's headline: same face, weight, size and spacing. */
-.lead-title{max-width:15em;font-size:clamp(24px,1.9vw,38px);line-height:1.21;font-weight:400;letter-spacing:-.022em;color:#000}
+.lead-copy{max-width:40em;margin:0 auto;text-align:center;font-size:clamp(19px,1.45vw,29px);line-height:1.32;font-weight:400;letter-spacing:-.018em;color:#000;text-wrap:balance}
 .anat .who{display:flex;flex-direction:column;align-items:flex-start;gap:14px;font-size:21px;font-weight:600;letter-spacing:-.01em}
 .anat .who img{width:64px;height:64px;padding:6px;border-radius:16px;background:linear-gradient(180deg,#fff,#f2f2f5);box-shadow:0 0 0 1px rgba(0,0,0,.05),0 8px 18px -10px rgba(0,0,0,.25)}
 .anat h2{margin-top:10px;max-width:820px;font-size:clamp(36px,4.6vw,56px);line-height:1.07;letter-spacing:-.035em}
@@ -337,32 +337,27 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 @container slide (max-width:700px){.s-sales .mac{width:150cqw;right:auto;left:6%;top:39%}.s-sales .note{display:none}}
 
 
-/* The first card: Simeon as your COO, staffing agents around him, drawn after the app's own
-   onboarding step (router-renderer-patch.mjs, simeon-coo): the same six seats on a 640 x 440 field,
-   the same hairlines and pulse, each agent leaving Simeon small and settling into its seat, then
-   floating. It plays when the card comes into view. */
-.slide.coo-slide{background:var(--soft)}
-.coo-cap{font-size:2.4cqw}
-.coo-cap span{display:block;margin-top:.5em;font-size:.62em;font-weight:500;color:rgba(60,60,67,.6);letter-spacing:-.01em}
-.coo-stage{position:absolute;left:50%;top:60%;width:64cqw;aspect-ratio:640/440;transform:translate(-50%,-50%);container-type:size}
-.coo-web{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-.coo-line{stroke:rgba(60,60,67,.18);stroke-width:1;stroke-linecap:round;fill:none;stroke-dasharray:1;stroke-dashoffset:1;vector-effect:non-scaling-stroke}
-.coo-pulse{fill:none;stroke:rgba(60,60,67,.18);stroke-width:1;vector-effect:non-scaling-stroke;transform-box:fill-box;transform-origin:center;opacity:0}
-.coo-hero,.coo-seat{position:absolute;transform:translate(-50%,-50%)}
-.coo-hero img{width:16cqw;display:block}
-.coo-seat{display:flex;flex-direction:column;align-items:center;gap:1.4cqw;opacity:0}
-.coo-seat img{width:9.5cqw;display:block}
-.coo-seat b{font-size:2.6cqw;line-height:1.3;font-weight:500;letter-spacing:-.01em;color:rgba(60,60,67,.6);white-space:nowrap}
-.coo-slide.play .coo-line{animation:coo-draw .8s cubic-bezier(.16,1,.3,1) both}
-.coo-slide.play .coo-pulse{animation:coo-pulse 1.8s cubic-bezier(.2,.7,.2,1) .7s both}
-.coo-slide.play .coo-seat{animation:coo-arrive 1.15s cubic-bezier(.16,1,.3,1) both;animation-delay:var(--d)}
-.coo-slide.play .coo-float{display:block;animation:coo-float 4.8s ease-in-out infinite both;animation-delay:calc(var(--d) + 900ms)}
-@keyframes coo-draw{to{stroke-dashoffset:0}}
-@keyframes coo-pulse{0%{opacity:.9;transform:scale(1)}100%{opacity:0;transform:scale(3.6)}}
-@keyframes coo-arrive{from{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(.3)}14%{opacity:0}42%{opacity:1}to{opacity:1;transform:translate(-50%,-50%)}}
-@keyframes coo-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
-@container slide (max-width:700px){.coo-cap{font-size:5.4cqw}.coo-stage{width:94cqw;top:62%}}
-@media (prefers-reduced-motion:reduce){.coo-seat{opacity:1}.coo-line{stroke-dashoffset:0}.coo-slide.play .coo-line,.coo-slide.play .coo-seat,.coo-slide.play .coo-float,.coo-slide.play .coo-pulse{animation:none}}
+/* The first card: messaging an agent like a teammate (the founder, 3 October 2026, with Apple's
+   Messages card as the model): a phone cut off by the card's top edge, one exchange with Theo in
+   the app's own bubbles and blue, two suggestion chips, the composer, the caption underneath. */
+#team{background:var(--soft);padding-bottom:120px}
+.slide.msg-slide{background:#fff}
+.msg-phone{position:absolute;left:50%;top:0;transform:translateX(-50%);width:54cqw;height:64%;border:1.15cqw solid #111;border-top:0;border-radius:0 0 8.6cqw 8.6cqw;box-shadow:0 0 0 .32cqw #9a9aa0,0 0 0 .5cqw #d8d8dc;overflow:hidden;background:#fff}
+.msg-screen{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;gap:1.4cqw;padding:0 3.2cqw 3cqw;font-size:2.25cqw;line-height:1.28;letter-spacing:-.01em;color:#000}
+.msg-name{margin:0 0 -.4cqw 8.4cqw;font-size:.62em;color:#86868b}
+.msg-in{display:flex;align-items:flex-end;gap:1.6cqw}
+.msg-av{width:5.6cqw;height:auto;flex:none;margin-bottom:.4cqw}
+.msg-bubble{max-width:41cqw;padding:1.3cqw 2cqw;border-radius:2.6cqw;background:#e9e9eb}
+.msg-chips{display:flex;gap:1cqw;margin-left:7.2cqw}
+.msg-chips span{display:inline-flex;align-items:center;gap:.7cqw;padding:.75cqw 1.4cqw;border-radius:99px;background:#f2f2f4;font-size:.62em;color:#1d1d1f}
+.msg-chips img{width:1.7cqw;height:1.7cqw;object-fit:contain}
+.msg-out{align-self:flex-end;max-width:30cqw;padding:1.3cqw 2cqw;border-radius:2.6cqw;background:var(--app-blue);color:#fff}
+.msg-compose{display:flex;align-items:center;gap:1.4cqw;margin-top:1cqw}
+.msg-plus{display:grid;place-items:center;width:5.4cqw;height:5.4cqw;border-radius:50%;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.1),0 .4cqw 1cqw rgba(0,0,0,.06);font-size:3.2cqw;font-weight:300;line-height:1}
+.msg-field{flex:1;display:flex;align-items:center;justify-content:space-between;height:5.4cqw;padding:0 1.8cqw 0 2.2cqw;border-radius:99px;box-shadow:0 0 0 1px rgba(0,0,0,.12);color:#b0b0b5}
+.msg-field svg{width:2.3cqw;height:2.3cqw;color:#8e8e93}
+.msg-cap{position:absolute;left:50%;bottom:7%;transform:translateX(-50%);width:min(64%,30em);margin:0;text-align:center;font-size:2.35cqw;line-height:1.2;font-weight:600;letter-spacing:-.015em;color:#1d1d1f;text-wrap:balance}
+@container slide (max-width:700px){.msg-phone{width:88cqw;height:66%;border-width:1.8cqw;border-radius:0 0 13cqw 13cqw}.msg-screen{font-size:4cqw;gap:2.2cqw;padding:0 4cqw 4cqw}.msg-bubble{max-width:58cqw;border-radius:4.4cqw;padding:2cqw 3cqw}.msg-out{max-width:50cqw;border-radius:4.4cqw;padding:2cqw 3cqw}.msg-av{width:8cqw}.msg-name{margin-left:11cqw}.msg-chips{margin-left:10cqw;gap:1.6cqw}.msg-chips span{padding:1.2cqw 2cqw}.msg-chips img{width:3cqw;height:3cqw}.msg-plus,.msg-field{height:9cqw}.msg-plus{width:9cqw;font-size:5cqw}.msg-field svg{width:4cqw;height:4cqw}.msg-cap{font-size:5cqw;width:84%;bottom:6%}}
 
 /* The app itself: the real window on white, as a Mac app is shown (the founder, 3 October 2026), on plain white. */
 .moment{padding-top:clamp(32px,3.95vw,79px)}
@@ -466,16 +461,18 @@ footer nav{display:flex;gap:18px}
 </section>
 
 <section class="sec" id="team" aria-roledescription="carousel" aria-label="Meet your team">
-  <div class="wrap"><h2 class="lead-title">Ask in plain words, and your team does the rest.</h2></div>
+  <div class="wrap"><p class="lead-copy">From your inbox and invoices to sales and reporting, your agents work together in the tools you already use, on computers of their own, and check with you before anything important.</p></div>
   <div class="gallery">
     <div class="track" tabindex="0">
-      <article class="slide light coo-slide" aria-label="Simeon, your COO">
-        <p class="cap top coo-cap">Your personal COO<span>Simeon staffs an agent for whatever needs doing.</span></p>
-        <div class="coo-stage" aria-hidden="true">
-          <svg class="coo-web" viewBox="-320 -220 640 440"><circle class="coo-pulse" cx="0" cy="-40" r="64"/><line class="coo-line" x1="-72" y1="-59" x2="-205" y2="-94" pathLength="1" style="animation-delay:960ms"/><line class="coo-line" x1="-70" y1="-16" x2="-188" y2="23" pathLength="1" style="animation-delay:1110ms"/><line class="coo-line" x1="-36" y1="24" x2="-66" y2="77" pathLength="1" style="animation-delay:1260ms"/><line class="coo-line" x1="36" y1="24" x2="66" y2="77" pathLength="1" style="animation-delay:1410ms"/><line class="coo-line" x1="70" y1="-16" x2="188" y2="23" pathLength="1" style="animation-delay:1560ms"/><line class="coo-line" x1="72" y1="-59" x2="205" y2="-94" pathLength="1" style="animation-delay:1710ms"/></svg>
-          <span class="coo-hero" style="left:50.00%;top:40.91%"><img src="faces/agent-simeon.png" alt=""></span>
-          <span class="coo-seat" style="left:11.88%;top:26.36%;--dx:38.12cqw;--dy:14.55cqh;--d:820ms"><span class="coo-float"><img src="faces/agent-mila.png" alt=""></span><b>Inbox</b></span><span class="coo-seat" style="left:14.69%;top:58.18%;--dx:35.31cqw;--dy:-17.27cqh;--d:970ms"><span class="coo-float"><img src="faces/agent-yodo.png" alt=""></span><b>Research</b></span><span class="coo-seat" style="left:36.56%;top:75.45%;--dx:13.44cqw;--dy:-34.55cqh;--d:1120ms"><span class="coo-float"><img src="faces/agent-theo.png" alt=""></span><b>Travel</b></span><span class="coo-seat" style="left:63.44%;top:75.45%;--dx:-13.44cqw;--dy:-34.55cqh;--d:1270ms"><span class="coo-float"><img src="faces/agent-nora.png" alt=""></span><b>Finance</b></span><span class="coo-seat" style="left:85.31%;top:58.18%;--dx:-35.31cqw;--dy:-17.27cqh;--d:1420ms"><span class="coo-float"><img src="faces/agent-felix.png" alt=""></span><b>Sales</b></span><span class="coo-seat" style="left:88.12%;top:26.36%;--dx:-38.12cqw;--dy:14.55cqh;--d:1570ms"><span class="coo-float"><img src="faces/agent-iris.png" alt=""></span><b>Content</b></span>
-        </div>
+      <article class="slide light msg-slide" aria-label="Message your agents like teammates">
+        <div class="msg-phone" aria-hidden="true"><div class="msg-screen">
+          <p class="msg-name">Theo</p>
+          <div class="msg-in"><img class="msg-av" src="faces/agent-theo.png" alt=""><p class="msg-bubble">Acme Health is 34 days late on the $4,200 invoice. Want me to send them a reminder?</p></div>
+          <div class="msg-chips"><span><img src="logos/gmail.webp" alt="">Send reminder</span><span><img src="logos/quickbooks.svg" alt="">Show invoice</span></div>
+          <p class="msg-out">Yes, send it today.</p>
+          <div class="msg-compose"><span class="msg-plus">+</span><span class="msg-field">Message Theo<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12z"/></svg></span></div>
+        </div></div>
+        <p class="msg-cap">Message any agent like a teammate. Ask in plain words, and it gets on with the work.</p>
       </article>
 
 
@@ -860,8 +857,6 @@ footer nav{display:flex;gap:18px}
 
 %FIT%
 <script>
-// The COO card plays its arrival once it is mostly in view.
-(() => { const c = document.querySelector('.coo-slide'); if (!c) return; new IntersectionObserver((es, io) => { for (const e of es) if (e.isIntersecting) { c.classList.add('play'); io.disconnect(); } }, { threshold: 0.5 }).observe(c); })();
 // The team gallery: one card at a time, the next one every few seconds, paused when you take over.
 (() => {
   const gal = document.querySelector('.gallery'), track = gal.querySelector('.track'), slides = [...track.children];
