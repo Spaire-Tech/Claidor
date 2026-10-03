@@ -355,45 +355,57 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
    cursor: it picks Thursday, clicks 7:30 and presses Reserve, on a loop. */
 .vo-cap{text-shadow:0 1px 18px rgba(0,0,0,.35)}
 .glass{background:linear-gradient(160deg,rgba(255,255,255,.22),rgba(255,255,255,.08));-webkit-backdrop-filter:blur(28px) saturate(1.6);backdrop-filter:blur(28px) saturate(1.6);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 0 0 1px rgba(255,255,255,.16),0 2.2cqw 5cqw rgba(10,20,50,.25);color:#fff}
-.slide.sp-slide{background:#d8d2c8 url(img/room-studio.jpg) center/cover}
-.sp-slide::before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(rgba(30,24,18,.45),rgba(30,24,18,0) 28%);pointer-events:none}
+.slide.sp-slide{background:#5a4430 url(img/room-library.jpg) center/cover}
+.sp-slide::before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(rgba(20,14,8,.5),rgba(20,14,8,.08) 32%);pointer-events:none}
 .sp-cap{z-index:6;text-shadow:0 1px 18px rgba(0,0,0,.3);color:#fff}
 .sp{position:absolute;inset:0;z-index:2}
-/* Safari on visionOS: a glass toolbar floating over one page, and a grabber under it. */
-.sf-bar{position:absolute;left:50%;top:27%;transform:translateX(-50%);display:flex;align-items:center;gap:.6cqw;padding:.5cqw;border-radius:99px;color:rgba(255,255,255,.9);
-  background:rgba(96,84,72,.42);-webkit-backdrop-filter:blur(24px) saturate(1.5);backdrop-filter:blur(24px) saturate(1.5);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),inset 0 0 0 1px rgba(255,255,255,.08),0 1cqw 3cqw rgba(30,20,10,.18)}
-.sf-b{display:grid;place-items:center;width:2.6cqw;height:2.6cqw;border-radius:50%;background:rgba(255,255,255,.12)}
-.sf-b.dim{color:rgba(255,255,255,.4)}
-.sf-b svg{width:1.2cqw;height:1.2cqw}
-.sf-url{display:flex;align-items:center;justify-content:center;gap:.8cqw;width:24cqw;height:2.6cqw;border-radius:99px;background:rgba(255,255,255,.12);font-size:1.1cqw;letter-spacing:-.01em}
-.sf-url svg{width:1.1cqw;height:1.1cqw;opacity:.7}
-.sf-win{position:absolute;left:21%;right:21%;top:34.5%;bottom:10.5%;border-radius:1.6cqw;overflow:hidden;background:#f7f6f3;color:#1d1d1f;box-shadow:0 2cqw 5cqw rgba(30,20,10,.25)}
-.sf-nav{display:flex;align-items:center;height:7.5%;padding:0 2cqw;font-size:.68cqw;letter-spacing:.14em;text-transform:uppercase;color:#6e6e73;gap:1.6cqw}
-.sf-nav b{position:absolute;left:50%;transform:translateX(-50%);font-family:"Newsreader",Georgia,serif;font-size:1.35cqw;font-weight:500;letter-spacing:.32em;color:#1d1d1f}
-.sf-nav i{margin-left:auto}
-.sf-img{position:absolute;left:3%;right:3%;top:7.5%;bottom:17%;background:url(img/venue.jpg) center/cover;border-radius:.3cqw}
-.sf-tag{position:absolute;left:4.5%;top:10.5%;padding:.25cqw .7cqw;border:1px solid rgba(255,255,255,.7);border-radius:.3cqw;font-size:.6cqw;letter-spacing:.14em;text-transform:uppercase;color:#fff}
-.sf-foot{position:absolute;left:3%;right:3%;bottom:4.5%;display:flex;justify-content:space-between;align-items:flex-end}
-.sf-foot b{display:block;font-family:"Newsreader",Georgia,serif;font-weight:400;font-size:1.55cqw;letter-spacing:-.01em}
-.sf-foot small{display:block;margin-top:.3cqw;font-size:.72cqw;color:#86868b}
-.sf-foot span{font-size:.75cqw;color:#6e6e73}
-.sf-grab{position:absolute;left:calc(50% - 3.5cqw);bottom:6.9%;width:7cqw;height:.55cqw;border-radius:99px;background:rgba(255,255,255,.8)}
-/* Simeon's cursor drifts to the venue and picks it. */
-.sf-cur{position:absolute;z-index:3;left:62%;top:58%;width:0;height:0;animation:sf-move 8s cubic-bezier(.45,0,.2,1) infinite}
-.sf-cur img{position:absolute;left:.5cqw;top:.8cqw;width:3.6cqw;max-width:none;filter:drop-shadow(0 .4cqw .7cqw rgba(0,0,0,.25))}
-.sf-cur svg{position:absolute;left:-.2cqw;top:-.2cqw;width:1.5cqw;filter:drop-shadow(0 .2cqw .3cqw rgba(0,0,0,.3))}
-@keyframes sf-move{0%,10%{left:64%;top:56%}40%,60%{left:33%;top:83.3%}62%{transform:scale(.9)}64%{transform:none}90%,100%{left:64%;top:56%}}
+/* Simeon's computer: the task list beside a live desktop, a placeholder window on it. */
+.pc{position:absolute;left:13%;right:13%;top:26%;bottom:7%;display:flex;border-radius:1.4cqw;overflow:hidden;background:#f7f6f3;color:#1d1d1f;box-shadow:0 0 0 1px rgba(0,0,0,.06),0 2.4cqw 6cqw rgba(20,12,4,.45)}
+.pc-side{flex:none;width:24%;padding:1.5cqw 1.2cqw;border-right:1px solid #e6e4df;font-size:1cqw}
+.pc-side>img{display:block;width:2cqw;height:auto;margin:0 0 1.4cqw .4cqw}
+.pc-side h6{margin:1.1cqw .4cqw .4cqw;font-size:.9cqw;font-weight:400;color:#9a978f}
+.pc-side ul{margin:0;padding:0;list-style:none}
+.pc-side li{display:flex;align-items:center;gap:.7cqw;padding:.6cqw .5cqw;border-radius:.6cqw;white-space:nowrap;overflow:hidden;color:#3a3a3c;-webkit-mask-image:linear-gradient(90deg,#000 82%,transparent);mask-image:linear-gradient(90deg,#000 82%,transparent)}
+.pc-side li.on{background:#ebe9e4}
+.pc-side li i{flex:none;width:.5cqw;height:.5cqw;border-radius:50%;background:#c9c6be}
+.pc-side li.on i{width:.8cqw;height:.8cqw;background:none;border:.15cqw solid #9a978f;border-right-color:transparent;animation:pc-spin 1s linear infinite}
+.pc-main{flex:1;display:flex;flex-direction:column;padding:1cqw 1.2cqw 1.2cqw;min-width:0}
+.pc-tabs{display:flex;gap:.4cqw;font-size:.95cqw;color:#9a978f;margin-bottom:.9cqw}
+.pc-tabs span{padding:.35cqw .8cqw;border-radius:99px}
+.pc-tabs span.on{background:#ebe9e4;color:#1d1d1f}
+.pc-desk{position:relative;flex:1;border-radius:1cqw;overflow:hidden;background:#6f8a58 url(img/wall-hills.jpg) center/cover}
+.pc-take{position:absolute;right:1.2cqw;top:1.1cqw;display:inline-flex;align-items:center;gap:.5cqw;padding:.5cqw 1.1cqw;border-radius:99px;background:rgba(20,22,26,.72);color:#fff;font-size:.95cqw;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.pc-take svg{width:1cqw;height:1cqw}
+.pc-app{position:absolute;left:30%;right:9%;top:22%;bottom:20%;border-radius:.7cqw;background:#f7f6f3;box-shadow:0 1.2cqw 3cqw rgba(0,0,0,.28);padding:.8cqw 1.2cqw}
+.pc-dots{display:flex;gap:.35cqw;margin-bottom:1cqw}
+.pc-dots i{width:.55cqw;height:.55cqw;border-radius:50%;background:#d5d2cb}
+.pc-ln{height:.45cqw;border-radius:99px;background:#dddad3;margin-bottom:.45cqw}
+.pc-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:.9cqw;margin-top:2.4cqw}
+.pc-cards span{height:6.6cqw;border-radius:.6cqw;border:.12cqw solid #e2dfd8;background:#f1efea;padding:1cqw}
+.pc-cards b{display:block;width:1.8cqw;height:1.8cqw;border-radius:50%;background:#dcd9d2;margin-bottom:1.1cqw}
+.pc-dock{position:absolute;left:50%;bottom:1.1cqw;transform:translateX(-50%);display:flex;gap:.6cqw;padding:.5cqw;border-radius:1.1cqw;background:rgba(30,32,28,.45);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.pc-dock span{display:grid;place-items:center;width:2.6cqw;height:2.6cqw;border-radius:.7cqw;background:rgba(255,255,255,.14);color:#fff}
+.pc-dock span.on{background:rgba(255,255,255,.3)}
+.pc-dock svg{width:1.3cqw;height:1.3cqw}
+.pc-who{position:absolute;z-index:3;left:22%;top:44%;animation:pc-move 7s cubic-bezier(.45,0,.2,1) infinite}
+.pc-who span{display:inline-flex;align-items:center;gap:.4cqw;padding:.3cqw .8cqw .3cqw .4cqw;border-radius:99px;background:rgba(20,22,26,.78);color:#fff;font-size:.9cqw}
+.pc-who img{width:1.5cqw;height:auto;max-width:none}
+@keyframes pc-move{0%,15%{left:22%;top:44%}45%,60%{left:48%;top:62%}85%,100%{left:22%;top:44%}}
+@keyframes pc-spin{to{transform:rotate(360deg)}}
 @container slide (max-width:700px){
-  .sf-bar{top:31%;gap:1.2cqw;padding:1.2cqw}.sf-b{width:6.4cqw;height:6.4cqw}.sf-b svg{width:3cqw;height:3cqw}.sf-b.x{display:none}
-  .sf-url{width:44cqw;height:6.4cqw;font-size:2.8cqw;gap:1.6cqw}.sf-url svg{width:2.6cqw;height:2.6cqw}
-  .sf-win{left:5%;right:5%;top:40%;bottom:12%;border-radius:4cqw}
-  .sf-nav{height:9%;font-size:1.7cqw;gap:3cqw;padding:0 4cqw}.sf-nav span{display:none}.sf-nav b{font-size:3.4cqw}
-  .sf-img{top:9%;bottom:21%}.sf-tag{font-size:1.6cqw;padding:.6cqw 1.6cqw}
-  .sf-foot b{font-size:4cqw}.sf-foot small{font-size:2cqw;margin-top:.8cqw}.sf-foot span{font-size:2cqw}
-  .sf-grab{bottom:8%;width:14cqw;left:calc(50% - 7cqw);height:1.2cqw}
-  .sf-cur{display:none}
+  .pc{left:5%;right:5%;top:33%;bottom:6%;border-radius:4cqw}
+  .pc-side{display:none}
+  .pc-main{padding:2.4cqw}
+  .pc-tabs{font-size:2.6cqw;gap:1cqw;margin-bottom:2cqw}.pc-tabs span{padding:.9cqw 2cqw}
+  .pc-desk{border-radius:2.6cqw}
+  .pc-take{font-size:2.4cqw;padding:1.2cqw 2.4cqw;right:2.4cqw;top:2.4cqw;gap:1.2cqw}.pc-take svg{width:2.6cqw;height:2.6cqw}
+  .pc-app{left:12%;right:12%;top:24%;bottom:24%;padding:2cqw 2.6cqw;border-radius:1.6cqw}
+  .pc-dots{gap:.8cqw;margin-bottom:2.4cqw}.pc-dots i{width:1.3cqw;height:1.3cqw}.pc-ln{height:1cqw;margin-bottom:1cqw}
+  .pc-cards{gap:2cqw;margin-top:4cqw}.pc-cards span{height:13cqw;padding:2cqw}.pc-cards b{width:3.6cqw;height:3.6cqw}
+  .pc-dock{bottom:2.4cqw;gap:1.4cqw;padding:1.2cqw;border-radius:2.4cqw}.pc-dock span{width:6.4cqw;height:6.4cqw;border-radius:1.6cqw}.pc-dock svg{width:3.2cqw;height:3.2cqw}
+  .pc-who span{font-size:2.4cqw;padding:.8cqw 2cqw .8cqw 1cqw;gap:1cqw}.pc-who img{width:3.6cqw}
 }
-@media (prefers-reduced-motion:reduce){.sf-cur{animation:none}}
+@media (prefers-reduced-motion:reduce){.pc-who,.pc-side li.on i{animation:none}}
 
 /* The first card: messaging an agent like a teammate (the founder, 3 October 2026, with Apple's
    Messages card as the model): a phone cut off by the card's top edge, one exchange with Theo in
@@ -679,15 +691,13 @@ footer nav{display:flex;gap:18px}
       <article class="slide sp-slide" aria-label="A computer for every agent">
         <p class="cap top sp-cap">Every agent works on a computer of its own. Watch it work, or take over whenever you like.</p>
         <div class="sp" aria-hidden="true">
-          <div class="sf-bar"><span class="sf-b x"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M9 5v14"/></svg></span><span class="sf-b"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 6l-6 6 6 6"/></svg></span><span class="sf-b dim x"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 6l6 6-6 6"/></svg></span><span class="sf-url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>alderhouse.com<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.3-5.7L20 8.6M20 4v4.6h-4.6"/></svg></span><span class="sf-b"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></svg></span><span class="sf-b x"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span><span class="sf-b x"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="7" width="13" height="13" rx="2.5"/><path d="M4 16V6a2 2 0 0 1 2-2h10"/></svg></span></div>
-          <div class="sf-win">
-            <div class="sf-nav"><span>Retreats</span><span>Rooms</span><span>Meetings</span><b>ALDER</b><i>Book</i></div>
-            <div class="sf-img"></div>
-            <span class="sf-tag">&#9679; For teams</span>
-            <div class="sf-foot"><div><b>Alder House, Sonoma &#8599;</b><small>Twelve rooms &#183; an hour from the office</small></div><span>From $480/nt</span></div>
+          <div class="pc">
+            <div class="pc-side"><img src="faces/agent-simeon.png" alt=""><h6>This week</h6><ul><li class="on"><i></i>Close the books for September</li><li><i></i>Follow up on unpaid invoices</li></ul><h6>This month</h6><ul><li><i></i>Compare payroll providers</li><li><i></i>Update the investor list</li><li><i></i>Plan the Q4 offsite</li><li><i></i>Renew the domain</li></ul></div>
+            <div class="pc-main">
+              <div class="pc-tabs"><span>Files</span><span class="on">Desktop</span><span>Terminal</span></div>
+              <div class="pc-desk"><span class="pc-take"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V6.5a1.5 1.5 0 0 1 3 0V12M11 11V5a1.5 1.5 0 0 1 3 0v6M14 11V6.5a1.5 1.5 0 0 1 3 0V14a6 6 0 0 1-6 6h-.5A5.5 5.5 0 0 1 6 17.4L4.2 14a1.5 1.5 0 0 1 2.6-1.5L8 14"/></svg>Take over</span><div class="pc-app"><div class="pc-dots"><i></i><i></i><i></i></div><div class="pc-ln" style="width:22%"></div><div class="pc-ln" style="width:14%"></div><div class="pc-cards"><span><b></b><div class="pc-ln" style="width:70%"></div><div class="pc-ln" style="width:45%"></div></span><span><b></b><div class="pc-ln" style="width:70%"></div><div class="pc-ln" style="width:45%"></div></span><span><b></b><div class="pc-ln" style="width:70%"></div><div class="pc-ln" style="width:45%"></div></span></div></div><div class="pc-who"><span><img src="faces/agent-simeon.png" alt="">Simeon</span></div><div class="pc-dock"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="m7 9 3 3-3 3M12 15h5"/></svg></span><span class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 3 2.5 15 0 18M12 3c-2.5 3-2.5 15 0 18"/></svg></span></div></div>
+            </div>
           </div>
-          <span class="sf-grab"></span>
-          <div class="sf-cur"><svg viewBox="0 0 20 20"><path d="M3 2l13 6.2-5.6 1.5L8 15.4z" fill="#111" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/></svg><img src="faces/agent-simeon.png" alt=""></div>
         </div>
       </article>
 
