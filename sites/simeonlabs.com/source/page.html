@@ -362,14 +362,13 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 /* Simeon's computer, as onboarding draws it: a rounded Mac desktop, two Mac windows, the cursor at work between them. */
 .mac{position:absolute;left:12%;right:12%;top:25%;bottom:9%;border-radius:1.8cqw;overflow:hidden;background:#6f8a58 url(img/wall-hills.jpg) center/cover;box-shadow:0 0 0 1px rgba(0,0,0,.08),0 2.4cqw 6cqw rgba(0,0,0,.18)}
 .mw{position:absolute;border-radius:.9cqw;overflow:hidden;background:#fff;box-shadow:0 1.2cqw 3cqw rgba(0,0,0,.22),0 0 0 1px rgba(0,0,0,.06);display:flex;flex-direction:column}
-.mw.a{left:6%;top:12%;width:50%;height:58%}
-.mw.b{left:30%;top:28%;width:52%;height:62%}
+.mw.a{left:16%;top:12%;width:50%;height:58%}
+.mw.b{left:34%;top:28%;width:50%;height:60%}
 .mw-bar{flex:none;height:3.2cqw;display:flex;align-items:center;gap:.55cqw;padding:0 1.1cqw;background:#e5e5e7}
 .mw-bar i{width:.85cqw;height:.85cqw;border-radius:50%;background:#ff5f57}.mw-bar i+i{background:#febc2e}.mw-bar i+i+i{background:#28c840}
 .mw-body{flex:1;display:flex;min-height:0}
 .mw-side{flex:none;width:30%;background:#f4f4f6;padding:1cqw}
 .mw-side b{display:block;height:4.6cqw;border-radius:.7cqw;background:#fff}
-.mw-side b img{display:block;width:60%;margin:0 auto;padding-top:.7cqw}
 .mw-main{flex:1;padding:1.6cqw 1.6cqw 1.2cqw}
 .mw-row{display:flex;align-items:center;gap:.9cqw;margin-bottom:1.1cqw}
 .mw-row i{flex:none;width:1.5cqw;height:1.5cqw;border-radius:.35cqw;background:#e9e9eb}
@@ -381,10 +380,11 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .pc-take{position:absolute;z-index:4;right:1.2cqw;top:1.1cqw;display:inline-flex;align-items:center;gap:.5cqw;padding:.5cqw 1.1cqw;border-radius:99px;background:rgba(20,22,26,.72);color:#fff;font-size:.95cqw;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 .pc-take svg{width:1cqw;height:1cqw}
 .pc-who{position:absolute;z-index:5;left:7%;top:12%;width:0;height:0;animation:pc-move 8s cubic-bezier(.45,0,.2,1) infinite}
-.pc-who svg{position:absolute;left:0;top:0;width:1.7cqw;filter:drop-shadow(0 .2cqw .3cqw rgba(0,0,0,.3))}
-.pc-who img{position:absolute;left:.9cqw;top:1.1cqw;width:3.6cqw;max-width:none;filter:drop-shadow(0 .4cqw .7cqw rgba(0,0,0,.25));animation:pc-bob 1.8s ease-in-out infinite}
+.pc-who>svg{position:absolute;left:0;top:0;width:1.7cqw;filter:drop-shadow(0 .2cqw .3cqw rgba(0,0,0,.3))}
+.pc-who span{position:absolute;left:1.1cqw;top:1.4cqw;display:inline-flex;align-items:center;gap:.45cqw;padding:.3cqw .9cqw .3cqw .4cqw;border-radius:99px;background:rgba(20,22,26,.8);color:#fff;font-size:1cqw;white-space:nowrap;animation:pc-bob 1.8s ease-in-out infinite}
+.pc-who img{width:1.7cqw;height:auto;max-width:none}
 .pc-click{position:absolute;left:-1.3cqw;top:-1.3cqw;width:2.6cqw;height:2.6cqw;border-radius:50%;border:.2cqw solid rgba(37,90,147,.75);opacity:0;animation:pc-ring 8s ease-out infinite}
-@keyframes pc-move{0%,12%{left:7%;top:12%}40%,58%{left:60%;top:51%}86%,100%{left:7%;top:12%}}
+@keyframes pc-move{0%,12%{left:19%;top:20%}40%,58%{left:62%;top:51%}86%,100%{left:19%;top:20%}}
 @keyframes pc-ring{0%,41%{opacity:0;transform:scale(.4)}44%{opacity:1}50%,100%{opacity:0;transform:scale(1.6)}}
 @keyframes pc-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-.25cqw)}}
 @keyframes pc-spin{to{transform:rotate(360deg)}}
@@ -396,7 +396,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
   .mw-row{gap:2cqw;margin-bottom:2.4cqw}.mw-row i{width:3.4cqw;height:3.4cqw;border-radius:.8cqw}.mw-row span{height:1.1cqw}.mw-row span+span{margin-top:1.2cqw}
   .mw-btn{height:9cqw;border-radius:1.4cqw;margin-top:4cqw}
   .pc-take{font-size:2.4cqw;padding:1.2cqw 2.4cqw;right:2.4cqw;top:2.4cqw;gap:1.2cqw}.pc-take svg{width:2.6cqw;height:2.6cqw}
-  .pc-who{left:20%;top:30%}.pc-who svg{width:3.6cqw}.pc-who img{width:7.6cqw;left:2cqw;top:2.4cqw}.pc-click{width:5.4cqw;height:5.4cqw;left:-2.7cqw;top:-2.7cqw}
+  .pc-who{left:20%;top:30%}.pc-who svg{width:3.6cqw}.pc-who span{left:2.4cqw;top:3cqw;font-size:2.4cqw;padding:.8cqw 2cqw .8cqw 1cqw;gap:1cqw}.pc-who img{width:3.8cqw}.pc-click{width:5.4cqw;height:5.4cqw;left:-2.7cqw;top:-2.7cqw}
   @keyframes pc-move{0%,12%{left:20%;top:30%}40%,58%{left:58%;top:43%}86%,100%{left:20%;top:30%}}
   .pc-tabs{font-size:2.6cqw;gap:1cqw;margin-bottom:2cqw}.pc-tabs span{padding:.9cqw 2cqw}
   .pc-desk{border-radius:2.6cqw}
@@ -710,10 +710,10 @@ footer nav{display:flex;gap:18px}
         <p class="cap top sp-cap">Every agent works on a computer of its own. Watch it work, or take over whenever you like.</p>
         <div class="sp" aria-hidden="true">
           <div class="mac">
-            <div class="mw a"><div class="mw-bar"><i></i><i></i><i></i></div><div class="mw-body"><div class="mw-side"><b><img src="faces/agent-simeon.png" alt=""></b></div><div class="mw-main"><div class="mw-tabs"><i></i><i></i><i></i></div></div></div></div>
+            <div class="mw a"><div class="mw-bar"><i></i><i></i><i></i></div><div class="mw-body"><div class="mw-side"><b></b></div><div class="mw-main"><div class="mw-tabs"><i></i><i></i><i></i></div></div></div></div>
             <div class="mw b"><div class="mw-bar"><i></i><i></i><i></i></div><div class="mw-body"><div class="mw-side"></div><div class="mw-main"><div class="mw-row"><i></i><div style="flex:1"><span style="width:78%"></span><span style="width:52%"></span></div></div><div class="mw-row"><i></i><div style="flex:1"><span style="width:70%"></span><span style="width:46%"></span></div></div><div class="mw-btn"></div></div></div></div>
             <span class="pc-take"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V6.5a1.5 1.5 0 0 1 3 0V12M11 11V5a1.5 1.5 0 0 1 3 0v6M14 11V6.5a1.5 1.5 0 0 1 3 0V14a6 6 0 0 1-6 6h-.5A5.5 5.5 0 0 1 6 17.4L4.2 14a1.5 1.5 0 0 1 2.6-1.5L8 14"/></svg>Take over</span>
-            <div class="pc-who"><svg viewBox="0 0 20 20"><path d="M3 2l13 6.2-5.6 1.5L8 15.4z" fill="#111" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/></svg><img src="faces/agent-simeon.png" alt=""><i class="pc-click"></i></div>
+            <div class="pc-who"><svg viewBox="0 0 20 20"><path d="M3 2l13 6.2-5.6 1.5L8 15.4z" fill="#111" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/></svg><span><img src="faces/agent-simeon.png" alt="">Simeon</span><i class="pc-click"></i></div>
           </div>
         </div>
       </article>
