@@ -41,8 +41,10 @@ button{font:inherit;color:inherit}
 h1,h2,h3,p,figure{margin:0}
 h1,h2,h3{font-weight:600;text-wrap:balance}
 .wrap{width:var(--col);margin-inline:auto}
-.btn{display:inline-flex;align-items:center;justify-content:center;height:44px;padding:0 22px;border-radius:99px;background:var(--blue);color:#fff;font-size:17px;font-weight:400;letter-spacing:-.01em;cursor:pointer;white-space:nowrap;transition:background .2s}
-.btn:hover{background:var(--blue-hover)}
+.btn{display:inline-flex;align-items:center;justify-content:center;height:44px;padding:0 22px;border-radius:99px;background:#000;color:#fff;font-size:17px;font-weight:400;letter-spacing:-.01em;cursor:pointer;white-space:nowrap;text-decoration:none;transition:background .2s}
+.btn:hover{background:#2b2b2d}
+.btn.ghost{background:#f2f2f2;color:#000}
+.btn.ghost:hover{background:#e8e8e8}
 .link{color:var(--blue);text-decoration:none;font-size:17px;white-space:nowrap;cursor:pointer}
 .link::after{content:" ›"}
 .wordmark{display:block;background:currentColor;-webkit-mask:url(img/wordmark.png) center/contain no-repeat;mask:url(img/wordmark.png) center/contain no-repeat;aspect-ratio:1024/460}
@@ -59,18 +61,13 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .bar .btn{height:28px;padding:0 12px;font-size:12px}
 @media (max-width:734px){.bar nav{display:none}.bar .btn{margin-left:auto}}
 
-/* Hero, centred: the name, the line, the six of them, one paragraph, one button. */
-.hero{padding:96px 0 0;text-align:center}
-.hero .wordmark{width:150px;margin:0 auto;color:var(--ink)}
-.hero h1{margin-top:18px;font-size:clamp(44px,6.4vw,80px);line-height:1.05;letter-spacing:-.04em}
-.team{display:flex;justify-content:center;gap:clamp(12px,2vw,28px);margin:56px auto 0;padding:0;list-style:none;flex-wrap:wrap}
-.team li{display:flex;flex-direction:column;align-items:center;gap:12px;font-size:14px;font-weight:600;color:var(--ink2);letter-spacing:-.01em}
-.team .ico{width:clamp(76px,9vw,124px);aspect-ratio:1;border-radius:24%;display:grid;place-items:center;background:linear-gradient(180deg,#fff,#f2f2f5);box-shadow:0 0 0 1px rgba(0,0,0,.05),0 16px 32px -14px rgba(0,0,0,.22)}
-.team .ico img{width:74%;height:74%}
-.hero .lede{max-width:760px;margin:52px auto 0;font-size:clamp(17px,1.5vw,21px);line-height:1.38;font-weight:600;color:var(--ink2);letter-spacing:-.016em;text-wrap:pretty}
-.hero .lede b,.anat .lede b,.fcap b,.yes .lede b{color:var(--ink);font-weight:600}
-.hero .ctas{display:flex;gap:28px;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:32px}
-@media (max-width:734px){.hero{padding-top:64px}.team{display:grid;grid-template-columns:repeat(3,auto);justify-content:center;gap:22px 20px}.team .ico{width:84px}}
+/* Hero: a title, a description and two buttons, nothing else (the founder, 3 October 2026). */
+.hero{padding:clamp(96px,13vw,180px) 0 0;text-align:center;color:#000}
+.hero h1{max-width:15ch;margin:0 auto;font-size:clamp(46px,7.4vw,108px);line-height:1.02;font-weight:500;letter-spacing:-.045em}
+.hero .lede{max-width:700px;margin:clamp(28px,3vw,40px) auto 0;font-size:clamp(18px,1.6vw,22px);line-height:1.5;font-weight:400;color:#000;letter-spacing:-.012em;text-wrap:pretty}
+.hero .ctas{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:clamp(32px,3.4vw,44px)}
+.hero .btn{height:clamp(48px,4.2vw,56px);padding:0 clamp(24px,2.2vw,30px);font-size:clamp(16px,1.3vw,18px)}
+@media (max-width:734px){.hero h1{letter-spacing:-.04em}}
 
 /* Section headings and the section anatomy. */
 .sec{padding-top:160px}
@@ -435,18 +432,9 @@ footer nav{display:flex;gap:18px}
 <main>
 <section class="hero">
   <div class="wrap">
-    <span class="wordmark" role="img" aria-label="Simeon"></span>
-    <h1>Your AI operations team.</h1>
-    <ul class="team" aria-label="The team">
-      <li><span class="ico"><img class="face" src="faces/simeon.png" alt=""></span>Chief of Staff</li>
-      <li><span class="ico"><img class="face" src="faces/scout.png" alt=""></span>Inbox</li>
-      <li><span class="ico"><img class="face" src="faces/yodo.png" alt=""></span>Money</li>
-      <li><span class="ico"><img class="face f-growth" src="faces/scout.png" alt=""></span>Growth</li>
-      <li><span class="ico"><img class="face f-content" src="faces/yodo.png" alt=""></span>Content</li>
-      <li><span class="ico"><img class="face f-sales" src="faces/yodo.png" alt=""></span>Sales</li>
-    </ul>
-    <p class="lede"><b>Six agents with real jobs in your business.</b> They work in the tools you already use, on computers of their own, day and night. Anything that matters waits for your yes.</p>
-    <div class="ctas"><span class="btn">Try it free</span><a class="link" href="#app">See it work</a></div>
+    <h1>An AI agent for every job in your business.</h1>
+    <p class="lede">Ask Simeon for help with anything and it adds an agent for the job. Each one works in your tools, on a computer of its own, and checks with you before anything important.</p>
+    <div class="ctas"><span class="btn">Download for Mac</span><a class="btn ghost" href="#app">See it work</a></div>
   </div>
 </section>
 
