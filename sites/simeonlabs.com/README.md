@@ -24,27 +24,29 @@ while the app loads). It rewrites `public/` from scratch; commit what it writes.
 
 ## What is in the page
 
-The page is written by hand in `source/page.html`, drawn the way Apple draws a
-product page (the founder, 3 October 2026): one idea per screen, large type,
-the product doing the explaining, no counts or tables.
+The page is written by hand in `source/page.html`, laid out by the rules of
+Apple's product pages (apple.com/apple-creator-studio, /apps, /apple-vision-pro
+and /apple-intelligence; the founder, 3 October 2026): one left edge, one
+section anatomy repeated, pictures without words on them and captions under
+them, light only.
 
-- **Hero.** "Your AI operations team.", one line, Download for Mac, and the
-  real app window playing in a box over the blue painting (`FIT` in
-  `build.py` scales it from the box's own size). Phones under 600 px get a
-  still of the app drawn by the page instead.
-- **Meet your team.** A gallery like Apple's: one card per agent with its
-  cloud face, one sentence, and one moment on an iPhone or a Mac drawn in CSS.
-  Chief of Staff (the Friday note on the lock screen), Inbox (replies written
-  overnight), Money (a phone call), Growth (the morning chart), Content (a
-  post and its picture), Sales (calls booked on the calendar). It plays by
-  itself while on screen, stops when you swipe or press pause, and arrow keys
-  move it.
-- **How the team works.** Large boxes: a computer of its own, nothing goes
-  out without your yes, routines, hand-offs, calls, and the tools it works in.
-- **Pricing** (Standard $20, Pro $60, Max $100, 20% less yearly, a free week),
-  **five questions**, and the closing banner.
+- **Product bar**: the wordmark, four section links, "Try it free".
+- **Hero**, centred: the wordmark, "Your AI operations team.", the six agents
+  as icons, one paragraph, Try it free.
+- **Meet your team**: a gallery of big cards (the whole team, then one card
+  per agent with one moment on an iPhone or a Mac drawn in CSS). It plays by
+  itself while on screen and stops when you swipe or press pause.
+- **The app**: the real app window, edge to edge on the blue painting (`FIT` in
+  `build.py` scales it from its box). Phones under 600 px see a still of it.
+- **One section per agent**, each the same: face and coloured name, a two-line
+  headline, a grey paragraph led by a bold sentence, then a row of three square
+  cards (a window of the app it works in) with a caption under each. Rows
+  scroll sideways with arrows when they do not fit.
+- **Nothing goes out without your yes** (a grey box), two tiles (a computer of
+  its own, talk to it), **pricing** (Standard $20, Pro $60, Max $100, 20% less
+  yearly, a free week), **Questions? Answers.**, and the closing line.
 
-Nothing in it links anywhere outside the page: it is a site to try.
+No counts, tables or logo walls. Nothing links outside the page.
 
 **`public/app/` is the app's window: the upstream 0.18.0 renderer with Simeon's patches (see `desktop/NOTICE.md`).** The
 founder chose on 28 September 2026 to publish it with the site, knowing the

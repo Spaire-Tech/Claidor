@@ -49,10 +49,12 @@ def chip(key):
     src, name, color = logo(key)
     return f'<span class="sd-app"><span class="sd-app-ico"><img src="{src}" alt=""></span><span style="color:{readable(color)}">{name}</span></span>'
 
-# "Works where you already work": the tools a founder opens every day. No count: the
-# founder asked for none (3 October 2026).
-TOOLS = ["gmail", "google-calendar", "slack", "notion", "stripe", "hubspot", "linkedin", "canva", "quickbooks", "google-sheets"]
-TOOL_ICONS = "".join(f'<span title="{logo(k)[1]}"><img src="{logo(k)[0]}" alt="{logo(k)[1]}" loading="lazy"></span>' for k in TOOLS)
+# The apps the agents' cards show, in the app's own logos.
+for key in ("notion", "gmail", "google-docs", "stripe", "quickbooks", "xero", "hubspot", "google-sheets", "mailchimp", "canva", "linkedin", "salesforce"):
+    logo(key)
+shutil.copy(f"{HERE}/simeon-mark.svg", f"{OUT}/logos/simeon.svg")
+for name in re.findall(r'src="(logos/[^"]+)"', open(f"{HERE}/page.html").read()):
+    assert os.path.exists(f"{OUT}/{name}") or name in ("logos/linear.svg", "logos/word.webp"), name
 
 # The phone hero: a still of the app, drawn by the page, nothing to load, scroll or touch.
 # Simeon's thread with both sides talking, the agents down the left as the window shows them.
@@ -274,7 +276,7 @@ async def main():
     app_idx = open(f"{APP}/index.html").read()
     js = re.search(r'src="\./assets/(index-[^"]+\.js)"', app_idx).group(1)
     css = re.search(r'href="\./assets/(index-[^"]+\.css)"', app_idx).group(1)
-    for key, value in (("%MOBILE_CSS%", MOBILE_CSS), ("%MOBILE_HTML%", MOBILE_HTML), ("%TOOL_ICONS%", TOOL_ICONS), ("%FIT%", FIT),
+    for key, value in (("%MOBILE_CSS%", MOBILE_CSS), ("%MOBILE_HTML%", MOBILE_HTML), ("%FIT%", FIT),
                        ("%APP_JS%", js), ("%APP_CSS%", css)):
         assert page.count(key) == 1, key
         page = page.replace(key, value)
