@@ -360,6 +360,14 @@ and Ashby connect through Simeon. The provider behind them is never named in the
   a tool not found names the ones that exist. Clicking Add waits up to 8 s for the install to
   reach the cloud computer, and a proposal card's sign-in resumes the agent that proposed it
   (it was never told before, and went on saying the app "isn't installed").
+* **Apps added 3 October 2026, for founders.** Through our apps service, each with a sign-in the
+  provider manages (checked that day on its toolkit page): Google Analytics, Google Search
+  Console, YouTube, Kit, Instagram and Facebook Pages (business accounts only), Calendly,
+  Cal.com, Attio, Zendesk, Microsoft Teams, Discord. Through the vendor's own MCP (dynamic
+  registration and S256, checked the same day): Mercury (read-only) and PostHog. Left out because
+  their sign-in needs an API key or a developer setup of ours: X, Google Ads, Close, PandaDoc,
+  Help Scout, Fireflies, Beehiiv, Mixpanel, Freshdesk. Run the apps check after signing in to one
+  to see it work end to end.
 * **Checking an account's apps for real.** On the API service's shell on Render:
   `uv run python -m scripts.desktop_apps_check someone@example.com` lists every app sign-in the
   provider holds for the account (with the date it was made: one older than an account reset is
