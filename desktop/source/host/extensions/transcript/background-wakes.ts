@@ -170,6 +170,7 @@ export class BackgroundWakes {
       async (runner) => {
         await runner.run(buildChannelDeliveryFailureWakePrompt(failures), {
           hidden: true,
+          callReason: "wake",
           ...this.tm.widgetResponses.collectUnansweredQuestionPrompts(session),
         });
       },
@@ -239,6 +240,7 @@ export class BackgroundWakes {
             buildChannelInboundWakePrompt(envelopes),
             {
               hidden: true,
+              callReason: "wake",
               ...this.tm.widgetResponses.collectUnansweredQuestionPrompts(
                 session,
               ),
@@ -349,7 +351,7 @@ export class BackgroundWakes {
       async (runner) => {
         const result = await runner.run(
           buildAdminBroadcastWakePrompt(message),
-          { hidden: true },
+          { hidden: true, callReason: "wake" },
         );
         if (!result.aborted && result.sentMessageCount === 0)
           await this.tm.automationRuntime.ensureHiddenTurnReply(runner);
@@ -434,6 +436,7 @@ export class BackgroundWakes {
         (runner) =>
           runner.run(buildTimelineEventWakePrompt(events), {
             hidden: true,
+            callReason: "wake",
             isSilenceAllowed: true,
           }),
         "Timeline event follow-up failed",
@@ -460,7 +463,7 @@ export class BackgroundWakes {
       requestSource,
       requestSource,
       async (runner) => {
-        await runner.run(prompt, { hidden: true, ...this.tm.widgetResponses.collectUnansweredQuestionPrompts(session) });
+        await runner.run(prompt, { hidden: true, callReason: "wake", ...this.tm.widgetResponses.collectUnansweredQuestionPrompts(session) });
       },
       trayTitle,
       requestSource,

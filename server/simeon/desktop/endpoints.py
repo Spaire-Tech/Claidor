@@ -1058,6 +1058,24 @@ async def proxy_models(
     )
 
 
+#: The header the app names each model call's purpose in: `chat` for a
+#: message the person sent, `routine`, `agent_wake`, `helper`, `safety`,
+#: `memory`, `summary` and so on (the app's `simeonCallReason`). It is
+#: stored on the usage row so the table can say which feature costs the
+#: most. Anything that is not a short lowercase word is dropped, not
+#: stored: the value is the caller's, and a usage row is not a place for
+#: free text.
+CALL_REASON_HEADER = "x-simeon-call-reason"
+_CALL_REASON_CHARACTERS = frozenset("abcdefghijklmnopqrstuvwxyz0123456789_")
+
+
+def call_reason(request: Request) -> str | None:
+    value = (request.headers.get(CALL_REASON_HEADER) or "").strip().lower()
+    if not value or len(value) > 32 or not set(value) <= _CALL_REASON_CHARACTERS:
+        return None
+    return value
+
+
 async def _proxy(
     request: Request,
     caller: ProxyCaller,
@@ -1120,6 +1138,7 @@ async def _proxy(
     headers = wire.headers(request)
     body = wire.body(payload, raw, model)
     user_id, session_id = user.id, caller.session_id
+    reason = call_reason(request)
     if spoken is SpokenApi.gemini_generate_content:
         parts = count_video_parts(payload)
         log.info(
@@ -1151,6 +1170,7 @@ async def _proxy(
                 usage=usage,
                 stream=stream,
                 upstream_status=status,
+                reason=reason,
             )
             return
         async with sessionmaker() as fresh:
@@ -1162,6 +1182,7 @@ async def _proxy(
                 usage=usage,
                 stream=stream,
                 upstream_status=status,
+                reason=reason,
             )
             await fresh.commit()
 

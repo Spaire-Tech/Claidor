@@ -43,7 +43,11 @@ import type {
 import { getTranscript, updateEntry } from "./transcript-store.js";
 import type { LiveTranscriptSession } from "./session-runtime.js";
 
-export const MAX_REPLY_NUDGES = 3;
+// One nudge when a turn the person started ends without a reply (three until
+// 2 October 2026): a turn that ignores "send your reply now" once ignores it
+// again, and each nudge is a whole hidden turn. The closing-send nudge below
+// still follows a turn that ended on silent tool calls.
+export const MAX_REPLY_NUDGES = 1;
 export const REPLY_NUDGE_PROMPT =
   "Your previous turn left the user without the result they're waiting on — you never called SendMessage that turn, or every SendMessage you tried failed to deliver. Either way they received nothing and are still waiting. Do not assume a send from an earlier turn covered it: an opening acknowledgement back then did not deliver this result (ack ≠ delivery). Deliver the result now by actually invoking the SendMessage tool — make a real tool/function call, not text you write. Plain assistant text is NEVER shown to the user; only a real SendMessage tool invocation reaches them, so if you don't call the tool they just keep seeing silence.";
 export const CLOSING_SEND_NUDGE_PROMPT =
@@ -559,6 +563,7 @@ export class TurnRuntime {
       attempts += 1;
       latest = await runner.run(REPLY_NUDGE_PROMPT, {
         hidden: true,
+        callReason: "nudge",
         ackToken,
         traceCtx,
         onModelResolved: (id: string) => turn?.setModel(id),
@@ -578,6 +583,7 @@ export class TurnRuntime {
       try {
         nudged = await runner.run(CLOSING_SEND_NUDGE_PROMPT, {
           hidden: true,
+          callReason: "nudge",
           ackToken,
           traceCtx,
           onModelResolved: (id: string) => turn?.setModel(id),
@@ -732,7 +738,12 @@ export class TurnRuntime {
         if (isVoiceAddress(incoming.channel)) return undefined;
         if (incoming.type === "listener-connect")
           this.notifyListenerConnect(runSession, incoming);
-        if (incoming.type === "connector" && incoming.variant === "connect")
+        // A proposal waits on the person too: ProposeConnector tells the agent
+        // "you're resumed when they connect", and only connect cards were
+        // registered, so after Add and sign-in nobody was told. The agent
+        // went on believing the app was missing ("Gmail isn't installed",
+        // OpenAI log, 2 October 2026).
+        if (incoming.type === "connector" && (incoming.variant === "connect" || incoming.variant === "propose"))
           this.notifyConnectorConnect(runSession, incoming);
         const entries =
           isForActiveAgent || runSession == null

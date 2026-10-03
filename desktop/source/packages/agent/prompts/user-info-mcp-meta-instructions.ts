@@ -50,7 +50,7 @@ If the user mentions a product or service represented by an available namespace,
 
 Pattern-search and catalog results shorten long descriptions, marked by a trailing "${TRUNCATED_DESCRIPTION_SUFFIX}"; namespace and single-tool lookups always return the complete description.
 
-Always inspect a tool's schema before invoking it with \`${toolNames.invocationToolName}\`.
+Listings and searches give each tool's arguments: invoke it with \`${toolNames.invocationToolName}\` straight from there, and look up one tool's full schema only when an argument needs its description.
 ${dynamicToolFallbackLine}
 
 ${serverListSection}
@@ -70,14 +70,14 @@ If the user mentions, references, or links to a product or service that correspo
 
 \`${toolNames.discoveryToolName}\` supports four modes:
 
-1. \`{"server":"<id>"}\`: returns full input schemas and full descriptions for every tool on that server. Preferred when you know which server to use.
+1. \`{"server":"<id>"}\`: lists every tool on that server, with full schemas when the server is small and by name only when it is large. Preferred when you know which server to use. Leave out fields you do not use; never send an empty toolName or pattern.
 2. \`{"server":"<id>","toolName":"<name>"}\`: returns the full schema and full description for one tool.
 3. \`{"pattern":"<regex>"}\`: searches tool and server names across all servers using RE2 syntax (no backreferences, lookahead, or lookbehind). Use when you're unsure which server has the tool you need.
 4. No arguments: returns a catalog of all servers with tool names and short descriptions. Only use this if you have no idea which server or tool to look for — in most cases, prefer fetching by server or pattern instead.
 
 Pattern-search and catalog results shorten long descriptions, marked by a trailing "${TRUNCATED_DESCRIPTION_SUFFIX}"; server and single-tool lookups always return the complete description.
 
-MANDATORY - Always call \`${toolNames.discoveryToolName}\` to discover a tool's schema before invoking it with \`${toolNames.invocationToolName}\`. If you already know the server, go directly to it rather than listing the full catalog first.
+List a server's tools once with \`${toolNames.discoveryToolName}\` (each comes with its arguments), then invoke the one you need with \`${toolNames.invocationToolName}\` straight from that list; never guess a tool name. If you already know the server, go directly to it rather than listing the full catalog first. Look up one tool's full schema only when an argument needs its description, or after a call failed on its arguments.
 ${mcpCapabilityFallbackLine}
 
 ${serverListSection}

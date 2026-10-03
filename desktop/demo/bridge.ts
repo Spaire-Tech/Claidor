@@ -25,6 +25,7 @@ const backend = createDemoBackend({
   timeScale: 0.5,
   pushCoordinatorEvent: (family, payload) => server?.postEvent(family, payload),
   pushMainEvent: (event, payload) => emit(`sand-rpc:main:e:${event}`, {}, payload),
+  reconnectCoordinator: () => openCoordinatorPort(),
 });
 
 let server: ReturnType<typeof createRendererPortServer> | null = null;

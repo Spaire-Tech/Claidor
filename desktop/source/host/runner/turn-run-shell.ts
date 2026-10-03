@@ -27,7 +27,7 @@ import type {
   PromptSnapshotStore,
 } from "./system-prompt-assembly.js";
 import type { SummarizationPromptSession } from "../../packages/agent-summarization/summarization-handler.js";
-import { createProviderPromptSession } from "../extensions/inference/provider-session.js";
+import { createProviderPromptSession, type SimeonCallReason } from "../extensions/inference/provider-session.js";
 import type { AgentProfilePromptSnapshot } from "./sand-agent-profile-prompt.js";
 import {
   ConversationAction,
@@ -99,6 +99,7 @@ export interface TurnAgentRunContextInput<ContextValue> {
   readonly isVideoSubagent?: boolean;
   readonly hidden?: boolean;
   readonly fullStepBudget?: boolean;
+  readonly callReason?: string;
   readonly lineage?: unknown;
   readonly canUseSelfSummary: () => boolean;
   readonly diskPressureReminder?: DiskPressureReminderEpisodes;
@@ -117,7 +118,12 @@ export interface TurnAgentRunContextInput<ContextValue> {
       typeof import("./system-prompt-assembly.js").createSystemPromptAssembly
     >,
     "prepareAgentProfilePromptSnapshot" | "getAgentProfileUpdateForTurn"
-  >;
+  > & Partial<Pick<
+    ReturnType<
+      typeof import("./system-prompt-assembly.js").createSystemPromptAssembly
+    >,
+    "getPromptUpdateForTurn"
+  >>;
   readonly profilePromptSnapshotStore?: PromptSnapshotStore;
   readonly onProfileUpdateAppended?: (identity: {
     readonly name: string;
@@ -186,7 +192,11 @@ export async function createTurnAgentRunContext<ContextValue>(
   };
   const inferenceProvider = "simeon" as const;
   const hidden = input.hidden === true;
-  const agent = createProviderPromptSession(inferenceProvider, { ...sessionOptions, hidden, ...(input.fullStepBudget === true ? { fullStepBudget: true } : {}) }) as unknown as TurnAgentPromptSession;
+  // What the usage table calls these calls: the caller's word (a routine, an
+  // agent waking another), a helper for a subagent child, else read off the
+  // flags by `simeonCallReason` (a message the person sent is `chat`).
+  const callReason = (input.callReason ?? (input.isSubagentRunner ? "helper" : undefined)) as SimeonCallReason | undefined;
+  const agent = createProviderPromptSession(inferenceProvider, { ...sessionOptions, hidden, ...(input.fullStepBudget === true ? { fullStepBudget: true } : {}), ...(callReason === undefined ? {} : { callReason }) }) as unknown as TurnAgentPromptSession;
   const summarizationSession = createProviderPromptSession(inferenceProvider, { cheap: true, isSummarizationSession: true, hidden }) as unknown as SummarizationPromptSession;
   const summarization = summarizationSession ?? input.inference.createSession(
     input.onRequestId,
@@ -200,9 +210,18 @@ export async function createTurnAgentRunContext<ContextValue>(
     ?? input.systemPromptAssembly?.prepareAgentProfilePromptSnapshot(
       input.profilePromptSnapshotStore,
     );
-  const profileUpdateForTurn = input.systemPromptAssembly?.getAgentProfileUpdateForTurn(
+  const profileUpdate = input.systemPromptAssembly?.getAgentProfileUpdateForTurn(
     profilePromptSnapshot,
   );
+  // The teammates, routines, channels and connector notes are frozen in the
+  // brief for the conversation; what changed since rides on this message.
+  const promptUpdate = input.systemPromptAssembly?.getPromptUpdateForTurn?.() ?? null;
+  const profileUpdateForTurn = promptUpdate == null
+    ? profileUpdate
+    : {
+      text: [profileUpdate?.text, promptUpdate].filter((part): part is string => part != null && part.length > 0).join("\n\n"),
+      identity: profileUpdate?.identity ?? { name: "", description: "" },
+    };
   const baseExecutor = (): PromptExecutor => agent.getExecutor();
   const toolSession = {
     getExecutor: () => {
@@ -349,6 +368,8 @@ export interface TurnRunOptions {
    * upstream app ran under the same cap as any turn (27 September 2026).
    */
   readonly fullStepBudget?: boolean;
+  /** Why the run's model calls are made, for the usage table (`SimeonCallReason`). */
+  readonly callReason?: string;
   readonly isSilenceAllowed?: boolean;
   readonly autoReviewEpoch?: "continue" | "new";
   readonly lineage?: {

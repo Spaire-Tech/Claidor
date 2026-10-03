@@ -22,7 +22,8 @@ import {
   MEMORY_SYNTHESIS_RETRY_INITIAL_MS,
   MEMORY_SYNTHESIS_RETRY_MAX_MS,
   MemorySynthesisService,
-  memorySynthesisTelemetryReport
+  memorySynthesisTelemetryReport,
+  shouldRetryMemorySynthesis
 } from "./memory-synthesis-service.js";
 
 type ProductionContext = HostExtensionContext<unknown> & {
@@ -58,7 +59,8 @@ export function createMemoryProductionExtras(
           name: "sand-memory-synthesis-retry",
           maxAttempts: MEMORY_SYNTHESIS_RETRY_ATTEMPTS,
           initialDelayMs: MEMORY_SYNTHESIS_RETRY_INITIAL_MS,
-          maxDelayMs: MEMORY_SYNTHESIS_RETRY_MAX_MS
+          maxDelayMs: MEMORY_SYNTHESIS_RETRY_MAX_MS,
+          shouldRetry: shouldRetryMemorySynthesis
         }),
         getTarget: agentId => service.synthesisTargetForAgent(agentId),
         listTargets: () => service.listSynthesisTargets().map(({ agentId, store }) => ({
@@ -68,7 +70,8 @@ export function createMemoryProductionExtras(
         createExecutor: () => context.deps.inference.port.createSession(() => {}, {
           modelId: SAND_SUMMARIZATION_MODEL_ID,
           isSummarizationSession: true,
-          skipLabeling: true
+          skipLabeling: true,
+          callReason: "memory"
         }).getExecutor(),
         report: event => context.deps.telemetry.logs.reportMemorySynthesis(memorySynthesisTelemetryReport(event))
       });

@@ -15,7 +15,7 @@ import { buildRequest, buildSystemPrompt, Engine, EngineError, JobCancelled, rea
 
 let server: http.Server;
 let baseUrl: string;
-const seen: { path: string; auth: string | undefined; body: Record<string, unknown> }[] = [];
+const seen: { path: string; auth: string | undefined; reason: string | string[] | undefined; body: Record<string, unknown> }[] = [];
 let answer: (path: string) => { status: number; body: unknown } = () => ({ status: 200, body: {} });
 
 beforeAll(async () => {
@@ -23,7 +23,7 @@ beforeAll(async () => {
     let raw = '';
     request.on('data', (chunk) => { raw += chunk; });
     request.on('end', () => {
-      seen.push({ path: request.url ?? '', auth: request.headers.authorization, body: JSON.parse(raw || '{}') });
+      seen.push({ path: request.url ?? '', auth: request.headers.authorization, reason: request.headers['x-simeon-call-reason'], body: JSON.parse(raw || '{}') });
       const reply = answer(request.url ?? '');
       response.writeHead(reply.status, { 'content-type': 'application/json' });
       response.end(JSON.stringify(reply.body));
@@ -103,6 +103,7 @@ describe('one turn through the proxy', () => {
     expect(seen).toHaveLength(1);
     expect(seen[0]!.path).toBe('/desktop/api/proxy/v1/responses');
     expect(seen[0]!.auth).toBe('Bearer job-token');
+    expect(seen[0]!.reason).toBe('cloud_agent');
     expect(seen[0]!.body.instructions).toContain('- likes tea');
     expect(seen[0]!.body.input).toEqual([{ role: 'user', content: 'summarise the morning' }]);
     await engine.stop();

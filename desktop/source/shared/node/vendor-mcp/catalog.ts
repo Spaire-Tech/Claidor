@@ -112,6 +112,25 @@ export const VENDOR_MCP_CONNECTORS: readonly VendorMcpConnector[] = [
   app({ id: "docusign", name: "Docusign", category: G.Sales, description: "Manage envelopes, templates, workflows, and agreements." }, "docusign"),
   app({ id: "klaviyo", name: "Klaviyo", category: G.Marketing, description: "Manage profiles, segments, campaigns, and flows." }, "klaviyo"),
   app({ id: "ashby", name: "Ashby", category: G.Hiring, description: "Search candidates, prep interviews, and manage pipeline tasks." }, "ashby"),
+  // 3 October 2026, for founders and small businesses ("we're selling to
+  // founders"): each one checked that day against Composio's toolkit page
+  // (Composio-managed sign-in, so Add works without an app of ours) or, for
+  // Mercury and PostHog, against the vendor's own MCP server (401 to an
+  // unsigned initialize, OAuth metadata with a registration endpoint and S256).
+  app({ id: "google-analytics", name: "Google Analytics", category: G.Marketing, description: "Traffic, conversions, and GA4 reports." }, "google_analytics"),
+  app({ id: "google-search-console", name: "Google Search Console", category: G.Marketing, description: "Search queries, clicks, and indexing for your site." }, "google_search_console"),
+  app({ id: "youtube", name: "YouTube", category: G.Marketing, description: "Your channel's videos, playlists, and stats." }, "youtube"),
+  app({ id: "kit", name: "Kit", category: G.Marketing, description: "Newsletter subscribers, tags, and broadcasts (ConvertKit)." }, "kit"),
+  app({ id: "instagram", name: "Instagram", category: G.Social, description: "Posts, comments, messages, and insights. Business and Creator accounts." }, "instagram"),
+  app({ id: "facebook", name: "Facebook Pages", category: G.Social, description: "Your Pages' posts, comments, messages, and insights." }, "facebook"),
+  app({ id: "calendly", name: "Calendly", category: G.Meetings, description: "Booking links, scheduled meetings, and invitees." }, "calendly"),
+  app({ id: "cal-com", name: "Cal.com", category: G.Meetings, description: "Bookings, event types, and availability." }, "cal"),
+  app({ id: "attio", name: "Attio", category: G.Sales, description: "People, companies, deals, and lists in your CRM." }, "attio"),
+  app({ id: "zendesk", name: "Zendesk", category: G.Sales, description: "Support tickets, customers, and help center." }, "zendesk"),
+  app({ id: "microsoft-teams", name: "Microsoft Teams", category: G.Social, description: "Chats, channels, and meetings in Teams." }, "microsoft_teams"),
+  app({ id: "discord", name: "Discord", category: G.Social, description: "Your servers, channels, and invites." }, "discord"),
+  { id: "mercury", name: "Mercury", category: G.Finance, url: "https://mcp.mercury.com/mcp", description: "Business bank accounts, balances, and transactions. Read-only." },
+  { id: "posthog", name: "PostHog", category: G.Developer, url: "https://mcp.posthog.com/mcp", description: "Product analytics, insights, and feature flags." },
 ];
 
 const byId = new Map(VENDOR_MCP_CONNECTORS.map((item) => [item.id, item]));

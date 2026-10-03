@@ -208,6 +208,23 @@ describe('the person\'s side', () => {
     expect(models[0]).toEqual({ id: 'first-one', contextWindow: 200000, maxTokens: 16384, transportApi: 'openai-responses' });
   });
 
+  test('puts the primary model first, whatever the catalogue order', async () => {
+    reply = () => ({
+      status: 200,
+      body: {
+        code: 0,
+        data: [
+          { modelId: 'claude-sonnet-5', provider: 'anthropic', role: 'fallback', accessible: true },
+          { modelId: 'gpt-6-sol', provider: 'openai', role: 'primary', accessible: true },
+          { modelId: 'gpt-6-luna', provider: 'openai', role: 'cheap', accessible: true },
+        ],
+      },
+    });
+    const models = await new PersonClient(baseUrl, 'person-token').models();
+    expect(models.map((model) => model.id)).toEqual(['gpt-6-sol', 'claude-sonnet-5', 'gpt-6-luna']);
+    expect(models[0]!.transportApi).toBe('openai-responses');
+  });
+
   test('skips a model this person may not use', async () => {
     reply = () => ({
       status: 200,

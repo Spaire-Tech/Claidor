@@ -81,8 +81,10 @@ test("the button says Connect apps and PowerPoint gets its own kind, on anchors 
   const chunk = await readFile(path.join(assets, names.find((name) => name === "index-UbX-y3il.js") ?? names.find((name) => /^index-.*\.js$/.test(name))), "utf8");
   for (const [label, before] of LOGO_REPLACEMENTS) assert.equal(chunk.split(before).length - 1, 1, `${label} occurs once`);
   const patched = patchOriginalLogos(chunk, appMentionNames((await readLogoAssets()).mentions));
-  assert.ok(patched.includes("syntheticProseCards:n}],__simeonAppMentions]}"), "the message pipeline ends with the app step");
+  assert.ok(patched.includes("syntheticProseCards:n}],__simeonAppMentions,__simeonAgentMentions]}"), "the message pipeline ends with the app step, then the agent step");
   assert.equal(patched.split("const __simeonAppMentions=").length - 1, 1);
+  assert.equal(patched.split("const __simeonAgentMentions=").length - 1, 1);
+  assert.ok(patched.includes("?.id??sle(n.id)}function __simeonNoteAgents(n){"), "the roster note follows the window's own colour resolver");
   assert.ok(patched.includes('children:"Connect apps"'));
   assert.ok(patched.includes('notion:{kind:"brand",hex:"#FFFFFF",path:'), "Notion draws its light-mode logo");
   assert.ok(patched.includes('slack:{kind:"brand",hex:"#FFFFFF",path:"M5.042 15.165'), "Slack's tile is white under its colour mark, and the glyph the stylesheet keys on is still there");
@@ -117,4 +119,96 @@ test("the message step marks app names with their logo, leaves links and code al
   const bare = { type: "root", children: [text("Loom")] };
   plugin()(bare);
   assert.equal(bare.children[0].type, "text", "text with no structure tag above it is not touched");
+});
+
+test("the sign-in wordmark is set in Suravaram, carried inside the stylesheet", async () => {
+  const { patchOriginalWordmarkStylesheet, readLogoAssets, WORDMARK_MARKER } = await import("../scripts/lib/router-renderer-patch.mjs");
+  const { wordmarkFont } = await readLogoAssets();
+  assert.match(wordmarkFont, /^data:font\/woff2;base64,/);
+  const css = patchOriginalWordmarkStylesheet(".a{}", wordmarkFont);
+  assert.ok(css.includes(WORDMARK_MARKER));
+  assert.match(css, /\.sand-onboarding__landing h1\{font-family:"Simeon Suravaram"/);
+  assert.throws(() => patchOriginalWordmarkStylesheet(css, wordmarkFont), /already present/);
+  assert.throws(() => patchOriginalWordmarkStylesheet(".a{}", ""), /did not load/);
+});
+
+test("the COO step sits after Meet Simeon, with Simeon at the centre and six agents leaving it", async () => {
+  const { COO_REPLACEMENTS, COO_CSS, patchOriginalCooStylesheet } = await import("../scripts/lib/router-renderer-patch.mjs");
+  const [list, title, screen, hero, component] = COO_REPLACEMENTS;
+  assert.match(list[2], /\["landing","meet","coo","computer-demo","name","tools"\]/, "the jobs and create steps are out; the name step follows the computer");
+  assert.equal(title[2], 'N="Your agents have their own computer and work just like you"');
+  assert.match(screen[2], /^case"coo":return p\.jsx\(__simeonCooStep,\{headingId:xn,onBack:\(\)=>x\.goBack\(ln\),onForward:\(\)=>x\.advance\(ln\)\}\);/);
+  assert.match(hero[2], /^case"coo":return\{\.\.\.e,x:0,y:-40,scale:1,opacity:1/);
+  assert.match(component[2], /title:"Your personal COO"/);
+  assert.match(component[2], /Simeon staffs an agent for whatever needs doing\./);
+  assert.equal((component[2].match(/"label":/g) ?? []).length, 6);
+  new Function("p", "fde", "tye", "nye", "sd", "re", "Fo", component[2].replace(/function sjn\(n\)\{$/, ""));
+  assert.match(COO_CSS, /prefers-reduced-motion:reduce/);
+  assert.throws(() => patchOriginalCooStylesheet(patchOriginalCooStylesheet(".a{}")), /already present/);
+});
+
+test("Simeon is the first agent, titled COO, and always pinned", async () => {
+  const { FIRST_AGENT_REPLACEMENTS, SIMEON_COO_PROFILE } = await import("../scripts/lib/router-renderer-patch.mjs");
+  assert.deepEqual({ name: SIMEON_COO_PROFILE.name, title: SIMEON_COO_PROFILE.title }, { name: "Simeon", title: "COO" });
+  const by = Object.fromEntries(FIRST_AGENT_REPLACEMENTS.map(([label, , after]) => [label, after]));
+  assert.match(by["first-agent-simeon"], /"name":"Simeon","title":"COO"/);
+  assert.match(by["first-agent-from-apps"], /onForward:\(\)=>\{Pe\(\)\}/, "Next on the apps step makes Simeon and finishes");
+  assert.match(by["first-agent-title"], /\.\.\.t\.title!=null\?\{title:t\.title\}:\{\}/);
+  assert.equal(by["first-agent-no-cos-template"], "");
+  // The pin rule, run on its own: the oldest agent titled COO leads the pinned list, once.
+  const source = by["coo-pinned-split"].replace(/function t5e\(n,e\)\{.*$/, "");
+  const pinCoo = new Function(`${source};return {pin:__simeonPinCoo,id:()=>__simeonCooId}`)();
+  const agents = [{ id: "a", title: "Research" }, { id: "s2", title: "COO", createdAt: 9 }, { id: "s", title: "coo", createdAt: 1 }];
+  assert.deepEqual(pinCoo.pin(agents, ["a", "s"]), ["s", "a"]);
+  assert.equal(pinCoo.id(), "s");
+  assert.deepEqual(pinCoo.pin([{ id: "a", title: "" }], ["a"]), ["a"], "an account with no COO is unchanged");
+  for (const label of ["coo-no-unpin-item", "coo-no-hide-item", "coo-no-duplicate-item", "coo-no-delete-item"]) assert.match(by[label], /===__simeonCooId\)return null;$/);
+  assert.match(by["coo-no-unpin-store"], /!D&&L===__simeonCooId\)return;/);
+});
+
+test("the name step: the apps step's agents gather over one field, and the last screen keeps only its line", async () => {
+  const { NAME_STEP_REPLACEMENTS, NAME_CSS } = await import("../scripts/lib/router-renderer-patch.mjs");
+  const by = Object.fromEntries(NAME_STEP_REPLACEMENTS.map(([label, , after]) => [label, after]));
+  assert.match(by["name-step-screen"], /^case"name":return p\.jsx\(__simeonNameStep,/);
+  assert.match(by["name-step-agents"], /^case"name":return\{\.\.\.t,\.\.\.__simeonNameSeat\[e\],opacity:1/);
+  assert.match(by["name-step-component"], /title:"How should we call you\?"/);
+  assert.match(by["name-step-component"], /a\.updateName\(name\)/, "saved through the account's own rename");
+  assert.doesNotMatch(by["name-step-component"], /Hi, /, "no greeting bubble");
+  for (const seat of ["weekly-standup", "invoice-chaser", "sales-forecast"]) assert.match(by["name-step-component"], new RegExp(`"${seat}":\\{"x"`));
+  assert.equal(by["hand-off-text-only"], 'x=p.jsxs("div",{className:f,style:m.style,children:[v,b]})');
+  assert.match(NAME_CSS, /background:light-dark\(#fff,#1c1c1e\)/, "a white field");
+  assert.match(NAME_CSS, /height:38px/);
+});
+
+test("Simeon's profile is read only: fields, commit and avatar", async () => {
+  const { FIRST_AGENT_REPLACEMENTS, COO_LOCK_CSS } = await import("../scripts/lib/router-renderer-patch.mjs");
+  const by = Object.fromEntries(FIRST_AGENT_REPLACEMENTS.map(([label, , after]) => [label, after]));
+  for (const field of ["name", "title", "description"]) assert.match(by[`coo-readonly-${field}`], /^p\.jsx\(Uwe,\{readOnly:t\.id===__simeonCooId,/);
+  assert.match(by["coo-readonly-field"], /readOnly:n\.readOnly===!0\}$/);
+  assert.match(by["coo-readonly-commit"], /^y=_=>\{if\(n\.readOnly===!0\)\{m\(s\);return\}/, "a read-only field never commits");
+  for (const label of ["coo-readonly-avatar", "coo-readonly-pane-avatar"]) assert.match(by[label], /t\.id===__simeonCooId\?p\.jsx\("div",\{className:"simeon-coo-avatar"/);
+  assert.match(COO_LOCK_CSS, /\.simeon-coo-avatar\{pointer-events:none\}/);
+});
+
+test("an agent named in a message wears its face and its palette's colour, only where the name stands alone", async () => {
+  const { AGENT_MENTIONS_PLUGIN_SOURCE, agentMentionMarks, agentMentionsCss, AGENT_PALETTES } = await import(patchModule);
+  const plugin = new Function(`${AGENT_MENTIONS_PLUGIN_SOURCE}return __simeonAgentMentions;`)();
+  const tree = () => ({ type: "root", children: [{ type: "element", tagName: "p", data: { sandMarkdown: 1 }, children: [{ type: "text", value: "Scout pulled quotes, Yodo closed tickets. Scouts and @Scout stay." }] }, { type: "element", tagName: "code", data: { sandMarkdown: 1 }, children: [{ type: "text", value: "Scout" }] }] });
+  delete globalThis.__simeonAgentColors;
+  const bare = tree();
+  plugin()(bare);
+  assert.equal(bare.children[0].children.length, 1, "no roster yet, nothing is marked");
+  globalThis.__simeonAgentColors = { Scout: "cyan", Yodo: "red" };
+  const marked = tree();
+  plugin()(marked);
+  const parts = marked.children[0].children.map((node) => node.type === "text" ? node.value : `[${node.properties.dataAgentColor}:${node.children[1].value}]`);
+  assert.deepEqual(parts, ["[cyan:Scout]", " pulled quotes, ", "[red:Yodo]", " closed tickets. Scouts and @Scout stay."]);
+  assert.equal(marked.children[1].children[0].type, "text", "code is left alone");
+  assert.deepEqual(marked.children[0].children[0].children[0].properties.className, ["simeon-agent__mark"]);
+  delete globalThis.__simeonAgentColors;
+  const { cloud, eyes } = agentMentionMarks();
+  assert.match(cloud, /^data:image\/svg\+xml;base64,/);
+  assert.match(Buffer.from(eyes.split(",")[1], "base64").toString(), /fill: #fcfcfc/);
+  const css = agentMentionsCss();
+  for (const { id } of AGENT_PALETTES) assert.ok(css.includes(`.simeon-agent[data-agent-color="${id}"]`), id);
 });

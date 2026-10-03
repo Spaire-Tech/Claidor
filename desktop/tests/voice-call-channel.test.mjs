@@ -191,7 +191,7 @@ test("a call where nothing was asked ends without waking the agent", async () =>
 
 test("the host carries the channel: the system prompt section, SendMessage keeps voice: addresses, and call messages stay out of the chat", async () => {
   const assembly = await src("host/runner/system-prompt-assembly.ts");
-  assert.match(assembly, /add\(getChannelsSection\(\)\); if \(!deps\.isSubagentRunner\) add\(voiceCallsSection\(\)\);/);
+  assert.match(assembly, /add\(getWorkflowsSection\(\)\); if \(!deps\.isSubagentRunner\) add\(voiceCallsSection\(\)\);/);
   const schema = await src("host/runner/tools/send-message-schema.ts");
   assert.match(schema, /if \(!isAnyChannelAvailable\(\) && !isVoiceAddress\(stripped\.channel\)\) delete stripped\.channel;/);
   const turn = await src("host/extensions/transcript/turn-runtime.ts");

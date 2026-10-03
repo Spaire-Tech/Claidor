@@ -2,9 +2,16 @@ import { isInjectedReminderMessage } from "./send-message-reminder-middleware.js
 import { SAND_REACT_TO_MESSAGE_TOOL_NAME } from "./tools/sand-reaction-tool.js";
 import { SAND_SEND_MESSAGE_TOOL_NAME } from "./tools/send-message-tool.js";
 
+// What reaches the person. A proposal card is one: ProposeConnector tells
+// the agent to end its turn once the card is shown, and the closing nudge
+// read that as a silent turn and ran a whole hidden turn more ("Your previous
+// turn acknowledged the user and then ran tool calls…"), two paid calls on
+// every connector proposal (OpenAI log, 2 October 2026).
+export const SAND_PROPOSE_CONNECTOR_TOOL_NAME = "ProposeConnector";
 export const DELIVERY_TOOL_NAMES = new Set([
   SAND_SEND_MESSAGE_TOOL_NAME,
   SAND_REACT_TO_MESSAGE_TOOL_NAME,
+  SAND_PROPOSE_CONNECTOR_TOOL_NAME,
 ]);
 
 export interface CorePart {
@@ -150,4 +157,32 @@ export function turnEndedOnSilentToolCalls(
     }
   }
   return ackedFirst;
+}
+
+// The model's step ended its turn when every call in it is a SendMessage that
+// says so (final, a question, a secret request; `sendMessageEndsTurn`) and
+// every one was delivered. Then the loop stops without asking the model once
+// more: that last call read the whole conversation to answer nothing.
+export function stepEndsTurn(
+  responseMessages: readonly unknown[],
+  endsTurn: (args: unknown) => boolean,
+): boolean {
+  const messages = responseMessages.map(asCoreMessage);
+  const calls: { readonly id: string; readonly args: unknown }[] = [];
+  for (const message of messages) {
+    if (message === undefined || message.role !== "assistant" || typeof message.content === "string") continue;
+    for (const part of message.content) {
+      if (part.type !== "tool-call") continue;
+      if (part.toolName !== SAND_SEND_MESSAGE_TOOL_NAME || part.toolCallId == null) return false;
+      calls.push({ id: part.toolCallId, args: (part as { readonly args?: unknown }).args });
+    }
+  }
+  if (calls.length === 0 || !calls.every((call) => endsTurn(call.args))) return false;
+  const answered = new Set<string>();
+  for (const message of messages) {
+    if (message === undefined || message.role !== "tool" || typeof message.content === "string") continue;
+    for (const part of message.content) if (part.type === "tool-result" && part.toolCallId != null) answered.add(part.toolCallId);
+  }
+  const errored = erroredToolResultIds(messages);
+  return calls.every((call) => answered.has(call.id) && !errored.has(call.id));
 }

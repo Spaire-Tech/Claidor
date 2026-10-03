@@ -4,6 +4,10 @@ Prints, for the account named by email:
 
 - totals per model: calls, input tokens, cached input, output tokens,
   credits, and the dollars those credits stand for;
+- the same totals per reason: what each call was for (a message the
+  person sent, a routine, an agent waking another, a helper, a safety
+  check, memory…), from the app's `x-simeon-call-reason` header; calls
+  from apps built before it read as "(not said)";
 - a timeline in ten-minute buckets (UTC), so a runaway loop shows as a
   wall of calls;
 - the busiest single hour.
@@ -69,16 +73,17 @@ async def run(email: str, hours: int) -> int:
         return 0
 
     per_model: dict[str, list[int]] = defaultdict(lambda: [0, 0, 0, 0, 0])
+    per_reason: dict[str, list[int]] = defaultdict(lambda: [0, 0, 0, 0, 0])
     per_status: Counter[int] = Counter()
     buckets: Counter[datetime] = Counter()
     hours_seen: Counter[datetime] = Counter()
     for row in rows:
-        totals = per_model[row.model]
-        totals[0] += 1
-        totals[1] += row.input_tokens
-        totals[2] += row.cache_read_tokens
-        totals[3] += row.output_tokens
-        totals[4] += row.credits
+        for totals in (per_model[row.model], per_reason[row.reason or "(not said)"]):
+            totals[0] += 1
+            totals[1] += row.input_tokens
+            totals[2] += row.cache_read_tokens
+            totals[3] += row.output_tokens
+            totals[4] += row.credits
         per_status[row.upstream_status] += 1
         created = row.created_at.astimezone(UTC)
         floored = created.replace(
@@ -103,6 +108,18 @@ async def run(email: str, hours: int) -> int:
             f"{outputs:10,} {credits:12,} {cost:9.2f}"
         )
     print(f"{"total dollars, by the proxy's own credits":64} {grand:9.2f}")
+    print()
+    print(
+        f"{'reason':24} {'calls':>6} {'input':>12} {'cached':>12} "
+        f"{'output':>10} {'credits':>12} {'dollars':>9}"
+    )
+    for reason, (calls, inputs, cached, outputs, credits) in sorted(
+        per_reason.items(), key=lambda item: -item[1][4]
+    ):
+        print(
+            f"{reason:24} {calls:6} {inputs:12,} {cached:12,} "
+            f"{outputs:10,} {credits:12,} {dollars(credits):9.2f}"
+        )
     print()
     print("upstream status codes:", dict(sorted(per_status.items())))
     print()

@@ -28,6 +28,8 @@ import {
 } from "../../packages/proto/generated/agent/v1/agent_pb.js";
 import type { ConversationAction } from "../../packages/proto/generated/agent/v1/agent_pb.js";
 import { RESUME_TURN_ACTION } from "./turn-run-shell.js";
+import { stepEndsTurn } from "./turn-shape.js";
+import { sendMessageEndsTurn } from "./tools/send-message-schema.js";
 import {
   SAND_BOX_SHELL_TOOL_NAME,
   SAND_EXTERNAL_SHELL_TOOL_NAME,
@@ -289,6 +291,7 @@ export function createSandAgentStaticConfig(
       skipPreTurnStateSnapshot: true,
     },
     agentType: "IDE" as const,
+    stepEndsTurn: (responseMessages: readonly unknown[]) => stepEndsTurn(responseMessages, sendMessageEndsTurn),
     conversationId: input.conversationId,
     conversationGroupId: input.conversationId,
     ...(input.attachedMediaUrlProvider === undefined

@@ -42,7 +42,9 @@ answers in words only: it does not check out code, run commands or open pull req
   heartbeat. There is one environment, `simeon-computer` ("Simeon's computer").
 - Runner: `runner/` (Render service `claidor-maty-runner`) claims a job, lays out the person's
   memory, makes one model call over the conversation through the API's metered proxy on the
-  job's token (`runner/src/engine.ts`), and writes the reply back as the turn's message. Jobs
+  job's token (`runner/src/engine.ts`), and writes the reply back as the turn's message. The
+  call runs on the model the API names `primary` (`PersonClient.models` in `runner/src/api.ts`;
+  until 2 October 2026 it took the catalogue's first row, the Claude fallback). Jobs
   go through the `Executor` seam in `runner/src/executor.ts`; the only executor today is
   `maty-runner`. The model cannot write files, so a cloud turn writes nothing back to memory.
 - App: the CloudAgent tool (`host/cloud-agents/cloud-agent-tool.ts`), the manager and a poll
@@ -78,7 +80,8 @@ failed check, a new issue).
   box stops firing those routines itself (`shouldScheduleLocally`) and the server owns them.
 - **Cron.** The worker actor `sand.listeners.fire_due_crons` (`listeners_tasks.py`) runs every
   minute and queues one fire per due routine, never a second while one is pending, then moves
-  the routine's next slot (`listeners_cron.py`). A pending fire expires after two hours, so a
+  the routine's next slot (`listeners_cron.py`), at least 15 minutes on (`ROUTINE_MIN_INTERVAL`
+  in `listeners_service.py`; the Mac holds the same gap). A pending fire expires after two hours, so a
   computer that was off for a day runs a missed routine once, not once per missed slot.
 - **Events.** Webhooks arrive at the ingress routes (`listeners_ingress.py`), are checked,
   matched against each person's routines (`listeners_service.py`) and queued.
@@ -343,8 +346,38 @@ and Ashby connect through Simeon. The provider behind them is never named in the
 * **Settings on Render.** `SIMEON_COMPOSIO_API_KEY` (optional `SIMEON_COMPOSIO_BASE_URL`). To
   show Simeon's own name on a provider's consent screen, register Simeon's own OAuth app with
   that provider, with redirect URI `https://api.simeonlabs.com/desktop/apps/oauth/callback`.
-* **Log lines.** Server: `desktop.apps.sign_in_started`, `desktop.apps.upstream_refused`. Mac:
+* **Log lines.** Server: `desktop.apps.sign_in_started`, `desktop.apps.upstream_refused`,
+  `desktop.apps.upstream_unreachable` (a timeout or dropped connection: `path`, `error`,
+  `elapsed_ms`; the app then reads "could not be reached" and Render shows a 200) and
+  `desktop.apps.upstream_slow` (a provider call over 5 s). Mac:
   `<app> sign-in started through Simeon's apps service` in `~/.simeon/vendor-mcp-signin.log`.
+  Box: `[simeon] tool=GetMcpTools` and `tool=CallMcpTool` lines in `/tmp/sand-host.log`; a
+  question that takes more than three of them is worth reading.
+* **What the model is shown.** `GetMcpTools` with `{"server":"gmail"}` lists a large app's
+  tools by name, short description and arguments (`query: string, max_results?: integer`), so
+  the model calls one straight from the list (every schema inline was tens of thousands of
+  tokens, paid again by each later call). A blank `toolName` or `pattern` counts as absent, and
+  a tool not found names the ones that exist. Clicking Add waits up to 8 s for the install to
+  reach the cloud computer, and a proposal card's sign-in resumes the agent that proposed it
+  (it was never told before, and went on saying the app "isn't installed").
+* **Apps added 3 October 2026, for founders.** Through our apps service, each with a sign-in the
+  provider manages (checked that day on its toolkit page): Google Analytics, Google Search
+  Console, YouTube, Kit, Instagram and Facebook Pages (business accounts only), Calendly,
+  Cal.com, Attio, Zendesk, Microsoft Teams, Discord. Through the vendor's own MCP (dynamic
+  registration and S256, checked the same day): Mercury (read-only) and PostHog. Left out because
+  their sign-in needs an API key or a developer setup of ours: X, Google Ads, Close, PandaDoc,
+  Help Scout, Fireflies, Beehiiv, Mixpanel, Freshdesk. Run the apps check after signing in to one
+  to see it work end to end.
+* **Checking an account's apps for real.** On the API service's shell on Render:
+  `uv run python -m scripts.desktop_apps_check someone@example.com` lists every app sign-in the
+  provider holds for the account (with the date it was made: one older than an account reset is
+  why Add then asks for no sign-in) and makes one read-only call per app through the agent's own
+  path (Gmail's address, LinkedIn's name), saying `works` or `FAILED` with the provider's
+  sentence. `--disconnect gmail` removes that app's sign-ins, so the next Add asks again. Notion
+  is not one of these apps: it is served by Notion's own MCP server, signed in on the Mac.
+* **The provider round trips.** Which accounts a person has connected is asked once a minute at
+  most for the agent's tool calls (`connected_account_ids`); "not connected" is never kept, and
+  disconnecting forgets it.
 * **Known limits.** Google's consent screen shows the provider's name until Simeon Labs uses its
   own Google OAuth app.
 * **Not yet verified.** No sign-in or tool call against the live provider, and nothing on a Mac.
@@ -693,3 +726,30 @@ Booking is not built; the panel has no Book button.
 date, `priority`, `airlines`, offers found and shown, `test`, milliseconds), `desktop.flights.upstream_refused` (what
 Duffel answered, in full) and `desktop.flights.rate_limited`. An agent that browsed instead of
 calling the tool shows no `desktop.flights.search` line for that request.
+
+## 11. Simeon, the COO
+
+**For the person.** Onboarding ends by making Simeon, their COO: the first agent,
+made for them (name Simeon, title COO, Ocean), who manages their other agents and
+pulls them in for decisions. There is no "Create your first Agent" form. Simeon is
+always first among the pinned agents and cannot be unpinned, hidden, deleted,
+duplicated or moved into a section; his name, title, description and avatar are
+read only.
+
+**How it works.** All in the window (`desktop/scripts/lib/router-renderer-patch.mjs`):
+
+- The flow is landing, meet, COO, computer, name, apps, then the hand-off screen.
+  Next on the apps step runs the flow's own create-and-finish with
+  `SIMEON_COO_PROFILE`; agent creation carries a `title` (`n5n`), which the host
+  stores (`host/host-gateway-api.ts`, `mintAgent`).
+- The COO is the oldest agent titled "COO" (`__simeonFindCoo`). The pinned list always
+  starts with it (`t5e`, `Cct`), its menu drops Unpin, Hide, Delete, Duplicate and
+  Move, the pin store refuses to unpin it, and hide and delete skip it. Its profile
+  fields are read only and its avatar has no editor, so the title that marks it
+  cannot be changed.
+- An account made before this has no agent titled COO, and nothing changes for it.
+- The Chief of Staff suggestion is gone from the new-agent picker.
+
+**When it misbehaves.** If Simeon is not pinned or can be edited, check his title in
+the roster: it must be "COO". If creation fails, the hand-off screen shows "Simeon
+couldn't finish setting up" with Try again, which creates him again.

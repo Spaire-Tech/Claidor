@@ -95,3 +95,44 @@ test("with real stores the prompt carries the memory, the automations and the ro
     await dispose();
   }
 });
+
+// 3 October 2026. The brief comes before the whole conversation, and the
+// provider caches a request by its unchanged start: a new teammate, routine or
+// connector note in the brief sent every agent's whole conversation back at
+// full price (ten times the cached price) on its next call. Those sections now
+// freeze with the conversation, like memory, and a change rides on the next
+// message as a note.
+test("teammates and routines are frozen in the brief; a change arrives once as a note, and a summary folds it in", async () => {
+  const { module, dispose } = await load("source/host/runner/system-prompt-assembly.ts", "prompt-assembly-tail");
+  try {
+    let epoch = 0;
+    let roster = [{ id: "a2", name: "Research", description: "reads the law" }];
+    let routines = [];
+    const db = { getMemoryPromptSnapshot: () => undefined, setMemoryPromptSnapshot: () => {} };
+    const assembly = module.createSystemPromptAssembly({
+      basePrompt: "You are Simeon.", isSubagentRunner: false, isSharedRoomRunner: false, isSystemPromptOverridden: false,
+      agentProfileProvider: () => null, agentStore: () => null, compactionEpoch: () => epoch,
+      memoryStore: () => null, memorySnapshots: () => db, userMemory: () => null, projectMemory: () => null,
+      isBoxScopedSubagent: () => false, requestContext: { resolve: () => ({ timeZone: "UTC" }) },
+      automationStore: () => ({ getLocation: () => "/home/box/.sand/agents/a1/automations", list: () => routines, listDefinitions: () => routines }),
+      workflowStore: () => null, channelStore: () => null, connectorManifests: [],
+      sendToAgentImpl: {}, agentManagement: {}, agentDirectory: () => roster, agentGroups: () => [], agentsRootDir: () => "/home/box/.sand/agents",
+      mcpManagement: () => null, mcpCustomInstructionsSection: () => null, mcpDiscoveryStatusSection: () => null,
+      remoteBoxSection: () => "", computerSection: () => null,
+    });
+    const first = assembly.getSystemPrompt();
+    assert.equal(assembly.getPromptUpdateForTurn(), null, "nothing changed, no note");
+    roster = [...roster, { id: "a3", name: "Email", description: "keeps the inbox" }];
+    assert.equal(assembly.getSystemPrompt(), first, "the brief is byte for byte the same after a new teammate");
+    const note = assembly.getPromptUpdateForTurn();
+    assert.match(note, /## Teammates, now/);
+    assert.match(note, /Email \(id: a3\)/);
+    assert.doesNotMatch(note, /## Routines/, "only the section that changed");
+    assert.equal(assembly.getPromptUpdateForTurn(), null, "told once");
+    epoch = 1;
+    assert.match(assembly.getSystemPrompt(), /Email \(id: a3\)/, "after a summary the brief carries it");
+    assert.equal(assembly.getPromptUpdateForTurn(), null);
+  } finally {
+    await dispose();
+  }
+});

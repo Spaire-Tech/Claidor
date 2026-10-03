@@ -71,7 +71,7 @@ test("the first-run intro runs on the full runner, and product turns on the host
   // The upstream app's own kickstart: the real runner, a hidden turn, the reply nudge,
   // and introductionPending cleared only once something was delivered.
   assert.match(lifecycle, /SAND_ONBOARDING_KICKSTART_PROMPT/);
-  assert.match(lifecycle, /runner\.run\(prompt, \{ hidden: true, fullStepBudget: true \}\)/);
+  assert.match(lifecycle, /runner\.run\(prompt, \{ hidden: true, fullStepBudget: true, callReason: "first_message" \}\)/);
   assert.match(lifecycle, /ensureHiddenTurnReply\(runner\)/);
   assert.match(lifecycle, /\} else if \(!result\.aborted\) \{\n[\s\S]*?session\.db\.setIntroductionPending\(false\);\n\s*if \(!delivered\)/);
   assert.doesNotMatch(lifecycle, /deliverCheapIntroduction/);
