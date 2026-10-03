@@ -424,6 +424,32 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
    the app's own bubbles and blue, two suggestion chips, the composer, the caption underneath. */
 #team{background:var(--page);padding-top:0;padding-bottom:120px}
 .slide.msg-slide{background:var(--soft)}
+/* Card 6: an agent asks before it acts. Iris's permission sheet in glass over a painting; Allow is pressed, then it confirms. */
+.slide.ok-slide{background:#c9b8a8 url(img/paint-pastel.jpg) center/cover;color:var(--ink)}
+.ok-sheet{position:absolute;left:50%;top:57%;transform:translate(-50%,-50%);width:36cqw;display:flex;flex-direction:column;align-items:center;text-align:center;gap:1.1cqw;padding:3cqw 2.6cqw 2.4cqw;border-radius:3.2cqw;
+  background:rgba(255,255,255,.8);-webkit-backdrop-filter:blur(30px) saturate(1.6);backdrop-filter:blur(30px) saturate(1.6);box-shadow:0 0 0 .5px rgba(255,255,255,.7),0 30px 70px -30px rgba(20,30,60,.5)}
+.ok-av{width:6cqw;height:auto;filter:drop-shadow(0 .4cqw .8cqw rgba(0,0,0,.16))}
+.ok-h{margin:.4cqw 0 0;font-size:1.8cqw;font-weight:500;letter-spacing:-.01em}
+.ok-b{margin:0;font-size:1.4cqw;line-height:1.5;color:var(--ink2);max-width:92%}
+.ok-app{display:inline-flex;align-items:center;gap:.3em;color:#0078D4;white-space:nowrap}
+.ok-app img{width:1.1em;height:1.1em}
+.ok-btns{display:grid;grid-template-columns:1fr 1fr;gap:1cqw;width:100%;margin-top:1.3cqw}
+.ok-deny,.ok-allow{height:4.1cqw;display:grid;place-items:center;border-radius:99px;font-size:1.45cqw;transition:transform .2s,opacity .2s}
+.ok-deny{background:rgba(120,120,128,.14);color:#1d1d1f}
+.ok-allow{background:var(--app-blue);color:#fff}
+.ok-allow.press{transform:scale(.94);opacity:.85}
+.ok-done{display:none;align-items:center;justify-content:center;gap:.7cqw;height:4.1cqw;margin:1.3cqw 0 0;font-size:1.4cqw}
+.ok-check{flex:none;width:1.5cqw;height:1.5cqw;border-radius:50%;background:var(--green);position:relative}
+.ok-check::after{content:"";position:absolute;left:35%;top:19%;width:22%;height:44%;border:solid #fff;border-width:0 .22cqw .22cqw 0;transform:rotate(45deg)}
+.ok-sheet.agreed .ok-btns{display:none}
+.ok-sheet.agreed .ok-done{display:flex}
+@container slide (max-width:700px){
+  .ok-sheet{top:60%;width:80cqw;gap:2.4cqw;padding:7cqw 6cqw 5.5cqw;border-radius:7cqw}
+  .ok-av{width:13cqw}.ok-h{font-size:4.1cqw}.ok-b{font-size:3.2cqw}
+  .ok-btns{gap:2.4cqw;margin-top:3cqw}.ok-deny,.ok-allow{height:9.4cqw;font-size:3.3cqw}
+  .ok-done{height:9.4cqw;margin-top:3cqw;font-size:3.2cqw;gap:1.6cqw}.ok-check{width:3.4cqw;height:3.4cqw}.ok-check::after{border-width:0 .5cqw .5cqw 0}
+}
+
 /* Card 5: calling an agent. The call window in liquid glass over a painting: the agent, its live voice, the controls, and the conversation so far. */
 .slide.call-slide{background:var(--soft);color:var(--ink)}
 .cw{position:absolute;left:50%;top:24.5%;width:48cqw;transform:translateX(-50%);border-radius:3.4cqw;overflow:hidden;
@@ -452,7 +478,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 @media (prefers-reduced-motion:reduce){.cw-wave i{animation:none;height:60%}}
 
 /* Card 4: agents passing work between them, on a grainy dusk ground. */
-.slide.tw-slide{background:var(--night);color:#fff}
+.slide.tw-slide{background:#262a44 url(img/dusk-grain.jpg) center/cover;color:#fff}
 .tw-feed{position:absolute;left:50%;top:26%;width:52cqw;transform:translateX(-50%);display:flex;flex-direction:column;gap:1.25cqw;font-size:1.42cqw;line-height:1.36;letter-spacing:-.005em}
 .tw-msg{flex:none;display:flex;align-items:flex-end;gap:1cqw}
 .tw-msg.r{flex-direction:row-reverse}
@@ -725,59 +751,15 @@ footer nav{display:flex;gap:18px}
         </div>
       </article>
 
-      <article class="slide light s-growth" aria-label="Growth">
-        <p class="cap top"><span class="who"><img class="face f-growth" src="faces/scout.png" alt="">Growth</span>Growth reads your numbers every morning, and only speaks up when something changed.</p>
-        <div class="mac"><div class="lid"><div class="scr"><div class="notch"></div>
-          <div class="menubar"><b>Simeon</b><span>File</span><span>Edit</span><span>View</span><span>Window</span><span class="r"><span>Tue 30 Sep</span><span>8:15</span></span></div>
-          <div class="win chart">
-            <div class="tl"><i></i><i></i><i></i></div>
-            <span class="k">Signups, last 30 days</span>
-            <div class="big">1,284<small>+31%</small></div>
-            <svg viewBox="0 0 600 190" preserveAspectRatio="none" aria-hidden="true">
-              <defs><linearGradient id="gfill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#255a93" stop-opacity=".22"/><stop offset="1" stop-color="#255a93" stop-opacity="0"/></linearGradient></defs>
-              <path d="M0 150 L40 146 L80 152 L120 140 L160 144 L200 136 L240 140 L280 132 L320 128 L360 104 L400 92 L440 84 L480 70 L520 58 L560 46 L600 30 L600 190 L0 190 Z" fill="url(#gfill)"/>
-              <path d="M0 150 L40 146 L80 152 L120 140 L160 144 L200 136 L240 140 L280 132 L320 128 L360 104 L400 92 L440 84 L480 70 L520 58 L560 46 L600 30" fill="none" stroke="#255a93" stroke-width="3" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
-              <line x1="320" x2="320" y1="0" y2="190" stroke="#8e8e93" stroke-width="1" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>
-              <circle cx="320" cy="128" r="6" fill="#fff" stroke="#255a93" stroke-width="3" vector-effect="non-scaling-stroke"/>
-            </svg>
-            <div class="axis"><span>1 Sep</span><span>New pricing page, 16 Sep</span><span>30 Sep</span></div>
-          </div>
-          <div class="note"><img class="face f-growth" src="faces/scout.png" alt=""><div><b>Growth<small>now</small></b>Signups are up 31% since the new pricing page went live. Most came from Tuesday’s LinkedIn post.</div></div>
-        </div></div></div>
-      </article>
-
-      <article class="slide dark s-content" aria-label="Content">
-        <p class="cap top"><span class="who"><img class="face f-content" src="faces/yodo.png" alt="">Content</span>Content turns a rough note into a post and a picture to go with it, in your voice.</p>
-        <div class="phone"><div class="pb"><div class="scr"><div class="island"></div>
-          <div class="sbar"><span>9:41</span><span class="ic"><i></i><i></i></span></div>
-          <div class="thread">
-            <div class="hd"><img class="face f-content" src="faces/yodo.png" alt="">Content</div>
-            <div class="bub me">Turn the launch note into a LinkedIn post.</div>
-            <div class="bub it">Here it is. I kept your first line.</div>
-            <div class="post"><div class="ph"><i></i><div><b>Sam Rivera</b><span>Founder, Northbeam</span></div></div>
-              <p>We spent a year making invoicing boring. Today it’s two clicks.</p>
-              <div class="art">Northbeam 2.0</div></div>
-            <div class="chips"><span>Post Monday 9:00</span><span>Edit</span></div>
-          </div></div></div></div>
-      </article>
-
-      <article class="slide light s-sales" aria-label="Sales">
-        <p class="cap side"><span class="who"><img class="face f-sales" src="faces/yodo.png" alt="">Sales</span>Sales follows up after every call. Two of last week’s demos are already back on your calendar.</p>
-        <div class="mac"><div class="lid"><div class="scr"><div class="notch"></div>
-          <div class="menubar"><b>Calendar</b><span>File</span><span>Edit</span><span>View</span><span class="r"><span>Mon 6 Oct</span><span>9:00</span></span></div>
-          <div class="win cal">
-            <div class="top"><div class="tl"><i></i><i></i><i></i></div><b>October 2026</b></div>
-            <div class="days"><span class="today">Mon<b>6</b></span><span>Tue<b>7</b></span><span>Wed<b>8</b></span><span>Thu<b>9</b></span><span>Fri<b>10</b></span></div>
-            <div class="grid">
-              <div><span class="ev" style="top:4%;height:13%"><b>Team standup</b>9:00</span><span class="ev s" style="top:40%;height:22%"><b>Northwind, second call</b>2:00 PM<small><img class="f-sales" src="faces/yodo.png" alt="">Booked by Sales</small></span></div>
-              <div><span class="ev" style="top:22%;height:13%"><b>Investor update</b>11:00</span></div>
-              <div><span class="ev" style="top:4%;height:13%"><b>Team standup</b>9:00</span><span class="ev" style="top:58%;height:13%"><b>Design review</b>3:00 PM</span></div>
-              <div><span class="ev s" style="top:22%;height:22%"><b>Halden &amp; Co, pricing</b>11:00<small><img class="f-sales" src="faces/yodo.png" alt="">Booked by Sales</small></span></div>
-              <div><span class="ev" style="top:4%;height:13%"><b>Team standup</b>9:00</span></div>
-            </div>
-          </div>
-        </div></div></div>
-        <div class="note"><img class="face f-sales" src="faces/yodo.png" alt=""><div><b>Sales<small>8:52</small></b>Halden said yes to Thursday. I sent the deck ahead so they come prepared.</div></div>
+      <article class="slide ok-slide" aria-label="Stay in control">
+        <p class="cap top">Stay in control of what your agents do.</p>
+        <div class="ok-sheet" aria-hidden="true">
+          <img class="ok-av" src="faces/agent-iris.png" alt="">
+          <p class="ok-h">Iris would like to send an email</p>
+          <p class="ok-b">The spring launch email, from <span class="ok-app"><img src="logos/outlook.webp" alt="">Outlook</span>, to 2,408 subscribers on Monday at 9:00.</p>
+          <div class="ok-btns"><span class="ok-deny">Don&#8217;t Allow</span><span class="ok-allow">Allow</span></div>
+          <p class="ok-done"><span class="ok-check"></span>Approved. Sending Monday at 9:00.</p>
+        </div>
       </article>
 
     </div>
@@ -1198,6 +1180,20 @@ footer nav{display:flex;gap:18px}
   new ResizeObserver(() => frame(0)(performance.now())).observe(orbit);
   new IntersectionObserver(([e]) => { if (e.isIntersecting) { t0 = null; requestAnimationFrame(frame(++run)); } else run++; }, { threshold: 0.1 }).observe(orbit);
 })();
+// Card 6: Iris asks, Allow is pressed, it confirms, and it asks again; only while the card is in view.
+(() => {
+  const sheet = document.querySelector('.ok-sheet');
+  if (!sheet || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const btn = sheet.querySelector('.ok-allow');
+  let timer = 0;
+  const loop = () => {
+    sheet.classList.remove('agreed'); btn.classList.remove('press');
+    timer = setTimeout(() => { btn.classList.add('press');
+      timer = setTimeout(() => { sheet.classList.add('agreed'); timer = setTimeout(loop, 3200); }, 260); }, 2200);
+  };
+  new IntersectionObserver(([e]) => { clearTimeout(timer); if (e.isIntersecting) loop(); else { sheet.classList.remove('agreed'); btn.classList.remove('press'); } }, { threshold: .5 }).observe(sheet.closest('.slide'));
+})();
+
 // The team gallery: back and next move one card at a time, and grey out at either end.
 (() => {
   const gal = document.querySelector('.gallery'), track = gal.querySelector('.track'), slides = [...track.children];
