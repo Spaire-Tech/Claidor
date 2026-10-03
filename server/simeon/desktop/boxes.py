@@ -76,7 +76,12 @@ from simeon.kit.utils import utc_now
 from simeon.models import DesktopBox, DesktopBoxState, User
 from simeon.postgres import AsyncSession
 
-from .pricing import BOX_MAX_SECONDS_PER_SETTLEMENT, Usage, box_model
+from .pricing import (
+    BOX_MAX_SECONDS_PER_SETTLEMENT,
+    BOX_USAGE_REASON,
+    Usage,
+    box_model,
+)
 from .repository import DesktopBoxRepository
 
 log = structlog.get_logger()
@@ -276,6 +281,13 @@ class BoxService:
             usage=Usage(input_tokens=charged),
             stream=False,
             upstream_status=200,
+            # Why this row exists, in the same vocabulary the app and the
+            # runner use (`x-simeon-call-reason`, added 2 October 2026): the
+            # runner labels its calls `cloud_agent`, and this row is not a
+            # model call at all but seconds the box was awake. Without it a
+            # box charge is the one row in the table whose reason is blank,
+            # and "which feature costs the most" cannot see the computer.
+            reason=BOX_USAGE_REASON,
         )
         box.billed_through = moment
         if stopping:

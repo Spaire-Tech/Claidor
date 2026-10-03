@@ -27,7 +27,7 @@ from pytest_mock import MockerFixture
 from simeon.config import settings
 from simeon.desktop import boxes as boxes_module
 from simeon.desktop.boxes import BoxService, box_service
-from simeon.desktop.pricing import BOX_MODEL_ID, credits_for_box
+from simeon.desktop.pricing import BOX_MODEL_ID, BOX_USAGE_REASON, credits_for_box
 from simeon.models import DesktopBox, DesktopUsage, User
 from simeon.postgres import AsyncSession
 
@@ -612,6 +612,8 @@ class TestAwakeSecondsAreCharged:
         )
         assert rows[0].credits == expected
         assert 3500 <= rows[0].input_tokens <= 3700
+        # The row says what it was for, as every other usage row now does.
+        assert rows[0].reason == BOX_USAGE_REASON
 
     async def test_a_box_that_was_never_awake_costs_nothing(
         self,

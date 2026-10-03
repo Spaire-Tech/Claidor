@@ -1471,3 +1471,126 @@ complete set for this repository, and counting the wakes instead of reading the
 jobs would read it as a job failing over and over. Already commented on and
 stood down; the three on the second head are the same condition on a new head,
 not a new failure.
+
+---
+
+## §24 — 3 October: the fifth migration collision, and the box charge learns to say what it is for
+
+Main moved roughly a hundred commits, `80f36e1b` → `33126284`. By directory:
+242 files under `sites/`, 67 under `desktop/`, **18 under `server/`**, 5 under
+`docs/`, **4 under `runner/`** — the first time main has edited `runner/`, which
+is mine, since this branch opened.
+
+### The fifth collision, caught by the same one command
+
+Main added `migrations/versions/2026-10-02-1200_desktop_usage_reason.py` with
+`down_revision = "desktop_voice_calls_0930"` — **the exact parent this file had
+been given on 1 October**, for the fifth time. `alembic heads` after the merge:
+
+```
+desktop_boxes_0918 (head)
+desktop_usage_reason_1002 (head)
+```
+
+Re-pointed onto `desktop_usage_reason_1002`, docstring count raised to five, and
+proven on a scratch database rather than assumed:
+
+- `upgrade head` ran the whole chain, ending
+  `desktop_usage_reason_1002 -> desktop_boxes_0918`.
+- `ix_desktop_boxes_live_scope` present, and `desktop_usage.reason` — main's new
+  column — present alongside it.
+- `downgrade -1` removed **only mine**: `to_regclass('desktop_boxes')` → null
+  while `desktop_usage.reason` is still there. The boundary is in the right place.
+
+The suite still passes with two heads and `Server: Migration Check 📚` still has
+never been given a runner, so this remains the one command that catches it.
+
+### `models/desktop.py` auto-merged — and I checked it instead of trusting it
+
+This is the file rule (g) was written about: on 1 October a region-by-region
+resolution here would have produced two models holding each other's fields, both
+importing cleanly. This time git merged it without a conflict, which is exactly
+when it is tempting not to look. Parsed the result:
+
+| Class | Fields |
+|---|---|
+| `DesktopUsage` | 12, **including main's new `reason`** |
+| `DesktopBox` | 9 (`user_id` … `last_seen_at`) |
+| `DesktopBoxState` | the `StrEnum`, no columns |
+
+Seven classes, nothing crossed over. Correct.
+
+### The one change to my own code, and why it is not scope creep
+
+Main added `desktop_usage.reason`, fed by a new `x-simeon-call-reason` header
+(`endpoints.py`'s `call_reason`: lowercase, digits and underscores, ≤32, anything
+else dropped). Its stated purpose is so the usage table answers *"which feature
+costs the most"*, not only which model.
+
+**Main applied that convention inside `runner/` itself.** `runner/src/engine.ts`
+now sends `'x-simeon-call-reason': 'cloud_agent'` on the runner's own calls. So
+the convention for a non-app caller is settled, and main set it in a directory I
+own.
+
+My box settlement at `boxes.py` was writing the **one row in the whole table with
+a blank reason** — and it is the row for the only cost in the product that
+accrues while nobody is using anything. Fixed in my own files:
+
+- `pricing.py`: `BOX_USAGE_REASON = "box_awake"`, exported, with a comment saying
+  why a box row is not a model call at all.
+- `boxes.py`: passed at the `record_usage` call site.
+- `tests/desktop/test_boxes.py`: asserted on the settled row.
+
+`record_usage`'s new parameter is `reason: str | None = None`, so nothing was
+broken before this — the row was simply silent about itself.
+
+### Main hardened the cloud box, and capped a second cost. Still no meter.
+
+- `sand/box_broker.py`: a `TimeoutError` while a box starts now answers
+  `unavailable` with `retry-after: 5` instead of reaching the app as an internal
+  error.
+- `sand/box_proxy.py`: `ClientDisconnect` before forwarding returns **499**
+  (the app's health and event polls did this "dozens a minute" into the log), and
+  a mid-answer upstream close logs `sand.box.proxy.stream_ended` instead of raising.
+- `sand/listeners_service.py`: `ROUTINE_MIN_INTERVAL = 15 minutes`, a floor under
+  every routine whatever its schedule says, because "each run is a whole agent
+  turn on the expensive model".
+
+That last one is the **second instance of the cap-without-a-meter pattern**, after
+`FLIGHT_SEARCHES_PER_HOUR` on 2 October. Main now has two deliberate cost
+ceilings and still writes no usage row for the computer itself:
+
+```
+grep -rnE "credits_for|desktop_usage|DesktopUsage|record_usage|billed_through" simeon/sand/
+→ no matches
+```
+
+Re-run on this tree, not carried forward. Five weeks, every person's computer
+unmetered, and main's instinct is plainly to cap spend where it sees it — which
+makes the absence here look more like nobody has owned it than a decision.
+
+### Measured on the merged tree
+
+| Check | Result |
+|---|---|
+| `alembic heads` after the re-point | **one**, `desktop_boxes_0918` |
+| Scoped suite | **14 failed / 585 passed / 1 skipped**, 600 collected |
+| The fourteen | the same twelve proxy + two maty |
+| Where the +9 came from | main's own changed in-scope test files → 52 passed |
+| Main's new `tests/scripts/` | 89 passed |
+| `runner/` (`npm test`) | **61 passed**, 6 files |
+| My two files | **52 passed**, including the new `reason` assertion |
+| Box routes vs catch-all | ten at 1491–1690, catch-all **1837** |
+| `hourly_exhausted` in `endpoints.py` | 1 |
+| AST duplicate top-level names | none in the four files |
+| `ruff check` / `format` on my six files | **0 findings**, all formatted |
+| `check_names.py` | exit 1, **72 findings, all three notes**, zero in `server/`/`runner/` |
+
+The one ruff overlap was re-proven rather than remembered: main's own copy of
+`simeon/models/__init__.py` carries the identical `RUF022` at line 137 where mine
+is at 139, and my whole diff to that file is four lines — `DesktopBox` and
+`DesktopBoxState` in the import and in `__all__`, both already in correct
+alphabetical position.
+
+Unchanged: **nothing has contacted E2B, no sandbox has been started, no command
+has run in a box, and CI has never executed a line of this diff.**

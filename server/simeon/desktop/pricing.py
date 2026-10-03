@@ -729,6 +729,15 @@ BOX_BILLING_UNIT_SECONDS = 1
 #: so its rows mean something and offered to nobody.
 BOX_MODEL_ID = "simeon-box"
 
+#: What a box row says it was for, in the vocabulary the app and the runner
+#: use on `x-simeon-call-reason` (added to `desktop_usage.reason` on 2
+#: October 2026). The app's values name a kind of model call — `chat`,
+#: `routine`, `agent_wake`, `safety` — and the runner labels its own
+#: `cloud_agent`; this one names the only cost in the table that is not a
+#: call at all, the seconds a computer was awake. It satisfies the server's
+#: own rule for the header (lowercase, digits and underscores, 32 or fewer).
+BOX_USAGE_REASON = "box_awake"
+
 BOX_PROVIDER_NOTE = (
     "A box row's provider column reads `openai` and the box is E2B's. "
     "The column picks a token weight table; a box has no tokens, so no "
@@ -1105,6 +1114,7 @@ __all__ = [
     "BOX_MAX_SECONDS_PER_SETTLEMENT",
     "BOX_MODEL_ID",
     "BOX_PROVIDER_NOTE",
+    "BOX_USAGE_REASON",
     "CREDIT_USD_PER_MILLION_INPUT",
     "E2B_USD_PER_GIB_HOUR",
     "E2B_USD_PER_VCPU_HOUR",
