@@ -567,8 +567,10 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .gw-ch .xlbl{display:flex;gap:1.4cqw;margin-top:.6cqw;font-size:1.1cqw;color:#5a5a5e}.gw-ch .xlbl span{flex:1;text-align:center}
 /* Content Producer: the recording, cut into the week. */
 .gw-cut{flex:1;padding:1.6cqw 8cqw 1.6cqw 2cqw}
-.gw-cut .frame{height:15cqw;border-radius:1cqw;background:radial-gradient(90% 90% at 30% 30%,#f2d9b5,#9a6a3c 60%,#2c1a10);position:relative;overflow:hidden}
-.gw-cut .frame span{position:absolute;left:50%;bottom:1.6cqw;transform:translateX(-50%);padding:.5cqw 1cqw;border-radius:.6cqw;background:rgba(0,0,0,.55);color:#fff;font-weight:600;font-size:1.25cqw;white-space:nowrap}
+.gw-cut .frame{height:15cqw;border-radius:1cqw;background:rgba(0,0,0,.42);box-shadow:inset 0 0 0 1px rgba(255,255,255,.18);position:relative;overflow:hidden}
+.gw-cut .frame::before{content:"";position:absolute;left:50%;top:44%;width:3.6cqw;height:3.6cqw;transform:translate(-50%,-50%);border-radius:50%;background:rgba(255,255,255,.22);-webkit-mask:radial-gradient(circle,#000 99%,transparent 100%);mask:radial-gradient(circle,#000 99%,transparent 100%)}
+.gw-cut .frame::after{content:"";position:absolute;left:50%;top:44%;width:0;height:0;transform:translate(-32%,-50%);border-left:1.2cqw solid #fff;border-top:.8cqw solid transparent;border-bottom:.8cqw solid transparent}
+.gw-cut .frame span{position:absolute;left:50%;bottom:1.6cqw;transform:translateX(-50%);padding:.5cqw 1cqw;border-radius:.6cqw;background:rgba(255,255,255,.22);box-shadow:inset 0 0 0 1px rgba(255,255,255,.35);color:#fff;font-weight:600;font-size:1.25cqw;white-space:nowrap}
 .gw-cut .strip{display:flex;gap:.4cqw;margin-top:1.2cqw;height:2.8cqw}
 .gw-cut .strip i{border-radius:.5cqw;background:rgba(0,0,0,.18)}
 .gw-cut .strip i.on{background:var(--blue,#255a93)}
