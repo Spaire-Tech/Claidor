@@ -345,11 +345,10 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
    founder, 3 October 2026): the Simeon mark on a frosted glass tile over our painting, the apps
    sliding behind it one place at a time; the logo resting behind the glass swells so the tile takes
    its colour. */
-.slide.apps-slide{background:url(img/paint-teal.jpg) center/cover}
-.apps-slide .cap{text-shadow:0 1px 18px rgba(0,0,0,.25)}
+.slide.apps-slide{background:var(--soft)}
 .sd-orbit{position:absolute;left:0;right:0;top:22%;bottom:0;overflow:hidden}
 .sd-orb{position:absolute;left:0;top:50%;object-fit:contain;will-change:transform,filter,opacity}
-.sd-tile{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:grid;place-items:center;background:rgba(255,255,255,.40);-webkit-backdrop-filter:blur(20px) saturate(1.9);backdrop-filter:blur(20px) saturate(1.9);border:1px solid rgba(255,255,255,.9)}
+.sd-tile{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:grid;place-items:center;background:rgba(255,255,255,.40);-webkit-backdrop-filter:blur(20px) saturate(1.9);backdrop-filter:blur(20px) saturate(1.9);border:1px solid rgba(255,255,255,.9);box-shadow:0 18px 50px -12px rgba(0,0,0,.18)}
 .sd-tile img{width:68%;height:68%}
 
 /* The second card: every agent on a computer of its own, set the way Apple shows visionOS
@@ -597,7 +596,7 @@ footer nav{display:flex;gap:18px}
         </div>
       </article>
 
-      <article class="slide dark apps-slide" aria-label="Connect your apps">
+      <article class="slide apps-slide" aria-label="Connect your apps">
         <p class="cap top">Connect your apps. Your agents work in the tools you already use.</p>
         <div class="sd-orbit" aria-hidden="true"><img class="sd-orb" src="logos/slack.webp" alt=""><img class="sd-orb" src="logos/gmail.webp" alt=""><img class="sd-orb" src="logos/notion.svg" alt=""><img class="sd-orb" src="logos/figma.svg" alt=""><img class="sd-orb" src="logos/linear.svg" alt=""><img class="sd-orb" src="logos/google-drive.svg" alt=""><img class="sd-orb" src="logos/hubspot.svg" alt=""><img class="sd-orb" src="logos/zoom.webp" alt=""><img class="sd-orb" src="logos/linkedin.svg" alt=""><img class="sd-orb" src="logos/google-calendar.webp" alt=""><img class="sd-orb" src="logos/stripe.svg" alt=""><img class="sd-orb" src="logos/salesforce.svg" alt=""><div class="sd-tile"><img src="logos/simeon.svg" alt=""></div></div>
       </article>
