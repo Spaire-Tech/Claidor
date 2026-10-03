@@ -175,7 +175,136 @@ orbit_items = "".join(f'<img class="sd-orb" src="{logo(k)[0]}" alt="{logo(k)[1]}
 ORBIT_HTML = f'<div class="sd-orbit" aria-label="Simeon connects to your apps">{orbit_items}<div class="sd-tile"><img src="logos/simeon.svg" alt="Simeon"></div></div>'
 open(f"{TMP}/stripped.html", "w", encoding="utf-8").write(html)
 
-SURGERY = r"""([TICKER, ORBIT_HTML, TALK_HTML, VM_HTML, APPROVE_HTML, MOBILE_HTML]) => {
+# The sections the founder asked for on 3 October 2026 ("make it like Viktor but keep our style"):
+# what Simeon is for a founder, drawn in the page's own type, paintings and glass. Every claim is
+# one the product makes today; no customer logos, quotes or counts.
+PAINT_HERO, PAINT_GREEN, PAINT_PASTEL, PAINT_TEAL = ("img/0tXvc1jb6FDg9uTgj0fOQDEvw.png", "img/NyYo9oaKLvMl0yl5Zo5bxltZo.png",
+                                                     "img/cREyxkDc4xqmbAOWrToek1PlTM.png", "img/ndcsiJlnsYoCCrA6LZUWC0vWxC0.png")
+for p in (PAINT_GREEN, PAINT_PASTEL, PAINT_TEAL):
+    assert p[4:] in images, p
+FACES = {"simeon": ("simeon", ""), "scout": ("scout", ""), "yodo": ("yodo", ""),
+         "iris": ("scout", "hue-rotate(90deg)"), "otto": ("yodo", "hue-rotate(60deg)"), "nova": ("yodo", "hue-rotate(300deg)")}
+def rface(who, cls="sd-rf"):
+    f, tint = FACES[who]
+    return f'<img class="{cls}" src="faces/{f}.png" alt="" style="{"filter:" + tint if tint else ""}">'
+def head(title, grey, cls=""):
+    return f'<div class="sd-head {cls}"><h2>{title}</h2><p>{grey}</p></div>'
+def mini(key):
+    src, name, _ = logo(key)
+    return f'<span class="sd-mini"><img src="{src}" alt="">{name}</span>'
+
+# A typical founder's team: one job each, the apps each works in.
+ROSTER = [
+    ("simeon", "Chief of Staff", "Runs the team. Weekly priorities, follow-ups and the big picture, in five lines on Friday.", ["notion", "google-calendar"]),
+    ("scout", "Inbox", "Sorts your email, drafts the replies and flags what needs you. Never sends without your OK.", ["gmail", "outlook"]),
+    ("yodo", "Money", "Revenue, failed payments, overdue invoices and runway, every Monday morning.", ["stripe", "quickbooks"]),
+    ("iris", "Growth", "Traffic, signups and what is working, with the numbers to back it.", ["hubspot", "google-sheets"]),
+    ("nova", "Content", "Posts, newsletters, decks and graphics, in your voice and your brand.", ["linkedin", "canva"]),
+    ("otto", "Sales", "Leads, follow-ups after every call, and a pipeline that never goes stale.", ["salesforce", "calendly"]),
+]
+ROSTER_HTML = ('<section class="sd-sec sd-roster-sec" data-sd="roster"><div class="sd-wrap">'
+  + head("Meet your operations team", "One agent for each job that keeps a business running. Start with the roles you need, rename them, add more as you grow.")
+  + f'<div class="sd-roster"><img class="sd-paint" src="{PAINT_GREEN}" alt="" loading="lazy"><div class="sd-roster-grid">'
+  + "".join(f'<article class="sd-role">{rface(who)}<div class="sd-role-t"><h3>{name}</h3><p>{text}</p>'
+            f'<div class="sd-role-apps">{"".join(mini(k) for k in apps)}</div></div></article>' for who, name, text, apps in ROSTER)
+  + '</div></div><p class="sd-note">A typical founder\'s team. Every agent has its own computer in the cloud and talks to the others.</p></div></section>')
+
+# How it works, in three steps, each over a crop of a painting with one piece of the app on glass.
+STEPS = [
+    ("1", "Pick your team", "Ask Simeon for the help you need and it adds an agent for each job: inbox, money, content, sales.",
+     PAINT_HERO, "20% 60%", '<div class="sd-g sd-g-team">' + "".join(f'<span>{rface(w, "sd-gf")}{n}</span>' for w, n in (("simeon", "Chief of Staff"), ("yodo", "Money"), ("scout", "Inbox"))) + '</div>'),
+    ("2", "Connect your tools", "When an agent needs an app, it shows you a card. Tap Add and sign in on the app's own page. No passwords in chat.",
+     PAINT_TEAL, "70% 40%", f'<div class="sd-g sd-g-add"><span class="sd-g-ico"><img src="{logo("stripe")[0]}" alt=""></span><span class="sd-g-txt"><b>Stripe</b>Payments, invoices, customers</span><span class="sd-g-btn">Add</span></div>'),
+    ("3", "Ask, then let it run", "Say what you need in plain words. Anything you do every week becomes a routine that runs on its own.",
+     PAINT_PASTEL, "60% 50%", '<div class="sd-g sd-g-rt"><span class="sd-g-clock">' + CLOCK + '</span><span class="sd-g-txt"><b>Monday numbers</b>Every Monday at 9:00</span><span class="sd-g-on"></span></div>'),
+]
+STEPS_HTML = ('<section class="sd-sec" data-sd="steps"><div class="sd-wrap">'
+  + head("How it works", "No workflows to build. You tell your team what you need, the way you would tell staff.")
+  + '<ol class="sd-steps">' + "".join(f'<li class="sd-step"><div class="sd-step-pic"><img class="sd-paint" src="{src}" alt="" loading="lazy" style="object-position:{pos}">{glass}</div>'
+                                       f'<span class="sd-step-n">{n}</span><h3>{title}</h3><p>{text}</p></li>' for n, title, text, src, pos, glass in STEPS) + '</ol></div></section>')
+
+# What a founder asks, by the part of the business it frees up. Each ask has the reply an agent gives.
+USES = [
+    ("Founders & CEOs", [
+        ("simeon", "Who did I promise something to in last week's calls?", f'Four people. Drafts are ready for each in {chip("gmail")}; the one to Dana is due tomorrow.'),
+        ("simeon", "Prep me for the board call on Thursday.", f'A one-page brief is in {chip("notion")}: revenue, hiring, the two open risks, and three questions they will ask.'),
+        ("simeon", "Every Friday, send me the week in five lines.", 'Routine created. Friday at 17:00: what moved, what is stuck, what needs you on Monday.'),
+    ]),
+    ("Money & ops", [
+        ("yodo", "How did we do last month?", f'$48,200 in revenue, up 12%. Two failed payments in {chip("stripe")}, already retried. One invoice is 30 days late.'),
+        ("yodo", "Chase every invoice that is more than two weeks late.", f'Three polite reminders drafted from {chip("quickbooks")}. Approve them and they go out.'),
+        ("yodo", "Put this month's receipts in the books.", f'26 receipts matched and filed in {chip("xero")}. Two need a category from you.'),
+    ]),
+    ("Growth & marketing", [
+        ("nova", "Turn the launch note into a LinkedIn post and a graphic.", f'Post drafted in your voice and a graphic made in {chip("canva")}. Ready to schedule on {chip("linkedin")}.'),
+        ("iris", "Which pages brought us signups this week?", f'Pricing and the comparison page, 61% between them. The full table is in {chip("google-sheets")}.'),
+        ("nova", "Write this month's newsletter from what we shipped.", f'Draft is in {chip("mailchimp")}, with the three biggest updates first. Send on Tuesday?'),
+    ]),
+    ("Sales & customers", [
+        ("otto", "Follow up with everyone I met at the conference.", f'14 contacts added to {chip("hubspot")} and a personal note drafted for each. Approve to send.'),
+        ("otto", "Which deals have gone quiet?", f'Five with no reply in 10 days. A nudge is drafted for each, with your {chip("calendly")} link to book a call.'),
+        ("scout", "Answer the support emails you can, and flag the rest.", f'Answered 9 in {chip("gmail")} from your help docs. Two refund requests are waiting for you.'),
+    ]),
+]
+ON = ' class="sd-on"'
+def use_card(who, ask, reply):
+    name = {"simeon": "Chief of Staff", "yodo": "Money", "nova": "Content", "iris": "Growth", "otto": "Sales", "scout": "Inbox"}[who]
+    return (f'<article class="sd-use"><p class="sd-ask">{ask}</p><div class="sd-reply">{rface(who, "sd-rf-s")}'
+            f'<div><span class="sd-reply-who">{name}</span><p>{reply}</p></div></div></article>')
+USES_HTML = ('<section class="sd-sec" data-sd="uses"><div class="sd-wrap">'
+  + head("What you can hand off", "The work that keeps a business running, done inside the tools you already pay for.")
+  + '<div class="sd-tabs" role="tablist" aria-label="Kind of work">'
+  + "".join(f'<button type="button" role="tab" id="sd-tab-{i}" aria-controls="sd-uses-{i}" aria-selected="{str(i == 0).lower()}"{ON if i == 0 else ""}>{label}</button>' for i, (label, _) in enumerate(USES))
+  + '</div>' + "".join(f'<div class="sd-uses" role="tabpanel" id="sd-uses-{i}" aria-labelledby="sd-tab-{i}"{"" if i == 0 else " hidden"}>{"".join(use_card(*u) for u in uses)}</div>' for i, (_, uses) in enumerate(USES))
+  + '</div></section>')
+
+# Simeon next to the two things a founder tries first. Kinds of product, not named rivals.
+YES, PART, NO = '<span class="sd-cy">Yes</span>', '<span class="sd-cp">Partly</span>', '<span class="sd-cn">No</span>'
+COMPARE = [
+    ("Does the work inside your apps", PART, YES, YES),
+    ("You ask in plain words", YES, NO, YES),
+    ("Works out the steps on its own", YES, NO, YES),
+    ("Keeps going when your laptop is closed", PART, YES, YES),
+    ("A team with roles that pass work along", NO, NO, YES),
+    ("Its own computer and browser", PART, NO, YES),
+    ("Asks before sending, paying or deleting", PART, NO, YES),
+]
+COMPARE_HTML = ('<section class="sd-sec" data-sd="compare"><div class="sd-wrap">'
+  + head("Not a chatbot. Not a workflow builder.", "A chatbot answers you. An automation app runs the steps you built. Simeon is a team that does the work.")
+  + '<div class="sd-cmp-scroll"><table class="sd-cmp"><thead><tr><th scope="col"><span class="sd-vh">What it does</span></th><th scope="col">AI chatbots</th><th scope="col">Automation apps</th><th scope="col" class="sd-us">Simeon</th></tr></thead><tbody>'
+  + "".join(f'<tr><th scope="row">{what}</th><td>{a}</td><td>{b}</td><td class="sd-us">{c}</td></tr>' for what, a, b, c in COMPARE)
+  + '</tbody></table></div>'
+  + '<p class="sd-note">And next to hiring: an operations hire costs thousands a month and works forty hours a week. Your team works around the clock from $20 a month.</p></div></section>')
+
+# Every app in the connector catalogue (desktop/source/shared/node/vendor-mcp/catalog.ts), with its
+# logo where the repository has one, by name where it does not yet.
+CATALOG = list(dict.fromkeys(re.findall(r'\bid: "([a-z0-9-]+)"', open(f"{REPO}/desktop/source/shared/node/vendor-mcp/catalog.ts").read())))
+assert len(CATALOG) == 66, len(CATALOG)
+NAMES = {"monday": "monday.com", "wix": "Wix", "square": "Square", "ramp": "Ramp", "apollo": "Apollo", "onedrive": "OneDrive", "google-tasks": "Google Tasks",
+         "brex": "Brex", "pipedrive": "Pipedrive", "docusign": "DocuSign", "klaviyo": "Klaviyo", "ashby": "Ashby", "google-analytics": "Google Analytics",
+         "google-search-console": "Search Console", "kit": "Kit", "cal-com": "Cal.com", "attio": "Attio", "microsoft-teams": "Microsoft Teams",
+         "mercury": "Mercury", "posthog": "PostHog"}
+# Apps the repository has no logo for show the icon the app itself shows for them (the site icons in
+# desktop/source/shared/node/vendor-mcp/logos.ts), saved once in app-favicons/. Google's three
+# share one generic icon there, so they are named instead of drawn.
+FAVICONS = sorted(os.path.splitext(n)[0] for n in os.listdir(f"{HERE}/app-favicons"))
+def tile(k):
+    if k in APPS:
+        src, name, _ = logo(k)
+    else:
+        src, name = f"logos/{k}.png", NAMES[k]
+        shutil.copy(f"{HERE}/app-favicons/{k}.png", f"{OUT}/{src}")
+    return f'<li title="{name}"><img src="{src}" alt="{name}" loading="lazy"></li>'
+drawn = [k for k in CATALOG if k in APPS or k in FAVICONS]
+by_name = [NAMES[k] for k in CATALOG if k not in drawn]
+assert len(drawn) == 63 and by_name == ["Google Tasks", "Google Analytics", "Search Console"], (len(drawn), by_name)
+WALL_HTML = ('<section class="sd-sec" data-sd="apps"><div class="sd-wrap">'
+  + head(f"{len(CATALOG)} apps, connected in a tap", "Sign in once on the app's own page and your agents use it from then on. Anything else they open in their own browser, like you would.")
+  + '<ul class="sd-wall">' + "".join(tile(k) for k in drawn) + '</ul>'
+  + '<p class="sd-wall-more">And ' + ", ".join(by_name[:-1]) + " and " + by_name[-1] + '.</p></div></section>')
+EXTRA = {"roster": ROSTER_HTML, "steps": STEPS_HTML, "uses": USES_HTML, "compare": COMPARE_HTML, "wall": WALL_HTML}
+
+SURGERY = r"""([TICKER, ORBIT_HTML, TALK_HTML, VM_HTML, APPROVE_HTML, MOBILE_HTML, EXTRA]) => {
   const gone = ['#__framer-badge-container', '#__framer-editorbar-container', '#hl-aria-live-message-container', '#hl-aria-live-alert-container'];
   gone.forEach((s) => document.querySelectorAll(s).forEach((n) => n.remove()));
   // Only the Framer editor bar and the extension used these; nothing else refers to them.
@@ -199,6 +328,15 @@ SURGERY = r"""([TICKER, ORBIT_HTML, TALK_HTML, VM_HTML, APPROVE_HTML, MOBILE_HTM
   // It is a preview to try: no button or link leads anywhere.
   for (const a of document.querySelectorAll('a')) { a.removeAttribute('href'); a.removeAttribute('target'); a.removeAttribute('rel'); }
   const heroSection = document.querySelector('section[data-framer-name="Hero"]');
+  // What Simeon is, said first: an operations team for a business, and what is true of it today.
+  heroSection.querySelectorAll('h1').forEach((h) => { h.textContent = 'Your AI operations team'; });
+  heroSection.querySelector('.framer-52laz7').insertAdjacentHTML('afterend',
+    '<p class="sd-lede">AI agents that run the busywork of your business inside the tools you already use. Each one has its own computer in the cloud, keeps working while you sleep, and asks before anything important.</p>');
+  heroSection.querySelector('.framer-1pr7n1c-container').closest('.ssr-variant').insertAdjacentHTML('afterend',
+    '<ul class="sd-proof"><li>7-day free trial</li><li>66 apps</li><li>Their own cloud computers</li><li>Asks before acting</li></ul>');
+  const introHtml = 'Tell them what you need, like you would tell staff<span class="framer-text" style="--framer-text-color:var(--token-c206cc3b-6522-4028-8a20-1f745a747981, rgba(41, 41, 41, 0.6))"><br class="framer-text">'
+    + 'Give your team a job and they take it from start to finish inside your tools, learn how your business works, and check in when they need you.</span>';
+  document.querySelectorAll('section[data-framer-name="Intro"] h3').forEach((h) => { h.innerHTML = introHtml; });
   for (const img of document.querySelectorAll('img')) {
     if (heroSection.contains(img)) { img.removeAttribute('loading'); img.setAttribute('fetchpriority', 'high'); }
     else if (img.closest('section')) img.setAttribute('loading', 'lazy');
@@ -234,6 +372,21 @@ SURGERY = r"""([TICKER, ORBIT_HTML, TALK_HTML, VM_HTML, APPROVE_HTML, MOBILE_HTM
   const featureBox = (re) => [...document.querySelectorAll('section[data-framer-name="Feature"]')].find((sec) => re.test(sec.textContent)).querySelector('.framer-115oxcp');
   featureBox(/their own computers/).insertAdjacentHTML('beforeend', VM_HTML);
   featureBox(/Stay in control/).insertAdjacentHTML('beforeend', APPROVE_HTML);
+  // Feature titles say what is true now: the agents' computers are in the cloud.
+  const featureText = (re, title, sub) => {
+    const sec = [...document.querySelectorAll('section[data-framer-name="Feature"]')].find((x) => re.test(x.textContent));
+    const titles = sec.querySelectorAll('[data-framer-name="Title"] h4'), subs = sec.querySelectorAll('[data-framer-name="Subtitle"] h4');
+    if (!titles.length || !subs.length) throw new Error('feature text not found: ' + title);
+    titles.forEach((h) => { h.textContent = title; }); subs.forEach((h) => { h.textContent = sub; });
+  };
+  featureText(/Connects to your apps/, 'Works inside your tools', 'Gmail, Stripe, Notion, HubSpot and 60 more. Your agents use them the way you would, even the ones that are hard to navigate.');
+  featureText(/their own computers/, 'Each agent has its own computer', 'A computer in the cloud with a full browser and its own files. Your agents keep working when your laptop is closed, and you can watch or step in at any point.');
+  featureText(/Let your Agents work together/, 'Your agents work together', 'They pass work to each other and keep things moving, without you stepping in at every turn.');
+  featureText(/Stay in control/, 'You stay in control', 'Sending an email, paying, publishing, deleting: your agents ask first, and you allow or refuse it in one tap.');
+  // The new sections, in reading order: who is on the team after the intro; how it works, what to
+  // hand off, how it compares and the apps after the features; then pricing.
+  document.querySelector('section[data-framer-name="Intro"]').insertAdjacentHTML('afterend', EXTRA.roster);
+  document.querySelector('section[data-framer-name="Pricing"]').insertAdjacentHTML('beforebegin', EXTRA.steps + EXTRA.uses + EXTRA.compare + EXTRA.wall);
   // Pricing: Standard, Pro, Max. The same Simeon on every plan, a 7-day trial on all three;
   // what changes is the weekly usage.
   const plans = [
@@ -241,7 +394,7 @@ SURGERY = r"""([TICKER, ORBIT_HTML, TALK_HTML, VM_HTML, APPROVE_HTML, MOBILE_HTM
     { name: 'Pro', monthly: 60, usage: '5× the weekly usage of Standard' },
     { name: 'Max', monthly: 100, usage: '20× the weekly usage of Standard' },
   ];
-  const features = ["Your agents' own computer", 'Signs into your tools', 'Routines on a schedule', 'Work anywhere: desktop, mobile, and more'];
+  const features = ['A team of agents with their own cloud computers', '66 apps to connect', 'Routines on a schedule', 'Asks before anything important'];
   const cards = [...document.querySelectorAll('section[data-framer-name="Pricing"] .framer-IbCrB')];
   const pricing = document.querySelector('section[data-framer-name="Pricing"]');
   pricing.querySelector('.framer-2vqzwa').insertAdjacentHTML('afterend',
@@ -263,22 +416,34 @@ SURGERY = r"""([TICKER, ORBIT_HTML, TALK_HTML, VM_HTML, APPROVE_HTML, MOBILE_HTM
   });
   // FAQ: Simeon's own questions, answered only with what is true today.
   const faq = [
-    ['How is Simeon different from an AI assistant?',
-     'An assistant answers you. Simeon gives you a team of agents that do the work: each one has a computer of its own, signs into your apps, and messages you like a teammate when it needs a decision. They pass work between each other and keep going while you do something else.'],
-    ['What does Simeon run on?',
-     "Simeon is a Mac app for Apple silicon. Your agents' computer runs on your Mac, in its own isolated space, so routines keep going even when the Simeon window is closed, as long as your Mac is awake."],
+    ['What is Simeon?',
+     "An AI operations team for founders and small businesses. It is a team of AI agents, each with a job (Chief of Staff, Inbox, Money, Growth, Content, Sales), its own computer in the cloud and access to the apps you already use. You tell them what you need and they do the work inside your tools."],
+    ['How is it different from ChatGPT and other chatbots?',
+     'A chatbot answers questions. Simeon\'s agents do the work: they sign into your apps, act in them, pass work to each other, and keep going on a schedule without being asked again.'],
+    ['How is it different from Zapier and other automation apps?',
+     'With an automation app you build every workflow yourself and fix it when it breaks. With Simeon you say what you want in plain words and the agent works out the steps.'],
     ['Which apps can my agents use?',
-     'About forty today, including Gmail, Outlook, Google Calendar, Slack, Notion, Linear, Jira, GitHub, HubSpot, Salesforce, Stripe, QuickBooks and Figma. You sign in once and your agents use it from then on. Anything else they can open in their own browser, like you would.'],
-    ['Do my agents share one computer?',
-     "Yes. Your agents share one persistent computer, with its files, browser and logins, so they can hand work to each other without losing context. It is separate from your own files: a file only reaches it when you give it to an agent."],
-    ['How much does Simeon cost?',
-     'Standard is $20 a month, Pro $60 and Max $100, or 20% less billed yearly. Every plan starts with a 7-day free trial and includes the same Simeon; what changes is how much weekly usage you get.'],
+     '66 today, including Gmail, Outlook, Google Calendar, Slack, Notion, HubSpot, Attio, Salesforce, Stripe, Mercury, QuickBooks, Xero, Google Analytics, PostHog, Canva, LinkedIn and Calendly. You sign in once on the app\'s own page. Anything else they can open in their own browser, like you would.'],
+    ['Where do my agents run?',
+     'Each agent works on a computer of its own in the cloud, with a browser and files. You talk to them from the Simeon app, and routines keep running when your Mac is closed.'],
+    ['What do I need to start?',
+     'A Mac with Apple silicon. Download Simeon, sign in, and ask for the help you need. Every plan starts with a 7-day free trial.'],
     ['Will my agents act without asking me?',
      'Not for the things that matter. Before an agent sends an email, makes a purchase or runs something risky, it asks, and you allow or refuse it in the chat. You can change what needs asking in Settings.'],
-    ['How does Simeon handle my data and privacy?',
-     "Your agents' computer runs on your Mac, isolated from the rest of it, and the logins you give it are stored encrypted by macOS. Simeon never reads your keychain, your SSH keys or your browser profiles. What your agents send to the AI model goes through Simeon Labs to the model provider to get an answer."],
+    ['Can I change my team?',
+     'Yes. Ask Simeon to add an agent for a new job, or rename or remove one. Your team grows with the business.'],
+    ['How does Simeon handle my data?',
+     "Your agents work on their own computers, apart from yours: a file only reaches them when you give it to them. You sign in to each app on that app's own page, and Simeon never asks for your passwords in chat. What your agents send to the AI model goes through Simeon Labs to the model provider to get an answer."],
+    ['How much does Simeon cost?',
+     'Standard is $20 a month, Pro $60 and Max $100, or 20% less billed yearly. Every plan starts with a 7-day free trial and includes the same team; what changes is how much weekly usage you get.'],
   ];
+  // The export drew seven rows; the rest are copies of the last one (with its wrapper, if it has one).
+  const drawn = [...document.querySelectorAll('section[data-framer-name="FAQ"] .framer-satGG')];
+  const unit = (r) => (r.parentElement.children.length === 1 ? r.parentElement : r);
+  let last = unit(drawn[drawn.length - 1]);
+  for (let n = drawn.length; n < faq.length; n++) { const c = last.cloneNode(true); last.after(c); last = c; }
   const rows = [...document.querySelectorAll('section[data-framer-name="FAQ"] .framer-satGG')];
+  if (rows.length !== faq.length) throw new Error('FAQ rows: ' + rows.length);
   rows.forEach((row, i) => {
     const [q, ans] = faq[i];
     row.querySelector('.framer-jv9jdf p').textContent = q;
@@ -287,6 +452,10 @@ SURGERY = r"""([TICKER, ORBIT_HTML, TALK_HTML, VM_HTML, APPROVE_HTML, MOBILE_HTM
     row.querySelector('.framer-7kqrje').setAttribute('role', 'button');
     row.querySelector('.framer-7kqrje').setAttribute('aria-expanded', 'false');
   });
+  // The closing banner: the same promise as the hero, and the button's name spelled right.
+  const cta = document.querySelector('section[data-framer-name="CTA"]');
+  cta.querySelectorAll('.framer-1m1e2jc h4').forEach((h) => { h.textContent = 'Your AI operations team'; });
+  for (const p of cta.querySelectorAll('p')) if (/Donwload/.test(p.textContent)) p.textContent = 'Download Simeon';
   const list = document.querySelector('section[data-framer-name="FAQ"] .framer-2bm14l-container');
   if (list) list.style.height = 'auto';
   const tokens = document.body.getAttribute('style');
@@ -517,6 +686,123 @@ section[data-framer-name="Hero"] .framer-hy289i{display:none!important}
 .sd-faq .framer-1levrjt{transition:transform .3s ease}
 .sd-faq.sd-open .framer-1levrjt{transform:rotate(0deg)!important}
 .sd-faq .framer-7kqrje:focus-visible{outline:2px solid #255a93;outline-offset:4px;border-radius:6px}
+/* The hero says what Simeon is under its title, and what is true of it under the button. */
+.sd-lede{margin:-8px 0 0;max-width:620px;font:400 20px/1.5 "Switzer Variable",-apple-system,system-ui,sans-serif;color:rgba(41,41,41,.6);text-wrap:pretty}
+.sd-proof{display:flex;flex-wrap:wrap;gap:8px 22px;margin:0;padding:0;list-style:none;font:400 14px/1.4 "Switzer Variable",-apple-system,system-ui,sans-serif;color:rgba(41,41,41,.72)}
+.sd-proof li{display:inline-flex;align-items:center;gap:8px}
+.sd-proof li::before{content:"";width:6px;height:6px;border-radius:50%;background:#3f7f78}
+/* The added sections share the page's column (1080 wide, 24 px from the edge, 18 on a phone),
+   its section spacing and its two-tone headings. Order follows the page: Framer numbers its
+   sections on tablets, so every section keeps its place in the page instead. */
+section[data-framer-name],.sd-sec{order:0!important}
+.sd-sec{position:relative;width:100%;box-sizing:border-box;padding:84px 0;font-family:"Switzer Variable",-apple-system,system-ui,sans-serif;color:#292929}
+.sd-wrap{width:min(1080px,calc(100% - 48px));margin-inline:auto;display:flex;flex-direction:column;gap:40px}
+.sd-head{max-width:760px}
+.sd-head h2{margin:0;font-size:38px;line-height:1.3;font-weight:400;letter-spacing:-.01em;text-wrap:balance}
+.sd-head p{margin:6px 0 0;font-size:24px;line-height:1.35;color:rgba(41,41,41,.6);text-wrap:pretty}
+.sd-note{margin:0;max-width:640px;font-size:15px;line-height:1.5;color:rgba(53,53,53,.7)}
+.sd-paint{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+/* Meet your team: six glass cards on a painting. */
+.sd-roster{position:relative;border-radius:12px;overflow:hidden;padding:clamp(18px,4vw,48px);isolation:isolate}
+.sd-roster-grid{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.sd-role{display:flex;gap:14px;align-items:flex-start;padding:20px 20px 18px;border-radius:18px;background:rgba(255,255,255,.82);
+  -webkit-backdrop-filter:blur(24px) saturate(1.5);backdrop-filter:blur(24px) saturate(1.5);box-shadow:0 0 0 .5px rgba(255,255,255,.7),0 18px 40px -24px rgba(20,30,60,.45)}
+.sd-rf{flex:none;width:44px;height:44px;object-fit:contain;filter:drop-shadow(0 4px 8px rgba(0,0,0,.16))}
+.sd-role-t{min-width:0;display:flex;flex-direction:column;gap:6px}
+.sd-role h3{margin:0;font-size:18px;line-height:1.3;font-weight:500;color:#1d1d1f}
+.sd-role p{margin:0;font-size:15px;line-height:1.45;color:rgba(41,41,41,.7)}
+.sd-role-apps{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.sd-mini{display:inline-flex;align-items:center;gap:6px;padding:4px 9px 4px 6px;border-radius:8px;background:rgba(237,237,232,.9);font-size:13px;line-height:1.3;color:#353535;white-space:nowrap}
+.sd-mini img{width:16px;height:16px;object-fit:contain}
+/* How it works. */
+.sd-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;margin:0;padding:0;list-style:none}
+.sd-step{display:flex;flex-direction:column;gap:8px;min-width:0}
+.sd-step-pic{position:relative;aspect-ratio:4/3;border-radius:12px;overflow:hidden;display:grid;place-items:center;margin-bottom:14px;isolation:isolate;container-type:inline-size}
+.sd-step-n{font-size:14px;color:rgba(41,41,41,.5);font-variant-numeric:tabular-nums}
+.sd-step h3{margin:0;font-size:22px;line-height:1.3;font-weight:400;color:#292929}
+.sd-step p{margin:0;font-size:16px;line-height:1.5;color:rgba(53,53,53,.7)}
+.sd-g{position:relative;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Switzer Variable",system-ui,sans-serif;color:#1d1d1f;
+  background:rgba(255,255,255,.8);-webkit-backdrop-filter:blur(24px) saturate(1.6);backdrop-filter:blur(24px) saturate(1.6);box-shadow:0 0 0 .5px rgba(255,255,255,.7),0 20px 44px -22px rgba(20,30,60,.5)}
+.sd-g-team{display:flex;flex-direction:column;gap:2px;padding:8px;border-radius:16px;width:62%}
+.sd-g-team span{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:10px;font-size:max(12px,4.4cqw)}
+.sd-g-team span:first-child{background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.sd-gf{width:max(22px,8cqw);height:max(22px,8cqw);object-fit:contain}
+.sd-g-add,.sd-g-rt{display:flex;align-items:center;gap:10px;width:76%;padding:12px;border-radius:16px}
+.sd-g-ico{flex:none;display:grid;place-items:center;width:max(30px,11cqw);height:max(30px,11cqw);border-radius:9px;background:#fff;box-shadow:0 0 0 .5px rgba(0,0,0,.12)}
+.sd-g-ico img{width:64%;height:64%;object-fit:contain}
+.sd-g-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;font-size:max(11px,3.6cqw);color:#6e6e73;line-height:1.3}
+.sd-g-txt b{font-weight:500;color:#1d1d1f;font-size:max(13px,4.4cqw)}
+.sd-g-btn{flex:none;padding:6px 14px;border-radius:99px;background:#255a93;color:#fff;font-size:max(12px,4cqw)}
+.sd-g-clock{flex:none;width:max(26px,9cqw);height:max(26px,9cqw);padding:5px;box-sizing:border-box;border-radius:50%;background:#fff;color:#3a3a3c;box-shadow:0 0 0 .5px rgba(0,0,0,.12)}
+.sd-g-clock svg{display:block;width:100%;height:100%}
+.sd-g-on{flex:none;position:relative;width:max(30px,10.5cqw);height:max(18px,6.2cqw);border-radius:99px;background:#34c759}
+.sd-g-on::after{content:"";position:absolute;right:2px;top:2px;bottom:2px;aspect-ratio:1;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+/* What you can hand off: a switch like the billing one, then three asks and their answers. */
+.sd-tabs{display:inline-flex;flex-wrap:wrap;gap:4px;padding:4px;border-radius:22px;background:#e6e6e1;align-self:flex-start;margin-bottom:-12px}
+.sd-tabs button{appearance:none;border:0;background:transparent;border-radius:99px;padding:9px 18px;font:400 15px/1 "Switzer Variable",system-ui,sans-serif;color:#555;cursor:pointer}
+.sd-tabs button.sd-on{background:#fff;color:#1d1d1f;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.sd-tabs button:focus-visible{outline:2px solid #255a93;outline-offset:2px}
+.sd-uses[hidden]{display:none!important}
+.sd-uses{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.sd-use{display:flex;flex-direction:column;gap:14px;padding:20px;border-radius:12px;background:#edede8;min-width:0}
+.sd-ask{align-self:flex-end;max-width:90%;margin:0;padding:10px 14px;border-radius:18px 18px 5px 18px;background:#255a93;color:#fff;font-size:15px;line-height:1.42;
+  box-shadow:inset 0 .5px 0 rgba(255,255,255,.28),0 1px 2px rgba(20,45,90,.1)}
+.sd-reply{display:flex;align-items:flex-end;gap:10px;max-width:96%}
+.sd-rf-s{flex:none;width:30px;height:30px;object-fit:contain;filter:drop-shadow(0 3px 6px rgba(0,0,0,.14))}
+.sd-reply>div{min-width:0;display:flex;flex-direction:column;gap:4px}
+.sd-reply-who{font-size:12px;color:rgba(41,41,41,.55);padding-left:4px}
+.sd-reply p{margin:0;padding:10px 14px;border-radius:18px 18px 18px 5px;background:#fff;font-size:15px;line-height:1.45;color:#1c1c1e;box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04)}
+.sd-reply .sd-app{font-weight:500}
+/* Next to a chatbot and an automation app. */
+.sd-cmp-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.sd-cmp{width:100%;min-width:560px;border-collapse:separate;border-spacing:0;font-size:16px;line-height:1.4}
+.sd-cmp th,.sd-cmp td{padding:15px 16px;text-align:left;border-bottom:1px solid rgba(0,0,0,.08);font-weight:400}
+.sd-cmp thead th{font-size:15px;color:rgba(53,53,53,.7);border-bottom-color:rgba(0,0,0,.14)}
+.sd-cmp tbody th{color:#353535;width:40%}
+.sd-cmp td{width:20%}
+.sd-cmp .sd-us{background:#edede8}
+.sd-cmp thead .sd-us{color:#1d1d1f;font-weight:500;border-radius:12px 12px 0 0}
+.sd-cmp tbody tr:last-child .sd-us{border-radius:0 0 12px 12px}
+.sd-cmp tbody tr:last-child th,.sd-cmp tbody tr:last-child td{border-bottom:0}
+.sd-cy,.sd-cp,.sd-cn{display:inline-flex;align-items:center;gap:8px;font-size:15px}
+.sd-cy{color:#1d1d1f}.sd-cp{color:rgba(53,53,53,.75)}.sd-cn{color:rgba(53,53,53,.45)}
+.sd-cy::before,.sd-cp::before,.sd-cn::before{content:"";flex:none;width:8px;height:8px;border-radius:50%}
+.sd-cy::before{background:#34c759}.sd-cp::before{background:#e8a33d}.sd-cn::before{background:rgba(0,0,0,.16)}
+.sd-vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+/* Every app, as the app's own tile. */
+.sd-wall{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:10px;width:100%;max-width:760px;margin:0;padding:0;list-style:none}
+.sd-wall li{aspect-ratio:1;display:grid;place-items:center;border-radius:16px;background:#fff;box-shadow:0 0 0 .5px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04)}
+.sd-wall img{width:42%;height:42%;object-fit:contain;border-radius:22%}
+.sd-wall-more{margin:-16px 0 0;font-size:15px;line-height:1.55;color:rgba(53,53,53,.7);max-width:820px}
+@media (max-width:1137.98px){
+  .sd-sec{padding:72px 0}
+  .sd-roster-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .sd-use{padding:16px}
+}
+@media (max-width:809.98px){
+  .sd-sec{padding:60px 0}
+  .sd-wrap{width:calc(100% - 36px);gap:28px}
+  .sd-head h2{font-size:27px}
+  .sd-head p{font-size:19px}
+  .sd-lede{font-size:17px;margin-top:-4px}
+  .sd-roster-grid,.sd-uses,.sd-steps{grid-template-columns:minmax(0,1fr)}
+  .sd-steps{gap:36px}
+  .sd-tabs{margin-bottom:0}
+  .sd-wall{grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
+  .sd-wall li{border-radius:12px}
+  .sd-wall-more{margin-top:-8px}
+  /* On a phone each row's question sits over its three answers, so Simeon's column is never off screen. */
+  .sd-cmp{min-width:0;display:block}
+  .sd-cmp thead,.sd-cmp tbody{display:block}
+  .sd-cmp tr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+  .sd-cmp thead th:first-child{display:none}
+  .sd-cmp th,.sd-cmp td{width:auto!important;padding:10px 12px}
+  .sd-cmp tbody th{grid-column:1/-1;padding:16px 0 4px;border-bottom:0;background:none}
+  .sd-cmp thead th{font-size:13px}
+  .sd-cmp thead .sd-us{border-radius:10px 10px 0 0}
+  .sd-cmp tbody tr:last-child .sd-us{border-radius:0 0 10px 10px}
+  .sd-cy,.sd-cp,.sd-cn{font-size:14px}
+}
 /* The sticky nav stays above the demo: the box is its own stacking context. */
 section[data-framer-name="Hero"] .framer-115oxcp{isolation:isolate}
 .framer-hwOqx .framer-1kaho43-container{z-index:20!important}
@@ -837,6 +1123,27 @@ TALK_JS = """<script>
 })();
 </script>"""
 
+USES_JS = """<script>
+(() => {
+  const tabs = [...document.querySelectorAll('.sd-tabs [role="tab"]')];
+  const pick = (t) => {
+    for (const x of tabs) {
+      const on = x === t;
+      x.classList.toggle('sd-on', on); x.setAttribute('aria-selected', String(on)); x.tabIndex = on ? 0 : -1;
+      document.getElementById(x.getAttribute('aria-controls')).hidden = !on;
+    }
+  };
+  tabs.forEach((t, i) => {
+    t.tabIndex = i === 0 ? 0 : -1;
+    t.addEventListener('click', () => pick(t));
+    t.addEventListener('keydown', (e) => {
+      const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+      if (d) { e.preventDefault(); const n = tabs[(i + d + tabs.length) % tabs.length]; pick(n); n.focus(); }
+    });
+  });
+})();
+</script>"""
+
 BILL_JS = """<script>
 (() => {
   const sw = document.querySelector('.sd-bill'), sec = document.querySelector('section[data-framer-name="Pricing"]');
@@ -909,7 +1216,7 @@ async def main():
         pg = await b.new_page()
         await pg.route("**/*", lambda r: r.abort() if r.request.url.startswith("http") else r.continue_())
         await pg.goto("file://" + f"{TMP}/stripped.html")
-        r = await pg.evaluate(SURGERY, [TICKER, ORBIT_HTML, TALK_HTML, VM_HTML, APPROVE_HTML, MOBILE_HTML])
+        r = await pg.evaluate(SURGERY, [TICKER, ORBIT_HTML, TALK_HTML, VM_HTML, APPROVE_HTML, MOBILE_HTML, EXTRA])
         await b.close()
     print("appear states finished:", r["shown"])
     head = re.sub(r"<meta[^>]*charset[^>]*>|<meta[^>]*viewport[^>]*>|<title>.*?</title>", "", r["head"], flags=re.S | re.I)
@@ -920,7 +1227,7 @@ async def main():
     # The site is light only (the founder, 28 September 2026: the dark mode "doesnt match"):
     # Framer's dark-scheme token block goes, and the page says it is light.
     head = strip_dark(head)
-    desc = "Your personal team of AI agents. They work in your apps on a computer of their own, pass work between each other, and ask before anything important."
+    desc = "Simeon is your AI operations team: AI agents that run the busywork of your business inside the tools you already use, on computers of their own, and ask before anything important."
     head = ('<meta name="description" content="' + desc + '">\n'
             '<meta property="og:type" content="website">\n<meta property="og:url" content="https://simeonlabs.com/">\n'
             '<meta property="og:title" content="Simeon">\n<meta property="og:description" content="' + desc + '">\n'
@@ -937,8 +1244,8 @@ async def main():
             "<script>if (matchMedia('(min-width:600px)').matches) for (const [rel, as, href] of [['modulepreload', '', 'app/" + js + "'], ['preload', 'style', 'app/" + css + "']]) "
             "{ const l = document.createElement('link'); l.rel = rel; if (as) l.as = as; l.crossOrigin = ''; l.href = href; document.head.appendChild(l); }</script>\n" + head)
     page = ('<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n'
-            '<title>Simeon</title>\n' + head +
-            "<style>" + CSS.replace("%TOKENS%", r["tokens"]) + "</style>\n</head>\n<body>\n" + r["body"] + FIT + HERO_JS + VIEW_JS + ORBIT_JS + SCENES_JS + TALK_JS + BILL_JS + FAQ_JS + "\n</body>\n</html>\n")
+            '<title>Simeon: your AI operations team</title>\n' + head +
+            "<style>" + CSS.replace("%TOKENS%", r["tokens"]) + "</style>\n</head>\n<body>\n" + r["body"] + FIT + HERO_JS + VIEW_JS + ORBIT_JS + SCENES_JS + TALK_JS + USES_JS + BILL_JS + FAQ_JS + "\n</body>\n</html>\n")
     assert "prefers-color-scheme:dark" not in page.replace(" ", ""), "dark mode left in the page"
     for bad in ("framerusercontent.com/assets", "framerusercontent.com/third", "fonts.gstatic", "chrome-extension", "Simeon le site_files"):
         assert bad not in page, bad

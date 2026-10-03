@@ -53,6 +53,31 @@ glass tile, Iris, Otto and Nova talking, Otto's computer asking you to sign
 in, Iris asking before she sends an email. Pricing is Standard $20, Pro $60
 and Max $100 a month, 20% less yearly, 7-day trial on each.
 
+**What the page says (3 October 2026).** Simeon is sold as an AI operations team for founders and
+small businesses, and the page is laid out like the pages of products in that space while keeping
+its own paintings, glass and type. Each section's content lives in `build.py`:
+
+- **Hero.** "Your AI operations team", one line on what it is, and four true facts under the
+  button: the 7-day free trial, 66 apps, the agents' own cloud computers, and approvals before
+  acting.
+- **Meet your operations team** (`ROSTER`): six glass cards on a painting. Chief of Staff, Inbox,
+  Money, Growth, Content and Sales, with the apps each works in. It is labelled as a typical team:
+  the agents are made by asking Simeon, there are no ready-made bundles yet.
+- **The four features**, retitled: works inside your tools, works together, has its own computer
+  (in the cloud, not on the Mac), you stay in control.
+- **How it works** (`STEPS`): pick your team, connect your tools, ask and let it run.
+- **What you can hand off** (`USES`): four tabs (Founders & CEOs, Money & ops, Growth &
+  marketing, Sales & customers), three asks each with the reply an agent gives.
+- **Not a chatbot. Not a workflow builder.** (`COMPARE`): Simeon next to kinds of product, never a
+  named rival; on a phone each question sits over its three answers.
+- **66 apps** (`WALL_HTML`): read from the connector catalogue
+  (`desktop/source/shared/node/vendor-mcp/catalog.ts`), so the count follows the app. Logos come
+  from `desktop/brand/app-logos`, or else from `source/app-favicons/` (the site icons the app
+  shows for those apps, saved once). Google's three share one generic icon and are named instead.
+- **Pricing** (unchanged prices) and **ten questions**, answered with what is true today.
+
+There are no customer logos, quotes or user counts on the page: Simeon has none to show yet.
+
 **`public/app/` is the app's window: the upstream 0.18.0 renderer with Simeon's patches (see `desktop/NOTICE.md`).** The
 founder chose on 28 September 2026 to publish it with the site, knowing the
 repository otherwise keeps that code out of git (`desktop/.gitignore`,
