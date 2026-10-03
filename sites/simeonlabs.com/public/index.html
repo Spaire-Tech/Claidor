@@ -359,45 +359,45 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .sp-cap{z-index:6;color:var(--ink)}
 .sp{position:absolute;inset:0;z-index:2}
 /* Simeon's computer: the task list beside a live desktop, a placeholder window on it. */
-.mb{position:absolute;left:11%;right:11%;top:25%;bottom:-2cqw;border:1.1cqw solid #111;border-bottom:0;border-radius:2.4cqw 2.4cqw 0 0;background:#111;box-shadow:0 0 0 .3cqw #a3a3a8,0 0 0 .48cqw #dcdce0,0 2.6cqw 6cqw rgba(0,0,0,.18)}
-.mb::before{content:"";position:absolute;z-index:5;left:50%;top:-.05cqw;transform:translateX(-50%);width:9cqw;height:1.25cqw;border-radius:0 0 .7cqw .7cqw;background:#111}
-.pc{position:absolute;inset:0;display:flex;border-radius:1.3cqw 1.3cqw 0 0;overflow:hidden;background:#fff;color:#1d1d1f}
-.pc-side{flex:none;width:24%;padding:2cqw 1.2cqw;border-right:1px solid #e6e4df;font-size:1cqw}
-.pc-side>img{display:block;width:2cqw;height:auto;margin:0 0 1.4cqw .4cqw}
-.pc-side h6{margin:1.1cqw .4cqw .4cqw;font-size:.9cqw;font-weight:400;color:#9a978f}
-.pc-side ul{margin:0;padding:0;list-style:none}
-.pc-side li{display:flex;align-items:center;gap:.7cqw;padding:.6cqw .5cqw;border-radius:.6cqw;white-space:nowrap;overflow:hidden;color:#3a3a3c;-webkit-mask-image:linear-gradient(90deg,#000 82%,transparent);mask-image:linear-gradient(90deg,#000 82%,transparent)}
-.pc-side li.on{background:#ebe9e4}
-.pc-side li i{flex:none;width:.5cqw;height:.5cqw;border-radius:50%;background:#c9c6be}
-.pc-side li.on i{width:.8cqw;height:.8cqw;background:none;border:.15cqw solid #9a978f;border-right-color:transparent;animation:pc-spin 1s linear infinite}
-.pc-main{flex:1;display:flex;flex-direction:column;padding:1.6cqw 1.2cqw 3.2cqw;min-width:0}
-.pc-tabs{display:flex;gap:.4cqw;font-size:.95cqw;color:#9a978f;margin-bottom:.9cqw}
-.pc-tabs span{padding:.35cqw .8cqw;border-radius:99px}
-.pc-tabs span.on{background:#ebe9e4;color:#1d1d1f}
-.pc-desk{position:relative;flex:1;border-radius:1cqw;overflow:hidden;background:#6f8a58 url(img/wall-hills.jpg) center/cover}
-.pc-take{position:absolute;right:1.2cqw;top:1.1cqw;display:inline-flex;align-items:center;gap:.5cqw;padding:.5cqw 1.1cqw;border-radius:99px;background:rgba(20,22,26,.72);color:#fff;font-size:.95cqw;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+/* Simeon's computer, as onboarding draws it: a rounded Mac desktop, two Mac windows, the cursor at work between them. */
+.mac{position:absolute;left:12%;right:12%;top:25%;bottom:9%;border-radius:1.8cqw;overflow:hidden;background:#6f8a58 url(img/wall-hills.jpg) center/cover;box-shadow:0 0 0 1px rgba(0,0,0,.08),0 2.4cqw 6cqw rgba(0,0,0,.18)}
+.mw{position:absolute;border-radius:.9cqw;overflow:hidden;background:#fff;box-shadow:0 1.2cqw 3cqw rgba(0,0,0,.22),0 0 0 1px rgba(0,0,0,.06);display:flex;flex-direction:column}
+.mw.a{left:6%;top:12%;width:50%;height:58%}
+.mw.b{left:30%;top:28%;width:52%;height:62%}
+.mw-bar{flex:none;height:3.2cqw;display:flex;align-items:center;gap:.55cqw;padding:0 1.1cqw;background:#e5e5e7}
+.mw-bar i{width:.85cqw;height:.85cqw;border-radius:50%;background:#ff5f57}.mw-bar i+i{background:#febc2e}.mw-bar i+i+i{background:#28c840}
+.mw-body{flex:1;display:flex;min-height:0}
+.mw-side{flex:none;width:30%;background:#f4f4f6;padding:1cqw}
+.mw-side b{display:block;height:4.6cqw;border-radius:.7cqw;background:#fff}
+.mw-side b img{display:block;width:60%;margin:0 auto;padding-top:.7cqw}
+.mw-main{flex:1;padding:1.6cqw 1.6cqw 1.2cqw}
+.mw-row{display:flex;align-items:center;gap:.9cqw;margin-bottom:1.1cqw}
+.mw-row i{flex:none;width:1.5cqw;height:1.5cqw;border-radius:.35cqw;background:#e9e9eb}
+.mw-row span{display:block;height:.5cqw;border-radius:99px;background:#e9e9eb}
+.mw-row span+span{margin-top:.55cqw}
+.mw-btn{height:4cqw;border-radius:.6cqw;background:#e3e3e5;margin-top:1.8cqw}
+.mw-tabs{display:flex;gap:.7cqw;padding:.9cqw 1cqw 0}
+.mw-tabs i{flex:1;height:1.6cqw;border-radius:.4cqw;background:#ececee}
+.pc-take{position:absolute;z-index:4;right:1.2cqw;top:1.1cqw;display:inline-flex;align-items:center;gap:.5cqw;padding:.5cqw 1.1cqw;border-radius:99px;background:rgba(20,22,26,.72);color:#fff;font-size:.95cqw;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 .pc-take svg{width:1cqw;height:1cqw}
-.pc-app{position:absolute;left:30%;right:9%;top:22%;bottom:20%;border-radius:.7cqw;background:#f7f6f3;box-shadow:0 1.2cqw 3cqw rgba(0,0,0,.28);padding:.8cqw 1.2cqw}
-.pc-dots{display:flex;gap:.35cqw;margin-bottom:1cqw}
-.pc-dots i{width:.55cqw;height:.55cqw;border-radius:50%;background:#d5d2cb}
-.pc-ln{height:.45cqw;border-radius:99px;background:#dddad3;margin-bottom:.45cqw}
-.pc-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:.9cqw;margin-top:2.4cqw}
-.pc-cards span{height:6.6cqw;border-radius:.6cqw;border:.12cqw solid #e2dfd8;background:#f1efea;padding:1cqw}
-.pc-cards b{display:block;width:1.8cqw;height:1.8cqw;border-radius:50%;background:#dcd9d2;margin-bottom:1.1cqw}
-.pc-dock{position:absolute;left:50%;bottom:1.1cqw;transform:translateX(-50%);display:flex;gap:.6cqw;padding:.5cqw;border-radius:1.1cqw;background:rgba(30,32,28,.45);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
-.pc-dock span{display:grid;place-items:center;width:2.6cqw;height:2.6cqw;border-radius:.7cqw;background:rgba(255,255,255,.14);color:#fff}
-.pc-dock span.on{background:rgba(255,255,255,.3)}
-.pc-dock svg{width:1.3cqw;height:1.3cqw}
-.pc-who{position:absolute;z-index:3;left:12%;top:52%;white-space:nowrap;animation:pc-move 7s cubic-bezier(.45,0,.2,1) infinite}
-.pc-who span{display:inline-flex;align-items:center;gap:.4cqw;padding:.3cqw .8cqw .3cqw .4cqw;border-radius:99px;background:rgba(20,22,26,.78);color:#fff;font-size:.9cqw}
-.pc-who img{width:1.5cqw;height:auto;max-width:none}
-@keyframes pc-move{0%,15%{left:12%;top:52%}45%,60%{left:58%;top:70%}85%,100%{left:12%;top:52%}}
+.pc-who{position:absolute;z-index:5;left:7%;top:12%;width:0;height:0;animation:pc-move 8s cubic-bezier(.45,0,.2,1) infinite}
+.pc-who svg{position:absolute;left:0;top:0;width:1.7cqw;filter:drop-shadow(0 .2cqw .3cqw rgba(0,0,0,.3))}
+.pc-who img{position:absolute;left:.9cqw;top:1.1cqw;width:3.6cqw;max-width:none;filter:drop-shadow(0 .4cqw .7cqw rgba(0,0,0,.25));animation:pc-bob 1.8s ease-in-out infinite}
+.pc-click{position:absolute;left:-1.3cqw;top:-1.3cqw;width:2.6cqw;height:2.6cqw;border-radius:50%;border:.2cqw solid rgba(37,90,147,.75);opacity:0;animation:pc-ring 8s ease-out infinite}
+@keyframes pc-move{0%,12%{left:7%;top:12%}40%,58%{left:60%;top:51%}86%,100%{left:7%;top:12%}}
+@keyframes pc-ring{0%,41%{opacity:0;transform:scale(.4)}44%{opacity:1}50%,100%{opacity:0;transform:scale(1.6)}}
+@keyframes pc-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-.25cqw)}}
 @keyframes pc-spin{to{transform:rotate(360deg)}}
 @container slide (max-width:700px){
-  .mb{left:5%;right:5%;top:33%;border-width:2cqw;border-radius:5cqw 5cqw 0 0;box-shadow:0 0 0 .5cqw #a3a3a8,0 0 0 .8cqw #dcdce0}.mb::before{width:18cqw;height:2.4cqw;border-radius:0 0 1.4cqw 1.4cqw}
-  .pc{border-radius:3cqw 3cqw 0 0}
-  .pc-side{display:none}
-  .pc-main{padding:3.6cqw 2.4cqw 6cqw}
+  .mac{left:5%;right:5%;top:33%;bottom:6%;border-radius:4cqw}
+  .mw.a{display:none}.mw.b{left:8%;top:14%;width:84%;height:70%;border-radius:2cqw}
+  .mw-bar{height:7cqw;gap:1.2cqw;padding:0 2.4cqw}.mw-bar i{width:1.9cqw;height:1.9cqw}
+  .mw-side{padding:2.2cqw}.mw-side b{height:10cqw;border-radius:1.5cqw}.mw-main{padding:3.4cqw}
+  .mw-row{gap:2cqw;margin-bottom:2.4cqw}.mw-row i{width:3.4cqw;height:3.4cqw;border-radius:.8cqw}.mw-row span{height:1.1cqw}.mw-row span+span{margin-top:1.2cqw}
+  .mw-btn{height:9cqw;border-radius:1.4cqw;margin-top:4cqw}
+  .pc-take{font-size:2.4cqw;padding:1.2cqw 2.4cqw;right:2.4cqw;top:2.4cqw;gap:1.2cqw}.pc-take svg{width:2.6cqw;height:2.6cqw}
+  .pc-who{left:20%;top:30%}.pc-who svg{width:3.6cqw}.pc-who img{width:7.6cqw;left:2cqw;top:2.4cqw}.pc-click{width:5.4cqw;height:5.4cqw;left:-2.7cqw;top:-2.7cqw}
+  @keyframes pc-move{0%,12%{left:20%;top:30%}40%,58%{left:58%;top:43%}86%,100%{left:20%;top:30%}}
   .pc-tabs{font-size:2.6cqw;gap:1cqw;margin-bottom:2cqw}.pc-tabs span{padding:.9cqw 2cqw}
   .pc-desk{border-radius:2.6cqw}
   .pc-take{font-size:2.4cqw;padding:1.2cqw 2.4cqw;right:2.4cqw;top:2.4cqw;gap:1.2cqw}.pc-take svg{width:2.6cqw;height:2.6cqw}
@@ -407,7 +407,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
   .pc-dock{bottom:2.4cqw;gap:1.4cqw;padding:1.2cqw;border-radius:2.4cqw}.pc-dock span{width:6.4cqw;height:6.4cqw;border-radius:1.6cqw}.pc-dock svg{width:3.2cqw;height:3.2cqw}
   .pc-who span{font-size:2.4cqw;padding:.8cqw 2cqw .8cqw 1cqw;gap:1cqw}.pc-who img{width:3.6cqw}
 }
-@media (prefers-reduced-motion:reduce){.pc-who,.pc-side li.on i{animation:none}}
+@media (prefers-reduced-motion:reduce){.pc-who,.pc-who img,.pc-click{animation:none}}
 
 /* The first card: messaging an agent like a teammate (the founder, 3 October 2026, with Apple's
    Messages card as the model): a phone cut off by the card's top edge, one exchange with Theo in
@@ -761,13 +761,12 @@ footer nav{display:flex;gap:18px}
       <article class="slide sp-slide" aria-label="A computer for every agent">
         <p class="cap top sp-cap">Every agent works on a computer of its own. Watch it work, or take over whenever you like.</p>
         <div class="sp" aria-hidden="true">
-          <div class="mb"><div class="pc">
-            <div class="pc-side"><img src="faces/agent-simeon.png" alt=""><h6>This week</h6><ul><li class="on"><i></i>Close the books for September</li><li><i></i>Follow up on unpaid invoices</li></ul><h6>This month</h6><ul><li><i></i>Compare payroll providers</li><li><i></i>Update the investor list</li><li><i></i>Plan the Q4 offsite</li><li><i></i>Renew the domain</li></ul></div>
-            <div class="pc-main">
-              <div class="pc-tabs"><span>Files</span><span class="on">Desktop</span><span>Terminal</span></div>
-              <div class="pc-desk"><span class="pc-take"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V6.5a1.5 1.5 0 0 1 3 0V12M11 11V5a1.5 1.5 0 0 1 3 0v6M14 11V6.5a1.5 1.5 0 0 1 3 0V14a6 6 0 0 1-6 6h-.5A5.5 5.5 0 0 1 6 17.4L4.2 14a1.5 1.5 0 0 1 2.6-1.5L8 14"/></svg>Take over</span><div class="pc-app"><div class="pc-dots"><i></i><i></i><i></i></div><div class="pc-ln" style="width:22%"></div><div class="pc-ln" style="width:14%"></div><div class="pc-who"><span><img src="faces/agent-simeon.png" alt="">Simeon</span></div><div class="pc-cards"><span><b></b><div class="pc-ln" style="width:70%"></div><div class="pc-ln" style="width:45%"></div></span><span><b></b><div class="pc-ln" style="width:70%"></div><div class="pc-ln" style="width:45%"></div></span><span><b></b><div class="pc-ln" style="width:70%"></div><div class="pc-ln" style="width:45%"></div></span></div></div><div class="pc-dock"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="m7 9 3 3-3 3M12 15h5"/></svg></span><span class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 3 2.5 15 0 18M12 3c-2.5 3-2.5 15 0 18"/></svg></span></div></div>
-            </div>
-          </div></div>
+          <div class="mac">
+            <div class="mw a"><div class="mw-bar"><i></i><i></i><i></i></div><div class="mw-body"><div class="mw-side"><b><img src="faces/agent-simeon.png" alt=""></b></div><div class="mw-main"><div class="mw-tabs"><i></i><i></i><i></i></div></div></div></div>
+            <div class="mw b"><div class="mw-bar"><i></i><i></i><i></i></div><div class="mw-body"><div class="mw-side"></div><div class="mw-main"><div class="mw-row"><i></i><div style="flex:1"><span style="width:78%"></span><span style="width:52%"></span></div></div><div class="mw-row"><i></i><div style="flex:1"><span style="width:70%"></span><span style="width:46%"></span></div></div><div class="mw-btn"></div></div></div></div>
+            <span class="pc-take"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V6.5a1.5 1.5 0 0 1 3 0V12M11 11V5a1.5 1.5 0 0 1 3 0v6M14 11V6.5a1.5 1.5 0 0 1 3 0V14a6 6 0 0 1-6 6h-.5A5.5 5.5 0 0 1 6 17.4L4.2 14a1.5 1.5 0 0 1 2.6-1.5L8 14"/></svg>Take over</span>
+            <div class="pc-who"><svg viewBox="0 0 20 20"><path d="M3 2l13 6.2-5.6 1.5L8 15.4z" fill="#111" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/></svg><img src="faces/agent-simeon.png" alt=""><i class="pc-click"></i></div>
+          </div>
         </div>
       </article>
 
