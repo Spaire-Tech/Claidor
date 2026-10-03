@@ -440,6 +440,11 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .bill3 button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.1)}
 .bill3 button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 .pricing3 .y{display:none}.pricing3.yearly .y{display:inline}.pricing3.yearly .m{display:none}
+.ptop{display:flex;flex-direction:column;align-items:center;text-align:center}
+.ptop h2{margin:0;font-family:"Newsreader",Georgia,"Times New Roman",serif;font-weight:400;font-size:clamp(40px,3.65vw,74px);line-height:1;letter-spacing:-.02em}
+.ptop p{margin:clamp(14px,1.2vw,22px) 0 0;max-width:34em;font-size:clamp(17px,1.05vw,20px);line-height:1.6;color:var(--ink2)}
+.ptop .bill3{margin-top:clamp(22px,1.8vw,34px)}
+.pricing3 .plans3{max-width:1180px;margin-left:auto;margin-right:auto}
 .qa3{margin-top:clamp(40px,4vw,80px);padding:clamp(12px,1.2vw,24px) clamp(28px,3vw,56px);border-radius:28px;background:#fafafb}
 .qa3 details{border-top:1px solid #ececef}
 .qa3 details:first-child{border-top:0}
@@ -784,10 +789,10 @@ footer nav{display:flex;gap:18px}
 
 <section class="trust pricing3" id="pricing" aria-label="Pricing">
   <div class="wrap">
-    <div class="trust-top">
+    <div class="ptop">
       <h2>Pricing</h2>
-      <div><p>Every agent, on every plan. The plans differ only in how much work your team can do each week.</p>
-      <div class="bill3" role="group" aria-label="Billing"><button type="button" class="on" data-bill="m">Monthly</button><button type="button" data-bill="y">Yearly, save 20%</button></div></div>
+      <p>Every agent, on every plan. The plans differ only in how much work your team can do each week.</p>
+      <div class="bill3" role="group" aria-label="Billing"><button type="button" class="on" data-bill="m">Monthly</button><button type="button" data-bill="y">Yearly, save 20%</button></div>
     </div>
     <div class="plans3"><div class="plan3"><h3>Standard</h3><div class="pr"><span class="m">$20</span><span class="y">$16</span><small>/ month</small></div><div class="per"><span class="m">Billed monthly. 7 days free.</span><span class="y">$192 billed yearly. 7 days free.</span></div><p class="use">For a light week of work.</p><span class="btn ghost">Try it free</span></div><div class="plan3"><h3>Pro</h3><div class="pr"><span class="m">$60</span><span class="y">$48</span><small>/ month</small></div><div class="per"><span class="m">Billed monthly. 7 days free.</span><span class="y">$576 billed yearly. 7 days free.</span></div><p class="use">Five times the weekly work of Standard.</p><span class="btn">Try it free</span></div><div class="plan3"><h3>Max</h3><div class="pr"><span class="m">$100</span><span class="y">$80</span><small>/ month</small></div><div class="per"><span class="m">Billed monthly. 7 days free.</span><span class="y">$960 billed yearly. 7 days free.</span></div><p class="use">Twenty times the weekly work of Standard.</p><span class="btn ghost">Try it free</span></div></div>
   </div>
