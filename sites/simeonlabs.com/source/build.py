@@ -153,8 +153,10 @@ FIT = """<script>
     const w = stage.clientWidth, h = stage.clientHeight;
     if (!w || !h) return;
     const phone = w < 560;
-    // Inset like Cursor's: the window floats on the painting with the picture showing all round.
-    const side = Math.round(w * (phone ? 0.03 : 0.04)), top = Math.round(h * (phone ? 0.03 : 0.05)), bottom = Math.round(h * (phone ? 0.03 : 0.05));
+    // The window's left and right edges are the page's column, the same edge as the logo and the
+    // headline (the founder, 3 October 2026: "the writing and the demo, aligned"). Room is left
+    // under it for the shadow only.
+    const side = phone ? Math.round(w * 0.03) : 0, top = phone ? Math.round(h * 0.03) : 0, bottom = Math.round(h * (phone ? 0.03 : 0.04));
     const fw = w - 2 * side, fh = h - top - bottom;
     // Zoom: the app is laid out 1150 px wide in the laptop scene (its card is wide and short), 880 on
     // other computers and tablets, 440 on a phone, then scaled to the window.

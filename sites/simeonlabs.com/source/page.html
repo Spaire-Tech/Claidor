@@ -54,18 +54,18 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 /* The bar, laid out like cursor.com's (the founder, 3 October 2026, with a screenshot): the name on
    the left, sign in and the download on the right. */
 .bar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.82);-webkit-backdrop-filter:saturate(1.8) blur(20px);backdrop-filter:saturate(1.8) blur(20px);padding-top:env(safe-area-inset-top,0px)}
-.bar .wrap{display:flex;justify-content:space-between;align-items:center;height:64px}
-.bar .wordmark{width:80px;color:var(--ink)}
-.bar .acts{display:flex;align-items:center;justify-content:flex-end;gap:16px;font-size:15px}
+.bar .wrap{display:flex;justify-content:space-between;align-items:center;height:56px}
+.bar .wordmark{width:86px;margin-left:calc(86px * -85 / 1024);color:var(--ink)} /* the image has 85/1024 of empty space on its left; the letters start on the column edge */
+.bar .acts{display:flex;align-items:center;justify-content:flex-end;gap:16px;font-size:14px}
 .bar .acts a{color:var(--ink);text-decoration:none}
-.bar .btn{height:34px;padding:0 15px;font-size:15px}
+.bar .btn{height:28px;padding:0 13px;font-size:14px}
 
 
 /* Hero, as cursor.com sets it: one sentence on the left edge, two buttons under it, nothing else. */
-.hero{padding:clamp(36px,4.5vw,72px) 0 0;color:#000}
-.hero h1{max-width:15em;font-size:clamp(26px,2.2vw,32px);line-height:1.2;font-weight:400;letter-spacing:-.022em}
-.hero .ctas{display:flex;gap:12px;flex-wrap:wrap;margin-top:clamp(24px,2.4vw,34px)}
-.hero .btn{height:48px;padding:0 24px;font-size:17px}
+.hero{padding:clamp(48px,7vw,104px) 0 0;color:#000}
+.hero h1{max-width:15em;font-size:clamp(24px,1.95vw,28px);line-height:1.2;font-weight:400;letter-spacing:-.022em}
+.hero .ctas{display:flex;gap:10px;flex-wrap:wrap;margin-top:clamp(18px,1.7vw,24px)}
+.hero .btn{height:42px;padding:0 22px;font-size:16px}
 .btn .apl{width:17px;height:17px;margin:-3px 8px 0 -2px;flex:none}
 
 /* Section headings and the section anatomy. */
@@ -343,8 +343,8 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 @container slide (max-width:700px){.allteam{top:60%;gap:6cqw 8cqw}.allteam .ico{width:20cqw}.allteam li{font-size:3.4cqw}}
 
 /* The app itself: the real window on white, as a Mac app is shown (the founder, 3 October 2026), on plain white. */
-.moment{padding-top:clamp(28px,3vw,44px)}
-.stagebox{position:relative;width:min(1440px,100%);margin:0 auto;aspect-ratio:1440/860;isolation:isolate}
+.moment{padding-top:clamp(36px,3.9vw,56px)}
+.stagebox{position:relative;width:var(--col);margin:0 auto;aspect-ratio:1440/860;isolation:isolate}
 .sd-stage{position:absolute;inset:0;z-index:5}
 .sd-frame{position:absolute;visibility:hidden;overflow:hidden;background:#fff;border:1px solid rgba(0,0,0,.1);box-shadow:0 2px 6px rgba(0,0,0,.04),0 40px 90px -30px rgba(20,30,60,.28)}
 .sd-frame.sd-ready{visibility:visible}
@@ -359,7 +359,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .sd-poster,.sd-poster img{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;object-position:0 0}
 .sd-window.sd-live.sd-settled .sd-poster{display:none}
 @media (max-width:809.98px){.stagebox{aspect-ratio:4/5}}
-@media (max-width:599.98px){.sd-stage{inset:0 var(--gutter)}.sd-stage .sd-mob{border-radius:20px;box-shadow:0 0 0 1px rgba(0,0,0,.08),0 30px 60px -30px rgba(20,30,60,.3)}}
+@media (max-width:599.98px){.sd-stage{inset:0}.sd-stage .sd-mob{border-radius:20px;box-shadow:0 0 0 1px rgba(0,0,0,.08),0 30px 60px -30px rgba(20,30,60,.3)}}
 %MOBILE_CSS%
 
 /* You stay in charge: one quiet grey box. */
