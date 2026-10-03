@@ -1,7 +1,7 @@
 /**
- * The app-window demo (`npm run demo`): a founder's morning with the team.
- * Simeon's conversation plays by itself; the rest is already written; nobody
- * types.
+ * The app-window demo (`npm run demo`): a founder's team. Simeon's
+ * conversation (Thursday's launch, as the website's phone still tells it)
+ * plays by itself; the rest is already written; nobody types.
  * Its scripted backend answers in the host's own shapes, so the pinned window
  * draws it, and the bridge bundles for the browser.
  */
@@ -28,13 +28,13 @@ async function loadModule(entry, name) {
 const RENDERED_TYPES = new Set(["text", "attachment", "widget", "cursor-agent", "secret-request", "email-draft", "slack-draft", "permission-request", "auto-review-approval", "local-tool-permission", "connector", "connectors", "listener-connect"]);
 const until = async (check, ms = 2000) => { const end = Date.now() + ms; while (!check()) { if (Date.now() > end) throw new Error("timed out"); await new Promise((r) => setTimeout(r, 5)); } };
 
-test("six agents and their group, every conversation a well-formed transcript window", async (t) => {
+test("eight agents and their group, every conversation a well-formed transcript window", async (t) => {
   const backendModule = await loadModule("demo/backend.ts", "demo-backend");
   const rpc = await loadModule("source/shared/rpc/coordinator.ts", "demo-rpc");
   t.after(async () => { await backendModule.dispose(); await rpc.dispose(); });
   const backend = backendModule.module.createDemoBackend({ pushCoordinatorEvent: () => {}, pushMainEvent: () => {} });
   const roster = (await backend.coordinator("listAgents", {})).value;
-  assert.deepEqual(roster.map((agent) => agent.name).sort(), ["Felix", "Iris", "Mila", "Nora", "Seed round", "Simeon", "Theo"]);
+  assert.deepEqual(roster.map((agent) => agent.name).sort(), ["Felix", "Iris", "Mila", "Nora", "Scout", "Seed round", "Simeon", "Theo", "Yodo"]);
   const group = roster.find((agent) => agent.isGroup);
   assert.equal(group.name, "Seed round");
   assert.deepEqual(group.memberIds, ["simeon", "theo", "nora"]);
@@ -57,7 +57,7 @@ test("six agents and their group, every conversation a well-formed transcript wi
   }
 });
 
-test("Simeon's board-meeting check plays through on its own, the pattern of the website's phone still", async (t) => {
+test("Simeon's conversation plays through on its own, the same thread the website's phone still shows", async (t) => {
   const { module, dispose } = await loadModule("demo/backend.ts", "demo-backend-story");
   t.after(dispose);
   const events = [];
@@ -68,15 +68,15 @@ test("Simeon's board-meeting check plays through on its own, the pattern of the 
   await until(() => appended().some((e) => e.id === "m2a"));
   const said = appended().map((e) => e.role === "user" ? `you: ${e.content}` : e.message?.type === "text" ? e.message.content : e.message?.type);
   assert.deepEqual(said, [
-    "you: Morning. Where are we on Thursday's board meeting?",
-    "Thursday is on track: September closed at $48,200 in **Stripe**, up 12%, and the board meets Thursday at 10.",
-    "Theo closed September's books and Nora finished the board deck. It's ready for you.",
+    "you: Morning. Where are we on Thursday's launch?",
+    "Thursday is on track: 12 of 15 launch tickets are done in **Linear**, and the review is Thursday at 2 pm.",
+    "Scout pulled three customer quotes and Yodo closed the last two tickets. The review doc is ready.",
     "attachment",
-    "you: Looks great. Send it to the board, and check in like this every Monday.",
-    "Done. The deck went out from **Gmail**.",
+    "you: Looks great. Send the agenda to Dana and Marcus, and check in like this every Monday.",
+    "Done. The agenda went out from **Gmail**.",
   ], "the whole story, once, in order, with no question to answer");
   const summaries = events.filter((e) => e.family === "outline" && e.payload.item.status === "completed").map((e) => e.payload.item.summary);
-  for (const line of ["Checked Stripe", "Messages from Theo", "Messages from Nora", "Created routine Monday check-in"]) assert.ok(summaries.includes(line), line);
+  for (const line of ["Checked Linear", "Messages from Scout", "Messages from Yodo", "Created routine Monday launch check"]) assert.ok(summaries.includes(line), line);
   const reacted = events.find((e) => e.family === "transcript" && e.payload.type === "updated" && e.payload.entry.id === "m2u");
   assert.deepEqual(reacted?.payload.entry.reactions, [{ emoji: "\u{1F44D}", by: "simeon" }], "Simeon gives your reply a thumbs up");
 });

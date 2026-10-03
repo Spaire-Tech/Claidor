@@ -35,6 +35,8 @@ const CONNECTED = [
   { id: "900004", name: "QuickBooks", identifier: "quickbooks", url: "https://api.simeonlabs.com/v1/desktop/apps/quickbooks/mcp" },
   { id: "900005", name: "Notion", identifier: "notion", url: "https://mcp.notion.com/mcp" },
   { id: "900006", name: "Intercom", identifier: "intercom", url: "https://mcp.intercom.com/mcp" },
+  { id: "900007", name: "Slack", identifier: "slack", url: "https://mcp.slack.com/mcp" },
+  { id: "900008", name: "Linear", identifier: "linear", url: "https://mcp.linear.app/mcp" },
 ] as const;
 const connectedServer = (s: (typeof CONNECTED)[number]) => ({
   id: s.id, name: s.name, serverIdentifier: s.identifier, accountKey: "default", rowServerIdentifier: s.identifier,

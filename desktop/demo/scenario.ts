@@ -78,10 +78,12 @@ const earlierCall = (prefix: string, minutesAgo: number, callId: string, seconds
 export const AGENTS: readonly DemoAgent[] = [
   { id: "simeon", name: "Simeon", title: "Chief of Staff", description: "Runs your day and hands work to the rest of the team.", color: "blue", minutesAgo: 0 },
   { id: "mila", name: "Mila", title: "Inbox and calendar", description: "Answers what she can and keeps your mornings free.", color: "violet", minutesAgo: 25 },
-  { id: "iris", name: "Iris", title: "Customer support", description: "Answers tickets from your help docs and flags the hard ones.", color: "cyan", minutesAgo: 70 },
+  { id: "yodo", name: "Yodo", title: "Launch manager", description: "Keeps the launch on track in Linear and Slack.", color: "red", minutesAgo: 95 },
+  { id: "iris", name: "Iris", title: "Customer support", description: "Answers tickets from your help docs and flags the hard ones.", color: "mint", minutesAgo: 70 },
   { id: "theo", name: "Theo", title: "Bookkeeping", description: "Keeps the books, the runway and the invoices straight.", color: "green", minutesAgo: 60 * 3 },
   { id: "felix", name: "Felix", title: "Hiring", description: "Finds candidates and books the interviews.", color: "orange", minutesAgo: 60 * 6 },
   { id: "nora", name: "Nora", title: "Investor relations", description: "Writes the monthly update and follows up with investors.", color: "magenta", minutesAgo: 60 * 26 },
+  { id: "scout", name: "Scout", title: "Customer research", description: "Reads what customers say and brings back what matters.", color: "cyan", minutesAgo: 60 * 26 },
 ];
 
 /** The group: getting ready to raise, with the two agents who know the numbers and the investors. */
@@ -120,6 +122,37 @@ export const TRANSCRIPTS: Record<string, Entry[]> = {
     ]),
     says("t1a", 60 * 3, "Both reminders went out from **Gmail**. I'll tell you when they pay."),
   ],
+  scout: [
+    you("s0u", 60 * 27, "What are customers saying about onboarding since the redesign?"),
+    says("s0a", 60 * 26 + 30, "I read the 14 interview notes in **Notion** and 212 **Intercom** conversations from the last 30 days. Three things stand out:\n\n1. **Setup takes too long.** 9 of 14 people stalled at the workspace step.\n2. **Templates work.** People who picked one were twice as likely to invite a teammate.\n3. **The words confuse.** \"Workspace\" and \"project\" get mixed up in 31 tickets."),
+    file("s0f", 60 * 26 + 29, "research/Onboarding research, September.pdf"),
+    says("s0b", 60 * 26 + 29, "The quotes behind each theme are on page 3."),
+    // A call on its own: the window draws it as one "Voice chat" line.
+    ...earlierCall("s1c", 60 * 20, "call-demo-scout", 109, [
+      ["you", "Hey Scout, what's the one thing customers complain about most?"],
+      ["agent", "Setup. Nine of fourteen people stalled at the workspace step."],
+      ["you", "Okay. Put that at the top of the review doc."],
+      ["agent", "Done, it's the first slide now."],
+    ]),
+  ],
+  yodo: [
+    you("y0u", 60 * 50, "Keep the launch on track. Post a standup in Slack every morning."),
+    says("y0a", 60 * 50 - 1, "I'll need **Linear** and **Slack** for that."),
+    card("y0c", 60 * 50 - 1, { type: "connectors", connectors: ["Linear", "Slack"] }),
+    says("y0b", 60 * 50 - 3, "Both connected. Every morning at 9:00 I'll post the launch board in #launch and flag anything stuck for more than a day."),
+    // A call during which Yodo asked Scout something: the teammate exchange and the call's lines
+    // sit side by side in the chat.
+    toTeammate("y2t", 60 * 3, { id: "scout", name: "Scout" }, "Bass asked for the latest NPS for the launch review. Can you send it?"),
+    fromTeammate("y2f", 60 * 3, { id: "scout", name: "Scout" }, "NPS is 41, up from 34 last month."),
+    ...earlierCall("y2c", 60 * 3, "call-demo-yodo", 92, [
+      ["you", "Yodo, can you get the latest NPS from Scout for the review?"],
+      ["agent", "Asking Scout now."],
+      ["agent", "It's 41, up from 34 last month."],
+      ["you", "Great, thanks."],
+    ]),
+    says("y1a", 95, "Today's standup is up in #launch:\n\n- **12 of 15** launch tickets done\n- 2 waiting on design review with Dana\n- **LIN-482**, the pricing page bug, is in code review"),
+    file("y1f", 95, "launch/Launch tracker.xlsx"),
+  ],
   felix: [
     you("f0u", 60 * 30, "We need a founding engineer. Find me five people worth talking to."),
     says("f0a", 60 * 29, "I went through 140 applicants and your LinkedIn network. Five stand out, and two of them have built payments products before. My notes on each are in the doc."),
@@ -145,13 +178,14 @@ export const GROUP_TRANSCRIPT: readonly { readonly author: string | null; readon
 ];
 
 /**
- * What plays when the page opens: what a chief of staff does, on the pattern
- * of the website's first phone still (the founder, 3 October 2026: "i liked
- * what we originally had in mobile … bring it to desktop. thats what a chief
- * is"). You ask where Thursday's board meeting stands; Simeon checks your
- * tools and answers, hears from Theo and Nora, hands you the deck, and when
- * you reply, sends it and makes the check-in a routine. Then the computer
- * (LinkedIn wants you to sign in) and a call. It plays through once.
+ * What plays when the page opens: the same conversation the website's phone
+ * still shows, word for word (the founder, 28 September 2026: "have the same
+ * text for simeon in the laptop", and again on 3 October: "i liked what we
+ * originally had in mobile … bring it to desktop. thats what a chief is").
+ * You ask where Thursday's launch stands, Simeon checks your tools and
+ * answers, hears from Scout and Yodo, hands you the review doc, and when you
+ * reply, sends the agenda and sets up a Monday routine. Then the computer and
+ * a call. Nobody chooses anything; it plays through once.
  */
 export type Beat =
   | { readonly at: number; readonly kind: "user"; readonly agent: string; readonly entry: Entry }
@@ -167,41 +201,44 @@ const step = (at: number, id: string, name: string, doing: string, done: string,
 
 export function openingScript(): Beat[] {
   return [
-    { at: 900, kind: "user", agent: "simeon", entry: you("m0u", 0, "Morning. Where are we on Thursday's board meeting?") },
+    { at: 900, kind: "user", agent: "simeon", entry: you("m0u", 0, "Morning. Where are we on Thursday's launch?") },
     { at: 1500, kind: "typing", agent: "simeon", on: true },
-    ...step(2100, "m1", "CallMcpTool", "Checking Stripe", "Checked Stripe", 1200, "Stripe"),
-    ...step(3400, "m2", "CallMcpTool", "Checking your calendar", "Checked your calendar", 1000, "Google Calendar"),
-    { at: 4600, kind: "append", agent: "simeon", entry: says("m0a", 0, "Thursday is on track: September closed at $48,200 in **Stripe**, up 12%, and the board meets Thursday at 10.") },
-    ...step(5400, "m3", "SendToAgent", "Asking Theo for the September numbers", "Messages from Theo", 1500, undefined, "theo"),
-    ...step(7100, "m4", "SendToAgent", "Asking Nora for the board deck", "Messages from Nora", 1300, undefined, "nora"),
-    { at: 8600, kind: "append", agent: "simeon", entry: says("m1a", 0, "Theo closed September's books and Nora finished the board deck. It's ready for you.") },
-    { at: 8900, kind: "append", agent: "simeon", entry: file("m1f", 0, "board/Board deck, September.pptx") },
-    { at: 9000, kind: "typing", agent: "simeon", on: false },
-    { at: 11200, kind: "user", agent: "simeon", entry: you("m2u", 0, "Looks great. Send it to the board, and check in like this every Monday.") },
-    { at: 11900, kind: "react", agent: "simeon", entryId: "m2u", emoji: "\u{1F44D}", by: "simeon" },
-    { at: 12200, kind: "typing", agent: "simeon", on: true },
-    ...step(12600, "m5", "CallMcpTool", "Sending the deck from Gmail", "Sent the deck from Gmail", 1300, "Gmail"),
-    ...step(14100, "m6", "UpdateState", "Creating routine Monday check-in", "Created routine Monday check-in", 1000),
-    { at: 15400, kind: "append", agent: "simeon", entry: says("m2a", 0, "Done. The deck went out from **Gmail**.") },
-    { at: 15500, kind: "typing", agent: "simeon", on: false },
+    ...step(2100, "m1", "CallMcpTool", "Checking Linear", "Checked Linear", 1300, "Linear"),
+    ...step(3500, "m2", "CallMcpTool", "Reading #launch in Slack", "Read #launch in Slack", 1200, "Slack"),
+    ...step(4800, "m3", "CallMcpTool", "Checking your calendar", "Checked your calendar", 1000, "Google Calendar"),
+    { at: 6000, kind: "append", agent: "simeon", entry: says("m0a", 0, "Thursday is on track: 12 of 15 launch tickets are done in **Linear**, and the review is Thursday at 2 pm.") },
+    ...step(6800, "m4", "SendToAgent", "Asking Scout for customer quotes", "Messages from Scout", 1500, undefined, "scout"),
+    ...step(8500, "m5", "SendToAgent", "Asking Yodo about the last tickets", "Messages from Yodo", 1300, undefined, "yodo"),
+    { at: 10000, kind: "append", agent: "simeon", entry: says("m1a", 0, "Scout pulled three customer quotes and Yodo closed the last two tickets. The review doc is ready.") },
+    { at: 10300, kind: "append", agent: "simeon", entry: file("m1f", 0, "docs/Launch review.docx") },
+    { at: 10400, kind: "typing", agent: "simeon", on: false },
+    { at: 12600, kind: "user", agent: "simeon", entry: you("m2u", 0, "Looks great. Send the agenda to Dana and Marcus, and check in like this every Monday.") },
+    { at: 13300, kind: "react", agent: "simeon", entryId: "m2u", emoji: "\u{1F44D}", by: "simeon" },
+    { at: 13600, kind: "typing", agent: "simeon", on: true },
+    ...step(14000, "m6", "CallMcpTool", "Sending the agenda from Gmail", "Sent the agenda from Gmail", 1300, "Gmail"),
+    ...step(15500, "m7", "UpdateState", "Creating routine Monday launch check", "Created routine Monday launch check", 1000),
+    { at: 16800, kind: "append", agent: "simeon", entry: says("m2a", 0, "Done. The agenda went out from **Gmail**.") },
+    { at: 16900, kind: "typing", agent: "simeon", on: false },
     // The agent hands the computer to the person: a SendMessage carrying the box request (the window's take-over card).
-    { at: 18000, kind: "user", agent: "simeon", entry: you("m3u", 0, "Can you post Felix's job ad on our LinkedIn page?") },
-    { at: 18600, kind: "typing", agent: "simeon", on: true },
-    ...step(19000, "m7", "Computer", "Opening LinkedIn on the computer", "Opened LinkedIn on the computer", 1600),
-    { at: 21000, kind: "append", agent: "simeon", entry: card("m3h", 0, { type: "text", content: "LinkedIn wants you to sign in." }, { boxRequestId: "demo-take-over", boxInstruction: "LinkedIn is asking for your password and a code from your phone. Take over to sign in, then hand it back and I'll post the ad.", boxResolution: "waiting" }) },
-    { at: 21100, kind: "typing", agent: "simeon", on: false },
+    { at: 19000, kind: "user", agent: "simeon", entry: you("m3u", 0, "Can you post the launch note on our LinkedIn page too?") },
+    { at: 19600, kind: "typing", agent: "simeon", on: true },
+    ...step(20000, "m8", "Computer", "Opening LinkedIn on the computer", "Opened LinkedIn on the computer", 1600),
+    { at: 22000, kind: "append", agent: "simeon", entry: card("m3h", 0, { type: "text", content: "LinkedIn wants you to sign in." }, { boxRequestId: "demo-take-over", boxInstruction: "LinkedIn is asking for your password and a code from your phone. Take over to sign in, then hand it back and I'll post the note.", boxResolution: "waiting" }) },
+    { at: 22100, kind: "typing", agent: "simeon", on: false },
     // A call: its line sits where the call began, the work it asked for below it, then the written
     // follow-up, the way a text would read.
-    { at: 24000, kind: "append", agent: "simeon", entry: voiceCall("m4c", 0, "call-demo-simeon", 74, [
-      ["you", "Hey Simeon, can we move the board meeting to Friday morning?"],
-      ["agent", "Sure. Friday at ten works for everyone. I'll ask Nora to tell the board."],
-      ["you", "Perfect, thanks."],
+    { at: 25000, kind: "append", agent: "simeon", entry: voiceCall("m4c", 0, "call-demo-simeon", 94, [
+      ["you", "Hey Simeon, can we move the launch review to Friday morning?"],
+      ["agent", "Sure. Friday at ten works for Dana and Marcus. I'll ask Yodo to move it."],
+      ["you", "Perfect. And tell the team in Slack."],
+      ["agent", "Will do. I'll post it in #launch once Yodo confirms."],
+      ["you", "Thanks, bye."],
     ]) },
-    { at: 24300, kind: "typing", agent: "simeon", on: true },
-    ...step(24600, "m8", "SendToAgent", "Asking Nora to tell the board", "Messages from Nora", 1300, undefined, "nora"),
-    ...step(26100, "m9", "CallMcpTool", "Updating your calendar", "Updated your calendar", 900, "Google Calendar"),
-    { at: 27200, kind: "append", agent: "simeon", entry: says("m4a", 0, "As we said on the call: the board meeting is now Friday at 10, Nora told the board, and your calendar is updated.") },
-    { at: 27300, kind: "typing", agent: "simeon", on: false },
+    { at: 25300, kind: "typing", agent: "simeon", on: true },
+    ...step(25600, "m9", "SendToAgent", "Asking Yodo to move the review", "Messages to Yodo", 1200, undefined, "yodo"),
+    ...step(27000, "m10", "CallMcpTool", "Posting in #launch on Slack", "Posted in #launch on Slack", 1000, "Slack"),
+    { at: 28400, kind: "append", agent: "simeon", entry: says("m4a", 0, "As we said on the call: the review is now Friday at 10, Yodo moved it, and I posted it in #launch on **Slack**.") },
+    { at: 28500, kind: "typing", agent: "simeon", on: false },
   ];
 }
 
