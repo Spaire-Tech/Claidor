@@ -353,71 +353,73 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
    a restaurant's booking page open, the address bar floating above it, the toolbar as an ornament
    below with its grab bar, and Simeon's note to you on a panel to the right. Simeon's cloud is the
    cursor: it picks Thursday, clicks 7:30 and presses Reserve, on a loop. */
-.slide.vo-slide{background:#262a44 url(img/dusk-grain.jpg) center/cover}
-.vo-slide::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,8,6,.55) 0%,rgba(10,8,6,0) 32%,rgba(10,8,6,0) 78%,rgba(10,8,6,.35) 100%)}
 .vo-cap{text-shadow:0 1px 18px rgba(0,0,0,.35)}
-.vo-scene{position:absolute;inset:0}
 .glass{background:linear-gradient(160deg,rgba(255,255,255,.22),rgba(255,255,255,.08));-webkit-backdrop-filter:blur(28px) saturate(1.6);backdrop-filter:blur(28px) saturate(1.6);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 0 0 1px rgba(255,255,255,.16),0 2.2cqw 5cqw rgba(10,20,50,.25);color:#fff}
-.vo-btn{display:grid;place-items:center;width:3.4cqw;height:3.4cqw;border-radius:50%;background:rgba(255,255,255,.2);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);box-shadow:inset 0 1px 0 rgba(255,255,255,.28);color:#fff}
-.vo-btn svg{width:1.6cqw;height:1.6cqw}
-.vo-btn.on{background:#fff;color:#1d1d1f}.vo-btn.dim{color:rgba(255,255,255,.4)}
-.vo-btn.sm{width:2.4cqw;height:2.4cqw}.vo-btn.sm svg{width:1.1cqw;height:1.1cqw}
-.vo-addr{position:absolute;left:16%;top:25.5%;display:flex;align-items:center;gap:.9cqw;padding:.8cqw;border-radius:99px;background:rgba(255,255,255,.14);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);box-shadow:inset 0 1px 0 rgba(255,255,255,.25)}
-.vo-url{display:flex;align-items:center;gap:1cqw;width:24cqw;height:3.4cqw;padding:0 1.6cqw;border-radius:99px;background:rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.22);font-size:1.45cqw;color:#fff;letter-spacing:-.01em}
-.vo-mic svg{width:1.4cqw;height:1.4cqw;opacity:.7}
-.vo-win{position:absolute;left:16%;top:35%;width:50%;height:47%;display:flex;gap:1.2cqw;padding:1.2cqw;border-radius:3cqw}
-.vo-side{width:36%;padding:1cqw .6cqw}
-.vo-title{margin:0 0 1.4cqw;font-size:2cqw;font-weight:600;letter-spacing:-.01em}
-.vo-search{display:flex;align-items:center;gap:.8cqw;height:3cqw;padding:0 1.2cqw;border-radius:99px;background:rgba(255,255,255,.12);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);font-size:1.2cqw;color:rgba(255,255,255,.62)}
-.vo-search svg{width:1.3cqw;height:1.3cqw}
-.vo-tiles{display:grid;grid-template-columns:1fr 1fr;gap:.9cqw;margin-top:1.4cqw}
-.vo-tiles span{display:flex;flex-direction:column;gap:.3cqw;padding:1.1cqw;border-radius:1.4cqw;background:rgba(255,255,255,.1);font-size:1.05cqw;color:rgba(255,255,255,.78)}
-.vo-tiles b{font-size:1.9cqw;font-weight:600;color:#fff}
-.vo-page{flex:1;border-radius:2cqw;background:rgba(255,255,255,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),inset 0 0 0 1px rgba(255,255,255,.08);padding:1.6cqw 2.2cqw;color:#fff;overflow:hidden}
-.vo-ph{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 .6cqw;font-family:Georgia,"Times New Roman",serif;font-size:2.1cqw}
-.vo-ph span{font-family:var(--font);font-size:1.15cqw;color:rgba(255,255,255,.6)}
-.vo-grab{position:absolute;left:calc(16% + 25% - 3.5cqw);top:83.4%;width:7cqw;height:.55cqw;border-radius:99px;background:rgba(255,255,255,.55)}
-.vo-bar{position:absolute;left:calc(16% + 25%);top:86%;transform:translateX(-50%);display:flex;align-items:center;gap:1cqw;padding:.8cqw 1.2cqw .8cqw .9cqw;border-radius:99px;white-space:nowrap}
-.vo-bar img{width:3cqw;height:auto}
-.vo-name{font-size:1.35cqw;font-weight:500;margin-right:.4cqw}
-.vo-sep{width:1px;height:2.2cqw;background:rgba(255,255,255,.22)}
-.vo-tool{display:grid;place-items:center;width:3.2cqw;height:3.2cqw;border-radius:50%;color:#fff}
-.vo-tool svg{width:1.6cqw;height:1.6cqw}
-.vo-tool.on{background:#fff;color:#1d1d1f}
-.vo-note{position:absolute;left:69%;top:36%;width:20%;padding:1.2cqw 1.6cqw 1.8cqw;border-radius:2.4cqw;transform:perspective(60cqw) rotateY(-9deg);transform-origin:left center}
-.vo-note-top{display:flex;justify-content:space-between;margin-bottom:1.2cqw}
-.vo-note p{margin:0 0 1.2cqw;font-size:1.3cqw;line-height:1.4;font-weight:500}
-.vo-note ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:.7cqw}
-.vo-note li{position:relative;padding-left:1.7cqw;font-size:1.15cqw;color:rgba(255,255,255,.78)}
-.vo-note li::before{content:"";position:absolute;left:0;top:.3cqw;width:1cqw;height:1cqw;border-radius:50%;background:rgba(255,255,255,.9)}
-.vo-note li.now::before{background:none;border:.18cqw solid rgba(255,255,255,.9);border-right-color:transparent;width:.7cqw;height:.7cqw;animation:mc-spin 1s linear infinite}
-.vo-page{position:relative}
-.vo-lbl{margin:1cqw 0 .6cqw;font-size:1cqw;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:rgba(255,255,255,.55)}
-.vo-days,.vo-times{display:flex;flex-wrap:wrap;gap:.7cqw}
-.vo-days span,.vo-times span{padding:.55cqw 1.1cqw;border-radius:99px;background:rgba(255,255,255,.14);font-size:1.2cqw;color:#fff}
-.vo-day-thu{background:#fff!important;color:#1d1d1f!important}
-.vo-times .off{color:rgba(255,255,255,.35);text-decoration:line-through}
-.vo-pick{animation:vo-pick 9s ease-in-out infinite}
-.vo-reserve{display:inline-grid;place-items:center;margin-top:1.3cqw;height:3cqw;padding:0 3cqw;border-radius:99px;background:#fff;color:#1d1d1f;font-size:1.25cqw;animation:vo-press 9s ease-in-out infinite}
-.vo-agent{--thu-x:39%;--day-y:36.5%;--t730-x:52%;--time-y:59.3%;--res-x:27.3%;--res-y:89.4%;position:absolute;left:0;top:0;width:0;height:0;z-index:3;animation:vo-move 9s cubic-bezier(.45,0,.2,1) infinite}
-.vo-arrow{position:absolute;left:-.3cqw;top:-.2cqw;width:1.9cqw;filter:drop-shadow(0 .2cqw .3cqw rgba(0,0,0,.25))}
-.vo-agent img{position:absolute;left:.7cqw;top:1.1cqw;width:5cqw;max-width:none;filter:drop-shadow(0 .5cqw .8cqw rgba(0,0,0,.18));animation:vo-bob 1.8s ease-in-out infinite}
-.vo-ring{position:absolute;left:-1.4cqw;top:-1.4cqw;width:2.8cqw;height:2.8cqw;border-radius:50%;border:.22cqw solid rgba(37,90,147,.75);opacity:0;animation:vo-ring 9s ease-out infinite}
-@keyframes vo-move{0%{left:78%;top:12%}12%,20%{left:var(--thu-x);top:var(--day-y)}38%,48%{left:var(--t730-x);top:var(--time-y)}64%,74%{left:var(--res-x);top:var(--res-y)}92%,100%{left:78%;top:12%}}
-@keyframes vo-ring{0%,15%{opacity:0;transform:scale(.4)}17%{opacity:1}22%{opacity:0;transform:scale(1.5)}23%,41%{opacity:0;transform:scale(.4)}43%{opacity:1}48%{opacity:0;transform:scale(1.5)}49%,67%{opacity:0;transform:scale(.4)}69%{opacity:1}74%,100%{opacity:0;transform:scale(1.5)}}
-@keyframes vo-pick{0%,42%{background:rgba(255,255,255,.14);color:#fff}44%,92%{background:var(--app-blue);color:#fff}96%,100%{background:rgba(255,255,255,.14);color:#fff}}
-@keyframes vo-press{0%,68%,74%,100%{transform:scale(1);background:#fff}70%,72%{transform:scale(.95);background:#d8d8dc}}
-@keyframes vo-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-.25cqw)}}
-@keyframes mc-spin{to{transform:rotate(360deg)}}
+.slide.sp-slide{background:#cbb9a5 url(img/room-vision.jpg) center/cover}
+.sp-slide::before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(rgba(40,28,18,.42),rgba(40,28,18,0) 30%);pointer-events:none;transition:opacity .9s}
+.sp-cap{z-index:6;text-shadow:0 1px 18px rgba(0,0,0,.3);color:#fff}
+.sp{position:absolute;inset:0;z-index:2}
+/* visionOS glass: windows float in the room. */
+.sp-glass{background:linear-gradient(160deg,rgba(255,255,255,.26),rgba(255,255,255,.1));-webkit-backdrop-filter:blur(26px) saturate(1.5);backdrop-filter:blur(26px) saturate(1.5);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 0 0 1px rgba(255,255,255,.14),0 2cqw 5cqw rgba(40,24,10,.22)}
+.sp-side{position:absolute;top:31%;bottom:22%;width:17%;border-radius:2.4cqw;overflow:hidden;opacity:.85;transition:opacity .9s,transform .9s}
+.sp-side.l{left:2.5%}.sp-side.r{right:2.5%}
+.sp-side i{position:absolute;inset:9% 10%;border-radius:1.4cqw;background:center/cover;filter:blur(.5cqw) saturate(.8);opacity:.75}
+.sp-tabs{position:absolute;left:50%;top:22%;transform:translateX(-50%);display:flex;gap:.4cqw;padding:.45cqw;border-radius:99px;font-size:1.15cqw;font-weight:500;transition:opacity .6s}
+.sp-tabs span{padding:.55cqw 1.5cqw;border-radius:99px;color:rgba(255,255,255,.7)}
+.sp-tabs span.on{background:rgba(255,255,255,.28);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.4)}
+.sp-win{position:absolute;left:22%;right:22%;top:30%;bottom:17%;border-radius:2.8cqw;overflow:hidden;background:#3a2a1e;box-shadow:inset 0 0 0 1px rgba(255,255,255,.22),0 2.4cqw 6cqw rgba(40,24,10,.32);transition:left .9s cubic-bezier(.4,0,.2,1),right .9s cubic-bezier(.4,0,.2,1),top .9s cubic-bezier(.4,0,.2,1),bottom .9s cubic-bezier(.4,0,.2,1),border-radius .9s}
+.sp-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scale(1.02);transition:transform 6s ease-out}
+.sp-win::after{content:"";position:absolute;inset:0;background:linear-gradient(rgba(0,0,0,.28),rgba(0,0,0,0) 28%,rgba(0,0,0,0) 48%,rgba(0,0,0,.62));transition:background .9s}
+.sp-head{position:absolute;z-index:2;left:2cqw;top:1.7cqw;display:flex;align-items:center;gap:.8cqw;font-size:1.2cqw;font-weight:600;color:#fff;transition:opacity .5s}
+.sp-head img{width:2.6cqw;height:auto;filter:drop-shadow(0 .2cqw .4cqw rgba(0,0,0,.3))}
+.sp-icons{position:absolute;z-index:2;right:1.8cqw;top:1.5cqw;display:flex;gap:1.3cqw;color:#fff;transition:opacity .5s}
+.sp-icons svg{width:1.6cqw;height:1.6cqw}
+.sp-text{position:absolute;z-index:2;left:2cqw;bottom:1.9cqw;width:52%;color:#fff;transition:opacity .5s}
+.sp-text p{margin:0;font-size:1.25cqw;line-height:1.38;font-weight:500}
+.sp-text small{display:block;margin-top:.6cqw;font-size:.85cqw;font-weight:600;letter-spacing:.08em;color:#7fb6f0}
+.sp-status{position:absolute;z-index:2;right:1.8cqw;bottom:1.9cqw;display:inline-flex;align-items:center;gap:.7cqw;padding:.6cqw 1.2cqw;border-radius:99px;font-size:1.1cqw;color:#fff;transition:opacity .5s}
+.sp-status i{width:1cqw;height:1cqw;border-radius:50%;border:.18cqw solid #fff;border-right-color:transparent;animation:sp-spin 1s linear infinite}
+/* Immersive: the window opens to fill the room. */
+.sp-ctl{position:absolute;z-index:3;left:50%;top:22%;transform:translateX(-50%);display:flex;align-items:center;gap:.7cqw;opacity:0;transition:opacity .6s}
+.sp-ctl span{display:inline-flex;align-items:center;gap:.6cqw;height:2.8cqw;padding:0 1.2cqw;border-radius:99px;font-size:1.1cqw;font-weight:500;color:#fff}
+.sp-ctl span.c{width:2.8cqw;padding:0;justify-content:center}
+.sp-ctl img{width:1.8cqw;height:auto}
+.sp-ctl svg{width:1.3cqw;height:1.3cqw}
+.sp-big{position:absolute;z-index:3;left:50%;bottom:16%;width:46%;transform:translateX(-50%);text-align:center;color:#fff;opacity:0;transition:opacity .6s}
+.sp-big p{margin:0;font-family:"Newsreader",Georgia,"Times New Roman",serif;font-size:2.3cqw;line-height:1.22;text-shadow:0 .2cqw 1.6cqw rgba(0,0,0,.35)}
+.sp-big small{display:block;margin-top:1cqw;font-size:.95cqw;font-weight:600;letter-spacing:.1em;color:#8fc2f5}
+.sp-big span{display:inline-block;margin-top:1.4cqw;padding:.6cqw 1.4cqw;border-radius:99px;font-size:1.05cqw;font-weight:500}
+.sp.imm .sp-win{left:0;right:0;top:0;bottom:0;border-radius:0}
+.sp.imm .sp-img{transform:scale(1.1)}
+.sp.imm .sp-win::after{background:linear-gradient(rgba(0,0,0,.38),rgba(0,0,0,.08) 35%,rgba(0,0,0,.5))}
+.sp.imm .sp-side{opacity:0;transform:scale(.94)}
+.sp.imm .sp-tabs,.sp.imm .sp-head,.sp.imm .sp-icons,.sp.imm .sp-text,.sp.imm .sp-status{opacity:0}
+.sp.imm .sp-ctl,.sp.imm .sp-big{opacity:1;transition-delay:.5s}
+.sp-slide:has(.sp.imm)::before{opacity:0}
+/* Pause, with the time to the next view as a ring. */
+.sp-play{position:absolute;z-index:7;right:2.4%;bottom:3.8%;width:4.6cqw;height:4.6cqw;padding:0;border:0;border-radius:50%;display:grid;place-items:center;color:#fff;cursor:pointer;background:rgba(30,22,16,.28);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.sp-play svg.ring{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.sp-play .trk{fill:none;stroke:rgba(255,255,255,.35);stroke-width:2}
+.sp-play .prg{fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-dasharray:138.2;stroke-dashoffset:138.2}
+.sp-play.run .prg{animation:sp-ring var(--sp-dur,5s) linear forwards}
+.sp-play.hold .prg{animation-play-state:paused}
+.sp-play svg.ic{width:38%;height:38%}
+.sp-play:focus-visible{outline:2px solid #fff;outline-offset:3px}
+@keyframes sp-ring{to{stroke-dashoffset:0}}
+@keyframes sp-spin{to{transform:rotate(360deg)}}
 @container slide (max-width:700px){
-  .slide.vo-slide{background-position:62% center}
-  .vo-addr{left:5%;top:30%}.vo-url{width:44cqw;height:6cqw;font-size:2.6cqw}.vo-btn{width:6cqw;height:6cqw}.vo-btn svg{width:2.8cqw;height:2.8cqw}.vo-addr .vo-btn:nth-child(2),.vo-addr .vo-btn:nth-child(3){display:none}
-  .vo-win{left:5%;top:39%;width:90%;height:34%;border-radius:5cqw}.vo-side{display:none}.vo-page{border-radius:4cqw;padding:3.6cqw}.vo-ph{font-size:4cqw}.vo-ph span{font-size:2.4cqw}  .vo-grab{left:calc(50% - 6cqw);top:74.5%;width:12cqw;height:1cqw}.vo-bar{left:50%;top:77%;gap:2cqw;padding:1.4cqw 2cqw}.vo-bar img{width:5.4cqw}.vo-name{font-size:2.6cqw}.vo-tool{width:6cqw;height:6cqw}.vo-tool svg{width:3cqw;height:3cqw}.vo-sep{height:4cqw}
-  .vo-note{display:none}
-  .vo-lbl{font-size:2cqw;margin:2cqw 0 1.2cqw}.vo-days,.vo-times{gap:1.4cqw}.vo-days span,.vo-times span{font-size:2.6cqw;padding:1.1cqw 2cqw}.vo-reserve{font-size:2.6cqw;height:6cqw;padding:0 5cqw;margin-top:2.6cqw}
-  .vo-agent{--thu-x:25.3%;--day-y:44.2%;--t730-x:33.6%;--time-y:72.1%;--res-x:16.2%;--res-y:91.9%}.vo-agent img{width:8cqw;top:2cqw;left:1.2cqw}.vo-arrow{width:3.2cqw}
+  .sp-side{display:none}
+  .sp-tabs{top:30%;font-size:2.8cqw;padding:1cqw}.sp-tabs span{padding:1.2cqw 3cqw}
+  .sp-win{left:5%;right:5%;top:38%;bottom:14%;border-radius:5.4cqw}
+  .sp-head{left:4cqw;top:3.4cqw;font-size:3cqw;gap:1.6cqw}.sp-head img{width:6cqw}
+  .sp-icons{right:4cqw;top:3.4cqw;gap:3cqw}.sp-icons svg{width:3.8cqw;height:3.8cqw}
+  .sp-text{left:4cqw;bottom:4cqw;width:84%}.sp-text p{font-size:3.3cqw}.sp-text small{font-size:2.3cqw;margin-top:1.4cqw}
+  .sp-status{display:none}
+  .sp-ctl{top:30%;gap:1.6cqw}.sp-ctl span{height:7cqw;padding:0 3cqw;font-size:2.8cqw;gap:1.4cqw}.sp-ctl span.c{width:7cqw}.sp-ctl img{width:4.4cqw}.sp-ctl svg{width:3.2cqw;height:3.2cqw}
+  .sp-big{width:86%;bottom:14%}.sp-big p{font-size:5.4cqw}.sp-big small{font-size:2.4cqw;margin-top:2.4cqw}.sp-big span{font-size:2.6cqw;padding:1.4cqw 3cqw;margin-top:3cqw}
+  .sp-play{width:11cqw;height:11cqw;right:5%;bottom:3%}
 }
-@media (prefers-reduced-motion:reduce){.vo-note li.now::before,.vo-agent,.vo-agent img,.vo-ring,.vo-pick,.vo-reserve{animation:none}.vo-agent{left:var(--t730-x);top:var(--time-y)}}
+@media (prefers-reduced-motion:reduce){.sp-win,.sp-img,.sp-side,.sp-status i{transition:none;animation:none}}
 
 /* The first card: messaging an agent like a teammate (the founder, 3 October 2026, with Apple's
    Messages card as the model): a phone cut off by the card's top edge, one exchange with Theo in
@@ -752,34 +754,23 @@ footer nav{display:flex;gap:18px}
       </article>
 
 
-      <article class="slide dark vo-slide" aria-label="A computer for every agent">
-        <p class="cap top vo-cap">Every agent works on a computer of its own. Watch it work, or take over whenever you like.</p>
-        <div class="vo-scene" aria-hidden="true">
-          <div class="vo-addr"><span class="vo-btn on"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM9 5v14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="vo-btn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="vo-btn dim"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="vo-url"><span class="vo-mic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3 3 0 0 0 3-3V7a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3zM6 11a6 6 0 0 0 12 0M12 17v3" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>osterialuce.com</span></div>
-          <div class="vo-win glass">
-            <div class="vo-side">
-              <p class="vo-title">Team dinner</p>
-              <div class="vo-search"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14zM20 20l-4-4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>Search places</div>
-              <div class="vo-tiles"><span><b>6</b>Guests</span><span><b>Thu</b>Oct 9</span><span><b>7:30</b>After the review</span><span><b>5 min</b>From the office</span></div>
-            </div>
-            <div class="vo-page">
-              <p class="vo-ph">Osteria Luce<span>Reservations</span></p>
-              <p class="vo-lbl">Day</p>
-              <div class="vo-days"><span>Wed 8</span><span class="vo-day-thu">Thu 9</span><span>Fri 10</span><span>Sat 11</span></div>
-              <p class="vo-lbl">Time for 6</p>
-              <div class="vo-times"><span>6:30</span><span>7:00</span><span class="vo-pick">7:30</span><span>8:00</span><span>8:30</span><span class="off">9:00</span></div>
-              <span class="vo-reserve">Reserve</span>
-              <div class="vo-agent"><svg class="vo-arrow" viewBox="0 0 20 20"><path d="M3 2l13 6.2-5.6 1.5L8 15.4z" fill="#111" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/></svg><img src="faces/agent-simeon.png" alt=""><i class="vo-ring"></i></div>
-            </div>
+      <article class="slide sp-slide" aria-label="A computer for every agent">
+        <p class="cap top sp-cap">Every agent works on a computer of its own. Watch it work, or take over whenever you like.</p>
+        <div class="sp" aria-hidden="true">
+          <div class="sp-side l sp-glass"><i style="background-image:url(img/paint-green.jpg)"></i></div>
+          <div class="sp-side r sp-glass"><i style="background-image:url(img/paint-pastel.jpg)"></i></div>
+          <div class="sp-tabs sp-glass"><span class="on">Simeon</span><span>Iris</span><span>Theo</span></div>
+          <div class="sp-win">
+            <img class="sp-img" src="img/dinner.jpg" alt="">
+            <div class="sp-head"><img src="faces/agent-simeon.png" alt="">Simeon&#8217;s computer</div>
+            <div class="sp-icons"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V6.5a1.5 1.5 0 0 1 3 0V12M11 11V5a1.5 1.5 0 0 1 3 0v6M14 11V6.5a1.5 1.5 0 0 1 3 0V14a6 6 0 0 1-6 6h-.5A5.5 5.5 0 0 1 6 17.4L4.2 14a1.5 1.5 0 0 1 2.6-1.5L8 14"/></svg></div>
+            <div class="sp-text"><p>Booking dinner for the launch team: a table for 6 on Thursday at 7:30, five minutes from the office.</p><small>THU 9 &#183; OSTERIA LUCE</small></div>
+            <span class="sp-status sp-glass"><i></i>Reserving 7:30</span>
           </div>
-          <span class="vo-grab"></span>
-          <div class="vo-bar glass"><img src="faces/agent-simeon.png" alt=""><span class="vo-name">Simeon&#8217;s computer</span><i class="vo-sep"></i><span class="vo-tool"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="vo-tool on"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 13V6.5a1.5 1.5 0 0 1 3 0V12M11 11V5a1.5 1.5 0 0 1 3 0v6M14 11V6.5a1.5 1.5 0 0 1 3 0V14a6 6 0 0 1-6 6h-.5A5.5 5.5 0 0 1 6 17.4L4.2 14a1.5 1.5 0 0 1 2.6-1.5L8 14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="vo-tool"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="vo-tool"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h.01M12 12h.01M18 12h.01" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
-          <div class="vo-note glass">
-            <div class="vo-note-top"><span class="vo-btn sm"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="vo-btn sm"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v5M10 19H5v-5M19 5l-6 6M5 19l6-6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
-            <p>Booking dinner for the launch team: a table for 6 on Thursday at 7:30, five minutes from the office.</p>
-            <ul><li class="ok">Found three places nearby</li><li class="ok">Checked Thursday for 6</li><li class="now">Reserving 7:30</li></ul>
-          </div>
+          <div class="sp-ctl"><span class="c sp-glass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 6l-6 6 6 6"/></svg></span><span class="sp-glass"><img src="faces/agent-simeon.png" alt="">Simeon</span><span class="c sp-glass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></span></div>
+          <div class="sp-big"><p>A table for 6 at Osteria Luce, Thursday at 7:30. Simeon is booking it now, five minutes from the office.</p><small>THU 9 &#183; OSTERIA LUCE</small><span class="sp-glass">Take over</span></div>
         </div>
+        <button class="sp-play run" type="button" aria-label="Pause"><svg class="ring" viewBox="0 0 48 48" aria-hidden="true"><circle class="trk" cx="24" cy="24" r="22"/><circle class="prg" cx="24" cy="24" r="22"/></svg><svg class="ic" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><rect x="5" y="4" width="3.4" height="12" rx="1"/><rect x="11.6" y="4" width="3.4" height="12" rx="1"/></svg></button>
       </article>
 
       <article class="slide apps-slide" aria-label="Connect your apps">
@@ -1031,6 +1022,21 @@ footer nav{display:flex;gap:18px}
   new IntersectionObserver(([e]) => { clearTimeout(timer); if (e.isIntersecting) loop(); else { sheet.classList.remove('agreed'); btn.classList.remove('press'); } }, { threshold: .5 }).observe(sheet.closest('.slide'));
 })();
 
+// The computer card: the window opens to fill the room and returns, every few seconds while in view; pause stops it.
+(() => {
+  const sc = document.querySelector('.sp'), btn = document.querySelector('.sp-play');
+  if (!sc || !btn) return;
+  const DUR = 5000, still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let playing = !still, seen = false, t = 0;
+  btn.style.setProperty('--sp-dur', DUR + 'ms');
+  const ring = () => { btn.classList.remove('run'); void btn.offsetWidth; if (playing && seen) btn.classList.add('run'); };
+  const tick = () => { clearTimeout(t); if (!(playing && seen)) return; t = setTimeout(() => { sc.classList.toggle('imm'); ring(); tick(); }, DUR); };
+  const icon = (on) => on ? '<rect x="5" y="4" width="3.4" height="12" rx="1"/><rect x="11.6" y="4" width="3.4" height="12" rx="1"/>' : '<path d="M6 3.8v12.4a.8.8 0 0 0 1.2.7l10-6.2a.8.8 0 0 0 0-1.4l-10-6.2a.8.8 0 0 0-1.2.7z"/>';
+  const set = (on) => { playing = on; btn.setAttribute('aria-label', on ? 'Pause' : 'Play'); btn.querySelector('.ic').innerHTML = icon(on); ring(); tick(); };
+  btn.addEventListener('click', () => set(!playing));
+  new IntersectionObserver(([e]) => { seen = e.isIntersecting; ring(); tick(); }, { threshold: .5 }).observe(sc.closest('.slide'));
+  set(playing);
+})();
 // The team gallery: back and next move one card at a time, and grey out at either end.
 (() => {
   const gal = document.querySelector('.gallery'), track = gal.querySelector('.track'), slides = [...track.children];
