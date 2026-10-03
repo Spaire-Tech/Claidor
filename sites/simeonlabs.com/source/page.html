@@ -18,7 +18,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <link rel="preload" as="image" href="app-poster-wide.jpg" media="(min-width:810px)" fetchpriority="high">
 <link rel="preload" as="image" href="app-poster-tall.jpg" media="(min-width:600px) and (max-width:809.98px)" fetchpriority="high">
-<script>if (matchMedia('(min-width:600px)').matches) for (const [rel, as, href] of [['modulepreload', '', 'app/539382685117/assets/index-UbX-y3il.js'], ['preload', 'style', 'app/539382685117/assets/index-lCyB53CO.css']]) { const l = document.createElement('link'); l.rel = rel; if (as) l.as = as; l.crossOrigin = ''; l.href = href; document.head.appendChild(l); }</script>
+<script>if (matchMedia('(min-width:600px)').matches) for (const [rel, as, href] of [['modulepreload', '', '%APP%/assets/%APP_JS%'], ['preload', 'style', '%APP%/assets/%APP_CSS%']]) { const l = document.createElement('link'); l.rel = rel; if (as) l.as = as; l.crossOrigin = ''; l.href = href; document.head.appendChild(l); }</script>
 <style>
 /* Simeon's site, drawn the way Apple draws a product page: one idea per screen, large type,
    the product doing the explaining. Light only, every colour set here. */
@@ -85,59 +85,7 @@ p{margin:0}
 .sd-poster,.sd-poster img{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;object-position:0 0}
 .sd-window.sd-live.sd-settled .sd-poster{display:none}
 @media (max-width:809.98px){.stagebox{aspect-ratio:4/5;border-radius:22px}}
-/* The phone hero: a still of the app window filling the hero box. */
-.sd-mob{display:none}
-@media (max-width:599.98px){
-  .stagebox{aspect-ratio:3/5!important}
-  .sd-frame{display:none!important}
-  .sd-mob{position:absolute;inset:0;display:flex;container-type:inline-size;background:#fbfbfa;border-radius:inherit;overflow:hidden;
-    box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;color:#1d1d1f;-webkit-font-smoothing:antialiased;
-    -webkit-user-select:none;user-select:none}
-  .sd-m-rail{flex:none;width:21cqw;display:flex;flex-direction:column;align-items:center;gap:2.6cqw;padding:4.4cqw 0 4cqw;background:#f4f4f3;border-right:1px solid rgba(0,0,0,.07)}
-  .sd-m-lights{display:flex;gap:1.6cqw;margin-bottom:2.4cqw}
-  .sd-m-lights i{width:2.9cqw;height:2.9cqw;border-radius:50%;background:#ff5f57}
-  .sd-m-lights i:nth-child(2){background:#febc2e}.sd-m-lights i:nth-child(3){background:#28c840}
-  .sd-m-av{position:relative;display:grid;place-items:center;width:15cqw;height:12.4cqw;border-radius:3cqw}
-  .sd-m-av img{width:11cqw;height:11cqw;object-fit:contain}
-  .sd-m-on{background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.05)}
-  .sd-m-group img{position:absolute;width:6.6cqw;height:6.6cqw}
-  .sd-m-group img:nth-child(1){top:1.2cqw;left:4.2cqw}.sd-m-group img:nth-child(2){bottom:1.4cqw;left:1.6cqw}.sd-m-group img:nth-child(3){bottom:1.4cqw;right:1.6cqw}
-  .sd-m-fill{flex:1}
-  .sd-m-new{width:6cqw;height:6cqw;color:#6e6e73}
-  .sd-m-new svg,.sd-m-plus svg,.sd-m-mic svg,.sd-m-clock svg{display:block;width:100%;height:100%}
-  .sd-m-me{display:grid;place-items:center;width:9cqw;height:9cqw;border-radius:50%;background:#ececea;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);font-size:3.2cqw;color:#555;letter-spacing:.02em}
-  .sd-m-main{flex:1;min-width:0;display:flex;flex-direction:column}
-  .sd-m-head{display:flex;align-items:center;gap:2cqw;padding:4.2cqw 4cqw 3.4cqw;border-bottom:1px solid rgba(0,0,0,.06);font-size:4.2cqw}
-  .sd-m-head img{width:7.4cqw;height:7.4cqw;object-fit:contain}
-  .sd-m-head b{font-weight:500}
-  .sd-m-role{font-size:3.3cqw;color:#255a93}
-  .sd-m-thread{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding:0 3.6cqw;
-    -webkit-mask-image:linear-gradient(#0000 0,#000 9cqw);mask-image:linear-gradient(#0000 0,#000 9cqw)}
-  .sd-m-feed{display:flex;flex-direction:column;gap:2.2cqw;padding:3cqw 0 2cqw}
-  .sd-m-in,.sd-m-out{position:relative;max-width:88%;padding:2.6cqw 3.6cqw;border-radius:4.8cqw;font-size:3.9cqw;line-height:1.42}
-  /* The agent speaks on the Messages grey, as in the app (AGENT_SHEET_CSS in router-renderer-patch.mjs). */
-  .sd-m-in{align-self:flex-start;background:#e9e9eb;box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04)}
-  .sd-m-out{align-self:flex-end;background:#255a93;color:#fff;margin:1.6cqw 0 2.4cqw;
-    box-shadow:inset 0 .5px 0 rgba(255,255,255,.28),0 0 0 .5px rgba(20,45,90,.18),0 1px 2px rgba(20,45,90,.08)}
-  .sd-m-react{position:absolute;right:-1.4cqw;bottom:-3.6cqw;display:grid;place-items:center;width:7cqw;height:7cqw;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.18);font-size:3.6cqw;line-height:1}
-  .sd-m-sys{align-self:center;display:flex;align-items:center;flex-wrap:wrap;justify-content:center;gap:1.2cqw;margin:1.4cqw 0;font-size:3.3cqw;color:#8e8e93}
-  .sd-m-sys b{font-weight:500;color:#1d1d1f}
-  .sd-m-clock{width:4cqw;height:4cqw;color:#3a3a3c}
-  .sd-m-tag{display:inline-flex;align-items:center;gap:.8cqw;font-weight:500;vertical-align:middle;position:relative;top:-.1em}
-  .sd-m-tag img{width:4.4cqw;height:4.4cqw;object-fit:contain}
-  .sd-m-in .sd-app{font-size:.96em}
-  .sd-m-file{align-self:flex-start;display:flex;align-items:center;gap:2.4cqw;padding:2.4cqw 4cqw 2.4cqw 2.6cqw;border-radius:3.6cqw;background:#e9e9eb;font-size:3.7cqw;
-    box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04)}
-  .sd-m-file img{width:7cqw;height:7cqw;object-fit:contain}
-  .sd-m-compose{display:flex;align-items:center;gap:2.4cqw;margin:1cqw 3.6cqw 4cqw;padding:1.8cqw 1.8cqw 1.8cqw 2cqw;border-radius:99px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.09),0 2px 8px -4px rgba(0,0,0,.1)}
-  .sd-m-plus{width:7cqw;height:7cqw;padding:1.3cqw;border-radius:50%;background:#f1f1f0;color:#6e6e73;box-sizing:border-box}
-  .sd-m-ph{flex:1;font-size:3.8cqw;color:#a1a1a6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .sd-m-mic{width:8cqw;height:8cqw;padding:1.9cqw;border-radius:50%;background:#255a93;color:#fff;box-sizing:border-box}
-}
-.sd-app{display:inline-flex;align-items:center;gap:.32em;white-space:nowrap;font-weight:500;margin-inline:.08em;vertical-align:middle;position:relative;top:-.07em;line-height:1}
-.sd-app-ico{flex:none;display:grid;place-items:center;width:1.3em;height:1.3em;border-radius:.34em;background:#fff;box-shadow:0 0 0 .5px rgba(0,0,0,.14)}
-.sd-app-ico img{width:72%;height:72%;object-fit:contain}
-
+%MOBILE_CSS%
 
 /* Section headings, Apple's way: one large line, flush left. */
 .sec{padding:120px 0 0}
@@ -459,8 +407,8 @@ footer nav{display:flex;gap:20px}
     <img class="paint" src="img/paint-blue.jpg" alt="" fetchpriority="high">
     <div class="sd-stage"><div class="sd-frame"><div class="sd-bar"><span class="sd-dots"><i></i><i></i><i></i></span><span class="sd-title">Simeon</span></div>
       <div class="sd-screen"><div class="sd-window"><picture class="sd-poster"><source media="(max-width:599.98px)" srcset="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="><source media="(max-width:809.98px)" srcset="app-poster-tall.jpg"><img src="app-poster-wide.jpg" alt="" fetchpriority="high" decoding="sync"></picture>
-      <iframe data-hold data-src="app/539382685117/index.html" title="Simeon, playing a launch week" loading="eager"></iframe></div></div></div>
-      <div class="sd-mob" aria-label="Simeon, a chief of staff agent, talking with you about a launch"><div class="sd-m-rail"><span class="sd-m-lights"><i></i><i></i><i></i></span><span class="sd-m-av sd-m-on"><img src="faces/simeon.png" alt="" style=""></span><span class="sd-m-av"><img src="faces/scout.png" alt="" style=""></span><span class="sd-m-av"><img src="faces/yodo.png" alt="" style=""></span><span class="sd-m-av"><img src="faces/scout.png" alt="" style="filter:hue-rotate(90deg)"></span><span class="sd-m-av"><img src="faces/yodo.png" alt="" style="filter:hue-rotate(60deg)"></span><span class="sd-m-av"><img src="faces/yodo.png" alt="" style="filter:hue-rotate(300deg)"></span><span class="sd-m-av sd-m-group"><img src="faces/simeon.png" alt="" style=""><img src="faces/scout.png" alt="" style=""><img src="faces/yodo.png" alt="" style=""></span><span class="sd-m-fill"></span><span class="sd-m-new"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span><span class="sd-m-me">BF</span></div><div class="sd-m-main"><div class="sd-m-head"><img src="faces/simeon.png" alt="" style=""><b>Simeon</b><span class="sd-m-role">Chief of staff</span></div><div class="sd-m-thread"><div class="sd-m-feed"><div class="sd-m-in">Thursday is on track: 12 of 15 launch tickets are done in <span class="sd-app"><span class="sd-app-ico"><img src="logos/linear.svg" alt=""></span><span style="color:#5E6AD2">Linear</span></span>, and the review is Thursday at 2 pm.</div><div class="sd-m-sys">Messages from <span class="sd-m-tag" style="color:#3f7f78"><img src="faces/scout.png" alt="">Scout</span> and <span class="sd-m-tag" style="color:#b0603c"><img src="faces/yodo.png" alt="">Yodo</span></div><div class="sd-m-in"><span class="sd-m-tag" style="color:#3f7f78"><img src="faces/scout.png" alt="">Scout</span> pulled three customer quotes and <span class="sd-m-tag" style="color:#b0603c"><img src="faces/yodo.png" alt="">Yodo</span> closed the last two tickets. The review doc is ready.</div><div class="sd-m-file"><img src="logos/word.webp" alt="">Launch review.docx</div><div class="sd-m-out">Looks great. Send the agenda to Dana and Marcus, and check in like this every Monday.<span class="sd-m-react">&#128077;</span></div><div class="sd-m-sys">Created routine <span class="sd-m-clock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><b>Monday launch check</b></div><div class="sd-m-in">Done. The agenda went out from <span class="sd-app"><span class="sd-app-ico"><img src="logos/gmail.webp" alt=""></span><span style="color:#EA4335">Gmail</span></span>.</div></div></div><div class="sd-m-compose"><span class="sd-m-plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span><span class="sd-m-ph">Message Simeon</span><span class="sd-m-mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span></div></div></div>
+      <iframe data-hold data-src="%APP%/index.html" title="Simeon, playing a launch week" loading="eager"></iframe></div></div></div>
+      %MOBILE_HTML%
     </div>
   </div>
 </section>
@@ -632,7 +580,7 @@ footer nav{display:flex;gap:20px}
       <div class="tile span3">
         <div class="tools">
           <div><h3>Works where you already work.</h3><p>Sign in once, on the app’s own page. Your agents use it from then on.</p></div>
-          <div class="icons"><span title="Gmail"><img src="logos/gmail.webp" alt="Gmail" loading="lazy"></span><span title="Google Calendar"><img src="logos/google-calendar.webp" alt="Google Calendar" loading="lazy"></span><span title="Slack"><img src="logos/slack.webp" alt="Slack" loading="lazy"></span><span title="Notion"><img src="logos/notion.svg" alt="Notion" loading="lazy"></span><span title="Stripe"><img src="logos/stripe.svg" alt="Stripe" loading="lazy"></span><span title="HubSpot"><img src="logos/hubspot.svg" alt="HubSpot" loading="lazy"></span><span title="LinkedIn"><img src="logos/linkedin.svg" alt="LinkedIn" loading="lazy"></span><span title="Canva"><img src="logos/canva.svg" alt="Canva" loading="lazy"></span><span title="QuickBooks"><img src="logos/quickbooks.svg" alt="QuickBooks" loading="lazy"></span><span title="Google Sheets"><img src="logos/google-sheets.webp" alt="Google Sheets" loading="lazy"></span></div>
+          <div class="icons">%TOOL_ICONS%</div>
         </div>
       </div>
     </div>
@@ -675,106 +623,7 @@ footer nav{display:flex;gap:20px}
 
 <footer><div class="wrap"><span>Copyright © 2026 Simeon Labs, Inc. All rights reserved.</span><nav><span>Privacy</span><span>Terms</span><span>Contact</span></nav></div></footer>
 
-<script>
-(() => {
-  const stage = document.querySelector('.sd-stage'), frame = stage.querySelector('.sd-frame');
-  const bar = frame.querySelector('.sd-bar'), dots = frame.querySelector('.sd-dots'), title = frame.querySelector('.sd-title');
-  const screen = frame.querySelector('.sd-screen'), win = frame.querySelector('.sd-window');
-  const px = (el, props) => { for (const k in props) el.style[k] = typeof props[k] === 'number' ? props[k] + 'px' : props[k]; };
-  const fit = () => {
-    const w = stage.clientWidth, h = stage.clientHeight;
-    if (!w || !h) return;
-    const phone = w < 560;
-    // Inset like Cursor's: the window floats on the painting with the picture showing all round.
-    const side = Math.round(w * (phone ? 0.03 : 0.04)), top = Math.round(h * (phone ? 0.03 : 0.05)), bottom = Math.round(h * (phone ? 0.03 : 0.05));
-    const fw = w - 2 * side, fh = h - top - bottom;
-    // Zoom: the app is laid out 1150 px wide in the laptop scene (its card is wide and short), 880 on
-    // other computers and tablets, 440 on a phone, then scaled to the window.
-    const s = fw / (phone ? 440 : document.documentElement.classList.contains('sd-scrolly') ? 1150 : 880);
-    const barH = Math.round(Math.max(22, 30 * s));
-    px(frame, { left: side, top, width: fw, height: fh, borderRadius: Math.round(11 * Math.min(1.2, s)) });
-    px(bar, { height: barH, fontSize: Math.max(11, 13 * Math.min(1.1, s)) });
-    px(dots, { left: 12 * Math.min(1.2, s), gap: 7 * Math.min(1.2, s) });
-    for (const i of dots.children) px(i, { width: 11 * Math.min(1.2, s), height: 11 * Math.min(1.2, s) });
-    const sh = fh - barH - 1;
-    px(screen, { width: fw - 2, height: sh });
-    px(win, { width: (fw - 2) / s, height: sh / s, transform: 'scale(' + s + ')' });
-    frame.classList.add('sd-ready');
-  };
-  new ResizeObserver(fit).observe(stage);
-  fit();
-  // The still of the app shows at once; the live app takes over, unseen, once it has drawn its sidebar.
-  const iframe = win.querySelector('iframe');
-  const t0 = performance.now();
-  const reveal = () => { win.classList.add('sd-live'); setTimeout(() => win.classList.add('sd-settled'), 500); };
-  const poll = () => {
-    let doc = null; try { doc = iframe.contentDocument; } catch {}
-    const ready = doc && doc.querySelector('.sand-agents-sidebar');
-    if (ready) { (doc.fonts ? Promise.race([doc.fonts.ready, new Promise((r) => setTimeout(r, 1200))]) : Promise.resolve()).then(() => requestAnimationFrame(() => requestAnimationFrame(reveal))); return; }
-    if (performance.now() - t0 > 20000) return reveal();
-    setTimeout(poll, 60);
-  };
-  // Phones show the still (.sd-mob) and never load the app; wider screens load it as soon as they are wider.
-  const wide = matchMedia('(min-width:600px)');
-  const load = () => { if (wide.matches && !iframe.getAttribute('src')) { iframe.setAttribute('src', iframe.dataset.src); poll(); } };
-  wide.addEventListener('change', load); load();
-  // The app redraws its agents' faces every frame, on this page's own thread. Nothing of it may
-  // cost a frame of scrolling: its frame loop is paused while the page scrolls, while the window
-  // is not showing (the laptop scene's painting, or the hero scrolled past), and resumes at rest.
-  let offscreen = false, thaw = null;
-  const freeze = (on) => { try { iframe.contentWindow.__sdFreeze && iframe.contentWindow.__sdFreeze(on); } catch {} };
-  const hidden = () => offscreen || (window.sdWindowHidden ? window.sdWindowHidden() : false);
-  window.sdSettleApp = () => { if (!thaw) freeze(hidden()); };
-  new IntersectionObserver(([e]) => { offscreen = !e.isIntersecting; sdSettleApp(); }).observe(stage);
-  addEventListener('scroll', () => { freeze(true); clearTimeout(thaw); thaw = setTimeout(() => { thaw = null; freeze(hidden()); }, 180); }, { passive: true });
-  iframe.addEventListener('load', () => sdSettleApp());
-  // The window takes no pointer, so a wheel or a finger over it always scrolls the page on the
-  // browser's own thread. A click on it is handed to the part of the app under the pointer
-  // (pointer and mouse events, then the click), and the cursor shows what is clickable there.
-  const appPoint = (e) => {
-    let doc = null; try { doc = iframe.contentDocument; } catch {}
-    if (!doc || !win.classList.contains('sd-live')) return null;
-    const r = iframe.getBoundingClientRect(), k = r.width / iframe.offsetWidth || 1;
-    const x = (e.clientX - r.left) / k, y = (e.clientY - r.top) / k;
-    if (x < 0 || y < 0 || x > iframe.offsetWidth || y > iframe.offsetHeight) return null;
-    const el = doc.elementFromPoint(x, y);
-    return el ? { doc, el, x, y } : null;
-  };
-  const send = (p, type) => {
-    const view = p.doc.defaultView, Kind = type.startsWith('pointer') ? view.PointerEvent : view.MouseEvent;
-    p.el.dispatchEvent(new Kind(type, { bubbles: true, cancelable: true, composed: true, view, clientX: p.x, clientY: p.y, screenX: p.x, screenY: p.y,
-      button: 0, buttons: type.endsWith('down') ? 1 : 0, detail: 1, pointerId: 1, pointerType: 'mouse', isPrimary: true }));
-  };
-  let pressed = null, hovering = 0;
-  screen.addEventListener('pointerdown', (e) => {
-    if (e.button !== 0) return;
-    const p = appPoint(e); if (!p) return;
-    pressed = p; send(p, 'pointerdown'); send(p, 'mousedown');
-  });
-  screen.addEventListener('pointerup', (e) => {
-    if (e.button !== 0 || !pressed) return;
-    const p = appPoint(e) || pressed;
-    send(p, 'pointerup'); send(p, 'mouseup');
-    if (pressed.el === p.el || pressed.el.contains(p.el)) send(pressed, 'click');
-    pressed = null;
-  });
-  screen.addEventListener('pointermove', (e) => {
-    if (hovering) return;
-    hovering = requestAnimationFrame(() => {
-      hovering = 0;
-      const p = appPoint(e);
-      screen.style.cursor = p && p.doc.defaultView.getComputedStyle(p.el).cursor === 'pointer' ? 'pointer' : '';
-    });
-  });
-  // Off the laptop scene the demo plays at once; in it, HERO_JS lets it go when the window rises.
-  window.sdReleaseDemo = () => {
-    if (!iframe.hasAttribute('data-hold')) return;
-    iframe.removeAttribute('data-hold');
-    try { iframe.contentWindow.__simeonStart && iframe.contentWindow.__simeonStart(); } catch {}
-  };
-  if (!document.documentElement.classList.contains('sd-scrolly')) sdReleaseDemo();
-})();
-</script>
+%FIT%
 <script>
 // The team gallery: one card at a time, the next one every few seconds, paused when you take over.
 (() => {

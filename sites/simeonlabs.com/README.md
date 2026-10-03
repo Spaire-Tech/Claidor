@@ -1,13 +1,11 @@
 # simeonlabs.com
 
-The public website: the Framer design, exported and made static, with the
-Simeon app-window demo playing in the hero.
+The public website, with the Simeon app-window demo playing in the hero.
 
 - `public/` is the site Vercel serves, as built. Nothing in it links anywhere:
   it is a site to try, every button leads nowhere.
-- `source/` is how it is made: `build.py`, the Framer export
-  (`framer-export.html`), the agents' faces, the Simeon mark and the demo's
-  scroll guard.
+- `source/` is how it is made: `page.html`, `build.py`, the paintings and
+  wordmark (`img/`), the agents' faces and the demo's scroll guard.
 - `vercel.json` tells Vercel there is no install or build step, to serve
   `public/`, and to skip a deploy when nothing under this folder changed.
 
@@ -21,62 +19,32 @@ cd sites/simeonlabs.com/source
 python3 build.py ../../../desktop/dist/demo
 ```
 
-The script needs Playwright's Chromium and network access to
-framerusercontent.com (it fetches the fonts and pictures once). It rewrites
-`public/` from scratch; commit what it writes.
+The script needs Playwright's Chromium (it captures the stills the hero shows
+while the app loads). It rewrites `public/` from scratch; commit what it writes.
 
 ## What is in the page
 
-The hero runs the real patched app window (`public/app/<digest>/`) in an iframe inside
-the hero box, scaled from the box's own size, with `scroll-guard.js` so the
-app never scrolls the page. The app in the window takes no pointer, so the
-wheel and a finger over it scroll the page on the browser's own scroll
-thread; a click on the window is handed to the part of the app under the
-pointer, and the cursor shows what is clickable, and the app's frame loop is paused while the
-page scrolls or the window is out of sight. The app's
-code is about 6 MB, so the page first shows a still of its opening screen
-(`app-poster-{wide,tall,phone}.jpg`, captured by `build.py` from the app
-itself) and fades the live app in over it once the app has drawn its sidebar.
-On a laptop (at least 1024 × 620, and Reduce Motion off) the hero is a scroll
-scene instead: the painting spans the page with Simeon's wordmark, narrows
-into the card as you scroll, the card pins under the nav, the wordmark fades
-and the app window rises onto the painting; the demo's story starts only
-then (`source/demo-gate.js` holds it until the page calls it). Smaller
-screens keep the window in the card from the start. Phones (under 600 px) show no live app at all: the hero is a still of
-the window drawn by the page (a Simeon thread with both sides talking), so
-there is nothing to load and the page scrolls natively over it. The site is light only: Framer's dark-scheme colour block is removed at
-build time. Each animation below the hero starts when it scrolls into view (and runs
-whatever the Reduce Motion setting; only the laptop hero's scroll scene honours it) and starts
-over when you come back to it. The four
-feature boxes are drawn by the page itself: connectors behind the Simeon
-glass tile, Iris, Otto and Nova talking, Otto's computer asking you to sign
-in, Iris asking before she sends an email. Pricing is Standard $20, Pro $60
-and Max $100 a month, 20% less yearly, 7-day trial on each.
+The page is written by hand in `source/page.html`, drawn the way Apple draws a
+product page (the founder, 3 October 2026): one idea per screen, large type,
+the product doing the explaining, no counts or tables.
 
-**What the page says (3 October 2026).** Simeon is sold as an AI operations team for founders and
-small businesses, and the page is laid out like the pages of products in that space while keeping
-its own paintings, glass and type. Each section's content lives in `build.py`:
+- **Hero.** "Your AI operations team.", one line, Download for Mac, and the
+  real app window playing in a box over the blue painting (`FIT` in
+  `build.py` scales it from the box's own size). Phones under 600 px get a
+  still of the app drawn by the page instead.
+- **Meet your team.** A gallery like Apple's: one card per agent with its
+  cloud face, one sentence, and one moment on an iPhone or a Mac drawn in CSS.
+  Chief of Staff (the Friday note on the lock screen), Inbox (replies written
+  overnight), Money (a phone call), Growth (the morning chart), Content (a
+  post and its picture), Sales (calls booked on the calendar). It plays by
+  itself while on screen, stops when you swipe or press pause, and arrow keys
+  move it.
+- **How the team works.** Large boxes: a computer of its own, nothing goes
+  out without your yes, routines, hand-offs, calls, and the tools it works in.
+- **Pricing** (Standard $20, Pro $60, Max $100, 20% less yearly, a free week),
+  **five questions**, and the closing banner.
 
-- **Hero.** "Your AI operations team", one line on what it is, and four true facts under the
-  button: the 7-day free trial, 66 apps, the agents' own cloud computers, and approvals before
-  acting.
-- **Meet your operations team** (`ROSTER`): six glass cards on a painting. Chief of Staff, Inbox,
-  Money, Growth, Content and Sales, with the apps each works in. It is labelled as a typical team:
-  the agents are made by asking Simeon, there are no ready-made bundles yet.
-- **The four features**, retitled: works inside your tools, works together, has its own computer
-  (in the cloud, not on the Mac), you stay in control.
-- **How it works** (`STEPS`): pick your team, connect your tools, ask and let it run.
-- **What you can hand off** (`USES`): four tabs (Founders & CEOs, Money & ops, Growth &
-  marketing, Sales & customers), three asks each with the reply an agent gives.
-- **Not a chatbot. Not a workflow builder.** (`COMPARE`): Simeon next to kinds of product, never a
-  named rival; on a phone each question sits over its three answers.
-- **66 apps** (`WALL_HTML`): read from the connector catalogue
-  (`desktop/source/shared/node/vendor-mcp/catalog.ts`), so the count follows the app. Logos come
-  from `desktop/brand/app-logos`, or else from `source/app-favicons/` (the site icons the app
-  shows for those apps, saved once). Google's three share one generic icon and are named instead.
-- **Pricing** (unchanged prices) and **ten questions**, answered with what is true today.
-
-There are no customer logos, quotes or user counts on the page: Simeon has none to show yet.
+Nothing in it links anywhere outside the page: it is a site to try.
 
 **`public/app/` is the app's window: the upstream 0.18.0 renderer with Simeon's patches (see `desktop/NOTICE.md`).** The
 founder chose on 28 September 2026 to publish it with the site, knowing the
