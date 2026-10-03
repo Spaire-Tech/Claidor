@@ -355,62 +355,45 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
    cursor: it picks Thursday, clicks 7:30 and presses Reserve, on a loop. */
 .vo-cap{text-shadow:0 1px 18px rgba(0,0,0,.35)}
 .glass{background:linear-gradient(160deg,rgba(255,255,255,.22),rgba(255,255,255,.08));-webkit-backdrop-filter:blur(28px) saturate(1.6);backdrop-filter:blur(28px) saturate(1.6);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 0 0 1px rgba(255,255,255,.16),0 2.2cqw 5cqw rgba(10,20,50,.25);color:#fff}
-.slide.sp-slide{background:#cbb9a5 url(img/room-vision.jpg) center/cover}
-.sp-slide::before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(rgba(40,28,18,.42),rgba(40,28,18,0) 30%);pointer-events:none}
+.slide.sp-slide{background:#d8d2c8 url(img/room-studio.jpg) center/cover}
+.sp-slide::before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(rgba(30,24,18,.45),rgba(30,24,18,0) 28%);pointer-events:none}
 .sp-cap{z-index:6;text-shadow:0 1px 18px rgba(0,0,0,.3);color:#fff}
 .sp{position:absolute;inset:0;z-index:2}
-.sp-glass{background:linear-gradient(160deg,rgba(255,255,255,.26),rgba(255,255,255,.1));-webkit-backdrop-filter:blur(26px) saturate(1.5);backdrop-filter:blur(26px) saturate(1.5);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 0 0 1px rgba(255,255,255,.14),0 2cqw 5cqw rgba(40,24,10,.22)}
-/* Apple TV on visionOS: one window in the room, a glass tab bar beside it, a grabber under it. */
-.sp-tabs{position:absolute;left:8.5%;top:39%;display:flex;flex-direction:column;gap:1.1cqw;padding:.9cqw;border-radius:99px}
-.sp-tabs img{display:block;width:3cqw;height:3cqw;object-fit:contain;padding:.35cqw;border-radius:50%;opacity:.8}
-.sp-tabs img.on{background:rgba(255,255,255,.34);opacity:1;box-shadow:inset 0 1px 0 rgba(255,255,255,.5)}
-.sp-win{position:absolute;left:14%;right:9%;top:25%;bottom:13%;border-radius:2.8cqw;overflow:hidden;color:#fff;
-  background:radial-gradient(70% 90% at 78% 30%,rgba(124,160,220,.35),transparent 60%),linear-gradient(150deg,#2b3550,#1a2033 55%,#151a28);box-shadow:inset 0 0 0 1px rgba(255,255,255,.2),0 2.4cqw 6cqw rgba(40,24,10,.32)}
-.sp-win::before{content:"";position:absolute;inset:0;background:url(img/dusk-grain.jpg) center/cover;opacity:.35;mix-blend-mode:screen}
-.sp-top{position:absolute;z-index:2;left:1.8cqw;right:1.8cqw;top:1.6cqw;display:flex;justify-content:space-between}
-.sp-top span{display:grid;place-items:center;width:2.6cqw;height:2.6cqw;border-radius:50%;color:#fff}
-.sp-top svg{width:1.3cqw;height:1.3cqw}
-.sp-info{position:absolute;z-index:2;left:3cqw;top:18%;width:44%}
-.sp-kick{display:flex;align-items:center;gap:.7cqw;font-size:1.05cqw;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.75)}
-.sp-kick img{width:2cqw;height:auto}
-.sp-title{margin:.9cqw 0 0;font-family:"Newsreader",Georgia,"Times New Roman",serif;font-size:3.6cqw;line-height:1;font-weight:400;letter-spacing:-.02em}
-.sp-meta{display:flex;align-items:center;gap:.6cqw;margin-top:1.1cqw;font-size:1.05cqw;color:rgba(255,255,255,.72)}
-.sp-meta img{width:1.3cqw;height:1.3cqw;object-fit:contain}
-.sp-meta b{font-weight:500;padding:.05cqw .45cqw;border:1px solid rgba(255,255,255,.5);border-radius:.3cqw;font-size:.85cqw}
-.sp-desc{margin:1.1cqw 0 0;font-size:1.15cqw;line-height:1.45;color:rgba(255,255,255,.82)}
-.sp-btns{display:flex;gap:.8cqw;margin-top:1.6cqw}
-.sp-btns span{display:inline-flex;align-items:center;gap:.6cqw;height:3.2cqw;padding:0 1.6cqw;border-radius:99px;font-size:1.15cqw;font-weight:500}
-.sp-btns span.c{width:3.2cqw;padding:0;justify-content:center;font-size:1.6cqw;font-weight:400}
-.sp-btns svg{width:1.1cqw;height:1.1cqw}
-.sp-by{position:absolute;z-index:2;right:3cqw;top:63%;width:22%;font-size:1cqw;line-height:1.4;color:rgba(255,255,255,.66)}
-/* The slide Simeon is writing, on the right. */
-.sp-slideprev{position:absolute;z-index:1;right:3cqw;top:15%;width:34%;aspect-ratio:16/10;border-radius:1.2cqw;background:#fbfaf8;color:#1d1d1f;padding:1.4cqw;box-shadow:0 1.6cqw 4cqw rgba(0,0,0,.35);transform:perspective(60cqw) rotateY(-8deg);transform-origin:right center}
-.sp-slideprev h5{margin:0;font-size:1.25cqw;font-weight:600;letter-spacing:-.01em}
-.sp-slideprev p{margin:.3cqw 0 0;font-size:.85cqw;color:#6e6e73}
-.sp-slideprev svg{display:block;width:100%;margin-top:1cqw}
-.sp-slideprev .cur{display:inline-block;width:.12cqw;height:1em;background:var(--app-blue);vertical-align:-.15em;margin-left:.1cqw;animation:sp-blink 1s steps(1) infinite}
-.sp-row{position:absolute;z-index:2;left:3cqw;right:3cqw;bottom:-1.2cqw;display:grid;grid-template-columns:repeat(4,1fr);gap:1.2cqw}
-.sp-row span{height:6.4cqw;border-radius:1cqw;background:#f5f4f1;color:#1d1d1f;padding:.8cqw 1cqw;font-size:.8cqw;font-weight:600;overflow:hidden;opacity:.92}
-.sp-row span i{display:block;margin-top:.5cqw;height:.45cqw;border-radius:99px;background:#d9d9de;width:70%}
-.sp-row span i+i{width:45%}
-.sp-row span.now{box-shadow:0 0 0 .2cqw var(--app-blue)}
-.sp-row span.todo{background:rgba(255,255,255,.14);color:rgba(255,255,255,.6)}
-.sp-row span.todo i{background:rgba(255,255,255,.18)}
-.sp-grab{position:absolute;left:calc(14% + (100% - 14% - 9%) / 2 - 3.5cqw);bottom:9.6%;width:7cqw;height:.55cqw;border-radius:99px;background:rgba(255,255,255,.75)}
-@keyframes sp-blink{50%{opacity:0}}
+/* Safari on visionOS: a glass toolbar floating over one page, and a grabber under it. */
+.sf-bar{position:absolute;left:50%;top:27%;transform:translateX(-50%);display:flex;align-items:center;gap:.6cqw;padding:.5cqw;border-radius:99px;color:rgba(255,255,255,.9);
+  background:rgba(96,84,72,.42);-webkit-backdrop-filter:blur(24px) saturate(1.5);backdrop-filter:blur(24px) saturate(1.5);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),inset 0 0 0 1px rgba(255,255,255,.08),0 1cqw 3cqw rgba(30,20,10,.18)}
+.sf-b{display:grid;place-items:center;width:2.6cqw;height:2.6cqw;border-radius:50%;background:rgba(255,255,255,.12)}
+.sf-b.dim{color:rgba(255,255,255,.4)}
+.sf-b svg{width:1.2cqw;height:1.2cqw}
+.sf-url{display:flex;align-items:center;justify-content:center;gap:.8cqw;width:24cqw;height:2.6cqw;border-radius:99px;background:rgba(255,255,255,.12);font-size:1.1cqw;letter-spacing:-.01em}
+.sf-url svg{width:1.1cqw;height:1.1cqw;opacity:.7}
+.sf-win{position:absolute;left:21%;right:21%;top:34.5%;bottom:10.5%;border-radius:1.6cqw;overflow:hidden;background:#f7f6f3;color:#1d1d1f;box-shadow:0 2cqw 5cqw rgba(30,20,10,.25)}
+.sf-nav{display:flex;align-items:center;height:7.5%;padding:0 2cqw;font-size:.68cqw;letter-spacing:.14em;text-transform:uppercase;color:#6e6e73;gap:1.6cqw}
+.sf-nav b{position:absolute;left:50%;transform:translateX(-50%);font-family:"Newsreader",Georgia,serif;font-size:1.35cqw;font-weight:500;letter-spacing:.32em;color:#1d1d1f}
+.sf-nav i{margin-left:auto}
+.sf-img{position:absolute;left:3%;right:3%;top:7.5%;bottom:17%;background:url(img/venue.jpg) center/cover;border-radius:.3cqw}
+.sf-tag{position:absolute;left:4.5%;top:10.5%;padding:.25cqw .7cqw;border:1px solid rgba(255,255,255,.7);border-radius:.3cqw;font-size:.6cqw;letter-spacing:.14em;text-transform:uppercase;color:#fff}
+.sf-foot{position:absolute;left:3%;right:3%;bottom:4.5%;display:flex;justify-content:space-between;align-items:flex-end}
+.sf-foot b{display:block;font-family:"Newsreader",Georgia,serif;font-weight:400;font-size:1.55cqw;letter-spacing:-.01em}
+.sf-foot small{display:block;margin-top:.3cqw;font-size:.72cqw;color:#86868b}
+.sf-foot span{font-size:.75cqw;color:#6e6e73}
+.sf-grab{position:absolute;left:calc(50% - 3.5cqw);bottom:6.9%;width:7cqw;height:.55cqw;border-radius:99px;background:rgba(255,255,255,.8)}
+/* Simeon's cursor drifts to the venue and picks it. */
+.sf-cur{position:absolute;z-index:3;left:62%;top:58%;width:0;height:0;animation:sf-move 8s cubic-bezier(.45,0,.2,1) infinite}
+.sf-cur img{position:absolute;left:.5cqw;top:.8cqw;width:3.6cqw;max-width:none;filter:drop-shadow(0 .4cqw .7cqw rgba(0,0,0,.25))}
+.sf-cur svg{position:absolute;left:-.2cqw;top:-.2cqw;width:1.5cqw;filter:drop-shadow(0 .2cqw .3cqw rgba(0,0,0,.3))}
+@keyframes sf-move{0%,10%{left:64%;top:56%}40%,60%{left:33%;top:83.3%}62%{transform:scale(.9)}64%{transform:none}90%,100%{left:64%;top:56%}}
 @container slide (max-width:700px){
-  .sp-tabs{left:50%;top:auto;bottom:4%;transform:translateX(-50%);flex-direction:row;gap:2.4cqw;padding:1.8cqw}.sp-tabs img{width:7cqw;height:7cqw;padding:.8cqw}
-  .sp-win{left:5%;right:5%;top:31%;bottom:17%;border-radius:5.4cqw}
-  .sp-top{left:3.6cqw;right:3.6cqw;top:3.4cqw}.sp-top span{width:6cqw;height:6cqw}.sp-top svg{width:3cqw;height:3cqw}
-  .sp-info{left:5cqw;right:5cqw;width:auto;top:16%}
-  .sp-kick{font-size:2.4cqw;gap:1.4cqw}.sp-kick img{width:4.6cqw}
-  .sp-title{font-size:7.4cqw;margin-top:2cqw}
-  .sp-meta{font-size:2.4cqw;gap:1.4cqw;margin-top:2.2cqw}.sp-meta img{width:3cqw;height:3cqw}.sp-meta b{font-size:2cqw}
-  .sp-desc{font-size:2.9cqw;margin-top:2.2cqw}
-  .sp-btns{gap:2cqw;margin-top:3.4cqw}.sp-btns span{height:8cqw;padding:0 4cqw;font-size:3cqw;gap:1.4cqw}.sp-btns span.c{width:8cqw;font-size:4cqw}.sp-btns svg{width:2.8cqw;height:2.8cqw}
-  .sp-slideprev,.sp-by,.sp-row,.sp-grab{display:none}
+  .sf-bar{top:31%;gap:1.2cqw;padding:1.2cqw}.sf-b{width:6.4cqw;height:6.4cqw}.sf-b svg{width:3cqw;height:3cqw}.sf-b.x{display:none}
+  .sf-url{width:44cqw;height:6.4cqw;font-size:2.8cqw;gap:1.6cqw}.sf-url svg{width:2.6cqw;height:2.6cqw}
+  .sf-win{left:5%;right:5%;top:40%;bottom:12%;border-radius:4cqw}
+  .sf-nav{height:9%;font-size:1.7cqw;gap:3cqw;padding:0 4cqw}.sf-nav span{display:none}.sf-nav b{font-size:3.4cqw}
+  .sf-img{top:9%;bottom:21%}.sf-tag{font-size:1.6cqw;padding:.6cqw 1.6cqw}
+  .sf-foot b{font-size:4cqw}.sf-foot small{font-size:2cqw;margin-top:.8cqw}.sf-foot span{font-size:2cqw}
+  .sf-grab{bottom:8%;width:14cqw;left:calc(50% - 7cqw);height:1.2cqw}
+  .sf-cur{display:none}
 }
-@media (prefers-reduced-motion:reduce){.sp-slideprev .cur{animation:none}}
+@media (prefers-reduced-motion:reduce){.sf-cur{animation:none}}
 
 /* The first card: messaging an agent like a teammate (the founder, 3 October 2026, with Apple's
    Messages card as the model): a phone cut off by the card's top edge, one exchange with Theo in
@@ -748,21 +731,15 @@ footer nav{display:flex;gap:18px}
       <article class="slide sp-slide" aria-label="A computer for every agent">
         <p class="cap top sp-cap">Every agent works on a computer of its own. Watch it work, or take over whenever you like.</p>
         <div class="sp" aria-hidden="true">
-          <div class="sp-tabs sp-glass"><img class="on" src="faces/agent-simeon.png" alt=""><img src="faces/agent-iris.png" alt=""><img src="faces/agent-theo.png" alt=""><img src="faces/agent-scout.png" alt=""><img src="faces/agent-nora.png" alt=""></div>
-          <div class="sp-win">
-            <div class="sp-top"><span class="sp-glass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 6l-6 6 6 6"/></svg></span><span class="sp-glass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></svg></span></div>
-            <div class="sp-slideprev"><h5>Revenue, up 31%<span class="cur"></span></h5><p>July to September &#183; from Stripe</p><svg viewBox="0 0 200 80" aria-hidden="true"><path d="M0 70 L25 64 L50 66 L75 55 L100 52 L125 40 L150 34 L175 20 L200 12" fill="none" stroke="#255a93" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M0 70 L25 64 L50 66 L75 55 L100 52 L125 40 L150 34 L175 20 L200 12 V80 H0z" fill="rgba(37,90,147,.1)"/><line x1="0" y1="79.5" x2="200" y2="79.5" stroke="#e5e5ea"/></svg></div>
-            <div class="sp-info">
-              <div class="sp-kick"><img src="faces/agent-simeon.png" alt="">Simeon&#8217;s computer</div>
-              <p class="sp-title">Q3 Investor Update</p>
-              <div class="sp-meta"><img src="logos/google-slides.webp" alt="">Google Slides &#183; 12 slides &#183; Writing slide 4 <b>DRAFT</b></div>
-              <p class="sp-desc">Simeon pulled revenue from Stripe, the pipeline from HubSpot and this quarter&#8217;s wins from Slack, and is writing the summary now.</p>
-              <div class="sp-btns"><span class="sp-glass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>Watch it work</span><span class="c sp-glass">+</span></div>
-            </div>
-            <p class="sp-by">Using Stripe, HubSpot and Slack. Ready for your review by 4 PM.</p>
-            <div class="sp-row"><span>Highlights<i></i><i></i></span><span>Revenue<i></i><i></i></span><span class="now">Pipeline<i></i><i></i></span><span class="todo">Hiring<i></i><i></i></span></div>
+          <div class="sf-bar"><span class="sf-b x"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M9 5v14"/></svg></span><span class="sf-b"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 6l-6 6 6 6"/></svg></span><span class="sf-b dim x"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 6l6 6-6 6"/></svg></span><span class="sf-url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>alderhouse.com<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.3-5.7L20 8.6M20 4v4.6h-4.6"/></svg></span><span class="sf-b"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></svg></span><span class="sf-b x"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span><span class="sf-b x"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="7" width="13" height="13" rx="2.5"/><path d="M4 16V6a2 2 0 0 1 2-2h10"/></svg></span></div>
+          <div class="sf-win">
+            <div class="sf-nav"><span>Retreats</span><span>Rooms</span><span>Meetings</span><b>ALDER</b><i>Book</i></div>
+            <div class="sf-img"></div>
+            <span class="sf-tag">&#9679; For teams</span>
+            <div class="sf-foot"><div><b>Alder House, Sonoma &#8599;</b><small>Twelve rooms &#183; an hour from the office</small></div><span>From $480/nt</span></div>
           </div>
-          <span class="sp-grab"></span>
+          <span class="sf-grab"></span>
+          <div class="sf-cur"><svg viewBox="0 0 20 20"><path d="M3 2l13 6.2-5.6 1.5L8 15.4z" fill="#111" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/></svg><img src="faces/agent-simeon.png" alt=""></div>
         </div>
       </article>
 
