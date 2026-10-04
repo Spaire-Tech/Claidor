@@ -268,7 +268,7 @@ async def posters(app_path):
                 pg = await b.new_page(viewport={"width": w, "height": h}, device_scale_factor=2)
                 if name == "held":
                     await pg.add_init_script("Object.defineProperty(window, 'frameElement', { get: () => ({ hasAttribute: () => true, removeAttribute() {} }) })")
-                await pg.goto(f"http://127.0.0.1:{srv.server_port}/{app_path}/index.html")
+                await pg.goto(f"http://127.0.0.1:{srv.server_port}/{app_path}/index.html?theme=light")
                 # The same moment the page reveals the live app: its sidebar drawn and its fonts in.
                 await pg.wait_for_selector(".sand-agents-sidebar", state="attached")
                 await pg.evaluate("document.fonts.ready")
