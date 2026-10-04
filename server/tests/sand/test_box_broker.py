@@ -379,6 +379,68 @@ class TestEnsureSandBox:
         # The lock is transaction-scoped: Postgres releases it with the
         # holder's commit or rollback, nothing of ours has to remember to.
 
+    async def test_a_container_that_rejects_the_rows_token_is_replaced(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        host: FakeBoxHost,
+    ) -> None:
+        # Render, 4 October 2026: the box's gateway answered 401 to the
+        # API's own health check and to every request of the Mac's helper,
+        # for good: the container running was not the one the row named.
+        access, _ = await _signed_in(client, session, user)
+        first = (await _ensure(client, access)).json()
+        rejected_token = first["gatewayToken"]
+
+        async def healthy(url: str, token: str) -> bool:
+            return True
+
+        async def rejects_the_old_token(url: str, token: str) -> bool:
+            return token == rejected_token
+
+        box_service.set_health_check_for_tests(healthy, rejects_the_old_token)
+        second = await _ensure(client, access)
+        assert second.status_code == 200, second.text
+        body = second.json()
+        assert body["podId"] == first["podId"], "same box, same volumes"
+        assert body["gatewayToken"] != rejected_token
+        assert body["networkToken"] != first["networkToken"]
+        assert host.removed[-1] == ("container-1", []), "the volumes stay"
+        assert len(host.created) == 2
+        assert host.created[-1].gateway_token == body["gatewayToken"]
+        # The replacement answers with its own token: nothing more to replace.
+        third = (await _ensure(client, access)).json()
+        assert third["gatewayToken"] == body["gatewayToken"]
+        assert len(host.created) == 2
+
+    async def test_recreate_waits_for_the_ensure_in_progress(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        host: FakeBoxHost,
+    ) -> None:
+        # A recreate removing and creating while an ensure created too is
+        # how the row came to name one container while another ran.
+        access, _ = await _signed_in(client, session, user)
+        engine = cast(Any, session.bind).engine
+        async with engine.connect() as other:
+            await other.execute(
+                text("SELECT pg_advisory_xact_lock(hashtext(:key))"),
+                {"key": f"sand-box-ensure:{user.id}"},
+            )
+            response = await client.post(
+                RECREATE,
+                json={"preserveData": True, "force": True},
+                headers={"Authorization": f"Bearer {access}"},
+            )
+            assert response.status_code == 503
+            assert response.json()["code"] == "unavailable"
+            assert response.headers["retry-after"] == "5"
+        assert host.removed == []
+        assert host.created == []
+
     async def test_the_row_is_written_after_the_box_answered_not_before(
         self,
         client: httpx.AsyncClient,
