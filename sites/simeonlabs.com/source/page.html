@@ -55,7 +55,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
    the left, sign in and the download on the right. */
 .bar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.82);-webkit-backdrop-filter:saturate(1.8) blur(20px);backdrop-filter:saturate(1.8) blur(20px);padding-top:env(safe-area-inset-top,0px)}
 .bar .wrap{display:flex;justify-content:space-between;align-items:center;height:clamp(52px,3.8vw,76px)}
-.bar .wordmark{--wm:clamp(76px,7vw,140px);width:var(--wm);margin-left:calc(var(--wm) * -85 / 1024);color:var(--ink)} /* the image has 85/1024 of empty space on its left; the letters start on the column edge */
+.bar .wordmark{--wm:clamp(118px,10.8vw,217px);width:var(--wm);margin-left:calc(var(--wm) * -85 / 1585);color:var(--ink);-webkit-mask-image:url(img/wordmark-labs.png);mask-image:url(img/wordmark-labs.png);aspect-ratio:1585/460} /* the bar says SimeonLabs (4 October 2026), the same letters at the same height; the image has 85/1585 of empty space on its left; the letters start on the column edge */
 .bar .acts{display:flex;align-items:center;justify-content:flex-end;gap:clamp(12px,.9vw,18px);font-size:clamp(14px,1vw,20px)}
 .bar .acts a{color:var(--ink);text-decoration:none}
 .bar .btn{height:clamp(28px,1.9vw,38px);padding:0 clamp(12px,.8vw,16px);font-size:clamp(14px,1vw,20px)}
@@ -859,7 +859,7 @@ footer nav{display:flex;gap:18px}
 
 <header class="bar">
   <div class="wrap">
-    <span class="wordmark" role="img" aria-label="Simeon"></span>
+    <span class="wordmark" role="img" aria-label="SimeonLabs"></span>
     <div class="acts"><a href="https://app.simeonlabs.com">Sign in</a><span class="btn">Download</span></div>
   </div>
 </header>

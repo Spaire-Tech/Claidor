@@ -8,25 +8,28 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 const logoModule = pathToFileURL(path.join(repoRoot, "scripts/lib/simeon-logo.mjs")).href;
 const icnsModule = pathToFileURL(path.join(repoRoot, "scripts/lib/make-icns.mjs")).href;
 
-test("Simeon's mark is twelve petals in a whirl, thin at the top left and full at the right", async () => {
-  const { SIMEON_PETALS, simeonLogoSvg, simeonAppIconSvg } = await import(logoModule);
-  assert.equal(SIMEON_PETALS.length, 12);
-  for (const petal of SIMEON_PETALS) {
-    assert.ok(petal.rx > petal.ry && petal.ry > 4, `a petal is an ellipse: ${JSON.stringify(petal)}`);
-    assert.ok(Math.hypot(petal.cx - 200, petal.cy - 200) > 60 && Math.hypot(petal.cx - 200, petal.cy - 200) < 100, "each petal sits on the ring");
+test("Simeon's mark is four petals in a bow, one even-odd path in the 400 box", async () => {
+  const { SIMEON_MARK_PATH, SIMEON_MARK_BOUNDS, simeonLogoSvg, simeonAppIconSvg } = await import(logoModule);
+  // The outline and the four loops' interiors: five closed subpaths.
+  assert.equal((SIMEON_MARK_PATH.match(/M/g) ?? []).length, 5);
+  assert.equal((SIMEON_MARK_PATH.match(/Z/g) ?? []).length, 5);
+  assert.match(SIMEON_MARK_PATH, /^M[\d.]+ [\d.]+C/);
+  // Every point lies inside the mark's bounds (a control point may overshoot by a hair), which sit centred in the 400 box.
+  const numbers = SIMEON_MARK_PATH.match(/-?[\d.]+/g).map(Number);
+  for (let index = 0; index < numbers.length; index += 2) {
+    assert.ok(numbers[index] >= SIMEON_MARK_BOUNDS.x - 4 && numbers[index] <= SIMEON_MARK_BOUNDS.x + SIMEON_MARK_BOUNDS.width + 4, `x ${numbers[index]}`);
+    assert.ok(numbers[index + 1] >= SIMEON_MARK_BOUNDS.y - 4 && numbers[index + 1] <= SIMEON_MARK_BOUNDS.y + SIMEON_MARK_BOUNDS.height + 4, `y ${numbers[index + 1]}`);
   }
-  const thin = SIMEON_PETALS.filter((petal) => petal.ry < 11);
-  const full = SIMEON_PETALS.filter((petal) => petal.ry >= 11);
-  assert.equal(thin.length, 4, "four thin strokes at the top left");
-  assert.equal(full.length, 8, "eight full petals round the rest");
-  assert.ok(thin.every((petal) => petal.cx < 200 && petal.cy < 200));
+  assert.ok(Math.abs(SIMEON_MARK_BOUNDS.x + SIMEON_MARK_BOUNDS.width / 2 - 200) < 2 && Math.abs(SIMEON_MARK_BOUNDS.y + SIMEON_MARK_BOUNDS.height / 2 - 200) < 2, "centred");
   const svg = simeonLogoSvg();
-  assert.equal((svg.match(/<ellipse /g) ?? []).length, 12);
+  assert.equal((svg.match(/<path /g) ?? []).length, 1);
+  assert.match(svg, /fill-rule="evenodd" fill="#141414"/);
   assert.match(svg, /viewBox="0 0 400 400"/);
   const icon = simeonAppIconSvg({ size: 1024 });
-  assert.match(icon, /<rect x="56.00" y="56.00" width="912.00" height="912.00" rx="171.00" fill="url\(#simeon-tile\)"\/>/);
-  assert.match(icon, /fill="#ffffff"/, "the mark is white on the tile");
-  assert.equal((icon.match(/<ellipse /g) ?? []).length, 12);
+  assert.match(icon, /<rect x="56.00" y="56.00" width="912.00" height="912.00" rx="186.00" fill="url\(#simeon-tile\)"\/>/);
+  assert.match(icon, /stop-color="#fefefe"/, "the tile is white");
+  assert.match(icon, /fill="#141414"/, "the mark is black on the tile");
+  assert.equal((icon.match(/<path /g) ?? []).length, 1);
   assert.doesNotMatch(icon, /data:image|<image/, "drawn, never a picture file");
 });
 
@@ -49,7 +52,7 @@ test("the mark drawn from the numbers covers the founder's PNG", { skip: process
     }
     const iou = both / either;
     t.diagnostic(`intersection over union with the founder's PNG: ${iou.toFixed(3)}`);
-    assert.ok(iou > 0.85, `intersection over union with the founder's PNG: ${iou.toFixed(3)}`);
+    assert.ok(iou > 0.95, `intersection over union with the founder's PNG: ${iou.toFixed(3)}`);
   } finally {
     await browser.close();
   }
@@ -83,11 +86,11 @@ test("the icon drawn from the numbers covers the founder's icon file, tile and m
     const drawn = PNG.sync.read(await page.screenshot({ type: "png", omitBackground: true }));
     const iou = (isA, isB) => { let both = 0, either = 0; for (let index = 0; index < 1024 * 1024; index += 1) { const a = isA(reference.data, index * 4), b = isB(drawn.data, index * 4); if (a && b) both += 1; if (a || b) either += 1; } return both / either; };
     const opaque = (data, at) => data[at + 3] > 200;
-    const white = (data, at) => data[at + 3] > 200 && data[at] > 200 && data[at + 1] > 200 && data[at + 2] > 200;
-    const tile = iou(opaque, opaque), mark = iou(white, white);
+    const black = (data, at) => data[at + 3] > 200 && data[at] < 80 && data[at + 1] < 80 && data[at + 2] < 80;
+    const tile = iou(opaque, opaque), mark = iou(black, black);
     t.diagnostic(`tile IoU ${tile.toFixed(3)}, mark IoU ${mark.toFixed(3)}`);
     assert.ok(tile > 0.97, `tile ${tile}`);
-    assert.ok(mark > 0.85, `mark ${mark}`);
+    assert.ok(mark > 0.95, `mark ${mark}`);
   } finally {
     await browser.close();
   }

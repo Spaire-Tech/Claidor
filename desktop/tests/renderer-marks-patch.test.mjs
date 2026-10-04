@@ -1,7 +1,7 @@
 /**
  * The founder's marks in the shipped screens (23 September 2026): the
  * landing mark and the onboarding hero become clouds, the boot screen's Grok
- * Bot logo becomes Simeon's petals with a slow turn, and the app icon file
+ * Bot logo becomes Simeon's mark with a slow turn, and the app icon file
  * the hand-off screen draws is Simeon's. All package-time, over the pinned
  * renderer (scripts/lib/router-renderer-patch.mjs). On 26 September the
  * marks became Ocean and the cloud became the only shape.
@@ -17,8 +17,9 @@ import { PINNED_RENDERER_SKIP, resolvePinnedRenderer } from "./lib/pinned-render
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const patchModule = pathToFileURL(path.join(repoRoot, "scripts/lib/router-renderer-patch.mjs")).href;
 
-test("the marks patch turns the landing and hero marks into clouds and the loading logo into the turning petals", async () => {
-  const { MARK_REPLACEMENTS, patchOriginalMarks, LOADING_LOGO_TURN_SECONDS } = await import(patchModule);
+test("the marks patch turns the landing and hero marks into clouds and the loading logo into the turning mark", async () => {
+  const { MARK_REPLACEMENTS, patchOriginalMarks, LOADING_LOGO_TURN_SECONDS, LOADING_LOGO_VIEWBOX } = await import(patchModule);
+  const { SIMEON_MARK_PATH } = await import(pathToFileURL(path.join(repoRoot, "scripts/lib/simeon-logo.mjs")).href);
   const chunk = MARK_REPLACEMENTS.map(([, before]) => before).join(";\n");
   const patched = patchOriginalMarks(chunk);
   // Ocean (the `blue` id), 26 September 2026, not Slate (`black`).
@@ -29,8 +30,10 @@ test("the marks patch turns the landing and hero marks into clouds and the loadi
   assert.match(patched, /function tOt\(\{size:n,color:e="black",className:t\}\)/);
   assert.match(patched, /prefers-reduced-motion: reduce/);
   assert.match(patched, /r=\{fill:MNe\(e\)\}/);
-  assert.match(patched, /height:n,viewBox:"80 80 240 240",width:n/);
-  assert.equal((patched.match(/p\.jsx\("ellipse",/g) ?? []).length, 12, "twelve petals");
+  assert.equal(LOADING_LOGO_VIEWBOX, "50 50 299 299", "the window round the mark");
+  assert.match(patched, /height:n,viewBox:"50 50 299 299",width:n/);
+  assert.ok(patched.includes(`p.jsx("path",{d:"${SIMEON_MARK_PATH}",fillRule:"evenodd",style:r},"mark")`), "the mark is the founder's path");
+  assert.equal((patched.match(/p\.jsx\("ellipse",/g) ?? []).length, 0, "no petal ellipses remain");
   assert.match(patched, new RegExp(`s\\?null:p\\.jsx\\("animateTransform",\\{attributeName:"transform",type:"rotate",from:"0 200 200",to:"360 200 200",dur:"${LOADING_LOGO_TURN_SECONDS}s",repeatCount:"indefinite"\\}`));
   assert.doesNotMatch(patched, /values:eOt/, "the 158-frame morph is gone");
   assert.throws(() => patchOriginalMarks(patched), /landing-mark-cloud anchor is missing or ambiguous/);

@@ -27,7 +27,7 @@ while the app loads). It rewrites `public/` from scratch; commit what it writes.
 The page is written by hand in `source/page.html`, light only, on one left
 edge shared by the wordmark, the headline and the demo.
 
-- **Bar**: the wordmark, Sign in, Download.
+- **Bar**: the wordmark (SimeonLabs, `img/wordmark-labs.png`; the footer keeps `img/wordmark.png`), Sign in, Download.
 - **Hero**: "Create a team of agents for any part of your business." in the
   serif, then Download for Mac and Request a demo.
 - **The app**: the real app window, playing a founder's morning.
