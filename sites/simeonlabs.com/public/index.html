@@ -184,7 +184,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
   .cap,.cap.top,.cap.side{left:7%;right:7%;top:6%;transform:none;width:auto;text-align:left;font-size:5.7cqw}
   .cap .who,.cap.top .who{justify-content:flex-start}
 }
-@media (max-width:809.98px){.track{gap:12px}.slide{aspect-ratio:4/5.4;border-radius:24px}.apps-slide{order:-1}} /* on a phone, connecting your apps comes first */
+@media (max-width:809.98px){.track{gap:12px}.slide{aspect-ratio:4/5.4;border-radius:24px}}
 /* The gallery's controls: back and next, round, at the right edge of the column. */
 .gctl{display:flex;justify-content:flex-end;gap:18px;width:var(--col);margin:28px auto 0}
 .gbtn{appearance:none;border:0;width:56px;height:56px;border-radius:50%;background:#d2d2d7;color:#424245;display:grid;place-items:center;cursor:pointer;transition:background .2s,color .2s}
@@ -938,6 +938,11 @@ footer nav{display:flex;gap:18px}
 <section class="sec" id="team" aria-roledescription="carousel" aria-label="Meet your team">
   <div class="gallery">
     <div class="track" tabindex="0">
+      <article class="slide apps-slide" aria-label="Connect your apps">
+        <p class="cap top">Connect your apps. Your agents work in the tools you already use.</p>
+        <div class="sd-orbit" aria-hidden="true"><img class="sd-orb" src="logos/slack.webp" alt=""><img class="sd-orb" src="logos/gmail.webp" alt=""><img class="sd-orb" src="logos/notion.svg" alt=""><img class="sd-orb" src="logos/figma.svg" alt=""><img class="sd-orb" src="logos/linear.svg" alt=""><img class="sd-orb" src="logos/google-drive.svg" alt=""><img class="sd-orb" src="logos/hubspot.svg" alt=""><img class="sd-orb" src="logos/zoom.webp" alt=""><img class="sd-orb" src="logos/linkedin.svg" alt=""><img class="sd-orb" src="logos/google-calendar.webp" alt=""><img class="sd-orb" src="logos/stripe.svg" alt=""><img class="sd-orb" src="logos/salesforce.svg" alt=""><div class="sd-tile"><img src="logos/simeon.svg" alt=""></div></div>
+      </article>
+
       <article class="slide light msg-slide" aria-label="Message your agents like teammates">
         <div class="msg-phone" aria-hidden="true"><div class="msg-screen">
           <p class="msg-name">Theo</p>
@@ -947,11 +952,6 @@ footer nav{display:flex;gap:18px}
           <div class="msg-compose"><span class="msg-plus">+</span><span class="msg-field">Message Theo<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12z"/></svg></span></div>
         </div></div>
         <p class="msg-cap">Message any agent like a teammate. Ask in plain words, and it gets on with the work.</p>
-      </article>
-
-      <article class="slide apps-slide" aria-label="Connect your apps">
-        <p class="cap top">Connect your apps. Your agents work in the tools you already use.</p>
-        <div class="sd-orbit" aria-hidden="true"><img class="sd-orb" src="logos/slack.webp" alt=""><img class="sd-orb" src="logos/gmail.webp" alt=""><img class="sd-orb" src="logos/notion.svg" alt=""><img class="sd-orb" src="logos/figma.svg" alt=""><img class="sd-orb" src="logos/linear.svg" alt=""><img class="sd-orb" src="logos/google-drive.svg" alt=""><img class="sd-orb" src="logos/hubspot.svg" alt=""><img class="sd-orb" src="logos/zoom.webp" alt=""><img class="sd-orb" src="logos/linkedin.svg" alt=""><img class="sd-orb" src="logos/google-calendar.webp" alt=""><img class="sd-orb" src="logos/stripe.svg" alt=""><img class="sd-orb" src="logos/salesforce.svg" alt=""><div class="sd-tile"><img src="logos/simeon.svg" alt=""></div></div>
       </article>
 
       <article class="slide call-slide" aria-label="Call your agents">
@@ -1250,9 +1250,7 @@ footer nav{display:flex;gap:18px}
 
 // The team gallery: back and next move one card at a time, and grey out at either end.
 (() => {
-  // The cards in the order they sit on screen (a phone puts Connect your apps first), kept current across resizes.
   const gal = document.querySelector('.gallery'), track = gal.querySelector('.track'), slides = [...track.children];
-  const order = () => slides.sort((a, b) => a.offsetLeft - b.offsetLeft); order(); addEventListener('resize', order);
   const [prev, next] = gal.querySelectorAll('.gbtn');
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let cur = 0;
