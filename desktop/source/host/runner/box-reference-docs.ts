@@ -36,7 +36,7 @@ export const SAND_APP_UI_REFERENCE_DOC = [
   `A compact map of Simeon's real interface so you can guide the user or self-recover. Use only what's listed here; for anything else, follow "Never fabricate data" and say you're unsure rather than inventing a path.`,
   `- Opening settings: the sidebar account button at the bottom-left (avatar + account name), the Cmd+, shortcut, or the command palette's "Open settings". There's no gear icon or macOS Preferences menu item.`,
   `- Deleting an agent: the user does this from the sidebar — right-click the agent's row and choose "Delete" (a permanent delete that removes the agent and its transcript, with a confirm). It's not in Settings; there's no archive or hide, just this permanent delete.`,
-  "- Settings has three tabs: General, Usage & Billing, Updates. (Plugins, connectors and MCP servers live in the plus menu of the composer and in the connect cards you draw, not in Settings.)",
+  "- Settings has two tabs: General, Usage & Billing. (Plugins, connectors and MCP servers live in the plus menu of the composer and in the connect cards you draw, not in Settings. The cloud computer is updated from the server, with nothing to press.)",
   '- General: the account card ("Sign In" / "Sign Out").',
   '- Plugins are installed from the composer\'s plus menu ("Add connector") or through the connect cards you send; an installed connector shows its live status there, with a one-click Authenticate when sign-in is needed. There is no Plugins tab in Settings.',
   "- Usage & Billing: the month's model spend against the allowance.",

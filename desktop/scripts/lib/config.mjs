@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -49,6 +50,13 @@ export const upstreamVersion = "0.18.0";
  * 29 September 2026.
  */
 export const simeonBundleId = "com.simeonlabs.simeon";
+/**
+ * The version people see (About, Settings, the bundle's Info.plist): ours,
+ * from desktop/package.json, never the upstream shell's (4 October 2026,
+ * the founder: "this will be our first version of Simeon so i dont want the
+ * 0.18.0 name"; "0.1.0 is the main").
+ */
+export const simeonVersion = JSON.parse(readFileSync(path.join(repoRoot, "package.json"), "utf8")).version;
 /** The URL scheme the bundle claims; must equal SAND_DEEP_LINK_SCHEME in source/shared/desktop.ts. */
 export const simeonUrlScheme = "simeon";
 export const simeonName = process.env.SIMEON_DISPLAY_NAME?.trim() || "Simeon";

@@ -34,7 +34,7 @@ export function plistIdentityRewrites(entries, { bundleId, name, year = 2026, ro
     }
     const human = key === "NSHumanReadableCopyright" || key.endsWith("UsageDescription") || READ_BY_PEOPLE.has(key);
     if (human && PREVIOUS_IDENTITY.test(value)) {
-      rewrites[key] = key === "NSHumanReadableCopyright" ? `Copyright © ${year} Simeon Labs. All rights reserved.` : renamed(value);
+      rewrites[key] = key === "NSHumanReadableCopyright" ? `Copyright © ${year} SimeonLabs, Inc. All rights reserved.` : renamed(value);
     } else if (PREVIOUS_IDENTITY.test(value) || PREVIOUS_IDENTITY_ANY_CASE.test(value)) {
       reported.push(key);
     }
