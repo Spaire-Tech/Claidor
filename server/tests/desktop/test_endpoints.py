@@ -151,7 +151,7 @@ class TestExchange:
 @pytest.mark.asyncio
 class TestFeedback:
     """`POST /desktop/api/feedback`: the app's Send Feedback sheet, which
-    posted to Cursor's `/sand/feedback` until 24 September 2026."""
+    posted to the upstream's `/sand/feedback` until 24 September 2026."""
 
     async def test_feedback_is_logged_against_the_person(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User

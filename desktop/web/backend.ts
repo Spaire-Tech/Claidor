@@ -362,7 +362,7 @@ export function createWebBackend(hooks: WebBackendHooks) {
         case "sand:mcp-list": return mcp("listServers");
         case "sand:mcp-effective-plugins": return mcp("listEffectivePlugins");
         case "sand:mcp-catalog": return mcp("getCatalog");
-        // Team popularity is Cursor's marketplace; Simeon's catalog has none.
+        // Team popularity is the upstream's marketplace; Simeon's catalog has none.
         case "sand:mcp-team-popularity": return {};
         case "sand:mcp-plugin-logo": return typeof payload?.url === "string" ? mcp("resolvePluginLogo", payload.url) : null;
         case "sand:mcp-install": {
