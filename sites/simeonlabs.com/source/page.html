@@ -628,24 +628,28 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 }
 
 /* Pricing, questions and the closing call: the same serif headline and pale panels as the trust section. */
-.plans3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin-top:clamp(40px,4vw,80px)}
-.plan3{display:flex;flex-direction:column;padding:clamp(28px,2.6vw,48px);border-radius:28px;background:#fafafb}
-.plan3 h3{margin:0;font-size:clamp(20px,1.35vw,26px);font-weight:500;letter-spacing:-.02em;color:#3a3a3c}
-.plan3 .pr{margin-top:clamp(18px,1.6vw,30px);font-family:"Newsreader",Georgia,"Times New Roman",serif;font-size:clamp(44px,3.4vw,68px);line-height:1;letter-spacing:-.02em}
-.plan3 .pr small{font-family:var(--font);font-size:clamp(15px,.95vw,18px);letter-spacing:-.01em;color:var(--ink2);margin-left:4px}
-.plan3 .per{margin-top:10px;font-size:clamp(14px,.9vw,17px);color:var(--ink3)}
-.plan3 .use{margin:clamp(20px,1.8vw,34px) 0 clamp(24px,2.2vw,40px);padding-top:clamp(18px,1.6vw,28px);border-top:1px solid #ececef;font-size:clamp(16px,1.02vw,19.5px);color:#3a3a3c;flex:1}
-.plan3 .btn{align-self:flex-start}
-.plan3 .btn.ghost{background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.06)}
-.plan3 .btn.ghost:hover{background:#f2f2f4}
-.bill3wrap{display:flex;justify-content:center;margin-top:clamp(40px,4vw,80px)}
-.bill3wrap+.plans3{margin-top:clamp(24px,2vw,36px)}
-@media (max-width:734px){.bill3wrap{justify-content:flex-start}}
-.bill3{display:inline-flex;gap:4px;padding:4px;border-radius:99px;background:#f2f2f4}
-.bill3 button{appearance:none;border:0;background:none;border-radius:99px;padding:9px 16px;font:inherit;font-size:15px;color:var(--ink2);cursor:pointer}
-.bill3 button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.1)}
-.bill3 button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
-.pricing3 .y{display:none}.pricing3.yearly .y{display:inline}.pricing3.yearly .m{display:none}
+/* Pricing: four plans the way Cursor sets them (the founder, 4 October 2026), on the page's own pale panels: name, who it is for, the price in the serif, the week's allowance, what it includes, the button at the foot. */
+.plans4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px;margin-top:clamp(40px,4vw,80px)}
+.plan4{display:flex;flex-direction:column;padding:clamp(26px,2.2vw,44px) clamp(22px,1.9vw,38px);border-radius:28px;background:#fafafb}
+.plan4 h3{margin:0;font-size:clamp(20px,1.35vw,26px);font-weight:500;letter-spacing:-.02em;color:#1d1d1f}
+.plan4 .tag{margin:6px 0 0;font-size:clamp(14px,.9vw,17px);letter-spacing:-.01em;color:var(--ink3)}
+.plan4 .pr{margin-top:clamp(18px,1.6vw,30px);font-family:"Newsreader",Georgia,"Times New Roman",serif;font-size:clamp(40px,2.9vw,58px);line-height:1;letter-spacing:-.02em}
+.plan4 .pr small{font-family:var(--font);font-size:clamp(14px,.9vw,17px);letter-spacing:-.01em;color:var(--ink2);margin-left:5px}
+.plan4 .quota{margin-top:clamp(16px,1.4vw,26px);padding:12px 14px 13px;border-radius:14px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.05);font-size:clamp(13.5px,.85vw,16px);line-height:1.4;letter-spacing:-.01em;color:var(--ink2)}
+.plan4 .quota .ql{display:block;font-size:clamp(12px,.75vw,14px);color:var(--ink3);margin-bottom:3px}
+.plan4 .quota b{display:block;font-weight:500;font-size:clamp(15px,1vw,19px);color:#1d1d1f;margin-bottom:2px}
+.plan4 .inc{margin:clamp(22px,2vw,36px) 0 0;padding-top:clamp(18px,1.6vw,28px);border-top:1px solid #ececef;font-size:clamp(15px,.95vw,17.5px);letter-spacing:-.01em;color:var(--ink3)}
+.plan4 ul{list-style:none;margin:14px 0 clamp(30px,2.8vw,48px);padding:0;display:grid;gap:10px;align-content:start;font-size:clamp(15px,.98vw,18px);line-height:1.4;letter-spacing:-.01em;color:#1d1d1f}
+.plan4 li{display:flex;gap:10px;align-items:flex-start}
+.plan4 li::before{content:"";flex:none;width:1em;height:1em;margin-top:.22em;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236e6e73' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7'/%3E%3C/svg%3E") center/contain no-repeat}
+.plan4 .btn{align-self:flex-start;margin-top:auto}
+.plan4 .btn.ghost{background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.06)}
+.plan4 .btn.ghost:hover{background:#f2f2f4}
+.pnote{margin:clamp(22px,2vw,36px) auto 0;max-width:60em;font-size:clamp(14px,.9vw,16.5px);line-height:1.55;letter-spacing:-.01em;color:var(--ink3);text-align:center}
+/* Where the browser can, the four cards share their rows, so the allowance boxes, the rules and the buttons sit level across the row. */
+@supports (grid-template-rows:subgrid){.plans4{grid-template-rows:repeat(7,auto)}.plan4{display:grid;grid-template-rows:subgrid;grid-row:span 7;align-content:start}.plan4 .btn{margin-top:0;align-self:start;justify-self:start}}
+@media (max-width:1068px){.plans4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:734px){.plans4{grid-template-columns:1fr;gap:14px}.plan4{border-radius:24px}.pnote{text-align:left}}
 .qa3{margin-top:clamp(40px,4vw,80px);padding:clamp(12px,1.2vw,24px) clamp(28px,3vw,56px);border-radius:28px;background:#fafafb}
 .qa3 details{border-top:1px solid #ececef}
 .qa3 details:first-child{border-top:0}
@@ -659,7 +663,6 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .close3 h2{margin:0 auto;font-family:"Newsreader",Georgia,"Times New Roman",serif;font-weight:400;font-size:clamp(44px,4.4vw,88px);line-height:1;letter-spacing:-.02em}
 .close3 .ctas{display:flex;justify-content:center;gap:clamp(10px,.7vw,14px);flex-wrap:wrap;margin-top:clamp(28px,2.4vw,44px)}
 .close3 .btn{height:clamp(44px,3.05vw,61px);padding:0 clamp(20px,1.6vw,32px);font-size:clamp(16px,1.15vw,23px)}
-@media (max-width:860px){.plans3{grid-template-columns:1fr}}
 
 /* Security and integrations: a serif headline beside the promise, then two grey panels of icon rows. */
 .trust{padding:clamp(100px,9vw,170px) 0 clamp(40px,4vw,80px)}
@@ -990,14 +993,14 @@ footer nav{display:flex;gap:18px}
 </section>
 
 
-<section class="trust pricing3" id="pricing" aria-label="Pricing">
+<section class="trust" id="pricing" aria-label="Pricing">
   <div class="wrap">
     <div class="trust-top">
       <h2>Pricing</h2>
-      <p>Every agent, on every plan. The plans differ only in how much work your team can do each week.</p>
+      <p>Every agent, every feature, on every plan. The plans differ in how much work your team can do each week.</p>
     </div>
-    <div class="bill3wrap"><div class="bill3" role="group" aria-label="Billing"><button type="button" class="on" data-bill="m">Monthly</button><button type="button" data-bill="y">Yearly, save 20%</button></div></div>
-    <div class="plans3"><div class="plan3"><h3>Standard</h3><div class="pr"><span class="m">$20</span><span class="y">$16</span><small>/ month</small></div><div class="per"><span class="m">Billed monthly. 7 days free.</span><span class="y">$192 billed yearly. 7 days free.</span></div><p class="use">For a light week of work.</p><span class="btn ghost">Try it free</span></div><div class="plan3"><h3>Pro</h3><div class="pr"><span class="m">$60</span><span class="y">$48</span><small>/ month</small></div><div class="per"><span class="m">Billed monthly. 7 days free.</span><span class="y">$576 billed yearly. 7 days free.</span></div><p class="use">Five times the weekly work of Standard.</p><span class="btn">Try it free</span></div><div class="plan3"><h3>Max</h3><div class="pr"><span class="m">$100</span><span class="y">$80</span><small>/ month</small></div><div class="per"><span class="m">Billed monthly. 7 days free.</span><span class="y">$960 billed yearly. 7 days free.</span></div><p class="use">Twenty times the weekly work of Standard.</p><span class="btn ghost">Try it free</span></div></div>
+    <div class="plans4"><div class="plan4"><h3>Trial</h3><p class="tag">For the first week</p><div class="pr">Free<small>for 7 days</small></div><div class="quota"><span class="ql">Included</span><b>1,000,000 credits</b>Once, for the week. About 10 tasks.</div><p class="inc">Includes:</p><ul><li>Every agent and every feature</li><li>A cloud computer for each agent</li><li>Card on file, one trial per card</li><li>Becomes Standard on day 8 unless you cancel</li></ul><span class="btn ghost">Try it free</span></div><div class="plan4"><h3>Individual</h3><p class="tag">For one person and their agents</p><div class="pr">$20<small>/ month</small></div><div class="quota"><span class="ql">Included each week</span><b>750,000 credits</b>About 7 tasks a week. A light week of work.</div><p class="inc">Everything in the trial, plus:</p><ul><li>Routines that run while your Mac is closed</li><li>Discord and Slack channels, voice calls</li><li>Memory shared across your agents</li><li>Keep going past the week&#8217;s allowance on demand, with a cap you set</li></ul><span class="btn">Get Standard</span></div><div class="plan4"><h3>Teams</h3><p class="tag">For a company that shares its agents</p><div class="pr">$40<small>/ person / month</small></div><div class="quota"><span class="ql">Pooled each week</span><b>1,000,000 credits</b>Per person, shared by the whole team.</div><p class="inc">Everything in Individual, plus:</p><ul><li>One bill and one admin for everyone</li><li>Shared agents in rooms, with the team&#8217;s memory</li><li>Approval rules for the whole team</li><li>Usage by person and by agent</li><li>SAML and OIDC sign-in, later</li></ul><span class="btn ghost">Get Teams</span></div><div class="plan4"><h3>Enterprise</h3><p class="tag">For larger organisations</p><div class="pr">Custom</div><div class="quota"><span class="ql">Pooled</span><b>Agreed up front</b>One allowance for the whole company.</div><p class="inc">Everything in Teams, plus:</p><ul><li>Invoice and purchase-order billing</li><li>Which apps and connectors agents may use</li><li>Audit log of every action an agent took</li><li>Priority support and account management</li></ul><span class="btn ghost">Contact sales</span></div></div>
+    <p class="pnote">A credit is one token of input on the middle model. A typical task, one that reads a few pages and writes something back, is about 100,000 credits. Allowances reset every Monday. Unused credits do not carry over.</p>
   </div>
 </section>
 
@@ -1120,11 +1123,6 @@ footer nav{display:flex;gap:18px}
   sync();
 })();
 
-// Monthly or yearly.
-(() => {
-  const sw = document.querySelector('.bill3'), sec = document.getElementById('pricing'); if (!sw) return;
-  sw.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; sw.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b)); sec.classList.toggle('yearly', b.dataset.bill === 'y'); });
-})();
 </script>
 </body>
 </html>
