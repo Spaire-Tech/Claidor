@@ -33,7 +33,7 @@ edge shared by the wordmark, the headline and the demo.
 - **The app**: the real app window, playing a founder's morning.
 - **Statement**: one centred sentence, the key words in black.
 - **Gallery**: six cards, light grey and dusk blue in turn, moved with back
-  and next: message an agent, a computer of its own, connect your apps, agents
+  and next: connect your apps, message an agent, a computer of its own, agents
   working together, call an agent, stay in control.
 - **Security and integrations**: a serif title beside a paragraph, then two
   pale panels of icon rows. A blue dot marks what is still in progress.
