@@ -28,6 +28,7 @@ from uuid import UUID, uuid4
 
 import httpx
 import structlog
+from sqlalchemy import text
 
 from simeon.config import settings
 from simeon.desktop.repository import DesktopSessionRepository
@@ -87,6 +88,12 @@ LOCAL_BOX_REASON = (
     "This computer runs in Docker on the user's Mac; it is updated from "
     "Simeon on the Mac (Settings → Updates), not from here."
 )
+
+
+class BoxEnsureInProgress(Exception):
+    """Another request is already creating, starting or checking this
+    person's box (4 October 2026). `EnsureSandBox` answers it the way it
+    answers a box still starting: unavailable, retry in five seconds."""
 
 
 class BoxBrokerRefused(Exception):
@@ -461,6 +468,12 @@ class BoxBrokerService:
         with its URLs stamped. Raises `BoxBrokerRefused` (a Connect code
         and a sentence) and `BoxHostError`."""
         parent = await self._parent_of(db, caller)
+        # One ensure per person at a time (Render, 4 October 2026). The page,
+        # the Mac app and its helper all ask within seconds of each other,
+        # and two of them creating a container at once left the row naming
+        # one container and the server running another. The lock lives with
+        # this transaction; a second caller is told to come back in a moment.
+        await self._take_ensure_lock(db, parent.user_id)
         repository = SandBoxRepository.from_session(db)
         box = await repository.get_by_user(parent.user_id)
         # A box stays on the server it was made on: its volumes live there.
@@ -570,11 +583,23 @@ class BoxBrokerService:
                 raise
             created = True
         self.stamp_urls(box)
+        # The wait comes before the row is written (Render, 4 October 2026).
+        # Written first, the row stayed locked by this transaction for the
+        # whole wait, up to ninety seconds; every other EnsureSandBox for the
+        # same person then blocked on that lock until the database's
+        # statement timeout killed it, and the window could not connect.
+        ready = await self.wait_ready(box)
+        if not ready:
+            log.warning(
+                "sand.box.ensure.not_ready",
+                box=str(box.id),
+                url=self.internal_url(box, GATEWAY_PORT),
+                waited_s=settings.BOX_READY_TIMEOUT.total_seconds(),
+            )
         box.last_ensured_at = utc_now()
         box.last_active_at = box.last_ensured_at
         box.hibernated_at = None
         await repository.update(box, flush=True)
-        ready = await self.wait_ready(box)
         log.info(
             "sand.box.ensure",
             box=str(box.id),
@@ -585,6 +610,17 @@ class BoxBrokerService:
             gateway_url=box.gateway_url,
         )
         return box
+
+    @staticmethod
+    async def _take_ensure_lock(db: AsyncSession, user_id: UUID) -> None:
+        """A transaction-scoped advisory lock on the person: released with
+        the request's commit or rollback, never left behind."""
+        taken = await db.scalar(
+            text("SELECT pg_try_advisory_xact_lock(hashtext(:key))"),
+            {"key": f"sand-box-ensure:{user_id}"},
+        )
+        if not taken:
+            raise BoxEnsureInProgress()
 
     async def recreate(
         self,

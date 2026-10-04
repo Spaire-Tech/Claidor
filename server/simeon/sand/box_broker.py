@@ -48,7 +48,7 @@ from .box_hosts import (
     BoxHostUnavailable,
     BoxStorageDisabled,
 )
-from .box_service import BoxBrokerRefused, broker, migrations
+from .box_service import BoxBrokerRefused, BoxEnsureInProgress, broker, migrations
 from .connect import ConnectCall, ConnectError, ConnectService
 
 log = structlog.get_logger()
@@ -162,11 +162,25 @@ async def ensure_sand_box(call: ConnectCall) -> dict[str, Any]:
             "sand.box.ensure.refused", user=str(call.caller.user_id), error=str(error)
         )
         raise connect_error_for(error)
-    except TimeoutError:
-        # The box is still starting (a new host bundle, a cold image): the
-        # app retries an unavailable answer. It used to reach the app as an
-        # internal error and the log as an unhandled exception.
-        log.warning("sand.box.ensure.timeout", user=str(call.caller.user_id))
+    except (TimeoutError, BoxEnsureInProgress) as error:
+        # The box is still starting (a new host bundle, a cold image), or
+        # another request is already seeing to it: the app retries an
+        # unavailable answer. It used to reach the app as an internal error
+        # and the log as an unhandled exception.
+        #
+        # A TimeoutError can be the database's own statement timeout raised
+        # inside a write (Render, 4 October 2026): the session is then marked
+        # rolled back, and the commit at the end of the request would raise
+        # PendingRollbackError as a 500. Roll it back here, so the answer is
+        # the retry the app knows. The rollback expires every loaded row, the
+        # caller's included, so its id is read first.
+        user_id = str(call.caller.user_id)
+        await call.db.rollback()
+        log.warning(
+            "sand.box.ensure.timeout",
+            user=user_id,
+            in_progress=isinstance(error, BoxEnsureInProgress),
+        )
         raise ConnectError(
             "unavailable",
             "Simeon's cloud computer is still starting. Try again in a moment.",

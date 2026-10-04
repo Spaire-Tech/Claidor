@@ -25,6 +25,7 @@ import pytest_asyncio
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from pytest_mock import MockerFixture
+from sqlalchemy import text
 from starlette.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
 from websockets.asyncio.server import serve
@@ -318,6 +319,92 @@ class TestEnsureSandBox:
         assert response.status_code == 503
         assert response.json()["code"] == "unavailable"
         assert response.headers["retry-after"] == "5"
+
+    async def test_a_database_timeout_inside_ensure_is_a_retry_not_a_500(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        host: FakeBoxHost,
+        mocker: MockerFixture,
+    ) -> None:
+        # Render, 4 October 2026: the statement timeout killed a write
+        # inside ensure; the session was left marked rolled back and the
+        # commit at the end of the request raised PendingRollbackError as
+        # a 500, on every connection attempt for ten minutes.
+        access, _ = await _signed_in(client, session, user)
+        assert (await _ensure(client, access)).status_code == 200
+        # The tests share one session with the app, inside one transaction
+        # that the fixture rolls back; on Render each request has its own
+        # session, so the rollback below reaches that request alone. Here
+        # it is watched, not followed by more requests.
+        rollback = mocker.spy(session, "rollback")
+
+        async def timed_out(self: Any, *args: Any, **kwargs: Any) -> Any:
+            # What asyncpg raises past DATABASE_COMMAND_TIMEOUT_SECONDS, mid-flush.
+            await self.session.execute(text("SELECT 1"))
+            raise TimeoutError()
+
+        mocker.patch.object(box_service.SandBoxRepository, "update", timed_out)
+        response = await _ensure(client, access)
+        assert response.status_code == 503
+        assert response.json()["code"] == "unavailable"
+        assert response.headers["retry-after"] == "5"
+        assert rollback.call_count == 1, "the session is rolled back before the answer"
+
+    async def test_one_ensure_per_person_at_a_time(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        host: FakeBoxHost,
+    ) -> None:
+        # Render, 4 October 2026: the page, the Mac app and its helper all
+        # asked within seconds, two created a container at once, and the
+        # row named one container while the server ran another.
+        access, _ = await _signed_in(client, session, user)
+        # Another request, on its own connection, is in the middle of ensure.
+        # (The tests run inside one transaction, so an ensure of our own
+        # first would hold the lock until the test ends.)
+        engine = cast(Any, session.bind).engine
+        async with engine.connect() as other:
+            await other.execute(
+                text("SELECT pg_advisory_xact_lock(hashtext(:key))"),
+                {"key": f"sand-box-ensure:{user.id}"},
+            )
+            response = await _ensure(client, access)
+            assert response.status_code == 503
+            assert response.json()["code"] == "unavailable"
+            assert response.headers["retry-after"] == "5"
+        # The lock is transaction-scoped: Postgres releases it with the
+        # holder's commit or rollback, nothing of ours has to remember to.
+
+    async def test_the_row_is_written_after_the_box_answered_not_before(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        host: FakeBoxHost,
+        mocker: MockerFixture,
+    ) -> None:
+        # Written first, the row stayed locked for the whole wait (up to
+        # ninety seconds) and every other EnsureSandBox blocked on it.
+        order: list[str] = []
+        update = box_service.SandBoxRepository.update
+
+        async def recorded_update(self: Any, *args: Any, **kwargs: Any) -> Any:
+            order.append("update")
+            return await update(self, *args, **kwargs)
+
+        async def recorded_health(url: str, token: str) -> bool:
+            order.append("health")
+            return True
+
+        mocker.patch.object(box_service.SandBoxRepository, "update", recorded_update)
+        box_service.set_health_check_for_tests(recorded_health)
+        access, _ = await _signed_in(client, session, user)
+        assert (await _ensure(client, access)).status_code == 200
+        assert order.index("health") < order.index("update")
 
     async def test_a_blocked_box_carries_the_hint_the_retry_after_and_the_details(
         self,
