@@ -1,2 +1,4 @@
 **/dist
 **/pnpm-lock.yaml
+# Simeon on the web: the built window (desktop/web/build-web.mjs).
+public/app

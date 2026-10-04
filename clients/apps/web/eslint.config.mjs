@@ -11,6 +11,8 @@ export default [
       'out/**',
       'build/**',
       'next-env.d.ts',
+      // Simeon on the web: the built window (desktop/web/build-web.mjs).
+      'public/app/**',
     ],
   },
 ]

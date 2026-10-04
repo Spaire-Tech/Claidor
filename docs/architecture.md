@@ -134,6 +134,18 @@ Next.js, at `app.simeonlabs.com`. For the Mac app it provides the web sign-in
 page: `/loginDeepControl` sends a person with no session to the web app's
 `/login`, then asks them to confirm.
 
+**Simeon on the web** (4 October 2026) is the Mac app's window served at
+`app.simeonlabs.com/app`, with the page standing in for Electron
+(`desktop/web/`, its README). The page trades the web cookie for the Mac's
+token pair (`POST /auth/web-session`, a `DesktopSession` marked `web`), asks
+the broker for the box, and runs the coordinator's gateway client in the
+browser: commands and the event stream reach the host through the API's
+proxy, which strips the browser's `Origin` so the host's own refusal of
+browser requests keeps guarding direct access. The built page lives under
+`clients/apps/web/public/app` and is rebuilt with `npm run web:build` in
+`desktop/`. The agent's hands on the person's own machine, WebAuthn, voice
+calls and the updater stay with the Mac app.
+
 ## The website (`sites/simeonlabs.com`)
 
 A static site served by Vercel from `public/`. Its hero plays the patched app
