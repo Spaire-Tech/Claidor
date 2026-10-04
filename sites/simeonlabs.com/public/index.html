@@ -66,6 +66,8 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .hero h1{max-width:13em;font-family:"Newsreader",Georgia,"Times New Roman",serif;font-size:clamp(36px,2.9vw,58px);line-height:1.04;font-weight:400;letter-spacing:-.02em;text-wrap:balance}
 .hero .ctas{display:flex;gap:clamp(10px,.7vw,14px);flex-wrap:wrap;margin-top:clamp(18px,1.6vw,32px)}
 .hero .btn{height:clamp(44px,3.05vw,61px);padding:0 clamp(20px,1.6vw,32px);font-size:clamp(16px,1.15vw,23px)}
+/* On a phone the hero breathes the way Cursor's does (4 October 2026): a long pause under the bar, a headline that leaves air on the right, and room before the app. */
+@media (max-width:734px){.hero{padding-top:88px}.hero h1{font-size:31px;line-height:1.1;max-width:11.5em}.hero .ctas{margin-top:26px}.moment{padding-top:58px}}
 .btn .apl{width:1.05em;height:1.05em;margin:-.18em .45em 0 -.1em;flex:none}
 
 /* Section headings and the section anatomy. */
