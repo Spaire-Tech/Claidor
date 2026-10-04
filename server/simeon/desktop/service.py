@@ -385,6 +385,24 @@ class DesktopService:
 
     # sessions
 
+    async def issue_web_session(
+        self,
+        session: AsyncSession,
+        user: User,
+        *,
+        user_agent: str = "",
+    ) -> tuple[DesktopSession, str, str]:
+        """The session behind the window served at app.simeonlabs.com
+        (4 October 2026). The person is already signed in there with the
+        web cookie; the window speaks the desktop protocol (a bearer on
+        `/desktop/*` and the box broker), so the cookie is traded for the
+        same pair the Mac holds, on a row marked `web`. It refreshes at
+        `/oauth/token` like the Mac's and dies on sign-out like the Mac's.
+        """
+        return await self._issue_session(
+            session, user, user_agent=user_agent, client_kind="web"
+        )
+
     async def _issue_session(
         self,
         session: AsyncSession,
@@ -392,6 +410,7 @@ class DesktopService:
         *,
         user_agent: str = "",
         client_version: str | None = None,
+        client_kind: str = "desktop",
     ) -> tuple[DesktopSession, str, str]:
         access, access_hash = generate_token_hash_pair(
             secret=settings.SECRET, prefix=ACCESS_TOKEN_PREFIX
@@ -407,6 +426,7 @@ class DesktopService:
             refresh_expires_at=now + settings.DESKTOP_REFRESH_TOKEN_TTL,
             user_agent=user_agent[:2000],
             client_version=(client_version or None) and client_version[:64],
+            client_kind=client_kind,
             user_id=user.id,
         )
         desktop_session.user = user
@@ -486,6 +506,7 @@ class DesktopService:
             found.user,
             user_agent=found.user_agent,
             client_version=found.client_version,
+            client_kind=found.client_kind,
         )
         # The box credential follows the desktop it belongs to: the app
         # refreshes every hour, and a box that died with each refresh would

@@ -206,6 +206,21 @@ export function saveAccountMcpStore(rootDir: string, store: AccountMcpStore): vo
   renameSync(temporary, path);
 }
 
+/**
+ * The store as the other side receives it (4 October 2026, with Simeon on
+ * the web): the refresh token of a credential stays where its sign-in
+ * finished, the Mac or the box, and that side alone refreshes it; the copy
+ * carries the access token.
+ */
+export function serializeAccountMcpStoreForPeer(store: AccountMcpStore): AccountMcpStore {
+  const credentials: Record<string, AccountMcpStoredCredential> = {};
+  for (const [id, credential] of Object.entries(store.credentials)) {
+    const { refreshToken: _refresh, ...copy } = credential;
+    credentials[id] = copy;
+  }
+  return { ...store, credentials };
+}
+
 function mergeTable<T extends { readonly updatedAtMs: number }>(local: Readonly<Record<string, T>>, incoming: Readonly<Record<string, T>>): Record<string, T> {
   const merged: Record<string, T> = { ...local };
   for (const [key, entry] of Object.entries(incoming)) {

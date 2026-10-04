@@ -405,6 +405,47 @@ class TestSigningIn:
         assert sent["toolkit"] == "gmail"
         assert sent["callback_url"].endswith("/desktop/apps/connected")
 
+    async def test_the_box_may_start_and_end_a_sign_in_for_the_web(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        """Simeon on the web (4 October 2026): the window on the web connects
+        apps through the manager in the box, so the box's own credential
+        reaches connect and disconnect, which were the Mac's alone."""
+        headers = await _signed_in(client, session, user)
+        minted = await client.post(
+            "/desktop/api/box/renewal-credential", headers=headers
+        )
+        traded = await client.post(
+            "/sand-box/inference-credential",
+            json={"credential": minted.json()["data"]["credential"]},
+        )
+        box = {"Authorization": f"Bearer {traded.json()['accessToken']}"}
+        with respx.mock(assert_all_called=True) as mock:
+            mock.get(f"{API}/api/v3.1/connected_accounts").mock(
+                side_effect=[_accounts(), _accounts("ca_1")]
+            )
+            mock.post(f"{API}/api/v3.1/tool_router/session").mock(
+                return_value=httpx.Response(201, json={"session_id": "trs_1"})
+            )
+            mock.post(f"{API}/api/v3.1/tool_router/session/trs_1/link").mock(
+                return_value=httpx.Response(
+                    201,
+                    json={
+                        "link_token": "t",
+                        "redirect_url": "https://accounts.google.com/o/oauth2/auth?x=1",
+                        "connected_account_id": "ca_2",
+                    },
+                )
+            )
+            mock.delete(f"{API}/api/v3.1/connected_accounts/ca_1").mock(
+                return_value=httpx.Response(200, json={"success": True})
+            )
+            started = await client.post("/desktop/api/apps/gmail/connect", headers=box)
+            gone = await client.delete("/desktop/api/apps/gmail", headers=box)
+        assert started.status_code == 200, started.text
+        assert started.json()["url"].startswith("https://accounts.google.com/")
+        assert gone.json() == {"toolkit": "gmail", "disconnected": 1}
+
     async def test_status_and_disconnect(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User
     ) -> None:

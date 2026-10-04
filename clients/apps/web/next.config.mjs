@@ -45,6 +45,27 @@ const embeddedCSP = `
   form-action 'self' ${process.env.NEXT_PUBLIC_API_URL};
   frame-ancestors *;
 `
+// Simeon on the web (4 October 2026): the Mac app's window at /app. It
+// talks to the API and, through the API's proxy, to the person's cloud
+// computer: commands and the event stream (connect-src), the agents'
+// pictures (img-src) and the computer panel (frame-src). It is never
+// shown inside another site.
+const appWindowCSP = `
+  default-src 'self';
+  connect-src 'self' blob: ${process.env.NEXT_PUBLIC_API_URL};
+  img-src 'self' blob: data: https: ${process.env.NEXT_PUBLIC_API_URL};
+  media-src 'self' blob: ${process.env.NEXT_PUBLIC_API_URL};
+  frame-src ${process.env.NEXT_PUBLIC_API_URL};
+  script-src 'self' blob:;
+  worker-src 'self' blob:;
+  style-src 'self' 'unsafe-inline';
+  font-src 'self' blob: data:;
+  object-src 'none';
+  base-uri 'self';
+  frame-ancestors 'none';
+  ${ENVIRONMENT !== 'development' ? 'upgrade-insecure-requests;' : ''}
+`
+
 // Don't add form-action to the OAuth2 authorize page, as it blocks the OAuth2 redirection
 // 10-years old debate about whether to block redirects with form-action or not: https://github.com/w3c/webappsec-csp/issues/8
 const oauth2CSP = `
@@ -136,6 +157,12 @@ const nextConfig = {
 
   async rewrites() {
     return [
+      // Simeon on the web: the window is a built page under public/app
+      // (desktop/web/build-web.mjs); /app opens it.
+      {
+        source: '/app',
+        destination: '/app/index.html',
+      },
       {
         source: '/ingest/static/:path*',
         destination: 'https://us-assets.i.posthog.com/static/:path*',
@@ -327,8 +354,47 @@ const nextConfig = {
 
     return [
       {
-        source: '/((?!checkout|oauth2|docs).*)',
+        source: '/((?!checkout|oauth2|docs|app).*)',
         headers: baseHeaders,
+      },
+      {
+        source: '/app/:path*',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: appWindowCSP.replace(/\n/g, ''),
+          },
+          {
+            key: 'Permissions-Policy',
+            value:
+              'payment=(), publickey-credentials-get=(), camera=(), microphone=(self), geolocation=()',
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'X-Robots-Tag',
+            value: 'noindex, nofollow, noarchive, nosnippet, noimageindex',
+          },
+        ],
+      },
+      {
+        source: '/app',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: appWindowCSP.replace(/\n/g, ''),
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'X-Robots-Tag',
+            value: 'noindex, nofollow, noarchive, nosnippet, noimageindex',
+          },
+        ],
       },
       {
         source: '/oauth2/:path*',

@@ -74,6 +74,8 @@ export class SandMcpAuthWatchLifecycle {
       reload(): Promise<void>;
       onConnectorAuth?(event: Record<string, unknown>): void;
       clock?: Clock;
+      /** Where the vendor sends the person back: the Mac's loopback, or the server's hosted callback for a sign-in started in the box. */
+      oauthRedirectUri?: string;
     },
   ) {
     this.clock = deps.clock ?? realClock;
@@ -159,7 +161,7 @@ export class SandMcpAuthWatchLifecycle {
       status = await this.deps.backendMcpExec.checkAuthStatus({
         serverId: parseInt32McpServerId(serverId),
         accountKey,
-        oauthRedirectUri: MCP_OAUTH_LOOPBACK_CALLBACK_URL,
+        oauthRedirectUri: this.deps.oauthRedirectUri ?? MCP_OAUTH_LOOPBACK_CALLBACK_URL,
         forceReauth,
       });
     } catch (error) {
