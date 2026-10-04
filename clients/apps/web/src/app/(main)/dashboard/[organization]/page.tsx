@@ -1,25 +1,19 @@
-import { Metadata } from 'next'
+import { redirect } from 'next/navigation'
 
-export async function generateMetadata(): Promise<Metadata> {
-  return { title: 'Simeon' }
-}
-
-/** The root of an organization. Simeon itself runs in the Mac app. */
-export default async function Page() {
-  return (
-    <main
-      style={{
-        minHeight: '100vh',
-        display: 'grid',
-        placeItems: 'center',
-        fontFamily: 'system-ui, sans-serif',
-        color: '#333',
-        background: '#fafafa',
-      }}
-    >
-      <p style={{ margin: 0, maxWidth: '36rem', textAlign: 'center' }}>
-        Simeon runs in the Mac app. There is nothing to manage here yet.
-      </p>
-    </main>
-  )
+/**
+ * The root of an organization. Simeon on the web (4 October 2026) is the
+ * window at /app, so a signed-in person goes straight there; until then
+ * this page said Simeon ran in the Mac app and there was nothing to
+ * manage here. The query string survives the hop, as it does on
+ * /dashboard: a connector's callback lands its verdict there.
+ */
+export default async function Page(props: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
+  const searchParams = await props.searchParams
+  const query = new URLSearchParams()
+  for (const [key, value] of Object.entries(searchParams)) {
+    if (typeof value === 'string') query.set(key, value)
+  }
+  redirect(query.size > 0 ? `/app?${query.toString()}` : '/app')
 }
