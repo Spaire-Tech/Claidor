@@ -4,7 +4,7 @@ import { copyFile, readdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { SIMEON_PETALS } from "./simeon-logo.mjs";
+import { SIMEON_MARK_BOUNDS, SIMEON_MARK_PATH } from "./simeon-logo.mjs";
 
 const REGISTRY_BEFORE = 'const wDn=[{id:"general",label:"General",icon:"settings-gear"},{id:"usage",label:"Usage & Billing",icon:"chart-bars"},{id:"beta",label:"Updates",icon:"cloud-download"}]';
 const REGISTRY_AFTER = REGISTRY_BEFORE;
@@ -120,10 +120,10 @@ export function patchOriginalBrandStrings(source) {
  *      teammates keep their shapes.
  *   3. The boot screen's logo (`tOt`, "Setting up …'s computer") is Grok
  *      Bot's own, an SVG path morphing through 158 frames. It becomes
- *      Simeon's twelve petals, drawn from the numbers in simeon-logo.mjs,
- *      same size, same colour variable (`MNe`, light-dark), same
- *      reduced-motion rule, turning once every 14 seconds instead of
- *      morphing.
+ *      Simeon's mark, drawn from the path in simeon-logo.mjs (the four
+ *      petals, 4 October 2026), same size, same colour variable (`MNe`,
+ *      light-dark), same reduced-motion rule, turning once every 14 seconds
+ *      instead of morphing.
  * Ocean, 26 September 2026 ("the onboarding cloud color is grey ish. i want
  * it this color", with a screenshot of the Ocean palette): the landing mark,
  * the hero and the no-agent mark (a fourth anchor) are `color:"blue"`, the
@@ -142,16 +142,20 @@ const HERO_MARK_AFTER = '{id:"hero",color:"blue",shape:"cloud",isGazing:!1,bob:n
 const IDLE_MARK_BEFORE = 'V=L==null?{color:"black",shape:"blob"}:';
 const IDLE_MARK_AFTER = 'V=L==null?{color:"blue",shape:"cloud"}:';
 const LOADING_LOGO_BEFORE = 'function tOt({size:n,color:e="black",className:t}){const s=window.matchMedia("(prefers-reduced-motion: reduce)").matches;return p.jsx("svg",{"aria-hidden":"true",className:t,height:n,viewBox:V_t,width:n,xmlns:"http://www.w3.org/2000/svg",children:p.jsx("path",{d:Q_t,fillRule:"evenodd",style:{fill:MNe(e)},children:s?null:p.jsx("animate",{attributeName:"d",calcMode:"discrete",dur:`${X_t}s`,repeatCount:"indefinite",values:eOt})})})}';
-/** The petals fill the 80..320 window of the 400 box, so at 56 px the mark is as large as the logo it replaces. */
-export const LOADING_LOGO_VIEWBOX = "80 80 240 240";
+/** The window of the 400 box the mark fills, with a hair of margin, so at 56 px the mark is as large as the logo it replaces. */
+export const LOADING_LOGO_VIEWBOX = (() => {
+  const { x, y, width, height } = SIMEON_MARK_BOUNDS;
+  const side = Math.ceil(Math.max(width, height) * 1.04), cx = x + width / 2, cy = y + height / 2;
+  return `${Math.round(cx - side / 2)} ${Math.round(cy - side / 2)} ${side} ${side}`;
+})();
 export const LOADING_LOGO_TURN_SECONDS = 14;
-const LOADING_LOGO_PETALS = SIMEON_PETALS.map((petal, index) => `p.jsx("ellipse",{cx:${petal.cx},cy:${petal.cy},rx:${petal.rx},ry:${petal.ry},transform:"rotate(${petal.angle} ${petal.cx} ${petal.cy})",style:r},${index})`).join(",");
-const LOADING_LOGO_AFTER = `function tOt({size:n,color:e="black",className:t}){const s=window.matchMedia("(prefers-reduced-motion: reduce)").matches,r={fill:MNe(e)};return p.jsx("svg",{"aria-hidden":"true",className:t,height:n,viewBox:"${LOADING_LOGO_VIEWBOX}",width:n,xmlns:"http://www.w3.org/2000/svg",children:p.jsxs("g",{children:[${LOADING_LOGO_PETALS},s?null:p.jsx("animateTransform",{attributeName:"transform",type:"rotate",from:"0 200 200",to:"360 200 200",dur:"${LOADING_LOGO_TURN_SECONDS}s",repeatCount:"indefinite"},"turn")]})})}`;
+const LOADING_LOGO_MARK = `p.jsx("path",{d:"${SIMEON_MARK_PATH}",fillRule:"evenodd",style:r},"mark")`;
+const LOADING_LOGO_AFTER = `function tOt({size:n,color:e="black",className:t}){const s=window.matchMedia("(prefers-reduced-motion: reduce)").matches,r={fill:MNe(e)};return p.jsx("svg",{"aria-hidden":"true",className:t,height:n,viewBox:"${LOADING_LOGO_VIEWBOX}",width:n,xmlns:"http://www.w3.org/2000/svg",children:p.jsxs("g",{children:[${LOADING_LOGO_MARK},s?null:p.jsx("animateTransform",{attributeName:"transform",type:"rotate",from:"0 200 200",to:"360 200 200",dur:"${LOADING_LOGO_TURN_SECONDS}s",repeatCount:"indefinite"},"turn")]})})}`;
 export const MARK_REPLACEMENTS = Object.freeze([
   ["landing-mark-cloud", LANDING_MARK_BEFORE, LANDING_MARK_AFTER],
   ["hero-mark-cloud", HERO_MARK_BEFORE, HERO_MARK_AFTER],
   ["idle-mark-ocean-cloud", IDLE_MARK_BEFORE, IDLE_MARK_AFTER],
-  ["loading-logo-petals", LOADING_LOGO_BEFORE, LOADING_LOGO_AFTER],
+  ["loading-logo-mark", LOADING_LOGO_BEFORE, LOADING_LOGO_AFTER],
 ]);
 export const APP_ICON_ASSET = "app-icon-C7NKj2u7.png";
 export const APP_ICON_SOURCE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../frontend/runtime-assets", APP_ICON_ASSET);
@@ -1761,7 +1765,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-petals", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "agent-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "flight-results"],
+    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-mark", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "agent-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "flight-results"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");
