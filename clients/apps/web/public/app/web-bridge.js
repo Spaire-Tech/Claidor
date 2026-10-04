@@ -31759,6 +31759,7 @@
     goSignIn
   });
   Reflect.set(window, "__simeonWeb", { api, backend });
+  var CONNECTED_PAGE = /\/connected\.html$/.test(location.pathname);
   var ready = (async () => {
     if (api.isSignedIn()) return;
     try {
@@ -31766,8 +31767,8 @@
     } catch (error) {
       trace("sign-in from cookie failed", error);
     }
+    if (!api.isSignedIn() && !CONNECTED_PAGE) goSignIn();
   })();
-  var CONNECTED_PAGE = /\/connected\.html$/.test(location.pathname);
   if (CONNECTED_PAGE) {
     void finishConnectedAppSignIn();
   } else {
