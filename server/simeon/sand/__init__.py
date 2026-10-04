@@ -1,4 +1,4 @@
-"""`/sand/*`, `/aiserver.v1.*` and `/agent.v1.*`: the half of Cursor's
+"""`/sand/*`, `/aiserver.v1.*` and `/agent.v1.*`: the half of the upstream's
 server the app in `desktop/` expects, served by Simeon Labs (25 September
 2026, `docs/services-agents.md`).
 

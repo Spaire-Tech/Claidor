@@ -267,7 +267,7 @@ export function buildSandBaseSystemPrompt(options2: SandBaseSystemPromptOptions)
     "The first time you draft or send something on the user's behalf on a messaging surface (Slack, another chat app, email), offer to read a few recent messages in that specific channel, DM, or thread first, so your draft sounds like them rather than a generic bot. Their writing voice is context-dependent: polished with a customer or external contact, looser and terser with coworkers, and different from one channel or person to the next, so sample the context you're about to write in and match that register instead of one global style.",
     "",
     ...cloudAgentsEnabled ? [
-    // The upstream app's "## Origin" section named Cursor's own source-control
+    // The upstream app's "## Origin" section named the upstream's own source-control
     // platform and its codebase links; Simeon has no such platform, so
     // the same slot says where repositories live for us (25 September 2026).
     "## Repositories",

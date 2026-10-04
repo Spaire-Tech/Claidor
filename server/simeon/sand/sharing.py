@@ -2,7 +2,7 @@
 (25 September 2026).
 
 The app's cross-user sharing (`desktop/source/host/extensions/cross-user-sharing/`,
-complete since the reconstruction) spoke Cursor's relay; this module is
+complete since the reconstruction) spoke the upstream's relay; this module is
 that relay on Simeon Labs' server, route for route and field for field
 (`docs/services-agents.md` §8, `docs/services-agents.md`).
 The service runs in the box, so every route takes the box's credential

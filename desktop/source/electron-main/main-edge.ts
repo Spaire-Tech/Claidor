@@ -141,7 +141,7 @@ export function createMainEdgeHandlers(deps: MainEdgeDeps): HandlerMap {
     setOnboardingSeen: (raw) => { const seen = req(raw).seen; if (typeof seen === "boolean") void Promise.resolve(invoke(deps.onboardingSeen, "apply", seen)); },
 
     openExternal: (raw) => invoke(deps.shell, "openExternalUrl", req(raw).url),
-    // Simeon's page for the run (app.simeonlabs.com/agents/<bcId>), never cursor.com nor the API host (ledger F-406, F-480).
+    // Simeon's page for the run (app.simeonlabs.com/agents/<bcId>), never the upstream site nor the API host (ledger F-406, F-480).
     openCloudAgent: async (raw) => { if (!isCloudAgentsServed()) return; const bcId = typeof req(raw).bcId === "string" ? (req(raw).bcId as string).trim() : ""; if (bcId.length === 0) return; await Promise.resolve(invoke(deps.shell, "openInSystemBrowser", cloudAgentWebUrl(bcId))); },
     submitFeedback: (raw) => invoke(deps.shell, "submitFeedback", raw),
     markDeepLinksReady: () => { invoke(deps.shell, "markDeepLinksReady"); },

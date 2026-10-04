@@ -9,7 +9,7 @@ export interface LoginManagerOptions { readonly redirectTarget?: string; readonl
 export interface LoginLinkHandler { openUrl(url: string): Promise<void> }
 
 function stripTrailingSlashes(url: string): string { return url.replace(/\/+$/, ""); }
-// With no environment named, the login manager goes to Simeon Labs' API host (which serves sign-in at its root), not Cursor's (25 September 2026, F-227).
+// With no environment named, the login manager goes to Simeon Labs' API host (which serves sign-in at its root), not the upstream's (25 September 2026, F-227).
 function resolveWebsiteUrl(url?: string): string { return stripTrailingSlashes(url ?? process.env.SIMEON_WEBSITE_URL ?? "https://api.simeonlabs.com"); }
 function resolveApiBaseUrl(url?: string): string { return stripTrailingSlashes(url ?? process.env.SIMEON_API_BASE_URL ?? "https://api.simeonlabs.com"); }
 function base64UrlEncode(bytes: Uint8Array): string { return Buffer.from(bytes).toString("base64url"); }

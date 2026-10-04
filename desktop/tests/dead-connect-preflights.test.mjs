@@ -1,10 +1,10 @@
 /**
- * Dead Cursor pre-flights are skipped and struck services say Coming Soon
+ * Dead the upstream app pre-flights are skipped and struck services say Coming Soon
  * (25 September 2026, design-audit-ledger.md cluster `dead-cursor-services`:
  * F-004/F-123, F-392, F-394, F-396, F-397, F-401, F-403).
  *
- * Every turn used to open with Cursor's GetUserPrivacyMode Connect RPC,
- * every host start prefetched a team-admin policy from Cursor's dashboard,
+ * Every turn used to open with the upstream's GetUserPrivacyMode Connect RPC,
+ * every host start prefetched a team-admin policy from the upstream's dashboard,
  * the sharing extension answered "not enabled for your account" for a relay
  * that does not exist, the box published a port for a tunnel the design
  * struck, and the Coming Soon brief still blamed "your team's admin".
@@ -38,8 +38,8 @@ test("the privacy-mode pre-flight, the team-admin prefetch and the cloud-agent w
     // by name, everything with "1", nothing with "0", a list otherwise.
     assert.equal(module.isConnectServed({}, "aiserver.v1.GrokBotService"), true);
     assert.equal(module.isConnectServed({}, "aiserver.v1.DashboardService"), true);
-    assert.equal(module.isConnectServed({}, "aiserver.v1.InferenceService"), false, "the loop runs on the simeon executor, never on Cursor's inference");
-    assert.equal(module.isConnectServed({}, "cursor.statsig-bootstrap"), false, "Cursor's feature-gate server is not ours");
+    assert.equal(module.isConnectServed({}, "aiserver.v1.InferenceService"), false, "the loop runs on the simeon executor, never on the upstream's inference");
+    assert.equal(module.isConnectServed({}, "cursor.statsig-bootstrap"), false, "the upstream's feature-gate server is not ours");
     assert.equal(module.isConnectServed({ SAND_CONNECT_SERVED: "0" }, "aiserver.v1.GrokBotService"), false);
     assert.equal(module.isConnectServed({ SAND_CONNECT_SERVED: "1" }, "cursor.statsig-bootstrap"), true);
     assert.equal(module.isConnectServed({ SAND_CONNECT_SERVED: "aiserver.v1.AiService" }, "aiserver.v1.AiService"), true);

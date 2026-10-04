@@ -31689,7 +31689,7 @@
             return mcp("listEffectivePlugins");
           case "sand:mcp-catalog":
             return mcp("getCatalog");
-          // Team popularity is Cursor's marketplace; Simeon's catalog has none.
+          // Team popularity is the upstream's marketplace; Simeon's catalog has none.
           case "sand:mcp-team-popularity":
             return {};
           case "sand:mcp-plugin-logo":

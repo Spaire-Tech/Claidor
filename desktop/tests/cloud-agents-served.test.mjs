@@ -9,7 +9,7 @@
  * `server/tests/sand/test_cloud_agents.py` asserts), so one launch, one
  * info poll, one list, the model catalogue and the transcript dump come
  * through the real transport and the card's fields are what the server
- * said. The brief's cloud-agent sections say Simeon, not Cursor.
+ * said. The brief's cloud-agent sections say Simeon, not the upstream app.
  */
 import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
@@ -109,7 +109,7 @@ test("the manager launches, polls, lists, dumps and reads the catalogue through 
 
     const launched = await manager.launch({ prompt: "Summarise the README.", repoUrl: "simeonlabs/demo", startingRef: "main", title: "Readme summary", modelId: "gpt-6-sol" });
     assert.match(launched.bcId, /^bc-[0-9a-f-]{36}$/);
-    assert.equal(launched.url, `https://app.simeonlabs.com/agents/${launched.bcId}`, "the card's link is Simeon's page, not cursor.com");
+    assert.equal(launched.url, `https://app.simeonlabs.com/agents/${launched.bcId}`, "the card's link is Simeon's page, not the upstream site");
     const start = fake.seen.find((entry) => entry.path.endsWith("/StartBackgroundComposerFromSnapshot"));
     assert.ok(start, "the launch reached the server");
     assert.equal(start.headers.authorization, "Bearer simeon_da_test");
@@ -173,7 +173,7 @@ test("the manager launches, polls, lists, dumps and reads the catalogue through 
   }
 });
 
-test("the brief and the app say Simeon where the upstream app said Cursor, and the card opens Simeon's page", async () => {
+test("the brief and the app say Simeon where the upstream app said the upstream app, and the card opens Simeon's page", async () => {
   delete process.env.SAND_CLOUD_AGENTS_SERVED;
   const { module, dispose } = await load("source/host/runner/system-prompt.ts", "system-prompt-served");
   try {
@@ -201,7 +201,7 @@ test("the brief and the app say Simeon where the upstream app said Cursor, and t
   assert.match(await src("electron-main/main-edge.ts"), /openCloudAgent: async \(raw\) => \{[^\n]*cloudAgentWebUrl\(bcId\)/);
   assert.doesNotMatch(await src("electron-main/main-edge.ts"), /https:\/\/cursor\.com/);
   for (const file of ["host/extensions/cloud-agents/cloud-agents-service.ts", "host/extensions/cloud-agents/cloud-agent-poll-loop.ts", "host/cloud-agents/cloud-agent-tool.ts", "shared/channel-messaging.ts", "packages/agent/prompts/cloud/no-repository-access.ts"]) {
-    assert.ok(!(await src(file)).includes("cursor.com"), `${file} names no cursor.com`);
+    assert.ok(!(await src(file)).includes("the upstream site"), `${file} names no the upstream site`);
   }
   assert.match(await src("shared/cloud-agents-availability.ts"), /Cloud agents are served/);
 });

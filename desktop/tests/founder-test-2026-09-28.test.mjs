@@ -88,7 +88,7 @@ test("a new agent's first turn is the upstream app's opening: a hello, then a qu
     assert.match(prompt, /allowCustom set to true/);
     assert.match(prompt, /Pick one, or type your own\. You can hand me a real task instead, and I'll just start on it\./);
     assert.match(prompt, /offer any choice as a question widget/, "the upstream app's own last sentence stays");
-    assert.doesNotMatch(prompt, /Grok|Cursor/);
+    assert.doesNotMatch(prompt, /Grok|the upstream app/);
   } finally {
     await dispose();
   }

@@ -47,7 +47,7 @@ export function createDashboardSandBackendMcpExec(deps: DashboardMcpExecDependen
     async executeTool(args: { serverIdentifier: string; toolName: string; args: unknown; toolCallId: string; agentId?: string }): Promise<McpExecResult> {
       try {
         // Connect accepts a structural request object here, but nested message fields
-        // still need to be real protobuf messages. Cursor's native inference path
+        // still need to be real protobuf messages. the upstream's native inference path
         // already supplies generated values; routed providers supply ordinary JSON.
         // Normalize both at this one backend boundary so the Struct serializer never
         // receives raw values and fails while looking for `value.toJson()`.

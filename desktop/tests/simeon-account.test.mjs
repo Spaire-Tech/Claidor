@@ -10,7 +10,7 @@ import { build } from "esbuild";
 // The account screens on Simeon Labs' server, offline: the profile and
 // picture, the usage meters, the Usage & Billing gate, and sign-out's
 // server revocation. Until 24 September 2026 every one of these went to a
-// Cursor Connect RPC the server does not serve, or (the gate) was off.
+// upstream Connect RPC the server does not serve, or (the gate) was off.
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -157,7 +157,7 @@ test("sand_usage_page is on by Simeon's default, over the bundled table, under t
     assert.equal(bundled.disposed, true);
 
     // A gate pinned on the authenticated bootstrap (memory dreaming) is answered
-    // at once from the table: that bootstrap is Cursor's and never arrives here.
+    // at once from the table: that bootstrap is the upstream's and never arrives here.
     const pinned = [];
     bundled.pinGateOnAuthenticatedBootstrap = (name, pin) => pinned.push(["waits", name]);
     service.pinGateOnAuthenticatedBootstrap("sand_memory_dreaming", (value) => pinned.push(["pinned", value]));

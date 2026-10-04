@@ -1,5 +1,5 @@
 // The account's MCP servers and plugins (24 September 2026). Until now the
-// six calls here went to Cursor's dashboard (GetAvailableMcpServers,
+// six calls here went to the upstream's dashboard (GetAvailableMcpServers,
 // GetMcpConfig, SetMcpConfig, InstallUserPlugin, UninstallUserPlugin,
 // UpdateUserPluginInstall), which Simeon Labs' server does not serve: reads
 // came back `unavailable`, writes threw, and no custom server or plugin could

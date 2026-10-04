@@ -191,7 +191,7 @@ import { HOST_LOG_PREFIX, logHostLine } from "../shared/host-log.js";
 import { configuredSimeonModel } from "./extensions/inference/provider-session.js";
 
 // The model id the composition projects onto the loop (parentModelInfo,
-// the Task tool's child configs, web search). It was Cursor's
+// the Task tool's child configs, web search). It was the upstream's
 // "gpt-5.5-high-fast" until 25 September 2026, a model the executor does
 // not serve, so every consumer read a name that does not exist (F-006).
 export const DEFAULT_SAND_MODEL = configuredSimeonModel();

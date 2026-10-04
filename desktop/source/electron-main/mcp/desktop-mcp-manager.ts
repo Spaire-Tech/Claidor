@@ -105,7 +105,7 @@ export async function createSandDesktopMcpManager(options: DesktopMcpManagerOpti
   });
   // The account's MCP configuration (custom servers, plugins) is the store
   // on this Mac, `account-mcp/store.ts`, merged with the box's copy before
-  // each read; the six calls that were Cursor's read and write it.
+  // each read; the six calls that were the upstream's read and write it.
   const accountMcpDeps: AccountMcpDependencies = {
     getAccessToken: async (request) => await options.getAccessToken({ backendUrl: request?.backendUrl ?? getSandInferenceBackendUrl() }),
     getMachineId: async () => await options.getMachineId(),

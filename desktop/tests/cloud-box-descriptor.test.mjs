@@ -3,7 +3,7 @@
  * docs/services-core.md).
  *
  * Nothing here is new app code beyond two things: the egress tunnel's
- * derivation learned the API proxy's `/p/<port>` shape next to Cursor's
+ * derivation learned the API proxy's `/p/<port>` shape next to the upstream's
  * `-<port>` label, and `setBoxRuntime("remote")` probes the broker before
  * stopping the local box. Everything else was already built
  * (`BrokeredHostConnector`, the descriptor, the blocked hold); these tests
@@ -39,11 +39,11 @@ const brokerAnswer = {
   imageUpdateAvailable: false,
 };
 
-test("the egress tunnel derives from Cursor's label shape, from the API proxy's path shape, and from a bare host", async () => {
+test("the egress tunnel derives from the upstream's label shape, from the API proxy's path shape, and from a bare host", async () => {
   const { module, dispose } = await load("source/shared/node/egress-tunnel/box-connection.ts", "box-connection");
   try {
     const { deriveEgressTunnelWsUrl, boxConnectionToEgressConfig } = module;
-    // Cursor's pod proxy, and a founder's per-port hostnames: unchanged.
+    // the upstream's pod proxy, and a founder's per-port hostnames: unchanged.
     assert.equal(deriveEgressTunnelWsUrl("https://pod-abc-1340.example.com/", true), "wss://pod-abc-8790.example.com/");
     assert.equal(deriveEgressTunnelWsUrl("https://box-0f6a-1340.boxes.simeonlabs.com", true), "wss://box-0f6a-8790.boxes.simeonlabs.com/");
     // The API's own proxy: the path names the port.

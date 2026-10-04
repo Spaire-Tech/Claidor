@@ -1,6 +1,6 @@
 """Connect RPC, served from FastAPI (25 September 2026).
 
-The app in `desktop/` talks to Cursor's server in two shapes. The routes
+The app in `desktop/` talks to the upstream's server in two shapes. The routes
 under `/sand/*` are plain JSON. Everything else is Connect RPC, built by
 `createSandBackendTransport` in
 `desktop/source/shared/node/cursor-backend/cursor-inference.ts` with

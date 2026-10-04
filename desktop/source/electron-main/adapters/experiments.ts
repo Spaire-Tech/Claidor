@@ -28,7 +28,7 @@ export function createProductionExperimentsAdapter(
         isDevBuild: context.env.SAND_PACKAGED !== "1",
         // Simeon's own gate defaults over the upstream app's bundled table. Until
         // 24 September 2026 the service answered the bundled default for
-        // every gate (Cursor's experiments server, which fills them for
+        // every gate (the upstream's experiments server, which fills them for
         // The upstream app, is not served here), so `sand_usage_page` read false
         // in `checkFeatureGate` and in the snapshot the renderer gates
         // Settings → Usage & Billing on, and the page never showed.

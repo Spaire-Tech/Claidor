@@ -1,8 +1,8 @@
 /**
- * A token refresh goes to the configured backend (Simeon), never to Cursor's
+ * A token refresh goes to the configured backend (Simeon), never to the upstream's
  * default host. Found in the 24 September audit: `getValidAccessToken()` with
  * no backend named (dictation, avatar generation) defaulted to
- * `https://api2.cursor.sh`, so when the access token was within five minutes
+ * `https://the upstream API`, so when the access token was within five minutes
  * of expiry the refresh went there, got a non-2xx, and the service revoked
  * the credentials: the person was signed out by pressing the mic or
  * "Generate".
@@ -30,7 +30,7 @@ function jwt(payload) {
   return `${enc({ alg: "HS256", typ: "JWT" })}.${enc(payload)}.sig`;
 }
 
-test("a refresh with no backend named goes to SAND_BACKEND_URL, not api2.cursor.sh", async () => {
+test("a refresh with no backend named goes to SAND_BACKEND_URL, not the upstream API", async () => {
   const previous = process.env.SAND_BACKEND_URL;
   process.env.SAND_BACKEND_URL = "https://api.simeonlabs.com";
   const { module, dispose } = await load("source/electron-main/account/cursor-auth.ts", "cursor-auth");

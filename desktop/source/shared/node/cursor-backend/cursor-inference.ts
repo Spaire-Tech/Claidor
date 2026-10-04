@@ -136,7 +136,7 @@ export function createSandInferenceInterceptor(options: SandInferenceOptions): I
     const [auth, machineId] = await Promise.all(["authMode" in options ? Promise.resolve({ mode: options.authMode } as const) : options.getAccessToken({ backendUrl: options.backendUrl }).then((accessToken) => ({ mode: "required" as const, accessToken })), options.getMachineId()]);
     const privacyLookup = request.service.typeName === "aiserver.v1.DashboardService" && request.method.name === "GetUserPrivacyMode";
     const resolveGhostMode = options.resolveGhostModeHeader ?? ((lookup: PrivacyLookupOptions) => resolveSandGhostModeHeader(lookup, options.fetchPrivacyMode ?? fetchSandPrivacyMode));
-    // Without Cursor's Connect surface the lookup only ever 404s (ledger F-382).
+    // Without the upstream's Connect surface the lookup only ever 404s (ledger F-382).
     const ghostMode = auth.mode === "anonymous" || privacyLookup || !isConnectServed(options.env, "aiserver.v1.DashboardService") ? "true" : await resolveGhostMode({ backendUrl: options.backendUrl, accessToken: auth.accessToken, machineId });
     const pinned = request.header.get("x-request-id");
     const requestId = pinned != null && pinned !== "" ? pinned : options.randomUUID?.() ?? globalThis.crypto.randomUUID();
@@ -161,7 +161,7 @@ export function createSandBackendTransport(options: Omit<SandInferenceOptions, "
   // so every request left as `application/proto` and the client refused the
   // JSON answer ("unsupported content type application/json"). Simeon Labs'
   // server (`server/simeon/sand/connect.py`) speaks protobuf JSON only, which
-  // `createConnectTransport` sends with the binary format off. Cursor's server
+  // `createConnectTransport` sends with the binary format off. the upstream's server
   // took both, so nothing changes for `SAND_CONNECT_SERVED=1` against it.
   return createConnectTransport({ baseUrl: backendUrl, httpVersion: "1.1", useBinaryFormat: false, interceptors: [createSandRpcTracingInterceptor(), createSandInferenceInterceptor({ ...options, backendUrl })] });
 }

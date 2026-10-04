@@ -231,7 +231,7 @@ test("a proxy refusal ends the step with the provider's sentence instead of hang
   }
 });
 
-test("toCoreMessages strips the Cursor wire dialect the AI SDK refuses", async () => {
+test("toCoreMessages strips the upstream app wire dialect the AI SDK refuses", async () => {
   const loaded = await loadHarness();
   try {
     const { toCoreMessages } = loaded.module;

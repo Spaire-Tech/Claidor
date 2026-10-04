@@ -42,7 +42,7 @@ export interface ProductionBoxRecoveryOptions {
 }
 
 /**
- * Whether the box-migration stream is worth attaching. It is Cursor's
+ * Whether the box-migration stream is worth attaching. It is the upstream's
  * `WatchSandBoxMigration` RPC, which only a remote (cloud) box can answer;
  * a local Docker box has no migration to watch and Simeon Labs' server does
  * not serve the stream, so on `local-docker` the answer is "no watcher" and

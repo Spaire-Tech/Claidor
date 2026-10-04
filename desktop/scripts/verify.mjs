@@ -300,7 +300,7 @@ if (urlTypes.includes("<string>sand</string>")) throw new Error("Reconstructed a
 // here since 26 September 2026 (ledger F-455): the renamed executable and
 // its helpers (the menu bar's name; a half-renamed bundle dies at launch),
 // the backend the bundle carries in LSEnvironment (a bundle without it
-// signs in to cursor.com), and the Dock icon's bytes.
+// signs in to the upstream site), and the Dock icon's bytes.
 const executableName = await capture(SYSTEM_TOOLS.plutil, ["-extract", "CFBundleExecutable", "raw", infoPlist]);
 if (executableName !== simeonExecutableName) throw new Error(`Unexpected executable name: ${executableName}`);
 const bundleName = await capture(SYSTEM_TOOLS.plutil, ["-extract", "CFBundleName", "raw", infoPlist]);

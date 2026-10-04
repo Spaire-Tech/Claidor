@@ -103,7 +103,7 @@ export function createCursorSandInference(options: CursorSandInferenceOptions): 
   const attachedMedia = createSandAttachedMediaUrlProvider(auth);
   const getLabelingClient = (): LabelingClient => labelingClient ??= createSandLabelingClient(auth);
   return {
-    // Every turn used to open with Cursor's GetUserPrivacyMode Connect RPC,
+    // Every turn used to open with the upstream's GetUserPrivacyMode Connect RPC,
     // which Simeon Labs' server does not serve: one 404 per turn and per
     // nudge, then the fallback (design-audit-ledger.md F-004, F-123). The
     // fallback is answered directly unless SAND_CONNECT_SERVED=1.

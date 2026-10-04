@@ -1,7 +1,7 @@
 """Sharing: a room with another person's agent (25 September 2026).
 
 The app's cross-user sharing (`desktop/source/host/extensions/cross-user-sharing/`)
-rode Cursor's `/sand/xuser` and `/sand/share-rooms` relay. These four
+rode the upstream's `/sand/xuser` and `/sand/share-rooms` relay. These four
 tables are that relay's whole state on Simeon Labs' server
 (`simeon/sand/sharing.py`):
 

@@ -5,7 +5,7 @@ export const SAND_XUSER_SHARING_ALLOW_PROD_ENV = "SAND_XUSER_SHARING_ALLOW_PROD"
 // Simeon Labs' server is the production relay since 25 September 2026
 // (`server/simeon/sand/sharing.py`); a dev host pointed at it is pointed at
 // its own account's rooms, so it is allowed without the opt-in below. The
-// refusal stays for Cursor's production origin, whose rooms are not ours.
+// refusal stays for the upstream app's production origin, whose rooms are not ours.
 export const SIMEON_BACKEND_ORIGIN = "https://api.simeonlabs.com";
 
 export interface XuserSharingEnvironment {

@@ -68,6 +68,8 @@ export const BRAND_PHRASE_REPLACEMENTS = Object.freeze([
   ["session's Cursor tokens", "session's sign-in tokens"],
   // The About panel's line (4 October 2026: "about uses SpaceX ai, please make it SimeonLabs, Inc.").
   ["Copyright © 2026 SpaceXAI", "Copyright © 2026 SimeonLabs, Inc."],
+  // The marketplace link in the plugins chunk (Track A of the detachment plan).
+  ["https://cursor.com/marketplace", "https://simeonlabs.com"],
 ]);
 
 /**
@@ -1156,6 +1158,24 @@ export const LOGO_REPLACEMENTS = Object.freeze([
   ["help-center-hidden", 'Q=p.jsx(It.Item,{leading:le,onSelect:Y,children:"Help Center"})', "Q=null"],
   ["send-feedback-hidden", 'ce=p.jsx(It.Item,{leading:ae,onSelect:h.open,children:"Send Feedback"})', "ce=null"],
   ["help-center-url", 'G=()=>{v("https://cursor.com/help")}', 'G=()=>{v("https://simeonlabs.com")}'],
+  // Track A of the detachment plan (4 October 2026): every address and
+  // name of the upstream maker a person could reach from the window. The
+  // spending link goes to our web app; the onboarding and privacy links
+  // to our site and privacy policy; the review host to a name of ours the
+  // window will never see (it only compares hostnames); the account's
+  // fallback name is Simeon; the "Get … for iOS" item and its App Store
+  // address go, there is no such app.
+  ["upstream-link-spending", 'const Yln="https://cursor.com/dashboard/spending"', 'const Yln="https://app.simeonlabs.com/app"'],
+  ["upstream-link-onboarding", 'const pft="https://cursor.com/bot/onboarding"', 'const pft="https://simeonlabs.com"'],
+  ["upstream-link-privacy", 'const LOn="https://cursor.com/dashboard/settings?openPrivacy=true"', 'const LOn="https://www.simeonlabs.com/legal/privacy-policy"'],
+  ["upstream-link-review", 'const QPt="https://review.cursor.com"', 'const QPt="https://review.simeonlabs.com"'],
+  ["upstream-host-review", 't==="review.cursor.com"&&(s=C_n)', 't==="review.simeonlabs.com"&&(s=C_n)'],
+  ["upstream-account-fallback", 'name:e.name??"Cursor"', 'name:e.name??"Simeon"'],
+  ["upstream-ios-link", 'const Rln="https://apps.apple.com/us/app/grok-bot/id6794501026"', 'const Rln="https://simeonlabs.com"'],
+  ["upstream-ios-item", 'ne=N?p.jsx(It.Item,{leading:p.jsx(bt,{name:"device-mobile",size:"base"}),onSelect:L,children:"Get Grok Bot for iOS"}):null', "ne=null"],
+  // The window's Sentry address was the upstream maker's project; with no
+  // address the SDK stays off (the packaged app disables it anyway).
+  ["upstream-sentry-dsn", 'const QLn="https://9fb7a1b8cb70c207a28a00476311bd40@metrics.cursor.sh/4511747394240513"', 'const QLn=""'],
 ]);
 
 /** Spelling → app key for every name the messages mark. */

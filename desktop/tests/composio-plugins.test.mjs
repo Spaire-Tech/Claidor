@@ -48,7 +48,7 @@ test("the curated catalog is forty-three verified Composio slugs", async () => {
   }
 });
 
-test("the marketplace listing is the static Composio catalog, not Cursor", async () => {
+test("the marketplace listing is the static Composio catalog, not the upstream app", async () => {
   const marketplace = await load("source/shared/node/composio/marketplace.ts", "composio-marketplace");
   const views = await load("source/shared/node/mcp/mcp-marketplace-view.ts", "mcp-marketplace-view");
   try {

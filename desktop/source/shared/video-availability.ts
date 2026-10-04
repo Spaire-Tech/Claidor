@@ -3,7 +3,7 @@
  * docs/services-agents.md; ledger F-236, F-273, F-329).
  *
  * The upstream app's watchVideo / videoReview subagents ran a Gemini model on
- * Cursor's inference service. Simeon Labs' server now serves Gemini's own
+ * the upstream's inference service. Simeon Labs' server now serves Gemini's own
  * wire at `/desktop/api/proxy/v1beta/models/{model}:streamGenerateContent`
  * behind `SIMEON_GEMINI_API_KEY`, and the box's executor speaks it
  * (`host/extensions/inference/gemini-direct-generate.ts`), so the two

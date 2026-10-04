@@ -67,7 +67,7 @@ export interface CursorProfileDeps {
 //
 // Until 24 September 2026 the profile came from `DashboardService/GetMe` +
 // `GetTeams` and the usage from `GetSandUsageStatus` + `GetCurrentPeriodUsage`,
-// four Cursor Connect RPCs that Simeon Labs' server never served. `fetchCursorProfile`
+// four upstream Connect RPCs that Simeon Labs' server never served. `fetchCursorProfile`
 // swallowed the failure and answered null (or the locally stored name with
 // no e-mail and no picture), so the account menu showed "Simeon user" with
 // no avatar; `fetchSandWeeklyUsage` answered null so the header never showed

@@ -1,6 +1,6 @@
 /**
  * Auto-review enforces, "asks once" remembers, and the box stops talking to
- * Cursor (25 September 2026, design-audit-ledger.md clusters
+ * the upstream app (25 September 2026, design-audit-ledger.md clusters
  * `auto-review-enforce`, `asks-once-memory`, `box-telemetry`).
  *
  * The box host never saw Simeon's gate table (only the Mac wrapped its
@@ -104,7 +104,7 @@ test("the Mac adopts the box's Always allow on reconnect instead of pushing its 
   }
 });
 
-test("the box carries the telemetry guards and makes no Cursor pre-flight, and the Mac copies no Statsig cache", async () => {
+test("the box carries the telemetry guards and makes no the upstream app pre-flight, and the Mac copies no Statsig cache", async () => {
   const docker = await src("electron-main/box/local-docker-host-connector.ts");
   // Schema 10 carried the guards; 11 (the stream guard, F-135) and 12 (the box's credentials in its environment, F-148) keep them.
   assert.match(docker, /LOCAL_DOCKER_SCHEMA_VERSION = "12"/);

@@ -4,7 +4,7 @@ The app in `desktop/` keeps every routine in the box (`automation.json`)
 and mirrors the ones a server can fire to the
 `AutomationsService` as a *shadow* workflow whose `description` is
 `sand-shadow:<hash>` (`host/extensions/automations/sand-automation-cloud-sync.ts`).
-Cursor's server fired those; this is the same store on ours
+the upstream's server fired those; this is the same store on ours
 (`simeon.sand.listeners`). Five tables:
 
 - `SandAutomation`: one shadow workflow per person per routine, keyed by

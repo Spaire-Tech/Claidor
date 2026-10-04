@@ -674,7 +674,7 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
       );
       const remoteConnector = connectorEgress.wrap(pauseControl.guard(baseRemoteConnector));
       // The migration watcher streams `GrokBotService/WatchSandBoxMigration`,
-      // a Cursor RPC that only means something for a cloud box. Until
+      // an upstream RPC that only means something for a cloud box. Until
       // 24 September 2026 it was started whatever the box runtime, so on
       // the default `local-docker` runtime it asked Simeon Labs' server for
       // a stream it does not serve, got a 404, and retried every 3 s for as
@@ -793,7 +793,7 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
         shell, windowChrome, getMainWindow: () => runtime?.getMainWindow(), requireMainEdge: () => requireValue(mainEdge, "main-edge"),
         // The picker's list, from `GET /desktop/api/models/available` on
         // Simeon Labs' server. Until 24 September 2026 this called
-        // `AiService/AvailableModels`, a Cursor Connect RPC the server does
+        // `AiService/AvailableModels`, an upstream Connect RPC the server does
         // not serve, and the 404 reached the renderer as the picker's
         // error. Same edge method, same `toJson()` shape; only the wire
         // changed (`models/simeon-model-catalog.ts`).

@@ -4,7 +4,7 @@ The app in `desktop/` already has the whole client: the CloudAgent tool
 (`host/cloud-agents/cloud-agent-tool.ts`, thirteen actions), the manager
 that composes each request (`host/extensions/cloud-agents/`), the poll
 loop that waits on a run, the `cursor-agent` card and its provider. All
-of it speaks Cursor's `aiserver.v1.BackgroundComposerService`. What was
+of it speaks the upstream's `aiserver.v1.BackgroundComposerService`. What was
 missing was the server. This is it, and it is not a new engine: a cloud
 agent is a `SandCloudAgent` row spanning one or more `MatyJob` turns, and
 the queue (`simeon.maty`) does what it always did — claim, lease,

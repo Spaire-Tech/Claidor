@@ -9,7 +9,7 @@ the egress tunnel); this table is what the broker answers from.
 
 - `gateway_token` is the bearer the in-box gateway (port 1340) checks,
   the same `SAND_GATEWAY_TOKEN` the local Docker path draws at random.
-- `network_token` is what Cursor's pod proxy checked as
+- `network_token` is what the upstream's pod proxy checked as
   `x-anyrun-network-token`; here `simeon.sand.box_proxy` checks it on
   every proxied request, and the Caddy on a box VM checks it when the
   founder runs the per-port hostnames instead (`docs/services-core.md`).

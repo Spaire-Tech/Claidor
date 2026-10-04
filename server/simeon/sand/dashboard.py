@@ -47,7 +47,7 @@ async def get_team_admin_settings(call: ConnectCall) -> dict[str, Any]:
 
 #: `GetSandAccessStatusResponse.SandAccessState`: GRANTED is 1. The Mac asks
 #: this at sign-in (`electron-main/account/access.ts`) and gates the whole
-#: app on it; Cursor answered from its billing. Every signed-in Simeon
+#: app on it; the upstream app answered from its billing. Every signed-in Simeon
 #: account has access; billing is the proxy's allowance, not a gate here.
 #: Purchase channel IN_APP (1); no block reason (0).
 SAND_ACCESS_STATE_GRANTED = 1

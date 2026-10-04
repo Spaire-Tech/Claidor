@@ -7,7 +7,8 @@
         "grok",
         "anysphere",
         "spacex",
-        "xai"
+        "xai",
+        "Cursor"
       ],
       "paths": [
         "desktop/NOTICE.md"
@@ -32,7 +33,9 @@
         "rakazo",
         "pierce",
         "vesence",
-        "polar"
+        "polar",
+        "Cursor",
+        "cursor.com"
       ],
       "paths": [
         "docs/kept-names.md"
@@ -60,7 +63,9 @@
         "caisra",
         "spacex",
         "xai",
-        "polar"
+        "polar",
+        "cursor.com",
+        "Cursor"
       ],
       "paths": [
         "sites/simeonlabs.com/public/app/**",
@@ -82,7 +87,8 @@
     {
       "kind": "contract",
       "names": [
-        "grok"
+        "grok",
+        "cursor.com"
       ],
       "paths": [
         "desktop/scripts/lib/config.mjs",
@@ -102,7 +108,9 @@
         "grok",
         "caisra",
         "anysphere",
-        "spacex"
+        "spacex",
+        "cursor.com",
+        "Cursor"
       ],
       "paths": [
         "desktop/scripts/lib/router-renderer-patch.mjs",
@@ -127,7 +135,9 @@
         "grok",
         "anysphere",
         "spacex",
-        "xai"
+        "xai",
+        "cursor.com",
+        "Cursor"
       ],
       "paths": [
         "desktop/scripts/lib/macos-plist-identity.mjs",
@@ -140,7 +150,9 @@
       "names": [
         "grok",
         "xai",
-        "anysphere"
+        "anysphere",
+        "cursor.com",
+        "Cursor"
       ],
       "paths": [
         "desktop/source/packages/proto/generated/**",
@@ -301,7 +313,8 @@
       "names": [
         "grok",
         "anysphere",
-        "xai"
+        "xai",
+        "Cursor"
       ],
       "paths": [
         "desktop/source/**",
@@ -318,7 +331,9 @@
         "grok",
         "anysphere",
         "xai",
-        "spacex"
+        "spacex",
+        "cursor.com",
+        "Cursor"
       ],
       "paths": [
         "desktop/source/shared/node/experiments/experiment-config.gen.ts",
@@ -369,12 +384,14 @@
       "kind": "guard",
       "names": [
         "claidor",
-        "grok"
+        "grok",
+        "cursor.com",
+        "Cursor"
       ],
       "paths": [
         "desktop/tests/**"
       ],
-      "match": "doesNotMatch|never reads|no longer|Claidor account|Sign in to Claidor|Claidor sign-in|Claidor API|Sign In with Claidor",
+      "match": "doesNotMatch|never reads|no longer|Claidor account|Sign in to Claidor|Claidor sign-in|Claidor API|Sign In with Claidor|never Cursor|not cursor\\.com|are off|includes\\(|cursor\\.com/help|says Cursor",
       "reason": "Tests that check an earlier name is gone from what a person or the agent reads have to name it."
     },
     {
@@ -446,13 +463,55 @@
       "kind": "contract",
       "names": [
         "grok",
-        "anysphere"
+        "anysphere",
+        "Cursor"
       ],
       "paths": [
         "desktop/web/**"
       ],
       "match": "GrokBotService|isAnysphereUser",
       "reason": "Simeon on the web speaks the Connect service the server mounts (`aiserver.v1.GrokBotService`, `server/simeon/sand/connect.py`) and answers the pinned renderer's own account status field."
+    },
+    {
+      "kind": "contract",
+      "names": [
+        "Cursor"
+      ],
+      "paths": [
+        "clients/apps/web/src/components/ClaudeCode/agentPlatforms.ts",
+        "clients/apps/web/src/components/ClaudeCode/*.tsx",
+        "clients/apps/web/src/components/Icons/frameworks/cursor.tsx"
+      ],
+      "reason": "The Cursor IDE is a third-party product the web app's integration guide targets (a rules file for its agent mode); it is named as the product it is, like Claude Code and Copilot beside it."
+    },
+    {
+      "kind": "contract",
+      "names": [
+        "cursor.com",
+        "Cursor"
+      ],
+      "paths": [
+        "desktop/source/shared/node/cursor-token.ts",
+        "desktop/source/shared/webauthn-gateway.ts",
+        "desktop/source/node-agent-coordinator/gateway/gateway-dns-diagnostics.ts",
+        "desktop/source/shared/node/experiments/statsig-bootstrap.ts",
+        "desktop/source/packages/cursor-plugins/origin-git-auth.ts",
+        "desktop/source/packages/agent-store-sync/presigned-url.ts",
+        "desktop/source/host/extensions/box-store-sync/agent-store-sand-files.ts",
+        "desktop/frontend/**"
+      ],
+      "reason": "The upstream's own addresses our code still compares against or refuses (the sharing refusal of its origin, the DNS probe host, the passkey origin class, the playground and origin-git hosts, the Statsig proxy) and the recovered window's copies of them and of the maker's name; each is replaced with ours in Track B of the detachment plan (4 October 2026)."
+    },
+    {
+      "kind": "guard",
+      "names": [
+        "cursor.com",
+        "Cursor"
+      ],
+      "paths": [
+        "desktop/tests/cursor-leftovers.test.mjs"
+      ],
+      "reason": "The test that checks the upstream's leftovers are gone from the app names the hosts and origin it checks are refused or not called."
     }
   ]
 }

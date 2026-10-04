@@ -17,7 +17,7 @@ import { resolveAuthRedirectTarget } from "../auth/auth-callback-registration.js
 
 export const ACCESS_TOKEN_SECRET_KEY = "cursor-access-token";
 export const REFRESH_TOKEN_SECRET_KEY = "cursor-refresh-token";
-/** Sign-in with no `SIMEON_WEBSITE_URL` set goes to Simeon Labs' API host, where `app_sign_in.py` serves the login routes at the root; until 25 September 2026 an unpackaged run fell back to cursor.com (F-314). */
+/** Sign-in with no `SIMEON_WEBSITE_URL` set goes to Simeon Labs' API host, where `app_sign_in.py` serves the login routes at the root; until 25 September 2026 an unpackaged run fell back to the upstream site (F-314). */
 export const DEFAULT_SIMEON_WEBSITE_URL = "https://api.simeonlabs.com";
 export const DEFAULT_LOCAL_SIMEON_WEBSITE_URL = "https://localhost:4443";
 export const MAX_LOGIN_POLL_ATTEMPTS = 150;
@@ -284,9 +284,9 @@ export class SandCursorAuthService {
   }
   async getValidAccessToken(options?: { readonly backendUrl?: string }): Promise<string> {
     const operationEpoch = this.authOperationEpoch; if (this.credentialUseRevoked) throw new SandAuthSignInRequiredError();
-    // The refresh goes to the configured backend (Simeon), never to Cursor's
+    // The refresh goes to the configured backend (Simeon), never to the upstream's
     // default host. Until 24 September a caller that named no backend
-    // (dictation, avatar generation) refreshed against api2.cursor.sh when the
+    // (dictation, avatar generation) refreshed against the upstream API when the
     // token was within five minutes of expiry; the non-2xx there revoked the
     // credentials and signed the person out (`runRefreshAccessToken`).
     const backendUrl = options?.backendUrl ?? this.options.getBackendUrl?.() ?? getConfiguredBackendUrl();

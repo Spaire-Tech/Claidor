@@ -256,12 +256,12 @@ def set_health_check_for_tests(
 # `busyOnlyAwaitingApproval` and `lastBusyAtMs` (`gateway-server.ts`,
 # `SandHost.getHealth`): busy while a turn, a background shell, a carried
 # wake or a mid-drain revival runs, and `lastBusyAtMs` moves only while
-# busy on something other than an approval card. Cursor's server read the
+# busy on something other than an approval card. the upstream's server read the
 # same pair (`AdminSandBoxHostStatusResponse.is_busy`, `last_busy_at_ms`),
 # kept `last_active_at_ms` per pod (`TeamMemberSandBoxPod`), hibernated a
 # pod with `AdminHibernateSandBox(force)`, which answers `started`/`reason`,
 # and reported `SAND_BOX_RUN_STATE_HIBERNATED`, which the window draws as
-# "sleeping" and "Waking your computer…". How long Cursor waited before
+# "sleeping" and "Waking your computer…". How long the upstream app waited before
 # hibernating is not in the client; `SIMEON_BOX_IDLE_HIBERNATE_AFTER` is ours.
 
 
