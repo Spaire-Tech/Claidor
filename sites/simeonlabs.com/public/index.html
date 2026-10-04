@@ -351,6 +351,8 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
    its colour. */
 .slide.apps-slide{background:var(--soft)}
 .sd-orbit{position:absolute;left:0;right:0;top:22%;bottom:0;overflow:hidden}
+/* On a phone each card's design sits in the card's middle, under its caption (the founder, 4 October 2026). */
+@container slide (max-width:700px){.sd-orbit{top:22%;bottom:12%}}
 .sd-orb{position:absolute;left:0;top:50%;object-fit:contain;will-change:transform,filter,opacity}
 .sd-tile{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:grid;place-items:center;background:rgba(255,255,255,.40);-webkit-backdrop-filter:blur(20px) saturate(1.9);backdrop-filter:blur(20px) saturate(1.9);border:1px solid rgba(255,255,255,.9);box-shadow:0 18px 50px -12px rgba(0,0,0,.18)}
 .sd-tile img{width:68%;height:68%}
@@ -398,7 +400,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 @keyframes pc-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-.25cqw)}}
 @keyframes pc-spin{to{transform:rotate(360deg)}}
 @container slide (max-width:700px){
-  .mac{left:5%;right:5%;top:33%;bottom:6%;border-radius:4cqw}
+  .mac{left:5%;right:5%;top:25%;bottom:14%;border-radius:4cqw}
   .mw.a{display:none}.mw.b{left:8%;top:14%;width:84%;height:70%;border-radius:2cqw}
   .mw-bar{height:7cqw;gap:1.2cqw;padding:0 2.4cqw}.mw-bar i{width:1.9cqw;height:1.9cqw}
   .mw-side{padding:2.2cqw}.mw-side b{height:10cqw;border-radius:1.5cqw}.mw-main{padding:3.4cqw}
@@ -726,7 +728,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .cw-log .you{align-self:flex-end;background:var(--app-blue);color:#fff}
 @keyframes cw-talk{0%,100%{height:22%}50%{height:100%}}
 @container slide (max-width:700px){
-  .cw{top:auto;bottom:6%;width:90cqw;border-radius:6.4cqw;font-size:3.4cqw}
+  .cw{top:55%;transform:translate(-50%,-50%);width:90cqw;border-radius:6.4cqw;font-size:3.4cqw}
   .cw-top{gap:1.8cqw;padding:2.8cqw}.cw-av{width:8cqw}.cw-wave{gap:.6cqw;height:6cqw}.cw-wave i{width:.55cqw}.cw-wave i:nth-child(n+9){display:none}
   .cw-btn{width:8.6cqw;height:8.6cqw}.cw-btn svg{width:4cqw;height:4cqw}
   .cw-log{gap:2cqw;padding:2.8cqw}.cw-log p{padding:2cqw 3cqw;border-radius:4cqw;max-width:86%}
@@ -757,7 +759,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 @keyframes tw-talk{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-6%) scale(1.06)}}
 @keyframes tw-ring{0%{opacity:.8;transform:scale(.85)}100%{opacity:0;transform:scale(1.35)}}
 @container slide (max-width:700px){
-  .tw-feed{top:auto;bottom:12%;width:90cqw;font-size:3.5cqw;gap:2.2cqw}
+  .tw-feed{top:55%;transform:translate(-50%,-50%);width:90cqw;font-size:3.5cqw;gap:2.2cqw}
   .tw-av{width:7.4cqw;height:7.4cqw}.tw-msg{gap:2cqw}
   .tw-col{max-width:72cqw;gap:.5cqw}.tw-who{padding-inline:3cqw}
   .tw-bub{padding:2cqw 3.2cqw;border-radius:4.6cqw}
