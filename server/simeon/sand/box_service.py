@@ -28,6 +28,7 @@ from uuid import UUID, uuid4
 
 import httpx
 import structlog
+from sqlalchemy import text
 
 from simeon.config import settings
 from simeon.desktop.repository import DesktopSessionRepository
@@ -87,6 +88,12 @@ LOCAL_BOX_REASON = (
     "This computer runs in Docker on the user's Mac; it is updated from "
     "Simeon on the Mac (Settings → Updates), not from here."
 )
+
+
+class BoxEnsureInProgress(Exception):
+    """Another request is already creating, starting or checking this
+    person's box (4 October 2026). `EnsureSandBox` answers it the way it
+    answers a box still starting: unavailable, retry in five seconds."""
 
 
 class BoxBrokerRefused(Exception):
@@ -204,12 +211,42 @@ async def gateway_health(url: str, token: str) -> bool:
         return False
 
 
+async def gateway_token_rejected(url: str, token: str) -> bool:
+    """True only when the box's gateway answers `/health` with 401: it
+    runs with another token than the row's, so the container answering is
+    not the one the row describes (Render, 4 October 2026). A host still
+    starting refuses the connection instead, and that is waiting, not a
+    mismatch; the gateway checks nothing but the token on this route
+    (`gateway-server.ts`)."""
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            response = await client.get(
+                f"{url}/health", headers={"authorization": f"Bearer {token}"}
+            )
+        return response.status_code == 401
+    except httpx.HTTPError:
+        return False
+
+
+async def _never_rejected(url: str, token: str) -> bool:
+    return False
+
+
 _health_check: HealthCheck = gateway_health
+_token_check: HealthCheck = gateway_token_rejected
 
 
-def set_health_check_for_tests(check: HealthCheck | None) -> None:
-    global _health_check
+def set_health_check_for_tests(
+    check: HealthCheck | None, token_rejected: HealthCheck | None = None
+) -> None:
+    """A fake health check has no gateway to ask, so with one the token is
+    never rejected unless the test says when (`token_rejected`)."""
+    global _health_check, _token_check
     _health_check = check or gateway_health
+    if token_rejected is not None:
+        _token_check = token_rejected
+    else:
+        _token_check = _never_rejected if check is not None else gateway_token_rejected
 
 
 # --- sleep: what the box says about itself ------------------------------------------
@@ -444,6 +481,12 @@ class BoxBrokerService:
             and row.refresh_expires_at > utc_now()
         )
 
+    async def _token_rejected(self, box: SandBox) -> bool:
+        url = self.internal_url(box, GATEWAY_PORT)
+        if url is None:
+            return False
+        return await _token_check(url, box.gateway_token)
+
     async def wait_ready(self, box: SandBox) -> bool:
         url = self.internal_url(box, GATEWAY_PORT)
         if url is None:
@@ -461,6 +504,12 @@ class BoxBrokerService:
         with its URLs stamped. Raises `BoxBrokerRefused` (a Connect code
         and a sentence) and `BoxHostError`."""
         parent = await self._parent_of(db, caller)
+        # One ensure per person at a time (Render, 4 October 2026). The page,
+        # the Mac app and its helper all ask within seconds of each other,
+        # and two of them creating a container at once left the row naming
+        # one container and the server running another. The lock lives with
+        # this transaction; a second caller is told to come back in a moment.
+        await self._take_ensure_lock(db, parent.user_id)
         repository = SandBoxRepository.from_session(db)
         box = await repository.get_by_user(parent.user_id)
         # A box stays on the server it was made on: its volumes live there.
@@ -532,6 +581,24 @@ class BoxBrokerService:
                 if inspected is not None:
                     self._apply(box, inspected)
                 box.state = "running"
+                if await self._token_rejected(box):
+                    # The container answers, with another token than the
+                    # row's: it is not the one this row describes (Render,
+                    # 4 October 2026: a recreate and an ensure creating at
+                    # once left the row naming one container and the server
+                    # running another, and from then on every health check
+                    # and every request of the Mac's helper got 401, for
+                    # good). Replaced on the same volumes, with fresh tokens.
+                    log.warning(
+                        "sand.box.ensure.token_rejected",
+                        box=str(box.id),
+                        url=self.internal_url(box, GATEWAY_PORT),
+                    )
+                    await host.remove(box.provider_box_id, volumes=[])
+                    box.gateway_token = ""
+                    box.network_token = ""
+                    await self._create(db, host, parent, box)
+                    created = True
         else:
             if box is not None:
                 # A row from a server that is no longer configured: leave
@@ -570,11 +637,23 @@ class BoxBrokerService:
                 raise
             created = True
         self.stamp_urls(box)
+        # The wait comes before the row is written (Render, 4 October 2026).
+        # Written first, the row stayed locked by this transaction for the
+        # whole wait, up to ninety seconds; every other EnsureSandBox for the
+        # same person then blocked on that lock until the database's
+        # statement timeout killed it, and the window could not connect.
+        ready = await self.wait_ready(box)
+        if not ready:
+            log.warning(
+                "sand.box.ensure.not_ready",
+                box=str(box.id),
+                url=self.internal_url(box, GATEWAY_PORT),
+                waited_s=settings.BOX_READY_TIMEOUT.total_seconds(),
+            )
         box.last_ensured_at = utc_now()
         box.last_active_at = box.last_ensured_at
         box.hibernated_at = None
         await repository.update(box, flush=True)
-        ready = await self.wait_ready(box)
         log.info(
             "sand.box.ensure",
             box=str(box.id),
@@ -585,6 +664,17 @@ class BoxBrokerService:
             gateway_url=box.gateway_url,
         )
         return box
+
+    @staticmethod
+    async def _take_ensure_lock(db: AsyncSession, user_id: UUID) -> None:
+        """A transaction-scoped advisory lock on the person: released with
+        the request's commit or rollback, never left behind."""
+        taken = await db.scalar(
+            text("SELECT pg_try_advisory_xact_lock(hashtext(:key))"),
+            {"key": f"sand-box-ensure:{user_id}"},
+        )
+        if not taken:
+            raise BoxEnsureInProgress()
 
     async def recreate(
         self,
@@ -606,6 +696,10 @@ class BoxBrokerService:
         else:
             box = await repository.get_by_user(caller.user_id)
         parent = await self._parent_of(db, caller)
+        # The same one-at-a-time lock as `ensure`: a recreate that removed
+        # and created while an ensure was creating too is how the row came
+        # to name one container while another ran (Render, 4 October 2026).
+        await self._take_ensure_lock(db, parent.user_id)
         try:
             host = await find_box_host(box.provider) if box is not None else None
         except BoxHostError as error:

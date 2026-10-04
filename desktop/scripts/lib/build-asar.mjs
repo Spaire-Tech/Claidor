@@ -9,6 +9,7 @@ import {
   sourceAppDir,
   stagedAppDir,
   simeonName,
+  simeonVersion,
 } from "./config.mjs";
 import { packStagedAppWithIntegrity } from "./asar-integrity.mjs";
 import { resolveRuntimeApp } from "./runtime.mjs";
@@ -159,6 +160,9 @@ export async function buildAsar({
     } else {
       stagedPackage.productName = simeonName;
     }
+    // app.getVersion() and the About panel read this field: Simeon's own
+    // version, not the upstream shell's 0.18.0.
+    stagedPackage.version = simeonVersion;
     await writeFile(stagedPackagePath, `${JSON.stringify(stagedPackage, null, 2)}\n`);
   }
 

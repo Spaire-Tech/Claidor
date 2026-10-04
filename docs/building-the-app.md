@@ -19,6 +19,16 @@ see `docs/architecture.md`.
   `desktop/NOTICE.md`). It is not in this repository. Bootstrap needs it (next
   section).
 
+## The version
+
+Simeon's version is the `version` in `desktop/package.json` (`0.1.0` for the
+first release). Packaging writes it into the staged `package.json` (what the
+About panel and `app.getVersion()` read) and into the bundle's
+`CFBundleShortVersionString` and `CFBundleVersion` (what Finder shows). The
+upstream shell's own `0.18.0` never reaches a person. Settings has no Updates
+tab: the updater is off in every packaged build, and the cloud computer is
+updated from the server (`docs/services-core.md`, the host bundle channel).
+
 ## The build loop
 
 ```sh

@@ -101,13 +101,14 @@
       "names": [
         "grok",
         "caisra",
-        "anysphere"
+        "anysphere",
+        "spacex"
       ],
       "paths": [
         "desktop/scripts/lib/router-renderer-patch.mjs",
         "desktop/tests/renderer-*.test.mjs"
       ],
-      "reason": "The window patch finds the upstream strings (Grok Bot, New Bot, Caisra, the .sand-grok-bot-mark class) to replace them, counts the upstream maker's name left after the brand pass, and its tests feed it those strings."
+      "reason": "The window patch finds the upstream strings (Grok Bot, New Bot, Caisra, the About panel's copyright line, the .sand-grok-bot-mark class) to replace them, counts the upstream maker's name left after the brand pass, and its tests feed it those strings."
     },
     {
       "kind": "contract",

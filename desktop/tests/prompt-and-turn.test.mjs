@@ -127,7 +127,7 @@ test("the brief follows the tools it has and carries the founder's voice, and a 
     assert.match(debugging, /local Docker container on the user's Mac named simeon-box/);
     assert.match(debugging, /docker restart simeon-box/);
     const ui = docs.module.SAND_APP_UI_REFERENCE_DOC;
-    assert.match(ui, /Settings has three tabs: General, Usage & Billing, Updates/);
+    assert.match(ui, /Settings has two tabs: General, Usage & Billing\./);
     assert.doesNotMatch(ui, /five tabs|Team Setup|Appearance: "Theme"/);
   } finally {
     await docs.dispose();

@@ -571,6 +571,20 @@ settings is not read (`desktop/source/shared/box-runtime.ts`).
   - `sand.box.ensure.refused` says what is missing.
   - `sand.box.ensure.recreate` gives the reason with `stale_host` or
     `stale_image`.
+  - `sand.box.ensure.token_rejected` means the container at the row's address
+    answered the health check with 401: it runs with another gateway token
+    than the row's, so it is not the row's container (a recreate and an
+    ensure that created at once). It is replaced on the same volumes with
+    fresh tokens, in that same ensure. `RecreateSandBox` takes the same
+    one-at-a-time lock as ensure and answers "still starting" when it is held.
+  - `sand.box.ensure.not_ready` means the box did not answer its health check
+    within `BOX_READY_TIMEOUT` (the URL the API tried is in the line); the
+    box is still handed to the app, which keeps retrying.
+  - `sand.box.ensure.timeout` with `in_progress=true` means another request
+    was already seeing to this person's box (one at a time, a
+    transaction-scoped advisory lock); the app retries in five seconds. With
+    `in_progress=false`, a database statement timed out inside ensure, and
+    the session was rolled back before answering.
   - `sand.box.update_deferred` means a new version is waiting for the box to
     be idle.
   - `sand.box.capacity.refused` and `sand.box.placed` cover placement.
