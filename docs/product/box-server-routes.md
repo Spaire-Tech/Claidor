@@ -1594,3 +1594,113 @@ alphabetical position.
 
 Unchanged: **nothing has contacted E2B, no sandbox has been started, no command
 has run in a box, and CI has never executed a line of this diff.**
+
+---
+
+## §25 — 4 October: Simeon on the web arrives, the sixth collision lands one day after the fifth
+
+Main moved ~37 commits, `33126284` → `70848ee1`: 136 files under `clients/`, 26
+under `desktop/`, 22 under `sites/`, **11 under `server/`**. The substance is
+**Simeon on the web**: the Mac app's window served at `app.simeonlabs.com/app`,
+the browser cookie traded for the same token pair the Mac uses, on a session row
+marked `web`.
+
+### Sixth re-point, and the fifth was yesterday
+
+`desktop_session_client_kind_1004` took `down_revision = "desktop_usage_reason_1002"`
+— the parent this file was given on 3 October, twenty-four hours earlier. Two
+heads again. Re-pointed, docstring count raised to six, proven on a scratch
+database, and this time the boundary check covers **both** of main's recent
+columns:
+
+| After | Result |
+|---|---|
+| `upgrade head` | chain ends `desktop_session_client_kind_1004 -> desktop_boxes_0918`; `ix_desktop_boxes_live_scope` present |
+| | `desktop_usage.reason` and `desktop_sessions.client_kind` both present |
+| `downgrade -1` | `to_regclass('desktop_boxes')` → **null** |
+| | `desktop_usage.reason` and `desktop_sessions.client_kind` both **still there** |
+
+`models/desktop.py` auto-merged without a conflict for the second day running,
+and was parsed rather than trusted for the second day running: seven classes,
+`DesktopSession` now 11 fields having gained `client_kind`, `DesktopUsage` 12,
+my `DesktopBox` 9, `DesktopBoxState` the enum. Nothing crossed.
+
+### A new kind of client now reaches my routes
+
+`DesktopSession.is_web` is *"signed in from the browser at app.simeonlabs.com,
+with no Mac."* Main immediately gated one route on it: `local_exec_daemon_credential`
+answers **403** for a web session, because the local-exec daemon runs on the
+person's Mac and a browser has none.
+
+My ten `/api/proxy/box/*` routes are the **cloud** box. They take
+`desktop_session.user` and nothing about the machine the session came from, so
+they work unchanged from a browser — the box is in E2B's cloud, not on the Mac.
+
+**But whether a browser session should be able to start, wake and bill a cloud
+computer is a product decision, and it is not mine.** As the code stands today my
+routes would let it, silently, and the awake seconds would be charged to that
+account exactly as from the Mac. If the answer is "web sessions get a box too"
+then nothing needs doing. If it is "not yet", the gate belongs at the top of
+`box_ensure` in `simeon/desktop/endpoints.py` and would look like main's own 403
+in `box_broker.py`. Writing it down rather than choosing.
+
+### Main stopped leaking the browser's cookie to the box — and I checked mine
+
+`sand/box_proxy.py` gained `BROWSER_ONLY = frozenset({"origin", "referer", "cookie"})`,
+dropped from `forwardable()` along with every `sec-fetch-*`, because *"the
+person's cookie … the box has no business reading"*.
+
+That is exactly the class of leak the box work is meant never to have, so I
+looked for it in mine instead of assuming. Searched `simeon/desktop/boxes.py` and
+`endpoints.py` lines 1480–1840 for `request.headers`, `cookie` and `forwardable`:
+**no match in either.** My routes never proxy a header at all — they call E2B
+through its SDK with explicit arguments, so there is no header set to filter. The
+hole main just closed never existed on this side, and that is a search result,
+not a recollection.
+
+### A defect in main's new code, named and deliberately not fixed
+
+In `sand/box_broker.py` the new web-session guard was inserted **above** the
+function's docstring:
+
+```python
+async def local_exec_daemon_credential(...) -> JSONResponse:
+    if desktop_session.is_web:
+        ...
+        )
+    """`{}` → `{credential, expiresAtMs}` ..."""   # no longer the first statement
+```
+
+A string is only a docstring when it is the first statement in the body. Verified
+with `ast` rather than by eye: first statement is `If`, second is `Expr`, and
+`ast.get_docstring(...)` returns **None**. So
+`local_exec_daemon_credential.__doc__` is now empty and that explanation is
+invisible to `help()` and to any doc tooling.
+
+No behaviour changes, and the fix is one line — move the docstring back above the
+`if`. **I have not made it.** This PR is the box-routes PR, fifteen days without a
+review, and widening it with a drive-by edit to another feature's file buys
+nothing and costs review surface. It is a free fix for whoever next touches that
+file.
+
+### Measured on the merged tree
+
+| Check | Result |
+|---|---|
+| `alembic heads` after the re-point | **one**, `desktop_boxes_0918` |
+| Scoped suite | **14 failed / 593 passed / 1 skipped** — the same fourteen |
+| Where the +8 came from | main's own `test_web_session.py`, `test_box_proxy_headers.py`, `test_apps.py` → 23 passed |
+| `runner/` `npm test` | **61 passed**, 6 files |
+| My two files | **52 passed** |
+| Box routes vs catch-all | ten, 1491–1690, catch-all **1837** |
+| `hourly_exhausted` in `endpoints.py` | 1 |
+| AST duplicate top-level names | none in the four files |
+| `ruff check` / `format` on my six files | **0 findings**, all formatted |
+| `check_names.py` | exit 1, **72 findings**, all three notes, zero in `server/`/`runner/` |
+| `simeon/sand/` metering search | **no matches**, re-run on this tree |
+
+Six weeks, and the computer every person gets by default is still metered by
+nothing.
+
+Unchanged: **nothing has contacted E2B, no sandbox has been started, no command
+has run in a box, and CI has never executed a line of this diff.**

@@ -1,7 +1,7 @@
 """the person's computer: one box row per account
 
 Revision ID: desktop_boxes_0918
-Revises: desktop_usage_reason_1002
+Revises: desktop_session_client_kind_1004
 Create Date: 2026-09-18 23:00:00.000000
 
 One new table and nothing else touched. See simeon/models/desktop.py,
@@ -15,7 +15,7 @@ a person's agents — so in practice there is one row per account, which
 is the founder's rule (*there is no "which computer", only this
 computer*). Each accidental extra row would be a second bill.
 
-Re-pointed FIVE times, every time for the same reason. It was written
+Re-pointed SIX times, every time for the same reason. It was written
 against `maty_job_times_0912`; `desktop_box_credential_0925` landed on
 `main` against that same parent, and then five more (`sand_listeners`,
 `desktop_share_rooms`, `sand_cloud_agents`, `sand_boxes`, `sand_plugins`)
@@ -24,10 +24,11 @@ September `sand_box_sleep_0928` landed on `main` against
 `sand_plugins_0925` — the parent this file had just been given — and on
 1 October `desktop_voice_calls_0930` landed against *that* one. On 3
 October `desktop_usage_reason_1002` landed against `desktop_voice_calls_0930`
-— again the parent this file had just been given — and again printed two
-heads, which `upgrade head` refuses to run with. Five re-pointings, one
-cause, every time. It now stacks on `desktop_usage_reason_1002`, `main`'s
-tip. The file is still dated the 18th because that is when it was written;
+— again the parent this file had just been given — and on 4 October
+`desktop_session_client_kind_1004` landed against *that*, one day later,
+making it six. Every one printed two heads, which `upgrade head` refuses to
+run with. Six re-pointings, one cause, every time. It now stacks on
+`desktop_session_client_kind_1004`, `main`'s tip. The file is still dated the 18th because that is when it was written;
 the chain, not the filename, is what alembic reads.
 
 Expect to do this again, and expect nothing to warn you: the suite builds
@@ -42,7 +43,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "desktop_boxes_0918"
-down_revision = "desktop_usage_reason_1002"
+down_revision = "desktop_session_client_kind_1004"
 branch_labels: tuple[str] | None = None
 depends_on: tuple[str] | None = None
 
