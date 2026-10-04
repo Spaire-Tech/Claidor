@@ -145,8 +145,25 @@ async def keep_attached(redis: Any, box_id: UUID) -> None:
         await asyncio.sleep(ATTACHED_REFRESH_SECONDS)
 
 
+#: What a browser adds to a request and the box must not see (4 October
+#: 2026, Simeon on the web). The host refuses any request carrying an
+#: `Origin` (`gateway-server.ts`, `rejectUntrustedBrowserRequest`) and any
+#: cross-site avatar load (`sec-fetch-site`): that guard is for a page
+#: reaching a box directly. Through this proxy the box is reached with its
+#: own network token, checked above, and the API's CORS rule says which
+#: pages may send it; so the browser's markings stop here, with the
+#: person's cookie, which the box has no business reading.
+BROWSER_ONLY = frozenset({"origin", "referer", "cookie"})
+
+
 def forwardable(headers: Any) -> dict[str, str]:
-    return {k: v for k, v in headers.items() if k.lower() not in HOP_BY_HOP}
+    return {
+        k: v
+        for k, v in headers.items()
+        if k.lower() not in HOP_BY_HOP
+        and k.lower() not in BROWSER_ONLY
+        and not k.lower().startswith("sec-fetch-")
+    }
 
 
 async def _resolve(

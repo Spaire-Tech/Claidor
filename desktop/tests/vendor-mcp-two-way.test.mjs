@@ -78,6 +78,63 @@ test("an install the agent ran in the box reaches the Mac, and the Mac's credent
   }
 });
 
+test("a sign-in finished in the box (Simeon on the web) reaches the Mac, each side keeps its own refresh token, and a sign-out anywhere wins", async () => {
+  const { module, dispose } = await load("source/shared/node/vendor-mcp/installs.ts", "vendor-installs-web");
+  const mac = await mkdtemp(path.join(os.tmpdir(), "simeon-mac3-"));
+  const box = await mkdtemp(path.join(os.tmpdir(), "simeon-box3-"));
+  const sync = (from, to, authority) => module.adoptVendorMcpStore(to, module.serializeVendorMcpStoreForPeer(module.loadVendorMcpStore(from)), authority);
+  try {
+    let clock = 1_000;
+    const now = () => clock;
+    // Installed from the web: the box has the row, the Mac takes it.
+    module.upsertVendorMcpInstall(box, { id: "notion", url: "https://mcp.notion.com/mcp", connected: false }, now);
+    sync(box, mac, "local");
+    // The web's sign-in finishes in the box; the Mac's next pull brings the credential, without the refresh token.
+    clock = 2_000;
+    module.setVendorMcpCredential(box, "notion", credential, now);
+    sync(box, mac, "local");
+    const onMac = module.vendorMcpInstallById(mac, "notion");
+    assert.equal(onMac?.credential?.accessToken, "notion-token");
+    assert.equal(onMac?.credential?.refreshToken, undefined, "the refresh token stays where the sign-in finished");
+    assert.equal(onMac?.credentialAtMs, 2_000);
+    // The Mac's refresh sends its copy back: the box keeps its own row, refresh token included, although the Mac is the authority on a tie.
+    sync(mac, box, "incoming");
+    assert.equal(module.vendorMcpInstallById(box, "notion")?.credential?.refreshToken, "r");
+    // The box refreshes the token (a newer credential): the Mac takes it.
+    clock = 3_000;
+    module.setVendorMcpCredential(box, "notion", { ...credential, accessToken: "notion-token-2" }, now);
+    sync(box, mac, "local");
+    assert.equal(module.vendorMcpInstallById(mac, "notion")?.credential?.accessToken, "notion-token-2");
+    // A sign-out on the Mac, later, wins over the box's credential; one in the box wins over the Mac's.
+    clock = 4_000;
+    module.clearVendorMcpCredential(mac, "notion", now);
+    sync(mac, box, "incoming");
+    assert.equal(module.vendorMcpInstallById(box, "notion")?.credential, undefined, "the Mac's sign-out reaches the box");
+    clock = 5_000;
+    module.setVendorMcpCredential(mac, "notion", credential, now);
+    sync(mac, box, "incoming");
+    assert.equal(module.vendorMcpInstallById(box, "notion")?.credential?.accessToken, "notion-token");
+    clock = 6_000;
+    module.clearVendorMcpCredential(box, "notion", now);
+    sync(box, mac, "local");
+    assert.equal(module.vendorMcpInstallById(mac, "notion")?.credential, undefined, "the box's sign-out reaches the Mac, although the Mac is the authority");
+    // A stale copy never undoes a newer change: the Mac's old row (with the credential) comes back, the box keeps the sign-out.
+    module.adoptVendorMcpStore(box, [{ id: "notion", url: "https://mcp.notion.com/mcp", connected: true, credential, installedAtMs: 1_000, credentialAtMs: 5_000 }], "incoming");
+    assert.equal(module.vendorMcpInstallById(box, "notion")?.credential, undefined);
+    // Rows from before this change (no credentialAtMs) merge as they did: the authority's credential stands.
+    const merged = module.mergeVendorMcpStores(
+      { installs: [{ id: "x", url: "u", connected: false, installedAtMs: 1 }], removed: [] },
+      { installs: [{ id: "x", url: "u", connected: true, credential: { accessToken: "a", tokenEndpoint: "t", clientId: "c" }, installedAtMs: 1 }], removed: [] },
+      "incoming",
+    );
+    assert.equal(merged.installs[0].credential?.accessToken, "a");
+  } finally {
+    await rm(mac, { recursive: true, force: true });
+    await rm(box, { recursive: true, force: true });
+    await dispose();
+  }
+});
+
 test("the Mac's pull is throttled, bounded, and merges the box's answer", async () => {
   const { module, dispose } = await load("source/shared/node/vendor-mcp/box-pull.ts", "vendor-box-pull");
   const installs = await load("source/shared/node/vendor-mcp/installs.ts", "vendor-installs-2");

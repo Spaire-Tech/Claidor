@@ -63,9 +63,10 @@
         "polar"
       ],
       "paths": [
-        "sites/simeonlabs.com/public/app/**"
+        "sites/simeonlabs.com/public/app/**",
+        "clients/apps/web/public/app/**"
       ],
-      "reason": "The website's demo is the app's window: the upstream compiled renderer, patched. Its internal identifiers are the upstream bytes."
+      "reason": "The website's demo and Simeon on the web are the app's window: the upstream compiled renderer, patched. Its internal identifiers are the upstream bytes; the web bridge bundled beside it carries the Connect service name and the renderer's own account field."
     },
     {
       "kind": "contract",
@@ -439,6 +440,18 @@
       ],
       "match": "github\\.com/polarsource/polar/(issues|pull)/",
       "reason": "Links to the upstream issue or pull request that explains the code next to them."
+    },
+    {
+      "kind": "contract",
+      "names": [
+        "grok",
+        "anysphere"
+      ],
+      "paths": [
+        "desktop/web/**"
+      ],
+      "match": "GrokBotService|isAnysphereUser",
+      "reason": "Simeon on the web speaks the Connect service the server mounts (`aiserver.v1.GrokBotService`, `server/simeon/sand/connect.py`) and answers the pinned renderer's own account status field."
     }
   ]
 }

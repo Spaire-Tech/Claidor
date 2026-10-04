@@ -92,6 +92,13 @@ def configure_cors(app: FastAPI) -> None:
         allow_credentials=True,  # Cookies are allowed, but only there!
         allow_methods=["*"],
         allow_headers=["*"],
+        # The window on the web reads these off the box gateway's answers
+        # through the proxy (`gateway-client.ts`, 4 October 2026).
+        expose_headers=[
+            "x-sand-mint-dedupe",
+            "x-automation-failure-hint",
+            "retry-after",
+        ],
     )
     configs.append(simeon_frontend_config)
 

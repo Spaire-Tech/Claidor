@@ -1,14 +1,14 @@
 import { DashboardService } from "../../../packages/proto/generated/aiserver/v1/dashboard_connect.js";
 import { getSandRootDir } from "../../host-paths.js";
 import { createAccountMcpBackendExec } from "../../../shared/node/account-mcp/backend-exec.js";
-import { adoptAccountMcpStore, loadAccountMcpStore, parseAccountMcpServerConfigValue } from "../../../shared/node/account-mcp/store.js";
+import { adoptAccountMcpStore, loadAccountMcpStore, parseAccountMcpServerConfigValue, serializeAccountMcpStoreForPeer } from "../../../shared/node/account-mcp/store.js";
 import { SandMcpConfigError } from "../../../shared/node/mcp/mcp-config-error.js";
-import { isVendorMcpPluginId } from "../../../shared/node/vendor-mcp/catalog.js";
+import { isVendorMcpPluginId, vendorMcpServerId } from "../../../shared/node/vendor-mcp/catalog.js";
 import { loadVendorMcpInstalls, removeVendorMcpInstall, upsertVendorMcpInstall } from "../../../shared/node/vendor-mcp/installs.js";
 import { fetchVendorEffectivePlugins, fetchVendorMarketplacePlugins } from "../../../shared/node/vendor-mcp/marketplace.js";
 import { createVendorMcpBackendExec } from "../../../shared/node/vendor-mcp/backend-exec.js";
 import { withVendorAccountServers } from "../../../shared/node/vendor-mcp/display.js";
-import { adoptVendorMcpStore, loadVendorMcpStore, serializeVendorMcpStore } from "../../../shared/node/vendor-mcp/installs.js";
+import { adoptVendorMcpStore, loadVendorMcpStore, serializeVendorMcpStoreForPeer } from "../../../shared/node/vendor-mcp/installs.js";
 import {
   createAccountMcpWriter,
   fetchAccountMcpServers,
@@ -78,6 +78,8 @@ export interface CreateHostMcpOptions {
   uninstallComposioPlugin?: (pluginId: string) => Promise<boolean>;
   /** Validates the JSON an AddMcpServer carries; the manager's `addServer` has no parser without it. */
   parseServerConfig?: (value: unknown) => unknown;
+  /** Where a sign-in started here sends the person back: the server's hosted callback (Simeon on the web). */
+  oauthRedirectUri?: string;
   log?: (message: string) => void;
 }
 /** The one parser both sides hand the manager: the store's own shape, or a SandMcpConfigError the tool result carries. */
@@ -90,6 +92,10 @@ interface McpManagerRuntime {
   listServers(): Promise<ServerState>;
   listConnectedBackendTools(): Promise<unknown[]>;
   getCatalog(getAccessToken: () => Promise<string | null>, options?: { forceRefresh?: boolean }): Promise<CatalogPlugin[]>;
+  resolvePluginLogo(url: string): Promise<unknown>;
+  updatePluginInstall(args: { pluginId: string; values: Record<string, string> }, getAccessToken: () => Promise<string | null>): Promise<ServerState>;
+  listServerTools(serverId: string): Promise<unknown>;
+  toggleMcpToolDisabled(args: { serverId: string; toolName: string }): Promise<unknown>;
   listEffectivePlugins(): Promise<EffectivePlugin[]>;
   uninstallPlugin(id: string): Promise<{ removed: boolean; reason?: string }>;
   setServerCustomInstructions(args: { serverId: string; instructions: string }): Promise<ServerState>;
@@ -97,7 +103,7 @@ interface McpManagerRuntime {
   addServer(args: { name: string; configJson: string }): Promise<ServerState>;
   removeServer(id: string): Promise<{ removed: boolean; reason?: string; state: ServerState }>;
   reloadServers(): Promise<ServerState>;
-  authenticateServer(serverId: string, accountKey: string, requestingAgentId: string | null, forceReauth?: boolean): Promise<{ status: string; serverName: string; authorizationUrl?: string; message?: string }>;
+  authenticateServer(serverId: string, accountKey: string, requestingAgentId: string | null, forceReauth?: boolean, trigger?: string | null): Promise<{ status: string; serverName: string; authorizationUrl?: string; message?: string }>;
   logoutAccount(serverId: string, accountKey: string): Promise<ServerState>;
   renameAccount(serverId: string, accountKey: string, newAccountKey: string): Promise<ServerState>;
   removeAccount(serverId: string, accountKey: string): Promise<ServerState>;
@@ -116,6 +122,7 @@ export function createHostMcp(deps: CreateHostMcpOptions): McpHostPort {
   const log = deps.log ?? ((message: string) => console.log(`[sand:mcp] ${message}`));
   const manager = new SandMcpManager({
     includeBuiltins: false,
+    ...(deps.oauthRedirectUri == null ? {} : { oauthRedirectUri: deps.oauthRedirectUri }),
     accountConfigProvider: deps.accountConfigProvider,
     accountDisplayConfigProvider: deps.accountDisplayConfigProvider,
     accountServersProvider: deps.accountServersProvider,
@@ -176,9 +183,35 @@ export function createHostMcp(deps: CreateHostMcpOptions): McpHostPort {
     renameAccount: async ({ serverId, accountKey, newAccountKey }: { serverId: string; accountKey: string; newAccountKey: string }) => toInstalledServers(await mutate(() => manager.renameAccount(serverId, accountKey, newAccountKey))),
     removeAccount: async ({ serverId, accountKey }: { serverId: string; accountKey: string }) => toInstalledServers(await mutate(() => manager.removeAccount(serverId, accountKey)))
   };
+  // The window's own calls, the ones Electron main answers on a Mac
+  // (`electron-main/mcp/mcp-desktop.ts`), answered by this manager for
+  // Simeon on the web (4 October 2026): the same shapes, nothing summarised.
+  const window = {
+    listServers: () => manager.listServers(),
+    listEffectivePlugins: () => manager.listEffectivePlugins(),
+    getCatalog: () => manager.getCatalog(token),
+    resolvePluginLogo: (url: string) => manager.resolvePluginLogo(url),
+    installEntry: async (request: { entryId: string; values?: Record<string, string> }) => {
+      const state = await mutate(() => manager.installEntry(request, token));
+      syncPluginSkillsInBackground(deps.pluginSkills, "install");
+      return state;
+    },
+    updatePluginInstall: async (request: { pluginId: string; values: Record<string, string> }) => await mutate(() => manager.updatePluginInstall(request, token)),
+    removeServer: (serverId: string) => mutate(() => manager.removeServer(serverId)),
+    uninstallPlugin: async (pluginId: string) => { const result = await mutate(() => manager.uninstallPlugin(pluginId)); if (uninstallClearedInstallRecord(result)) syncPluginSkillsInBackground(deps.pluginSkills, "uninstall"); return result; },
+    authenticateServer: async (serverId: string, accountKey: string, trigger?: string) => { const result = await manager.authenticateServer(serverId, accountKey, null, false, trigger ?? null); if (result.status === "started") deps.onServersMutated?.(); return result; },
+    renameAccount: (args: { serverId: string; accountKey: string; newAccountKey: string }) => mutate(() => manager.renameAccount(args.serverId, args.accountKey, args.newAccountKey)),
+    removeAccount: (args: { serverId: string; accountKey: string }) => mutate(() => manager.removeAccount(args.serverId, args.accountKey)),
+    setServerCustomInstructions: (args: { serverId: string; instructions: string }) => mutate(() => manager.setServerCustomInstructions(args)),
+    listServerTools: (serverId: string) => manager.listServerTools(serverId),
+    toggleMcpToolDisabled: (args: { serverId: string; toolName: string }) => manager.toggleMcpToolDisabled(args),
+    /** The numeric server id of a vendor connector, so an install can go straight to its sign-in, as the Mac's does. */
+    vendorServerIdForPlugin: async (pluginId: string) => vendorMcpServerId(pluginId) ?? null,
+  };
   return {
     mcp: { getTools: (ctx: unknown) => discovery.getToolsForTurnStart(ctx), listTools: async (ctx: unknown) => { const connected = await manager.listConnectedBackendTools(), discovered = await discovery.getTools(ctx), byName = new Map<string, any>(); for (const tool of [...connected, ...discovered] as any[]) if (!byName.has(tool.name)) byName.set(tool.name, tool); return [...byName.values()]; }, createExecutor: (persistImage: unknown, spillLargeText: unknown, auditIdentity: unknown) => new SandMcpExecutor(discovery, persistImage, spillLargeText, auditIdentity), refreshAccountConfig: () => manager.refreshAccountConfigInBackground(), createStateExecutor: () => createSandMcpStateExecutor({ getTools: (ctx: unknown) => discovery.getTools(ctx) }), getCustomInstructions: () => manager.getMcpCustomInstructions(), resolveToolTransport: (id: string) => discovery.resolveProviderTransport(id), resolveNeedsAuthSlot: async (id: string) => { const summary = (await manager.listServers()).servers.find((server: McpServerSummary) => server.serverIdentifier === id && server.status === "needsAuth"); return summary == null ? null : { serverId: summary.id, serverName: summary.name }; } },
     management,
+    window,
     setSettingsStore: (settings: unknown) => manager.setSettingsStore(settings),
     listBoxServers: (ids, options) => discovery.listBoxServers([...ids], options),
     noteAuthCompletedElsewhere: (serverId, accountKey) => manager.noteAuthCompletedElsewhere(serverId, accountKey),
@@ -187,7 +220,12 @@ export function createHostMcp(deps: CreateHostMcpOptions): McpHostPort {
   };
 }
 
-export interface McpHostPort { dispose(): void | Promise<void>; listBoxServers(ids: readonly string[], options?: { kickOnly?: boolean }): Promise<Array<{ serverIdentifier: string; status: string; statusDetail?: string; toolCount: number }>>; noteAuthCompletedElsewhere(serverId: string, accountKey: string): string | null; setSettingsStore?(settings: unknown): void; setBoxMcpExec?(exec: unknown): void; mcp: unknown; management: unknown }
+export interface McpHostPort { dispose(): void | Promise<void>; listBoxServers(ids: readonly string[], options?: { kickOnly?: boolean }): Promise<Array<{ serverIdentifier: string; status: string; statusDetail?: string; toolCount: number }>>; noteAuthCompletedElsewhere(serverId: string, accountKey: string): string | null; setSettingsStore?(settings: unknown): void; setBoxMcpExec?(exec: unknown): void; mcp: unknown; management: unknown; window: Record<string, (...args: any[]) => Promise<unknown>> }
+
+/** `…/desktop/mcp-oauth/callback` on Simeon Labs' server: where a vendor sends the person back from a sign-in the box started (`server/simeon/desktop/app_sign_in.py`). */
+export function hostedMcpOAuthCallbackUrl(backendUrl: string = getSandInferenceBackendUrl()): string {
+  return new URL("desktop/mcp-oauth/callback", backendUrl.endsWith("/") ? backendUrl : `${backendUrl}/`).toString();
+}
 export interface McpHostServiceDeps {
   auth: {
     getAccessToken(args: { backendUrl: string }): Promise<string>;
@@ -206,6 +244,8 @@ export class McpHostService {
   readonly statusFollowUps = new Map<string, Promise<void>>();
   private disposed = false;
   readonly hostMcp: McpHostPort;
+  private readonly backendMcpExec: { completeOAuth(args: { stateId: string; code: string }): Promise<void>; refreshOwnedCredentials(): Promise<void> };
+  private readonly accountBackendMcpExec: { refreshOwnedCredentials(): Promise<void> };
   readonly api;
   constructor(readonly deps: McpHostServiceDeps) {
     // The account's MCP configuration is the box's copy of the Mac's store
@@ -228,16 +268,21 @@ export class McpHostService {
     });
     // Custom URL servers are served here, in the box, from the account
     // store (`account-mcp/backend-exec.ts`), over streamable HTTP with the
-    // server's headers; the box never opens a sign-in, so a 401 reads as
-    // needsAuth and draws the connect card the Mac then acts on.
-    const accountBackendMcpExec = createAccountMcpBackendExec({ rootDir: getSandRootDir, fallback: cursorBackendMcpExec, canStartAuth: false, log: deps.log });
+    // server's headers; a 401 reads as needsAuth and draws the connect card.
+    // The sign-in starts here too, for the window on the web, and comes
+    // back through the server's hosted callback (4 October 2026); the Mac's
+    // window starts its own, on its loopback.
+    const accountBackendMcpExec = createAccountMcpBackendExec({ rootDir: getSandRootDir, fallback: cursorBackendMcpExec, canStartAuth: true, log: deps.log });
     // Vendor connectors are served here, in the box, from the credential
-    // store the Mac sends (`vendor-mcp/backend-exec.ts`); the box never opens
-    // a sign-in, so a missing credential reads as needsAuth and draws the card.
+    // store (`vendor-mcp/backend-exec.ts`): the Mac's sign-ins arrive by
+    // sync, the web's finish here, and each side refreshes its own.
     // Apps Simeon Labs' server serves take the box's own credential (`vendor-mcp/backend-exec.ts`, `appsToolkit`).
-    const backendMcpExec = createVendorMcpBackendExec({ rootDir: getSandRootDir, fallback: accountBackendMcpExec, canStartAuth: false, getServerAccessToken: async () => { try { const token = await deps.auth.getAccessToken({ backendUrl: getSandInferenceBackendUrl() }); return token.length > 0 ? token : null; } catch { return null; } }, log: deps.log });
+    const backendMcpExec = createVendorMcpBackendExec({ rootDir: getSandRootDir, fallback: accountBackendMcpExec, canStartAuth: true, getServerAccessToken: async () => { try { const token = await deps.auth.getAccessToken({ backendUrl: getSandInferenceBackendUrl() }); return token.length > 0 ? token : null; } catch { return null; } }, log: deps.log });
+    this.backendMcpExec = backendMcpExec;
+    this.accountBackendMcpExec = accountBackendMcpExec;
     this.hostMcp = createHostMcp({
       log: deps.log,
+      oauthRedirectUri: hostedMcpOAuthCallbackUrl(),
       onServerAuthenticated: (completion) => this.emitAuthCompletion(completion),
       onServersMutated: () => this.emitServersUpdated({ servers: [] }),
       ...(deps.pluginSkills == null ? {} : { pluginSkills: deps.pluginSkills }),
@@ -263,10 +308,15 @@ export class McpHostService {
       ...(deps.onDiscoveryFailed === undefined ? {} : { onDiscoveryFailed: deps.onDiscoveryFailed }),
       ...(deps.onConnectorAuth === undefined ? {} : { onConnectorAuth: deps.onConnectorAuth }),
     });
-    this.api = { mcp: this.hostMcp.mcp, management: this.hostMcp.management, replaceVendorMcpStore: (installs: unknown) => adoptVendorMcpStore(getSandRootDir(), installs, "incoming").changed, readVendorMcpStore: () => serializeVendorMcpStore(loadVendorMcpStore(getSandRootDir())), replaceAccountMcpStore: (store: unknown) => adoptAccountMcpStore(getSandRootDir(), store).changed, readAccountMcpStore: () => loadAccountMcpStore(getSandRootDir()),listBoxServers: (ids: readonly string[]) => this.listBoxServers(ids), subscribeToAuthCompletion: (listener: (event: unknown) => void) => { this.authCompletionListeners.add(listener); return () => this.authCompletionListeners.delete(listener); }, noteAuthCompletedElsewhere: (serverId: string, accountKey: string) => this.hostMcp.noteAuthCompletedElsewhere(serverId, accountKey), subscribeToServersUpdated: (listener: (event: { servers: unknown[] }) => void) => { this.serversUpdatedListeners.add(listener); return () => this.serversUpdatedListeners.delete(listener); }, syncPluginSkills: async () => await deps.pluginSkills?.sync("desktop") ?? [], pluginSyncStatus: () => deps.pluginSkills?.status() ?? { authBlocked: [] } };
+    this.api = { mcp: this.hostMcp.mcp, management: this.hostMcp.management, window: this.hostMcp.window, completeOAuth: (args: { stateId: string; code: string }) => this.completeOAuth(args), replaceVendorMcpStore: (installs: unknown) => adoptVendorMcpStore(getSandRootDir(), installs, "incoming").changed, readVendorMcpStore: () => this.readVendorMcpStore(), replaceAccountMcpStore: (store: unknown) => adoptAccountMcpStore(getSandRootDir(), store).changed, readAccountMcpStore: () => this.readAccountMcpStore(), listBoxServers: (ids: readonly string[]) => this.listBoxServers(ids), subscribeToAuthCompletion: (listener: (event: unknown) => void) => { this.authCompletionListeners.add(listener); return () => this.authCompletionListeners.delete(listener); }, noteAuthCompletedElsewhere: (serverId: string, accountKey: string) => this.hostMcp.noteAuthCompletedElsewhere(serverId, accountKey), subscribeToServersUpdated: (listener: (event: { servers: unknown[] }) => void) => { this.serversUpdatedListeners.add(listener); return () => this.serversUpdatedListeners.delete(listener); }, syncPluginSkills: async () => await deps.pluginSkills?.sync("desktop") ?? [], pluginSyncStatus: () => deps.pluginSkills?.status() ?? { authBlocked: [] } };
   }
   setSettingsStore(settings: unknown): void { this.hostMcp.setSettingsStore?.(settings); }
   setBoxMcpExec(exec: unknown): void { this.hostMcp.setBoxMcpExec?.(exec); }
+  /** The second half of a sign-in the box started: the code from the server's hosted callback, for the credential. The watch the manager keeps then sees it and tells the window. */
+  async completeOAuth(args: { stateId: string; code: string }): Promise<void> { await this.backendMcpExec.completeOAuth(args); this.emitServersUpdated({ servers: [] }); }
+  /** The box's copy for the Mac: its own sign-ins refreshed first, their refresh tokens kept here. */
+  async readVendorMcpStore(): Promise<unknown[]> { try { await this.backendMcpExec.refreshOwnedCredentials(); } catch (error) { this.deps.log(`[sand:mcp] refresh before sync failed: ${error instanceof Error ? error.message : String(error)}`); } return serializeVendorMcpStoreForPeer(loadVendorMcpStore(getSandRootDir())); }
+  async readAccountMcpStore(): Promise<unknown> { try { await this.accountBackendMcpExec?.refreshOwnedCredentials(); } catch (error) { this.deps.log(`[sand:mcp] refresh before sync failed: ${error instanceof Error ? error.message : String(error)}`); } return serializeAccountMcpStoreForPeer(loadAccountMcpStore(getSandRootDir())); }
   async dispose(): Promise<void> { if (this.disposed) return; this.disposed = true; this.authCompletionListeners.clear(); this.serversUpdatedListeners.clear(); this.statusFollowUps.clear(); await this.hostMcp.dispose(); }
   async listBoxServers(ids: readonly string[]) { const servers = await this.hostMcp.listBoxServers(ids, { kickOnly: true }); this.scheduleStatusFollowUps(servers); return servers.map(({ serverIdentifier, status, statusDetail, toolCount }) => ({ serverIdentifier, status, ...(statusDetail == null ? {} : { statusDetail }), toolCount })); }
   scheduleStatusFollowUps(servers: readonly { serverIdentifier: string; status: string }[]): void {

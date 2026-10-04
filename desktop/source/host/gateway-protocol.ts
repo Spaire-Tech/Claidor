@@ -131,7 +131,8 @@ export const SAND_GATEWAY_COMMANDS = {
   listRoutedMcpTools: (api: GatewayApi) => api.listRoutedMcpTools(),
   executeRoutedMcpTool: (api: GatewayApi, body: string) => api.executeRoutedMcpTool(parseCommandArgs(body)),
   executeRoutedAgentTool: (api: GatewayApi, body: string) => api.executeRoutedAgentTool(parseCommandArgs(body)),
-  listBoxMcpServers: (api: GatewayApi, body: string) => api.listBoxMcpServers(parseCommandArgs(body))
+  listBoxMcpServers: (api: GatewayApi, body: string) => api.listBoxMcpServers(parseCommandArgs(body)),
+  desktopMcp: (api: GatewayApi, body: string) => api.desktopMcp(parseCommandArgs(body))
 };
 export const GATEWAY_PREPARE_UPGRADE_PATH = "/prepare-upgrade";
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "::1", "[::1]"]);

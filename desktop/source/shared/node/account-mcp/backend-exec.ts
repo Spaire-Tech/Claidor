@@ -7,8 +7,10 @@
 // connectors: tools listed and called over streamable HTTP by
 // `vendor-mcp/http-mcp-client.ts`, with the server's configured headers; a
 // 401 or 403 reads as needsAuth; the sign-in is the same OAuth flow as the
-// vendors' (discovery, dynamic registration, PKCE, the loopback), started on
-// the Mac only. Anything not in the store goes to the fallback unchanged.
+// vendors' (discovery, dynamic registration, PKCE), started on the Mac for
+// its loopback and in the box for the web page, whose callback the server
+// hosts (4 October 2026). Anything not in the store goes to the fallback
+// unchanged.
 //
 // A command-configured (stdio) server never reaches this object: the manager
 // lists it through the box's own MCP executor
@@ -31,6 +33,7 @@ import {
   accountMcpServerByName,
   accountMcpServerByUrl,
   clearAccountMcpCredential,
+  listAccountMcpServers,
   loadAccountMcpStore,
   setAccountMcpCredential,
   type AccountMcpCredential,
@@ -79,7 +82,7 @@ export interface AccountMcpBackendExecOptions {
   readonly fallback?: AccountMcpFallbackBackend;
   readonly fetch?: typeof fetch;
   readonly now?: () => number;
-  /** True on the Mac only: this side may open a sign-in and refresh a token. */
+  /** Whether this side may start a sign-in and refresh the tokens it holds the refresh token for; false in tests of a read-only copy. */
   readonly canStartAuth: boolean;
   /** Called after this side wrote a credential (a finished sign-in, a refresh, a logout). */
   readonly onCredentialChanged?: (serverId: string) => void;
@@ -133,9 +136,10 @@ export function createAccountMcpBackendExec(options: AccountMcpBackendExecOption
     return server == null || config == null ? undefined : { ...server, config };
   };
 
-  // A credential that is fresh, or refreshed on the Mac when it can be. In
-  // the box an expired token reads as needsAuth: the Mac refreshes and sends
-  // the store again, and the box never spends the refresh token.
+  // A credential that is fresh, or refreshed here when this side holds its
+  // refresh token (it finished the sign-in; the other side's copy has none,
+  // `serializeAccountMcpStoreForPeer`). A copy that expired reads as
+  // needsAuth until the owner refreshes and the next sync brings the token.
   const usableCredential = async (server: AccountMcpLiveServer & { readonly config: McpRemoteConfig }): Promise<AccountMcpCredential | undefined> => {
     const credential = server.credential;
     if (credential == null) return undefined;
@@ -325,6 +329,16 @@ export function createAccountMcpBackendExec(options: AccountMcpBackendExecOption
       if (server == null) { await fallback.deleteAccount?.(args); return; }
       if (server.credential != null) forgetVendorMcpSession(server.config.url, server.credential.accessToken, server.config.headers);
       if (clearAccountMcpCredential(options.rootDir(), server.id, now())) options.onCredentialChanged?.(server.id);
+    },
+
+    /** Refreshes every credential this side owns that is about to expire, before the store goes to the other side. */
+    async refreshOwnedCredentials(): Promise<void> {
+      if (!options.canStartAuth) return;
+      for (const server of listAccountMcpServers(store())) {
+        const config = remoteConfig(server);
+        if (config == null || server.credential?.refreshToken == null || isVendorMcpGrantFresh(server.credential, now())) continue;
+        await usableCredential({ ...server, config });
+      }
     },
   };
 }

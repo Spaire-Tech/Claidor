@@ -7,11 +7,15 @@
 // nothing else. This object answers for the vendor connectors in our store
 // and hands anything else to the old backend unchanged.
 //
-// Two sides run it. On the Mac (`canStartAuth: true`) it starts sign-ins,
-// finishes them from the loopback, refreshes tokens and is the only writer
-// of a credential. In the box (`canStartAuth: false`) it only reads the
-// store the Mac sent, lists tools and calls them; with no credential it
-// reports needsAuth, which is what makes the connect card appear.
+// Two sides run it, both with `canStartAuth: true` since Simeon on the web
+// (4 October 2026). On the Mac it starts sign-ins and finishes them from
+// the loopback; in the box it starts them for the web page and finishes
+// them from the server's hosted callback (`completeMcpOAuth`). Each side
+// writes the credentials of the sign-ins it finished and refreshes those
+// alone: the other side holds a copy without the refresh token
+// (`serializeVendorMcpStoreForPeer`), so with no usable credential it
+// reports needsAuth, which is what makes the connect card appear, until the
+// owner's next refresh reaches it.
 
 import { Struct } from "@bufbuild/protobuf";
 import {
@@ -82,7 +86,7 @@ export interface VendorMcpBackendExecOptions {
   readonly fallback?: VendorMcpFallbackBackend;
   readonly fetch?: typeof fetch;
   readonly now?: () => number;
-  /** True on the Mac only: this side may open a sign-in and refresh a token. */
+  /** Whether this side may start a sign-in and refresh the tokens it holds the refresh token for; false in tests of a read-only copy. */
   readonly canStartAuth: boolean;
   /** Called after this side wrote a credential (a finished sign-in, a refresh, a logout). */
   readonly onCredentialChanged?: (pluginId: string) => void;
@@ -147,9 +151,9 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
   const markApp = (install: VendorMcpInstall, connected: boolean): void => {
     const marked = install.credential?.clientId === APPS_CONNECTED_CLIENT_ID;
     if (connected && !marked) {
-      if (setVendorMcpCredential(options.rootDir(), install.id, { accessToken: "connected", tokenEndpoint: appsRouteUrl(install.url, "/status"), clientId: APPS_CONNECTED_CLIENT_ID }) != null) options.onCredentialChanged?.(install.id);
+      if (setVendorMcpCredential(options.rootDir(), install.id, { accessToken: "connected", tokenEndpoint: appsRouteUrl(install.url, "/status"), clientId: APPS_CONNECTED_CLIENT_ID }, now) != null) options.onCredentialChanged?.(install.id);
     } else if (!connected && install.credential != null) {
-      if (clearVendorMcpCredential(options.rootDir(), install.id)) options.onCredentialChanged?.(install.id);
+      if (clearVendorMcpCredential(options.rootDir(), install.id, now)) options.onCredentialChanged?.(install.id);
     }
   };
   const installFor = (serverIdentifier: string): VendorMcpInstall | undefined => {
@@ -164,9 +168,10 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
   const installForUrl = (serverUrl: string): VendorMcpInstall | undefined =>
     loadVendorMcpInstalls(options.rootDir()).find((item) => item.url === serverUrl.trim() && vendorMcpConnectorById(item.id) != null);
 
-  // A credential that is fresh, or refreshed on the Mac when it can be. In
-  // the box an expired token reads as needsAuth: the Mac refreshes and sends
-  // the store again, and the box never spends the refresh token.
+  // A credential that is fresh, or refreshed here when this side holds its
+  // refresh token (it finished the sign-in). A copy from the other side has
+  // none: expired, it reads as needsAuth until the owner refreshes and the
+  // next sync brings the new token.
   const usableCredential = async (install: VendorMcpInstall): Promise<VendorMcpCredential | undefined> => {
     if (isApp(install)) {
       // An app our server serves answers with the account's own bearer; a 401 on its tools means "not connected yet".
@@ -180,14 +185,14 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
     try {
       const refreshed = await refreshVendorMcpGrant({ grant: credential, fetch: fetchImpl, now: now() });
       forgetVendorMcpSession(install.url, credential.accessToken);
-      setVendorMcpCredential(options.rootDir(), install.id, refreshed);
+      setVendorMcpCredential(options.rootDir(), install.id, refreshed, now);
       options.onCredentialChanged?.(install.id);
       return refreshed;
     } catch (error) {
       log(`vendor-mcp refresh failed for ${install.id}: ${errorLabel(error)}`);
       // invalid_grant is final (revoked or spent refresh token): the token is
       // dropped so the auth watch stops re-posting it every 5 s (ledger F-174).
-      if (/invalid_grant/i.test(errorLabel(error))) { const { refreshToken: _spent, ...kept } = credential; setVendorMcpCredential(options.rootDir(), install.id, kept); options.onCredentialChanged?.(install.id); }
+      if (/invalid_grant/i.test(errorLabel(error))) { const { refreshToken: _spent, ...kept } = credential; setVendorMcpCredential(options.rootDir(), install.id, kept, now); options.onCredentialChanged?.(install.id); }
       return undefined;
     }
   };
@@ -356,7 +361,7 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
         appendVendorMcpSigninLog(options.rootDir(), `${pending.pluginId} sign-in failed at the token exchange: ${errorLabel(error)}`, now);
         throw error;
       }
-      const stored = setVendorMcpCredential(options.rootDir(), pending.pluginId, grant);
+      const stored = setVendorMcpCredential(options.rootDir(), pending.pluginId, grant, now);
       if (stored == null) throw new Error(`${pending.pluginId} is no longer installed; the sign-in was discarded.`);
       appendVendorMcpSigninLog(options.rootDir(), `${pending.pluginId} credential stored (refresh=${grant.refreshToken == null ? "no" : "yes"})`, now);
       log(`vendor-mcp credential stored for ${pending.pluginId}`);
@@ -387,7 +392,7 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
       if (install == null) { await fallback.logoutAccount?.(args); return; }
       if (isApp(install)) { await disconnectApp(install); return; }
       if (install.credential != null) forgetVendorMcpSession(install.url, install.credential.accessToken);
-      if (clearVendorMcpCredential(options.rootDir(), install.id)) options.onCredentialChanged?.(install.id);
+      if (clearVendorMcpCredential(options.rootDir(), install.id, now)) options.onCredentialChanged?.(install.id);
     },
 
     async renameAccount(args: { serverId: string; accountKey: string; newAccountKey: string }): Promise<void> {
@@ -400,7 +405,21 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
       if (install == null) { await fallback.deleteAccount?.(args); return; }
       if (isApp(install)) { await disconnectApp(install); return; }
       if (install.credential != null) forgetVendorMcpSession(install.url, install.credential.accessToken);
-      if (clearVendorMcpCredential(options.rootDir(), install.id)) options.onCredentialChanged?.(install.id);
+      if (clearVendorMcpCredential(options.rootDir(), install.id, now)) options.onCredentialChanged?.(install.id);
+    },
+
+    /**
+     * Refreshes every credential this side owns (holds the refresh token
+     * for) that is about to expire, before the store is sent to the other
+     * side, so a sign-in finished here keeps working there too.
+     */
+    async refreshOwnedCredentials(): Promise<void> {
+      if (!options.canStartAuth) return;
+      for (const install of loadVendorMcpInstalls(options.rootDir())) {
+        const credential = install.credential;
+        if (credential?.refreshToken == null || isApp(install) || isVendorMcpGrantFresh(credential, now())) continue;
+        await usableCredential(install);
+      }
     },
 
     /** For the Mac: the numeric server id a plugin's connect card carries. */
