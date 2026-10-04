@@ -67,7 +67,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .hero .ctas{display:flex;gap:clamp(10px,.7vw,14px);flex-wrap:wrap;margin-top:clamp(18px,1.6vw,32px)}
 .hero .btn{height:clamp(44px,3.05vw,61px);padding:0 clamp(20px,1.6vw,32px);font-size:clamp(16px,1.15vw,23px)}
 /* On a phone the hero breathes the way Cursor's does (4 October 2026): a long pause under the bar, a headline that leaves air on the right, and room before the app. */
-@media (max-width:734px){.hero{padding-top:88px}.hero h1{font-size:31px;line-height:1.1;max-width:11.5em}.hero .ctas{margin-top:26px}.moment{padding-top:58px}}
+@media (max-width:734px){.hero{padding-top:88px}.hero h1{font-size:31px;line-height:1.1;max-width:11.5em}.hero .ctas{margin-top:26px}}
 .btn .apl{width:1.05em;height:1.05em;margin:-.18em .45em 0 -.1em;flex:none}
 
 /* Section headings and the section anatomy. */
@@ -782,6 +782,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 
 /* The app itself: the real window on white, as a Mac app is shown (the founder, 3 October 2026), on plain white. */
 .moment{padding-top:clamp(32px,3.95vw,79px)}
+@media (max-width:734px){.moment{padding-top:58px}} /* on a phone, room between the buttons and the app */
 .stagebox{position:relative;width:var(--col);margin:0 auto;aspect-ratio:1440/860;isolation:isolate}
 .sd-stage{position:absolute;inset:0;z-index:5}
 .sd-frame{position:absolute;visibility:hidden;overflow:hidden;background:#fff;border:1px solid rgba(0,0,0,.1);box-shadow:0 2px 6px rgba(0,0,0,.04),0 40px 90px -30px rgba(20,30,60,.28)}
