@@ -24,6 +24,7 @@ shutil.rmtree(OUT, ignore_errors=True)
 os.makedirs(f"{OUT}/logos")
 shutil.copytree(f"{HERE}/img", f"{OUT}/img")
 shutil.copytree(f"{HERE}/faces", f"{OUT}/faces")
+shutil.copytree(f"{HERE}/fonts", f"{OUT}/fonts")
 for name in ("favicon.svg", "favicon.ico", "apple-touch-icon.png"): shutil.copy(f"{HERE}/favicons/{name}", f"{OUT}/{name}")
 
 # The app's own logos and brand colours (desktop/brand/app-logos).

@@ -37,7 +37,7 @@ edge shared by the wordmark, the headline and the demo.
   working together, call an agent, stay in control.
 - **Security and integrations**: a serif title beside a paragraph, then two
   pale panels of icon rows. A blue dot marks what is still in progress.
-- **Pricing** (a free week, Individual $20, Teams $40 a person, Enterprise custom; each card says the week's allowance),
+- **Pricing** (a free week, Standard $20, Pro $60, Max $200; each card says the week's credits),
   **Questions and answers**, and the closing line.
 
 Nothing links outside the page.
