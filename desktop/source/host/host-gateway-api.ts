@@ -679,28 +679,38 @@ export function createHostGatewayApi(
       // The Mac pulls the box's account MCP store with this action, so a
       // server the agent added here shows in Settings and its connect card
       // finds its row on the Mac.
-      if (routedAction === "account-mcp-store") return { accountMcpStore: method(deps.extensions.api("mcp"), "readAccountMcpStore")() };
+      if (routedAction === "account-mcp-store") return { accountMcpStore: await method(deps.extensions.api("mcp"), "readAccountMcpStore")() };
       // The Mac pulls the box's vendor connector store the same way, so a
       // connector the agent installed here has a row on the Mac for its
       // connect card (`vendor-mcp/box-pull.ts`).
-      if (routedAction === "vendor-mcp-store") return { vendorMcpStore: method(deps.extensions.api("mcp"), "readVendorMcpStore")() };
+      if (routedAction === "vendor-mcp-store") return { vendorMcpStore: await method(deps.extensions.api("mcp"), "readVendorMcpStore")() };
       // The Mac's vendor connector store comes with every refresh and is
-      // merged, the Mac's row winning a shared install (it holds the
-      // credential); the box never opens a sign-in (`vendor-mcp/backend-exec.ts`).
+      // merged, the newer credential winning a shared install
+      // (`vendor-mcp/installs.ts`): the Mac's sign-ins, or the web's, which
+      // finish here.
       if (vendorMcpStore !== undefined) method(deps.extensions.api("mcp"), "replaceVendorMcpStore")(vendorMcpStore);
       // The Mac's account MCP store too, merged newer-entry-wins; the merged
       // copies go back in the answer so the Mac learns what the agent wrote.
       if (accountMcpStore !== undefined) method(deps.extensions.api("mcp"), "replaceAccountMcpStore")(accountMcpStore);
-      const answer = () => ({
-        accountMcpStore: method(deps.extensions.api("mcp"), "readAccountMcpStore")(),
-        vendorMcpStore: method(deps.extensions.api("mcp"), "readVendorMcpStore")(),
+      const answer = async () => ({
+        accountMcpStore: await method(deps.extensions.api("mcp"), "readAccountMcpStore")(),
+        vendorMcpStore: await method(deps.extensions.api("mcp"), "readVendorMcpStore")(),
       });
       if (completion != null) {
         await deps.handleDesktopMcpAuthCompletion(completion);
-        return answer();
+        return await answer();
       }
       await method(deps.extensions.api("mcp").management, "restart")();
-      return answer();
+      return await answer();
+    },
+    // Simeon on the web (4 October 2026): the window's connected apps, as
+    // Electron main answers them on a Mac, answered by the manager here.
+    // `action` is the facade's method (`mcp-service.ts`, `window`), `args`
+    // its arguments in order.
+    desktopMcp: async ({ action, args }: any) => {
+      const facade = deps.extensions.api("mcp").window;
+      if (typeof action !== "string" || typeof facade?.[action] !== "function") throw new Error(`unknown connected-apps action: ${String(action)}`);
+      return await method(facade, action)(...(Array.isArray(args) ? args : []));
     },
     listRoutedMcpTools,
     executeRoutedMcpTool,
@@ -742,7 +752,14 @@ export function createHostGatewayApi(
         }))
       };
     },
-    completeMcpOAuth: async () => undefined,
+    // The code a vendor sent back to the server's hosted callback, for a
+    // sign-in the box started (the web page's). Until 4 October 2026 the
+    // box started none and this answered nothing.
+    completeMcpOAuth: async ({ stateId, code }: any) => {
+      if (typeof stateId !== "string" || stateId.length === 0 || typeof code !== "string" || code.length === 0) throw new Error("completeMcpOAuth needs the sign-in's state and code");
+      await method(deps.extensions.api("mcp"), "completeOAuth")({ stateId, code });
+      return { ok: true };
+    },
     requestWebAuthnCeremony: (args: any) =>
       method(deps.extensions.api("webauthn-proxy"), "requestCeremony")(args),
     setBoxSecrets: ({ secrets }: any) =>

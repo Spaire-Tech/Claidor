@@ -83,6 +83,28 @@ class TestWebSession:
             response = await client.post("/auth/web-session", headers=headers)
             assert response.status_code == 403, headers
 
+    async def test_a_connected_app_s_sign_in_comes_back_to_the_web_app(
+        self, client: httpx.AsyncClient
+    ) -> None:
+        """The box registers `/desktop/mcp-oauth/callback` with the vendor;
+        the vendor lands here and the page on the web app hands the box the
+        code. Only the sign-in's own parameters travel."""
+        response = await client.get(
+            "/desktop/mcp-oauth/callback?state=s1&code=c1&foo=bar",
+        )
+        assert response.status_code == 302
+        assert response.headers["cache-control"] == "no-store"
+        assert (
+            response.headers["location"]
+            == f"{settings.FRONTEND_BASE_URL}/app/connected.html?state=s1&code=c1"
+        )
+        refused = await client.get(
+            "/desktop/mcp-oauth/callback?error=access_denied&error_description=No"
+        )
+        assert refused.headers["location"].endswith(
+            "/app/connected.html?error=access_denied&error_description=No"
+        )
+
     @pytest.mark.auth
     async def test_a_web_session_has_no_mac_to_hand_a_daemon_credential_to(
         self, client: httpx.AsyncClient

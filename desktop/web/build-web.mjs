@@ -53,7 +53,7 @@ const index = await readFile(path.join(rendererDir, "index.html"), "utf8");
 // The renderer's own policy, opened to Simeon Labs' server: the API, the box
 // through its proxy (same host), and a developer's API on loopback.
 const api = "https://api.simeonlabs.com http://127.0.0.1:8000 http://localhost:8000";
-const csp = `default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; worker-src 'self' blob:; font-src 'self' data:; img-src 'self' data: blob: https: ${api}; media-src 'self' blob: ${api}; connect-src 'self' blob: ${api} wss://api.simeonlabs.com ws://127.0.0.1:8000; frame-src ${api}; base-uri 'self';`;
+const csp = `default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; worker-src 'self' blob:; font-src 'self' data:; img-src 'self' data: blob: https: ${api}; media-src 'self' blob: ${api}; connect-src 'self' blob: ${api} wss://api.simeonlabs.com ws://127.0.0.1:8000; frame-src 'self' ${api}; base-uri 'self';`;
 let page = index
   .replace(/<meta\s+http-equiv="Content-Security-Policy"\s+content="[^"]*"\s*\/>/s, `<meta http-equiv="Content-Security-Policy" content="${csp}" />`)
   .replace(/<title>[^<]*<\/title>/, "<title>Simeon</title>")
@@ -72,4 +72,30 @@ page = page.replace(marker, `${ground}<script src="/app/web-bridge.js"></script>
 // are absolute: `./assets/…` would resolve to the site's root.
 page = page.replace(/(src|href)="\.\/assets\//g, '$1="/app/assets/');
 await writeFile(path.join(outDir, "index.html"), page);
+
+// Where a connected app's sign-in lands (`/desktop/mcp-oauth/callback` on
+// the server sends the person here): the bridge alone, which hands the box
+// the code and says to come back (`bridge.ts`, `finishConnectedAppSignIn`).
+const connected = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta http-equiv="Content-Security-Policy" content="${csp}" />
+    <title>Simeon</title>
+    <style>
+      :root{color-scheme:light dark}
+      body{margin:0;min-height:100vh;display:grid;place-items:center;font:16px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;background:#f5f5f7;color:#1d1d1f}
+      .card{background:#fff;border-radius:18px;padding:36px 40px;text-align:center;max-width:360px;box-shadow:0 0 0 .5px rgba(20,30,60,.08),0 1px 2px rgba(20,30,60,.05)}
+      h1{font-size:20px;font-weight:600;margin:0 0 6px}p{margin:0;opacity:.7}
+      @media (prefers-color-scheme:dark){body{background:#1c1c1e;color:#f5f5f7}.card{background:#2c2c2e}}
+    </style>
+  </head>
+  <body>
+    <div class="card"><h1 id="title">Connecting…</h1><p id="body">One moment.</p></div>
+    <script src="/app/web-bridge.js"></script>
+  </body>
+</html>
+`;
+await writeFile(path.join(outDir, "connected.html"), connected);
 console.log(`Simeon on the web built in ${path.relative(process.cwd(), outDir) || outDir} from ${path.relative(process.cwd(), rendererDir)}`);

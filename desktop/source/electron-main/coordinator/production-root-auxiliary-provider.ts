@@ -1,6 +1,6 @@
 import { getSandRootDir } from "../../host/host-paths.js";
 import { loadVendorMcpStore, serializeVendorMcpStore, serializeVendorMcpStoreForBox } from "../../shared/node/vendor-mcp/installs.js";
-import { loadAccountMcpStore } from "../../shared/node/account-mcp/store.js";
+import { loadAccountMcpStore, serializeAccountMcpStoreForPeer } from "../../shared/node/account-mcp/store.js";
 import {
   isSandAgentModelSelection,
   resolveComputerUseModelSelection,
@@ -133,7 +133,7 @@ export function createProductionCoordinatorAuxiliaryPorts(
       getWebauthnProxyEnabled: () => settings.getWebauthnProxyEnabled(),
       getFeatureFlagOverrides: () => context.requireExperiments().getFeatureFlagOverridesRecord(),
       getVendorMcpStore: () => serializeVendorMcpStoreForBox(loadVendorMcpStore(getSandRootDir())),
-      getAccountMcpStore: () => loadAccountMcpStore(getSandRootDir()),
+      getAccountMcpStore: () => serializeAccountMcpStoreForPeer(loadAccountMcpStore(getSandRootDir())),
       pushBoxSecrets: () => context.secretsStores.pushBoxSecrets.push("resync"),
       onHostSettingsTransportConnected: () => context.hostSettingsFields.onTransportConnected(),
       onHostSettingsTransportDown: () => context.hostSettingsFields.setBoxStreamLive(false),

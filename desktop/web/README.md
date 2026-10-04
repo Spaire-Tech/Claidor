@@ -37,15 +37,43 @@ at `/sand-box/{box}/p/1340`. So the browser runs it as is:
 
 The computer panel: the window draws it in Electron's `<webview>`, which
 `bridge.ts` swaps for an `<iframe>` on the box's noVNC page through the
-proxy. The pinned window ships with the computer button compiled out
-(`sand-chat-header__computer` is behind a constant false in the bundle), so
-the swap is ready for the day it returns and cannot be exercised today.
+proxy (the agent pane's Computer tab, its preview and the full-size view).
+The frame's load stands in for the message the Mac's preload sends from
+inside the webview once the screen is up (`sand:vnc-session`, phase
+`rfb_connect`), which is what takes the window's spinner off the picture.
+
+Connected apps (MCP): the manager that answers the window on a Mac from
+Electron main runs in the box too, so the window's calls go to it through
+the gateway (`desktopMcp`, `host/host-gateway-api.ts`, the `window` facade
+in `host/extensions/mcp/mcp-service.ts`): the catalog, installs, accounts,
+tools, instructions. A sign-in starts in the box as well: the vendor is
+registered with the server's hosted callback
+(`GET /desktop/mcp-oauth/callback`, `server/simeon/desktop/app_sign_in.py`)
+instead of the Mac's loopback, the page opens the vendor in a new tab, the
+vendor sends the person back to the server, the server to
+`/app/connected.html` on the web app, and the bridge there hands the box
+the code (`completeMcpOAuth`). The box stores the credential, its auth watch
+sees it and the window in the first tab hears of it on the host's `mcp-auth`
+channel (`sand:mcp-auth-event`). Apps Simeon Labs' own server serves (Gmail,
+Slack, …) sign in through the server as on a Mac; the box's credential may
+now start and end those (`apps.py`).
+
+Credentials have two writers since then, the Mac and the box; each refreshes
+the sign-ins it finished and sends the other side a copy without the refresh
+token (`serializeVendorMcpStoreForPeer`, `serializeAccountMcpStoreForPeer`),
+and a shared install keeps the newer credential event on either side
+(`credentialAtMs` in `vendor-mcp/installs.ts`; `updatedAtMs` in the account
+store), so a sign-in on the web reaches the Mac, a sign-out anywhere reaches
+everywhere, and a rotating refresh token is spent by one party. The box
+refreshes its own stale tokens before answering the Mac's pull of its store.
+
+A vendor registered by hand in its console (`clientId` in the catalog) must
+also list the hosted callback as a redirect URI; a dynamically registered
+one registers it on every sign-in.
 
 Not on the web, by design: the local-exec daemon (the agent's hands on the
 person's own Mac), WebAuthn, voice calls, the updater, the egress tunnel.
 Each answers "needs Simeon on your Mac" in the shape the window draws.
-Connected apps (MCP) are managed from the Mac for now: the manager runs in
-Electron main, not in the box.
 
 ## Building and running
 
@@ -68,4 +96,7 @@ the rewrite and its own CSP). After changing anything here, run
 The stand-in server (`serve-web.mjs`) answers the cookie trade, the profile,
 the models, the broker and the box's gateway from the website's scripted
 backend (`demo/backend.ts`), so the whole page runs, sign-in to a streaming
-reply, before any real server is involved.
+reply, before any real server is involved. It stands in for connected apps
+too: a small catalog, the manager's answers, a pretend vendor at
+`/vendor/authorize`, the hosted callback and the box's completion, so the
+whole sign-in runs in a browser from Connect to Connected.

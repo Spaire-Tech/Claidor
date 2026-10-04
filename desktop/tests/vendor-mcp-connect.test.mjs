@@ -295,11 +295,14 @@ test("both managers, the loopback, the gateway and the resync are wired to the v
   const read = (file) => readFile(path.join(repoRoot, file), "utf8");
   const host = await read("source/host/extensions/mcp/mcp-service.ts");
   // Since the account store (custom servers) is served locally too, the vendor backend falls through to it, and it to the old one.
-  assert.match(host, /createVendorMcpBackendExec\(\{ rootDir: getSandRootDir, fallback: accountBackendMcpExec, canStartAuth: false/);
+  // Since Simeon on the web (4 October 2026) the box starts sign-ins too, on the server's hosted callback.
+  assert.match(host, /createVendorMcpBackendExec\(\{ rootDir: getSandRootDir, fallback: accountBackendMcpExec, canStartAuth: true/);
+  assert.match(host, /oauthRedirectUri: hostedMcpOAuthCallbackUrl\(\),/);
   assert.match(host, /accountServersProvider: \(\) => withVendorAccountServers\(fetchAccountMcpServers\(accountMcpDeps\), getSandRootDir\)/);
   // Since 24 September (evening) the box merges the Mac's copy instead of writing it over its own, and answers with its own.
   assert.match(host, /replaceVendorMcpStore: \(installs: unknown\) => adoptVendorMcpStore\(getSandRootDir\(\), installs, "incoming"\)\.changed/);
-  assert.match(host, /readVendorMcpStore: \(\) => serializeVendorMcpStore\(loadVendorMcpStore\(getSandRootDir\(\)\)\)/);
+  assert.match(host, /readVendorMcpStore: \(\) => this\.readVendorMcpStore\(\)/);
+  assert.match(host, /return serializeVendorMcpStoreForPeer\(loadVendorMcpStore\(getSandRootDir\(\)\)\);/, "the box's copy for the Mac keeps the box's refresh tokens here");
   const gateway = await read("source/host/host-gateway-api.ts");
   assert.match(gateway, /refreshMcp: async \(\{ completion, routedAction, routedArgs, vendorMcpStore, accountMcpStore \}: any\)/);
   assert.match(gateway, /const \{ vendorMcpStore, accountMcpStore, \.\.\.settingsArgs \} = args \?\? \{\};/);

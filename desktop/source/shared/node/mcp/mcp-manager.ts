@@ -82,6 +82,7 @@ export class SandMcpManager {
       resolveDisplayServer: (id, opts) => this.resolveDisplayServer(id, opts),
       reload: () => this.reload(),
       onConnectorAuth: options.onConnectorAuth,
+      ...(typeof options.oauthRedirectUri === "string" ? { oauthRedirectUri: options.oauthRedirectUri } : {}),
     });
     this.summaries = new SandMcpListingSummaries({
       settingsStore: () => this.settingsStore,

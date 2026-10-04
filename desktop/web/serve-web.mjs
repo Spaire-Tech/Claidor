@@ -10,6 +10,12 @@
  * is ever involved. With `--real`, only the page is served and it talks to
  * the API on 127.0.0.1:8000 (`uv run task api`).
  *
+ * Connected apps are stood in for too: a small catalog, the manager's
+ * answers (`desktopMcp`), and a sign-in that goes to a pretend vendor on
+ * this server, comes back through the hosted callback to
+ * `/app/connected.html`, and finishes in the "box" (`completeMcpOAuth`),
+ * which then tells the window (`mcp-auth`, `mcp-servers`).
+ *
  *   node web/serve-web.mjs [--real] [--port 4174]
  */
 import { execFileSync } from "node:child_process";
@@ -55,6 +61,62 @@ const readBody = (req) => new Promise((resolve) => { const chunks = []; req.on("
 const profile = { id: "user-1", email: "bass@simeonlabs.com", name: "Bass F", preferredName: "Bass", suggestedName: "Bass", avatarUrl: null, accountMode: "personal" };
 const HOST_SETTINGS = { pinnedAgentIds: [], sidebarSections: null, agentDefaultModel: null, computerUseModel: null, autoReviewInstructions: null };
 
+// The stand-in's connected apps: the catalog as the manager lists it
+// (`mcp-marketplace-view.ts`), the installed servers as it lists them, and
+// sign-ins pending by state, the way the box keeps them.
+const CATALOG = [
+  { id: "notion", displayName: "Notion", category: "Files & Docs", description: "Search, read, and write pages and databases.", url: "https://mcp.notion.com/mcp", serverId: "900005" },
+  { id: "linear", displayName: "Linear", category: "Developer", description: "Issues, projects and cycles.", url: "https://mcp.linear.app/mcp", serverId: "900008" },
+  { id: "gmail", displayName: "Gmail", category: "Mail & Calendar", description: "Search, read, draft, and manage email.", url: "https://api.simeonlabs.com/desktop/api/apps/mcp/gmail", serverId: "900001" },
+];
+const mcpState = { installed: new Map(), pending: new Map() };
+const catalogView = (entry) => ({ id: entry.id, name: entry.id, displayName: entry.displayName, description: entry.description, category: entry.category, homepage: entry.url, connectors: [{ name: entry.displayName, description: entry.description }], skills: [], vendorMcpUrl: entry.url });
+const installedServer = (entry, row) => ({ id: entry.serverId, name: entry.displayName, serverIdentifier: entry.id, accountKey: "default", rowServerIdentifier: entry.id, transport: "http", url: entry.url, toolCount: row.connected ? 12 : 0, customInstructions: row.instructions ?? "", isTeamServer: false, pluginId: entry.id, status: row.connected ? "connected" : "needsAuth", accounts: [{ accountKey: "default", serverIdentifier: entry.id, status: row.connected ? "connected" : "needsAuth" }] });
+const byServerId = (serverId) => CATALOG.find((entry) => entry.serverId === String(serverId));
+const listServers = () => ({ servers: [...mcpState.installed].map(([id, row]) => installedServer(CATALOG.find((entry) => entry.id === id), row)) });
+const pushBox = (channel, payload) => { const line = `data: ${JSON.stringify({ channel, payload })}\n\n`; for (const res of sseClients) res.write(line); };
+function desktopMcp(origin, { action, args = [] }) {
+  const [first, second, third] = args;
+  switch (action) {
+    case "listServers": return listServers();
+    case "listEffectivePlugins": return [...mcpState.installed.keys()].map((id) => ({ pluginId: id, name: id, displayName: CATALOG.find((entry) => entry.id === id).displayName, installMode: "user", isEnabled: true }));
+    case "getCatalog": return CATALOG.map(catalogView);
+    case "resolvePluginLogo": return null;
+    case "vendorServerIdForPlugin": return CATALOG.find((entry) => entry.id === first)?.serverId ?? null;
+    case "installEntry": { const entry = CATALOG.find((item) => item.id === first?.entryId); if (entry == null) throw new Error(`no such app ${first?.entryId}`); mcpState.installed.set(entry.id, { connected: false }); pushBox("mcp-servers", { servers: [] }); return listServers(); }
+    case "updatePluginInstall": return listServers();
+    case "removeServer": { const entry = byServerId(first); const removed = entry != null && mcpState.installed.delete(entry.id); pushBox("mcp-servers", { servers: [] }); return { removed, ...listServers() }; }
+    case "uninstallPlugin": { const removed = mcpState.installed.delete(first); pushBox("mcp-servers", { servers: [] }); return { removed }; }
+    case "authenticateServer": {
+      const entry = byServerId(first); const row = entry == null ? undefined : mcpState.installed.get(entry.id);
+      if (entry == null || row == null) return { status: "not-configured", serverName: String(first) };
+      if (row.connected) return { status: "already-authenticated", serverName: entry.displayName };
+      // What the box does: PKCE, the vendor's authorize endpoint, the hosted callback as redirect_uri, the state kept for 15 minutes.
+      const state = `st-${Math.random().toString(36).slice(2, 10)}`;
+      mcpState.pending.set(state, { id: entry.id, serverName: entry.displayName, accountKey: second ?? "default" });
+      const authorize = new URL(`${origin}/vendor/authorize`); authorize.searchParams.set("client_id", "simeon"); authorize.searchParams.set("redirect_uri", `${origin}/desktop/mcp-oauth/callback`); authorize.searchParams.set("state", state); authorize.searchParams.set("response_type", "code");
+      return { status: "started", serverName: entry.displayName, authorizationUrl: authorize.toString() };
+    }
+    case "renameAccount": case "removeAccount": { const entry = byServerId(first?.serverId); if (entry != null && action === "removeAccount") { const row = mcpState.installed.get(entry.id); if (row) row.connected = false; } pushBox("mcp-servers", { servers: [] }); return listServers(); }
+    case "setServerCustomInstructions": { const entry = byServerId(first?.serverId); const row = entry == null ? undefined : mcpState.installed.get(entry.id); if (row) row.instructions = first.instructions; return listServers(); }
+    case "listServerTools": { const entry = byServerId(first); const row = entry == null ? undefined : mcpState.installed.get(entry.id); if (!row?.connected) return []; row.disabled ??= new Set(); return ["search", "create_page", "update_page"].map((name) => ({ name, title: name.replace("_", " "), description: `${entry.displayName}: ${name}`, isDisabled: row.disabled.has(name) })); }
+    case "toggleMcpToolDisabled": { const entry = byServerId(first?.serverId); const row = entry == null ? undefined : mcpState.installed.get(entry.id); if (row) { row.disabled ??= new Set(); if (row.disabled.has(first.toolName)) row.disabled.delete(first.toolName); else row.disabled.add(first.toolName); } return desktopMcp(origin, { action: "listServerTools", args: [first?.serverId] }); }
+    default: throw new Error(`unknown connected-apps action: ${action}`);
+  }
+}
+/** The second half of the sign-in, as the box does it: the code for the credential; the watch then tells the window. */
+function completeMcpOAuth({ stateId, code }) {
+  const pending = mcpState.pending.get(stateId);
+  if (pending == null || code !== `code-${stateId}`) throw new Error("No pending sign-in matches this callback.");
+  mcpState.pending.delete(stateId);
+  const row = mcpState.installed.get(pending.id);
+  if (row == null) throw new Error(`${pending.id} is no longer installed; the sign-in was discarded.`);
+  row.connected = true;
+  const entry = CATALOG.find((item) => item.id === pending.id);
+  setTimeout(() => { pushBox("mcp-auth", { serverId: entry.serverId, accountKey: pending.accountKey, serverName: pending.serverName, serverIdentifier: entry.id, requestingAgentId: null }); pushBox("mcp-servers", { servers: [] }); }, 300);
+  return { ok: true };
+}
+
 async function fakeApi(req, res, url) {
   const origin = `http://127.0.0.1:${port}`;
   if (req.method === "POST" && url.pathname === "/auth/web-session") return json(res, 200, { accessToken: "simeon_da_fake", refreshToken: "simeon_dr_fake", expiresAt: new Date(Date.now() + 3600_000).toISOString() }, { "cache-control": "no-store" });
@@ -68,6 +130,22 @@ async function fakeApi(req, res, url) {
     return json(res, 200, { cluster: "simeon", podId: "box-1", networkToken: "net", gatewayUrl: `${origin}/sand-box/box-1/p/1340`, gatewayToken: "gw", vncUrl: `${origin}/sand-box/box-1/p/6080/vnc.html?network_token=net`, forkVncBaseUrl: `${origin}/sand-box/box-1/p/6081` });
   }
   if (url.pathname.startsWith("/aiserver.v1.GrokBotService/")) { await readBody(req); return json(res, 200, { started: false, reason: "not in the stand-in", operationId: "" }); }
+  // The vendor's sign-in page and the server's hosted callback: the vendor
+  // sends the person back with a code, the server sends them on to the page
+  // on the web app that hands the box the code.
+  if (url.pathname === "/vendor/authorize") {
+    const back = new URL(url.searchParams.get("redirect_uri") ?? `${origin}/desktop/mcp-oauth/callback`);
+    const state = url.searchParams.get("state") ?? "";
+    res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+    res.end(`<!doctype html><title>Pretend vendor</title><body style="font:16px system-ui;padding:40px"><h1>Pretend vendor</h1><p>Simeon would like to read your workspace.</p><a id="allow" href="${back.toString()}?code=code-${state}&state=${state}">Allow</a> · <a id="deny" href="${back.toString()}?error=access_denied&state=${state}">Deny</a></body>`);
+    return undefined;
+  }
+  if (url.pathname === "/desktop/mcp-oauth/callback") {
+    const kept = new URLSearchParams(); for (const name of ["state", "code", "error", "error_description"]) { const value = url.searchParams.get(name); if (value != null) kept.set(name, value); }
+    // The page in the new tab must find this stand-in as its API, as the first tab did through `?api=`.
+    kept.set("api", origin);
+    res.writeHead(302, { location: `${origin}/app/connected.html?${kept.toString()}`, "cache-control": "no-store" }); res.end(); return undefined;
+  }
   // The computer panel's page, as noVNC would be through the proxy.
   if (url.pathname === "/sand-box/box-1/p/6080/vnc.html") { res.writeHead(200, { "content-type": "text/html; charset=utf-8" }); res.end("<!doctype html><title>computer</title><body style='margin:0;background:#1e3a5f;color:#fff;font:16px system-ui;display:grid;place-items:center;height:100vh'>the cloud computer's screen (noVNC stands here)</body>"); return undefined; }
   const gateway = /^\/sand-box\/box-1\/p\/1340(\/.*)$/.exec(url.pathname);
@@ -94,8 +172,13 @@ async function fakeApi(req, res, url) {
       if (method === "getHostSettings") return json(res, 200, HOST_SETTINGS, { "x-sand-mint-dedupe": "1" });
       if (method === "setHostSettings") { Object.assign(HOST_SETTINGS, args); return json(res, 200, HOST_SETTINGS); }
       if (method === "getBoxSecretsStatus") return json(res, 200, { keys: [] });
-      if (method === "getForeverBoxStatus") return json(res, 200, { state: "ready", vncUrl: `${origin}/sand-box/box-1/p/6080/vnc.html?network_token=net` });
+      // The host's shape (`host-box.ts`, BoxStatus): the agent's screen and its windows.
+      if (method === "getForeverBoxStatus" || method === "ensureForeverBox") { const vncUrl = `${origin}/sand-box/box-1/p/6080/vnc.html?network_token=net`; return json(res, 200, { agentId: args?.id ?? "", state: "running", vncUrl, windows: [{ windowIndex: 0, vncUrl }] }); }
       if (method === "setBoxSecrets") return json(res, 200, { ok: true });
+      if (method === "syncPluginSkills") return json(res, 200, []);
+      if (method === "getPluginSyncStatus") return json(res, 200, { authBlocked: [] });
+      if (method === "desktopMcp") { try { return json(res, 200, desktopMcp(origin, args) ?? null, { "x-sand-mint-dedupe": "1" }); } catch (error) { return json(res, 500, { error: error.message }); } }
+      if (method === "completeMcpOAuth") { try { return json(res, 200, completeMcpOAuth(args)); } catch (error) { return json(res, 500, { error: error.message }); } }
       const outcome = await backend.coordinator(method, args);
       if (outcome.status === "ok") return json(res, 200, outcome.value ?? null, { "x-sand-mint-dedupe": "1" });
       return json(res, 404, { error: outcome.failure.message });

@@ -28,7 +28,12 @@ export const COORDINATOR_MAIN_METHOD_TABLE = {
   // The call as a channel into the agent, `voice:<call>` (1 October 2026).
   voiceCall: { args: "object" },
   // The agent's picture for the call banner (2 October 2026): the roster carries no picture.
-  getAgentAvatar: { args: "object" }
+  getAgentAvatar: { args: "object" },
+  // Simeon on the web (4 October 2026): the window's connected apps are
+  // managed by the manager in the box, and a sign-in started there finishes
+  // from the server's hosted callback.
+  desktopMcp: { args: "object" },
+  completeMcpOAuth: { args: "object" }
 } as const;
 
 export type CoordinatorMainMethod = keyof typeof COORDINATOR_MAIN_METHOD_TABLE;

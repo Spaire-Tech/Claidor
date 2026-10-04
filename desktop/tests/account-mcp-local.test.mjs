@@ -375,17 +375,19 @@ test("install and uninstall of a plugin round-trip through the store", async () 
 test("both sides, the gateway, the loopback and the resync carry the account store and serve custom servers", async () => {
   const read = (file) => readFile(path.join(repoRoot, file), "utf8");
   const host = await read("source/host/extensions/mcp/mcp-service.ts");
-  assert.match(host, /createAccountMcpBackendExec\(\{ rootDir: getSandRootDir, fallback: cursorBackendMcpExec, canStartAuth: false/);
-  assert.match(host, /createVendorMcpBackendExec\(\{ rootDir: getSandRootDir, fallback: accountBackendMcpExec, canStartAuth: false/);
+  // Since Simeon on the web (4 October 2026) the box starts sign-ins too, for the window on the web; each side refreshes the credentials it finished.
+  assert.match(host, /createAccountMcpBackendExec\(\{ rootDir: getSandRootDir, fallback: cursorBackendMcpExec, canStartAuth: true/);
+  assert.match(host, /createVendorMcpBackendExec\(\{ rootDir: getSandRootDir, fallback: accountBackendMcpExec, canStartAuth: true/);
   assert.match(host, /rootDir: getSandRootDir,\n    \};/, "the box's account deps name the store, not a Connect client");
   assert.doesNotMatch(host, /createClient: \(credentials\) => createSandCursorBackendClient\(DashboardService, \{\n        getAccessToken: \(options\) => credentials\.getAccessToken\(\{ backendUrl: options\.backendUrl \}\),\n        getMachineId: credentials\.getMachineId,\n      \}\) as unknown as AccountMcpClient/);
-  assert.match(host, /replaceAccountMcpStore: \(store: unknown\) => adoptAccountMcpStore\(getSandRootDir\(\), store\)\.changed, readAccountMcpStore: \(\) => loadAccountMcpStore\(getSandRootDir\(\)\)/);
+  assert.match(host, /replaceAccountMcpStore: \(store: unknown\) => adoptAccountMcpStore\(getSandRootDir\(\), store\)\.changed, readAccountMcpStore: \(\) => this\.readAccountMcpStore\(\)/);
+  assert.match(host, /return serializeAccountMcpStoreForPeer\(loadAccountMcpStore\(getSandRootDir\(\)\)\);/, "the box's copy for the Mac carries no refresh token");
   assert.match(host, /parseServerConfig: deps\.parseServerConfig \?\? parseCustomMcpServerConfig/, "AddMcpServer has a parser in the box");
   assert.match(host, /\.\.\.await fetchEffectiveUserPlugins\(accountMcpDeps\)/);
   const gateway = await read("source/host/host-gateway-api.ts");
   assert.match(gateway, /const \{ vendorMcpStore, accountMcpStore, \.\.\.settingsArgs \} = args \?\? \{\};/);
   assert.match(gateway, /refreshMcp: async \(\{ completion, routedAction, routedArgs, vendorMcpStore, accountMcpStore \}: any\)/);
-  assert.match(gateway, /if \(routedAction === "account-mcp-store"\) return \{ accountMcpStore: method\(deps\.extensions\.api\("mcp"\), "readAccountMcpStore"\)\(\) \};/);
+  assert.match(gateway, /if \(routedAction === "account-mcp-store"\) return \{ accountMcpStore: await method\(deps\.extensions\.api\("mcp"\), "readAccountMcpStore"\)\(\) \};/);
   const mac = await read("source/electron-main/mcp/desktop-mcp-manager.ts");
   assert.match(mac, /rootDir: vendorRoot,\n    syncStore: pullBoxStore,/);
   assert.match(mac, /fallback: accountBackendMcpExec,\n    canStartAuth: true,/);
@@ -398,13 +400,13 @@ test("both sides, the gateway, the loopback and the resync carry the account sto
   assert.match(ipc, /const accountMcpStore = deps\.readAccountMcpStore\?\.\(\);/);
   assert.match(ipc, /deps\.adoptAccountMcpStore\?\.\(answer\.accountMcpStore\)/);
   const adapter = await read("source/electron-main/adapters/mcp-oauth.ts");
-  assert.match(adapter, /readAccountMcpStore: \(\) => loadAccountMcpStore\(getSandRootDir\(\)\)/);
+  assert.match(adapter, /readAccountMcpStore: \(\) => serializeAccountMcpStoreForPeer\(loadAccountMcpStore\(getSandRootDir\(\)\)\)/, "the Mac's copy for the box carries no refresh token");
   assert.match(adapter, /refreshMcp\(\{ routedAction: "account-mcp-store" \}\)/);
   assert.equal((adapter.match(/onAccountStoreChanged: \(\) => \{ void context\.mcpHost\.refreshMcp\(undefined\); \}/g) ?? []).length, 2);
   const resync = await read("source/electron-main/coordinator/coordinator-resync.ts");
   assert.match(resync, /step\("account_mcp"/);
   const auxiliary = await read("source/electron-main/coordinator/production-root-auxiliary-provider.ts");
-  assert.match(auxiliary, /getAccountMcpStore: \(\) => loadAccountMcpStore\(getSandRootDir\(\)\)/);
+  assert.match(auxiliary, /getAccountMcpStore: \(\) => serializeAccountMcpStoreForPeer\(loadAccountMcpStore\(getSandRootDir\(\)\)\)/);
   const accountMcp = await read("source/shared/node/cursor-backend/account-mcp.ts");
   assert.doesNotMatch(accountMcp, /DashboardService|createSandCursorBackendClient/, "no Connect client is reachable from the six functions");
 });

@@ -8,7 +8,7 @@ import type { ElectronProductionAdapterBindings } from "../production-adapters.j
 import type { ProductionDisposable, ProductionMcpService, ProductionServiceContext } from "../main-production-services.js";
 import { getSandRootDir } from "../../host/host-paths.js";
 import { adoptVendorMcpStore, loadVendorMcpStore, serializeVendorMcpStore, serializeVendorMcpStoreForBox } from "../../shared/node/vendor-mcp/installs.js";
-import { adoptAccountMcpStore, loadAccountMcpStore } from "../../shared/node/account-mcp/store.js";
+import { adoptAccountMcpStore, loadAccountMcpStore, serializeAccountMcpStoreForPeer } from "../../shared/node/account-mcp/store.js";
 import { delay } from "../../shared/node/async.js";
 import { cleanupLegacyMcpAuthCredentials } from "../../shared/node/mcp/mcp-auth-cleanup.js";
 import { parseAllowedExternalUrl } from "../../shared/external-url-policy.js";
@@ -206,7 +206,7 @@ export function createProductionMcpOAuthPorts(): ProductionMcpOAuthPorts {
       shell: { openExternal: async (url) => await context.native.shell.openExternal(url) },
       parseAllowedExternalUrl,
       readVendorMcpStore: () => serializeVendorMcpStoreForBox(loadVendorMcpStore(getSandRootDir())),
-      readAccountMcpStore: () => loadAccountMcpStore(getSandRootDir()),
+      readAccountMcpStore: () => serializeAccountMcpStoreForPeer(loadAccountMcpStore(getSandRootDir())),
       adoptAccountMcpStore: (store) => { adoptAccountMcpStore(getSandRootDir(), store); },
       adoptVendorMcpStore: (store) => { adoptVendorMcpStore(getSandRootDir(), store, "local"); },
       peekAccessToken: async () => {

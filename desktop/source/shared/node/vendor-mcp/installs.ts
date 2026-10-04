@@ -4,9 +4,12 @@ import { dirname, join } from "node:path";
 /**
  * What the vendor's sign-in left us (24 September 2026): a bearer token for
  * the MCP endpoint, the refresh token when the vendor gave one, and the two
- * things a refresh needs. The Mac is the only writer of a credential; the
- * host in the box receives a copy through the settings sync and never
- * refreshes it itself, so a rotating refresh token is used by one party.
+ * things a refresh needs. A credential is written where its sign-in
+ * finished, on the Mac or, since Simeon on the web (4 October 2026), in the
+ * box; the other side receives a copy without the refresh token
+ * (`serializeVendorMcpStoreForPeer`) and never refreshes it, so a rotating
+ * refresh token is used by one party. The owner refreshes on use and before
+ * answering the other side's pull of its store.
  */
 export interface VendorMcpCredential {
   readonly accessToken: string;
@@ -26,6 +29,8 @@ export interface VendorMcpInstall {
   readonly credential?: VendorMcpCredential;
   /** When this install was recorded; a row from before 24 September 2026 (evening) has none and reads as 0. */
   readonly installedAtMs?: number;
+  /** When the credential last changed (a sign-in, a refresh, a sign-out); a row from before 4 October 2026 has none and reads as 0. */
+  readonly credentialAtMs?: number;
 }
 
 /**
@@ -38,8 +43,10 @@ export interface VendorMcpInstall {
  * not installed" → retry). Now each side merges the other's copy: per
  * connector the newest event wins, an install (`installedAtMs`) or a
  * removal (a tombstone, `removedAtMs`), and on a tie the side named as
- * authority. The Mac is the authority for credentials: when both sides hold
- * the same install, the box takes the Mac's row.
+ * authority. When both sides hold the same install, the credential is the
+ * newer one (`credentialAtMs`: a sign-in, a refresh or a sign-out on either
+ * side, since the web signs in through the box); on a tie, the side holding
+ * the refresh token wrote it, and failing that the authority's row stands.
  */
 export interface VendorMcpTombstone {
   readonly id: string;
@@ -103,6 +110,7 @@ export function parseVendorMcpStore(parsed: unknown): VendorMcpStore {
         connected: row.connected === true || credential != null,
         ...(credential == null ? {} : { credential }),
         ...(typeof row.installedAtMs === "number" && Number.isFinite(row.installedAtMs) ? { installedAtMs: row.installedAtMs } : {}),
+        ...(typeof row.credentialAtMs === "number" && Number.isFinite(row.credentialAtMs) ? { credentialAtMs: row.credentialAtMs } : {}),
       });
     } else if (typeof row.removedAtMs === "number" && Number.isFinite(row.removedAtMs)) {
       removed.push({ id: row.id, removedAtMs: row.removedAtMs });
@@ -139,16 +147,20 @@ export function serializeVendorMcpStore(store: VendorMcpStore): unknown[] {
 }
 
 /**
- * The store as the box receives it (25 September 2026, ledger F-153): the
- * box lists and calls tools with the access token and never signs in or
- * refreshes, so the refresh token and the client secret stay on the Mac.
+ * The store as the other side receives it (25 September 2026, ledger F-153;
+ * both ways since 4 October 2026): it lists and calls tools with the access
+ * token and refreshes only what it signed in itself, so the refresh token
+ * and the client secret stay where the sign-in finished.
  */
-export function serializeVendorMcpStoreForBox(store: VendorMcpStore): unknown[] {
+export function serializeVendorMcpStoreForPeer(store: VendorMcpStore): unknown[] {
   return [
     ...store.installs.map((row) => { if (row.credential == null) return row; const { refreshToken: _refresh, clientSecret: _secret, ...credential } = row.credential; return { ...row, credential }; }),
     ...store.removed,
   ];
 }
+
+/** The Mac's name for the same thing, kept for its callers. */
+export const serializeVendorMcpStoreForBox = serializeVendorMcpStoreForPeer;
 
 export function saveVendorMcpStore(rootDir: string, store: VendorMcpStore): void {
   const path = vendorMcpInstallsPath(rootDir);
@@ -178,9 +190,23 @@ export function upsertVendorMcpInstall(rootDir: string, install: VendorMcpInstal
     connected: install.connected || credential != null,
     ...(credential == null ? {} : { credential }),
     installedAtMs: Math.max(install.installedAtMs ?? 0, previous?.installedAtMs ?? 0, now()),
+    ...(previous?.credentialAtMs == null ? {} : { credentialAtMs: previous.credentialAtMs }),
   });
   saveVendorMcpInstalls(rootDir, next);
   return next;
+}
+
+/**
+ * Which row's credential a shared install keeps: the newer change wins; on
+ * a tie between two credentials, the row holding the refresh token is the
+ * one whose side signed in (the other holds a copy without it); failing
+ * that, the authority's row stands, a sign-out included.
+ */
+function pickCredential(a: VendorMcpInstall, b: VendorMcpInstall, authority: VendorMcpInstall): VendorMcpCredential | undefined {
+  const atA = a.credentialAtMs ?? 0, atB = b.credentialAtMs ?? 0;
+  if (atA !== atB) return atA > atB ? a.credential : b.credential;
+  if (a.credential != null && b.credential != null) return (a.credential.refreshToken != null ? a : b.credential.refreshToken != null ? b : authority).credential;
+  return authority.credential;
 }
 
 type VendorMcpEvent =
@@ -216,12 +242,12 @@ export function mergeVendorMcpStores(local: VendorMcpStore, incoming: VendorMcpS
     if (winner.kind === "removed") { removed.push(winner.row); continue; }
     const loser = winner === preferred ? other : preferred;
     if (loser != null && loser.kind === "install") {
-      // A row that won on age alone and carries no credential (the agent's
-      // install in the box, or the box's stripped copy) never drops the
-      // credential the authority holds; the authority's own empty row is a
-      // sign-out and stands.
-      const credential = winner.row.credential ?? (winner === preferred ? undefined : loser.row.credential);
-      installs.push({ ...winner.row, ...(credential == null ? {} : { credential }), installedAtMs: Math.max(winner.at, loser.at) });
+      // Both sides hold the install: the row that won on age gives the
+      // address, the credential is the newer change on either side (a
+      // sign-in in the box, a refresh on the Mac, a sign-out anywhere).
+      const credential = pickCredential(winner.row, loser.row, preferred!.row as VendorMcpInstall);
+      const credentialAtMs = Math.max(winner.row.credentialAtMs ?? 0, loser.row.credentialAtMs ?? 0);
+      installs.push({ id: winner.row.id, url: winner.row.url, connected: credential != null, ...(credential == null ? {} : { credential }), installedAtMs: Math.max(winner.at, loser.at), ...(credentialAtMs === 0 ? {} : { credentialAtMs }) });
     } else {
       installs.push(winner.row);
     }
@@ -246,23 +272,25 @@ export function vendorMcpInstallById(rootDir: string, id: string): VendorMcpInst
   return loadVendorMcpInstalls(rootDir).find((item) => item.id === id);
 }
 
-export function setVendorMcpCredential(rootDir: string, id: string, credential: VendorMcpCredential): VendorMcpInstall | undefined {
+export function setVendorMcpCredential(rootDir: string, id: string, credential: VendorMcpCredential, now: () => number = Date.now): VendorMcpInstall | undefined {
   const current = vendorMcpInstallById(rootDir, id);
   if (current == null) return undefined;
   // A finished sign-in keeps the install time: it is not a re-install, and
-  // the merge orders installs and removals by that time.
-  const next: VendorMcpInstall = { id, url: current.url, connected: true, credential, ...(current.installedAtMs == null ? {} : { installedAtMs: current.installedAtMs }) };
+  // the merge orders installs and removals by that time. The credential's
+  // own time moves, so the other side's copy takes this one.
+  const next: VendorMcpInstall = { id, url: current.url, connected: true, credential, ...(current.installedAtMs == null ? {} : { installedAtMs: current.installedAtMs }), credentialAtMs: Math.max(now(), (current.credentialAtMs ?? 0) + 1) };
   saveVendorMcpInstalls(rootDir, [...loadVendorMcpInstalls(rootDir).filter((item) => item.id !== id), next]);
   return next;
 }
 
-export function clearVendorMcpCredential(rootDir: string, id: string): boolean {
+export function clearVendorMcpCredential(rootDir: string, id: string, now: () => number = Date.now): boolean {
   const current = vendorMcpInstallById(rootDir, id);
   if (current?.credential == null) return false;
   const next = loadVendorMcpInstalls(rootDir).filter((item) => item.id !== id);
   // The install time is kept: a logout is not a re-install, and the merge
-  // must not read the row as older than the box's copy of it.
-  next.push({ id, url: current.url, connected: false, ...(current.installedAtMs == null ? {} : { installedAtMs: current.installedAtMs }) });
+  // must not read the row as older than the box's copy of it. The
+  // credential's time moves, so the sign-out reaches the other side.
+  next.push({ id, url: current.url, connected: false, ...(current.installedAtMs == null ? {} : { installedAtMs: current.installedAtMs }), credentialAtMs: Math.max(now(), (current.credentialAtMs ?? 0) + 1) });
   saveVendorMcpInstalls(rootDir, next);
   return true;
 }

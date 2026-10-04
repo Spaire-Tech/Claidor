@@ -284,6 +284,35 @@ async def web_session(
     )
 
 
+#: What a vendor's OAuth callback may carry on to the page: the code and
+#: state of the sign-in, or the refusal. Nothing else travels.
+_MCP_OAUTH_PARAMS = ("state", "code", "error", "error_description")
+
+
+@router.get("/desktop/mcp-oauth/callback", name="desktop:mcp_oauth_callback")
+async def mcp_oauth_callback(request: Request) -> RedirectResponse:
+    """Where a connected app's sign-in started from Simeon on the web comes
+    back (4 October 2026). On a Mac the app registers
+    `http://localhost:8787/callback` with the vendor and listens there
+    (`shared/node/mcp/mcp-oauth-loopback.ts`); a browser page cannot, so
+    the box registers this address instead
+    (`host/extensions/mcp/mcp-service.ts`, `hostedMcpOAuthCallbackUrl`).
+    The vendor lands here with the code and the state; the page at
+    `/app/connected.html` on the web app hands them to the box that started
+    the sign-in, which holds the PKCE verifier and nothing else can. The
+    code is single-use and bound to that verifier, so carrying it through
+    the redirect gives a bystander nothing."""
+    kept = [
+        (name, value)
+        for name, value in request.query_params.multi_items()
+        if name in _MCP_OAUTH_PARAMS
+    ]
+    target = f"{settings.FRONTEND_BASE_URL.rstrip('/')}/app/connected.html"
+    if kept:
+        target = f"{target}?{urlencode(kept)}"
+    return RedirectResponse(target, status_code=302, headers=NO_STORE)
+
+
 # --- the app's half --------------------------------------------------------
 
 

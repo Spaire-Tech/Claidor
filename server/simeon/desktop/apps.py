@@ -20,8 +20,10 @@ made through it is kept):
   own credential both reach it, because the tools run in the box.
 - `GET  /api/apps/{toolkit}/status` — whether the person has the app
   connected. Desktop and box.
-- `POST /api/apps/{toolkit}/connect` — the sign-in link. Desktop only.
-- `DELETE /api/apps/{toolkit}` — disconnect. Desktop only.
+- `POST /api/apps/{toolkit}/connect` — the sign-in link. Desktop and,
+  since Simeon on the web (4 October 2026), the box: the window on the web
+  starts a sign-in through the manager in the box.
+- `DELETE /api/apps/{toolkit}` — disconnect. Desktop and box, likewise.
 - `GET  /apps/connected` — the page a finished sign-in lands on, ours.
 - `GET  /apps/oauth/callback` — the redirect URI to register in a
   provider's console when Simeon Labs brings its own OAuth app, so the
@@ -49,7 +51,7 @@ from simeon.config import settings
 from simeon.models import DesktopSession, User
 from simeon.routing import APIRouter
 
-from .auth import get_desktop_or_box_session, get_desktop_session
+from .auth import get_desktop_or_box_session
 from .composio import composio_user_id, configured
 
 log = structlog.get_logger()
@@ -479,7 +481,7 @@ async def apps_status(
 @router.post("/api/apps/{toolkit}/connect", name="desktop:apps_connect")
 async def apps_connect(
     toolkit: str,
-    desktop_session: DesktopSession = Depends(get_desktop_session),
+    desktop_session: DesktopSession = Depends(get_desktop_or_box_session),
 ) -> JSONResponse:
     refused = _guard(toolkit)
     if refused is not None:
@@ -501,7 +503,7 @@ async def apps_connect(
 @router.delete("/api/apps/{toolkit}", name="desktop:apps_disconnect")
 async def apps_disconnect(
     toolkit: str,
-    desktop_session: DesktopSession = Depends(get_desktop_session),
+    desktop_session: DesktopSession = Depends(get_desktop_or_box_session),
 ) -> JSONResponse:
     refused = _guard(toolkit)
     if refused is not None:

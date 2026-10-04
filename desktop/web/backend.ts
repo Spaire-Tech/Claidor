@@ -11,6 +11,13 @@
  * localStorage, the way the Mac keeps them in its settings file. What needs
  * a Mac (the updater, the egress tunnel, WebAuthn, local tools, voice
  * calls) answers "not here", in the shapes the window already draws.
+ *
+ * Connected apps (MCP) are the fourth kind: the manager that answers the
+ * window on a Mac from Electron main runs in the box too, and here the
+ * window's calls go to it through the gateway (`desktopMcp`,
+ * `host-gateway-api.ts`). A sign-in starts in the box, opens in a new tab,
+ * and comes back through the server's hosted callback to
+ * `/app/connected.html`, which hands the box the code (`bridge.ts`).
  */
 import { SimeonApi, SimeonApiError } from "./api.js";
 import { createWebGateway, type WebGateway } from "./gateway.js";
@@ -19,10 +26,16 @@ export interface WebBackendHooks {
   readonly api: SimeonApi;
   readonly pushCoordinatorEvent: (family: string, payload: unknown) => void;
   readonly pushMainEvent: (event: string, payload: unknown) => void;
+  /** An event on one of the preload's own channels (`sand:mcp-auth-event`). */
+  readonly pushIpcEvent: (channel: string, payload: unknown) => void;
   /** Sends the person to the web app's sign-in, to come back here after. */
   readonly goSignIn: () => void;
+  /** Opens a vendor's sign-in page; a new tab here, the browser on a Mac. */
+  readonly openSignIn?: (url: string) => void;
   readonly storage?: Storage;
   readonly matchDark?: () => boolean;
+  /** For tests: the gateway to use instead of one on the API. */
+  readonly gateway?: WebGateway;
 }
 
 type Outcome = { status: "ok"; value: unknown } | { status: "failed"; failure: { code: string; message: string } };
@@ -143,14 +156,20 @@ export function createWebBackend(hooks: WebBackendHooks) {
     return { preference, resolved };
   };
 
-  const gateway: WebGateway = createWebGateway({
+  const gateway: WebGateway = hooks.gateway ?? createWebGateway({
     api,
     postEvent: hooks.pushCoordinatorEvent,
     accountSlot,
+    onMcpAuthCompleted: (completion) => hooks.pushIpcEvent("sand:mcp-auth-event", completion),
   });
 
   const hostSettings = () => gateway.main("getHostSettings", {}) as Promise<Record<string, unknown>>;
   const setHostSettings = (update: Record<string, unknown>) => gateway.main("setHostSettings", update) as Promise<Record<string, unknown>>;
+  /** The window's connected-apps calls, answered by the manager in the box (`mcp-service.ts`, `window`). */
+  const mcp = <T = unknown>(action: string, ...args: unknown[]) => gateway.main("desktopMcp", { action, args }) as Promise<T>;
+  const openSignIn = hooks.openSignIn ?? ((url: string) => { if (typeof window !== "undefined") window.open(url, "_blank", "noopener"); });
+  /** A started sign-in, as the manager reports it. */
+  interface AuthStart { readonly status?: string; readonly authorizationUrl?: string; readonly serverName?: string }
 
   const notHere = (what: string) => { throw new SimeonApiError(`${what} needs Simeon on your Mac.`, 501); };
 
@@ -318,6 +337,10 @@ export function createWebBackend(hooks: WebBackendHooks) {
     async coordinator(method: string, args: unknown, signal: AbortSignal): Promise<Outcome> {
       return gateway.dispatch(method, args, signal);
     },
+    /** The code a vendor sent back to the server's hosted callback, handed to the box that started the sign-in. */
+    async completeMcpOAuth(stateId: string, code: string): Promise<void> {
+      await gateway.main("completeMcpOAuth", { stateId, code });
+    },
     async ipc(channel: string, payload: any): Promise<unknown> {
       switch (channel) {
         case "sand:client-persistence-read": { try { return storage?.getItem(persisted(String(payload?.key))) ?? null; } catch { return null; } }
@@ -335,12 +358,33 @@ export function createWebBackend(hooks: WebBackendHooks) {
         case "sand:secrets-upsert": { await gateway.main("setBoxSecrets", { secrets: payload?.entries ?? {} }); return undefined; }
         case "sand:secrets-delete": return undefined;
         case "sand:secrets-reveal": return null;
-        // Connected apps are managed from the Mac for now: the box's list is read, nothing is installed from here.
-        case "sand:mcp-list": return { servers: [] };
-        case "sand:mcp-effective-plugins": return [];
-        case "sand:mcp-catalog": return { entries: [] };
+        // Connected apps: what `mcp-desktop.ts` answers on a Mac, from the manager in the box.
+        case "sand:mcp-list": return mcp("listServers");
+        case "sand:mcp-effective-plugins": return mcp("listEffectivePlugins");
+        case "sand:mcp-catalog": return mcp("getCatalog");
+        // Team popularity is Cursor's marketplace; Simeon's catalog has none.
         case "sand:mcp-team-popularity": return {};
-        case "sand:mcp-plugin-logo": return null;
+        case "sand:mcp-plugin-logo": return typeof payload?.url === "string" ? mcp("resolvePluginLogo", payload.url) : null;
+        case "sand:mcp-install": {
+          const state = await mcp("installEntry", payload);
+          // A vendor connector goes straight to its sign-in, as on a Mac (`sand:mcp-install` there).
+          const serverId = typeof payload?.entryId === "string" ? await mcp<string | null>("vendorServerIdForPlugin", payload.entryId).catch(() => null) : null;
+          if (serverId != null) {
+            const started = await mcp<AuthStart>("authenticateServer", serverId, "default").catch(() => null);
+            if (started?.status === "started" && typeof started.authorizationUrl === "string") openSignIn(started.authorizationUrl);
+          }
+          return state;
+        }
+        case "sand:mcp-update-plugin-install": return mcp("updatePluginInstall", payload);
+        case "sand:mcp-remove": return mcp("removeServer", payload?.serverId);
+        case "sand:mcp-uninstall-plugin": return mcp("uninstallPlugin", payload?.pluginId);
+        // The window opens the link itself (`openExternal`), as on a Mac.
+        case "sand:mcp-auth": return mcp("authenticateServer", payload?.serverId, payload?.accountKey ?? "default", payload?.trigger === "connector_card" ? "connector_card" : undefined);
+        case "sand:mcp-rename-account": return mcp("renameAccount", payload);
+        case "sand:mcp-remove-account": return mcp("removeAccount", payload);
+        case "sand:mcp-set-instructions": return mcp("setServerCustomInstructions", payload);
+        case "sand:mcp-list-server-tools": return mcp("listServerTools", payload?.serverId);
+        case "sand:mcp-toggle-tool-disabled": return mcp("toggleMcpToolDisabled", payload);
         case "sand:attach-prod-box-status": return { enabled: false };
         default:
           console.warn("[simeon web] ipc unanswered", channel);

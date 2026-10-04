@@ -143,8 +143,14 @@ browser: commands and the event stream reach the host through the API's
 proxy, which strips the browser's `Origin` so the host's own refusal of
 browser requests keeps guarding direct access. The built page lives under
 `clients/apps/web/public/app` and is rebuilt with `npm run web:build` in
-`desktop/`. The agent's hands on the person's own machine, WebAuthn, voice
-calls and the updater stay with the Mac app.
+`desktop/`. Connected apps are managed by the manager in the box
+(`desktopMcp` on the gateway), and a sign-in started there comes back
+through the server's hosted callback (`GET /desktop/mcp-oauth/callback`) to
+`/app/connected.html`; the Mac and the box each refresh the sign-ins they
+finished and exchange copies without the refresh token. The computer panel
+is the box's noVNC page in a frame through the proxy. The agent's hands on
+the person's own machine, WebAuthn, voice calls and the updater stay with
+the Mac app.
 
 ## The website (`sites/simeonlabs.com`)
 

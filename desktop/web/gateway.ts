@@ -48,6 +48,9 @@ export function connectionFromBox(box: BrokerBox): GatewayConnection {
   };
 }
 
+/** The host's channel for a finished connected-app sign-in (`sand-host.ts`), which the Mac's coordinator has no family for: the page reads it itself. */
+export const MCP_AUTH_CHANNEL = "mcp-auth";
+
 export interface WebGatewayHooks {
   readonly api: SimeonApi;
   /** Events for the window, by coordinator family. */
@@ -55,6 +58,8 @@ export interface WebGatewayHooks {
   /** The Allow card's account scope: the signed-in account's slot. */
   readonly accountSlot: () => string | null;
   readonly onTransport?: (state: "connected" | "down") => void;
+  /** A connected-app sign-in finished in the box, in the shape the Mac's manager reports (`sand:mcp-auth-event`). */
+  readonly onMcpAuthCompleted?: (completion: unknown) => void;
 }
 
 export function createWebGateway(hooks: WebGatewayHooks) {
@@ -78,6 +83,7 @@ export function createWebGateway(hooks: WebGatewayHooks) {
     timing: createCoordinatorGatewayClientTiming(),
     onEvent: (event) => {
       if (event.channel === "client-side-tool-v2") { toolRelay.accept(event.payload); return; }
+      if (event.channel === MCP_AUTH_CHANNEL) { hooks.onMcpAuthCompleted?.(event.payload); return; }
       const family = coordinatorEventFamilyForSseChannel(event.channel);
       if (family == null) return;
       if (family === "transcript") {
@@ -118,7 +124,7 @@ export function createWebGateway(hooks: WebGatewayHooks) {
       if (outcome.status !== "ok" || !carriesPermissionCard(outcome.value)) return outcome;
       return { status: "ok", value: stampTranscriptReply(method, outcome.value, scope()) };
     },
-    /** What the Mac's main process asks the host (`coordinator-main.ts`): host settings, secrets, the roster. */
+    /** What the Mac's main process asks the host (`coordinator-main.ts`): host settings, secrets, the roster, connected apps. */
     async main(method: string, args: unknown): Promise<unknown> {
       const outcome = await dispatchMain(method, args);
       if (outcome.status === "ok") return outcome.value;

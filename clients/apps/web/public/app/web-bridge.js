@@ -488,7 +488,7 @@
     const edge = (method, ...args) => mainEdge[method](...args);
     const subscribe = (event, listener) => mainEdge.subscribe({ [event]: listener });
     const initialState = options.initialState ?? readPrimaryPreloadInitialState(ipc);
-    const desktop2 = {
+    const desktop = {
       resolveAttachmentMedia: (url) => edge("resolveAttachmentMedia", { source: url }),
       readAttachmentText: (path) => edge("readAttachmentText", { path }),
       readAttachmentBytes: (path, maxBytes) => edge("readAttachmentBytes", { path, maxBytes }),
@@ -712,17 +712,17 @@
         onStatusEvent: (listener) => subscribe("update-status", listener)
       }
     };
-    if (isDevRestartEnabled) desktop2.devRestart = async () => {
+    if (isDevRestartEnabled) desktop.devRestart = async () => {
       await ipc.invoke("sand:dev-restart");
     };
-    desktop2.attachProdBox = {
+    desktop.attachProdBox = {
       getStatus: () => ipc.invoke("sand:attach-prod-box-status"),
       setEnabled: (enabled, attachOptions) => ipc.invoke("sand:attach-prod-box-set-enabled", {
         enabled,
         isRestartMainApp: attachOptions?.isRestartMainApp
       })
     };
-    return desktop2;
+    return desktop;
   }
   function installPrimaryPreload(options) {
     const env = options.env ?? define_process_env_default;
@@ -731,15 +731,15 @@
     const broker = options.coordinatorBroker ?? createCoordinatorPortBroker({ invokeRequest: () => {
       void options.ipc.invoke("sand:coordinator-port-request");
     } });
-    const desktop2 = createDesktopPreloadBridge({ ...options, env, devRestartEnabled, initialState });
-    options.contextBridge.exposeInMainWorld("desktop", desktop2);
+    const desktop = createDesktopPreloadBridge({ ...options, env, devRestartEnabled, initialState });
+    options.contextBridge.exposeInMainWorld("desktop", desktop);
     options.contextBridge.exposeInMainWorld("coordinatorPort", broker.bridge);
     options.ipc.on("sand:coordinator-port", (event) => {
       const port = event.ports[0];
       if (port != null) broker.deliver(wrapTransferredCoordinatorPort(port));
     });
     installComputerStreamNoticeSafely(options.ipc);
-    return { desktop: desktop2, coordinatorPort: broker.bridge };
+    return { desktop, coordinatorPort: broker.bridge };
   }
   function installPrimaryPreloadEntrypoint(electron, env = define_process_env_default) {
     const devRestartEnabled = hasDevRestart(env);
@@ -31220,7 +31220,12 @@
     // The call as a channel into the agent, `voice:<call>` (1 October 2026).
     voiceCall: { args: "object" },
     // The agent's picture for the call banner (2 October 2026): the roster carries no picture.
-    getAgentAvatar: { args: "object" }
+    getAgentAvatar: { args: "object" },
+    // Simeon on the web (4 October 2026): the window's connected apps are
+    // managed by the manager in the box, and a sign-in started there finishes
+    // from the server's hosted callback.
+    desktopMcp: { args: "object" },
+    completeMcpOAuth: { args: "object" }
   };
   function isCoordinatorMainMethod(name) {
     return Object.hasOwn(COORDINATOR_MAIN_METHOD_TABLE, name);
@@ -31240,6 +31245,7 @@
       ...proxied ? { vncProxy: { primaryUrl: box.vncUrl, forkBaseUrl: box.forkVncBaseUrl, networkToken } } : {}
     };
   }
+  var MCP_AUTH_CHANNEL = "mcp-auth";
   function createWebGateway(hooks) {
     const revision = Date.now();
     const scope = () => {
@@ -31260,6 +31266,10 @@
       onEvent: (event) => {
         if (event.channel === "client-side-tool-v2") {
           toolRelay.accept(event.payload);
+          return;
+        }
+        if (event.channel === MCP_AUTH_CHANNEL) {
+          hooks.onMcpAuthCompleted?.(event.payload);
           return;
         }
         const family = coordinatorEventFamilyForSseChannel(event.channel);
@@ -31309,7 +31319,7 @@
         if (outcome.status !== "ok" || !carriesPermissionCard(outcome.value)) return outcome;
         return { status: "ok", value: stampTranscriptReply(method, outcome.value, scope()) };
       },
-      /** What the Mac's main process asks the host (`coordinator-main.ts`): host settings, secrets, the roster. */
+      /** What the Mac's main process asks the host (`coordinator-main.ts`): host settings, secrets, the roster, connected apps. */
       async main(method, args) {
         const outcome = await dispatchMain(method, args);
         if (outcome.status === "ok") return outcome.value;
@@ -31407,13 +31417,18 @@
       const resolved = preference === "dark" || preference !== "light" && matchDark() ? "dark" : "light";
       return { preference, resolved };
     };
-    const gateway = createWebGateway({
+    const gateway = hooks.gateway ?? createWebGateway({
       api: api2,
       postEvent: hooks.pushCoordinatorEvent,
-      accountSlot
+      accountSlot,
+      onMcpAuthCompleted: (completion) => hooks.pushIpcEvent("sand:mcp-auth-event", completion)
     });
     const hostSettings = () => gateway.main("getHostSettings", {});
     const setHostSettings = (update) => gateway.main("setHostSettings", update);
+    const mcp = (action, ...args) => gateway.main("desktopMcp", { action, args });
+    const openSignIn = hooks.openSignIn ?? ((url) => {
+      if (typeof window !== "undefined") window.open(url, "_blank", "noopener");
+    });
     const notHere = (what) => {
       throw new SimeonApiError(`${what} needs Simeon on your Mac.`, 501);
     };
@@ -31609,6 +31624,10 @@
       async coordinator(method, args, signal) {
         return gateway.dispatch(method, args, signal);
       },
+      /** The code a vendor sent back to the server's hosted callback, handed to the box that started the sign-in. */
+      async completeMcpOAuth(stateId, code) {
+        await gateway.main("completeMcpOAuth", { stateId, code });
+      },
       async ipc(channel, payload) {
         switch (channel) {
           case "sand:client-persistence-read": {
@@ -31663,17 +31682,46 @@
             return void 0;
           case "sand:secrets-reveal":
             return null;
-          // Connected apps are managed from the Mac for now: the box's list is read, nothing is installed from here.
+          // Connected apps: what `mcp-desktop.ts` answers on a Mac, from the manager in the box.
           case "sand:mcp-list":
-            return { servers: [] };
+            return mcp("listServers");
           case "sand:mcp-effective-plugins":
-            return [];
+            return mcp("listEffectivePlugins");
           case "sand:mcp-catalog":
-            return { entries: [] };
+            return mcp("getCatalog");
+          // Team popularity is Cursor's marketplace; Simeon's catalog has none.
           case "sand:mcp-team-popularity":
             return {};
           case "sand:mcp-plugin-logo":
-            return null;
+            return typeof payload?.url === "string" ? mcp("resolvePluginLogo", payload.url) : null;
+          case "sand:mcp-install": {
+            const state = await mcp("installEntry", payload);
+            const serverId = typeof payload?.entryId === "string" ? await mcp("vendorServerIdForPlugin", payload.entryId).catch(() => null) : null;
+            if (serverId != null) {
+              const started = await mcp("authenticateServer", serverId, "default").catch(() => null);
+              if (started?.status === "started" && typeof started.authorizationUrl === "string") openSignIn(started.authorizationUrl);
+            }
+            return state;
+          }
+          case "sand:mcp-update-plugin-install":
+            return mcp("updatePluginInstall", payload);
+          case "sand:mcp-remove":
+            return mcp("removeServer", payload?.serverId);
+          case "sand:mcp-uninstall-plugin":
+            return mcp("uninstallPlugin", payload?.pluginId);
+          // The window opens the link itself (`openExternal`), as on a Mac.
+          case "sand:mcp-auth":
+            return mcp("authenticateServer", payload?.serverId, payload?.accountKey ?? "default", payload?.trigger === "connector_card" ? "connector_card" : void 0);
+          case "sand:mcp-rename-account":
+            return mcp("renameAccount", payload);
+          case "sand:mcp-remove-account":
+            return mcp("removeAccount", payload);
+          case "sand:mcp-set-instructions":
+            return mcp("setServerCustomInstructions", payload);
+          case "sand:mcp-list-server-tools":
+            return mcp("listServerTools", payload?.serverId);
+          case "sand:mcp-toggle-tool-disabled":
+            return mcp("toggleMcpToolDisabled", payload);
           case "sand:attach-prod-box-status":
             return { enabled: false };
           default:
@@ -31707,70 +31755,10 @@
     api,
     pushCoordinatorEvent: (family, payload) => server?.postEvent(family, payload),
     pushMainEvent: (event, payload) => emit(`sand-rpc:main:e:${event}`, {}, payload),
+    pushIpcEvent: (channel, payload) => emit(channel, {}, payload),
     goSignIn
   });
   Reflect.set(window, "__simeonWeb", { api, backend });
-  var portWanted = false;
-  function openCoordinatorPort() {
-    if (!backend.isSignedIn()) {
-      portWanted = true;
-      return;
-    }
-    portWanted = false;
-    const channel = new MessageChannel();
-    const serverPort = channel.port2;
-    server?.handlePortClosed();
-    server = createRendererPortServer(
-      { post: (frame) => serverPort.postMessage(frame), close: () => serverPort.close() },
-      {
-        dispatchRequest: async (method, args, signal) => {
-          const outcome = await backend.coordinator(method, args, signal);
-          trace("coordinator", method, outcome.status);
-          return outcome;
-        },
-        onServing: () => backend.onServing()
-      }
-    );
-    serverPort.addEventListener("message", (event) => server?.handleMessage(event.data));
-    serverPort.start();
-    backend.gateway.start();
-    emit("sand:coordinator-port", { ports: [channel.port1] });
-  }
-  var ipcRenderer = {
-    async invoke(channel, payload) {
-      if (channel === "sand:coordinator-port-request") {
-        queueMicrotask(openCoordinatorPort);
-        return void 0;
-      }
-      const main = /^sand-rpc:main:m:(.+)$/.exec(channel);
-      if (main) {
-        try {
-          const value2 = await backend.main(main[1], payload);
-          trace("main", main[1], value2);
-          return { ok: true, value: value2 };
-        } catch (error) {
-          trace("main failed", main[1], error);
-          return { ok: false, failure: { code: "main/handler-failed", detail: error instanceof Error ? error.message : String(error) } };
-        }
-      }
-      const value = await backend.ipc(channel, payload);
-      trace("ipc", channel, value);
-      return value;
-    },
-    sendSync(channel) {
-      return backend.sync(channel);
-    },
-    send(channel, payload) {
-      trace("send", channel, payload);
-    },
-    on(channel, listener) {
-      if (!listeners.has(channel)) listeners.set(channel, /* @__PURE__ */ new Set());
-      listeners.get(channel).add(listener);
-    },
-    off(channel, listener) {
-      listeners.get(channel)?.delete(listener);
-    }
-  };
   var ready = (async () => {
     if (api.isSignedIn()) return;
     try {
@@ -31779,47 +31767,156 @@
       trace("sign-in from cookie failed", error);
     }
   })();
-  void ready.then(() => {
-    if (portWanted) openCoordinatorPort();
-  });
-  installPrimaryPreloadEntrypoint(
-    {
-      ipcRenderer,
-      webFrame: { getZoomFactor: () => 1 },
-      contextBridge: { exposeInMainWorld: (name, value) => Reflect.set(window, name, value) }
-    },
-    {}
-  );
-  var desktop = Reflect.get(window, "desktop");
-  var getStatus = desktop?.cursorAccount?.getStatus;
-  if (desktop?.cursorAccount != null && typeof getStatus === "function") {
-    desktop.cursorAccount.getStatus = async () => {
-      await ready;
-      return getStatus();
+  var CONNECTED_PAGE = /\/connected\.html$/.test(location.pathname);
+  if (CONNECTED_PAGE) {
+    void finishConnectedAppSignIn();
+  } else {
+    installWindow();
+  }
+  async function finishConnectedAppSignIn() {
+    const params = new URLSearchParams(location.search);
+    const say = (title, body) => {
+      const heading = document.getElementById("title"), text = document.getElementById("body");
+      if (heading != null) heading.textContent = title;
+      if (text != null) text.textContent = body;
+    };
+    const state = params.get("state") ?? "", code = params.get("code") ?? "";
+    const refused = params.get("error");
+    if (refused != null) {
+      say("That didn't work", params.get("error_description") ?? "The app refused the sign-in. Go back to Simeon and try again.");
+      return;
+    }
+    if (state.length === 0 || code.length === 0) {
+      say("That didn't work", "The sign-in came back incomplete. Go back to Simeon and try again.");
+      return;
+    }
+    await ready;
+    if (!backend.isSignedIn()) {
+      say("Sign in to Simeon first", "Open Simeon on the web, sign in, and connect the app again.");
+      return;
+    }
+    try {
+      await backend.completeMcpOAuth(state, code);
+      say("Connected", "You can close this tab and go back to Simeon.");
+      setTimeout(() => {
+        try {
+          window.close();
+        } catch {
+        }
+      }, 1500);
+    } catch (error) {
+      trace("sign-in completion failed", error);
+      say("That didn't work", error instanceof Error && error.message.length > 0 ? error.message : "Simeon's computer could not finish the sign-in. Go back and try again.");
+    } finally {
+      backend.gateway.close();
+    }
+  }
+  function installWindow() {
+    let portWanted = false;
+    function openCoordinatorPort() {
+      if (!backend.isSignedIn()) {
+        portWanted = true;
+        return;
+      }
+      portWanted = false;
+      const channel = new MessageChannel();
+      const serverPort = channel.port2;
+      server?.handlePortClosed();
+      server = createRendererPortServer(
+        { post: (frame) => serverPort.postMessage(frame), close: () => serverPort.close() },
+        {
+          dispatchRequest: async (method, args, signal) => {
+            const outcome = await backend.coordinator(method, args, signal);
+            trace("coordinator", method, outcome.status);
+            return outcome;
+          },
+          onServing: () => backend.onServing()
+        }
+      );
+      serverPort.addEventListener("message", (event) => server?.handleMessage(event.data));
+      serverPort.start();
+      backend.gateway.start();
+      emit("sand:coordinator-port", { ports: [channel.port1] });
+    }
+    const ipcRenderer = {
+      async invoke(channel, payload) {
+        if (channel === "sand:coordinator-port-request") {
+          queueMicrotask(openCoordinatorPort);
+          return void 0;
+        }
+        const main = /^sand-rpc:main:m:(.+)$/.exec(channel);
+        if (main) {
+          try {
+            const value2 = await backend.main(main[1], payload);
+            trace("main", main[1], value2);
+            return { ok: true, value: value2 };
+          } catch (error) {
+            trace("main failed", main[1], error);
+            return { ok: false, failure: { code: "main/handler-failed", detail: error instanceof Error ? error.message : String(error) } };
+          }
+        }
+        const value = await backend.ipc(channel, payload);
+        trace("ipc", channel, value);
+        return value;
+      },
+      sendSync(channel) {
+        return backend.sync(channel);
+      },
+      send(channel, payload) {
+        trace("send", channel, payload);
+      },
+      on(channel, listener) {
+        if (!listeners.has(channel)) listeners.set(channel, /* @__PURE__ */ new Set());
+        listeners.get(channel).add(listener);
+      },
+      off(channel, listener) {
+        listeners.get(channel)?.delete(listener);
+      }
+    };
+    void ready.then(() => {
+      if (portWanted) openCoordinatorPort();
+    });
+    installPrimaryPreloadEntrypoint(
+      {
+        ipcRenderer,
+        webFrame: { getZoomFactor: () => 1 },
+        contextBridge: { exposeInMainWorld: (name, value) => Reflect.set(window, name, value) }
+      },
+      {}
+    );
+    const desktop = Reflect.get(window, "desktop");
+    const getStatus = desktop?.cursorAccount?.getStatus;
+    if (desktop?.cursorAccount != null && typeof getStatus === "function") {
+      desktop.cursorAccount.getStatus = async () => {
+        await ready;
+        return getStatus();
+      };
+    }
+    installComputerPanel();
+    window.addEventListener("pagehide", () => {
+      backend.gateway.close();
+      server?.handlePortClosed();
+    });
+  }
+  var WEBVIEW_METHODS = ["send", "executeJavaScript", "insertCSS", "openDevTools", "closeDevTools", "reload", "setZoomFactor", "setZoomLevel", "setAudioMuted", "focus"];
+  var VNC_SESSION_CHANNEL = "sand:vnc-session";
+  function installComputerPanel() {
+    const nativeCreateElement = Document.prototype.createElement;
+    Document.prototype.createElement = function createElement(tagName, options) {
+      if (String(tagName).toLowerCase() !== "webview") return nativeCreateElement.call(this, tagName, options);
+      const frame = nativeCreateElement.call(this, "iframe");
+      frame.setAttribute("data-simeon-webview", "");
+      frame.setAttribute("allow", "clipboard-read; clipboard-write");
+      frame.setAttribute("referrerpolicy", "no-referrer");
+      for (const name of WEBVIEW_METHODS) Reflect.set(frame, name, name === "focus" ? () => HTMLElement.prototype.focus.call(frame) : () => Promise.resolve(void 0));
+      Reflect.set(frame, "getWebContentsId", () => 0);
+      Reflect.set(frame, "isLoading", () => false);
+      frame.addEventListener("load", () => {
+        frame.dispatchEvent(new Event("dom-ready"));
+        frame.dispatchEvent(new Event("did-finish-load"));
+        frame.dispatchEvent(Object.assign(new Event("ipc-message"), { channel: VNC_SESSION_CHANNEL, args: [JSON.stringify({ phase: "rfb_connect" })] }));
+      });
+      return frame;
     };
   }
-  var WEBVIEW_ATTRIBUTES = ["src", "class", "style", "id", "title"];
-  function swapWebview(node) {
-    const frame = document.createElement("iframe");
-    for (const name of WEBVIEW_ATTRIBUTES) {
-      const value = node.getAttribute(name);
-      if (value != null) frame.setAttribute(name, value);
-    }
-    frame.setAttribute("allow", "clipboard-read; clipboard-write");
-    frame.setAttribute("referrerpolicy", "no-referrer");
-    node.replaceWith(frame);
-  }
-  new MutationObserver((records) => {
-    for (const record of records) {
-      for (const added of record.addedNodes) {
-        if (!(added instanceof Element)) continue;
-        if (added.tagName.toLowerCase() === "webview") swapWebview(added);
-        for (const inner of added.querySelectorAll("webview")) swapWebview(inner);
-      }
-    }
-  }).observe(document.documentElement, { childList: true, subtree: true });
-  window.addEventListener("pagehide", () => {
-    backend.gateway.close();
-    server?.handlePortClosed();
-  });
 })();

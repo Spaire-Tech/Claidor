@@ -438,9 +438,12 @@ export class SandHost {
 
   private wireExtensionGatewayEvents(extensions: HostExtensionRegistry): void {
     const mcp = extensions.api("mcp");
-    optionalMethod(mcp, "subscribeToAuthCompletion")?.(
-      (completion: unknown) => this.runtime.resolveMcpAuthCompletion(completion)
-    );
+    optionalMethod(mcp, "subscribeToAuthCompletion")?.((completion: unknown) => {
+      this.runtime.resolveMcpAuthCompletion(completion);
+      // The window on the web learns of a finished sign-in from here, the
+      // way the Mac's window learns it from its own manager (4 October 2026).
+      this.emit({ channel: "mcp-auth", payload: completion });
+    });
     optionalMethod(mcp, "subscribeToServersUpdated")?.((payload: unknown) => {
       this.emit({ channel: "mcp-servers", payload });
     });

@@ -153,3 +153,48 @@ test("the models menu is the Mac's: the primary role only, one row on by default
   assert.equal(menu.models[0].vendorName, "openai");
   assert.equal(menu.models[0].contextTokenLimit, 400000);
 });
+
+test("connected apps on the web: the window's calls go to the manager in the box, a vendor install goes straight to its sign-in, a finished sign-in reaches the window", async (t) => {
+  const { module, dispose } = await loadModule("web/backend.ts", "web-backend-mcp");
+  t.after(dispose);
+  const { createWebBackend } = module;
+  const calls = [];
+  const answers = { listServers: { servers: [{ id: "900005", name: "Notion" }] }, vendorServerIdForPlugin: "900005", authenticateServer: { status: "started", serverName: "Notion", authorizationUrl: "https://vendor.test/authorize?state=s1" }, installEntry: { servers: [] }, listServerTools: [{ name: "search", isDisabled: false }] };
+  let onMcpAuthCompleted;
+  const gateway = { start() {}, close() {}, isLive: () => true, forceReconnect: async () => {}, dispatch: async () => ({ status: "ok", value: null }), onServing() {}, async main(method, args) { calls.push({ method, args }); if (method === "completeMcpOAuth") return { ok: true }; return answers[args.action] ?? null; } };
+  const opened = [], pushed = [];
+  const api = { isSignedIn: () => true, data: async () => ({}), connect: async () => ({}), signInFromCookie: async () => true, signOut: async () => {} };
+  const backend = createWebBackend({ api, gateway, storage: fakeStorage(), matchDark: () => false, pushCoordinatorEvent() {}, pushMainEvent() {}, pushIpcEvent: (channel, payload) => pushed.push({ channel, payload }), goSignIn() {}, openSignIn: (url) => opened.push(url) });
+
+  assert.deepEqual(await backend.ipc("sand:mcp-list"), answers.listServers);
+  assert.deepEqual(calls.at(-1), { method: "desktopMcp", args: { action: "listServers", args: [] } });
+  await backend.ipc("sand:mcp-install", { entryId: "notion" });
+  assert.deepEqual(calls.map((c) => c.args.action).slice(1), ["installEntry", "vendorServerIdForPlugin", "authenticateServer"]);
+  assert.deepEqual(calls.at(-1).args.args, ["900005", "default"]);
+  assert.deepEqual(opened, ["https://vendor.test/authorize?state=s1"], "the vendor's page opens, as the Mac opens it");
+  await backend.ipc("sand:mcp-auth", { serverId: "900005", accountKey: "work", trigger: "connector_card" });
+  assert.deepEqual(calls.at(-1).args, { action: "authenticateServer", args: ["900005", "work", "connector_card"] });
+  assert.deepEqual(await backend.ipc("sand:mcp-list-server-tools", { serverId: "900005" }), answers.listServerTools);
+  assert.deepEqual(await backend.ipc("sand:mcp-team-popularity"), {});
+  await backend.completeMcpOAuth("s1", "c1");
+  assert.deepEqual(calls.at(-1), { method: "completeMcpOAuth", args: { stateId: "s1", code: "c1" } });
+  // On the API, the box's channel for a finished sign-in becomes the preload's event.
+  const live = createWebBackend({ api, storage: fakeStorage(), matchDark: () => false, pushCoordinatorEvent() {}, pushMainEvent() {}, pushIpcEvent: (channel, payload) => pushed.push({ channel, payload }), goSignIn() {} });
+  assert.ok(live.gateway, "a gateway on the API is built when none is given");
+});
+
+test("the hosted sign-in page and the box's methods are in the bundle, with the computer panel's connected phase", async () => {
+  const bridge = await readFile(path.join(repoRoot, "web/bridge.ts"), "utf8");
+  assert.ok(bridge.includes("/\\/connected\\.html$/.test(location.pathname)"), "the bridge knows the page a sign-in lands on");
+  assert.match(bridge, /completeMcpOAuth\(state, code\)/);
+  assert.match(bridge, /phase: "rfb_connect"/, "the frame's load reads as the screen being up");
+  const build = await readFile(path.join(repoRoot, "web/build-web.mjs"), "utf8");
+  assert.match(build, /connected\.html/);
+  const table = await readFile(path.join(repoRoot, "source/shared/rpc/coordinator-main.ts"), "utf8");
+  assert.match(table, /desktopMcp: \{ args: "object" \}/);
+  assert.match(table, /completeMcpOAuth: \{ args: "object" \}/);
+  const protocol = await readFile(path.join(repoRoot, "source/host/gateway-protocol.ts"), "utf8");
+  assert.match(protocol, /desktopMcp: \(api: GatewayApi, body: string\) => api\.desktopMcp\(parseCommandArgs\(body\)\)/);
+  const host = await readFile(path.join(repoRoot, "source/host/sand-host.ts"), "utf8");
+  assert.match(host, /this\.emit\(\{ channel: "mcp-auth", payload: completion \}\)/);
+});
