@@ -6,7 +6,10 @@ the founder asked to bring that sign-in back and redesign from it.
 
 Nothing here is compiled or routed: the folder sits outside `src/`, which is
 all `tsconfig.json` includes. The files are reference, read side by side with
-the live pages:
+the live pages. The private pages to redesign on are `/login/draft` and
+`/signup/draft` (`src/app/(main)/login/draft`, `src/app/(main)/signup/draft`):
+unlisted, not indexed, signing people in for real; when the redesign is
+right, it moves into `/login` and `/signup`.
 
 | Here                                                      | Live page today                                            |
 | --------------------------------------------------------- | ---------------------------------------------------------- |
