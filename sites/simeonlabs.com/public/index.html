@@ -628,24 +628,27 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 }
 
 /* Pricing, questions and the closing call: the same serif headline and pale panels as the trust section. */
-.plans3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin-top:clamp(40px,4vw,80px)}
-.plan3{display:flex;flex-direction:column;padding:clamp(28px,2.6vw,48px);border-radius:28px;background:#fafafb}
+/* Pricing: Trial, Standard, Pro and Max on the pale panels (the founder, 4 October 2026): the name, who it is for, the price in Switzer, the week's credits under it, what the plan includes, a small button at the foot. */
+@font-face{font-family:"Switzer";src:url(fonts/switzer-500.woff2) format("woff2");font-weight:500;font-style:normal;font-display:swap}
+@font-face{font-family:"Switzer";src:url(fonts/switzer-600.woff2) format("woff2");font-weight:600;font-style:normal;font-display:swap}
+.plans3{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px;margin-top:clamp(40px,4vw,80px)}
+.plan3{display:flex;flex-direction:column;padding:clamp(28px,2.4vw,44px) clamp(24px,2.1vw,40px);border-radius:28px;background:#fafafb}
 .plan3 h3{margin:0;font-size:clamp(20px,1.35vw,26px);font-weight:500;letter-spacing:-.02em;color:#3a3a3c}
-.plan3 .pr{margin-top:clamp(18px,1.6vw,30px);font-family:"Newsreader",Georgia,"Times New Roman",serif;font-size:clamp(44px,3.4vw,68px);line-height:1;letter-spacing:-.02em}
-.plan3 .pr small{font-family:var(--font);font-size:clamp(15px,.95vw,18px);letter-spacing:-.01em;color:var(--ink2);margin-left:4px}
-.plan3 .per{margin-top:10px;font-size:clamp(14px,.9vw,17px);color:var(--ink3)}
-.plan3 .use{margin:clamp(20px,1.8vw,34px) 0 clamp(24px,2.2vw,40px);padding-top:clamp(18px,1.6vw,28px);border-top:1px solid #ececef;font-size:clamp(16px,1.02vw,19.5px);color:#3a3a3c;flex:1}
-.plan3 .btn{align-self:flex-start}
+.plan3 .tag{margin:4px 0 0;font-size:clamp(14px,.9vw,17px);letter-spacing:-.01em;color:var(--ink3)}
+.plan3 .pr{margin-top:clamp(18px,1.6vw,30px);font-family:"Switzer",var(--font);font-weight:500;font-size:clamp(40px,3vw,60px);line-height:1;letter-spacing:-.03em;color:var(--ink)}
+.plan3 .pr small{font-family:var(--font);font-weight:400;font-size:clamp(14px,.9vw,17px);letter-spacing:-.01em;color:var(--ink2);margin-left:5px}
+.plan3 .per{margin-top:10px;font-size:clamp(14px,.9vw,17px);line-height:1.45;letter-spacing:-.01em;color:var(--ink3)}
+.plan3 .inc{margin:clamp(20px,1.8vw,34px) 0 0;padding-top:clamp(18px,1.6vw,28px);border-top:1px solid #ececef;font-size:clamp(15px,.95vw,17.5px);letter-spacing:-.01em;color:var(--ink3)}
+.plan3 ul{list-style:none;margin:12px 0 clamp(26px,2.4vw,40px);padding:0;display:grid;gap:9px;align-content:start;font-size:clamp(15px,.98vw,18px);line-height:1.4;letter-spacing:-.01em;color:#3a3a3c}
+.plan3 li{display:flex;gap:9px;align-items:flex-start}
+.plan3 li::before{content:"";flex:none;width:.95em;height:.95em;margin-top:.24em;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236e6e73' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7'/%3E%3C/svg%3E") center/contain no-repeat}
+.plan3 .btn{align-self:flex-start;margin-top:auto;height:clamp(36px,2.3vw,42px);padding:0 clamp(16px,1.1vw,20px);font-size:clamp(14px,.95vw,16px)}
 .plan3 .btn.ghost{background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.06)}
 .plan3 .btn.ghost:hover{background:#f2f2f4}
-.bill3wrap{display:flex;justify-content:center;margin-top:clamp(40px,4vw,80px)}
-.bill3wrap+.plans3{margin-top:clamp(24px,2vw,36px)}
-@media (max-width:734px){.bill3wrap{justify-content:flex-start}}
-.bill3{display:inline-flex;gap:4px;padding:4px;border-radius:99px;background:#f2f2f4}
-.bill3 button{appearance:none;border:0;background:none;border-radius:99px;padding:9px 16px;font:inherit;font-size:15px;color:var(--ink2);cursor:pointer}
-.bill3 button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.1)}
-.bill3 button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
-.pricing3 .y{display:none}.pricing3.yearly .y{display:inline}.pricing3.yearly .m{display:none}
+.pnote{margin:clamp(22px,2vw,36px) 0 0;max-width:60em;font-size:clamp(14px,.9vw,16.5px);line-height:1.55;letter-spacing:-.01em;color:var(--ink3)}
+@supports (grid-template-rows:subgrid){.plans3{grid-template-rows:repeat(7,auto)}.plan3{display:grid;grid-template-rows:subgrid;row-gap:0;grid-row:span 7;align-content:start}.plan3 .btn{margin-top:0;align-self:start;justify-self:start}}
+@media (max-width:1068px){.plans3{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:734px){.plans3{grid-template-columns:1fr;gap:14px}.plan3{border-radius:24px}}
 .qa3{margin-top:clamp(40px,4vw,80px);padding:clamp(12px,1.2vw,24px) clamp(28px,3vw,56px);border-radius:28px;background:#fafafb}
 .qa3 details{border-top:1px solid #ececef}
 .qa3 details:first-child{border-top:0}
@@ -659,12 +662,13 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .close3 h2{margin:0 auto;font-family:"Newsreader",Georgia,"Times New Roman",serif;font-weight:400;font-size:clamp(44px,4.4vw,88px);line-height:1;letter-spacing:-.02em}
 .close3 .ctas{display:flex;justify-content:center;gap:clamp(10px,.7vw,14px);flex-wrap:wrap;margin-top:clamp(28px,2.4vw,44px)}
 .close3 .btn{height:clamp(44px,3.05vw,61px);padding:0 clamp(20px,1.6vw,32px);font-size:clamp(16px,1.15vw,23px)}
-@media (max-width:860px){.plans3{grid-template-columns:1fr}}
 
 /* Security and integrations: a serif headline beside the promise, then two grey panels of icon rows. */
 .trust{padding:clamp(100px,9vw,170px) 0 clamp(40px,4vw,80px)}
 #team+.trust{padding-top:clamp(56px,4.4vw,88px)}
 .trust-top{display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,5vw,96px);align-items:start}
+.trust-top.centred{display:block;text-align:center}
+.trust-top.centred h2{margin:0 auto}
 .trust h2{margin:0;font-family:"Newsreader",Georgia,"Times New Roman",serif;font-weight:400;font-size:clamp(36px,2.9vw,58px);line-height:1.04;letter-spacing:-.02em;max-width:11em;text-wrap:balance}
 .trust-top p{margin:clamp(4px,.45vw,9px) 0 0;max-width:30em;font-size:clamp(17px,1.2vw,23px);line-height:1.5;letter-spacing:-.01em;color:var(--ink2)}
 .tpanel{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,3.6fr);gap:24px;margin-top:clamp(40px,4vw,80px);padding:clamp(28px,3vw,56px);border-radius:28px;background:#fafafb}
@@ -931,7 +935,7 @@ footer nav{display:flex;gap:18px}
   <div class="stagebox">
     <div class="sd-stage"><div class="sd-frame"><span class="sd-dots"><i></i><i></i><i></i></span><div class="sd-bar"><span class="sd-title">Simeon</span></div>
       <div class="sd-screen"><div class="sd-window"><picture class="sd-poster"><source media="(max-width:599.98px)" srcset="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="><source media="(max-width:809.98px)" srcset="app-poster-tall.jpg"><img src="app-poster-wide.jpg" alt="" fetchpriority="high"></picture>
-      <iframe data-hold data-src="app/c240c441e36a/index.html" title="Simeon, playing a founder's morning" loading="eager"></iframe></div></div></div>
+      <iframe data-hold data-src="app/c240c441e36a/index.html?theme=light" title="Simeon, playing a founder's morning" loading="eager"></iframe></div></div></div>
       <div class="sd-mob" aria-label="Simeon, the chief of staff, talking with you about a launch"><div class="sd-m-rail"><span class="sd-m-lights"><i></i><i></i><i></i></span><span class="sd-m-av sd-m-on"><img src="faces/agent-simeon.png" alt="" style=""></span><span class="sd-m-av sd-m-group"><img src="faces/agent-simeon.png" alt="" style=""><img src="faces/agent-scout.png" alt="" style=""><img src="faces/agent-iris.png" alt="" style=""></span><span class="sd-m-av"><img src="faces/agent-iris.png" alt="" style=""></span><span class="sd-m-av"><img src="faces/agent-theo.png" alt="" style=""></span><span class="sd-m-av"><img src="faces/agent-scout.png" alt="" style=""></span><span class="sd-m-fill"></span><span class="sd-m-new"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span><span class="sd-m-me">BF</span></div><div class="sd-m-main"><div class="sd-m-head"><img src="faces/agent-simeon.png" alt="" style=""><b>Simeon</b><span class="sd-m-role">Chief of Staff</span></div><div class="sd-m-thread"><div class="sd-m-feed"><div class="sd-m-in">Thursday is on track: 12 of 15 launch tickets are done in <span class="sd-app"><span class="sd-app-ico"><img src="logos/linear.svg" alt=""></span><span style="color:#5E6AD2">Linear</span></span>, and the review is Thursday at 2 pm.</div><div class="sd-m-sys">Messages from <span class="sd-m-tag" style="color:#3f7f78"><img src="faces/agent-scout.png" alt="">Scout</span> and <span class="sd-m-tag" style="color:#69847c"><img src="faces/agent-iris.png" alt="">Iris</span></div><div class="sd-m-in"><span class="sd-m-tag" style="color:#3f7f78"><img src="faces/agent-scout.png" alt="">Scout</span> pulled three customer quotes and <span class="sd-m-tag" style="color:#69847c"><img src="faces/agent-iris.png" alt="">Iris</span> closed the last two tickets. The review doc is ready.</div><div class="sd-m-file"><img src="logos/word.webp" alt="">Launch review.docx</div><div class="sd-m-out">Looks great. Send the agenda to Dana and Marcus, and check in like this every Monday.<span class="sd-m-react">&#128077;</span></div><div class="sd-m-sys">Created routine <span class="sd-m-clock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><b>Monday launch check</b></div><div class="sd-m-in">Done. The agenda went out from <span class="sd-app"><span class="sd-app-ico"><img src="logos/gmail.webp" alt=""></span><span style="color:#EA4335">Gmail</span></span>.</div></div></div><div class="sd-m-compose"><span class="sd-m-plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span><span class="sd-m-ph">Message Simeon</span><span class="sd-m-mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span></div></div></div>
     </div>
   </div>
@@ -1042,22 +1046,20 @@ footer nav{display:flex;gap:18px}
 </section>
 
 
-<section class="trust pricing3" id="pricing" aria-label="Pricing">
+<section class="trust" id="pricing" aria-label="Pricing">
   <div class="wrap">
     <div class="trust-top">
       <h2>Pricing</h2>
-      <p>Every agent, on every plan. The plans differ only in how much work your team can do each week.</p>
     </div>
-    <div class="bill3wrap"><div class="bill3" role="group" aria-label="Billing"><button type="button" class="on" data-bill="m">Monthly</button><button type="button" data-bill="y">Yearly, save 20%</button></div></div>
-    <div class="plans3"><div class="plan3"><h3>Standard</h3><div class="pr"><span class="m">$20</span><span class="y">$16</span><small>/ month</small></div><div class="per"><span class="m">Billed monthly. 7 days free.</span><span class="y">$192 billed yearly. 7 days free.</span></div><p class="use">For a light week of work.</p><span class="btn ghost">Try it free</span></div><div class="plan3"><h3>Pro</h3><div class="pr"><span class="m">$60</span><span class="y">$48</span><small>/ month</small></div><div class="per"><span class="m">Billed monthly. 7 days free.</span><span class="y">$576 billed yearly. 7 days free.</span></div><p class="use">Five times the weekly work of Standard.</p><span class="btn">Try it free</span></div><div class="plan3"><h3>Max</h3><div class="pr"><span class="m">$100</span><span class="y">$80</span><small>/ month</small></div><div class="per"><span class="m">Billed monthly. 7 days free.</span><span class="y">$960 billed yearly. 7 days free.</span></div><p class="use">Twenty times the weekly work of Standard.</p><span class="btn ghost">Try it free</span></div></div>
+    <div class="plans3"><div class="plan3"><h3>Trial</h3><p class="tag">For the first week</p><div class="pr">Free<small>/ 7 days</small></div><p class="per">1,000,000 credits once.</p><p class="inc">Includes:</p><ul><li>Every agent and every feature</li><li>A cloud computer for each agent</li><li>Card on file, one trial per card</li><li>Becomes Standard on day 8 unless you cancel</li></ul><span class="btn">Try it free</span></div><div class="plan3"><h3>Standard</h3><p class="tag">For a light week of work</p><div class="pr">$20<small>/ month</small></div><p class="per">750,000 credits a week.</p><p class="inc">Everything in the trial, plus:</p><ul><li>Routines that run while your Mac is closed</li><li>Discord and Slack channels, voice calls</li><li>Memory shared across your agents</li><li>Keep going past the week&#8217;s allowance on demand</li></ul><span class="btn">Get Standard</span></div><div class="plan3"><h3>Pro</h3><p class="tag">For agents working every day</p><div class="pr">$60<small>/ month</small></div><p class="per">2,500,000 credits a week.</p><p class="inc">Everything in Standard, plus:</p><ul><li>Three times the weekly work of Standard</li><li>Room for routines that run every day</li></ul><span class="btn">Get Pro</span></div><div class="plan3"><h3>Max</h3><p class="tag">For a team of agents that never stops</p><div class="pr">$200<small>/ month</small></div><p class="per">8,000,000 credits a week.</p><p class="inc">Everything in Pro, plus:</p><ul><li>Eleven times the weekly work of Standard</li><li>Agents on routines all week long</li><li>Our highest allowance</li></ul><span class="btn">Get Max</span></div></div>
+    <p class="pnote">A credit is one token of input on the middle model. A typical task, one that reads a few pages and writes something back, is about 100,000 credits. Allowances reset every Monday. Unused credits do not carry over.</p>
   </div>
 </section>
 
 <section class="trust" id="questions" aria-label="Questions">
   <div class="wrap">
-    <div class="trust-top">
+    <div class="trust-top centred">
       <h2>Questions and answers</h2>
-      <p>The short version of what people ask before they start.</p>
     </div>
     <div class="qa3"><details><summary>What is Simeon?</summary><p>A team of AI agents for your business. Each agent has a job you give it, a computer of its own in the cloud, and access to the apps you already use. You ask in plain words, and they do the work.</p></details><details><summary>Do I need to set anything up?</summary><p>No. There are no workflows to build. Tell an agent what you need. When it needs one of your apps, it asks you to sign in once, on that app&#8217;s own page.</p></details><details><summary>Where does the work happen?</summary><p>On each agent&#8217;s own computer in the cloud, with a browser and files. You can watch it work or take over at any time, and routines keep running when your Mac is closed.</p></details><details><summary>Will an agent act without asking?</summary><p>Not on anything that matters. Before it sends an email, makes a payment or publishes something, it asks you in the chat, and you allow or refuse it.</p></details><details><summary>Is my data safe?</summary><p>Your data is encrypted, kept apart from every other customer, and never used to train a model.</p></details><details><summary>What do I need?</summary><p>A Mac with Apple silicon. Every plan starts with a free week.</p></details></div>
   </div>
@@ -1275,11 +1277,6 @@ footer nav{display:flex;gap:18px}
   sync();
 })();
 
-// Monthly or yearly.
-(() => {
-  const sw = document.querySelector('.bill3'), sec = document.getElementById('pricing'); if (!sw) return;
-  sw.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; sw.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b)); sec.classList.toggle('yearly', b.dataset.bill === 'y'); });
-})();
 </script>
 </body>
 </html>
