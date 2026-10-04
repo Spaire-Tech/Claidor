@@ -453,16 +453,6 @@
       ],
       "match": "GrokBotService|isAnysphereUser",
       "reason": "Simeon on the web speaks the Connect service the server mounts (`aiserver.v1.GrokBotService`, `server/simeon/sand/connect.py`) and answers the pinned renderer's own account status field."
-    },
-    {
-      "kind": "record",
-      "names": [
-        "spaire"
-      ],
-      "paths": [
-        "clients/apps/web/design/spaire-sign-in/*"
-      ],
-      "reason": "A private copy of the web app's sign-in and sign-up under the earlier name, kept outside the compiled source for the redesign the founder asked for on 4 October 2026 (its README says so); it is not routed or built."
     }
   ]
 }

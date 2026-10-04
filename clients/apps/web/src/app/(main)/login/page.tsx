@@ -1,15 +1,12 @@
-import Login from '@/components/Auth/Login'
-import LogoIcon from '@/components/Brand/LogoIcon'
+import SignInPage from '@/components/Auth/SignInPage'
 import { Metadata } from 'next'
-import Link from 'next/link'
 
 export const metadata: Metadata = {
   title: 'Log in to Simeon',
 }
 
-// The sign-in as it was under the earlier name (kept under design/ for the
-// redesign), with Simeon's mark and line: one card, the mark, "Welcome
-// back", Google, then an email code. Anyone can sign in or sign up; the
+// Where the web window sends a person who is not signed in, and where a
+// signed-in session comes back to `return_to`. Anyone can sign in: the
 // account is made on the first sign-in.
 export default async function Page(props: {
   searchParams: Promise<{
@@ -17,31 +14,6 @@ export default async function Page(props: {
   }>
 }) {
   const searchParams = await props.searchParams
-
   const { return_to, ...rest } = searchParams
-
-  return (
-    <div className="flex h-screen w-full grow items-center justify-center">
-      <div className="flex w-full max-w-md flex-col justify-between gap-16 rounded-4xl bg-gray-50 p-12">
-        <div className="flex flex-col gap-y-8">
-          <LogoIcon className="text-blue-500" size={60} />
-          <div className="flex flex-col gap-4">
-            <h2 className="text-2xl text-black">Welcome back to Simeon</h2>
-            <h2 className="text-lg text-gray-500">
-              Your team of agents, always on.
-            </h2>
-          </div>
-        </div>
-        <div className="flex flex-col gap-4">
-          <Login returnTo={return_to} returnParams={rest} />
-          <p className="text-center text-sm text-gray-500">
-            Don&apos;t have an account?{' '}
-            <Link href="/signup" className="text-blue-500 hover:text-blue-600">
-              Sign up
-            </Link>
-          </p>
-        </div>
-      </div>
-    </div>
-  )
+  return <SignInPage mode="login" returnTo={return_to} returnParams={rest} />
 }
