@@ -227,6 +227,63 @@ async def confirm_deep_control(
     )
 
 
+# --- the window on the web ---------------------------------------------------
+
+
+def _from_the_web_app(request: Request) -> bool:
+    """Only the page at `FRONTEND_BASE_URL` (app.simeonlabs.com) may trade
+    its cookie for the pair. The cookie is `SameSite=lax`, so a cross-site
+    POST never carries it; this refuses the one that somehow does, and a
+    request with no `Origin` at all, which no browser page sends."""
+    origin = request.headers.get("Origin")
+    if origin is None:
+        return False
+    theirs = urlparse(origin)
+    mine = urlparse(settings.FRONTEND_BASE_URL)
+    return (theirs.scheme, theirs.hostname, theirs.port) == (
+        mine.scheme,
+        mine.hostname,
+        mine.port,
+    )
+
+
+@router.post("/auth/web-session", name="desktop:web_session")
+async def web_session(
+    request: Request,
+    auth_subject: WebUserOrAnonymous,
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    """Simeon on the web (4 October 2026). The window at
+    app.simeonlabs.com is the Mac app's window, and it speaks the Mac's
+    protocol: a bearer on `/desktop/*` and the box broker, refreshed at
+    `/oauth/token`. The person is already signed in there with the web
+    cookie, so this trades the cookie for that pair, on a session row
+    marked `web` (`DesktopSession.client_kind`). 401 with no cookie, 403
+    from anywhere but the web app. The answer is the shape `/auth/poll`
+    gives the Mac, so one client reads both."""
+    if not _from_the_web_app(request):
+        return JSONResponse(
+            {"error": "forbidden_origin"}, status_code=403, headers=NO_STORE
+        )
+    if not is_user(auth_subject):
+        return JSONResponse(
+            {"error": "unauthenticated"}, status_code=401, headers=NO_STORE
+        )
+    desktop_session, access, refresh = await desktop.issue_web_session(
+        session,
+        auth_subject.subject,
+        user_agent=request.headers.get("User-Agent", ""),
+    )
+    return JSONResponse(
+        {
+            "accessToken": envelope_access_token(desktop_session, access),
+            "refreshToken": refresh,
+            "expiresAt": desktop_session.access_expires_at.isoformat(),
+        },
+        headers=NO_STORE,
+    )
+
+
 # --- the app's half --------------------------------------------------------
 
 

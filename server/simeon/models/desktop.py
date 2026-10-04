@@ -107,6 +107,15 @@ class DesktopSession(RecordModel):
     client_version: Mapped[str | None] = mapped_column(
         String(64), nullable=True, default=None
     )
+    #: What kind of client signed this session in (4 October 2026):
+    #: `desktop` for the Mac app, `web` for the window served at
+    #: app.simeonlabs.com. The web has no Mac behind it, so a web session
+    #: can be listed, limited and revoked on its own, and the routes that
+    #: only make sense with a Mac (the local-exec daemon credential) refuse
+    #: it. Rows from before the column are the Mac's.
+    client_kind: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="desktop", server_default="desktop"
+    )
     user_id: Mapped[UUID] = mapped_column(
         Uuid, ForeignKey("users.id", ondelete="cascade"), nullable=False, index=True
     )
@@ -153,6 +162,11 @@ class DesktopSession(RecordModel):
     def is_box_credential(self) -> bool:
         """The credential a person's box renews its access token with."""
         return self.box_of_session_id is not None
+
+    @property
+    def is_web(self) -> bool:
+        """Signed in from the browser at app.simeonlabs.com, with no Mac."""
+        return self.client_kind == "web"
 
 
 class DesktopUsage(RecordModel):
