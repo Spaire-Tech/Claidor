@@ -1080,9 +1080,32 @@ export function appMentionsPluginSource(names) {
  * with their text … use the same logic as the connectors"). The name takes the palette's top
  * stop, nudged to 3:1 on the message grey (4.5:1 on the dark bubble).
  */
+const AGENT_SHAPE_RESOLVER = "function Eee(n){return Qtt.find(t=>t===n.avatarShape)??u4e(n.id)}";
 const AGENT_COLOR_RESOLVER = "function Cee(n){return PQ.find(t=>t.id===n.avatarColor)?.id??sle(n.id)}";
-const AGENT_NOTE_SOURCE = "function __simeonNoteAgents(n){const m={};for(const a of n??[]){const k=typeof a?.name===\"string\"?a.name.trim():\"\";k.length>1&&(m[k]=Cee(a))}globalThis.__simeonAgentColors=m}";
-export const AGENT_MENTIONS_PLUGIN_SOURCE = "const __simeonAgentMentions=(()=>{let K=null,R=null,A={};const S=new Set([\"a\",\"code\",\"pre\",\"kbd\",\"script\",\"style\"]);const e=x=>x.replace(/[.*+?^${}()|[\\]\\\\]/g,\"\\\\$&\");const sync=()=>{const m=globalThis.__simeonAgentColors||{},k=Object.keys(m).sort().join(\"\\n\");if(k===K)return;K=k;A=m;const l=Object.keys(m).sort((a,b)=>b.length-a.length).map(e);R=l.length?new RegExp(\"(?<![\\\\w@/.-])(?:\"+l.join(\"|\")+\")(?![\\\\w-])\",\"g\"):null};const w=n=>{if(!n||!Array.isArray(n.children)||S.has(n.tagName))return;const o=[];let c=!1;const d=n.data&&n.data.sandMarkdown;for(const k of n.children){if(k.type!==\"text\"||d===void 0){w(k);o.push(k);continue}const v=k.value;let i=0,m;R.lastIndex=0;while((m=R.exec(v))!==null){c=!0;m.index>i&&o.push({type:\"text\",value:v.slice(i,m.index)});o.push({type:\"element\",tagName:\"span\",properties:{className:[\"simeon-agent\"],dataAgentColor:A[m[0]]},data:{sandMarkdown:d},children:[{type:\"element\",tagName:\"span\",properties:{className:[\"simeon-agent__mark\"],ariaHidden:\"true\"},data:{sandMarkdown:d},children:[]},{type:\"text\",value:m[0]}]});i=m.index+m[0].length}i===0?o.push(k):i<v.length&&o.push({type:\"text\",value:v.slice(i)})}c&&(n.children=o)};return()=>t=>{sync();R&&w(t)}})();";
+/**
+ * The window's two fallbacks (`u4e`, `sle`: a shape and a colour hashed from
+ * the id) run for any record without a face, and while the computer is
+ * connecting that is every agent: a conversation's members and a message's
+ * sender are looked up in the roster, which is empty until the box answers,
+ * so each face is drawn hashed and jumps to the real one on connect (4
+ * October 2026, the founder: "a whole different avatar for each avatar").
+ * The roster note now also remembers each agent's resolved shape and colour
+ * by id, in memory and in `localStorage` under `simeon.agent-avatars`, and
+ * both resolvers read that memory before hashing. Only a record that carries
+ * a face is remembered, so a hashed fallback never becomes the memory. The
+ * signed-in person's name (`displayName` of `getCursorAuthStatus`) is noted
+ * too, so the mention step never dresses the person as an agent ("Hi, Bass"
+ * wore an agent's face when an agent shared the name).
+ */
+export const AGENT_AVATAR_MEMORY_KEY = "simeon.agent-avatars";
+export const AGENT_NOTE_SOURCE = `var __simeonAvatarMemory=null;function __simeonAvatars(){if(__simeonAvatarMemory==null){__simeonAvatarMemory={};try{const s=globalThis.localStorage?.getItem("${AGENT_AVATAR_MEMORY_KEY}");if(s){const p=JSON.parse(s);p&&typeof p==="object"&&!Array.isArray(p)&&(__simeonAvatarMemory=p)}}catch{}}return __simeonAvatarMemory}function __simeonRememberedAvatar(n){return typeof n==="string"?__simeonAvatars()[n]:void 0}function __simeonNotePerson(r){const n=typeof r?.displayName==="string"?r.displayName.trim():"";globalThis.__simeonPersonName=n.length>0?n:null;return r}function __simeonNoteAgents(n){const m={},r=__simeonAvatars();let c=!1;for(const a of n??[]){if(a==null)continue;const k=typeof a.name==="string"?a.name.trim():"";k.length>1&&(m[k]=Cee(a));if(typeof a.id==="string"&&(a.avatarColor||a.avatarShape)){const v={color:Cee(a),shape:Eee(a)},o=r[a.id];(o==null||o.color!==v.color||o.shape!==v.shape)&&(r[a.id]=v,c=!0)}}globalThis.__simeonAgentColors=m;if(c)try{globalThis.localStorage?.setItem("${AGENT_AVATAR_MEMORY_KEY}",JSON.stringify(r))}catch{}}`;
+export const AGENT_RESOLVERS_BEFORE = `${AGENT_SHAPE_RESOLVER}${AGENT_COLOR_RESOLVER}`;
+export const AGENT_RESOLVERS_AFTER = `function Eee(n){return Qtt.find(t=>t===n.avatarShape)??__simeonRememberedAvatar(n.id)?.shape??u4e(n.id)}function Cee(n){return PQ.find(t=>t.id===n.avatarColor)?.id??__simeonRememberedAvatar(n.id)?.color??sle(n.id)}${AGENT_NOTE_SOURCE}`;
+// The step keys its cache on names, colours and the person's name together: a
+// roster that comes back with the real colours after the connect redraws
+// (the first cut compared names only, and a mention kept the colour from
+// before the reconnection).
+export const AGENT_MENTIONS_PLUGIN_SOURCE = "const __simeonAgentMentions=(()=>{let K=null,R=null,A={};const S=new Set([\"a\",\"code\",\"pre\",\"kbd\",\"script\",\"style\"]);const e=x=>x.replace(/[.*+?^${}()|[\\]\\\\]/g,\"\\\\$&\");const sync=()=>{const m=globalThis.__simeonAgentColors||{},p=typeof globalThis.__simeonPersonName===\"string\"?globalThis.__simeonPersonName.toLowerCase():\"\",n=Object.keys(m).filter(x=>x.toLowerCase()!==p).sort(),k=n.map(x=>x+\"=\"+m[x]).join(\"\\n\")+\"\\n\"+p;if(k===K)return;K=k;A={};for(const x of n)A[x]=m[x];const l=n.sort((a,b)=>b.length-a.length).map(e);R=l.length?new RegExp(\"(?<![\\\\w@/.-])(?:\"+l.join(\"|\")+\")(?![\\\\w-])\",\"g\"):null};const w=n=>{if(!n||!Array.isArray(n.children)||S.has(n.tagName))return;const o=[];let c=!1;const d=n.data&&n.data.sandMarkdown;for(const k of n.children){if(k.type!==\"text\"||d===void 0){w(k);o.push(k);continue}const v=k.value;let i=0,m;R.lastIndex=0;while((m=R.exec(v))!==null){c=!0;m.index>i&&o.push({type:\"text\",value:v.slice(i,m.index)});o.push({type:\"element\",tagName:\"span\",properties:{className:[\"simeon-agent\"],dataAgentColor:A[m[0]]},data:{sandMarkdown:d},children:[{type:\"element\",tagName:\"span\",properties:{className:[\"simeon-agent__mark\"],ariaHidden:\"true\"},data:{sandMarkdown:d},children:[]},{type:\"text\",value:m[0]}]});i=m.index+m[0].length}i===0?o.push(k):i<v.length&&o.push({type:\"text\",value:v.slice(i)})}c&&(n.children=o)};return()=>t=>{sync();R&&w(t)}})();";
 
 export const AGENT_MENTION_VIEWBOX = "0 22 229 185";
 const AGENT_MARK_SOURCE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../source/shared/voice-call/agent-mark.ts");
@@ -1113,7 +1136,8 @@ export const LOGO_REPLACEMENTS = Object.freeze([
   ["slack-tile-light", 'slack:{kind:"brand",hex:"#4A154B",path:', 'slack:{kind:"brand",hex:"#FFFFFF",path:'],
   ["approval-badge-marker", 'p.jsxs("span",{...Fe(lc.badge,N?lc.badgePending:FAn[y.kind]),role:"status",children:[N?p.jsx(bt,{"aria-hidden":!0,color:"yellow"', 'p.jsxs("span",{...Fe(lc.badge,N?lc.badgePending:FAn[y.kind]),"data-simeon-approval":N?"pending":void 0,role:"status",children:[N?p.jsx(bt,{"aria-hidden":!0,color:"yellow"'],
   ["message-app-mentions", MESSAGE_REHYPE_BEFORE, (names) => `${appMentionsPluginSource(names)}${AGENT_MENTIONS_PLUGIN_SOURCE}${MESSAGE_REHYPE_BEFORE.replace("syntheticProseCards:n}]]}", "syntheticProseCards:n}],__simeonAppMentions,__simeonAgentMentions]}")}`],
-  ["agent-mention-colours", AGENT_COLOR_RESOLVER, `${AGENT_COLOR_RESOLVER}${AGENT_NOTE_SOURCE}`],
+  ["agent-mention-colours", AGENT_RESOLVERS_BEFORE, AGENT_RESOLVERS_AFTER],
+  ["person-name-noted", 'GX("getCursorAuthStatus",t,()=>e.getStatus())', 'GX("getCursorAuthStatus",t,()=>e.getStatus().then(__simeonNotePerson))'],
 ]);
 
 /** Spelling → app key for every name the messages mark. */
