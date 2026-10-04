@@ -7,7 +7,11 @@ import { fileURLToPath } from "node:url";
 import { SIMEON_MARK_BOUNDS, SIMEON_MARK_PATH } from "./simeon-logo.mjs";
 
 const REGISTRY_BEFORE = 'const wDn=[{id:"general",label:"General",icon:"settings-gear"},{id:"usage",label:"Usage & Billing",icon:"chart-bars"},{id:"beta",label:"Updates",icon:"cloud-download"}]';
-const REGISTRY_AFTER = REGISTRY_BEFORE;
+// Two tabs (4 October 2026, the founder: "hide the whole update tab"). The
+// Updates tab carried the upstream app's release tracks, which Simeon has
+// none of, and the updater is off in every packaged build
+// (build-asar.mjs); the cloud computer is updated from the server.
+const REGISTRY_AFTER = 'const wDn=[{id:"general",label:"General",icon:"settings-gear"},{id:"usage",label:"Usage & Billing",icon:"chart-bars"}]';
 const GENERAL_BEFORE = 'Q=x==="general"?a.jsx(Te,{children:a.jsx(Sa,{auth:t})}):null';
 const USAGE_BEFORE = 'Z=x==="usage"?a.jsx(Te,{children:a.jsx(Na,{})}):null';
 const COMPONENT_ANCHOR = 'function Sa(s){';
@@ -62,6 +66,8 @@ export const BRAND_PHRASE_REPLACEMENTS = Object.freeze([
   ["Cursor backend ", "Simeon Labs backend "],
   ["Cursor session ", "Simeon session "],
   ["session's Cursor tokens", "session's sign-in tokens"],
+  // The About panel's line (4 October 2026: "about uses SpaceX ai, please make it SimeonLabs, Inc.").
+  ["Copyright © 2026 SpaceXAI", "Copyright © 2026 SimeonLabs, Inc."],
 ]);
 
 /**
@@ -1138,6 +1144,10 @@ export const LOGO_REPLACEMENTS = Object.freeze([
   ["message-app-mentions", MESSAGE_REHYPE_BEFORE, (names) => `${appMentionsPluginSource(names)}${AGENT_MENTIONS_PLUGIN_SOURCE}${MESSAGE_REHYPE_BEFORE.replace("syntheticProseCards:n}]]}", "syntheticProseCards:n}],__simeonAppMentions,__simeonAgentMentions]}")}`],
   ["agent-mention-colours", AGENT_RESOLVERS_BEFORE, AGENT_RESOLVERS_AFTER],
   ["person-name-noted", 'GX("getCursorAuthStatus",t,()=>e.getStatus())', 'GX("getCursorAuthStatus",t,()=>e.getStatus().then(__simeonNotePerson))'],
+  // The app icon in About and on the hand-off screen (`Plt`) sat on a dark
+  // drop shadow (`sand-10xuot4`); the founder's icon is drawn flat (4 October
+  // 2026: "no dark accent around it").
+  ["app-icon-flat", 'kfSwDN:"sand-87ps6o",ku685b:"sand-10xuot4",$$css:!0}};function Plt(n){', 'kfSwDN:"sand-87ps6o",$$css:!0}};function Plt(n){'],
 ]);
 
 /** Spelling → app key for every name the messages mark. */

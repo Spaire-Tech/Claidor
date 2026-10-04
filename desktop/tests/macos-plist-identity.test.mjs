@@ -14,7 +14,7 @@ test("the copyright line and permission prompts name Simeon; working values are 
     CFBundleIdentifier: "com.simeonlabs.simeon",
   }, identity);
   assert.deepEqual(rewrites, {
-    NSHumanReadableCopyright: "Copyright © 2026 Simeon Labs. All rights reserved.",
+    NSHumanReadableCopyright: "Copyright © 2026 SimeonLabs, Inc. All rights reserved.",
     NSCameraUsageDescription: "Simeon uses the camera for video calls.",
   });
   assert.deepEqual(reported, ["SUFeedURL"]);
