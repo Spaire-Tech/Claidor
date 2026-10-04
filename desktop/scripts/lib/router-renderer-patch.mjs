@@ -1148,6 +1148,14 @@ export const LOGO_REPLACEMENTS = Object.freeze([
   // drop shadow (`sand-10xuot4`); the founder's icon is drawn flat (4 October
   // 2026: "no dark accent around it").
   ["app-icon-flat", 'kfSwDN:"sand-87ps6o",ku685b:"sand-10xuot4",$$css:!0}};function Plt(n){', 'kfSwDN:"sand-87ps6o",$$css:!0}};function Plt(n){'],
+  // The account menu's Help Center opened the upstream app's help site, and
+  // Send Feedback its form; both are hidden until Simeon has its own (4
+  // October 2026: "hide help center until i figure that out. same for send
+  // feedback"). The menu's children list takes a null. The handler's URL is
+  // rewritten too, so no upstream address is left in the shipped bytes.
+  ["help-center-hidden", 'Q=p.jsx(It.Item,{leading:le,onSelect:Y,children:"Help Center"})', "Q=null"],
+  ["send-feedback-hidden", 'ce=p.jsx(It.Item,{leading:ae,onSelect:h.open,children:"Send Feedback"})', "ce=null"],
+  ["help-center-url", 'G=()=>{v("https://cursor.com/help")}', 'G=()=>{v("https://simeonlabs.com")}'],
 ]);
 
 /** Spelling → app key for every name the messages mark. */
