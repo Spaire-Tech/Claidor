@@ -667,6 +667,8 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .trust{padding:clamp(100px,9vw,170px) 0 clamp(40px,4vw,80px)}
 #team+.trust{padding-top:clamp(56px,4.4vw,88px)}
 .trust-top{display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,5vw,96px);align-items:start}
+.trust-top.centred{display:block;text-align:center}
+.trust-top.centred h2{margin:0 auto}
 .trust h2{margin:0;font-family:"Newsreader",Georgia,"Times New Roman",serif;font-weight:400;font-size:clamp(36px,2.9vw,58px);line-height:1.04;letter-spacing:-.02em;max-width:11em;text-wrap:balance}
 .trust-top p{margin:clamp(4px,.45vw,9px) 0 0;max-width:30em;font-size:clamp(17px,1.2vw,23px);line-height:1.5;letter-spacing:-.01em;color:var(--ink2)}
 .tpanel{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,3.6fr);gap:24px;margin-top:clamp(40px,4vw,80px);padding:clamp(28px,3vw,56px);border-radius:28px;background:#fafafb}
@@ -1056,7 +1058,7 @@ footer nav{display:flex;gap:18px}
 
 <section class="trust" id="questions" aria-label="Questions">
   <div class="wrap">
-    <div class="trust-top">
+    <div class="trust-top centred">
       <h2>Questions and answers</h2>
     </div>
     <div class="qa3"><details><summary>What is Simeon?</summary><p>A team of AI agents for your business. Each agent has a job you give it, a computer of its own in the cloud, and access to the apps you already use. You ask in plain words, and they do the work.</p></details><details><summary>Do I need to set anything up?</summary><p>No. There are no workflows to build. Tell an agent what you need. When it needs one of your apps, it asks you to sign in once, on that app&#8217;s own page.</p></details><details><summary>Where does the work happen?</summary><p>On each agent&#8217;s own computer in the cloud, with a browser and files. You can watch it work or take over at any time, and routines keep running when your Mac is closed.</p></details><details><summary>Will an agent act without asking?</summary><p>Not on anything that matters. Before it sends an email, makes a payment or publishes something, it asks you in the chat, and you allow or refuse it.</p></details><details><summary>Is my data safe?</summary><p>Your data is encrypted, kept apart from every other customer, and never used to train a model.</p></details><details><summary>What do I need?</summary><p>A Mac with Apple silicon. Every plan starts with a free week.</p></details></div>
