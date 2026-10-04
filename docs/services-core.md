@@ -571,6 +571,14 @@ settings is not read (`desktop/source/shared/box-runtime.ts`).
   - `sand.box.ensure.refused` says what is missing.
   - `sand.box.ensure.recreate` gives the reason with `stale_host` or
     `stale_image`.
+  - `sand.box.ensure.not_ready` means the box did not answer its health check
+    within `BOX_READY_TIMEOUT` (the URL the API tried is in the line); the
+    box is still handed to the app, which keeps retrying.
+  - `sand.box.ensure.timeout` with `in_progress=true` means another request
+    was already seeing to this person's box (one at a time, a
+    transaction-scoped advisory lock); the app retries in five seconds. With
+    `in_progress=false`, a database statement timed out inside ensure, and
+    the session was rolled back before answering.
   - `sand.box.update_deferred` means a new version is waiting for the box to
     be idle.
   - `sand.box.capacity.refused` and `sand.box.placed` cover placement.
