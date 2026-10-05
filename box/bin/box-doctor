@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# One line per check, PASS or FAIL, then a summary: what the agent (and the
+# Mac's developer controls, dev-controls-window.ts) read when a box acts up.
+#
+#   [box-doctor] PASS xvfb: display :1 answers
+#   [box-doctor] FAIL x11vnc: nothing listens on 5900
+#   [box-doctor] SUMMARY: 11 checks, 1 failed (x11vnc)
+#
+# Exit 0 when every check passes, 1 otherwise.
+set -uo pipefail
+
+DISPLAY_TO_CHECK="${SAND_DOCTOR_DISPLAY:-:1}"
+ATTEMPTS="${DESKTOP_PROBE_ATTEMPTS:-6}"
+DELAY="${DESKTOP_PROBE_DELAY_S:-0.5}"
+failed=()
+count=0
+
+report() { count=$((count + 1)); printf '[box-doctor] %s %s: %s\n' "$1" "$2" "$3"; [ "$1" = PASS ] || failed+=("$2"); }
+retry() { local i; for i in $(seq 1 "$ATTEMPTS"); do "$@" && return 0; sleep "$DELAY"; done; return 1; }
+listening() { (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null; }
+
+id="$(cat /etc/machine-id 2>/dev/null || true)"
+if [[ "$id" =~ ^[0-9a-f]{32}$ ]] && [ "$(cat /var/lib/dbus/machine-id 2>/dev/null)" = "$id" ]; then report PASS machine-id "$id"; else report FAIL machine-id "/etc/machine-id is not 32 hex characters mirrored at /var/lib/dbus/machine-id"; fi
+
+if v="$(google-chrome-stable --version 2>/dev/null)"; then report PASS chrome "$v"; else report FAIL chrome "google-chrome-stable --version failed"; fi
+
+if node -v >/dev/null 2>&1; then report PASS node "$(node -v)"; else report FAIL node "node is missing"; fi
+
+if [ -f /home/box/sand-host/host-main.cjs ]; then report PASS host-bundle "/home/box/sand-host/host-main.cjs ($(cat /home/box/sand-host/version 2>/dev/null || echo 'no version file'))"; else report FAIL host-bundle "no /home/box/sand-host/host-main.cjs mounted"; fi
+if [ -f /home/box/box-exec-daemon/main.cjs ]; then report PASS exec-daemon-bundle "/home/box/box-exec-daemon/main.cjs"; else report FAIL exec-daemon-bundle "no /home/box/box-exec-daemon/main.cjs mounted"; fi
+
+if retry listening 1337; then report PASS exec-daemon "listening on 1337"; else report FAIL exec-daemon "nothing listens on 1337 (see /tmp/exec-daemon.log)"; fi
+if retry listening 1339; then report PASS window-router "listening on 1339"; else report FAIL window-router "nothing listens on 1339 (see /tmp/sand-window-router.log)"; fi
+gateway_port="${SAND_HOST_PORT:-1340}"
+if retry listening "$gateway_port"; then report PASS host "listening on $gateway_port"; else report FAIL host "nothing listens on $gateway_port (see /tmp/sand-host.log)"; fi
+
+if curl -fsS --max-time 8 -o /dev/null https://www.google.com/generate_204; then report PASS egress "https reaches the internet"; else report FAIL egress "https://www.google.com/generate_204 unreachable"; fi
+
+year="$(date +%Y)"
+if [ "$year" -ge 2024 ] && [ "$year" -le 2100 ]; then report PASS clock "$(date -u +%FT%TZ)"; else report FAIL clock "year $year is not believable"; fi
+
+if [ -s /tmp/xdg-runtime-box/dbus-session-address ] || command -v dbus-launch >/dev/null; then report PASS dbus "session bus available"; else report FAIL dbus "no session bus address and no dbus-launch"; fi
+
+if retry xdpyinfo -display "$DISPLAY_TO_CHECK" >/dev/null 2>&1; then report PASS xvfb "display $DISPLAY_TO_CHECK answers"; else report FAIL xvfb "display $DISPLAY_TO_CHECK does not answer (see /tmp/xvfb$DISPLAY_TO_CHECK.log)"; fi
+if retry listening 5900; then report PASS x11vnc "listening on 5900"; else report FAIL x11vnc "nothing listens on 5900 (see /tmp/x11vnc:1.log)"; fi
+if retry listening 6080; then report PASS novnc "listening on 6080"; else report FAIL novnc "nothing listens on 6080 (see /tmp/novnc:1.log)"; fi
+if [ -n "$(ls -A /tmp/sand-novnc-tokens.d 2>/dev/null)" ]; then
+  if retry listening 6081; then report PASS novnc-forks "listening on 6081"; else report FAIL novnc-forks "fork windows exist but nothing listens on 6081 (see /tmp/novnc-forks.log)"; fi
+fi
+if pgrep -x xfwm4 >/dev/null && pgrep -x picom >/dev/null; then report PASS compositor "xfwm4 and picom running"; elif pgrep -x xfwm4 >/dev/null; then report FAIL compositor "picom is not running (see /tmp/picom:1.log)"; else report FAIL compositor "xfwm4 is not running (see /tmp/xfwm4:1.log)"; fi
+
+if [ ${#failed[@]} -eq 0 ]; then
+  printf '[box-doctor] SUMMARY: %d checks, 0 failed\n' "$count"
+  exit 0
+fi
+printf '[box-doctor] SUMMARY: %d checks, %d failed (%s)\n' "$count" "${#failed[@]}" "$(IFS=,; echo "${failed[*]}")"
+exit 1

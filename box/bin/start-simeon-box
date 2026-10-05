@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# The cloud computer's entrypoint (box/Dockerfile ENTRYPOINT, under tini), as root.
+#
+# It prepares the folders and files the rest relies on, then hands over to
+# the supervisor (simeon-supervisor.mjs), which starts and keeps alive the
+# primary desktop (:1), the exec daemon (1337), the window router (1339), the
+# fork screens' websockify (6081) and the host (1340), and stops them all on
+# SIGTERM.
+#
+# Everything it reads has a default; the server and the Mac set the SAND_*
+# variables the host needs (`BoxSpec.environment()`,
+# `local-docker-host-connector.ts`), not these.
+set -euo pipefail
+
+export DISPLAY="${DISPLAY:-:1}"
+export HOME="${HOME:-/root}"
+export SIMEON_BOX_VERSION="$(cat /etc/simeon-box-version 2>/dev/null || echo unknown)"
+
+log() { printf '[start-simeon-box] %s\n' "$*"; }
+
+log "Simeon cloud computer ${SIMEON_BOX_VERSION}, node $(node --version)"
+
+# Core dumps off, swap discouraged (best effort: a container may not allow it).
+ulimit -c 0 || true
+sysctl -q -w vm.swappiness=10 2>/dev/null || true
+
+# Folders every process expects.
+mkdir -p /workspace /home/box/sand-data /home/box/chrome-profile/Default /home/box/sand-host /home/box/box-exec-daemon \
+  /tmp/sand-supervisor/acks /tmp/sand-desktop/shared /tmp/sand-window-tokens.d /tmp/sand-novnc-tokens.d \
+  /tmp/sand-box-terminals /tmp/xdg-runtime-box
+chmod 700 /home/box/chrome-profile /home/box/chrome-profile/Default /tmp/xdg-runtime-box
+chown box:box /workspace /home/box/sand-data /tmp/xdg-runtime-box /tmp/sand-window-tokens.d /tmp/sand-novnc-tokens.d
+chown -R box:box /home/box/chrome-profile
+ln -sfn /home/box/sand-data /home/box/agent-data
+
+# A display left behind by an unclean stop would keep Xvfb from starting.
+for lock in /tmp/.X*-lock; do
+  [ -e "$lock" ] || continue
+  n="${lock#/tmp/.X}"; n="${n%-lock}"
+  rm -f "$lock" "/tmp/.X11-unix/X$n"
+done
+mkdir -p /tmp/.X11-unix && chmod 1777 /tmp/.X11-unix
+# Chrome's singleton files from a previous life of the same volume.
+find /home/box/chrome-profile -maxdepth 2 \( -name SingletonLock -o -name SingletonSocket -o -name SingletonCookie \) -exec rm -f {} + 2>/dev/null || true
+# Fork windows do not survive a restart: their tokens must not either.
+rm -f /tmp/sand-window-tokens.d/* /tmp/sand-novnc-tokens.d/* 2>/dev/null || true
+
+# Logs, readable by everyone (the agent reads them to diagnose its box).
+for f in /tmp/sand-supervisor.log /tmp/sand-host.log /tmp/exec-daemon.log /tmp/sand-window-router.log /tmp/novnc-forks.log /tmp/start-desktop.log; do
+  touch "$f" && chmod a+rw "$f"
+done
+
+/usr/local/bin/ensure-machine-id
+
+if [ ! -f /home/box/sand-host/host-main.cjs ]; then
+  log "no host bundle at /home/box/sand-host/host-main.cjs: the server or the Mac mounts it when the container is made; the desktop and the exec daemon start without it"
+fi
+
+exec node /usr/local/bin/simeon-supervisor.mjs

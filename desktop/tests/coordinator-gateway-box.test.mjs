@@ -53,6 +53,9 @@ test("the box image can be pinned by digest, and the reference is what the conta
     const digest = "a".repeat(64);
     assert.equal(module.localDockerBoxImageReference({ SAND_BOX_IMAGE_DIGEST: `sha256:${digest}` }), `${module.LOCAL_DOCKER_BOX_IMAGE}@sha256:${digest}`);
     assert.equal(module.localDockerBoxImageReference({ SAND_BOX_IMAGE_DIGEST: "not-a-digest" }), module.LOCAL_DOCKER_BOX_IMAGE, "a malformed digest is ignored, not run");
+    // Simeon's own image (box/Dockerfile) is named by SIMEON_BOX_IMAGE, as on the server; a digest in the name is dropped in favour of the pin.
+    assert.equal(module.localDockerBoxImageReference({ SIMEON_BOX_IMAGE: "ghcr.io/simeonlabs/simeon-box:2026.10.05" }), "ghcr.io/simeonlabs/simeon-box:2026.10.05");
+    assert.equal(module.localDockerBoxImageReference({ SAND_BOX_IMAGE: "ghcr.io/simeonlabs/simeon-box:2026.10.05@sha256:abc", SIMEON_BOX_IMAGE_DIGEST: digest }), `ghcr.io/simeonlabs/simeon-box:2026.10.05@sha256:${digest}`);
   } finally {
     await dispose();
   }

@@ -510,10 +510,19 @@ All servers share one CA, so one client certificate opens every one of them.
   retried every minute for an hour.
 
 **The pinned image.** The box image is `SIMEON_BOX_IMAGE` pinned by
-`SIMEON_BOX_IMAGE_DIGEST` (default `322c3a90…c0c1c8`). That build's supervisor
-starts `/home/box/sand-host/host-main.cjs`, which is where the host bundle is
-mounted. A box on any other image is replaced. Move the pin only after
-checking which path a new build's supervisor starts.
+`SIMEON_BOX_IMAGE_DIGEST` (default `322c3a90…c0c1c8`, the earlier maker's
+build). That build's supervisor starts `/home/box/sand-host/host-main.cjs`,
+which is where the host bundle is mounted. A box on any other image is
+replaced, keeping its volumes. Move the pin only after checking which path a
+new build's supervisor starts.
+
+Simeon's own image is `box/` (`box/README.md`, 5 October 2026): the same
+ports, files and scripts the host relies on, its supervisor starting the
+mounted `/home/box/sand-host/host-main.cjs` and the mounted exec daemon,
+which now takes the screenshots and clicks itself. Once it is built and
+published, the switch is the two settings above (and `SIMEON_BOX_IMAGE` in
+the Mac's internal Docker path); every box is replaced on its next
+`EnsureSandBox`, its workspace and data kept.
 
 **The host bundle channel.**
 
