@@ -24,6 +24,8 @@ from .customer_session import CustomerSession
 from .customer_session_code import CustomerSessionCode
 from .desktop import (
     DesktopAuthCode,
+    DesktopBox,
+    DesktopBoxState,
     DesktopMemoryFile,
     DesktopSession,
     DesktopUsage,
@@ -157,6 +159,8 @@ __all__ = [
     "CustomerSession",
     "CustomerSessionCode",
     "DesktopAuthCode",
+    "DesktopBox",
+    "DesktopBoxState",
     "DesktopMemoryFile",
     "DesktopSession",
     "DesktopShareEvent",
