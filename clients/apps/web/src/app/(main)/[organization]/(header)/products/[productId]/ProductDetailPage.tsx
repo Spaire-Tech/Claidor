@@ -1,5 +1,6 @@
 'use client'
 
+import { poppinsProduct } from '@/app/fonts'
 import {
   DETAIL_KEYS,
   DETAIL_OPTION_MAP,
@@ -10,7 +11,6 @@ import { CONFIG } from '@/utils/config'
 import { SUBTITLE_METADATA_KEY } from '@/utils/product'
 import { schemas } from '@simeon/client'
 import { formatCurrency } from '@simeon/currency'
-import { Poppins } from 'next/font/google'
 import Link from 'next/link'
 import {
   useCallback,
@@ -20,13 +20,7 @@ import {
   type CSSProperties,
 } from 'react'
 
-// The design is built on Poppins throughout (monochrome, Apple-like).
-const poppins = Poppins({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
-  style: ['normal', 'italic'],
-  display: 'swap',
-})
+// The design is built on Poppins throughout (monochrome, Apple-like); the font is served from the repository (app/fonts.ts).
 
 // A storefront product, plus the new free-form `subtitle` tagline. The
 // generated client type already carries `metadata`, where the byline lives.
@@ -784,7 +778,7 @@ export const ProductDetailPage = ({
   }, [])
 
   return (
-    <div className={`${poppins.className} sppdp`} ref={rootRef}>
+    <div className={`${poppinsProduct.className} sppdp`} ref={rootRef}>
       <style>{CSS}</style>
 
       <StickyBar

@@ -23,7 +23,7 @@
   --r-sm: 10px;
   --r-md: 14px;
   --r-lg: 20px;
-  /* Inter for the picker (loaded via next/font/google in layout.tsx). */
+  /* Inter for the picker (served from the repository, app/fonts.ts). */
   font-family:
     var(--font-inter),
     'Inter',

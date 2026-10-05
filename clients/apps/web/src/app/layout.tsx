@@ -13,15 +13,6 @@ import { schemas } from '@simeon/client'
 import { GeistMono } from 'geist/font/mono'
 import { GeistSans } from 'geist/font/sans'
 import { PHASE_PRODUCTION_BUILD } from 'next/constants'
-import {
-  Barlow_Condensed,
-  DM_Sans,
-  Instrument_Serif,
-  Inter,
-  Newsreader,
-  Poppins,
-  Source_Serif_4,
-} from 'next/font/google'
 import { Metadata } from 'next/types'
 import {
   NavigationHistoryProvider,
@@ -30,59 +21,8 @@ import {
   PolarQueryClientProvider,
 } from './providers'
 
-// Inter — used by the Add-to-Space picker (matches the design hand-off)
-const inter = Inter({
-  subsets: ['latin'],
-  weight: ['400', '500', '600'],
-  variable: '--font-inter',
-})
-
-const instrumentSerif = Instrument_Serif({
-  subsets: ['latin'],
-  weight: '400',
-  style: ['normal', 'italic'],
-  variable: '--font-instrument-serif',
-  display: 'swap',
-})
-
-const dmSans = DM_Sans({
-  subsets: ['latin'],
-  weight: ['300', '400', '500'],
-  variable: '--font-dm-sans',
-  display: 'swap',
-})
-
-const barlowCondensed = Barlow_Condensed({
-  subsets: ['latin'],
-  weight: ['700', '800'],
-  style: ['normal', 'italic'],
-  variable: '--font-barlow-condensed',
-  display: 'swap',
-})
-
-// Source Serif 4 — the Simeon display face (docs/design).
-const sourceSerif = Source_Serif_4({
-  subsets: ['latin'],
-  weight: ['400', '600'],
-  variable: '--font-simeon-serif',
-  display: 'swap',
-})
-
-// Newsreader — the website's serif (sites/simeonlabs.com); the sign-in
-// pages set their headings in it.
-const newsreader = Newsreader({
-  subsets: ['latin'],
-  weight: '400',
-  variable: '--font-newsreader',
-  display: 'swap',
-})
-
-const poppins = Poppins({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-poppins',
-  display: 'swap',
-})
+// The fonts are served from this repository (./fonts.ts).
+import { inter, newsreader, poppins, sourceSerif } from './fonts'
 
 export async function generateMetadata(): Promise<Metadata> {
   const baseMetadata: Metadata = {
@@ -174,7 +114,7 @@ export default async function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`antialiased ${GeistSans.variable} ${GeistMono.variable} ${inter.variable} ${instrumentSerif.variable} ${dmSans.variable} ${barlowCondensed.variable} ${poppins.variable} ${sourceSerif.variable} ${newsreader.variable}`}
+      className={`antialiased ${GeistSans.variable} ${GeistMono.variable} ${inter.variable} ${poppins.variable} ${sourceSerif.variable} ${newsreader.variable}`}
     >
       <head>
         <link href="/apple-touch-icon.png" rel="apple-touch-icon" />
