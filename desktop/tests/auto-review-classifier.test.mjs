@@ -1,6 +1,6 @@
 /**
  * Auto-review's risky-or-safe classifier runs on Simeon's own model path.
- * Until 24 September 2026 it asked Cursor's `ClassifySandAutoReview`, which
+ * Until 24 September 2026 it asked the upstream's `ClassifySandAutoReview`, which
  * Simeon Labs' server does not serve, so every classification failed and an
  * enforced review blocked everything (`runSandAutoReviewClassifier` falls
  * closed to `reject`).
@@ -80,7 +80,7 @@ test("the classifier asks the cheap model with the action and the conversation, 
   }
 });
 
-test("the auto-review extension binds the Simeon classifier, not Cursor's", async () => {
+test("the auto-review extension binds the Simeon classifier, not the upstream's", async () => {
   const extension = await readFile(path.join(repoRoot, "source/host/extensions/auto-review/extension.ts"), "utf8");
   assert.match(extension, /createSimeonSmartModeClassifierExecutor\(\{/);
   assert.match(extension, /HostExtensions\.Inference,/);

@@ -9,7 +9,7 @@
  * `server/tests/sand/test_cloud_agents.py` asserts), so one launch, one
  * info poll, one list, the model catalogue and the transcript dump come
  * through the real transport and the card's fields are what the server
- * said. The brief's cloud-agent sections say Simeon, not Cursor.
+ * said. The brief's cloud-agent sections say Simeon, not the upstream app.
  */
 import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
@@ -43,27 +43,27 @@ function simeonServer() {
   ], modelNames: ["gpt-6-sol", "gpt-6-luna"], useModelParameters: true };
   const answer = (pathname, body) => {
     switch (pathname) {
-      case "/aiserver.v1.DashboardService/GetUserPrivacyMode": return [200, { privacyMode: 2, isEnforcedByTeam: false }];
-      case "/aiserver.v1.AiService/AvailableModels": return [200, models];
-      case "/aiserver.v1.BackgroundComposerService/StartBackgroundComposerFromSnapshot": {
+      case "/simeon.v1.DashboardService/GetUserPrivacyMode": return [200, { privacyMode: 2, isEnforcedByTeam: false }];
+      case "/simeon.v1.AiService/AvailableModels": return [200, models];
+      case "/simeon.v1.CloudAgentService/StartBackgroundComposerFromSnapshot": {
         const text = body.conversationAction?.userMessageAction?.userMessage?.text ?? "";
         if (!body.bcId || !text) return [400, { code: "invalid_argument", message: "A cloud agent needs something to do." }];
         const agent = { bcId: body.bcId, name: body.name ?? "", repoUrl: body.repoUrl ?? "", prompt: text, status: 4, modelId: body.requestedModels?.[0]?.modelId ?? "", conversation: [{ text, type: 1, bubbleId: `${body.bcId}-0`, isAgentic: true, createdAt: "1" }] };
         agents.set(body.bcId, agent);
         return [200, { composer: composerOf(agent), initialRunId: "job-1", wasSwappedToDefault: false }];
       }
-      case "/aiserver.v1.BackgroundComposerService/GetBackgroundComposerInfo": {
+      case "/simeon.v1.CloudAgentService/GetBackgroundComposerInfo": {
         const agent = agents.get(body.bcId);
         return agent ? [200, { composer: detailedOf(agent) }] : [404, { code: "not_found", message: `There is no cloud agent '${body.bcId}'.` }];
       }
-      case "/aiserver.v1.BackgroundComposerService/ListBackgroundComposers": return [200, { composers: [...agents.values()].map(composerOf), didLoadStatus: true, hasMore: false, participants: [], pinnedBcIds: [], didLoadPinnedState: false }];
-      case "/aiserver.v1.BackgroundComposerService/GetBackgroundComposerConversation": { const agent = agents.get(body.bcId); return agent ? [200, { conversation: agent.conversation }] : [404, { code: "not_found", message: "no" }]; }
-      case "/aiserver.v1.BackgroundComposerService/GetPullRequestMergeStatus": return [200, { isMerged: false, isClosed: false, isDraft: false, state: "" }];
-      case "/aiserver.v1.BackgroundComposerService/GetOptimizedDiffDetails": return [200, { diff: { diffs: [], diffType: 0 }, submoduleDiffs: [] }];
-      case "/aiserver.v1.BackgroundComposerService/ListBackgroundComposerArtifacts": return [200, { artifacts: [] }];
-      case "/aiserver.v1.BackgroundComposerService/ListEnvironments": return [200, { environments: [{ publicId: "simeon-computer", name: "Simeon's computer", repoConfig: { repos: [] }, createdAtMs: "0", updatedAtMs: "0" }] }];
-      case "/aiserver.v1.BackgroundComposerService/AddAsyncFollowupBackgroundComposer": { const agent = agents.get(body.bcId); if (!agent) return [404, { code: "not_found", message: "no" }]; agent.conversation.push({ text: body.followupConversationAction?.userMessageAction?.userMessage?.text ?? "", type: 1, bubbleId: `${body.bcId}-${agent.conversation.length}`, isAgentic: true, createdAt: "3" }); return [200, { runId: "job-2" }]; }
-      case "/aiserver.v1.BackgroundComposerService/PauseBackgroundComposer": case "/aiserver.v1.BackgroundComposerService/RenameBackgroundComposer": case "/aiserver.v1.BackgroundComposerService/ArchiveBackgroundComposer": case "/aiserver.v1.BackgroundComposerService/DeleteBackgroundComposer": return [200, {}];
+      case "/simeon.v1.CloudAgentService/ListBackgroundComposers": return [200, { composers: [...agents.values()].map(composerOf), didLoadStatus: true, hasMore: false, participants: [], pinnedBcIds: [], didLoadPinnedState: false }];
+      case "/simeon.v1.CloudAgentService/GetBackgroundComposerConversation": { const agent = agents.get(body.bcId); return agent ? [200, { conversation: agent.conversation }] : [404, { code: "not_found", message: "no" }]; }
+      case "/simeon.v1.CloudAgentService/GetPullRequestMergeStatus": return [200, { isMerged: false, isClosed: false, isDraft: false, state: "" }];
+      case "/simeon.v1.CloudAgentService/GetOptimizedDiffDetails": return [200, { diff: { diffs: [], diffType: 0 }, submoduleDiffs: [] }];
+      case "/simeon.v1.CloudAgentService/ListBackgroundComposerArtifacts": return [200, { artifacts: [] }];
+      case "/simeon.v1.CloudAgentService/ListEnvironments": return [200, { environments: [{ publicId: "simeon-computer", name: "Simeon's computer", repoConfig: { repos: [] }, createdAtMs: "0", updatedAtMs: "0" }] }];
+      case "/simeon.v1.CloudAgentService/AddAsyncFollowupBackgroundComposer": { const agent = agents.get(body.bcId); if (!agent) return [404, { code: "not_found", message: "no" }]; agent.conversation.push({ text: body.followupConversationAction?.userMessageAction?.userMessage?.text ?? "", type: 1, bubbleId: `${body.bcId}-${agent.conversation.length}`, isAgentic: true, createdAt: "3" }); return [200, { runId: "job-2" }]; }
+      case "/simeon.v1.CloudAgentService/PauseBackgroundComposer": case "/simeon.v1.CloudAgentService/RenameBackgroundComposer": case "/simeon.v1.CloudAgentService/ArchiveBackgroundComposer": case "/simeon.v1.CloudAgentService/DeleteBackgroundComposer": return [200, {}];
       default: return [404, { code: "unimplemented", message: `${pathname} is not served by Simeon Labs' server.` }];
     }
   };
@@ -100,7 +100,7 @@ test("the manager launches, polls, lists, dumps and reads the catalogue through 
     const { SandCloudAgentManager } = service.module;
     const { convertConversationMessagesToTrace, HistoryVisibilityMode } = trace.module;
     const manager = new SandCloudAgentManager({
-      getCursorAccessToken: async () => "simeon_da_test",
+      getAccountAccessToken: async () => "simeon_da_test",
       getMachineId: async () => "machine-1",
       completionPolling: { start: () => ({ dispose() {} }) },
       clock: { monotonicNow: () => Date.now() },
@@ -109,11 +109,13 @@ test("the manager launches, polls, lists, dumps and reads the catalogue through 
 
     const launched = await manager.launch({ prompt: "Summarise the README.", repoUrl: "simeonlabs/demo", startingRef: "main", title: "Readme summary", modelId: "gpt-6-sol" });
     assert.match(launched.bcId, /^bc-[0-9a-f-]{36}$/);
-    assert.equal(launched.url, `https://app.simeonlabs.com/agents/${launched.bcId}`, "the card's link is Simeon's page, not cursor.com");
+    assert.equal(launched.url, `https://app.simeonlabs.com/agents/${launched.bcId}`, "the card's link is Simeon's page, not the upstream site");
     const start = fake.seen.find((entry) => entry.path.endsWith("/StartBackgroundComposerFromSnapshot"));
     assert.ok(start, "the launch reached the server");
     assert.equal(start.headers.authorization, "Bearer simeon_da_test");
-    assert.equal(start.headers["x-cursor-client-type"], "sand");
+    assert.equal(start.headers["x-simeon-client-type"], "sand");
+    assert.equal(start.headers["x-cursor-client-type"], undefined, "5 October 2026: only Simeon's header names leave the host");
+    assert.equal(start.body.source, "BACKGROUND_COMPOSER_SOURCE_SIMEON", "the cloud agent's source is Simeon's own enum value, as protobuf JSON spells it");
     assert.equal(start.body.bcId, launched.bcId);
     assert.equal(start.body.repoUrl, "https://github.com/simeonlabs/demo");
     assert.equal(start.body.baseBranch, "main");
@@ -173,7 +175,7 @@ test("the manager launches, polls, lists, dumps and reads the catalogue through 
   }
 });
 
-test("the brief and the app say Simeon where the upstream app said Cursor, and the card opens Simeon's page", async () => {
+test("the brief and the app say Simeon where the upstream app said the upstream app, and the card opens Simeon's page", async () => {
   delete process.env.SAND_CLOUD_AGENTS_SERVED;
   const { module, dispose } = await load("source/host/runner/system-prompt.ts", "system-prompt-served");
   try {
@@ -201,7 +203,7 @@ test("the brief and the app say Simeon where the upstream app said Cursor, and t
   assert.match(await src("electron-main/main-edge.ts"), /openCloudAgent: async \(raw\) => \{[^\n]*cloudAgentWebUrl\(bcId\)/);
   assert.doesNotMatch(await src("electron-main/main-edge.ts"), /https:\/\/cursor\.com/);
   for (const file of ["host/extensions/cloud-agents/cloud-agents-service.ts", "host/extensions/cloud-agents/cloud-agent-poll-loop.ts", "host/cloud-agents/cloud-agent-tool.ts", "shared/channel-messaging.ts", "packages/agent/prompts/cloud/no-repository-access.ts"]) {
-    assert.ok(!(await src(file)).includes("cursor.com"), `${file} names no cursor.com`);
+    assert.ok(!(await src(file)).includes("the upstream site"), `${file} names no the upstream site`);
   }
   assert.match(await src("shared/cloud-agents-availability.ts"), /Cloud agents are served/);
 });

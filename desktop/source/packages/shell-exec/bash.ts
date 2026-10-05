@@ -62,7 +62,7 @@ export async function initBashState(options?: BashInitOptions): Promise<BashStat
     ...SHELL_ENV_OVERRIDES,
     ...options?.env,
   };
-  const stateMarker = "__CURSOR_STATE_MARKER__";
+  const stateMarker = "__SIMEON_STATE_MARKER__";
   const args = [
     "-O",
     "extglob",
@@ -141,14 +141,14 @@ class BashState {
       stateOutputPath = join(tempDir, "state-out");
       await writeFile(stateInputPath, this.state, "utf8");
       await writeFile(stateOutputPath, "", "utf8").catch(() => {});
-      env.CURSOR_STATE_INPUT_FILE = windowsPathToGitBash(stateInputPath);
-      env.CURSOR_STATE_OUTPUT_FILE = windowsPathToGitBash(stateOutputPath);
+      env.SIMEON_STATE_INPUT_FILE = windowsPathToGitBash(stateInputPath);
+      env.SIMEON_STATE_OUTPUT_FILE = windowsPathToGitBash(stateOutputPath);
     }
-    const stateLoader = useFileTransport ? 'snap=$(command cat "$CURSOR_STATE_INPUT_FILE")' : "snap=$(command cat <&3)";
+    const stateLoader = useFileTransport ? 'snap=$(command cat "$SIMEON_STATE_INPUT_FILE")' : "snap=$(command cat <&3)";
     const stateWriter = useFileTransport
-      ? 'mkdir -p "$(dirname "$CURSOR_STATE_OUTPUT_FILE")" 2>/dev/null; dump_bash_state > "$CURSOR_STATE_OUTPUT_FILE"'
+      ? 'mkdir -p "$(dirname "$SIMEON_STATE_OUTPUT_FILE")" 2>/dev/null; dump_bash_state > "$SIMEON_STATE_OUTPUT_FILE"'
       : "dump_bash_state >&4";
-    const commandScript = `${stateLoader} && builtin shopt -s extglob && builtin eval -- "$snap" && { builtin set +u 2>/dev/null || true; builtin eval "\${__CURSOR_SANDBOX_ENV_RESTORE:-}" 2>/dev/null; builtin export PWD="$(builtin pwd)"; builtin shopt -s expand_aliases 2>/dev/null; ${sudoAliasInjection}${core}; }; COMMAND_EXIT_CODE=$?; ${stateWriter}; builtin exit $COMMAND_EXIT_CODE`;
+    const commandScript = `${stateLoader} && builtin shopt -s extglob && builtin eval -- "$snap" && { builtin set +u 2>/dev/null || true; builtin eval "\${__SIMEON_SANDBOX_ENV_RESTORE:-}" 2>/dev/null; builtin export PWD="$(builtin pwd)"; builtin shopt -s expand_aliases 2>/dev/null; ${sudoAliasInjection}${core}; }; COMMAND_EXIT_CODE=$?; ${stateWriter}; builtin exit $COMMAND_EXIT_CODE`;
     const args = ["-O", "extglob", "-c", commandScript, "--", command];
     const bashPath = getBashPath(this.userTerminalHint);
     if (!bashPath) throw new Error("Can't find Bash");

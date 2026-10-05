@@ -1,4 +1,4 @@
-"""The box broker (25 September 2026): `aiserver.v1.GrokBotService`
+"""The box broker (25 September 2026): `simeon.v1.ComputerService`
 served from Simeon Labs' server against an in-memory `BoxHost`, the
 local-exec credential routes, and the API's own proxy to the box.
 
@@ -25,6 +25,7 @@ import pytest_asyncio
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from pytest_mock import MockerFixture
+from sqlalchemy import text
 from starlette.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
 from websockets.asyncio.server import serve
@@ -49,12 +50,12 @@ from simeon.sand.box_service import (
 from simeon.sand.connect import decode_stream_frames
 from tests.desktop.test_endpoints import _signed_in
 
-ENSURE = "/aiserver.v1.GrokBotService/EnsureSandBox"
-RECREATE = "/aiserver.v1.GrokBotService/RecreateSandBox"
-FORCE_RECREATE = "/aiserver.v1.GrokBotService/ForceRecreateSandBox"
-WATCH = "/aiserver.v1.GrokBotService/WatchSandBoxMigration"
-RUN_STATE = "/aiserver.v1.GrokBotService/GetSandBoxRunState"
-TURN_FINISHED = "/aiserver.v1.GrokBotService/NotifySandAgentTurnFinished"
+ENSURE = "/simeon.v1.ComputerService/EnsureSandBox"
+RECREATE = "/simeon.v1.ComputerService/RecreateSandBox"
+FORCE_RECREATE = "/simeon.v1.ComputerService/ForceRecreateSandBox"
+WATCH = "/simeon.v1.ComputerService/WatchSandBoxMigration"
+RUN_STATE = "/simeon.v1.ComputerService/GetSandBoxRunState"
+TURN_FINISHED = "/simeon.v1.ComputerService/NotifySandAgentTurnFinished"
 
 
 class FakeBoxHost:
@@ -319,6 +320,154 @@ class TestEnsureSandBox:
         assert response.json()["code"] == "unavailable"
         assert response.headers["retry-after"] == "5"
 
+    async def test_a_database_timeout_inside_ensure_is_a_retry_not_a_500(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        host: FakeBoxHost,
+        mocker: MockerFixture,
+    ) -> None:
+        # Render, 4 October 2026: the statement timeout killed a write
+        # inside ensure; the session was left marked rolled back and the
+        # commit at the end of the request raised PendingRollbackError as
+        # a 500, on every connection attempt for ten minutes.
+        access, _ = await _signed_in(client, session, user)
+        assert (await _ensure(client, access)).status_code == 200
+        # The tests share one session with the app, inside one transaction
+        # that the fixture rolls back; on Render each request has its own
+        # session, so the rollback below reaches that request alone. Here
+        # it is watched, not followed by more requests.
+        rollback = mocker.spy(session, "rollback")
+
+        async def timed_out(self: Any, *args: Any, **kwargs: Any) -> Any:
+            # What asyncpg raises past DATABASE_COMMAND_TIMEOUT_SECONDS, mid-flush.
+            await self.session.execute(text("SELECT 1"))
+            raise TimeoutError()
+
+        mocker.patch.object(box_service.SandBoxRepository, "update", timed_out)
+        response = await _ensure(client, access)
+        assert response.status_code == 503
+        assert response.json()["code"] == "unavailable"
+        assert response.headers["retry-after"] == "5"
+        assert rollback.call_count == 1, "the session is rolled back before the answer"
+
+    async def test_one_ensure_per_person_at_a_time(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        host: FakeBoxHost,
+    ) -> None:
+        # Render, 4 October 2026: the page, the Mac app and its helper all
+        # asked within seconds, two created a container at once, and the
+        # row named one container while the server ran another.
+        access, _ = await _signed_in(client, session, user)
+        # Another request, on its own connection, is in the middle of ensure.
+        # (The tests run inside one transaction, so an ensure of our own
+        # first would hold the lock until the test ends.)
+        engine = cast(Any, session.bind).engine
+        async with engine.connect() as other:
+            await other.execute(
+                text("SELECT pg_advisory_xact_lock(hashtext(:key))"),
+                {"key": f"sand-box-ensure:{user.id}"},
+            )
+            response = await _ensure(client, access)
+            assert response.status_code == 503
+            assert response.json()["code"] == "unavailable"
+            assert response.headers["retry-after"] == "5"
+        # The lock is transaction-scoped: Postgres releases it with the
+        # holder's commit or rollback, nothing of ours has to remember to.
+
+    async def test_a_container_that_rejects_the_rows_token_is_replaced(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        host: FakeBoxHost,
+    ) -> None:
+        # Render, 4 October 2026: the box's gateway answered 401 to the
+        # API's own health check and to every request of the Mac's helper,
+        # for good: the container running was not the one the row named.
+        access, _ = await _signed_in(client, session, user)
+        first = (await _ensure(client, access)).json()
+        rejected_token = first["gatewayToken"]
+
+        async def healthy(url: str, token: str) -> bool:
+            return True
+
+        async def rejects_the_old_token(url: str, token: str) -> bool:
+            return token == rejected_token
+
+        box_service.set_health_check_for_tests(healthy, rejects_the_old_token)
+        second = await _ensure(client, access)
+        assert second.status_code == 200, second.text
+        body = second.json()
+        assert body["podId"] == first["podId"], "same box, same volumes"
+        assert body["gatewayToken"] != rejected_token
+        assert body["networkToken"] != first["networkToken"]
+        assert host.removed[-1] == ("container-1", []), "the volumes stay"
+        assert len(host.created) == 2
+        assert host.created[-1].gateway_token == body["gatewayToken"]
+        # The replacement answers with its own token: nothing more to replace.
+        third = (await _ensure(client, access)).json()
+        assert third["gatewayToken"] == body["gatewayToken"]
+        assert len(host.created) == 2
+
+    async def test_recreate_waits_for_the_ensure_in_progress(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        host: FakeBoxHost,
+    ) -> None:
+        # A recreate removing and creating while an ensure created too is
+        # how the row came to name one container while another ran.
+        access, _ = await _signed_in(client, session, user)
+        engine = cast(Any, session.bind).engine
+        async with engine.connect() as other:
+            await other.execute(
+                text("SELECT pg_advisory_xact_lock(hashtext(:key))"),
+                {"key": f"sand-box-ensure:{user.id}"},
+            )
+            response = await client.post(
+                RECREATE,
+                json={"preserveData": True, "force": True},
+                headers={"Authorization": f"Bearer {access}"},
+            )
+            assert response.status_code == 503
+            assert response.json()["code"] == "unavailable"
+            assert response.headers["retry-after"] == "5"
+        assert host.removed == []
+        assert host.created == []
+
+    async def test_the_row_is_written_after_the_box_answered_not_before(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        host: FakeBoxHost,
+        mocker: MockerFixture,
+    ) -> None:
+        # Written first, the row stayed locked for the whole wait (up to
+        # ninety seconds) and every other EnsureSandBox blocked on it.
+        order: list[str] = []
+        update = box_service.SandBoxRepository.update
+
+        async def recorded_update(self: Any, *args: Any, **kwargs: Any) -> Any:
+            order.append("update")
+            return await update(self, *args, **kwargs)
+
+        async def recorded_health(url: str, token: str) -> bool:
+            order.append("health")
+            return True
+
+        mocker.patch.object(box_service.SandBoxRepository, "update", recorded_update)
+        box_service.set_health_check_for_tests(recorded_health)
+        access, _ = await _signed_in(client, session, user)
+        assert (await _ensure(client, access)).status_code == 200
+        assert order.index("health") < order.index("update")
+
     async def test_a_blocked_box_carries_the_hint_the_retry_after_and_the_details(
         self,
         client: httpx.AsyncClient,
@@ -340,7 +489,8 @@ class TestEnsureSandBox:
         body = response.json()
         assert body["code"] == "resource_exhausted"
         detail = body["details"][0]
-        assert detail["type"] == "aiserver.v1.ErrorDetails"
+        assert detail["type"] == "simeon.v1.ErrorDetails"
+        assert body["details"][1]["type"] == "aiserver.v1.ErrorDetails"
         raw = base64.b64decode(detail["value"])
         assert (
             b"No room" in raw

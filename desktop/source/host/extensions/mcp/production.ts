@@ -2,7 +2,7 @@ import type { HostExtensionContext } from "../../../internal/host-extensions.js"
 import {
   createRealPollingPolicy
 } from "../../../internal/scheduling.js";
-import { getSandInferenceBackendUrl } from "../../../shared/node/cursor-backend/cursor-inference.js";
+import { getSandInferenceBackendUrl } from "../../../shared/node/simeon-backend/simeon-inference.js";
 import { cleanupLegacyMcpAuthCredentials } from "../../../shared/node/mcp/mcp-auth-cleanup.js";
 import type { CapableBox } from "../../box/box-capabilities.js";
 import { getSandRootDir } from "../../host-paths.js";

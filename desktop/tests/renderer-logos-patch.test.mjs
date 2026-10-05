@@ -84,7 +84,9 @@ test("the button says Connect apps and PowerPoint gets its own kind, on anchors 
   assert.ok(patched.includes("syntheticProseCards:n}],__simeonAppMentions,__simeonAgentMentions]}"), "the message pipeline ends with the app step, then the agent step");
   assert.equal(patched.split("const __simeonAppMentions=").length - 1, 1);
   assert.equal(patched.split("const __simeonAgentMentions=").length - 1, 1);
-  assert.ok(patched.includes("?.id??sle(n.id)}function __simeonNoteAgents(n){"), "the roster note follows the window's own colour resolver");
+  assert.ok(patched.includes("?.id??__simeonRememberedAvatar(n.id)?.color??sle(n.id)}var __simeonAvatarMemory=null;"), "the colour resolver reads the memory before hashing, and the roster note follows it");
+  assert.ok(patched.includes("??__simeonRememberedAvatar(n.id)?.shape??u4e(n.id)}"), "so does the shape resolver");
+  assert.ok(patched.includes('GX("getCursorAuthStatus",t,()=>e.getStatus().then(__simeonNotePerson))'), "the signed-in person's name is noted");
   assert.ok(patched.includes('children:"Connect apps"'));
   assert.ok(patched.includes('notion:{kind:"brand",hex:"#FFFFFF",path:'), "Notion draws its light-mode logo");
   assert.ok(patched.includes('slack:{kind:"brand",hex:"#FFFFFF",path:"M5.042 15.165'), "Slack's tile is white under its colour mark, and the glyph the stylesheet keys on is still there");
@@ -211,4 +213,46 @@ test("an agent named in a message wears its face and its palette's colour, only 
   assert.match(Buffer.from(eyes.split(",")[1], "base64").toString(), /fill: #fcfcfc/);
   const css = agentMentionsCss();
   for (const { id } of AGENT_PALETTES) assert.ok(css.includes(`.simeon-agent[data-agent-color="${id}"]`), id);
+});
+
+test("a face is remembered by id across a reconnect, a mention follows the colour that comes back, and the person is never an agent", async () => {
+  const { AGENT_RESOLVERS_AFTER, AGENT_MENTIONS_PLUGIN_SOURCE, AGENT_AVATAR_MEMORY_KEY } = await import(patchModule);
+  // The window's own tables and hashes, as small as the test needs them.
+  const store = new Map();
+  const localStorage = { getItem: (key) => store.get(key) ?? null, setItem: (key, value) => { store.set(key, value); } };
+  const saved = globalThis.localStorage;
+  Object.defineProperty(globalThis, "localStorage", { value: localStorage, configurable: true, writable: true });
+  try {
+    const make = () => new Function(`const PQ=[{id:"red"},{id:"cyan"}],Qtt=["cloud","pebble"],sle=()=>"hashed-colour",u4e=()=>"hashed-shape";${AGENT_RESOLVERS_AFTER};return {Cee,Eee,note:__simeonNoteAgents,person:__simeonNotePerson}`)();
+    const first = make();
+    // Connected: the roster carries faces; the note remembers them.
+    first.note([{ id: "a1", name: "Scout", avatarColor: "cyan", avatarShape: "pebble" }, { id: "a2", name: "Bass", avatarColor: "red", avatarShape: "cloud" }, { id: "a3", name: "Bare" }]);
+    assert.deepEqual(globalThis.__simeonAgentColors, { Scout: "cyan", Bass: "red", Bare: "hashed-colour" });
+    assert.deepEqual(JSON.parse(store.get(AGENT_AVATAR_MEMORY_KEY)), { a1: { color: "cyan", shape: "pebble" }, a2: { color: "red", shape: "cloud" } }, "a record without a face is never remembered");
+    // Reconnecting, in a fresh window: a member looked up before the roster answers has no face, and keeps the remembered one.
+    const second = make();
+    assert.equal(second.Cee({ id: "a1", avatarColor: null }), "cyan");
+    assert.equal(second.Eee({ id: "a1", avatarShape: null }), "pebble");
+    assert.equal(second.Cee({ id: "new", avatarColor: null }), "hashed-colour", "an unknown id still hashes");
+    // The person's name, from the account status, passes through untouched.
+    const status = { kind: "logged-in", displayName: " Bass " };
+    assert.equal(second.person(status), status);
+    assert.equal(globalThis.__simeonPersonName, "Bass");
+    // The mention step: the person is left alone even though an agent shares the name, and a colour that changes is redrawn.
+    const plugin = new Function(`${AGENT_MENTIONS_PLUGIN_SOURCE}return __simeonAgentMentions;`)();
+    const tree = () => ({ type: "root", children: [{ type: "element", tagName: "p", data: { sandMarkdown: 1 }, children: [{ type: "text", value: "Hi, Bass. Scout is on it." }] }] });
+    const parts = (node) => node.children[0].children.map((child) => child.type === "text" ? child.value : `[${child.properties.dataAgentColor}:${child.children[1].value}]`);
+    globalThis.__simeonAgentColors = { Scout: "hashed-colour", Bass: "red" };
+    const before = tree();
+    plugin()(before);
+    assert.deepEqual(parts(before), ["Hi, Bass. ", "[hashed-colour:Scout]", " is on it."]);
+    globalThis.__simeonAgentColors = { Scout: "cyan", Bass: "red" };
+    const after = tree();
+    plugin()(after);
+    assert.deepEqual(parts(after), ["Hi, Bass. ", "[cyan:Scout]", " is on it."], "the same names with a new colour are redrawn");
+  } finally {
+    delete globalThis.__simeonAgentColors;
+    delete globalThis.__simeonPersonName;
+    if (saved === undefined) delete globalThis.localStorage; else Object.defineProperty(globalThis, "localStorage", { value: saved, configurable: true, writable: true });
+  }
 });

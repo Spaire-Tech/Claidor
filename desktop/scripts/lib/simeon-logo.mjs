@@ -1,62 +1,53 @@
 /**
- * Simeon's mark: twelve petals in a whirl, thin at the top left and full at
- * the right, as the founder supplied it on 22 September 2026 (a 400×400 PNG,
- * black on transparent). The petals were measured off that file as the
- * moment ellipses of its twelve connected components (centroid, semi-axes
- * from the second moments, orientation), so the drawing is the founder's
- * shape and not an interpretation of it; the check in
- * tests/simeon-logo.test.mjs rasterises this and compares it to the PNG.
+ * Simeon's mark: four petals in a bow, each an open loop, meeting at the
+ * centre, as the founder supplied it on 4 October 2026 (a 400×400 PNG, black
+ * on white, and the same mark on the app icon at 1024). The outline was
+ * traced off the 1024 icon (potrace, the mark's dark pixels, the loops'
+ * interiors as holes) and scaled into the 400 box where the 400 picture puts
+ * it, so the drawing is the founder's shape and not an interpretation of it;
+ * the check in tests/simeon-logo.test.mjs rasterises this and compares it to
+ * the PNG.
  *
- * No picture file is imported anywhere: the mark is drawn from these
- * numbers wherever it is needed (the in-app icon, the Dock icon).
+ * No picture file is imported anywhere: the mark is drawn from this path
+ * wherever it is needed (the boot screen's logo, the favicons, the Dock icon
+ * when the founder's icon file is absent).
  */
 export const SIMEON_LOGO_BOX = 400;
 
-/** Centre, semi-axes and orientation of each petal, in the 400-unit box, sorted by angle about the centre. */
-export const SIMEON_PETALS = Object.freeze([
-  { cx: 127.06, cy: 199.5, rx: 38.94, ry: 9.89, angle: 0 },
-  { cx: 138.75, cy: 164.5, rx: 41.47, ry: 8.54, angle: 29.98 },
-  { cx: 165.87, cy: 141.5, rx: 43.86, ry: 6.1, angle: 60.04 },
-  { cx: 199.41, cy: 133.85, rx: 44.68, ry: 4.99, angle: 89.97 },
-  { cx: 242.28, cy: 125.69, rx: 26.79, ry: 17.83, angle: -60.27 },
-  { cx: 273.53, cy: 156.92, rx: 26.75, ry: 17.92, angle: -30.35 },
-  { cx: 283, cy: 199.5, rx: 28.54, ry: 17.06, angle: 0 },
-  { cx: 270.28, cy: 240.25, rx: 30.36, ry: 15.79, angle: 30.01 },
-  { cx: 239.52, cy: 268.84, rx: 31.86, ry: 14.71, angle: 60.03 },
-  { cx: 199.89, cy: 277.9, rx: 33.48, ry: 13.46, angle: 89.95 },
-  { cx: 161.13, cy: 265.95, rx: 35.31, ry: 12.63, angle: -60.1 },
-  { cx: 134.77, cy: 236.79, rx: 37.01, ry: 11.89, angle: -29.92 },
-]);
+/** The mark as one even-odd path in the 400-unit box: the outline, then the four loops' interiors. */
+export const SIMEON_MARK_PATH = "M107.96 341.69C105.53 341.37 102.92 340.96 102.15 340.79C96.58 339.52 95.93 339.34 92.86 338.24C92.35 338.06 90.26 337.09 88.21 336.09C76.27 330.27 66.15 320.22 61.31 309.38C59.27 304.79 59.25 304.75 58.27 301.03C56.22 293.22 55.82 289.67 56.04 280.85C56.23 273.36 56.41 271.85 57.7 266.88C59.33 260.6 59.04 261.36 62.65 253.87C70.31 237.98 83.85 223.93 101.69 213.36C104.36 211.78 114.5 206.7 114.99 206.7C115.22 206.7 116.29 206.29 117.38 205.79C118.46 205.29 121.23 204.27 123.54 203.53C128.16 202.05 130.73 200.86 130.73 200.22C130.73 199.33 127.94 197.87 124.41 196.91C119.72 195.63 111.11 192.22 106.33 189.74C93.64 183.17 84.5 175.94 74.02 164.18C69.54 159.17 63.66 149.42 60.55 141.88C54.07 126.21 54.36 105.58 61.26 90.73C65.64 81.29 72.45 73.22 80.78 67.6C84.81 64.88 90.71 61.73 91.78 61.73C92.14 61.73 92.64 61.56 92.88 61.36C94.45 60.05 103.19 58.21 110.98 57.56C117.28 57.03 128.39 57.82 133.24 59.15C148.31 63.26 162.66 71.83 174.87 84.02C185.61 94.73 192.04 104.2 197.19 116.89C198.04 118.99 199.03 120.82 199.4 120.96C200.35 121.32 202.48 118.82 203.17 116.54C204.01 113.74 208.2 105.83 211.69 100.46C224.66 80.48 244.9 65 265.25 59.5C277.05 56.31 293.35 56.69 304.28 60.42C305.77 60.92 306.12 61.06 310.09 62.66C319.33 66.4 329.17 75.08 334.83 84.5C339.64 92.47 341.99 99.79 343.11 110.28C346.13 138.38 329.89 166.14 299.6 184.65C295.57 187.11 284.6 192.75 283.81 192.76C283.54 192.76 282.47 193.17 281.43 193.67C280.4 194.17 277.17 195.35 274.26 196.29C271.35 197.22 268.79 198.15 268.57 198.35C268.36 198.55 268.31 199.12 268.47 199.63C268.7 200.34 270.33 201.06 275.6 202.77C279.36 204 282.64 205.17 282.88 205.38C283.13 205.6 283.64 205.77 284.02 205.77C285.38 205.77 297.16 211.87 302.53 215.36C321.89 227.91 335.9 245.75 341.15 264.55C344.43 276.26 344.24 290.99 340.67 302.42C335.84 317.91 324.99 329.93 309.39 337.06C296.84 342.8 276.66 343.89 263.59 339.53C262.17 339.06 260.76 338.67 260.45 338.67C258.97 338.67 248.14 333.3 242.84 329.94C236.45 325.89 231.71 322.06 225.73 316.13C219.25 309.71 216.21 305.98 211.43 298.62C207.66 292.79 204.97 287.65 203.02 282.55C201.78 279.3 200.56 277.93 199.32 278.41C199.01 278.53 198.16 280.16 197.43 282.04C195.41 287.26 192.01 293.81 188.8 298.71C174.88 319.89 150.84 337.25 130.27 340.96C122.23 342.41 115.15 342.64 107.96 341.69ZM123.3 314.72C139.48 313.27 157.05 301.52 168.79 284.3C172.06 279.5 178.13 268.49 178.13 267.34C178.13 267.21 178.53 266.21 179.03 265.13C180.81 261.23 183.78 251.11 184.58 246.2C185.85 238.39 186.02 235.7 186.02 224.44C186.02 214.32 185.91 212.3 185.33 211.82C184.42 211.06 164.54 211.42 161.17 212.25C159.89 212.57 158.21 212.99 157.45 213.19C144.7 216.49 132.96 221.81 121.41 229.51C116.48 232.8 107.98 239.73 105.15 242.77C95.08 253.59 90.5 261.43 87.56 272.92C86.41 277.41 86.61 287.89 87.96 293.13C88.96 297.04 92.07 302.73 94.84 305.73C97.69 308.81 102.36 312.04 105.41 313.03C106.43 313.36 107.68 313.82 108.19 314.05C109.66 314.71 115.41 315.37 117.95 315.17C119.23 315.07 121.63 314.86 123.3 314.72ZM286.26 314.93C291.44 314.2 296.07 312.5 299.64 310.03C302.02 308.37 306.9 303 308.16 300.63C313.5 290.62 314.08 277.96 309.75 266.41C308.36 262.71 305.41 256.97 303.66 254.56C297.67 246.33 295.97 244.37 290.22 239.12C277.68 227.66 257.87 217.03 242.02 213.24C240.74 212.94 238.96 212.51 238.07 212.28C235.47 211.64 230.03 211.27 222.15 211.21C215.76 211.16 214.73 211.25 214.02 211.96C213.32 212.66 213.18 213.96 213.04 221.47C212.66 240.91 215.59 254.67 223.54 270.83C235.82 295.76 254.72 311.72 275.47 314.71C281.02 315.5 282.01 315.52 286.26 314.93ZM184.6 188.06L186.1 187.54L185.86 173.77C185.57 156.36 185.06 152.61 181.63 142.29C179.54 135.99 179.73 136.47 176.55 129.86C171.23 118.82 166.14 111.52 158.16 103.5C151.12 96.42 146.83 93.29 139.09 89.55C132.12 86.18 129.49 85.41 121.74 84.49C117.32 83.96 113.67 84.18 108.89 85.26C105.32 86.08 104.51 86.43 100.49 88.99C96.95 91.25 94.74 93.56 91.97 97.9C88.14 103.88 86.91 108.69 86.9 117.72C86.89 126.39 88.23 132.08 92.07 139.56C99.85 154.75 114.12 167.93 133.05 177.45C139.19 180.53 140.44 181.08 144.9 182.7C151.18 184.96 153.63 185.65 160.93 187.16C167.2 188.45 181.86 189.01 184.6 188.06ZM235.05 187.71C236.58 187.44 238.98 187.02 240.39 186.78C243.26 186.27 253.23 183.31 255.72 182.22C256.62 181.83 257.77 181.35 258.28 181.14C269.89 176.41 283.14 167.9 291.9 159.54C303.03 148.91 309.3 138.5 311.7 126.65C313.24 119.03 313.12 114.33 311.18 106.61C308.75 96.94 301.24 88.77 291.97 85.72C286.86 84.04 277.53 83.93 271.29 85.46C251.69 90.28 234.59 105.76 223.08 129.1C215.59 144.28 212.97 156.48 212.98 176.07C212.99 186.22 213.25 187.63 215.21 188.1C217.01 188.52 232.08 188.23 235.05 187.71Z";
 
-export function simeonPetalsMarkup(ink = "#141414") {
-  return SIMEON_PETALS.map((petal) => `<ellipse cx="${petal.cx}" cy="${petal.cy}" rx="${petal.rx}" ry="${petal.ry}" transform="rotate(${petal.angle} ${petal.cx} ${petal.cy})" fill="${ink}"/>`).join("");
+/** Where the mark sits in the 400 box (measured off the founder's 400 picture). */
+export const SIMEON_MARK_BOUNDS = Object.freeze({ x: 56, y: 57, width: 287, height: 285 });
+
+export function simeonMarkMarkup(ink = "#141414") {
+  return `<path d="${SIMEON_MARK_PATH}" fill-rule="evenodd"${ink === "" ? "" : ` fill="${ink}"`}/>`;
 }
 
 /** The mark alone, on nothing. */
 export function simeonLogoSvg({ size = SIMEON_LOGO_BOX, ink = "#141414" } = {}) {
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${SIMEON_LOGO_BOX} ${SIMEON_LOGO_BOX}">${simeonPetalsMarkup(ink)}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${SIMEON_LOGO_BOX} ${SIMEON_LOGO_BOX}">${simeonMarkMarkup(ink)}</svg>`;
 }
 
 /**
- * The app icon, as the founder supplied it on 22 September 2026: the mark
- * in white on a black rounded tile with a faint sheen, inside the margin
- * macOS leaves round an icon. Measured off that 1024 file: the tile spans
- * 56..967, its corners round at ~171, it shades from #1b1b1b at the top to
- * #060606 at the bottom, and the mark spans 234..790.
+ * The app icon, as the founder supplied it on 4 October 2026: the mark in
+ * black on a white rounded tile that shades faintly towards the bottom,
+ * inside the margin macOS leaves round an icon. Measured off that 1024 file:
+ * the tile spans 56..967, its corners round at ~186, it shades from #fefefe
+ * at the top to #ededee at the bottom, and the mark spans 202..820. The
+ * file's soft drop shadow is not drawn; macOS adds its own.
  */
-export function simeonAppIconSvg({ size = 1024, ink = "#ffffff" } = {}) {
+export function simeonAppIconSvg({ size = 1024, ink = "#141414" } = {}) {
   const unit = size / 1024;
-  const tile = 912 * unit, inset = 56 * unit, radius = 171 * unit;
-  const scale = (556 / 230) * unit;
+  const tile = 912 * unit, inset = 56 * unit, radius = 186 * unit;
+  const scale = (618 / SIMEON_MARK_BOUNDS.width) * unit;
   const offset = size / 2 - (SIMEON_LOGO_BOX / 2) * scale;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
   <defs>
-    <linearGradient id="simeon-tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b1b1b"/><stop offset="0.5" stop-color="#0f0f0f"/><stop offset="1" stop-color="#060606"/></linearGradient>
-    <linearGradient id="simeon-sheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity="0.07"/><stop offset="0.45" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="simeon-tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fefefe"/><stop offset="0.55" stop-color="#f8f8f8"/><stop offset="1" stop-color="#ededee"/></linearGradient>
   </defs>
   <rect x="${inset.toFixed(2)}" y="${inset.toFixed(2)}" width="${tile.toFixed(2)}" height="${tile.toFixed(2)}" rx="${radius.toFixed(2)}" fill="url(#simeon-tile)"/>
-  <rect x="${inset.toFixed(2)}" y="${inset.toFixed(2)}" width="${tile.toFixed(2)}" height="${tile.toFixed(2)}" rx="${radius.toFixed(2)}" fill="url(#simeon-sheen)"/>
-  <g transform="translate(${offset.toFixed(2)} ${offset.toFixed(2)}) scale(${scale.toFixed(4)})">${simeonPetalsMarkup(ink)}</g>
+  <g transform="translate(${offset.toFixed(2)} ${offset.toFixed(2)}) scale(${scale.toFixed(4)})">${simeonMarkMarkup(ink)}</g>
 </svg>`;
 }
 

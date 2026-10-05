@@ -7,7 +7,7 @@
  */
 import { Message, proto3 } from "@bufbuild/protobuf";
 import type { BinaryReadOptions, JsonReadOptions, JsonValue, MessageType, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
-import { CursorRule } from "./cursor_rules_pb.js";
+import { AgentRule } from "./agent_rules_pb.js";
 
 type MutableMessageType<T extends Message<T>> = { -readonly [P in keyof MessageType<T>]: MessageType<T>[P] };
 
@@ -156,8 +156,8 @@ var ReadToolSuccess$Runtime = (() => class _ReadToolSuccess extends Message<_Rea
   declare path: string;
   declare readRange?: ReadRange;
   declare includeLineNumbers?: boolean;
-  declare relatedCursorRulePaths: string[];
-  declare relatedCursorRules: CursorRule[];
+  declare relatedAgentRulePaths: string[];
+  declare relatedAgentRules: AgentRule[];
   declare output: { case: "content"; value: string } | { case: "data"; value: Uint8Array } | { case: "dataBlobId"; value: Uint8Array } | { case: "contentBlobId"; value: Uint8Array } | { case: undefined; value?: undefined };
   constructor(data?: PartialMessage<_ReadToolSuccess>) {
     super();
@@ -167,8 +167,8 @@ var ReadToolSuccess$Runtime = (() => class _ReadToolSuccess extends Message<_Rea
     this.totalLines = 0;
     this.fileSize = 0;
     this.path = "";
-    this.relatedCursorRulePaths = [];
-    this.relatedCursorRules = [];
+    this.relatedAgentRulePaths = [];
+    this.relatedAgentRules = [];
     proto3.util.initPartial(data, this as _ReadToolSuccess);
   }
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): _ReadToolSuccess {
@@ -230,8 +230,8 @@ var ReadToolSuccess: MessageType<ReadToolSuccess> = ReadToolSuccess$Runtime as u
   },
   { no: 8, name: "read_range", kind: "message", T: ReadRange, opt: true },
   { no: 11, name: "include_line_numbers", kind: "scalar", T: 8, opt: true },
-  { no: 12, name: "related_cursor_rule_paths", kind: "scalar", T: 9, repeated: true },
-  { no: 13, name: "related_cursor_rules", kind: "message", T: CursorRule, repeated: true }
+  { no: 12, name: "related_agent_rule_paths", kind: "scalar", T: 9, repeated: true },
+  { no: 13, name: "related_agent_rules", kind: "message", T: AgentRule, repeated: true }
 ]);
 var ReadToolError$Runtime = (() => class _ReadToolError extends Message<_ReadToolError> {
   declare errorMessage: string;

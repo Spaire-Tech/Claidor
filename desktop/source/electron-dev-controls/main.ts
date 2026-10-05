@@ -1,3 +1,4 @@
+import "../shared/node/accept-simeon-env.js";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";

@@ -59,8 +59,8 @@ test("the validator's schema-2 key set is exactly what router-renderer-patch.mjs
   const record = patch.slice(patch.indexOf("const record = {"), patch.indexOf("const provenancePath"));
   // Keys written `key: value,` and shorthand keys written `key,`.
   const keys = [...record.matchAll(/^\s{4}(\w+)(?::|,$)/gm)].map(match => match[1]).sort();
-  assert.deepEqual(keys, ["brand", "chunks", "features", "files", "marks", "mode", "schemaVersion", "transformations"]);
-  assert.match(record, /schemaVersion: 2,/);
+  assert.deepEqual(keys, ["brand", "chunks", "features", "files", "marks", "mode", "renames", "schemaVersion", "transformations"]);
+  assert.match(record, /schemaVersion: 3,/);
   // And the validator takes that record.
   const read = readRendererExtensionRecord(schemaTwoRecord(), shipped);
   assert.deepEqual([...read.chunks.keys()], ["assets/registry-abc.js", "assets/panel-def.js"]);
@@ -88,5 +88,5 @@ test("a schema-1 record still reads, with the chunks as the only patched files",
   ];
   const read = readRendererExtensionRecord({ schemaVersion: 1, mode: "original-renderer-settings-extension", chunks, features: [], transformations: [] }, shipped);
   assert.deepEqual([...read.patched.keys()], ["assets/registry-abc.js", "assets/panel-def.js"]);
-  assert.throws(() => readRendererExtensionRecord({ schemaVersion: 3, mode: "original-renderer-settings-extension", chunks }, shipped), /contract is invalid/);
+  assert.throws(() => readRendererExtensionRecord({ schemaVersion: 4, mode: "original-renderer-settings-extension", chunks }, shipped), /contract is invalid/);
 });

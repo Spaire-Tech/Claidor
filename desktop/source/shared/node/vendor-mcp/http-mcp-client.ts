@@ -1,6 +1,6 @@
 // A small MCP client over streamable HTTP (24 September 2026), for the
 // vendors' own hosted servers (mcp.figma.com, mcp.notion.com, …). The upstream app
-// never spoke MCP to an HTTP server itself: Cursor's backend did, and Simeon
+// never spoke MCP to an HTTP server itself: the upstream's backend did, and Simeon
 // does not serve that. This is the part of the backend we need: initialize,
 // tools/list, tools/call, JSON-RPC over POST, a JSON or an SSE reply, the
 // session id header, and a 401 that means "sign in".

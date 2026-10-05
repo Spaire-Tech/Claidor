@@ -193,7 +193,7 @@ test("a Computer call runs through the real loop: parsed actions reach the box, 
     const output = items.find((item) => item.type === "function_call_output");
     assert.equal(output.call_id, "call_1");
     assert.match(String(output.output), /Computer action ran on the box desktop/);
-    assert.match(String(output.output), /Cursor is at \(120, 340\)/);
+    assert.match(String(output.output), /The pointer is at \(120, 340\)/);
     const image = items.flatMap((item) => (Array.isArray(item.content) ? item.content : [])).find((part) => part.type === "input_image");
     assert.equal(image.image_url, `data:image/webp;base64,${WEBP}`);
   } finally {

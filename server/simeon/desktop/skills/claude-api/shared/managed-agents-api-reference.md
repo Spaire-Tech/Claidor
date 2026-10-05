@@ -431,8 +431,8 @@ Most Managed Agents list endpoints use the `page` / `next_page` cursor scheme:
 | `limit` | query | Max items per page |
 | `page` | query | Opaque cursor from a previous response - pass a `next_page` or `prev_page` value here |
 | `order` | query | `asc` / `desc` on endpoints that support sorting. A cursor encodes the `order` of the request that produced it - reusing it with a different `order` returns 400. Other params (filters, `limit`) can change between paginated requests. |
-| `next_page` | response | Cursor for the next page; `null` when there are no more results |
-| `prev_page` | response | Cursor for the previous page on endpoints that support backward pagination - currently **only `GET /v1/sessions`**. `null` on the first page. On endpoints that don't support it, the field is **absent** (not `null`). |
+| `next_page` | response | The cursor for the next page; `null` when there are no more results |
+| `prev_page` | response | The cursor for the previous page on endpoints that support backward pagination - currently **only `GET /v1/sessions`**. `null` on the first page. On endpoints that don't support it, the field is **absent** (not `null`). |
 
 Every SDK exposes an auto-paginating iterator that follows `next_page`. In Python and TypeScript, iterate the list result directly; the other SDKs expose the iterator via a separate method (iterating the plain list result returns one page). SDK auto-pagination is **forward-only** - to go back a page, read `prev_page` from the response and pass it back as the `page` parameter yourself.
 

@@ -1,6 +1,6 @@
 // The backend the MCP manager talks to for a custom URL server (24 September
-// 2026). The upstream app routed every HTTP server through Cursor's backend
-// (`cursor-backend/backend-mcp-exec.ts`: ListSandMcpTools, ExecuteSandMcpTool,
+// 2026). The upstream app routed every HTTP server through the upstream's backend
+// (`simeon-backend/backend-mcp-exec.ts`: ListSandMcpTools, ExecuteSandMcpTool,
 // CheckHttpMcpStatus, CompleteMcpOAuth, …), which Simeon Labs' server does
 // not serve. This object answers for the servers in the account store
 // (`store.ts`) the way `vendor-mcp/backend-exec.ts` answers for the vendor

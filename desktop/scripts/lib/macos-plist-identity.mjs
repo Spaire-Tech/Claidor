@@ -9,7 +9,7 @@
 
 // Proper nouns only, case-sensitive, for rewriting: a prompt about "the
 // cursor" must not become "the Simeon". Any case, for reporting.
-export const PREVIOUS_IDENTITY = /\b(Grok Bot|Grok|Cursor|Anysphere|SpaceX|xAI)\b/;
+export const PREVIOUS_IDENTITY = /\b(Grok Bot|Grok|Cursor|Anysphere|SpaceXAI|SpaceX|xAI)\b/;
 const PREVIOUS_IDENTITY_ANY_CASE = /grok|cursor\.(com|sh)|anysphere|spacex|\bxai\b/i;
 
 const READ_BY_PEOPLE = new Set(["CFBundleName", "CFBundleDisplayName", "CFBundleGetInfoString"]);
@@ -34,7 +34,7 @@ export function plistIdentityRewrites(entries, { bundleId, name, year = 2026, ro
     }
     const human = key === "NSHumanReadableCopyright" || key.endsWith("UsageDescription") || READ_BY_PEOPLE.has(key);
     if (human && PREVIOUS_IDENTITY.test(value)) {
-      rewrites[key] = key === "NSHumanReadableCopyright" ? `Copyright © ${year} Simeon Labs. All rights reserved.` : renamed(value);
+      rewrites[key] = key === "NSHumanReadableCopyright" ? `Copyright © ${year} SimeonLabs, Inc. All rights reserved.` : renamed(value);
     } else if (PREVIOUS_IDENTITY.test(value) || PREVIOUS_IDENTITY_ANY_CASE.test(value)) {
       reported.push(key);
     }

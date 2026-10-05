@@ -1,43 +1,40 @@
 #!/usr/bin/env node
 /**
- * Simeon's favicon, the twelve-petal mark, for every web surface (the
+ * Simeon's favicon, the four-petal mark, for every web surface (the
  * founder, 28 September 2026: "this is the favicon. please change
- * everywhere. even in app.simeonlabs"). Drawn from the numbers in
- * lib/simeon-logo.mjs, cropped to the petals so it reads at 16 px.
+ * everywhere. even in app.simeonlabs"; the mark itself from 4 October 2026).
+ * Drawn from the path in lib/simeon-logo.mjs, cropped to the mark so it
+ * reads at 16 px.
  *
  *   node scripts/make-favicons.mjs site <dir>   the website: favicon.svg, favicon.ico, apple-touch-icon.png
  *   node scripts/make-favicons.mjs web <dir>    the dashboard's public/: the same, plus the four PNG names
  *                                               its layout links (favicon.png is shown on dark tab bars,
  *                                               favicon-dark.png on light ones, and their -dev twins)
  *
- * The SVG follows the browser's colour scheme (black petals on a light tab
+ * The SVG follows the browser's colour scheme (a black mark on a light tab
  * bar, white on a dark one); the .ico and the home-screen icon are the mark
  * as supplied, black on white.
  */
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import { SIMEON_PETALS, loadChromium, simeonPetalsMarkup } from "./lib/simeon-logo.mjs";
+import { SIMEON_MARK_BOUNDS, loadChromium, simeonMarkMarkup } from "./lib/simeon-logo.mjs";
 
-// The petals' bounds in the 400-unit box, with a hair of margin.
+// The mark's bounds in the 400-unit box, with a hair of margin.
 const box = (() => {
-  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-  for (const p of SIMEON_PETALS) {
-    const r = Math.max(p.rx, p.ry);
-    x0 = Math.min(x0, p.cx - r); y0 = Math.min(y0, p.cy - r); x1 = Math.max(x1, p.cx + r); y1 = Math.max(y1, p.cy + r);
-  }
-  const side = Math.max(x1 - x0, y1 - y0) * 1.04, cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+  const { x, y, width, height } = SIMEON_MARK_BOUNDS;
+  const side = Math.max(width, height) * 1.04, cx = x + width / 2, cy = y + height / 2;
   return `${(cx - side / 2).toFixed(1)} ${(cy - side / 2).toFixed(1)} ${side.toFixed(1)} ${side.toFixed(1)}`;
 })();
 
-const schemeSvg = () => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${box}"><style>ellipse{fill:#141414}@media (prefers-color-scheme:dark){ellipse{fill:#ffffff}}</style>${simeonPetalsMarkup("").replaceAll(' fill=""', "")}</svg>\n`;
+const schemeSvg = () => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${box}"><style>path{fill:#141414}@media (prefers-color-scheme:dark){path{fill:#ffffff}}</style>${simeonMarkMarkup("")}</svg>\n`;
 const flatSvg = (ink, background) => {
   const [x, y, w] = box.split(" ").map(Number);
   // On a background the mark sits inside a margin, as it does in the supplied picture.
   const pad = background ? w * 0.22 : 0;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x - pad} ${y - pad} ${w + 2 * pad} ${w + 2 * pad}">`
     + (background ? `<rect x="${x - pad}" y="${y - pad}" width="${w + 2 * pad}" height="${w + 2 * pad}" fill="${background}"/>` : "")
-    + `${simeonPetalsMarkup(ink)}</svg>`;
+    + `${simeonMarkMarkup(ink)}</svg>`;
 };
 
 async function rasterise(page, svg, size) {

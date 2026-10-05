@@ -1,5 +1,5 @@
 import type { Clock, RetryPolicy } from "../../../internal/scheduling.js";
-import { getConfiguredBackendUrl } from "../../../shared/node/cursor-token.js";
+import { getConfiguredBackendUrl } from "../../../shared/node/simeon-token.js";
 import { getOrCreateHostMachineId } from "../../host-secret-store.js";
 import {
   readDevInferenceCredentialFile,

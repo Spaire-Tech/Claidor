@@ -11,7 +11,7 @@ export const SAND_COOKIE_PERSIST_PHASES = ["capture", "restore"] as const;
 export const SAND_COOKIE_PERSIST_OUTCOMES = ["captured", "ok", "partial", "failed", "empty"] as const;
 export const SAND_EGRESS_TUNNEL_OUTCOMES = ["ready", "restart", "startup_timeout", "listener_lost", "stale_port"] as const;
 export const SAND_BOX_BOOT_FAILURE_STAGES = ["desktop"] as const, SAND_BOX_BOOT_FAILURE_REASONS = ["x_display_timeout"] as const;
-export const SAND_PROCESS_CRASH_BINARIES = ["cursor", "cursor-nightly", "cursor-lab", "chrome", "node", "exec-daemon", "xvfb", "xfwm4", "picom", "x11vnc", "websockify", "plank", "thunar", "xfce4-terminal", "other"] as const;
+export const SAND_PROCESS_CRASH_BINARIES = ["simeon"] as const;
 export const SAND_PROCESS_CRASH_SIGNALS = ["sigill", "sigsegv", "sigabrt", "sigbus", "other"] as const;
 export const SAND_HOST_BOOT_FETCH_OUTCOMES = ["current", "applied", "fallback", "restore_failed"] as const;
 export const SAND_HOST_BOOT_FETCH_REASONS = ["current", "applied", "pointer_unreachable", "pointer_malformed", "target_vetoed", "download_failed", "swap_refused", "swap_failed_restored", "restore_failed", "budget_exceeded", "unexpected_error"] as const;

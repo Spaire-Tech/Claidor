@@ -5,12 +5,12 @@
 The app side never changed: the automations extension in the box
 (`desktop/source/host/extensions/automations/`) registers what it
 listens for, polls two queues, mirrors each routine as a shadow workflow
-and completes runs, exactly as it did against Cursor's server. This
+and completes runs, exactly as it did against the upstream's server. This
 package is that server, split by what the app calls:
 
 - `listeners_relay.py` — the five JSON routes (`/sand/listener-*`,
   `/sand/automation-*`), plus the webhook mint;
-- `listeners_automations.py` — `aiserver.v1.AutomationsService`
+- `listeners_automations.py` — `simeon.v1.AutomationsService`
   (List/Create/Update/DeleteSandAutomation);
 - `listeners_connections.py` — the `DashboardService` Slack/SCM reads,
   the install pages for Simeon's Slack app and GitHub App;

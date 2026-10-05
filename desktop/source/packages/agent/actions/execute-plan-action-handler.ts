@@ -75,17 +75,17 @@ export class ExecutePlanActionHandler extends AbstractUserMessageActionHandler {
   getFirstUserInfoRequestContextCompleteness(priorMessages: readonly Any[]): Any {
     const firstMsg = priorMessages[0];
     if (firstMsg?.role !== "user") return undefined;
-    return parseRequestContextCompletenessMetadata(firstMsg.providerOptions?.cursor?.requestContextCompleteness);
+    return parseRequestContextCompletenessMetadata(firstMsg.providerOptions?.simeon?.requestContextCompleteness);
   }
 
   getFirstUserInfoSummarizationEpoch(priorMessages: readonly Any[]): Any {
     const firstMsg = priorMessages[0];
     if (firstMsg?.role !== "user") return undefined;
-    return parseUserInfoSummarizationEpochMetadata(firstMsg.providerOptions?.cursor?.userInfoSummarizationEpoch);
+    return parseUserInfoSummarizationEpochMetadata(firstMsg.providerOptions?.simeon?.userInfoSummarizationEpoch);
   }
 
   getFirstUserInfoOmitCloudWorkerProcedure(priorMessages: readonly Any[]): boolean {
-    return priorMessages[0]?.providerOptions?.cursor?.omitCloudWorkerProcedure === true;
+    return priorMessages[0]?.providerOptions?.simeon?.omitCloudWorkerProcedure === true;
   }
 
   async resolvePlanFilePath(ctx: Any, requestContext: Any, action: Any, planFileContent: string): Promise<Any> {
@@ -167,7 +167,7 @@ export class ExecutePlanActionHandler extends AbstractUserMessageActionHandler {
     const needsOmitCloudWorkerProcedureRerender = hasExistingNonSystemMessages && this.getFirstUserInfoOmitCloudWorkerProcedure(priorMessages) !== omitCloudWorkerProcedure;
     const newMessages: Any[] = [{
       role: "system",
-      content: configAny.systemPromptGenerator({ requestContext, cursorRules: rules, env: requestContext.env, cloudRule: requestContext.cloudRule ?? undefined, mode: executionMode, omitCloudWorkerProcedure, priorUserInfoCloudTestingSectionsPlacement }, toolSetHandle),
+      content: configAny.systemPromptGenerator({ requestContext, agentRules: rules, env: requestContext.env, cloudRule: requestContext.cloudRule ?? undefined, mode: executionMode, omitCloudWorkerProcedure, priorUserInfoCloudTestingSectionsPlacement }, toolSetHandle),
     }];
     let didReplaceUserInfo = false;
     if ((!hasExistingNonSystemMessages || needsUserInfoRerender || needsRequestContextRecoveryRerender || needsSummarizationRerender || needsCloudTestingPlacementRerender || needsOmitCloudWorkerProcedureRerender) && !configAny.userInfoDisplayOptions?.disable) {
@@ -184,7 +184,7 @@ export class ExecutePlanActionHandler extends AbstractUserMessageActionHandler {
       newMessages.push({
         role: "user",
         content: UserInfo({
-          cursorRules: rules,
+          agentRules: rules,
           agentSkills: requestContext.agentSkills,
           env: requestContext.env,
           cloudRule: requestContext.cloudRule ?? undefined,
@@ -224,7 +224,7 @@ export class ExecutePlanActionHandler extends AbstractUserMessageActionHandler {
           enableComposer2IntelligentTestingPromptSection: configAny.enableComposer2IntelligentTestingPromptSection,
           priorUserInfoCloudTestingSectionsPlacement,
         }),
-        providerOptions: { cursor: { requestContextCompleteness, userInfoSummarizationEpoch: currentSummarizationEpoch, omitCloudWorkerProcedure, ...(userInfoCloudTestingSectionsPlacement !== undefined ? { composer2CloudTestingSectionsPlacement: userInfoCloudTestingSectionsPlacement } : {}) } },
+        providerOptions: { simeon: { requestContextCompleteness, userInfoSummarizationEpoch: currentSummarizationEpoch, omitCloudWorkerProcedure, ...(userInfoCloudTestingSectionsPlacement !== undefined ? { composer2CloudTestingSectionsPlacement: userInfoCloudTestingSectionsPlacement } : {}) } },
       });
     }
     const effectivePriorMessages = didReplaceUserInfo ? priorMessages.slice(1) : priorMessages;

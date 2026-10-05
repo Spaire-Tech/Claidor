@@ -1,11 +1,11 @@
 """The skill registry behind the app's plugin marketplace (25 September 2026).
 
-The desktop app publishes a skill as a Cursor "plugin": it packs the
+The desktop app publishes a skill as an upstream "plugin": it packs the
 skill folder into a tar.gz and posts it to
-`aiserver.v1.DashboardService/PublishPlugin`, then reads it back from
+`simeon.v1.DashboardService/PublishPlugin`, then reads it back from
 `GetEffectiveUserPlugins` on every daily sync and installs it from the
 listing's `inline_content_json` (`desktop/source/packages/cursor-plugins/
-backend-marketplace-client.ts`, `inline-plugin-synthesizer.ts`). Cursor
+backend-marketplace-client.ts`, `inline-plugin-synthesizer.ts`). the upstream app
 kept these in a git-hosted team marketplace; Simeon Labs keeps them here.
 
 - `SandPlugin`: one published plugin. `numeric_id` is the int64 the app

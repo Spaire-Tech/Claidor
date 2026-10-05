@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { promises as fs } from "node:fs";
 
-import { parseJwtPayload } from "../../../shared/node/cursor-token.js";
+import { parseJwtPayload } from "../../../shared/node/simeon-token.js";
 
 export const UA_OWNER_STAMP_PATH = "/tmp/sand-ua-user";
 export const UA_OWNER_STAMP_LENGTH = 16;

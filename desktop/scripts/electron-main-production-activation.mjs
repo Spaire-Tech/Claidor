@@ -18,7 +18,7 @@ export const electronMainProductionBindingEvidence = Object.freeze({
   "adapters.mainRpc": "const mainEdge = serveMainEdge({",
   "adapters.updaterInstaller": "updateService = createUpdateServiceWiring({",
   "adapters.mediaProtocol": "registerSandMediaProtocol();",
-  "adapters.accountOAuth": "var cursorAuthWiring = createCursorAuthWiring({",
+  "adapters.accountOAuth": "var accountAuthWiring = createAccountAuthWiring({",
   "adapters.experiments": "var experimentsRuntime = createExperimentsRuntime({",
   "adapters.mcpOAuth": "var mcpRuntime = createMcpRuntime({",
   "adapters.telemetry": "desktopTelemetry = await SandDesktopStructuredLogTelemetry.create({",
@@ -45,7 +45,7 @@ export const electronMainProductionBindingInventorySpecs = Object.freeze([
   { path: "adapters.ipc", classification: "generated-source", module: "./source/electron-main/adapters/ipc.ts", export: "createElectronProductionIpcBinding", access: "call", artifactAnchor: { artifact: "src/app/dist/electron-main/main.cjs", line: 506728, needle: "registerSecretsIpc({" } },
   { path: "adapters.updaterInstaller", classification: "generated-source", module: "./source/electron-main/production-binding-providers.ts", export: "createElectronProductionUpdaterInstallerBinding", access: "call", artifactAnchor: { artifact: "src/app/dist/electron-main/main.cjs", line: 506321, needle: "updateService = createUpdateServiceWiring({" } },
   { path: "adapters.mediaProtocol", classification: "generated-source", module: "./source/electron-main/production-binding-providers.ts", export: "createElectronProductionMediaProtocolBinding", access: "call", artifactAnchor: { artifact: "src/app/dist/electron-main/main.cjs", line: 506337, needle: "registerSandMediaProtocol();" } },
-  { path: "adapters.accountOAuth", classification: "generated-source", module: "./source/electron-main/adapters/account-oauth.ts", export: "createElectronProductionAccountOAuthBinding", access: "call", artifactAnchor: { artifact: "src/app/dist/electron-main/main.cjs", line: 505993, needle: "var cursorAuthWiring = createCursorAuthWiring({" } },
+  { path: "adapters.accountOAuth", classification: "generated-source", module: "./source/electron-main/adapters/account-oauth.ts", export: "createElectronProductionAccountOAuthBinding", access: "call", artifactAnchor: { artifact: "src/app/dist/electron-main/main.cjs", line: 505993, needle: "var accountAuthWiring = createAccountAuthWiring({" } },
   { path: "adapters.experiments", classification: "generated-source", module: "./source/electron-main/adapters/production-experiments-binding.ts", export: "createElectronProductionExperimentsBinding", access: "call", artifactAnchor: { artifact: "src/app/dist/electron-main/main.cjs", line: 506018, needle: "var experimentsRuntime = createExperimentsRuntime({" } },
   { path: "adapters.mcpOAuth", classification: "generated-source", module: "./source/electron-main/adapters/mcp-oauth.ts", export: "createProductionMcpOAuthAdapter", access: "call", artifactAnchor: { artifact: "src/app/dist/electron-main/main.cjs", line: 506056, needle: "var mcpRuntime = createMcpRuntime({" } },
   { path: "adapters.telemetry", classification: "generated-source", module: "./source/electron-main/adapters/telemetry.ts", export: "createElectronProductionTelemetryBinding", access: "call", artifactAnchor: { artifact: "src/app/dist/electron-main/main.cjs", line: 506459, needle: "desktopTelemetry = await SandDesktopStructuredLogTelemetry.create({" } },
@@ -218,7 +218,7 @@ import { startElectronMainProduction } from "./source/electron-main/main.ts";
 import { createElectronProductionNativeBindings } from "./source/electron-main/main-production-services.ts";
 import { createElectronProductionAvatarImagesBinding } from "./source/electron-main/adapters/avatar-images.ts";
 import { createElectronProductionImageContextMenuBinding } from "./source/electron-main/adapters/avatar-images.ts";
-import { createElectronProductionCursorAccountBinding } from "./source/electron-main/adapters/account-edge.ts";
+import { createElectronProductionAccountBinding } from "./source/electron-main/adapters/account-edge.ts";
 import { composeElectronProductionCoordinatorBindings, createElectronProductionServiceFactories } from "./source/electron-main/production-adapters.ts";
 
 const coordinatorBindings = composeElectronProductionCoordinatorBindings(
@@ -231,7 +231,7 @@ const adapters = {
   // root context when createElectronProductionServiceFactories invokes them.
   avatarImages: createElectronProductionAvatarImagesBinding(),
   imageContextMenu: createElectronProductionImageContextMenuBinding(),
-  cursorAccount: createElectronProductionCursorAccountBinding(),
+  accountService: createElectronProductionAccountBinding(),
 ${adapterKeys.filter(key => key !== "coordinator" && key !== "ipc").map(key => `  ${key}: ${expression(bindings, `adapters.${key}`)},`).join("\n")}
   ...coordinatorBindings,
 };

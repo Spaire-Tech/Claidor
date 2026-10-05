@@ -88,7 +88,7 @@ function accountPorts(
     },
     resetAccountState: (receivedContext) => receivedContext.requireNotifications().resetAccountState(),
     deliverStatus: (status, receivedContext) => {
-      receivedContext.requireAccount().deliverCursorAuthStatus(
+      receivedContext.requireAccount().deliverAccountAuthStatus(
         status as unknown as ProductionAccountStatus,
       );
     },

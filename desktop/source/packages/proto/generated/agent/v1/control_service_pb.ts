@@ -6,7 +6,7 @@
  * B11 exports: 65 messages + 8 enums + 0 services = 73
  */
 import { Any, Empty, Message, Struct, Timestamp, Value, proto3, protoInt64, type BinaryReadOptions, type JsonReadOptions, type JsonValue, type MessageType, type PartialMessage, type PlainMessage } from "@bufbuild/protobuf";
-import { GetDiffRequest, GetDiffResponse } from "../../aiserver/v1/utils_pb.js";
+import { GetDiffRequest, GetDiffResponse } from "../../simeon/v1/utils_pb.js";
 
 type MutableMessageType<T extends Message<T>> = { -readonly [P in keyof MessageType<T>]: MessageType<T>[P] };
 
@@ -2315,31 +2315,31 @@ var UpdateEnvironmentVariablesResponse: MessageType<UpdateEnvironmentVariablesRe
     /* ScalarType.UINT32 */
   }
 ]);
-var DownloadCursorServerRequest$Runtime = (() => class _DownloadCursorServerRequest extends Message<_DownloadCursorServerRequest> {
+var DownloadSimeonServerRequest$Runtime = (() => class _DownloadSimeonServerRequest extends Message<_DownloadSimeonServerRequest> {
   declare commit: string;
-  constructor(data?: PartialMessage<_DownloadCursorServerRequest>) {
+  constructor(data?: PartialMessage<_DownloadSimeonServerRequest>) {
     super();
     this.commit = "";
-    proto3.util.initPartial(data, this as _DownloadCursorServerRequest);
+    proto3.util.initPartial(data, this as _DownloadSimeonServerRequest);
   }
-  static fromBinary(bytes: Uint8Array, options2?: Partial<BinaryReadOptions>): _DownloadCursorServerRequest {
-    return new _DownloadCursorServerRequest().fromBinary(bytes, options2);
+  static fromBinary(bytes: Uint8Array, options2?: Partial<BinaryReadOptions>): _DownloadSimeonServerRequest {
+    return new _DownloadSimeonServerRequest().fromBinary(bytes, options2);
   }
-  static fromJson(jsonValue: JsonValue, options2?: Partial<JsonReadOptions>): _DownloadCursorServerRequest {
-    return new _DownloadCursorServerRequest().fromJson(jsonValue, options2);
+  static fromJson(jsonValue: JsonValue, options2?: Partial<JsonReadOptions>): _DownloadSimeonServerRequest {
+    return new _DownloadSimeonServerRequest().fromJson(jsonValue, options2);
   }
-  static fromJsonString(jsonString: string, options2?: Partial<JsonReadOptions>): _DownloadCursorServerRequest {
-    return new _DownloadCursorServerRequest().fromJsonString(jsonString, options2);
+  static fromJsonString(jsonString: string, options2?: Partial<JsonReadOptions>): _DownloadSimeonServerRequest {
+    return new _DownloadSimeonServerRequest().fromJsonString(jsonString, options2);
   }
-  static equals(a: _DownloadCursorServerRequest | PlainMessage<_DownloadCursorServerRequest> | undefined | null, b2: _DownloadCursorServerRequest | PlainMessage<_DownloadCursorServerRequest> | undefined | null): boolean {
-    return proto3.util.equals(_DownloadCursorServerRequest as unknown as MessageType<_DownloadCursorServerRequest>, a, b2);
+  static equals(a: _DownloadSimeonServerRequest | PlainMessage<_DownloadSimeonServerRequest> | undefined | null, b2: _DownloadSimeonServerRequest | PlainMessage<_DownloadSimeonServerRequest> | undefined | null): boolean {
+    return proto3.util.equals(_DownloadSimeonServerRequest as unknown as MessageType<_DownloadSimeonServerRequest>, a, b2);
   }
 })();
-export type DownloadCursorServerRequest = InstanceType<typeof DownloadCursorServerRequest$Runtime>;
-var DownloadCursorServerRequest: MessageType<DownloadCursorServerRequest> = DownloadCursorServerRequest$Runtime as unknown as MessageType<DownloadCursorServerRequest>;
-(DownloadCursorServerRequest as MutableMessageType<DownloadCursorServerRequest>).runtime = proto3;
-(DownloadCursorServerRequest as MutableMessageType<DownloadCursorServerRequest>).typeName = "agent.v1.DownloadCursorServerRequest";
-(DownloadCursorServerRequest as MutableMessageType<DownloadCursorServerRequest>).fields = proto3.util.newFieldList(() => [
+export type DownloadSimeonServerRequest = InstanceType<typeof DownloadSimeonServerRequest$Runtime>;
+var DownloadSimeonServerRequest: MessageType<DownloadSimeonServerRequest> = DownloadSimeonServerRequest$Runtime as unknown as MessageType<DownloadSimeonServerRequest>;
+(DownloadSimeonServerRequest as MutableMessageType<DownloadSimeonServerRequest>).runtime = proto3;
+(DownloadSimeonServerRequest as MutableMessageType<DownloadSimeonServerRequest>).typeName = "agent.v1.DownloadSimeonServerRequest";
+(DownloadSimeonServerRequest as MutableMessageType<DownloadSimeonServerRequest>).fields = proto3.util.newFieldList(() => [
   {
     no: 1,
     name: "commit",
@@ -2348,31 +2348,31 @@ var DownloadCursorServerRequest: MessageType<DownloadCursorServerRequest> = Down
     /* ScalarType.STRING */
   }
 ]);
-var DownloadCursorServerResponse$Runtime = (() => class _DownloadCursorServerResponse extends Message<_DownloadCursorServerResponse> {
+var DownloadSimeonServerResponse$Runtime = (() => class _DownloadSimeonServerResponse extends Message<_DownloadSimeonServerResponse> {
   declare alreadyDownloaded: boolean;
-  constructor(data?: PartialMessage<_DownloadCursorServerResponse>) {
+  constructor(data?: PartialMessage<_DownloadSimeonServerResponse>) {
     super();
     this.alreadyDownloaded = false;
-    proto3.util.initPartial(data, this as _DownloadCursorServerResponse);
+    proto3.util.initPartial(data, this as _DownloadSimeonServerResponse);
   }
-  static fromBinary(bytes: Uint8Array, options2?: Partial<BinaryReadOptions>): _DownloadCursorServerResponse {
-    return new _DownloadCursorServerResponse().fromBinary(bytes, options2);
+  static fromBinary(bytes: Uint8Array, options2?: Partial<BinaryReadOptions>): _DownloadSimeonServerResponse {
+    return new _DownloadSimeonServerResponse().fromBinary(bytes, options2);
   }
-  static fromJson(jsonValue: JsonValue, options2?: Partial<JsonReadOptions>): _DownloadCursorServerResponse {
-    return new _DownloadCursorServerResponse().fromJson(jsonValue, options2);
+  static fromJson(jsonValue: JsonValue, options2?: Partial<JsonReadOptions>): _DownloadSimeonServerResponse {
+    return new _DownloadSimeonServerResponse().fromJson(jsonValue, options2);
   }
-  static fromJsonString(jsonString: string, options2?: Partial<JsonReadOptions>): _DownloadCursorServerResponse {
-    return new _DownloadCursorServerResponse().fromJsonString(jsonString, options2);
+  static fromJsonString(jsonString: string, options2?: Partial<JsonReadOptions>): _DownloadSimeonServerResponse {
+    return new _DownloadSimeonServerResponse().fromJsonString(jsonString, options2);
   }
-  static equals(a: _DownloadCursorServerResponse | PlainMessage<_DownloadCursorServerResponse> | undefined | null, b2: _DownloadCursorServerResponse | PlainMessage<_DownloadCursorServerResponse> | undefined | null): boolean {
-    return proto3.util.equals(_DownloadCursorServerResponse as unknown as MessageType<_DownloadCursorServerResponse>, a, b2);
+  static equals(a: _DownloadSimeonServerResponse | PlainMessage<_DownloadSimeonServerResponse> | undefined | null, b2: _DownloadSimeonServerResponse | PlainMessage<_DownloadSimeonServerResponse> | undefined | null): boolean {
+    return proto3.util.equals(_DownloadSimeonServerResponse as unknown as MessageType<_DownloadSimeonServerResponse>, a, b2);
   }
 })();
-export type DownloadCursorServerResponse = InstanceType<typeof DownloadCursorServerResponse$Runtime>;
-var DownloadCursorServerResponse: MessageType<DownloadCursorServerResponse> = DownloadCursorServerResponse$Runtime as unknown as MessageType<DownloadCursorServerResponse>;
-(DownloadCursorServerResponse as MutableMessageType<DownloadCursorServerResponse>).runtime = proto3;
-(DownloadCursorServerResponse as MutableMessageType<DownloadCursorServerResponse>).typeName = "agent.v1.DownloadCursorServerResponse";
-(DownloadCursorServerResponse as MutableMessageType<DownloadCursorServerResponse>).fields = proto3.util.newFieldList(() => [
+export type DownloadSimeonServerResponse = InstanceType<typeof DownloadSimeonServerResponse$Runtime>;
+var DownloadSimeonServerResponse: MessageType<DownloadSimeonServerResponse> = DownloadSimeonServerResponse$Runtime as unknown as MessageType<DownloadSimeonServerResponse>;
+(DownloadSimeonServerResponse as MutableMessageType<DownloadSimeonServerResponse>).runtime = proto3;
+(DownloadSimeonServerResponse as MutableMessageType<DownloadSimeonServerResponse>).typeName = "agent.v1.DownloadSimeonServerResponse";
+(DownloadSimeonServerResponse as MutableMessageType<DownloadSimeonServerResponse>).fields = proto3.util.newFieldList(() => [
   {
     no: 1,
     name: "already_downloaded",
@@ -2525,4 +2525,4 @@ var LoadMcpServersResponse: MessageType<LoadMcpServersResponse> = LoadMcpServers
   { no: 1, name: "loaded_server_names", kind: "scalar", T: 9, repeated: true }
 ]);
 
-export { EntryType, BatchGetDiffErrorKind, ArtifactUploadStatus, ArtifactPathErrorKind, ArtifactRootKind, ArtifactUploadDispatchStatus, PersistArtifactToAgentStoreStatus, ArtifactRestoreStatus, PingRequest, PingResponse, GetCapabilitiesRequest, GetCapabilitiesResponse, ReloadAgentSkillsRequest, ReloadAgentSkillsResponse, ReloadPluginsRequest, ReloadPluginsResponse, ExecRequest, ExecResponse, StdoutEvent, StderrEvent, ExitEvent, ListDirectoryRequest, ListDirectoryResponse, DirectoryEntry, ReadTextFileRequest, ReadTextFileResponse, WriteTextFileRequest, WriteTextFileResponse, ReadBinaryFileRequest, ReadBinaryFileResponse, ExportFileRequest, ExportFileMetadata, ExportFileResponse, WriteBinaryFileRequest, WriteBinaryFileResponse, GetWorkspaceChangesHashRequest, GetWorkspaceChangesHashResponse, BatchGetDiffRequest, BatchGetDiffItem, BatchGetDiffResponse, BatchGetDiffResult, BatchGetDiffError, RefreshGithubAccessTokenRequest, RefreshGithubAccessTokenResponse, WarmRemoteAccessServerRequest, WarmRemoteAccessServerResponse, ListArtifactsRequest, ArtifactUploadMetadata, ArtifactPathError, ListArtifactsResponse, UploadArtifactsRequest, ArtifactUploadInstruction, ArtifactUploadDispatchResult, UploadArtifactsResponse, PersistArtifactToAgentStoreInstruction, PersistArtifactsToAgentStoreRequest, PersistArtifactToAgentStoreResult, PersistArtifactsToAgentStoreResponse, RestoreArtifactInstruction, RestoreArtifactResult, RestoreArtifactsRequest, RestoreArtifactsResponse, GetMcpRefreshTokensRequest, GetMcpRefreshTokensResponse, UpdateEnvironmentVariablesRequest, RunScopedOverlay, UpdateEnvironmentVariablesResponse, DownloadCursorServerRequest, DownloadCursorServerResponse, InstallPluginArtifactRequest, InstallPluginArtifactResponse, LoadMcpServersRequest, LoadMcpServersResponse };
+export { EntryType, BatchGetDiffErrorKind, ArtifactUploadStatus, ArtifactPathErrorKind, ArtifactRootKind, ArtifactUploadDispatchStatus, PersistArtifactToAgentStoreStatus, ArtifactRestoreStatus, PingRequest, PingResponse, GetCapabilitiesRequest, GetCapabilitiesResponse, ReloadAgentSkillsRequest, ReloadAgentSkillsResponse, ReloadPluginsRequest, ReloadPluginsResponse, ExecRequest, ExecResponse, StdoutEvent, StderrEvent, ExitEvent, ListDirectoryRequest, ListDirectoryResponse, DirectoryEntry, ReadTextFileRequest, ReadTextFileResponse, WriteTextFileRequest, WriteTextFileResponse, ReadBinaryFileRequest, ReadBinaryFileResponse, ExportFileRequest, ExportFileMetadata, ExportFileResponse, WriteBinaryFileRequest, WriteBinaryFileResponse, GetWorkspaceChangesHashRequest, GetWorkspaceChangesHashResponse, BatchGetDiffRequest, BatchGetDiffItem, BatchGetDiffResponse, BatchGetDiffResult, BatchGetDiffError, RefreshGithubAccessTokenRequest, RefreshGithubAccessTokenResponse, WarmRemoteAccessServerRequest, WarmRemoteAccessServerResponse, ListArtifactsRequest, ArtifactUploadMetadata, ArtifactPathError, ListArtifactsResponse, UploadArtifactsRequest, ArtifactUploadInstruction, ArtifactUploadDispatchResult, UploadArtifactsResponse, PersistArtifactToAgentStoreInstruction, PersistArtifactsToAgentStoreRequest, PersistArtifactToAgentStoreResult, PersistArtifactsToAgentStoreResponse, RestoreArtifactInstruction, RestoreArtifactResult, RestoreArtifactsRequest, RestoreArtifactsResponse, GetMcpRefreshTokensRequest, GetMcpRefreshTokensResponse, UpdateEnvironmentVariablesRequest, RunScopedOverlay, UpdateEnvironmentVariablesResponse, DownloadSimeonServerRequest, DownloadSimeonServerResponse, InstallPluginArtifactRequest, InstallPluginArtifactResponse, LoadMcpServersRequest, LoadMcpServersResponse };

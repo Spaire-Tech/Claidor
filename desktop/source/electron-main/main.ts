@@ -1,3 +1,4 @@
+import "../shared/node/accept-simeon-env.js";
 import { installApplicationMenu, type ApplicationMenuElectronPort, type ApplicationMenuVoiceCall } from "./application-menu.js";
 import { reportDesktopEdgeFailure } from "./desktop-edge-failures.js";
 import { createDevToolsGate, createDevToolsMembershipResolver } from "./devtools-gate.js";
@@ -114,7 +115,7 @@ export interface ElectronMainServices {
   readonly mainEdge: MainEdge;
   readonly getDevToolsMembershipStatus: () => Promise<{
     readonly kind: string;
-    readonly isAnysphereUser?: boolean;
+    readonly isStaffUser?: boolean;
   }>;
   readonly subscribeDevToolsMembership: (listener: () => void) => () => void;
   readonly getThemeBackgroundColor: () => string;
@@ -278,7 +279,7 @@ export function startElectronMain(deps: ElectronMainDependencies): ElectronMainR
     reportFailure: (error) => reportDesktopEdgeFailure("window-focus", "push", error),
   });
 
-  // DevTools in a packaged build: the upstream app gated it on Cursor staff membership, which Simeon's profile never grants (F-221); `SAND_DEVTOOLS=1` in the environment opens it for whoever launched the app that way.
+  // DevTools in a packaged build: the upstream app gated it on upstream staff membership, which Simeon's profile never grants (F-221); `SAND_DEVTOOLS=1` in the environment opens it for whoever launched the app that way.
   const devToolsGate = createDevToolsGate({ isDevBuild: !deps.app.isPackaged || process.env.SAND_DEVTOOLS?.trim() === "1" });
   const hostChords = createHostWindowChords({
     getMainWindow: () => mainWindow,
@@ -406,7 +407,7 @@ export function startElectronMain(deps: ElectronMainDependencies): ElectronMainR
       const membership = createDevToolsMembershipResolver({
         getStatus: services.getDevToolsMembershipStatus,
         setMembership: devToolsGate.setMembership,
-        onError: (error) => reportDesktopEdgeFailure("cursor-auth", "anysphere-membership", error),
+        onError: (error) => reportDesktopEdgeFailure("account-auth", "staff-membership", error),
       });
       services.subscribeDevToolsMembership(() => void membership.refresh());
       void membership.refresh();

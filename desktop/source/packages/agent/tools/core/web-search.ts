@@ -207,7 +207,7 @@ async function buildReferencesFromServiceResult(context: Context, serviceResult:
 function getToolName(promptVersion: string): string {
   switch (promptVersion) {
     case "dsv3-1018": return "web_search";
-    case "cursor-0226":
+    case "simeon-0226":
     case "dsv3-1205":
     case "latest":
     case "gpt5-codex":
@@ -227,7 +227,7 @@ function getBaseDescription(promptVersion: string, useMinimalHarness: boolean, c
   switch (promptVersion) {
     case "gpt5-codex":
     case "codex-cloud":
-    case "cursor-0226": return "Search web for real-time info on any topic; use for up-to-date facts not in training data, like current events or tech updates. Results include snippets and URLs.";
+    case "simeon-0226": return "Search web for real-time info on any topic; use for up-to-date facts not in training data, like current events or tech updates. Results include snippets and URLs.";
     case "dsv3-1205":
     case "dsv3-1018": return "Search the web for real-time information about any topic. Use this tool when you need up-to-date information that might not be available in your training data, or when you need to verify facts. The search results will include relevant snippets and URLs from web pages. This is particularly useful for questions about current events, technology updates, or any topic that requires recent information.";
     case "latest":

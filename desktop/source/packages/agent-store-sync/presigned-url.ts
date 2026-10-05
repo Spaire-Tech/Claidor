@@ -66,11 +66,6 @@ const BCS_AGENT_STORE_BUCKET_HOSTS = [
   "agent-stores.s3.amazonaws.com",
 ];
 
-const PLAYGROUND_AGENT_STORE_BUCKET_HOSTS = [
-  "agent-stores-928182716709-us-west-2-an.s3.us-west-2.amazonaws.com",
-  "agent-stores-928182716709-us-west-2-an.s3.amazonaws.com",
-];
-
 function createBcsPresignedUrlValidator(): (url: URL) => void {
   return createHostAllowlistValidator(BCS_AGENT_STORE_BUCKET_HOSTS);
 }
@@ -83,21 +78,9 @@ function isLocalAgentStoreBackendUrl(backendUrl: string): boolean {
   return trimmed.includes("localhost") || trimmed.includes("lclhst.build");
 }
 
-function isPlaygroundAgentStoreBackendUrl(backendUrl: string): boolean {
-  try {
-    const hostname = new URL(backendUrl).hostname.toLowerCase();
-    return hostname === "playground.cursor.sh" || hostname.endsWith(".playground.cursor.sh");
-  } catch {
-    return false;
-  }
-}
-
 export function createAgentStorePresignedUrlValidatorForBackend(backendUrl: string): (url: URL) => void {
   if (isLocalAgentStoreBackendUrl(backendUrl)) {
     return createLocalDevAgentStorePresignedUrlValidator();
-  }
-  if (isPlaygroundAgentStoreBackendUrl(backendUrl)) {
-    return createHostAllowlistValidator(PLAYGROUND_AGENT_STORE_BUCKET_HOSTS);
   }
   return createBcsPresignedUrlValidator();
 }

@@ -2,7 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
 import { dirname, join } from "node:path";
 import { delay } from "../../shared/node/async.js";
-import { parseJwtPayload } from "../../shared/node/cursor-token.js";
+import { parseJwtPayload } from "../../shared/node/simeon-token.js";
 import { findSystemErrno } from "../../shared/system-errno.js";
 import { reportDesktopEdgeFailure } from "../desktop-edge-failures.js";
 import { captureSandSentryWarning } from "../telemetry/sentry.js";
@@ -12,7 +12,7 @@ export const SCOPED_CIPHERTEXT_PREFIX = "scoped:v1:";
 export const ACCOUNT_SCOPE_PATTERN = /^[0-9a-f]{64}$/u;
 export const ACCESS_TOKEN_KEY = "cursor-access-token";
 export const REFRESH_TOKEN_KEY = "cursor-refresh-token";
-export const CURSOR_AUTH_KEYS = [ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY] as const;
+export const SIMEON_AUTH_KEYS = [ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY] as const;
 export const LEGACY_PLAINTEXT_PREFIX = "plaintext:v1:";
 export const SECURE_STORAGE_READY_TIMEOUT_MS = 5_000;
 export const SECURE_STORAGE_POLL_INTERVAL_MS = 200;
@@ -51,14 +51,14 @@ export function parseStoredEncryptedSecret(stored: string): StoredEncryptedSecre
   return { accountScope, ciphertextBase64 };
 }
 
-export function withoutCursorAuth(map: Readonly<Record<string, string>>): Readonly<Record<string, string>> {
-  if (!CURSOR_AUTH_KEYS.some((key) => key in map)) return map;
+export function withoutAccountAuth(map: Readonly<Record<string, string>>): Readonly<Record<string, string>> {
+  if (!SIMEON_AUTH_KEYS.some((key) => key in map)) return map;
   const next = { ...map };
-  for (const key of CURSOR_AUTH_KEYS) delete next[key];
+  for (const key of SIMEON_AUTH_KEYS) delete next[key];
   return next;
 }
 
-export function canKeepCursorAuthRecovery(
+export function canKeepAccountAuthRecovery(
   map: Readonly<Record<string, string>>,
   accessToken: string,
 ): boolean {
@@ -268,7 +268,7 @@ export async function writeSecret(key: string, value: string): Promise<void> {
   }
   warnInMemoryOnce();
   if (key === ACCESS_TOKEN_KEY) {
-    await updateDisk((map) => canKeepCursorAuthRecovery(map, value) ? map : withoutCursorAuth(map));
+    await updateDisk((map) => canKeepAccountAuthRecovery(map, value) ? map : withoutAccountAuth(map));
   }
   sessionSecrets.set(key, value);
 }
@@ -382,7 +382,7 @@ export class DesktopSecretStore {
     }
     this.warnInMemoryOnce();
     if (key === ACCESS_TOKEN_KEY) {
-      await this.updateDisk((map) => canKeepCursorAuthRecovery(map, value) ? map : withoutCursorAuth(map));
+      await this.updateDisk((map) => canKeepAccountAuthRecovery(map, value) ? map : withoutAccountAuth(map));
     }
     this.sessionSecrets.set(key, value);
   }

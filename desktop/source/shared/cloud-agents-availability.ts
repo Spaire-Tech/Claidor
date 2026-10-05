@@ -3,13 +3,13 @@
  * 25 September 2026, later the same day; they were Coming Soon that
  * morning, design-audit-ledger.md cluster `cloud-agents-channels`).
  *
- * A cloud agent is Cursor's BackgroundComposerService (launch, reply,
+ * A cloud agent is the CloudAgentService (launch, reply,
  * artifacts, the cloud-agent card's link); `simeon/sand/cloud_agents.py`
  * serves it over the maty queue. A messaging channel is a Discord or Slack
  * connector the box runs itself (`host/extensions/channels/`, no server in
  * the path; docs/services-agents.md). The reach points below keep
  * their Coming Soon branch behind the switches: `SAND_CLOUD_AGENTS_SERVED=0`
- * withholds the `cursor-agent` type, the CloudAgent tool and the brief's
+ * withholds the `cloud-agent` type, the CloudAgent tool and the brief's
  * cloud-agent sections; `SAND_CHANNELS_SERVED=0` (`shared/channels.ts`)
  * withholds the `channel` target and the `secret-request` type, marks every
  * connector manifest coming soon so the Channels tab draws it, and
@@ -21,7 +21,7 @@ export const CLOUD_AGENTS_SERVED_ENV = "SAND_CLOUD_AGENTS_SERVED";
 
 /**
  * Where a cloud agent's page lives, for the card's "open" and the plain
- * link a channel gets. The upstream app opened `https://cursor.com/agents/<bcId>`;
+ * link a channel gets. The upstream app opened `the upstream site<bcId>`;
  * ours is Simeon's dashboard on Vercel. The page itself does not exist
  * yet (needs-web, `docs/services-agents.md`): until it does,
  * the card's conversation in the app is the record of the run.
@@ -43,13 +43,13 @@ export const CHANNELS_COMING_SOON_SENTENCE =
   "Messaging channels (Slack, Discord) are coming soon on Simeon: there is no channel to deliver to and no channel credential store to write to yet. Never ask the user to paste a key, token or password into the chat; if the service is a connector, use its connect card instead.";
 
 // On by default since 25 September 2026: `simeon/sand/cloud_agents.py`
-// serves BackgroundComposerService over the maty queue. "0" turns the
+// serves CloudAgentService over the maty queue. "0" turns the
 // paths off again.
 export function isCloudAgentsServed(env: NodeJS.ProcessEnv = process.env): boolean {
   const raw = env[CLOUD_AGENTS_SERVED_ENV]?.trim();
   if (raw === "0") return false;
   if (raw === "1") return true;
-  return isConnectServed(env, "aiserver.v1.BackgroundComposerService");
+  return isConnectServed(env, "simeon.v1.CloudAgentService");
 }
 
 // Which Connect services Simeon Labs' server answers (25 September 2026,
@@ -59,26 +59,40 @@ export function isCloudAgentsServed(env: NodeJS.ProcessEnv = process.env): boole
 // serves these at the root of the API host and answers `unimplemented`
 // for anything else, so a client is served by service name:
 //   - unset: the services below;
-//   - "1": every service (the upstream app's own behaviour, for a Cursor backend);
+//   - "1": every service (the upstream app's own behaviour, for an upstream backend);
 //   - "0": none (the 24 September behaviour);
 //   - "a.b.C,d.e.F": exactly those.
-// A name that is not a Connect service (Cursor's Statsig bootstrap is a
+// A name that is not a Connect service (the upstream's Statsig bootstrap is a
 // REST fetch) is never in the default set.
 export const CONNECT_SERVED_ENV = "SAND_CONNECT_SERVED";
 export const CONNECT_SERVED_SERVICES: ReadonlySet<string> = new Set([
-  "aiserver.v1.GrokBotService",
-  "aiserver.v1.BackgroundComposerService",
-  "aiserver.v1.DashboardService",
-  "aiserver.v1.AutomationsService",
-  "aiserver.v1.AiService",
+  "simeon.v1.ComputerService",
+  "simeon.v1.CloudAgentService",
+  "simeon.v1.DashboardService",
+  "simeon.v1.AutomationsService",
+  "simeon.v1.AiService",
   "agent.v1.AgentService",
 ]);
+// 5 October 2026: the services carry Simeon's names
+// (`packages/proto/simeon/v1/services.ts`). A `SAND_CONNECT_SERVED` list
+// written with the upstream's names still selects the same services.
+export const EARLIER_CONNECT_SERVICE_NAMES: Readonly<Record<string, string>> = {
+  "aiserver.v1.GrokBotService": "simeon.v1.ComputerService",
+  "aiserver.v1.BackgroundComposerService": "simeon.v1.CloudAgentService",
+  "aiserver.v1.DashboardService": "simeon.v1.DashboardService",
+  "aiserver.v1.AutomationsService": "simeon.v1.AutomationsService",
+  "aiserver.v1.AiService": "simeon.v1.AiService",
+};
+export function connectServiceName(typeName: string): string {
+  return EARLIER_CONNECT_SERVICE_NAMES[typeName] ?? typeName;
+}
 export function isConnectServed(env: NodeJS.ProcessEnv = process.env, serviceTypeName?: string): boolean {
   const raw = env[CONNECT_SERVED_ENV]?.trim() ?? "";
   if (raw === "1") return true;
   if (raw === "0") return false;
-  if (raw.length > 0) return serviceTypeName == null ? true : raw.split(",").map((name) => name.trim()).includes(serviceTypeName);
-  return serviceTypeName == null ? true : CONNECT_SERVED_SERVICES.has(serviceTypeName);
+  const wanted = serviceTypeName == null ? null : connectServiceName(serviceTypeName);
+  if (raw.length > 0) return wanted == null ? true : raw.split(",").map((name) => connectServiceName(name.trim())).includes(wanted);
+  return wanted == null ? true : CONNECT_SERVED_SERVICES.has(wanted);
 }
 
 export function isAnyChannelAvailable(manifests?: readonly { readonly availability: string }[], env: NodeJS.ProcessEnv = process.env): boolean {

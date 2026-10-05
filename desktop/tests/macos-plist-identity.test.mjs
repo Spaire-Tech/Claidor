@@ -7,14 +7,14 @@ const identity = { bundleId: "com.simeonlabs.simeon", name: "Simeon", year: 2026
 
 test("the copyright line and permission prompts name Simeon; working values are only reported", () => {
   const { rewrites, reported } = plistIdentityRewrites({
-    NSHumanReadableCopyright: "Copyright © 2026 Anysphere, Inc.",
+    NSHumanReadableCopyright: "Copyright © 2026 SpaceXAI",
     NSCameraUsageDescription: "Grok Bot uses the camera for video calls.",
     NSMicrophoneUsageDescription: "Simeon uses the microphone to take your dictation.",
     SUFeedURL: "https://updates.cursor.sh/feed",
     CFBundleIdentifier: "com.simeonlabs.simeon",
   }, identity);
   assert.deepEqual(rewrites, {
-    NSHumanReadableCopyright: "Copyright © 2026 Simeon Labs. All rights reserved.",
+    NSHumanReadableCopyright: "Copyright © 2026 SimeonLabs, Inc. All rights reserved.",
     NSCameraUsageDescription: "Simeon uses the camera for video calls.",
   });
   assert.deepEqual(reported, ["SUFeedURL"]);

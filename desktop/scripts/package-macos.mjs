@@ -7,7 +7,8 @@ import {
   simeonBundleId,
   simeonExecutableName,
   simeonName,
-  simeonUrlScheme
+  simeonUrlScheme,
+  simeonVersion
 } from "./lib/config.mjs";
 import { buildFidelityReconstructedAsar } from "./clean-build.mjs";
 import { signAppBundleAdHoc } from "./lib/codesign.mjs";
@@ -68,6 +69,10 @@ const infoPlist = path.join(outputApp, "Contents", "Info.plist");
 await run(SYSTEM_TOOLS.plutil, ["-remove", "ElectronAsarIntegrity", infoPlist]);
 await run(SYSTEM_TOOLS.plutil, ["-replace", "CFBundleIdentifier", "-string", simeonBundleId, infoPlist]);
 await run(SYSTEM_TOOLS.plutil, ["-replace", "CFBundleDisplayName", "-string", simeonName, infoPlist]);
+// Finder's Get Info and the About panel show Simeon's own version
+// (desktop/package.json), not the upstream shell's.
+await run(SYSTEM_TOOLS.plutil, ["-replace", "CFBundleShortVersionString", "-string", simeonVersion, infoPlist]);
+await run(SYSTEM_TOOLS.plutil, ["-replace", "CFBundleVersion", "-string", simeonVersion, infoPlist]);
 // macOS kills an app that touches the microphone without this key. Simeon
 // captures for dictation (F-230, 25 September 2026) and, since 30 September
 // 2026, for voice calls with an agent. `-replace` writes it whether or not
@@ -80,7 +85,7 @@ await run(SYSTEM_TOOLS.plutil, ["-remove", "CFBundleURLTypes", infoPlist]);
 await run(SYSTEM_TOOLS.plutil, ["-insert", "CFBundleURLTypes", "-xml", `<array><dict><key>CFBundleTypeRole</key><string>Viewer</string><key>CFBundleURLName</key><string>Simeon auth callback</string><key>CFBundleURLSchemes</key><array><string>${simeonUrlScheme}</string></array></dict></array>`, infoPlist]);
 // The packaged bundle carries its own backend. A bundle launched from Finder
 // inherits no shell environment, so a build without this signs in to
-// cursor.com however the terminal that built it was configured.
+// the upstream site however the terminal that built it was configured.
 await run(SYSTEM_TOOLS.plutil, ["-remove", "LSEnvironment", infoPlist]).catch(() => {});
 await run(SYSTEM_TOOLS.plutil, [
   "-insert",

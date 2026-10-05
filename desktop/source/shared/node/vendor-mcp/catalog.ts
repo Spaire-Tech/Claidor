@@ -1,4 +1,4 @@
-import { getConfiguredBackendUrl } from "../cursor-token.js";
+import { getConfiguredBackendUrl } from "../simeon-token.js";
 
 export const VENDOR_MCP_GROUP = {
   MailCalendar: "Mail & Calendar",
@@ -149,7 +149,7 @@ export function isVendorMcpComingSoon(id: string): boolean {
 
 /**
  * The MCP manager validates every server id as a positive decimal string
- * (`mcp-server-id.ts`), because Cursor's backend numbered its servers. A
+ * (`mcp-server-id.ts`), because the upstream's backend numbered its servers. A
  * vendor connector gets a stable number from its place in the store, far
  * above anything a real account ever held; the plugin id stays the
  * server *identifier* ("figma"), which is what tools and the box use.

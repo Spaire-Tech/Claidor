@@ -131,7 +131,7 @@ test("the local Docker box is always told our backend, credential or not", async
     assert.equal(withoutCredential.SAND_BACKEND_URL, "https://api.simeonlabs.com/");
     assert.equal(withoutCredential.SAND_INFERENCE_RENEWAL_CREDENTIAL, undefined);
     assert.equal(withoutCredential.SAND_INFERENCE_PROVIDER, "simeon");
-    assert.equal(withoutCredential.SAND_DISABLE_TELEMETRY, "1", "no Cursor telemetry from the box");
+    assert.equal(withoutCredential.SAND_DISABLE_TELEMETRY, "1", "no the upstream app telemetry from the box");
     assert.equal(withoutCredential.SAND_DISABLE_ANALYTICS, "1");
     assert.equal(withoutCredential.SAND_BOX_LOG_SHIP_DISABLED, "1");
 
@@ -139,8 +139,8 @@ test("the local Docker box is always told our backend, credential or not", async
     assert.equal(withCredential.SAND_BACKEND_URL, "https://api.simeonlabs.com/");
     assert.equal(withCredential.SAND_INFERENCE_RENEWAL_CREDENTIAL, "simeon_db_box");
 
-    const fromCursorVariable = envOf(localDockerInferenceEnvironmentArguments(undefined, { SIMEON_API_BASE_URL: "https://api.simeonlabs.com" }));
-    assert.equal(fromCursorVariable.SAND_BACKEND_URL, "https://api.simeonlabs.com/");
+    const fromPluginVariable = envOf(localDockerInferenceEnvironmentArguments(undefined, { SIMEON_API_BASE_URL: "https://api.simeonlabs.com" }));
+    assert.equal(fromPluginVariable.SAND_BACKEND_URL, "https://api.simeonlabs.com/");
   } finally {
     await loaded.dispose();
   }

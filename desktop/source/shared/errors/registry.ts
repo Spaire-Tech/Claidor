@@ -262,7 +262,7 @@ export const SAND_ERROR_DEFINITIONS = {
     "payload": [
       "httpStatus"
     ],
-    "seededFrom": "non-ok /oauth/token response in cursor-auth.ts runRefreshAccessToken"
+    "seededFrom": "non-ok /oauth/token response in account-auth.ts runRefreshAccessToken"
   },
   "SAND-E0215": {
     "name": "sessionRefreshNetwork",
@@ -272,7 +272,7 @@ export const SAND_ERROR_DEFINITIONS = {
     "payload": [
       "errno"
     ],
-    "seededFrom": "fetch throw in cursor-auth.ts runRefreshAccessToken"
+    "seededFrom": "fetch throw in account-auth.ts runRefreshAccessToken"
   },
   "SAND-E0216": {
     "name": "sessionRefreshBadPayload",
@@ -280,7 +280,7 @@ export const SAND_ERROR_DEFINITIONS = {
     "retryable": true,
     "summary": "Simeon session token refresh returned an ok status without a usable token payload; the session is kept.",
     "payload": [],
-    "seededFrom": "unreadable body / empty access_token branches in cursor-auth.ts runRefreshAccessToken"
+    "seededFrom": "unreadable body / empty access_token branches in account-auth.ts runRefreshAccessToken"
   },
   "SAND-E0217": {
     "name": "sessionRefreshRejected",
@@ -288,7 +288,7 @@ export const SAND_ERROR_DEFINITIONS = {
     "retryable": false,
     "summary": "Simeon session refresh was terminally rejected (backend shouldLogout verdict or an unparseable token response) with no rotation-race rescue; the user was signed out.",
     "payload": [],
-    "seededFrom": "shouldLogout / parse-failure sign-out in cursor-auth.ts runRefreshAccessToken"
+    "seededFrom": "shouldLogout / parse-failure sign-out in account-auth.ts runRefreshAccessToken"
   },
   "SAND-E0218": {
     "name": "sessionPolicyRefused",
@@ -296,7 +296,7 @@ export const SAND_ERROR_DEFINITIONS = {
     "retryable": false,
     "summary": "Simeon session refresh was refused by the device's MDM sign-in policy; the user was signed out.",
     "payload": [],
-    "seededFrom": "MDM policy verdict in cursor-auth.ts runRefreshAccessToken"
+    "seededFrom": "MDM policy verdict in account-auth.ts runRefreshAccessToken"
   },
   "SAND-E0219": {
     "name": "sessionSecretsUnavailable",
@@ -304,7 +304,7 @@ export const SAND_ERROR_DEFINITIONS = {
     "retryable": false,
     "summary": "OS secure storage is unavailable, so the signed-in session's sign-in tokens are held in memory only and will not survive a restart.",
     "payload": [],
-    "seededFrom": "noteSecretsUnavailableSession in cursor-auth.ts storeAuthentication callers"
+    "seededFrom": "noteSecretsUnavailableSession in account-auth.ts storeAuthentication callers"
   },
   "SAND-E0301": {
     "name": "bootStageStalled",

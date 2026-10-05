@@ -4,7 +4,7 @@ const splitPath = (value: string): string[] => value.split(/[/\\]/).filter(Boole
 function matchProjectSubdir(value: string, targetDir: string): { workspaceId: string; remainingPath: string[] } | null {
   const parts = splitPath(value);
   for (let index = 0; index < parts.length - 2; index += 1) {
-    if (parts[index] === ".cursor" && parts[index + 1] === "projects" && parts[index + 3] === targetDir) {
+    if (parts[index] === ".simeon" && parts[index + 1] === "projects" && parts[index + 3] === targetDir) {
       return { workspaceId: parts[index + 2]!, remainingPath: parts.slice(index + 4) };
     }
   }
@@ -12,7 +12,7 @@ function matchProjectSubdir(value: string, targetDir: string): { workspaceId: st
 }
 
 export const isAgentTranscriptPath = (value: string): boolean => matchProjectSubdir(value, "agent-transcripts") !== null;
-export const isCursorTerminalsDirectory = (value: string): boolean => {
+export const isBoxTerminalsDirectory = (value: string): boolean => {
   const match = matchProjectSubdir(value, "terminals");
   return match !== null && match.remainingPath.length === 0;
 };

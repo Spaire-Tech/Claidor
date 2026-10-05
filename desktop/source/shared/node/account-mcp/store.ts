@@ -1,5 +1,5 @@
 // The account's MCP configuration, kept on the Mac (24 September 2026).
-// The upstream app kept this on Cursor's server (GetMcpConfig / SetMcpConfig /
+// The upstream app kept this on the upstream's server (GetMcpConfig / SetMcpConfig /
 // InstallUserPlugin …); Simeon Labs' server serves none of those and will
 // not. So the configuration the renderer edits — custom servers with a `url`
 // or a `command`, plus installed plugins, plus the credential a custom URL
@@ -109,7 +109,7 @@ export const ACCOUNT_MCP_STORE_FILENAME = "account-mcp-config.json";
 export const EMPTY_ACCOUNT_MCP_STORE: AccountMcpStore = { version: 1, servers: {}, plugins: {}, credentials: {} };
 
 /**
- * Custom server ids live far above anything Cursor's account ever numbered
+ * Custom server ids live far above anything the upstream's account ever numbered
  * and below the vendor connectors' band (`VENDOR_MCP_SERVER_ID_BASE`,
  * 900,000+), within int32 as `parseInt32McpServerId` demands. They are drawn
  * at random so the Mac and the box, which both allocate, cannot collide.

@@ -2,7 +2,7 @@ import { isLoopbackIpHost, isPrivateIpHost } from "../../packages/agent/utils/ip
 // Web fetch, on the machine the agent runs on.
 //
 // Until 19 September 2026 the agent's `web_fetch` tool was a Connect RPC call
-// (`aiserver.v1.AiService/RunWebFetch`) that asked a server to read the page
+// (`simeon.v1.AiService/RunWebFetch`) that asked a server to read the page
 // for it. Simeon never served that route, and it should not: reading a
 // public page needs no key, no meter and no middleman, and going through one
 // would tell that middleman every address the person's agent reads. So the

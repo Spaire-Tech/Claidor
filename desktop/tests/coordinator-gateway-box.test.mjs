@@ -2,11 +2,11 @@
  * The coordinator, the gateway and the box (25 September 2026,
  * design-audit-ledger.md clusters `unserved-transports` and `hatch-residue`).
  *
- * The upstream app's Mac-and-box plumbing was built for Cursor's cloud and the
+ * The upstream app's Mac-and-box plumbing was built for the upstream app's cloud and the
  * reconstruction pointed it at Simeon Labs' server without the "is this
  * served?" switch each path needs: the Statsig bootstrap asked every five
  * minutes, the local-exec credential every thirty seconds, the update feed
- * defaulted to Cursor's, the box image was a floating tag with no digest
+ * defaulted to the upstream's, the box image was a floating tag with no digest
  * hook. And the hatch-era coordinator plumbing (a local reaction store, a
  * timestamp re-sort, a best-effort permission stamp) still ran on the host
  * path.
@@ -30,8 +30,8 @@ async function load(entry, name) {
   return { module, dispose: () => rm(dir, { recursive: true, force: true }) };
 }
 
-test("nothing asks Cursor's server on a timer: no Statsig bootstrap, no local-exec credential, no update feed", async () => {
-  const experiments = await src("shared/node/experiments/cursor-experiments.ts");
+test("nothing asks the upstream's server on a timer: no Statsig bootstrap, no local-exec credential, no update feed", async () => {
+  const experiments = await src("shared/node/experiments/simeon-experiments.ts");
   assert.match(experiments, /this\.refreshSnapshot\(\); if \(!isConnectServed\(this\.options\.env, "cursor\.statsig-bootstrap"\)\) return; this\.pollHandle = this\.refreshPoll\.start/);
   assert.match(experiments, /private async runRefresh\(trigger: Trigger\): Promise<void> \{ if \(!isConnectServed\(this\.options\.env, "cursor\.statsig-bootstrap"\)\) \{ this\.refreshSnapshot\(\); return; \}/);
   const docker = await src("electron-main/box/local-docker-host-connector.ts");
@@ -53,6 +53,9 @@ test("the box image can be pinned by digest, and the reference is what the conta
     const digest = "a".repeat(64);
     assert.equal(module.localDockerBoxImageReference({ SAND_BOX_IMAGE_DIGEST: `sha256:${digest}` }), `${module.LOCAL_DOCKER_BOX_IMAGE}@sha256:${digest}`);
     assert.equal(module.localDockerBoxImageReference({ SAND_BOX_IMAGE_DIGEST: "not-a-digest" }), module.LOCAL_DOCKER_BOX_IMAGE, "a malformed digest is ignored, not run");
+    // Simeon's own image (box/Dockerfile) is named by SIMEON_BOX_IMAGE, as on the server; a digest in the name is dropped in favour of the pin.
+    assert.equal(module.localDockerBoxImageReference({ SIMEON_BOX_IMAGE: "ghcr.io/simeonlabs/simeon-box:2026.10.05" }), "ghcr.io/simeonlabs/simeon-box:2026.10.05");
+    assert.equal(module.localDockerBoxImageReference({ SAND_BOX_IMAGE: "ghcr.io/simeonlabs/simeon-box:2026.10.05@sha256:abc", SIMEON_BOX_IMAGE_DIGEST: digest }), `ghcr.io/simeonlabs/simeon-box:2026.10.05@sha256:${digest}`);
   } finally {
     await dispose();
   }
@@ -79,7 +82,7 @@ test("the hatch's plumbing is off the host path: no local reaction, no re-sort, 
   assert.match(main, /if \(permissionScope\(\) == null\) await fetchPermissionScopeSlot\(\);\n\s*server\.postEvent\(family, stampTranscriptEvent\(event\.payload, permissionScope\(\)\)\);/);
   assert.match(main, /\{ sortByTimestamp: !routesSimeonThroughHost\(\) \}/);
   assert.equal((await src("shared/deep-link.ts")).includes('SAND_HTTPS_DEEP_LINK_ORIGIN = "https://app.simeonlabs.com"'), true);
-  for (const [file, gone] of [["electron-main/coordinator/coordinator-port-ipc-guard.ts", "Sand app window"], ["electron-main/main-edge.ts", "Sand app window"], ["shared/node/cursor-backend/simeon-api.ts", "Simeon answered"], ["shared/node/cursor-backend/simeon-api.ts", "Simeon refused"]]) {
+  for (const [file, gone] of [["electron-main/coordinator/coordinator-port-ipc-guard.ts", "Sand app window"], ["electron-main/main-edge.ts", "Sand app window"], ["shared/node/simeon-backend/simeon-api.ts", "Simeon answered"], ["shared/node/simeon-backend/simeon-api.ts", "Simeon refused"]]) {
     assert.ok(!(await src(file)).includes(gone), `${file} no longer says ${gone}`);
   }
 });

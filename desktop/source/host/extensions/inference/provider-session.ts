@@ -18,7 +18,7 @@ import { redactSandAutoReviewInlineSecrets } from "../../../shared/sand-auto-rev
 import { SIMEON_WORKING_CONTEXT_TOKENS } from "../../../shared/inference/simeon-context-window.js";
 import { resolveSandAgentStepCap, stepBudgetExceededMessage } from "../../../shared/inference/turn-step-budget.js";
 import { readSimeonEnv, type SandInferenceProvider } from "../../../shared/inference-router.js";
-import { simeonProxyBaseUrl } from "../../../shared/node/cursor-backend/simeon-api.js";
+import { simeonProxyBaseUrl } from "../../../shared/node/simeon-backend/simeon-api.js";
 import { getSandRootDir } from "../../host-paths.js";
 import { SandSettingsStore } from "../../../shared/node/settings/sand-settings-store.js";
 import { simeonGeminiEndpoint, streamGeminiGenerateContent, toGeminiRequest, type GeminiDirectTool } from "./gemini-direct-generate.js";
@@ -33,7 +33,7 @@ type RoutedToolExecutor = (tool: Loose, args: unknown, toolCallId: string) => Pr
 
 // The Codex, Claude Code and OpenRouter executors that sat beside this one
 // were the reconstruction author's router experiment ("an inference router
-// for Cursor, Claude Code, Codex, and OpenRouter", its README), never the
+// for the upstream app, Claude Code, Codex, and OpenRouter", its README), never the
 // upstream app's, and nothing could reach them since the executor was pinned to
 // Simeon Labs' proxy; they are gone since 26 September 2026 (ledger F-128).
 // The provider names stay in SAND_INFERENCE_PROVIDERS so stored usage reads.
@@ -268,11 +268,11 @@ export function simeonEffortForCall(sessionEffort: SimeonReasoningEffort, follow
   if (!followsSteps) return sessionEffort;
   const last = messages.at(-1);
   if (last?.role !== "tool") return sessionEffort;
-  // The loop marks a failed tool on the message's Cursor metadata
+  // The loop marks a failed tool on the message's upstream metadata
   // (`highLevelToolCallResult.isError`, packages/agent/tool-stream-executor.ts);
   // a result built elsewhere may carry `isError` on the part itself.
   const parts = Array.isArray(last.content) ? last.content as readonly Loose[] : [];
-  const failed = (last as Loose).providerOptions?.cursor?.highLevelToolCallResult?.isError === true
+  const failed = (last as Loose).providerOptions?.simeon?.highLevelToolCallResult?.isError === true
     || parts.some((part) => part?.type === "tool-result" && part.isError === true);
   if (failed) return SIMEON_RECOVERY_EFFORT;
   return parseReasoningEffort(readSimeonEnv(env, SAND_SIMEON_TOOL_RESULT_EFFORT_ENV), SIMEON_TOOL_RESULT_EFFORT);
@@ -301,7 +301,7 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: s
 // puts its conversation id in the context (`packages/agent/index.ts`,
 // `conversationIdKey`) and the inference client sends it as
 // `InferenceStreamRequest.conversationId` (`chat-inference-proto/client.ts`),
-// which is what Cursor's server keyed its prompt cache on. This executor
+// which is what the upstream's server keyed its prompt cache on. This executor
 // read the context as `_ctx` and dropped it, so every request reached OpenAI
 // with no cache key: on 26 September 2026, the first call of each turn on
 // the founder's Mac read 0 of ~50,000 tokens from cache even 48 s after the
@@ -422,7 +422,7 @@ const TOOL_IMAGE_INTRO = "Image output of the tool call(s) above.";
 const TOOL_IMAGE_DROPPED = "Image output of the tool call(s) above. (Not shown again: only the latest screenshots are kept; take a new one if you need to look.)";
 
 // The host loop appends messages in its own dialect of the AI SDK shape:
-// Cursor wire metadata under `providerOptions.cursor` (with `undefined` fields
+// the upstream app wire metadata under `providerOptions.simeon` (with `undefined` fields
 // the SDK's JSON validator refuses), tool results whose text may be empty and
 // whose images live in `experimental_content`, reasoning parts with signatures.
 // This is the copy the wire sees; the loop keeps its own.
@@ -624,7 +624,7 @@ function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessag
   // The host loop's state carries its own system prompt; the router prompt is
   // for the connector-only path, where nothing else says who the agent is.
   const system = coreMessages.some(message => message.role === "system") ? undefined : ROUTER_SYSTEM_PROMPT;
-  // Cursor-era tool schemas (Task included) omit additionalProperties.
+  // upstream-era tool schemas (Task included) omit additionalProperties.
   // OpenAI's Responses default is strict:true, which then refuses them.
   const result = streamText({
     model,

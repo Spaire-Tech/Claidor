@@ -2,7 +2,7 @@ export type DevToolsMembership = "pending" | "allowed" | "denied";
 
 export interface DevToolsMembershipStatus {
   readonly kind: string;
-  readonly isAnysphereUser?: boolean;
+  readonly isStaffUser?: boolean;
 }
 
 export function createDevToolsMembershipResolver(deps: {
@@ -18,7 +18,7 @@ export function createDevToolsMembershipResolver(deps: {
       const status = await deps.getStatus();
       if (attempt !== latestAttempt) return;
       deps.setMembership(
-        status.kind === "logged-in" && status.isAnysphereUser === true ? "allowed" : "denied",
+        status.kind === "logged-in" && status.isStaffUser === true ? "allowed" : "denied",
       );
     } catch (error) {
       if (attempt !== latestAttempt) return;

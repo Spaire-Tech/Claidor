@@ -196,17 +196,17 @@ export function createDemoBackend(hooks: DemoBackendHooks) {
     getTimeZone: () => ({ timeZone: "Europe/Zurich", override: null }),
     getSidebarCollapsed: () => false,
     markDeepLinksReady: () => undefined,
-    getCursorAuthStatus: () => authStatus,
+    getAccountStatus: () => authStatus,
     // In the app, Sign in opens the browser on app.simeonlabs.com and the window waits; here the browser step passes by itself.
-    loginCursor: () => {
+    signInAccount: () => {
       authStatus = { kind: "logging-in" };
-      hooks.pushMainEvent("cursor-auth-changed", authStatus);
-      setTimeout(() => { authStatus = signedIn; hooks.pushMainEvent("cursor-auth-changed", authStatus); }, 1800);
+      hooks.pushMainEvent("account-changed", authStatus);
+      setTimeout(() => { authStatus = signedIn; hooks.pushMainEvent("account-changed", authStatus); }, 1800);
       // The window then shows "Setting up Simeon's computer" until the cloud computer answers.
       setTimeout(() => hooks.reconnectCoordinator?.(), 8000);
       return authStatus;
     },
-    cancelCursorLogin: () => { authStatus = { kind: "logged-out" }; hooks.pushMainEvent("cursor-auth-changed", authStatus); return authStatus; },
+    cancelAccountSignIn: () => { authStatus = { kind: "logged-out" }; hooks.pushMainEvent("account-changed", authStatus); return authStatus; },
     getSandAccess: () => ({ state: "granted", reason: "none" }),
     getSandAccessFresh: () => ({ state: "granted", reason: "none" }),
     getEgressTunnelStatus: () => null,
@@ -215,8 +215,8 @@ export function createDemoBackend(hooks: DemoBackendHooks) {
     getUpdateStatus: () => ({ kind: "idle" }),
     getBoxMigrationStatus: () => null,
     getExperimentsSnapshot: () => null,
-    getCursorUsageSummary: () => null,
-    getCursorPrReviewPreferences: () => null,
+    getAccountUsageSummary: () => null,
+    getAccountPrReviewPreferences: () => null,
     getHostPinnedAgents: () => [],
     getHostSidebarSections: () => [],
     getAgentDefaultModel: () => null,
@@ -230,10 +230,10 @@ export function createDemoBackend(hooks: DemoBackendHooks) {
     getAgentVoice: () => ({ voiceId: "demo-aria", isDefault: true }),
     setAgentVoice: (args: any) => ({ voiceId: args?.voiceId ?? null, isDefault: false }),
     getVoicePreviewUrl: () => null,
-    getCursorAvatar: () => null,
+    getAccountAvatar: () => null,
     // A new account has not said what to call them yet: the window's name sheet.
-    getCursorNamePrompt: () => ({ needed: personName == null, suggested: "Bass" }),
-    updateCursorAccountName: (args: any) => { personName = typeof args?.name === "string" ? args.name : "Bass"; return { ok: true }; },
+    getAccountNamePrompt: () => ({ needed: personName == null, suggested: "Bass" }),
+    updateAccountName: (args: any) => { personName = typeof args?.name === "string" ? args.name : "Bass"; return { ok: true }; },
     resolveAttachmentMedia: () => null,
     getLinkMetadata: () => null,
     openExternal: () => undefined,

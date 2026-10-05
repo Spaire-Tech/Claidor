@@ -27,17 +27,17 @@ while the app loads). It rewrites `public/` from scratch; commit what it writes.
 The page is written by hand in `source/page.html`, light only, on one left
 edge shared by the wordmark, the headline and the demo.
 
-- **Bar**: the wordmark, Sign in, Download.
+- **Bar**: the wordmark (SimeonLabs, `img/wordmark-labs.png`; the footer keeps `img/wordmark.png`), Sign in, Download.
 - **Hero**: "Create a team of agents for any part of your business." in the
   serif, then Download for Mac and Request a demo.
 - **The app**: the real app window, playing a founder's morning.
 - **Statement**: one centred sentence, the key words in black.
 - **Gallery**: six cards, light grey and dusk blue in turn, moved with back
-  and next: message an agent, a computer of its own, connect your apps, agents
+  and next: connect your apps, message an agent, a computer of its own, agents
   working together, call an agent, stay in control.
 - **Security and integrations**: a serif title beside a paragraph, then two
   pale panels of icon rows. A blue dot marks what is still in progress.
-- **Pricing** (Standard $20, Pro $60, Max $100, 20% less yearly, a free week),
+- **Pricing** (a free week, Standard $20, Pro $60, Max $200; each card says the week's credits),
   **Questions and answers**, and the closing line.
 
 Nothing links outside the page.

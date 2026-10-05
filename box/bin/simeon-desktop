@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# Brings one desktop up and leaves its pieces running, registered for the
+# supervisor (box-register): the X server, the wallpaper, the VNC server,
+# the screen's websockify (or, for a fork window, its token file), the
+# window manager, the compositor. Exits 0 once the display answers.
+#
+#   DISPLAY=:1 simeon-desktop                      the primary desktop
+#   DISPLAY=:N SAND_VNC_PORT=$((5900+N)) SAND_NOVNC_TOKEN=N simeon-desktop
+#                                                  a fork window (start-window)
+#
+# Settings (defaults in brackets): DISPLAY [:1], SAND_VNC_PORT [5900],
+# SAND_NOVNC_PORT [6080], SAND_NOVNC_TOKEN [none: websockify serves this
+# screen on SAND_NOVNC_PORT; set: no websockify, the fork websockify on 6081
+# finds the screen through /tmp/sand-novnc-tokens.d/<token>],
+# SAND_SCREEN_WIDTH [1280], SAND_SCREEN_HEIGHT [800].
+#
+# Logs: /tmp/xvfb:N.log, /tmp/x11vnc:N.log, /tmp/novnc:N.log,
+# /tmp/xfwm4:N.log, /tmp/picom:N.log.
+set -euo pipefail
+
+export DISPLAY="${DISPLAY:-:1}"
+N="${DISPLAY#:}"
+GROUP="d$N"
+WIDTH="${SAND_SCREEN_WIDTH:-1280}"
+HEIGHT="${SAND_SCREEN_HEIGHT:-800}"
+VNC_PORT="${SAND_VNC_PORT:-5900}"
+NOVNC_PORT="${SAND_NOVNC_PORT:-6080}"
+NOVNC_TOKEN="${SAND_NOVNC_TOKEN:-}"
+NOVNC_TOKEN_DIR="${SAND_NOVNC_TOKEN_DIR:-/tmp/sand-novnc-tokens.d}"
+export HOME="${HOME:-/root}"
+# The session bus for the window manager and Chrome; one per desktop.
+BOX_XDG_DIR="/tmp/xdg-runtime-box"; [ "$N" -gt 1 ] && BOX_XDG_DIR="/tmp/xdg-runtime-box-$N"
+export XDG_RUNTIME_DIR="${SAND_XDG_RUNTIME_DIR:-/tmp/xdg-runtime-$N}"
+install -d -m 700 "$XDG_RUNTIME_DIR"
+install -d -m 700 -o box -g box "$BOX_XDG_DIR"
+
+log() { printf '[simeon-desktop %s] %s\n' "$DISPLAY" "$*"; }
+
+launch() {
+  # launch <name> <order> <logfile> [--listen-port P] -- <argv...>
+  local name="$1" order="$2" logfile="$3"; shift 3
+  local port=""
+  if [ "$1" = "--listen-port" ]; then port="$2"; shift 2; fi
+  [ "$1" = "--" ] && shift
+  setsid nohup "$@" >> "$logfile" 2>&1 &
+  local pid=$!
+  if [ -n "$port" ]; then box-register "$GROUP" "$name" "$order" "$logfile" "$pid" --listen-port "$port" -- "$@"; else box-register "$GROUP" "$name" "$order" "$logfile" "$pid" -- "$@"; fi
+  log "$name started (pid $pid)"
+}
+
+if xdpyinfo -display "$DISPLAY" >/dev/null 2>&1; then
+  log "display already up"
+else
+  rm -f "/tmp/.X$N-lock" "/tmp/.X11-unix/X$N"
+  # -ac: every local user may draw (Chrome runs as box, the exec daemon as
+  # root). -noreset: the server keeps its state when its last client leaves.
+  launch xvfb 0 "/tmp/xvfb$DISPLAY.log" -- Xvfb "$DISPLAY" -screen 0 "${WIDTH}x${HEIGHT}x24" -ac +extension GLX +render -noreset
+  ready=0
+  for _ in $(seq 1 100); do
+    if xdpyinfo -display "$DISPLAY" >/dev/null 2>&1; then ready=1; break; fi
+    sleep 0.2
+  done
+  if [ "$ready" != 1 ]; then log "X display $DISPLAY did not become ready (see /tmp/xvfb$DISPLAY.log)"; exit 1; fi
+fi
+
+# A session bus of its own for the box user's programs on this display.
+if [ ! -s "$BOX_XDG_DIR/dbus-session-address" ]; then
+  runuser -u box -- env XDG_RUNTIME_DIR="$BOX_XDG_DIR" DISPLAY="$DISPLAY" HOME=/home/box dbus-launch --sh-syntax 2>/dev/null \
+    | sed -n "s/^DBUS_SESSION_BUS_ADDRESS='\(.*\)';$/\1/p" | tr -d '\n' > "$BOX_XDG_DIR/dbus-session-address" || true
+  chown box:box "$BOX_XDG_DIR/dbus-session-address" 2>/dev/null || true
+fi
+export DBUS_SESSION_BUS_ADDRESS="$(cat "$BOX_XDG_DIR/dbus-session-address" 2>/dev/null || true)"
+# The window manager and the compositor are the box user's, like Chrome:
+# xfwm4 keeps its settings through xfconfd on that user's session bus.
+AS_BOX=(runuser -u box -- env HOME=/home/box USER=box LOGNAME=box DISPLAY="$DISPLAY" XDG_RUNTIME_DIR="$BOX_XDG_DIR" DBUS_SESSION_BUS_ADDRESS="$DBUS_SESSION_BUS_ADDRESS")
+
+/usr/local/bin/sand-wallpaper paint "$DISPLAY" || true
+
+launch x11vnc 3 "/tmp/x11vnc$DISPLAY.log" --listen-port "$VNC_PORT" -- x11vnc -display "$DISPLAY" -localhost -nopw -shared -forever -noxdamage -rfbport "$VNC_PORT" -quiet
+
+if [ -n "$NOVNC_TOKEN" ]; then
+  mkdir -p "$NOVNC_TOKEN_DIR"
+  printf '%s: localhost:%s\n' "$NOVNC_TOKEN" "$VNC_PORT" > "$NOVNC_TOKEN_DIR/$NOVNC_TOKEN"
+  log "screen reachable through the fork websockify with token $NOVNC_TOKEN"
+else
+  launch websockify 4 "/tmp/novnc$DISPLAY.log" --listen-port "$NOVNC_PORT" -- websockify --web=/usr/share/novnc --heartbeat=30 "0.0.0.0:$NOVNC_PORT" "localhost:$VNC_PORT"
+fi
+
+launch xfwm4 1 "/tmp/xfwm4$DISPLAY.log" -- "${AS_BOX[@]}" xfwm4 --display "$DISPLAY" --compositor=off --replace
+for _ in $(seq 1 50); do
+  if xprop -display "$DISPLAY" -root _NET_SUPPORTING_WM_CHECK 2>/dev/null | grep -q "window id"; then break; fi
+  sleep 0.2
+done
+launch picom 2 "/tmp/picom$DISPLAY.log" -- "${AS_BOX[@]}" picom --backend xrender --no-vsync --no-use-damage
+
+log "ready (${WIDTH}x${HEIGHT}, vnc $VNC_PORT${NOVNC_TOKEN:+, token $NOVNC_TOKEN}${NOVNC_TOKEN:-, novnc $NOVNC_PORT})"

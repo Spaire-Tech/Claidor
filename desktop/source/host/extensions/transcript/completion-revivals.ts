@@ -134,7 +134,7 @@ export class CompletionRevivals {
           this.tm.pendingWakes.clearSettledPendingWake({
             agentId,
             kind:
-              completion.subagentType === "cursor-agent"
+              (completion.subagentType === "cloud-agent" || completion.subagentType === "cursor-agent")
                 ? "cloud-agent"
                 : "subagent",
             workId: completion.subagentAgentId,

@@ -130,9 +130,14 @@ ANTHROPIC_VERSION = "2023-06-01"
 # is still taken so a build from before that day can finish a sign-in.
 DEEP_LINK_CALLBACK = "simeon://auth/callback"
 DEEP_LINK_SCHEMES = ("simeon", "caisra")
-# The app stamps `x-cursor-client-version` on every call it makes
-# (`shared/node/sand-client-metadata.ts`); the older name is read second.
-CLIENT_VERSION_HEADERS = ("x-cursor-client-version", "x-maties-client-version")
+# The app stamps `x-simeon-client-version` on every call it makes
+# (`shared/node/sand-client-metadata.ts`, since 5 October 2026); the two
+# earlier names are read after it, for the apps and box hosts built before.
+CLIENT_VERSION_HEADERS = (
+    "x-simeon-client-version",
+    "x-cursor-client-version",
+    "x-maties-client-version",
+)
 CLIENT_VERSION_HEADER = CLIENT_VERSION_HEADERS[0]
 
 
@@ -391,7 +396,7 @@ async def feedback(
     """Send Feedback, recorded as one log line against the person.
 
     Added 24 September 2026. Until then the app posted its feedback to
-    `{api}/sand/feedback`, the upstream app's address at Cursor, which this
+    `{api}/sand/feedback`, the upstream app's own address, which this
     server answered 404, so every message a person wrote in the sheet
     was lost and the sheet said « unavailable ». There is no table: a
     log line with the user id is what the founder asked for, and it is

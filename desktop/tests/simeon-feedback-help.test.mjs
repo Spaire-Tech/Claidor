@@ -8,8 +8,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { build } from "esbuild";
 
 // Send Feedback and the Help menu, offline. Until 24 September 2026 feedback
-// went to Cursor's `/sand/feedback` (404 on Simeon Labs' server) and Help
-// Center opened cursor.com.
+// went to the upstream's `/sand/feedback` (404 on Simeon Labs' server) and Help
+// Center opened the upstream site.
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -81,24 +81,20 @@ test("the server route the app posts to exists, takes the same body and logs the
   for (const field of ["category", "message", "appVersion", "platform"]) assert.match(endpoints, new RegExp(`^    ${field}: `, "m"));
 });
 
-test("Help Center opens simeonlabs.com; the cloud-agent link still builds on the website URL", async () => {
+test("the menu bar has no Help menu for now, the help URL stays simeonlabs.com, and the cloud-agent link still builds on the website URL", async () => {
   const loaded = await loadModule("source/electron-main/application-menu.ts", "application-menu");
   try {
     const { buildApplicationMenuTemplate, HELP_CENTER_URL } = loaded.module;
     assert.equal(HELP_CENTER_URL, "https://simeonlabs.com");
-    const opened = [];
     const template = buildApplicationMenuTemplate(
       { platform: "darwin", applyWindowShortcut: () => {}, canUseDevTools: () => false, emitOpenAbout: () => {}, emitOpenFeedback: () => {} },
-      { appName: "Simeon", buildFromTemplate: (items) => items, setApplicationMenu: () => {}, openExternal: async (url) => { opened.push(url); } },
+      { appName: "Simeon", buildFromTemplate: (items) => items, setApplicationMenu: () => {}, openExternal: async () => {} },
     );
-    const help = template.find((item) => item.role === "help");
-    assert.ok(help, "a Help menu");
-    const center = help.submenu.find((item) => item.label === "Help Center");
-    center.click();
-    assert.deepEqual(opened, ["https://simeonlabs.com"]);
+    // 4 October 2026: Help Center and Send Feedback are hidden until Simeon has its own.
+    assert.equal(template.find((item) => item.role === "help"), undefined, "no Help menu");
+    assert.equal(template.at(-1).role, "windowMenu");
     const source = await readFile(path.join(repoRoot, "source/electron-main/application-menu.ts"), "utf8");
     assert.equal(source.includes('openExternal("https://cursor.com/help")'), false);
-    assert.match(source, /openExternal\(HELP_CENTER_URL\)/);
     // `openCloudAgent` is left as it was: cloud agents are not served here.
     const edge = await readFile(path.join(repoRoot, "source/electron-main/main-edge.ts"), "utf8");
     assert.match(edge, /openCloudAgent: async \(raw\)/);

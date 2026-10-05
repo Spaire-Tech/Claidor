@@ -111,22 +111,11 @@ export function buildApplicationMenuTemplate(
     });
   }
   template.push({ role: "windowMenu" });
-  template.push({
-    role: "help",
-    submenu: [
-      {
-        label: "Help Center",
-        // Simeon Labs' site. Until 24 September 2026 this opened
-        // `https://cursor.com/help`, the upstream app's own help, which has nothing
-        // to say about Simeon.
-        click: () => {
-          void electron.openExternal(HELP_CENTER_URL);
-        },
-      },
-      { type: "separator" },
-      { label: "Send Feedback", click: () => options.emitOpenFeedback() },
-    ],
-  });
+  // No Help menu for now (4 October 2026, the founder: "hide help center until
+  // i figure that out. same for send feedback"). It held Help Center, which
+  // opened HELP_CENTER_URL (Simeon Labs' site; until 24 September 2026 the
+  // upstream app's own help), and Send Feedback (`options.emitOpenFeedback`).
+  // The window's account menu hides the same two items (the renderer patch).
   return template;
 }
 

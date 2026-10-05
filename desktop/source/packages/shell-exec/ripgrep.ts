@@ -46,7 +46,7 @@ export function withConfiguredRipgrepEnv(env: NodeJS.ProcessEnv): NodeJS.Process
   }
   return {
     ...prependExecutableDirToPath(env, configuredPath),
-    CURSOR_RIPGREP_PATH: configuredPath,
+    SIMEON_RIPGREP_PATH: configuredPath,
   };
 }
 

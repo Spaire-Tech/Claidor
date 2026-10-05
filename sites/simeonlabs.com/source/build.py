@@ -24,6 +24,7 @@ shutil.rmtree(OUT, ignore_errors=True)
 os.makedirs(f"{OUT}/logos")
 shutil.copytree(f"{HERE}/img", f"{OUT}/img")
 shutil.copytree(f"{HERE}/faces", f"{OUT}/faces")
+shutil.copytree(f"{HERE}/fonts", f"{OUT}/fonts")
 for name in ("favicon.svg", "favicon.ico", "apple-touch-icon.png"): shutil.copy(f"{HERE}/favicons/{name}", f"{OUT}/{name}")
 
 # The app's own logos and brand colours (desktop/brand/app-logos).
@@ -267,7 +268,7 @@ async def posters(app_path):
                 pg = await b.new_page(viewport={"width": w, "height": h}, device_scale_factor=2)
                 if name == "held":
                     await pg.add_init_script("Object.defineProperty(window, 'frameElement', { get: () => ({ hasAttribute: () => true, removeAttribute() {} }) })")
-                await pg.goto(f"http://127.0.0.1:{srv.server_port}/{app_path}/index.html")
+                await pg.goto(f"http://127.0.0.1:{srv.server_port}/{app_path}/index.html?theme=light")
                 # The same moment the page reveals the live app: its sidebar drawn and its fonts in.
                 await pg.wait_for_selector(".sand-agents-sidebar", state="attached")
                 await pg.evaluate("document.fonts.ready")
@@ -298,7 +299,7 @@ async def main():
     # The sidebar is solid in the page, not glass over a desktop.
     before = 'body::before{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(160deg,#e4e4e7,#d4d4d8)}'
     assert before in idx
-    idx = idx.replace(before, before + 'html body .sand-agents-sidebar{background-color:var(--cursor-bg-chrome)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}')
+    idx = idx.replace(before, before + 'html body .sand-agents-sidebar{background-color:var(--simeon-bg-chrome)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}')
     open(f"{OUT}/app/index.html", "w").write(idx)
     # The app lives under a folder named after its content (app/<digest>/), so a changed window is a
     # new address: its files keep the same names from build to build (the patch rewrites them after

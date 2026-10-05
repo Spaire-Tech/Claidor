@@ -128,9 +128,9 @@ async function bundleProcess([entry, outfile]) {
  * Measured, headless Chromium on dist/renderer/index.html over file://:
  *
  *   with crossorigin      stylesheet blocked; font-family "Times New Roman";
- *                         --cursor-font-family-sans "" ; --sand-text-primary ""
+ *                         --simeon-font-family-sans "" ; --sand-text-primary ""
  *   without crossorigin   stylesheet applied; font-family -apple-system, …;
- *                         --cursor-spacing-5-5 22px ; background rgb(24,24,24)
+ *                         --simeon-spacing-5-5 22px ; background rgb(24,24,24)
  *
  * The first column is the app the founder was looking at: correct markup, no
  * styling at all, browser default serif. One attribute.

@@ -260,8 +260,8 @@ function getOmittedSkillDirectories(skills: readonly SkillCatalogItem[]): string
 function getSkillDirectoryHint(fullPath: string): string {
   const normalizedPath = fullPath.replace(/\\/g, "/");
   const skillPathMarkers = [
-    "/.cursor/skills/",
-    "/.cursor/skills-cursor/",
+    "/.simeon/skills/",
+    "/.simeon/skills-simeon/",
     "/.agents/skills/",
     "/.claude/skills/",
     "/.codex/skills/",
@@ -273,7 +273,7 @@ function getSkillDirectoryHint(fullPath: string): string {
       return normalizedPath.slice(0, markerIndex + marker.length - 1);
     }
   }
-  const pluginSkillsMarker = "/.cursor/plugins/cache/";
+  const pluginSkillsMarker = "/.simeon/plugins/cache/";
   const pluginSkillsIndex = normalizedPath.indexOf(pluginSkillsMarker);
   if (pluginSkillsIndex !== -1) {
     const skillsIndex = normalizedPath.indexOf("/skills/", pluginSkillsIndex);

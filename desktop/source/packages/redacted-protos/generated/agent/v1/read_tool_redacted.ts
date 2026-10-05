@@ -2,7 +2,7 @@
 import { ReadRange, ReadToolArgs, ReadToolCall, ReadToolError, ReadToolResult, ReadToolSuccess } from "../../../../proto/generated/agent/v1/read_tool_pb.js";
 import { DataClassification } from "../../../../redaction/classification.js";
 import { createRedactedBytes, createRedactedString } from "../../../../redaction/factory.js";
-import { fromRedactedCursorRule2 as fromRedactedCursorRule, toRedactedCursorRule2 as toRedactedCursorRule } from "./cursor_rules_redacted.js";
+import { fromRedactedAgentRule2 as fromRedactedAgentRule, toRedactedAgentRule2 as toRedactedAgentRule } from "./agent_rules_redacted.js";
 
 function toRedactedReadToolCall(msg, privacyMode) {
   return {
@@ -104,8 +104,8 @@ function toRedactedReadToolSuccess(msg, privacyMode) {
     path: createRedactedString(msg.path, DataClassification.PATH, "path", privacyMode),
     readRange: msg.readRange !== void 0 ? toRedactedReadRange(msg.readRange, privacyMode) : void 0,
     includeLineNumbers: msg.includeLineNumbers,
-    relatedCursorRulePaths: msg.relatedCursorRulePaths.map((v2) => createRedactedString(v2, DataClassification.PATH, "related_cursor_rule_paths", privacyMode)),
-    relatedCursorRules: msg.relatedCursorRules.map((v2) => toRedactedCursorRule(v2, privacyMode)),
+    relatedAgentRulePaths: msg.relatedAgentRulePaths.map((v2) => createRedactedString(v2, DataClassification.PATH, "related_agent_rule_paths", privacyMode)),
+    relatedAgentRules: msg.relatedAgentRules.map((v2) => toRedactedAgentRule(v2, privacyMode)),
     output: toRedactedReadToolSuccess_output(msg.output, privacyMode)
   };
 }
@@ -137,8 +137,8 @@ function fromRedactedReadToolSuccess(msg, purpose, opts) {
     path: msg.path.unwrap(purpose, { redactUnallowedFieldsInsteadOfThrowing, enforcing }),
     readRange: msg.readRange !== void 0 ? fromRedactedReadRange(msg.readRange, purpose, opts) : void 0,
     includeLineNumbers: msg.includeLineNumbers,
-    relatedCursorRulePaths: msg.relatedCursorRulePaths.map((v2) => v2.unwrap(purpose, { redactUnallowedFieldsInsteadOfThrowing, enforcing })),
-    relatedCursorRules: msg.relatedCursorRules.map((v2) => fromRedactedCursorRule(v2, purpose, opts)),
+    relatedAgentRulePaths: msg.relatedAgentRulePaths.map((v2) => v2.unwrap(purpose, { redactUnallowedFieldsInsteadOfThrowing, enforcing })),
+    relatedAgentRules: msg.relatedAgentRules.map((v2) => fromRedactedAgentRule(v2, purpose, opts)),
     output: fromRedactedReadToolSuccess_output(msg.output, purpose, opts)
   });
 }

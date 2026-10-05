@@ -23,7 +23,7 @@ from simeon.models import User
 from simeon.postgres import AsyncSession
 from tests.desktop.test_endpoints import _signed_in
 
-BC = "/aiserver.v1.BackgroundComposerService"
+BC = "/simeon.v1.CloudAgentService"
 RUNNER_TOKEN = "a-service-secret-that-belongs-to-no-person"
 RUNNER = {"Authorization": f"Bearer {RUNNER_TOKEN}"}
 
@@ -670,7 +670,7 @@ class TestTheRest:
             await client.get("/desktop/api/models/available", headers=headers)
         ).json()["data"]
         response = await client.post(
-            "/aiserver.v1.AiService/AvailableModels",
+            "/simeon.v1.AiService/AvailableModels",
             json={"useModelParameters": True, "doNotUseMarkdown": True, "scope": 1},
             headers=headers,
         )

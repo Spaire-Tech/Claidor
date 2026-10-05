@@ -19,6 +19,16 @@ see `docs/architecture.md`.
   `desktop/NOTICE.md`). It is not in this repository. Bootstrap needs it (next
   section).
 
+## The version
+
+Simeon's version is the `version` in `desktop/package.json` (`0.1.0` for the
+first release). Packaging writes it into the staged `package.json` (what the
+About panel and `app.getVersion()` read) and into the bundle's
+`CFBundleShortVersionString` and `CFBundleVersion` (what Finder shows). The
+upstream shell's own `0.18.0` never reaches a person. Settings has no Updates
+tab: the updater is off in every packaged build, and the cloud computer is
+updated from the server (`docs/services-core.md`, the host bundle channel).
+
 ## The build loop
 
 ```sh
@@ -120,6 +130,90 @@ rm -rf /Applications/Simeon.app && cp -R dist/Simeon.app /Applications/ && open 
 - **The data folder moves.** On the first start that finds `~/.caisra` and no
   `~/.simeon`, the app renames `~/.caisra` to `~/.simeon`. If an older host or
   daemon still holds the old folder, the move waits for a later start.
+
+## Simeon on its own Electron shell
+
+Since 5 October 2026 (Track D, piece 1) there is a second way to package,
+which takes nothing from the upstream app's shell:
+
+```sh
+npm run package:own-shell   # dist/Simeon.app on a stock Electron 42.1.0
+npm run verify:own-shell    # the checks for that bundle
+```
+
+`scripts/package-simeon-shell.mjs` bundles every process from `source/`
+(the main process and the host ignited, as `npm run package` does), stages
+only what we build plus the pinned window with its patch, compiles the two
+native add-ons the app loads (`tree-sitter`, `tree-sitter-bash`) against
+Electron's own headers (`scripts/lib/electron-runtime.mjs`; the headers are
+fetched once into `.cache/electron-headers/`), packs one `app.asar`, and has
+`@electron/packager` lay out a stock Electron 42.1.0 around it: the
+executable, the four helpers, the plists, the icon and the `simeon` URL
+scheme carry Simeon's names from the start. The stock Electron comes from
+Electron's release (`@electron/get` caches it in `~/Library/Caches/electron`;
+`SIMEON_ELECTRON_ZIP_DIR` names a folder that already holds
+`electron-v42.1.0-darwin-arm64.zip`). The bundle is ad-hoc signed as before.
+
+What this path still reads from the upstream app, when `npm run bootstrap`
+has put it on the machine: the pinned window (until the window is ours,
+Track D piece 2) and the WebAuthn signer `sand-webauthn-signer` (until it is
+rewritten, piece 4). Without the window the build refuses; without the signer
+it warns, and sign-in with a passkey does not work in that build.
+
+What it never reads: the upstream shell, its `app.asar`, its native payload,
+its plists. `Contents/Resources/simeon-package.json` records what the bundle
+was built from, and `dist/simeon-build.json` inside the asar lists every
+output with its hash; `npm run verify:own-shell` checks both against the
+bundle, the pinned window against its inventory, the add-ons against their
+manifest, the plists for any name of the upstream's maker, and the signature.
+
+`node scripts/package-simeon-shell.mjs --platform linux --arch x64` builds the
+same thing for Linux, which is how the path is checked on a machine without
+macOS; that bundle is not a product.
+
+Until the own-shell bundle has been seen working on a Mac (sign-in, the
+cloud computer, a turn, a voice call, passkeys), `npm run package` stays the
+build people install.
+
+## A signed release for other Macs
+
+`npm run package:own-shell` signs ad hoc, which is enough for the Mac it
+was built on. A build for other people is signed with Simeon Labs' Apple
+developer certificate and checked by Apple (notarized), so it opens without
+the "unidentified developer" warning:
+
+```sh
+npm run package:own-shell   # dist/Simeon.app
+npm run release:macos       # dist/release/<version>/
+```
+
+`scripts/release-macos.mjs` signs every binary in the app with the
+Developer ID Application certificate and the hardened runtime
+(`scripts/lib/release-macos.mjs` has the entitlements), sends the app to
+Apple with `notarytool`, staples the ticket, checks it the way Gatekeeper
+will (`spctl --assess`), then writes four files: the `.dmg` a person
+downloads, the `.zip` an installed app downloads to update itself,
+`feed.json` (what the updater reads) and `release.json` (the files'
+sha256 and sizes). The disk image is signed, notarized and stapled too.
+
+Once per Mac, before the first release:
+
+1. Install the Developer ID Application certificate: Xcode → Settings →
+   Accounts → the Apple account → Manage Certificates → + → Developer ID
+   Application (or developer.apple.com → Certificates).
+2. Store the notarization login under a keychain profile, so no password
+   is ever on a command line again:
+   `xcrun notarytool store-credentials simeon-notary --apple-id <the Apple
+   account's e-mail> --team-id <the team id>` and, when asked, an
+   app-specific password made at account.apple.com → Sign-In and Security
+   → App-Specific Passwords.
+
+Settings the script reads: `SIMEON_TEAM_ID` (picks the certificate),
+`SIMEON_SIGN_IDENTITY` (the certificate's full name, when several match),
+`SIMEON_NOTARY_PROFILE` (default `simeon-notary`) and
+`SIMEON_RELEASE_BASE_URL` (where the files will be served from, default
+`https://simeonlabs.com/releases`; the URLs in `feed.json` and
+`release.json` are built from it).
 
 ## Publishing the host bundle
 

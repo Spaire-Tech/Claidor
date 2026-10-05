@@ -132,9 +132,9 @@ export function checkoutDeepControlUrl(action: {
   )
     ? action.membershipToUpgradeTo
     : "pro";
-  // Simeon Labs' site, not Cursor's checkout (ledger F-431, 26 September
+  // Simeon Labs' site, not the upstream's checkout (ledger F-431, 26 September
   // 2026): an "upgrade" button in a served error used to open
-  // cursor.com/api/auth/checkoutDeepControl. No plans page exists on
+  // the upstream site No plans page exists on
   // simeonlabs.com yet; the tier travels as a query for when one does.
   let url = `${SIMEON_WEBSITE_ORIGIN}/pricing?tier=${tier}`;
   if (action.allowTrial === true) url += "&allowTrial=true";
@@ -172,7 +172,7 @@ export function mapErrorDetailButtons(
         actions.push({
           kind: "open-url",
           label: button.label || "Upgrade",
-          // Simeon's own site, not Cursor's pricing page (F-132).
+          // Simeon's own site, not the upstream's pricing page (F-132).
           url: SIMEON_WEBSITE_ORIGIN,
         });
         break;

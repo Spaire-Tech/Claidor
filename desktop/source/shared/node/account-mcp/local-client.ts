@@ -1,4 +1,4 @@
-// The six account-MCP RPCs the upstream app sent to Cursor's dashboard, answered
+// The six account-MCP RPCs the upstream app sent to the upstream's dashboard, answered
 // from the store on this machine (24 September 2026). The answers are the
 // generated proto messages themselves, so every field the manager reads
 // (`account-mcp.ts`) has the type the wire had: ids, plugin ids as int64,
@@ -21,7 +21,7 @@ import {
   UninstallUserPluginResponse,
   UpdateUserPluginInstallResponse,
   UserPluginInstall,
-} from "../../../packages/proto/generated/aiserver/v1/dashboard_pb.js";
+} from "../../../packages/proto/generated/simeon/v1/dashboard_pb.js";
 import {
   installAccountMcpPlugin,
   listAccountMcpPlugins,

@@ -5,7 +5,7 @@ half is in the tree and unchanged (the host's `/health` reports `isBusy`
 and `lastBusyAtMs`, the window draws `SAND_BOX_RUN_STATE_HIBERNATED` as
 "sleeping", every reconnect is an EnsureSandBox that starts it again, and
 the box drains every notify topic when its stream connects). This is the
-server half Cursor ran: `box_service.hibernate_idle` every minute, and a
+server half the upstream app ran: `box_service.hibernate_idle` every minute, and a
 wake whenever the server queues something for a person's box
 (`notify.publish`: a routine's fire, a listener event, a shared room).
 """

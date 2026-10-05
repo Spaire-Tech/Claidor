@@ -1,4 +1,4 @@
-import { createSimeonGenerateImageService } from "../../../shared/node/cursor-backend/simeon-generate-image.js";
+import { createSimeonGenerateImageService } from "../../../shared/node/simeon-backend/simeon-generate-image.js";
 
 export class SandGenerateImagePersistError extends Error {}
 export interface GenerateImageAuth { readonly getAccessToken: () => Promise<string>; readonly getMachineId: () => Promise<string> }

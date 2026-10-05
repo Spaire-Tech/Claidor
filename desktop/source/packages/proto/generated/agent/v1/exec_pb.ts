@@ -37,7 +37,7 @@ import { SmartModeClassifierArgs, SmartModeClassifierResult } from "./smart_mode
 import { SubagentArgs, SubagentResult, SubagentAwaitArgs, SubagentAwaitResult, ForceBackgroundSubagentArgs, ForceBackgroundSubagentResult } from "./subagent_exec_pb.js";
 import { WebFetchAllowlistPrecheckArgs, WebFetchAllowlistPrecheckResult } from "./web_fetch_allowlist_precheck_exec_pb.js";
 import { WriteArgs, WriteResult } from "./write_exec_pb.js";
-import { GetDiffRequest, GetDiffResponse } from "../../aiserver/v1/utils_pb.js";
+import { GetDiffRequest, GetDiffResponse } from "../../simeon/v1/utils_pb.js";
 
 type MutableMessageType<T extends Message<T>> = { -readonly [P in keyof MessageType<T>]: MessageType<T>[P] };
 

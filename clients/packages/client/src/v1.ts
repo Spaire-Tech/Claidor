@@ -187,7 +187,7 @@ export interface paths {
      * @description Send Feedback, recorded as one log line against the person.
      *
      *     Added 24 September 2026. Until then the app posted its feedback to
-     *     `{api}/sand/feedback`, the upstream app's address at Cursor, which this
+     *     `{api}/sand/feedback`, the upstream app's own address, which this
      *     server answered 404, so every message a person wrote in the sheet
      *     was lost and the sheet said « unavailable ». There is no table: a
      *     log line with the user id is what the founder asked for, and it is

@@ -2,7 +2,7 @@ import type { Context } from "../../../context/core.js";
 import { createLogger } from "../../../context/logger.js";
 import { isSyntheticUserMessage } from "./synthetic-user-message.js";
 
-interface CursorProviderOptions {
+interface SimeonProviderOptions {
   readonly isSummary?: boolean;
   readonly messageId?: string;
   readonly requestId?: string;
@@ -11,16 +11,16 @@ interface CursorProviderOptions {
 interface Message {
   readonly role: string;
   readonly content?: unknown;
-  readonly providerOptions?: { readonly cursor?: CursorProviderOptions };
+  readonly providerOptions?: { readonly simeon?: SimeonProviderOptions };
 }
 
 const logger = createLogger("@sand/agent");
 const CONSECUTIVE_USER_MESSAGE_WARNING_THRESHOLD = 3;
 const TAIL_INSPECTION_WINDOW = 12;
 
-function extractCursorProviderOptions(message: Message): CursorProviderOptions | undefined {
+function extractSimeonProviderOptions(message: Message): SimeonProviderOptions | undefined {
   const providerOptions = message.providerOptions;
-  return providerOptions?.cursor;
+  return providerOptions?.simeon;
 }
 
 export function warnIfLongTrailingUserMessageRun(
@@ -55,19 +55,19 @@ export function warnIfLongTrailingUserMessageRun(
   }
   const tailMessages = messages.slice(-TAIL_INSPECTION_WINDOW);
   const tailRoles = tailMessages.map(message => message.role);
-  const tailCursorMessageIds: string[] = [];
-  const tailCursorRequestIds: string[] = [];
+  const tailAgentMessageIds: string[] = [];
+  const tailAgentRequestIds: string[] = [];
   for (const message of tailMessages) {
-    const cursor = extractCursorProviderOptions(message);
+    const cursor = extractSimeonProviderOptions(message);
     if (cursor?.messageId !== undefined) {
-      tailCursorMessageIds.push(cursor.messageId);
+      tailAgentMessageIds.push(cursor.messageId);
     }
     if (cursor?.requestId !== undefined) {
-      tailCursorRequestIds.push(cursor.requestId);
+      tailAgentRequestIds.push(cursor.requestId);
     }
   }
-  const tailDistinctCursorMessageIdCount = new Set(tailCursorMessageIds).size;
-  const tailDistinctCursorRequestIdCount = new Set(tailCursorRequestIds).size;
+  const tailDistinctAgentMessageIdCount = new Set(tailAgentMessageIds).size;
+  const tailDistinctAgentRequestIdCount = new Set(tailAgentRequestIds).size;
   logger.warn(ctx, "Turn contains unusually long trailing run of consecutive user messages", {
     trailingConsecutiveUserMessages,
     threshold: CONSECUTIVE_USER_MESSAGE_WARNING_THRESHOLD,
@@ -76,13 +76,13 @@ export function warnIfLongTrailingUserMessageRun(
     distanceToLastAssistant,
     tailInspectionWindow: TAIL_INSPECTION_WINDOW,
     tailRoles,
-    tailCursorMessageIdCount: tailCursorMessageIds.length,
-    tailDistinctCursorMessageIdCount,
-    hasDuplicateTailCursorMessageIds:
-      tailDistinctCursorMessageIdCount < tailCursorMessageIds.length,
-    tailCursorRequestIdCount: tailCursorRequestIds.length,
-    tailDistinctCursorRequestIdCount,
-    hasDuplicateTailCursorRequestIds:
-      tailDistinctCursorRequestIdCount < tailCursorRequestIds.length,
+    tailAgentMessageIdCount: tailAgentMessageIds.length,
+    tailDistinctAgentMessageIdCount,
+    hasDuplicateTailAgentMessageIds:
+      tailDistinctAgentMessageIdCount < tailAgentMessageIds.length,
+    tailAgentRequestIdCount: tailAgentRequestIds.length,
+    tailDistinctAgentRequestIdCount,
+    hasDuplicateTailAgentRequestIds:
+      tailDistinctAgentRequestIdCount < tailAgentRequestIds.length,
   });
 }

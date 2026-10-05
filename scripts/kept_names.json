@@ -7,7 +7,8 @@
         "grok",
         "anysphere",
         "spacex",
-        "xai"
+        "xai",
+        "Cursor"
       ],
       "paths": [
         "desktop/NOTICE.md"
@@ -32,7 +33,9 @@
         "rakazo",
         "pierce",
         "vesence",
-        "polar"
+        "polar",
+        "Cursor",
+        "cursor.com"
       ],
       "paths": [
         "docs/kept-names.md"
@@ -60,7 +63,9 @@
         "caisra",
         "spacex",
         "xai",
-        "polar"
+        "polar",
+        "cursor.com",
+        "Cursor"
       ],
       "paths": [
         "sites/simeonlabs.com/public/app/**",
@@ -82,7 +87,8 @@
     {
       "kind": "contract",
       "names": [
-        "grok"
+        "grok",
+        "cursor.com"
       ],
       "paths": [
         "desktop/scripts/lib/config.mjs",
@@ -101,13 +107,16 @@
       "names": [
         "grok",
         "caisra",
-        "anysphere"
+        "anysphere",
+        "spacex",
+        "cursor.com",
+        "Cursor"
       ],
       "paths": [
         "desktop/scripts/lib/router-renderer-patch.mjs",
         "desktop/tests/renderer-*.test.mjs"
       ],
-      "reason": "The window patch finds the upstream strings (Grok Bot, New Bot, Caisra, the .sand-grok-bot-mark class) to replace them, counts the upstream maker's name left after the brand pass, and its tests feed it those strings."
+      "reason": "The window patch finds the upstream strings (Grok Bot, New Bot, Caisra, the About panel's copyright line, the .sand-grok-bot-mark class) to replace them, counts the upstream maker's name left after the brand pass, and its tests feed it those strings."
     },
     {
       "kind": "contract",
@@ -126,7 +135,9 @@
         "grok",
         "anysphere",
         "spacex",
-        "xai"
+        "xai",
+        "cursor.com",
+        "Cursor"
       ],
       "paths": [
         "desktop/scripts/lib/macos-plist-identity.mjs",
@@ -137,15 +148,14 @@
     {
       "kind": "contract",
       "names": [
-        "grok",
-        "xai",
-        "anysphere"
+        "xai"
       ],
       "paths": [
         "desktop/source/packages/proto/generated/**",
         "desktop/source/packages/redacted-protos/generated/**"
       ],
-      "reason": "Generated protocol code: service, message and field names the pinned window and the server speak on the wire (aiserver.v1.GrokBotService, Xai* messages)."
+      "reason": "Generated protocol code (Simeon's package since 5 October 2026): the model vendor enum names xAI, a lab whose model ids the voice feature uses, next to OpenAI and Google.",
+      "match": "\"XAI\"|MODEL_VENDOR_ID_XAI"
     },
     {
       "kind": "contract",
@@ -159,7 +169,7 @@
         "server/simeon/models/sand_*.py"
       ],
       "match": "GrokBotService|GROK_BOT|grok_bot|\"grok-bot\"",
-      "reason": "The server answers the Connect service aiserver.v1.GrokBotService, and the GROK_BOT source enum (\"grok-bot\" in JSON) the app sends with a cloud agent."
+      "reason": "The server answers the Connect service under its earlier name aiserver.v1.GrokBotService for one release (simeon.v1.ComputerService since 5 October 2026), and the GROK_BOT source enum an app built before that day sends with a cloud agent."
     },
     {
       "kind": "fallback",
@@ -300,7 +310,8 @@
       "names": [
         "grok",
         "anysphere",
-        "xai"
+        "xai",
+        "Cursor"
       ],
       "paths": [
         "desktop/source/**",
@@ -308,8 +319,8 @@
         "desktop/tests/**",
         "desktop/scripts/**"
       ],
-      "match": "GrokBotService|grok_bot_connect|BackgroundComposerSource\\.GROK_BOT|\"grok-bot\"|grok[-_]4|GROK_4|[Ii]sAnysphereUser|ANYSPHERE_TEAM_ID|AnysphereMembership|anysphere-membership|isanysphereteam|IsAnysphereTeam|sand-grok-bot-mark|data-grok-state|grok_bot_\\w+|app/grok-bot|grokCloudTesting|isGrok45|accounts/anysphere|anysphere\\.cursor-mcp|xai-compaction|`grokbot`|\\.\\(\\?:sand-\\|grok-",
-      "reason": "Names the pinned window, the generated protocol code or the upstream agent code read or send: the Connect service and its source enum, the account status field isAnysphereUser the window reads, upstream model ids (grok-4.5) that saved agents carry, the window's mark class and state attribute, feature-gate and prompt-flag names, the MCP OAuth extension id and a summary kind stored in conversation state."
+      "match": "aiserver\\.v1\\.GrokBotService|\"grok-bot\"|grok[-_]4|GROK_4|[Ii]sAnysphereUser|ANYSPHERE_TEAM_ID|AnysphereMembership|anysphere-membership|isanysphereteam|IsAnysphereTeam|sand-grok-bot-mark|data-grok-state|grok_bot_\\w+|app/grok-bot|grokCloudTesting|isGrok45|accounts/anysphere|anysphere\\.cursor-mcp|xai-compaction|`grokbot`|\\.\\(\\?:sand-\\|grok-",
+      "reason": "Names the pinned window or the upstream agent code read or send, and the earlier Connect service name a SAND_CONNECT_SERVED list may still carry: the account status field isAnysphereUser the window reads, upstream model ids (grok-4.5) that saved agents carry, the window's mark class and state attribute, feature-gate and prompt-flag names, the MCP OAuth extension id and a summary kind stored in conversation state."
     },
     {
       "kind": "contract",
@@ -317,7 +328,9 @@
         "grok",
         "anysphere",
         "xai",
-        "spacex"
+        "spacex",
+        "cursor.com",
+        "Cursor"
       ],
       "paths": [
         "desktop/source/shared/node/experiments/experiment-config.gen.ts",
@@ -368,12 +381,14 @@
       "kind": "guard",
       "names": [
         "claidor",
-        "grok"
+        "grok",
+        "cursor.com",
+        "Cursor"
       ],
       "paths": [
         "desktop/tests/**"
       ],
-      "match": "doesNotMatch|never reads|no longer|Claidor account|Sign in to Claidor|Claidor sign-in|Claidor API|Sign In with Claidor",
+      "match": "doesNotMatch|never reads|no longer|Claidor account|Sign in to Claidor|Claidor sign-in|Claidor API|Sign In with Claidor|never Cursor|not cursor\\.com|are off|includes\\(|cursor\\.com/help|says Cursor",
       "reason": "Tests that check an earlier name is gone from what a person or the agent reads have to name it."
     },
     {
@@ -444,14 +459,50 @@
     {
       "kind": "contract",
       "names": [
+        "Cursor"
+      ],
+      "paths": [
+        "clients/apps/web/src/components/ClaudeCode/agentPlatforms.ts",
+        "clients/apps/web/src/components/ClaudeCode/*.tsx",
+        "clients/apps/web/src/components/Icons/frameworks/cursor.tsx"
+      ],
+      "reason": "The Cursor IDE is a third-party product the web app's integration guide targets (a rules file for its agent mode); it is named as the product it is, like Claude Code and Copilot beside it."
+    },
+    {
+      "kind": "contract",
+      "names": [
+        "cursor.com",
+        "Cursor"
+      ],
+      "paths": [
+        "desktop/frontend/**"
+      ],
+      "reason": "The recovered window (desktop/frontend, not shipped) still carries the upstream's addresses and the maker's name where the pinned window had them; it is redrawn from the upstream bytes and goes with Track D of the detachment plan. Our own code compared against those addresses until Track B (4 October 2026) replaced them."
+    },
+    {
+      "kind": "guard",
+      "names": [
+        "cursor.com",
+        "Cursor"
+      ],
+      "paths": [
+        "desktop/tests/upstream-leftovers.test.mjs"
+      ],
+      "reason": "The test that checks the upstream's leftovers are gone from the app names the hosts and origin it checks are refused or not called."
+    },
+    {
+      "kind": "guard",
+      "names": [
         "grok",
+        "cursor.com",
         "anysphere"
       ],
       "paths": [
-        "desktop/web/**"
+        "desktop/scripts/verify-own-shell.mjs",
+        "desktop/tests/own-shell-package.test.mjs"
       ],
-      "match": "GrokBotService|isAnysphereUser",
-      "reason": "Simeon on the web speaks the Connect service the server mounts (`aiserver.v1.GrokBotService`, `server/simeon/sand/connect.py`) and answers the pinned renderer's own account status field."
+      "match": "plistNamesPreviousMaker|PREVIOUS_IDENTITY\\.test|belongs to the old path|verifyOfficialMacReference",
+      "reason": "The own-shell package check refuses any plist that still names the upstream's maker or app, and its test feeds it those names (Track D, piece 1)."
     }
   ]
 }
