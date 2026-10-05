@@ -1,20 +1,20 @@
 import type { Context } from "../../../packages/context/core.js";
 import { conversationIdKey, requestIdKey } from "../../../packages/chat-inference-proto/client.js";
 import { coreMessageToProto } from "../../../packages/chat-inference-proto/converters.js";
-import { InferenceService } from "../../../packages/proto/generated/aiserver/v1/inference_connect.js";
+import { InferenceService } from "../../../packages/proto/generated/simeon/v1/inference_connect.js";
 import {
   AgentFollowupCategorizationRequest,
   AgentPostTurnLabelingRequest,
-} from "../../../packages/proto/generated/aiserver/v1/inference_pb.js";
+} from "../../../packages/proto/generated/simeon/v1/inference_pb.js";
 import {
-  createSandCursorBackendClient,
+  createSimeonBackendClient,
   type SandInferenceOptions,
-} from "../../../shared/node/cursor-backend/cursor-inference.js";
+} from "../../../shared/node/simeon-backend/simeon-inference.js";
 import { errorLogTag } from "../../../shared/errors.js";
 import { reportHostDiagnostic } from "../../host-diagnostics.js";
 
 export const SAND_AGENT_MODE = "sand-agent";
-export interface LabelMessage { providerOptions?: { cursor?: { inferenceReason?: string } }; [key: string]: unknown }
+export interface LabelMessage { providerOptions?: { simeon?: { inferenceReason?: string } }; [key: string]: unknown }
 export interface LabelingClient {
   recordFollowupClassification(request: AgentFollowupCategorizationRequest): Promise<unknown>;
   recordPostTurnLabeling(request: AgentPostTurnLabelingRequest): Promise<unknown>;
@@ -28,7 +28,7 @@ export interface PromptExecutor {
 }
 
 export function createSandLabelingClient(options: Omit<SandInferenceOptions, "backendUrl">): LabelingClient {
-  const client = createSandCursorBackendClient(InferenceService, options) as unknown as {
+  const client = createSimeonBackendClient(InferenceService, options) as unknown as {
     recordAgentFollowupClassification(request: AgentFollowupCategorizationRequest): Promise<unknown>;
     recordAgentPostTurnLabeling(request: AgentPostTurnLabelingRequest): Promise<unknown>;
   };
@@ -63,7 +63,7 @@ export function wrapExecutorWithSandFollowupLabeling(
         const requestId = ctx.get(requestIdKey);
         if (conversationId == null || conversationId === "" || requestId == null || requestId === "") return result;
         const messages = executor.getMessages();
-        if (messages.length === 0 || messages.some((message) => message.providerOptions?.cursor?.inferenceReason === "agent-summarization")) return result;
+        if (messages.length === 0 || messages.some((message) => message.providerOptions?.simeon?.inferenceReason === "agent-summarization")) return result;
         const previousRequestId = lastRequestIdByConversation.get(conversationId);
         if (lastRequestIdByConversation.get(conversationId) !== requestId) lastRequestIdByConversation.set(conversationId, requestId);
         if (previousRequestId == null || previousRequestId === "" || previousRequestId === requestId || recordedRequestIds.has(requestId)) return result;

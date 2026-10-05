@@ -49,7 +49,7 @@ export function createSchemaTowardsModel(
       merge: z.boolean().describe("Whether to merge the todos with the existing todos. If true, the todos will be merged into the existing todos based on the id field. You can leave unchanged properties undefined. If false, the new todos will replace the existing todos."),
     });
   }
-  if (version === "cursor-0226") {
+  if (version === "simeon-0226") {
     const todosField = z.array(todoItemSchemaTowardsModelDsv31205).describe("Array of TODO items to update or create");
     const todosFieldWithMin = options?.minTodos
       ? todosField.min(options.minTodos)

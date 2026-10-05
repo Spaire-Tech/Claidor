@@ -1,4 +1,4 @@
-"""`aiserver.v1.DashboardService`, the team and plugin half: the skill
+"""`simeon.v1.DashboardService`, the team and plugin half: the skill
 registry (25 September 2026, `docs/services-agents.md`).
 
 Five methods the app calls (`docs/services-agents.md` §7):
@@ -18,7 +18,9 @@ from typing import Any
 from .connect import ConnectCall, ConnectError, ConnectService
 from .skill_registry_service import TEAM_ROLE_MEMBER, TEAM_ROLE_OWNER, skill_registry
 
-service = ConnectService("aiserver.v1.DashboardService")
+service = ConnectService(
+    "simeon.v1.DashboardService", aliases=("aiserver.v1.DashboardService",)
+)
 
 
 def _int(value: Any, field: str) -> int | None:

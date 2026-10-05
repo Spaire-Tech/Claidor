@@ -163,7 +163,7 @@ export class ShellCommandActionHandler {
         role: "system",
         content: this.config.systemPromptGenerator({
           requestContext,
-          cursorRules: rules,
+          agentRules: rules,
           env: requestContext.env,
           browserTools: getBrowserToolNames(mcpTools),
           cloudRule: requestContext.cloudRule ?? undefined,
@@ -186,7 +186,7 @@ export class ShellCommandActionHandler {
         rootPromptExecutor.appendMessages(toRedactedCoreMessages([{
           role: "user",
           content: UserInfo({
-            cursorRules: rules,
+            agentRules: rules,
             agentSkills: requestContext.agentSkills,
             env: requestContext.env,
             gitRepos: requestContext.gitRepos,
@@ -225,7 +225,7 @@ export class ShellCommandActionHandler {
             agentTokenLimit: this.config.agentTokenLimit,
             enableComposer2IntelligentTestingPromptSection: this.config.enableComposer2IntelligentTestingPromptSection,
           }),
-          ...(placement !== undefined && { providerOptions: { cursor: { composer2CloudTestingSectionsPlacement: placement } } }),
+          ...(placement !== undefined && { providerOptions: { simeon: { composer2CloudTestingSectionsPlacement: placement } } }),
         }], stateHandler.getPrivacyMode()));
       }
     }

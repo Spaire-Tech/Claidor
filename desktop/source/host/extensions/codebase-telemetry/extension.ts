@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { createCursorChecksum, getSandInferenceBackendUrl } from "../../../shared/node/cursor-backend/cursor-inference.js";
+import { createClientChecksum, getSandInferenceBackendUrl } from "../../../shared/node/simeon-backend/simeon-inference.js";
 import { getSandBackendClientHeaders } from "../../../shared/node/sand-client-metadata.js";
 import { createDeadlinePolicy, createRealPollingPolicy, createRealRetryPolicy, realClock } from "../../../internal/scheduling.js";
 import { defineHostExtension } from "../../../internal/host-extensions.js";
@@ -43,7 +43,7 @@ export const codebaseTelemetryExtension = defineHostExtension({
         csnapsBinPath: capability.executablePath,
         spawnCsnaps,
         uploadPolling: createRealPollingPolicy({ name: "codebase-snapshot-upload", intervalMs: 5 * 60_000 }),
-        createUploadCredentials: async () => ({ authToken: credentials.authToken, requestHeaders: { ...getSandBackendClientHeaders(), "x-cursor-checksum": createCursorChecksum(await deps.auth.getMachineId()), "x-ghost-mode": "false" } }),
+        createUploadCredentials: async () => ({ authToken: credentials.authToken, requestHeaders: { ...getSandBackendClientHeaders(), "x-simeon-checksum": createClientChecksum(await deps.auth.getMachineId()), "x-ghost-mode": "false" } }),
         logger,
         signal
       }),

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Simeon \u2014 a team of always-on agents, on your Mac, with a computer of their own",
+  "description": "Simeon — a team of always-on agents, on your Mac, with a computer of their own",
   "engines": {
     "node": ">=26.5.0 <27"
   },
@@ -20,7 +20,13 @@
     "native:patch": "node scripts/apply-third-party-patches.mjs",
     "native:build:electron": "node scripts/build-tree-sitter-electron.mjs",
     "package": "npm run preflight && npm run check && node scripts/package-macos.mjs",
+    "package:own-shell": "npm run check && node scripts/package-simeon-shell.mjs",
+    "release:macos": "node scripts/release-macos.mjs",
     "demo": "node demo/serve-demo.mjs",
+    "window:typecheck": "tsc --project window/tsconfig.json",
+    "window:build": "vite build --config window/vite.config.ts",
+    "window:demo": "node window/scripts/build-window-demo.mjs --serve",
+    "window:shots": "node window/test/screenshots.mjs",
     "web": "node web/serve-web.mjs",
     "web:build": "node web/build-web.mjs",
     "package:diagnostic": "npm run check && node scripts/package-fidelity-diagnostic.mjs",
@@ -31,12 +37,14 @@
     "typecheck": "tsc --project frontend/tsconfig.json",
     "source:typecheck": "tsc --project source/tsconfig.json",
     "verify": "npm run preflight && node scripts/verify.mjs",
+    "verify:own-shell": "node scripts/verify-own-shell.mjs",
     "preflight": "node scripts/preflight-bootstrap.mjs",
     "publish:host-bundle": "node scripts/publish-host-bundle.mjs",
     "vendor:playwright-core": "node scripts/vendor-playwright-core.mjs"
   },
   "devDependencies": {
     "@electron/asar": "4.2.1",
+    "@electron/packager": "20.3.0",
     "@types/js-yaml": "3.12.10",
     "@types/node": "26.2.0",
     "@types/react": "19.2.18",

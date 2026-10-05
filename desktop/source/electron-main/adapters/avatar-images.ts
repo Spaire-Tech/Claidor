@@ -1,7 +1,7 @@
 import { writeFile } from "node:fs/promises";
 import { createContext } from "../../packages/context/core.js";
 import { loggerKey } from "../../packages/context/logger.js";
-import { createSimeonGenerateImageService } from "../../shared/node/cursor-backend/simeon-generate-image.js";
+import { createSimeonGenerateImageService } from "../../shared/node/simeon-backend/simeon-generate-image.js";
 import {
   createAvatarImageEdgePort,
   registerImageContextMenu,

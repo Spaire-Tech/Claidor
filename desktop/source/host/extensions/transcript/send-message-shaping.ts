@@ -172,8 +172,8 @@ function shapeThreadable(message: SendMessage, replyTo?: string): SendMessage {
       };
     case "widget":
       return { type: "widget", widget: message.widget, ...thread };
-    case "cursor-agent":
-      return { type: "cursor-agent", bcId: message.bcId, ...thread };
+    case "cloud-agent":
+      return { type: "cloud-agent", bcId: message.bcId, ...thread };
     case "secret-request":
       return {
         type: "secret-request",

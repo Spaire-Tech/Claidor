@@ -53,7 +53,7 @@ proto3.util.setEnumType(TaskMode, "agent.v1.TaskMode", [
   { no: 2, name: "TASK_MODE_PLAN" }
 ]);
 var SubagentType$Runtime = (() => class _SubagentType extends Message<_SubagentType> {
-  declare type: { case: "unspecified"; value: SubagentTypeUnspecified } | { case: "computerUse"; value: SubagentTypeComputerUse } | { case: "custom"; value: SubagentTypeCustom } | { case: "explore"; value: SubagentTypeExplore } | { case: "mediaReview"; value: SubagentTypeMediaReview } | { case: "bash"; value: SubagentTypeBash } | { case: "browserUse"; value: SubagentTypeBrowserUse } | { case: "shell"; value: SubagentTypeShell } | { case: "vmSetupHelper"; value: SubagentTypeVmSetupHelper } | { case: "debug"; value: SubagentTypeDebug } | { case: "cursorGuide"; value: SubagentTypeCursorGuide } | { case: "watchVideo"; value: SubagentTypeWatchVideo } | { case: undefined; value?: undefined };
+  declare type: { case: "unspecified"; value: SubagentTypeUnspecified } | { case: "computerUse"; value: SubagentTypeComputerUse } | { case: "custom"; value: SubagentTypeCustom } | { case: "explore"; value: SubagentTypeExplore } | { case: "mediaReview"; value: SubagentTypeMediaReview } | { case: "bash"; value: SubagentTypeBash } | { case: "browserUse"; value: SubagentTypeBrowserUse } | { case: "shell"; value: SubagentTypeShell } | { case: "vmSetupHelper"; value: SubagentTypeVmSetupHelper } | { case: "debug"; value: SubagentTypeDebug } | { case: "simeonGuide"; value: SubagentTypeSimeonGuide } | { case: "watchVideo"; value: SubagentTypeWatchVideo } | { case: undefined; value?: undefined };
   constructor(data?: PartialMessage<_SubagentType>) {
     super();
     this.type = { case: void 0 };
@@ -87,7 +87,7 @@ var SubagentType: MessageType<SubagentType> = SubagentType$Runtime as unknown as
   { no: 8, name: "shell", kind: "message", T: SubagentTypeShell, oneof: "type" },
   { no: 9, name: "vm_setup_helper", kind: "message", T: SubagentTypeVmSetupHelper, oneof: "type" },
   { no: 10, name: "debug", kind: "message", T: SubagentTypeDebug, oneof: "type" },
-  { no: 11, name: "cursor_guide", kind: "message", T: SubagentTypeCursorGuide, oneof: "type" },
+  { no: 11, name: "simeon_guide", kind: "message", T: SubagentTypeSimeonGuide, oneof: "type" },
   { no: 12, name: "watch_video", kind: "message", T: SubagentTypeWatchVideo, oneof: "type" }
 ]);
 var SubagentTypeUnspecified$Runtime = (() => class _SubagentTypeUnspecified extends Message<_SubagentTypeUnspecified> {
@@ -297,29 +297,29 @@ var SubagentTypeDebug: MessageType<SubagentTypeDebug> = SubagentTypeDebug$Runtim
 (SubagentTypeDebug as MutableMessageType<SubagentTypeDebug>).runtime = proto3;
 (SubagentTypeDebug as MutableMessageType<SubagentTypeDebug>).typeName = "agent.v1.SubagentTypeDebug";
 (SubagentTypeDebug as MutableMessageType<SubagentTypeDebug>).fields = proto3.util.newFieldList(() => []);
-var SubagentTypeCursorGuide$Runtime = (() => class _SubagentTypeCursorGuide extends Message<_SubagentTypeCursorGuide> {
-  constructor(data?: PartialMessage<_SubagentTypeCursorGuide>) {
+var SubagentTypeSimeonGuide$Runtime = (() => class _SubagentTypeSimeonGuide extends Message<_SubagentTypeSimeonGuide> {
+  constructor(data?: PartialMessage<_SubagentTypeSimeonGuide>) {
     super();
-    proto3.util.initPartial(data, this as _SubagentTypeCursorGuide);
+    proto3.util.initPartial(data, this as _SubagentTypeSimeonGuide);
   }
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): _SubagentTypeCursorGuide {
-    return new _SubagentTypeCursorGuide().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): _SubagentTypeSimeonGuide {
+    return new _SubagentTypeSimeonGuide().fromBinary(bytes, options);
   }
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): _SubagentTypeCursorGuide {
-    return new _SubagentTypeCursorGuide().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): _SubagentTypeSimeonGuide {
+    return new _SubagentTypeSimeonGuide().fromJson(jsonValue, options);
   }
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): _SubagentTypeCursorGuide {
-    return new _SubagentTypeCursorGuide().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): _SubagentTypeSimeonGuide {
+    return new _SubagentTypeSimeonGuide().fromJsonString(jsonString, options);
   }
-  static equals(a: _SubagentTypeCursorGuide | PlainMessage<_SubagentTypeCursorGuide> | undefined | null, b2: _SubagentTypeCursorGuide | PlainMessage<_SubagentTypeCursorGuide> | undefined | null): boolean {
-    return proto3.util.equals(_SubagentTypeCursorGuide as unknown as MessageType<_SubagentTypeCursorGuide>, a, b2);
+  static equals(a: _SubagentTypeSimeonGuide | PlainMessage<_SubagentTypeSimeonGuide> | undefined | null, b2: _SubagentTypeSimeonGuide | PlainMessage<_SubagentTypeSimeonGuide> | undefined | null): boolean {
+    return proto3.util.equals(_SubagentTypeSimeonGuide as unknown as MessageType<_SubagentTypeSimeonGuide>, a, b2);
   }
 })();
-export type SubagentTypeCursorGuide = InstanceType<typeof SubagentTypeCursorGuide$Runtime>;
-var SubagentTypeCursorGuide: MessageType<SubagentTypeCursorGuide> = SubagentTypeCursorGuide$Runtime as unknown as MessageType<SubagentTypeCursorGuide>;
-(SubagentTypeCursorGuide as MutableMessageType<SubagentTypeCursorGuide>).runtime = proto3;
-(SubagentTypeCursorGuide as MutableMessageType<SubagentTypeCursorGuide>).typeName = "agent.v1.SubagentTypeCursorGuide";
-(SubagentTypeCursorGuide as MutableMessageType<SubagentTypeCursorGuide>).fields = proto3.util.newFieldList(() => []);
+export type SubagentTypeSimeonGuide = InstanceType<typeof SubagentTypeSimeonGuide$Runtime>;
+var SubagentTypeSimeonGuide: MessageType<SubagentTypeSimeonGuide> = SubagentTypeSimeonGuide$Runtime as unknown as MessageType<SubagentTypeSimeonGuide>;
+(SubagentTypeSimeonGuide as MutableMessageType<SubagentTypeSimeonGuide>).runtime = proto3;
+(SubagentTypeSimeonGuide as MutableMessageType<SubagentTypeSimeonGuide>).typeName = "agent.v1.SubagentTypeSimeonGuide";
+(SubagentTypeSimeonGuide as MutableMessageType<SubagentTypeSimeonGuide>).fields = proto3.util.newFieldList(() => []);
 var SubagentTypeWatchVideo$Runtime = (() => class _SubagentTypeWatchVideo extends Message<_SubagentTypeWatchVideo> {
   constructor(data?: PartialMessage<_SubagentTypeWatchVideo>) {
     super();
@@ -481,4 +481,4 @@ var CustomSubagent: MessageType<CustomSubagent> = CustomSubagent$Runtime as unkn
 ]);
 
 
-export { CustomSubagentPermissionMode, TaskMode, SubagentType, SubagentTypeUnspecified, SubagentTypeComputerUse, SubagentTypeExplore, SubagentTypeMediaReview, SubagentTypeBash, SubagentTypeShell, SubagentTypeBrowserUse, SubagentTypeVmSetupHelper, SubagentTypeDebug, SubagentTypeCursorGuide, SubagentTypeWatchVideo, SubagentTypeCustom, CustomSubagent };
+export { CustomSubagentPermissionMode, TaskMode, SubagentType, SubagentTypeUnspecified, SubagentTypeComputerUse, SubagentTypeExplore, SubagentTypeMediaReview, SubagentTypeBash, SubagentTypeShell, SubagentTypeBrowserUse, SubagentTypeVmSetupHelper, SubagentTypeDebug, SubagentTypeSimeonGuide, SubagentTypeWatchVideo, SubagentTypeCustom, CustomSubagent };

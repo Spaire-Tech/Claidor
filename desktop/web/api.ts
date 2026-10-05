@@ -13,7 +13,7 @@
 export const WEB_SESSION_PATH = "/auth/web-session";
 export const REFRESH_PATH = "/oauth/token";
 export const DESKTOP_API_PREFIX = "/desktop/api/";
-export const CONNECT_SERVICE = "aiserver.v1.GrokBotService";
+export const CONNECT_SERVICE = "simeon.v1.ComputerService";
 export const TOKENS_KEY = "simeon.web.tokens";
 /** Refresh when this much of the hour is left: the Mac app does the same behind the person's back. */
 export const REFRESH_AHEAD_MS = 5 * 60_000;
@@ -89,7 +89,7 @@ export interface SimeonApiOptions {
   readonly store: TokenStore;
   readonly fetch?: typeof fetch;
   readonly now?: () => number;
-  /** `x-cursor-client-version`: what the server is told the client is. */
+  /** `x-simeon-client-version`: what the server is told the client is. */
   readonly clientVersion: string;
 }
 
@@ -111,7 +111,7 @@ export class SimeonApi {
 
   /** The headers the Mac app sends the broker (`sand-client-metadata.ts`). */
   clientHeaders(): Record<string, string> {
-    return { "x-cursor-client-type": "sand", "x-cursor-client-version": this.options.clientVersion, "x-sand-box-namespace": "prod" };
+    return { "x-simeon-client-type": "sand", "x-simeon-client-version": this.options.clientVersion, "x-sand-box-namespace": "prod" };
   }
 
   /**
@@ -218,7 +218,7 @@ export class SimeonApi {
 
   /**
    * One unary call on the box broker, Connect JSON
-   * (`server/simeon/sand/connect.py`): `POST /aiserver.v1.GrokBotService/{Method}`.
+   * (`server/simeon/sand/connect.py`): `POST /simeon.v1.ComputerService/{Method}`.
    */
   async connect<T = Record<string, unknown>>(method: string, message: Record<string, unknown> = {}): Promise<T> {
     const headers = await this.authorized({ "content-type": "application/json", "connect-protocol-version": "1" });

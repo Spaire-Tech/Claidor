@@ -27,7 +27,7 @@
   --night:#000; --blue:#255a93; --blue-hover:#2b66a6; --app-blue:#255a93; /* the person's own chat bubble in the app (USER_BUBBLE_LIGHT, router-renderer-patch.mjs) */ --green:#34c759; --red:#ff3b30;
   --c-cos:#2c6bb3; --c-inbox:#2b8a80; --c-money:#cc6526; --c-growth:#6a58cf; --c-content:#c7457f; --c-sales:#36894a;
   --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Inter","Helvetica Neue",Arial,sans-serif;
-  --gutter:max(20px,4.6vw); /* cursor.com's margin: 4.6% of the screen each side (the founder's screenshots, 3 October 2026) */
+  --gutter:max(20px,4.6vw); /* the margin: 4.6% of the screen each side (the founder's screenshots, 3 October 2026) */
   --col:min(1840px,calc(100vw - 2 * var(--gutter)));
   --edge:max(var(--gutter),calc((100% - 1260px) / 2));
   color-scheme:light;
@@ -51,7 +51,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .face{object-fit:contain;flex:none}
 .f-growth{filter:hue-rotate(90deg)}.f-content{filter:hue-rotate(300deg)}.f-sales{filter:hue-rotate(60deg)}
 
-/* The bar, laid out like cursor.com's (the founder, 3 October 2026, with a screenshot): the name on
+/* The bar (the founder, 3 October 2026, with a screenshot): the name on
    the left, sign in and the download on the right. */
 .bar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.82);-webkit-backdrop-filter:saturate(1.8) blur(20px);backdrop-filter:saturate(1.8) blur(20px);padding-top:env(safe-area-inset-top,0px)}
 .bar .wrap{display:flex;justify-content:space-between;align-items:center;height:clamp(52px,3.8vw,76px)}
@@ -61,13 +61,13 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .bar .btn{height:clamp(28px,1.9vw,38px);padding:0 clamp(12px,.8vw,16px);font-size:clamp(14px,1vw,20px)}
 
 
-/* Hero, as cursor.com sets it: one sentence on the left edge, two buttons under it, nothing else. */
+/* Hero: one sentence on the left edge, two buttons under it, nothing else. */
 .hero{padding:clamp(40px,8.1vw,162px) 0 0;color:#000}
 .hero h1{max-width:13em;font-family:"Newsreader",Georgia,"Times New Roman",serif;font-size:clamp(36px,2.9vw,58px);line-height:1.04;font-weight:400;letter-spacing:-.02em;text-wrap:balance}
 .hero .ctas{display:flex;gap:clamp(10px,.7vw,14px);flex-wrap:wrap;margin-top:clamp(18px,1.6vw,32px)}
 .hero .btn{height:clamp(44px,3.05vw,61px);padding:0 clamp(20px,1.6vw,32px);font-size:clamp(16px,1.15vw,23px)}
-/* On a phone the hero breathes the way Cursor's does (4 October 2026): a long pause under the bar, a headline that leaves air on the right, and room before the app. */
-.hero .btn.go{display:none} /* the phone's one button, Get started, like Cursor's */
+/* On a phone the hero breathes (4 October 2026): a long pause under the bar, a headline that leaves air on the right, and room before the app. */
+.hero .btn.go{display:none} /* the phone's one button, Get started */
 @media (max-width:734px){.hero{padding-top:88px}.hero h1{font-size:31px;line-height:1.1;max-width:11.5em}.hero .ctas{margin-top:26px}.hero .ctas .btn{display:none}.hero .btn.go{display:inline-flex}}
 .btn .apl{width:1.05em;height:1.05em;margin:-.18em .45em 0 -.1em;flex:none}
 

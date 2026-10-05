@@ -9,7 +9,7 @@ import {
   SelectedVideo_SignedUrl,
   type SelectedVideo as SelectedVideoValue,
 } from "../proto/generated/agent/v1/selected_context_pb.js";
-import type { PrivacyMode } from "../proto/generated/aiserver/v1/privacy_mode_pb.js";
+import type { PrivacyMode } from "../proto/generated/simeon/v1/privacy_mode_pb.js";
 import {
   hydrateSelectedAttachmentData,
   type AttachmentBlobStore,

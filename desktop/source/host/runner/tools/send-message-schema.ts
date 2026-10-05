@@ -3,17 +3,17 @@ import { z } from "zod";
 import { sandWidgetSchema } from "../../../shared/sand-widgets.js";
 import { CHANNELS_COMING_SOON_SENTENCE, CLOUD_AGENTS_COMING_SOON_SENTENCE, isAnyChannelAvailable, isCloudAgentsServed } from "../../../shared/cloud-agents-availability.js";
 import { CONNECTOR_MANIFESTS } from "../../../shared/channels.js";
-export const SEND_MESSAGE_TYPES = ["text", "attachment", "widget", "cursor-agent", "secret-request"] as const;
+export const SEND_MESSAGE_TYPES = ["text", "attachment", "widget", "cloud-agent", "secret-request"] as const;
 // Coming Soon at the reach point (shared/cloud-agents-availability.ts): the
 // types the model is offered when cloud agents and channels are not served.
 export function describeSendMessageTypes(env: NodeJS.ProcessEnv = process.env): string {
   const cloud = isCloudAgentsServed(env);
   return [
     "text for chat messages, attachment for actual files or standalone media, widget for an interactive question with selectable options",
-    cloud ? ", cursor-agent to reference a cloud agent by its bcId (renders as a card that opens the agent on click)" : "",
+    cloud ? ", cloud-agent to reference a cloud agent by its bcId (renders as a card that opens the agent on click)" : "",
     ", secret-request to ask the user for a credential through a secure masked input (never a chat paste)",
     ".",
-    cloud ? "" : " cursor-agent is not available: cloud agents are coming soon in Simeon.",
+    cloud ? "" : " cloud-agent is not available: cloud agents are coming soon in Simeon.",
   
   ].join("");
 }
@@ -65,7 +65,7 @@ function secretOrUndefined(value: unknown): unknown {
 function dropBlankItems(value: unknown): unknown { return Array.isArray(value) ? blankToUndefined(value.filter((item) => !isBlankField(item))) : value; }
 const TYPE_FIELDS: readonly { field: keyof SendMessageInput; types: readonly SendMessageType[] }[] = [
   { field: "content", types: ["text"] }, { field: "url", types: ["attachment"] }, { field: "alt", types: ["attachment"] },
-  { field: "widget", types: ["widget"] }, { field: "bcId", types: ["cursor-agent"] }, { field: "secret", types: ["secret-request"] },
+  { field: "widget", types: ["widget"] }, { field: "bcId", types: ["cloud-agent"] }, { field: "secret", types: ["secret-request"] },
 ];
 // GPT-6 fills every property it is offered. For a string it writes "", but an
 // object field had no empty value to write, so every text message carried
@@ -132,7 +132,7 @@ export function sendMessageEndsTurn(args: unknown): boolean {
 
 export function refineSendMessage(value: SendMessageInput, env: NodeJS.ProcessEnv = process.env): SendMessageIssue[] {
   const issues: SendMessageIssue[] = [];
-  if (value.type === "cursor-agent" && !isCloudAgentsServed(env)) issues.push({ path: ["type"], message: CLOUD_AGENTS_COMING_SOON_SENTENCE });
+  if (value.type === "cloud-agent" && !isCloudAgentsServed(env)) issues.push({ path: ["type"], message: CLOUD_AGENTS_COMING_SOON_SENTENCE });
   // Only a messaging connector's key needs channels; any other key becomes a secret on the computer.
   if (value.type === "secret-request" && isMessagingConnector(value.secret?.connector) && !isAnyChannelAvailable(undefined, env)) issues.push({ path: ["type"], message: CHANNELS_COMING_SOON_SENTENCE });
   if (value.channel && value.type !== "text" && value.type !== "attachment") issues.push({ path: ["channel"], message: "channel can only be set for type:text or type:attachment, not widgets or cloud-agent cards" });
@@ -159,7 +159,7 @@ const objectSchema = z.object({
   reply_to: z.string().trim().optional().describe("Optional. Short address of the prior message this reply threads to (e.g. t3u for the user message in turn 3, t3s1 for your second SendMessage in turn 3). Omit when not threading."),
   channel: z.string().trim().optional().describe(isAnyChannelAvailable() ? "Optional. A connected messaging channel address to deliver this to instead of the in-app Simeon chat, shaped platform:chat, the address shown to you in an [inbound] wake. Omit to send to the in-app chat (the default). Only valid with type:text or type:attachment." : "Only to answer an open voice call: set it to the call's voice:<call> address, as the call's [inbound] message says. Messaging channels are coming soon in Simeon; otherwise omit it and the message goes to the in-app chat."),
   widget: z.preprocess(widgetOrUndefined, sandWidgetSchema.nullable().optional()).describe("Required when type is widget; null for every other type. A question with selectable options: { prompt, helpText?, options: [{ label, value?, description?, style? }], allowCustom?, dismissOnMoveOn? }. The user picks one option; its value comes back as their reply, and the chat shows the resolved card with their selection checked under your prompt \u2014 so phrase the prompt as a natural question, not a menu instruction. The user can also dismiss the question without answering; you'll be told on your next turn, so treat that as a decline and don't re-ask. Set allowCustom: true to also let the user type their own free-text answer instead of picking an option. Set dismissOnMoveOn: true only for low-stakes questions that become moot if the user moves on (it auto-dismisses once they send a newer message without answering); leave it off for real decisions you still need answered."),
-  bcId: z.string().trim().optional().describe("Required when type is cursor-agent. The bcId of the cloud agent to reference (e.g. bc-xxxxxxxx-...)."),
+  bcId: z.string().trim().optional().describe("Required when type is cloud-agent. The bcId of the cloud agent to reference (e.g. bc-xxxxxxxx-...)."),
   secret: z.preprocess(secretOrUndefined, z.object({
     label: z.string().trim().min(1).describe('What credential to ask for, shown as the card title and echoed in the field placeholder ("Paste your \u2026"), e.g. "Slack bot token".'),
     description: z.string().trim().optional().describe("Optional short help shown under the label."),

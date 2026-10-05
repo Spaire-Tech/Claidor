@@ -30,7 +30,7 @@ test("every class the appended CSS relies on is extracted and counted, and a mis
   const header = styleAnchorClasses(HEADER_CARD_CSS);
   assert.ok(header.includes("sand-toolbar-divider"));
   assert.ok(header.includes("sand-chat-header__identity-row"));
-  assert.ok(header.includes("sand-grok-bot-mark"));
+  assert.ok(header.includes("sand-simeon-mark"));
   const glass = styleAnchorClasses(LIQUID_GLASS_CSS);
   assert.ok(glass.includes("sand-agents-sidebar"));
   assert.ok(glass.includes("sand-chat"));
@@ -45,7 +45,7 @@ test("every class the appended CSS relies on is extracted and counted, and a mis
 test("the patch records its style anchors and only the chunks a transform changed", async () => {
   const source = await readFile(path.join(repoRoot, "scripts/lib/router-renderer-patch.mjs"), "utf8");
   assert.match(source, /styles: styleAnchors,/);
-  assert.match(source, /header: countStyleAnchors\(styleAnchorClasses\(HEADER_CARD_CSS\), \[bubbleSheets\[0\]\.css, \.\.\.chunkSources\]\)/);
+  assert.match(source, /header: countStyleAnchors\(styleAnchorClasses\(HEADER_CARD_CSS\), anchorSources\)/);
   assert.match(source, /if \(patched === candidate\.source\) continue;/);
   assert.equal(patchOriginalSettingsPanel("unchanged panel"), "unchanged panel");
   const record = source.slice(source.indexOf("const record = {"), source.indexOf("const provenancePath"));

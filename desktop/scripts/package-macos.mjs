@@ -85,7 +85,7 @@ await run(SYSTEM_TOOLS.plutil, ["-remove", "CFBundleURLTypes", infoPlist]);
 await run(SYSTEM_TOOLS.plutil, ["-insert", "CFBundleURLTypes", "-xml", `<array><dict><key>CFBundleTypeRole</key><string>Viewer</string><key>CFBundleURLName</key><string>Simeon auth callback</string><key>CFBundleURLSchemes</key><array><string>${simeonUrlScheme}</string></array></dict></array>`, infoPlist]);
 // The packaged bundle carries its own backend. A bundle launched from Finder
 // inherits no shell environment, so a build without this signs in to
-// cursor.com however the terminal that built it was configured.
+// the upstream site however the terminal that built it was configured.
 await run(SYSTEM_TOOLS.plutil, ["-remove", "LSEnvironment", infoPlist]).catch(() => {});
 await run(SYSTEM_TOOLS.plutil, [
   "-insert",

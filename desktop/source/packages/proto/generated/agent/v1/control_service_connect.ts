@@ -6,8 +6,8 @@
  * B11 exports: 0 messages + 0 enums + 1 services = 1
  */
 import { MethodKind } from "@bufbuild/protobuf";
-import { PingRequest, PingResponse, GetCapabilitiesRequest, GetCapabilitiesResponse, ReloadAgentSkillsRequest, ReloadAgentSkillsResponse, ReloadPluginsRequest, ReloadPluginsResponse, ExecRequest, ExecResponse, ListDirectoryRequest as ListDirectoryRequest2, ListDirectoryResponse as ListDirectoryResponse2, ReadTextFileRequest as ReadTextFileRequest2, ReadTextFileResponse as ReadTextFileResponse2, WriteTextFileRequest as WriteTextFileRequest2, WriteTextFileResponse as WriteTextFileResponse2, ReadBinaryFileRequest as ReadBinaryFileRequest3, ReadBinaryFileResponse as ReadBinaryFileResponse3, ExportFileRequest, ExportFileResponse, WriteBinaryFileRequest as WriteBinaryFileRequest2, WriteBinaryFileResponse as WriteBinaryFileResponse2, GetWorkspaceChangesHashRequest, GetWorkspaceChangesHashResponse, BatchGetDiffRequest, BatchGetDiffResponse, RefreshGithubAccessTokenRequest, RefreshGithubAccessTokenResponse, WarmRemoteAccessServerRequest, WarmRemoteAccessServerResponse, ListArtifactsRequest, ListArtifactsResponse, UploadArtifactsRequest, UploadArtifactsResponse, PersistArtifactsToAgentStoreRequest, PersistArtifactsToAgentStoreResponse, RestoreArtifactsRequest, RestoreArtifactsResponse, GetMcpRefreshTokensRequest, GetMcpRefreshTokensResponse, UpdateEnvironmentVariablesRequest, UpdateEnvironmentVariablesResponse, DownloadCursorServerRequest, DownloadCursorServerResponse, InstallPluginArtifactRequest, InstallPluginArtifactResponse, LoadMcpServersRequest, LoadMcpServersResponse } from "./control_service_pb.js";
-import { GetDiffRequest, GetDiffResponse } from "../../aiserver/v1/utils_pb.js";
+import { PingRequest, PingResponse, GetCapabilitiesRequest, GetCapabilitiesResponse, ReloadAgentSkillsRequest, ReloadAgentSkillsResponse, ReloadPluginsRequest, ReloadPluginsResponse, ExecRequest, ExecResponse, ListDirectoryRequest as ListDirectoryRequest2, ListDirectoryResponse as ListDirectoryResponse2, ReadTextFileRequest as ReadTextFileRequest2, ReadTextFileResponse as ReadTextFileResponse2, WriteTextFileRequest as WriteTextFileRequest2, WriteTextFileResponse as WriteTextFileResponse2, ReadBinaryFileRequest as ReadBinaryFileRequest3, ReadBinaryFileResponse as ReadBinaryFileResponse3, ExportFileRequest, ExportFileResponse, WriteBinaryFileRequest as WriteBinaryFileRequest2, WriteBinaryFileResponse as WriteBinaryFileResponse2, GetWorkspaceChangesHashRequest, GetWorkspaceChangesHashResponse, BatchGetDiffRequest, BatchGetDiffResponse, RefreshGithubAccessTokenRequest, RefreshGithubAccessTokenResponse, WarmRemoteAccessServerRequest, WarmRemoteAccessServerResponse, ListArtifactsRequest, ListArtifactsResponse, UploadArtifactsRequest, UploadArtifactsResponse, PersistArtifactsToAgentStoreRequest, PersistArtifactsToAgentStoreResponse, RestoreArtifactsRequest, RestoreArtifactsResponse, GetMcpRefreshTokensRequest, GetMcpRefreshTokensResponse, UpdateEnvironmentVariablesRequest, UpdateEnvironmentVariablesResponse, DownloadSimeonServerRequest, DownloadSimeonServerResponse, InstallPluginArtifactRequest, InstallPluginArtifactResponse, LoadMcpServersRequest, LoadMcpServersResponse } from "./control_service_pb.js";
+import { GetDiffRequest, GetDiffResponse } from "../../simeon/v1/utils_pb.js";
 
 var ControlService = {
   typeName: "agent.v1.ControlService",
@@ -206,12 +206,12 @@ var ControlService = {
      * This is used to pre-download the cursor server binary so that subsequent
      * WarmRemoteAccessServer calls are faster.
      *
-     * @generated from rpc agent.v1.ControlService.DownloadCursorServer
+     * @generated from rpc agent.v1.ControlService.DownloadSimeonServer
      */
-    downloadCursorServer: {
-      name: "DownloadCursorServer",
-      I: DownloadCursorServerRequest,
-      O: DownloadCursorServerResponse,
+    downloadSimeonServer: {
+      name: "DownloadSimeonServer",
+      I: DownloadSimeonServerRequest,
+      O: DownloadSimeonServerResponse,
       kind: MethodKind.Unary
     },
     /**

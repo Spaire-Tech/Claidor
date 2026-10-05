@@ -23,7 +23,7 @@ type ExistingMainRpcCoreDeps = Pick<MainEdgeWiringDeps,
   | "platform"
   | "avatarImages"
   | "attachments"
-  | "cursorAccount"
+  | "accountService"
   | "ensureTranscriptionManager"
   | "fetchAvailableModels"
   | "recordLocalToolApproval"
@@ -150,11 +150,11 @@ function createExistingMainRpcCoreDeps(
       : supplied.avatarImages,
     "mainRpc.avatarImages",
   );
-  const cursorAccount = requireObject(
-    supplied.cursorAccount === undefined
-      ? (typeof context.cursorAccount === "object" && context.cursorAccount != null ? context.cursorAccount : undefined)
-      : supplied.cursorAccount,
-    "mainRpc.cursorAccount",
+  const accountService = requireObject(
+    supplied.accountService === undefined
+      ? (typeof context.accountService === "object" && context.accountService != null ? context.accountService : undefined)
+      : supplied.accountService,
+    "mainRpc.accountService",
   );
   const ensureTranscriptionManager = requireFunction(
     supplied.ensureTranscriptionManager === undefined ? context.ensureTranscriptionManager : supplied.ensureTranscriptionManager,
@@ -205,7 +205,7 @@ function createExistingMainRpcCoreDeps(
     // context intentionally keeps the public field opaque.
     attachments: attachments as MainEdgeWiringDeps["attachments"],
     avatarImages: avatarImages as MainEdgeWiringDeps["avatarImages"],
-    cursorAccount: cursorAccount as MainEdgeWiringDeps["cursorAccount"],
+    accountService: accountService as MainEdgeWiringDeps["accountService"],
     ensureTranscriptionManager: ensureTranscriptionManager as MainEdgeWiringDeps["ensureTranscriptionManager"],
     fetchAvailableModels,
     recordLocalToolApproval,
@@ -235,7 +235,7 @@ function withGeneratedMainRpc(
 function validateMainRpcDeps(deps: MainEdgeWiringDeps): MainEdgeWiringDeps {
   requireObject(deps, "mainRpc.deps");
   requireObject(deps.shell, "mainRpc.shell");
-  for (const name of ["settingsStore", "agentPrefsStore", "boxToggleStore", "windowChrome", "cursorAccount"] as const) {
+  for (const name of ["settingsStore", "agentPrefsStore", "boxToggleStore", "windowChrome", "accountService"] as const) {
     requireObject(deps[name], `mainRpc.${name}`);
   }
   requireFunction(deps.syncHostSettingsToBox, "mainRpc.syncHostSettingsToBox");

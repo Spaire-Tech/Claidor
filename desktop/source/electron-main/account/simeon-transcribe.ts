@@ -1,5 +1,5 @@
 import { createDeadlinePolicy, realClock, type DeadlinePolicy } from "../../internal/scheduling.js";
-import { simeonProxyRequest, type SimeonApiAuth } from "../../shared/node/cursor-backend/simeon-api.js";
+import { simeonProxyRequest, type SimeonApiAuth } from "../../shared/node/simeon-backend/simeon-api.js";
 
 const TRANSCRIBE_TIMEOUT_MS = 60_000;
 // No default language. Until 24 September 2026 a request with none was sent
@@ -10,7 +10,7 @@ const transcribeDeadline = createDeadlinePolicy(realClock, { name: "simeon-trans
 
 // Dictation, on Simeon's `/audio/transcriptions` door
 // (`server/simeon/desktop/capabilities.py`). Until 19 September 2026 this was
-// a Connect RPC call on `aiserver.v1.AiService/TranscribeAudio`, which
+// a Connect RPC call on `simeon.v1.AiService/TranscribeAudio`, which
 // Simeon never served. The edge (`main-edge.ts`, `transcribeAudio`) and the
 // renderer still call `manager.transcribe({ audio, mimeType, language })` and
 // get `{ text, transcriptionTimeMs }` back; only the wire changed.

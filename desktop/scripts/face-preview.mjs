@@ -20,8 +20,8 @@ const CSS = `
 :root { color-scheme: light dark; font: 13px/1.4 -apple-system, "SF Pro Text", "Helvetica Neue", sans-serif; }
 html, body { margin: 0; }
 .page { min-height: 100vh; padding: 20px 24px 40px; }
-.page[data-theme="cursor-light"] { background: #ffffff; color: #1d1d1f; }
-.page[data-theme="cursor-dark"] { background: #1c1c1e; color: #f2f2f4; }
+.page[data-theme="simeon-light"] { background: #ffffff; color: #1d1d1f; }
+.page[data-theme="simeon-dark"] { background: #1c1c1e; color: #f2f2f4; }
 .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-bottom: 18px; }
 .group { display: inline-flex; gap: 4px; align-items: center; }
 .group button { font: inherit; padding: 3px 9px; border-radius: 6px; border: 1px solid rgba(128,128,128,.4); background: transparent; color: inherit; cursor: pointer; }

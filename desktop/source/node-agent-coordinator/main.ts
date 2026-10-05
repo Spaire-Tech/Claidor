@@ -1,3 +1,4 @@
+import "../shared/node/accept-simeon-env.js";
 import { hostname } from "node:os";
 import { pathToFileURL } from "node:url";
 

@@ -40,7 +40,7 @@ type ResolveIdentity = (input: {
 
 interface PendingContractCarrierMessage {
   readonly providerOptions?: {
-    readonly cursor?: {
+    readonly simeon?: {
       readonly pendingToolExecutionContracts?: unknown;
     };
   };
@@ -95,7 +95,7 @@ function parseContract(value: unknown): PendingToolExecutionContract | undefined
 export function readPendingToolExecutionContracts(
   message: PendingContractCarrierMessage,
 ): Map<string, PendingToolExecutionContract> {
-  const raw = message.providerOptions?.cursor?.pendingToolExecutionContracts;
+  const raw = message.providerOptions?.simeon?.pendingToolExecutionContracts;
   const contracts = new Map<string, PendingToolExecutionContract>();
   if (raw === undefined || raw === null || typeof raw !== "object") {
     return contracts;
@@ -169,11 +169,11 @@ export function enrichPendingToolCallJson(
     const parsed = JSON.parse(pendingMessage) as Record<string, unknown> & {
       content?: unknown;
       providerOptions?: Record<string, unknown> & {
-        cursor?: Record<string, unknown>;
+        simeon?: Record<string, unknown>;
       };
     };
     const contracts: Record<string, unknown> = {
-      ...(parsed.providerOptions?.cursor?.pendingToolExecutionContracts as
+      ...(parsed.providerOptions?.simeon?.pendingToolExecutionContracts as
         | Record<string, unknown>
         | undefined) ?? {},
     };
@@ -193,11 +193,11 @@ export function enrichPendingToolCallJson(
       }
     }
     const existingStartedAtMs =
-      parsed.providerOptions?.cursor?.pendingToolCallStartedAtMs;
+      parsed.providerOptions?.simeon?.pendingToolCallStartedAtMs;
     parsed.providerOptions = {
       ...parsed.providerOptions,
-      cursor: {
-        ...parsed.providerOptions?.cursor,
+      simeon: {
+        ...parsed.providerOptions?.simeon,
         ...(options.pendingToolCallStartedAtMs !== undefined
           ? {
             pendingToolCallStartedAtMs:

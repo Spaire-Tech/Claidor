@@ -1,4 +1,4 @@
-import { BackgroundComposerSource } from "../../proto/generated/aiserver/v1/background_composer_pb.js";
+import { BackgroundComposerSource } from "../../proto/generated/simeon/v1/background_composer_pb.js";
 import { jsx as promptJsx, jsxs as promptJsxs, type PromptNode, type PromptProps } from "../../prompt-jsx/jsx-runtime.js";
 import { getBrowserMcpProviderName } from "../common.js";
 import {
@@ -38,14 +38,14 @@ interface Composer2CloudTestingSectionsProps {
   readonly enableCloudTesting?: boolean | undefined;
   readonly priorUserInfoCloudTestingSectionsPlacement?: string | undefined;
   readonly featureFlags?: {
-    readonly grokCloudTestingInSystemPrompt?: boolean | undefined;
+    readonly cloudTestingInSystemPrompt?: boolean | undefined;
   } | undefined;
   readonly namedAgentSessionKind?: string | undefined;
   readonly isCloudMetaAgentParent?: boolean | undefined;
   readonly subagentType?: { readonly type?: { readonly case?: string | undefined } | undefined } | undefined;
   readonly useLocalAgentPrompting?: boolean | undefined;
   readonly env?: ComposerEnvironment | undefined;
-  readonly cursorRules?: unknown;
+  readonly agentRules?: unknown;
   readonly browserTools?: readonly string[] | undefined;
   readonly cloudRule?: unknown;
   readonly mode?: unknown;
@@ -68,7 +68,7 @@ export function parseComposer2CloudTestingSectionsPlacementMetadata(
 export function getComposer2CloudTestingSectionsPlacement(
   props: Composer2CloudTestingSectionsProps,
 ): "user_info" | "system_prompt" | undefined {
-  const eligible = !isNamedAgentHomePromptSession(props) && props.modelInfo?.promptVersion === "cursor-0226" && props.enableComposer2IntelligentTestingPromptSection === true && props.backgroundAgentSource !== undefined && props.agentType !== undefined && shouldUseExperimentalCloudBehavior({
+  const eligible = !isNamedAgentHomePromptSession(props) && props.modelInfo?.promptVersion === "simeon-0226" && props.enableComposer2IntelligentTestingPromptSection === true && props.backgroundAgentSource !== undefined && props.agentType !== undefined && shouldUseExperimentalCloudBehavior({
     agentType: props.agentType,
     enableCloudTesting: props.enableCloudTesting ?? false,
   }) && isCloudAgentTestingPromptEligibleEnvironment(props.backgroundAgentSource);
@@ -83,7 +83,7 @@ export function getComposer2CloudTestingSectionsPlacement(
   if (prior === "user_info") {
     return "user_info";
   }
-  return isGrok45ProductPrompt && props.featureFlags?.grokCloudTestingInSystemPrompt === true ? "system_prompt" : "user_info";
+  return isGrok45ProductPrompt && props.featureFlags?.cloudTestingInSystemPrompt === true ? "system_prompt" : "user_info";
 }
 
 function getComposer2CloudSectionContext(props: Composer2CloudTestingSectionsProps) {
@@ -100,7 +100,7 @@ function getComposer2CloudSectionContext(props: Composer2CloudTestingSectionsPro
   }) ?? false;
   const testingPromptProps = {
     env: props.env,
-    cursorRules: props.cursorRules,
+    agentRules: props.agentRules,
     browserTools: props.browserTools,
     cloudRule: props.cloudRule,
     mode: props.mode,

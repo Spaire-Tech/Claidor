@@ -34,6 +34,6 @@ export function agentKeyEnvName(connector: string, field: string): string {
   const what = part(field) || "API_KEY";
   let name = service.length === 0 || what === service || what.startsWith(`${service}_`) ? what : `${service}_${what}`;
   if (!/^[A-Z_]/.test(name)) name = `KEY_${name}`;
-  if (/^(SAND_|LD_|__CURSOR)|CURSOR_SANDBOX/.test(name) || ["PATH", "HOME", "USER", "SHELL", "TERM", "PWD", "DISPLAY", "CLOUD_AGENT_INJECTED_SECRET_NAMES"].includes(name)) name = `USER_${name}`;
+  if (/^(SAND_|LD_|__SIMEON)|SIMEON_SANDBOX/.test(name) || ["PATH", "HOME", "USER", "SHELL", "TERM", "PWD", "DISPLAY", "CLOUD_AGENT_INJECTED_SECRET_NAMES"].includes(name)) name = `USER_${name}`;
   return name.slice(0, 120);
 }

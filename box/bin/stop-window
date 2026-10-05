@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# Stops a fork window (start-window): its exec daemon, VNC server, X server
+# and Chrome profile, and forgets its tokens. The host runs this
+# (box-windows.ts, runStopWindow).
+#
+#   stop-window <N>
+set -uo pipefail
+
+N="${1:-}"
+if ! [[ "$N" =~ ^[0-9]+$ ]]; then echo "usage: stop-window <N>" >&2; exit 64; fi
+if [ "$N" -le 1 ]; then echo "stop-window: refusing to stop primary desktop :$N" >&2; exit 0; fi
+
+EXEC_PORT=$((14000 + N))
+VNC_PORT=$((5900 + N))
+DESKTOP_DIR="${SAND_DESKTOP_DIR:-/tmp/sand-desktop}"
+
+# Forget the window first, so the supervisor does not restart what we kill.
+rm -f "/tmp/sand-window-tokens.d/$N" "/tmp/sand-novnc-tokens.d/$N"
+rm -rf "$DESKTOP_DIR/d$N"
+
+kill_port() {
+  local port="$1" pids
+  pids="$(ss -lptnH "sport = :$port" 2>/dev/null | grep -o 'pid=[0-9]*' | cut -d= -f2 | sort -u)"
+  [ -n "$pids" ] || pids="$(fuser -n tcp "$port" 2>/dev/null | tr -s ' ' '\n')"
+  for pid in $pids; do kill "$pid" 2>/dev/null || true; done
+}
+kill_port "$EXEC_PORT"
+kill_port "$VNC_PORT"
+for _ in $(seq 1 50); do
+  (exec 3<>"/dev/tcp/127.0.0.1/$VNC_PORT") 2>/dev/null || break
+  sleep 0.1
+done
+
+if [ -f "/tmp/.X$N-lock" ]; then
+  xpid="$(tr -d ' ' < "/tmp/.X$N-lock")"
+  [[ "$xpid" =~ ^[0-9]+$ ]] && kill "$xpid" 2>/dev/null || true
+fi
+# Chrome, the window manager and the compositor die with their X server;
+# anything that lingers is told plainly.
+pkill -f -- "--display :$N " 2>/dev/null || true
+pkill -f -- "--user-data-dir=/home/box/chrome-profile/Fork-$N" 2>/dev/null || true
+rm -f "/tmp/.X$N-lock" "/tmp/.X11-unix/X$N"
+rm -rf "/home/box/chrome-profile/Fork-$N" "/tmp/xdg-runtime-box-$N" "/tmp/xdg-runtime-$N" "/tmp/sand-window-$N"
+
+echo "sand window $N stopped"

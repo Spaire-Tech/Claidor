@@ -1,7 +1,7 @@
 """A cloud agent, as the app's CloudAgent tool and `cursor-agent` card see
 one (25 September 2026, `simeon.sand.cloud_agents`).
 
-The app speaks Cursor's `aiserver.v1.BackgroundComposerService`: a
+The app speaks the upstream's `simeon.v1.CloudAgentService`: a
 "background composer" with a `bcId` the app mints, a name, an archived
 flag, a conversation that takes follow-ups, and a run that can be paused.
 On Simeon Labs' server a cloud agent is a projection over the maty queue

@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Registers one desktop piece so the supervisor restarts it when it dies:
+#
+#   box-register <group> <name> <order> <logfile> <pid> [pidfile] [--listen-port P] -- <argv...>
+#
+# Writes /tmp/sand-desktop/<group>/<name>.json ({name, group, order, logFile,
+# pidFile, env, argv, listenPort?}) atomically and the pid to the pidfile.
+# Group d1 is the primary desktop, dN a fork window, shared the pieces every
+# desktop uses. Order 0 is the piece the others wait for (the X server).
+set -euo pipefail
+
+DESKTOP_DIR="${SAND_DESKTOP_DIR:-/tmp/sand-desktop}"
+group="$1"; name="$2"; order="$3"; logfile="$4"; pid="$5"; shift 5
+pidfile=""
+listen_port=""
+if [ $# -gt 0 ] && [ "$1" != "--" ] && [ "$1" != "--listen-port" ]; then pidfile="$1"; shift; fi
+if [ $# -gt 1 ] && [ "$1" = "--listen-port" ]; then listen_port="$2"; shift 2; fi
+[ "${1:-}" = "--" ] && shift
+[ $# -gt 0 ] || { echo "box-register: no command given" >&2; exit 64; }
+[[ "$pid" =~ ^[0-9]+$ ]] || { echo "box-register: pid '$pid' is not a number" >&2; exit 64; }
+
+dir="$DESKTOP_DIR/$group"
+mkdir -p "$dir"
+[ -n "$pidfile" ] || pidfile="$dir/$name.pid"
+printf '%s' "$pid" > "$pidfile"
+
+NAME="$name" GROUP="$group" ORDER="$order" LOGFILE="$logfile" PIDFILE="$pidfile" LISTEN_PORT="$listen_port" \
+python3 - "$@" > "$dir/.$name.json.$$" <<'EOF'
+import json, os, sys
+env = {k: os.environ.get(k, "") for k in ("DISPLAY", "HOME", "XDG_RUNTIME_DIR", "DBUS_SESSION_BUS_ADDRESS")}
+record = {
+    "name": os.environ["NAME"], "group": os.environ["GROUP"], "order": int(os.environ["ORDER"]),
+    "logFile": os.environ["LOGFILE"], "pidFile": os.environ["PIDFILE"],
+    "env": {k: v for k, v in env.items() if v}, "argv": sys.argv[1:],
+}
+if os.environ.get("LISTEN_PORT"):
+    record["listenPort"] = int(os.environ["LISTEN_PORT"])
+print(json.dumps(record))
+EOF
+mv -f "$dir/.$name.json.$$" "$dir/$name.json"

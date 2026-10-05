@@ -9,7 +9,7 @@ import { BcsAgentStoreTransport } from "../../../packages/agent-store-sync/bcs-t
 import { AGENT_STORE_SYNC_CLIENT_CONFIG_DEFAULTS } from "../../../packages/agent-store-sync/sync-client-config.js";
 import { TokenCachingAgentStoreClient } from "../../../packages/agent-store-sync/token-caching-client.js";
 import { normalizeS3Etag } from "../../../packages/agent-store-sync/etag.js";
-import { createSandBackendTransport, getSandInferenceBackendUrl } from "../../../shared/node/cursor-backend/cursor-inference.js";
+import { createSandBackendTransport, getSandInferenceBackendUrl } from "../../../shared/node/simeon-backend/simeon-inference.js";
 import { sha256Hex } from "../../sha256.js";
 import { reportBoxStoreDiagnostic } from "./box-store-diagnostics.js";
 import { SandBoxStoreSyncError } from "./box-store-sync-error.js";
@@ -102,10 +102,6 @@ const BCS_AGENT_STORE_BUCKET_HOSTS = new Set([
   "agent-stores.s3.us-east-1.amazonaws.com",
   "agent-stores.s3.amazonaws.com",
 ]);
-const PLAYGROUND_AGENT_STORE_BUCKET_HOSTS = new Set([
-  "agent-stores-928182716709-us-west-2-an.s3.us-west-2.amazonaws.com",
-  "agent-stores-928182716709-us-west-2-an.s3.amazonaws.com",
-]);
 const WINDOWS_RESERVED = new Set([
   "con", "prn", "aux", "nul",
   "com1", "com2", "com3", "com4", "com5", "com6", "com7", "com8", "com9",
@@ -172,15 +168,7 @@ function validatePresignedUrl(rawUrl: string, relPath: string): void {
   if (url.protocol !== "https:") {
     throw new Error(`Refusing presigned URL for ${relPath}: Refused presigned URL with non-https scheme: ${url.protocol}`);
   }
-  const isPlayground = (() => {
-    try {
-      const hostname = new URL(backendUrl).hostname.toLowerCase();
-      return hostname === "playground.cursor.sh" || hostname.endsWith(".playground.cursor.sh");
-    } catch {
-      return false;
-    }
-  })();
-  const allowed = isPlayground ? PLAYGROUND_AGENT_STORE_BUCKET_HOSTS : BCS_AGENT_STORE_BUCKET_HOSTS;
+  const allowed = BCS_AGENT_STORE_BUCKET_HOSTS;
   if (!allowed.has(url.hostname.toLowerCase())) {
     throw new Error(
       `Refusing presigned URL for ${relPath}: Refused presigned URL whose host is not in the allowlist: ${url.hostname}`,

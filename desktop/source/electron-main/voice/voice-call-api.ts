@@ -12,7 +12,7 @@
  * status; 503 means the server has no ElevenLabs key.
  */
 import { createDeadlinePolicy, realClock, type DeadlinePolicy } from "../../internal/scheduling.js";
-import { simeonProxyRequest, type SimeonApiAuth } from "../../shared/node/cursor-backend/simeon-api.js";
+import { simeonProxyRequest, type SimeonApiAuth } from "../../shared/node/simeon-backend/simeon-api.js";
 
 export const VOICE_CALLS_PATH = "voice/calls";
 export const VOICE_VOICES_PATH = "voice/voices";

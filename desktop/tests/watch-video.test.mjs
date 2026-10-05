@@ -4,7 +4,7 @@
  * The upstream app's watchVideo / videoReview subagents were in the tree and
  * refused: nothing registered them (`resolveSubagentConfigs`), the
  * executor spoke only the Responses wire (no video part) and dropped
- * `providerOptions.cursor.videoFps`, and the brief said "You can't watch
+ * `providerOptions.simeon.videoFps`, and the brief said "You can't watch
  * videos yet". Offline, this measures: (1) the two configs are registered
  * on the Gemini model and the Task tool's own resolver accepts them;
  * (2) a video child's session runs on the video model at low effort and
@@ -135,7 +135,7 @@ test("a video child's session speaks Gemini's wire through the proxy with the vi
       { role: "user", content: [
         { type: "text", text: "What happens in this clip?" },
         // The part exactly as context-processing.ts writes the inline video (~293).
-        { type: "image", image: `data:video/mp4;base64,${video}`, mimeType: "video/mp4", providerOptions: { cursor: { videoFps: 4 } } },
+        { type: "image", image: `data:video/mp4;base64,${video}`, mimeType: "video/mp4", providerOptions: { simeon: { videoFps: 4 } } },
       ] },
     ];
     const definitions = [{ name: "Shell", description: "Run a command", parameters: { jsonSchema: { $schema: "http://json-schema.org/draft-07/schema#", type: "object", additionalProperties: false, properties: { command: { type: "string", description: "the command" }, block_until_ms: { type: ["number", "null"], default: 0 } }, required: ["command"] } } }];
@@ -189,7 +189,7 @@ test("the request conversion folds the loop's tool rounds into Gemini's roles an
   try {
     const request = module.toGeminiRequest([
       { role: "system", content: [{ type: "text", text: "sys" }] },
-      { role: "user", content: [{ type: "text", text: "watch" }, { type: "image", image: new URL("https://store.simeonlabs.com/v/1?sig=x"), mimeType: "video/webm", providerOptions: { cursor: { mimeType: "video/webm", videoFps: 0.5 } } }] },
+      { role: "user", content: [{ type: "text", text: "watch" }, { type: "image", image: new URL("https://store.simeonlabs.com/v/1?sig=x"), mimeType: "video/webm", providerOptions: { simeon: { mimeType: "video/webm", videoFps: 0.5 } } }] },
       { role: "assistant", content: [{ type: "text", text: "Looking." }, { type: "tool-call", toolCallId: "c1", toolName: "Shell", args: { command: "ls" } }] },
       { role: "tool", content: [{ type: "tool-result", toolCallId: "c1", toolName: "Shell", result: "a.mp4" }] },
       { role: "user", content: [{ type: "text", text: "Image output of the tool call(s) above." }, { type: "image", image: `data:image/png;base64,iVBORw0KGgo=`, mimeType: "image/png" }] },

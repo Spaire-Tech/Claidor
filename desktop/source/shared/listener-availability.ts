@@ -3,7 +3,7 @@
  * 2026 (`server/simeon/sand/listeners*.py`, `docs/services-agents.md`).
  *
  * A listener routine (Slack, GitHub, Linear, Sentry, PagerDuty) fires
- * through the relay the upstream app reached on Cursor's server:
+ * through the relay the upstream app reached on the upstream's server:
  * `/sand/listener-subscriptions`, `/sand/listener-events/poll`,
  * `/sand/automation-events/poll`, `/sand/automation-runs/complete`, plus
  * `AutomationsService` and the dashboard's Slack/GitHub account

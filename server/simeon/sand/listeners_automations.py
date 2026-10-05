@@ -1,4 +1,4 @@
-"""`aiserver.v1.AutomationsService`, the four methods the app's cloud
+"""`simeon.v1.AutomationsService`, the four methods the app's cloud
 sync calls (25 September 2026; `sand-automation-cloud-sync.ts`).
 
 The app mirrors every routine a server can fire as a shadow workflow:
@@ -24,7 +24,9 @@ from simeon.models import SandAutomation
 from .connect import ConnectCall, ConnectError, ConnectService
 from .listeners_service import listeners
 
-service = ConnectService("aiserver.v1.AutomationsService")
+service = ConnectService(
+    "simeon.v1.AutomationsService", aliases=("aiserver.v1.AutomationsService",)
+)
 
 
 def automation_json(row: SandAutomation) -> dict[str, Any]:

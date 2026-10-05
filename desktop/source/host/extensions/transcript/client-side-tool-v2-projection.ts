@@ -41,7 +41,7 @@ import {
   WebSearchParams,
   WebSearchResult2,
   WebSearchResult_WebReference,
-} from "../../../packages/proto/generated/aiserver/v1/tools_pb.js";
+} from "../../../packages/proto/generated/simeon/v1/tools_pb.js";
 
 // Generated-message evidence is present in both immutable shipped processes:
 // renderer index-UbX-y3il.js offsets 3097937/3102316 and host-main.cjs

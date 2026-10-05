@@ -125,11 +125,11 @@ async function fakeApi(req, res, url) {
   if (url.pathname === "/desktop/api/user/name") { const body = JSON.parse(await readBody(req) || "{}"); profile.preferredName = body.name ?? profile.preferredName; return json(res, 200, { code: 0, data: profile }); }
   if (url.pathname === "/desktop/api/models/available") return json(res, 200, { code: 0, data: [{ modelId: "gpt-6-sol", modelName: "Sol", provider: "openai", role: "primary", contextWindow: 400000, supportsImage: true, supportsToolCalling: true, agenticReady: true }, { modelId: "gpt-6-luna", modelName: "Luna", provider: "openai", role: "cheap" }] });
   if (url.pathname.startsWith("/desktop/api/")) { await readBody(req); return json(res, 200, { code: 0, data: {} }); }
-  if (url.pathname === "/aiserver.v1.GrokBotService/EnsureSandBox") {
+  if (url.pathname === "/simeon.v1.ComputerService/EnsureSandBox") {
     await readBody(req);
     return json(res, 200, { cluster: "simeon", podId: "box-1", networkToken: "net", gatewayUrl: `${origin}/sand-box/box-1/p/1340`, gatewayToken: "gw", vncUrl: `${origin}/sand-box/box-1/p/6080/vnc.html?network_token=net`, forkVncBaseUrl: `${origin}/sand-box/box-1/p/6081` });
   }
-  if (url.pathname.startsWith("/aiserver.v1.GrokBotService/")) { await readBody(req); return json(res, 200, { started: false, reason: "not in the stand-in", operationId: "" }); }
+  if (url.pathname.startsWith("/simeon.v1.ComputerService/")) { await readBody(req); return json(res, 200, { started: false, reason: "not in the stand-in", operationId: "" }); }
   // The vendor's sign-in page and the server's hosted callback: the vendor
   // sends the person back with a code, the server sends them on to the page
   // on the web app that hands the box the code.

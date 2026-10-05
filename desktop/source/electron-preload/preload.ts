@@ -173,24 +173,27 @@ export function createDesktopPreloadBridge(options: {
       // The thumbs on a finished call's card in the chat (2 October 2026).
       rateCall: (conversationId: string, like: boolean | null) => edge("rateVoiceCall", { conversationId, like }),
     },
-    cursorAccount: {
-      getStatus: () => edge("getCursorAuthStatus"),
-      login: () => edge("loginCursor"),
-      cancelLogin: () => edge("cancelCursorLogin"),
-      logout: () => edge("logoutCursor"),
-      updateName: (name: string) => edge("updateCursorAccountName", { name }),
+    // The window reads `desktop.account` (its own bytes said accountService;
+    // the renderer patch renames it with the rest of the upstream's tokens,
+    // Track B of the detachment plan, 4 October 2026).
+    account: {
+      getStatus: () => edge("getAccountStatus"),
+      login: () => edge("signInAccount"),
+      cancelLogin: () => edge("cancelAccountSignIn"),
+      logout: () => edge("signOutAccount"),
+      updateName: (name: string) => edge("updateAccountName", { name }),
       // The name sheet after onboarding (1 October 2026): whether to ask, and Google's first name to offer.
-      getNamePrompt: () => edge("getCursorNamePrompt"),
-      getAvatar: () => edge("getCursorAvatar"),
-      getWeeklyUsage: () => edge("getCursorWeeklyUsage"),
-      getUsageSummary: () => edge("getCursorUsageSummary"),
-      getPrReviewPreferences: () => edge("getCursorPrReviewPreferences"),
-      getPrivacyModeEnabled: () => edge("getCursorPrivacyModeEnabled"),
+      getNamePrompt: () => edge("getAccountNamePrompt"),
+      getAvatar: () => edge("getAccountAvatar"),
+      getWeeklyUsage: () => edge("getAccountWeeklyUsage"),
+      getUsageSummary: () => edge("getAccountUsageSummary"),
+      getPrReviewPreferences: () => edge("getAccountPrReviewPreferences"),
+      getPrivacyModeEnabled: () => edge("getAccountPrivacyModeEnabled"),
       getSandAccess: () => edge("getSandAccess"),
       getSandAccessFresh: () => edge("getSandAccessFresh"),
-      invokeDashboardAction: (request: unknown) => edge("invokeCursorDashboardAction", request),
-      cancelTrial: () => edge("cancelCursorSandTrial"),
-      onStatusChanged: (listener: (payload: unknown) => void) => subscribe("cursor-auth-changed", listener),
+      invokeDashboardAction: (request: unknown) => edge("invokeAccountDashboardAction", request),
+      cancelTrial: () => edge("cancelAccountTrial"),
+      onStatusChanged: (listener: (payload: unknown) => void) => subscribe("account-changed", listener),
     },
     experiments: {
       initialSnapshot: initialState.experimentSnapshot,

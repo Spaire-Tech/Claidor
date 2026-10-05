@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { readFile, stat, unlink } from "node:fs/promises";
-import { parseJwtPayload } from "../../shared/node/cursor-token.js";
+import { parseJwtPayload } from "../../shared/node/simeon-token.js";
 import { writeFileAtomic } from "../../shared/node/atomic-write.js";
 
 export const DESKTOP_STRUCTURED_LOG_SPILL_MAX_BYTES = 1024 * 1024;
@@ -53,10 +53,10 @@ export function normalizeDesktopStructuredLogSpill(state: DesktopStructuredLogSp
   return { state: normalized, encoded: prefix(normalized, counters) + encodedRecords.slice(byteStart).join(",") + "]}}\n" };
 }
 
-export type CursorAuthStatus = { readonly kind: "logging-in" | "logged-out" } | { readonly kind: "logged-in"; readonly authId?: string; readonly email?: string };
-export function desktopStructuredLogAccountSlot(status: CursorAuthStatus): string | undefined { if (status.kind === "logging-in") return undefined; if (status.kind !== "logged-in") return "logged-out"; const slot = status.authId ?? status.email; return slot === undefined || slot.length === 0 ? "logged-out" : createHash("sha256").update(slot).digest("hex"); }
+export type AccountAuthStatus = { readonly kind: "logging-in" | "logged-out" } | { readonly kind: "logged-in"; readonly authId?: string; readonly email?: string };
+export function desktopStructuredLogAccountSlot(status: AccountAuthStatus): string | undefined { if (status.kind === "logging-in") return undefined; if (status.kind !== "logged-in") return "logged-out"; const slot = status.authId ?? status.email; return slot === undefined || slot.length === 0 ? "logged-out" : createHash("sha256").update(slot).digest("hex"); }
 export function desktopStructuredLogAccountSlotForToken(accessToken: string): string | undefined { const authId = parseJwtPayload(accessToken)?.sub; return authId === undefined || authId.length === 0 ? undefined : desktopStructuredLogAccountSlot({ kind: "logged-in", authId }); }
-export function fanOutCursorAuthAccountSlot(status: CursorAuthStatus, tracker?: { noteAccountSlot(slot: string | undefined): void }, telemetry?: { setAccountSlot(slot: string | undefined): Promise<unknown> | unknown }): void { const slot = desktopStructuredLogAccountSlot(status); tracker?.noteAccountSlot(slot); void telemetry?.setAccountSlot(slot); }
+export function fanOutAccountSlot(status: AccountAuthStatus, tracker?: { noteAccountSlot(slot: string | undefined): void }, telemetry?: { setAccountSlot(slot: string | undefined): Promise<unknown> | unknown }): void { const slot = desktopStructuredLogAccountSlot(status); tracker?.noteAccountSlot(slot); void telemetry?.setAccountSlot(slot); }
 
 class FileDesktopStructuredLogSpill implements DesktopStructuredLogSpill {
   private chain = Promise.resolve();

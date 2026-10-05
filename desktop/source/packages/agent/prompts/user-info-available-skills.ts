@@ -1,23 +1,23 @@
 import path from "node:path";
 
 import type { AgentSkill } from "../../proto/generated/agent/v1/agent_skills_pb.js";
-import type { CursorRule } from "../../proto/generated/agent/v1/cursor_rules_pb.js";
+import type { AgentRule } from "../../proto/generated/agent/v1/agent_rules_pb.js";
 import type { PromptNode } from "../../prompt-jsx/jsx-runtime.js";
 import { getFirstNonEmptyLine } from "../utils/common.js";
 import { AgentType } from "../utils/agent-config.js";
 import { filterByAgentEnvironment } from "../utils/environment-filtering.js";
 import { normalizeToUnixPath } from "../../utils/path-utils.js";
 import { BudgetedAgentSkillsSection } from "./agent-skills-section.js";
-import { categorizeCursorRules } from "./user-info-rule-categorization.js";
+import { categorizeAgentRules } from "./user-info-rule-categorization.js";
 
 interface AvailableSkillsPromptProps {
   readonly env?: { readonly workspacePaths?: readonly string[] | undefined } | undefined;
-  readonly cursorRules: CursorRule[];
+  readonly agentRules: AgentRule[];
   readonly displayOptions?: {
     readonly agentType?: AgentType | undefined;
     readonly computerUseSubagentSurface?: boolean | undefined;
     readonly displaySkills?: boolean | undefined;
-    readonly displayCursorRules?: boolean | undefined;
+    readonly displayAgentRules?: boolean | undefined;
   } | undefined;
   readonly agentSkills?: AgentSkill[] | undefined;
   readonly featureFlags?: { readonly protectLoopSkillDescription?: boolean | undefined } | undefined;
@@ -26,14 +26,17 @@ interface AvailableSkillsPromptProps {
 }
 
 interface AvailableSkillsPromptOverrides {
-  readonly skills?: CursorRule[] | undefined;
+  readonly skills?: AgentRule[] | undefined;
   readonly readToolName?: string | undefined;
 }
 
 const COMPUTER_USE_SKILL_PATTERN = /computer[-_ ]use|\bcua\b/i;
+// `.cursor` is the folder skills were published to on boxes before 5 October
+// 2026; it is read, never written.
 const SKILL_DIR_SEGMENTS = [
+  [".simeon", "skills"],
+  [".simeon", "skills-simeon"],
   [".cursor", "skills"],
-  [".cursor", "skills-cursor"],
   [".agents", "skills"],
   [".claude", "skills"],
   [".codex", "skills"],
@@ -99,7 +102,7 @@ function getRuleDir(mdcPath: string): string {
   const literalRuleDir = normalizeToUnixPath(path.posix.dirname(normalizedPath));
   const segments = literalRuleDir.split(SEP);
   for (let index = segments.length - 2; index >= 0; index--) {
-    if (segments[index] === ".cursor" && segments[index + 1] === "rules") {
+    if (segments[index] === ".simeon" && segments[index + 1] === "rules") {
       const parentSegments = segments.slice(0, index);
       if (parentSegments.length === 0) {
         return SEP;
@@ -110,7 +113,7 @@ function getRuleDir(mdcPath: string): string {
   return literalRuleDir;
 }
 
-function getAgentRequestableRuleDescription(rule: CursorRule, ruleDir: string): string | undefined {
+function getAgentRequestableRuleDescription(rule: AgentRule, ruleDir: string): string | undefined {
   if (rule.type?.type.case === "fileGlobbed") {
     const globPattern = rule.type.type.value.globs.join(", ");
     return `${getFirstNonEmptyLine(rule.content ?? "")}, glob pattern(s) for applicable files: ${globPattern}`;
@@ -124,7 +127,7 @@ function getAgentRequestableRuleDescription(rule: CursorRule, ruleDir: string): 
   return undefined;
 }
 
-function toLegacySkillCatalogItems(skills: readonly CursorRule[]) {
+function toLegacySkillCatalogItems(skills: readonly AgentRule[]) {
   return skills.map((rule) => {
     const ruleDir = getRuleDir(rule.fullPath);
     return {
@@ -146,7 +149,7 @@ export function buildAvailableSkillsPromptSection(
   readonly strategy?: "under_budget" | "shortened_descriptions" | "dropped_descriptions" | "omitted_skills";
 } {
   const workspacePaths = props.env?.workspacePaths ?? [];
-  const skills = overrides?.skills ?? categorizeCursorRules(props.cursorRules, workspacePaths, props.displayOptions?.agentType).skills;
+  const skills = overrides?.skills ?? categorizeAgentRules(props.agentRules, workspacePaths, props.displayOptions?.agentType).skills;
   const computerUseSubagentSurface = props.displayOptions?.computerUseSubagentSurface === true;
   const agentSkillsFromProto = filterByAgentEnvironment(props.agentSkills ?? [], props.displayOptions?.agentType)
     .filter((skill) => !skill.disableModelInvocation && !isFileScopedSkill(skill, workspacePaths));
@@ -162,7 +165,7 @@ export function buildAvailableSkillsPromptSection(
     : skills;
   const availableSkillCount = useAgentSkillsProto ? filteredAgentSkillsFromProto.length : filteredLegacySkills.length;
   const shouldRenderSection = availableSkillCount > 0 && (
-    computerUseSubagentSurface || props.displayOptions?.displaySkills === true && props.displayOptions?.displayCursorRules !== false
+    computerUseSubagentSurface || props.displayOptions?.displaySkills === true && props.displayOptions?.displayAgentRules !== false
   );
   if (!shouldRenderSection) {
     return { skillCount: 0 };

@@ -1,5 +1,5 @@
 // @ts-nocheck -- exact generated runtime; declaration typing is a subsequent mechanical pass.
-import { CustomSubagent, SubagentType, SubagentTypeBash, SubagentTypeBrowserUse, SubagentTypeComputerUse, SubagentTypeCursorGuide, SubagentTypeCustom, SubagentTypeDebug, SubagentTypeExplore, SubagentTypeMediaReview, SubagentTypeShell, SubagentTypeUnspecified, SubagentTypeVmSetupHelper, SubagentTypeWatchVideo } from "../../../../proto/generated/agent/v1/subagents_pb.js";
+import { CustomSubagent, SubagentType, SubagentTypeBash, SubagentTypeBrowserUse, SubagentTypeComputerUse, SubagentTypeSimeonGuide, SubagentTypeCustom, SubagentTypeDebug, SubagentTypeExplore, SubagentTypeMediaReview, SubagentTypeShell, SubagentTypeUnspecified, SubagentTypeVmSetupHelper, SubagentTypeWatchVideo } from "../../../../proto/generated/agent/v1/subagents_pb.js";
 import { DataClassification } from "../../../../redaction/classification.js";
 import { createRedactedString } from "../../../../redaction/factory.js";
 
@@ -34,8 +34,8 @@ function toRedactedSubagentType_type(oneof, privacyMode) {
       return { case: "vmSetupHelper", value: toRedactedSubagentTypeVmSetupHelper(oneof.value, privacyMode) };
     case "debug":
       return { case: "debug", value: toRedactedSubagentTypeDebug(oneof.value, privacyMode) };
-    case "cursorGuide":
-      return { case: "cursorGuide", value: toRedactedSubagentTypeCursorGuide(oneof.value, privacyMode) };
+    case "simeonGuide":
+      return { case: "simeonGuide", value: toRedactedSubagentTypeSimeonGuide(oneof.value, privacyMode) };
     case "watchVideo":
       return { case: "watchVideo", value: toRedactedSubagentTypeWatchVideo(oneof.value, privacyMode) };
     default:
@@ -76,8 +76,8 @@ function fromRedactedSubagentType_type(oneof, purpose, opts) {
       return { case: "vmSetupHelper", value: fromRedactedSubagentTypeVmSetupHelper(oneof.value, purpose, opts) };
     case "debug":
       return { case: "debug", value: fromRedactedSubagentTypeDebug(oneof.value, purpose, opts) };
-    case "cursorGuide":
-      return { case: "cursorGuide", value: fromRedactedSubagentTypeCursorGuide(oneof.value, purpose, opts) };
+    case "simeonGuide":
+      return { case: "simeonGuide", value: fromRedactedSubagentTypeSimeonGuide(oneof.value, purpose, opts) };
     case "watchVideo":
       return { case: "watchVideo", value: fromRedactedSubagentTypeWatchVideo(oneof.value, purpose, opts) };
     default:
@@ -174,15 +174,15 @@ function fromRedactedSubagentTypeDebug(msg, purpose, opts) {
   const enforcing = opts?.enforcing;
   return new SubagentTypeDebug({});
 }
-function toRedactedSubagentTypeCursorGuide(msg, privacyMode) {
+function toRedactedSubagentTypeSimeonGuide(msg, privacyMode) {
   return {
     _privacyMode: privacyMode
   };
 }
-function fromRedactedSubagentTypeCursorGuide(msg, purpose, opts) {
+function fromRedactedSubagentTypeSimeonGuide(msg, purpose, opts) {
   const redactUnallowedFieldsInsteadOfThrowing = opts?.redactUnallowedFieldsInsteadOfThrowing ?? false;
   const enforcing = opts?.enforcing;
-  return new SubagentTypeCursorGuide({});
+  return new SubagentTypeSimeonGuide({});
 }
 function toRedactedSubagentTypeWatchVideo(msg, privacyMode) {
   return {
@@ -270,8 +270,8 @@ export {
   fromRedactedSubagentTypeVmSetupHelper,
   toRedactedSubagentTypeDebug,
   fromRedactedSubagentTypeDebug,
-  toRedactedSubagentTypeCursorGuide,
-  fromRedactedSubagentTypeCursorGuide,
+  toRedactedSubagentTypeSimeonGuide,
+  fromRedactedSubagentTypeSimeonGuide,
   toRedactedSubagentTypeWatchVideo,
   fromRedactedSubagentTypeWatchVideo,
   toRedactedSubagentTypeCustom,

@@ -9,7 +9,7 @@
 
 // Proper nouns only, case-sensitive, for rewriting: a prompt about "the
 // cursor" must not become "the Simeon". Any case, for reporting.
-export const PREVIOUS_IDENTITY = /\b(Grok Bot|Grok|Cursor|Anysphere|SpaceX|xAI)\b/;
+export const PREVIOUS_IDENTITY = /\b(Grok Bot|Grok|Cursor|Anysphere|SpaceXAI|SpaceX|xAI)\b/;
 const PREVIOUS_IDENTITY_ANY_CASE = /grok|cursor\.(com|sh)|anysphere|spacex|\bxai\b/i;
 
 const READ_BY_PEOPLE = new Set(["CFBundleName", "CFBundleDisplayName", "CFBundleGetInfoString"]);

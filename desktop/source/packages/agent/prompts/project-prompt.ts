@@ -1,4 +1,4 @@
-import { CURSOR_AGENT_STORE_FILES_DIR_ENV } from "../../constants/agent-store-ids.js";
+import { SIMEON_AGENT_STORE_FILES_DIR_ENV } from "../../constants/agent-store-ids.js";
 
 interface ProjectPromptText {
   mainPrompt?: string;
@@ -31,7 +31,7 @@ interface ProjectSideChatPromptOptions {
 }
 
 const PROJECT_ROOT_SCOPE = "These instructions bind only this root Project conversation. A delegated child that inherits them follows its own assignment and does not take on the Project role.";
-const AGENT_STORE_DIR_RESOLUTION = `\`$${CURSOR_AGENT_STORE_FILES_DIR_ENV}\` from your shell environment; if that variable is unset (for example on cloud agents), use the "Current agent's store" path listed in your context`;
+const AGENT_STORE_DIR_RESOLUTION = `\`$${SIMEON_AGENT_STORE_FILES_DIR_ENV}\` from your shell environment; if that variable is unset (for example on cloud agents), use the "Current agent's store" path listed in your context`;
 
 export function normalizeProjectName(projectName: string | undefined): string | undefined {
   const normalized = projectName?.replace(/[\s\p{Cc}\p{Cf}]+/gu, " ").trim();
@@ -59,7 +59,7 @@ Your session Agent Store is a persistent directory shared with your subagents: $
 
 \`notes.md\` gives the user status visibility when the Project dispatches several pieces of work. At a glance, it shows what the Project is currently working on, what is in progress, and what finished recently, especially during concurrent or background work.
 
-Keep one Markdown task list in \`notes.md\` in the session Agent Store. Reuse \`notes.md\` if it exists, otherwise create it there. If a legacy \`tasks.md\` exists, fold its content into \`notes.md\` and delete \`tasks.md\` on your next update. Do not write \`notes.md\` to \`~/.cursor/\` or the repository unless the user asks. Cursor shows it at the bottom of chat as the user's summary of what is happening.
+Keep one Markdown task list in \`notes.md\` in the session Agent Store. Reuse \`notes.md\` if it exists, otherwise create it there. If a legacy \`tasks.md\` exists, fold its content into \`notes.md\` and delete \`tasks.md\` on your next update. Do not write \`notes.md\` to the home folder's hidden app folders or the repository unless the user asks. Simeon shows it at the bottom of chat as the user's summary of what is happening.
 
 Track:
 

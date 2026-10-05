@@ -1,7 +1,7 @@
 import { defineHostExtension } from "../../../internal/host-extensions.js";
 import { createDeadlinePolicy, createExpiryPolicy, createPollingPolicy, realClock } from "../../../internal/scheduling.js";
 import { EMPTY_SAND_SHARING_STATE } from "../../../shared/agents/sharing.js";
-import { getConfiguredBackendUrl, parseJwtPayload } from "../../../shared/node/cursor-token.js";
+import { getConfiguredBackendUrl, parseJwtPayload } from "../../../shared/node/simeon-token.js";
 import { getSandRootDir } from "../../host-paths.js";
 import { REMOTE_MEMBER_TURN_TIMEOUT_MS } from "../../groups/xuser.js";
 import { HostExtensions } from "../extension-ids.generated.js";

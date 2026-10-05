@@ -7,8 +7,8 @@
  */
 import { Message, proto3 } from "@bufbuild/protobuf";
 import type { BinaryReadOptions, JsonReadOptions, JsonValue, MessageType, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
-import { PackageType } from "./cursor_packages_pb.js";
-import { CursorRule } from "./cursor_rules_pb.js";
+import { PackageType } from "./simeon_packages_pb.js";
+import { AgentRule } from "./agent_rules_pb.js";
 import { RepositoryIndexingInfo } from "./repo_pb.js";
 import { McpToolDefinition, McpInstructions, McpFileSystemOptions, McpMetaToolOptions } from "./mcp_pb.js";
 import { LsDirectoryTreeNode } from "./ls_exec_pb.js";
@@ -892,7 +892,7 @@ var PrecomputedHumanChange: MessageType<PrecomputedHumanChange> = PrecomputedHum
   }
 ]);
 var RequestContext$Runtime = (() => class _RequestContext extends Message<_RequestContext> {
-  declare rules: CursorRule[];
+  declare rules: AgentRule[];
   declare env?: RequestContextEnv;
   declare repositoryInfo: RepositoryIndexingInfo[];
   declare tools: McpToolDefinition[];
@@ -923,7 +923,7 @@ var RequestContext$Runtime = (() => class _RequestContext extends Message<_Reque
   declare mcpMetaToolOptions?: McpMetaToolOptions;
   declare readLintsEnabled?: boolean;
   declare mcpInfoComplete?: boolean;
-  declare nonFileRules: CursorRule[];
+  declare nonFileRules: AgentRule[];
   declare matchedInstalledPlugin?: MatchedInstalledPlugin;
   declare rulesInfoComplete?: boolean;
   declare envInfoComplete?: boolean;
@@ -975,7 +975,7 @@ var RequestContext: MessageType<RequestContext> = RequestContext$Runtime as unkn
 (RequestContext as MutableMessageType<RequestContext>).runtime = proto3;
 (RequestContext as MutableMessageType<RequestContext>).typeName = "agent.v1.RequestContext";
 (RequestContext as MutableMessageType<RequestContext>).fields = proto3.util.newFieldList(() => [
-  { no: 2, name: "rules", kind: "message", T: CursorRule, repeated: true },
+  { no: 2, name: "rules", kind: "message", T: AgentRule, repeated: true },
   { no: 4, name: "env", kind: "message", T: RequestContextEnv },
   { no: 6, name: "repository_info", kind: "message", T: RepositoryIndexingInfo, repeated: true },
   { no: 7, name: "tools", kind: "message", T: McpToolDefinition, repeated: true },
@@ -1010,7 +1010,7 @@ var RequestContext: MessageType<RequestContext> = RequestContext$Runtime as unkn
   { no: 34, name: "mcp_meta_tool_options", kind: "message", T: McpMetaToolOptions, opt: true },
   { no: 35, name: "read_lints_enabled", kind: "scalar", T: 8, opt: true },
   { no: 36, name: "mcp_info_complete", kind: "scalar", T: 8, opt: true },
-  { no: 37, name: "non_file_rules", kind: "message", T: CursorRule, repeated: true },
+  { no: 37, name: "non_file_rules", kind: "message", T: AgentRule, repeated: true },
   { no: 38, name: "matched_installed_plugin", kind: "message", T: MatchedInstalledPlugin, opt: true },
   { no: 39, name: "rules_info_complete", kind: "scalar", T: 8, opt: true },
   { no: 40, name: "env_info_complete", kind: "scalar", T: 8, opt: true },
@@ -1029,8 +1029,8 @@ var RequestContext: MessageType<RequestContext> = RequestContext$Runtime as unkn
   { no: 53, name: "system_prompt_override", kind: "message", T: SystemPromptSpec, opt: true }
 ]);
 var RequestContextRulesPart$Runtime = (() => class _RequestContextRulesPart extends Message<_RequestContextRulesPart> {
-  declare rules: CursorRule[];
-  declare nonFileRules: CursorRule[];
+  declare rules: AgentRule[];
+  declare nonFileRules: AgentRule[];
   declare cloudRule?: string;
   constructor(data?: PartialMessage<_RequestContextRulesPart>) {
     super();
@@ -1056,8 +1056,8 @@ var RequestContextRulesPart: MessageType<RequestContextRulesPart> = RequestConte
 (RequestContextRulesPart as MutableMessageType<RequestContextRulesPart>).runtime = proto3;
 (RequestContextRulesPart as MutableMessageType<RequestContextRulesPart>).typeName = "agent.v1.RequestContextRulesPart";
 (RequestContextRulesPart as MutableMessageType<RequestContextRulesPart>).fields = proto3.util.newFieldList(() => [
-  { no: 1, name: "rules", kind: "message", T: CursorRule, repeated: true },
-  { no: 2, name: "non_file_rules", kind: "message", T: CursorRule, repeated: true },
+  { no: 1, name: "rules", kind: "message", T: AgentRule, repeated: true },
+  { no: 2, name: "non_file_rules", kind: "message", T: AgentRule, repeated: true },
   { no: 3, name: "cloud_rule", kind: "scalar", T: 9, opt: true }
 ]);
 var RequestContextSkillsPart$Runtime = (() => class _RequestContextSkillsPart extends Message<_RequestContextSkillsPart> {

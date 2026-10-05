@@ -234,19 +234,19 @@ const HARDCODED_ALLOWED_READ_PATHS: AllowedReadPath[] = [
 ];
 
 const HARDCODED_WRITE_PROTECTION_PATTERNS: WriteProtectionPattern[] = [
-  { type: "workspace", pattern: "**/.cursor/*.json" },
-  { type: "workspace", pattern: "**/.cursor/**/*.json" },
-  { type: "workspace", pattern: "**/.cursor/.workspace-trusted" },
-  { type: "workspace", pattern: "!**/.cursor/rules" },
-  { type: "workspace", pattern: "!**/.cursor/rules/**" },
-  { type: "workspace", pattern: "!**/.cursor/commands" },
-  { type: "workspace", pattern: "!**/.cursor/commands/**" },
-  { type: "workspace", pattern: "!**/.cursor/worktrees" },
-  { type: "workspace", pattern: "!**/.cursor/worktrees/**" },
-  { type: "workspace", pattern: "!**/.cursor/skills" },
-  { type: "workspace", pattern: "!**/.cursor/skills/**" },
-  { type: "workspace", pattern: "!**/.cursor/agents" },
-  { type: "workspace", pattern: "!**/.cursor/agents/**" },
+  { type: "workspace", pattern: "**/.simeon/*.json" },
+  { type: "workspace", pattern: "**/.simeon/**/*.json" },
+  { type: "workspace", pattern: "**/.simeon/.workspace-trusted" },
+  { type: "workspace", pattern: "!**/.simeon/rules" },
+  { type: "workspace", pattern: "!**/.simeon/rules/**" },
+  { type: "workspace", pattern: "!**/.simeon/commands" },
+  { type: "workspace", pattern: "!**/.simeon/commands/**" },
+  { type: "workspace", pattern: "!**/.simeon/worktrees" },
+  { type: "workspace", pattern: "!**/.simeon/worktrees/**" },
+  { type: "workspace", pattern: "!**/.simeon/skills" },
+  { type: "workspace", pattern: "!**/.simeon/skills/**" },
+  { type: "workspace", pattern: "!**/.simeon/agents" },
+  { type: "workspace", pattern: "!**/.simeon/agents/**" },
   { type: "workspace", pattern: "**/.claude/*.json" },
   { type: "workspace", pattern: "**/.claude/**/*.json" },
   { type: "workspace", pattern: "**/.vscode/**" },
@@ -254,13 +254,13 @@ const HARDCODED_WRITE_PROTECTION_PATTERNS: WriteProtectionPattern[] = [
   { type: "workspace", pattern: "**/.venv/" },
   { type: "workspace", pattern: "**/venv/" },
   { type: "workspace", pattern: "**/*.code-workspace" },
-  { type: "workspace", pattern: "**/.cursorignore" },
+  { type: "workspace", pattern: "**/.simeonignore" },
   { type: "workspace", pattern: "**/.workspace-trusted" },
-  { type: "workspace", pattern: "**/.cursor/**/cli.json" },
-  { type: "workspace", pattern: "**/.cursor/**/cli-config.json" },
-  { type: "workspace", pattern: "**/.cursor/**/mcp.json" },
-  { type: "workspace", pattern: "**/.cursor/**/mcp-approvals.json" },
-  { type: "workspace", pattern: "**/.cursor/**/permissions.json" },
+  { type: "workspace", pattern: "**/.simeon/**/cli.json" },
+  { type: "workspace", pattern: "**/.simeon/**/cli-config.json" },
+  { type: "workspace", pattern: "**/.simeon/**/mcp.json" },
+  { type: "workspace", pattern: "**/.simeon/**/mcp-approvals.json" },
+  { type: "workspace", pattern: "**/.simeon/**/permissions.json" },
   { type: "git", pattern: "**/.git/hooks/**" },
   { type: "git", pattern: "**/.git/config" },
   { type: "git", pattern: "**/.git/config.worktree" },
@@ -275,14 +275,14 @@ const HARDCODED_WRITE_PROTECTION_PATTERNS: WriteProtectionPattern[] = [
   { type: "absolute", pattern: "/etc/pki/tls/certs/ca-bundle.crt" },
   { type: "absolute", pattern: "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem" },
   { type: "home", pattern: ".ssh" },
-  { type: "home", pattern: ".cursor/sandbox-policies" },
+  { type: "home", pattern: ".simeon/sandbox-policies" },
 ];
 
 const HARDCODED_PROTECTED_GIT_PATTERNS = HARDCODED_WRITE_PROTECTION_PATTERNS
   .filter((entry) => entry.type === "git")
   .map((entry) => entry.pattern);
 
-const CURSOR_ALLOWED_WRITE_SUBDIRS = HARDCODED_WRITE_PROTECTION_PATTERNS
+const SIMEON_ALLOWED_WRITE_SUBDIRS = HARDCODED_WRITE_PROTECTION_PATTERNS
   .filter((entry) => entry.type === "workspace" && entry.pattern.startsWith("!") && !entry.pattern.endsWith("/**"))
   .map((entry) => entry.pattern.replace(/^!(\*\*\/)?/, ""));
 
@@ -291,5 +291,5 @@ const _caseInsensitiveFs = process.platform === "win32" || process.platform === 
 
 void ignore;
 void HARDCODED_PROTECTED_GIT_PATTERNS;
-void CURSOR_ALLOWED_WRITE_SUBDIRS;
+void SIMEON_ALLOWED_WRITE_SUBDIRS;
 void _caseInsensitiveFs;

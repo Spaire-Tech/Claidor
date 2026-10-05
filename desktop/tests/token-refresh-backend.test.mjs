@@ -1,8 +1,8 @@
 /**
- * A token refresh goes to the configured backend (Simeon), never to Cursor's
+ * A token refresh goes to the configured backend (Simeon), never to the upstream's
  * default host. Found in the 24 September audit: `getValidAccessToken()` with
  * no backend named (dictation, avatar generation) defaulted to
- * `https://api2.cursor.sh`, so when the access token was within five minutes
+ * `https://the upstream API`, so when the access token was within five minutes
  * of expiry the refresh went there, got a non-2xx, and the service revoked
  * the credentials: the person was signed out by pressing the mic or
  * "Generate".
@@ -30,17 +30,17 @@ function jwt(payload) {
   return `${enc({ alg: "HS256", typ: "JWT" })}.${enc(payload)}.sig`;
 }
 
-test("a refresh with no backend named goes to SAND_BACKEND_URL, not api2.cursor.sh", async () => {
+test("a refresh with no backend named goes to SAND_BACKEND_URL, not the upstream API", async () => {
   const previous = process.env.SAND_BACKEND_URL;
   process.env.SAND_BACKEND_URL = "https://api.simeonlabs.com";
-  const { module, dispose } = await load("source/electron-main/account/cursor-auth.ts", "cursor-auth");
+  const { module, dispose } = await load("source/electron-main/account/account-auth.ts", "account-auth");
   try {
     const nowSeconds = Math.floor(Date.now() / 1000);
     const expiring = jwt({ sub: "user|1", exp: nowSeconds + 60 });
     const fresh = jwt({ sub: "user|1", exp: nowSeconds + 3600 });
     const store = new Map([["cursor-access-token", expiring], ["cursor-refresh-token", "simeon_da_refresh"]]);
     const requests = [];
-    const service = new module.SandCursorAuthService({
+    const service = new module.SandAccountAuthService({
       openExternal: () => {},
       secrets: {
         readSecret: async (key) => store.get(key) ?? null,

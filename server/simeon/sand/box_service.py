@@ -62,13 +62,13 @@ from .box_repository import SandBoxRepository
 
 log = structlog.get_logger()
 
-#: `aiserver.v1.SandBoxRunState`
+#: `simeon.v1.SandBoxRunState`
 RUN_STATE_UNSPECIFIED = 0
 RUN_STATE_ABSENT = 1
 RUN_STATE_HIBERNATED = 2
 RUN_STATE_RUNNING = 3
 
-#: `aiserver.v1.SandBoxMigrationPhase`
+#: `simeon.v1.SandBoxMigrationPhase`
 PHASE_BACKING_UP = 1
 PHASE_CREATING = 2
 PHASE_MOVING = 3
@@ -256,12 +256,12 @@ def set_health_check_for_tests(
 # `busyOnlyAwaitingApproval` and `lastBusyAtMs` (`gateway-server.ts`,
 # `SandHost.getHealth`): busy while a turn, a background shell, a carried
 # wake or a mid-drain revival runs, and `lastBusyAtMs` moves only while
-# busy on something other than an approval card. Cursor's server read the
+# busy on something other than an approval card. the upstream's server read the
 # same pair (`AdminSandBoxHostStatusResponse.is_busy`, `last_busy_at_ms`),
 # kept `last_active_at_ms` per pod (`TeamMemberSandBoxPod`), hibernated a
 # pod with `AdminHibernateSandBox(force)`, which answers `started`/`reason`,
 # and reported `SAND_BOX_RUN_STATE_HIBERNATED`, which the window draws as
-# "sleeping" and "Waking your computer…". How long Cursor waited before
+# "sleeping" and "Waking your computer…". How long the upstream app waited before
 # hibernating is not in the client; `SIMEON_BOX_IDLE_HIBERNATE_AFTER` is ours.
 
 
@@ -765,7 +765,7 @@ class BoxBrokerService:
     ) -> tuple[int, bool]:
         """`GetSandBoxRunState`: `(state, image_update_available)`. A box
         credential that is not one of ours is the Docker box on the Mac,
-        which the host inside it now asks about (GrokBotService is in the
+        which the host inside it now asks about (ComputerService is in the
         served set): it is running, by definition, and updated from the Mac."""
         repository = SandBoxRepository.from_session(db)
         if caller.is_box_credential:

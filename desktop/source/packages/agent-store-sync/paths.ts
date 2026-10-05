@@ -2,7 +2,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import {
-  AGENT_STORE_RESERVED_CURSOR_PATH_PREFIX,
+  AGENT_STORE_RESERVED_SIMEON_PATH_PREFIX,
   isAgentStoreId,
   isAgentStoreShareMountKey,
   isCloudAgentStoreId,
@@ -18,8 +18,8 @@ export function isReservedRelPath(relPath: string): boolean {
 }
 
 export function isReservedRelPathSegment(segment: string): boolean {
-  return segment.slice(0, AGENT_STORE_RESERVED_CURSOR_PATH_PREFIX.length).toLowerCase()
-    === AGENT_STORE_RESERVED_CURSOR_PATH_PREFIX;
+  return segment.slice(0, AGENT_STORE_RESERVED_SIMEON_PATH_PREFIX.length).toLowerCase()
+    === AGENT_STORE_RESERVED_SIMEON_PATH_PREFIX;
 }
 
 export const AGENT_STORE_CONFLICT_EVENTS_FILE_NAME = "conflict-events.jsonl";

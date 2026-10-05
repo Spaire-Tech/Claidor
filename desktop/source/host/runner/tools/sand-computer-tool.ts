@@ -175,7 +175,7 @@ export function describeOutcome(result: ComputerUseResult, operation: "screensho
   const value = result.result.value as ComputerUseSuccess;
   const lines = [heading];
   if (value.screenshotPath != null && value.screenshotPath.length > 0) lines.push(`Screenshot saved to ${value.screenshotPath}.`);
-  if (value.cursorPosition != null) lines.push(`Cursor is at (${value.cursorPosition.x}, ${value.cursorPosition.y}).`);
+  if (value.cursorPosition != null) lines.push(`The pointer is at (${value.cursorPosition.x}, ${value.cursorPosition.y}).`);
   return lines.join("\n");
 }
 

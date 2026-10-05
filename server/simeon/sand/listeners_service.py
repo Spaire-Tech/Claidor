@@ -5,7 +5,7 @@ Every shape here is the app's. A relay event is what
 `mapRelayWireEvent` reads (`backend-relay-source.ts`); a fire's `event`
 is what `parseFireTriggerEvent` reads
 (`sand-automation-fire-consumer.ts`); a workflow's triggers are
-`aiserver.v1.Trigger` as protobuf JSON, written by
+`simeon.v1.Trigger` as protobuf JSON, written by
 `sand-automation-cloud-sync.ts` and `sand-automation-cloud-trigger.ts`.
 The matching below mirrors `host/automations/automation-trigger.ts`
 (`slackListenerMatches`, `githubListenerMatches`,
@@ -266,7 +266,7 @@ def _ids_match(wanted: object, actual: object) -> bool:
 
 
 def trigger_matches_event(trigger: dict[str, Any], event: dict[str, Any]) -> bool:
-    """One `aiserver.v1.Trigger` (protobuf JSON) against one fire event."""
+    """One `simeon.v1.Trigger` (protobuf JSON) against one fire event."""
     source = event.get("source")
     if source == "slack":
         is_reaction = isinstance(event.get("reactionEmoji"), str) and bool(

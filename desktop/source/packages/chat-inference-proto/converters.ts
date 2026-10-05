@@ -6,7 +6,7 @@ import {
   InferenceContentPart,
   InferenceContentParts,
   InferenceCoreMessage,
-  InferenceCursorOptions,
+  InferenceSimeonOptions,
   InferenceCustomToolFormat,
   InferenceImagePart,
   InferenceMessageRole,
@@ -24,10 +24,10 @@ import {
   InferenceToolResultContent,
   InferenceToolResultPart,
   type InferenceStreamError,
-} from "../proto/generated/aiserver/v1/inference_pb.js";
+} from "../proto/generated/simeon/v1/inference_pb.js";
 import { classifyTokenLimitErrorFromMessage } from "../chat-inference/token-limit-error-classification.js";
 import { InputTokenLimitError, OutputTokensLimitExceededError } from "../chat-inference/prompt-executor.js";
-import { getCursorModelName } from "./cursorModelProviderOptions.js";
+import { getSimeonModelName } from "./modelProviderOptions.js";
 
 type Loose = Record<string, any>;
 const DEFAULT_IMAGE_MIME_TYPE = "image/png";
@@ -58,10 +58,10 @@ function roleToProto(role: unknown): InferenceMessageRole {
   }
 }
 
-function cursorOptionsToProto(cursor: unknown): InferenceCursorOptions | undefined {
+function simeonOptionsToProto(cursor: unknown): InferenceSimeonOptions | undefined {
   if (!cursor || typeof cursor !== "object") return undefined;
   const options = cursor as Loose;
-  const proto = new InferenceCursorOptions();
+  const proto = new InferenceSimeonOptions();
   let populated = false;
   if (typeof options.imageDescription === "string" && options.imageDescription.length > 0) {
     proto.imageDescription = options.imageDescription;
@@ -90,7 +90,7 @@ function providerOptionsToProto(options: unknown): InferenceProviderOptions | un
     });
     populated = true;
   }
-  const cursor = cursorOptionsToProto(values.cursor);
+  const cursor = simeonOptionsToProto(values.cursor);
   if (cursor !== undefined) {
     proto.cursor = cursor;
     populated = true;
@@ -149,14 +149,14 @@ export function coreMessageToProto(message: Loose): InferenceCoreMessage {
         if (part.type === "text") text.push(part.text);
         else if (part.type === "tool-call") {
           const call = new InferenceToolCall({ toolCallId: part.toolCallId, toolName: part.toolName });
-          const raw = part.providerOptions?.cursor?.rawToolCallArgs;
+          const raw = part.providerOptions?.simeon?.rawToolCallArgs;
           applyToolCallArgs(call, part.args, typeof raw === "string" ? raw : undefined);
           proto.toolCalls.push(call);
         } else if (part.type === "reasoning") {
-          const modelName = getCursorModelName(part);
+          const modelName = getSimeonModelName(part);
           proto.reasoningParts.push(new InferenceReasoningPart({ isRedacted: false, text: part.text, signature: part.signature, ...(modelName === undefined ? {} : { modelName }) }));
         } else if (part.type === "redacted-reasoning") {
-          const modelName = getCursorModelName(part);
+          const modelName = getSimeonModelName(part);
           proto.reasoningParts.push(new InferenceReasoningPart({ isRedacted: true, redactedData: part.data, ...(modelName === undefined ? {} : { modelName }) }));
         }
       }
@@ -179,9 +179,9 @@ export function coreMessageToProto(message: Loose): InferenceCoreMessage {
 }
 
 function getResponsesMetadataFromProviderOptions(message: Loose): { modelProviderMessageId?: string; openaiPhase?: string | null } {
-  const cursorOptions = message.providerOptions?.cursor;
-  const modelProviderMessageId = cursorOptions?.modelProviderMessageId;
-  const openaiPhase = cursorOptions?.openaiPhase;
+  const simeonOptions = message.providerOptions?.simeon;
+  const modelProviderMessageId = simeonOptions?.modelProviderMessageId;
+  const openaiPhase = simeonOptions?.openaiPhase;
   return {
     ...(typeof modelProviderMessageId === "string" ? { modelProviderMessageId } : {}),
     ...(typeof openaiPhase === "string" || openaiPhase === null ? { openaiPhase } : {}),

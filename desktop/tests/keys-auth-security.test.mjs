@@ -111,15 +111,15 @@ test("sign-out forgets the box's credential and stops the box; a 5xx on refresh 
   const oauth = await src("electron-main/adapters/account-oauth.ts");
   assert.match(oauth, /if \(settlement\.kind !== "signed_out"\) return;/);
   assert.match(oauth, /await forgetInferenceCredential\(settingsPath\);\n\s*if \(runtime === "local-docker"\) await stopLocalDockerBox\(\);/);
-  const auth = await load("source/electron-main/account/cursor-auth.ts", "cursor-auth-transient");
+  const auth = await load("source/electron-main/account/account-auth.ts", "account-auth-transient");
   try {
     for (const status of [500, 502, 503, 429, 408]) assert.equal(auth.module.isTransientRefreshStatus(status), true, String(status));
     for (const status of [400, 401, 403, 404]) assert.equal(auth.module.isTransientRefreshStatus(status), false, String(status));
   } finally {
     await auth.dispose();
   }
-  const cursorAuth = await src("electron-main/account/cursor-auth.ts");
-  assert.match(cursorAuth, /if \(isTransientRefreshStatus\(response\.status\)\) throw new SandAuthRefreshTransientError\(response\.status\); this\.advanceAuthOperationEpoch\(\);/);
+  const accountAuth = await src("electron-main/account/account-auth.ts");
+  assert.match(accountAuth, /if \(isTransientRefreshStatus\(response\.status\)\) throw new SandAuthRefreshTransientError\(response\.status\); this\.advanceAuthOperationEpoch\(\);/);
 });
 
 test("the person's name comes from the profile route, and the person never reads Claidor", async () => {
@@ -153,8 +153,8 @@ test("the person's name comes from the profile route, and the person never reads
   const service = await src("host/extensions/auth/user-full-name-service.ts");
   assert.doesNotMatch(service, /new GetMeRequest|dashboard_connect\.js/);
   for (const [file, gone] of [
-    ["electron-main/account/cursor-auth.ts", "Sign in to Claidor"], ["electron-main/account/cursor-auth.ts", "Claidor sign-in expired"],
-    ["electron-main/account/cursor-auth-wiring.ts", "Sign in to Claidor"], ["packages/cursor-config/auth/login.ts", "Claidor API"],
+    ["electron-main/account/account-auth.ts", "Sign in to Claidor"], ["electron-main/account/account-auth.ts", "Claidor sign-in expired"],
+    ["electron-main/account/account-auth-wiring.ts", "Sign in to Claidor"], ["packages/simeon-config/auth/login.ts", "Claidor API"],
     ["host/extensions/inference/provider-session.ts", "Sign in to Claidor"], ["host/extensions/transcript/agent-run-error.ts", "Sign in to Claidor"],
     ["host/runner/box-reference-docs.ts", "Sign In with Claidor"], ["node-agent-coordinator/main.ts", "Sign in to Claidor"],
     ["host/extensions/auth/auth-service.ts", "no desktop required"],

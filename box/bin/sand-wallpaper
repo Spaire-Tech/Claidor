@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# The desktop's wallpaper, by time of day in the person's time zone.
+#
+#   sand-wallpaper paint [display]   paint the tone of the hour (default :1)
+#   sand-wallpaper zone              print the person's IANA zone, if any
+#
+# The host calls `sand-wallpaper paint <display>` on every live display when
+# the tone changes (box-wallpaper-commands.ts), and reads the next change
+# from sand-wallpaper-tone.mjs. Tones: a (day), b (morning and evening),
+# c (night), as /usr/share/backgrounds/simeon/simeon-<tone>.png.
+set -uo pipefail
+
+COMMAND="${1:-paint}"
+TONE_DIR="${SAND_WALLPAPER_TONE_DIR:-/usr/share/backgrounds/simeon}"
+FALLBACK="${SAND_WALLPAPER_FALLBACK:-$TONE_DIR/simeon-b.png}"
+SETTINGS="${SAND_WALLPAPER_SETTINGS:-/home/box/sand-data/settings.json}"
+TONE_SCRIPT="${SAND_WALLPAPER_TONE_SCRIPT:-/usr/local/bin/sand-wallpaper-tone.mjs}"
+NODE="${SAND_WALLPAPER_NODE:-node}"
+
+case "$COMMAND" in
+  paint)
+    export DISPLAY="${2:-${DISPLAY:-:1}}"
+    tone="$(timeout 10 "$NODE" "$TONE_SCRIPT" "$SETTINGS" 2>/dev/null | awk '{print $1}')"
+    image=""
+    case "$tone" in a|b|c) image="$TONE_DIR/simeon-$tone.png" ;; esac
+    if [ -n "$image" ] && [ -f "$image" ] && hsetroot -cover "$image" >/dev/null 2>&1; then exit 0; fi
+    if [ -f "$FALLBACK" ] && hsetroot -cover "$FALLBACK" >/dev/null 2>&1; then exit 0; fi
+    hsetroot -solid "#1b2a4a" >/dev/null 2>&1 || xsetroot -solid "#1b2a4a" >/dev/null 2>&1 || true
+    ;;
+  zone)
+    exec "$NODE" "$TONE_SCRIPT" zone "$SETTINGS"
+    ;;
+  *)
+    echo "usage: sand-wallpaper paint|zone [display]" >&2
+    exit 2
+    ;;
+esac

@@ -39,10 +39,10 @@ const DEFAULT_MCP_AUTH_TOOL_DESCRIPTION = "Authenticate this MCP server so its t
 const DEFAULT_MCP_ERROR_STATUS_MESSAGE = "The MCP server errored. If this server is important for completing the task, concisely inform the user and ask them to check the MCP status in Settings → Plugins; otherwise continue with a different approach.";
 const DEFAULT_MCP_NEEDS_AUTH_STATUS_MESSAGE = 'The MCP server needs authentication. Authenticate it by calling the `{authToolName}` tool for server "{serverIdentifier}" through your MCP tool-calling interface using an empty arguments object. If this server is important for completing the task, authenticate it first; otherwise continue with a different approach.';
 const DEFAULT_MCP_NEEDS_AUTH_STATUS_MESSAGE_NO_VIRTUAL_TOOL = "This MCP server requires authentication before its tools can be used. Open Settings → Plugins, select this server, and use Authenticate/Reopen, or refresh credentials in your MCP configuration (for example, mcp.json), then restart this environment. If this server is not required for the task, continue without it.";
-const CURSOR_DIR_GITIGNORE_MANAGED_START = "# >>> CURSOR MANAGED BLOCK >>>";
-const CURSOR_DIR_GITIGNORE_MANAGED_END = "# <<< CURSOR MANAGED BLOCK <<<";
-const CURSOR_DIR_GITIGNORE_CONTENT = [
-  "# Ignore everything in .cursor",
+const SIMEON_DIR_GITIGNORE_MANAGED_START = "# >>> SIMEON MANAGED BLOCK >>>";
+const SIMEON_DIR_GITIGNORE_MANAGED_END = "# <<< SIMEON MANAGED BLOCK <<<";
+const SIMEON_DIR_GITIGNORE_CONTENT = [
+  "# Ignore everything in .simeon",
   "*",
   "# Un-ignore projects so we can descend to allowlisted subdirs",
   "!projects/",
@@ -68,8 +68,8 @@ const CURSOR_DIR_GITIGNORE_CONTENT = [
   "!plugins/",
   "!plugins/**",
   "# Built-in skills",
-  "!skills-cursor/",
-  "!skills-cursor/**",
+  "!skills-simeon/",
+  "!skills-simeon/**",
   "# User's personal skills",
   "!skills/",
   "!skills/**",
@@ -142,19 +142,19 @@ function configuredServersBucket(count: number): string {
   return "11+";
 }
 
-async function ensureCursorDirGitignore(cursorDir: string): Promise<void> {
-  const gitignorePath = join(cursorDir, ".gitignore");
-  const managedBlock = `${CURSOR_DIR_GITIGNORE_MANAGED_START}\n${CURSOR_DIR_GITIGNORE_CONTENT}\n${CURSOR_DIR_GITIGNORE_MANAGED_END}\n`;
-  await mkdir(cursorDir, { recursive: true });
+async function ensureSimeonDirGitignore(simeonDir: string): Promise<void> {
+  const gitignorePath = join(simeonDir, ".gitignore");
+  const managedBlock = `${SIMEON_DIR_GITIGNORE_MANAGED_START}\n${SIMEON_DIR_GITIGNORE_CONTENT}\n${SIMEON_DIR_GITIGNORE_MANAGED_END}\n`;
+  await mkdir(simeonDir, { recursive: true });
   let existingContent: string | undefined;
   try { existingContent = await readFile(gitignorePath, "utf-8"); }
   catch (error: unknown) { if ((error as { code?: unknown } | null)?.code !== "ENOENT") throw error; }
   if (existingContent === undefined) { await writeFile(gitignorePath, managedBlock); return; }
-  const startIdx = existingContent.indexOf(CURSOR_DIR_GITIGNORE_MANAGED_START);
-  const endIdx = existingContent.indexOf(CURSOR_DIR_GITIGNORE_MANAGED_END, startIdx + CURSOR_DIR_GITIGNORE_MANAGED_START.length);
+  const startIdx = existingContent.indexOf(SIMEON_DIR_GITIGNORE_MANAGED_START);
+  const endIdx = existingContent.indexOf(SIMEON_DIR_GITIGNORE_MANAGED_END, startIdx + SIMEON_DIR_GITIGNORE_MANAGED_START.length);
   if (startIdx !== -1 && endIdx !== -1) {
     const before = existingContent.slice(0, startIdx);
-    const after = existingContent.slice(endIdx + CURSOR_DIR_GITIGNORE_MANAGED_END.length).replace(/^\n/, "");
+    const after = existingContent.slice(endIdx + SIMEON_DIR_GITIGNORE_MANAGED_END.length).replace(/^\n/, "");
     const updatedContent = `${before}${managedBlock}${after}`;
     if (updatedContent !== existingContent) await writeFile(gitignorePath, updatedContent);
     return;
@@ -347,10 +347,10 @@ export class McpFileSystemWriter {
     });
     logger.info(this.ctx, "Constructor: scheduling initial write");
     this.scheduleWrite(this.ctx);
-    this.ensureCursorDirGitignore();
+    this.ensureSimeonDirGitignore();
   }
 
-  private ensureCursorDirGitignore(): void { void ensureCursorDirGitignore(join(homedir(), ".cursor")).catch((error) => logger.warn(this.ctx, "Failed to ensure ~/.cursor/.gitignore", { error: String(error) })); }
+  private ensureSimeonDirGitignore(): void { void ensureSimeonDirGitignore(join(homedir(), ".simeon")).catch((error) => logger.warn(this.ctx, "Failed to ensure ~/.simeon/.gitignore", { error: String(error) })); }
   private async cleanupStaleStagingDirs(ctx: Context): Promise<void> { const logCtx = this.getLogContext(ctx); const mcpsPath = join(this.projectDir, MCPS_SUBDIR); try { const entries = await readdir(mcpsPath); await Promise.allSettled(entries.filter((entry) => entry.endsWith(STAGING_SUFFIX)).map((entry) => rm(join(mcpsPath, entry), { recursive: true, force: true }))); } catch (error) { if ((error as { code?: unknown } | null)?.code !== "ENOENT") logger.error(logCtx, "Error clearing stale mcps staging dirs", error); } }
   private onLeaseChanged(ctx: Context, event: McpLeaseChangeEvent | undefined): void { if (this.disposed) return; const normalizedEvent = event ?? { serverIdentifiers: undefined }; this.pendingServerEvent = this.hasPendingLeaseChangeEvent ? mergeMcpLeaseEvents(this.pendingServerEvent ?? { serverIdentifiers: undefined }, normalizedEvent) : normalizedEvent; this.hasPendingLeaseChangeEvent = true; if (this.debounceTimer !== undefined) clearTimeout(this.debounceTimer); this.debounceTimer = setTimeout(() => { this.debounceTimer = undefined; this.scheduleWrite(ctx, this.takePendingLeaseChangeEvent()); }, this.debounceMs); }
   private takePendingLeaseChangeEvent(): McpLeaseChangeEvent | undefined { if (!this.hasPendingLeaseChangeEvent) return undefined; const event = this.pendingServerEvent ?? { serverIdentifiers: undefined }; this.pendingServerEvent = undefined; this.hasPendingLeaseChangeEvent = false; return event; }

@@ -1,6 +1,6 @@
-import { AnalyticsService } from "../../../packages/proto/generated/aiserver/v1/analytics_connect.js";
-import type { TrackEventsRequest } from "../../../packages/proto/generated/aiserver/v1/analytics_pb.js";
-import { createSandCursorBackendClient, getSandInferenceBackendUrl } from "../cursor-backend/cursor-inference.js";
+import { AnalyticsService } from "../../../packages/proto/generated/simeon/v1/analytics_connect.js";
+import type { TrackEventsRequest } from "../../../packages/proto/generated/simeon/v1/analytics_pb.js";
+import { createSimeonBackendClient, getSandInferenceBackendUrl } from "../simeon-backend/simeon-inference.js";
 import { getSandClientVersion } from "../sand-client-metadata.js";
 import { getSandVariant } from "../sand-variant.js";
 import {
@@ -121,7 +121,7 @@ export class SandProductAnalytics {
     const deferredBuffer = this.state.kind === "deferred" ? this.state.buffer : undefined;
     try {
       const createClient = this.options.createClient ?? (() =>
-        createSandCursorBackendClient(AnalyticsService, {
+        createSimeonBackendClient(AnalyticsService, {
           getAccessToken: this.options.getAccessToken,
           getMachineId: this.options.getMachineId,
         }));

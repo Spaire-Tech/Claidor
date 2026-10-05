@@ -16,9 +16,9 @@
 // `inlineData {mimeType, data}` and its frame rate as `videoMetadata {fps}`,
 // read off the loop's own message dialect (`context-processing.ts` ~283:
 // `{type: "image", image: <data URI | URL>, mimeType, providerOptions:
-// {cursor: {mimeType, videoFps}}}`). Simeon Labs' server forwards the body
+// {simeon: {mimeType, videoFps}}}`). Simeon Labs' server forwards the body
 // untouched (`proxy_gemini_generate` in `server/simeon/desktop/endpoints.py`).
-import { simeonProxyBaseUrl } from "../../../shared/node/cursor-backend/simeon-api.js";
+import { simeonProxyBaseUrl } from "../../../shared/node/simeon-backend/simeon-api.js";
 
 type Loose = Record<string, any>;
 
@@ -90,7 +90,7 @@ function toBase64(value: unknown): string | undefined {
 // The loop's image part, as the video branch of context-processing writes
 // it, into Gemini's part: inline bytes with their mime type, or a file URI.
 function mediaPart(part: Loose): { readonly gemini: Loose; readonly video: GeminiVideoPart | undefined } | undefined {
-  const cursor = record(record(part.providerOptions)?.cursor) ?? {};
+  const cursor = record(record(part.providerOptions)?.simeon) ?? {};
   const fps = typeof cursor.videoFps === "number" && Number.isFinite(cursor.videoFps) ? cursor.videoFps : undefined;
   let mimeType: string | undefined = typeof part.mimeType === "string" ? part.mimeType : typeof cursor.mimeType === "string" ? cursor.mimeType : undefined;
   const image = part.image;
@@ -188,8 +188,8 @@ function partText(parts: readonly Loose[]): string {
 
 /**
  * The host loop's messages, in Gemini's request shape. The loop's own
- * dialect is the AI SDK's with Cursor's metadata under
- * `providerOptions.cursor` (the same input `toCoreMessages` reads for the
+ * dialect is the AI SDK's with the upstream's metadata under
+ * `providerOptions.simeon` (the same input `toCoreMessages` reads for the
  * Responses wire).
  */
 export function toGeminiRequest(messages: readonly GeminiLoopMessage[], tools?: readonly GeminiDirectTool[]): GeminiRequest {

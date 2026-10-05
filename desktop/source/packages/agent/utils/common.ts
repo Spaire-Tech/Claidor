@@ -30,11 +30,11 @@ export function getContextUsageInfo(tokenDetails: {
 
 export function getSkillSourceFromPath(fullPath: string): "builtin" | "plugin" | "claude" | "workspace" | "unknown" {
   const normalizedPath = fullPath.replace(/\\/g, "/");
-  if (normalizedPath.includes("/.cursor/skills-cursor/")) {
+  if (normalizedPath.includes("/.simeon/skills-simeon/")) {
     return "builtin";
   }
   if (
-    normalizedPath.includes("/.cursor/plugins/") ||
+    normalizedPath.includes("/.simeon/plugins/") ||
     normalizedPath.includes("/.claude/plugins/")
   ) {
     return "plugin";
@@ -43,7 +43,7 @@ export function getSkillSourceFromPath(fullPath: string): "builtin" | "plugin" |
     return "claude";
   }
   if (
-    normalizedPath.includes("/.cursor/skills/") ||
+    normalizedPath.includes("/.simeon/skills/") ||
     normalizedPath.includes("/.agents/skills/")
   ) {
     return "workspace";

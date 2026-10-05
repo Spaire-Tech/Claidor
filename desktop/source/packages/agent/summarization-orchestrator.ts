@@ -726,8 +726,8 @@ export class SummarizationOrchestrator {
       const summarizedMessages = await Promise.all(
         messagesActuallySummarized
           .filter(message => !(message.providerOptions as {
-            readonly cursor?: { readonly isSummary?: unknown } | undefined;
-          } | undefined)?.cursor?.isSummary)
+            readonly simeon?: { readonly isSummary?: unknown } | undefined;
+          } | undefined)?.simeon?.isSummary)
           .map(async message => {
             const serializedMessage = redactedCoreMessageSerde.serialize(message);
             const blobId = await getBlobId(serializedMessage);
@@ -864,8 +864,8 @@ export class SummarizationOrchestrator {
         ...replacementMessages.filter((message, index) =>
           message === newSummaryMessage ||
           (message.providerOptions as {
-            readonly cursor?: { readonly isSummary?: unknown } | undefined;
-          } | undefined)?.cursor?.isSummary === true ||
+            readonly simeon?: { readonly isSummary?: unknown } | undefined;
+          } | undefined)?.simeon?.isSummary === true ||
           preservedTailIndices.has(index)
         ),
         ...messagesNotSummarized,

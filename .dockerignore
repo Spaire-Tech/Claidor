@@ -1,6 +1,7 @@
-# The only image built from the repository root is the cloud runner
-# (`runner/Dockerfile`); the API and the worker are built from `server/` and
-# read `server/.dockerignore` instead. The runner copies only its own
+# Two images are built from the repository root: the cloud runner
+# (`runner/Dockerfile`), which reads this file, and the cloud computer
+# (`box/Dockerfile`), which reads `box/Dockerfile.dockerignore` instead; the
+# API and the worker are built from `server/` and read `server/.dockerignore`. The runner copies only its own
 # sources, so everything else is excluded: without this the context would
 # carry the git history, the web client, the corpus and the desktop tree.
 #

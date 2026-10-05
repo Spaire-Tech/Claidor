@@ -18,6 +18,7 @@ import {
   DM_Sans,
   Instrument_Serif,
   Inter,
+  Newsreader,
   Poppins,
   Source_Serif_4,
 } from 'next/font/google'
@@ -64,6 +65,15 @@ const sourceSerif = Source_Serif_4({
   subsets: ['latin'],
   weight: ['400', '600'],
   variable: '--font-simeon-serif',
+  display: 'swap',
+})
+
+// Newsreader — the website's serif (sites/simeonlabs.com); the sign-in
+// pages set their headings in it.
+const newsreader = Newsreader({
+  subsets: ['latin'],
+  weight: '400',
+  variable: '--font-newsreader',
   display: 'swap',
 })
 
@@ -164,7 +174,7 @@ export default async function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`antialiased ${GeistSans.variable} ${GeistMono.variable} ${inter.variable} ${instrumentSerif.variable} ${dmSans.variable} ${barlowCondensed.variable} ${poppins.variable} ${sourceSerif.variable}`}
+      className={`antialiased ${GeistSans.variable} ${GeistMono.variable} ${inter.variable} ${instrumentSerif.variable} ${dmSans.variable} ${barlowCondensed.variable} ${poppins.variable} ${sourceSerif.variable} ${newsreader.variable}`}
     >
       <head>
         <link href="/apple-touch-icon.png" rel="apple-touch-icon" />

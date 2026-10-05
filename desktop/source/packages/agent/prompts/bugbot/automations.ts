@@ -9,7 +9,7 @@ export function automationToolNameToSnakeCase(name: string): string {
 
 const AUTOMATION_MEMORY_DIRECTORY_NAME = "memories";
 const AUTOMATION_MEMORY_DEFAULT_FILE = "MEMORIES.md";
-const AUTOMATION_MEMORY_INSTRUCTION_MARKER = "__CURSOR_AUTOMATION_MEMORY_INSTRUCTIONS__";
+const AUTOMATION_MEMORY_INSTRUCTION_MARKER = "__SIMEON_AUTOMATION_MEMORY_INSTRUCTIONS__";
 const AUTOMATION_MEMORY_UNAVAILABLE_INSTRUCTION = "Automation memory is unavailable for this run. Do not attempt to read or write memory; continue with the available context and tools.";
 
 function getMountedPathModule(mountPath: string): typeof path.posix | typeof path.win32 {

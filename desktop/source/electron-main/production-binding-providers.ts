@@ -1,6 +1,6 @@
 import { join } from "node:path";
 
-import { createGetOrCreateMachineId } from "./account/cursor-machine-id.js";
+import { createGetOrCreateMachineId } from "./account/machine-id.js";
 import {
   getLocalExecDaemonDiscoveryPath,
   readLocalExecDaemonDiscovery,
@@ -464,18 +464,24 @@ export function createElectronProductionNotificationsBinding(): NotificationsBin
 export function createProductionStartupBinding(
   ports: ElectronStartupProviderPorts,
 ): ElectronProductionStartupBindings {
+  const argv = ports.argv ?? process.argv;
+  const env = ports.env ?? process.env;
+  const platform = ports.platform ?? process.platform;
+  // The two Applications-folder calls exist in Electron on macOS only, and the
+  // move check never makes them elsewhere (move-to-applications-folder.ts), so
+  // a Linux build of the same bundle (the own-shell check, Track D piece 1)
+  // is not refused at startup for lacking them.
   for (const [value, label] of [
     [ports?.app?.setPath, "electron.app.setPath()."],
     [ports?.app?.getPath, "electron.app.getPath()."],
-    [ports?.app?.isInApplicationsFolder, "electron.app.isInApplicationsFolder()."],
-    [ports?.app?.moveToApplicationsFolder, "electron.app.moveToApplicationsFolder()."],
+    ...(platform === "darwin" ? [
+      [ports?.app?.isInApplicationsFolder, "electron.app.isInApplicationsFolder()."],
+      [ports?.app?.moveToApplicationsFolder, "electron.app.moveToApplicationsFolder()."],
+    ] as const : []),
     [ports?.app?.relaunch, "electron.app.relaunch()."],
     [ports?.app?.exit, "electron.app.exit()."],
     [ports?.dialog?.showMessageBox, "electron.dialog.showMessageBox()."],
   ] as const) requireFunction(value, label);
-  const argv = ports.argv ?? process.argv;
-  const env = ports.env ?? process.env;
-  const platform = ports.platform ?? process.platform;
   const buffered: Array<{ readonly level: Parameters<ProductionTelemetrySink["reportDesktopStartup"]>[0]; readonly metadata: Parameters<ProductionTelemetrySink["reportDesktopStartup"]>[1] }> = [];
   let telemetry: ProductionTelemetrySink | undefined;
   const report: ElectronProductionStartupBindings["report"] = (level, metadata) => {

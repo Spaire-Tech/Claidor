@@ -13,11 +13,11 @@ export class TranscriptMirrorProtobufDecodeError extends Error {
   override name = "TranscriptMirrorProtobufDecodeError";
 }
 
-interface Cursor {
+interface ReadCursor {
   offset: number;
 }
 
-function readVarint(bytes: Uint8Array, cursor: Cursor): number {
+function readVarint(bytes: Uint8Array, cursor: ReadCursor): number {
   let value = 0;
   let multiplier = 1;
   for (let index = 0; index < 10; index += 1) {
@@ -37,7 +37,7 @@ function readVarint(bytes: Uint8Array, cursor: Cursor): number {
   throw new TranscriptMirrorProtobufDecodeError("invalid protobuf varint");
 }
 
-function readBytes(bytes: Uint8Array, cursor: Cursor): Uint8Array {
+function readBytes(bytes: Uint8Array, cursor: ReadCursor): Uint8Array {
   const length = readVarint(bytes, cursor);
   const end = cursor.offset + length;
   if (!Number.isSafeInteger(end) || end > bytes.length) {
@@ -50,7 +50,7 @@ function readBytes(bytes: Uint8Array, cursor: Cursor): Uint8Array {
 
 function skipField(
   bytes: Uint8Array,
-  cursor: Cursor,
+  cursor: ReadCursor,
   wireType: number,
   fieldNumber: number
 ): void {

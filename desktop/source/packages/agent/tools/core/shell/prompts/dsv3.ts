@@ -142,7 +142,7 @@ export function getDescriptionDsv3(sandboxEnabled: boolean, version: string, opt
     const minimalSections = [fileToolsSection, terminalFilesSection, outputNotificationSection, tmuxGuidanceSection].filter((section): section is string => section !== undefined);
     return minimalSections.length === 0 ? minimalHarnessDescription : `${minimalHarnessDescription}\n\n${minimalSections.join("\n\n")}`;
   }
-  if (version === "cursor-0226") {
+  if (version === "simeon-0226") {
     const base = "Executes a given command in a shell session, waiting for output for `block_until_ms` millis.";
     const baseWithProgress = outputNotificationSection === undefined ? base : `${base}\n\n${outputNotificationSection}`;
     return tmuxGuidanceSection === undefined ? (sandboxEnabled ? `${baseWithProgress}\n${sandboxDescription}` : baseWithProgress) : appendDescriptionSections(baseWithProgress);
@@ -167,9 +167,9 @@ export function getParametersSchemaDsv3(sandboxEnabled: boolean, version: string
     if (sandboxEnabled) nextSchema = nextSchema.extend({ required_permissions: getRequiredPermissionsSchema({ isReadonly: isReadonly === true, strict: strictArgParsing === true }) });
     return nextSchema;
   };
-  if (version === "dsv3-1205" || version === "cursor-0226") {
+  if (version === "dsv3-1205" || version === "simeon-0226") {
     if (enableBlockUntilMs === true) {
-      const blockUntilSchema = version === "cursor-0226" && requireBlockUntilMs !== true
+      const blockUntilSchema = version === "simeon-0226" && requireBlockUntilMs !== true
         ? baseParametersSchemaDsv30226
         : requireBlockUntilMs === true
           ? baseParametersSchemaDsv31205WithBlockUntilRequired

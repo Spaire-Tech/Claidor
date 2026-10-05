@@ -10,7 +10,7 @@ import { build } from "esbuild";
 // The account screens on Simeon Labs' server, offline: the profile and
 // picture, the usage meters, the Usage & Billing gate, and sign-out's
 // server revocation. Until 24 September 2026 every one of these went to a
-// Cursor Connect RPC the server does not serve, or (the gate) was off.
+// upstream Connect RPC the server does not serve, or (the gate) was off.
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -30,12 +30,12 @@ function envelope(data, status = 200) {
 const PROFILE = { id: "6d1e…", nickname: "Bass Fall", email: "bass@simeonlabs.com", avatarUrl: "https://lh3.googleusercontent.com/a/photo=s96-c", phone: null, accountMode: "personal" };
 const QUOTA = { planName: "Free", subscriptionStatus: "free", creditsLimit: 2_000_000, creditsUsed: 500_000, creditsRemaining: 1_500_000, hasPaidCredits: false, mediaGenerationEntitled: false, shareEntitled: false, deploymentEntitled: false, periodStart: "2026-09-01T00:00:00+00:00", periodEnd: "2026-10-01T00:00:00+00:00" };
 
-test("the profile comes from /desktop/api/user/profile and fills the CursorProfile the menu reads", async () => {
-  const loaded = await loadModule("source/electron-main/account/cursor-profile.ts", "cursor-profile");
+test("the profile comes from /desktop/api/user/profile and fills the AccountProfile the menu reads", async () => {
+  const loaded = await loadModule("source/electron-main/account/account-profile.ts", "account-profile");
   const requests = [];
   try {
-    const { fetchCursorProfile, cursorProfileFromSimeon } = loaded.module;
-    const profile = await fetchCursorProfile(async () => "simeon_da_me", {
+    const { fetchAccountProfile, accountProfileFromSimeon } = loaded.module;
+    const profile = await fetchAccountProfile(async () => "simeon_da_me", {
       backendUrl: "https://api.simeonlabs.com",
       fetch: async (input, init) => { requests.push({ url: String(input), method: init?.method, headers: new Headers(init?.headers) }); return envelope(PROFILE); },
     });
@@ -46,21 +46,21 @@ test("the profile comes from /desktop/api/user/profile and fills the CursorProfi
     // on this machine, so the server's nickname shows.
     assert.equal(profile.email, "bass@simeonlabs.com");
     assert.equal(profile.profilePictureUrl, "https://lh3.googleusercontent.com/a/photo=s96-c");
-    assert.equal(profile.isAnysphereUser, false);
+    assert.equal(profile.isStaffUser, false);
     assert.ok(profile.displayName === "Bass Fall" || typeof profile.displayName === "string");
 
-    assert.deepEqual(cursorProfileFromSimeon(PROFILE, undefined), { displayName: "Bass Fall", email: "bass@simeonlabs.com", profilePictureUrl: "https://lh3.googleusercontent.com/a/photo=s96-c", isAnysphereUser: false });
-    assert.deepEqual(cursorProfileFromSimeon({ ...PROFILE, name: "Bassirou Fall" }, undefined).displayName, "Bassirou Fall");
-    assert.deepEqual(cursorProfileFromSimeon(PROFILE, "Simeon's Person").displayName, "Simeon's Person");
-    assert.equal(cursorProfileFromSimeon({ ...PROFILE, avatarUrl: null }, undefined).profilePictureUrl, undefined);
+    assert.deepEqual(accountProfileFromSimeon(PROFILE, undefined), { displayName: "Bass Fall", email: "bass@simeonlabs.com", profilePictureUrl: "https://lh3.googleusercontent.com/a/photo=s96-c", isStaffUser: false });
+    assert.deepEqual(accountProfileFromSimeon({ ...PROFILE, name: "Bassirou Fall" }, undefined).displayName, "Bassirou Fall");
+    assert.deepEqual(accountProfileFromSimeon(PROFILE, "Simeon's Person").displayName, "Simeon's Person");
+    assert.equal(accountProfileFromSimeon({ ...PROFILE, avatarUrl: null }, undefined).profilePictureUrl, undefined);
 
     // A refusal is reported and degrades the way it always did.
     const failures = [];
-    const refused = await fetchCursorProfile(async () => "x", { backendUrl: "https://api.simeonlabs.com", fetch: async () => new Response("{}", { status: 401 }), reportFailure: (area, leg) => failures.push(`${area}/${leg}`) });
+    const refused = await fetchAccountProfile(async () => "x", { backendUrl: "https://api.simeonlabs.com", fetch: async () => new Response("{}", { status: 401 }), reportFailure: (area, leg) => failures.push(`${area}/${leg}`) });
     assert.ok(refused === null || refused.email === undefined);
-    assert.deepEqual(failures, ["cursor-profile/simeon-profile"]);
+    assert.deepEqual(failures, ["account-profile/simeon-profile"]);
 
-    const source = await readFile(path.join(repoRoot, "source/electron-main/account/cursor-profile.ts"), "utf8");
+    const source = await readFile(path.join(repoRoot, "source/electron-main/account/account-profile.ts"), "utf8");
     assert.equal(/client\.getMe\(/.test(source), false);
     assert.equal(/client\.getTeams\(/.test(source), false);
     assert.match(source, /updateUserName\(/, "the local rename keeps its swallowed UpdateUserName");
@@ -70,27 +70,27 @@ test("the profile comes from /desktop/api/user/profile and fills the CursorProfi
 });
 
 test("the picture the server names is fetched over https and handed to the menu as a data URL", async () => {
-  const loaded = await loadModule("source/electron-main/account/cursor-avatar.ts", "cursor-avatar");
+  const loaded = await loadModule("source/electron-main/account/account-avatar.ts", "cursor-avatar");
   try {
-    const { resolveCursorAvatarDataUrl, clearCursorAvatarCacheForTesting } = loaded.module;
-    clearCursorAvatarCacheForTesting();
+    const { resolveAccountAvatarDataUrl, clearAccountAvatarCacheForTesting } = loaded.module;
+    clearAccountAvatarCacheForTesting();
     const fetched = [];
-    const dataUrl = await resolveCursorAvatarDataUrl("6d1e-not-github", {
+    const dataUrl = await resolveAccountAvatarDataUrl("6d1e-not-github", {
       preferredUrl: PROFILE.avatarUrl,
       fetchImpl: async (url) => { fetched.push(String(url)); return new Response(new Uint8Array([137, 80, 78, 71]), { status: 200, headers: { "content-type": "image/png" } }); },
     });
     assert.deepEqual(fetched, [PROFILE.avatarUrl]);
     assert.equal(dataUrl, `data:image/png;base64,${Buffer.from([137, 80, 78, 71]).toString("base64")}`);
     // A user id that is not a GitHub subject draws nothing on its own.
-    clearCursorAvatarCacheForTesting();
-    assert.equal(await resolveCursorAvatarDataUrl("6d1e-not-github", { fetchImpl: async () => { throw new Error("must not fetch"); } }), null);
+    clearAccountAvatarCacheForTesting();
+    assert.equal(await resolveAccountAvatarDataUrl("6d1e-not-github", { fetchImpl: async () => { throw new Error("must not fetch"); } }), null);
   } finally {
     await loaded.dispose();
   }
 });
 
 test("usage comes from /desktop/api/user/quota, in the shapes the header and Settings read", async () => {
-  const loaded = await loadModule("source/electron-main/account/cursor-profile.ts", "cursor-profile");
+  const loaded = await loadModule("source/electron-main/account/account-profile.ts", "account-profile");
   const requests = [];
   try {
     const { fetchSandWeeklyUsage, fetchSandUsageSummary, weeklyUsageFromSimeonQuota, usageSummaryFromSimeonQuota } = loaded.module;
@@ -123,7 +123,7 @@ test("usage comes from /desktop/api/user/quota, in the shapes the header and Set
     // renderer can show the sentence.
     const failures = [];
     assert.equal(await fetchSandWeeklyUsage(async () => "x", { backendUrl: "https://api.simeonlabs.com", fetch: async () => new Response("", { status: 503 }), reportFailure: (area, leg) => failures.push(`${area}/${leg}`) }), null);
-    assert.deepEqual(failures, ["cursor-usage/simeon-quota"]);
+    assert.deepEqual(failures, ["account-usage/simeon-quota"]);
     await assert.rejects(() => fetchSandUsageSummary(async () => "x", { backendUrl: "https://api.simeonlabs.com", fetch: async () => new Response(JSON.stringify({ error: { message: "Allowance service is down." } }), { status: 503 }) }), /Allowance service is down/);
   } finally {
     await loaded.dispose();
@@ -157,7 +157,7 @@ test("sand_usage_page is on by Simeon's default, over the bundled table, under t
     assert.equal(bundled.disposed, true);
 
     // A gate pinned on the authenticated bootstrap (memory dreaming) is answered
-    // at once from the table: that bootstrap is Cursor's and never arrives here.
+    // at once from the table: that bootstrap is the upstream's and never arrives here.
     const pinned = [];
     bundled.pinGateOnAuthenticatedBootstrap = (name, pin) => pinned.push(["waits", name]);
     service.pinGateOnAuthenticatedBootstrap("sand_memory_dreaming", (value) => pinned.push(["pinned", value]));
@@ -210,16 +210,16 @@ test("sign-out posts the departing bearer to /desktop/api/auth/logout, best effo
 
   // The auth service calls it with the token still in hand, then deletes;
   // a revoke that throws changes nothing about the local sign-out.
-  const auth = await loadModule("source/electron-main/account/cursor-auth.ts", "cursor-auth");
+  const auth = await loadModule("source/electron-main/account/account-auth.ts", "account-auth");
   try {
-    const { SandCursorAuthService, ACCESS_TOKEN_SECRET_KEY, REFRESH_TOKEN_SECRET_KEY } = auth.module;
+    const { SandAccountAuthService, ACCESS_TOKEN_SECRET_KEY, REFRESH_TOKEN_SECRET_KEY } = auth.module;
     const order = [];
     const makeSecrets = () => {
       const store = new Map([[ACCESS_TOKEN_SECRET_KEY, "simeon_da_live"], [REFRESH_TOKEN_SECRET_KEY, "simeon_dr_live"]]);
       return { store, readSecret: async (key) => store.get(key) ?? null, writeSecret: async (key, value) => { store.set(key, value); }, deleteSecret: async (key) => { order.push(`delete:${key}`); store.delete(key); }, isEncryptedStorageAvailable: () => true };
     };
     const secrets = makeSecrets();
-    const service = new SandCursorAuthService({ openExternal: async () => {}, secrets, revokeSession: async (token) => { order.push(`revoke:${token}:${secrets.store.has(ACCESS_TOKEN_SECRET_KEY) ? "still-stored" : "gone"}`); } });
+    const service = new SandAccountAuthService({ openExternal: async () => {}, secrets, revokeSession: async (token) => { order.push(`revoke:${token}:${secrets.store.has(ACCESS_TOKEN_SECRET_KEY) ? "still-stored" : "gone"}`); } });
     const status = await service.logout();
     assert.equal(status.kind, "logged-out");
     assert.deepEqual(order, ["revoke:simeon_da_live:still-stored", `delete:${ACCESS_TOKEN_SECRET_KEY}`, `delete:${REFRESH_TOKEN_SECRET_KEY}`]);
@@ -227,12 +227,12 @@ test("sign-out posts the departing bearer to /desktop/api/auth/logout, best effo
 
     const reported = [];
     const failing = makeSecrets();
-    const throwing = new SandCursorAuthService({ openExternal: async () => {}, secrets: failing, revokeSession: async () => { throw new Error("server down"); }, reportFailure: (operation, error) => reported.push(`${operation}:${error.message}`) });
+    const throwing = new SandAccountAuthService({ openExternal: async () => {}, secrets: failing, revokeSession: async () => { throw new Error("server down"); }, reportFailure: (operation, error) => reported.push(`${operation}:${error.message}`) });
     assert.equal((await throwing.logout()).kind, "logged-out");
     assert.equal(failing.store.size, 0);
     assert.deepEqual(reported, ["session-revoke:server down"]);
 
-    const wiring = await readFile(path.join(repoRoot, "source/electron-main/account/cursor-auth-wiring.ts"), "utf8");
+    const wiring = await readFile(path.join(repoRoot, "source/electron-main/account/account-auth-wiring.ts"), "utf8");
     assert.match(wiring, /revokeSession: deps\.revokeSession \?\? \(\(accessToken\) => revokeSimeonSession\(/);
   } finally {
     await auth.dispose();

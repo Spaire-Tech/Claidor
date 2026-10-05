@@ -2,14 +2,15 @@ import grayMatter from "gray-matter";
 import { minimatch } from "minimatch";
 
 const SKILL_GLOB_PATTERNS = [
+  "**/.simeon/skills/**",
+  "**/.simeon/skills-simeon/**",
   "**/.cursor/skills/**",
-  "**/.cursor/skills-cursor/**",
   "**/.claude/skills/**",
   "**/.codex/skills/**",
   "**/.claude/plugins/**",
   "**/.agents/skills/**",
   "**/SKILL.md",
-  "**/.cursor/plugins/cache/**/skills/**",
+  "**/.simeon/plugins/cache/**/skills/**",
 ];
 
 // Extracted from ../packages/agent/dist/prompts/user-info.js as an

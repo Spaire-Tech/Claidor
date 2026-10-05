@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+# A fork window: a second desktop of its own for one agent, on display :N.
+#
+#   start-window <N> [ownerToken]
+#
+# The host runs this (box-windows.ts, runStartWindow) and then reaches the
+# window's exec daemon through the router on 1339 with the headers
+# x-sand-display: N and x-sand-window-owner: <ownerToken>, and its screen
+# through the fork websockify on 6081 with token N.
+#
+# Exit codes: 0 ready or already up; 75 when :N belongs to another owner
+# token; 1 when the display or the daemon did not come up.
+set -uo pipefail
+
+N="${1:-}"
+OWNER_TOKEN="${2:-}"
+if ! [[ "$N" =~ ^[0-9]+$ ]]; then echo "usage: start-window <N> [ownerToken]" >&2; exit 64; fi
+if [ "$N" -le 1 ]; then echo "start-window: :$N is the primary desktop; nothing to fork" >&2; exit 0; fi
+
+DISPLAY_N=":$N"
+EXEC_PORT=$((14000 + N))
+VNC_PORT=$((5900 + N))
+WINDOW_DIR="/tmp/sand-window-$N"
+TOKEN_FILE="/tmp/sand-window-tokens.d/$N"
+WINDOW_UNAVAILABLE_EXIT_CODE=75
+
+display_up() { xdpyinfo -display "$DISPLAY_N" >/dev/null 2>&1; }
+daemon_up() { (exec 3<>"/dev/tcp/127.0.0.1/$EXEC_PORT") 2>/dev/null; }
+
+mkdir -p "$WINDOW_DIR/terminals" /tmp/sand-window-tokens.d /tmp/sand-novnc-tokens.d
+
+if [ -n "$OWNER_TOKEN" ] && display_up && [ -s "$TOKEN_FILE" ] && [ "$(cat "$TOKEN_FILE")" != "$OWNER_TOKEN" ]; then
+  echo "sand window $N: display owned by a different token; refusing to adopt" >&2
+  exit "$WINDOW_UNAVAILABLE_EXIT_CODE"
+fi
+
+if display_up && daemon_up; then
+  echo "sand window $N already up (display $DISPLAY_N, daemon :$EXEC_PORT)"
+  exit 0
+fi
+
+if ! display_up; then
+  DISPLAY="$DISPLAY_N" SAND_VNC_PORT="$VNC_PORT" SAND_NOVNC_TOKEN="$N" SAND_XDG_RUNTIME_DIR="/tmp/xdg-runtime-$N" \
+    /usr/local/bin/simeon-desktop >> "$WINDOW_DIR/start-desktop.log" 2>&1
+  ready=0
+  for _ in $(seq 1 150); do
+    if display_up; then ready=1; break; fi
+    sleep 0.2
+  done
+  if [ "$ready" != 1 ]; then echo "sand window $N: X display $DISPLAY_N did not become ready (see $WINDOW_DIR/start-desktop.log)" >&2; exit 1; fi
+  if [ -n "$OWNER_TOKEN" ]; then printf '%s' "$OWNER_TOKEN" > "$TOKEN_FILE"; fi
+fi
+
+if ! daemon_up; then
+  cd /workspace || exit 1
+  DISPLAY="$DISPLAY_N" SAND_BOX_WORKSPACE_ROOT=/workspace SAND_BOX_EXEC_DAEMON_PORT="$EXEC_PORT" SAND_BOX_TERMINALS_DIRECTORY="$WINDOW_DIR/terminals" \
+    env -u SAND_GATEWAY_TOKEN -u SAND_INFERENCE_RENEWAL_CREDENTIAL \
+    setsid nohup node /home/box/box-exec-daemon/main.cjs >> "$WINDOW_DIR/exec-daemon.log" 2>&1 &
+  pid=$!
+  DISPLAY="$DISPLAY_N" box-register "d$N" exec-daemon 6 "$WINDOW_DIR/exec-daemon.log" "$pid" --listen-port "$EXEC_PORT" -- \
+    env DISPLAY="$DISPLAY_N" SAND_BOX_WORKSPACE_ROOT=/workspace SAND_BOX_EXEC_DAEMON_PORT="$EXEC_PORT" SAND_BOX_TERMINALS_DIRECTORY="$WINDOW_DIR/terminals" -u SAND_GATEWAY_TOKEN -u SAND_INFERENCE_RENEWAL_CREDENTIAL node /home/box/box-exec-daemon/main.cjs
+  ready=0
+  for _ in $(seq 1 150); do
+    if daemon_up; then ready=1; break; fi
+    sleep 0.2
+  done
+  if [ "$ready" != 1 ]; then echo "sand window $N: exec daemon on :$EXEC_PORT did not become ready (see $WINDOW_DIR/exec-daemon.log)" >&2; exit 1; fi
+fi
+
+echo "sand window $N ready (display $DISPLAY_N, daemon :$EXEC_PORT, vnc token $N)"

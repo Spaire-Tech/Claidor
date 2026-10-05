@@ -3,7 +3,7 @@ import { DebugModeConfig, GitRepoInfo, HooksConfigInfo, MatchedInstalledPlugin, 
 import { DataClassification } from "../../../../redaction/classification.js";
 import { createRedactedString } from "../../../../redaction/factory.js";
 import { fromRedactedAgentSkill, toRedactedAgentSkill } from "./agent_skills_redacted.js";
-import { fromRedactedCursorRule2 as fromRedactedCursorRule, toRedactedCursorRule2 as toRedactedCursorRule } from "./cursor_rules_redacted.js";
+import { fromRedactedAgentRule2 as fromRedactedAgentRule, toRedactedAgentRule2 as toRedactedAgentRule } from "./agent_rules_redacted.js";
 import { fromRedactedLsDirectoryTreeNode, toRedactedLsDirectoryTreeNode } from "./ls_exec_redacted.js";
 import { fromRedactedMcpFileSystemOptions, fromRedactedMcpInstructions, fromRedactedMcpMetaToolOptions, fromRedactedMcpToolDefinition, toRedactedMcpFileSystemOptions, toRedactedMcpInstructions, toRedactedMcpMetaToolOptions, toRedactedMcpToolDefinition } from "./mcp_redacted.js";
 import { fromRedactedRepositoryIndexingInfo, toRedactedRepositoryIndexingInfo } from "./repo_redacted.js";
@@ -235,7 +235,7 @@ function fromRedactedPrecomputedHumanChange(msg, purpose, opts) {
 function toRedactedRequestContext(msg, privacyMode) {
   return {
     _privacyMode: privacyMode,
-    rules: msg.rules.map((v2) => toRedactedCursorRule(v2, privacyMode)),
+    rules: msg.rules.map((v2) => toRedactedAgentRule(v2, privacyMode)),
     env: msg.env !== void 0 ? toRedactedRequestContextEnv(msg.env, privacyMode) : void 0,
     repositoryInfo: msg.repositoryInfo.map((v2) => toRedactedRepositoryIndexingInfo(v2, privacyMode)),
     tools: msg.tools.map((v2) => toRedactedMcpToolDefinition(v2, privacyMode)),
@@ -266,7 +266,7 @@ function toRedactedRequestContext(msg, privacyMode) {
     mcpMetaToolOptions: msg.mcpMetaToolOptions !== void 0 ? toRedactedMcpMetaToolOptions(msg.mcpMetaToolOptions, privacyMode) : void 0,
     readLintsEnabled: msg.readLintsEnabled,
     mcpInfoComplete: msg.mcpInfoComplete,
-    nonFileRules: msg.nonFileRules.map((v2) => toRedactedCursorRule(v2, privacyMode)),
+    nonFileRules: msg.nonFileRules.map((v2) => toRedactedAgentRule(v2, privacyMode)),
     matchedInstalledPlugin: msg.matchedInstalledPlugin !== void 0 ? toRedactedMatchedInstalledPlugin(msg.matchedInstalledPlugin, privacyMode) : void 0,
     rulesInfoComplete: msg.rulesInfoComplete,
     envInfoComplete: msg.envInfoComplete,
@@ -289,7 +289,7 @@ function fromRedactedRequestContext(msg, purpose, opts) {
   const redactUnallowedFieldsInsteadOfThrowing = opts?.redactUnallowedFieldsInsteadOfThrowing ?? false;
   const enforcing = opts?.enforcing;
   return new RequestContext({
-    rules: msg.rules.map((v2) => fromRedactedCursorRule(v2, purpose, opts)),
+    rules: msg.rules.map((v2) => fromRedactedAgentRule(v2, purpose, opts)),
     env: msg.env !== void 0 ? fromRedactedRequestContextEnv(msg.env, purpose, opts) : void 0,
     repositoryInfo: msg.repositoryInfo.map((v2) => fromRedactedRepositoryIndexingInfo(v2, purpose, opts)),
     tools: msg.tools.map((v2) => fromRedactedMcpToolDefinition(v2, purpose, opts)),
@@ -320,7 +320,7 @@ function fromRedactedRequestContext(msg, purpose, opts) {
     mcpMetaToolOptions: msg.mcpMetaToolOptions !== void 0 ? fromRedactedMcpMetaToolOptions(msg.mcpMetaToolOptions, purpose, opts) : void 0,
     readLintsEnabled: msg.readLintsEnabled,
     mcpInfoComplete: msg.mcpInfoComplete,
-    nonFileRules: msg.nonFileRules.map((v2) => fromRedactedCursorRule(v2, purpose, opts)),
+    nonFileRules: msg.nonFileRules.map((v2) => fromRedactedAgentRule(v2, purpose, opts)),
     matchedInstalledPlugin: msg.matchedInstalledPlugin !== void 0 ? fromRedactedMatchedInstalledPlugin(msg.matchedInstalledPlugin, purpose, opts) : void 0,
     rulesInfoComplete: msg.rulesInfoComplete,
     envInfoComplete: msg.envInfoComplete,

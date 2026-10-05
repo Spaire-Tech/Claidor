@@ -31,7 +31,7 @@ export function SandboxingDescriptionBody(props: PromptProps): PromptNode {
     children: [
       jsx("p", { children: "By default, your commands will run in a sandbox. The sandbox allows most writes to the workspace and reads to the rest of the filesystem. Some other syscalls are also disallowed like access to USB devices. Syscalls that attempt forbidden operations will fail and not all programs will surface these errors in a useful way." }),
       hasNetworkInsideSandbox && jsx(NetworkAllowlistDescription, { sandboxNetworkInfo }),
-      jsx("p", { children: 'Files that are ignored by .cursorignore are not accessible to the command. If you need to access a file that is ignored, you will need to request "all" permissions to disable sandboxing.' }),
+      jsx("p", { children: 'Files that are ignored by .simeonignore are not accessible to the command. If you need to access a file that is ignored, you will need to request "all" permissions to disable sandboxing.' }),
       jsx("p", { children: "The required_permissions argument is used to request additional permissions. If you know you will need a permission, request it. Requesting permissions will slow down the command execution as it will ask the user for approval. Do not hesitate to request permissions if you are certain you need them. For commands you know will need unrestricted network access, request the full_network permission rather than waiting for the command to fail and asking for it later." }),
       jsx("p", { children: "The following permissions are supported:" }),
       jsxs("ul", { children: [

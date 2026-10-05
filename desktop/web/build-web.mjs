@@ -66,7 +66,7 @@ const marker = '<script type="module"';
 if (!page.includes(marker)) throw new Error("renderer index.html has no module script to put the bridge before");
 // A browser has no desktop behind the window: a plain light ground, and the
 // sidebar's material drawn flat, as the website's demo does.
-const ground = `<style>html,body{height:100%;margin:0;background:#f5f5f7}body::before{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(160deg,#e9e9ee,#d9d9df)}html body .sand-agents-sidebar{background-color:var(--cursor-bg-chrome)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}</style>\n    `;
+const ground = `<style>html,body{height:100%;margin:0;background:#f5f5f7}body::before{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(160deg,#e9e9ee,#d9d9df)}html body .sand-agents-sidebar{background-color:var(--simeon-bg-chrome)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}</style>\n    `;
 page = page.replace(marker, `${ground}<script src="/app/web-bridge.js"></script>\n    ${marker}`);
 // The page is served at /app, with no trailing slash, so its references
 // are absolute: `./assets/…` would resolve to the site's root.

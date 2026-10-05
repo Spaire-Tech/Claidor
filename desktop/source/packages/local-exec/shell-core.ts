@@ -11,7 +11,7 @@ import { getSafeConversationId, TRANSCRIPTS_SUBDIR } from "../utils/workspace-pa
 import { MAX_BUFFER_SIZE } from "./constants.js";
 import type { SandboxRule } from "./sandbox-conversion.js";
 
-const REQUEST_SCOPED_SHELL_ENV_KEYS = ["CURSOR_CONVERSATION_ID", "CURSOR_AGENT_STORE_FILES_DIR", "CURSOR_AGENT_STORE_SHARED_PATHS"] as const;
+const REQUEST_SCOPED_SHELL_ENV_KEYS = ["SIMEON_CONVERSATION_ID", "SIMEON_AGENT_STORE_FILES_DIR", "SIMEON_AGENT_STORE_SHARED_PATHS"] as const;
 const MAX_OUTPUT_FILE_SIZE = 50 * 1024 * 1024;
 const AGENT_TOOLS_DIR = "agent-tools";
 const isWindows = process.platform === "win32";
@@ -23,7 +23,7 @@ function effectiveEnv(env: NodeJS.ProcessEnv, key: string): string | undefined {
 function appendRequestScopedEnvRestore(env: NodeJS.ProcessEnv): void {
   const parts = [`builtin unset ${REQUEST_SCOPED_SHELL_ENV_KEYS.join(" ")} 2>/dev/null || true`];
   for (const key of REQUEST_SCOPED_SHELL_ENV_KEYS) { const value = effectiveEnv(env, key); if (value !== undefined) parts.push(`builtin export ${key}=${shellSingleQuote(value)}`); }
-  env.__CURSOR_SANDBOX_ENV_RESTORE = [process.env.__CURSOR_SANDBOX_ENV_RESTORE?.trim(), env.__CURSOR_SANDBOX_ENV_RESTORE?.trim(), parts.join("; ")].filter((part) => part !== undefined && part !== "").join("; ");
+  env.__SIMEON_SANDBOX_ENV_RESTORE = [process.env.__SIMEON_SANDBOX_ENV_RESTORE?.trim(), env.__SIMEON_SANDBOX_ENV_RESTORE?.trim(), parts.join("; ")].filter((part) => part !== undefined && part !== "").join("; ");
 }
 function appendUnique(paths: string[] | undefined, value: string): string[] { const next = paths === undefined ? [] : [...paths]; if (!next.includes(value)) next.push(value); return next; }
 function parseSharedPaths(value: string | undefined): Array<{ path: string; readOnly: boolean }> {
@@ -31,7 +31,7 @@ function parseSharedPaths(value: string | undefined): Array<{ path: string; read
   try { const parsed: unknown = JSON.parse(value); if (typeof parsed !== "object" || parsed === null) return []; const result: Array<{ path: string; readOnly: boolean }> = []; for (const entry of Object.values(parsed)) if (typeof entry === "object" && entry !== null && "path" in entry && "readOnly" in entry && typeof entry.path === "string" && typeof entry.readOnly === "boolean") result.push({ path: entry.path, readOnly: entry.readOnly }); return result; } catch { return []; }
 }
 function agentStoreSandboxPolicyFromEnv(policy: SandboxPolicy | undefined, env: NodeJS.ProcessEnv): SandboxPolicy | undefined {
-  const filesDir = effectiveEnv(env, "CURSOR_AGENT_STORE_FILES_DIR"); const shared = parseSharedPaths(effectiveEnv(env, "CURSOR_AGENT_STORE_SHARED_PATHS"));
+  const filesDir = effectiveEnv(env, "SIMEON_AGENT_STORE_FILES_DIR"); const shared = parseSharedPaths(effectiveEnv(env, "SIMEON_AGENT_STORE_SHARED_PATHS"));
   if (filesDir === undefined && shared.length === 0) return policy;
   const reference = policy?.perRepo ?? policy?.perUser ?? policy?.teamAdmin;
   if (reference?.type !== "workspace_readwrite" && reference?.type !== "workspace_readonly") return policy;
@@ -62,13 +62,13 @@ export class BaseShellCoreExecutor {
     let stdoutSize = 0, stderrSize = 0, suppressionNoticeSent = false, stdoutTrimmed = false, stderrTrimmed = false;
     let merged: { buffer: string; lineCount: number; size: number; threshold: number; path?: string; file?: WriteStream } | undefined;
     if (args.fileOutputThresholdBytes && this.projectDir) merged = { buffer: "", lineCount: 0, size: 0, threshold: Number(args.fileOutputThresholdBytes) };
-    const env: NodeJS.ProcessEnv = { CURSOR_AGENT: "1" };
-    if (args.conversationId) env.CURSOR_CONVERSATION_ID = getSafeConversationId(args.conversationId);
+    const env: NodeJS.ProcessEnv = { SIMEON_AGENT: "1" };
+    if (args.conversationId) env.SIMEON_CONVERSATION_ID = getSafeConversationId(args.conversationId);
     if (this.projectDir) env.AGENT_TRANSCRIPTS = join(this.projectDir, TRANSCRIPTS_SUBDIR);
     Object.assign(env, this.extraEnvProvider?.(ctx, args)); appendRequestScopedEnvRestore(env);
     const sandboxPolicy = agentStoreSandboxPolicyFromEnv(args.sandboxPolicy, env); const policyType = sandboxPolicy?.perRepo?.type ?? sandboxPolicy?.perUser?.type ?? sandboxPolicy?.teamAdmin?.type ?? "insecure_none";
     if (sandboxPolicy !== undefined) yield { type: "start", sandboxed: policyType === "workspace_readonly" || policyType === "workspace_readwrite" };
-    if (args.askpassConfig && !isWindows) { env.SUDO_ASKPASS = args.askpassConfig.helperPath; env.CURSOR_ASKPASS_SOCKET = args.askpassConfig.socketPath; env.CURSOR_ASKPASS_SECRET = args.askpassConfig.secret; }
+    if (args.askpassConfig && !isWindows) { env.SUDO_ASKPASS = args.askpassConfig.helperPath; env.SIMEON_ASKPASS_SOCKET = args.askpassConfig.socketPath; env.SIMEON_ASKPASS_SECRET = args.askpassConfig.secret; }
     for await (const event of this.executor.execute(ctx, args.command, { ...(args.signal === undefined ? {} : { signal: args.signal }), workingDirectory: cwd, env, ...(sandboxPolicy === undefined ? {} : { sandboxPolicy }), ...(this.workspacePath === undefined ? {} : { sandboxWorkspaceRoot: this.workspacePath }), pipeStdin: args.pipeStdin ?? false, ...(this.shellOutputBackpressureOptions?.bufferOutputEvents === undefined ? {} : { bufferOutputEvents: this.shellOutputBackpressureOptions.bufferOutputEvents }), ...(this.shellOutputBackpressureOptions?.outputLimiterOptions === undefined ? {} : { outputLimiterOptions: this.shellOutputBackpressureOptions.outputLimiterOptions }) })) {
       let text = "", size = 0;
       if (event.type === "stdout" || event.type === "stderr") { text = event.data.toString(); size = event.data.length; if (merged) { merged.size += size; merged.lineCount += text.split("\n").length - 1; if (merged.size <= MAX_OUTPUT_FILE_SIZE) { if (merged.file) merged.file.write(text); else { merged.buffer += text; if (merged.size > merged.threshold && this.projectDir) { const dir = join(this.projectDir, AGENT_TOOLS_DIR); merged.path = join(dir, `${randomUUID()}.txt`); await mkdir(dirname(merged.path), { recursive: true }); merged.file = createWriteStream(merged.path); merged.file.write(merged.buffer); merged.buffer = ""; } } } } }

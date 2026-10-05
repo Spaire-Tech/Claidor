@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400&display=swap">
-<script>if (matchMedia('(min-width:600px)').matches) for (const [rel, as, href] of [['modulepreload', '', 'app/c240c441e36a/assets/index-UbX-y3il.js'], ['preload', 'style', 'app/c240c441e36a/assets/index-lCyB53CO.css']]) { const l = document.createElement('link'); l.rel = rel; if (as) l.as = as; l.crossOrigin = ''; l.href = href; document.head.appendChild(l); }</script>
+<script>if (matchMedia('(min-width:600px)').matches) for (const [rel, as, href] of [['modulepreload', '', 'app/163eb35724af/assets/index-UbX-y3il.js'], ['preload', 'style', 'app/163eb35724af/assets/index-lCyB53CO.css']]) { const l = document.createElement('link'); l.rel = rel; if (as) l.as = as; l.crossOrigin = ''; l.href = href; document.head.appendChild(l); }</script>
 <style>
 /* Simeon's site, laid out by the rules of Apple's product pages (apple.com/apple-creator-studio,
    /apps, /apple-vision-pro, /apple-intelligence; the founder, 3 October 2026): one left edge,
@@ -27,7 +27,7 @@
   --night:#000; --blue:#255a93; --blue-hover:#2b66a6; --app-blue:#255a93; /* the person's own chat bubble in the app (USER_BUBBLE_LIGHT, router-renderer-patch.mjs) */ --green:#34c759; --red:#ff3b30;
   --c-cos:#2c6bb3; --c-inbox:#2b8a80; --c-money:#cc6526; --c-growth:#6a58cf; --c-content:#c7457f; --c-sales:#36894a;
   --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Inter","Helvetica Neue",Arial,sans-serif;
-  --gutter:max(20px,4.6vw); /* cursor.com's margin: 4.6% of the screen each side (the founder's screenshots, 3 October 2026) */
+  --gutter:max(20px,4.6vw); /* the margin: 4.6% of the screen each side (the founder's screenshots, 3 October 2026) */
   --col:min(1840px,calc(100vw - 2 * var(--gutter)));
   --edge:max(var(--gutter),calc((100% - 1260px) / 2));
   color-scheme:light;
@@ -51,7 +51,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .face{object-fit:contain;flex:none}
 .f-growth{filter:hue-rotate(90deg)}.f-content{filter:hue-rotate(300deg)}.f-sales{filter:hue-rotate(60deg)}
 
-/* The bar, laid out like cursor.com's (the founder, 3 October 2026, with a screenshot): the name on
+/* The bar (the founder, 3 October 2026, with a screenshot): the name on
    the left, sign in and the download on the right. */
 .bar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.82);-webkit-backdrop-filter:saturate(1.8) blur(20px);backdrop-filter:saturate(1.8) blur(20px);padding-top:env(safe-area-inset-top,0px)}
 .bar .wrap{display:flex;justify-content:space-between;align-items:center;height:clamp(52px,3.8vw,76px)}
@@ -61,13 +61,13 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .bar .btn{height:clamp(28px,1.9vw,38px);padding:0 clamp(12px,.8vw,16px);font-size:clamp(14px,1vw,20px)}
 
 
-/* Hero, as cursor.com sets it: one sentence on the left edge, two buttons under it, nothing else. */
+/* Hero: one sentence on the left edge, two buttons under it, nothing else. */
 .hero{padding:clamp(40px,8.1vw,162px) 0 0;color:#000}
 .hero h1{max-width:13em;font-family:"Newsreader",Georgia,"Times New Roman",serif;font-size:clamp(36px,2.9vw,58px);line-height:1.04;font-weight:400;letter-spacing:-.02em;text-wrap:balance}
 .hero .ctas{display:flex;gap:clamp(10px,.7vw,14px);flex-wrap:wrap;margin-top:clamp(18px,1.6vw,32px)}
 .hero .btn{height:clamp(44px,3.05vw,61px);padding:0 clamp(20px,1.6vw,32px);font-size:clamp(16px,1.15vw,23px)}
-/* On a phone the hero breathes the way Cursor's does (4 October 2026): a long pause under the bar, a headline that leaves air on the right, and room before the app. */
-.hero .btn.go{display:none} /* the phone's one button, Get started, like Cursor's */
+/* On a phone the hero breathes (4 October 2026): a long pause under the bar, a headline that leaves air on the right, and room before the app. */
+.hero .btn.go{display:none} /* the phone's one button, Get started */
 @media (max-width:734px){.hero{padding-top:88px}.hero h1{font-size:31px;line-height:1.1;max-width:11.5em}.hero .ctas{margin-top:26px}.hero .ctas .btn{display:none}.hero .btn.go{display:inline-flex}}
 .btn .apl{width:1.05em;height:1.05em;margin:-.18em .45em 0 -.1em;flex:none}
 
@@ -937,7 +937,7 @@ footer nav{display:flex;gap:18px}
   <div class="stagebox">
     <div class="sd-stage"><div class="sd-frame"><span class="sd-dots"><i></i><i></i><i></i></span><div class="sd-bar"><span class="sd-title">Simeon</span></div>
       <div class="sd-screen"><div class="sd-window"><picture class="sd-poster"><source media="(max-width:599.98px)" srcset="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="><source media="(max-width:809.98px)" srcset="app-poster-tall.jpg"><img src="app-poster-wide.jpg" alt="" fetchpriority="high"></picture>
-      <iframe data-hold data-src="app/c240c441e36a/index.html?theme=light" title="Simeon, playing a founder's morning" loading="eager"></iframe></div></div></div>
+      <iframe data-hold data-src="app/163eb35724af/index.html?theme=light" title="Simeon, playing a founder's morning" loading="eager"></iframe></div></div></div>
       <div class="sd-mob" aria-label="Simeon, the chief of staff, talking with you about a launch"><div class="sd-m-rail"><span class="sd-m-lights"><i></i><i></i><i></i></span><span class="sd-m-av sd-m-on"><img src="faces/agent-simeon.png" alt="" style=""></span><span class="sd-m-av sd-m-group"><img src="faces/agent-simeon.png" alt="" style=""><img src="faces/agent-scout.png" alt="" style=""><img src="faces/agent-iris.png" alt="" style=""></span><span class="sd-m-av"><img src="faces/agent-iris.png" alt="" style=""></span><span class="sd-m-av"><img src="faces/agent-theo.png" alt="" style=""></span><span class="sd-m-av"><img src="faces/agent-scout.png" alt="" style=""></span><span class="sd-m-fill"></span><span class="sd-m-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg></span><span class="sd-m-new"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 4.5H6.5A2.5 2.5 0 0 0 4 7v10.5A2.5 2.5 0 0 0 6.5 20H17a2.5 2.5 0 0 0 2.5-2.5V12M18.3 3.7a1.9 1.9 0 0 1 2.7 2.7L13 14.4l-3.6.9.9-3.6z"/></svg></span><span class="sd-m-me">BF</span></div><div class="sd-m-main"><div class="sd-m-head"><img src="faces/agent-simeon.png" alt="" style=""><b>Simeon</b><span class="sd-m-role">Chief of Staff</span></div><div class="sd-m-thread"><div class="sd-m-feed"><div class="sd-m-in">Thursday is on track: 12 of 15 launch tickets are done in <span class="sd-app"><span class="sd-app-ico"><img src="logos/linear.svg" alt=""></span><span style="color:#5E6AD2">Linear</span></span>, and the review is Thursday at 2 pm.</div><div class="sd-m-sys">Messages from <span class="sd-m-tag" style="color:#3f7f78"><img src="faces/agent-scout.png" alt="">Scout</span> and <span class="sd-m-tag" style="color:#69847c"><img src="faces/agent-iris.png" alt="">Iris</span></div><div class="sd-m-in"><span class="sd-m-tag" style="color:#3f7f78"><img src="faces/agent-scout.png" alt="">Scout</span> pulled three customer quotes and <span class="sd-m-tag" style="color:#69847c"><img src="faces/agent-iris.png" alt="">Iris</span> closed the last two tickets. The review doc is ready.</div><div class="sd-m-file"><img src="logos/word.webp" alt="">Launch review.docx</div><div class="sd-m-out">Looks great. Send the agenda to Dana and Marcus, and check in like this every Monday.<span class="sd-m-react">&#128077;</span></div><div class="sd-m-sys">Created routine <span class="sd-m-clock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><b>Monday launch check</b></div><div class="sd-m-in">Done. The agenda went out from <span class="sd-app"><span class="sd-app-ico"><img src="logos/gmail.webp" alt=""></span><span style="color:#EA4335">Gmail</span></span>.</div></div></div><div class="sd-m-compose"><span class="sd-m-plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span><span class="sd-m-ph">Message Simeon</span><span class="sd-m-mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span></div></div></div>
     </div>
   </div>

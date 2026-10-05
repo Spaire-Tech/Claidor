@@ -53,7 +53,7 @@ test("a group text reaches every member, the upstream app's rounds (restored 28 
   }
 });
 
-test("machinery sessions stay on Luna; unknown Cursor model ids cannot steal Terra", async () => {
+test("machinery sessions stay on Luna; unknown the upstream app model ids cannot steal Terra", async () => {
   const loaded = await load("source/host/extensions/inference/provider-session.ts", "provider-session");
   const previousModel = process.env.SAND_SIMEON_MODEL;
   const previousCheap = process.env.SAND_SIMEON_CHEAP_MODEL;

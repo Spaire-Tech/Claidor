@@ -7,7 +7,7 @@ interface SelectedContextRule {
   readonly marketplaceId?: unknown;
 }
 
-interface SelectedContextCursorRule {
+interface SelectedContextAgentRule {
   readonly rule?: SelectedContextRule;
 }
 
@@ -21,7 +21,7 @@ interface SelectedContextSkill {
 }
 
 export interface SelectedContextSkillInput {
-  readonly cursorRules?: readonly SelectedContextCursorRule[];
+  readonly agentRules?: readonly SelectedContextAgentRule[];
   readonly selectedSkills?: readonly SelectedContextSkill[];
 }
 
@@ -32,8 +32,8 @@ export function resolveSelectedContextSkillSections(selectedContext: SelectedCon
   selectedSkills: SelectedContextSkill[];
   regularRules: SelectedContextRule[];
 } {
-  const validRules = (selectedContext.cursorRules ?? [])
-    .map((cursorRule) => cursorRule.rule)
+  const validRules = (selectedContext.agentRules ?? [])
+    .map((agentRule) => agentRule.rule)
     .filter((rule): rule is SelectedContextRule => rule !== undefined && rule.content !== undefined && rule.content.trim().length > 0);
   const hasNewSkillsField = (selectedContext.selectedSkills?.length ?? 0) > 0;
   const selectedSkills = hasNewSkillsField

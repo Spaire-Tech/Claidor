@@ -3,10 +3,10 @@
  * design-audit-ledger.md clusters `executor-contract`, `child-state` and
  * `brief-text`).
  *
- * The simeon executor was bolted onto a loop built for Cursor's server
+ * The simeon executor was bolted onto a loop built for the upstream app's server
  * and never given the loop's contract back: a 45 s deadline on the whole
  * streamed body, a silent swap to the cheap model on a rate limit, no
- * request id, a Cursor-era model name. A Task child ran on the parent's
+ * request id, a upstream-era model name. A Task child ran on the parent's
  * conversation state and wrote its checkpoint into the parent's store. The
  * brief promised a Screenshot tool the request withheld, a watchVideo
  * subagent nobody offered, per-action approval cards, poppler, an anyrun
