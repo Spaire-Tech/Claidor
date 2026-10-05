@@ -11,8 +11,8 @@ test("the glass block is the agents sidebar only, see-through to the Mac's sideb
   const { LIQUID_GLASS_CSS, patchOriginalGlassStylesheet } = await import(patchModule);
   const out = patchOriginalGlassStylesheet(":root{--x:1}");
   assert.ok(out.startsWith(":root{--x:1}\n"));
-  // The material of Messages' sidebar (5 October 2026): a near-white frost over a 40 pt blur, no border, a specular inner hairline; the same in the dark.
-  assert.match(LIQUID_GLASS_CSS, /\.sand-agents-sidebar\{background:linear-gradient\(180deg,light-dark\(rgba\(255,255,255,\.82\),rgba\(32,32,34,\.76\)\),light-dark\(rgba\(250,251,253,\.74\),rgba\(28,28,30,\.7\)\)\)!important;-webkit-backdrop-filter:blur\(40px\) saturate\(1\.6\)!important;backdrop-filter:blur\(40px\) saturate\(1\.6\)!important;border-right:0!important;box-shadow:inset -\.5px 0 0 light-dark\(/);
+  // The material of Messages' sidebar (5 October 2026): a white wash over a 40 pt blur, light enough for the material to show, no border, a specular inner hairline; the same in the dark.
+  assert.match(LIQUID_GLASS_CSS, /\.sand-agents-sidebar\{background:linear-gradient\(180deg,light-dark\(rgba\(255,255,255,\.55\),rgba\(32,32,34,\.6\)\),light-dark\(rgba\(250,251,253,\.45\),rgba\(28,28,30,\.55\)\)\)!important;-webkit-backdrop-filter:blur\(40px\) saturate\(1\.6\)!important;backdrop-filter:blur\(40px\) saturate\(1\.6\)!important;border-right:0!important;box-shadow:inset -\.5px 0 0 light-dark\(/);
   assert.ok(!LIQUID_GLASS_CSS.includes("--simeon-bg-chrome"), "the frost is its own colour, not the chrome's");
   // The page is clear only where the sidebar is, so the window's material shows there and nowhere else.
   assert.ok(LIQUID_GLASS_CSS.includes("html:has(.sand-agents-sidebar),html:has(.sand-agents-sidebar) body,[data-theme]:has(>.sand-agents-sidebar){background-color:transparent!important}"));

@@ -304,10 +304,11 @@ async def main():
     idx = idx.replace('<script src="./demo-gate.js"></script>', '<script src="./demo-gate.js"></script>\n    <link rel="stylesheet" href="./demo-glass.css">', 1)
     shutil.copy(f"{HERE}/demo-glass.css", f"{OUT}/app/demo-glass.css")
     assert "scroll-guard.js" in idx
-    # The sidebar is solid in the page, not glass over a desktop.
+    # The page's ground stands in for the desktop behind the window and shows through the sidebar's wash; there is
+    # nothing to blur, so the blur is dropped.
     before = 'body::before{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(160deg,#e4e4e7,#d4d4d8)}'
     assert before in idx
-    idx = idx.replace(before, before + 'html body .sand-agents-sidebar{background-color:var(--simeon-bg-chrome)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}')
+    idx = idx.replace(before, before + 'html body .sand-agents-sidebar{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}')
     open(f"{OUT}/app/index.html", "w").write(idx)
     # The app lives under a folder named after its content (app/<digest>/), so a changed window is a
     # new address: its files keep the same names from build to build (the patch rewrites them after
