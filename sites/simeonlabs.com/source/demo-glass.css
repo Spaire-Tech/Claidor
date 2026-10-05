@@ -1,19 +1,22 @@
-/* The sidebar's two round Liquid Glass buttons (the founder, 5 October 2026): search, and the plus that creates an
-   agent, set like Apple's round glass buttons: a translucent disc with a bright specular rim along the top edge, a
-   hairline and a soft drop shadow, the glyph in the label colour. The search bar below them is gone. This sheet
-   rides over the pinned renderer's styles inside the demo bundle, so its rules are !important. */
+/* The sidebar's two round Liquid Glass buttons (the founder, 5 October 2026): search, a clear glass disc, and the
+   create button, a raised, fuller disc with the founder's three-line glyph, both like Apple's round glass buttons:
+   a translucent disc, a bright rim along the top edge, a hairline, a soft shadow, the glyph in the label colour.
+   The search bar below them is gone. This sheet rides over the pinned renderer's styles inside the demo bundle,
+   so its rules are !important. */
 html body .sand-agents-sidebar__search{display:none!important}
-html body .sand-agents-sidebar__header{height:56px!important;padding:0 12px 0 0!important}
+html body .sand-agents-sidebar__header{height:60px!important;padding:0 12px 0 0!important}
 html body .sand-agents-sidebar__new-actions{display:flex!important;gap:10px!important;align-items:center!important}
 html body .sand-agents-sidebar__new-actions .sand-kit-icon-button{
-  width:36px!important;height:36px!important;border-radius:999px!important;display:grid!important;place-items:center!important;padding:0!important;
-  color:rgba(0,0,0,.72)!important;
-  background:linear-gradient(180deg,rgba(255,255,255,.78),rgba(255,255,255,.5))!important;
+  width:40px!important;height:40px!important;border-radius:999px!important;display:grid!important;place-items:center!important;padding:0!important;
+  color:rgba(0,0,0,.78)!important;
+  background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,255,255,.38))!important;
   -webkit-backdrop-filter:blur(14px) saturate(1.6)!important;backdrop-filter:blur(14px) saturate(1.6)!important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,1),inset 0 0 0 .75px rgba(255,255,255,.75),inset 0 -1px 1px rgba(0,0,0,.05),0 0 0 .5px rgba(0,0,0,.08),0 2px 6px rgba(0,0,0,.08),0 10px 24px -8px rgba(0,0,0,.14)!important;
-  transition:transform .18s ease,box-shadow .18s ease!important}
-html body .sand-agents-sidebar__new-actions .sand-kit-icon-button:hover{transform:scale(1.04)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,1),inset 0 0 0 .75px rgba(255,255,255,.85),inset 0 -1px 1px rgba(0,0,0,.05),0 0 0 .5px rgba(0,0,0,.1),0 3px 8px rgba(0,0,0,.1),0 14px 28px -8px rgba(0,0,0,.18)!important}
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 0 0 .75px rgba(255,255,255,.6),inset 0 -1px 1px rgba(0,0,0,.04),0 0 0 .5px rgba(0,0,0,.07),0 1px 3px rgba(0,0,0,.06)!important;
+  transition:transform .18s ease,box-shadow .18s ease,background .18s ease!important}
+html body .sand-agents-sidebar__new-actions .simeon-sidebar-create{
+  background:linear-gradient(180deg,#fff,rgba(255,255,255,.86))!important;
+  box-shadow:inset 0 1px 0 #fff,inset 0 0 0 .75px rgba(255,255,255,.9),inset 0 -1px 1px rgba(0,0,0,.05),0 0 0 .5px rgba(0,0,0,.09),0 2px 5px rgba(0,0,0,.08),0 8px 18px -6px rgba(0,0,0,.14)!important}
+html body .sand-agents-sidebar__new-actions .sand-kit-icon-button:hover{transform:scale(1.04)!important}
 html body .sand-agents-sidebar__new-actions .sand-kit-icon-button:active{transform:scale(.97)!important}
-html body .sand-agents-sidebar__new-actions .sand-kit-icon{width:17px!important;height:17px!important}
-html body .sand-agents-sidebar__new-actions .sand-kit-icon svg{width:17px!important;height:17px!important;stroke-width:2.2!important}
-html body .simeon-sidebar-search svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
+html body .sand-agents-sidebar__new-actions .sand-kit-icon{width:18px!important;height:18px!important;display:block!important}
+html body .sand-agents-sidebar__new-actions .sand-kit-icon svg{width:18px!important;height:18px!important;fill:none!important;stroke:currentColor!important;stroke-width:2!important;stroke-linecap:round!important;stroke-linejoin:round!important}
