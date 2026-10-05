@@ -41,3 +41,5 @@ html body .sand-shell:has(.sand-info-pane[data-open="true"]) .sand-agents-sideba
 html body .sand-shell:has(.sand-info-pane[data-open="true"]) .sand-agents-sidebar__new-actions{flex-direction:column!important;gap:10px!important;margin:0 auto!important}
 /* The rail renders a second "New chat" plus of its own; the compose disc already is that button. */
 html body .sand-agents-sidebar__rail-new{display:none!important}
+/* The rail's header was its 44px spacer under the traffic lights; with the header at the foot, the spacer stays. */
+html body .sand-shell:has(.sand-info-pane[data-open="true"]) .sand-agents-sidebar::before{content:""!important;display:block!important;flex:none!important;order:0!important;height:44px!important}
