@@ -131,6 +131,50 @@ rm -rf /Applications/Simeon.app && cp -R dist/Simeon.app /Applications/ && open 
   `~/.simeon`, the app renames `~/.caisra` to `~/.simeon`. If an older host or
   daemon still holds the old folder, the move waits for a later start.
 
+## Simeon on its own Electron shell
+
+Since 5 October 2026 (Track D, piece 1) there is a second way to package,
+which takes nothing from the upstream app's shell:
+
+```sh
+npm run package:own-shell   # dist/Simeon.app on a stock Electron 42.1.0
+npm run verify:own-shell    # the checks for that bundle
+```
+
+`scripts/package-simeon-shell.mjs` bundles every process from `source/`
+(the main process and the host ignited, as `npm run package` does), stages
+only what we build plus the pinned window with its patch, compiles the two
+native add-ons the app loads (`tree-sitter`, `tree-sitter-bash`) against
+Electron's own headers (`scripts/lib/electron-runtime.mjs`; the headers are
+fetched once into `.cache/electron-headers/`), packs one `app.asar`, and has
+`@electron/packager` lay out a stock Electron 42.1.0 around it: the
+executable, the four helpers, the plists, the icon and the `simeon` URL
+scheme carry Simeon's names from the start. The stock Electron comes from
+Electron's release (`@electron/get` caches it in `~/Library/Caches/electron`;
+`SIMEON_ELECTRON_ZIP_DIR` names a folder that already holds
+`electron-v42.1.0-darwin-arm64.zip`). The bundle is ad-hoc signed as before.
+
+What this path still reads from the upstream app, when `npm run bootstrap`
+has put it on the machine: the pinned window (until the window is ours,
+Track D piece 2) and the WebAuthn signer `sand-webauthn-signer` (until it is
+rewritten, piece 4). Without the window the build refuses; without the signer
+it warns, and sign-in with a passkey does not work in that build.
+
+What it never reads: the upstream shell, its `app.asar`, its native payload,
+its plists. `Contents/Resources/simeon-package.json` records what the bundle
+was built from, and `dist/simeon-build.json` inside the asar lists every
+output with its hash; `npm run verify:own-shell` checks both against the
+bundle, the pinned window against its inventory, the add-ons against their
+manifest, the plists for any name of the upstream's maker, and the signature.
+
+`node scripts/package-simeon-shell.mjs --platform linux --arch x64` builds the
+same thing for Linux, which is how the path is checked on a machine without
+macOS; that bundle is not a product.
+
+Until the own-shell bundle has been seen working on a Mac (sign-in, the
+cloud computer, a turn, a voice call, passkeys), `npm run package` stays the
+build people install.
+
 ## Publishing the host bundle
 
 The cloud boxes run the host from the packaged app. After `npm run package`:
