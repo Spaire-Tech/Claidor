@@ -33,6 +33,9 @@ html body .simeon-segments__item:hover{transform:scale(1.04)!important}
 html body .simeon-segments__item[aria-selected="true"]{color:rgba(0,0,0,.85)!important;background:linear-gradient(180deg,#fff,rgba(255,255,255,.9))!important;
   box-shadow:inset 0 1px 0 #fff,inset 0 0 0 .75px rgba(255,255,255,.9),inset 0 -1px 1px rgba(0,0,0,.05),0 0 0 .5px rgba(0,0,0,.1),0 2px 5px rgba(0,0,0,.08),0 8px 18px -6px rgba(0,0,0,.16)!important}
 html body .simeon-segments__item svg{width:20px!important;height:20px!important;stroke-width:1.7!important}
-/* While the pane is open the sidebar is a narrow rail: the two buttons stack. */
-html body .sand-shell:has(.sand-info-pane[data-open="true"]) .sand-agents-sidebar__header{height:auto!important;padding:10px 0 4px!important;justify-content:center!important}
+/* While the pane is open the sidebar is a narrow rail whose top is under the window's traffic lights, so the two
+   buttons move to the foot of the rail, stacked above the account initials, the way the phone has them. */
+html body .sand-shell:has(.sand-info-pane[data-open="true"]) .sand-agents-sidebar{display:flex!important;flex-direction:column!important}
+html body .sand-shell:has(.sand-info-pane[data-open="true"]) .sand-agents-sidebar__header{order:1!important;height:auto!important;padding:6px 0 10px!important;justify-content:center!important}
+html body .sand-shell:has(.sand-info-pane[data-open="true"]) .sand-agents-sidebar__footer{order:2!important}
 html body .sand-shell:has(.sand-info-pane[data-open="true"]) .sand-agents-sidebar__new-actions{flex-direction:column!important;gap:10px!important;margin:0 auto!important}
