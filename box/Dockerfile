@@ -115,6 +115,12 @@ RUN set -eux \
 # The host loads tree-sitter from SAND_TREE_SITTER_NODE_DEPS=/home/box/deps
 # as `<root>/<package>/package.json` (packages/shell-exec/shell-parser.ts),
 # so the packages sit directly under /home/box/deps, not under node_modules.
+# The packages sit side by side under /home/box/deps, not under a
+# node_modules folder, so Node finds tree-sitter's own dependency
+# (node-gyp-build) only through NODE_PATH; the box runs with it set, and so
+# does the check below (measured on the founder's Mac, 5 October 2026).
+ENV SAND_TREE_SITTER_NODE_DEPS=/home/box/deps \
+    NODE_PATH=/home/box/deps
 COPY box/deps/package.json box/deps/package-lock.json /tmp/deps/
 RUN set -eux \
     && cd /tmp/deps && npm ci --no-audit --no-fund --build-from-source \
@@ -138,9 +144,7 @@ RUN printf '%s\n' "$SIMEON_BOX_VERSION" > /etc/simeon-box-version
 LABEL com.simeonlabs.box-image.version=$SIMEON_BOX_VERSION
 
 ENV EXEC_DAEMON_CWD=/workspace \
-    BROWSER=/usr/local/bin/box-chrome \
-    SAND_TREE_SITTER_NODE_DEPS=/home/box/deps \
-    NODE_PATH=/home/box/deps
+    BROWSER=/usr/local/bin/box-chrome
 
 # 1337 exec daemon, 1339 window router, 1340 host gateway, 6080 primary
 # screen, 6081 fork screens. The server and the Mac dial 1340, 6080, 6081.
