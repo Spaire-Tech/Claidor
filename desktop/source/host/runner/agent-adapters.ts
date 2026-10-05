@@ -5,7 +5,7 @@ import { requestIdKey } from "../../packages/chat-inference-proto/client.js";
 import type { Context } from "../../packages/context/core.js";
 import { SubagentBackgroundReason } from "../../packages/proto/generated/agent/v1/agent_pb.js";
 import type { AgentSkill } from "../../packages/proto/generated/agent/v1/agent_skills_pb.js";
-import type { CursorRule as AgentRule } from "../../packages/proto/generated/agent/v1/cursor_rules_pb.js";
+import type { AgentRule } from "../../packages/proto/generated/agent/v1/agent_rules_pb.js";
 import {
   RequestContext,
   RequestContextEnv,

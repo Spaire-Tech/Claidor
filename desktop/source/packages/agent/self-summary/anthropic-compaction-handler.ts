@@ -12,7 +12,7 @@ import {
 } from "../../agent-summarization/pipeline.js";
 import { prepareMessagesForCompaction } from "../../agent-summarization/prepare-messages.js";
 import { collectAllSkillBlocks } from "../../agent-summarization/skill-persistence.js";
-import { SUMMARIZATION_CURSOR_PROVIDER_OPTIONS } from "../../agent-summarization/summarization-handler.js";
+import { SUMMARIZATION_SIMEON_PROVIDER_OPTIONS } from "../../agent-summarization/summarization-handler.js";
 import type { Context } from "../../context/core.js";
 import { createLogger, createSpan } from "../../context/index.js";
 import { createCounter, createHistogram } from "../../metrics/index.js";
@@ -154,7 +154,7 @@ export class AnthropicCompactionHandler {
         _privacyMode: privacySource._privacyMode,
         role: "user",
         content: safeString(finalUserContent),
-        providerOptions: SUMMARIZATION_CURSOR_PROVIDER_OPTIONS,
+        providerOptions: SUMMARIZATION_SIMEON_PROVIDER_OPTIONS,
       },
     ];
     const unredact = (message: RedactedCoreMessage) =>

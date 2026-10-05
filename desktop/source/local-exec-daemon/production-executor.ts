@@ -253,7 +253,7 @@ export function createDefaultProductionLocalExecExecutor(options: {
       const permissionsService = new MockPermissionsService();
       const ignoreService = new MockIgnoreService();
       const terminalExecutor = createDefaultTerminalExecutor({
-        env: { CURSOR_AGENT: "1", SAND_AGENT: "1" },
+        env: { SIMEON_AGENT: "1", SAND_AGENT: "1" },
       }).clone(root);
       const shellCoreExecutor = new BaseShellCoreExecutor(terminalExecutor, root, root);
       const backgroundShellExecutor = new LocalBackgroundShellExecutor(

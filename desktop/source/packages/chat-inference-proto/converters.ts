@@ -6,7 +6,7 @@ import {
   InferenceContentPart,
   InferenceContentParts,
   InferenceCoreMessage,
-  InferenceCursorOptions as InferenceSimeonOptions,
+  InferenceSimeonOptions,
   InferenceCustomToolFormat,
   InferenceImagePart,
   InferenceMessageRole,
@@ -24,7 +24,7 @@ import {
   InferenceToolResultContent,
   InferenceToolResultPart,
   type InferenceStreamError,
-} from "../proto/generated/aiserver/v1/inference_pb.js";
+} from "../proto/generated/simeon/v1/inference_pb.js";
 import { classifyTokenLimitErrorFromMessage } from "../chat-inference/token-limit-error-classification.js";
 import { InputTokenLimitError, OutputTokensLimitExceededError } from "../chat-inference/prompt-executor.js";
 import { getSimeonModelName } from "./modelProviderOptions.js";

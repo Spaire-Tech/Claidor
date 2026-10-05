@@ -7,7 +7,7 @@ import { classifyCloneError } from "../../../packages/plugins/marketplace-cache.
 import { buildOriginTokenGitConfig } from "../../../packages/plugins/origin-git-auth.js";
 import { loadFromMarketplaceSource } from "../../../packages/plugins/loader.js";
 import { DashboardService } from "../../../packages/proto/simeon/v1/services.js";
-import { GetEffectiveUserPluginsRequest, GetMeRequest } from "../../../packages/proto/generated/aiserver/v1/dashboard_pb.js";
+import { GetEffectiveUserPluginsRequest, GetMeRequest } from "../../../packages/proto/generated/simeon/v1/dashboard_pb.js";
 import { createSimeonBackendClient, getSandInferenceBackendUrl } from "../../../shared/node/simeon-backend/simeon-inference.js";
 import { HOST_LOG_PREFIX, clipForHostLog, logHostLine } from "../../../shared/host-log.js";
 import { clampWorkflowDescription, clampWorkflowName, slugifyWorkflowName } from "../../../shared/workflow-model.js";

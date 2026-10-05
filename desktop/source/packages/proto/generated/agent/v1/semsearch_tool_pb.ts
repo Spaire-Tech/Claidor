@@ -7,7 +7,7 @@
  */
 import { Message, proto3 } from "@bufbuild/protobuf";
 import type { BinaryReadOptions, JsonReadOptions, JsonValue, MessageType, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
-import { CodeResult } from "../../aiserver/v1/repository_pb.js";
+import { CodeResult } from "../../simeon/v1/repository_pb.js";
 
 type MutableMessageType<T extends Message<T>> = { -readonly [P in keyof MessageType<T>]: MessageType<T>[P] };
 

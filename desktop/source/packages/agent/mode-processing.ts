@@ -10,7 +10,7 @@ import {
   renderStillInMultitaskModeReminder,
   type MultitaskModelInfo,
 } from "./prompts/multitask-mode-user-reminder.js";
-import { CURSOR_WORKTREE_NOTE } from "./prompts/user-info.js";
+import { SIMEON_WORKTREE_NOTE } from "./prompts/user-info.js";
 import { getTaskToolName, type TaskToolModelInfo } from "./tools/task-tool-name.js";
 import { AgentType } from "./utils/agent-config.js";
 
@@ -240,7 +240,7 @@ export function processWorkspaceChangeReminder(
   }
   let worktreeNote = "";
   if (normalizedCurrent.length === 1 && isWorktreesPath(normalizedCurrent[0]!)) {
-    worktreeNote = ` ${CURSOR_WORKTREE_NOTE}`;
+    worktreeNote = ` ${SIMEON_WORKTREE_NOTE}`;
   } else {
     worktreeNote =
       " Your workspace path has changed, and all future edits should be performed in the new workspace folders.";

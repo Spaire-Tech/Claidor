@@ -62,13 +62,13 @@ from .box_repository import SandBoxRepository
 
 log = structlog.get_logger()
 
-#: `aiserver.v1.SandBoxRunState`
+#: `simeon.v1.SandBoxRunState`
 RUN_STATE_UNSPECIFIED = 0
 RUN_STATE_ABSENT = 1
 RUN_STATE_HIBERNATED = 2
 RUN_STATE_RUNNING = 3
 
-#: `aiserver.v1.SandBoxMigrationPhase`
+#: `simeon.v1.SandBoxMigrationPhase`
 PHASE_BACKING_UP = 1
 PHASE_CREATING = 2
 PHASE_MOVING = 3
@@ -765,7 +765,7 @@ class BoxBrokerService:
     ) -> tuple[int, bool]:
         """`GetSandBoxRunState`: `(state, image_update_available)`. A box
         credential that is not one of ours is the Docker box on the Mac,
-        which the host inside it now asks about (GrokBotService is in the
+        which the host inside it now asks about (ComputerService is in the
         served set): it is running, by definition, and updated from the Mac."""
         repository = SandBoxRepository.from_session(db)
         if caller.is_box_credential:

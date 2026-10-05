@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { AiService } from "../../packages/proto/simeon/v1/services.js";
-import { ClientNumericMetric } from "../../packages/proto/generated/aiserver/v1/aiserver_pb.js";
+import { ClientNumericMetric } from "../../packages/proto/generated/simeon/v1/simeon_pb.js";
 import { createSimeonBackendClient } from "../../shared/node/simeon-backend/simeon-inference.js";
 import { reportDesktopEdgeFailure } from "../desktop-edge-failures.js";
 

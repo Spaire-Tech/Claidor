@@ -186,7 +186,7 @@ import type {
 import type {
   SubagentAdapterArgs,
 } from "./runner/agent-adapters.js";
-import type { CursorRule as AgentRule } from "../packages/proto/generated/agent/v1/cursor_rules_pb.js";
+import type { AgentRule } from "../packages/proto/generated/agent/v1/agent_rules_pb.js";
 import { HOST_LOG_PREFIX, logHostLine } from "../shared/host-log.js";
 import { configuredSimeonModel } from "./extensions/inference/provider-session.js";
 

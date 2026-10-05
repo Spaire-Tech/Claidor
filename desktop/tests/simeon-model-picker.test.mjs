@@ -119,7 +119,7 @@ test("a refusal from the server is the server's own sentence, and the Mac bindin
     );
     const adapter = await readFile(path.join(repoRoot, "source/electron-main/models/simeon-model-catalog.ts"), "utf8");
     assert.equal(adapter.includes("createSimeonBackendClient"), false);
-    assert.equal(adapter.includes("aiserver_connect"), false);
+    assert.equal(adapter.includes("simeon_connect"), false);
     const services = await readFile(path.join(repoRoot, "source/electron-main/main-production-services.ts"), "utf8");
     assert.equal(services.includes("fetchSandAvailableModels"), false);
     assert.match(services, /fetchSimeonAvailableModels\(/);

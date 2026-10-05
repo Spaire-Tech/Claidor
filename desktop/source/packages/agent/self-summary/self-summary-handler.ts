@@ -17,7 +17,7 @@ import { prepareMessagesForCompaction } from "../../agent-summarization/prepare-
 import { collectAllSkillBlocks } from "../../agent-summarization/skill-persistence.js";
 import {
   SHORTER_OUTPUT_RETRY_PROMPT,
-  SUMMARIZATION_CURSOR_PROVIDER_OPTIONS,
+  SUMMARIZATION_SIMEON_PROVIDER_OPTIONS,
 } from "../../agent-summarization/summarization-handler.js";
 import { toUnredactedInteractionListener } from "../../agent-core/redacted-interaction-listener.js";
 import type { Context } from "../../context/core.js";
@@ -516,7 +516,7 @@ export class SelfSummarizer {
         _privacyMode: privacySource._privacyMode,
         role: "user",
         content: safeString(SELF_SUMMARIZATION_PROMPT),
-        providerOptions: SUMMARIZATION_CURSOR_PROVIDER_OPTIONS,
+        providerOptions: SUMMARIZATION_SIMEON_PROVIDER_OPTIONS,
       },
     ];
     const unredact = (message: RedactedCoreMessage) =>

@@ -1,6 +1,6 @@
 import { isSecretPluginVariableName } from "./secret-variable-names.js";
 const PLACEHOLDER = /\$\{([A-Z][A-Z0-9_]*)(?::-([^}]*))?\}/g;
-const LOADER_PROVIDED = new Set(["CURSOR_PLUGIN_ROOT", "CLAUDE_PLUGIN_ROOT"]);
+const LOADER_PROVIDED = new Set(["SIMEON_PLUGIN_ROOT", "CLAUDE_PLUGIN_ROOT", "CURSOR_PLUGIN_ROOT"]);
 const ACRONYMS = new Set(["api", "aws", "db", "dd", "gcp", "http", "https", "id", "mcp", "ssl", "tls", "uri", "url"]);
 const humanize = (name: string): string => name.split("_").filter(Boolean).map((word) => ACRONYMS.has(word.toLowerCase()) ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.toLowerCase().slice(1)).join(" ");
 function collectFromStrings(value: unknown, into: Map<string, string | undefined>): void {

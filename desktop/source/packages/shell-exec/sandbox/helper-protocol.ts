@@ -102,7 +102,7 @@ export function buildSandboxChildEnvironment(optionsEnv?: NodeJS.ProcessEnv): No
   const mergedEnv: NodeJS.ProcessEnv = {
     ...baseEnv,
     ...environment,
-    CURSOR_SANDBOX: "native",
+    SIMEON_SANDBOX: "native",
   };
   if (process.platform === "linux") {
     Object.assign(mergedEnv, withConfiguredRipgrepEnv(mergedEnv));

@@ -19,17 +19,17 @@ import type {
   ReadMcpResourceExecResult
 } from "../proto/generated/agent/v1/mcp_exec_pb.js";
 
-export const CURSOR_PLAYWRIGHT_PROVIDER_ID = "cursor-browser-extension";
-export const CURSOR_IDE_BROWSER_PROVIDER_ID = "simeon-ide-browser";
-export const CURSOR_SELF_CONTROL_PROVIDER_ID = "simeon-dev-control";
+export const SIMEON_PLAYWRIGHT_PROVIDER_ID = "cursor-browser-extension";
+export const SIMEON_IDE_BROWSER_PROVIDER_ID = "simeon-ide-browser";
+export const SIMEON_SELF_CONTROL_PROVIDER_ID = "simeon-dev-control";
 export const CUSTOM_USER_TOOLS_PROVIDER_ID = "custom-user-tools";
 
 export const NON_AUTHENTICATABLE_MCP_PROVIDER_IDS = new Set([
   "cursor-app-control",
   "cursor-backend-control",
-  CURSOR_PLAYWRIGHT_PROVIDER_ID,
-  CURSOR_IDE_BROWSER_PROVIDER_ID,
-  CURSOR_SELF_CONTROL_PROVIDER_ID,
+  SIMEON_PLAYWRIGHT_PROVIDER_ID,
+  SIMEON_IDE_BROWSER_PROVIDER_ID,
+  SIMEON_SELF_CONTROL_PROVIDER_ID,
   CUSTOM_USER_TOOLS_PROVIDER_ID,
   "fsd"
 ]);
@@ -41,8 +41,8 @@ export function isFirstPartyToolsNamespace(namespace: string | undefined): boole
 }
 
 export const BROWSER_MCP_PROVIDER_IDS = new Set([
-  CURSOR_SELF_CONTROL_PROVIDER_ID,
-  CURSOR_IDE_BROWSER_PROVIDER_ID
+  SIMEON_SELF_CONTROL_PROVIDER_ID,
+  SIMEON_IDE_BROWSER_PROVIDER_ID
 ]);
 
 export enum McpLeaseChangeReason {

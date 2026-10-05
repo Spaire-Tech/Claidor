@@ -2,7 +2,7 @@ import type { McpServerConfig } from "./mcp-display-runtime.js";
 import {
   bestEffortToken,
   createDashboardClient,
-  CURSOR_MARKETPLACE_REQUEST_TIMEOUT_MS,
+  SIMEON_MARKETPLACE_REQUEST_TIMEOUT_MS,
 } from "../marketplace/marketplace-client.js";
 import { rememberPluginLogoUrl } from "../marketplace/marketplace-logo-registry.js";
 export { bestEffortToken } from "../marketplace/marketplace-client.js";
@@ -96,7 +96,7 @@ export type MarketplaceListingDeps = Pick<
 const defaultMarketplaceListingDependencies: MarketplaceListingDeps = {
   bestEffortToken,
   createClient: createDashboardClient,
-  timeoutMs: CURSOR_MARKETPLACE_REQUEST_TIMEOUT_MS,
+  timeoutMs: SIMEON_MARKETPLACE_REQUEST_TIMEOUT_MS,
   rememberPluginLogoUrl,
 };
 function toPlugin(

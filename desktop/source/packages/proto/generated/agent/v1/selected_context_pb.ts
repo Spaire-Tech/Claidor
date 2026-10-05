@@ -9,7 +9,7 @@ import { Message, proto3, protoInt64 } from "@bufbuild/protobuf";
 import type { BinaryReadOptions, JsonReadOptions, JsonValue, MessageType, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Range } from "./utils_pb.js";
 import { LsDirectoryTreeNode } from "./ls_exec_pb.js";
-import { CursorRule } from "./cursor_rules_pb.js";
+import { AgentRule } from "./agent_rules_pb.js";
 import { AgentSkill } from "./agent_skills_pb.js";
 
 type MutableMessageType<T extends Message<T>> = { -readonly [P in keyof MessageType<T>]: MessageType<T>[P] };
@@ -790,31 +790,31 @@ var SelectedExternalLink: MessageType<SelectedExternalLink> = SelectedExternalLi
   { no: 5, name: "filename", kind: "scalar", T: 9, opt: true },
   { no: 6, name: "blob_id", kind: "scalar", T: 12, opt: true }
 ]);
-var SelectedCursorRule$Runtime = (() => class _SelectedCursorRule extends Message<_SelectedCursorRule> {
-  declare rule?: CursorRule;
-  constructor(data?: PartialMessage<_SelectedCursorRule>) {
+var SelectedAgentRule$Runtime = (() => class _SelectedAgentRule extends Message<_SelectedAgentRule> {
+  declare rule?: AgentRule;
+  constructor(data?: PartialMessage<_SelectedAgentRule>) {
     super();
-    proto3.util.initPartial(data, this as _SelectedCursorRule);
+    proto3.util.initPartial(data, this as _SelectedAgentRule);
   }
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): _SelectedCursorRule {
-    return new _SelectedCursorRule().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): _SelectedAgentRule {
+    return new _SelectedAgentRule().fromBinary(bytes, options);
   }
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): _SelectedCursorRule {
-    return new _SelectedCursorRule().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): _SelectedAgentRule {
+    return new _SelectedAgentRule().fromJson(jsonValue, options);
   }
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): _SelectedCursorRule {
-    return new _SelectedCursorRule().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): _SelectedAgentRule {
+    return new _SelectedAgentRule().fromJsonString(jsonString, options);
   }
-  static equals(a: _SelectedCursorRule | PlainMessage<_SelectedCursorRule> | undefined | null, b2: _SelectedCursorRule | PlainMessage<_SelectedCursorRule> | undefined | null): boolean {
-    return proto3.util.equals(_SelectedCursorRule as unknown as MessageType<_SelectedCursorRule>, a, b2);
+  static equals(a: _SelectedAgentRule | PlainMessage<_SelectedAgentRule> | undefined | null, b2: _SelectedAgentRule | PlainMessage<_SelectedAgentRule> | undefined | null): boolean {
+    return proto3.util.equals(_SelectedAgentRule as unknown as MessageType<_SelectedAgentRule>, a, b2);
   }
 })();
-export type SelectedCursorRule = InstanceType<typeof SelectedCursorRule$Runtime>;
-var SelectedCursorRule: MessageType<SelectedCursorRule> = SelectedCursorRule$Runtime as unknown as MessageType<SelectedCursorRule>;
-(SelectedCursorRule as MutableMessageType<SelectedCursorRule>).runtime = proto3;
-(SelectedCursorRule as MutableMessageType<SelectedCursorRule>).typeName = "agent.v1.SelectedCursorRule";
-(SelectedCursorRule as MutableMessageType<SelectedCursorRule>).fields = proto3.util.newFieldList(() => [
-  { no: 1, name: "rule", kind: "message", T: CursorRule }
+export type SelectedAgentRule = InstanceType<typeof SelectedAgentRule$Runtime>;
+var SelectedAgentRule: MessageType<SelectedAgentRule> = SelectedAgentRule$Runtime as unknown as MessageType<SelectedAgentRule>;
+(SelectedAgentRule as MutableMessageType<SelectedAgentRule>).runtime = proto3;
+(SelectedAgentRule as MutableMessageType<SelectedAgentRule>).typeName = "agent.v1.SelectedAgentRule";
+(SelectedAgentRule as MutableMessageType<SelectedAgentRule>).fields = proto3.util.newFieldList(() => [
+  { no: 1, name: "rule", kind: "message", T: AgentRule }
 ]);
 var SelectedGitDiff$Runtime = (() => class _SelectedGitDiff extends Message<_SelectedGitDiff> {
   declare content: string;
@@ -1132,36 +1132,36 @@ var SelectedPluginCapabilityRef: MessageType<SelectedPluginCapabilityRef> = Sele
   },
   { no: 5, name: "resolved_commit_sha", kind: "scalar", T: 9, opt: true }
 ]);
-var SelectedCursorCommand$Runtime = (() => class _SelectedCursorCommand extends Message<_SelectedCursorCommand> {
+var SelectedAgentCommand$Runtime = (() => class _SelectedAgentCommand extends Message<_SelectedAgentCommand> {
   declare name: string;
   declare content: string;
   declare pluginCapability?: SelectedPluginCapabilityRef;
   declare fullPath?: string;
   declare displayName?: string;
-  constructor(data?: PartialMessage<_SelectedCursorCommand>) {
+  constructor(data?: PartialMessage<_SelectedAgentCommand>) {
     super();
     this.name = "";
     this.content = "";
-    proto3.util.initPartial(data, this as _SelectedCursorCommand);
+    proto3.util.initPartial(data, this as _SelectedAgentCommand);
   }
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): _SelectedCursorCommand {
-    return new _SelectedCursorCommand().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): _SelectedAgentCommand {
+    return new _SelectedAgentCommand().fromBinary(bytes, options);
   }
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): _SelectedCursorCommand {
-    return new _SelectedCursorCommand().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): _SelectedAgentCommand {
+    return new _SelectedAgentCommand().fromJson(jsonValue, options);
   }
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): _SelectedCursorCommand {
-    return new _SelectedCursorCommand().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): _SelectedAgentCommand {
+    return new _SelectedAgentCommand().fromJsonString(jsonString, options);
   }
-  static equals(a: _SelectedCursorCommand | PlainMessage<_SelectedCursorCommand> | undefined | null, b2: _SelectedCursorCommand | PlainMessage<_SelectedCursorCommand> | undefined | null): boolean {
-    return proto3.util.equals(_SelectedCursorCommand as unknown as MessageType<_SelectedCursorCommand>, a, b2);
+  static equals(a: _SelectedAgentCommand | PlainMessage<_SelectedAgentCommand> | undefined | null, b2: _SelectedAgentCommand | PlainMessage<_SelectedAgentCommand> | undefined | null): boolean {
+    return proto3.util.equals(_SelectedAgentCommand as unknown as MessageType<_SelectedAgentCommand>, a, b2);
   }
 })();
-export type SelectedCursorCommand = InstanceType<typeof SelectedCursorCommand$Runtime>;
-var SelectedCursorCommand: MessageType<SelectedCursorCommand> = SelectedCursorCommand$Runtime as unknown as MessageType<SelectedCursorCommand>;
-(SelectedCursorCommand as MutableMessageType<SelectedCursorCommand>).runtime = proto3;
-(SelectedCursorCommand as MutableMessageType<SelectedCursorCommand>).typeName = "agent.v1.SelectedCursorCommand";
-(SelectedCursorCommand as MutableMessageType<SelectedCursorCommand>).fields = proto3.util.newFieldList(() => [
+export type SelectedAgentCommand = InstanceType<typeof SelectedAgentCommand$Runtime>;
+var SelectedAgentCommand: MessageType<SelectedAgentCommand> = SelectedAgentCommand$Runtime as unknown as MessageType<SelectedAgentCommand>;
+(SelectedAgentCommand as MutableMessageType<SelectedAgentCommand>).runtime = proto3;
+(SelectedAgentCommand as MutableMessageType<SelectedAgentCommand>).typeName = "agent.v1.SelectedAgentCommand";
+(SelectedAgentCommand as MutableMessageType<SelectedAgentCommand>).fields = proto3.util.newFieldList(() => [
   {
     no: 1,
     name: "name",
@@ -1943,10 +1943,10 @@ var SelectedContext$Runtime = (() => class _SelectedContext extends Message<_Sel
   declare terminalSelections: SelectedTerminalSelection[];
   declare folders: SelectedFolder[];
   declare externalLinks: SelectedExternalLink[];
-  declare cursorRules: SelectedCursorRule[];
+  declare agentRules: SelectedAgentRule[];
   declare gitDiff?: SelectedGitDiff;
   declare gitDiffFromBranchToMain?: SelectedGitDiffFromBranchToMain;
-  declare cursorCommands: SelectedCursorCommand[];
+  declare agentCommands: SelectedAgentCommand[];
   declare documentations: SelectedDocumentation[];
   declare uiElements: SelectedUIElement[];
   declare consoleLogs: SelectedConsoleLog[];
@@ -1972,8 +1972,8 @@ var SelectedContext$Runtime = (() => class _SelectedContext extends Message<_Sel
     this.terminalSelections = [];
     this.folders = [];
     this.externalLinks = [];
-    this.cursorRules = [];
-    this.cursorCommands = [];
+    this.agentRules = [];
+    this.agentCommands = [];
     this.documentations = [];
     this.uiElements = [];
     this.consoleLogs = [];
@@ -2016,10 +2016,10 @@ var SelectedContext: MessageType<SelectedContext> = SelectedContext$Runtime as u
   { no: 7, name: "terminal_selections", kind: "message", T: SelectedTerminalSelection, repeated: true },
   { no: 8, name: "folders", kind: "message", T: SelectedFolder, repeated: true },
   { no: 9, name: "external_links", kind: "message", T: SelectedExternalLink, repeated: true },
-  { no: 10, name: "cursor_rules", kind: "message", T: SelectedCursorRule, repeated: true },
+  { no: 10, name: "agent_rules", kind: "message", T: SelectedAgentRule, repeated: true },
   { no: 18, name: "git_diff", kind: "message", T: SelectedGitDiff, opt: true },
   { no: 11, name: "git_diff_from_branch_to_main", kind: "message", T: SelectedGitDiffFromBranchToMain, opt: true },
-  { no: 12, name: "cursor_commands", kind: "message", T: SelectedCursorCommand, repeated: true },
+  { no: 12, name: "agent_commands", kind: "message", T: SelectedAgentCommand, repeated: true },
   { no: 13, name: "documentations", kind: "message", T: SelectedDocumentation, repeated: true },
   { no: 14, name: "ui_elements", kind: "message", T: SelectedUIElement, repeated: true },
   { no: 15, name: "console_logs", kind: "message", T: SelectedConsoleLog, repeated: true },
@@ -2382,4 +2382,4 @@ var InvocationContext_IdeState_ViewedPullRequest: MessageType<InvocationContext_
 ]);
 
 
-export { SelectedPluginCapabilityType, SelectedImage, SelectedImage_BlobIdWithData, SelectedImage_Dimension, PromptUploadRef, SelectedDocument, SelectedDocument_BlobIdWithData, SelectedVideo, SelectedVideo_BlobIdWithData, SelectedVideo_SignedUrl, ExtraContextEntry, SelectedFile, SelectedCodeSelection, SelectedTerminal, SelectedTerminalSelection, SelectedFolder, SelectedExternalLink, SelectedCursorRule, SelectedGitDiff, SelectedGitDiffFromBranchToMain, SelectedGitCommit, SelectedPullRequest, SelectedGitPRDiffSelection, SelectedPluginCapabilityRef, SelectedCursorCommand, SelectedDocumentation, SelectedPastChat, RecentAgent, RecentAgentsContext, CallFrame, StackTrace, SelectedConsoleLog, SelectedUIElement, SelectedSubagent, SelectedBrowser, SelectedAgenticGitActionCommitParams, SelectedAgenticGitActionCreateBranchParams, SelectedAgenticGitFileWithStatus, SelectedAgenticGitActionPushParams, SelectedAgenticGitActionFixMergeConflictsParams, SelectedAgenticGitActionBabysitPrInCloudParams, SelectedAgenticGitActionUpdateBranchParams, SelectedAgenticGitActionPullLocallyParams, SelectedAgenticGitAction, SelectedGitBranchContext, SelectedContext, InvocationContext, InvocationContext_SlackThread, InvocationContext_MicrosoftTeamsThread, InvocationContext_GithubPR, InvocationContext_IdeState, InvocationContext_IdeState_File, InvocationContext_IdeState_File_CursorPosition, InvocationContext_IdeState_ViewedPullRequest };
+export { SelectedPluginCapabilityType, SelectedImage, SelectedImage_BlobIdWithData, SelectedImage_Dimension, PromptUploadRef, SelectedDocument, SelectedDocument_BlobIdWithData, SelectedVideo, SelectedVideo_BlobIdWithData, SelectedVideo_SignedUrl, ExtraContextEntry, SelectedFile, SelectedCodeSelection, SelectedTerminal, SelectedTerminalSelection, SelectedFolder, SelectedExternalLink, SelectedAgentRule, SelectedGitDiff, SelectedGitDiffFromBranchToMain, SelectedGitCommit, SelectedPullRequest, SelectedGitPRDiffSelection, SelectedPluginCapabilityRef, SelectedAgentCommand, SelectedDocumentation, SelectedPastChat, RecentAgent, RecentAgentsContext, CallFrame, StackTrace, SelectedConsoleLog, SelectedUIElement, SelectedSubagent, SelectedBrowser, SelectedAgenticGitActionCommitParams, SelectedAgenticGitActionCreateBranchParams, SelectedAgenticGitFileWithStatus, SelectedAgenticGitActionPushParams, SelectedAgenticGitActionFixMergeConflictsParams, SelectedAgenticGitActionBabysitPrInCloudParams, SelectedAgenticGitActionUpdateBranchParams, SelectedAgenticGitActionPullLocallyParams, SelectedAgenticGitAction, SelectedGitBranchContext, SelectedContext, InvocationContext, InvocationContext_SlackThread, InvocationContext_MicrosoftTeamsThread, InvocationContext_GithubPR, InvocationContext_IdeState, InvocationContext_IdeState_File, InvocationContext_IdeState_File_CursorPosition, InvocationContext_IdeState_ViewedPullRequest };

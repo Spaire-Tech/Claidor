@@ -10,7 +10,7 @@ package is that server, split by what the app calls:
 
 - `listeners_relay.py` — the five JSON routes (`/sand/listener-*`,
   `/sand/automation-*`), plus the webhook mint;
-- `listeners_automations.py` — `aiserver.v1.AutomationsService`
+- `listeners_automations.py` — `simeon.v1.AutomationsService`
   (List/Create/Update/DeleteSandAutomation);
 - `listeners_connections.py` — the `DashboardService` Slack/SCM reads,
   the install pages for Simeon's Slack app and GitHub App;

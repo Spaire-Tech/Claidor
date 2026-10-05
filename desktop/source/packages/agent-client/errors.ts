@@ -1,6 +1,6 @@
 import { Code } from "@connectrpc/connect";
 
-import { ErrorDetails, ErrorDetails_Error } from "../proto/generated/aiserver/v1/utils_pb.js";
+import { ErrorDetails, ErrorDetails_Error } from "../proto/generated/simeon/v1/utils_pb.js";
 import { findBlobNotFoundError } from "../agent-kv/blob-not-found-error.js";
 
 export interface AgentErrorDisplayInfo {

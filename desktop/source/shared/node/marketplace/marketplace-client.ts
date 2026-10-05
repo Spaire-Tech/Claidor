@@ -5,7 +5,7 @@ import { DashboardService } from "../../../packages/proto/simeon/v1/services.js"
 import { createClientChecksum, getSandInferenceBackendUrl } from "../simeon-backend/simeon-inference.js";
 import { getSandBackendClientHeaders } from "../sand-client-metadata.js";
 
-export const CURSOR_MARKETPLACE_REQUEST_TIMEOUT_MS = 12_000;
+export const SIMEON_MARKETPLACE_REQUEST_TIMEOUT_MS = 12_000;
 export interface MarketplaceHeader { set(name: string, value: string): void }
 export interface MarketplaceRequest { readonly header: MarketplaceHeader }
 export type MarketplaceNext<Request extends MarketplaceRequest, Response> = (request: Request) => Promise<Response>;

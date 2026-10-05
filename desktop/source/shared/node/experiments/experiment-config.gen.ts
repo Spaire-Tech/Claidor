@@ -213,7 +213,7 @@ export const FLAGS = {
       },
       // Server-controlled rollout of Sand's product-analytics pipeline (DAU / WAU,
       // messages-per-user, and the starter set of product events). When ON for the
-      // signed-in Cursor user, the Sand host activates its analytics buffer and ships
+      // signed-in Simeon user, the Sand host activates its analytics buffer and ships
       // events to AnalyticsService.TrackEvents; when OFF (the default for everyone)
       // the host holds then drops events and trackEvent is a no-op. Evaluated in the
       // Sand host via its SandExperimentService — a rollout/kill switch with no app
@@ -230,7 +230,7 @@ export const FLAGS = {
         default: true
       },
       // Rollout of Sand's customer-facing action audit trail: when ON for the
-      // signed-in Cursor user, the Sand host reports agent actions (stdio MCP tool
+      // signed-in Simeon user, the Sand host reports agent actions (stdio MCP tool
       // calls, shell commands, browser navigations, computer-use session summaries)
       // to DashboardService.RecordSandAuditEvents, and the backend emits
       // server-observed audit events for HTTP MCP calls inside ExecuteSandMcpTool.
@@ -642,7 +642,7 @@ export const FLAGS = {
       // The in-client Origin pull-request experience (userID-bucketed). While
       // OFF, the Codebase repo Pull Requests tab links every repo kind to the
       // in-portal coming-soon teaser at /codebase/:team/:repo/pulls instead of
-      // the review.cursor.com / portal review destinations.
+      // the simeonlabs.com / portal review destinations.
       origin_pull_requests_enabled_in_client: {
         client: true,
         default: false
@@ -658,7 +658,7 @@ export const FLAGS = {
         default: false
       },
       // When ON, PR references in the Codebase (Origin) browse UI link to the
-      // GitHub PR (for repos with a GitHub mirror) instead of review.cursor.com —
+      // GitHub PR (for repos with a GitHub mirror) instead of simeonlabs.com —
       // for early-access design partners who still work in GitHub PRs.
       use_github_pr_links_in_origin_browse: {
         client: true,
@@ -666,7 +666,7 @@ export const FLAGS = {
       },
       // Lets the managed `automations` service account request reviewers on Origin
       // changes. When on, the Origin reviewer-candidate list + RequestReview
-      // validation switch from caller-scoped to team-scoped for managed Cursor
+      // validation switch from caller-scoped to team-scoped for managed Simeon
       // service accounts (which have no org membership of their own), so an
       // automation can request any reviewer candidate of the repo-owner team.
       // Client exposure keeps the Automations editor aligned with this rollout.
@@ -746,7 +746,7 @@ export const FLAGS = {
         default: false
       },
       // Perf Loop (E3): default-off kill switch that defers activation of
-      // anysphere.cursor-agent-exec from the eager "*" activation event to
+      // the agent-exec extension from the eager "*" activation event to
       // "onStartupFinished". cursor-agent-exec dominates the eager-activation
       // window on Glass root cold boots (~800ms code-load + ~9ms activate call),
       // so moving it out of the startup-critical eager window reclaims that time.
@@ -887,7 +887,7 @@ export const FLAGS = {
         client: true,
         default: false
       },
-      // Portal team-rules UI: agent type picker (Cursor / Sand / Both) and list badges.
+      // Portal team-rules UI: agent type picker (Simeon / Sand / Both) and list badges.
       // Backend agentType field stays available regardless; this gate only hides the
       // dashboard controls until rollout. Read via useGateValue in portal-website.
       team_rule_agent_type_ui: {
@@ -1014,7 +1014,7 @@ export const FLAGS = {
         default: false
       },
       // Consolidated review-agents growth kit on the portal (shared enable CTAs,
-      // From Cursor cards, deep links, invite-modal CTA, upsell destinations for
+      // From Simeon cards, deep links, invite-modal CTA, upsell destinations for
       // bugbot / security / pr-routing / self-driving). OFF: every Bugbot growth
       // surface runs its pre-kit code path byte-for-byte. ON: the wrapped
       // surfaces route through the agent-parameterized kit in
@@ -1208,8 +1208,8 @@ export const FLAGS = {
         client: true,
         default: true
       },
-      // Anysphere-internal-only CPU monitor: detects sustained high CPU usage
-      // across the Cursor process tree and offers to capture and upload a process
+      // Simeon Labs-internal-only CPU monitor: detects sustained high CPU usage
+      // across the Simeon process tree and offers to capture and upload a process
       // snapshot (similar to the memory monitor's heap snapshot flow). The client
       // additionally requires the server-provided internal/dev flag, so enabling
       // this gate for external users has no effect. Default OFF; tuned via the
@@ -1470,7 +1470,7 @@ export const FLAGS = {
       },
       /**
        * Freehand annotation on PromptInput attached images (Glass, composer
-       * message edit, Cursor Review). When off, the image lightbox stays
+       * message edit, Simeon Review). When off, the image lightbox stays
        * available without a drawing canvas.
        */
       prompt_input_image_annotation: {
@@ -1722,8 +1722,8 @@ export const FLAGS = {
         default: false
       },
       // Phase-21 pr-page-portal-web migration gates. Client emitters (VS Code /
-      // Glass) require BOTH to emit cursor.com portal PR links, matching the
-      // portal-website emitter convention (useCursorPortalReviewLinksEnabled):
+      // Glass) require BOTH to emit Simeon portal PR links, matching the
+      // portal-website emitter convention (useAgentPortalReviewLinksEnabled):
       // `simeon_review_redirects` is the migration kill switch (ships dark;
       // per-owner enablement rides on its Statsig targeting), and
       // `simeon_review_pages` alone is not a safe emitter condition because
@@ -2047,8 +2047,8 @@ export const FLAGS = {
         default: false
       },
       /**
-       * Gates the Cursor Organization <-> xAI team billing link + credit
-       * transfer integration (org admin xAI Console, the link/unlink/transfer
+       * Gates the Simeon Organization <-> the partner lab team billing link + credit
+       * transfer integration (org admin the partner lab Console, the link/unlink/transfer
        * RPCs, and the start-link flow that mints callback states). When OFF: the
        * portal hides the integration and the RPCs reject, which also starves the
        * partner callback of valid states. Standard userID-style gate (email /
@@ -2056,7 +2056,7 @@ export const FLAGS = {
        * idType gate; the unsigned browser callback deliberately does not re-check
        * it. `client: true` because the portal reads it via useGateValue.
        */
-      xai_team_link: {
+      partner_team_link: {
         client: true,
         default: false
       },
@@ -2467,7 +2467,7 @@ export const FLAGS = {
         default: false
       },
       // Routes built-in Gemini video subagents through the Developer API Files
-      // path, including the larger signed-URL attachment limit and Cursor's
+      // path, including the larger signed-URL attachment limit and Simeon's
       // Google AI Studio credential. Keep disabled until the backend and client
       // changes have landed.
       gemini_video_developer_api: {
@@ -2896,7 +2896,7 @@ export const FLAGS = {
         client: true,
         default: false
       },
-      /** Per-user Slack default-worker rules (repo -> My Machines worker): launch-path injection, the `@Cursor worker` management command, and the dashboard "Default Workers" section (client-read for the portal UI gate). */
+      /** Per-user Slack default-worker rules (repo -> My Machines worker): launch-path injection, the `@Simeon worker` management command, and the dashboard "Default Workers" section (client-read for the portal UI gate). */
       cloud_agent_slack_default_worker: {
         client: true,
         default: false
@@ -3183,7 +3183,7 @@ export const FLAGS = {
         default: false
       },
       /**
-       * Internal Anysphere: default tsgo on for engineers who have not previously
+       * Internal Simeon Labs: default tsgo on for engineers who have not previously
        * installed native-preview. When on, installs `typescriptteam.native-preview`
        * when missing and sets `js/ts.experimental.useTsgo` at user scope. Scoped
        * to team 1 in Statsig; client also guards with `isStaffUser()`.
@@ -3606,7 +3606,7 @@ export const EXPERIMENTS = {
           enabled: parseBoolean
         }
       },
-      // Internal Anysphere user-level tsgo memory experiment. Control preserves
+      // Internal Simeon Labs user-level tsgo memory experiment. Control preserves
       // auto imports; treatment disables their default and restarts native-preview.
       tsgo_disable_auto_imports_internal: {
         client: true,
@@ -4356,7 +4356,7 @@ export const EXPERIMENTS = {
       },
       /**
        * Experiment for the CLI install in-app ad.
-       * Shows an ad to users who have claude/codex CLI but not Cursor agent CLI.
+       * Shows an ad to users who have claude/codex CLI but not Simeon agent CLI.
        * This is a separate experiment from terminal_tip to keep assignment close to exposure.
        */
       cli_install_ad: {
@@ -5529,7 +5529,7 @@ Requirements:
       browser_default_url_config: {
         client: true,
         fallbackValues: {
-          defaultUrl: "https://cursor.com"
+          defaultUrl: "https://simeonlabs.com"
         }
       },
       glass_per_app_tabs_config: {

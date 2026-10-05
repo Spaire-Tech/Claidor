@@ -12,7 +12,7 @@ export const SCOPED_CIPHERTEXT_PREFIX = "scoped:v1:";
 export const ACCOUNT_SCOPE_PATTERN = /^[0-9a-f]{64}$/u;
 export const ACCESS_TOKEN_KEY = "cursor-access-token";
 export const REFRESH_TOKEN_KEY = "cursor-refresh-token";
-export const CURSOR_AUTH_KEYS = [ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY] as const;
+export const SIMEON_AUTH_KEYS = [ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY] as const;
 export const LEGACY_PLAINTEXT_PREFIX = "plaintext:v1:";
 export const SECURE_STORAGE_READY_TIMEOUT_MS = 5_000;
 export const SECURE_STORAGE_POLL_INTERVAL_MS = 200;
@@ -52,9 +52,9 @@ export function parseStoredEncryptedSecret(stored: string): StoredEncryptedSecre
 }
 
 export function withoutAccountAuth(map: Readonly<Record<string, string>>): Readonly<Record<string, string>> {
-  if (!CURSOR_AUTH_KEYS.some((key) => key in map)) return map;
+  if (!SIMEON_AUTH_KEYS.some((key) => key in map)) return map;
   const next = { ...map };
-  for (const key of CURSOR_AUTH_KEYS) delete next[key];
+  for (const key of SIMEON_AUTH_KEYS) delete next[key];
   return next;
 }
 

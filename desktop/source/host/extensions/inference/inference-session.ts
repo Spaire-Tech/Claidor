@@ -3,7 +3,7 @@ import { DASHBOARD_SERVICE_NAME } from "../../../packages/proto/simeon/v1/servic
 import { join } from "node:path";
 
 import { SAND_COMPUTER_USE_MODEL_SELECTION, SAND_COMPUTER_USE_SUBAGENT_MODEL_ID, isSandAgentModelSelection, type SandAgentModelSelection } from "../../../shared/agents/sand-agent-model.js";
-import { type InferenceReason } from "../../../packages/proto/generated/aiserver/v1/inference_pb.js";
+import { type InferenceReason } from "../../../packages/proto/generated/simeon/v1/inference_pb.js";
 import { createMockPromptExecutor } from "../../../packages/chat-inference/mock-prompt-executor.js";
 import {
   createSimeonInferencePromptSession,

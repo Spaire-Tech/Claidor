@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { AnalyticsService } from "../../packages/proto/generated/aiserver/v1/analytics_connect.js";
+import { AnalyticsService } from "../../packages/proto/generated/simeon/v1/analytics_connect.js";
 import { createSimeonBackendClient } from "../../shared/node/simeon-backend/simeon-inference.js";
 import { getSandClientVersion } from "../../shared/node/sand-client-metadata.js";
 import { SandDesktopStructuredLogTelemetry, type DesktopStructuredLogTelemetryOptions } from "../telemetry/desktop-structured-log-telemetry.js";

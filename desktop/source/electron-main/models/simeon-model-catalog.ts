@@ -1,11 +1,11 @@
-import { AvailableModelsResponse, AvailableModelsResponse_AvailableModel } from "../../packages/proto/generated/aiserver/v1/aiserver_pb.js";
+import { AvailableModelsResponse, AvailableModelsResponse_AvailableModel } from "../../packages/proto/generated/simeon/v1/simeon_pb.js";
 import { simeonApiData, type SimeonApiAuth } from "../../shared/node/simeon-backend/simeon-api.js";
 
 // The model picker, on Simeon Labs' server's own menu.
 //
 // Until 24 September 2026 the Mac's `getAvailableModels` binding
 // (`main-production-services.ts`, `fetchAvailableModels`) called
-// `aiserver.v1.AiService/AvailableModels` through `fetchSandAvailableModels`,
+// `simeon.v1.AiService/AvailableModels` through `fetchSandAvailableModels`,
 // a Connect RPC that Simeon Labs' server never served, so the picker got a
 // 404 wrapped as a ConnectError and the renderer showed the error instead
 // of a list. The menu the server does serve is `GET /desktop/api/models/available`

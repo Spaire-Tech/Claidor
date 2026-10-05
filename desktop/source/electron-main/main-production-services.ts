@@ -673,7 +673,7 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
         },
       );
       const remoteConnector = connectorEgress.wrap(pauseControl.guard(baseRemoteConnector));
-      // The migration watcher streams `GrokBotService/WatchSandBoxMigration`,
+      // The migration watcher streams `ComputerService/WatchSandBoxMigration`,
       // an upstream RPC that only means something for a cloud box. Until
       // 24 September 2026 it was started whatever the box runtime, so on
       // the default `local-docker` runtime it asked Simeon Labs' server for

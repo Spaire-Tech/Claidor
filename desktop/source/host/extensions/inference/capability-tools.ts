@@ -4,7 +4,7 @@ import { fetchWebPage, type WebFetchOptions, type WebFetchResult } from "../../.
 // The agent's `web_search` and `web_fetch` tools, behind the two seams the
 // host composition already had (`production.ts`, `createWebSearch` and
 // `createWebFetch`). Until 19 September 2026 both were Connect RPC calls on
-// `aiserver.v1.AiService` that Simeon never served
+// `simeon.v1.AiService` that Simeon never served
 // (`docs/services-core.md`).
 
 export interface WebSearchDocument { readonly url: string; readonly title: string; readonly text: string }

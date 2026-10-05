@@ -1,4 +1,4 @@
-"""`aiserver.v1.DashboardService`, the part every Connect call pre-flights
+"""`simeon.v1.DashboardService`, the part every Connect call pre-flights
 (25 September 2026).
 
 The app's Connect interceptor looks up the person's privacy mode before

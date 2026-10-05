@@ -39,7 +39,7 @@ export interface SandWindowPlacement {
 }
 
 export function isCloudAgentVm(env: NodeJS.ProcessEnv = process.env): boolean {
-  return ["IS_CLOUD_AGENT", "EVERYSPHERE_DEV_IN_CLOUD", "CURSOR_AGENT"].some((key) => {
+  return ["IS_CLOUD_AGENT", "EVERYSPHERE_DEV_IN_CLOUD", "SIMEON_AGENT"].some((key) => {
     const value = env[key]?.trim().toLowerCase();
     return value != null && value !== "" && value !== "0" && value !== "false";
   });

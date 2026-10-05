@@ -1,5 +1,5 @@
 import { AiService } from "../../packages/proto/simeon/v1/services.js";
-import { AvailableModelsRequest, AvailableModelsScope } from "../../packages/proto/generated/aiserver/v1/aiserver_pb.js";
+import { AvailableModelsRequest, AvailableModelsScope } from "../../packages/proto/generated/simeon/v1/simeon_pb.js";
 import { createSimeonBackendClient, type SandInferenceOptions } from "../../shared/node/simeon-backend/simeon-inference.js";
 
 export const SAND_AVAILABLE_MODELS_SCOPE = "USER_AVAILABLE" as const;

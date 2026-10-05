@@ -19,7 +19,7 @@ import {
   AgentStoreMultipartWriteCompletion as AgentStoreMultipartWriteCompletionProto,
   AgentStoreMultipartUploadedPart,
   AgentStoreMultipartWriteAbort as AgentStoreMultipartWriteAbortProto,
-} from "../proto/generated/aiserver/v1/background_composer_pb.js";
+} from "../proto/generated/simeon/v1/background_composer_pb.js";
 import { CloudAgentService } from "../proto/simeon/v1/services.js";
 import { normalizeS3Etag } from "./etag.js";
 import { AgentStoreDirectoryListingError, AgentStoreProtocolError, AgentStoreUnauthorizedError } from "./bcs-client.js";

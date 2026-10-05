@@ -1,8 +1,8 @@
-"""`aiserver.v1.BackgroundComposerService` and `aiserver.v1.AiService`
+"""`simeon.v1.CloudAgentService` and `simeon.v1.AiService`
 (25 September 2026): the Connect surface the app's cloud-agent client
 speaks, served over the maty queue. `cloud_agents_service.py` is the
 projection; this module is the wire. Field names are the generated
-protos' JSON spellings (`background_composer_pb.ts`, `aiserver_pb.ts`),
+protos' JSON spellings (`background_composer_pb.ts`, `simeon_pb.ts`),
 and enums travel as integers, which protobuf JSON accepts.
 
 Sixteen methods of the first service and one of the second. `GetTeams`
@@ -180,7 +180,7 @@ async def list_environments(call: ConnectCall) -> dict[str, Any]:
 @service.unary("GetBackgroundComposerUserSettings", auth="desktop-or-box")
 async def get_background_composer_user_settings(call: ConnectCall) -> dict[str, Any]:
     """Every field is optional; the Mac reads `prReviewOpenDestination`
-    (`electron-main/account/cursor-pr-review.ts`) and falls back to its own
+    (`electron-main/account/pr-review.ts`) and falls back to its own
     default on 0. the upstream app stored these per account; Simeon has no settings
     page for them yet, so the answer is the empty message (25 September
     2026, found on the founder's Mac as a "not found" at launch)."""
@@ -192,7 +192,7 @@ async def update_background_composer_user_settings(call: ConnectCall) -> dict[st
     return {}
 
 
-# --- aiserver.v1.AiService/AvailableModels ----------------------------------
+# --- simeon.v1.AiService/AvailableModels ----------------------------------
 
 
 def available_model_row(row: dict[str, Any]) -> dict[str, Any] | None:

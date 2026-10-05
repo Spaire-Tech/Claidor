@@ -1,4 +1,4 @@
-"""`aiserver.v1.AutomationsService`, the four methods the app's cloud
+"""`simeon.v1.AutomationsService`, the four methods the app's cloud
 sync calls (25 September 2026; `sand-automation-cloud-sync.ts`).
 
 The app mirrors every routine a server can fire as a shadow workflow:

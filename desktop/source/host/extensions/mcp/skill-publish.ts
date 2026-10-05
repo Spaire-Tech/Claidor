@@ -10,7 +10,7 @@ import {
   GetTeamsRequest,
   PublishPluginRequest,
   UnpublishPluginRequest,
-} from "../../../packages/proto/generated/aiserver/v1/dashboard_pb.js";
+} from "../../../packages/proto/generated/simeon/v1/dashboard_pb.js";
 import { errorLogTag } from "../../../shared/errors.js";
 import { HOST_LOG_PREFIX, clipForHostLog, logHostLine } from "../../../shared/host-log.js";
 import {

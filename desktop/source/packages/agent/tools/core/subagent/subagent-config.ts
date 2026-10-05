@@ -33,7 +33,7 @@ export function getSubagentTypeName(subagentType: SubagentType): string {
   if (subagentType.type.case === "debug") {
     return "debug";
   }
-  if (subagentType.type.case === "cursorGuide") {
+  if (subagentType.type.case === "simeonGuide") {
     return "cursor-guide";
   }
   if (subagentType.type.case === "mediaReview") {

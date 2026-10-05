@@ -223,19 +223,19 @@ export function verifyFidelityActivationPayloads({ archivePath } = {}) {
       runtime: "electron-main",
       path: "dist/electron-main/main.cjs",
       activation: "cursor-auth",
-      markers: ["createCursorAuthWiring", "SUPPORTED_DASHBOARD_ACTIONS", "local-tool-ceiling", "requestLimitIncrease"],
+      markers: ["createAccountAuthWiring", "SUPPORTED_DASHBOARD_ACTIONS", "local-tool-ceiling", "requestLimitIncrease"],
     },
     {
       runtime: "host",
       path: "dist/host/host-main.cjs",
       activation: "typed-tool-producer",
-      markers: ["ClientSideToolV2Producer", "encodeClientSideToolV2Message", "protobuf-base64", "aiserver.v1.ClientSideToolV2Call"],
+      markers: ["ClientSideToolV2Producer", "encodeClientSideToolV2Message", "protobuf-base64", "simeon.v1.ClientSideToolV2Call"],
     },
     {
       runtime: "node-agent-coordinator",
       path: "dist/node-agent-coordinator/main.cjs",
       activation: "typed-tool-relay",
-      markers: ["ClientSideToolV2Relay", "parseClientSideToolV2TransportEvent", "materializeClientSideToolV2RendererEvent", "aiserver.v1.ClientSideToolV2Result"],
+      markers: ["ClientSideToolV2Relay", "parseClientSideToolV2TransportEvent", "materializeClientSideToolV2RendererEvent", "simeon.v1.ClientSideToolV2Result"],
     },
   ];
   return contracts.map(contract => {

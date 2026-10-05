@@ -1,7 +1,7 @@
 import type { MethodInfoUnary } from "@bufbuild/protobuf";
 import { DashboardService } from "../../../packages/proto/simeon/v1/services.js";
-import { GetUserPrivacyModeRequest, type GetUserPrivacyModeResponse } from "../../../packages/proto/generated/aiserver/v1/dashboard_pb.js";
-import { PrivacyMode as ProtoPrivacyMode } from "../../../packages/proto/generated/aiserver/v1/privacy_mode_pb.js";
+import { GetUserPrivacyModeRequest, type GetUserPrivacyModeResponse } from "../../../packages/proto/generated/simeon/v1/dashboard_pb.js";
+import { PrivacyMode as ProtoPrivacyMode } from "../../../packages/proto/generated/simeon/v1/privacy_mode_pb.js";
 import { createSimeonBackendClient } from "../../../shared/node/simeon-backend/simeon-inference.js";
 import type { DeadlinePolicy, PollingPolicy, RetryPolicy } from "../../../internal/scheduling.js";
 export const PrivacyModes = { Unspecified: 0, NoStorage: 1, NoTraining: 2, UsageDataTrainingAllowed: 3, UsageCodebaseTrainingAllowed: 4 } as const;

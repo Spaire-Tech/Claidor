@@ -28,7 +28,7 @@ import {
   ReadToolSuccess,
 } from "../../../../proto/generated/agent/v1/read_tool_pb.js";
 import { ToolCall } from "../../../../proto/generated/agent/v1/agent_pb.js";
-import type { CursorRule as AgentRule } from "../../../../proto/generated/agent/v1/cursor_rules_pb.js";
+import type { AgentRule } from "../../../../proto/generated/agent/v1/agent_rules_pb.js";
 import type { HookAdditionalContext } from "../../../../proto/generated/agent/v1/hook_additional_context_pb.js";
 import {
   ToolCallError,
@@ -422,8 +422,8 @@ export function createReadTool(
       meta.stateHandler?.recordReadPath?.(safeString(resolvedPath));
       meta.stepReadPathDedup?.add(resolvedPath);
       const relatedRules = (meta.agentRules ?? []).filter(rule => rule.fullPath !== undefined && normalizeComparablePath(rule.fullPath) === normalizeComparablePath(resolvedPath));
-      result.result.value.relatedCursorRules = relatedRules;
-      result.result.value.relatedCursorRulePaths = relatedRules.flatMap(rule => rule.fullPath === undefined ? [] : [rule.fullPath]);
+      result.result.value.relatedAgentRules = relatedRules;
+      result.result.value.relatedAgentRulePaths = relatedRules.flatMap(rule => rule.fullPath === undefined ? [] : [rule.fullPath]);
       const eligibleSkills = filterByAgentEnvironment(Array.from(meta.agentSkills ?? []), meta.stateHandler?.agentType);
       const relatedSkills = eligibleSkills.filter(skill => skill.disableModelInvocation !== true && skill.parseError === undefined && skill.fullPath !== undefined && normalizeComparablePath(skill.fullPath) === normalizeComparablePath(resolvedPath));
       relatedSkillsBySuccess.set(result.result.value, relatedSkills);
@@ -479,7 +479,7 @@ export function createReadTool(
       ...(sparseLineNumbers === undefined ? {} : { sparseLineNumbers }),
     };
     const formatted = formatCodeBlock({ content: rawContent, filePath: success.path, startLineNumber: success.readRange?.startLine ?? 1, totalLineNumbersInFile: success.totalLines, formattingOptions: finalFormattingOptions }, { addAmountOfOmittedLines: success.readRange !== undefined && (success.readRange.startLine > 1 || success.readRange.endLine < success.totalLines) });
-    return createStringResult(mergeReminders(formatted, success.relatedCursorRules, relatedSkillsBySuccess.get(success) ?? []));
+    return createStringResult(mergeReminders(formatted, success.relatedAgentRules, relatedSkillsBySuccess.get(success) ?? []));
   };
 
   return createZodAgentTool(options.toolIdentifier ?? "READ", {

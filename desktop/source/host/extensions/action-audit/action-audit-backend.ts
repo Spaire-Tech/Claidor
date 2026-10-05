@@ -8,7 +8,7 @@ import {
   SandAuditEvent_ComputerUseSession,
   SandAuditEvent_McpToolCall,
   SandAuditEvent_ShellCommand
-} from "../../../packages/proto/generated/aiserver/v1/dashboard_pb.js";
+} from "../../../packages/proto/generated/simeon/v1/dashboard_pb.js";
 import { createSimeonBackendClient } from "../../../shared/node/simeon-backend/simeon-inference.js";
 import type { AuditEvent } from "./action-audit-service.js";
 

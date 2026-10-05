@@ -1,10 +1,10 @@
-export const CURSOR_AGENT_FALLBACK_PREVIEW = "Cloud agent";
+export const SIMEON_AGENT_FALLBACK_PREVIEW = "Cloud agent";
 
 export function cloudAgentPreviewText(title?: string | null): string {
   const trimmed = title?.trim();
   return trimmed != null && trimmed.length > 0
     ? `Cloud agent: ${trimmed}`
-    : CURSOR_AGENT_FALLBACK_PREVIEW;
+    : SIMEON_AGENT_FALLBACK_PREVIEW;
 }
 
 export function connectorsPreviewText(connectors: readonly string[]): string {

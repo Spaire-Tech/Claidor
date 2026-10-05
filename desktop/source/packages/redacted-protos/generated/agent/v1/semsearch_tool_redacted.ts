@@ -2,7 +2,7 @@
 import { SemSearchToolArgs, SemSearchToolCall, SemSearchToolError, SemSearchToolResult, SemSearchToolSuccess } from "../../../../proto/generated/agent/v1/semsearch_tool_pb.js";
 import { DataClassification } from "../../../../redaction/classification.js";
 import { createRedactedString } from "../../../../redaction/factory.js";
-import { fromRedactedCodeResult, toRedactedCodeResult } from "../../aiserver/v1/repository_redacted.js";
+import { fromRedactedCodeResult, toRedactedCodeResult } from "../../simeon/v1/repository_redacted.js";
 
 function toRedactedSemSearchToolCall(msg, privacyMode) {
   return {

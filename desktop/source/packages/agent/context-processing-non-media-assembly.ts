@@ -55,8 +55,8 @@ export function appendNonMediaSelectedContextContent({
   babysitV2Prompt,
   enablePrCreationForgeGuidance,
 }: AppendNonMediaSelectedContextContentArgs): void {
-  if (selectedContext.cursorCommands.length > 0) {
-    const commandsText = renderSelectedAgentCommands(selectedContext.cursorCommands);
+  if (selectedContext.agentCommands.length > 0) {
+    const commandsText = renderSelectedAgentCommands(selectedContext.agentCommands);
     if (commandsText !== undefined) {
       userContent.push(commandsText);
     }

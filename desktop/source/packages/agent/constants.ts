@@ -12,4 +12,4 @@ export const NAMED_AGENT_HOME_STORE_PATH = "/cursor/stores/home";
 export const NAMED_AGENT_SELF_MEMORY_FILE = "SELF.md";
 export const NAMED_AGENT_STORE_SELF_PATH = `${NAMED_AGENT_HOME_STORE_PATH}/${NAMED_AGENT_SELF_MEMORY_FILE}`;
 export const NAMED_AGENT_STORE_ACTIVITY_DIR = `${NAMED_AGENT_HOME_STORE_PATH}/activity`;
-export const CURSOR_SUBSCRIPTIONS_MCP_SERVER_NAME = "cursor-subscriptions";
+export const SIMEON_SUBSCRIPTIONS_MCP_SERVER_NAME = "cursor-subscriptions";

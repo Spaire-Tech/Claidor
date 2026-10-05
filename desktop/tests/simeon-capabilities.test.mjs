@@ -195,7 +195,7 @@ test("transcription posts the clip as multipart and never talks protobuf", async
     assert.equal(requests[1].language, null);
     assert.match(loaded.module.SandTranscriptionManager.toString() + Object.keys(loaded.module).join(","), /SandTranscriptionManager/);
     const source = await import("node:fs/promises").then((fs) => fs.readFile(path.join(repoRoot, "source/electron-main/account/simeon-transcribe.ts"), "utf8"));
-    assert.equal(source.includes("from \"../../packages/proto/generated/aiserver"), false);
+    assert.equal(source.includes("from \"../../packages/proto/generated/simeon"), false);
     assert.equal(source.includes("TranscribeAudioRequest"), false);
     assert.equal(source.includes("createSimeonBackendClient"), false);
     assert.match(source, /audio\/transcriptions/);

@@ -64,7 +64,12 @@ CLOUD_AGENT_STORAGE_DISABLED = "CLOUD_AGENT_STORAGE_DISABLED"
 SAND_CLIENT_UPDATE_REQUIRED = "SAND_CLIENT_UPDATE_REQUIRED"
 #: `SAND_BOX_BLOCK_REASON_KEY` in `shared/gateway-reachability.ts`.
 SAND_BOX_BLOCK_REASON_KEY = "sandBoxBlockReason"
-ERROR_DETAILS_TYPE = "aiserver.v1.ErrorDetails"
+#: The one detail the app decodes, under Simeon's name and, for one release,
+#: the earlier one an app built before 5 October 2026 looks for. Both carry
+#: the same bytes; a client reads the entry whose type it knows.
+ERROR_DETAILS_TYPE = "simeon.v1.ErrorDetails"
+EARLIER_ERROR_DETAILS_TYPE = "aiserver.v1.ErrorDetails"
+ERROR_DETAILS_TYPES = (ERROR_DETAILS_TYPE, EARLIER_ERROR_DETAILS_TYPE)
 ERROR_DETAILS_CUSTOM_MESSAGE = 29
 
 
@@ -72,7 +77,7 @@ ERROR_DETAILS_CUSTOM_MESSAGE = 29
 #
 # Connect carries error details as `{"type": "<typeName>", "value":
 # "<base64 protobuf>"}`, and `readBlockedInfoOrEmpty` decodes
-# `aiserver.v1.ErrorDetails` (`error` enum = 1, `details` message = 2)
+# `simeon.v1.ErrorDetails` (`error` enum = 1, `details` message = 2)
 # whose `CustomErrorDetails` has `title` = 1, `detail` = 2 and
 # `additional_info` map = 7 (`utils_pb.ts`). Three field kinds, encoded
 # by hand rather than adding a schema for one message.
@@ -100,7 +105,10 @@ def _message(field: int, payload: bytes) -> bytes:
 
 
 def encode_error_details(
-    title: str, detail: str, additional_info: dict[str, str]
+    title: str,
+    detail: str,
+    additional_info: dict[str, str],
+    type_name: str = ERROR_DETAILS_TYPE,
 ) -> dict[str, str]:
     custom = _string(1, title) + _string(2, detail)
     for key, value in additional_info.items():
@@ -110,7 +118,17 @@ def encode_error_details(
         + _varint(ERROR_DETAILS_CUSTOM_MESSAGE)
         + _message(2, custom)
     )
-    return {"type": ERROR_DETAILS_TYPE, "value": base64.b64encode(body).decode("ascii")}
+    return {"type": type_name, "value": base64.b64encode(body).decode("ascii")}
+
+
+def error_details_under_both_names(
+    title: str, detail: str, additional_info: dict[str, str]
+) -> list[dict[str, str]]:
+    """The same detail once per name in `ERROR_DETAILS_TYPES`."""
+    return [
+        encode_error_details(title, detail, additional_info, type_name)
+        for type_name in ERROR_DETAILS_TYPES
+    ]
 
 
 def connect_error_for(error: Exception) -> ConnectError:
@@ -122,11 +140,9 @@ def connect_error_for(error: Exception) -> ConnectError:
         return ConnectError(
             "resource_exhausted",
             error.detail or "Simeon's cloud computer is blocked for now.",
-            details=[
-                encode_error_details(
-                    error.title, error.detail, {SAND_BOX_BLOCK_REASON_KEY: error.reason}
-                )
-            ],
+            details=error_details_under_both_names(
+                error.title, error.detail, {SAND_BOX_BLOCK_REASON_KEY: error.reason}
+            ),
             headers={
                 AUTOMATION_FAILURE_HINT_HEADER: SAND_BOX_BLOCKED,
                 "retry-after": str(error.retry_after_s),
@@ -355,4 +371,10 @@ async def local_exec_connection(
 router.include_router(service.router)
 router.include_router(box_proxy.router)
 
-__all__ = ["connect_error_for", "encode_error_details", "router", "service"]
+__all__ = [
+    "connect_error_for",
+    "encode_error_details",
+    "error_details_under_both_names",
+    "router",
+    "service",
+]

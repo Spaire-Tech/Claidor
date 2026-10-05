@@ -132,7 +132,7 @@ export const SHORTER_OUTPUT_RETRY_PROMPT = `
 
 Additional instruction: Write a shorter summary that focuses on the highest-signal context. Avoid long code snippets and avoid unnecessarily exhaustive detail. Prioritize the most recent user intent, recent implementation work, and unresolved blockers.
 IMPORTANT: When listing user messages, you do not need to repeat each message verbatim. Concisely capture user intent.`;
-export const SUMMARIZATION_CURSOR_PROVIDER_OPTIONS = {
+export const SUMMARIZATION_SIMEON_PROVIDER_OPTIONS = {
   simeon: {
     inferenceReason: "agent-summarization",
     featureType: "agenticComposerSummary",
@@ -150,7 +150,7 @@ async function executeSummarizationStream(
     {
       role: "user",
       content: summaryPrompt,
-      providerOptions: SUMMARIZATION_CURSOR_PROVIDER_OPTIONS,
+      providerOptions: SUMMARIZATION_SIMEON_PROVIDER_OPTIONS,
     },
   ]);
   const streamOptions = maxOutputTokens !== undefined ? { maxTokens: maxOutputTokens } : {};

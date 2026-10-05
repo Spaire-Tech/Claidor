@@ -489,7 +489,8 @@ class TestEnsureSandBox:
         body = response.json()
         assert body["code"] == "resource_exhausted"
         detail = body["details"][0]
-        assert detail["type"] == "aiserver.v1.ErrorDetails"
+        assert detail["type"] == "simeon.v1.ErrorDetails"
+        assert body["details"][1]["type"] == "aiserver.v1.ErrorDetails"
         raw = base64.b64decode(detail["value"])
         assert (
             b"No room" in raw

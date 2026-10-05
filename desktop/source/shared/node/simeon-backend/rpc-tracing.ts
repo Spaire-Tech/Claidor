@@ -1,7 +1,7 @@
 import { createExpiryPolicy, realClock, type ExpiryPolicy } from "../../../internal/scheduling.js";
 import type { Interceptor } from "@connectrpc/connect";
 
-export const UNTRACED_SERVICE_TYPE_NAMES = new Set(["aiserver.v1.AnalyticsService"]);
+export const UNTRACED_SERVICE_TYPE_NAMES = new Set(["simeon.v1.AnalyticsService"]);
 export const SAND_RPC_TRACE_WINDOW_DURATION_MS = 2 * 60 * 1_000;
 
 export interface RpcSpanContext { readonly traceId: string; readonly spanId: string; readonly traceFlags: number }

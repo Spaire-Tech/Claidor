@@ -2,7 +2,7 @@ import { simeonProxyRequest, SimeonApiError, type SimeonApiAuth } from "./simeon
 
 // Pictures, on Simeon's `/images/generations` door
 // (`server/simeon/desktop/capabilities.py`). Until 19 September 2026 this was
-// a Connect RPC call on `aiserver.v1.AiService/RunGenerateImage`, which
+// a Connect RPC call on `simeon.v1.AiService/RunGenerateImage`, which
 // Simeon never served; the tool that calls it
 // (`packages/agent/tools/core/generate-image.ts`) and the avatar picker are
 // unchanged, because the shape they were given is kept.

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { CloudAgentService, DashboardService } from "../../../packages/proto/simeon/v1/services.js";
-import { BackgroundComposerSource, StartingMessageType } from "../../../packages/proto/generated/aiserver/v1/background_composer_pb.js";
+import { BackgroundComposerSource, StartingMessageType } from "../../../packages/proto/generated/simeon/v1/background_composer_pb.js";
 import { AgentMode } from "../../../packages/proto/generated/agent/v1/agent_pb.js";
 import { createSimeonBackendClient } from "../../../shared/node/simeon-backend/simeon-inference.js";
 import { cloudAgentWebUrl } from "../../../shared/cloud-agents-availability.js";

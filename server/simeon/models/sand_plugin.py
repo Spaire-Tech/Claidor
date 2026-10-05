@@ -2,7 +2,7 @@
 
 The desktop app publishes a skill as an upstream "plugin": it packs the
 skill folder into a tar.gz and posts it to
-`aiserver.v1.DashboardService/PublishPlugin`, then reads it back from
+`simeon.v1.DashboardService/PublishPlugin`, then reads it back from
 `GetEffectiveUserPlugins` on every daily sync and installs it from the
 listing's `inline_content_json` (`desktop/source/packages/cursor-plugins/
 backend-marketplace-client.ts`, `inline-plugin-synthesizer.ts`). the upstream app

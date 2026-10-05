@@ -31,7 +31,7 @@ const CONTROL_CHARACTERS_REGEX = /[\u0000-\u001F\u007F]/g;
 const FILE_OUTPUT_THRESHOLD_BYTES = 12_000;
 const MAX_REGEX_PATTERN_LENGTH = 256;
 const MCP_AUTH_INPUT_SCHEMA = { type: "object", properties: {}, additionalProperties: false };
-const CURSOR_APP_CONTROL_SERVER = "cursor-app-control";
+const SIMEON_APP_CONTROL_SERVER = "cursor-app-control";
 const WORKSPACE_MUTATION_TOOLS = new Set(["move_agent_to_root", "move_agent_to_cloned_root", "create_project"]);
 
 interface ResolvedServer {
@@ -238,7 +238,7 @@ async function resolveServers(ctx: Context, accessor: ResourceAccessor<RemoteExe
 }
 
 function isWorkspaceMutation(input: { readonly serverIdentifier: string; readonly toolName: string }): boolean {
-  return input.serverIdentifier.toLowerCase() === CURSOR_APP_CONTROL_SERVER && WORKSPACE_MUTATION_TOOLS.has(input.toolName.toLowerCase());
+  return input.serverIdentifier.toLowerCase() === SIMEON_APP_CONTROL_SERVER && WORKSPACE_MUTATION_TOOLS.has(input.toolName.toLowerCase());
 }
 
 function validateArgs(args: GetMcpToolsArgsInput, dynamic: boolean): void {

@@ -19,7 +19,7 @@ import {
   type SelectedImage as SelectedImageValue,
   type SelectedVideo as SelectedVideoValue,
 } from "../proto/generated/agent/v1/selected_context_pb.js";
-import { BackgroundComposerSource } from "../proto/generated/aiserver/v1/background_composer_pb.js";
+import { BackgroundComposerSource } from "../proto/generated/simeon/v1/background_composer_pb.js";
 import type { PrivacyMode } from "../redaction/privacy-mode.js";
 import { AgentType } from "./utils/agent-config.js";
 import { getFilenameWithoutExtension, getSkillSourceFromPath } from "./utils/common.js";

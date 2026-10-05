@@ -120,7 +120,7 @@ import {
 } from "../../../shared/node/sand-client-metadata.js";
 import { journalOutcomeTelemetry } from "./journal-outcome-telemetry.js";
 import { resolveSandBoxIdentityTags } from "../../ports/telemetry.js";
-import { AnalyticsService } from "../../../packages/proto/generated/aiserver/v1/analytics_connect.js";
+import { AnalyticsService } from "../../../packages/proto/generated/simeon/v1/analytics_connect.js";
 import { createSimeonBackendClient } from "../../../shared/node/simeon-backend/simeon-inference.js";
 
 export type LogLevel = "info" | "warn" | "error";

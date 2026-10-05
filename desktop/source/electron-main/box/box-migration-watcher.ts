@@ -1,6 +1,6 @@
 import { ConnectError, Code } from "@connectrpc/connect";
 import { ComputerService } from "../../packages/proto/simeon/v1/services.js";
-import { SandBoxMigrationPhase } from "../../packages/proto/generated/aiserver/v1/sand_box_pb.js";
+import { SandBoxMigrationPhase } from "../../packages/proto/generated/simeon/v1/sand_box_pb.js";
 import { createSimeonBackendClient, type SandInferenceOptions } from "../../shared/node/simeon-backend/simeon-inference.js";
 import { isSameSandBoxMigrationOperation, parseSandBoxMigrationOperationId } from "../../shared/box-migration.js";
 import type { RecreateOperationId } from "./box-recreate-commands.js";

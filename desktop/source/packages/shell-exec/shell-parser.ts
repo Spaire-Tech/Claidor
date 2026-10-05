@@ -136,7 +136,7 @@ export interface ShellCommandAnalysis {
   readonly structured: ShellCommandParsingResult;
 }
 
-export const TREE_SITTER_STUBBED_ERROR_CODE = "CURSOR_TREE_SITTER_STUBBED";
+export const TREE_SITTER_STUBBED_ERROR_CODE = "SIMEON_TREE_SITTER_STUBBED";
 
 let cachedParser: ParserType | null | undefined;
 

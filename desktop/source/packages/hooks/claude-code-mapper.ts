@@ -1,4 +1,4 @@
-import { CLAUDE_EVENT_TO_CURSOR_STEP, CLAUDE_TOOL_TO_SIMEON_TOOL, UNSUPPORTED_CLAUDE_EVENTS, UNSUPPORTED_CLAUDE_TOOLS } from "./claude-code-types.js";
+import { CLAUDE_EVENT_TO_SIMEON_STEP, CLAUDE_TOOL_TO_SIMEON_TOOL, UNSUPPORTED_CLAUDE_EVENTS, UNSUPPORTED_CLAUDE_TOOLS } from "./claude-code-types.js";
 
 interface Logger { warn(message: string): void; info(message: string): void }
 interface ClaudeHookScript { type?: string; command?: string; prompt?: string; timeout?: number }
@@ -36,7 +36,7 @@ export function transformClaudeHooksToConfig(claudeHooks: Record<string, unknown
   const agentHooks: Record<string, AgentHookScript[]> = {};
   for (const [eventName, entries] of Object.entries(claudeHooks)) {
     if ((UNSUPPORTED_CLAUDE_EVENTS as readonly string[]).includes(eventName)) { logger.warn(`Claude Code event "${eventName}" is not supported in Simeon and will be ignored`); continue; }
-    const cursorStep = (CLAUDE_EVENT_TO_CURSOR_STEP as Record<string, string | null | undefined>)[eventName]; if (!cursorStep) { logger.warn(`Unknown Claude Code event "${eventName}", skipping`); continue; }
+    const cursorStep = (CLAUDE_EVENT_TO_SIMEON_STEP as Record<string, string | null | undefined>)[eventName]; if (!cursorStep) { logger.warn(`Unknown Claude Code event "${eventName}", skipping`); continue; }
     const scripts: AgentHookScript[] = []; if (Array.isArray(entries)) for (const entry of entries) scripts.push(...transformHookEntry(entry as ClaudeHookEntry, eventName, logger)); else if (entries !== undefined) logger.warn(`Claude Code event "${eventName}" has invalid value (expected array), skipping`);
     if (scripts.length > 0) agentHooks[cursorStep] = [...(agentHooks[cursorStep] ?? []), ...scripts];
   }

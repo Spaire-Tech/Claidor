@@ -282,7 +282,7 @@ const HARDCODED_PROTECTED_GIT_PATTERNS = HARDCODED_WRITE_PROTECTION_PATTERNS
   .filter((entry) => entry.type === "git")
   .map((entry) => entry.pattern);
 
-const CURSOR_ALLOWED_WRITE_SUBDIRS = HARDCODED_WRITE_PROTECTION_PATTERNS
+const SIMEON_ALLOWED_WRITE_SUBDIRS = HARDCODED_WRITE_PROTECTION_PATTERNS
   .filter((entry) => entry.type === "workspace" && entry.pattern.startsWith("!") && !entry.pattern.endsWith("/**"))
   .map((entry) => entry.pattern.replace(/^!(\*\*\/)?/, ""));
 
@@ -291,5 +291,5 @@ const _caseInsensitiveFs = process.platform === "win32" || process.platform === 
 
 void ignore;
 void HARDCODED_PROTECTED_GIT_PATTERNS;
-void CURSOR_ALLOWED_WRITE_SUBDIRS;
+void SIMEON_ALLOWED_WRITE_SUBDIRS;
 void _caseInsensitiveFs;

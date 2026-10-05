@@ -1,8 +1,8 @@
 import type { PartialMessage } from "@bufbuild/protobuf";
 import { Code, ConnectError } from "@connectrpc/connect";
-import { type EnsureSandBoxRequest, type EnsureSandBoxResponse, type ForceRecreateSandBoxRequest, type RecreateSandBoxRequest, type RecreateSandBoxResponse } from "../../packages/proto/generated/aiserver/v1/sand_box_pb.js";
+import { type EnsureSandBoxRequest, type EnsureSandBoxResponse, type ForceRecreateSandBoxRequest, type RecreateSandBoxRequest, type RecreateSandBoxResponse } from "../../packages/proto/generated/simeon/v1/sand_box_pb.js";
 import { ComputerService } from "../../packages/proto/simeon/v1/services.js";
-import { ErrorDetails } from "../../packages/proto/generated/aiserver/v1/utils_pb.js";
+import { ErrorDetails } from "../../packages/proto/generated/simeon/v1/utils_pb.js";
 import { createSimeonBackendClient, getSandInferenceBackendUrl } from "../../shared/node/simeon-backend/simeon-inference.js";
 import { getAccessTokenExpiryMs } from "../../shared/node/simeon-token.js";
 import { getSandBackendClientHeaders } from "../../shared/node/sand-client-metadata.js";

@@ -4,7 +4,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 
 const SANDBOX_POLICY_DIR_NAME = "sandbox-policies";
-const SANDBOX_POLICY_DIR_ENV = "CURSOR_SANDBOX_POLICY_DIR";
+const SANDBOX_POLICY_DIR_ENV = "SIMEON_SANDBOX_POLICY_DIR";
 const STALE_POLICY_MAX_AGE_MS = 60 * 60 * 1_000;
 
 function getSandboxPolicyDirectory(): string {

@@ -8,7 +8,7 @@ import {
   type GetSlackInstallUrlResponse,
   GetSlackUserSettingsRequest,
   type GetSlackUserSettingsResponse
-} from "../../../packages/proto/generated/aiserver/v1/dashboard_pb.js";
+} from "../../../packages/proto/generated/simeon/v1/dashboard_pb.js";
 import { createSimeonBackendClient } from "../../../shared/node/simeon-backend/simeon-inference.js";
 import { LISTENERS_COMING_SOON_SENTENCE, isListenerRelayServed } from "../../../shared/listener-availability.js";
 import { connectorManifests } from "../../../shared/channels.js";

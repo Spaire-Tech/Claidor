@@ -8,7 +8,7 @@ import { DashboardService } from "../../../packages/proto/simeon/v1/services.js"
 import {
   ClassifySandAutoReviewRequest,
   type ClassifySandAutoReviewResponse,
-} from "../../../packages/proto/generated/aiserver/v1/dashboard_pb.js";
+} from "../../../packages/proto/generated/simeon/v1/dashboard_pb.js";
 import {
   createSimeonBackendClient,
   type SandInferenceOptions,

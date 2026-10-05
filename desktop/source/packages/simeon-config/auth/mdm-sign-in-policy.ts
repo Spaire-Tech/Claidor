@@ -89,7 +89,7 @@ async function readLinuxPolicyFile(): Promise<RawPolicy | undefined> {
   try { return pickPolicyValues(JSON.parse(await fs.readFile(join(homedir(), ".simeon", "policy.json"), "utf-8")) as RawPolicy); } catch { return undefined; }
 }
 async function readRawPolicyValues(): Promise<RawPolicy | undefined> {
-  const override = process.env.CURSOR_MDM_SIGN_IN_POLICY_JSON;
+  const override = process.env.SIMEON_MDM_SIGN_IN_POLICY_JSON;
   if (override !== undefined && override.length > 0) { try { return pickPolicyValues(JSON.parse(override) as RawPolicy); } catch { return undefined; } }
   switch (process.platform) {
     case "darwin": return await readMacosManagedPreferences();

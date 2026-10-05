@@ -1,7 +1,7 @@
 import { AgentMode } from "../../proto/generated/agent/v1/agent_pb.js";
-import type { BackgroundComposerSource } from "../../proto/generated/aiserver/v1/background_composer_pb.js";
+import type { BackgroundComposerSource } from "../../proto/generated/simeon/v1/background_composer_pb.js";
 import type { AgentSkill } from "../../proto/generated/agent/v1/agent_skills_pb.js";
-import type { CursorRule as AgentRule } from "../../proto/generated/agent/v1/cursor_rules_pb.js";
+import type { AgentRule } from "../../proto/generated/agent/v1/agent_rules_pb.js";
 import type { GitRepoInfo, RequestContextEnv } from "../../proto/generated/agent/v1/request_context_exec_pb.js";
 import type { McpDescriptor, McpFileSystemOptions, McpInstructions } from "../../proto/generated/agent/v1/mcp_pb.js";
 import { jsx as promptJsx, jsxs as promptJsxs, Fragment } from "../../prompt-jsx/jsx-runtime.js";

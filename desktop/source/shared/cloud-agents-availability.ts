@@ -3,7 +3,7 @@
  * 25 September 2026, later the same day; they were Coming Soon that
  * morning, design-audit-ledger.md cluster `cloud-agents-channels`).
  *
- * A cloud agent is the upstream's BackgroundComposerService (launch, reply,
+ * A cloud agent is the CloudAgentService (launch, reply,
  * artifacts, the cloud-agent card's link); `simeon/sand/cloud_agents.py`
  * serves it over the maty queue. A messaging channel is a Discord or Slack
  * connector the box runs itself (`host/extensions/channels/`, no server in
@@ -43,7 +43,7 @@ export const CHANNELS_COMING_SOON_SENTENCE =
   "Messaging channels (Slack, Discord) are coming soon on Simeon: there is no channel to deliver to and no channel credential store to write to yet. Never ask the user to paste a key, token or password into the chat; if the service is a connector, use its connect card instead.";
 
 // On by default since 25 September 2026: `simeon/sand/cloud_agents.py`
-// serves BackgroundComposerService over the maty queue. "0" turns the
+// serves CloudAgentService over the maty queue. "0" turns the
 // paths off again.
 export function isCloudAgentsServed(env: NodeJS.ProcessEnv = process.env): boolean {
   const raw = env[CLOUD_AGENTS_SERVED_ENV]?.trim();

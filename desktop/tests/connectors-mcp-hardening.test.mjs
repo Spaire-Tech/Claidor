@@ -32,7 +32,7 @@ test("an upstream Connect client answers Unimplemented at once and sends nothing
   // (simeon/sand); "0" is the 24 September behaviour, measured here.
   process.env.SAND_CONNECT_SERVED = "0";
   const { module, dispose } = await load("source/shared/node/simeon-backend/simeon-inference.ts", "simeon-backend-client");
-  const proto = await load("source/packages/proto/generated/aiserver/v1/dashboard_connect.ts", "dashboard-connect");
+  const proto = await load("source/packages/proto/generated/simeon/v1/dashboard_connect.ts", "dashboard-connect");
   try {
     const client = module.createSimeonBackendClient(proto.module.DashboardService, { getAccessToken: async () => { throw new Error("the wire was touched"); }, getMachineId: async () => "m" });
     await assert.rejects(() => client.getTeams({}), (error) => error.code === 12 && /not served by Simeon Labs' server/.test(error.message));

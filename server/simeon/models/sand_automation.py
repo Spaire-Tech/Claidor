@@ -66,7 +66,7 @@ class SandAutomation(RecordModel):
     #: must carry or the box drops it.
     description: Mapped[str] = mapped_column(Text, nullable=False, default="")
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    #: `aiserver.v1.Workflow` as protobuf JSON, untouched.
+    #: `simeon.v1.Workflow` as protobuf JSON, untouched.
     workflow: Mapped[dict[str, Any]] = mapped_column(
         JSONB, nullable=False, default=dict
     )

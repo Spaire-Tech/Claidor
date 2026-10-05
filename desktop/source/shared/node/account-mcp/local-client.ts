@@ -21,7 +21,7 @@ import {
   UninstallUserPluginResponse,
   UpdateUserPluginInstallResponse,
   UserPluginInstall,
-} from "../../../packages/proto/generated/aiserver/v1/dashboard_pb.js";
+} from "../../../packages/proto/generated/simeon/v1/dashboard_pb.js";
 import {
   installAccountMcpPlugin,
   listAccountMcpPlugins,

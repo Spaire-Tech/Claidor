@@ -1,6 +1,6 @@
-import { GetBackgroundComposerUserSettingsRequest } from "../../packages/proto/generated/aiserver/v1/background_composer_pb.js";
+import { GetBackgroundComposerUserSettingsRequest } from "../../packages/proto/generated/simeon/v1/background_composer_pb.js";
 import { CloudAgentService, DashboardService } from "../../packages/proto/simeon/v1/services.js";
-import { GetTeamAdminSettingsRequest } from "../../packages/proto/generated/aiserver/v1/dashboard_pb.js";
+import { GetTeamAdminSettingsRequest } from "../../packages/proto/generated/simeon/v1/dashboard_pb.js";
 import { createSimeonBackendClient } from "../../shared/node/simeon-backend/simeon-inference.js";
 import { getOrCreateMachineId } from "./machine-id.js";
 

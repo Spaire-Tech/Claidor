@@ -2,7 +2,7 @@ import { PrivacyCapability } from "../../redaction/classification.js";
 import { fromRedactedLsDirectoryTreeNode } from "../../redacted-protos/generated/agent/v1/ls_exec_redacted.js";
 import type { Context } from "../../context/core.js";
 import type { AgentSkill } from "../../proto/generated/agent/v1/agent_skills_pb.js";
-import type { CursorRule as AgentRule } from "../../proto/generated/agent/v1/cursor_rules_pb.js";
+import type { AgentRule } from "../../proto/generated/agent/v1/agent_rules_pb.js";
 import { renderManuallyAttachedSkillsSection } from "../context-processing-manual-skills.js";
 import { resolveSelectedContextSkillSections, type SelectedContextSkillInput } from "../context-processing-selected-context.js";
 import { buildAvailableSkillsPromptSection } from "../prompts/user-info-available-skills.js";

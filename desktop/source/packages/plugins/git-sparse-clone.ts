@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { execGitNonInteractive, type ExecGitNonInteractiveOptions } from "./git-subprocess-env.js";
 import { MARKETPLACE_MANIFEST_PATHS } from "./manifest-parser.js";
 
-const DISABLE_SPARSE_PLUGIN_CLONES_ENV = "CURSOR_DISABLE_SPARSE_PLUGIN_CLONES";
+const DISABLE_SPARSE_PLUGIN_CLONES_ENV = "SIMEON_DISABLE_SPARSE_PLUGIN_CLONES";
 const ALWAYS_SPARSE_DIRS = MARKETPLACE_MANIFEST_PATHS.map(path => path.split("/")[0]!);
 const MIN_SPARSE_GIT = { major: 2, minor: 26 };
 let sparseSupportPromise: Promise<boolean> | undefined;

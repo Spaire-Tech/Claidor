@@ -25,7 +25,7 @@ export function createClientChecksum(machineId: string, now = Date.now()): strin
   return `${Buffer.from(bytes).toString("base64url")}${machineId}`;
 }
 
-function applyLocalCliModeHeader(headers: Headers, env: NodeJS.ProcessEnv): void { if (env.CURSOR_AGENT_CLI_LOCAL_MODE === "true") headers.set("local-cli-mode", "true"); }
+function applyLocalCliModeHeader(headers: Headers, env: NodeJS.ProcessEnv): void { if (env.SIMEON_AGENT_CLI_LOCAL_MODE === "true") headers.set("local-cli-mode", "true"); }
 export async function fetchStatsigBootstrap(options: {
   readonly backendUrl: string; readonly deadline: DeadlinePolicy;
   readonly getAccessToken: (options: { backendUrl: string }) => Promise<string>;
@@ -37,7 +37,7 @@ export async function fetchStatsigBootstrap(options: {
   if (accessToken != null) headers.set("authorization", `Bearer ${accessToken}`);
   applyLocalCliModeHeader(headers, options.env ?? process.env);
   return options.deadline.run(async (signal) => {
-    const response = await (options.fetchImpl ?? fetch)(new URL("aiserver.v1.AnalyticsService/BootstrapStatsig", options.backendUrl), { method: "POST", headers, body: "{}", signal });
+    const response = await (options.fetchImpl ?? fetch)(new URL("simeon.v1.AnalyticsService/BootstrapStatsig", options.backendUrl), { method: "POST", headers, body: "{}", signal });
     if (!response.ok) { const retryAfterMs = parseRetryAfterHeaderMs(response.headers.get("retry-after")); return retryAfterMs === undefined ? {} : { retryAfterMs }; }
     const data = await response.json() as unknown;
     if (typeof data !== "object" || data == null || !("config" in data)) return {};
