@@ -1,5 +1,0 @@
-/* The demo's own rules (the founder, 5 October 2026), on top of the patched window: the agent pane stays closed and
-   the chat header's avatar does nothing ("nothing should happen when we click on avatar"). Everything the demo once
-   drew here (the glass discs, the pane at its widest with three tabs, the sidebar's frost, the composer's disc) is
-   the window's own since the renderer patch of 5 October 2026 (desktop/scripts/lib/router-renderer-patch.mjs). */
-html body .sand-chat-header__identity{pointer-events:none!important}
