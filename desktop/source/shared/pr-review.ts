@@ -1,4 +1,4 @@
-export type SandPrReviewDestination = "github" | "graphite" | "reviewCursor";
+export type SandPrReviewDestination = "github" | "graphite" | "reviewApp";
 
 export interface SandPrReviewPreferences {
   readonly user: SandPrReviewDestination | undefined;

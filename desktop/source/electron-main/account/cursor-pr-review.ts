@@ -5,7 +5,7 @@ import { createSandCursorBackendClient } from "../../shared/node/cursor-backend/
 import { getOrCreateMachineId } from "./cursor-machine-id.js";
 
 export const PR_REVIEW_REQUEST_TIMEOUT_MS = 10_000;
-export type PrReviewDestination = "github" | "graphite" | "reviewCursor";
+export type PrReviewDestination = "github" | "graphite" | "reviewApp";
 export interface SandPrReviewPreferences { readonly user: PrReviewDestination | undefined; readonly team: PrReviewDestination | undefined }
 export type PrReviewAccessTokenReader = (options?: { readonly backendUrl?: string }) => Promise<string>;
 
@@ -13,7 +13,7 @@ export function narrowDestination(mode: number): PrReviewDestination | undefined
   switch (mode) {
     case 1: return "github";
     case 2: return "graphite";
-    case 3: return "reviewCursor";
+    case 3: return "reviewApp";
     default: return undefined;
   }
 }
