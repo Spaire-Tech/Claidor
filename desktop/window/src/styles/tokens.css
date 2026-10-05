@@ -1,0 +1,65 @@
+/*
+ * Simeon's window: the tokens. Light first; dark redefines the same names
+ * under [data-theme="dark"], which App sets from the app's theme state.
+ * The look is today's: a clear sidebar over the desktop's material, blue
+ * bubbles for the person, soft grey for the agents, the agent's card at
+ * the top of a chat.
+ */
+:root {
+  color-scheme: light;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Inter, system-ui, sans-serif;
+  --font-serif: "New York", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --bg: #ffffff;
+  --bg-sidebar: rgba(243, 244, 246, 0.86);
+  --bg-sidebar-solid: #f3f4f6;
+  --bg-elevated: #ffffff;
+  --bg-field: #ffffff;
+  --bg-bubble-agent: #ececef;
+  --bg-bubble-you: #2563b8;
+  --bg-row-active: #ffffff;
+  --bg-row-hover: rgba(0, 0, 0, 0.04);
+  --bg-pill: #ffffff;
+  --fg: #111318;
+  --fg-muted: #6b7280;
+  --fg-faint: #9ca3af;
+  --fg-on-you: #ffffff;
+  --fg-link: #2563b8;
+  --accent: #2563b8;
+  --border: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.14);
+  --shadow-row: 0 1px 2px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  --shadow-pill: 0 1px 3px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  --unread: #2563b8;
+  --danger: #c2410c;
+  --radius: 12px;
+  --radius-bubble: 18px;
+  --sidebar-width: 280px;
+  --rail-width: 64px;
+  --titlebar-height: 38px;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #16181d;
+  --bg-sidebar: rgba(28, 30, 36, 0.86);
+  --bg-sidebar-solid: #1c1e24;
+  --bg-elevated: #23262d;
+  --bg-field: #23262d;
+  --bg-bubble-agent: #2a2d35;
+  --bg-bubble-you: #3b7ddd;
+  --bg-row-active: #2a2d35;
+  --bg-row-hover: rgba(255, 255, 255, 0.05);
+  --bg-pill: #2a2d35;
+  --fg: #eef0f3;
+  --fg-muted: #9aa2ad;
+  --fg-faint: #6b7280;
+  --fg-on-you: #ffffff;
+  --fg-link: #7fb0f0;
+  --accent: #3b7ddd;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --shadow-row: 0 1px 2px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --shadow-pill: 0 1px 3px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --unread: #7fb0f0;
+  --danger: #f97316;
+}
