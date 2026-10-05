@@ -1,4 +1,5 @@
-export const ORIGIN_GIT_HOSTS = ["origin.cursor.com"] as const;
+// The upstream app had a git host of its own; Simeon has none (Track B of the detachment plan).
+export const ORIGIN_GIT_HOSTS: readonly string[] = [];
 export const PREFER_ORIGIN_READS_HEADER = "x-prefer-origin-reads: true";
 
 function buildTokenBasicAuthGitConfig(

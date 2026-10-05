@@ -37,8 +37,8 @@ export class SandAuthRefreshTransientError extends Error { constructor(readonly 
 export type SandAuthStatus =
   | { readonly kind: "logging-in" }
   | { readonly kind: "logged-out"; readonly errorMessage?: string }
-  | { readonly kind: "logged-in"; readonly authId?: string; readonly email?: string; readonly expiresAt?: number; readonly displayName?: string; readonly profilePictureUrl?: string; readonly isAnysphereUser?: boolean };
-export interface CursorProfile { readonly email?: string; readonly displayName?: string; readonly profilePictureUrl?: string; readonly isAnysphereUser: boolean }
+  | { readonly kind: "logged-in"; readonly authId?: string; readonly email?: string; readonly expiresAt?: number; readonly displayName?: string; readonly profilePictureUrl?: string; readonly isStaffUser?: boolean };
+export interface CursorProfile { readonly email?: string; readonly displayName?: string; readonly profilePictureUrl?: string; readonly isStaffUser: boolean }
 export interface CursorTokens { readonly accessToken: string; readonly refreshToken: string }
 export interface CursorSecretStore {
   readSecret(key: string): Promise<string | null | undefined>;
@@ -259,14 +259,14 @@ export class SandCursorAuthService {
     if (status.kind !== "logged-in" || status.authId == null) return status;
     const profile = this.profileCache.get(status.authId); if (profile == null) return status;
     const email = status.email ?? profile.email;
-    return { ...status, ...(email == null ? {} : { email }), ...(profile.displayName == null ? {} : { displayName: profile.displayName }), ...(profile.profilePictureUrl == null ? {} : { profilePictureUrl: profile.profilePictureUrl }), isAnysphereUser: profile.isAnysphereUser };
+    return { ...status, ...(email == null ? {} : { email }), ...(profile.displayName == null ? {} : { displayName: profile.displayName }), ...(profile.profilePictureUrl == null ? {} : { profilePictureUrl: profile.profilePictureUrl }), isStaffUser: profile.isStaffUser };
   }
   async updateDisplayName(rawName: string): Promise<SandAuthStatus> {
     const status = await this.getStatus(); if (status.kind !== "logged-in" || status.authId == null) return status;
     if (this.options.updateProfileName == null) throw new Error("updateDisplayName requires the wiring-injected profile-name writer.");
     const name = rawName.replace(/\s+/g, " ").trim(); await this.options.updateProfileName((options) => this.getValidAccessToken(options), name);
     const cached = this.profileCache.get(status.authId);
-    this.profileCache.set(status.authId, { ...(cached?.email ?? status.email) == null ? {} : { email: cached?.email ?? status.email }, ...(cached?.profilePictureUrl == null ? {} : { profilePictureUrl: cached.profilePictureUrl }), isAnysphereUser: cached?.isAnysphereUser ?? false, ...(name.length === 0 ? {} : { displayName: name }) });
+    this.profileCache.set(status.authId, { ...(cached?.email ?? status.email) == null ? {} : { email: cached?.email ?? status.email }, ...(cached?.profilePictureUrl == null ? {} : { profilePictureUrl: cached.profilePictureUrl }), isStaffUser: cached?.isStaffUser ?? false, ...(name.length === 0 ? {} : { displayName: name }) });
     const next = await this.getStatus(); this.emitStatus(next); return next;
   }
   private async ensureProfile(authId: string, operationEpoch: number): Promise<void> {

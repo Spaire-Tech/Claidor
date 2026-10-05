@@ -22,7 +22,7 @@ type Snapshot = { isInitialized: boolean; featureGates: Record<string, boolean>;
 export class SandExperimentService {
   private client: StatsigClient | null = null; private isInitialized = false; private isRefreshing = false; private pendingRefreshTrigger: Trigger | null = null; private isDisposed = false; private pollHandle: ReturnType<PollingPolicy["start"]> | undefined; private hasStartupTickRun = false; private currentRefresh: Promise<void> | null = null;
   private hasAuthenticatedNetworkBootstrap = false; private hasLiveNetworkBootstrap = false; private authRevision = 0; private snapshot: Snapshot;
-  private readonly listeners = new Set<(snapshot: Snapshot) => void>(); private readonly gateProperties = new Map<FeatureFlagName, MutableGateProperty>(); private readonly overrideStore: SandFeatureFlagOverrideStore; private isAnysphereUser = false;
+  private readonly listeners = new Set<(snapshot: Snapshot) => void>(); private readonly gateProperties = new Map<FeatureFlagName, MutableGateProperty>(); private readonly overrideStore: SandFeatureFlagOverrideStore; private isStaffUser = false;
   private readonly loggedModelConfigRejections = new Map<string, Set<ModelConfigRejection>>(); private rateLimitedUntilMs: number | undefined; private flagsFetchedAtMs: number | undefined;
   private readonly bootstrapDeadline; private readonly refreshPoll; private lastHydratedUserId: string | null = null; private hydratedUserIdReady: Promise<boolean> | null = null; private resolveHydratedUserIdReady: ((value: boolean) => void) | null = null;
   constructor(private readonly options: { getAccessToken(options: { backendUrl: string }): Promise<string>; getMachineId(): Promise<string>; getCacheDir(): string; isDevBuild?: boolean; bootstrapTimeoutMs?: number; pollIntervalMs?: number; env?: NodeJS.ProcessEnv }) {
@@ -41,8 +41,8 @@ export class SandExperimentService {
   hasAuthenticatedStatsigBootstrap(): boolean { return this.hasAuthenticatedNetworkBootstrap; }
   hasLiveStatsigBootstrap(): boolean { return this.hasLiveNetworkBootstrap; }
   getFlagsAgeMs(): number | undefined { return this.flagsFetchedAtMs == null ? undefined : Math.max(0, Date.now() - this.flagsFetchedAtMs); }
-  canUseFeatureFlagOverrides(): boolean { return this.options.isDevBuild === true || this.isAnysphereUser; }
-  setIsAnysphereUser(value: boolean): void { if (this.isAnysphereUser === value) return; const before = this.canUseFeatureFlagOverrides(); this.isAnysphereUser = value; const after = this.canUseFeatureFlagOverrides(); if (before === after) return; if (after) this.overrideStore.hydrateFromDisk(); else this.overrideStore.clearAll(); this.refreshSnapshot(); }
+  canUseFeatureFlagOverrides(): boolean { return this.options.isDevBuild === true || this.isStaffUser; }
+  setIsAnysphereUser(value: boolean): void { if (this.isStaffUser === value) return; const before = this.canUseFeatureFlagOverrides(); this.isStaffUser = value; const after = this.canUseFeatureFlagOverrides(); if (before === after) return; if (after) this.overrideStore.hydrateFromDisk(); else this.overrideStore.clearAll(); this.refreshSnapshot(); }
   getFeatureFlagOverrides(): Map<FeatureFlagName, boolean> { return this.overrideStore.activeOverrides(); }
   setFeatureFlagOverride(name: string, value: boolean): void { if (this.canUseFeatureFlagOverrides() && this.overrideStore.set(name, value)) this.persistAndBroadcastOverrides(); }
   clearFeatureFlagOverride(name: FeatureFlagName): void { if (this.canUseFeatureFlagOverrides() && this.overrideStore.clear(name)) this.persistAndBroadcastOverrides(); }

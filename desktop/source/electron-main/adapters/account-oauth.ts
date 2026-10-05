@@ -45,7 +45,7 @@ function defaultWiringDeps(context: ProductionServiceContext): CursorAuthWiringD
       })().catch((error: unknown) => context.reportFailure?.("account", "sign-out-box", error));
     },
     getAccountRuntime: () => accountRuntimeOf(context),
-    emitAuthStatus: (status) => context.requireMainEdge().emit("cursor-auth-changed", status),
+    emitAuthStatus: (status) => context.requireMainEdge().emit("account-changed", status),
     sentryEnabled: context.env.SAND_DISABLE_SENTRY !== "1",
     settingsStore: context.settings.settingsStore,
     syncHostSettingsToBox: async (settings) => {

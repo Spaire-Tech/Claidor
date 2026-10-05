@@ -11,7 +11,7 @@ export const SAND_WEBAUTHN_MACHINE_UNAVAILABLE_MESSAGE =
 export const SAND_WEBAUTHN_LIVENESS_WINDOW_MS = 30_000;
 export const SAND_WEBAUTHN_CEREMONY_TIMEOUT_MS = 120_000;
 
-export type SandWebAuthnOriginClass = "cursor_com" | "subdomain" | "external";
+export type SandWebAuthnOriginClass = "first_party" | "subdomain" | "external";
 
 export function sandWebAuthnOriginClass(origin: string): SandWebAuthnOriginClass {
   let hostname: string;
@@ -20,8 +20,8 @@ export function sandWebAuthnOriginClass(origin: string): SandWebAuthnOriginClass
   } catch {
     return "external";
   }
-  if (hostname === "cursor.com") return "cursor_com";
-  return hostname.endsWith(".cursor.com") ? "subdomain" : "external";
+  if (hostname === "simeonlabs.com") return "first_party";
+  return hostname.endsWith(".simeonlabs.com") ? "subdomain" : "external";
 }
 
 export interface WebAuthnCeremony {

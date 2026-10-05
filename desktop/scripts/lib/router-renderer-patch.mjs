@@ -92,6 +92,64 @@ export function countBrandResidue(sources) {
   return counts;
 }
 
+/**
+ * The window's own tokens that carry the upstream maker's name (Track B of
+ * the detachment plan, 4 October 2026): the 424 CSS custom properties
+ * `--cursor-*` and the two places the window builds their names from
+ * pieces (`--cursor-${…}`), the theme classes cursor-light / cursor-dark /
+ * cursor-high-contrast, the glass-mode attribute, the stylesheet's layer
+ * names, the icon font's family (its file keeps its name: the packaged
+ * renderer's inventory is pinned by file), the mark's class and state
+ * attribute, and the cloud-agent card's class family. Nothing outside the
+ * window reads any of them, so every chunk, the stylesheet and the page
+ * are rewritten together, and the patch's own CSS spells the new names.
+ * The stale-name check below refuses a build in which any `--cursor-` is
+ * left, so a token this list misses is a build error, not a blank screen.
+ */
+export const UPSTREAM_TOKEN_REPLACEMENTS = Object.freeze([
+  ["css-variables", /--cursor-/g, "--simeon-"],
+  ["themes", /(?<![A-Za-z0-9_-])cursor-(light|dark|high-contrast)(?![A-Za-z0-9_])/g, "simeon-$1"],
+  ["glass-attribute", /data-cursor-glass-mode/g, "data-simeon-glass-mode"],
+  ["layers", /anysphere\.(tokens|scss|stylex)/g, "simeon.$1"],
+  ["icon-font", /cursor-icons(?!-16)/g, "simeon-icons"],
+  ["mark-class", /sand-grok-bot-mark/g, "sand-simeon-mark"],
+  ["mark-state", /data-grok-state/g, "data-mark-state"],
+  ["cloud-agent-card", /sand-cursor-agent-card/g, "sand-cloud-agent-card"],
+  // The account bridge between the window and the Mac (`desktop.account`
+  // in the preload, the edge method names, the status event and the
+  // status field): the window's own spellings carried the maker's name.
+  // Our side spells the new names (preload.ts, main-edge.ts, web/backend.ts,
+  // demo/backend.ts); the pass makes the window agree.
+  ["account-bridge", /\bcursorAccount\b/g, "account"],
+  ["account-auth-prop", /\bcursorAuth\b/g, "accountAuth"],
+  ["account-event", /cursor-auth-changed/g, "account-changed"],
+  ["account-staff-field", /\bisAnysphereUser\b/g, "isStaffUser"],
+  ["account-method-status", /\bgetCursorAuthStatus\b/g, "getAccountStatus"],
+  ["account-method-sign-in", /\bloginCursor\b/g, "signInAccount"],
+  ["account-method-cancel-sign-in", /\bcancelCursorLogin\b/g, "cancelAccountSignIn"],
+  ["account-method-sign-out", /\blogoutCursor\b/g, "signOutAccount"],
+  ["account-method-name", /\bupdateCursorAccountName\b/g, "updateAccountName"],
+  ["account-method-name-prompt", /\bgetCursorNamePrompt\b/g, "getAccountNamePrompt"],
+  ["account-method-avatar", /\bgetCursorAvatar\b/g, "getAccountAvatar"],
+  ["account-method-weekly-usage", /\bgetCursorWeeklyUsage\b/g, "getAccountWeeklyUsage"],
+  ["account-method-usage-summary", /\bgetCursorUsageSummary\b/g, "getAccountUsageSummary"],
+  ["account-method-pr-review", /\bgetCursorPrReviewPreferences\b/g, "getAccountPrReviewPreferences"],
+  ["account-method-privacy", /\bgetCursorPrivacyModeEnabled\b/g, "getAccountPrivacyModeEnabled"],
+  ["account-method-dashboard", /\binvokeCursorDashboardAction\b/g, "invokeAccountDashboardAction"],
+  ["account-method-trial", /\bcancelCursorSandTrial\b/g, "cancelAccountTrial"],
+]);
+
+export function patchOriginalUpstreamTokens(source) {
+  let out = source;
+  const counts = {};
+  for (const [label, pattern, after] of UPSTREAM_TOKEN_REPLACEMENTS) {
+    const count = (out.match(pattern) ?? []).length;
+    counts[label] = count;
+    if (count > 0) out = out.replace(pattern, after);
+  }
+  return { source: out, counts };
+}
+
 export function patchOriginalBrandStrings(source) {
   let out = source;
   const counts = {};
@@ -510,7 +568,7 @@ export const AGENT_PANE_CSS = `${AGENT_PANE_MARKER} (1 October 2026). Measured o
 .simeon-pane__head .sand-avatar-trigger{width:auto!important;height:auto!important}
 .simeon-pane__head .sand-avatar-trigger__button{position:relative;width:96px!important;height:96px!important;padding:0!important;overflow:visible!important;border-radius:50%!important;background:none!important;box-shadow:none!important}
 .simeon-pane__head .sand-avatar-trigger__button>span:first-child{display:flex!important;align-items:center;justify-content:center;width:96px!important;height:96px!important;border-radius:50%;overflow:hidden;background:light-dark(#ffffff,#2c2c2e);box-shadow:inset 0 0 0 1px var(--simeon-hairline)}
-.simeon-pane__head .sand-grok-bot-mark-avatar,.simeon-pane__head .sand-grok-bot-mark-avatar>svg{width:68px!important;height:68px!important}
+.simeon-pane__head .sand-simeon-mark-avatar,.simeon-pane__head .sand-simeon-mark-avatar>svg{width:68px!important;height:68px!important}
 .simeon-pane__head .sand-avatar-trigger__button>span:first-child img{width:96px!important;height:96px!important;object-fit:cover}
 .simeon-pane__head .sand-avatar-trigger__overlay{position:absolute!important;inset:auto -3px -3px auto!important;width:32px!important;height:32px!important;border-radius:50%!important;opacity:1!important;-webkit-mask-image:none!important;mask-image:none!important;background:var(--simeon-fill)!important;box-shadow:0 0 0 3px var(--simeon-paper)!important;display:block!important;transition:background-color .15s}
 .simeon-pane__head .sand-avatar-trigger__overlay>*{display:none!important}
@@ -1537,12 +1595,12 @@ export function patchOriginalPalette(source) {
  * in the chunk (`Ct("fill/bubble-user", El(light, dark, hcLight, hcDark))`,
  * emitted by `bzn` as `--sand-fill-bubble-user`); the stylesheet carries only
  * the light default for first paint. Both are patched to the painting's base
- * blue, which is also what `--cursor-foreground` (a checked checkbox) reads.
+ * blue, which is also what `--simeon-foreground` (a checked checkbox) reads.
  * `USER_BUBBLE_PAINT_CSS`, appended to the stylesheet on `.sand-mvmkjj`, the
  * one atomic class that applies the bubble colour (it occurs once in the
  * pinned chunk, in the message's `user` style), clears any background image
  * so the token's flat colour is all that shows, and carries the dark-mode
- * selection. The renderer marks dark mode as `data-theme="cursor-dark"` on
+ * selection. The renderer marks dark mode as `data-theme="simeon-dark"` on
  * the root. The text on the bubble is `text/on-color`, white in every theme.
  */
 export const USER_BUBBLE_LIGHT = "#255a93";
@@ -1563,7 +1621,7 @@ export function patchOriginalBubble(source) {
 export const USER_BUBBLE_PAINT_MARKER = "/* Simeon: the person's bubble is one flat blue";
 export const USER_BUBBLE_PAINT_CSS = `${USER_BUBBLE_PAINT_MARKER} (1 October 2026), plain, and its selection reads in dark mode. */
 .sand-mvmkjj:not(#\\#):not(#\\#):not(#\\#){background-image:none}
-[data-theme="cursor-dark"] .sand-mvmkjj:not(#\\#):not(#\\#):not(#\\#)::selection,[data-theme="cursor-dark"] .sand-mvmkjj:not(#\\#):not(#\\#):not(#\\#) *::selection{background-color:#ffffff;color:${USER_BUBBLE_DARK}}
+[data-theme="simeon-dark"] .sand-mvmkjj:not(#\\#):not(#\\#):not(#\\#)::selection,[data-theme="simeon-dark"] .sand-mvmkjj:not(#\\#):not(#\\#):not(#\\#) *::selection{background-color:#ffffff;color:${USER_BUBBLE_DARK}}
 `;
 
 /**
@@ -1607,12 +1665,12 @@ export function patchOriginalBubbleStylesheet(css) {
 export const HEADER_CARD_CSS = `
 /* Simeon: the chat header is the agent's card, centred, without the divider (23 September 2026). */
 .sand-toolbar-divider{display:none!important}
-.sand-toolbar:has(.sand-chat-header__identity-row){padding-top:4px!important;padding-bottom:28px!important;border-bottom-width:0!important;background-color:color-mix(in srgb,var(--cursor-bg-editor) 78%,transparent)!important;-webkit-backdrop-filter:blur(22px) saturate(1.5)!important;backdrop-filter:blur(22px) saturate(1.5)!important;-webkit-mask-image:linear-gradient(to bottom,#000 0,#000 calc(100% - 30px),transparent 100%)!important;mask-image:linear-gradient(to bottom,#000 0,#000 calc(100% - 30px),transparent 100%)!important}
+.sand-toolbar:has(.sand-chat-header__identity-row){padding-top:4px!important;padding-bottom:28px!important;border-bottom-width:0!important;background-color:color-mix(in srgb,var(--simeon-bg-editor) 78%,transparent)!important;-webkit-backdrop-filter:blur(22px) saturate(1.5)!important;backdrop-filter:blur(22px) saturate(1.5)!important;-webkit-mask-image:linear-gradient(to bottom,#000 0,#000 calc(100% - 30px),transparent 100%)!important;mask-image:linear-gradient(to bottom,#000 0,#000 calc(100% - 30px),transparent 100%)!important}
 .sand-chat-header:has(>.sand-chat-header__identity-row){justify-content:center!important;position:relative!important}
 .sand-chat-header__identity-row{flex-direction:column!important;align-items:center!important;gap:6px!important}
 .sand-chat-header__identity{flex-direction:column!important;align-items:center!important;gap:4px!important;padding:0 8px 2px!important;border-radius:16px!important}
-.sand-chat-header__avatar .sand-agent-avatar,.sand-chat-header__avatar .sand-grok-bot-mark{width:52px!important;height:52px!important}
-.sand-chat-header__avatar .sand-grok-bot-mark>svg{width:52px!important;height:52px!important}
+.sand-chat-header__avatar .sand-agent-avatar,.sand-chat-header__avatar .sand-simeon-mark{width:52px!important;height:52px!important}
+.sand-chat-header__avatar .sand-simeon-mark>svg{width:52px!important;height:52px!important}
 .sand-chat-header__avatar img.sand-agent-avatar{border-radius:50%!important;object-fit:cover!important}
 .sand-chat-header__title{align-items:center!important}
 .sand-chat-header__name{font-size:13px!important;line-height:18px!important;padding:3px 12px!important;border-radius:999px!important;background-color:var(--sand-fill-bubble-agent)!important;font-weight:500!important}
@@ -1642,7 +1700,7 @@ export function patchOriginalHeaderStylesheet(css) {
 export const LIQUID_GLASS_CSS = `
 /* Simeon: Liquid Glass on the chrome (23 September 2026), the agents sidebar only since 27 September 2026. */
 html:has(.sand-agents-sidebar),html:has(.sand-agents-sidebar) body,[data-theme]:has(>.sand-agents-sidebar){background-color:transparent!important}
-.sand-agents-sidebar{background-color:color-mix(in srgb,var(--cursor-bg-chrome) 93%,transparent)!important;-webkit-backdrop-filter:blur(30px) saturate(1.8)!important;backdrop-filter:blur(30px) saturate(1.8)!important;border-right:.5px solid color-mix(in srgb,var(--cursor-text-primary) 10%,transparent)!important}
+.sand-agents-sidebar{background-color:color-mix(in srgb,var(--simeon-bg-chrome) 93%,transparent)!important;-webkit-backdrop-filter:blur(30px) saturate(1.8)!important;backdrop-filter:blur(30px) saturate(1.8)!important;border-right:.5px solid color-mix(in srgb,var(--simeon-text-primary) 10%,transparent)!important}
 .sand-agents-sidebar~.sand-chat,.sand-agents-sidebar~.sand-info-pane{background-color:var(--sand-bg-base)!important}
 `;
 export const LIQUID_GLASS_MARKER = "/* Simeon: Liquid Glass on the chrome";
@@ -1755,11 +1813,13 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   const stylesheetPatched = patchOriginalCooStylesheet(patchOriginalWordmarkStylesheet(patchOriginalFlightsStylesheet(patchOriginalHandoffStylesheet(patchOriginalAgentPaneStylesheet(patchOriginalVoiceCallStylesheet(patchOriginalLogosStylesheet(patchOriginalShapePickerStylesheet(patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)))), logoAssets))))), logoAssets.wordmarkFont));
   const chunkSources = [];
   for (const target of markCandidates) chunkSources.push(await readFile(target, "utf8"));
+  // The blocks spell the window's tokens as the token pass below leaves them.
+  const anchorSources = [bubbleSheets[0].css, ...chunkSources].map((source) => patchOriginalUpstreamTokens(source).source);
   const styleAnchors = {
-    header: countStyleAnchors(styleAnchorClasses(HEADER_CARD_CSS), [bubbleSheets[0].css, ...chunkSources]),
-    glass: countStyleAnchors(styleAnchorClasses(LIQUID_GLASS_CSS), [bubbleSheets[0].css, ...chunkSources]),
+    header: countStyleAnchors(styleAnchorClasses(HEADER_CARD_CSS), anchorSources),
+    glass: countStyleAnchors(styleAnchorClasses(LIQUID_GLASS_CSS), anchorSources),
     // Only the window's own classes: the simeon- ones are drawn by this patch.
-    voiceCall: countStyleAnchors(styleAnchorClasses(voiceCallCss()).filter((name) => name.startsWith("sand-")), [bubbleSheets[0].css, ...chunkSources]),
+    voiceCall: countStyleAnchors(styleAnchorClasses(voiceCallCss()).filter((name) => name.startsWith("sand-")), anchorSources),
   };
   for (const [block, result] of Object.entries(styleAnchors)) {
     if (result.missing.length > 0) console.warn(`renderer patch: ${result.missing.length} ${block} style anchor(s) appear nowhere in the pinned renderer: ${result.missing.join(", ")}`);
@@ -1789,17 +1849,27 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   const brandTargets = (await readdir(assetsRoot)).filter((name) => name.endsWith(".js") || name.endsWith(".css")).map((name) => path.join(assetsRoot, name));
   brandTargets.push(path.join(stageRoot, "dist", "renderer", "index.html"));
   const brandSources = [];
+  const tokenTotals = Object.fromEntries(UPSTREAM_TOKEN_REPLACEMENTS.map(([label]) => [label, 0]));
   for (const target of brandTargets) {
     let source;
     try { source = await readFile(target, "utf8"); } catch { continue; }
-    const { source: patched, counts } = patchOriginalBrandStrings(source);
+    const branded = patchOriginalBrandStrings(source);
+    const tokens = patchOriginalUpstreamTokens(branded.source);
+    const patched = tokens.source;
+    const counts = branded.counts;
     brandSources.push(patched);
+    for (const [label, count] of Object.entries(tokens.counts)) tokenTotals[label] += count;
     if (patched === source) continue;
     await writeFile(target, patched);
     for (const [before, count] of Object.entries(counts)) brandTotals[before] += count;
-    brandFiles.push({ path: path.relative(stageRoot, target), counts, original: { bytes: Buffer.byteLength(source), sha256: sha256(source) }, patched: { bytes: Buffer.byteLength(patched), sha256: sha256(patched) } });
+    brandFiles.push({ path: path.relative(stageRoot, target), counts, tokens: tokens.counts, original: { bytes: Buffer.byteLength(source), sha256: sha256(source) }, patched: { bytes: Buffer.byteLength(patched), sha256: sha256(patched) } });
   }
   if (brandTotals["Grok Bot"] === 0) throw new Error("Expected the original renderer to name Grok Bot at least once; the brand pass found none.");
+  if (bubbleSheets[0].css.includes("--cursor-") && tokenTotals["css-variables"] === 0) throw new Error("Expected the original renderer to carry the upstream's CSS variables; the token pass found none.");
+  for (const source of brandSources) {
+    if (source.includes("--cursor-")) throw new Error("A renderer file still carries an upstream CSS variable after the token pass.");
+  }
+  console.log(`renderer patch: upstream tokens renamed ${JSON.stringify(tokenTotals)}`);
   const brandResidue = countBrandResidue(brandSources);
   console.log(`renderer patch: brand residue after the pass ${JSON.stringify(brandResidue)}`);
   // Every renderer file this pass rewrote: its bytes before the first pass and
@@ -1823,12 +1893,12 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     chunks: changes,
     marks,
     files,
-    brand: { replacements: [...BRAND_REPLACEMENTS.map(([before, after]) => ({ before, after })), ...BRAND_WORD_REPLACEMENTS.map(([pattern, after, label]) => ({ before: label, pattern: String(pattern), after })), ...BRAND_PHRASE_REPLACEMENTS.map(([before, after]) => ({ before, after }))], totals: brandTotals, files: brandFiles, residue: brandResidue },
+    brand: { tokens: tokenTotals, tokenReplacements: UPSTREAM_TOKEN_REPLACEMENTS.map(([label, pattern, after]) => ({ label, pattern: String(pattern), after })), replacements: [...BRAND_REPLACEMENTS.map(([before, after]) => ({ before, after })), ...BRAND_WORD_REPLACEMENTS.map(([pattern, after, label]) => ({ before: label, pattern: String(pattern), after })), ...BRAND_PHRASE_REPLACEMENTS.map(([before, after]) => ({ before, after }))], totals: brandTotals, files: brandFiles, residue: brandResidue },
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-mark", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "agent-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "flight-results"],
-    transformations: ["settings-registry", "marks", "app-icon", "brand-strings"],
+    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-mark", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "agent-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "flight-results", "upstream-tokens"],
+    transformations: ["settings-registry", "marks", "app-icon", "brand-strings", "upstream-tokens"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");
   await writeFile(provenancePath, `${JSON.stringify(record, null, 2)}\n`);

@@ -3186,7 +3186,7 @@ export const FLAGS = {
        * Internal Anysphere: default tsgo on for engineers who have not previously
        * installed native-preview. When on, installs `typescriptteam.native-preview`
        * when missing and sets `js/ts.experimental.useTsgo` at user scope. Scoped
-       * to team 1 in Statsig; client also guards with `isAnysphereUser()`.
+       * to team 1 in Statsig; client also guards with `isStaffUser()`.
        */
       default_tsgo_internal: {
         client: true,

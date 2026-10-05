@@ -79,16 +79,16 @@ test("the served switch is on by default and SAND_SHARING_SERVED=0 restores Comi
   }
 });
 
-test("a dev host pointed at api.simeonlabs.com is allowed; the upstream's production origin still needs the opt-in", async () => {
+test("a dev host pointed at api.simeonlabs.com or a local host is allowed; any other production backend still needs the opt-in", async () => {
   const { module, dispose } = await load("source/host/extensions/cross-user-sharing/xuser-sharing-environment.ts", "sharing-environment");
   try {
     const dev = { SAND_PACKAGED: "0", SAND_DEV_XUSER_SHARING: "1" };
     assert.deepEqual(module.resolveXuserSharingEnvironment({ backendUrl: "https://api.simeonlabs.com/", env: dev }), { isAllowed: true });
     assert.deepEqual(module.resolveXuserSharingEnvironment({ backendUrl: "http://127.0.0.1:8000", env: dev }), { isAllowed: true });
-    const cursor = module.resolveXuserSharingEnvironment({ backendUrl: "https://the upstream API", env: dev });
+    const cursor = module.resolveXuserSharingEnvironment({ backendUrl: "https://api.example.com", env: dev });
     assert.equal(cursor.isAllowed, false);
     assert.match(cursor.reason, /a backend that is not Simeon Labs'/);
-    assert.deepEqual(module.resolveXuserSharingEnvironment({ backendUrl: "https://the upstream API", env: { ...dev, SAND_XUSER_SHARING_ALLOW_PROD: "1" } }), { isAllowed: true });
+    assert.deepEqual(module.resolveXuserSharingEnvironment({ backendUrl: "https://api.example.com", env: { ...dev, SAND_XUSER_SHARING_ALLOW_PROD: "1" } }), { isAllowed: true });
     assert.equal(module.resolveXuserSharingEnvironment({ backendUrl: "https://api.simeonlabs.com", env: { SAND_PACKAGED: "0" } }).isAllowed, false, "a dev host still opts in with SAND_DEV_XUSER_SHARING=1");
     assert.deepEqual(module.resolveXuserSharingEnvironment({ backendUrl: "https://api.simeonlabs.com", env: { SAND_PACKAGED: "1" } }), { isAllowed: true });
   } finally {

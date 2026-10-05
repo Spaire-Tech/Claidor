@@ -44,7 +44,7 @@ test("sign-in errors name Simeon, not an earlier name (the account is Simeon sin
   assert.doesNotMatch(wiring, /Sign in to Cursor to continue/);
   assert.match(mcp, /signed-in Simeon account/);
   assert.doesNotMatch(mcp, /signed-in Cursor account/);
-  assert.match(auth, /isAnysphereUser/);
+  assert.match(auth, /isStaffUser/);
   assert.match(auth, /export interface CursorProfile/);
 });
 

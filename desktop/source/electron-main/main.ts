@@ -114,7 +114,7 @@ export interface ElectronMainServices {
   readonly mainEdge: MainEdge;
   readonly getDevToolsMembershipStatus: () => Promise<{
     readonly kind: string;
-    readonly isAnysphereUser?: boolean;
+    readonly isStaffUser?: boolean;
   }>;
   readonly subscribeDevToolsMembership: (listener: () => void) => () => void;
   readonly getThemeBackgroundColor: () => string;

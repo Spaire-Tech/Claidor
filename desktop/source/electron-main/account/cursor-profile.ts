@@ -37,7 +37,7 @@ export interface SandUsageStatus {
   readonly upgradeRecommendation?: { readonly disabled: boolean; readonly cta?: DashboardButton };
 }
 export interface WeeklyUsage { readonly percentUsed: number; readonly nextResetMs: number | null; readonly hasNonZeroIncludedLimit: boolean; readonly onDemand: { readonly usedCents: number; readonly limitCents: number } | null }
-export interface CursorProfile { readonly displayName: string | undefined; readonly email: string | undefined; readonly profilePictureUrl: string | undefined; readonly isAnysphereUser: boolean }
+export interface CursorProfile { readonly displayName: string | undefined; readonly email: string | undefined; readonly profilePictureUrl: string | undefined; readonly isStaffUser: boolean }
 export interface DashboardClient {
   getMe(request: object, options: { timeoutMs: number }): Promise<{ firstName?: string; lastName?: string; email?: string; profilePictureUrl?: string }>;
   getTeams(request: object, options: { timeoutMs: number }): Promise<TeamsResponse>;
@@ -128,7 +128,7 @@ export function cursorProfileFromSimeon(row: SimeonProfileRow, localName: string
     displayName: localName ?? nonEmpty(row.preferredName) ?? nonEmpty(row.name) ?? nonEmpty(row.nickname),
     email: nonEmpty(row.email),
     profilePictureUrl: avatar,
-    isAnysphereUser: false,
+    isStaffUser: false,
   };
 }
 
@@ -224,7 +224,7 @@ export async function fetchCursorProfile(getAccessToken: AccessTokenReader, deps
     return cursorProfileFromSimeon(await readSimeonProfile(getAccessToken, deps), localName);
   } catch (error) {
     deps.reportFailure?.("cursor-profile", "simeon-profile", error);
-    return localName == null ? null : { displayName: localName, email: undefined, profilePictureUrl: undefined, isAnysphereUser: false };
+    return localName == null ? null : { displayName: localName, email: undefined, profilePictureUrl: undefined, isStaffUser: false };
   }
 }
 // The rename stays local, as before: the name is written to

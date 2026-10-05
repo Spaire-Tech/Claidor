@@ -491,16 +491,9 @@
         "Cursor"
       ],
       "paths": [
-        "desktop/source/shared/node/cursor-token.ts",
-        "desktop/source/shared/webauthn-gateway.ts",
-        "desktop/source/node-agent-coordinator/gateway/gateway-dns-diagnostics.ts",
-        "desktop/source/shared/node/experiments/statsig-bootstrap.ts",
-        "desktop/source/packages/cursor-plugins/origin-git-auth.ts",
-        "desktop/source/packages/agent-store-sync/presigned-url.ts",
-        "desktop/source/host/extensions/box-store-sync/agent-store-sand-files.ts",
         "desktop/frontend/**"
       ],
-      "reason": "The upstream's own addresses our code still compares against or refuses (the sharing refusal of its origin, the DNS probe host, the passkey origin class, the playground and origin-git hosts, the Statsig proxy) and the recovered window's copies of them and of the maker's name; each is replaced with ours in Track B of the detachment plan (4 October 2026)."
+      "reason": "The recovered window (desktop/frontend, not shipped) still carries the upstream's addresses and the maker's name where the pinned window had them; it is redrawn from the upstream bytes and goes with Track D of the detachment plan. Our own code compared against those addresses until Track B (4 October 2026) replaced them."
     },
     {
       "kind": "guard",

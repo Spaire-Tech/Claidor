@@ -140,7 +140,7 @@ export function createWebBackend(hooks: WebBackendHooks) {
       ...(row?.email == null ? {} : { email: row.email }),
       ...(nonEmpty(row?.preferredName) ?? nonEmpty(row?.name) ?? nonEmpty(row?.nickname)) == null ? {} : { displayName: nonEmpty(row?.preferredName) ?? nonEmpty(row?.name) ?? nonEmpty(row?.nickname) },
       ...(nonEmpty(row?.avatarUrl ?? undefined) == null ? {} : { profilePictureUrl: nonEmpty(row?.avatarUrl ?? undefined) }),
-      isAnysphereUser: false,
+      isStaffUser: false,
     };
   };
   const accountSlot = (): string | null => {
@@ -175,42 +175,42 @@ export function createWebBackend(hooks: WebBackendHooks) {
 
   const main: Record<string, (args: any) => unknown> = {
     // --- the account, on Simeon Labs' server ---
-    getCursorAuthStatus: async () => { if (api.isSignedIn()) await loadProfile(); return authStatus(); },
-    loginCursor: async () => {
+    getAccountStatus: async () => { if (api.isSignedIn()) await loadProfile(); return authStatus(); },
+    signInAccount: async () => {
       if (api.isSignedIn()) { await loadProfile(); return authStatus(); }
-      hooks.pushMainEvent("cursor-auth-changed", { kind: "logging-in" });
+      hooks.pushMainEvent("account-changed", { kind: "logging-in" });
       if (await api.signInFromCookie()) {
         await loadProfile();
         const status = authStatus();
-        hooks.pushMainEvent("cursor-auth-changed", status);
+        hooks.pushMainEvent("account-changed", status);
         return status;
       }
       hooks.goSignIn();
       return { kind: "logging-in" };
     },
-    cancelCursorLogin: () => ({ kind: "logged-out" }),
-    logoutCursor: async () => { await api.signOut(); profile = null; const status = { kind: "logged-out" }; hooks.pushMainEvent("cursor-auth-changed", status); return status; },
-    updateCursorAccountName: async (args: any) => {
+    cancelAccountSignIn: () => ({ kind: "logged-out" }),
+    signOutAccount: async () => { await api.signOut(); profile = null; const status = { kind: "logged-out" }; hooks.pushMainEvent("account-changed", status); return status; },
+    updateAccountName: async (args: any) => {
       const name = typeof args?.name === "string" ? args.name : "";
       profile = await api.data<ProfileRow>("user/name", { json: { name } });
-      hooks.pushMainEvent("cursor-auth-changed", authStatus());
+      hooks.pushMainEvent("account-changed", authStatus());
       return authStatus();
     },
-    getCursorNamePrompt: async () => {
+    getAccountNamePrompt: async () => {
       const row = await loadProfile();
       const preferred = nonEmpty(row?.preferredName);
       return { needed: preferred == null, suggested: preferred ?? nonEmpty(row?.suggestedName) ?? null };
     },
     // The menu draws whatever `<img src>` takes; the sign-in provider's picture is an https URL.
-    getCursorAvatar: async () => nonEmpty((await loadProfile())?.avatarUrl ?? undefined) ?? null,
-    getCursorWeeklyUsage: () => null,
-    getCursorUsageSummary: () => null,
-    getCursorPrReviewPreferences: () => null,
-    getCursorPrivacyModeEnabled: () => true,
+    getAccountAvatar: async () => nonEmpty((await loadProfile())?.avatarUrl ?? undefined) ?? null,
+    getAccountWeeklyUsage: () => null,
+    getAccountUsageSummary: () => null,
+    getAccountPrReviewPreferences: () => null,
+    getAccountPrivacyModeEnabled: () => true,
     getSandAccess: () => ({ state: api.isSignedIn() ? "granted" : "unknown", reason: "none" }),
     getSandAccessFresh: () => ({ state: api.isSignedIn() ? "granted" : "unknown", reason: "none" }),
-    invokeCursorDashboardAction: () => notHere("That account action"),
-    cancelCursorSandTrial: () => notHere("That account action"),
+    invokeAccountDashboardAction: () => notHere("That account action"),
+    cancelAccountTrial: () => notHere("That account action"),
     submitFeedback: (args: any) => api.data("feedback", { json: { ...(args ?? {}), platform: "web" } }),
     getAvailableModels: async () => availableModelsJson(await api.data<unknown>("models/available")),
     getExperimentsSnapshot: () => null,
