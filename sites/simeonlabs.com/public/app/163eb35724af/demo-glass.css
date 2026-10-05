@@ -21,6 +21,8 @@ html body .sand-agents-sidebar__new-actions .sand-kit-icon svg{width:18px!import
 /* The agent's pane (the founder, 5 October 2026): open from the start at its widest, and its four tabs, profile,
    routines and computer (channels hidden), as the same round glass discs; the chosen one solid white in the ink. */
 html body .sand-info-pane{--sand-info-pane-width:480px!important}
+/* In the demo the pane stays closed and the header's avatar does nothing (the founder, 5 October 2026). */
+html body .sand-chat-header__identity{pointer-events:none!important}
 html body .simeon-segments{display:flex!important;justify-content:center!important;gap:12px!important;height:auto!important;padding:0!important;margin:28px 0 26px!important;background:none!important}
 html body .simeon-segments__thumb{display:none!important}
 html body .simeon-segments__item[data-segment="channels"]{display:none!important}
