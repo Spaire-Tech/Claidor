@@ -4,7 +4,7 @@ The app in `desktop/` already has the whole client: the CloudAgent tool
 (`host/cloud-agents/cloud-agent-tool.ts`, thirteen actions), the manager
 that composes each request (`host/extensions/cloud-agents/`), the poll
 loop that waits on a run, the `cursor-agent` card and its provider. All
-of it speaks the upstream's `aiserver.v1.BackgroundComposerService`. What was
+of it speaks the upstream's `simeon.v1.CloudAgentService`. What was
 missing was the server. This is it, and it is not a new engine: a cloud
 agent is a `SandCloudAgent` row spanning one or more `MatyJob` turns, and
 the queue (`simeon.maty`) does what it always did — claim, lease,
@@ -191,7 +191,7 @@ class CloudAgentsService:
         return agent, job
 
     def composer(self, agent: SandCloudAgent, job: MatyJob) -> dict[str, Any]:
-        """`aiserver.v1.BackgroundComposer`, the fields the client reads."""
+        """`simeon.v1.BackgroundComposer`, the fields the client reads."""
         return {
             "bcId": agent.bc_id,
             "createdAtMs": _ms(agent.created_at),
@@ -219,7 +219,7 @@ class CloudAgentsService:
         }
 
     def detailed(self, agent: SandCloudAgent, job: MatyJob) -> dict[str, Any]:
-        """`aiserver.v1.DetailedBackgroundComposer`."""
+        """`simeon.v1.DetailedBackgroundComposer`."""
         body: dict[str, Any] = {
             "composer": self.composer(agent, job),
             "status": status_of(job),
@@ -245,7 +245,7 @@ class CloudAgentsService:
         return body
 
     def conversation(self, job: MatyJob) -> list[dict[str, Any]]:
-        """`aiserver.v1.ConversationMessage`s, as
+        """`simeon.v1.ConversationMessage`s, as
         `convertConversationMessagesToTrace` reads them."""
         rows: list[dict[str, Any]] = []
         for index, message in enumerate(job.conversation or []):
@@ -264,7 +264,7 @@ class CloudAgentsService:
         return rows
 
     def environment(self) -> dict[str, Any]:
-        """`aiserver.v1.LogicalEnvironment`: the one we have."""
+        """`simeon.v1.LogicalEnvironment`: the one we have."""
         return {
             "publicId": ENVIRONMENT_PUBLIC_ID,
             "name": ENVIRONMENT_NAME,

@@ -16,7 +16,7 @@ type TranscriptContentPart = {
 interface TranscriptMessage {
   readonly role: string;
   readonly content?: string | readonly TranscriptContentPart[];
-  readonly providerOptions?: { readonly cursor?: { readonly isSummary?: boolean } };
+  readonly providerOptions?: { readonly simeon?: { readonly isSummary?: boolean } };
 }
 
 interface TranscriptState {
@@ -100,7 +100,7 @@ class CoreMessageSerde {
 const coreMessageSerde = new CoreMessageSerde();
 
 function isSummaryMessage(message: TranscriptMessage): boolean {
-  return message.providerOptions?.cursor?.isSummary === true;
+  return message.providerOptions?.simeon?.isSummary === true;
 }
 
 function formatBlobSizeMegabytes(bytes: number): string {

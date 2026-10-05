@@ -189,7 +189,7 @@ export async function fetchLinkMetadata(agentDir: string, rawUrl: string): Promi
 // What an attachment may never be made of (F-277): the box's credential
 // mount, the kernel's views, the host's own secret store and another
 // agent's data. SendMessage is not auto-reviewed, so this is the check.
-export const ATTACHMENT_REFUSED_ROOTS: readonly string[] = ["/run/grok-bot", "/proc", "/sys", "/dev", "/etc/shadow"];
+export const ATTACHMENT_REFUSED_ROOTS: readonly string[] = ["/run/simeon", "/proc", "/sys", "/dev", "/etc/shadow"];
 export function attachmentSourceRefusal(sourcePath: string, sandRoot: string = getSandRootDir()): string | null {
   const resolved = reanchorSandPath(sourcePath);
   for (const root of ATTACHMENT_REFUSED_ROOTS) if (resolved === root || resolved.startsWith(`${root}/`)) return `Attachment refused: ${root} holds credentials or the system, not files to send.`;

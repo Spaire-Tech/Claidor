@@ -18,7 +18,7 @@ import { redactSandAutoReviewInlineSecrets } from "../../../shared/sand-auto-rev
 import { SIMEON_WORKING_CONTEXT_TOKENS } from "../../../shared/inference/simeon-context-window.js";
 import { resolveSandAgentStepCap, stepBudgetExceededMessage } from "../../../shared/inference/turn-step-budget.js";
 import { readSimeonEnv, type SandInferenceProvider } from "../../../shared/inference-router.js";
-import { simeonProxyBaseUrl } from "../../../shared/node/cursor-backend/simeon-api.js";
+import { simeonProxyBaseUrl } from "../../../shared/node/simeon-backend/simeon-api.js";
 import { getSandRootDir } from "../../host-paths.js";
 import { SandSettingsStore } from "../../../shared/node/settings/sand-settings-store.js";
 import { simeonGeminiEndpoint, streamGeminiGenerateContent, toGeminiRequest, type GeminiDirectTool } from "./gemini-direct-generate.js";
@@ -272,7 +272,7 @@ export function simeonEffortForCall(sessionEffort: SimeonReasoningEffort, follow
   // (`highLevelToolCallResult.isError`, packages/agent/tool-stream-executor.ts);
   // a result built elsewhere may carry `isError` on the part itself.
   const parts = Array.isArray(last.content) ? last.content as readonly Loose[] : [];
-  const failed = (last as Loose).providerOptions?.cursor?.highLevelToolCallResult?.isError === true
+  const failed = (last as Loose).providerOptions?.simeon?.highLevelToolCallResult?.isError === true
     || parts.some((part) => part?.type === "tool-result" && part.isError === true);
   if (failed) return SIMEON_RECOVERY_EFFORT;
   return parseReasoningEffort(readSimeonEnv(env, SAND_SIMEON_TOOL_RESULT_EFFORT_ENV), SIMEON_TOOL_RESULT_EFFORT);
@@ -422,7 +422,7 @@ const TOOL_IMAGE_INTRO = "Image output of the tool call(s) above.";
 const TOOL_IMAGE_DROPPED = "Image output of the tool call(s) above. (Not shown again: only the latest screenshots are kept; take a new one if you need to look.)";
 
 // The host loop appends messages in its own dialect of the AI SDK shape:
-// the upstream app wire metadata under `providerOptions.cursor` (with `undefined` fields
+// the upstream app wire metadata under `providerOptions.simeon` (with `undefined` fields
 // the SDK's JSON validator refuses), tool results whose text may be empty and
 // whose images live in `experimental_content`, reasoning parts with signatures.
 // This is the copy the wire sees; the loop keeps its own.

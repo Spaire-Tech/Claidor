@@ -8,9 +8,9 @@ const AGENT_STORE_TEAM_SOURCE_ID_PATTERN = /^t([1-9][0-9]*)$/;
 export const AGENT_STORE_USER_MOUNT_NAME = "user";
 export const AGENT_STORE_TEAM_MOUNT_NAME = "team";
 export const AGENT_STORE_AUTOMATION_MOUNT_NAME = "automation";
-export const AGENT_STORE_RESERVED_CURSOR_PATH_PREFIX = ".cursor";
+export const AGENT_STORE_RESERVED_SIMEON_PATH_PREFIX = ".simeon";
 export const NAMED_AGENT_HOME_STORE_MOUNT_NAME = "home";
-export const CURSOR_AGENT_STORE_FILES_DIR_ENV = "CURSOR_AGENT_STORE_FILES_DIR";
+export const SIMEON_AGENT_STORE_FILES_DIR_ENV = "SIMEON_AGENT_STORE_FILES_DIR";
 
 function parsePositiveSafeInteger(value: string): number | undefined {
   const parsed = Number(value);

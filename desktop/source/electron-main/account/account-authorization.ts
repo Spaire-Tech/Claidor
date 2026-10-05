@@ -1,4 +1,4 @@
-import { accountCacheScope } from "../../shared/node/cursor-token.js";
+import { accountCacheScope } from "../../shared/node/simeon-token.js";
 
 export function createDesktopAccountAuthorizer(deps: {
   readonly binding?: { authorize(args: { accountSlot: string; descriptorUrl: string; allowExistingDataClaim: boolean; hasExistingDurableData: () => boolean | Promise<boolean> }): Promise<boolean> };

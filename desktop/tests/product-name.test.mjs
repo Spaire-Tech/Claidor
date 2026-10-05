@@ -30,8 +30,8 @@ test("Settings copy names Simeon, not an earlier name", async () => {
 });
 
 test("sign-in errors name Simeon, not an earlier name (the account is Simeon since 25 September)", async () => {
-  const auth = await read("source/electron-main/account/cursor-auth.ts");
-  const wiring = await read("source/electron-main/account/cursor-auth-wiring.ts");
+  const auth = await read("source/electron-main/account/account-auth.ts");
+  const wiring = await read("source/electron-main/account/account-auth-wiring.ts");
   const mcp = await read("source/shared/node/mcp/mcp-manager.ts");
   assert.match(auth, /Sign in to Simeon to run it\./);
   assert.match(auth, /Your Simeon sign-in expired/);
@@ -45,7 +45,7 @@ test("sign-in errors name Simeon, not an earlier name (the account is Simeon sin
   assert.match(mcp, /signed-in Simeon account/);
   assert.doesNotMatch(mcp, /signed-in Cursor account/);
   assert.match(auth, /isStaffUser/);
-  assert.match(auth, /export interface CursorProfile/);
+  assert.match(auth, /export interface AccountProfile/);
 });
 
 test("the agent's brief names Simeon, not an earlier name", async () => {
@@ -64,7 +64,7 @@ test("the agent's brief names Simeon, not an earlier name", async () => {
   assert.doesNotMatch(listeners, /Claidor account/);
   assert.match(plugins, /user's Simeon account/);
   assert.doesNotMatch(plugins, /Claidor account/);
-  assert.match(prompt, /cursor-agent/);
+  assert.match(prompt, /cloud-agent/);
 });
 
 test("the shipped renderer is renamed Simeon and its default agent New Agent, by the brand pass", async () => {

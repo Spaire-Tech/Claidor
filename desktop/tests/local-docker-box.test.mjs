@@ -139,8 +139,8 @@ test("the local Docker box is always told our backend, credential or not", async
     assert.equal(withCredential.SAND_BACKEND_URL, "https://api.simeonlabs.com/");
     assert.equal(withCredential.SAND_INFERENCE_RENEWAL_CREDENTIAL, "simeon_db_box");
 
-    const fromCursorVariable = envOf(localDockerInferenceEnvironmentArguments(undefined, { SIMEON_API_BASE_URL: "https://api.simeonlabs.com" }));
-    assert.equal(fromCursorVariable.SAND_BACKEND_URL, "https://api.simeonlabs.com/");
+    const fromPluginVariable = envOf(localDockerInferenceEnvironmentArguments(undefined, { SIMEON_API_BASE_URL: "https://api.simeonlabs.com" }));
+    assert.equal(fromPluginVariable.SAND_BACKEND_URL, "https://api.simeonlabs.com/");
   } finally {
     await loaded.dispose();
   }

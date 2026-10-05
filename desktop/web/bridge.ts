@@ -166,10 +166,10 @@ function installWindow(): void {
 
   // The main edge's first question is the account status; hold it until the
   // cookie trade has settled, so the answer is the real one.
-  const desktop = Reflect.get(window, "desktop") as { cursorAccount?: { getStatus?: () => Promise<unknown> } } | undefined;
-  const getStatus = desktop?.cursorAccount?.getStatus;
-  if (desktop?.cursorAccount != null && typeof getStatus === "function") {
-    desktop.cursorAccount.getStatus = async () => { await ready; return getStatus(); };
+  const desktop = Reflect.get(window, "desktop") as { accountService?: { getStatus?: () => Promise<unknown> } } | undefined;
+  const getStatus = desktop?.accountService?.getStatus;
+  if (desktop?.accountService != null && typeof getStatus === "function") {
+    desktop.accountService.getStatus = async () => { await ready; return getStatus(); };
   }
 
   installComputerPanel();

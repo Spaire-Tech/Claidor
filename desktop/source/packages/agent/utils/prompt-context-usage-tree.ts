@@ -622,7 +622,7 @@ function serializeProviderFacingToolDefinition(tool) {
   return `${tool.name} ${tool.description} ${JSON.stringify(tool.customToolFormat ?? tool.parameters)}`;
 }
 function isSummaryCarrierMessage(message) {
-  return message.role === "user" && message.providerOptions?.cursor?.isSummary === true;
+  return message.role === "user" && message.providerOptions?.simeon?.isSummary === true;
 }
 function isMcpBlockTag(tagName2) {
   return tagName2.startsWith("mcp_");

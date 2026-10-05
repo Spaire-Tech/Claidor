@@ -31,10 +31,10 @@ test("an upstream Connect client answers Unimplemented at once and sends nothing
   // Since 25 September 2026 the DashboardService is served by default
   // (simeon/sand); "0" is the 24 September behaviour, measured here.
   process.env.SAND_CONNECT_SERVED = "0";
-  const { module, dispose } = await load("source/shared/node/cursor-backend/cursor-inference.ts", "cursor-backend-client");
-  const proto = await load("source/packages/proto/generated/aiserver/v1/dashboard_connect.ts", "dashboard-connect");
+  const { module, dispose } = await load("source/shared/node/simeon-backend/simeon-inference.ts", "simeon-backend-client");
+  const proto = await load("source/packages/proto/generated/simeon/v1/dashboard_connect.ts", "dashboard-connect");
   try {
-    const client = module.createSandCursorBackendClient(proto.module.DashboardService, { getAccessToken: async () => { throw new Error("the wire was touched"); }, getMachineId: async () => "m" });
+    const client = module.createSimeonBackendClient(proto.module.DashboardService, { getAccessToken: async () => { throw new Error("the wire was touched"); }, getMachineId: async () => "m" });
     await assert.rejects(() => client.getTeams({}), (error) => error.code === 12 && /not served by Simeon Labs' server/.test(error.message));
   } finally {
     delete process.env.SAND_CONNECT_SERVED;
@@ -97,7 +97,7 @@ test("a refresh the vendor refuses for good drops the refresh token, and the too
   assert.doesNotMatch(await src("shared/node/mcp/mcp-catalog-flow.ts"), /Ask the user for it and pass it/);
   assert.match(await src("shared/node/account-mcp/backend-exec.ts"), /const clientId = server\.config\.auth\?\.CLIENT_ID;/);
   assert.match(await src("shared/node/vendor-mcp/box-pull.ts"), /holdUntilMs = now\(\) \+ BOX_STORE_PULL_FAILURE_HOLD_MS/);
-  assert.match(await src("shared/node/cursor-backend/account-mcp.ts"), /cacheScope = accessToken\.length === 0 \? "local" : accountCacheScope\(accessToken\)/);
+  assert.match(await src("shared/node/simeon-backend/account-mcp.ts"), /cacheScope = accessToken\.length === 0 \? "local" : accountCacheScope\(accessToken\)/);
   assert.doesNotMatch(await src("shared/node/mcp/mcp-marketplace.ts"), /fetchPluginServers/);
   // F-157 is served since 25 September 2026 (`simeon/sand/skill_registry.py`,
   // `tests/skill-publish-served.test.mjs`): a failure shows the server's own

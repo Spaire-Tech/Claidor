@@ -148,17 +148,14 @@
     {
       "kind": "contract",
       "names": [
-        "grok",
-        "xai",
-        "anysphere",
-        "cursor.com",
-        "Cursor"
+        "xai"
       ],
       "paths": [
         "desktop/source/packages/proto/generated/**",
         "desktop/source/packages/redacted-protos/generated/**"
       ],
-      "reason": "Generated protocol code: service, message and field names the pinned window and the server speak on the wire (aiserver.v1.GrokBotService, Xai* messages)."
+      "reason": "Generated protocol code (Simeon's package since 5 October 2026): the model vendor enum names xAI, a lab whose model ids the voice feature uses, next to OpenAI and Google.",
+      "match": "\"XAI\"|MODEL_VENDOR_ID_XAI"
     },
     {
       "kind": "contract",
@@ -322,8 +319,8 @@
         "desktop/tests/**",
         "desktop/scripts/**"
       ],
-      "match": "GrokBotService|grok_bot_connect|BackgroundComposerSource\\.GROK_BOT|\"grok-bot\"|grok[-_]4|GROK_4|[Ii]sAnysphereUser|ANYSPHERE_TEAM_ID|AnysphereMembership|anysphere-membership|isanysphereteam|IsAnysphereTeam|sand-grok-bot-mark|data-grok-state|grok_bot_\\w+|app/grok-bot|grokCloudTesting|isGrok45|accounts/anysphere|anysphere\\.cursor-mcp|xai-compaction|`grokbot`|\\.\\(\\?:sand-\\|grok-",
-      "reason": "Names the pinned window, the generated protocol code or the upstream agent code read or send: the Connect service and its source enum, the account status field isAnysphereUser the window reads, upstream model ids (grok-4.5) that saved agents carry, the window's mark class and state attribute, feature-gate and prompt-flag names, the MCP OAuth extension id and a summary kind stored in conversation state."
+      "match": "aiserver\\.v1\\.GrokBotService|\"grok-bot\"|grok[-_]4|GROK_4|[Ii]sAnysphereUser|ANYSPHERE_TEAM_ID|AnysphereMembership|anysphere-membership|isanysphereteam|IsAnysphereTeam|sand-grok-bot-mark|data-grok-state|grok_bot_\\w+|app/grok-bot|grokCloudTesting|isGrok45|accounts/anysphere|anysphere\\.cursor-mcp|xai-compaction|`grokbot`|\\.\\(\\?:sand-\\|grok-",
+      "reason": "Names the pinned window or the upstream agent code read or send, and the earlier Connect service name a SAND_CONNECT_SERVED list may still carry: the account status field isAnysphereUser the window reads, upstream model ids (grok-4.5) that saved agents carry, the window's mark class and state attribute, feature-gate and prompt-flag names, the MCP OAuth extension id and a summary kind stored in conversation state."
     },
     {
       "kind": "contract",
@@ -489,7 +486,7 @@
         "Cursor"
       ],
       "paths": [
-        "desktop/tests/cursor-leftovers.test.mjs"
+        "desktop/tests/upstream-leftovers.test.mjs"
       ],
       "reason": "The test that checks the upstream's leftovers are gone from the app names the hosts and origin it checks are refused or not called."
     },

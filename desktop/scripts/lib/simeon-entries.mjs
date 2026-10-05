@@ -77,7 +77,7 @@ import { startElectronMainProduction } from "./source/electron-main/main.ts";
 import { createElectronProductionNativeBindings } from "./source/electron-main/main-production-services.ts";
 import { createElectronProductionAvatarImagesBinding } from "./source/electron-main/adapters/avatar-images.ts";
 import { createElectronProductionImageContextMenuBinding } from "./source/electron-main/adapters/avatar-images.ts";
-import { createElectronProductionCursorAccountBinding } from "./source/electron-main/adapters/account-edge.ts";
+import { createElectronProductionAccountBinding } from "./source/electron-main/adapters/account-edge.ts";
 import { composeElectronProductionCoordinatorBindings, createElectronProductionServiceFactories } from "./source/electron-main/production-adapters.ts";
 
 const coordinatorBindings = composeElectronProductionCoordinatorBindings(
@@ -89,7 +89,7 @@ const adapters = {
   // they receive the live root context when the service factories run.
   avatarImages: createElectronProductionAvatarImagesBinding(),
   imageContextMenu: createElectronProductionImageContextMenuBinding(),
-  cursorAccount: createElectronProductionCursorAccountBinding(),
+  accountService: createElectronProductionAccountBinding(),
 ${adapterKeys
   .filter((key) => key !== "coordinator" && key !== "ipc")
   .map((key) => `  ${key}: ${expression(bindings, `adapters.${key}`)},`)

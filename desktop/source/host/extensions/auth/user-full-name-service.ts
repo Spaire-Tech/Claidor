@@ -1,5 +1,5 @@
-import { parseJwtPayload } from "../../../shared/node/cursor-token.js";
-import { getSandInferenceBackendUrl } from "../../../shared/node/cursor-backend/cursor-inference.js";
+import { parseJwtPayload } from "../../../shared/node/simeon-token.js";
+import { getSandInferenceBackendUrl } from "../../../shared/node/simeon-backend/simeon-inference.js";
 
 export const GET_ME_TIMEOUT_MS = 10_000;
 export const USER_NAME_REFRESH_MS = 5 * 60_000;

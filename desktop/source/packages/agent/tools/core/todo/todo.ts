@@ -26,7 +26,7 @@ export interface UpdateTodosResourceAccessor extends ResourceAccessor<RemoteExec
 function getToolName(promptVersion: string): string {
   switch (promptVersion) {
     case "dsv3-1018": return "todo_write";
-    case "cursor-0226":
+    case "simeon-0226":
     case "dsv3-1205":
     case "latest":
     case "gpt5-codex":
@@ -47,7 +47,7 @@ function getDescription(promptVersion: string): string {
 - Cancel tasks that are no longer needed immediately.
 - Prefer creating the first todo as in_progress
 - Batch todo updates with other tool calls in parallel`;
-    case "cursor-0226":
+    case "simeon-0226":
       return "Use this tool to create and manage a structured task list for your current coding session.";
     case "dsv3-1205":
     case "dsv3-1018":

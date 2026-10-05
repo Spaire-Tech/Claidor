@@ -1,12 +1,12 @@
 import type { HostExtensionContext } from "../../../internal/host-extensions.js";
-import { getSandInferenceBackendUrl } from "../../../shared/node/cursor-backend/cursor-inference.js";
-import { createDashboardClient } from "../../../shared/node/marketplace/cursor-marketplace-client.js";
+import { getSandInferenceBackendUrl } from "../../../shared/node/simeon-backend/simeon-inference.js";
+import { createDashboardClient } from "../../../shared/node/marketplace/marketplace-client.js";
 import { getSandRootDir } from "../../host-paths.js";
 import {
   fetchSandManagedSkills,
   fetchSkillCatalog,
   type ManagedSkillsClient
-} from "./cursor-skills-marketplace.js";
+} from "./skills-marketplace.js";
 import type { ManagedSetupContext } from "./extension.js";
 import { getManagedSkillsDir } from "./managed-skills-cache.js";
 import { SandManagedSkillsService } from "./managed-skills-service.js";

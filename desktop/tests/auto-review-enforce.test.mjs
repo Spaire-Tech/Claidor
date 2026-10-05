@@ -109,10 +109,10 @@ test("the box carries the telemetry guards and makes no the upstream app pre-fli
   // Schema 10 carried the guards; 11 (the stream guard, F-135) and 12 (the box's credentials in its environment, F-148) keep them.
   assert.match(docker, /LOCAL_DOCKER_SCHEMA_VERSION = "12"/);
   for (const key of ["SAND_DISABLE_TELEMETRY=1", "SAND_DISABLE_ANALYTICS=1", "SAND_BOX_LOG_SHIP_DISABLED=1"]) assert.ok(docker.includes(`"--env", "${key}"`), key);
-  assert.match(await src("shared/node/cursor-backend/cursor-inference.ts"), /privacyLookup \|\| !isConnectServed\(options\.env, DASHBOARD_SERVICE_NAME\) \? "true"/);
+  assert.match(await src("shared/node/simeon-backend/simeon-inference.ts"), /privacyLookup \|\| !isConnectServed\(options\.env, DASHBOARD_SERVICE_NAME\) \? "true"/);
   assert.match(await src("host/extensions/notifications/extension.ts"), /start: \(context\) => \{ if \(!isConnectServed\(process\.env, ComputerService\.typeName\)\) return \{\};/);
-  assert.match(await src("shared/node/experiments/cursor-experiments.ts"), /loggingEnabled: isConnectServed\(process\.env, "cursor\.statsig-bootstrap"\) \? "always" : "disabled"/);
+  assert.match(await src("shared/node/experiments/simeon-experiments.ts"), /loggingEnabled: isConnectServed\(process\.env, "cursor\.statsig-bootstrap"\) \? "always" : "disabled"/);
   assert.match(await src("electron-main/startup/desktop-user-data-bootstrap.ts"), /"sand-statsig-bootstrap\.json"\]\);/);
   assert.match(await src("shared/observability/sentry.ts"), /SAND_SENTRY_DSN = "";/);
-  assert.match(await src("electron-main/account/cursor-profile.ts"), /if \(!isConnectServed\(process\.env, DASHBOARD_SERVICE_NAME\)\) return PrivacyMode\.NO_TRAINING;/);
+  assert.match(await src("electron-main/account/account-profile.ts"), /if \(!isConnectServed\(process\.env, DASHBOARD_SERVICE_NAME\)\) return PrivacyMode\.NO_TRAINING;/);
 });

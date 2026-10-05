@@ -306,7 +306,7 @@ export function createSandAgentStaticConfig(
     documentationHydrationService: new NoopDocumentationHydrationService(),
     userInfoDisplayOptions: {
       disable: input.isBoxScopedSubagent,
-      displayCursorRules: true,
+      displayAgentRules: true,
       displaySkills: !input.isSubagentRunner && !input.isSharedRoomRunner,
       excludeAgentTranscripts:
         input.isSubagentRunner || input.transcriptsFolderAvailable === false,

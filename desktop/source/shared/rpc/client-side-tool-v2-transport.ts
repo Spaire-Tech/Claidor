@@ -1,7 +1,7 @@
 import {
   ClientSideToolV2Call,
   ClientSideToolV2Result,
-} from "../../packages/proto/generated/aiserver/v1/tools_pb.js";
+} from "../../packages/proto/generated/simeon/v1/tools_pb.js";
 
 // The payload is the generated protobuf wire representation, not a hand-shaped
 // JSON substitute. Immutable renderer evidence:
@@ -17,8 +17,8 @@ export type ClientSideToolV2MessageKind = "call" | "result";
 export interface EncodedClientSideToolV2Message {
   readonly encoding: "protobuf-base64";
   readonly messageType:
-    | "aiserver.v1.ClientSideToolV2Call"
-    | "aiserver.v1.ClientSideToolV2Result";
+    | "simeon.v1.ClientSideToolV2Call"
+    | "simeon.v1.ClientSideToolV2Result";
   readonly bytes: string;
 }
 
@@ -74,8 +74,8 @@ export function encodeClientSideToolV2Message(
   return {
     encoding: "protobuf-base64",
     messageType: kind === "call"
-      ? "aiserver.v1.ClientSideToolV2Call"
-      : "aiserver.v1.ClientSideToolV2Result",
+      ? "simeon.v1.ClientSideToolV2Call"
+      : "simeon.v1.ClientSideToolV2Result",
     bytes: Buffer.from(value.toBinary()).toString("base64"),
   };
 }
@@ -86,8 +86,8 @@ export function decodeClientSideToolV2Message(
 ): ClientSideToolV2Call | ClientSideToolV2Result | null {
   if (!isRecord(value) || value.encoding !== "protobuf-base64" || typeof value.bytes !== "string") return null;
   const expectedType = kind === "call"
-    ? "aiserver.v1.ClientSideToolV2Call"
-    : "aiserver.v1.ClientSideToolV2Result";
+    ? "simeon.v1.ClientSideToolV2Call"
+    : "simeon.v1.ClientSideToolV2Result";
   if (value.messageType !== expectedType) return null;
   const bytes = canonicalBase64(value.bytes);
   if (bytes == null) return null;

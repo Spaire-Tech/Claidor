@@ -15,7 +15,7 @@ export interface SelfSummaryMessage {
   readonly role: string;
   readonly content: unknown;
   readonly providerOptions?: {
-    readonly cursor?: {
+    readonly simeon?: {
       readonly isSummary?: unknown;
       readonly [key: string]: unknown;
     } | undefined;
@@ -40,7 +40,7 @@ export function findLastUserMessageIndex(
     const message = messages[index]!;
     if (
       message.role === "user" &&
-      (options?.includeSummaryMessages || !message.providerOptions?.cursor?.isSummary)
+      (options?.includeSummaryMessages || !message.providerOptions?.simeon?.isSummary)
     ) {
       return index;
     }
@@ -58,7 +58,7 @@ function countTurns(messages: readonly SelfSummaryMessage[]): number {
   const messagesToBeSummarized = getMessagesToSummarize(messages);
   let turnCount = 0;
   for (const message of messagesToBeSummarized) {
-    if (message.role === "user" && !message.providerOptions?.cursor?.isSummary) {
+    if (message.role === "user" && !message.providerOptions?.simeon?.isSummary) {
       turnCount++;
     }
   }

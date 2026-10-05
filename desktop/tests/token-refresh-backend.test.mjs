@@ -33,14 +33,14 @@ function jwt(payload) {
 test("a refresh with no backend named goes to SAND_BACKEND_URL, not the upstream API", async () => {
   const previous = process.env.SAND_BACKEND_URL;
   process.env.SAND_BACKEND_URL = "https://api.simeonlabs.com";
-  const { module, dispose } = await load("source/electron-main/account/cursor-auth.ts", "cursor-auth");
+  const { module, dispose } = await load("source/electron-main/account/account-auth.ts", "account-auth");
   try {
     const nowSeconds = Math.floor(Date.now() / 1000);
     const expiring = jwt({ sub: "user|1", exp: nowSeconds + 60 });
     const fresh = jwt({ sub: "user|1", exp: nowSeconds + 3600 });
     const store = new Map([["cursor-access-token", expiring], ["cursor-refresh-token", "simeon_da_refresh"]]);
     const requests = [];
-    const service = new module.SandCursorAuthService({
+    const service = new module.SandAccountAuthService({
       openExternal: () => {},
       secrets: {
         readSecret: async (key) => store.get(key) ?? null,

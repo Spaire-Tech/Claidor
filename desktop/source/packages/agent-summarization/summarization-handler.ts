@@ -132,8 +132,8 @@ export const SHORTER_OUTPUT_RETRY_PROMPT = `
 
 Additional instruction: Write a shorter summary that focuses on the highest-signal context. Avoid long code snippets and avoid unnecessarily exhaustive detail. Prioritize the most recent user intent, recent implementation work, and unresolved blockers.
 IMPORTANT: When listing user messages, you do not need to repeat each message verbatim. Concisely capture user intent.`;
-export const SUMMARIZATION_CURSOR_PROVIDER_OPTIONS = {
-  cursor: {
+export const SUMMARIZATION_SIMEON_PROVIDER_OPTIONS = {
+  simeon: {
     inferenceReason: "agent-summarization",
     featureType: "agenticComposerSummary",
   },
@@ -150,7 +150,7 @@ async function executeSummarizationStream(
     {
       role: "user",
       content: summaryPrompt,
-      providerOptions: SUMMARIZATION_CURSOR_PROVIDER_OPTIONS,
+      providerOptions: SUMMARIZATION_SIMEON_PROVIDER_OPTIONS,
     },
   ]);
   const streamOptions = maxOutputTokens !== undefined ? { maxTokens: maxOutputTokens } : {};
@@ -952,7 +952,7 @@ export class SummarizationHandler {
       let lastUserIndex = -1;
       for (let index = messagesToSummarize.length - 1; index >= 0; index--) {
         const message = messagesToSummarize[index]!;
-        const cursor = (message.providerOptions as { cursor?: { isSummary?: unknown } } | undefined)?.cursor;
+        const cursor = (message.providerOptions as { simeon?: { isSummary?: unknown } } | undefined)?.simeon;
         if (message.role === "user" && cursor?.isSummary !== true) {
           lastUserIndex = index;
           break;
@@ -1093,7 +1093,7 @@ export class SummarizationHandler {
       ? {
           role: "user",
           content: carrierContent,
-          providerOptions: { cursor: { isSummary: true } },
+          providerOptions: { simeon: { isSummary: true } },
         }
       : {
           role: "user",
@@ -1102,7 +1102,7 @@ export class SummarizationHandler {
             { type: "text", text: SUMMARY_PRESERVED_IMAGE_NOTE },
             toUserMessageImagePart(preservedImage),
           ],
-          providerOptions: { cursor: { isSummary: true } },
+          providerOptions: { simeon: { isSummary: true } },
         };
     return {
       message: toRedactedCoreMessage(carrierMessage, privacyMode),

@@ -73,7 +73,7 @@ test("the avatar asks for low quality, the image service passes usage through, a
   assert.equal(tool.includes("it is already displayed to the user"), false);
   const runError = await read("source/host/extensions/transcript/agent-run-error.ts");
   assert.match(runError, /export const SIMEON_WEBSITE_ORIGIN = "https:\/\/simeonlabs\.com";/);
-  assert.equal(runError.includes("`${CURSOR_WEBSITE_ORIGIN}/pricing`"), false);
+  assert.equal(runError.includes("`${SIMEON_WEBSITE_ORIGIN}/pricing`"), false);
 });
 
 test("the web-search tool keeps a cited page beside the answer, labels an unsearched answer, and names the server's refusal", async () => {

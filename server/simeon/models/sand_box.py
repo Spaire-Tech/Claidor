@@ -2,7 +2,7 @@
 
 One row per person per box: the container Simeon Labs' box host runs
 for them, where it is reachable, and the two secrets the app is handed
-by `aiserver.v1.GrokBotService/EnsureSandBox` (`simeon.sand.box_broker`).
+by `simeon.v1.ComputerService/EnsureSandBox` (`simeon.sand.box_broker`).
 The app side of this was complete before the row existed
 (`BrokeredHostConnector`, the descriptor cache, the VNC proxy rewrite,
 the egress tunnel); this table is what the broker answers from.
@@ -57,7 +57,7 @@ class SandBox(RecordModel):
     vnc_url: Mapped[str] = mapped_column(Text, nullable=False, default="")
     fork_vnc_base_url: Mapped[str] = mapped_column(Text, nullable=False, default="")
     #: `running`, `hibernated` (stopped, data kept) or `absent` (removed);
-    #: `aiserver.v1.SandBoxRunState` is answered from this.
+    #: `simeon.v1.SandBoxRunState` is answered from this.
     state: Mapped[str] = mapped_column(String(16), nullable=False, default="absent")
     image: Mapped[str] = mapped_column(Text, nullable=False, default="")
     image_digest: Mapped[str | None] = mapped_column(Text, nullable=True, default=None)

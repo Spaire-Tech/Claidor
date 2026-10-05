@@ -109,7 +109,7 @@ test("connected toolkits become enabled user plugins, and a 503 degrades to none
 
 test("the Simeon Composio client talks session, link, toolkits, and disconnect", async () => {
   const loaded = await load("source/shared/node/composio/composio-api.ts", "composio-api");
-  const urls = await load("source/shared/node/cursor-backend/simeon-api.ts", "simeon-api");
+  const urls = await load("source/shared/node/simeon-backend/simeon-api.ts", "simeon-api");
   try {
     assert.equal(
       urls.module.simeonComposioUrl("api/v3.1/tool_router/session", "https://api.simeonlabs.com/"),

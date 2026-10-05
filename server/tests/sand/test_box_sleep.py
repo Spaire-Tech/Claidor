@@ -332,8 +332,14 @@ class TestCapacity:
         assert response.status_code == 429, response.text
         assert response.headers["x-automation-failure-hint"] == "SAND_BOX_BLOCKED"
         assert response.headers["retry-after"] == "60"
-        details = response.json()["details"][0]
-        assert details["type"] == "aiserver.v1.ErrorDetails"
+        all_details = response.json()["details"]
+        # Simeon's name first; the earlier one for an app built before 5 October 2026.
+        assert [entry["type"] for entry in all_details] == [
+            "simeon.v1.ErrorDetails",
+            "aiserver.v1.ErrorDetails",
+        ]
+        assert all_details[0]["value"] == all_details[1]["value"]
+        details = all_details[0]
         decoded = base64.b64decode(details["value"])
         assert CAPACITY_BLOCK_TITLE.encode() in decoded
         assert CAPACITY_BLOCK_DETAIL.encode() in decoded

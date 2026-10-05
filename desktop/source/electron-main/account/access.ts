@@ -19,7 +19,7 @@ export type SandAccessBlockReason =
   | "unspecified";
 export interface SandAccess { readonly state: SandAccessState | "checking"; readonly reason: SandAccessBlockReason }
 
-export type CursorAuthStatus =
+export type AccountAuthStatus =
   | { readonly kind: "logging-in" }
   | { readonly kind: "logged-out"; readonly errorMessage?: string }
   | { readonly kind: "logged-in"; readonly authId?: string; readonly email?: string };
@@ -73,19 +73,19 @@ export async function fetchSandAccess(
   };
 }
 
-function accountSlot(status: CursorAuthStatus): string | null {
+function accountSlotOf(status: AccountAuthStatus): string | null {
   if (status.kind !== "logged-in") return null;
   const slot = status.authId ?? status.email;
   return slot == null || slot.length === 0 ? null : slot;
 }
 
 export async function readSandAccessOnce(deps: {
-  readonly getAuthStatus: () => Promise<CursorAuthStatus>;
+  readonly getAuthStatus: () => Promise<AccountAuthStatus>;
   readonly readAccess: () => Promise<SandAccess>;
 }): Promise<{ readonly identity: string | null; readonly access: SandAccess }> {
-  const status = await deps.getAuthStatus().catch((): CursorAuthStatus => ({ kind: "logged-out" }));
+  const status = await deps.getAuthStatus().catch((): AccountAuthStatus => ({ kind: "logged-out" }));
   if (status.kind === "logging-in") return { identity: null, access: SAND_ACCESS_CHECKING };
-  const identity = accountSlot(status);
+  const identity = accountSlotOf(status);
   if (identity === null) {
     return {
       identity: null,

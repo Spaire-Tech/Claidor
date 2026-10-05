@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { copyFile, readdir, readFile, stat, writeFile } from "node:fs/promises";
+import { copyFile, readFile, readdir, rename, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -112,6 +112,10 @@ export const UPSTREAM_TOKEN_REPLACEMENTS = Object.freeze([
   ["glass-attribute", /data-cursor-glass-mode/g, "data-simeon-glass-mode"],
   ["layers", /anysphere\.(tokens|scss|stylex)/g, "simeon.$1"],
   ["icon-font", /cursor-icons(?!-16)/g, "simeon-icons"],
+  // The icon font's file: the stylesheet's src and the file itself, which
+  // the patch renames on disk and records under `renames` (the founder, 5
+  // October 2026: "do the icon font file too").
+  ["icon-font-file", /cursor-icons-16-/g, "simeon-icons-16-"],
   ["mark-class", /sand-grok-bot-mark/g, "sand-simeon-mark"],
   ["mark-state", /data-grok-state/g, "data-mark-state"],
   ["cloud-agent-card", /sand-cursor-agent-card/g, "sand-cloud-agent-card"],
@@ -133,6 +137,42 @@ export const UPSTREAM_TOKEN_REPLACEMENTS = Object.freeze([
   ["account-method-avatar", /\bgetCursorAvatar\b/g, "getAccountAvatar"],
   ["account-method-weekly-usage", /\bgetCursorWeeklyUsage\b/g, "getAccountWeeklyUsage"],
   ["account-method-usage-summary", /\bgetCursorUsageSummary\b/g, "getAccountUsageSummary"],
+  // The maker's name where it was still readable in the shipped bytes
+  // (measured 5 October 2026, the founder: "I want every mention of them to
+  // be gone"): their UI package in two error messages, their auth module in
+  // six, the icon class and two glyph names, an icon style, a few internal
+  // names, and the type names of code-editor messages the window never
+  // sends. The ordinary word "cursor" (the mouse and text cursor inside the
+  // editor and the animation and highlighting libraries) is not theirs and
+  // stays; the icon font's file keeps its name because the packaged
+  // window's file inventory is pinned by name (macos-package-verification).
+  ["ui-package", /@anysphere\/ui/g, "simeon-ui"],
+  ["auth-module-note", /cursor-auth\.ts/g, "account-auth.ts"],
+  ["icon-class", /(?<![A-Za-z0-9_-])cursor-icon(?!s)/g, "simeon-icon"],
+  ["icon-glyphs", /"cursor-(logo|text)"/g, "\"simeon-$1\""],
+  ["icon-style", /"cursor-mixed"/g, "\"simeon-mixed\""],
+  ["signed-in-prop", /\bisCursorSignedIn\b/g, "isAccountSignedIn"],
+  ["cycle-agent", /\b(cycle|get)CursorAgentId\b/g, "$1NextAgentId"],
+  ["cycle-agent-state", /\bcursorAgentId\b/g, "nextAgentId"],
+  ["editor-message-types", /"(aiserver|agent)\.v1\.[A-Za-z.]*Cursor[A-Za-z.]*"/g, (name) => name.replaceAll("Cursor", "Pointer")],
+  ["editor-message-fields", /\b(matchingCursorRules|relatedCursorRules|relatedCursorRulePaths|relativePathToCursorFolder|isFusedCursorPredictionModel)\b/g, (name) => name.replace("Cursor", "Pointer")],
+  // The same fields' wire spellings. `cursor_position` is not among them:
+  // it is the pointer's place in agent.v1.ComputerUseSuccess, our own
+  // computer-use contract (box-exec-daemon/computer-use.ts).
+  ["editor-message-field-names", /\b(matching_cursor_rules|cursor_rules|cursor_prediction|is_fused_cursor_prediction_model|cursor_version|cursor_commands|user_explicitly_asked_to_generate_cursor_rules)\b/g, (name) => name.replace("cursor", "pointer")],
+  ["sidebar-cycle-focus", /\b(is)?[cC]ycleCursor\b/g, (name) => name.replace("Cursor", "Focus")],
+  // Where pull-request links open: the value our main process answers with
+  // (electron-main/account/pr-review.ts) and the window compares, both
+  // spelled reviewApp since 5 October 2026.
+  ["pr-review-destination", /\breviewCursor\b/g, "reviewApp"],
+  ["pr-review-gate", /\bopenGithubPrLinksInReviewCursor\b/g, "openGithubPrLinksInReviewApp"],
+  ["pr-review-gate-name", /\bopen_github_pr_links_in_review_cursor\b/g, "open_github_pr_links_in_review_app"],
+  ["editor-fields-more", /\b(cursorRules|cursorCommands|cursorCommandsExplicitlySet|cursorVersion|cursorSelections|cursorTarget)\b/g, (name) => name.replace("cursor", "pointer")],
+  ["editor-field-names-more", /\b(related_cursor_rules|related_cursor_rule_paths|relative_path_to_cursor_folder|(suggest|reject|accept)_cursor_prediction_event|cursor_prediction_target|cursor_token_fee|cursor_selections|cursor_commands_explicitly_set)\b/g, (name) => name.replace("cursor", "pointer")],
+  ["editor-dotfiles", /\.cursor(rules|ignore|indexingignore)\b/g, ".pointer$1"],
+  // The cloud-agent card's type: the host writes cloud-agent since 5 October
+  // 2026 and maps saved cursor-agent entries on read (session-runtime.ts).
+  ["cloud-agent-card-type", /(?<![A-Za-z0-9_-])cursor-agent(?![A-Za-z0-9_])/g, "cloud-agent"],
   ["account-method-pr-review", /\bgetCursorPrReviewPreferences\b/g, "getAccountPrReviewPreferences"],
   ["account-method-privacy", /\bgetCursorPrivacyModeEnabled\b/g, "getAccountPrivacyModeEnabled"],
   ["account-method-dashboard", /\binvokeCursorDashboardAction\b/g, "invokeAccountDashboardAction"],
@@ -1893,18 +1933,31 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   // `readRendererExtensionRecord` (macos-package-verification.mjs) requires
   // (measured 5 October 2026, on the first own-shell package).
   const finalPatched = new Map(files.map((file) => [file.path, file.patched]));
+  // The icon font's file takes the stylesheet's new name for it. The pinned
+  // inventory still lists the file under its old path; `renames` tells the
+  // verification (macos-package-verification.mjs, verify.mjs) where it is.
+  const renames = [];
+  for (const name of await readdir(assetsRoot)) {
+    if (!/^cursor-icons-16-.*\.woff2$/.test(name)) continue;
+    const renamed = name.replace(/^cursor-icons-16-/, "simeon-icons-16-");
+    await rename(path.join(assetsRoot, name), path.join(assetsRoot, renamed));
+    renames.push({ from: path.posix.join("dist", "renderer", "assets", name), to: path.posix.join("dist", "renderer", "assets", renamed) });
+  }
+  // The pinned window has one; a staged renderer in a test may have none.
+  if (renames.length !== (tokenTotals["icon-font-file"] > 0 ? 1 : 0)) throw new Error(`Expected ${tokenTotals["icon-font-file"] > 0 ? "one" : "no"} icon font file to rename, found ${renames.length}.`);
   const record = {
-    schemaVersion: 2,
+    schemaVersion: 3,
     mode: "original-renderer-settings-extension",
     chunks: changes.map((change) => ({ ...change, patched: finalPatched.get(change.path) ?? change.patched })),
     marks,
     files,
+    renames,
     brand: { tokens: tokenTotals, tokenReplacements: UPSTREAM_TOKEN_REPLACEMENTS.map(([label, pattern, after]) => ({ label, pattern: String(pattern), after })), replacements: [...BRAND_REPLACEMENTS.map(([before, after]) => ({ before, after })), ...BRAND_WORD_REPLACEMENTS.map(([pattern, after, label]) => ({ before: label, pattern: String(pattern), after })), ...BRAND_PHRASE_REPLACEMENTS.map(([before, after]) => ({ before, after }))], totals: brandTotals, files: brandFiles, residue: brandResidue },
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
     features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-mark", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "agent-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "flight-results", "upstream-tokens"],
-    transformations: ["settings-registry", "marks", "app-icon", "brand-strings", "upstream-tokens"],
+    transformations: ["settings-registry", "marks", "app-icon", "brand-strings", "upstream-tokens", "icon-font-file"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");
   await writeFile(provenancePath, `${JSON.stringify(record, null, 2)}\n`);

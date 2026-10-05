@@ -346,24 +346,25 @@ export class SessionRuntime {
   }
 
   getAgentTranscriptWindow(agentId: string, query: unknown): TranscriptWindow {
-    return (
+    return withCurrentCardTypes(
       this.liveSessions.get(agentId)?.db.getTranscriptWindow(query) ??
       this.tm.sessionStore.readAgentTranscriptWindow(agentId, query)
     );
   }
 
   getAgentTranscriptTail(agentId: string, query: unknown): TranscriptWindow {
-    return (
+    return withCurrentCardTypes(
       this.liveSessions.get(agentId)?.db.getTranscriptTail(query) ??
       this.tm.sessionStore.readAgentTranscriptTail(agentId, query)
     );
   }
 
   getAgentThread(agentId: string, rootId: string): unknown {
-    return (
-      this.liveSessions.get(agentId)?.db.getThread(rootId) ??
-      this.tm.sessionStore.readAgentThread(agentId, rootId)
-    );
+    const thread = this.liveSessions.get(agentId)?.db.getThread(rootId) ??
+      this.tm.sessionStore.readAgentThread(agentId, rootId);
+    return typeof thread === "object" && thread != null && Array.isArray((thread as { entries?: unknown }).entries)
+      ? { ...thread, entries: (thread as { entries: unknown[] }).entries.map(currentCardType) }
+      : thread;
   }
 
   async ensureActionTarget(agentId?: string): Promise<void> {
@@ -503,4 +504,22 @@ export class SessionRuntime {
     this.tm.runLifecycle.watchActiveSession(session);
     await this.tm.runLifecycle.retireSession(previous);
   }
+}
+
+/**
+ * The cloud-agent card was written into chats as `cursor-agent` until 5
+ * October 2026 (the earlier maker's name for it); the window draws
+ * `cloud-agent`. Saved chats are read through this map, never rewritten.
+ */
+const EARLIER_CLOUD_AGENT_CARD_TYPE = "cursor-agent";
+function currentCardType<T>(entry: T): T {
+  if (typeof entry !== "object" || entry == null) return entry;
+  const record = entry as { kind?: unknown; message?: { type?: unknown } };
+  if (record.kind !== "send-message" || record.message?.type !== EARLIER_CLOUD_AGENT_CARD_TYPE) return entry;
+  return { ...entry, message: { ...record.message, type: "cloud-agent" } };
+}
+function withCurrentCardTypes(window: TranscriptWindow): TranscriptWindow {
+  const entries = (window as { entries?: unknown[] }).entries;
+  if (!Array.isArray(entries) || !entries.some(entry => (entry as { message?: { type?: unknown } })?.message?.type === EARLIER_CLOUD_AGENT_CARD_TYPE)) return window;
+  return { ...window, entries: entries.map(currentCardType) } as TranscriptWindow;
 }

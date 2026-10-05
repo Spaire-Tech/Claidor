@@ -46,13 +46,13 @@ import { createDevRestartExit, maybeDevLoginFromEnv, registerDevWiring, type Ipc
 import { SandProductAnalytics } from "../shared/node/analytics/product-analytics.js";
 import { registerElectronProductionVncTrust, type ElectronProductionVncTrustDeps } from "./vnc/vnc-trust.js";
 import { registerProductionTelemetryIpc } from "./telemetry/production-telemetry-ipc.js";
-import type { SandAuthStatus } from "./account/cursor-auth.js";
+import type { SandAuthStatus } from "./account/account-auth.js";
 import type { SecureStorageCodec } from "./secrets/secret-store.js";
 import { recordLocalToolApproval as persistLocalToolApproval, clearLocalToolApprovals as clearPersistedLocalToolApprovals } from "../host/local-exec/local-tool-approvals.js";
 import { fetchSimeonAvailableModels } from "./models/simeon-model-catalog.js";
 import { migrationWatchForBoxRuntime } from "./box/box-recovery.js";
 import { createVoiceCallApi, type VoiceCallApi } from "./voice/voice-call-api.js";
-import { fetchPersonName } from "./account/cursor-profile.js";
+import { fetchPersonName } from "./account/account-profile.js";
 import { createVoiceCallService, type VoiceCallMenuItem, type VoiceCallService, type VoiceCallWindowPort } from "./voice/voice-call-service.js";
 import { createElectronVoiceCallWindow, createFileVoiceStore, createVoiceCallLog, createVoicePreviewCache, voiceCallResourcePaths, voiceCallsEnabled, VOICE_CALL_LOG_FILE, VOICE_CALL_STORE_FILE, VOICE_PREVIEW_DIR } from "./voice/voice-call-window.js";
 import type { SandSettingsStore } from "../shared/node/settings/sand-settings-store.js";
@@ -182,7 +182,7 @@ export interface ProductionAccountService extends ProductionDisposable {
   subscribe(listener: () => void): () => void;
   currentAuthStatusFreshness(): number;
   /** Exact auth-wiring handoff used by coordinator account status delivery. */
-  deliverCursorAuthStatus(status: ProductionAccountStatus): void;
+  deliverAccountAuthStatus(status: ProductionAccountStatus): void;
   revokeForAccountRefusal(): Promise<{ readonly kind: "completed"; readonly status: ProductionAccountStatus } | { readonly kind: "failed"; readonly status: ProductionAccountStatus; readonly error: unknown }>;
   /** Exact authenticated service shared by experiments, MCP, telemetry, and coordinator joins. */
   getAuthService(): Promise<ProductionAccountAuthService>;
@@ -362,7 +362,7 @@ export interface ProductionServiceContext {
   readonly attachments: unknown;
   readonly avatarImages: unknown;
   /** Exact account RPC edge installed beside the generated MainEdge handlers. */
-  readonly cursorAccount: unknown;
+  readonly accountService: unknown;
   /** Lazy generated AiService transcription manager installed by the root. */
   readonly ensureTranscriptionManager: () => Promise<unknown>;
   readonly fetchAvailableModels: () => Promise<unknown>;
@@ -405,10 +405,10 @@ export interface ElectronProductionServiceFactories {
   initializeSecureStorage(): void;
   getMachineId(): Promise<string>;
   createSettings(args: { readonly native: ElectronProductionNativeBindings; readonly resources: ElectronProductionResources; readonly env: NodeJS.ProcessEnv; readonly emitThemeChanged: (state: SandThemeState) => void }): ProductionSettingsService;
-  createAttachments(context: Omit<ProductionServiceContext, "attachments" | "avatarImages" | "cursorAccount" | "ensureTranscriptionManager">): unknown;
-  createAvatarImages(context: Omit<ProductionServiceContext, "attachments" | "avatarImages" | "cursorAccount" | "ensureTranscriptionManager">): unknown;
-  createCursorAccount(context: Omit<ProductionServiceContext, "attachments" | "avatarImages" | "cursorAccount" | "ensureTranscriptionManager">): unknown;
-  createTranscriptionManager(context: Omit<ProductionServiceContext, "attachments" | "avatarImages" | "cursorAccount" | "ensureTranscriptionManager">): () => Promise<unknown>;
+  createAttachments(context: Omit<ProductionServiceContext, "attachments" | "avatarImages" | "accountService" | "ensureTranscriptionManager">): unknown;
+  createAvatarImages(context: Omit<ProductionServiceContext, "attachments" | "avatarImages" | "accountService" | "ensureTranscriptionManager">): unknown;
+  createAccountService(context: Omit<ProductionServiceContext, "attachments" | "avatarImages" | "accountService" | "ensureTranscriptionManager">): unknown;
+  createTranscriptionManager(context: Omit<ProductionServiceContext, "attachments" | "avatarImages" | "accountService" | "ensureTranscriptionManager">): () => Promise<unknown>;
   createMainEdge(context: ProductionServiceContext): MainEdge & Partial<ProductionDisposable>;
   createUpdate(context: ProductionServiceContext): Promise<ProductionUpdateService> | ProductionUpdateService;
   registerMediaScheme(): void;
@@ -457,7 +457,7 @@ export interface ElectronMainProductionComposition {
 }
 
 function requireFactoryBindings(factories: ElectronProductionServiceFactories): void {
-  const required = ["initializeSecureStorage", "getMachineId", "createSettings", "createAttachments", "createAvatarImages", "createCursorAccount", "createTranscriptionManager", "createMainEdge", "createUpdate", "registerMediaScheme", "registerMedia", "createAccount", "createExperiments", "createMcp", "createTelemetry", "createNotifications", "createCoordinator", "registerIpc"] as const;
+  const required = ["initializeSecureStorage", "getMachineId", "createSettings", "createAttachments", "createAvatarImages", "createAccountService", "createTranscriptionManager", "createMainEdge", "createUpdate", "registerMediaScheme", "registerMedia", "createAccount", "createExperiments", "createMcp", "createTelemetry", "createNotifications", "createCoordinator", "registerIpc"] as const;
   const missing = required.filter((name) => typeof factories[name] !== "function");
   if (missing.length > 0) throw new Error(`Incomplete Electron production service graph: ${missing.join(", ")}.`);
 }
@@ -475,7 +475,7 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
   bindings.services.registerMediaScheme();
   const authCallbackRegistration = registerAuthCallbackProtocol({ app: bindings.native.app, isPackaged: bindings.native.app.isPackaged, isLabBuild: metadata.sandLab, env });
   if (!authCallbackRegistration.skipped && !authCallbackRegistration.registered) {
-    bindings.reportFailure("cursor-auth", "protocol-registration", new Error(`Unable to register ${authCallbackRegistration.protocolScheme}:${authCallbackRegistration.redirectTarget}.`));
+    bindings.reportFailure("account-auth", "protocol-registration", new Error(`Unable to register ${authCallbackRegistration.protocolScheme}:${authCallbackRegistration.redirectTarget}.`));
   }
   const windowStatePersistence = createWindowStatePersistence({ app: bindings.native.app, screen: bindings.native.screen, env, captureWarning: (message) => bindings.reportFailure("window-state", "persistence", new Error(message)) });
   const coordinatorLegs = createCoordinatorMainLegs({ onProblem: (problem) => bindings.reportFailure("coordinator", "main-legs", new Error(problem)), reportFailure: (leg, error) => bindings.reportFailure("coordinator", leg, error) });
@@ -488,14 +488,14 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
     return { induced: Reflect.get(result, "induced") as boolean };
   });
   type ProductionClientPauseControl = ReturnType<typeof createSandClientPauseControl<BoxConnectionInfo, { readonly preserveData: boolean; readonly force?: boolean }, RecreateResult, { readonly credential: string; readonly backendUrl: string; readonly expiresAtMs?: number }>>;
-  let runtime: ElectronMainRuntime | undefined, settings: ProductionSettingsService | undefined, mainEdge: (MainEdge & Partial<ProductionDisposable>) | undefined, account: ProductionAccountService | undefined, cursorAccount: unknown, ensureTranscriptionManager: (() => Promise<unknown>) | undefined, experiments: ProductionExperimentsService | undefined, update: ProductionUpdateService | undefined, mcp: ProductionMcpService | undefined, telemetry: ProductionTelemetryService | undefined, notifications: ProductionNotificationsService | undefined, coordinator: ProductionCoordinatorService | undefined, egressTunnelController: EgressTunnelController | undefined, context: ProductionServiceContext | undefined, secretsStores: ReturnType<typeof createSecretsStores> | undefined, boxRecovery: ReturnType<typeof createProductionBoxRecovery> | undefined, clientPauseControl: ProductionClientPauseControl | undefined, boxVisibilityTracker: SandBoxVisibilityTracker | undefined, desktopMetricsRuntime: DesktopMetricsRuntime | undefined, productAnalytics: SandProductAnalytics | undefined, vncTrust: ReturnType<typeof registerElectronProductionVncTrust> | undefined;
+  let runtime: ElectronMainRuntime | undefined, settings: ProductionSettingsService | undefined, mainEdge: (MainEdge & Partial<ProductionDisposable>) | undefined, account: ProductionAccountService | undefined, accountService: unknown, ensureTranscriptionManager: (() => Promise<unknown>) | undefined, experiments: ProductionExperimentsService | undefined, update: ProductionUpdateService | undefined, mcp: ProductionMcpService | undefined, telemetry: ProductionTelemetryService | undefined, notifications: ProductionNotificationsService | undefined, coordinator: ProductionCoordinatorService | undefined, egressTunnelController: EgressTunnelController | undefined, context: ProductionServiceContext | undefined, secretsStores: ReturnType<typeof createSecretsStores> | undefined, boxRecovery: ReturnType<typeof createProductionBoxRecovery> | undefined, clientPauseControl: ProductionClientPauseControl | undefined, boxVisibilityTracker: SandBoxVisibilityTracker | undefined, desktopMetricsRuntime: DesktopMetricsRuntime | undefined, productAnalytics: SandProductAnalytics | undefined, vncTrust: ReturnType<typeof registerElectronProductionVncTrust> | undefined;
   let sessionDeathSettlement: ReturnType<typeof wireDesktopUncleanExitSettlement> | undefined;
   const desktopLifecycle = createDesktopLifecycleReporter();
   const disposeLocalExecLifecycleReporter = installLocalExecLifecycleReporter(desktopLifecycle.reportDesktopLocalExecLifecycle);
   let desktopEventLoopSampler: ReturnType<typeof createDesktopEventLoopTelemetry> | undefined;
   let accountStatusUnsubscribe: (() => void) | undefined;
   let accountStatusSequence = 0;
-  let cursorAuthSignedIn = false;
+  let accountAuthSignedIn = false;
   let accountTransitionDeparting = false;
   let dataRootSettlement: DataRootSettlement | null = null, hasIsolatedUserData = false, foundationInitialized = false, initialization: Promise<ElectronMainServices> | undefined, disposed = false, quitState: "idle" | "flushing" | "settled" = "idle";
   const disposables: ProductionDisposable[] = [];
@@ -584,7 +584,7 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
       const broadcast = createProductionWindowBroadcaster(bindings.native.BrowserWindow);
       const getTrustedContents = (): MainBrowserWindow["webContents"] | undefined => runtime?.getMainWindow()?.webContents;
       desktopMetricsRuntime = createDesktopMetricsRuntime({
-        ensureCursorAuthService: async () => await requireValue(account, "account").getAuthService(),
+        ensureAccountAuthService: async () => await requireValue(account, "account").getAuthService(),
         ensureExperimentService: async () => {
           const service = requireValue(experiments, "experiments");
           return {
@@ -609,11 +609,11 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
       const handleBoxVisibilityReport = createBoxVisibilityReportHandler(() => boxVisibilityTracker);
       const accountLifecycle: ProductionAccountLifecycle = {
         getAccountScope: () => requireValue(settings, "settings").settingsStore.getMcpCustomInstructionsAccountScope(),
-        isSignedIn: () => cursorAuthSignedIn,
+        isSignedIn: () => accountAuthSignedIn,
         isAccountDeparting: () => accountTransitionDeparting,
         beginTransition: () => { accountTransitionDeparting = true; connectorEgress.noteAccountDeparted(); },
         deliverStatus: (status) => {
-          cursorAuthSignedIn = (desktopStructuredLogAccountSlot(status) ?? "logged-out") !== "logged-out";
+          accountAuthSignedIn = (desktopStructuredLogAccountSlot(status) ?? "logged-out") !== "logged-out";
           accountTransitionDeparting = false;
         },
       };
@@ -673,7 +673,7 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
         },
       );
       const remoteConnector = connectorEgress.wrap(pauseControl.guard(baseRemoteConnector));
-      // The migration watcher streams `GrokBotService/WatchSandBoxMigration`,
+      // The migration watcher streams `ComputerService/WatchSandBoxMigration`,
       // an upstream RPC that only means something for a cloud box. Until
       // 24 September 2026 it was started whatever the box runtime, so on
       // the default `local-docker` runtime it asked Simeon Labs' server for
@@ -775,7 +775,7 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
         });
         return service;
       };
-      const base: Omit<ProductionServiceContext, "attachments" | "avatarImages" | "cursorAccount" | "ensureTranscriptionManager"> = {
+      const base: Omit<ProductionServiceContext, "attachments" | "avatarImages" | "accountService" | "ensureTranscriptionManager"> = {
         native: bindings.native, resources, env, machineId,
         isQuitting: () => quitState !== "idle",
         onCoordinatorLaunched: () => {
@@ -837,9 +837,9 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
       };
       const attachments = bindings.services.createAttachments(base);
       const avatarImages = bindings.services.createAvatarImages(base);
-      cursorAccount = bindings.services.createCursorAccount(base);
+      accountService = bindings.services.createAccountService(base);
       ensureTranscriptionManager = bindings.services.createTranscriptionManager(base);
-      context = { ...base, attachments, avatarImages, cursorAccount, ensureTranscriptionManager };
+      context = { ...base, attachments, avatarImages, accountService, ensureTranscriptionManager };
       mainEdge = bindings.services.createMainEdge(context); if (typeof mainEdge.emit !== "function") throw new Error("Electron production main-edge binding did not provide emit()."); if (typeof mainEdge.dispose === "function") track(mainEdge as MainEdge & ProductionDisposable);
       update = track(requireDisposable(await bindings.services.createUpdate(context), "update"));
       track(requireDisposable(bindings.services.registerMedia(context), "media"));

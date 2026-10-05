@@ -227,7 +227,7 @@ test("the server's own sentence reaches the card when targets or a publish fail;
 });
 
 test("an inline plugin's files are written to disk and its skills land in the manifest", async () => {
-  const { module, dispose } = await load("source/packages/cursor-plugins/inline-plugin-synthesizer.ts", "inline-synth");
+  const { module, dispose } = await load("source/packages/plugins/inline-plugin-synthesizer.ts", "inline-synth");
   const targetDir = await mkdtemp(path.join(os.tmpdir(), "simeon-inline-plugin-"));
   try {
     await module.synthesizeInlinePluginDir({ targetDir, pluginName: "meeting-notes", inlineContentJson: JSON.stringify({ files: [
@@ -237,7 +237,7 @@ test("an inline plugin's files are written to disk and its skills land in the ma
     ] }) });
     assert.match(await readFile(path.join(targetDir, "skills", "meeting-notes", "SKILL.md"), "utf8"), /Take notes/);
     assert.deepEqual([...await readFile(path.join(targetDir, "skills", "meeting-notes", "logo.png"))], [0x89, 0x50, 0x4e, 0x47]);
-    const manifest = JSON.parse(await readFile(path.join(targetDir, ".cursor-plugin", "plugin.json"), "utf8"));
+    const manifest = JSON.parse(await readFile(path.join(targetDir, ".simeon-plugin", "plugin.json"), "utf8"));
     assert.deepEqual(manifest, { name: "meeting-notes", skills: ["skills/meeting-notes"], displayName: "Meeting Notes" });
     await assert.rejects(module.synthesizeInlinePluginDir({ targetDir, pluginName: "evil", inlineContentJson: JSON.stringify({ files: [{ path: "../escape.md", content: "x" }] }) }), /unsafe path/);
     assert.equal(module.isSafeInlineFilePath("/etc/passwd"), false);

@@ -13,7 +13,7 @@ type McpManagerOptions = {
   }) => void;
 };
 
-type CursorAuthService = {
+type AccountAuthService = {
   readonly getValidAccessToken: (args: {
     readonly backendUrl: string;
   }) => Promise<string | null>;
@@ -23,7 +23,7 @@ type McpRuntimeDependencies<TManager> = {
   readonly createManager: (options: McpManagerOptions) => Promise<TManager>;
   readonly settingsStore: unknown;
   readonly pushBoxSecrets: () => Promise<unknown>;
-  readonly ensureCursorAuthService: () => Promise<CursorAuthService>;
+  readonly ensureAccountAuthService: () => Promise<AccountAuthService>;
   readonly getMachineId: () => string | Promise<string>;
   readonly listBoxMcpServers: (
     serverIdentifiers: unknown,
@@ -55,7 +55,7 @@ export function createMcpRuntime<
       settingsStore: deps.settingsStore,
       onAccountScopeApplied: () => void deps.pushBoxSecrets(),
       getAccessToken: async ({ backendUrl }) => {
-        const service = await deps.ensureCursorAuthService();
+        const service = await deps.ensureAccountAuthService();
         return await service.getValidAccessToken({ backendUrl });
       },
       getMachineId: deps.getMachineId,

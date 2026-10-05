@@ -68,6 +68,12 @@ Those are the fallback rules below for `server/simeon/sand/**`.
 
 ## Kept on purpose, not checked
 
+- **`${CURSOR_PLUGIN_ROOT}`** in a plugin's commands: a plugin written for
+  the upstream app names its folder this way, and the loader expands it next
+  to `${SIMEON_PLUGIN_ROOT}` and `${CLAUDE_PLUGIN_ROOT}`
+  (`desktop/source/packages/plugins/plugin-variables.ts`). The checker does
+  not search for the upper-case spelling.
+
 - **`sand`** is the upstream app's internal word for the agent's computer
   (`SAND_*` settings, `/sand/*` routes, `sand-*` file and class names). Nobody
   using Simeon sees it, and much of it has to match the pinned window and the

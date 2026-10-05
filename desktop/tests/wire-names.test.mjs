@@ -47,7 +47,7 @@ test("the served services carry Simeon's names and the upstream's methods", asyn
 });
 
 test("a Connect call leaves under Simeon's service name with Simeon's headers", async () => {
-  const loaded = await loadModule("source/shared/node/cursor-backend/cursor-inference.ts", "cursor-inference");
+  const loaded = await loadModule("source/shared/node/simeon-backend/simeon-inference.ts", "simeon-inference");
   const services = await loadModule("source/packages/proto/simeon/v1/services.ts", "services-2");
   try {
     const { createSandInferenceInterceptor } = loaded.module;
@@ -90,9 +90,10 @@ test("the metadata module and the web page send the same header names", async ()
 
 test("a cloud agent is launched with Simeon's source", async () => {
   const source = await readFile(path.join(repoRoot, "source/host/extensions/cloud-agents/cloud-agents-service.ts"), "utf8");
-  assert.equal(source.includes("BackgroundComposerSource.GROK_BOT"), false);
+  assert.equal(source.includes("BackgroundComposerSource.SIMEON_EARLIER"), false);
+  assert.equal(source.includes("GROK_BOT"), false);
   assert.ok(source.includes("source: BackgroundComposerSource.SIMEON"));
-  const loaded = await loadModule("source/packages/proto/generated/aiserver/v1/background_composer_pb.ts", "bc-pb");
+  const loaded = await loadModule("source/packages/proto/generated/simeon/v1/background_composer_pb.ts", "bc-pb");
   try {
     const { BackgroundComposerSource } = loaded.module;
     assert.equal(BackgroundComposerSource.SIMEON, 34);

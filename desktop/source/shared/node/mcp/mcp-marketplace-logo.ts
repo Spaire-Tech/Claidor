@@ -4,8 +4,8 @@ import {
   type DeadlinePolicy,
 } from "../../../internal/scheduling.js";
 import { responseToImageDataUrl } from "../http-image.js";
-import { CURSOR_MARKETPLACE_REQUEST_TIMEOUT_MS } from "../marketplace/cursor-marketplace-client.js";
-import { isKnownPluginLogoUrl } from "../marketplace/cursor-marketplace-logo-registry.js";
+import { SIMEON_MARKETPLACE_REQUEST_TIMEOUT_MS } from "../marketplace/marketplace-client.js";
+import { isKnownPluginLogoUrl } from "../marketplace/marketplace-logo-registry.js";
 
 export const LOGO_MAX_BYTES = 512 * 1024,
   LOGO_FETCH_CONCURRENCY = 6;
@@ -14,13 +14,13 @@ let active = 0;
 const pending: Array<() => void> = [];
 const marketplaceFetchDeadline = createDeadlinePolicy(realClock, {
   name: "mcp-marketplace-logo-fetch",
-  timeoutMs: CURSOR_MARKETPLACE_REQUEST_TIMEOUT_MS,
+  timeoutMs: SIMEON_MARKETPLACE_REQUEST_TIMEOUT_MS,
 });
 const defaultLogoDependencies = {
   isKnownPluginLogoUrl,
   fetch: (url: string, signal: AbortSignal) => fetch(url, { signal }),
   responseToImageDataUrl,
-  timeoutMs: CURSOR_MARKETPLACE_REQUEST_TIMEOUT_MS,
+  timeoutMs: SIMEON_MARKETPLACE_REQUEST_TIMEOUT_MS,
   deadline: marketplaceFetchDeadline,
 };
 export async function withLogoFetchSlot<T>(run: () => Promise<T>): Promise<T> {

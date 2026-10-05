@@ -407,7 +407,7 @@ export function startElectronMain(deps: ElectronMainDependencies): ElectronMainR
       const membership = createDevToolsMembershipResolver({
         getStatus: services.getDevToolsMembershipStatus,
         setMembership: devToolsGate.setMembership,
-        onError: (error) => reportDesktopEdgeFailure("cursor-auth", "anysphere-membership", error),
+        onError: (error) => reportDesktopEdgeFailure("account-auth", "staff-membership", error),
       });
       services.subscribeDevToolsMembership(() => void membership.refresh());
       void membership.refresh();

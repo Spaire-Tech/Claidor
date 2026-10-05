@@ -24,7 +24,7 @@ async function load(entry, name) {
   return { module, dispose: () => rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) };
 }
 
-const cursorBudget = {
+const simeonBudget = {
   unusedTokensThresholdToStartBackgroundSummarization: 10_000,
   unusedPercentTokensThresholdToStartBackgroundSummarization: 0.1,
   unusedTokensThresholdToPersistBackgroundSummarization: 5_000,
@@ -41,11 +41,11 @@ test("the upstream's compaction trigger is dead when maxTokens is 0, and live on
       getBackgroundSummarizationTriggerThreshold,
       shouldStartBackgroundSummarization,
     } = loaded.module;
-    assert.equal(getBackgroundSummarizationTriggerThreshold(0, cursorBudget), undefined);
-    assert.equal(shouldStartBackgroundSummarization(46_589, 0, cursorBudget), false);
-    assert.equal(getBackgroundSummarizationTriggerThreshold(200_000, cursorBudget), 180_000);
-    assert.equal(shouldStartBackgroundSummarization(46_589, 200_000, cursorBudget), false);
-    assert.equal(shouldStartBackgroundSummarization(180_000, 200_000, cursorBudget), true);
+    assert.equal(getBackgroundSummarizationTriggerThreshold(0, simeonBudget), undefined);
+    assert.equal(shouldStartBackgroundSummarization(46_589, 0, simeonBudget), false);
+    assert.equal(getBackgroundSummarizationTriggerThreshold(200_000, simeonBudget), 180_000);
+    assert.equal(shouldStartBackgroundSummarization(46_589, 200_000, simeonBudget), false);
+    assert.equal(shouldStartBackgroundSummarization(180_000, 200_000, simeonBudget), true);
   } finally {
     await loaded.dispose();
   }

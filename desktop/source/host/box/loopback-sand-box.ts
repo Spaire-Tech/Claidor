@@ -12,7 +12,7 @@ import { SAND_BOX_DISPLAY_HEADER, SAND_BOX_FORK_ROUTER_PORT, SAND_BOX_MAX_WINDOW
 export const EXEC_DAEMON_PORT = 1337;
 export const VNC_PORT = SAND_BOX_PRIMARY_NOVNC_PORT;
 export const DEFAULT_AUTH_TOKEN = "local";
-export const BOX_TERMINALS_FOLDER = "/root/.cursor/projects/workspace/terminals";
+export const BOX_TERMINALS_FOLDER = "/root/.simeon/projects/workspace/terminals";
 export const DAEMON_READY_TIMEOUT_MS = 90_000;
 export const DAEMON_WATCHDOG_INTERVAL_MS = 30_000;
 

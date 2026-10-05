@@ -1,28 +1,28 @@
-import { CursorRuleSource, type CursorRule } from "../../proto/generated/agent/v1/cursor_rules_pb.js";
+import { AgentRuleSource, type AgentRule } from "../../proto/generated/agent/v1/agent_rules_pb.js";
 import { filterByAgentEnvironment } from "../utils/environment-filtering.js";
-import { isFileScopedCursorRule } from "../utils/cursor-rule-matching.js";
+import { isFileScopedAgentRule } from "../utils/rule-matching.js";
 import { AgentType } from "../utils/agent-config.js";
 import { hasDisableModelInvocation, isSkillPath } from "./user-info-rule-helpers.js";
 
-export interface CategorizedCursorRules {
-  readonly globalRules: CursorRule[];
-  readonly agentRequestableRules: CursorRule[];
-  readonly userRules: CursorRule[];
-  readonly skills: CursorRule[];
+export interface CategorizedAgentRules {
+  readonly globalRules: AgentRule[];
+  readonly agentRequestableRules: AgentRule[];
+  readonly userRules: AgentRule[];
+  readonly skills: AgentRule[];
 }
 
 // Extracted from ../packages/agent/dist/prompts/user-info.js as an
 // uncomposed owner leaf. Prompt composition remains separate.
-export function categorizeCursorRules(
-  cursorRules: CursorRule[],
+export function categorizeAgentRules(
+  agentRules: AgentRule[],
   workspacePaths: readonly string[] = [],
   agentType?: AgentType,
-): CategorizedCursorRules {
-  const filteredRules = filterByAgentEnvironment(cursorRules, agentType);
-  const globalRules: CursorRule[] = [];
-  const agentRequestableRules: CursorRule[] = [];
-  const userRules: CursorRule[] = [];
-  const skills: CursorRule[] = [];
+): CategorizedAgentRules {
+  const filteredRules = filterByAgentEnvironment(agentRules, agentType);
+  const globalRules: AgentRule[] = [];
+  const agentRequestableRules: AgentRule[] = [];
+  const userRules: AgentRule[] = [];
+  const skills: AgentRule[] = [];
   for (const rule of filteredRules) {
     const mdcPath = rule.fullPath;
     if (isSkillPath(mdcPath)) {
@@ -33,11 +33,11 @@ export function categorizeCursorRules(
       }
       continue;
     }
-    if (rule.source === CursorRuleSource.USER) {
+    if (rule.source === AgentRuleSource.USER) {
       userRules.push(rule);
       continue;
     }
-    if (rule.source === CursorRuleSource.TEAM) {
+    if (rule.source === AgentRuleSource.TEAM) {
       globalRules.push(rule);
       continue;
     }
@@ -48,7 +48,7 @@ export function categorizeCursorRules(
       agentRequestableRules.push(rule);
       continue;
     }
-    if (isFileScopedCursorRule(rule, workspacePaths)) {
+    if (isFileScopedAgentRule(rule, workspacePaths)) {
       agentRequestableRules.push(rule);
     } else {
       globalRules.push(rule);

@@ -11,6 +11,7 @@ product people see is **Simeon** (spelled Simeon, never Simon).
 | `desktop/` | The Mac app. `docs/architecture.md`, `docs/building-the-app.md`. |
 | `server/` | The API at `api.simeonlabs.com` (FastAPI, PostgreSQL, Redis, Dramatiq). The Python package is `simeon`. Patterns: `server/CLAUDE.md`. |
 | `runner/` | The cloud runner (Node): queued work while the Mac is closed. |
+| `box/` | The cloud computer image (Dockerfile, supervisor, desktop scripts). `box/README.md`. |
 | `clients/` | The web app at `app.simeonlabs.com` (sign-in pages, account dashboard). Patterns: `clients/CLAUDE.md`. |
 | `sites/simeonlabs.com/` | The public website and its live demo. |
 | `docs/` | Start at `docs/README.md`. |

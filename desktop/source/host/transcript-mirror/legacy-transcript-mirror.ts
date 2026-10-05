@@ -23,7 +23,7 @@ interface CoreMessage {
   readonly role: string;
   readonly content?: string | readonly CoreMessagePart[];
   readonly providerOptions?: {
-    readonly cursor?: { readonly isSummary?: boolean };
+    readonly simeon?: { readonly isSummary?: boolean };
   };
 }
 
@@ -94,7 +94,7 @@ function deserializeCoreMessage(blob: Uint8Array): CoreMessage {
 }
 
 function isSummaryMessage(message: CoreMessage): boolean {
-  return message.providerOptions?.cursor?.isSummary === true;
+  return message.providerOptions?.simeon?.isSummary === true;
 }
 
 function createOversizeBlobOmittedMessage(blobSizeBytes: number): CoreMessage {

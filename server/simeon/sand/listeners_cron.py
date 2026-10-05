@@ -2,7 +2,7 @@
 writes them (25 September 2026).
 
 `cronCloudTrigger` in `sand-automation-cloud-sync.ts` writes one
-`aiserver.v1.CronTrigger.cron` per schedule: a five-field expression,
+`simeon.v1.CronTrigger.cron` per schedule: a five-field expression,
 `CRON_TZ=<zone> <expression>` when the routine or the person has a time
 zone, or `@every <n><s|m|h|d>`; the `@daily` aliases are expanded before
 they reach the wire, but are accepted here anyway. The next slot is

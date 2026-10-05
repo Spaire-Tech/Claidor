@@ -272,7 +272,7 @@ export function spawnWithSandboxHelperPolicy(
   const mergedEnv: NodeJS.ProcessEnv = {
     ...baseEnv,
     ...optionsEnv,
-    CURSOR_SANDBOX: "native",
+    SIMEON_SANDBOX: "native",
   };
   applyConfiguredRipgrepToSandboxEnv(mergedEnv);
   const spawnOptions: SpawnOptions = {

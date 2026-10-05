@@ -1,4 +1,4 @@
-"""`aiserver.v1.DashboardService`, the team and plugin half: the skill
+"""`simeon.v1.DashboardService`, the team and plugin half: the skill
 registry (25 September 2026, `docs/services-agents.md`).
 
 Five methods the app calls (`docs/services-agents.md` §7):

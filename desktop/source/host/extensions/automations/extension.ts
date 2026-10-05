@@ -2,9 +2,9 @@ import { isListenerRelayServed } from "../../../shared/listener-availability.js"
 import { join } from "node:path";
 import { createRealPollingPolicy } from "../../../internal/scheduling.js";
 import { defineHostExtension } from "../../../internal/host-extensions.js";
-import { getConfiguredBackendUrl } from "../../../shared/node/cursor-token.js";
+import { getConfiguredBackendUrl } from "../../../shared/node/simeon-token.js";
 import { AutomationsService } from "../../../packages/proto/simeon/v1/services.js";
-import { createSandCursorBackendClient } from "../../../shared/node/cursor-backend/cursor-inference.js";
+import { createSimeonBackendClient } from "../../../shared/node/simeon-backend/simeon-inference.js";
 import { inspectAgentAutomationDefinitions } from "../../automations/automation-store.js";
 import { getSandAgentsRootDir } from "../../storage/agent-paths.js";
 import { HostExtensions } from "../extension-ids.generated.js";
@@ -55,7 +55,7 @@ export const automationsExtension = defineHostExtension({
       inspectLocalDefinitions(agentId: string): ReturnType<typeof inspectAgentAutomationDefinitions>;
       reportShadowPrune(report: Record<string, unknown>): void;
     } = {
-      client: createSandCursorBackendClient(AutomationsService, {
+      client: createSimeonBackendClient(AutomationsService, {
         getAccessToken: deps.auth.getAccessToken,
         getMachineId: async () => await deps.auth.getMachineId()
       }) as unknown as CloudSyncClient,

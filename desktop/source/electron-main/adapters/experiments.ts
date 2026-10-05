@@ -1,9 +1,9 @@
 import { createExperimentsRuntime, type DesktopAuthService, type DesktopExperimentService } from "../experiments/experiments-runtime.js";
 import type { ElectronProductionAdapterBindings } from "../production-adapters.js";
 import type { ProductionServiceContext } from "../main-production-services.js";
-import { SandExperimentService } from "../../shared/node/experiments/cursor-experiments.js";
+import { SandExperimentService } from "../../shared/node/experiments/simeon-experiments.js";
 import { applySimeonGateDefaults } from "../../shared/node/experiments/simeon-gate-defaults.js";
-import { startSandRpcTraceWindow } from "../../shared/node/cursor-backend/rpc-tracing.js";
+import { startSandRpcTraceWindow } from "../../shared/node/simeon-backend/rpc-tracing.js";
 import { requireFunction } from "./provider-guards.js";
 
 export interface ProductionExperimentsPorts {
@@ -22,7 +22,7 @@ export function createProductionExperimentsAdapter(
   return {
     async create(context) {
       const runtime = createExperimentsRuntime({
-        ensureCursorAuthService: async () => await ports.getAuthService(context),
+        ensureAccountAuthService: async () => await ports.getAuthService(context),
         getMachineId: async () => context.machineId,
         getCacheDir: () => context.native.app.getPath("userData"),
         isDevBuild: context.env.SAND_PACKAGED !== "1",

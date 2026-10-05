@@ -79,7 +79,7 @@ import type { GitRepoInfo, RequestContext } from "../proto/generated/agent/v1/re
 import { isEqual } from "./common.js";
 import { createCounter, createHistogram } from "../metrics/index.js";
 import { asyncMapValues } from "../utils/promise-extras.js";
-import { isCursorBigModel } from "../utils/model-utils.js";
+import { isSimeonBigModel } from "../utils/model-utils.js";
 import { parseAgentType } from "./state-agent-type.js";
 import { computeCoreMessageImagePresence } from "./conversation-image-presence.js";
 import {
@@ -1985,7 +1985,7 @@ These images can be copied for use in other locations.
       const message = {
         role: "user",
         content: userContent,
-        ...(requestId2 !== undefined ? { providerOptions: { cursor: { requestId: requestId2 } } } : {}),
+        ...(requestId2 !== undefined ? { providerOptions: { simeon: { requestId: requestId2 } } } : {}),
       };
       const redactedMessage = toRedactedCoreMessage(message, this.privacyMode);
       coreToRedactedMap.set(message, redactedMessage);
@@ -2074,7 +2074,7 @@ These images can be copied for use in other locations.
   }
 
   isDsv3(): boolean {
-    return isCursorBigModel(this.modelId);
+    return isSimeonBigModel(this.modelId);
   }
 
   getOrInitializeConversationStartedDate(timeZone?: string): string {

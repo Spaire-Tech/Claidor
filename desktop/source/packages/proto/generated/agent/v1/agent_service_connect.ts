@@ -7,7 +7,7 @@
  */
 import { MethodKind } from "@bufbuild/protobuf";
 import { AgentClientMessage, AgentServerMessage, NameAgentRequest, NameAgentResponse, UpdateConversationMetadataRequest, UpdateConversationMetadataResponse, GetPromptContextUsageRequest, GetPromptContextUsageResponse, CreateTranscriptOverviewRequest, CreateTranscriptOverviewResponse, GetUsableModelsRequest, GetUsableModelsResponse, GetDefaultModelForCliRequest, GetDefaultModelForCliResponse, GetAllowedModelIntentsRequest, GetAllowedModelIntentsResponse, UploadConversationBlobsRequest, UploadConversationBlobsResponse, UploadLocalAgentRunToPromptQualityRequest, UploadLocalAgentRunToPromptQualityResponse, GetSignedUrlForAttachedMediaRequest, GetSignedUrlForAttachedMediaResponse, NotifyConversationCloneRequest, NotifyConversationCloneResponse, GetNewChatNudgeLegacyModelPickerRequest, GetNewChatNudgeLegacyModelPickerResponse, GetNewChatNudgeParameterizedModelPickerRequest, GetNewChatNudgeParameterizedModelPickerResponse } from "./agent_service_pb.js";
-import { BidiRequestId, BidiPollRequest, BidiPollResponse } from "../../aiserver/v1/bidi_pb.js";
+import { BidiRequestId, BidiPollRequest, BidiPollResponse } from "../../simeon/v1/bidi_pb.js";
 
 var AgentService = {
   typeName: "agent.v1.AgentService",

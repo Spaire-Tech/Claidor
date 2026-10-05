@@ -1,12 +1,12 @@
 import { createLogger, createSpan, type Context } from "../../context/index.js";
 import { Updates } from "../../agent-core/interaction-updates.js";
 import { createCounter } from "../../metrics/index.js";
-import { PrivacyMode } from "../../proto/generated/aiserver/v1/privacy_mode_pb.js";
+import { PrivacyMode } from "../../proto/generated/simeon/v1/privacy_mode_pb.js";
 import { PrivacyCapability } from "../../redaction/classification.js";
 import { fromRedactedCoreMessages, toRedactedCoreMessages } from "../../redaction/core-message.js";
 import { promptSuggestionUserMessage, PROMPT_SUGGESTION_MAX_WORDS } from "../prompts/prompt-suggestion.js";
 import { estimateStringTokenCount } from "../utils/token-estimate.js";
-import { isCursorBigModel } from "../../utils/model-utils.js";
+import { isSimeonBigModel } from "../../utils/model-utils.js";
 
 const logger = createLogger("prompt-suggestion");
 const SILENCE_TAG_REGEX = /<{1,2}\/?\s*silence\s*\/?>/i;
@@ -148,12 +148,12 @@ export async function requestPromptSuggestion(
       executor.clearMessages();
       executor.appendMessages(messagesSnapshot);
     }
-    const isDsv3 = isCursorBigModel(model);
+    const isDsv3 = isSimeonBigModel(model);
     const userMessage = {
       role: "user",
       content: promptSuggestionUserMessage(isDsv3),
       providerOptions: {
-        cursor: {
+        simeon: {
           inferenceReason: "prompt-suggestion",
           featureType: "promptSuggestion",
         },

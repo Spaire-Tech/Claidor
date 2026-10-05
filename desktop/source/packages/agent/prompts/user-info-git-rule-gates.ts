@@ -18,7 +18,7 @@ export function shouldInjectComposerGitUserRules(
 ): boolean {
   if (modelInfo === undefined) return false;
   if (modelInfo.isComposerMatterhorn === true && modelInfo.isRawTrainingSlug === true) return false;
-  const isComposerWithoutShellGithubTools = modelInfo.promptVersion === "cursor-0226" ||
+  const isComposerWithoutShellGithubTools = modelInfo.promptVersion === "simeon-0226" ||
     modelInfo.isComposerMatterhorn === true ||
     modelInfo.isComposer2 === true ||
     modelInfo.isComposer15 === true;

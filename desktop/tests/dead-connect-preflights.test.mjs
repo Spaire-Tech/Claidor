@@ -30,7 +30,7 @@ async function load(entry, name) {
 
 test("the privacy-mode pre-flight, the team-admin prefetch and the cloud-agent watcher follow the served set, per service", async () => {
   delete process.env.SAND_CONNECT_SERVED;
-  const session = await src("host/extensions/inference/cursor-session.ts");
+  const session = await src("host/extensions/inference/inference-session.ts");
   assert.match(session, /resolvePrivacyMode: \(\) => isConnectServed\(process\.env, DASHBOARD_SERVICE_NAME\) \? resolveSandRunPrivacyMode\(auth\) : Promise\.resolve\(SAND_RUN_PRIVACY_MODE_FALLBACK\)/);
   const { module, dispose } = await load("source/shared/cloud-agents-availability.ts", "availability");
   try {
@@ -68,7 +68,7 @@ test("the Coming Soon brief no longer blames a team admin, and no string the age
   } finally {
     await dispose();
   }
-  for (const file of ["host/runner/system-prompt.ts", "host/runner/tools/sand-mcp-management-tools.ts", "shared/sand-tools.ts", "shared/node/mcp/mcp-manager.ts", "electron-main/account/cursor-auth.ts", "host/automations/automation.ts"]) {
+  for (const file of ["host/runner/system-prompt.ts", "host/runner/tools/sand-mcp-management-tools.ts", "shared/sand-tools.ts", "shared/node/mcp/mcp-manager.ts", "electron-main/account/account-auth.ts", "host/automations/automation.ts"]) {
     assert.ok(!(await src(file)).includes("Claidor account"), `${file} says Simeon account`);
   }
 });

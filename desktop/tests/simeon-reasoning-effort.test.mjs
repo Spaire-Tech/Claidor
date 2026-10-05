@@ -153,7 +153,7 @@ test("effort follows the step: the request at the session's level, tool results 
     const asked = [system, { role: "user", content: [{ type: "text", text: "plan my trip" }] }];
     const call = { role: "assistant", content: [{ type: "tool-call", toolCallId: "c1", toolName: "Shell", args: { command: "ls" } }] };
     const result = { role: "tool", content: [{ type: "tool-result", toolCallId: "c1", toolName: "Shell", result: "a b c" }] };
-    const failed = { role: "tool", content: [{ type: "tool-result", toolCallId: "c1", toolName: "Shell", result: "No such file" }], providerOptions: { cursor: { highLevelToolCallResult: { isError: true } } } };
+    const failed = { role: "tool", content: [{ type: "tool-result", toolCallId: "c1", toolName: "Shell", result: "No such file" }], providerOptions: { simeon: { highLevelToolCallResult: { isError: true } } } };
     const efforts = async (options, states) => { const session = loaded.module.createProviderPromptSession("simeon", options); for (const state of states) await collect(session.getExecutor(state)); return requests.splice(0).map((body) => body.reasoning?.effort); };
     const steps = [asked, [...asked, call, result], [...asked, call, failed], [...asked, call, result, { role: "user", content: "reminder from the loop" }]];
 

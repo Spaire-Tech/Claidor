@@ -1,4 +1,4 @@
-import { BackgroundComposerSource } from "../../proto/generated/aiserver/v1/background_composer_pb.js";
+import { BackgroundComposerSource } from "../../proto/generated/simeon/v1/background_composer_pb.js";
 import {
   CommandClassifierResult,
   CommandClassifierResult_ClassifiedCommand,

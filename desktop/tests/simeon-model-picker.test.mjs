@@ -118,13 +118,13 @@ test("a refusal from the server is the server's own sentence, and the Mac bindin
       (error) => { assert.equal(error.name, "SimeonApiError"); assert.equal(error.message, "Sign in first."); return true; },
     );
     const adapter = await readFile(path.join(repoRoot, "source/electron-main/models/simeon-model-catalog.ts"), "utf8");
-    assert.equal(adapter.includes("createSandCursorBackendClient"), false);
-    assert.equal(adapter.includes("aiserver_connect"), false);
+    assert.equal(adapter.includes("createSimeonBackendClient"), false);
+    assert.equal(adapter.includes("simeon_connect"), false);
     const services = await readFile(path.join(repoRoot, "source/electron-main/main-production-services.ts"), "utf8");
     assert.equal(services.includes("fetchSandAvailableModels"), false);
     assert.match(services, /fetchSimeonAvailableModels\(/);
     // The cloud-agent path keeps its RPC; only the Mac binding moved.
-    const cloud = await readFile(path.join(repoRoot, "source/electron-main/models/cursor-model-catalog.ts"), "utf8");
+    const cloud = await readFile(path.join(repoRoot, "source/electron-main/models/model-catalog.ts"), "utf8");
     assert.match(cloud, /export async function fetchSandAvailableModels/);
   } finally {
     await loaded.dispose();

@@ -1,4 +1,4 @@
-import { getConfiguredBackendUrl } from "../cursor-token.js";
+import { getConfiguredBackendUrl } from "../simeon-token.js";
 
 export const VENDOR_MCP_GROUP = {
   MailCalendar: "Mail & Calendar",

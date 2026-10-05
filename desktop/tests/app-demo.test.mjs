@@ -25,7 +25,7 @@ async function loadModule(entry, name) {
 }
 
 // The message types the pinned renderer's send-message switch draws (PAe / jEn in the 0.18.0 chunk).
-const RENDERED_TYPES = new Set(["text", "attachment", "widget", "cursor-agent", "secret-request", "email-draft", "slack-draft", "permission-request", "auto-review-approval", "local-tool-permission", "connector", "connectors", "listener-connect"]);
+const RENDERED_TYPES = new Set(["text", "attachment", "widget", "cloud-agent", "secret-request", "email-draft", "slack-draft", "permission-request", "auto-review-approval", "local-tool-permission", "connector", "connectors", "listener-connect"]);
 const until = async (check, ms = 2000) => { const end = Date.now() + ms; while (!check()) { if (Date.now() > end) throw new Error("timed out"); await new Promise((r) => setTimeout(r, 5)); } };
 
 test("eight agents and their group, every conversation a well-formed transcript window", async (t) => {

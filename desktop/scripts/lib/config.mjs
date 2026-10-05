@@ -74,8 +74,8 @@ export const simeonExecutableName = simeonName;
  * Where the packaged app signs in.
  *
  * The app resolves these from `process.env` at startup
- * (`source/shared/node/cursor-token.ts`, `getConfiguredBackendUrl`, and
- * `packages/cursor-config/auth/login.ts`, `resolveApiBaseUrl` /
+ * (`source/shared/node/simeon-token.ts`, `getConfiguredBackendUrl`, and
+ * `packages/simeon-config/auth/login.ts`, `resolveApiBaseUrl` /
  * `resolveWebsiteUrl`). A bundle launched from Finder inherits no shell
  * environment, so without this a packaged build goes to the upstream site no matter
  * what is exported in a terminal. They are written into `LSEnvironment` so the

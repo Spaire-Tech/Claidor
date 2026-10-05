@@ -1,9 +1,9 @@
 // @ts-nocheck -- exact generated runtime; declaration typing is a subsequent mechanical pass.
-import { CallFrame, ExtraContextEntry, InvocationContext, InvocationContext_GithubPR, InvocationContext_IdeState, InvocationContext_IdeState_File, InvocationContext_IdeState_File_CursorPosition, InvocationContext_IdeState_ViewedPullRequest, InvocationContext_MicrosoftTeamsThread, InvocationContext_SlackThread, PromptUploadRef, RecentAgent, RecentAgentsContext, SelectedAgenticGitAction, SelectedAgenticGitActionBabysitPrInCloudParams, SelectedAgenticGitActionCommitParams, SelectedAgenticGitActionCreateBranchParams, SelectedAgenticGitActionFixMergeConflictsParams, SelectedAgenticGitActionPullLocallyParams, SelectedAgenticGitActionPushParams, SelectedAgenticGitActionUpdateBranchParams, SelectedAgenticGitFileWithStatus, SelectedBrowser, SelectedCodeSelection, SelectedConsoleLog, SelectedContext, SelectedCursorCommand, SelectedCursorRule, SelectedDocument, SelectedDocument_BlobIdWithData, SelectedDocumentation, SelectedExternalLink, SelectedFile, SelectedFolder, SelectedGitBranchContext, SelectedGitCommit, SelectedGitDiff, SelectedGitDiffFromBranchToMain, SelectedGitPRDiffSelection, SelectedImage, SelectedImage_BlobIdWithData, SelectedImage_Dimension, SelectedPastChat, SelectedPluginCapabilityRef, SelectedPullRequest, SelectedSubagent, SelectedTerminal, SelectedTerminalSelection, SelectedUIElement, SelectedVideo, SelectedVideo_BlobIdWithData, SelectedVideo_SignedUrl, StackTrace } from "../../../../proto/generated/agent/v1/selected_context_pb.js";
+import { CallFrame, ExtraContextEntry, InvocationContext, InvocationContext_GithubPR, InvocationContext_IdeState, InvocationContext_IdeState_File, InvocationContext_IdeState_File_CursorPosition, InvocationContext_IdeState_ViewedPullRequest, InvocationContext_MicrosoftTeamsThread, InvocationContext_SlackThread, PromptUploadRef, RecentAgent, RecentAgentsContext, SelectedAgenticGitAction, SelectedAgenticGitActionBabysitPrInCloudParams, SelectedAgenticGitActionCommitParams, SelectedAgenticGitActionCreateBranchParams, SelectedAgenticGitActionFixMergeConflictsParams, SelectedAgenticGitActionPullLocallyParams, SelectedAgenticGitActionPushParams, SelectedAgenticGitActionUpdateBranchParams, SelectedAgenticGitFileWithStatus, SelectedBrowser, SelectedCodeSelection, SelectedConsoleLog, SelectedContext, SelectedAgentCommand, SelectedAgentRule, SelectedDocument, SelectedDocument_BlobIdWithData, SelectedDocumentation, SelectedExternalLink, SelectedFile, SelectedFolder, SelectedGitBranchContext, SelectedGitCommit, SelectedGitDiff, SelectedGitDiffFromBranchToMain, SelectedGitPRDiffSelection, SelectedImage, SelectedImage_BlobIdWithData, SelectedImage_Dimension, SelectedPastChat, SelectedPluginCapabilityRef, SelectedPullRequest, SelectedSubagent, SelectedTerminal, SelectedTerminalSelection, SelectedUIElement, SelectedVideo, SelectedVideo_BlobIdWithData, SelectedVideo_SignedUrl, StackTrace } from "../../../../proto/generated/agent/v1/selected_context_pb.js";
 import { DataClassification } from "../../../../redaction/classification.js";
 import { createRedactedBytes, createRedactedString } from "../../../../redaction/factory.js";
 import { fromRedactedAgentSkill, toRedactedAgentSkill } from "./agent_skills_redacted.js";
-import { fromRedactedCursorRule2 as fromRedactedCursorRule, toRedactedCursorRule2 as toRedactedCursorRule } from "./cursor_rules_redacted.js";
+import { fromRedactedAgentRule2 as fromRedactedAgentRule, toRedactedAgentRule2 as toRedactedAgentRule } from "./agent_rules_redacted.js";
 import { fromRedactedLsDirectoryTreeNode, toRedactedLsDirectoryTreeNode } from "./ls_exec_redacted.js";
 import { fromRedactedRange, toRedactedRange } from "./utils_redacted.js";
 
@@ -429,17 +429,17 @@ function fromRedactedSelectedExternalLink(msg, purpose, opts) {
     blobId: msg.blobId !== void 0 ? msg.blobId : void 0
   });
 }
-function toRedactedSelectedCursorRule(msg, privacyMode) {
+function toRedactedSelectedAgentRule(msg, privacyMode) {
   return {
     _privacyMode: privacyMode,
-    rule: msg.rule !== void 0 ? toRedactedCursorRule(msg.rule, privacyMode) : void 0
+    rule: msg.rule !== void 0 ? toRedactedAgentRule(msg.rule, privacyMode) : void 0
   };
 }
-function fromRedactedSelectedCursorRule(msg, purpose, opts) {
+function fromRedactedSelectedAgentRule(msg, purpose, opts) {
   const redactUnallowedFieldsInsteadOfThrowing = opts?.redactUnallowedFieldsInsteadOfThrowing ?? false;
   const enforcing = opts?.enforcing;
-  return new SelectedCursorRule({
-    rule: msg.rule !== void 0 ? fromRedactedCursorRule(msg.rule, purpose, opts) : void 0
+  return new SelectedAgentRule({
+    rule: msg.rule !== void 0 ? fromRedactedAgentRule(msg.rule, purpose, opts) : void 0
   });
 }
 function toRedactedSelectedGitDiff(msg, privacyMode) {
@@ -560,7 +560,7 @@ function fromRedactedSelectedPluginCapabilityRef(msg, purpose, opts) {
     resolvedCommitSha: msg.resolvedCommitSha
   });
 }
-function toRedactedSelectedCursorCommand(msg, privacyMode) {
+function toRedactedSelectedAgentCommand(msg, privacyMode) {
   return {
     _privacyMode: privacyMode,
     name: msg.name,
@@ -570,10 +570,10 @@ function toRedactedSelectedCursorCommand(msg, privacyMode) {
     displayName: msg.displayName
   };
 }
-function fromRedactedSelectedCursorCommand(msg, purpose, opts) {
+function fromRedactedSelectedAgentCommand(msg, purpose, opts) {
   const redactUnallowedFieldsInsteadOfThrowing = opts?.redactUnallowedFieldsInsteadOfThrowing ?? false;
   const enforcing = opts?.enforcing;
-  return new SelectedCursorCommand({
+  return new SelectedAgentCommand({
     name: msg.name,
     content: msg.content.unwrap(purpose, { redactUnallowedFieldsInsteadOfThrowing, enforcing }),
     pluginCapability: msg.pluginCapability !== void 0 ? fromRedactedSelectedPluginCapabilityRef(msg.pluginCapability, purpose, opts) : void 0,
@@ -991,10 +991,10 @@ function toRedactedSelectedContext(msg, privacyMode) {
     terminalSelections: msg.terminalSelections.map((v2) => toRedactedSelectedTerminalSelection(v2, privacyMode)),
     folders: msg.folders.map((v2) => toRedactedSelectedFolder(v2, privacyMode)),
     externalLinks: msg.externalLinks.map((v2) => toRedactedSelectedExternalLink(v2, privacyMode)),
-    cursorRules: msg.cursorRules.map((v2) => toRedactedSelectedCursorRule(v2, privacyMode)),
+    agentRules: msg.agentRules.map((v2) => toRedactedSelectedAgentRule(v2, privacyMode)),
     gitDiff: msg.gitDiff !== void 0 ? toRedactedSelectedGitDiff(msg.gitDiff, privacyMode) : void 0,
     gitDiffFromBranchToMain: msg.gitDiffFromBranchToMain !== void 0 ? toRedactedSelectedGitDiffFromBranchToMain(msg.gitDiffFromBranchToMain, privacyMode) : void 0,
-    cursorCommands: msg.cursorCommands.map((v2) => toRedactedSelectedCursorCommand(v2, privacyMode)),
+    agentCommands: msg.agentCommands.map((v2) => toRedactedSelectedAgentCommand(v2, privacyMode)),
     documentations: msg.documentations.map((v2) => toRedactedSelectedDocumentation(v2, privacyMode)),
     uiElements: msg.uiElements.map((v2) => toRedactedSelectedUIElement(v2, privacyMode)),
     consoleLogs: msg.consoleLogs.map((v2) => toRedactedSelectedConsoleLog(v2, privacyMode)),
@@ -1025,10 +1025,10 @@ function fromRedactedSelectedContext(msg, purpose, opts) {
     terminalSelections: msg.terminalSelections.map((v2) => fromRedactedSelectedTerminalSelection(v2, purpose, opts)),
     folders: msg.folders.map((v2) => fromRedactedSelectedFolder(v2, purpose, opts)),
     externalLinks: msg.externalLinks.map((v2) => fromRedactedSelectedExternalLink(v2, purpose, opts)),
-    cursorRules: msg.cursorRules.map((v2) => fromRedactedSelectedCursorRule(v2, purpose, opts)),
+    agentRules: msg.agentRules.map((v2) => fromRedactedSelectedAgentRule(v2, purpose, opts)),
     gitDiff: msg.gitDiff !== void 0 ? fromRedactedSelectedGitDiff(msg.gitDiff, purpose, opts) : void 0,
     gitDiffFromBranchToMain: msg.gitDiffFromBranchToMain !== void 0 ? fromRedactedSelectedGitDiffFromBranchToMain(msg.gitDiffFromBranchToMain, purpose, opts) : void 0,
-    cursorCommands: msg.cursorCommands.map((v2) => fromRedactedSelectedCursorCommand(v2, purpose, opts)),
+    agentCommands: msg.agentCommands.map((v2) => fromRedactedSelectedAgentCommand(v2, purpose, opts)),
     documentations: msg.documentations.map((v2) => fromRedactedSelectedDocumentation(v2, purpose, opts)),
     uiElements: msg.uiElements.map((v2) => fromRedactedSelectedUIElement(v2, purpose, opts)),
     consoleLogs: msg.consoleLogs.map((v2) => fromRedactedSelectedConsoleLog(v2, purpose, opts)),
@@ -1283,8 +1283,8 @@ export {
   fromRedactedSelectedFolder,
   toRedactedSelectedExternalLink,
   fromRedactedSelectedExternalLink,
-  toRedactedSelectedCursorRule,
-  fromRedactedSelectedCursorRule,
+  toRedactedSelectedAgentRule,
+  fromRedactedSelectedAgentRule,
   toRedactedSelectedGitDiff,
   fromRedactedSelectedGitDiff,
   toRedactedSelectedGitDiffFromBranchToMain,
@@ -1297,8 +1297,8 @@ export {
   fromRedactedSelectedGitPRDiffSelection,
   toRedactedSelectedPluginCapabilityRef,
   fromRedactedSelectedPluginCapabilityRef,
-  toRedactedSelectedCursorCommand,
-  fromRedactedSelectedCursorCommand,
+  toRedactedSelectedAgentCommand,
+  fromRedactedSelectedAgentCommand,
   toRedactedSelectedDocumentation,
   fromRedactedSelectedDocumentation,
   toRedactedSelectedPastChat,

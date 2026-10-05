@@ -130,7 +130,7 @@ export class LocalBackgroundShellExecutor {
   constructor(
     private readonly permissions: BackgroundPermissions,
     private readonly core: LocalBackgroundCoreExecutor,
-    private readonly ignore: { getCursorIgnoreMapping(): Promise<unknown> },
+    private readonly ignore: { getAgentIgnoreMapping(): Promise<unknown> },
     private readonly projectDir: string,
     factory?: BackgroundShellFactory,
     backgroundWorkRegistry?: BackgroundWorkRegistry,
@@ -195,7 +195,7 @@ export class LocalBackgroundShellExecutor {
     policy = decision.policy;
     if (isForcedShellEgressEnabled()) {
       policy = forcedShellSandboxPolicy(command, parsed);
-      if (policy.type !== "insecure_none") policy = { ...policy, ignoreMapping: await this.ignore.getCursorIgnoreMapping() };
+      if (policy.type !== "insecure_none") policy = { ...policy, ignoreMapping: await this.ignore.getAgentIgnoreMapping() };
     }
     try {
       const shellId = this.manager.generateShellId();

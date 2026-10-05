@@ -136,7 +136,7 @@ export function getIsPremiumFromContext(ctx: Context): boolean {
   return ctx.get(isPremiumKey) === true;
 }
 
-export function getIsAnysphereTeamFromContext(ctx: Context): boolean {
+export function getIsStaffTeamFromContext(ctx: Context): boolean {
   const teamId = ctx.get(teamIdKey);
   return teamId !== undefined && teamId === ANYSPHERE_TEAM_ID;
 }

@@ -175,6 +175,46 @@ Until the own-shell bundle has been seen working on a Mac (sign-in, the
 cloud computer, a turn, a voice call, passkeys), `npm run package` stays the
 build people install.
 
+## A signed release for other Macs
+
+`npm run package:own-shell` signs ad hoc, which is enough for the Mac it
+was built on. A build for other people is signed with Simeon Labs' Apple
+developer certificate and checked by Apple (notarized), so it opens without
+the "unidentified developer" warning:
+
+```sh
+npm run package:own-shell   # dist/Simeon.app
+npm run release:macos       # dist/release/<version>/
+```
+
+`scripts/release-macos.mjs` signs every binary in the app with the
+Developer ID Application certificate and the hardened runtime
+(`scripts/lib/release-macos.mjs` has the entitlements), sends the app to
+Apple with `notarytool`, staples the ticket, checks it the way Gatekeeper
+will (`spctl --assess`), then writes four files: the `.dmg` a person
+downloads, the `.zip` an installed app downloads to update itself,
+`feed.json` (what the updater reads) and `release.json` (the files'
+sha256 and sizes). The disk image is signed, notarized and stapled too.
+
+Once per Mac, before the first release:
+
+1. Install the Developer ID Application certificate: Xcode → Settings →
+   Accounts → the Apple account → Manage Certificates → + → Developer ID
+   Application (or developer.apple.com → Certificates).
+2. Store the notarization login under a keychain profile, so no password
+   is ever on a command line again:
+   `xcrun notarytool store-credentials simeon-notary --apple-id <the Apple
+   account's e-mail> --team-id <the team id>` and, when asked, an
+   app-specific password made at account.apple.com → Sign-In and Security
+   → App-Specific Passwords.
+
+Settings the script reads: `SIMEON_TEAM_ID` (picks the certificate),
+`SIMEON_SIGN_IDENTITY` (the certificate's full name, when several match),
+`SIMEON_NOTARY_PROFILE` (default `simeon-notary`) and
+`SIMEON_RELEASE_BASE_URL` (where the files will be served from, default
+`https://simeonlabs.com/releases`; the URLs in `feed.json` and
+`release.json` are built from it).
+
 ## Publishing the host bundle
 
 The cloud boxes run the host from the packaged app. After `npm run package`:

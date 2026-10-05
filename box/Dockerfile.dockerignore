@@ -1,0 +1,10 @@
+# The build context for box/Dockerfile (Docker reads <Dockerfile>.dockerignore
+# in place of the root .dockerignore, which keeps only runner/). The image
+# copies box/bin, box/etc, box/deps and box/wallpapers; nothing else from the
+# repository is needed, and nothing else is sent.
+*
+!box/bin
+!box/etc
+!box/deps/package.json
+!box/deps/package-lock.json
+!box/wallpapers

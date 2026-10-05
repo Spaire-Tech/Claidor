@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# One machine id per box that survives a new container on the same volume:
+# Chrome and dbus read /etc/machine-id, and a changed id makes Chrome drop
+# what it encrypted with the old one. The id lives in the Chrome profile
+# (/home/box/chrome-profile/machine-id, on the data volume) and is copied
+# to /etc/machine-id and /var/lib/dbus/machine-id at every boot.
+set -uo pipefail
+
+ROOT="${SAND_MACHINE_ID_ROOT:-}"
+PERSISTED="$ROOT/home/box/chrome-profile/machine-id"
+ETC_ID="$ROOT/etc/machine-id"
+DBUS_ID="$ROOT/var/lib/dbus/machine-id"
+
+if [ "$(id -u)" != 0 ] && command -v sudo >/dev/null && sudo -n true 2>/dev/null; then exec sudo -n "$0" "$@"; fi
+
+valid() { [[ "${1:-}" =~ ^[0-9a-f]{32}$ ]]; }
+id="$(head -c 64 "$PERSISTED" 2>/dev/null | tr -d '[:space:]')"
+if ! valid "$id"; then id="$(head -c 64 "$ETC_ID" 2>/dev/null | tr -d '[:space:]')"; fi
+if ! valid "$id"; then id="$(tr -d '-' < /proc/sys/kernel/random/uuid | tr 'A-F' 'a-f' | head -c 32)"; fi
+valid "$id" || exit 0
+
+mkdir -p "$(dirname "$PERSISTED")" "$(dirname "$ETC_ID")" "$(dirname "$DBUS_ID")"
+if [ "$(cat "$PERSISTED" 2>/dev/null)" != "$id" ]; then
+  tmp="$(mktemp "$(dirname "$PERSISTED")/.machine-id.XXXXXX")" && printf '%s\n' "$id" > "$tmp" && chmod 644 "$tmp" && mv -T "$tmp" "$PERSISTED"
+  chown box:box "$PERSISTED" 2>/dev/null || true
+fi
+if [ "$(cat "$ETC_ID" 2>/dev/null)" != "$id" ]; then printf '%s\n' "$id" > "$ETC_ID" 2>/dev/null || true; fi
+if [ "$(readlink "$DBUS_ID" 2>/dev/null)" != "$ETC_ID" ]; then rm -f "$DBUS_ID" && ln -s "$ETC_ID" "$DBUS_ID" 2>/dev/null || printf '%s\n' "$id" > "$DBUS_ID" 2>/dev/null || true; fi
+exit 0

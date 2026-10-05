@@ -8,11 +8,11 @@ import { DashboardService } from "../../../packages/proto/simeon/v1/services.js"
 import {
   ClassifySandAutoReviewRequest,
   type ClassifySandAutoReviewResponse,
-} from "../../../packages/proto/generated/aiserver/v1/dashboard_pb.js";
+} from "../../../packages/proto/generated/simeon/v1/dashboard_pb.js";
 import {
-  createSandCursorBackendClient,
+  createSimeonBackendClient,
   type SandInferenceOptions,
-} from "../../../shared/node/cursor-backend/cursor-inference.js";
+} from "../../../shared/node/simeon-backend/simeon-inference.js";
 import {
   smartModeClassifierAttemptIndexKey,
   smartModeClassifierModeKey,
@@ -31,7 +31,7 @@ export function createSandBackendSmartModeClassifierExecutor(
       >;
     };
   };
-  const client = createSandCursorBackendClient(service, options);
+  const client = createSimeonBackendClient(service, options);
   return {
     async execute(ctx: Context, args: SmartModeClassifierArgs): Promise<SmartModeClassifierResult> {
       const attemptIndex = ctx.get(smartModeClassifierAttemptIndexKey);

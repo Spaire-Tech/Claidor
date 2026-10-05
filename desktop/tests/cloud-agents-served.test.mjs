@@ -100,7 +100,7 @@ test("the manager launches, polls, lists, dumps and reads the catalogue through 
     const { SandCloudAgentManager } = service.module;
     const { convertConversationMessagesToTrace, HistoryVisibilityMode } = trace.module;
     const manager = new SandCloudAgentManager({
-      getCursorAccessToken: async () => "simeon_da_test",
+      getAccountAccessToken: async () => "simeon_da_test",
       getMachineId: async () => "machine-1",
       completionPolling: { start: () => ({ dispose() {} }) },
       clock: { monotonicNow: () => Date.now() },

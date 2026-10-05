@@ -78,7 +78,7 @@ export function UserInfoSection({
                   children: [jsx("br", {}), "If editing a git workspace within your current directory, do not search or edit non-primary worktrees unless the user explicitly requests you to do so."],
                 }),
                 shouldShowNonPrimaryWorktreeWarning && env.isWorkingDirHomeDir === true && jsxs(Fragment, {
-                  children: [jsx("br", {}), "This applies especially to managed worktrees in ~/.cursor/worktrees."],
+                  children: [jsx("br", {}), "This applies especially to managed worktrees in ~/.simeon/worktrees."],
                 }),
               ],
             })
@@ -112,7 +112,7 @@ export function UserInfoSection({
                 children: [jsx("br", {}), "If editing a git workspace within your current directory, do not search or edit non-primary worktrees unless the user explicitly requests you to do so."],
               }),
               shouldShowNonPrimaryWorktreeWarning && env.isWorkingDirHomeDir === true && jsxs(Fragment, {
-                children: [jsx("br", {}), "This applies especially to managed worktrees in ~/.cursor/worktrees."],
+                children: [jsx("br", {}), "This applies especially to managed worktrees in ~/.simeon/worktrees."],
               }),
             ],
           })

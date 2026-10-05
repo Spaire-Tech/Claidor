@@ -50,7 +50,7 @@ type ToolLike = Record<string, unknown> & {
 };
 
 type ProviderOptions = {
-  readonly cursor?: {
+  readonly simeon?: {
     readonly isAlreadySummarizedThinking?: boolean;
     readonly modelName?: string;
   };
@@ -739,7 +739,7 @@ export async function executeDeferredToolCall(
         experimental_content: toolResultContent,
       }],
       providerOptions: {
-        cursor: {
+        simeon: {
           highLevelToolCallResult: highLevelToolCallResult ?? {},
         },
       },
@@ -851,19 +851,19 @@ function sanitizeContentBufferForReplay(buffer: readonly AssistantContentPart[])
     if (part.type !== "reasoning") {
       return [part];
     }
-    const isSummary = part.providerOptions?.cursor?.isAlreadySummarizedThinking === true;
+    const isSummary = part.providerOptions?.simeon?.isAlreadySummarizedThinking === true;
     if (!isSummary) {
       return [part];
     }
     if (part.signature !== undefined && part.signature.length > 0) {
-      const modelName = part.providerOptions?.cursor?.modelName;
+      const modelName = part.providerOptions?.simeon?.modelName;
       if (modelName === undefined) {
         return [];
       }
       return [{
         type: "redacted-reasoning" as const,
         data: part.signature,
-        providerOptions: { cursor: { modelName } },
+        providerOptions: { simeon: { modelName } },
       }];
     }
     return [];
@@ -1070,15 +1070,15 @@ function streamModelAndCollectToolCalls(
           const last = contentBuffer.at(-1);
           if (last !== undefined && last.type === "reasoning" && last.signature === undefined) {
             last.text += chunk.textDelta;
-            const incomingCursor = incomingProviderOptions?.cursor;
+            const incomingCursor = incomingProviderOptions?.simeon;
             if (
               incomingCursor?.isAlreadySummarizedThinking === true ||
               incomingCursor?.modelName !== undefined
             ) {
               last.providerOptions = {
                 ...(last.providerOptions ?? {}),
-                cursor: {
-                  ...(last.providerOptions?.cursor ?? {}),
+                simeon: {
+                  ...(last.providerOptions?.simeon ?? {}),
                   ...(incomingCursor.isAlreadySummarizedThinking === true
                     ? { isAlreadySummarizedThinking: true }
                     : {}),
@@ -1102,12 +1102,12 @@ function streamModelAndCollectToolCalls(
           const last = contentBuffer.at(-1);
           if (last !== undefined && last.type === "redacted-reasoning") {
             last.data += chunk.data;
-            if (incomingProviderOptions?.cursor?.modelName !== undefined) {
+            if (incomingProviderOptions?.simeon?.modelName !== undefined) {
               last.providerOptions = {
                 ...(last.providerOptions ?? {}),
-                cursor: {
-                  ...(last.providerOptions?.cursor ?? {}),
-                  modelName: incomingProviderOptions.cursor.modelName,
+                simeon: {
+                  ...(last.providerOptions?.simeon ?? {}),
+                  modelName: incomingProviderOptions.simeon.modelName,
                 },
               };
             }

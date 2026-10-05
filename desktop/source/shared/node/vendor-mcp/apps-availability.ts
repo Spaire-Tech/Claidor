@@ -9,7 +9,7 @@
 // sign-in) keeps the cards Coming soon, the way the upstream app only offers Connect
 // for what can actually connect.
 
-import { getConfiguredBackendUrl } from "../cursor-token.js";
+import { getConfiguredBackendUrl } from "../simeon-token.js";
 
 export const APPS_AVAILABILITY_TTL_MS = 60_000;
 export const APPS_AVAILABILITY_TIMEOUT_MS = 5_000;

@@ -8,8 +8,8 @@ import {
   SandAuditEvent_ComputerUseSession,
   SandAuditEvent_McpToolCall,
   SandAuditEvent_ShellCommand
-} from "../../../packages/proto/generated/aiserver/v1/dashboard_pb.js";
-import { createSandCursorBackendClient } from "../../../shared/node/cursor-backend/cursor-inference.js";
+} from "../../../packages/proto/generated/simeon/v1/dashboard_pb.js";
+import { createSimeonBackendClient } from "../../../shared/node/simeon-backend/simeon-inference.js";
 import type { AuditEvent } from "./action-audit-service.js";
 
 const rounded = (value: number) => BigInt(Math.max(0, Math.round(value)));
@@ -93,7 +93,7 @@ export function createSandAuditBatchSender(deps: {
       readonly recordSandAuditEvents: MethodInfoUnary<RecordSandAuditEventsRequest, RecordSandAuditEventsResponse>;
     };
   };
-  const client = createSandCursorBackendClient(service, {
+  const client = createSimeonBackendClient(service, {
     getAccessToken: deps.getAccessToken,
     getMachineId: deps.getMachineId
   });
