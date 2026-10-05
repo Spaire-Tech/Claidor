@@ -234,7 +234,10 @@ export async function createTurnAgentRunContext<ContextValue>(
       const withSendMessage = input.isSubagentRunner || input.isSilenceAllowed
         ? withDiskPressure
         : createSendMessageReminderMiddleware()(withDiskPressure);
-      const executor = input.isSubagentRunner || input.isSilenceAllowed
+      // 5 October 2026: a hidden turn (the box handed back, a routine, a
+      // nudge) has nobody watching silence; the reminder made the agent say
+      // "I'm checking whether the sign-up finished" after the person did it.
+      const executor = input.isSubagentRunner || input.isSilenceAllowed || input.hidden === true
         ? withSendMessage
         : createStartOfTurnAckReminderMiddleware()(withSendMessage);
       const toolExecutor = new SimplePromptToolExecutor(executor);

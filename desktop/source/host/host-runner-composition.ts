@@ -2362,8 +2362,13 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
             if (start == null) throw new Error("The box hand-off service is not bound.");
             return await start(request) as { kind: "started"; requestId: string } | { kind: "already-pending"; requestId: string; instruction: string };
           },
-          onSendMessage: (message, timestampMs) => {
-            const update = { type: "send-message" as const, message: { ...message, type: "text" }, timestampMs, ...(turn.ackToken === undefined ? {} : { ackToken: turn.ackToken }) };
+          onSendMessage: (message, timestampMs, metadata) => {
+            // `boxHandoff` is what `turn-runtime.ts` stamps on the entry
+            // (`boxRequestId`), and the window draws the handoff card for an
+            // entry whose id matches the pending handoff. Until 5 October 2026
+            // the id was dropped here and the person saw the instruction as
+            // plain text, with no card and no way to the computer.
+            const update = { type: "send-message" as const, message: { ...message, type: "text" }, timestampMs, boxHandoff: { requestId: metadata.requestId, instruction: metadata.instruction }, ...(turn.ackToken === undefined ? {} : { ackToken: turn.ackToken }) };
             if (turn.emitUpdate === undefined) hooks.transport.onUpdate(update);
             else turn.emitUpdate(update);
           },

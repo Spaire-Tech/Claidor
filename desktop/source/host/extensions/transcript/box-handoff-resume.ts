@@ -117,7 +117,7 @@ export class BoxHandoffResume {
     trigger = "button",
   ): Promise<void> {
     let prompt =
-      "[The user handed the box back to you. Please continue your task — start by looking at the current state of the box desktop (a computerUse subagent's screenshot, or your Screenshot tool when you hold one).]";
+      "[The user handed the box back to you. Please continue your task — start by looking at the current state of the box desktop (a computerUse subagent's screenshot, or your Screenshot tool when you hold one). They did that step themselves and watched it, so do not tell them what they did or that you are checking; say nothing until the task has a result for them or needs them again.]";
     if (trigger === "dismissed") {
       prompt =
         "[The user dismissed your box help request without doing the step you asked for. Treat it as declined: do not assume the step happened, and do not immediately request the box again for the same step. Continue the task without it if you can — skip the step or find another way. If the task cannot proceed without it, send the user a brief message saying what is blocked, then stop and wait for their reply.]";
