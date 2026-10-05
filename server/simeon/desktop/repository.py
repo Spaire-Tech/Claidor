@@ -14,6 +14,8 @@ from simeon.models import (
     DesktopSession,
     DesktopUsage,
     DesktopVoiceCall,
+    Organization,
+    UserOrganization,
 )
 
 
@@ -159,5 +161,26 @@ class DesktopVoiceCallRepository(RepositoryBase[DesktopVoiceCall]):
     ) -> DesktopVoiceCall | None:
         statement = self.get_base_statement().where(
             DesktopVoiceCall.conversation_id == conversation_id
+        )
+        return await self.get_one_or_none(statement)
+
+
+class DesktopOrganizationRepository(RepositoryBase[Organization]):
+    """The person's own organisation: what the billing engine bills
+    (`simeon.desktop.allowance`). The web app makes one on the person's
+    first visit (`provisionWorkspace`), the Mac sign-in makes one too
+    (`DesktopService.ensure_personal_organization`); the earliest one
+    they belong to is theirs."""
+
+    model = Organization
+
+    async def get_first_for_user(self, user_id: UUID) -> Organization | None:
+        statement = (
+            self.get_base_statement()
+            .join(UserOrganization, UserOrganization.organization_id == Organization.id)
+            .where(UserOrganization.user_id == user_id)
+            .where(Organization.deleted_at.is_(None))
+            .order_by(Organization.created_at.asc())
+            .limit(1)
         )
         return await self.get_one_or_none(statement)

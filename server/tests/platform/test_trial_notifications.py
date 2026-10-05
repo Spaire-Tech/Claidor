@@ -1,9 +1,9 @@
 """Unit tests for the platform trial-reminder scheduling logic.
 
 The marker selection (`_due_marker`) had a bug where iterating the reminder
-days in descending order made every run resolve to the 7-day marker, so the
-T-2 and T-0 reminders never fired. These tests lock in the corrected
-ascending behavior.
+days in descending order made every run resolve to the largest marker, so
+the later reminders never fired. These tests lock in the corrected
+ascending behavior, on the 7-day trial's markers (3, 1, 0).
 
 The integration tests below lock in the send/skip semantics: markers are
 NOT stamped when no recipient can be resolved (so the next run retries
@@ -34,18 +34,16 @@ from tests.fixtures.random_objects import (
 
 
 class TestDueMarker:
-    def test_more_than_seven_days_out_is_not_due(self) -> None:
-        assert _due_marker(14) is None
-        assert _due_marker(8) is None
+    def test_more_than_three_days_out_is_not_due(self) -> None:
+        assert _due_marker(7) is None
+        assert _due_marker(4) is None
 
-    def test_seven_day_window_fires_seven(self) -> None:
-        assert _due_marker(7) == 7
-        assert _due_marker(6) == 7
-        assert _due_marker(3) == 7
+    def test_three_day_window_fires_three(self) -> None:
+        assert _due_marker(3) == 3
+        assert _due_marker(2) == 3
 
-    def test_two_day_window_fires_two(self) -> None:
-        assert _due_marker(2) == 2
-        assert _due_marker(1) == 2
+    def test_one_day_window_fires_one(self) -> None:
+        assert _due_marker(1) == 1
 
     def test_last_day_fires_zero(self) -> None:
         assert _due_marker(0) == 0
@@ -83,7 +81,7 @@ async def _trialing_setup(
         recurring_interval=SubscriptionRecurringInterval.month,
         prices=[(4900, "usd")],
     )
-    product.user_metadata = {"tier": "starter"}
+    product.user_metadata = {"tier": "standard"}
     await save_fixture(product)
     creator = await create_organization(save_fixture)
     customer = await create_customer(
@@ -150,7 +148,7 @@ class TestCheckPendingTrialReminders:
         enqueue.assert_called_once()
         assert enqueue.call_args.kwargs["to_email_addr"] == "founder@example.com"
         await session.refresh(subscription)
-        assert (subscription.user_metadata or {}).get("trial_reminders_sent") == "2"
+        assert (subscription.user_metadata or {}).get("trial_reminders_sent") == "3"
 
     async def test_canceled_trial_is_skipped(
         self,

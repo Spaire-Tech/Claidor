@@ -178,7 +178,7 @@ class TestSetDomain:
         mocker.patch(
             "simeon.organization_custom_domain.service.entitlements_service.require_feature",
             side_effect=FeatureNotInPlanError(
-                "custom_storefront_domain", TierKey.starter
+                "custom_storefront_domain", TierKey.standard
             ),
         )
 

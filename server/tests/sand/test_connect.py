@@ -12,10 +12,11 @@ way `@connectrpc/connect` reads it.
 import httpx
 import pytest
 from fastapi import FastAPI
+from pytest_mock import MockerFixture
 
 from simeon.models import User
+from simeon.models.subscription import SubscriptionStatus
 from simeon.postgres import AsyncSession
-from simeon.sand import router as sand_router
 from simeon.sand.connect import (
     ConnectCall,
     ConnectError,
@@ -24,6 +25,7 @@ from simeon.sand.connect import (
     encode_stream_frames,
 )
 from tests.desktop.test_endpoints import _signed_in
+from tests.fixtures.database import SaveFixture
 
 demo = ConnectService("aiserver.v1.DemoService")
 
@@ -59,7 +61,10 @@ def _mount(app: FastAPI) -> None:
     # the demo service is included (which binds the app's dependency
     # overrides into each route) and then moved in front of it, the way a
     # real module is included before `unimplemented_router` in `simeon.sand`.
-    if any(getattr(route, "path", "") == "/aiserver.v1.DemoService/Echo" for route in app.routes):
+    if any(
+        getattr(route, "path", "") == "/aiserver.v1.DemoService/Echo"
+        for route in app.routes
+    ):
         return
     before = len(app.router.routes)
     app.include_router(demo.router)
@@ -77,17 +82,27 @@ class TestConnect:
         response = await client.post(
             "/aiserver.v1.DemoService/Echo",
             json={"preserveData": True, "count": "12"},
-            headers={"Authorization": f"Bearer {access}", "content-type": "application/json"},
+            headers={
+                "Authorization": f"Bearer {access}",
+                "content-type": "application/json",
+            },
         )
         assert response.status_code == 200, response.text
-        assert response.json() == {"echoed": {"preserveData": True, "count": "12"}, "userId": str(user.id)}
+        assert response.json() == {
+            "echoed": {"preserveData": True, "count": "12"},
+            "userId": str(user.id),
+        }
 
-    async def test_unauthenticated_is_connects_own_code(self, client: httpx.AsyncClient) -> None:
+    async def test_unauthenticated_is_connects_own_code(
+        self, client: httpx.AsyncClient
+    ) -> None:
         response = await client.post("/aiserver.v1.DemoService/Echo", json={})
         assert response.status_code == 401
         assert response.json()["code"] == "unauthenticated"
 
-    async def test_an_open_method_takes_no_bearer(self, client: httpx.AsyncClient) -> None:
+    async def test_an_open_method_takes_no_bearer(
+        self, client: httpx.AsyncClient
+    ) -> None:
         response = await client.post("/aiserver.v1.DemoService/Open", content=b"")
         assert response.status_code == 200
         assert response.json() == {"anonymous": True}
@@ -97,7 +112,9 @@ class TestConnect:
     ) -> None:
         access, _ = await _signed_in(client, session, user)
         response = await client.post(
-            "/aiserver.v1.DemoService/Blocked", json={}, headers={"Authorization": f"Bearer {access}"}
+            "/aiserver.v1.DemoService/Blocked",
+            json={},
+            headers={"Authorization": f"Bearer {access}"},
         )
         assert response.status_code == 403
         assert response.json() == {"code": "permission_denied", "message": "blocked"}
@@ -108,8 +125,13 @@ class TestConnect:
         self, client: httpx.AsyncClient, session: AsyncSession, user: User
     ) -> None:
         access, _ = await _signed_in(client, session, user)
-        for path in ("/aiserver.v1.NoSuchService/Nothing", "/agent.v1.AgentService/Nothing"):
-            response = await client.post(path, json={}, headers={"Authorization": f"Bearer {access}"})
+        for path in (
+            "/aiserver.v1.NoSuchService/Nothing",
+            "/agent.v1.AgentService/Nothing",
+        ):
+            response = await client.post(
+                path, json={}, headers={"Authorization": f"Bearer {access}"}
+            )
             assert response.status_code == 404, path
             assert response.json()["code"] == "unimplemented"
 
@@ -120,7 +142,10 @@ class TestConnect:
         response = await client.post(
             "/aiserver.v1.DemoService/Count",
             json={"upTo": 3},
-            headers={"Authorization": f"Bearer {access}", "content-type": "application/connect+json"},
+            headers={
+                "Authorization": f"Bearer {access}",
+                "content-type": "application/connect+json",
+            },
         )
         assert response.status_code == 200
         assert response.headers["content-type"].startswith("application/connect+json")
@@ -130,7 +155,10 @@ class TestConnect:
 
     def test_frames_round_trip(self) -> None:
         body = encode_stream_frames([{"a": 1}], ConnectError("aborted", "gone"))
-        assert decode_stream_frames(body) == ([{"a": 1}], {"error": {"code": "aborted", "message": "gone"}})
+        assert decode_stream_frames(body) == (
+            [{"a": 1}],
+            {"error": {"code": "aborted", "message": "gone"}},
+        )
 
 
 @pytest.mark.asyncio
@@ -140,12 +168,20 @@ class TestDashboardPreflight:
     ) -> None:
         access, _ = await _signed_in(client, session, user)
         headers = {"Authorization": f"Bearer {access}"}
-        privacy = await client.post("/aiserver.v1.DashboardService/GetUserPrivacyMode", json={}, headers=headers)
+        privacy = await client.post(
+            "/aiserver.v1.DashboardService/GetUserPrivacyMode", json={}, headers=headers
+        )
         assert privacy.status_code == 200, privacy.text
         assert privacy.json()["privacyMode"] == 2
-        team = await client.post("/aiserver.v1.DashboardService/GetTeamAdminSettingsOrEmptyIfNotInTeam", json={}, headers=headers)
+        team = await client.post(
+            "/aiserver.v1.DashboardService/GetTeamAdminSettingsOrEmptyIfNotInTeam",
+            json={},
+            headers=headers,
+        )
         assert team.status_code == 200 and team.json() == {}
-        me = await client.post("/aiserver.v1.DashboardService/GetMe", json={"teamId": 0}, headers=headers)
+        me = await client.post(
+            "/aiserver.v1.DashboardService/GetMe", json={"teamId": 0}, headers=headers
+        )
         assert me.status_code == 200, me.text
         body = me.json()
         assert body["authId"] == str(user.id)
@@ -163,9 +199,73 @@ class TestLaunchPreflights:
     ) -> None:
         access, _ = await _signed_in(client, session, user)
         headers = {"Authorization": f"Bearer {access}"}
-        status = await client.post("/aiserver.v1.DashboardService/GetSandAccessStatus", json={}, headers=headers)
+        status = await client.post(
+            "/aiserver.v1.DashboardService/GetSandAccessStatus",
+            json={},
+            headers=headers,
+        )
         assert status.status_code == 200, status.text
         assert status.json() == {"state": 1, "purchaseChannel": 1, "blockReason": 0}
-        settings_ = await client.post("/aiserver.v1.BackgroundComposerService/GetBackgroundComposerUserSettings", json={}, headers=headers)
+        settings_ = await client.post(
+            "/aiserver.v1.BackgroundComposerService/GetBackgroundComposerUserSettings",
+            json={},
+            headers=headers,
+        )
         assert settings_.status_code == 200, settings_.text
         assert settings_.json() == {}
+
+
+@pytest.mark.asyncio
+class TestCancelSandTrial:
+    """The Settings page's « Cancel trial » button, answered by the billing
+    engine (`simeon/sand/dashboard.py`)."""
+
+    async def test_without_billing_there_is_nothing_to_cancel(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        access, _ = await _signed_in(client, session, user)
+        response = await client.post(
+            "/aiserver.v1.DashboardService/CancelSandTrial",
+            json={},
+            headers={"Authorization": f"Bearer {access}"},
+        )
+        assert response.status_code == 412
+        assert response.json()["code"] == "failed_precondition"
+
+    async def test_a_trial_is_scheduled_to_end_without_a_charge(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        save_fixture: SaveFixture,
+        mocker: MockerFixture,
+    ) -> None:
+        from tests.desktop.test_allowance import _person_with_plan
+
+        await _person_with_plan(
+            save_fixture,
+            mocker,
+            user,
+            tier="standard",
+            status=SubscriptionStatus.trialing,
+            trial_days_left=4,
+        )
+        # The cancellation e-mail is the engine's; its renderer is a binary
+        # the Docker image builds, not this test's concern.
+        mocker.patch(
+            "simeon.subscription.service.render_email_template", return_value="<p/>"
+        )
+        mocker.patch("simeon.subscription.service.enqueue_email")
+        access, _ = await _signed_in(client, session, user)
+        response = await client.post(
+            "/aiserver.v1.DashboardService/CancelSandTrial",
+            json={},
+            headers={"Authorization": f"Bearer {access}"},
+        )
+        assert response.status_code == 200, response.text
+        quota = await client.get(
+            "/desktop/api/user/quota", headers={"Authorization": f"Bearer {access}"}
+        )
+        data = quota.json()["data"]
+        assert data["subscriptionStatus"] == "trialing"
+        assert data["trialCancelable"] is False

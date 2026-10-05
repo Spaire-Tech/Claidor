@@ -114,7 +114,18 @@ class Entitlements(Schema):
         description="API rate-limit group assigned to this tier."
     )
     monthly_price_cents: int = Field(
-        description="Monthly Simeon subscription price, in cents (0 = Legacy)."
+        description="Monthly Simeon subscription price, in cents (0 = no plan)."
+    )
+    weekly_credits: int = Field(
+        default=0,
+        description=(
+            "Credits the plan includes each week, Monday to Monday UTC. "
+            "One credit is one input token on the middle model."
+        ),
+    )
+    trial_credits: int = Field(
+        default=0,
+        description="Credits the plan's trial includes, once, for its 7 days.",
     )
 
     @classmethod
@@ -126,4 +137,6 @@ class Entitlements(Schema):
             features=TierFeatures.from_dataclass(source.features),
             rate_limit_group=source.rate_limit_group,
             monthly_price_cents=source.monthly_price_cents,
+            weekly_credits=source.weekly_credits,
+            trial_credits=source.trial_credits,
         )

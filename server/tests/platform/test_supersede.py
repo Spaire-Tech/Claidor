@@ -36,7 +36,7 @@ async def _setup(
         recurring_interval=SubscriptionRecurringInterval.month,
         prices=[(12900, "usd")],
     )
-    product.user_metadata = {"tier": "studio"}
+    product.user_metadata = {"tier": "pro"}
     await save_fixture(product)
     creator = await create_organization(save_fixture)
     customer = await create_customer(

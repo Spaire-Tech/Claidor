@@ -12,12 +12,15 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import re
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any
 from uuid import UUID
 
+from simeon.auth.models import AuthSubject
+from simeon.auth.scope import Scope
 from simeon.config import settings
 from simeon.desktop.tokens import (
     ACCESS_TOKEN_PREFIX,
@@ -36,10 +39,23 @@ from simeon.models import (
     DesktopMemoryFile,
     DesktopSession,
     DesktopUsage,
+    Organization,
     User,
 )
+from simeon.organization.repository import OrganizationRepository
+from simeon.organization.schemas import OrganizationCreate
+from simeon.organization.service import organization as organization_service
+from simeon.platform.billing import platform_billing
+from simeon.platform.service import platform as platform_service
 from simeon.postgres import AsyncSession
 
+from .allowance import (
+    Allowance,
+    billing_url,
+    month_bounds,
+    resolve_allowance,
+    week_bounds,
+)
 from .memory_merge import is_accepted_memory_name, merge_memory_file
 from .pricing import (
     MODELS,
@@ -61,6 +77,7 @@ from .pricing import (
 from .repository import (
     DesktopAuthCodeRepository,
     DesktopMemoryFileRepository,
+    DesktopOrganizationRepository,
     DesktopSessionRepository,
     DesktopUsageRepository,
 )
@@ -77,6 +94,32 @@ UNAUTHENTICATED = 40100
 #: A memory sync Simeon will not carry out: a name it does not keep, or
 #: more text than it accepts.
 MEMORY_REFUSED = 40001
+
+#: The web app tries five slugs for a person's organisation before it
+#: gives up (`clients/apps/web/src/utils/creatorOnboarding.ts`); so does
+#: the sign-in.
+PERSONAL_ORGANIZATION_SLUG_ATTEMPTS = 5
+#: What the slug becomes when the e-mail's local part has nothing
+#: slug-shaped in it.
+PERSONAL_ORGANIZATION_FALLBACK_SLUG = "workspace"
+
+
+def personal_organization_slug(email: str) -> str:
+    """The e-mail's local part as the slug the server accepts: lower
+    case, three characters at least, slug punctuation only. The same rule
+    as the web app's `workspaceSlugFor`, so a person who signed in on the
+    web first and one who signed in from the Mac first get the same name."""
+    local = email.split("@", 1)[0]
+    slug = re.sub(r"[^a-z0-9]+", "-", local.lower()).strip("-")
+    return slug if len(slug) >= 3 else PERSONAL_ORGANIZATION_FALLBACK_SLUG
+
+
+class PersonalOrganizationUnavailable(PolarError):
+    """Every slug tried for the person's organisation was taken."""
+
+    def __init__(self, base: str) -> None:
+        super().__init__(f"No free organisation slug near '{base}'.", 503)
+
 
 #: The memory is the assistant's own notes, a few pages of text. These
 #: caps are far above anything honest and well below anything that would
@@ -181,17 +224,10 @@ def offered_models() -> tuple[DesktopModel, ...]:
 
 
 # --- credits --------------------------------------------------------------------
-
-
-def month_bounds(now: datetime | None = None) -> tuple[datetime, datetime]:
-    """The calendar month, in UTC, the allowance is counted over."""
-    moment = now or utc_now()
-    start = moment.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    if start.month == 12:
-        end = start.replace(year=start.year + 1, month=1)
-    else:
-        end = start.replace(month=start.month + 1)
-    return start, end
+#
+# The window and the limit are the person's allowance, resolved from their
+# plan in `allowance.py`; `month_bounds` and `week_bounds` live there and are
+# re-exported here for the callers that import them from the service.
 
 
 # --- the shared memory ----------------------------------------------------------
@@ -759,10 +795,31 @@ class DesktopService:
 
     # credits
 
+    async def allowance(
+        self, session: AsyncSession, user: User, *, now: datetime | None = None
+    ) -> Allowance:
+        """What this person may spend now, and over which window
+        (`simeon.desktop.allowance`)."""
+        return await resolve_allowance(session, user, now=now)
+
     async def credits_used(
-        self, session: AsyncSession, user_id: UUID, *, now: datetime | None = None
+        self,
+        session: AsyncSession,
+        user_id: UUID,
+        *,
+        now: datetime | None = None,
+        period: tuple[datetime, datetime] | None = None,
     ) -> int:
-        start, end = month_bounds(now)
+        """Credits spent in `period`. Without one: the free month when no
+        billing is configured, else the plan week. A caller holding an
+        `Allowance` passes its own window, which for a trial is the trial."""
+        if period is None:
+            period = (
+                week_bounds(now)
+                if platform_service.is_configured()
+                else month_bounds(now)
+            )
+        start, end = period
         return await DesktopUsageRepository.from_session(session).credits_between(
             user_id, start, end
         )
@@ -780,7 +837,7 @@ class DesktopService:
     ) -> bool:
         """True when the last sliding hour already holds the hourly
         budget. A runaway loop is stopped within the hour it starts,
-        whatever the month still allows."""
+        whatever the week still allows."""
         used = await self.credits_used_last_hour(session, user.id, now=now)
         return used >= settings.DESKTOP_HOURLY_CREDITS
 
@@ -788,27 +845,50 @@ class DesktopService:
         self, session: AsyncSession, user: User, *, now: datetime | None = None
     ) -> dict[str, Any]:
         """The `quota` object the app normalises (`authQuota.ts`): a
-        limit, what is used, what remains, a plan name and a status."""
-        start, end = month_bounds(now)
-        limit = settings.DESKTOP_MONTHLY_CREDITS
-        used = await self.credits_used(session, user.id, now=now)
+        limit, what is used, what remains, a plan name and a status.
+
+        The first eight keys are what every shipped app reads
+        (`SimeonQuotaRow` in `desktop/source/electron-main/account/cursor-profile.ts`);
+        they keep their names and meaning. The keys after `periodEnd` are
+        what the app's usage summary can show once it reads them: the
+        trial's end and whether it can still be cancelled, the on-demand
+        spend (none yet), and where the person goes to change plan.
+        An app that does not know a key ignores it."""
+        allowance = await self.allowance(session, user, now=now)
+        limit = allowance.credits_limit
+        used = await self.credits_used(
+            session,
+            user.id,
+            now=now,
+            period=(allowance.period_start, allowance.period_end),
+        )
         return {
-            "planName": "Free",
-            "subscriptionStatus": "free",
+            "planName": allowance.plan_name,
+            "subscriptionStatus": allowance.status,
             "creditsLimit": limit,
             "creditsUsed": used,
             "creditsRemaining": max(0, limit - used),
-            "hasPaidCredits": False,
+            "hasPaidCredits": allowance.paid,
             "mediaGenerationEntitled": False,
             "shareEntitled": False,
             "deploymentEntitled": False,
-            "periodStart": start.isoformat(),
-            "periodEnd": end.isoformat(),
+            "periodStart": allowance.period_start.isoformat(),
+            "periodEnd": allowance.period_end.isoformat(),
+            "tier": allowance.tier,
+            "trialEndsAt": (
+                allowance.trial_end.isoformat()
+                if allowance.trial_end is not None
+                else None
+            ),
+            "trialCancelable": allowance.trial_cancelable,
+            "onDemand": None,
+            "upgradeUrl": None if allowance.free else billing_url(),
         }
 
     async def profile_summary(
         self, session: AsyncSession, user: User
     ) -> dict[str, Any]:
+        allowance = await self.allowance(session, user)
         quota = await self.quota(session, user)
         payload = self.user_payload(user)
         return {
@@ -818,18 +898,69 @@ class DesktopService:
             "totalCreditsRemaining": quota["creditsRemaining"],
             "creditItems": [
                 {
-                    "type": "free",
-                    "label": "Monthly credits",
-                    "labelEn": "Monthly credits",
+                    "type": "free" if allowance.free else "plan",
+                    "label": allowance.label,
+                    "labelEn": allowance.label,
                     "creditsRemaining": quota["creditsRemaining"],
                     "expiresAt": quota["periodEnd"],
                 }
             ],
         }
 
-    async def exhausted(self, session: AsyncSession, user: User) -> bool:
-        used = await self.credits_used(session, user.id)
-        return used >= settings.DESKTOP_MONTHLY_CREDITS
+    async def exhausted(
+        self,
+        session: AsyncSession,
+        user: User,
+        *,
+        allowance: Allowance | None = None,
+    ) -> bool:
+        """True when the window's credits are spent. With no plan the
+        limit is 0, so this is true before the first call."""
+        if allowance is None:
+            allowance = await self.allowance(session, user)
+        used = await self.credits_used(
+            session, user.id, period=(allowance.period_start, allowance.period_end)
+        )
+        return used >= allowance.credits_limit
+
+    # the person's own organisation
+
+    async def ensure_personal_organization(
+        self, session: AsyncSession, user: User
+    ) -> Organization:
+        """The organisation the billing engine bills for this person:
+        the earliest one they belong to, made now if there is none, the
+        way the web app's `provisionWorkspace` makes it (a slug from the
+        e-mail's local part, numbered past a collision). Idempotent. The
+        platform Customer for it is made too, so the billing page can
+        start a checkout on the first click."""
+        repository = DesktopOrganizationRepository.from_session(session)
+        organization = await repository.get_first_for_user(user.id)
+        if organization is None:
+            organization = await self._create_personal_organization(session, user)
+        await platform_billing.ensure_platform_customer(session, organization)
+        return organization
+
+    async def _create_personal_organization(
+        self, session: AsyncSession, user: User
+    ) -> Organization:
+        base = personal_organization_slug(user.email)
+        auth_subject: AuthSubject[User] = AuthSubject(
+            subject=user, scopes={Scope.web_write}, session=None
+        )
+        organization_repository = OrganizationRepository.from_session(session)
+        for attempt in range(PERSONAL_ORGANIZATION_SLUG_ATTEMPTS):
+            slug = base if attempt == 0 else f"{base}-{attempt + 1}"
+            if await organization_repository.slug_exists(slug):
+                continue
+            return await organization_service.create(
+                session,
+                OrganizationCreate(name=slug, slug=slug),
+                auth_subject,
+            )
+        raise PersonalOrganizationUnavailable(base)
+
+    # the shared memory
 
     # the shared memory
 
@@ -1086,6 +1217,7 @@ __all__ = [
     "model_by_id",
     "month_bounds",
     "offered_models",
+    "personal_organization_slug",
     "provider_api_key",
     "provider_base_url",
     "provider_configured",

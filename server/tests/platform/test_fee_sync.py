@@ -125,7 +125,7 @@ class TestSyncForOrganization:
         creator, account, _ = await _setup_subscribed_creator(
             mocker=mocker,
             save_fixture=save_fixture,
-            tier=TierKey.starter,
+            tier=TierKey.standard,
             monthly_cents=4900,
             platform_fee_locked=True,
         )
@@ -151,7 +151,7 @@ class TestSyncForOrganization:
         creator, account, _ = await _setup_subscribed_creator(
             mocker=mocker,
             save_fixture=save_fixture,
-            tier=TierKey.starter,
+            tier=TierKey.standard,
             monthly_cents=4900,
             platform_fee_locked=True,
         )
@@ -175,7 +175,7 @@ class TestSyncForOrganization:
         creator, account, _ = await _setup_subscribed_creator(
             mocker=mocker,
             save_fixture=save_fixture,
-            tier=TierKey.starter,
+            tier=TierKey.standard,
             monthly_cents=0,
         )
 
@@ -195,7 +195,7 @@ class TestSyncForOrganization:
         creator, account, _ = await _setup_subscribed_creator(
             mocker=mocker,
             save_fixture=save_fixture,
-            tier=TierKey.starter,
+            tier=TierKey.standard,
             monthly_cents=4900,
         )
 
@@ -214,7 +214,7 @@ class TestSyncForOrganization:
         creator, account, _ = await _setup_subscribed_creator(
             mocker=mocker,
             save_fixture=save_fixture,
-            tier=TierKey.scale,
+            tier=TierKey.max,
             monthly_cents=29900,
         )
 
@@ -233,7 +233,7 @@ class TestSyncForOrganization:
         creator, account, _ = await _setup_subscribed_creator(
             mocker=mocker,
             save_fixture=save_fixture,
-            tier=TierKey.starter,
+            tier=TierKey.standard,
             monthly_cents=4900,
             fee_basis_points=700,
             fee_fixed=30,
@@ -340,7 +340,7 @@ class TestMaybeEnqueueFromSubscription:
         product = await _seed_tier_product(
             save_fixture,
             platform_org=platform_org,
-            tier=TierKey.starter.value,
+            tier=TierKey.standard.value,
             monthly_cents=4900,
         )
         customer = await create_customer(
@@ -436,7 +436,7 @@ class TestMaybeEnqueueFromSubscription:
         product = await _seed_tier_product(
             save_fixture,
             platform_org=platform_org,
-            tier=TierKey.starter.value,
+            tier=TierKey.standard.value,
             monthly_cents=4900,
         )
         # Customer on platform org but missing the creator_org_id metadata.

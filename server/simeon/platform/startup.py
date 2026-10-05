@@ -1,13 +1,13 @@
 """Startup verification for Simeon-on-Simeon billing.
 
-When SIMEON_PLATFORM_ORG_ID is set, the API requires the three tier
-products (starter, studio, scale) and the four overage meters to exist on
+When SIMEON_PLATFORM_ORG_ID is set, the API requires the three plan
+products (standard, pro, max) and the four overage meters to exist on
 the platform org. Without them:
 
-  - organization.created actor can't start the new org on a Starter trial
-    (TierProductMissing), leaving them with no platform subscription.
-  - EntitlementsService resolves those orgs to "inactive" (no access), so
-    legitimate new signups would be blocked until ops notices.
+  - the upgrade checkout can't find a product to sell (TierProductNotFound),
+    so nobody can start a trial or pay;
+  - EntitlementsService resolves every organisation to "inactive" (no
+    access), so the desktop proxy refuses every call.
 
 This module surfaces that failure mode at boot time. Run
 `uv run task seed_platform_products` before starting the API on any
@@ -19,7 +19,7 @@ check.
 
 import structlog
 
-from simeon.entitlements.tiers import TierKey
+from simeon.entitlements.tiers import PAID_TIERS
 from simeon.kit.db.postgres import AsyncSession
 from simeon.platform.repository import platform_product_repository
 from simeon.platform.service import (
@@ -38,10 +38,10 @@ class PlatformStartupError(Exception):
     so the operator knows exactly what to run."""
 
 
-_REQUIRED_TIERS = (TierKey.starter, TierKey.studio, TierKey.scale)
+_REQUIRED_TIERS = PAID_TIERS
 
-# Every shipped tier carries a 14-day trial configuration on its Product row.
-_TRIAL_REQUIRED_TIERS = (TierKey.starter, TierKey.studio, TierKey.scale)
+# Every shipped plan carries a 7-day trial configuration on its Product row.
+_TRIAL_REQUIRED_TIERS = PAID_TIERS
 
 
 async def verify_platform_setup(session: AsyncSession) -> None:

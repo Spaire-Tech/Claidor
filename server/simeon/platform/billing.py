@@ -1,5 +1,5 @@
-"""Platform-side billing: subscribe creator organizations to Simeon's own
-Pro/Studio/Scale plans.
+"""Platform-side billing: subscribe a person's organisation to Simeon's own
+Standard/Pro/Max plans.
 
 This is the write counterpart to simeon.entitlements.service (read-only).
 Simeon is itself an Organization (the "platform org"); every creator org
@@ -145,7 +145,7 @@ class PlatformBillingService:
         session: AsyncSession,
         organization: Organization,
     ) -> Subscription | None:
-        """Start a local 14-day Starter trial subscription for an org.
+        """Start a local Standard trial subscription for an org.
 
         NOTE: this is NOT the live trial path. Org creation only provisions
         the platform Customer (``ensure_platform_customer``); the real,
@@ -161,7 +161,7 @@ class PlatformBillingService:
         `platform.lapse_legacy_trials` cron revokes it at trial_end.
         """
         return await self.ensure_subscription(
-            session, organization, tier=TierKey.starter, managed_by="trial"
+            session, organization, tier=TierKey.standard, managed_by="trial"
         )
 
     async def ensure_platform_customer(

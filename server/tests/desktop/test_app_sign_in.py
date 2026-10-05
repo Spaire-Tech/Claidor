@@ -16,15 +16,20 @@ from urllib.parse import parse_qs, urlparse
 
 import httpx
 import pytest
+from pytest_mock import MockerFixture
 
 from simeon.config import settings
-from simeon.desktop.repository import DesktopAuthCodeRepository
+from simeon.desktop.repository import (
+    DesktopAuthCodeRepository,
+    DesktopOrganizationRepository,
+)
 from simeon.desktop.service import (
     ACCESS_TOKEN_PREFIX,
     DEEP_CONTROL_NAMESPACE,
     challenge_for,
     desktop,
     envelope_access_token,
+    personal_organization_slug,
     unwrap_access_token,
 )
 from simeon.kit import jwt
@@ -32,7 +37,11 @@ from simeon.kit.crypto import get_token_hash
 from simeon.kit.utils import utc_now
 from simeon.models import User
 from simeon.models.maty import MatyJob, MatyJobKind, MatyJobStatus
+from simeon.models.subscription import SubscriptionStatus
 from simeon.postgres import AsyncSession
+from tests.desktop.test_allowance import _person_with_plan
+from tests.fixtures.database import SaveFixture
+from tests.fixtures.random_objects import create_organization
 
 
 def _login_metadata() -> tuple[str, str, str]:
@@ -113,6 +122,72 @@ class TestLoginDeepControl:
         assert response.status_code == 200
         assert "text/html" in response.headers["content-type"]
         assert user.email in response.text
+        assert 'method="post"' in response.text
+
+    @pytest.mark.auth
+    async def test_with_billing_on_a_person_without_a_plan_is_sent_to_billing(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        save_fixture: SaveFixture,
+        mocker: MockerFixture,
+    ) -> None:
+        """Nobody is signed in to the app without a card on file: with
+        billing configured and no plan, the GET sends the browser to the
+        billing page with this very link as the way back, and confirms
+        nothing. The person's own organisation is made on the way, so
+        the billing page can start a checkout at once."""
+        platform_org = await create_organization(save_fixture)
+        mocker.patch(
+            "simeon.platform.service.settings.PLATFORM_ORG_ID", platform_org.id
+        )
+        verifier, challenge, uuid = _login_metadata()
+        response = await client.get(
+            "/loginDeepControl", params={"challenge": challenge, "uuid": uuid}
+        )
+        assert response.status_code == 303
+        location = urlparse(response.headers["location"])
+        assert location.path == "/billing"
+        query = parse_qs(location.query)
+        assert query["plan"] == ["standard"]
+        back = query["return_to"][0]
+        assert back.startswith(settings.generate_external_url("/loginDeepControl?"))
+        assert f"uuid={uuid}" in back
+
+        own = await DesktopOrganizationRepository.from_session(
+            session
+        ).get_first_for_user(user.id)
+        assert own is not None
+        assert own.slug == personal_organization_slug(user.email)
+        # Nothing was confirmed: the app's poll still waits.
+        poll = await client.post(
+            "/auth/poll", json={"uuid": uuid, "verifier": verifier}
+        )
+        assert poll.status_code == 404
+
+    @pytest.mark.auth
+    async def test_with_a_plan_the_person_is_asked_as_before(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        save_fixture: SaveFixture,
+        mocker: MockerFixture,
+    ) -> None:
+        await _person_with_plan(
+            save_fixture,
+            mocker,
+            user,
+            tier="standard",
+            status=SubscriptionStatus.trialing,
+            trial_days_left=7,
+        )
+        _, challenge, uuid = _login_metadata()
+        response = await client.get(
+            "/loginDeepControl", params={"challenge": challenge, "uuid": uuid}
+        )
+        assert response.status_code == 200
         assert 'method="post"' in response.text
 
     @pytest.mark.auth

@@ -180,49 +180,48 @@ class TestSeedPlatformProducts:
         ).scalar_one()
         assert legacy_count == 0
 
-        # Starter — monthly $49 + annual $470 (~20% off 12 × $49 = $588,
-        # rounded to a whole dollar).
-        starter_monthly = await _find("starter", "month")
-        assert starter_monthly.name == "Simeon Starter"
-        assert starter_monthly.trial_interval_count == 14
-        starter_monthly_price = await _price_for(starter_monthly)
-        assert isinstance(starter_monthly_price, ProductPriceFixed)
-        assert starter_monthly_price.price_amount == 4900
+        # Standard — monthly $20 + annual $192 (20% off 12 × $20 = $240).
+        standard_monthly = await _find("standard", "month")
+        assert standard_monthly.name == "Simeon Standard"
+        assert standard_monthly.trial_interval_count == 7
+        standard_monthly_price = await _price_for(standard_monthly)
+        assert isinstance(standard_monthly_price, ProductPriceFixed)
+        assert standard_monthly_price.price_amount == 2000
 
-        starter_annual = await _find("starter", "year")
-        assert starter_annual.name == "Simeon Starter (Annual)"
-        assert starter_annual.trial_interval_count == 14
-        starter_annual_price = await _price_for(starter_annual)
-        assert isinstance(starter_annual_price, ProductPriceFixed)
-        assert starter_annual_price.price_amount == 47000  # $470.00
+        standard_annual = await _find("standard", "year")
+        assert standard_annual.name == "Simeon Standard (Annual)"
+        assert standard_annual.trial_interval_count == 7
+        standard_annual_price = await _price_for(standard_annual)
+        assert isinstance(standard_annual_price, ProductPriceFixed)
+        assert standard_annual_price.price_amount == 19200  # $192.00
 
-        # Studio — monthly $129 + annual $1,238.
-        studio_monthly = await _find("studio", "month")
-        assert studio_monthly.name == "Simeon Studio"
-        assert studio_monthly.trial_interval_count == 14
-        studio_monthly_price = await _price_for(studio_monthly)
-        assert isinstance(studio_monthly_price, ProductPriceFixed)
-        assert studio_monthly_price.price_amount == 12900
+        # Pro — monthly $60 + annual $576.
+        pro_monthly = await _find("pro", "month")
+        assert pro_monthly.name == "Simeon Pro"
+        assert pro_monthly.trial_interval_count == 7
+        pro_monthly_price = await _price_for(pro_monthly)
+        assert isinstance(pro_monthly_price, ProductPriceFixed)
+        assert pro_monthly_price.price_amount == 6000
 
-        studio_annual = await _find("studio", "year")
-        assert studio_annual.name == "Simeon Studio (Annual)"
-        studio_annual_price = await _price_for(studio_annual)
-        assert isinstance(studio_annual_price, ProductPriceFixed)
-        assert studio_annual_price.price_amount == 123800  # $1,238.00
+        pro_annual = await _find("pro", "year")
+        assert pro_annual.name == "Simeon Pro (Annual)"
+        pro_annual_price = await _price_for(pro_annual)
+        assert isinstance(pro_annual_price, ProductPriceFixed)
+        assert pro_annual_price.price_amount == 57600  # $576.00
 
-        # Scale — monthly $299 + annual $2,870.
-        scale_monthly = await _find("scale", "month")
-        assert scale_monthly.name == "Simeon Scale"
-        assert scale_monthly.trial_interval_count == 14
-        scale_monthly_price = await _price_for(scale_monthly)
-        assert isinstance(scale_monthly_price, ProductPriceFixed)
-        assert scale_monthly_price.price_amount == 29900
+        # Max — monthly $200 + annual $1,920.
+        max_monthly = await _find("max", "month")
+        assert max_monthly.name == "Simeon Max"
+        assert max_monthly.trial_interval_count == 7
+        max_monthly_price = await _price_for(max_monthly)
+        assert isinstance(max_monthly_price, ProductPriceFixed)
+        assert max_monthly_price.price_amount == 20000
 
-        scale_annual = await _find("scale", "year")
-        assert scale_annual.name == "Simeon Scale (Annual)"
-        scale_annual_price = await _price_for(scale_annual)
-        assert isinstance(scale_annual_price, ProductPriceFixed)
-        assert scale_annual_price.price_amount == 287000  # $2,870.00
+        max_annual = await _find("max", "year")
+        assert max_annual.name == "Simeon Max (Annual)"
+        max_annual_price = await _price_for(max_annual)
+        assert isinstance(max_annual_price, ProductPriceFixed)
+        assert max_annual_price.price_amount == 192000  # $1,920.00
 
     async def test_archives_stale_price_when_amount_changes(
         self,
@@ -234,18 +233,20 @@ class TestSeedPlatformProducts:
         mocker.patch(
             "simeon.platform.service.settings.PLATFORM_ORG_ID", platform_org.id
         )
-        starter_spec = next(s for s in PRODUCT_SPECS if s.tier == "starter")
+        standard_spec = next(s for s in PRODUCT_SPECS if s.tier == "standard")
 
         product, _ = await _upsert_product(
-            session, platform_org, starter_spec, dry_run=False
+            session, platform_org, standard_spec, dry_run=False
         )
-        await _upsert_catalog_price(session, product, starter_spec.price, dry_run=False)
+        await _upsert_catalog_price(
+            session, product, standard_spec.price, dry_run=False
+        )
         await session.flush()
 
         # Simulate a price change: same product, different amount.
         from dataclasses import replace
 
-        new_price_spec = replace(starter_spec.price, price_amount_cents=5900)
+        new_price_spec = replace(standard_spec.price, price_amount_cents=2500)
         action = await _upsert_catalog_price(
             session, product, new_price_spec, dry_run=False
         )
@@ -266,9 +267,9 @@ class TestSeedPlatformProducts:
         assert len(active) == 1
         assert len(archived) == 1
         assert isinstance(active[0], ProductPriceFixed)
-        assert active[0].price_amount == 5900
+        assert active[0].price_amount == 2500
         assert isinstance(archived[0], ProductPriceFixed)
-        assert archived[0].price_amount == 4900
+        assert archived[0].price_amount == 2000
 
     async def test_configure_platform_org_enables_multiple_subscriptions(
         self,
@@ -299,51 +300,52 @@ class TestSeedPlatformProducts:
             platform_org.subscription_settings["allow_multiple_subscriptions"] is False
         )
 
-    async def test_migrates_legacy_pro_product_to_starter_in_place(
+    async def test_migrates_creator_era_product_to_the_plan_in_place(
         self,
         mocker: MockerFixture,
         session: AsyncSession,
         save_fixture: SaveFixture,
     ) -> None:
-        """A product seeded under the original "pro" tier key is adopted by
-        the Starter spec and re-stamped to "starter" — same row, no
-        duplicate — so existing subscriptions keep pointing at it."""
+        """A product seeded under the creator-era "starter" key is adopted
+        by the Standard spec and re-stamped to "standard" — same row, no
+        duplicate — so a subscription on a staging database keeps pointing
+        at it."""
         platform_org = await create_organization(save_fixture)
         mocker.patch(
             "simeon.platform.service.settings.PLATFORM_ORG_ID", platform_org.id
         )
 
-        legacy_pro = await create_product(
+        legacy_starter = await create_product(
             save_fixture,
             organization=platform_org,
-            name="Simeon Pro",
+            name="Simeon Starter",
             recurring_interval=SubscriptionRecurringInterval.month,
             prices=[(4900, "usd")],
         )
-        legacy_pro.user_metadata = {"tier": "pro", "billing_interval": "month"}
-        await save_fixture(legacy_pro)
+        legacy_starter.user_metadata = {"tier": "starter", "billing_interval": "month"}
+        await save_fixture(legacy_starter)
 
-        # The Starter monthly spec must find the legacy "pro" row...
-        starter_spec = next(
+        # The Standard monthly spec must find the legacy "starter" row...
+        standard_spec = next(
             s
             for s in PRODUCT_SPECS
-            if s.tier == "starter" and s.billing_interval == "month"
+            if s.tier == "standard" and s.billing_interval == "month"
         )
         found = await _find_product_by_tier_and_interval(
-            session, platform_org.id, "starter", "month"
+            session, platform_org.id, "standard", "month"
         )
         assert found is not None
-        assert found.id == legacy_pro.id
+        assert found.id == legacy_starter.id
 
         # ...and upserting re-stamps it in place rather than creating a new one.
         product, action = await _upsert_product(
-            session, platform_org, starter_spec, dry_run=False
+            session, platform_org, standard_spec, dry_run=False
         )
         await session.flush()
-        assert product.id == legacy_pro.id
+        assert product.id == legacy_starter.id
         assert action == "updated"
-        assert product.user_metadata["tier"] == "starter"
-        assert product.name == "Simeon Starter"
+        assert product.user_metadata["tier"] == "standard"
+        assert product.name == "Simeon Standard"
 
         total = (
             await session.execute(

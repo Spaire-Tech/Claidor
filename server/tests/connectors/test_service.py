@@ -8,6 +8,7 @@ from pytest_mock import MockerFixture
 from simeon.config import settings
 from simeon.connectors.provider import Connection
 from simeon.connectors.service import ENTITLED_PLANS, connectors
+from simeon.desktop.allowance import Allowance
 from simeon.desktop.service import desktop
 from simeon.models import User
 from simeon.postgres import AsyncSession
@@ -15,12 +16,12 @@ from simeon.postgres import AsyncSession
 
 @pytest.mark.asyncio
 class TestEntitled:
-    async def test_the_allowlist_is_the_only_yes_today(
+    async def test_the_allowlist_is_the_only_yes_without_billing(
         self, session: AsyncSession, user: User, mocker: MockerFixture
     ) -> None:
-        """Section 5 of the note: the plan does the real work once step 9
-        lands, and until then `quota()` says « Free » for everybody."""
-        assert ENTITLED_PLANS == frozenset()
+        """With no platform organisation configured everybody is « Free »,
+        which no plan name matches, so the allowlist is the only yes."""
+        assert ENTITLED_PLANS == frozenset({"Standard", "Pro", "Max"})
         assert await connectors.entitled(session, user) is False
 
         mocker.patch.object(settings, "CONNECTORS_ENTITLED_EMAILS", {user.email})
@@ -50,11 +51,28 @@ class TestEntitled:
     async def test_a_free_plan_does_not_buy_connections(
         self, session: AsyncSession, user: User, mocker: MockerFixture
     ) -> None:
-        """The quota is deliberately not even consulted while no plan
-        includes connections; what matters is that « Free » is a no."""
+        """« Free » is a no: connections cost money every month."""
         mocker.patch.object(settings, "CONNECTORS_ENTITLED_EMAILS", set())
         assert (await desktop.quota(session, user))["planName"] == "Free"
         assert await connectors.entitled(session, user) is False
+
+    async def test_a_plan_buys_connections(
+        self, session: AsyncSession, user: User, mocker: MockerFixture
+    ) -> None:
+        mocker.patch.object(settings, "CONNECTORS_ENTITLED_EMAILS", set())
+        mocker.patch.object(
+            desktop,
+            "allowance",
+            return_value=Allowance(
+                plan_name="Standard",
+                status="active",
+                tier="standard",
+                credits_limit=750_000,
+                period_start=datetime(2026, 10, 5, tzinfo=UTC),
+                period_end=datetime(2026, 10, 12, tzinfo=UTC),
+            ),
+        )
+        assert await connectors.entitled(session, user) is True
 
 
 class TestTheCachedShape:
