@@ -28,7 +28,7 @@ const state = await loadModule("source/shared/voice-call/call-state.ts", "call-s
 const handoff = await loadModule("source/shared/voice-call/handoff.ts", "handoff");
 const service = await loadModule("source/electron-main/voice/voice-call-service.ts", "voice-call-service");
 const api = await loadModule("source/electron-main/voice/voice-call-api.ts", "voice-call-api");
-const simeonApi = await loadModule("source/shared/node/cursor-backend/simeon-api.ts", "simeon-api");
+const simeonApi = await loadModule("source/shared/node/simeon-backend/simeon-api.ts", "simeon-api");
 
 const run = (events, from = state.initialCallState()) => events.reduce(state.reduceCall, from);
 

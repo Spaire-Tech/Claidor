@@ -489,7 +489,7 @@
         "Cursor"
       ],
       "paths": [
-        "desktop/tests/cursor-leftovers.test.mjs"
+        "desktop/tests/upstream-leftovers.test.mjs"
       ],
       "reason": "The test that checks the upstream's leftovers are gone from the app names the hosts and origin it checks are refused or not called."
     },

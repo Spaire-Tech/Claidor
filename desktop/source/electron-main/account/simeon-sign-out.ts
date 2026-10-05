@@ -1,11 +1,11 @@
-import { simeonApiUrl } from "../../shared/node/cursor-backend/simeon-api.js";
+import { simeonApiUrl } from "../../shared/node/simeon-backend/simeon-api.js";
 
 // Sign-out on Simeon Labs' server: `POST /desktop/api/auth/logout` with the
 // departing bearer (`server/simeon/desktop/endpoints.py`, `logout`), which
 // revokes the session row behind it — the envelope token and the opaque
 // one alike, since `authenticate` unwraps before it looks up.
 //
-// Until 24 September 2026 the app's sign-out (`cursor-auth.ts`,
+// Until 24 September 2026 the app's sign-out (`account-auth.ts`,
 // `revokeCredentials`) only deleted the two keychain entries; the server
 // session lived on until its refresh token expired, so a token copied out
 // of the keychain before sign-out kept working. The upstream app never revoked

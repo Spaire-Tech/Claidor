@@ -254,7 +254,7 @@ const HARDCODED_WRITE_PROTECTION_PATTERNS: WriteProtectionPattern[] = [
   { type: "workspace", pattern: "**/.venv/" },
   { type: "workspace", pattern: "**/venv/" },
   { type: "workspace", pattern: "**/*.code-workspace" },
-  { type: "workspace", pattern: "**/.cursorignore" },
+  { type: "workspace", pattern: "**/.simeonignore" },
   { type: "workspace", pattern: "**/.workspace-trusted" },
   { type: "workspace", pattern: "**/.cursor/**/cli.json" },
   { type: "workspace", pattern: "**/.cursor/**/cli-config.json" },

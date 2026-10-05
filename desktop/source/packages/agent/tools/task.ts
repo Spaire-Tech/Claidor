@@ -172,7 +172,7 @@ function createSubagentAgentConfig(args: {
     preTurnAssistantNotice: undefined,
     getNamedAgentSelfDocument: undefined,
     userInfoDisplayOptions: subagentConfig.subagent_type.type.case === "computerUse"
-      ? { ...baseAgentConfig.userInfoDisplayOptions, displaySkills: false, displayCursorRules: false, computerUseSubagentSurface: true, excludeAgentTranscripts: true }
+      ? { ...baseAgentConfig.userInfoDisplayOptions, displaySkills: false, displayAgentRules: false, computerUseSubagentSurface: true, excludeAgentTranscripts: true }
       : baseAgentConfig.userInfoDisplayOptions,
     toolsGenerator: (props: Any) => {
       const nextProps = { ...props, isCloudMetaAgentParent: false, subagentInstanceId, subagentConfig };

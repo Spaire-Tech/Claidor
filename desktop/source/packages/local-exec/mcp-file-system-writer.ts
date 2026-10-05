@@ -142,10 +142,10 @@ function configuredServersBucket(count: number): string {
   return "11+";
 }
 
-async function ensureCursorDirGitignore(cursorDir: string): Promise<void> {
-  const gitignorePath = join(cursorDir, ".gitignore");
+async function ensureSimeonDirGitignore(simeonDir: string): Promise<void> {
+  const gitignorePath = join(simeonDir, ".gitignore");
   const managedBlock = `${CURSOR_DIR_GITIGNORE_MANAGED_START}\n${CURSOR_DIR_GITIGNORE_CONTENT}\n${CURSOR_DIR_GITIGNORE_MANAGED_END}\n`;
-  await mkdir(cursorDir, { recursive: true });
+  await mkdir(simeonDir, { recursive: true });
   let existingContent: string | undefined;
   try { existingContent = await readFile(gitignorePath, "utf-8"); }
   catch (error: unknown) { if ((error as { code?: unknown } | null)?.code !== "ENOENT") throw error; }
@@ -347,10 +347,10 @@ export class McpFileSystemWriter {
     });
     logger.info(this.ctx, "Constructor: scheduling initial write");
     this.scheduleWrite(this.ctx);
-    this.ensureCursorDirGitignore();
+    this.ensureSimeonDirGitignore();
   }
 
-  private ensureCursorDirGitignore(): void { void ensureCursorDirGitignore(join(homedir(), ".cursor")).catch((error) => logger.warn(this.ctx, "Failed to ensure ~/.cursor/.gitignore", { error: String(error) })); }
+  private ensureSimeonDirGitignore(): void { void ensureSimeonDirGitignore(join(homedir(), ".cursor")).catch((error) => logger.warn(this.ctx, "Failed to ensure ~/.cursor/.gitignore", { error: String(error) })); }
   private async cleanupStaleStagingDirs(ctx: Context): Promise<void> { const logCtx = this.getLogContext(ctx); const mcpsPath = join(this.projectDir, MCPS_SUBDIR); try { const entries = await readdir(mcpsPath); await Promise.allSettled(entries.filter((entry) => entry.endsWith(STAGING_SUFFIX)).map((entry) => rm(join(mcpsPath, entry), { recursive: true, force: true }))); } catch (error) { if ((error as { code?: unknown } | null)?.code !== "ENOENT") logger.error(logCtx, "Error clearing stale mcps staging dirs", error); } }
   private onLeaseChanged(ctx: Context, event: McpLeaseChangeEvent | undefined): void { if (this.disposed) return; const normalizedEvent = event ?? { serverIdentifiers: undefined }; this.pendingServerEvent = this.hasPendingLeaseChangeEvent ? mergeMcpLeaseEvents(this.pendingServerEvent ?? { serverIdentifiers: undefined }, normalizedEvent) : normalizedEvent; this.hasPendingLeaseChangeEvent = true; if (this.debounceTimer !== undefined) clearTimeout(this.debounceTimer); this.debounceTimer = setTimeout(() => { this.debounceTimer = undefined; this.scheduleWrite(ctx, this.takePendingLeaseChangeEvent()); }, this.debounceMs); }
   private takePendingLeaseChangeEvent(): McpLeaseChangeEvent | undefined { if (!this.hasPendingLeaseChangeEvent) return undefined; const event = this.pendingServerEvent ?? { serverIdentifiers: undefined }; this.pendingServerEvent = undefined; this.hasPendingLeaseChangeEvent = false; return event; }

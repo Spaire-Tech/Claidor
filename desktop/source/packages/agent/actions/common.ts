@@ -1,10 +1,10 @@
-import { CursorRuleSource, type CursorRule } from "../../proto/generated/agent/v1/cursor_rules_pb.js";
+import { CursorRuleSource as AgentRuleSource, type CursorRule as AgentRule } from "../../proto/generated/agent/v1/cursor_rules_pb.js";
 import { fromRedactedCoreMessage } from "../../redaction/core-message.js";
 import { PrivacyCapability } from "../../redaction/classification.js";
 import { parseComposer2CloudTestingSectionsPlacementMetadata } from "../prompts/composer2-cloud-testing-sections.js";
 
 type RequestContextWithRules = {
-  readonly rules: readonly CursorRule[];
+  readonly rules: readonly AgentRule[];
   readonly disabledTeamRules: readonly string[];
 };
 
@@ -14,21 +14,21 @@ type RuleFeatureFlags = {
 
 export function getAllRules(
   requestContext: RequestContextWithRules,
-  serverFetchedRules: readonly CursorRule[],
+  serverFetchedRules: readonly AgentRule[],
   featureFlags?: RuleFeatureFlags,
-): CursorRule[] {
+): AgentRule[] {
   if (featureFlags?.dropCustomPromptContext === true) {
     return [];
   }
-  const teamRuleName = (rule: CursorRule) => rule.fullPath.split("/").pop() ?? rule.fullPath;
+  const teamRuleName = (rule: AgentRule) => rule.fullPath.split("/").pop() ?? rule.fullPath;
   const allRules = [...requestContext.rules, ...serverFetchedRules];
   const disabled = new Set(requestContext.disabledTeamRules);
   const enabledRules = allRules.filter(
-    rule => rule.source !== CursorRuleSource.TEAM || rule.isRequired || !disabled.has(teamRuleName(rule)),
+    rule => rule.source !== AgentRuleSource.TEAM || rule.isRequired || !disabled.has(teamRuleName(rule)),
   );
   const seenTeamRules = new Set<string>();
   return enabledRules.filter(rule => {
-    if (rule.source !== CursorRuleSource.TEAM) {
+    if (rule.source !== AgentRuleSource.TEAM) {
       return true;
     }
     const name = teamRuleName(rule);
@@ -57,7 +57,7 @@ function userMessagePlainText(message: { readonly content: UserMessageContent })
 type PriorUserMessage = Parameters<typeof fromRedactedCoreMessage>[0] & {
   readonly role: string;
   readonly providerOptions?: {
-    readonly cursor?: {
+    readonly simeon?: {
       readonly composer2CloudTestingSectionsPlacement?: unknown;
     } | undefined;
   } | undefined;
@@ -68,7 +68,7 @@ function getFirstUserInfoCloudTestingSectionsPlacement(priorMessages: readonly P
   if (firstMsg?.role !== "user") {
     return undefined;
   }
-  const placement = parseComposer2CloudTestingSectionsPlacementMetadata(firstMsg.providerOptions?.cursor?.composer2CloudTestingSectionsPlacement);
+  const placement = parseComposer2CloudTestingSectionsPlacementMetadata(firstMsg.providerOptions?.simeon?.composer2CloudTestingSectionsPlacement);
   if (placement !== undefined) {
     return placement;
   }

@@ -26,7 +26,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 async function load() {
   const temporary = await mkdtemp(path.join(os.tmpdir(), "simeon-cursor-leftovers-"));
   const outfile = path.join(temporary, "entry.mjs");
-  await build({ entryPoints: [path.join(repoRoot, "tests/fixtures/cursor-leftovers-entry.ts")], outfile, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent", banner: { js: "import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);" } });
+  await build({ entryPoints: [path.join(repoRoot, "tests/fixtures/upstream-leftovers-entry.ts")], outfile, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent", banner: { js: "import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);" } });
   const module = await import(`${pathToFileURL(outfile).href}?${Date.now()}`);
   return { module, dispose: () => rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) };
 }
@@ -40,10 +40,10 @@ test("an unpackaged run with no backend named goes to Simeon Labs, and the token
     assert.equal(module.getConfiguredBackendUrl({ SAND_BACKEND_URL: "http://127.0.0.1:8000" }), "http://127.0.0.1:8000/");
     assert.equal(module.DEFAULT_SAND_BACKEND_URL, "https://api.simeonlabs.com");
     assert.equal(module.DEFAULT_CURSOR_BACKEND_URL, undefined, "the upstream's origin is no longer spelled anywhere (Track B)");
-    assert.doesNotMatch(await readFile(path.join(repoRoot, "source/shared/node/cursor-token.ts"), "utf8"), /cursor\.sh|cursor\.com/);
+    assert.doesNotMatch(await readFile(path.join(repoRoot, "source/shared/node/simeon-token.ts"), "utf8"), /cursor\.sh|cursor\.com/);
     assert.equal(new URL(module.getAuthWebsiteUrl("https://api.simeonlabs.com", {})).origin, "https://api.simeonlabs.com");
     assert.equal(module.DEFAULT_SIMEON_WEBSITE_URL, "https://api.simeonlabs.com");
-    const login = await readFile(path.join(repoRoot, "source/packages/cursor-config/auth/login.ts"), "utf8");
+    const login = await readFile(path.join(repoRoot, "source/packages/simeon-config/auth/login.ts"), "utf8");
     assert.equal(login.includes('?? "https://cursor.com"'), false);
     assert.equal(login.includes('?? "https://api2.cursor.sh"'), false);
     assert.match(login, /SIMEON_WEBSITE_URL \?\? "https:\/\/api\.simeonlabs\.com"/);
@@ -60,7 +60,7 @@ test("exposure logging to Cursor, product analytics and cursor.com deep links ar
     // cursor-experiments.ts: loggingEnabled is "always" only when this name is served.
     assert.equal(module.isConnectServed({}, "cursor.statsig-bootstrap"), false);
     assert.equal(module.isConnectServed({ SAND_CONNECT_SERVED: "1" }, "cursor.statsig-bootstrap"), true);
-    const experiments = await readFile(path.join(repoRoot, "source/shared/node/experiments/cursor-experiments.ts"), "utf8");
+    const experiments = await readFile(path.join(repoRoot, "source/shared/node/experiments/simeon-experiments.ts"), "utf8");
     assert.match(experiments, /loggingEnabled: isConnectServed\(process\.env, "cursor\.statsig-bootstrap"\) \? "always" : "disabled"/);
     assert.equal(module.SIMEON_FEATURE_GATE_DEFAULTS.sand_product_analytics, false);
     assert.equal(module.SAND_HTTPS_DEEP_LINK_ORIGIN, "https://app.simeonlabs.com");

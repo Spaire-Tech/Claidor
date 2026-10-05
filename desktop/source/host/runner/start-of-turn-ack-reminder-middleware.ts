@@ -15,12 +15,12 @@ export function buildReminderMessage(content: string): MessageLike {
   return {
     role: "user",
     content,
-    providerOptions: { cursor: { sandStartOfTurnAckReminder: true } },
+    providerOptions: { simeon: { sandStartOfTurnAckReminder: true } },
   };
 }
 
 export function isStartOfTurnAckReminderMessage(message: MessageLike): boolean {
-  return message.providerOptions?.cursor?.sandStartOfTurnAckReminder === true;
+  return message.providerOptions?.simeon?.sandStartOfTurnAckReminder === true;
 }
 
 export function isTextSendMessageArgs(args: unknown): boolean {

@@ -567,7 +567,7 @@ If the task is complete, respond to the user. Otherwise, continue working on the
       message: toRedactedCoreMessage({
         role: "user",
         content: wrappedContent,
-        providerOptions: { cursor: { isSummary: true } },
+        providerOptions: { simeon: { isSummary: true } },
       }, summaryPrivacyMode),
       summaryTextLength: wrappedContent.length,
     };

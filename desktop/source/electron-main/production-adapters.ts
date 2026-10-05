@@ -22,7 +22,7 @@ import {
 
 export const ELECTRON_PRODUCTION_AREA_EVIDENCE = Object.freeze({
   secureStorage: {
-    recoveredProviders: ["source/electron-main/secrets/secret-store.ts", "source/electron-main/account/cursor-machine-id.ts"],
+    recoveredProviders: ["source/electron-main/secrets/secret-store.ts", "source/electron-main/account/machine-id.ts"],
     injectedPorts: ["electron.safeStorage"],
   },
   settings: {
@@ -34,11 +34,11 @@ export const ELECTRON_PRODUCTION_AREA_EVIDENCE = Object.freeze({
     injectedPorts: ["ProductionServiceContext.coordinatorLegs.legs", "electron.app", "electron.BrowserWindow", "electron.dialog", "electron.nativeImage"],
   },
   avatarImages: {
-    recoveredProviders: ["source/electron-main/media/avatar-images.ts", "source/shared/node/cursor-backend/simeon-generate-image.ts"],
+    recoveredProviders: ["source/electron-main/media/avatar-images.ts", "source/shared/node/simeon-backend/simeon-generate-image.ts"],
     injectedPorts: ["electron.dialog", "electron.BrowserWindow", "electron.nativeImage", "ProductionServiceContext.requireAccount", "ProductionServiceContext.machineId"],
   },
-  cursorAccount: {
-    recoveredProviders: ["source/electron-main/account/cursor-auth-wiring.ts", "source/electron-main/account/access.ts", "source/electron-main/account/cursor-avatar.ts", "source/electron-main/account/cursor-profile.ts", "source/electron-main/account/cursor-pr-review.ts"],
+  accountService: {
+    recoveredProviders: ["source/electron-main/account/account-auth-wiring.ts", "source/electron-main/account/access.ts", "source/electron-main/account/account-avatar.ts", "source/electron-main/account/account-profile.ts", "source/electron-main/account/pr-review.ts"],
     injectedPorts: ["ProductionServiceContext.requireAccount", "ProductionServiceContext.requireMcp", "ProductionServiceContext.requireExperiments", "generated Dashboard clients"],
   },
   mainRpc: {
@@ -54,7 +54,7 @@ export const ELECTRON_PRODUCTION_AREA_EVIDENCE = Object.freeze({
     injectedPorts: ["electron.protocol", "coordinator attachment reader"],
   },
   accountOAuth: {
-    recoveredProviders: ["source/electron-main/account/cursor-auth.ts", "source/electron-main/account/cursor-auth-wiring.ts", "source/electron-main/account/account-authorization.ts"],
+    recoveredProviders: ["source/electron-main/account/account-auth.ts", "source/electron-main/account/account-auth-wiring.ts", "source/electron-main/account/account-authorization.ts"],
     injectedPorts: ["generated account/backend clients", "OAuth browser callback environment"],
   },
   experiments: {
@@ -98,14 +98,14 @@ export interface ElectronProductionAdapterBindings {
     create(args: Parameters<ElectronProductionServiceFactories["createSettings"]>[0]): ProductionSettingsService;
   };
   readonly attachmentGateway: {
-    create(context: Omit<ProductionServiceContext, "attachments" | "avatarImages" | "cursorAccount" | "ensureTranscriptionManager">): unknown;
+    create(context: Omit<ProductionServiceContext, "attachments" | "avatarImages" | "accountService" | "ensureTranscriptionManager">): unknown;
   };
   readonly avatarImages: {
-    create(context: Omit<ProductionServiceContext, "attachments" | "avatarImages" | "cursorAccount" | "ensureTranscriptionManager">): unknown;
+    create(context: Omit<ProductionServiceContext, "attachments" | "avatarImages" | "accountService" | "ensureTranscriptionManager">): unknown;
   };
-  readonly cursorAccount: {
-    create(context: Omit<ProductionServiceContext, "attachments" | "avatarImages" | "cursorAccount" | "ensureTranscriptionManager">): unknown;
-    createTranscriptionManager(context: Omit<ProductionServiceContext, "attachments" | "avatarImages" | "cursorAccount" | "ensureTranscriptionManager">): () => Promise<unknown>;
+  readonly accountService: {
+    create(context: Omit<ProductionServiceContext, "attachments" | "avatarImages" | "accountService" | "ensureTranscriptionManager">): unknown;
+    createTranscriptionManager(context: Omit<ProductionServiceContext, "attachments" | "avatarImages" | "accountService" | "ensureTranscriptionManager">): () => Promise<unknown>;
   };
   readonly mainRpc: {
     create(context: ProductionServiceContext): MainEdge & Partial<ProductionDisposable>;
@@ -259,7 +259,7 @@ export function createElectronProductionServiceFactories(
   adapters: ElectronProductionAdapterBindings,
 ): ElectronProductionServiceFactories {
   const requirements: Readonly<Record<keyof ElectronProductionAdapterBindings, readonly string[]>> = {
-    secureStorage: ["initialize", "getMachineId"], settings: ["create"], attachmentGateway: ["create"], avatarImages: ["create"], cursorAccount: ["create", "createTranscriptionManager"], mainRpc: ["create"],
+    secureStorage: ["initialize", "getMachineId"], settings: ["create"], attachmentGateway: ["create"], avatarImages: ["create"], accountService: ["create", "createTranscriptionManager"], mainRpc: ["create"],
     updaterInstaller: ["create"], mediaProtocol: ["registerScheme", "register"], accountOAuth: ["create"],
     experiments: ["create"], mcpOAuth: ["create"], telemetry: ["create"], notifications: ["create"], coordinator: ["create"],
     ipc: ["register"], windowLifecycle: ["onWindowCreated"], imageContextMenu: ["register"],
@@ -277,8 +277,8 @@ export function createElectronProductionServiceFactories(
     createSettings: (args) => adapters.settings.create(args),
     createAttachments: (context) => adapters.attachmentGateway.create(context),
     createAvatarImages: (context) => adapters.avatarImages.create(context),
-    createCursorAccount: (context) => adapters.cursorAccount.create(context),
-    createTranscriptionManager: (context) => adapters.cursorAccount.createTranscriptionManager(context),
+    createAccountService: (context) => adapters.accountService.create(context),
+    createTranscriptionManager: (context) => adapters.accountService.createTranscriptionManager(context),
     createMainEdge: (context) => adapters.mainRpc.create(context),
     createUpdate: (context) => adapters.updaterInstaller.create(context),
     registerMediaScheme: () => adapters.mediaProtocol.registerScheme(),

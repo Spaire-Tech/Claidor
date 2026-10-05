@@ -6,11 +6,11 @@ import { SAND_COMPUTER_USE_MODEL_SELECTION, SAND_COMPUTER_USE_SUBAGENT_MODEL_ID,
 import { type InferenceReason } from "../../../packages/proto/generated/aiserver/v1/inference_pb.js";
 import { createMockPromptExecutor } from "../../../packages/chat-inference/mock-prompt-executor.js";
 import {
-  createCursorInferencePromptSession,
+  createSimeonInferencePromptSession,
   createSandAttachedMediaUrlProvider,
   resolveSandRunPrivacyMode, SAND_RUN_PRIVACY_MODE_FALLBACK,
   type RequestLineage,
-} from "../../../shared/node/cursor-backend/cursor-inference.js";
+} from "../../../shared/node/simeon-backend/simeon-inference.js";
 import { createSandLabelingClient, recordSandPostTurnLabeling, wrapPromptSessionWithSandFollowupLabeling, type LabelMessage, type LabelingClient, type PromptExecutor } from "./sand-labeling.js";
 import { selectSandExperimentTurnModel } from "./sand-model-experiment.js";
 import type { SummarizationPromptSession } from "../../../packages/agent-summarization/summarization-handler.js";
@@ -78,9 +78,9 @@ export function createScriptedMockSession(script: SandMockScript, modelId: strin
   };
 }
 
-export interface CursorPromptSession { getModelId(): string; getExecutor(state?: unknown): PromptExecutor }
-export interface CursorSessionOptions extends SandSessionOptions { requestSource?: string; inferenceReason?: InferenceReason; lineage?: RequestLineage; skipLabeling?: boolean }
-export interface CursorSandInferenceOptions {
+export interface SimeonPromptSession { getModelId(): string; getExecutor(state?: unknown): PromptExecutor }
+export interface SimeonSessionOptions extends SandSessionOptions { requestSource?: string; inferenceReason?: InferenceReason; lineage?: RequestLineage; skipLabeling?: boolean }
+export interface SimeonSandInferenceOptions {
   getAccessToken(...args: unknown[]): Promise<string>;
   getMachineId(): string;
   isGeminiVideoDeveloperApiEnabled?(): boolean;
@@ -91,14 +91,14 @@ export interface CursorSandInferenceOptions {
   getConfiguredDefaultModel?(): SandAgentModelSelection | undefined;
   getConfiguredAutomationsModel?(): SandAgentModelSelection | undefined;
 }
-export interface CursorSandInference {
+export interface SimeonSandInference {
   resolvePrivacyMode(): Promise<unknown> | unknown;
   getGeminiVideoAttachedMediaUrlProvider(): unknown | undefined;
-  createSession(onRequestId: (requestId: string) => void, sessionOptions?: CursorSessionOptions): CursorPromptSession | ReturnType<typeof createScriptedMockSession> | { getModelId(): string; getExecutor(): PromptExecutor };
-  createSummarizationSession?(onRequestId: (requestId: string) => void, sessionOptions?: CursorSessionOptions): SummarizationPromptSession;
+  createSession(onRequestId: (requestId: string) => void, sessionOptions?: SimeonSessionOptions): SimeonPromptSession | ReturnType<typeof createScriptedMockSession> | { getModelId(): string; getExecutor(): PromptExecutor };
+  createSummarizationSession?(onRequestId: (requestId: string) => void, sessionOptions?: SimeonSessionOptions): SummarizationPromptSession;
   recordPostTurnLabeling(args: { conversationId: string; requestId: string; modelName: string; messages: readonly LabelMessage[] }): void;
 }
-export function createCursorSandInference(options: CursorSandInferenceOptions): CursorSandInference {
+export function createSimeonSandInference(options: SimeonSandInferenceOptions): SimeonSandInference {
   let labelingClient: LabelingClient | undefined;
   const auth = { getAccessToken: options.getAccessToken, getMachineId: options.getMachineId };
   const attachedMedia = createSandAttachedMediaUrlProvider(auth);
@@ -118,12 +118,12 @@ export function createCursorSandInference(options: CursorSandInferenceOptions): 
         return { getExecutor: () => createMockPromptExecutor(() => ({ response: mockResponse, chunkSize: 8 })), getModelId: () => modelId };
       }
       const routedProvider = new SandSettingsStore(join(getSandRootDir(), "settings.json")).getInferenceProvider();
-      if (routedProvider !== "cursor") return createProviderPromptSession(routedProvider, sessionOptions) as unknown as CursorPromptSession;
+      if (routedProvider !== "cursor") return createProviderPromptSession(routedProvider, sessionOptions) as unknown as SimeonPromptSession;
       const experimentState = options.getModelExperimentState?.(), requestSource = sessionOptions?.requestSource;
       const experimentModelOverride = selectSandExperimentTurnModel({ ...(experimentState === undefined ? {} : { state: experimentState }), ...(requestSource === undefined ? {} : { requestSource }), readConfiguredDefaultModel: () => options.getConfiguredDefaultModel?.(), readConfiguredAutomationsModel: () => options.getConfiguredAutomationsModel?.() });
       const storedDefaultModel = options.getDefaultModel?.(), storedComputerUseModel = options.getComputerUseModel?.(), storedBrowserUseModel = options.getBrowserUseModel?.();
       const requestedModel = resolveSandRequestedModel({ ...(sessionOptions == null ? {} : { sessionOptions }), ...(process.env.SAND_AGENT_MODEL == null ? {} : { envModelOverride: process.env.SAND_AGENT_MODEL }), ...(storedDefaultModel == null ? {} : { storedDefaultModel }), ...(storedComputerUseModel === undefined ? {} : { storedComputerUseModel }), ...(storedBrowserUseModel === undefined ? {} : { storedBrowserUseModel }), ...(experimentModelOverride == null ? {} : { experimentModelOverride }) });
-      const promptArgs: Parameters<typeof createCursorInferencePromptSession>[0] = {
+      const promptArgs: Parameters<typeof createSimeonInferencePromptSession>[0] = {
         getAccessToken: options.getAccessToken,
         getMachineId: options.getMachineId,
         requestedModel,
@@ -131,7 +131,7 @@ export function createCursorSandInference(options: CursorSandInferenceOptions): 
         ...(options.isGeminiVideoDeveloperApiEnabled?.() === true && sessionOptions?.inferenceReason != null ? { inferenceReason: sessionOptions.inferenceReason } : {}),
         ...(sessionOptions?.lineage == null ? {} : { lineage: sessionOptions.lineage }),
       };
-      const session = createCursorInferencePromptSession(promptArgs), skipLabeling = sessionOptions?.skipLabeling === true || sessionOptions?.isSummarizationSession === true || sessionOptions?.isComputerUseSubagent === true;
+      const session = createSimeonInferencePromptSession(promptArgs), skipLabeling = sessionOptions?.skipLabeling === true || sessionOptions?.isSummarizationSession === true || sessionOptions?.isComputerUseSubagent === true;
       return skipLabeling ? session : wrapPromptSessionWithSandFollowupLabeling(session, getLabelingClient(), requestedModel.modelId);
     },
     createSummarizationSession(onRequestId, sessionOptions) {

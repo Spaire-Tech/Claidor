@@ -1,4 +1,4 @@
-import { envGateOverride } from "./cursor-experiments.js";
+import { envGateOverride } from "./simeon-experiments.js";
 
 // Feature gates Simeon turns on that the upstream app's bundled table
 // (`experiment-config.gen.ts`, a generated file that is not edited) leaves
@@ -9,7 +9,7 @@ import { envGateOverride } from "./cursor-experiments.js";
 // `sand_usage_page` — Settings → Usage & Billing and the account menu's
 // usage card. Off by default since the reconstruction; on since
 // 24 September 2026, now that the summary is built from Simeon Labs'
-// server's quota (`account/cursor-profile.ts`).
+// server's quota (`account/account-profile.ts`).
 //
 // Precedence, lowest to highest: this table, then
 // `SAND_FEATURE_GATE_OVERRIDES=name=0` in the environment (a kill switch,

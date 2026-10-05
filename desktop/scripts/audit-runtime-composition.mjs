@@ -33,7 +33,7 @@ const requiredElectronProductionAreas = new Set([
   "settings",
   "attachmentGateway",
   "avatarImages",
-  "cursorAccount",
+  "accountService",
   "mainRpc",
   "updaterInstaller",
   "mediaProtocol",

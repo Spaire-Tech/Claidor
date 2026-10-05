@@ -3,9 +3,9 @@ import {
   bestEffortToken,
   createDashboardClient,
   CURSOR_MARKETPLACE_REQUEST_TIMEOUT_MS,
-} from "../marketplace/cursor-marketplace-client.js";
-import { rememberPluginLogoUrl } from "../marketplace/cursor-marketplace-logo-registry.js";
-export { bestEffortToken } from "../marketplace/cursor-marketplace-client.js";
+} from "../marketplace/marketplace-client.js";
+import { rememberPluginLogoUrl } from "../marketplace/marketplace-logo-registry.js";
+export { bestEffortToken } from "../marketplace/marketplace-client.js";
 export { resolvePluginLogo } from "./mcp-marketplace-logo.js";
 import {
   createDeadlinePolicy,

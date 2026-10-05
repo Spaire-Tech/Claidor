@@ -1,7 +1,7 @@
 import { ConnectError, Code } from "@connectrpc/connect";
 import { ComputerService } from "../../packages/proto/simeon/v1/services.js";
 import { SandBoxMigrationPhase } from "../../packages/proto/generated/aiserver/v1/sand_box_pb.js";
-import { createSandCursorBackendClient, type SandInferenceOptions } from "../../shared/node/cursor-backend/cursor-inference.js";
+import { createSimeonBackendClient, type SandInferenceOptions } from "../../shared/node/simeon-backend/simeon-inference.js";
 import { isSameSandBoxMigrationOperation, parseSandBoxMigrationOperationId } from "../../shared/box-migration.js";
 import type { RecreateOperationId } from "./box-recreate-commands.js";
 
@@ -30,7 +30,7 @@ type DirectMigrationWatcherDeps = Omit<SandInferenceOptions, "backendUrl">;
 export function createSandMigrationWatcher(deps: InjectedMigrationWatcherDeps | DirectMigrationWatcherDeps) {
   let client: { watchSandBoxMigration(request: { fromOffsetKey: string; includeFinished: true }, options: { signal: AbortSignal }): AsyncIterable<MigrationBackendEvent> } | undefined; let resumeOffsetKey = "";
   return async function* watch(signal: AbortSignal): AsyncGenerator<MigrationStatus> {
-    const activeClient = client ??= "createClient" in deps ? deps.createClient() : createSandCursorBackendClient(ComputerService, deps);
+    const activeClient = client ??= "createClient" in deps ? deps.createClient() : createSimeonBackendClient(ComputerService, deps);
     const phaseName = "phaseName" in deps ? deps.phaseName : MIGRATION_PHASE_NAME;
     const fromOffsetKey = resumeOffsetKey; let received = false;
     try {

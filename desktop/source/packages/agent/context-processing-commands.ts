@@ -1,9 +1,9 @@
-export interface SelectedCursorCommandForPrompt {
+export interface SelectedAgentCommandForPrompt {
   readonly name: string;
   readonly content: string;
 }
 
-export interface CursorCommandsTextContent {
+export interface AgentCommandsTextContent {
   readonly type: "text";
   readonly text: string;
 }
@@ -11,13 +11,13 @@ export interface CursorCommandsTextContent {
 // Extracted from ../packages/agent/dist/context-processing.js as an
 // uncomposed cursor-command prompt leaf. The parent processSelectedContext
 // function remains absent.
-export function renderSelectedCursorCommands(
-  cursorCommands: readonly SelectedCursorCommandForPrompt[],
-): CursorCommandsTextContent | undefined {
-  if (cursorCommands.length === 0) {
+export function renderSelectedAgentCommands(
+  agentCommands: readonly SelectedAgentCommandForPrompt[],
+): AgentCommandsTextContent | undefined {
+  if (agentCommands.length === 0) {
     return undefined;
   }
-  const commandsText = cursorCommands.map((command) => `
+  const commandsText = agentCommands.map((command) => `
 
 --- Command: ${command.name} ---
 ${command.content}

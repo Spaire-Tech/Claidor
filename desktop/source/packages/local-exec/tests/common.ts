@@ -1,9 +1,9 @@
 import type { SandboxRule } from "../shell-core.js";
 
 export class MockIgnoreService {
-  isCursorIgnored(_path: string): Promise<boolean> { return Promise.resolve(false); } isGitIgnored(_path: string): Promise<boolean> { return Promise.resolve(false); } isIgnoredByAny(_path: string): Promise<boolean> { return Promise.resolve(false); }
-  listCursorIgnoreFilesByRoot(_root: string): Promise<never[]> { return Promise.resolve([]); } isRepoBlocked(_path: string): Promise<boolean> { return Promise.resolve(false); }
-  getCursorIgnoreMapping(): Promise<Record<string, never>> { return Promise.resolve({}); } getGitIgnoreMapping(): Promise<Record<string, never>> { return Promise.resolve({}); } getRepoBlockExcludeGlobs(_root: string): Promise<never[]> { return Promise.resolve([]); }
+  isAgentIgnored(_path: string): Promise<boolean> { return Promise.resolve(false); } isGitIgnored(_path: string): Promise<boolean> { return Promise.resolve(false); } isIgnoredByAny(_path: string): Promise<boolean> { return Promise.resolve(false); }
+  listAgentIgnoreFilesByRoot(_root: string): Promise<never[]> { return Promise.resolve([]); } isRepoBlocked(_path: string): Promise<boolean> { return Promise.resolve(false); }
+  getAgentIgnoreMapping(): Promise<Record<string, never>> { return Promise.resolve({}); } getGitIgnoreMapping(): Promise<Record<string, never>> { return Promise.resolve({}); } getRepoBlockExcludeGlobs(_root: string): Promise<never[]> { return Promise.resolve([]); }
 }
 export class MockPermissionsService {
   private shouldBlockShellCommandImpl: (_ctx: unknown, _command: string, _options: unknown, requestedPolicy?: SandboxRule) => Promise<{ kind: "allow"; policy: SandboxRule }> = async (_ctx, _command, _options, requestedPolicy) => ({ kind: "allow", policy: requestedPolicy ?? { type: "insecure_none" } });

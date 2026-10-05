@@ -5,11 +5,11 @@ import {
   isDevAuthBackend,
   parseJwtPayload,
   shouldRefreshAccessToken,
-} from "../../shared/node/cursor-token.js";
+} from "../../shared/node/simeon-token.js";
 import { findSystemErrno } from "../../shared/system-errno.js";
-import { createLocalCliModeHeaders } from "../../packages/cursor-config/request.js";
-import { LoginManager } from "../../packages/cursor-config/auth/login.js";
-import { mdmSignInPolicyHeaders, SignInPolicyViolationError, SIGN_IN_POLICY_VIOLATION_ERROR, SIGN_IN_POLICY_VIOLATION_MESSAGE } from "../../packages/cursor-config/auth/mdm-sign-in-policy.js";
+import { createLocalCliModeHeaders } from "../../packages/simeon-config/request.js";
+import { LoginManager } from "../../packages/simeon-config/auth/login.js";
+import { mdmSignInPolicyHeaders, SignInPolicyViolationError, SIGN_IN_POLICY_VIOLATION_ERROR, SIGN_IN_POLICY_VIOLATION_MESSAGE } from "../../packages/simeon-config/auth/mdm-sign-in-policy.js";
 import { deleteSecret, isEncryptedStorageAvailable, readSecret, waitForEncryptedStorage, writeSecret } from "../secrets/secret-store.js";
 import { reportSessionEvent, type SessionRefreshFailure, type SessionSignoutCause } from "./session-funnel-telemetry.js";
 import { reportSigninLogin, reportSigninSignout, signinSignoutCause } from "./signin-funnel-telemetry.js";
@@ -21,7 +21,7 @@ export const REFRESH_TOKEN_SECRET_KEY = "cursor-refresh-token";
 export const DEFAULT_SIMEON_WEBSITE_URL = "https://api.simeonlabs.com";
 export const DEFAULT_LOCAL_SIMEON_WEBSITE_URL = "https://localhost:4443";
 export const MAX_LOGIN_POLL_ATTEMPTS = 150;
-export { SignInPolicyViolationError, SIGN_IN_POLICY_VIOLATION_ERROR, SIGN_IN_POLICY_VIOLATION_MESSAGE } from "../../packages/cursor-config/auth/mdm-sign-in-policy.js";
+export { SignInPolicyViolationError, SIGN_IN_POLICY_VIOLATION_ERROR, SIGN_IN_POLICY_VIOLATION_MESSAGE } from "../../packages/simeon-config/auth/mdm-sign-in-policy.js";
 export class SandAuthOperationSupersededError extends Error { constructor() { super("Authentication operation was superseded."); } }
 export class SandAuthSignInRequiredError extends Error { constructor() { super("Sign in to Simeon to run it."); } }
 export class SandAuthSignInExpiredError extends Error { constructor() { super("Your Simeon sign-in expired. Sign in again."); } }
@@ -38,18 +38,18 @@ export type SandAuthStatus =
   | { readonly kind: "logging-in" }
   | { readonly kind: "logged-out"; readonly errorMessage?: string }
   | { readonly kind: "logged-in"; readonly authId?: string; readonly email?: string; readonly expiresAt?: number; readonly displayName?: string; readonly profilePictureUrl?: string; readonly isStaffUser?: boolean };
-export interface CursorProfile { readonly email?: string; readonly displayName?: string; readonly profilePictureUrl?: string; readonly isStaffUser: boolean }
-export interface CursorTokens { readonly accessToken: string; readonly refreshToken: string }
-export interface CursorSecretStore {
+export interface AccountProfile { readonly email?: string; readonly displayName?: string; readonly profilePictureUrl?: string; readonly isStaffUser: boolean }
+export interface AccountTokens { readonly accessToken: string; readonly refreshToken: string }
+export interface AccountSecretStore {
   readSecret(key: string): Promise<string | null | undefined>;
   writeSecret(key: string, value: string): Promise<void>;
   deleteSecret(key: string): Promise<void>;
   isEncryptedStorageAvailable(): boolean;
 }
 export interface LoginMetadata { readonly uuid: string; readonly verifier: string }
-export interface CursorLoginManager {
+export interface AccountLoginManager {
   startLogin(): { readonly metadata: LoginMetadata; readonly loginUrl: string };
-  waitForResult(metadata: LoginMetadata, signal?: AbortSignal): Promise<CursorTokens | null>;
+  waitForResult(metadata: LoginMetadata, signal?: AbortSignal): Promise<AccountTokens | null>;
 }
 export type AccessTokenReader = (options?: { readonly backendUrl?: string }) => Promise<string>;
 export type SessionSettlement =
@@ -104,7 +104,7 @@ function abortableDelay(delayMs: number, signal?: AbortSignal): Promise<void> {
   });
 }
 
-export class SandBackendLoginManager implements CursorLoginManager {
+export class SandBackendLoginManager implements AccountLoginManager {
   constructor(
     readonly backendUrl: string,
     readonly websiteUrl: string,
@@ -123,7 +123,7 @@ export class SandBackendLoginManager implements CursorLoginManager {
     url.searchParams.set("mode", "login"); url.searchParams.set("redirectTarget", this.options.redirectTarget ?? resolveAuthRedirectTarget());
     return { metadata, loginUrl: url.toString() };
   }
-  async waitForResult(metadata: LoginMetadata, signal?: AbortSignal): Promise<CursorTokens | null> {
+  async waitForResult(metadata: LoginMetadata, signal?: AbortSignal): Promise<AccountTokens | null> {
     const url = new URL("/auth/poll", this.backendUrl);
     url.searchParams.set("uuid", metadata.uuid); url.searchParams.set("verifier", metadata.verifier);
     const policyHeaders = await (this.options.policyHeaders?.() ?? mdmSignInPolicyHeaders());
@@ -157,7 +157,7 @@ export class SandBackendLoginManager implements CursorLoginManager {
   }
 }
 
-export function createDefaultLoginManager(): CursorLoginManager {
+export function createDefaultLoginManager(): AccountLoginManager {
   const backendUrl = getConfiguredBackendUrl();
   if (isDevAuthBackend(backendUrl)) return new SandBackendLoginManager(backendUrl, getAuthWebsiteUrl(backendUrl));
   return new LoginManager({ redirectTarget: resolveAuthRedirectTarget() });
@@ -172,12 +172,12 @@ function parseOAuthTokenBody(value: unknown): OAuthTokenBody | null {
   return source as OAuthTokenBody;
 }
 
-export interface SandCursorAuthServiceOptions {
+export interface SandAccountAuthServiceOptions {
   readonly openExternal: (url: string) => void | Promise<void>;
-  readonly secrets?: CursorSecretStore;
-  readonly createLoginManager?: () => CursorLoginManager;
+  readonly secrets?: AccountSecretStore;
+  readonly createLoginManager?: () => AccountLoginManager;
   readonly fetchOAuthToken?: typeof fetch;
-  readonly fetchProfile?: (getAccessToken: AccessTokenReader) => Promise<CursorProfile | null>;
+  readonly fetchProfile?: (getAccessToken: AccessTokenReader) => Promise<AccountProfile | null>;
   readonly updateProfileName?: (getAccessToken: AccessTokenReader, name: string) => Promise<void>;
   readonly secureStorageWaitOptions?: { readonly timeoutMs?: number; readonly intervalMs?: number };
   readonly waitForEncryptedStorage?: (isAvailable: () => boolean, options: { readonly timeoutMs?: number; readonly intervalMs?: number }) => Promise<void>;
@@ -190,18 +190,18 @@ export interface SandCursorAuthServiceOptions {
   readonly revokeSession?: (accessToken: string) => Promise<unknown>;
 }
 
-const defaultSecrets: CursorSecretStore = {
+const defaultSecrets: AccountSecretStore = {
   readSecret,
   writeSecret,
   deleteSecret,
   isEncryptedStorageAvailable,
 };
 
-export class SandCursorAuthService {
-  private readonly secrets: CursorSecretStore;
+export class SandAccountAuthService {
+  private readonly secrets: AccountSecretStore;
   private readonly listeners = new Set<(status: SandAuthStatus) => void>();
-  private readonly profileCache = new Map<string, CursorProfile>();
-  private readonly profilePromises = new Map<string, { operationEpoch: number; promise: Promise<CursorProfile | null> }>();
+  private readonly profileCache = new Map<string, AccountProfile>();
+  private readonly profilePromises = new Map<string, { operationEpoch: number; promise: Promise<AccountProfile | null> }>();
   private authOperationEpoch = 0;
   private credentialMutationTail: Promise<void> = Promise.resolve();
   private loginAbortController: AbortController | undefined;
@@ -212,7 +212,7 @@ export class SandCursorAuthService {
   private signoutSettled = false;
   private reportedLoggedOutStatus: SandAuthStatus = LOGGED_OUT_STATUS;
 
-  constructor(private readonly options: SandCursorAuthServiceOptions) {
+  constructor(private readonly options: SandAccountAuthServiceOptions) {
     this.secrets = options.secrets ?? defaultSecrets;
   }
   private get credentialUseRevoked(): boolean { return this.credentialState !== "active"; }
@@ -295,7 +295,7 @@ export class SandCursorAuthService {
     return shouldRefreshAccessToken(backendUrl, accessToken) ? await this.refreshAccessToken({ backendUrl, operationEpoch, refreshToken }) : accessToken;
   }
   async peekAccessToken(): Promise<string | null> { if (this.credentialUseRevoked) return null; const [access, refresh] = await Promise.all([this.secrets.readSecret(ACCESS_TOKEN_SECRET_KEY), this.secrets.readSecret(REFRESH_TOKEN_SECRET_KEY)]); return this.credentialUseRevoked || access == null || refresh == null ? null : access; }
-  async exportTokens(): Promise<CursorTokens | null> { if (this.credentialUseRevoked) return null; const [accessToken, refreshToken] = await Promise.all([this.secrets.readSecret(ACCESS_TOKEN_SECRET_KEY), this.secrets.readSecret(REFRESH_TOKEN_SECRET_KEY)]); return this.credentialUseRevoked || accessToken == null || refreshToken == null ? null : { accessToken, refreshToken }; }
+  async exportTokens(): Promise<AccountTokens | null> { if (this.credentialUseRevoked) return null; const [accessToken, refreshToken] = await Promise.all([this.secrets.readSecret(ACCESS_TOKEN_SECRET_KEY), this.secrets.readSecret(REFRESH_TOKEN_SECRET_KEY)]); return this.credentialUseRevoked || accessToken == null || refreshToken == null ? null : { accessToken, refreshToken }; }
   async login(): Promise<SandAuthStatus> {
     this.abortActiveLogin(); const operationEpoch = this.advanceAuthOperationEpoch(); const controller = new AbortController(); this.loginAbortController = controller;
     try { return await this.runLogin(controller.signal, operationEpoch); } finally { if (this.loginAbortController === controller) this.loginAbortController = undefined; }
@@ -339,14 +339,14 @@ export class SandCursorAuthService {
     const settling = this.settleSecureStorage().catch((error) => this.reportFailure("secure-storage-settle", error)); this.emitStatus({ kind: "logging-in" }); const manager = (this.options.createLoginManager ?? createDefaultLoginManager)(); const { metadata, loginUrl } = manager.startLogin(); reportSigninLogin({ phase: "login_started" });
     try { await this.options.openExternal(loginUrl); } catch (error) { if (!signal.aborted && this.isCurrentAuthOperation(operationEpoch)) reportSigninLogin({ phase: "login_failed", cause: "error" }); throw error; }
     if (signal.aborted || !this.isCurrentAuthOperation(operationEpoch)) return await this.getStatus();
-    let result: CursorTokens | null;
+    let result: AccountTokens | null;
     try { result = await manager.waitForResult(metadata, signal); } catch (error) { if (signal.aborted || !this.isCurrentAuthOperation(operationEpoch)) return await this.getStatus(); if (error instanceof SignInPolicyViolationError) { const status = await this.getStatus(); this.emitStatus(status.kind === "logged-out" && status.errorMessage === undefined ? SIGN_IN_POLICY_VIOLATION_STATUS : status); reportSigninLogin({ phase: "login_failed", cause: "policy_refused" }); } else reportSigninLogin({ phase: "login_failed", cause: "error" }); throw error; }
     if (signal.aborted || !this.isCurrentAuthOperation(operationEpoch)) return await this.getStatus();
     if (result == null) { const status = await this.getStatus(); if (status.kind === "logged-out" && status.errorMessage === undefined) { this.credentialState = "revoked"; this.reportedLoggedOutStatus = LOGIN_DID_NOT_FINISH_STATUS; this.emitStatus(LOGIN_DID_NOT_FINISH_STATUS); } else this.emitStatus(status); reportSigninLogin({ phase: "login_failed", cause: "timeout" }); throw new SandAuthLoginTimedOutError(); }
     await settling; try { if (!await this.storeAuthentication(result, operationEpoch)) return await this.getStatus(); } catch (error) { if (!signal.aborted && this.isCurrentAuthOperation(operationEpoch)) reportSigninLogin({ phase: "login_failed", cause: "error" }); throw error; }
     reportSigninLogin({ phase: "login_completed" }); return await this.emitLoggedIn(result.accessToken, operationEpoch);
   }
-  private async storeAuthentication(result: CursorTokens, operationEpoch: number): Promise<boolean> {
+  private async storeAuthentication(result: AccountTokens, operationEpoch: number): Promise<boolean> {
     const stored = await this.mutateCredentials(async () => { if (!this.isCurrentAuthOperation(operationEpoch)) return false; await this.secrets.writeSecret(ACCESS_TOKEN_SECRET_KEY, result.accessToken); if (!this.isCurrentAuthOperation(operationEpoch)) { await this.rollbackSupersededAuthentication(); return false; } await this.secrets.writeSecret(REFRESH_TOKEN_SECRET_KEY, result.refreshToken); if (!this.isCurrentAuthOperation(operationEpoch)) { await this.rollbackSupersededAuthentication(); return false; } this.credentialState = "active"; this.signoutSettled = false; this.reportedLoggedOutStatus = LOGGED_OUT_STATUS; return true; });
     if (stored) this.noteSecretsUnavailableSession(result.accessToken); return stored;
   }

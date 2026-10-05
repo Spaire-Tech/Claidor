@@ -3,14 +3,14 @@
  * immutable host artifact. Mac/Windows evidence:
  * host-main.cjs:554541-554563, 554942-555095, and 555136-555166.
  */
-import type { CursorRule } from "../../proto/generated/agent/v1/cursor_rules_pb.js";
+import type { CursorRule as AgentRule } from "../../proto/generated/agent/v1/cursor_rules_pb.js";
 import { jsx } from "../../prompt-jsx/jsx-runtime.js";
 import { buildAntiAskQuestionUserRule } from "./anti-ask-question-copy.js";
 import { getComposerGitUserRules } from "./user-info-git-prompt-sections.js";
 import { shouldInjectComposerGitUserRules } from "./user-info-git-rule-gates.js";
 import { RulesSection } from "./user-info-rule-sections.js";
-import { categorizeCursorRules } from "./user-info-rule-categorization.js";
-import { isFileScopedCursorRule } from "../utils/cursor-rule-matching.js";
+import { categorizeAgentRules } from "./user-info-rule-categorization.js";
+import { isFileScopedAgentRule } from "../utils/rule-matching.js";
 import { AgentType } from "../utils/agent-config.js";
 import type { PromptNode } from "../../prompt-jsx/jsx-runtime.js";
 
@@ -216,9 +216,9 @@ export function getComposer2CustomUserRulesForModel(
 }
 
 export interface BuildRulesPromptProps {
-  readonly cursorRules: CursorRule[];
+  readonly agentRules: AgentRule[];
   readonly env?: { readonly workspacePaths?: readonly string[] | undefined } | undefined;
-  readonly displayOptions?: { readonly displayCursorRules?: boolean | undefined; readonly agentType?: AgentType | undefined } | undefined;
+  readonly displayOptions?: { readonly displayAgentRules?: boolean | undefined; readonly agentType?: AgentType | undefined } | undefined;
   readonly backgroundAgentSource?: unknown;
   readonly agentType?: AgentType | undefined;
   readonly modelInfo?: Composer2CustomUserRuleModelInfo & { readonly promptVersion?: string | undefined; readonly isComposer2?: boolean | undefined; readonly isComposer15?: boolean | undefined };
@@ -227,7 +227,7 @@ export interface BuildRulesPromptProps {
 }
 
 export interface BuildRulesPromptOptions {
-  readonly categorizedRules?: { readonly globalRules: CursorRule[]; readonly agentRequestableRules: CursorRule[]; readonly userRules: CursorRule[] };
+  readonly categorizedRules?: { readonly globalRules: AgentRule[]; readonly agentRequestableRules: AgentRule[]; readonly userRules: AgentRule[] };
   readonly readToolName?: string | undefined;
   readonly awaitToolName?: string | undefined;
   readonly shellToolName?: string | undefined;
@@ -238,10 +238,10 @@ export function buildRulesPromptSection(
   props: BuildRulesPromptProps,
   options?: BuildRulesPromptOptions,
 ): { readonly section?: PromptNode; readonly ruleCount: number } {
-  if (props.displayOptions?.displayCursorRules === false) return { ruleCount: 0 };
+  if (props.displayOptions?.displayAgentRules === false) return { ruleCount: 0 };
   const workspacePaths = props.env?.workspacePaths ?? [];
-  const { globalRules, agentRequestableRules, userRules } = options?.categorizedRules ?? categorizeCursorRules(props.cursorRules, workspacePaths, props.displayOptions?.agentType);
-  const filteredAgentRequestableRules = agentRequestableRules.filter(rule => !isFileScopedCursorRule(rule, workspacePaths));
+  const { globalRules, agentRequestableRules, userRules } = options?.categorizedRules ?? categorizeAgentRules(props.agentRules, workspacePaths, props.displayOptions?.agentType);
+  const filteredAgentRequestableRules = agentRequestableRules.filter(rule => !isFileScopedAgentRule(rule, workspacePaths));
   const isCloudAgentPrompt = props.backgroundAgentSource !== undefined;
   const resolvedAgentType = props.displayOptions?.agentType ?? props.agentType;
   const composerGitUserRules = !isCloudAgentPrompt && shouldInjectComposerGitUserRules(props.modelInfo, resolvedAgentType) && props.toolInfo?.allTools !== undefined

@@ -28,7 +28,7 @@ import {
   ReadToolSuccess,
 } from "../../../../proto/generated/agent/v1/read_tool_pb.js";
 import { ToolCall } from "../../../../proto/generated/agent/v1/agent_pb.js";
-import type { CursorRule } from "../../../../proto/generated/agent/v1/cursor_rules_pb.js";
+import type { CursorRule as AgentRule } from "../../../../proto/generated/agent/v1/cursor_rules_pb.js";
 import type { HookAdditionalContext } from "../../../../proto/generated/agent/v1/hook_additional_context_pb.js";
 import {
   ToolCallError,
@@ -109,7 +109,7 @@ interface ReadMetadata {
   readonly stateHandler?: ReadBlobState;
   readonly hookContextCollector?: HookAdditionalContext[];
   readonly stepReadPathDedup?: Set<string>;
-  readonly cursorRules?: readonly CursorRule[];
+  readonly agentRules?: readonly AgentRule[];
   readonly agentSkills?: readonly ReadSkill[];
   readonly workspacePaths?: readonly string[];
 }
@@ -261,7 +261,7 @@ function parametersSchema(version: string, includeLineNumbers: boolean, includeN
   }
   return z.object({
     path: z.string().describe("The absolute path of the file to read."),
-    offset: positiveIntegerSchema("The line number to start reading from. Only provide if the file is too large to read at once.", version === "cursor-0226" || includeNegativeOffset),
+    offset: positiveIntegerSchema("The line number to start reading from. Only provide if the file is too large to read at once.", version === "simeon-0226" || includeNegativeOffset),
     limit: limitSchema(),
     ...lineNumberField,
   });
@@ -270,7 +270,7 @@ function parametersSchema(version: string, includeLineNumbers: boolean, includeN
 function toolName(version: string): string {
   if (version === "dsv3-1018") return "read_file";
   if (version === "gpt5-codex" || version === "codex-cloud") return "ReadFile";
-  if (version === "cursor-0226" || version === "dsv3-1205" || version === "latest" || version === "haiku") return "Read";
+  if (version === "simeon-0226" || version === "dsv3-1205" || version === "latest" || version === "haiku") return "Read";
   throw new Error(`Unhandled version: ${version}`);
 }
 
@@ -281,14 +281,14 @@ function toolDescription(version: string, minimal: boolean, explicitOffsetLimit:
     : "- You can optionally specify a line offset and limit (especially handy for long files), but it's recommended to read the whole file by not providing these parameters.";
   const numbers = includeLineNumbers && !sparse ? "\n- Lines in the output are numbered starting at 1, using following format: LINE_NUMBER|LINE_CONTENT" : "";
   const base = `Reads a file from the local filesystem. You can access any file directly by using this tool.\nIf the User provides a path to a file assume that path is valid. It is okay to read a file that does not exist; an error will be returned.\n\nUsage:\n${usage}${numbers}\n- You have the capability to call multiple tools in a single response. It is always better to speculatively read multiple files as a batch that are potentially useful.\n- If you read a file that exists but has empty contents you will receive 'File is empty.'`;
-  if (version === "cursor-0226") return "Reads a file from the local filesystem. This tool can also read image files when called with the appropriate path. Formats supported: jpeg/jpg, png, gif, webp.";
+  if (version === "simeon-0226") return "Reads a file from the local filesystem. This tool can also read image files when called with the appropriate path. Formats supported: jpeg/jpg, png, gif, webp.";
   if (version === "dsv3-1018") return base;
   if (version === "dsv3-1205") return `${base}\n\nImage Support:\n- This tool can also read image files when called with the appropriate path.\n- Supported image formats: jpeg/jpg, png, gif, webp.`;
   if (version === "gpt5-codex" || version === "codex-cloud" || version === "latest" || version === "haiku") return `${base}\n\nImage Support:\n- This tool can also read image files when called with the appropriate path.\n- Supported image formats: jpeg/jpg, png, gif, webp.\n\nPDF Support:\n- PDF files are converted into text content automatically (subject to the same character limits as other files).`;
   throw new Error(`Unhandled version: ${version}`);
 }
 
-function cursorRuleReminder(rules: readonly CursorRule[]): string | undefined {
+function agentRuleReminder(rules: readonly AgentRule[]): string | undefined {
   if (rules.length === 0) return undefined;
   return ["The following rule files are relevant to the files you just read:", ...rules.map(rule => `- ${rule.fullPath ?? "(unknown rule path)"}\n${rule.content.trimEnd() || "(Rule file is empty.)"}`), "Consider these rules if they affect your changes."].join("\n\n");
 }
@@ -298,8 +298,8 @@ function skillReminder(skills: readonly ReadSkill[]): string | undefined {
   return ["The following skills may be relevant to the files you just read:", ...skills.map(skill => `- ${skill.fullPath ?? "(unknown skill path)"}\n${skill.description || "(No description)"}`)].join("\n\n");
 }
 
-function mergeReminders(content: string, rules: readonly CursorRule[], skills: readonly ReadSkill[]): string {
-  const additions = [cursorRuleReminder(rules), skillReminder(skills)].filter((value): value is string => value !== undefined);
+function mergeReminders(content: string, rules: readonly AgentRule[], skills: readonly ReadSkill[]): string {
+  const additions = [agentRuleReminder(rules), skillReminder(skills)].filter((value): value is string => value !== undefined);
   return additions.length === 0 ? content : `${content}\n\n${additions.join("\n\n")}`;
 }
 
@@ -313,7 +313,7 @@ export function createReadTool(
     ? resourceAccessor.get(redactedReadExecutorResource)
     : resourceAccessor.get(readExecutorResource);
   const minimal = options.useMinimalHarness === true;
-  if (!["dsv3-1018", "dsv3-1205", "gpt5-codex", "codex-cloud", "cursor-0226", "latest", "haiku"].includes(promptVersion) && !minimal) throw new Error(`Unhandled version: ${promptVersion}`);
+  if (!["dsv3-1018", "dsv3-1205", "gpt5-codex", "codex-cloud", "simeon-0226", "latest", "haiku"].includes(promptVersion) && !minimal) throw new Error(`Unhandled version: ${promptVersion}`);
   const includeLineNumbersArg = options.enableLineNumbersArg === true;
   const sparse = formattingOptions.useSparseReadLineNumbers === true;
   const schema = minimal ? z.object({ path: z.string().describe("The absolute path of the image to view.") }) : parametersSchema(promptVersion, includeLineNumbersArg, options.enableNegativeOffset === true, sparse);
@@ -421,7 +421,7 @@ export function createReadTool(
       const resolvedPath = result.result.value.path;
       meta.stateHandler?.recordReadPath?.(safeString(resolvedPath));
       meta.stepReadPathDedup?.add(resolvedPath);
-      const relatedRules = (meta.cursorRules ?? []).filter(rule => rule.fullPath !== undefined && normalizeComparablePath(rule.fullPath) === normalizeComparablePath(resolvedPath));
+      const relatedRules = (meta.agentRules ?? []).filter(rule => rule.fullPath !== undefined && normalizeComparablePath(rule.fullPath) === normalizeComparablePath(resolvedPath));
       result.result.value.relatedCursorRules = relatedRules;
       result.result.value.relatedCursorRulePaths = relatedRules.flatMap(rule => rule.fullPath === undefined ? [] : [rule.fullPath]);
       const eligibleSkills = filterByAgentEnvironment(Array.from(meta.agentSkills ?? []), meta.stateHandler?.agentType);

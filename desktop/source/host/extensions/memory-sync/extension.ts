@@ -21,7 +21,7 @@ import type { DebouncePolicy } from "../../../internal/scheduling.js";
 import { createRealDebouncePolicy } from "../../../internal/scheduling.js";
 import { defineHostExtension, type HostExtensionContext } from "../../../internal/host-extensions.js";
 import { HOST_LOG_PREFIX, logHostLine } from "../../../shared/host-log.js";
-import { getConfiguredBackendUrl } from "../../../shared/node/cursor-token.js";
+import { getConfiguredBackendUrl } from "../../../shared/node/simeon-token.js";
 import { getSandRootDir } from "../../host-paths.js";
 import { WatchedDirectory } from "../../watched-directory.js";
 import { HostExtensions } from "../extension-ids.generated.js";

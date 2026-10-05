@@ -18,7 +18,7 @@ export function sandStatsigNetworkOverride(url: string, args: RequestInit, fetch
 export function extractStatsigUser(config: string): Record<string, unknown> { const parsed = JSON.parse(config) as { user?: unknown }; return typeof parsed.user === "object" && parsed.user != null && !Array.isArray(parsed.user) ? parsed.user as Record<string, unknown> : {}; }
 export function readStatsigBootstrapUserId(config: string): string | null { try { const user = extractStatsigUser(config); return typeof user.userID === "string" ? user.userID : null; } catch (error) { reportExperimentsDiagnostic({ kind: "bootstrap_config_unparseable", errorClass: errorLogTag(error) }); return null; } }
 
-export function createCursorChecksum(machineId: string, now = Date.now()): string {
+export function createClientChecksum(machineId: string, now = Date.now()): string {
   const unixKiloSeconds = Math.floor(now / 1e6);
   const bytes = new Uint8Array([unixKiloSeconds >> 40 & 255, unixKiloSeconds >> 32 & 255, unixKiloSeconds >> 24 & 255, unixKiloSeconds >> 16 & 255, unixKiloSeconds >> 8 & 255, unixKiloSeconds & 255]);
   let lastByte = 165; for (let index = 0; index < bytes.length; index += 1) { const current = bytes[index] ?? 0; bytes[index] = (current ^ lastByte) + index % 256; lastByte = bytes[index] ?? 0; }
@@ -33,7 +33,7 @@ export async function fetchStatsigBootstrap(options: {
 }): Promise<{ config?: string; retryAfterMs?: number }> {
   const accessToken = await options.getAccessToken({ backendUrl: options.backendUrl }).catch((error) => { reportExperimentsDiagnostic({ kind: "bootstrap_anonymous", errorClass: errorLogTag(error) }); return undefined; });
   const machineId = await options.getMachineId();
-  const headers = new Headers({ "content-type": "application/json", "x-cursor-checksum": createCursorChecksum(machineId), ...getSandBackendClientHeaders(options.env), "x-ghost-mode": "true", "x-request-id": randomUUID() });
+  const headers = new Headers({ "content-type": "application/json", "x-simeon-checksum": createClientChecksum(machineId), ...getSandBackendClientHeaders(options.env), "x-ghost-mode": "true", "x-request-id": randomUUID() });
   if (accessToken != null) headers.set("authorization", `Bearer ${accessToken}`);
   applyLocalCliModeHeader(headers, options.env ?? process.env);
   return options.deadline.run(async (signal) => {

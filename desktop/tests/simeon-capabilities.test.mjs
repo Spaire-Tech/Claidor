@@ -27,7 +27,7 @@ function jsonResponse(body, status = 200) {
 }
 
 test("every Simeon door lives under /desktop/api/proxy/v1", async () => {
-  const loaded = await loadModule("source/shared/node/cursor-backend/simeon-api.ts", "simeon-api");
+  const loaded = await loadModule("source/shared/node/simeon-backend/simeon-api.ts", "simeon-api");
   try {
     const { simeonProxyBaseUrl, simeonProxyUrl, SIMEON_PROXY_PREFIX } = loaded.module;
     assert.equal(SIMEON_PROXY_PREFIX, "desktop/api/proxy/v1");
@@ -107,7 +107,7 @@ test("web fetch reads the page on this machine and never calls Simeon", async ()
 });
 
 test("image generation posts to Simeon and maps a 402 to the tool's restricted error", async () => {
-  const loaded = await loadModule("source/shared/node/cursor-backend/simeon-generate-image.ts", "simeon-generate-image");
+  const loaded = await loadModule("source/shared/node/simeon-backend/simeon-generate-image.ts", "simeon-generate-image");
   const requests = [];
   try {
     const { createSimeonGenerateImageService, imageSizeForAspectRatio, SandGenerateImageModelRestrictedError } = loaded.module;
@@ -197,7 +197,7 @@ test("transcription posts the clip as multipart and never talks protobuf", async
     const source = await import("node:fs/promises").then((fs) => fs.readFile(path.join(repoRoot, "source/electron-main/account/simeon-transcribe.ts"), "utf8"));
     assert.equal(source.includes("from \"../../packages/proto/generated/aiserver"), false);
     assert.equal(source.includes("TranscribeAudioRequest"), false);
-    assert.equal(source.includes("createSandCursorBackendClient"), false);
+    assert.equal(source.includes("createSimeonBackendClient"), false);
     assert.match(source, /audio\/transcriptions/);
   } finally {
     await loaded.dispose();

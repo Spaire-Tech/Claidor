@@ -14,15 +14,15 @@ import {
   fetchAccountMcpServers,
   fetchEffectiveUserPlugins,
   type AccountMcpDependencies,
-} from "../../../shared/node/cursor-backend/account-mcp.js";
+} from "../../../shared/node/simeon-backend/account-mcp.js";
 import {
   createDashboardSandBackendMcpExec,
   type DashboardMcpExecClient,
-} from "../../../shared/node/cursor-backend/backend-mcp-exec.js";
+} from "../../../shared/node/simeon-backend/backend-mcp-exec.js";
 import {
-  createSandCursorBackendClient,
+  createSimeonBackendClient,
   getSandInferenceBackendUrl,
-} from "../../../shared/node/cursor-backend/cursor-inference.js";
+} from "../../../shared/node/simeon-backend/simeon-inference.js";
 import { SandMcpManager } from "../../../shared/node/mcp/mcp-manager.js";
 import {
   createMcpToolsDiscovery,
@@ -258,10 +258,10 @@ export class McpHostService {
       getBackendUrl: getSandInferenceBackendUrl,
       rootDir: getSandRootDir,
     };
-    const cursorBackendMcpExec = createDashboardSandBackendMcpExec({
+    const simeonBackendMcpExec = createDashboardSandBackendMcpExec({
       getAccessToken: accountMcpDeps.getAccessToken,
       getMachineId: accountMcpDeps.getMachineId,
-      createClient: (credentials) => createSandCursorBackendClient(DashboardService, {
+      createClient: (credentials) => createSimeonBackendClient(DashboardService, {
         getAccessToken: (options) => credentials.getAccessToken({ backendUrl: options.backendUrl }),
         getMachineId: credentials.getMachineId,
       }) as unknown as DashboardMcpExecClient,
@@ -272,7 +272,7 @@ export class McpHostService {
     // The sign-in starts here too, for the window on the web, and comes
     // back through the server's hosted callback (4 October 2026); the Mac's
     // window starts its own, on its loopback.
-    const accountBackendMcpExec = createAccountMcpBackendExec({ rootDir: getSandRootDir, fallback: cursorBackendMcpExec, canStartAuth: true, log: deps.log });
+    const accountBackendMcpExec = createAccountMcpBackendExec({ rootDir: getSandRootDir, fallback: simeonBackendMcpExec, canStartAuth: true, log: deps.log });
     // Vendor connectors are served here, in the box, from the credential
     // store (`vendor-mcp/backend-exec.ts`): the Mac's sign-ins arrive by
     // sync, the web's finish here, and each side refreshes its own.

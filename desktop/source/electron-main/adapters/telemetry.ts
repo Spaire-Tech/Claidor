@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import { AnalyticsService } from "../../packages/proto/generated/aiserver/v1/analytics_connect.js";
-import { createSandCursorBackendClient } from "../../shared/node/cursor-backend/cursor-inference.js";
+import { createSimeonBackendClient } from "../../shared/node/simeon-backend/simeon-inference.js";
 import { getSandClientVersion } from "../../shared/node/sand-client-metadata.js";
 import { SandDesktopStructuredLogTelemetry, type DesktopStructuredLogTelemetryOptions } from "../telemetry/desktop-structured-log-telemetry.js";
 import { createDesktopStructuredLogAccessTokenResolver } from "../telemetry/desktop-structured-log-telemetry.js";
@@ -30,14 +30,14 @@ function completeTelemetryOptions(options: ProductionTelemetryOptions): DesktopS
   const currentAccountSlot = options.currentAccountSlot ?? (() => options.accountSlot);
   const createClient = options.createClient ?? (getAccessToken === undefined || getMachineId === undefined
     ? undefined
-    : () => createSandCursorBackendClient(AnalyticsService, {
+    : () => createSimeonBackendClient(AnalyticsService, {
       getAccessToken: createDesktopStructuredLogAccessTokenResolver({ getAccessToken: (request) => getAccessToken(request as { readonly backendUrl: string }), currentAccountSlot }),
       getMachineId,
       ...(options.onRequestId === undefined ? {} : { onRequestId: options.onRequestId }),
     }));
   const createAnonymousClient = options.createAnonymousClient ?? (getMachineId === undefined
     ? undefined
-    : () => createSandCursorBackendClient(AnalyticsService, { authMode: "anonymous", getAccessToken: async () => "", getMachineId }));
+    : () => createSimeonBackendClient(AnalyticsService, { authMode: "anonymous", getAccessToken: async () => "", getMachineId }));
   if (createClient === undefined) throw new TypeError("Missing Electron production adapter port: telemetry.createClient");
   if (createAnonymousClient === undefined) throw new TypeError("Missing Electron production adapter port: telemetry.createAnonymousClient");
   return {

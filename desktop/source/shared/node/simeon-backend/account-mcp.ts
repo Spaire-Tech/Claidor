@@ -11,7 +11,7 @@
 
 import { createLocalAccountMcpClient } from "../account-mcp/local-client.js";
 import { parseAccountMcpServerConfigValue, type McpConfig, type McpRemoteConfig, type McpServerConfig } from "../account-mcp/store.js";
-import { accountCacheScope } from "../cursor-token.js";
+import { accountCacheScope } from "../simeon-token.js";
 
 export type { McpConfig, McpRemoteConfig, McpServerConfig, McpStdioConfig } from "../account-mcp/store.js";
 

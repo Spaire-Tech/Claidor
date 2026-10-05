@@ -1,4 +1,4 @@
-import { getConfiguredBackendUrl } from "../cursor-token.js";
+import { getConfiguredBackendUrl } from "../simeon-token.js";
 
 // Simeon's metered doors for the desktop app, all under one prefix on the
 // API host: the model proxy (`/responses`, `/messages`, `/chat/completions`),

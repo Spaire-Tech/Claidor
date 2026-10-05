@@ -78,7 +78,7 @@ import {
 } from "./sand-activity.js";
 import { connectorCardEmissionToMessage } from "./runner/tools/box-help-tool.js";
 import type { FlightSearchAnswer } from "./runner/tools/flight-search-tool.js";
-import { simeonApiData } from "../shared/node/cursor-backend/simeon-api.js";
+import { simeonApiData } from "../shared/node/simeon-backend/simeon-api.js";
 import { createRepeatSendGuard } from "./runner/repeat-send-guard.js";
 import { createAgentPromptSession } from "./extensions/inference/extension.js";
 import { connectorManifests } from "../shared/channels.js";
@@ -186,7 +186,7 @@ import type {
 import type {
   SubagentAdapterArgs,
 } from "./runner/agent-adapters.js";
-import type { CursorRule } from "../packages/proto/generated/agent/v1/cursor_rules_pb.js";
+import type { CursorRule as AgentRule } from "../packages/proto/generated/agent/v1/cursor_rules_pb.js";
 import { HOST_LOG_PREFIX, logHostLine } from "../shared/host-log.js";
 import { configuredSimeonModel } from "./extensions/inference/provider-session.js";
 
@@ -438,7 +438,7 @@ interface PromptRequestContext {
     readonly transcriptsFolder?: string;
     readonly userFullName?: string;
   };
-  resolveRules(): Promise<CursorRule[] | undefined>;
+  resolveRules(): Promise<AgentRule[] | undefined>;
 }
 
 function asTransferBox(value: unknown): TransferBox | undefined {
@@ -1178,7 +1178,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
       // provider's folder (the Mac's `hello` frame), never the box's. Until
       // 25 September 2026 this read the box's folder, and the Mac's daemon
       // refused every wait with "Path is outside the allowed local-exec
-      // root … /root/.cursor/projects/workspace/terminals/<id>.txt"
+      // root … /root/.simeon/projects/workspace/terminals/<id>.txt"
       // (the founder's log, that evening).
       const getLocalTerminalsFolder = method(localExec.box as DynamicApi, "terminalsFolder");
       const getTerminalsFolder = getLocalTerminalsFolder ?? method(remoteBox, "getTerminalsFolder");

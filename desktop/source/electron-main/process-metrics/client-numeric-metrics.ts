@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { AiService } from "../../packages/proto/simeon/v1/services.js";
 import { ClientNumericMetric } from "../../packages/proto/generated/aiserver/v1/aiserver_pb.js";
-import { createSandCursorBackendClient } from "../../shared/node/cursor-backend/cursor-inference.js";
+import { createSimeonBackendClient } from "../../shared/node/simeon-backend/simeon-inference.js";
 import { reportDesktopEdgeFailure } from "../desktop-edge-failures.js";
 
 const MAX_PENDING_METRICS = 1_000;
@@ -19,7 +19,7 @@ export class SandClientNumericMetricsManager {
     readonly clientVersion: string;
     readonly clientForTesting?: { reportClientNumericMetrics(request: unknown): Promise<unknown> };
     readonly createClient?: () => { reportClientNumericMetrics(request: unknown): Promise<unknown> };
-    readonly getCursorAccessToken?: (options: { readonly backendUrl: string }) => Promise<string>;
+    readonly getAccountAccessToken?: (options: { readonly backendUrl: string }) => Promise<string>;
     readonly getMachineId?: () => Promise<string> | string;
     readonly onRequestId?: (requestId: string) => void;
     readonly createMetric?: (sample: NumericMetricSample & { readonly clientVersion: string; readonly sessionId: string; readonly os: NodeJS.Platform; readonly timestampMsBigInt: bigint }) => unknown;
@@ -48,9 +48,9 @@ export class SandClientNumericMetricsManager {
   private getClient() {
     if (this.options.clientForTesting != null) return this.options.clientForTesting;
     this.client ??= this.options.createClient?.() ?? (
-      this.options.getCursorAccessToken !== undefined && this.options.getMachineId !== undefined
-        ? createSandCursorBackendClient(AiService, {
-            getAccessToken: this.options.getCursorAccessToken,
+      this.options.getAccountAccessToken !== undefined && this.options.getMachineId !== undefined
+        ? createSimeonBackendClient(AiService, {
+            getAccessToken: this.options.getAccountAccessToken,
             getMachineId: this.options.getMachineId,
             ...(this.options.onRequestId === undefined ? {} : { onRequestId: this.options.onRequestId }),
           }) as unknown as { reportClientNumericMetrics(request: unknown): Promise<unknown> }

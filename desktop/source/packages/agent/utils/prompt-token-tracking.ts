@@ -2,11 +2,11 @@ import { PrivacyCapability } from "../../redaction/classification.js";
 import { fromRedactedLsDirectoryTreeNode } from "../../redacted-protos/generated/agent/v1/ls_exec_redacted.js";
 import type { Context } from "../../context/core.js";
 import type { AgentSkill } from "../../proto/generated/agent/v1/agent_skills_pb.js";
-import type { CursorRule } from "../../proto/generated/agent/v1/cursor_rules_pb.js";
+import type { CursorRule as AgentRule } from "../../proto/generated/agent/v1/cursor_rules_pb.js";
 import { renderManuallyAttachedSkillsSection } from "../context-processing-manual-skills.js";
 import { resolveSelectedContextSkillSections, type SelectedContextSkillInput } from "../context-processing-selected-context.js";
 import { buildAvailableSkillsPromptSection } from "../prompts/user-info-available-skills.js";
-import { categorizeCursorRules } from "../prompts/user-info-rule-categorization.js";
+import { categorizeAgentRules } from "../prompts/user-info-rule-categorization.js";
 import { renderContent } from "../../prompt-jsx/render.js";
 import type { PromptNode } from "../../prompt-jsx/jsx-runtime.js";
 import { getAgentEventTracker } from "./event-tracking.js";
@@ -42,7 +42,7 @@ interface McpPromptTrackingOptions {
 }
 
 interface McpPromptTrackingRequestContext {
-  readonly rules: CursorRule[];
+  readonly rules: AgentRule[];
   readonly agentSkills?: AgentSkill[] | undefined;
   readonly env?: { readonly workspacePaths?: readonly string[] | undefined } | undefined;
   readonly mcpMetaToolOptions?: McpPromptTrackingOptions | undefined;
@@ -92,20 +92,20 @@ interface SelectedContextSkillValueLike {
   readonly marketplaceId?: unknown;
 }
 
-interface SelectedContextCursorRuleValueLike {
+interface SelectedContextAgentRuleValueLike {
   readonly rule?: SelectedContextSkillValueLike;
 }
 
 interface SelectedContextSkillNormalizationInput {
   readonly selectedSkills?: readonly SelectedContextSkillValueLike[];
-  readonly cursorRules?: readonly SelectedContextCursorRuleValueLike[];
+  readonly agentRules?: readonly SelectedContextAgentRuleValueLike[];
 }
 
 interface PromptTokenTrackingDisplayOptions {
   readonly agentType?: AgentType | undefined;
   readonly computerUseSubagentSurface?: boolean | undefined;
   readonly displaySkills?: boolean | undefined;
-  readonly displayCursorRules?: boolean | undefined;
+  readonly displayAgentRules?: boolean | undefined;
 }
 
 interface PromptTokenTrackingFeatureFlags {
@@ -288,7 +288,7 @@ function normalizeSelectedContextSkillInput(
     readonly plugin: string | undefined;
     readonly marketplace: string | undefined;
   }>;
-  readonly cursorRules: Array<{
+  readonly agentRules: Array<{
     readonly rule: {
       readonly fullPath: string | undefined;
       readonly content: string | undefined;
@@ -303,10 +303,10 @@ function normalizeSelectedContextSkillInput(
       plugin: unwrapMaybeRedactedString(skill.plugin),
       marketplace: unwrapMaybeRedactedString(skill.marketplace),
     })),
-    cursorRules: (selectedContextWithSkills.cursorRules ?? []).map((cursorRule) => ({
-      rule: cursorRule.rule === void 0 ? void 0 : {
-        fullPath: unwrapMaybeRedactedString(cursorRule.rule.fullPath),
-        content: unwrapMaybeRedactedString(cursorRule.rule.content),
+    agentRules: (selectedContextWithSkills.agentRules ?? []).map((agentRule) => ({
+      rule: agentRule.rule === void 0 ? void 0 : {
+        fullPath: unwrapMaybeRedactedString(agentRule.rule.fullPath),
+        content: unwrapMaybeRedactedString(agentRule.rule.content),
       },
     })),
   };
@@ -326,14 +326,14 @@ function renderSection(section: PromptNode): string {
   return renderContent(section);
 }
 
-function countCursorRuleTokens(params: {
-  readonly rules: CursorRule[];
+function countAgentRuleTokens(params: {
+  readonly rules: AgentRule[];
   readonly requestContext: McpPromptTrackingRequestContext;
   readonly userInfoDisplayOptions: PromptTokenTrackingDisplayOptions | undefined;
 }): { readonly ruleTokens: number; readonly ruleCount: number } {
   let ruleTokens = 0;
   const workspacePaths = params.requestContext.env?.workspacePaths ?? [];
-  const { globalRules, agentRequestableRules, userRules } = categorizeCursorRules(params.rules, workspacePaths, params.userInfoDisplayOptions?.agentType);
+  const { globalRules, agentRequestableRules, userRules } = categorizeAgentRules(params.rules, workspacePaths, params.userInfoDisplayOptions?.agentType);
   const promptRules = [...globalRules, ...agentRequestableRules, ...userRules];
   const ruleCount = promptRules.length;
   for (const rule of promptRules) {
@@ -354,7 +354,7 @@ function countAvailableSkillPromptUsage(params: {
   readonly stateHandler: { lastSkillCatalogBudgetStrategy?: string | undefined } | undefined;
 }): { readonly availableSkillTokens: number; readonly availableSkillCount: number } {
   const { section, skillCount, renderedEstimatedTokens, uncappedEstimatedTokens, omittedSkillCount, strategy } = buildAvailableSkillsPromptSection({
-    cursorRules: params.requestContext.rules,
+    agentRules: params.requestContext.rules,
     agentSkills: params.requestContext.agentSkills,
     displayOptions: params.userInfoDisplayOptions,
     env: params.requestContext.env,
@@ -391,7 +391,7 @@ export function trackPromptTokenUsage(params: PromptTokenTrackingParams): void {
   const { ctx, mcpTools, requestContext, messages, selectedContext, userInfoDisplayOptions, readToolName, invocationId, agentTokenLimit, modelInfo, featureFlags, stateHandler } = params;
   const { mcpToolTokens, mcpToolCount } = countMcpToolDefinitionTokens(mcpTools);
   const { mcpEnabled, discoveryMode, serverCount } = getMcpPromptTrackingContext(requestContext);
-  const { ruleTokens, ruleCount } = countCursorRuleTokens({
+  const { ruleTokens, ruleCount } = countAgentRuleTokens({
     rules: requestContext.rules,
     requestContext,
     userInfoDisplayOptions,

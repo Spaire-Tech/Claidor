@@ -227,7 +227,7 @@ test("the server's own sentence reaches the card when targets or a publish fail;
 });
 
 test("an inline plugin's files are written to disk and its skills land in the manifest", async () => {
-  const { module, dispose } = await load("source/packages/cursor-plugins/inline-plugin-synthesizer.ts", "inline-synth");
+  const { module, dispose } = await load("source/packages/plugins/inline-plugin-synthesizer.ts", "inline-synth");
   const targetDir = await mkdtemp(path.join(os.tmpdir(), "simeon-inline-plugin-"));
   try {
     await module.synthesizeInlinePluginDir({ targetDir, pluginName: "meeting-notes", inlineContentJson: JSON.stringify({ files: [

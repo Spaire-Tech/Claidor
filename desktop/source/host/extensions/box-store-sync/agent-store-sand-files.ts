@@ -9,7 +9,7 @@ import { BcsAgentStoreTransport } from "../../../packages/agent-store-sync/bcs-t
 import { AGENT_STORE_SYNC_CLIENT_CONFIG_DEFAULTS } from "../../../packages/agent-store-sync/sync-client-config.js";
 import { TokenCachingAgentStoreClient } from "../../../packages/agent-store-sync/token-caching-client.js";
 import { normalizeS3Etag } from "../../../packages/agent-store-sync/etag.js";
-import { createSandBackendTransport, getSandInferenceBackendUrl } from "../../../shared/node/cursor-backend/cursor-inference.js";
+import { createSandBackendTransport, getSandInferenceBackendUrl } from "../../../shared/node/simeon-backend/simeon-inference.js";
 import { sha256Hex } from "../../sha256.js";
 import { reportBoxStoreDiagnostic } from "./box-store-diagnostics.js";
 import { SandBoxStoreSyncError } from "./box-store-sync-error.js";

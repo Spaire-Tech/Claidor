@@ -30,7 +30,7 @@ interface ParsedPendingMessage {
   readonly role: string;
   readonly content: unknown;
   readonly providerOptions?: {
-    readonly cursor?: {
+    readonly simeon?: {
       readonly pendingToolCallStartedAtMs?: unknown;
       readonly highLevelToolCallResult?: unknown;
     } | undefined;
@@ -44,10 +44,10 @@ type RedactedInterruptedResolutions = {
 
 function getPendingToolCallElapsedMs(message: {
   readonly providerOptions?: {
-    readonly cursor?: { readonly pendingToolCallStartedAtMs?: unknown } | undefined;
+    readonly simeon?: { readonly pendingToolCallStartedAtMs?: unknown } | undefined;
   } | undefined;
 }): number | undefined {
-  const startedAtMs = message.providerOptions?.cursor?.pendingToolCallStartedAtMs;
+  const startedAtMs = message.providerOptions?.simeon?.pendingToolCallStartedAtMs;
   if (typeof startedAtMs !== "number" || !Number.isFinite(startedAtMs)) return undefined;
   return Math.max(0, Date.now() - startedAtMs);
 }
@@ -180,7 +180,7 @@ export function buildInterruptedPendingToolCallMessages(
         role: "tool",
         content: toolResults,
         providerOptions: {
-          cursor: {
+          simeon: {
             highLevelToolCallResult: {
               output: toolResults.map(result => result.result),
               isError: rawErrorMessages.length > 0,

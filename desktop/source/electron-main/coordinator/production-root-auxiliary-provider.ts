@@ -5,7 +5,7 @@ import {
   isSandAgentModelSelection,
   resolveComputerUseModelSelection,
 } from "../../shared/agents/sand-agent-model.js";
-import { getSandRpcTraceWindowTraceparent } from "../../shared/node/cursor-backend/rpc-tracing.js";
+import { getSandRpcTraceWindowTraceparent } from "../../shared/node/simeon-backend/rpc-tracing.js";
 import type {
   ProductionCoordinatorAuthStatus,
   ProductionCoordinatorPorts,

@@ -11,16 +11,16 @@ const avatarRequestDeadline = createDeadlinePolicy(realClock, {
 });
 const avatarDataUrlCache = new Map<string, string>();
 
-export interface CursorAuthIdentity { readonly provider: string; readonly subject: string }
+export interface AccountAuthIdentity { readonly provider: string; readonly subject: string }
 
-export function parseCursorAuthIdentity(authId: string): CursorAuthIdentity | null {
+export function parseAccountAuthIdentity(authId: string): AccountAuthIdentity | null {
   const separatorIndex = authId.indexOf("|");
   if (separatorIndex <= 0 || separatorIndex >= authId.length - 1) return null;
   return { provider: authId.slice(0, separatorIndex), subject: authId.slice(separatorIndex + 1) };
 }
 
 export function githubAvatarUrlForAuthId(authId: string): string | null {
-  const identity = parseCursorAuthIdentity(authId);
+  const identity = parseAccountAuthIdentity(authId);
   if (identity == null || identity.provider !== "github" || !/^[0-9]+$/.test(identity.subject)) return null;
   const url = new URL(`https://${GITHUB_AVATAR_HOST}/u/${identity.subject}`);
   url.searchParams.set("v", "4");
@@ -60,7 +60,7 @@ async function fetchHttpsAvatarDataUrl(rawUrl: string, fetchImpl: typeof fetch):
   try { return await fetchAvatarDataUrl(parsed.toString(), fetchImpl); } catch { return null; }
 }
 
-export async function resolveCursorAvatarDataUrl(
+export async function resolveAccountAvatarDataUrl(
   authId: string | null | undefined,
   options: { readonly fetchImpl?: typeof fetch; readonly preferredUrl?: string } = {},
 ): Promise<string | null> {
@@ -84,4 +84,4 @@ export async function resolveCursorAvatarDataUrl(
   } catch { return null; }
 }
 
-export function clearCursorAvatarCacheForTesting(): void { avatarDataUrlCache.clear(); }
+export function clearAccountAvatarCacheForTesting(): void { avatarDataUrlCache.clear(); }

@@ -24,7 +24,7 @@ const logger = createLogger("@sand/agent:summarize");
 function summarizedConversationCharCount(messages: readonly Any[]): number {
   let total = 0;
   for (const message of messages) {
-    if (message.role !== "user" || message.providerOptions?.cursor?.isSummary !== true) continue;
+    if (message.role !== "user" || message.providerOptions?.simeon?.isSummary !== true) continue;
     total += extractTextContent(message).length;
   }
   return total;
@@ -115,7 +115,7 @@ export class SummarizeActionHandler {
         {
           role: "system",
           content: this.config.systemPromptGenerator({
-            cursorRules: [],
+            agentRules: [],
             mode: stateHandler.mode ?? AgentMode.AGENT,
           }, toolSetHandle),
         },

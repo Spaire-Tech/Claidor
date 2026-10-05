@@ -2,7 +2,7 @@ import { isConnectServed } from "../../cloud-agents-availability.js";
 import { LogEventCompressionMode, StatsigClient, type StatsigUser } from "@statsig/js-client";
 import { createDeadlinePolicy, createPollingPolicy, DeadlineExceededError, realClock, type PollingPolicy } from "../../../internal/scheduling.js";
 import { errorLogTag } from "../../errors.js";
-import { getConfiguredBackendUrl } from "../cursor-token.js";
+import { getConfiguredBackendUrl } from "../simeon-token.js";
 import { DYNAMIC_CONFIGS, EXPERIMENTS, FLAGS, type DynamicConfigName, type ExperimentName, type FeatureFlagName } from "./experiment-config.gen.js";
 import { SandFeatureFlagOverrideStore, isFlagName } from "./feature-flag-overrides.js";
 import { MutableGateProperty } from "./gate-property.js";
@@ -42,7 +42,7 @@ export class SandExperimentService {
   hasLiveStatsigBootstrap(): boolean { return this.hasLiveNetworkBootstrap; }
   getFlagsAgeMs(): number | undefined { return this.flagsFetchedAtMs == null ? undefined : Math.max(0, Date.now() - this.flagsFetchedAtMs); }
   canUseFeatureFlagOverrides(): boolean { return this.options.isDevBuild === true || this.isStaffUser; }
-  setIsAnysphereUser(value: boolean): void { if (this.isStaffUser === value) return; const before = this.canUseFeatureFlagOverrides(); this.isStaffUser = value; const after = this.canUseFeatureFlagOverrides(); if (before === after) return; if (after) this.overrideStore.hydrateFromDisk(); else this.overrideStore.clearAll(); this.refreshSnapshot(); }
+  setIsStaffUser(value: boolean): void { if (this.isStaffUser === value) return; const before = this.canUseFeatureFlagOverrides(); this.isStaffUser = value; const after = this.canUseFeatureFlagOverrides(); if (before === after) return; if (after) this.overrideStore.hydrateFromDisk(); else this.overrideStore.clearAll(); this.refreshSnapshot(); }
   getFeatureFlagOverrides(): Map<FeatureFlagName, boolean> { return this.overrideStore.activeOverrides(); }
   setFeatureFlagOverride(name: string, value: boolean): void { if (this.canUseFeatureFlagOverrides() && this.overrideStore.set(name, value)) this.persistAndBroadcastOverrides(); }
   clearFeatureFlagOverride(name: FeatureFlagName): void { if (this.canUseFeatureFlagOverrides() && this.overrideStore.clear(name)) this.persistAndBroadcastOverrides(); }

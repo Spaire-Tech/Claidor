@@ -1,7 +1,7 @@
 import { AgentMode } from "../../proto/generated/agent/v1/agent_pb.js";
 import type { BackgroundComposerSource } from "../../proto/generated/aiserver/v1/background_composer_pb.js";
 import type { AgentSkill } from "../../proto/generated/agent/v1/agent_skills_pb.js";
-import type { CursorRule } from "../../proto/generated/agent/v1/cursor_rules_pb.js";
+import type { CursorRule as AgentRule } from "../../proto/generated/agent/v1/cursor_rules_pb.js";
 import type { GitRepoInfo, RequestContextEnv } from "../../proto/generated/agent/v1/request_context_exec_pb.js";
 import type { McpDescriptor, McpFileSystemOptions, McpInstructions } from "../../proto/generated/agent/v1/mcp_pb.js";
 import { jsx as promptJsx, jsxs as promptJsxs, Fragment } from "../../prompt-jsx/jsx-runtime.js";
@@ -23,7 +23,7 @@ import { resolveMetaAgentNotesDirectory } from "./user-info-notes.js";
 import { UserInfoSection } from "./user-info-section.js";
 import { getFriendlyDateForTimeZone } from "./user-info-date.js";
 import { buildRulesPromptSection } from "./user-info-composer2-rules.js";
-import { categorizeCursorRules } from "./user-info-rule-categorization.js";
+import { categorizeAgentRules } from "./user-info-rule-categorization.js";
 import { getDsv3McpFileSystemInstructions } from "../utils/mcp-file-system.js";
 
 const jsx = (type: unknown, props: PromptProps) => promptJsx(type as never, props);
@@ -54,7 +54,7 @@ interface UserInfoDisplayOptions {
   readonly displayGitRepoStatusLine?: boolean | undefined;
   readonly displayGitStatus?: boolean | undefined;
   readonly excludeAgentTranscripts?: boolean | undefined;
-  readonly displayCursorRules?: boolean | undefined;
+  readonly displayAgentRules?: boolean | undefined;
   readonly displaySkills?: boolean | undefined;
   readonly computerUseSubagentSurface?: boolean | undefined;
   readonly agentType?: AgentType | undefined;
@@ -75,7 +75,7 @@ interface UserInfoFeatureFlags {
   readonly enableComposer2CustomUserRules?: boolean | undefined;
   readonly enableMatterhornPromptTweaks?: boolean | undefined;
   readonly enableGrepBroadGlobGuard?: boolean | undefined;
-  readonly grokCloudTestingInSystemPrompt?: boolean | undefined;
+  readonly cloudTestingInSystemPrompt?: boolean | undefined;
   readonly [key: string]: unknown;
 }
 
@@ -92,7 +92,7 @@ interface UserInfoMcpMetaToolOptions {
 }
 
 export interface UserInfoProps {
-  readonly cursorRules: CursorRule[];
+  readonly agentRules: AgentRule[];
   readonly agentSkills?: AgentSkill[] | undefined;
   readonly env?: RequestContextEnv | undefined;
   readonly dsv3?: boolean | undefined;
@@ -147,7 +147,7 @@ function UserInfoComponent({ props }: { readonly props: UserInfoProps }): Prompt
   const hasGitRepos = gitRepos.length > 0;
   const gitRepoInfoComplete = props.gitRepoInfoComplete;
   const workspacePaths = props.env?.workspacePaths ?? [];
-  const { globalRules, agentRequestableRules, userRules, skills } = categorizeCursorRules(props.cursorRules, workspacePaths, props.displayOptions?.agentType);
+  const { globalRules, agentRequestableRules, userRules, skills } = categorizeAgentRules(props.agentRules, workspacePaths, props.displayOptions?.agentType);
   const readToolName = props.toolInfo?.allTools?.READ?.name;
   const awaitToolName = props.toolInfo?.allTools?.AWAIT?.name;
   const shellToolName = props.toolInfo?.allTools?.SHELL?.name;

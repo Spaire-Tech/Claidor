@@ -1,7 +1,7 @@
 import { createRealIdleWatchdogPolicy, createRealRetryPolicy } from "../../../internal/scheduling.js";
 import { defineHostExtension } from "../../../internal/host-extensions.js";
 import { errorLogTag } from "../../../shared/errors.js";
-import { getConfiguredBackendUrl } from "../../../shared/node/cursor-token.js";
+import { getConfiguredBackendUrl } from "../../../shared/node/simeon-token.js";
 import { HostExtensions } from "../extension-ids.generated.js";
 import { SandNotifyBusClient, SAND_NOTIFY_TOPICS, type SandNotifyTopic } from "./notify-bus-client.js";
 

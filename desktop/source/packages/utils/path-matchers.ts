@@ -12,7 +12,7 @@ function matchProjectSubdir(value: string, targetDir: string): { workspaceId: st
 }
 
 export const isAgentTranscriptPath = (value: string): boolean => matchProjectSubdir(value, "agent-transcripts") !== null;
-export const isCursorTerminalsDirectory = (value: string): boolean => {
+export const isBoxTerminalsDirectory = (value: string): boolean => {
   const match = matchProjectSubdir(value, "terminals");
   return match !== null && match.remainingPath.length === 0;
 };

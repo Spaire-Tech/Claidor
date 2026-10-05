@@ -1,14 +1,14 @@
 import { readdirSync, rmSync } from "node:fs";
 import { join, resolve, sep } from "node:path";
-import { getPluginInstallCachePath } from "../../../packages/cursor-plugins/cursor-marketplace.js";
-import { DefaultPluginCacheManager } from "../../../packages/cursor-plugins/cursor-marketplace.js";
-import { createBackendMarketplaceClient, normalizeEffectiveUserPluginsResponse } from "../../../packages/cursor-plugins/backend-marketplace-client.js";
-import { classifyCloneError } from "../../../packages/cursor-plugins/marketplace-cache.js";
-import { buildOriginTokenGitConfig } from "../../../packages/cursor-plugins/origin-git-auth.js";
-import { loadFromMarketplaceSource } from "../../../packages/cursor-plugins/loader.js";
+import { getPluginInstallCachePath } from "../../../packages/plugins/marketplace.js";
+import { DefaultPluginCacheManager } from "../../../packages/plugins/marketplace.js";
+import { createBackendMarketplaceClient, normalizeEffectiveUserPluginsResponse } from "../../../packages/plugins/backend-marketplace-client.js";
+import { classifyCloneError } from "../../../packages/plugins/marketplace-cache.js";
+import { buildOriginTokenGitConfig } from "../../../packages/plugins/origin-git-auth.js";
+import { loadFromMarketplaceSource } from "../../../packages/plugins/loader.js";
 import { DashboardService } from "../../../packages/proto/simeon/v1/services.js";
 import { GetEffectiveUserPluginsRequest, GetMeRequest } from "../../../packages/proto/generated/aiserver/v1/dashboard_pb.js";
-import { createSandCursorBackendClient, getSandInferenceBackendUrl } from "../../../shared/node/cursor-backend/cursor-inference.js";
+import { createSimeonBackendClient, getSandInferenceBackendUrl } from "../../../shared/node/simeon-backend/simeon-inference.js";
 import { HOST_LOG_PREFIX, clipForHostLog, logHostLine } from "../../../shared/host-log.js";
 import { clampWorkflowDescription, clampWorkflowName, slugifyWorkflowName } from "../../../shared/workflow-model.js";
 import { getPluginSkillsDir, getPluginsRootDir, readPluginSkillsCache, writePluginSkillsCache, type PluginAuthBlock, type PluginSkillRecord, type PluginSkillsCache } from "./plugin-skills-cache.js";
@@ -20,7 +20,7 @@ export function skillRecordsIdentity(records: readonly PluginSkillRecord[]): str
 export function toPluginSkillInfo(record: PluginSkillRecord): { pluginId: string; pluginName: string; name: string; description: string } { return { pluginId: record.pluginId, pluginName: record.pluginName, name: record.name, description: record.description }; }
 export function skillNameFromPath(relativePath: string): string { const segments = relativePath.split("/").filter(Boolean), fileIndex = segments.length - 1; return segments[fileIndex - 1] ?? segments[fileIndex] ?? ""; }
 export function pluginVersionOf(identifier: PluginIdentifier): string { return typeof identifier.sourceInfo.version === "string" ? identifier.sourceInfo.version : ""; }
-function getPluginDbId(identifier: PluginIdentifier): string | undefined { return identifier.source === "cursor-first-party" || identifier.source === "cursor-third-party" ? identifier.sourceInfo.pluginDbId : undefined; }
+function getPluginDbId(identifier: PluginIdentifier): string | undefined { return identifier.source === "simeon-first-party" || identifier.source === "cursor-third-party" ? identifier.sourceInfo.pluginDbId : undefined; }
 export function pluginContentsToSkillRecords(plugins: readonly InstalledPlugin[], publisherFacts: ReadonlyMap<string, PublisherFacts> = new Map()): PluginSkillRecord[] {
   const records: PluginSkillRecord[] = [], usedIds = new Set<string>();
   for (const plugin of plugins) { if (plugin.loadError != null || plugin.installPath.length === 0) continue; const pluginId = getPluginDbId(plugin.identifier); if (!pluginId) continue; const pluginName = plugin.displayName != null && plugin.displayName.length > 0 ? plugin.displayName : plugin.identifier.sourceInfo.name; for (const skill of plugin.skills) { const name = clampWorkflowName(skill.name != null && skill.name.length > 0 ? skill.name : skillNameFromPath(skill.path)); if (!name) continue; const slug = slugifyWorkflowName(name); let id = `plugin-${pluginId}-${slug}`; for (let suffix = 2; usedIds.has(id); suffix++) id = `plugin-${pluginId}-${slug}-${suffix}`; usedIds.add(id); records.push({ id, pluginId, pluginName, name, description: clampWorkflowDescription(skill.description ?? ""), filePath: resolve(plugin.installPath, skill.path), pluginVersion: pluginVersionOf(plugin.identifier), installPath: plugin.installPath, skillRelativePath: skill.path, publisherUserId: publisherFacts.get(pluginId)?.publisherUserId ?? null, marketplaceTeamId: publisherFacts.get(pluginId)?.marketplaceTeamId ?? null }); } }
@@ -53,7 +53,7 @@ export interface SharedInstalledPluginsLoaderDeps {
 }
 export function createSharedInstalledPluginsLoader(deps: SharedInstalledPluginsLoaderDeps): () => Promise<LoadedPlugins> {
   const pluginsRoot = getPluginsRootDir(deps.sandRootDir);
-  const dashboard = deps.dashboardForTesting ?? createSandCursorBackendClient(DashboardService, {
+  const dashboard = deps.dashboardForTesting ?? createSimeonBackendClient(DashboardService, {
     getAccessToken: async () => await deps.auth.getAccessToken({ backendUrl: getSandInferenceBackendUrl() }),
     getMachineId: deps.auth.getMachineId
   }) as unknown as {

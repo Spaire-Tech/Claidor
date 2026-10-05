@@ -4,7 +4,7 @@
  * host-main.cjs:554845-554859 and 555129-555134.
  */
 import path from "node:path";
-import type { CursorRule } from "../../proto/generated/agent/v1/cursor_rules_pb.js";
+import type { CursorRule as AgentRule } from "../../proto/generated/agent/v1/cursor_rules_pb.js";
 import { jsx, jsxs } from "../../prompt-jsx/jsx-runtime.js";
 import type { PromptNode } from "../../prompt-jsx/jsx-runtime.js";
 import { normalizeToUnixPath } from "../../utils/path-utils.js";
@@ -26,7 +26,7 @@ function getRuleDir(mdcPath: string): string {
   return literalRuleDir;
 }
 
-function getAgentRequestableRuleDescription(rule: CursorRule, ruleDir: string): string | undefined {
+function getAgentRequestableRuleDescription(rule: AgentRule, ruleDir: string): string | undefined {
   if (rule.type?.type.case === "fileGlobbed") {
     const globPattern = rule.type.type.value.globs.join(", ");
     return `${getFirstNonEmptyLine(rule.content ?? "")}, glob pattern(s) for applicable files: ${globPattern}`;
@@ -40,7 +40,7 @@ function getAgentRequestableRuleDescription(rule: CursorRule, ruleDir: string): 
   return undefined;
 }
 
-function AlwaysAppliedWorkspaceRulesSection({ globalRules }: { readonly globalRules: readonly CursorRule[] }): PromptNode {
+function AlwaysAppliedWorkspaceRulesSection({ globalRules }: { readonly globalRules: readonly AgentRule[] }): PromptNode {
   return jsx("section", {
     title: "always_applied_workspace_rules",
     description: "These are workspace-level rules that the agent must always follow.",
@@ -60,7 +60,7 @@ function AgentRequestableWorkspaceRulesSection({
   agentRequestableRules,
   readToolName,
 }: {
-  readonly agentRequestableRules: readonly CursorRule[];
+  readonly agentRequestableRules: readonly AgentRule[];
   readonly readToolName?: string | undefined;
 }): PromptNode {
   const description = readToolName
@@ -81,7 +81,7 @@ function UserRulesSection({
   userRules,
   composer2CustomUserRules = [],
 }: {
-  readonly userRules: readonly CursorRule[];
+  readonly userRules: readonly AgentRule[];
   readonly composer2CustomUserRules?: readonly string[];
 }): PromptNode {
   return jsxs("section", {
@@ -101,9 +101,9 @@ export function RulesSection({
   readToolName,
   composer2CustomUserRules = [],
 }: {
-  readonly globalRules: readonly CursorRule[];
-  readonly agentRequestableRules: readonly CursorRule[];
-  readonly userRules: readonly CursorRule[];
+  readonly globalRules: readonly AgentRule[];
+  readonly agentRequestableRules: readonly AgentRule[];
+  readonly userRules: readonly AgentRule[];
   readonly readToolName?: string | undefined;
   readonly composer2CustomUserRules?: readonly string[];
 }): PromptNode {

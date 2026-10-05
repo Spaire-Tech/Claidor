@@ -9,7 +9,7 @@ import {
   GetSlackUserSettingsRequest,
   type GetSlackUserSettingsResponse
 } from "../../../packages/proto/generated/aiserver/v1/dashboard_pb.js";
-import { createSandCursorBackendClient } from "../../../shared/node/cursor-backend/cursor-inference.js";
+import { createSimeonBackendClient } from "../../../shared/node/simeon-backend/simeon-inference.js";
 import { LISTENERS_COMING_SOON_SENTENCE, isListenerRelayServed } from "../../../shared/listener-availability.js";
 import { connectorManifests } from "../../../shared/channels.js";
 // The upstream app sent "Connect" to the upstream site There is
@@ -42,7 +42,7 @@ export function createListenerIntegrationReads(deps: { readonly auth?: { getAcce
         readonly getSlackInstallUrl: MethodInfoUnary<GetSlackInstallUrlRequest, GetSlackInstallUrlResponse>;
       };
     };
-    const client = createSandCursorBackendClient(service, { getAccessToken: deps.auth.getAccessToken, getMachineId: deps.auth.getMachineId });
+    const client = createSimeonBackendClient(service, { getAccessToken: deps.auth.getAccessToken, getMachineId: deps.auth.getMachineId });
     return {
       getSlackUserSettings: () => client.getSlackUserSettings(new GetSlackUserSettingsRequest({})),
       getScmConnectionStatus: () => client.getScmConnectionStatus(new GetScmConnectionStatusRequest({})),

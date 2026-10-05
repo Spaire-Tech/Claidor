@@ -10,7 +10,7 @@ import type { RequestContextResources } from "../../utils/request-context.js";
 import { createSpan } from "../../../context/otel.js";
 import { createLogger } from "../../../context/logger.js";
 import { ProactiveSummarizationThresholdError, InputTokenLimitError, OutputTokensLimitExceededError } from "../../../chat-inference/prompt-executor.js";
-import { PermissionsFileProvider } from "../../../cursor-config/permissions-file-provider.js";
+import { PermissionsFileProvider } from "../../../simeon-config/permissions-file-provider.js";
 import { createCounter, createHistogram } from "../../../metrics/index.js";
 import { DataClassification, PrivacyCapability } from "../../../redaction/classification.js";
 import { fromRedactedCoreMessages, toRedactedCoreMessages, type CoreMessageLike } from "../../../redaction/core-message.js";
@@ -50,7 +50,7 @@ import { EVAL_ENFORCED_WAIT_FOR_SUMMARIZATION_COMPLETION } from "../../utils/ove
 import { trackPromptTokenUsage } from "../../utils/prompt-token-tracking.js";
 import { getAgentEventTracker } from "../../utils/event-tracking.js";
 import { requestPromptSuggestion } from "../../prompt-suggestion/prompt-suggestion-handler.js";
-import { getAutoRoutingReasonFromContext, getClientVersionMetricTagsFromContext, getIsAnysphereTeamFromContext, getIsAutoFromContext, getIsDevFromContext, getIsPremiumFromContext, getIsSubagentFromContext, getIsUserApiKeyFromContext, getRequestId, getSdkFlavorMetricTagFromContext } from "../../utils/request-id.js";
+import { getAutoRoutingReasonFromContext, getClientVersionMetricTagsFromContext, getIsStaffTeamFromContext, getIsAutoFromContext, getIsDevFromContext, getIsPremiumFromContext, getIsSubagentFromContext, getIsUserApiKeyFromContext, getRequestId, getSdkFlavorMetricTagFromContext } from "../../utils/request-id.js";
 import { smartModeAutoRunInstructionsFromProtos } from "../../utils/smart-mode-permissions-instructions.js";
 import { isGoalContinuationNotificationMessage, isNotificationOnlyUserMessage } from "./synthetic-user-message.js";
 import { warnIfLongTrailingUserMessageRun } from "./user-message-run-warning.js";
@@ -522,11 +522,11 @@ function trailingToolBatchHasFailure(messages: readonly CoreMessageLike[]): bool
     }
     const highLevelResult = (
       message.providerOptions as {
-        readonly cursor?: {
+        readonly simeon?: {
           readonly highLevelToolCallResult?: { readonly isError?: unknown };
         };
       } | undefined
-    )?.cursor?.highLevelToolCallResult;
+    )?.simeon?.highLevelToolCallResult;
     if (highLevelResult?.isError !== false) {
       return true;
     }
@@ -674,7 +674,7 @@ const agentTurnResult = createCounter("agent.turn.result", {
     "newConversation",
     "isauto",
     "ispremium",
-    "isanysphereteam",
+    "isstaffteam",
     "isuserapikey",
     "issubagent",
     "autoroutingreason",
@@ -873,7 +873,7 @@ interface UserMessageActionHandlerConfigLike {
   readonly messageHistoryModifier?: ((messages: CoreMessageLike[]) => CoreMessageLike[] | undefined) | undefined;
   readonly systemPromptGenerator: (args: {
     readonly requestContext: RequestContext;
-    readonly cursorRules: ReturnType<typeof getAllRules>;
+    readonly agentRules: ReturnType<typeof getAllRules>;
     readonly env: unknown;
     readonly browserTools: readonly string[];
     readonly cloudRule: unknown;
@@ -1981,7 +1981,7 @@ export class AbstractUserMessageActionHandler {
             workspacePaths: requestContext.env?.workspacePaths,
             userAutoRunInstructions,
             projectAutoRunInstructions,
-            cursorRules: getAllRules(requestContext, this.config.nonFileRules, this.config.featureFlags),
+            agentRules: getAllRules(requestContext, this.config.nonFileRules, this.config.featureFlags),
             agentSkills: requestContext.agentSkills ?? [],
             contextInjectionSignal: this.conversationActionReceiver.getContextInjectionToolSignal?.(),
           },
@@ -2072,7 +2072,7 @@ export class AbstractUserMessageActionHandler {
               workspacePaths: requestContext.env?.workspacePaths,
               userAutoRunInstructions,
               projectAutoRunInstructions,
-              cursorRules: getAllRules(requestContext, this.config.nonFileRules, this.config.featureFlags),
+              agentRules: getAllRules(requestContext, this.config.nonFileRules, this.config.featureFlags),
               agentSkills: requestContext.agentSkills ?? [],
             },
             automationTriggerContext: this.getAutomationTriggerContext(rootPromptExecutor.getMessages()),
@@ -2880,7 +2880,7 @@ export class AbstractUserMessageActionHandler {
         newConversation: hadPreviousAssistantMessage ? "false" : "true",
         isauto: getIsAutoFromContext(ctx) ? "true" : "false",
         ispremium: getIsPremiumFromContext(ctx) ? "true" : "false",
-        isanysphereteam: getIsAnysphereTeamFromContext(ctx) ? "true" : "false",
+        isstaffteam: getIsStaffTeamFromContext(ctx) ? "true" : "false",
         isuserapikey: getIsUserApiKeyFromContext(ctx) ? "true" : "false",
         issubagent: getIsSubagentFromContext(ctx) ? "true" : "false",
         autoroutingreason: getAutoRoutingReasonFromContext(ctx),
@@ -2949,7 +2949,7 @@ export class AbstractUserMessageActionHandler {
       const turnDuration = performance.now() - turnStartTime;
       agentTurnDuration.histogram(ctx, turnDuration);
       const outcome = ctx.signal.aborted ? "aborted" : "error";
-      agentTurnResult.increment(ctx, 1, { outcome, newConversation: hadPreviousAssistantMessage ? "false" : "true", isauto: getIsAutoFromContext(ctx) ? "true" : "false", ispremium: getIsPremiumFromContext(ctx) ? "true" : "false", isanysphereteam: getIsAnysphereTeamFromContext(ctx) ? "true" : "false", isuserapikey: getIsUserApiKeyFromContext(ctx) ? "true" : "false", issubagent: getIsSubagentFromContext(ctx) ? "true" : "false", autoroutingreason: getAutoRoutingReasonFromContext(ctx) });
+      agentTurnResult.increment(ctx, 1, { outcome, newConversation: hadPreviousAssistantMessage ? "false" : "true", isauto: getIsAutoFromContext(ctx) ? "true" : "false", ispremium: getIsPremiumFromContext(ctx) ? "true" : "false", isstaffteam: getIsStaffTeamFromContext(ctx) ? "true" : "false", isuserapikey: getIsUserApiKeyFromContext(ctx) ? "true" : "false", issubagent: getIsSubagentFromContext(ctx) ? "true" : "false", autoroutingreason: getAutoRoutingReasonFromContext(ctx) });
       await this.interactionListener.sendUpdate(ctx, RedactedUpdates.stepCompleted(stateHandler.getPrivacyMode(), turn.steps.length, Math.round(turnDuration)));
       agentToolCallsPerTurn.histogram(ctx, totalToolCallsInTurn, { outcome, ...getClientVersionMetricTagsFromContext(ctx), ...getSdkFlavorMetricTagFromContext(ctx), "user.is_dev": getIsDevFromContext(ctx) ? "true" : "false" });
       const modelName = this.config.modelId ?? "unknown";
@@ -3275,7 +3275,7 @@ export class AbstractUserMessageActionHandler {
       workspacePaths: requestContext.env?.workspacePaths,
       userAutoRunInstructions,
       projectAutoRunInstructions,
-      cursorRules: getAllRules(requestContext, this.config.nonFileRules, this.config.featureFlags),
+      agentRules: getAllRules(requestContext, this.config.nonFileRules, this.config.featureFlags),
       agentSkills: requestContext.agentSkills ?? [],
       contextInjectionSignal: this.conversationActionReceiver.getContextInjectionToolSignal?.(),
     };
@@ -3438,7 +3438,7 @@ export class AbstractUserMessageActionHandler {
           role: "system",
           content: this.config.systemPromptGenerator({
             requestContext,
-            cursorRules: getAllRules(requestContext, this.config.nonFileRules, this.config.featureFlags),
+            agentRules: getAllRules(requestContext, this.config.nonFileRules, this.config.featureFlags),
             env: requestContext.env,
             browserTools: getBrowserToolNames(mcpTools as Parameters<typeof getBrowserToolNames>[0]),
             cloudRule: requestContext.cloudRule,
@@ -3581,7 +3581,7 @@ export class AbstractUserMessageActionHandler {
       workspacePaths: requestContext.env?.workspacePaths,
       userAutoRunInstructions,
       projectAutoRunInstructions,
-      cursorRules: getAllRules(requestContext, this.config.nonFileRules, this.config.featureFlags),
+      agentRules: getAllRules(requestContext, this.config.nonFileRules, this.config.featureFlags),
       agentSkills: requestContext.agentSkills ?? [],
       contextInjectionSignal: this.conversationActionReceiver.getContextInjectionToolSignal?.(),
     };
@@ -4021,7 +4021,7 @@ export class AbstractUserMessageActionHandler {
           workspacePaths: requestContext.env?.workspacePaths,
           userAutoRunInstructions: await this.getUserPermissionsFileAutoRunInstructions(ctx, requestContext),
           projectAutoRunInstructions: this.getProjectPermissionsFileAutoRunInstructions(requestContext),
-          cursorRules: getAllRules(requestContext, this.config.nonFileRules, this.config.featureFlags),
+          agentRules: getAllRules(requestContext, this.config.nonFileRules, this.config.featureFlags),
           agentSkills: requestContext.agentSkills ?? [],
         },
         automationTriggerContext: this.getAutomationTriggerContext(rootPromptExecutor.getMessages()),

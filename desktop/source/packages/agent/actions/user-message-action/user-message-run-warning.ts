@@ -2,7 +2,7 @@ import type { Context } from "../../../context/core.js";
 import { createLogger } from "../../../context/logger.js";
 import { isSyntheticUserMessage } from "./synthetic-user-message.js";
 
-interface CursorProviderOptions {
+interface SimeonProviderOptions {
   readonly isSummary?: boolean;
   readonly messageId?: string;
   readonly requestId?: string;
@@ -11,16 +11,16 @@ interface CursorProviderOptions {
 interface Message {
   readonly role: string;
   readonly content?: unknown;
-  readonly providerOptions?: { readonly cursor?: CursorProviderOptions };
+  readonly providerOptions?: { readonly simeon?: SimeonProviderOptions };
 }
 
 const logger = createLogger("@sand/agent");
 const CONSECUTIVE_USER_MESSAGE_WARNING_THRESHOLD = 3;
 const TAIL_INSPECTION_WINDOW = 12;
 
-function extractCursorProviderOptions(message: Message): CursorProviderOptions | undefined {
+function extractSimeonProviderOptions(message: Message): SimeonProviderOptions | undefined {
   const providerOptions = message.providerOptions;
-  return providerOptions?.cursor;
+  return providerOptions?.simeon;
 }
 
 export function warnIfLongTrailingUserMessageRun(
@@ -58,7 +58,7 @@ export function warnIfLongTrailingUserMessageRun(
   const tailCursorMessageIds: string[] = [];
   const tailCursorRequestIds: string[] = [];
   for (const message of tailMessages) {
-    const cursor = extractCursorProviderOptions(message);
+    const cursor = extractSimeonProviderOptions(message);
     if (cursor?.messageId !== undefined) {
       tailCursorMessageIds.push(cursor.messageId);
     }

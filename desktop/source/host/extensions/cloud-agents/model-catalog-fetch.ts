@@ -1,7 +1,7 @@
 import { AiService } from "../../../packages/proto/simeon/v1/services.js";
 import { AvailableModelsRequest, AvailableModelsScope } from "../../../packages/proto/generated/aiserver/v1/aiserver_pb.js";
 import { mapAvailableModels, type SandModelCatalogEntry } from "../../../shared/agents/model-catalog.js";
-import { createSandCursorBackendClient } from "../../../shared/node/cursor-backend/cursor-inference.js";
+import { createSimeonBackendClient } from "../../../shared/node/simeon-backend/simeon-inference.js";
 
 export interface FetchSandModelCatalogOptions {
   readonly getAccessToken: (options: { readonly backendUrl: string }) => Promise<string>;
@@ -12,7 +12,7 @@ export interface FetchSandModelCatalogOptions {
 export async function fetchSandModelCatalog(
   options: FetchSandModelCatalogOptions,
 ): Promise<SandModelCatalogEntry[]> {
-  const client = createSandCursorBackendClient(AiService, options);
+  const client = createSimeonBackendClient(AiService, options);
   const response = await client.availableModels(
     new AvailableModelsRequest({
       useModelParameters: true,

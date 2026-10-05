@@ -173,7 +173,7 @@ export function createDesktopPreloadBridge(options: {
       // The thumbs on a finished call's card in the chat (2 October 2026).
       rateCall: (conversationId: string, like: boolean | null) => edge("rateVoiceCall", { conversationId, like }),
     },
-    // The window reads `desktop.account` (its own bytes said cursorAccount;
+    // The window reads `desktop.account` (its own bytes said accountService;
     // the renderer patch renames it with the rest of the upstream's tokens,
     // Track B of the detachment plan, 4 October 2026).
     account: {

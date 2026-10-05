@@ -3,7 +3,7 @@ import { defineHostExtension } from "../../../internal/host-extensions.js";
 import { getSandRootDir } from "../../host-paths.js";
 import { resolveMultitaskEnabled } from "../../sand-multitask.js";
 import { resolveSpotlightEnabled } from "../../../shared/sand-spotlight.js";
-import { SandExperimentService } from "../../../shared/node/experiments/cursor-experiments.js";
+import { SandExperimentService } from "../../../shared/node/experiments/simeon-experiments.js";
 import { HostExtensions } from "../extension-ids.generated.js";
 
 interface AuthApi { getAccessToken(options: { backendUrl: string }): Promise<string>; getMachineId(): Promise<string>; peekAccessToken(): string | null; subscribeToRenewal(listener: (event: { outcome: string; isFirstCredential: boolean }) => void): () => void; }

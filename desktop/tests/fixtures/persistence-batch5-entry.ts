@@ -3,4 +3,4 @@
 // driven offline on a temp directory or a local HTTP server.
 export { SandSettingsStore } from "../../source/shared/node/settings/sand-settings-store.js";
 export { SandConnectorSecretStore } from "../../source/host/extensions/session/connector-secret-store.js";
-export { pollAuthenticationStatus } from "../../source/packages/cursor-config/auth/login.js";
+export { pollAuthenticationStatus } from "../../source/packages/simeon-config/auth/login.js";

@@ -31,7 +31,7 @@ import { detectImageMimeType } from "./tools/core/read/image-utils.js";
 import { renderAgentNotesContext } from "./context-processing-agent-notes.js";
 import { renderSelectedCodeSelections } from "./context-processing-code-selection-renderer.js";
 import { renderConsoleLogsContext } from "./context-processing-console-logs.js";
-import { renderSelectedCursorCommands } from "./context-processing-cursor-commands.js";
+import { renderSelectedAgentCommands } from "./context-processing-commands.js";
 import { processSelectedDocumentAttachment } from "./context-processing-document.js";
 import { hydrateSelectedDocumentation, type DocumentationHydrationService } from "./context-processing-documentation-hydration.js";
 import { renderDocumentationContext, type DocumentationResult } from "./context-processing-documentation.js";
@@ -68,7 +68,7 @@ interface ImagePart {
   readonly type: "image";
   readonly image: Uint8Array | string | URL;
   readonly mimeType: string;
-  readonly providerOptions?: { readonly cursor: { readonly mimeType?: string; readonly videoFps?: number } };
+  readonly providerOptions?: { readonly simeon: { readonly mimeType?: string; readonly videoFps?: number } };
 }
 type UserContentPart = TextPart | ImagePart;
 
@@ -285,14 +285,14 @@ export async function processSelectedContext(
         type: "image",
         image: new URL(result.videoUrl),
         mimeType: result.mimeType,
-        providerOptions: { cursor: { mimeType: result.mimeType, ...(result.fps === undefined ? {} : { videoFps: result.fps }) } },
+        providerOptions: { simeon: { mimeType: result.mimeType, ...(result.fps === undefined ? {} : { videoFps: result.fps }) } },
       });
     } else if (result.videoData) {
       userContent.push({
         type: "image",
         image: `data:${result.mimeType};base64,${Buffer.from(result.videoData).toString("base64")}`,
         mimeType: result.mimeType,
-        ...(result.fps === undefined ? {} : { providerOptions: { cursor: { videoFps: result.fps } } }),
+        ...(result.fps === undefined ? {} : { providerOptions: { simeon: { videoFps: result.fps } } }),
       });
     }
   }

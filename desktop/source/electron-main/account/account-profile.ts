@@ -1,9 +1,9 @@
 import { isConnectServed } from "../../shared/cloud-agents-availability.js";
 import { PrivacyMode } from "../../shared/observability/sentry-privacy-mode.js";
 import { DASHBOARD_SERVICE_NAME, DashboardService } from "../../packages/proto/simeon/v1/services.js";
-import { createSandCursorBackendClient } from "../../shared/node/cursor-backend/cursor-inference.js";
-import { simeonApiData } from "../../shared/node/cursor-backend/simeon-api.js";
-import { getOrCreateMachineId } from "./cursor-machine-id.js";
+import { createSimeonBackendClient } from "../../shared/node/simeon-backend/simeon-inference.js";
+import { simeonApiData } from "../../shared/node/simeon-backend/simeon-api.js";
+import { getOrCreateMachineId } from "./machine-id.js";
 import { persistAccountDisplayName, readLocalAccountDisplayName } from "./account-display-name.js";
 export { ACCOUNT_DISPLAY_NAME_FILE, isUnimplementedProfileError, persistAccountDisplayName, readLocalAccountDisplayName, writeLocalAccountDisplayName } from "./account-display-name.js";
 
@@ -37,7 +37,7 @@ export interface SandUsageStatus {
   readonly upgradeRecommendation?: { readonly disabled: boolean; readonly cta?: DashboardButton };
 }
 export interface WeeklyUsage { readonly percentUsed: number; readonly nextResetMs: number | null; readonly hasNonZeroIncludedLimit: boolean; readonly onDemand: { readonly usedCents: number; readonly limitCents: number } | null }
-export interface CursorProfile { readonly displayName: string | undefined; readonly email: string | undefined; readonly profilePictureUrl: string | undefined; readonly isStaffUser: boolean }
+export interface AccountProfile { readonly displayName: string | undefined; readonly email: string | undefined; readonly profilePictureUrl: string | undefined; readonly isStaffUser: boolean }
 export interface DashboardClient {
   getMe(request: object, options: { timeoutMs: number }): Promise<{ firstName?: string; lastName?: string; email?: string; profilePictureUrl?: string }>;
   getTeams(request: object, options: { timeoutMs: number }): Promise<TeamsResponse>;
@@ -50,7 +50,7 @@ export interface DashboardClient {
   cancelSandTrial(request: object, options: { timeoutMs: number }): Promise<unknown>;
   clientAction(request: { action: string; args: Readonly<Record<string, string>> }, options: { timeoutMs: number }): Promise<{ success: boolean; infoMessage?: string; errorMessage?: string }>;
 }
-export interface CursorProfileDeps {
+export interface AccountProfileDeps {
   readonly createClient?: (getAccessToken: AccessTokenReader) => DashboardClient;
   readonly getMachineId?: () => Promise<string>;
   readonly reportFailure?: (area: string, leg: string, error: unknown) => void;
@@ -67,12 +67,12 @@ export interface CursorProfileDeps {
 //
 // Until 24 September 2026 the profile came from `DashboardService/GetMe` +
 // `GetTeams` and the usage from `GetSandUsageStatus` + `GetCurrentPeriodUsage`,
-// four upstream Connect RPCs that Simeon Labs' server never served. `fetchCursorProfile`
+// four upstream Connect RPCs that Simeon Labs' server never served. `fetchAccountProfile`
 // swallowed the failure and answered null (or the locally stored name with
 // no e-mail and no picture), so the account menu showed "Simeon user" with
 // no avatar; `fetchSandWeeklyUsage` answered null so the header never showed
 // usage. The renderer still calls the same edge methods and reads the same
-// shapes (`CursorProfile`, `WeeklyUsage`, the usage summary of
+// shapes (`AccountProfile`, `WeeklyUsage`, the usage summary of
 // `buildSandUsageSummary`); only where the numbers come from changed:
 // `GET /desktop/api/user/profile` (`service.py`, `user_payload`) and
 // `GET /desktop/api/user/quota` (`quota`). `profile-summary` repeats the
@@ -109,20 +109,20 @@ export interface SimeonQuotaRow {
   readonly periodEnd?: string;
 }
 
-function simeonAuth(getAccessToken: AccessTokenReader, deps: CursorProfileDeps) {
+function simeonAuth(getAccessToken: AccessTokenReader, deps: AccountProfileDeps) {
   return { getAccessToken: () => getAccessToken(), ...(deps.backendUrl === undefined ? {} : { backendUrl: deps.backendUrl }) };
 }
-async function readSimeonProfile(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<SimeonProfileRow> {
+async function readSimeonProfile(getAccessToken: AccessTokenReader, deps: AccountProfileDeps): Promise<SimeonProfileRow> {
   return await simeonApiData<SimeonProfileRow>(simeonAuth(getAccessToken, deps), SIMEON_PROFILE_PATH, { method: "GET", ...(deps.fetch === undefined ? {} : { fetch: deps.fetch }) });
 }
-export async function readSimeonQuota(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<SimeonQuotaRow> {
+export async function readSimeonQuota(getAccessToken: AccessTokenReader, deps: AccountProfileDeps): Promise<SimeonQuotaRow> {
   return await simeonApiData<SimeonQuotaRow>(simeonAuth(getAccessToken, deps), SIMEON_QUOTA_PATH, { method: "GET", ...(deps.fetch === undefined ? {} : { fetch: deps.fetch }) });
 }
 
 function finiteOrNull(value: unknown): number | null { return typeof value === "number" && Number.isFinite(value) ? value : null; }
 function isoToMs(value: unknown): number | null { if (typeof value !== "string" || value.length === 0) return null; const ms = Date.parse(value); return Number.isFinite(ms) && ms > 0 ? ms : null; }
 
-export function cursorProfileFromSimeon(row: SimeonProfileRow, localName: string | undefined): CursorProfile {
+export function accountProfileFromSimeon(row: SimeonProfileRow, localName: string | undefined): AccountProfile {
   const avatar = typeof row.avatarUrl === "string" ? nonEmpty(row.avatarUrl) : undefined;
   return {
     displayName: localName ?? nonEmpty(row.preferredName) ?? nonEmpty(row.name) ?? nonEmpty(row.nickname),
@@ -162,9 +162,9 @@ export function usageSummaryFromSimeonQuota(quota: SimeonQuotaRow): unknown {
   };
 }
 
-function profileClient(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): DashboardClient {
+function profileClient(getAccessToken: AccessTokenReader, deps: AccountProfileDeps): DashboardClient {
   if (deps.createClient != null) return deps.createClient(getAccessToken);
-  return createSandCursorBackendClient(DashboardService, {
+  return createSimeonBackendClient(DashboardService, {
     getAccessToken,
     getMachineId: deps.getMachineId ?? getOrCreateMachineId,
   }) as unknown as DashboardClient;
@@ -218,12 +218,12 @@ export function buildSandUsageSummary(args: { readonly sandStatus: SandUsageStat
 // `cursor-avatar.ts` fetches as `preferredUrl` and hands to the account menu
 // as a data URL. A locally renamed account keeps its local name on top.
 // Until 24 September 2026 this was `GetMe` + `GetTeams` (see above).
-export async function fetchCursorProfile(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<CursorProfile | null> {
+export async function fetchAccountProfile(getAccessToken: AccessTokenReader, deps: AccountProfileDeps): Promise<AccountProfile | null> {
   const localName = readLocalAccountDisplayName();
   try {
-    return cursorProfileFromSimeon(await readSimeonProfile(getAccessToken, deps), localName);
+    return accountProfileFromSimeon(await readSimeonProfile(getAccessToken, deps), localName);
   } catch (error) {
-    deps.reportFailure?.("cursor-profile", "simeon-profile", error);
+    deps.reportFailure?.("account-profile", "simeon-profile", error);
     return localName == null ? null : { displayName: localName, email: undefined, profilePictureUrl: undefined, isStaffUser: false };
   }
 }
@@ -235,12 +235,12 @@ export async function fetchCursorProfile(getAccessToken: AccessTokenReader, deps
 // Since 1 October 2026 the name is the server's (`POST /desktop/api/user/name`):
 // what the person's agents, calls and recaps call them. The local copy stays
 // so the account menu shows it at once.
-export async function updateCursorProfileName(getAccessToken: AccessTokenReader, name: string, deps: CursorProfileDeps): Promise<void> {
+export async function updateAccountProfileName(getAccessToken: AccessTokenReader, name: string, deps: AccountProfileDeps): Promise<void> {
   await persistAccountDisplayName(name, () => saveSimeonPreferredName(getAccessToken, name, deps).then(() => undefined));
 }
 
 export const SIMEON_NAME_PATH = "user/name";
-export async function saveSimeonPreferredName(getAccessToken: AccessTokenReader, name: string, deps: CursorProfileDeps): Promise<SimeonProfileRow> {
+export async function saveSimeonPreferredName(getAccessToken: AccessTokenReader, name: string, deps: AccountProfileDeps): Promise<SimeonProfileRow> {
   return await simeonApiData<SimeonProfileRow>(simeonAuth(getAccessToken, deps), SIMEON_NAME_PATH, { method: "POST", json: { name }, ...(deps.fetch === undefined ? {} : { fetch: deps.fetch }) });
 }
 
@@ -254,29 +254,29 @@ export function namePromptFromSimeon(row: SimeonProfileRow): NamePrompt {
   const preferred = nonEmpty(row.preferredName);
   return { needed: preferred == null, suggested: preferred ?? nonEmpty(row.suggestedName) ?? null };
 }
-export async function fetchNamePrompt(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<NamePrompt> {
+export async function fetchNamePrompt(getAccessToken: AccessTokenReader, deps: AccountProfileDeps): Promise<NamePrompt> {
   return namePromptFromSimeon(await readSimeonProfile(getAccessToken, deps));
 }
 /** The person's name for a voice call: the chosen one, else Google's first name. */
-export async function fetchPersonName(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<string | null> {
+export async function fetchPersonName(getAccessToken: AccessTokenReader, deps: AccountProfileDeps): Promise<string | null> {
   const row = await readSimeonProfile(getAccessToken, deps);
   return nonEmpty(row.preferredName) ?? nonEmpty(row.suggestedName) ?? null;
 }
 // Simeon Labs' proxy trains nothing on anyone; the answer is stated, not
 // fetched from a dashboard RPC that 404s (ledger F-383).
-export async function fetchUserPrivacyMode(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<PrivacyMode | undefined> { if (!isConnectServed(process.env, DASHBOARD_SERVICE_NAME)) return PrivacyMode.NO_TRAINING; try { return (await profileClient(getAccessToken, deps).getUserPrivacyMode({}, { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS })).privacyMode; } catch { return undefined; } }
-export async function fetchUserPrivacyModeEnabled(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<boolean> { return privacyModeEnabledForMode(await fetchUserPrivacyMode(getAccessToken, deps)); }
+export async function fetchUserPrivacyMode(getAccessToken: AccessTokenReader, deps: AccountProfileDeps): Promise<PrivacyMode | undefined> { if (!isConnectServed(process.env, DASHBOARD_SERVICE_NAME)) return PrivacyMode.NO_TRAINING; try { return (await profileClient(getAccessToken, deps).getUserPrivacyMode({}, { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS })).privacyMode; } catch { return undefined; } }
+export async function fetchUserPrivacyModeEnabled(getAccessToken: AccessTokenReader, deps: AccountProfileDeps): Promise<boolean> { return privacyModeEnabledForMode(await fetchUserPrivacyMode(getAccessToken, deps)); }
 // The header's usage, from `GET /desktop/api/user/quota`. Until
 // 24 September 2026 this was `GetSandUsageStatus` + `GetCurrentPeriodUsage`
 // (see above) and always answered null here.
-export async function fetchSandWeeklyUsage(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<WeeklyUsage | null> { try { return weeklyUsageFromSimeonQuota(await readSimeonQuota(getAccessToken, deps)); } catch (error) { deps.reportFailure?.("cursor-usage", "simeon-quota", error); return null; } }
-export async function fetchLocalToolPermissionCeiling(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<"never" | "ask" | "always" | undefined> { if (!isConnectServed(process.env, DASHBOARD_SERVICE_NAME)) return undefined; try { const value = (await profileClient(getAccessToken, deps).getTeamAdminSettingsOrEmptyIfNotInTeam({}, { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS })).localToolControls?.permissionCeiling; const c = deps.localToolPermissionCeilings ?? { never: 1, ask: 2, always: 3 }; return value === c.never ? "never" : value === c.ask ? "ask" : value === c.always ? "always" : undefined; } catch { return undefined; } }
+export async function fetchSandWeeklyUsage(getAccessToken: AccessTokenReader, deps: AccountProfileDeps): Promise<WeeklyUsage | null> { try { return weeklyUsageFromSimeonQuota(await readSimeonQuota(getAccessToken, deps)); } catch (error) { deps.reportFailure?.("account-usage", "simeon-quota", error); return null; } }
+export async function fetchLocalToolPermissionCeiling(getAccessToken: AccessTokenReader, deps: AccountProfileDeps): Promise<"never" | "ask" | "always" | undefined> { if (!isConnectServed(process.env, DASHBOARD_SERVICE_NAME)) return undefined; try { const value = (await profileClient(getAccessToken, deps).getTeamAdminSettingsOrEmptyIfNotInTeam({}, { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS })).localToolControls?.permissionCeiling; const c = deps.localToolPermissionCeilings ?? { never: 1, ask: 2, always: 3 }; return value === c.never ? "never" : value === c.ask ? "ask" : value === c.always ? "always" : undefined; } catch { return undefined; } }
 // Settings → Usage & Billing and the account menu's usage card, from
 // `GET /desktop/api/user/quota`. Until 24 September 2026 this was four
 // Dashboard RPCs (see above) behind the `sand_usage_page` gate, which was
 // off, so the page never showed. A failure is thrown, as before: the
 // renderer's `loadUsageState` turns it into its "failed" state with the
 // server's sentence.
-export async function fetchSandUsageSummary(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<unknown> { return usageSummaryFromSimeonQuota(await readSimeonQuota(getAccessToken, deps)); }
-export async function cancelSandTrial(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<{ ok: boolean; message: string | null }> { try { await profileClient(getAccessToken, deps).cancelSandTrial({}, { timeoutMs: USAGE_REQUEST_TIMEOUT_MS }); return { ok: true, message: null }; } catch (error) { return { ok: false, message: nonEmpty(deps.connectRawMessage?.(error)) ?? null }; } }
-export async function invokeSandDashboardAction(getAccessToken: AccessTokenReader, request: { readonly action: string; readonly args: Readonly<Record<string, string>> }, deps: CursorProfileDeps): Promise<{ ok: boolean; message: string | null }> { const response = await profileClient(getAccessToken, deps).clientAction(request, { timeoutMs: USAGE_REQUEST_TIMEOUT_MS }); return { ok: response.success, message: nonEmpty(response.success ? response.infoMessage : response.errorMessage) ?? null }; }
+export async function fetchSandUsageSummary(getAccessToken: AccessTokenReader, deps: AccountProfileDeps): Promise<unknown> { return usageSummaryFromSimeonQuota(await readSimeonQuota(getAccessToken, deps)); }
+export async function cancelSandTrial(getAccessToken: AccessTokenReader, deps: AccountProfileDeps): Promise<{ ok: boolean; message: string | null }> { try { await profileClient(getAccessToken, deps).cancelSandTrial({}, { timeoutMs: USAGE_REQUEST_TIMEOUT_MS }); return { ok: true, message: null }; } catch (error) { return { ok: false, message: nonEmpty(deps.connectRawMessage?.(error)) ?? null }; } }
+export async function invokeSandDashboardAction(getAccessToken: AccessTokenReader, request: { readonly action: string; readonly args: Readonly<Record<string, string>> }, deps: AccountProfileDeps): Promise<{ ok: boolean; message: string | null }> { const response = await profileClient(getAccessToken, deps).clientAction(request, { timeoutMs: USAGE_REQUEST_TIMEOUT_MS }); return { ok: response.success, message: nonEmpty(response.success ? response.infoMessage : response.errorMessage) ?? null }; }

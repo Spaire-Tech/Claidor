@@ -47,7 +47,7 @@ test("the served services carry Simeon's names and the upstream's methods", asyn
 });
 
 test("a Connect call leaves under Simeon's service name with Simeon's headers", async () => {
-  const loaded = await loadModule("source/shared/node/cursor-backend/cursor-inference.ts", "cursor-inference");
+  const loaded = await loadModule("source/shared/node/simeon-backend/simeon-inference.ts", "simeon-inference");
   const services = await loadModule("source/packages/proto/simeon/v1/services.ts", "services-2");
   try {
     const { createSandInferenceInterceptor } = loaded.module;

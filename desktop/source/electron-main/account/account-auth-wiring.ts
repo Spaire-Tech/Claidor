@@ -1,6 +1,6 @@
 import { createSandAccessReader, readSandAccessOnce, type SandAccess } from "./access.js";
-import { SandCursorAuthService, type AccessTokenReader, type SandAuthStatus, type SandCursorAuthServiceOptions } from "./cursor-auth.js";
-import { fetchCursorProfile, fetchLocalToolPermissionCeiling, fetchNamePrompt, fetchPersonName, fetchUserPrivacyMode, updateCursorProfileName } from "./cursor-profile.js";
+import { SandAccountAuthService, type AccessTokenReader, type SandAuthStatus, type SandAccountAuthServiceOptions } from "./account-auth.js";
+import { fetchAccountProfile, fetchLocalToolPermissionCeiling, fetchNamePrompt, fetchPersonName, fetchUserPrivacyMode, updateAccountProfileName } from "./account-profile.js";
 import { SandTranscriptionManager, type SandTranscriptionOptions } from "./simeon-transcribe.js";
 import { revokeSimeonSession } from "./simeon-sign-out.js";
 import { syncSandSentryAccount } from "../telemetry/sentry.js";
@@ -26,14 +26,14 @@ export interface AuthServicePort {
   devLogin?(options: { readonly tier?: string; readonly email?: string }): Promise<SandAuthStatus>;
 }
 
-export function createCursorAuthWiring(deps: {
+export function createAccountAuthWiring(deps: {
   readonly openExternal: (url: string) => void | Promise<void>;
-  readonly serviceOptions?: Omit<SandCursorAuthServiceOptions, "openExternal">;
-  readonly createAuthService?: (options: SandCursorAuthServiceOptions) => AuthServicePort;
+  readonly serviceOptions?: Omit<SandAccountAuthServiceOptions, "openExternal">;
+  readonly createAuthService?: (options: SandAccountAuthServiceOptions) => AuthServicePort;
   readonly fetchProfile?: (getAccessToken: AccessTokenReader) => Promise<{ readonly email?: string; readonly displayName?: string; readonly profilePictureUrl?: string; readonly isStaffUser: boolean } | null>;
   readonly updateProfileName?: (getAccessToken: AccessTokenReader, name: string) => Promise<void>;
-  readonly revokeSession?: SandCursorAuthServiceOptions["revokeSession"];
-  readonly reportSessionSettlement?: SandCursorAuthServiceOptions["reportSessionSettlement"];
+  readonly revokeSession?: SandAccountAuthServiceOptions["revokeSession"];
+  readonly reportSessionSettlement?: SandAccountAuthServiceOptions["reportSessionSettlement"];
   readonly getAccountRuntime: () => AccountRuntime | null | undefined;
   readonly emitAuthStatus: (status: SandAuthStatus & { readonly freshness: number }) => void;
   readonly sentryEnabled: boolean;
@@ -47,7 +47,7 @@ export function createCursorAuthWiring(deps: {
   readonly syncHostSettingsToBox: (settings: { readonly localToolPermission: string }) => Promise<void>;
   readonly reportFailure?: (domain: string, operation: string, error: unknown) => void;
 }) {
-  let cursorAuthService: AuthServicePort | undefined;
+  let accountAuthService: AuthServicePort | undefined;
   let unsubscribeAuthStatus: (() => void) | undefined;
   let authStatusFreshness = 0;
   let localToolCeilingSyncSeq = 0;
@@ -68,20 +68,20 @@ export function createCursorAuthWiring(deps: {
     catch (error) { deps.reportFailure?.("host-settings", "local-tool-ceiling", error); }
   }
 
-  function deliverCursorAuthStatus(service: AuthServicePort, status: SandAuthStatus): void {
+  function deliverAccountAuthStatus(service: AuthServicePort, status: SandAuthStatus): void {
     authStatusFreshness += 1;
     deps.emitAuthStatus({ ...status, freshness: authStatusFreshness });
     if (deps.sentryEnabled) void syncSentryAccount(status, () => readPrivacyMode((options) => service.getValidAccessToken(options)));
     void syncLocalToolPermissionCeiling(service, status);
   }
 
-  async function ensureCursorAuthService(): Promise<AuthServicePort> {
-    if (cursorAuthService != null) return cursorAuthService;
-    const service = (deps.createAuthService ?? ((options) => new SandCursorAuthService(options)))({
+  async function ensureAccountAuthService(): Promise<AuthServicePort> {
+    if (accountAuthService != null) return accountAuthService;
+    const service = (deps.createAuthService ?? ((options) => new SandAccountAuthService(options)))({
       ...(deps.serviceOptions ?? {}),
       openExternal: deps.openExternal,
       fetchProfile: deps.fetchProfile ?? (async (getAccessToken) => {
-        const profile = await fetchCursorProfile(getAccessToken, {});
+        const profile = await fetchAccountProfile(getAccessToken, {});
         return profile == null ? null : {
           isStaffUser: profile.isStaffUser,
           ...(profile.email === undefined ? {} : { email: profile.email }),
@@ -89,31 +89,31 @@ export function createCursorAuthWiring(deps: {
           ...(profile.profilePictureUrl === undefined ? {} : { profilePictureUrl: profile.profilePictureUrl }),
         };
       }),
-      updateProfileName: deps.updateProfileName ?? ((getAccessToken, name) => updateCursorProfileName(getAccessToken, name, {})),
+      updateProfileName: deps.updateProfileName ?? ((getAccessToken, name) => updateAccountProfileName(getAccessToken, name, {})),
       // Sign-out reaches Simeon Labs' server since 24 September 2026
       // (`simeon-sign-out.ts`); before, only the keychain was emptied.
-      revokeSession: deps.revokeSession ?? ((accessToken) => revokeSimeonSession(accessToken, { reportFailure: (error) => deps.reportFailure?.("cursor-auth", "session-revoke", error) })),
+      revokeSession: deps.revokeSession ?? ((accessToken) => revokeSimeonSession(accessToken, { reportFailure: (error) => deps.reportFailure?.("account-auth", "session-revoke", error) })),
       ...(deps.reportSessionSettlement == null ? {} : { reportSessionSettlement: deps.reportSessionSettlement }),
     });
     unsubscribeAuthStatus = service.subscribe((status) => {
       const runtime = deps.getAccountRuntime();
-      if (runtime == null) deliverCursorAuthStatus(service, status);
+      if (runtime == null) deliverAccountAuthStatus(service, status);
       else runtime.observe(status);
     });
-    cursorAuthService = service;
+    accountAuthService = service;
     if (deps.sentryEnabled) void service.getStatus().then((status) => syncSentryAccount(status, () => readPrivacyMode((options) => service.getValidAccessToken(options))));
     void service.getStatus().then((status) => syncLocalToolPermissionCeiling(service, status));
     return service;
   }
 
   return {
-    ensureCursorAuthService,
-    deliverCursorAuthStatus,
+    ensureAccountAuthService,
+    deliverAccountAuthStatus,
     currentAuthStatusFreshness: () => authStatusFreshness,
     dispose(): void {
       unsubscribeAuthStatus?.();
       unsubscribeAuthStatus = undefined;
-      cursorAuthService = undefined;
+      accountAuthService = undefined;
       localToolCeilingSyncSeq += 1;
     },
   };
@@ -129,8 +129,8 @@ export function parseDashboardActionRequest(request: unknown): DashboardActionRe
   return { action: action as DashboardActionRequest["action"], args: Object.fromEntries(entries) as Record<string, string> };
 }
 
-export function createCursorAccountEdgePort(deps: {
-  readonly ensureCursorAuthService: () => Promise<AuthServicePort>;
+export function createAccountEdgePort(deps: {
+  readonly ensureAccountAuthService: () => Promise<AuthServicePort>;
   readonly currentAuthStatusFreshness: () => number;
   readonly getAccountRuntime: () => AccountRuntime | null | undefined;
   readonly readSandAccess: (getAccessToken: AccessTokenReader) => Promise<SandAccess>;
@@ -149,19 +149,19 @@ export function createCursorAccountEdgePort(deps: {
   let sandAccessReader: Promise<ReturnType<typeof createSandAccessReader>> | undefined;
   const settledStatus = async (getStatus: () => Promise<SandAuthStatus>) => await deps.getAccountRuntime()?.whenIdle() ?? await getStatus();
   const sandAccessDeps = async () => {
-    const service = await deps.ensureCursorAuthService();
+    const service = await deps.ensureAccountAuthService();
     return { getAuthStatus: () => settledStatus(() => service.getStatus()), readAccess: () => deps.readSandAccess((options) => service.getValidAccessToken(options)) };
   };
   const ensureSandAccessReader = async () => {
     sandAccessReader ??= sandAccessDeps().then(createSandAccessReader);
     return await sandAccessReader;
   };
-  const withService = async <T>(operation: (service: AuthServicePort) => Promise<T>): Promise<T> => await operation(await deps.ensureCursorAuthService());
+  const withService = async <T>(operation: (service: AuthServicePort) => Promise<T>): Promise<T> => await operation(await deps.ensureAccountAuthService());
   const tokenReader = (service: AuthServicePort): AccessTokenReader => (options) => service.getValidAccessToken(options);
   return {
     getSandAccess: async () => await (await ensureSandAccessReader()).read(),
     getSandAccessFresh: async () => (await readSandAccessOnce(await sandAccessDeps())).access,
-    getAuthStatus: async () => { const freshness = deps.currentAuthStatusFreshness(); const service = await deps.ensureCursorAuthService(); return { ...await settledStatus(() => service.getStatus()), freshness }; },
+    getAuthStatus: async () => { const freshness = deps.currentAuthStatusFreshness(); const service = await deps.ensureAccountAuthService(); return { ...await settledStatus(() => service.getStatus()), freshness }; },
     login: async () => withService(async (service) => { const result = await service.login(); const settled = await deps.getAccountRuntime()?.whenIdle(); await deps.resetMcpManager(); await deps.refreshHostMcp(); return settled ?? result; }),
     cancelLogin: async () => withService(async (service) => { const result = await service.cancelLogin(); return await deps.getAccountRuntime()?.whenIdle() ?? result; }),
     logout: async () => withService(async (service) => { const result = await service.logout(); return await deps.getAccountRuntime()?.whenIdle() ?? result; }),
@@ -187,14 +187,14 @@ export function createCursorAccountEdgePort(deps: {
 }
 
 export function createTranscriptionManagerEnsure(deps: {
-  readonly ensureCursorAuthService: () => Promise<AuthServicePort>;
+  readonly ensureAccountAuthService: () => Promise<AuthServicePort>;
   readonly getMachineId: () => Promise<string>;
   readonly fetch?: SandTranscriptionOptions["fetch"];
 }) {
   let transcriptionManager: SandTranscriptionManager | undefined;
   return async (): Promise<SandTranscriptionManager> => {
     if (transcriptionManager != null) return transcriptionManager;
-    const authService = await deps.ensureCursorAuthService();
+    const authService = await deps.ensureAccountAuthService();
     transcriptionManager = new SandTranscriptionManager({
       getAccessToken: () => authService.getValidAccessToken(),
       ...(deps.fetch === undefined ? {} : { fetch: deps.fetch }),

@@ -33,7 +33,7 @@ test("the silence nudge waits for 25 calls, fires once per stretch, and asks rat
     const messages = [{ role: "user", content: "find me a flight" }, { role: "assistant", content: [{ type: "tool-call", toolName: "SendMessage" }] }];
     const executor = { getMessages: () => messages, getState: () => messages, clearMessages() {}, appendMessages(m) { messages.push(...(Array.isArray(m) ? m : [m])); }, stream() { return "ok"; } };
     const middleware = module.createSendMessageReminderMiddleware({ earlyResultThreshold: Number.MAX_SAFE_INTEGER })(executor);
-    const nudges = () => messages.filter((m) => m.providerOptions?.cursor?.sandSendMessageReminder === true).length;
+    const nudges = () => messages.filter((m) => m.providerOptions?.simeon?.sandSendMessageReminder === true).length;
     for (let i = 0; i < 25; i += 1) { messages.push(call(), result()); middleware.stream(); }
     assert.equal(nudges(), 0, "25 quiet calls draw no nudge");
     messages.push(call(), result()); middleware.stream();

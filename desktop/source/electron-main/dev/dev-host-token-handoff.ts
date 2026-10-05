@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 
 import { getSandRootDir } from "../../host/host-paths.js";
 import { realClock, type Clock } from "../../internal/scheduling.js";
-import { getConfiguredBackendUrl } from "../../shared/node/cursor-token.js";
+import { getConfiguredBackendUrl } from "../../shared/node/simeon-token.js";
 
 export const REWRITE_INTERVAL_MS = 60_000;
 export interface DevTokenAuthService {

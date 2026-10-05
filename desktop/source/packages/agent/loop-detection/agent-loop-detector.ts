@@ -172,6 +172,6 @@ export function createLoopReminderMessage(options?: { kind?: string }) {
   return {
     role: "user",
     content: reminder,
-    providerOptions: { cursor: { loopReminder: true } },
+    providerOptions: { simeon: { loopReminder: true } },
   };
 }

@@ -4,7 +4,7 @@ import { mdmSignInPolicyHeaders, SignInPolicyViolationError, SIGN_IN_POLICY_VIOL
 import { proxyFetch } from "./proxy-fetch.js";
 
 export interface LoginMetadata { readonly uuid: string; readonly verifier: string }
-export interface CursorTokens { readonly accessToken: string; readonly refreshToken: string }
+export interface AccountTokens { readonly accessToken: string; readonly refreshToken: string }
 export interface LoginManagerOptions { readonly redirectTarget?: string; readonly apiUrl?: string; readonly websiteUrl?: string }
 export interface LoginLinkHandler { openUrl(url: string): Promise<void> }
 
@@ -30,10 +30,10 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
     signal?.addEventListener("abort", onAbort, { once: true });
   });
 }
-function validTokens(value: unknown): value is CursorTokens {
+function validTokens(value: unknown): value is AccountTokens {
   return typeof value === "object" && value !== null && "accessToken" in value && typeof value.accessToken === "string" && "refreshToken" in value && typeof value.refreshToken === "string";
 }
-export async function pollAuthenticationStatus(args: { readonly uuid: string; readonly verifier: string; readonly apiBaseUrl?: string; readonly signal?: AbortSignal }): Promise<CursorTokens | null> {
+export async function pollAuthenticationStatus(args: { readonly uuid: string; readonly verifier: string; readonly apiBaseUrl?: string; readonly signal?: AbortSignal }): Promise<AccountTokens | null> {
   const endpoint = `${resolveApiBaseUrl(args.apiBaseUrl)}/auth/poll`;
   const policyHeaders = await mdmSignInPolicyHeaders();
   let consecutiveErrors = 0;
@@ -85,7 +85,7 @@ export class AuthNetworkError extends Error {
 }
 
 export interface ExchangeApiKeyOptions { readonly endpoint?: string }
-export async function exchangeApiKeyForTokens(apiKey: string, options?: ExchangeApiKeyOptions): Promise<CursorTokens | null> {
+export async function exchangeApiKeyForTokens(apiKey: string, options?: ExchangeApiKeyOptions): Promise<AccountTokens | null> {
   const baseUrl = resolveApiBaseUrl(options?.endpoint);
   const policyHeaders = await mdmSignInPolicyHeaders();
   try {
@@ -119,13 +119,13 @@ export class LoginManager {
     const auth = generateAuthParams(this.redirectTarget, this.websiteUrl);
     return { metadata: { uuid: auth.uuid, verifier: auth.verifier }, loginUrl: auth.loginUrl };
   }
-  async waitForResult(metadata: LoginMetadata, signal?: AbortSignal): Promise<CursorTokens | null> {
+  async waitForResult(metadata: LoginMetadata, signal?: AbortSignal): Promise<AccountTokens | null> {
     return await pollAuthenticationStatus({ uuid: metadata.uuid, verifier: metadata.verifier, apiBaseUrl: this.apiUrl, ...(signal === undefined ? {} : { signal }) });
   }
-  async loginWithApiKey(apiKey: string, options?: ExchangeApiKeyOptions): Promise<CursorTokens | null> {
+  async loginWithApiKey(apiKey: string, options?: ExchangeApiKeyOptions): Promise<AccountTokens | null> {
     return await exchangeApiKeyForTokens(apiKey, { endpoint: options?.endpoint ?? this.apiUrl });
   }
-  async login(linkHandler: LoginLinkHandler, signal?: AbortSignal): Promise<CursorTokens | null> {
+  async login(linkHandler: LoginLinkHandler, signal?: AbortSignal): Promise<AccountTokens | null> {
     const { metadata, loginUrl } = this.startLogin();
     await linkHandler.openUrl(loginUrl);
     return await this.waitForResult(metadata, signal);

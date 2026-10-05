@@ -1,6 +1,6 @@
 import { errorLogTag } from "../../../shared/errors.js";
-import { CURSOR_MARKETPLACE_REQUEST_TIMEOUT_MS } from "../../../shared/node/marketplace/cursor-marketplace-client.js";
-import { rememberPluginLogoUrl } from "../../../shared/node/marketplace/cursor-marketplace-logo-registry.js";
+import { CURSOR_MARKETPLACE_REQUEST_TIMEOUT_MS } from "../../../shared/node/marketplace/marketplace-client.js";
+import { rememberPluginLogoUrl } from "../../../shared/node/marketplace/marketplace-logo-registry.js";
 
 export interface ManagedSkillsClient { getManagedSkills(request: Record<string, never>, options: { timeoutMs: number }): Promise<{ skills: readonly { id: string; description: string; content: string; enabled?: boolean | null }[] }>; listMarketplacePlugins(request: { excludeCloudAgentPlugins: true }, options: { timeoutMs: number }): Promise<{ plugins: readonly MarketplacePlugin[] }> }
 export interface MarketplacePlugin { id: string | number | bigint; name: string; displayName: string; logoUrl?: string | null; publisher?: { logoUrl?: string | null } | null; skills: readonly { name: string; description?: string | null; sourceUrl?: string | null }[] }

@@ -7,7 +7,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { PRODUCT_INFERENCE_PROVIDER, readSimeonEnv, SAND_INFERENCE_PROVIDER_ENV } from "../../shared/inference-router.js";
-import { getConfiguredBackendUrl } from "../../shared/node/cursor-token.js";
+import { getConfiguredBackendUrl } from "../../shared/node/simeon-token.js";
 import { buildSandBoxNoVncUrl } from "../../packages/constants/sand-box.js";
 import type { SandSettingsStore } from "../../shared/node/settings/sand-settings-store.js";
 import type { SecureStorageCodec } from "../secrets/secret-store.js";

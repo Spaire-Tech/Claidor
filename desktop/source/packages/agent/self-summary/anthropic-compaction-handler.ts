@@ -226,7 +226,7 @@ ${rawSummary.text}
       message: toRedactedCoreMessage({
         role: "user",
         content: wrappedContent,
-        providerOptions: { cursor: { isSummary: true } },
+        providerOptions: { simeon: { isSummary: true } },
       }, summaryPrivacyMode),
       summaryTextLength: wrappedContent.length,
     };

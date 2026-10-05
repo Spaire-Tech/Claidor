@@ -161,14 +161,14 @@ function isAllowedReleaseDownloadHost(downloadHost: string, repoHost: string): b
 async function downloadReleaseAssetBuffer(options: { repo: string; asset: string; tag?: string | undefined; expectedSha256?: string | undefined; githubToken?: string | undefined }): Promise<Buffer> {
   const { repo, asset, tag } = options, { apiBase, ownerRepo, host } = parseReleaseRepo(repo), authHeaders = host === "github.com" && options.githubToken !== undefined && options.githubToken.length > 0 ? { Authorization: `token ${options.githubToken}` } : {};
   const releaseUrl = tag ? `${apiBase}/repos/${ownerRepo}/releases/tags/${encodeURIComponent(tag)}` : `${apiBase}/repos/${ownerRepo}/releases/latest`;
-  const releaseResponse = await fetch(releaseUrl, { headers: { Accept: "application/vnd.github.v3+json", "User-Agent": "CursorPluginInstaller", ...authHeaders } });
+  const releaseResponse = await fetch(releaseUrl, { headers: { Accept: "application/vnd.github.v3+json", "User-Agent": "PluginInstaller", ...authHeaders } });
   if (!releaseResponse.ok) throw new Error(`Failed to fetch release from ${releaseUrl}: ${releaseResponse.status} ${releaseResponse.statusText}`);
   const release = await releaseResponse.json() as { assets: Array<{ name: string; size: number; browser_download_url: string }> }, matchingAsset = release.assets.find(candidate => candidate.name === asset);
   if (!matchingAsset) throw new Error(`Release asset "${asset}" not found. Available assets: ${release.assets.map(candidate => candidate.name).join(", ")}`);
   if (matchingAsset.size > MAX_RELEASE_ASSET_BYTES) throw new Error(`Release asset "${asset}" exceeds maximum size of ${MAX_RELEASE_ASSET_BYTES} bytes (actual: ${matchingAsset.size})`);
   const downloadUrl = new URL(matchingAsset.browser_download_url);
   if (downloadUrl.protocol !== "https:" || !isAllowedReleaseDownloadHost(downloadUrl.hostname, host)) throw new Error(`Refusing to download release asset from untrusted host: ${downloadUrl.hostname}`);
-  const assetResponse = await fetch(matchingAsset.browser_download_url, { headers: { "User-Agent": "CursorPluginInstaller", Accept: "application/octet-stream", ...authHeaders } });
+  const assetResponse = await fetch(matchingAsset.browser_download_url, { headers: { "User-Agent": "PluginInstaller", Accept: "application/octet-stream", ...authHeaders } });
   if (!assetResponse.ok) throw new Error(`Failed to download release asset: ${assetResponse.status} ${assetResponse.statusText}`);
   if (assetResponse.url) { const finalUrl = new URL(assetResponse.url); if (finalUrl.protocol !== "https:" || !isAllowedReleaseDownloadHost(finalUrl.hostname, host)) throw new Error(`Refusing to download release asset: redirected to untrusted host: ${finalUrl.hostname}`); }
   const buffer = Buffer.from(await assetResponse.arrayBuffer());

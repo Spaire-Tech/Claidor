@@ -1,20 +1,20 @@
-import { createCursorAuthWiring, type AuthServicePort } from "../account/cursor-auth-wiring.js";
+import { createAccountAuthWiring, type AuthServicePort } from "../account/account-auth-wiring.js";
 import { forgetInferenceCredential, stopLocalDockerBox } from "../box/local-docker-host-connector.js";
 import type { ElectronProductionAdapterBindings } from "../production-adapters.js";
 import type { ProductionAccountService, ProductionServiceContext } from "../main-production-services.js";
 import { requireFunction, requireObject } from "./provider-guards.js";
 
-type CursorAuthWiringDeps = Parameters<typeof createCursorAuthWiring>[0];
+type AccountAuthWiringDeps = Parameters<typeof createAccountAuthWiring>[0];
 
 export interface ProductionAccountOAuthPorts {
-  readonly resolveWiringDeps?: (context: ProductionServiceContext) => CursorAuthWiringDeps;
+  readonly resolveWiringDeps?: (context: ProductionServiceContext) => AccountAuthWiringDeps;
 }
 
-function accountRuntimeOf(context: ProductionServiceContext): ReturnType<CursorAuthWiringDeps["getAccountRuntime"]> {
+function accountRuntimeOf(context: ProductionServiceContext): ReturnType<AccountAuthWiringDeps["getAccountRuntime"]> {
   try {
     const runtime = context.requireCoordinator().getAccountRuntime?.();
     if (runtime != null && typeof (runtime as { observe?: unknown }).observe === "function" && typeof (runtime as { whenIdle?: unknown }).whenIdle === "function") {
-      return runtime as ReturnType<CursorAuthWiringDeps["getAccountRuntime"]>;
+      return runtime as ReturnType<AccountAuthWiringDeps["getAccountRuntime"]>;
     }
   } catch {
     // Account construction precedes coordinator construction. The auth wiring
@@ -23,7 +23,7 @@ function accountRuntimeOf(context: ProductionServiceContext): ReturnType<CursorA
   return null;
 }
 
-function defaultWiringDeps(context: ProductionServiceContext): CursorAuthWiringDeps {
+function defaultWiringDeps(context: ProductionServiceContext): AccountAuthWiringDeps {
   requireFunction(context.native?.shell?.openExternal, "electron.shell.openExternal");
   requireFunction(context.settings?.settingsStore?.getLocalToolPermission, "account settings.getLocalToolPermission");
   requireFunction(context.settings?.settingsStore?.setLocalToolPermissionCeiling, "account settings.setLocalToolPermissionCeiling");
@@ -64,22 +64,22 @@ function validateAuthService(service: AuthServicePort): AuthServicePort {
   return service;
 }
 
-/** Artifact anchor: main.cjs:505993, `var cursorAuthWiring = createCursorAuthWiring({`. */
+/** Artifact anchor: main.cjs:505993, `var accountAuthWiring = createAccountAuthWiring({`. */
 export function createProductionAccountOAuthAdapter(
   ports: ProductionAccountOAuthPorts,
 ): ElectronProductionAdapterBindings["accountOAuth"] {
   return {
     async create(context): Promise<ProductionAccountService> {
-      const wiring = createCursorAuthWiring((ports?.resolveWiringDeps ?? defaultWiringDeps)(context));
-      const service = validateAuthService(await wiring.ensureCursorAuthService());
+      const wiring = createAccountAuthWiring((ports?.resolveWiringDeps ?? defaultWiringDeps)(context));
+      const service = validateAuthService(await wiring.ensureAccountAuthService());
       const subscriptions = new Set<() => void>();
       let disposed = false;
       return {
         getStatus: () => service.getStatus(),
         currentAuthStatusFreshness: wiring.currentAuthStatusFreshness,
-        deliverCursorAuthStatus(status) {
+        deliverAccountAuthStatus(status) {
           if (disposed) throw new Error("Electron production account adapter is disposed.");
-          wiring.deliverCursorAuthStatus(service, status);
+          wiring.deliverAccountAuthStatus(service, status);
         },
         async getAuthService() {
           if (disposed) throw new Error("Electron production account adapter is disposed.");

@@ -31,7 +31,7 @@ async function load(entry, name) {
 }
 
 test("nothing asks the upstream's server on a timer: no Statsig bootstrap, no local-exec credential, no update feed", async () => {
-  const experiments = await src("shared/node/experiments/cursor-experiments.ts");
+  const experiments = await src("shared/node/experiments/simeon-experiments.ts");
   assert.match(experiments, /this\.refreshSnapshot\(\); if \(!isConnectServed\(this\.options\.env, "cursor\.statsig-bootstrap"\)\) return; this\.pollHandle = this\.refreshPoll\.start/);
   assert.match(experiments, /private async runRefresh\(trigger: Trigger\): Promise<void> \{ if \(!isConnectServed\(this\.options\.env, "cursor\.statsig-bootstrap"\)\) \{ this\.refreshSnapshot\(\); return; \}/);
   const docker = await src("electron-main/box/local-docker-host-connector.ts");
@@ -82,7 +82,7 @@ test("the hatch's plumbing is off the host path: no local reaction, no re-sort, 
   assert.match(main, /if \(permissionScope\(\) == null\) await fetchPermissionScopeSlot\(\);\n\s*server\.postEvent\(family, stampTranscriptEvent\(event\.payload, permissionScope\(\)\)\);/);
   assert.match(main, /\{ sortByTimestamp: !routesSimeonThroughHost\(\) \}/);
   assert.equal((await src("shared/deep-link.ts")).includes('SAND_HTTPS_DEEP_LINK_ORIGIN = "https://app.simeonlabs.com"'), true);
-  for (const [file, gone] of [["electron-main/coordinator/coordinator-port-ipc-guard.ts", "Sand app window"], ["electron-main/main-edge.ts", "Sand app window"], ["shared/node/cursor-backend/simeon-api.ts", "Simeon answered"], ["shared/node/cursor-backend/simeon-api.ts", "Simeon refused"]]) {
+  for (const [file, gone] of [["electron-main/coordinator/coordinator-port-ipc-guard.ts", "Sand app window"], ["electron-main/main-edge.ts", "Sand app window"], ["shared/node/simeon-backend/simeon-api.ts", "Simeon answered"], ["shared/node/simeon-backend/simeon-api.ts", "Simeon refused"]]) {
     assert.ok(!(await src(file)).includes(gone), `${file} no longer says ${gone}`);
   }
 });

@@ -81,7 +81,7 @@ const BoxExecService = {
 export const BOX_EXEC_DAEMON_HOST = "127.0.0.1";
 export const BOX_EXEC_DAEMON_PORT = 1337;
 export const BOX_EXEC_DAEMON_AUTH_TOKEN = "local";
-export const BOX_TERMINAL_VIRTUAL_PREFIX = "/root/.cursor/projects/workspace/terminals/";
+export const BOX_TERMINAL_VIRTUAL_PREFIX = "/root/.simeon/projects/workspace/terminals/";
 
 export interface BoxExecDaemonOptions {
   readonly host?: string;

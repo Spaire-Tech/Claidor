@@ -1,8 +1,8 @@
 import { GetBackgroundComposerUserSettingsRequest } from "../../packages/proto/generated/aiserver/v1/background_composer_pb.js";
 import { CloudAgentService, DashboardService } from "../../packages/proto/simeon/v1/services.js";
 import { GetTeamAdminSettingsRequest } from "../../packages/proto/generated/aiserver/v1/dashboard_pb.js";
-import { createSandCursorBackendClient } from "../../shared/node/cursor-backend/cursor-inference.js";
-import { getOrCreateMachineId } from "./cursor-machine-id.js";
+import { createSimeonBackendClient } from "../../shared/node/simeon-backend/simeon-inference.js";
+import { getOrCreateMachineId } from "./machine-id.js";
 
 export const PR_REVIEW_REQUEST_TIMEOUT_MS = 10_000;
 export type PrReviewDestination = "github" | "graphite" | "reviewApp";
@@ -27,7 +27,7 @@ export function teamDestination(response: {
 }
 
 async function fetchUserDestination(getAccessToken: PrReviewAccessTokenReader): Promise<PrReviewDestination | undefined> {
-  const client = createSandCursorBackendClient(CloudAgentService, {
+  const client = createSimeonBackendClient(CloudAgentService, {
     getAccessToken,
     getMachineId: () => getOrCreateMachineId(),
   });
@@ -39,7 +39,7 @@ async function fetchUserDestination(getAccessToken: PrReviewAccessTokenReader): 
 }
 
 async function fetchTeamDestination(getAccessToken: PrReviewAccessTokenReader): Promise<PrReviewDestination | undefined> {
-  const client = createSandCursorBackendClient(DashboardService, {
+  const client = createSimeonBackendClient(DashboardService, {
     getAccessToken,
     getMachineId: () => getOrCreateMachineId(),
   });

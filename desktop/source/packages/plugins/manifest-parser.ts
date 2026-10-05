@@ -133,7 +133,7 @@ function isRecord(value: unknown): value is Record<string, unknown> { return typ
 export function normalizeMarketplaceName(value: string): string { return value.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]+/g, "-").replace(/-+/g, "-").replace(/^-+|-+$/g, ""); }
 function fallbackMarketplaceName(options: { repoName?: string; fallbackId?: string }): string {
   const repoName = options.repoName !== undefined ? normalizeMarketplaceName(options.repoName) : "";
-  return repoName.length > 0 ? repoName : `cursor-marketplace-${options.fallbackId ?? randomUUID()}`;
+  return repoName.length > 0 ? repoName : `simeon-marketplace-${options.fallbackId ?? randomUUID()}`;
 }
 function readMarketplaceName(json: unknown, options: { repoName?: string; fallbackId?: string }): string {
   if (isRecord(json) && typeof json.name === "string") { const name = normalizeMarketplaceName(json.name); if (name.length > 0) return name; }

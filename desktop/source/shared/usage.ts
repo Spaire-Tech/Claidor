@@ -65,7 +65,7 @@ export interface SandUsageUpgradeCta {
   readonly action: SandUsageUpgradeAction;
 }
 
-/** Exact value assembled by `electron-main/account/cursor-profile.ts`. */
+/** Exact value assembled by `electron-main/account/account-profile.ts`. */
 export interface SandUsageSummary {
   readonly isEnterprise: boolean;
   readonly sandUsagePercent: number | null;

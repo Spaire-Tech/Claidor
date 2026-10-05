@@ -1,18 +1,18 @@
 import { fetchSandAccess } from "../account/access.js";
-import { createCursorAccountEdgePort, createTranscriptionManagerEnsure, type AccountRuntime } from "../account/cursor-auth-wiring.js";
-import { resolveCursorAvatarDataUrl } from "../account/cursor-avatar.js";
+import { createAccountEdgePort, createTranscriptionManagerEnsure, type AccountRuntime } from "../account/account-auth-wiring.js";
+import { resolveAccountAvatarDataUrl } from "../account/account-avatar.js";
 import {
   cancelSandTrial,
   fetchSandUsageSummary,
   fetchSandWeeklyUsage,
   fetchUserPrivacyModeEnabled,
   invokeSandDashboardAction,
-} from "../account/cursor-profile.js";
-import { fetchSandPrReviewPreferences } from "../account/cursor-pr-review.js";
+} from "../account/account-profile.js";
+import { fetchSandPrReviewPreferences } from "../account/pr-review.js";
 import type { ProductionServiceContext } from "../main-production-services.js";
 import type { ElectronProductionAdapterBindings } from "../production-adapters.js";
 import { DashboardService } from "../../packages/proto/simeon/v1/services.js";
-import { createSandCursorBackendClient } from "../../shared/node/cursor-backend/cursor-inference.js";
+import { createSimeonBackendClient } from "../../shared/node/simeon-backend/simeon-inference.js";
 import { SAND_PRODUCT_DISPLAY_NAME } from "../../shared/product-name.js";
 import { simeonGateDefault } from "../../shared/node/experiments/simeon-gate-defaults.js";
 import type { SandAccessBackend } from "../account/access.js";
@@ -34,22 +34,22 @@ function machineId(context: Pick<ProductionServiceContext, "machineId">): () => 
   return async () => context.machineId;
 }
 
-/** Artifact anchor: main.cjs:506294, `cursorAccount: createCursorAccountEdgePort({`. */
-export function createElectronProductionCursorAccountBinding(): ElectronProductionAdapterBindings["cursorAccount"] {
+/** Artifact anchor: main.cjs:506294, `accountService: createAccountEdgePort({`. */
+export function createElectronProductionAccountBinding(): ElectronProductionAdapterBindings["accountService"] {
   return {
     create(context) {
       const getMachineId = machineId(context);
-      return createCursorAccountEdgePort({
-        ensureCursorAuthService: () => context.requireAccount().getAuthService(),
+      return createAccountEdgePort({
+        ensureAccountAuthService: () => context.requireAccount().getAuthService(),
         currentAuthStatusFreshness: () => context.requireAccount().currentAuthStatusFreshness(),
         getAccountRuntime: () => accountRuntimeOf(context),
         readSandAccess: (getAccessToken) => fetchSandAccess(getAccessToken, {
-          createClient: (credentials) => createSandCursorBackendClient(DashboardService, credentials) as unknown as SandAccessBackend,
+          createClient: (credentials) => createSimeonBackendClient(DashboardService, credentials) as unknown as SandAccessBackend,
           getMachineId,
         }),
         resetMcpManager: () => context.requireMcp().resetMcpManager(),
         refreshHostMcp: () => context.requireMcp().refreshHostMcp(),
-        resolveAvatar: (authId, preferredUrl) => resolveCursorAvatarDataUrl(authId, { ...(preferredUrl == null ? {} : { preferredUrl }) }),
+        resolveAvatar: (authId, preferredUrl) => resolveAccountAvatarDataUrl(authId, { ...(preferredUrl == null ? {} : { preferredUrl }) }),
         // Usage from Simeon Labs' server's quota (`cursor-profile.ts`). Until
         // 24 September 2026 the gate below read the bundled default, false,
         // so `getUsageSummary` answered null before touching anything, and
@@ -72,7 +72,7 @@ export function createElectronProductionCursorAccountBinding(): ElectronProducti
     },
     createTranscriptionManager(context) {
       return createTranscriptionManagerEnsure({
-        ensureCursorAuthService: () => context.requireAccount().getAuthService(),
+        ensureAccountAuthService: () => context.requireAccount().getAuthService(),
         getMachineId: machineId(context),
       });
     },

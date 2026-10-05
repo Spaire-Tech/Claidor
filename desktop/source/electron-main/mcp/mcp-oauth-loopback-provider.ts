@@ -1,6 +1,6 @@
 import { DashboardService } from "../../packages/proto/simeon/v1/services.js";
-import { createSandCursorBackendClient, getSandInferenceBackendUrl } from "../../shared/node/cursor-backend/cursor-inference.js";
-import { createDashboardSandBackendMcpExec, type DashboardMcpExecClient } from "../../shared/node/cursor-backend/backend-mcp-exec.js";
+import { createSimeonBackendClient, getSandInferenceBackendUrl } from "../../shared/node/simeon-backend/simeon-inference.js";
+import { createDashboardSandBackendMcpExec, type DashboardMcpExecClient } from "../../shared/node/simeon-backend/backend-mcp-exec.js";
 import { createSandMcpOAuthLoopback } from "../../shared/node/mcp/mcp-oauth-loopback.js";
 import { createVendorMcpBackendExec } from "../../shared/node/vendor-mcp/backend-exec.js";
 import { createAccountMcpBackendExec } from "../../shared/node/account-mcp/backend-exec.js";
@@ -22,7 +22,7 @@ export interface ProductionMcpOAuthLoopbackPorts {
 }
 
 function createGeneratedBackendClient(ports: Pick<ProductionMcpOAuthLoopbackPorts, "getAccessToken" | "getMachineId">): DashboardMcpExecClient {
-  return createSandCursorBackendClient(DashboardService, {
+  return createSimeonBackendClient(DashboardService, {
     getAccessToken: ports.getAccessToken,
     getMachineId: ports.getMachineId,
   }) as unknown as DashboardMcpExecClient;

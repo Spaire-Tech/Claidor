@@ -14,7 +14,7 @@ import { imageResizingMiddleware } from "../../../packages/chat-inference/middle
 import { SAND_DEFAULT_MODEL_SELECTION } from "../../agents/agent-model.js";
 import { SAND_COMPUTER_USE_MODEL_SELECTION, type SandAgentModelSelection } from "../../agents/sand-agent-model.js";
 import { PrivacyMode } from "../../observability/sentry-privacy-mode.js";
-import { accountCacheScope, getConfiguredBackendUrl } from "../cursor-token.js";
+import { accountCacheScope, getConfiguredBackendUrl } from "../simeon-token.js";
 import { CLIENT_TYPE_HEADER, CLIENT_VERSION_HEADER, SAND_BOX_NAMESPACE_HEADER, SAND_CLIENT_TYPE, getSandBoxNamespace, getSandClientVersion } from "../sand-client-metadata.js";
 import { createSandRpcTracingInterceptor } from "./rpc-tracing.js";
 import { SandSettingsStore } from "../settings/sand-settings-store.js";
@@ -41,7 +41,7 @@ export function enhancedObfuscate(bytes: Uint8Array): Uint8Array {
   }
   return bytes;
 }
-export function createCursorChecksum(machineId: string, nowMs = Date.now()): string {
+export function createClientChecksum(machineId: string, nowMs = Date.now()): string {
   const unixKiloSeconds = Math.floor(nowMs / 1_000_000);
   const bytes = new Uint8Array([
     unixKiloSeconds >> 40 & 255,
@@ -59,7 +59,7 @@ export function getSandGhostModeHeaderFromPrivacyMode(privacyMode: PrivacyMode |
 }
 export interface PrivacyLookupOptions { readonly backendUrl: string; readonly accessToken: string; readonly machineId: string }
 export type PrivacyModeFetcher = (options: PrivacyLookupOptions) => Promise<PrivacyMode | undefined>;
-export async function fetchSandPrivacyMode(options: PrivacyLookupOptions, client = createSandCursorBackendClient(
+export async function fetchSandPrivacyMode(options: PrivacyLookupOptions, client = createSimeonBackendClient(
   DashboardService as typeof DashboardService & {
     readonly methods: typeof DashboardService.methods & {
       readonly getUserPrivacyMode: MethodInfoUnary<GetUserPrivacyModeRequest, GetUserPrivacyModeResponse>;
@@ -141,7 +141,7 @@ export function createSandInferenceInterceptor(options: SandInferenceOptions): I
     const pinned = request.header.get("x-request-id");
     const requestId = pinned != null && pinned !== "" ? pinned : options.randomUUID?.() ?? globalThis.crypto.randomUUID();
     if (auth.mode === "anonymous") request.header.delete("authorization"); else request.header.set("authorization", `Bearer ${auth.accessToken}`);
-    request.header.set("x-cursor-checksum", createCursorChecksum(machineId));
+    request.header.set("x-simeon-checksum", createClientChecksum(machineId));
     request.header.set(CLIENT_TYPE_HEADER, SAND_CLIENT_TYPE);
     request.header.set(CLIENT_VERSION_HEADER, getSandClientVersion(options.env));
     request.header.set(SAND_BOX_NAMESPACE_HEADER, getSandBoxNamespace(options.env));
@@ -172,10 +172,10 @@ export function createSandBackendTransport(options: Omit<SandInferenceOptions, "
 // removed). For a service not in the set, or with SAND_CONNECT_SERVED=0, a
 // client built here answers every call with Unimplemented at once and
 // sends nothing; every caller already catches and falls back.
-export function createSandCursorBackendClient<Service extends ServiceType>(service: Service, options: Omit<SandInferenceOptions, "backendUrl">): Client<Service> { if (!isConnectServed(options.env, service.typeName)) return createUnservedClient(service); return createClient(service, createSandBackendTransport(options)); }
+export function createSimeonBackendClient<Service extends ServiceType>(service: Service, options: Omit<SandInferenceOptions, "backendUrl">): Client<Service> { if (!isConnectServed(options.env, service.typeName)) return createUnservedClient(service); return createClient(service, createSandBackendTransport(options)); }
 
 export function createSandAttachedMediaUrlProvider(options: Omit<SandInferenceOptions, "backendUrl">) {
-  const client = createSandCursorBackendClient(AgentService, options) as unknown as {
+  const client = createSimeonBackendClient(AgentService, options) as unknown as {
     getSignedUrlForAttachedMedia(request: GetSignedUrlForAttachedMediaRequest, options: { signal: AbortSignal }): Promise<GetSignedUrlForAttachedMediaResponse>;
   };
   return {
@@ -197,14 +197,14 @@ export function createSandAttachedMediaUrlProvider(options: Omit<SandInferenceOp
   };
 }
 
-export function createCursorInferencePromptSession(options: Omit<SandInferenceOptions, "backendUrl"> & {
+export function createSimeonInferencePromptSession(options: Omit<SandInferenceOptions, "backendUrl"> & {
   readonly requestedModel: RequestedModel;
   readonly inferenceReason?: InferenceReason;
 }) {
   const settingsPath = join(getSandRootDir(), "settings.json");
   const routedProvider = new SandSettingsStore(settingsPath).getInferenceProvider();
   if (routedProvider !== "cursor") return createProviderPromptSession(routedProvider, { modelId: options.requestedModel.modelId });
-  const client = createSandCursorBackendClient(InferenceService, options);
+  const client = createSimeonBackendClient(InferenceService, options);
   return createProtoSessionProvider(client, options.requestedModel, undefined, options.inferenceReason).getSession(imageResizingMiddleware);
 }
 

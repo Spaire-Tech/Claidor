@@ -1,7 +1,7 @@
 import { SYSTEM_NOTIFICATION_TAG } from "../../../constants/system-notification.js";
 
-interface Message { role: string; content?: unknown; providerOptions?: { cursor?: { isSummary?: boolean } } }
-export function extractCursorProviderOptions(message: Message): { isSummary?: boolean } | undefined { return message.providerOptions?.cursor; }
+interface Message { role: string; content?: unknown; providerOptions?: { simeon?: { isSummary?: boolean } } }
+export function extractSimeonProviderOptions(message: Message): { isSummary?: boolean } | undefined { return message.providerOptions?.simeon; }
 export function getUserMessageTextContent(message: Message): string | undefined {
   if (message.role !== "user") return undefined;
   if (typeof message.content === "string") return message.content;
@@ -27,5 +27,5 @@ export function isGoalContinuationNotificationMessage(message: Message): boolean
   return getUserMessageTextContent(message)?.includes(`<${SYSTEM_NOTIFICATION_TAG} source="goal"`) === true;
 }
 export function isSyntheticUserMessage(message: Message): boolean {
-  return extractCursorProviderOptions(message)?.isSummary === true || isNotificationOnlyUserMessage(message);
+  return extractSimeonProviderOptions(message)?.isSummary === true || isNotificationOnlyUserMessage(message);
 }

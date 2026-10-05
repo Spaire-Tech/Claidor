@@ -2,7 +2,7 @@ import { createClient, type Interceptor } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-node";
 
 import { DashboardService } from "../../../packages/proto/simeon/v1/services.js";
-import { createCursorChecksum, getSandInferenceBackendUrl } from "../cursor-backend/cursor-inference.js";
+import { createClientChecksum, getSandInferenceBackendUrl } from "../simeon-backend/simeon-inference.js";
 import { getSandBackendClientHeaders } from "../sand-client-metadata.js";
 
 export const CURSOR_MARKETPLACE_REQUEST_TIMEOUT_MS = 12_000;
@@ -20,7 +20,7 @@ export function createMarketplaceInterceptor<Request extends MarketplaceRequest,
   options: { readonly env?: NodeJS.ProcessEnv; readonly uuid?: () => string } = {},
 ) {
   return (next: MarketplaceNext<Request, Response>): MarketplaceNext<Request, Response> => async (request) => {
-    try { if (getMachineId != null) request.header.set("x-cursor-checksum", createCursorChecksum(await getMachineId())); } catch {}
+    try { if (getMachineId != null) request.header.set("x-simeon-checksum", createClientChecksum(await getMachineId())); } catch {}
     for (const [name, value] of Object.entries(getSandBackendClientHeaders(options.env))) request.header.set(name, value);
     request.header.set("x-ghost-mode", "true");
     request.header.set("x-request-id", options.uuid?.() ?? globalThis.crypto.randomUUID());

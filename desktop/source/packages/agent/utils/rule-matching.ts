@@ -2,7 +2,7 @@ import path from "node:path";
 
 import { normalizeToUnixPath } from "../../utils/path-utils.js";
 
-interface CursorRulePathInput {
+interface AgentRulePathInput {
   readonly fullPath?: string | undefined;
   readonly type?: {
     readonly type: {
@@ -41,7 +41,7 @@ function normalizeWorkspaceRoot(workspaceRoot: string): string {
   return normalizePath(workspaceRoot);
 }
 
-function isNestedGlobalRule(rule: CursorRulePathInput, workspacePaths: readonly string[]): boolean {
+function isNestedGlobalRule(rule: AgentRulePathInput, workspacePaths: readonly string[]): boolean {
   if (rule.type?.type.case !== "global" || !rule.fullPath) {
     return false;
   }
@@ -55,10 +55,10 @@ function isNestedGlobalRule(rule: CursorRulePathInput, workspacePaths: readonly 
   return ruleDir !== containingWorkspaceRoot;
 }
 
-// Extracted from ../packages/agent/dist/utils/cursor-rule-matching.js as an
+// Extracted from ../packages/agent/dist/utils/rule-matching.js as an
 // uncomposed leaf. The parent user-info and rule-matching consumers remain absent.
-export function isFileScopedCursorRule(
-  rule: CursorRulePathInput,
+export function isFileScopedAgentRule(
+  rule: AgentRulePathInput,
   workspacePaths: readonly string[],
 ): boolean {
   if (rule.type?.type.case === "fileGlobbed") {

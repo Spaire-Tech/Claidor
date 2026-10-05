@@ -205,7 +205,7 @@ function createGenerateImageToolCall(toolCall: GenerateImageToolCall): ToolCall 
 function getToolName(promptVersion: string): string {
   switch (promptVersion) {
     case "dsv3-1018": return "generate_image";
-    case "cursor-0226":
+    case "simeon-0226":
     case "dsv3-1205":
     case "latest":
     case "gpt5-codex":
@@ -217,7 +217,7 @@ function getToolName(promptVersion: string): string {
 
 function getDescription(promptVersion: string): string {
   switch (promptVersion) {
-    case "cursor-0226":
+    case "simeon-0226":
     case "dsv3-1205":
     case "gpt5-codex":
     case "codex-cloud":
@@ -685,7 +685,7 @@ export function createGenerateImageTool(
           renderOutcome = "success";
           return createStringResult(`Successfully generated image. Display it in your response using:\n<img src="${filePath}" alt="Generated image" />`);
         }
-          if (version === "dsv3-1018" || version === "dsv3-1205" || version === "cursor-0226") {
+          if (version === "dsv3-1018" || version === "dsv3-1205" || version === "simeon-0226") {
             renderOutcome = "success";
             return createStringResult(resultToString(result));
           }

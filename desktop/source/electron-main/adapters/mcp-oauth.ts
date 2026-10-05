@@ -13,7 +13,7 @@ import { delay } from "../../shared/node/async.js";
 import { cleanupLegacyMcpAuthCredentials } from "../../shared/node/mcp/mcp-auth-cleanup.js";
 import { parseAllowedExternalUrl } from "../../shared/external-url-policy.js";
 import { DashboardService } from "../../packages/proto/simeon/v1/services.js";
-import { createSandCursorBackendClient } from "../../shared/node/cursor-backend/cursor-inference.js";
+import { createSimeonBackendClient } from "../../shared/node/simeon-backend/simeon-inference.js";
 import { reportDesktopEdgeFailure, reportDesktopEdgeFailureClass } from "../desktop-edge-failures.js";
 import { requireFunction, requireObject } from "./provider-guards.js";
 
@@ -54,7 +54,7 @@ function reportConnectorAuth(context: ProductionServiceContext, report: unknown)
 
 function createTeamPopularityFetcher(context: ProductionServiceContext): () => Promise<Map<string, unknown>> {
   return async () => {
-    const client: unknown = createSandCursorBackendClient(DashboardService, {
+    const client: unknown = createSimeonBackendClient(DashboardService, {
       getAccessToken: async ({ backendUrl }) => {
         const auth = await context.requireAccount().getAuthService();
         return await auth.getValidAccessToken({ backendUrl });
@@ -191,7 +191,7 @@ export function createProductionMcpOAuthPorts(): ProductionMcpOAuthPorts {
       }),
       settingsStore: context.settings.settingsStore,
       pushBoxSecrets: () => context.secretsStores.pushBoxSecrets.push("account_scope"),
-      ensureCursorAuthService: async () => await context.requireAccount().getAuthService(),
+      ensureAccountAuthService: async () => await context.requireAccount().getAuthService(),
       getMachineId: () => context.machineId,
       listBoxMcpServers: (serverIdentifiers) => listBoxMcpServers(context, serverIdentifiers),
       reportConnectorAuth: (report) => reportConnectorAuth(context, report),
@@ -234,7 +234,7 @@ export function createProductionMcpOAuthAdapter(
       const rootPorts = ports.resolveRootPorts?.(context);
       const runtimeDeps = { ...ports.resolveRuntimeDeps(context), ...rootPorts?.runtime };
       requireObject(runtimeDeps, "mcpOAuth.runtimeDeps");
-      for (const method of ["createManager", "pushBoxSecrets", "ensureCursorAuthService", "getMachineId", "listBoxMcpServers", "reportConnectorAuth", "reportDiagnostic", "cleanupLegacyAuth", "sandRootDir", "reportFailure", "broadcast", "refreshHostMcp"] as const) {
+      for (const method of ["createManager", "pushBoxSecrets", "ensureAccountAuthService", "getMachineId", "listBoxMcpServers", "reportConnectorAuth", "reportDiagnostic", "cleanupLegacyAuth", "sandRootDir", "reportFailure", "broadcast", "refreshHostMcp"] as const) {
         requireFunction(runtimeDeps[method], `mcpOAuth.${method}`);
       }
       const runtime = createMcpRuntime<DesktopMcpManagerFacade>(runtimeDeps);

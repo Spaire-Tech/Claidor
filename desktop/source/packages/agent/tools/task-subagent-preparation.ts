@@ -12,7 +12,7 @@ import { RequestContextArgs, type RequestContextResult } from "../../proto/gener
 import { ReadArgs, type ReadResult } from "../../proto/generated/agent/v1/read_exec_pb.js";
 import type { SubagentPersistedState } from "../../proto/generated/agent/v1/agent_pb.js";
 import type { SubagentType } from "../../proto/generated/agent/v1/subagents_pb.js";
-import { SelectedContext, SelectedImage, SelectedImage_BlobIdWithData, SelectedVideo, SelectedVideo_BlobIdWithData, SelectedVideo_SignedUrl, type SelectedContext as SelectedContextValue, type SelectedCursorCommand } from "../../proto/generated/agent/v1/selected_context_pb.js";
+import { SelectedContext, SelectedImage, SelectedImage_BlobIdWithData, SelectedVideo, SelectedVideo_BlobIdWithData, SelectedVideo_SignedUrl, type SelectedContext as SelectedContextValue, type SelectedCursorCommand as SelectedAgentCommand } from "../../proto/generated/agent/v1/selected_context_pb.js";
 import type { PrivacyMode } from "../../redaction/privacy-mode.js";
 import { GENERAL_PURPOSE_SUBAGENT_TYPE, applyConversationStateMapping, getSubagentTypeName, isGeminiVideoSubagentType } from "./core/subagent/subagent-config.js";
 import { computeSubagentRequestId, generateSeededUuid, ToolCallArgParseError } from "./common.js";
@@ -566,7 +566,7 @@ export interface PrepareTaskSubagentArgs {
   readonly configuredSteps?: readonly string[] | undefined;
   readonly readonlyShellEnabled?: boolean | undefined;
   readonly toolName?: string | undefined;
-  readonly parentCursorCommands?: readonly SelectedCursorCommand[] | undefined;
+  readonly parentAgentCommands?: readonly SelectedAgentCommand[] | undefined;
   readonly privacyMode?: PrivacyMode | undefined;
   readonly attachedMediaUrlProvider?: AttachedMediaUrlProvider | undefined;
   readonly geminiVideoAttachedMediaUrlProvider?: AttachedMediaUrlProvider | undefined;
@@ -591,9 +591,9 @@ export async function prepareTaskSubagent(args: PrepareTaskSubagentArgs): Promis
       skipTrustedPathValidation: true,
     });
   }
-  if (args.parentCursorCommands !== undefined && args.parentCursorCommands.length > 0) {
+  if (args.parentAgentCommands !== undefined && args.parentAgentCommands.length > 0) {
     selectedContext = selectedContext ?? new SelectedContext();
-    selectedContext.cursorCommands = [...args.parentCursorCommands];
+    selectedContext.cursorCommands = [...args.parentAgentCommands];
   }
   const initialAction = createUserMessageAction(subagentConfig, rawArgs.prompt, generateSeededUuid(meta.toolCallId), useAskModeForSubagent, selectedContext);
   const conversationState = await resolveSubagentConversationState(ctx, subagentConfig, parentState, subagentIdToResume, isSelfForkRequested, meta.toolCallId, typeName);

@@ -45,7 +45,7 @@ export interface ModeProcessingConfig {
   } | undefined;
   readonly userInfoDisplayOptions?: {
     readonly disable?: boolean | undefined;
-    readonly displayCursorRules?: boolean | undefined;
+    readonly displayAgentRules?: boolean | undefined;
   } | undefined;
   readonly askQuestionToolName?: string | undefined;
 }
@@ -183,7 +183,7 @@ export function processAntiAskQuestionSystemReminder(config: ModeProcessingConfi
     config.featureFlags?.enableAntiAskQuestionSysReminder !== true ||
     config.featureFlags?.dropCustomPromptContext === true ||
     config.userInfoDisplayOptions?.disable === true ||
-    config.userInfoDisplayOptions?.displayCursorRules === false
+    config.userInfoDisplayOptions?.displayAgentRules === false
   ) {
     return "";
   }

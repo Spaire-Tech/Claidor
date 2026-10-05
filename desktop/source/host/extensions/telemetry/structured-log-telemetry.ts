@@ -121,7 +121,7 @@ import {
 import { journalOutcomeTelemetry } from "./journal-outcome-telemetry.js";
 import { resolveSandBoxIdentityTags } from "../../ports/telemetry.js";
 import { AnalyticsService } from "../../../packages/proto/generated/aiserver/v1/analytics_connect.js";
-import { createSandCursorBackendClient } from "../../../shared/node/cursor-backend/cursor-inference.js";
+import { createSimeonBackendClient } from "../../../shared/node/simeon-backend/simeon-inference.js";
 
 export type LogLevel = "info" | "warn" | "error";
 export type Metadata = Record<string, string | undefined>;
@@ -284,7 +284,7 @@ export class SandStructuredLogTelemetry {
         ...(options.identityTags ?? resolveSandBoxIdentityTags()),
       };
       const createClient = options.createClient ?? (() =>
-        createSandCursorBackendClient(AnalyticsService, {
+        createSimeonBackendClient(AnalyticsService, {
           getAccessToken: async (request) => {
             try {
               return await options.getAccessToken!(request);

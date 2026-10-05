@@ -2,9 +2,9 @@ import { existsSync, readFileSync } from "node:fs";
 import { cp, mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
-import { packPluginArtifact } from "../../../packages/cursor-plugins/tarball.js";
-import { restoreSkillsFromPluginDir } from "../../../packages/cursor-plugins/skill-plugin-restore.js";
-import { synthesizeSkillPluginDir } from "../../../packages/cursor-plugins/skill-plugin-synthesizer.js";
+import { packPluginArtifact } from "../../../packages/plugins/tarball.js";
+import { restoreSkillsFromPluginDir } from "../../../packages/plugins/skill-plugin-restore.js";
+import { synthesizeSkillPluginDir } from "../../../packages/plugins/skill-plugin-synthesizer.js";
 import { DashboardService } from "../../../packages/proto/simeon/v1/services.js";
 import {
   GetTeamsRequest,
@@ -14,9 +14,9 @@ import {
 import { errorLogTag } from "../../../shared/errors.js";
 import { HOST_LOG_PREFIX, clipForHostLog, logHostLine } from "../../../shared/host-log.js";
 import {
-  createSandCursorBackendClient,
+  createSimeonBackendClient,
   getSandInferenceBackendUrl,
-} from "../../../shared/node/cursor-backend/cursor-inference.js";
+} from "../../../shared/node/simeon-backend/simeon-inference.js";
 import { LEGACY_WORKFLOW_FILENAME, parseWorkflowFile } from "../../../shared/workflow-model.js";
 import { SandSkillPublishError } from "../../../shared/workflows.js";
 import { GlobalWorkflowLibrary, getGlobalWorkflowsDir, type GlobalWorkflowRecord } from "../../workflows/workflow-library.js";
@@ -56,7 +56,7 @@ export function createSandSkillPublishClient(deps: {
     getMachineId(): Promise<string>;
   };
 }): SkillPublishClient {
-  return createSandCursorBackendClient(DashboardService, {
+  return createSimeonBackendClient(DashboardService, {
     getAccessToken: async () => await deps.auth.getAccessToken({
       backendUrl: getSandInferenceBackendUrl(),
     }),

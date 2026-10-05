@@ -1,5 +1,5 @@
 import type { AgentToolsGenerator } from "./tools/tools-generator-contract.js";
-import type { CursorRule } from "../proto/generated/agent/v1/cursor_rules_pb.js";
+import type { CursorRule as AgentRule } from "../proto/generated/agent/v1/cursor_rules_pb.js";
 
 /**
  * The normalized SandAgent config fragment consumed by tool generation.
@@ -20,5 +20,5 @@ export interface AgentConfigToolingContract {
     readonly enableAgentStoreConflictNotices?: boolean | undefined;
   } | undefined;
   readonly recordAgentStoreWriteBarrier: unknown;
-  readonly nonFileRules: readonly CursorRule[];
+  readonly nonFileRules: readonly AgentRule[];
 }

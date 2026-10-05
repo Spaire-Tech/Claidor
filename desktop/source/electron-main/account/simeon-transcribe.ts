@@ -1,5 +1,5 @@
 import { createDeadlinePolicy, realClock, type DeadlinePolicy } from "../../internal/scheduling.js";
-import { simeonProxyRequest, type SimeonApiAuth } from "../../shared/node/cursor-backend/simeon-api.js";
+import { simeonProxyRequest, type SimeonApiAuth } from "../../shared/node/simeon-backend/simeon-api.js";
 
 const TRANSCRIBE_TIMEOUT_MS = 60_000;
 // No default language. Until 24 September 2026 a request with none was sent

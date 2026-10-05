@@ -8,7 +8,7 @@ import { buildGitCommitsUserContent } from "./git-commit-processing.js";
 import { buildGitDiffUncommittedUserContent, buildGitDiffUserContent } from "./git-diff-processing.js";
 import { buildGitPullRequestsUserContent } from "./git-pr-processing.js";
 import { renderConsoleLogsContext } from "./context-processing-console-logs.js";
-import { renderSelectedCursorCommands } from "./context-processing-cursor-commands.js";
+import { renderSelectedAgentCommands } from "./context-processing-commands.js";
 import { renderPrReviewContext } from "./context-processing-pr-review.js";
 import { renderRecentAgentsContext } from "./context-processing-recent-agents.js";
 import { renderSelectedBrowsersContext } from "./context-processing-selected-browsers.js";
@@ -56,7 +56,7 @@ export function appendNonMediaSelectedContextContent({
   enablePrCreationForgeGuidance,
 }: AppendNonMediaSelectedContextContentArgs): void {
   if (selectedContext.cursorCommands.length > 0) {
-    const commandsText = renderSelectedCursorCommands(selectedContext.cursorCommands);
+    const commandsText = renderSelectedAgentCommands(selectedContext.cursorCommands);
     if (commandsText !== undefined) {
       userContent.push(commandsText);
     }

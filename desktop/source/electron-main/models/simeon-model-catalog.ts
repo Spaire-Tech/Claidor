@@ -1,5 +1,5 @@
 import { AvailableModelsResponse, AvailableModelsResponse_AvailableModel } from "../../packages/proto/generated/aiserver/v1/aiserver_pb.js";
-import { simeonApiData, type SimeonApiAuth } from "../../shared/node/cursor-backend/simeon-api.js";
+import { simeonApiData, type SimeonApiAuth } from "../../shared/node/simeon-backend/simeon-api.js";
 
 // The model picker, on Simeon Labs' server's own menu.
 //

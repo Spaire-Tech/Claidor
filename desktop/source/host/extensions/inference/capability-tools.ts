@@ -1,4 +1,4 @@
-import { simeonProxyRequest, type SimeonApiAuth } from "../../../shared/node/cursor-backend/simeon-api.js";
+import { simeonProxyRequest, type SimeonApiAuth } from "../../../shared/node/simeon-backend/simeon-api.js";
 import { fetchWebPage, type WebFetchOptions, type WebFetchResult } from "../../../shared/node/web-fetch.js";
 
 // The agent's `web_search` and `web_fetch` tools, behind the two seams the

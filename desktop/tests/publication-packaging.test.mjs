@@ -63,8 +63,8 @@ test("Router settings use the trusted backend and display recorded inference usa
   const preload = await readFile(path.join(repoRoot, "source", "electron-preload", "preload.ts"), "utf8");
   const mainEdge = await readFile(path.join(repoRoot, "source", "electron-main", "main-edge.ts"), "utf8");
   const inference = await readFile(path.join(repoRoot, "source", "host", "extensions", "inference", "inference-service.ts"), "utf8");
-  const cursorSession = await readFile(path.join(repoRoot, "source", "host", "extensions", "inference", "cursor-session.ts"), "utf8");
-  const cursorBackend = await readFile(path.join(repoRoot, "source", "shared", "node", "cursor-backend", "cursor-inference.ts"), "utf8");
+  const simeonSession = await readFile(path.join(repoRoot, "source", "host", "extensions", "inference", "inference-session.ts"), "utf8");
+  const simeonBackend = await readFile(path.join(repoRoot, "source", "shared", "node", "simeon-backend", "simeon-inference.ts"), "utf8");
   const providers = await readFile(path.join(repoRoot, "source", "host", "extensions", "inference", "provider-session.ts"), "utf8");
   const turnShell = await readFile(path.join(repoRoot, "source", "host", "runner", "turn-run-shell.ts"), "utf8");
   const coordinator = await readFile(path.join(repoRoot, "source", "node-agent-coordinator", "inference-router.ts"), "utf8");
@@ -109,10 +109,10 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(providers, /You are Simeon, a warm, concise desktop assistant/);
   assert.match(providers, /recordRoutedUsage\(provider, usage\)/);
   assert.match(providers, /return simeonExecutor\(this\.getMessages\(\), invocationId, definitions, undefined, this\.onUsage, this\.modelId, effort, this\.budget, this\.onRequestId, simeonPromptCacheKey\(conversationIdFromContext\(ctx\)\), this\.callReason\);/);
-  assert.match(cursorSession, /routedProvider !== "cursor"/);
-  assert.match(cursorSession, /createProviderPromptSession\(routedProvider, sessionOptions\)/);
-  assert.match(cursorBackend, /routedProvider !== "cursor"/);
-  assert.match(cursorBackend, /createProviderPromptSession\(routedProvider, \{ modelId: options\.requestedModel\.modelId \}\)/);
+  assert.match(simeonSession, /routedProvider !== "cursor"/);
+  assert.match(simeonSession, /createProviderPromptSession\(routedProvider, sessionOptions\)/);
+  assert.match(simeonBackend, /routedProvider !== "cursor"/);
+  assert.match(simeonBackend, /createProviderPromptSession\(routedProvider, \{ modelId: options\.requestedModel\.modelId \}\)/);
   assert.doesNotMatch(rendererPatch, /ANTHROPIC_API_KEY|OPENAI_API_KEY/);
   assert.match(turnShell, /const inferenceProvider = "simeon"/);
   assert.match(turnShell, /createProviderPromptSession\(inferenceProvider, \{ \.\.\.sessionOptions, hidden, \.\.\.\(input\.fullStepBudget === true \? \{ fullStepBudget: true \} : \{\}\), \.\.\.\(callReason === undefined \? \{\} : \{ callReason \}\) \}\)/);
@@ -130,9 +130,9 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(inference, /cheap: true, isSummarizationSession: true/);
   assert.match(turnShell, /cheap: true, isSummarizationSession: true/);
   assert.match(providers, /providerOptions: \{ openai: \{ strictSchemas: false, \.\.\.openaiOptions \} \}/);
-  assert.match(providers, /from "\.\.\/\.\.\/\.\.\/shared\/node\/cursor-backend\/simeon-api\.js"/);
+  assert.match(providers, /from "\.\.\/\.\.\/\.\.\/shared\/node\/simeon-backend\/simeon-api\.js"/);
   assert.match(providers, /export \{ simeonProxyBaseUrl \}/);
-  assert.match(await readFile(path.join(repoRoot, "source", "shared", "node", "cursor-backend", "simeon-api.ts"), "utf8"), /SIMEON_PROXY_PREFIX = "desktop\/api\/proxy\/v1"/);
+  assert.match(await readFile(path.join(repoRoot, "source", "shared", "node", "simeon-backend", "simeon-api.ts"), "utf8"), /SIMEON_PROXY_PREFIX = "desktop\/api\/proxy\/v1"/);
   assert.match(providers, /headers\.set\("authorization", `Bearer \$\{accessToken\}`\)/);
   assert.match(inference, /setSimeonCredentialSource\(\{ getAccessToken: \(\) => auth\.getAccessToken\(\) \}\)/);
   assert.match(coordinator, /export const BOX_OPTIONAL_WAIT_MS = 800/);

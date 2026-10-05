@@ -1,6 +1,6 @@
 import { join } from "node:path";
 
-import { createGetOrCreateMachineId } from "./account/cursor-machine-id.js";
+import { createGetOrCreateMachineId } from "./account/machine-id.js";
 import {
   getLocalExecDaemonDiscoveryPath,
   readLocalExecDaemonDiscovery,

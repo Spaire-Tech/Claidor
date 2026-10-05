@@ -15,7 +15,7 @@ import {
   protoStreamErrorToError,
   toolCallArgsFromProto,
 } from "./converters.js";
-import { providerOptionsFromModelName } from "./cursorModelProviderOptions.js";
+import { providerOptionsFromModelName } from "./modelProviderOptions.js";
 
 type Loose = Record<string, any>;
 type PromptMessage = Loose;
@@ -62,7 +62,7 @@ export function stampImageDescriptionsOnMessage(
         ...part,
         providerOptions: {
           ...part.providerOptions,
-          cursor: { ...part.providerOptions?.cursor, imageDescription: entry.description },
+          simeon: { ...part.providerOptions?.simeon, imageDescription: entry.description },
         },
       };
       updated = true;
@@ -77,13 +77,13 @@ export function stampImageDescriptionsOnMessage(
       const part = content[entry.partIndex];
       if (part === undefined || part.type !== "tool-result" || !Array.isArray(part.experimental_content) ||
           part.experimental_content[entry.expContentIndex]?.type !== "image") continue;
-      const descriptions = part.providerOptions?.cursor?.imageDescriptions ?? {};
+      const descriptions = part.providerOptions?.simeon?.imageDescriptions ?? {};
       content[entry.partIndex] = {
         ...part,
         providerOptions: {
           ...part.providerOptions,
-          cursor: {
-            ...part.providerOptions?.cursor,
+          simeon: {
+            ...part.providerOptions?.simeon,
             imageDescriptions: { ...descriptions, [entry.expContentIndex]: entry.description },
           },
         },
