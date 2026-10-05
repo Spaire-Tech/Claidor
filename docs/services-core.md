@@ -620,3 +620,44 @@ settings is not read (`desktop/source/shared/box-runtime.ts`).
 **Not yet verified:** the cloud computer has been tested against two real
 Docker Engines, but has not run in the packaged app on a Mac. Sleep and wake
 have not run against the production VM.
+
+## 5. The Mac app's releases
+
+The download on simeonlabs.com and the update an installed app pulls
+(`server/simeon/desktop/releases.py`, 5 October 2026).
+
+### How it works
+
+A release is made on a Mac (`docs/building-the-app.md`, "A signed release
+for other Macs") and its folder uploaded to the public bucket:
+`releases/darwin-arm64/<version>/` holds the `.dmg`, the `.zip`,
+`release.json` and `feed.json`, and `release.json` is copied once more to
+`releases/darwin-arm64/latest.json`. The server reads only `latest.json`
+(over HTTPS, cached five minutes) and builds the file URLs from the
+bucket's address and the version.
+
+- `GET /desktop/download/mac` sends the browser to the latest `.dmg`
+  (302); the website's Download buttons point here. 404 with a sentence
+  until a release is uploaded.
+- `GET /desktop/download/mac/latest` is the latest release as JSON.
+- `GET /desktop/api/update/{platform}/{app}/{version}/{machine}/{channel}`
+  answers the app's updater in Squirrel.Mac's shape: 204 when the
+  installed version is the latest, else the `.zip` URL and the version.
+  The app carries `SAND_UPDATE_FEED_BASE_URL=https://api.simeonlabs.com/desktop`
+  in its bundle (`desktop/scripts/lib/config.mjs`, `packagedEnvironment`)
+  and checks thirty seconds after launch and hourly after that.
+
+### Settings on Render
+
+- `SIMEON_DESKTOP_RELEASES_BASE_URL`: where the release folders are
+  served from. Unset, the public bucket's `releases/` folder
+  (`S3_FILES_PUBLIC_BUCKET_NAME`).
+
+### When it misbehaves
+
+- `desktop.releases.index_failed` / `index_status` / `index_unreadable`
+  in the API log: `latest.json` could not be read; the URL is in the
+  line. The download answers 404 and the updater 204 until it can.
+- A download that 404s right after an upload: the index is cached five
+  minutes.
+

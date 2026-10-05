@@ -212,6 +212,10 @@ class Settings(BaseSettings):
     # 22 September 2026: one unattended first-run loop spent 1.9M credits
     # in fifty minutes with nothing on screen (docs/services-core.md).
     DESKTOP_HOURLY_CREDITS: int = 200_000
+    # Where the Mac app's releases are served from (`simeon.desktop.releases`):
+    # the folder that holds `darwin-arm64/latest.json` and the version
+    # folders. Unset, the public bucket's `releases/` folder.
+    DESKTOP_RELEASES_BASE_URL: str | None = None
     # One address per provider the catalogue names. The key that goes
     # with each is ANTHROPIC_API_KEY / OPENAI_API_KEY below; a provider
     # with no key is simply not offered in the app's model list, never an

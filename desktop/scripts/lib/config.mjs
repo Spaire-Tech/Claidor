@@ -94,6 +94,10 @@ export const packagedEnvironment = Object.freeze({
   SIMEON_API_BASE_URL: process.env.SIMEON_BACKEND_URL?.trim() || "https://api.simeonlabs.com",
   SIMEON_WEBSITE_URL: process.env.SIMEON_BACKEND_URL?.trim() || "https://api.simeonlabs.com",
   SAND_BACKEND_URL: process.env.SIMEON_BACKEND_URL?.trim() || "https://api.simeonlabs.com",
+  // The updater asks `<this>/api/update/...` (`electron-main/update/update-feed.ts`;
+  // the server's `simeon.desktop.releases`); carried in the bundle so a
+  // packaged app checks on its own (5 October 2026, the first release).
+  SAND_UPDATE_FEED_BASE_URL: `${process.env.SIMEON_BACKEND_URL?.trim() || "https://api.simeonlabs.com"}/desktop`,
 });
 export const fidelityBundleId = "com.simeonlabs.simeon.fidelity";
 export const fidelityName = "Simeon Fidelity";
