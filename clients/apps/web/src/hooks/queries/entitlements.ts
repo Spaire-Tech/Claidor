@@ -18,27 +18,23 @@ export type LimitKey = keyof TierLimits
  * up or down a tier.
  */
 const FEATURE_REQUIRED_TIER: Record<FeatureKey, SimeonTierKey> = {
-  drip_scheduling: 'starter',
-  // Sequences & segments are included on Starter (3 active on Starter,
-  // 15 on Studio) — the count cap is enforced separately, the feature
-  // itself is not gated above Starter. Must match the backend, which
-  // sets email_sequences_and_segments=True on Starter.
-  email_sequences_and_segments: 'starter',
-  email_ab_testing: 'studio',
-  stackable_discounts: 'studio',
-  custom_email_sender_domain: 'studio',
-  seat_based_product_pricing: 'studio',
-  cohort_analytics: 'studio',
-  customer_wallet: 'studio',
-  white_label_course_player: 'studio',
-  sandbox_mode: 'starter',
-  custom_pricing_negotiation: 'scale',
-  // Hosted (custom) storefront domain unlocked on Studio — matches
-  // tiers.py custom_storefront_domain=True on studio and scale.
-  custom_storefront_domain: 'studio',
-  custom_checkout_domain: 'scale',
-  sso: 'scale',
-  audit_logs: 'scale',
+  // The creator-era feature gates, kept in step with tiers.py: Standard
+  // carries what Starter did, Pro what Studio did, Max what Scale did.
+  drip_scheduling: 'standard',
+  email_sequences_and_segments: 'standard',
+  email_ab_testing: 'pro',
+  stackable_discounts: 'pro',
+  custom_email_sender_domain: 'pro',
+  seat_based_product_pricing: 'pro',
+  cohort_analytics: 'pro',
+  customer_wallet: 'pro',
+  white_label_course_player: 'pro',
+  sandbox_mode: 'standard',
+  custom_pricing_negotiation: 'max',
+  custom_storefront_domain: 'pro',
+  custom_checkout_domain: 'max',
+  sso: 'max',
+  audit_logs: 'max',
 }
 
 export interface Entitlements {
