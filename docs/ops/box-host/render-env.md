@@ -1,5 +1,26 @@
 # Connecting Render to the box servers
 
+## Where the services run
+
+Since 5 October 2026 the API (`simeon-api`, serving `api.simeonlabs.com`),
+the worker (`simeon-worker`), Postgres (`simeon-postgres`) and Redis
+(`simeon-redis`) run in Render's **Oregon** region, the same side of the
+country as the box server (`box2.simeonlabs.com`, Hetzner Hillsboro) and
+the people using the app. Until that day they ran in Frankfurt, and every
+screen frame and keystroke of a cloud computer crossed the Atlantic twice
+(measured from Seattle: 0.3 s to first byte; about 0.15 s after the move).
+The environment group is `simeon-shared`. The cloud runner
+(`simeonlabs-maty-runner`) stayed in Frankfurt; it only queues work and
+reaches the API by its public name.
+
+A move between regions is a new set of services, not a setting: the
+database is restored into the new one from a backup, the services are
+created again with the same variables and secret files, the custom domain
+is moved, and **the new services' outbound addresses go into the box
+server's firewall before the first cloud computer is opened** (the
+Oregon API's first `EnsureSandBox` timed out on port 2376 until they were
+added). Render's outbound ranges differ per region.
+
 Settings are named `SIMEON_<NAME>` below. A variable still named
 `CLAIDOR_<NAME>` on Render keeps working (the server reads both, and the
 `SIMEON_` one wins when both are set), so they can be renamed one at a time.
@@ -53,9 +74,12 @@ variables.
 The worker also dials the box host (port 2376, and each box's `/health`
 on its published port), so its outbound addresses must be in the VM's
 firewall too. Render lists them on each service's Networking tab; they
-are normally the same set for every service in a region. If the worker's
-list differs from the API's, add the missing ones to `RENDER_EGRESS_IPS`
-and run `setup-box-host.sh` again.
+are normally the same set for every service in a region, and a different
+set in another region (the Oregon services use two ranges the Frankfurt
+ones did not). If the worker's list differs from the API's, or the
+services move, add the missing ranges to `RENDER_EGRESS_IPS` and run
+`setup-box-host.sh` again, or add them by hand to `ufw` on port 2376 and
+to the `DOCKER-USER` chain for the published ports.
 
 
 Secret files (Environment → Secret Files; Render mounts them under

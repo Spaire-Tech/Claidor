@@ -1,3 +1,6 @@
+# The Render services. Since 5 October 2026 the live services run in Oregon
+# (docs/ops/box-host/render-env.md, "Where the services run"); `region` below
+# says so for a Blueprint made from this file.
 # Claidor on Render — infrastructure as a blueprint.
 #
 # Create with: Render dashboard → New → Blueprint → point at this repo.
@@ -21,6 +24,7 @@ services:
     dockerfilePath: ./server/Dockerfile
     dockerContext: ./server
     plan: starter
+    region: oregon
     healthCheckPath: /healthz
     autoDeploy: true
     envVarGroups:
@@ -88,6 +92,7 @@ services:
     dockerfilePath: ./server/Dockerfile
     dockerContext: ./server
     plan: starter
+    region: oregon
     autoDeploy: true
     dockerCommand: uv run dramatiq -p 2 -t 4 -f simeon.worker.scheduler:start simeon.worker.run
     envVarGroups:
@@ -141,6 +146,7 @@ services:
     dockerfilePath: ./runner/Dockerfile
     dockerContext: .
     plan: starter
+    region: oregon
     # Deliberately NOT in the `claidor-shared` group, unlike the two
     # services above. That group carries the provider key, the signing
     # secrets and the S3 credentials, and this service needs none of them:
@@ -164,6 +170,7 @@ services:
   - type: keyvalue
     name: claidor-redis
     plan: free
+    region: oregon
     maxmemoryPolicy: noeviction
     ipAllowList: []
 
@@ -171,6 +178,7 @@ databases:
   - name: claidor-postgres
     databaseName: claidor
     plan: basic-256mb
+    region: oregon
     postgresMajorVersion: "16"
 
 # Everything both processes must agree on. Render prompts once for each

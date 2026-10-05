@@ -215,6 +215,19 @@ Settings the script reads: `SIMEON_TEAM_ID` (picks the certificate),
 `https://simeonlabs.com/releases`; the URLs in `feed.json` and
 `release.json` are built from it).
 
+### Uploading a release
+
+The server serves releases from the public bucket (`docs/services-core.md`,
+"The Mac app's releases"). From the Mac that made it, with the AWS keys
+Render uses (`aws configure` once):
+
+```sh
+V=0.1.0
+aws s3 cp --recursive dist/release/$V s3://simeon-s3-public/releases/darwin-arm64/$V/
+aws s3 cp dist/release/$V/release.json s3://simeon-s3-public/releases/darwin-arm64/latest.json
+curl -sI https://api.simeonlabs.com/desktop/download/mac | head -3   # 302 to the .dmg within five minutes
+```
+
 ## Publishing the host bundle
 
 The cloud boxes run the host from the packaged app. After `npm run package`:
