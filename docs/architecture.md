@@ -161,7 +161,8 @@ rebuild it.
 ## Sign-in
 
 The app opens `https://api.simeonlabs.com/loginDeepControl` in the browser.
-The page asks the person to confirm (after the web login if needed), then
+The page asks the person to confirm (after the web login if needed, and after
+the billing page if they have no plan yet; `docs/services-billing.md`), then
 opens `simeon://app/v1/open`. Meanwhile the app polls `/auth/poll` for its
 token pair and later refreshes with `/oauth/token`. The access token is the
 opaque desktop token inside a signed JWT, so the app can read its expiry.
