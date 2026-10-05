@@ -17,6 +17,17 @@
       actions.insertBefore(search, plus);
     }
   };
-  put();
-  new MutationObserver(put).observe(document.documentElement, { childList: true, subtree: true });
+  // The agent's pane opens by itself the first time the chat header is up (the founder, 5 October 2026); closing it afterwards sticks.
+  let opened = false;
+  const open = () => {
+    if (opened) return;
+    const identity = document.querySelector('.sand-chat-header__identity');
+    const pane = document.querySelector('.sand-info-pane');
+    if (!identity || !pane || pane.getAttribute('data-open') === 'true') return;
+    opened = true;
+    identity.click();
+  };
+  const tick = () => { put(); open(); };
+  tick();
+  new MutationObserver(tick).observe(document.documentElement, { childList: true, subtree: true });
 })();

@@ -17,3 +17,22 @@ html body .sand-agents-sidebar__new-actions .sand-kit-icon-button:hover{transfor
 html body .sand-agents-sidebar__new-actions .sand-kit-icon-button:active{transform:scale(.97)!important}
 html body .sand-agents-sidebar__new-actions .sand-kit-icon{width:18px!important;height:18px!important;display:block!important}
 html body .sand-agents-sidebar__new-actions .sand-kit-icon svg{width:18px!important;height:18px!important;fill:none!important;stroke:currentColor!important;stroke-width:2!important;stroke-linecap:round!important;stroke-linejoin:round!important}
+
+/* The agent's pane (the founder, 5 October 2026): open from the start at its widest, and its four tabs, profile,
+   routines, computer and channels, as the same round glass discs; the chosen one solid white in the ink. */
+html body .sand-info-pane{--sand-info-pane-width:480px!important}
+html body .simeon-segments{display:flex!important;justify-content:center!important;gap:12px!important;height:auto!important;padding:0!important;margin:28px 0 26px!important;background:none!important}
+html body .simeon-segments__thumb{display:none!important}
+html body .simeon-segments>*+*::before{display:none!important}
+html body .simeon-segments__item{flex:none!important;width:44px!important;height:44px!important;border-radius:999px!important;color:rgba(0,0,0,.62)!important;
+  background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,255,255,.38))!important;
+  -webkit-backdrop-filter:blur(14px) saturate(1.6)!important;backdrop-filter:blur(14px) saturate(1.6)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 0 0 .75px rgba(255,255,255,.6),inset 0 -1px 1px rgba(0,0,0,.04),0 0 0 .5px rgba(0,0,0,.07),0 1px 3px rgba(0,0,0,.06)!important;
+  transition:transform .18s ease,background .18s ease,box-shadow .18s ease!important}
+html body .simeon-segments__item:hover{transform:scale(1.04)!important}
+html body .simeon-segments__item[aria-selected="true"]{color:rgba(0,0,0,.85)!important;background:linear-gradient(180deg,#fff,rgba(255,255,255,.9))!important;
+  box-shadow:inset 0 1px 0 #fff,inset 0 0 0 .75px rgba(255,255,255,.9),inset 0 -1px 1px rgba(0,0,0,.05),0 0 0 .5px rgba(0,0,0,.1),0 2px 5px rgba(0,0,0,.08),0 8px 18px -6px rgba(0,0,0,.16)!important}
+html body .simeon-segments__item svg{width:20px!important;height:20px!important;stroke-width:1.7!important}
+/* While the pane is open the sidebar is a narrow rail: the two buttons stack. */
+html body .sand-shell:has(.sand-info-pane[data-open="true"]) .sand-agents-sidebar__header{height:auto!important;padding:10px 0 4px!important;justify-content:center!important}
+html body .sand-shell:has(.sand-info-pane[data-open="true"]) .sand-agents-sidebar__new-actions{flex-direction:column!important;gap:10px!important;margin:0 auto!important}
