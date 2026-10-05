@@ -556,14 +556,15 @@ const AGENT_PANE_COMPONENTS_SOURCE = [
   // open at quit still gives the sidebar back when it closes.
   "let __simeonPaneTookSidebar=(()=>{try{return localStorage.getItem(\"simeon.paneTookSidebar\")===\"1\"}catch{return!1}})();",
   "function __simeonSetPaneTookSidebar(v){__simeonPaneTookSidebar=v;try{localStorage.setItem(\"simeon.paneTookSidebar\",v?\"1\":\"0\")}catch{}}",
-  "function __simeonPaneSegments(n){const{value:v,onChange:c,hasChannels:h}=n,items=[[\"settings\",\"Profile\"],[\"routines\",\"Routines\"],[\"overview\",\"Computer\"],...(h?[[\"channels\",\"Channels\"]]:[])],at=Math.max(0,items.findIndex(x=>x[0]===v));",
+  // Three tabs (5 October 2026, the founder: "remove the channel icon in the app as well"): the Channels view stays in the code, reachable by a request, with no tab of its own.
+  "function __simeonPaneSegments(n){const{value:v,onChange:c}=n,items=[[\"settings\",\"Profile\"],[\"routines\",\"Routines\"],[\"overview\",\"Computer\"]],at=Math.max(0,items.findIndex(x=>x[0]===v));",
   "return p.jsxs(\"div\",{className:\"simeon-segments\",role:\"tablist\",\"aria-label\":\"Agent\",style:{\"--simeon-seg-count\":items.length,\"--simeon-seg-index\":at},children:[p.jsx(\"span\",{className:\"simeon-segments__thumb\",\"aria-hidden\":!0}),...items.map(([id,label])=>p.jsx(yo,{content:label,children:p.jsx(\"button\",{type:\"button\",role:\"tab\",\"aria-selected\":id===v,\"aria-label\":label,\"data-segment\":id,className:\"simeon-segments__item\",onClick:()=>c(id),children:p.jsx(\"svg\",{viewBox:\"0 0 24 24\",\"aria-hidden\":!0,dangerouslySetInnerHTML:{__html:__simeonPaneIcons[id]}})})},id))]})}",
 ].join("");
 const AGENT_PANE_ANCHOR = "function p3n(n){";
 const AGENT_PANE_BODY_BEFORE = "p.jsx(Ar,{className:re(\"sand-info-pane__section-content\",\"sand-1iyjqo2 sand-s83m0k sand-dl72j9 sand-2lwn1j\"),ref:Y,children:F===\"overview\"?p.jsxs(\"div\",{className:\"sand-9f619 sand-78zum5 sand-dt5ytf sand-1v2ro7d sand-1nn3v0j sand-yfqnmn sand-1l90r2v sand-nm25rq sand-1iyjqo2 sand-s83m0k sand-dl72j9\",children:[l,b?p.jsx(z2n,{agent:t,onOpenAgentChat:f}):null,p.jsxs(\"div\",{className:{0:{className:\"sand-78zum5 sand-dt5ytf sand-17d4w8g\"},1:{className:\"sand-78zum5 sand-dt5ytf sand-17d4w8g sand-1iyjqo2 sand-s83m0k sand-dl72j9 sand-2lwn1j\"}}[!!Cmt(x)<<0].className,children:[N.length>0?p.jsxs(\"div\",{className:\"sand-78zum5 sand-6s0dn4 sand-1qughib sand-167g77z sand-mix8c7\",children:[p.jsx(\"span\",{className:re(\"sand-info-pane__section-heading\",Fe(FUe.sectionHeading,Us.medium).className),id:ye,children:\"Routines\"}),p.jsx(yo,{content:\"Create Routine\",children:p.jsx(fr,{\"aria-label\":\"Create Routine\",className:\"sand-info-pane__section-heading-action\",\"data-routine-row\":\"new\",icon:\"plus\",onClick:xe,size:\"sm\",style:FUe.sectionHeadingAction})})]}):null,p.jsx(K2n,{agentId:t.id,labelledBy:ye,onCreateRoutine:xe,onOpenRoutine:Ie=>_({kind:\"existing\",id:Ie})})]}),k.length>0?p.jsx(D2n,{counts:I,onOpenSection:J,sections:k}):null]}):p.jsxs(\"div\",{className:\"sand-9f619 sand-78zum5 sand-dt5ytf sand-1v2ro7d sand-1nn3v0j sand-yfqnmn sand-1l90r2v sand-nm25rq sand-1iyjqo2 sand-s83m0k sand-dl72j9\",\"aria-labelledby\":ve,id:ge,role:\"region\",children:[F===\"settings\"?p.jsx(h3n,{agent:t,onDescriptionChange:m,onNameChange:u,onTitleChange:d}):null,F===\"channels\"?p.jsx(_0n,{agentId:t.id,labelledBy:ve}):null]})})";
 const AGENT_PANE_BODY_AFTER = 'p.jsx(Ar,{className:re("sand-info-pane__section-content","sand-1iyjqo2 sand-s83m0k sand-dl72j9 sand-2lwn1j"),ref:Y,children:p.jsxs("div",{className:"simeon-pane","data-segment":F,children:['
   + 'p.jsxs("div",{className:"simeon-pane__head",children:[p.jsx(f3n,{agent:t}),p.jsx("div",{className:"simeon-pane__name",children:t.name}),typeof t.title==="string"&&t.title.trim().length>0?p.jsx("div",{className:"simeon-pane__title",children:t.title}):null]}),'
-  + 'p.jsx(__simeonPaneSegments,{value:F,onChange:J,hasChannels:k.some(Ie=>Ie.id==="channels")}),'
+  + 'p.jsx(__simeonPaneSegments,{value:F,onChange:J}),'
   + 'p.jsxs("div",{className:"simeon-pane__body",id:ge,role:"tabpanel",children:['
   + 'F==="settings"?p.jsx(h3n,{agent:t,onDescriptionChange:m,onNameChange:u,onTitleChange:d}):null,'
   + 'F==="routines"?p.jsxs("div",{className:"simeon-pane__routines",children:[p.jsx("span",{id:ye,hidden:!0,children:"Routines"}),N.length>0?p.jsx("div",{className:"simeon-pane__add",children:p.jsxs("button",{type:"button","data-routine-row":"new",onClick:xe,children:[p.jsx(bt,{name:"plus",size:"sm"}),"New Routine"]})}):null,p.jsx(K2n,{agentId:t.id,labelledBy:ye,onCreateRoutine:xe,onOpenRoutine:Ie=>_({kind:"existing",id:Ie})})]}):null,'
@@ -1805,7 +1806,15 @@ export const SIDEBAR_DISCS_REPLACEMENTS = Object.freeze([
   ["sidebar-header-store-search", SIDEBAR_HEADER_STORE_BEFORE, SIDEBAR_HEADER_STORE_AFTER],
   ["sidebar-no-search-bar", SIDEBAR_SEARCH_BAR_BEFORE, SIDEBAR_SEARCH_BAR_AFTER],
   ["sidebar-rail-call-search", SIDEBAR_RAIL_CALL_BEFORE, SIDEBAR_RAIL_CALL_AFTER],
+  // The pane opens at its widest (the founder, 5 October 2026: "make the avatar panel to open in max"): every
+  // fallback for its width is `ume` (480) rather than `K4e` (320): a fresh install, a stored slice or key without
+  // a width, and the width the sidebar's layout reads. A width the person dragged is still kept.
+  ["pane-widest-default", "Olt={isOpen:!1,width:K4e}", "Olt={isOpen:!1,width:ume}"],
+  ["pane-widest-stored-fallback", "bge(s.width,K4e)", "bge(s.width,ume)"],
+  ["pane-widest-legacy-fallback", "bge(e.infoPaneWidth,K4e)", "bge(e.infoPaneWidth,ume)"],
+  ["pane-widest-stored-key-fallback", '{fallback:K4e,min:DQ,max:ume}', '{fallback:ume,min:DQ,max:ume}'],
 ]);
+export const PANE_WIDEST = 480;
 
 export function patchOriginalSidebarDiscs(source) {
   let out = source;
@@ -2047,7 +2056,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-mark", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "agent-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "flight-results", "upstream-tokens", "sidebar-glass-discs"],
+    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-mark", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "agent-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "flight-results", "upstream-tokens", "sidebar-glass-discs", "pane-widest-default", "pane-three-tabs"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings", "upstream-tokens", "icon-font-file"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");

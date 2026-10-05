@@ -36,3 +36,5 @@ html body .sand-prompt-attach{width:30px!important;height:30px!important;border-
 html body .sand-prompt-attach:hover{transform:scale(1.04)!important;background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,255,255,.38))!important}
 html body .sand-prompt-attach:active{transform:scale(.97)!important}
 html body .sand-prompt-attach .ui-icon{color:rgba(0,0,0,.78)!important}
+/* The demo keeps the agent pane closed: the chat header's avatar takes no clicks (the founder, 5 October 2026). */
+html body .sand-chat-header__identity{pointer-events:none!important}
