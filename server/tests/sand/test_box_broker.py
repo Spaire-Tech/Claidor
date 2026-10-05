@@ -1,4 +1,4 @@
-"""The box broker (25 September 2026): `aiserver.v1.GrokBotService`
+"""The box broker (25 September 2026): `simeon.v1.ComputerService`
 served from Simeon Labs' server against an in-memory `BoxHost`, the
 local-exec credential routes, and the API's own proxy to the box.
 
@@ -50,12 +50,12 @@ from simeon.sand.box_service import (
 from simeon.sand.connect import decode_stream_frames
 from tests.desktop.test_endpoints import _signed_in
 
-ENSURE = "/aiserver.v1.GrokBotService/EnsureSandBox"
-RECREATE = "/aiserver.v1.GrokBotService/RecreateSandBox"
-FORCE_RECREATE = "/aiserver.v1.GrokBotService/ForceRecreateSandBox"
-WATCH = "/aiserver.v1.GrokBotService/WatchSandBoxMigration"
-RUN_STATE = "/aiserver.v1.GrokBotService/GetSandBoxRunState"
-TURN_FINISHED = "/aiserver.v1.GrokBotService/NotifySandAgentTurnFinished"
+ENSURE = "/simeon.v1.ComputerService/EnsureSandBox"
+RECREATE = "/simeon.v1.ComputerService/RecreateSandBox"
+FORCE_RECREATE = "/simeon.v1.ComputerService/ForceRecreateSandBox"
+WATCH = "/simeon.v1.ComputerService/WatchSandBoxMigration"
+RUN_STATE = "/simeon.v1.ComputerService/GetSandBoxRunState"
+TURN_FINISHED = "/simeon.v1.ComputerService/NotifySandAgentTurnFinished"
 
 
 class FakeBoxHost:

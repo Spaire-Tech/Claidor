@@ -19,8 +19,11 @@ from simeon.desktop.service import offered_models
 from .cloud_agents_service import cloud_agents
 from .connect import ConnectCall, ConnectService
 
-service = ConnectService("aiserver.v1.BackgroundComposerService")
-ai_service = ConnectService("aiserver.v1.AiService")
+service = ConnectService(
+    "simeon.v1.CloudAgentService",
+    aliases=("aiserver.v1.BackgroundComposerService",),
+)
+ai_service = ConnectService("simeon.v1.AiService", aliases=("aiserver.v1.AiService",))
 
 
 def _text(message: dict[str, Any], key: str) -> str:

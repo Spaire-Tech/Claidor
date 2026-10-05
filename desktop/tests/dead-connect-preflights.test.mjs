@@ -31,19 +31,24 @@ async function load(entry, name) {
 test("the privacy-mode pre-flight, the team-admin prefetch and the cloud-agent watcher follow the served set, per service", async () => {
   delete process.env.SAND_CONNECT_SERVED;
   const session = await src("host/extensions/inference/cursor-session.ts");
-  assert.match(session, /resolvePrivacyMode: \(\) => isConnectServed\(process\.env, "aiserver\.v1\.DashboardService"\) \? resolveSandRunPrivacyMode\(auth\) : Promise\.resolve\(SAND_RUN_PRIVACY_MODE_FALLBACK\)/);
+  assert.match(session, /resolvePrivacyMode: \(\) => isConnectServed\(process\.env, DASHBOARD_SERVICE_NAME\) \? resolveSandRunPrivacyMode\(auth\) : Promise\.resolve\(SAND_RUN_PRIVACY_MODE_FALLBACK\)/);
   const { module, dispose } = await load("source/shared/cloud-agents-availability.ts", "availability");
   try {
     // The served set (simeon/sand, 25 September 2026): our Connect services
     // by name, everything with "1", nothing with "0", a list otherwise.
+    assert.equal(module.isConnectServed({}, "simeon.v1.ComputerService"), true);
+    assert.equal(module.isConnectServed({}, "simeon.v1.DashboardService"), true);
+    // 5 October 2026: the upstream's names select the same services, so a SAND_CONNECT_SERVED list written before keeps working.
     assert.equal(module.isConnectServed({}, "aiserver.v1.GrokBotService"), true);
-    assert.equal(module.isConnectServed({}, "aiserver.v1.DashboardService"), true);
+    assert.equal(module.isConnectServed({ SAND_CONNECT_SERVED: "aiserver.v1.GrokBotService" }, "simeon.v1.ComputerService"), true);
+    assert.equal(module.isConnectServed({ SAND_CONNECT_SERVED: "simeon.v1.ComputerService" }, "aiserver.v1.GrokBotService"), true);
+    assert.equal(module.connectServiceName("aiserver.v1.BackgroundComposerService"), "simeon.v1.CloudAgentService");
     assert.equal(module.isConnectServed({}, "aiserver.v1.InferenceService"), false, "the loop runs on the simeon executor, never on the upstream's inference");
     assert.equal(module.isConnectServed({}, "cursor.statsig-bootstrap"), false, "the upstream's feature-gate server is not ours");
-    assert.equal(module.isConnectServed({ SAND_CONNECT_SERVED: "0" }, "aiserver.v1.GrokBotService"), false);
+    assert.equal(module.isConnectServed({ SAND_CONNECT_SERVED: "0" }, "simeon.v1.ComputerService"), false);
     assert.equal(module.isConnectServed({ SAND_CONNECT_SERVED: "1" }, "cursor.statsig-bootstrap"), true);
-    assert.equal(module.isConnectServed({ SAND_CONNECT_SERVED: "aiserver.v1.AiService" }, "aiserver.v1.AiService"), true);
-    assert.equal(module.isConnectServed({ SAND_CONNECT_SERVED: "aiserver.v1.AiService" }, "aiserver.v1.GrokBotService"), false);
+    assert.equal(module.isConnectServed({ SAND_CONNECT_SERVED: "simeon.v1.AiService" }, "simeon.v1.AiService"), true);
+    assert.equal(module.isConnectServed({ SAND_CONNECT_SERVED: "simeon.v1.AiService" }, "simeon.v1.ComputerService"), false);
     assert.equal(module.isCloudAgentsServed({}), true);
     assert.equal(module.isCloudAgentsServed({ SAND_CLOUD_AGENTS_SERVED: "0" }), false);
     assert.equal(module.isCloudAgentsServed({ SAND_CONNECT_SERVED: "0" }), false);

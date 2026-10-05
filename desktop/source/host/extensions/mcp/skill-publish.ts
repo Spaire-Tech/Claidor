@@ -5,7 +5,7 @@ import { basename, dirname, join } from "node:path";
 import { packPluginArtifact } from "../../../packages/cursor-plugins/tarball.js";
 import { restoreSkillsFromPluginDir } from "../../../packages/cursor-plugins/skill-plugin-restore.js";
 import { synthesizeSkillPluginDir } from "../../../packages/cursor-plugins/skill-plugin-synthesizer.js";
-import { DashboardService } from "../../../packages/proto/generated/aiserver/v1/dashboard_connect.js";
+import { DashboardService } from "../../../packages/proto/simeon/v1/services.js";
 import {
   GetTeamsRequest,
   PublishPluginRequest,

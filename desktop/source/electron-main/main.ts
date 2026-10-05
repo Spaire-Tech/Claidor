@@ -1,3 +1,4 @@
+import "../shared/node/accept-simeon-env.js";
 import { installApplicationMenu, type ApplicationMenuElectronPort, type ApplicationMenuVoiceCall } from "./application-menu.js";
 import { reportDesktopEdgeFailure } from "./desktop-edge-failures.js";
 import { createDevToolsGate, createDevToolsMembershipResolver } from "./devtools-gate.js";

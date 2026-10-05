@@ -172,7 +172,7 @@
         "server/simeon/models/sand_*.py"
       ],
       "match": "GrokBotService|GROK_BOT|grok_bot|\"grok-bot\"",
-      "reason": "The server answers the Connect service aiserver.v1.GrokBotService, and the GROK_BOT source enum (\"grok-bot\" in JSON) the app sends with a cloud agent."
+      "reason": "The server answers the Connect service under its earlier name aiserver.v1.GrokBotService for one release (simeon.v1.ComputerService since 5 October 2026), and the GROK_BOT source enum an app built before that day sends with a cloud agent."
     },
     {
       "kind": "fallback",
@@ -458,19 +458,6 @@
       ],
       "match": "github\\.com/polarsource/polar/(issues|pull)/",
       "reason": "Links to the upstream issue or pull request that explains the code next to them."
-    },
-    {
-      "kind": "contract",
-      "names": [
-        "grok",
-        "anysphere",
-        "Cursor"
-      ],
-      "paths": [
-        "desktop/web/**"
-      ],
-      "match": "GrokBotService|isAnysphereUser",
-      "reason": "Simeon on the web speaks the Connect service the server mounts (`aiserver.v1.GrokBotService`, `server/simeon/sand/connect.py`) and answers the pinned renderer's own account status field."
     },
     {
       "kind": "contract",

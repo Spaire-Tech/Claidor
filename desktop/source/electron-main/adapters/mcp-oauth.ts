@@ -12,7 +12,7 @@ import { adoptAccountMcpStore, loadAccountMcpStore, serializeAccountMcpStoreForP
 import { delay } from "../../shared/node/async.js";
 import { cleanupLegacyMcpAuthCredentials } from "../../shared/node/mcp/mcp-auth-cleanup.js";
 import { parseAllowedExternalUrl } from "../../shared/external-url-policy.js";
-import { DashboardService } from "../../packages/proto/generated/aiserver/v1/dashboard_connect.js";
+import { DashboardService } from "../../packages/proto/simeon/v1/services.js";
 import { createSandCursorBackendClient } from "../../shared/node/cursor-backend/cursor-inference.js";
 import { reportDesktopEdgeFailure, reportDesktopEdgeFailureClass } from "../desktop-edge-failures.js";
 import { requireFunction, requireObject } from "./provider-guards.js";

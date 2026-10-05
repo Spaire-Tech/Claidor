@@ -1,4 +1,4 @@
-import { DashboardService } from "../../packages/proto/generated/aiserver/v1/dashboard_connect.js";
+import { DashboardService } from "../../packages/proto/simeon/v1/services.js";
 import { McpError, McpResult } from "../../packages/proto/generated/agent/v1/mcp_exec_pb.js";
 import { reportDesktopEdgeFailure } from "../desktop-edge-failures.js";
 import { createSandCursorBackendClient, getSandInferenceBackendUrl } from "../../shared/node/cursor-backend/cursor-inference.js";

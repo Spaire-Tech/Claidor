@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { createRealPollingPolicy } from "../../../internal/scheduling.js";
 import { defineHostExtension } from "../../../internal/host-extensions.js";
 import { getConfiguredBackendUrl } from "../../../shared/node/cursor-token.js";
-import { AutomationsService } from "../../../packages/proto/generated/aiserver/v1/automations_connect.js";
+import { AutomationsService } from "../../../packages/proto/simeon/v1/services.js";
 import { createSandCursorBackendClient } from "../../../shared/node/cursor-backend/cursor-inference.js";
 import { inspectAgentAutomationDefinitions } from "../../automations/automation-store.js";
 import { getSandAgentsRootDir } from "../../storage/agent-paths.js";

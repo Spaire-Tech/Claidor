@@ -1,3 +1,4 @@
+import "../shared/node/accept-simeon-env.js";
 import { runBoxExecDaemonEntrypoint } from "./main.js";
 
 void runBoxExecDaemonEntrypoint().catch(error => {

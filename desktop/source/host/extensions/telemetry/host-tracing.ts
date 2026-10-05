@@ -8,7 +8,7 @@ import {
   type SpanExporter as OTelSpanExporter,
 } from "@opentelemetry/sdk-trace-node";
 import { errorLogTag } from "../../../shared/errors.js";
-import { SAND_CLIENT_TYPE } from "../../../shared/node/sand-client-metadata.js";
+import { CLIENT_TYPE_HEADER, CLIENT_VERSION_HEADER, SAND_CLIENT_TYPE } from "../../../shared/node/sand-client-metadata.js";
 import { createSendTraceSampler } from "./send-trace-sampler.js";
 export { ExportResultCode };
 export type SpanExporter = OTelSpanExporter;
@@ -132,8 +132,8 @@ export function initSandHostTracing(options: {
       options.getToken,
       {
         "x-ghost-mode": "false",
-        "x-cursor-client-type": SAND_CLIENT_TYPE,
-        "x-cursor-client-version": "sand-host",
+        [CLIENT_TYPE_HEADER]: SAND_CLIENT_TYPE,
+        [CLIENT_VERSION_HEADER]: "sand-host",
       },
       options.insecure ?? false,
       options.createExporter,

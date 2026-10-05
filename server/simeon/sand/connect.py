@@ -19,9 +19,13 @@ codec. On the wire that is:
   `{"error": {...}}`.
 
 This module is the one place that knows those rules. A feature module
-declares a service with `ConnectService("aiserver.v1.GrokBotService")`
-and decorates handlers with `@service.unary("EnsureSandBox")` or
-`@service.stream("WatchSandBoxMigration")`; the handler takes the
+declares a service with `ConnectService("simeon.v1.ComputerService",
+aliases=("aiserver.v1.GrokBotService",))` and decorates handlers with
+`@service.unary("EnsureSandBox")` or `@service.stream("WatchSandBoxMigration")`;
+every method is mounted under the service's name and under each alias
+(5 October 2026: the services carry Simeon's names, and the upstream's
+names an app or box host from before that day still speaks are served
+for one release, `docs/kept-names.md`). The handler takes the
 decoded JSON body and the caller's session and returns a JSON object
 (or, for a stream, an async iterator of them). Nothing here parses the
 generated protos: the app decodes protobuf JSON leniently (`fromJson`
@@ -238,18 +242,30 @@ async def _caller(
 
 class ConnectService:
     """One Connect service, mounted at `/{name}/{Method}` on the root of
-    the API host, the way the app builds every URL."""
+    the API host, the way the app builds every URL, and at
+    `/{alias}/{Method}` for each earlier name of the service."""
 
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, *, aliases: tuple[str, ...] = ()) -> None:
         self.name = name
+        self.aliases = aliases
         self.router = APIRouter(tags=["sand", APITag.private], include_in_schema=False)
         self.methods: dict[str, str] = {}
+
+    @property
+    def names(self) -> tuple[str, ...]:
+        return (self.name, *self.aliases)
+
+    def _mount(self, method: str, endpoint: Any) -> None:
+        endpoint.__name__ = f"{self.name}_{method}"
+        for name in self.names:
+            self.router.add_api_route(
+                f"/{name}/{method}", endpoint, methods=["POST"], response_model=None
+            )
 
     def unary(
         self, method: str, *, auth: Auth = "desktop"
     ) -> Callable[[UnaryHandler], UnaryHandler]:
         def register(handler: UnaryHandler) -> UnaryHandler:
-            path = f"/{self.name}/{method}"
             self.methods[method] = "unary"
 
             async def endpoint(
@@ -273,10 +289,7 @@ class ConnectService:
                     return error.response()
                 return JSONResponse(status_code=200, content=result)
 
-            endpoint.__name__ = f"{self.name}_{method}"
-            self.router.add_api_route(
-                path, endpoint, methods=["POST"], response_model=None
-            )
+            self._mount(method, endpoint)
             return handler
 
         return register
@@ -285,7 +298,6 @@ class ConnectService:
         self, method: str, *, auth: Auth = "desktop"
     ) -> Callable[[StreamHandler], StreamHandler]:
         def register(handler: StreamHandler) -> StreamHandler:
-            path = f"/{self.name}/{method}"
             self.methods[method] = "server-stream"
 
             async def endpoint(
@@ -320,10 +332,7 @@ class ConnectService:
                     frames(), media_type="application/connect+json"
                 )
 
-            endpoint.__name__ = f"{self.name}_{method}"
-            self.router.add_api_route(
-                path, endpoint, methods=["POST"], response_model=None
-            )
+            self._mount(method, endpoint)
             return handler
 
         return register

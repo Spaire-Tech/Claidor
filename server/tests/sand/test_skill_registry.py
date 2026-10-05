@@ -1,4 +1,4 @@
-"""The skill registry behind `aiserver.v1.DashboardService` (25 September
+"""The skill registry behind `simeon.v1.DashboardService` (25 September
 2026, `docs/services-agents.md`).
 
 The app packs a skill folder as a plugin tar.gz (`plugin.json` +
@@ -36,7 +36,7 @@ from simeon.sand.skill_registry_service import (
 from tests.desktop.test_endpoints import _signed_in
 from tests.fixtures.database import SaveFixture
 
-SERVICE = "/aiserver.v1.DashboardService"
+SERVICE = "/simeon.v1.DashboardService"
 
 
 def plugin_tar_gz(name: str = "meeting-notes", body: str = "Take notes.") -> bytes:
@@ -405,7 +405,7 @@ class TestManagedSetupAnswersEmpty:
             ("ListMarketplacePlugins", {"limit": 20}),
         ):
             response = await client.post(
-                f"/aiserver.v1.DashboardService/{method}", json=body, headers=headers
+                f"/simeon.v1.DashboardService/{method}", json=body, headers=headers
             )
             assert response.status_code == 200, (method, response.text)
             assert response.json() == {}

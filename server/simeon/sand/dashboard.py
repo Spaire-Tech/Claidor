@@ -18,7 +18,9 @@ from typing import Any
 
 from .connect import ConnectCall, ConnectService
 
-service = ConnectService("aiserver.v1.DashboardService")
+service = ConnectService(
+    "simeon.v1.DashboardService", aliases=("aiserver.v1.DashboardService",)
+)
 
 #: `PrivacyMode` in `desktop/source/shared/observability/sentry-privacy-mode.ts`:
 #: UNSPECIFIED 0, NO_STORAGE 1, NO_TRAINING 2, …. Simeon Labs trains on
@@ -56,7 +58,11 @@ SAND_PURCHASE_CHANNEL_IN_APP = 1
 
 @service.unary("GetSandAccessStatus", auth="desktop-or-box")
 async def get_sand_access_status(call: ConnectCall) -> dict[str, Any]:
-    return {"state": SAND_ACCESS_STATE_GRANTED, "purchaseChannel": SAND_PURCHASE_CHANNEL_IN_APP, "blockReason": 0}
+    return {
+        "state": SAND_ACCESS_STATE_GRANTED,
+        "purchaseChannel": SAND_PURCHASE_CHANNEL_IN_APP,
+        "blockReason": 0,
+    }
 
 
 @service.unary("GetMe", auth="desktop-or-box")

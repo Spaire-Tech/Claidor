@@ -1,4 +1,5 @@
 import { isConnectServed } from "../../../shared/cloud-agents-availability.js";
+import { DASHBOARD_SERVICE_NAME } from "../../../packages/proto/simeon/v1/services.js";
 import { join } from "node:path";
 
 import { SAND_COMPUTER_USE_MODEL_SELECTION, SAND_COMPUTER_USE_SUBAGENT_MODEL_ID, isSandAgentModelSelection, type SandAgentModelSelection } from "../../../shared/agents/sand-agent-model.js";
@@ -107,7 +108,7 @@ export function createCursorSandInference(options: CursorSandInferenceOptions): 
     // which Simeon Labs' server does not serve: one 404 per turn and per
     // nudge, then the fallback (design-audit-ledger.md F-004, F-123). The
     // fallback is answered directly unless SAND_CONNECT_SERVED=1.
-    resolvePrivacyMode: () => isConnectServed(process.env, "aiserver.v1.DashboardService") ? resolveSandRunPrivacyMode(auth) : Promise.resolve(SAND_RUN_PRIVACY_MODE_FALLBACK),
+    resolvePrivacyMode: () => isConnectServed(process.env, DASHBOARD_SERVICE_NAME) ? resolveSandRunPrivacyMode(auth) : Promise.resolve(SAND_RUN_PRIVACY_MODE_FALLBACK),
     getGeminiVideoAttachedMediaUrlProvider: () => options.isGeminiVideoDeveloperApiEnabled?.() === true ? attachedMedia : undefined,
     createSession(onRequestId, sessionOptions) {
       const mockResponse = process.env.SAND_AGENT_MOCK_RESPONSE;

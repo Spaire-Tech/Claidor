@@ -32,9 +32,9 @@ answers in words only: it does not check out code, run commands or open pull req
 **How it works.**
 
 - Server: `server/simeon/sand/cloud_agents.py` (Connect surface), `cloud_agents_service.py`,
-  `cloud_agents_repository.py`. It serves `aiserver.v1.BackgroundComposerService` (start, info,
+  `cloud_agents_repository.py`. It serves `simeon.v1.CloudAgentService` (start, info,
   list, follow-up, pause, rename, archive, delete, artifacts, conversation, and empty
-  pull-request and diff answers) and `aiserver.v1.AiService/AvailableModels`.
+  pull-request and diff answers) and `simeon.v1.AiService/AvailableModels`.
 - A cloud agent is a `sand_cloud_agents` row over one `MatyJob` per turn in the job queue
   (`server/simeon/maty/`). A follow-up on a finished turn is a continuation job with the whole
   conversation; on a running turn it waits and is queued when the turn settles. Pause calls off
@@ -75,7 +75,7 @@ failed check, a new issue).
 - The agent creates a routine with its state tool (`update_state`, target `routine`); the
   routine lives in the agent's folder in the box (`host/automations/automation-store.ts`).
 - The box mirrors every routine the server can schedule through
-  `aiserver.v1.AutomationsService` (`listeners_automations.py`; app side
+  `simeon.v1.AutomationsService` (`listeners_automations.py`; app side
   `host/extensions/automations/sand-automation-cloud-sync.ts`). Once the server answers, the
   box stops firing those routines itself (`shouldScheduleLocally`) and the server owns them.
 - **Cron.** The worker actor `sand.listeners.fire_due_crons` (`listeners_tasks.py`) runs every
@@ -241,7 +241,7 @@ the next plugin sync.
 **How it works.**
 
 - Server: `server/simeon/sand/skill_registry.py`, `skill_registry_service.py`,
-  `skill_registry_repository.py`, as methods of `aiserver.v1.DashboardService`: `GetTeams`
+  `skill_registry_repository.py`, as methods of `simeon.v1.DashboardService`: `GetTeams`
   ("Just me" first, then one team per organization the person belongs to), `PublishPlugin`
   (a tar.gz of at most 10 MB packed, 50 MB unpacked and 2,000 files, which must contain
   `skills/<name>/SKILL.md`), `UnpublishPlugin`, `GetEffectiveUserPlugins`.

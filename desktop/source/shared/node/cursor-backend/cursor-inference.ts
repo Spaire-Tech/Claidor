@@ -3,7 +3,7 @@ import type { MethodInfoUnary, ServiceType } from "@bufbuild/protobuf";
 import { join } from "node:path";
 import { Code, ConnectError, createClient, type Client, type Interceptor, type Transport } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-node";
-import { DashboardService } from "../../../packages/proto/generated/aiserver/v1/dashboard_connect.js";
+import { DASHBOARD_SERVICE_NAME, DashboardService } from "../../../packages/proto/simeon/v1/services.js";
 import { GetUserPrivacyModeRequest, type GetUserPrivacyModeResponse } from "../../../packages/proto/generated/aiserver/v1/dashboard_pb.js";
 import { AgentService } from "../../../packages/proto/generated/agent/v1/agent_service_connect.js";
 import { GetSignedUrlForAttachedMediaRequest, type GetSignedUrlForAttachedMediaResponse } from "../../../packages/proto/generated/agent/v1/agent_service_pb.js";
@@ -15,7 +15,7 @@ import { SAND_DEFAULT_MODEL_SELECTION } from "../../agents/agent-model.js";
 import { SAND_COMPUTER_USE_MODEL_SELECTION, type SandAgentModelSelection } from "../../agents/sand-agent-model.js";
 import { PrivacyMode } from "../../observability/sentry-privacy-mode.js";
 import { accountCacheScope, getConfiguredBackendUrl } from "../cursor-token.js";
-import { SAND_BOX_NAMESPACE_HEADER, SAND_CLIENT_TYPE, getSandBoxNamespace, getSandClientVersion } from "../sand-client-metadata.js";
+import { CLIENT_TYPE_HEADER, CLIENT_VERSION_HEADER, SAND_BOX_NAMESPACE_HEADER, SAND_CLIENT_TYPE, getSandBoxNamespace, getSandClientVersion } from "../sand-client-metadata.js";
 import { createSandRpcTracingInterceptor } from "./rpc-tracing.js";
 import { SandSettingsStore } from "../settings/sand-settings-store.js";
 import { getSandRootDir } from "../../../host/host-paths.js";
@@ -134,16 +134,16 @@ export interface SandInferenceOptions {
 export function createSandInferenceInterceptor(options: SandInferenceOptions): Interceptor {
   return (next) => async (request) => {
     const [auth, machineId] = await Promise.all(["authMode" in options ? Promise.resolve({ mode: options.authMode } as const) : options.getAccessToken({ backendUrl: options.backendUrl }).then((accessToken) => ({ mode: "required" as const, accessToken })), options.getMachineId()]);
-    const privacyLookup = request.service.typeName === "aiserver.v1.DashboardService" && request.method.name === "GetUserPrivacyMode";
+    const privacyLookup = request.service.typeName === DASHBOARD_SERVICE_NAME && request.method.name === "GetUserPrivacyMode";
     const resolveGhostMode = options.resolveGhostModeHeader ?? ((lookup: PrivacyLookupOptions) => resolveSandGhostModeHeader(lookup, options.fetchPrivacyMode ?? fetchSandPrivacyMode));
     // Without the upstream's Connect surface the lookup only ever 404s (ledger F-382).
-    const ghostMode = auth.mode === "anonymous" || privacyLookup || !isConnectServed(options.env, "aiserver.v1.DashboardService") ? "true" : await resolveGhostMode({ backendUrl: options.backendUrl, accessToken: auth.accessToken, machineId });
+    const ghostMode = auth.mode === "anonymous" || privacyLookup || !isConnectServed(options.env, DASHBOARD_SERVICE_NAME) ? "true" : await resolveGhostMode({ backendUrl: options.backendUrl, accessToken: auth.accessToken, machineId });
     const pinned = request.header.get("x-request-id");
     const requestId = pinned != null && pinned !== "" ? pinned : options.randomUUID?.() ?? globalThis.crypto.randomUUID();
     if (auth.mode === "anonymous") request.header.delete("authorization"); else request.header.set("authorization", `Bearer ${auth.accessToken}`);
     request.header.set("x-cursor-checksum", createCursorChecksum(machineId));
-    request.header.set("x-cursor-client-type", SAND_CLIENT_TYPE);
-    request.header.set("x-cursor-client-version", getSandClientVersion(options.env));
+    request.header.set(CLIENT_TYPE_HEADER, SAND_CLIENT_TYPE);
+    request.header.set(CLIENT_VERSION_HEADER, getSandClientVersion(options.env));
     request.header.set(SAND_BOX_NAMESPACE_HEADER, getSandBoxNamespace(options.env));
     request.header.set("x-ghost-mode", ghostMode);
     request.header.set("x-request-id", requestId);

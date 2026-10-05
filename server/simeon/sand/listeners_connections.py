@@ -62,7 +62,9 @@ GITHUB_NOT_REGISTERED = (
     "(SIMEON_SAND_GITHUB_APP_SLUG is empty), so GitHub cannot be connected."
 )
 
-service = ConnectService("aiserver.v1.DashboardService")
+service = ConnectService(
+    "simeon.v1.DashboardService", aliases=("aiserver.v1.DashboardService",)
+)
 router = APIRouter(tags=["sand", APITag.private], include_in_schema=False)
 
 #: Replaceable in tests (an `httpx.MockTransport` behind it).

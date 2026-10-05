@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { AiService } from "../../packages/proto/generated/aiserver/v1/aiserver_connect.js";
+import { AiService } from "../../packages/proto/simeon/v1/services.js";
 import { ClientNumericMetric } from "../../packages/proto/generated/aiserver/v1/aiserver_pb.js";
 import { createSandCursorBackendClient } from "../../shared/node/cursor-backend/cursor-inference.js";
 import { reportDesktopEdgeFailure } from "../desktop-edge-failures.js";

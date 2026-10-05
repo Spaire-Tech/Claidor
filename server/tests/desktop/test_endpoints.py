@@ -1710,3 +1710,38 @@ class TestWithheldModelsAreNotServed:
                 response.json()["error"]["message"]
                 == "This model is not offered by the desktop app."
             )
+
+
+def test_the_client_version_is_read_under_simeons_name_first() -> None:
+    """5 October 2026: the app sends `x-simeon-client-version`; an app or
+    box host built before still sends the two earlier names."""
+    from starlette.requests import Request
+
+    from simeon.desktop.endpoints import CLIENT_VERSION_HEADERS, client_version_of
+
+    def request(*headers: tuple[str, str]) -> Request:
+        raw = [(name.encode(), value.encode()) for name, value in headers]
+        return Request(
+            {
+                "type": "http",
+                "method": "GET",
+                "path": "/",
+                "headers": raw,
+                "query_string": b"",
+            }
+        )
+
+    assert CLIENT_VERSION_HEADERS[0] == "x-simeon-client-version"
+    assert client_version_of(request(("x-simeon-client-version", "0.1.0"))) == "0.1.0"
+    assert client_version_of(request(("x-cursor-client-version", "0.18.0"))) == "0.18.0"
+    assert client_version_of(request(("x-maties-client-version", "0.9.0"))) == "0.9.0"
+    assert (
+        client_version_of(
+            request(
+                ("x-cursor-client-version", "0.18.0"),
+                ("x-simeon-client-version", "0.1.0"),
+            )
+        )
+        == "0.1.0"
+    )
+    assert client_version_of(request(("x-simeon-client-version", "  "))) is None

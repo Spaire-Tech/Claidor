@@ -1,4 +1,4 @@
-import { DashboardService } from "../../../packages/proto/generated/aiserver/v1/dashboard_connect.js";
+import { DashboardService } from "../../../packages/proto/simeon/v1/services.js";
 import { getSandRootDir } from "../../host-paths.js";
 import { createAccountMcpBackendExec } from "../../../shared/node/account-mcp/backend-exec.js";
 import { adoptAccountMcpStore, loadAccountMcpStore, parseAccountMcpServerConfigValue, serializeAccountMcpStoreForPeer } from "../../../shared/node/account-mcp/store.js";

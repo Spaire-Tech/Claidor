@@ -121,9 +121,14 @@ ANTHROPIC_VERSION = "2023-06-01"
 # is still taken so a build from before that day can finish a sign-in.
 DEEP_LINK_CALLBACK = "simeon://auth/callback"
 DEEP_LINK_SCHEMES = ("simeon", "caisra")
-# The app stamps `x-cursor-client-version` on every call it makes
-# (`shared/node/sand-client-metadata.ts`); the older name is read second.
-CLIENT_VERSION_HEADERS = ("x-cursor-client-version", "x-maties-client-version")
+# The app stamps `x-simeon-client-version` on every call it makes
+# (`shared/node/sand-client-metadata.ts`, since 5 October 2026); the two
+# earlier names are read after it, for the apps and box hosts built before.
+CLIENT_VERSION_HEADERS = (
+    "x-simeon-client-version",
+    "x-cursor-client-version",
+    "x-maties-client-version",
+)
 CLIENT_VERSION_HEADER = CLIENT_VERSION_HEADERS[0]
 
 

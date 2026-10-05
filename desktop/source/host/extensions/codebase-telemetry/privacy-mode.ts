@@ -1,5 +1,5 @@
 import type { MethodInfoUnary } from "@bufbuild/protobuf";
-import { DashboardService } from "../../../packages/proto/generated/aiserver/v1/dashboard_connect.js";
+import { DashboardService } from "../../../packages/proto/simeon/v1/services.js";
 import { GetUserPrivacyModeRequest, type GetUserPrivacyModeResponse } from "../../../packages/proto/generated/aiserver/v1/dashboard_pb.js";
 import { PrivacyMode as ProtoPrivacyMode } from "../../../packages/proto/generated/aiserver/v1/privacy_mode_pb.js";
 import { createSandCursorBackendClient } from "../../../shared/node/cursor-backend/cursor-inference.js";

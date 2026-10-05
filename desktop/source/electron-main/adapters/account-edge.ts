@@ -11,7 +11,7 @@ import {
 import { fetchSandPrReviewPreferences } from "../account/cursor-pr-review.js";
 import type { ProductionServiceContext } from "../main-production-services.js";
 import type { ElectronProductionAdapterBindings } from "../production-adapters.js";
-import { DashboardService } from "../../packages/proto/generated/aiserver/v1/dashboard_connect.js";
+import { DashboardService } from "../../packages/proto/simeon/v1/services.js";
 import { createSandCursorBackendClient } from "../../shared/node/cursor-backend/cursor-inference.js";
 import { SAND_PRODUCT_DISPLAY_NAME } from "../../shared/product-name.js";
 import { simeonGateDefault } from "../../shared/node/experiments/simeon-gate-defaults.js";

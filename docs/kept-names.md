@@ -54,6 +54,18 @@ optional pattern the line must match, and the reason.
 - **guard**: a test that checks an earlier name is gone from what a person or
   the agent reads has to name it.
 
+## The wire, for one release
+
+Since 5 October 2026 the Connect services carry Simeon's names
+(`simeon.v1.ComputerService`, `DashboardService`, `AutomationsService`,
+`CloudAgentService`, `AiService`; `desktop/source/packages/proto/simeon/v1/services.ts`)
+and the app stamps `x-simeon-client-type` and `x-simeon-client-version` on
+every call. The server mounts each service under its earlier `aiserver.v1.*`
+name as well and reads `x-cursor-client-version` after Simeon's header
+(`server/simeon/sand/connect.py`, `server/simeon/desktop/endpoints.py`), so a
+Mac app or a box host built before that day keeps working for one release.
+Those are the fallback rules below for `server/simeon/sand/**`.
+
 ## Kept on purpose, not checked
 
 - **`sand`** is the upstream app's internal word for the agent's computer

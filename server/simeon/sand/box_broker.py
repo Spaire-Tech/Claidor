@@ -1,4 +1,5 @@
-"""`aiserver.v1.GrokBotService`, the box broker (25 September 2026).
+"""`simeon.v1.ComputerService` (until 5 October 2026 `aiserver.v1.GrokBotService`,
+still answered for one release), the box broker (25 September 2026).
 
 the upstream's server brokered the box the app runs its agent in; Simeon Labs'
 server did not, so `setBoxRuntime("remote")` was refused and Settings
@@ -53,7 +54,9 @@ from .connect import ConnectCall, ConnectError, ConnectService
 
 log = structlog.get_logger()
 
-service = ConnectService("aiserver.v1.GrokBotService")
+service = ConnectService(
+    "simeon.v1.ComputerService", aliases=("aiserver.v1.GrokBotService",)
+)
 
 AUTOMATION_FAILURE_HINT_HEADER = "x-automation-failure-hint"
 SAND_BOX_BLOCKED = "SAND_BOX_BLOCKED"
