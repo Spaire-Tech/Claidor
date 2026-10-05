@@ -492,6 +492,20 @@
         "desktop/tests/cursor-leftovers.test.mjs"
       ],
       "reason": "The test that checks the upstream's leftovers are gone from the app names the hosts and origin it checks are refused or not called."
+    },
+    {
+      "kind": "guard",
+      "names": [
+        "grok",
+        "cursor.com",
+        "anysphere"
+      ],
+      "paths": [
+        "desktop/scripts/verify-own-shell.mjs",
+        "desktop/tests/own-shell-package.test.mjs"
+      ],
+      "match": "plistNamesPreviousMaker|PREVIOUS_IDENTITY\\.test|belongs to the old path|verifyOfficialMacReference",
+      "reason": "The own-shell package check refuses any plist that still names the upstream's maker or app, and its test feeds it those names (Track D, piece 1)."
     }
   ]
 }

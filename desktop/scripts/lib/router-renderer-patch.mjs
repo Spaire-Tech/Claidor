@@ -1887,10 +1887,16 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     const bytes = await readFile(path.join(stageRoot, relative));
     files.push({ path: relative, original, patched: { bytes: bytes.length, sha256: sha256(bytes) } });
   }
+  // A Settings chunk is rewritten again by the marks, brand and token passes
+  // after `changes` recorded it, so its row carries the bytes after the last
+  // pass, the same as `files`: the record's two inventories agree, which
+  // `readRendererExtensionRecord` (macos-package-verification.mjs) requires
+  // (measured 5 October 2026, on the first own-shell package).
+  const finalPatched = new Map(files.map((file) => [file.path, file.patched]));
   const record = {
     schemaVersion: 2,
     mode: "original-renderer-settings-extension",
-    chunks: changes,
+    chunks: changes.map((change) => ({ ...change, patched: finalPatched.get(change.path) ?? change.patched })),
     marks,
     files,
     brand: { tokens: tokenTotals, tokenReplacements: UPSTREAM_TOKEN_REPLACEMENTS.map(([label, pattern, after]) => ({ label, pattern: String(pattern), after })), replacements: [...BRAND_REPLACEMENTS.map(([before, after]) => ({ before, after })), ...BRAND_WORD_REPLACEMENTS.map(([pattern, after, label]) => ({ before: label, pattern: String(pattern), after })), ...BRAND_PHRASE_REPLACEMENTS.map(([before, after]) => ({ before, after }))], totals: brandTotals, files: brandFiles, residue: brandResidue },
