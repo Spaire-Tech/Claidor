@@ -561,7 +561,7 @@
         // The thumbs on a finished call's card in the chat (2 October 2026).
         rateCall: (conversationId, like) => edge("rateVoiceCall", { conversationId, like })
       },
-      // The window reads `desktop.account` (its own bytes said cursorAccount;
+      // The window reads `desktop.account` (its own bytes said accountService;
       // the renderer patch renames it with the rest of the upstream's tokens,
       // Track B of the detachment plan, 4 October 2026).
       account: {
@@ -986,9 +986,9 @@
   };
   var AGENTS = [
     { id: "simeon", name: "Simeon", title: "Chief of Staff", description: "Runs your day and hands work to the rest of the team.", color: "blue", minutesAgo: 0 },
-    { id: "iris", name: "Iris", title: "Customer support", description: "Answers tickets from your help docs and flags the hard ones.", color: "mint", minutesAgo: 70 },
-    { id: "theo", name: "Theo", title: "Bookkeeping", description: "Keeps the books, the runway and the invoices straight.", color: "green", minutesAgo: 60 * 3 },
-    { id: "scout", name: "Scout", title: "Customer research", description: "Reads what customers say and brings back what matters.", color: "cyan", minutesAgo: 60 * 26 }
+    { id: "theo", name: "Theo", title: "Bookkeeping", description: "Keeps the books, the runway and the invoices straight.", color: "green", minutesAgo: 70 },
+    { id: "iris", name: "Iris", title: "Customer support", description: "Answers tickets from your help docs and flags the hard ones.", color: "violet", minutesAgo: 60 * 3 },
+    { id: "scout", name: "Scout", title: "Customer research", description: "Reads what customers say and brings back what matters.", color: "orange", minutesAgo: 60 * 26 }
   ];
   var GROUP = {
     id: "launch-squad",

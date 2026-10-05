@@ -77,9 +77,9 @@ const earlierCall = (prefix: string, minutesAgo: number, callId: string, seconds
 
 export const AGENTS: readonly DemoAgent[] = [
   { id: "simeon", name: "Simeon", title: "Chief of Staff", description: "Runs your day and hands work to the rest of the team.", color: "blue", minutesAgo: 0 },
-  { id: "iris", name: "Iris", title: "Customer support", description: "Answers tickets from your help docs and flags the hard ones.", color: "mint", minutesAgo: 70 },
-  { id: "theo", name: "Theo", title: "Bookkeeping", description: "Keeps the books, the runway and the invoices straight.", color: "green", minutesAgo: 60 * 3 },
-  { id: "scout", name: "Scout", title: "Customer research", description: "Reads what customers say and brings back what matters.", color: "cyan", minutesAgo: 60 * 26 },
+  { id: "theo", name: "Theo", title: "Bookkeeping", description: "Keeps the books, the runway and the invoices straight.", color: "green", minutesAgo: 70 },
+  { id: "iris", name: "Iris", title: "Customer support", description: "Answers tickets from your help docs and flags the hard ones.", color: "violet", minutesAgo: 60 * 3 },
+  { id: "scout", name: "Scout", title: "Customer research", description: "Reads what customers say and brings back what matters.", color: "orange", minutesAgo: 60 * 26 },
 ];
 
 /** The group the phone still shows: Thursday's launch, with Simeon, Scout and Iris. */
