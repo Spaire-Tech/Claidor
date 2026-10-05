@@ -9,7 +9,7 @@ import { simeonApiUrl } from "../../shared/node/cursor-backend/simeon-api.js";
 // `revokeCredentials`) only deleted the two keychain entries; the server
 // session lived on until its refresh token expired, so a token copied out
 // of the keychain before sign-out kept working. The upstream app never revoked
-// either (Cursor's session ends server-side by other means), which is why
+// either (the upstream's session ends server-side by other means), which is why
 // there was no hook here to point at anything.
 //
 // Best effort, by design: five seconds, then the local sign-out goes ahead

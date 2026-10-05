@@ -4,7 +4,7 @@
  *
  * The app side never changed shape: `SandSkillPublishService` packs the
  * skill folder as a plugin tar.gz, posts it to
- * `aiserver.v1.DashboardService/PublishPlugin`, then runs the plugin sync
+ * `simeon.v1.DashboardService/PublishPlugin`, then runs the plugin sync
  * until `GetEffectiveUserPlugins` lists the answered `pluginId` at the
  * answered `commitSha`; `unpublish` restores the library copy and posts
  * `UnpublishPlugin`. This test stands up an in-process Connect JSON server
@@ -113,7 +113,7 @@ function startRegistry() {
     const chunks = [];
     request.on("data", (chunk) => chunks.push(chunk));
     request.on("end", () => {
-      const match = /^\/aiserver\.v1\.DashboardService\/(\w+)$/.exec(request.url ?? "");
+      const match = /^\/simeon\.v1\.DashboardService\/(\w+)$/.exec(request.url ?? "");
       const method = match?.[1];
       calls.push(method ?? request.url);
       const handler = method != null ? handlers[method] : undefined;

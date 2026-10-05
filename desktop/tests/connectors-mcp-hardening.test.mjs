@@ -2,7 +2,7 @@
  * Connectors and MCP, hardened (25 September 2026, design-audit-ledger.md
  * cluster `connectors-mcp`).
  *
- * Cursor's Dashboard client was still a live caller on both sides; the
+ * the upstream's Dashboard client was still a live caller on both sides; the
  * vendor OAuth and MCP client had no deadlines, no RFC 8707 resource and a
  * body read that could hang on an open stream; the store crossed to the box
  * with the refresh token and the client secret; and the MCP tools told the
@@ -27,7 +27,7 @@ async function load(entry, name) {
   return { module, dispose: () => rm(dir, { recursive: true, force: true }) };
 }
 
-test("a Cursor Connect client answers Unimplemented at once and sends nothing for a service that is not served", async () => {
+test("an upstream Connect client answers Unimplemented at once and sends nothing for a service that is not served", async () => {
   // Since 25 September 2026 the DashboardService is served by default
   // (simeon/sand); "0" is the 24 September behaviour, measured here.
   process.env.SAND_CONNECT_SERVED = "0";

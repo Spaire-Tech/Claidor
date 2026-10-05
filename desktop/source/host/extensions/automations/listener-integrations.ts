@@ -1,6 +1,6 @@
 import type { MethodInfoUnary } from "@bufbuild/protobuf";
 import { countListenerPlatforms, type ListenerPlatform } from "../../automations/listener-integrations.js";
-import { DashboardService } from "../../../packages/proto/generated/aiserver/v1/dashboard_connect.js";
+import { DashboardService } from "../../../packages/proto/simeon/v1/services.js";
 import {
   GetScmConnectionStatusRequest,
   type GetScmConnectionStatusResponse,
@@ -12,7 +12,7 @@ import {
 import { createSandCursorBackendClient } from "../../../shared/node/cursor-backend/cursor-inference.js";
 import { LISTENERS_COMING_SOON_SENTENCE, isListenerRelayServed } from "../../../shared/listener-availability.js";
 import { connectorManifests } from "../../../shared/channels.js";
-// The upstream app sent "Connect" to cursor.com/dashboard?tab=integrations. There is
+// The upstream app sent "Connect" to the upstream site There is
 // no such page for Simeon. Since 25 September 2026 the connect pages are on
 // Simeon Labs' server (simeon/sand/listeners_connections.py): Slack's is
 // what `GetSlackInstallUrl` answers, GitHub's is `GITHUB_INSTALL_PATH` on

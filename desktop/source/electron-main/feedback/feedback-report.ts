@@ -4,7 +4,7 @@ const feedbackRequestDeadline = createDeadlinePolicy(realClock, { name: "sand-fe
 // (`server/simeon/desktop/endpoints.py`, `feedback`, added 24 September 2026),
 // which logs `desktop.feedback.received` against the person and answers
 // `{ received: true }`. Until then this posted to `{api}/sand/feedback`,
-// The upstream app's own address at Cursor, which answered 404 here, so every
+// The upstream app's own address, which answered 404 here, so every
 // feedback ended as "unavailable" and nothing was recorded. The body carries
 // the fields the server reads (`message`, `appVersion`, `platform`,
 // `category`) and the ones the app always sent, which the server ignores.

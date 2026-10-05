@@ -94,7 +94,7 @@ test("the brief: cloud agents coming soon, no admin, no Origin, no CloudAgent to
     assert.match(module.SAND_CLOUD_AGENTS_DISABLED_PROMPT_SECTION, /^## Cloud agents coming soon\n/);
     assert.doesNotMatch(module.SAND_CLOUD_AGENTS_DISABLED_PROMPT_SECTION, /admin/);
     // Served since 25 September 2026 (simeon/sand/cloud_agents.py): the enabled
-    // sections are on, and say Simeon where the upstream app said Cursor
+    // sections are on, and say Simeon where the upstream app said the upstream app
     // (tests/cloud-agents-served.test.mjs measures the sentences).
     assert.match(module.buildSandBaseSystemPrompt({ cloudAgentsEnabled: true }), /## Repositories/, "the upstream app's served structure is kept behind the flag, as Simeon's");
     assert.match(module.DEFAULT_SAND_SYSTEM_PROMPT, /## Repositories/, "the bare fallback follows the switch too (F-280): served by default since 25 September");

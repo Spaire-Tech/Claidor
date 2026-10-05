@@ -1,6 +1,7 @@
-"""`aiserver.v1.GrokBotService`, the box broker (25 September 2026).
+"""`simeon.v1.ComputerService` (until 5 October 2026 `aiserver.v1.GrokBotService`,
+still answered for one release), the box broker (25 September 2026).
 
-Cursor's server brokered the box the app runs its agent in; Simeon Labs'
+the upstream's server brokered the box the app runs its agent in; Simeon Labs'
 server did not, so `setBoxRuntime("remote")` was refused and Settings
 said Coming Soon (design-audit-ledger.md F-137). The app side was
 complete the whole time (`docs/services-agents.md` §5):
@@ -53,7 +54,9 @@ from .connect import ConnectCall, ConnectError, ConnectService
 
 log = structlog.get_logger()
 
-service = ConnectService("aiserver.v1.GrokBotService")
+service = ConnectService(
+    "simeon.v1.ComputerService", aliases=("aiserver.v1.GrokBotService",)
+)
 
 AUTOMATION_FAILURE_HINT_HEADER = "x-automation-failure-hint"
 SAND_BOX_BLOCKED = "SAND_BOX_BLOCKED"
@@ -270,7 +273,7 @@ async def get_sand_box_run_state(call: ConnectCall) -> dict[str, Any]:
 
 @service.unary("NotifySandAgentTurnFinished", auth="desktop-or-box")
 async def notify_sand_agent_turn_finished(call: ConnectCall) -> dict[str, Any]:
-    # Cursor pushed this to the person's phone. There is no push service
+    # the upstream app pushed this to the person's phone. There is no push service
     # here; the turn is logged so a box that reports is a box that runs.
     log.info(
         "sand.box.turn_finished",

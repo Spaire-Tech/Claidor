@@ -1,7 +1,7 @@
 // Bundle entry for tests/cursor-leftovers.test.mjs: the defaults an
 // unpackaged run falls back to, the DevTools gate, and the switch that keeps
-// the Statsig client from logging exposures to Cursor.
-export { getConfiguredBackendUrl, DEFAULT_CURSOR_BACKEND_URL, DEFAULT_SAND_BACKEND_URL } from "../../source/shared/node/cursor-token.js";
+// the Statsig client from logging exposures to the upstream app.
+export { getConfiguredBackendUrl, DEFAULT_SAND_BACKEND_URL } from "../../source/shared/node/cursor-token.js";
 export { getAuthWebsiteUrl, DEFAULT_SIMEON_WEBSITE_URL } from "../../source/electron-main/account/cursor-auth.js";
 export { createDevToolsGate } from "../../source/electron-main/devtools-gate.js";
 export { isConnectServed } from "../../source/shared/cloud-agents-availability.js";

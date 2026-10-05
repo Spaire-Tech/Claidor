@@ -1,4 +1,4 @@
-"""The five JSON routes of Cursor's listener relay, on Simeon Labs'
+"""The five JSON routes of the upstream's listener relay, on Simeon Labs'
 server (25 September 2026). The box's host calls every one with its
 own credential, so each takes `get_desktop_or_box_session`.
 

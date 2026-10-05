@@ -30,7 +30,7 @@ export function createCursorAuthWiring(deps: {
   readonly openExternal: (url: string) => void | Promise<void>;
   readonly serviceOptions?: Omit<SandCursorAuthServiceOptions, "openExternal">;
   readonly createAuthService?: (options: SandCursorAuthServiceOptions) => AuthServicePort;
-  readonly fetchProfile?: (getAccessToken: AccessTokenReader) => Promise<{ readonly email?: string; readonly displayName?: string; readonly profilePictureUrl?: string; readonly isAnysphereUser: boolean } | null>;
+  readonly fetchProfile?: (getAccessToken: AccessTokenReader) => Promise<{ readonly email?: string; readonly displayName?: string; readonly profilePictureUrl?: string; readonly isStaffUser: boolean } | null>;
   readonly updateProfileName?: (getAccessToken: AccessTokenReader, name: string) => Promise<void>;
   readonly revokeSession?: SandCursorAuthServiceOptions["revokeSession"];
   readonly reportSessionSettlement?: SandCursorAuthServiceOptions["reportSessionSettlement"];
@@ -83,7 +83,7 @@ export function createCursorAuthWiring(deps: {
       fetchProfile: deps.fetchProfile ?? (async (getAccessToken) => {
         const profile = await fetchCursorProfile(getAccessToken, {});
         return profile == null ? null : {
-          isAnysphereUser: profile.isAnysphereUser,
+          isStaffUser: profile.isStaffUser,
           ...(profile.email === undefined ? {} : { email: profile.email }),
           ...(profile.displayName === undefined ? {} : { displayName: profile.displayName }),
           ...(profile.profilePictureUrl === undefined ? {} : { profilePictureUrl: profile.profilePictureUrl }),
@@ -166,7 +166,7 @@ export function createCursorAccountEdgePort(deps: {
     cancelLogin: async () => withService(async (service) => { const result = await service.cancelLogin(); return await deps.getAccountRuntime()?.whenIdle() ?? result; }),
     logout: async () => withService(async (service) => { const result = await service.logout(); return await deps.getAccountRuntime()?.whenIdle() ?? result; }),
     updateAccountName: async (name: unknown) => {
-      if (typeof name !== "string" || name.length > 200) throw new Error("updateCursorAccountName requires a bounded name string.");
+      if (typeof name !== "string" || name.length > 200) throw new Error("updateAccountName requires a bounded name string.");
       return await withService(async (service) => { const result = await service.updateDisplayName(name); return await deps.getAccountRuntime()?.whenIdle() ?? result; });
     },
     // The name sheet after onboarding, and the name a voice call uses (1 October 2026).

@@ -1,6 +1,6 @@
 import { isConnectServed } from "../../shared/cloud-agents-availability.js";
 import { PrivacyMode } from "../../shared/observability/sentry-privacy-mode.js";
-import { DashboardService } from "../../packages/proto/generated/aiserver/v1/dashboard_connect.js";
+import { DASHBOARD_SERVICE_NAME, DashboardService } from "../../packages/proto/simeon/v1/services.js";
 import { createSandCursorBackendClient } from "../../shared/node/cursor-backend/cursor-inference.js";
 import { simeonApiData } from "../../shared/node/cursor-backend/simeon-api.js";
 import { getOrCreateMachineId } from "./cursor-machine-id.js";
@@ -37,7 +37,7 @@ export interface SandUsageStatus {
   readonly upgradeRecommendation?: { readonly disabled: boolean; readonly cta?: DashboardButton };
 }
 export interface WeeklyUsage { readonly percentUsed: number; readonly nextResetMs: number | null; readonly hasNonZeroIncludedLimit: boolean; readonly onDemand: { readonly usedCents: number; readonly limitCents: number } | null }
-export interface CursorProfile { readonly displayName: string | undefined; readonly email: string | undefined; readonly profilePictureUrl: string | undefined; readonly isAnysphereUser: boolean }
+export interface CursorProfile { readonly displayName: string | undefined; readonly email: string | undefined; readonly profilePictureUrl: string | undefined; readonly isStaffUser: boolean }
 export interface DashboardClient {
   getMe(request: object, options: { timeoutMs: number }): Promise<{ firstName?: string; lastName?: string; email?: string; profilePictureUrl?: string }>;
   getTeams(request: object, options: { timeoutMs: number }): Promise<TeamsResponse>;
@@ -67,7 +67,7 @@ export interface CursorProfileDeps {
 //
 // Until 24 September 2026 the profile came from `DashboardService/GetMe` +
 // `GetTeams` and the usage from `GetSandUsageStatus` + `GetCurrentPeriodUsage`,
-// four Cursor Connect RPCs that Simeon Labs' server never served. `fetchCursorProfile`
+// four upstream Connect RPCs that Simeon Labs' server never served. `fetchCursorProfile`
 // swallowed the failure and answered null (or the locally stored name with
 // no e-mail and no picture), so the account menu showed "Simeon user" with
 // no avatar; `fetchSandWeeklyUsage` answered null so the header never showed
@@ -128,7 +128,7 @@ export function cursorProfileFromSimeon(row: SimeonProfileRow, localName: string
     displayName: localName ?? nonEmpty(row.preferredName) ?? nonEmpty(row.name) ?? nonEmpty(row.nickname),
     email: nonEmpty(row.email),
     profilePictureUrl: avatar,
-    isAnysphereUser: false,
+    isStaffUser: false,
   };
 }
 
@@ -224,7 +224,7 @@ export async function fetchCursorProfile(getAccessToken: AccessTokenReader, deps
     return cursorProfileFromSimeon(await readSimeonProfile(getAccessToken, deps), localName);
   } catch (error) {
     deps.reportFailure?.("cursor-profile", "simeon-profile", error);
-    return localName == null ? null : { displayName: localName, email: undefined, profilePictureUrl: undefined, isAnysphereUser: false };
+    return localName == null ? null : { displayName: localName, email: undefined, profilePictureUrl: undefined, isStaffUser: false };
   }
 }
 // The rename stays local, as before: the name is written to
@@ -264,13 +264,13 @@ export async function fetchPersonName(getAccessToken: AccessTokenReader, deps: C
 }
 // Simeon Labs' proxy trains nothing on anyone; the answer is stated, not
 // fetched from a dashboard RPC that 404s (ledger F-383).
-export async function fetchUserPrivacyMode(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<PrivacyMode | undefined> { if (!isConnectServed(process.env, "aiserver.v1.DashboardService")) return PrivacyMode.NO_TRAINING; try { return (await profileClient(getAccessToken, deps).getUserPrivacyMode({}, { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS })).privacyMode; } catch { return undefined; } }
+export async function fetchUserPrivacyMode(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<PrivacyMode | undefined> { if (!isConnectServed(process.env, DASHBOARD_SERVICE_NAME)) return PrivacyMode.NO_TRAINING; try { return (await profileClient(getAccessToken, deps).getUserPrivacyMode({}, { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS })).privacyMode; } catch { return undefined; } }
 export async function fetchUserPrivacyModeEnabled(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<boolean> { return privacyModeEnabledForMode(await fetchUserPrivacyMode(getAccessToken, deps)); }
 // The header's usage, from `GET /desktop/api/user/quota`. Until
 // 24 September 2026 this was `GetSandUsageStatus` + `GetCurrentPeriodUsage`
 // (see above) and always answered null here.
 export async function fetchSandWeeklyUsage(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<WeeklyUsage | null> { try { return weeklyUsageFromSimeonQuota(await readSimeonQuota(getAccessToken, deps)); } catch (error) { deps.reportFailure?.("cursor-usage", "simeon-quota", error); return null; } }
-export async function fetchLocalToolPermissionCeiling(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<"never" | "ask" | "always" | undefined> { if (!isConnectServed(process.env, "aiserver.v1.DashboardService")) return undefined; try { const value = (await profileClient(getAccessToken, deps).getTeamAdminSettingsOrEmptyIfNotInTeam({}, { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS })).localToolControls?.permissionCeiling; const c = deps.localToolPermissionCeilings ?? { never: 1, ask: 2, always: 3 }; return value === c.never ? "never" : value === c.ask ? "ask" : value === c.always ? "always" : undefined; } catch { return undefined; } }
+export async function fetchLocalToolPermissionCeiling(getAccessToken: AccessTokenReader, deps: CursorProfileDeps): Promise<"never" | "ask" | "always" | undefined> { if (!isConnectServed(process.env, DASHBOARD_SERVICE_NAME)) return undefined; try { const value = (await profileClient(getAccessToken, deps).getTeamAdminSettingsOrEmptyIfNotInTeam({}, { timeoutMs: PROFILE_REQUEST_TIMEOUT_MS })).localToolControls?.permissionCeiling; const c = deps.localToolPermissionCeilings ?? { never: 1, ask: 2, always: 3 }; return value === c.never ? "never" : value === c.ask ? "ask" : value === c.always ? "always" : undefined; } catch { return undefined; } }
 // Settings → Usage & Billing and the account menu's usage card, from
 // `GET /desktop/api/user/quota`. Until 24 September 2026 this was four
 // Dashboard RPCs (see above) behind the `sand_usage_page` gate, which was

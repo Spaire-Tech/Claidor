@@ -113,6 +113,13 @@ their Google name in `user.meta` (`server/simeon/integrations/google/service.py`
 
 ### In the app
 
+Every setting the app, the host in the box and the helpers read as
+`SAND_<NAME>` is also read as `SIMEON_<NAME>` since 5 October 2026: each
+process copies `SIMEON_<NAME>` to `SAND_<NAME>` at start when the latter is not
+set (`desktop/source/shared/node/env-names.ts`), and `SAND_<NAME>` wins when both
+are set. The server still writes the `SAND_` names into a box, because the box
+image's own scripts read them.
+
 The packaged app points sign-in at `https://api.simeonlabs.com` through
 `SIMEON_API_BASE_URL`, `SIMEON_WEBSITE_URL` and `SAND_BACKEND_URL`
 (`desktop/scripts/lib/config.mjs`). `SAND_BACKEND_URL` alone is not enough:
@@ -430,8 +437,10 @@ runtime for real users. It sleeps when nobody uses it and wakes when needed.
 
 ### How it works
 
-**The broker.** The app speaks Connect RPC to `aiserver.v1.GrokBotService` at
-the root of the API host (`server/simeon/sand/box_broker.py`). Its methods are
+**The broker.** The app speaks Connect RPC to `simeon.v1.ComputerService` at
+the root of the API host (`server/simeon/sand/box_broker.py`; until 5 October
+2026 the service was called `aiserver.v1.GrokBotService`, and the server answers
+that name too for one release, for the apps and box hosts built before). Its methods are
 `EnsureSandBox`, `RecreateSandBox`, `ForceRecreateSandBox`,
 `WatchSandBoxMigration` and `GetSandBoxRunState`. The logic is in
 `server/simeon/sand/box_service.py`, and `server/simeon/sand/box_hosts.py` talks

@@ -286,7 +286,7 @@ def create_app() -> FastAPI:
     # /maty/runner: the queue the cloud engine takes its work from
     app.include_router(maty_router)
 
-    # /sand/*, /aiserver.v1.*, /agent.v1.*: the half of Cursor's server the
+    # /sand/*, /simeon.v1.* (and the upstream's /aiserver.v1.*, /agent.v1.* names for one release): the half of the upstream's server the
     # app expects, root-level for the same reason as sign-in
     # (docs/services-agents.md).
     app.include_router(sand_router)

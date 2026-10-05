@@ -7,7 +7,8 @@
         "grok",
         "anysphere",
         "spacex",
-        "xai"
+        "xai",
+        "Cursor"
       ],
       "paths": [
         "desktop/NOTICE.md"
@@ -32,7 +33,9 @@
         "rakazo",
         "pierce",
         "vesence",
-        "polar"
+        "polar",
+        "Cursor",
+        "cursor.com"
       ],
       "paths": [
         "docs/kept-names.md"
@@ -60,7 +63,9 @@
         "caisra",
         "spacex",
         "xai",
-        "polar"
+        "polar",
+        "cursor.com",
+        "Cursor"
       ],
       "paths": [
         "sites/simeonlabs.com/public/app/**",
@@ -82,7 +87,8 @@
     {
       "kind": "contract",
       "names": [
-        "grok"
+        "grok",
+        "cursor.com"
       ],
       "paths": [
         "desktop/scripts/lib/config.mjs",
@@ -102,7 +108,9 @@
         "grok",
         "caisra",
         "anysphere",
-        "spacex"
+        "spacex",
+        "cursor.com",
+        "Cursor"
       ],
       "paths": [
         "desktop/scripts/lib/router-renderer-patch.mjs",
@@ -127,7 +135,9 @@
         "grok",
         "anysphere",
         "spacex",
-        "xai"
+        "xai",
+        "cursor.com",
+        "Cursor"
       ],
       "paths": [
         "desktop/scripts/lib/macos-plist-identity.mjs",
@@ -140,7 +150,9 @@
       "names": [
         "grok",
         "xai",
-        "anysphere"
+        "anysphere",
+        "cursor.com",
+        "Cursor"
       ],
       "paths": [
         "desktop/source/packages/proto/generated/**",
@@ -160,7 +172,7 @@
         "server/simeon/models/sand_*.py"
       ],
       "match": "GrokBotService|GROK_BOT|grok_bot|\"grok-bot\"",
-      "reason": "The server answers the Connect service aiserver.v1.GrokBotService, and the GROK_BOT source enum (\"grok-bot\" in JSON) the app sends with a cloud agent."
+      "reason": "The server answers the Connect service under its earlier name aiserver.v1.GrokBotService for one release (simeon.v1.ComputerService since 5 October 2026), and the GROK_BOT source enum an app built before that day sends with a cloud agent."
     },
     {
       "kind": "fallback",
@@ -301,7 +313,8 @@
       "names": [
         "grok",
         "anysphere",
-        "xai"
+        "xai",
+        "Cursor"
       ],
       "paths": [
         "desktop/source/**",
@@ -318,7 +331,9 @@
         "grok",
         "anysphere",
         "xai",
-        "spacex"
+        "spacex",
+        "cursor.com",
+        "Cursor"
       ],
       "paths": [
         "desktop/source/shared/node/experiments/experiment-config.gen.ts",
@@ -369,12 +384,14 @@
       "kind": "guard",
       "names": [
         "claidor",
-        "grok"
+        "grok",
+        "cursor.com",
+        "Cursor"
       ],
       "paths": [
         "desktop/tests/**"
       ],
-      "match": "doesNotMatch|never reads|no longer|Claidor account|Sign in to Claidor|Claidor sign-in|Claidor API|Sign In with Claidor",
+      "match": "doesNotMatch|never reads|no longer|Claidor account|Sign in to Claidor|Claidor sign-in|Claidor API|Sign In with Claidor|never Cursor|not cursor\\.com|are off|includes\\(|cursor\\.com/help|says Cursor",
       "reason": "Tests that check an earlier name is gone from what a person or the agent reads have to name it."
     },
     {
@@ -445,14 +462,36 @@
     {
       "kind": "contract",
       "names": [
-        "grok",
-        "anysphere"
+        "Cursor"
       ],
       "paths": [
-        "desktop/web/**"
+        "clients/apps/web/src/components/ClaudeCode/agentPlatforms.ts",
+        "clients/apps/web/src/components/ClaudeCode/*.tsx",
+        "clients/apps/web/src/components/Icons/frameworks/cursor.tsx"
       ],
-      "match": "GrokBotService|isAnysphereUser",
-      "reason": "Simeon on the web speaks the Connect service the server mounts (`aiserver.v1.GrokBotService`, `server/simeon/sand/connect.py`) and answers the pinned renderer's own account status field."
+      "reason": "The Cursor IDE is a third-party product the web app's integration guide targets (a rules file for its agent mode); it is named as the product it is, like Claude Code and Copilot beside it."
+    },
+    {
+      "kind": "contract",
+      "names": [
+        "cursor.com",
+        "Cursor"
+      ],
+      "paths": [
+        "desktop/frontend/**"
+      ],
+      "reason": "The recovered window (desktop/frontend, not shipped) still carries the upstream's addresses and the maker's name where the pinned window had them; it is redrawn from the upstream bytes and goes with Track D of the detachment plan. Our own code compared against those addresses until Track B (4 October 2026) replaced them."
+    },
+    {
+      "kind": "guard",
+      "names": [
+        "cursor.com",
+        "Cursor"
+      ],
+      "paths": [
+        "desktop/tests/cursor-leftovers.test.mjs"
+      ],
+      "reason": "The test that checks the upstream's leftovers are gone from the app names the hosts and origin it checks are refused or not called."
     }
   ]
 }

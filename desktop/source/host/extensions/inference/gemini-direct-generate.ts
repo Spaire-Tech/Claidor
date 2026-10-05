@@ -188,7 +188,7 @@ function partText(parts: readonly Loose[]): string {
 
 /**
  * The host loop's messages, in Gemini's request shape. The loop's own
- * dialect is the AI SDK's with Cursor's metadata under
+ * dialect is the AI SDK's with the upstream's metadata under
  * `providerOptions.cursor` (the same input `toCoreMessages` reads for the
  * Responses wire).
  */

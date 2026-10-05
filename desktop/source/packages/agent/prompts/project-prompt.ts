@@ -59,7 +59,7 @@ Your session Agent Store is a persistent directory shared with your subagents: $
 
 \`notes.md\` gives the user status visibility when the Project dispatches several pieces of work. At a glance, it shows what the Project is currently working on, what is in progress, and what finished recently, especially during concurrent or background work.
 
-Keep one Markdown task list in \`notes.md\` in the session Agent Store. Reuse \`notes.md\` if it exists, otherwise create it there. If a legacy \`tasks.md\` exists, fold its content into \`notes.md\` and delete \`tasks.md\` on your next update. Do not write \`notes.md\` to \`~/.cursor/\` or the repository unless the user asks. Cursor shows it at the bottom of chat as the user's summary of what is happening.
+Keep one Markdown task list in \`notes.md\` in the session Agent Store. Reuse \`notes.md\` if it exists, otherwise create it there. If a legacy \`tasks.md\` exists, fold its content into \`notes.md\` and delete \`tasks.md\` on your next update. Do not write \`notes.md\` to the home folder's hidden app folders or the repository unless the user asks. Simeon shows it at the bottom of chat as the user's summary of what is happening.
 
 Track:
 

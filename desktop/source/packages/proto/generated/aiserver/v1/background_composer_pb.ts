@@ -97,7 +97,7 @@ var CloudAgentWorkflowStatus: {
   6: "NOT_YET_STARTED";
   7: "WAITING_FOR_BACKGROUND_WORK";
 };
-export type BackgroundComposerSource = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31 | 32 | 33;
+export type BackgroundComposerSource = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31 | 32 | 33 | 34;
 var BackgroundComposerSource: {
   "UNSPECIFIED": 0;
   "EDITOR": 1;
@@ -133,6 +133,7 @@ var BackgroundComposerSource: {
   "ORIGIN": 31;
   "AS_SIDE_CHAT_FROM_CLOUD": 32;
   "GROK_BOT": 33;
+  "SIMEON": 34;
   0: "UNSPECIFIED";
   1: "EDITOR";
   2: "SLACK";
@@ -167,6 +168,7 @@ var BackgroundComposerSource: {
   31: "ORIGIN";
   32: "AS_SIDE_CHAT_FROM_CLOUD";
   33: "GROK_BOT";
+  34: "SIMEON";
 };
 export type OwnerType = 0 | 1 | 2;
 var OwnerType: {
@@ -968,6 +970,8 @@ proto3.util.setEnumType(CloudAgentWorkflowStatus, "aiserver.v1.CloudAgentWorkflo
   BackgroundComposerSource2[BackgroundComposerSource2["ORIGIN"] = 31] = "ORIGIN";
   BackgroundComposerSource2[BackgroundComposerSource2["AS_SIDE_CHAT_FROM_CLOUD"] = 32] = "AS_SIDE_CHAT_FROM_CLOUD";
   BackgroundComposerSource2[BackgroundComposerSource2["GROK_BOT"] = 33] = "GROK_BOT";
+  // 5 October 2026: Simeon's own source, the value the app sends with a cloud agent (`simeon/sand/cloud_agents.py` stores it as it comes).
+  BackgroundComposerSource2[BackgroundComposerSource2["SIMEON"] = 34] = "SIMEON";
 })(BackgroundComposerSource! || (BackgroundComposerSource = {} as typeof BackgroundComposerSource));
 proto3.util.setEnumType(BackgroundComposerSource, "aiserver.v1.BackgroundComposerSource", [
   { no: 0, name: "BACKGROUND_COMPOSER_SOURCE_UNSPECIFIED" },
@@ -1003,7 +1007,8 @@ proto3.util.setEnumType(BackgroundComposerSource, "aiserver.v1.BackgroundCompose
   { no: 30, name: "BACKGROUND_COMPOSER_SOURCE_ENVIRONMENT_SETUP_ONBOARDING_AUTO" },
   { no: 31, name: "BACKGROUND_COMPOSER_SOURCE_ORIGIN" },
   { no: 32, name: "BACKGROUND_COMPOSER_SOURCE_AS_SIDE_CHAT_FROM_CLOUD" },
-  { no: 33, name: "BACKGROUND_COMPOSER_SOURCE_GROK_BOT" }
+  { no: 33, name: "BACKGROUND_COMPOSER_SOURCE_GROK_BOT" },
+  { no: 34, name: "BACKGROUND_COMPOSER_SOURCE_SIMEON" }
 ]);
 (function(OwnerType2) {
   OwnerType2[OwnerType2["UNSPECIFIED"] = 0] = "UNSPECIFIED";

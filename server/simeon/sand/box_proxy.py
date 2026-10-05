@@ -1,6 +1,6 @@
 """The network path to a cloud box, served by the API (25 September 2026).
 
-Cursor's pod proxy stood between the app and the box: per-port hostnames
+the upstream's pod proxy stood between the app and the box: per-port hostnames
 (`<pod>-1340.…`, `<pod>-6080.…`, `<pod>-8790.…`), TLS, and a check of
 `x-anyrun-network-token` on every request. This module is that proxy when
 no TLS proxy of the founder's serves per-port hostnames

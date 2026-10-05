@@ -31,7 +31,7 @@ const cursorBudget = {
   unusedPercentTokensThresholdToPersistBackgroundSummarization: 0.05,
 };
 
-test("Cursor's compaction trigger is dead when maxTokens is 0, and live on the 200k working window", async () => {
+test("the upstream's compaction trigger is dead when maxTokens is 0, and live on the 200k working window", async () => {
   const loaded = await load(
     "source/packages/agent-summarization/background-summarization.ts",
     "compaction-window",

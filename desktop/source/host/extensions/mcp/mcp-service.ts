@@ -1,4 +1,4 @@
-import { DashboardService } from "../../../packages/proto/generated/aiserver/v1/dashboard_connect.js";
+import { DashboardService } from "../../../packages/proto/simeon/v1/services.js";
 import { getSandRootDir } from "../../host-paths.js";
 import { createAccountMcpBackendExec } from "../../../shared/node/account-mcp/backend-exec.js";
 import { adoptAccountMcpStore, loadAccountMcpStore, parseAccountMcpServerConfigValue, serializeAccountMcpStoreForPeer } from "../../../shared/node/account-mcp/store.js";
@@ -249,7 +249,7 @@ export class McpHostService {
   readonly api;
   constructor(readonly deps: McpHostServiceDeps) {
     // The account's MCP configuration is the box's copy of the Mac's store
-    // (`account-mcp/store.ts`); the six calls that were Cursor's read and
+    // (`account-mcp/store.ts`); the six calls that were the upstream's read and
     // write it here. The agent's AddMcpServer lands in this copy and travels
     // back to the Mac with the next refresh.
     const accountMcpDeps: AccountMcpDependencies = {

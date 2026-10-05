@@ -301,21 +301,21 @@
     getBoxRuntime: { args: "none" },
     setBoxRuntime: { args: "object" },
     transcribeAudio: { args: "object" },
-    getCursorAuthStatus: { args: "none" },
-    loginCursor: { args: "none" },
-    cancelCursorLogin: { args: "none" },
-    logoutCursor: { args: "none" },
-    updateCursorAccountName: { args: "object" },
-    getCursorNamePrompt: { args: "none" },
-    getCursorAvatar: { args: "none" },
-    getCursorWeeklyUsage: { args: "none" },
-    getCursorUsageSummary: { args: "none" },
-    getCursorPrReviewPreferences: { args: "none" },
-    getCursorPrivacyModeEnabled: { args: "none" },
+    getAccountStatus: { args: "none" },
+    signInAccount: { args: "none" },
+    cancelAccountSignIn: { args: "none" },
+    signOutAccount: { args: "none" },
+    updateAccountName: { args: "object" },
+    getAccountNamePrompt: { args: "none" },
+    getAccountAvatar: { args: "none" },
+    getAccountWeeklyUsage: { args: "none" },
+    getAccountUsageSummary: { args: "none" },
+    getAccountPrReviewPreferences: { args: "none" },
+    getAccountPrivacyModeEnabled: { args: "none" },
     getSandAccess: { args: "none" },
     getSandAccessFresh: { args: "none" },
-    invokeCursorDashboardAction: { args: "object" },
-    cancelCursorSandTrial: { args: "none" },
+    invokeAccountDashboardAction: { args: "object" },
+    cancelAccountTrial: { args: "none" },
     reportAgentLoad: { args: "object" },
     reportAccessBlocked: { args: "object" },
     reportAgentsUnreachable: { args: "object" },
@@ -561,24 +561,27 @@
         // The thumbs on a finished call's card in the chat (2 October 2026).
         rateCall: (conversationId, like) => edge("rateVoiceCall", { conversationId, like })
       },
-      cursorAccount: {
-        getStatus: () => edge("getCursorAuthStatus"),
-        login: () => edge("loginCursor"),
-        cancelLogin: () => edge("cancelCursorLogin"),
-        logout: () => edge("logoutCursor"),
-        updateName: (name) => edge("updateCursorAccountName", { name }),
+      // The window reads `desktop.account` (its own bytes said cursorAccount;
+      // the renderer patch renames it with the rest of the upstream's tokens,
+      // Track B of the detachment plan, 4 October 2026).
+      account: {
+        getStatus: () => edge("getAccountStatus"),
+        login: () => edge("signInAccount"),
+        cancelLogin: () => edge("cancelAccountSignIn"),
+        logout: () => edge("signOutAccount"),
+        updateName: (name) => edge("updateAccountName", { name }),
         // The name sheet after onboarding (1 October 2026): whether to ask, and Google's first name to offer.
-        getNamePrompt: () => edge("getCursorNamePrompt"),
-        getAvatar: () => edge("getCursorAvatar"),
-        getWeeklyUsage: () => edge("getCursorWeeklyUsage"),
-        getUsageSummary: () => edge("getCursorUsageSummary"),
-        getPrReviewPreferences: () => edge("getCursorPrReviewPreferences"),
-        getPrivacyModeEnabled: () => edge("getCursorPrivacyModeEnabled"),
+        getNamePrompt: () => edge("getAccountNamePrompt"),
+        getAvatar: () => edge("getAccountAvatar"),
+        getWeeklyUsage: () => edge("getAccountWeeklyUsage"),
+        getUsageSummary: () => edge("getAccountUsageSummary"),
+        getPrReviewPreferences: () => edge("getAccountPrReviewPreferences"),
+        getPrivacyModeEnabled: () => edge("getAccountPrivacyModeEnabled"),
         getSandAccess: () => edge("getSandAccess"),
         getSandAccessFresh: () => edge("getSandAccessFresh"),
-        invokeDashboardAction: (request) => edge("invokeCursorDashboardAction", request),
-        cancelTrial: () => edge("cancelCursorSandTrial"),
-        onStatusChanged: (listener) => subscribe("cursor-auth-changed", listener)
+        invokeDashboardAction: (request) => edge("invokeAccountDashboardAction", request),
+        cancelTrial: () => edge("cancelAccountTrial"),
+        onStatusChanged: (listener) => subscribe("account-changed", listener)
       },
       experiments: {
         initialSnapshot: initialState.experimentSnapshot,
@@ -1322,21 +1325,21 @@
       getTimeZone: () => ({ timeZone: "Europe/Zurich", override: null }),
       getSidebarCollapsed: () => false,
       markDeepLinksReady: () => void 0,
-      getCursorAuthStatus: () => authStatus,
+      getAccountStatus: () => authStatus,
       // In the app, Sign in opens the browser on app.simeonlabs.com and the window waits; here the browser step passes by itself.
-      loginCursor: () => {
+      signInAccount: () => {
         authStatus = { kind: "logging-in" };
-        hooks.pushMainEvent("cursor-auth-changed", authStatus);
+        hooks.pushMainEvent("account-changed", authStatus);
         setTimeout(() => {
           authStatus = signedIn;
-          hooks.pushMainEvent("cursor-auth-changed", authStatus);
+          hooks.pushMainEvent("account-changed", authStatus);
         }, 1800);
         setTimeout(() => hooks.reconnectCoordinator?.(), 8e3);
         return authStatus;
       },
-      cancelCursorLogin: () => {
+      cancelAccountSignIn: () => {
         authStatus = { kind: "logged-out" };
-        hooks.pushMainEvent("cursor-auth-changed", authStatus);
+        hooks.pushMainEvent("account-changed", authStatus);
         return authStatus;
       },
       getSandAccess: () => ({ state: "granted", reason: "none" }),
@@ -1347,8 +1350,8 @@
       getUpdateStatus: () => ({ kind: "idle" }),
       getBoxMigrationStatus: () => null,
       getExperimentsSnapshot: () => null,
-      getCursorUsageSummary: () => null,
-      getCursorPrReviewPreferences: () => null,
+      getAccountUsageSummary: () => null,
+      getAccountPrReviewPreferences: () => null,
       getHostPinnedAgents: () => [],
       getHostSidebarSections: () => [],
       getAgentDefaultModel: () => null,
@@ -1362,10 +1365,10 @@
       getAgentVoice: () => ({ voiceId: "demo-aria", isDefault: true }),
       setAgentVoice: (args) => ({ voiceId: args?.voiceId ?? null, isDefault: false }),
       getVoicePreviewUrl: () => null,
-      getCursorAvatar: () => null,
+      getAccountAvatar: () => null,
       // A new account has not said what to call them yet: the window's name sheet.
-      getCursorNamePrompt: () => ({ needed: personName == null, suggested: "Bass" }),
-      updateCursorAccountName: (args) => {
+      getAccountNamePrompt: () => ({ needed: personName == null, suggested: "Bass" }),
+      updateAccountName: (args) => {
         personName = typeof args?.name === "string" ? args.name : "Bass";
         return { ok: true };
       },

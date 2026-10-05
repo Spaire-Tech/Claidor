@@ -38,10 +38,12 @@ test("the brand pass counts Cursor's names left after it and records them", asyn
 test("every class the header-card and Liquid Glass blocks name is in the pinned renderer", async (t) => {
   const pinned = resolvePinnedRenderer();
   if (!pinned) { t.skip(PINNED_RENDERER_SKIP); return; }
-  const { HEADER_CARD_CSS, LIQUID_GLASS_CSS, styleAnchorClasses, countStyleAnchors } = await import(patchModule);
+  const { HEADER_CARD_CSS, LIQUID_GLASS_CSS, styleAnchorClasses, countStyleAnchors, patchOriginalUpstreamTokens } = await import(patchModule);
   const { css, chunks } = await readPinnedRendererAssets(pinned);
+  // The blocks spell the window's tokens as the token pass leaves them (Track B), so the pinned sources are read through that pass.
+  const renamed = [css, ...chunks].map((source) => patchOriginalUpstreamTokens(source).source);
   for (const [block, text] of [["header-card", HEADER_CARD_CSS], ["liquid-glass", LIQUID_GLASS_CSS]]) {
-    const { missing } = countStyleAnchors(styleAnchorClasses(text), [css, ...chunks]);
+    const { missing } = countStyleAnchors(styleAnchorClasses(text), renamed);
     assert.deepEqual(missing, [], `${block}: every class appears in the pinned stylesheet or a chunk`);
   }
 });

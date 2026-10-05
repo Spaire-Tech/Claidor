@@ -45,8 +45,18 @@ NAMES: dict[str, str] = {
     "pierce": r"\bpierce\b",
     "vesence": r"vesence",
     "polar": r"(?<![a-z])polar(?![a-z])",
+    # The upstream maker's addresses (4 October 2026, the detachment plan,
+    # Track A). The plain word "cursor" is English (the pointer, a CSS
+    # property, a pagination cursor) and is not searched for.
+    "cursor.com": r"cursor\.(com|sh)",
+}
+# Names recognised only in this spelling: "Cursor" as a word is the maker's
+# name; cursorRule or CursorPosition are the window's own identifiers.
+CASE_SENSITIVE_NAMES: dict[str, str] = {
+    "Cursor": r"(?<![A-Za-z])Cursor(?![A-Za-z])",
 }
 PATTERNS = {name: re.compile(regex, re.IGNORECASE) for name, regex in NAMES.items()}
+PATTERNS.update({name: re.compile(regex) for name, regex in CASE_SENSITIVE_NAMES.items()})
 
 
 def tracked_files() -> list[str]:
@@ -63,7 +73,7 @@ def load_rules() -> list[dict]:
     rules = json.loads(RULES_FILE.read_text())["rules"]
     for rule in rules:
         rule["_match"] = re.compile(rule["match"], re.IGNORECASE) if rule.get("match") else None
-        unknown = set(rule["names"]) - set(NAMES)
+        unknown = set(rule["names"]) - set(NAMES) - set(CASE_SENSITIVE_NAMES)
         if unknown:
             raise SystemExit(f"{RULES_FILE.name}: unknown names {sorted(unknown)} in {rule['reason'][:60]!r}")
     return rules

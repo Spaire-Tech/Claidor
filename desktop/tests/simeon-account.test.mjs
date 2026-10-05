@@ -10,7 +10,7 @@ import { build } from "esbuild";
 // The account screens on Simeon Labs' server, offline: the profile and
 // picture, the usage meters, the Usage & Billing gate, and sign-out's
 // server revocation. Until 24 September 2026 every one of these went to a
-// Cursor Connect RPC the server does not serve, or (the gate) was off.
+// upstream Connect RPC the server does not serve, or (the gate) was off.
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -46,10 +46,10 @@ test("the profile comes from /desktop/api/user/profile and fills the CursorProfi
     // on this machine, so the server's nickname shows.
     assert.equal(profile.email, "bass@simeonlabs.com");
     assert.equal(profile.profilePictureUrl, "https://lh3.googleusercontent.com/a/photo=s96-c");
-    assert.equal(profile.isAnysphereUser, false);
+    assert.equal(profile.isStaffUser, false);
     assert.ok(profile.displayName === "Bass Fall" || typeof profile.displayName === "string");
 
-    assert.deepEqual(cursorProfileFromSimeon(PROFILE, undefined), { displayName: "Bass Fall", email: "bass@simeonlabs.com", profilePictureUrl: "https://lh3.googleusercontent.com/a/photo=s96-c", isAnysphereUser: false });
+    assert.deepEqual(cursorProfileFromSimeon(PROFILE, undefined), { displayName: "Bass Fall", email: "bass@simeonlabs.com", profilePictureUrl: "https://lh3.googleusercontent.com/a/photo=s96-c", isStaffUser: false });
     assert.deepEqual(cursorProfileFromSimeon({ ...PROFILE, name: "Bassirou Fall" }, undefined).displayName, "Bassirou Fall");
     assert.deepEqual(cursorProfileFromSimeon(PROFILE, "Simeon's Person").displayName, "Simeon's Person");
     assert.equal(cursorProfileFromSimeon({ ...PROFILE, avatarUrl: null }, undefined).profilePictureUrl, undefined);
@@ -157,7 +157,7 @@ test("sand_usage_page is on by Simeon's default, over the bundled table, under t
     assert.equal(bundled.disposed, true);
 
     // A gate pinned on the authenticated bootstrap (memory dreaming) is answered
-    // at once from the table: that bootstrap is Cursor's and never arrives here.
+    // at once from the table: that bootstrap is the upstream's and never arrives here.
     const pinned = [];
     bundled.pinGateOnAuthenticatedBootstrap = (name, pin) => pinned.push(["waits", name]);
     service.pinGateOnAuthenticatedBootstrap("sand_memory_dreaming", (value) => pinned.push(["pinned", value]));

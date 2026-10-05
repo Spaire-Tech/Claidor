@@ -1,4 +1,4 @@
-import { DashboardService } from "../../packages/proto/generated/aiserver/v1/dashboard_connect.js";
+import { DashboardService } from "../../packages/proto/simeon/v1/services.js";
 import { McpError, McpResult } from "../../packages/proto/generated/agent/v1/mcp_exec_pb.js";
 import { reportDesktopEdgeFailure } from "../desktop-edge-failures.js";
 import { createSandCursorBackendClient, getSandInferenceBackendUrl } from "../../shared/node/cursor-backend/cursor-inference.js";
@@ -105,7 +105,7 @@ export async function createSandDesktopMcpManager(options: DesktopMcpManagerOpti
   });
   // The account's MCP configuration (custom servers, plugins) is the store
   // on this Mac, `account-mcp/store.ts`, merged with the box's copy before
-  // each read; the six calls that were Cursor's read and write it.
+  // each read; the six calls that were the upstream's read and write it.
   const accountMcpDeps: AccountMcpDependencies = {
     getAccessToken: async (request) => await options.getAccessToken({ backendUrl: request?.backendUrl ?? getSandInferenceBackendUrl() }),
     getMachineId: async () => await options.getMachineId(),

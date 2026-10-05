@@ -1,4 +1,4 @@
-import { DashboardService } from "../../packages/proto/generated/aiserver/v1/dashboard_connect.js";
+import { DashboardService } from "../../packages/proto/simeon/v1/services.js";
 import { createSandCursorBackendClient, getSandInferenceBackendUrl } from "../../shared/node/cursor-backend/cursor-inference.js";
 import { createDashboardSandBackendMcpExec, type DashboardMcpExecClient } from "../../shared/node/cursor-backend/backend-mcp-exec.js";
 import { createSandMcpOAuthLoopback } from "../../shared/node/mcp/mcp-oauth-loopback.js";

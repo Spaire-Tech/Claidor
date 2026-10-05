@@ -1,6 +1,6 @@
 /**
  * Auto-review enforces, "asks once" remembers, and the box stops talking to
- * Cursor (25 September 2026, design-audit-ledger.md clusters
+ * the upstream app (25 September 2026, design-audit-ledger.md clusters
  * `auto-review-enforce`, `asks-once-memory`, `box-telemetry`).
  *
  * The box host never saw Simeon's gate table (only the Mac wrapped its
@@ -104,15 +104,15 @@ test("the Mac adopts the box's Always allow on reconnect instead of pushing its 
   }
 });
 
-test("the box carries the telemetry guards and makes no Cursor pre-flight, and the Mac copies no Statsig cache", async () => {
+test("the box carries the telemetry guards and makes no the upstream app pre-flight, and the Mac copies no Statsig cache", async () => {
   const docker = await src("electron-main/box/local-docker-host-connector.ts");
   // Schema 10 carried the guards; 11 (the stream guard, F-135) and 12 (the box's credentials in its environment, F-148) keep them.
   assert.match(docker, /LOCAL_DOCKER_SCHEMA_VERSION = "12"/);
   for (const key of ["SAND_DISABLE_TELEMETRY=1", "SAND_DISABLE_ANALYTICS=1", "SAND_BOX_LOG_SHIP_DISABLED=1"]) assert.ok(docker.includes(`"--env", "${key}"`), key);
-  assert.match(await src("shared/node/cursor-backend/cursor-inference.ts"), /privacyLookup \|\| !isConnectServed\(options\.env, "aiserver\.v1\.DashboardService"\) \? "true"/);
-  assert.match(await src("host/extensions/notifications/extension.ts"), /start: \(context\) => \{ if \(!isConnectServed\(process\.env, "aiserver\.v1\.GrokBotService"\)\) return \{\};/);
+  assert.match(await src("shared/node/cursor-backend/cursor-inference.ts"), /privacyLookup \|\| !isConnectServed\(options\.env, DASHBOARD_SERVICE_NAME\) \? "true"/);
+  assert.match(await src("host/extensions/notifications/extension.ts"), /start: \(context\) => \{ if \(!isConnectServed\(process\.env, ComputerService\.typeName\)\) return \{\};/);
   assert.match(await src("shared/node/experiments/cursor-experiments.ts"), /loggingEnabled: isConnectServed\(process\.env, "cursor\.statsig-bootstrap"\) \? "always" : "disabled"/);
   assert.match(await src("electron-main/startup/desktop-user-data-bootstrap.ts"), /"sand-statsig-bootstrap\.json"\]\);/);
   assert.match(await src("shared/observability/sentry.ts"), /SAND_SENTRY_DSN = "";/);
-  assert.match(await src("electron-main/account/cursor-profile.ts"), /if \(!isConnectServed\(process\.env, "aiserver\.v1\.DashboardService"\)\) return PrivacyMode\.NO_TRAINING;/);
+  assert.match(await src("electron-main/account/cursor-profile.ts"), /if \(!isConnectServed\(process\.env, DASHBOARD_SERVICE_NAME\)\) return PrivacyMode\.NO_TRAINING;/);
 });

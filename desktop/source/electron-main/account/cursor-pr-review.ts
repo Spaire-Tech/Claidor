@@ -1,6 +1,5 @@
-import { BackgroundComposerService } from "../../packages/proto/generated/aiserver/v1/background_composer_connect.js";
 import { GetBackgroundComposerUserSettingsRequest } from "../../packages/proto/generated/aiserver/v1/background_composer_pb.js";
-import { DashboardService } from "../../packages/proto/generated/aiserver/v1/dashboard_connect.js";
+import { CloudAgentService, DashboardService } from "../../packages/proto/simeon/v1/services.js";
 import { GetTeamAdminSettingsRequest } from "../../packages/proto/generated/aiserver/v1/dashboard_pb.js";
 import { createSandCursorBackendClient } from "../../shared/node/cursor-backend/cursor-inference.js";
 import { getOrCreateMachineId } from "./cursor-machine-id.js";
@@ -28,7 +27,7 @@ export function teamDestination(response: {
 }
 
 async function fetchUserDestination(getAccessToken: PrReviewAccessTokenReader): Promise<PrReviewDestination | undefined> {
-  const client = createSandCursorBackendClient(BackgroundComposerService, {
+  const client = createSandCursorBackendClient(CloudAgentService, {
     getAccessToken,
     getMachineId: () => getOrCreateMachineId(),
   });

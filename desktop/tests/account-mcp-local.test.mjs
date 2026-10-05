@@ -1,6 +1,6 @@
 /**
  * The account's MCP configuration lives on this machine (24 September 2026).
- * The upstream app kept it on Cursor's server and the reconstruction still called
+ * The upstream app kept it on the upstream's server and the reconstruction still called
  * those RPCs (GetAvailableMcpServers, GetMcpConfig, SetMcpConfig,
  * InstallUserPlugin, UninstallUserPlugin, UpdateUserPluginInstall), which
  * Simeon Labs' server does not serve: reads came back unavailable and every

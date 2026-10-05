@@ -14,7 +14,7 @@ export const SIMEON_COMPOSIO_PREFIX = "desktop/api/proxy/composio";
 // sit one level up, under `/desktop/api`, and answer the app's own envelope
 // `{ code, data }` (`_ok` in `server/simeon/desktop/endpoints.py`) rather
 // than a provider's shape. Added 24 September 2026 when the account screens
-// were moved off Cursor's Connect RPCs.
+// were moved off the upstream's Connect RPCs.
 export const SIMEON_API_PREFIX = "desktop/api";
 
 export interface SimeonApiAuth {

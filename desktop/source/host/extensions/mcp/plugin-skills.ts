@@ -6,7 +6,7 @@ import { createBackendMarketplaceClient, normalizeEffectiveUserPluginsResponse }
 import { classifyCloneError } from "../../../packages/cursor-plugins/marketplace-cache.js";
 import { buildOriginTokenGitConfig } from "../../../packages/cursor-plugins/origin-git-auth.js";
 import { loadFromMarketplaceSource } from "../../../packages/cursor-plugins/loader.js";
-import { DashboardService } from "../../../packages/proto/generated/aiserver/v1/dashboard_connect.js";
+import { DashboardService } from "../../../packages/proto/simeon/v1/services.js";
 import { GetEffectiveUserPluginsRequest, GetMeRequest } from "../../../packages/proto/generated/aiserver/v1/dashboard_pb.js";
 import { createSandCursorBackendClient, getSandInferenceBackendUrl } from "../../../shared/node/cursor-backend/cursor-inference.js";
 import { HOST_LOG_PREFIX, clipForHostLog, logHostLine } from "../../../shared/host-log.js";

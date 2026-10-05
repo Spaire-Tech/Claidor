@@ -212,7 +212,7 @@ class TestSlackIngress:
             headers=headers,
         )
         create = await client.post(
-            "/aiserver.v1.AutomationsService/CreateSandAutomation",
+            "/simeon.v1.AutomationsService/CreateSandAutomation",
             json={
                 "name": "Mentions",
                 "description": "sand-shadow:abc123",
@@ -372,7 +372,7 @@ class TestGithubIngress:
             headers=headers,
         )
         await client.post(
-            "/aiserver.v1.AutomationsService/CreateSandAutomation",
+            "/simeon.v1.AutomationsService/CreateSandAutomation",
             json={
                 "name": "PRs",
                 "description": "sand-shadow:rev1",
@@ -524,7 +524,7 @@ class TestAutomationsService:
             "prompts": [{"prompt": "Morning brief"}],
         }
         create = await client.post(
-            "/aiserver.v1.AutomationsService/CreateSandAutomation",
+            "/simeon.v1.AutomationsService/CreateSandAutomation",
             json={
                 "name": "Brief",
                 "description": "sand-shadow:h1",
@@ -538,7 +538,7 @@ class TestAutomationsService:
         assert create.status_code == 200, create.text
         assert create.json()["workflow"]["automationId"] == "auto-cron"
         listed = await client.post(
-            "/aiserver.v1.AutomationsService/ListSandAutomations",
+            "/simeon.v1.AutomationsService/ListSandAutomations",
             json={"sandAgentId": "agent-1"},
             headers=headers,
         )
@@ -552,14 +552,14 @@ class TestAutomationsService:
         assert entry["name"] == "Brief"
         assert isinstance(entry["createdAt"], str)
         other = await client.post(
-            "/aiserver.v1.AutomationsService/ListSandAutomations",
+            "/simeon.v1.AutomationsService/ListSandAutomations",
             json={"sandAgentId": "agent-2"},
             headers=headers,
         )
         assert other.json()["workflows"] == []
 
         again = await client.post(
-            "/aiserver.v1.AutomationsService/CreateSandAutomation",
+            "/simeon.v1.AutomationsService/CreateSandAutomation",
             json={
                 "name": "Brief",
                 "description": "sand-shadow:h1",
@@ -575,7 +575,7 @@ class TestAutomationsService:
             len(
                 (
                     await client.post(
-                        "/aiserver.v1.AutomationsService/ListSandAutomations",
+                        "/simeon.v1.AutomationsService/ListSandAutomations",
                         json={"sandAgentId": "agent-1"},
                         headers=headers,
                     )
@@ -585,7 +585,7 @@ class TestAutomationsService:
         )
 
         updated = await client.post(
-            "/aiserver.v1.AutomationsService/UpdateSandAutomation",
+            "/simeon.v1.AutomationsService/UpdateSandAutomation",
             json={
                 "automationId": "auto-cron",
                 "description": "sand-shadow:h2",
@@ -596,7 +596,7 @@ class TestAutomationsService:
         assert updated.status_code == 200
         entry = (
             await client.post(
-                "/aiserver.v1.AutomationsService/ListSandAutomations",
+                "/simeon.v1.AutomationsService/ListSandAutomations",
                 json={"sandAgentId": "agent-1"},
                 headers=headers,
             )
@@ -605,7 +605,7 @@ class TestAutomationsService:
         assert entry["enabled"] is False
 
         deleted = await client.post(
-            "/aiserver.v1.AutomationsService/DeleteSandAutomation",
+            "/simeon.v1.AutomationsService/DeleteSandAutomation",
             json={"automationId": "auto-cron"},
             headers=headers,
         )
@@ -613,13 +613,13 @@ class TestAutomationsService:
         assert deleted.json() == {}
         assert (
             await client.post(
-                "/aiserver.v1.AutomationsService/ListSandAutomations",
+                "/simeon.v1.AutomationsService/ListSandAutomations",
                 json={"sandAgentId": "agent-1"},
                 headers=headers,
             )
         ).json()["workflows"] == []
         twice = await client.post(
-            "/aiserver.v1.AutomationsService/DeleteSandAutomation",
+            "/simeon.v1.AutomationsService/DeleteSandAutomation",
             json={"automationId": "auto-cron"},
             headers=headers,
         )
@@ -630,7 +630,7 @@ class TestAutomationsService:
     ) -> None:
         headers = await _headers(client, session, user)
         response = await client.post(
-            "/aiserver.v1.AutomationsService/CreateSandAutomation",
+            "/simeon.v1.AutomationsService/CreateSandAutomation",
             json={"name": "x"},
             headers=headers,
         )
@@ -653,7 +653,7 @@ class TestCron:
             "prompts": [{"prompt": "tick"}],
         }
         await client.post(
-            "/aiserver.v1.AutomationsService/CreateSandAutomation",
+            "/simeon.v1.AutomationsService/CreateSandAutomation",
             json={
                 "name": "Tick",
                 "description": "sand-shadow:rev-cron",
@@ -734,7 +734,7 @@ class TestWebhooks:
             await client.post("/sand/listener-webhooks/linear", headers=headers)
         ).json()["url"] == url
         await client.post(
-            "/aiserver.v1.AutomationsService/CreateSandAutomation",
+            "/simeon.v1.AutomationsService/CreateSandAutomation",
             json={
                 "name": "Linear",
                 "description": "sand-shadow:lin",
@@ -819,7 +819,7 @@ class TestDashboardConnections:
         headers = await _headers(client, session, user)
         slack = (
             await client.post(
-                "/aiserver.v1.DashboardService/GetSlackUserSettings",
+                "/simeon.v1.DashboardService/GetSlackUserSettings",
                 json={},
                 headers=headers,
             )
@@ -827,7 +827,7 @@ class TestDashboardConnections:
         assert slack["hasSlackAuth"] is False
         scm = (
             await client.post(
-                "/aiserver.v1.DashboardService/GetScmConnectionStatus",
+                "/simeon.v1.DashboardService/GetScmConnectionStatus",
                 json={},
                 headers=headers,
             )
@@ -835,7 +835,7 @@ class TestDashboardConnections:
         assert scm["connected"] is False
         install = (
             await client.post(
-                "/aiserver.v1.DashboardService/GetSlackInstallUrl",
+                "/simeon.v1.DashboardService/GetSlackInstallUrl",
                 json={},
                 headers=headers,
             )
@@ -845,14 +845,14 @@ class TestDashboardConnections:
         await _github_installation(save_fixture, user)
         assert (
             await client.post(
-                "/aiserver.v1.DashboardService/GetSlackUserSettings",
+                "/simeon.v1.DashboardService/GetSlackUserSettings",
                 json={},
                 headers=headers,
             )
         ).json()["hasSlackAuth"] is True
         assert (
             await client.post(
-                "/aiserver.v1.DashboardService/GetScmConnectionStatus",
+                "/simeon.v1.DashboardService/GetScmConnectionStatus",
                 json={},
                 headers=headers,
             )

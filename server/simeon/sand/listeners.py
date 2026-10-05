@@ -5,7 +5,7 @@
 The app side never changed: the automations extension in the box
 (`desktop/source/host/extensions/automations/`) registers what it
 listens for, polls two queues, mirrors each routine as a shadow workflow
-and completes runs, exactly as it did against Cursor's server. This
+and completes runs, exactly as it did against the upstream's server. This
 package is that server, split by what the app calls:
 
 - `listeners_relay.py` — the five JSON routes (`/sand/listener-*`,

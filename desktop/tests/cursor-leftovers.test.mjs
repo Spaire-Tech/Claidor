@@ -31,7 +31,7 @@ async function load() {
   return { module, dispose: () => rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) };
 }
 
-test("an unpackaged run with no backend named goes to Simeon Labs, and Cursor's origin is still known to refuse", async () => {
+test("an unpackaged run with no backend named goes to Simeon Labs, and the token module names no upstream host", async () => {
   const loaded = await load();
   try {
     const { module } = loaded;
@@ -39,7 +39,8 @@ test("an unpackaged run with no backend named goes to Simeon Labs, and Cursor's 
     assert.equal(module.getConfiguredBackendUrl({ SIMEON_API_BASE_URL: "https://api.simeonlabs.com" }), "https://api.simeonlabs.com/");
     assert.equal(module.getConfiguredBackendUrl({ SAND_BACKEND_URL: "http://127.0.0.1:8000" }), "http://127.0.0.1:8000/");
     assert.equal(module.DEFAULT_SAND_BACKEND_URL, "https://api.simeonlabs.com");
-    assert.equal(module.DEFAULT_CURSOR_BACKEND_URL, "https://api2.cursor.sh");
+    assert.equal(module.DEFAULT_CURSOR_BACKEND_URL, undefined, "the upstream's origin is no longer spelled anywhere (Track B)");
+    assert.doesNotMatch(await readFile(path.join(repoRoot, "source/shared/node/cursor-token.ts"), "utf8"), /cursor\.sh|cursor\.com/);
     assert.equal(new URL(module.getAuthWebsiteUrl("https://api.simeonlabs.com", {})).origin, "https://api.simeonlabs.com");
     assert.equal(module.DEFAULT_SIMEON_WEBSITE_URL, "https://api.simeonlabs.com");
     const login = await readFile(path.join(repoRoot, "source/packages/cursor-config/auth/login.ts"), "utf8");

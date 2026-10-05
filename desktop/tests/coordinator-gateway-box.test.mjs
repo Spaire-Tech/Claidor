@@ -2,11 +2,11 @@
  * The coordinator, the gateway and the box (25 September 2026,
  * design-audit-ledger.md clusters `unserved-transports` and `hatch-residue`).
  *
- * The upstream app's Mac-and-box plumbing was built for Cursor's cloud and the
+ * The upstream app's Mac-and-box plumbing was built for the upstream app's cloud and the
  * reconstruction pointed it at Simeon Labs' server without the "is this
  * served?" switch each path needs: the Statsig bootstrap asked every five
  * minutes, the local-exec credential every thirty seconds, the update feed
- * defaulted to Cursor's, the box image was a floating tag with no digest
+ * defaulted to the upstream's, the box image was a floating tag with no digest
  * hook. And the hatch-era coordinator plumbing (a local reaction store, a
  * timestamp re-sort, a best-effort permission stamp) still ran on the host
  * path.
@@ -30,7 +30,7 @@ async function load(entry, name) {
   return { module, dispose: () => rm(dir, { recursive: true, force: true }) };
 }
 
-test("nothing asks Cursor's server on a timer: no Statsig bootstrap, no local-exec credential, no update feed", async () => {
+test("nothing asks the upstream's server on a timer: no Statsig bootstrap, no local-exec credential, no update feed", async () => {
   const experiments = await src("shared/node/experiments/cursor-experiments.ts");
   assert.match(experiments, /this\.refreshSnapshot\(\); if \(!isConnectServed\(this\.options\.env, "cursor\.statsig-bootstrap"\)\) return; this\.pollHandle = this\.refreshPoll\.start/);
   assert.match(experiments, /private async runRefresh\(trigger: Trigger\): Promise<void> \{ if \(!isConnectServed\(this\.options\.env, "cursor\.statsig-bootstrap"\)\) \{ this\.refreshSnapshot\(\); return; \}/);

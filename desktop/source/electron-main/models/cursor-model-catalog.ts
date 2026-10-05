@@ -1,4 +1,4 @@
-import { AiService } from "../../packages/proto/generated/aiserver/v1/aiserver_connect.js";
+import { AiService } from "../../packages/proto/simeon/v1/services.js";
 import { AvailableModelsRequest, AvailableModelsScope } from "../../packages/proto/generated/aiserver/v1/aiserver_pb.js";
 import { createSandCursorBackendClient, type SandInferenceOptions } from "../../shared/node/cursor-backend/cursor-inference.js";
 

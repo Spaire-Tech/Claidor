@@ -1,6 +1,6 @@
 // The backend the MCP manager talks to for HTTP servers, served locally for
 // vendor connectors (24 September 2026). The upstream app's manager routes every
-// HTTP MCP server through one object with Cursor's backend behind it:
+// HTTP MCP server through one object with the upstream's backend behind it:
 // tool listing, tool calls, the OAuth start (checkAuthStatus), the OAuth
 // finish (completeOAuth), token checks and account removal. Simeon serves
 // none of that, so until now a vendor connector could be installed and
@@ -69,7 +69,7 @@ export interface VendorMcpAuthStatus {
   readonly error: string;
 }
 
-/** The slice of Cursor's backend exec the manager calls; the fallback is optional per method. */
+/** The slice of the upstream's backend exec the manager calls; the fallback is optional per method. */
 export interface VendorMcpFallbackBackend {
   listTools?(serverIdentifiers: readonly string[]): Promise<readonly unknown[]>;
   executeTool?(args: unknown): Promise<unknown>;

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { release as osRelease } from "node:os";
-import { AiService } from "../../packages/proto/generated/aiserver/v1/aiserver_connect.js";
+import { AiService } from "../../packages/proto/simeon/v1/services.js";
 import { createSandCursorBackendClient } from "../../shared/node/cursor-backend/cursor-inference.js";
 import { readLocalExecDaemonDiscovery } from "../../host/local-exec/local-exec-daemon-protocol.js";
 import { isProcessAlive } from "../local-exec/local-exec-native.js";

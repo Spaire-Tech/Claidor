@@ -7,7 +7,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { build } from "esbuild";
 
-// The box-migration watcher (Cursor's `WatchSandBoxMigration` stream) is
+// The box-migration watcher (the upstream's `WatchSandBoxMigration` stream) is
 // only attached for a remote box. Until 24 September 2026 it started
 // whatever the runtime and, on the default local Docker box, retried a 404
 // against Simeon Labs' server every 3 s for as long as the app ran.

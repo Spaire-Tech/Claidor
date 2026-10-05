@@ -17,7 +17,7 @@ import type { GatewayConnection } from "./gateway-descriptor-cache.js";
 import { computerStreamLine } from "../vnc/computer-stream-log.js";
 
 export const LOCAL_DOCKER_BOX_IMAGE = "public.ecr.aws/k0i0n2g5/cursorenvironments/universal:sand-box-latest";
-// The tag is Cursor's and mutable. A digest pins the box (F-412, F-363):
+// The tag is the upstream's and mutable. A digest pins the box (F-412, F-363):
 // `SAND_BOX_IMAGE_DIGEST=<64 hex>` makes every create run `image@sha256:<digest>`
 // and refuse a container on any other reference. The digest is read on a
 // Mac (`docker image inspect --format '{{index .RepoDigests 0}}' <image>`)
@@ -131,7 +131,7 @@ function runDocker(args: readonly string[]): Promise<CommandResult> {
  * encrypted with Electron's `safeStorage` (`gateway-descriptor-store.ts`),
  * and its secret store holds a value encrypted when encryption is available
  * and in memory when it is not (`secret-store.ts`,
- * `resolveSecretStorageMode`). The box itself, a pod on Cursor's servers,
+ * `resolveSecretStorageMode`). The box itself, a pod on the upstream's servers,
  * receives its gateway token and a long-lived renewal credential in its
  * environment (`SAND_GATEWAY_TOKEN`, `SAND_INFERENCE_RENEWAL_CREDENTIAL`) and
  * renews its short-lived model token itself (`host/extensions/auth`).
@@ -398,7 +398,7 @@ export function localDockerInferenceEnvironmentArguments(boxCredential?: string,
     "--env", `${SAND_INFERENCE_PROVIDER_ENV}=${PRODUCT_INFERENCE_PROVIDER}`,
     // The packaged Mac carries these guards in its main; the box never got
     // them, so the host buffered console lines, crash markers and product
-    // events for Cursor's AnalyticsService and posted them to Simeon Labs'
+    // events for the upstream app's AnalyticsService and posted them to Simeon Labs'
     // server every 3 s to get a 404 (design-audit-ledger.md F-376, F-378,
     // F-391). Schema 10 replaces a container created without them.
     "--env", "SAND_DISABLE_TELEMETRY=1",

@@ -47,7 +47,7 @@ import { createElectronDesktopConnectivity } from "./desktop-connectivity.js";
 import type { BoxConnectionInfo } from "../../shared/node/egress-tunnel/box-connection.js";
 
 export interface ProductionCoordinatorAuthStatus extends CoordinatorAuthStatus {
-  readonly isAnysphereUser?: boolean;
+  readonly isStaffUser?: boolean;
 }
 
 export interface ProductionCoordinatorUtilityProcess {

@@ -19,8 +19,11 @@ from simeon.desktop.service import offered_models
 from .cloud_agents_service import cloud_agents
 from .connect import ConnectCall, ConnectService
 
-service = ConnectService("aiserver.v1.BackgroundComposerService")
-ai_service = ConnectService("aiserver.v1.AiService")
+service = ConnectService(
+    "simeon.v1.CloudAgentService",
+    aliases=("aiserver.v1.BackgroundComposerService",),
+)
+ai_service = ConnectService("simeon.v1.AiService", aliases=("aiserver.v1.AiService",))
 
 
 def _text(message: dict[str, Any], key: str) -> str:
@@ -178,7 +181,7 @@ async def list_environments(call: ConnectCall) -> dict[str, Any]:
 async def get_background_composer_user_settings(call: ConnectCall) -> dict[str, Any]:
     """Every field is optional; the Mac reads `prReviewOpenDestination`
     (`electron-main/account/cursor-pr-review.ts`) and falls back to its own
-    default on 0. Cursor stored these per account; Simeon has no settings
+    default on 0. the upstream app stored these per account; Simeon has no settings
     page for them yet, so the answer is the empty message (25 September
     2026, found on the founder's Mac as a "not found" at launch)."""
     return {}

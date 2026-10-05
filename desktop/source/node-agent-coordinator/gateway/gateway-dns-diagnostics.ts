@@ -5,7 +5,7 @@ import { findSystemErrno } from "../../shared/system-errno.js";
 
 export const DNS_PROBE_TIMEOUT_MS = 2_000;
 export const DNS_PROBE_MIN_INTERVAL_MS = 60_000;
-export const GENERAL_CONTROL_HOSTNAME = "api2.cursor.sh";
+export const GENERAL_CONTROL_HOSTNAME = "api.simeonlabs.com";
 
 export type DnsProbeResult = "resolved" | "timeout" | "not_found" | "temporary_failure" | "error";
 export type DnsDiagnosis = "resolved_before_probe" | "system_path_failure" | "independent_path_failure" | "endpoint_failure" | "cursorvm_failure" | "general_dns_failure" | "inconclusive";

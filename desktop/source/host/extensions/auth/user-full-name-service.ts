@@ -5,7 +5,7 @@ export const GET_ME_TIMEOUT_MS = 10_000;
 export const USER_NAME_REFRESH_MS = 5 * 60_000;
 /** A failed read is not asked again by every turn: once a minute at most. */
 export const USER_NAME_RETRY_MS = 60_000;
-// Until 25 September 2026 the name was asked of Cursor's DashboardService
+// Until 25 September 2026 the name was asked of the upstream's DashboardService
 // (GetMe), which Simeon Labs' server does not serve, so the agent never
 // had it. The profile route answers the box's own credential too
 // (`get_desktop_or_box_session`, server/simeon/desktop/auth.py).
