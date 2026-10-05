@@ -22,9 +22,9 @@
 .sand-chat-header__controls{position:absolute!important;right:0!important;top:50%!important;transform:translateY(-50%)!important}
 
 
-/* Simeon: Liquid Glass on the chrome (23 September 2026), the agents sidebar only since 27 September 2026. */
+/* Simeon: Liquid Glass on the chrome (23 September 2026), the agents sidebar only since 27 September 2026; the material of Messages' sidebar since 5 October 2026 (the founder: "just the water glass … less grey"): a near-white frost over a 40 pt blur with the saturation lifted, a specular hairline on its inner edge and a faint shadow where it meets the chat, over the Mac's own sidebar material; the same in the dark, in the dark's ink. */
 html:has(.sand-agents-sidebar),html:has(.sand-agents-sidebar) body,[data-theme]:has(>.sand-agents-sidebar){background-color:transparent!important}
-.sand-agents-sidebar{background-color:color-mix(in srgb,var(--simeon-bg-chrome) 93%,transparent)!important;-webkit-backdrop-filter:blur(30px) saturate(1.8)!important;backdrop-filter:blur(30px) saturate(1.8)!important;border-right:.5px solid color-mix(in srgb,var(--simeon-text-primary) 10%,transparent)!important}
+.sand-agents-sidebar{background:linear-gradient(180deg,light-dark(rgba(255,255,255,.82),rgba(32,32,34,.76)),light-dark(rgba(250,251,253,.74),rgba(28,28,30,.7)))!important;-webkit-backdrop-filter:blur(40px) saturate(1.6)!important;backdrop-filter:blur(40px) saturate(1.6)!important;border-right:0!important;box-shadow:inset -.5px 0 0 light-dark(rgba(255,255,255,.7),rgba(255,255,255,.08)),.5px 0 0 light-dark(rgba(0,0,0,.06),rgba(0,0,0,.5)),2px 0 12px -6px rgba(0,0,0,.05)!important}
 .sand-agents-sidebar~.sand-chat,.sand-agents-sidebar~.sand-info-pane{background-color:var(--sand-bg-base)!important}
 
 /* Simeon: one shape, the cloud (26 September 2026): the shape pickers in the agent editor and onboarding are gone; colour stays. */
@@ -314,7 +314,7 @@ strong .simeon-agent,b .simeon-agent,h1 .simeon-agent,h2 .simeon-agent,h3 .simeo
 .simeon-name-sheet__save:disabled{opacity:.4;cursor:default}
 @media (prefers-reduced-motion:reduce){.simeon-call-record__chevron,.simeon-call-record__recap{transition:none}}
 
-/* Simeon: the agent's pane, one page with a segmented control (1 October 2026). Measured on the founder's reference: a 96 pt avatar circle with a hairline and a 32 pt pencil on its edge, a 22 pt name, a 36 pt pill of icon segments, rows of 40 pt icon tiles with 15 pt titles, and air between them. No boxes, no accent. */
+/* Simeon: the agent's pane, one page with a segmented control (1 October 2026). Measured on the founder's reference: a 96 pt avatar circle with a hairline and a 32 pt pencil on its edge, a 22 pt name, rows of 40 pt icon tiles with 15 pt titles, and air between them. No boxes, no accent. The tabs are round glass discs since 5 October 2026 (the base rules are in the sidebar discs block). */
 .sand-agents-sidebar~.sand-info-pane,.sand-info-pane .sand-info-pane__inner{background-color:light-dark(#fbfbfd,#1c1c1e)!important}
 .simeon-pane{--simeon-ink:light-dark(#1d1d1f,#f5f5f7);--simeon-ink-2:light-dark(#86868b,#98989d);--simeon-fill:light-dark(#f2f2f4,#2c2c2e);--simeon-fill-2:light-dark(#e8e8ed,#3a3a3c);--simeon-hairline:light-dark(rgba(0,0,0,.08),rgba(255,255,255,.1));--simeon-paper:light-dark(#fbfbfd,#1c1c1e);display:flex;flex-direction:column;padding:6px 20px 40px;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--simeon-ink);letter-spacing:-.01em}
 .simeon-pane__head{display:flex;flex-direction:column;align-items:center;padding:6px 0 0}
@@ -330,16 +330,10 @@ strong .simeon-agent,b .simeon-agent,h1 .simeon-agent,h2 .simeon-agent,h3 .simeo
 .simeon-pane__head .sand-avatar-trigger__button:hover .sand-avatar-trigger__overlay{background:var(--simeon-fill-2)!important}
 .simeon-pane__name{margin-top:14px;font-size:22px;line-height:28px;font-weight:500;letter-spacing:-.022em;text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .simeon-pane__title{margin-top:1px;font-size:15px;line-height:20px;color:var(--simeon-ink-2);text-align:center}
-.simeon-segments{position:relative;display:grid;grid-auto-flow:column;grid-auto-columns:1fr;height:36px;padding:3px;margin:32px 0 26px;border-radius:999px;background:var(--simeon-fill)}
-.simeon-segments__thumb{position:absolute;top:3px;bottom:3px;left:3px;width:calc((100% - 6px) / var(--simeon-seg-count));transform:translateX(calc(var(--simeon-seg-index) * 100%));border-radius:999px;background:light-dark(#ffffff,#636366);box-shadow:0 1px 2px rgba(0,0,0,.06),0 2px 8px rgba(0,0,0,.06);transition:transform .34s cubic-bezier(.32,.72,0,1)}
-.simeon-segments>:not(.simeon-segments__thumb){position:relative;z-index:1}
-.simeon-segments__item{display:flex;align-items:center;justify-content:center;width:100%;height:30px;appearance:none;border:0;margin:0;padding:0;background:none;border-radius:999px;color:light-dark(#6e6e73,#aeaeb2);cursor:default;outline:none;transition:color .2s}
-.simeon-segments__item[aria-selected="true"]{color:var(--simeon-ink)}
-.simeon-segments__item svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-.simeon-segments__item:focus-visible{box-shadow:0 0 0 3px light-dark(rgba(0,0,0,.14),rgba(255,255,255,.24))}
-.simeon-segments>*+*::before{content:"";position:absolute;left:0;top:50%;height:16px;margin-top:-8px;width:1px;background:light-dark(#d8d8dd,#48484a);transition:opacity .2s}
-.simeon-segments__thumb+*::before{display:none}
-.simeon-segments>:has(>[aria-selected="true"])::before,.simeon-segments>:has(>[aria-selected="true"])+*::before,.simeon-segments>[aria-selected="true"]::before,.simeon-segments>[aria-selected="true"]+*::before{opacity:0}
+.simeon-segments{display:flex;justify-content:center;gap:12px;margin:28px 0 26px}
+.simeon-segments .simeon-segments__item{width:44px;height:44px;color:light-dark(rgba(0,0,0,.62),rgba(255,255,255,.7))}
+.simeon-segments .simeon-segments__item[aria-selected="true"]{color:var(--simeon-ink);background:linear-gradient(180deg,light-dark(#ffffff,#6a6a6e),light-dark(rgba(255,255,255,.9),#5c5c60));box-shadow:inset 0 1px 0 light-dark(#ffffff,rgba(255,255,255,.3)),inset 0 0 0 .75px light-dark(rgba(255,255,255,.9),rgba(255,255,255,.12)),inset 0 -1px 1px rgba(0,0,0,.05),0 0 0 .5px light-dark(rgba(0,0,0,.1),rgba(0,0,0,.55)),0 2px 5px rgba(0,0,0,.08),0 8px 18px -6px rgba(0,0,0,.16)}
+.simeon-segments .simeon-segments__item svg{width:20px;height:20px;stroke-width:1.7}
 .simeon-pane__body{display:flex;flex-direction:column;gap:22px;font-size:15px;line-height:20px}
 .simeon-pane__body .sand-agent-settings{gap:22px!important}
 .simeon-pane__body .sand-agent-settings div:has(>.sand-avatar-trigger-row){display:none!important}
@@ -483,3 +477,22 @@ strong .simeon-agent,b .simeon-agent,h1 .simeon-agent,h2 .simeon-agent,h3 .simeo
 .simeon-coo-avatar{pointer-events:none}
 .simeon-coo-avatar .sand-avatar-trigger__button>:not(:first-child),.simeon-coo-avatar .sand-avatar-trigger>:not(.sand-avatar-trigger__button){display:none!important}
 .sand-info-pane input[readonly],.sand-info-pane textarea[readonly],input[aria-label^="Agent "][readonly],textarea[aria-label^="Agent "][readonly]{cursor:default;caret-color:transparent}
+
+/* Simeon: the sidebar's round glass discs (5 October 2026): search and create in the header, the same two at the foot of the rail, the account initials, the pane's tabs, and the composer's attach button at its own size. Clear glass, a specular top edge, a hairline, a soft shadow; the same in the dark. */
+.sand-agents-sidebar__search{display:none!important}
+.simeon-disc{display:grid;place-items:center;width:40px;height:40px;padding:0;margin:0;border:0;border-radius:999px;appearance:none;cursor:default;outline:none;color:light-dark(rgba(0,0,0,.78),rgba(255,255,255,.86));background:linear-gradient(180deg,light-dark(rgba(255,255,255,.62),rgba(255,255,255,.16)),light-dark(rgba(255,255,255,.38),rgba(255,255,255,.08)));-webkit-backdrop-filter:blur(14px) saturate(1.6);backdrop-filter:blur(14px) saturate(1.6);box-shadow:inset 0 1px 0 light-dark(rgba(255,255,255,.95),rgba(255,255,255,.28)),inset 0 0 0 .75px light-dark(rgba(255,255,255,.6),rgba(255,255,255,.12)),inset 0 -1px 1px rgba(0,0,0,.04),0 0 0 .5px light-dark(rgba(0,0,0,.07),rgba(0,0,0,.5)),0 1px 3px rgba(0,0,0,.06);transition:transform .18s ease,box-shadow .18s ease,background .18s ease}
+.simeon-disc:hover{transform:scale(1.04)}
+.simeon-disc:active{transform:scale(.97)}
+.simeon-disc:focus-visible{box-shadow:0 0 0 3px light-dark(rgba(0,0,0,.14),rgba(255,255,255,.24))}
+.simeon-disc svg{display:block;width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.sand-agents-sidebar__header:has(.simeon-disc){height:60px!important;padding-right:12px!important}
+.sand-agents-sidebar__new-actions:has(.simeon-disc){gap:10px!important;align-items:center!important}
+.simeon-rail-discs{gap:10px!important;padding-bottom:10px!important}
+.sand-agents-sidebar__account>button{width:40px!important;height:40px!important;padding:0!important;border-radius:999px!important;display:grid!important;place-items:center!important}
+.sand-agents-sidebar__account .sand-kit-base-avatar{width:40px!important;height:40px!important;border-radius:999px!important;font-size:13px!important;font-weight:500!important;letter-spacing:.02em!important;color:light-dark(rgba(0,0,0,.72),rgba(255,255,255,.86))!important;background:linear-gradient(180deg,light-dark(rgba(255,255,255,.62),rgba(255,255,255,.16)),light-dark(rgba(255,255,255,.38),rgba(255,255,255,.08)))!important;-webkit-backdrop-filter:blur(14px) saturate(1.6)!important;backdrop-filter:blur(14px) saturate(1.6)!important;box-shadow:inset 0 1px 0 light-dark(rgba(255,255,255,.95),rgba(255,255,255,.28)),inset 0 0 0 .75px light-dark(rgba(255,255,255,.6),rgba(255,255,255,.12)),inset 0 -1px 1px rgba(0,0,0,.04),0 0 0 .5px light-dark(rgba(0,0,0,.07),rgba(0,0,0,.5)),0 1px 3px rgba(0,0,0,.06)!important;transition:transform .18s ease!important}
+.sand-agents-sidebar__account .sand-kit-base-avatar>span{display:none!important}
+.sand-agents-sidebar__account>button:hover .sand-kit-base-avatar{transform:scale(1.04)!important}
+.sand-prompt-attach{width:30px!important;height:30px!important;border-radius:999px!important;color:light-dark(rgba(0,0,0,.78),rgba(255,255,255,.86))!important;background:linear-gradient(180deg,light-dark(rgba(255,255,255,.62),rgba(255,255,255,.16)),light-dark(rgba(255,255,255,.38),rgba(255,255,255,.08)))!important;-webkit-backdrop-filter:blur(14px) saturate(1.6)!important;backdrop-filter:blur(14px) saturate(1.6)!important;box-shadow:inset 0 1px 0 light-dark(rgba(255,255,255,.95),rgba(255,255,255,.28)),inset 0 0 0 .75px light-dark(rgba(255,255,255,.6),rgba(255,255,255,.12)),inset 0 -1px 1px rgba(0,0,0,.04),0 0 0 .5px light-dark(rgba(0,0,0,.07),rgba(0,0,0,.5)),0 1px 3px rgba(0,0,0,.06)!important;transition:transform .18s ease!important}
+.sand-prompt-attach:hover{transform:scale(1.04)!important}
+.sand-prompt-attach:active{transform:scale(.97)!important}
+.sand-prompt-attach .ui-icon{color:inherit!important}
