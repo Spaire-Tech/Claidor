@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { copyFile, readdir, readFile, stat, writeFile } from "node:fs/promises";
+import { copyFile, readFile, readdir, rename, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -112,6 +112,10 @@ export const UPSTREAM_TOKEN_REPLACEMENTS = Object.freeze([
   ["glass-attribute", /data-cursor-glass-mode/g, "data-simeon-glass-mode"],
   ["layers", /anysphere\.(tokens|scss|stylex)/g, "simeon.$1"],
   ["icon-font", /cursor-icons(?!-16)/g, "simeon-icons"],
+  // The icon font's file: the stylesheet's src and the file itself, which
+  // the patch renames on disk and records under `renames` (the founder, 5
+  // October 2026: "do the icon font file too").
+  ["icon-font-file", /cursor-icons-16-/g, "simeon-icons-16-"],
   ["mark-class", /sand-grok-bot-mark/g, "sand-simeon-mark"],
   ["mark-state", /data-grok-state/g, "data-mark-state"],
   ["cloud-agent-card", /sand-cursor-agent-card/g, "sand-cloud-agent-card"],
@@ -1926,18 +1930,31 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   // `readRendererExtensionRecord` (macos-package-verification.mjs) requires
   // (measured 5 October 2026, on the first own-shell package).
   const finalPatched = new Map(files.map((file) => [file.path, file.patched]));
+  // The icon font's file takes the stylesheet's new name for it. The pinned
+  // inventory still lists the file under its old path; `renames` tells the
+  // verification (macos-package-verification.mjs, verify.mjs) where it is.
+  const renames = [];
+  for (const name of await readdir(assetsRoot)) {
+    if (!/^cursor-icons-16-.*\.woff2$/.test(name)) continue;
+    const renamed = name.replace(/^cursor-icons-16-/, "simeon-icons-16-");
+    await rename(path.join(assetsRoot, name), path.join(assetsRoot, renamed));
+    renames.push({ from: path.posix.join("dist", "renderer", "assets", name), to: path.posix.join("dist", "renderer", "assets", renamed) });
+  }
+  // The pinned window has one; a staged renderer in a test may have none.
+  if (renames.length !== (tokenTotals["icon-font-file"] > 0 ? 1 : 0)) throw new Error(`Expected ${tokenTotals["icon-font-file"] > 0 ? "one" : "no"} icon font file to rename, found ${renames.length}.`);
   const record = {
-    schemaVersion: 2,
+    schemaVersion: 3,
     mode: "original-renderer-settings-extension",
     chunks: changes.map((change) => ({ ...change, patched: finalPatched.get(change.path) ?? change.patched })),
     marks,
     files,
+    renames,
     brand: { tokens: tokenTotals, tokenReplacements: UPSTREAM_TOKEN_REPLACEMENTS.map(([label, pattern, after]) => ({ label, pattern: String(pattern), after })), replacements: [...BRAND_REPLACEMENTS.map(([before, after]) => ({ before, after })), ...BRAND_WORD_REPLACEMENTS.map(([pattern, after, label]) => ({ before: label, pattern: String(pattern), after })), ...BRAND_PHRASE_REPLACEMENTS.map(([before, after]) => ({ before, after }))], totals: brandTotals, files: brandFiles, residue: brandResidue },
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
     features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-mark", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "agent-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "flight-results", "upstream-tokens"],
-    transformations: ["settings-registry", "marks", "app-icon", "brand-strings", "upstream-tokens"],
+    transformations: ["settings-registry", "marks", "app-icon", "brand-strings", "upstream-tokens", "icon-font-file"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");
   await writeFile(provenancePath, `${JSON.stringify(record, null, 2)}\n`);
