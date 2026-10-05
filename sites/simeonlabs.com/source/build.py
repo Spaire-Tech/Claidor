@@ -77,7 +77,7 @@ rail += group + "".join(f'<span class="sd-m-av">{mface("agent-" + f)}</span>' fo
 # laptop too (28 September and 3 October 2026); the laptop's demo plays the same thread.
 MOBILE_HTML = ('<div class="sd-mob" aria-label="Simeon, the chief of staff, talking with you about a launch">'
   '<div class="sd-m-rail"><span class="sd-m-lights"><i></i><i></i><i></i></span>' + rail
-  + '<span class="sd-m-fill"></span><span class="sd-m-search">' + SEARCH + '</span><span class="sd-m-new">' + LINES + '</span><span class="sd-m-me">BF</span></div>'
+  + '<span class="sd-m-fill"></span><span class="sd-m-me">BF</span><span class="sd-m-search">' + SEARCH + '</span><span class="sd-m-new">' + LINES + '</span></div>'
   '<div class="sd-m-main"><div class="sd-m-head">' + mface("agent-simeon") + '<b>Simeon</b><span class="sd-m-role">Chief of Staff</span></div>'
   '<div class="sd-m-thread"><div class="sd-m-feed">'
   f'<div class="sd-m-in">Thursday is on track: 12 of 15 launch tickets are done in {chip("linear")}, and the review is Thursday at 2 pm.</div>'
@@ -110,12 +110,11 @@ MOBILE_CSS = """/* The phone hero: a still of the app window filling the hero bo
   .sd-m-group img{position:absolute;width:6.6cqw;height:6.6cqw}
   .sd-m-group img:nth-child(1){top:1.2cqw;left:4.2cqw}.sd-m-group img:nth-child(2){bottom:1.4cqw;left:1.6cqw}.sd-m-group img:nth-child(3){bottom:1.4cqw;right:1.6cqw}
   .sd-m-fill{flex:1}
-  /* The rail's two round glass buttons, search and create, as in the demo (demo-glass.css). */
-  .sd-m-search,.sd-m-new{display:grid;place-items:center;width:9.4cqw;height:9.4cqw;border-radius:50%;color:rgba(0,0,0,.78);background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,255,255,.38));box-shadow:inset 0 .25cqw 0 rgba(255,255,255,.95),inset 0 0 0 .2cqw rgba(255,255,255,.6),inset 0 -.25cqw .25cqw rgba(0,0,0,.04),0 0 0 .13cqw rgba(0,0,0,.07),0 .25cqw .8cqw rgba(0,0,0,.06)}
-  .sd-m-search{margin-top:auto}
+  /* The rail's three round glass discs, the initials, search and create, as in the demo (demo-glass.css). */
+  .sd-m-me,.sd-m-search,.sd-m-new{display:grid;place-items:center;width:9.4cqw;height:9.4cqw;border-radius:50%;color:rgba(0,0,0,.78);background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,255,255,.38));box-shadow:inset 0 .25cqw 0 rgba(255,255,255,.95),inset 0 0 0 .2cqw rgba(255,255,255,.6),inset 0 -.25cqw .25cqw rgba(0,0,0,.04),0 0 0 .13cqw rgba(0,0,0,.07),0 .25cqw .8cqw rgba(0,0,0,.06)}
+  .sd-m-me{margin-top:auto;font-size:3.2cqw;font-weight:500;letter-spacing:.02em;color:rgba(0,0,0,.72)}
   .sd-m-plus svg,.sd-m-mic svg,.sd-m-clock svg{display:block;width:100%;height:100%}
   .sd-m-search svg,.sd-m-new svg{display:block;width:4.6cqw;height:4.6cqw}
-  .sd-m-me{display:grid;place-items:center;width:9cqw;height:9cqw;border-radius:50%;background:#ececea;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);font-size:3.2cqw;color:#555;letter-spacing:.02em}
   .sd-m-main{flex:1;min-width:0;display:flex;flex-direction:column}
   .sd-m-head{display:flex;align-items:center;gap:2cqw;padding:4.2cqw 4cqw 3.4cqw;border-bottom:1px solid rgba(0,0,0,.06);font-size:4.2cqw}
   .sd-m-head img{width:7.4cqw;height:7.4cqw;object-fit:contain}

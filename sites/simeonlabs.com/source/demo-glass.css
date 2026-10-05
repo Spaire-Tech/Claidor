@@ -36,10 +36,19 @@ html body .simeon-segments__item svg{width:20px!important;height:20px!important;
 /* While the pane is open the sidebar is a narrow rail whose top is under the window's traffic lights, so the two
    buttons move to the foot of the rail, stacked above the account initials, the way the phone has them. */
 html body .sand-shell:has(.sand-info-pane[data-open="true"]) .sand-agents-sidebar{display:flex!important;flex-direction:column!important}
-html body .sand-shell:has(.sand-info-pane[data-open="true"]) .sand-agents-sidebar__header{order:1!important;height:auto!important;padding:6px 0 10px!important;justify-content:center!important}
-html body .sand-shell:has(.sand-info-pane[data-open="true"]) .sand-agents-sidebar__footer{order:2!important}
+html body .sand-shell:has(.sand-info-pane[data-open="true"]) .sand-agents-sidebar__footer{order:1!important;padding:0 0 10px!important;display:flex!important;justify-content:center!important}
+html body .sand-shell:has(.sand-info-pane[data-open="true"]) .sand-agents-sidebar__header{order:2!important;height:auto!important;padding:0 0 14px!important;justify-content:center!important}
 html body .sand-shell:has(.sand-info-pane[data-open="true"]) .sand-agents-sidebar__new-actions{flex-direction:column!important;gap:10px!important;margin:0 auto!important}
 /* The rail renders a second "New chat" plus of its own; the compose disc already is that button. */
 html body .sand-agents-sidebar__rail-new{display:none!important}
 /* The rail's header was its 44px spacer under the traffic lights; with the header at the foot, the spacer stays. */
 html body .sand-shell:has(.sand-info-pane[data-open="true"]) .sand-agents-sidebar::before{content:""!important;display:block!important;flex:none!important;order:0!important;height:44px!important}
+/* The account initials as the same glass disc (the founder, 5 October 2026); in the rail they sit above the two buttons. */
+html body .sand-agents-sidebar__account button{padding:0!important;width:40px!important;height:40px!important;border-radius:999px!important;display:grid!important;place-items:center!important}
+html body .sand-agents-sidebar__account .sand-kit-base-avatar{width:40px!important;height:40px!important;border-radius:999px!important;font-size:13px!important;font-weight:500!important;letter-spacing:.02em!important;color:rgba(0,0,0,.72)!important;
+  background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,255,255,.38))!important;
+  -webkit-backdrop-filter:blur(14px) saturate(1.6)!important;backdrop-filter:blur(14px) saturate(1.6)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 0 0 .75px rgba(255,255,255,.6),inset 0 -1px 1px rgba(0,0,0,.04),0 0 0 .5px rgba(0,0,0,.07),0 1px 3px rgba(0,0,0,.06)!important;
+  transition:transform .18s ease!important}
+html body .sand-agents-sidebar__account .sand-kit-base-avatar>span{display:none!important}
+html body .sand-agents-sidebar__account button:hover .sand-kit-base-avatar{transform:scale(1.04)!important}
