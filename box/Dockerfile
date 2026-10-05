@@ -25,9 +25,11 @@
 #   - tools an agent uses from the shell: git, gh, ripgrep, jq, ffmpeg,
 #     poppler, python3, uv, LibreOffice (documents), playwright-core and
 #     bun (browser scripts).
-#   - Node 24, the version the host bundle is built for (the Mac runs the
-#     same bundle on Electron 42's Node 24), and the tree-sitter add-ons
-#     the host loads from /home/box/deps, compiled here against that Node.
+#   - Node 22 (the LTS line the host and exec daemon bundles are built for,
+#     esbuild target node22), and the tree-sitter add-ons the host loads
+#     from /home/box/deps, compiled here against that Node. Not Node 24:
+#     tree-sitter 0.21.1 does not compile against its headers (C++20
+#     required; measured on the founder's Mac and here, 5 October 2026).
 #   - Google Chrome, pinned, with the policies under box/etc.
 #   - our scripts under /usr/local/bin (box/bin): the entrypoint, the
 #     supervisor, the desktop, fork windows, the window router, Chrome's
@@ -38,7 +40,7 @@
 
 FROM debian:trixie-slim
 
-ARG NODE_VERSION=24.15.0
+ARG NODE_VERSION=22.23.3
 ARG CHROME_VERSION=151.0.7922.169
 ARG PLAYWRIGHT_CORE_VERSION=1.59.1
 ARG BUN_VERSION=1.4.2

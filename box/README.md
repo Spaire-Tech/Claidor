@@ -10,7 +10,7 @@ what runs inside, and the small contract the host relies on.
 
 | Piece | Where | What it does |
 |---|---|---|
-| `Dockerfile` | `box/Dockerfile` | Debian trixie, Node 24, Google Chrome, the desktop (Xvfb, xfwm4, picom, x11vnc, websockify and noVNC, xdotool, ImageMagick), tools for the shell (git, gh, ripgrep, jq, ffmpeg, poppler, python3, uv, bun, playwright-core, LibreOffice), the host's add-ons compiled against that Node under `/home/box/deps`, and our scripts under `/usr/local/bin`. |
+| `Dockerfile` | `box/Dockerfile` | Debian trixie, Node 22, Google Chrome, the desktop (Xvfb, xfwm4, picom, x11vnc, websockify and noVNC, xdotool, ImageMagick), tools for the shell (git, gh, ripgrep, jq, ffmpeg, poppler, python3, uv, bun, playwright-core, LibreOffice), the host's add-ons compiled against that Node under `/home/box/deps`, and our scripts under `/usr/local/bin`. |
 | `start-simeon-box` | `bin/` | The entrypoint (under tini). Prepares folders, logs and the machine id, then runs the supervisor. |
 | `simeon-supervisor.mjs` | `bin/` | Starts and keeps alive the primary desktop, the exec daemon (1337), the window router (1339), the fork screens' websockify (6081) and the host (1340, when its bundle is mounted). Writes the health file the host forwards and answers the command mailbox. |
 | `simeon-desktop` | `bin/` | Brings one desktop up: the X server, the wallpaper, the VNC server, the screen's websockify (or a fork token), the window manager, the compositor. Registers each piece with `box-register` so the supervisor restarts it. |
