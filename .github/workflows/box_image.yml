@@ -1,0 +1,101 @@
+name: Box image
+
+# Builds the cloud computer image (`box/Dockerfile`) on GitHub's own
+# amd64 machines and publishes it to GHCR. The servers that run boxes are
+# amd64; a build on a Mac needs Rosetta and `--platform linux/amd64`, and
+# is slow and fragile there (5 October 2026: two days of partial builds on
+# the founder's Air). Here the build is native and the push needs no
+# registry secret: GitHub's own token writes packages under this
+# repository's owner.
+#
+# Runs by hand (Actions → Box image → Run workflow) and on every push to
+# `main` that touches `box/`. The Dockerfile checks itself (Node runs,
+# Chrome is the pinned version, playwright connects, the add-ons parse a
+# shell line, every script parses), so a published image passed those.
+#
+# To put a build in service: copy the sha-tagged name and its digest from
+# the "Build and push" step into `SIMEON_BOX_IMAGE` and
+# `SIMEON_BOX_IMAGE_DIGEST` on Render (`docs/services-core.md`).
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "box/**"
+      - ".github/workflows/box_image.yml"
+
+concurrency:
+  group: box-image-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: |
+            ghcr.io/${{ github.repository_owner }}/simeon-box
+          # The commit sha names one exact image forever; `main` follows the
+          # default branch.
+          tags: |
+            type=sha,format=long
+            type=raw,value=main,enable={{is_default_branch}}
+
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: box/Dockerfile
+          platforms: linux/amd64
+          push: true
+          build-args: |
+            SIMEON_BOX_VERSION=${{ github.sha }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=box-image
+          cache-to: type=gha,mode=max,scope=box-image
+
+      - name: Start the image and ask it what is up
+        # A box with no host bundle mounted still brings up its desktop, the
+        # exec daemon is absent by design, and box-doctor reports it. This
+        # proves the entrypoint, the supervisor and the desktop scripts on
+        # the published image, not only the Dockerfile's own checks.
+        run: |
+          set -eux
+          docker run -d --name box-trial --platform linux/amd64 \
+            -e SAND_SUPERVISOR_ENABLED=1 -e SAND_GATEWAY_TOKEN=trial \
+            "ghcr.io/${{ github.repository_owner }}/simeon-box:sha-${{ github.sha }}"
+          for _ in $(seq 1 60); do
+            if docker exec box-trial test -f /tmp/sand-supervisor/desktop-health.json; then break; fi
+            sleep 1
+          done
+          docker exec box-trial cat /tmp/sand-supervisor/desktop-health.json
+          docker exec box-trial box-doctor || true
+          docker exec box-trial sh -c 'test "$(node -e "const h=require(\"/tmp/sand-supervisor/desktop-health.json\"); process.stdout.write(String(h.components.some(c=>c.name===\"d1/xvfb\"&&c.up)))")" = true'
+          docker rm -f box-trial
+
+      - name: The name to pin
+        run: |
+          echo "SIMEON_BOX_IMAGE=ghcr.io/${{ github.repository_owner }}/simeon-box:sha-${{ github.sha }}"
+          echo "SIMEON_BOX_IMAGE_DIGEST=${{ steps.build.outputs.digest }}"
