@@ -80,8 +80,7 @@ the Mac app and the server already ship, so they stay (`docs/kept-names.md`).
 
 The image is published by `.github/workflows/box_image.yml`, which builds
 it on GitHub's amd64 machines and pushes `ghcr.io/<owner>/simeon-box:sha-<commit>`
-(run it from Actions → Box image → Run workflow; it also runs on a push to
-`main` that touches `box/`). The run's last step prints the two values to
+(run it from Actions → Box image → Run workflow; by hand only, since the image is not in service yet). The run's last step prints the two values to
 pin on Render. A build on a Mac works too, but needs Rosetta and the
 platform flag, and takes much longer:
 

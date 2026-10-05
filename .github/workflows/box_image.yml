@@ -8,8 +8,8 @@ name: Box image
 # registry secret: GitHub's own token writes packages under this
 # repository's owner.
 #
-# Runs by hand (Actions → Box image → Run workflow) and on every push to
-# `main` that touches `box/`. The Dockerfile checks itself (Node runs,
+# Runs by hand only (Actions → Box image → Run workflow): the image is not
+# in service yet, and a merge must not start a build on its own. The Dockerfile checks itself (Node runs,
 # Chrome is the pinned version, playwright connects, the add-ons parse a
 # shell line, every script parses), so a published image passed those.
 #
@@ -19,11 +19,6 @@ name: Box image
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - "box/**"
-      - ".github/workflows/box_image.yml"
 
 concurrency:
   group: box-image-${{ github.ref }}
