@@ -53,3 +53,28 @@ html body .sand-agents-sidebar__account .sand-kit-base-avatar{width:40px!importa
   transition:transform .18s ease!important}
 html body .sand-agents-sidebar__account .sand-kit-base-avatar>span{display:none!important}
 html body .sand-agents-sidebar__account button:hover .sand-kit-base-avatar{transform:scale(1.04)!important}
+/* The agents sidebar as Messages' sidebar on macOS Tahoe (the founder, 5 October 2026: "bring liquid glass to the
+   message side bar … on the right is apple"), measured on the founder's screenshot and the kit's sidebar material:
+   the sidebar's grey (#eee over the Mac's blurred material), rows of 40 pt avatars with a 13 pt name, a grey preview
+   and time, hairline dividers from the text's left edge, the unread dot in the gutter, and the chosen row a solid
+   accent-blue card (#0088ff) with white text. The sidebar only; the chat and the pane stay as they are. */
+html body .sand-agents-sidebar{background:#eeeeee!important;-webkit-backdrop-filter:blur(40px) saturate(1.5)!important;backdrop-filter:blur(40px) saturate(1.5)!important;border-right:0!important}
+html body .sand-agents-list .sand-agent-item[data-layout="expanded"]{position:relative!important;min-height:62px!important;padding:10px 12px 10px 18px!important;gap:12px!important;border-radius:16px!important;background:transparent!important;box-shadow:none!important;color:#1d1d1f!important}
+html body .sand-agents-list .sand-agent-item[data-layout="expanded"]:hover{background:rgba(0,0,0,.04)!important}
+html body .sand-agents-list .sand-agent-item[data-layout="expanded"] .sand-agent-item__avatar,html body .sand-agents-list .sand-agent-item[data-layout="expanded"] .sand-agent-item__avatar-disc{width:40px!important;height:40px!important}
+html body .sand-agents-list .sand-agent-item[data-layout="expanded"] .sand-agent-item__avatar-disc>*{width:40px!important;height:40px!important}
+html body .sand-agents-list .sand-agent-item[data-layout="expanded"] .sand-agent-item__name{font-size:13px!important;font-weight:600!important;letter-spacing:-.01em!important}
+html body .sand-agents-list .sand-agent-item[data-layout="expanded"] .sand-agent-item__time{font-size:13px!important;color:#8a8a8e!important}
+html body .sand-agents-list .sand-agent-item[data-layout="expanded"] .sand-agent-item__preview{font-size:13px!important;line-height:17px!important;color:#828282!important}
+/* The divider: a hairline from the text's left edge to the row's right edge, between rows; none around the chosen row. */
+html body .sand-agents-list .sand-agent-item[data-layout="expanded"]::after{content:""!important;position:absolute!important;left:70px!important;right:12px!important;bottom:-1px!important;height:1px!important;background:#d6d6d6!important;pointer-events:none!important}
+html body .sand-agents-list div:last-child>.sand-agent-item[data-layout="expanded"]::after,html body .sand-agents-list .sand-agent-item[data-layout="expanded"][data-active="true"]::after,html body .sand-agents-list div:has(+div>.sand-agent-item[data-active="true"])>.sand-agent-item[data-layout="expanded"]::after{display:none!important}
+/* The unread dot in the gutter, left of the avatar, as Messages has it. */
+html body .sand-agents-list .sand-agent-item[data-layout="expanded"] .sand-agent-item__trailing{position:absolute!important;left:5px!important;top:50%!important;transform:translateY(-50%)!important;padding:0!important;width:8px!important;height:auto!important;justify-content:center!important}
+html body .sand-agents-list .sand-agent-item[data-layout="expanded"] .sand-agent-item__trailing .sand-kit-status-dot{width:8px!important;height:8px!important;background:#0088ff!important}
+/* The chosen row. */
+html body .sand-agents-list .sand-agent-item[data-layout="expanded"][data-active="true"]{background:#0088ff!important;color:#fff!important}
+html body .sand-agents-list .sand-agent-item[data-layout="expanded"][data-active="true"] .sand-agent-item__name{color:#fff!important}
+html body .sand-agents-list .sand-agent-item[data-layout="expanded"][data-active="true"] .sand-agent-item__time,html body .sand-agents-list .sand-agent-item[data-layout="expanded"][data-active="true"] .sand-agent-item__preview{color:rgba(255,255,255,.82)!important}
+html body .sand-agents-list .sand-agent-item[data-layout="expanded"][data-active="true"] .sand-agent-title-tag{color:#fff!important;background:rgba(255,255,255,.22)!important}
+html body .sand-agents-list .sand-agent-item[data-layout="expanded"][data-active="true"] .sand-kit-status-dot{background:#fff!important}
