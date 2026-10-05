@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Simeon \u2014 a team of always-on agents, on your Mac, with a computer of their own",
+  "description": "Simeon — a team of always-on agents, on your Mac, with a computer of their own",
   "engines": {
     "node": ">=26.5.0 <27"
   },
@@ -37,6 +37,7 @@
   },
   "devDependencies": {
     "@electron/asar": "4.2.1",
+    "@electron/packager": "^20.3.0",
     "@types/js-yaml": "3.12.10",
     "@types/node": "26.2.0",
     "@types/react": "19.2.18",
