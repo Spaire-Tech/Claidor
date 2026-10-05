@@ -126,7 +126,7 @@ RUN set -eux \
     && cd /tmp/deps && npm ci --no-audit --no-fund --build-from-source \
     && cp -R /tmp/deps/node_modules/. /home/box/deps/ \
     && node -e 'const P = require("/home/box/deps/tree-sitter"), B = require("/home/box/deps/tree-sitter-bash"); const p = new P(); p.setLanguage(B); if (p.parse("echo hi").rootNode.type !== "program") process.exit(1)' \
-    && rm -rf /tmp/deps && npm cache clean --force \
+    && cd / && npm cache clean --force && rm -rf /tmp/deps \
     && chown -R box:box /home/box/deps
 
 # --- Wallpapers and our scripts ---------------------------------------------
