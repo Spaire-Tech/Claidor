@@ -629,13 +629,12 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 
 /* Pricing, questions and the closing call: the same serif headline and pale panels as the trust section. */
 /* Pricing: Trial, Standard, Pro and Max on the pale panels (the founder, 4 October 2026): the name, who it is for, the price in Switzer, the week's credits under it, what the plan includes, a small button at the foot. */
-@font-face{font-family:"Switzer";src:url(fonts/switzer-500.woff2) format("woff2");font-weight:500;font-style:normal;font-display:swap}
-@font-face{font-family:"Switzer";src:url(fonts/switzer-600.woff2) format("woff2");font-weight:600;font-style:normal;font-display:swap}
+@font-face{font-family:"Switzer";src:url(fonts/switzer-400.woff2) format("woff2");font-weight:400;font-style:normal;font-display:swap}
 .plans3{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px;margin-top:clamp(40px,4vw,80px)}
 .plan3{display:flex;flex-direction:column;padding:clamp(28px,2.4vw,44px) clamp(24px,2.1vw,40px);border-radius:28px;background:#fafafb}
 .plan3 h3{margin:0;font-size:clamp(20px,1.35vw,26px);font-weight:500;letter-spacing:-.02em;color:#3a3a3c}
 .plan3 .tag{margin:4px 0 0;font-size:clamp(14px,.9vw,17px);letter-spacing:-.01em;color:var(--ink3)}
-.plan3 .pr{margin-top:clamp(18px,1.6vw,30px);font-family:"Switzer",var(--font);font-weight:500;font-size:clamp(40px,3vw,60px);line-height:1;letter-spacing:-.03em;color:var(--ink)}
+.plan3 .pr{margin-top:clamp(18px,1.6vw,30px);font-family:"Switzer",var(--font);font-weight:400;font-size:clamp(40px,3vw,60px);line-height:1;letter-spacing:-.03em;color:var(--ink)}
 .plan3 .pr small{font-family:var(--font);font-weight:400;font-size:clamp(14px,.9vw,17px);letter-spacing:-.01em;color:var(--ink2);margin-left:5px}
 .plan3 .per{margin-top:10px;font-size:clamp(14px,.9vw,17px);line-height:1.45;letter-spacing:-.01em;color:var(--ink3)}
 .plan3 .inc{margin:clamp(20px,1.8vw,34px) 0 0;padding-top:clamp(18px,1.6vw,28px);border-top:1px solid #ececef;font-size:clamp(15px,.95vw,17.5px);letter-spacing:-.01em;color:var(--ink3)}
@@ -645,7 +644,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .plan3 .btn{align-self:flex-start;margin-top:auto;height:clamp(36px,2.3vw,42px);padding:0 clamp(16px,1.1vw,20px);font-size:clamp(14px,.95vw,16px)}
 .plan3 .btn.ghost{background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.06)}
 .plan3 .btn.ghost:hover{background:#f2f2f4}
-.pnote{margin:clamp(22px,2vw,36px) 0 0;max-width:60em;font-size:clamp(14px,.9vw,16.5px);line-height:1.55;letter-spacing:-.01em;color:var(--ink3)}
+.pnote{margin:clamp(22px,2vw,36px) auto 0;max-width:60em;text-align:center;font-size:clamp(14px,.9vw,16.5px);line-height:1.55;letter-spacing:-.01em;color:var(--ink3)}
 @supports (grid-template-rows:subgrid){.plans3{grid-template-rows:repeat(7,auto)}.plan3{display:grid;grid-template-rows:subgrid;row-gap:0;grid-row:span 7;align-content:start}.plan3 .btn{margin-top:0;align-self:start;justify-self:start}}
 @media (max-width:1068px){.plans3{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:734px){.plans3{grid-template-columns:1fr;gap:14px}.plan3{border-radius:24px}}
