@@ -73,8 +73,9 @@ test("the discs stylesheet block hides the search bar, draws the discs in both t
   assert.ok(SIDEBAR_DISCS_CSS.includes(".simeon-rail-discs{gap:10px!important;padding-bottom:10px!important}"));
   assert.ok(SIDEBAR_DISCS_CSS.includes(".sand-agents-sidebar__account .sand-kit-base-avatar{width:40px!important;height:40px!important;border-radius:999px!important;"));
   assert.deepEqual(styleAnchorClasses(SIDEBAR_DISCS_CSS).filter((name) => name.startsWith("sand-")), [
-    "sand-agents-sidebar__account", "sand-agents-sidebar__header", "sand-agents-sidebar__new-actions", "sand-agents-sidebar__search", "sand-kit-base-avatar",
+    "sand-agents-sidebar__account", "sand-agents-sidebar__header", "sand-agents-sidebar__new-actions", "sand-agents-sidebar__search", "sand-kit-base-avatar", "sand-prompt-attach",
   ]);
+  assert.ok(SIDEBAR_DISCS_CSS.includes(".sand-prompt-attach{width:30px!important;height:30px!important;border-radius:999px!important;"), "the composer's attach button is the same disc at its own size");
   assert.throws(() => patchOriginalSidebarDiscsStylesheet(out), /already present/);
 });
 

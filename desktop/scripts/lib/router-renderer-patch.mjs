@@ -1733,9 +1733,9 @@ export function patchOriginalHeaderStylesheet(css) {
  * it wins over the atom classes and inline styles the renderer sets.
  */
 export const LIQUID_GLASS_CSS = `
-/* Simeon: Liquid Glass on the chrome (23 September 2026), the agents sidebar only since 27 September 2026. */
+/* Simeon: Liquid Glass on the chrome (23 September 2026), the agents sidebar only since 27 September 2026; the material of Messages' sidebar since 5 October 2026 (the founder: "just the water glass … less grey"): a near-white frost over a 40 pt blur with the saturation lifted, a specular hairline on its inner edge and a faint shadow where it meets the chat, over the Mac's own sidebar material; the same in the dark, in the dark's ink. */
 html:has(.sand-agents-sidebar),html:has(.sand-agents-sidebar) body,[data-theme]:has(>.sand-agents-sidebar){background-color:transparent!important}
-.sand-agents-sidebar{background-color:color-mix(in srgb,var(--simeon-bg-chrome) 93%,transparent)!important;-webkit-backdrop-filter:blur(30px) saturate(1.8)!important;backdrop-filter:blur(30px) saturate(1.8)!important;border-right:.5px solid color-mix(in srgb,var(--simeon-text-primary) 10%,transparent)!important}
+.sand-agents-sidebar{background:linear-gradient(180deg,light-dark(rgba(255,255,255,.82),rgba(32,32,34,.76)),light-dark(rgba(250,251,253,.74),rgba(28,28,30,.7)))!important;-webkit-backdrop-filter:blur(40px) saturate(1.6)!important;backdrop-filter:blur(40px) saturate(1.6)!important;border-right:0!important;box-shadow:inset -.5px 0 0 light-dark(rgba(255,255,255,.7),rgba(255,255,255,.08)),.5px 0 0 light-dark(rgba(0,0,0,.06),rgba(0,0,0,.5)),2px 0 12px -6px rgba(0,0,0,.05)!important}
 .sand-agents-sidebar~.sand-chat,.sand-agents-sidebar~.sand-info-pane{background-color:var(--sand-bg-base)!important}
 `;
 export const LIQUID_GLASS_MARKER = "/* Simeon: Liquid Glass on the chrome";
@@ -1816,7 +1816,7 @@ export function patchOriginalSidebarDiscs(source) {
 }
 
 export const SIDEBAR_DISCS_MARKER = "/* Simeon: the sidebar's round glass discs";
-export const SIDEBAR_DISCS_CSS = `${SIDEBAR_DISCS_MARKER} (5 October 2026): search and create in the header, the same two at the foot of the rail, the account initials, and the pane's tabs. Clear glass, a specular top edge, a hairline, a soft shadow; the same in the dark. */
+export const SIDEBAR_DISCS_CSS = `${SIDEBAR_DISCS_MARKER} (5 October 2026): search and create in the header, the same two at the foot of the rail, the account initials, the pane's tabs, and the composer's attach button at its own size. Clear glass, a specular top edge, a hairline, a soft shadow; the same in the dark. */
 .sand-agents-sidebar__search{display:none!important}
 .simeon-disc{display:grid;place-items:center;width:40px;height:40px;padding:0;margin:0;border:0;border-radius:999px;appearance:none;cursor:default;outline:none;color:light-dark(rgba(0,0,0,.78),rgba(255,255,255,.86));background:linear-gradient(180deg,light-dark(rgba(255,255,255,.62),rgba(255,255,255,.16)),light-dark(rgba(255,255,255,.38),rgba(255,255,255,.08)));-webkit-backdrop-filter:blur(14px) saturate(1.6);backdrop-filter:blur(14px) saturate(1.6);box-shadow:inset 0 1px 0 light-dark(rgba(255,255,255,.95),rgba(255,255,255,.28)),inset 0 0 0 .75px light-dark(rgba(255,255,255,.6),rgba(255,255,255,.12)),inset 0 -1px 1px rgba(0,0,0,.04),0 0 0 .5px light-dark(rgba(0,0,0,.07),rgba(0,0,0,.5)),0 1px 3px rgba(0,0,0,.06);transition:transform .18s ease,box-shadow .18s ease,background .18s ease}
 .simeon-disc:hover{transform:scale(1.04)}
@@ -1830,6 +1830,10 @@ export const SIDEBAR_DISCS_CSS = `${SIDEBAR_DISCS_MARKER} (5 October 2026): sear
 .sand-agents-sidebar__account .sand-kit-base-avatar{width:40px!important;height:40px!important;border-radius:999px!important;font-size:13px!important;font-weight:500!important;letter-spacing:.02em!important;color:light-dark(rgba(0,0,0,.72),rgba(255,255,255,.86))!important;background:linear-gradient(180deg,light-dark(rgba(255,255,255,.62),rgba(255,255,255,.16)),light-dark(rgba(255,255,255,.38),rgba(255,255,255,.08)))!important;-webkit-backdrop-filter:blur(14px) saturate(1.6)!important;backdrop-filter:blur(14px) saturate(1.6)!important;box-shadow:inset 0 1px 0 light-dark(rgba(255,255,255,.95),rgba(255,255,255,.28)),inset 0 0 0 .75px light-dark(rgba(255,255,255,.6),rgba(255,255,255,.12)),inset 0 -1px 1px rgba(0,0,0,.04),0 0 0 .5px light-dark(rgba(0,0,0,.07),rgba(0,0,0,.5)),0 1px 3px rgba(0,0,0,.06)!important;transition:transform .18s ease!important}
 .sand-agents-sidebar__account .sand-kit-base-avatar>span{display:none!important}
 .sand-agents-sidebar__account>button:hover .sand-kit-base-avatar{transform:scale(1.04)!important}
+.sand-prompt-attach{width:30px!important;height:30px!important;border-radius:999px!important;color:light-dark(rgba(0,0,0,.78),rgba(255,255,255,.86))!important;background:linear-gradient(180deg,light-dark(rgba(255,255,255,.62),rgba(255,255,255,.16)),light-dark(rgba(255,255,255,.38),rgba(255,255,255,.08)))!important;-webkit-backdrop-filter:blur(14px) saturate(1.6)!important;backdrop-filter:blur(14px) saturate(1.6)!important;box-shadow:inset 0 1px 0 light-dark(rgba(255,255,255,.95),rgba(255,255,255,.28)),inset 0 0 0 .75px light-dark(rgba(255,255,255,.6),rgba(255,255,255,.12)),inset 0 -1px 1px rgba(0,0,0,.04),0 0 0 .5px light-dark(rgba(0,0,0,.07),rgba(0,0,0,.5)),0 1px 3px rgba(0,0,0,.06)!important;transition:transform .18s ease!important}
+.sand-prompt-attach:hover{transform:scale(1.04)!important}
+.sand-prompt-attach:active{transform:scale(.97)!important}
+.sand-prompt-attach .ui-icon{color:inherit!important}
 `;
 
 export function patchOriginalSidebarDiscsStylesheet(css) {
