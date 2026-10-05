@@ -561,7 +561,7 @@
         // The thumbs on a finished call's card in the chat (2 October 2026).
         rateCall: (conversationId, like) => edge("rateVoiceCall", { conversationId, like })
       },
-      // The window reads `desktop.account` (its own bytes said accountService;
+      // The window reads `desktop.account` (its own bytes said cursorAccount;
       // the renderer patch renames it with the rest of the upstream's tokens,
       // Track B of the detachment plan, 4 October 2026).
       account: {
@@ -941,7 +941,7 @@
   var WEB_SESSION_PATH = "/auth/web-session";
   var REFRESH_PATH = "/oauth/token";
   var DESKTOP_API_PREFIX = "/desktop/api/";
-  var CONNECT_SERVICE = "simeon.v1.ComputerService";
+  var CONNECT_SERVICE = "aiserver.v1.GrokBotService";
   var TOKENS_KEY = "simeon.web.tokens";
   var REFRESH_AHEAD_MS = 5 * 6e4;
   var SimeonApiError = class extends Error {
@@ -1013,7 +1013,7 @@
     }
     /** The headers the Mac app sends the broker (`sand-client-metadata.ts`). */
     clientHeaders() {
-      return { "x-simeon-client-type": "sand", "x-simeon-client-version": this.options.clientVersion, "x-sand-box-namespace": "prod" };
+      return { "x-cursor-client-type": "sand", "x-cursor-client-version": this.options.clientVersion, "x-sand-box-namespace": "prod" };
     }
     /**
      * Trades the web cookie for the pair. 401 means the person is not signed
@@ -1115,7 +1115,7 @@
     }
     /**
      * One unary call on the box broker, Connect JSON
-     * (`server/simeon/sand/connect.py`): `POST /simeon.v1.ComputerService/{Method}`.
+     * (`server/simeon/sand/connect.py`): `POST /aiserver.v1.GrokBotService/{Method}`.
      */
     async connect(method, message = {}) {
       const headers = await this.authorized({ "content-type": "application/json", "connect-protocol-version": "1" });
@@ -5259,7 +5259,7 @@
     { no: 1, name: "values", kind: "message", T: Value, repeated: true }
   ]);
 
-  // source/packages/proto/generated/simeon/v1/utils_pb.ts
+  // source/packages/proto/generated/aiserver/v1/utils_pb.ts
   var LintSeverity;
   var FeatureType;
   var EmbeddingModel;
@@ -5279,7 +5279,7 @@
     LintSeverity2[LintSeverity2["HINT"] = 4] = "HINT";
     LintSeverity2[LintSeverity2["AI"] = 5] = "AI";
   })(LintSeverity || (LintSeverity = {}));
-  proto3.util.setEnumType(LintSeverity, "simeon.v1.LintSeverity", [
+  proto3.util.setEnumType(LintSeverity, "aiserver.v1.LintSeverity", [
     { no: 0, name: "LINT_SEVERITY_UNSPECIFIED" },
     { no: 1, name: "LINT_SEVERITY_ERROR" },
     { no: 2, name: "LINT_SEVERITY_WARNING" },
@@ -5293,7 +5293,7 @@
     FeatureType2[FeatureType2["GENERATE"] = 2] = "GENERATE";
     FeatureType2[FeatureType2["INLINE_LONG_COMPLETION"] = 3] = "INLINE_LONG_COMPLETION";
   })(FeatureType || (FeatureType = {}));
-  proto3.util.setEnumType(FeatureType, "simeon.v1.FeatureType", [
+  proto3.util.setEnumType(FeatureType, "aiserver.v1.FeatureType", [
     { no: 0, name: "FEATURE_TYPE_UNSPECIFIED" },
     { no: 1, name: "FEATURE_TYPE_EDIT" },
     { no: 2, name: "FEATURE_TYPE_GENERATE" },
@@ -5308,7 +5308,7 @@
     EmbeddingModel2[EmbeddingModel2["QWEN_1_5B_0618_CUSTOM"] = 5] = "QWEN_1_5B_0618_CUSTOM";
     EmbeddingModel2[EmbeddingModel2["QWEN_1_5B_0618_FP8_MM_CUSTOM"] = 6] = "QWEN_1_5B_0618_FP8_MM_CUSTOM";
   })(EmbeddingModel || (EmbeddingModel = {}));
-  proto3.util.setEnumType(EmbeddingModel, "simeon.v1.EmbeddingModel", [
+  proto3.util.setEnumType(EmbeddingModel, "aiserver.v1.EmbeddingModel", [
     { no: 0, name: "EMBEDDING_MODEL_UNSPECIFIED" },
     { no: 1, name: "EMBEDDING_MODEL_VOYAGE_CODE_2" },
     { no: 2, name: "EMBEDDING_MODEL_TEXT_EMBEDDINGS_LARGE_3" },
@@ -5339,7 +5339,7 @@
   })();
   var CursorPosition = CursorPosition$Runtime;
   CursorPosition.runtime = proto3;
-  CursorPosition.typeName = "simeon.v1.CursorPosition";
+  CursorPosition.typeName = "aiserver.v1.CursorPosition";
   CursorPosition.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -5379,7 +5379,7 @@
   })();
   var VscodeOSStatistics = VscodeOSStatistics$Runtime;
   VscodeOSStatistics.runtime = proto3;
-  VscodeOSStatistics.typeName = "simeon.v1.VscodeOSStatistics";
+  VscodeOSStatistics.typeName = "aiserver.v1.VscodeOSStatistics";
   VscodeOSStatistics.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -5422,7 +5422,7 @@
   })();
   var VscodeOSProperties = VscodeOSProperties$Runtime;
   VscodeOSProperties.runtime = proto3;
-  VscodeOSProperties.typeName = "simeon.v1.VscodeOSProperties";
+  VscodeOSProperties.typeName = "aiserver.v1.VscodeOSProperties";
   VscodeOSProperties.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -5476,7 +5476,7 @@
   })();
   var VscodeCPUProperties = VscodeCPUProperties$Runtime;
   VscodeCPUProperties.runtime = proto3;
-  VscodeCPUProperties.typeName = "simeon.v1.VscodeCPUProperties";
+  VscodeCPUProperties.typeName = "aiserver.v1.VscodeCPUProperties";
   VscodeCPUProperties.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -5514,7 +5514,7 @@
   })();
   var EnvironmentInfo = EnvironmentInfo$Runtime;
   EnvironmentInfo.runtime = proto3;
-  EnvironmentInfo.typeName = "simeon.v1.EnvironmentInfo";
+  EnvironmentInfo.typeName = "aiserver.v1.EnvironmentInfo";
   EnvironmentInfo.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "exthost_platform", kind: "scalar", T: 9, opt: true },
     { no: 2, name: "exthost_arch", kind: "scalar", T: 9, opt: true },
@@ -5522,7 +5522,7 @@
     { no: 4, name: "exthost_shell", kind: "scalar", T: 9, opt: true },
     { no: 5, name: "local_timestamp", kind: "scalar", T: 9, opt: true },
     { no: 6, name: "workspace_uris", kind: "scalar", T: 9, repeated: true },
-    { no: 7, name: "simeon_version", kind: "scalar", T: 9, opt: true },
+    { no: 7, name: "cursor_version", kind: "scalar", T: 9, opt: true },
     { no: 8, name: "is_remote", kind: "scalar", T: 8, opt: true },
     { no: 9, name: "local_os_type", kind: "scalar", T: 9, opt: true },
     { no: 10, name: "home_directory", kind: "scalar", T: 9, opt: true },
@@ -5552,7 +5552,7 @@
   })();
   var SelectionWithOrientation = SelectionWithOrientation$Runtime;
   SelectionWithOrientation.runtime = proto3;
-  SelectionWithOrientation.typeName = "simeon.v1.SelectionWithOrientation";
+  SelectionWithOrientation.typeName = "aiserver.v1.SelectionWithOrientation";
   SelectionWithOrientation.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -5613,7 +5613,7 @@
   })();
   var GetDiffRequest = GetDiffRequest$Runtime;
   GetDiffRequest.runtime = proto3;
-  GetDiffRequest.typeName = "simeon.v1.GetDiffRequest";
+  GetDiffRequest.typeName = "aiserver.v1.GetDiffRequest";
   GetDiffRequest.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -5691,7 +5691,7 @@
     GetDiffRequest_OutputFormat2[GetDiffRequest_OutputFormat2["FILE_DIFFS"] = 3] = "FILE_DIFFS";
     GetDiffRequest_OutputFormat2[GetDiffRequest_OutputFormat2["DIFFS_WITH_BEFORE_AND_AFTER"] = 4] = "DIFFS_WITH_BEFORE_AND_AFTER";
   })(GetDiffRequest_OutputFormat || (GetDiffRequest_OutputFormat = {}));
-  proto3.util.setEnumType(GetDiffRequest_OutputFormat, "simeon.v1.GetDiffRequest.OutputFormat", [
+  proto3.util.setEnumType(GetDiffRequest_OutputFormat, "aiserver.v1.GetDiffRequest.OutputFormat", [
     { no: 0, name: "OUTPUT_FORMAT_UNSPECIFIED" },
     { no: 1, name: "OUTPUT_FORMAT_NAME_STATUS" },
     { no: 2, name: "OUTPUT_FORMAT_NAME_STATUS_AND_NUMSTAT" },
@@ -5719,7 +5719,7 @@
   })();
   var GetDiffResponse = GetDiffResponse$Runtime;
   GetDiffResponse.runtime = proto3;
-  GetDiffResponse.typeName = "simeon.v1.GetDiffResponse";
+  GetDiffResponse.typeName = "aiserver.v1.GetDiffResponse";
   GetDiffResponse.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "diff", kind: "message", T: GitDiff },
     { no: 2, name: "submodule_diffs", kind: "message", T: GetDiffResponse_SubmoduleDiff, repeated: true },
@@ -5749,7 +5749,7 @@
   })();
   var GetDiffResponse_SubmoduleDiff = GetDiffResponse_SubmoduleDiff$Runtime;
   GetDiffResponse_SubmoduleDiff.runtime = proto3;
-  GetDiffResponse_SubmoduleDiff.typeName = "simeon.v1.GetDiffResponse.SubmoduleDiff";
+  GetDiffResponse_SubmoduleDiff.typeName = "aiserver.v1.GetDiffResponse.SubmoduleDiff";
   GetDiffResponse_SubmoduleDiff.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -5789,7 +5789,7 @@
   })();
   var SimplestRange = SimplestRange$Runtime;
   SimplestRange.runtime = proto3;
-  SimplestRange.typeName = "simeon.v1.SimplestRange";
+  SimplestRange.typeName = "aiserver.v1.SimplestRange";
   SimplestRange.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -5828,7 +5828,7 @@
   })();
   var ComputeLinesDiffOriginalAndModified = ComputeLinesDiffOriginalAndModified$Runtime;
   ComputeLinesDiffOriginalAndModified.runtime = proto3;
-  ComputeLinesDiffOriginalAndModified.typeName = "simeon.v1.ComputeLinesDiffOriginalAndModified";
+  ComputeLinesDiffOriginalAndModified.typeName = "aiserver.v1.ComputeLinesDiffOriginalAndModified";
   ComputeLinesDiffOriginalAndModified.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "original", kind: "scalar", T: 9, repeated: true },
     { no: 2, name: "modified", kind: "scalar", T: 9, repeated: true }
@@ -5855,7 +5855,7 @@
   })();
   var GitDiff = GitDiff$Runtime;
   GitDiff.runtime = proto3;
-  GitDiff.typeName = "simeon.v1.GitDiff";
+  GitDiff.typeName = "aiserver.v1.GitDiff";
   GitDiff.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "diffs", kind: "message", T: FileDiff, repeated: true },
     { no: 2, name: "diff_type", kind: "enum", T: proto3.getEnumType(GitDiff_DiffType) }
@@ -5865,7 +5865,7 @@
     GitDiff_DiffType2[GitDiff_DiffType2["DIFF_TO_HEAD"] = 1] = "DIFF_TO_HEAD";
     GitDiff_DiffType2[GitDiff_DiffType2["DIFF_FROM_BRANCH_TO_MAIN"] = 2] = "DIFF_FROM_BRANCH_TO_MAIN";
   })(GitDiff_DiffType || (GitDiff_DiffType = {}));
-  proto3.util.setEnumType(GitDiff_DiffType, "simeon.v1.GitDiff.DiffType", [
+  proto3.util.setEnumType(GitDiff_DiffType, "aiserver.v1.GitDiff.DiffType", [
     { no: 0, name: "DIFF_TYPE_UNSPECIFIED" },
     { no: 1, name: "DIFF_TYPE_DIFF_TO_HEAD" },
     { no: 2, name: "DIFF_TYPE_DIFF_FROM_BRANCH_TO_MAIN" }
@@ -5895,7 +5895,7 @@
   })();
   var FileDiff = FileDiff$Runtime;
   FileDiff.runtime = proto3;
-  FileDiff.typeName = "simeon.v1.FileDiff";
+  FileDiff.typeName = "aiserver.v1.FileDiff";
   FileDiff.fields = proto3.util.newFieldList(() => [
     {
       no: 4,
@@ -5956,7 +5956,7 @@
   })();
   var FileDiff_Chunk = FileDiff_Chunk$Runtime;
   FileDiff_Chunk.runtime = proto3;
-  FileDiff_Chunk.typeName = "simeon.v1.FileDiff.Chunk";
+  FileDiff_Chunk.typeName = "aiserver.v1.FileDiff.Chunk";
   FileDiff_Chunk.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -6019,7 +6019,7 @@
   })();
   var SimpleRange = SimpleRange$Runtime;
   SimpleRange.runtime = proto3;
-  SimpleRange.typeName = "simeon.v1.SimpleRange";
+  SimpleRange.typeName = "aiserver.v1.SimpleRange";
   SimpleRange.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -6072,7 +6072,7 @@
   })();
   var SimpleFileChunk = SimpleFileChunk$Runtime;
   SimpleFileChunk.runtime = proto3;
-  SimpleFileChunk.typeName = "simeon.v1.SimpleFileChunk";
+  SimpleFileChunk.typeName = "aiserver.v1.SimpleFileChunk";
   SimpleFileChunk.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -6124,7 +6124,7 @@
   })();
   var CmdKDebugInfo = CmdKDebugInfo$Runtime;
   CmdKDebugInfo.runtime = proto3;
-  CmdKDebugInfo.typeName = "simeon.v1.CmdKDebugInfo";
+  CmdKDebugInfo.typeName = "aiserver.v1.CmdKDebugInfo";
   CmdKDebugInfo.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -6223,7 +6223,7 @@
   })();
   var CmdKDebugInfo_UnsavedFiles = CmdKDebugInfo_UnsavedFiles$Runtime;
   CmdKDebugInfo_UnsavedFiles.runtime = proto3;
-  CmdKDebugInfo_UnsavedFiles.typeName = "simeon.v1.CmdKDebugInfo.UnsavedFiles";
+  CmdKDebugInfo_UnsavedFiles.typeName = "aiserver.v1.CmdKDebugInfo.UnsavedFiles";
   CmdKDebugInfo_UnsavedFiles.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -6264,7 +6264,7 @@
   })();
   var CmdKDebugInfo_OpenEditor = CmdKDebugInfo_OpenEditor$Runtime;
   CmdKDebugInfo_OpenEditor.runtime = proto3;
-  CmdKDebugInfo_OpenEditor.typeName = "simeon.v1.CmdKDebugInfo.OpenEditor";
+  CmdKDebugInfo_OpenEditor.typeName = "aiserver.v1.CmdKDebugInfo.OpenEditor";
   CmdKDebugInfo_OpenEditor.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -6317,7 +6317,7 @@
   })();
   var CmdKDebugInfo_CppFileDiffHistory = CmdKDebugInfo_CppFileDiffHistory$Runtime;
   CmdKDebugInfo_CppFileDiffHistory.runtime = proto3;
-  CmdKDebugInfo_CppFileDiffHistory.typeName = "simeon.v1.CmdKDebugInfo.CppFileDiffHistory";
+  CmdKDebugInfo_CppFileDiffHistory.typeName = "aiserver.v1.CmdKDebugInfo.CppFileDiffHistory";
   CmdKDebugInfo_CppFileDiffHistory.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -6350,7 +6350,7 @@
   })();
   var CmdKDebugInfo_PastThought = CmdKDebugInfo_PastThought$Runtime;
   CmdKDebugInfo_PastThought.runtime = proto3;
-  CmdKDebugInfo_PastThought.typeName = "simeon.v1.CmdKDebugInfo.PastThought";
+  CmdKDebugInfo_PastThought.typeName = "aiserver.v1.CmdKDebugInfo.PastThought";
   CmdKDebugInfo_PastThought.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -6389,7 +6389,7 @@
   })();
   var LineRange = LineRange$Runtime;
   LineRange.runtime = proto3;
-  LineRange.typeName = "simeon.v1.LineRange";
+  LineRange.typeName = "aiserver.v1.LineRange";
   LineRange.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -6426,7 +6426,7 @@
   })();
   var CursorRange = CursorRange$Runtime;
   CursorRange.runtime = proto3;
-  CursorRange.typeName = "simeon.v1.CursorRange";
+  CursorRange.typeName = "aiserver.v1.CursorRange";
   CursorRange.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "start_position", kind: "message", T: CursorPosition },
     { no: 2, name: "end_position", kind: "message", T: CursorPosition }
@@ -6454,7 +6454,7 @@
   })();
   var DetailedLine = DetailedLine$Runtime;
   DetailedLine.runtime = proto3;
-  DetailedLine.typeName = "simeon.v1.DetailedLine";
+  DetailedLine.typeName = "aiserver.v1.DetailedLine";
   DetailedLine.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -6501,7 +6501,7 @@
   })();
   var CodeBlock = CodeBlock$Runtime;
   CodeBlock.runtime = proto3;
-  CodeBlock.typeName = "simeon.v1.CodeBlock";
+  CodeBlock.typeName = "aiserver.v1.CodeBlock";
   CodeBlock.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -6547,7 +6547,7 @@
   })();
   var CodeBlock_Signatures = CodeBlock_Signatures$Runtime;
   CodeBlock_Signatures.runtime = proto3;
-  CodeBlock_Signatures.typeName = "simeon.v1.CodeBlock.Signatures";
+  CodeBlock_Signatures.typeName = "aiserver.v1.CodeBlock.Signatures";
   CodeBlock_Signatures.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "ranges", kind: "message", T: CursorRange, repeated: true }
   ]);
@@ -6575,7 +6575,7 @@
   })();
   var GitCommit = GitCommit$Runtime;
   GitCommit.runtime = proto3;
-  GitCommit.typeName = "simeon.v1.GitCommit";
+  GitCommit.typeName = "aiserver.v1.GitCommit";
   GitCommit.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -6627,7 +6627,7 @@
   })();
   var FileGit = FileGit$Runtime;
   FileGit.runtime = proto3;
-  FileGit.typeName = "simeon.v1.FileGit";
+  FileGit.typeName = "aiserver.v1.FileGit";
   FileGit.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "commits", kind: "message", T: GitCommit, repeated: true }
   ]);
@@ -6653,7 +6653,7 @@
   })();
   var File2 = File2$Runtime;
   File2.runtime = proto3;
-  File2.typeName = "simeon.v1.File";
+  File2.typeName = "aiserver.v1.File";
   File2.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -6694,7 +6694,7 @@
   })();
   var Diagnostic2 = Diagnostic2$Runtime;
   Diagnostic2.runtime = proto3;
-  Diagnostic2.typeName = "simeon.v1.Diagnostic";
+  Diagnostic2.typeName = "aiserver.v1.Diagnostic";
   Diagnostic2.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -6714,7 +6714,7 @@
     Diagnostic_DiagnosticSeverity2[Diagnostic_DiagnosticSeverity2["INFORMATION"] = 3] = "INFORMATION";
     Diagnostic_DiagnosticSeverity2[Diagnostic_DiagnosticSeverity2["HINT"] = 4] = "HINT";
   })(Diagnostic_DiagnosticSeverity || (Diagnostic_DiagnosticSeverity = {}));
-  proto3.util.setEnumType(Diagnostic_DiagnosticSeverity, "simeon.v1.Diagnostic.DiagnosticSeverity", [
+  proto3.util.setEnumType(Diagnostic_DiagnosticSeverity, "aiserver.v1.Diagnostic.DiagnosticSeverity", [
     { no: 0, name: "DIAGNOSTIC_SEVERITY_UNSPECIFIED" },
     { no: 1, name: "DIAGNOSTIC_SEVERITY_ERROR" },
     { no: 2, name: "DIAGNOSTIC_SEVERITY_WARNING" },
@@ -6742,7 +6742,7 @@
   })();
   var Diagnostic_RelatedInformation = Diagnostic_RelatedInformation$Runtime;
   Diagnostic_RelatedInformation.runtime = proto3;
-  Diagnostic_RelatedInformation.typeName = "simeon.v1.Diagnostic.RelatedInformation";
+  Diagnostic_RelatedInformation.typeName = "aiserver.v1.Diagnostic.RelatedInformation";
   Diagnostic_RelatedInformation.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -6775,7 +6775,7 @@
   })();
   var Lint = Lint$Runtime;
   Lint.runtime = proto3;
-  Lint.typeName = "simeon.v1.Lint";
+  Lint.typeName = "aiserver.v1.Lint";
   Lint.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -6810,7 +6810,7 @@
   })();
   var BM25Chunk = BM25Chunk$Runtime;
   BM25Chunk.runtime = proto3;
-  BM25Chunk.typeName = "simeon.v1.BM25Chunk";
+  BM25Chunk.typeName = "aiserver.v1.BM25Chunk";
   BM25Chunk.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -6867,7 +6867,7 @@
   })();
   var CurrentFileInfo = CurrentFileInfo$Runtime;
   CurrentFileInfo.runtime = proto3;
-  CurrentFileInfo.typeName = "simeon.v1.CurrentFileInfo";
+  CurrentFileInfo.typeName = "aiserver.v1.CurrentFileInfo";
   CurrentFileInfo.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -6950,7 +6950,7 @@
   })();
   var CurrentFileInfo_NotebookCell = CurrentFileInfo_NotebookCell$Runtime;
   CurrentFileInfo_NotebookCell.runtime = proto3;
-  CurrentFileInfo_NotebookCell.typeName = "simeon.v1.CurrentFileInfo.NotebookCell";
+  CurrentFileInfo_NotebookCell.typeName = "aiserver.v1.CurrentFileInfo.NotebookCell";
   CurrentFileInfo_NotebookCell.fields = proto3.util.newFieldList(() => []);
   var AzureState$Runtime = /* @__PURE__ */ (() => class _AzureState extends Message {
     constructor(data) {
@@ -6976,7 +6976,7 @@
   })();
   var AzureState = AzureState$Runtime;
   AzureState.runtime = proto3;
-  AzureState.typeName = "simeon.v1.AzureState";
+  AzureState.typeName = "aiserver.v1.AzureState";
   AzureState.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -7032,7 +7032,7 @@
   })();
   var BedrockState = BedrockState$Runtime;
   BedrockState.runtime = proto3;
-  BedrockState.typeName = "simeon.v1.BedrockState";
+  BedrockState.typeName = "aiserver.v1.BedrockState";
   BedrockState.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -7090,7 +7090,7 @@
   })();
   var ModelDetails = ModelDetails$Runtime;
   ModelDetails.runtime = proto3;
-  ModelDetails.typeName = "simeon.v1.ModelDetails";
+  ModelDetails.typeName = "aiserver.v1.ModelDetails";
   ModelDetails.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "model_name", kind: "scalar", T: 9, opt: true },
     { no: 2, name: "api_key", kind: "scalar", T: 9, opt: true },
@@ -7123,7 +7123,7 @@
   })();
   var CloudAgentModelSelection = CloudAgentModelSelection$Runtime;
   CloudAgentModelSelection.runtime = proto3;
-  CloudAgentModelSelection.typeName = "simeon.v1.CloudAgentModelSelection";
+  CloudAgentModelSelection.typeName = "aiserver.v1.CloudAgentModelSelection";
   CloudAgentModelSelection.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -7157,7 +7157,7 @@
   })();
   var CloudAgentModelSelection_ParameterValue = CloudAgentModelSelection_ParameterValue$Runtime;
   CloudAgentModelSelection_ParameterValue.runtime = proto3;
-  CloudAgentModelSelection_ParameterValue.typeName = "simeon.v1.CloudAgentModelSelection.ParameterValue";
+  CloudAgentModelSelection_ParameterValue.typeName = "aiserver.v1.CloudAgentModelSelection.ParameterValue";
   CloudAgentModelSelection_ParameterValue.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -7195,7 +7195,7 @@
   })();
   var ModelInfo = ModelInfo$Runtime;
   ModelInfo.runtime = proto3;
-  ModelInfo.typeName = "simeon.v1.ModelInfo";
+  ModelInfo.typeName = "aiserver.v1.ModelInfo";
   ModelInfo.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -7231,7 +7231,7 @@
   })();
   var DataframeInfo = DataframeInfo$Runtime;
   DataframeInfo.runtime = proto3;
-  DataframeInfo.typeName = "simeon.v1.DataframeInfo";
+  DataframeInfo.typeName = "aiserver.v1.DataframeInfo";
   DataframeInfo.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -7292,7 +7292,7 @@
   })();
   var DataframeInfo_Column = DataframeInfo_Column$Runtime;
   DataframeInfo_Column.runtime = proto3;
-  DataframeInfo_Column.typeName = "simeon.v1.DataframeInfo.Column";
+  DataframeInfo_Column.typeName = "aiserver.v1.DataframeInfo.Column";
   DataframeInfo_Column.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -7331,7 +7331,7 @@
   })();
   var LinterError = LinterError$Runtime;
   LinterError.runtime = proto3;
-  LinterError.typeName = "simeon.v1.LinterError";
+  LinterError.typeName = "aiserver.v1.LinterError";
   LinterError.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -7369,7 +7369,7 @@
   })();
   var LinterErrors = LinterErrors$Runtime;
   LinterErrors.runtime = proto3;
-  LinterErrors.typeName = "simeon.v1.LinterErrors";
+  LinterErrors.typeName = "aiserver.v1.LinterErrors";
   LinterErrors.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -7409,7 +7409,7 @@
   })();
   var LinterErrorsWithoutFileContents = LinterErrorsWithoutFileContents$Runtime;
   LinterErrorsWithoutFileContents.runtime = proto3;
-  LinterErrorsWithoutFileContents.typeName = "simeon.v1.LinterErrorsWithoutFileContents";
+  LinterErrorsWithoutFileContents.typeName = "aiserver.v1.LinterErrorsWithoutFileContents";
   LinterErrorsWithoutFileContents.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -7420,7 +7420,7 @@
     },
     { no: 2, name: "errors", kind: "message", T: LinterError, repeated: true }
   ]);
-  var AgentRule2$Runtime = /* @__PURE__ */ (() => class _AgentRule extends Message {
+  var CursorRule2$Runtime = /* @__PURE__ */ (() => class _CursorRule extends Message {
     constructor(data) {
       super();
       this.name = "";
@@ -7430,22 +7430,22 @@
       proto3.util.initPartial(data, this);
     }
     static fromBinary(bytes, options) {
-      return new _AgentRule().fromBinary(bytes, options);
+      return new _CursorRule().fromBinary(bytes, options);
     }
     static fromJson(jsonValue, options) {
-      return new _AgentRule().fromJson(jsonValue, options);
+      return new _CursorRule().fromJson(jsonValue, options);
     }
     static fromJsonString(jsonString, options) {
-      return new _AgentRule().fromJsonString(jsonString, options);
+      return new _CursorRule().fromJsonString(jsonString, options);
     }
     static equals(a, b2) {
-      return proto3.util.equals(_AgentRule, a, b2);
+      return proto3.util.equals(_CursorRule, a, b2);
     }
   })();
-  var AgentRule2 = AgentRule2$Runtime;
-  AgentRule2.runtime = proto3;
-  AgentRule2.typeName = "simeon.v1.AgentRule";
-  AgentRule2.fields = proto3.util.newFieldList(() => [
+  var CursorRule2 = CursorRule2$Runtime;
+  CursorRule2.runtime = proto3;
+  CursorRule2.typeName = "aiserver.v1.CursorRule";
+  CursorRule2.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
       name: "name",
@@ -7493,7 +7493,7 @@
   })();
   var ExplicitContext = ExplicitContext$Runtime;
   ExplicitContext.runtime = proto3;
-  ExplicitContext.typeName = "simeon.v1.ExplicitContext";
+  ExplicitContext.typeName = "aiserver.v1.ExplicitContext";
   ExplicitContext.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -7503,7 +7503,7 @@
       /* ScalarType.STRING */
     },
     { no: 2, name: "repo_context", kind: "scalar", T: 9, opt: true },
-    { no: 3, name: "rules", kind: "message", T: AgentRule2, repeated: true },
+    { no: 3, name: "rules", kind: "message", T: CursorRule2, repeated: true },
     { no: 4, name: "mode_specific_context", kind: "scalar", T: 9, opt: true },
     { no: 5, name: "mcp_instructions", kind: "message", T: MCPInstructions, repeated: true }
   ]);
@@ -7530,7 +7530,7 @@
   })();
   var MCPInstructions = MCPInstructions$Runtime;
   MCPInstructions.runtime = proto3;
-  MCPInstructions.typeName = "simeon.v1.MCPInstructions";
+  MCPInstructions.typeName = "aiserver.v1.MCPInstructions";
   MCPInstructions.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -7576,7 +7576,7 @@
   })();
   var PureMessage = PureMessage$Runtime;
   PureMessage.runtime = proto3;
-  PureMessage.typeName = "simeon.v1.PureMessage";
+  PureMessage.typeName = "aiserver.v1.PureMessage";
   PureMessage.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "message_type", kind: "enum", T: proto3.getEnumType(PureMessage_MessageType) },
     {
@@ -7593,7 +7593,7 @@
     PureMessage_MessageType2[PureMessage_MessageType2["USER"] = 2] = "USER";
     PureMessage_MessageType2[PureMessage_MessageType2["ASSISTANT"] = 3] = "ASSISTANT";
   })(PureMessage_MessageType || (PureMessage_MessageType = {}));
-  proto3.util.setEnumType(PureMessage_MessageType, "simeon.v1.PureMessage.MessageType", [
+  proto3.util.setEnumType(PureMessage_MessageType, "aiserver.v1.PureMessage.MessageType", [
     { no: 0, name: "MESSAGE_TYPE_UNSPECIFIED" },
     { no: 1, name: "MESSAGE_TYPE_SYSTEM" },
     { no: 2, name: "MESSAGE_TYPE_USER" },
@@ -7624,7 +7624,7 @@
   })();
   var DocumentSymbol = DocumentSymbol$Runtime;
   DocumentSymbol.runtime = proto3;
-  DocumentSymbol.typeName = "simeon.v1.DocumentSymbol";
+  DocumentSymbol.typeName = "aiserver.v1.DocumentSymbol";
   DocumentSymbol.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -7681,7 +7681,7 @@
     DocumentSymbol_SymbolKind2[DocumentSymbol_SymbolKind2["OPERATOR"] = 25] = "OPERATOR";
     DocumentSymbol_SymbolKind2[DocumentSymbol_SymbolKind2["TYPE_PARAMETER"] = 26] = "TYPE_PARAMETER";
   })(DocumentSymbol_SymbolKind || (DocumentSymbol_SymbolKind = {}));
-  proto3.util.setEnumType(DocumentSymbol_SymbolKind, "simeon.v1.DocumentSymbol.SymbolKind", [
+  proto3.util.setEnumType(DocumentSymbol_SymbolKind, "aiserver.v1.DocumentSymbol.SymbolKind", [
     { no: 0, name: "SYMBOL_KIND_UNSPECIFIED" },
     { no: 1, name: "SYMBOL_KIND_FILE" },
     { no: 2, name: "SYMBOL_KIND_MODULE" },
@@ -7734,7 +7734,7 @@
   })();
   var DocumentSymbol_Range = DocumentSymbol_Range$Runtime;
   DocumentSymbol_Range.runtime = proto3;
-  DocumentSymbol_Range.typeName = "simeon.v1.DocumentSymbol.Range";
+  DocumentSymbol_Range.typeName = "aiserver.v1.DocumentSymbol.Range";
   DocumentSymbol_Range.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -7787,7 +7787,7 @@
   })();
   var HoverDetails = HoverDetails$Runtime;
   HoverDetails.runtime = proto3;
-  HoverDetails.typeName = "simeon.v1.HoverDetails";
+  HoverDetails.typeName = "aiserver.v1.HoverDetails";
   HoverDetails.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -7819,7 +7819,7 @@
   })();
   var UriComponents = UriComponents$Runtime;
   UriComponents.runtime = proto3;
-  UriComponents.typeName = "simeon.v1.UriComponents";
+  UriComponents.typeName = "aiserver.v1.UriComponents";
   UriComponents.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -7855,7 +7855,7 @@
   })();
   var DocumentSymbolWithText = DocumentSymbolWithText$Runtime;
   DocumentSymbolWithText.runtime = proto3;
-  DocumentSymbolWithText.typeName = "simeon.v1.DocumentSymbolWithText";
+  DocumentSymbolWithText.typeName = "aiserver.v1.DocumentSymbolWithText";
   DocumentSymbolWithText.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "symbol", kind: "message", T: DocumentSymbol },
     {
@@ -7895,7 +7895,7 @@
   })();
   var ErrorDetails = ErrorDetails$Runtime;
   ErrorDetails.runtime = proto3;
-  ErrorDetails.typeName = "simeon.v1.ErrorDetails";
+  ErrorDetails.typeName = "aiserver.v1.ErrorDetails";
   ErrorDetails.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "error", kind: "enum", T: proto3.getEnumType(ErrorDetails_Error) },
     { no: 2, name: "details", kind: "message", T: CustomErrorDetails },
@@ -7961,7 +7961,7 @@
     ErrorDetails_Error2[ErrorDetails_Error2["UNSUPPORTED_REGION"] = 64] = "UNSUPPORTED_REGION";
     ErrorDetails_Error2[ErrorDetails_Error2["ACCOUNT_CLOSED"] = 65] = "ACCOUNT_CLOSED";
   })(ErrorDetails_Error || (ErrorDetails_Error = {}));
-  proto3.util.setEnumType(ErrorDetails_Error, "simeon.v1.ErrorDetails.Error", [
+  proto3.util.setEnumType(ErrorDetails_Error, "aiserver.v1.ErrorDetails.Error", [
     { no: 0, name: "ERROR_UNSPECIFIED" },
     { no: 1, name: "ERROR_BAD_API_KEY" },
     { no: 42, name: "ERROR_BAD_USER_API_KEY" },
@@ -8046,7 +8046,7 @@
   })();
   var CustomErrorDetails = CustomErrorDetails$Runtime;
   CustomErrorDetails.runtime = proto3;
-  CustomErrorDetails.typeName = "simeon.v1.CustomErrorDetails";
+  CustomErrorDetails.typeName = "aiserver.v1.CustomErrorDetails";
   CustomErrorDetails.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -8095,7 +8095,7 @@
   })();
   var ErrorAnalyticsMetadata = ErrorAnalyticsMetadata$Runtime;
   ErrorAnalyticsMetadata.runtime = proto3;
-  ErrorAnalyticsMetadata.typeName = "simeon.v1.ErrorAnalyticsMetadata";
+  ErrorAnalyticsMetadata.typeName = "aiserver.v1.ErrorAnalyticsMetadata";
   ErrorAnalyticsMetadata.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "action_required", kind: "scalar", T: 9, opt: true }
   ]);
@@ -8121,7 +8121,7 @@
   })();
   var PlanChoice = PlanChoice$Runtime;
   PlanChoice.runtime = proto3;
-  PlanChoice.typeName = "simeon.v1.PlanChoice";
+  PlanChoice.typeName = "aiserver.v1.PlanChoice";
   PlanChoice.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -8162,7 +8162,7 @@
   })();
   var ErrorButton = ErrorButton$Runtime;
   ErrorButton.runtime = proto3;
-  ErrorButton.typeName = "simeon.v1.ErrorButton";
+  ErrorButton.typeName = "aiserver.v1.ErrorButton";
   ErrorButton.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -8202,7 +8202,7 @@
   })();
   var ClientAction = ClientAction$Runtime;
   ClientAction.runtime = proto3;
-  ClientAction.typeName = "simeon.v1.ClientAction";
+  ClientAction.typeName = "aiserver.v1.ClientAction";
   ClientAction.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -8237,7 +8237,7 @@
   })();
   var ReloadWindowAction = ReloadWindowAction$Runtime;
   ReloadWindowAction.runtime = proto3;
-  ReloadWindowAction.typeName = "simeon.v1.ReloadWindowAction";
+  ReloadWindowAction.typeName = "aiserver.v1.ReloadWindowAction";
   ReloadWindowAction.fields = proto3.util.newFieldList(() => []);
   var DashboardAction$Runtime = /* @__PURE__ */ (() => class _DashboardAction extends Message {
     constructor(data) {
@@ -8261,7 +8261,7 @@
   })();
   var DashboardAction = DashboardAction$Runtime;
   DashboardAction.runtime = proto3;
-  DashboardAction.typeName = "simeon.v1.DashboardAction";
+  DashboardAction.typeName = "aiserver.v1.DashboardAction";
   DashboardAction.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -8297,7 +8297,7 @@
   })();
   var UpgradeChoice = UpgradeChoice$Runtime;
   UpgradeChoice.runtime = proto3;
-  UpgradeChoice.typeName = "simeon.v1.UpgradeChoice";
+  UpgradeChoice.typeName = "aiserver.v1.UpgradeChoice";
   UpgradeChoice.fields = proto3.util.newFieldList(() => []);
   var UpgradeAction$Runtime = /* @__PURE__ */ (() => class _UpgradeAction extends Message {
     constructor(data) {
@@ -8320,7 +8320,7 @@
   })();
   var UpgradeAction = UpgradeAction$Runtime;
   UpgradeAction.runtime = proto3;
-  UpgradeAction.typeName = "simeon.v1.UpgradeAction";
+  UpgradeAction.typeName = "aiserver.v1.UpgradeAction";
   UpgradeAction.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -8353,7 +8353,7 @@
   })();
   var SwitchModelAction = SwitchModelAction$Runtime;
   SwitchModelAction.runtime = proto3;
-  SwitchModelAction.typeName = "simeon.v1.SwitchModelAction";
+  SwitchModelAction.typeName = "aiserver.v1.SwitchModelAction";
   SwitchModelAction.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "suggested_model", kind: "scalar", T: 9, opt: true },
     { no: 2, name: "parameters", kind: "message", T: SwitchModelAction_ModelParameterValue, repeated: true },
@@ -8381,7 +8381,7 @@
   })();
   var SwitchModelAction_ModelParameterValue = SwitchModelAction_ModelParameterValue$Runtime;
   SwitchModelAction_ModelParameterValue.runtime = proto3;
-  SwitchModelAction_ModelParameterValue.typeName = "simeon.v1.SwitchModelAction.ModelParameterValue";
+  SwitchModelAction_ModelParameterValue.typeName = "aiserver.v1.SwitchModelAction.ModelParameterValue";
   SwitchModelAction_ModelParameterValue.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -8419,7 +8419,7 @@
   })();
   var ConfigureSpendLimitAction = ConfigureSpendLimitAction$Runtime;
   ConfigureSpendLimitAction.runtime = proto3;
-  ConfigureSpendLimitAction.typeName = "simeon.v1.ConfigureSpendLimitAction";
+  ConfigureSpendLimitAction.typeName = "aiserver.v1.ConfigureSpendLimitAction";
   ConfigureSpendLimitAction.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -8450,7 +8450,7 @@
   })();
   var UrlAction = UrlAction$Runtime;
   UrlAction.runtime = proto3;
-  UrlAction.typeName = "simeon.v1.UrlAction";
+  UrlAction.typeName = "aiserver.v1.UrlAction";
   UrlAction.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -8482,7 +8482,7 @@
   })();
   var ImageProto2 = ImageProto2$Runtime;
   ImageProto2.runtime = proto3;
-  ImageProto2.typeName = "simeon.v1.ImageProto";
+  ImageProto2.typeName = "aiserver.v1.ImageProto";
   ImageProto2.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -8523,7 +8523,7 @@
   })();
   var ImageProto_Dimension2 = ImageProto_Dimension2$Runtime;
   ImageProto_Dimension2.runtime = proto3;
-  ImageProto_Dimension2.typeName = "simeon.v1.ImageProto.Dimension";
+  ImageProto_Dimension2.typeName = "aiserver.v1.ImageProto.Dimension";
   ImageProto_Dimension2.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -8563,7 +8563,7 @@
   })();
   var ChatQuote = ChatQuote$Runtime;
   ChatQuote.runtime = proto3;
-  ChatQuote.typeName = "simeon.v1.ChatQuote";
+  ChatQuote.typeName = "aiserver.v1.ChatQuote";
   ChatQuote.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -8609,7 +8609,7 @@
   })();
   var ChatExternalLink = ChatExternalLink$Runtime;
   ChatExternalLink.runtime = proto3;
-  ChatExternalLink.typeName = "simeon.v1.ChatExternalLink";
+  ChatExternalLink.typeName = "aiserver.v1.ChatExternalLink";
   ChatExternalLink.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -8651,7 +8651,7 @@
   })();
   var ComposerExternalLink = ComposerExternalLink$Runtime;
   ComposerExternalLink.runtime = proto3;
-  ComposerExternalLink.typeName = "simeon.v1.ComposerExternalLink";
+  ComposerExternalLink.typeName = "aiserver.v1.ComposerExternalLink";
   ComposerExternalLink.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -8693,7 +8693,7 @@
   })();
   var CmdKExternalLink = CmdKExternalLink$Runtime;
   CmdKExternalLink.runtime = proto3;
-  CmdKExternalLink.typeName = "simeon.v1.CmdKExternalLink";
+  CmdKExternalLink.typeName = "aiserver.v1.CmdKExternalLink";
   CmdKExternalLink.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -8732,7 +8732,7 @@
   })();
   var CommitNote = CommitNote$Runtime;
   CommitNote.runtime = proto3;
-  CommitNote.typeName = "simeon.v1.CommitNote";
+  CommitNote.typeName = "aiserver.v1.CommitNote";
   CommitNote.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -8772,7 +8772,7 @@
   })();
   var CommitNoteWithEmbeddings = CommitNoteWithEmbeddings$Runtime;
   CommitNoteWithEmbeddings.runtime = proto3;
-  CommitNoteWithEmbeddings.typeName = "simeon.v1.CommitNoteWithEmbeddings";
+  CommitNoteWithEmbeddings.typeName = "aiserver.v1.CommitNoteWithEmbeddings";
   CommitNoteWithEmbeddings.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -8811,7 +8811,7 @@
   })();
   var CommitDiffString = CommitDiffString$Runtime;
   CommitDiffString.runtime = proto3;
-  CommitDiffString.typeName = "simeon.v1.CommitDiffString";
+  CommitDiffString.typeName = "aiserver.v1.CommitDiffString";
   CommitDiffString.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -8845,7 +8845,7 @@
   })();
   var FullCommitNotes = FullCommitNotes$Runtime;
   FullCommitNotes.runtime = proto3;
-  FullCommitNotes.typeName = "simeon.v1.FullCommitNotes";
+  FullCommitNotes.typeName = "aiserver.v1.FullCommitNotes";
   FullCommitNotes.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "notes", kind: "message", T: CommitNote, repeated: true },
     {
@@ -8892,7 +8892,7 @@
   })();
   var CrossExtHostHeader = CrossExtHostHeader$Runtime;
   CrossExtHostHeader.runtime = proto3;
-  CrossExtHostHeader.typeName = "simeon.v1.CrossExtHostHeader";
+  CrossExtHostHeader.typeName = "aiserver.v1.CrossExtHostHeader";
   CrossExtHostHeader.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -8930,7 +8930,7 @@
   })();
   var CrossExtHostHeaders = CrossExtHostHeaders$Runtime;
   CrossExtHostHeaders.runtime = proto3;
-  CrossExtHostHeaders.typeName = "simeon.v1.CrossExtHostHeaders";
+  CrossExtHostHeaders.typeName = "aiserver.v1.CrossExtHostHeaders";
   CrossExtHostHeaders.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "headers", kind: "message", T: CrossExtHostHeader, repeated: true }
   ]);
@@ -8957,7 +8957,7 @@
   })();
   var SimpleUnaryCrossExtensionHostMessage = SimpleUnaryCrossExtensionHostMessage$Runtime;
   SimpleUnaryCrossExtensionHostMessage.runtime = proto3;
-  SimpleUnaryCrossExtensionHostMessage.typeName = "simeon.v1.SimpleUnaryCrossExtensionHostMessage";
+  SimpleUnaryCrossExtensionHostMessage.typeName = "aiserver.v1.SimpleUnaryCrossExtensionHostMessage";
   SimpleUnaryCrossExtensionHostMessage.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -9007,7 +9007,7 @@
   })();
   var CodeChunk = CodeChunk$Runtime;
   CodeChunk.runtime = proto3;
-  CodeChunk.typeName = "simeon.v1.CodeChunk";
+  CodeChunk.typeName = "aiserver.v1.CodeChunk";
   CodeChunk.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -9041,7 +9041,7 @@
     CodeChunk_Intent2[CodeChunk_Intent2["COMPOSER_FILE"] = 1] = "COMPOSER_FILE";
     CodeChunk_Intent2[CodeChunk_Intent2["COMPRESSED_COMPOSER_FILE"] = 2] = "COMPRESSED_COMPOSER_FILE";
   })(CodeChunk_Intent || (CodeChunk_Intent = {}));
-  proto3.util.setEnumType(CodeChunk_Intent, "simeon.v1.CodeChunk.Intent", [
+  proto3.util.setEnumType(CodeChunk_Intent, "aiserver.v1.CodeChunk.Intent", [
     { no: 0, name: "INTENT_UNSPECIFIED" },
     { no: 1, name: "INTENT_COMPOSER_FILE" },
     { no: 2, name: "INTENT_COMPRESSED_COMPOSER_FILE" }
@@ -9051,7 +9051,7 @@
     CodeChunk_SummarizationStrategy2[CodeChunk_SummarizationStrategy2["SUMMARIZED"] = 1] = "SUMMARIZED";
     CodeChunk_SummarizationStrategy2[CodeChunk_SummarizationStrategy2["EMBEDDED"] = 2] = "EMBEDDED";
   })(CodeChunk_SummarizationStrategy || (CodeChunk_SummarizationStrategy = {}));
-  proto3.util.setEnumType(CodeChunk_SummarizationStrategy, "simeon.v1.CodeChunk.SummarizationStrategy", [
+  proto3.util.setEnumType(CodeChunk_SummarizationStrategy, "aiserver.v1.CodeChunk.SummarizationStrategy", [
     { no: 0, name: "SUMMARIZATION_STRATEGY_NONE_UNSPECIFIED" },
     { no: 1, name: "SUMMARIZATION_STRATEGY_SUMMARIZED" },
     { no: 2, name: "SUMMARIZATION_STRATEGY_EMBEDDED" }
@@ -9076,7 +9076,7 @@
   })();
   var RCPCallFrame = RCPCallFrame$Runtime;
   RCPCallFrame.runtime = proto3;
-  RCPCallFrame.typeName = "simeon.v1.RCPCallFrame";
+  RCPCallFrame.typeName = "aiserver.v1.RCPCallFrame";
   RCPCallFrame.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "function_name", kind: "scalar", T: 9, opt: true },
     { no: 2, name: "url", kind: "scalar", T: 9, opt: true },
@@ -9104,7 +9104,7 @@
   })();
   var RCPStackTrace = RCPStackTrace$Runtime;
   RCPStackTrace.runtime = proto3;
-  RCPStackTrace.typeName = "simeon.v1.RCPStackTrace";
+  RCPStackTrace.typeName = "aiserver.v1.RCPStackTrace";
   RCPStackTrace.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "call_frames", kind: "message", T: RCPCallFrame, repeated: true },
     { no: 2, name: "raw_stack_trace", kind: "scalar", T: 9, opt: true }
@@ -9134,7 +9134,7 @@
   })();
   var RCPLogEntry = RCPLogEntry$Runtime;
   RCPLogEntry.runtime = proto3;
-  RCPLogEntry.typeName = "simeon.v1.RCPLogEntry";
+  RCPLogEntry.typeName = "aiserver.v1.RCPLogEntry";
   RCPLogEntry.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -9198,7 +9198,7 @@
   })();
   var RCPUIElementPicked = RCPUIElementPicked$Runtime;
   RCPUIElementPicked.runtime = proto3;
-  RCPUIElementPicked.typeName = "simeon.v1.RCPUIElementPicked";
+  RCPUIElementPicked.typeName = "aiserver.v1.RCPUIElementPicked";
   RCPUIElementPicked.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -9252,7 +9252,7 @@
   })();
   var RCPChatMessage = RCPChatMessage$Runtime;
   RCPChatMessage.runtime = proto3;
-  RCPChatMessage.typeName = "simeon.v1.RCPChatMessage";
+  RCPChatMessage.typeName = "aiserver.v1.RCPChatMessage";
   RCPChatMessage.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -9283,7 +9283,7 @@
   })();
   var RCPMessage = RCPMessage$Runtime;
   RCPMessage.runtime = proto3;
-  RCPMessage.typeName = "simeon.v1.RCPMessage";
+  RCPMessage.typeName = "aiserver.v1.RCPMessage";
   RCPMessage.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "console", kind: "message", T: RCPLogEntry, oneof: "message" },
     { no: 2, name: "ui_element_picked", kind: "message", T: RCPUIElementPicked, oneof: "message" },
@@ -12130,7 +12130,7 @@
     { no: 2, name: "result", kind: "message", T: AiAttributionResult }
   ]);
 
-  // source/packages/proto/generated/simeon/v1/symbolic_context_pb.ts
+  // source/packages/proto/generated/aiserver/v1/symbolic_context_pb.ts
   var CodeSymbolWithAction_CodeSymbolAction;
   var CreateExperimentalIndexRequest$Runtime = /* @__PURE__ */ (() => class _CreateExperimentalIndexRequest extends Message {
     constructor(data) {
@@ -12155,7 +12155,7 @@
   })();
   var CreateExperimentalIndexRequest = CreateExperimentalIndexRequest$Runtime;
   CreateExperimentalIndexRequest.runtime = proto3;
-  CreateExperimentalIndexRequest.typeName = "simeon.v1.CreateExperimentalIndexRequest";
+  CreateExperimentalIndexRequest.typeName = "aiserver.v1.CreateExperimentalIndexRequest";
   CreateExperimentalIndexRequest.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "files", kind: "scalar", T: 9, repeated: true },
     {
@@ -12194,7 +12194,7 @@
   })();
   var CreateExperimentalIndexResponse = CreateExperimentalIndexResponse$Runtime;
   CreateExperimentalIndexResponse.runtime = proto3;
-  CreateExperimentalIndexResponse.typeName = "simeon.v1.CreateExperimentalIndexResponse";
+  CreateExperimentalIndexResponse.typeName = "aiserver.v1.CreateExperimentalIndexResponse";
   CreateExperimentalIndexResponse.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -12225,7 +12225,7 @@
   })();
   var ListExperimentalIndexFilesRequest = ListExperimentalIndexFilesRequest$Runtime;
   ListExperimentalIndexFilesRequest.runtime = proto3;
-  ListExperimentalIndexFilesRequest.typeName = "simeon.v1.ListExperimentalIndexFilesRequest";
+  ListExperimentalIndexFilesRequest.typeName = "aiserver.v1.ListExperimentalIndexFilesRequest";
   ListExperimentalIndexFilesRequest.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -12257,7 +12257,7 @@
   })();
   var ListExperimentalIndexFilesResponse = ListExperimentalIndexFilesResponse$Runtime;
   ListExperimentalIndexFilesResponse.runtime = proto3;
-  ListExperimentalIndexFilesResponse.typeName = "simeon.v1.ListExperimentalIndexFilesResponse";
+  ListExperimentalIndexFilesResponse.typeName = "aiserver.v1.ListExperimentalIndexFilesResponse";
   ListExperimentalIndexFilesResponse.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -12289,7 +12289,7 @@
   })();
   var ListenExperimentalIndexRequest = ListenExperimentalIndexRequest$Runtime;
   ListenExperimentalIndexRequest.runtime = proto3;
-  ListenExperimentalIndexRequest.typeName = "simeon.v1.ListenExperimentalIndexRequest";
+  ListenExperimentalIndexRequest.typeName = "aiserver.v1.ListenExperimentalIndexRequest";
   ListenExperimentalIndexRequest.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -12321,7 +12321,7 @@
   })();
   var ListenExperimentalIndexResponse = ListenExperimentalIndexResponse$Runtime;
   ListenExperimentalIndexResponse.runtime = proto3;
-  ListenExperimentalIndexResponse.typeName = "simeon.v1.ListenExperimentalIndexResponse";
+  ListenExperimentalIndexResponse.typeName = "aiserver.v1.ListenExperimentalIndexResponse";
   ListenExperimentalIndexResponse.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -12357,7 +12357,7 @@
   })();
   var ListenExperimentalIndexResponse_ReadyItem = ListenExperimentalIndexResponse_ReadyItem$Runtime;
   ListenExperimentalIndexResponse_ReadyItem.runtime = proto3;
-  ListenExperimentalIndexResponse_ReadyItem.typeName = "simeon.v1.ListenExperimentalIndexResponse.ReadyItem";
+  ListenExperimentalIndexResponse_ReadyItem.typeName = "aiserver.v1.ListenExperimentalIndexResponse.ReadyItem";
   ListenExperimentalIndexResponse_ReadyItem.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -12389,7 +12389,7 @@
   })();
   var ListenExperimentalIndexResponse_RegisterItem = ListenExperimentalIndexResponse_RegisterItem$Runtime;
   ListenExperimentalIndexResponse_RegisterItem.runtime = proto3;
-  ListenExperimentalIndexResponse_RegisterItem.typeName = "simeon.v1.ListenExperimentalIndexResponse.RegisterItem";
+  ListenExperimentalIndexResponse_RegisterItem.typeName = "aiserver.v1.ListenExperimentalIndexResponse.RegisterItem";
   ListenExperimentalIndexResponse_RegisterItem.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "response", kind: "message", T: RegisterFileToIndexResponse },
     { no: 2, name: "request", kind: "message", T: RegisterFileToIndexRequest },
@@ -12422,7 +12422,7 @@
   })();
   var ListenExperimentalIndexResponse_ChooseItem = ListenExperimentalIndexResponse_ChooseItem$Runtime;
   ListenExperimentalIndexResponse_ChooseItem.runtime = proto3;
-  ListenExperimentalIndexResponse_ChooseItem.typeName = "simeon.v1.ListenExperimentalIndexResponse.ChooseItem";
+  ListenExperimentalIndexResponse_ChooseItem.typeName = "aiserver.v1.ListenExperimentalIndexResponse.ChooseItem";
   ListenExperimentalIndexResponse_ChooseItem.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "response", kind: "message", T: ChooseCodeReferencesResponse },
     { no: 2, name: "request", kind: "message", T: ChooseCodeReferencesRequest },
@@ -12455,7 +12455,7 @@
   })();
   var ListenExperimentalIndexResponse_SummarizeItem = ListenExperimentalIndexResponse_SummarizeItem$Runtime;
   ListenExperimentalIndexResponse_SummarizeItem.runtime = proto3;
-  ListenExperimentalIndexResponse_SummarizeItem.typeName = "simeon.v1.ListenExperimentalIndexResponse.SummarizeItem";
+  ListenExperimentalIndexResponse_SummarizeItem.typeName = "aiserver.v1.ListenExperimentalIndexResponse.SummarizeItem";
   ListenExperimentalIndexResponse_SummarizeItem.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "response", kind: "message", T: SummarizeWithReferencesResponse },
     { no: 2, name: "request", kind: "message", T: SummarizeWithReferencesRequest },
@@ -12491,7 +12491,7 @@
   })();
   var ListenExperimentalIndexResponse_ErrorItem = ListenExperimentalIndexResponse_ErrorItem$Runtime;
   ListenExperimentalIndexResponse_ErrorItem.runtime = proto3;
-  ListenExperimentalIndexResponse_ErrorItem.typeName = "simeon.v1.ListenExperimentalIndexResponse.ErrorItem";
+  ListenExperimentalIndexResponse_ErrorItem.typeName = "aiserver.v1.ListenExperimentalIndexResponse.ErrorItem";
   ListenExperimentalIndexResponse_ErrorItem.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -12541,7 +12541,7 @@
   })();
   var RegisterFileToIndexRequest = RegisterFileToIndexRequest$Runtime;
   RegisterFileToIndexRequest.runtime = proto3;
-  RegisterFileToIndexRequest.typeName = "simeon.v1.RegisterFileToIndexRequest";
+  RegisterFileToIndexRequest.typeName = "aiserver.v1.RegisterFileToIndexRequest";
   RegisterFileToIndexRequest.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -12583,7 +12583,7 @@
   })();
   var RegisterFileToIndexResponse = RegisterFileToIndexResponse$Runtime;
   RegisterFileToIndexResponse.runtime = proto3;
-  RegisterFileToIndexResponse.typeName = "simeon.v1.RegisterFileToIndexResponse";
+  RegisterFileToIndexResponse.typeName = "aiserver.v1.RegisterFileToIndexResponse";
   RegisterFileToIndexResponse.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -12625,7 +12625,7 @@
   })();
   var SetupIndexDependenciesRequest = SetupIndexDependenciesRequest$Runtime;
   SetupIndexDependenciesRequest.runtime = proto3;
-  SetupIndexDependenciesRequest.typeName = "simeon.v1.SetupIndexDependenciesRequest";
+  SetupIndexDependenciesRequest.typeName = "aiserver.v1.SetupIndexDependenciesRequest";
   SetupIndexDependenciesRequest.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -12663,7 +12663,7 @@
   })();
   var SetupIndexDependenciesResponse = SetupIndexDependenciesResponse$Runtime;
   SetupIndexDependenciesResponse.runtime = proto3;
-  SetupIndexDependenciesResponse.typeName = "simeon.v1.SetupIndexDependenciesResponse";
+  SetupIndexDependenciesResponse.typeName = "aiserver.v1.SetupIndexDependenciesResponse";
   SetupIndexDependenciesResponse.fields = proto3.util.newFieldList(() => []);
   var ComputeIndexTopoSortRequest$Runtime = /* @__PURE__ */ (() => class _ComputeIndexTopoSortRequest extends Message {
     constructor(data) {
@@ -12686,7 +12686,7 @@
   })();
   var ComputeIndexTopoSortRequest = ComputeIndexTopoSortRequest$Runtime;
   ComputeIndexTopoSortRequest.runtime = proto3;
-  ComputeIndexTopoSortRequest.typeName = "simeon.v1.ComputeIndexTopoSortRequest";
+  ComputeIndexTopoSortRequest.typeName = "aiserver.v1.ComputeIndexTopoSortRequest";
   ComputeIndexTopoSortRequest.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -12716,7 +12716,7 @@
   })();
   var ComputeIndexTopoSortResponse = ComputeIndexTopoSortResponse$Runtime;
   ComputeIndexTopoSortResponse.runtime = proto3;
-  ComputeIndexTopoSortResponse.typeName = "simeon.v1.ComputeIndexTopoSortResponse";
+  ComputeIndexTopoSortResponse.typeName = "aiserver.v1.ComputeIndexTopoSortResponse";
   ComputeIndexTopoSortResponse.fields = proto3.util.newFieldList(() => []);
   var ChooseCodeReferencesRequest$Runtime = /* @__PURE__ */ (() => class _ChooseCodeReferencesRequest extends Message {
     constructor(data) {
@@ -12741,7 +12741,7 @@
   })();
   var ChooseCodeReferencesRequest = ChooseCodeReferencesRequest$Runtime;
   ChooseCodeReferencesRequest.runtime = proto3;
-  ChooseCodeReferencesRequest.typeName = "simeon.v1.ChooseCodeReferencesRequest";
+  ChooseCodeReferencesRequest.typeName = "aiserver.v1.ChooseCodeReferencesRequest";
   ChooseCodeReferencesRequest.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -12781,7 +12781,7 @@
   })();
   var ChooseCodeReferencesRequest_FileRequest = ChooseCodeReferencesRequest_FileRequest$Runtime;
   ChooseCodeReferencesRequest_FileRequest.runtime = proto3;
-  ChooseCodeReferencesRequest_FileRequest.typeName = "simeon.v1.ChooseCodeReferencesRequest.FileRequest";
+  ChooseCodeReferencesRequest_FileRequest.typeName = "aiserver.v1.ChooseCodeReferencesRequest.FileRequest";
   ChooseCodeReferencesRequest_FileRequest.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -12812,7 +12812,7 @@
   })();
   var ChooseCodeReferencesRequest_NodeRequest = ChooseCodeReferencesRequest_NodeRequest$Runtime;
   ChooseCodeReferencesRequest_NodeRequest.runtime = proto3;
-  ChooseCodeReferencesRequest_NodeRequest.typeName = "simeon.v1.ChooseCodeReferencesRequest.NodeRequest";
+  ChooseCodeReferencesRequest_NodeRequest.typeName = "aiserver.v1.ChooseCodeReferencesRequest.NodeRequest";
   ChooseCodeReferencesRequest_NodeRequest.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -12843,7 +12843,7 @@
   })();
   var ChooseCodeReferencesResponse = ChooseCodeReferencesResponse$Runtime;
   ChooseCodeReferencesResponse.runtime = proto3;
-  ChooseCodeReferencesResponse.typeName = "simeon.v1.ChooseCodeReferencesResponse";
+  ChooseCodeReferencesResponse.typeName = "aiserver.v1.ChooseCodeReferencesResponse";
   ChooseCodeReferencesResponse.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "file", kind: "message", T: ChooseCodeReferencesResponse_FileResponse, oneof: "response" },
     { no: 2, name: "node", kind: "message", T: ChooseCodeReferencesResponse_NodeResponse, oneof: "response" }
@@ -12872,7 +12872,7 @@
   })();
   var ChooseCodeReferencesResponse_NodeResponse = ChooseCodeReferencesResponse_NodeResponse$Runtime;
   ChooseCodeReferencesResponse_NodeResponse.runtime = proto3;
-  ChooseCodeReferencesResponse_NodeResponse.typeName = "simeon.v1.ChooseCodeReferencesResponse.NodeResponse";
+  ChooseCodeReferencesResponse_NodeResponse.typeName = "aiserver.v1.ChooseCodeReferencesResponse.NodeResponse";
   ChooseCodeReferencesResponse_NodeResponse.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -12913,7 +12913,7 @@
   })();
   var ChooseCodeReferencesResponse_FileResponse = ChooseCodeReferencesResponse_FileResponse$Runtime;
   ChooseCodeReferencesResponse_FileResponse.runtime = proto3;
-  ChooseCodeReferencesResponse_FileResponse.typeName = "simeon.v1.ChooseCodeReferencesResponse.FileResponse";
+  ChooseCodeReferencesResponse_FileResponse.typeName = "aiserver.v1.ChooseCodeReferencesResponse.FileResponse";
   ChooseCodeReferencesResponse_FileResponse.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -12946,7 +12946,7 @@
   })();
   var RegisterCodeReferencesRequest = RegisterCodeReferencesRequest$Runtime;
   RegisterCodeReferencesRequest.runtime = proto3;
-  RegisterCodeReferencesRequest.typeName = "simeon.v1.RegisterCodeReferencesRequest";
+  RegisterCodeReferencesRequest.typeName = "aiserver.v1.RegisterCodeReferencesRequest";
   RegisterCodeReferencesRequest.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -12978,7 +12978,7 @@
   })();
   var RegisterCodeReferencesResponse = RegisterCodeReferencesResponse$Runtime;
   RegisterCodeReferencesResponse.runtime = proto3;
-  RegisterCodeReferencesResponse.typeName = "simeon.v1.RegisterCodeReferencesResponse";
+  RegisterCodeReferencesResponse.typeName = "aiserver.v1.RegisterCodeReferencesResponse";
   RegisterCodeReferencesResponse.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "dependencies", kind: "scalar", T: 9, repeated: true }
   ]);
@@ -13005,7 +13005,7 @@
   })();
   var SummarizeWithReferencesRequest = SummarizeWithReferencesRequest$Runtime;
   SummarizeWithReferencesRequest.runtime = proto3;
-  SummarizeWithReferencesRequest.typeName = "simeon.v1.SummarizeWithReferencesRequest";
+  SummarizeWithReferencesRequest.typeName = "aiserver.v1.SummarizeWithReferencesRequest";
   SummarizeWithReferencesRequest.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -13051,7 +13051,7 @@
   })();
   var SummarizeWithReferencesResponse = SummarizeWithReferencesResponse$Runtime;
   SummarizeWithReferencesResponse.runtime = proto3;
-  SummarizeWithReferencesResponse.typeName = "simeon.v1.SummarizeWithReferencesResponse";
+  SummarizeWithReferencesResponse.typeName = "aiserver.v1.SummarizeWithReferencesResponse";
   SummarizeWithReferencesResponse.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "success", kind: "message", T: SummarizeWithReferencesResponse_Success, oneof: "response" },
     { no: 2, name: "dependency", kind: "message", T: SummarizeWithReferencesResponse_Dependency, oneof: "response" },
@@ -13084,7 +13084,7 @@
   })();
   var SummarizeWithReferencesResponse_Success = SummarizeWithReferencesResponse_Success$Runtime;
   SummarizeWithReferencesResponse_Success.runtime = proto3;
-  SummarizeWithReferencesResponse_Success.typeName = "simeon.v1.SummarizeWithReferencesResponse.Success";
+  SummarizeWithReferencesResponse_Success.typeName = "aiserver.v1.SummarizeWithReferencesResponse.Success";
   SummarizeWithReferencesResponse_Success.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -13115,7 +13115,7 @@
   })();
   var SummarizeWithReferencesResponse_Dependency = SummarizeWithReferencesResponse_Dependency$Runtime;
   SummarizeWithReferencesResponse_Dependency.runtime = proto3;
-  SummarizeWithReferencesResponse_Dependency.typeName = "simeon.v1.SummarizeWithReferencesResponse.Dependency";
+  SummarizeWithReferencesResponse_Dependency.typeName = "aiserver.v1.SummarizeWithReferencesResponse.Dependency";
   SummarizeWithReferencesResponse_Dependency.fields = proto3.util.newFieldList(() => [
     { no: 2, name: "nodes", kind: "scalar", T: 9, repeated: true }
   ]);
@@ -13140,7 +13140,7 @@
   })();
   var RequestReceivedResponse = RequestReceivedResponse$Runtime;
   RequestReceivedResponse.runtime = proto3;
-  RequestReceivedResponse.typeName = "simeon.v1.RequestReceivedResponse";
+  RequestReceivedResponse.typeName = "aiserver.v1.RequestReceivedResponse";
   RequestReceivedResponse.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -13173,7 +13173,7 @@
   })();
   var ReflectionData = ReflectionData$Runtime;
   ReflectionData.runtime = proto3;
-  ReflectionData.typeName = "simeon.v1.ReflectionData";
+  ReflectionData.typeName = "aiserver.v1.ReflectionData";
   ReflectionData.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -13222,7 +13222,7 @@
   })();
   var IndexFileData = IndexFileData$Runtime;
   IndexFileData.runtime = proto3;
-  IndexFileData.typeName = "simeon.v1.IndexFileData";
+  IndexFileData.typeName = "aiserver.v1.IndexFileData";
   IndexFileData.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -13278,7 +13278,7 @@
   })();
   var IndexFileData_NodeData = IndexFileData_NodeData$Runtime;
   IndexFileData_NodeData.runtime = proto3;
-  IndexFileData_NodeData.typeName = "simeon.v1.IndexFileData.NodeData";
+  IndexFileData_NodeData.typeName = "aiserver.v1.IndexFileData.NodeData";
   IndexFileData_NodeData.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -13333,7 +13333,7 @@
   })();
   var SerializedContextNode = SerializedContextNode$Runtime;
   SerializedContextNode.runtime = proto3;
-  SerializedContextNode.typeName = "simeon.v1.SerializedContextNode";
+  SerializedContextNode.typeName = "aiserver.v1.SerializedContextNode";
   SerializedContextNode.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -13381,7 +13381,7 @@
   })();
   var URIResolutionAttempt = URIResolutionAttempt$Runtime;
   URIResolutionAttempt.runtime = proto3;
-  URIResolutionAttempt.typeName = "simeon.v1.URIResolutionAttempt";
+  URIResolutionAttempt.typeName = "aiserver.v1.URIResolutionAttempt";
   URIResolutionAttempt.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -13420,7 +13420,7 @@
   })();
   var URIResolutionResult = URIResolutionResult$Runtime;
   URIResolutionResult.runtime = proto3;
-  URIResolutionResult.typeName = "simeon.v1.URIResolutionResult";
+  URIResolutionResult.typeName = "aiserver.v1.URIResolutionResult";
   URIResolutionResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "request", kind: "message", T: URIResolutionAttempt },
     { no: 2, name: "resolved_paths", kind: "scalar", T: 9, repeated: true }
@@ -13445,7 +13445,7 @@
   })();
   var ExtractPathsRequest = ExtractPathsRequest$Runtime;
   ExtractPathsRequest.runtime = proto3;
-  ExtractPathsRequest.typeName = "simeon.v1.ExtractPathsRequest";
+  ExtractPathsRequest.typeName = "aiserver.v1.ExtractPathsRequest";
   ExtractPathsRequest.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "file_code_snippets", kind: "message", T: FileCodeSnippets }
   ]);
@@ -13470,7 +13470,7 @@
   })();
   var ExtractPathsResponse = ExtractPathsResponse$Runtime;
   ExtractPathsResponse.runtime = proto3;
-  ExtractPathsResponse.typeName = "simeon.v1.ExtractPathsResponse";
+  ExtractPathsResponse.typeName = "aiserver.v1.ExtractPathsResponse";
   ExtractPathsResponse.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "paths", kind: "message", T: CodeSymbolWithAction, repeated: true }
   ]);
@@ -13495,7 +13495,7 @@
   })();
   var SymbolActionResults = SymbolActionResults$Runtime;
   SymbolActionResults.runtime = proto3;
-  SymbolActionResults.typeName = "simeon.v1.SymbolActionResults";
+  SymbolActionResults.typeName = "aiserver.v1.SymbolActionResults";
   SymbolActionResults.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "action", kind: "message", T: CodeSymbolWithAction },
     { no: 2, name: "references", kind: "message", T: SymbolActionResultReference, repeated: true }
@@ -13520,7 +13520,7 @@
   })();
   var SymbolActionResultReference = SymbolActionResultReference$Runtime;
   SymbolActionResultReference.runtime = proto3;
-  SymbolActionResultReference.typeName = "simeon.v1.SymbolActionResultReference";
+  SymbolActionResultReference.typeName = "aiserver.v1.SymbolActionResultReference";
   SymbolActionResultReference.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "range", kind: "message", T: SimpleRange },
     { no: 2, name: "reference", kind: "message", T: FileCodeSnippets }
@@ -13548,7 +13548,7 @@
   })();
   var FileCodeSnippets = FileCodeSnippets$Runtime;
   FileCodeSnippets.runtime = proto3;
-  FileCodeSnippets.typeName = "simeon.v1.FileCodeSnippets";
+  FileCodeSnippets.typeName = "aiserver.v1.FileCodeSnippets";
   FileCodeSnippets.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -13589,7 +13589,7 @@
   })();
   var CodeSnippet = CodeSnippet$Runtime;
   CodeSnippet.runtime = proto3;
-  CodeSnippet.typeName = "simeon.v1.CodeSnippet";
+  CodeSnippet.typeName = "aiserver.v1.CodeSnippet";
   CodeSnippet.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -13633,7 +13633,7 @@
   })();
   var CodeSymbolWithAction = CodeSymbolWithAction$Runtime;
   CodeSymbolWithAction.runtime = proto3;
-  CodeSymbolWithAction.typeName = "simeon.v1.CodeSymbolWithAction";
+  CodeSymbolWithAction.typeName = "aiserver.v1.CodeSymbolWithAction";
   CodeSymbolWithAction.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -13678,14 +13678,14 @@
     CodeSymbolWithAction_CodeSymbolAction2[CodeSymbolWithAction_CodeSymbolAction2["GO_TO_IMPLEMENTATION"] = 2] = "GO_TO_IMPLEMENTATION";
     CodeSymbolWithAction_CodeSymbolAction2[CodeSymbolWithAction_CodeSymbolAction2["REFERENCES"] = 3] = "REFERENCES";
   })(CodeSymbolWithAction_CodeSymbolAction || (CodeSymbolWithAction_CodeSymbolAction = {}));
-  proto3.util.setEnumType(CodeSymbolWithAction_CodeSymbolAction, "simeon.v1.CodeSymbolWithAction.CodeSymbolAction", [
+  proto3.util.setEnumType(CodeSymbolWithAction_CodeSymbolAction, "aiserver.v1.CodeSymbolWithAction.CodeSymbolAction", [
     { no: 0, name: "CODE_SYMBOL_ACTION_UNSPECIFIED" },
     { no: 1, name: "CODE_SYMBOL_ACTION_GO_TO_DEFINITION" },
     { no: 2, name: "CODE_SYMBOL_ACTION_GO_TO_IMPLEMENTATION" },
     { no: 3, name: "CODE_SYMBOL_ACTION_REFERENCES" }
   ]);
 
-  // source/packages/proto/generated/simeon/v1/repository_pb.ts
+  // source/packages/proto/generated/aiserver/v1/repository_pb.ts
   var ChunkingStrategy;
   var SimilarityMetricType;
   var PathKeyHashType;
@@ -13724,7 +13724,7 @@
     ChunkingStrategy2[ChunkingStrategy2["UNSPECIFIED"] = 0] = "UNSPECIFIED";
     ChunkingStrategy2[ChunkingStrategy2["DEFAULT"] = 1] = "DEFAULT";
   })(ChunkingStrategy || (ChunkingStrategy = {}));
-  proto3.util.setEnumType(ChunkingStrategy, "simeon.v1.ChunkingStrategy", [
+  proto3.util.setEnumType(ChunkingStrategy, "aiserver.v1.ChunkingStrategy", [
     { no: 0, name: "CHUNKING_STRATEGY_UNSPECIFIED" },
     { no: 1, name: "CHUNKING_STRATEGY_DEFAULT" }
   ]);
@@ -13732,7 +13732,7 @@
     SimilarityMetricType2[SimilarityMetricType2["UNSPECIFIED"] = 0] = "UNSPECIFIED";
     SimilarityMetricType2[SimilarityMetricType2["SIMHASH"] = 1] = "SIMHASH";
   })(SimilarityMetricType || (SimilarityMetricType = {}));
-  proto3.util.setEnumType(SimilarityMetricType, "simeon.v1.SimilarityMetricType", [
+  proto3.util.setEnumType(SimilarityMetricType, "aiserver.v1.SimilarityMetricType", [
     { no: 0, name: "SIMILARITY_METRIC_TYPE_UNSPECIFIED" },
     { no: 1, name: "SIMILARITY_METRIC_TYPE_SIMHASH" }
   ]);
@@ -13740,7 +13740,7 @@
     PathKeyHashType2[PathKeyHashType2["UNSPECIFIED"] = 0] = "UNSPECIFIED";
     PathKeyHashType2[PathKeyHashType2["SHA256"] = 1] = "SHA256";
   })(PathKeyHashType || (PathKeyHashType = {}));
-  proto3.util.setEnumType(PathKeyHashType, "simeon.v1.PathKeyHashType", [
+  proto3.util.setEnumType(PathKeyHashType, "aiserver.v1.PathKeyHashType", [
     { no: 0, name: "PATH_KEY_HASH_TYPE_UNSPECIFIED" },
     { no: 1, name: "PATH_KEY_HASH_TYPE_SHA256" }
   ]);
@@ -13759,7 +13759,7 @@
     RerankerAlgorithm2[RerankerAlgorithm2["IDENTITY"] = 11] = "IDENTITY";
     RerankerAlgorithm2[RerankerAlgorithm2["ADA_EMBEDS"] = 12] = "ADA_EMBEDS";
   })(RerankerAlgorithm || (RerankerAlgorithm = {}));
-  proto3.util.setEnumType(RerankerAlgorithm, "simeon.v1.RerankerAlgorithm", [
+  proto3.util.setEnumType(RerankerAlgorithm, "aiserver.v1.RerankerAlgorithm", [
     { no: 0, name: "RERANKER_ALGORITHM_UNSPECIFIED" },
     { no: 1, name: "RERANKER_ALGORITHM_LULEA" },
     { no: 2, name: "RERANKER_ALGORITHM_UMEA" },
@@ -13779,7 +13779,7 @@
     DatabaseProvider2[DatabaseProvider2["AURORA"] = 1] = "AURORA";
     DatabaseProvider2[DatabaseProvider2["PLANETSCALE"] = 2] = "PLANETSCALE";
   })(DatabaseProvider || (DatabaseProvider = {}));
-  proto3.util.setEnumType(DatabaseProvider, "simeon.v1.DatabaseProvider", [
+  proto3.util.setEnumType(DatabaseProvider, "aiserver.v1.DatabaseProvider", [
     { no: 0, name: "DATABASE_PROVIDER_UNSPECIFIED" },
     { no: 1, name: "DATABASE_PROVIDER_AURORA" },
     { no: 2, name: "DATABASE_PROVIDER_PLANETSCALE" }
@@ -13791,7 +13791,7 @@
     RechunkerChoice2[RechunkerChoice2["RECHUNKER_CHOICE_2400_TOKS"] = 3] = "RECHUNKER_CHOICE_2400_TOKS";
     RechunkerChoice2[RechunkerChoice2["RECHUNKER_CHOICE_4000_TOKS"] = 4] = "RECHUNKER_CHOICE_4000_TOKS";
   })(RechunkerChoice || (RechunkerChoice = {}));
-  proto3.util.setEnumType(RechunkerChoice, "simeon.v1.RechunkerChoice", [
+  proto3.util.setEnumType(RechunkerChoice, "aiserver.v1.RechunkerChoice", [
     { no: 0, name: "RECHUNKER_CHOICE_UNSPECIFIED" },
     { no: 1, name: "RECHUNKER_CHOICE_IDENTITY" },
     { no: 2, name: "RECHUNKER_CHOICE_600_TOKS" },
@@ -13821,7 +13821,7 @@
   })();
   var GetHighLevelFolderDescriptionRequest = GetHighLevelFolderDescriptionRequest$Runtime;
   GetHighLevelFolderDescriptionRequest.runtime = proto3;
-  GetHighLevelFolderDescriptionRequest.typeName = "simeon.v1.GetHighLevelFolderDescriptionRequest";
+  GetHighLevelFolderDescriptionRequest.typeName = "aiserver.v1.GetHighLevelFolderDescriptionRequest";
   GetHighLevelFolderDescriptionRequest.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "readmes", kind: "message", T: GetHighLevelFolderDescriptionRequest_Readme, repeated: true },
     { no: 2, name: "top_level_relative_workspace_paths", kind: "scalar", T: 9, repeated: true },
@@ -13855,7 +13855,7 @@
   })();
   var GetHighLevelFolderDescriptionRequest_Readme = GetHighLevelFolderDescriptionRequest_Readme$Runtime;
   GetHighLevelFolderDescriptionRequest_Readme.runtime = proto3;
-  GetHighLevelFolderDescriptionRequest_Readme.typeName = "simeon.v1.GetHighLevelFolderDescriptionRequest.Readme";
+  GetHighLevelFolderDescriptionRequest_Readme.typeName = "aiserver.v1.GetHighLevelFolderDescriptionRequest.Readme";
   GetHighLevelFolderDescriptionRequest_Readme.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -13893,7 +13893,7 @@
   })();
   var GetHighLevelFolderDescriptionResponse = GetHighLevelFolderDescriptionResponse$Runtime;
   GetHighLevelFolderDescriptionResponse.runtime = proto3;
-  GetHighLevelFolderDescriptionResponse.typeName = "simeon.v1.GetHighLevelFolderDescriptionResponse";
+  GetHighLevelFolderDescriptionResponse.typeName = "aiserver.v1.GetHighLevelFolderDescriptionResponse";
   GetHighLevelFolderDescriptionResponse.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -13923,7 +13923,7 @@
   })();
   var EnsureIndexCreatedRequest = EnsureIndexCreatedRequest$Runtime;
   EnsureIndexCreatedRequest.runtime = proto3;
-  EnsureIndexCreatedRequest.typeName = "simeon.v1.EnsureIndexCreatedRequest";
+  EnsureIndexCreatedRequest.typeName = "aiserver.v1.EnsureIndexCreatedRequest";
   EnsureIndexCreatedRequest.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "repository", kind: "message", T: RepositoryInfo }
   ]);
@@ -13947,7 +13947,7 @@
   })();
   var EnsureIndexCreatedResponse = EnsureIndexCreatedResponse$Runtime;
   EnsureIndexCreatedResponse.runtime = proto3;
-  EnsureIndexCreatedResponse.typeName = "simeon.v1.EnsureIndexCreatedResponse";
+  EnsureIndexCreatedResponse.typeName = "aiserver.v1.EnsureIndexCreatedResponse";
   EnsureIndexCreatedResponse.fields = proto3.util.newFieldList(() => []);
   var PartialPathItem$Runtime = /* @__PURE__ */ (() => class _PartialPathItem extends Message {
     constructor(data) {
@@ -13971,7 +13971,7 @@
   })();
   var PartialPathItem = PartialPathItem$Runtime;
   PartialPathItem.runtime = proto3;
-  PartialPathItem.typeName = "simeon.v1.PartialPathItem";
+  PartialPathItem.typeName = "aiserver.v1.PartialPathItem";
   PartialPathItem.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -14010,7 +14010,7 @@
   })();
   var FastRepoInitHandshakeRequest = FastRepoInitHandshakeRequest$Runtime;
   FastRepoInitHandshakeRequest.runtime = proto3;
-  FastRepoInitHandshakeRequest.typeName = "simeon.v1.FastRepoInitHandshakeRequest";
+  FastRepoInitHandshakeRequest.typeName = "aiserver.v1.FastRepoInitHandshakeRequest";
   FastRepoInitHandshakeRequest.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "repository", kind: "message", T: RepositoryInfo },
     {
@@ -14050,7 +14050,7 @@
   })();
   var FastRepoInitHandshakeResponse = FastRepoInitHandshakeResponse$Runtime;
   FastRepoInitHandshakeResponse.runtime = proto3;
-  FastRepoInitHandshakeResponse.typeName = "simeon.v1.FastRepoInitHandshakeResponse";
+  FastRepoInitHandshakeResponse.typeName = "aiserver.v1.FastRepoInitHandshakeResponse";
   FastRepoInitHandshakeResponse.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "status", kind: "enum", T: proto3.getEnumType(FastRepoInitHandshakeResponse_Status) },
     {
@@ -14068,7 +14068,7 @@
     FastRepoInitHandshakeResponse_Status2[FastRepoInitHandshakeResponse_Status2["FAILURE"] = 3] = "FAILURE";
     FastRepoInitHandshakeResponse_Status2[FastRepoInitHandshakeResponse_Status2["EMPTY"] = 4] = "EMPTY";
   })(FastRepoInitHandshakeResponse_Status || (FastRepoInitHandshakeResponse_Status = {}));
-  proto3.util.setEnumType(FastRepoInitHandshakeResponse_Status, "simeon.v1.FastRepoInitHandshakeResponse.Status", [
+  proto3.util.setEnumType(FastRepoInitHandshakeResponse_Status, "aiserver.v1.FastRepoInitHandshakeResponse.Status", [
     { no: 0, name: "STATUS_UNSPECIFIED" },
     { no: 1, name: "STATUS_UP_TO_DATE" },
     { no: 2, name: "STATUS_OUT_OF_SYNC" },
@@ -14098,7 +14098,7 @@
   })();
   var LocalCodebaseFileInfo = LocalCodebaseFileInfo$Runtime;
   LocalCodebaseFileInfo.runtime = proto3;
-  LocalCodebaseFileInfo.typeName = "simeon.v1.LocalCodebaseFileInfo";
+  LocalCodebaseFileInfo.typeName = "aiserver.v1.LocalCodebaseFileInfo";
   LocalCodebaseFileInfo.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -14145,7 +14145,7 @@
   })();
   var FastRepoInitHandshakeV2Request = FastRepoInitHandshakeV2Request$Runtime;
   FastRepoInitHandshakeV2Request.runtime = proto3;
-  FastRepoInitHandshakeV2Request.typeName = "simeon.v1.FastRepoInitHandshakeV2Request";
+  FastRepoInitHandshakeV2Request.typeName = "aiserver.v1.FastRepoInitHandshakeV2Request";
   FastRepoInitHandshakeV2Request.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "repository", kind: "message", T: RepositoryInfo },
     {
@@ -14208,7 +14208,7 @@
   })();
   var QueryOnlyRepositoryInfo = QueryOnlyRepositoryInfo$Runtime;
   QueryOnlyRepositoryInfo.runtime = proto3;
-  QueryOnlyRepositoryInfo.typeName = "simeon.v1.QueryOnlyRepositoryInfo";
+  QueryOnlyRepositoryInfo.typeName = "aiserver.v1.QueryOnlyRepositoryInfo";
   QueryOnlyRepositoryInfo.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "repository", kind: "message", T: RepositoryInfo },
     { no: 2, name: "query_only_repo_access", kind: "message", T: QueryOnlyRepoAccess }
@@ -14236,7 +14236,7 @@
   })();
   var RepositoryCodebaseInfo = RepositoryCodebaseInfo$Runtime;
   RepositoryCodebaseInfo.runtime = proto3;
-  RepositoryCodebaseInfo.typeName = "simeon.v1.RepositoryCodebaseInfo";
+  RepositoryCodebaseInfo.typeName = "aiserver.v1.RepositoryCodebaseInfo";
   RepositoryCodebaseInfo.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -14263,7 +14263,7 @@
     RepositoryCodebaseInfo_Status2[RepositoryCodebaseInfo_Status2["EMPTY_WITH_COPY_AVAILABLE"] = 4] = "EMPTY_WITH_COPY_AVAILABLE";
     RepositoryCodebaseInfo_Status2[RepositoryCodebaseInfo_Status2["COPY_IN_PROGRESS"] = 5] = "COPY_IN_PROGRESS";
   })(RepositoryCodebaseInfo_Status || (RepositoryCodebaseInfo_Status = {}));
-  proto3.util.setEnumType(RepositoryCodebaseInfo_Status, "simeon.v1.RepositoryCodebaseInfo.Status", [
+  proto3.util.setEnumType(RepositoryCodebaseInfo_Status, "aiserver.v1.RepositoryCodebaseInfo.Status", [
     { no: 0, name: "STATUS_UNSPECIFIED" },
     { no: 1, name: "STATUS_UP_TO_DATE" },
     { no: 2, name: "STATUS_OUT_OF_SYNC" },
@@ -14293,7 +14293,7 @@
   })();
   var FastRepoInitHandshakeV2Response = FastRepoInitHandshakeV2Response$Runtime;
   FastRepoInitHandshakeV2Response.runtime = proto3;
-  FastRepoInitHandshakeV2Response.typeName = "simeon.v1.FastRepoInitHandshakeV2Response";
+  FastRepoInitHandshakeV2Response.typeName = "aiserver.v1.FastRepoInitHandshakeV2Response";
   FastRepoInitHandshakeV2Response.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "status", kind: "enum", T: proto3.getEnumType(FastRepoInitHandshakeV2Response_Status) },
     { no: 2, name: "codebases", kind: "message", T: RepositoryCodebaseInfo, repeated: true }
@@ -14303,7 +14303,7 @@
     FastRepoInitHandshakeV2Response_Status2[FastRepoInitHandshakeV2Response_Status2["FAILURE"] = 1] = "FAILURE";
     FastRepoInitHandshakeV2Response_Status2[FastRepoInitHandshakeV2Response_Status2["SUCCESS"] = 2] = "SUCCESS";
   })(FastRepoInitHandshakeV2Response_Status || (FastRepoInitHandshakeV2Response_Status = {}));
-  proto3.util.setEnumType(FastRepoInitHandshakeV2Response_Status, "simeon.v1.FastRepoInitHandshakeV2Response.Status", [
+  proto3.util.setEnumType(FastRepoInitHandshakeV2Response_Status, "aiserver.v1.FastRepoInitHandshakeV2Response.Status", [
     { no: 0, name: "STATUS_UNSPECIFIED" },
     { no: 1, name: "STATUS_FAILURE" },
     { no: 2, name: "STATUS_SUCCESS" }
@@ -14341,7 +14341,7 @@
   })();
   var RepositoryCodebaseSyncStatus = RepositoryCodebaseSyncStatus$Runtime;
   RepositoryCodebaseSyncStatus.runtime = proto3;
-  RepositoryCodebaseSyncStatus.typeName = "simeon.v1.RepositoryCodebaseSyncStatus";
+  RepositoryCodebaseSyncStatus.typeName = "aiserver.v1.RepositoryCodebaseSyncStatus";
   RepositoryCodebaseSyncStatus.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -14416,7 +14416,7 @@
     RepositoryCodebaseSyncStatus_Status2[RepositoryCodebaseSyncStatus_Status2["SUCCESS"] = 1] = "SUCCESS";
     RepositoryCodebaseSyncStatus_Status2[RepositoryCodebaseSyncStatus_Status2["FAILURE"] = 2] = "FAILURE";
   })(RepositoryCodebaseSyncStatus_Status || (RepositoryCodebaseSyncStatus_Status = {}));
-  proto3.util.setEnumType(RepositoryCodebaseSyncStatus_Status, "simeon.v1.RepositoryCodebaseSyncStatus.Status", [
+  proto3.util.setEnumType(RepositoryCodebaseSyncStatus_Status, "aiserver.v1.RepositoryCodebaseSyncStatus.Status", [
     { no: 0, name: "STATUS_UNSPECIFIED" },
     { no: 1, name: "STATUS_SUCCESS" },
     { no: 2, name: "STATUS_FAILURE" }
@@ -14442,7 +14442,7 @@
   })();
   var FastRepoSyncCompleteRequest = FastRepoSyncCompleteRequest$Runtime;
   FastRepoSyncCompleteRequest.runtime = proto3;
-  FastRepoSyncCompleteRequest.typeName = "simeon.v1.FastRepoSyncCompleteRequest";
+  FastRepoSyncCompleteRequest.typeName = "aiserver.v1.FastRepoSyncCompleteRequest";
   FastRepoSyncCompleteRequest.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "codebases", kind: "message", T: RepositoryCodebaseSyncStatus, repeated: true }
   ]);
@@ -14466,7 +14466,7 @@
   })();
   var FastRepoSyncCompleteResponse = FastRepoSyncCompleteResponse$Runtime;
   FastRepoSyncCompleteResponse.runtime = proto3;
-  FastRepoSyncCompleteResponse.typeName = "simeon.v1.FastRepoSyncCompleteResponse";
+  FastRepoSyncCompleteResponse.typeName = "aiserver.v1.FastRepoSyncCompleteResponse";
   FastRepoSyncCompleteResponse.fields = proto3.util.newFieldList(() => []);
   var SyncMerkleSubtreeRequest$Runtime = /* @__PURE__ */ (() => class _SyncMerkleSubtreeRequest extends Message {
     constructor(data) {
@@ -14488,7 +14488,7 @@
   })();
   var SyncMerkleSubtreeRequest = SyncMerkleSubtreeRequest$Runtime;
   SyncMerkleSubtreeRequest.runtime = proto3;
-  SyncMerkleSubtreeRequest.typeName = "simeon.v1.SyncMerkleSubtreeRequest";
+  SyncMerkleSubtreeRequest.typeName = "aiserver.v1.SyncMerkleSubtreeRequest";
   SyncMerkleSubtreeRequest.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "repository", kind: "message", T: RepositoryInfo },
     { no: 2, name: "local_partial_path", kind: "message", T: PartialPathItem }
@@ -14514,7 +14514,7 @@
   })();
   var SyncMerkleSubtreeResponse = SyncMerkleSubtreeResponse$Runtime;
   SyncMerkleSubtreeResponse.runtime = proto3;
-  SyncMerkleSubtreeResponse.typeName = "simeon.v1.SyncMerkleSubtreeResponse";
+  SyncMerkleSubtreeResponse.typeName = "aiserver.v1.SyncMerkleSubtreeResponse";
   SyncMerkleSubtreeResponse.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "match", kind: "scalar", T: 8, oneof: "result" },
     { no: 2, name: "mismatch", kind: "message", T: SyncMerkleSubtreeResponse_Mismatch, oneof: "result" }
@@ -14540,7 +14540,7 @@
   })();
   var SyncMerkleSubtreeResponse_Mismatch = SyncMerkleSubtreeResponse_Mismatch$Runtime;
   SyncMerkleSubtreeResponse_Mismatch.runtime = proto3;
-  SyncMerkleSubtreeResponse_Mismatch.typeName = "simeon.v1.SyncMerkleSubtreeResponse.Mismatch";
+  SyncMerkleSubtreeResponse_Mismatch.typeName = "aiserver.v1.SyncMerkleSubtreeResponse.Mismatch";
   SyncMerkleSubtreeResponse_Mismatch.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "children", kind: "message", T: PartialPathItem, repeated: true }
   ]);
@@ -14565,7 +14565,7 @@
   })();
   var ClientRepositoryInfo = ClientRepositoryInfo$Runtime;
   ClientRepositoryInfo.runtime = proto3;
-  ClientRepositoryInfo.typeName = "simeon.v1.ClientRepositoryInfo";
+  ClientRepositoryInfo.typeName = "aiserver.v1.ClientRepositoryInfo";
   ClientRepositoryInfo.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -14597,7 +14597,7 @@
   })();
   var SyncMerkleSubtreeV2Request = SyncMerkleSubtreeV2Request$Runtime;
   SyncMerkleSubtreeV2Request.runtime = proto3;
-  SyncMerkleSubtreeV2Request.typeName = "simeon.v1.SyncMerkleSubtreeV2Request";
+  SyncMerkleSubtreeV2Request.typeName = "aiserver.v1.SyncMerkleSubtreeV2Request";
   SyncMerkleSubtreeV2Request.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "client_repository_info", kind: "message", T: ClientRepositoryInfo },
     {
@@ -14632,7 +14632,7 @@
   })();
   var SyncMerkleSubtreeV2Response = SyncMerkleSubtreeV2Response$Runtime;
   SyncMerkleSubtreeV2Response.runtime = proto3;
-  SyncMerkleSubtreeV2Response.typeName = "simeon.v1.SyncMerkleSubtreeV2Response";
+  SyncMerkleSubtreeV2Response.typeName = "aiserver.v1.SyncMerkleSubtreeV2Response";
   SyncMerkleSubtreeV2Response.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "match", kind: "scalar", T: 8, oneof: "result" },
     { no: 2, name: "mismatch", kind: "message", T: SyncMerkleSubtreeV2Response_Mismatch, oneof: "result" },
@@ -14659,7 +14659,7 @@
   })();
   var SyncMerkleSubtreeV2Response_Mismatch = SyncMerkleSubtreeV2Response_Mismatch$Runtime;
   SyncMerkleSubtreeV2Response_Mismatch.runtime = proto3;
-  SyncMerkleSubtreeV2Response_Mismatch.typeName = "simeon.v1.SyncMerkleSubtreeV2Response.Mismatch";
+  SyncMerkleSubtreeV2Response_Mismatch.typeName = "aiserver.v1.SyncMerkleSubtreeV2Response.Mismatch";
   SyncMerkleSubtreeV2Response_Mismatch.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "children", kind: "message", T: PartialPathItem, repeated: true }
   ]);
@@ -14684,7 +14684,7 @@
   })();
   var SyncMerkleSubtreeV2Response_PartialPathResult = SyncMerkleSubtreeV2Response_PartialPathResult$Runtime;
   SyncMerkleSubtreeV2Response_PartialPathResult.runtime = proto3;
-  SyncMerkleSubtreeV2Response_PartialPathResult.typeName = "simeon.v1.SyncMerkleSubtreeV2Response.PartialPathResult";
+  SyncMerkleSubtreeV2Response_PartialPathResult.typeName = "aiserver.v1.SyncMerkleSubtreeV2Response.PartialPathResult";
   SyncMerkleSubtreeV2Response_PartialPathResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "match", kind: "scalar", T: 8, oneof: "result" },
     { no: 2, name: "mismatch", kind: "message", T: SyncMerkleSubtreeV2Response_Mismatch, oneof: "result" },
@@ -14713,7 +14713,7 @@
   })();
   var FastUpdateFileRequest = FastUpdateFileRequest$Runtime;
   FastUpdateFileRequest.runtime = proto3;
-  FastUpdateFileRequest.typeName = "simeon.v1.FastUpdateFileRequest";
+  FastUpdateFileRequest.typeName = "aiserver.v1.FastUpdateFileRequest";
   FastUpdateFileRequest.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "repository", kind: "message", T: RepositoryInfo },
     { no: 2, name: "directory", kind: "message", T: PartialPathItem, oneof: "partial_path" },
@@ -14727,7 +14727,7 @@
     FastUpdateFileRequest_UpdateType2[FastUpdateFileRequest_UpdateType2["DELETE"] = 2] = "DELETE";
     FastUpdateFileRequest_UpdateType2[FastUpdateFileRequest_UpdateType2["MODIFY"] = 3] = "MODIFY";
   })(FastUpdateFileRequest_UpdateType || (FastUpdateFileRequest_UpdateType = {}));
-  proto3.util.setEnumType(FastUpdateFileRequest_UpdateType, "simeon.v1.FastUpdateFileRequest.UpdateType", [
+  proto3.util.setEnumType(FastUpdateFileRequest_UpdateType, "aiserver.v1.FastUpdateFileRequest.UpdateType", [
     { no: 0, name: "UPDATE_TYPE_UNSPECIFIED" },
     { no: 1, name: "UPDATE_TYPE_ADD" },
     { no: 2, name: "UPDATE_TYPE_DELETE" },
@@ -14755,7 +14755,7 @@
   })();
   var FastUpdateFileRequest_LocalFile = FastUpdateFileRequest_LocalFile$Runtime;
   FastUpdateFileRequest_LocalFile.runtime = proto3;
-  FastUpdateFileRequest_LocalFile.typeName = "simeon.v1.FastUpdateFileRequest.LocalFile";
+  FastUpdateFileRequest_LocalFile.typeName = "aiserver.v1.FastUpdateFileRequest.LocalFile";
   FastUpdateFileRequest_LocalFile.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "file", kind: "message", T: File2 },
     {
@@ -14794,7 +14794,7 @@
   })();
   var FastUpdateFileResponse = FastUpdateFileResponse$Runtime;
   FastUpdateFileResponse.runtime = proto3;
-  FastUpdateFileResponse.typeName = "simeon.v1.FastUpdateFileResponse";
+  FastUpdateFileResponse.typeName = "aiserver.v1.FastUpdateFileResponse";
   FastUpdateFileResponse.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "status", kind: "enum", T: proto3.getEnumType(FastUpdateFileResponse_Status) }
   ]);
@@ -14804,7 +14804,7 @@
     FastUpdateFileResponse_Status2[FastUpdateFileResponse_Status2["FAILURE"] = 2] = "FAILURE";
     FastUpdateFileResponse_Status2[FastUpdateFileResponse_Status2["EXPECTED_FAILURE"] = 3] = "EXPECTED_FAILURE";
   })(FastUpdateFileResponse_Status || (FastUpdateFileResponse_Status = {}));
-  proto3.util.setEnumType(FastUpdateFileResponse_Status, "simeon.v1.FastUpdateFileResponse.Status", [
+  proto3.util.setEnumType(FastUpdateFileResponse_Status, "aiserver.v1.FastUpdateFileResponse.Status", [
     { no: 0, name: "STATUS_UNSPECIFIED" },
     { no: 1, name: "STATUS_SUCCESS" },
     { no: 2, name: "STATUS_FAILURE" },
@@ -14835,7 +14835,7 @@
   })();
   var FastUpdateFileV2Request = FastUpdateFileV2Request$Runtime;
   FastUpdateFileV2Request.runtime = proto3;
-  FastUpdateFileV2Request.typeName = "simeon.v1.FastUpdateFileV2Request";
+  FastUpdateFileV2Request.typeName = "aiserver.v1.FastUpdateFileV2Request";
   FastUpdateFileV2Request.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "client_repository_info", kind: "message", T: ClientRepositoryInfo },
     {
@@ -14858,7 +14858,7 @@
     FastUpdateFileV2Request_UpdateType2[FastUpdateFileV2Request_UpdateType2["MODIFY"] = 3] = "MODIFY";
     FastUpdateFileV2Request_UpdateType2[FastUpdateFileV2Request_UpdateType2["BATCH"] = 4] = "BATCH";
   })(FastUpdateFileV2Request_UpdateType || (FastUpdateFileV2Request_UpdateType = {}));
-  proto3.util.setEnumType(FastUpdateFileV2Request_UpdateType, "simeon.v1.FastUpdateFileV2Request.UpdateType", [
+  proto3.util.setEnumType(FastUpdateFileV2Request_UpdateType, "aiserver.v1.FastUpdateFileV2Request.UpdateType", [
     { no: 0, name: "UPDATE_TYPE_UNSPECIFIED" },
     { no: 1, name: "UPDATE_TYPE_ADD" },
     { no: 2, name: "UPDATE_TYPE_DELETE" },
@@ -14887,7 +14887,7 @@
   })();
   var FastUpdateFileV2Request_LocalFile = FastUpdateFileV2Request_LocalFile$Runtime;
   FastUpdateFileV2Request_LocalFile.runtime = proto3;
-  FastUpdateFileV2Request_LocalFile.typeName = "simeon.v1.FastUpdateFileV2Request.LocalFile";
+  FastUpdateFileV2Request_LocalFile.typeName = "aiserver.v1.FastUpdateFileV2Request.LocalFile";
   FastUpdateFileV2Request_LocalFile.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "file", kind: "message", T: File2 },
     {
@@ -14928,7 +14928,7 @@
   })();
   var FastUpdateFileV2Request_FileUpdate = FastUpdateFileV2Request_FileUpdate$Runtime;
   FastUpdateFileV2Request_FileUpdate.runtime = proto3;
-  FastUpdateFileV2Request_FileUpdate.typeName = "simeon.v1.FastUpdateFileV2Request.FileUpdate";
+  FastUpdateFileV2Request_FileUpdate.typeName = "aiserver.v1.FastUpdateFileV2Request.FileUpdate";
   FastUpdateFileV2Request_FileUpdate.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "directory", kind: "message", T: PartialPathItem, oneof: "partial_path" },
     { no: 2, name: "local_file", kind: "message", T: FastUpdateFileV2Request_LocalFile, oneof: "partial_path" },
@@ -14956,7 +14956,7 @@
   })();
   var FastUpdateFileV2Response = FastUpdateFileV2Response$Runtime;
   FastUpdateFileV2Response.runtime = proto3;
-  FastUpdateFileV2Response.typeName = "simeon.v1.FastUpdateFileV2Response";
+  FastUpdateFileV2Response.typeName = "aiserver.v1.FastUpdateFileV2Response";
   FastUpdateFileV2Response.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "status", kind: "enum", T: proto3.getEnumType(FastUpdateFileV2Response_Status) }
   ]);
@@ -14966,7 +14966,7 @@
     FastUpdateFileV2Response_Status2[FastUpdateFileV2Response_Status2["FAILURE"] = 2] = "FAILURE";
     FastUpdateFileV2Response_Status2[FastUpdateFileV2Response_Status2["EXPECTED_FAILURE"] = 3] = "EXPECTED_FAILURE";
   })(FastUpdateFileV2Response_Status || (FastUpdateFileV2Response_Status = {}));
-  proto3.util.setEnumType(FastUpdateFileV2Response_Status, "simeon.v1.FastUpdateFileV2Response.Status", [
+  proto3.util.setEnumType(FastUpdateFileV2Response_Status, "aiserver.v1.FastUpdateFileV2Response.Status", [
     { no: 0, name: "STATUS_UNSPECIFIED" },
     { no: 1, name: "STATUS_SUCCESS" },
     { no: 2, name: "STATUS_FAILURE" },
@@ -14992,7 +14992,7 @@
   })();
   var GetUploadLimitsRequest = GetUploadLimitsRequest$Runtime;
   GetUploadLimitsRequest.runtime = proto3;
-  GetUploadLimitsRequest.typeName = "simeon.v1.GetUploadLimitsRequest";
+  GetUploadLimitsRequest.typeName = "aiserver.v1.GetUploadLimitsRequest";
   GetUploadLimitsRequest.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "repository", kind: "message", T: RepositoryInfo, opt: true }
   ]);
@@ -15018,7 +15018,7 @@
   })();
   var GetUploadLimitsResponse = GetUploadLimitsResponse$Runtime;
   GetUploadLimitsResponse.runtime = proto3;
-  GetUploadLimitsResponse.typeName = "simeon.v1.GetUploadLimitsResponse";
+  GetUploadLimitsResponse.typeName = "aiserver.v1.GetUploadLimitsResponse";
   GetUploadLimitsResponse.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -15055,7 +15055,7 @@
   })();
   var GetNumFilesToSendRequest = GetNumFilesToSendRequest$Runtime;
   GetNumFilesToSendRequest.runtime = proto3;
-  GetNumFilesToSendRequest.typeName = "simeon.v1.GetNumFilesToSendRequest";
+  GetNumFilesToSendRequest.typeName = "aiserver.v1.GetNumFilesToSendRequest";
   GetNumFilesToSendRequest.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "repository", kind: "message", T: RepositoryInfo }
   ]);
@@ -15080,7 +15080,7 @@
   })();
   var GetNumFilesToSendResponse = GetNumFilesToSendResponse$Runtime;
   GetNumFilesToSendResponse.runtime = proto3;
-  GetNumFilesToSendResponse.typeName = "simeon.v1.GetNumFilesToSendResponse";
+  GetNumFilesToSendResponse.typeName = "aiserver.v1.GetNumFilesToSendResponse";
   GetNumFilesToSendResponse.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -15110,7 +15110,7 @@
   })();
   var GetAvailableChunkingStrategiesRequest = GetAvailableChunkingStrategiesRequest$Runtime;
   GetAvailableChunkingStrategiesRequest.runtime = proto3;
-  GetAvailableChunkingStrategiesRequest.typeName = "simeon.v1.GetAvailableChunkingStrategiesRequest";
+  GetAvailableChunkingStrategiesRequest.typeName = "aiserver.v1.GetAvailableChunkingStrategiesRequest";
   GetAvailableChunkingStrategiesRequest.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "repository", kind: "message", T: RepositoryInfo }
   ]);
@@ -15135,7 +15135,7 @@
   })();
   var GetAvailableChunkingStrategiesResponse = GetAvailableChunkingStrategiesResponse$Runtime;
   GetAvailableChunkingStrategiesResponse.runtime = proto3;
-  GetAvailableChunkingStrategiesResponse.typeName = "simeon.v1.GetAvailableChunkingStrategiesResponse";
+  GetAvailableChunkingStrategiesResponse.typeName = "aiserver.v1.GetAvailableChunkingStrategiesResponse";
   GetAvailableChunkingStrategiesResponse.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "chunking_strategies", kind: "enum", T: proto3.getEnumType(ChunkingStrategy), repeated: true }
   ]);
@@ -15160,7 +15160,7 @@
   })();
   var GetEmbeddingsRequest = GetEmbeddingsRequest$Runtime;
   GetEmbeddingsRequest.runtime = proto3;
-  GetEmbeddingsRequest.typeName = "simeon.v1.GetEmbeddingsRequest";
+  GetEmbeddingsRequest.typeName = "aiserver.v1.GetEmbeddingsRequest";
   GetEmbeddingsRequest.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "texts", kind: "scalar", T: 9, repeated: true }
   ]);
@@ -15185,7 +15185,7 @@
   })();
   var GetEmbeddingsResponse = GetEmbeddingsResponse$Runtime;
   GetEmbeddingsResponse.runtime = proto3;
-  GetEmbeddingsResponse.typeName = "simeon.v1.GetEmbeddingsResponse";
+  GetEmbeddingsResponse.typeName = "aiserver.v1.GetEmbeddingsResponse";
   GetEmbeddingsResponse.fields = proto3.util.newFieldList(() => [
     { no: 2, name: "embeddings", kind: "message", T: GetEmbeddingsResponse_Embedding, repeated: true }
   ]);
@@ -15210,7 +15210,7 @@
   })();
   var GetEmbeddingsResponse_Embedding = GetEmbeddingsResponse_Embedding$Runtime;
   GetEmbeddingsResponse_Embedding.runtime = proto3;
-  GetEmbeddingsResponse_Embedding.typeName = "simeon.v1.GetEmbeddingsResponse.Embedding";
+  GetEmbeddingsResponse_Embedding.typeName = "aiserver.v1.GetEmbeddingsResponse.Embedding";
   GetEmbeddingsResponse_Embedding.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "embedding", kind: "scalar", T: 2, repeated: true }
   ]);
@@ -15235,7 +15235,7 @@
   })();
   var AdminRemoveRepositoryRequest = AdminRemoveRepositoryRequest$Runtime;
   AdminRemoveRepositoryRequest.runtime = proto3;
-  AdminRemoveRepositoryRequest.typeName = "simeon.v1.AdminRemoveRepositoryRequest";
+  AdminRemoveRepositoryRequest.typeName = "aiserver.v1.AdminRemoveRepositoryRequest";
   AdminRemoveRepositoryRequest.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -15265,7 +15265,7 @@
   })();
   var AdminRemoveRepositoryResponse = AdminRemoveRepositoryResponse$Runtime;
   AdminRemoveRepositoryResponse.runtime = proto3;
-  AdminRemoveRepositoryResponse.typeName = "simeon.v1.AdminRemoveRepositoryResponse";
+  AdminRemoveRepositoryResponse.typeName = "aiserver.v1.AdminRemoveRepositoryResponse";
   AdminRemoveRepositoryResponse.fields = proto3.util.newFieldList(() => []);
   var SyncRepositoryRequest$Runtime = /* @__PURE__ */ (() => class _SyncRepositoryRequest extends Message {
     constructor(data) {
@@ -15288,7 +15288,7 @@
   })();
   var SyncRepositoryRequest = SyncRepositoryRequest$Runtime;
   SyncRepositoryRequest.runtime = proto3;
-  SyncRepositoryRequest.typeName = "simeon.v1.SyncRepositoryRequest";
+  SyncRepositoryRequest.typeName = "aiserver.v1.SyncRepositoryRequest";
   SyncRepositoryRequest.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -15318,7 +15318,7 @@
   })();
   var SyncRepositoryResponse = SyncRepositoryResponse$Runtime;
   SyncRepositoryResponse.runtime = proto3;
-  SyncRepositoryResponse.typeName = "simeon.v1.SyncRepositoryResponse";
+  SyncRepositoryResponse.typeName = "aiserver.v1.SyncRepositoryResponse";
   SyncRepositoryResponse.fields = proto3.util.newFieldList(() => []);
   var StartUploadRepoRequest$Runtime = /* @__PURE__ */ (() => class _StartUploadRepoRequest extends Message {
     constructor(data) {
@@ -15340,7 +15340,7 @@
   })();
   var StartUploadRepoRequest = StartUploadRepoRequest$Runtime;
   StartUploadRepoRequest.runtime = proto3;
-  StartUploadRepoRequest.typeName = "simeon.v1.StartUploadRepoRequest";
+  StartUploadRepoRequest.typeName = "aiserver.v1.StartUploadRepoRequest";
   StartUploadRepoRequest.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "repository", kind: "message", T: RepositoryInfo }
   ]);
@@ -15366,7 +15366,7 @@
   })();
   var StartUploadRepoResponse = StartUploadRepoResponse$Runtime;
   StartUploadRepoResponse.runtime = proto3;
-  StartUploadRepoResponse.typeName = "simeon.v1.StartUploadRepoResponse";
+  StartUploadRepoResponse.typeName = "aiserver.v1.StartUploadRepoResponse";
   StartUploadRepoResponse.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "status", kind: "enum", T: proto3.getEnumType(StartUploadRepoResponse_Status) },
     { no: 2, name: "seen_files", kind: "scalar", T: 9, repeated: true }
@@ -15377,7 +15377,7 @@
     StartUploadRepoResponse_Status2[StartUploadRepoResponse_Status2["FAILURE"] = 2] = "FAILURE";
     StartUploadRepoResponse_Status2[StartUploadRepoResponse_Status2["ALREADY_EXISTS"] = 3] = "ALREADY_EXISTS";
   })(StartUploadRepoResponse_Status || (StartUploadRepoResponse_Status = {}));
-  proto3.util.setEnumType(StartUploadRepoResponse_Status, "simeon.v1.StartUploadRepoResponse.Status", [
+  proto3.util.setEnumType(StartUploadRepoResponse_Status, "aiserver.v1.StartUploadRepoResponse.Status", [
     { no: 0, name: "STATUS_UNSPECIFIED" },
     { no: 1, name: "STATUS_SUCCESS" },
     { no: 2, name: "STATUS_FAILURE" },
@@ -15405,7 +15405,7 @@
   })();
   var UploadFileRequest = UploadFileRequest$Runtime;
   UploadFileRequest.runtime = proto3;
-  UploadFileRequest.typeName = "simeon.v1.UploadFileRequest";
+  UploadFileRequest.typeName = "aiserver.v1.UploadFileRequest";
   UploadFileRequest.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "repository", kind: "message", T: RepositoryInfo },
     { no: 2, name: "file", kind: "message", T: File2 },
@@ -15445,7 +15445,7 @@
   })();
   var UploadFileResponse = UploadFileResponse$Runtime;
   UploadFileResponse.runtime = proto3;
-  UploadFileResponse.typeName = "simeon.v1.UploadFileResponse";
+  UploadFileResponse.typeName = "aiserver.v1.UploadFileResponse";
   UploadFileResponse.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "status", kind: "enum", T: proto3.getEnumType(UploadFileResponse_Status) }
   ]);
@@ -15456,7 +15456,7 @@
     UploadFileResponse_Status2[UploadFileResponse_Status2["EXPECTED_FAILURE"] = 3] = "EXPECTED_FAILURE";
     UploadFileResponse_Status2[UploadFileResponse_Status2["QUEUE_BACKED_UP"] = 4] = "QUEUE_BACKED_UP";
   })(UploadFileResponse_Status || (UploadFileResponse_Status = {}));
-  proto3.util.setEnumType(UploadFileResponse_Status, "simeon.v1.UploadFileResponse.Status", [
+  proto3.util.setEnumType(UploadFileResponse_Status, "aiserver.v1.UploadFileResponse.Status", [
     { no: 0, name: "STATUS_UNSPECIFIED" },
     { no: 1, name: "STATUS_SUCCESS" },
     { no: 2, name: "STATUS_FAILURE" },
@@ -15483,7 +15483,7 @@
   })();
   var FinishUploadRepoRequest = FinishUploadRepoRequest$Runtime;
   FinishUploadRepoRequest.runtime = proto3;
-  FinishUploadRepoRequest.typeName = "simeon.v1.FinishUploadRepoRequest";
+  FinishUploadRepoRequest.typeName = "aiserver.v1.FinishUploadRepoRequest";
   FinishUploadRepoRequest.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "repository", kind: "message", T: RepositoryInfo }
   ]);
@@ -15508,7 +15508,7 @@
   })();
   var FinishUploadRepoResponse = FinishUploadRepoResponse$Runtime;
   FinishUploadRepoResponse.runtime = proto3;
-  FinishUploadRepoResponse.typeName = "simeon.v1.FinishUploadRepoResponse";
+  FinishUploadRepoResponse.typeName = "aiserver.v1.FinishUploadRepoResponse";
   FinishUploadRepoResponse.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "status", kind: "enum", T: proto3.getEnumType(FinishUploadRepoResponse_Status) }
   ]);
@@ -15517,7 +15517,7 @@
     FinishUploadRepoResponse_Status2[FinishUploadRepoResponse_Status2["SUCCESS"] = 1] = "SUCCESS";
     FinishUploadRepoResponse_Status2[FinishUploadRepoResponse_Status2["FAILURE"] = 2] = "FAILURE";
   })(FinishUploadRepoResponse_Status || (FinishUploadRepoResponse_Status = {}));
-  proto3.util.setEnumType(FinishUploadRepoResponse_Status, "simeon.v1.FinishUploadRepoResponse.Status", [
+  proto3.util.setEnumType(FinishUploadRepoResponse_Status, "aiserver.v1.FinishUploadRepoResponse.Status", [
     { no: 0, name: "STATUS_UNSPECIFIED" },
     { no: 1, name: "STATUS_SUCCESS" },
     { no: 2, name: "STATUS_FAILURE" }
@@ -15542,7 +15542,7 @@
   })();
   var StartUpdateRepoRequest = StartUpdateRepoRequest$Runtime;
   StartUpdateRepoRequest.runtime = proto3;
-  StartUpdateRepoRequest.typeName = "simeon.v1.StartUpdateRepoRequest";
+  StartUpdateRepoRequest.typeName = "aiserver.v1.StartUpdateRepoRequest";
   StartUpdateRepoRequest.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "repository", kind: "message", T: RepositoryInfo }
   ]);
@@ -15567,7 +15567,7 @@
   })();
   var StartUpdateRepoResponse = StartUpdateRepoResponse$Runtime;
   StartUpdateRepoResponse.runtime = proto3;
-  StartUpdateRepoResponse.typeName = "simeon.v1.StartUpdateRepoResponse";
+  StartUpdateRepoResponse.typeName = "aiserver.v1.StartUpdateRepoResponse";
   StartUpdateRepoResponse.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "status", kind: "enum", T: proto3.getEnumType(StartUpdateRepoResponse_Status) }
   ]);
@@ -15578,7 +15578,7 @@
     StartUpdateRepoResponse_Status2[StartUpdateRepoResponse_Status2["NOT_FOUND"] = 3] = "NOT_FOUND";
     StartUpdateRepoResponse_Status2[StartUpdateRepoResponse_Status2["ALREADY_SYNCING"] = 4] = "ALREADY_SYNCING";
   })(StartUpdateRepoResponse_Status || (StartUpdateRepoResponse_Status = {}));
-  proto3.util.setEnumType(StartUpdateRepoResponse_Status, "simeon.v1.StartUpdateRepoResponse.Status", [
+  proto3.util.setEnumType(StartUpdateRepoResponse_Status, "aiserver.v1.StartUpdateRepoResponse.Status", [
     { no: 0, name: "STATUS_UNSPECIFIED" },
     { no: 1, name: "STATUS_SUCCESS" },
     { no: 2, name: "STATUS_FAILURE" },
@@ -15607,7 +15607,7 @@
   })();
   var UpdateFileRequest = UpdateFileRequest$Runtime;
   UpdateFileRequest.runtime = proto3;
-  UpdateFileRequest.typeName = "simeon.v1.UpdateFileRequest";
+  UpdateFileRequest.typeName = "aiserver.v1.UpdateFileRequest";
   UpdateFileRequest.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "repository", kind: "message", T: RepositoryInfo },
     { no: 2, name: "added_file", kind: "message", T: File2 },
@@ -15648,7 +15648,7 @@
   })();
   var UpdateFileResponse = UpdateFileResponse$Runtime;
   UpdateFileResponse.runtime = proto3;
-  UpdateFileResponse.typeName = "simeon.v1.UpdateFileResponse";
+  UpdateFileResponse.typeName = "aiserver.v1.UpdateFileResponse";
   UpdateFileResponse.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "status", kind: "enum", T: proto3.getEnumType(UpdateFileResponse_Status) }
   ]);
@@ -15659,7 +15659,7 @@
     UpdateFileResponse_Status2[UpdateFileResponse_Status2["EXPECTED_FAILURE"] = 3] = "EXPECTED_FAILURE";
     UpdateFileResponse_Status2[UpdateFileResponse_Status2["QUEUE_BACKED_UP"] = 4] = "QUEUE_BACKED_UP";
   })(UpdateFileResponse_Status || (UpdateFileResponse_Status = {}));
-  proto3.util.setEnumType(UpdateFileResponse_Status, "simeon.v1.UpdateFileResponse.Status", [
+  proto3.util.setEnumType(UpdateFileResponse_Status, "aiserver.v1.UpdateFileResponse.Status", [
     { no: 0, name: "STATUS_UNSPECIFIED" },
     { no: 1, name: "STATUS_SUCCESS" },
     { no: 2, name: "STATUS_FAILURE" },
@@ -15686,7 +15686,7 @@
   })();
   var FinishUpdateRepoRequest = FinishUpdateRepoRequest$Runtime;
   FinishUpdateRepoRequest.runtime = proto3;
-  FinishUpdateRepoRequest.typeName = "simeon.v1.FinishUpdateRepoRequest";
+  FinishUpdateRepoRequest.typeName = "aiserver.v1.FinishUpdateRepoRequest";
   FinishUpdateRepoRequest.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "repository", kind: "message", T: RepositoryInfo }
   ]);
@@ -15711,7 +15711,7 @@
   })();
   var FinishUpdateRepoResponse = FinishUpdateRepoResponse$Runtime;
   FinishUpdateRepoResponse.runtime = proto3;
-  FinishUpdateRepoResponse.typeName = "simeon.v1.FinishUpdateRepoResponse";
+  FinishUpdateRepoResponse.typeName = "aiserver.v1.FinishUpdateRepoResponse";
   FinishUpdateRepoResponse.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "status", kind: "enum", T: proto3.getEnumType(FinishUpdateRepoResponse_Status) }
   ]);
@@ -15720,7 +15720,7 @@
     FinishUpdateRepoResponse_Status2[FinishUpdateRepoResponse_Status2["SUCCESS"] = 1] = "SUCCESS";
     FinishUpdateRepoResponse_Status2[FinishUpdateRepoResponse_Status2["FAILURE"] = 2] = "FAILURE";
   })(FinishUpdateRepoResponse_Status || (FinishUpdateRepoResponse_Status = {}));
-  proto3.util.setEnumType(FinishUpdateRepoResponse_Status, "simeon.v1.FinishUpdateRepoResponse.Status", [
+  proto3.util.setEnumType(FinishUpdateRepoResponse_Status, "aiserver.v1.FinishUpdateRepoResponse.Status", [
     { no: 0, name: "STATUS_UNSPECIFIED" },
     { no: 1, name: "STATUS_SUCCESS" },
     { no: 2, name: "STATUS_FAILURE" }
@@ -15746,7 +15746,7 @@
   })();
   var BatchRepositoryStatusRequest = BatchRepositoryStatusRequest$Runtime;
   BatchRepositoryStatusRequest.runtime = proto3;
-  BatchRepositoryStatusRequest.typeName = "simeon.v1.BatchRepositoryStatusRequest";
+  BatchRepositoryStatusRequest.typeName = "aiserver.v1.BatchRepositoryStatusRequest";
   BatchRepositoryStatusRequest.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "requests", kind: "message", T: RepositoryStatusRequest, repeated: true }
   ]);
@@ -15771,7 +15771,7 @@
   })();
   var BatchRepositoryStatusResponse = BatchRepositoryStatusResponse$Runtime;
   BatchRepositoryStatusResponse.runtime = proto3;
-  BatchRepositoryStatusResponse.typeName = "simeon.v1.BatchRepositoryStatusResponse";
+  BatchRepositoryStatusResponse.typeName = "aiserver.v1.BatchRepositoryStatusResponse";
   BatchRepositoryStatusResponse.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "responses", kind: "message", T: RepositoryStatusResponse, repeated: true }
   ]);
@@ -15795,7 +15795,7 @@
   })();
   var UnsubscribeRepositoryRequest = UnsubscribeRepositoryRequest$Runtime;
   UnsubscribeRepositoryRequest.runtime = proto3;
-  UnsubscribeRepositoryRequest.typeName = "simeon.v1.UnsubscribeRepositoryRequest";
+  UnsubscribeRepositoryRequest.typeName = "aiserver.v1.UnsubscribeRepositoryRequest";
   UnsubscribeRepositoryRequest.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "repository", kind: "message", T: RepositoryInfo }
   ]);
@@ -15820,7 +15820,7 @@
   })();
   var UnsubscribeRepositoryResponse = UnsubscribeRepositoryResponse$Runtime;
   UnsubscribeRepositoryResponse.runtime = proto3;
-  UnsubscribeRepositoryResponse.typeName = "simeon.v1.UnsubscribeRepositoryResponse";
+  UnsubscribeRepositoryResponse.typeName = "aiserver.v1.UnsubscribeRepositoryResponse";
   UnsubscribeRepositoryResponse.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "status", kind: "enum", T: proto3.getEnumType(UnsubscribeRepositoryResponse_Status) }
   ]);
@@ -15830,7 +15830,7 @@
     UnsubscribeRepositoryResponse_Status2[UnsubscribeRepositoryResponse_Status2["NOT_SUBSCRIBED"] = 2] = "NOT_SUBSCRIBED";
     UnsubscribeRepositoryResponse_Status2[UnsubscribeRepositoryResponse_Status2["SUCCESS"] = 3] = "SUCCESS";
   })(UnsubscribeRepositoryResponse_Status || (UnsubscribeRepositoryResponse_Status = {}));
-  proto3.util.setEnumType(UnsubscribeRepositoryResponse_Status, "simeon.v1.UnsubscribeRepositoryResponse.Status", [
+  proto3.util.setEnumType(UnsubscribeRepositoryResponse_Status, "aiserver.v1.UnsubscribeRepositoryResponse.Status", [
     { no: 0, name: "STATUS_UNSPECIFIED" },
     { no: 1, name: "STATUS_NOT_FOUND" },
     { no: 2, name: "STATUS_NOT_SUBSCRIBED" },
@@ -15856,7 +15856,7 @@
   })();
   var LogoutRequest = LogoutRequest$Runtime;
   LogoutRequest.runtime = proto3;
-  LogoutRequest.typeName = "simeon.v1.LogoutRequest";
+  LogoutRequest.typeName = "aiserver.v1.LogoutRequest";
   LogoutRequest.fields = proto3.util.newFieldList(() => []);
   var LogoutResponse$Runtime = /* @__PURE__ */ (() => class _LogoutResponse extends Message {
     constructor(data) {
@@ -15879,7 +15879,7 @@
   })();
   var LogoutResponse = LogoutResponse$Runtime;
   LogoutResponse.runtime = proto3;
-  LogoutResponse.typeName = "simeon.v1.LogoutResponse";
+  LogoutResponse.typeName = "aiserver.v1.LogoutResponse";
   LogoutResponse.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "status", kind: "enum", T: proto3.getEnumType(LogoutResponse_Status) }
   ]);
@@ -15889,7 +15889,7 @@
     LogoutResponse_Status2[LogoutResponse_Status2["FAILURE"] = 2] = "FAILURE";
     LogoutResponse_Status2[LogoutResponse_Status2["NOT_LOGGED_IN"] = 3] = "NOT_LOGGED_IN";
   })(LogoutResponse_Status || (LogoutResponse_Status = {}));
-  proto3.util.setEnumType(LogoutResponse_Status, "simeon.v1.LogoutResponse.Status", [
+  proto3.util.setEnumType(LogoutResponse_Status, "aiserver.v1.LogoutResponse.Status", [
     { no: 0, name: "STATUS_UNSPECIFIED" },
     { no: 1, name: "STATUS_SUCCESS" },
     { no: 2, name: "STATUS_FAILURE" },
@@ -15915,7 +15915,7 @@
   })();
   var RemoveRepositoryRequest = RemoveRepositoryRequest$Runtime;
   RemoveRepositoryRequest.runtime = proto3;
-  RemoveRepositoryRequest.typeName = "simeon.v1.RemoveRepositoryRequest";
+  RemoveRepositoryRequest.typeName = "aiserver.v1.RemoveRepositoryRequest";
   RemoveRepositoryRequest.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "repository", kind: "message", T: RepositoryInfo }
   ]);
@@ -15940,7 +15940,7 @@
   })();
   var RemoveRepositoryResponse = RemoveRepositoryResponse$Runtime;
   RemoveRepositoryResponse.runtime = proto3;
-  RemoveRepositoryResponse.typeName = "simeon.v1.RemoveRepositoryResponse";
+  RemoveRepositoryResponse.typeName = "aiserver.v1.RemoveRepositoryResponse";
   RemoveRepositoryResponse.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "status", kind: "enum", T: proto3.getEnumType(RemoveRepositoryResponse_Status) }
   ]);
@@ -15951,7 +15951,7 @@
     RemoveRepositoryResponse_Status2[RemoveRepositoryResponse_Status2["STARTED"] = 3] = "STARTED";
     RemoveRepositoryResponse_Status2[RemoveRepositoryResponse_Status2["SUCCESS"] = 4] = "SUCCESS";
   })(RemoveRepositoryResponse_Status || (RemoveRepositoryResponse_Status = {}));
-  proto3.util.setEnumType(RemoveRepositoryResponse_Status, "simeon.v1.RemoveRepositoryResponse.Status", [
+  proto3.util.setEnumType(RemoveRepositoryResponse_Status, "aiserver.v1.RemoveRepositoryResponse.Status", [
     { no: 0, name: "STATUS_UNSPECIFIED" },
     { no: 1, name: "STATUS_NOT_FOUND" },
     { no: 2, name: "STATUS_NOT_AUTHORIZED" },
@@ -15978,7 +15978,7 @@
   })();
   var SubscribeRepositoryRequest = SubscribeRepositoryRequest$Runtime;
   SubscribeRepositoryRequest.runtime = proto3;
-  SubscribeRepositoryRequest.typeName = "simeon.v1.SubscribeRepositoryRequest";
+  SubscribeRepositoryRequest.typeName = "aiserver.v1.SubscribeRepositoryRequest";
   SubscribeRepositoryRequest.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "repository", kind: "message", T: RepositoryInfo }
   ]);
@@ -16003,7 +16003,7 @@
   })();
   var SubscribeRepositoryResponse = SubscribeRepositoryResponse$Runtime;
   SubscribeRepositoryResponse.runtime = proto3;
-  SubscribeRepositoryResponse.typeName = "simeon.v1.SubscribeRepositoryResponse";
+  SubscribeRepositoryResponse.typeName = "aiserver.v1.SubscribeRepositoryResponse";
   SubscribeRepositoryResponse.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "status", kind: "enum", T: proto3.getEnumType(SubscribeRepositoryResponse_Status) }
   ]);
@@ -16014,7 +16014,7 @@
     SubscribeRepositoryResponse_Status2[SubscribeRepositoryResponse_Status2["ALREADY_SUBSCRIBED"] = 3] = "ALREADY_SUBSCRIBED";
     SubscribeRepositoryResponse_Status2[SubscribeRepositoryResponse_Status2["SUCCESS"] = 4] = "SUCCESS";
   })(SubscribeRepositoryResponse_Status || (SubscribeRepositoryResponse_Status = {}));
-  proto3.util.setEnumType(SubscribeRepositoryResponse_Status, "simeon.v1.SubscribeRepositoryResponse.Status", [
+  proto3.util.setEnumType(SubscribeRepositoryResponse_Status, "aiserver.v1.SubscribeRepositoryResponse.Status", [
     { no: 0, name: "STATUS_UNSPECIFIED" },
     { no: 1, name: "STATUS_NOT_FOUND" },
     { no: 2, name: "STATUS_NOT_AUTHORIZED" },
@@ -16044,7 +16044,7 @@
   })();
   var SearchRepositoryRequest = SearchRepositoryRequest$Runtime;
   SearchRepositoryRequest.runtime = proto3;
-  SearchRepositoryRequest.typeName = "simeon.v1.SearchRepositoryRequest";
+  SearchRepositoryRequest.typeName = "aiserver.v1.SearchRepositoryRequest";
   SearchRepositoryRequest.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -16099,7 +16099,7 @@
   })();
   var QueryOnlyRepoAccess = QueryOnlyRepoAccess$Runtime;
   QueryOnlyRepoAccess.runtime = proto3;
-  QueryOnlyRepoAccess.typeName = "simeon.v1.QueryOnlyRepoAccess";
+  QueryOnlyRepoAccess.typeName = "aiserver.v1.QueryOnlyRepoAccess";
   QueryOnlyRepoAccess.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -16151,7 +16151,7 @@
   })();
   var CodeResult = CodeResult$Runtime;
   CodeResult.runtime = proto3;
-  CodeResult.typeName = "simeon.v1.CodeResult";
+  CodeResult.typeName = "aiserver.v1.CodeResult";
   CodeResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "code_block", kind: "message", T: CodeBlock },
     {
@@ -16183,7 +16183,7 @@
   })();
   var FileResult = FileResult$Runtime;
   FileResult.runtime = proto3;
-  FileResult.typeName = "simeon.v1.FileResult";
+  FileResult.typeName = "aiserver.v1.FileResult";
   FileResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "file", kind: "message", T: File2 },
     {
@@ -16215,7 +16215,7 @@
   })();
   var SearchRepositoryResponse = SearchRepositoryResponse$Runtime;
   SearchRepositoryResponse.runtime = proto3;
-  SearchRepositoryResponse.typeName = "simeon.v1.SearchRepositoryResponse";
+  SearchRepositoryResponse.typeName = "aiserver.v1.SearchRepositoryResponse";
   SearchRepositoryResponse.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "code_results", kind: "message", T: CodeResult, repeated: true }
   ]);
@@ -16239,7 +16239,7 @@
   })();
   var SemSearchRequest = SemSearchRequest$Runtime;
   SemSearchRequest.runtime = proto3;
-  SemSearchRequest.typeName = "simeon.v1.SemSearchRequest";
+  SemSearchRequest.typeName = "aiserver.v1.SemSearchRequest";
   SemSearchRequest.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "request", kind: "message", T: SearchRepositoryRequest }
   ]);
@@ -16263,7 +16263,7 @@
   })();
   var CodeResultWithClassificationInfo = CodeResultWithClassificationInfo$Runtime;
   CodeResultWithClassificationInfo.runtime = proto3;
-  CodeResultWithClassificationInfo.typeName = "simeon.v1.CodeResultWithClassificationInfo";
+  CodeResultWithClassificationInfo.typeName = "aiserver.v1.CodeResultWithClassificationInfo";
   CodeResultWithClassificationInfo.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "code_result", kind: "message", T: CodeResult },
     { no: 2, name: "line_number_classification", kind: "message", T: CodeResultWithClassificationInfo_LineNumberClassification, opt: true }
@@ -16290,7 +16290,7 @@
   })();
   var CodeResultWithClassificationInfo_LineNumberClassification = CodeResultWithClassificationInfo_LineNumberClassification$Runtime;
   CodeResultWithClassificationInfo_LineNumberClassification.runtime = proto3;
-  CodeResultWithClassificationInfo_LineNumberClassification.typeName = "simeon.v1.CodeResultWithClassificationInfo.LineNumberClassification";
+  CodeResultWithClassificationInfo_LineNumberClassification.typeName = "aiserver.v1.CodeResultWithClassificationInfo.LineNumberClassification";
   CodeResultWithClassificationInfo_LineNumberClassification.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "detailed_line", kind: "message", T: DetailedLine },
     {
@@ -16324,7 +16324,7 @@
   })();
   var SemSearchResponse = SemSearchResponse$Runtime;
   SemSearchResponse.runtime = proto3;
-  SemSearchResponse.typeName = "simeon.v1.SemSearchResponse";
+  SemSearchResponse.typeName = "aiserver.v1.SemSearchResponse";
   SemSearchResponse.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "response", kind: "message", T: SearchRepositoryResponse },
     { no: 2, name: "metadata", kind: "message", T: SemSearchResponse_SemSearchMetadata, opt: true },
@@ -16350,7 +16350,7 @@
   })();
   var SemSearchResponse_SemSearchMetadata = SemSearchResponse_SemSearchMetadata$Runtime;
   SemSearchResponse_SemSearchMetadata.runtime = proto3;
-  SemSearchResponse_SemSearchMetadata.typeName = "simeon.v1.SemSearchResponse.SemSearchMetadata";
+  SemSearchResponse_SemSearchMetadata.typeName = "aiserver.v1.SemSearchResponse.SemSearchMetadata";
   SemSearchResponse_SemSearchMetadata.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "query_embedding_model", kind: "scalar", T: 9, opt: true },
     { no: 2, name: "server_side_latency_ms", kind: "scalar", T: 5, opt: true },
@@ -16377,7 +16377,7 @@
   })();
   var LoginRequest = LoginRequest$Runtime;
   LoginRequest.runtime = proto3;
-  LoginRequest.typeName = "simeon.v1.LoginRequest";
+  LoginRequest.typeName = "aiserver.v1.LoginRequest";
   LoginRequest.fields = proto3.util.newFieldList(() => []);
   var LoginResponse$Runtime = /* @__PURE__ */ (() => class _LoginResponse extends Message {
     constructor(data) {
@@ -16400,7 +16400,7 @@
   })();
   var LoginResponse = LoginResponse$Runtime;
   LoginResponse.runtime = proto3;
-  LoginResponse.typeName = "simeon.v1.LoginResponse";
+  LoginResponse.typeName = "aiserver.v1.LoginResponse";
   LoginResponse.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -16430,7 +16430,7 @@
   })();
   var IsLoggedInRequest = IsLoggedInRequest$Runtime;
   IsLoggedInRequest.runtime = proto3;
-  IsLoggedInRequest.typeName = "simeon.v1.IsLoggedInRequest";
+  IsLoggedInRequest.typeName = "aiserver.v1.IsLoggedInRequest";
   IsLoggedInRequest.fields = proto3.util.newFieldList(() => []);
   var IsLoggedInResponse$Runtime = /* @__PURE__ */ (() => class _IsLoggedInResponse extends Message {
     constructor(data) {
@@ -16453,7 +16453,7 @@
   })();
   var IsLoggedInResponse = IsLoggedInResponse$Runtime;
   IsLoggedInResponse.runtime = proto3;
-  IsLoggedInResponse.typeName = "simeon.v1.IsLoggedInResponse";
+  IsLoggedInResponse.typeName = "aiserver.v1.IsLoggedInResponse";
   IsLoggedInResponse.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -16483,7 +16483,7 @@
   })();
   var PollLoginRequest = PollLoginRequest$Runtime;
   PollLoginRequest.runtime = proto3;
-  PollLoginRequest.typeName = "simeon.v1.PollLoginRequest";
+  PollLoginRequest.typeName = "aiserver.v1.PollLoginRequest";
   PollLoginRequest.fields = proto3.util.newFieldList(() => []);
   var PollLoginResponse$Runtime = /* @__PURE__ */ (() => class _PollLoginResponse extends Message {
     constructor(data) {
@@ -16506,7 +16506,7 @@
   })();
   var PollLoginResponse = PollLoginResponse$Runtime;
   PollLoginResponse.runtime = proto3;
-  PollLoginResponse.typeName = "simeon.v1.PollLoginResponse";
+  PollLoginResponse.typeName = "aiserver.v1.PollLoginResponse";
   PollLoginResponse.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "status", kind: "enum", T: proto3.getEnumType(PollLoginResponse_Status) }
   ]);
@@ -16516,7 +16516,7 @@
     PollLoginResponse_Status2[PollLoginResponse_Status2["FAILURE"] = 2] = "FAILURE";
     PollLoginResponse_Status2[PollLoginResponse_Status2["CHECKING"] = 3] = "CHECKING";
   })(PollLoginResponse_Status || (PollLoginResponse_Status = {}));
-  proto3.util.setEnumType(PollLoginResponse_Status, "simeon.v1.PollLoginResponse.Status", [
+  proto3.util.setEnumType(PollLoginResponse_Status, "aiserver.v1.PollLoginResponse.Status", [
     { no: 0, name: "STATUS_UNSPECIFIED" },
     { no: 1, name: "STATUS_LOGGED_IN" },
     { no: 2, name: "STATUS_FAILURE" },
@@ -16543,7 +16543,7 @@
   })();
   var UpgradeScopeRequest = UpgradeScopeRequest$Runtime;
   UpgradeScopeRequest.runtime = proto3;
-  UpgradeScopeRequest.typeName = "simeon.v1.UpgradeScopeRequest";
+  UpgradeScopeRequest.typeName = "aiserver.v1.UpgradeScopeRequest";
   UpgradeScopeRequest.fields = proto3.util.newFieldList(() => [
     { no: 2, name: "scopes", kind: "scalar", T: 9, repeated: true }
   ]);
@@ -16568,7 +16568,7 @@
   })();
   var UpgradeScopeResponse = UpgradeScopeResponse$Runtime;
   UpgradeScopeResponse.runtime = proto3;
-  UpgradeScopeResponse.typeName = "simeon.v1.UpgradeScopeResponse";
+  UpgradeScopeResponse.typeName = "aiserver.v1.UpgradeScopeResponse";
   UpgradeScopeResponse.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "status", kind: "enum", T: proto3.getEnumType(UpgradeScopeResponse_Status) }
   ]);
@@ -16577,7 +16577,7 @@
     UpgradeScopeResponse_Status2[UpgradeScopeResponse_Status2["SUCCESS"] = 1] = "SUCCESS";
     UpgradeScopeResponse_Status2[UpgradeScopeResponse_Status2["FAILURE"] = 2] = "FAILURE";
   })(UpgradeScopeResponse_Status || (UpgradeScopeResponse_Status = {}));
-  proto3.util.setEnumType(UpgradeScopeResponse_Status, "simeon.v1.UpgradeScopeResponse.Status", [
+  proto3.util.setEnumType(UpgradeScopeResponse_Status, "aiserver.v1.UpgradeScopeResponse.Status", [
     { no: 0, name: "STATUS_UNSPECIFIED" },
     { no: 1, name: "STATUS_SUCCESS" },
     { no: 2, name: "STATUS_FAILURE" }
@@ -16602,7 +16602,7 @@
   })();
   var RepositoriesRequest = RepositoriesRequest$Runtime;
   RepositoriesRequest.runtime = proto3;
-  RepositoriesRequest.typeName = "simeon.v1.RepositoriesRequest";
+  RepositoriesRequest.typeName = "aiserver.v1.RepositoriesRequest";
   RepositoriesRequest.fields = proto3.util.newFieldList(() => []);
   var RepositoriesResponse$Runtime = /* @__PURE__ */ (() => class _RepositoriesResponse extends Message {
     constructor(data) {
@@ -16625,7 +16625,7 @@
   })();
   var RepositoriesResponse = RepositoriesResponse$Runtime;
   RepositoriesResponse.runtime = proto3;
-  RepositoriesResponse.typeName = "simeon.v1.RepositoriesResponse";
+  RepositoriesResponse.typeName = "aiserver.v1.RepositoriesResponse";
   RepositoriesResponse.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "repositories", kind: "message", T: RepositoryInfo, repeated: true }
   ]);
@@ -16649,7 +16649,7 @@
   })();
   var UploadRepositoryRequest = UploadRepositoryRequest$Runtime;
   UploadRepositoryRequest.runtime = proto3;
-  UploadRepositoryRequest.typeName = "simeon.v1.UploadRepositoryRequest";
+  UploadRepositoryRequest.typeName = "aiserver.v1.UploadRepositoryRequest";
   UploadRepositoryRequest.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "repository", kind: "message", T: RepositoryInfo }
   ]);
@@ -16674,7 +16674,7 @@
   })();
   var UploadRepositoryResponse = UploadRepositoryResponse$Runtime;
   UploadRepositoryResponse.runtime = proto3;
-  UploadRepositoryResponse.typeName = "simeon.v1.UploadRepositoryResponse";
+  UploadRepositoryResponse.typeName = "aiserver.v1.UploadRepositoryResponse";
   UploadRepositoryResponse.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "status", kind: "enum", T: proto3.getEnumType(UploadRepositoryResponse_Status) }
   ]);
@@ -16685,7 +16685,7 @@
     UploadRepositoryResponse_Status2[UploadRepositoryResponse_Status2["AUTH_TOKEN_BAD_PERMISSIONS"] = 3] = "AUTH_TOKEN_BAD_PERMISSIONS";
     UploadRepositoryResponse_Status2[UploadRepositoryResponse_Status2["ALREADY_EXISTS"] = 4] = "ALREADY_EXISTS";
   })(UploadRepositoryResponse_Status || (UploadRepositoryResponse_Status = {}));
-  proto3.util.setEnumType(UploadRepositoryResponse_Status, "simeon.v1.UploadRepositoryResponse.Status", [
+  proto3.util.setEnumType(UploadRepositoryResponse_Status, "aiserver.v1.UploadRepositoryResponse.Status", [
     { no: 0, name: "STATUS_UNSPECIFIED" },
     { no: 1, name: "STATUS_SUCCESS" },
     { no: 2, name: "STATUS_FAILURE" },
@@ -16712,7 +16712,7 @@
   })();
   var RepositoryStatusRequest = RepositoryStatusRequest$Runtime;
   RepositoryStatusRequest.runtime = proto3;
-  RepositoryStatusRequest.typeName = "simeon.v1.RepositoryStatusRequest";
+  RepositoryStatusRequest.typeName = "aiserver.v1.RepositoryStatusRequest";
   RepositoryStatusRequest.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "repository", kind: "message", T: RepositoryInfo }
   ]);
@@ -16737,7 +16737,7 @@
   })();
   var RepositoryStatusResponse = RepositoryStatusResponse$Runtime;
   RepositoryStatusResponse.runtime = proto3;
-  RepositoryStatusResponse.typeName = "simeon.v1.RepositoryStatusResponse";
+  RepositoryStatusResponse.typeName = "aiserver.v1.RepositoryStatusResponse";
   RepositoryStatusResponse.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "not_found", kind: "message", T: RepositoryStatusResponse_NotFound, oneof: "status" },
     { no: 2, name: "uploading", kind: "message", T: RepositoryStatusResponse_Uploading, oneof: "status" },
@@ -16771,7 +16771,7 @@
   })();
   var RepositoryStatusResponse_NotFound = RepositoryStatusResponse_NotFound$Runtime;
   RepositoryStatusResponse_NotFound.runtime = proto3;
-  RepositoryStatusResponse_NotFound.typeName = "simeon.v1.RepositoryStatusResponse.NotFound";
+  RepositoryStatusResponse_NotFound.typeName = "aiserver.v1.RepositoryStatusResponse.NotFound";
   RepositoryStatusResponse_NotFound.fields = proto3.util.newFieldList(() => []);
   var RepositoryStatusResponse_NotSubscribed$Runtime = /* @__PURE__ */ (() => class _RepositoryStatusResponse_NotSubscribed extends Message {
     constructor(data) {
@@ -16793,7 +16793,7 @@
   })();
   var RepositoryStatusResponse_NotSubscribed = RepositoryStatusResponse_NotSubscribed$Runtime;
   RepositoryStatusResponse_NotSubscribed.runtime = proto3;
-  RepositoryStatusResponse_NotSubscribed.typeName = "simeon.v1.RepositoryStatusResponse.NotSubscribed";
+  RepositoryStatusResponse_NotSubscribed.typeName = "aiserver.v1.RepositoryStatusResponse.NotSubscribed";
   RepositoryStatusResponse_NotSubscribed.fields = proto3.util.newFieldList(() => []);
   var RepositoryStatusResponse_Uploading$Runtime = /* @__PURE__ */ (() => class _RepositoryStatusResponse_Uploading extends Message {
     constructor(data) {
@@ -16816,7 +16816,7 @@
   })();
   var RepositoryStatusResponse_Uploading = RepositoryStatusResponse_Uploading$Runtime;
   RepositoryStatusResponse_Uploading.runtime = proto3;
-  RepositoryStatusResponse_Uploading.typeName = "simeon.v1.RepositoryStatusResponse.Uploading";
+  RepositoryStatusResponse_Uploading.typeName = "aiserver.v1.RepositoryStatusResponse.Uploading";
   RepositoryStatusResponse_Uploading.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -16850,7 +16850,7 @@
   })();
   var RepositoryStatusResponse_Syncing = RepositoryStatusResponse_Syncing$Runtime;
   RepositoryStatusResponse_Syncing.runtime = proto3;
-  RepositoryStatusResponse_Syncing.typeName = "simeon.v1.RepositoryStatusResponse.Syncing";
+  RepositoryStatusResponse_Syncing.typeName = "aiserver.v1.RepositoryStatusResponse.Syncing";
   RepositoryStatusResponse_Syncing.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -16903,7 +16903,7 @@
   })();
   var RepositoryStatusResponse_Synced = RepositoryStatusResponse_Synced$Runtime;
   RepositoryStatusResponse_Synced.runtime = proto3;
-  RepositoryStatusResponse_Synced.typeName = "simeon.v1.RepositoryStatusResponse.Synced";
+  RepositoryStatusResponse_Synced.typeName = "aiserver.v1.RepositoryStatusResponse.Synced";
   RepositoryStatusResponse_Synced.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -16941,7 +16941,7 @@
   })();
   var RepositoryStatusResponse_TooBig = RepositoryStatusResponse_TooBig$Runtime;
   RepositoryStatusResponse_TooBig.runtime = proto3;
-  RepositoryStatusResponse_TooBig.typeName = "simeon.v1.RepositoryStatusResponse.TooBig";
+  RepositoryStatusResponse_TooBig.typeName = "aiserver.v1.RepositoryStatusResponse.TooBig";
   RepositoryStatusResponse_TooBig.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -16971,7 +16971,7 @@
   })();
   var RepositoryStatusResponse_AuthTokenNotFound = RepositoryStatusResponse_AuthTokenNotFound$Runtime;
   RepositoryStatusResponse_AuthTokenNotFound.runtime = proto3;
-  RepositoryStatusResponse_AuthTokenNotFound.typeName = "simeon.v1.RepositoryStatusResponse.AuthTokenNotFound";
+  RepositoryStatusResponse_AuthTokenNotFound.typeName = "aiserver.v1.RepositoryStatusResponse.AuthTokenNotFound";
   RepositoryStatusResponse_AuthTokenNotFound.fields = proto3.util.newFieldList(() => []);
   var RepositoryStatusResponse_AuthTokenNotAuthorized$Runtime = /* @__PURE__ */ (() => class _RepositoryStatusResponse_AuthTokenNotAuthorized extends Message {
     constructor(data) {
@@ -16993,7 +16993,7 @@
   })();
   var RepositoryStatusResponse_AuthTokenNotAuthorized = RepositoryStatusResponse_AuthTokenNotAuthorized$Runtime;
   RepositoryStatusResponse_AuthTokenNotAuthorized.runtime = proto3;
-  RepositoryStatusResponse_AuthTokenNotAuthorized.typeName = "simeon.v1.RepositoryStatusResponse.AuthTokenNotAuthorized";
+  RepositoryStatusResponse_AuthTokenNotAuthorized.typeName = "aiserver.v1.RepositoryStatusResponse.AuthTokenNotAuthorized";
   RepositoryStatusResponse_AuthTokenNotAuthorized.fields = proto3.util.newFieldList(() => []);
   var RepositoryStatusResponse_EmptyMessage$Runtime = /* @__PURE__ */ (() => class _RepositoryStatusResponse_EmptyMessage extends Message {
     constructor(data) {
@@ -17015,7 +17015,7 @@
   })();
   var RepositoryStatusResponse_EmptyMessage = RepositoryStatusResponse_EmptyMessage$Runtime;
   RepositoryStatusResponse_EmptyMessage.runtime = proto3;
-  RepositoryStatusResponse_EmptyMessage.typeName = "simeon.v1.RepositoryStatusResponse.EmptyMessage";
+  RepositoryStatusResponse_EmptyMessage.typeName = "aiserver.v1.RepositoryStatusResponse.EmptyMessage";
   RepositoryStatusResponse_EmptyMessage.fields = proto3.util.newFieldList(() => []);
   var RepositoryInfo$Runtime = /* @__PURE__ */ (() => class _RepositoryInfo extends Message {
     constructor(data) {
@@ -17045,7 +17045,7 @@
   })();
   var RepositoryInfo = RepositoryInfo$Runtime;
   RepositoryInfo.runtime = proto3;
-  RepositoryInfo.typeName = "simeon.v1.RepositoryInfo";
+  RepositoryInfo.typeName = "aiserver.v1.RepositoryInfo";
   RepositoryInfo.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -17122,7 +17122,7 @@
   })();
   var SearchRepositoryDeepContextRequest = SearchRepositoryDeepContextRequest$Runtime;
   SearchRepositoryDeepContextRequest.runtime = proto3;
-  SearchRepositoryDeepContextRequest.typeName = "simeon.v1.SearchRepositoryDeepContextRequest";
+  SearchRepositoryDeepContextRequest.typeName = "aiserver.v1.SearchRepositoryDeepContextRequest";
   SearchRepositoryDeepContextRequest.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -17182,7 +17182,7 @@
   })();
   var NodeResult = NodeResult$Runtime;
   NodeResult.runtime = proto3;
-  NodeResult.typeName = "simeon.v1.NodeResult";
+  NodeResult.typeName = "aiserver.v1.NodeResult";
   NodeResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "node", kind: "message", T: IndexFileData_NodeData },
     { no: 2, name: "file", kind: "message", T: File2 },
@@ -17215,7 +17215,7 @@
   })();
   var ReflectionResult = ReflectionResult$Runtime;
   ReflectionResult.runtime = proto3;
-  ReflectionResult.typeName = "simeon.v1.ReflectionResult";
+  ReflectionResult.typeName = "aiserver.v1.ReflectionResult";
   ReflectionResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "reflection", kind: "message", T: ReflectionData },
     {
@@ -17249,7 +17249,7 @@
   })();
   var SearchRepositoryDeepContextResponse = SearchRepositoryDeepContextResponse$Runtime;
   SearchRepositoryDeepContextResponse.runtime = proto3;
-  SearchRepositoryDeepContextResponse.typeName = "simeon.v1.SearchRepositoryDeepContextResponse";
+  SearchRepositoryDeepContextResponse.typeName = "aiserver.v1.SearchRepositoryDeepContextResponse";
   SearchRepositoryDeepContextResponse.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "top_nodes", kind: "message", T: NodeResult, repeated: true },
     { no: 2, name: "reflections", kind: "message", T: ReflectionResult, repeated: true },
@@ -17283,7 +17283,7 @@
   })();
   var GetLineNumberClassificationsRequest = GetLineNumberClassificationsRequest$Runtime;
   GetLineNumberClassificationsRequest.runtime = proto3;
-  GetLineNumberClassificationsRequest.typeName = "simeon.v1.GetLineNumberClassificationsRequest";
+  GetLineNumberClassificationsRequest.typeName = "aiserver.v1.GetLineNumberClassificationsRequest";
   GetLineNumberClassificationsRequest.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -17314,7 +17314,7 @@
   })();
   var GetLineNumberClassificationsResponse = GetLineNumberClassificationsResponse$Runtime;
   GetLineNumberClassificationsResponse.runtime = proto3;
-  GetLineNumberClassificationsResponse.typeName = "simeon.v1.GetLineNumberClassificationsResponse";
+  GetLineNumberClassificationsResponse.typeName = "aiserver.v1.GetLineNumberClassificationsResponse";
   GetLineNumberClassificationsResponse.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "classified_result", kind: "message", T: CodeResultWithClassificationInfo }
   ]);
@@ -17340,7 +17340,7 @@
   })();
   var GetCopyStatusRequest = GetCopyStatusRequest$Runtime;
   GetCopyStatusRequest.runtime = proto3;
-  GetCopyStatusRequest.typeName = "simeon.v1.GetCopyStatusRequest";
+  GetCopyStatusRequest.typeName = "aiserver.v1.GetCopyStatusRequest";
   GetCopyStatusRequest.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -17380,7 +17380,7 @@
   })();
   var GetCopyStatusResponse = GetCopyStatusResponse$Runtime;
   GetCopyStatusResponse.runtime = proto3;
-  GetCopyStatusResponse.typeName = "simeon.v1.GetCopyStatusResponse";
+  GetCopyStatusResponse.typeName = "aiserver.v1.GetCopyStatusResponse";
   GetCopyStatusResponse.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "phase", kind: "enum", T: proto3.getEnumType(GetCopyStatusResponse_Phase) },
     {
@@ -17409,7 +17409,7 @@
     GetCopyStatusResponse_Phase2[GetCopyStatusResponse_Phase2["COPYING_TREE_STATE"] = 6] = "COPYING_TREE_STATE";
     GetCopyStatusResponse_Phase2[GetCopyStatusResponse_Phase2["SYNCING_COPY"] = 7] = "SYNCING_COPY";
   })(GetCopyStatusResponse_Phase || (GetCopyStatusResponse_Phase = {}));
-  proto3.util.setEnumType(GetCopyStatusResponse_Phase, "simeon.v1.GetCopyStatusResponse.Phase", [
+  proto3.util.setEnumType(GetCopyStatusResponse_Phase, "aiserver.v1.GetCopyStatusResponse.Phase", [
     { no: 0, name: "PHASE_UNSPECIFIED" },
     { no: 1, name: "PHASE_INITIALIZING" },
     { no: 2, name: "PHASE_COPYING" },
@@ -17425,7 +17425,7 @@
     GetCopyStatusResponse_CompletedStatus2[GetCopyStatusResponse_CompletedStatus2["OUT_OF_SYNC"] = 2] = "OUT_OF_SYNC";
     GetCopyStatusResponse_CompletedStatus2[GetCopyStatusResponse_CompletedStatus2["FAILURE"] = 3] = "FAILURE";
   })(GetCopyStatusResponse_CompletedStatus || (GetCopyStatusResponse_CompletedStatus = {}));
-  proto3.util.setEnumType(GetCopyStatusResponse_CompletedStatus, "simeon.v1.GetCopyStatusResponse.CompletedStatus", [
+  proto3.util.setEnumType(GetCopyStatusResponse_CompletedStatus, "aiserver.v1.GetCopyStatusResponse.CompletedStatus", [
     { no: 0, name: "COMPLETED_STATUS_UNSPECIFIED" },
     { no: 1, name: "COMPLETED_STATUS_UP_TO_DATE" },
     { no: 2, name: "COMPLETED_STATUS_OUT_OF_SYNC" },
@@ -17453,7 +17453,7 @@
   })();
   var IndexedFile = IndexedFile$Runtime;
   IndexedFile.runtime = proto3;
-  IndexedFile.typeName = "simeon.v1.IndexedFile";
+  IndexedFile.typeName = "aiserver.v1.IndexedFile";
   IndexedFile.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -17491,7 +17491,7 @@
   })();
   var IndexedPullRequest = IndexedPullRequest$Runtime;
   IndexedPullRequest.runtime = proto3;
-  IndexedPullRequest.typeName = "simeon.v1.IndexedPullRequest";
+  IndexedPullRequest.typeName = "aiserver.v1.IndexedPullRequest";
   IndexedPullRequest.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -17560,7 +17560,7 @@
   })();
   var RepoHistoryInitHandshakeRequest = RepoHistoryInitHandshakeRequest$Runtime;
   RepoHistoryInitHandshakeRequest.runtime = proto3;
-  RepoHistoryInitHandshakeRequest.typeName = "simeon.v1.RepoHistoryInitHandshakeRequest";
+  RepoHistoryInitHandshakeRequest.typeName = "aiserver.v1.RepoHistoryInitHandshakeRequest";
   RepoHistoryInitHandshakeRequest.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "repository", kind: "message", T: RepositoryInfo },
     {
@@ -17595,7 +17595,7 @@
   })();
   var RepoHistoryInfo = RepoHistoryInfo$Runtime;
   RepoHistoryInfo.runtime = proto3;
-  RepoHistoryInfo.typeName = "simeon.v1.RepoHistoryInfo";
+  RepoHistoryInfo.typeName = "aiserver.v1.RepoHistoryInfo";
   RepoHistoryInfo.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -17632,7 +17632,7 @@
   })();
   var RepoHistoryInitHandshakeResponse = RepoHistoryInitHandshakeResponse$Runtime;
   RepoHistoryInitHandshakeResponse.runtime = proto3;
-  RepoHistoryInitHandshakeResponse.typeName = "simeon.v1.RepoHistoryInitHandshakeResponse";
+  RepoHistoryInitHandshakeResponse.typeName = "aiserver.v1.RepoHistoryInitHandshakeResponse";
   RepoHistoryInitHandshakeResponse.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "status", kind: "enum", T: proto3.getEnumType(RepoHistoryInitHandshakeResponse_Status) },
     { no: 2, name: "histories", kind: "message", T: RepoHistoryInfo, repeated: true },
@@ -17647,7 +17647,7 @@
     RepoHistoryInitHandshakeResponse_Status2[RepoHistoryInitHandshakeResponse_Status2["TEST_CANDIDATES"] = 3] = "TEST_CANDIDATES";
     RepoHistoryInitHandshakeResponse_Status2[RepoHistoryInitHandshakeResponse_Status2["NO_INDEXING"] = 4] = "NO_INDEXING";
   })(RepoHistoryInitHandshakeResponse_Status || (RepoHistoryInitHandshakeResponse_Status = {}));
-  proto3.util.setEnumType(RepoHistoryInitHandshakeResponse_Status, "simeon.v1.RepoHistoryInitHandshakeResponse.Status", [
+  proto3.util.setEnumType(RepoHistoryInitHandshakeResponse_Status, "aiserver.v1.RepoHistoryInitHandshakeResponse.Status", [
     { no: 0, name: "STATUS_UNSPECIFIED" },
     { no: 1, name: "STATUS_FAILURE" },
     { no: 2, name: "STATUS_SUCCESS" },
@@ -17677,7 +17677,7 @@
   })();
   var RepoHistorySyncOneRequest = RepoHistorySyncOneRequest$Runtime;
   RepoHistorySyncOneRequest.runtime = proto3;
-  RepoHistorySyncOneRequest.typeName = "simeon.v1.RepoHistorySyncOneRequest";
+  RepoHistorySyncOneRequest.typeName = "aiserver.v1.RepoHistorySyncOneRequest";
   RepoHistorySyncOneRequest.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -17710,7 +17710,7 @@
   })();
   var RepoHistorySyncOneResponse = RepoHistorySyncOneResponse$Runtime;
   RepoHistorySyncOneResponse.runtime = proto3;
-  RepoHistorySyncOneResponse.typeName = "simeon.v1.RepoHistorySyncOneResponse";
+  RepoHistorySyncOneResponse.typeName = "aiserver.v1.RepoHistorySyncOneResponse";
   RepoHistorySyncOneResponse.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "status", kind: "enum", T: proto3.getEnumType(RepoHistorySyncOneResponse_Status) }
   ]);
@@ -17721,7 +17721,7 @@
     RepoHistorySyncOneResponse_Status2[RepoHistorySyncOneResponse_Status2["PARTIAL_SUCCESS"] = 3] = "PARTIAL_SUCCESS";
     RepoHistorySyncOneResponse_Status2[RepoHistorySyncOneResponse_Status2["NOT_INDEXING"] = 4] = "NOT_INDEXING";
   })(RepoHistorySyncOneResponse_Status || (RepoHistorySyncOneResponse_Status = {}));
-  proto3.util.setEnumType(RepoHistorySyncOneResponse_Status, "simeon.v1.RepoHistorySyncOneResponse.Status", [
+  proto3.util.setEnumType(RepoHistorySyncOneResponse_Status, "aiserver.v1.RepoHistorySyncOneResponse.Status", [
     { no: 0, name: "STATUS_UNSPECIFIED" },
     { no: 1, name: "STATUS_SUCCESS" },
     { no: 2, name: "STATUS_FAILURE" },
@@ -17749,7 +17749,7 @@
   })();
   var RepoHistorySyncCompleteRequest = RepoHistorySyncCompleteRequest$Runtime;
   RepoHistorySyncCompleteRequest.runtime = proto3;
-  RepoHistorySyncCompleteRequest.typeName = "simeon.v1.RepoHistorySyncCompleteRequest";
+  RepoHistorySyncCompleteRequest.typeName = "aiserver.v1.RepoHistorySyncCompleteRequest";
   RepoHistorySyncCompleteRequest.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "synced_histories", kind: "message", T: RepoHistorySyncCompleteRequest_SyncedHistory, repeated: true }
   ]);
@@ -17760,7 +17760,7 @@
     RepoHistorySyncCompleteRequest_Status2[RepoHistorySyncCompleteRequest_Status2["TOTAL_FAILURE"] = 3] = "TOTAL_FAILURE";
     RepoHistorySyncCompleteRequest_Status2[RepoHistorySyncCompleteRequest_Status2["INTERRUPTED"] = 4] = "INTERRUPTED";
   })(RepoHistorySyncCompleteRequest_Status || (RepoHistorySyncCompleteRequest_Status = {}));
-  proto3.util.setEnumType(RepoHistorySyncCompleteRequest_Status, "simeon.v1.RepoHistorySyncCompleteRequest.Status", [
+  proto3.util.setEnumType(RepoHistorySyncCompleteRequest_Status, "aiserver.v1.RepoHistorySyncCompleteRequest.Status", [
     { no: 0, name: "STATUS_UNSPECIFIED" },
     { no: 1, name: "STATUS_SUCCESS" },
     { no: 2, name: "STATUS_FAILURE" },
@@ -17789,7 +17789,7 @@
   })();
   var RepoHistorySyncCompleteRequest_SyncedHistory = RepoHistorySyncCompleteRequest_SyncedHistory$Runtime;
   RepoHistorySyncCompleteRequest_SyncedHistory.runtime = proto3;
-  RepoHistorySyncCompleteRequest_SyncedHistory.typeName = "simeon.v1.RepoHistorySyncCompleteRequest.SyncedHistory";
+  RepoHistorySyncCompleteRequest_SyncedHistory.typeName = "aiserver.v1.RepoHistorySyncCompleteRequest.SyncedHistory";
   RepoHistorySyncCompleteRequest_SyncedHistory.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -17823,7 +17823,7 @@
   })();
   var RepoHistorySyncCompleteResponse = RepoHistorySyncCompleteResponse$Runtime;
   RepoHistorySyncCompleteResponse.runtime = proto3;
-  RepoHistorySyncCompleteResponse.typeName = "simeon.v1.RepoHistorySyncCompleteResponse";
+  RepoHistorySyncCompleteResponse.typeName = "aiserver.v1.RepoHistorySyncCompleteResponse";
   RepoHistorySyncCompleteResponse.fields = proto3.util.newFieldList(() => []);
   var SearchPRHistoryRequest$Runtime = /* @__PURE__ */ (() => class _SearchPRHistoryRequest extends Message {
     constructor(data) {
@@ -17847,7 +17847,7 @@
   })();
   var SearchPRHistoryRequest = SearchPRHistoryRequest$Runtime;
   SearchPRHistoryRequest.runtime = proto3;
-  SearchPRHistoryRequest.typeName = "simeon.v1.SearchPRHistoryRequest";
+  SearchPRHistoryRequest.typeName = "aiserver.v1.SearchPRHistoryRequest";
   SearchPRHistoryRequest.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "repository", kind: "message", T: RepositoryInfo },
     {
@@ -17888,7 +17888,7 @@
   })();
   var PRDiffChunkPointer = PRDiffChunkPointer$Runtime;
   PRDiffChunkPointer.runtime = proto3;
-  PRDiffChunkPointer.typeName = "simeon.v1.PRDiffChunkPointer";
+  PRDiffChunkPointer.typeName = "aiserver.v1.PRDiffChunkPointer";
   PRDiffChunkPointer.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -17933,7 +17933,7 @@
   })();
   var SearchPRHistoryResponse = SearchPRHistoryResponse$Runtime;
   SearchPRHistoryResponse.runtime = proto3;
-  SearchPRHistoryResponse.typeName = "simeon.v1.SearchPRHistoryResponse";
+  SearchPRHistoryResponse.typeName = "aiserver.v1.SearchPRHistoryResponse";
   SearchPRHistoryResponse.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "results", kind: "message", T: SearchPRHistoryResponse_PRSearchResult, repeated: true },
     { no: 2, name: "git_height", kind: "scalar", T: 13, opt: true }
@@ -17962,7 +17962,7 @@
   })();
   var SearchPRHistoryResponse_PRSearchResult = SearchPRHistoryResponse_PRSearchResult$Runtime;
   SearchPRHistoryResponse_PRSearchResult.runtime = proto3;
-  SearchPRHistoryResponse_PRSearchResult.typeName = "simeon.v1.SearchPRHistoryResponse.PRSearchResult";
+  SearchPRHistoryResponse_PRSearchResult.typeName = "aiserver.v1.SearchPRHistoryResponse.PRSearchResult";
   SearchPRHistoryResponse_PRSearchResult.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -18006,7 +18006,7 @@
   })();
   var RemoveRepoHistoryRequest = RemoveRepoHistoryRequest$Runtime;
   RemoveRepoHistoryRequest.runtime = proto3;
-  RemoveRepoHistoryRequest.typeName = "simeon.v1.RemoveRepoHistoryRequest";
+  RemoveRepoHistoryRequest.typeName = "aiserver.v1.RemoveRepoHistoryRequest";
   RemoveRepoHistoryRequest.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "repository", kind: "message", T: RepositoryInfo }
   ]);
@@ -18031,7 +18031,7 @@
   })();
   var RemoveRepoHistoryResponse = RemoveRepoHistoryResponse$Runtime;
   RemoveRepoHistoryResponse.runtime = proto3;
-  RemoveRepoHistoryResponse.typeName = "simeon.v1.RemoveRepoHistoryResponse";
+  RemoveRepoHistoryResponse.typeName = "aiserver.v1.RemoveRepoHistoryResponse";
   RemoveRepoHistoryResponse.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "status", kind: "enum", T: proto3.getEnumType(RemoveRepoHistoryResponse_Status) }
   ]);
@@ -18042,7 +18042,7 @@
     RemoveRepoHistoryResponse_Status2[RemoveRepoHistoryResponse_Status2["PARTIAL_SUCCESS"] = 3] = "PARTIAL_SUCCESS";
     RemoveRepoHistoryResponse_Status2[RemoveRepoHistoryResponse_Status2["SUCCESS"] = 4] = "SUCCESS";
   })(RemoveRepoHistoryResponse_Status || (RemoveRepoHistoryResponse_Status = {}));
-  proto3.util.setEnumType(RemoveRepoHistoryResponse_Status, "simeon.v1.RemoveRepoHistoryResponse.Status", [
+  proto3.util.setEnumType(RemoveRepoHistoryResponse_Status, "aiserver.v1.RemoveRepoHistoryResponse.Status", [
     { no: 0, name: "STATUS_UNSPECIFIED" },
     { no: 1, name: "STATUS_NOT_FOUND" },
     { no: 2, name: "STATUS_NOT_AUTHORIZED" },
@@ -18069,7 +18069,7 @@
   })();
   var GetPRIndexingStatusRequest = GetPRIndexingStatusRequest$Runtime;
   GetPRIndexingStatusRequest.runtime = proto3;
-  GetPRIndexingStatusRequest.typeName = "simeon.v1.GetPRIndexingStatusRequest";
+  GetPRIndexingStatusRequest.typeName = "aiserver.v1.GetPRIndexingStatusRequest";
   GetPRIndexingStatusRequest.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "repository", kind: "message", T: RepositoryInfo }
   ]);
@@ -18095,7 +18095,7 @@
   })();
   var GetPRIndexingStatusResponse = GetPRIndexingStatusResponse$Runtime;
   GetPRIndexingStatusResponse.runtime = proto3;
-  GetPRIndexingStatusResponse.typeName = "simeon.v1.GetPRIndexingStatusResponse";
+  GetPRIndexingStatusResponse.typeName = "aiserver.v1.GetPRIndexingStatusResponse";
   GetPRIndexingStatusResponse.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "status", kind: "enum", T: proto3.getEnumType(GetPRIndexingStatusResponse_Status) },
     {
@@ -18119,7 +18119,7 @@
     GetPRIndexingStatusResponse_Status2[GetPRIndexingStatusResponse_Status2["SYNCED"] = 3] = "SYNCED";
     GetPRIndexingStatusResponse_Status2[GetPRIndexingStatusResponse_Status2["PARTIAL"] = 4] = "PARTIAL";
   })(GetPRIndexingStatusResponse_Status || (GetPRIndexingStatusResponse_Status = {}));
-  proto3.util.setEnumType(GetPRIndexingStatusResponse_Status, "simeon.v1.GetPRIndexingStatusResponse.Status", [
+  proto3.util.setEnumType(GetPRIndexingStatusResponse_Status, "aiserver.v1.GetPRIndexingStatusResponse.Status", [
     { no: 0, name: "STATUS_UNSPECIFIED" },
     { no: 1, name: "STATUS_EMPTY" },
     { no: 2, name: "STATUS_SYNCING" },
@@ -18185,7 +18185,7 @@
     { no: 8, name: "shell", kind: "message", T: SubagentTypeShell, oneof: "type" },
     { no: 9, name: "vm_setup_helper", kind: "message", T: SubagentTypeVmSetupHelper, oneof: "type" },
     { no: 10, name: "debug", kind: "message", T: SubagentTypeDebug, oneof: "type" },
-    { no: 11, name: "simeon_guide", kind: "message", T: SubagentTypeSimeonGuide, oneof: "type" },
+    { no: 11, name: "cursor_guide", kind: "message", T: SubagentTypeCursorGuide, oneof: "type" },
     { no: 12, name: "watch_video", kind: "message", T: SubagentTypeWatchVideo, oneof: "type" }
   ]);
   var SubagentTypeUnspecified$Runtime = /* @__PURE__ */ (() => class _SubagentTypeUnspecified extends Message {
@@ -18386,28 +18386,28 @@
   SubagentTypeDebug.runtime = proto3;
   SubagentTypeDebug.typeName = "agent.v1.SubagentTypeDebug";
   SubagentTypeDebug.fields = proto3.util.newFieldList(() => []);
-  var SubagentTypeSimeonGuide$Runtime = /* @__PURE__ */ (() => class _SubagentTypeSimeonGuide extends Message {
+  var SubagentTypeCursorGuide$Runtime = /* @__PURE__ */ (() => class _SubagentTypeCursorGuide extends Message {
     constructor(data) {
       super();
       proto3.util.initPartial(data, this);
     }
     static fromBinary(bytes, options) {
-      return new _SubagentTypeSimeonGuide().fromBinary(bytes, options);
+      return new _SubagentTypeCursorGuide().fromBinary(bytes, options);
     }
     static fromJson(jsonValue, options) {
-      return new _SubagentTypeSimeonGuide().fromJson(jsonValue, options);
+      return new _SubagentTypeCursorGuide().fromJson(jsonValue, options);
     }
     static fromJsonString(jsonString, options) {
-      return new _SubagentTypeSimeonGuide().fromJsonString(jsonString, options);
+      return new _SubagentTypeCursorGuide().fromJsonString(jsonString, options);
     }
     static equals(a, b2) {
-      return proto3.util.equals(_SubagentTypeSimeonGuide, a, b2);
+      return proto3.util.equals(_SubagentTypeCursorGuide, a, b2);
     }
   })();
-  var SubagentTypeSimeonGuide = SubagentTypeSimeonGuide$Runtime;
-  SubagentTypeSimeonGuide.runtime = proto3;
-  SubagentTypeSimeonGuide.typeName = "agent.v1.SubagentTypeSimeonGuide";
-  SubagentTypeSimeonGuide.fields = proto3.util.newFieldList(() => []);
+  var SubagentTypeCursorGuide = SubagentTypeCursorGuide$Runtime;
+  SubagentTypeCursorGuide.runtime = proto3;
+  SubagentTypeCursorGuide.typeName = "agent.v1.SubagentTypeCursorGuide";
+  SubagentTypeCursorGuide.fields = proto3.util.newFieldList(() => []);
   var SubagentTypeWatchVideo$Runtime = /* @__PURE__ */ (() => class _SubagentTypeWatchVideo extends Message {
     constructor(data) {
       super();
@@ -19704,7 +19704,7 @@
     { no: 2, name: "result", kind: "message", T: ReportBugfixResultsResult }
   ]);
 
-  // source/packages/proto/generated/simeon/v1/tools_pb.ts
+  // source/packages/proto/generated/aiserver/v1/tools_pb.ts
   var ClientSideToolV2;
   var ShellType;
   var BuiltinTool;
@@ -19775,7 +19775,7 @@
     ClientSideToolV22[ClientSideToolV22["SEND_TO_USER"] = 65] = "SEND_TO_USER";
     ClientSideToolV22[ClientSideToolV22["CONNECT_SCM"] = 66] = "CONNECT_SCM";
   })(ClientSideToolV2 || (ClientSideToolV2 = {}));
-  proto3.util.setEnumType(ClientSideToolV2, "simeon.v1.ClientSideToolV2", [
+  proto3.util.setEnumType(ClientSideToolV2, "aiserver.v1.ClientSideToolV2", [
     { no: 0, name: "CLIENT_SIDE_TOOL_V2_UNSPECIFIED" },
     { no: 1, name: "CLIENT_SIDE_TOOL_V2_READ_SEMSEARCH_FILES" },
     { no: 3, name: "CLIENT_SIDE_TOOL_V2_RIPGREP_SEARCH" },
@@ -19837,7 +19837,7 @@
     ShellType2[ShellType2["BASH"] = 1] = "BASH";
     ShellType2[ShellType2["POWERSHELL"] = 2] = "POWERSHELL";
   })(ShellType || (ShellType = {}));
-  proto3.util.setEnumType(ShellType, "simeon.v1.ShellType", [
+  proto3.util.setEnumType(ShellType, "aiserver.v1.ShellType", [
     { no: 0, name: "SHELL_TYPE_UNSPECIFIED" },
     { no: 1, name: "SHELL_TYPE_BASH" },
     { no: 2, name: "SHELL_TYPE_POWERSHELL" }
@@ -19864,7 +19864,7 @@
     BuiltinTool2[BuiltinTool2["NEW_EDIT"] = 18] = "NEW_EDIT";
     BuiltinTool2[BuiltinTool2["READ_WITH_LINTER"] = 19] = "READ_WITH_LINTER";
   })(BuiltinTool || (BuiltinTool = {}));
-  proto3.util.setEnumType(BuiltinTool, "simeon.v1.BuiltinTool", [
+  proto3.util.setEnumType(BuiltinTool, "aiserver.v1.BuiltinTool", [
     { no: 0, name: "BUILTIN_TOOL_UNSPECIFIED" },
     { no: 1, name: "BUILTIN_TOOL_SEARCH" },
     { no: 2, name: "BUILTIN_TOOL_READ_CHUNK" },
@@ -19894,7 +19894,7 @@
     RunTerminalCommandEndedReason2[RunTerminalCommandEndedReason2["ERROR_OCCURRED_CHECKING_REASON"] = 4] = "ERROR_OCCURRED_CHECKING_REASON";
     RunTerminalCommandEndedReason2[RunTerminalCommandEndedReason2["IDLE_TIMEOUT"] = 5] = "IDLE_TIMEOUT";
   })(RunTerminalCommandEndedReason || (RunTerminalCommandEndedReason = {}));
-  proto3.util.setEnumType(RunTerminalCommandEndedReason, "simeon.v1.RunTerminalCommandEndedReason", [
+  proto3.util.setEnumType(RunTerminalCommandEndedReason, "aiserver.v1.RunTerminalCommandEndedReason", [
     { no: 0, name: "RUN_TERMINAL_COMMAND_ENDED_REASON_UNSPECIFIED" },
     { no: 1, name: "RUN_TERMINAL_COMMAND_ENDED_REASON_EXECUTION_COMPLETED" },
     { no: 2, name: "RUN_TERMINAL_COMMAND_ENDED_REASON_EXECUTION_ABORTED" },
@@ -19923,7 +19923,7 @@
   })();
   var ReapplyParams = ReapplyParams$Runtime;
   ReapplyParams.runtime = proto3;
-  ReapplyParams.typeName = "simeon.v1.ReapplyParams";
+  ReapplyParams.typeName = "aiserver.v1.ReapplyParams";
   ReapplyParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -19954,7 +19954,7 @@
   })();
   var ApplyAgentDiffParams = ApplyAgentDiffParams$Runtime;
   ApplyAgentDiffParams.runtime = proto3;
-  ApplyAgentDiffParams.typeName = "simeon.v1.ApplyAgentDiffParams";
+  ApplyAgentDiffParams.typeName = "aiserver.v1.ApplyAgentDiffParams";
   ApplyAgentDiffParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -19987,7 +19987,7 @@
   })();
   var ReapplyResult = ReapplyResult$Runtime;
   ReapplyResult.runtime = proto3;
-  ReapplyResult.typeName = "simeon.v1.ReapplyResult";
+  ReapplyResult.typeName = "aiserver.v1.ReapplyResult";
   ReapplyResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "diff", kind: "message", T: EditFileResult_FileDiff },
     {
@@ -20028,7 +20028,7 @@
   })();
   var FetchRulesParams = FetchRulesParams$Runtime;
   FetchRulesParams.runtime = proto3;
-  FetchRulesParams.typeName = "simeon.v1.FetchRulesParams";
+  FetchRulesParams.typeName = "aiserver.v1.FetchRulesParams";
   FetchRulesParams.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "rule_names", kind: "scalar", T: 9, repeated: true }
   ]);
@@ -20053,9 +20053,9 @@
   })();
   var FetchRulesResult = FetchRulesResult$Runtime;
   FetchRulesResult.runtime = proto3;
-  FetchRulesResult.typeName = "simeon.v1.FetchRulesResult";
+  FetchRulesResult.typeName = "aiserver.v1.FetchRulesResult";
   FetchRulesResult.fields = proto3.util.newFieldList(() => [
-    { no: 1, name: "rules", kind: "message", T: AgentRule2, repeated: true }
+    { no: 1, name: "rules", kind: "message", T: CursorRule2, repeated: true }
   ]);
   var ReapplyStream$Runtime = /* @__PURE__ */ (() => class _ReapplyStream extends Message {
     constructor(data) {
@@ -20077,7 +20077,7 @@
   })();
   var ReapplyStream = ReapplyStream$Runtime;
   ReapplyStream.runtime = proto3;
-  ReapplyStream.typeName = "simeon.v1.ReapplyStream";
+  ReapplyStream.typeName = "aiserver.v1.ReapplyStream";
   ReapplyStream.fields = proto3.util.newFieldList(() => []);
   var SemanticSearchArguments$Runtime = /* @__PURE__ */ (() => class _SemanticSearchArguments extends Message {
     constructor(data) {
@@ -20102,7 +20102,7 @@
   })();
   var SemanticSearchArguments = SemanticSearchArguments$Runtime;
   SemanticSearchArguments.runtime = proto3;
-  SemanticSearchArguments.typeName = "simeon.v1.SemanticSearchArguments";
+  SemanticSearchArguments.typeName = "aiserver.v1.SemanticSearchArguments";
   SemanticSearchArguments.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -20143,7 +20143,7 @@
   })();
   var ToolResultError = ToolResultError$Runtime;
   ToolResultError.runtime = proto3;
-  ToolResultError.typeName = "simeon.v1.ToolResultError";
+  ToolResultError.typeName = "aiserver.v1.ToolResultError";
   ToolResultError.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -20184,7 +20184,7 @@
   })();
   var ToolResultError_EditFileError = ToolResultError_EditFileError$Runtime;
   ToolResultError_EditFileError.runtime = proto3;
-  ToolResultError_EditFileError.typeName = "simeon.v1.ToolResultError.EditFileError";
+  ToolResultError_EditFileError.typeName = "aiserver.v1.ToolResultError.EditFileError";
   ToolResultError_EditFileError.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -20215,7 +20215,7 @@
   })();
   var ToolResultError_SearchReplaceError = ToolResultError_SearchReplaceError$Runtime;
   ToolResultError_SearchReplaceError.runtime = proto3;
-  ToolResultError_SearchReplaceError.typeName = "simeon.v1.ToolResultError.SearchReplaceError";
+  ToolResultError_SearchReplaceError.typeName = "aiserver.v1.ToolResultError.SearchReplaceError";
   ToolResultError_SearchReplaceError.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -20253,7 +20253,7 @@
   })();
   var ClientSideToolV2Call = ClientSideToolV2Call$Runtime;
   ClientSideToolV2Call.runtime = proto3;
-  ClientSideToolV2Call.typeName = "simeon.v1.ClientSideToolV2Call";
+  ClientSideToolV2Call.typeName = "aiserver.v1.ClientSideToolV2Call";
   ClientSideToolV2Call.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "tool", kind: "enum", T: proto3.getEnumType(ClientSideToolV2) },
     { no: 2, name: "read_semsearch_files_params", kind: "message", T: ReadSemsearchFilesParams, oneof: "params" },
@@ -20374,7 +20374,7 @@
   })();
   var ClientSideToolV2Result = ClientSideToolV2Result$Runtime;
   ClientSideToolV2Result.runtime = proto3;
-  ClientSideToolV2Result.typeName = "simeon.v1.ClientSideToolV2Result";
+  ClientSideToolV2Result.typeName = "aiserver.v1.ClientSideToolV2Result";
   ClientSideToolV2Result.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "tool", kind: "enum", T: proto3.getEnumType(ClientSideToolV2) },
     { no: 2, name: "read_semsearch_files_result", kind: "message", T: ReadSemsearchFilesResult, oneof: "result" },
@@ -20461,7 +20461,7 @@
   })();
   var NudgeMessage = NudgeMessage$Runtime;
   NudgeMessage.runtime = proto3;
-  NudgeMessage.typeName = "simeon.v1.NudgeMessage";
+  NudgeMessage.typeName = "aiserver.v1.NudgeMessage";
   NudgeMessage.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -20496,7 +20496,7 @@
   })();
   var ToolResultAttachments = ToolResultAttachments$Runtime;
   ToolResultAttachments.runtime = proto3;
-  ToolResultAttachments.typeName = "simeon.v1.ToolResultAttachments";
+  ToolResultAttachments.typeName = "aiserver.v1.ToolResultAttachments";
   ToolResultAttachments.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "original_todos", kind: "message", T: TodoItem2, repeated: true },
     { no: 2, name: "updated_todos", kind: "message", T: TodoItem2, repeated: true },
@@ -20516,7 +20516,7 @@
     ToolResultAttachments_TodoReminderType2[ToolResultAttachments_TodoReminderType2["EVERY_10_TURNS"] = 1] = "EVERY_10_TURNS";
     ToolResultAttachments_TodoReminderType2[ToolResultAttachments_TodoReminderType2["AFTER_EDIT"] = 2] = "AFTER_EDIT";
   })(ToolResultAttachments_TodoReminderType || (ToolResultAttachments_TodoReminderType = {}));
-  proto3.util.setEnumType(ToolResultAttachments_TodoReminderType, "simeon.v1.ToolResultAttachments.TodoReminderType", [
+  proto3.util.setEnumType(ToolResultAttachments_TodoReminderType, "aiserver.v1.ToolResultAttachments.TodoReminderType", [
     { no: 0, name: "TODO_REMINDER_TYPE_UNSPECIFIED" },
     { no: 1, name: "TODO_REMINDER_TYPE_EVERY_10_TURNS" },
     { no: 2, name: "TODO_REMINDER_TYPE_AFTER_EDIT" }
@@ -20542,7 +20542,7 @@
   })();
   var ToolResultAttachments_DiscoveryBudgetReminder = ToolResultAttachments_DiscoveryBudgetReminder$Runtime;
   ToolResultAttachments_DiscoveryBudgetReminder.runtime = proto3;
-  ToolResultAttachments_DiscoveryBudgetReminder.typeName = "simeon.v1.ToolResultAttachments.DiscoveryBudgetReminder";
+  ToolResultAttachments_DiscoveryBudgetReminder.typeName = "aiserver.v1.ToolResultAttachments.DiscoveryBudgetReminder";
   ToolResultAttachments_DiscoveryBudgetReminder.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -20576,7 +20576,7 @@
   })();
   var StreamedBackPartialToolCall = StreamedBackPartialToolCall$Runtime;
   StreamedBackPartialToolCall.runtime = proto3;
-  StreamedBackPartialToolCall.typeName = "simeon.v1.StreamedBackPartialToolCall";
+  StreamedBackPartialToolCall.typeName = "aiserver.v1.StreamedBackPartialToolCall";
   StreamedBackPartialToolCall.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "tool", kind: "enum", T: proto3.getEnumType(ClientSideToolV2) },
     {
@@ -20621,7 +20621,7 @@
   })();
   var StreamedBackToolCall = StreamedBackToolCall$Runtime;
   StreamedBackToolCall.runtime = proto3;
-  StreamedBackToolCall.typeName = "simeon.v1.StreamedBackToolCall";
+  StreamedBackToolCall.typeName = "aiserver.v1.StreamedBackToolCall";
   StreamedBackToolCall.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "tool", kind: "enum", T: proto3.getEnumType(ClientSideToolV2) },
     {
@@ -20720,7 +20720,7 @@
   })();
   var StreamedBackToolCallV2 = StreamedBackToolCallV2$Runtime;
   StreamedBackToolCallV2.runtime = proto3;
-  StreamedBackToolCallV2.typeName = "simeon.v1.StreamedBackToolCallV2";
+  StreamedBackToolCallV2.typeName = "aiserver.v1.StreamedBackToolCallV2";
   StreamedBackToolCallV2.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "tool", kind: "enum", T: proto3.getEnumType(ClientSideToolV2) },
     {
@@ -20821,7 +20821,7 @@
   })();
   var EditFileV2Params = EditFileV2Params$Runtime;
   EditFileV2Params.runtime = proto3;
-  EditFileV2Params.typeName = "simeon.v1.EditFileV2Params";
+  EditFileV2Params.typeName = "aiserver.v1.EditFileV2Params";
   EditFileV2Params.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -20874,7 +20874,7 @@
   })();
   var EditFileV2Params_StreamingEditText = EditFileV2Params_StreamingEditText$Runtime;
   EditFileV2Params_StreamingEditText.runtime = proto3;
-  EditFileV2Params_StreamingEditText.typeName = "simeon.v1.EditFileV2Params.StreamingEditText";
+  EditFileV2Params_StreamingEditText.typeName = "aiserver.v1.EditFileV2Params.StreamingEditText";
   EditFileV2Params_StreamingEditText.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -20905,7 +20905,7 @@
   })();
   var EditFileV2Params_StreamingEditCode = EditFileV2Params_StreamingEditCode$Runtime;
   EditFileV2Params_StreamingEditCode.runtime = proto3;
-  EditFileV2Params_StreamingEditCode.typeName = "simeon.v1.EditFileV2Params.StreamingEditCode";
+  EditFileV2Params_StreamingEditCode.typeName = "aiserver.v1.EditFileV2Params.StreamingEditCode";
   EditFileV2Params_StreamingEditCode.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -20941,7 +20941,7 @@
   })();
   var EditFileV2Result = EditFileV2Result$Runtime;
   EditFileV2Result.runtime = proto3;
-  EditFileV2Result.typeName = "simeon.v1.EditFileV2Result";
+  EditFileV2Result.typeName = "aiserver.v1.EditFileV2Result";
   EditFileV2Result.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "contents_before_edit", kind: "scalar", T: 9, opt: true },
     { no: 9, name: "eol_sequence", kind: "scalar", T: 9, opt: true },
@@ -21008,7 +21008,7 @@
   })();
   var EditFileV2Stream = EditFileV2Stream$Runtime;
   EditFileV2Stream.runtime = proto3;
-  EditFileV2Stream.typeName = "simeon.v1.EditFileV2Stream";
+  EditFileV2Stream.typeName = "aiserver.v1.EditFileV2Stream";
   EditFileV2Stream.fields = proto3.util.newFieldList(() => []);
   var EditFileParams$Runtime = /* @__PURE__ */ (() => class _EditFileParams extends Message {
     constructor(data) {
@@ -21035,7 +21035,7 @@
   })();
   var EditFileParams = EditFileParams$Runtime;
   EditFileParams.runtime = proto3;
-  EditFileParams.typeName = "simeon.v1.EditFileParams";
+  EditFileParams.typeName = "aiserver.v1.EditFileParams";
   EditFileParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -21103,7 +21103,7 @@
   })();
   var EditFileResult = EditFileResult$Runtime;
   EditFileResult.runtime = proto3;
-  EditFileResult.typeName = "simeon.v1.EditFileResult";
+  EditFileResult.typeName = "aiserver.v1.EditFileResult";
   EditFileResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "diff", kind: "message", T: EditFileResult_FileDiff },
     {
@@ -21158,7 +21158,7 @@
   })();
   var EditFileResult_FileDiff = EditFileResult_FileDiff$Runtime;
   EditFileResult_FileDiff.runtime = proto3;
-  EditFileResult_FileDiff.typeName = "simeon.v1.EditFileResult.FileDiff";
+  EditFileResult_FileDiff.typeName = "aiserver.v1.EditFileResult.FileDiff";
   EditFileResult_FileDiff.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "chunks", kind: "message", T: EditFileResult_FileDiff_ChunkDiff, repeated: true },
     { no: 2, name: "editor", kind: "enum", T: proto3.getEnumType(EditFileResult_FileDiff_Editor) },
@@ -21175,7 +21175,7 @@
     EditFileResult_FileDiff_Editor2[EditFileResult_FileDiff_Editor2["AI"] = 1] = "AI";
     EditFileResult_FileDiff_Editor2[EditFileResult_FileDiff_Editor2["HUMAN"] = 2] = "HUMAN";
   })(EditFileResult_FileDiff_Editor || (EditFileResult_FileDiff_Editor = {}));
-  proto3.util.setEnumType(EditFileResult_FileDiff_Editor, "simeon.v1.EditFileResult.FileDiff.Editor", [
+  proto3.util.setEnumType(EditFileResult_FileDiff_Editor, "aiserver.v1.EditFileResult.FileDiff.Editor", [
     { no: 0, name: "EDITOR_UNSPECIFIED" },
     { no: 1, name: "EDITOR_AI" },
     { no: 2, name: "EDITOR_HUMAN" }
@@ -21207,7 +21207,7 @@
   })();
   var EditFileResult_FileDiff_ChunkDiff = EditFileResult_FileDiff_ChunkDiff$Runtime;
   EditFileResult_FileDiff_ChunkDiff.runtime = proto3;
-  EditFileResult_FileDiff_ChunkDiff.typeName = "simeon.v1.EditFileResult.FileDiff.ChunkDiff";
+  EditFileResult_FileDiff_ChunkDiff.typeName = "aiserver.v1.EditFileResult.FileDiff.ChunkDiff";
   EditFileResult_FileDiff_ChunkDiff.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -21281,7 +21281,7 @@
   })();
   var EditFileResult_RecoverableError = EditFileResult_RecoverableError$Runtime;
   EditFileResult_RecoverableError.runtime = proto3;
-  EditFileResult_RecoverableError.typeName = "simeon.v1.EditFileResult.RecoverableError";
+  EditFileResult_RecoverableError.typeName = "aiserver.v1.EditFileResult.RecoverableError";
   EditFileResult_RecoverableError.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "error_type", kind: "enum", T: proto3.getEnumType(EditFileResult_RecoverableError_RecoverableErrorType) },
     {
@@ -21297,7 +21297,7 @@
     EditFileResult_RecoverableError_RecoverableErrorType2[EditFileResult_RecoverableError_RecoverableErrorType2["SEARCH_STRING_NOT_FOUND"] = 1] = "SEARCH_STRING_NOT_FOUND";
     EditFileResult_RecoverableError_RecoverableErrorType2[EditFileResult_RecoverableError_RecoverableErrorType2["AMBIGUOUS_SEARCH_STRING"] = 2] = "AMBIGUOUS_SEARCH_STRING";
   })(EditFileResult_RecoverableError_RecoverableErrorType || (EditFileResult_RecoverableError_RecoverableErrorType = {}));
-  proto3.util.setEnumType(EditFileResult_RecoverableError_RecoverableErrorType, "simeon.v1.EditFileResult.RecoverableError.RecoverableErrorType", [
+  proto3.util.setEnumType(EditFileResult_RecoverableError_RecoverableErrorType, "aiserver.v1.EditFileResult.RecoverableError.RecoverableErrorType", [
     { no: 0, name: "RECOVERABLE_ERROR_TYPE_UNSPECIFIED" },
     { no: 1, name: "RECOVERABLE_ERROR_TYPE_SEARCH_STRING_NOT_FOUND" },
     { no: 2, name: "RECOVERABLE_ERROR_TYPE_AMBIGUOUS_SEARCH_STRING" }
@@ -21325,7 +21325,7 @@
   })();
   var EditFileResult_EditFileHumanReview = EditFileResult_EditFileHumanReview$Runtime;
   EditFileResult_EditFileHumanReview.runtime = proto3;
-  EditFileResult_EditFileHumanReview.typeName = "simeon.v1.EditFileResult.EditFileHumanReview";
+  EditFileResult_EditFileHumanReview.typeName = "aiserver.v1.EditFileResult.EditFileHumanReview";
   EditFileResult_EditFileHumanReview.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -21373,7 +21373,7 @@
   })();
   var EditFileResult_HumanFeedback = EditFileResult_HumanFeedback$Runtime;
   EditFileResult_HumanFeedback.runtime = proto3;
-  EditFileResult_HumanFeedback.typeName = "simeon.v1.EditFileResult.HumanFeedback";
+  EditFileResult_HumanFeedback.typeName = "aiserver.v1.EditFileResult.HumanFeedback";
   EditFileResult_HumanFeedback.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -21428,7 +21428,7 @@
   })();
   var HumanReview = HumanReview$Runtime;
   HumanReview.runtime = proto3;
-  HumanReview.typeName = "simeon.v1.HumanReview";
+  HumanReview.typeName = "aiserver.v1.HumanReview";
   HumanReview.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -21479,7 +21479,7 @@
   })();
   var EditFileStream = EditFileStream$Runtime;
   EditFileStream.runtime = proto3;
-  EditFileStream.typeName = "simeon.v1.EditFileStream";
+  EditFileStream.typeName = "aiserver.v1.EditFileStream";
   EditFileStream.fields = proto3.util.newFieldList(() => []);
   var ToolCallFileSearchParams$Runtime = /* @__PURE__ */ (() => class _ToolCallFileSearchParams extends Message {
     constructor(data) {
@@ -21502,7 +21502,7 @@
   })();
   var ToolCallFileSearchParams = ToolCallFileSearchParams$Runtime;
   ToolCallFileSearchParams.runtime = proto3;
-  ToolCallFileSearchParams.typeName = "simeon.v1.ToolCallFileSearchParams";
+  ToolCallFileSearchParams.typeName = "aiserver.v1.ToolCallFileSearchParams";
   ToolCallFileSearchParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -21533,7 +21533,7 @@
   })();
   var ToolCallFileSearchStream = ToolCallFileSearchStream$Runtime;
   ToolCallFileSearchStream.runtime = proto3;
-  ToolCallFileSearchStream.typeName = "simeon.v1.ToolCallFileSearchStream";
+  ToolCallFileSearchStream.typeName = "aiserver.v1.ToolCallFileSearchStream";
   ToolCallFileSearchStream.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -21565,7 +21565,7 @@
   })();
   var ToolCallFileSearchResult = ToolCallFileSearchResult$Runtime;
   ToolCallFileSearchResult.runtime = proto3;
-  ToolCallFileSearchResult.typeName = "simeon.v1.ToolCallFileSearchResult";
+  ToolCallFileSearchResult.typeName = "aiserver.v1.ToolCallFileSearchResult";
   ToolCallFileSearchResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "files", kind: "message", T: ToolCallFileSearchResult_File, repeated: true },
     { no: 2, name: "limit_hit", kind: "scalar", T: 8, opt: true },
@@ -21598,7 +21598,7 @@
   })();
   var ToolCallFileSearchResult_File = ToolCallFileSearchResult_File$Runtime;
   ToolCallFileSearchResult_File.runtime = proto3;
-  ToolCallFileSearchResult_File.typeName = "simeon.v1.ToolCallFileSearchResult.File";
+  ToolCallFileSearchResult_File.typeName = "aiserver.v1.ToolCallFileSearchResult.File";
   ToolCallFileSearchResult_File.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -21629,7 +21629,7 @@
   })();
   var ListDirParams = ListDirParams$Runtime;
   ListDirParams.runtime = proto3;
-  ListDirParams.typeName = "simeon.v1.ListDirParams";
+  ListDirParams.typeName = "aiserver.v1.ListDirParams";
   ListDirParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -21661,7 +21661,7 @@
   })();
   var ListDirResult = ListDirResult$Runtime;
   ListDirResult.runtime = proto3;
-  ListDirResult.typeName = "simeon.v1.ListDirResult";
+  ListDirResult.typeName = "aiserver.v1.ListDirResult";
   ListDirResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "files", kind: "message", T: ListDirResult_File, repeated: true },
     {
@@ -21694,7 +21694,7 @@
   })();
   var ListDirResult_File = ListDirResult_File$Runtime;
   ListDirResult_File.runtime = proto3;
-  ListDirResult_File.typeName = "simeon.v1.ListDirResult.File";
+  ListDirResult_File.typeName = "aiserver.v1.ListDirResult.File";
   ListDirResult_File.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -21735,7 +21735,7 @@
   })();
   var ListDirStream = ListDirStream$Runtime;
   ListDirStream.runtime = proto3;
-  ListDirStream.typeName = "simeon.v1.ListDirStream";
+  ListDirStream.typeName = "aiserver.v1.ListDirStream";
   ListDirStream.fields = proto3.util.newFieldList(() => []);
   var ReadFileParams$Runtime = /* @__PURE__ */ (() => class _ReadFileParams extends Message {
     constructor(data) {
@@ -21760,7 +21760,7 @@
   })();
   var ReadFileParams = ReadFileParams$Runtime;
   ReadFileParams.runtime = proto3;
-  ReadFileParams.typeName = "simeon.v1.ReadFileParams";
+  ReadFileParams.typeName = "aiserver.v1.ReadFileParams";
   ReadFileParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -21798,7 +21798,7 @@
       this.didSetDefaultLineRange = false;
       this.relativeWorkspacePath = "";
       this.didShortenCharRange = false;
-      this.matchingAgentRules = [];
+      this.matchingCursorRules = [];
       proto3.util.initPartial(data, this);
     }
     static fromBinary(bytes, options) {
@@ -21816,7 +21816,7 @@
   })();
   var ReadFileResult = ReadFileResult$Runtime;
   ReadFileResult.runtime = proto3;
-  ReadFileResult.typeName = "simeon.v1.ReadFileResult";
+  ReadFileResult.typeName = "aiserver.v1.ReadFileResult";
   ReadFileResult.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -21866,7 +21866,7 @@
     },
     { no: 11, name: "read_full_file", kind: "scalar", T: 8, opt: true },
     { no: 12, name: "total_lines", kind: "scalar", T: 5, opt: true },
-    { no: 13, name: "matching_agent_rules", kind: "message", T: AgentRule2, repeated: true },
+    { no: 13, name: "matching_cursor_rules", kind: "message", T: CursorRule2, repeated: true },
     { no: 14, name: "file_git_context", kind: "message", T: FileGit }
   ]);
   var ReadFileStream$Runtime = /* @__PURE__ */ (() => class _ReadFileStream extends Message {
@@ -21889,7 +21889,7 @@
   })();
   var ReadFileStream = ReadFileStream$Runtime;
   ReadFileStream.runtime = proto3;
-  ReadFileStream.typeName = "simeon.v1.ReadFileStream";
+  ReadFileStream.typeName = "aiserver.v1.ReadFileStream";
   ReadFileStream.fields = proto3.util.newFieldList(() => []);
   var RipgrepSearchParams$Runtime = /* @__PURE__ */ (() => class _RipgrepSearchParams extends Message {
     constructor(data) {
@@ -21911,7 +21911,7 @@
   })();
   var RipgrepSearchParams = RipgrepSearchParams$Runtime;
   RipgrepSearchParams.runtime = proto3;
-  RipgrepSearchParams.typeName = "simeon.v1.RipgrepSearchParams";
+  RipgrepSearchParams.typeName = "aiserver.v1.RipgrepSearchParams";
   RipgrepSearchParams.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "options", kind: "message", T: RipgrepSearchParams_ITextQueryBuilderOptionsProto },
     { no: 2, name: "pattern_info", kind: "message", T: RipgrepSearchParams_IPatternInfoProto }
@@ -21937,7 +21937,7 @@
   })();
   var RipgrepSearchParams_IPatternInfoProto = RipgrepSearchParams_IPatternInfoProto$Runtime;
   RipgrepSearchParams_IPatternInfoProto.runtime = proto3;
-  RipgrepSearchParams_IPatternInfoProto.typeName = "simeon.v1.RipgrepSearchParams.IPatternInfoProto";
+  RipgrepSearchParams_IPatternInfoProto.typeName = "aiserver.v1.RipgrepSearchParams.IPatternInfoProto";
   RipgrepSearchParams_IPatternInfoProto.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -21975,7 +21975,7 @@
   })();
   var RipgrepSearchParams_IPatternInfoProto_INotebookPatternInfoProto = RipgrepSearchParams_IPatternInfoProto_INotebookPatternInfoProto$Runtime;
   RipgrepSearchParams_IPatternInfoProto_INotebookPatternInfoProto.runtime = proto3;
-  RipgrepSearchParams_IPatternInfoProto_INotebookPatternInfoProto.typeName = "simeon.v1.RipgrepSearchParams.IPatternInfoProto.INotebookPatternInfoProto";
+  RipgrepSearchParams_IPatternInfoProto_INotebookPatternInfoProto.typeName = "aiserver.v1.RipgrepSearchParams.IPatternInfoProto.INotebookPatternInfoProto";
   RipgrepSearchParams_IPatternInfoProto_INotebookPatternInfoProto.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "is_in_notebook_markdown_input", kind: "scalar", T: 8, opt: true },
     { no: 2, name: "is_in_notebook_markdown_preview", kind: "scalar", T: 8, opt: true },
@@ -22002,7 +22002,7 @@
   })();
   var RipgrepSearchParams_ITextQueryBuilderOptionsProto = RipgrepSearchParams_ITextQueryBuilderOptionsProto$Runtime;
   RipgrepSearchParams_ITextQueryBuilderOptionsProto.runtime = proto3;
-  RipgrepSearchParams_ITextQueryBuilderOptionsProto.typeName = "simeon.v1.RipgrepSearchParams.ITextQueryBuilderOptionsProto";
+  RipgrepSearchParams_ITextQueryBuilderOptionsProto.typeName = "aiserver.v1.RipgrepSearchParams.ITextQueryBuilderOptionsProto";
   RipgrepSearchParams_ITextQueryBuilderOptionsProto.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "preview_options", kind: "message", T: RipgrepSearchParams_ITextQueryBuilderOptionsProto_ITextSearchPreviewOptionsProto },
     { no: 2, name: "file_encoding", kind: "scalar", T: 9, opt: true },
@@ -22046,7 +22046,7 @@
   })();
   var RipgrepSearchParams_ITextQueryBuilderOptionsProto_ExtraFileResourcesProto = RipgrepSearchParams_ITextQueryBuilderOptionsProto_ExtraFileResourcesProto$Runtime;
   RipgrepSearchParams_ITextQueryBuilderOptionsProto_ExtraFileResourcesProto.runtime = proto3;
-  RipgrepSearchParams_ITextQueryBuilderOptionsProto_ExtraFileResourcesProto.typeName = "simeon.v1.RipgrepSearchParams.ITextQueryBuilderOptionsProto.ExtraFileResourcesProto";
+  RipgrepSearchParams_ITextQueryBuilderOptionsProto_ExtraFileResourcesProto.typeName = "aiserver.v1.RipgrepSearchParams.ITextQueryBuilderOptionsProto.ExtraFileResourcesProto";
   RipgrepSearchParams_ITextQueryBuilderOptionsProto_ExtraFileResourcesProto.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "extra_file_resources", kind: "scalar", T: 9, repeated: true }
   ]);
@@ -22071,7 +22071,7 @@
   })();
   var RipgrepSearchParams_ITextQueryBuilderOptionsProto_ExcludePatternProto = RipgrepSearchParams_ITextQueryBuilderOptionsProto_ExcludePatternProto$Runtime;
   RipgrepSearchParams_ITextQueryBuilderOptionsProto_ExcludePatternProto.runtime = proto3;
-  RipgrepSearchParams_ITextQueryBuilderOptionsProto_ExcludePatternProto.typeName = "simeon.v1.RipgrepSearchParams.ITextQueryBuilderOptionsProto.ExcludePatternProto";
+  RipgrepSearchParams_ITextQueryBuilderOptionsProto_ExcludePatternProto.typeName = "aiserver.v1.RipgrepSearchParams.ITextQueryBuilderOptionsProto.ExcludePatternProto";
   RipgrepSearchParams_ITextQueryBuilderOptionsProto_ExcludePatternProto.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "exclude_pattern", kind: "message", T: RipgrepSearchParams_ITextQueryBuilderOptionsProto_ISearchPatternBuilderProto, repeated: true }
   ]);
@@ -22095,7 +22095,7 @@
   })();
   var RipgrepSearchParams_ITextQueryBuilderOptionsProto_ISearchPatternBuilderProto = RipgrepSearchParams_ITextQueryBuilderOptionsProto_ISearchPatternBuilderProto$Runtime;
   RipgrepSearchParams_ITextQueryBuilderOptionsProto_ISearchPatternBuilderProto.runtime = proto3;
-  RipgrepSearchParams_ITextQueryBuilderOptionsProto_ISearchPatternBuilderProto.typeName = "simeon.v1.RipgrepSearchParams.ITextQueryBuilderOptionsProto.ISearchPatternBuilderProto";
+  RipgrepSearchParams_ITextQueryBuilderOptionsProto_ISearchPatternBuilderProto.typeName = "aiserver.v1.RipgrepSearchParams.ITextQueryBuilderOptionsProto.ISearchPatternBuilderProto";
   RipgrepSearchParams_ITextQueryBuilderOptionsProto_ISearchPatternBuilderProto.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "uri", kind: "scalar", T: 9, opt: true },
     { no: 2, name: "pattern", kind: "message", T: RipgrepSearchParams_ITextQueryBuilderOptionsProto_ISearchPathPatternBuilderProto }
@@ -22121,7 +22121,7 @@
   })();
   var RipgrepSearchParams_ITextQueryBuilderOptionsProto_ISearchPathPatternBuilderProto = RipgrepSearchParams_ITextQueryBuilderOptionsProto_ISearchPathPatternBuilderProto$Runtime;
   RipgrepSearchParams_ITextQueryBuilderOptionsProto_ISearchPathPatternBuilderProto.runtime = proto3;
-  RipgrepSearchParams_ITextQueryBuilderOptionsProto_ISearchPathPatternBuilderProto.typeName = "simeon.v1.RipgrepSearchParams.ITextQueryBuilderOptionsProto.ISearchPathPatternBuilderProto";
+  RipgrepSearchParams_ITextQueryBuilderOptionsProto_ISearchPathPatternBuilderProto.typeName = "aiserver.v1.RipgrepSearchParams.ITextQueryBuilderOptionsProto.ISearchPathPatternBuilderProto";
   RipgrepSearchParams_ITextQueryBuilderOptionsProto_ISearchPathPatternBuilderProto.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "pattern", kind: "scalar", T: 9, opt: true },
     { no: 2, name: "patterns", kind: "scalar", T: 9, repeated: true }
@@ -22148,7 +22148,7 @@
   })();
   var RipgrepSearchParams_ITextQueryBuilderOptionsProto_ITextSearchPreviewOptionsProto = RipgrepSearchParams_ITextQueryBuilderOptionsProto_ITextSearchPreviewOptionsProto$Runtime;
   RipgrepSearchParams_ITextQueryBuilderOptionsProto_ITextSearchPreviewOptionsProto.runtime = proto3;
-  RipgrepSearchParams_ITextQueryBuilderOptionsProto_ITextSearchPreviewOptionsProto.typeName = "simeon.v1.RipgrepSearchParams.ITextQueryBuilderOptionsProto.ITextSearchPreviewOptionsProto";
+  RipgrepSearchParams_ITextQueryBuilderOptionsProto_ITextSearchPreviewOptionsProto.typeName = "aiserver.v1.RipgrepSearchParams.ITextQueryBuilderOptionsProto.ITextSearchPreviewOptionsProto";
   RipgrepSearchParams_ITextQueryBuilderOptionsProto_ITextSearchPreviewOptionsProto.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -22189,7 +22189,7 @@
   })();
   var RipgrepSearchParams_ITextQueryBuilderOptionsProto_INotebookSearchConfigProto = RipgrepSearchParams_ITextQueryBuilderOptionsProto_INotebookSearchConfigProto$Runtime;
   RipgrepSearchParams_ITextQueryBuilderOptionsProto_INotebookSearchConfigProto.runtime = proto3;
-  RipgrepSearchParams_ITextQueryBuilderOptionsProto_INotebookSearchConfigProto.typeName = "simeon.v1.RipgrepSearchParams.ITextQueryBuilderOptionsProto.INotebookSearchConfigProto";
+  RipgrepSearchParams_ITextQueryBuilderOptionsProto_INotebookSearchConfigProto.typeName = "aiserver.v1.RipgrepSearchParams.ITextQueryBuilderOptionsProto.INotebookSearchConfigProto";
   RipgrepSearchParams_ITextQueryBuilderOptionsProto_INotebookSearchConfigProto.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -22240,7 +22240,7 @@
   })();
   var RipgrepSearchResult = RipgrepSearchResult$Runtime;
   RipgrepSearchResult.runtime = proto3;
-  RipgrepSearchResult.typeName = "simeon.v1.RipgrepSearchResult";
+  RipgrepSearchResult.typeName = "aiserver.v1.RipgrepSearchResult";
   RipgrepSearchResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "internal", kind: "message", T: RipgrepSearchResultInternal }
   ]);
@@ -22267,7 +22267,7 @@
   })();
   var RipgrepSearchResultInternal = RipgrepSearchResultInternal$Runtime;
   RipgrepSearchResultInternal.runtime = proto3;
-  RipgrepSearchResultInternal.typeName = "simeon.v1.RipgrepSearchResultInternal";
+  RipgrepSearchResultInternal.typeName = "aiserver.v1.RipgrepSearchResultInternal";
   RipgrepSearchResultInternal.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "results", kind: "message", T: RipgrepSearchResultInternal_IFileMatch, repeated: true },
     { no: 2, name: "exit", kind: "enum", T: proto3.getEnumType(RipgrepSearchResultInternal_SearchCompletionExitCode), opt: true },
@@ -22281,7 +22281,7 @@
     RipgrepSearchResultInternal_TextSearchCompleteMessageType2[RipgrepSearchResultInternal_TextSearchCompleteMessageType2["INFORMATION"] = 1] = "INFORMATION";
     RipgrepSearchResultInternal_TextSearchCompleteMessageType2[RipgrepSearchResultInternal_TextSearchCompleteMessageType2["WARNING"] = 2] = "WARNING";
   })(RipgrepSearchResultInternal_TextSearchCompleteMessageType || (RipgrepSearchResultInternal_TextSearchCompleteMessageType = {}));
-  proto3.util.setEnumType(RipgrepSearchResultInternal_TextSearchCompleteMessageType, "simeon.v1.RipgrepSearchResultInternal.TextSearchCompleteMessageType", [
+  proto3.util.setEnumType(RipgrepSearchResultInternal_TextSearchCompleteMessageType, "aiserver.v1.RipgrepSearchResultInternal.TextSearchCompleteMessageType", [
     { no: 0, name: "TEXT_SEARCH_COMPLETE_MESSAGE_TYPE_UNSPECIFIED" },
     { no: 1, name: "TEXT_SEARCH_COMPLETE_MESSAGE_TYPE_INFORMATION" },
     { no: 2, name: "TEXT_SEARCH_COMPLETE_MESSAGE_TYPE_WARNING" }
@@ -22291,7 +22291,7 @@
     RipgrepSearchResultInternal_SearchCompletionExitCode2[RipgrepSearchResultInternal_SearchCompletionExitCode2["NORMAL"] = 1] = "NORMAL";
     RipgrepSearchResultInternal_SearchCompletionExitCode2[RipgrepSearchResultInternal_SearchCompletionExitCode2["NEW_SEARCH_STARTED"] = 2] = "NEW_SEARCH_STARTED";
   })(RipgrepSearchResultInternal_SearchCompletionExitCode || (RipgrepSearchResultInternal_SearchCompletionExitCode = {}));
-  proto3.util.setEnumType(RipgrepSearchResultInternal_SearchCompletionExitCode, "simeon.v1.RipgrepSearchResultInternal.SearchCompletionExitCode", [
+  proto3.util.setEnumType(RipgrepSearchResultInternal_SearchCompletionExitCode, "aiserver.v1.RipgrepSearchResultInternal.SearchCompletionExitCode", [
     { no: 0, name: "SEARCH_COMPLETION_EXIT_CODE_UNSPECIFIED" },
     { no: 1, name: "SEARCH_COMPLETION_EXIT_CODE_NORMAL" },
     { no: 2, name: "SEARCH_COMPLETION_EXIT_CODE_NEW_SEARCH_STARTED" }
@@ -22318,7 +22318,7 @@
   })();
   var RipgrepSearchResultInternal_IFileMatch = RipgrepSearchResultInternal_IFileMatch$Runtime;
   RipgrepSearchResultInternal_IFileMatch.runtime = proto3;
-  RipgrepSearchResultInternal_IFileMatch.typeName = "simeon.v1.RipgrepSearchResultInternal.IFileMatch";
+  RipgrepSearchResultInternal_IFileMatch.typeName = "aiserver.v1.RipgrepSearchResultInternal.IFileMatch";
   RipgrepSearchResultInternal_IFileMatch.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -22350,7 +22350,7 @@
   })();
   var RipgrepSearchResultInternal_ITextSearchResult = RipgrepSearchResultInternal_ITextSearchResult$Runtime;
   RipgrepSearchResultInternal_ITextSearchResult.runtime = proto3;
-  RipgrepSearchResultInternal_ITextSearchResult.typeName = "simeon.v1.RipgrepSearchResultInternal.ITextSearchResult";
+  RipgrepSearchResultInternal_ITextSearchResult.typeName = "aiserver.v1.RipgrepSearchResultInternal.ITextSearchResult";
   RipgrepSearchResultInternal_ITextSearchResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "match", kind: "message", T: RipgrepSearchResultInternal_ITextSearchMatch, oneof: "result" },
     { no: 2, name: "context", kind: "message", T: RipgrepSearchResultInternal_ITextSearchContext, oneof: "result" }
@@ -22377,7 +22377,7 @@
   })();
   var RipgrepSearchResultInternal_ITextSearchMatch = RipgrepSearchResultInternal_ITextSearchMatch$Runtime;
   RipgrepSearchResultInternal_ITextSearchMatch.runtime = proto3;
-  RipgrepSearchResultInternal_ITextSearchMatch.typeName = "simeon.v1.RipgrepSearchResultInternal.ITextSearchMatch";
+  RipgrepSearchResultInternal_ITextSearchMatch.typeName = "aiserver.v1.RipgrepSearchResultInternal.ITextSearchMatch";
   RipgrepSearchResultInternal_ITextSearchMatch.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "uri", kind: "scalar", T: 9, opt: true },
     { no: 2, name: "range_locations", kind: "message", T: RipgrepSearchResultInternal_ISearchRangeSetPairing, repeated: true },
@@ -22413,7 +22413,7 @@
   })();
   var RipgrepSearchResultInternal_ITextSearchContext = RipgrepSearchResultInternal_ITextSearchContext$Runtime;
   RipgrepSearchResultInternal_ITextSearchContext.runtime = proto3;
-  RipgrepSearchResultInternal_ITextSearchContext.typeName = "simeon.v1.RipgrepSearchResultInternal.ITextSearchContext";
+  RipgrepSearchResultInternal_ITextSearchContext.typeName = "aiserver.v1.RipgrepSearchResultInternal.ITextSearchContext";
   RipgrepSearchResultInternal_ITextSearchContext.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "uri", kind: "scalar", T: 9, opt: true },
     {
@@ -22451,7 +22451,7 @@
   })();
   var RipgrepSearchResultInternal_ISearchRangeSetPairing = RipgrepSearchResultInternal_ISearchRangeSetPairing$Runtime;
   RipgrepSearchResultInternal_ISearchRangeSetPairing.runtime = proto3;
-  RipgrepSearchResultInternal_ISearchRangeSetPairing.typeName = "simeon.v1.RipgrepSearchResultInternal.ISearchRangeSetPairing";
+  RipgrepSearchResultInternal_ISearchRangeSetPairing.typeName = "aiserver.v1.RipgrepSearchResultInternal.ISearchRangeSetPairing";
   RipgrepSearchResultInternal_ISearchRangeSetPairing.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "source", kind: "message", T: RipgrepSearchResultInternal_ISearchRange },
     { no: 2, name: "preview", kind: "message", T: RipgrepSearchResultInternal_ISearchRange }
@@ -22480,7 +22480,7 @@
   })();
   var RipgrepSearchResultInternal_ISearchRange = RipgrepSearchResultInternal_ISearchRange$Runtime;
   RipgrepSearchResultInternal_ISearchRange.runtime = proto3;
-  RipgrepSearchResultInternal_ISearchRange.typeName = "simeon.v1.RipgrepSearchResultInternal.ISearchRange";
+  RipgrepSearchResultInternal_ISearchRange.typeName = "aiserver.v1.RipgrepSearchResultInternal.ISearchRange";
   RipgrepSearchResultInternal_ISearchRange.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -22533,7 +22533,7 @@
   })();
   var RipgrepSearchResultInternal_ITextSearchCompleteMessage = RipgrepSearchResultInternal_ITextSearchCompleteMessage$Runtime;
   RipgrepSearchResultInternal_ITextSearchCompleteMessage.runtime = proto3;
-  RipgrepSearchResultInternal_ITextSearchCompleteMessage.typeName = "simeon.v1.RipgrepSearchResultInternal.ITextSearchCompleteMessage";
+  RipgrepSearchResultInternal_ITextSearchCompleteMessage.typeName = "aiserver.v1.RipgrepSearchResultInternal.ITextSearchCompleteMessage";
   RipgrepSearchResultInternal_ITextSearchCompleteMessage.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -22569,7 +22569,7 @@
   })();
   var RipgrepSearchResultInternal_IFileSearchStats = RipgrepSearchResultInternal_IFileSearchStats$Runtime;
   RipgrepSearchResultInternal_IFileSearchStats.runtime = proto3;
-  RipgrepSearchResultInternal_IFileSearchStats.typeName = "simeon.v1.RipgrepSearchResultInternal.IFileSearchStats";
+  RipgrepSearchResultInternal_IFileSearchStats.typeName = "aiserver.v1.RipgrepSearchResultInternal.IFileSearchStats";
   RipgrepSearchResultInternal_IFileSearchStats.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -22596,7 +22596,7 @@
     RipgrepSearchResultInternal_IFileSearchStats_FileSearchProviderType2[RipgrepSearchResultInternal_IFileSearchStats_FileSearchProviderType2["FILE_SEARCH_PROVIDER"] = 1] = "FILE_SEARCH_PROVIDER";
     RipgrepSearchResultInternal_IFileSearchStats_FileSearchProviderType2[RipgrepSearchResultInternal_IFileSearchStats_FileSearchProviderType2["SEARCH_PROCESS"] = 2] = "SEARCH_PROCESS";
   })(RipgrepSearchResultInternal_IFileSearchStats_FileSearchProviderType || (RipgrepSearchResultInternal_IFileSearchStats_FileSearchProviderType = {}));
-  proto3.util.setEnumType(RipgrepSearchResultInternal_IFileSearchStats_FileSearchProviderType, "simeon.v1.RipgrepSearchResultInternal.IFileSearchStats.FileSearchProviderType", [
+  proto3.util.setEnumType(RipgrepSearchResultInternal_IFileSearchStats_FileSearchProviderType, "aiserver.v1.RipgrepSearchResultInternal.IFileSearchStats.FileSearchProviderType", [
     { no: 0, name: "FILE_SEARCH_PROVIDER_TYPE_UNSPECIFIED" },
     { no: 1, name: "FILE_SEARCH_PROVIDER_TYPE_FILE_SEARCH_PROVIDER" },
     { no: 2, name: "FILE_SEARCH_PROVIDER_TYPE_SEARCH_PROCESS" }
@@ -22622,7 +22622,7 @@
   })();
   var RipgrepSearchResultInternal_ITextSearchStats = RipgrepSearchResultInternal_ITextSearchStats$Runtime;
   RipgrepSearchResultInternal_ITextSearchStats.runtime = proto3;
-  RipgrepSearchResultInternal_ITextSearchStats.typeName = "simeon.v1.RipgrepSearchResultInternal.ITextSearchStats";
+  RipgrepSearchResultInternal_ITextSearchStats.typeName = "aiserver.v1.RipgrepSearchResultInternal.ITextSearchStats";
   RipgrepSearchResultInternal_ITextSearchStats.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "type", kind: "enum", T: proto3.getEnumType(RipgrepSearchResultInternal_ITextSearchStats_TextSearchProviderType) }
   ]);
@@ -22632,7 +22632,7 @@
     RipgrepSearchResultInternal_ITextSearchStats_TextSearchProviderType2[RipgrepSearchResultInternal_ITextSearchStats_TextSearchProviderType2["SEARCH_PROCESS"] = 2] = "SEARCH_PROCESS";
     RipgrepSearchResultInternal_ITextSearchStats_TextSearchProviderType2[RipgrepSearchResultInternal_ITextSearchStats_TextSearchProviderType2["AI_TEXT_SEARCH_PROVIDER"] = 3] = "AI_TEXT_SEARCH_PROVIDER";
   })(RipgrepSearchResultInternal_ITextSearchStats_TextSearchProviderType || (RipgrepSearchResultInternal_ITextSearchStats_TextSearchProviderType = {}));
-  proto3.util.setEnumType(RipgrepSearchResultInternal_ITextSearchStats_TextSearchProviderType, "simeon.v1.RipgrepSearchResultInternal.ITextSearchStats.TextSearchProviderType", [
+  proto3.util.setEnumType(RipgrepSearchResultInternal_ITextSearchStats_TextSearchProviderType, "aiserver.v1.RipgrepSearchResultInternal.ITextSearchStats.TextSearchProviderType", [
     { no: 0, name: "TEXT_SEARCH_PROVIDER_TYPE_UNSPECIFIED" },
     { no: 1, name: "TEXT_SEARCH_PROVIDER_TYPE_TEXT_SEARCH_PROVIDER" },
     { no: 2, name: "TEXT_SEARCH_PROVIDER_TYPE_SEARCH_PROCESS" },
@@ -22662,7 +22662,7 @@
   })();
   var RipgrepSearchResultInternal_ISearchEngineStats = RipgrepSearchResultInternal_ISearchEngineStats$Runtime;
   RipgrepSearchResultInternal_ISearchEngineStats.runtime = proto3;
-  RipgrepSearchResultInternal_ISearchEngineStats.typeName = "simeon.v1.RipgrepSearchResultInternal.ISearchEngineStats";
+  RipgrepSearchResultInternal_ISearchEngineStats.typeName = "aiserver.v1.RipgrepSearchResultInternal.ISearchEngineStats";
   RipgrepSearchResultInternal_ISearchEngineStats.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -22718,7 +22718,7 @@
   })();
   var RipgrepSearchResultInternal_ICachedSearchStats = RipgrepSearchResultInternal_ICachedSearchStats$Runtime;
   RipgrepSearchResultInternal_ICachedSearchStats.runtime = proto3;
-  RipgrepSearchResultInternal_ICachedSearchStats.typeName = "simeon.v1.RipgrepSearchResultInternal.ICachedSearchStats";
+  RipgrepSearchResultInternal_ICachedSearchStats.typeName = "aiserver.v1.RipgrepSearchResultInternal.ICachedSearchStats";
   RipgrepSearchResultInternal_ICachedSearchStats.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -22771,7 +22771,7 @@
   })();
   var RipgrepSearchResultInternal_IFileSearchProviderStats = RipgrepSearchResultInternal_IFileSearchProviderStats$Runtime;
   RipgrepSearchResultInternal_IFileSearchProviderStats.runtime = proto3;
-  RipgrepSearchResultInternal_IFileSearchProviderStats.typeName = "simeon.v1.RipgrepSearchResultInternal.IFileSearchProviderStats";
+  RipgrepSearchResultInternal_IFileSearchProviderStats.typeName = "aiserver.v1.RipgrepSearchResultInternal.IFileSearchProviderStats";
   RipgrepSearchResultInternal_IFileSearchProviderStats.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -22809,7 +22809,7 @@
   })();
   var RipgrepSearchStream = RipgrepSearchStream$Runtime;
   RipgrepSearchStream.runtime = proto3;
-  RipgrepSearchStream.typeName = "simeon.v1.RipgrepSearchStream";
+  RipgrepSearchStream.typeName = "aiserver.v1.RipgrepSearchStream";
   RipgrepSearchStream.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -22842,7 +22842,7 @@
   })();
   var ReadSemsearchFilesParams = ReadSemsearchFilesParams$Runtime;
   ReadSemsearchFilesParams.runtime = proto3;
-  ReadSemsearchFilesParams.typeName = "simeon.v1.ReadSemsearchFilesParams";
+  ReadSemsearchFilesParams.typeName = "aiserver.v1.ReadSemsearchFilesParams";
   ReadSemsearchFilesParams.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "repository_info", kind: "message", T: RepositoryInfo },
     { no: 2, name: "code_results", kind: "message", T: CodeResult, repeated: true },
@@ -22878,7 +22878,7 @@
   })();
   var MissingFile = MissingFile$Runtime;
   MissingFile.runtime = proto3;
-  MissingFile.typeName = "simeon.v1.MissingFile";
+  MissingFile.typeName = "aiserver.v1.MissingFile";
   MissingFile.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -22895,7 +22895,7 @@
     MissingFile_MissingReason2[MissingFile_MissingReason2["TOO_LARGE"] = 1] = "TOO_LARGE";
     MissingFile_MissingReason2[MissingFile_MissingReason2["NOT_FOUND"] = 2] = "NOT_FOUND";
   })(MissingFile_MissingReason || (MissingFile_MissingReason = {}));
-  proto3.util.setEnumType(MissingFile_MissingReason, "simeon.v1.MissingFile.MissingReason", [
+  proto3.util.setEnumType(MissingFile_MissingReason, "aiserver.v1.MissingFile.MissingReason", [
     { no: 0, name: "MISSING_REASON_UNSPECIFIED" },
     { no: 1, name: "MISSING_REASON_TOO_LARGE" },
     { no: 2, name: "MISSING_REASON_NOT_FOUND" }
@@ -22922,7 +22922,7 @@
   })();
   var Knowledge = Knowledge$Runtime;
   Knowledge.runtime = proto3;
-  Knowledge.typeName = "simeon.v1.Knowledge";
+  Knowledge.typeName = "aiserver.v1.Knowledge";
   Knowledge.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -22963,7 +22963,7 @@
   })();
   var ToolPullRequestResult = ToolPullRequestResult$Runtime;
   ToolPullRequestResult.runtime = proto3;
-  ToolPullRequestResult.typeName = "simeon.v1.ToolPullRequestResult";
+  ToolPullRequestResult.typeName = "aiserver.v1.ToolPullRequestResult";
   ToolPullRequestResult.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -23018,7 +23018,7 @@
   })();
   var ReadSemsearchFilesResult = ReadSemsearchFilesResult$Runtime;
   ReadSemsearchFilesResult.runtime = proto3;
-  ReadSemsearchFilesResult.typeName = "simeon.v1.ReadSemsearchFilesResult";
+  ReadSemsearchFilesResult.typeName = "aiserver.v1.ReadSemsearchFilesResult";
   ReadSemsearchFilesResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "code_results", kind: "message", T: CodeResult, repeated: true },
     { no: 2, name: "all_files", kind: "message", T: File2, repeated: true },
@@ -23049,7 +23049,7 @@
   })();
   var ReadSemsearchFilesStream = ReadSemsearchFilesStream$Runtime;
   ReadSemsearchFilesStream.runtime = proto3;
-  ReadSemsearchFilesStream.typeName = "simeon.v1.ReadSemsearchFilesStream";
+  ReadSemsearchFilesStream.typeName = "aiserver.v1.ReadSemsearchFilesStream";
   ReadSemsearchFilesStream.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -23083,7 +23083,7 @@
   })();
   var SemanticSearchFullParams = SemanticSearchFullParams$Runtime;
   SemanticSearchFullParams.runtime = proto3;
-  SemanticSearchFullParams.typeName = "simeon.v1.SemanticSearchFullParams";
+  SemanticSearchFullParams.typeName = "aiserver.v1.SemanticSearchFullParams";
   SemanticSearchFullParams.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "repository_info", kind: "message", T: RepositoryInfo },
     {
@@ -23132,7 +23132,7 @@
   })();
   var SemanticSearchFullResult = SemanticSearchFullResult$Runtime;
   SemanticSearchFullResult.runtime = proto3;
-  SemanticSearchFullResult.typeName = "simeon.v1.SemanticSearchFullResult";
+  SemanticSearchFullResult.typeName = "aiserver.v1.SemanticSearchFullResult";
   SemanticSearchFullResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "code_results", kind: "message", T: CodeResult, repeated: true },
     { no: 2, name: "all_files", kind: "message", T: File2, repeated: true },
@@ -23163,7 +23163,7 @@
   })();
   var SemanticSearchFullStream = SemanticSearchFullStream$Runtime;
   SemanticSearchFullStream.runtime = proto3;
-  SemanticSearchFullStream.typeName = "simeon.v1.SemanticSearchFullStream";
+  SemanticSearchFullStream.typeName = "aiserver.v1.SemanticSearchFullStream";
   SemanticSearchFullStream.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -23194,7 +23194,7 @@
   })();
   var DeleteFileParams = DeleteFileParams$Runtime;
   DeleteFileParams.runtime = proto3;
-  DeleteFileParams.typeName = "simeon.v1.DeleteFileParams";
+  DeleteFileParams.typeName = "aiserver.v1.DeleteFileParams";
   DeleteFileParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -23227,7 +23227,7 @@
   })();
   var DeleteFileResult = DeleteFileResult$Runtime;
   DeleteFileResult.runtime = proto3;
-  DeleteFileResult.typeName = "simeon.v1.DeleteFileResult";
+  DeleteFileResult.typeName = "aiserver.v1.DeleteFileResult";
   DeleteFileResult.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -23272,7 +23272,7 @@
   })();
   var DeleteFileStream = DeleteFileStream$Runtime;
   DeleteFileStream.runtime = proto3;
-  DeleteFileStream.typeName = "simeon.v1.DeleteFileStream";
+  DeleteFileStream.typeName = "aiserver.v1.DeleteFileStream";
   DeleteFileStream.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -23304,7 +23304,7 @@
   })();
   var BuiltinToolCall = BuiltinToolCall$Runtime;
   BuiltinToolCall.runtime = proto3;
-  BuiltinToolCall.typeName = "simeon.v1.BuiltinToolCall";
+  BuiltinToolCall.typeName = "aiserver.v1.BuiltinToolCall";
   BuiltinToolCall.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "tool", kind: "enum", T: proto3.getEnumType(BuiltinTool) },
     { no: 2, name: "search_params", kind: "message", T: SearchParams, oneof: "params" },
@@ -23353,7 +23353,7 @@
   })();
   var BuiltinToolResult = BuiltinToolResult$Runtime;
   BuiltinToolResult.runtime = proto3;
-  BuiltinToolResult.typeName = "simeon.v1.BuiltinToolResult";
+  BuiltinToolResult.typeName = "aiserver.v1.BuiltinToolResult";
   BuiltinToolResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "tool", kind: "enum", T: proto3.getEnumType(BuiltinTool) },
     { no: 2, name: "search_result", kind: "message", T: SearchResult, oneof: "result" },
@@ -23401,7 +23401,7 @@
   })();
   var AddUiStepParams = AddUiStepParams$Runtime;
   AddUiStepParams.runtime = proto3;
-  AddUiStepParams.typeName = "simeon.v1.AddUiStepParams";
+  AddUiStepParams.typeName = "aiserver.v1.AddUiStepParams";
   AddUiStepParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -23433,7 +23433,7 @@
   })();
   var AddUiStepParams_SearchResult = AddUiStepParams_SearchResult$Runtime;
   AddUiStepParams_SearchResult.runtime = proto3;
-  AddUiStepParams_SearchResult.typeName = "simeon.v1.AddUiStepParams.SearchResult";
+  AddUiStepParams_SearchResult.typeName = "aiserver.v1.AddUiStepParams.SearchResult";
   AddUiStepParams_SearchResult.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -23464,7 +23464,7 @@
   })();
   var AddUiStepParams_SearchResults = AddUiStepParams_SearchResults$Runtime;
   AddUiStepParams_SearchResults.runtime = proto3;
-  AddUiStepParams_SearchResults.typeName = "simeon.v1.AddUiStepParams.SearchResults";
+  AddUiStepParams_SearchResults.typeName = "aiserver.v1.AddUiStepParams.SearchResults";
   AddUiStepParams_SearchResults.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "search_results", kind: "message", T: AddUiStepParams_SearchResult, repeated: true }
   ]);
@@ -23488,7 +23488,7 @@
   })();
   var AddUiStepResult = AddUiStepResult$Runtime;
   AddUiStepResult.runtime = proto3;
-  AddUiStepResult.typeName = "simeon.v1.AddUiStepResult";
+  AddUiStepResult.typeName = "aiserver.v1.AddUiStepResult";
   AddUiStepResult.fields = proto3.util.newFieldList(() => []);
   var ServerSideToolResult$Runtime = /* @__PURE__ */ (() => class _ServerSideToolResult extends Message {
     constructor(data) {
@@ -23510,7 +23510,7 @@
   })();
   var ServerSideToolResult = ServerSideToolResult$Runtime;
   ServerSideToolResult.runtime = proto3;
-  ServerSideToolResult.typeName = "simeon.v1.ServerSideToolResult";
+  ServerSideToolResult.typeName = "aiserver.v1.ServerSideToolResult";
   ServerSideToolResult.fields = proto3.util.newFieldList(() => []);
   var ToolCall2$Runtime = /* @__PURE__ */ (() => class _ToolCall extends Message {
     constructor(data) {
@@ -23533,7 +23533,7 @@
   })();
   var ToolCall2 = ToolCall2$Runtime;
   ToolCall2.runtime = proto3;
-  ToolCall2.typeName = "simeon.v1.ToolCall";
+  ToolCall2.typeName = "aiserver.v1.ToolCall";
   ToolCall2.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "builtin_tool_call", kind: "message", T: BuiltinToolCall, oneof: "tool_call" },
     { no: 2, name: "custom_tool_call", kind: "message", T: CustomToolCall, oneof: "tool_call" }
@@ -23559,7 +23559,7 @@
   })();
   var ToolResult = ToolResult$Runtime;
   ToolResult.runtime = proto3;
-  ToolResult.typeName = "simeon.v1.ToolResult";
+  ToolResult.typeName = "aiserver.v1.ToolResult";
   ToolResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "builtin_tool_result", kind: "message", T: BuiltinToolResult, oneof: "tool_result" },
     { no: 2, name: "custom_tool_result", kind: "message", T: CustomToolResult, oneof: "tool_result" },
@@ -23586,7 +23586,7 @@
   })();
   var ReadWithLinterParams = ReadWithLinterParams$Runtime;
   ReadWithLinterParams.runtime = proto3;
-  ReadWithLinterParams.typeName = "simeon.v1.ReadWithLinterParams";
+  ReadWithLinterParams.typeName = "aiserver.v1.ReadWithLinterParams";
   ReadWithLinterParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -23618,7 +23618,7 @@
   })();
   var ReadWithLinterResult = ReadWithLinterResult$Runtime;
   ReadWithLinterResult.runtime = proto3;
-  ReadWithLinterResult.typeName = "simeon.v1.ReadWithLinterResult";
+  ReadWithLinterResult.typeName = "aiserver.v1.ReadWithLinterResult";
   ReadWithLinterResult.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -23651,7 +23651,7 @@
   })();
   var RunTerminalCommandsParams = RunTerminalCommandsParams$Runtime;
   RunTerminalCommandsParams.runtime = proto3;
-  RunTerminalCommandsParams.typeName = "simeon.v1.RunTerminalCommandsParams";
+  RunTerminalCommandsParams.typeName = "aiserver.v1.RunTerminalCommandsParams";
   RunTerminalCommandsParams.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "commands", kind: "scalar", T: 9, repeated: true },
     {
@@ -23683,7 +23683,7 @@
   })();
   var RunTerminalCommandsResult = RunTerminalCommandsResult$Runtime;
   RunTerminalCommandsResult.runtime = proto3;
-  RunTerminalCommandsResult.typeName = "simeon.v1.RunTerminalCommandsResult";
+  RunTerminalCommandsResult.typeName = "aiserver.v1.RunTerminalCommandsResult";
   RunTerminalCommandsResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "outputs", kind: "scalar", T: 9, repeated: true }
   ]);
@@ -23710,7 +23710,7 @@
   })();
   var CreateRmFilesParams = CreateRmFilesParams$Runtime;
   CreateRmFilesParams.runtime = proto3;
-  CreateRmFilesParams.typeName = "simeon.v1.CreateRmFilesParams";
+  CreateRmFilesParams.typeName = "aiserver.v1.CreateRmFilesParams";
   CreateRmFilesParams.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "removed_file_paths", kind: "scalar", T: 9, repeated: true },
     { no: 2, name: "created_file_paths", kind: "scalar", T: 9, repeated: true },
@@ -23738,7 +23738,7 @@
   })();
   var CreateRmFilesResult = CreateRmFilesResult$Runtime;
   CreateRmFilesResult.runtime = proto3;
-  CreateRmFilesResult.typeName = "simeon.v1.CreateRmFilesResult";
+  CreateRmFilesResult.typeName = "aiserver.v1.CreateRmFilesResult";
   CreateRmFilesResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "created_file_paths", kind: "scalar", T: 9, repeated: true },
     { no: 2, name: "removed_file_paths", kind: "scalar", T: 9, repeated: true }
@@ -23763,7 +23763,7 @@
   })();
   var GetProjectStructureParams = GetProjectStructureParams$Runtime;
   GetProjectStructureParams.runtime = proto3;
-  GetProjectStructureParams.typeName = "simeon.v1.GetProjectStructureParams";
+  GetProjectStructureParams.typeName = "aiserver.v1.GetProjectStructureParams";
   GetProjectStructureParams.fields = proto3.util.newFieldList(() => []);
   var GetProjectStructureResult$Runtime = /* @__PURE__ */ (() => class _GetProjectStructureResult extends Message {
     constructor(data) {
@@ -23787,7 +23787,7 @@
   })();
   var GetProjectStructureResult = GetProjectStructureResult$Runtime;
   GetProjectStructureResult.runtime = proto3;
-  GetProjectStructureResult.typeName = "simeon.v1.GetProjectStructureResult";
+  GetProjectStructureResult.typeName = "aiserver.v1.GetProjectStructureResult";
   GetProjectStructureResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "files", kind: "message", T: GetProjectStructureResult_File, repeated: true },
     {
@@ -23820,7 +23820,7 @@
   })();
   var GetProjectStructureResult_File = GetProjectStructureResult_File$Runtime;
   GetProjectStructureResult_File.runtime = proto3;
-  GetProjectStructureResult_File.typeName = "simeon.v1.GetProjectStructureResult.File";
+  GetProjectStructureResult_File.typeName = "aiserver.v1.GetProjectStructureResult.File";
   GetProjectStructureResult_File.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -23858,7 +23858,7 @@
   })();
   var NewFileParams = NewFileParams$Runtime;
   NewFileParams.runtime = proto3;
-  NewFileParams.typeName = "simeon.v1.NewFileParams";
+  NewFileParams.typeName = "aiserver.v1.NewFileParams";
   NewFileParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -23891,7 +23891,7 @@
   })();
   var SemanticSearchParams = SemanticSearchParams$Runtime;
   SemanticSearchParams.runtime = proto3;
-  SemanticSearchParams.typeName = "simeon.v1.SemanticSearchParams";
+  SemanticSearchParams.typeName = "aiserver.v1.SemanticSearchParams";
   SemanticSearchParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -23942,7 +23942,7 @@
   })();
   var Range2 = Range2$Runtime;
   Range2.runtime = proto3;
-  Range2.typeName = "simeon.v1.Range";
+  Range2.typeName = "aiserver.v1.Range";
   Range2.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -23995,7 +23995,7 @@
   })();
   var MatchRange = MatchRange$Runtime;
   MatchRange.runtime = proto3;
-  MatchRange.typeName = "simeon.v1.MatchRange";
+  MatchRange.typeName = "aiserver.v1.MatchRange";
   MatchRange.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -24034,7 +24034,7 @@
   })();
   var SemanticSearchResult = SemanticSearchResult$Runtime;
   SemanticSearchResult.runtime = proto3;
-  SemanticSearchResult.typeName = "simeon.v1.SemanticSearchResult";
+  SemanticSearchResult.typeName = "aiserver.v1.SemanticSearchResult";
   SemanticSearchResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "results", kind: "message", T: SemanticSearchResult_Item, repeated: true },
     { no: 2, name: "files", kind: "map", K: 9, V: {
@@ -24067,7 +24067,7 @@
   })();
   var SemanticSearchResult_Item = SemanticSearchResult_Item$Runtime;
   SemanticSearchResult_Item.runtime = proto3;
-  SemanticSearchResult_Item.typeName = "simeon.v1.SemanticSearchResult.Item";
+  SemanticSearchResult_Item.typeName = "aiserver.v1.SemanticSearchResult.Item";
   SemanticSearchResult_Item.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -24119,7 +24119,7 @@
   })();
   var SearchParams = SearchParams$Runtime;
   SearchParams.runtime = proto3;
-  SearchParams.typeName = "simeon.v1.SearchParams";
+  SearchParams.typeName = "aiserver.v1.SearchParams";
   SearchParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -24181,7 +24181,7 @@
   })();
   var SearchToolFileSearchResult = SearchToolFileSearchResult$Runtime;
   SearchToolFileSearchResult.runtime = proto3;
-  SearchToolFileSearchResult.typeName = "simeon.v1.SearchToolFileSearchResult";
+  SearchToolFileSearchResult.typeName = "aiserver.v1.SearchToolFileSearchResult";
   SearchToolFileSearchResult.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -24228,7 +24228,7 @@
   })();
   var SearchToolFileSearchResult_Line = SearchToolFileSearchResult_Line$Runtime;
   SearchToolFileSearchResult_Line.runtime = proto3;
-  SearchToolFileSearchResult_Line.typeName = "simeon.v1.SearchToolFileSearchResult.Line";
+  SearchToolFileSearchResult_Line.typeName = "aiserver.v1.SearchToolFileSearchResult.Line";
   SearchToolFileSearchResult_Line.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -24270,7 +24270,7 @@
   })();
   var SearchResult = SearchResult$Runtime;
   SearchResult.runtime = proto3;
-  SearchResult.typeName = "simeon.v1.SearchResult";
+  SearchResult.typeName = "aiserver.v1.SearchResult";
   SearchResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "file_results", kind: "message", T: SearchToolFileSearchResult, repeated: true },
     {
@@ -24324,7 +24324,7 @@
   })();
   var ReadChunkParams = ReadChunkParams$Runtime;
   ReadChunkParams.runtime = proto3;
-  ReadChunkParams.typeName = "simeon.v1.ReadChunkParams";
+  ReadChunkParams.typeName = "aiserver.v1.ReadChunkParams";
   ReadChunkParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -24367,7 +24367,7 @@
   })();
   var ReadChunkResult = ReadChunkResult$Runtime;
   ReadChunkResult.runtime = proto3;
-  ReadChunkResult.typeName = "simeon.v1.ReadChunkResult";
+  ReadChunkResult.typeName = "aiserver.v1.ReadChunkResult";
   ReadChunkResult.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -24419,7 +24419,7 @@
   })();
   var UndoEditParams = UndoEditParams$Runtime;
   UndoEditParams.runtime = proto3;
-  UndoEditParams.typeName = "simeon.v1.UndoEditParams";
+  UndoEditParams.typeName = "aiserver.v1.UndoEditParams";
   UndoEditParams.fields = proto3.util.newFieldList(() => []);
   var EndParams$Runtime = /* @__PURE__ */ (() => class _EndParams extends Message {
     constructor(data) {
@@ -24441,7 +24441,7 @@
   })();
   var EndParams = EndParams$Runtime;
   EndParams.runtime = proto3;
-  EndParams.typeName = "simeon.v1.EndParams";
+  EndParams.typeName = "aiserver.v1.EndParams";
   EndParams.fields = proto3.util.newFieldList(() => []);
   var NewFileResult$Runtime = /* @__PURE__ */ (() => class _NewFileResult extends Message {
     constructor(data) {
@@ -24465,7 +24465,7 @@
   })();
   var NewFileResult = NewFileResult$Runtime;
   NewFileResult.runtime = proto3;
-  NewFileResult.typeName = "simeon.v1.NewFileResult";
+  NewFileResult.typeName = "aiserver.v1.NewFileResult";
   NewFileResult.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -24508,7 +24508,7 @@
   })();
   var UndoEditResult = UndoEditResult$Runtime;
   UndoEditResult.runtime = proto3;
-  UndoEditResult.typeName = "simeon.v1.UndoEditResult";
+  UndoEditResult.typeName = "aiserver.v1.UndoEditResult";
   UndoEditResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "feedback", kind: "scalar", T: 9, repeated: true },
     {
@@ -24561,7 +24561,7 @@
   })();
   var EndResult = EndResult$Runtime;
   EndResult.runtime = proto3;
-  EndResult.typeName = "simeon.v1.EndResult";
+  EndResult.typeName = "aiserver.v1.EndResult";
   EndResult.fields = proto3.util.newFieldList(() => []);
   var CustomToolCall$Runtime = /* @__PURE__ */ (() => class _CustomToolCall extends Message {
     constructor(data) {
@@ -24585,7 +24585,7 @@
   })();
   var CustomToolCall = CustomToolCall$Runtime;
   CustomToolCall.runtime = proto3;
-  CustomToolCall.typeName = "simeon.v1.CustomToolCall";
+  CustomToolCall.typeName = "aiserver.v1.CustomToolCall";
   CustomToolCall.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -24622,7 +24622,7 @@
   })();
   var ScratchpadResult = ScratchpadResult$Runtime;
   ScratchpadResult.runtime = proto3;
-  ScratchpadResult.typeName = "simeon.v1.ScratchpadResult";
+  ScratchpadResult.typeName = "aiserver.v1.ScratchpadResult";
   ScratchpadResult.fields = proto3.util.newFieldList(() => []);
   var CustomToolResult$Runtime = /* @__PURE__ */ (() => class _CustomToolResult extends Message {
     constructor(data) {
@@ -24646,7 +24646,7 @@
   })();
   var CustomToolResult = CustomToolResult$Runtime;
   CustomToolResult.runtime = proto3;
-  CustomToolResult.typeName = "simeon.v1.CustomToolResult";
+  CustomToolResult.typeName = "aiserver.v1.CustomToolResult";
   CustomToolResult.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -24687,7 +24687,7 @@
   })();
   var GotodefParams = GotodefParams$Runtime;
   GotodefParams.runtime = proto3;
-  GotodefParams.typeName = "simeon.v1.GotodefParams";
+  GotodefParams.typeName = "aiserver.v1.GotodefParams";
   GotodefParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -24742,7 +24742,7 @@
   })();
   var GotodefDefinition = GotodefDefinition$Runtime;
   GotodefDefinition.runtime = proto3;
-  GotodefDefinition.typeName = "simeon.v1.GotodefDefinition";
+  GotodefDefinition.typeName = "aiserver.v1.GotodefDefinition";
   GotodefDefinition.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -24790,7 +24790,7 @@
   })();
   var GotodefResult = GotodefResult$Runtime;
   GotodefResult.runtime = proto3;
-  GotodefResult.typeName = "simeon.v1.GotodefResult";
+  GotodefResult.typeName = "aiserver.v1.GotodefResult";
   GotodefResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "definitions", kind: "message", T: GotodefDefinition, repeated: true }
   ]);
@@ -24815,7 +24815,7 @@
   })();
   var ErrorToolResult = ErrorToolResult$Runtime;
   ErrorToolResult.runtime = proto3;
-  ErrorToolResult.typeName = "simeon.v1.ErrorToolResult";
+  ErrorToolResult.typeName = "aiserver.v1.ErrorToolResult";
   ErrorToolResult.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -24849,7 +24849,7 @@
   })();
   var NewEditParams = NewEditParams$Runtime;
   NewEditParams.runtime = proto3;
-  NewEditParams.typeName = "simeon.v1.NewEditParams";
+  NewEditParams.typeName = "aiserver.v1.NewEditParams";
   NewEditParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -24902,7 +24902,7 @@
   })();
   var NewEditResult = NewEditResult$Runtime;
   NewEditResult.runtime = proto3;
-  NewEditResult.typeName = "simeon.v1.NewEditResult";
+  NewEditResult.typeName = "aiserver.v1.NewEditResult";
   NewEditResult.fields = proto3.util.newFieldList(() => []);
   var EditParams$Runtime = /* @__PURE__ */ (() => class _EditParams extends Message {
     constructor(data) {
@@ -24929,7 +24929,7 @@
   })();
   var EditParams = EditParams$Runtime;
   EditParams.runtime = proto3;
-  EditParams.typeName = "simeon.v1.EditParams";
+  EditParams.typeName = "aiserver.v1.EditParams";
   EditParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -24963,7 +24963,7 @@
     EditParams_FrontendEditType2[EditParams_FrontendEditType2["INLINE_DIFFS"] = 1] = "INLINE_DIFFS";
     EditParams_FrontendEditType2[EditParams_FrontendEditType2["SIMPLE"] = 2] = "SIMPLE";
   })(EditParams_FrontendEditType || (EditParams_FrontendEditType = {}));
-  proto3.util.setEnumType(EditParams_FrontendEditType, "simeon.v1.EditParams.FrontendEditType", [
+  proto3.util.setEnumType(EditParams_FrontendEditType, "aiserver.v1.EditParams.FrontendEditType", [
     { no: 0, name: "FRONTEND_EDIT_TYPE_UNSPECIFIED" },
     { no: 1, name: "FRONTEND_EDIT_TYPE_INLINE_DIFFS" },
     { no: 2, name: "FRONTEND_EDIT_TYPE_SIMPLE" }
@@ -24994,7 +24994,7 @@
   })();
   var EditResult2 = EditResult2$Runtime;
   EditResult2.runtime = proto3;
-  EditResult2.typeName = "simeon.v1.EditResult";
+  EditResult2.typeName = "aiserver.v1.EditResult";
   EditResult2.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "feedback", kind: "scalar", T: 9, repeated: true },
     {
@@ -25045,7 +25045,7 @@
   })();
   var EditResult_RelatedInformation = EditResult_RelatedInformation$Runtime;
   EditResult_RelatedInformation.runtime = proto3;
-  EditResult_RelatedInformation.typeName = "simeon.v1.EditResult.RelatedInformation";
+  EditResult_RelatedInformation.typeName = "aiserver.v1.EditResult.RelatedInformation";
   EditResult_RelatedInformation.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -25101,7 +25101,7 @@
   })();
   var EditResult_Feedback = EditResult_Feedback$Runtime;
   EditResult_Feedback.runtime = proto3;
-  EditResult_Feedback.typeName = "simeon.v1.EditResult.Feedback";
+  EditResult_Feedback.typeName = "aiserver.v1.EditResult.Feedback";
   EditResult_Feedback.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -25156,7 +25156,7 @@
   })();
   var AddTestParams = AddTestParams$Runtime;
   AddTestParams.runtime = proto3;
-  AddTestParams.typeName = "simeon.v1.AddTestParams";
+  AddTestParams.typeName = "aiserver.v1.AddTestParams";
   AddTestParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -25201,7 +25201,7 @@
   })();
   var AddTestResult = AddTestResult$Runtime;
   AddTestResult.runtime = proto3;
-  AddTestResult.typeName = "simeon.v1.AddTestResult";
+  AddTestResult.typeName = "aiserver.v1.AddTestResult";
   AddTestResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "feedback", kind: "message", T: AddTestResult_Feedback, repeated: true }
   ]);
@@ -25229,7 +25229,7 @@
   })();
   var AddTestResult_RelatedInformation = AddTestResult_RelatedInformation$Runtime;
   AddTestResult_RelatedInformation.runtime = proto3;
-  AddTestResult_RelatedInformation.typeName = "simeon.v1.AddTestResult.RelatedInformation";
+  AddTestResult_RelatedInformation.typeName = "aiserver.v1.AddTestResult.RelatedInformation";
   AddTestResult_RelatedInformation.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -25285,7 +25285,7 @@
   })();
   var AddTestResult_Feedback = AddTestResult_Feedback$Runtime;
   AddTestResult_Feedback.runtime = proto3;
-  AddTestResult_Feedback.typeName = "simeon.v1.AddTestResult.Feedback";
+  AddTestResult_Feedback.typeName = "aiserver.v1.AddTestResult.Feedback";
   AddTestResult_Feedback.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -25338,7 +25338,7 @@
   })();
   var RunTestParams = RunTestParams$Runtime;
   RunTestParams.runtime = proto3;
-  RunTestParams.typeName = "simeon.v1.RunTestParams";
+  RunTestParams.typeName = "aiserver.v1.RunTestParams";
   RunTestParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -25370,7 +25370,7 @@
   })();
   var RunTestResult = RunTestResult$Runtime;
   RunTestResult.runtime = proto3;
-  RunTestResult.typeName = "simeon.v1.RunTestResult";
+  RunTestResult.typeName = "aiserver.v1.RunTestResult";
   RunTestResult.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -25401,7 +25401,7 @@
   })();
   var GetTestsParams = GetTestsParams$Runtime;
   GetTestsParams.runtime = proto3;
-  GetTestsParams.typeName = "simeon.v1.GetTestsParams";
+  GetTestsParams.typeName = "aiserver.v1.GetTestsParams";
   GetTestsParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -25432,7 +25432,7 @@
   })();
   var GetTestsResult = GetTestsResult$Runtime;
   GetTestsResult.runtime = proto3;
-  GetTestsResult.typeName = "simeon.v1.GetTestsResult";
+  GetTestsResult.typeName = "aiserver.v1.GetTestsResult";
   GetTestsResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "tests", kind: "message", T: GetTestsResult_Test, repeated: true }
   ]);
@@ -25458,7 +25458,7 @@
   })();
   var GetTestsResult_Test = GetTestsResult_Test$Runtime;
   GetTestsResult_Test.runtime = proto3;
-  GetTestsResult_Test.typeName = "simeon.v1.GetTestsResult.Test";
+  GetTestsResult_Test.typeName = "aiserver.v1.GetTestsResult.Test";
   GetTestsResult_Test.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -25490,7 +25490,7 @@
   })();
   var DeleteTestParams = DeleteTestParams$Runtime;
   DeleteTestParams.runtime = proto3;
-  DeleteTestParams.typeName = "simeon.v1.DeleteTestParams";
+  DeleteTestParams.typeName = "aiserver.v1.DeleteTestParams";
   DeleteTestParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -25521,7 +25521,7 @@
   })();
   var DeleteTestResult = DeleteTestResult$Runtime;
   DeleteTestResult.runtime = proto3;
-  DeleteTestResult.typeName = "simeon.v1.DeleteTestResult";
+  DeleteTestResult.typeName = "aiserver.v1.DeleteTestResult";
   DeleteTestResult.fields = proto3.util.newFieldList(() => []);
   var SaveFileParams$Runtime = /* @__PURE__ */ (() => class _SaveFileParams extends Message {
     constructor(data) {
@@ -25544,7 +25544,7 @@
   })();
   var SaveFileParams = SaveFileParams$Runtime;
   SaveFileParams.runtime = proto3;
-  SaveFileParams.typeName = "simeon.v1.SaveFileParams";
+  SaveFileParams.typeName = "aiserver.v1.SaveFileParams";
   SaveFileParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -25574,7 +25574,7 @@
   })();
   var SaveFileResult = SaveFileResult$Runtime;
   SaveFileResult.runtime = proto3;
-  SaveFileResult.typeName = "simeon.v1.SaveFileResult";
+  SaveFileResult.typeName = "aiserver.v1.SaveFileResult";
   SaveFileResult.fields = proto3.util.newFieldList(() => []);
   var GetSymbolsParams$Runtime = /* @__PURE__ */ (() => class _GetSymbolsParams extends Message {
     constructor(data) {
@@ -25598,7 +25598,7 @@
   })();
   var GetSymbolsParams = GetSymbolsParams$Runtime;
   GetSymbolsParams.runtime = proto3;
-  GetSymbolsParams.typeName = "simeon.v1.GetSymbolsParams";
+  GetSymbolsParams.typeName = "aiserver.v1.GetSymbolsParams";
   GetSymbolsParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -25638,7 +25638,7 @@
   })();
   var GetSymbolsParams_LineRange = GetSymbolsParams_LineRange$Runtime;
   GetSymbolsParams_LineRange.runtime = proto3;
-  GetSymbolsParams_LineRange.typeName = "simeon.v1.GetSymbolsParams.LineRange";
+  GetSymbolsParams_LineRange.typeName = "aiserver.v1.GetSymbolsParams.LineRange";
   GetSymbolsParams_LineRange.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -25676,7 +25676,7 @@
   })();
   var GetSymbolsResult = GetSymbolsResult$Runtime;
   GetSymbolsResult.runtime = proto3;
-  GetSymbolsResult.typeName = "simeon.v1.GetSymbolsResult";
+  GetSymbolsResult.typeName = "aiserver.v1.GetSymbolsResult";
   GetSymbolsResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "symbols", kind: "message", T: DocumentSymbol, repeated: true }
   ]);
@@ -25705,7 +25705,7 @@
   })();
   var ShellCommandParsingResult22 = ShellCommandParsingResult2$Runtime;
   ShellCommandParsingResult22.runtime = proto3;
-  ShellCommandParsingResult22.typeName = "simeon.v1.ShellCommandParsingResult";
+  ShellCommandParsingResult22.typeName = "aiserver.v1.ShellCommandParsingResult";
   ShellCommandParsingResult22.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -25754,7 +25754,7 @@
   })();
   var ShellCommandParsingResult_ExecutableCommandArg2 = ShellCommandParsingResult_ExecutableCommandArg2$Runtime;
   ShellCommandParsingResult_ExecutableCommandArg2.runtime = proto3;
-  ShellCommandParsingResult_ExecutableCommandArg2.typeName = "simeon.v1.ShellCommandParsingResult.ExecutableCommandArg";
+  ShellCommandParsingResult_ExecutableCommandArg2.typeName = "aiserver.v1.ShellCommandParsingResult.ExecutableCommandArg";
   ShellCommandParsingResult_ExecutableCommandArg2.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -25794,7 +25794,7 @@
   })();
   var ShellCommandParsingResult_ExecutableCommand2 = ShellCommandParsingResult_ExecutableCommand2$Runtime;
   ShellCommandParsingResult_ExecutableCommand2.runtime = proto3;
-  ShellCommandParsingResult_ExecutableCommand2.typeName = "simeon.v1.ShellCommandParsingResult.ExecutableCommand";
+  ShellCommandParsingResult_ExecutableCommand2.typeName = "aiserver.v1.ShellCommandParsingResult.ExecutableCommand";
   ShellCommandParsingResult_ExecutableCommand2.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -25835,7 +25835,7 @@
   })();
   var ShellCommandParsingResult_Redirect2 = ShellCommandParsingResult_Redirect2$Runtime;
   ShellCommandParsingResult_Redirect2.runtime = proto3;
-  ShellCommandParsingResult_Redirect2.typeName = "simeon.v1.ShellCommandParsingResult.Redirect";
+  ShellCommandParsingResult_Redirect2.typeName = "aiserver.v1.ShellCommandParsingResult.Redirect";
   ShellCommandParsingResult_Redirect2.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -25877,7 +25877,7 @@
   })();
   var RunTerminalCommandV2Params = RunTerminalCommandV2Params$Runtime;
   RunTerminalCommandV2Params.runtime = proto3;
-  RunTerminalCommandV2Params.typeName = "simeon.v1.RunTerminalCommandV2Params";
+  RunTerminalCommandV2Params.typeName = "aiserver.v1.RunTerminalCommandV2Params";
   RunTerminalCommandV2Params.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -25930,7 +25930,7 @@
   })();
   var RunTerminalCommandV2Params_ExecutionOptions = RunTerminalCommandV2Params_ExecutionOptions$Runtime;
   RunTerminalCommandV2Params_ExecutionOptions.runtime = proto3;
-  RunTerminalCommandV2Params_ExecutionOptions.typeName = "simeon.v1.RunTerminalCommandV2Params.ExecutionOptions";
+  RunTerminalCommandV2Params_ExecutionOptions.typeName = "aiserver.v1.RunTerminalCommandV2Params.ExecutionOptions";
   RunTerminalCommandV2Params_ExecutionOptions.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "timeout", kind: "scalar", T: 5, opt: true },
     { no: 2, name: "skip_ai_check", kind: "scalar", T: 8, opt: true },
@@ -25964,7 +25964,7 @@
   })();
   var OutputLocation2 = OutputLocation2$Runtime;
   OutputLocation2.runtime = proto3;
-  OutputLocation2.typeName = "simeon.v1.OutputLocation";
+  OutputLocation2.typeName = "aiserver.v1.OutputLocation";
   OutputLocation2.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -26017,7 +26017,7 @@
   })();
   var RunTerminalCommandV2Result = RunTerminalCommandV2Result$Runtime;
   RunTerminalCommandV2Result.runtime = proto3;
-  RunTerminalCommandV2Result.typeName = "simeon.v1.RunTerminalCommandV2Result";
+  RunTerminalCommandV2Result.typeName = "aiserver.v1.RunTerminalCommandV2Result";
   RunTerminalCommandV2Result.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -26108,7 +26108,7 @@
   })();
   var RunTerminalCommandV2Stream = RunTerminalCommandV2Stream$Runtime;
   RunTerminalCommandV2Stream.runtime = proto3;
-  RunTerminalCommandV2Stream.typeName = "simeon.v1.RunTerminalCommandV2Stream";
+  RunTerminalCommandV2Stream.typeName = "aiserver.v1.RunTerminalCommandV2Stream";
   RunTerminalCommandV2Stream.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -26149,7 +26149,7 @@
   })();
   var FetchRulesStream = FetchRulesStream$Runtime;
   FetchRulesStream.runtime = proto3;
-  FetchRulesStream.typeName = "simeon.v1.FetchRulesStream";
+  FetchRulesStream.typeName = "aiserver.v1.FetchRulesStream";
   FetchRulesStream.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "rule_names", kind: "scalar", T: 9, repeated: true }
   ]);
@@ -26174,7 +26174,7 @@
   })();
   var WebSearchParams = WebSearchParams$Runtime;
   WebSearchParams.runtime = proto3;
-  WebSearchParams.typeName = "simeon.v1.WebSearchParams";
+  WebSearchParams.typeName = "aiserver.v1.WebSearchParams";
   WebSearchParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -26205,7 +26205,7 @@
   })();
   var WebSearchResult2 = WebSearchResult2$Runtime;
   WebSearchResult2.runtime = proto3;
-  WebSearchResult2.typeName = "simeon.v1.WebSearchResult";
+  WebSearchResult2.typeName = "aiserver.v1.WebSearchResult";
   WebSearchResult2.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "references", kind: "message", T: WebSearchResult_WebReference, repeated: true },
     { no: 2, name: "is_final", kind: "scalar", T: 8, opt: true },
@@ -26234,7 +26234,7 @@
   })();
   var WebSearchResult_WebReference = WebSearchResult_WebReference$Runtime;
   WebSearchResult_WebReference.runtime = proto3;
-  WebSearchResult_WebReference.typeName = "simeon.v1.WebSearchResult.WebReference";
+  WebSearchResult_WebReference.typeName = "aiserver.v1.WebSearchResult.WebReference";
   WebSearchResult_WebReference.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -26279,7 +26279,7 @@
   })();
   var WebSearchStream = WebSearchStream$Runtime;
   WebSearchStream.runtime = proto3;
-  WebSearchStream.typeName = "simeon.v1.WebSearchStream";
+  WebSearchStream.typeName = "aiserver.v1.WebSearchStream";
   WebSearchStream.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -26310,7 +26310,7 @@
   })();
   var MCPParams = MCPParams$Runtime;
   MCPParams.runtime = proto3;
-  MCPParams.typeName = "simeon.v1.MCPParams";
+  MCPParams.typeName = "aiserver.v1.MCPParams";
   MCPParams.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "tools", kind: "message", T: MCPParams_Tool, repeated: true },
     { no: 2, name: "file_output_threshold_bytes", kind: "scalar", T: 3, opt: true }
@@ -26339,7 +26339,7 @@
   })();
   var MCPParams_Tool = MCPParams_Tool$Runtime;
   MCPParams_Tool.runtime = proto3;
-  MCPParams_Tool.typeName = "simeon.v1.MCPParams.Tool";
+  MCPParams_Tool.typeName = "aiserver.v1.MCPParams.Tool";
   MCPParams_Tool.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -26394,7 +26394,7 @@
   })();
   var MCPParams_TranscriptDisplay = MCPParams_TranscriptDisplay$Runtime;
   MCPParams_TranscriptDisplay.runtime = proto3;
-  MCPParams_TranscriptDisplay.typeName = "simeon.v1.MCPParams.TranscriptDisplay";
+  MCPParams_TranscriptDisplay.typeName = "aiserver.v1.MCPParams.TranscriptDisplay";
   MCPParams_TranscriptDisplay.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -26440,7 +26440,7 @@
   })();
   var MCPResult = MCPResult$Runtime;
   MCPResult.runtime = proto3;
-  MCPResult.typeName = "simeon.v1.MCPResult";
+  MCPResult.typeName = "aiserver.v1.MCPResult";
   MCPResult.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -26478,7 +26478,7 @@
   })();
   var MCPStream = MCPStream$Runtime;
   MCPStream.runtime = proto3;
-  MCPStream.typeName = "simeon.v1.MCPStream";
+  MCPStream.typeName = "aiserver.v1.MCPStream";
   MCPStream.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "tools", kind: "message", T: MCPParams_Tool, repeated: true }
   ]);
@@ -26502,7 +26502,7 @@
   })();
   var ListMcpResourcesParams = ListMcpResourcesParams$Runtime;
   ListMcpResourcesParams.runtime = proto3;
-  ListMcpResourcesParams.typeName = "simeon.v1.ListMcpResourcesParams";
+  ListMcpResourcesParams.typeName = "aiserver.v1.ListMcpResourcesParams";
   ListMcpResourcesParams.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "server", kind: "scalar", T: 9, opt: true }
   ]);
@@ -26527,7 +26527,7 @@
   })();
   var ListMcpResourcesResult = ListMcpResourcesResult$Runtime;
   ListMcpResourcesResult.runtime = proto3;
-  ListMcpResourcesResult.typeName = "simeon.v1.ListMcpResourcesResult";
+  ListMcpResourcesResult.typeName = "aiserver.v1.ListMcpResourcesResult";
   ListMcpResourcesResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "resources", kind: "message", T: ListMcpResourcesResult_MCPResource, repeated: true }
   ]);
@@ -26554,7 +26554,7 @@
   })();
   var ListMcpResourcesResult_MCPResource = ListMcpResourcesResult_MCPResource$Runtime;
   ListMcpResourcesResult_MCPResource.runtime = proto3;
-  ListMcpResourcesResult_MCPResource.typeName = "simeon.v1.ListMcpResourcesResult.MCPResource";
+  ListMcpResourcesResult_MCPResource.typeName = "aiserver.v1.ListMcpResourcesResult.MCPResource";
   ListMcpResourcesResult_MCPResource.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -26601,7 +26601,7 @@
   })();
   var ReadMcpResourceParams = ReadMcpResourceParams$Runtime;
   ReadMcpResourceParams.runtime = proto3;
-  ReadMcpResourceParams.typeName = "simeon.v1.ReadMcpResourceParams";
+  ReadMcpResourceParams.typeName = "aiserver.v1.ReadMcpResourceParams";
   ReadMcpResourceParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -26642,7 +26642,7 @@
   })();
   var ReadMcpResourceResult = ReadMcpResourceResult$Runtime;
   ReadMcpResourceResult.runtime = proto3;
-  ReadMcpResourceResult.typeName = "simeon.v1.ReadMcpResourceResult";
+  ReadMcpResourceResult.typeName = "aiserver.v1.ReadMcpResourceResult";
   ReadMcpResourceResult.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -26684,7 +26684,7 @@
   })();
   var CallMcpToolParams = CallMcpToolParams$Runtime;
   CallMcpToolParams.runtime = proto3;
-  CallMcpToolParams.typeName = "simeon.v1.CallMcpToolParams";
+  CallMcpToolParams.typeName = "aiserver.v1.CallMcpToolParams";
   CallMcpToolParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -26724,7 +26724,7 @@
   })();
   var CallMcpToolResult = CallMcpToolResult$Runtime;
   CallMcpToolResult.runtime = proto3;
-  CallMcpToolResult.typeName = "simeon.v1.CallMcpToolResult";
+  CallMcpToolResult.typeName = "aiserver.v1.CallMcpToolResult";
   CallMcpToolResult.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -26762,7 +26762,7 @@
   })();
   var GetMcpToolsParams = GetMcpToolsParams$Runtime;
   GetMcpToolsParams.runtime = proto3;
-  GetMcpToolsParams.typeName = "simeon.v1.GetMcpToolsParams";
+  GetMcpToolsParams.typeName = "aiserver.v1.GetMcpToolsParams";
   GetMcpToolsParams.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "server", kind: "scalar", T: 9, opt: true },
     { no: 2, name: "tool_name", kind: "scalar", T: 9, opt: true },
@@ -26789,7 +26789,7 @@
   })();
   var GetMcpToolsResult = GetMcpToolsResult$Runtime;
   GetMcpToolsResult.runtime = proto3;
-  GetMcpToolsResult.typeName = "simeon.v1.GetMcpToolsResult";
+  GetMcpToolsResult.typeName = "aiserver.v1.GetMcpToolsResult";
   GetMcpToolsResult.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -26821,7 +26821,7 @@
   })();
   var SearchSymbolsParams = SearchSymbolsParams$Runtime;
   SearchSymbolsParams.runtime = proto3;
-  SearchSymbolsParams.typeName = "simeon.v1.SearchSymbolsParams";
+  SearchSymbolsParams.typeName = "aiserver.v1.SearchSymbolsParams";
   SearchSymbolsParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -26852,7 +26852,7 @@
   })();
   var SearchSymbolsResult = SearchSymbolsResult$Runtime;
   SearchSymbolsResult.runtime = proto3;
-  SearchSymbolsResult.typeName = "simeon.v1.SearchSymbolsResult";
+  SearchSymbolsResult.typeName = "aiserver.v1.SearchSymbolsResult";
   SearchSymbolsResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "matches", kind: "message", T: SearchSymbolsResult_SymbolMatch, repeated: true },
     { no: 2, name: "rejected", kind: "scalar", T: 8, opt: true }
@@ -26883,7 +26883,7 @@
   })();
   var SearchSymbolsResult_SymbolMatch = SearchSymbolsResult_SymbolMatch$Runtime;
   SearchSymbolsResult_SymbolMatch.runtime = proto3;
-  SearchSymbolsResult_SymbolMatch.typeName = "simeon.v1.SearchSymbolsResult.SymbolMatch";
+  SearchSymbolsResult_SymbolMatch.typeName = "aiserver.v1.SearchSymbolsResult.SymbolMatch";
   SearchSymbolsResult_SymbolMatch.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -26938,7 +26938,7 @@
   })();
   var SearchSymbolsStream = SearchSymbolsStream$Runtime;
   SearchSymbolsStream.runtime = proto3;
-  SearchSymbolsStream.typeName = "simeon.v1.SearchSymbolsStream";
+  SearchSymbolsStream.typeName = "aiserver.v1.SearchSymbolsStream";
   SearchSymbolsStream.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -26970,7 +26970,7 @@
   })();
   var BackgroundComposerFollowupParams = BackgroundComposerFollowupParams$Runtime;
   BackgroundComposerFollowupParams.runtime = proto3;
-  BackgroundComposerFollowupParams.typeName = "simeon.v1.BackgroundComposerFollowupParams";
+  BackgroundComposerFollowupParams.typeName = "aiserver.v1.BackgroundComposerFollowupParams";
   BackgroundComposerFollowupParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -27009,7 +27009,7 @@
   })();
   var BackgroundComposerFollowupResult = BackgroundComposerFollowupResult$Runtime;
   BackgroundComposerFollowupResult.runtime = proto3;
-  BackgroundComposerFollowupResult.typeName = "simeon.v1.BackgroundComposerFollowupResult";
+  BackgroundComposerFollowupResult.typeName = "aiserver.v1.BackgroundComposerFollowupResult";
   BackgroundComposerFollowupResult.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -27046,7 +27046,7 @@
   })();
   var BackgroundComposerFollowupStream = BackgroundComposerFollowupStream$Runtime;
   BackgroundComposerFollowupStream.runtime = proto3;
-  BackgroundComposerFollowupStream.typeName = "simeon.v1.BackgroundComposerFollowupStream";
+  BackgroundComposerFollowupStream.typeName = "aiserver.v1.BackgroundComposerFollowupStream";
   BackgroundComposerFollowupStream.fields = proto3.util.newFieldList(() => []);
   var SummarizeCodeParams$Runtime = /* @__PURE__ */ (() => class _SummarizeCodeParams extends Message {
     constructor(data) {
@@ -27070,7 +27070,7 @@
   })();
   var SummarizeCodeParams = SummarizeCodeParams$Runtime;
   SummarizeCodeParams.runtime = proto3;
-  SummarizeCodeParams.typeName = "simeon.v1.SummarizeCodeParams";
+  SummarizeCodeParams.typeName = "aiserver.v1.SummarizeCodeParams";
   SummarizeCodeParams.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "target_files", kind: "scalar", T: 9, repeated: true },
     {
@@ -27102,7 +27102,7 @@
   })();
   var SummarizeCodeResult = SummarizeCodeResult$Runtime;
   SummarizeCodeResult.runtime = proto3;
-  SummarizeCodeResult.typeName = "simeon.v1.SummarizeCodeResult";
+  SummarizeCodeResult.typeName = "aiserver.v1.SummarizeCodeResult";
   SummarizeCodeResult.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -27132,7 +27132,7 @@
   })();
   var SummarizeCodeStream = SummarizeCodeStream$Runtime;
   SummarizeCodeStream.runtime = proto3;
-  SummarizeCodeStream.typeName = "simeon.v1.SummarizeCodeStream";
+  SummarizeCodeStream.typeName = "aiserver.v1.SummarizeCodeStream";
   SummarizeCodeStream.fields = proto3.util.newFieldList(() => []);
   var KnowledgeBaseParams$Runtime = /* @__PURE__ */ (() => class _KnowledgeBaseParams extends Message {
     constructor(data) {
@@ -27156,7 +27156,7 @@
   })();
   var KnowledgeBaseParams = KnowledgeBaseParams$Runtime;
   KnowledgeBaseParams.runtime = proto3;
-  KnowledgeBaseParams.typeName = "simeon.v1.KnowledgeBaseParams";
+  KnowledgeBaseParams.typeName = "aiserver.v1.KnowledgeBaseParams";
   KnowledgeBaseParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -27198,7 +27198,7 @@
   })();
   var KnowledgeBaseResult = KnowledgeBaseResult$Runtime;
   KnowledgeBaseResult.runtime = proto3;
-  KnowledgeBaseResult.typeName = "simeon.v1.KnowledgeBaseResult";
+  KnowledgeBaseResult.typeName = "aiserver.v1.KnowledgeBaseResult";
   KnowledgeBaseResult.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -27242,7 +27242,7 @@
   })();
   var KnowledgeBaseStream = KnowledgeBaseStream$Runtime;
   KnowledgeBaseStream.runtime = proto3;
-  KnowledgeBaseStream.typeName = "simeon.v1.KnowledgeBaseStream";
+  KnowledgeBaseStream.typeName = "aiserver.v1.KnowledgeBaseStream";
   KnowledgeBaseStream.fields = proto3.util.newFieldList(() => []);
   var FetchPullRequestParams$Runtime = /* @__PURE__ */ (() => class _FetchPullRequestParams extends Message {
     constructor(data) {
@@ -27265,7 +27265,7 @@
   })();
   var FetchPullRequestParams = FetchPullRequestParams$Runtime;
   FetchPullRequestParams.runtime = proto3;
-  FetchPullRequestParams.typeName = "simeon.v1.FetchPullRequestParams";
+  FetchPullRequestParams.typeName = "aiserver.v1.FetchPullRequestParams";
   FetchPullRequestParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -27307,7 +27307,7 @@
   })();
   var FetchPullRequestResult = FetchPullRequestResult$Runtime;
   FetchPullRequestResult.runtime = proto3;
-  FetchPullRequestResult.typeName = "simeon.v1.FetchPullRequestResult";
+  FetchPullRequestResult.typeName = "aiserver.v1.FetchPullRequestResult";
   FetchPullRequestResult.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -27392,7 +27392,7 @@
   })();
   var IssueComment = IssueComment$Runtime;
   IssueComment.runtime = proto3;
-  IssueComment.typeName = "simeon.v1.IssueComment";
+  IssueComment.typeName = "aiserver.v1.IssueComment";
   IssueComment.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -27445,7 +27445,7 @@
   })();
   var FetchPullRequestStream = FetchPullRequestStream$Runtime;
   FetchPullRequestStream.runtime = proto3;
-  FetchPullRequestStream.typeName = "simeon.v1.FetchPullRequestStream";
+  FetchPullRequestStream.typeName = "aiserver.v1.FetchPullRequestStream";
   FetchPullRequestStream.fields = proto3.util.newFieldList(() => []);
   var PullRequestReference$Runtime = /* @__PURE__ */ (() => class _PullRequestReference extends Message {
     constructor(data) {
@@ -27470,7 +27470,7 @@
   })();
   var PullRequestReference = PullRequestReference$Runtime;
   PullRequestReference.runtime = proto3;
-  PullRequestReference.typeName = "simeon.v1.PullRequestReference";
+  PullRequestReference.typeName = "aiserver.v1.PullRequestReference";
   PullRequestReference.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -27514,7 +27514,7 @@
   })();
   var DeepSearchParams = DeepSearchParams$Runtime;
   DeepSearchParams.runtime = proto3;
-  DeepSearchParams.typeName = "simeon.v1.DeepSearchParams";
+  DeepSearchParams.typeName = "aiserver.v1.DeepSearchParams";
   DeepSearchParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -27546,7 +27546,7 @@
   })();
   var DeepSearchResult = DeepSearchResult$Runtime;
   DeepSearchResult.runtime = proto3;
-  DeepSearchResult.typeName = "simeon.v1.DeepSearchResult";
+  DeepSearchResult.typeName = "aiserver.v1.DeepSearchResult";
   DeepSearchResult.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -27583,7 +27583,7 @@
   })();
   var DeepSearchStream = DeepSearchStream$Runtime;
   DeepSearchStream.runtime = proto3;
-  DeepSearchStream.typeName = "simeon.v1.DeepSearchStream";
+  DeepSearchStream.typeName = "aiserver.v1.DeepSearchStream";
   DeepSearchStream.fields = proto3.util.newFieldList(() => []);
   var CreateDiagramParams$Runtime = /* @__PURE__ */ (() => class _CreateDiagramParams extends Message {
     constructor(data) {
@@ -27606,7 +27606,7 @@
   })();
   var CreateDiagramParams = CreateDiagramParams$Runtime;
   CreateDiagramParams.runtime = proto3;
-  CreateDiagramParams.typeName = "simeon.v1.CreateDiagramParams";
+  CreateDiagramParams.typeName = "aiserver.v1.CreateDiagramParams";
   CreateDiagramParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -27636,7 +27636,7 @@
   })();
   var CreateDiagramResult = CreateDiagramResult$Runtime;
   CreateDiagramResult.runtime = proto3;
-  CreateDiagramResult.typeName = "simeon.v1.CreateDiagramResult";
+  CreateDiagramResult.typeName = "aiserver.v1.CreateDiagramResult";
   CreateDiagramResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "error", kind: "scalar", T: 9, opt: true }
   ]);
@@ -27660,7 +27660,7 @@
   })();
   var CreateDiagramStream = CreateDiagramStream$Runtime;
   CreateDiagramStream.runtime = proto3;
-  CreateDiagramStream.typeName = "simeon.v1.CreateDiagramStream";
+  CreateDiagramStream.typeName = "aiserver.v1.CreateDiagramStream";
   CreateDiagramStream.fields = proto3.util.newFieldList(() => []);
   var FixLintsParams$Runtime = /* @__PURE__ */ (() => class _FixLintsParams extends Message {
     constructor(data) {
@@ -27682,7 +27682,7 @@
   })();
   var FixLintsParams = FixLintsParams$Runtime;
   FixLintsParams.runtime = proto3;
-  FixLintsParams.typeName = "simeon.v1.FixLintsParams";
+  FixLintsParams.typeName = "aiserver.v1.FixLintsParams";
   FixLintsParams.fields = proto3.util.newFieldList(() => []);
   var FixLintsResult$Runtime = /* @__PURE__ */ (() => class _FixLintsResult extends Message {
     constructor(data) {
@@ -27705,7 +27705,7 @@
   })();
   var FixLintsResult = FixLintsResult$Runtime;
   FixLintsResult.runtime = proto3;
-  FixLintsResult.typeName = "simeon.v1.FixLintsResult";
+  FixLintsResult.typeName = "aiserver.v1.FixLintsResult";
   FixLintsResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "file_results", kind: "message", T: FixLintsResult_FileResult, repeated: true }
   ]);
@@ -27733,7 +27733,7 @@
   })();
   var FixLintsResult_FileResult = FixLintsResult_FileResult$Runtime;
   FixLintsResult_FileResult.runtime = proto3;
-  FixLintsResult_FileResult.typeName = "simeon.v1.FixLintsResult.FileResult";
+  FixLintsResult_FileResult.typeName = "aiserver.v1.FixLintsResult.FileResult";
   FixLintsResult_FileResult.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -27780,7 +27780,7 @@
   })();
   var FixLintsStream = FixLintsStream$Runtime;
   FixLintsStream.runtime = proto3;
-  FixLintsStream.typeName = "simeon.v1.FixLintsStream";
+  FixLintsStream.typeName = "aiserver.v1.FixLintsStream";
   FixLintsStream.fields = proto3.util.newFieldList(() => []);
   var ReadLintsParams$Runtime = /* @__PURE__ */ (() => class _ReadLintsParams extends Message {
     constructor(data) {
@@ -27804,7 +27804,7 @@
   })();
   var ReadLintsParams = ReadLintsParams$Runtime;
   ReadLintsParams.runtime = proto3;
-  ReadLintsParams.typeName = "simeon.v1.ReadLintsParams";
+  ReadLintsParams.typeName = "aiserver.v1.ReadLintsParams";
   ReadLintsParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -27838,7 +27838,7 @@
   })();
   var ReadLintsResult = ReadLintsResult$Runtime;
   ReadLintsResult.runtime = proto3;
-  ReadLintsResult.typeName = "simeon.v1.ReadLintsResult";
+  ReadLintsResult.typeName = "aiserver.v1.ReadLintsResult";
   ReadLintsResult.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -27870,7 +27870,7 @@
   })();
   var ReadLintsStream = ReadLintsStream$Runtime;
   ReadLintsStream.runtime = proto3;
-  ReadLintsStream.typeName = "simeon.v1.ReadLintsStream";
+  ReadLintsStream.typeName = "aiserver.v1.ReadLintsStream";
   ReadLintsStream.fields = proto3.util.newFieldList(() => []);
   var GotodefStream$Runtime = /* @__PURE__ */ (() => class _GotodefStream extends Message {
     constructor(data) {
@@ -27892,7 +27892,7 @@
   })();
   var GotodefStream = GotodefStream$Runtime;
   GotodefStream.runtime = proto3;
-  GotodefStream.typeName = "simeon.v1.GotodefStream";
+  GotodefStream.typeName = "aiserver.v1.GotodefStream";
   GotodefStream.fields = proto3.util.newFieldList(() => []);
   var TaskParams$Runtime = /* @__PURE__ */ (() => class _TaskParams extends Message {
     constructor(data) {
@@ -27917,7 +27917,7 @@
   })();
   var TaskParams = TaskParams$Runtime;
   TaskParams.runtime = proto3;
-  TaskParams.typeName = "simeon.v1.TaskParams";
+  TaskParams.typeName = "aiserver.v1.TaskParams";
   TaskParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -27960,7 +27960,7 @@
   })();
   var TaskResult2 = TaskResult2$Runtime;
   TaskResult2.runtime = proto3;
-  TaskResult2.typeName = "simeon.v1.TaskResult";
+  TaskResult2.typeName = "aiserver.v1.TaskResult";
   TaskResult2.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "completed_task_result", kind: "message", T: TaskResult_CompletedTaskResult, oneof: "result" },
     { no: 2, name: "async_task_result", kind: "message", T: TaskResult_AsyncTaskResult, oneof: "result" }
@@ -27989,7 +27989,7 @@
   })();
   var TaskResult_CompletedTaskResult = TaskResult_CompletedTaskResult$Runtime;
   TaskResult_CompletedTaskResult.runtime = proto3;
-  TaskResult_CompletedTaskResult.typeName = "simeon.v1.TaskResult.CompletedTaskResult";
+  TaskResult_CompletedTaskResult.typeName = "aiserver.v1.TaskResult.CompletedTaskResult";
   TaskResult_CompletedTaskResult.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -28037,7 +28037,7 @@
   })();
   var TaskResult_AsyncTaskResult = TaskResult_AsyncTaskResult$Runtime;
   TaskResult_AsyncTaskResult.runtime = proto3;
-  TaskResult_AsyncTaskResult.typeName = "simeon.v1.TaskResult.AsyncTaskResult";
+  TaskResult_AsyncTaskResult.typeName = "aiserver.v1.TaskResult.AsyncTaskResult";
   TaskResult_AsyncTaskResult.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -28081,7 +28081,7 @@
   })();
   var TaskStream = TaskStream$Runtime;
   TaskStream.runtime = proto3;
-  TaskStream.typeName = "simeon.v1.TaskStream";
+  TaskStream.typeName = "aiserver.v1.TaskStream";
   TaskStream.fields = proto3.util.newFieldList(() => []);
   var TaskV2Params$Runtime = /* @__PURE__ */ (() => class _TaskV2Params extends Message {
     constructor(data) {
@@ -28108,7 +28108,7 @@
   })();
   var TaskV2Params = TaskV2Params$Runtime;
   TaskV2Params.runtime = proto3;
-  TaskV2Params.typeName = "simeon.v1.TaskV2Params";
+  TaskV2Params.typeName = "aiserver.v1.TaskV2Params";
   TaskV2Params.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -28162,7 +28162,7 @@
   })();
   var TaskV2Result = TaskV2Result$Runtime;
   TaskV2Result.runtime = proto3;
-  TaskV2Result.typeName = "simeon.v1.TaskV2Result";
+  TaskV2Result.typeName = "aiserver.v1.TaskV2Result";
   TaskV2Result.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "agent_id", kind: "scalar", T: 9, opt: true },
     {
@@ -28194,7 +28194,7 @@
   })();
   var TaskV2Stream = TaskV2Stream$Runtime;
   TaskV2Stream.runtime = proto3;
-  TaskV2Stream.typeName = "simeon.v1.TaskV2Stream";
+  TaskV2Stream.typeName = "aiserver.v1.TaskV2Stream";
   TaskV2Stream.fields = proto3.util.newFieldList(() => []);
   var RipgrepRawSearchParams$Runtime = /* @__PURE__ */ (() => class _RipgrepRawSearchParams extends Message {
     constructor(data) {
@@ -28218,7 +28218,7 @@
   })();
   var RipgrepRawSearchParams = RipgrepRawSearchParams$Runtime;
   RipgrepRawSearchParams.runtime = proto3;
-  RipgrepRawSearchParams.typeName = "simeon.v1.RipgrepRawSearchParams";
+  RipgrepRawSearchParams.typeName = "aiserver.v1.RipgrepRawSearchParams";
   RipgrepRawSearchParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -28263,7 +28263,7 @@
   })();
   var RipgrepRawSearchResult = RipgrepRawSearchResult$Runtime;
   RipgrepRawSearchResult.runtime = proto3;
-  RipgrepRawSearchResult.typeName = "simeon.v1.RipgrepRawSearchResult";
+  RipgrepRawSearchResult.typeName = "aiserver.v1.RipgrepRawSearchResult";
   RipgrepRawSearchResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "success", kind: "message", T: RipgrepRawSearchSuccess, oneof: "result" },
     { no: 2, name: "error", kind: "message", T: RipgrepRawSearchError, oneof: "result" }
@@ -28289,7 +28289,7 @@
   })();
   var RipgrepRawSearchError = RipgrepRawSearchError$Runtime;
   RipgrepRawSearchError.runtime = proto3;
-  RipgrepRawSearchError.typeName = "simeon.v1.RipgrepRawSearchError";
+  RipgrepRawSearchError.typeName = "aiserver.v1.RipgrepRawSearchError";
   RipgrepRawSearchError.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -28323,7 +28323,7 @@
   })();
   var RipgrepRawSearchSuccess = RipgrepRawSearchSuccess$Runtime;
   RipgrepRawSearchSuccess.runtime = proto3;
-  RipgrepRawSearchSuccess.typeName = "simeon.v1.RipgrepRawSearchSuccess";
+  RipgrepRawSearchSuccess.typeName = "aiserver.v1.RipgrepRawSearchSuccess";
   RipgrepRawSearchSuccess.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -28370,7 +28370,7 @@
   })();
   var RipgrepRawSearchUnionResult = RipgrepRawSearchUnionResult$Runtime;
   RipgrepRawSearchUnionResult.runtime = proto3;
-  RipgrepRawSearchUnionResult.typeName = "simeon.v1.RipgrepRawSearchUnionResult";
+  RipgrepRawSearchUnionResult.typeName = "aiserver.v1.RipgrepRawSearchUnionResult";
   RipgrepRawSearchUnionResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "count", kind: "message", T: RipgrepRawSearchCountResult, oneof: "result" },
     { no: 2, name: "files", kind: "message", T: RipgrepRawSearchFilesResult, oneof: "result" },
@@ -28401,7 +28401,7 @@
   })();
   var RipgrepRawSearchCountResult = RipgrepRawSearchCountResult$Runtime;
   RipgrepRawSearchCountResult.runtime = proto3;
-  RipgrepRawSearchCountResult.typeName = "simeon.v1.RipgrepRawSearchCountResult";
+  RipgrepRawSearchCountResult.typeName = "aiserver.v1.RipgrepRawSearchCountResult";
   RipgrepRawSearchCountResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "counts", kind: "message", T: RipgrepRawSearchFileCount, repeated: true },
     {
@@ -28457,7 +28457,7 @@
   })();
   var RipgrepRawSearchFileCount = RipgrepRawSearchFileCount$Runtime;
   RipgrepRawSearchFileCount.runtime = proto3;
-  RipgrepRawSearchFileCount.typeName = "simeon.v1.RipgrepRawSearchFileCount";
+  RipgrepRawSearchFileCount.typeName = "aiserver.v1.RipgrepRawSearchFileCount";
   RipgrepRawSearchFileCount.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -28502,7 +28502,7 @@
   })();
   var RipgrepRawSearchFilesResult = RipgrepRawSearchFilesResult$Runtime;
   RipgrepRawSearchFilesResult.runtime = proto3;
-  RipgrepRawSearchFilesResult.typeName = "simeon.v1.RipgrepRawSearchFilesResult";
+  RipgrepRawSearchFilesResult.typeName = "aiserver.v1.RipgrepRawSearchFilesResult";
   RipgrepRawSearchFilesResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "files", kind: "scalar", T: 9, repeated: true },
     {
@@ -28553,7 +28553,7 @@
   })();
   var RipgrepRawSearchFilesResult_FileEntry = RipgrepRawSearchFilesResult_FileEntry$Runtime;
   RipgrepRawSearchFilesResult_FileEntry.runtime = proto3;
-  RipgrepRawSearchFilesResult_FileEntry.typeName = "simeon.v1.RipgrepRawSearchFilesResult.FileEntry";
+  RipgrepRawSearchFilesResult_FileEntry.typeName = "aiserver.v1.RipgrepRawSearchFilesResult.FileEntry";
   RipgrepRawSearchFilesResult_FileEntry.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -28603,7 +28603,7 @@
   })();
   var RipgrepRawSearchContentResult = RipgrepRawSearchContentResult$Runtime;
   RipgrepRawSearchContentResult.runtime = proto3;
-  RipgrepRawSearchContentResult.typeName = "simeon.v1.RipgrepRawSearchContentResult";
+  RipgrepRawSearchContentResult.typeName = "aiserver.v1.RipgrepRawSearchContentResult";
   RipgrepRawSearchContentResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "matches", kind: "message", T: RipgrepRawSearchFileMatch, repeated: true },
     {
@@ -28659,7 +28659,7 @@
   })();
   var RipgrepRawSearchFileMatch = RipgrepRawSearchFileMatch$Runtime;
   RipgrepRawSearchFileMatch.runtime = proto3;
-  RipgrepRawSearchFileMatch.typeName = "simeon.v1.RipgrepRawSearchFileMatch";
+  RipgrepRawSearchFileMatch.typeName = "aiserver.v1.RipgrepRawSearchFileMatch";
   RipgrepRawSearchFileMatch.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -28697,7 +28697,7 @@
   })();
   var RipgrepRawSearchContentMatch = RipgrepRawSearchContentMatch$Runtime;
   RipgrepRawSearchContentMatch.runtime = proto3;
-  RipgrepRawSearchContentMatch.typeName = "simeon.v1.RipgrepRawSearchContentMatch";
+  RipgrepRawSearchContentMatch.typeName = "aiserver.v1.RipgrepRawSearchContentMatch";
   RipgrepRawSearchContentMatch.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -28749,7 +28749,7 @@
   })();
   var RipgrepRawSearchStream = RipgrepRawSearchStream$Runtime;
   RipgrepRawSearchStream.runtime = proto3;
-  RipgrepRawSearchStream.typeName = "simeon.v1.RipgrepRawSearchStream";
+  RipgrepRawSearchStream.typeName = "aiserver.v1.RipgrepRawSearchStream";
   RipgrepRawSearchStream.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -28780,7 +28780,7 @@
   })();
   var AwaitTaskParams = AwaitTaskParams$Runtime;
   AwaitTaskParams.runtime = proto3;
-  AwaitTaskParams.typeName = "simeon.v1.AwaitTaskParams";
+  AwaitTaskParams.typeName = "aiserver.v1.AwaitTaskParams";
   AwaitTaskParams.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "ids", kind: "scalar", T: 9, repeated: true }
   ]);
@@ -28806,7 +28806,7 @@
   })();
   var AwaitTaskResult = AwaitTaskResult$Runtime;
   AwaitTaskResult.runtime = proto3;
-  AwaitTaskResult.typeName = "simeon.v1.AwaitTaskResult";
+  AwaitTaskResult.typeName = "aiserver.v1.AwaitTaskResult";
   AwaitTaskResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "task_results", kind: "message", T: AwaitTaskResult_TaskResultItem, repeated: true },
     { no: 2, name: "missing_task_ids", kind: "scalar", T: 9, repeated: true }
@@ -28832,7 +28832,7 @@
   })();
   var AwaitTaskResult_TaskResultItem = AwaitTaskResult_TaskResultItem$Runtime;
   AwaitTaskResult_TaskResultItem.runtime = proto3;
-  AwaitTaskResult_TaskResultItem.typeName = "simeon.v1.AwaitTaskResult.TaskResultItem";
+  AwaitTaskResult_TaskResultItem.typeName = "aiserver.v1.AwaitTaskResult.TaskResultItem";
   AwaitTaskResult_TaskResultItem.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -28863,7 +28863,7 @@
   })();
   var AwaitTaskStream = AwaitTaskStream$Runtime;
   AwaitTaskStream.runtime = proto3;
-  AwaitTaskStream.typeName = "simeon.v1.AwaitTaskStream";
+  AwaitTaskStream.typeName = "aiserver.v1.AwaitTaskStream";
   AwaitTaskStream.fields = proto3.util.newFieldList(() => []);
   var TodoReadParams$Runtime = /* @__PURE__ */ (() => class _TodoReadParams extends Message {
     constructor(data) {
@@ -28886,7 +28886,7 @@
   })();
   var TodoReadParams = TodoReadParams$Runtime;
   TodoReadParams.runtime = proto3;
-  TodoReadParams.typeName = "simeon.v1.TodoReadParams";
+  TodoReadParams.typeName = "aiserver.v1.TodoReadParams";
   TodoReadParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -28920,7 +28920,7 @@
   })();
   var TodoItem2 = TodoItem2$Runtime;
   TodoItem2.runtime = proto3;
-  TodoItem2.typeName = "simeon.v1.TodoItem";
+  TodoItem2.typeName = "aiserver.v1.TodoItem";
   TodoItem2.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -28966,7 +28966,7 @@
   })();
   var TodoReadResult = TodoReadResult$Runtime;
   TodoReadResult.runtime = proto3;
-  TodoReadResult.typeName = "simeon.v1.TodoReadResult";
+  TodoReadResult.typeName = "aiserver.v1.TodoReadResult";
   TodoReadResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "todos", kind: "message", T: TodoItem2, repeated: true }
   ]);
@@ -28990,7 +28990,7 @@
   })();
   var TodoReadStream = TodoReadStream$Runtime;
   TodoReadStream.runtime = proto3;
-  TodoReadStream.typeName = "simeon.v1.TodoReadStream";
+  TodoReadStream.typeName = "aiserver.v1.TodoReadStream";
   TodoReadStream.fields = proto3.util.newFieldList(() => []);
   var TodoWriteParams$Runtime = /* @__PURE__ */ (() => class _TodoWriteParams extends Message {
     constructor(data) {
@@ -29014,7 +29014,7 @@
   })();
   var TodoWriteParams = TodoWriteParams$Runtime;
   TodoWriteParams.runtime = proto3;
-  TodoWriteParams.typeName = "simeon.v1.TodoWriteParams";
+  TodoWriteParams.typeName = "aiserver.v1.TodoWriteParams";
   TodoWriteParams.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "todos", kind: "message", T: TodoItem2, repeated: true },
     {
@@ -29051,7 +29051,7 @@
   })();
   var TodoWriteResult = TodoWriteResult$Runtime;
   TodoWriteResult.runtime = proto3;
-  TodoWriteResult.typeName = "simeon.v1.TodoWriteResult";
+  TodoWriteResult.typeName = "aiserver.v1.TodoWriteResult";
   TodoWriteResult.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -29098,7 +29098,7 @@
   })();
   var TodoWriteStream = TodoWriteStream$Runtime;
   TodoWriteStream.runtime = proto3;
-  TodoWriteStream.typeName = "simeon.v1.TodoWriteStream";
+  TodoWriteStream.typeName = "aiserver.v1.TodoWriteStream";
   TodoWriteStream.fields = proto3.util.newFieldList(() => []);
   var ListDirV2Params$Runtime = /* @__PURE__ */ (() => class _ListDirV2Params extends Message {
     constructor(data) {
@@ -29122,7 +29122,7 @@
   })();
   var ListDirV2Params = ListDirV2Params$Runtime;
   ListDirV2Params.runtime = proto3;
-  ListDirV2Params.typeName = "simeon.v1.ListDirV2Params";
+  ListDirV2Params.typeName = "aiserver.v1.ListDirV2Params";
   ListDirV2Params.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -29154,7 +29154,7 @@
   })();
   var ListDirV2Result = ListDirV2Result$Runtime;
   ListDirV2Result.runtime = proto3;
-  ListDirV2Result.typeName = "simeon.v1.ListDirV2Result";
+  ListDirV2Result.typeName = "aiserver.v1.ListDirV2Result";
   ListDirV2Result.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "directory_tree_root", kind: "message", T: ListDirV2Result_DirectoryTreeNode }
   ]);
@@ -29184,7 +29184,7 @@
   })();
   var ListDirV2Result_DirectoryTreeNode = ListDirV2Result_DirectoryTreeNode$Runtime;
   ListDirV2Result_DirectoryTreeNode.runtime = proto3;
-  ListDirV2Result_DirectoryTreeNode.typeName = "simeon.v1.ListDirV2Result.DirectoryTreeNode";
+  ListDirV2Result_DirectoryTreeNode.typeName = "aiserver.v1.ListDirV2Result.DirectoryTreeNode";
   ListDirV2Result_DirectoryTreeNode.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -29236,7 +29236,7 @@
   })();
   var ListDirV2Result_DirectoryTreeNode_File = ListDirV2Result_DirectoryTreeNode_File$Runtime;
   ListDirV2Result_DirectoryTreeNode_File.runtime = proto3;
-  ListDirV2Result_DirectoryTreeNode_File.typeName = "simeon.v1.ListDirV2Result.DirectoryTreeNode.File";
+  ListDirV2Result_DirectoryTreeNode_File.typeName = "aiserver.v1.ListDirV2Result.DirectoryTreeNode.File";
   ListDirV2Result_DirectoryTreeNode_File.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -29267,7 +29267,7 @@
   })();
   var ListDirV2Stream = ListDirV2Stream$Runtime;
   ListDirV2Stream.runtime = proto3;
-  ListDirV2Stream.typeName = "simeon.v1.ListDirV2Stream";
+  ListDirV2Stream.typeName = "aiserver.v1.ListDirV2Stream";
   ListDirV2Stream.fields = proto3.util.newFieldList(() => []);
   var ReadFileV2Params$Runtime = /* @__PURE__ */ (() => class _ReadFileV2Params extends Message {
     constructor(data) {
@@ -29292,7 +29292,7 @@
   })();
   var ReadFileV2Params = ReadFileV2Params$Runtime;
   ReadFileV2Params.runtime = proto3;
-  ReadFileV2Params.typeName = "simeon.v1.ReadFileV2Params";
+  ReadFileV2Params.typeName = "aiserver.v1.ReadFileV2Params";
   ReadFileV2Params.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -29323,7 +29323,7 @@
     constructor(data) {
       super();
       this.numCharactersInRequestedRange = 0;
-      this.matchingAgentRules = [];
+      this.matchingCursorRules = [];
       this.images = [];
       proto3.util.initPartial(data, this);
     }
@@ -29342,7 +29342,7 @@
   })();
   var ReadFileV2Result = ReadFileV2Result$Runtime;
   ReadFileV2Result.runtime = proto3;
-  ReadFileV2Result.typeName = "simeon.v1.ReadFileV2Result";
+  ReadFileV2Result.typeName = "aiserver.v1.ReadFileV2Result";
   ReadFileV2Result.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "contents", kind: "scalar", T: 9, opt: true },
     {
@@ -29354,7 +29354,7 @@
     },
     { no: 3, name: "offset_is_bigger_than_number_of_lines_in_file", kind: "scalar", T: 8, opt: true },
     { no: 4, name: "total_lines_in_file", kind: "scalar", T: 5, opt: true },
-    { no: 5, name: "matching_agent_rules", kind: "message", T: AgentRule2, repeated: true },
+    { no: 5, name: "matching_cursor_rules", kind: "message", T: CursorRule2, repeated: true },
     { no: 6, name: "images", kind: "message", T: ImageProto2, repeated: true }
   ]);
   var ReadFileV2Stream$Runtime = /* @__PURE__ */ (() => class _ReadFileV2Stream extends Message {
@@ -29377,7 +29377,7 @@
   })();
   var ReadFileV2Stream = ReadFileV2Stream$Runtime;
   ReadFileV2Stream.runtime = proto3;
-  ReadFileV2Stream.typeName = "simeon.v1.ReadFileV2Stream";
+  ReadFileV2Stream.typeName = "aiserver.v1.ReadFileV2Stream";
   ReadFileV2Stream.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "params", kind: "message", T: ReadFileV2Params, opt: true }
   ]);
@@ -29403,7 +29403,7 @@
   })();
   var GlobFileSearchParams = GlobFileSearchParams$Runtime;
   GlobFileSearchParams.runtime = proto3;
-  GlobFileSearchParams.typeName = "simeon.v1.GlobFileSearchParams";
+  GlobFileSearchParams.typeName = "aiserver.v1.GlobFileSearchParams";
   GlobFileSearchParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -29441,7 +29441,7 @@
   })();
   var GlobFileSearchResult = GlobFileSearchResult$Runtime;
   GlobFileSearchResult.runtime = proto3;
-  GlobFileSearchResult.typeName = "simeon.v1.GlobFileSearchResult";
+  GlobFileSearchResult.typeName = "aiserver.v1.GlobFileSearchResult";
   GlobFileSearchResult.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "directories", kind: "message", T: GlobFileSearchResult_Directory, repeated: true }
   ]);
@@ -29466,7 +29466,7 @@
   })();
   var GlobFileSearchResult_File = GlobFileSearchResult_File$Runtime;
   GlobFileSearchResult_File.runtime = proto3;
-  GlobFileSearchResult_File.typeName = "simeon.v1.GlobFileSearchResult.File";
+  GlobFileSearchResult_File.typeName = "aiserver.v1.GlobFileSearchResult.File";
   GlobFileSearchResult_File.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -29500,7 +29500,7 @@
   })();
   var GlobFileSearchResult_Directory = GlobFileSearchResult_Directory$Runtime;
   GlobFileSearchResult_Directory.runtime = proto3;
-  GlobFileSearchResult_Directory.typeName = "simeon.v1.GlobFileSearchResult.Directory";
+  GlobFileSearchResult_Directory.typeName = "aiserver.v1.GlobFileSearchResult.Directory";
   GlobFileSearchResult_Directory.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -29545,7 +29545,7 @@
   })();
   var GlobFileSearchStream = GlobFileSearchStream$Runtime;
   GlobFileSearchStream.runtime = proto3;
-  GlobFileSearchStream.typeName = "simeon.v1.GlobFileSearchStream";
+  GlobFileSearchStream.typeName = "aiserver.v1.GlobFileSearchStream";
   GlobFileSearchStream.fields = proto3.util.newFieldList(() => []);
   var ListMcpResourcesStream$Runtime = /* @__PURE__ */ (() => class _ListMcpResourcesStream extends Message {
     constructor(data) {
@@ -29567,7 +29567,7 @@
   })();
   var ListMcpResourcesStream = ListMcpResourcesStream$Runtime;
   ListMcpResourcesStream.runtime = proto3;
-  ListMcpResourcesStream.typeName = "simeon.v1.ListMcpResourcesStream";
+  ListMcpResourcesStream.typeName = "aiserver.v1.ListMcpResourcesStream";
   ListMcpResourcesStream.fields = proto3.util.newFieldList(() => []);
   var CallMcpToolStream$Runtime = /* @__PURE__ */ (() => class _CallMcpToolStream extends Message {
     constructor(data) {
@@ -29589,7 +29589,7 @@
   })();
   var CallMcpToolStream = CallMcpToolStream$Runtime;
   CallMcpToolStream.runtime = proto3;
-  CallMcpToolStream.typeName = "simeon.v1.CallMcpToolStream";
+  CallMcpToolStream.typeName = "aiserver.v1.CallMcpToolStream";
   CallMcpToolStream.fields = proto3.util.newFieldList(() => []);
   var ReadMcpResourceStream$Runtime = /* @__PURE__ */ (() => class _ReadMcpResourceStream extends Message {
     constructor(data) {
@@ -29611,7 +29611,7 @@
   })();
   var ReadMcpResourceStream = ReadMcpResourceStream$Runtime;
   ReadMcpResourceStream.runtime = proto3;
-  ReadMcpResourceStream.typeName = "simeon.v1.ReadMcpResourceStream";
+  ReadMcpResourceStream.typeName = "aiserver.v1.ReadMcpResourceStream";
   ReadMcpResourceStream.fields = proto3.util.newFieldList(() => []);
   var Step$Runtime = /* @__PURE__ */ (() => class _Step extends Message {
     constructor(data) {
@@ -29639,7 +29639,7 @@
   })();
   var Step = Step$Runtime;
   Step.runtime = proto3;
-  Step.typeName = "simeon.v1.Step";
+  Step.typeName = "aiserver.v1.Step";
   Step.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -29700,7 +29700,7 @@
   })();
   var PlanPhase = PlanPhase$Runtime;
   PlanPhase.runtime = proto3;
-  PlanPhase.typeName = "simeon.v1.PlanPhase";
+  PlanPhase.typeName = "aiserver.v1.PlanPhase";
   PlanPhase.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -29743,7 +29743,7 @@
   })();
   var CreatePlanParams = CreatePlanParams$Runtime;
   CreatePlanParams.runtime = proto3;
-  CreatePlanParams.typeName = "simeon.v1.CreatePlanParams";
+  CreatePlanParams.typeName = "aiserver.v1.CreatePlanParams";
   CreatePlanParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -29834,7 +29834,7 @@
   })();
   var CreatePlanResult2 = CreatePlanResult2$Runtime;
   CreatePlanResult2.runtime = proto3;
-  CreatePlanResult2.typeName = "simeon.v1.CreatePlanResult";
+  CreatePlanResult2.typeName = "aiserver.v1.CreatePlanResult";
   CreatePlanResult2.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "accepted", kind: "message", T: CreatePlanResult_Accepted, oneof: "result" },
     { no: 2, name: "rejected", kind: "message", T: CreatePlanResult_Rejected, oneof: "result" },
@@ -29868,7 +29868,7 @@
   })();
   var CreatePlanResult_Accepted = CreatePlanResult_Accepted$Runtime;
   CreatePlanResult_Accepted.runtime = proto3;
-  CreatePlanResult_Accepted.typeName = "simeon.v1.CreatePlanResult.Accepted";
+  CreatePlanResult_Accepted.typeName = "aiserver.v1.CreatePlanResult.Accepted";
   CreatePlanResult_Accepted.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "final_todos", kind: "message", T: TodoItem2, repeated: true }
   ]);
@@ -29892,7 +29892,7 @@
   })();
   var CreatePlanResult_Rejected = CreatePlanResult_Rejected$Runtime;
   CreatePlanResult_Rejected.runtime = proto3;
-  CreatePlanResult_Rejected.typeName = "simeon.v1.CreatePlanResult.Rejected";
+  CreatePlanResult_Rejected.typeName = "aiserver.v1.CreatePlanResult.Rejected";
   CreatePlanResult_Rejected.fields = proto3.util.newFieldList(() => []);
   var CreatePlanResult_Modified$Runtime = /* @__PURE__ */ (() => class _CreatePlanResult_Modified extends Message {
     constructor(data) {
@@ -29916,7 +29916,7 @@
   })();
   var CreatePlanResult_Modified = CreatePlanResult_Modified$Runtime;
   CreatePlanResult_Modified.runtime = proto3;
-  CreatePlanResult_Modified.typeName = "simeon.v1.CreatePlanResult.Modified";
+  CreatePlanResult_Modified.typeName = "aiserver.v1.CreatePlanResult.Modified";
   CreatePlanResult_Modified.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -29947,7 +29947,7 @@
   })();
   var CreatePlanStream = CreatePlanStream$Runtime;
   CreatePlanStream.runtime = proto3;
-  CreatePlanStream.typeName = "simeon.v1.CreatePlanStream";
+  CreatePlanStream.typeName = "aiserver.v1.CreatePlanStream";
   CreatePlanStream.fields = proto3.util.newFieldList(() => []);
   var ReadProjectParams$Runtime = /* @__PURE__ */ (() => class _ReadProjectParams extends Message {
     constructor(data) {
@@ -29969,7 +29969,7 @@
   })();
   var ReadProjectParams = ReadProjectParams$Runtime;
   ReadProjectParams.runtime = proto3;
-  ReadProjectParams.typeName = "simeon.v1.ReadProjectParams";
+  ReadProjectParams.typeName = "aiserver.v1.ReadProjectParams";
   ReadProjectParams.fields = proto3.util.newFieldList(() => []);
   var ReadProjectResult$Runtime = /* @__PURE__ */ (() => class _ReadProjectResult extends Message {
     constructor(data) {
@@ -29992,7 +29992,7 @@
   })();
   var ReadProjectResult = ReadProjectResult$Runtime;
   ReadProjectResult.runtime = proto3;
-  ReadProjectResult.typeName = "simeon.v1.ReadProjectResult";
+  ReadProjectResult.typeName = "aiserver.v1.ReadProjectResult";
   ReadProjectResult.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -30022,7 +30022,7 @@
   })();
   var ReadProjectStream = ReadProjectStream$Runtime;
   ReadProjectStream.runtime = proto3;
-  ReadProjectStream.typeName = "simeon.v1.ReadProjectStream";
+  ReadProjectStream.typeName = "aiserver.v1.ReadProjectStream";
   ReadProjectStream.fields = proto3.util.newFieldList(() => []);
   var UpdateProjectStringReplacement$Runtime = /* @__PURE__ */ (() => class _UpdateProjectStringReplacement extends Message {
     constructor(data) {
@@ -30046,7 +30046,7 @@
   })();
   var UpdateProjectStringReplacement = UpdateProjectStringReplacement$Runtime;
   UpdateProjectStringReplacement.runtime = proto3;
-  UpdateProjectStringReplacement.typeName = "simeon.v1.UpdateProjectStringReplacement";
+  UpdateProjectStringReplacement.typeName = "aiserver.v1.UpdateProjectStringReplacement";
   UpdateProjectStringReplacement.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -30085,7 +30085,7 @@
   })();
   var UpdateProjectParams = UpdateProjectParams$Runtime;
   UpdateProjectParams.runtime = proto3;
-  UpdateProjectParams.typeName = "simeon.v1.UpdateProjectParams";
+  UpdateProjectParams.typeName = "aiserver.v1.UpdateProjectParams";
   UpdateProjectParams.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "string_replacements", kind: "message", T: UpdateProjectStringReplacement, repeated: true },
     {
@@ -30118,7 +30118,7 @@
   })();
   var UpdateProjectResult = UpdateProjectResult$Runtime;
   UpdateProjectResult.runtime = proto3;
-  UpdateProjectResult.typeName = "simeon.v1.UpdateProjectResult";
+  UpdateProjectResult.typeName = "aiserver.v1.UpdateProjectResult";
   UpdateProjectResult.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -30155,7 +30155,7 @@
   })();
   var UpdateProjectStream = UpdateProjectStream$Runtime;
   UpdateProjectStream.runtime = proto3;
-  UpdateProjectStream.typeName = "simeon.v1.UpdateProjectStream";
+  UpdateProjectStream.typeName = "aiserver.v1.UpdateProjectStream";
   UpdateProjectStream.fields = proto3.util.newFieldList(() => []);
   var AskQuestionParams$Runtime = /* @__PURE__ */ (() => class _AskQuestionParams extends Message {
     constructor(data) {
@@ -30180,7 +30180,7 @@
   })();
   var AskQuestionParams = AskQuestionParams$Runtime;
   AskQuestionParams.runtime = proto3;
-  AskQuestionParams.typeName = "simeon.v1.AskQuestionParams";
+  AskQuestionParams.typeName = "aiserver.v1.AskQuestionParams";
   AskQuestionParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -30222,7 +30222,7 @@
   })();
   var AskQuestionParams_Question = AskQuestionParams_Question$Runtime;
   AskQuestionParams_Question.runtime = proto3;
-  AskQuestionParams_Question.typeName = "simeon.v1.AskQuestionParams.Question";
+  AskQuestionParams_Question.typeName = "aiserver.v1.AskQuestionParams.Question";
   AskQuestionParams_Question.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -30269,7 +30269,7 @@
   })();
   var AskQuestionParams_Option = AskQuestionParams_Option$Runtime;
   AskQuestionParams_Option.runtime = proto3;
-  AskQuestionParams_Option.typeName = "simeon.v1.AskQuestionParams.Option";
+  AskQuestionParams_Option.typeName = "aiserver.v1.AskQuestionParams.Option";
   AskQuestionParams_Option.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -30308,7 +30308,7 @@
   })();
   var AskQuestionResult2 = AskQuestionResult2$Runtime;
   AskQuestionResult2.runtime = proto3;
-  AskQuestionResult2.typeName = "simeon.v1.AskQuestionResult";
+  AskQuestionResult2.typeName = "aiserver.v1.AskQuestionResult";
   AskQuestionResult2.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "answers", kind: "message", T: AskQuestionResult_Answer, repeated: true },
     {
@@ -30341,7 +30341,7 @@
   })();
   var AskQuestionResult_Answer = AskQuestionResult_Answer$Runtime;
   AskQuestionResult_Answer.runtime = proto3;
-  AskQuestionResult_Answer.typeName = "simeon.v1.AskQuestionResult.Answer";
+  AskQuestionResult_Answer.typeName = "aiserver.v1.AskQuestionResult.Answer";
   AskQuestionResult_Answer.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -30373,7 +30373,7 @@
   })();
   var AskQuestionStream = AskQuestionStream$Runtime;
   AskQuestionStream.runtime = proto3;
-  AskQuestionStream.typeName = "simeon.v1.AskQuestionStream";
+  AskQuestionStream.typeName = "aiserver.v1.AskQuestionStream";
   AskQuestionStream.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "params", kind: "message", T: AskQuestionParams }
   ]);
@@ -30399,7 +30399,7 @@
   })();
   var SwitchModeParams = SwitchModeParams$Runtime;
   SwitchModeParams.runtime = proto3;
-  SwitchModeParams.typeName = "simeon.v1.SwitchModeParams";
+  SwitchModeParams.typeName = "aiserver.v1.SwitchModeParams";
   SwitchModeParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -30441,7 +30441,7 @@
   })();
   var SwitchModeResult2 = SwitchModeResult2$Runtime;
   SwitchModeResult2.runtime = proto3;
-  SwitchModeResult2.typeName = "simeon.v1.SwitchModeResult";
+  SwitchModeResult2.typeName = "aiserver.v1.SwitchModeResult";
   SwitchModeResult2.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -30492,7 +30492,7 @@
   })();
   var SwitchModeStream = SwitchModeStream$Runtime;
   SwitchModeStream.runtime = proto3;
-  SwitchModeStream.typeName = "simeon.v1.SwitchModeStream";
+  SwitchModeStream.typeName = "aiserver.v1.SwitchModeStream";
   SwitchModeStream.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "params", kind: "message", T: SwitchModeParams }
   ]);
@@ -30517,7 +30517,7 @@
   })();
   var ComputerUseParams = ComputerUseParams$Runtime;
   ComputerUseParams.runtime = proto3;
-  ComputerUseParams.typeName = "simeon.v1.ComputerUseParams";
+  ComputerUseParams.typeName = "aiserver.v1.ComputerUseParams";
   ComputerUseParams.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "actions", kind: "message", T: ComputerUseAction, repeated: true }
   ]);
@@ -30542,7 +30542,7 @@
   })();
   var ComputerUseResult22 = ComputerUseResult2$Runtime;
   ComputerUseResult22.runtime = proto3;
-  ComputerUseResult22.typeName = "simeon.v1.ComputerUseResult";
+  ComputerUseResult22.typeName = "aiserver.v1.ComputerUseResult";
   ComputerUseResult22.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "success", kind: "message", T: ComputerUseSuccess, oneof: "result" },
     { no: 2, name: "error", kind: "message", T: ComputerUseError, oneof: "result" }
@@ -30567,7 +30567,7 @@
   })();
   var ComputerUseStream = ComputerUseStream$Runtime;
   ComputerUseStream.runtime = proto3;
-  ComputerUseStream.typeName = "simeon.v1.ComputerUseStream";
+  ComputerUseStream.typeName = "aiserver.v1.ComputerUseStream";
   ComputerUseStream.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "params", kind: "message", T: ComputerUseParams }
   ]);
@@ -30591,7 +30591,7 @@
   })();
   var WriteShellStdinStream = WriteShellStdinStream$Runtime;
   WriteShellStdinStream.runtime = proto3;
-  WriteShellStdinStream.typeName = "simeon.v1.WriteShellStdinStream";
+  WriteShellStdinStream.typeName = "aiserver.v1.WriteShellStdinStream";
   WriteShellStdinStream.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "params", kind: "message", T: WriteShellStdinArgs }
   ]);
@@ -30616,7 +30616,7 @@
   })();
   var WebFetchParams = WebFetchParams$Runtime;
   WebFetchParams.runtime = proto3;
-  WebFetchParams.typeName = "simeon.v1.WebFetchParams";
+  WebFetchParams.typeName = "aiserver.v1.WebFetchParams";
   WebFetchParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -30647,7 +30647,7 @@
   })();
   var WebFetchResult2 = WebFetchResult2$Runtime;
   WebFetchResult2.runtime = proto3;
-  WebFetchResult2.typeName = "simeon.v1.WebFetchResult";
+  WebFetchResult2.typeName = "aiserver.v1.WebFetchResult";
   WebFetchResult2.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -30679,7 +30679,7 @@
   })();
   var WebFetchStream = WebFetchStream$Runtime;
   WebFetchStream.runtime = proto3;
-  WebFetchStream.typeName = "simeon.v1.WebFetchStream";
+  WebFetchStream.typeName = "aiserver.v1.WebFetchStream";
   WebFetchStream.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "params", kind: "message", T: WebFetchParams }
   ]);
@@ -30705,7 +30705,7 @@
   })();
   var ReportBugfixResultsParams = ReportBugfixResultsParams$Runtime;
   ReportBugfixResultsParams.runtime = proto3;
-  ReportBugfixResultsParams.typeName = "simeon.v1.ReportBugfixResultsParams";
+  ReportBugfixResultsParams.typeName = "aiserver.v1.ReportBugfixResultsParams";
   ReportBugfixResultsParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -30737,7 +30737,7 @@
   })();
   var ReportBugfixResultsResult22 = ReportBugfixResultsResult2$Runtime;
   ReportBugfixResultsResult22.runtime = proto3;
-  ReportBugfixResultsResult22.typeName = "simeon.v1.ReportBugfixResultsResult";
+  ReportBugfixResultsResult22.typeName = "aiserver.v1.ReportBugfixResultsResult";
   ReportBugfixResultsResult22.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "success", kind: "message", T: ReportBugfixResultsSuccess, oneof: "result" },
     { no: 2, name: "error", kind: "message", T: ReportBugfixResultsError, oneof: "result" }
@@ -30762,7 +30762,7 @@
   })();
   var ReportBugfixResultsStream = ReportBugfixResultsStream$Runtime;
   ReportBugfixResultsStream.runtime = proto3;
-  ReportBugfixResultsStream.typeName = "simeon.v1.ReportBugfixResultsStream";
+  ReportBugfixResultsStream.typeName = "aiserver.v1.ReportBugfixResultsStream";
   ReportBugfixResultsStream.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "params", kind: "message", T: ReportBugfixResultsParams }
   ]);
@@ -30787,7 +30787,7 @@
   })();
   var McpAuthParams = McpAuthParams$Runtime;
   McpAuthParams.runtime = proto3;
-  McpAuthParams.typeName = "simeon.v1.McpAuthParams";
+  McpAuthParams.typeName = "aiserver.v1.McpAuthParams";
   McpAuthParams.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -30819,7 +30819,7 @@
   })();
   var McpAuthResult2 = McpAuthResult2$Runtime;
   McpAuthResult2.runtime = proto3;
-  McpAuthResult2.typeName = "simeon.v1.McpAuthResult";
+  McpAuthResult2.typeName = "aiserver.v1.McpAuthResult";
   McpAuthResult2.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -30856,7 +30856,7 @@
   })();
   var McpAuthStream = McpAuthStream$Runtime;
   McpAuthStream.runtime = proto3;
-  McpAuthStream.typeName = "simeon.v1.McpAuthStream";
+  McpAuthStream.typeName = "aiserver.v1.McpAuthStream";
   McpAuthStream.fields = proto3.util.newFieldList(() => []);
   var ConnectScmParams$Runtime = /* @__PURE__ */ (() => class _ConnectScmParams extends Message {
     constructor(data) {
@@ -30878,7 +30878,7 @@
   })();
   var ConnectScmParams = ConnectScmParams$Runtime;
   ConnectScmParams.runtime = proto3;
-  ConnectScmParams.typeName = "simeon.v1.ConnectScmParams";
+  ConnectScmParams.typeName = "aiserver.v1.ConnectScmParams";
   ConnectScmParams.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "github", kind: "message", T: ConnectScmGithub2 }
   ]);
@@ -30902,7 +30902,7 @@
   })();
   var ConnectScmGithub2 = ConnectScmGithub2$Runtime;
   ConnectScmGithub2.runtime = proto3;
-  ConnectScmGithub2.typeName = "simeon.v1.ConnectScmGithub";
+  ConnectScmGithub2.typeName = "aiserver.v1.ConnectScmGithub";
   ConnectScmGithub2.fields = proto3.util.newFieldList(() => [
     { no: 1, name: "repository", kind: "message", T: ConnectScmGithubRepository2 },
     { no: 2, name: "ghe_application", kind: "scalar", T: 9, opt: true }
@@ -30929,7 +30929,7 @@
   })();
   var ConnectScmGithubRepository2 = ConnectScmGithubRepository2$Runtime;
   ConnectScmGithubRepository2.runtime = proto3;
-  ConnectScmGithubRepository2.typeName = "simeon.v1.ConnectScmGithubRepository";
+  ConnectScmGithubRepository2.typeName = "aiserver.v1.ConnectScmGithubRepository";
   ConnectScmGithubRepository2.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -30968,7 +30968,7 @@
   })();
   var ConnectScmResult2 = ConnectScmResult2$Runtime;
   ConnectScmResult2.runtime = proto3;
-  ConnectScmResult2.typeName = "simeon.v1.ConnectScmResult";
+  ConnectScmResult2.typeName = "aiserver.v1.ConnectScmResult";
   ConnectScmResult2.fields = proto3.util.newFieldList(() => [
     {
       no: 1,
@@ -31005,7 +31005,7 @@
   })();
   var ConnectScmStream = ConnectScmStream$Runtime;
   ConnectScmStream.runtime = proto3;
-  ConnectScmStream.typeName = "simeon.v1.ConnectScmStream";
+  ConnectScmStream.typeName = "aiserver.v1.ConnectScmStream";
   ConnectScmStream.fields = proto3.util.newFieldList(() => []);
 
   // source/shared/rpc/client-side-tool-v2-transport.ts
@@ -31025,7 +31025,7 @@
   }
   function decodeClientSideToolV2Message(kind, value) {
     if (!isRecord3(value) || value.encoding !== "protobuf-base64" || typeof value.bytes !== "string") return null;
-    const expectedType = kind === "call" ? "simeon.v1.ClientSideToolV2Call" : "simeon.v1.ClientSideToolV2Result";
+    const expectedType = kind === "call" ? "aiserver.v1.ClientSideToolV2Call" : "aiserver.v1.ClientSideToolV2Result";
     if (value.messageType !== expectedType) return null;
     const bytes = canonicalBase64(value.bytes);
     if (bytes == null) return null;
@@ -31889,9 +31889,9 @@
       {}
     );
     const desktop = Reflect.get(window, "desktop");
-    const getStatus = desktop?.accountService?.getStatus;
-    if (desktop?.accountService != null && typeof getStatus === "function") {
-      desktop.accountService.getStatus = async () => {
+    const getStatus = desktop?.cursorAccount?.getStatus;
+    if (desktop?.cursorAccount != null && typeof getStatus === "function") {
+      desktop.cursorAccount.getStatus = async () => {
         await ready;
         return getStatus();
       };

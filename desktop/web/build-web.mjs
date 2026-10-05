@@ -61,8 +61,7 @@ let page = index
   .replace(/\s*<style>body::before[^<]*<\/style>/, "")
   .replace(/\s*<script src="\.\/scroll-guard\.js"><\/script>/, "")
   .replace(/\s*<script src="\.\/demo-bridge\.js"><\/script>/, "")
-  .replace(/\s*<script src="\.\/demo-gate\.js"><\/script>/, "")
-  .replace(/\s*<link rel="stylesheet" href="\.\/demo-glass\.css">/, "");
+  .replace(/\s*<script src="\.\/demo-gate\.js"><\/script>/, "");
 const marker = '<script type="module"';
 if (!page.includes(marker)) throw new Error("renderer index.html has no module script to put the bridge before");
 // A browser has no desktop behind the window: a plain light ground, and the

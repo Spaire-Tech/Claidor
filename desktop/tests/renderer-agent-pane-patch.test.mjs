@@ -1,4 +1,4 @@
-/** The agent's pane is one page (1 October 2026): avatar, name and title, then Profile · Routines · Computer over the window's own views (the Channels tab went on 5 October 2026); no gear, no computer button in the chat header. */
+/** The agent's pane is one page (1 October 2026): avatar, name and title, then Profile · Routines · Computer · Channels over the window's own views; no gear, no computer button in the chat header. */
 import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
@@ -25,7 +25,7 @@ test("the pane patch admits a routines view, opens on Profile, and draws the seg
   assert.match(patched, /J\(r\.automationId!=null\?"routines":r\.section\?\?"overview"\)/, "a routine request lands on Routines");
   assert.match(patched, /ne=!1\?p\.jsx\(yo,\{content:iSn/, "the chat header draws no computer button");
   assert.match(patched, /n\.isOpen\?"close":"open-settings"/, "the header avatar toggles the pane");
-  assert.match(patched, /p\.jsx\(__simeonPaneSegments,\{value:F,onChange:J\}\)/);
+  assert.match(patched, /p\.jsx\(__simeonPaneSegments,\{value:F,onChange:J,hasChannels:k\.some\(Ie=>Ie\.id==="channels"\)\}\)/);
   for (const view of ['F==="settings"?p.jsx(h3n,', 'F==="routines"?', 'F==="overview"?', 'F==="channels"?p.jsx(_0n,']) assert.ok(patched.includes(view), view);
   assert.ok(!patched.includes("Connected"), "no connection status under the name");
   // The sidebar steps back to its rail while the pane is open, the same way ⌘B draws it (WFe), and
@@ -52,18 +52,13 @@ test("the pane remembers across launches whether it took the sidebar", async () 
   assert.equal(broken, false, "storage that throws reads as not taken");
 });
 
-test("the segments read Profile, Routines and Computer, as glass discs, and no Channels tab (5 October 2026)", async () => {
-  const { AGENT_PANE_REPLACEMENTS, AGENT_PANE_CSS } = await import(patchModule);
+test("the segments read Profile, Routines, Computer and, where served, Channels", async () => {
+  const { AGENT_PANE_REPLACEMENTS } = await import(patchModule);
   const components = AGENT_PANE_REPLACEMENTS[0][2];
   assert.match(components, /\[\\"settings\\",\\"Profile\\"\]|\["settings","Profile"\]/);
   assert.match(components, /"routines","Routines"/);
   assert.match(components, /"overview","Computer"/);
-  assert.ok(!components.includes("Channels"), "no Channels tab");
-  assert.ok(!components.includes("hasChannels"), "the segments take no channels flag");
-  assert.ok(!components.includes("simeon-segments__thumb"), "no sliding thumb under round tabs");
-  assert.ok(components.includes('className:"simeon-disc simeon-segments__item"'), "each tab is a glass disc");
-  assert.ok(!AGENT_PANE_CSS.includes(".simeon-segments__thumb"), "the pane styles no thumb");
-  assert.ok(AGENT_PANE_CSS.includes(".simeon-segments .simeon-segments__item[aria-selected=\"true\"]{color:var(--simeon-ink);background:linear-gradient(180deg,light-dark(#ffffff,#6a6a6e)"), "the chosen tab is solid");
+  assert.match(components, /\.\.\.\(h\?\[\["channels","Channels"\]\]:\[\]\)/);
 });
 
 test("the pane's styles are greys only, and every switch in the window is the main blue", async () => {
