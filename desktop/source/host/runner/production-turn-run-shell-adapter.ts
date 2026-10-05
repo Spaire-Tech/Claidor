@@ -299,6 +299,7 @@ export function createProductionTurnRunShellAdapter(
           baseState: cloneBaseTurnCheckpoint(productionInput.baseState),
           transcriptPersistenceEnabled: true,
           session: input.createSession(owner),
+          emitUpdate: (update) => emitUpdate(update as ForwardedUpdate),
           productionOwner: owner,
           productionInput,
           runContext: linked.context,

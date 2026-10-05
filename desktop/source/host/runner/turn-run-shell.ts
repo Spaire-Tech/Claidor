@@ -41,6 +41,7 @@ import {
   type TurnSettleHost,
   type TurnSettleResult,
 } from "./turn-settle.js";
+import { logPlainTextReplyDelivered, plainTextReplyToDeliver } from "./plain-text-reply.js";
 import type {
   InactiveTurnAgentStreamPath,
   InactiveTurnAgentStreamLifecycleInput,
@@ -399,6 +400,8 @@ export interface PreparedTurn {
   readonly baseState: TurnCheckpoint;
   readonly transcriptPersistenceEnabled: boolean;
   readonly session: TurnSession;
+  /** The turn's own update emitter, when the host offers it: a message the host sends on the model's behalf goes through here, counted like one the model sent. */
+  readonly emitUpdate?: (update: { readonly type: "send-message"; readonly message: { readonly type: "text"; readonly content: string }; readonly timestampMs: number; readonly ackToken?: string }) => void;
 }
 
 export interface TurnStreamCallbacks {
@@ -787,6 +790,20 @@ export function createTurnRunShell(host: TurnRunShellHost) {
           baseContext: context,
           requestId,
         });
+        const reply = prepared.emitUpdate === undefined ? null : plainTextReplyToDeliver({
+          ...settle.snapshot(),
+          hidden: options.hidden === true,
+          isSubagentRunner: host.isSubagentRunner,
+        });
+        if (reply !== null) {
+          prepared.emitUpdate?.({
+            type: "send-message",
+            message: { type: "text", content: reply },
+            timestampMs: Date.now(),
+            ...(options.ackToken === undefined ? {} : { ackToken: options.ackToken }),
+          });
+          logPlainTextReplyDelivered(reply);
+        }
       }
     } catch (error) {
       endLifecycle();
