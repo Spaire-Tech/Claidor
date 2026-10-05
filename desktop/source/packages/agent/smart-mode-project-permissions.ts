@@ -7,7 +7,7 @@ import { parseProjectPermissionsFileConfig } from "../simeon-config/project-perm
 const MAX_PROJECT_PERMISSION_INSTRUCTIONS_PER_WORKSPACE = 20;
 const MAX_USER_AUTO_RUN_INSTRUCTIONS = 20;
 const MAX_PROJECT_PERMISSION_INSTRUCTION_CHARS = 1e3;
-const PROJECT_PERMISSIONS_FILE_NAME = ".cursor/permissions.json";
+const PROJECT_PERMISSIONS_FILE_NAME = ".simeon/permissions.json";
 
 interface AutoRunInstructions {
   readonly allowInstructions: readonly string[];

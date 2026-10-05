@@ -64,7 +64,7 @@ test("the agent's brief names Simeon, not an earlier name", async () => {
   assert.doesNotMatch(listeners, /Claidor account/);
   assert.match(plugins, /user's Simeon account/);
   assert.doesNotMatch(plugins, /Claidor account/);
-  assert.match(prompt, /cursor-agent/);
+  assert.match(prompt, /cloud-agent/);
 });
 
 test("the shipped renderer is renamed Simeon and its default agent New Agent, by the brand pass", async () => {

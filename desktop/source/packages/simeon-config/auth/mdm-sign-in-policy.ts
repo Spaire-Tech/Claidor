@@ -86,7 +86,7 @@ async function readWindowsPolicyRegistry(): Promise<RawPolicy | undefined> {
   return fallback;
 }
 async function readLinuxPolicyFile(): Promise<RawPolicy | undefined> {
-  try { return pickPolicyValues(JSON.parse(await fs.readFile(join(homedir(), ".cursor", "policy.json"), "utf-8")) as RawPolicy); } catch { return undefined; }
+  try { return pickPolicyValues(JSON.parse(await fs.readFile(join(homedir(), ".simeon", "policy.json"), "utf-8")) as RawPolicy); } catch { return undefined; }
 }
 async function readRawPolicyValues(): Promise<RawPolicy | undefined> {
   const override = process.env.CURSOR_MDM_SIGN_IN_POLICY_JSON;

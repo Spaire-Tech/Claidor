@@ -9,7 +9,7 @@
  * connector the box runs itself (`host/extensions/channels/`, no server in
  * the path; docs/services-agents.md). The reach points below keep
  * their Coming Soon branch behind the switches: `SAND_CLOUD_AGENTS_SERVED=0`
- * withholds the `cursor-agent` type, the CloudAgent tool and the brief's
+ * withholds the `cloud-agent` type, the CloudAgent tool and the brief's
  * cloud-agent sections; `SAND_CHANNELS_SERVED=0` (`shared/channels.ts`)
  * withholds the `channel` target and the `secret-request` type, marks every
  * connector manifest coming soon so the Channels tab draws it, and

@@ -42,7 +42,7 @@ const DEFAULT_MCP_NEEDS_AUTH_STATUS_MESSAGE_NO_VIRTUAL_TOOL = "This MCP server r
 const CURSOR_DIR_GITIGNORE_MANAGED_START = "# >>> CURSOR MANAGED BLOCK >>>";
 const CURSOR_DIR_GITIGNORE_MANAGED_END = "# <<< CURSOR MANAGED BLOCK <<<";
 const CURSOR_DIR_GITIGNORE_CONTENT = [
-  "# Ignore everything in .cursor",
+  "# Ignore everything in .simeon",
   "*",
   "# Un-ignore projects so we can descend to allowlisted subdirs",
   "!projects/",
@@ -68,8 +68,8 @@ const CURSOR_DIR_GITIGNORE_CONTENT = [
   "!plugins/",
   "!plugins/**",
   "# Built-in skills",
-  "!skills-cursor/",
-  "!skills-cursor/**",
+  "!skills-simeon/",
+  "!skills-simeon/**",
   "# User's personal skills",
   "!skills/",
   "!skills/**",
@@ -350,7 +350,7 @@ export class McpFileSystemWriter {
     this.ensureSimeonDirGitignore();
   }
 
-  private ensureSimeonDirGitignore(): void { void ensureSimeonDirGitignore(join(homedir(), ".cursor")).catch((error) => logger.warn(this.ctx, "Failed to ensure ~/.cursor/.gitignore", { error: String(error) })); }
+  private ensureSimeonDirGitignore(): void { void ensureSimeonDirGitignore(join(homedir(), ".simeon")).catch((error) => logger.warn(this.ctx, "Failed to ensure ~/.simeon/.gitignore", { error: String(error) })); }
   private async cleanupStaleStagingDirs(ctx: Context): Promise<void> { const logCtx = this.getLogContext(ctx); const mcpsPath = join(this.projectDir, MCPS_SUBDIR); try { const entries = await readdir(mcpsPath); await Promise.allSettled(entries.filter((entry) => entry.endsWith(STAGING_SUFFIX)).map((entry) => rm(join(mcpsPath, entry), { recursive: true, force: true }))); } catch (error) { if ((error as { code?: unknown } | null)?.code !== "ENOENT") logger.error(logCtx, "Error clearing stale mcps staging dirs", error); } }
   private onLeaseChanged(ctx: Context, event: McpLeaseChangeEvent | undefined): void { if (this.disposed) return; const normalizedEvent = event ?? { serverIdentifiers: undefined }; this.pendingServerEvent = this.hasPendingLeaseChangeEvent ? mergeMcpLeaseEvents(this.pendingServerEvent ?? { serverIdentifiers: undefined }, normalizedEvent) : normalizedEvent; this.hasPendingLeaseChangeEvent = true; if (this.debounceTimer !== undefined) clearTimeout(this.debounceTimer); this.debounceTimer = setTimeout(() => { this.debounceTimer = undefined; this.scheduleWrite(ctx, this.takePendingLeaseChangeEvent()); }, this.debounceMs); }
   private takePendingLeaseChangeEvent(): McpLeaseChangeEvent | undefined { if (!this.hasPendingLeaseChangeEvent) return undefined; const event = this.pendingServerEvent ?? { serverIdentifiers: undefined }; this.pendingServerEvent = undefined; this.hasPendingLeaseChangeEvent = false; return event; }

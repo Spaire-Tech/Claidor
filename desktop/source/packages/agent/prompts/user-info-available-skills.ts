@@ -31,9 +31,12 @@ interface AvailableSkillsPromptOverrides {
 }
 
 const COMPUTER_USE_SKILL_PATTERN = /computer[-_ ]use|\bcua\b/i;
+// `.cursor` is the folder skills were published to on boxes before 5 October
+// 2026; it is read, never written.
 const SKILL_DIR_SEGMENTS = [
+  [".simeon", "skills"],
+  [".simeon", "skills-simeon"],
   [".cursor", "skills"],
-  [".cursor", "skills-cursor"],
   [".agents", "skills"],
   [".claude", "skills"],
   [".codex", "skills"],
@@ -99,7 +102,7 @@ function getRuleDir(mdcPath: string): string {
   const literalRuleDir = normalizeToUnixPath(path.posix.dirname(normalizedPath));
   const segments = literalRuleDir.split(SEP);
   for (let index = segments.length - 2; index >= 0; index--) {
-    if (segments[index] === ".cursor" && segments[index + 1] === "rules") {
+    if (segments[index] === ".simeon" && segments[index + 1] === "rules") {
       const parentSegments = segments.slice(0, index);
       if (parentSegments.length === 0) {
         return SEP;

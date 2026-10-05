@@ -170,6 +170,9 @@ export const UPSTREAM_TOKEN_REPLACEMENTS = Object.freeze([
   ["editor-fields-more", /\b(cursorRules|cursorCommands|cursorCommandsExplicitlySet|cursorVersion|cursorSelections|cursorTarget)\b/g, (name) => name.replace("cursor", "pointer")],
   ["editor-field-names-more", /\b(related_cursor_rules|related_cursor_rule_paths|relative_path_to_cursor_folder|(suggest|reject|accept)_cursor_prediction_event|cursor_prediction_target|cursor_token_fee|cursor_selections|cursor_commands_explicitly_set)\b/g, (name) => name.replace("cursor", "pointer")],
   ["editor-dotfiles", /\.cursor(rules|ignore|indexingignore)\b/g, ".pointer$1"],
+  // The cloud-agent card's type: the host writes cloud-agent since 5 October
+  // 2026 and maps saved cursor-agent entries on read (session-runtime.ts).
+  ["cloud-agent-card-type", /(?<![A-Za-z0-9_-])cursor-agent(?![A-Za-z0-9_])/g, "cloud-agent"],
   ["account-method-pr-review", /\bgetCursorPrReviewPreferences\b/g, "getAccountPrReviewPreferences"],
   ["account-method-privacy", /\bgetCursorPrivacyModeEnabled\b/g, "getAccountPrivacyModeEnabled"],
   ["account-method-dashboard", /\binvokeCursorDashboardAction\b/g, "invokeAccountDashboardAction"],

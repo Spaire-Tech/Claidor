@@ -35,7 +35,7 @@ export function cloudAgentUrl(bcId: string): string { return cloudAgentWebUrl(bc
 export function buildTranscriptJsonl(conversation: unknown, convert: (conversation: unknown) => readonly unknown[]) { const lines = convert(conversation).map((message) => JSON.stringify(message, (_key, value) => typeof value === "bigint" ? value.toString() : value)); return { jsonl: lines.length > 0 ? `${lines.join("\n")}\n` : "", lineCount: lines.length }; }
 export interface SandCloudAgentManagerOptions { readonly getAccountAccessToken: (options?: { readonly backendUrl: string }) => Promise<string>; readonly getMachineId: () => Promise<string>; readonly completionPolling: PollingPolicy; readonly clock: Clock; readonly convertConversationMessagesToTrace: (conversation: unknown) => readonly unknown[]; readonly clientForTesting?: CloudAgentClient; readonly dashboardClientForTesting?: DashboardClient; readonly modelCatalogForTesting?: readonly SandModelCatalogEntry[]; readonly onRequestId?: (id: string) => void }
 // The enum fields (`source`, `followupSource`, `startingMessageType`, the user message's `mode`) carry the generated
-// constants: the reconstruction had the strings "grok-bot", "user-message" and "agent" where the bundle had enum values,
+// constants: the reconstruction had the strings "their product name", "user-message" and "agent" where the bundle had enum values,
 // which the binary codec wrote as garbage and the JSON codec refuses ("cannot encode field ... to JSON"; 25 September 2026).
 export class SandCloudAgentManager {
   readonly launchedIds = new Set<string>();

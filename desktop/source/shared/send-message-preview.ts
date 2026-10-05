@@ -1,6 +1,6 @@
 export const CURSOR_AGENT_FALLBACK_PREVIEW = "Cloud agent";
 
-export function cursorAgentPreviewText(title?: string | null): string {
+export function cloudAgentPreviewText(title?: string | null): string {
   const trimmed = title?.trim();
   return trimmed != null && trimmed.length > 0
     ? `Cloud agent: ${trimmed}`
@@ -17,7 +17,7 @@ export type SendMessagePreviewInput =
   | { readonly type: "text"; readonly content: string }
   | { readonly type: "attachment"; readonly url: string }
   | { readonly type: "widget"; readonly widget: { readonly prompt: string } }
-  | { readonly type: "cursor-agent"; readonly title?: string | null }
+  | { readonly type: "cloud-agent"; readonly title?: string | null }
   | {
       readonly type: "secret-request";
       readonly secretRequest: { readonly label: string };
@@ -58,8 +58,8 @@ export function sendMessagePreviewText(message: SendMessagePreviewInput): string
       return message.url;
     case "widget":
       return message.widget.prompt;
-    case "cursor-agent":
-      return cursorAgentPreviewText(message.title);
+    case "cloud-agent":
+      return cloudAgentPreviewText(message.title);
     case "secret-request":
       return message.secretRequest.label;
     case "email-draft":

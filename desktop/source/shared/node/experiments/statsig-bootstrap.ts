@@ -9,7 +9,7 @@ import { parseRetryAfterHeaderMs } from "../../retry-after.js";
 import { reportExperimentsDiagnostic } from "./experiments-diagnostics.js";
 
 export const STATSIG_CLIENT_KEY = "client-Bm4HJ0aDjXHQVsoACMREyLNxm5p6zzuzhO50MgtoT5D";
-// The upstream app proxied Statsig through its own API; logging is off here (`cursor-experiments.ts`), and the address is ours.
+// The upstream app proxied Statsig through its own API; logging is off here (`simeon-experiments.ts`), and the address is ours.
 export const STATSIG_LOG_EVENT_PROXY_URL = "https://api.simeonlabs.com/tev1/v1";
 export const BOOTSTRAP_CACHE_FILENAME = "sand-statsig-bootstrap.json";
 

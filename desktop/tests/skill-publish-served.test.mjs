@@ -237,7 +237,7 @@ test("an inline plugin's files are written to disk and its skills land in the ma
     ] }) });
     assert.match(await readFile(path.join(targetDir, "skills", "meeting-notes", "SKILL.md"), "utf8"), /Take notes/);
     assert.deepEqual([...await readFile(path.join(targetDir, "skills", "meeting-notes", "logo.png"))], [0x89, 0x50, 0x4e, 0x47]);
-    const manifest = JSON.parse(await readFile(path.join(targetDir, ".cursor-plugin", "plugin.json"), "utf8"));
+    const manifest = JSON.parse(await readFile(path.join(targetDir, ".simeon-plugin", "plugin.json"), "utf8"));
     assert.deepEqual(manifest, { name: "meeting-notes", skills: ["skills/meeting-notes"], displayName: "Meeting Notes" });
     await assert.rejects(module.synthesizeInlinePluginDir({ targetDir, pluginName: "evil", inlineContentJson: JSON.stringify({ files: [{ path: "../escape.md", content: "x" }] }) }), /unsafe path/);
     assert.equal(module.isSafeInlineFilePath("/etc/passwd"), false);

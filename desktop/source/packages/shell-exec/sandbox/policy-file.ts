@@ -12,7 +12,7 @@ function getSandboxPolicyDirectory(): string {
   if (override) {
     return path.resolve(override);
   }
-  return path.resolve(path.join(os.homedir(), ".cursor", SANDBOX_POLICY_DIR_NAME));
+  return path.resolve(path.join(os.homedir(), ".simeon", SANDBOX_POLICY_DIR_NAME));
 }
 
 function pruneStaleSandboxPolicyFiles(dir: string): void {

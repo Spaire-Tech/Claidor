@@ -49,7 +49,7 @@ const sameMachineSchema = z.object({ type: z.literal("same_machine") }).strict()
 
 const selfHostedWorkerSchema = z.object({
   type: z.literal("self_hosted_worker"),
-  worker_id: z.string().min(1).describe("Worker to run on, from cursor-cloud-list-self-hosted-workers. Only your own machines can be targeted this way; use self_hosted_pool for a team pool worker. Check that tool's sharedAssignmentAllowed first: a shared worker runs this subagent alongside others, otherwise the subagent waits for the worker to free up."),
+  worker_id: z.string().min(1).describe("Worker to run on, from the self-hosted workers list. Only your own machines can be targeted this way; use self_hosted_pool for a team pool worker. Check that tool's sharedAssignmentAllowed first: a shared worker runs this subagent alongside others, otherwise the subagent waits for the worker to free up."),
 }).strict().describe("Run on one specific self-hosted worker of your own. The subagent uses that machine's existing checkout and branch, so it cannot be given a base branch.");
 
 const selfHostedPoolSchema = z.object({

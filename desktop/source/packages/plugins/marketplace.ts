@@ -61,7 +61,7 @@ export class DefaultPluginCacheManager {
   ) {
     const home = userHomeDir ?? process.env.HOME ?? "";
     this.cacheRoot = options?.cacheRoot
-      ?? join(home, ".cursor", PLUGINS_CACHE_ROOT);
+      ?? join(home, ".simeon", PLUGINS_CACHE_ROOT);
   }
 
   getCacheDir(args: PluginCacheKey): string {

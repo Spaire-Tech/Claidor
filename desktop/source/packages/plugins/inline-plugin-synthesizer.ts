@@ -116,7 +116,7 @@ export async function synthesizeInlinePluginDir(options: { targetDir: string; in
     for (const server of content.mcpServers) if (server.config) mcpConfig[server.name] = server.config;
     if (Object.keys(mcpConfig).length > 0) await writeFile(join(targetDir, ".mcp.json"), JSON.stringify({ mcpServers: mcpConfig }, null, 2), "utf-8");
   }
-  const pluginJsonDir = join(targetDir, ".cursor-plugin"); await mkdir(pluginJsonDir, { recursive: true });
+  const pluginJsonDir = join(targetDir, ".simeon-plugin"); await mkdir(pluginJsonDir, { recursive: true });
   await writeFile(join(pluginJsonDir, "plugin.json"), JSON.stringify({ name: pluginName, ...manifestPaths }, null, 2), "utf-8");
 }
 

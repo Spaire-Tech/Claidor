@@ -12,5 +12,5 @@ export function getConfigDir(env: NodeJS.ProcessEnv = process.env): string {
   if (override?.trim()) return override;
   const xdg = env.XDG_CONFIG_HOME;
   if (xdg?.trim()) return join(xdg, "cursor");
-  return join(homedir(), ".cursor");
+  return join(homedir(), ".simeon");
 }

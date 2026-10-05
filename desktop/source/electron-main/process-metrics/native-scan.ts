@@ -5,19 +5,19 @@ import { createRequire } from "node:module";
 // the bundled process-metrics owner does not evaluate an undefined import.meta
 // URL; the ESM path remains artifact-equivalent.
 const nodeRequire = createRequire(typeof __filename === "string" ? __filename : import.meta.url);
-export interface ProclistNative { cursor_proclist_scan_async(roots: readonly number[]): Promise<unknown> }
+export interface ProclistNative { proclist_scan_async(roots: readonly number[]): Promise<unknown> }
 
 export function loadProclist(requireFn: (name: string) => unknown = nodeRequire): ProclistNative | null {
   try {
-    const module = requireFn("cursor-proclist") as Partial<ProclistNative> | null;
-    return typeof module?.cursor_proclist_scan_async === "function" ? module as ProclistNative : null;
+    const module = requireFn("simeon-proclist") as Partial<ProclistNative> | null;
+    return typeof module?.proclist_scan_async === "function" ? module as ProclistNative : null;
   } catch { return null; }
 }
 
 export function createNativeProcessScan(native: ProclistNative | null = loadProclist()): (roots: readonly number[]) => Promise<unknown[]> {
   return async (roots) => {
     if (native == null) return [];
-    try { const result = await native.cursor_proclist_scan_async(roots); return Array.isArray(result) ? result : []; }
+    try { const result = await native.proclist_scan_async(roots); return Array.isArray(result) ? result : []; }
     catch { return []; }
   };
 }

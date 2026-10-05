@@ -20,8 +20,8 @@ import type {
 } from "../proto/generated/agent/v1/mcp_exec_pb.js";
 
 export const CURSOR_PLAYWRIGHT_PROVIDER_ID = "cursor-browser-extension";
-export const CURSOR_IDE_BROWSER_PROVIDER_ID = "cursor-ide-browser";
-export const CURSOR_SELF_CONTROL_PROVIDER_ID = "cursor-dev-control";
+export const CURSOR_IDE_BROWSER_PROVIDER_ID = "simeon-ide-browser";
+export const CURSOR_SELF_CONTROL_PROVIDER_ID = "simeon-dev-control";
 export const CUSTOM_USER_TOOLS_PROVIDER_ID = "custom-user-tools";
 
 export const NON_AUTHENTICATABLE_MCP_PROVIDER_IDS = new Set([
@@ -34,10 +34,10 @@ export const NON_AUTHENTICATABLE_MCP_PROVIDER_IDS = new Set([
   "fsd"
 ]);
 
-export const CURSOR_DYNAMIC_TOOLS_NAMESPACE = "simeon";
+export const SIMEON_DYNAMIC_TOOLS_NAMESPACE = "simeon";
 /** The first-party namespace, under its name or the earlier one ("cursor"), which tool calls saved before the rename still carry. */
 export function isFirstPartyToolsNamespace(namespace: string | undefined): boolean {
-  return namespace === CURSOR_DYNAMIC_TOOLS_NAMESPACE || namespace === "cursor";
+  return namespace === SIMEON_DYNAMIC_TOOLS_NAMESPACE || namespace === "cursor";
 }
 
 export const BROWSER_MCP_PROVIDER_IDS = new Set([
@@ -46,11 +46,11 @@ export const BROWSER_MCP_PROVIDER_IDS = new Set([
 ]);
 
 export enum McpLeaseChangeReason {
-  Snapshots = "cursor_mcp_lease_snapshot_store",
-  Status = "cursor_mcp_lease_server_status",
-  Settings = "cursor_mcp_lease_settings",
-  Providers = "cursor_mcp_lease_providers",
-  Unknown = "cursor_mcp_lease_unknown"
+  Snapshots = "simeon_mcp_lease_snapshot_store",
+  Status = "simeon_mcp_lease_server_status",
+  Settings = "simeon_mcp_lease_settings",
+  Providers = "simeon_mcp_lease_providers",
+  Unknown = "simeon_mcp_lease_unknown"
 }
 
 export interface McpToolFileLike {

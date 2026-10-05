@@ -62,7 +62,7 @@ import { envGateOverride } from "./simeon-experiments.js";
 // wrapper below answers it from this table.
 //
 // Not named, and why: `sand_teach_by_demonstration` stays off (the founder,
-// 2 October). `sand_computer_use_unicode_typing` and `grok_bot_dynamic_tools`
+// 2 October). `sand_computer_use_unicode_typing` and `simeon_dynamic_tools`
 // stay at their bundled default: the first changes how the screen executor
 // types, which the box does not serve; the second marks no tool as its own
 // here, so either switch would read as on and do nothing. `sand_multitask`

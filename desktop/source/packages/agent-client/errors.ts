@@ -131,7 +131,7 @@ const NETWORK_ERRNO_CODES = new Set([
   "ENETUNREACH",
 ]);
 const NETWORK_ERRNO_RE = new RegExp(`\\b(${[...NETWORK_ERRNO_CODES].join("|")})\\b`);
-const INFERENCE_REQUEST_ERROR_TYPE_HEADER = "x-cursor-inference-request-error-type";
+const INFERENCE_REQUEST_ERROR_TYPE_HEADER = "x-simeon-inference-request-error-type";
 
 interface ConnectErrorLike {
   readonly name: string;

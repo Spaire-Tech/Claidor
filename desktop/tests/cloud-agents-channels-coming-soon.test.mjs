@@ -8,7 +8,7 @@
  * honest behind its switches (`SAND_CLOUD_AGENTS_SERVED=0`,
  * `SAND_CHANNELS_SERVED=0`): the brief used to tell the agent to hand every
  * repository task to a cloud agent whose launch failed every time; the
- * SendMessage tool offered a cursor-agent card, a channel target that always
+ * SendMessage tool offered a cloud-agent card, a channel target that always
  * raised "Message not delivered", and a secret-request whose only store is a
  * channel credential nothing read; the gateway's channel manifests carried
  * no availability, so the Channels tab drew nothing.
@@ -32,7 +32,7 @@ async function load(entry, name) {
   return { module, dispose: () => rm(dir, { recursive: true, force: true }) };
 }
 
-test("SendMessage: cursor-agent served by default, a dropped channel, a refused secret-request; the flag at 0 restores coming soon", async () => {
+test("SendMessage: cloud-agent served by default, a dropped channel, a refused secret-request; the flag at 0 restores coming soon", async () => {
   // Cloud agents are served by default since 25 September 2026 (simeon/sand/cloud_agents.py).
   process.env.SAND_CLOUD_AGENTS_SERVED = "0";
   process.env.SAND_CHANNELS_SERVED = "0";
@@ -40,23 +40,23 @@ test("SendMessage: cursor-agent served by default, a dropped channel, a refused 
   try {
     const off = { SAND_CLOUD_AGENTS_SERVED: "0", SAND_CHANNELS_SERVED: "0" };
     const types = module.describeSendMessageTypes(off);
-    assert.match(types, /cursor-agent is not available: cloud agents are coming soon in Simeon/);
+    assert.match(types, /cloud-agent is not available: cloud agents are coming soon in Simeon/);
     assert.match(types, /secret-request to ask the user for a credential/, "a key for any service but a messaging connector works without channels");
-    assert.doesNotMatch(types, /cursor-agent to reference a cloud agent/);
-    assert.deepEqual(module.refineSendMessage({ type: "cursor-agent", bcId: "bc-1" }, off).map((issue) => issue.message), [
+    assert.doesNotMatch(types, /cloud-agent to reference a cloud agent/);
+    assert.deepEqual(module.refineSendMessage({ type: "cloud-agent", bcId: "bc-1" }, off).map((issue) => issue.message), [
       "Cloud agents are coming soon in Simeon, so the CloudAgent tool and cloud-agent cards are not available here yet. Never claim you can launch or manage one.",
     ]);
     assert.match(module.refineSendMessage({ type: "secret-request", secret: { label: "Slack token", connector: "slack", field: "token" } }, off)[0].message, /Messaging channels \(Slack, Discord\) are coming soon on Simeon/);
     assert.deepEqual(module.refineSendMessage({ type: "secret-request", secret: { label: "Slack token", connector: "slack", field: "token" } }, {}), [], "served by default: the secret-request card is back (channels-runtime.test.mjs)");
     assert.deepEqual(module.refineSendMessage({ type: "secret-request", secret: { label: "Render API key", connector: "render", field: "api_key" } }, off), [], "a Render key is a secret on the computer, channels or not");
-    assert.deepEqual(module.refineSendMessage({ type: "cursor-agent", bcId: "bc-1" }, {}), [], "served by default: the upstream app's card is back");
-    assert.match(module.describeSendMessageTypes({}), /cursor-agent to reference a cloud agent/);
+    assert.deepEqual(module.refineSendMessage({ type: "cloud-agent", bcId: "bc-1" }, {}), [], "served by default: the upstream app's card is back");
+    assert.match(module.describeSendMessageTypes({}), /cloud-agent to reference a cloud agent/);
     assert.match(module.describeSendMessageTypes({}), /secret-request to ask the user for a credential/);
     const parsed = module.sendMessageParameters.safeParse({ type: "text", content: "Hi", channel: "slack:C1" });
     assert.equal(parsed.success, true);
     assert.equal(parsed.data.channel, undefined, "with the switch off a channel the model set is dropped, and the text lands in the in-app chat");
     assert.equal(parsed.data.content, "Hi");
-    assert.equal(module.sendMessageParameters.safeParse({ type: "cursor-agent", bcId: "bc-1" }).success, false);
+    assert.equal(module.sendMessageParameters.safeParse({ type: "cloud-agent", bcId: "bc-1" }).success, false);
   } finally {
     delete process.env.SAND_CLOUD_AGENTS_SERVED;
     delete process.env.SAND_CHANNELS_SERVED;
@@ -67,11 +67,11 @@ test("SendMessage: cursor-agent served by default, a dropped channel, a refused 
   try {
     const description = tool.module.describeSendMessageTool({ SAND_CLOUD_AGENTS_SERVED: "0", SAND_CHANNELS_SERVED: "0" });
     assert.match(description, /Cloud agents are coming soon in Simeon/);
-    assert.doesNotMatch(description, /"type":"cursor-agent"/);
+    assert.doesNotMatch(description, /"type":"cloud-agent"/);
     assert.match(description, /"type":"secret-request"/, "the masked input asks for any service's key");
     assert.match(description, /the value becomes an environment variable on your computer named for both \(RENDER_API_KEY\)/);
     assert.doesNotMatch(description, /for a messaging connector \(discord, slack\) the value goes straight/, "no messaging connector to write to with channels off");
-    assert.match(tool.module.SAND_SEND_MESSAGE_TOOL_DESCRIPTION, /"type":"cursor-agent"/, "the upstream app's full text is kept");
+    assert.match(tool.module.SAND_SEND_MESSAGE_TOOL_DESCRIPTION, /"type":"cloud-agent"/, "the upstream app's full text is kept");
   } finally {
     delete process.env.SAND_CLOUD_AGENTS_SERVED;
     await tool.dispose();

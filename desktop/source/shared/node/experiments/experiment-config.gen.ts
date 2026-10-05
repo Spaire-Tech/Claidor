@@ -143,7 +143,7 @@ export const FLAGS = {
         client: true,
         default: false
       },
-      grok_bot_dynamic_tools: {
+      simeon_dynamic_tools: {
         client: true,
         default: false
       },
@@ -277,7 +277,7 @@ export const FLAGS = {
       // Sand conversation-bundle size limits: background reachability GC over
       // conversation-blobs.db past the soft threshold, plus the turn-start hard
       // cap that compacts and refuses turns when the bundle stays over the limit.
-      grok_bot_conversation_gc: {
+      simeon_conversation_gc: {
         client: true,
         default: false
       },
@@ -401,7 +401,7 @@ export const FLAGS = {
       },
       // Sand desktop's "Get Simeon for iOS" account-menu row (opens the iOS
       // download page). When OFF (the default) the row is absent from the menu.
-      sand_get_grok_bot_ios: {
+      sand_get_simeon_ios: {
         client: true,
         default: false
       },
@@ -713,7 +713,7 @@ export const FLAGS = {
         client: true,
         default: false
       },
-      // Logs a structured `ext_host_cursor` warning (default off) when an extension
+      // Logs a structured `ext_host_simeon` warning (default off) when an extension
       // on the agent-exec isolated extension host touches a text-document API. Used
       // to verify agent-exec never needs document sync before we stop syncing
       // documents to it. Scoped to agent-exec only: retrieval and always-local
@@ -726,16 +726,16 @@ export const FLAGS = {
       // the window-pinned workbench decision swaps the agent-exec fanout /
       // allowlist / dependency-backfill path over to cursor-agent-host so only one
       // of the pair is active in that window, regardless of workspace family.
-      cursor_agent_host: {
+      simeon_agent_host: {
         client: true,
         default: false
       },
-      // Sub-feature under cursor_agent_host: when ON, move exec instantiation into
+      // Sub-feature under simeon_agent_host: when ON, move exec instantiation into
       // agent-host (host constructs once and injects into shared exec activate /
       // createAgentHost). When OFF (default), host-ON still uses the topology, but
       // exec keeps minting its local fallback when no gitExecutor is injected.
       // Reused for future exec migrations — not git-specific.
-      cursor_agent_host_move_exec: {
+      simeon_agent_host_move_exec: {
         client: true,
         default: false
       },
@@ -754,7 +754,7 @@ export const FLAGS = {
       // extension's activation event so it loads just after eager activation
       // settles instead of blocking it. Absent gate reads false (safe default), so
       // this can ship dark and be flipped remotely without a redeploy.
-      defer_cursor_agent_exec_activation: {
+      defer_simeon_agent_exec_activation: {
         client: true,
         default: false
       },
@@ -802,11 +802,11 @@ export const FLAGS = {
         default: false
       },
       /**
-       * Makes `.cursor/rules` discovery pass `.cursorignore` files to ripgrep
+       * Makes `.simeon/rules` discovery pass `.cursorignore` files to ripgrep
        * (`--cursor-ignore`), so negation patterns can re-include gitignored rule
        * files (DESK-9199).
        */
-      rules_discovery_respect_cursorignore: {
+      rules_discovery_respect_simeonignore: {
         client: true,
         default: false
       },
@@ -924,7 +924,7 @@ export const FLAGS = {
         client: true,
         default: true
       },
-      enable_cursor_agent_worker_extension: {
+      enable_simeon_agent_worker_extension: {
         client: true,
         default: false
       },
@@ -1249,7 +1249,7 @@ export const FLAGS = {
         client: true,
         default: false
       },
-      cursor_backend_control_automation_mcp: {
+      simeon_backend_control_automation_mcp: {
         client: true,
         default: true
       },
@@ -1685,7 +1685,7 @@ export const FLAGS = {
         client: true,
         default: false
       },
-      glass_cursor_tab: {
+      glass_simeon_tab: {
         client: true,
         default: true
       },
@@ -1717,27 +1717,27 @@ export const FLAGS = {
         client: true,
         default: true
       },
-      open_github_pr_links_in_review_cursor: {
+      open_github_pr_links_in_review_app: {
         client: true,
         default: false
       },
       // Phase-21 pr-page-portal-web migration gates. Client emitters (VS Code /
       // Glass) require BOTH to emit cursor.com portal PR links, matching the
       // portal-website emitter convention (useCursorPortalReviewLinksEnabled):
-      // `cursor_com_review_redirects` is the migration kill switch (ships dark;
+      // `simeon_review_redirects` is the migration kill switch (ships dark;
       // per-owner enablement rides on its Statsig targeting), and
-      // `cursor_com_review_pages` alone is not a safe emitter condition because
+      // `simeon_review_pages` alone is not a safe emitter condition because
       // that admission gate is already on for canary cohorts whose portal PR
       // routes do not render PRs yet.
-      cursor_com_review_redirects: {
+      simeon_review_redirects: {
         client: true,
         default: false
       },
-      cursor_com_review_pages: {
+      simeon_review_pages: {
         client: true,
         default: false
       },
-      show_cursor_review_early_access_ad: {
+      show_review_early_access_ad: {
         client: true,
         default: false
       },
@@ -1891,11 +1891,11 @@ export const FLAGS = {
         client: true,
         default: false
       },
-      cursor_blame: {
+      simeon_blame: {
         client: true,
         default: false
       },
-      cursor_skill_enabled: {
+      simeon_skill_enabled: {
         client: true,
         default: false
       },
@@ -2087,7 +2087,7 @@ export const FLAGS = {
       // Gates whether the public start RPC honors the client-supplied
       // `disable_pr_management_tool` flag (which drops the ManagePullRequest tool
       // from a codebase-only agent's tool surface). Off strips the flag fail-closed.
-      codebase_browse_ask_cursor: {
+      codebase_browse_ask: {
         client: true,
         default: false
       },
@@ -2106,7 +2106,7 @@ export const FLAGS = {
       // control). Only takes effect while
       // enable_forge_source_pr_creation_setting and cloud_agent_origin_repos are
       // also enabled.
-      origin_dogfooding_cursor_creation_provider_override: {
+      origin_dogfooding_creation_provider_override: {
         client: true,
         default: false
       },
@@ -2379,7 +2379,7 @@ export const FLAGS = {
         client: true,
         default: false
       },
-      cursor_rules_batch_update: {
+      simeon_rules_batch_update: {
         client: true,
         default: true
       },
@@ -3031,7 +3031,7 @@ export const FLAGS = {
       // Extends the SEV-1252 AwaitShell subagent-wait mitigation to Grok 4.6,
       // which vacuously slept on AwaitShell instead of ending its turn to collect
       // background Task subagent results (same failure mode Fable had).
-      fix_grok_subagent_await: {
+      fix_subagent_await: {
         client: true,
         default: false
       },
@@ -3059,7 +3059,7 @@ export const FLAGS = {
         client: true,
         default: false
       },
-      use_cursor_github_app_id: {
+      use_simeon_github_app_id: {
         client: true,
         default: true
       },
@@ -3275,10 +3275,10 @@ export const FLAGS = {
       },
       /**
        * Gates the Customize "Publish Skill" and "Unpublish Skill" row actions.
-       * Publish packs a personal `~/.cursor/skills` skill, publishes it to the team
+       * Publish packs a personal `~/.simeon/skills` skill, publishes it to the team
        * marketplace via `DashboardService.PublishPlugin`, and trashes the local copy
        * once the published commit is confirmed loaded from the plugin cache;
-       * unpublish restores the skill to `~/.cursor/skills` and deletes that plugin.
+       * unpublish restores the skill to `~/.simeon/skills` and deletes that plugin.
        * Off means the skill row's overflow menu offers neither, so nothing
        * client-side can reach either RPC. The two share one gate so it can never
        * leave someone with a published skill and no way to take it back.
@@ -3500,19 +3500,19 @@ export const FLAGS = {
         client: true,
         default: true
       },
-      cursor_shared_session_file_watcher: {
+      simeon_shared_session_file_watcher: {
         client: true,
         default: false
       },
-      cursor_update_supervisor: {
+      simeon_update_supervisor: {
         client: true,
         default: false
       },
-      cursor_private_inference_download_prompt: {
+      simeon_private_inference_download_prompt: {
         client: true,
         default: false
       },
-      cursor_cli_private_inference_download_prompt: {
+      simeon_cli_private_inference_download_prompt: {
         client: true,
         default: false
       },
@@ -3673,11 +3673,11 @@ export const EXPERIMENTS = {
         client: true,
         fallbackValues: {
           group: "control",
-          copy: "cursor_models"
+          copy: "simeon_models"
         },
         parseValue: {
           group: parseEnum(["control", "treatment"]),
-          copy: parseEnum(["cursor_models", "grok_45"])
+          copy: parseEnum(["simeon_models", "model_45"])
         }
       },
       // Controls whether the Automations entrypoint row is shown in the editor/IDE
@@ -4169,7 +4169,7 @@ export const EXPERIMENTS = {
           enabled: parseBoolean
         }
       },
-      cursor_launch_at_login: {
+      simeon_launch_at_login: {
         client: true,
         fallbackValues: {
           enabled: false
@@ -4246,7 +4246,7 @@ export const EXPERIMENTS = {
           ])
         }
       },
-      free_user_composer_grok_picker_2026_07: {
+      free_user_composer_model_picker_2026_07: {
         client: true,
         fallbackValues: {
           group: "control"
@@ -5192,7 +5192,7 @@ export const DYNAMIC_CONFIGS = {
           ]
         }
       },
-      grok_bot_conversation_size_limits: {
+      simeon_conversation_size_limits: {
         client: true,
         fallbackValues: {
           soft_limit_mb: 256,

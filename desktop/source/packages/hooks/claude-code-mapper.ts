@@ -1,4 +1,4 @@
-import { CLAUDE_EVENT_TO_CURSOR_STEP, CLAUDE_TOOL_TO_CURSOR_TOOL, UNSUPPORTED_CLAUDE_EVENTS, UNSUPPORTED_CLAUDE_TOOLS } from "./claude-code-types.js";
+import { CLAUDE_EVENT_TO_CURSOR_STEP, CLAUDE_TOOL_TO_SIMEON_TOOL, UNSUPPORTED_CLAUDE_EVENTS, UNSUPPORTED_CLAUDE_TOOLS } from "./claude-code-types.js";
 
 interface Logger { warn(message: string): void; info(message: string): void }
 interface ClaudeHookScript { type?: string; command?: string; prompt?: string; timeout?: number }
@@ -13,9 +13,9 @@ function transformToolMatcher(matcher: string | undefined, logger: Logger = noop
   for (const tool of matcher.split("|")) {
     const trimmedTool = tool.trim();
     if (trimmedTool.startsWith("mcp__")) { const parts = trimmedTool.split("__"); if (parts.length >= 3) { transformedTools.push(`MCP:${parts.slice(2).join("__")}`); continue; } }
-    const cursorTool = CLAUDE_TOOL_TO_CURSOR_TOOL[trimmedTool];
-    if (cursorTool === null) { if ((UNSUPPORTED_CLAUDE_TOOLS as readonly string[]).includes(trimmedTool)) warnings.push(`Tool "${trimmedTool}" is not supported in Simeon and will be ignored`); continue; }
-    if (cursorTool !== undefined) { if (!transformedTools.includes(cursorTool)) transformedTools.push(cursorTool); } else transformedTools.push(trimmedTool);
+    const simeonTool = CLAUDE_TOOL_TO_SIMEON_TOOL[trimmedTool];
+    if (simeonTool === null) { if ((UNSUPPORTED_CLAUDE_TOOLS as readonly string[]).includes(trimmedTool)) warnings.push(`Tool "${trimmedTool}" is not supported in Simeon and will be ignored`); continue; }
+    if (simeonTool !== undefined) { if (!transformedTools.includes(simeonTool)) transformedTools.push(simeonTool); } else transformedTools.push(trimmedTool);
   }
   for (const warning of warnings) logger.warn(warning);
   return transformedTools.length === 0 ? null : transformedTools.join("|");
@@ -42,8 +42,8 @@ export function transformClaudeHooksToConfig(claudeHooks: Record<string, unknown
   }
   return { version: 1, hooks: agentHooks };
 }
-export function detectHooksSchema(value: unknown): "cursor" | "claude-code" | "unknown" {
+export function detectHooksSchema(value: unknown): "simeon" | "claude-code" | "unknown" {
   if (typeof value !== "object" || value === null) return "unknown"; const hooks = typeof (value as Record<string, unknown>).hooks === "object" && (value as Record<string, unknown>).hooks !== null ? (value as Record<string, unknown>).hooks as Record<string, unknown> : null; if (!hooks) return "unknown";
-  for (const candidate of Object.values(hooks)) { if (!Array.isArray(candidate) || candidate.length === 0) continue; const first = candidate[0]; if (typeof first !== "object" || first === null) continue; if ("hooks" in first && Array.isArray((first as Record<string, unknown>).hooks)) return "claude-code"; if ("command" in first || "prompt" in first || "type" in first) return "cursor"; }
+  for (const candidate of Object.values(hooks)) { if (!Array.isArray(candidate) || candidate.length === 0) continue; const first = candidate[0]; if (typeof first !== "object" || first === null) continue; if ("hooks" in first && Array.isArray((first as Record<string, unknown>).hooks)) return "claude-code"; if ("command" in first || "prompt" in first || "type" in first) return "simeon"; }
   return "unknown";
 }

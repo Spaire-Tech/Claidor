@@ -88,7 +88,7 @@ function isEnvironmentUnreachableMessageError(error: unknown): boolean { return 
 function isExecBackendUnavailableError(error: unknown): boolean {
   if (error instanceof Error && (error.name === "ExecBackendUnavailableError" || error.name === "ControlledExecDisposedError" || error.name === AGENT_STREAM_START_TIMEOUT_ERROR_NAME)) return true;
   if (isAgentStreamStartTimeoutError(error) || isExtensionHostTimeoutConnectError(error) || isLegacyAgentStreamStartTimeoutError(error)) return true;
-  return collectErrorText(error).map(text => text.toLowerCase()).some(text => text.includes("mainthreadcursor disposed") || text.includes("agent execution timed out") || text.includes("extension host is not running or is unresponsive") || text.includes("controlledexecdisposederror"));
+  return collectErrorText(error).map(text => text.toLowerCase()).some(text => text.includes("mainthreadsimeon disposed") || text.includes("agent execution timed out") || text.includes("extension host is not running or is unresponsive") || text.includes("controlledexecdisposederror"));
 }
 
 export function isAgentStreamStartTimeoutError(error: unknown): boolean {

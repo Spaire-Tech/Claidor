@@ -60,12 +60,12 @@ export function normalizeToUnixPath(value: string): string {
 }
 
 export function isWorktreesPath(value: string): boolean {
-  return normalizeToUnixPath(value).includes(".cursor/worktrees");
+  return normalizeToUnixPath(value).includes(".simeon/worktrees");
 }
 
 function getWorktreesRepoRoot(worktreePath: string): string | undefined {
   const normalizedPath = normalizeToUnixPath(worktreePath);
-  const marker = "/.cursor/worktrees/";
+  const marker = "/.simeon/worktrees/";
   const markerIndex = normalizedPath.indexOf(marker);
   if (markerIndex === -1) return undefined;
   const afterMarker = normalizedPath.slice(markerIndex + marker.length);

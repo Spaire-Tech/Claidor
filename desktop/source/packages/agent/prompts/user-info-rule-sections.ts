@@ -17,7 +17,7 @@ function getRuleDir(mdcPath: string): string {
   const literalRuleDir = normalizeToUnixPath(path.normalize(path.dirname(normalizedPath)));
   const segments = literalRuleDir.split(SEP);
   for (let index = segments.length - 2; index >= 0; index--) {
-    if (segments[index] === ".cursor" && segments[index + 1] === "rules") {
+    if (segments[index] === ".simeon" && segments[index + 1] === "rules") {
       const parentSegments = segments.slice(0, index);
       if (parentSegments.length === 0) return SEP;
       return parentSegments.join(SEP);

@@ -72,7 +72,7 @@ export function getSandRootDir(homeDir = homedir()): string {
   const userDataDir = resolveSandUserDataDir([], process.env);
   if (userDataDir != null) return join(userDataDir, SAND_DATA_DIRNAME);
   const variant = getSandVariant();
-  return variant === "sand" ? getSandProductionRootDir(homeDir) : join(homeDir, ".cursor", variant);
+  return variant === "sand" ? getSandProductionRootDir(homeDir) : join(homeDir, ".simeon", variant);
 }
 
 export function reanchorSandPath(storedPath: string): string {

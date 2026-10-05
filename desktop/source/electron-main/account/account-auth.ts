@@ -315,7 +315,7 @@ export class SandAccountAuthService {
     if (!startedRetained) { this.credentialState = "revoked"; this.reportedLoggedOutStatus = status; } this.profileCache.clear();
     // The server session is revoked with the departing token before the
     // keychain entries go (`revokeSession`, wired to `POST /desktop/api/auth/logout`
-    // on Simeon Labs' server by `cursor-auth-wiring.ts`). Until 24 September
+    // on Simeon Labs' server by `account-auth-wiring.ts`). Until 24 September
     // 2026 nothing here told the server anything: sign-out was the two
     // `deleteSecret` calls and the session stayed live until its refresh
     // token expired. The call is awaited so the token is still in hand,
@@ -329,7 +329,7 @@ export class SandAccountAuthService {
   async devLogin(args: { readonly tier?: string; readonly email?: string }): Promise<SandAuthStatus> {
     const backendUrl = this.options.getBackendUrl?.() ?? getConfiguredBackendUrl(); if (!isDevAuthBackend(backendUrl)) throw new SandDevLoginError(`Refusing dev-login against non-dev backend ${backendUrl}. Set SAND_BACKEND_URL to a local backend (e.g. https://localhost:8000).`);
     this.abortActiveLogin(); const operationEpoch = this.advanceAuthOperationEpoch(); await this.settleSecureStorage(); if (!this.isCurrentAuthOperation(operationEpoch)) return await this.getStatus(); this.emitStatus({ kind: "logging-in" });
-    const { plan, trial } = resolveDevLoginPlan(args.tier); const url = new URL("/auth/cursor_dev_session_token", backendUrl); url.searchParams.set("plan", plan); if (trial) url.searchParams.set("trial", "true"); if (args.email != null && args.email.length > 0) url.searchParams.set("email", args.email);
+    const { plan, trial } = resolveDevLoginPlan(args.tier); const url = new URL("/auth/simeon_dev_session_token", backendUrl); url.searchParams.set("plan", plan); if (trial) url.searchParams.set("trial", "true"); if (args.email != null && args.email.length > 0) url.searchParams.set("email", args.email);
     const response = await (this.options.fetchOAuthToken ?? fetch)(url, { headers: { accept: "application/json" } }); if (!response.ok) throw new SandDevLoginError(`dev session token request failed: ${response.status} ${response.statusText}`);
     const body: unknown = await response.json(); if (typeof body !== "object" || body == null || !("accessToken" in body) || typeof body.accessToken !== "string") throw new SandDevLoginError("dev session response did not include an accessToken.");
     const result = { accessToken: body.accessToken, refreshToken: "refreshToken" in body && typeof body.refreshToken === "string" ? body.refreshToken : body.accessToken };

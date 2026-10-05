@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import type { Context } from "../../../context/core.js";
 import type { ResourceAccessor, RemoteExecManager } from "../../../agent-exec/index.js";
-import { CURSOR_DYNAMIC_TOOLS_NAMESPACE, mcpInputSchemaToJson, mcpServerUnavailableReason, mcpStateExecutorResource, supportsInteractiveMcpAuth } from "../../../agent-exec/mcp.js";
+import { SIMEON_DYNAMIC_TOOLS_NAMESPACE, mcpInputSchemaToJson, mcpServerUnavailableReason, mcpStateExecutorResource, supportsInteractiveMcpAuth } from "../../../agent-exec/mcp.js";
 import { writeExecutorResource } from "../../../agent-exec/write.js";
 import { writeToAgentToolsFile } from "../../../agent-exec/agent-tools-file.js";
 import { createStringResult } from "../../../chat-inference/prompt-executor.js";
@@ -443,7 +443,7 @@ export function createGetMcpToolsTool(mcpMetaToolOptions: McpMetaToolOptions, op
         ? ["", dynamic ? `MCP authentication: If an MCP-backed namespace has namespaceStatus "needsAuth", or its tool call fails with an authentication/authorization error, authenticate it by calling ${MCP_AUTH_TOOL_NAME} through ${callName} with empty arguments. Then inspect that namespace again and retry if appropriate.` : `MCP authentication: If a relevant server has serverStatus "needsAuth", or if an MCP tool call fails with an authentication/authorization error, authenticate it by calling ${MCP_AUTH_TOOL_NAME} (via ${callName}, with empty arguments), then inspect that server again and retry the original request if appropriate. Do not call ${MCP_AUTH_TOOL_NAME} just because it is listed, and do not repeatedly call it if authentication did not fix the failure.`]
         : ["", dynamic ? `MCP authentication: If an MCP-backed namespace has namespaceStatus "needsAuth", its tools are unavailable until that MCP integration is authenticated in Simeon.` : `MCP authentication: If a server has serverStatus "needsAuth", its tools are not usable in this environment. Ask the user to authenticate that MCP server in Simeon, then retry.`];
       const builtinLines = dynamic && options.dynamicToolRegistry !== undefined && !options.dynamicToolRegistry.isEmpty()
-        ? ["", `First-party tools: the reserved namespace "${CURSOR_DYNAMIC_TOOLS_NAMESPACE}" lists built-in tools available on demand (${options.dynamicToolRegistry.getToolNames().join(", ")}). Discover their schemas here, then invoke them via ${callName}; they run natively with their own approvals and rendering.`]
+        ? ["", `First-party tools: the reserved namespace "${SIMEON_DYNAMIC_TOOLS_NAMESPACE}" lists built-in tools available on demand (${options.dynamicToolRegistry.getToolNames().join(", ")}). Discover their schemas here, then invoke them via ${callName}; they run natively with their own approvals and rendering.`]
         : [];
       const description = dynamic
         ? [

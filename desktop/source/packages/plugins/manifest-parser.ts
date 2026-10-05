@@ -7,13 +7,13 @@ import { readSchemaId, resolveSchemaVersion } from "./schema-version.js";
 export const MAX_MANIFEST_SIZE_BYTES = 10 * 1024 * 1024;
 const KEBAB_CASE_PATTERN = /^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$/;
 export const PLUGIN_MANIFEST_PATHS = [
-  ".cursor-plugin/plugin.json",
+  ".simeon-plugin/plugin.json",
   ".claude-plugin/plugin.json",
   "plugin.json",
 ] as const;
-export const PLUGIN_ROOT_DIR_NAMES = [".cursor-plugin", ".claude-plugin"] as const;
+export const PLUGIN_ROOT_DIR_NAMES = [".simeon-plugin", ".claude-plugin"] as const;
 export const MARKETPLACE_MANIFEST_PATHS = [
-  ".cursor-plugin/marketplace.json",
+  ".simeon-plugin/marketplace.json",
   ".claude-plugin/marketplace.json",
 ] as const;
 
