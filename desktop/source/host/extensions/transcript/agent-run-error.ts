@@ -123,20 +123,26 @@ export type ErrorButton = {
   label: string;
   action: { case: string; value: any };
 };
+export const SIMEON_BILLING_URL = "https://app.simeonlabs.com/billing";
+/** Cursor's membership names, as a served error still spells them, to Simeon's plans. */
+const PLAN_OF_MEMBERSHIP: Record<string, string> = {
+  pro: "standard",
+  pro_plus: "pro",
+  ultra: "max",
+  standard: "standard",
+  max: "max",
+};
 export function checkoutDeepControlUrl(action: {
   membershipToUpgradeTo?: string;
   allowTrial?: boolean;
 }): string {
-  const tier = ["pro", "pro_plus", "ultra"].includes(
-    action.membershipToUpgradeTo ?? "",
-  )
-    ? action.membershipToUpgradeTo
-    : "pro";
-  // Simeon Labs' site, not Cursor's checkout (ledger F-431, 26 September
-  // 2026): an "upgrade" button in a served error used to open
-  // cursor.com/api/auth/checkoutDeepControl. No plans page exists on
-  // simeonlabs.com yet; the tier travels as a query for when one does.
-  let url = `${SIMEON_WEBSITE_ORIGIN}/pricing?tier=${tier}`;
+  // The billing page on app.simeonlabs.com (5 October 2026), where the
+  // plans are chosen; before it, an "upgrade" button in a served error
+  // opened cursor.com/api/auth/checkoutDeepControl (ledger F-431), then a
+  // pricing page simeonlabs.com never had. The plan travels as a query so
+  // the page opens on that card.
+  const plan = PLAN_OF_MEMBERSHIP[action.membershipToUpgradeTo ?? ""] ?? "standard";
+  let url = `${SIMEON_BILLING_URL}?plan=${plan}`;
   if (action.allowTrial === true) url += "&allowTrial=true";
   else if (action.allowTrial === false) url += "&allowTrial=false";
   return url;
@@ -172,8 +178,8 @@ export function mapErrorDetailButtons(
         actions.push({
           kind: "open-url",
           label: button.label || "Upgrade",
-          // Simeon's own site, not Cursor's pricing page (F-132).
-          url: SIMEON_WEBSITE_ORIGIN,
+          // The billing page, not Cursor's pricing page (F-132).
+          url: SIMEON_BILLING_URL,
         });
         break;
       case "switchModel":

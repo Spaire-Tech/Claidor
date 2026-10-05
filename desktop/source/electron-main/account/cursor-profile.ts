@@ -3,6 +3,7 @@ import { PrivacyMode } from "../../shared/observability/sentry-privacy-mode.js";
 import { DashboardService } from "../../packages/proto/generated/aiserver/v1/dashboard_connect.js";
 import { createSandCursorBackendClient } from "../../shared/node/cursor-backend/cursor-inference.js";
 import { simeonApiData } from "../../shared/node/cursor-backend/simeon-api.js";
+import type { SandUsageSummary, SandUsageUpgradeCta } from "../../shared/usage.js";
 import { getOrCreateMachineId } from "./cursor-machine-id.js";
 import { persistAccountDisplayName, readLocalAccountDisplayName } from "./account-display-name.js";
 export { ACCOUNT_DISPLAY_NAME_FILE, isUnimplementedProfileError, persistAccountDisplayName, readLocalAccountDisplayName, writeLocalAccountDisplayName } from "./account-display-name.js";
@@ -100,6 +101,7 @@ export interface SimeonProfileRow {
 /** `quota()` in `server/simeon/desktop/service.py`. */
 export interface SimeonQuotaRow {
   readonly planName?: string;
+  /** `free`, `none`, or the subscription's own: `trialing`, `active`, `past_due`. */
   readonly subscriptionStatus?: string;
   readonly creditsLimit?: number;
   readonly creditsUsed?: number;
@@ -107,6 +109,15 @@ export interface SimeonQuotaRow {
   readonly hasPaidCredits?: boolean;
   readonly periodStart?: string;
   readonly periodEnd?: string;
+  /** The plan's key (`standard`, `pro`, `max`), null with no plan. */
+  readonly tier?: string | null;
+  /** When the trial ends, while trialing (5 October 2026). */
+  readonly trialEndsAt?: string | null;
+  readonly trialCancelable?: boolean;
+  /** On-demand spend past the allowance; null until the server meters it. */
+  readonly onDemand?: { readonly usedCents?: number; readonly limitCents?: number | null } | null;
+  /** Where the person changes plan: app.simeonlabs.com/billing. Null on the free fallback. */
+  readonly upgradeUrl?: string | null;
 }
 
 function simeonAuth(getAccessToken: AccessTokenReader, deps: CursorProfileDeps) {
@@ -133,32 +144,56 @@ export function cursorProfileFromSimeon(row: SimeonProfileRow, localName: string
 }
 
 /**
- * The quota as the renderer's meter reads it. The allowance is monthly
- * (`month_bounds` in `service.py`), so the percent is of the month and the
- * reset is the period's end; the pinned renderer titles that meter "Weekly
- * usage", which is its own string and not ours to change here.
+ * The quota as the renderer's meter reads it. The window is the plan's
+ * (`simeon/desktop/allowance.py`): the week, Monday to Monday, on a plan;
+ * the trial while trialing; the calendar month where no billing is
+ * configured. The percent is of that window and the reset its end, so the
+ * pinned renderer's "Weekly usage" title is true on a plan and the
+ * "Trial usage" one while trialing. On-demand spend is carried through as
+ * the renderer's used/limit pair when the server meters it.
  */
 export function weeklyUsageFromSimeonQuota(quota: SimeonQuotaRow): WeeklyUsage | null {
   const limit = finiteOrNull(quota.creditsLimit); const used = finiteOrNull(quota.creditsUsed);
   if (limit == null || used == null) return null;
   const included = limit > 0;
-  return { percentUsed: included ? Math.max(0, Math.min(100, (used / limit) * 100)) : 0, nextResetMs: isoToMs(quota.periodEnd), hasNonZeroIncludedLimit: included, onDemand: null };
+  return { percentUsed: included ? Math.max(0, Math.min(100, (used / limit) * 100)) : 0, nextResetMs: isoToMs(quota.periodEnd), hasNonZeroIncludedLimit: included, onDemand: onDemandOfQuota(quota) };
 }
 
-export function usageSummaryFromSimeonQuota(quota: SimeonQuotaRow): unknown {
+function onDemandOfQuota(quota: SimeonQuotaRow): { usedCents: number; limitCents: number } | null {
+  const onDemand = quota.onDemand; if (onDemand == null) return null;
+  const used = finiteOrNull(onDemand.usedCents); const limit = finiteOrNull(onDemand.limitCents);
+  return used == null || limit == null || limit <= 0 ? null : { usedCents: used, limitCents: limit };
+}
+
+/** The upgrade button: the billing page, when the server names one. */
+export function upgradeCtaOfQuota(quota: SimeonQuotaRow): SandUsageUpgradeCta | null {
+  const url = typeof quota.upgradeUrl === "string" ? quota.upgradeUrl : "";
+  if (url.length === 0) return null;
+  try { if (!["http:", "https:"].includes(new URL(url).protocol)) return null; } catch { return null; }
+  const status = quota.subscriptionStatus;
+  const label = status === "none" ? "Choose a plan" : status === "trialing" ? "Choose a plan" : "Get more usage";
+  return { label, disabled: false, action: { kind: "open-url", url } };
+}
+
+export function usageSummaryFromSimeonQuota(quota: SimeonQuotaRow): SandUsageSummary {
   const weekly = weeklyUsageFromSimeonQuota(quota);
   const remaining = finiteOrNull(quota.creditsRemaining);
+  const trialing = quota.subscriptionStatus === "trialing";
+  const trialEndMs = isoToMs(quota.trialEndsAt);
+  const onDemand = onDemandOfQuota(quota);
   return {
     isEnterprise: false,
     sandUsagePercent: weekly == null ? null : weekly.percentUsed,
     sandUsageResetTimestampMs: weekly?.nextResetMs ?? null,
     hasAvailableUsage: remaining == null ? weekly != null && weekly.percentUsed < 100 : remaining > 0,
-    isSandTrial: false,
-    hasEndedSandTrial: false,
+    isSandTrial: trialing,
+    // The server answers `none` once a trial has ended without a plan; the
+    // renderer then says the trial is over and offers the plans.
+    hasEndedSandTrial: !trialing && trialEndMs != null && trialEndMs <= Date.now(),
     hasNonZeroIncludedLimit: weekly?.hasNonZeroIncludedLimit ?? false,
-    canCancelSandTrial: false,
-    onDemand: null,
-    upgradeCta: null,
+    canCancelSandTrial: trialing && quota.trialCancelable === true,
+    onDemand: onDemand == null ? null : { usedCents: onDemand.usedCents, limitCents: onDemand.limitCents, resetTimestampMs: weekly?.nextResetMs ?? null },
+    upgradeCta: upgradeCtaOfQuota(quota),
   };
 }
 
