@@ -1704,3 +1704,109 @@ nothing.
 
 Unchanged: **nothing has contacted E2B, no sandbox has been started, no command
 has run in a box, and CI has never executed a line of this diff.**
+
+---
+
+## §26 — 5 October: main hit the ensure race in production, and this branch had the same one, worse
+
+Main moved ~60 commits, `70848ee1` → `01592b06`: 528 files under `desktop/`, 164
+under `sites/`, **37 under `server/`**, 29 under `clients/`, and **27 under a new
+top-level `box/`** — the cloud computer's own image, which `CLAUDE.md` now lists.
+`box/` is **not** `server/` or `runner/`, so it is not mine.
+
+No Alembic collision this round: `alembic heads` printed one, `desktop_boxes_0918`,
+unchanged. Proven on a scratch database anyway — chain to head,
+`ix_desktop_boxes_live_scope` present, `downgrade -1` dropping only
+`desktop_boxes` while `desktop_usage.reason` and `desktop_sessions.client_kind`
+both survive.
+
+**An existing migration was modified, and that is not what it sounds like.**
+`2026-09-25-1400_sand_listeners.py` shows up in the diff, which would be alarming
+— rewriting applied history. It is a **one-word docstring edit**, "Cursor's" →
+"the upstream's", part of the detachment sweep. `revision`, `down_revision` and
+both DDL bodies are untouched. Checked the diff rather than the filename.
+
+### The finding: `ensure` could create two paid sandboxes, and leak one
+
+Main's `simeon/sand/box_service.py` gained `BoxEnsureInProgress` and a
+per-person advisory lock, with the reason stated as fact rather than theory:
+
+> "One ensure per person at a time (Render, 4 October 2026). The page, the Mac
+> app and its helper all ask within seconds of each other, and two of them
+> creating a container at once left the row naming one container and the server
+> running another."
+
+**The same three callers reach `POST /box/sandboxes`.** So I read my own `ensure`
+instead of assuming the table covered it — my docstring even claims it does:
+*"The uniqueness that guarantees it is on the table, not in this function."*
+
+That claim is only half true, and the half it misses costs money:
+
+- **First-ever ensure, two callers.** Both `get_by_scope` → `None`, both build a
+  row, both `session.flush()`. The partial unique index
+  `ix_desktop_boxes_live_scope` on `(user_id, scope_key) WHERE deleted_at IS NULL`
+  fires on the second flush, *before* `_create` is reached. No sandbox leaks. Safe.
+- **A row that exists with no sandbox on it** — a fresh row, or one whose sandbox
+  E2B lost and `_mark_gone` blanked — **two callers, both unsafe.** `get_by_scope`
+  is a plain `SELECT` with no `FOR UPDATE`. Both see `has_sandbox` false. Both
+  reach `_create`, so **both call `AsyncSandbox.create` and both are billed**.
+  Both then assign `box.sandbox_id`; the last write wins. The other sandbox runs
+  to its TTL with **no row naming it** — nothing settles it, nothing stops it, and
+  `_settle` can never charge or release it because the meter cannot see it.
+
+That is strictly worse than the "second bill" the table was built to prevent: a
+second *row* is at least visible. An orphan is not.
+
+**Fixed, in my own files.** `BoxEnsureInProgress` and
+`BoxService._take_ensure_lock` in `simeon/desktop/boxes.py`, taken at the top of
+`ensure` before the row is read; `pg_try_advisory_xact_lock(hashtext(...))`,
+transaction-scoped so the request's own commit or rollback releases it and nothing
+can be left behind (request code here never commits). The key is
+`desktop-box-ensure:{user_id}` and **not** main's `sand-box-ensure:{user_id}` —
+two different boxes must not contend on one lock. `_box_json` answers **409** with
+`retry-after: 5` and one sentence, which is what the app already does with a box
+that is still starting.
+
+Three tests, in `tests/desktop/test_boxes.py`:
+
+| Test | Asserts |
+|---|---|
+| a second caller on another connection | raises `BoxEnsureInProgress` |
+| two accounts | do **not** contend — a different person's ensure is never blocked |
+| the route while the lock is held | **409**, `retry-after: 5`, and **no sandbox id written** |
+
+A note for the next person writing a test here: `simeon.postgres.AsyncSession` is
+`NewType("AsyncSession", AsyncReadSession)`, **not a class**. Constructing it
+fails with `TypeError: _typing._idfunc() takes no keyword arguments`, which says
+nothing about the cause. The fixtures import the real
+`sqlalchemy.ext.asyncio.AsyncSession`; so must a test that builds its own session.
+A second connection also needs `pool_size` and `pool_recycle` passed explicitly,
+or the pool arithmetic fails on `None`.
+
+### Measured on the merged tree
+
+| Check | Result |
+|---|---|
+| `alembic heads` | **one**, no collision this round |
+| Scoped suite | **14 failed / 604 passed / 1 skipped** — the same fourteen |
+| The +11 over yesterday | my 3 new tests, and main's 6 changed `tests/sand/` files → 96 passed |
+| `runner/` `npm test` | **61 passed**, 6 files |
+| My own two files | **55 passed** (52 + 3) |
+| Box routes vs catch-all | ten, 1510–1709, catch-all **1856** |
+| `hourly_exhausted` / AST dups | 1 / none |
+| `ruff` on my files | **0 findings**, all formatted |
+| `check_names.py` | exit 1, **75**, all three notes, zero in `server/`/`runner/` |
+| `simeon/sand/` metering search | **no matches**, re-run (`box_service.py` changed) |
+
+Main extended the name check with `cursor.com` and a case-sensitive `Cursor`, and
+exempted its own files. It did **not** add the `record` rule for these three
+notes, so they still carry every finding — and the count moved 72 → **75** purely
+because this section quotes the old name three times in order to explain the
+docstring edit and the new rule. 66 / 6 / 3, and still zero in `server/` or
+`runner/`. Recording a rename honestly is what trips this check; that is the whole
+argument for the `record` rule, and it is in `main`'s file, not mine.
+
+Unchanged: **nothing has contacted E2B, no sandbox has been started, no command
+has run in a box, and CI has never executed a line of this diff** — which is
+exactly why this race was found by reading main's production note rather than by
+feeling it.

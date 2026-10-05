@@ -23,6 +23,7 @@ from typing import Any
 import httpx
 import pytest
 from pytest_mock import MockerFixture
+from sqlalchemy.ext.asyncio import AsyncSession as _SaAsyncSession
 
 from simeon.config import settings
 from simeon.desktop import boxes as boxes_module
@@ -1193,3 +1194,90 @@ class TestExecDoesItsDatabaseWorkBeforeItStreams:
         # And `prepare_exec` is the one that does take a session.
         prepare = set(inspect.signature(BoxService.prepare_exec).parameters)
         assert {"session", "user", "box_id"} <= prepare
+
+
+@pytest.mark.asyncio
+class TestOneEnsurePerAccountAtATime:
+    """`main` hit this in production on 4 October 2026 and wrote down what
+    happened in `simeon/sand/box_service.py`: the page, the Mac app and its
+    helper all ask within seconds of each other, and two of them creating a
+    container at once left the row naming one container and the server
+    running another. The same three callers reach `POST /box/sandboxes`, and
+    here the loser is a paid sandbox no row names, which nothing will ever
+    settle or stop."""
+
+    @staticmethod
+    async def _second_connection(worker_id: str) -> Any:
+        """A connection of its own, the way a second request is. The lock is
+        transaction-scoped, so it has to be a different transaction for the
+        test to mean anything."""
+        from simeon.kit.db.postgres import create_async_engine
+        from tests.fixtures.database import get_database_url
+
+        return create_async_engine(
+            dsn=get_database_url(worker_id),
+            application_name="test_second_caller",
+            pool_size=settings.DATABASE_POOL_SIZE,
+            pool_recycle=settings.DATABASE_POOL_RECYCLE_SECONDS,
+        )
+
+    async def test_a_second_caller_on_another_connection_is_refused(
+        self,
+        session: AsyncSession,
+        user: User,
+        worker_id: str,
+    ) -> None:
+        from simeon.desktop.boxes import BoxEnsureInProgress
+
+        service = BoxService()
+        await service._take_ensure_lock(session, user.id)
+        engine = await self._second_connection(worker_id)
+        try:
+            async with engine.connect() as connection:
+                second = _SaAsyncSession(bind=connection, expire_on_commit=False)
+                with pytest.raises(BoxEnsureInProgress):
+                    await service._take_ensure_lock(second, user.id)
+        finally:
+            await engine.dispose()
+
+    async def test_two_accounts_do_not_contend(
+        self,
+        session: AsyncSession,
+        user: User,
+        worker_id: str,
+    ) -> None:
+        from uuid import uuid4
+
+        service = BoxService()
+        await service._take_ensure_lock(session, user.id)
+        engine = await self._second_connection(worker_id)
+        try:
+            async with engine.connect() as connection:
+                other = _SaAsyncSession(bind=connection, expire_on_commit=False)
+                # A different person's ensure must not be blocked by this one.
+                await service._take_ensure_lock(other, uuid4())
+        finally:
+            await engine.dispose()
+
+    async def test_ensure_refuses_while_another_holds_the_lock_and_creates_nothing(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        worker_id: str,
+    ) -> None:
+        access, _ = await _signed_in(client, session, user)
+        engine = await self._second_connection(worker_id)
+        try:
+            async with engine.connect() as connection:
+                held = _SaAsyncSession(bind=connection, expire_on_commit=False)
+                await BoxService()._take_ensure_lock(held, user.id)
+                response = await _ensure(client, access)
+        finally:
+            await engine.dispose()
+        assert response.status_code == 409
+        assert response.headers["retry-after"] == "5"
+        assert "already being started" in response.json()["error"]
+        # And no sandbox was created for the refused call.
+        rows = (await session.execute(DesktopBox.__table__.select())).all()
+        assert all(row.sandbox_id is None for row in rows)

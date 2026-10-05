@@ -67,6 +67,7 @@ from .auth import (
 )
 from .boxes import (
     DEFAULT_SCOPE_KEY,
+    BoxEnsureInProgress,
     BoxNotConfigured,
     BoxNotFound,
     BoxUpstreamError,
@@ -1443,6 +1444,13 @@ BOX_UPSTREAM_REFUSED = 502
 #: likely to meet without having just asked for anything.
 BOX_QUOTA_EXHAUSTED = 402
 
+#: Another request for this account is already inside `ensure`. The app's
+#: own answer to a box that is still starting is to retry, so this is told
+#: the same way, with `retry-after`: there is nothing wrong and nothing for
+#: the person to do. 409 and not 503 because the server is healthy — it is
+#: this one account that is busy.
+BOX_ENSURE_IN_PROGRESS = 409
+
 
 def _box_error(status: int, message: str) -> JSONResponse:
     return JSONResponse({"error": message}, status_code=status)
@@ -1455,6 +1463,12 @@ async def _box_json(make: Callable[[], Awaitable[Any]]) -> JSONResponse:
     keep in step."""
     try:
         return JSONResponse(await make())
+    except BoxEnsureInProgress:
+        return JSONResponse(
+            {"error": "Your computer is already being started. Try again in a moment."},
+            status_code=BOX_ENSURE_IN_PROGRESS,
+            headers={"retry-after": "5"},
+        )
     except BoxNotConfigured:
         return _box_error(BOX_NOT_CONFIGURED, "The computer is not switched on here.")
     except BoxNotFound:

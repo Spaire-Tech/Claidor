@@ -68,8 +68,10 @@ from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
+from uuid import UUID
 
 import structlog
+from sqlalchemy import text
 
 from simeon.config import settings
 from simeon.kit.utils import utc_now
@@ -111,6 +113,29 @@ SHELL_TIMEOUT_SECONDS = 120.0
 
 class BoxNotConfigured(Exception):
     """Simeon Labs holds no E2B key. Never a fault of the person's request."""
+
+
+class BoxEnsureInProgress(Exception):
+    """Another request for this account is already inside `ensure`.
+
+    Why this exists, in `main`'s words rather than a guess: on 4 October
+    2026 the cloud box hit this in production, and
+    `simeon/sand/box_service.py` says what happened — *"The page, the Mac
+    app and its helper all ask within seconds of each other, and two of
+    them creating a container at once left the row naming one container and
+    the server running another."*
+
+    The same three callers reach `POST /box/sandboxes`, and here the loser
+    costs money. The unique index `ix_desktop_boxes_live_scope` stops a
+    second **row**, so two first-time ensures cannot both insert — but once
+    a row exists with no sandbox on it (a fresh row, or one whose sandbox
+    E2B lost), nothing stopped two requests both reaching
+    `AsyncSandbox.create`. Both would succeed, both would be billed, and
+    only the last write would be remembered: the other sandbox would run to
+    its TTL with no row naming it, so nothing would ever settle or stop it.
+    An orphan is worse than the "second bill" the table was built to
+    prevent, because the meter cannot even see it.
+    """
 
 
 class BoxNotFound(Exception):
@@ -357,6 +382,12 @@ class BoxService:
         on the table, not in this function.
         """
         scope = (scope_key or DEFAULT_SCOPE_KEY).strip() or DEFAULT_SCOPE_KEY
+        # One ensure per account at a time, taken before the row is read so
+        # that two callers cannot both find « no sandbox » and both create
+        # one. See `BoxEnsureInProgress`: the table's uniqueness guards the
+        # row, not the call to E2B, and the loser of that race is a paid
+        # sandbox no row names.
+        await self._take_ensure_lock(session, user.id)
         repository = DesktopBoxRepository.from_session(session)
         box = await repository.get_by_scope(user.id, scope)
         if box is None:
@@ -743,6 +774,27 @@ class BoxService:
 
     # --- the pieces ---------------------------------------------------
 
+    @staticmethod
+    async def _take_ensure_lock(session: AsyncSession, user_id: UUID) -> None:
+        """A transaction-scoped advisory lock on the account.
+
+        `pg_try_advisory_xact_lock` and not the blocking form: a caller who
+        would have to wait is told to come back, which is what the app does
+        with « still starting » anyway, and nothing holds a connection open
+        waiting for E2B. Released by the request's own commit or rollback,
+        so it cannot be left behind — request code here never commits.
+
+        The key names this table, not the cloud box's: `box_service.py`
+        takes `sand-box-ensure:{user_id}` for its own ensure, and two
+        different boxes must not contend on one lock.
+        """
+        taken = await session.scalar(
+            text("SELECT pg_try_advisory_xact_lock(hashtext(:key))"),
+            {"key": f"desktop-box-ensure:{user_id}"},
+        )
+        if not taken:
+            raise BoxEnsureInProgress()
+
     async def _create(self, box: DesktopBox, *, template: str | None) -> None:
         from e2b import AsyncSandbox
 
@@ -862,6 +914,7 @@ box_service = BoxService()
 __all__ = [
     "DEFAULT_SCOPE_KEY",
     "UPSTREAM_REFUSED",
+    "BoxEnsureInProgress",
     "BoxNotConfigured",
     "BoxNotFound",
     "BoxService",
