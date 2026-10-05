@@ -105,6 +105,7 @@ MOBILE_CSS = """/* The phone hero: a still of the app window filling the hero bo
   .sd-m-av{position:relative;display:grid;place-items:center;width:15cqw;height:12.4cqw;border-radius:3cqw}
   .sd-m-av img{width:11cqw;height:11cqw;object-fit:contain}
   .sd-m-on{background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.05)}
+  .sd-m-group{transform:scale(1.3);transform-origin:center}
   .sd-m-group img{position:absolute;width:6.6cqw;height:6.6cqw}
   .sd-m-group img:nth-child(1){top:1.2cqw;left:4.2cqw}.sd-m-group img:nth-child(2){bottom:1.4cqw;left:1.6cqw}.sd-m-group img:nth-child(3){bottom:1.4cqw;right:1.6cqw}
   .sd-m-fill{flex:1}
@@ -299,7 +300,8 @@ async def main():
     # The sidebar is solid in the page, not glass over a desktop.
     before = 'body::before{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(160deg,#e4e4e7,#d4d4d8)}'
     assert before in idx
-    idx = idx.replace(before, before + 'html body .sand-agents-sidebar{background-color:var(--simeon-bg-chrome)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}')
+    # The group avatar's three small clouds read the size of a single cloud (the founder, 5 October 2026).
+    idx = idx.replace(before, before + 'html body .sand-agents-sidebar{background-color:var(--simeon-bg-chrome)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}html body .sand-group-avatar{transform:scale(1.3)!important;transform-origin:center!important}')
     open(f"{OUT}/app/index.html", "w").write(idx)
     # The app lives under a folder named after its content (app/<digest>/), so a changed window is a
     # new address: its files keep the same names from build to build (the patch rewrites them after
