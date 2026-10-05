@@ -13,6 +13,9 @@
 #
 #   docker build -f box/Dockerfile -t simeon-box .
 #
+# The context is filtered by box/Dockerfile.dockerignore (the root
+# .dockerignore keeps only runner/).
+#
 # What is in it and why, in the order it is installed:
 #   - Debian trixie, the base the earlier image used, so Chrome's .deb and
 #     every apt name below are known to work on it.
