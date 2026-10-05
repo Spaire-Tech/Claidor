@@ -37,7 +37,6 @@ import { packStagedAppWithIntegrity } from "./lib/asar-integrity.mjs";
 import { buildDir, outputApp, outputDir, repoRoot, sourceAppDir } from "./lib/config.mjs";
 import { signAppBundleAdHoc } from "./lib/codesign.mjs";
 import {
-  WEBAUTHN_SIGNER,
   copyUnpackedBesideAsar,
   finishOwnShellStage,
   ownShellBundlePaths,
@@ -88,14 +87,14 @@ export async function packageOwnShell({ platform = "darwin", arch = "arm64", dev
   await cp(path.join(cleanOutputRoot, "dist"), path.join(stageRoot, "dist"), { recursive: true, dereference: false, preserveTimestamps: true });
 
   // 2. The window, the add-ons, the signer, the manifest.
-  let signerPath = null;
+  let nativeRoot = null;
   try {
     const runtimeApp = await resolveRuntimeApp();
-    signerPath = path.join(runtimeApp, "Contents", "Resources", "app.asar.unpacked", "dist", "native", WEBAUTHN_SIGNER);
+    nativeRoot = path.join(runtimeApp, "Contents", "Resources", "app.asar.unpacked", "dist", "native");
   } catch (error) {
     log(`no upstream app for the signer: ${error.message}`);
   }
-  const staged = await finishOwnShellStage({ stageRoot, rendererRoot: path.join(sourceAppDir, "dist", "renderer"), signerPath, platform, arch, dev, log });
+  const staged = await finishOwnShellStage({ stageRoot, rendererRoot: path.join(sourceAppDir, "dist", "renderer"), nativeRoot, platform, arch, dev, log });
   const composition = ownShellComposition(base.buildManifest.runtimeComposition, {
     hostProvenancePath: path.relative(cleanOutputRoot, host.provenancePath).split(path.sep).join("/"),
     electronMainProvenancePath: path.relative(cleanOutputRoot, main.provenancePath).split(path.sep).join("/"),
@@ -126,7 +125,12 @@ export async function packageOwnShell({ platform = "darwin", arch = "arm64", dev
   const finalApp = platform === "darwin" ? outputApp : path.join(outputDir, path.basename(built));
   await mkdir(outputDir, { recursive: true });
   await rm(finalApp, { recursive: true, force: true });
-  await cp(built, finalApp, { recursive: true, dereference: false, preserveTimestamps: true });
+  // verbatimSymlinks: a framework's top-level entries are links to
+  // Versions/Current/…; without it fs.cp rewrites them as absolute paths into
+  // .build, and codesign refuses "unsealed contents present in the root
+  // directory of an embedded framework" (measured on the founder's Mac,
+  // 5 October 2026).
+  await cp(built, finalApp, { recursive: true, dereference: false, verbatimSymlinks: true, preserveTimestamps: true });
 
   if (platform === "darwin") {
     await run(SYSTEM_TOOLS.xattr, ["-cr", finalApp]).catch(() => {});

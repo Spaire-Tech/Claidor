@@ -68,7 +68,13 @@ test("the bundle's package.json and plist are Simeon's own", () => {
   assert.equal(plist.NSHumanReadableCopyright, "Copyright © 2026 SimeonLabs, Inc. All rights reserved.");
   assert.match(plist.NSMicrophoneUsageDescription, /^Simeon uses the microphone/);
   assert.match(plist.NSCameraUsageDescription, /^Simeon uses the camera/);
-  assert.deepEqual(plist.LSEnvironment, { SAND_BACKEND_URL: "https://api.simeonlabs.com" });
+  assert.deepEqual(plist.LSEnvironment, { MallocNanoZone: "0", SAND_BACKEND_URL: "https://api.simeonlabs.com" }, "Electron's own entry stays beside ours");
+  // What the upstream shell's plist carried (read on the founder's Mac, 5 October 2026), in our words.
+  for (const key of ["NSAudioCaptureUsageDescription", "NSBluetoothAlwaysUsageDescription", "NSBluetoothPeripheralUsageDescription"]) assert.match(plist[key], /^Simeon /, key);
+  assert.equal(plist.LSMinimumSystemVersion, "12.0");
+  assert.equal(plist.NSRequiresAquaSystemAppearance, false);
+  assert.equal(plist.NSAppTransportSecurity.NSAllowsLocalNetworking, true);
+  assert.deepEqual(Object.keys(plist.NSAppTransportSecurity.NSExceptionDomains), ["127.0.0.1", "localhost"]);
   for (const value of Object.values(plist)) if (typeof value === "string") assert.equal(plistNamesPreviousMaker(value), false, value);
   assert.equal(plistNamesPreviousMaker("<string>Grok Bot Helper</string>"), true);
   assert.equal(plistNamesPreviousMaker("<string>https://cursor.com/x</string>"), true);
@@ -167,6 +173,7 @@ test("every file the app opens by path inside its bundle is a required asar entr
 
 test("the own-shell package script never reads the upstream shell, its asar or its plists", async () => {
   const script = await readFile(path.join(repoRoot, "scripts/package-simeon-shell.mjs"), "utf8");
+  const own = await readFile(path.join(repoRoot, "scripts/lib/own-shell.mjs"), "utf8");
   for (const forbidden of ["verifyOfficialMacReference", "renameMacBundleIdentity", "plistIdentityRewrites", "ElectronAsarIntegrity", "CFBundleIconName", "SYSTEM_TOOLS.ditto", "Contents/MacOS/Grok", "buildFidelityReconstructedAsar"]) {
     assert.equal(script.includes(forbidden), false, `${forbidden} belongs to the old path`);
   }
@@ -180,6 +187,8 @@ test("the own-shell package script never reads the upstream shell, its asar or i
   // The signer is the one thing still taken from the upstream app, and only when it is there.
   assert.match(script, /resolveRuntimeApp\(\)/);
   assert.match(script, /no upstream app for the signer/);
-  const own = await readFile(path.join(repoRoot, "scripts/lib/own-shell.mjs"), "utf8");
+  // The copies keep a framework's links as links: codesign refuses absolute ones (measured on the founder's Mac).
+  assert.match(script, /await cp\(built, finalApp, \{ recursive: true, dereference: false, verbatimSymlinks: true/);
+  assert.match(own, /NATIVE_HELPERS = Object\.freeze\(\[WEBAUTHN_SIGNER, ONEPASSWORD_LAUNCHER\]\)/);
   assert.match(own, /Run npm run bootstrap: until the window is Simeon's own/);
 });

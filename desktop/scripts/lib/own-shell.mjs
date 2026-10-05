@@ -31,6 +31,10 @@ export const OWN_SHELL_BUILD_MANIFEST = "dist/simeon-build.json";
 /** Folders the asar keeps unpacked beside it (`asar-integrity.mjs`). */
 export const UNPACKED_PREFIXES = Object.freeze(["dist/deps/", "dist/native/", "dist/node-deps/"]);
 export const WEBAUTHN_SIGNER = "sand-webauthn-signer";
+/** The 1Password CLI launcher the upstream app carried beside the signer (`electron-main/onepassword/`). */
+export const ONEPASSWORD_LAUNCHER = "sand-op-launcher";
+/** Both native helpers, still the upstream's binaries until Track D piece 4. */
+export const NATIVE_HELPERS = Object.freeze([WEBAUTHN_SIGNER, ONEPASSWORD_LAUNCHER]);
 export const APP_CATEGORY = "public.app-category.productivity";
 export const COPYRIGHT_YEAR = 2026;
 
@@ -67,12 +71,35 @@ export function ownShellPackageJson({ name = simeonName, version = simeonVersion
  * carries (a bundle launched from Finder inherits no shell environment).
  */
 export function ownShellPlistExtension({ environment = packagedEnvironment, year = COPYRIGHT_YEAR } = {}) {
+  // The keys the upstream shell's plist carried, read on the founder's Mac on
+  // 5 October 2026, in Simeon's words: the four permission prompts, the
+  // minimum macOS, the appearance and graphics flags, and the transport
+  // exceptions for the local gateway. MallocNanoZone=0 is Electron's own
+  // LSEnvironment entry, kept since our dict replaces the whole key.
   return {
     NSHumanReadableCopyright: `Copyright © ${year} SimeonLabs, Inc. All rights reserved.`,
     NSMicrophoneUsageDescription: "Simeon uses the microphone to take your dictation and for voice calls with your agents.",
+    NSAudioCaptureUsageDescription: "Simeon captures audio for voice calls with your agents.",
     NSCameraUsageDescription: "Simeon uses the camera for video calls with your agents.",
+    NSBluetoothAlwaysUsageDescription: "Simeon uses Bluetooth for devices your agents work with.",
+    NSBluetoothPeripheralUsageDescription: "Simeon uses Bluetooth for devices your agents work with.",
+    LSMinimumSystemVersion: "12.0",
     NSHighResolutionCapable: true,
-    LSEnvironment: { ...environment },
+    NSRequiresAquaSystemAppearance: false,
+    NSSupportsAutomaticGraphicsSwitching: true,
+    NSAutoFillRequiresTextContentTypeForOneTimeCodeOnMac: true,
+    NSAppTransportSecurity: {
+      NSAllowsArbitraryLoads: true,
+      NSAllowsLocalNetworking: true,
+      NSExceptionDomains: Object.fromEntries(["127.0.0.1", "localhost"].map((host) => [host, {
+        NSTemporaryExceptionAllowsInsecureHTTPLoads: true,
+        NSTemporaryExceptionAllowsInsecureHTTPSLoads: false,
+        NSTemporaryExceptionRequiresForwardSecrecy: false,
+        NSTemporaryExceptionMinimumTLSVersion: "1.0",
+        NSIncludesSubdomains: false,
+      }])),
+    },
+    LSEnvironment: { MallocNanoZone: "0", ...environment },
   };
 }
 
@@ -149,7 +176,7 @@ export function ownShellPackagerOutput({ outDir, name = simeonName, platform = "
  * settings patch applied, the Electron add-ons, the signer. Returns what was
  * staged, for the package record.
  */
-export async function finishOwnShellStage({ stageRoot, rendererRoot, signerPath = null, platform = process.platform, arch = process.arch, dev = false, log = () => {} } = {}) {
+export async function finishOwnShellStage({ stageRoot, rendererRoot, nativeRoot = null, platform = process.platform, arch = process.arch, dev = false, log = () => {} } = {}) {
   if (typeof stageRoot !== "string" || stageRoot.length === 0) throw new TypeError("finishOwnShellStage requires stageRoot");
   if (typeof rendererRoot !== "string" || !(await exists(path.join(rendererRoot, "index.html")))) {
     throw new Error(`The pinned window is not at ${rendererRoot}. Run npm run bootstrap: until the window is Simeon's own (Track D, piece 2), the package carries the pinned 0.18.0 renderer.`);
@@ -166,25 +193,30 @@ export async function finishOwnShellStage({ stageRoot, rendererRoot, signerPath 
   const nativeDir = path.join(stageRoot, "dist", "native");
   await rm(nativeDir, { recursive: true, force: true });
   await mkdir(nativeDir, { recursive: true });
-  let signer = { present: false, reason: "no upstream app on this machine; passkeys need the signer (Track D, piece 4 rewrites it)" };
-  if (signerPath != null && await exists(signerPath)) {
-    const bytes = await readFile(signerPath);
-    await writeFile(path.join(nativeDir, WEBAUTHN_SIGNER), bytes, { mode: 0o755 });
-    signer = { present: true, origin: "upstream-0.18.0", sha256: sha256(bytes), bytes: bytes.byteLength };
-  } else {
-    log(`warning: ${WEBAUTHN_SIGNER} is not staged (${signer.reason}); sign-in with a passkey will not work in this build`);
+  const helpers = {};
+  for (const name of NATIVE_HELPERS) {
+    const source = nativeRoot == null ? null : path.join(nativeRoot, name);
+    if (source != null && await exists(source)) {
+      const bytes = await readFile(source);
+      await writeFile(path.join(nativeDir, name), bytes, { mode: 0o755 });
+      helpers[name] = { present: true, origin: "upstream-0.18.0", sha256: sha256(bytes), bytes: bytes.byteLength };
+    } else {
+      helpers[name] = { present: false, reason: "no upstream app on this machine (Track D, piece 4 rewrites the native helpers)" };
+      log(`warning: ${name} is not staged (${helpers[name].reason}); ${name === WEBAUTHN_SIGNER ? "sign-in with a passkey" : "the 1Password connection"} will not work in this build`);
+    }
   }
+  const signer = helpers[WEBAUTHN_SIGNER];
 
   // Nothing the upstream asar carried leaks in: the staging folder is ours.
   for (const relative of ["dist/recovered-source", "dist/reconstruction-build.json"]) await rm(path.join(stageRoot, relative), { recursive: true, force: true });
-  return { renderer: { files: patch?.files?.length ?? patch?.record?.files?.length ?? null }, deps: { nodeFiles: deps.nodeFiles, packages: deps.packages }, signer };
+  return { renderer: { files: patch?.files?.length ?? patch?.record?.files?.length ?? null }, deps: { nodeFiles: deps.nodeFiles, packages: deps.packages }, signer, helpers };
 }
 
 /** The `app.asar.unpacked` folder the packager does not copy for a prebuilt asar. */
 export async function copyUnpackedBesideAsar({ unpackedRoot, appPath, platform = "darwin" }) {
   const paths = ownShellBundlePaths(appPath, platform);
   await rm(paths.unpacked, { recursive: true, force: true });
-  await cp(unpackedRoot, paths.unpacked, { recursive: true, dereference: false, preserveTimestamps: true });
+  await cp(unpackedRoot, paths.unpacked, { recursive: true, dereference: false, verbatimSymlinks: true, preserveTimestamps: true });
   return paths.unpacked;
 }
 
@@ -276,6 +308,7 @@ export function ownShellPackageRecord({ platform, arch, asarSha256, staged, dev,
     window: { origin: "pinned-0.18.0-renderer-patched", ...(staged.renderer ?? {}) },
     deps: staged.deps,
     signer: staged.signer,
+    helpers: staged.helpers ?? { [WEBAUTHN_SIGNER]: staged.signer },
   };
 }
 
