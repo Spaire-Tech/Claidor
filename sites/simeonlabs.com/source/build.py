@@ -300,9 +300,9 @@ async def main():
     idx = open(f"{OUT}/app/index.html").read()
     idx = idx.replace('<script src="./demo-bridge.js"></script>', '<script src="./scroll-guard.js"></script>\n    <script src="./demo-bridge.js"></script>\n    <script src="./demo-gate.js"></script>', 1)
     shutil.copy(f"{HERE}/demo-gate.js", f"{OUT}/app/demo-gate.js")
-    # The sidebar's two round Liquid Glass buttons (demo-glass.css and .js), in the demo only.
-    idx = idx.replace('<script src="./demo-gate.js"></script>', '<script src="./demo-gate.js"></script>\n    <script src="./demo-glass.js"></script>\n    <link rel="stylesheet" href="./demo-glass.css">', 1)
-    for name in ("demo-glass.css", "demo-glass.js"): shutil.copy(f"{HERE}/{name}", f"{OUT}/app/{name}")
+    # The demo's own rules (demo-glass.css): the pane stays closed, the header's avatar does nothing.
+    idx = idx.replace('<script src="./demo-gate.js"></script>', '<script src="./demo-gate.js"></script>\n    <link rel="stylesheet" href="./demo-glass.css">', 1)
+    shutil.copy(f"{HERE}/demo-glass.css", f"{OUT}/app/demo-glass.css")
     assert "scroll-guard.js" in idx
     # The sidebar is solid in the page, not glass over a desktop.
     before = 'body::before{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(160deg,#e4e4e7,#d4d4d8)}'
