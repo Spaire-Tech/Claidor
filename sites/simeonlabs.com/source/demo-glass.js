@@ -1,7 +1,7 @@
 // The two round glass buttons at the top of the sidebar (the founder, 5 October 2026), in the demo only: search, and
-// the create button drawn with the founder's three-line glyph in place of the plus.
+// the create button drawn with the founder's compose glyph (a square and a pencil) in place of the plus.
 (() => {
-  const LINES = '<span class="sand-kit-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14M8 12h8M10.5 16h3"/></svg></span>';
+  const LINES = '<span class="sand-kit-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4.5H6.5A2.5 2.5 0 0 0 4 7v10.5A2.5 2.5 0 0 0 6.5 20H17a2.5 2.5 0 0 0 2.5-2.5V12M18.3 3.7a1.9 1.9 0 0 1 2.7 2.7L13 14.4l-3.6.9.9-3.6z"/></svg></span>';
   const put = () => {
     const actions = document.querySelector('.sand-agents-sidebar__new-actions');
     if (!actions) return;
