@@ -39,3 +39,5 @@ html body .sand-shell:has(.sand-info-pane[data-open="true"]) .sand-agents-sideba
 html body .sand-shell:has(.sand-info-pane[data-open="true"]) .sand-agents-sidebar__header{order:1!important;height:auto!important;padding:6px 0 10px!important;justify-content:center!important}
 html body .sand-shell:has(.sand-info-pane[data-open="true"]) .sand-agents-sidebar__footer{order:2!important}
 html body .sand-shell:has(.sand-info-pane[data-open="true"]) .sand-agents-sidebar__new-actions{flex-direction:column!important;gap:10px!important;margin:0 auto!important}
+/* The rail renders a second "New chat" plus of its own; the compose disc already is that button. */
+html body .sand-agents-sidebar__rail-new{display:none!important}
