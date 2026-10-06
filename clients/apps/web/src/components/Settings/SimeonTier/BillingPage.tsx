@@ -2,7 +2,6 @@
 
 import { toast } from '@/components/Toast/use-toast'
 import {
-  BillingInterval,
   CurrentSubscription,
   formatCredits,
   formatDollarAmount,
@@ -10,7 +9,6 @@ import {
   PAID_TIERS,
   PaidTierKey,
   Plan,
-  tasksPerWeek,
   tierDisplayName,
   useMySubscription,
   useOpenPortal,
@@ -191,12 +189,45 @@ const AllSet = ({
   )
 }
 
-// --- "Adjust your plan" -----------------------------------------------------
+// --- "Choose your plan" / "Adjust your plan" -------------------------------
+
+/** The site's pricing cards, word for word (sites/simeonlabs.com, #pricing). */
+const CARD_COPY: Record<
+  PaidTierKey,
+  { tag: string; includes: string; lines: string[] }
+> = {
+  standard: {
+    tag: 'For a light week of work',
+    includes: 'Everything in the trial, plus:',
+    lines: [
+      'Routines that run while your Mac is closed',
+      'Discord and Slack channels, voice calls',
+      'Memory shared across your agents',
+      'Keep going past the week’s allowance on demand',
+    ],
+  },
+  pro: {
+    tag: 'For agents working every day',
+    includes: 'Everything in Standard, plus:',
+    lines: [
+      'Three times the weekly work of Standard',
+      'Room for routines that run every day',
+    ],
+  },
+  max: {
+    tag: 'For a team of agents that never stops',
+    includes: 'Everything in Pro, plus:',
+    lines: [
+      'Eleven times the weekly work of Standard',
+      'Agents on routines all week long',
+      'Our highest allowance',
+    ],
+  },
+}
 
 const AdjustPlan = ({
   sub,
   subscribed,
-  highlight,
   returnTo,
   onBack,
 }: {
@@ -209,12 +240,7 @@ const AdjustPlan = ({
   const plans = usePlans()
   const startCheckout = useStartCheckout()
   const openPortal = useOpenPortal()
-  const [intervalOverride, setIntervalOverride] =
-    useState<BillingInterval | null>(null)
   const [pending, setPending] = useState<PaidTierKey | 'portal' | null>(null)
-
-  const interval: BillingInterval =
-    intervalOverride ?? sub?.billing_interval ?? 'month'
   const trialing = subscribed && sub?.status === 'trialing'
 
   const ordered = useMemo<Plan[]>(() => {
@@ -238,7 +264,7 @@ const AdjustPlan = ({
         }
         const { checkout_url } = await startCheckout.mutateAsync({
           tier,
-          billing_interval: interval,
+          billing_interval: 'month',
           success_url: returnTo ?? undefined,
         })
         window.location.assign(checkout_url)
@@ -250,7 +276,7 @@ const AdjustPlan = ({
         setPending(null)
       }
     },
-    [interval, openPortal, returnTo, startCheckout, subscribed],
+    [openPortal, returnTo, startCheckout, subscribed],
   )
 
   const portal = useCallback(
@@ -270,148 +296,112 @@ const AdjustPlan = ({
     [openPortal],
   )
 
+  const currentIndex = sub ? PAID_TIERS.indexOf(sub.tier as PaidTierKey) : -1
+
   return (
     <main className={styles.main}>
-      <h1 className={styles.title}>Adjust your plan</h1>
-      {!subscribed && (
-        <p className={styles.lede}>
-          {returnTo
-            ? 'Pick a plan to use Simeon on your Mac. The first 7 days are free.'
-            : 'The first 7 days are free. Your card is charged on day 8 unless you cancel.'}
-        </p>
-      )}
-      <div className={styles.toggleRow}>
-        <div className={styles.toggle} role="group" aria-label="Billing period">
-          {(['month', 'year'] as const).map((option) => (
-            <button
-              key={option}
-              type="button"
-              aria-pressed={interval === option}
-              onClick={() => setIntervalOverride(option)}
-            >
-              {option === 'month' ? 'Monthly' : 'Annual'}
-            </button>
-          ))}
-        </div>
-        <span className={styles.save}>Save 20% when billed annually</span>
-      </div>
+      <h1 className={styles.title}>
+        {subscribed ? 'Adjust your plan' : 'Choose your plan'}
+      </h1>
 
       <div className={styles.plans}>
-        {ordered.map((item, index) => (
-          <PlanCard
-            key={item.tier}
-            plan={item}
-            previous={index === 0 ? null : ordered[index - 1]}
-            interval={interval}
-            current={subscribed && sub?.tier === item.tier}
-            highlighted={!subscribed && highlight === item.tier}
-            busy={pending !== null}
-            pending={pending === item.tier}
-            onChoose={() => choose(item.tier)}
-          />
-        ))}
+        {ordered.map((item, index) => {
+          const current = subscribed && sub?.tier === item.tier
+          const label = !subscribed
+            ? `Get ${tierDisplayName(item.tier)}`
+            : index > currentIndex
+              ? `Upgrade to ${tierDisplayName(item.tier)}`
+              : `Switch to ${tierDisplayName(item.tier)}`
+          return (
+            <PlanCard
+              key={item.tier}
+              plan={item}
+              current={current}
+              label={label}
+              busy={pending !== null}
+              pending={pending === item.tier}
+              onChoose={() => choose(item.tier)}
+            />
+          )
+        })}
       </div>
 
-      <p className={styles.foot}>
-        {subscribed ? (
-          <>
-            <button type="button" onClick={() => portal(undefined)}>
-              Manage billing on Stripe
+      {subscribed && (
+        <p className={styles.foot}>
+          <button
+            type="button"
+            className={styles.stripe}
+            onClick={() => portal(undefined)}
+          >
+            Manage billing on Stripe
+          </button>
+          {' · '}
+          {sub?.cancel_at_period_end ? (
+            <span className={styles.muted}>
+              {trialing ? 'Trial cancelled' : 'Plan ends at period end'}
+            </span>
+          ) : (
+            <button type="button" onClick={() => portal('cancel')}>
+              {trialing ? 'Cancel trial' : 'Cancel plan'}
             </button>
-            {' · '}
-            {sub?.cancel_at_period_end ? (
-              <span className={styles.muted}>
-                {trialing ? 'Trial cancelled' : 'Plan ends at period end'}
-              </span>
-            ) : (
-              <button type="button" onClick={() => portal('cancel')}>
-                {trialing ? 'Cancel trial' : 'Cancel plan'}
+          )}
+          {onBack && (
+            <>
+              {' · '}
+              <button type="button" className={styles.blue} onClick={onBack}>
+                Back
               </button>
-            )}
-            {onBack && (
-              <>
-                {' · '}
-                <button type="button" onClick={onBack}>
-                  Back
-                </button>
-              </>
-            )}
-          </>
-        ) : (
-          <>
-            One trial per card. Questions?{' '}
-            <a href="mailto:hello@simeonlabs.com">hello@simeonlabs.com</a>
-          </>
-        )}
-      </p>
+            </>
+          )}
+        </p>
+      )}
     </main>
   )
 }
 
 const PlanCard = ({
   plan,
-  previous,
-  interval,
   current,
-  highlighted,
+  label,
   busy,
   pending,
   onChoose,
 }: {
   plan: Plan
-  previous: Plan | null
-  interval: BillingInterval
   current: boolean
-  highlighted: boolean
+  label: string
   busy: boolean
   pending: boolean
   onChoose: () => void
 }) => {
-  const monthly =
-    interval === 'year'
-      ? Math.round(plan.annual_price_cents / 12)
-      : plan.monthly_price_cents
+  const copy = CARD_COPY[plan.tier]
   return (
-    <div
-      className={`${styles.plan} ${current ? styles.planCurrent : ''}`}
-      style={highlighted ? { boxShadow: '0 0 0 1.5px #1d1d1f' } : undefined}
-    >
+    <div className={`${styles.plan} ${current ? styles.planCurrent : ''}`}>
       <div className={styles.planHead}>
         <h3>{tierDisplayName(plan.tier)}</h3>
         {current && <span className={styles.badge}>Current plan</span>}
       </div>
+      <p className={styles.tag}>{copy.tag}</p>
       <div className={styles.price}>
-        ${formatDollarAmount(monthly)}
-        <small>/mo.</small>
+        ${formatDollarAmount(plan.monthly_price_cents)}
+        <small>/ month</small>
       </div>
       <p className={styles.per}>
-        {interval === 'year'
-          ? `$${formatDollarAmount(plan.annual_price_cents)} billed yearly.`
-          : `${formatCredits(plan.weekly_credits)} credits a week.`}
+        {formatCredits(plan.weekly_credits)} credits a week.
       </p>
-      <p className={styles.inc}>
-        {previous
-          ? `Everything in ${tierDisplayName(previous.tier)}, plus:`
-          : 'Includes:'}
-      </p>
+      <div className={styles.trial}>
+        <div className={styles.trialPrice}>
+          Free<small>/ {plan.trial_days} days</small>
+        </div>
+        <p className={styles.per}>
+          {formatCredits(plan.trial_credits)} credits once.
+        </p>
+      </div>
+      <p className={styles.inc}>{copy.includes}</p>
       <ul>
-        <li>
-          {formatCredits(plan.weekly_credits)} credits a week, about{' '}
-          {tasksPerWeek(plan.weekly_credits)} tasks
-        </li>
-        {previous ? (
-          <li>
-            {Math.round(plan.weekly_credits / previous.weekly_credits)}× the
-            weekly work of {tierDisplayName(previous.tier)}
-          </li>
-        ) : (
-          <>
-            <li>Every agent and every feature</li>
-            <li>A cloud computer for each agent</li>
-            <li>Routines that run while your Mac is closed</li>
-          </>
-        )}
-        {plan.tier === 'max' && <li>Our highest allowance</li>}
+        {copy.lines.map((line) => (
+          <li key={line}>{line}</li>
+        ))}
       </ul>
       {current ? (
         <button
@@ -428,7 +418,7 @@ const PlanCard = ({
           disabled={busy}
           onClick={onChoose}
         >
-          {pending ? 'One moment…' : 'Choose plan'}
+          {pending ? 'One moment…' : label}
         </button>
       )}
     </div>

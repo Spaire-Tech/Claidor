@@ -12,6 +12,8 @@
   --card: #fafafb;
   --card-current: #ececef;
   --line: #ececef;
+  --blue: #255a93;
+  --stripe: #635bff;
   --font:
     -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Inter',
     'Helvetica Neue', Arial, sans-serif;
@@ -54,7 +56,7 @@
 }
 
 .who a {
-  color: var(--ink);
+  color: var(--blue);
   text-decoration: none;
   font-weight: 500;
 }
@@ -408,4 +410,50 @@
 
 .muted {
   color: var(--ink3);
+}
+
+/* The site's card, word for word and line for line. */
+
+.tag {
+  margin: 4px 0 0;
+  font-size: clamp(14px, 0.9vw, 17px);
+  letter-spacing: -0.01em;
+  color: var(--ink3);
+}
+
+.trial {
+  margin-top: clamp(16px, 1.4vw, 24px);
+  padding-top: clamp(14px, 1.2vw, 20px);
+  border-top: 1px solid var(--line);
+}
+
+.trialPrice {
+  font-weight: 400;
+  font-size: clamp(24px, 1.7vw, 30px);
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.trialPrice small {
+  font-weight: 400;
+  font-size: clamp(14px, 0.9vw, 17px);
+  letter-spacing: -0.01em;
+  color: var(--ink2);
+  margin-left: 5px;
+}
+
+.plan .btn {
+  align-self: flex-start;
+  width: auto;
+  height: clamp(36px, 2.3vw, 42px);
+  padding: 0 clamp(16px, 1.1vw, 20px);
+  font-size: clamp(14px, 0.95vw, 16px);
+}
+
+.foot .stripe {
+  color: var(--stripe);
+}
+
+.foot .blue {
+  color: var(--blue);
 }
