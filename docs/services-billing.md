@@ -111,6 +111,20 @@ was; the public name and statement descriptor are what a person sees.
    to `/billing?plan=standard&return_to=<this page>`; the checkout returns
    there with `checkout_session_id`, the page copies it in, and asks. So
    nobody is signed in to the app without a card on file.
+6. **The window's access cover**, for a person already signed in whose
+   plan lapsed, was cancelled, or who signed in before billing was
+   required. The window asks `GetSandAccessStatus` once at sign-in
+   (`server/simeon/sand/dashboard.py`): payment required, with "Start a
+   Simeon trial" for a person who never had one and "Check Access" for
+   one who did. It shows its cover the moment `EnsureSandBox` refuses the
+   box with `permission_denied` (`box_broker.require_a_plan`), the way the
+   upstream app paywalls; the cover's button opens
+   `app.simeonlabs.com/billing?plan=standard` (the renderer patch,
+   `desktop/scripts/lib/router-renderer-patch.mjs`). The window keeps
+   asking for its box; once the plan is on Stripe the next ask succeeds
+   and the cover goes, with nothing to restart or sign in to again. Metered
+   calls get the same answer meanwhile: `402`, code `40200`, naming the
+   billing page.
 
 ## 4. How the app's allowance follows the plan
 
@@ -199,6 +213,9 @@ and the Customer Portal configuration by hand (section 2). The migration
   ended at once. **`plans.trial.card_unreadable`**: the card could not be
   read, so the check passed the person.
 - **`plans.trial.cancelled`**: the app's Cancel trial button worked.
+- **`sand.box.ensure.no_plan`**: the window asked for its box without a
+  plan and was shown the cover; one line per ask, so a person stuck on
+  the cover shows up as a run of them.
 - **`plans.report_usage.done`**: the five-minute report, with how many
   credit and box events were sent and how many people were skipped.
   **`plans.usage.credits_not_sent`** and **`plans.usage.box_not_sent`**:
@@ -218,10 +235,10 @@ and the Customer Portal configuration by hand (section 2). The migration
   is missing is a metered price on each product, a cap per person, and the
   allowance letting a metered call through once the week's credits are
   used.
-- **The renderer's paywall cover** opens the upstream's URL; until it is patched
-  (`desktop/scripts/lib/router-renderer-patch.mjs`), Connect
-  `GetSandAccessStatus` keeps answering GRANTED and the gate is the sign-in
-  page plus the proxy's 402.
+- **The access cover on a Mac.** The patch that points its button at the
+  billing page and the refusal that shows it have run in tests, not in the
+  packaged app. Read the window's cover and its recovery after a checkout
+  on a Mac before relying on them.
 - **Teams**: an organisation with several members and pooled credits.
 - **Verified on a Mac**: nothing in this file has run in the packaged app
   against a Stripe test account yet. The server tests cover the catalogue,

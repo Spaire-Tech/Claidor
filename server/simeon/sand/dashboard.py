@@ -23,7 +23,10 @@ from typing import Any
 
 from simeon.desktop.allowance import billing_required
 from simeon.desktop.service import desktop
+from simeon.models import User
+from simeon.plans.repository import DesktopTrialRedemptionRepository
 from simeon.plans.service import plans as plans_service
+from simeon.postgres import AsyncSession
 
 from .connect import ConnectCall, ConnectError, ConnectService
 
@@ -56,22 +59,50 @@ async def get_team_admin_settings(call: ConnectCall) -> dict[str, Any]:
     return {}
 
 
-#: `GetSandAccessStatusResponse.SandAccessState`: GRANTED is 1. The Mac asks
-#: this at sign-in (`electron-main/account/access.ts`) and gates the whole
-#: app on it; the upstream app answered from its billing. Every signed-in Simeon
-#: account has access; billing is the proxy's allowance, not a gate here.
-#: Purchase channel IN_APP (1); no block reason (0).
+#: `GetSandAccessStatusResponse.SandAccessState`: GRANTED 1, PAYMENT_REQUIRED 3.
+#: The Mac asks this at sign-in (`electron-main/account/access.ts`) and the
+#: window keeps the answer for its access cover's words. The cover itself
+#: shows when `EnsureSandBox` refuses with `permission_denied`
+#: (`box_broker.require_a_plan`), the way the upstream app paywalls: the
+#: cover's button opens the billing page, and the window keeps asking for
+#: its box until the plan is there, so paying on the web is all it takes.
+#: Purchase channel IN_APP (1). Block reasons: NONE 1 ("Check Access"),
+#: FREE_TRIAL_AVAILABLE 6 ("Start Trial"), in the window's own copy.
 SAND_ACCESS_STATE_GRANTED = 1
+SAND_ACCESS_STATE_PAYMENT_REQUIRED = 3
 SAND_PURCHASE_CHANNEL_IN_APP = 1
+SAND_BLOCK_REASON_NONE = 1
+SAND_BLOCK_REASON_FREE_TRIAL_AVAILABLE = 6
+
+
+async def sand_access_of(db: AsyncSession, user: User) -> dict[str, Any]:
+    """Granted on the free month, a trial or a plan; payment required
+    with no plan, offering the trial to a person who never had one."""
+    allowance = await desktop.allowance(db, user)
+    if not allowance.none:
+        return {
+            "state": SAND_ACCESS_STATE_GRANTED,
+            "purchaseChannel": SAND_PURCHASE_CHANNEL_IN_APP,
+            "blockReason": 0,
+        }
+    had_trial = (
+        await DesktopTrialRedemptionRepository.from_session(db).get_for_user(user.id)
+        is not None
+    )
+    return {
+        "state": SAND_ACCESS_STATE_PAYMENT_REQUIRED,
+        "purchaseChannel": SAND_PURCHASE_CHANNEL_IN_APP,
+        "blockReason": (
+            SAND_BLOCK_REASON_NONE
+            if had_trial
+            else SAND_BLOCK_REASON_FREE_TRIAL_AVAILABLE
+        ),
+    }
 
 
 @service.unary("GetSandAccessStatus", auth="desktop-or-box")
 async def get_sand_access_status(call: ConnectCall) -> dict[str, Any]:
-    return {
-        "state": SAND_ACCESS_STATE_GRANTED,
-        "purchaseChannel": SAND_PURCHASE_CHANNEL_IN_APP,
-        "blockReason": 0,
-    }
+    return await sand_access_of(call.db, call.caller.user)
 
 
 @service.unary("GetMe", auth="desktop-or-box")
