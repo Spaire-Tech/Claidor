@@ -327,6 +327,10 @@ async def main():
     assert home.count("%APP%") == 3
     open(f"{OUT}/index.html", "w", encoding="utf-8").write(home.replace("%APP%", app_path))
     await posters(app_path)
+    # Every image the page names carries its content's version, so a redrawn face or poster is never served from a cache.
+    from versioning import version_assets
+    home = open(f"{OUT}/index.html", encoding="utf-8").read()
+    open(f"{OUT}/index.html", "w", encoding="utf-8").write(version_assets(home, OUT))
     print("site written to", os.path.abspath(OUT))
 
 asyncio.run(main())
