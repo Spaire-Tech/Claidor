@@ -135,8 +135,8 @@ MOBILE_CSS = """/* The phone hero: a still of the app window filling the hero bo
   .sd-m-sys{align-self:center;display:flex;align-items:center;flex-wrap:wrap;justify-content:center;gap:1.2cqw;margin:1.4cqw 0;font-size:3.3cqw;color:#8e8e93}
   .sd-m-sys b{font-weight:500;color:#1d1d1f}
   .sd-m-clock{width:4cqw;height:4cqw;color:#3a3a3c}
-  .sd-m-tag{display:inline-flex;align-items:center;gap:.8cqw;font-weight:500;vertical-align:middle;position:relative;top:-.1em}
-  .sd-m-tag img{width:4.4cqw;height:4.4cqw;object-fit:contain}
+  .sd-m-tag{font-weight:500;white-space:nowrap}
+  .sd-m-tag img{display:inline-block;width:1.44em;height:1.05em;margin:0 .22em 0 .02em;vertical-align:-.18em;object-fit:contain}
   .sd-m-in .sd-app{font-size:.96em}
   .sd-m-file{align-self:flex-start;display:flex;align-items:center;gap:2.4cqw;padding:2.4cqw 4cqw 2.4cqw 2.6cqw;border-radius:3.6cqw;background:#e9e9eb;font-size:3.7cqw;
     box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04)}

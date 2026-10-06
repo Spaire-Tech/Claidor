@@ -2,7 +2,7 @@
   // <define:process.env>
   var define_process_env_default = {};
 
-  // source/shared/computer-stream.ts
+  // desktop/source/shared/computer-stream.ts
   var COMPUTER_STREAM_CHANNEL = "sand:computer-stream";
   var SCREEN_LINE_TAG = "[SimeonScreen]";
   function isComputerStreamMessage(value) {
@@ -43,7 +43,7 @@
     return null;
   }
 
-  // source/electron-preload/computer-stream-notice.ts
+  // desktop/source/electron-preload/computer-stream-notice.ts
   var COMPUTER_STREAM_NOTICE_ATTR = "data-simeon-screen-notice";
   var COMPUTER_STREAM_NOTICE_DELAY_MS = 2e4;
   var CONNECTING_SELECTOR = ".sand-box-vnc-pool__connecting";
@@ -182,7 +182,7 @@
     }
   }
 
-  // source/shared/persistence.ts
+  // desktop/source/shared/persistence.ts
   var CLIENT_PERSISTENCE_CHANNELS = {
     read: "sand:client-persistence-read",
     write: "sand:client-persistence-write",
@@ -191,7 +191,7 @@
     migrate: "sand:client-persistence-migrate"
   };
 
-  // source/electron-preload/coordinator-port-bridge.ts
+  // desktop/source/electron-preload/coordinator-port-bridge.ts
   function createCoordinatorPortBroker(options) {
     let owner = null;
     return {
@@ -231,7 +231,7 @@
     };
   }
 
-  // source/shared/rpc/main.ts
+  // desktop/source/shared/rpc/main.ts
   var MAIN_RPC_CONTRACT_NAME = "main";
   var MAIN_METHOD_TABLE = {
     openExternal: { args: "object" },
@@ -367,7 +367,7 @@
     rateVoiceCall: { args: "object" }
   };
 
-  // source/electron-preload/rpc-edge-runtime.ts
+  // desktop/source/electron-preload/rpc-edge-runtime.ts
   var EDGE_UNKNOWN_METHOD = "edge/unknown-method";
   var EDGE_HANDLER_FAILED = "edge/handler-failed";
   var EdgeCallFailure = class extends Error {
@@ -424,7 +424,7 @@
     return bridge;
   }
 
-  // source/electron-preload/preload.ts
+  // desktop/source/electron-preload/preload.ts
   function createMainEdgeTransport(ipc) {
     return {
       invoke: (channel, payload) => ipc.invoke(channel, payload),
@@ -765,7 +765,7 @@
     });
   }
 
-  // source/shared/rpc/coordinator-port.ts
+  // desktop/source/shared/rpc/coordinator-port.ts
   var COORDINATOR_PROTOCOL_VERSION = 1;
   var COORDINATOR_UNKNOWN_METHOD = "unknown-method";
   var COORDINATOR_CANCELLED = "cancelled";
@@ -835,7 +835,7 @@
     return { status: "failed", failure: { code, message, ...isNonEmptyString(transportKind) ? { transportKind } : {} } };
   }
 
-  // source/node-agent-coordinator/renderer-port-server.ts
+  // desktop/source/node-agent-coordinator/renderer-port-server.ts
   function createRendererPortServer(port, options = {}) {
     let phase = "awaiting-hello";
     const { promise: settled, resolve: resolveSettled } = Promise.withResolvers();
@@ -936,7 +936,7 @@
     };
   }
 
-  // demo/scenario.ts
+  // desktop/demo/scenario.ts
   var MIN = 6e4;
   var NOW = Date.now();
   var at = (minutesAgo) => NOW - minutesAgo * MIN;
@@ -979,6 +979,12 @@
     isStreaming: false,
     timestampMs: at(minutesAgo),
     fromAgent: peer
+  });
+  var routineChanged = (id, minutesAgo, automationId, automationName, action = "created") => ({
+    kind: "event",
+    id,
+    timestampMs: at(minutesAgo),
+    event: { type: "automation-changed", action, automationId, automationName }
   });
   var earlierCall = (prefix, minutesAgo, callId, seconds, lines) => {
     const peer = { id: `voice-call:${callId}:${seconds}`, name: "Bass" };
@@ -1065,6 +1071,8 @@
       { at: 13600, kind: "typing", agent: "simeon", on: true },
       ...step(14e3, "m6", "CallMcpTool", "Sending the agenda from Gmail", "Sent the agenda from Gmail", 1300, "Gmail"),
       ...step(15500, "m7", "UpdateState", "Creating routine Monday launch check", "Created routine Monday launch check", 1e3),
+      // The line the phone still shows, "Created routine · Monday launch check" (the founder, 6 October 2026: "desktop doesnt have" it).
+      { at: 16500, kind: "append", agent: "simeon", entry: routineChanged("m7r", 0, "demo-monday-launch-check", "Monday launch check") },
       { at: 16800, kind: "append", agent: "simeon", entry: says("m2a", 0, "Done. The agenda went out from **Gmail**.") },
       { at: 16900, kind: "typing", agent: "simeon", on: false }
     ];
@@ -1098,7 +1106,7 @@
     ];
   }
 
-  // source/shared/channels.ts
+  // desktop/source/shared/channels.ts
   var DISCORD_PLATFORM = "discord";
   var SLACK_PLATFORM = "slack";
   var CONNECTOR_MANIFESTS = [
@@ -1126,7 +1134,7 @@
     }
   ];
 
-  // demo/backend.ts
+  // desktop/demo/backend.ts
   var ok = (value) => ({ status: "ok", value });
   var unanswered = { main: /* @__PURE__ */ new Set(), coordinator: /* @__PURE__ */ new Set(), ipc: /* @__PURE__ */ new Set() };
   var CONNECTED = [
@@ -1504,7 +1512,7 @@
     };
   }
 
-  // demo/bridge.ts
+  // desktop/demo/bridge.ts
   var TRACE = new URLSearchParams(location.search).has("trace");
   var trace = (...args) => {
     if (TRACE) console.log("[demo]", ...args);
