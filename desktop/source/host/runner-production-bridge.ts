@@ -218,6 +218,7 @@ export interface ProductionTurnToolsetHostInput {
   readonly isBoxScopedSubagent: boolean;
   readonly isComputerUseSubagent: boolean;
   readonly isBrowserUseSubagent: boolean;
+  readonly isVideoSubagent?: boolean;
   readonly isSystemPromptOverridden: boolean;
   readonly remoteBoxHasDesktop: boolean;
   readonly getConversationId: () => string;
@@ -254,6 +255,7 @@ export function createProductionTurnToolsetHost(
     isBoxScopedSubagent: input.isBoxScopedSubagent,
     isComputerUseSubagent: input.isComputerUseSubagent,
     isBrowserUseSubagent: input.isBrowserUseSubagent,
+    ...(input.isVideoSubagent === undefined ? {} : { isVideoSubagent: input.isVideoSubagent }),
     isSystemPromptOverridden: input.isSystemPromptOverridden,
     remoteBoxHasDesktop: input.remoteBoxHasDesktop,
     getConversationId: input.getConversationId,
