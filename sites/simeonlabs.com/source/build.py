@@ -68,7 +68,8 @@ SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-widt
 MIC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>'
 CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>'
 # The phone hero: a still of the app, drawn by the page, telling the demo's opening (desktop/demo/scenario.ts):
-# Simeon's launch check. The faces are the app's own, captured from the demo (source/faces/agent-*.png).
+# Simeon's launch check. The faces (source/faces/agent-*.png) are the app's own butterfly, drawn from
+# desktop/source/shared/voice-call/agent-mark.ts in each agent's palette (6 October 2026).
 # Name colours are the top colour of each agent's palette (desktop/source/shared/voice-call/agent-mark.ts).
 rail = "".join(f'<span class="sd-m-av{" sd-m-on" if i == 0 else ""}">{mface("agent-" + f)}</span>' for i, f in enumerate(["simeon"]))
 group = '<span class="sd-m-av sd-m-group">' + mface("agent-simeon") + mface("agent-scout") + mface("agent-iris") + '</span>'
@@ -107,7 +108,7 @@ MOBILE_CSS = """/* The phone hero: a still of the app window filling the hero bo
   .sd-m-av{position:relative;display:grid;place-items:center;width:15cqw;height:12.4cqw;border-radius:3cqw}
   .sd-m-av img{width:11cqw;height:11cqw;object-fit:contain}
   .sd-m-on{background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.05)}
-  .sd-m-group img{position:absolute;width:6.6cqw;height:6.6cqw}
+  .sd-m-group img{position:absolute;width:6.6cqw;height:6.6cqw;object-fit:contain}
   .sd-m-group img:nth-child(1){top:1.2cqw;left:4.2cqw}.sd-m-group img:nth-child(2){bottom:1.4cqw;left:1.6cqw}.sd-m-group img:nth-child(3){bottom:1.4cqw;right:1.6cqw}
   .sd-m-fill{flex:1}
   /* The rail's three round glass discs, the initials, search and create, as in the demo (demo-glass.css). */
@@ -308,7 +309,7 @@ async def main():
     # The sidebar is solid in the page, not glass over a desktop.
     before = 'body::before{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(160deg,#e4e4e7,#d4d4d8)}'
     assert before in idx
-    # In the chat header a group's three clouds read the size of a single agent's 52 pt cloud (the founder, 5 October 2026).
+    # In the chat header a group's three marks read the size of a single agent's 52 pt mark (the founder, 5 October 2026).
     idx = idx.replace(before, before + 'html body .sand-agents-sidebar{background-color:var(--simeon-bg-chrome)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}html body .sand-chat-header__avatar:has(.sand-group-avatar){display:flex!important;align-items:center!important;justify-content:center!important;width:117px!important;height:52px!important}html body .sand-chat-header__avatar .sand-group-avatar{transform:scale(2.6)!important;transform-origin:center!important}')
     open(f"{OUT}/app/index.html", "w").write(idx)
     # The app lives under a folder named after its content (app/<digest>/), so a changed window is a
