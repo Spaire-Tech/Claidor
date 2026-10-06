@@ -34,8 +34,8 @@ The app calls three routes. They sit at the **root** of the API host, not under
 
 | Route | What it does |
 |---|---|
-| `GET /loginDeepControl?challenge=…&uuid=…` | The browser page. With no web session it redirects to `/login?return_to=…` on the web app (`app.simeonlabs.com`). With a session it shows a confirm page naming the account. |
-| `POST /loginDeepControl` | The confirm form. Same-origin only. Records the pending sign-in; nothing is written before this post. |
+| `GET /loginDeepControl?challenge=…&uuid=…` | The browser page. With no web session it redirects to `/login?return_to=…` on the web app (`app.simeonlabs.com`). With a session and no plan (billing configured, no active or trialing subscription) it redirects to `/billing?plan=standard&return_to=…` on the web app, which takes a card and comes back (`services-billing.md`). Otherwise it shows a confirm page naming the account. |
+| `POST /loginDeepControl` | The confirm form. Same-origin only. Records the pending sign-in; no sign-in is written before this post. |
 | `POST /auth/poll` (body `{uuid, verifier}`) | The app polls here. `404` means "not yet"; `200` returns `{accessToken, refreshToken}` once. `GET /auth/poll` with query parameters is still served for older builds. |
 | `POST /oauth/token` (`grant_type=refresh_token`) | The refresh. Returns a new pair. A spent or expired refresh token gets `200` with `shouldLogout: true`; only a malformed request gets `400`. |
 
@@ -141,8 +141,9 @@ the login and poll URLs come from the first two.
 
 **What it does for the person.** Every model call the agent makes goes through
 Simeon's server, on Simeon's provider keys. The person never needs an API key.
-Usage counts against a monthly allowance, and limits stop a runaway agent
-before it spends much.
+Usage counts against the plan's weekly allowance (the trial's, while trialing;
+a monthly one where no billing is configured; `services-billing.md`), and
+limits stop a runaway agent before it spends much.
 
 ### Routes
 
@@ -164,7 +165,7 @@ All are under `/desktop` (`server/simeon/desktop/endpoints.py`,
 | `GET /desktop/api/proxy/v1/voice/voices` | The voice picker's curated list, cached for an hour. |
 | `GET /desktop/api/models/available` | The models offered to the app. |
 | `GET /desktop/api/models/pricing-catalog` | Their prices. |
-| `GET /desktop/api/user/quota` | The person's usage, for the Usage tab. |
+| `GET /desktop/api/user/quota` | The person's allowance and usage, for the Usage tab: the plan, the window, the limit, the trial's end, where to change plan (`services-billing.md`, section 4). |
 
 The body goes through to the provider untouched. The usage the provider
 reports is converted to credits and stored as a `desktop_usage` row.
@@ -257,8 +258,12 @@ line. This means the server and the app can be deployed in either order.
 On the server, every metered route checks two limits before calling a provider
 (`budget_refusal` in `server/simeon/desktop/proxy_common.py`):
 
-- **Monthly allowance:** `SIMEON_DESKTOP_MONTHLY_CREDITS` (3,000,000). Over it,
-  the route answers `402` with code `40200`.
+- **The allowance:** the plan's week (Monday to Monday UTC), the trial's
+  credits while trialing, or `SIMEON_DESKTOP_MONTHLY_CREDITS` (3,000,000 a
+  calendar month) where no billing is configured
+  (`server/simeon/desktop/allowance.py`, `services-billing.md`). Over it, or
+  with no plan at all, the route answers `402` with code `40200` and a
+  sentence that says which allowance and where to change plan.
 - **Hourly cap:** `SIMEON_DESKTOP_HOURLY_CREDITS` (200,000 over a sliding hour).
   Over it, the route answers `402` with code `40201`: "Hourly spending budget
   reached … The agent stops here; it can continue as the hour passes."
@@ -332,8 +337,9 @@ box and `SAND_KEEP_BOX_RUNNING_ON_QUIT=1` always keeps it running
 - `SIMEON_OPENAI_API_KEY`: the OpenAI key. Without it, no OpenAI model is offered.
 - `ANTHROPIC_API_KEY` (or `SIMEON_ANTHROPIC_API_KEY`): Claude, for the fallback.
 - `SIMEON_GEMINI_API_KEY`: Gemini, for the video role.
-- `SIMEON_DESKTOP_MONTHLY_CREDITS`, `SIMEON_DESKTOP_HOURLY_CREDITS`: only to
-  change the defaults.
+- `SIMEON_DESKTOP_MONTHLY_CREDITS` (only a server with no billing configured
+  reads it), `SIMEON_DESKTOP_HOURLY_CREDITS`: only to change the defaults.
+  The plans' weekly credits are in `server/simeon/entitlements/tiers.py`.
 
 ### In the app
 

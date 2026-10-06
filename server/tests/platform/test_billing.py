@@ -114,7 +114,7 @@ class TestEnsureStarterTrialSubscription:
         creator = await create_organization(save_fixture)
         _patch_platform_org_id(mocker, platform_org.id)
         pro_product = await _seed_tier_product(
-            save_fixture, platform_org=platform_org, tier=TierKey.starter.value
+            save_fixture, platform_org=platform_org, tier=TierKey.standard.value
         )
 
         subscription = await platform_billing.ensure_starter_trial_subscription(
@@ -149,7 +149,7 @@ class TestEnsureStarterTrialSubscription:
         creator = await create_organization(save_fixture)
         _patch_platform_org_id(mocker, platform_org.id)
         await _seed_tier_product(
-            save_fixture, platform_org=platform_org, tier=TierKey.starter.value
+            save_fixture, platform_org=platform_org, tier=TierKey.standard.value
         )
 
         first = await platform_billing.ensure_starter_trial_subscription(
@@ -194,27 +194,27 @@ class TestEnsureStarterTrialSubscription:
         creator = await create_organization(save_fixture)
         _patch_platform_org_id(mocker, platform_org.id)
         await _seed_tier_product(
-            save_fixture, platform_org=platform_org, tier=TierKey.starter.value
+            save_fixture, platform_org=platform_org, tier=TierKey.standard.value
         )
         await _seed_tier_product(
-            save_fixture, platform_org=platform_org, tier=TierKey.studio.value
+            save_fixture, platform_org=platform_org, tier=TierKey.pro.value
         )
 
         first = await platform_billing.ensure_subscription(
-            session, creator, tier=TierKey.starter
+            session, creator, tier=TierKey.standard
         )
         assert first is not None
-        assert first.product.user_metadata["tier"] == "starter"
+        assert first.product.user_metadata["tier"] == "standard"
 
         second = await platform_billing.ensure_subscription(
             session,
             creator,
-            tier=TierKey.studio,
+            tier=TierKey.pro,
         )
         assert second is not None
         assert second.id == first.id
         # Still on Starter, not switched to Studio.
-        assert second.product.user_metadata["tier"] == "starter"
+        assert second.product.user_metadata["tier"] == "standard"
 
     async def test_reuses_existing_customer_when_subscription_is_missing(
         self,
@@ -228,7 +228,7 @@ class TestEnsureStarterTrialSubscription:
         creator = await create_organization(save_fixture)
         _patch_platform_org_id(mocker, platform_org.id)
         await _seed_tier_product(
-            save_fixture, platform_org=platform_org, tier=TierKey.starter.value
+            save_fixture, platform_org=platform_org, tier=TierKey.standard.value
         )
 
         existing_customer = Customer(

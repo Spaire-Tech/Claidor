@@ -84,10 +84,10 @@ class EntitlementsService:
         if not isinstance(tier_value, str):
             return TierKey.inactive
 
-        # Honor the "pro" -> "starter" alias so a creator whose platform
-        # product still carries the original "pro" metadata resolves to
-        # Starter rather than dropping to inactive. Only the three paid tiers
-        # are valid here; anything else is treated as no plan.
+        # Honor the creator-era aliases (starter/studio/scale) so a product
+        # seeded under an old key resolves to the plan that replaced it
+        # rather than dropping to inactive. Only the three paid plans are
+        # valid here; anything else is treated as no plan.
         tier = tier_from_value(tier_value)
         if tier not in PAID_TIERS:
             return TierKey.inactive

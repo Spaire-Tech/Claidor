@@ -4,13 +4,14 @@ import { useModal } from '@/components/Modal/useModal'
 import { toast } from '@/components/Toast/use-toast'
 import {
   BillingInterval,
-  breakevenGmvDollars,
   CurrentSimeonSubscription,
+  formatCredits,
   formatDollarAmount,
-  formatTransactionFee,
   headlinePriceForPlan,
+  PAID_TIERS,
   PaidTierKey,
   renewalSentence,
+  tasksPerWeek,
   tierDisplayName,
   TierPlan,
   useCancelSimeonSubscription,
@@ -29,19 +30,30 @@ import { ConfirmModal } from '../../Modal/ConfirmModal'
 
 interface SimeonPlanCardsProps {
   organization: schemas['Organization']
+  /**
+   * Where the checkout sends the person once the card is saved. The Mac
+   * sign-in passes its own confirm page here, so a new person goes card,
+   * then app, with nothing in between. Defaults to the billing page.
+   */
+  successUrl?: string
+  /** The card to open on, from the site's "Try it free" buttons. */
+  highlightTier?: PaidTierKey | null
 }
 
 /**
- * Plan-selection grid — three cards (Starter / Studio / Scale) styled to
- * match the Framer/Webflow plan-card pattern, with a single global
- * Monthly/Annual toggle.
+ * Plan-selection grid — three cards (Standard / Pro / Max) with a single
+ * global Monthly/Annual toggle.
  *
  * The card the user is currently subscribed to renders the CURRENT
  * badge and a secondary "Cancel" CTA. Other cards show a primary
- * black CTA that maps to the right action ("Upgrade", "Switch to X",
- * or "Add payment & keep your plan" during a trial).
+ * black CTA that maps to the right action ("Start free trial",
+ * "Switch", or "Add payment & keep plan" during a trial).
  */
-const SimeonPlanCards = ({ organization }: SimeonPlanCardsProps) => {
+const SimeonPlanCards = ({
+  organization,
+  successUrl,
+  highlightTier = null,
+}: SimeonPlanCardsProps) => {
   const plans = useSimeonPlans()
   const subscription = useSimeonSubscription(organization.id)
   const queryClient = useQueryClient()
@@ -65,9 +77,9 @@ const SimeonPlanCards = ({ organization }: SimeonPlanCardsProps) => {
   const ordered = useMemo<TierPlan[]>(() => {
     if (!plans.data?.items) return []
     const map = new Map(plans.data.items.map((p) => [p.tier, p]))
-    return (['starter', 'studio', 'scale'] as const)
-      .map((t) => map.get(t))
-      .filter((p): p is TierPlan => Boolean(p))
+    return PAID_TIERS.map((t) => map.get(t)).filter((p): p is TierPlan =>
+      Boolean(p),
+    )
   }, [plans.data])
 
   // Annual-savings badge next to the interval toggle. Prefer the API's
@@ -110,7 +122,8 @@ const SimeonPlanCards = ({ organization }: SimeonPlanCardsProps) => {
         const result = await createCheckout.mutateAsync({
           tier,
           billing_interval: interval,
-          success_url: `${window.location.origin}/dashboard/${organization.slug}/settings/plan?upgraded=1`,
+          success_url:
+            successUrl ?? `${window.location.origin}/billing?upgraded=1`,
         })
         queryClient.invalidateQueries({
           queryKey: ['simeon', 'subscription', organization.id],
@@ -123,7 +136,7 @@ const SimeonPlanCards = ({ organization }: SimeonPlanCardsProps) => {
         setPending(null)
       }
     },
-    [createCheckout, interval, organization.id, organization.slug, queryClient],
+    [createCheckout, interval, organization.id, queryClient, successUrl],
   )
 
   const doSwitch = useCallback(
@@ -180,7 +193,7 @@ const SimeonPlanCards = ({ organization }: SimeonPlanCardsProps) => {
           ? trialEndDate
             ? `Your trial continues until ${trialEndDate}. You won't be charged and your plan won't start — pick a plan any time to keep going.`
             : "Your trial continues until it ends. You won't be charged and your plan won't start — pick a plan any time to keep going."
-          : 'Your Simeon subscription will end at the close of the current billing period, after which your org will have no active plan until you pick one.',
+          : 'Your Simeon plan ends at the close of the current billing period. After that your agents stop until you pick a plan again.',
       })
       queryClient.invalidateQueries({
         queryKey: ['simeon', 'subscription', organization.id],
@@ -233,6 +246,7 @@ const SimeonPlanCards = ({ organization }: SimeonPlanCardsProps) => {
               interval={interval}
               currentTier={currentTier}
               currentInterval={currentInterval ?? null}
+              highlighted={highlightTier === plan.tier}
               isTrial={Boolean(isTrial)}
               status={sub?.status ?? null}
               cancelAtPeriodEnd={Boolean(sub?.cancel_at_period_end)}
@@ -246,7 +260,9 @@ const SimeonPlanCards = ({ organization }: SimeonPlanCardsProps) => {
       )}
 
       <p className="mt-2 text-center text-sm text-gray-500">
-        Compare all plans and features
+        A credit is one token of input on the middle model. A typical task is
+        about 100,000 credits. Weekly credits reset every Monday and do not
+        carry over.
       </p>
 
       <ConfirmModal
@@ -261,8 +277,8 @@ const SimeonPlanCards = ({ organization }: SimeonPlanCardsProps) => {
             : sub?.current_period_end
               ? `Your plan stays active through ${new Date(
                   sub.current_period_end,
-                ).toLocaleDateString()}. After that your org has no active plan until you pick one.`
-              : 'Your plan will be canceled at the end of the current billing period, after which your org has no active plan until you pick one.'
+                ).toLocaleDateString()}. After that your agents stop until you pick a plan again.`
+              : 'Your plan will be canceled at the end of the current billing period, after which your agents stop until you pick a plan again.'
         }
         destructiveText={isTrial ? 'Yes, cancel trial' : 'Yes, cancel'}
         destructive
@@ -284,7 +300,7 @@ const SimeonPlanCards = ({ organization }: SimeonPlanCardsProps) => {
           switchTarget
             ? `You'll move to Simeon ${tierDisplayName(switchTarget)}${
                 interval === 'year' ? ' (annual)' : ''
-              } now. Your card on file is used and a prorated amount for the rest of this billing period is invoiced immediately. Your transaction fee updates to the new plan's rate right away.`
+              } now. Your card on file is used and a prorated amount for the rest of this billing period is invoiced immediately. Your weekly credits change right away.`
             : ''
         }
         onConfirm={onConfirmSwitch}
@@ -320,7 +336,7 @@ const Header = ({
         ) : (
           <p className="text-sm text-gray-500">
             {renewal ??
-              "Pick a plan to get started. We'll charge you when your trial ends."}
+              'Pick a plan to start your 7 days free. Your card is charged when the trial ends unless you cancel.'}
           </p>
         )}
       </div>
@@ -379,6 +395,7 @@ interface PlanCardProps {
   interval: BillingInterval
   currentTier: CurrentSimeonSubscription['tier'] | undefined
   currentInterval: BillingInterval | null
+  highlighted: boolean
   isTrial: boolean
   status: string | null
   cancelAtPeriodEnd: boolean
@@ -394,6 +411,7 @@ const PlanCard = ({
   interval,
   currentTier,
   currentInterval,
+  highlighted,
   isTrial,
   status,
   cancelAtPeriodEnd,
@@ -403,11 +421,8 @@ const PlanCard = ({
   onCancel,
 }: PlanCardProps) => {
   const isCurrentTier = plan.tier === currentTier
-  const previousPlanName = previousPlan?.name ?? null
-  // Volume at which this tier's lower rate outweighs its higher monthly
-  // fee vs the next-cheaper tier — the "upgrade pays for itself here" line.
-  const breakeven = previousPlan
-    ? breakevenGmvDollars(previousPlan, plan)
+  const previousPlanName = previousPlan
+    ? tierDisplayName(previousPlan.tier)
     : null
   const annualAvailable = plan.annual_price_cents != null
   const effectiveInterval: BillingInterval =
@@ -429,7 +444,7 @@ const PlanCard = ({
     <div
       className={twMerge(
         'flex flex-col rounded-2xl border bg-white p-6',
-        isCurrentTier ? 'border-blue-500' : 'border-gray-200',
+        isCurrentTier || highlighted ? 'border-blue-500' : 'border-gray-200',
       )}
     >
       {/* Header row: plan name + CURRENT badge */}
@@ -463,27 +478,31 @@ const PlanCard = ({
         )}
         {plan.trial_days && !isCurrentTier && (
           <span className="mt-1 text-xs text-gray-500">
-            {plan.trial_days}-day free trial included
-          </span>
-        )}
-        {breakeven !== null && previousPlanName && (
-          <span className="mt-2 text-xs text-gray-500">
-            Cheaper than {previousPlanName} above{' '}
-            <span className="font-medium text-gray-700">
-              ~${breakeven.toLocaleString('en-US')}/mo
-            </span>{' '}
-            in sales
+            {plan.trial_days} days free, card on file
           </span>
         )}
       </div>
 
+      {/* Credits */}
+      <div className="mt-6 rounded-xl bg-gray-50 px-4 py-3">
+        <span className="text-xs tracking-wide text-gray-500 uppercase">
+          Included each week
+        </span>
+        <div className="font-mono text-base font-medium text-gray-900">
+          {formatCredits(plan.weekly_credits)} credits
+        </div>
+        <span className="text-xs text-gray-500">
+          About {tasksPerWeek(plan.weekly_credits)} tasks a week.
+        </span>
+      </div>
+
       {/* Features */}
       <div className="mt-6 flex flex-1 flex-col gap-y-2.5">
-        {previousPlanName && (
-          <p className="text-sm font-medium text-gray-900">
-            Everything from {previousPlanName}, plus:
-          </p>
-        )}
+        <p className="text-sm font-medium text-gray-900">
+          {previousPlanName
+            ? `Everything in ${previousPlanName}, plus:`
+            : 'Everything in the trial, plus:'}
+        </p>
         {featureLines.map((line, i) => (
           <FeatureRow key={i} label={line} />
         ))}
@@ -520,7 +539,7 @@ type CtaKind =
   | { kind: 'end_trial' } // CURRENT and trialing — show End trial
   | { kind: 'convert_trial' } // trialing on this exact tier+interval, prompt to add card
   | { kind: 'switch'; primary: boolean } // paid → paid switch
-  | { kind: 'upgrade'; primary: boolean } // no plan or trial → checkout
+  | { kind: 'upgrade'; primary: boolean; trial: boolean } // no plan or trial → checkout
   | { kind: 'downgrade' } // paid on a higher tier → switch down
   | { kind: 'noop' }
 
@@ -538,17 +557,17 @@ const TIER_ORDER: Record<string, number> = {
   // No-plan states rank below every paid tier so any plan reads as an upgrade.
   inactive: 0,
   unmanaged: 0,
-  starter: 1,
-  // Legacy key — Starter originally shipped as "pro". Stale/cached subs may
-  // still report it; rank it identically so comparisons never produce NaN.
-  pro: 1,
-  studio: 2,
-  scale: 3,
+  standard: 1,
+  pro: 2,
+  max: 3,
 }
 
 const resolveCta = (args: ResolveCtaArgs): CtaKind => {
   const { plan, interval, currentTier, currentInterval, isTrial, status } = args
-  if (!currentTier) return { kind: 'upgrade', primary: true }
+  // A person with no subscription at all starts the trial; everybody else
+  // has used it (the engine bills at once on a second checkout).
+  const trial = !currentTier || currentTier === 'inactive'
+  if (!currentTier) return { kind: 'upgrade', primary: true, trial }
 
   const planRank = TIER_ORDER[plan.tier]
   const currentRank = TIER_ORDER[currentTier]
@@ -562,14 +581,14 @@ const resolveCta = (args: ResolveCtaArgs): CtaKind => {
   if (exactlyCurrent) {
     if (status === 'canceled' || args.cancelAtPeriodEnd) {
       // Already on the way out; offer a re-up via checkout.
-      return { kind: 'upgrade', primary: true }
+      return { kind: 'upgrade', primary: true, trial: false }
     }
     if (isTrial) return { kind: 'end_trial' }
     return { kind: 'cancel' }
   }
 
-  // Same tier, different interval (e.g. Starter monthly user looking at
-  // Starter annual). Allow the switch via update_product unless trialing.
+  // Same tier, different interval (e.g. Standard monthly user looking at
+  // Standard annual). Allow the switch via update_product unless trialing.
   if (plan.tier === currentTier && interval !== currentInterval) {
     if (isTrial) {
       return { kind: 'convert_trial' }
@@ -579,7 +598,7 @@ const resolveCta = (args: ResolveCtaArgs): CtaKind => {
 
   // No plan or trial → a paid tier: checkout.
   if (isNoPlan || isTrial) {
-    return { kind: 'upgrade', primary: planRank >= currentRank }
+    return { kind: 'upgrade', primary: planRank >= currentRank, trial }
   }
 
   // Paid → higher paid: switch (highlighted primary).
@@ -646,7 +665,7 @@ const PlanCardButton = ({
           disabled={disabled}
           onClick={onUpgrade}
         >
-          Upgrade
+          {cta.trial ? 'Start free trial' : 'Choose plan'}
         </PrimaryBlackButton>
       ) : (
         <Button
@@ -708,55 +727,34 @@ const PrimaryBlackButton = ({
 )
 
 // -----------------------------------------------------------------------------
-// Feature copy — picks the lines that best differentiate each tier
+// Feature copy — the lines on the pricing card, per plan
 // -----------------------------------------------------------------------------
 
 const buildFeatureLines = (plan: TierPlan): string[] => {
-  if (plan.tier === 'starter') return starterLines(plan)
-  if (plan.tier === 'studio') return studioLines(plan)
-  if (plan.tier === 'scale') return scaleLines(plan)
-  // Defensive — Legacy isn't in the card grid.
+  if (plan.tier === 'standard') return STANDARD_LINES
+  if (plan.tier === 'pro') return PRO_LINES
+  if (plan.tier === 'max') return MAX_LINES
   return []
 }
 
-const formatCount = (n: number): string => {
-  if (n >= 1_000_000)
-    return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`
-  if (n >= 1_000) return `${Math.round(n / 1_000)}K`
-  return String(n)
-}
-
-// Starter lists the full baseline. Studio and Scale list only the
-// incremental delta — the "Everything from X, plus:" header above them
-// in the card carries the inheritance, so re-listing identical rows
-// would just inflate the cards.
-const starterLines = (plan: TierPlan): string[] => [
-  `${formatTransactionFee(plan.transaction_fee)} per transaction`,
-  `${plan.limits.published_courses} published courses`,
-  `${formatCount(plan.limits.email_subscribers ?? 0)} email subscribers`,
-  `${plan.limits.video_hours_hosted} hours of hosted video`,
-  'Email sequences, segments & drip',
-  'Revenue, MRR & churn analytics',
+// Standard lists the baseline over the trial. Pro and Max list only the
+// delta — the "Everything in X, plus:" header above them carries the rest.
+const STANDARD_LINES = [
+  'Routines that run while your Mac is closed',
+  'Discord and Slack channels, voice calls',
+  'Memory shared across your agents',
+  "Keep going past the week's allowance on demand",
 ]
 
-const studioLines = (plan: TierPlan): string[] => [
-  `${formatTransactionFee(plan.transaction_fee)} per transaction (saves 2%)`,
-  `${plan.limits.published_courses} published courses`,
-  `${formatCount(plan.limits.email_subscribers ?? 0)} email subscribers`,
-  'Custom email sender domain',
-  'Email A/B testing',
-  'White-label player & customer wallet',
-  `${plan.limits.dashboard_team_seats} team seats`,
+const PRO_LINES = [
+  'Three times the weekly work of Standard',
+  'Room for routines that run every day',
 ]
 
-const scaleLines = (plan: TierPlan): string[] => [
-  `${formatTransactionFee(plan.transaction_fee)} per transaction (saves 4%)`,
-  `${plan.limits.published_courses} published courses`,
-  `${formatCount(plan.limits.email_subscribers ?? 0)} email subscribers`,
-  `${plan.limits.video_hours_hosted} video hours · ${plan.limits.storage_gb} GB storage`,
-  `${plan.limits.dashboard_team_seats} team seats · audit logs`,
-  'Slack + dedicated AM · 4-hr SLA',
-  'Custom pricing above $50k/mo GMV',
+const MAX_LINES = [
+  'Eleven times the weekly work of Standard',
+  'Agents on routines all week long',
+  'Our highest allowance',
 ]
 
 export default SimeonPlanCards

@@ -14,7 +14,7 @@ from typing import Literal
 
 import structlog
 
-from simeon.entitlements.tiers import TierKey, tier_from_value
+from simeon.entitlements.tiers import PAID_TIERS, TierKey, tier_from_value
 from simeon.enums import SubscriptionProrationBehavior, SubscriptionRecurringInterval
 from simeon.exceptions import PolarError
 from simeon.locker import Locker
@@ -31,7 +31,7 @@ from simeon.subscription.service import subscription as subscription_service
 log: structlog.stdlib.BoundLogger = structlog.get_logger()
 
 
-_PAID_TIERS = (TierKey.starter, TierKey.studio, TierKey.scale)
+_PAID_TIERS = PAID_TIERS
 
 
 class PlatformManagementError(PolarError): ...

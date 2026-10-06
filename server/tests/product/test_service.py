@@ -982,7 +982,7 @@ class TestUpdateSeatPricingGate:
         require_feature = mocker.patch(
             "simeon.product.service.entitlements_service.require_feature",
             side_effect=FeatureNotInPlanError(
-                "seat_based_product_pricing", TierKey.starter
+                "seat_based_product_pricing", TierKey.standard
             ),
         )
 

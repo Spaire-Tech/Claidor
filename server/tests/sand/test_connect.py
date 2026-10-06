@@ -12,8 +12,10 @@ way `@connectrpc/connect` reads it.
 import httpx
 import pytest
 from fastapi import FastAPI
+from pytest_mock import MockerFixture
 
 from simeon.models import User
+from simeon.models.subscription import SubscriptionStatus
 from simeon.postgres import AsyncSession
 from simeon.sand.connect import (
     ConnectCall,
@@ -23,6 +25,7 @@ from simeon.sand.connect import (
     encode_stream_frames,
 )
 from tests.desktop.test_endpoints import _signed_in
+from tests.fixtures.database import SaveFixture
 
 demo = ConnectService("simeon.v1.DemoService", aliases=("aiserver.v1.DemoService",))
 
@@ -261,3 +264,59 @@ class TestLaunchPreflights:
         )
         assert settings_.status_code == 200, settings_.text
         assert settings_.json() == {}
+
+
+@pytest.mark.asyncio
+class TestCancelSandTrial:
+    """The Settings page's « Cancel trial » button, answered by the billing
+    engine (`simeon/sand/dashboard.py`)."""
+
+    async def test_without_billing_there_is_nothing_to_cancel(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        access, _ = await _signed_in(client, session, user)
+        response = await client.post(
+            "/simeon.v1.DashboardService/CancelSandTrial",
+            json={},
+            headers={"Authorization": f"Bearer {access}"},
+        )
+        assert response.status_code == 412
+        assert response.json()["code"] == "failed_precondition"
+
+    async def test_a_trial_is_scheduled_to_end_without_a_charge(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        save_fixture: SaveFixture,
+        mocker: MockerFixture,
+    ) -> None:
+        from tests.desktop.test_allowance import _person_with_plan
+
+        await _person_with_plan(
+            save_fixture,
+            mocker,
+            user,
+            tier="standard",
+            status=SubscriptionStatus.trialing,
+            trial_days_left=4,
+        )
+        # The cancellation e-mail is the engine's; its renderer is a binary
+        # the Docker image builds, not this test's concern.
+        mocker.patch(
+            "simeon.subscription.service.render_email_template", return_value="<p/>"
+        )
+        mocker.patch("simeon.subscription.service.enqueue_email")
+        access, _ = await _signed_in(client, session, user)
+        response = await client.post(
+            "/simeon.v1.DashboardService/CancelSandTrial",
+            json={},
+            headers={"Authorization": f"Bearer {access}"},
+        )
+        assert response.status_code == 200, response.text
+        quota = await client.get(
+            "/desktop/api/user/quota", headers={"Authorization": f"Bearer {access}"}
+        )
+        data = quota.json()["data"]
+        assert data["subscriptionStatus"] == "trialing"
+        assert data["trialCancelable"] is False

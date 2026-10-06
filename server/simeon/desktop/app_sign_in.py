@@ -24,8 +24,19 @@ would never be called.
        mean anybody who can get a signed-in person to open a link of
        their making ends up holding that person's session, because the
        verifier in the link is theirs. So the page states whose account
-       it is about to hand over and to what, and nothing is written
+       it is about to hand over and to what, and no sign-in is written
        until the person posts the form back.
+
+       Before it asks, it checks the person has a plan. With billing
+       configured (`SIMEON_PLATFORM_ORG_ID`) and no active or trialing
+       subscription on the person's own organisation, the page sends
+       the browser to the web app's billing page instead, with this
+       very URL as the way back; the billing page takes a card, starts
+       the 7-day trial, and returns here, where the question is asked.
+       So nobody is signed in to the app without a card on file
+       (`docs/services-billing.md`). The one thing the GET writes is
+       the person's own organisation and its billing Customer, both
+       idempotent and the same rows the web app makes on a first visit.
     4. The app, meanwhile, is polling `/auth/poll?uuid=…&verifier=…`.
        404 means « not yet » and it keeps waiting; 200 with a token
        pair means it is signed in.
@@ -42,6 +53,7 @@ from __future__ import annotations
 
 import re
 from html import escape
+from typing import Any
 from urllib.parse import quote, urlencode, urlparse
 
 from fastapi import Depends, Form, Query, Request
@@ -51,9 +63,11 @@ from simeon.auth.dependencies import WebUserOrAnonymous
 from simeon.auth.models import is_user
 from simeon.config import settings
 from simeon.openapi import APITag
+from simeon.platform.service import platform as platform_service
 from simeon.postgres import AsyncSession, get_db_session
 from simeon.routing import APIRouter
 
+from .allowance import BILLING_PATH
 from .endpoints import client_version_of
 from .service import (
     DesktopUnauthenticated,
@@ -149,6 +163,19 @@ def _same_origin(request: Request) -> bool:
 # --- the browser's half ----------------------------------------------------
 
 
+async def _needs_a_plan(session: AsyncSession, user: Any) -> bool:
+    """Whether to send the person to the billing page before asking.
+    Never with billing unconfigured (development, a self-hosted server):
+    then the free monthly allowance applies and there is nothing to
+    buy. Otherwise the person's organisation is made if missing, and a
+    plan is needed when its allowance says `none`."""
+    if not platform_service.is_configured():
+        return False
+    await desktop.ensure_personal_organization(session, user)
+    allowance = await desktop.allowance(session, user)
+    return allowance.none
+
+
 @router.get("/loginDeepControl", name="desktop:deep_control", response_model=None)
 async def login_deep_control(
     auth_subject: WebUserOrAnonymous,
@@ -156,6 +183,7 @@ async def login_deep_control(
     uuid: str = Query(default=""),
     mode: str = Query(default="login"),
     redirectTarget: str | None = Query(default=None),  # the app's own name
+    session: AsyncSession = Depends(get_db_session),
 ) -> RedirectResponse | HTMLResponse:
     if not is_deep_control_param(uuid) or not is_deep_control_param(challenge):
         return _page(
@@ -163,18 +191,26 @@ async def login_deep_control(
             f"<p>Open {PRODUCT} and sign in from there.</p>",
         )
 
+    kept = {"challenge": challenge, "uuid": uuid, "mode": mode}
+    if redirectTarget:
+        kept["redirectTarget"] = redirectTarget
+    return_to = settings.generate_external_url(f"/loginDeepControl?{urlencode(kept)}")
+
     if not is_user(auth_subject):
-        kept = {"challenge": challenge, "uuid": uuid, "mode": mode}
-        if redirectTarget:
-            kept["redirectTarget"] = redirectTarget
-        return_to = settings.generate_external_url(
-            f"/loginDeepControl?{urlencode(kept)}"
-        )
         return RedirectResponse(
             settings.generate_frontend_url(
                 f"/login?return_to={quote(return_to, safe='')}"
             ),
             303,
+        )
+
+    if await _needs_a_plan(session, auth_subject.subject):
+        return RedirectResponse(
+            settings.generate_frontend_url(
+                f"{BILLING_PATH}?plan=standard&return_to={quote(return_to, safe='')}"
+            ),
+            303,
+            headers=NO_STORE,
         )
 
     email = escape(auth_subject.subject.email)

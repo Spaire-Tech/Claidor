@@ -33,13 +33,13 @@ def _patch_starter_limits(mocker: MockerFixture, **limit_overrides: int | None) 
     against small values (Pro's real limits — unlimited courses /
     lessons, 250k email sends — make the original Free-shaped tests
     meaningless without an override)."""
-    base = get_definition(TierKey.starter)
+    base = get_definition(TierKey.standard)
     overridden = dataclasses.replace(
         base, limits=dataclasses.replace(base.limits, **limit_overrides)
     )
 
     def _resolve(tier: TierKey) -> "object":
-        if tier == TierKey.starter:
+        if tier == TierKey.standard:
             return overridden
         return get_definition(tier)
 
@@ -110,7 +110,7 @@ class TestRequireFeature:
             save_fixture,
             platform_org=platform_org,
             creator=creator,
-            tier="starter",
+            tier="standard",
             monthly_cents=0,
         )
 
@@ -118,7 +118,7 @@ class TestRequireFeature:
         with pytest.raises(FeatureNotInPlanError) as excinfo:
             await entitlements.require_feature(session, creator.id, "email_ab_testing")
         assert excinfo.value.feature == "email_ab_testing"
-        assert excinfo.value.tier == TierKey.starter
+        assert excinfo.value.tier == TierKey.standard
         assert excinfo.value.status_code == 402
 
     async def test_passes_when_feature_enabled(
@@ -134,7 +134,7 @@ class TestRequireFeature:
             save_fixture,
             platform_org=platform_org,
             creator=creator,
-            tier="starter",
+            tier="standard",
             monthly_cents=4900,
         )
 
@@ -156,7 +156,7 @@ class TestRequireFeature:
             save_fixture,
             platform_org=platform_org,
             creator=creator,
-            tier="scale",
+            tier="max",
             monthly_cents=29900,
         )
 
@@ -183,7 +183,7 @@ class TestRequireFeature:
             save_fixture,
             platform_org=platform_org,
             creator=creator,
-            tier="starter",
+            tier="standard",
             monthly_cents=0,
         )
 
@@ -226,7 +226,7 @@ class TestRequireUnderLimit:
             save_fixture,
             platform_org=platform_org,
             creator=creator,
-            tier="starter",
+            tier="standard",
             monthly_cents=0,
         )
 
@@ -236,7 +236,7 @@ class TestRequireUnderLimit:
             )
         assert excinfo.value.key == "email_subscribers"
         assert excinfo.value.limit == 1
-        assert excinfo.value.tier == TierKey.starter
+        assert excinfo.value.tier == TierKey.standard
         assert excinfo.value.status_code == 402
 
     async def test_raises_when_above_limit(
@@ -255,7 +255,7 @@ class TestRequireUnderLimit:
             save_fixture,
             platform_org=platform_org,
             creator=creator,
-            tier="starter",
+            tier="standard",
             monthly_cents=0,
         )
 
@@ -278,7 +278,7 @@ class TestRequireUnderLimit:
             save_fixture,
             platform_org=platform_org,
             creator=creator,
-            tier="starter",
+            tier="standard",
             monthly_cents=0,
         )
 
@@ -300,7 +300,7 @@ class TestRequireUnderLimit:
             save_fixture,
             platform_org=platform_org,
             creator=creator,
-            tier="scale",
+            tier="max",
             monthly_cents=29900,
         )
 
@@ -324,7 +324,7 @@ class TestRequireUnderLimit:
             save_fixture,
             platform_org=platform_org,
             creator=creator,
-            tier="starter",
+            tier="standard",
             monthly_cents=0,
         )
 

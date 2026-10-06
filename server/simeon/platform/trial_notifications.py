@@ -1,7 +1,7 @@
-"""Send creator-facing reminders before a Starter/Studio/Scale trial ends.
+"""Send reminders before a Standard/Pro/Max trial ends.
 
-Three reminders per trial — at T-7, T-2, and T-0 days before
-`trial_end`. Each one is sent at most once per (subscription, marker)
+Three reminders per trial — at T-3, T-1, and T-0 days before
+`trial_end` (the trial is seven days). Each one is sent at most once per (subscription, marker)
 pair; we record the marker in the subscription's `user_metadata` to
 keep the implementation table-less. The trial is card-required, so at
 `trial_end` Simeon's own cycle scheduler charges the card on file and the
@@ -25,7 +25,7 @@ from uuid import UUID
 import structlog
 
 from simeon.email.sender import enqueue_email
-from simeon.entitlements.tiers import TierKey
+from simeon.entitlements.tiers import TIER_NAMES, tier_from_value
 from simeon.kit.utils import utc_now
 from simeon.models import Organization, Subscription
 from simeon.organization.repository import OrganizationRepository
@@ -43,8 +43,8 @@ logging.getLogger(__name__)
 # reminder is due based on (trial_end - now).days. Kept in ASCENDING order
 # so _due_marker returns the most-urgent (smallest) threshold the trial has
 # reached — iterating descending was the original bug that made every run
-# resolve to 7, so the T-2 and T-0 reminders never fired.
-_REMINDER_DAYS = (0, 2, 7)
+# resolve to the largest, so the later reminders never fired.
+_REMINDER_DAYS = (0, 1, 3)
 _METADATA_KEY = "trial_reminders_sent"
 
 
@@ -59,13 +59,13 @@ def _due_marker(days_remaining: int) -> int | None:
 
     Returns the smallest marker M such that ``days_remaining <= M`` — i.e.
     the most-urgent threshold the trial has already reached. Examples
-    (markers 0, 2, 7):
+    (markers 0, 1, 3):
 
-      - days_remaining == 7  -> 7  (halfway reminder)
-      - days_remaining == 5  -> 7  (still in the T-7 window)
-      - days_remaining == 2  -> 2  (two days left)
+      - days_remaining == 3  -> 3  (halfway reminder)
+      - days_remaining == 2  -> 3  (still in the T-3 window)
+      - days_remaining == 1  -> 1  (one day left)
       - days_remaining == 0  -> 0  (last day)
-      - days_remaining == 9  -> None (T-7 not reached yet)
+      - days_remaining == 5  -> None (T-3 not reached yet)
 
     Per-marker idempotency (``_already_sent``) prevents a delayed cron from
     re-firing a threshold it skipped past.
@@ -143,11 +143,10 @@ def _tier_label(subscription: Subscription) -> str:
     tier_value = (subscription.product.user_metadata or {}).get("tier")
     if not isinstance(tier_value, str):
         return "Simeon"
-    try:
-        tier = TierKey(tier_value)
-    except ValueError:
+    tier = tier_from_value(tier_value)
+    if tier is None:
         return "Simeon"
-    return f"Simeon {tier.value.capitalize()}"
+    return f"Simeon {TIER_NAMES[tier]}"
 
 
 def _render(
@@ -160,24 +159,24 @@ def _render(
 
     when = trial_end.strftime("%A, %B %-d") if trial_end is not None else "soon"
 
-    if marker == 7:
+    billing = "<strong>app.simeonlabs.com/billing</strong>"
+    if marker == 3:
         subject = f"You're halfway through your {tier_label} trial"
         body = (
             f"Hi {organization.name},<br><br>"
-            f"You've been on the {tier_label} trial for a week — another "
-            f"week to go. When it ends on {when}, the card on file is "
-            "charged and your plan continues automatically. If you'd rather "
-            "not continue, you can cancel any time from "
-            "<strong>Settings → Plan</strong>."
+            f"You've had Simeon for a few days; three more to go. When the "
+            f"trial ends on {when}, the card on file is charged and your "
+            "plan continues automatically. If you'd rather not continue, "
+            f"you can cancel any time at {billing}."
         )
-    elif marker == 2:
-        subject = f"Your {tier_label} trial ends in 2 days"
+    elif marker == 1:
+        subject = f"Your {tier_label} trial ends tomorrow"
         body = (
             f"Hi {organization.name},<br><br>"
             f"Your {tier_label} trial ends on {when}, when the card on file "
             "is charged and your plan continues. Nothing to do to keep your "
-            "access. If you don't want to continue, cancel before then from "
-            "<strong>Settings → Plan</strong>."
+            "agents going. If you don't want to continue, cancel before then "
+            f"at {billing}."
         )
     else:  # marker == 0 — last day
         subject = f"Last day of your {tier_label} trial"
@@ -185,7 +184,7 @@ def _render(
             f"Hi {organization.name},<br><br>"
             f"This is the last day of your {tier_label} trial. The card on "
             "file will be charged and your plan continues. If you don't want "
-            "to continue, cancel today from <strong>Settings → Plan</strong>."
+            f"to continue, cancel today at {billing}."
         )
 
     html_content = (
@@ -276,7 +275,7 @@ async def check_pending_trial_reminders(
     session: AsyncSession, *, now: datetime | None = None
 ) -> dict[str, int]:
     """Scan every trialing platform-org subscription and send the next
-    due reminder (T-7 / T-2 / T-0). Idempotent — markers stamped on
+    due reminder (T-3 / T-1 / T-0). Idempotent — markers stamped on
     subscription.user_metadata prevent re-sending across cron runs.
     """
     counters = {

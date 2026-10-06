@@ -100,7 +100,7 @@ class TestMaybeSupersedePlatformTrial:
         )
 
         trial_product = await _tier_product(
-            save_fixture, platform_org=platform_org, tier="starter"
+            save_fixture, platform_org=platform_org, tier="standard"
         )
         trial = await create_subscription(
             save_fixture,
@@ -114,7 +114,7 @@ class TestMaybeSupersedePlatformTrial:
         studio_product = await _tier_product(
             save_fixture,
             platform_org=platform_org,
-            tier="studio",
+            tier="pro",
             monthly_cents=12900,
         )
         paid = await create_subscription(
@@ -147,7 +147,7 @@ class TestMaybeSupersedePlatformTrial:
             save_fixture, platform_org=platform_org, creator=creator
         )
         starter_product = await _tier_product(
-            save_fixture, platform_org=platform_org, tier="starter"
+            save_fixture, platform_org=platform_org, tier="standard"
         )
         prior_trial = await create_subscription(
             save_fixture,
@@ -160,7 +160,7 @@ class TestMaybeSupersedePlatformTrial:
         studio_product = await _tier_product(
             save_fixture,
             platform_org=platform_org,
-            tier="studio",
+            tier="pro",
             monthly_cents=12900,
         )
         new_trial = await create_subscription(
@@ -193,7 +193,7 @@ class TestMaybeSupersedePlatformTrial:
 
         # Some other active sub that must NOT be touched.
         other_product = await _tier_product(
-            save_fixture, platform_org=platform_org, tier="starter"
+            save_fixture, platform_org=platform_org, tier="standard"
         )
         other = await create_subscription(
             save_fixture,
@@ -273,7 +273,7 @@ class TestMaybeMarkPlatformTrialConsumed:
         assert "trial_consumed_at" not in (customer.user_metadata or {})
 
         product = await _tier_product(
-            save_fixture, platform_org=platform_org, tier="starter"
+            save_fixture, platform_org=platform_org, tier="standard"
         )
         trial = await create_subscription(
             save_fixture,
@@ -301,7 +301,7 @@ class TestMaybeMarkPlatformTrialConsumed:
             save_fixture, platform_org=platform_org, creator=creator
         )
         product = await _tier_product(
-            save_fixture, platform_org=platform_org, tier="starter"
+            save_fixture, platform_org=platform_org, tier="standard"
         )
         active = await create_subscription(
             save_fixture,
@@ -348,7 +348,7 @@ class TestCreateCheckout:
             save_fixture, platform_org=platform_org, creator=creator
         )
         starter = await _tier_product(
-            save_fixture, platform_org=platform_org, tier="starter"
+            save_fixture, platform_org=platform_org, tier="standard"
         )
         trial = await create_subscription(
             save_fixture,
@@ -361,7 +361,7 @@ class TestCreateCheckout:
         await _tier_product(
             save_fixture,
             platform_org=platform_org,
-            tier="studio",
+            tier="pro",
             monthly_cents=12900,
         )
 
@@ -370,7 +370,7 @@ class TestCreateCheckout:
         await platform_upgrade.create_checkout(
             session,
             organization=creator,
-            tier=TierKey.studio,
+            tier=TierKey.pro,
             billing_interval="month",
             success_url="https://app.test/done",
             billing_email="creator@real.test",
@@ -403,14 +403,14 @@ class TestCreateCheckout:
         await _platform_customer(
             save_fixture, platform_org=platform_org, creator=creator
         )
-        await _tier_product(save_fixture, platform_org=platform_org, tier="starter")
+        await _tier_product(save_fixture, platform_org=platform_org, tier="standard")
 
         create_mock = self._mock_checkout_create(mocker)
 
         await platform_upgrade.create_checkout(
             session,
             organization=creator,
-            tier=TierKey.starter,
+            tier=TierKey.standard,
             billing_interval="month",
         )
 
@@ -441,14 +441,14 @@ class TestCreateCheckout:
             "trial_consumed_at": utc_now().isoformat(),
         }
         await save_fixture(customer)
-        await _tier_product(save_fixture, platform_org=platform_org, tier="starter")
+        await _tier_product(save_fixture, platform_org=platform_org, tier="standard")
 
         create_mock = self._mock_checkout_create(mocker)
 
         await platform_upgrade.create_checkout(
             session,
             organization=creator,
-            tier=TierKey.starter,
+            tier=TierKey.standard,
             billing_interval="month",
         )
 
@@ -469,7 +469,7 @@ class TestCreateCheckout:
             save_fixture, platform_org=platform_org, creator=creator
         )
         starter = await _tier_product(
-            save_fixture, platform_org=platform_org, tier="starter"
+            save_fixture, platform_org=platform_org, tier="standard"
         )
         await create_subscription(
             save_fixture,
@@ -480,7 +480,7 @@ class TestCreateCheckout:
         await _tier_product(
             save_fixture,
             platform_org=platform_org,
-            tier="studio",
+            tier="pro",
             monthly_cents=12900,
         )
         self._mock_checkout_create(mocker)
@@ -489,7 +489,7 @@ class TestCreateCheckout:
             await platform_upgrade.create_checkout(
                 session,
                 organization=creator,
-                tier=TierKey.studio,
+                tier=TierKey.pro,
                 billing_interval="month",
             )
 
@@ -506,7 +506,7 @@ class TestCreateCheckout:
             save_fixture, platform_org=platform_org, creator=creator
         )
         synthetic = customer.email
-        await _tier_product(save_fixture, platform_org=platform_org, tier="starter")
+        await _tier_product(save_fixture, platform_org=platform_org, tier="standard")
         self._mock_checkout_create(mocker)
 
         assert synthetic.endswith("@billing.simeonlabs.internal")
@@ -514,7 +514,7 @@ class TestCreateCheckout:
         await platform_upgrade.create_checkout(
             session,
             organization=creator,
-            tier=TierKey.starter,
+            tier=TierKey.standard,
             billing_interval="month",
             billing_email="real-creator@gmail.com",
         )
@@ -534,7 +534,7 @@ class TestCreateCheckout:
         # still end up with a DELIVERABLE address, not the dead placeholder.
         platform_org = await create_organization(save_fixture)
         _patch_platform_org_id(mocker, platform_org.id)
-        await _tier_product(save_fixture, platform_org=platform_org, tier="starter")
+        await _tier_product(save_fixture, platform_org=platform_org, tier="standard")
         self._mock_checkout_create(mocker)
         real_email = "niki@gmail.com"
 
@@ -546,7 +546,7 @@ class TestCreateCheckout:
         await platform_upgrade.create_checkout(
             session,
             organization=org_a,
-            tier=TierKey.starter,
+            tier=TierKey.standard,
             billing_interval="month",
             billing_email=real_email,
         )
@@ -563,7 +563,7 @@ class TestCreateCheckout:
         await platform_upgrade.create_checkout(
             session,
             organization=org_b,
-            tier=TierKey.starter,
+            tier=TierKey.standard,
             billing_interval="month",
             billing_email=real_email,
         )

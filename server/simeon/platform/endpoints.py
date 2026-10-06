@@ -1,16 +1,16 @@
 """Dashboard-facing endpoints for Simeon's own platform billing.
 
 GET  /v1/platform/plans
-    Lists Pro/Studio/Scale with their pricing and entitlements.
+    Lists Standard/Pro/Max with their pricing, credits and entitlements.
 
 GET  /v1/platform/organizations/{organization_id}/subscription
     Current Simeon subscription state for a creator org plus the
     resolved entitlements.
 
 POST /v1/platform/organizations/{organization_id}/upgrade-checkout
-    Starts a Simeon checkout for the target Pro/Studio/Scale tier.
-    Returns a URL the creator visits to enter their card and complete
-    the upgrade.
+    Starts a Simeon checkout for the target Standard/Pro/Max plan.
+    Returns a URL the person visits to enter their card and complete
+    the upgrade (or start the 7-day trial, card on file).
 """
 
 from datetime import datetime
@@ -40,7 +40,7 @@ from simeon.customer_session.service import (
 )
 from simeon.entitlements.schemas import Entitlements
 from simeon.entitlements.service import entitlements as entitlements_service
-from simeon.entitlements.tiers import TierKey, get_definition
+from simeon.entitlements.tiers import PAID_TIERS, TIER_NAMES, TierKey, get_definition
 from simeon.enums import SubscriptionRecurringInterval
 from simeon.exceptions import ResourceNotFound
 from simeon.integrations.resend import domains as resend_domains
@@ -109,12 +109,8 @@ log: structlog.stdlib.BoundLogger = structlog.get_logger()
 router = APIRouter(prefix="/platform", tags=["platform", APITag.private])
 
 
-_PLAN_TIERS = (TierKey.starter, TierKey.studio, TierKey.scale)
-_TIER_NAMES = {
-    TierKey.starter: "Simeon Starter",
-    TierKey.studio: "Simeon Studio",
-    TierKey.scale: "Simeon Scale",
-}
+_PLAN_TIERS = PAID_TIERS
+_TIER_NAMES = {tier: f"Simeon {TIER_NAMES[tier]}" for tier in PAID_TIERS}
 
 
 def _trial_days_from_product(product: Product | None) -> int | None:
@@ -187,6 +183,8 @@ async def _plan_for_tier(
             definition.monthly_price_cents, _annual_price_cents(annual_product)
         ),
         trial_days=_trial_days_from_product(monthly_product),
+        weekly_credits=definition.weekly_credits,
+        trial_credits=definition.trial_credits,
         transaction_fee=Entitlements.from_dataclass(definition).transaction_fee,
         features=Entitlements.from_dataclass(definition).features,
         limits=Entitlements.from_dataclass(definition).limits,
@@ -446,8 +444,8 @@ async def switch_plan(
     session: AsyncSession = Depends(get_db_session),
     locker: Locker = Depends(get_locker),
 ) -> SubscriptionSchema:
-    """Switch a creator's current Simeon subscription from one paid tier
-    to another (Starter <-> Studio <-> Scale). The card on file is reused;
+    """Switch a person's current Simeon subscription from one paid plan
+    to another (Standard <-> Pro <-> Max). The card on file is reused;
     proration is invoiced immediately. Use the upgrade-checkout endpoint
     to convert a trialing subscription or start a new one, and the cancel
     endpoint to end the paid subscription.
