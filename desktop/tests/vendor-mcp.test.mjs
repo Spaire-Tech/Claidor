@@ -320,8 +320,10 @@ test("every store card has a logo, and in-repo data marks skip a network fetch",
     assert.match(notion.logoUrl, /^data:image\//);
     const slack = listing.plugins.find((plugin) => plugin.pluginId === "slack");
     assert.match(slack.logoUrl, /^data:image\//);
+    // Every mark is embedded now (6 October 2026): none is fetched from a favicon service.
     const linear = listing.plugins.find((plugin) => plugin.pluginId === "linear");
-    assert.match(linear.logoUrl, /^https:\/\/www\.google\.com\/s2\/favicons\?/);
+    assert.match(linear.logoUrl, /^data:image\//);
+    assert.ok(listing.plugins.every((plugin) => plugin.logoUrl.startsWith("data:image/")));
     const resolver = await (await import("node:fs/promises")).readFile(
       path.join(repoRoot, "source/shared/node/mcp/mcp-marketplace-logo.ts"),
       "utf8",
