@@ -691,6 +691,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
    yet, inside the picture. The call reads as a call, not a text thread: a line with a pulsing dot
    and a waveform, and each line spoken by a named side. */
 .ring .trust-top p{margin-bottom:0}
+.ring[hidden]{display:none}
 .btn.white{border:0;background:#fff;color:#000}
 .btn.white:hover{background:#f5f5f7}
 .ring-box{position:relative;margin-top:clamp(40px,4vw,80px);aspect-ratio:16/10;border-radius:28px;overflow:hidden;background:#111;container-type:inline-size}
@@ -1022,7 +1023,8 @@ footer nav{display:flex;gap:18px}
 </section>
 
 
-<section class="trust ring" aria-label="Agents that answer your customers&#8217; calls">
+<!-- Hidden until the phone product ships (the founder, 6 October 2026): remove `hidden` to show it. -->
+<section class="trust ring" hidden aria-label="Agents that answer your customers&#8217; calls">
   <div class="wrap">
     <div class="trust-top">
       <h2>An agent that picks up when your customers call.</h2>
