@@ -965,7 +965,7 @@ export function patchOriginalFlightsStylesheet(css) {
 }
 
 /**
- * "Your own Chief of Staff" (titled "Your personal COO" until 6 October 2026), the welcome step after "Meet Simeon" (3 October 2026,
+ * "Your personal COO", the welcome step after "Meet Simeon" (3 October 2026,
  * the founder: "an animated very apple like, very premium thing that says
  * that simeon is your personal COO and that he staffs agents for whatever
  * job you need done … agents coming out of simeon, and simeon at the
@@ -1001,7 +1001,7 @@ const COO_SOURCE = [
   "const lines=p.jsx(fde,{x:0,y:" + COO_HERO_Y + ",ariaHidden:!0,className:\"simeon-coo__web\",children:p.jsxs(\"svg\",{width:640,height:440,viewBox:\"-320 -220 640 440\",children:[p.jsx(\"circle\",{className:\"simeon-coo__pulse\",cx:0,cy:0,r:64}),...__simeonCooCrew.map(a=>p.jsx(\"line\",{className:\"simeon-coo__line\",x1:a.x1,y1:a.y1,x2:a.x2,y2:a.y2,pathLength:1,style:{animationDelay:`${a.delay+140}ms`}},a.id))]})},\"web\");",
   "const crew=__simeonCooCrew.map(a=>p.jsx(fde,{x:a.x,y:a.y,ariaHidden:!0,className:\"simeon-coo__seat\",children:p.jsxs(\"div\",{className:\"simeon-coo__agent\",style:{\"--simeon-coo-dx\":`${-a.x}px`,\"--simeon-coo-dy\":`${" + COO_HERO_Y + "-a.y}px`,animationDelay:`${a.delay}ms`},children:[p.jsx(\"div\",{className:\"simeon-coo__float\",style:{animationDelay:`${a.delay+900}ms`},children:p.jsx(sd,{\"aria-hidden\":!0,color:a.color,paused:still,shape:\"cloud\",sizePx:52,state:\"idle\"})}),p.jsx(\"span\",{className:\"simeon-coo__role\",style:{animationDelay:`${a.delay+420}ms`},children:a.label})]})},a.id));",
   "const line=p.jsx(fde,{x:0,y:-196,className:\"simeon-coo__copy\",children:p.jsx(\"p\",{children:\"Simeon staffs an agent for whatever needs doing.\"})},\"copy\");",
-  "return p.jsx(tye,{className:re(\"sand-onboarding__coo\",\"simeon-coo\"),footer:p.jsx(nye,{onBack:i,onForward:r}),headingId:t,title:\"Your own Chief of Staff\",children:[lines,...crew,line]})}",
+  "return p.jsx(tye,{className:re(\"sand-onboarding__coo\",\"simeon-coo\"),footer:p.jsx(nye,{onBack:i,onForward:r}),headingId:t,title:\"Your personal COO\",children:[lines,...crew,line]})}",
 ].join("");
 
 export const COO_REPLACEMENTS = Object.freeze([

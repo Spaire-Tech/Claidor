@@ -141,7 +141,7 @@ test("the COO step sits after Meet Simeon, with Simeon at the centre and six age
   assert.equal(title[2], 'N="Your agents have their own computer and work just like you"');
   assert.match(screen[2], /^case"coo":return p\.jsx\(__simeonCooStep,\{headingId:xn,onBack:\(\)=>x\.goBack\(ln\),onForward:\(\)=>x\.advance\(ln\)\}\);/);
   assert.match(hero[2], /^case"coo":return\{\.\.\.e,x:0,y:-40,scale:1,opacity:1/);
-  assert.match(component[2], /title:"Your own Chief of Staff"/);
+  assert.match(component[2], /title:"Your personal COO"/);
   assert.match(component[2], /Simeon staffs an agent for whatever needs doing\./);
   assert.equal((component[2].match(/"label":/g) ?? []).length, 6);
   new Function("p", "fde", "tye", "nye", "sd", "re", "Fo", component[2].replace(/function sjn\(n\)\{$/, ""));
