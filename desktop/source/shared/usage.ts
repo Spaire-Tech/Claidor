@@ -66,6 +66,15 @@ export interface SandUsageUpgradeCta {
 }
 
 /** Exact value assembled by `electron-main/account/account-profile.ts`. */
+/** The Manage plan card in Settings → Usage & Billing (6 October 2026): the plan, when it resets, the next plan up. */
+export interface SandManagePlan {
+  readonly planName: string;
+  readonly tier: string;
+  readonly status: string;
+  readonly periodEndMs: number | null;
+  readonly nextTier: { readonly tier: string; readonly label: string } | null;
+}
+
 export interface SandUsageSummary {
   readonly isEnterprise: boolean;
   readonly sandUsagePercent: number | null;
@@ -77,4 +86,6 @@ export interface SandUsageSummary {
   readonly canCancelSandTrial: boolean;
   readonly onDemand: SandUsageOnDemand | null;
   readonly upgradeCta: SandUsageUpgradeCta | null;
+  /** Null without a plan on Stripe (the free month, no plan): the card is not drawn. */
+  readonly managePlan?: SandManagePlan | null;
 }
