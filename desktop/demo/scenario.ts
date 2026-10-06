@@ -211,7 +211,7 @@ export function onboardingScript(agent: string, stage: number): Beat[] {
   if (stage === 0) {
     return [
       typing(700, true),
-      append(2600, says("o0a", 0, "Hi Bass, I'm Simeon, your COO. Before I start staffing your team, I'd like to know where you want me first.")),
+      append(2600, says("o0a", 0, "Hi Bass, I'm Simeon, your Chief of Staff. Before I start staffing your team, I'd like to know where you want me first.")),
       append(3600, question("o0q", "What should I mainly help you with?", ["Run my day: calendar and inbox", "Keep my projects moving", "Prepare me for meetings", "Lead my other agents"], "Pick one, or type your own. You can hand me a real task instead, and I'll just start on it.")),
       typing(3700, false),
     ];
