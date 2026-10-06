@@ -143,6 +143,8 @@ export function createAccountEdgePort(deps: {
   readonly fetchPrReviewPreferences: (getAccessToken: AccessTokenReader) => Promise<unknown>;
   readonly fetchPrivacyModeEnabled: (getAccessToken: AccessTokenReader) => Promise<boolean>;
   readonly cancelTrial: (getAccessToken: AccessTokenReader) => Promise<unknown>;
+  readonly fetchPlanBilling: (getAccessToken: AccessTokenReader) => Promise<unknown>;
+  readonly openPlanPortal: (getAccessToken: AccessTokenReader, flow: "cancel" | "update" | "payment_method" | null) => Promise<string>;
   readonly invokeDashboardAction: (getAccessToken: AccessTokenReader, request: DashboardActionRequest) => Promise<unknown>;
   readonly productDisplayName?: string;
 }) {
@@ -178,6 +180,20 @@ export function createAccountEdgePort(deps: {
     getPrReviewPreferences: async () => withService(async (service) => (await service.getStatus()).kind === "logged-in" ? await deps.fetchPrReviewPreferences(tokenReader(service)) : NO_SAND_PR_REVIEW_PREFERENCES),
     getPrivacyModeEnabled: async () => withService(async (service) => (await service.getStatus()).kind === "logged-in" ? await deps.fetchPrivacyModeEnabled(tokenReader(service)) : true),
     cancelTrial: async () => !await deps.isUsagePageEnabled() ? { ok: false, message: "This isn’t available right now" } : await withService(async (service) => (await service.getStatus()).kind === "logged-in" ? await deps.cancelTrial(tokenReader(service)) : { ok: false, message: "Sign in to Simeon to continue" }),
+    getPlanBilling: async () => withService(async (service) => (await service.getStatus()).kind === "logged-in" ? await deps.fetchPlanBilling(tokenReader(service)) : null),
+    openPlanPortal: async (flow: unknown) => {
+      const allowed = flow === "cancel" || flow === "update" || flow === "payment_method" ? flow : null;
+      return await withService(async (service) => {
+        if ((await service.getStatus()).kind !== "logged-in") return { ok: false, portalUrl: null, message: "Sign in to Simeon to continue" };
+        try {
+          const portalUrl = await deps.openPlanPortal(tokenReader(service), allowed);
+          return { ok: true, portalUrl, message: null };
+        } catch (error) {
+          const message = error instanceof Error && error.message.length > 0 ? error.message : "Could not open your billing page.";
+          return { ok: false, portalUrl: null, message };
+        }
+      });
+    },
     invokeDashboardAction: async (raw: unknown) => {
       const request = parseDashboardActionRequest(raw);
       if (request == null) return { ok: false, message: `This action isn’t supported by this version of ${deps.productDisplayName ?? "Simeon"}` };

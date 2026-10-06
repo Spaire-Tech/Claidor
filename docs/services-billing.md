@@ -31,8 +31,12 @@ unset. The code stays with the inherited shop
 The numbers live in one place, `server/simeon/entitlements/tiers.py`
 (`weekly_credits`, `trial_credits`, `monthly_price_cents`), and
 `server/simeon/plans/catalog.py` turns them into what Stripe sells. The web
-app's billing page reads the prices from the server (`GET /v1/plans/`);
-the site's pricing section repeats them by hand.
+app's billing page reads them from the server (`GET /v1/plans/`). The site's
+pricing section repeats the same monthly figures by hand. The page shows
+that section: Trial, Standard, Pro and Max, monthly only. The live site has
+no monthly/yearly switch, so the page has none. A yearly plan is a switch
+from Settings in the Mac app, which opens Stripe's portal on the
+subscription.
 
 A credit is one input token on the middle model at $3 per million
 (`services-core.md`, section 2). A typical task is about 100,000 credits.
@@ -66,8 +70,11 @@ was; the public name and statement descriptor are what a person sees.
 
 ## 3. How a person gets a plan
 
-1. **Starting.** The billing page (`app.simeonlabs.com/billing`) posts
-   `POST /v1/plans/checkout` with a tier and an interval. The server makes
+1. **Starting.** The billing page (`app.simeonlabs.com/billing`) is the
+   site's pricing section. Each button posts `POST /v1/plans/checkout` for
+   that plan, monthly. The Trial button starts Standard monthly; the server
+   adds the seven-day trial for a person who never had one, and charges at
+   once for a person who did. The server makes
    the Stripe customer on first use (kept on `users.stripe_customer_id`),
    finds the price by its lookup key, and opens a Stripe Checkout session:
    `mode=subscription`, the card always collected, a seven-day trial for a
@@ -96,15 +103,22 @@ was; the public name and statement descriptor are what a person sees.
    (`trial_end=now`), so the card is charged today; otherwise the trial is
    recorded. A person who had a trial gets none on a later checkout
    either.
-4. **Changing and ending.** `POST /v1/plans/portal` opens Stripe's Customer
-   Portal, optionally on one step (`flow`: `cancel`, `update`,
-   `payment_method`). Cards, invoices, receipts, a plan switch and a
-   cancellation all happen there; Stripe sends the resulting
-   `customer.subscription.updated` and the copy follows. The Mac app's
-   Settings page has a Cancel trial button; it calls Connect
-   `DashboardService/CancelSandTrial` (`server/simeon/sand/dashboard.py`),
-   which sets `cancel_at_period_end` on Stripe, so the person keeps the
-   remaining days and is never charged.
+4. **Changing and ending.** The web page is not where a plan is managed.
+   Someone who already has one sees a short note: manage it in the Simeon
+   app, under Settings and Usage & Billing. The app reads
+   `GET /desktop/api/user/billing` and opens Stripe's Customer Portal with
+   `POST /desktop/api/user/billing/portal` (`flow`: `cancel`, `update`,
+   `payment_method`, or none for the invoices). Switching plan or interval
+   is `update`. Cancelling a paid plan is `cancel`. The card form is
+   Stripe's (`payment_method`). `POST /v1/plans/portal` is the same portal
+   for a browser session. Stripe sends the resulting
+   `customer.subscription.updated` and the copy follows. Cancelling a trial
+   stays Connect `DashboardService/CancelSandTrial`
+   (`server/simeon/sand/dashboard.py`): the existing Cancel trial button,
+   and the plan block's Cancel trial while the trial can still be
+   cancelled. It sets `cancel_at_period_end` on Stripe, so the person keeps
+   the remaining days and is never charged. A trial can show both of those
+   buttons; they do the same thing.
 5. **The Mac sign-in.** `GET /loginDeepControl` reads the person's
    allowance before asking them to confirm the sign-in. With billing
    required and no trialing or active subscription, it sends the browser
@@ -137,6 +151,15 @@ added on 5 October 2026 feed the app's usage summary
 (`desktop/source/electron-main/account/account-profile.ts`,
 `usageSummaryFromSimeonQuota`): `tier`, `trialEndsAt`, `trialCancelable`,
 `onDemand` (null until the server meters it), `upgradeUrl`.
+
+`GET /desktop/api/user/billing` is what Settings' plan block reads: the
+tier, the status, the interval, the period and trial dates, whether the
+portal can open, whether the plan can be changed, and the weekly and trial
+credits. A synced trialing, active or past-due row is shown even when
+billing is not required, so the person can still reach the card and the
+invoices. With no such row, and a free month, the answer is `status: free`,
+`tier: unmanaged`. `POST /desktop/api/user/billing/portal` returns the
+portal URL. Neither route commits the session; the request does.
 
 Connections (`services-agents.md`, section 7) are included on every plan and
 on the trial (`ENTITLED_PLANS` in `server/simeon/connectors/service.py`).
@@ -218,10 +241,20 @@ and the Customer Portal configuration by hand (section 2). The migration
   is missing is a metered price on each product, a cap per person, and the
   allowance letting a metered call through once the week's credits are
   used.
-- **The renderer's paywall cover** opens the upstream's URL; until it is patched
-  (`desktop/scripts/lib/router-renderer-patch.mjs`), Connect
-  `GetSandAccessStatus` keeps answering GRANTED and the gate is the sign-in
-  page plus the proxy's 402.
+- **The renderer's paywall cover.** The cover's button reads `const pft`.
+  The logo replacement in `desktop/scripts/lib/router-renderer-patch.mjs`
+  rewrites that constant to
+  `https://app.simeonlabs.com/billing?plan=standard`. The replacement runs
+  before the brand pass, and the committed renderer
+  (`clients/apps/web/public/app/assets/index-UbX-y3il.js`) already has the
+  raw onboarding URL gone and the two clicks as `s(pft)` and `e(pft)`,
+  with `pft` still `https://simeonlabs.com` until the next package. A brand
+  phrase that names the raw onboarding URL matches nothing after the logo
+  pass, so it cannot retarget the button. The Settings plan block is a div
+  the same patch adds to the usage panel; the preload fills it. Neither
+  has been seen in the packaged app on a Mac. Until that package ships,
+  Connect `GetSandAccessStatus` keeps answering GRANTED and the gate is the
+  sign-in page plus the proxy's 402.
 - **Teams**: an organisation with several members and pooled credits.
 - **Verified on a Mac**: nothing in this file has run in the packaged app
   against a Stripe test account yet. The server tests cover the catalogue,

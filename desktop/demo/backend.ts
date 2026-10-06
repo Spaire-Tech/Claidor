@@ -216,6 +216,8 @@ export function createDemoBackend(hooks: DemoBackendHooks) {
     getBoxMigrationStatus: () => null,
     getExperimentsSnapshot: () => null,
     getAccountUsageSummary: () => null,
+    getPlanBilling: () => null,
+    openPlanPortal: () => ({ ok: false, portalUrl: null, message: "Open Simeon on your Mac to manage the plan." }),
     getAccountPrReviewPreferences: () => null,
     getHostPinnedAgents: () => [],
     getHostSidebarSections: () => [],

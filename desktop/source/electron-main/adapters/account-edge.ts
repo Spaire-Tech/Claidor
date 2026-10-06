@@ -3,10 +3,12 @@ import { createAccountEdgePort, createTranscriptionManagerEnsure, type AccountRu
 import { resolveAccountAvatarDataUrl } from "../account/account-avatar.js";
 import {
   cancelSandTrial,
+  fetchPlanBilling,
   fetchSandUsageSummary,
   fetchSandWeeklyUsage,
   fetchUserPrivacyModeEnabled,
   invokeSandDashboardAction,
+  openPlanPortal,
 } from "../account/account-profile.js";
 import { fetchSandPrReviewPreferences } from "../account/pr-review.js";
 import type { ProductionServiceContext } from "../main-production-services.js";
@@ -66,6 +68,8 @@ export function createElectronProductionAccountBinding(): ElectronProductionAdap
         fetchPrReviewPreferences: (getAccessToken) => fetchSandPrReviewPreferences(getAccessToken),
         fetchPrivacyModeEnabled: (getAccessToken) => fetchUserPrivacyModeEnabled(getAccessToken, { getMachineId }),
         cancelTrial: (getAccessToken) => cancelSandTrial(getAccessToken, { getMachineId }),
+        fetchPlanBilling: (getAccessToken) => fetchPlanBilling(getAccessToken, { getMachineId }),
+        openPlanPortal: (getAccessToken, flow) => openPlanPortal(getAccessToken, flow, { getMachineId }),
         invokeDashboardAction: (getAccessToken, request) => invokeSandDashboardAction(getAccessToken, request, { getMachineId }),
         productDisplayName: SAND_PRODUCT_DISPLAY_NAME,
       });

@@ -82,6 +82,25 @@ export interface AccountProfileDeps {
 
 export const SIMEON_PROFILE_PATH = "user/profile";
 export const SIMEON_QUOTA_PATH = "user/quota";
+export const SIMEON_BILLING_PATH = "user/billing";
+
+/** `GET /desktop/api/user/billing`. The plan block in Settings reads this. */
+export interface SimeonPlanBilling {
+  readonly tier: string;
+  readonly plan_name: string;
+  readonly status: string;
+  readonly billing_interval: "month" | "year" | null;
+  readonly current_period_end: string | null;
+  readonly trial_end: string | null;
+  readonly cancel_at_period_end: boolean;
+  readonly can_open_portal: boolean;
+  readonly can_change_plan: boolean;
+  readonly trial_cancelable: boolean;
+  readonly weekly_credits: number;
+  readonly trial_credits: number;
+}
+
+export type PlanPortalFlow = "cancel" | "update" | "payment_method";
 
 /** `user_payload()` in `server/simeon/desktop/service.py`. */
 export interface SimeonProfileRow {
@@ -313,5 +332,14 @@ export async function fetchLocalToolPermissionCeiling(getAccessToken: AccessToke
 // renderer's `loadUsageState` turns it into its "failed" state with the
 // server's sentence.
 export async function fetchSandUsageSummary(getAccessToken: AccessTokenReader, deps: AccountProfileDeps): Promise<unknown> { return usageSummaryFromSimeonQuota(await readSimeonQuota(getAccessToken, deps)); }
+export async function fetchPlanBilling(getAccessToken: AccessTokenReader, deps: AccountProfileDeps): Promise<SimeonPlanBilling> {
+  return await simeonApiData<SimeonPlanBilling>(simeonAuth(getAccessToken, deps), SIMEON_BILLING_PATH, { method: "GET", ...(deps.fetch === undefined ? {} : { fetch: deps.fetch }) });
+}
+export async function openPlanPortal(getAccessToken: AccessTokenReader, flow: PlanPortalFlow | null, deps: AccountProfileDeps): Promise<string> {
+  const row = await simeonApiData<{ portal_url?: string }>(simeonAuth(getAccessToken, deps), `${SIMEON_BILLING_PATH}/portal`, { method: "POST", json: flow == null ? {} : { flow }, ...(deps.fetch === undefined ? {} : { fetch: deps.fetch }) });
+  const url = row.portal_url;
+  if (typeof url !== "string" || url.length === 0) throw new Error("Simeon Labs' server did not return a billing page.");
+  return url;
+}
 export async function cancelSandTrial(getAccessToken: AccessTokenReader, deps: AccountProfileDeps): Promise<{ ok: boolean; message: string | null }> { try { await profileClient(getAccessToken, deps).cancelSandTrial({}, { timeoutMs: USAGE_REQUEST_TIMEOUT_MS }); return { ok: true, message: null }; } catch (error) { return { ok: false, message: nonEmpty(deps.connectRawMessage?.(error)) ?? null }; } }
 export async function invokeSandDashboardAction(getAccessToken: AccessTokenReader, request: { readonly action: string; readonly args: Readonly<Record<string, string>> }, deps: AccountProfileDeps): Promise<{ ok: boolean; message: string | null }> { const response = await profileClient(getAccessToken, deps).clientAction(request, { timeoutMs: USAGE_REQUEST_TIMEOUT_MS }); return { ok: response.success, message: nonEmpty(response.success ? response.infoMessage : response.errorMessage) ?? null }; }

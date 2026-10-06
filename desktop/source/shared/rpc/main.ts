@@ -84,6 +84,8 @@ export const MAIN_METHOD_TABLE = {
   getSandAccessFresh: { args: "none" },
   invokeAccountDashboardAction: { args: "object" },
   cancelAccountTrial: { args: "none" },
+  getPlanBilling: { args: "none" },
+  openPlanPortal: { args: "object" },
   reportAgentLoad: { args: "object" },
   reportAccessBlocked: { args: "object" },
   reportAgentsUnreachable: { args: "object" },

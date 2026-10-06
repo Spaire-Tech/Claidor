@@ -30,7 +30,7 @@ import json
 from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 from urllib.parse import parse_qsl, quote, urlencode, urlparse, urlunparse
 
 import httpx
@@ -48,11 +48,15 @@ from simeon.auth.dependencies import WebUserOrAnonymous
 from simeon.auth.models import is_user
 from simeon.config import settings
 from simeon.connectors.endpoints import router as connectors_router
+from simeon.entitlements.tiers import TIER_NAMES, TierKey, tier_from_value
 from simeon.kit.db.postgres import AsyncSessionMaker
 from simeon.kit.utils import utc_now
 from simeon.maty.desktop_endpoints import router as maty_jobs_router
-from simeon.models import DesktopSession
+from simeon.models import DesktopSession, User
 from simeon.openapi import APITag
+from simeon.plans.endpoints import current_subscription
+from simeon.plans.service import PlansError
+from simeon.plans.service import plans as plans_service
 from simeon.postgres import AsyncSession, get_db_session
 from simeon.routing import APIRouter
 
@@ -67,7 +71,6 @@ from .auth import (
 from .capabilities import router as capabilities_router
 from .composio import forward as composio_forward
 from .flights import router as flights_router
-from .releases import router as releases_router
 
 # Straight from the price list rather than through `service`, which
 # re-exports only what it uses itself — a name it merely passed through
@@ -84,6 +87,7 @@ from .proxy_common import budget_refusal
 from .proxy_common import error_response as _error
 from .proxy_common import log_upstream_refusal as _log_upstream_refusal
 from .proxy_common import upstream_timeout as _timeout
+from .releases import router as releases_router
 from .service import (
     AUTH_CODE_INVALID,
     MEMORY_FILE_LIMIT,
@@ -359,6 +363,88 @@ async def profile_summary(
     session: AsyncSession = Depends(get_db_session),
 ) -> JSONResponse:
     return _ok(await desktop.profile_summary(session, desktop_session.user))
+
+
+def _iso(value: object) -> str | None:
+    if value is None:
+        return None
+    isoformat = getattr(value, "isoformat", None)
+    return isoformat() if callable(isoformat) else None
+
+
+async def _billing_payload(session: AsyncSession, user: User) -> dict[str, Any]:
+    """What Settings shows about the plan, and whether Stripe's portal can open.
+
+    A free month (billing off, or an exempt e-mail) with no live subscription
+    says `free`. A synced trialing, active or past-due row is the plan, even
+    on a server where the sign-in gate is off, so the person can still reach
+    the card and the invoices.
+    """
+    row = await plans_service.subscription_of(session, user)
+    current = current_subscription(row, user.stripe_customer_id)
+    allowance = await desktop.allowance(session, user)
+    billable = row is not None and row.billable
+    tier_key = tier_from_value(row.tier) if row is not None and row.tier else None
+    tier = current.tier.value
+    status = current.status
+    plan_name = (
+        TIER_NAMES.get(tier_key, allowance.plan_name)
+        if tier_key
+        else allowance.plan_name
+    )
+    if not billable and allowance.free:
+        tier = TierKey.unmanaged.value
+        status = allowance.status
+        plan_name = allowance.plan_name
+    elif not billable:
+        plan_name = allowance.plan_name
+    return {
+        "tier": tier,
+        "plan_name": plan_name,
+        "status": status,
+        "billing_interval": current.billing_interval,
+        "current_period_end": _iso(current.current_period_end),
+        "trial_end": _iso(current.trial_end),
+        "cancel_at_period_end": current.cancel_at_period_end,
+        "can_open_portal": current.stripe_customer_id is not None,
+        "can_change_plan": billable,
+        "trial_cancelable": bool(
+            row is not None and row.trialing and not row.cancel_at_period_end
+        ),
+        "weekly_credits": current.entitlements.weekly_credits,
+        "trial_credits": current.entitlements.trial_credits,
+    }
+
+
+@router.get("/api/user/billing", name="desktop:billing")
+async def billing(
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    return _ok(await _billing_payload(session, desktop_session.user))
+
+
+class BillingPortalBody(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    flow: Literal["cancel", "update", "payment_method"] | None = None
+
+
+@router.post("/api/user/billing/portal", name="desktop:billing_portal")
+async def billing_portal(
+    body: BillingPortalBody,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    """A Stripe Customer Portal URL. The card form is Stripe's."""
+    try:
+        url = await plans_service.create_portal(
+            session,
+            desktop_session.user,
+            flow=body.flow,
+        )
+    except PlansError as error:
+        return _fail(error.status_code, error.message, status=error.status_code)
+    return _ok({"portal_url": url})
 
 
 # --- feedback ---------------------------------------------------------------

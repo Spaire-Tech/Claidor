@@ -493,6 +493,17 @@
     {
       "kind": "guard",
       "names": [
+        "cursor.com"
+      ],
+      "paths": [
+        "desktop/tests/billing-plan.test.mjs"
+      ],
+      "match": "bot/onboarding",
+      "reason": "The billing-page test names the access cover's upstream onboarding URL to prove the logo replacement rewrites it, and that a later brand phrase naming that URL no longer matches."
+    },
+    {
+      "kind": "guard",
+      "names": [
         "grok",
         "cursor.com",
         "anysphere"

@@ -211,6 +211,15 @@ export function createWebBackend(hooks: WebBackendHooks) {
     getSandAccessFresh: () => ({ state: api.isSignedIn() ? "granted" : "unknown", reason: "none" }),
     invokeAccountDashboardAction: () => notHere("That account action"),
     cancelAccountTrial: () => notHere("That account action"),
+    getPlanBilling: () => api.data("user/billing"),
+    openPlanPortal: async (args: { flow?: string } | undefined) => {
+      const flow = args?.flow === "cancel" || args?.flow === "update" || args?.flow === "payment_method" ? args.flow : undefined;
+      const row = await api.data<{ portal_url?: string }>("user/billing/portal", { json: flow == null ? {} : { flow } });
+      const url = typeof row?.portal_url === "string" ? row.portal_url : "";
+      const opener = (globalThis as { window?: { open(url: string, target: string, features: string): unknown } }).window;
+      if (url.length > 0 && opener != null) opener.open(url, "_blank", "noopener");
+      return { ok: url.length > 0, portalUrl: url.length > 0 ? url : null, message: url.length > 0 ? null : "Could not open your billing page." };
+    },
     submitFeedback: (args: any) => api.data("feedback", { json: { ...(args ?? {}), platform: "web" } }),
     getAvailableModels: async () => availableModelsJson(await api.data<unknown>("models/available")),
     getExperimentsSnapshot: () => null,

@@ -1,0 +1,254 @@
+/* The site's pricing section (sites/simeonlabs.com/source/page.html, #pricing),
+   on the billing page. Cards, type and breakpoints are the site's. The
+   section padding is shorter than the homepage's, so the same cards sit on
+   a page. Switzer is the site's price face; the file is not in this repo,
+   so the numbers fall through to the site's system stack. */
+.simeon-billing {
+  --page: #fff;
+  --ink: #1d1d1f;
+  --ink2: #6e6e73;
+  --ink3: #86868b;
+  --font:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', Inter,
+    'Helvetica Neue', Arial, sans-serif;
+  --gutter: max(20px, 4.6vw);
+  --col: min(1840px, calc(100vw - 2 * var(--gutter)));
+  box-sizing: border-box;
+  margin: 0;
+  background: var(--page);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 17px;
+  line-height: 1.47;
+  letter-spacing: -0.022em;
+  -webkit-font-smoothing: antialiased;
+  padding: clamp(36px, 4vw, 64px) 0 clamp(48px, 5vw, 80px);
+}
+.simeon-billing *,
+.simeon-billing *::before,
+.simeon-billing *::after {
+  box-sizing: border-box;
+}
+.simeon-billing h2,
+.simeon-billing h3,
+.simeon-billing p {
+  margin: 0;
+}
+.simeon-billing h2,
+.simeon-billing h3 {
+  font-weight: 600;
+  text-wrap: balance;
+}
+.simeon-billing .wrap {
+  width: var(--col);
+  margin-inline: auto;
+}
+.simeon-billing .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 99px;
+  background: #000;
+  color: #fff;
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+.simeon-billing .btn:hover {
+  background: #2b2b2d;
+}
+.simeon-billing .btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.simeon-billing .btn.ghost {
+  background: #f2f2f2;
+  color: #000;
+}
+.simeon-billing .btn.ghost:hover {
+  background: #e8e8e8;
+}
+.simeon-billing h2 {
+  margin: 0;
+  font-family: var(--font-newsreader), Georgia, 'Times New Roman', serif;
+  font-weight: 400;
+  font-size: clamp(36px, 2.9vw, 58px);
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+  max-width: 11em;
+  text-wrap: balance;
+}
+.simeon-billing .plans3 {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 22px;
+  margin-top: clamp(40px, 4vw, 80px);
+}
+.simeon-billing .plan3 {
+  display: flex;
+  flex-direction: column;
+  padding: clamp(28px, 2.4vw, 44px) clamp(24px, 2.1vw, 40px);
+  border-radius: 28px;
+  background: #fafafb;
+}
+.simeon-billing .plan3.picked {
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.28);
+}
+.simeon-billing .plan3 h3 {
+  margin: 0;
+  font-size: clamp(20px, 1.35vw, 26px);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: #3a3a3c;
+}
+.simeon-billing .plan3 .tag {
+  margin: 4px 0 0;
+  font-size: clamp(14px, 0.9vw, 17px);
+  letter-spacing: -0.01em;
+  color: var(--ink3);
+}
+.simeon-billing .plan3 .pr {
+  margin-top: clamp(18px, 1.6vw, 30px);
+  font-family: 'Switzer', var(--font);
+  font-weight: 400;
+  font-size: clamp(40px, 3vw, 60px);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+}
+.simeon-billing .plan3 .pr small {
+  font-family: var(--font);
+  font-weight: 400;
+  font-size: clamp(14px, 0.9vw, 17px);
+  letter-spacing: -0.01em;
+  color: var(--ink2);
+  margin-left: 5px;
+}
+.simeon-billing .plan3 .per {
+  margin-top: 10px;
+  font-size: clamp(14px, 0.9vw, 17px);
+  line-height: 1.45;
+  letter-spacing: -0.01em;
+  color: var(--ink3);
+}
+.simeon-billing .plan3 .inc {
+  margin: clamp(20px, 1.8vw, 34px) 0 0;
+  padding-top: clamp(18px, 1.6vw, 28px);
+  border-top: 1px solid #ececef;
+  font-size: clamp(15px, 0.95vw, 17.5px);
+  letter-spacing: -0.01em;
+  color: var(--ink3);
+}
+.simeon-billing .plan3 ul {
+  list-style: none;
+  margin: 12px 0 clamp(26px, 2.4vw, 40px);
+  padding: 0;
+  display: grid;
+  gap: 9px;
+  align-content: start;
+  font-size: clamp(15px, 0.98vw, 18px);
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  color: #3a3a3c;
+}
+.simeon-billing .plan3 li {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+}
+.simeon-billing .plan3 li::before {
+  content: '';
+  flex: none;
+  width: 0.95em;
+  height: 0.95em;
+  margin-top: 0.24em;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236e6e73' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+.simeon-billing .plan3 .btn {
+  align-self: flex-start;
+  margin-top: auto;
+  height: clamp(36px, 2.3vw, 42px);
+  padding: 0 clamp(16px, 1.1vw, 20px);
+  font-size: clamp(14px, 0.95vw, 16px);
+}
+.simeon-billing .pnote {
+  margin: clamp(22px, 2vw, 36px) auto 0;
+  max-width: 60em;
+  text-align: center;
+  font-size: clamp(14px, 0.9vw, 16.5px);
+  line-height: 1.55;
+  letter-spacing: -0.01em;
+  color: var(--ink3);
+}
+.simeon-billing .note {
+  margin-top: clamp(28px, 3vw, 48px);
+  padding: clamp(20px, 2vw, 28px) clamp(22px, 2vw, 32px);
+  border-radius: 28px;
+  background: #fafafb;
+  font-size: clamp(16px, 1.02vw, 19px);
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+  color: var(--ink2);
+}
+.simeon-billing .note strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+.simeon-billing .note a {
+  color: var(--ink);
+}
+.simeon-billing .manage {
+  margin-top: clamp(28px, 3vw, 48px);
+  max-width: 36em;
+  font-size: clamp(17px, 1.1vw, 21px);
+  line-height: 1.45;
+  letter-spacing: -0.01em;
+  color: var(--ink2);
+}
+.simeon-billing .manage strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+.simeon-billing .manage a {
+  color: var(--ink);
+}
+@supports (grid-template-rows: subgrid) {
+  .simeon-billing .plans3 {
+    grid-template-rows: repeat(7, auto);
+  }
+  .simeon-billing .plan3 {
+    display: grid;
+    grid-template-rows: subgrid;
+    row-gap: 0;
+    grid-row: span 7;
+    align-content: start;
+  }
+  .simeon-billing .plan3 .btn {
+    margin-top: 0;
+    align-self: start;
+    justify-self: start;
+  }
+}
+@media (max-width: 1068px) {
+  .simeon-billing .plans3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 734px) {
+  .simeon-billing .plans3 {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .simeon-billing .plan3 {
+    border-radius: 24px;
+  }
+}

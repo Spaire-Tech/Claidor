@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { describePlan, type PlanBilling } from "../../../../../../source/electron-preload/plan-settings.js";
 import type { CursorUsageSummary, CursorUsageUpgradeAction, DesktopTimeZoneState } from "../../../contracts/desktop-bridge";
 import { egressTunnelStatusDescription, type EgressTunnelStatus, type UpdateStatus, type UpdateTrack } from "./updates";
 // @evidence src/app/dist/renderer/assets/index-BlqerJhg.js#L1
@@ -289,12 +290,32 @@ export interface UsageSettingsPanelProps {
   onCancelTrial?(): Promise<UsageActionResult>;
   onCancelDialogOpen?(open: boolean): void;
   provider?: RouterProviderId;
+  /** The plan block. Absent, the panel is the meters alone. */
+  plan?: PlanBilling | null;
+  onPlanAction?(action: string): void;
+}
+
+function PlanSettingsBlock({ plan, onAction }: { plan: PlanBilling; onAction?(action: string): void }) {
+  const view = describePlan(plan);
+  return (
+    <div className="simeon-plan-settings">
+      <h3>{view.title}</h3>
+      {view.lines.map((line) => <p key={line}>{line}</p>)}
+      {view.actions.length === 0 ? null : (
+        <div className="acts">
+          {view.actions.map((action) => (
+            <button className={action.id === "update" ? undefined : "quiet"} key={action.id} onClick={() => onAction?.(action.id)} type="button">{action.label}</button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 const UPGRADE_ERROR = "Couldn’t complete the upgrade action — try again";
 const CANCEL_TRIAL_COPY = "This ends your Simeon trial now and removes your remaining trial credits. Your card won’t be charged either way — the trial never turns into a paid plan on its own.";
 
-export function UsageSettingsPanel({ meters = [], state, onRetry, onUpgrade, onCancelTrial, onCancelDialogOpen, provider = "cursor" }: UsageSettingsPanelProps) {
+export function UsageSettingsPanel({ meters = [], state, onRetry, onUpgrade, onCancelTrial, onCancelDialogOpen, provider = "cursor", plan = null, onPlanAction }: UsageSettingsPanelProps) {
   const [upgradePending, setUpgradePending] = useState(false);
   const [upgradeNotice, setUpgradeNotice] = useState<{ tone: "info" | "error"; text: string } | null>(null);
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
@@ -429,6 +450,7 @@ export function UsageSettingsPanel({ meters = [], state, onRetry, onUpgrade, onC
           </div>
         ) : null}
       </SettingsGroup>
+      {plan == null ? null : <PlanSettingsBlock onAction={onPlanAction} plan={plan} />}
       <OverlayDialog
         label="Cancel your trial?"
         onClose={() => {

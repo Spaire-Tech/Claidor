@@ -1,4 +1,5 @@
 import { installComputerStreamNoticeSafely } from "./computer-stream-notice.js";
+import { installPlanSettingsPage } from "./plan-settings.js";
 import { CLIENT_PERSISTENCE_CHANNELS } from "../shared/persistence.js";
 import {
   createCoordinatorPortBroker,
@@ -193,6 +194,9 @@ export function createDesktopPreloadBridge(options: {
       getSandAccessFresh: () => edge("getSandAccessFresh"),
       invokeDashboardAction: (request: unknown) => edge("invokeAccountDashboardAction", request),
       cancelTrial: () => edge("cancelAccountTrial"),
+      // Settings → Usage & Billing, the plan block the renderer patch mounts.
+      getPlan: () => edge("getPlanBilling"),
+      openPortal: (flow?: string) => edge("openPlanPortal", typeof flow === "string" && flow.length > 0 ? { flow } : {}),
       onStatusChanged: (listener: (payload: unknown) => void) => subscribe("account-changed", listener),
     },
     experiments: {
@@ -329,6 +333,8 @@ export function installPrimaryPreload(options: {
   const broker = options.coordinatorBroker ?? createCoordinatorPortBroker<any>({ invokeRequest: () => { void options.ipc.invoke("sand:coordinator-port-request"); } });
   const desktop = createDesktopPreloadBridge({ ...options, env, devRestartEnabled, initialState });
   options.contextBridge.exposeInMainWorld("desktop", desktop);
+  const page = (globalThis as { document?: Parameters<typeof installPlanSettingsPage>[0] }).document;
+  if (page != null) installPlanSettingsPage(page);
   options.contextBridge.exposeInMainWorld("coordinatorPort", broker.bridge);
   options.ipc.on("sand:coordinator-port", (event: { readonly ports: readonly any[] }) => {
     const port = event.ports[0];

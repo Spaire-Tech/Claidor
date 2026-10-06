@@ -296,6 +296,9 @@ export interface CursorAccountDesktopBridge {
   getSandAccessFresh(): Promise<unknown>;
   invokeDashboardAction(request: Record<string, unknown>): Promise<unknown>;
   cancelTrial(): Promise<unknown>;
+  /** Settings' plan block. Absent on a bridge that only redraws the meters. */
+  getPlan?(): Promise<unknown>;
+  openPortal?(flow?: string): Promise<unknown>;
   onStatusChanged(listener: BridgeListener<CursorAuthStatus>): Unsubscribe;
 }
 

@@ -5,7 +5,7 @@ import { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Billing',
-  description: 'Your Simeon plan, card and invoices',
+  description: 'Simeon plans. Standard, Pro and Max, each with a free week.',
 }
 
 const PLANS: readonly PaidTierKey[] = ['standard', 'pro', 'max']

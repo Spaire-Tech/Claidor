@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { normalizePlan, type PlanBilling } from "../../../../../../source/electron-preload/plan-settings.js";
 // @evidence src/app/dist/renderer/assets/index-BlqerJhg.js#byteOffset=36041 (released Settings Retry copy)
 import type { ProductionCoordinatorClient } from "../../../../production/coordinator-client";
 // @evidence src/app/dist/renderer/assets/index-BlqerJhg.js#L1
@@ -56,11 +57,25 @@ export function SettingsDesktopSurface({ bridge, coordinatorClient = null, initi
   const [reload, setReload] = useState(0);
   const [surfaceNotice, setSurfaceNotice] = useState<SettingsNotice | null>(null);
   const [cancelTrialDialogOpen, setCancelTrialDialogOpen] = useState(false);
+  const [plan, setPlan] = useState<PlanBilling | null>(null);
   const handleCancelTrialDialogOpen = useCallback((open: boolean) => setCancelTrialDialogOpen(open), []);
   const handleNotice = useCallback((event: SettingsNoticeEvent) => {
     setSurfaceNotice(settingsNoticeFromEvent(event));
     onNotice?.(event);
   }, [onNotice]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const account = bridge.cursorAccount;
+    if (account.getPlan == null) return;
+    let active = true;
+    void account.getPlan().then((value) => {
+      if (active) setPlan(normalizePlan(value));
+    }).catch(() => {
+      if (active) setPlan(null);
+    });
+    return () => { active = false; };
+  }, [bridge, isOpen, reload]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -229,8 +244,17 @@ export function SettingsDesktopSurface({ bridge, coordinatorClient = null, initi
             onCancelTrial={() => mutate(() => cancelUsageTrial(bridge), "settings-usage-cancel-trial", (usage) => {
               if (usage.ok) refreshUsage();
             })}
+            onPlanAction={(action) => {
+              const account = bridge.cursorAccount;
+              if (action === "trial") {
+                void account.cancelTrial?.().then(() => account.getPlan?.().then((value) => setPlan(normalizePlan(value))));
+                return;
+              }
+              void account.openPortal?.(action === "invoices" ? undefined : action);
+            }}
             onRetry={refreshUsage}
             onUpgrade={(action) => runUsageUpgradeActionAndRefresh(bridge, action, refreshUsage)}
+            plan={plan}
             state={snapshot.usage}
           />
         );

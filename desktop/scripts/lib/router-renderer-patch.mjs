@@ -15,6 +15,10 @@ const REGISTRY_AFTER = 'const wDn=[{id:"general",label:"General",icon:"settings-
 const GENERAL_BEFORE = 'Q=x==="general"?a.jsx(Te,{children:a.jsx(Sa,{auth:t})}):null';
 const USAGE_BEFORE = 'Z=x==="usage"?a.jsx(Te,{children:a.jsx(Na,{})}):null';
 const COMPONENT_ANCHOR = 'function Sa(s){';
+// The usage panel's ready state (`function Na`). The div is a child React
+// owns, so a later render does not wipe it. The preload fills it.
+export const SETTINGS_PLAN_BEFORE = 'return s[39]!==h||s[40]!==y||s[41]!==j?(v=a.jsxs("div",{className:h,children:[y,j]}),s[39]=h,s[40]=y,s[41]=j,s[42]=v):v=s[42],v}';
+const SETTINGS_PLAN_AFTER = 'return s[39]!==h||s[40]!==y||s[41]!==j?(v=a.jsxs("div",{className:h,children:[y,j,a.jsx("div",{className:"simeon-plan-settings",ref:n=>{globalThis.__simeonMountPlan&&globalThis.__simeonMountPlan(n)}})]}),s[39]=h,s[40]=y,s[41]=j,s[42]=v):v=s[42],v}';
 
 /**
  * The product's name in the shipped 0.18.0 renderer, decided by the founder
@@ -1259,13 +1263,17 @@ export const LOGO_REPLACEMENTS = Object.freeze([
   ["help-center-url", 'G=()=>{v("https://cursor.com/help")}', 'G=()=>{v("https://simeonlabs.com")}'],
   // Track A of the detachment plan (4 October 2026): every address and
   // name of the upstream maker a person could reach from the window. The
-  // spending link goes to our web app; the onboarding and privacy links
-  // to our site and privacy policy; the review host to a name of ours the
-  // window will never see (it only compares hostnames); the account's
-  // fallback name is Simeon; the "Get … for iOS" item and its App Store
-  // address go, there is no such app.
+  // spending link goes to our web app; the access cover's button opens the
+  // billing page; the privacy link goes to the privacy policy; the review
+  // host to a name of ours the window will never see (it only compares
+  // hostnames); the account's fallback name is Simeon; the "Get … for iOS"
+  // item and its App Store address go, there is no such app.
+  // The cover's button reads `pft` (`onClick:()=>{s(pft)}` and
+  // `onClick:()=>{e(pft)}`). This exact replacement runs before the brand
+  // pass writes the files, so a later phrase that names the raw onboarding
+  // URL never sees it and cannot retarget the button.
   ["upstream-link-spending", 'const Yln="https://cursor.com/dashboard/spending"', 'const Yln="https://app.simeonlabs.com/app"'],
-  ["upstream-link-onboarding", 'const pft="https://cursor.com/bot/onboarding"', 'const pft="https://simeonlabs.com"'],
+  ["upstream-link-onboarding", 'const pft="https://cursor.com/bot/onboarding"', 'const pft="https://app.simeonlabs.com/billing?plan=standard"'],
   ["upstream-link-privacy", 'const LOn="https://cursor.com/dashboard/settings?openPrivacy=true"', 'const LOn="https://www.simeonlabs.com/legal/privacy-policy"'],
   ["upstream-link-review", 'const QPt="https://review.cursor.com"', 'const QPt="https://review.simeonlabs.com"'],
   ["upstream-host-review", 't==="review.cursor.com"&&(s=C_n)', 't==="review.simeonlabs.com"&&(s=C_n)'],
@@ -1888,7 +1896,7 @@ export function patchOriginalSettingsRegistry(source) {
 }
 
 export function patchOriginalSettingsPanel(source) {
-  return source;
+  return replaceExactlyOnce(source, SETTINGS_PLAN_BEFORE, SETTINGS_PLAN_AFTER, "settings plan");
 }
 
 export async function applyOriginalRendererRouterPatch({ stageRoot }) {
@@ -1911,8 +1919,8 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     ["panel", panelCandidates[0], patchOriginalSettingsPanel],
   ]) {
     const patched = transform(candidate.source);
-    // A transform that returns its input (the Settings panel since the Router
-    // left the product) is not a change and is not recorded as one (F-199).
+    // A transform that returns its input is not a change and is not recorded
+    // as one (F-199).
     if (patched === candidate.source) continue;
     await writeFile(candidate.target, patched);
     changes.push({
