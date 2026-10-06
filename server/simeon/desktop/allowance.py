@@ -70,8 +70,9 @@ def billing_exempt(user: User) -> bool:
 
 
 def billing_url() -> str:
-    """The billing page, on this host (`simeon.desktop.billing_page`)."""
-    return settings.generate_external_url(BILLING_PATH)
+    """The billing page on the web app (`clients/`), the one thing the web
+    app is for: a plan and a card, then Stripe's portal."""
+    return settings.generate_frontend_url(BILLING_PATH)
 
 
 def month_bounds(now: datetime | None = None) -> tuple[datetime, datetime]:

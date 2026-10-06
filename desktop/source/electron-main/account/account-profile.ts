@@ -116,7 +116,7 @@ export interface SimeonQuotaRow {
   readonly trialCancelable?: boolean;
   /** On-demand spend past the allowance; null until the server meters it. */
   readonly onDemand?: { readonly usedCents?: number; readonly limitCents?: number | null } | null;
-  /** Where the person changes plan: the API host's /billing page. Null on the free fallback. */
+  /** Where the person changes plan: app.simeonlabs.com/billing. Null on the free fallback. */
   readonly upgradeUrl?: string | null;
 }
 

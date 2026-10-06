@@ -139,14 +139,14 @@ test("a plan's quota lights the trial, the on-demand bar and the upgrade button 
       creditsLimit: 1_000_000, creditsUsed: 250_000, creditsRemaining: 750_000,
       periodStart: "2026-10-05T10:00:00+00:00", periodEnd: "2026-10-12T10:00:00+00:00",
       trialEndsAt: "2026-10-12T10:00:00+00:00", trialCancelable: true, onDemand: null,
-      upgradeUrl: "https://api.simeonlabs.com/billing",
+      upgradeUrl: "https://app.simeonlabs.com/billing",
     };
     const summary = usageSummaryFromSimeonQuota(trial);
     assert.equal(summary.isSandTrial, true);
     assert.equal(summary.canCancelSandTrial, true);
     assert.equal(summary.hasEndedSandTrial, false);
     assert.equal(summary.sandUsagePercent, 25);
-    assert.deepEqual(summary.upgradeCta, { label: "Choose a plan", disabled: false, action: { kind: "open-url", url: "https://api.simeonlabs.com/billing" } });
+    assert.deepEqual(summary.upgradeCta, { label: "Choose a plan", disabled: false, action: { kind: "open-url", url: "https://app.simeonlabs.com/billing" } });
 
     // A trial that ended with no plan: the server says `none`, limit 0.
     const lapsed = { ...trial, subscriptionStatus: "none", planName: "No plan", tier: null, creditsLimit: 0, creditsUsed: 0, creditsRemaining: 0, trialEndsAt: "2020-01-01T00:00:00+00:00", trialCancelable: false };

@@ -16,6 +16,9 @@ import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import PlanCards from './PlanCards'
 
+/** The latest Mac build, served by the API (`server/simeon/desktop/releases.py`). */
+const DOWNLOAD_URL = 'https://api.simeonlabs.com/desktop/download/mac'
+
 interface BillingPageProps {
   /** `?plan=` from the site's buttons and the Mac sign-in. */
   plan: PaidTierKey | null
@@ -32,10 +35,12 @@ interface BillingPageProps {
 }
 
 /**
- * app.simeonlabs.com/billing: the person's plan, the three cards, and
- * Stripe's Customer Portal for cards, invoices and changes. The Mac
- * app's upgrade button, the site's "Try it free" buttons and the Mac
- * sign-in gate all land here (docs/services-billing.md).
+ * app.simeonlabs.com/billing, the one page the web app is for: the
+ * person's plan, the three cards, and Stripe's Customer Portal for
+ * cards, invoices and changes. The Mac app's upgrade button, the
+ * window's access cover, the site's "Try it free" buttons and the Mac
+ * sign-in gate all land here. A new customer leaves it with the
+ * Download button (docs/services-billing.md, section 3).
  */
 const BillingPage = ({
   plan,
@@ -59,6 +64,8 @@ const BillingPage = ({
 
   const sub = subscription.data
   const subscribed = hasPlan(sub)
+  // The checkout just came back, by either of the two marks it leaves.
+  const justPaid = upgraded || checkoutSessionId !== null
 
   const portal = useCallback(
     async (flow?: 'payment_method') => {
@@ -95,12 +102,30 @@ const BillingPage = ({
         </div>
       )}
 
-      {upgraded && (
-        <div className="rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-sm text-green-900">
-          <span className="font-medium">Your card is saved.</span>{' '}
-          {sub?.status === 'trialing'
-            ? 'Your 7 days start now. Open Simeon on your Mac and sign in to begin.'
-            : 'Your plan is active. Open Simeon on your Mac to keep going.'}
+      {justPaid && !returnTo && (
+        <div className="flex flex-col gap-y-4 rounded-2xl border border-green-200 bg-green-50 px-6 py-6 text-green-900">
+          <div className="flex flex-col gap-y-1">
+            <span className="text-xl font-medium">
+              {sub?.status === 'trialing'
+                ? 'Your 7 days have started.'
+                : 'Your plan is active.'}
+            </span>
+            <span className="text-sm">
+              {sub?.status === 'trialing'
+                ? 'Your card is saved and is charged when the trial ends unless you cancel.'
+                : 'Your card is saved.'}{' '}
+              Download Simeon for your Mac, open it, and sign in with the same
+              account. It finds your plan on its own.
+            </span>
+          </div>
+          <div className="flex flex-row flex-wrap items-center gap-3">
+            <a href={DOWNLOAD_URL}>
+              <Button>Download Simeon for Mac</Button>
+            </a>
+            <span className="text-sm">
+              Already have it? Open Simeon. Nothing else to do.
+            </span>
+          </div>
         </div>
       )}
 

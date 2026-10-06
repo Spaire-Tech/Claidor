@@ -31,9 +31,8 @@ unset. The code stays with the inherited shop
 The numbers live in one place, `server/simeon/entitlements/tiers.py`
 (`weekly_credits`, `trial_credits`, `monthly_price_cents`), and
 `server/simeon/plans/catalog.py` turns them into what Stripe sells. The
-billing page on the API reads them from the same module; the web app's
-reads them from the server (`GET /v1/plans/`); the site's pricing section
-repeats them by hand.
+billing page reads them from the server (`GET /v1/plans/`); the site's
+pricing section repeats them by hand.
 
 A credit is one input token on the middle model at $3 per million
 (`services-core.md`, section 2). A typical task is about 100,000 credits.
@@ -67,15 +66,13 @@ was; the public name and statement descriptor are what a person sees.
 
 ## 3. How a person gets a plan
 
-1. **Starting.** The billing page is on the API host,
-   `api.simeonlabs.com/billing` (`server/simeon/desktop/billing_page.py`):
-   there is no web app in front of the Mac app (6 October 2026), so the
-   page the app's upgrade button, the sign-in gate and the window's access
-   cover open is served next to the sign-in page, with the same session
-   cookie. A browser with no session goes to the API's own Google sign-in
-   and comes back. Choosing a plan posts to `/billing/checkout` (the web
-   app's page, kept in `clients/`, posts `POST /v1/plans/checkout` to the
-   same service). The server makes
+1. **Starting.** The billing page is `app.simeonlabs.com/billing`, and it
+   is the one thing the web app is for (6 October 2026): a plan and a
+   card, then Stripe's portal. The site's "Try it free" buttons, the
+   Mac app's upgrade button, the sign-in gate and the window's access
+   cover all open it. A visitor with no session signs in with Google
+   there first. Choosing a plan posts `POST /v1/plans/checkout` with a
+   tier and an interval. The server makes
    the Stripe customer on first use (kept on `users.stripe_customer_id`),
    finds the price by its lookup key, and opens a Stripe Checkout session:
    `mode=subscription`, the card always collected, a seven-day trial for a
@@ -104,8 +101,8 @@ was; the public name and statement descriptor are what a person sees.
    (`trial_end=now`), so the card is charged today; otherwise the trial is
    recorded. A person who had a trial gets none on a later checkout
    either.
-4. **Changing and ending.** The page's buttons post to `/billing/portal`
-   (the web app's to `POST /v1/plans/portal`) and open Stripe's Customer
+4. **Changing and ending.** The page's buttons post `POST /v1/plans/portal`
+   and open Stripe's Customer
    Portal, optionally on one step (`flow`: `cancel`, `update`,
    `payment_method`). Cards, invoices, receipts, a plan switch and a
    cancellation all happen there; Stripe sends the resulting
@@ -117,7 +114,7 @@ was; the public name and statement descriptor are what a person sees.
 5. **The Mac sign-in.** `GET /loginDeepControl` reads the person's
    allowance before asking them to confirm the sign-in. With billing
    required and no trialing or active subscription, it sends the browser
-   to the API's `/billing?plan=standard&return_to=<this page>`; the
+   to the web app's `/billing?plan=standard&return_to=<this page>`; the
    checkout returns there with `checkout_session_id`, the page copies it
    in, and asks. So nobody is signed in to the app without a card on file.
    With no session in the browser at all, the sign-in page goes to the
@@ -130,12 +127,19 @@ was; the public name and statement descriptor are what a person sees.
    one who did. It shows its cover the moment `EnsureSandBox` refuses the
    box with `permission_denied` (`box_broker.require_a_plan`), the way the
    upstream app paywalls; the cover's button opens
-   `api.simeonlabs.com/billing?plan=standard` (the renderer patch,
+   `app.simeonlabs.com/billing?plan=standard` (the renderer patch,
    `desktop/scripts/lib/router-renderer-patch.mjs`). The window keeps
    asking for its box; once the plan is on Stripe the next ask succeeds
    and the cover goes, with nothing to restart or sign in to again. Metered
    calls get the same answer meanwhile: `402`, code `40200`, naming the
    billing page.
+7. **From the site.** "Try it free" opens the billing page with the plan
+   chosen. A visitor with no account signs in with Google, saves a card,
+   and the page comes back saying the 7 days have started, with the
+   Download button (`api.simeonlabs.com/desktop/download/mac`) and one
+   line: open Simeon and sign in with the same account. The app then finds
+   the trial already there and shows no cover. The same page serves a
+   person who already has the app; their app unlocks on its own.
 
 ## 4. How the app's allowance follows the plan
 

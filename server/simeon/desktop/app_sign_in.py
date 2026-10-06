@@ -31,9 +31,9 @@ would never be called.
        Before it asks, it checks the person has a plan. With billing
        required (`SIMEON_DESKTOP_BILLING_REQUIRED`) and no trialing or
        active subscription in the synced copy of Stripe's
-       (`simeon.plans`), the page sends the browser to the billing page
-       on this host (`simeon.desktop.billing_page`) instead, with this
-       very URL as the way back; the
+       (`simeon.plans`), the page sends the browser to the web app's
+       billing page instead (the one thing the web app is for), with
+       this very URL as the way back; the
        billing page opens Stripe Checkout, which takes a card, starts
        the 7-day trial, and returns here with `checkout_session_id`,
        which the page copies in before asking, so the gate opens even
@@ -221,7 +221,7 @@ async def login_deep_control(
         session, auth_subject.subject, checkout_session_id=checkout_session_id
     ):
         return RedirectResponse(
-            settings.generate_external_url(
+            settings.generate_frontend_url(
                 f"{BILLING_PATH}?plan=standard&return_to={quote(return_to, safe='')}"
             ),
             303,

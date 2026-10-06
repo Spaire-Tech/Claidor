@@ -247,7 +247,7 @@ class TestQuotaAndRefusal:
         assert quota["trialEndsAt"] == quota["periodEnd"]
         assert quota["trialCancelable"] is True
         assert quota["onDemand"] is None
-        assert quota["upgradeUrl"] == settings.generate_external_url("/billing")
+        assert quota["upgradeUrl"] == settings.generate_frontend_url("/billing")
         summary = await desktop.profile_summary(session, user)
         assert summary["creditItems"][0]["label"] == "Trial credits"
         assert summary["creditItems"][0]["type"] == "plan"
