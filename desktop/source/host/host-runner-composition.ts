@@ -2801,6 +2801,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
         isBoxScopedSubagent: isBoxScopedTurn,
         isComputerUseSubagent: isComputerUseTurn,
         isBrowserUseSubagent: isBrowserUseTurn,
+        isVideoSubagent: isVideoTurn,
         isSystemPromptOverridden: typeof overrides.systemPrompt === "string",
         remoteBoxHasDesktop: true,
         // The toolset reads this id for one thing: the owner of the
