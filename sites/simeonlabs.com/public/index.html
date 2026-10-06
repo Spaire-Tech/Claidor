@@ -696,7 +696,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .ring-box{position:relative;margin-top:clamp(40px,4vw,80px);aspect-ratio:16/10;border-radius:28px;overflow:hidden;background:#111;container-type:inline-size}
 .ring-box>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 50%}
 .ring-more{position:absolute;right:3cqw;bottom:3cqw;height:clamp(40px,3.4cqw,52px);padding:0 clamp(18px,1.7cqw,26px);font-size:clamp(15px,1.25cqw,19px);box-shadow:0 10px 30px -12px rgba(0,0,0,.5)}
-.ring-call{position:absolute;right:3cqw;bottom:calc(3cqw + clamp(40px,3.4cqw,52px) + 2cqw);width:min(36cqw,500px);color:#fff;font-size:clamp(13px,1.3cqw,19px);line-height:1.4;letter-spacing:-.012em;text-shadow:0 1px 14px rgba(0,0,0,.5)}
+.ring-call{position:absolute;right:3cqw;top:50%;transform:translateY(-50%);width:min(36cqw,500px);color:#fff;font-size:clamp(13px,1.3cqw,19px);line-height:1.4;letter-spacing:-.012em;text-shadow:0 1px 14px rgba(0,0,0,.5)}
 .ring-head{display:flex;align-items:center;gap:.7em;margin:0 0 .9em;font-size:.86em;font-weight:500;color:rgba(255,255,255,.82);letter-spacing:.01em}
 .ring-dot{width:.6em;height:.6em;border-radius:50%;background:#34c759;box-shadow:0 0 0 0 rgba(52,199,89,.6);animation:ring-pulse 2s ease-out infinite}
 .ring-wave{margin-left:auto;display:flex;align-items:center;gap:.18em;height:1.1em}
@@ -713,7 +713,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 @keyframes ph-b3{0%,46%{opacity:0;transform:translateY(6px)}50%,88%{opacity:1;transform:none}94%,100%{opacity:0;transform:translateY(6px)}}
 @keyframes ph-b4{0%,62%{opacity:0;transform:translateY(6px)}66%,88%{opacity:1;transform:none}94%,100%{opacity:0;transform:translateY(6px)}}
 @media (prefers-reduced-motion:reduce){.ring-call p,.ring-dot,.ring-wave i{animation:none;opacity:1;transform:none}.ring-wave i{height:60%}}
-@media (max-width:734px){.ring-box{aspect-ratio:4/5;border-radius:22px}.ring-box::after{content:"";position:absolute;left:0;right:0;bottom:0;height:64%;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.74) 50%)}.ring-call,.ring-more{z-index:1}.ring-box>img{object-position:30% 50%}.ring-call{left:4cqw;right:4cqw;bottom:calc(8cqw + 44px);width:auto;font-size:14px}.ring-more{right:4cqw;bottom:4cqw;height:44px}}
+@media (max-width:734px){.ring-box{aspect-ratio:4/5;border-radius:22px}.ring-box::after{content:"";position:absolute;left:0;right:0;bottom:0;height:64%;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.74) 50%)}.ring-call,.ring-more{z-index:1}.ring-box>img{object-position:30% 50%}.ring-call{left:4cqw;right:4cqw;top:auto;transform:none;bottom:calc(8cqw + 44px);width:auto;font-size:14px}.ring-more{right:4cqw;bottom:4cqw;height:44px}}
 
 
 /* Card 6: an agent asks before it acts. Iris's permission sheet in glass over a painting; Allow is pressed, then it confirms. */
