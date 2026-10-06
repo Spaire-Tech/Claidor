@@ -689,6 +689,16 @@ export function createGenerateImageTool(
             renderOutcome = "success";
             return createStringResult(resultToString(result));
           }
+          // Simeon's service saves the picture into the agent's media store
+          // and answers its absolute path with no bytes (execute above keeps
+          // that path as is). Until 6 October 2026 this branch read the
+          // empty bytes as a failure for the default version, so an agent
+          // whose picture was made, saved and billed told the person "the
+          // image generator isn't returning an image" (the founder's log).
+          if (!imageData && isAlreadyPersistedImagePath(filePath)) {
+            renderOutcome = "success";
+            return createStringResult(resultToString(result));
+          }
           if (!imageData) {
             renderOutcome = "missing_image_data";
             return createStringResult("Failed to generate image: no image data returned");
