@@ -28,6 +28,7 @@ from simeon.organization_access_token import tasks as organization_access_token
 from simeon.organization_custom_domain import tasks as organization_custom_domain
 from simeon.payout import tasks as payout
 from simeon.personal_access_token import tasks as personal_access_token
+from simeon.plans import tasks as plans_tasks
 from simeon.platform import tasks as platform_tasks
 from simeon.processor_transaction import tasks as processor_transaction
 from simeon.quotas import tasks as quotas_tasks
@@ -67,12 +68,13 @@ __all__ = [
     "organization_custom_domain",
     "payout",
     "personal_access_token",
+    "plans_tasks",
     "platform_tasks",
     "processor_transaction",
     "quotas_tasks",
+    "resend",
     "sand_box",
     "sand_listeners",
-    "resend",
     "stripe",
     "subscription",
     "transaction",

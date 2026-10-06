@@ -13,20 +13,17 @@ which protobuf JSON accepts.
 
 `CancelSandTrial` (5 October 2026) is the Settings page's « Cancel
 trial » button: the app calls it as it did the upstream's, and here it ends
-the person's trial through the billing engine (`docs/services-billing.md`).
+the person's trial on Stripe Billing (`simeon.plans`,
+`docs/services-billing.md`).
 """
 
 from __future__ import annotations
 
 from typing import Any
 
+from simeon.desktop.allowance import billing_required
 from simeon.desktop.service import desktop
-from simeon.locker import Locker
-from simeon.platform.management import (
-    NoActiveSubscription,
-    platform_management,
-)
-from simeon.platform.service import platform as platform_service
+from simeon.plans.service import plans as plans_service
 
 from .connect import ConnectCall, ConnectError, ConnectService
 
@@ -97,7 +94,7 @@ async def cancel_sand_trial(call: ConnectCall) -> dict[str, Any]:
     stays consumed: no second one on re-subscribe. The upstream's own answers
     `FAILED_PRECONDITION` when there is no trial to cancel; the app
     shows the message either way."""
-    if not platform_service.is_configured():
+    if not billing_required():
         raise ConnectError("failed_precondition", "There is no trial to cancel.")
     user = call.caller.user
     allowance = await desktop.allowance(call.db, user)
@@ -105,12 +102,7 @@ async def cancel_sand_trial(call: ConnectCall) -> dict[str, Any]:
         raise ConnectError("failed_precondition", "There is no trial to cancel.")
     if not allowance.trial_cancelable:
         return {}
-    organization = await desktop.ensure_personal_organization(call.db, user)
-    try:
-        await platform_management.cancel_at_period_end(
-            call.db, Locker(call.redis), organization=organization
-        )
-    except NoActiveSubscription:
+    if not await plans_service.cancel_trial(call.db, user):
         raise ConnectError("failed_precondition", "There is no trial to cancel.")
     return {}
 

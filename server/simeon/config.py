@@ -212,6 +212,14 @@ class Settings(BaseSettings):
     # 22 September 2026: one unattended first-run loop spent 1.9M credits
     # in fifty minutes with nothing on screen (docs/services-core.md).
     DESKTOP_HOURLY_CREDITS: int = 200_000
+    # Whether a person needs a plan on Stripe Billing (trialing or active,
+    # `simeon.plans`) to sign in to the Mac app and make metered calls.
+    # False = everyone gets the free monthly allowance (development, a
+    # self-hosted server). Production sets it once the Stripe catalogue is
+    # in place (`docs/services-billing.md`).
+    DESKTOP_BILLING_REQUIRED: bool = False
+    # People who never need a plan, by e-mail (staff, friends).
+    DESKTOP_BILLING_EXEMPT_EMAILS: set[str] = set()
     # Where the Mac app's releases are served from (`simeon.desktop.releases`):
     # the folder that holds `darwin-arm64/latest.json` and the version
     # folders. Unset, the public bucket's `releases/` folder.
@@ -560,6 +568,10 @@ class Settings(BaseSettings):
     STRIPE_CONNECT_WEBHOOK_SECRET: str = ""
     STRIPE_V2_WEBHOOK_SECRET: str = ""
     STRIPE_STATEMENT_DESCRIPTOR: str = "SIMEON LABS"
+    # The Billing Meters the usage reporter writes to (`simeon.plans`):
+    # their `event_name` on Stripe, made by `scripts/stripe_catalog.py`.
+    STRIPE_CREDITS_METER_EVENT: str = "simeon_credits"
+    STRIPE_BOX_SECONDS_METER_EVENT: str = "simeon_box_seconds"
 
     # Mux video
     # Signing key used to mint short-lived JWTs for signed playback URLs

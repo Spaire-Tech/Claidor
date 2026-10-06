@@ -80,6 +80,11 @@ class SandBox(RecordModel):
     hibernated_at: Mapped[datetime | None] = mapped_column(
         TIMESTAMP(timezone=True), nullable=True, default=None
     )
+    #: Up to when the box's running seconds were sent to Stripe's meter
+    #: (`simeon.plans.service.report_usage`); None until the first time.
+    usage_metered_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True, default=None
+    )
 
     @declared_attr
     def user(cls) -> Mapped["User"]:

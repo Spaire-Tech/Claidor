@@ -28,15 +28,15 @@ would never be called.
        until the person posts the form back.
 
        Before it asks, it checks the person has a plan. With billing
-       configured (`SIMEON_PLATFORM_ORG_ID`) and no active or trialing
-       subscription on the person's own organisation, the page sends
-       the browser to the web app's billing page instead, with this
-       very URL as the way back; the billing page takes a card, starts
-       the 7-day trial, and returns here, where the question is asked.
-       So nobody is signed in to the app without a card on file
-       (`docs/services-billing.md`). The one thing the GET writes is
-       the person's own organisation and its billing Customer, both
-       idempotent and the same rows the web app makes on a first visit.
+       required (`SIMEON_DESKTOP_BILLING_REQUIRED`) and no trialing or
+       active subscription in the synced copy of Stripe's
+       (`simeon.plans`), the page sends the browser to the web app's
+       billing page instead, with this very URL as the way back; the
+       billing page opens Stripe Checkout, which takes a card, starts
+       the 7-day trial, and returns here with `checkout_session_id`,
+       which the page copies in before asking, so the gate opens even
+       if Stripe's webhook is a few seconds behind. So nobody is signed
+       in to the app without a card on file (`docs/services-billing.md`).
     4. The app, meanwhile, is polling `/auth/poll?uuid=…&verifier=…`.
        404 means « not yet » and it keeps waiting; 200 with a token
        pair means it is signed in.
@@ -63,7 +63,8 @@ from simeon.auth.dependencies import WebUserOrAnonymous
 from simeon.auth.models import is_user
 from simeon.config import settings
 from simeon.openapi import APITag
-from simeon.platform.service import platform as platform_service
+from simeon.plans.service import PlansError
+from simeon.plans.service import plans as plans_service
 from simeon.postgres import AsyncSession, get_db_session
 from simeon.routing import APIRouter
 
@@ -163,16 +164,29 @@ def _same_origin(request: Request) -> bool:
 # --- the browser's half ----------------------------------------------------
 
 
-async def _needs_a_plan(session: AsyncSession, user: Any) -> bool:
+async def _needs_a_plan(
+    session: AsyncSession, user: Any, *, checkout_session_id: str | None
+) -> bool:
     """Whether to send the person to the billing page before asking.
-    Never with billing unconfigured (development, a self-hosted server):
+    Never with billing not required (development, a self-hosted server):
     then the free monthly allowance applies and there is nothing to
-    buy. Otherwise the person's organisation is made if missing, and a
-    plan is needed when its allowance says `none`."""
-    if not platform_service.is_configured():
-        return False
-    await desktop.ensure_personal_organization(session, user)
+    buy. A checkout that just came back is copied in first, so the
+    plan it started counts before Stripe's webhook has landed; a
+    checkout that cannot be read (someone else's, a made-up id) is
+    ignored and the allowance decides."""
     allowance = await desktop.allowance(session, user)
+    if not allowance.none:
+        return False
+    if checkout_session_id:
+        try:
+            await plans_service.sync_checkout_session(
+                session, user, checkout_session_id
+            )
+        except PlansError:
+            return True
+        except Exception:
+            return True
+        allowance = await desktop.allowance(session, user)
     return allowance.none
 
 
@@ -183,6 +197,7 @@ async def login_deep_control(
     uuid: str = Query(default=""),
     mode: str = Query(default="login"),
     redirectTarget: str | None = Query(default=None),  # the app's own name
+    checkout_session_id: str | None = Query(default=None),  # back from Checkout
     session: AsyncSession = Depends(get_db_session),
 ) -> RedirectResponse | HTMLResponse:
     if not is_deep_control_param(uuid) or not is_deep_control_param(challenge):
@@ -204,7 +219,9 @@ async def login_deep_control(
             303,
         )
 
-    if await _needs_a_plan(session, auth_subject.subject):
+    if await _needs_a_plan(
+        session, auth_subject.subject, checkout_session_id=checkout_session_id
+    ):
         return RedirectResponse(
             settings.generate_frontend_url(
                 f"{BILLING_PATH}?plan=standard&return_to={quote(return_to, safe='')}"

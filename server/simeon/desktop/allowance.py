@@ -2,26 +2,29 @@
 
 The app meters model calls in credits (`simeon.desktop.pricing`). How many
 a person has depends on their plan (`simeon.entitlements.tiers`), which
-the billing engine keeps as a Subscription on the Customer that stands
-for the person's own organisation, under the Simeon Labs platform
-organisation (`simeon.platform`, `docs/services-billing.md`).
+Stripe Billing owns and the server keeps a copy of, one row per person,
+written by webhook (`DesktopSubscription`, `simeon.plans`,
+`docs/services-billing.md`).
 
 Three windows, one shape:
 
-- **Free** (no platform organisation configured: development, tests, a
-  self-hosted server): the calendar month, `DESKTOP_MONTHLY_CREDITS`.
-  Nothing changes for an installation that has not switched billing on.
+- **Free** (`DESKTOP_BILLING_REQUIRED` off: development, tests, a
+  self-hosted server; or an exempt e-mail): the calendar month,
+  `DESKTOP_MONTHLY_CREDITS`. Nothing changes for an installation that
+  has not switched billing on.
 - **Trial**: `trial_start` to `trial_end` of the trialing subscription,
   the plan's `trial_credits`, once.
 - **A plan** (active, or past due while the card is retried): Monday
-  00:00 UTC to the next Monday, the plan's `weekly_credits`.
+  00:00 UTC to the next Monday, the plan's `weekly_credits`. Stripe
+  cannot reset a meter weekly, so the week is counted here, from
+  `desktop_usage`.
 - **No plan** (never subscribed, trial lapsed, cancelled, dunning over):
   the week, with a limit of 0, so every metered call is refused with a
   sentence that says where to subscribe.
 
 The allowance is read before every metered call (`budget_refusal`), so
-it is three indexed lookups and no aggregate; the aggregate is the
-usage in the window, which `DesktopService.credits_used` sums.
+it is one indexed lookup and no Stripe call; the aggregate is the usage
+in the window, which `DesktopService.credits_used` sums.
 """
 
 from __future__ import annotations
@@ -38,25 +41,32 @@ from simeon.entitlements.tiers import (
     tier_from_value,
 )
 from simeon.kit.utils import utc_now
-from simeon.models import User
-from simeon.models.subscription import SubscriptionStatus
-from simeon.platform.repository import (
-    platform_customer_repository,
-    platform_subscription_repository,
-)
-from simeon.platform.service import platform as platform_service
+from simeon.models import DesktopSubscription, User
+from simeon.plans.repository import DesktopSubscriptionRepository
 from simeon.postgres import AsyncSession
 
-from .repository import DesktopOrganizationRepository
-
 #: `subscriptionStatus` values the app sees. `free` and `none` are ours;
-#: the rest are the subscription's own status.
+#: the rest are Stripe's own status words.
 STATUS_FREE = "free"
 STATUS_NONE = "none"
-STATUS_TRIALING = SubscriptionStatus.trialing.value
+STATUS_TRIALING = "trialing"
+STATUS_ACTIVE = "active"
+STATUS_PAST_DUE = "past_due"
 
 #: Where a person goes to choose, change or cancel a plan.
 BILLING_PATH = "/billing"
+
+
+def billing_required() -> bool:
+    """Whether anyone needs a plan on this server."""
+    return settings.DESKTOP_BILLING_REQUIRED
+
+
+def billing_exempt(user: User) -> bool:
+    """Staff and friends: never asked for a plan, on the free month."""
+    return user.email.lower() in {
+        email.lower() for email in settings.DESKTOP_BILLING_EXEMPT_EMAILS
+    }
 
 
 def billing_url() -> str:
@@ -108,10 +118,7 @@ class Allowance:
 
     @property
     def paid(self) -> bool:
-        return self.status in (
-            SubscriptionStatus.active.value,
-            SubscriptionStatus.past_due.value,
-        )
+        return self.status in (STATUS_ACTIVE, STATUS_PAST_DUE)
 
     @property
     def trialing(self) -> bool:
@@ -159,44 +166,20 @@ def _none(now: datetime) -> Allowance:
     )
 
 
-async def resolve_allowance(
-    session: AsyncSession, user: User, *, now: datetime | None = None
+def allowance_of(
+    subscription: DesktopSubscription | None, *, now: datetime | None = None
 ) -> Allowance:
-    """The person's allowance now. Reads the person's own organisation,
-    its Customer on the platform organisation, and that Customer's
-    billable subscription; three lookups, all by index."""
+    """The allowance one synced subscription row gives, with billing on."""
     moment = now or utc_now()
-    if not platform_service.is_configured():
-        return _free(moment)
-
-    organization = await DesktopOrganizationRepository.from_session(
-        session
-    ).get_first_for_user(user.id)
-    if organization is None:
+    if subscription is None or not subscription.billable:
         return _none(moment)
-    # Staff: the platform organisation's own members are not its customers.
-    if platform_service.is_platform_organization(organization.id):
-        return _free(moment)
-
-    customer = await platform_customer_repository(session).get_for_creator_org(
-        platform_service.get_id(), organization.id
-    )
-    if customer is None:
-        return _none(moment)
-    subscription = await platform_subscription_repository(
-        session
-    ).get_active_for_customer(customer.id)
-    if subscription is None or subscription.product is None:
-        return _none(moment)
-
-    tier_value = (subscription.product.user_metadata or {}).get("tier")
-    tier = tier_from_value(tier_value) if isinstance(tier_value, str) else None
+    tier = tier_from_value(subscription.tier) if subscription.tier else None
     if tier is None or tier not in PAID_TIERS:
         return _none(moment)
     definition = get_definition(tier)
 
     if (
-        subscription.status == SubscriptionStatus.trialing
+        subscription.trialing
         and subscription.trial_start is not None
         and subscription.trial_end is not None
     ):
@@ -214,7 +197,7 @@ async def resolve_allowance(
     start, end = week_bounds(moment)
     return Allowance(
         plan_name=TIER_NAMES[tier],
-        status=subscription.status.value,
+        status=subscription.status,
         tier=tier.value,
         credits_limit=definition.weekly_credits,
         period_start=start,
@@ -222,12 +205,31 @@ async def resolve_allowance(
     )
 
 
+async def resolve_allowance(
+    session: AsyncSession, user: User, *, now: datetime | None = None
+) -> Allowance:
+    """The person's allowance now: one lookup of the synced subscription
+    row, by the user's id."""
+    moment = now or utc_now()
+    if not billing_required() or billing_exempt(user):
+        return _free(moment)
+    subscription = await DesktopSubscriptionRepository.from_session(
+        session
+    ).get_by_user(user.id)
+    return allowance_of(subscription, now=moment)
+
+
 __all__ = [
     "BILLING_PATH",
+    "STATUS_ACTIVE",
     "STATUS_FREE",
     "STATUS_NONE",
+    "STATUS_PAST_DUE",
     "STATUS_TRIALING",
     "Allowance",
+    "allowance_of",
+    "billing_exempt",
+    "billing_required",
     "billing_url",
     "month_bounds",
     "resolve_allowance",
