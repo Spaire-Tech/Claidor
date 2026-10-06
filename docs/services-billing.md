@@ -167,6 +167,19 @@ added on 5 October 2026 feed the app's usage summary
 `usageSummaryFromSimeonQuota`): `tier`, `trialEndsAt`, `trialCancelable`,
 `onDemand` (null until the server meters it), `upgradeUrl`.
 
+**The Manage plan card** (Settings → Usage & Billing, 6 October 2026). The
+window's own page had one, filled from the upstream's dashboard calls;
+the renderer patch (`desktop/scripts/lib/router-renderer-patch.mjs`,
+`MANAGE_PLAN_REPLACEMENTS`) redraws it under the meters from the usage
+summary's `managePlan` (the quota's plan, status, `periodEnd` and the next
+plan up, `desktop/source/electron-main/account/account-profile.ts`): the
+plan's name, when it resets or the trial ends, an "Upgrade to Pro" (or
+Max) button and a "Manage Billing" button. Both ask the server for a
+Stripe Customer Portal link, `POST /desktop/api/billing/portal` (bearer
+auth; `flow=update_confirm` with a `tier` opens the confirmation of that
+one change, nothing opens the portal's front page), and open it in the
+browser. Nothing is drawn without a plan on Stripe.
+
 Connections (`services-agents.md`, section 7) are included on every plan and
 on the trial (`ENTITLED_PLANS` in `server/simeon/connectors/service.py`).
 `SIMEON_CONNECTORS_ENTITLED_EMAILS` stays for staff and for a server with no

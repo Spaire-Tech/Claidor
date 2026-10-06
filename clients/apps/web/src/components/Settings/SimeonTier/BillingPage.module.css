@@ -12,6 +12,8 @@
   --card: #fafafb;
   --card-current: #ececef;
   --line: #ececef;
+  --blue: #255a93;
+  --stripe: #635bff;
   --font:
     -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Inter',
     'Helvetica Neue', Arial, sans-serif;
@@ -54,7 +56,7 @@
 }
 
 .who a {
-  color: var(--ink);
+  color: var(--blue);
   text-decoration: none;
   font-weight: 500;
 }
@@ -70,13 +72,15 @@
   padding: clamp(24px, 4vw, 56px) 0 clamp(40px, 5vw, 80px);
 }
 
+/* The site's "Pricing" and "Questions and answers" heading (.trust h2). */
 .title {
   margin: 0;
   text-align: center;
-  font-weight: 500;
-  font-size: clamp(32px, 4vw, 48px);
-  line-height: 1.08;
-  letter-spacing: -0.03em;
+  font-family: 'Newsreader', Georgia, 'Times New Roman', serif;
+  font-weight: 400;
+  font-size: clamp(36px, 2.9vw, 58px);
+  line-height: 1.04;
+  letter-spacing: -0.02em;
 }
 
 .lede {
@@ -312,8 +316,7 @@
   border: 0;
   background: none;
   color: var(--ink);
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  text-decoration: none;
   cursor: pointer;
 }
 
@@ -348,7 +351,7 @@
 }
 
 .setTitle {
-  margin: 40px 0 0;
+  margin: 0;
   font-size: 20px;
   font-weight: 500;
   letter-spacing: -0.02em;
@@ -396,7 +399,7 @@
   padding: 0;
   border: 0;
   background: none;
-  color: var(--ink);
+  color: var(--blue);
   cursor: pointer;
   text-decoration: none;
 }
@@ -408,4 +411,53 @@
 
 .muted {
   color: var(--ink3);
+}
+
+/* The site's card, word for word and line for line. */
+
+.tag {
+  margin: 4px 0 0;
+  font-size: clamp(14px, 0.9vw, 17px);
+  letter-spacing: -0.01em;
+  color: var(--ink3);
+}
+
+.trial {
+  margin-top: clamp(16px, 1.4vw, 24px);
+  padding-top: clamp(14px, 1.2vw, 20px);
+  border-top: 1px solid var(--line);
+}
+
+.trialPrice {
+  font-weight: 400;
+  font-size: clamp(24px, 1.7vw, 30px);
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.trialPrice small {
+  font-weight: 400;
+  font-size: clamp(14px, 0.9vw, 17px);
+  letter-spacing: -0.01em;
+  color: var(--ink2);
+  margin-left: 5px;
+}
+
+.plan .btn {
+  align-self: flex-start;
+  width: auto;
+  height: clamp(36px, 2.3vw, 42px);
+  padding: 0 clamp(16px, 1.1vw, 20px);
+  font-size: clamp(14px, 0.95vw, 16px);
+}
+
+.foot .stripe {
+  color: var(--stripe);
+}
+
+.btn .apl {
+  width: 1.05em;
+  height: 1.05em;
+  margin: -0.18em 0.45em 0 -0.1em;
+  flex: none;
 }

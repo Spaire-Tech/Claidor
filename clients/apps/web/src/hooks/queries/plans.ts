@@ -109,7 +109,9 @@ export const useOpenPortal = () =>
   useMutation({
     mutationFn: async (
       input: {
-        flow?: 'cancel' | 'update' | 'payment_method'
+        flow?: 'cancel' | 'update' | 'update_confirm' | 'payment_method'
+        /** With `update_confirm`: the plan to move to, confirmed on Stripe. */
+        tier?: PaidTierKey
         return_url?: string
       } = {},
     ): Promise<{ portal_url: string }> => {
