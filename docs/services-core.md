@@ -635,7 +635,8 @@ The download on simeonlabs.com and the update an installed app pulls
 ### How it works
 
 A release is made on a Mac (`docs/building-the-app.md`, "A signed release
-for other Macs") and its folder uploaded to the public bucket:
+for other Macs") and its folder uploaded to the public bucket
+(`simeonlabs-files-public` in production):
 `releases/darwin-arm64/<version>/` holds the `.dmg`, the `.zip`,
 `release.json` and `feed.json`, and `release.json` is copied once more to
 `releases/darwin-arm64/latest.json`. The server reads only `latest.json`
