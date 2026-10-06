@@ -257,9 +257,13 @@ class PlansService:
         *,
         return_url: str | None = None,
         flow: str | None = None,
+        tier: TierKey | None = None,
     ) -> str:
         """Stripe's Customer Portal: cards, invoices, a plan change or a
-        cancellation. `flow` opens the portal on one of those."""
+        cancellation. `flow` opens the portal on one of those;
+        `update_confirm` with a `tier` opens straight on the confirmation
+        of that one plan, skipping the portal's own picker (the person
+        already chose on the billing page)."""
         if not settings.STRIPE_SECRET_KEY:
             raise BillingNotConfigured()
         subscription = await self.subscription_of(session, user)
@@ -288,10 +292,40 @@ class PlansService:
                         "subscription": subscription.stripe_subscription_id
                     },
                 }
+            elif flow == "update_confirm" and tier is not None:
+                params["flow_data"] = {
+                    "type": "subscription_update_confirm",
+                    "subscription_update_confirm": {
+                        "subscription": subscription.stripe_subscription_id,
+                        "items": [await self._plan_change_item(subscription, tier)],
+                    },
+                }
             elif flow == "payment_method":
                 params["flow_data"] = {"type": "payment_method_update"}
         portal = await stripe_billing.create_portal_session(**params)
         return str(portal.url)
+
+    async def _plan_change_item(
+        self, subscription: DesktopSubscription, tier: TierKey
+    ) -> dict[str, Any]:
+        """The subscription's one item, moved to `tier`'s price at the
+        same interval: what the portal's confirm flow takes."""
+        item = first_item(subscription.raw or {})
+        if item is None or not isinstance(item.get("id"), str):
+            fresh = await stripe_billing.retrieve_subscription(
+                subscription.stripe_subscription_id
+            )
+            item = first_item(fresh)
+        if item is None or not isinstance(item.get("id"), str):
+            raise NoSubscription()
+        interval: catalog.BillingInterval = (
+            "year" if subscription.billing_interval == "year" else "month"
+        )
+        plan_price = catalog.price_for(tier, interval)
+        price = await stripe_billing.price_by_lookup_key(plan_price.lookup_key)
+        if price is None:
+            raise UnknownPrice(plan_price.lookup_key)
+        return {"id": item["id"], "price": price.id, "quantity": 1}
 
     # --- knowing what the person has ----------------------------------------
 

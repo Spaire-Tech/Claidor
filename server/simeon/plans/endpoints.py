@@ -152,7 +152,11 @@ async def create_portal(
     session: AsyncSession = Depends(get_db_session),
 ) -> PortalCreated:
     url = await plans_service.create_portal(
-        session, auth_subject.subject, return_url=body.return_url, flow=body.flow
+        session,
+        auth_subject.subject,
+        return_url=body.return_url,
+        flow=body.flow,
+        tier=body.tier,
     )
     return PortalCreated(portal_url=url)
 

@@ -147,20 +147,6 @@ const AllSet = ({
   return (
     <>
       <section className={styles.set}>
-        <div className={styles.setBrand}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            className={styles.setIcon}
-            src="/assets/brand/app-icon.png"
-            alt=""
-          />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            className={styles.setWordmark}
-            src="/assets/logotype-simeon.png"
-            alt="Simeon"
-          />
-        </div>
         <h1 className={styles.setTitle}>You&apos;re all set!</h1>
         <p className={styles.setLede}>
           {returnTo
@@ -267,8 +253,10 @@ const AdjustPlan = ({
       setPending(tier)
       try {
         if (subscribed) {
+          // Straight to Stripe's confirmation of the plan just chosen.
           const { portal_url } = await openPortal.mutateAsync({
-            flow: 'update',
+            flow: 'update_confirm',
+            tier,
           })
           window.location.assign(portal_url)
           return
