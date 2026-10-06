@@ -3,24 +3,24 @@ import { getUserOrganizations } from '@/utils/user'
 import { redirect } from 'next/navigation'
 
 /**
- * `GET /v1/platform/organizations/{id}/subscription`, read on the server.
- * The generated client does not know the platform paths yet (see
- * `hooks/queries/simeonTier.ts`), so the call is untyped here too. Any
+ * `GET /v1/plans/subscription`, read on the server: the synced copy of
+ * the person's Stripe subscription (docs/services-billing.md). The
+ * generated client does not know the path yet (see
+ * `hooks/queries/plans.ts`), so the call is untyped here too. Any
  * failure reads as "has a plan": the window's own 402 says the rest, and
  * a billing outage must not lock people out of their agents.
  */
-const tierOf = async (organizationId: string): Promise<string | null> => {
+const needsAPlan = async (): Promise<boolean> => {
   try {
     const api = await getServerSideAPI()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (api as unknown as any).GET(
-      '/v1/platform/organizations/{organization_id}/subscription',
-      { params: { path: { organization_id: organizationId } } },
+      '/v1/plans/subscription',
     )
-    if (error || !data) return null
-    return typeof data.tier === 'string' ? data.tier : null
+    if (error || !data) return false
+    return data.tier === 'inactive'
   } catch {
-    return null
+    return false
   }
 }
 
@@ -49,11 +49,8 @@ export default async function Page(props: {
   const api = await getServerSideAPI()
   const organizations = await getUserOrganizations(api)
   const organization = organizations.find((item) => item.slug === slug)
-  if (organization) {
-    const tier = await tierOf(organization.id)
-    if (tier === 'inactive') {
-      redirect('/billing?plan=standard')
-    }
+  if (organization && (await needsAPlan())) {
+    redirect('/billing?plan=standard')
   }
 
   redirect(query.size > 0 ? `/app?${query.toString()}` : '/app')

@@ -210,6 +210,11 @@ class DesktopUsage(RecordModel):
     #: `safety`, `memory`, `summary`, …), from the `x-simeon-call-reason`
     #: header; None for rows written before it and apps built before it.
     reason: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    #: When these credits were sent to Stripe's meter
+    #: (`simeon.plans.service.report_usage`); None until then.
+    stripe_reported_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True, default=None, index=True
+    )
 
 
 class DesktopMemoryFile(RecordModel):

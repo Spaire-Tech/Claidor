@@ -1,21 +1,22 @@
 'use client'
 
+import { toast } from '@/components/Toast/use-toast'
 import {
   formatCredits,
+  hasPlan,
   PaidTierKey,
   renewalSentence,
   tierDisplayName,
-  useSimeonSubscription,
-} from '@/hooks/queries/simeonTier'
-import { schemas } from '@simeon/client'
+  useMySubscription,
+  useOpenPortal,
+  useSyncCheckout,
+} from '@/hooks/queries/plans'
+import Button from '@simeon/ui/components/atoms/Button'
 import Link from 'next/link'
-import PastDueBanner from './PastDueBanner'
-import SimeonBillingManagement from './SimeonBillingManagement'
-import SimeonPlanCards from './SimeonPlanCards'
-import TrialBanner from './TrialBanner'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import PlanCards from './PlanCards'
 
 interface BillingPageProps {
-  organization: schemas['Organization']
   /** `?plan=` from the site's buttons and the Mac sign-in. */
   plan: PaidTierKey | null
   /**
@@ -26,29 +27,73 @@ interface BillingPageProps {
   returnTo: string | null
   /** `?upgraded=1`: the checkout just came back here. */
   upgraded: boolean
+  /** `?checkout_session_id=`: the checkout that just came back, to copy in. */
+  checkoutSessionId: string | null
 }
 
 /**
  * app.simeonlabs.com/billing: the person's plan, the three cards, and
- * the cards and invoices below. The Mac app's upgrade button, the site's
- * "Try it free" buttons and the Mac sign-in gate all land here
- * (docs/services-billing.md).
+ * Stripe's Customer Portal for cards, invoices and changes. The Mac
+ * app's upgrade button, the site's "Try it free" buttons and the Mac
+ * sign-in gate all land here (docs/services-billing.md).
  */
 const BillingPage = ({
-  organization,
   plan,
   returnTo,
   upgraded,
+  checkoutSessionId,
 }: BillingPageProps) => {
-  const subscription = useSimeonSubscription(organization.id)
+  const subscription = useMySubscription()
+  const sync = useSyncCheckout()
+  const openPortal = useOpenPortal()
+  const [portalPending, setPortalPending] = useState(false)
+  const synced = useRef<string | null>(null)
+
+  // The checkout came back: copy its subscription in before Stripe's
+  // webhook does, so the page says "trialing" at once. Once per id.
+  useEffect(() => {
+    if (!checkoutSessionId || synced.current === checkoutSessionId) return
+    synced.current = checkoutSessionId
+    sync.mutate(checkoutSessionId)
+  }, [checkoutSessionId, sync])
+
   const sub = subscription.data
-  const hasPlan =
-    sub !== undefined && sub.tier !== 'inactive' && sub.tier !== 'unmanaged'
+  const subscribed = hasPlan(sub)
+
+  const portal = useCallback(
+    async (flow?: 'payment_method') => {
+      setPortalPending(true)
+      try {
+        const { portal_url } = await openPortal.mutateAsync({ flow })
+        window.location.assign(portal_url)
+      } catch {
+        toast({
+          title: 'Could not open your billing page',
+          description: 'Please try again in a moment.',
+        })
+        setPortalPending(false)
+      }
+    },
+    [openPortal],
+  )
 
   return (
     <div className="flex flex-col gap-y-10">
-      <PastDueBanner organizationId={organization.id} />
-      <TrialBanner organizationId={organization.id} />
+      {sub?.status === 'past_due' && (
+        <div className="flex flex-col gap-y-2 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-900 md:flex-row md:items-center md:justify-between">
+          <span>
+            <span className="font-medium">Your last payment failed.</span>{' '}
+            Stripe retries the card for a few days; update it to keep your plan.
+          </span>
+          <Button
+            variant="outline"
+            loading={portalPending}
+            onClick={() => portal('payment_method')}
+          >
+            Update card
+          </Button>
+        </div>
+      )}
 
       {upgraded && (
         <div className="rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-sm text-green-900">
@@ -59,7 +104,7 @@ const BillingPage = ({
         </div>
       )}
 
-      {returnTo && !hasPlan && (
+      {returnTo && !subscribed && (
         <div className="rounded-2xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm text-blue-900">
           <span className="font-medium">
             One step before you sign in to Simeon on your Mac.
@@ -70,7 +115,7 @@ const BillingPage = ({
         </div>
       )}
 
-      {returnTo && hasPlan && (
+      {returnTo && subscribed && (
         <div className="rounded-2xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm text-blue-900">
           <span className="font-medium">You have a plan.</span>{' '}
           <Link href={returnTo} className="underline">
@@ -79,7 +124,7 @@ const BillingPage = ({
         </div>
       )}
 
-      {sub && hasPlan && (
+      {sub && subscribed && (
         <div className="flex flex-col gap-y-1 rounded-2xl border border-gray-200 bg-white px-6 py-5">
           <span className="text-xs tracking-wide text-gray-500 uppercase">
             Your plan
@@ -107,13 +152,28 @@ const BillingPage = ({
         </div>
       )}
 
-      <SimeonPlanCards
-        organization={organization}
-        successUrl={returnTo ?? undefined}
-        highlightTier={plan}
-      />
+      <PlanCards successUrl={returnTo ?? undefined} highlightTier={plan} />
 
-      {hasPlan && <SimeonBillingManagement organization={organization} />}
+      {(subscribed || sub?.stripe_customer_id) && (
+        <div className="flex flex-col gap-y-3 rounded-2xl border border-gray-200 bg-white px-6 py-5 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-y-1">
+            <span className="text-base font-medium text-gray-900">
+              Cards, invoices and receipts
+            </span>
+            <span className="text-sm text-gray-500">
+              Your card, your invoices and your billing address are on Stripe.
+              Changing or cancelling your plan is there too.
+            </span>
+          </div>
+          <Button
+            variant="outline"
+            loading={portalPending}
+            onClick={() => portal()}
+          >
+            Open billing on Stripe
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

@@ -34,7 +34,7 @@ The app calls three routes. They sit at the **root** of the API host, not under
 
 | Route | What it does |
 |---|---|
-| `GET /loginDeepControl?challenge=…&uuid=…` | The browser page. With no web session it redirects to `/login?return_to=…` on the web app (`app.simeonlabs.com`). With a session and no plan (billing configured, no active or trialing subscription) it redirects to `/billing?plan=standard&return_to=…` on the web app, which takes a card and comes back (`services-billing.md`). Otherwise it shows a confirm page naming the account. |
+| `GET /loginDeepControl?challenge=…&uuid=…` | The browser page. With no web session it redirects to `/login?return_to=…` on the web app (`app.simeonlabs.com`). With a session and no plan (billing required, no trialing or active subscription on Stripe) it redirects to `/billing?plan=standard&return_to=…` on the web app, which opens Stripe Checkout and comes back with `checkout_session_id` (`services-billing.md`). Otherwise it shows a confirm page naming the account. |
 | `POST /loginDeepControl` | The confirm form. Same-origin only. Records the pending sign-in; no sign-in is written before this post. |
 | `POST /auth/poll` (body `{uuid, verifier}`) | The app polls here. `404` means "not yet"; `200` returns `{accessToken, refreshToken}` once. `GET /auth/poll` with query parameters is still served for older builds. |
 | `POST /oauth/token` (`grant_type=refresh_token`) | The refresh. Returns a new pair. A spent or expired refresh token gets `200` with `shouldLogout: true`; only a malformed request gets `400`. |

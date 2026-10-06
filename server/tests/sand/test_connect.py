@@ -15,7 +15,6 @@ from fastapi import FastAPI
 from pytest_mock import MockerFixture
 
 from simeon.models import User
-from simeon.models.subscription import SubscriptionStatus
 from simeon.postgres import AsyncSession
 from simeon.sand.connect import (
     ConnectCall,
@@ -268,8 +267,8 @@ class TestLaunchPreflights:
 
 @pytest.mark.asyncio
 class TestCancelSandTrial:
-    """The Settings page's « Cancel trial » button, answered by the billing
-    engine (`simeon/sand/dashboard.py`)."""
+    """The Settings page's « Cancel trial » button, answered on Stripe
+    Billing (`simeon/sand/dashboard.py`)."""
 
     async def test_without_billing_there_is_nothing_to_cancel(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User
@@ -292,21 +291,24 @@ class TestCancelSandTrial:
         mocker: MockerFixture,
     ) -> None:
         from tests.desktop.test_allowance import _person_with_plan
+        from tests.plans.test_service import stripe_subscription
 
         await _person_with_plan(
             save_fixture,
             mocker,
             user,
             tier="standard",
-            status=SubscriptionStatus.trialing,
+            status="trialing",
             trial_days_left=4,
         )
-        # The cancellation e-mail is the engine's; its renderer is a binary
-        # the Docker image builds, not this test's concern.
-        mocker.patch(
-            "simeon.subscription.service.render_email_template", return_value="<p/>"
+        # Stripe's answer to the modify call: the same trial, now ending
+        # when the trial does.
+        modify = mocker.patch(
+            "simeon.plans.service.stripe_billing.modify_subscription",
+            return_value=stripe_subscription(
+                user, status="trialing", cancel_at_period_end=True
+            ),
         )
-        mocker.patch("simeon.subscription.service.enqueue_email")
         access, _ = await _signed_in(client, session, user)
         response = await client.post(
             "/simeon.v1.DashboardService/CancelSandTrial",
@@ -320,3 +322,4 @@ class TestCancelSandTrial:
         data = quota.json()["data"]
         assert data["subscriptionStatus"] == "trialing"
         assert data["trialCancelable"] is False
+        modify.assert_called_once_with("sub_test", cancel_at_period_end=True)

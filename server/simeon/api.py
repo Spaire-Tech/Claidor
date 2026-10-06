@@ -63,6 +63,7 @@ from simeon.organization_custom_domain.endpoints import (
 from simeon.payment.endpoints import router as payment_router
 from simeon.payout.endpoints import router as payout_router
 from simeon.personal_access_token.endpoints import router as pat_router
+from simeon.plans.endpoints import router as plans_router
 from simeon.platform.endpoints import router as platform_router
 from simeon.product.endpoints import router as product_router
 from simeon.product_review.endpoints import router as product_review_router
@@ -136,6 +137,9 @@ router.include_router(files_router)
 router.include_router(metrics_router)
 # /entitlements
 router.include_router(entitlements_router)
+# /plans
+router.include_router(plans_router)
+
 # /platform
 router.include_router(platform_router)
 # /audit-log

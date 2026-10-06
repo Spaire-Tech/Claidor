@@ -1,7 +1,6 @@
 """What one person may spend, per plan state (`simeon/desktop/allowance.py`),
 and what the app's quota route says about it."""
 
-import uuid
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -17,18 +16,59 @@ from simeon.desktop.allowance import (
 )
 from simeon.desktop.proxy_common import quota_exhausted_response
 from simeon.desktop.service import desktop
-from simeon.enums import SubscriptionRecurringInterval
+from simeon.entitlements.tiers import tier_from_value
 from simeon.kit.utils import utc_now
-from simeon.models import DesktopUsage, Organization, Product, User, UserOrganization
-from simeon.models.subscription import SubscriptionStatus
+from simeon.models import DesktopSubscription, DesktopUsage, User
+from simeon.plans.catalog import lookup_key
 from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
-from tests.fixtures.random_objects import (
-    create_customer,
-    create_organization,
-    create_product,
-    create_subscription,
-)
+
+
+def billing_on(mocker: MockerFixture) -> None:
+    """Production's setting: everyone needs a plan."""
+    mocker.patch("simeon.desktop.allowance.settings.DESKTOP_BILLING_REQUIRED", True)
+
+
+async def _person_with_plan(
+    save_fixture: SaveFixture,
+    mocker: MockerFixture,
+    user: User,
+    *,
+    tier: str,
+    status: str,
+    trial_days_left: int | None = None,
+    cancel_at_period_end: bool = False,
+    stripe_subscription_id: str = "sub_test",
+) -> DesktopSubscription:
+    """Billing on, and the synced copy of a Stripe subscription on `tier`
+    in `status`, as the webhook would have written it."""
+    billing_on(mocker)
+    now = utc_now()
+    trial: dict[str, datetime] = {}
+    if trial_days_left is not None:
+        trial = {
+            "trial_start": now - timedelta(days=7 - trial_days_left),
+            "trial_end": now + timedelta(days=trial_days_left),
+        }
+    row = DesktopSubscription(
+        user_id=user.id,
+        stripe_customer_id="cus_test",
+        stripe_subscription_id=stripe_subscription_id,
+        status=status,
+        tier=tier,
+        price_lookup_key=(
+            lookup_key(key, "month") if (key := tier_from_value(tier)) else None
+        ),
+        billing_interval="month",
+        current_period_start=now - timedelta(days=3),
+        current_period_end=now + timedelta(days=27),
+        cancel_at_period_end=cancel_at_period_end,
+        synced_at=now,
+        raw={},
+        **trial,
+    )
+    await save_fixture(row)
+    return row
 
 
 class TestWeekBounds:
@@ -48,54 +88,6 @@ class TestWeekBounds:
         assert start == datetime(2026, 10, 5, tzinfo=UTC)
 
 
-async def _person_with_plan(
-    save_fixture: SaveFixture,
-    mocker: MockerFixture,
-    user: User,
-    *,
-    tier: str,
-    status: SubscriptionStatus,
-    trial_days_left: int | None = None,
-    cancel_at_period_end: bool = False,
-) -> tuple[Organization, Product]:
-    """A platform organisation, the person's own organisation, its
-    Customer, and a subscription on a tier product in `status`."""
-    platform_org = await create_organization(save_fixture)
-    mocker.patch("simeon.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
-    own = await create_organization(save_fixture)
-    await save_fixture(UserOrganization(user_id=user.id, organization_id=own.id))
-    customer = await create_customer(
-        save_fixture,
-        organization=platform_org,
-        email=f"creator-{own.slug}@billing.simeonlabs.internal",
-        user_metadata={"creator_org_id": str(own.id)},
-    )
-    product = await create_product(
-        save_fixture,
-        organization=platform_org,
-        recurring_interval=SubscriptionRecurringInterval.month,
-        prices=[(2000, "usd")],
-    )
-    product.user_metadata = {"tier": tier, "billing_interval": "month"}
-    await save_fixture(product)
-    now = utc_now()
-    trial: dict[str, datetime] = {}
-    if trial_days_left is not None:
-        trial = {
-            "trial_start": now - timedelta(days=7 - trial_days_left),
-            "trial_end": now + timedelta(days=trial_days_left),
-        }
-    await create_subscription(
-        save_fixture,
-        product=product,
-        customer=customer,
-        status=status,
-        cancel_at_period_end=cancel_at_period_end,
-        **trial,
-    )
-    return own, product
-
-
 @pytest.mark.asyncio
 class TestResolveAllowance:
     async def test_without_billing_configured_everybody_is_free_for_the_month(
@@ -109,10 +101,10 @@ class TestResolveAllowance:
         assert allowance.credits_limit == settings.DESKTOP_MONTHLY_CREDITS
         assert allowance.period_start.day == 1
 
-    async def test_with_billing_and_no_organisation_there_is_no_plan(
+    async def test_with_billing_and_no_subscription_there_is_no_plan(
         self, session: AsyncSession, user: User, mocker: MockerFixture
     ) -> None:
-        mocker.patch("simeon.platform.service.settings.PLATFORM_ORG_ID", uuid.uuid4())
+        billing_on(mocker)
         allowance = await resolve_allowance(session, user)
         assert allowance.status == STATUS_NONE
         assert allowance.credits_limit == 0
@@ -125,11 +117,9 @@ class TestResolveAllowance:
         user: User,
         mocker: MockerFixture,
     ) -> None:
-        await _person_with_plan(
-            save_fixture, mocker, user, tier="pro", status=SubscriptionStatus.active
-        )
+        await _person_with_plan(save_fixture, mocker, user, tier="pro", status="active")
         allowance = await resolve_allowance(session, user)
-        assert allowance.status == SubscriptionStatus.active.value
+        assert allowance.status == "active"
         assert allowance.plan_name == "Pro"
         assert allowance.tier == "pro"
         assert allowance.credits_limit == 2_500_000
@@ -149,10 +139,10 @@ class TestResolveAllowance:
             mocker,
             user,
             tier="standard",
-            status=SubscriptionStatus.past_due,
+            status="past_due",
         )
         allowance = await resolve_allowance(session, user)
-        assert allowance.status == SubscriptionStatus.past_due.value
+        assert allowance.status == "past_due"
         assert allowance.credits_limit == 750_000
         assert allowance.paid
 
@@ -168,7 +158,7 @@ class TestResolveAllowance:
             mocker,
             user,
             tier="max",
-            status=SubscriptionStatus.trialing,
+            status="trialing",
             trial_days_left=5,
         )
         allowance = await resolve_allowance(session, user)
@@ -192,7 +182,7 @@ class TestResolveAllowance:
             mocker,
             user,
             tier="standard",
-            status=SubscriptionStatus.trialing,
+            status="trialing",
             trial_days_left=2,
             cancel_at_period_end=True,
         )
@@ -212,7 +202,7 @@ class TestResolveAllowance:
             mocker,
             user,
             tier="standard",
-            status=SubscriptionStatus.canceled,
+            status="canceled",
         )
         allowance = await resolve_allowance(session, user)
         assert allowance.none
@@ -226,7 +216,7 @@ class TestResolveAllowance:
         mocker: MockerFixture,
     ) -> None:
         await _person_with_plan(
-            save_fixture, mocker, user, tier="studio", status=SubscriptionStatus.active
+            save_fixture, mocker, user, tier="studio", status="active"
         )
         allowance = await resolve_allowance(session, user)
         assert allowance.plan_name == "Pro"
@@ -246,7 +236,7 @@ class TestQuotaAndRefusal:
             mocker,
             user,
             tier="standard",
-            status=SubscriptionStatus.trialing,
+            status="trialing",
             trial_days_left=6,
         )
         quota = await desktop.quota(session, user)
@@ -274,7 +264,7 @@ class TestQuotaAndRefusal:
             mocker,
             user,
             tier="standard",
-            status=SubscriptionStatus.active,
+            status="active",
         )
         start, _ = week_bounds()
         old = DesktopUsage(
@@ -295,7 +285,7 @@ class TestQuotaAndRefusal:
     async def test_no_plan_is_exhausted_before_the_first_call(
         self, session: AsyncSession, user: User, mocker: MockerFixture
     ) -> None:
-        mocker.patch("simeon.platform.service.settings.PLATFORM_ORG_ID", uuid.uuid4())
+        billing_on(mocker)
         assert await desktop.exhausted(session, user)
         allowance = await desktop.allowance(session, user)
         body = quota_exhausted_response(allowance).body.decode()
@@ -315,7 +305,7 @@ class TestQuotaAndRefusal:
             mocker,
             user,
             tier="standard",
-            status=SubscriptionStatus.active,
+            status="active",
         )
         allowance = await desktop.allowance(session, user)
         body = quota_exhausted_response(allowance).body.decode()

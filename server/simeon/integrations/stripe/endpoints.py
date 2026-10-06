@@ -43,6 +43,11 @@ DIRECT_IMPLEMENTED_WEBHOOKS = {
     "invoice.paid",
     "invoice.payment_failed",
     "invoice.voided",
+    # Simeon's plans on Stripe Billing (`simeon.plans.tasks`)
+    "customer.subscription.created",
+    "customer.subscription.updated",
+    "customer.subscription.deleted",
+    "checkout.session.completed",
 }
 CONNECT_IMPLEMENTED_WEBHOOKS = {"account.updated", "payout.updated", "payout.paid"}
 
