@@ -1,5 +1,4 @@
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
 import { copyFile, readFile, readdir, rename, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -70,6 +69,12 @@ export const BRAND_PHRASE_REPLACEMENTS = Object.freeze([
   ["Copyright © 2026 SpaceXAI", "Copyright © 2026 SimeonLabs, Inc."],
   // The marketplace link in the plugins chunk (Track A of the detachment plan).
   ["https://cursor.com/marketplace", "https://simeonlabs.com"],
+  // The access cover's button (6 October 2026): the window shows the cover
+  // when the server refuses the box for want of a plan, and the button
+  // opened the upstream's onboarding page. It opens Simeon's billing page;
+  // once the plan is on Stripe, the window's next ask for its box succeeds
+  // and the cover goes (docs/services-billing.md, section 3).
+  ["https://cursor.com/bot/onboarding", "https://app.simeonlabs.com/billing?plan=standard"],
 ]);
 
 /**
@@ -515,6 +520,67 @@ export const voiceCallCss = () => `${VOICE_CALL_MARKER} (30 September 2026). */
 .simeon-name-sheet__save:disabled{opacity:.4;cursor:default}
 @media (prefers-reduced-motion:reduce){.simeon-call-record__chevron,.simeon-call-record__recap{transition:none}}
 `;
+
+// The Manage plan card in Settings → Usage & Billing (6 October 2026): the
+// upstream's page had one from its own dashboard calls, which Simeon never
+// answered. Drawn from the usage summary's `managePlan` (the server's quota:
+// the plan, when it resets, the next plan up) under the usage meters, with
+// two buttons that open Stripe's Customer Portal in the browser through the
+// account bridge: the confirmation of the next plan up, and the portal's
+// front page for cards and invoices. Nothing without a plan on Stripe.
+export const MANAGE_PLAN_COMPONENT_SOURCE = [
+  "function __simeonManagePlan(){",
+  "const d=typeof window<\"u\"?window.desktop:void 0,a=d?.cursorAccount,[s,ss]=S.useState(null),[busy,sb]=S.useState(null),[er,se]=S.useState(null);",
+  "S.useEffect(()=>{if(a?.getUsageSummary==null)return;let l=!0;Promise.resolve(a.getUsageSummary()).then(v=>{l&&ss(v?.managePlan??null)},()=>{});return()=>{l=!1}},[a]);",
+  "if(s==null||a?.openBillingPortal==null||d?.openExternal==null)return null;",
+  "const open=req=>{if(busy!=null)return;sb(req.flow??\"manage\");se(null);Promise.resolve(a.openBillingPortal(req)).then(r=>{if(r?.ok===!0&&typeof r.url===\"string\")return d.openExternal(r.url);se(typeof r?.message===\"string\"?r.message:\"Couldn’t open billing. Try again.\")},()=>se(\"Couldn’t open billing. Try again.\")).finally(()=>sb(null))};",
+  "const when=s.periodEndMs!=null?new Date(s.periodEndMs).toLocaleDateString(void 0,{month:\"short\",day:\"numeric\"}):null;",
+  "const line=s.status===\"trialing\"?(when!=null?`Your trial ends on ${when}.`:\"Your trial is running.\"):when!=null?`Usage resets on ${when}.`:\"\";",
+  `return p.jsxs("div",{className:"simeon-manage-plan",children:[p.jsx("h3",{className:"simeon-manage-plan__title",children:"Manage Plan"}),p.jsxs("div",{className:"simeon-manage-plan__card",children:[p.jsxs("div",{className:"simeon-manage-plan__row",children:[p.jsxs("div",{children:[p.jsx("div",{className:"simeon-manage-plan__name",children:\`Current plan: \${s.planName}\`}),p.jsx("div",{className:"simeon-manage-plan__sub",children:\`\${line}\${s.nextTier!=null?" Upgrade for more usage.":""}\`.trim()})]}),s.nextTier!=null?p.jsx("button",{type:"button",className:"simeon-manage-plan__btn",disabled:busy!=null,onClick:()=>open({flow:"update_confirm",tier:s.nextTier.tier}),children:busy==="update_confirm"?"Opening…":\`Upgrade to \${s.nextTier.label}\`}):null]}),p.jsxs("div",{className:"simeon-manage-plan__row",children:[p.jsx("div",{className:"simeon-manage-plan__name",children:"Manage billing on Stripe"}),p.jsx("button",{type:"button",className:"simeon-manage-plan__btn simeon-manage-plan__btn--quiet",disabled:busy!=null,onClick:()=>open({}),children:busy==="manage"?"Opening…":"Manage Billing ↗"})]}),er!=null?p.jsx("div",{className:"simeon-manage-plan__error",children:er}):null]})]})}`,
+  "globalThis.__simeonManagePlan=__simeonManagePlan;",
+].join("");
+// The settings chunk has its own jsx alias and no React alias of its own to
+// lean on, so it reaches the component through the global the main chunk
+// sets; a window where the main chunk has not run yet draws nothing there.
+const MANAGE_PLAN_PANEL_AFTER = 'Z=x==="usage"?a.jsx(Te,{children:a.jsx("div",{children:[a.jsx(Na,{},"usage"),a.jsx(globalThis.__simeonManagePlan??(()=>null),{},"simeon-manage-plan")]})}):null';
+export const MANAGE_PLAN_REPLACEMENTS = Object.freeze([
+  ["manage-plan-component", VOICE_COMPONENTS_ANCHOR, `${MANAGE_PLAN_COMPONENT_SOURCE}${VOICE_COMPONENTS_ANCHOR}`],
+]);
+export const MANAGE_PLAN_PANEL_REPLACEMENTS = Object.freeze([
+  ["manage-plan-under-usage", USAGE_BEFORE, MANAGE_PLAN_PANEL_AFTER],
+]);
+
+export function patchOriginalManagePlan(source) {
+  if (source.includes("function __simeonManagePlan(){")) throw new Error("Original renderer Manage plan component is already present.");
+  let out = source;
+  for (const [label, before, after] of MANAGE_PLAN_REPLACEMENTS) out = replaceExactlyOnce(out, before, after, label);
+  return out;
+}
+
+export function patchOriginalManagePlanPanel(source) {
+  let out = source;
+  for (const [label, before, after] of MANAGE_PLAN_PANEL_REPLACEMENTS) out = replaceExactlyOnce(out, before, after, label);
+  return out;
+}
+
+export const MANAGE_PLAN_MARKER = "/* Simeon: the Manage plan card in Usage & Billing";
+export const managePlanCss = () => `${MANAGE_PLAN_MARKER} (6 October 2026). The upstream's card, redrawn: a bordered card under the meters, the plan and its reset date, a black pill to upgrade, a quiet pill to Stripe. */
+.simeon-manage-plan{margin-top:28px}
+.simeon-manage-plan__title{margin:0 0 10px;font-size:15px;font-weight:400;opacity:.6}
+.simeon-manage-plan__card{display:grid;gap:18px;padding:20px 22px;border:1px solid rgba(127,127,127,.28);border-radius:14px}
+.simeon-manage-plan__row{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.simeon-manage-plan__name{font-size:17px;line-height:1.3}
+.simeon-manage-plan__sub{margin-top:3px;max-width:34em;font-size:15px;line-height:1.4;opacity:.6}
+.simeon-manage-plan__btn{flex:none;height:40px;padding:0 18px;border:0;border-radius:99px;background:#000;color:#fff;font:inherit;font-size:15px;cursor:pointer;white-space:nowrap}
+.simeon-manage-plan__btn:disabled{opacity:.6;cursor:default}
+.simeon-manage-plan__btn--quiet{background:rgba(127,127,127,.16);color:inherit}
+.simeon-manage-plan__error{color:#ef8585;font-size:14px}
+@media (prefers-color-scheme:dark){.simeon-manage-plan__btn{background:#fff;color:#000}.simeon-manage-plan__btn--quiet{background:rgba(255,255,255,.14);color:inherit}}
+`;
+export function patchOriginalManagePlanStylesheet(css) {
+  if (css.includes(MANAGE_PLAN_MARKER)) throw new Error("Original renderer Manage plan block is already present.");
+  return `${css}\n${managePlanCss()}`;
+}
 
 export function patchOriginalVoiceCallStylesheet(css) {
   if (css.includes(VOICE_CALL_MARKER)) throw new Error("Original renderer voice-call block is already present.");
@@ -1177,9 +1243,9 @@ export function appMentionsPluginSource(names) {
  * wraps each name in `span.simeon-agent[data-agent-color]` with an empty
  * mark span before it, under the same rules as the app step (text under
  * `a`, `code`, `pre`, `kbd` left alone, the structure tag shared with the
- * parent). The mark is the cloud: the palette's three stops as a gradient,
- * masked by the cloud's outline, with the two eyes on top, both read from
- * `source/shared/voice-call/agent-mark.ts`, in the app logo's box: as tall
+ * parent). The mark is the agent's butterfly in its palette (one image per
+ * palette, drawn by `butterflyMarkSvg` like the call banner's copy in
+ * `source/shared/voice-call/agent-mark.ts`), in the app logo's box: as tall
  * (1.05em), as far from the name, on the same baseline ("not proportionate
  * with their text … use the same logic as the connectors"). The name takes the palette's top
  * stop, nudged to 3:1 on the message grey (4.5:1 on the dark bubble).
@@ -1211,24 +1277,19 @@ export const AGENT_RESOLVERS_AFTER = `function Eee(n){return Qtt.find(t=>t===n.a
 // before the reconnection).
 export const AGENT_MENTIONS_PLUGIN_SOURCE = "const __simeonAgentMentions=(()=>{let K=null,R=null,A={};const S=new Set([\"a\",\"code\",\"pre\",\"kbd\",\"script\",\"style\"]);const e=x=>x.replace(/[.*+?^${}()|[\\]\\\\]/g,\"\\\\$&\");const sync=()=>{const m=globalThis.__simeonAgentColors||{},p=typeof globalThis.__simeonPersonName===\"string\"?globalThis.__simeonPersonName.toLowerCase():\"\",n=Object.keys(m).filter(x=>x.toLowerCase()!==p).sort(),k=n.map(x=>x+\"=\"+m[x]).join(\"\\n\")+\"\\n\"+p;if(k===K)return;K=k;A={};for(const x of n)A[x]=m[x];const l=n.sort((a,b)=>b.length-a.length).map(e);R=l.length?new RegExp(\"(?<![\\\\w@/.-])(?:\"+l.join(\"|\")+\")(?![\\\\w-])\",\"g\"):null};const w=n=>{if(!n||!Array.isArray(n.children)||S.has(n.tagName))return;const o=[];let c=!1;const d=n.data&&n.data.sandMarkdown;for(const k of n.children){if(k.type!==\"text\"||d===void 0){w(k);o.push(k);continue}const v=k.value;let i=0,m;R.lastIndex=0;while((m=R.exec(v))!==null){c=!0;m.index>i&&o.push({type:\"text\",value:v.slice(i,m.index)});o.push({type:\"element\",tagName:\"span\",properties:{className:[\"simeon-agent\"],dataAgentColor:A[m[0]]},data:{sandMarkdown:d},children:[{type:\"element\",tagName:\"span\",properties:{className:[\"simeon-agent__mark\"],ariaHidden:\"true\"},data:{sandMarkdown:d},children:[]},{type:\"text\",value:m[0]}]});i=m.index+m[0].length}i===0?o.push(k):i<v.length&&o.push({type:\"text\",value:v.slice(i)})}c&&(n.children=o)};return()=>t=>{sync();R&&w(t)}})();";
 
-export const AGENT_MENTION_VIEWBOX = "0 22 229 185";
-const AGENT_MARK_SOURCE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../source/shared/voice-call/agent-mark.ts");
-/** The cloud's outline (the mask) and its two eyes, as SVG data URLs, from the mark the call banner draws. */
-export function agentMentionMarks(markSource = readFileSync(AGENT_MARK_SOURCE, "utf8")) {
-  const svg = JSON.parse(markSource.match(/export const CLOUD_MARK_SVG = ("(?:[^"\\]|\\.)*");/)[1]);
-  const outline = svg.match(/<clipPath id="MARKID"><path d="([^"]+)"/)[1];
-  const eyes = svg.match(/<g clip-path="url\(#MARKID\)">([\s\S]*?)<\/g>/)[1].replaceAll("var(--eye,#fcfcfc)", "#fcfcfc");
-  // Cropped to the cloud itself (it spans x 0–228.5, y 22–206 of the mark's square), so it fills its box the way an app's logo does.
-  const url = (body) => `data:image/svg+xml;base64,${Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${AGENT_MENTION_VIEWBOX}">${body}</svg>`).toString("base64")}`;
-  return { cloud: url(`<path d="${outline}"/>`), eyes: url(eyes) };
+/** The butterfly's own box in the mark's square, the rim included (x 3.3–225.3, y 30.6–191.6; a test measures it). */
+export const AGENT_MENTION_VIEWBOX = "3 30 223 163";
+/** One butterfly per palette, as SVG data URLs, drawn by `butterflyMarkSvg` like the call banner's copy. */
+export function agentMentionMarks() {
+  return Object.fromEntries(AGENT_PALETTES.map(({ id, top, mid, bottom }) => [id, `data:image/svg+xml;base64,${Buffer.from(butterflyMarkSvg({ id: `mention-${id}`, from: top, mid, to: bottom, viewBox: AGENT_MENTION_VIEWBOX })).toString("base64")}`]));
 }
 
-export function agentMentionsCss({ cloud, eyes } = agentMentionMarks()) {
+export function agentMentionsCss(marks = agentMentionMarks()) {
   return `.simeon-agent{color:var(--simeon-agent-color,inherit);font-weight:500;white-space:nowrap}
-.simeon-agent__mark{display:inline-block;width:1.3em;height:1.05em;margin:0 .26em 0 .04em;vertical-align:-.18em;background:url("${eyes}") center/contain no-repeat,linear-gradient(172deg,var(--simeon-agent-top),var(--simeon-agent-mid) 55%,var(--simeon-agent-bottom));-webkit-mask:url("${cloud}") center/contain no-repeat;mask:url("${cloud}") center/contain no-repeat}
+.simeon-agent__mark{display:inline-block;width:1.44em;height:1.05em;margin:0 .22em 0 .02em;vertical-align:-.18em;background:var(--simeon-agent-mark) center/contain no-repeat}
 .sand-mvmkjj .simeon-agent{color:inherit}
 strong .simeon-agent,b .simeon-agent,h1 .simeon-agent,h2 .simeon-agent,h3 .simeon-agent{font-weight:inherit}
-${AGENT_PALETTES.map(({ id, top, mid, bottom }) => `.simeon-agent[data-agent-color="${id}"]{--simeon-agent-color:light-dark(${readableOn(top, MESSAGE_GREY_LIGHT, "#000000")},${readableOn(top, MESSAGE_GREY_DARK, "#ffffff", 4.5)});--simeon-agent-top:${top};--simeon-agent-mid:${mid};--simeon-agent-bottom:${bottom}}`).join("\n")}
+${AGENT_PALETTES.map(({ id, top }) => `.simeon-agent[data-agent-color="${id}"]{--simeon-agent-color:light-dark(${readableOn(top, MESSAGE_GREY_LIGHT, "#000000")},${readableOn(top, MESSAGE_GREY_DARK, "#ffffff", 4.5)});--simeon-agent-mark:url("${marks[id]}")}`).join("\n")}
 `;
 }
 
@@ -1846,6 +1907,143 @@ export function patchOriginalSidebarDiscsStylesheet(css) {
 }
 
 /**
+ * The butterfly (6 October 2026, the founder: "what if the avatar was a
+ * butterfly … i dont want to lose the animations"; then "i want actual
+ * butterfly … i'm okay to lose the eyes. but i wanna keep the animation of
+ * the avatar turning around, morphing into 3 dots", with three photographs
+ * of pale blue, pink and lavender butterflies; and the spin's lights
+ * "related to the specific agent avatar color").
+ *
+ * Every agent is a butterfly in its own palette (the twelve of
+ * AGENT_PALETTES): pale wings that deepen toward a soft darker border, a
+ * thin rim, fine veins, a slim body and two antennae, the rim, veins and
+ * body a dark shade of the palette's own colours. The window's mark engine
+ * draws it, so all of its motion stays:
+ *   1. The geometry every shape draws (`Jo.cloud`, which SHAPE_REPLACEMENTS
+ *      gives every name; the key stays `cloud`, it is what agents have
+ *      stored) is the wings: the outer edge of a union of rotated ellipses
+ *      (BUTTERFLY_ELLIPSES), sampled by the engine's own `Yse`, with
+ *      spheres for its turns (`solid`).
+ *   2. The details (`simeon-wing-art`) sit over the body in the engine's
+ *      moving group, clipped to the engine's outline, so they spin, sway
+ *      and turn with it; they and the rim fade out as the body morphs into
+ *      the orb (the morph's progress, `Jc`) and come back after it.
+ *   3. No eyes: the eye group is not drawn (the expressions and the eye
+ *      movement go with it; the founder: "i'm okay with the eye movement
+ *      out"). The details are inserted just before it, after the body.
+ *   4. The still renderer (`rOt`: the group avatar's members and every
+ *      other still mark) draws the same wings and details, without the eye
+ *      holes it cut.
+ *   5. The spin's light trails and burst of sparks take the agent's own
+ *      colours, read off the mark (`--ink-from`, `--ink-mid`, `--ink-to`,
+ *      light-dark pairs resolved through a computed fill): each trail runs
+ *      between two neighbouring stops with a little drift, each spark is a
+ *      shade of one. They went round the whole colour wheel and six fixed
+ *      colours (`k1e`).
+ * The call banner's and the mentions' copies (source/shared/voice-call/
+ * agent-mark.ts, `agentMentionsCss`) and the website's faces are drawn by
+ * `butterflyMarkSvg` from the same pieces.
+ */
+const MARK_CENTRE = 114.2705;
+/** The wings: rotated ellipses [cx, cy, a, b, degrees] around the mark's centre (y down), the left side mirroring the right. */
+export const BUTTERFLY_ELLIPSES = Object.freeze([[52, -36, 63, 39, -30], [38, 36, 44, 35, 48], [0, 0, 7, 50, 90]].flatMap(([cx, cy, a, b, g]) => (cx === 0 ? [[cx, cy, a, b, g]] : [[cx, cy, a, b, g], [-cx, cy, a, b, 180 - g]])));
+const BUTTERFLY_SPHERES = "[[-52,-36,10,46],[52,-36,-12,46],[-38,36,8,38],[38,36,-10,38],[0,0,14,12]]";
+const BUTTERFLY_REACH_SOURCE = `const dx=Math.cos(t),dy=Math.sin(t);let k=0;for(const[cx,cy,a,b,g]of ${JSON.stringify(BUTTERFLY_ELLIPSES)}){const r=g*Math.PI/180,c=Math.cos(r),s=Math.sin(r),px=-cx*c-cy*s,py=cx*s-cy*c,vx=dx*c+dy*s,vy=-dx*s+dy*c,A=vx*vx/(a*a)+vy*vy/(b*b),B=2*(px*vx/(a*a)+py*vy/(b*b)),C=px*px/(a*a)+py*py/(b*b)-1,D=B*B-4*A*C;if(D<0)continue;const q=(-B+Math.sqrt(D))/(2*A);q>k&&(k=q)}`;
+/** How far from the centre the wings reach along the angle `t` (radians, y down): the same code the window runs. */
+export const butterflyReach = new Function("t", `${BUTTERFLY_REACH_SOURCE}return k;`);
+const fixed = (value, digits) => Number(value.toFixed(digits)).toString();
+/** The wings' outline as a path, sampled at the window's 200 angles. */
+export const BUTTERFLY_OUTLINE = (() => {
+  const points = [];
+  for (let i = 0; i < 200; i++) {
+    const t = (i / 200) * Math.PI * 2, k = butterflyReach(t);
+    points.push(`${fixed(MARK_CENTRE + Math.cos(t) * k, 2)} ${fixed(MARK_CENTRE + Math.sin(t) * k, 2)}`);
+  }
+  return `M${points.join("L")}Z`;
+})();
+/** Veins: four on each forewing and three on each hindwing, from the wing's root to just inside its edge. */
+export const BUTTERFLY_VEINS = (() => {
+  const at = (x, y) => `${fixed(MARK_CENTRE + x, 1)} ${fixed(MARK_CENTRE + y, 1)}`;
+  const vein = (x0, y0, x1, y1, bend) => {
+    const l = Math.hypot(x1 - x0, y1 - y0) || 1, cx = (x0 + x1) / 2 - ((y1 - y0) / l) * bend, cy = (y0 + y1) / 2 + ((x1 - x0) / l) * bend;
+    return `M${at(x0, y0)}Q${at(cx, cy)} ${at(x1, y1)}`;
+  };
+  let d = "";
+  for (const side of [1, -1]) {
+    for (const [rootY, fan] of [[-8, [[-58, 4], [-40, 2], [-22, 1], [-6, -1]]], [6, [[22, -2], [42, 0], [64, 2]]]]) {
+      for (const [degrees, bend] of fan) {
+        const t = (degrees * Math.PI) / 180, k = butterflyReach(Math.atan2(Math.sin(t), Math.cos(t) * side));
+        d += vein(4 * side, rootY, side * Math.abs(k * Math.cos(t)) * 0.97, k * Math.sin(t) * 0.97, bend * side);
+      }
+    }
+  }
+  return d;
+})();
+const R = MARK_CENTRE;
+export const BUTTERFLY_ANTENNAE = `M${R - 2} ${R - 30}C${R - 6} ${R - 50} ${R - 14} ${R - 66} ${R - 24} ${R - 80}M${R + 2} ${R - 30}C${R + 6} ${R - 50} ${R + 14} ${R - 66} ${R + 24} ${R - 80}`;
+const BUTTERFLY_KNOBS = `<circle cx="${R - 24}" cy="${R - 80}" r="2.6"/><circle cx="${R + 24}" cy="${R - 80}" r="2.6"/>`;
+const BUTTERFLY_BODY = `<ellipse cx="${R}" cy="${R - 26}" rx="4" ry="4"/><ellipse cx="${R}" cy="${R - 11}" rx="4.6" ry="11"/><ellipse cx="${R}" cy="${R + 20}" rx="3.2" ry="22"/>`;
+/** The rim and veins, and the body, as dark shades of a palette's first and last stops. */
+export const wingEdgeColour = (from, to) => `color-mix(in oklab,color-mix(in oklab,${from},${to}) 60%,#10131c)`;
+export const wingBodyColour = (from, to) => `color-mix(in oklab,color-mix(in oklab,${from},${to}) 35%,#1b1f29)`;
+/** The antennae on a dark window would vanish: there they are a light shade of the palette. */
+export const wingFeelerColour = (from, to) => `light-dark(${wingBodyColour(from, to)},color-mix(in oklab,color-mix(in oklab,${from},${to}) 45%,#dfe4ee))`;
+/**
+ * The details over the wings: a pale wash from the body out, veins, a soft
+ * darker border (clipped to the wings), then the antennae and the body. With
+ * `outlineId` the clip and the border reuse a path the caller defines;
+ * without it they clip to the element `id` and draw the outline inline.
+ */
+export function butterflyArt({ id, edge, body, feelers = body, outlineId = null }) {
+  const outline = (attributes) => (outlineId == null ? `<path d="${BUTTERFLY_OUTLINE}"${attributes}/>` : `<use href="#${outlineId}"${attributes}/>`);
+  return `<defs>${outlineId == null ? "" : `<clipPath id="${id}">${outline("")}</clipPath>`}<radialGradient id="${id}-wash" cx="${R}" cy="${R}" r="118" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity=".78"/><stop offset=".55" stop-color="#fff" stop-opacity=".42"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>`
+    + `<g clip-path="url(#${id})"><rect x="-20" y="-20" width="270" height="270" fill="url(#${id}-wash)"/><path d="${BUTTERFLY_VEINS}" fill="none" style="stroke:${edge}" stroke-opacity=".22" stroke-width=".9" stroke-linecap="round"/>${outline(` fill="none" style="stroke:${edge}" stroke-opacity=".22" stroke-width="22" stroke-linejoin="round"`)}</g>`
+    + `<path d="${BUTTERFLY_ANTENNAE}" fill="none" style="stroke:${feelers}" stroke-width="1.8" stroke-linecap="round"/><g style="fill:${feelers}">${BUTTERFLY_KNOBS}</g><g style="fill:${body}">${BUTTERFLY_BODY}</g>`;
+}
+const GRAIN_FILTER = (id) => `<filter id="${id}-grain" x="0" y="0" width="1" height="1"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" result="n"></feTurbulence><feColorMatrix in="n" type="matrix" values="0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .35 0" result="g"></feColorMatrix><feBlend in="SourceGraphic" in2="g" mode="overlay" result="b"></feBlend><feComposite in="b" in2="SourceGraphic" operator="in"></feComposite></filter>`;
+/** A whole butterfly as standalone SVG, in a palette's three stops (colours, or the mark's variables). */
+export function butterflyMarkSvg({ id, from, mid, to, viewBox = "-15 -15 259 259" }) {
+  const edge = wingEdgeColour(from, to);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}"><defs><path id="${id}-outline" d="${BUTTERFLY_OUTLINE}"></path><linearGradient id="${id}-ink" x1="0" y1="0" x2="0.15" y2="1"><stop offset="0" style="stop-color:${from}"></stop><stop offset="0.55" style="stop-color:${mid}"></stop><stop offset="1" style="stop-color:${to}"></stop></linearGradient>${GRAIN_FILTER(id)}</defs>`
+    + `<use href="#${id}-outline" style="fill:url(#${id}-ink);filter:url(#${id}-grain);stroke:${edge};stroke-width:2.2;stroke-linejoin:round"></use>`
+    + `${butterflyArt({ id, edge, body: wingBodyColour(from, to), feelers: wingFeelerColour(from, to), outlineId: `${id}-outline` })}</svg>`;
+}
+
+const CLOUD_SHAPE_BEFORE = 'cloud:Po("Cloud",YJt([[Re-62,Re+26,56],[Re+62,Re+26,54],[Re,Re+34,62],[Re-24,Re-30,62],[Re+38,Re-26,54]]),{solid:[[-62,26,10,58],[62,26,-14,56],[0,34,24,64],[-24,-30,-22,64],[38,-26,16,56]]}';
+const BUTTERFLY_SHAPE_AFTER = `cloud:Po("Butterfly",Yse(t=>{${BUTTERFLY_REACH_SOURCE}return[Re+dx*k,Re+dy*k]},200),{solid:${BUTTERFLY_SPHERES}}`;
+const LIVE_EDGE = wingEdgeColour("var(--ink-from)", "var(--ink-to)");
+const LIVE_ART = butterflyArt({ id: "@@", edge: "var(--wing-edge)", body: "var(--wing-body)", feelers: "var(--wing-feelers)" });
+const STILL_ART = `<defs><path id="@@-outline" d="%CLIP%"/></defs>${butterflyArt({ id: "@@", edge: "%EDGE%", body: "%BODY%", feelers: "%BODY%", outlineId: "@@-outline" })}`;
+export const AGENT_SPARKS_SOURCE = "function __simeonInk(g){const d=[[212,62,52],[204,58,60],[190,50,68]];if(!g||!g.isConnected)return d;try{const p=document.createElementNS(kie,\"g\");g.appendChild(p);const o=[\"--ink-from\",\"--ink-mid\",\"--ink-to\"].map((v,i)=>{p.style.fill=`var(${v})`;const m=/rgba?\\(\\s*([\\d.]+)[ ,]+([\\d.]+)[ ,]+([\\d.]+)/.exec(getComputedStyle(p).fill||\"\");if(!m||!getComputedStyle(g).getPropertyValue(v).trim())return d[i];const r=m[1]/255,G=m[2]/255,b=m[3]/255,x=Math.max(r,G,b),n=Math.min(r,G,b),l=(x+n)/2,c=x-n;let h=0,s=0;if(c){s=c/(1-Math.abs(2*l-1));h=x===r?((G-b)/c)%6:x===G?(b-r)/c+2:(r-G)/c+4;h*=60;if(h<0)h+=360}return[h,Math.min(s*100,88),Math.min(Math.max(l*100,52),74)]});p.remove();return o}catch{return d}}function __simeonSpark(K,j=10){const a=K[Math.random()*K.length|0];return`hsl(${((a[0]+$t(-j,j))%360+360)%360|0} ${a[1]|0}% ${Math.min(Math.max(a[2]+$t(-6,6),50),76)|0}%)`}";
+/** The still renderer's details, in a palette's literal first and last stops; one id per palette, so two copies on a page agree. */
+export const WING_STILL_SOURCE = `function __simeonWingStill(o,f,t){const e=${JSON.stringify(wingEdgeColour("%F%", "%T%"))}.split("%F%").join(f).split("%T%").join(t),b=${JSON.stringify(wingBodyColour("%F%", "%T%"))}.split("%F%").join(f).split("%T%").join(t),i="simeon-w"+(f+t).replace(/[^A-Za-z0-9]/g,"");return{rim:e,art:${JSON.stringify(STILL_ART)}.split("@@").join(i).split("%EDGE%").join(e).split("%BODY%").join(b).split("%CLIP%").join(o)}}`;
+export const BUTTERFLY_REPLACEMENTS = Object.freeze([
+  ["mark-butterfly-shape", CLOUD_SHAPE_BEFORE, BUTTERFLY_SHAPE_AFTER],
+  // The details sit between the body (`G`, as PALETTE_REPLACEMENTS leaves it) and the eye group, which is not drawn; at mount they give the body its rim.
+  ["mark-wing-art", 'p.jsxs("g",{clipPath:`url(#${N})`,children:[p.jsx("path",{style:WBe,ref:Q=>{U.current[0]=Q}})',
+    `p.jsx("g",{className:"simeon-wing-art",style:{"--wing-edge":${JSON.stringify(LIVE_EDGE)},"--wing-body":${JSON.stringify(wingBodyColour("var(--ink-from)", "var(--ink-to)"))},"--wing-feelers":${JSON.stringify(wingFeelerColour("var(--ink-from)", "var(--ink-to)"))}},ref:w=>{const b=w?.previousElementSibling;b&&(b.style.stroke=${JSON.stringify(LIVE_EDGE)},b.style.strokeWidth="2.2",b.style.strokeLinejoin="round")},dangerouslySetInnerHTML:{__html:${JSON.stringify(LIVE_ART)}.split("@@").join(N)}}),p.jsxs("g",{clipPath:\`url(#\${N})\`,style:{display:"none"},children:[p.jsx("path",{style:WBe,ref:Q=>{U.current[0]=Q}})`],
+  ["mark-wing-art-fade", 'G.current?.setAttribute("d",_t),Y.current?.setAttribute("d",_t),Vr=Jc,si=bn,Yi=Ua,ri=R.current}',
+    'G.current?.setAttribute("d",_t),Y.current?.setAttribute("d",_t),Vr=Jc,si=bn,Yi=Ua,ri=R.current}{const w=G.current?.nextElementSibling,o=Math.max(0,1-2.2*Jc).toFixed(3);w&&(w.style.opacity=o);G.current&&(G.current.style.strokeOpacity=o)}'],
+  ["still-mark-no-eyes", "m=`${o.path} ${nqe(l,u)} ${nqe(c,d)}`", "m=o.path"],
+  ["still-mark-wings", 'x=`<path${r?\' class="b"\':""} fill="${t}" fill-rule="evenodd" d="${m}"/>`',
+    'W=__simeonWingStill(m,r?r.light.from:t,r?r.light.to:t),x=`<path${r?\' class="b"\':""} fill="${t}" fill-rule="evenodd" d="${m}" style="stroke:${W.rim};stroke-width:2.2;stroke-linejoin:round"/>${W.art}`'],
+  ["spin-lights-helper", "GBe=5,N_t=.09;function E_t({back:n,front:e,idPrefix:t,reduceMotion:s,radius:r}){", `GBe=5,N_t=.09;${AGENT_SPARKS_SOURCE}${WING_STILL_SOURCE}function E_t({back:n,front:e,idPrefix:t,reduceMotion:s,radius:r}){`],
+  ["spin-sparks-ink", "if(!(s||!n)&&!(m.length>120))for(let Y=0;Y<W;Y++){", "if(!(s||!n)&&!(m.length>120))for(let Y=0,K=__simeonInk(n);Y<W;Y++){"],
+  ["spin-sparks-colour", "color:X?WJt:k1e[Math.random()*k1e.length|0],round:!X&&Math.random()<.3,star:X,", "color:X?__simeonSpark(K.map(c=>[c[0],c[1],76]),6):__simeonSpark(K),round:!X&&Math.random()<.3,star:X,"],
+  ["spin-trails-ink", "I=(W,H,G)=>{if(m.length>110)return;x.length||A();", "I=(W,H,G)=>{if(m.length>110)return;x.length||A();const K=__simeonInk(n),Ka=K[Math.random()<.5?0:1],Kb=K[K.indexOf(Ka)+1];"],
+  ["spin-trails-hue", "color:k1e[Math.random()*k1e.length|0],round:!U,star:U,hue:N+G*360/Math.max(E,1)+$t(-14,14),hueSpan:$t(45,95)*(Math.random()<.5?1:-1),hueVel:$t(18,42)*sae.hueDrift*(Math.random()<.5?1:-1),",
+    "color:__simeonSpark([Ka]),round:!U,star:U,hue:Ka[0]+$t(-8,8),hueSpan:((Kb[0]-Ka[0]+540)%360-180)+$t(-8,8),hueVel:$t(1,3)*(Math.random()<.5?1:-1),sat:(Ka[1]+Kb[1])/2,lit:[Ka[2],Kb[2]],"],
+  ["spin-trails-stops", "j.stops[we].setAttribute(\"stop-color\",`hsl(${((je%360+360)%360).toFixed(0)} 56% ${(56+11*Pe).toFixed(0)}%)`)",
+    "j.stops[we].setAttribute(\"stop-color\",`hsl(${((je%360+360)%360).toFixed(0)} ${(j.sat??56).toFixed(0)}% ${(j.lit?j.lit[0]+(j.lit[1]-j.lit[0])*Pe:56+11*Pe).toFixed(0)}%)`)"],
+]);
+
+export function patchOriginalButterfly(source) {
+  let out = source;
+  for (const [label, before, after] of BUTTERFLY_REPLACEMENTS) out = replaceExactlyOnce(out, before, after, label);
+  return out;
+}
+
+/**
  * The two appended blocks name classes the pinned markup is supposed to
  * carry; a selector that misses no-ops silently (F-206, 25 September 2026).
  * So every class name in them is counted in the shipped stylesheet and in
@@ -1906,6 +2104,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   for (const [role, candidate, transform] of [
     ["registry", registryCandidates[0], patchOriginalSettingsRegistry],
     ["panel", panelCandidates[0], patchOriginalSettingsPanel],
+    ["manage-plan", panelCandidates[0], patchOriginalManagePlanPanel],
   ]) {
     const patched = transform(candidate.source);
     // A transform that returns its input (the Settings panel since the Router
@@ -1936,8 +2135,9 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   if (!AGENT_PANE_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer agent pane anchors (the info pane, its view guard, the chat header's computer button) are not all in the mark chunk.");
   if (!HANDOFF_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer take-over card anchor is not in the mark chunk.");
   if (!SIDEBAR_DISCS_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer sidebar anchors (the header, the rail's new button, the search bar) are not all in the mark chunk.");
+  if (!BUTTERFLY_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer mark engine anchors (the cloud's geometry, the body and eyes, the still renderer, the spin's lights) are not all in the mark chunk.");
   const logoAssets = await readLogoAssets();
-  const markPatched = patchOriginalSidebarDiscs(patchOriginalCooStep(patchOriginalFlights(patchOriginalHandoff(patchOriginalAgentPane(patchOriginalVoiceCall(patchOriginalChatLayout(patchOriginalLogos(patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source))))), appMentionNames(logoAssets.mentions)))))))));
+  const markPatched = patchOriginalButterfly(patchOriginalSidebarDiscs(patchOriginalCooStep(patchOriginalFlights(patchOriginalHandoff(patchOriginalAgentPane(patchOriginalManagePlan(patchOriginalVoiceCall(patchOriginalChatLayout(patchOriginalLogos(patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source))))), appMentionNames(logoAssets.mentions)))))))))));
   // The stylesheet's light default of the same variable, for first paint.
   const stylesheets = (await readdir(assetsRoot)).filter((name) => name.endsWith(".css")).map((name) => path.join(assetsRoot, name));
   const bubbleSheets = [];
@@ -1946,7 +2146,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     if (css.includes(BUBBLE_CSS_REPLACEMENT[1])) bubbleSheets.push({ target, css });
   }
   if (bubbleSheets.length !== 1) throw new Error(`Expected one stylesheet carrying the user bubble default, found ${bubbleSheets.length}.`);
-  const stylesheetPatched = patchOriginalSidebarDiscsStylesheet(patchOriginalCooStylesheet(patchOriginalWordmarkStylesheet(patchOriginalFlightsStylesheet(patchOriginalHandoffStylesheet(patchOriginalAgentPaneStylesheet(patchOriginalVoiceCallStylesheet(patchOriginalLogosStylesheet(patchOriginalShapePickerStylesheet(patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)))), logoAssets))))), logoAssets.wordmarkFont)));
+  const stylesheetPatched = patchOriginalSidebarDiscsStylesheet(patchOriginalCooStylesheet(patchOriginalWordmarkStylesheet(patchOriginalFlightsStylesheet(patchOriginalHandoffStylesheet(patchOriginalAgentPaneStylesheet(patchOriginalManagePlanStylesheet(patchOriginalVoiceCallStylesheet(patchOriginalLogosStylesheet(patchOriginalShapePickerStylesheet(patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)))), logoAssets)))))), logoAssets.wordmarkFont)));
   const chunkSources = [];
   for (const target of markCandidates) chunkSources.push(await readFile(target, "utf8"));
   // The blocks spell the window's tokens as the token pass below leaves them.
@@ -1969,7 +2169,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   const appIconAfter = await readFile(appIconTarget);
   const marks = {
     chunk: path.relative(stageRoot, markChunks[0].target),
-    replacements: [...[...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, ...SHAPE_REPLACEMENTS, ...COPY_REPLACEMENTS, ...LOGO_REPLACEMENTS, ...CHAT_LAYOUT_REPLACEMENTS, ...VOICE_CALL_REPLACEMENTS, ...AGENT_PANE_REPLACEMENTS, ...HANDOFF_REPLACEMENTS, ...SIDEBAR_DISCS_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT].map(([label]) => label), "chat-header-card", "liquid-glass-chrome", "sidebar-discs", "shape-pickers-hidden", "title-tag-blue", "file-and-app-logos", "voice-call-styles", "agent-pane-styles", "switch-blue", "take-over-card-styles"],
+    replacements: [...[...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, ...SHAPE_REPLACEMENTS, ...COPY_REPLACEMENTS, ...LOGO_REPLACEMENTS, ...CHAT_LAYOUT_REPLACEMENTS, ...VOICE_CALL_REPLACEMENTS, ...AGENT_PANE_REPLACEMENTS, ...HANDOFF_REPLACEMENTS, ...SIDEBAR_DISCS_REPLACEMENTS, ...BUTTERFLY_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT].map(([label]) => label), "chat-header-card", "liquid-glass-chrome", "sidebar-discs", "shape-pickers-hidden", "title-tag-blue", "file-and-app-logos", "voice-call-styles", "agent-pane-styles", "switch-blue", "take-over-card-styles"],
     userBubble: { light: USER_BUBBLE_LIGHT, dark: USER_BUBBLE_DARK, stylesheet: path.relative(stageRoot, bubbleSheets[0].target) },
     // The stylesheet's hashes, so `npm run verify` can check the packaged
     // file against what this patch wrote (25 September 2026: verify read
@@ -2053,7 +2253,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-mark", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "agent-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "flight-results", "upstream-tokens", "sidebar-glass-discs", "pane-widest-default", "pane-three-tabs"],
+    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-mark", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "agent-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "flight-results", "upstream-tokens", "sidebar-glass-discs", "pane-widest-default", "pane-three-tabs", "mark-butterfly", "mark-no-eyes", "spin-lights-agent-colours", "manage-plan-card"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings", "upstream-tokens", "icon-font-file"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");

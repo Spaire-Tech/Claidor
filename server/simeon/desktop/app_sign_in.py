@@ -18,8 +18,9 @@ would never be called.
        in the browser. The challenge is `base64url(sha256(verifier))`
        for a verifier only the app holds.
     2. With no Simeon session in the browser, that page sends the
-       person to the web login and asks to be returned to — the same
-       hand-off `/desktop/login` makes.
+       person to the API's own Google sign-in and asks to be returned
+       to — the same hand-off `/desktop/login` makes. No web app is in
+       the way (6 October 2026).
     3. With one, it **asks**. A sign-in confirmed by a bare GET would
        mean anybody who can get a signed-in person to open a link of
        their making ends up holding that person's session, because the
@@ -31,7 +32,8 @@ would never be called.
        required (`SIMEON_DESKTOP_BILLING_REQUIRED`) and no trialing or
        active subscription in the synced copy of Stripe's
        (`simeon.plans`), the page sends the browser to the web app's
-       billing page instead, with this very URL as the way back; the
+       billing page instead (the one thing the web app is for), with
+       this very URL as the way back; the
        billing page opens Stripe Checkout, which takes a card, starts
        the 7-day trial, and returns here with `checkout_session_id`,
        which the page copies in before asking, so the gate opens even
@@ -70,7 +72,7 @@ from simeon.postgres import AsyncSession, get_db_session
 from simeon.routing import APIRouter
 
 from .allowance import BILLING_PATH
-from .endpoints import client_version_of
+from .endpoints import client_version_of, sign_in_url
 from .service import (
     DesktopUnauthenticated,
     desktop,
@@ -111,9 +113,12 @@ def _deep_link(redirect_target: str | None) -> str | None:
 
 
 def _page(title: str, body: str, *, deep_link: str | None = None) -> HTMLResponse:
-    """One page, no assets, no scripts beyond the one line that brings
-    the app forward. It is served from the API host, which has no
-    front end of its own, so it carries its own styling or none."""
+    """One page, no assets but the site's heading face, no scripts beyond
+    the one line that brings the app forward. It is served from the API
+    host, which has no front end of its own, so it carries its own
+    styling: simeonlabs.com's (the font stack, the ink colours, the
+    heading face, the black pill button), so the person who installed the
+    app from the site sees the same site here."""
     jump = (
         ""
         if deep_link is None
@@ -125,23 +130,39 @@ def _page(title: str, body: str, *, deep_link: str | None = None) -> HTMLRespons
         '<html lang="en"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
         f"<title>{escape(title)} · {PRODUCT}</title>"
+        '<link rel="preconnect" href="https://fonts.googleapis.com">'
+        '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
+        '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400&display=swap">'
         "<style>"
-        ":root{color-scheme:light dark}"
-        "body{margin:0;min-height:100vh;display:grid;place-items:center;"
-        "font:16px/1.55 ui-sans-serif,-apple-system,system-ui,sans-serif;"
-        "background:Canvas;color:CanvasText}"
-        "main{max-width:26rem;padding:2rem;text-align:left}"
-        "h1{font-size:1.25rem;margin:0 0 .75rem}"
-        "p{margin:0 0 1rem;opacity:.85}"
-        "button{font:inherit;font-weight:600;padding:.6rem 1.1rem;border:0;"
-        "border-radius:.5rem;background:CanvasText;color:Canvas;cursor:pointer}"
-        "form+form{margin-top:1rem}"
-        "button.quiet{background:none;color:CanvasText;opacity:.7;padding:0;"
-        "font-weight:400;text-decoration:underline}"
-        "code{opacity:.7;font-size:.85em}"
-        "</style></head><body><main>"
-        f"<h1>{escape(title)}</h1>{body}"
-        f"</main>{jump}</body></html>",
+        ":root{--ink:#1d1d1f;--ink2:#6e6e73;--ink3:#86868b;--blue:#255a93;"
+        '--serif:"Newsreader",Georgia,"Times New Roman",serif;'
+        '--font:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text",'
+        '"Inter","Helvetica Neue",Arial,sans-serif}'
+        "body{margin:0;min-height:100vh;display:flex;flex-direction:column;"
+        "background:#fff;color:var(--ink);font-family:var(--font);font-size:17px;"
+        "line-height:1.47;letter-spacing:-.022em;-webkit-font-smoothing:antialiased}"
+        "header{display:flex;align-items:center;height:64px;padding:0 clamp(20px,3vw,48px)}"
+        "header a{font-family:var(--serif);font-size:26px;letter-spacing:-.02em;"
+        "color:var(--ink);text-decoration:none}"
+        "main{flex:1;display:flex;flex-direction:column;align-items:center;"
+        "justify-content:center;text-align:center;padding:clamp(32px,8vh,120px) 24px 96px}"
+        "h1{margin:0;font-family:var(--serif);font-weight:400;"
+        "font-size:clamp(34px,2.9vw,48px);line-height:1.04;letter-spacing:-.02em}"
+        "p{margin:14px 0 0;max-width:32em;color:var(--ink3)}"
+        "form{margin:28px 0 0}form+form{margin-top:16px}"
+        "strong{font-weight:500;color:var(--ink)}"
+        "button{display:inline-flex;align-items:center;justify-content:center;"
+        "height:48px;padding:0 26px;border:0;border-radius:99px;background:#000;"
+        "color:#fff;font:inherit;font-size:17px;letter-spacing:-.01em;cursor:pointer;"
+        "white-space:nowrap;transition:background .2s}"
+        "button:hover{background:#2b2b2d}"
+        "button.quiet{height:auto;padding:0;background:none;color:var(--blue);"
+        "font-size:15px}"
+        "button.quiet:hover{background:none;text-decoration:underline}"
+        "code{color:var(--ink2);font-size:.85em}"
+        "</style></head><body>"
+        f'<header><a href="https://simeonlabs.com" aria-label="{PRODUCT}">{PRODUCT}</a></header>'
+        f"<main><h1>{escape(title)}</h1>{body}</main>{jump}</body></html>",
     )
 
 
@@ -196,6 +217,7 @@ async def _needs_a_plan(
 
 @router.get("/loginDeepControl", name="desktop:deep_control", response_model=None)
 async def login_deep_control(
+    request: Request,
     auth_subject: WebUserOrAnonymous,
     challenge: str = Query(default=""),
     uuid: str = Query(default=""),
@@ -216,12 +238,7 @@ async def login_deep_control(
     return_to = settings.generate_external_url(f"/loginDeepControl?{urlencode(kept)}")
 
     if not is_user(auth_subject):
-        return RedirectResponse(
-            settings.generate_frontend_url(
-                f"/login?return_to={quote(return_to, safe='')}"
-            ),
-            303,
-        )
+        return RedirectResponse(sign_in_url(request, return_to), 303)
 
     if await _needs_a_plan(
         session, auth_subject.subject, checkout_session_id=checkout_session_id
@@ -263,7 +280,9 @@ async def login_deep_control(
     )
 
 
-@router.post("/loginDeepControl/switch", name="desktop:deep_control_switch")
+@router.post(
+    "/loginDeepControl/switch", name="desktop:deep_control_switch", response_model=None
+)
 async def switch_deep_control(
     request: Request,
     challenge: str = Form(default=""),

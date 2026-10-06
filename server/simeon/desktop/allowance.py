@@ -70,6 +70,8 @@ def billing_exempt(user: User) -> bool:
 
 
 def billing_url() -> str:
+    """The billing page on the web app (`clients/`), the one thing the web
+    app is for: a plan and a card, then Stripe's portal."""
     return settings.generate_frontend_url(BILLING_PATH)
 
 

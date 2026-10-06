@@ -210,11 +210,13 @@ test("an agent named in a message wears its face and its palette's colour, only 
   assert.equal(marked.children[1].children[0].type, "text", "code is left alone");
   assert.deepEqual(marked.children[0].children[0].children[0].properties.className, ["simeon-agent__mark"]);
   delete globalThis.__simeonAgentColors;
-  const { cloud, eyes } = agentMentionMarks();
-  assert.match(cloud, /^data:image\/svg\+xml;base64,/);
-  assert.match(Buffer.from(eyes.split(",")[1], "base64").toString(), /fill: #fcfcfc/);
+  const marks = agentMentionMarks();
   const css = agentMentionsCss();
-  for (const { id } of AGENT_PALETTES) assert.ok(css.includes(`.simeon-agent[data-agent-color="${id}"]`), id);
+  for (const { id, top } of AGENT_PALETTES) {
+    assert.match(marks[id], /^data:image\/svg\+xml;base64,/, id);
+    assert.ok(Buffer.from(marks[id].split(",")[1], "base64").toString().includes(`stop-color:${top}`), `${id}'s butterfly is in its palette`);
+    assert.ok(css.includes(`.simeon-agent[data-agent-color="${id}"]`), id);
+  }
 });
 
 test("a face is remembered by id across a reconnect, a mention follows the colour that comes back, and the person is never an agent", async () => {

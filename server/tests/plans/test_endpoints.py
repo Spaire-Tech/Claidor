@@ -36,13 +36,41 @@ class TestPlans:
         assert items[2]["monthly_lookup_key"] == "simeon_max_month"
 
     @pytest.mark.auth
-    async def test_no_subscription_is_inactive(self, client: httpx.AsyncClient) -> None:
+    async def test_no_subscription_is_inactive_once_billing_is_required(
+        self, client: httpx.AsyncClient, mocker: MockerFixture
+    ) -> None:
+        mocker.patch("simeon.desktop.allowance.settings.DESKTOP_BILLING_REQUIRED", True)
         response = await client.get("/v1/plans/subscription")
         assert response.status_code == 200
         body = response.json()
         assert body["tier"] == "inactive"
         assert body["status"] == "none"
         assert body["entitlements"]["tier"] == "inactive"
+
+    @pytest.mark.auth
+    async def test_with_billing_off_nobody_is_sent_to_billing(
+        self, client: httpx.AsyncClient
+    ) -> None:
+        """The web app's dashboard gate redirects on `inactive`; while the
+        server does not require a plan, the answer is `unmanaged` (free),
+        as the platform endpoint answered before."""
+        response = await client.get("/v1/plans/subscription")
+        assert response.status_code == 200
+        body = response.json()
+        assert body["tier"] == "unmanaged"
+        assert body["status"] == "free"
+
+    @pytest.mark.auth
+    async def test_an_exempt_person_is_free_too(
+        self, client: httpx.AsyncClient, user: User, mocker: MockerFixture
+    ) -> None:
+        mocker.patch("simeon.desktop.allowance.settings.DESKTOP_BILLING_REQUIRED", True)
+        mocker.patch(
+            "simeon.desktop.allowance.settings.DESKTOP_BILLING_EXEMPT_EMAILS",
+            {user.email.upper()},
+        )
+        response = await client.get("/v1/plans/subscription")
+        assert response.json()["tier"] == "unmanaged"
 
     @pytest.mark.auth
     async def test_the_synced_subscription_is_shown(

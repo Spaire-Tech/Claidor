@@ -84,6 +84,7 @@ export const MAIN_METHOD_TABLE = {
   getSandAccessFresh: { args: "none" },
   invokeAccountDashboardAction: { args: "object" },
   cancelAccountTrial: { args: "none" },
+  openAccountBillingPortal: { args: "object" },
   reportAgentLoad: { args: "object" },
   reportAccessBlocked: { args: "object" },
   reportAgentsUnreachable: { args: "object" },

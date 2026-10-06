@@ -136,11 +136,11 @@ export function checkoutDeepControlUrl(action: {
   membershipToUpgradeTo?: string;
   allowTrial?: boolean;
 }): string {
-  // The billing page on app.simeonlabs.com (5 October 2026), where the
-  // plans are chosen; before it, an "upgrade" button in a served error
-  // opened the upstream's checkout (ledger F-431), then a pricing page
-  // simeonlabs.com never had. The plan travels as a query so the page
-  // opens on that card.
+  // The billing page on app.simeonlabs.com (5 October 2026), the one
+  // page the web app is for, where the plans are chosen; before it, an
+  // "upgrade" button in a served error opened the upstream's checkout
+  // (ledger F-431), then a pricing page simeonlabs.com never had. The
+  // plan travels as a query so the page opens on that card.
   const plan = PLAN_OF_MEMBERSHIP[action.membershipToUpgradeTo ?? ""] ?? "standard";
   let url = `${SIMEON_BILLING_URL}?plan=${plan}`;
   if (action.allowTrial === true) url += "&allowTrial=true";

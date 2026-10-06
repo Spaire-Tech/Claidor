@@ -193,6 +193,8 @@ export function createDesktopPreloadBridge(options: {
       getSandAccessFresh: () => edge("getSandAccessFresh"),
       invokeDashboardAction: (request: unknown) => edge("invokeAccountDashboardAction", request),
       cancelTrial: () => edge("cancelAccountTrial"),
+      // The Manage plan card (6 October 2026): a Stripe portal link to open.
+      openBillingPortal: (request: unknown) => edge("openAccountBillingPortal", request),
       onStatusChanged: (listener: (payload: unknown) => void) => subscribe("account-changed", listener),
     },
     experiments: {

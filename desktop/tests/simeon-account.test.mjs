@@ -109,8 +109,16 @@ test("usage comes from /desktop/api/user/quota, in the shapes the header and Set
       canCancelSandTrial: false,
       onDemand: null,
       upgradeCta: null,
+      managePlan: null,
     });
     assert.deepEqual(requests, ["https://api.simeonlabs.com/desktop/api/user/quota", "https://api.simeonlabs.com/desktop/api/user/quota"]);
+
+    // The Manage plan card (6 October 2026): only with a plan on Stripe, naming the next plan up.
+    const { managePlanOfQuota } = loaded.module;
+    assert.deepEqual(managePlanOfQuota({ ...QUOTA, planName: "Standard", tier: "standard", subscriptionStatus: "active", periodEnd: "2026-10-13T00:00:00+00:00" }), { planName: "Standard", tier: "standard", status: "active", periodEndMs: Date.parse("2026-10-13T00:00:00+00:00"), nextTier: { tier: "pro", label: "Pro" } });
+    assert.equal(managePlanOfQuota({ ...QUOTA, planName: "Max", tier: "max", subscriptionStatus: "trialing", periodEnd: "2026-10-13T00:00:00+00:00" }).nextTier, null);
+    assert.equal(managePlanOfQuota({ ...QUOTA, tier: "standard", subscriptionStatus: "none" }), null);
+    assert.equal(managePlanOfQuota(QUOTA), null);
 
     // Exhausted, over, and a limit of nothing.
     assert.equal(usageSummaryFromSimeonQuota({ ...QUOTA, creditsUsed: 2_000_000, creditsRemaining: 0 }).hasAvailableUsage, false);

@@ -6,8 +6,7 @@ import {
   fetchSandUsageSummary,
   fetchSandWeeklyUsage,
   fetchUserPrivacyModeEnabled,
-  invokeSandDashboardAction,
-} from "../account/account-profile.js";
+  invokeSandDashboardAction, openSimeonBillingPortal } from "../account/account-profile.js";
 import { fetchSandPrReviewPreferences } from "../account/pr-review.js";
 import type { ProductionServiceContext } from "../main-production-services.js";
 import type { ElectronProductionAdapterBindings } from "../production-adapters.js";
@@ -66,6 +65,7 @@ export function createElectronProductionAccountBinding(): ElectronProductionAdap
         fetchPrReviewPreferences: (getAccessToken) => fetchSandPrReviewPreferences(getAccessToken),
         fetchPrivacyModeEnabled: (getAccessToken) => fetchUserPrivacyModeEnabled(getAccessToken, { getMachineId }),
         cancelTrial: (getAccessToken) => cancelSandTrial(getAccessToken, { getMachineId }),
+        openBillingPortal: (getAccessToken, request) => openSimeonBillingPortal(getAccessToken, request, { getMachineId }),
         invokeDashboardAction: (getAccessToken, request) => invokeSandDashboardAction(getAccessToken, request, { getMachineId }),
         productDisplayName: SAND_PRODUCT_DISPLAY_NAME,
       });

@@ -1,6 +1,7 @@
 import BillingPage from '@/components/Settings/SimeonTier/BillingPage'
 import { PaidTierKey } from '@/hooks/queries/plans'
 import { CONFIG } from '@/utils/config'
+import { getAuthenticatedUser } from '@/utils/user'
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -53,8 +54,10 @@ export default async function Page(props: {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   const searchParams = await props.searchParams
+  const user = await getAuthenticatedUser()
   return (
     <BillingPage
+      email={user?.email ?? null}
       plan={planOf(searchParams.plan)}
       returnTo={returnToOf(searchParams.return_to)}
       upgraded={searchParams.upgraded === '1'}

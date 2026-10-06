@@ -442,6 +442,39 @@ class TestPortal:
         }
         assert params["return_url"] == settings.generate_frontend_url("/billing")
 
+    async def test_a_plan_change_confirms_that_one_plan(
+        self, session: AsyncSession, user: User, billing: None, mocker: MockerFixture
+    ) -> None:
+        """The person chose Pro on the billing page; the portal opens on
+        the confirmation of Pro, not on its own picker."""
+        await plans.apply_stripe_subscription(
+            session, stripe_subscription(user, status="active")
+        )
+        mocker.patch(
+            "simeon.plans.service.stripe_billing.price_by_lookup_key",
+            new=AsyncMock(
+                return_value=stripe_lib.Price.construct_from({"id": "price_pro"}, None)
+            ),
+        )
+        create = mocker.patch(
+            "simeon.plans.service.stripe_billing.create_portal_session",
+            new=AsyncMock(
+                return_value=stripe_lib.billing_portal.Session.construct_from(
+                    {"id": "bps_2", "url": "https://billing.stripe.com/p/2"}, None
+                )
+            ),
+        )
+        await plans.create_portal(
+            session, user, flow="update_confirm", tier=TierKey.pro
+        )
+        assert create.await_args.kwargs["flow_data"] == {
+            "type": "subscription_update_confirm",
+            "subscription_update_confirm": {
+                "subscription": "sub_test",
+                "items": [{"id": "si_test", "price": "price_pro", "quantity": 1}],
+            },
+        }
+
 
 @pytest.mark.asyncio
 class TestCancelTrial:

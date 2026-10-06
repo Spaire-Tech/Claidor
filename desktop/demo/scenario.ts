@@ -64,6 +64,16 @@ export const voiceCall = (id: string, minutesAgo: number, callId: string, second
 });
 
 /**
+ * A routine an agent created, changed or removed, as the host writes it
+ * (`emitAutomationChange`, host/extensions/transcript/automation-runtime.ts):
+ * the window draws it as one line, "Created routine" and the routine's name.
+ */
+export const routineChanged = (id: string, minutesAgo: number, automationId: string, automationName: string, action: "created" | "updated" | "deleted" = "created"): Entry => ({
+  kind: "event", id, timestampMs: at(minutesAgo),
+  event: { type: "automation-changed", action, automationId, automationName },
+});
+
+/**
  * A call as the host wrote it before 2 October 2026's second change: every line a message with
  * one peer, `voice-call:<call>:<seconds>`, named for the person. Kept so the demo shows that
  * calls already in people's chats draw as calls.
@@ -178,6 +188,8 @@ export function openingScript(): Beat[] {
     { at: 13600, kind: "typing", agent: "simeon", on: true },
     ...step(14000, "m6", "CallMcpTool", "Sending the agenda from Gmail", "Sent the agenda from Gmail", 1300, "Gmail"),
     ...step(15500, "m7", "UpdateState", "Creating routine Monday launch check", "Created routine Monday launch check", 1000),
+    // The line the phone still shows, "Created routine · Monday launch check" (the founder, 6 October 2026: "desktop doesnt have" it).
+    { at: 16500, kind: "append", agent: "simeon", entry: routineChanged("m7r", 0, "demo-monday-launch-check", "Monday launch check") },
     { at: 16800, kind: "append", agent: "simeon", entry: says("m2a", 0, "Done. The agenda went out from **Gmail**.") },
     { at: 16900, kind: "typing", agent: "simeon", on: false },
   ];
