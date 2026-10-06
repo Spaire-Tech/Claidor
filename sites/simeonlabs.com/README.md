@@ -38,7 +38,7 @@ edge shared by the wordmark, the headline and the demo.
 - **Security and integrations**: a serif title beside a paragraph, then two
   pale panels of icon rows. A blue dot marks what is still in progress.
 - **An agent that picks up when your customers call**: a serif title beside the promise, written
-  from the customer's side, then one big photo (`img/phone.jpg`) with a live call playing out in a
+  from the customer's side, then one big photo (`img/phone.webp`) with a live call playing out in a
   glass card and a white Learn more, with nowhere to go yet, inside the picture. The product is
   not built yet.
 - **Pricing** (a free week, Standard $20, Pro $60, Max $200; each card says the week's credits),
