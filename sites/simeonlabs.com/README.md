@@ -37,9 +37,10 @@ edge shared by the wordmark, the headline and the demo.
   working together, call an agent, stay in control.
 - **Security and integrations**: a serif title beside a paragraph, then two
   pale panels of icon rows. A blue dot marks what is still in progress.
-- **Agents that answer the phone**: a serif title beside the promise, a white Learn more with
-  nowhere to go yet, and one big photo (`img/phone.jpg`) with a label, a Coming soon pill and
-  a booking call playing out in bubbles. The product is not built yet.
+- **An agent that picks up when your customers call**: a serif title beside the promise, written
+  from the customer's side, then one big photo (`img/phone.jpg`) with a live call playing out in a
+  glass card and a white Learn more, with nowhere to go yet, inside the picture. The product is
+  not built yet.
 - **Pricing** (a free week, Standard $20, Pro $60, Max $200; each card says the week's credits),
   **Questions and answers**, and the closing line.
 
