@@ -1915,7 +1915,8 @@ export function patchOriginalSidebarDiscsStylesheet(css) {
  * "related to the specific agent avatar color").
  *
  * Every agent is a butterfly in its own palette (the twelve of
- * AGENT_PALETTES): pale wings that deepen toward a soft darker border, a
+ * AGENT_PALETTES): the wings carry the palette's full gradient, as the
+ * cloud did (the founder, 6 October 2026: "full colour"), with a soft darker border, a
  * thin rim, fine veins, a slim body and two antennae, the rim, veins and
  * body a dark shade of the palette's own colours. The window's mark engine
  * draws it, so all of its motion stays:
@@ -1989,15 +1990,16 @@ export const wingBodyColour = (from, to) => `color-mix(in oklab,color-mix(in okl
 /** The antennae on a dark window would vanish: there they are a light shade of the palette. */
 export const wingFeelerColour = (from, to) => `light-dark(${wingBodyColour(from, to)},color-mix(in oklab,color-mix(in oklab,${from},${to}) 45%,#dfe4ee))`;
 /**
- * The details over the wings: a pale wash from the body out, veins, a soft
- * darker border (clipped to the wings), then the antennae and the body. With
+ * The details over the wings: veins and a soft darker border (clipped to
+ * the wings; the pale wash from the body out was taken off on 6 October
+ * 2026, "full colour, like before"), then the antennae and the body. With
  * `outlineId` the clip and the border reuse a path the caller defines;
  * without it they clip to the element `id` and draw the outline inline.
  */
 export function butterflyArt({ id, edge, body, feelers = body, outlineId = null }) {
   const outline = (attributes) => (outlineId == null ? `<path d="${BUTTERFLY_OUTLINE}"${attributes}/>` : `<use href="#${outlineId}"${attributes}/>`);
-  return `<defs>${outlineId == null ? "" : `<clipPath id="${id}">${outline("")}</clipPath>`}<radialGradient id="${id}-wash" cx="${R}" cy="${R}" r="118" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity=".78"/><stop offset=".55" stop-color="#fff" stop-opacity=".42"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>`
-    + `<g clip-path="url(#${id})"><rect x="-20" y="-20" width="270" height="270" fill="url(#${id}-wash)"/><path d="${BUTTERFLY_VEINS}" fill="none" style="stroke:${edge}" stroke-opacity=".22" stroke-width=".9" stroke-linecap="round"/>${outline(` fill="none" style="stroke:${edge}" stroke-opacity=".22" stroke-width="22" stroke-linejoin="round"`)}</g>`
+  return `<defs>${outlineId == null ? "" : `<clipPath id="${id}">${outline("")}</clipPath>`}</defs>`
+    + `<g clip-path="url(#${id})"><path d="${BUTTERFLY_VEINS}" fill="none" style="stroke:${edge}" stroke-opacity=".22" stroke-width=".9" stroke-linecap="round"/>${outline(` fill="none" style="stroke:${edge}" stroke-opacity=".22" stroke-width="22" stroke-linejoin="round"`)}</g>`
     + `<path d="${BUTTERFLY_ANTENNAE}" fill="none" style="stroke:${feelers}" stroke-width="1.8" stroke-linecap="round"/><g style="fill:${feelers}">${BUTTERFLY_KNOBS}</g><g style="fill:${body}">${BUTTERFLY_BODY}</g>`;
 }
 const GRAIN_FILTER = (id) => `<filter id="${id}-grain" x="0" y="0" width="1" height="1"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" result="n"></feTurbulence><feColorMatrix in="n" type="matrix" values="0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .35 0" result="g"></feColorMatrix><feBlend in="SourceGraphic" in2="g" mode="overlay" result="b"></feBlend><feComposite in="b" in2="SourceGraphic" operator="in"></feComposite></filter>`;
