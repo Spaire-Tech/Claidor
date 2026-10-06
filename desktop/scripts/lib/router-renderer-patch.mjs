@@ -899,9 +899,10 @@ export function patchOriginalFlightsStylesheet(css) {
 }
 
 /**
- * "Your personal COO", the welcome step after "Meet Simeon" (3 October 2026,
- * the founder: "an animated very apple like, very premium thing that says
- * that simeon is your personal COO and that he staffs agents for whatever
+ * "Your Personal Chief of Staff", the welcome step after "Meet Simeon" (3
+ * October 2026, the founder: "an animated very apple like, very premium thing
+ * that says that simeon is your personal COO and that he staffs agents for
+ * whatever
  * job you need done … agents coming out of simeon, and simeon at the
  * center … minimalist … inheriting our existing design").
  *
@@ -935,7 +936,7 @@ const COO_SOURCE = [
   "const lines=p.jsx(fde,{x:0,y:" + COO_HERO_Y + ",ariaHidden:!0,className:\"simeon-coo__web\",children:p.jsxs(\"svg\",{width:640,height:440,viewBox:\"-320 -220 640 440\",children:[p.jsx(\"circle\",{className:\"simeon-coo__pulse\",cx:0,cy:0,r:64}),...__simeonCooCrew.map(a=>p.jsx(\"line\",{className:\"simeon-coo__line\",x1:a.x1,y1:a.y1,x2:a.x2,y2:a.y2,pathLength:1,style:{animationDelay:`${a.delay+140}ms`}},a.id))]})},\"web\");",
   "const crew=__simeonCooCrew.map(a=>p.jsx(fde,{x:a.x,y:a.y,ariaHidden:!0,className:\"simeon-coo__seat\",children:p.jsxs(\"div\",{className:\"simeon-coo__agent\",style:{\"--simeon-coo-dx\":`${-a.x}px`,\"--simeon-coo-dy\":`${" + COO_HERO_Y + "-a.y}px`,animationDelay:`${a.delay}ms`},children:[p.jsx(\"div\",{className:\"simeon-coo__float\",style:{animationDelay:`${a.delay+900}ms`},children:p.jsx(sd,{\"aria-hidden\":!0,color:a.color,paused:still,shape:\"cloud\",sizePx:52,state:\"idle\"})}),p.jsx(\"span\",{className:\"simeon-coo__role\",style:{animationDelay:`${a.delay+420}ms`},children:a.label})]})},a.id));",
   "const line=p.jsx(fde,{x:0,y:-196,className:\"simeon-coo__copy\",children:p.jsx(\"p\",{children:\"Simeon staffs an agent for whatever needs doing.\"})},\"copy\");",
-  "return p.jsx(tye,{className:re(\"sand-onboarding__coo\",\"simeon-coo\"),footer:p.jsx(nye,{onBack:i,onForward:r}),headingId:t,title:\"Your personal COO\",children:[lines,...crew,line]})}",
+  "return p.jsx(tye,{className:re(\"sand-onboarding__coo\",\"simeon-coo\"),footer:p.jsx(nye,{onBack:i,onForward:r}),headingId:t,title:\"Your Personal Chief of Staff\",children:[lines,...crew,line]})}",
 ].join("");
 
 export const COO_REPLACEMENTS = Object.freeze([
@@ -948,25 +949,28 @@ export const COO_REPLACEMENTS = Object.freeze([
 ]);
 
 /**
- * Simeon is the first agent, made for the person, and always pinned (3
+ * Simeon is the first agent, made for the person: the Chief of Staff (3
  * October 2026, the founder: "the create your first agent part is where we
  * need gone. The first agent should automatically be Simeon. (Chief of
- * Staff) But change the name Chief of Staff by COO … That's the first and
- * Main. Now I want Simeon to always be pinned. Can't unpin him.").
+ * Staff)"; 4 October: "Bring back Chief of staff. Chief of staff stays the
+ * first agent, but its not pinned. it's changeable but only the name and
+ * the avatar").
  *
  * - Next on the apps step runs the flow's own create-and-finish (`Pe`: the
  *   hand-off screen, the computer, the agent, the first-run cue) with
  *   Simeon's profile instead of the form's. The "create" step is out of the
  *   step list. The agent-creation path now carries a title, so Simeon's
- *   profile reads COO.
- * - The COO is the oldest agent titled "COO". The sidebar's pinned list
- *   always starts with it, its menu has no Unpin, and the store refuses to
- *   unpin it. An account made before this has no COO and is unchanged.
- * - The Chief of Staff suggestion is gone from the new-agent picker: the
- *   COO is that job, and there is one.
+ *   profile reads Chief of Staff.
+ * - The Chief of Staff is the oldest agent titled "Chief of Staff" (or
+ *   "COO", the title the day before). He is pinned, hidden, moved and
+ *   deleted like any agent; only his title and description are read only,
+ *   the title being what makes him the Chief of Staff. His name and avatar
+ *   are the person's to change.
+ * - The Chief of Staff suggestion is gone from the new-agent picker: there
+ *   is one, and it is Simeon.
  */
-export const SIMEON_COO_PROFILE = Object.freeze({ name: "Simeon", title: "COO", description: "Your COO: manages your other Agents and pulls you in for decisions.", avatarColor: "blue", avatarShape: "cloud", templateId: "chief-of-staff" });
-const COO_PIN_SOURCE = "var __simeonCooId=null;function __simeonFindCoo(n){let c=null;for(const a of n??[]){if(a!=null&&typeof a.title===\"string\"&&a.title.trim().toLowerCase()===\"coo\"&&(c==null||(a.createdAt??0)<(c.createdAt??0)))c=a}return c}function __simeonPinCoo(n,e){const c=__simeonFindCoo(n);__simeonCooId=c?.id??null;typeof __simeonNoteAgents===\"function\"&&__simeonNoteAgents(n);return c==null?e:[c.id,...(e??[]).filter(x=>x!==c.id)]}";
+export const SIMEON_COO_PROFILE = Object.freeze({ name: "Simeon", title: "Chief of Staff", description: "Your Chief of Staff: manages your other Agents and pulls you in for decisions.", avatarColor: "blue", avatarShape: "cloud", templateId: "chief-of-staff" });
+const COO_PIN_SOURCE = "var __simeonCooId=null;function __simeonFindCoo(n){let c=null;for(const a of n??[]){if(a!=null&&typeof a.title===\"string\"&&(a.title.trim().toLowerCase()===\"chief of staff\"||a.title.trim().toLowerCase()===\"coo\")&&(c==null||(a.createdAt??0)<(c.createdAt??0)))c=a}return c}function __simeonPinCoo(n,e){const c=__simeonFindCoo(n);__simeonCooId=c?.id??null;typeof __simeonNoteAgents===\"function\"&&__simeonNoteAgents(n);return e}";
 /**
  * "What should your agents call you?" as a step of the flow, after the
  * computer (3 October 2026, the founder: "have their a step … that's the
@@ -990,7 +994,7 @@ const NAME_SOURCE = [
   "const go=()=>{name.length>0&&a?.updateName!=null&&Promise.resolve(a.updateName(name)).catch(()=>{});r()};",
   "const field=p.jsx(fde,{x:0,y:4,className:\"simeon-name__field-seat\",children:p.jsx(\"form\",{onSubmit:e=>{e.preventDefault();go()},children:p.jsx(\"input\",{ref:ip,className:\"simeon-name__input\",type:\"text\",autoComplete:\"given-name\",spellCheck:!1,maxLength:60,placeholder:\"Your name\",\"aria-label\":\"Your name\",value:v,onChange:e=>{touched.current=!0;sv(e.target.value)}})})},\"field\");",
   "const note=p.jsx(fde,{x:0,y:44,className:\"simeon-name__note-seat\",children:p.jsx(\"p\",{className:\"simeon-name__note\",children:\"They’ll use it in chat and on calls. You can change it later.\"})},\"note\");",
-  "return p.jsx(tye,{className:re(\"sand-onboarding__name\",\"simeon-name\"),footer:p.jsx(nye,{onBack:i,onForward:go}),headingId:t,title:\"How should we call you?\",children:[field,note]})}",
+  "return p.jsx(tye,{className:re(\"sand-onboarding__name\",\"simeon-name\"),footer:p.jsx(nye,{onBack:i,onForward:go}),headingId:t,title:\"How should they call you?\",children:[field,note]})}",
 ].join("");
 export const NAME_STEP_REPLACEMENTS = Object.freeze([
   ["name-step-screen", "case\"tools\":return p.jsx(Ljn,{", "case\"name\":return p.jsx(__simeonNameStep,{headingId:xn,onBack:()=>x.goBack(ln),onForward:()=>x.advance(ln)});case\"tools\":return p.jsx(Ljn,{"],
@@ -1000,10 +1004,12 @@ export const NAME_STEP_REPLACEMENTS = Object.freeze([
   // The last screen keeps only its line ("Getting your team ready…", with its moving light): the mark and the name above it go, as on the boot screen.
   ["hand-off-text-only", "x=p.jsxs(\"div\",{className:f,style:m.style,children:[y,v,b]})", "x=p.jsxs(\"div\",{className:f,style:m.style,children:[v,b]})"],
 ]);
-export const COO_LOCK_CSS = `/* Simeon: the COO's profile is read only */
-.simeon-coo-avatar{pointer-events:none}
-.simeon-coo-avatar .sand-avatar-trigger__button>:not(:first-child),.simeon-coo-avatar .sand-avatar-trigger>:not(.sand-avatar-trigger__button){display:none!important}
+export const COO_LOCK_CSS = `/* Simeon: the Chief of Staff's title and description are read only */
 .sand-info-pane input[readonly],.sand-info-pane textarea[readonly],input[aria-label^="Agent "][readonly],textarea[aria-label^="Agent "][readonly]{cursor:default;caret-color:transparent}
+/* Simeon: the apps step's "Skip for later" */
+.simeon-tools__footer{display:flex;flex-direction:column;align-items:center;gap:10px}
+.simeon-tools__skip{height:24px;padding:0 8px;border:0;background:none;font:inherit;font-size:13px;line-height:18px;letter-spacing:-.01em;color:light-dark(rgba(60,60,67,.6),rgba(235,235,245,.6));cursor:pointer}
+.simeon-tools__skip:hover{color:light-dark(rgba(60,60,67,.9),rgba(235,235,245,.9))}
 `;
 export const NAME_CSS = `/* Simeon: the name step */
 .simeon-name{--simeon-name-ink-2:light-dark(rgba(60,60,67,.6),rgba(235,235,245,.6))}
@@ -1018,27 +1024,18 @@ export const FIRST_AGENT_REPLACEMENTS = Object.freeze([
   ["first-agent-simeon", "createTeammate:async _n=>(await y({name:A.name.trim(),description:A.description,avatarPngBase64:null,avatarColor:A.color,avatarShape:A.shape,onAgentCreated:_n,...A.pickedTemplateId==null?{}:{templateId:A.pickedTemplateId}})).agentId", `createTeammate:async _n=>(await y({...${JSON.stringify(SIMEON_COO_PROFILE)},avatarPngBase64:null,onAgentCreated:_n})).agentId`],
   ["first-agent-from-apps", "onChange:x.chooseDailyTools,onForward:()=>x.advance(ln),picked:N", "onChange:x.chooseDailyTools,onForward:()=>{Pe()},picked:N"],
   ["first-agent-no-cos-template", '{id:"chief-of-staff",name:"Chief of Staff",description:"Manages your other Bots and pulls you in for decisions",eligibility:{kind:"universal"}},', ""],
+  // The roster read that finds the Chief of Staff (the pinned list itself is the person's: 4 October 2026, "its not pinned").
   ["coo-pinned-split", "function t5e(n,e){const t=new Set(e);", `${COO_PIN_SOURCE}function t5e(n,e){e=__simeonPinCoo(n,e);const t=new Set(e);`],
   ["coo-pinned-sections", "function Cct({agents:n,pinnedIds:e,sections:t}){if(t.length===0)return[];", "function Cct({agents:n,pinnedIds:e,sections:t}){e=__simeonPinCoo(n,e);if(t.length===0)return[];"],
-  ["coo-no-unpin-item", 'function scn(n){const e=he.c(9),{isPinned:t,onTogglePin:s,id:r}=n,i=t?"pin-slash":"pin";', 'function scn(n){const e=he.c(9),{isPinned:t,onTogglePin:s,id:r}=n,i=t?"pin-slash":"pin";if(r!=null&&r===__simeonCooId)return null;'],
-  ["coo-no-unpin-store", "B=(L,D)=>{if(y||L.length===0)return;const F=i.get();", "B=(L,D)=>{if(y||L.length===0||!D&&L===__simeonCooId)return;const F=i.get();"],
-  // Nor can the COO be hidden, deleted, duplicated or moved into a section: each would take him off the top.
-  ["coo-no-hide-item", "function ccn(n){const e=he.c(4),{id:t,onHideFromSidebar:s}=n;", "function ccn(n){const e=he.c(4),{id:t,onHideFromSidebar:s}=n;if(t===__simeonCooId)return null;"],
-  ["coo-no-duplicate-item", "function lcn(n){const e=he.c(4),{id:t,onDuplicate:s}=n;", "function lcn(n){const e=he.c(4),{id:t,onDuplicate:s}=n;if(t===__simeonCooId)return null;"],
-  ["coo-no-delete-item", "function mcn(n){const e=he.c(10),{id:t,batchCount:s,onRequestDelete:r}=n;", "function mcn(n){const e=he.c(10),{id:t,batchCount:s,onRequestDelete:r}=n;if(t===__simeonCooId)return null;"],
-  ["coo-no-section-item", "R=o||!l?null:p.jsx(rcn,{", "R=o||!l||t.id===__simeonCooId?null:p.jsx(rcn,{"],
-  ["coo-no-hide-action", "J=S.useCallback(L=>{f.setAgentHiddenFromSidebar(L,!0)},[f])", "J=S.useCallback(L=>{L!==__simeonCooId&&f.setAgentHiddenFromSidebar(L,!0)},[f])"],
-  ["coo-no-delete-action", "_=S.useCallback(L=>{const D=new Set(L),F=u.filter(z=>D.has(z.id));", "_=S.useCallback(L=>{const D=new Set(L),F=u.filter(z=>D.has(z.id)&&z.id!==__simeonCooId);"],
-  // Simeon's profile is read only (the founder, 3 October 2026: "make the simeon uneditable"): his
-  // name, title and description show as text in his pane, and his avatar has no editor. The title
-  // is what makes him the COO, so it can never be typed away.
-  ["coo-readonly-name", 'p.jsx(Uwe,{ariaLabel:"Agent name",initialValue:t.name,', 'p.jsx(Uwe,{readOnly:t.id===__simeonCooId,ariaLabel:"Agent name",initialValue:t.name,'],
+  // The apps step offers "Skip for later" under Next (the founder, 4 October 2026).
+  ["tools-skip-for-later", "E=p.jsx(nye,{onBack:i,onForward:o}),e[32]=i,e[33]=o", 'E=p.jsxs("div",{className:"simeon-tools__footer",children:[p.jsx(nye,{onBack:i,onForward:o}),p.jsx("button",{type:"button",className:"simeon-tools__skip",onClick:o,children:"Skip for later"})]}),e[32]=i,e[33]=o'],
+  // Simeon's title and description are read only (the founder, 3 October 2026: "make the simeon
+  // uneditable"; 4 October: "changeable but only the name and the avatar"): both show as text in
+  // his pane. The title is what makes him the Chief of Staff, so it can never be typed away.
   ["coo-readonly-title", 'p.jsx(Uwe,{ariaLabel:"Agent title",initialValue:t.title,', 'p.jsx(Uwe,{readOnly:t.id===__simeonCooId,ariaLabel:"Agent title",initialValue:t.title,'],
   ["coo-readonly-description", 'p.jsx(Uwe,{ariaLabel:"Agent description",initialValue:t.description,', 'p.jsx(Uwe,{readOnly:t.id===__simeonCooId,ariaLabel:"Agent description",initialValue:t.description,'],
   ["coo-readonly-field", 'N={"aria-label":t,placeholder:o,spellCheck:!1,value:d,onFocus:x}', 'N={"aria-label":t,placeholder:o,spellCheck:!1,value:d,onFocus:x,readOnly:n.readOnly===!0}'],
   ["coo-readonly-commit", "y=_=>{if(h.current){h.current=!1,m(s);return}", "y=_=>{if(n.readOnly===!0){m(s);return}if(h.current){h.current=!1,m(s);return}"],
-  ["coo-readonly-avatar", "children:p.jsx(f3n,{agent:t})", "children:t.id===__simeonCooId?p.jsx(\"div\",{className:\"simeon-coo-avatar\",children:p.jsx(f3n,{agent:t})}):p.jsx(f3n,{agent:t})"],
-  ["coo-readonly-pane-avatar", "p.jsxs(\"div\",{className:\"simeon-pane__head\",children:[p.jsx(f3n,{agent:t}),", "p.jsxs(\"div\",{className:\"simeon-pane__head\",children:[t.id===__simeonCooId?p.jsx(\"div\",{className:\"simeon-coo-avatar\",children:p.jsx(f3n,{agent:t})}):p.jsx(f3n,{agent:t}),"],
 ]);
 
 export function patchOriginalCooStep(source) {
@@ -1047,7 +1044,7 @@ export function patchOriginalCooStep(source) {
   return out;
 }
 
-export const COO_MARKER = "/* Simeon: the COO welcome step";
+export const COO_MARKER = "/* Simeon: the Chief of Staff welcome step";
 /** Motion on Apple's curves: expo-out to arrive, a long ease-in-out to breathe. Greys are the system's. */
 export const COO_CSS = `${COO_MARKER} */
 .simeon-coo{--simeon-coo-ink:light-dark(rgba(60,60,67,.6),rgba(235,235,245,.6));--simeon-coo-hair:light-dark(rgba(60,60,67,.16),rgba(235,235,245,.18));--simeon-coo-arrive:cubic-bezier(.16,1,.3,1)}

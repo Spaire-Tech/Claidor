@@ -134,14 +134,14 @@ test("the sign-in wordmark is set in Suravaram, carried inside the stylesheet", 
   assert.throws(() => patchOriginalWordmarkStylesheet(".a{}", ""), /did not load/);
 });
 
-test("the COO step sits after Meet Simeon, with Simeon at the centre and six agents leaving it", async () => {
+test("the Chief of Staff step sits after Meet Simeon, with Simeon at the centre and six agents leaving it", async () => {
   const { COO_REPLACEMENTS, COO_CSS, patchOriginalCooStylesheet } = await import("../scripts/lib/router-renderer-patch.mjs");
   const [list, title, screen, hero, component] = COO_REPLACEMENTS;
   assert.match(list[2], /\["landing","meet","coo","computer-demo","name","tools"\]/, "the jobs and create steps are out; the name step follows the computer");
   assert.equal(title[2], 'N="Your agents have their own computer and work just like you"');
   assert.match(screen[2], /^case"coo":return p\.jsx\(__simeonCooStep,\{headingId:xn,onBack:\(\)=>x\.goBack\(ln\),onForward:\(\)=>x\.advance\(ln\)\}\);/);
   assert.match(hero[2], /^case"coo":return\{\.\.\.e,x:0,y:-40,scale:1,opacity:1/);
-  assert.match(component[2], /title:"Your personal COO"/);
+  assert.match(component[2], /title:"Your Personal Chief of Staff"/);
   assert.match(component[2], /Simeon staffs an agent for whatever needs doing\./);
   assert.equal((component[2].match(/"label":/g) ?? []).length, 6);
   new Function("p", "fde", "tye", "nye", "sd", "re", "Fo", component[2].replace(/function sjn\(n\)\{$/, ""));
@@ -149,23 +149,24 @@ test("the COO step sits after Meet Simeon, with Simeon at the centre and six age
   assert.throws(() => patchOriginalCooStylesheet(patchOriginalCooStylesheet(".a{}")), /already present/);
 });
 
-test("Simeon is the first agent, titled COO, and always pinned", async () => {
+test("Simeon is the first agent, titled Chief of Staff, pinned or not as the person likes", async () => {
   const { FIRST_AGENT_REPLACEMENTS, SIMEON_COO_PROFILE } = await import("../scripts/lib/router-renderer-patch.mjs");
-  assert.deepEqual({ name: SIMEON_COO_PROFILE.name, title: SIMEON_COO_PROFILE.title }, { name: "Simeon", title: "COO" });
+  assert.deepEqual({ name: SIMEON_COO_PROFILE.name, title: SIMEON_COO_PROFILE.title }, { name: "Simeon", title: "Chief of Staff" });
   const by = Object.fromEntries(FIRST_AGENT_REPLACEMENTS.map(([label, , after]) => [label, after]));
-  assert.match(by["first-agent-simeon"], /"name":"Simeon","title":"COO"/);
+  assert.match(by["first-agent-simeon"], /"name":"Simeon","title":"Chief of Staff"/);
   assert.match(by["first-agent-from-apps"], /onForward:\(\)=>\{Pe\(\)\}/, "Next on the apps step makes Simeon and finishes");
   assert.match(by["first-agent-title"], /\.\.\.t\.title!=null\?\{title:t\.title\}:\{\}/);
   assert.equal(by["first-agent-no-cos-template"], "");
-  // The pin rule, run on its own: the oldest agent titled COO leads the pinned list, once.
+  assert.match(by["tools-skip-for-later"], /children:"Skip for later"\}\)\]\}\)/, "the apps step offers Skip for later under Next");
+  // The roster read, run on its own: the oldest Chief of Staff (or COO, the day before) is noted; the pinned list is left as it is (4 October 2026: "its not pinned").
   const source = by["coo-pinned-split"].replace(/function t5e\(n,e\)\{.*$/, "");
   const pinCoo = new Function(`${source};return {pin:__simeonPinCoo,id:()=>__simeonCooId}`)();
-  const agents = [{ id: "a", title: "Research" }, { id: "s2", title: "COO", createdAt: 9 }, { id: "s", title: "coo", createdAt: 1 }];
-  assert.deepEqual(pinCoo.pin(agents, ["a", "s"]), ["s", "a"]);
+  const agents = [{ id: "a", title: "Research" }, { id: "s2", title: "Chief of Staff", createdAt: 9 }, { id: "s", title: "COO", createdAt: 1 }];
+  assert.deepEqual(pinCoo.pin(agents, ["a"]), ["a"], "nothing is pinned by force");
   assert.equal(pinCoo.id(), "s");
-  assert.deepEqual(pinCoo.pin([{ id: "a", title: "" }], ["a"]), ["a"], "an account with no COO is unchanged");
-  for (const label of ["coo-no-unpin-item", "coo-no-hide-item", "coo-no-duplicate-item", "coo-no-delete-item"]) assert.match(by[label], /===__simeonCooId\)return null;$/);
-  assert.match(by["coo-no-unpin-store"], /!D&&L===__simeonCooId\)return;/);
+  pinCoo.pin([{ id: "a", title: "" }], ["a"]);
+  assert.equal(pinCoo.id(), null, "an account with no Chief of Staff has none");
+  for (const label of ["coo-no-unpin-item", "coo-no-unpin-store", "coo-no-hide-item", "coo-no-duplicate-item", "coo-no-delete-item", "coo-no-section-item"]) assert.equal(by[label], undefined, `${label}: the menu is the same for him as for any agent`);
 });
 
 test("the name step: the apps step's agents gather over one field, and the last screen keeps only its line", async () => {
@@ -173,7 +174,7 @@ test("the name step: the apps step's agents gather over one field, and the last 
   const by = Object.fromEntries(NAME_STEP_REPLACEMENTS.map(([label, , after]) => [label, after]));
   assert.match(by["name-step-screen"], /^case"name":return p\.jsx\(__simeonNameStep,/);
   assert.match(by["name-step-agents"], /^case"name":return\{\.\.\.t,\.\.\.__simeonNameSeat\[e\],opacity:1/);
-  assert.match(by["name-step-component"], /title:"How should we call you\?"/);
+  assert.match(by["name-step-component"], /title:"How should they call you\?"/);
   assert.match(by["name-step-component"], /a\.updateName\(name\)/, "saved through the account's own rename");
   assert.doesNotMatch(by["name-step-component"], /Hi, /, "no greeting bubble");
   for (const seat of ["weekly-standup", "invoice-chaser", "sales-forecast"]) assert.match(by["name-step-component"], new RegExp(`"${seat}":\\{"x"`));
@@ -182,14 +183,15 @@ test("the name step: the apps step's agents gather over one field, and the last 
   assert.match(NAME_CSS, /height:38px/);
 });
 
-test("Simeon's profile is read only: fields, commit and avatar", async () => {
+test("Simeon's title and description are read only; his name and avatar are the person's", async () => {
   const { FIRST_AGENT_REPLACEMENTS, COO_LOCK_CSS } = await import("../scripts/lib/router-renderer-patch.mjs");
   const by = Object.fromEntries(FIRST_AGENT_REPLACEMENTS.map(([label, , after]) => [label, after]));
-  for (const field of ["name", "title", "description"]) assert.match(by[`coo-readonly-${field}`], /^p\.jsx\(Uwe,\{readOnly:t\.id===__simeonCooId,/);
+  for (const field of ["title", "description"]) assert.match(by[`coo-readonly-${field}`], /^p\.jsx\(Uwe,\{readOnly:t\.id===__simeonCooId,/);
+  for (const label of ["coo-readonly-name", "coo-readonly-avatar", "coo-readonly-pane-avatar"]) assert.equal(by[label], undefined, `${label}: changeable (4 October 2026)`);
   assert.match(by["coo-readonly-field"], /readOnly:n\.readOnly===!0\}$/);
   assert.match(by["coo-readonly-commit"], /^y=_=>\{if\(n\.readOnly===!0\)\{m\(s\);return\}/, "a read-only field never commits");
-  for (const label of ["coo-readonly-avatar", "coo-readonly-pane-avatar"]) assert.match(by[label], /t\.id===__simeonCooId\?p\.jsx\("div",\{className:"simeon-coo-avatar"/);
-  assert.match(COO_LOCK_CSS, /\.simeon-coo-avatar\{pointer-events:none\}/);
+  assert.doesNotMatch(COO_LOCK_CSS, /simeon-coo-avatar/);
+  assert.match(COO_LOCK_CSS, /\.simeon-tools__skip\{/);
 });
 
 test("an agent named in a message wears its face and its palette's colour, only where the name stands alone", async () => {

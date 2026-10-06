@@ -727,29 +727,29 @@ date, `priority`, `airlines`, offers found and shown, `test`, milliseconds), `de
 Duffel answered, in full) and `desktop.flights.rate_limited`. An agent that browsed instead of
 calling the tool shows no `desktop.flights.search` line for that request.
 
-## 11. Simeon, the COO
+## 11. Simeon, the Chief of Staff
 
-**For the person.** Onboarding ends by making Simeon, their COO: the first agent,
-made for them (name Simeon, title COO, Ocean), who manages their other agents and
-pulls them in for decisions. There is no "Create your first Agent" form. Simeon is
-always first among the pinned agents and cannot be unpinned, hidden, deleted,
-duplicated or moved into a section; his name, title, description and avatar are
-read only.
+**For the person.** Onboarding ends by making Simeon, their Chief of Staff: the
+first agent, made for them (name Simeon, title Chief of Staff, Ocean), who manages
+their other agents and pulls them in for decisions. There is no "Create your first
+Agent" form. He is pinned, hidden, moved or deleted like any agent; his name and
+avatar are theirs to change, his title and description are read only. The apps
+step ("What do you use every day?") offers "Skip for later" under Next.
 
 **How it works.** All in the window (`desktop/scripts/lib/router-renderer-patch.mjs`):
 
-- The flow is landing, meet, COO, computer, name, apps, then the hand-off screen.
-  Next on the apps step runs the flow's own create-and-finish with
-  `SIMEON_COO_PROFILE`; agent creation carries a `title` (`n5n`), which the host
-  stores (`host/host-gateway-api.ts`, `mintAgent`).
-- The COO is the oldest agent titled "COO" (`__simeonFindCoo`). The pinned list always
-  starts with it (`t5e`, `Cct`), its menu drops Unpin, Hide, Delete, Duplicate and
-  Move, the pin store refuses to unpin it, and hide and delete skip it. Its profile
-  fields are read only and its avatar has no editor, so the title that marks it
-  cannot be changed.
-- An account made before this has no agent titled COO, and nothing changes for it.
+- The flow is landing, meet, Chief of Staff ("Your Personal Chief of Staff"),
+  computer, name ("How should they call you?"), apps, then the hand-off screen.
+  Next or Skip for later on the apps step runs the flow's own create-and-finish
+  with `SIMEON_COO_PROFILE`; agent creation carries a `title` (`n5n`), which the
+  host stores (`host/host-gateway-api.ts`, `mintAgent`).
+- The Chief of Staff is the oldest agent titled "Chief of Staff", or "COO", the
+  title from 3 October 2026 (`__simeonFindCoo`, noted on every roster read). His
+  title and description fields are read only, so the title that marks him cannot
+  be typed away.
+- An account made before this has no such agent, and nothing changes for it.
 - The Chief of Staff suggestion is gone from the new-agent picker.
 
-**When it misbehaves.** If Simeon is not pinned or can be edited, check his title in
-the roster: it must be "COO". If creation fails, the hand-off screen shows "Simeon
+**When it misbehaves.** If Simeon's title can be edited, check it in the roster: it
+must be "Chief of Staff". If creation fails, the hand-off screen shows "Simeon
 couldn't finish setting up" with Try again, which creates him again.
