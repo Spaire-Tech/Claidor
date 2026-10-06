@@ -52,8 +52,13 @@ class AuthService:
         if user_session is not None:
             await session.delete(user_session)
         response = RedirectResponse(settings.FRONTEND_BASE_URL)
-        response = self._set_user_session_cookie(request, response, "", 0)
-        return response
+        return self.clear_user_session_cookie(request, response)
+
+    def clear_user_session_cookie(self, request: Request, response: R) -> R:
+        """The website's sign-in cookie, emptied and expired, on a response
+        of the caller's choosing (the logout above, and the app's sign-in
+        page when the person says the shown account is not theirs)."""
+        return self._set_user_session_cookie(request, response, "", 0)
 
     async def authenticate(
         self,
