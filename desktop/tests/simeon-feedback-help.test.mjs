@@ -8,8 +8,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { build } from "esbuild";
 
 // Send Feedback and the Help menu, offline. Until 24 September 2026 feedback
-// went to Cursor's `/sand/feedback` (404 on Simeon Labs' server) and Help
-// Center opened cursor.com.
+// went to the upstream's `/sand/feedback` (404 on Simeon Labs' server) and Help
+// Center opened the upstream site.
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 

@@ -415,7 +415,7 @@ export function createAwaitTool(resourceAccessor: AwaitResourceAccessor, options
       const taskToolName = props.allTools.TASK?.name;
       const mentionSubagents = enableSubagentAwaiting && taskToolName !== undefined;
       if (training) return "Poll a background shell.";
-      if (!["cursor-0226", "dsv3-1205", "dsv3-1018", "gpt5-codex", "codex-cloud", "latest", "haiku"].includes(promptVersion)) throw new Error(`Unhandled version: ${promptVersion}`);
+      if (!["simeon-0226", "dsv3-1205", "dsv3-1018", "gpt5-codex", "codex-cloud", "latest", "haiku"].includes(promptVersion)) throw new Error(`Unhandled version: ${promptVersion}`);
       return options.enableJobCompletionNotifications === true
         ? buildNotifyFirstAwaitDescription({ enableSubagentAwaiting: mentionSubagents, hasShell: shellToolName !== undefined, toolName: name, ...(taskToolName === undefined ? {} : { taskToolName }), ...(options.promptCacheTTLMs === undefined ? {} : { promptCacheTTLMs: options.promptCacheTTLMs }) })
         : buildLegacyAwaitDescription({ enableSubagentAwaiting: mentionSubagents, hasShell: shellToolName !== undefined });

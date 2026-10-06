@@ -35,6 +35,8 @@ export interface SynthesisTarget {
   prepareSynthesis(): SynthesisSnapshot;
   applySynthesis(snapshot: SynthesisSnapshot, changes: readonly SynthesisChange[], now: number): "committed" | "stale" | "invalid";
   hasMemories(): boolean;
+  /** Optional: when present and false, the daily temporal review is skipped (nothing dated to move). */
+  hasDatedMemory?(): boolean;
   isTemporalReviewDue(now: number): boolean;
   markTemporalReview(now: number): void;
 }
@@ -231,6 +233,7 @@ export class MemorySynthesisService {
     for (const { agentId, target } of this.options.listTargets?.() ?? []) {
       if (queued >= MAX_TEMPORAL_TARGETS_PER_SWEEP) break;
       if (!target.hasMemories() || !target.isTemporalReviewDue(now)) continue;
+      if (target.hasDatedMemory?.() === false) { target.markTemporalReview(now); continue; }
       const pending = this.pending.get(agentId) ?? { evidence: [], temporal: false };
       if (pending.temporal) continue;
       pending.temporal = true; this.pending.set(agentId, pending); queued++;

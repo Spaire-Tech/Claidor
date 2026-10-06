@@ -589,7 +589,7 @@ function stripTagBlocks(text2, matchesStrippedTag) {
   return stripped;
 }
 function isSummaryCarrierMessage(message) {
-  return message.role === "user" && message.providerOptions?.cursor?.isSummary === true;
+  return message.role === "user" && message.providerOptions?.simeon?.isSummary === true;
 }
 function findInitialUserPromptMessage(messages) {
   return messages.find((message) => message.role === "user" && !isSummaryCarrierMessage(message));

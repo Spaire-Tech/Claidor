@@ -5,7 +5,7 @@ export const SAND_UPDATE_PLATFORM = "darwin-arm64";
 export const SAND_UPDATE_PLATFORM_DARWIN_X64 = "darwin-x64";
 export const SAND_UPDATE_PLATFORM_WIN32 = "win32-x64-user";
 export const SAND_UPDATE_PLATFORM_WIN32_ARM64 = "win32-arm64-user";
-// Cursor's feed until 25 September 2026; Simeon has no update feed yet, so
+// the upstream's feed until 25 September 2026; Simeon has no update feed yet, so
 // a check runs only against SAND_UPDATE_FEED_BASE_URL (F-415).
 export const DEFAULT_UPDATE_BASE_URL: string | undefined = undefined;
 export type UpdateTrack = "stable" | "nightly" | "dogfood";

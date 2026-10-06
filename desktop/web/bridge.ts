@@ -49,16 +49,20 @@ const backend = createWebBackend({
 });
 Reflect.set(window, "__simeonWeb", { api, backend });
 
+/** `/app/connected.html`: the end of a connected app's sign-in, not the window. */
+const CONNECTED_PAGE = /\/connected\.html$/.test(location.pathname);
+
 // The window's own sign-in gate asks for the status first; when the tab
 // holds no pair, trade the cookie before it asks, so a person who is signed
-// in on the web app never sees the gate at all.
+// in on the web app never sees the gate at all. With no cookie either, the
+// window goes to the web app's own sign-in page at once (4 October 2026):
+// the gate the Mac app shows, "Sign in", then a browser, is the Mac's; on
+// the web the sign-in page is the gate.
 const ready = (async () => {
   if (api.isSignedIn()) return;
   try { await api.signInFromCookie(); } catch (error) { trace("sign-in from cookie failed", error); }
+  if (!api.isSignedIn() && !CONNECTED_PAGE) goSignIn();
 })();
-
-/** `/app/connected.html`: the end of a connected app's sign-in, not the window. */
-const CONNECTED_PAGE = /\/connected\.html$/.test(location.pathname);
 
 if (CONNECTED_PAGE) {
   void finishConnectedAppSignIn();
@@ -162,10 +166,10 @@ function installWindow(): void {
 
   // The main edge's first question is the account status; hold it until the
   // cookie trade has settled, so the answer is the real one.
-  const desktop = Reflect.get(window, "desktop") as { cursorAccount?: { getStatus?: () => Promise<unknown> } } | undefined;
-  const getStatus = desktop?.cursorAccount?.getStatus;
-  if (desktop?.cursorAccount != null && typeof getStatus === "function") {
-    desktop.cursorAccount.getStatus = async () => { await ready; return getStatus(); };
+  const desktop = Reflect.get(window, "desktop") as { accountService?: { getStatus?: () => Promise<unknown> } } | undefined;
+  const getStatus = desktop?.accountService?.getStatus;
+  if (desktop?.accountService != null && typeof getStatus === "function") {
+    desktop.accountService.getStatus = async () => { await ready; return getStatus(); };
   }
 
   installComputerPanel();

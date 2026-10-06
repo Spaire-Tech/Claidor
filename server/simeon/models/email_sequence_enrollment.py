@@ -59,7 +59,7 @@ class EmailSequenceEnrollment(RecordModel):
     current_step_position: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0
     )
-    # Cursor into the parent sequence's flow_doc.steps array. Populated for
+    # Position into the parent sequence's flow_doc.steps array. Populated for
     # sequences that ship an authored flow_doc (templates, anything created
     # in the new editor). Legacy sequences leave this NULL and the worker
     # falls back to the email-step walker.

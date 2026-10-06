@@ -74,10 +74,10 @@ export const simeonExecutableName = simeonName;
  * Where the packaged app signs in.
  *
  * The app resolves these from `process.env` at startup
- * (`source/shared/node/cursor-token.ts`, `getConfiguredBackendUrl`, and
- * `packages/cursor-config/auth/login.ts`, `resolveApiBaseUrl` /
+ * (`source/shared/node/simeon-token.ts`, `getConfiguredBackendUrl`, and
+ * `packages/simeon-config/auth/login.ts`, `resolveApiBaseUrl` /
  * `resolveWebsiteUrl`). A bundle launched from Finder inherits no shell
- * environment, so without this a packaged build goes to cursor.com no matter
+ * environment, so without this a packaged build goes to the upstream site no matter
  * what is exported in a terminal. They are written into `LSEnvironment` so the
  * app carries its own backend.
  *
@@ -94,6 +94,10 @@ export const packagedEnvironment = Object.freeze({
   SIMEON_API_BASE_URL: process.env.SIMEON_BACKEND_URL?.trim() || "https://api.simeonlabs.com",
   SIMEON_WEBSITE_URL: process.env.SIMEON_BACKEND_URL?.trim() || "https://api.simeonlabs.com",
   SAND_BACKEND_URL: process.env.SIMEON_BACKEND_URL?.trim() || "https://api.simeonlabs.com",
+  // The updater asks `<this>/api/update/...` (`electron-main/update/update-feed.ts`;
+  // the server's `simeon.desktop.releases`); carried in the bundle so a
+  // packaged app checks on its own (5 October 2026, the first release).
+  SAND_UPDATE_FEED_BASE_URL: `${process.env.SIMEON_BACKEND_URL?.trim() || "https://api.simeonlabs.com"}/desktop`,
 });
 export const fidelityBundleId = "com.simeonlabs.simeon.fidelity";
 export const fidelityName = "Simeon Fidelity";

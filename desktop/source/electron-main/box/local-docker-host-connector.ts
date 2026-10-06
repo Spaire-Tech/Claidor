@@ -7,7 +7,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { PRODUCT_INFERENCE_PROVIDER, readSimeonEnv, SAND_INFERENCE_PROVIDER_ENV } from "../../shared/inference-router.js";
-import { getConfiguredBackendUrl } from "../../shared/node/cursor-token.js";
+import { getConfiguredBackendUrl } from "../../shared/node/simeon-token.js";
 import { buildSandBoxNoVncUrl } from "../../packages/constants/sand-box.js";
 import type { SandSettingsStore } from "../../shared/node/settings/sand-settings-store.js";
 import type { SecureStorageCodec } from "../secrets/secret-store.js";
@@ -16,15 +16,23 @@ import type { SandRemoteHostConnector } from "./box-host-connector.js";
 import type { GatewayConnection } from "./gateway-descriptor-cache.js";
 import { computerStreamLine } from "../vnc/computer-stream-log.js";
 
+// The image the earlier path ran, until Simeon's own (box/Dockerfile,
+// 5 October 2026) is published: `SIMEON_BOX_IMAGE=<reference>` (or
+// `SAND_BOX_IMAGE`) names another, as the server's SIMEON_BOX_IMAGE does.
 export const LOCAL_DOCKER_BOX_IMAGE = "public.ecr.aws/k0i0n2g5/cursorenvironments/universal:sand-box-latest";
-// The tag is Cursor's and mutable. A digest pins the box (F-412, F-363):
+export function localDockerBoxImage(env: NodeJS.ProcessEnv = process.env): string {
+  const configured = (env.SIMEON_BOX_IMAGE ?? env.SAND_BOX_IMAGE ?? "").trim();
+  return configured.length > 0 ? configured.split("@", 1)[0]! : LOCAL_DOCKER_BOX_IMAGE;
+}
+// The tag is mutable. A digest pins the box (F-412, F-363):
 // `SAND_BOX_IMAGE_DIGEST=<64 hex>` makes every create run `image@sha256:<digest>`
 // and refuse a container on any other reference. The digest is read on a
 // Mac (`docker image inspect --format '{{index .RepoDigests 0}}' <image>`)
 // and recorded in docs/services-core.md; none is pinned yet.
 export function localDockerBoxImageReference(env: NodeJS.ProcessEnv = process.env): string {
-  const digest = env.SAND_BOX_IMAGE_DIGEST?.trim().toLowerCase().replace(/^sha256:/, "") ?? "";
-  return /^[0-9a-f]{64}$/.test(digest) ? `${LOCAL_DOCKER_BOX_IMAGE}@sha256:${digest}` : LOCAL_DOCKER_BOX_IMAGE;
+  const image = localDockerBoxImage(env);
+  const digest = (env.SIMEON_BOX_IMAGE_DIGEST ?? env.SAND_BOX_IMAGE_DIGEST ?? "").trim().toLowerCase().replace(/^sha256:/, "");
+  return /^[0-9a-f]{64}$/.test(digest) ? `${image}@sha256:${digest}` : image;
 }
 // The container, its two volumes and its labels carry Simeon's names. A
 // container made before 29 September 2026 carries the earlier owner label
@@ -131,7 +139,7 @@ function runDocker(args: readonly string[]): Promise<CommandResult> {
  * encrypted with Electron's `safeStorage` (`gateway-descriptor-store.ts`),
  * and its secret store holds a value encrypted when encryption is available
  * and in memory when it is not (`secret-store.ts`,
- * `resolveSecretStorageMode`). The box itself, a pod on Cursor's servers,
+ * `resolveSecretStorageMode`). The box itself, a pod on the upstream's servers,
  * receives its gateway token and a long-lived renewal credential in its
  * environment (`SAND_GATEWAY_TOKEN`, `SAND_INFERENCE_RENEWAL_CREDENTIAL`) and
  * renews its short-lived model token itself (`host/extensions/auth`).
@@ -333,9 +341,9 @@ export function localDockerContainerNeedsReplace(
 
 export async function getLocalDockerStatus(settingsPath: string): Promise<LocalDockerStatus> {
   const daemon = await runDocker(["info", "--format", "{{.ServerVersion}}"]).catch(() => ({ ok: false, output: "Docker is not installed." }));
-  if (!daemon.ok) return { available: false, running: false, ready: false, containerName: LOCAL_DOCKER_BOX_CONTAINER, image: LOCAL_DOCKER_BOX_IMAGE, detail: daemon.output || "Docker is not running." };
+  if (!daemon.ok) return { available: false, running: false, ready: false, containerName: LOCAL_DOCKER_BOX_CONTAINER, image: localDockerBoxImage(), detail: daemon.output || "Docker is not running." };
   const inspected = await inspectContainer();
-  if (!inspected.exists) return { available: true, running: false, ready: false, containerName: LOCAL_DOCKER_BOX_CONTAINER, image: LOCAL_DOCKER_BOX_IMAGE, detail: "Ready to create the local VM." };
+  if (!inspected.exists) return { available: true, running: false, ready: false, containerName: LOCAL_DOCKER_BOX_CONTAINER, image: localDockerBoxImage(), detail: "Ready to create the local VM." };
   if (!inspected.owned) return { available: true, running: inspected.running, ready: false, containerName: LOCAL_DOCKER_BOX_CONTAINER, image: inspected.image, detail: `Container ${LOCAL_DOCKER_BOX_CONTAINER} exists but is not owned by Simeon.` };
   const ready = inspected.running && await gatewayReady(await readOrCreateToken(settingsPath));
   return { available: true, running: inspected.running, ready, containerName: LOCAL_DOCKER_BOX_CONTAINER, image: inspected.image, detail: ready ? "Local Docker VM is ready." : inspected.running ? "Container is starting." : "Local Docker VM is stopped." };
@@ -398,7 +406,7 @@ export function localDockerInferenceEnvironmentArguments(boxCredential?: string,
     "--env", `${SAND_INFERENCE_PROVIDER_ENV}=${PRODUCT_INFERENCE_PROVIDER}`,
     // The packaged Mac carries these guards in its main; the box never got
     // them, so the host buffered console lines, crash markers and product
-    // events for Cursor's AnalyticsService and posted them to Simeon Labs'
+    // events for the upstream app's AnalyticsService and posted them to Simeon Labs'
     // server every 3 s to get a 404 (design-audit-ledger.md F-376, F-378,
     // F-391). Schema 10 replaces a container created without them.
     "--env", "SAND_DISABLE_TELEMETRY=1",

@@ -19,11 +19,15 @@ Swens, Spaire, SpaceX, xAI, LobsterAI, OpenClaw, Youdao, Rakazo, Pierce and
 Vesence, in any case, in the text and the name of every file in the
 repository (tracked, or new and not ignored by git). Binary files are skipped.
 
-"Cursor" is not on the list: it is an ordinary English word and appears
-thousands of times in code (a text cursor, a database cursor, a page cursor).
-The strings a person can see are checked by the window patch instead: the
-package build records how many "Cursor" and "Anysphere" survive it
-(`brand.residue` in `dist/renderer-router-extension.json`).
+The plain word "cursor" is not on the list: it is ordinary English and
+appears thousands of times in code (a text cursor, a database cursor, a page
+cursor). Two spellings of it are (4 October 2026, the detachment plan):
+"Cursor" as a capitalised word on its own, which is the upstream maker's
+name, and the addresses cursor.com and cursor.sh. The window's identifiers
+(cursorRule, CursorPosition) are not matched. The strings a person can see
+are also checked by the window patch: the package build records how many
+"Cursor" and "Anysphere" survive it (`brand.residue` in
+`dist/renderer-router-extension.json`).
 
 ## The kinds of rule
 
@@ -50,7 +54,25 @@ optional pattern the line must match, and the reason.
 - **guard**: a test that checks an earlier name is gone from what a person or
   the agent reads has to name it.
 
+## The wire, for one release
+
+Since 5 October 2026 the Connect services carry Simeon's names
+(`simeon.v1.ComputerService`, `DashboardService`, `AutomationsService`,
+`CloudAgentService`, `AiService`; `desktop/source/packages/proto/simeon/v1/services.ts`)
+and the app stamps `x-simeon-client-type` and `x-simeon-client-version` on
+every call. The server mounts each service under its earlier `aiserver.v1.*`
+name as well and reads `x-cursor-client-version` after Simeon's header
+(`server/simeon/sand/connect.py`, `server/simeon/desktop/endpoints.py`), so a
+Mac app or a box host built before that day keeps working for one release.
+Those are the fallback rules below for `server/simeon/sand/**`.
+
 ## Kept on purpose, not checked
+
+- **`${CURSOR_PLUGIN_ROOT}`** in a plugin's commands: a plugin written for
+  the upstream app names its folder this way, and the loader expands it next
+  to `${SIMEON_PLUGIN_ROOT}` and `${CLAUDE_PLUGIN_ROOT}`
+  (`desktop/source/packages/plugins/plugin-variables.ts`). The checker does
+  not search for the upper-case spelling.
 
 - **`sand`** is the upstream app's internal word for the agent's computer
   (`SAND_*` settings, `/sand/*` routes, `sand-*` file and class names). Nobody

@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# A fork window's Chrome profile shares the primary profile's sign-ins:
+# its Cookies and Login Data are links to the primary profile's files.
+#
+#   SAND_CHROME_PROFILE_DIR=/home/box/chrome-profile/Fork-2 link-chrome-session
+#
+# SAND_CHROME_SESSION_DIR names the primary session folder
+# [/home/box/chrome-profile/Default]. Always exits 0.
+set -uo pipefail
+
+PROFILE="${SAND_CHROME_PROFILE_DIR:-}"
+[ -n "$PROFILE" ] || exit 0
+SESSION="${SAND_CHROME_SESSION_DIR:-/home/box/chrome-profile/Default}"
+DEFAULT="$PROFILE/Default"
+
+if [ -L "$DEFAULT" ]; then rm -f "$DEFAULT"; fi
+mkdir -p "$DEFAULT" "$SESSION"
+if [ "$(id -u)" = 0 ]; then chown box:box "$PROFILE" "$DEFAULT" 2>/dev/null || true; fi
+for name in "Cookies" "Login Data" "Login Data For Account"; do
+  target="$SESSION/$name"
+  link="$DEFAULT/$name"
+  if [ -e "$link" ] && [ ! -L "$link" ]; then rm -rf "$link"; fi
+  ln -sfn "$target" "$link" 2>/dev/null || true
+  if [ "$(id -u)" = 0 ]; then chown -h box:box "$link" 2>/dev/null || true; fi
+done
+exit 0

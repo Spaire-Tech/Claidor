@@ -1,7 +1,7 @@
 """Connect RPC served from FastAPI (25 September 2026).
 
 The app's `createSandBackendTransport` speaks Connect over HTTP/1.1 with
-the JSON codec. This measures the helper that every `/aiserver.v1.*`
+the JSON codec. This measures the helper that every `/simeon.v1.*`
 module builds on: a unary method answers protobuf JSON, an error answers
 Connect's `{code, message}` with the protocol's status, an
 unauthenticated call is `unauthenticated`, a method nothing serves is
@@ -27,7 +27,7 @@ from simeon.sand.connect import (
 from tests.desktop.test_endpoints import _signed_in
 from tests.fixtures.database import SaveFixture
 
-demo = ConnectService("aiserver.v1.DemoService")
+demo = ConnectService("simeon.v1.DemoService", aliases=("aiserver.v1.DemoService",))
 
 
 @demo.unary("Echo")
@@ -62,7 +62,7 @@ def _mount(app: FastAPI) -> None:
     # overrides into each route) and then moved in front of it, the way a
     # real module is included before `unimplemented_router` in `simeon.sand`.
     if any(
-        getattr(route, "path", "") == "/aiserver.v1.DemoService/Echo"
+        getattr(route, "path", "") == "/simeon.v1.DemoService/Echo"
         for route in app.routes
     ):
         return
@@ -80,7 +80,7 @@ class TestConnect:
     ) -> None:
         access, _ = await _signed_in(client, session, user)
         response = await client.post(
-            "/aiserver.v1.DemoService/Echo",
+            "/simeon.v1.DemoService/Echo",
             json={"preserveData": True, "count": "12"},
             headers={
                 "Authorization": f"Bearer {access}",
@@ -96,14 +96,14 @@ class TestConnect:
     async def test_unauthenticated_is_connects_own_code(
         self, client: httpx.AsyncClient
     ) -> None:
-        response = await client.post("/aiserver.v1.DemoService/Echo", json={})
+        response = await client.post("/simeon.v1.DemoService/Echo", json={})
         assert response.status_code == 401
         assert response.json()["code"] == "unauthenticated"
 
     async def test_an_open_method_takes_no_bearer(
         self, client: httpx.AsyncClient
     ) -> None:
-        response = await client.post("/aiserver.v1.DemoService/Open", content=b"")
+        response = await client.post("/simeon.v1.DemoService/Open", content=b"")
         assert response.status_code == 200
         assert response.json() == {"anonymous": True}
 
@@ -112,7 +112,7 @@ class TestConnect:
     ) -> None:
         access, _ = await _signed_in(client, session, user)
         response = await client.post(
-            "/aiserver.v1.DemoService/Blocked",
+            "/simeon.v1.DemoService/Blocked",
             json={},
             headers={"Authorization": f"Bearer {access}"},
         )
@@ -121,11 +121,64 @@ class TestConnect:
         assert response.headers["x-automation-failure-hint"] == "SAND_BOX_BLOCKED"
         assert response.headers["retry-after"] == "60"
 
+    async def test_the_earlier_service_name_answers_the_same_method(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User, app: FastAPI
+    ) -> None:
+        # 5 October 2026: a Mac app or a box host from before Simeon's own
+        # service names still calls the upstream's, for one release.
+        access, _ = await _signed_in(client, session, user)
+        headers = {"Authorization": f"Bearer {access}"}
+        for path in ("/simeon.v1.DemoService/Echo", "/aiserver.v1.DemoService/Echo"):
+            response = await client.post(path, json={"count": "1"}, headers=headers)
+            assert response.status_code == 200, (path, response.text)
+            assert response.json()["echoed"] == {"count": "1"}
+        assert demo.names == ("simeon.v1.DemoService", "aiserver.v1.DemoService")
+        for name in demo.names:
+            assert any(
+                getattr(route, "path", "") == f"/{name}/Echo" for route in app.routes
+            )
+
+    async def test_every_served_service_keeps_its_earlier_name_for_one_release(
+        self,
+    ) -> None:
+        from simeon.sand import (
+            box_broker,
+            cloud_agents,
+            dashboard,
+            listeners_automations,
+            listeners_connections,
+            skill_registry,
+        )
+
+        assert box_broker.service.names == (
+            "simeon.v1.ComputerService",
+            "aiserver.v1.GrokBotService",
+        )
+        assert dashboard.service.names == (
+            "simeon.v1.DashboardService",
+            "aiserver.v1.DashboardService",
+        )
+        assert skill_registry.service.names == dashboard.service.names
+        assert listeners_connections.service.names == dashboard.service.names
+        assert listeners_automations.service.names == (
+            "simeon.v1.AutomationsService",
+            "aiserver.v1.AutomationsService",
+        )
+        assert cloud_agents.service.names == (
+            "simeon.v1.CloudAgentService",
+            "aiserver.v1.BackgroundComposerService",
+        )
+        assert cloud_agents.ai_service.names == (
+            "simeon.v1.AiService",
+            "aiserver.v1.AiService",
+        )
+
     async def test_anything_unserved_is_unimplemented(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User
     ) -> None:
         access, _ = await _signed_in(client, session, user)
         for path in (
+            "/simeon.v1.NoSuchService/Nothing",
             "/aiserver.v1.NoSuchService/Nothing",
             "/agent.v1.AgentService/Nothing",
         ):
@@ -140,7 +193,7 @@ class TestConnect:
     ) -> None:
         access, _ = await _signed_in(client, session, user)
         response = await client.post(
-            "/aiserver.v1.DemoService/Count",
+            "/simeon.v1.DemoService/Count",
             json={"upTo": 3},
             headers={
                 "Authorization": f"Bearer {access}",
@@ -169,18 +222,18 @@ class TestDashboardPreflight:
         access, _ = await _signed_in(client, session, user)
         headers = {"Authorization": f"Bearer {access}"}
         privacy = await client.post(
-            "/aiserver.v1.DashboardService/GetUserPrivacyMode", json={}, headers=headers
+            "/simeon.v1.DashboardService/GetUserPrivacyMode", json={}, headers=headers
         )
         assert privacy.status_code == 200, privacy.text
         assert privacy.json()["privacyMode"] == 2
         team = await client.post(
-            "/aiserver.v1.DashboardService/GetTeamAdminSettingsOrEmptyIfNotInTeam",
+            "/simeon.v1.DashboardService/GetTeamAdminSettingsOrEmptyIfNotInTeam",
             json={},
             headers=headers,
         )
         assert team.status_code == 200 and team.json() == {}
         me = await client.post(
-            "/aiserver.v1.DashboardService/GetMe", json={"teamId": 0}, headers=headers
+            "/simeon.v1.DashboardService/GetMe", json={"teamId": 0}, headers=headers
         )
         assert me.status_code == 200, me.text
         body = me.json()
@@ -200,14 +253,12 @@ class TestLaunchPreflights:
         access, _ = await _signed_in(client, session, user)
         headers = {"Authorization": f"Bearer {access}"}
         status = await client.post(
-            "/aiserver.v1.DashboardService/GetSandAccessStatus",
-            json={},
-            headers=headers,
+            "/simeon.v1.DashboardService/GetSandAccessStatus", json={}, headers=headers
         )
         assert status.status_code == 200, status.text
         assert status.json() == {"state": 1, "purchaseChannel": 1, "blockReason": 0}
         settings_ = await client.post(
-            "/aiserver.v1.BackgroundComposerService/GetBackgroundComposerUserSettings",
+            "/simeon.v1.CloudAgentService/GetBackgroundComposerUserSettings",
             json={},
             headers=headers,
         )
@@ -225,7 +276,7 @@ class TestCancelSandTrial:
     ) -> None:
         access, _ = await _signed_in(client, session, user)
         response = await client.post(
-            "/aiserver.v1.DashboardService/CancelSandTrial",
+            "/simeon.v1.DashboardService/CancelSandTrial",
             json={},
             headers={"Authorization": f"Bearer {access}"},
         )
@@ -258,7 +309,7 @@ class TestCancelSandTrial:
         mocker.patch("simeon.subscription.service.enqueue_email")
         access, _ = await _signed_in(client, session, user)
         response = await client.post(
-            "/aiserver.v1.DashboardService/CancelSandTrial",
+            "/simeon.v1.DashboardService/CancelSandTrial",
             json={},
             headers={"Authorization": f"Bearer {access}"},
         )

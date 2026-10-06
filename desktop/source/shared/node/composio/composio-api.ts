@@ -1,5 +1,5 @@
-import { SimeonApiError, simeonComposioUrl } from "../cursor-backend/simeon-api.js";
-import { getConfiguredBackendUrl } from "../cursor-token.js";
+import { SimeonApiError, simeonComposioUrl } from "../simeon-backend/simeon-api.js";
+import { getConfiguredBackendUrl } from "../simeon-token.js";
 import { composioConnectorById, composioConnectorByToolkit } from "./catalog.js";
 
 export const COMPOSIO_USER_ID = "default";

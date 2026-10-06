@@ -2,7 +2,7 @@
 
 The desktop agent advertises four tools that are not a model turn. Until
 19 September 2026 all four were Connect RPC calls on
-`aiserver.v1.AiService` — `RunWebSearch`, `RunWebFetch`,
+`simeon.v1.AiService` — `RunWebSearch`, `RunWebFetch`,
 `RunGenerateImage`, `TranscribeAudio` — which Simeon never served, so
 every one of them failed the moment the app was pointed here
 (`docs/services-core.md`). Web fetch now runs on the

@@ -1,7 +1,7 @@
 import { CLOUD_AGENT_ARTIFACTS_DIR } from "../../constants/cloud-agent.js";
 import { Fragment, jsx, jsxs } from "../../prompt-jsx/jsx-runtime.js";
 import { renderContent } from "../../prompt-jsx/render.js";
-import { CURSOR_DYNAMIC_TOOLS_NAMESPACE } from "../../agent-exec/mcp.js";
+import { SIMEON_DYNAMIC_TOOLS_NAMESPACE } from "../../agent-exec/mcp.js";
 import { noRepositoryAccessBullets } from "./cloud/no-repository-access.js";
 
 interface PromptArtifactProps {
@@ -198,8 +198,8 @@ export function userInfoMatchesDynamicToolSnapshot(
   const hasDynamicToolNamespaces = content.includes("<dynamic_tool_namespaces>");
   if (expectsDynamicToolNamespaces !== hasDynamicToolNamespaces) return false;
   if (!expectsDynamicToolNamespaces || mcpMetaToolOptions === undefined) return true;
-  const cursorDescriptor = mcpMetaToolOptions.mcpDescriptors.find(descriptor => descriptor.serverIdentifier === CURSOR_DYNAMIC_TOOLS_NAMESPACE);
-  const priorHasCursorNamespace = content.includes(`<namespace name="${CURSOR_DYNAMIC_TOOLS_NAMESPACE}"`) || content.includes(`<namespace name="cursor"`);
-  if (cursorDescriptor === undefined) return !priorHasCursorNamespace;
-  return priorHasCursorNamespace;
+  const simeonDescriptor = mcpMetaToolOptions.mcpDescriptors.find(descriptor => descriptor.serverIdentifier === SIMEON_DYNAMIC_TOOLS_NAMESPACE);
+  const priorHasSimeonNamespace = content.includes(`<namespace name="${SIMEON_DYNAMIC_TOOLS_NAMESPACE}"`) || content.includes(`<namespace name="cursor"`);
+  if (simeonDescriptor === undefined) return !priorHasSimeonNamespace;
+  return priorHasSimeonNamespace;
 }

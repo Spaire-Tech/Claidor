@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { resolveComputerUseModelSelection, type SandAgentModelSelection } from "../../../shared/agents/sand-agent-model.js";
 import type { SandModelExperimentState } from "../../../shared/node/experiments/sand-model-experiment.js";
 import { SandSettingsStore } from "../../../shared/node/settings/sand-settings-store.js";
-import { createCursorSandInference } from "./cursor-session.js";
+import { createSimeonSandInference } from "./inference-session.js";
 import type { SandInferenceProvider } from "../../../shared/inference-router.js";
 import type { PromptExecutor } from "./sand-labeling.js";
 import { createProviderPromptSession, setSimeonCredentialSource } from "./provider-session.js";
@@ -18,7 +18,7 @@ export function createHostInference(options: HostInferenceOptions) {
   const { auth, experiments, settings } = options;
   const routerSettings = new SandSettingsStore(join(getSandRootDir(), "settings.json"));
   setSimeonCredentialSource({ getAccessToken: () => auth.getAccessToken() });
-  const cursor = createCursorSandInference({
+  const cursor = createSimeonSandInference({
     getAccessToken: auth.getAccessToken,
     getMachineId: auth.getMachineId,
     isGeminiVideoDeveloperApiEnabled: () => experiments.checkFeatureGate("gemini_video_developer_api"),

@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+# Chrome on the box, launched the one way the agent is told to launch it
+# (box-reference-docs.ts): as the box user, on the current DISPLAY, with the
+# profile of that desktop and a DevTools port only the box can reach.
+#
+#   box-chrome [chrome arguments…]        e.g. box-chrome --new-window https://…
+#
+# Profile and port by display: :1 uses /home/box/chrome-profile and port
+# 9223; a fork window :N uses /home/box/chrome-profile/Fork-N (its Cookies
+# and Login Data linked to the primary profile's, link-chrome-session) and
+# port 9222+N. When Chrome already runs on that profile, the arguments go
+# to it (its singleton opens the window). Exit 0 once DevTools answers.
+#
+# Log: /tmp/chrome:N.log.
+set -uo pipefail
+
+export DISPLAY="${DISPLAY:-:1}"
+N="${DISPLAY#:}"
+[[ "$N" =~ ^[0-9]+$ ]] || N=1
+if [ "$N" -gt 1 ]; then
+  PROFILE="${CHROME_USER_DATA_DIR:-/home/box/chrome-profile/Fork-$N}"
+  XDG_DIR="/tmp/xdg-runtime-box-$N"
+  PORT="${SAND_CHROME_REMOTE_DEBUG_PORT:-$((9222 + N))}"
+else
+  PROFILE="${CHROME_USER_DATA_DIR:-/home/box/chrome-profile}"
+  XDG_DIR="/tmp/xdg-runtime-box"
+  PORT="${SAND_CHROME_REMOTE_DEBUG_PORT:-9223}"
+fi
+LOG="/tmp/chrome$DISPLAY.log"
+
+/usr/local/bin/box-chrome-policy || true
+
+if [ "$(id -u)" = 0 ]; then
+  install -d -m 700 -o box -g box "$PROFILE" "$XDG_DIR"
+  chown box:box "$PROFILE" "$XDG_DIR"
+  AS_BOX=(runuser -u box --)
+else
+  mkdir -p "$PROFILE" "$XDG_DIR"
+  AS_BOX=()
+fi
+if [ "$N" -gt 1 ] && [ -z "${CHROME_USER_DATA_DIR:-}" ]; then
+  SAND_CHROME_PROFILE_DIR="$PROFILE" /usr/local/bin/link-chrome-session || true
+fi
+
+DBUS_ADDRESS="$(cat "$XDG_DIR/dbus-session-address" 2>/dev/null || true)"
+[ -n "$DBUS_ADDRESS" ] || DBUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-}"
+
+FLAGS=(
+  --no-sandbox --disable-dev-shm-usage --password-store=basic
+  --no-first-run --no-default-browser-check --hide-crash-restore-bubble
+  --start-maximized --class=box-chrome "--user-data-dir=$PROFILE"
+  --enable-unsafe-swiftshader
+  "--remote-debugging-port=$PORT" --remote-debugging-address=127.0.0.1
+)
+
+ready() { curl --max-time 0.2 -fsS "http://127.0.0.1:$PORT/json/version" >/dev/null 2>&1; }
+
+launch() {
+  "${AS_BOX[@]}" env -u TZ DISPLAY="$DISPLAY" HOME=/home/box XDG_RUNTIME_DIR="$XDG_DIR" DBUS_SESSION_BUS_ADDRESS="$DBUS_ADDRESS" \
+    setsid -f nice -n 10 google-chrome-stable "${FLAGS[@]}" "$@" >> "$LOG" 2>&1
+}
+
+if ready; then
+  # Already running on this profile: Chrome's singleton takes the arguments.
+  launch "$@"
+  exit 0
+fi
+
+exec 9> "$PROFILE/.simeon-launch.lock"
+flock -w 15 9 || { echo "box-chrome: another launch holds $PROFILE" >&2; exit 1; }
+if ! ready; then
+  rm -f "$PROFILE/SingletonLock" "$PROFILE/SingletonSocket" "$PROFILE/SingletonCookie"
+  launch "$@"
+fi
+for _ in $(seq 1 100); do
+  if ready; then
+    if xdotool search --onlyvisible --class box-chrome >/dev/null 2>&1 || xdotool search --onlyvisible --class chrome >/dev/null 2>&1; then exit 0; fi
+  fi
+  sleep 0.1
+done
+if ready; then exit 0; fi
+echo "box-chrome: Chrome on $DISPLAY did not answer on port $PORT within 10 s (see $LOG)" >&2
+exit 1

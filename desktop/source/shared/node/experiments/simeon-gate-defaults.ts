@@ -1,15 +1,15 @@
-import { envGateOverride } from "./cursor-experiments.js";
+import { envGateOverride } from "./simeon-experiments.js";
 
 // Feature gates Simeon turns on that the upstream app's bundled table
 // (`experiment-config.gen.ts`, a generated file that is not edited) leaves
-// off. The upstream app flips these from Cursor's experiments server, which Simeon
+// off. The upstream app flips these from the upstream's experiments server, which Simeon
 // Labs' server does not serve, so without this the bundled default is the
 // only value the app ever sees.
 //
 // `sand_usage_page` — Settings → Usage & Billing and the account menu's
 // usage card. Off by default since the reconstruction; on since
 // 24 September 2026, now that the summary is built from Simeon Labs'
-// server's quota (`account/cursor-profile.ts`).
+// server's quota (`account/account-profile.ts`).
 //
 // Precedence, lowest to highest: this table, then
 // `SAND_FEATURE_GATE_OVERRIDES=name=0` in the environment (a kill switch,
@@ -23,7 +23,7 @@ import { envGateOverride } from "./cursor-experiments.js";
 // 2026 (design-audit-ledger.md F-340), now that the classifier runs on Luna
 // through Simeon Labs' proxy and the box host reads this table.
 //
-// `sand_product_analytics` — the upstream app's event stream to Cursor's
+// `sand_product_analytics` — the upstream app's event stream to the upstream's
 // AnalyticsService, which nothing serves here; off (F-378).
 //
 // `sand_multiplayer` — sharing a room with another person's agent. Off in
@@ -58,11 +58,11 @@ import { envGateOverride } from "./cursor-experiments.js";
 //
 // `sand_memory_dreaming` — the memory synthesis between turns. Its
 // extension reads the gate through `pinGateOnAuthenticatedBootstrap`, which
-// waits for Cursor's experiments server and so never answered here; the
+// waits for the upstream app's experiments server and so never answered here; the
 // wrapper below answers it from this table.
 //
 // Not named, and why: `sand_teach_by_demonstration` stays off (the founder,
-// 2 October). `sand_computer_use_unicode_typing` and `grok_bot_dynamic_tools`
+// 2 October). `sand_computer_use_unicode_typing` and `simeon_dynamic_tools`
 // stay at their bundled default: the first changes how the screen executor
 // types, which the box does not serve; the second marks no tool as its own
 // here, so either switch would read as on and do nothing. `sand_multitask`
@@ -116,7 +116,7 @@ export interface GateDefaultableService<Snapshot> {
  * is set to Simeon's default when one exists; 25 September 2026, the
  * sharing gate), and a gate pinned on the authenticated bootstrap, which
  * is answered at once from Simeon's default because that bootstrap comes
- * from Cursor's experiments server and never arrives here (2 October 2026,
+ * from the upstream's experiments server and never arrives here (2 October 2026,
  * memory dreaming). Everything else reaches the wrapped service untouched.
  */
 export function applySimeonGateDefaults<Snapshot, Service extends GateDefaultableService<Snapshot>>(service: Service, env: NodeJS.ProcessEnv = process.env): Service {

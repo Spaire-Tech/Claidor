@@ -20,6 +20,11 @@ const FACT_LINE = /^-\s+\((\d{4}-\d{2}-\d{2})\)\s+(.+?)\s*$/;
 export type MemoryKind = "profile" | "log";
 export type MemoryOrigin = "explicit" | "synthesis" | "legacy";
 export interface MemoryRecord { id: string; content: string; createdAt: number; kind: MemoryKind }
+// A year, a month, a weekday, a relative day or a clock time. The daily
+// temporal review asks the model whether a dated fact moved into the past;
+// a memory with none of these cannot, so an agent holding only those is
+// skipped (OpenAI log, 3–4 October 2026: seven such calls answered nothing).
+export const DATED_MEMORY = /\b(20\d\d|jan(uary)?|feb(ruary)?|mar(ch)?|apr(il)?|may|june?|july?|aug(ust)?|sep(t(ember)?)?|oct(ober)?|nov(ember)?|dec(ember)?|mon(day)?|tue(s(day)?)?|wed(nesday)?|thu(rs(day)?)?|fri(day)?|sat(urday)?|sun(day)?|today|tonight|tomorrow|yesterday|weekend|next (week|month|year)|this (week|month|year)|\d{1,2}(:\d{2})?\s?(am|pm)|\d{1,2}[/-]\d{1,2}([/-]\d{2,4})?)\b/i;
 interface MemoryFact extends MemoryRecord { origin: MemoryOrigin; path: string; line: number; order: number }
 export type SynthesisChange =
   | { action: "create"; content: string; kind: MemoryKind }
@@ -124,6 +129,8 @@ export class FileMemoryStore {
   private removeFact(fact: MemoryFact, tombstone: boolean): void { const lines = this.read(fact.path).split("\n"); lines.splice(fact.line, 1); this.dir.writeFileAtomic(fact.path, lines.join("\n")); this.clearOrigins(fact.content); if (tombstone) this.markTombstone(fact.content); }
   private addSynthesized(content: string, createdAt: number, kind: MemoryKind): void { if (this.facts().some((fact) => memoryDedupeKey(fact.content) === memoryDedupeKey(content))) return; const path = kind === "profile" ? this.profileFile : this.logFileForDate(createdAt), raw = this.read(path), base = raw || (kind === "profile" ? PROFILE_HEADER : LOG_HEADER); this.dir.writeFileAtomic(path, `${base}${base.endsWith("\n") ? "" : "\n"}${serializeFactLine(content, createdAt)}\n`); this.clearOrigins(content); this.markOrigin(content, "synthesis"); }
   hasMemories(): boolean { return this.countMemories() > 0; }
+  /** Whether any memory names a date, a day or a clock time: the only kind the daily temporal re-check can move (5 October 2026). */
+  hasDatedMemory(): boolean { return this.facts().some((fact) => DATED_MEMORY.test(fact.content)); }
   isTemporalReviewDue(now: number): boolean { const next = Number.parseInt(this.read(this.refreshFile).trim(), 10); return !Number.isFinite(next) || next <= now; }
   markTemporalReview(now: number): void { this.dir.writeFileAtomic(this.refreshFile, `${now + MEMORY_SYNTHESIS_REFRESH_INTERVAL_MS}\n`); }
   clearMemories(): void { const facts = this.facts(); if (!facts.length) return; if (this.dreaming?.isEnabled()) for (const fact of facts) { this.clearOrigins(fact.content); this.markTombstone(fact.content); } rmSync(this.logDir, { recursive: true, force: true }); this.dir.writeFileAtomic(this.profileFile, PROFILE_HEADER); }

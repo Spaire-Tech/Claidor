@@ -28,8 +28,8 @@ function extractManuallyAttachedSkillBlocks(redactedMessage: RedactedCoreMessage
 export function collectAllSkillBlocks(messages: readonly RedactedCoreMessage[]): string[] {
   for (let index = messages.length - 1; index >= 0; index--) {
     const message = messages[index]!;
-    const providerOptions = message.providerOptions as { cursor?: { isSummary?: unknown } } | undefined;
-    if (message.role === "user" && providerOptions?.cursor?.isSummary !== true) {
+    const providerOptions = message.providerOptions as { simeon?: { isSummary?: unknown } } | undefined;
+    if (message.role === "user" && providerOptions?.simeon?.isSummary !== true) {
       return extractManuallyAttachedSkillBlocks(message);
     }
   }

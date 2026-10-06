@@ -34,12 +34,14 @@ const sha256 = bytes => createHash("sha256").update(bytes).digest("hex");
  */
 export function readRendererExtensionRecord(parsed, expectedFiles) {
   const schemaVersion = parsed?.schemaVersion;
-  if (![1, 2].includes(schemaVersion) || parsed?.mode !== "original-renderer-settings-extension" || !Array.isArray(parsed.chunks)) {
+  if (![1, 2, 3].includes(schemaVersion) || parsed?.mode !== "original-renderer-settings-extension" || !Array.isArray(parsed.chunks)) {
     throw new Error("Renderer extension provenance contract is invalid");
   }
   const allowedKeys = schemaVersion === 1
     ? ["schemaVersion", "mode", "chunks", "features", "transformations"]
-    : ["schemaVersion", "mode", "chunks", "marks", "files", "brand", "features", "transformations"];
+    : schemaVersion === 2
+      ? ["schemaVersion", "mode", "chunks", "marks", "files", "brand", "features", "transformations"]
+      : ["schemaVersion", "mode", "chunks", "marks", "files", "renames", "brand", "features", "transformations"];
   if (Object.keys(parsed).sort().join("\0") !== allowedKeys.sort().join("\0")) throw new Error("Renderer extension provenance has unknown fields");
   const isHash = value => /^[0-9a-f]{64}$/.test(value);
   const relativeOf = row => (typeof row?.path === "string" && row.path.startsWith("dist/renderer/") ? row.path.slice("dist/renderer/".length) : null);
@@ -77,7 +79,23 @@ export function readRendererExtensionRecord(parsed, expectedFiles) {
       if (file === undefined || file.bytes !== row.patched.bytes || file.sha256 !== row.patched.sha256) throw new Error(`Renderer extension chunk and file inventories disagree at ${relative}`);
     }
   }
-  return { parsed, chunks, patched };
+  // Schema 3: files the patch moved to a new name (the icon font). The
+  // pinned inventory lists the old path; the package carries the new one,
+  // with the pinned bytes.
+  const renames = new Map();
+  if (schemaVersion >= 3) {
+    if (!Array.isArray(parsed.renames)) throw new Error("Renderer extension provenance has no renames list");
+    for (const row of parsed.renames) {
+      const from = relativeOf({ path: row?.from });
+      const to = relativeOf({ path: row?.to });
+      if (from == null || to == null || !expectedFiles.has(from) || expectedFiles.has(to) || renames.has(from) || [...renames.values()].includes(to) || patched.has(from)) {
+        throw new Error("Renderer extension rename provenance is invalid");
+      }
+      assertSafeRelative(to);
+      renames.set(from, to);
+    }
+  }
+  return { parsed, chunks, patched, renames };
 }
 
 export async function verifyChecksumPinnedRendererPackage({
@@ -169,11 +187,13 @@ export async function verifyChecksumPinnedRendererPackage({
     }
   }
   packagedFiles.sort();
-  if (JSON.stringify(packagedFiles) !== JSON.stringify([...expectedFiles.keys()])) {
+  const renames = rendererExtension?.renames ?? new Map();
+  const expectedPackaged = [...expectedFiles.keys()].map(relative => renames.get(relative) ?? relative).sort();
+  if (JSON.stringify(packagedFiles) !== JSON.stringify(expectedPackaged)) {
     throw new Error("Packaged renderer file inventory differs from the exact shipped renderer");
   }
   for (const [relative, expected] of expectedFiles) {
-    const packaged = extractFile(archivePath, `dist/renderer/${relative}`);
+    const packaged = extractFile(archivePath, `dist/renderer/${renames.get(relative) ?? relative}`);
     const wanted = rendererExtension?.patched.get(relative) ?? expected;
     if (packaged.byteLength !== wanted.bytes || sha256(packaged) !== wanted.sha256) {
       throw new Error(`Packaged renderer drift at ${relative}`);
@@ -203,19 +223,19 @@ export function verifyFidelityActivationPayloads({ archivePath } = {}) {
       runtime: "electron-main",
       path: "dist/electron-main/main.cjs",
       activation: "cursor-auth",
-      markers: ["createCursorAuthWiring", "SUPPORTED_DASHBOARD_ACTIONS", "local-tool-ceiling", "requestLimitIncrease"],
+      markers: ["createAccountAuthWiring", "SUPPORTED_DASHBOARD_ACTIONS", "local-tool-ceiling", "requestLimitIncrease"],
     },
     {
       runtime: "host",
       path: "dist/host/host-main.cjs",
       activation: "typed-tool-producer",
-      markers: ["ClientSideToolV2Producer", "encodeClientSideToolV2Message", "protobuf-base64", "aiserver.v1.ClientSideToolV2Call"],
+      markers: ["ClientSideToolV2Producer", "encodeClientSideToolV2Message", "protobuf-base64", "simeon.v1.ClientSideToolV2Call"],
     },
     {
       runtime: "node-agent-coordinator",
       path: "dist/node-agent-coordinator/main.cjs",
       activation: "typed-tool-relay",
-      markers: ["ClientSideToolV2Relay", "parseClientSideToolV2TransportEvent", "materializeClientSideToolV2RendererEvent", "aiserver.v1.ClientSideToolV2Result"],
+      markers: ["ClientSideToolV2Relay", "parseClientSideToolV2TransportEvent", "materializeClientSideToolV2RendererEvent", "simeon.v1.ClientSideToolV2Result"],
     },
   ];
   return contracts.map(contract => {

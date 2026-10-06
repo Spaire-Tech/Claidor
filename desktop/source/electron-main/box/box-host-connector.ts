@@ -1,10 +1,10 @@
 import type { PartialMessage } from "@bufbuild/protobuf";
 import { Code, ConnectError } from "@connectrpc/connect";
-import { type EnsureSandBoxRequest, type EnsureSandBoxResponse, type ForceRecreateSandBoxRequest, type RecreateSandBoxRequest, type RecreateSandBoxResponse } from "../../packages/proto/generated/aiserver/v1/sand_box_pb.js";
-import { GrokBotService } from "../../packages/proto/generated/aiserver/v1/grok_bot_connect.js";
-import { ErrorDetails } from "../../packages/proto/generated/aiserver/v1/utils_pb.js";
-import { createSandCursorBackendClient, getSandInferenceBackendUrl } from "../../shared/node/cursor-backend/cursor-inference.js";
-import { getAccessTokenExpiryMs } from "../../shared/node/cursor-token.js";
+import { type EnsureSandBoxRequest, type EnsureSandBoxResponse, type ForceRecreateSandBoxRequest, type RecreateSandBoxRequest, type RecreateSandBoxResponse } from "../../packages/proto/generated/simeon/v1/sand_box_pb.js";
+import { ComputerService } from "../../packages/proto/simeon/v1/services.js";
+import { ErrorDetails } from "../../packages/proto/generated/simeon/v1/utils_pb.js";
+import { createSimeonBackendClient, getSandInferenceBackendUrl } from "../../shared/node/simeon-backend/simeon-inference.js";
+import { getAccessTokenExpiryMs } from "../../shared/node/simeon-token.js";
 import { getSandBackendClientHeaders } from "../../shared/node/sand-client-metadata.js";
 import { parseSandBoxMigrationOperationId } from "../../shared/box-migration.js";
 import { GATEWAY_ACCESS_DENIED_MESSAGE_MARKER, CLOUD_AGENT_STORAGE_DISABLED, GATEWAY_NO_STORAGE_MESSAGE_MARKER, SAND_BOX_BLOCKED, SAND_BOX_BLOCK_REASON_KEY, encodeSandBoxBlockedMessage, type SandBoxBlockedInfo } from "../../shared/gateway-reachability.js";
@@ -80,7 +80,7 @@ export class BrokeredHostConnector {
   private blocked: { info: SandBoxBlockedInfo; untilMs: number } | undefined;
   private readonly client: BrokerClient;
   constructor(private readonly deps: BrokerDeps, client?: BrokerClient, private readonly updateSink?: { noteBackendUpdateRequirement(required: boolean): void }) {
-    this.client = client ?? createSandCursorBackendClient(GrokBotService, deps);
+    this.client = client ?? createSimeonBackendClient(ComputerService, deps);
   }
 
   async connect(): Promise<GatewayConnection> {

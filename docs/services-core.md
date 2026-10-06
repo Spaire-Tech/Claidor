@@ -113,6 +113,13 @@ their Google name in `user.meta` (`server/simeon/integrations/google/service.py`
 
 ### In the app
 
+Every setting the app, the host in the box and the helpers read as
+`SAND_<NAME>` is also read as `SIMEON_<NAME>` since 5 October 2026: each
+process copies `SIMEON_<NAME>` to `SAND_<NAME>` at start when the latter is not
+set (`desktop/source/shared/node/env-names.ts`), and `SAND_<NAME>` wins when both
+are set. The server still writes the `SAND_` names into a box, because the box
+image's own scripts read them.
+
 The packaged app points sign-in at `https://api.simeonlabs.com` through
 `SIMEON_API_BASE_URL`, `SIMEON_WEBSITE_URL` and `SAND_BACKEND_URL`
 (`desktop/scripts/lib/config.mjs`). `SAND_BACKEND_URL` alone is not enough:
@@ -436,8 +443,10 @@ runtime for real users. It sleeps when nobody uses it and wakes when needed.
 
 ### How it works
 
-**The broker.** The app speaks Connect RPC to `aiserver.v1.GrokBotService` at
-the root of the API host (`server/simeon/sand/box_broker.py`). Its methods are
+**The broker.** The app speaks Connect RPC to `simeon.v1.ComputerService` at
+the root of the API host (`server/simeon/sand/box_broker.py`; until 5 October
+2026 the service was called `aiserver.v1.GrokBotService`, and the server answers
+that name too for one release, for the apps and box hosts built before). Its methods are
 `EnsureSandBox`, `RecreateSandBox`, `ForceRecreateSandBox`,
 `WatchSandBoxMigration` and `GetSandBoxRunState`. The logic is in
 `server/simeon/sand/box_service.py`, and `server/simeon/sand/box_hosts.py` talks
@@ -507,10 +516,19 @@ All servers share one CA, so one client certificate opens every one of them.
   retried every minute for an hour.
 
 **The pinned image.** The box image is `SIMEON_BOX_IMAGE` pinned by
-`SIMEON_BOX_IMAGE_DIGEST` (default `322c3a90…c0c1c8`). That build's supervisor
-starts `/home/box/sand-host/host-main.cjs`, which is where the host bundle is
-mounted. A box on any other image is replaced. Move the pin only after
-checking which path a new build's supervisor starts.
+`SIMEON_BOX_IMAGE_DIGEST` (default `322c3a90…c0c1c8`, the earlier maker's
+build). That build's supervisor starts `/home/box/sand-host/host-main.cjs`,
+which is where the host bundle is mounted. A box on any other image is
+replaced, keeping its volumes. Move the pin only after checking which path a
+new build's supervisor starts.
+
+Simeon's own image is `box/` (`box/README.md`, 5 October 2026): the same
+ports, files and scripts the host relies on, its supervisor starting the
+mounted `/home/box/sand-host/host-main.cjs` and the mounted exec daemon,
+which now takes the screenshots and clicks itself. Once it is built and
+published, the switch is the two settings above (and `SIMEON_BOX_IMAGE` in
+the Mac's internal Docker path); every box is replaced on its next
+`EnsureSandBox`, its workspace and data kept.
 
 **The host bundle channel.**
 
@@ -608,3 +626,44 @@ settings is not read (`desktop/source/shared/box-runtime.ts`).
 **Not yet verified:** the cloud computer has been tested against two real
 Docker Engines, but has not run in the packaged app on a Mac. Sleep and wake
 have not run against the production VM.
+
+## 5. The Mac app's releases
+
+The download on simeonlabs.com and the update an installed app pulls
+(`server/simeon/desktop/releases.py`, 5 October 2026).
+
+### How it works
+
+A release is made on a Mac (`docs/building-the-app.md`, "A signed release
+for other Macs") and its folder uploaded to the public bucket:
+`releases/darwin-arm64/<version>/` holds the `.dmg`, the `.zip`,
+`release.json` and `feed.json`, and `release.json` is copied once more to
+`releases/darwin-arm64/latest.json`. The server reads only `latest.json`
+(over HTTPS, cached five minutes) and builds the file URLs from the
+bucket's address and the version.
+
+- `GET /desktop/download/mac` sends the browser to the latest `.dmg`
+  (302); the website's Download buttons point here. 404 with a sentence
+  until a release is uploaded.
+- `GET /desktop/download/mac/latest` is the latest release as JSON.
+- `GET /desktop/api/update/{platform}/{app}/{version}/{machine}/{channel}`
+  answers the app's updater in Squirrel.Mac's shape: 204 when the
+  installed version is the latest, else the `.zip` URL and the version.
+  The app carries `SAND_UPDATE_FEED_BASE_URL=https://api.simeonlabs.com/desktop`
+  in its bundle (`desktop/scripts/lib/config.mjs`, `packagedEnvironment`)
+  and checks thirty seconds after launch and hourly after that.
+
+### Settings on Render
+
+- `SIMEON_DESKTOP_RELEASES_BASE_URL`: where the release folders are
+  served from. Unset, the public bucket's `releases/` folder
+  (`S3_FILES_PUBLIC_BUCKET_NAME`).
+
+### When it misbehaves
+
+- `desktop.releases.index_failed` / `index_status` / `index_unreadable`
+  in the API log: `latest.json` could not be read; the URL is in the
+  line. The download answers 404 and the updater 204 until it can.
+- A download that 404s right after an upload: the index is cached five
+  minutes.
+

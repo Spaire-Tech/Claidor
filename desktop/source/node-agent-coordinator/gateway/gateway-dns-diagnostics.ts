@@ -5,10 +5,10 @@ import { findSystemErrno } from "../../shared/system-errno.js";
 
 export const DNS_PROBE_TIMEOUT_MS = 2_000;
 export const DNS_PROBE_MIN_INTERVAL_MS = 60_000;
-export const GENERAL_CONTROL_HOSTNAME = "api2.cursor.sh";
+export const GENERAL_CONTROL_HOSTNAME = "api.simeonlabs.com";
 
 export type DnsProbeResult = "resolved" | "timeout" | "not_found" | "temporary_failure" | "error";
-export type DnsDiagnosis = "resolved_before_probe" | "system_path_failure" | "independent_path_failure" | "endpoint_failure" | "cursorvm_failure" | "general_dns_failure" | "inconclusive";
+export type DnsDiagnosis = "resolved_before_probe" | "system_path_failure" | "independent_path_failure" | "endpoint_failure" | "simeonvm_failure" | "general_dns_failure" | "inconclusive";
 
 interface DnsTarget {
   endpointHostname: string;
@@ -35,11 +35,11 @@ export function dnsTargetFromBaseUrl(baseUrl: string | null | undefined, createW
   try {
     const url = new URL(baseUrl);
     const labels = url.hostname.split(".");
-    if (url.protocol !== "https:" || labels.length !== 4 || labels[0] == null || labels[0].length === 0 || labels[1] == null || labels[2] !== "cursorvm" || labels[3] !== "com" || !isAllowedCluster(labels[1])) return undefined;
+    if (url.protocol !== "https:" || labels.length !== 4 || labels[0] == null || labels[0].length === 0 || labels[1] == null || labels[2] !== "simeonvm" || labels[3] !== "com" || !isAllowedCluster(labels[1])) return undefined;
     const cluster = labels[1];
     const wildcardLabel = createWildcardLabel();
     if (!/^[a-z0-9-]{1,63}$/.test(wildcardLabel)) return undefined;
-    return { endpointHostname: url.hostname, wildcardHostname: `${wildcardLabel}.${cluster}.cursorvm.com`, cluster };
+    return { endpointHostname: url.hostname, wildcardHostname: `${wildcardLabel}.${cluster}.simeonvm.com`, cluster };
   } catch {
     return undefined;
   }
@@ -68,7 +68,7 @@ export function classifyDnsDiagnosis(results: Omit<GatewayDnsDiagnostic, "cluste
   if (results.systemExact !== "resolved" && results.independentExact === "resolved") return "system_path_failure";
   if (results.systemExact === "resolved" && results.independentExact !== "resolved") return "independent_path_failure";
   if (results.independentExact !== "resolved" && results.independentWildcard === "resolved") return "endpoint_failure";
-  if (results.independentExact !== "resolved" && results.independentWildcard !== "resolved" && results.independentGeneral === "resolved") return "cursorvm_failure";
+  if (results.independentExact !== "resolved" && results.independentWildcard !== "resolved" && results.independentGeneral === "resolved") return "simeonvm_failure";
   if (results.independentGeneral !== "resolved") return "general_dns_failure";
   return "inconclusive";
 }

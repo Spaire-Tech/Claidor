@@ -1,4 +1,4 @@
-"""`aiserver.v1.DashboardService`, the part every Connect call pre-flights
+"""`simeon.v1.DashboardService`, the part every Connect call pre-flights
 (25 September 2026).
 
 The app's Connect interceptor looks up the person's privacy mode before
@@ -12,7 +12,7 @@ Slack and SCM ones in `listeners.py`. Enum fields are sent as integers,
 which protobuf JSON accepts.
 
 `CancelSandTrial` (5 October 2026) is the Settings page's « Cancel
-trial » button: the app calls it as it did Cursor's, and here it ends
+trial » button: the app calls it as it did the upstream's, and here it ends
 the person's trial through the billing engine (`docs/services-billing.md`).
 """
 
@@ -30,7 +30,9 @@ from simeon.platform.service import platform as platform_service
 
 from .connect import ConnectCall, ConnectError, ConnectService
 
-service = ConnectService("aiserver.v1.DashboardService")
+service = ConnectService(
+    "simeon.v1.DashboardService", aliases=("aiserver.v1.DashboardService",)
+)
 
 #: `PrivacyMode` in `desktop/source/shared/observability/sentry-privacy-mode.ts`:
 #: UNSPECIFIED 0, NO_STORAGE 1, NO_TRAINING 2, …. Simeon Labs trains on
@@ -59,7 +61,7 @@ async def get_team_admin_settings(call: ConnectCall) -> dict[str, Any]:
 
 #: `GetSandAccessStatusResponse.SandAccessState`: GRANTED is 1. The Mac asks
 #: this at sign-in (`electron-main/account/access.ts`) and gates the whole
-#: app on it; Cursor answered from its billing. Every signed-in Simeon
+#: app on it; the upstream app answered from its billing. Every signed-in Simeon
 #: account has access; billing is the proxy's allowance, not a gate here.
 #: Purchase channel IN_APP (1); no block reason (0).
 SAND_ACCESS_STATE_GRANTED = 1
@@ -92,7 +94,7 @@ async def cancel_sand_trial(call: ConnectCall) -> dict[str, Any]:
     """End the trial without a charge. The subscription is scheduled to
     end when the trial does (the person keeps the remaining days, as the
     reminder e-mails promise), the card is never charged, and the trial
-    stays consumed: no second one on re-subscribe. Cursor's own answers
+    stays consumed: no second one on re-subscribe. The upstream's own answers
     `FAILED_PRECONDITION` when there is no trial to cancel; the app
     shows the message either way."""
     if not platform_service.is_configured():

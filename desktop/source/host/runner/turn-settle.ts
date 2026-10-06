@@ -402,8 +402,14 @@ export function createTurnSettle(
     };
   }
 
+  /** What the turn produced so far: the plain text and whether anything reached the person. */
+  function snapshot(): { readonly text: string; readonly sentMessageCount: number; readonly reacted: boolean } {
+    return { text, sentMessageCount, reacted };
+  }
+
   return {
     collectors,
+    snapshot,
     setProfileSnapshot,
     noteProfileUpdateAppended,
     noteBaseState,

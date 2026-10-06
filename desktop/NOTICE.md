@@ -20,6 +20,12 @@ by Anysphere, Cursor, xAI or SpaceX.
   written from its shipped artifacts, with Simeon's own changes on top.
 - Built apps carry Simeon's own bundle id and are signed by whoever builds
   them; they do not carry or claim the upstream signature.
+- Since 5 October 2026 a second package step, `npm run package:own-shell`,
+  takes nothing from the upstream app's shell, native payload or plists: it
+  lays a stock Electron 42.1.0 from Electron's own release around what Simeon
+  Labs builds. From the upstream app it reads only the window above and the
+  WebAuthn signer `sand-webauthn-signer`, each until its replacement ships
+  (`docs/building-the-app.md`).
 
 The build checks the upstream artifact by these values (`scripts/lib/config.mjs`):
 

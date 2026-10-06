@@ -5,7 +5,7 @@
  *
  * The relay a listener routine needs (/sand/listener-*,
  * /sand/automation-events/poll, AutomationsService, the dashboard's
- * Slack/GitHub connections) is Cursor's; Simeon Labs' server serves none
+ * Slack/GitHub connections) is the upstream's; Simeon Labs' server serves none
  * of it, and no flag turns it on. So: the update_state tool refuses a
  * listener trigger with one sentence, the agent's brief offers cron only
  * and says listeners and running-while-away are coming soon, the connect

@@ -44,6 +44,7 @@ import {
   ReadSuccess,
   type ReadArgs,
 } from "../packages/proto/generated/agent/v1/read_exec_pb.js";
+import { BoxComputerUse, type ComputerUseTools } from "./computer-use.js";
 import {
   ShellFailure,
   ShellResult,
@@ -80,7 +81,7 @@ const BoxExecService = {
 export const BOX_EXEC_DAEMON_HOST = "127.0.0.1";
 export const BOX_EXEC_DAEMON_PORT = 1337;
 export const BOX_EXEC_DAEMON_AUTH_TOKEN = "local";
-export const BOX_TERMINAL_VIRTUAL_PREFIX = "/root/.cursor/projects/workspace/terminals/";
+export const BOX_TERMINAL_VIRTUAL_PREFIX = "/root/.simeon/projects/workspace/terminals/";
 
 export interface BoxExecDaemonOptions {
   readonly host?: string;
@@ -89,6 +90,12 @@ export interface BoxExecDaemonOptions {
   readonly workspaceRoot: string;
   readonly terminalsDirectory?: string;
   readonly environment?: NodeJS.ProcessEnv;
+  /**
+   * Computer use runs on the daemon's `DISPLAY` with xdotool and ImageMagick;
+   * `false` turns it off (capabilities then say so), a tools map points at
+   * other binaries.
+   */
+  readonly computerUse?: boolean | Partial<ComputerUseTools>;
 }
 
 export interface BoxExecDaemonHandle {
@@ -168,10 +175,19 @@ class BoxExecRuntime {
   readonly #environment: NodeJS.ProcessEnv;
   readonly #foreground = new Set<ChildProcessWithoutNullStreams>();
   readonly #background = new Map<number, BackgroundProcess>();
+  readonly computerUse: BoxComputerUse | undefined;
   #nextShellId = 1;
 
-  constructor(readonly workspaceRoot: string, readonly terminalsDirectory: string, environment: NodeJS.ProcessEnv) {
+  constructor(readonly workspaceRoot: string, readonly terminalsDirectory: string, environment: NodeJS.ProcessEnv, computerUse: boolean | Partial<ComputerUseTools> = true) {
     this.#environment = { ...environment };
+    this.computerUse = computerUse === false
+      ? undefined
+      : new BoxComputerUse({ environment: () => this.#environment, ...(computerUse === true ? {} : { tools: computerUse }) });
+  }
+
+  /** Whether a desktop answers on the daemon's `DISPLAY` right now. */
+  async computerUseSupported(): Promise<boolean> {
+    return this.computerUse == null ? false : this.computerUse.available();
   }
 
   applyEnvironment(request: UpdateEnvironmentVariablesRequest): { applied: number; removed: number } {
@@ -242,6 +258,16 @@ class BoxExecRuntime {
         case "writeShellStdinArgs":
           yield client(request.id, request.execId, { case: "writeShellStdinResult", value: await this.writeStdin(request.message.value) });
           break;
+        case "computerUseArgs": {
+          if (this.computerUse == null) {
+            yield thrown(request.id, "Computer use is turned off on this daemon", "BOX_EXEC_UNSUPPORTED");
+            break;
+          }
+          const startedAt = Date.now();
+          const result = await this.computerUse.execute(request.message.value, signal);
+          yield client(request.id, request.execId, { case: "computerUseResult", value: result }, Date.now() - startedAt);
+          break;
+        }
         default:
           yield thrown(request.id, `Unsupported ExecServerMessage case: ${request.message.case ?? "unset"}`, "BOX_EXEC_UNSUPPORTED");
       }
@@ -462,12 +488,12 @@ export async function startBoxExecDaemon(options: BoxExecDaemonOptions): Promise
   await stat(workspaceRoot).then(info => {
     if (!info.isDirectory()) throw new Error(`workspaceRoot is not a directory: ${workspaceRoot}`);
   });
-  const runtime = new BoxExecRuntime(workspaceRoot, terminalsDirectory, options.environment ?? process.env);
+  const runtime = new BoxExecRuntime(workspaceRoot, terminalsDirectory, options.environment ?? process.env, options.computerUse ?? true);
   const adapter = connectNodeAdapter({
     routes(router) {
       router.service(BoxControlService, {
         ping: async () => new PingResponse(),
-        getCapabilities: async () => new GetCapabilitiesResponse({ computerUseSupported: false, installPluginArtifactSupported: false }),
+        getCapabilities: async () => new GetCapabilitiesResponse({ computerUseSupported: await runtime.computerUseSupported(), installPluginArtifactSupported: false }),
         updateEnvironmentVariables: async request => new UpdateEnvironmentVariablesResponse(runtime.applyEnvironment(request)),
         loadMcpServers: async () => new LoadMcpServersResponse(),
       });

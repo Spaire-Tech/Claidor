@@ -124,7 +124,7 @@ export type ErrorButton = {
   action: { case: string; value: any };
 };
 export const SIMEON_BILLING_URL = "https://app.simeonlabs.com/billing";
-/** Cursor's membership names, as a served error still spells them, to Simeon's plans. */
+/** The upstream's membership names, as a served error still spells them, to Simeon's plans. */
 const PLAN_OF_MEMBERSHIP: Record<string, string> = {
   pro: "standard",
   pro_plus: "pro",
@@ -138,9 +138,9 @@ export function checkoutDeepControlUrl(action: {
 }): string {
   // The billing page on app.simeonlabs.com (5 October 2026), where the
   // plans are chosen; before it, an "upgrade" button in a served error
-  // opened cursor.com/api/auth/checkoutDeepControl (ledger F-431), then a
-  // pricing page simeonlabs.com never had. The plan travels as a query so
-  // the page opens on that card.
+  // opened the upstream's checkout (ledger F-431), then a pricing page
+  // simeonlabs.com never had. The plan travels as a query so the page
+  // opens on that card.
   const plan = PLAN_OF_MEMBERSHIP[action.membershipToUpgradeTo ?? ""] ?? "standard";
   let url = `${SIMEON_BILLING_URL}?plan=${plan}`;
   if (action.allowTrial === true) url += "&allowTrial=true";
@@ -178,7 +178,7 @@ export function mapErrorDetailButtons(
         actions.push({
           kind: "open-url",
           label: button.label || "Upgrade",
-          // The billing page, not Cursor's pricing page (F-132).
+          // The billing page, not the upstream's pricing page (F-132).
           url: SIMEON_BILLING_URL,
         });
         break;

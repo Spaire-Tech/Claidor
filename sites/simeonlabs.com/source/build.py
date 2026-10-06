@@ -24,6 +24,7 @@ shutil.rmtree(OUT, ignore_errors=True)
 os.makedirs(f"{OUT}/logos")
 shutil.copytree(f"{HERE}/img", f"{OUT}/img")
 shutil.copytree(f"{HERE}/faces", f"{OUT}/faces")
+shutil.copytree(f"{HERE}/fonts", f"{OUT}/fonts")
 for name in ("favicon.svg", "favicon.ico", "apple-touch-icon.png"): shutil.copy(f"{HERE}/favicons/{name}", f"{OUT}/{name}")
 
 # The app's own logos and brand colours (desktop/brand/app-logos).
@@ -62,6 +63,8 @@ def mface(f, tint=""):
 def tag(f, name, color):
     return f'<span class="sd-m-tag" style="color:{color}"><img src="faces/{f}.png" alt="">{name}</span>'
 PLUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>'
+LINES = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 4.5H6.5A2.5 2.5 0 0 0 4 7v10.5A2.5 2.5 0 0 0 6.5 20H17a2.5 2.5 0 0 0 2.5-2.5V12M18.3 3.7a1.9 1.9 0 0 1 2.7 2.7L13 14.4l-3.6.9.9-3.6z"/></svg>'
+SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>'
 MIC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>'
 CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>'
 # The phone hero: a still of the app, drawn by the page, telling the demo's opening (desktop/demo/scenario.ts):
@@ -69,17 +72,17 @@ CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width
 # Name colours are the top colour of each agent's palette (desktop/source/shared/voice-call/agent-mark.ts).
 rail = "".join(f'<span class="sd-m-av{" sd-m-on" if i == 0 else ""}">{mface("agent-" + f)}</span>' for i, f in enumerate(["simeon"]))
 group = '<span class="sd-m-av sd-m-group">' + mface("agent-simeon") + mface("agent-scout") + mface("agent-iris") + '</span>'
-rail += group + "".join(f'<span class="sd-m-av">{mface("agent-" + f)}</span>' for f in ["iris", "theo", "scout"])
+rail += group + "".join(f'<span class="sd-m-av">{mface("agent-" + f)}</span>' for f in ["theo", "iris", "scout"])
 # The words are the original phone still's, which the founder asked to keep and to show on the
 # laptop too (28 September and 3 October 2026); the laptop's demo plays the same thread.
 MOBILE_HTML = ('<div class="sd-mob" aria-label="Simeon, the chief of staff, talking with you about a launch">'
   '<div class="sd-m-rail"><span class="sd-m-lights"><i></i><i></i><i></i></span>' + rail
-  + '<span class="sd-m-fill"></span><span class="sd-m-new">' + PLUS + '</span><span class="sd-m-me">BF</span></div>'
+  + '<span class="sd-m-fill"></span><span class="sd-m-search">' + SEARCH + '</span><span class="sd-m-new">' + LINES + '</span><span class="sd-m-me">BF</span></div>'
   '<div class="sd-m-main"><div class="sd-m-head">' + mface("agent-simeon") + '<b>Simeon</b><span class="sd-m-role">Chief of Staff</span></div>'
   '<div class="sd-m-thread"><div class="sd-m-feed">'
   f'<div class="sd-m-in">Thursday is on track: 12 of 15 launch tickets are done in {chip("linear")}, and the review is Thursday at 2 pm.</div>'
-  '<div class="sd-m-sys">Messages from ' + tag("agent-scout", "Scout", "#3f7f78") + ' and ' + tag("agent-iris", "Iris", "#69847c") + '</div>'
-  '<div class="sd-m-in">' + tag("agent-scout", "Scout", "#3f7f78") + ' pulled three customer quotes and ' + tag("agent-iris", "Iris", "#69847c") + ' closed the last two tickets. The review doc is ready.</div>'
+  '<div class="sd-m-sys">Messages from ' + tag("agent-scout", "Scout", "#997d64") + ' and ' + tag("agent-iris", "Iris", "#5d90a8") + '</div>'
+  '<div class="sd-m-in">' + tag("agent-scout", "Scout", "#997d64") + ' pulled three customer quotes and ' + tag("agent-iris", "Iris", "#5d90a8") + ' closed the last two tickets. The review doc is ready.</div>'
   '<div class="sd-m-file"><img src="logos/word.webp" alt="">Launch review.docx</div>'
   '<div class="sd-m-out">Looks great. Send the agenda to Dana and Marcus, and check in like this every Monday.<span class="sd-m-react">&#128077;</span></div>'
   '<div class="sd-m-sys">Created routine <span class="sd-m-clock">' + CLOCK + '</span><b>Monday launch check</b></div>'
@@ -107,9 +110,13 @@ MOBILE_CSS = """/* The phone hero: a still of the app window filling the hero bo
   .sd-m-group img{position:absolute;width:6.6cqw;height:6.6cqw}
   .sd-m-group img:nth-child(1){top:1.2cqw;left:4.2cqw}.sd-m-group img:nth-child(2){bottom:1.4cqw;left:1.6cqw}.sd-m-group img:nth-child(3){bottom:1.4cqw;right:1.6cqw}
   .sd-m-fill{flex:1}
-  .sd-m-new{width:6cqw;height:6cqw;color:#6e6e73}
-  .sd-m-new svg,.sd-m-plus svg,.sd-m-mic svg,.sd-m-clock svg{display:block;width:100%;height:100%}
-  .sd-m-me{display:grid;place-items:center;width:9cqw;height:9cqw;border-radius:50%;background:#ececea;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);font-size:3.2cqw;color:#555;letter-spacing:.02em}
+  /* The rail's three round glass discs, the initials, search and create, as in the demo (demo-glass.css). */
+  .sd-m-me,.sd-m-search,.sd-m-new{display:grid;place-items:center;width:9.4cqw;height:9.4cqw;border-radius:50%;color:rgba(0,0,0,.78);background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,255,255,.38));box-shadow:inset 0 .25cqw 0 rgba(255,255,255,.95),inset 0 0 0 .2cqw rgba(255,255,255,.6),inset 0 -.25cqw .25cqw rgba(0,0,0,.04),0 0 0 .13cqw rgba(0,0,0,.07),0 .25cqw .8cqw rgba(0,0,0,.06)}
+  .sd-m-search{margin-top:auto}
+  .sd-m-me{font-size:3.2cqw;font-weight:500;letter-spacing:.02em;color:rgba(0,0,0,.72)}
+  .sd-m-plus svg,.sd-m-mic svg,.sd-m-clock svg{display:block;width:100%;height:100%}
+  .sd-m-plus svg{width:4.2cqw;height:4.2cqw}
+  .sd-m-search svg,.sd-m-new svg{display:block;width:4.6cqw;height:4.6cqw}
   .sd-m-main{flex:1;min-width:0;display:flex;flex-direction:column}
   .sd-m-head{display:flex;align-items:center;gap:2cqw;padding:4.2cqw 4cqw 3.4cqw;border-bottom:1px solid rgba(0,0,0,.06);font-size:4.2cqw}
   .sd-m-head img{width:7.4cqw;height:7.4cqw;object-fit:contain}
@@ -134,7 +141,7 @@ MOBILE_CSS = """/* The phone hero: a still of the app window filling the hero bo
     box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04)}
   .sd-m-file img{width:7cqw;height:7cqw;object-fit:contain}
   .sd-m-compose{display:flex;align-items:center;gap:2.4cqw;margin:1cqw 3.6cqw 4cqw;padding:1.8cqw 1.8cqw 1.8cqw 2cqw;border-radius:99px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.09),0 2px 8px -4px rgba(0,0,0,.1)}
-  .sd-m-plus{width:7cqw;height:7cqw;padding:1.3cqw;border-radius:50%;background:#f1f1f0;color:#6e6e73;box-sizing:border-box}
+  .sd-m-plus{display:grid;place-items:center;width:8cqw;height:8cqw;border-radius:50%;color:rgba(0,0,0,.78);background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,255,255,.38));box-shadow:inset 0 .25cqw 0 rgba(255,255,255,.95),inset 0 0 0 .2cqw rgba(255,255,255,.6),inset 0 -.25cqw .25cqw rgba(0,0,0,.04),0 0 0 .13cqw rgba(0,0,0,.07),0 .25cqw .8cqw rgba(0,0,0,.06)}
   .sd-m-ph{flex:1;font-size:3.8cqw;color:#a1a1a6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .sd-m-mic{width:8cqw;height:8cqw;padding:1.9cqw;border-radius:50%;background:#255a93;color:#fff;box-sizing:border-box}
 }
@@ -267,7 +274,7 @@ async def posters(app_path):
                 pg = await b.new_page(viewport={"width": w, "height": h}, device_scale_factor=2)
                 if name == "held":
                     await pg.add_init_script("Object.defineProperty(window, 'frameElement', { get: () => ({ hasAttribute: () => true, removeAttribute() {} }) })")
-                await pg.goto(f"http://127.0.0.1:{srv.server_port}/{app_path}/index.html")
+                await pg.goto(f"http://127.0.0.1:{srv.server_port}/{app_path}/index.html?theme=light")
                 # The same moment the page reveals the live app: its sidebar drawn and its fonts in.
                 await pg.wait_for_selector(".sand-agents-sidebar", state="attached")
                 await pg.evaluate("document.fonts.ready")
@@ -294,11 +301,15 @@ async def main():
     idx = open(f"{OUT}/app/index.html").read()
     idx = idx.replace('<script src="./demo-bridge.js"></script>', '<script src="./scroll-guard.js"></script>\n    <script src="./demo-bridge.js"></script>\n    <script src="./demo-gate.js"></script>', 1)
     shutil.copy(f"{HERE}/demo-gate.js", f"{OUT}/app/demo-gate.js")
+    # The round Liquid Glass buttons (demo-glass.css and .js), in the demo only.
+    idx = idx.replace('<script src="./demo-gate.js"></script>', '<script src="./demo-gate.js"></script>\n    <script src="./demo-glass.js"></script>\n    <link rel="stylesheet" href="./demo-glass.css">', 1)
+    for name in ("demo-glass.css", "demo-glass.js"): shutil.copy(f"{HERE}/{name}", f"{OUT}/app/{name}")
     assert "scroll-guard.js" in idx
     # The sidebar is solid in the page, not glass over a desktop.
     before = 'body::before{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(160deg,#e4e4e7,#d4d4d8)}'
     assert before in idx
-    idx = idx.replace(before, before + 'html body .sand-agents-sidebar{background-color:var(--cursor-bg-chrome)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}')
+    # In the chat header a group's three clouds read the size of a single agent's 52 pt cloud (the founder, 5 October 2026).
+    idx = idx.replace(before, before + 'html body .sand-agents-sidebar{background-color:var(--simeon-bg-chrome)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}html body .sand-chat-header__avatar:has(.sand-group-avatar){display:flex!important;align-items:center!important;justify-content:center!important;width:117px!important;height:52px!important}html body .sand-chat-header__avatar .sand-group-avatar{transform:scale(2.6)!important;transform-origin:center!important}')
     open(f"{OUT}/app/index.html", "w").write(idx)
     # The app lives under a folder named after its content (app/<digest>/), so a changed window is a
     # new address: its files keep the same names from build to build (the patch rewrites them after

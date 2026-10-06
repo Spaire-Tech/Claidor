@@ -50,7 +50,7 @@ function createWebFetchToolCall(value: WebFetchToolCall): ToolCall {
 
 function toolName(promptVersion: string): string {
   if (promptVersion === "dsv3-1018" || promptVersion === "dsv3-1205") return "mcp_web_fetch";
-  if (["cursor-0226", "latest", "gpt5-codex", "codex-cloud", "haiku"].includes(promptVersion)) return "WebFetch";
+  if (["simeon-0226", "latest", "gpt5-codex", "codex-cloud", "haiku"].includes(promptVersion)) return "WebFetch";
   throw new Error(`Unhandled version: ${promptVersion}`);
 }
 

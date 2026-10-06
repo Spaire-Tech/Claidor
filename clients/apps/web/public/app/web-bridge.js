@@ -301,21 +301,21 @@
     getBoxRuntime: { args: "none" },
     setBoxRuntime: { args: "object" },
     transcribeAudio: { args: "object" },
-    getCursorAuthStatus: { args: "none" },
-    loginCursor: { args: "none" },
-    cancelCursorLogin: { args: "none" },
-    logoutCursor: { args: "none" },
-    updateCursorAccountName: { args: "object" },
-    getCursorNamePrompt: { args: "none" },
-    getCursorAvatar: { args: "none" },
-    getCursorWeeklyUsage: { args: "none" },
-    getCursorUsageSummary: { args: "none" },
-    getCursorPrReviewPreferences: { args: "none" },
-    getCursorPrivacyModeEnabled: { args: "none" },
+    getAccountStatus: { args: "none" },
+    signInAccount: { args: "none" },
+    cancelAccountSignIn: { args: "none" },
+    signOutAccount: { args: "none" },
+    updateAccountName: { args: "object" },
+    getAccountNamePrompt: { args: "none" },
+    getAccountAvatar: { args: "none" },
+    getAccountWeeklyUsage: { args: "none" },
+    getAccountUsageSummary: { args: "none" },
+    getAccountPrReviewPreferences: { args: "none" },
+    getAccountPrivacyModeEnabled: { args: "none" },
     getSandAccess: { args: "none" },
     getSandAccessFresh: { args: "none" },
-    invokeCursorDashboardAction: { args: "object" },
-    cancelCursorSandTrial: { args: "none" },
+    invokeAccountDashboardAction: { args: "object" },
+    cancelAccountTrial: { args: "none" },
     reportAgentLoad: { args: "object" },
     reportAccessBlocked: { args: "object" },
     reportAgentsUnreachable: { args: "object" },
@@ -561,24 +561,27 @@
         // The thumbs on a finished call's card in the chat (2 October 2026).
         rateCall: (conversationId, like) => edge("rateVoiceCall", { conversationId, like })
       },
-      cursorAccount: {
-        getStatus: () => edge("getCursorAuthStatus"),
-        login: () => edge("loginCursor"),
-        cancelLogin: () => edge("cancelCursorLogin"),
-        logout: () => edge("logoutCursor"),
-        updateName: (name) => edge("updateCursorAccountName", { name }),
+      // The window reads `desktop.account` (its own bytes said cursorAccount;
+      // the renderer patch renames it with the rest of the upstream's tokens,
+      // Track B of the detachment plan, 4 October 2026).
+      account: {
+        getStatus: () => edge("getAccountStatus"),
+        login: () => edge("signInAccount"),
+        cancelLogin: () => edge("cancelAccountSignIn"),
+        logout: () => edge("signOutAccount"),
+        updateName: (name) => edge("updateAccountName", { name }),
         // The name sheet after onboarding (1 October 2026): whether to ask, and Google's first name to offer.
-        getNamePrompt: () => edge("getCursorNamePrompt"),
-        getAvatar: () => edge("getCursorAvatar"),
-        getWeeklyUsage: () => edge("getCursorWeeklyUsage"),
-        getUsageSummary: () => edge("getCursorUsageSummary"),
-        getPrReviewPreferences: () => edge("getCursorPrReviewPreferences"),
-        getPrivacyModeEnabled: () => edge("getCursorPrivacyModeEnabled"),
+        getNamePrompt: () => edge("getAccountNamePrompt"),
+        getAvatar: () => edge("getAccountAvatar"),
+        getWeeklyUsage: () => edge("getAccountWeeklyUsage"),
+        getUsageSummary: () => edge("getAccountUsageSummary"),
+        getPrReviewPreferences: () => edge("getAccountPrReviewPreferences"),
+        getPrivacyModeEnabled: () => edge("getAccountPrivacyModeEnabled"),
         getSandAccess: () => edge("getSandAccess"),
         getSandAccessFresh: () => edge("getSandAccessFresh"),
-        invokeDashboardAction: (request) => edge("invokeCursorDashboardAction", request),
-        cancelTrial: () => edge("cancelCursorSandTrial"),
-        onStatusChanged: (listener) => subscribe("cursor-auth-changed", listener)
+        invokeDashboardAction: (request) => edge("invokeAccountDashboardAction", request),
+        cancelTrial: () => edge("cancelAccountTrial"),
+        onStatusChanged: (listener) => subscribe("account-changed", listener)
       },
       experiments: {
         initialSnapshot: initialState.experimentSnapshot,
@@ -31404,7 +31407,7 @@
         ...row?.email == null ? {} : { email: row.email },
         ...(nonEmpty(row?.preferredName) ?? nonEmpty(row?.name) ?? nonEmpty(row?.nickname)) == null ? {} : { displayName: nonEmpty(row?.preferredName) ?? nonEmpty(row?.name) ?? nonEmpty(row?.nickname) },
         ...nonEmpty(row?.avatarUrl ?? void 0) == null ? {} : { profilePictureUrl: nonEmpty(row?.avatarUrl ?? void 0) },
-        isAnysphereUser: false
+        isStaffUser: false
       };
     };
     const accountSlot = () => {
@@ -31434,54 +31437,54 @@
     };
     const main = {
       // --- the account, on Simeon Labs' server ---
-      getCursorAuthStatus: async () => {
+      getAccountStatus: async () => {
         if (api2.isSignedIn()) await loadProfile();
         return authStatus();
       },
-      loginCursor: async () => {
+      signInAccount: async () => {
         if (api2.isSignedIn()) {
           await loadProfile();
           return authStatus();
         }
-        hooks.pushMainEvent("cursor-auth-changed", { kind: "logging-in" });
+        hooks.pushMainEvent("account-changed", { kind: "logging-in" });
         if (await api2.signInFromCookie()) {
           await loadProfile();
           const status = authStatus();
-          hooks.pushMainEvent("cursor-auth-changed", status);
+          hooks.pushMainEvent("account-changed", status);
           return status;
         }
         hooks.goSignIn();
         return { kind: "logging-in" };
       },
-      cancelCursorLogin: () => ({ kind: "logged-out" }),
-      logoutCursor: async () => {
+      cancelAccountSignIn: () => ({ kind: "logged-out" }),
+      signOutAccount: async () => {
         await api2.signOut();
         profile = null;
         const status = { kind: "logged-out" };
-        hooks.pushMainEvent("cursor-auth-changed", status);
+        hooks.pushMainEvent("account-changed", status);
         return status;
       },
-      updateCursorAccountName: async (args) => {
+      updateAccountName: async (args) => {
         const name = typeof args?.name === "string" ? args.name : "";
         profile = await api2.data("user/name", { json: { name } });
-        hooks.pushMainEvent("cursor-auth-changed", authStatus());
+        hooks.pushMainEvent("account-changed", authStatus());
         return authStatus();
       },
-      getCursorNamePrompt: async () => {
+      getAccountNamePrompt: async () => {
         const row = await loadProfile();
         const preferred = nonEmpty(row?.preferredName);
         return { needed: preferred == null, suggested: preferred ?? nonEmpty(row?.suggestedName) ?? null };
       },
       // The menu draws whatever `<img src>` takes; the sign-in provider's picture is an https URL.
-      getCursorAvatar: async () => nonEmpty((await loadProfile())?.avatarUrl ?? void 0) ?? null,
-      getCursorWeeklyUsage: () => null,
-      getCursorUsageSummary: () => null,
-      getCursorPrReviewPreferences: () => null,
-      getCursorPrivacyModeEnabled: () => true,
+      getAccountAvatar: async () => nonEmpty((await loadProfile())?.avatarUrl ?? void 0) ?? null,
+      getAccountWeeklyUsage: () => null,
+      getAccountUsageSummary: () => null,
+      getAccountPrReviewPreferences: () => null,
+      getAccountPrivacyModeEnabled: () => true,
       getSandAccess: () => ({ state: api2.isSignedIn() ? "granted" : "unknown", reason: "none" }),
       getSandAccessFresh: () => ({ state: api2.isSignedIn() ? "granted" : "unknown", reason: "none" }),
-      invokeCursorDashboardAction: () => notHere("That account action"),
-      cancelCursorSandTrial: () => notHere("That account action"),
+      invokeAccountDashboardAction: () => notHere("That account action"),
+      cancelAccountTrial: () => notHere("That account action"),
       submitFeedback: (args) => api2.data("feedback", { json: { ...args ?? {}, platform: "web" } }),
       getAvailableModels: async () => availableModelsJson(await api2.data("models/available")),
       getExperimentsSnapshot: () => null,
@@ -31689,7 +31692,7 @@
             return mcp("listEffectivePlugins");
           case "sand:mcp-catalog":
             return mcp("getCatalog");
-          // Team popularity is Cursor's marketplace; Simeon's catalog has none.
+          // Team popularity is the upstream's marketplace; Simeon's catalog has none.
           case "sand:mcp-team-popularity":
             return {};
           case "sand:mcp-plugin-logo":
@@ -31759,6 +31762,7 @@
     goSignIn
   });
   Reflect.set(window, "__simeonWeb", { api, backend });
+  var CONNECTED_PAGE = /\/connected\.html$/.test(location.pathname);
   var ready = (async () => {
     if (api.isSignedIn()) return;
     try {
@@ -31766,8 +31770,8 @@
     } catch (error) {
       trace("sign-in from cookie failed", error);
     }
+    if (!api.isSignedIn() && !CONNECTED_PAGE) goSignIn();
   })();
-  var CONNECTED_PAGE = /\/connected\.html$/.test(location.pathname);
   if (CONNECTED_PAGE) {
     void finishConnectedAppSignIn();
   } else {

@@ -4,7 +4,7 @@ The app in `desktop/` keeps every routine in the box (`automation.json`)
 and mirrors the ones a server can fire to the
 `AutomationsService` as a *shadow* workflow whose `description` is
 `sand-shadow:<hash>` (`host/extensions/automations/sand-automation-cloud-sync.ts`).
-Cursor's server fired those; this is the same store on ours
+the upstream's server fired those; this is the same store on ours
 (`simeon.sand.listeners`). Five tables:
 
 - `SandAutomation`: one shadow workflow per person per routine, keyed by
@@ -66,7 +66,7 @@ class SandAutomation(RecordModel):
     #: must carry or the box drops it.
     description: Mapped[str] = mapped_column(Text, nullable=False, default="")
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    #: `aiserver.v1.Workflow` as protobuf JSON, untouched.
+    #: `simeon.v1.Workflow` as protobuf JSON, untouched.
     workflow: Mapped[dict[str, Any]] = mapped_column(
         JSONB, nullable=False, default=dict
     )

@@ -1,6 +1,6 @@
 /**
  * The account's MCP configuration lives on this machine (24 September 2026).
- * The upstream app kept it on Cursor's server and the reconstruction still called
+ * The upstream app kept it on the upstream's server and the reconstruction still called
  * those RPCs (GetAvailableMcpServers, GetMcpConfig, SetMcpConfig,
  * InstallUserPlugin, UninstallUserPlugin, UpdateUserPluginInstall), which
  * Simeon Labs' server does not serve: reads came back unavailable and every
@@ -82,7 +82,7 @@ const deps = (root, extra = {}) => ({ getAccessToken: async () => "simeon_da_tes
 const readStore = (root) => JSON.parse(readFileSync(path.join(root, "account-mcp-config.json"), "utf8"));
 
 test("SetMcpConfig then GetMcpConfig round-trips through account-mcp-config.json; a removal is a tombstone", async () => {
-  const account = await load("source/shared/node/cursor-backend/account-mcp.ts", "account-mcp");
+  const account = await load("source/shared/node/simeon-backend/account-mcp.ts", "account-mcp");
   const root = await mkdtemp(path.join(os.tmpdir(), "simeon-account-mcp-store-"));
   try {
     const { createAccountMcpWriter, fetchAccountMcpServers } = account.module;
@@ -204,7 +204,7 @@ test("the two copies merge newer-entry-wins per name, tombstones included, on bo
 });
 
 test("a custom URL server's tools are listed and called through a streamable-HTTP MCP server, with its configured headers", async () => {
-  const account = await load("source/shared/node/cursor-backend/account-mcp.ts", "account-mcp-http-writer");
+  const account = await load("source/shared/node/simeon-backend/account-mcp.ts", "account-mcp-http-writer");
   const backend = await load("source/shared/node/account-mcp/backend-exec.ts", "account-mcp-http-backend");
   const root = await mkdtemp(path.join(os.tmpdir(), "simeon-account-mcp-http-"));
   const server = await startCustomMcpServer({ apiKey: "k3y" });
@@ -251,7 +251,7 @@ test("a custom URL server's tools are listed and called through a streamable-HTT
 });
 
 test("a 401 from a custom server yields requiresAuth with an auth URL on the Mac, and never on the box", async () => {
-  const account = await load("source/shared/node/cursor-backend/account-mcp.ts", "account-mcp-auth-writer");
+  const account = await load("source/shared/node/simeon-backend/account-mcp.ts", "account-mcp-auth-writer");
   const backend = await load("source/shared/node/account-mcp/backend-exec.ts", "account-mcp-auth-backend");
   const macRoot = await mkdtemp(path.join(os.tmpdir(), "simeon-account-mcp-mac-"));
   const boxRoot = await mkdtemp(path.join(os.tmpdir(), "simeon-account-mcp-box-"));
@@ -346,7 +346,7 @@ test("a 401 from a custom server yields requiresAuth with an auth URL on the Mac
 });
 
 test("install and uninstall of a plugin round-trip through the store", async () => {
-  const account = await load("source/shared/node/cursor-backend/account-mcp.ts", "account-mcp-plugins");
+  const account = await load("source/shared/node/simeon-backend/account-mcp.ts", "account-mcp-plugins");
   const root = await mkdtemp(path.join(os.tmpdir(), "simeon-account-mcp-plugins-"));
   try {
     const { createAccountMcpWriter, fetchEffectiveUserPlugins, backfillUserPluginInstalls } = account.module;
@@ -376,10 +376,10 @@ test("both sides, the gateway, the loopback and the resync carry the account sto
   const read = (file) => readFile(path.join(repoRoot, file), "utf8");
   const host = await read("source/host/extensions/mcp/mcp-service.ts");
   // Since Simeon on the web (4 October 2026) the box starts sign-ins too, for the window on the web; each side refreshes the credentials it finished.
-  assert.match(host, /createAccountMcpBackendExec\(\{ rootDir: getSandRootDir, fallback: cursorBackendMcpExec, canStartAuth: true/);
+  assert.match(host, /createAccountMcpBackendExec\(\{ rootDir: getSandRootDir, fallback: simeonBackendMcpExec, canStartAuth: true/);
   assert.match(host, /createVendorMcpBackendExec\(\{ rootDir: getSandRootDir, fallback: accountBackendMcpExec, canStartAuth: true/);
   assert.match(host, /rootDir: getSandRootDir,\n    \};/, "the box's account deps name the store, not a Connect client");
-  assert.doesNotMatch(host, /createClient: \(credentials\) => createSandCursorBackendClient\(DashboardService, \{\n        getAccessToken: \(options\) => credentials\.getAccessToken\(\{ backendUrl: options\.backendUrl \}\),\n        getMachineId: credentials\.getMachineId,\n      \}\) as unknown as AccountMcpClient/);
+  assert.doesNotMatch(host, /createClient: \(credentials\) => createSimeonBackendClient\(DashboardService, \{\n        getAccessToken: \(options\) => credentials\.getAccessToken\(\{ backendUrl: options\.backendUrl \}\),\n        getMachineId: credentials\.getMachineId,\n      \}\) as unknown as AccountMcpClient/);
   assert.match(host, /replaceAccountMcpStore: \(store: unknown\) => adoptAccountMcpStore\(getSandRootDir\(\), store\)\.changed, readAccountMcpStore: \(\) => this\.readAccountMcpStore\(\)/);
   assert.match(host, /return serializeAccountMcpStoreForPeer\(loadAccountMcpStore\(getSandRootDir\(\)\)\);/, "the box's copy for the Mac carries no refresh token");
   assert.match(host, /parseServerConfig: deps\.parseServerConfig \?\? parseCustomMcpServerConfig/, "AddMcpServer has a parser in the box");
@@ -407,6 +407,6 @@ test("both sides, the gateway, the loopback and the resync carry the account sto
   assert.match(resync, /step\("account_mcp"/);
   const auxiliary = await read("source/electron-main/coordinator/production-root-auxiliary-provider.ts");
   assert.match(auxiliary, /getAccountMcpStore: \(\) => serializeAccountMcpStoreForPeer\(loadAccountMcpStore\(getSandRootDir\(\)\)\)/);
-  const accountMcp = await read("source/shared/node/cursor-backend/account-mcp.ts");
-  assert.doesNotMatch(accountMcp, /DashboardService|createSandCursorBackendClient/, "no Connect client is reachable from the six functions");
+  const accountMcp = await read("source/shared/node/simeon-backend/account-mcp.ts");
+  assert.doesNotMatch(accountMcp, /DashboardService|createSimeonBackendClient/, "no Connect client is reachable from the six functions");
 });

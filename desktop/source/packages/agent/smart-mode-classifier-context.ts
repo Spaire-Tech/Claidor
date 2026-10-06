@@ -148,7 +148,7 @@ function extractInvokedSkillFilePaths(selectedContext: any): string[] {
 function extractInvokedCommandFilePaths(selectedContext: any): string[] {
   if (selectedContext === undefined) return [];
   const paths = new Set<string>();
-  for (const command of selectedContext.cursorCommands) {
+  for (const command of selectedContext.agentCommands) {
     const fullPath = command.fullPath?.trim();
     if (fullPath !== undefined && fullPath.length > 0) paths.add(fullPath);
   }

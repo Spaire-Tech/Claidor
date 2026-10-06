@@ -1,4 +1,4 @@
-const BROWSER_MCP_PROVIDER_IDS = new Set(["cursor-dev-control", "cursor-ide-browser"]);
+const BROWSER_MCP_PROVIDER_IDS = new Set(["simeon-dev-control", "simeon-ide-browser"]);
 
 export const isEqual = <T>(a: readonly T[], b: readonly T[]): boolean => {
   if (a.length !== b.length) return false;

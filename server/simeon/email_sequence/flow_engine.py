@@ -395,7 +395,7 @@ async def _last_send_reached(
     return actual >= target
 
 
-# ── Cursor advancement ────────────────────────────────────────────────────────
+# ── Position advancement ────────────────────────────────────────────────────────
 
 
 def advance_after_branch(index: int, took_yes: bool) -> int:
@@ -604,7 +604,7 @@ async def _process_one_step_tree(
         visited += 1
         node = find_step_in_tree(steps, cursor_id)
         if node is None:
-            # Cursor points at nothing — flow drifted or completed.
+            # The position points at nothing — flow drifted or completed.
             enrollment.status = EmailSequenceEnrollmentStatus.completed
             enrollment.completed_at = utc_now()
             enrollment.next_step_at = None

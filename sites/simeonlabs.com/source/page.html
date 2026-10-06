@@ -27,7 +27,7 @@
   --night:#000; --blue:#255a93; --blue-hover:#2b66a6; --app-blue:#255a93; /* the person's own chat bubble in the app (USER_BUBBLE_LIGHT, router-renderer-patch.mjs) */ --green:#34c759; --red:#ff3b30;
   --c-cos:#2c6bb3; --c-inbox:#2b8a80; --c-money:#cc6526; --c-growth:#6a58cf; --c-content:#c7457f; --c-sales:#36894a;
   --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Inter","Helvetica Neue",Arial,sans-serif;
-  --gutter:max(20px,4.6vw); /* cursor.com's margin: 4.6% of the screen each side (the founder's screenshots, 3 October 2026) */
+  --gutter:max(20px,4.6vw); /* the margin: 4.6% of the screen each side (the founder's screenshots, 3 October 2026) */
   --col:min(1840px,calc(100vw - 2 * var(--gutter)));
   --edge:max(var(--gutter),calc((100% - 1260px) / 2));
   color-scheme:light;
@@ -51,7 +51,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .face{object-fit:contain;flex:none}
 .f-growth{filter:hue-rotate(90deg)}.f-content{filter:hue-rotate(300deg)}.f-sales{filter:hue-rotate(60deg)}
 
-/* The bar, laid out like cursor.com's (the founder, 3 October 2026, with a screenshot): the name on
+/* The bar (the founder, 3 October 2026, with a screenshot): the name on
    the left, sign in and the download on the right. */
 .bar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.82);-webkit-backdrop-filter:saturate(1.8) blur(20px);backdrop-filter:saturate(1.8) blur(20px);padding-top:env(safe-area-inset-top,0px)}
 .bar .wrap{display:flex;justify-content:space-between;align-items:center;height:clamp(52px,3.8vw,76px)}
@@ -61,13 +61,13 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .bar .btn{height:clamp(28px,1.9vw,38px);padding:0 clamp(12px,.8vw,16px);font-size:clamp(14px,1vw,20px)}
 
 
-/* Hero, as cursor.com sets it: one sentence on the left edge, two buttons under it, nothing else. */
+/* Hero: one sentence on the left edge, two buttons under it, nothing else. */
 .hero{padding:clamp(40px,8.1vw,162px) 0 0;color:#000}
 .hero h1{max-width:13em;font-family:"Newsreader",Georgia,"Times New Roman",serif;font-size:clamp(36px,2.9vw,58px);line-height:1.04;font-weight:400;letter-spacing:-.02em;text-wrap:balance}
 .hero .ctas{display:flex;gap:clamp(10px,.7vw,14px);flex-wrap:wrap;margin-top:clamp(18px,1.6vw,32px)}
 .hero .btn{height:clamp(44px,3.05vw,61px);padding:0 clamp(20px,1.6vw,32px);font-size:clamp(16px,1.15vw,23px)}
-/* On a phone the hero breathes the way Cursor's does (4 October 2026): a long pause under the bar, a headline that leaves air on the right, and room before the app. */
-.hero .btn.go{display:none} /* the phone's one button, Get started, like Cursor's */
+/* On a phone the hero breathes (4 October 2026): a long pause under the bar, a headline that leaves air on the right, and room before the app. */
+.hero .btn.go{display:none} /* the phone's one button, Get started */
 @media (max-width:734px){.hero{padding-top:88px}.hero h1{font-size:31px;line-height:1.1;max-width:11.5em}.hero .ctas{margin-top:26px}.hero .ctas .btn{display:none}.hero .btn.go{display:inline-flex}}
 .btn .apl{width:1.05em;height:1.05em;margin:-.18em .45em 0 -.1em;flex:none}
 
@@ -628,24 +628,26 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 }
 
 /* Pricing, questions and the closing call: the same serif headline and pale panels as the trust section. */
-.plans3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin-top:clamp(40px,4vw,80px)}
-.plan3{display:flex;flex-direction:column;padding:clamp(28px,2.6vw,48px);border-radius:28px;background:#fafafb}
+/* Pricing: Trial, Standard, Pro and Max on the pale panels (the founder, 4 October 2026): the name, who it is for, the price in Switzer, the week's credits under it, what the plan includes, a small button at the foot. */
+@font-face{font-family:"Switzer";src:url(fonts/switzer-400.woff2) format("woff2");font-weight:400;font-style:normal;font-display:swap}
+.plans3{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px;margin-top:clamp(40px,4vw,80px)}
+.plan3{display:flex;flex-direction:column;padding:clamp(28px,2.4vw,44px) clamp(24px,2.1vw,40px);border-radius:28px;background:#fafafb}
 .plan3 h3{margin:0;font-size:clamp(20px,1.35vw,26px);font-weight:500;letter-spacing:-.02em;color:#3a3a3c}
-.plan3 .pr{margin-top:clamp(18px,1.6vw,30px);font-family:"Newsreader",Georgia,"Times New Roman",serif;font-size:clamp(44px,3.4vw,68px);line-height:1;letter-spacing:-.02em}
-.plan3 .pr small{font-family:var(--font);font-size:clamp(15px,.95vw,18px);letter-spacing:-.01em;color:var(--ink2);margin-left:4px}
-.plan3 .per{margin-top:10px;font-size:clamp(14px,.9vw,17px);color:var(--ink3)}
-.plan3 .use{margin:clamp(20px,1.8vw,34px) 0 clamp(24px,2.2vw,40px);padding-top:clamp(18px,1.6vw,28px);border-top:1px solid #ececef;font-size:clamp(16px,1.02vw,19.5px);color:#3a3a3c;flex:1}
-.plan3 .btn{align-self:flex-start}
+.plan3 .tag{margin:4px 0 0;font-size:clamp(14px,.9vw,17px);letter-spacing:-.01em;color:var(--ink3)}
+.plan3 .pr{margin-top:clamp(18px,1.6vw,30px);font-family:"Switzer",var(--font);font-weight:400;font-size:clamp(40px,3vw,60px);line-height:1;letter-spacing:-.03em;color:var(--ink)}
+.plan3 .pr small{font-family:var(--font);font-weight:400;font-size:clamp(14px,.9vw,17px);letter-spacing:-.01em;color:var(--ink2);margin-left:5px}
+.plan3 .per{margin-top:10px;font-size:clamp(14px,.9vw,17px);line-height:1.45;letter-spacing:-.01em;color:var(--ink3)}
+.plan3 .inc{margin:clamp(20px,1.8vw,34px) 0 0;padding-top:clamp(18px,1.6vw,28px);border-top:1px solid #ececef;font-size:clamp(15px,.95vw,17.5px);letter-spacing:-.01em;color:var(--ink3)}
+.plan3 ul{list-style:none;margin:12px 0 clamp(26px,2.4vw,40px);padding:0;display:grid;gap:9px;align-content:start;font-size:clamp(15px,.98vw,18px);line-height:1.4;letter-spacing:-.01em;color:#3a3a3c}
+.plan3 li{display:flex;gap:9px;align-items:flex-start}
+.plan3 li::before{content:"";flex:none;width:.95em;height:.95em;margin-top:.24em;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236e6e73' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7'/%3E%3C/svg%3E") center/contain no-repeat}
+.plan3 .btn{align-self:flex-start;margin-top:auto;height:clamp(36px,2.3vw,42px);padding:0 clamp(16px,1.1vw,20px);font-size:clamp(14px,.95vw,16px)}
 .plan3 .btn.ghost{background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.06)}
 .plan3 .btn.ghost:hover{background:#f2f2f4}
-.bill3wrap{display:flex;justify-content:center;margin-top:clamp(40px,4vw,80px)}
-.bill3wrap+.plans3{margin-top:clamp(24px,2vw,36px)}
-@media (max-width:734px){.bill3wrap{justify-content:flex-start}}
-.bill3{display:inline-flex;gap:4px;padding:4px;border-radius:99px;background:#f2f2f4}
-.bill3 button{appearance:none;border:0;background:none;border-radius:99px;padding:9px 16px;font:inherit;font-size:15px;color:var(--ink2);cursor:pointer}
-.bill3 button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.1)}
-.bill3 button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
-.pricing3 .y{display:none}.pricing3.yearly .y{display:inline}.pricing3.yearly .m{display:none}
+.pnote{margin:clamp(22px,2vw,36px) auto 0;max-width:60em;text-align:center;font-size:clamp(14px,.9vw,16.5px);line-height:1.55;letter-spacing:-.01em;color:var(--ink3)}
+@supports (grid-template-rows:subgrid){.plans3{grid-template-rows:repeat(7,auto)}.plan3{display:grid;grid-template-rows:subgrid;row-gap:0;grid-row:span 7;align-content:start}.plan3 .btn{margin-top:0;align-self:start;justify-self:start}}
+@media (max-width:1068px){.plans3{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:734px){.plans3{grid-template-columns:1fr;gap:14px}.plan3{border-radius:24px}}
 .qa3{margin-top:clamp(40px,4vw,80px);padding:clamp(12px,1.2vw,24px) clamp(28px,3vw,56px);border-radius:28px;background:#fafafb}
 .qa3 details{border-top:1px solid #ececef}
 .qa3 details:first-child{border-top:0}
@@ -659,7 +661,6 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .close3 h2{margin:0 auto;font-family:"Newsreader",Georgia,"Times New Roman",serif;font-weight:400;font-size:clamp(44px,4.4vw,88px);line-height:1;letter-spacing:-.02em}
 .close3 .ctas{display:flex;justify-content:center;gap:clamp(10px,.7vw,14px);flex-wrap:wrap;margin-top:clamp(28px,2.4vw,44px)}
 .close3 .btn{height:clamp(44px,3.05vw,61px);padding:0 clamp(20px,1.6vw,32px);font-size:clamp(16px,1.15vw,23px)}
-@media (max-width:860px){.plans3{grid-template-columns:1fr}}
 
 /* Security and integrations: a serif headline beside the promise, then two grey panels of icon rows. */
 .trust{padding:clamp(100px,9vw,170px) 0 clamp(40px,4vw,80px)}
@@ -879,7 +880,7 @@ footer nav{display:flex;gap:18px}
   <div class="stagebox">
     <div class="sd-stage"><div class="sd-frame"><span class="sd-dots"><i></i><i></i><i></i></span><div class="sd-bar"><span class="sd-title">Simeon</span></div>
       <div class="sd-screen"><div class="sd-window"><picture class="sd-poster"><source media="(max-width:599.98px)" srcset="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="><source media="(max-width:809.98px)" srcset="app-poster-tall.jpg"><img src="app-poster-wide.jpg" alt="" fetchpriority="high"></picture>
-      <iframe data-hold data-src="%APP%/index.html" title="Simeon, playing a founder's morning" loading="eager"></iframe></div></div></div>
+      <iframe data-hold data-src="%APP%/index.html?theme=light" title="Simeon, playing a founder's morning" loading="eager"></iframe></div></div></div>
       %MOBILE_HTML%
     </div>
   </div>
@@ -990,14 +991,13 @@ footer nav{display:flex;gap:18px}
 </section>
 
 
-<section class="trust pricing3" id="pricing" aria-label="Pricing">
+<section class="trust" id="pricing" aria-label="Pricing">
   <div class="wrap">
     <div class="trust-top">
       <h2>Pricing</h2>
-      <p>Every agent, on every plan. The plans differ only in how much work your team can do each week. A credit is one token of input on the middle model; a typical task is about 100,000 credits. Credits reset every Monday.</p>
     </div>
-    <div class="bill3wrap"><div class="bill3" role="group" aria-label="Billing"><button type="button" class="on" data-bill="m">Monthly</button><button type="button" data-bill="y">Yearly, save 20%</button></div></div>
-    <div class="plans3"><div class="plan3"><h3>Standard</h3><div class="pr"><span class="m">$20</span><span class="y">$16</span><small>/ month</small></div><div class="per"><span class="m">Billed monthly. 7 days free.</span><span class="y">$192 billed yearly. 7 days free.</span></div><p class="use">For a light week of work. 750,000 credits a week.</p><a class="btn ghost" href="https://app.simeonlabs.com/billing?plan=standard">Try it free</a></div><div class="plan3"><h3>Pro</h3><div class="pr"><span class="m">$60</span><span class="y">$48</span><small>/ month</small></div><div class="per"><span class="m">Billed monthly. 7 days free.</span><span class="y">$576 billed yearly. 7 days free.</span></div><p class="use">For agents working every day. 2,500,000 credits a week, three times Standard.</p><a class="btn" href="https://app.simeonlabs.com/billing?plan=pro">Try it free</a></div><div class="plan3"><h3>Max</h3><div class="pr"><span class="m">$200</span><span class="y">$160</span><small>/ month</small></div><div class="per"><span class="m">Billed monthly. 7 days free.</span><span class="y">$1,920 billed yearly. 7 days free.</span></div><p class="use">For a team of agents that never stops. 8,000,000 credits a week, eleven times Standard.</p><a class="btn ghost" href="https://app.simeonlabs.com/billing?plan=max">Try it free</a></div></div>
+    <div class="plans3"><div class="plan3"><h3>Trial</h3><p class="tag">For the first week</p><div class="pr">Free<small>/ 7 days</small></div><p class="per">1,000,000 credits once.</p><p class="inc">Includes:</p><ul><li>Every agent and every feature</li><li>A cloud computer for each agent</li><li>Card on file, one trial per card</li><li>Becomes Standard on day 8 unless you cancel</li></ul><span class="btn">Try it free</span></div><div class="plan3"><h3>Standard</h3><p class="tag">For a light week of work</p><div class="pr">$20<small>/ month</small></div><p class="per">750,000 credits a week.</p><p class="inc">Everything in the trial, plus:</p><ul><li>Routines that run while your Mac is closed</li><li>Discord and Slack channels, voice calls</li><li>Memory shared across your agents</li><li>Keep going past the week&#8217;s allowance on demand</li></ul><span class="btn">Get Standard</span></div><div class="plan3"><h3>Pro</h3><p class="tag">For agents working every day</p><div class="pr">$60<small>/ month</small></div><p class="per">2,500,000 credits a week.</p><p class="inc">Everything in Standard, plus:</p><ul><li>Three times the weekly work of Standard</li><li>Room for routines that run every day</li></ul><span class="btn">Get Pro</span></div><div class="plan3"><h3>Max</h3><p class="tag">For a team of agents that never stops</p><div class="pr">$200<small>/ month</small></div><p class="per">8,000,000 credits a week.</p><p class="inc">Everything in Pro, plus:</p><ul><li>Eleven times the weekly work of Standard</li><li>Agents on routines all week long</li><li>Our highest allowance</li></ul><span class="btn">Get Max</span></div></div>
+    <p class="pnote">A credit is one token of input on the middle model. A typical task, one that reads a few pages and writes something back, is about 100,000 credits. Allowances reset every Monday. Unused credits do not carry over.</p>
   </div>
 </section>
 
@@ -1005,9 +1005,8 @@ footer nav{display:flex;gap:18px}
   <div class="wrap">
     <div class="trust-top">
       <h2>Questions and answers</h2>
-      <p>The short version of what people ask before they start.</p>
     </div>
-    <div class="qa3"><details><summary>What is Simeon?</summary><p>A team of AI agents for your business. Each agent has a job you give it, a computer of its own in the cloud, and access to the apps you already use. You ask in plain words, and they do the work.</p></details><details><summary>Do I need to set anything up?</summary><p>No. There are no workflows to build. Tell an agent what you need. When it needs one of your apps, it asks you to sign in once, on that app&#8217;s own page.</p></details><details><summary>Where does the work happen?</summary><p>On each agent&#8217;s own computer in the cloud, with a browser and files. You can watch it work or take over at any time, and routines keep running when your Mac is closed.</p></details><details><summary>Will an agent act without asking?</summary><p>Not on anything that matters. Before it sends an email, makes a payment or publishes something, it asks you in the chat, and you allow or refuse it.</p></details><details><summary>Is my data safe?</summary><p>Your data is encrypted, kept apart from every other customer, and never used to train a model.</p></details><details><summary>What do I need?</summary><p>A Mac with Apple silicon. Every plan starts with a free week.</p></details><details><summary>How does the free week work?</summary><p>You pick a plan and save a card, and your first seven days cost nothing: 1,000,000 credits, about ten tasks. On day eight the card is charged for the plan you picked, unless you cancelled before then. One free week per card.</p></details><details><summary>What is a credit?</summary><p>One token of input on the model your agents think with. A task that reads a few pages and writes something back is about 100,000 credits. Each plan includes a number of credits every week, counted from Monday to Monday, and they do not carry over.</p></details><details><summary>Can I cancel?</summary><p>Any time, at app.simeonlabs.com/billing. During the free week you are not charged. Afterwards your plan runs to the end of the period you paid for.</p></details></div>
+    <div class="qa3"><details><summary>What is Simeon?</summary><p>A team of AI agents for your business. Each agent has a job you give it, a computer of its own in the cloud, and access to the apps you already use. You ask in plain words, and they do the work.</p></details><details><summary>Do I need to set anything up?</summary><p>No. There are no workflows to build. Tell an agent what you need. When it needs one of your apps, it asks you to sign in once, on that app&#8217;s own page.</p></details><details><summary>Where does the work happen?</summary><p>On each agent&#8217;s own computer in the cloud, with a browser and files. You can watch it work or take over at any time, and routines keep running when your Mac is closed.</p></details><details><summary>Will an agent act without asking?</summary><p>Not on anything that matters. Before it sends an email, makes a payment or publishes something, it asks you in the chat, and you allow or refuse it.</p></details><details><summary>Is my data safe?</summary><p>Your data is encrypted, kept apart from every other customer, and never used to train a model.</p></details><details><summary>What do I need?</summary><p>A Mac with Apple silicon. Every plan starts with a free week.</p></details></div>
   </div>
 </section>
 
@@ -1120,11 +1119,6 @@ footer nav{display:flex;gap:18px}
   sync();
 })();
 
-// Monthly or yearly.
-(() => {
-  const sw = document.querySelector('.bill3'), sec = document.getElementById('pricing'); if (!sw) return;
-  sw.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; sw.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b)); sec.classList.toggle('yearly', b.dataset.bill === 'y'); });
-})();
 </script>
 </body>
 </html>

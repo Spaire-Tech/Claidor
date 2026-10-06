@@ -187,7 +187,7 @@ export class UserMessageActionHandler extends AbstractUserMessageActionHandler {
       role: "system",
       content: configAny.systemPromptGenerator({
         requestContext,
-        cursorRules: rules,
+        agentRules: rules,
         env: requestContext.env,
         browserTools: getBrowserToolNames(mcpTools),
         cloudRule: requestContext.cloudRule,
@@ -248,7 +248,7 @@ export class UserMessageActionHandler extends AbstractUserMessageActionHandler {
         }
       }
       let userInfoContent = UserInfo({
-        cursorRules: rules,
+        agentRules: rules,
         agentSkills: requestContext.agentSkills,
         env: requestContext.env,
         gitRepos: requestContext.gitRepos,
@@ -292,7 +292,7 @@ export class UserMessageActionHandler extends AbstractUserMessageActionHandler {
         priorUserInfoCloudTestingSectionsPlacement,
       });
       if (shouldAppendMultitaskEnterReminderToUserInfo) userInfoContent = `${userInfoContent}\n\n${renderMultitaskModeEnterUserReminder(subagentToolName, multitaskModeEnterReminderOptions)}`;
-      newMessages.push({ role: "user", content: userInfoContent, providerOptions: { cursor: { requestContextCompleteness, userInfoSummarizationEpoch: currentSummarizationEpoch, omitCloudWorkerProcedure, ...(userInfoCloudTestingSectionsPlacement !== undefined ? { composer2CloudTestingSectionsPlacement: userInfoCloudTestingSectionsPlacement } : {}) } } });
+      newMessages.push({ role: "user", content: userInfoContent, providerOptions: { simeon: { requestContextCompleteness, userInfoSummarizationEpoch: currentSummarizationEpoch, omitCloudWorkerProcedure, ...(userInfoCloudTestingSectionsPlacement !== undefined ? { composer2CloudTestingSectionsPlacement: userInfoCloudTestingSectionsPlacement } : {}) } } });
     }
     const effectivePriorMessages = didReplaceUserInfo ? priorMessages.slice(1) : priorMessages;
     const conversationHistoryMessages = deserializeConversationHistoryMessages(action, stateHandler.getPrivacyMode());

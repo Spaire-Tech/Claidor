@@ -10,7 +10,7 @@ import { SAND_SUMMARIZATION_MODEL_ID } from "../../../shared/agents/sand-agent-m
 import { createSimeonSmartModeClassifierExecutor } from "./simeon-smart-mode-classifier-exec.js";
 
 // The classifier runs on Simeon's own model path (see
-// simeon-smart-mode-classifier-exec.ts); Cursor's `ClassifySandAutoReview`
+// simeon-smart-mode-classifier-exec.ts); the upstream's `ClassifySandAutoReview`
 // exec stays in the tree unreferenced. `auth` is kept on the service's deps
 // for its shape; the classifier does not use it.
 type AutoReviewAuth = unknown;

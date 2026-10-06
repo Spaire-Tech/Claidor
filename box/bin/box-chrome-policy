@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Keeps Chrome's optional policy file in step with the box's settings. The
+# host calls it after writing or removing the WebAuthn proxy marker
+# (webauthn-proxy-marker.ts, /home/box/.sand-webauthn-proxy-enabled).
+#
+# Simeon's image ships no WebAuthn proxy extension (Track D piece 4 will
+# bring our own), so the file holds an empty policy either way; the marker
+# is honoured, and logged, so the switch is visible on the box.
+set -uo pipefail
+
+POLICY_FILE="${SAND_WEBAUTHN_POLICY_FILE:-/etc/opt/chrome/policies/managed/simeon-webauthn.json}"
+MARKER="${SAND_WEBAUTHN_MARKER_FILE:-/home/box/.sand-webauthn-proxy-enabled}"
+
+case "${SAND_WEBAUTHN_PROXY:-}" in
+  1) touch "$MARKER" 2>/dev/null || true ;;
+  0) rm -f "$MARKER" ;;
+esac
+
+[ -w "$POLICY_FILE" ] || [ -w "$(dirname "$POLICY_FILE")" ] || exit 0
+printf '{}\n' > "$POLICY_FILE.part" && mv -f "$POLICY_FILE.part" "$POLICY_FILE"
+if [ -e "$MARKER" ]; then echo "box-chrome-policy: WebAuthn proxy requested; this image ships none yet (policy left empty)"; fi
+exit 0

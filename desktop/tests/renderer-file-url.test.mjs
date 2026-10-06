@@ -50,9 +50,9 @@ test("the emitted index.html marks nothing crossorigin", async (t) => {
   //
   // Measured on this file in headless Chromium over file://:
   //   with it     stylesheet refused; font-family "Times New Roman";
-  //               --cursor-font-family-sans and --sand-text-primary empty
+  //               --simeon-font-family-sans and --sand-text-primary empty
   //   without it  stylesheet applied; font-family -apple-system, …;
-  //               --cursor-spacing-5-5 22px
+  //               --simeon-spacing-5-5 22px
   //
   // The first is an app with correct markup and no styling whatsoever. It is
   // one attribute between that and the product.

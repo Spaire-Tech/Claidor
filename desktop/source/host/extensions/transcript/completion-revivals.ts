@@ -36,7 +36,7 @@ export function buildSubagentRevivalPrompt(
       completions.length === 1
         ? "A background task you started has finished."
         : `${completions.length} background tasks you started have finished.`,
-    instruction = `Pick the work back up: review the result(s), then either keep going or wrap up. If this result is genuinely new and relevant to the user, or the user asked to be told when this finished, tell them with a SendMessage. Lead with the concrete thing that finished, not a bare pronoun like "That" (they cannot see the background task). If it is stale, irrelevant, already handled, or a duplicate, and the user was not waiting on it, just stay silent and end the turn with no SendMessage rather than narrating it. Keep your status current, and clear it once everything is done and you're idle.`;
+    instruction = `Pick the work back up: review the result(s), then either keep going or wrap up. If this result is genuinely new and relevant to the user, or the user asked to be told when this finished, tell them with a SendMessage. Lead with the concrete thing that finished, not a bare pronoun like "That" (they cannot see the background task). If it is stale, irrelevant, already handled, or a duplicate, and the user was not waiting on it, just stay silent and end the turn with no SendMessage rather than narrating it. A result you will act on yourself next (another step, a check, handing them the box) gets no message of its own: the user hears from you once, when the work they asked for is done or needs them. Keep your status current, and clear it once everything is done and you're idle.`;
   return [
     `[A background task just completed] ${intro}`,
     "",
@@ -79,7 +79,7 @@ export function buildShellRevivalPrompt(
       completions.length === 1
         ? "A command you started in the background has finished."
         : `${completions.length} commands you started in the background have finished.`,
-    instruction = `Pick the work back up: check the result (read the output file if you need the full logs), then either keep going or wrap up. If this result is genuinely new and relevant to the user, or the user asked to be told when this finished, tell them with a SendMessage. Lead with the concrete thing that finished, not a bare pronoun like "That" (they cannot see the background task). If it is stale, irrelevant, already handled, or a duplicate, and the user was not waiting on it, just stay silent and end the turn with no SendMessage rather than narrating it. Keep your status current, and clear it once everything is done and you're idle.`;
+    instruction = `Pick the work back up: check the result (read the output file if you need the full logs), then either keep going or wrap up. If this result is genuinely new and relevant to the user, or the user asked to be told when this finished, tell them with a SendMessage. Lead with the concrete thing that finished, not a bare pronoun like "That" (they cannot see the background task). If it is stale, irrelevant, already handled, or a duplicate, and the user was not waiting on it, just stay silent and end the turn with no SendMessage rather than narrating it. A result you will act on yourself next (another step, a check, handing them the box) gets no message of its own: the user hears from you once, when the work they asked for is done or needs them. Keep your status current, and clear it once everything is done and you're idle.`;
   return [
     `[A background command just completed] ${intro}`,
     "",
@@ -134,7 +134,7 @@ export class CompletionRevivals {
           this.tm.pendingWakes.clearSettledPendingWake({
             agentId,
             kind:
-              completion.subagentType === "cursor-agent"
+              (completion.subagentType === "cloud-agent" || completion.subagentType === "cursor-agent")
                 ? "cloud-agent"
                 : "subagent",
             workId: completion.subagentAgentId,

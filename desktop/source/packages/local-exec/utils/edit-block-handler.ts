@@ -12,10 +12,10 @@ export type ShellBlockReason =
   | {
       readonly type:
         | "needsApproval"
-        | "cursorIgnore"
+        | "agentIgnore"
         | "adminBlock"
         | "permissionsConfig"
-        | "cursorFiles";
+        | "simeonFiles";
       readonly isReadonly?: boolean;
     };
 
@@ -28,10 +28,10 @@ export function shellBlockReasonMessage(reason: ShellBlockReason): string {
     case "adminCommandDenylist":
       return formatAdminCommandDenylistBlockReason(reason.pattern);
     case "needsApproval":
-    case "cursorIgnore":
+    case "agentIgnore":
     case "adminBlock":
     case "permissionsConfig":
-    case "cursorFiles":
+    case "simeonFiles":
       return "Command is not allowed";
     default: {
       const _exhaustive: never = reason;

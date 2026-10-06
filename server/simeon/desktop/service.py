@@ -848,7 +848,7 @@ class DesktopService:
         limit, what is used, what remains, a plan name and a status.
 
         The first eight keys are what every shipped app reads
-        (`SimeonQuotaRow` in `desktop/source/electron-main/account/cursor-profile.ts`);
+        (`SimeonQuotaRow` in `desktop/source/electron-main/account/account-profile.ts`);
         they keep their names and meaning. The keys after `periodEnd` are
         what the app's usage summary can show once it reads them: the
         trial's end and whether it can still be cancelled, the on-demand

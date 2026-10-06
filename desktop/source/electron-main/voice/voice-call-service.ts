@@ -9,7 +9,7 @@
  * Everything it touches comes in as a port, so the whole flow is tested
  * with fakes; `voice-call-window.ts` is the Electron half.
  */
-import { SimeonApiError } from "../../shared/node/cursor-backend/simeon-api.js";
+import { SimeonApiError } from "../../shared/node/simeon-backend/simeon-api.js";
 import { createCallChannel, type CallChannel, type CallChannelLegs } from "../../shared/voice-call/handoff.js";
 import { RELAY_SOFT_FAIL } from "../../shared/voice-call/main-loop-voice.js";
 import type { VoiceCallConnectResult, VoiceCallPanelEvent, VoiceCallPanelMethod, VoiceCallSetup } from "../../shared/voice-call/panel-protocol.js";

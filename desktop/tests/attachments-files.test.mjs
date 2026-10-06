@@ -72,7 +72,7 @@ test("staging keeps the original name, avoids collisions, and reports a failed u
 test("an attachment is never the credential mount or a sign-in file, and a too-large file is a tool error", async () => {
   const { module, dispose } = await load("source/host/extensions/attachments/attachments-service.ts", "attachments-service");
   try {
-    assert.match(module.attachmentSourceRefusal("/run/grok-bot/inference.json", "/home/box/sand-data"), /holds credentials or the system/);
+    assert.match(module.attachmentSourceRefusal("/run/simeon/inference.json", "/home/box/sand-data"), /holds credentials or the system/);
     assert.match(module.attachmentSourceRefusal("/proc/self/environ", "/home/box/sand-data"), /holds credentials or the system/);
     assert.match(module.attachmentSourceRefusal("/home/box/sand-data/secrets/store.json", "/home/box/sand-data"), /secret store is never sent/);
     assert.match(module.attachmentSourceRefusal("/home/box/sand-data/vendor-mcp-installs.json", "/home/box/sand-data"), /holds sign-ins/);

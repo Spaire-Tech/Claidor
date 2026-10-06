@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { copyFile, readdir, readFile, stat, writeFile } from "node:fs/promises";
+import { copyFile, readFile, readdir, rename, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -68,6 +68,8 @@ export const BRAND_PHRASE_REPLACEMENTS = Object.freeze([
   ["session's Cursor tokens", "session's sign-in tokens"],
   // The About panel's line (4 October 2026: "about uses SpaceX ai, please make it SimeonLabs, Inc.").
   ["Copyright © 2026 SpaceXAI", "Copyright © 2026 SimeonLabs, Inc."],
+  // The marketplace link in the plugins chunk (Track A of the detachment plan).
+  ["https://cursor.com/marketplace", "https://simeonlabs.com"],
 ]);
 
 /**
@@ -88,6 +90,104 @@ export function countBrandResidue(sources) {
     counts[word] = count;
   }
   return counts;
+}
+
+/**
+ * The window's own tokens that carry the upstream maker's name (Track B of
+ * the detachment plan, 4 October 2026): the 424 CSS custom properties
+ * `--cursor-*` and the two places the window builds their names from
+ * pieces (`--cursor-${…}`), the theme classes cursor-light / cursor-dark /
+ * cursor-high-contrast, the glass-mode attribute, the stylesheet's layer
+ * names, the icon font's family (its file keeps its name: the packaged
+ * renderer's inventory is pinned by file), the mark's class and state
+ * attribute, and the cloud-agent card's class family. Nothing outside the
+ * window reads any of them, so every chunk, the stylesheet and the page
+ * are rewritten together, and the patch's own CSS spells the new names.
+ * The stale-name check below refuses a build in which any `--cursor-` is
+ * left, so a token this list misses is a build error, not a blank screen.
+ */
+export const UPSTREAM_TOKEN_REPLACEMENTS = Object.freeze([
+  ["css-variables", /--cursor-/g, "--simeon-"],
+  ["themes", /(?<![A-Za-z0-9_-])cursor-(light|dark|high-contrast)(?![A-Za-z0-9_])/g, "simeon-$1"],
+  ["glass-attribute", /data-cursor-glass-mode/g, "data-simeon-glass-mode"],
+  ["layers", /anysphere\.(tokens|scss|stylex)/g, "simeon.$1"],
+  ["icon-font", /cursor-icons(?!-16)/g, "simeon-icons"],
+  // The icon font's file: the stylesheet's src and the file itself, which
+  // the patch renames on disk and records under `renames` (the founder, 5
+  // October 2026: "do the icon font file too").
+  ["icon-font-file", /cursor-icons-16-/g, "simeon-icons-16-"],
+  ["mark-class", /sand-grok-bot-mark/g, "sand-simeon-mark"],
+  ["mark-state", /data-grok-state/g, "data-mark-state"],
+  ["cloud-agent-card", /sand-cursor-agent-card/g, "sand-cloud-agent-card"],
+  // The account bridge between the window and the Mac (`desktop.account`
+  // in the preload, the edge method names, the status event and the
+  // status field): the window's own spellings carried the maker's name.
+  // Our side spells the new names (preload.ts, main-edge.ts, web/backend.ts,
+  // demo/backend.ts); the pass makes the window agree.
+  ["account-bridge", /\bcursorAccount\b/g, "account"],
+  ["account-auth-prop", /\bcursorAuth\b/g, "accountAuth"],
+  ["account-event", /cursor-auth-changed/g, "account-changed"],
+  ["account-staff-field", /\bisAnysphereUser\b/g, "isStaffUser"],
+  ["account-method-status", /\bgetCursorAuthStatus\b/g, "getAccountStatus"],
+  ["account-method-sign-in", /\bloginCursor\b/g, "signInAccount"],
+  ["account-method-cancel-sign-in", /\bcancelCursorLogin\b/g, "cancelAccountSignIn"],
+  ["account-method-sign-out", /\blogoutCursor\b/g, "signOutAccount"],
+  ["account-method-name", /\bupdateCursorAccountName\b/g, "updateAccountName"],
+  ["account-method-name-prompt", /\bgetCursorNamePrompt\b/g, "getAccountNamePrompt"],
+  ["account-method-avatar", /\bgetCursorAvatar\b/g, "getAccountAvatar"],
+  ["account-method-weekly-usage", /\bgetCursorWeeklyUsage\b/g, "getAccountWeeklyUsage"],
+  ["account-method-usage-summary", /\bgetCursorUsageSummary\b/g, "getAccountUsageSummary"],
+  // The maker's name where it was still readable in the shipped bytes
+  // (measured 5 October 2026, the founder: "I want every mention of them to
+  // be gone"): their UI package in two error messages, their auth module in
+  // six, the icon class and two glyph names, an icon style, a few internal
+  // names, and the type names of code-editor messages the window never
+  // sends. The ordinary word "cursor" (the mouse and text cursor inside the
+  // editor and the animation and highlighting libraries) is not theirs and
+  // stays; the icon font's file keeps its name because the packaged
+  // window's file inventory is pinned by name (macos-package-verification).
+  ["ui-package", /@anysphere\/ui/g, "simeon-ui"],
+  ["auth-module-note", /cursor-auth\.ts/g, "account-auth.ts"],
+  ["icon-class", /(?<![A-Za-z0-9_-])cursor-icon(?!s)/g, "simeon-icon"],
+  ["icon-glyphs", /"cursor-(logo|text)"/g, "\"simeon-$1\""],
+  ["icon-style", /"cursor-mixed"/g, "\"simeon-mixed\""],
+  ["signed-in-prop", /\bisCursorSignedIn\b/g, "isAccountSignedIn"],
+  ["cycle-agent", /\b(cycle|get)CursorAgentId\b/g, "$1NextAgentId"],
+  ["cycle-agent-state", /\bcursorAgentId\b/g, "nextAgentId"],
+  ["editor-message-types", /"(aiserver|agent)\.v1\.[A-Za-z.]*Cursor[A-Za-z.]*"/g, (name) => name.replaceAll("Cursor", "Pointer")],
+  ["editor-message-fields", /\b(matchingCursorRules|relatedCursorRules|relatedCursorRulePaths|relativePathToCursorFolder|isFusedCursorPredictionModel)\b/g, (name) => name.replace("Cursor", "Pointer")],
+  // The same fields' wire spellings. `cursor_position` is not among them:
+  // it is the pointer's place in agent.v1.ComputerUseSuccess, our own
+  // computer-use contract (box-exec-daemon/computer-use.ts).
+  ["editor-message-field-names", /\b(matching_cursor_rules|cursor_rules|cursor_prediction|is_fused_cursor_prediction_model|cursor_version|cursor_commands|user_explicitly_asked_to_generate_cursor_rules)\b/g, (name) => name.replace("cursor", "pointer")],
+  ["sidebar-cycle-focus", /\b(is)?[cC]ycleCursor\b/g, (name) => name.replace("Cursor", "Focus")],
+  // Where pull-request links open: the value our main process answers with
+  // (electron-main/account/pr-review.ts) and the window compares, both
+  // spelled reviewApp since 5 October 2026.
+  ["pr-review-destination", /\breviewCursor\b/g, "reviewApp"],
+  ["pr-review-gate", /\bopenGithubPrLinksInReviewCursor\b/g, "openGithubPrLinksInReviewApp"],
+  ["pr-review-gate-name", /\bopen_github_pr_links_in_review_cursor\b/g, "open_github_pr_links_in_review_app"],
+  ["editor-fields-more", /\b(cursorRules|cursorCommands|cursorCommandsExplicitlySet|cursorVersion|cursorSelections|cursorTarget)\b/g, (name) => name.replace("cursor", "pointer")],
+  ["editor-field-names-more", /\b(related_cursor_rules|related_cursor_rule_paths|relative_path_to_cursor_folder|(suggest|reject|accept)_cursor_prediction_event|cursor_prediction_target|cursor_token_fee|cursor_selections|cursor_commands_explicitly_set)\b/g, (name) => name.replace("cursor", "pointer")],
+  ["editor-dotfiles", /\.cursor(rules|ignore|indexingignore)\b/g, ".pointer$1"],
+  // The cloud-agent card's type: the host writes cloud-agent since 5 October
+  // 2026 and maps saved cursor-agent entries on read (session-runtime.ts).
+  ["cloud-agent-card-type", /(?<![A-Za-z0-9_-])cursor-agent(?![A-Za-z0-9_])/g, "cloud-agent"],
+  ["account-method-pr-review", /\bgetCursorPrReviewPreferences\b/g, "getAccountPrReviewPreferences"],
+  ["account-method-privacy", /\bgetCursorPrivacyModeEnabled\b/g, "getAccountPrivacyModeEnabled"],
+  ["account-method-dashboard", /\binvokeCursorDashboardAction\b/g, "invokeAccountDashboardAction"],
+  ["account-method-trial", /\bcancelCursorSandTrial\b/g, "cancelAccountTrial"],
+]);
+
+export function patchOriginalUpstreamTokens(source) {
+  let out = source;
+  const counts = {};
+  for (const [label, pattern, after] of UPSTREAM_TOKEN_REPLACEMENTS) {
+    const count = (out.match(pattern) ?? []).length;
+    counts[label] = count;
+    if (count > 0) out = out.replace(pattern, after);
+  }
+  return { source: out, counts };
 }
 
 export function patchOriginalBrandStrings(source) {
@@ -456,14 +556,15 @@ const AGENT_PANE_COMPONENTS_SOURCE = [
   // open at quit still gives the sidebar back when it closes.
   "let __simeonPaneTookSidebar=(()=>{try{return localStorage.getItem(\"simeon.paneTookSidebar\")===\"1\"}catch{return!1}})();",
   "function __simeonSetPaneTookSidebar(v){__simeonPaneTookSidebar=v;try{localStorage.setItem(\"simeon.paneTookSidebar\",v?\"1\":\"0\")}catch{}}",
-  "function __simeonPaneSegments(n){const{value:v,onChange:c,hasChannels:h}=n,items=[[\"settings\",\"Profile\"],[\"routines\",\"Routines\"],[\"overview\",\"Computer\"],...(h?[[\"channels\",\"Channels\"]]:[])],at=Math.max(0,items.findIndex(x=>x[0]===v));",
+  // Three tabs (5 October 2026, the founder: "remove the channel icon in the app as well"): the Channels view stays in the code, reachable by a request, with no tab of its own.
+  "function __simeonPaneSegments(n){const{value:v,onChange:c}=n,items=[[\"settings\",\"Profile\"],[\"routines\",\"Routines\"],[\"overview\",\"Computer\"]],at=Math.max(0,items.findIndex(x=>x[0]===v));",
   "return p.jsxs(\"div\",{className:\"simeon-segments\",role:\"tablist\",\"aria-label\":\"Agent\",style:{\"--simeon-seg-count\":items.length,\"--simeon-seg-index\":at},children:[p.jsx(\"span\",{className:\"simeon-segments__thumb\",\"aria-hidden\":!0}),...items.map(([id,label])=>p.jsx(yo,{content:label,children:p.jsx(\"button\",{type:\"button\",role:\"tab\",\"aria-selected\":id===v,\"aria-label\":label,\"data-segment\":id,className:\"simeon-segments__item\",onClick:()=>c(id),children:p.jsx(\"svg\",{viewBox:\"0 0 24 24\",\"aria-hidden\":!0,dangerouslySetInnerHTML:{__html:__simeonPaneIcons[id]}})})},id))]})}",
 ].join("");
 const AGENT_PANE_ANCHOR = "function p3n(n){";
 const AGENT_PANE_BODY_BEFORE = "p.jsx(Ar,{className:re(\"sand-info-pane__section-content\",\"sand-1iyjqo2 sand-s83m0k sand-dl72j9 sand-2lwn1j\"),ref:Y,children:F===\"overview\"?p.jsxs(\"div\",{className:\"sand-9f619 sand-78zum5 sand-dt5ytf sand-1v2ro7d sand-1nn3v0j sand-yfqnmn sand-1l90r2v sand-nm25rq sand-1iyjqo2 sand-s83m0k sand-dl72j9\",children:[l,b?p.jsx(z2n,{agent:t,onOpenAgentChat:f}):null,p.jsxs(\"div\",{className:{0:{className:\"sand-78zum5 sand-dt5ytf sand-17d4w8g\"},1:{className:\"sand-78zum5 sand-dt5ytf sand-17d4w8g sand-1iyjqo2 sand-s83m0k sand-dl72j9 sand-2lwn1j\"}}[!!Cmt(x)<<0].className,children:[N.length>0?p.jsxs(\"div\",{className:\"sand-78zum5 sand-6s0dn4 sand-1qughib sand-167g77z sand-mix8c7\",children:[p.jsx(\"span\",{className:re(\"sand-info-pane__section-heading\",Fe(FUe.sectionHeading,Us.medium).className),id:ye,children:\"Routines\"}),p.jsx(yo,{content:\"Create Routine\",children:p.jsx(fr,{\"aria-label\":\"Create Routine\",className:\"sand-info-pane__section-heading-action\",\"data-routine-row\":\"new\",icon:\"plus\",onClick:xe,size:\"sm\",style:FUe.sectionHeadingAction})})]}):null,p.jsx(K2n,{agentId:t.id,labelledBy:ye,onCreateRoutine:xe,onOpenRoutine:Ie=>_({kind:\"existing\",id:Ie})})]}),k.length>0?p.jsx(D2n,{counts:I,onOpenSection:J,sections:k}):null]}):p.jsxs(\"div\",{className:\"sand-9f619 sand-78zum5 sand-dt5ytf sand-1v2ro7d sand-1nn3v0j sand-yfqnmn sand-1l90r2v sand-nm25rq sand-1iyjqo2 sand-s83m0k sand-dl72j9\",\"aria-labelledby\":ve,id:ge,role:\"region\",children:[F===\"settings\"?p.jsx(h3n,{agent:t,onDescriptionChange:m,onNameChange:u,onTitleChange:d}):null,F===\"channels\"?p.jsx(_0n,{agentId:t.id,labelledBy:ve}):null]})})";
 const AGENT_PANE_BODY_AFTER = 'p.jsx(Ar,{className:re("sand-info-pane__section-content","sand-1iyjqo2 sand-s83m0k sand-dl72j9 sand-2lwn1j"),ref:Y,children:p.jsxs("div",{className:"simeon-pane","data-segment":F,children:['
   + 'p.jsxs("div",{className:"simeon-pane__head",children:[p.jsx(f3n,{agent:t}),p.jsx("div",{className:"simeon-pane__name",children:t.name}),typeof t.title==="string"&&t.title.trim().length>0?p.jsx("div",{className:"simeon-pane__title",children:t.title}):null]}),'
-  + 'p.jsx(__simeonPaneSegments,{value:F,onChange:J,hasChannels:k.some(Ie=>Ie.id==="channels")}),'
+  + 'p.jsx(__simeonPaneSegments,{value:F,onChange:J}),'
   + 'p.jsxs("div",{className:"simeon-pane__body",id:ge,role:"tabpanel",children:['
   + 'F==="settings"?p.jsx(h3n,{agent:t,onDescriptionChange:m,onNameChange:u,onTitleChange:d}):null,'
   + 'F==="routines"?p.jsxs("div",{className:"simeon-pane__routines",children:[p.jsx("span",{id:ye,hidden:!0,children:"Routines"}),N.length>0?p.jsx("div",{className:"simeon-pane__add",children:p.jsxs("button",{type:"button","data-routine-row":"new",onClick:xe,children:[p.jsx(bt,{name:"plus",size:"sm"}),"New Routine"]})}):null,p.jsx(K2n,{agentId:t.id,labelledBy:ye,onCreateRoutine:xe,onOpenRoutine:Ie=>_({kind:"existing",id:Ie})})]}):null,'
@@ -508,7 +609,7 @@ export const AGENT_PANE_CSS = `${AGENT_PANE_MARKER} (1 October 2026). Measured o
 .simeon-pane__head .sand-avatar-trigger{width:auto!important;height:auto!important}
 .simeon-pane__head .sand-avatar-trigger__button{position:relative;width:96px!important;height:96px!important;padding:0!important;overflow:visible!important;border-radius:50%!important;background:none!important;box-shadow:none!important}
 .simeon-pane__head .sand-avatar-trigger__button>span:first-child{display:flex!important;align-items:center;justify-content:center;width:96px!important;height:96px!important;border-radius:50%;overflow:hidden;background:light-dark(#ffffff,#2c2c2e);box-shadow:inset 0 0 0 1px var(--simeon-hairline)}
-.simeon-pane__head .sand-grok-bot-mark-avatar,.simeon-pane__head .sand-grok-bot-mark-avatar>svg{width:68px!important;height:68px!important}
+.simeon-pane__head .sand-simeon-mark-avatar,.simeon-pane__head .sand-simeon-mark-avatar>svg{width:68px!important;height:68px!important}
 .simeon-pane__head .sand-avatar-trigger__button>span:first-child img{width:96px!important;height:96px!important;object-fit:cover}
 .simeon-pane__head .sand-avatar-trigger__overlay{position:absolute!important;inset:auto -3px -3px auto!important;width:32px!important;height:32px!important;border-radius:50%!important;opacity:1!important;-webkit-mask-image:none!important;mask-image:none!important;background:var(--simeon-fill)!important;box-shadow:0 0 0 3px var(--simeon-paper)!important;display:block!important;transition:background-color .15s}
 .simeon-pane__head .sand-avatar-trigger__overlay>*{display:none!important}
@@ -1156,6 +1257,24 @@ export const LOGO_REPLACEMENTS = Object.freeze([
   ["help-center-hidden", 'Q=p.jsx(It.Item,{leading:le,onSelect:Y,children:"Help Center"})', "Q=null"],
   ["send-feedback-hidden", 'ce=p.jsx(It.Item,{leading:ae,onSelect:h.open,children:"Send Feedback"})', "ce=null"],
   ["help-center-url", 'G=()=>{v("https://cursor.com/help")}', 'G=()=>{v("https://simeonlabs.com")}'],
+  // Track A of the detachment plan (4 October 2026): every address and
+  // name of the upstream maker a person could reach from the window. The
+  // spending link goes to our web app; the onboarding and privacy links
+  // to our site and privacy policy; the review host to a name of ours the
+  // window will never see (it only compares hostnames); the account's
+  // fallback name is Simeon; the "Get … for iOS" item and its App Store
+  // address go, there is no such app.
+  ["upstream-link-spending", 'const Yln="https://cursor.com/dashboard/spending"', 'const Yln="https://app.simeonlabs.com/app"'],
+  ["upstream-link-onboarding", 'const pft="https://cursor.com/bot/onboarding"', 'const pft="https://simeonlabs.com"'],
+  ["upstream-link-privacy", 'const LOn="https://cursor.com/dashboard/settings?openPrivacy=true"', 'const LOn="https://www.simeonlabs.com/legal/privacy-policy"'],
+  ["upstream-link-review", 'const QPt="https://review.cursor.com"', 'const QPt="https://review.simeonlabs.com"'],
+  ["upstream-host-review", 't==="review.cursor.com"&&(s=C_n)', 't==="review.simeonlabs.com"&&(s=C_n)'],
+  ["upstream-account-fallback", 'name:e.name??"Cursor"', 'name:e.name??"Simeon"'],
+  ["upstream-ios-link", 'const Rln="https://apps.apple.com/us/app/grok-bot/id6794501026"', 'const Rln="https://simeonlabs.com"'],
+  ["upstream-ios-item", 'ne=N?p.jsx(It.Item,{leading:p.jsx(bt,{name:"device-mobile",size:"base"}),onSelect:L,children:"Get Grok Bot for iOS"}):null', "ne=null"],
+  // The window's Sentry address was the upstream maker's project; with no
+  // address the SDK stays off (the packaged app disables it anyway).
+  ["upstream-sentry-dsn", 'const QLn="https://9fb7a1b8cb70c207a28a00476311bd40@metrics.cursor.sh/4511747394240513"', 'const QLn=""'],
 ]);
 
 /** Spelling → app key for every name the messages mark. */
@@ -1517,12 +1636,12 @@ export function patchOriginalPalette(source) {
  * in the chunk (`Ct("fill/bubble-user", El(light, dark, hcLight, hcDark))`,
  * emitted by `bzn` as `--sand-fill-bubble-user`); the stylesheet carries only
  * the light default for first paint. Both are patched to the painting's base
- * blue, which is also what `--cursor-foreground` (a checked checkbox) reads.
+ * blue, which is also what `--simeon-foreground` (a checked checkbox) reads.
  * `USER_BUBBLE_PAINT_CSS`, appended to the stylesheet on `.sand-mvmkjj`, the
  * one atomic class that applies the bubble colour (it occurs once in the
  * pinned chunk, in the message's `user` style), clears any background image
  * so the token's flat colour is all that shows, and carries the dark-mode
- * selection. The renderer marks dark mode as `data-theme="cursor-dark"` on
+ * selection. The renderer marks dark mode as `data-theme="simeon-dark"` on
  * the root. The text on the bubble is `text/on-color`, white in every theme.
  */
 export const USER_BUBBLE_LIGHT = "#255a93";
@@ -1543,7 +1662,7 @@ export function patchOriginalBubble(source) {
 export const USER_BUBBLE_PAINT_MARKER = "/* Simeon: the person's bubble is one flat blue";
 export const USER_BUBBLE_PAINT_CSS = `${USER_BUBBLE_PAINT_MARKER} (1 October 2026), plain, and its selection reads in dark mode. */
 .sand-mvmkjj:not(#\\#):not(#\\#):not(#\\#){background-image:none}
-[data-theme="cursor-dark"] .sand-mvmkjj:not(#\\#):not(#\\#):not(#\\#)::selection,[data-theme="cursor-dark"] .sand-mvmkjj:not(#\\#):not(#\\#):not(#\\#) *::selection{background-color:#ffffff;color:${USER_BUBBLE_DARK}}
+[data-theme="simeon-dark"] .sand-mvmkjj:not(#\\#):not(#\\#):not(#\\#)::selection,[data-theme="simeon-dark"] .sand-mvmkjj:not(#\\#):not(#\\#):not(#\\#) *::selection{background-color:#ffffff;color:${USER_BUBBLE_DARK}}
 `;
 
 /**
@@ -1587,12 +1706,12 @@ export function patchOriginalBubbleStylesheet(css) {
 export const HEADER_CARD_CSS = `
 /* Simeon: the chat header is the agent's card, centred, without the divider (23 September 2026). */
 .sand-toolbar-divider{display:none!important}
-.sand-toolbar:has(.sand-chat-header__identity-row){padding-top:4px!important;padding-bottom:28px!important;border-bottom-width:0!important;background-color:color-mix(in srgb,var(--cursor-bg-editor) 78%,transparent)!important;-webkit-backdrop-filter:blur(22px) saturate(1.5)!important;backdrop-filter:blur(22px) saturate(1.5)!important;-webkit-mask-image:linear-gradient(to bottom,#000 0,#000 calc(100% - 30px),transparent 100%)!important;mask-image:linear-gradient(to bottom,#000 0,#000 calc(100% - 30px),transparent 100%)!important}
+.sand-toolbar:has(.sand-chat-header__identity-row){padding-top:4px!important;padding-bottom:28px!important;border-bottom-width:0!important;background-color:color-mix(in srgb,var(--simeon-bg-editor) 78%,transparent)!important;-webkit-backdrop-filter:blur(22px) saturate(1.5)!important;backdrop-filter:blur(22px) saturate(1.5)!important;-webkit-mask-image:linear-gradient(to bottom,#000 0,#000 calc(100% - 30px),transparent 100%)!important;mask-image:linear-gradient(to bottom,#000 0,#000 calc(100% - 30px),transparent 100%)!important}
 .sand-chat-header:has(>.sand-chat-header__identity-row){justify-content:center!important;position:relative!important}
 .sand-chat-header__identity-row{flex-direction:column!important;align-items:center!important;gap:6px!important}
 .sand-chat-header__identity{flex-direction:column!important;align-items:center!important;gap:4px!important;padding:0 8px 2px!important;border-radius:16px!important}
-.sand-chat-header__avatar .sand-agent-avatar,.sand-chat-header__avatar .sand-grok-bot-mark{width:52px!important;height:52px!important}
-.sand-chat-header__avatar .sand-grok-bot-mark>svg{width:52px!important;height:52px!important}
+.sand-chat-header__avatar .sand-agent-avatar,.sand-chat-header__avatar .sand-simeon-mark{width:52px!important;height:52px!important}
+.sand-chat-header__avatar .sand-simeon-mark>svg{width:52px!important;height:52px!important}
 .sand-chat-header__avatar img.sand-agent-avatar{border-radius:50%!important;object-fit:cover!important}
 .sand-chat-header__title{align-items:center!important}
 .sand-chat-header__name{font-size:13px!important;line-height:18px!important;padding:3px 12px!important;border-radius:999px!important;background-color:var(--sand-fill-bubble-agent)!important;font-weight:500!important}
@@ -1622,7 +1741,7 @@ export function patchOriginalHeaderStylesheet(css) {
 export const LIQUID_GLASS_CSS = `
 /* Simeon: Liquid Glass on the chrome (23 September 2026), the agents sidebar only since 27 September 2026. */
 html:has(.sand-agents-sidebar),html:has(.sand-agents-sidebar) body,[data-theme]:has(>.sand-agents-sidebar){background-color:transparent!important}
-.sand-agents-sidebar{background-color:color-mix(in srgb,var(--cursor-bg-chrome) 93%,transparent)!important;-webkit-backdrop-filter:blur(30px) saturate(1.8)!important;backdrop-filter:blur(30px) saturate(1.8)!important;border-right:.5px solid color-mix(in srgb,var(--cursor-text-primary) 10%,transparent)!important}
+.sand-agents-sidebar{background-color:color-mix(in srgb,var(--simeon-bg-chrome) 93%,transparent)!important;-webkit-backdrop-filter:blur(30px) saturate(1.8)!important;backdrop-filter:blur(30px) saturate(1.8)!important;border-right:.5px solid color-mix(in srgb,var(--simeon-text-primary) 10%,transparent)!important}
 .sand-agents-sidebar~.sand-chat,.sand-agents-sidebar~.sand-info-pane{background-color:var(--sand-bg-base)!important}
 `;
 export const LIQUID_GLASS_MARKER = "/* Simeon: Liquid Glass on the chrome";
@@ -1630,6 +1749,103 @@ export const LIQUID_GLASS_MARKER = "/* Simeon: Liquid Glass on the chrome";
 export function patchOriginalGlassStylesheet(css) {
   if (css.includes(LIQUID_GLASS_MARKER)) throw new Error("Original renderer Liquid Glass block is already present.");
   return `${css}\n${LIQUID_GLASS_CSS}`;
+}
+
+/**
+ * The sidebar's round glass buttons (5 October 2026, the founder: "redesign
+ * the + button that create agents with this, based on apple water glass.
+ * next to it have a search icon that replace the search bar", then the
+ * compose glyph for create, the same disc for the account initials and
+ * the composer's plus; settled on the website's demo first
+ * (sites/simeonlabs.com/source/demo-glass.css), then "bring those changes
+ * to the mac app electron and not the web app"). The buttons only.
+ *
+ * In the window: the search bar under the sidebar header is gone and its
+ * `onOpenSearch` moves to a search disc beside the create disc in the
+ * header; the rail (the sidebar while the pane is open) already draws a
+ * "New chat" button of its own at its foot above the account, so that one
+ * becomes the same two discs; the account button's initials are the same
+ * disc; and so is the composer's attach button, at its own size.
+ */
+const DISC_ICONS = {
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>',
+  // The founder's compose glyph (5 October 2026): a square and a pencil.
+  create: '<path d="M12 4.5H6.5A2.5 2.5 0 0 0 4 7v10.5A2.5 2.5 0 0 0 6.5 20H17a2.5 2.5 0 0 0 2.5-2.5V12M18.3 3.7a1.9 1.9 0 0 1 2.7 2.7L13 14.4l-3.6.9.9-3.6z"/>',
+};
+const SIDEBAR_DISCS_SOURCE = [
+  `const __simeonDiscIcons=${JSON.stringify(DISC_ICONS)};`,
+  'function __simeonDisc(n){const{icon:i,label:l,className:c,onClick:o}=n;return p.jsx(yo,{content:l,children:p.jsx("button",{type:"button","aria-label":l,className:"simeon-disc "+c,onClick:o,children:p.jsx("svg",{viewBox:"0 0 24 24","aria-hidden":!0,dangerouslySetInnerHTML:{__html:__simeonDiscIcons[i]}})})})}',
+  'function __simeonSidebarDiscs(n){const{onOpenSearch:s,onNewChat:c}=n;return p.jsxs(p.Fragment,{children:[p.jsx(__simeonDisc,{icon:"search",label:"Search",className:"simeon-disc--search",onClick:()=>{typeof s=="function"&&s()}},"search"),p.jsx(__simeonDisc,{icon:"create",label:"New chat",className:"simeon-disc--create",onClick:c},"create")]})}',
+].join("");
+const SIDEBAR_HEADER_ANCHOR = "function pcn(n){";
+const SIDEBAR_HEADER_HEAD_BEFORE = "function pcn(n){const e=he.c(13),{isSelecting:t,selectedCount:s,sectionableSelectedCount:r,areSectionsSupported:i,sections:o,onMoveSelectionToNewSection:l,onMoveSelectionToSection:c,onRequestDeleteSelected:u,onClearSelection:d,onOpenNetwork:m,onOpenBroadcast:f,onNewChat:h}=n;let y;if(e[0]!==i||e[1]!==t||e[2]!==d||e[3]!==l||e[4]!==c||e[5]!==h||e[6]!==f||e[7]!==m||e[8]!==u||e[9]!==r||e[10]!==o||e[11]!==s){";
+const SIDEBAR_HEADER_HEAD_AFTER = "function pcn(n){const e=he.c(14),{isSelecting:t,selectedCount:s,sectionableSelectedCount:r,areSectionsSupported:i,sections:o,onMoveSelectionToNewSection:l,onMoveSelectionToSection:c,onRequestDeleteSelected:u,onClearSelection:d,onOpenNetwork:m,onOpenBroadcast:f,onNewChat:h,onOpenSearch:__s}=n;let y;if(e[0]!==i||e[1]!==t||e[2]!==d||e[3]!==l||e[4]!==c||e[5]!==h||e[6]!==f||e[7]!==m||e[8]!==u||e[9]!==r||e[10]!==o||e[11]!==s||e[13]!==__s){";
+const SIDEBAR_HEADER_NEW_BEFORE = 'p.jsx(yo,{content:"New chat",children:p.jsx(fr,{"aria-label":"New",className:"sand-agents-sidebar__new",focusAppearance:"none",icon:"plus",onClick:h,size:"sm",style:Ete.newButton})})]})}),e[0]=i,e[1]=t,e[2]=d,e[3]=l,e[4]=c,e[5]=h,e[6]=f,e[7]=m,e[8]=u,e[9]=r,e[10]=o,e[11]=s,e[12]=y}else y=e[12];return y}';
+const SIDEBAR_HEADER_NEW_AFTER = 'p.jsx(__simeonSidebarDiscs,{onOpenSearch:__s,onNewChat:h})]})}),e[0]=i,e[1]=t,e[2]=d,e[3]=l,e[4]=c,e[5]=h,e[6]=f,e[7]=m,e[8]=u,e[9]=r,e[10]=o,e[11]=s,e[12]=y,e[13]=__s}else y=e[12];return y}';
+const RAIL_NEW_BEFORE = 'function n0n(n){const e=he.c(4),{onNewChat:t}=n;let s,r;e[0]===Symbol.for("react.memo_cache_sentinel")?(s={className:"sand-78zum5 sand-dt5ytf sand-6s0dn4 sand-2lah0s sand-10b6aqq sand-lvsv26 sand-r1vbnl sand-1aquc0h sand-5hsz1j sand-1lfcbla"},r=re("sand-agents-sidebar__rail-new",s.className),e[0]=s,e[1]=r):(s=e[0],r=e[1]);let i;return e[2]!==t?(i=p.jsx("div",{className:r,style:s.style,children:p.jsx(yo,{content:"New chat",children:p.jsx(fr,{"aria-label":"New",className:"sand-agents-sidebar__new",focusAppearance:"none",icon:"plus",onClick:t,shape:"circle",style:Xbe.newButton})})}),e[2]=t,e[3]=i):i=e[3],i}';
+const RAIL_NEW_AFTER = 'function n0n(n){const{onNewChat:t,onOpenSearch:s}=n;return p.jsx("div",{className:"sand-agents-sidebar__rail-new simeon-rail-discs sand-78zum5 sand-dt5ytf sand-6s0dn4 sand-2lah0s sand-10b6aqq sand-lvsv26 sand-r1vbnl sand-1aquc0h sand-5hsz1j sand-1lfcbla",children:p.jsx(__simeonSidebarDiscs,{onOpenSearch:s,onNewChat:t})})}';
+// The sidebar (`u0n`) hands `onOpenSearch` to the header and the rail; both
+// memo guards learn the callback, in two slots past the sidebar's 204.
+const SIDEBAR_CACHE_BEFORE = "function u0n(n){const e=he.c(204),";
+const SIDEBAR_CACHE_AFTER = "function u0n(n){const e=he.c(206),";
+const SIDEBAR_HEADER_CALL_BEFORE = "let yi;e[115]!==de||e[116]!==On||e[117]!==_n||e[118]!==wt||e[119]!==gt||e[120]!==F||e[121]!==be||e[122]!==ke||e[123]!==we||e[124]!==St.length||e[125]!==Ue?(yi=p.jsx(pcn,{";
+const SIDEBAR_HEADER_CALL_AFTER = "let yi;e[115]!==de||e[116]!==On||e[117]!==_n||e[118]!==wt||e[119]!==gt||e[120]!==F||e[121]!==be||e[122]!==ke||e[123]!==we||e[124]!==St.length||e[125]!==Ue||e[204]!==V?(yi=p.jsx(pcn,{onOpenSearch:V,";
+const SIDEBAR_HEADER_STORE_BEFORE = "sectionableSelectedCount:St.length,sections:we,selectedCount:Ue}),e[115]=de,e[116]=On,e[117]=_n,e[118]=wt,e[119]=gt,e[120]=F,e[121]=be,e[122]=ke,e[123]=we,e[124]=St.length,e[125]=Ue,e[126]=yi):yi=e[126];";
+const SIDEBAR_HEADER_STORE_AFTER = "sectionableSelectedCount:St.length,sections:we,selectedCount:Ue}),e[115]=de,e[116]=On,e[117]=_n,e[118]=wt,e[119]=gt,e[120]=F,e[121]=be,e[122]=ke,e[123]=we,e[124]=St.length,e[125]=Ue,e[126]=yi,e[204]=V):yi=e[126];";
+const SIDEBAR_SEARCH_BAR_BEFORE = "ki=Hn?null:p.jsx(a0n,{onOpenSearch:V})";
+const SIDEBAR_SEARCH_BAR_AFTER = "ki=null";
+const SIDEBAR_RAIL_CALL_BEFORE = "let ai;e[173]!==Hn||e[174]!==gt||e[175]!==F?(ai=Hn&&!gt?p.jsx(n0n,{onNewChat:F}):null,e[173]=Hn,e[174]=gt,e[175]=F,e[176]=ai):ai=e[176];";
+const SIDEBAR_RAIL_CALL_AFTER = "let ai;e[173]!==Hn||e[174]!==gt||e[175]!==F||e[205]!==V?(ai=Hn&&!gt?p.jsx(n0n,{onNewChat:F,onOpenSearch:V}):null,e[173]=Hn,e[174]=gt,e[175]=F,e[176]=ai,e[205]=V):ai=e[176];";
+export const SIDEBAR_DISCS_REPLACEMENTS = Object.freeze([
+  ["sidebar-discs-components", SIDEBAR_HEADER_ANCHOR, `${SIDEBAR_DISCS_SOURCE}${SIDEBAR_HEADER_ANCHOR}`],
+  ["sidebar-header-takes-search", SIDEBAR_HEADER_HEAD_BEFORE, SIDEBAR_HEADER_HEAD_AFTER],
+  ["sidebar-header-discs", SIDEBAR_HEADER_NEW_BEFORE, SIDEBAR_HEADER_NEW_AFTER],
+  ["sidebar-rail-discs", RAIL_NEW_BEFORE, RAIL_NEW_AFTER],
+  ["sidebar-cache-two-more", SIDEBAR_CACHE_BEFORE, SIDEBAR_CACHE_AFTER],
+  ["sidebar-header-call-search", SIDEBAR_HEADER_CALL_BEFORE, SIDEBAR_HEADER_CALL_AFTER],
+  ["sidebar-header-store-search", SIDEBAR_HEADER_STORE_BEFORE, SIDEBAR_HEADER_STORE_AFTER],
+  ["sidebar-no-search-bar", SIDEBAR_SEARCH_BAR_BEFORE, SIDEBAR_SEARCH_BAR_AFTER],
+  ["sidebar-rail-call-search", SIDEBAR_RAIL_CALL_BEFORE, SIDEBAR_RAIL_CALL_AFTER],
+  // The pane opens at its widest (the founder, 5 October 2026: "make the avatar panel to open in max"): every
+  // fallback for its width is `ume` (480) rather than `K4e` (320): a fresh install, a stored slice or key without
+  // a width, and the width the sidebar's layout reads. A width the person dragged is still kept.
+  ["pane-widest-default", "Olt={isOpen:!1,width:K4e}", "Olt={isOpen:!1,width:ume}"],
+  ["pane-widest-stored-fallback", "bge(s.width,K4e)", "bge(s.width,ume)"],
+  ["pane-widest-legacy-fallback", "bge(e.infoPaneWidth,K4e)", "bge(e.infoPaneWidth,ume)"],
+  ["pane-widest-stored-key-fallback", '{fallback:K4e,min:DQ,max:ume}', '{fallback:ume,min:DQ,max:ume}'],
+]);
+export const PANE_WIDEST = 480;
+
+export function patchOriginalSidebarDiscs(source) {
+  let out = source;
+  for (const [label, before, after] of SIDEBAR_DISCS_REPLACEMENTS) out = replaceExactlyOnce(out, before, after, label);
+  return out;
+}
+
+export const SIDEBAR_DISCS_MARKER = "/* Simeon: the sidebar's round glass discs";
+export const SIDEBAR_DISCS_CSS = `${SIDEBAR_DISCS_MARKER} (5 October 2026): search and create in the header, the same two at the foot of the rail, the account initials, and the composer's attach button at its own size. Clear glass, a specular top edge, a hairline, a soft shadow; the same in the dark. */
+.sand-agents-sidebar__search{display:none!important}
+.simeon-disc{display:grid;place-items:center;width:40px;height:40px;padding:0;margin:0;border:0;border-radius:999px;appearance:none;cursor:default;outline:none;color:light-dark(rgba(0,0,0,.78),rgba(255,255,255,.86));background:linear-gradient(180deg,light-dark(rgba(255,255,255,.62),rgba(255,255,255,.16)),light-dark(rgba(255,255,255,.38),rgba(255,255,255,.08)));-webkit-backdrop-filter:blur(14px) saturate(1.6);backdrop-filter:blur(14px) saturate(1.6);box-shadow:inset 0 1px 0 light-dark(rgba(255,255,255,.95),rgba(255,255,255,.28)),inset 0 0 0 .75px light-dark(rgba(255,255,255,.6),rgba(255,255,255,.12)),inset 0 -1px 1px rgba(0,0,0,.04),0 0 0 .5px light-dark(rgba(0,0,0,.07),rgba(0,0,0,.5)),0 1px 3px rgba(0,0,0,.06);transition:transform .18s ease,box-shadow .18s ease,background .18s ease}
+.simeon-disc:hover{transform:scale(1.04)}
+.simeon-disc:active{transform:scale(.97)}
+.simeon-disc:focus-visible{box-shadow:0 0 0 3px light-dark(rgba(0,0,0,.14),rgba(255,255,255,.24))}
+.simeon-disc svg{display:block;width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.sand-agents-sidebar__header:has(.simeon-disc){height:60px!important;padding-right:12px!important}
+.sand-agents-sidebar__new-actions:has(.simeon-disc){gap:10px!important;align-items:center!important}
+.simeon-rail-discs{gap:10px!important;padding-bottom:10px!important}
+.sand-agents-sidebar__account>button{width:40px!important;height:40px!important;padding:0!important;border-radius:999px!important;display:grid!important;place-items:center!important}
+.sand-agents-sidebar__account .sand-kit-base-avatar{width:40px!important;height:40px!important;border-radius:999px!important;font-size:13px!important;font-weight:500!important;letter-spacing:.02em!important;color:light-dark(rgba(0,0,0,.72),rgba(255,255,255,.86))!important;background:linear-gradient(180deg,light-dark(rgba(255,255,255,.62),rgba(255,255,255,.16)),light-dark(rgba(255,255,255,.38),rgba(255,255,255,.08)))!important;-webkit-backdrop-filter:blur(14px) saturate(1.6)!important;backdrop-filter:blur(14px) saturate(1.6)!important;box-shadow:inset 0 1px 0 light-dark(rgba(255,255,255,.95),rgba(255,255,255,.28)),inset 0 0 0 .75px light-dark(rgba(255,255,255,.6),rgba(255,255,255,.12)),inset 0 -1px 1px rgba(0,0,0,.04),0 0 0 .5px light-dark(rgba(0,0,0,.07),rgba(0,0,0,.5)),0 1px 3px rgba(0,0,0,.06)!important;transition:transform .18s ease!important}
+.sand-agents-sidebar__account .sand-kit-base-avatar>span{display:none!important}
+.sand-agents-sidebar__account>button:hover .sand-kit-base-avatar{transform:scale(1.04)!important}
+.sand-prompt-attach{width:30px!important;height:30px!important;border-radius:999px!important;color:light-dark(rgba(0,0,0,.78),rgba(255,255,255,.86))!important;background:linear-gradient(180deg,light-dark(rgba(255,255,255,.62),rgba(255,255,255,.16)),light-dark(rgba(255,255,255,.38),rgba(255,255,255,.08)))!important;-webkit-backdrop-filter:blur(14px) saturate(1.6)!important;backdrop-filter:blur(14px) saturate(1.6)!important;box-shadow:inset 0 1px 0 light-dark(rgba(255,255,255,.95),rgba(255,255,255,.28)),inset 0 0 0 .75px light-dark(rgba(255,255,255,.6),rgba(255,255,255,.12)),inset 0 -1px 1px rgba(0,0,0,.04),0 0 0 .5px light-dark(rgba(0,0,0,.07),rgba(0,0,0,.5)),0 1px 3px rgba(0,0,0,.06)!important;transition:transform .18s ease!important}
+.sand-prompt-attach:hover{transform:scale(1.04)!important}
+.sand-prompt-attach:active{transform:scale(.97)!important}
+.sand-prompt-attach .ui-icon{color:inherit!important}
+`;
+
+export function patchOriginalSidebarDiscsStylesheet(css) {
+  if (css.includes(SIDEBAR_DISCS_MARKER)) throw new Error("Original renderer sidebar discs block is already present.");
+  return `${css}\n${SIDEBAR_DISCS_CSS}`;
 }
 
 /**
@@ -1722,8 +1938,9 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   if (!VOICE_CALL_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer voice-call anchors (chat header identity row, character settings) are not all in the mark chunk.");
   if (!AGENT_PANE_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer agent pane anchors (the info pane, its view guard, the chat header's computer button) are not all in the mark chunk.");
   if (!HANDOFF_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer take-over card anchor is not in the mark chunk.");
+  if (!SIDEBAR_DISCS_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer sidebar anchors (the header, the rail's new button, the search bar) are not all in the mark chunk.");
   const logoAssets = await readLogoAssets();
-  const markPatched = patchOriginalCooStep(patchOriginalFlights(patchOriginalHandoff(patchOriginalAgentPane(patchOriginalVoiceCall(patchOriginalChatLayout(patchOriginalLogos(patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source))))), appMentionNames(logoAssets.mentions))))))));
+  const markPatched = patchOriginalSidebarDiscs(patchOriginalCooStep(patchOriginalFlights(patchOriginalHandoff(patchOriginalAgentPane(patchOriginalVoiceCall(patchOriginalChatLayout(patchOriginalLogos(patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source))))), appMentionNames(logoAssets.mentions)))))))));
   // The stylesheet's light default of the same variable, for first paint.
   const stylesheets = (await readdir(assetsRoot)).filter((name) => name.endsWith(".css")).map((name) => path.join(assetsRoot, name));
   const bubbleSheets = [];
@@ -1732,14 +1949,17 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     if (css.includes(BUBBLE_CSS_REPLACEMENT[1])) bubbleSheets.push({ target, css });
   }
   if (bubbleSheets.length !== 1) throw new Error(`Expected one stylesheet carrying the user bubble default, found ${bubbleSheets.length}.`);
-  const stylesheetPatched = patchOriginalCooStylesheet(patchOriginalWordmarkStylesheet(patchOriginalFlightsStylesheet(patchOriginalHandoffStylesheet(patchOriginalAgentPaneStylesheet(patchOriginalVoiceCallStylesheet(patchOriginalLogosStylesheet(patchOriginalShapePickerStylesheet(patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)))), logoAssets))))), logoAssets.wordmarkFont));
+  const stylesheetPatched = patchOriginalSidebarDiscsStylesheet(patchOriginalCooStylesheet(patchOriginalWordmarkStylesheet(patchOriginalFlightsStylesheet(patchOriginalHandoffStylesheet(patchOriginalAgentPaneStylesheet(patchOriginalVoiceCallStylesheet(patchOriginalLogosStylesheet(patchOriginalShapePickerStylesheet(patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)))), logoAssets))))), logoAssets.wordmarkFont)));
   const chunkSources = [];
   for (const target of markCandidates) chunkSources.push(await readFile(target, "utf8"));
+  // The blocks spell the window's tokens as the token pass below leaves them.
+  const anchorSources = [bubbleSheets[0].css, ...chunkSources].map((source) => patchOriginalUpstreamTokens(source).source);
   const styleAnchors = {
-    header: countStyleAnchors(styleAnchorClasses(HEADER_CARD_CSS), [bubbleSheets[0].css, ...chunkSources]),
-    glass: countStyleAnchors(styleAnchorClasses(LIQUID_GLASS_CSS), [bubbleSheets[0].css, ...chunkSources]),
+    header: countStyleAnchors(styleAnchorClasses(HEADER_CARD_CSS), anchorSources),
+    glass: countStyleAnchors(styleAnchorClasses(LIQUID_GLASS_CSS), anchorSources),
     // Only the window's own classes: the simeon- ones are drawn by this patch.
-    voiceCall: countStyleAnchors(styleAnchorClasses(voiceCallCss()).filter((name) => name.startsWith("sand-")), [bubbleSheets[0].css, ...chunkSources]),
+    voiceCall: countStyleAnchors(styleAnchorClasses(voiceCallCss()).filter((name) => name.startsWith("sand-")), anchorSources),
+    sidebarDiscs: countStyleAnchors(styleAnchorClasses(SIDEBAR_DISCS_CSS).filter((name) => name.startsWith("sand-")), anchorSources),
   };
   for (const [block, result] of Object.entries(styleAnchors)) {
     if (result.missing.length > 0) console.warn(`renderer patch: ${result.missing.length} ${block} style anchor(s) appear nowhere in the pinned renderer: ${result.missing.join(", ")}`);
@@ -1752,7 +1972,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   const appIconAfter = await readFile(appIconTarget);
   const marks = {
     chunk: path.relative(stageRoot, markChunks[0].target),
-    replacements: [...[...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, ...SHAPE_REPLACEMENTS, ...COPY_REPLACEMENTS, ...LOGO_REPLACEMENTS, ...CHAT_LAYOUT_REPLACEMENTS, ...VOICE_CALL_REPLACEMENTS, ...AGENT_PANE_REPLACEMENTS, ...HANDOFF_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT].map(([label]) => label), "chat-header-card", "liquid-glass-chrome", "shape-pickers-hidden", "title-tag-blue", "file-and-app-logos", "voice-call-styles", "agent-pane-styles", "switch-blue", "take-over-card-styles"],
+    replacements: [...[...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, ...SHAPE_REPLACEMENTS, ...COPY_REPLACEMENTS, ...LOGO_REPLACEMENTS, ...CHAT_LAYOUT_REPLACEMENTS, ...VOICE_CALL_REPLACEMENTS, ...AGENT_PANE_REPLACEMENTS, ...HANDOFF_REPLACEMENTS, ...SIDEBAR_DISCS_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT].map(([label]) => label), "chat-header-card", "liquid-glass-chrome", "sidebar-discs", "shape-pickers-hidden", "title-tag-blue", "file-and-app-logos", "voice-call-styles", "agent-pane-styles", "switch-blue", "take-over-card-styles"],
     userBubble: { light: USER_BUBBLE_LIGHT, dark: USER_BUBBLE_DARK, stylesheet: path.relative(stageRoot, bubbleSheets[0].target) },
     // The stylesheet's hashes, so `npm run verify` can check the packaged
     // file against what this patch wrote (25 September 2026: verify read
@@ -1769,17 +1989,27 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   const brandTargets = (await readdir(assetsRoot)).filter((name) => name.endsWith(".js") || name.endsWith(".css")).map((name) => path.join(assetsRoot, name));
   brandTargets.push(path.join(stageRoot, "dist", "renderer", "index.html"));
   const brandSources = [];
+  const tokenTotals = Object.fromEntries(UPSTREAM_TOKEN_REPLACEMENTS.map(([label]) => [label, 0]));
   for (const target of brandTargets) {
     let source;
     try { source = await readFile(target, "utf8"); } catch { continue; }
-    const { source: patched, counts } = patchOriginalBrandStrings(source);
+    const branded = patchOriginalBrandStrings(source);
+    const tokens = patchOriginalUpstreamTokens(branded.source);
+    const patched = tokens.source;
+    const counts = branded.counts;
     brandSources.push(patched);
+    for (const [label, count] of Object.entries(tokens.counts)) tokenTotals[label] += count;
     if (patched === source) continue;
     await writeFile(target, patched);
     for (const [before, count] of Object.entries(counts)) brandTotals[before] += count;
-    brandFiles.push({ path: path.relative(stageRoot, target), counts, original: { bytes: Buffer.byteLength(source), sha256: sha256(source) }, patched: { bytes: Buffer.byteLength(patched), sha256: sha256(patched) } });
+    brandFiles.push({ path: path.relative(stageRoot, target), counts, tokens: tokens.counts, original: { bytes: Buffer.byteLength(source), sha256: sha256(source) }, patched: { bytes: Buffer.byteLength(patched), sha256: sha256(patched) } });
   }
   if (brandTotals["Grok Bot"] === 0) throw new Error("Expected the original renderer to name Grok Bot at least once; the brand pass found none.");
+  if (bubbleSheets[0].css.includes("--cursor-") && tokenTotals["css-variables"] === 0) throw new Error("Expected the original renderer to carry the upstream's CSS variables; the token pass found none.");
+  for (const source of brandSources) {
+    if (source.includes("--cursor-")) throw new Error("A renderer file still carries an upstream CSS variable after the token pass.");
+  }
+  console.log(`renderer patch: upstream tokens renamed ${JSON.stringify(tokenTotals)}`);
   const brandResidue = countBrandResidue(brandSources);
   console.log(`renderer patch: brand residue after the pass ${JSON.stringify(brandResidue)}`);
   // Every renderer file this pass rewrote: its bytes before the first pass and
@@ -1797,18 +2027,37 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     const bytes = await readFile(path.join(stageRoot, relative));
     files.push({ path: relative, original, patched: { bytes: bytes.length, sha256: sha256(bytes) } });
   }
+  // A Settings chunk is rewritten again by the marks, brand and token passes
+  // after `changes` recorded it, so its row carries the bytes after the last
+  // pass, the same as `files`: the record's two inventories agree, which
+  // `readRendererExtensionRecord` (macos-package-verification.mjs) requires
+  // (measured 5 October 2026, on the first own-shell package).
+  const finalPatched = new Map(files.map((file) => [file.path, file.patched]));
+  // The icon font's file takes the stylesheet's new name for it. The pinned
+  // inventory still lists the file under its old path; `renames` tells the
+  // verification (macos-package-verification.mjs, verify.mjs) where it is.
+  const renames = [];
+  for (const name of await readdir(assetsRoot)) {
+    if (!/^cursor-icons-16-.*\.woff2$/.test(name)) continue;
+    const renamed = name.replace(/^cursor-icons-16-/, "simeon-icons-16-");
+    await rename(path.join(assetsRoot, name), path.join(assetsRoot, renamed));
+    renames.push({ from: path.posix.join("dist", "renderer", "assets", name), to: path.posix.join("dist", "renderer", "assets", renamed) });
+  }
+  // The pinned window has one; a staged renderer in a test may have none.
+  if (renames.length !== (tokenTotals["icon-font-file"] > 0 ? 1 : 0)) throw new Error(`Expected ${tokenTotals["icon-font-file"] > 0 ? "one" : "no"} icon font file to rename, found ${renames.length}.`);
   const record = {
-    schemaVersion: 2,
+    schemaVersion: 3,
     mode: "original-renderer-settings-extension",
-    chunks: changes,
+    chunks: changes.map((change) => ({ ...change, patched: finalPatched.get(change.path) ?? change.patched })),
     marks,
     files,
-    brand: { replacements: [...BRAND_REPLACEMENTS.map(([before, after]) => ({ before, after })), ...BRAND_WORD_REPLACEMENTS.map(([pattern, after, label]) => ({ before: label, pattern: String(pattern), after })), ...BRAND_PHRASE_REPLACEMENTS.map(([before, after]) => ({ before, after }))], totals: brandTotals, files: brandFiles, residue: brandResidue },
+    renames,
+    brand: { tokens: tokenTotals, tokenReplacements: UPSTREAM_TOKEN_REPLACEMENTS.map(([label, pattern, after]) => ({ label, pattern: String(pattern), after })), replacements: [...BRAND_REPLACEMENTS.map(([before, after]) => ({ before, after })), ...BRAND_WORD_REPLACEMENTS.map(([pattern, after, label]) => ({ before: label, pattern: String(pattern), after })), ...BRAND_PHRASE_REPLACEMENTS.map(([before, after]) => ({ before, after }))], totals: brandTotals, files: brandFiles, residue: brandResidue },
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-mark", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "agent-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "flight-results"],
-    transformations: ["settings-registry", "marks", "app-icon", "brand-strings"],
+    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-mark", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "agent-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "flight-results", "upstream-tokens", "sidebar-glass-discs", "pane-widest-default", "pane-three-tabs"],
+    transformations: ["settings-registry", "marks", "app-icon", "brand-strings", "upstream-tokens", "icon-font-file"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");
   await writeFile(provenancePath, `${JSON.stringify(record, null, 2)}\n`);

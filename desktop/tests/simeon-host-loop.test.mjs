@@ -231,15 +231,15 @@ test("a proxy refusal ends the step with the provider's sentence instead of hang
   }
 });
 
-test("toCoreMessages strips the Cursor wire dialect the AI SDK refuses", async () => {
+test("toCoreMessages strips the upstream app wire dialect the AI SDK refuses", async () => {
   const loaded = await loadHarness();
   try {
     const { toCoreMessages } = loaded.module;
     const converted = toCoreMessages([
       { role: "system", content: "sys" },
       { role: "user", content: [{ type: "text", text: "hi" }, { type: "image", image: new Uint8Array([1, 2, 3]), mimeType: "image/png" }, { type: "cursor-only", weird: true }] },
-      { role: "assistant", id: "m1", content: [{ type: "reasoning", text: "thinking", signature: "sig", providerOptions: { cursor: { modelName: "x" } } }, { type: "redacted-reasoning", data: "…" }, { type: "tool-call", toolCallId: "c1", toolName: "t", args: { a: 1 } }] },
-      { role: "tool", id: "c1", content: [{ type: "tool-result", toolCallId: "c1", toolName: "t", result: undefined, experimental_content: [] }], providerOptions: { cursor: { highLevelToolCallResult: { isError: undefined } } } },
+      { role: "assistant", id: "m1", content: [{ type: "reasoning", text: "thinking", signature: "sig", providerOptions: { simeon: { modelName: "x" } } }, { type: "redacted-reasoning", data: "…" }, { type: "tool-call", toolCallId: "c1", toolName: "t", args: { a: 1 } }] },
+      { role: "tool", id: "c1", content: [{ type: "tool-result", toolCallId: "c1", toolName: "t", result: undefined, experimental_content: [] }], providerOptions: { simeon: { highLevelToolCallResult: { isError: undefined } } } },
       { role: "tool", content: [{ type: "tool-result", toolCallId: "c2", toolName: "t", result: { hits: 3 } }] },
     ]);
     assert.deepEqual(converted, [

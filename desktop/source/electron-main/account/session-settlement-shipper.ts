@@ -4,7 +4,7 @@ import { sessionReportToTelemetry, type SessionSignoutCause } from "./session-fu
 export const STRUCTURED_LOG_SUBMIT_DEADLINE_MS = 15_000;
 export const DESKTOP_SESSION_EVENT = "sand.desktop.session";
 export const SAND_LOG_KEY = "sand";
-const settlementShipDeadline = createDeadlinePolicy(realClock, { name: "cursor-auth-session-settlement-ship", timeoutMs: STRUCTURED_LOG_SUBMIT_DEADLINE_MS });
+const settlementShipDeadline = createDeadlinePolicy(realClock, { name: "account-auth-session-settlement-ship", timeoutMs: STRUCTURED_LOG_SUBMIT_DEADLINE_MS });
 
 export type SessionSettlement =
   | { readonly kind: "signed_out"; readonly cause: SessionSignoutCause; readonly durable: boolean; readonly accessToken: string }

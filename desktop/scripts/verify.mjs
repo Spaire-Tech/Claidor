@@ -189,9 +189,18 @@ if (rendererComposition?.mode === "clean-source") {
   // after its last pass; every other file must match the pinned inventory.
   const rendererExtensionPath = "dist/renderer-router-extension.json";
   const patchedRendererFiles = new Map();
+  // Files the patch moved to a new name (schema 3, the icon font): the
+  // pinned inventory names the old path, the package carries the new one.
+  const renamedRendererFiles = new Map();
   if (listing.has(`/${rendererExtensionPath}`)) {
     const rendererExtension = JSON.parse(extractFile(builtAsar, rendererExtensionPath).toString("utf8"));
     if (!Array.isArray(rendererExtension.files)) throw new Error("Renderer patch record has no patched file hashes.");
+    for (const row of Array.isArray(rendererExtension.renames) ? rendererExtension.renames : []) {
+      const from = typeof row?.from === "string" && row.from.startsWith("dist/renderer/") ? row.from.slice("dist/renderer/".length) : null;
+      const to = typeof row?.to === "string" && row.to.startsWith("dist/renderer/") ? row.to.slice("dist/renderer/".length) : null;
+      if (from === null || to === null || renamedRendererFiles.has(from)) throw new Error(`Renderer patch record has an invalid rename entry: ${JSON.stringify(row)}`);
+      renamedRendererFiles.set(from, to);
+    }
     for (const file of rendererExtension.files) {
       const relative = typeof file.path === "string" && file.path.startsWith("dist/renderer/") ? file.path.slice("dist/renderer/".length) : null;
       if (relative === null || patchedRendererFiles.has(relative) || typeof file.patched?.sha256 !== "string" || typeof file.patched?.bytes !== "number") throw new Error(`Renderer patch record has an invalid patched file entry: ${file.path}`);
@@ -202,7 +211,7 @@ if (rendererComposition?.mode === "clean-source") {
   for (const file of rendererProvenance.files) {
     if (typeof file.path !== "string" || declaredPaths.has(file.path)) throw new Error("Packaged artifact renderer provenance contains a missing or duplicate path.");
     declaredPaths.add(file.path);
-    const bytes = extractFile(builtAsar, `dist/renderer/${file.path}`);
+    const bytes = extractFile(builtAsar, `dist/renderer/${renamedRendererFiles.get(file.path) ?? file.path}`);
     const patched = patchedRendererFiles.get(file.path);
     if (patched !== undefined) {
       if (patched.original != null && (patched.original.bytes !== file.bytes || patched.original.sha256 !== file.sha256)) throw new Error(`Renderer patch record did not start from the pinned file: ${file.path}`);
@@ -215,8 +224,10 @@ if (rendererComposition?.mode === "clean-source") {
   const unpinnedPatched = [...patchedRendererFiles.keys()].filter(relative => !declaredPaths.has(relative));
   if (unpinnedPatched.length > 0) throw new Error(`Renderer patch record lists files outside the pinned inventory: ${unpinnedPatched.join(", ")}`);
   const packagedPaths = rendererListing.filter(entry => entry.startsWith("dist/renderer/")).map(entry => entry.slice("dist/renderer/".length)).filter(Boolean);
-  const undeclaredFiles = packagedPaths.filter(candidate => !declaredPaths.has(candidate) && ![...declaredPaths].some(file => file.startsWith(`${candidate}/`)));
-  if (undeclaredFiles.length > 0 || [...declaredPaths].some(file => !packagedPaths.includes(file))) throw new Error("Packaged artifact renderer contains undeclared or missing files.");
+  const expectedPackagedPaths = new Set([...declaredPaths].map(file => renamedRendererFiles.get(file) ?? file));
+  if ([...renamedRendererFiles.keys()].some(from => !declaredPaths.has(from))) throw new Error("Renderer patch record renames a file outside the pinned inventory.");
+  const undeclaredFiles = packagedPaths.filter(candidate => !expectedPackagedPaths.has(candidate) && ![...expectedPackagedPaths].some(file => file.startsWith(`${candidate}/`)));
+  if (undeclaredFiles.length > 0 || [...expectedPackagedPaths].some(file => !packagedPaths.includes(file))) throw new Error("Packaged artifact renderer contains undeclared or missing files.");
 } else {
   throw new Error(`Unsupported packaged renderer mode: ${rendererComposition?.mode}`);
 }
@@ -300,7 +311,7 @@ if (urlTypes.includes("<string>sand</string>")) throw new Error("Reconstructed a
 // here since 26 September 2026 (ledger F-455): the renamed executable and
 // its helpers (the menu bar's name; a half-renamed bundle dies at launch),
 // the backend the bundle carries in LSEnvironment (a bundle without it
-// signs in to cursor.com), and the Dock icon's bytes.
+// signs in to the upstream site), and the Dock icon's bytes.
 const executableName = await capture(SYSTEM_TOOLS.plutil, ["-extract", "CFBundleExecutable", "raw", infoPlist]);
 if (executableName !== simeonExecutableName) throw new Error(`Unexpected executable name: ${executableName}`);
 const bundleName = await capture(SYSTEM_TOOLS.plutil, ["-extract", "CFBundleName", "raw", infoPlist]);

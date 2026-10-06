@@ -97,7 +97,8 @@ test("the API door: the cookie trades for the pair once, the pair refreshes ahea
   answers.set("GET /desktop/api/user/profile", { status: 200, body: { code: 0, data: { email: "bass@simeonlabs.com" } } });
   assert.deepEqual(await api.data("user/profile"), { email: "bass@simeonlabs.com" });
   assert.equal(calls.at(-1).headers.authorization, `Bearer ${envelope(exp)}`);
-  assert.equal(calls.at(-1).headers["x-cursor-client-type"], "sand");
+  assert.equal(calls.at(-1).headers["x-simeon-client-type"], "sand");
+  assert.equal(calls.at(-1).headers["x-cursor-client-type"], undefined, "5 October 2026: only Simeon's header names leave the page");
 
   // Five minutes before the hour is up, the next call refreshes first, like the Mac.
   now = (exp - 200) * 1000;
@@ -119,7 +120,7 @@ test("the API door: the cookie trades for the pair once, the pair refreshes ahea
   // A Connect call on the broker: JSON in, JSON out, the hint header on a refusal.
   answers.set("POST /auth/web-session", { status: 200, body: { accessToken: envelope(exp2 + 7200), refreshToken: "simeon_dr_three" } });
   await api.signInFromCookie();
-  answers.set("POST /aiserver.v1.GrokBotService/EnsureSandBox", { status: 200, body: { gatewayUrl: "https://api.test/sand-box/b/p/1340", gatewayToken: "gw", networkToken: "net" } });
+  answers.set("POST /simeon.v1.ComputerService/EnsureSandBox", { status: 200, body: { gatewayUrl: "https://api.test/sand-box/b/p/1340", gatewayToken: "gw", networkToken: "net" } });
   const box = await api.connect("EnsureSandBox", {});
   assert.equal(box.gatewayUrl, "https://api.test/sand-box/b/p/1340");
   assert.equal(calls.at(-1).headers["content-type"], "application/json");

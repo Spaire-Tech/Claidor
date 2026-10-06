@@ -1,6 +1,6 @@
 import { Value } from "@bufbuild/protobuf";
 
-import { CURSOR_DYNAMIC_TOOLS_NAMESPACE, isFirstPartyToolsNamespace } from "../../../agent-exec/mcp.js";
+import { SIMEON_DYNAMIC_TOOLS_NAMESPACE, isFirstPartyToolsNamespace } from "../../../agent-exec/mcp.js";
 import {
   McpImageContent,
   McpResult as McpToolResult,
@@ -98,8 +98,8 @@ function buildBuiltinToolsMcpDescriptorFromTools(tools: BuiltinTool[], descripti
     });
   });
   return new McpDescriptor({
-    serverIdentifier: CURSOR_DYNAMIC_TOOLS_NAMESPACE,
-    serverName: CURSOR_DYNAMIC_TOOLS_NAMESPACE,
+    serverIdentifier: SIMEON_DYNAMIC_TOOLS_NAMESPACE,
+    serverName: SIMEON_DYNAMIC_TOOLS_NAMESPACE,
     serverUseInstructions: buildBuiltinToolsServerUseInstructions(tools),
     tools: toolDescriptors,
   });

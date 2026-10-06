@@ -4,7 +4,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 
 const SANDBOX_POLICY_DIR_NAME = "sandbox-policies";
-const SANDBOX_POLICY_DIR_ENV = "CURSOR_SANDBOX_POLICY_DIR";
+const SANDBOX_POLICY_DIR_ENV = "SIMEON_SANDBOX_POLICY_DIR";
 const STALE_POLICY_MAX_AGE_MS = 60 * 60 * 1_000;
 
 function getSandboxPolicyDirectory(): string {
@@ -12,7 +12,7 @@ function getSandboxPolicyDirectory(): string {
   if (override) {
     return path.resolve(override);
   }
-  return path.resolve(path.join(os.homedir(), ".cursor", SANDBOX_POLICY_DIR_NAME));
+  return path.resolve(path.join(os.homedir(), ".simeon", SANDBOX_POLICY_DIR_NAME));
 }
 
 function pruneStaleSandboxPolicyFiles(dir: string): void {

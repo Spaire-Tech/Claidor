@@ -5,6 +5,11 @@ export const SAND_CLIENT_FALLBACK_BASE_VERSION = "0.1.0";
 export const SAND_CLIENT_VERSION_DEV_SUFFIX = "-dev";
 export const SAND_CLIENT_VERSION_LAB_SUFFIX = "-lab";
 export const SAND_BOX_NAMESPACE_HEADER = "x-sand-box-namespace";
+// 5 October 2026: Simeon's own header names. The server reads these first
+// and the upstream's `x-cursor-client-*` after them, for the apps and box
+// hosts built before this day (`server/simeon/desktop/endpoints.py`).
+export const CLIENT_TYPE_HEADER = "x-simeon-client-type";
+export const CLIENT_VERSION_HEADER = "x-simeon-client-version";
 const STAMPED_VERSION_BASE = /^(\d+\.\d+\.\d+)(?:-.+)?$/;
 
 export type SandBoxNamespace = "dev" | "lab" | "prod";
@@ -35,8 +40,8 @@ export function getSandClientVersion(env: NodeJS.ProcessEnv = process.env): stri
 
 export function getSandBackendClientHeaders(env: NodeJS.ProcessEnv = process.env): Record<string, string> {
   return {
-    "x-cursor-client-type": SAND_CLIENT_TYPE,
-    "x-cursor-client-version": getSandClientVersion(env),
+    [CLIENT_TYPE_HEADER]: SAND_CLIENT_TYPE,
+    [CLIENT_VERSION_HEADER]: getSandClientVersion(env),
     [SAND_BOX_NAMESPACE_HEADER]: getSandBoxNamespace(env)
   };
 }

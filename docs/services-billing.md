@@ -112,7 +112,7 @@ plan …", each naming `app.simeonlabs.com/billing`.
 keys are what every shipped app reads and keep their meaning (`creditsLimit`,
 `creditsUsed`, `creditsRemaining`, `periodStart`, `periodEnd`, …). The keys
 added on 5 October 2026 feed the app's usage summary
-(`desktop/source/electron-main/account/cursor-profile.ts`,
+(`desktop/source/electron-main/account/account-profile.ts`,
 `usageSummaryFromSimeonQuota`): `tier`, `trialEndsAt`, `trialCancelable`,
 `onDemand` (null until the server meters it), `upgradeUrl`. The renderer
 already has the "Trial usage" meter, the Cancel trial button, the upgrade
@@ -171,7 +171,7 @@ organisation set and the products missing (`server/simeon/platform/startup.py`).
   `onDemand: null` and the app shows no bar. The plan: a cap in cents on
   the platform Customer, overage rows stamped in `desktop_usage`, a daily
   task feeding the engine's meters, a metered unit price on each product.
-- **The renderer's paywall cover** opens a Cursor URL; until it is patched
+- **The renderer's paywall cover** opens the upstream's URL; until it is patched
   (`desktop/scripts/lib/router-renderer-patch.mjs`), Connect
   `GetSandAccessStatus` keeps answering GRANTED and the gate is the sign-in
   page plus the proxy's 402.

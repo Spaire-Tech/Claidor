@@ -2,7 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 
-export const ATTACH_PROD_BOX_PREFS_PATH = join(homedir(), ".cursor", "sand-dev", "attach-prod-box.json");
+export const ATTACH_PROD_BOX_PREFS_PATH = join(homedir(), ".simeon", "sand-dev", "attach-prod-box.json");
 export const DEFAULT_ATTACH_PROD_BOX_PREFS = { enabled: false, updatedAtMs: 0 } as const;
 export interface AttachProdBoxPrefs { readonly enabled: boolean; readonly updatedAtMs: number }
 export interface AttachProdBoxStatus { readonly preferred: boolean; readonly active: boolean; readonly prefsPath: string; readonly updatedAtMs: number }

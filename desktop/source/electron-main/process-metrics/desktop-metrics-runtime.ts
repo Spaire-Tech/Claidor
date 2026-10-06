@@ -1,11 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { release as osRelease } from "node:os";
-import { AiService } from "../../packages/proto/generated/aiserver/v1/aiserver_connect.js";
-import { createSandCursorBackendClient } from "../../shared/node/cursor-backend/cursor-inference.js";
+import { AiService } from "../../packages/proto/simeon/v1/services.js";
+import { createSimeonBackendClient } from "../../shared/node/simeon-backend/simeon-inference.js";
 import { readLocalExecDaemonDiscovery } from "../../host/local-exec/local-exec-daemon-protocol.js";
 import { isProcessAlive } from "../local-exec/local-exec-native.js";
 import { SandProcessMetricsCollector, type SandProcessMetricsConfig } from "./collector.js";
-import { SandClientNumericMetricsManager } from "./cursor-client-numeric-metrics.js";
+import { SandClientNumericMetricsManager } from "./client-numeric-metrics.js";
 import { createFlushCoalescer } from "./heap-metrics-ingest.js";
 import { createNativeProcessScan } from "./native-scan.js";
 import { SandProcessMetricsReporter } from "./transport.js";
@@ -22,7 +22,7 @@ interface DisposableNumericMetrics { flush(): Promise<void>; dispose(): void }
 interface DisposableCollector { start(): void; dispose(): void }
 
 export interface DesktopMetricsRuntimeDeps {
-  readonly ensureCursorAuthService: () => Promise<AuthService>;
+  readonly ensureAccountAuthService: () => Promise<AuthService>;
   readonly ensureExperimentService: () => Promise<ExperimentService>;
   readonly getMachineId: () => string | Promise<string>;
   readonly getClientVersion: () => string;
@@ -59,13 +59,13 @@ export function createDesktopMetricsRuntime(deps: DesktopMetricsRuntimeDeps): De
   async function ensureClientNumericMetricsManager(): Promise<DisposableNumericMetrics> {
     if (clientNumericMetricsManagerInit == null) {
       clientNumericMetricsManagerInit = (async () => {
-        const authService = await deps.ensureCursorAuthService();
+        const authService = await deps.ensureAccountAuthService();
         const experiments = await deps.ensureExperimentService();
         const createManager = deps.createNumericMetricsManager ?? ((options) => new SandClientNumericMetricsManager(options));
         const manager = createManager({
           isFlushEnabled: () => experiments.checkFeatureGate("client_numeric_metrics"),
           clientVersion: deps.getClientVersion(),
-          createClient: () => deps.createNumericMetricsClient?.(authService) ?? createSandCursorBackendClient(AiService, {
+          createClient: () => deps.createNumericMetricsClient?.(authService) ?? createSimeonBackendClient(AiService, {
             getAccessToken: (request) => authService.getValidAccessToken(request),
             getMachineId: () => deps.getMachineId(),
           }) as unknown as { reportClientNumericMetrics(request: unknown): Promise<unknown> },
@@ -100,9 +100,9 @@ export function createDesktopMetricsRuntime(deps: DesktopMetricsRuntimeDeps): De
       reporter: {
         report: async (sample, signal) => {
           if (reporter == null) {
-            const auth = await deps.ensureCursorAuthService();
+            const auth = await deps.ensureAccountAuthService();
             reporter = new SandProcessMetricsReporter({
-              client: deps.createProcessMetricsClient?.(auth) ?? createSandCursorBackendClient(AiService, {
+              client: deps.createProcessMetricsClient?.(auth) ?? createSimeonBackendClient(AiService, {
                 getAccessToken: (request) => auth.getValidAccessToken(request),
                 getMachineId: () => deps.getMachineId(),
               }) as unknown as { reportSandProcessMetrics(request: unknown, options: { timeoutMs: number; signal?: AbortSignal }): Promise<unknown> },

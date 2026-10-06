@@ -18,7 +18,7 @@ import type { ProductionServiceContext } from "../main-production-services.js";
 import { requireFunction, requireObject } from "./provider-guards.js";
 
 export interface ProductionAttachmentGatewayPorts {
-  readonly resolveDeps: (context: Omit<ProductionServiceContext, "attachments" | "avatarImages" | "cursorAccount" | "ensureTranscriptionManager">) => AttachmentEdgeDeps;
+  readonly resolveDeps: (context: Omit<ProductionServiceContext, "attachments" | "avatarImages" | "accountService" | "ensureTranscriptionManager">) => AttachmentEdgeDeps;
 }
 
 export interface ElectronAttachmentGatewayCompositionPorts {

@@ -46,8 +46,8 @@ export interface DesktopUserDataBootstrapOptions {
 export const PREVIOUS_USER_DATA_NAME = "Grok Bot";
 /** Chromium's caches: rebuilt on demand, never worth copying. */
 const USER_DATA_CACHE_ENTRIES = new Set(["Cache", "Code Cache", "GPUCache", "DawnCache", "DawnGraphiteCache", "DawnWebGPUCache", "blob_storage", "Crashpad", "logs",
-  // The upstream app's Statsig bootstrap: a config with the person's Cursor user id
-  // that would hydrate a client logging gate exposures to api3.cursor.sh
+  // The upstream app's Statsig bootstrap: a config with the person's upstream user id
+  // that would hydrate a client logging gate exposures to the upstream API
   // (design-audit-ledger.md F-388). Never copied.
   "sand-statsig-bootstrap.json"]);
 /**

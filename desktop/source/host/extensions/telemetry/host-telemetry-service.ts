@@ -8,7 +8,7 @@ import type {
 } from "../../../internal/scheduling.js";
 import type { StructuredLogClient } from "../../../shared/observability/structured-log-transport.js";
 import { errorLogTag } from "../../../shared/errors.js";
-import { getSandInferenceBackendUrl } from "../../../shared/node/cursor-backend/cursor-inference.js";
+import { getSandInferenceBackendUrl } from "../../../shared/node/simeon-backend/simeon-inference.js";
 import { getSandClientVersion } from "../../../shared/node/sand-client-metadata.js";
 import {
   SandProductAnalytics,

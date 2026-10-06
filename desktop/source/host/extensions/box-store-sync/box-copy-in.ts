@@ -16,7 +16,7 @@ import { isAgentStoreSourceId } from "../../../packages/constants/agent-store-id
 import { tryAcquireStoreLock } from "../../../packages/agent-store-sync/store-lock.js";
 import { errorMessage } from "../../../shared/errors.js";
 import { STRUCTURED_LOG_SUBMIT_DEADLINE_MS } from "../../../shared/observability/structured-log-transport.js";
-import { getSandInferenceBackendUrl } from "../../../shared/node/cursor-backend/cursor-inference.js";
+import { getSandInferenceBackendUrl } from "../../../shared/node/simeon-backend/simeon-inference.js";
 import { getSandRootDir } from "../../host-paths.js";
 import { getOrCreateHostMachineId } from "../../host-secret-store.js";
 import { getBoxStoreBackendPolicy, isBoxStoreCopyInEnabled } from "../../box/box-store-backend-policy.js";

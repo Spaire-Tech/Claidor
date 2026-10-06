@@ -9,7 +9,8 @@ import { parseRetryAfterHeaderMs } from "../../retry-after.js";
 import { reportExperimentsDiagnostic } from "./experiments-diagnostics.js";
 
 export const STATSIG_CLIENT_KEY = "client-Bm4HJ0aDjXHQVsoACMREyLNxm5p6zzuzhO50MgtoT5D";
-export const STATSIG_LOG_EVENT_PROXY_URL = "https://api3.cursor.sh/tev1/v1";
+// The upstream app proxied Statsig through its own API; logging is off here (`simeon-experiments.ts`), and the address is ours.
+export const STATSIG_LOG_EVENT_PROXY_URL = "https://api.simeonlabs.com/tev1/v1";
 export const BOOTSTRAP_CACHE_FILENAME = "sand-statsig-bootstrap.json";
 
 export function sandStatsigNetworkUrlAllowed(url: string): boolean { return url.includes("/rgstr"); }
@@ -17,14 +18,14 @@ export function sandStatsigNetworkOverride(url: string, args: RequestInit, fetch
 export function extractStatsigUser(config: string): Record<string, unknown> { const parsed = JSON.parse(config) as { user?: unknown }; return typeof parsed.user === "object" && parsed.user != null && !Array.isArray(parsed.user) ? parsed.user as Record<string, unknown> : {}; }
 export function readStatsigBootstrapUserId(config: string): string | null { try { const user = extractStatsigUser(config); return typeof user.userID === "string" ? user.userID : null; } catch (error) { reportExperimentsDiagnostic({ kind: "bootstrap_config_unparseable", errorClass: errorLogTag(error) }); return null; } }
 
-export function createCursorChecksum(machineId: string, now = Date.now()): string {
+export function createClientChecksum(machineId: string, now = Date.now()): string {
   const unixKiloSeconds = Math.floor(now / 1e6);
   const bytes = new Uint8Array([unixKiloSeconds >> 40 & 255, unixKiloSeconds >> 32 & 255, unixKiloSeconds >> 24 & 255, unixKiloSeconds >> 16 & 255, unixKiloSeconds >> 8 & 255, unixKiloSeconds & 255]);
   let lastByte = 165; for (let index = 0; index < bytes.length; index += 1) { const current = bytes[index] ?? 0; bytes[index] = (current ^ lastByte) + index % 256; lastByte = bytes[index] ?? 0; }
   return `${Buffer.from(bytes).toString("base64url")}${machineId}`;
 }
 
-function applyLocalCliModeHeader(headers: Headers, env: NodeJS.ProcessEnv): void { if (env.CURSOR_AGENT_CLI_LOCAL_MODE === "true") headers.set("local-cli-mode", "true"); }
+function applyLocalCliModeHeader(headers: Headers, env: NodeJS.ProcessEnv): void { if (env.SIMEON_AGENT_CLI_LOCAL_MODE === "true") headers.set("local-cli-mode", "true"); }
 export async function fetchStatsigBootstrap(options: {
   readonly backendUrl: string; readonly deadline: DeadlinePolicy;
   readonly getAccessToken: (options: { backendUrl: string }) => Promise<string>;
@@ -32,11 +33,11 @@ export async function fetchStatsigBootstrap(options: {
 }): Promise<{ config?: string; retryAfterMs?: number }> {
   const accessToken = await options.getAccessToken({ backendUrl: options.backendUrl }).catch((error) => { reportExperimentsDiagnostic({ kind: "bootstrap_anonymous", errorClass: errorLogTag(error) }); return undefined; });
   const machineId = await options.getMachineId();
-  const headers = new Headers({ "content-type": "application/json", "x-cursor-checksum": createCursorChecksum(machineId), ...getSandBackendClientHeaders(options.env), "x-ghost-mode": "true", "x-request-id": randomUUID() });
+  const headers = new Headers({ "content-type": "application/json", "x-simeon-checksum": createClientChecksum(machineId), ...getSandBackendClientHeaders(options.env), "x-ghost-mode": "true", "x-request-id": randomUUID() });
   if (accessToken != null) headers.set("authorization", `Bearer ${accessToken}`);
   applyLocalCliModeHeader(headers, options.env ?? process.env);
   return options.deadline.run(async (signal) => {
-    const response = await (options.fetchImpl ?? fetch)(new URL("aiserver.v1.AnalyticsService/BootstrapStatsig", options.backendUrl), { method: "POST", headers, body: "{}", signal });
+    const response = await (options.fetchImpl ?? fetch)(new URL("simeon.v1.AnalyticsService/BootstrapStatsig", options.backendUrl), { method: "POST", headers, body: "{}", signal });
     if (!response.ok) { const retryAfterMs = parseRetryAfterHeaderMs(response.headers.get("retry-after")); return retryAfterMs === undefined ? {} : { retryAfterMs }; }
     const data = await response.json() as unknown;
     if (typeof data !== "object" || data == null || !("config" in data)) return {};

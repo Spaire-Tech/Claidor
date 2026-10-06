@@ -31,6 +31,7 @@ const target = {
   prepareSynthesis: () => ({ memories: [] }),
   applySynthesis: () => "committed",
   hasMemories: () => false,
+  hasDatedMemory: () => false,
   isTemporalReviewDue: () => false,
   markTemporalReview: () => {},
 };

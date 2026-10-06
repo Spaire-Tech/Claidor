@@ -27,8 +27,8 @@ test("the user bubble is one flat blue in light and dark, and selection on it re
   // One simple blue: no gradient, no grain or brush texture ("looks dirty").
   assert.doesNotMatch(USER_BUBBLE_PAINT_CSS, /gradient|feTurbulence|url\(/);
   // Dark mode only: selected text is the bubble's blue on white.
-  assert.ok(USER_BUBBLE_PAINT_CSS.includes('[data-theme="cursor-dark"] .sand-mvmkjj:not(#\\#):not(#\\#):not(#\\#) *::selection{background-color:#ffffff;color:#1f5087}'));
-  assert.doesNotMatch(USER_BUBBLE_PAINT_CSS, /cursor-light/);
+  assert.ok(USER_BUBBLE_PAINT_CSS.includes('[data-theme="simeon-dark"] .sand-mvmkjj:not(#\\#):not(#\\#):not(#\\#) *::selection{background-color:#ffffff;color:#1f5087}'));
+  assert.doesNotMatch(USER_BUBBLE_PAINT_CSS, /simeon-light/);
   assert.throws(() => patchOriginalBubbleStylesheet(sheet), /bubble paint block is already present/);
   assert.throws(() => patchOriginalBubble(patched), /user-bubble-blue anchor is missing or ambiguous/);
 });
