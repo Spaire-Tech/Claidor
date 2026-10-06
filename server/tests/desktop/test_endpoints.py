@@ -62,7 +62,7 @@ async def _signed_in(
 
 @pytest.mark.asyncio
 class TestLogin:
-    async def test_anonymous_is_sent_to_the_web_login_and_asked_back(
+    async def test_anonymous_is_sent_to_the_api_s_sign_in_and_asked_back(
         self, client: httpx.AsyncClient
     ) -> None:
         response = await client.get(
@@ -72,7 +72,8 @@ class TestLogin:
         )
         assert response.status_code == 303
         location = urlparse(response.headers["location"])
-        assert location.path == "/login"
+        # The API's own Google sign-in: no web app in the way.
+        assert location.path.endswith("/integrations/google/login/authorize")
         return_to = parse_qs(location.query)["return_to"][0]
         assert return_to.startswith(settings.generate_external_url("/desktop/login?"))
         assert "state=abc" in return_to

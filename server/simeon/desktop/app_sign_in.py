@@ -18,8 +18,9 @@ would never be called.
        in the browser. The challenge is `base64url(sha256(verifier))`
        for a verifier only the app holds.
     2. With no Simeon session in the browser, that page sends the
-       person to the web login and asks to be returned to — the same
-       hand-off `/desktop/login` makes.
+       person to the API's own Google sign-in and asks to be returned
+       to — the same hand-off `/desktop/login` makes. No web app is in
+       the way (6 October 2026).
     3. With one, it **asks**. A sign-in confirmed by a bare GET would
        mean anybody who can get a signed-in person to open a link of
        their making ends up holding that person's session, because the
@@ -31,7 +32,8 @@ would never be called.
        required (`SIMEON_DESKTOP_BILLING_REQUIRED`) and no trialing or
        active subscription in the synced copy of Stripe's
        (`simeon.plans`), the page sends the browser to the web app's
-       billing page instead, with this very URL as the way back; the
+       billing page instead (the one thing the web app is for), with
+       this very URL as the way back; the
        billing page opens Stripe Checkout, which takes a card, starts
        the 7-day trial, and returns here with `checkout_session_id`,
        which the page copies in before asking, so the gate opens even
@@ -70,7 +72,7 @@ from simeon.postgres import AsyncSession, get_db_session
 from simeon.routing import APIRouter
 
 from .allowance import BILLING_PATH
-from .endpoints import client_version_of
+from .endpoints import client_version_of, sign_in_url
 from .service import (
     DesktopUnauthenticated,
     desktop,
@@ -196,6 +198,7 @@ async def _needs_a_plan(
 
 @router.get("/loginDeepControl", name="desktop:deep_control", response_model=None)
 async def login_deep_control(
+    request: Request,
     auth_subject: WebUserOrAnonymous,
     challenge: str = Query(default=""),
     uuid: str = Query(default=""),
@@ -216,12 +219,7 @@ async def login_deep_control(
     return_to = settings.generate_external_url(f"/loginDeepControl?{urlencode(kept)}")
 
     if not is_user(auth_subject):
-        return RedirectResponse(
-            settings.generate_frontend_url(
-                f"/login?return_to={quote(return_to, safe='')}"
-            ),
-            303,
-        )
+        return RedirectResponse(sign_in_url(request, return_to), 303)
 
     if await _needs_a_plan(
         session, auth_subject.subject, checkout_session_id=checkout_session_id
@@ -263,7 +261,9 @@ async def login_deep_control(
     )
 
 
-@router.post("/loginDeepControl/switch", name="desktop:deep_control_switch")
+@router.post(
+    "/loginDeepControl/switch", name="desktop:deep_control_switch", response_model=None
+)
 async def switch_deep_control(
     request: Request,
     challenge: str = Form(default=""),
