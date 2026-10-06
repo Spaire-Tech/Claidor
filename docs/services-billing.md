@@ -125,6 +125,22 @@ was; the public name and statement descriptor are what a person sees.
    to `/billing?plan=standard&return_to=<this page>`; the checkout returns
    there with `checkout_session_id`, the page copies it in, and asks. So
    nobody is signed in to the app without a card on file.
+6. **The window's access cover**, for a person already signed in whose
+   plan lapsed, was cancelled, or who signed in before billing was
+   required. The window asks `GetSandAccessStatus` once at sign-in
+   (`server/simeon/sand/dashboard.py`): payment required, with "Start a
+   Simeon trial" for a person who never had one and "Check Access" for
+   one who did. It shows its cover the moment `EnsureSandBox` refuses the
+   box with `permission_denied` (`box_broker.require_a_plan`), the way the
+   upstream app paywalls. The cover's button reads `const pft`; the logo
+   replacement in `desktop/scripts/lib/router-renderer-patch.mjs` rewrites
+   that constant to `https://app.simeonlabs.com/billing?plan=standard`
+   before the brand pass, so the brand phrase that names the raw
+   onboarding URL does not retarget it. The window keeps
+   asking for its box; once the plan is on Stripe the next ask succeeds
+   and the cover goes, with nothing to restart or sign in to again. Metered
+   calls get the same answer meanwhile: `402`, code `40200`, naming the
+   billing page.
 
 ## 4. How the app's allowance follows the plan
 
@@ -222,6 +238,9 @@ and the Customer Portal configuration by hand (section 2). The migration
   ended at once. **`plans.trial.card_unreadable`**: the card could not be
   read, so the check passed the person.
 - **`plans.trial.cancelled`**: the app's Cancel trial button worked.
+- **`sand.box.ensure.no_plan`**: the window asked for its box without a
+  plan and was shown the cover; one line per ask, so a person stuck on
+  the cover shows up as a run of them.
 - **`plans.report_usage.done`**: the five-minute report, with how many
   credit and box events were sent and how many people were skipped.
   **`plans.usage.credits_not_sent`** and **`plans.usage.box_not_sent`**:
@@ -241,20 +260,20 @@ and the Customer Portal configuration by hand (section 2). The migration
   is missing is a metered price on each product, a cap per person, and the
   allowance letting a metered call through once the week's credits are
   used.
-- **The renderer's paywall cover.** The cover's button reads `const pft`.
+- **The access cover on a Mac.** The cover's button reads `const pft`.
   The logo replacement in `desktop/scripts/lib/router-renderer-patch.mjs`
   rewrites that constant to
-  `https://app.simeonlabs.com/billing?plan=standard`. The replacement runs
-  before the brand pass, and the committed renderer
-  (`clients/apps/web/public/app/assets/index-UbX-y3il.js`) already has the
-  raw onboarding URL gone and the two clicks as `s(pft)` and `e(pft)`,
-  with `pft` still `https://simeonlabs.com` until the next package. A brand
-  phrase that names the raw onboarding URL matches nothing after the logo
-  pass, so it cannot retarget the button. The Settings plan block is a div
+  `https://app.simeonlabs.com/billing?plan=standard`, and it runs before
+  the brand pass. The brand phrase that names the raw onboarding URL
+  therefore matches nothing and does not retarget the button. The committed
+  renderer (`clients/apps/web/public/app/assets/index-UbX-y3il.js`) already
+  has that URL gone and the two clicks as `s(pft)` and `e(pft)`, with
+  `pft` still `https://simeonlabs.com` until the next package. The refusal
+  that shows the cover has run in tests. The Settings plan block is a div
   the same patch adds to the usage panel; the preload fills it. Neither
-  has been seen in the packaged app on a Mac. Until that package ships,
-  Connect `GetSandAccessStatus` keeps answering GRANTED and the gate is the
-  sign-in page plus the proxy's 402.
+  the cover's new button nor that block has been seen in the packaged app.
+  Read the window's cover and its recovery after a checkout on a Mac
+  before relying on them.
 - **Teams**: an organisation with several members and pooled credits.
 - **Verified on a Mac**: nothing in this file has run in the packaged app
   against a Stripe test account yet. The server tests cover the catalogue,

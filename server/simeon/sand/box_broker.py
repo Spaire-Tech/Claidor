@@ -35,7 +35,9 @@ import structlog
 from fastapi import Depends, Request
 from fastapi.responses import JSONResponse
 
+from simeon.desktop.allowance import billing_url
 from simeon.desktop.auth import get_desktop_session
+from simeon.desktop.service import desktop
 from simeon.models import DesktopSession
 from simeon.openapi import APITag
 from simeon.postgres import AsyncSession, get_db_session
@@ -198,8 +200,25 @@ async def _still_starting(call: ConnectCall, error: BaseException) -> ConnectErr
 # --- the RPCs -----------------------------------------------------------------------
 
 
+async def require_a_plan(call: ConnectCall) -> None:
+    """With billing required and no plan, no box: `permission_denied`
+    with no hint header, which the Mac's host connector reads as access
+    denied (`box-host-connector.ts`), so the window shows its access
+    cover with the words `GetSandAccessStatus` gives and keeps asking
+    for the box; once the plan is on Stripe the next ask succeeds and
+    the cover goes, with nothing to restart (`docs/services-billing.md`)."""
+    allowance = await desktop.allowance(call.db, call.caller.user)
+    if allowance.none:
+        log.info("sand.box.ensure.no_plan", user=str(call.caller.user_id))
+        raise ConnectError(
+            "permission_denied",
+            f"No active plan. Choose one at {billing_url()}.",
+        )
+
+
 @service.unary("EnsureSandBox")
 async def ensure_sand_box(call: ConnectCall) -> dict[str, Any]:
+    await require_a_plan(call)
     try:
         box = await broker.ensure(call.db, call.caller)
     except (BoxHostError, BoxBrokerRefused) as error:
@@ -232,6 +251,7 @@ def _recreate_json(outcome: Any) -> dict[str, Any]:
 
 @service.unary("RecreateSandBox", auth="desktop-or-box")
 async def recreate_sand_box(call: ConnectCall) -> dict[str, Any]:
+    await require_a_plan(call)
     preserve = call.message.get("preserveData")
     force = call.message.get("force")
     try:
@@ -251,6 +271,7 @@ async def recreate_sand_box(call: ConnectCall) -> dict[str, Any]:
 
 @service.unary("ForceRecreateSandBox")
 async def force_recreate_sand_box(call: ConnectCall) -> dict[str, Any]:
+    await require_a_plan(call)
     try:
         outcome = await broker.recreate(
             call.db, call.caller, redis=call.redis, preserve_data=False, force=True

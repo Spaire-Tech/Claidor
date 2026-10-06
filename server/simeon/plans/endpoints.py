@@ -10,6 +10,7 @@ POST /v1/plans/sync          Copy in the subscription a checkout just made.
 from fastapi import Depends
 
 from simeon.auth.dependencies import WebUserRead, WebUserWrite
+from simeon.desktop.allowance import billing_exempt, billing_required
 from simeon.entitlements.schemas import Entitlements
 from simeon.entitlements.tiers import PAID_TIERS, TIER_NAMES, TierKey, get_definition
 from simeon.models import DesktopSubscription
@@ -62,18 +63,25 @@ def plan_list() -> PlanList:
 
 
 def current_subscription(
-    row: DesktopSubscription | None, stripe_customer_id: str | None
+    row: DesktopSubscription | None,
+    stripe_customer_id: str | None,
+    *,
+    free: bool = False,
 ) -> CurrentSubscription:
-    tier = TierKey.inactive
+    """`free` is a person who needs no plan (billing not required on this
+    server, or an exempt e-mail): `unmanaged` rather than `inactive`, so
+    the web app's gates leave them alone. A plan they bought anyway still
+    shows."""
+    tier = TierKey.unmanaged if free else TierKey.inactive
     if row is not None and row.billable and row.tier is not None:
         try:
             tier = TierKey(row.tier)
         except ValueError:
-            tier = TierKey.inactive
+            pass
     interval = row.billing_interval if row is not None else None
     return CurrentSubscription(
         tier=tier,
-        status=row.status if row is not None else "none",
+        status=row.status if row is not None else ("free" if free else "none"),
         billing_interval=interval if interval in ("month", "year") else None,  # type: ignore[arg-type]
         current_period_end=row.current_period_end if row is not None else None,
         trial_end=row.trial_end if row is not None and row.trialing else None,
@@ -103,7 +111,11 @@ async def get_subscription(
 ) -> CurrentSubscription:
     user = auth_subject.subject
     row = await plans_service.subscription_of(session, user)  # type: ignore[arg-type]
-    return current_subscription(row, user.stripe_customer_id)
+    return current_subscription(
+        row,
+        user.stripe_customer_id,
+        free=not billing_required() or billing_exempt(user),
+    )
 
 
 @router.post(
