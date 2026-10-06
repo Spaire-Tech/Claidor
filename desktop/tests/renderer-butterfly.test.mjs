@@ -1,14 +1,15 @@
 /**
- * The butterfly (6 October 2026, the founder): every agent's mark is
- * Simeon's logo filled in, with small dot eyes, and the spin's light trails
- * and sparks take the agent's own colours. The engine's animations are its
- * own and untouched.
+ * The butterfly (6 October 2026, the founder): every agent is a butterfly in
+ * its palette, with pale wings, a darker border, veins, a body and antennae,
+ * and no eyes; the window's mark engine keeps all of its motion, and the
+ * spin's light trails and sparks take the agent's own colours.
  *
  * Offline: the replacements apply once each to a source carrying every
- * anchor; the dot-eye rewrite turns pills into dots and leaves the closed and
- * round eyes; the colour helpers fall back and stay near the agent's hue; the
- * still copy (call banner, mentions) is the butterfly. With a pinned renderer
- * on disk: every anchor occurs in the chunk exactly once.
+ * anchor; the wings' outline is the same code the window runs; the details
+ * fade with the morph; the still renderer loses its eye holes and gains the
+ * details; the colour helpers fall back and stay near the agent's hue; the
+ * call banner's and the mentions' copies are the same drawing. With a pinned
+ * renderer on disk: every anchor occurs in the chunk exactly once.
  */
 import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
@@ -21,12 +22,14 @@ import { PINNED_RENDERER_SKIP, resolvePinnedRenderer } from "./lib/pinned-render
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const patchModule = pathToFileURL(path.join(repoRoot, "scripts/lib/router-renderer-patch.mjs")).href;
 
-test("the butterfly patch replaces the cloud's circles, rewrites the eyes and colours the spin's lights", async () => {
-  const { BUTTERFLY_REPLACEMENTS, BUTTERFLY_WINGS, patchOriginalButterfly } = await import(patchModule);
+test("the butterfly patch draws wings, lays the details over them, hides the eyes and colours the spin's lights", async () => {
+  const { BUTTERFLY_REPLACEMENTS, patchOriginalButterfly } = await import(patchModule);
   assert.deepEqual(BUTTERFLY_REPLACEMENTS.map(([label]) => label), [
     "mark-butterfly-shape",
-    "mark-dot-eyes-open",
-    "mark-dot-eyes-close",
+    "mark-wing-art",
+    "mark-wing-art-fade",
+    "still-mark-no-eyes",
+    "still-mark-wings",
     "spin-lights-helper",
     "spin-sparks-ink",
     "spin-sparks-colour",
@@ -34,43 +37,44 @@ test("the butterfly patch replaces the cloud's circles, rewrites the eyes and co
     "spin-trails-hue",
     "spin-trails-stops",
   ]);
-  const before = BUTTERFLY_REPLACEMENTS.map(([, anchor]) => anchor).join("\n");
-  const patched = patchOriginalButterfly(before);
-  // The key agents have stored stays; the geometry is four tapered wings and a body.
-  assert.match(patched, /cloud:Po\("Butterfly",YJt\(\[\[Re-56,Re-50,54\],/);
-  assert.equal(BUTTERFLY_WINGS.length, 9);
+  const patched = patchOriginalButterfly(BUTTERFLY_REPLACEMENTS.map(([, anchor]) => anchor).join("\n"));
+  // The key agents have stored stays; the geometry is the wings, sampled by the window's own Yse.
+  assert.match(patched, /cloud:Po\("Butterfly",Yse\(t=>\{const dx=Math\.cos\(t\)/);
   assert.ok(!patched.includes("[Re-62,Re+26,56]"), "the cloud's circles are gone");
-  assert.match(patched, /const u3=\(E=>\{/);
-  assert.ok(patched.includes("]]]]),HJt="), "the eye table's wrapper is closed");
-  assert.ok(patched.includes("function __simeonInk(g){"));
+  assert.match(patched, /p\.jsx\("g",\{className:"simeon-wing-art",style:\{"--wing-edge":/);
+  assert.ok(patched.includes('.split("@@").join(N)'), "each mark's details take its own ids");
+  assert.ok(patched.includes("o=Math.max(0,1-2.2*Jc).toFixed(3);w&&(w.style.opacity=o)"), "the details fade as the body morphs");
+  assert.ok(patched.includes('clipPath:`url(#${N})`,style:{display:"none"}'), "no eyes");
+  assert.ok(patched.indexOf('className:"simeon-wing-art"') < patched.indexOf('style:{display:"none"}'), "the details come before the hidden eye group, right after the body");
+  assert.match(patched, /ref:w=>\{const b=w\?\.previousElementSibling;b&&\(b\.style\.stroke=/);
+  assert.ok(patched.includes("m=o.path"), "the still mark cuts no eye holes");
+  assert.ok(patched.includes("W=__simeonWingStill(m,r?r.light.from:t,r?r.light.to:t)"));
+  assert.ok(patched.includes("function __simeonInk(g){") && patched.includes("function __simeonWingStill(o,f,t){"));
   assert.ok(!patched.includes("k1e[Math.random()*k1e.length|0]"), "no spark or trail picks from the fixed six colours");
   assert.ok(!patched.includes("hue:N+G*360/Math.max(E,1)"), "no trail is spread round the colour wheel");
-  assert.ok(patched.includes("${(j.sat??56).toFixed(0)}%"));
   assert.throws(() => patchOriginalButterfly(patched), /missing or ambiguous/);
 });
 
-test("pills become dots as wide as the pill; closed and round eyes stay", async () => {
-  const { DOT_EYES_SOURCE, EYE_SLITS, EYE_ROUND } = await import(patchModule);
-  const dotEyes = new Function(`return ${DOT_EYES_SOURCE}`)();
-  // A pill 60 long and 20 wide along x, centred on (100, 50), 48 points.
-  const pill = Array.from({ length: 48 }, (_, i) => {
-    const a = ((i + 0.5) / 48) * Math.PI * 2; // no point on the seam, so the pill is symmetric
-    const x = Math.cos(a) >= 0 ? 20 + 10 * Math.cos(a) : -20 + 10 * Math.cos(a);
-    return [100 + x, 50 + 10 * Math.sin(a)];
-  });
-  const table = Array.from({ length: 25 }, () => [pill, pill]);
-  const out = dotEyes(table);
-  assert.equal(out.length, 25);
-  const dot = out[0][0];
-  assert.equal(dot.length, 48, "the morph keeps its 48 points");
-  const cx = dot.reduce((s, p) => s + p[0], 0) / 48, cy = dot.reduce((s, p) => s + p[1], 0) / 48;
-  assert.ok(Math.abs(cx - 100) < 0.5 && Math.abs(cy - 50) < 0.5, "the dot sits where the pill was");
-  for (const [x, y] of dot) assert.ok(Math.abs(Math.hypot(x - cx, y - cy) - 10) < 0.05, "the dot's radius is half the pill's width");
-  for (const key of EYE_SLITS) {
-    const [k, m] = key.split(",").map(Number);
-    assert.equal(out[k][m], pill, `closed eye ${key} stays`);
-  }
-  for (const k of EYE_ROUND) assert.equal(out[k], table[k], `round expression ${k} stays`);
+test("the wings are a butterfly's: wider than tall, pinched at the body, the same outline the window samples", async () => {
+  const { butterflyReach, BUTTERFLY_OUTLINE, BUTTERFLY_REPLACEMENTS } = await import(patchModule);
+  const across = butterflyReach(0), up = butterflyReach(-Math.PI / 2), upperWing = butterflyReach(-Math.PI / 5);
+  assert.ok(across > 60 && upperWing > 100, "the forewings reach out and up");
+  assert.ok(up < 45, "the wings meet at the body, with a notch above it");
+  assert.equal(BUTTERFLY_OUTLINE.split("L").length, 200);
+  const engine = BUTTERFLY_REPLACEMENTS[0][2];
+  const sample = new Function("Yse", "Re", `return ${engine.slice(engine.indexOf("Yse("), engine.lastIndexOf(",{solid:"))}`)((f, n) => Array.from({ length: n }, (_, i) => f((i / n) * Math.PI * 2)), 114.2705);
+  const first = BUTTERFLY_OUTLINE.slice(1).split("L")[0].split(" ").map(Number);
+  assert.ok(Math.abs(sample[0][0] - first[0]) < 0.01 && Math.abs(sample[0][1] - first[1]) < 0.01, "the still copies draw the window's outline");
+});
+
+test("the still renderer's details take a palette's colours and one id per palette", async () => {
+  const { WING_STILL_SOURCE } = await import(patchModule);
+  const still = new Function(`${WING_STILL_SOURCE}return __simeonWingStill;`)();
+  const a = still("M0 0Z", "#ffd1a6", "#e56f8f"), b = still("M0 0Z", "#ffd1a6", "#e56f8f");
+  assert.equal(a.art, b.art, "the same palette draws the same markup");
+  assert.match(a.rim, /color-mix\(in oklab,color-mix\(in oklab,#ffd1a6,#e56f8f\) 60%,#10131c\)/);
+  assert.ok(a.art.includes('<clipPath id="simeon-wffd1a6e56f8f"><use href="#simeon-wffd1a6e56f8f-outline"/></clipPath>'));
+  assert.ok(!a.art.includes("%EDGE%") && !a.art.includes("@@"));
 });
 
 test("the lights fall back to Ocean off the page, and a spark stays near the agent's hue", async () => {
@@ -81,18 +85,20 @@ test("the lights fall back to Ocean off the page, and a spark stays near the age
   assert.equal(spark([[355, 70, 90]]), "hsl(355 70% 76%)", "a spark's lightness stays in the glowing range");
 });
 
-test("the call banner's and the mentions' still copy is the butterfly with dot eyes", async () => {
+test("the call banner's and the mentions' copies are the same butterfly, cropped to its own box", async () => {
   const markSource = await readFile(path.join(repoRoot, "source/shared/voice-call/agent-mark.ts"), "utf8");
   assert.ok(!markSource.includes("CLOUD_MARK_SVG"));
   const svg = JSON.parse(markSource.match(/export const AGENT_MARK_SVG = ("(?:[^"\\]|\\.)*");/)[1]);
-  assert.equal((svg.match(/var\(--eye,#fcfcfc\)/g) ?? []).length, 2, "two eyes");
-  const { AGENT_MENTION_VIEWBOX, agentMentionMarks, agentMentionsCss } = await import(patchModule);
-  assert.equal(AGENT_MENTION_VIEWBOX, "0 9 229 211");
-  const { outline } = agentMentionMarks(markSource);
-  const outlineSvg = Buffer.from(outline.split(",")[1], "base64").toString();
-  assert.ok(outlineSvg.includes(`viewBox="${AGENT_MENTION_VIEWBOX}"`));
-  assert.ok(svg.includes(outlineSvg.match(/<path d="([^"]+)"/)[1]), "the mask is the still copy's outline");
-  assert.match(agentMentionsCss(), /\.simeon-agent__mark\{display:inline-block;width:1\.14em;height:1\.05em;/);
+  const { butterflyMarkSvg, BUTTERFLY_OUTLINE, AGENT_MENTION_VIEWBOX, agentMentionsCss } = await import(patchModule);
+  assert.equal(svg, butterflyMarkSvg({ id: "MARKID", from: "var(--ink-from)", mid: "var(--ink-mid)", to: "var(--ink-to)" }), "agent-mark.ts holds the patch's drawing");
+  assert.ok(!svg.includes("--eye"), "no eyes");
+  const points = BUTTERFLY_OUTLINE.slice(1, -1).split("L").map((p) => p.split(" ").map(Number));
+  const [x, y, width, height] = AGENT_MENTION_VIEWBOX.split(" ").map(Number);
+  const rim = 1.1, feelerTop = 114.2705 - 80 - 2.6;
+  assert.ok(x <= Math.min(...points.map((p) => p[0])) - rim && x + width >= Math.max(...points.map((p) => p[0])) + rim, "the crop holds the wings across");
+  assert.ok(y <= feelerTop && y + height >= Math.max(...points.map((p) => p[1])) + rim, "the crop holds the antennae and the hindwings");
+  assert.ok(width - (Math.max(...points.map((p) => p[0])) - Math.min(...points.map((p) => p[0]))) < 6, "and little more");
+  assert.match(agentMentionsCss(), /\.simeon-agent__mark\{display:inline-block;width:1\.44em;height:1\.05em;/);
 });
 
 test("the apply pass runs the butterfly patch on the mark chunk and records it", async () => {
@@ -100,7 +106,7 @@ test("the apply pass runs the butterfly patch on the mark chunk and records it",
   assert.match(source, /const markPatched = patchOriginalButterfly\(patchOriginalSidebarDiscs\(/);
   assert.match(source, /if \(!BUTTERFLY_REPLACEMENTS\.every\(\(\[, before\]\) => markChunks\[0\]\.source\.includes\(before\)\)\) throw new Error/);
   assert.match(source, /\.\.\.SIDEBAR_DISCS_REPLACEMENTS, \.\.\.BUTTERFLY_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT\]\.map\(\(\[label\]\) => label\)/);
-  assert.match(source, /"pane-three-tabs", "mark-butterfly", "eyes-dots", "spin-lights-agent-colours"\]/);
+  assert.match(source, /"pane-three-tabs", "mark-butterfly", "mark-no-eyes", "spin-lights-agent-colours"\]/);
 });
 
 test("the pinned 0.18.0 renderer carries every butterfly anchor exactly once", async (t) => {

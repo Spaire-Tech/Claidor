@@ -95,7 +95,7 @@ test("the banner's mark uses the window's twelve palettes", async () => {
   assert.equal(mark.agentPalette("nope").id, "blue");
   const svg = mark.agentMarkSvg("call-a1");
   assert.equal(svg.includes("MARKID"), false);
-  assert.match(svg, /url\(&quot;#simeon-call-a1-ink&quot;\)/);
+  assert.match(svg, /url\(#simeon-call-a1-ink\)/);
 });
 
 test("Agent › Call <name> appears only when calls are on", async () => {

@@ -68,8 +68,8 @@ SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-widt
 MIC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>'
 CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>'
 # The phone hero: a still of the app, drawn by the page, telling the demo's opening (desktop/demo/scenario.ts):
-# Simeon's launch check. The faces (source/faces/agent-*.png) are the app's own butterfly, drawn from
-# desktop/source/shared/voice-call/agent-mark.ts in each agent's palette (6 October 2026).
+# Simeon's launch check. The faces (source/faces/agent-*.png) are the app's own butterfly, drawn by
+# butterflyMarkSvg (desktop/scripts/lib/router-renderer-patch.mjs) in each agent's palette (6 October 2026).
 # Name colours are the top colour of each agent's palette (desktop/source/shared/voice-call/agent-mark.ts).
 rail = "".join(f'<span class="sd-m-av{" sd-m-on" if i == 0 else ""}">{mface("agent-" + f)}</span>' for i, f in enumerate(["simeon"]))
 group = '<span class="sd-m-av sd-m-group">' + mface("agent-simeon") + mface("agent-scout") + mface("agent-iris") + '</span>'
