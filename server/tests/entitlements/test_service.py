@@ -97,7 +97,7 @@ class TestGetTier:
         _patch_platform_org_id(mocker, platform_org.id)
 
         product = await _seed_tier_product(
-            save_fixture, platform_org=platform_org, tier="starter", monthly_cents=4900
+            save_fixture, platform_org=platform_org, tier="standard", monthly_cents=4900
         )
         customer = await create_customer(
             save_fixture,
@@ -120,9 +120,13 @@ class TestGetTier:
     @pytest.mark.parametrize(
         ("tier_label", "expected", "monthly_cents"),
         [
-            ("pro", TierKey.starter, 4900),
-            ("studio", TierKey.studio, 12900),
-            ("scale", TierKey.scale, 29900),
+            ("standard", TierKey.standard, 2000),
+            ("pro", TierKey.pro, 6000),
+            ("max", TierKey.max, 20000),
+            # The creator-era keys resolve to the plan that replaced them.
+            ("starter", TierKey.standard, 2000),
+            ("studio", TierKey.pro, 6000),
+            ("scale", TierKey.max, 20000),
         ],
     )
     async def test_active_subscription_returns_product_tier(
@@ -172,7 +176,7 @@ class TestGetTier:
         _patch_platform_org_id(mocker, platform_org.id)
 
         product = await _seed_tier_product(
-            save_fixture, platform_org=platform_org, tier="starter", monthly_cents=4900
+            save_fixture, platform_org=platform_org, tier="standard", monthly_cents=4900
         )
         customer = await create_customer(
             save_fixture,
@@ -189,7 +193,7 @@ class TestGetTier:
 
         tier = await entitlements.get_tier(session, creator.id)
 
-        assert tier == TierKey.starter
+        assert tier == TierKey.standard
 
     async def test_past_due_subscription_keeps_tier(
         self,
@@ -205,7 +209,7 @@ class TestGetTier:
         _patch_platform_org_id(mocker, platform_org.id)
 
         product = await _seed_tier_product(
-            save_fixture, platform_org=platform_org, tier="studio", monthly_cents=12900
+            save_fixture, platform_org=platform_org, tier="pro", monthly_cents=12900
         )
         customer = await create_customer(
             save_fixture,
@@ -222,7 +226,7 @@ class TestGetTier:
 
         tier = await entitlements.get_tier(session, creator.id)
 
-        assert tier == TierKey.studio
+        assert tier == TierKey.pro
 
     async def test_unrecognized_tier_metadata_returns_inactive(
         self,
@@ -284,7 +288,7 @@ class TestGetForOrganization:
         _patch_platform_org_id(mocker, platform_org.id)
 
         product = await _seed_tier_product(
-            save_fixture, platform_org=platform_org, tier="starter", monthly_cents=4900
+            save_fixture, platform_org=platform_org, tier="standard", monthly_cents=4900
         )
         customer = await create_customer(
             save_fixture,
@@ -301,10 +305,10 @@ class TestGetForOrganization:
 
         result = await entitlements.get_for_organization(session, creator.id)
 
-        assert result.tier == TierKey.starter
+        assert result.tier == TierKey.standard
         assert result.transaction_fee.percent_basis_points == 700
         assert result.transaction_fee.fixed_cents == 30
-        assert result.monthly_price_cents == 4900
+        assert result.monthly_price_cents == 2000
         assert result.features.email_sequences_and_segments is True
         assert result.features.customer_wallet is False
         # Email is metered on list size only — sends and active sequences
@@ -336,8 +340,10 @@ class TestTierDefinitions:
     def test_studio_shape(self) -> None:
         from simeon.entitlements.tiers import get_definition
 
-        studio = get_definition(TierKey.studio)
-        assert studio.monthly_price_cents == 12900
+        studio = get_definition(TierKey.pro)
+        assert studio.monthly_price_cents == 6000
+        assert studio.weekly_credits == 2_500_000
+        assert studio.trial_credits == 1_000_000
         assert studio.transaction_fee.percent_basis_points == 500
         assert studio.transaction_fee.fixed_cents == 30
         assert studio.limits.active_email_sequences is None
@@ -350,8 +356,10 @@ class TestTierDefinitions:
     def test_starter_shape(self) -> None:
         from simeon.entitlements.tiers import get_definition
 
-        starter = get_definition(TierKey.starter)
-        assert starter.monthly_price_cents == 4900
+        starter = get_definition(TierKey.standard)
+        assert starter.monthly_price_cents == 2000
+        assert starter.weekly_credits == 750_000
+        assert starter.trial_credits == 1_000_000
         assert starter.transaction_fee.percent_basis_points == 700
         assert starter.transaction_fee.fixed_cents == 30
         assert starter.limits.active_email_sequences is None
@@ -369,6 +377,7 @@ class TestTierDefinitions:
         # unmanaged is the dev / self-host / platform-org fallback: unlimited.
         unmanaged = get_definition(TierKey.unmanaged)
         assert unmanaged.monthly_price_cents == 0
+        assert unmanaged.weekly_credits == 0
         assert unmanaged.features.audit_logs is True
 
     def test_inactive_is_restrictive(self) -> None:
@@ -385,8 +394,10 @@ class TestTierDefinitions:
     def test_scale_shape(self) -> None:
         from simeon.entitlements.tiers import get_definition
 
-        scale = get_definition(TierKey.scale)
-        assert scale.monthly_price_cents == 29900
+        scale = get_definition(TierKey.max)
+        assert scale.monthly_price_cents == 20000
+        assert scale.weekly_credits == 8_000_000
+        assert scale.trial_credits == 1_000_000
         assert scale.transaction_fee.percent_basis_points == 300
         assert scale.transaction_fee.fixed_cents == 30
         # Scale caps video at 200 hours; only Legacy is fully unlimited.

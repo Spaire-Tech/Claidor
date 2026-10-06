@@ -22,7 +22,7 @@ class TierPlan(Schema):
     """A subscribable tier plan, as exposed to creators in the upgrade UI."""
 
     tier: TierKey = Field(description="Tier identifier.")
-    name: str = Field(description="Display name, e.g. 'Simeon Starter'.")
+    name: str = Field(description="Display name, e.g. 'Simeon Standard'.")
     description: str | None = Field(description="Marketing description.")
     product_id: UUID | None = Field(
         description=(
@@ -55,6 +55,13 @@ class TierPlan(Schema):
     )
     currency: str = Field(default="usd", description="Currency code (lowercased).")
     trial_days: int | None = Field(description="Trial duration in days, if any.")
+    weekly_credits: int = Field(
+        default=0,
+        description="Credits included each week, Monday to Monday UTC.",
+    )
+    trial_credits: int = Field(
+        default=0, description="Credits the trial includes, once."
+    )
     transaction_fee: TransactionFee
     features: TierFeatures
     limits: TierLimits
@@ -116,7 +123,7 @@ class CurrentSimeonSubscription(Schema):
     is_default_trial: bool = Field(
         default=False,
         description=(
-            "True when the active subscription is the auto-created Starter "
+            "True when the active subscription is the auto-created Standard "
             "trial from the org-creation hook (i.e. `managed_by=trial`). "
             "Becomes False once the creator goes through upgrade-checkout "
             "and a payment method is captured. The onboarding review "
@@ -129,7 +136,7 @@ class CurrentSimeonSubscription(Schema):
 
 class UpgradeCheckoutCreate(Schema):
     tier: TierKey = Field(
-        description="Target tier to upgrade to (must be Starter, Studio, or Scale)."
+        description="Target plan to upgrade to (must be standard, pro, or max)."
     )
     billing_interval: BillingInterval = Field(
         default="month",

@@ -40,6 +40,14 @@ from simeon.models import (
 )
 from simeon.postgres import AsyncSession
 
+from .allowance import (
+    Allowance,
+    billing_required,
+    billing_url,
+    month_bounds,
+    resolve_allowance,
+    week_bounds,
+)
 from .memory_merge import is_accepted_memory_name, merge_memory_file
 from .pricing import (
     MODELS,
@@ -77,6 +85,7 @@ UNAUTHENTICATED = 40100
 #: A memory sync Simeon will not carry out: a name it does not keep, or
 #: more text than it accepts.
 MEMORY_REFUSED = 40001
+
 
 #: The memory is the assistant's own notes, a few pages of text. These
 #: caps are far above anything honest and well below anything that would
@@ -181,17 +190,10 @@ def offered_models() -> tuple[DesktopModel, ...]:
 
 
 # --- credits --------------------------------------------------------------------
-
-
-def month_bounds(now: datetime | None = None) -> tuple[datetime, datetime]:
-    """The calendar month, in UTC, the allowance is counted over."""
-    moment = now or utc_now()
-    start = moment.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    if start.month == 12:
-        end = start.replace(year=start.year + 1, month=1)
-    else:
-        end = start.replace(month=start.month + 1)
-    return start, end
+#
+# The window and the limit are the person's allowance, resolved from their
+# plan in `allowance.py`; `month_bounds` and `week_bounds` live there and are
+# re-exported here for the callers that import them from the service.
 
 
 # --- the shared memory ----------------------------------------------------------
@@ -759,10 +761,27 @@ class DesktopService:
 
     # credits
 
+    async def allowance(
+        self, session: AsyncSession, user: User, *, now: datetime | None = None
+    ) -> Allowance:
+        """What this person may spend now, and over which window
+        (`simeon.desktop.allowance`)."""
+        return await resolve_allowance(session, user, now=now)
+
     async def credits_used(
-        self, session: AsyncSession, user_id: UUID, *, now: datetime | None = None
+        self,
+        session: AsyncSession,
+        user_id: UUID,
+        *,
+        now: datetime | None = None,
+        period: tuple[datetime, datetime] | None = None,
     ) -> int:
-        start, end = month_bounds(now)
+        """Credits spent in `period`. Without one: the free month when no
+        billing is configured, else the plan week. A caller holding an
+        `Allowance` passes its own window, which for a trial is the trial."""
+        if period is None:
+            period = week_bounds(now) if billing_required() else month_bounds(now)
+        start, end = period
         return await DesktopUsageRepository.from_session(session).credits_between(
             user_id, start, end
         )
@@ -780,7 +799,7 @@ class DesktopService:
     ) -> bool:
         """True when the last sliding hour already holds the hourly
         budget. A runaway loop is stopped within the hour it starts,
-        whatever the month still allows."""
+        whatever the week still allows."""
         used = await self.credits_used_last_hour(session, user.id, now=now)
         return used >= settings.DESKTOP_HOURLY_CREDITS
 
@@ -788,27 +807,50 @@ class DesktopService:
         self, session: AsyncSession, user: User, *, now: datetime | None = None
     ) -> dict[str, Any]:
         """The `quota` object the app normalises (`authQuota.ts`): a
-        limit, what is used, what remains, a plan name and a status."""
-        start, end = month_bounds(now)
-        limit = settings.DESKTOP_MONTHLY_CREDITS
-        used = await self.credits_used(session, user.id, now=now)
+        limit, what is used, what remains, a plan name and a status.
+
+        The first eight keys are what every shipped app reads
+        (`SimeonQuotaRow` in `desktop/source/electron-main/account/account-profile.ts`);
+        they keep their names and meaning. The keys after `periodEnd` are
+        what the app's usage summary can show once it reads them: the
+        trial's end and whether it can still be cancelled, the on-demand
+        spend (none yet), and where the person goes to change plan.
+        An app that does not know a key ignores it."""
+        allowance = await self.allowance(session, user, now=now)
+        limit = allowance.credits_limit
+        used = await self.credits_used(
+            session,
+            user.id,
+            now=now,
+            period=(allowance.period_start, allowance.period_end),
+        )
         return {
-            "planName": "Free",
-            "subscriptionStatus": "free",
+            "planName": allowance.plan_name,
+            "subscriptionStatus": allowance.status,
             "creditsLimit": limit,
             "creditsUsed": used,
             "creditsRemaining": max(0, limit - used),
-            "hasPaidCredits": False,
+            "hasPaidCredits": allowance.paid,
             "mediaGenerationEntitled": False,
             "shareEntitled": False,
             "deploymentEntitled": False,
-            "periodStart": start.isoformat(),
-            "periodEnd": end.isoformat(),
+            "periodStart": allowance.period_start.isoformat(),
+            "periodEnd": allowance.period_end.isoformat(),
+            "tier": allowance.tier,
+            "trialEndsAt": (
+                allowance.trial_end.isoformat()
+                if allowance.trial_end is not None
+                else None
+            ),
+            "trialCancelable": allowance.trial_cancelable,
+            "onDemand": None,
+            "upgradeUrl": None if allowance.free else billing_url(),
         }
 
     async def profile_summary(
         self, session: AsyncSession, user: User
     ) -> dict[str, Any]:
+        allowance = await self.allowance(session, user)
         quota = await self.quota(session, user)
         payload = self.user_payload(user)
         return {
@@ -818,18 +860,32 @@ class DesktopService:
             "totalCreditsRemaining": quota["creditsRemaining"],
             "creditItems": [
                 {
-                    "type": "free",
-                    "label": "Monthly credits",
-                    "labelEn": "Monthly credits",
+                    "type": "free" if allowance.free else "plan",
+                    "label": allowance.label,
+                    "labelEn": allowance.label,
                     "creditsRemaining": quota["creditsRemaining"],
                     "expiresAt": quota["periodEnd"],
                 }
             ],
         }
 
-    async def exhausted(self, session: AsyncSession, user: User) -> bool:
-        used = await self.credits_used(session, user.id)
-        return used >= settings.DESKTOP_MONTHLY_CREDITS
+    async def exhausted(
+        self,
+        session: AsyncSession,
+        user: User,
+        *,
+        allowance: Allowance | None = None,
+    ) -> bool:
+        """True when the window's credits are spent. With no plan the
+        limit is 0, so this is true before the first call."""
+        if allowance is None:
+            allowance = await self.allowance(session, user)
+        used = await self.credits_used(
+            session, user.id, period=(allowance.period_start, allowance.period_end)
+        )
+        return used >= allowance.credits_limit
+
+    # the shared memory
 
     # the shared memory
 

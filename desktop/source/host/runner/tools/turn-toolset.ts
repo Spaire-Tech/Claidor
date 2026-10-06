@@ -1333,6 +1333,8 @@ export interface TurnToolsetHost {
   readonly isBoxScopedSubagent: boolean;
   readonly isComputerUseSubagent: boolean;
   readonly isBrowserUseSubagent: boolean;
+  /** A watchVideo / videoReview child: no tools at all (the video is in its message). */
+  readonly isVideoSubagent?: boolean;
   readonly isSystemPromptOverridden: boolean;
   readonly remoteBoxHasDesktop: boolean;
   readonly localToolPermission?: LocalToolPermission;
@@ -1375,11 +1377,16 @@ export function buildTurnTools(
   turn: TurnToolsetInput,
   props?: TurnToolsetBuildProps,
 ): ToolSetHandle {
-  if (
-    host.isSubagentRunner
-    && (host.isComputerUseSubagent || host.isBrowserUseSubagent) === false
-    && turn.subagentConfigs === undefined
-  ) {
+  // A video child (watchVideo, videoReview) works with no tools: the video
+  // is in its first message and its prompt tells it not to reach for one.
+  // Until 6 October 2026 this exit also caught the executor child, which
+  // is offered as "your full work toolset" (sand-multitask.ts) and ran with
+  // nothing: the founder's box log showed one answering a job search with
+  // "I can't verify live listings from the information available" after
+  // 1,235 reasoning tokens, never having had WebSearch to try. The
+  // executor now falls through to the list below, which already keeps the
+  // parent-only tools (Task, SendMessage, agent management) from any child.
+  if (host.isSubagentRunner && host.isVideoSubagent === true) {
     return fencedToolSet([], host.spotlightEnabled());
   }
 

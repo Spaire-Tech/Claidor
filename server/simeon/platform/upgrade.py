@@ -19,7 +19,7 @@ from simeon.auth.scope import Scope
 from simeon.checkout.schemas import CheckoutProductCreate
 from simeon.checkout.service import checkout as checkout_service
 from simeon.customer.repository import CustomerRepository
-from simeon.entitlements.tiers import TierKey
+from simeon.entitlements.tiers import PAID_TIERS, TierKey
 from simeon.exceptions import PolarError
 from simeon.kit.trial import TrialInterval
 from simeon.kit.utils import utc_now
@@ -38,7 +38,7 @@ from simeon.postgres import AsyncSession
 log: structlog.stdlib.BoundLogger = structlog.get_logger()
 
 
-_UPGRADEABLE_TIERS = (TierKey.starter, TierKey.studio, TierKey.scale)
+_UPGRADEABLE_TIERS = PAID_TIERS
 
 
 class PlatformUpgradeError(PolarError): ...
@@ -48,7 +48,7 @@ class TierNotUpgradeable(PlatformUpgradeError):
     def __init__(self, tier: TierKey) -> None:
         super().__init__(
             f"Tier '{tier.value}' is not a valid upgrade target. "
-            "Use 'starter', 'studio', or 'scale'.",
+            "Use 'standard', 'pro', or 'max'.",
             400,
         )
 
@@ -338,9 +338,10 @@ class PlatformUpgradeService:
                 # different one both route through switch-plan, not here.
                 raise AlreadyOnPaidTier()
         else:
-            # No active plan. A FIRST-TIME creator (never trialed) gets the
-            # card-required 14-day trial: the checkout captures their card
-            # via a setup intent and billing starts at day 14. A creator who
+            # No active plan. A FIRST-TIME person (never trialed) gets the
+            # card-required trial (7 days, from the product): the checkout
+            # captures their card via a setup intent and billing starts
+            # when the trial ends. A person who
             # has ALREADY used their trial (churned / lapsed) is charged
             # immediately — no second free trial, which closes the
             # cancel-then-re-subscribe-for-a-fresh-trial abuse loop.
@@ -363,16 +364,16 @@ class PlatformUpgradeService:
             checkout_payload["allow_trial"] = False
         elif carryover_trial_end is not None and carryover_trial_end > now:
             # Grant only the days remaining on the original trial, not a
-            # fresh 14. Round up to whole days; clamp to the schema's 1..1000.
+            # fresh 7. Round up to whole days; clamp to the schema's 1..1000.
             remaining_days = ceil((carryover_trial_end - now) / timedelta(days=1))
             remaining_days = max(1, min(remaining_days, 1000))
             checkout_payload["trial_interval"] = TrialInterval.day
             checkout_payload["trial_interval_count"] = remaining_days
         elif grant_fresh_trial:
-            # First-time: leave the trial config to the product (its 14-day
+            # First-time: leave the trial config to the product (its 7-day
             # trial). allow_trial defaults True and we don't override the
             # interval, so the checkout does a card-capturing setup intent
-            # (no immediate charge) and starts the 14-day trial.
+            # (no immediate charge) and starts the trial.
             pass
         else:
             # Churned / already trialed: no trial, bill immediately.

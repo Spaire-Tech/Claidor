@@ -16,6 +16,7 @@ from urllib.parse import parse_qs, urlparse
 
 import httpx
 import pytest
+from pytest_mock import MockerFixture
 
 from simeon.config import settings
 from simeon.desktop.repository import DesktopAuthCodeRepository
@@ -33,6 +34,8 @@ from simeon.kit.utils import utc_now
 from simeon.models import User
 from simeon.models.maty import MatyJob, MatyJobKind, MatyJobStatus
 from simeon.postgres import AsyncSession
+from tests.desktop.test_allowance import _person_with_plan, billing_on
+from tests.fixtures.database import SaveFixture
 
 
 def _login_metadata() -> tuple[str, str, str]:
@@ -75,7 +78,7 @@ class TestTheChallenge:
 
 @pytest.mark.asyncio
 class TestLoginDeepControl:
-    async def test_anonymous_is_sent_to_the_web_login_and_asked_back(
+    async def test_anonymous_is_sent_to_the_api_s_sign_in_and_asked_back(
         self, client: httpx.AsyncClient
     ) -> None:
         _, challenge, uuid = _login_metadata()
@@ -91,7 +94,8 @@ class TestLoginDeepControl:
         )
         assert response.status_code == 303
         location = urlparse(response.headers["location"])
-        assert location.path == "/login"
+        # The API's own Google sign-in: no web app in the way.
+        assert location.path.endswith("/integrations/google/login/authorize")
         return_to = parse_qs(location.query)["return_to"][0]
         assert return_to.startswith(
             settings.generate_external_url("/loginDeepControl?")
@@ -114,6 +118,168 @@ class TestLoginDeepControl:
         assert "text/html" in response.headers["content-type"]
         assert user.email in response.text
         assert 'method="post"' in response.text
+
+    @pytest.mark.auth
+    async def test_with_billing_on_a_person_without_a_plan_is_sent_to_billing(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        save_fixture: SaveFixture,
+        mocker: MockerFixture,
+    ) -> None:
+        """Nobody is signed in to the app without a card on file: with
+        billing required and no plan, the GET sends the browser to the
+        billing page with this very link as the way back, and confirms
+        nothing."""
+        billing_on(mocker)
+        verifier, challenge, uuid = _login_metadata()
+        response = await client.get(
+            "/loginDeepControl", params={"challenge": challenge, "uuid": uuid}
+        )
+        assert response.status_code == 303
+        location = urlparse(response.headers["location"])
+        assert location.path == "/billing"
+        query = parse_qs(location.query)
+        assert query["plan"] == ["standard"]
+        back = query["return_to"][0]
+        assert back.startswith(settings.generate_external_url("/loginDeepControl?"))
+        assert f"uuid={uuid}" in back
+        # Nothing was confirmed: the app's poll still waits.
+        poll = await client.post(
+            "/auth/poll", json={"uuid": uuid, "verifier": verifier}
+        )
+        assert poll.status_code == 404
+
+    @pytest.mark.auth
+    async def test_with_a_plan_the_person_is_asked_as_before(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        save_fixture: SaveFixture,
+        mocker: MockerFixture,
+    ) -> None:
+        await _person_with_plan(
+            save_fixture,
+            mocker,
+            user,
+            tier="standard",
+            status="trialing",
+            trial_days_left=7,
+        )
+        _, challenge, uuid = _login_metadata()
+        response = await client.get(
+            "/loginDeepControl", params={"challenge": challenge, "uuid": uuid}
+        )
+        assert response.status_code == 200
+        assert 'method="post"' in response.text
+
+    @pytest.mark.auth
+    async def test_a_checkout_that_just_came_back_opens_the_gate(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        """Stripe sends the browser back here with `checkout_session_id`
+        before its webhook has landed. The page copies the checkout's
+        subscription in and asks, instead of bouncing to billing again."""
+        from tests.plans.test_service import stripe_subscription
+
+        billing_on(mocker)
+        subscription = stripe_subscription(user, status="trialing")
+        checkout = {"client_reference_id": str(user.id), "subscription": subscription}
+        mocker.patch(
+            "simeon.plans.service.stripe_billing.retrieve_checkout_session",
+            return_value=checkout,
+        )
+        mocker.patch("simeon.plans.service.settings.STRIPE_SECRET_KEY", "sk_test_x")
+        _, challenge, uuid = _login_metadata()
+        response = await client.get(
+            "/loginDeepControl",
+            params={
+                "challenge": challenge,
+                "uuid": uuid,
+                "checkout_session_id": "cs_1",
+            },
+        )
+        assert response.status_code == 200, response.headers.get("location")
+        assert 'method="post"' in response.text
+
+    @pytest.mark.auth
+    async def test_someone_else_s_checkout_opens_nothing(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        billing_on(mocker)
+        mocker.patch(
+            "simeon.plans.service.stripe_billing.retrieve_checkout_session",
+            return_value={"client_reference_id": str(uuid_module.uuid4())},
+        )
+        mocker.patch("simeon.plans.service.settings.STRIPE_SECRET_KEY", "sk_test_x")
+        _, challenge, uuid = _login_metadata()
+        response = await client.get(
+            "/loginDeepControl",
+            params={
+                "challenge": challenge,
+                "uuid": uuid,
+                "checkout_session_id": "cs_1",
+            },
+        )
+        assert response.status_code == 303
+        assert urlparse(response.headers["location"]).path == "/billing"
+
+    @pytest.mark.auth
+    async def test_a_signed_in_person_can_say_it_is_not_them(
+        self, client: httpx.AsyncClient, user: User
+    ) -> None:
+        """The browser keeps the website's sign-in long after the app's,
+        so the page offers a way past the account it shows: a POST that
+        ends the browser's session and goes to the web login, with the
+        app's own link as the way back. Nothing is confirmed."""
+        verifier, challenge, uuid = _login_metadata()
+        page = await client.get(
+            "/loginDeepControl", params={"challenge": challenge, "uuid": uuid}
+        )
+        assert 'action="/loginDeepControl/switch"' in page.text
+        response = await client.post(
+            "/loginDeepControl/switch",
+            data={
+                "uuid": uuid,
+                "challenge": challenge,
+                "mode": "login",
+                "redirectTarget": "simeon",
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+        location = urlparse(response.headers["location"])
+        assert location.path == "/login"
+        back = parse_qs(location.query)["return_to"][0]
+        assert back.startswith(settings.generate_external_url("/loginDeepControl?"))
+        assert f"uuid={uuid}" in back
+        assert "redirectTarget=simeon" in back
+        cookie = response.headers["set-cookie"]
+        assert cookie.startswith(f"{settings.USER_SESSION_COOKIE_KEY}=")
+        assert "expires=" in cookie.lower()
+        poll = await client.post(
+            "/auth/poll", json={"uuid": uuid, "verifier": verifier}
+        )
+        assert poll.status_code == 404
+
+    async def test_the_switch_refuses_a_link_without_the_pair(
+        self, client: httpx.AsyncClient
+    ) -> None:
+        response = await client.post(
+            "/loginDeepControl/switch", data={"uuid": "x"}, follow_redirects=False
+        )
+        assert response.status_code == 200
+        assert "could not be completed" in response.text
 
     @pytest.mark.auth
     async def test_a_link_without_the_pair_is_refused_outright(

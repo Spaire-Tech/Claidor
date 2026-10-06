@@ -48,7 +48,7 @@ async def _trialing_creator(
         recurring_interval=SubscriptionRecurringInterval.month,
         prices=prices,
     )
-    product.user_metadata = {"tier": "starter"}
+    product.user_metadata = {"tier": "standard"}
     await save_fixture(product)
     creator = await create_organization(save_fixture)
     customer = await create_customer(

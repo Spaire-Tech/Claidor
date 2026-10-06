@@ -130,6 +130,48 @@ test("usage comes from /desktop/api/user/quota, in the shapes the header and Set
   }
 });
 
+test("a plan's quota lights the trial, the on-demand bar and the upgrade button in the summary", async () => {
+  const loaded = await loadModule("source/electron-main/account/account-profile.ts", "account-profile");
+  try {
+    const { usageSummaryFromSimeonQuota, upgradeCtaOfQuota } = loaded.module;
+    const trial = {
+      planName: "Standard", subscriptionStatus: "trialing", tier: "standard",
+      creditsLimit: 1_000_000, creditsUsed: 250_000, creditsRemaining: 750_000,
+      periodStart: "2026-10-05T10:00:00+00:00", periodEnd: "2026-10-12T10:00:00+00:00",
+      trialEndsAt: "2026-10-12T10:00:00+00:00", trialCancelable: true, onDemand: null,
+      upgradeUrl: "https://app.simeonlabs.com/billing",
+    };
+    const summary = usageSummaryFromSimeonQuota(trial);
+    assert.equal(summary.isSandTrial, true);
+    assert.equal(summary.canCancelSandTrial, true);
+    assert.equal(summary.hasEndedSandTrial, false);
+    assert.equal(summary.sandUsagePercent, 25);
+    assert.deepEqual(summary.upgradeCta, { label: "Choose a plan", disabled: false, action: { kind: "open-url", url: "https://app.simeonlabs.com/billing" } });
+
+    // A trial that ended with no plan: the server says `none`, limit 0.
+    const lapsed = { ...trial, subscriptionStatus: "none", planName: "No plan", tier: null, creditsLimit: 0, creditsUsed: 0, creditsRemaining: 0, trialEndsAt: "2020-01-01T00:00:00+00:00", trialCancelable: false };
+    const ended = usageSummaryFromSimeonQuota(lapsed);
+    assert.equal(ended.isSandTrial, false);
+    assert.equal(ended.hasEndedSandTrial, true);
+    assert.equal(ended.hasAvailableUsage, false);
+    assert.equal(ended.hasNonZeroIncludedLimit, false);
+
+    // On a plan: the week, "Get more usage", and on-demand only when the server meters it.
+    const plan = { ...trial, subscriptionStatus: "active", creditsLimit: 750_000, trialEndsAt: null, trialCancelable: false, onDemand: { usedCents: 120, limitCents: 2000 } };
+    const active = usageSummaryFromSimeonQuota(plan);
+    assert.equal(active.isSandTrial, false);
+    assert.equal(active.canCancelSandTrial, false);
+    assert.deepEqual(active.onDemand, { usedCents: 120, limitCents: 2000, resetTimestampMs: Date.parse("2026-10-12T10:00:00+00:00") });
+    assert.equal(active.upgradeCta.label, "Get more usage");
+
+    // Only http(s) may be opened, and no URL means no button.
+    assert.equal(upgradeCtaOfQuota({ upgradeUrl: "file:///etc/passwd" }), null);
+    assert.equal(upgradeCtaOfQuota({ planName: "Free", upgradeUrl: null }), null);
+  } finally {
+    await loaded.dispose();
+  }
+});
+
 test("sand_usage_page is on by Simeon's default, over the bundled table, under the environment and a local override", async () => {
   const loaded = await loadModule("source/shared/node/experiments/simeon-gate-defaults.ts", "simeon-gate-defaults");
   try {

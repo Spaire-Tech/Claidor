@@ -1,7 +1,14 @@
 """Static tier definitions — the source of truth for what each tier includes.
 
-These mirror the customer-facing PRICING.md table. When updating prices or
-limits here, update PRICING.md in the same PR.
+Simeon sells three plans to the person who signs in from the Mac: Standard,
+Pro and Max (`docs/services-billing.md`). What the app meters is credits
+(`simeon.desktop.pricing`), and each tier says how many a week it includes
+and how many a trial gets. The creator-era fields (transaction fee, email
+and storage limits, feature flags) stay: the inherited shop code reads
+them, and a person's organisation is still a seller in that code.
+
+When updating prices or credits here, update `scripts/seed_platform_products.py`
+and the pricing on `sites/simeonlabs.com` in the same PR.
 """
 
 from dataclasses import dataclass
@@ -11,9 +18,9 @@ from simeon.config import settings
 
 
 class TierKey(StrEnum):
-    starter = "starter"
-    studio = "studio"
-    scale = "scale"
+    standard = "standard"
+    pro = "pro"
+    max = "max"
     # `unmanaged`: platform billing is not in play at all — the platform org
     # is unconfigured (single-tenant / self-hosted / dev), or the org being
     # resolved IS the platform org itself. Unlimited, no enforcement. This
@@ -29,15 +36,31 @@ class TierKey(StrEnum):
     inactive = "inactive"
 
 
-# The Starter tier originally shipped under the key "pro". Existing platform
-# product/subscription metadata, older API clients, and historical analytics
-# may still carry "pro"; normalize it to the canonical "starter" before any
-# enum resolution so no existing record silently resolves wrong.
-_TIER_ALIASES: dict[str, str] = {"pro": "starter"}
+# The plans shipped first as the creator tiers Starter, Studio and Scale
+# (and Starter, before that, as "pro"). Product and subscription rows seeded
+# under those keys resolve to the plan that took their place, so a staging
+# database re-seeds in place and nothing stored resolves wrong. The old
+# "pro" key is NOT aliased: it now names the Pro plan, and no production
+# row ever carried it (Simeon sold nothing through the shop before the
+# plans; `docs/services-billing.md`).
+_TIER_ALIASES: dict[str, str] = {
+    "starter": "standard",
+    "studio": "pro",
+    "scale": "max",
+}
 
-# Tiers a creator actively pays for. Used by fee-sync and access checks to
+# Tiers a person actively pays for. Used by fee-sync and access checks to
 # tell a "real plan" apart from the unmanaged/inactive fallbacks.
-PAID_TIERS: tuple[TierKey, ...] = (TierKey.starter, TierKey.studio, TierKey.scale)
+PAID_TIERS: tuple[TierKey, ...] = (TierKey.standard, TierKey.pro, TierKey.max)
+
+#: The plan's name as the app, the web app and the site show it.
+TIER_NAMES: dict[TierKey, str] = {
+    TierKey.standard: "Standard",
+    TierKey.pro: "Pro",
+    TierKey.max: "Max",
+    TierKey.unmanaged: "Free",
+    TierKey.inactive: "No plan",
+}
 
 
 def normalize_tier_value(value: str) -> str:
@@ -118,6 +141,15 @@ class TierEntitlements:
     # The monthly fee Simeon charges for this tier itself (informational —
     # the actual billing is driven by the platform-org subscription).
     monthly_price_cents: int
+    # Credits included each week, Monday to Monday UTC, while the plan is
+    # active or past due (`simeon.desktop.service.DesktopService.allowance`).
+    # One credit is one input token on the middle model at $3 per million
+    # (`simeon.desktop.pricing.CREDIT_USD_PER_MILLION_INPUT`). 0 on the
+    # fallbacks: `unmanaged` meters against `DESKTOP_MONTHLY_CREDITS`
+    # instead, and `inactive` refuses every call.
+    weekly_credits: int
+    # Credits for the whole trial, once, while the subscription is trialing.
+    trial_credits: int
     # Soft overage grace above the limit, expressed as a percent. Legacy
     # uses 0% (no enforcement anyway). Starter/Studio/Scale use 10% so
     # creators are not surprised by abrupt blocks when they slightly
@@ -165,6 +197,8 @@ _UNMANAGED = TierEntitlements(
     ),
     rate_limit_group="default",
     monthly_price_cents=0,
+    weekly_credits=0,
+    trial_credits=0,
     overage_grace_pct=0,
 )
 
@@ -206,12 +240,23 @@ _INACTIVE = TierEntitlements(
     ),
     rate_limit_group="default",
     monthly_price_cents=0,
+    weekly_credits=0,
+    trial_credits=0,
     overage_grace_pct=0,
 )
 
 
-_STARTER = TierEntitlements(
-    tier=TierKey.starter,
+#: What every plan's trial includes: 1,000,000 credits, once, for the
+#: seven days. About ten tasks; a shade more than Standard's week, so the
+#: trial feels like the plan it turns into.
+TRIAL_CREDITS = 1_000_000
+
+# Standard, $20 a month: 750,000 credits a week. The same 3,000,000 a
+# month the app has always had, so nothing changes for anyone already
+# using it. Model cost at list is about half the price; the rest pays
+# for the cloud computer, search, images, voice and card fees.
+_STANDARD = TierEntitlements(
+    tier=TierKey.standard,
     # Steep fee spine (7% / 5% / 3%, all + $0.30) so moving up a tier buys a
     # real rate cut, and the entry rate covers the usage-driven serving cost
     # (Mux/AI/email/storage) that a transaction fee on a low-GMV creator
@@ -266,13 +311,17 @@ _STARTER = TierEntitlements(
         audit_logs=False,
     ),
     rate_limit_group="elevated",
-    monthly_price_cents=4900,
+    monthly_price_cents=2000,
+    weekly_credits=750_000,
+    trial_credits=TRIAL_CREDITS,
     overage_grace_pct=10,
 )
 
 
-_STUDIO = TierEntitlements(
-    tier=TierKey.studio,
+# Pro, $60 a month: 2,500,000 credits a week, three times Standard. Room
+# for routines that run every day.
+_PRO = TierEntitlements(
+    tier=TierKey.pro,
     transaction_fee=TransactionFee(percent_basis_points=500, fixed_cents=30),
     limits=TierLimits(
         # Studio is the "real business" tier — generous on courses /
@@ -290,15 +339,15 @@ _STUDIO = TierEntitlements(
         drip_scheduling=True,
         email_sequences_and_segments=True,
         email_ab_testing=True,
-        # stackable_discounts: roadmap — see Pro definition.
+        # stackable_discounts: roadmap — see Standard definition.
         stackable_discounts=False,
         custom_email_sender_domain=True,
         seat_based_product_pricing=True,
-        # cohort_analytics: roadmap — see Pro definition.
+        # cohort_analytics: roadmap — see Standard definition.
         cohort_analytics=False,
         custom_pricing_negotiation=False,
         customer_wallet=True,
-        # See Pro definition.
+        # See Standard definition.
         sandbox_mode=True,
         # Hosted (custom) storefront domain — serve the masterclass landing
         # + customer portal from the creator's own subdomain. Studio+.
@@ -308,13 +357,19 @@ _STUDIO = TierEntitlements(
         audit_logs=False,
     ),
     rate_limit_group="elevated",
-    monthly_price_cents=12900,
+    monthly_price_cents=6000,
+    weekly_credits=2_500_000,
+    trial_credits=TRIAL_CREDITS,
     overage_grace_pct=10,
 )
 
 
-_SCALE = TierEntitlements(
-    tier=TierKey.scale,
+# Max, $200 a month: 8,000,000 credits a week, about eleven times
+# Standard. Agents on routines all week long. The earlier site sold a
+# twenty-times plan at $100, which costs $180 of model time at list if
+# used; this one pays.
+_MAX = TierEntitlements(
+    tier=TierKey.max,
     # 3% base is at/under the true MoR cost floor (~3.5%); it stays profitable
     # only because international/FX cards add the +1.5% passthrough
     # (PlatformFeeType.international_payment) on top. Margin on this tier comes
@@ -337,15 +392,15 @@ _SCALE = TierEntitlements(
         drip_scheduling=True,
         email_sequences_and_segments=True,
         email_ab_testing=True,
-        # stackable_discounts: roadmap — see Pro definition.
+        # stackable_discounts: roadmap — see Standard definition.
         stackable_discounts=False,
         custom_email_sender_domain=True,
         seat_based_product_pricing=True,
-        # cohort_analytics: roadmap — see Pro definition.
+        # cohort_analytics: roadmap — see Standard definition.
         cohort_analytics=False,
         custom_pricing_negotiation=True,
         customer_wallet=True,
-        # See Pro definition.
+        # See Standard definition.
         sandbox_mode=True,
         # Hosted (custom) storefront domain — Studio and above.
         custom_storefront_domain=True,
@@ -354,7 +409,9 @@ _SCALE = TierEntitlements(
         audit_logs=True,
     ),
     rate_limit_group="elevated",
-    monthly_price_cents=29900,
+    monthly_price_cents=20000,
+    weekly_credits=8_000_000,
+    trial_credits=TRIAL_CREDITS,
     overage_grace_pct=10,
 )
 
@@ -364,9 +421,9 @@ def get_definition(tier: TierKey) -> TierEntitlements:
 
 
 _TIER_DEFINITIONS: dict[TierKey, TierEntitlements] = {
-    TierKey.starter: _STARTER,
-    TierKey.studio: _STUDIO,
-    TierKey.scale: _SCALE,
+    TierKey.standard: _STANDARD,
+    TierKey.pro: _PRO,
+    TierKey.max: _MAX,
     TierKey.unmanaged: _UNMANAGED,
     TierKey.inactive: _INACTIVE,
 }

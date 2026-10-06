@@ -69,6 +69,12 @@ export const BRAND_PHRASE_REPLACEMENTS = Object.freeze([
   ["Copyright © 2026 SpaceXAI", "Copyright © 2026 SimeonLabs, Inc."],
   // The marketplace link in the plugins chunk (Track A of the detachment plan).
   ["https://cursor.com/marketplace", "https://simeonlabs.com"],
+  // The access cover's button (6 October 2026): the window shows the cover
+  // when the server refuses the box for want of a plan, and the button
+  // opened the upstream's onboarding page. It opens Simeon's billing page;
+  // once the plan is on Stripe, the window's next ask for its box succeeds
+  // and the cover goes (docs/services-billing.md, section 3).
+  ["https://cursor.com/bot/onboarding", "https://app.simeonlabs.com/billing?plan=standard"],
 ]);
 
 /**

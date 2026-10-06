@@ -1,14 +1,16 @@
-"""Seed the Starter/Studio/Scale subscription products and overage meters in
+"""Seed the Standard/Pro/Max subscription products and overage meters in
 the Simeon platform organization.
 
 Idempotent: re-running updates existing rows in place rather than creating
 duplicates. Products and meters are identified by metadata tier key and
 name respectively, both scoped to the platform organization.
 
-The Starter tier originally shipped under the key "pro". Re-seeding migrates
-those rows in place — the (tier, interval) finder accepts the legacy "pro"
-key for the Starter spec and re-stamps it to "starter" — so existing
-subscriptions keep pointing at the same Product, now correctly named.
+The plans shipped first as the creator tiers Starter, Studio and Scale.
+Re-seeding migrates those rows in place — the (tier, interval) finder
+accepts the old key for each spec and re-stamps it — so a subscription on
+a staging database keeps pointing at the same Product, now the plan that
+replaced it. Prices, names, descriptions and the trial length are
+overwritten to the spec.
 
 Usage:
     python -m scripts.seed_platform_products run
@@ -81,7 +83,8 @@ def typer_async(f):  # type: ignore
 
 
 # ---------------------------------------------------------------------------
-# Specs — the source of truth for what Simeon Starter/Studio/Scale look like.
+# Specs — the source of truth for what Simeon Standard/Pro/Max look like.
+# The credits each plan includes live in `simeon/entitlements/tiers.py`.
 # ---------------------------------------------------------------------------
 
 
@@ -161,8 +164,8 @@ class PriceSpec:
     amount_type: ProductPriceAmountType
     price_currency: str = "usd"
     price_amount_cents: int | None = None  # required if amount_type == fixed
-    # tax_behavior=inclusive on Starter/Studio/Scale means the headline
-    # price ($49 / $129 / $299) is what the creator pays — Simeon Labs absorbs
+    # tax_behavior=inclusive on Standard/Pro/Max means the headline
+    # price ($20 / $60 / $200) is what the person pays — Simeon Labs absorbs
     # the sales tax internally rather than tacking it on top. Legacy stays
     # None (no tax to compute on a $0 product).
     tax_behavior: TaxBehaviorOption | None = None
@@ -170,7 +173,7 @@ class PriceSpec:
 
 @dataclass(frozen=True)
 class ProductSpec:
-    tier: str  # "starter" | "studio" | "scale" | "legacy" — stamped onto user_metadata["tier"]
+    tier: str  # "standard" | "pro" | "max" — stamped onto user_metadata["tier"]
     # "month" | "year" — stamped onto user_metadata["billing_interval"] so a
     # creator can pick monthly vs annual at checkout. Legacy is "month" by
     # convention (it's an internal grandfather product, the interval doesn't
@@ -183,119 +186,80 @@ class ProductSpec:
     trial: TrialSpec | None = None
 
 
-_STARTER_DESCRIPTION = (
-    "For solo creators starting out. 7% + $0.30 per transaction. "
-    "5 published courses, 10,000 email subscribers, unlimited email sends "
-    "and sequences, 25 hours of hosted video, sandbox environment. "
-    "14-day free trial."
+_STANDARD_DESCRIPTION = (
+    "For a light week of work. 750,000 credits a week: about seven tasks. "
+    "Every agent and every feature, a cloud computer for each agent, "
+    "routines that run while your Mac is closed. 7 days free, card on file."
 )
-_STUDIO_DESCRIPTION = (
-    "For small teams scaling up. 5% + $0.30 per transaction. "
-    "Everything in Starter plus 25 published courses, 50,000 subscribers, "
-    "unlimited email sends and sequences, custom email sender domain, "
-    "A/B testing, white-label course player, customer wallet, 5 team "
-    "seats. 14-day free trial."
+_PRO_DESCRIPTION = (
+    "For agents working every day. 2,500,000 credits a week, three times "
+    "Standard, with room for routines that run every day. 7 days free, "
+    "card on file."
 )
-_SCALE_DESCRIPTION = (
-    "For established businesses. 3% + $0.30 per transaction, with "
-    "custom pricing available above $50,000/month GMV. 100 published "
-    "courses, 150,000 subscribers, unlimited email sends and sequences, "
-    "250 GB storage, 20 team seats. Audit logs and dedicated support "
-    "with a 4-hour SLA. 14-day free trial."
+_MAX_DESCRIPTION = (
+    "For a team of agents that never stops. 8,000,000 credits a week, "
+    "eleven times Standard: agents on routines all week long. Our highest "
+    "allowance. 7 days free, card on file."
 )
 
-# Annual = ~20% off the monthly run-rate, rounded to a whole dollar so the
-# published yearly price is clean (and matches PRICING.md exactly):
-#   $49/mo  -> $470/yr    ($39/mo effective)
-#   $129/mo -> $1,238/yr  ($103/mo effective)
-#   $299/mo -> $2,870/yr  ($239/mo effective)
-_ANNUAL_STARTER_CENTS = 47000
-_ANNUAL_STUDIO_CENTS = 123800
-_ANNUAL_SCALE_CENTS = 287000
+# Annual = 20% off the monthly run-rate, whole dollars, and what the site
+# shows: $16, $48 and $160 a month billed yearly.
+#   $20/mo  -> $192/yr
+#   $60/mo  -> $576/yr
+#   $200/mo -> $1,920/yr
+_ANNUAL_STANDARD_CENTS = 19200
+_ANNUAL_PRO_CENTS = 57600
+_ANNUAL_MAX_CENTS = 192000
+
+# Every plan starts with the same trial: seven days, card on file, charged
+# on day eight unless cancelled. The credits the trial includes are
+# `TRIAL_CREDITS` in `simeon/entitlements/tiers.py`.
+_TRIAL = TrialSpec(interval=TrialInterval.day, count=7)
+
+
+def _plan_specs(
+    tier: str,
+    name: str,
+    description: str,
+    monthly_cents: int,
+    annual_cents: int,
+) -> list[ProductSpec]:
+    return [
+        ProductSpec(
+            tier=tier,
+            billing_interval="month",
+            name=f"Simeon {name}",
+            description=description,
+            recurring_interval=SubscriptionRecurringInterval.month,
+            price=PriceSpec(
+                amount_type=ProductPriceAmountType.fixed,
+                tax_behavior=TaxBehaviorOption.inclusive,
+                price_amount_cents=monthly_cents,
+            ),
+            trial=_TRIAL,
+        ),
+        ProductSpec(
+            tier=tier,
+            billing_interval="year",
+            name=f"Simeon {name} (Annual)",
+            description=description + " Save 20% with annual billing.",
+            recurring_interval=SubscriptionRecurringInterval.year,
+            price=PriceSpec(
+                amount_type=ProductPriceAmountType.fixed,
+                tax_behavior=TaxBehaviorOption.inclusive,
+                price_amount_cents=annual_cents,
+            ),
+            trial=_TRIAL,
+        ),
+    ]
 
 
 PRODUCT_SPECS: list[ProductSpec] = [
-    # Starter — monthly + annual
-    ProductSpec(
-        tier="starter",
-        billing_interval="month",
-        name="Simeon Starter",
-        description=_STARTER_DESCRIPTION,
-        recurring_interval=SubscriptionRecurringInterval.month,
-        price=PriceSpec(
-            amount_type=ProductPriceAmountType.fixed,
-            tax_behavior=TaxBehaviorOption.inclusive,
-            price_amount_cents=4900,
-        ),
-        trial=TrialSpec(interval=TrialInterval.day, count=14),
+    *_plan_specs(
+        "standard", "Standard", _STANDARD_DESCRIPTION, 2000, _ANNUAL_STANDARD_CENTS
     ),
-    ProductSpec(
-        tier="starter",
-        billing_interval="year",
-        name="Simeon Starter (Annual)",
-        description=_STARTER_DESCRIPTION + " Save 20% with annual billing.",
-        recurring_interval=SubscriptionRecurringInterval.year,
-        price=PriceSpec(
-            amount_type=ProductPriceAmountType.fixed,
-            tax_behavior=TaxBehaviorOption.inclusive,
-            price_amount_cents=_ANNUAL_STARTER_CENTS,
-        ),
-        trial=TrialSpec(interval=TrialInterval.day, count=14),
-    ),
-    # Studio — monthly + annual
-    ProductSpec(
-        tier="studio",
-        billing_interval="month",
-        name="Simeon Studio",
-        description=_STUDIO_DESCRIPTION,
-        recurring_interval=SubscriptionRecurringInterval.month,
-        price=PriceSpec(
-            amount_type=ProductPriceAmountType.fixed,
-            tax_behavior=TaxBehaviorOption.inclusive,
-            price_amount_cents=12900,
-        ),
-        trial=TrialSpec(interval=TrialInterval.day, count=14),
-    ),
-    ProductSpec(
-        tier="studio",
-        billing_interval="year",
-        name="Simeon Studio (Annual)",
-        description=_STUDIO_DESCRIPTION + " Save 20% with annual billing.",
-        recurring_interval=SubscriptionRecurringInterval.year,
-        price=PriceSpec(
-            amount_type=ProductPriceAmountType.fixed,
-            tax_behavior=TaxBehaviorOption.inclusive,
-            price_amount_cents=_ANNUAL_STUDIO_CENTS,
-        ),
-        trial=TrialSpec(interval=TrialInterval.day, count=14),
-    ),
-    # Scale — monthly + annual
-    ProductSpec(
-        tier="scale",
-        billing_interval="month",
-        name="Simeon Scale",
-        description=_SCALE_DESCRIPTION,
-        recurring_interval=SubscriptionRecurringInterval.month,
-        price=PriceSpec(
-            amount_type=ProductPriceAmountType.fixed,
-            tax_behavior=TaxBehaviorOption.inclusive,
-            price_amount_cents=29900,
-        ),
-        trial=TrialSpec(interval=TrialInterval.day, count=14),
-    ),
-    ProductSpec(
-        tier="scale",
-        billing_interval="year",
-        name="Simeon Scale (Annual)",
-        description=_SCALE_DESCRIPTION + " Save 20% with annual billing.",
-        recurring_interval=SubscriptionRecurringInterval.year,
-        price=PriceSpec(
-            amount_type=ProductPriceAmountType.fixed,
-            tax_behavior=TaxBehaviorOption.inclusive,
-            price_amount_cents=_ANNUAL_SCALE_CENTS,
-        ),
-        trial=TrialSpec(interval=TrialInterval.day, count=14),
-    ),
+    *_plan_specs("pro", "Pro", _PRO_DESCRIPTION, 6000, _ANNUAL_PRO_CENTS),
+    *_plan_specs("max", "Max", _MAX_DESCRIPTION, 20000, _ANNUAL_MAX_CENTS),
 ]
 
 
@@ -368,9 +332,13 @@ async def _upsert_meter(
 
 
 # Tier keys that an existing Product row may carry for a given spec tier.
-# The Starter tier shipped originally as "pro", so a Starter spec must also
-# adopt any leftover "pro"-tagged rows and re-stamp them to "starter".
-_TIER_LOOKUP_ALIASES: dict[str, list[str]] = {"starter": ["starter", "pro"]}
+# The plans shipped first as Starter, Studio and Scale, so each spec also
+# adopts the row seeded under the old key and re-stamps it.
+_TIER_LOOKUP_ALIASES: dict[str, list[str]] = {
+    "standard": ["standard", "starter"],
+    "pro": ["pro", "studio"],
+    "max": ["max", "scale"],
+}
 
 
 def _tier_lookup_values(tier: str) -> list[str]:
@@ -390,8 +358,8 @@ async def _find_product_by_tier_and_interval(
     product with the matching tier as the canonical "month" row so a
     re-seed migrates it in place rather than duplicating it.
 
-    The tier match honors legacy aliases (e.g. the original "pro" key for
-    the Starter tier) so a rename re-stamps the existing row in place.
+    The tier match honors the old keys (starter, studio, scale) so a
+    rename re-stamps the existing row in place.
     """
     result = await session.execute(
         select(Product)
@@ -497,7 +465,7 @@ async def _upsert_product(
     ):
         # Stamp the interval onto pre-existing rows (an early seed didn't
         # store this key) and re-stamp the tier key when migrating a
-        # renamed tier in place (e.g. "pro" -> "starter").
+        # renamed tier in place (e.g. "starter" -> "standard").
         if not dry_run:
             merged = dict(existing_metadata)
             merged.update(target_metadata)
@@ -628,7 +596,7 @@ def _format_billing_type(spec: ProductSpec) -> str:
 
 @cli.command(
     help=(
-        "Seed Starter/Studio/Scale subscription products and overage meters in "
+        "Seed Standard/Pro/Max subscription products and overage meters in "
         "the platform organization."
     )
 )

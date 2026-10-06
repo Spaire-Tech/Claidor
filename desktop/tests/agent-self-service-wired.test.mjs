@@ -91,7 +91,7 @@ test("a dispatched subagent runs on its own production shell, headless, with the
   const composition = await readFile(path.join(repoRoot, "source/host/host-runner-composition.ts"), "utf8");
   assert.match(composition, /const buildProductionTurnRunShell = \(identity: \{/);
   assert.match(composition, /const isComputerUseTurn = identity\.isSubagentRunner && isComputerUseSubagentType\(identity\.subagentType\);/);
-  assert.match(composition, /isComputerUseSubagent: isComputerUseTurn,\n\s*isBrowserUseSubagent: isBrowserUseTurn,\n\s*isSystemPromptOverridden/);
+  assert.match(composition, /isComputerUseSubagent: isComputerUseTurn,\n\s*isBrowserUseSubagent: isBrowserUseTurn,\n\s*isVideoSubagent: isVideoTurn,\n\s*isSystemPromptOverridden/);
   assert.match(composition, /runnerOptions\.productionTurnRunShell = buildProductionTurnRunShell\(\{ conversationId: session\.id, isSubagentRunner: false \}\);/);
   assert.match(composition, /productionTurnRunShell: buildProductionTurnRunShell\(\{\n\s*conversationId: agentId,\n\s*isSubagentRunner: true,\n\s*subagentType: args\.subagentType,/);
   assert.match(composition, /transport: undefined,\n\s*\}\);\n\s*childRunner = child;/);

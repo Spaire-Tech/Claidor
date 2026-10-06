@@ -18,6 +18,7 @@ from simeon.kit.db.postgres import AsyncSessionMaker
 from simeon.models import User
 from simeon.postgres import AsyncSession
 
+from .allowance import Allowance, billing_url
 from .auth import ProxyCaller
 from .service import (
     HOURLY_BUDGET_CODE,
@@ -48,16 +49,39 @@ def error_response(kind: str, message: str, status: int) -> JSONResponse:
     )
 
 
-def quota_exhausted_response() -> JSONResponse:
+def quota_exhausted_response(allowance: Allowance | None = None) -> JSONResponse:
+    """The allowance is spent, or there is none. One code, 40200, which
+    the app's voice, search and image code already read as « credits
+    exhausted »; a sentence that says what kind of allowance it was and
+    where to go. The app shows the sentence as it is."""
+    url = billing_url()
+    if allowance is None or allowance.free:
+        message = (
+            f"Monthly credits exhausted (code {QUOTA_EXHAUSTED_CODE}). "
+            "The allowance resets at the start of next month."
+        )
+    elif allowance.none:
+        message = (
+            f"No active plan (code {QUOTA_EXHAUSTED_CODE}). "
+            f"Choose a plan at {url} to keep going."
+        )
+    elif allowance.trialing:
+        message = (
+            f"Your trial credits are used up (code {QUOTA_EXHAUSTED_CODE}). "
+            f"Choose a plan at {url} to keep going."
+        )
+    else:
+        resets = allowance.period_end.strftime("%A %-d %B at %H:%M UTC")
+        message = (
+            f"This week's credits are used (code {QUOTA_EXHAUSTED_CODE}). "
+            f"They reset on {resets}. Upgrade at {url} to keep going now."
+        )
     return JSONResponse(
         {
             "error": {
                 "type": "quota_exhausted",
                 "code": QUOTA_EXHAUSTED_CODE,
-                "message": (
-                    f"Monthly credits exhausted (code {QUOTA_EXHAUSTED_CODE}). "
-                    "The allowance resets at the start of next month."
-                ),
+                "message": message,
             }
         },
         status_code=402,
@@ -85,10 +109,12 @@ def hourly_budget_response(used: int, limit: int) -> JSONResponse:
 
 async def budget_refusal(session: AsyncSession, user: User) -> JSONResponse | None:
     """The two spending refusals every metered door makes before calling
-    a provider: the month's allowance, then the sliding hour. Checked in
-    that order so an exhausted month still says so."""
-    if await desktop.exhausted(session, user):
-        return quota_exhausted_response()
+    a provider: the plan's allowance (the week, the trial, or none), then
+    the sliding hour. Checked in that order so a spent allowance still
+    says so."""
+    allowance = await desktop.allowance(session, user)
+    if await desktop.exhausted(session, user, allowance=allowance):
+        return quota_exhausted_response(allowance)
     if await desktop.hourly_exhausted(session, user):
         used = await desktop.credits_used_last_hour(session, user.id)
         return hourly_budget_response(used, settings.DESKTOP_HOURLY_CREDITS)

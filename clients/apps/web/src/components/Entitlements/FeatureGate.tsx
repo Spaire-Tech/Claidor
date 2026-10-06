@@ -34,7 +34,6 @@ interface FeatureGateProps {
 export const FeatureGate = ({
   feature,
   organizationId,
-  organizationSlug,
   children,
   title,
   description,
@@ -72,7 +71,7 @@ export const FeatureGate = ({
         <h3 className="text-lg font-medium text-gray-900">{headline}</h3>
         <p className="text-sm text-gray-500">{sub}</p>
       </div>
-      <Link href={`/dashboard/${organizationSlug}/settings/plan`}>
+      <Link href="/billing">
         <Button className="bg-black text-white hover:bg-gray-800">
           Upgrade to {requiredTier}
         </Button>

@@ -42,75 +42,54 @@ interface DesignTier {
 
 const TIERS: DesignTier[] = [
   {
-    tier: 'starter',
-    name: 'Starter',
-    monthly: 49,
-    annual: 39,
+    tier: 'standard',
+    name: 'Standard',
+    monthly: 20,
+    annual: 16,
     recommended: false,
     includes: 'Includes',
     features: [
-      { label: <>7% + $0.30 per transaction</> },
-      { label: <>5 published courses</> },
-      { label: <>10K email subscribers</> },
-      { label: <>25 hours of hosted video</> },
-      { label: <>Email sequences, segments &amp; drip</> },
-      { label: <>Revenue, MRR &amp; churn analytics</> },
+      { label: <>750,000 credits a week, about seven tasks</> },
+      { label: <>Every agent and every feature</> },
+      { label: <>A cloud computer for each agent</> },
+      { label: <>Routines that run while your Mac is closed</> },
+      { label: <>Discord and Slack channels, voice calls</> },
+      { label: <>Memory shared across your agents</> },
     ],
   },
   {
-    tier: 'studio',
-    name: 'Studio',
-    monthly: 129,
-    annual: 103,
+    tier: 'pro',
+    name: 'Pro',
+    monthly: 60,
+    annual: 48,
     recommended: true,
     includes: (
       <>
-        Everything in Starter, <span className="text-gray-400">plus</span>
+        Everything in Standard, <span className="text-gray-400">plus</span>
       </>
     ),
     features: [
-      {
-        label: (
-          <>
-            5% + $0.30 per transaction{' '}
-            <span className="text-gray-400">(saves 2%)</span>
-          </>
-        ),
-      },
-      { label: <>25 published courses</> },
-      { label: <>50K email subscribers</> },
-      { label: <>Custom email sender domain</> },
-      { label: <>Email A/B testing</> },
-      { label: <>White-label player &amp; customer wallet</> },
-      { label: <>5 team seats</> },
+      { label: <>2,500,000 credits a week</> },
+      { label: <>Three times the weekly work of Standard</> },
+      { label: <>Room for routines that run every day</> },
     ],
   },
   {
-    tier: 'scale',
-    name: 'Scale',
-    monthly: 299,
-    annual: 239,
+    tier: 'max',
+    name: 'Max',
+    monthly: 200,
+    annual: 160,
     recommended: false,
     includes: (
       <>
-        Everything in Studio, <span className="text-gray-400">plus</span>
+        Everything in Pro, <span className="text-gray-400">plus</span>
       </>
     ),
     features: [
-      {
-        label: (
-          <>
-            3% + $0.30 per transaction{' '}
-            <span className="text-gray-400">(saves 4%)</span>
-          </>
-        ),
-      },
-      { label: <>100 published courses</> },
-      { label: <>150K email subscribers</> },
-      { label: <>200 video hours · 250 GB storage</> },
-      { label: <>20 team seats · audit logs</> },
-      { label: <>Slack + dedicated AM · 4-hr SLA</> },
-      { label: <>Custom pricing above $50k/mo GMV</> },
+      { label: <>8,000,000 credits a week</> },
+      { label: <>Eleven times the weekly work of Standard</> },
+      { label: <>Agents on routines all week long</> },
+      { label: <>Our highest allowance</> },
     ],
   },
 ]
@@ -205,7 +184,7 @@ export default function PlanPage() {
             Choose your plan
           </h1>
           <p className="mx-auto max-w-lg text-sm text-gray-500">
-            Every plan starts with a 14-day free trial. You won&rsquo;t be
+            Every plan starts with 7 days free, card on file. You won&rsquo;t be
             charged during the trial — switch or cancel anytime from Settings.
           </p>
         </div>
@@ -302,7 +281,7 @@ export default function PlanPage() {
                   {isPending ? 'Starting…' : 'Start free trial'}
                 </button>
                 <div className="mt-2.5 text-center text-xs text-gray-400">
-                  Card required. Won&rsquo;t be charged during the 14-day trial.
+                  Card required. Won&rsquo;t be charged during the 7-day trial.
                 </div>
 
                 <div className="my-5 border-t border-gray-100" />

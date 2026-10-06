@@ -18,14 +18,27 @@ would never be called.
        in the browser. The challenge is `base64url(sha256(verifier))`
        for a verifier only the app holds.
     2. With no Simeon session in the browser, that page sends the
-       person to the web login and asks to be returned to — the same
-       hand-off `/desktop/login` makes.
+       person to the API's own Google sign-in and asks to be returned
+       to — the same hand-off `/desktop/login` makes. No web app is in
+       the way (6 October 2026).
     3. With one, it **asks**. A sign-in confirmed by a bare GET would
        mean anybody who can get a signed-in person to open a link of
        their making ends up holding that person's session, because the
        verifier in the link is theirs. So the page states whose account
-       it is about to hand over and to what, and nothing is written
+       it is about to hand over and to what, and no sign-in is written
        until the person posts the form back.
+
+       Before it asks, it checks the person has a plan. With billing
+       required (`SIMEON_DESKTOP_BILLING_REQUIRED`) and no trialing or
+       active subscription in the synced copy of Stripe's
+       (`simeon.plans`), the page sends the browser to the web app's
+       billing page instead (the one thing the web app is for), with
+       this very URL as the way back; the
+       billing page opens Stripe Checkout, which takes a card, starts
+       the 7-day trial, and returns here with `checkout_session_id`,
+       which the page copies in before asking, so the gate opens even
+       if Stripe's webhook is a few seconds behind. So nobody is signed
+       in to the app without a card on file (`docs/services-billing.md`).
     4. The app, meanwhile, is polling `/auth/poll?uuid=…&verifier=…`.
        404 means « not yet » and it keeps waiting; 200 with a token
        pair means it is signed in.
@@ -42,6 +55,7 @@ from __future__ import annotations
 
 import re
 from html import escape
+from typing import Any
 from urllib.parse import quote, urlencode, urlparse
 
 from fastapi import Depends, Form, Query, Request
@@ -49,12 +63,16 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
 from simeon.auth.dependencies import WebUserOrAnonymous
 from simeon.auth.models import is_user
+from simeon.auth.service import auth as auth_service
 from simeon.config import settings
 from simeon.openapi import APITag
+from simeon.plans.service import PlansError
+from simeon.plans.service import plans as plans_service
 from simeon.postgres import AsyncSession, get_db_session
 from simeon.routing import APIRouter
 
-from .endpoints import client_version_of
+from .allowance import BILLING_PATH
+from .endpoints import client_version_of, sign_in_url
 from .service import (
     DesktopUnauthenticated,
     desktop,
@@ -119,6 +137,9 @@ def _page(title: str, body: str, *, deep_link: str | None = None) -> HTMLRespons
         "p{margin:0 0 1rem;opacity:.85}"
         "button{font:inherit;font-weight:600;padding:.6rem 1.1rem;border:0;"
         "border-radius:.5rem;background:CanvasText;color:Canvas;cursor:pointer}"
+        "form+form{margin-top:1rem}"
+        "button.quiet{background:none;color:CanvasText;opacity:.7;padding:0;"
+        "font-weight:400;text-decoration:underline}"
         "code{opacity:.7;font-size:.85em}"
         "</style></head><body><main>"
         f"<h1>{escape(title)}</h1>{body}"
@@ -149,13 +170,42 @@ def _same_origin(request: Request) -> bool:
 # --- the browser's half ----------------------------------------------------
 
 
+async def _needs_a_plan(
+    session: AsyncSession, user: Any, *, checkout_session_id: str | None
+) -> bool:
+    """Whether to send the person to the billing page before asking.
+    Never with billing not required (development, a self-hosted server):
+    then the free monthly allowance applies and there is nothing to
+    buy. A checkout that just came back is copied in first, so the
+    plan it started counts before Stripe's webhook has landed; a
+    checkout that cannot be read (someone else's, a made-up id) is
+    ignored and the allowance decides."""
+    allowance = await desktop.allowance(session, user)
+    if not allowance.none:
+        return False
+    if checkout_session_id:
+        try:
+            await plans_service.sync_checkout_session(
+                session, user, checkout_session_id
+            )
+        except PlansError:
+            return True
+        except Exception:
+            return True
+        allowance = await desktop.allowance(session, user)
+    return allowance.none
+
+
 @router.get("/loginDeepControl", name="desktop:deep_control", response_model=None)
 async def login_deep_control(
+    request: Request,
     auth_subject: WebUserOrAnonymous,
     challenge: str = Query(default=""),
     uuid: str = Query(default=""),
     mode: str = Query(default="login"),
     redirectTarget: str | None = Query(default=None),  # the app's own name
+    checkout_session_id: str | None = Query(default=None),  # back from Checkout
+    session: AsyncSession = Depends(get_db_session),
 ) -> RedirectResponse | HTMLResponse:
     if not is_deep_control_param(uuid) or not is_deep_control_param(challenge):
         return _page(
@@ -163,18 +213,23 @@ async def login_deep_control(
             f"<p>Open {PRODUCT} and sign in from there.</p>",
         )
 
+    kept = {"challenge": challenge, "uuid": uuid, "mode": mode}
+    if redirectTarget:
+        kept["redirectTarget"] = redirectTarget
+    return_to = settings.generate_external_url(f"/loginDeepControl?{urlencode(kept)}")
+
     if not is_user(auth_subject):
-        kept = {"challenge": challenge, "uuid": uuid, "mode": mode}
-        if redirectTarget:
-            kept["redirectTarget"] = redirectTarget
-        return_to = settings.generate_external_url(
-            f"/loginDeepControl?{urlencode(kept)}"
-        )
+        return RedirectResponse(sign_in_url(request, return_to), 303)
+
+    if await _needs_a_plan(
+        session, auth_subject.subject, checkout_session_id=checkout_session_id
+    ):
         return RedirectResponse(
             settings.generate_frontend_url(
-                f"/login?return_to={quote(return_to, safe='')}"
+                f"{BILLING_PATH}?plan=standard&return_to={quote(return_to, safe='')}"
             ),
             303,
+            headers=NO_STORE,
         )
 
     email = escape(auth_subject.subject.email)
@@ -188,13 +243,61 @@ async def login_deep_control(
         )
         if value
     )
+    # The second form is for the person this page is not about: the
+    # browser keeps the website's own sign-in long after the app's, so
+    # signing out of the app and opening this link again showed the same
+    # account with no way past it (the founder, 6 October 2026). It ends
+    # the browser's session and goes to the web login, with this very
+    # link as the way back.
     return _page(
         f"Sign in to {PRODUCT}?",
         f"<p>{PRODUCT} on your Mac is asking to sign in as <strong>{email}</strong>."
         " Only continue if you just asked it to.</p>"
         f'<form method="post" action="/loginDeepControl">{fields}'
-        f'<button type="submit">Sign in as {email}</button></form>',
+        f'<button type="submit">Sign in as {email}</button></form>'
+        f'<form method="post" action="/loginDeepControl/switch">{fields}'
+        '<button type="submit" class="quiet">Not you? Use a different account</button>'
+        "</form>",
     )
+
+
+@router.post(
+    "/loginDeepControl/switch", name="desktop:deep_control_switch", response_model=None
+)
+async def switch_deep_control(
+    request: Request,
+    challenge: str = Form(default=""),
+    uuid: str = Form(default=""),
+    mode: str = Form(default="login"),
+    redirectTarget: str | None = Form(default=None),  # the app's own name
+    session: AsyncSession = Depends(get_db_session),
+) -> RedirectResponse | HTMLResponse:
+    """Ends the browser's website session and sends the person to the web
+    login, asking to be returned to the app's sign-in link. A POST from
+    the page itself, like the confirmation: a cross-site link must not be
+    able to sign somebody out of the website."""
+    if (
+        not _same_origin(request)
+        or not is_deep_control_param(uuid)
+        or not is_deep_control_param(challenge)
+    ):
+        return _page(
+            "That sign-in could not be completed",
+            f"<p>Open {PRODUCT} and try again.</p>",
+        )
+    kept = {"challenge": challenge, "uuid": uuid, "mode": mode}
+    if redirectTarget:
+        kept["redirectTarget"] = redirectTarget
+    return_to = settings.generate_external_url(f"/loginDeepControl?{urlencode(kept)}")
+    user_session = await auth_service.authenticate(session, request)
+    if user_session is not None:
+        await session.delete(user_session)
+    response = RedirectResponse(
+        settings.generate_frontend_url(f"/login?return_to={quote(return_to, safe='')}"),
+        303,
+        headers=NO_STORE,
+    )
+    return auth_service.clear_user_session_cookie(request, response)
 
 
 @router.post("/loginDeepControl", name="desktop:deep_control_confirm")

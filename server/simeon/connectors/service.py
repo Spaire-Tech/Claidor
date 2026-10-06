@@ -21,6 +21,7 @@ from uuid import UUID
 
 from simeon.config import settings
 from simeon.desktop.service import desktop
+from simeon.entitlements.tiers import PAID_TIERS, TIER_NAMES
 from simeon.models import User
 from simeon.postgres import AsyncSession
 from simeon.redis import Redis
@@ -28,13 +29,12 @@ from simeon.redis import Redis
 from .pipedream import PipedreamCredentials, PipedreamProvider
 from .provider import Connection, ConnectorProvider
 
-#: The plans that include connections. Empty on purpose: step 9 of
-#: `docs/maties/plan.md` is what creates a plan that is not « Free », and
-#: until it lands `quota()` answers « Free » for everybody, so consulting
-#: it would be a database aggregate in front of every request whose answer
-#: is known. The allowlist below is the only yes today. When the plans
-#: exist, this set names them and `entitled` needs no other change.
-ENTITLED_PLANS: frozenset[str] = frozenset()
+#: The plans that include connections: every plan, and the trial, since
+#: a trial has a card on file (`docs/services-billing.md`). `quota()`
+#: answers one of these names once billing is configured, and « Free »
+#: where it is not (development, a self-hosted server), where the
+#: allowlist below is the only yes.
+ENTITLED_PLANS: frozenset[str] = frozenset(TIER_NAMES[tier] for tier in PAID_TIERS)
 
 #: How long one person's list of connections is held. Long enough that
 #: opening the app is one call rather than forty, short enough that a
@@ -92,10 +92,8 @@ class ConnectorsService:
             and (user.email or "").strip().lower() in _entitled_emails()
         ):
             return True
-        if not ENTITLED_PLANS:
-            return False
-        quota = await desktop.quota(session, user)
-        return str(quota.get("planName", "")) in ENTITLED_PLANS
+        allowance = await desktop.allowance(session, user)
+        return allowance.plan_name in ENTITLED_PLANS
 
     # --- the middleman ------------------------------------------------------
 

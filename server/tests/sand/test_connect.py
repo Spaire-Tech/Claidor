@@ -12,6 +12,7 @@ way `@connectrpc/connect` reads it.
 import httpx
 import pytest
 from fastapi import FastAPI
+from pytest_mock import MockerFixture
 
 from simeon.models import User
 from simeon.postgres import AsyncSession
@@ -23,6 +24,7 @@ from simeon.sand.connect import (
     encode_stream_frames,
 )
 from tests.desktop.test_endpoints import _signed_in
+from tests.fixtures.database import SaveFixture
 
 demo = ConnectService("simeon.v1.DemoService", aliases=("aiserver.v1.DemoService",))
 
@@ -261,3 +263,143 @@ class TestLaunchPreflights:
         )
         assert settings_.status_code == 200, settings_.text
         assert settings_.json() == {}
+
+
+@pytest.mark.asyncio
+class TestSandAccessWithBilling:
+    """With billing required, the window's access cover: `GetSandAccessStatus`
+    gives it its words and `EnsureSandBox` refuses the box until a plan is
+    there (`simeon/sand/dashboard.py`, `simeon/sand/box_broker.py`)."""
+
+    async def test_no_plan_offers_the_trial_and_refuses_the_box(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        from tests.desktop.test_allowance import billing_on
+
+        billing_on(mocker)
+        access, _ = await _signed_in(client, session, user)
+        headers = {"Authorization": f"Bearer {access}"}
+        status = await client.post(
+            "/simeon.v1.DashboardService/GetSandAccessStatus", json={}, headers=headers
+        )
+        assert status.json() == {"state": 3, "purchaseChannel": 1, "blockReason": 6}
+        ensure = await client.post(
+            "/simeon.v1.ComputerService/EnsureSandBox", json={}, headers=headers
+        )
+        assert ensure.status_code == 403, ensure.text
+        assert ensure.json()["code"] == "permission_denied"
+        assert "/billing" in ensure.json()["message"]
+        # No hint header: that is what the Mac reads as access denied.
+        assert "x-automation-failure-hint" not in ensure.headers
+
+    async def test_after_a_trial_the_cover_says_check_access(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        save_fixture: SaveFixture,
+        mocker: MockerFixture,
+    ) -> None:
+        from simeon.models import DesktopTrialRedemption
+        from tests.desktop.test_allowance import _person_with_plan
+
+        await _person_with_plan(
+            save_fixture, mocker, user, tier="standard", status="canceled"
+        )
+        await save_fixture(
+            DesktopTrialRedemption(
+                user_id=user.id, email=user.email, stripe_subscription_id="sub_test"
+            )
+        )
+        access, _ = await _signed_in(client, session, user)
+        status = await client.post(
+            "/simeon.v1.DashboardService/GetSandAccessStatus",
+            json={},
+            headers={"Authorization": f"Bearer {access}"},
+        )
+        assert status.json() == {"state": 3, "purchaseChannel": 1, "blockReason": 1}
+
+    async def test_a_plan_is_granted(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        save_fixture: SaveFixture,
+        mocker: MockerFixture,
+    ) -> None:
+        from tests.desktop.test_allowance import _person_with_plan
+
+        await _person_with_plan(
+            save_fixture, mocker, user, tier="pro", status="trialing", trial_days_left=5
+        )
+        access, _ = await _signed_in(client, session, user)
+        status = await client.post(
+            "/simeon.v1.DashboardService/GetSandAccessStatus",
+            json={},
+            headers={"Authorization": f"Bearer {access}"},
+        )
+        assert status.json() == {"state": 1, "purchaseChannel": 1, "blockReason": 0}
+
+
+@pytest.mark.asyncio
+class TestCancelSandTrial:
+    """The Settings page's « Cancel trial » button, answered on Stripe
+    Billing (`simeon/sand/dashboard.py`)."""
+
+    async def test_without_billing_there_is_nothing_to_cancel(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        access, _ = await _signed_in(client, session, user)
+        response = await client.post(
+            "/simeon.v1.DashboardService/CancelSandTrial",
+            json={},
+            headers={"Authorization": f"Bearer {access}"},
+        )
+        assert response.status_code == 412
+        assert response.json()["code"] == "failed_precondition"
+
+    async def test_a_trial_is_scheduled_to_end_without_a_charge(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        save_fixture: SaveFixture,
+        mocker: MockerFixture,
+    ) -> None:
+        from tests.desktop.test_allowance import _person_with_plan
+        from tests.plans.test_service import stripe_subscription
+
+        await _person_with_plan(
+            save_fixture,
+            mocker,
+            user,
+            tier="standard",
+            status="trialing",
+            trial_days_left=4,
+        )
+        # Stripe's answer to the modify call: the same trial, now ending
+        # when the trial does.
+        modify = mocker.patch(
+            "simeon.plans.service.stripe_billing.modify_subscription",
+            return_value=stripe_subscription(
+                user, status="trialing", cancel_at_period_end=True
+            ),
+        )
+        access, _ = await _signed_in(client, session, user)
+        response = await client.post(
+            "/simeon.v1.DashboardService/CancelSandTrial",
+            json={},
+            headers={"Authorization": f"Bearer {access}"},
+        )
+        assert response.status_code == 200, response.text
+        quota = await client.get(
+            "/desktop/api/user/quota", headers={"Authorization": f"Bearer {access}"}
+        )
+        data = quota.json()["data"]
+        assert data["subscriptionStatus"] == "trialing"
+        assert data["trialCancelable"] is False
+        modify.assert_called_once_with("sub_test", cancel_at_period_end=True)

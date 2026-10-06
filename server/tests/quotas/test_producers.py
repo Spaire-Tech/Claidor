@@ -33,13 +33,13 @@ def _patch_platform_org_id(mocker: MockerFixture, org_id: UUID | None) -> None:
 
 def _patch_starter_limits(mocker: MockerFixture, **limit_overrides: int | None) -> None:
     """See tests/quotas/test_service.py:_patch_starter_limits."""
-    base = get_definition(TierKey.starter)
+    base = get_definition(TierKey.standard)
     overridden = dataclasses.replace(
         base, limits=dataclasses.replace(base.limits, **limit_overrides)
     )
 
     def _resolve(tier: TierKey) -> "object":
-        if tier == TierKey.starter:
+        if tier == TierKey.standard:
             return overridden
         return get_definition(tier)
 
@@ -154,7 +154,7 @@ class TestEmitVideoEvents:
             save_fixture,
             platform_org=platform_org,
             creator=creator,
-            tier="starter",
+            tier="standard",
             monthly_cents=4900,
         )
 
@@ -206,7 +206,7 @@ class TestProducersIntegrateWithService:
             save_fixture,
             platform_org=platform_org,
             creator=creator,
-            tier="starter",
+            tier="standard",
             monthly_cents=4900,
         )
 

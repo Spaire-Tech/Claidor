@@ -186,6 +186,17 @@ def _with_params(url: str, params: dict[str, str]) -> str:
 # --- sign-in ---------------------------------------------------------------
 
 
+def sign_in_url(request: Request, return_to: str) -> str:
+    """Where a browser with no session goes to sign in: the API's own
+    Google sign-in, which comes back to `return_to` with the session
+    cookie set. There is no web app in front of the Mac app (6 October
+    2026), so nothing here sends anyone to one."""
+    path = request.app.url_path_for("integrations.google.login.authorize")
+    return settings.generate_external_url(
+        f"{path}?return_to={quote(return_to, safe='')}"
+    )
+
+
 @router.get("/login", name="desktop:login", response_model=None)
 async def login(
     request: Request,
@@ -214,10 +225,7 @@ async def login(
         return_to = settings.generate_external_url(
             "/desktop/login" + (f"?{urlencode(kept)}" if kept else "")
         )
-        login_url = settings.generate_frontend_url(
-            f"/login?return_to={quote(return_to, safe='')}"
-        )
-        return RedirectResponse(login_url, 303)
+        return RedirectResponse(sign_in_url(request, return_to), 303)
 
     code = await desktop.create_auth_code(session, auth_subject.subject)
     params = {"code": code}

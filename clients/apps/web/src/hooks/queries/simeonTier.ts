@@ -24,15 +24,18 @@ const platformApi = api as unknown as any
 // -----------------------------------------------------------------------------
 
 export type SimeonTierKey =
-  | 'starter'
-  | 'studio'
-  | 'scale'
-  // No-plan fallbacks: `inactive` = real creator with no active plan;
+  | 'standard'
+  | 'pro'
+  | 'max'
+  // No-plan fallbacks: `inactive` = a person with no active plan;
   // `unmanaged` = dev / self-host (platform billing not configured).
   | 'inactive'
   | 'unmanaged'
 
-export type PaidTierKey = 'starter' | 'studio' | 'scale'
+export type PaidTierKey = 'standard' | 'pro' | 'max'
+
+/** The plans in the order the cards show them. */
+export const PAID_TIERS: readonly PaidTierKey[] = ['standard', 'pro', 'max']
 
 export type BillingInterval = 'month' | 'year'
 
@@ -78,6 +81,10 @@ export interface Entitlements {
   features: TierFeatures
   rate_limit_group: string
   monthly_price_cents: number
+  /** Credits included each week, Monday to Monday UTC. */
+  weekly_credits: number
+  /** Credits the 7-day trial includes, once. */
+  trial_credits: number
 }
 
 export interface TierPlan {
@@ -91,6 +98,10 @@ export interface TierPlan {
   annual_savings_percent: number
   currency: string
   trial_days: number | null
+  /** Credits included each week, Monday to Monday UTC. */
+  weekly_credits: number
+  /** Credits the trial includes, once. */
+  trial_credits: number
   transaction_fee: TransactionFee
   features: TierFeatures
   limits: TierLimits
@@ -576,8 +587,7 @@ export const breakevenGmvDollars = (
 }
 
 /**
- * Match the screenshot's renewal copy:
- *   "This site is charged on a monthly basis and renews on Jun 12th, 2026."
+ * The one line under the heading: when the trial ends or the plan renews.
  * Returns null if there's no active subscription yet (no plan / pre-trial).
  */
 export const renewalSentence = (
@@ -610,21 +620,32 @@ export const renewalSentence = (
   const cadence = sub.billing_interval === 'year' ? 'annual' : 'monthly'
   const formatted = formatDate(sub.current_period_end)
   if (sub.cancel_at_period_end) {
-    return `This site is on a ${cadence} plan that ends on ${formatted}.`
+    return `Your plan ends on ${formatted}.`
   }
-  return `This site is charged on a ${cadence} basis and renews on ${formatted}.`
+  return `Your plan is charged ${cadence === 'annual' ? 'yearly' : 'monthly'} and renews on ${formatted}.`
 }
 
 const TIER_DISPLAY_NAME: Record<SimeonTierKey, string> = {
-  starter: 'Starter',
-  studio: 'Studio',
-  scale: 'Scale',
+  standard: 'Standard',
+  pro: 'Pro',
+  max: 'Max',
   inactive: 'No plan',
-  unmanaged: 'Unmanaged',
+  unmanaged: 'Free',
 }
 
-// The Starter tier shipped originally as "pro". The backend now normalizes
-// it to "starter" everywhere, but tolerate a stale/cached "pro" value so the
-// UI never renders an empty plan name.
-export const tierDisplayName = (tier: SimeonTierKey | 'pro'): string =>
-  tier === 'pro' ? 'Starter' : TIER_DISPLAY_NAME[tier]
+export const tierDisplayName = (tier: SimeonTierKey): string =>
+  TIER_DISPLAY_NAME[tier] ?? 'No plan'
+
+/** "750,000" — credits are big round numbers, shown with separators. */
+export const formatCredits = (credits: number): string =>
+  new Intl.NumberFormat('en-US').format(credits)
+
+/**
+ * One task, the kind that reads a few pages and writes something back,
+ * is about 100,000 credits (docs/services-billing.md). The card says
+ * "about 7 tasks a week" next to the exact number.
+ */
+export const CREDITS_PER_TASK = 100_000
+
+export const tasksPerWeek = (weeklyCredits: number): number =>
+  Math.round(weeklyCredits / CREDITS_PER_TASK)

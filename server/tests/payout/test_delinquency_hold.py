@@ -69,7 +69,7 @@ async def _platform_plan(
         recurring_interval=SubscriptionRecurringInterval.month,
         prices=prices,
     )
-    product.user_metadata = {"tier": "starter"}
+    product.user_metadata = {"tier": "standard"}
     await save_fixture(product)
     customer = await create_customer(
         save_fixture,

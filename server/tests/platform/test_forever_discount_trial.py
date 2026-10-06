@@ -51,7 +51,7 @@ async def _expired_forever_discount_trial(
         recurring_interval=SubscriptionRecurringInterval.month,
         prices=[(4900, "usd")],
     )
-    product.user_metadata = {"tier": "starter"}
+    product.user_metadata = {"tier": "standard"}
     await save_fixture(product)
     discount = await create_discount(
         save_fixture,

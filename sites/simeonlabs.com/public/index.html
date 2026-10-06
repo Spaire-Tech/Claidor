@@ -52,12 +52,12 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .f-growth{filter:hue-rotate(90deg)}.f-content{filter:hue-rotate(300deg)}.f-sales{filter:hue-rotate(60deg)}
 
 /* The bar (the founder, 3 October 2026, with a screenshot): the name on
-   the left, sign in and the download on the right. */
+   the left, the download on the right. Sign in left on 6 October 2026: the
+   web app is paused for now, so the page does not point at it. */
 .bar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.82);-webkit-backdrop-filter:saturate(1.8) blur(20px);backdrop-filter:saturate(1.8) blur(20px);padding-top:env(safe-area-inset-top,0px)}
 .bar .wrap{display:flex;justify-content:space-between;align-items:center;height:clamp(52px,3.8vw,76px)}
 .bar .wordmark{--wm:clamp(118px,10.8vw,217px);width:var(--wm);margin-left:calc(var(--wm) * -85 / 1585);color:var(--ink);-webkit-mask-image:url(img/wordmark-labs.png);mask-image:url(img/wordmark-labs.png);aspect-ratio:1585/460} /* the bar says SimeonLabs (4 October 2026), the same letters at the same height; the image has 85/1585 of empty space on its left; the letters start on the column edge */
 .bar .acts{display:flex;align-items:center;justify-content:flex-end;gap:clamp(12px,.9vw,18px);font-size:clamp(14px,1vw,20px)}
-.bar .acts a{color:var(--ink);text-decoration:none}
 .bar .btn{height:clamp(28px,1.9vw,38px);padding:0 clamp(12px,.8vw,16px);font-size:clamp(14px,1vw,20px)}
 
 
@@ -67,7 +67,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .hero .ctas{display:flex;gap:clamp(10px,.7vw,14px);flex-wrap:wrap;margin-top:clamp(18px,1.6vw,32px)}
 .hero .btn{height:clamp(44px,3.05vw,61px);padding:0 clamp(20px,1.6vw,32px);font-size:clamp(16px,1.15vw,23px)}
 /* On a phone the hero breathes (4 October 2026): a long pause under the bar, a headline that leaves air on the right, and room before the app. */
-.hero .btn.go{display:none} /* the phone's one button, Get started */
+.hero .btn.go{display:none} /* the phone's one button: Download for iOS, no link until there is an app (6 October 2026) */
 @media (max-width:734px){.hero{padding-top:88px}.hero h1{font-size:31px;line-height:1.1;max-width:11.5em}.hero .ctas{margin-top:26px}.hero .ctas .btn{display:none}.hero .btn.go{display:inline-flex}}
 .btn .apl{width:1.05em;height:1.05em;margin:-.18em .45em 0 -.1em;flex:none}
 
@@ -920,7 +920,7 @@ footer nav{display:flex;gap:18px}
 <header class="bar">
   <div class="wrap">
     <span class="wordmark" role="img" aria-label="SimeonLabs"></span>
-    <div class="acts"><a href="https://app.simeonlabs.com">Sign in</a><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download</a></div>
+    <div class="acts"><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download</a></div>
   </div>
 </header>
 
@@ -928,7 +928,7 @@ footer nav{display:flex;gap:18px}
 <section class="hero">
   <div class="wrap">
     <h1>Create a team of agents for any part of your business.</h1>
-    <div class="ctas"><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac"><svg class="apl" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>Download for Mac</a><a class="btn ghost" href="#app">Request a demo&nbsp;→</a><span class="btn go">Get started&nbsp;→</span></div>
+    <div class="ctas"><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac"><svg class="apl" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>Download for Mac</a><a class="btn ghost" href="#app">Request a demo&nbsp;→</a><span class="btn go"><svg class="apl" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>Download for iOS</span></div>
   </div>
 </section>
 
@@ -1052,7 +1052,7 @@ footer nav{display:flex;gap:18px}
     <div class="trust-top">
       <h2>Pricing</h2>
     </div>
-    <div class="plans3"><div class="plan3"><h3>Trial</h3><p class="tag">For the first week</p><div class="pr">Free<small>/ 7 days</small></div><p class="per">1,000,000 credits once.</p><p class="inc">Includes:</p><ul><li>Every agent and every feature</li><li>A cloud computer for each agent</li><li>Card on file, one trial per card</li><li>Becomes Standard on day 8 unless you cancel</li></ul><span class="btn">Try it free</span></div><div class="plan3"><h3>Standard</h3><p class="tag">For a light week of work</p><div class="pr">$20<small>/ month</small></div><p class="per">750,000 credits a week.</p><p class="inc">Everything in the trial, plus:</p><ul><li>Routines that run while your Mac is closed</li><li>Discord and Slack channels, voice calls</li><li>Memory shared across your agents</li><li>Keep going past the week&#8217;s allowance on demand</li></ul><span class="btn">Get Standard</span></div><div class="plan3"><h3>Pro</h3><p class="tag">For agents working every day</p><div class="pr">$60<small>/ month</small></div><p class="per">2,500,000 credits a week.</p><p class="inc">Everything in Standard, plus:</p><ul><li>Three times the weekly work of Standard</li><li>Room for routines that run every day</li></ul><span class="btn">Get Pro</span></div><div class="plan3"><h3>Max</h3><p class="tag">For a team of agents that never stops</p><div class="pr">$200<small>/ month</small></div><p class="per">8,000,000 credits a week.</p><p class="inc">Everything in Pro, plus:</p><ul><li>Eleven times the weekly work of Standard</li><li>Agents on routines all week long</li><li>Our highest allowance</li></ul><span class="btn">Get Max</span></div></div>
+    <div class="plans3"><div class="plan3"><h3>Trial</h3><p class="tag">For the first week</p><div class="pr">Free<small>/ 7 days</small></div><p class="per">1,000,000 credits once.</p><p class="inc">Includes:</p><ul><li>Every agent and every feature</li><li>A cloud computer for each agent</li><li>Card on file, one trial per card</li><li>Becomes Standard on day 8 unless you cancel</li></ul><a class="btn" href="https://app.simeonlabs.com/billing?plan=standard">Try it free</a></div><div class="plan3"><h3>Standard</h3><p class="tag">For a light week of work</p><div class="pr">$20<small>/ month</small></div><p class="per">750,000 credits a week.</p><p class="inc">Everything in the trial, plus:</p><ul><li>Routines that run while your Mac is closed</li><li>Discord and Slack channels, voice calls</li><li>Memory shared across your agents</li><li>Keep going past the week&#8217;s allowance on demand</li></ul><a class="btn" href="https://app.simeonlabs.com/billing?plan=standard">Get Standard</a></div><div class="plan3"><h3>Pro</h3><p class="tag">For agents working every day</p><div class="pr">$60<small>/ month</small></div><p class="per">2,500,000 credits a week.</p><p class="inc">Everything in Standard, plus:</p><ul><li>Three times the weekly work of Standard</li><li>Room for routines that run every day</li></ul><a class="btn" href="https://app.simeonlabs.com/billing?plan=pro">Get Pro</a></div><div class="plan3"><h3>Max</h3><p class="tag">For a team of agents that never stops</p><div class="pr">$200<small>/ month</small></div><p class="per">8,000,000 credits a week.</p><p class="inc">Everything in Pro, plus:</p><ul><li>Eleven times the weekly work of Standard</li><li>Agents on routines all week long</li><li>Our highest allowance</li></ul><a class="btn" href="https://app.simeonlabs.com/billing?plan=max">Get Max</a></div></div>
     <p class="pnote">A credit is one token of input on the middle model. A typical task, one that reads a few pages and writes something back, is about 100,000 credits. Allowances reset every Monday. Unused credits do not carry over.</p>
   </div>
 </section>
