@@ -72,13 +72,15 @@
   padding: clamp(24px, 4vw, 56px) 0 clamp(40px, 5vw, 80px);
 }
 
+/* The site's "Pricing" and "Questions and answers" heading (.trust h2). */
 .title {
   margin: 0;
   text-align: center;
-  font-weight: 500;
-  font-size: clamp(32px, 4vw, 48px);
-  line-height: 1.08;
-  letter-spacing: -0.03em;
+  font-family: 'Newsreader', Georgia, 'Times New Roman', serif;
+  font-weight: 400;
+  font-size: clamp(36px, 2.9vw, 58px);
+  line-height: 1.04;
+  letter-spacing: -0.02em;
 }
 
 .lede {
@@ -452,8 +454,4 @@
 
 .foot .stripe {
   color: var(--stripe);
-}
-
-.foot .blue {
-  color: var(--blue);
 }

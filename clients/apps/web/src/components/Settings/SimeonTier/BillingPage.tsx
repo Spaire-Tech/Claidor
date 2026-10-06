@@ -79,6 +79,11 @@ const BillingPage = ({
 
   return (
     <div className={styles.page}>
+      {/* The site's heading face (sites/simeonlabs.com loads it the same way). */}
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400&display=swap"
+      />
       <header className={styles.bar}>
         <a href="https://simeonlabs.com" aria-label="Simeon">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -109,7 +114,6 @@ const BillingPage = ({
           subscribed={subscribed}
           highlight={plan}
           returnTo={returnTo}
-          onBack={subscribed ? () => setAdjusting(false) : null}
         />
       )}
     </div>
@@ -229,20 +233,16 @@ const AdjustPlan = ({
   sub,
   subscribed,
   returnTo,
-  onBack,
 }: {
   sub: CurrentSubscription | undefined
   subscribed: boolean
   highlight: PaidTierKey | null
   returnTo: string | null
-  onBack: (() => void) | null
 }) => {
   const plans = usePlans()
   const startCheckout = useStartCheckout()
   const openPortal = useOpenPortal()
   const [pending, setPending] = useState<PaidTierKey | 'portal' | null>(null)
-  const trialing = subscribed && sub?.status === 'trialing'
-
   const ordered = useMemo<Plan[]>(() => {
     if (!plans.data?.items) return []
     const byTier = new Map(plans.data.items.map((p) => [p.tier, p]))
@@ -279,22 +279,19 @@ const AdjustPlan = ({
     [openPortal, returnTo, startCheckout, subscribed],
   )
 
-  const portal = useCallback(
-    async (flow: 'cancel' | undefined) => {
-      setPending('portal')
-      try {
-        const { portal_url } = await openPortal.mutateAsync({ flow })
-        window.location.assign(portal_url)
-      } catch {
-        toast({
-          title: 'Could not open your billing page',
-          description: 'Please try again in a moment.',
-        })
-        setPending(null)
-      }
-    },
-    [openPortal],
-  )
+  const portal = useCallback(async () => {
+    setPending('portal')
+    try {
+      const { portal_url } = await openPortal.mutateAsync({})
+      window.location.assign(portal_url)
+    } catch {
+      toast({
+        title: 'Could not open your billing page',
+        description: 'Please try again in a moment.',
+      })
+      setPending(null)
+    }
+  }, [openPortal])
 
   const currentIndex = sub ? PAID_TIERS.indexOf(sub.tier as PaidTierKey) : -1
 
@@ -308,7 +305,7 @@ const AdjustPlan = ({
         {ordered.map((item, index) => {
           const current = subscribed && sub?.tier === item.tier
           const label = !subscribed
-            ? `Get ${tierDisplayName(item.tier)}`
+            ? `Start your ${tierDisplayName(item.tier)} Trial`
             : index > currentIndex
               ? `Upgrade to ${tierDisplayName(item.tier)}`
               : `Switch to ${tierDisplayName(item.tier)}`
@@ -328,31 +325,9 @@ const AdjustPlan = ({
 
       {subscribed && (
         <p className={styles.foot}>
-          <button
-            type="button"
-            className={styles.stripe}
-            onClick={() => portal(undefined)}
-          >
-            Manage billing on Stripe
+          <button type="button" onClick={() => portal()}>
+            Manage billing on <span className={styles.stripe}>Stripe</span>
           </button>
-          {' · '}
-          {sub?.cancel_at_period_end ? (
-            <span className={styles.muted}>
-              {trialing ? 'Trial cancelled' : 'Plan ends at period end'}
-            </span>
-          ) : (
-            <button type="button" onClick={() => portal('cancel')}>
-              {trialing ? 'Cancel trial' : 'Cancel plan'}
-            </button>
-          )}
-          {onBack && (
-            <>
-              {' · '}
-              <button type="button" className={styles.blue} onClick={onBack}>
-                Back
-              </button>
-            </>
-          )}
         </p>
       )}
     </main>
