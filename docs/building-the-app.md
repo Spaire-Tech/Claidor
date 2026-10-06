@@ -217,16 +217,20 @@ Settings the script reads: `SIMEON_TEAM_ID` (picks the certificate),
 
 ### Uploading a release
 
-The server serves releases from the public bucket (`docs/services-core.md`,
-"The Mac app's releases"). From the Mac that made it, with the AWS keys
-Render uses (`aws configure` once):
+The server serves releases from the public bucket, `simeonlabs-files-public`
+(`docs/services-core.md`, "The Mac app's releases"). From the Mac that made
+it, with the AWS keys Render uses (`aws configure` once):
 
 ```sh
 V=0.1.0
-aws s3 cp --recursive dist/release/$V s3://simeon-s3-public/releases/darwin-arm64/$V/
-aws s3 cp dist/release/$V/release.json s3://simeon-s3-public/releases/darwin-arm64/latest.json
-curl -sI https://api.simeonlabs.com/desktop/download/mac | head -3   # 302 to the .dmg within five minutes
+aws s3 cp --recursive dist/release/$V s3://simeonlabs-files-public/releases/darwin-arm64/$V/
+aws s3 cp dist/release/$V/release.json s3://simeonlabs-files-public/releases/darwin-arm64/latest.json
+# 302 to the .dmg within five minutes (a GET: the route answers HEAD with 405)
+curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' https://api.simeonlabs.com/desktop/download/mac
 ```
+
+`simeon-s3-public` in `server/.env.template` is the local MinIO bucket, not
+this one.
 
 ## Publishing the host bundle
 

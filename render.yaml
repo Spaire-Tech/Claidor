@@ -281,8 +281,9 @@ envVarGroups:
         value: eu-west-3
       - key: CLAIDOR_S3_FILES_BUCKET_NAME
         value: claidor-files
+      # The live public bucket (the Mac app's releases are served from it).
       - key: CLAIDOR_S3_FILES_PUBLIC_BUCKET_NAME
-        value: claidor-files-public
+        value: simeonlabs-files-public
 
       # --- email (login codes, alerts later) ---
       # Start with `logger` to get the app up without Resend; switch to

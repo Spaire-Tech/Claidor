@@ -9,7 +9,7 @@ import type {
   RunTerminalCommandV2Params,
   RunTerminalCommandV2Result,
   ToolResultError
-} from "../../../../../../source/packages/proto/generated/aiserver/v1/tools_pb";
+} from "../../../../../../source/packages/proto/generated/simeon/v1/tools_pb";
 import type { ToolResultCardSnapshot } from "./model";
 
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=3097937 (ClientSideToolV2Call oneof and toolCallId)
