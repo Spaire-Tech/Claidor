@@ -316,8 +316,7 @@
   border: 0;
   background: none;
   color: var(--ink);
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  text-decoration: none;
   cursor: pointer;
 }
 
@@ -400,7 +399,7 @@
   padding: 0;
   border: 0;
   background: none;
-  color: var(--ink);
+  color: var(--blue);
   cursor: pointer;
   text-decoration: none;
 }
@@ -454,4 +453,11 @@
 
 .foot .stripe {
   color: var(--stripe);
+}
+
+.btn .apl {
+  width: 1.05em;
+  height: 1.05em;
+  margin: -0.18em 0.45em 0 -0.1em;
+  flex: none;
 }
