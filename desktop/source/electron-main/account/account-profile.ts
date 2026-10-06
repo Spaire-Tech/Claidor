@@ -4,7 +4,7 @@ import { DASHBOARD_SERVICE_NAME, DashboardService } from "../../packages/proto/s
 import { createSimeonBackendClient } from "../../shared/node/simeon-backend/simeon-inference.js";
 import { simeonApiData } from "../../shared/node/simeon-backend/simeon-api.js";
 import { getOrCreateMachineId } from "./machine-id.js";
-import type { SandUsageSummary, SandUsageUpgradeCta } from "../../shared/usage.js";
+import type { SandManagePlan, SandUsageSummary, SandUsageUpgradeCta } from "../../shared/usage.js";
 import { persistAccountDisplayName, readLocalAccountDisplayName } from "./account-display-name.js";
 export { ACCOUNT_DISPLAY_NAME_FILE, isUnimplementedProfileError, persistAccountDisplayName, readLocalAccountDisplayName, writeLocalAccountDisplayName } from "./account-display-name.js";
 
@@ -175,6 +175,17 @@ export function upgradeCtaOfQuota(quota: SimeonQuotaRow): SandUsageUpgradeCta | 
   return { label, disabled: false, action: { kind: "open-url", url } };
 }
 
+/** The plan after this one, for the card's Upgrade button; none past Max. */
+const NEXT_TIER: Readonly<Record<string, { readonly tier: string; readonly label: string } | null>> = { standard: { tier: "pro", label: "Pro" }, pro: { tier: "max", label: "Max" }, max: null };
+
+/** The Manage plan card: only with a plan on Stripe (trialing, active, past due). */
+export function managePlanOfQuota(quota: SimeonQuotaRow): SandManagePlan | null {
+  const tier = typeof quota.tier === "string" ? quota.tier : "";
+  const status = typeof quota.subscriptionStatus === "string" ? quota.subscriptionStatus : "";
+  if (!(tier in NEXT_TIER) || !["trialing", "active", "past_due"].includes(status)) return null;
+  return { planName: typeof quota.planName === "string" && quota.planName.length > 0 ? quota.planName : tier, tier, status, periodEndMs: isoToMs(quota.periodEnd), nextTier: NEXT_TIER[tier] ?? null };
+}
+
 export function usageSummaryFromSimeonQuota(quota: SimeonQuotaRow): SandUsageSummary {
   const weekly = weeklyUsageFromSimeonQuota(quota);
   const remaining = finiteOrNull(quota.creditsRemaining);
@@ -194,6 +205,7 @@ export function usageSummaryFromSimeonQuota(quota: SimeonQuotaRow): SandUsageSum
     canCancelSandTrial: trialing && quota.trialCancelable === true,
     onDemand: onDemand == null ? null : { usedCents: onDemand.usedCents, limitCents: onDemand.limitCents, resetTimestampMs: weekly?.nextResetMs ?? null },
     upgradeCta: upgradeCtaOfQuota(quota),
+    managePlan: managePlanOfQuota(quota),
   };
 }
 
@@ -313,5 +325,23 @@ export async function fetchLocalToolPermissionCeiling(getAccessToken: AccessToke
 // renderer's `loadUsageState` turns it into its "failed" state with the
 // server's sentence.
 export async function fetchSandUsageSummary(getAccessToken: AccessTokenReader, deps: AccountProfileDeps): Promise<unknown> { return usageSummaryFromSimeonQuota(await readSimeonQuota(getAccessToken, deps)); }
+export const SIMEON_BILLING_PORTAL_PATH = "billing/portal";
+
+/** The Manage plan card's buttons: a Stripe Customer Portal link from the server, opened in the browser by the caller. */
+export async function openSimeonBillingPortal(getAccessToken: AccessTokenReader, request: unknown, deps: AccountProfileDeps): Promise<{ ok: boolean; url: string | null; message: string | null }> {
+  const raw = typeof request === "object" && request !== null ? request as Record<string, unknown> : {};
+  const json: Record<string, string> = {};
+  if (raw.flow === "update_confirm" && typeof raw.tier === "string") { json.flow = "update_confirm"; json.tier = raw.tier; }
+  try {
+    const data = await simeonApiData<{ portalUrl?: unknown }>(simeonAuth(getAccessToken, deps), SIMEON_BILLING_PORTAL_PATH, { method: "POST", json, ...(deps.fetch === undefined ? {} : { fetch: deps.fetch }) });
+    const url = typeof data?.portalUrl === "string" ? data.portalUrl : "";
+    if (!/^https:\/\//.test(url)) return { ok: false, url: null, message: "Couldn’t open billing. Try again." };
+    return { ok: true, url, message: null };
+  } catch (error) {
+    deps.reportFailure?.("account-billing", "portal", error);
+    return { ok: false, url: null, message: error instanceof Error && error.message.length > 0 ? error.message : "Couldn’t open billing. Try again." };
+  }
+}
+
 export async function cancelSandTrial(getAccessToken: AccessTokenReader, deps: AccountProfileDeps): Promise<{ ok: boolean; message: string | null }> { try { await profileClient(getAccessToken, deps).cancelSandTrial({}, { timeoutMs: USAGE_REQUEST_TIMEOUT_MS }); return { ok: true, message: null }; } catch (error) { return { ok: false, message: nonEmpty(deps.connectRawMessage?.(error)) ?? null }; } }
 export async function invokeSandDashboardAction(getAccessToken: AccessTokenReader, request: { readonly action: string; readonly args: Readonly<Record<string, string>> }, deps: AccountProfileDeps): Promise<{ ok: boolean; message: string | null }> { const response = await profileClient(getAccessToken, deps).clientAction(request, { timeoutMs: USAGE_REQUEST_TIMEOUT_MS }); return { ok: response.success, message: nonEmpty(response.success ? response.infoMessage : response.errorMessage) ?? null }; }

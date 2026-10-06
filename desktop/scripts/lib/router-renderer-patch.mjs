@@ -521,6 +521,67 @@ export const voiceCallCss = () => `${VOICE_CALL_MARKER} (30 September 2026). */
 @media (prefers-reduced-motion:reduce){.simeon-call-record__chevron,.simeon-call-record__recap{transition:none}}
 `;
 
+// The Manage plan card in Settings → Usage & Billing (6 October 2026): the
+// upstream's page had one from its own dashboard calls, which Simeon never
+// answered. Drawn from the usage summary's `managePlan` (the server's quota:
+// the plan, when it resets, the next plan up) under the usage meters, with
+// two buttons that open Stripe's Customer Portal in the browser through the
+// account bridge: the confirmation of the next plan up, and the portal's
+// front page for cards and invoices. Nothing without a plan on Stripe.
+export const MANAGE_PLAN_COMPONENT_SOURCE = [
+  "function __simeonManagePlan(){",
+  "const d=typeof window<\"u\"?window.desktop:void 0,a=d?.cursorAccount,[s,ss]=S.useState(null),[busy,sb]=S.useState(null),[er,se]=S.useState(null);",
+  "S.useEffect(()=>{if(a?.getUsageSummary==null)return;let l=!0;Promise.resolve(a.getUsageSummary()).then(v=>{l&&ss(v?.managePlan??null)},()=>{});return()=>{l=!1}},[a]);",
+  "if(s==null||a?.openBillingPortal==null||d?.openExternal==null)return null;",
+  "const open=req=>{if(busy!=null)return;sb(req.flow??\"manage\");se(null);Promise.resolve(a.openBillingPortal(req)).then(r=>{if(r?.ok===!0&&typeof r.url===\"string\")return d.openExternal(r.url);se(typeof r?.message===\"string\"?r.message:\"Couldn’t open billing. Try again.\")},()=>se(\"Couldn’t open billing. Try again.\")).finally(()=>sb(null))};",
+  "const when=s.periodEndMs!=null?new Date(s.periodEndMs).toLocaleDateString(void 0,{month:\"short\",day:\"numeric\"}):null;",
+  "const line=s.status===\"trialing\"?(when!=null?`Your trial ends on ${when}.`:\"Your trial is running.\"):when!=null?`Usage resets on ${when}.`:\"\";",
+  `return p.jsxs("div",{className:"simeon-manage-plan",children:[p.jsx("h3",{className:"simeon-manage-plan__title",children:"Manage Plan"}),p.jsxs("div",{className:"simeon-manage-plan__card",children:[p.jsxs("div",{className:"simeon-manage-plan__row",children:[p.jsxs("div",{children:[p.jsx("div",{className:"simeon-manage-plan__name",children:\`Current plan: \${s.planName}\`}),p.jsx("div",{className:"simeon-manage-plan__sub",children:\`\${line}\${s.nextTier!=null?" Upgrade for more usage.":""}\`.trim()})]}),s.nextTier!=null?p.jsx("button",{type:"button",className:"simeon-manage-plan__btn",disabled:busy!=null,onClick:()=>open({flow:"update_confirm",tier:s.nextTier.tier}),children:busy==="update_confirm"?"Opening…":\`Upgrade to \${s.nextTier.label}\`}):null]}),p.jsxs("div",{className:"simeon-manage-plan__row",children:[p.jsx("div",{className:"simeon-manage-plan__name",children:"Manage billing on Stripe"}),p.jsx("button",{type:"button",className:"simeon-manage-plan__btn simeon-manage-plan__btn--quiet",disabled:busy!=null,onClick:()=>open({}),children:busy==="manage"?"Opening…":"Manage Billing ↗"})]}),er!=null?p.jsx("div",{className:"simeon-manage-plan__error",children:er}):null]})]})}`,
+  "globalThis.__simeonManagePlan=__simeonManagePlan;",
+].join("");
+// The settings chunk has its own jsx alias and no React alias of its own to
+// lean on, so it reaches the component through the global the main chunk
+// sets; a window where the main chunk has not run yet draws nothing there.
+const MANAGE_PLAN_PANEL_AFTER = 'Z=x==="usage"?a.jsx(Te,{children:a.jsx("div",{children:[a.jsx(Na,{},"usage"),a.jsx(globalThis.__simeonManagePlan??(()=>null),{},"simeon-manage-plan")]})}):null';
+export const MANAGE_PLAN_REPLACEMENTS = Object.freeze([
+  ["manage-plan-component", VOICE_COMPONENTS_ANCHOR, `${MANAGE_PLAN_COMPONENT_SOURCE}${VOICE_COMPONENTS_ANCHOR}`],
+]);
+export const MANAGE_PLAN_PANEL_REPLACEMENTS = Object.freeze([
+  ["manage-plan-under-usage", USAGE_BEFORE, MANAGE_PLAN_PANEL_AFTER],
+]);
+
+export function patchOriginalManagePlan(source) {
+  if (source.includes("function __simeonManagePlan(){")) throw new Error("Original renderer Manage plan component is already present.");
+  let out = source;
+  for (const [label, before, after] of MANAGE_PLAN_REPLACEMENTS) out = replaceExactlyOnce(out, before, after, label);
+  return out;
+}
+
+export function patchOriginalManagePlanPanel(source) {
+  let out = source;
+  for (const [label, before, after] of MANAGE_PLAN_PANEL_REPLACEMENTS) out = replaceExactlyOnce(out, before, after, label);
+  return out;
+}
+
+export const MANAGE_PLAN_MARKER = "/* Simeon: the Manage plan card in Usage & Billing";
+export const managePlanCss = () => `${MANAGE_PLAN_MARKER} (6 October 2026). The upstream's card, redrawn: a bordered card under the meters, the plan and its reset date, a black pill to upgrade, a quiet pill to Stripe. */
+.simeon-manage-plan{margin-top:28px}
+.simeon-manage-plan__title{margin:0 0 10px;font-size:15px;font-weight:400;opacity:.6}
+.simeon-manage-plan__card{display:grid;gap:18px;padding:20px 22px;border:1px solid rgba(127,127,127,.28);border-radius:14px}
+.simeon-manage-plan__row{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.simeon-manage-plan__name{font-size:17px;line-height:1.3}
+.simeon-manage-plan__sub{margin-top:3px;max-width:34em;font-size:15px;line-height:1.4;opacity:.6}
+.simeon-manage-plan__btn{flex:none;height:40px;padding:0 18px;border:0;border-radius:99px;background:#000;color:#fff;font:inherit;font-size:15px;cursor:pointer;white-space:nowrap}
+.simeon-manage-plan__btn:disabled{opacity:.6;cursor:default}
+.simeon-manage-plan__btn--quiet{background:rgba(127,127,127,.16);color:inherit}
+.simeon-manage-plan__error{color:#ef8585;font-size:14px}
+@media (prefers-color-scheme:dark){.simeon-manage-plan__btn{background:#fff;color:#000}.simeon-manage-plan__btn--quiet{background:rgba(255,255,255,.14);color:inherit}}
+`;
+export function patchOriginalManagePlanStylesheet(css) {
+  if (css.includes(MANAGE_PLAN_MARKER)) throw new Error("Original renderer Manage plan block is already present.");
+  return `${css}\n${managePlanCss()}`;
+}
+
 export function patchOriginalVoiceCallStylesheet(css) {
   if (css.includes(VOICE_CALL_MARKER)) throw new Error("Original renderer voice-call block is already present.");
   return `${css}\n${voiceCallCss()}`;
@@ -2046,6 +2107,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   for (const [role, candidate, transform] of [
     ["registry", registryCandidates[0], patchOriginalSettingsRegistry],
     ["panel", panelCandidates[0], patchOriginalSettingsPanel],
+    ["manage-plan", panelCandidates[0], patchOriginalManagePlanPanel],
   ]) {
     const patched = transform(candidate.source);
     // A transform that returns its input (the Settings panel since the Router
@@ -2078,7 +2140,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   if (!SIDEBAR_DISCS_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer sidebar anchors (the header, the rail's new button, the search bar) are not all in the mark chunk.");
   if (!BUTTERFLY_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer mark engine anchors (the cloud's geometry, the body and eyes, the still renderer, the spin's lights) are not all in the mark chunk.");
   const logoAssets = await readLogoAssets();
-  const markPatched = patchOriginalButterfly(patchOriginalSidebarDiscs(patchOriginalCooStep(patchOriginalFlights(patchOriginalHandoff(patchOriginalAgentPane(patchOriginalVoiceCall(patchOriginalChatLayout(patchOriginalLogos(patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source))))), appMentionNames(logoAssets.mentions))))))))));
+  const markPatched = patchOriginalButterfly(patchOriginalSidebarDiscs(patchOriginalCooStep(patchOriginalFlights(patchOriginalHandoff(patchOriginalAgentPane(patchOriginalManagePlan(patchOriginalVoiceCall(patchOriginalChatLayout(patchOriginalLogos(patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source))))), appMentionNames(logoAssets.mentions)))))))))));
   // The stylesheet's light default of the same variable, for first paint.
   const stylesheets = (await readdir(assetsRoot)).filter((name) => name.endsWith(".css")).map((name) => path.join(assetsRoot, name));
   const bubbleSheets = [];
@@ -2087,7 +2149,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     if (css.includes(BUBBLE_CSS_REPLACEMENT[1])) bubbleSheets.push({ target, css });
   }
   if (bubbleSheets.length !== 1) throw new Error(`Expected one stylesheet carrying the user bubble default, found ${bubbleSheets.length}.`);
-  const stylesheetPatched = patchOriginalSidebarDiscsStylesheet(patchOriginalCooStylesheet(patchOriginalWordmarkStylesheet(patchOriginalFlightsStylesheet(patchOriginalHandoffStylesheet(patchOriginalAgentPaneStylesheet(patchOriginalVoiceCallStylesheet(patchOriginalLogosStylesheet(patchOriginalShapePickerStylesheet(patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)))), logoAssets))))), logoAssets.wordmarkFont)));
+  const stylesheetPatched = patchOriginalSidebarDiscsStylesheet(patchOriginalCooStylesheet(patchOriginalWordmarkStylesheet(patchOriginalFlightsStylesheet(patchOriginalHandoffStylesheet(patchOriginalAgentPaneStylesheet(patchOriginalManagePlanStylesheet(patchOriginalVoiceCallStylesheet(patchOriginalLogosStylesheet(patchOriginalShapePickerStylesheet(patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)))), logoAssets)))))), logoAssets.wordmarkFont)));
   const chunkSources = [];
   for (const target of markCandidates) chunkSources.push(await readFile(target, "utf8"));
   // The blocks spell the window's tokens as the token pass below leaves them.
@@ -2194,7 +2256,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-mark", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "agent-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "flight-results", "upstream-tokens", "sidebar-glass-discs", "pane-widest-default", "pane-three-tabs", "mark-butterfly", "mark-no-eyes", "spin-lights-agent-colours"],
+    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-mark", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "agent-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "flight-results", "upstream-tokens", "sidebar-glass-discs", "pane-widest-default", "pane-three-tabs", "mark-butterfly", "mark-no-eyes", "spin-lights-agent-colours", "manage-plan-card"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings", "upstream-tokens", "icon-font-file"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");

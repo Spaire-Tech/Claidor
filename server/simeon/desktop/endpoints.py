@@ -30,7 +30,7 @@ import json
 from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 from urllib.parse import parse_qsl, quote, urlencode, urlparse, urlunparse
 
 import httpx
@@ -48,11 +48,14 @@ from simeon.auth.dependencies import WebUserOrAnonymous
 from simeon.auth.models import is_user
 from simeon.config import settings
 from simeon.connectors.endpoints import router as connectors_router
+from simeon.entitlements.tiers import PAID_TIERS, tier_from_value
 from simeon.kit.db.postgres import AsyncSessionMaker
 from simeon.kit.utils import utc_now
 from simeon.maty.desktop_endpoints import router as maty_jobs_router
 from simeon.models import DesktopSession
 from simeon.openapi import APITag
+from simeon.plans.service import PlansError
+from simeon.plans.service import plans as plans_service
 from simeon.postgres import AsyncSession, get_db_session
 from simeon.routing import APIRouter
 
@@ -67,7 +70,6 @@ from .auth import (
 from .capabilities import router as capabilities_router
 from .composio import forward as composio_forward
 from .flights import router as flights_router
-from .releases import router as releases_router
 
 # Straight from the price list rather than through `service`, which
 # re-exports only what it uses itself — a name it merely passed through
@@ -84,6 +86,7 @@ from .proxy_common import budget_refusal
 from .proxy_common import error_response as _error
 from .proxy_common import log_upstream_refusal as _log_upstream_refusal
 from .proxy_common import upstream_timeout as _timeout
+from .releases import router as releases_router
 from .service import (
     AUTH_CODE_INVALID,
     MEMORY_FILE_LIMIT,
@@ -351,6 +354,37 @@ async def set_name(
         return _fail(400, str(error), status=400)
     session.add(user)
     return _ok(desktop.user_payload(user))
+
+
+class PortalBody(BaseModel):
+    """The app's Manage plan card: `flow` `update_confirm` with a `tier`
+    for an upgrade, nothing for the portal's front page."""
+
+    model_config = ConfigDict(extra="ignore")
+    flow: Literal["update_confirm", "cancel", "payment_method"] | None = None
+    tier: str | None = None
+
+
+@router.post("/api/billing/portal", name="desktop:billing_portal")
+async def billing_portal(
+    body: PortalBody,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    """A Stripe Customer Portal link for the app's Manage plan card
+    (Settings → Usage & Billing): the portal's front page for cards and
+    invoices, or the confirmation of one plan change. The app opens the
+    link in the browser (`docs/services-billing.md`, section 4)."""
+    tier = tier_from_value(body.tier) if body.tier else None
+    if body.flow == "update_confirm" and (tier is None or tier not in PAID_TIERS):
+        return _fail(400, "That plan is not one of ours.", status=400)
+    try:
+        url = await plans_service.create_portal(
+            session, desktop_session.user, flow=body.flow, tier=tier
+        )
+    except PlansError as error:
+        return _fail(error.status_code, error.message, status=error.status_code)
+    return _ok({"portalUrl": url})
 
 
 @router.get("/api/user/quota", name="desktop:quota")

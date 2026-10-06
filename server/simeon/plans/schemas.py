@@ -65,7 +65,11 @@ class CheckoutCreated(Schema):
 
 class PortalCreate(Schema):
     return_url: str | None = None
-    flow: Literal["cancel", "update", "payment_method"] | None = None
+    flow: Literal["cancel", "update", "update_confirm", "payment_method"] | None = None
+    tier: TierKey | None = Field(
+        default=None,
+        description="With `update_confirm`: the plan to move to, confirmed on Stripe.",
+    )
 
 
 class PortalCreated(Schema):
