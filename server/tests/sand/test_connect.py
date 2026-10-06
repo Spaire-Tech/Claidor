@@ -266,6 +266,86 @@ class TestLaunchPreflights:
 
 
 @pytest.mark.asyncio
+class TestSandAccessWithBilling:
+    """With billing required, the window's access cover: `GetSandAccessStatus`
+    gives it its words and `EnsureSandBox` refuses the box until a plan is
+    there (`simeon/sand/dashboard.py`, `simeon/sand/box_broker.py`)."""
+
+    async def test_no_plan_offers_the_trial_and_refuses_the_box(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        from tests.desktop.test_allowance import billing_on
+
+        billing_on(mocker)
+        access, _ = await _signed_in(client, session, user)
+        headers = {"Authorization": f"Bearer {access}"}
+        status = await client.post(
+            "/simeon.v1.DashboardService/GetSandAccessStatus", json={}, headers=headers
+        )
+        assert status.json() == {"state": 3, "purchaseChannel": 1, "blockReason": 6}
+        ensure = await client.post(
+            "/simeon.v1.ComputerService/EnsureSandBox", json={}, headers=headers
+        )
+        assert ensure.status_code == 403, ensure.text
+        assert ensure.json()["code"] == "permission_denied"
+        assert "/billing" in ensure.json()["message"]
+        # No hint header: that is what the Mac reads as access denied.
+        assert "x-automation-failure-hint" not in ensure.headers
+
+    async def test_after_a_trial_the_cover_says_check_access(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        save_fixture: SaveFixture,
+        mocker: MockerFixture,
+    ) -> None:
+        from simeon.models import DesktopTrialRedemption
+        from tests.desktop.test_allowance import _person_with_plan
+
+        await _person_with_plan(
+            save_fixture, mocker, user, tier="standard", status="canceled"
+        )
+        await save_fixture(
+            DesktopTrialRedemption(
+                user_id=user.id, email=user.email, stripe_subscription_id="sub_test"
+            )
+        )
+        access, _ = await _signed_in(client, session, user)
+        status = await client.post(
+            "/simeon.v1.DashboardService/GetSandAccessStatus",
+            json={},
+            headers={"Authorization": f"Bearer {access}"},
+        )
+        assert status.json() == {"state": 3, "purchaseChannel": 1, "blockReason": 1}
+
+    async def test_a_plan_is_granted(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        save_fixture: SaveFixture,
+        mocker: MockerFixture,
+    ) -> None:
+        from tests.desktop.test_allowance import _person_with_plan
+
+        await _person_with_plan(
+            save_fixture, mocker, user, tier="pro", status="trialing", trial_days_left=5
+        )
+        access, _ = await _signed_in(client, session, user)
+        status = await client.post(
+            "/simeon.v1.DashboardService/GetSandAccessStatus",
+            json={},
+            headers={"Authorization": f"Bearer {access}"},
+        )
+        assert status.json() == {"state": 1, "purchaseChannel": 1, "blockReason": 0}
+
+
+@pytest.mark.asyncio
 class TestCancelSandTrial:
     """The Settings page's « Cancel trial » button, answered on Stripe
     Billing (`simeon/sand/dashboard.py`)."""

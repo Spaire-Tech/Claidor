@@ -207,6 +207,8 @@ async def charge_pending(event_id: uuid.UUID) -> None:
     async with AsyncSessionMaker() as session:
         async with external_event_service.handle_stripe(session, event_id) as event:
             charge = cast(stripe_lib.Charge, event.stripe_data.data.object)
+            if not payment.belongs_to_the_shop(charge):
+                return
             checkout = await payment.resolve_checkout(session, charge)
             try:
                 order = await payment.resolve_order(session, charge, checkout)

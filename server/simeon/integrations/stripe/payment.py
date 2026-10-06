@@ -45,6 +45,23 @@ class OutdatedCheckoutIntent(PolarError):
         super().__init__(message)
 
 
+#: The metadata the shop writes on every intent and charge it makes. A
+#: charge without any of it is Stripe Billing's own (Simeon's plans,
+#: `simeon.plans`, whose charges come off an invoice): the shop has
+#: nothing to record for it, and `Payment` needs an organisation it
+#: cannot name.
+SHOP_METADATA_KEYS = ("checkout_id", "order_id", "wallet_id", "wallet_transaction_id")
+
+
+def belongs_to_the_shop(
+    object: stripe_lib.Charge | stripe_lib.PaymentIntent | stripe_lib.SetupIntent,
+) -> bool:
+    metadata = object.metadata
+    if not metadata:
+        return False
+    return any(metadata.get(key) for key in SHOP_METADATA_KEYS)
+
+
 async def resolve_checkout(
     session: AsyncSession,
     object: stripe_lib.Charge | stripe_lib.PaymentIntent | stripe_lib.SetupIntent,
@@ -120,6 +137,8 @@ async def resolve_order(
 async def handle_success(
     session: AsyncSession, object: stripe_lib.Charge | stripe_lib.SetupIntent
 ) -> None:
+    if not belongs_to_the_shop(object):
+        return
     checkout = await resolve_checkout(session, object)
     wallet, wallet_transaction = await resolve_wallet(session, object)
     order = await resolve_order(session, object, checkout)
@@ -165,6 +184,8 @@ async def handle_failure(
     session: AsyncSession,
     object: stripe_lib.Charge | stripe_lib.PaymentIntent | stripe_lib.SetupIntent,
 ) -> None:
+    if not belongs_to_the_shop(object):
+        return
     checkout = await resolve_checkout(session, object)
     wallet, _ = await resolve_wallet(session, object)
     order = await resolve_order(session, object, checkout)
@@ -195,6 +216,7 @@ async def handle_failure(
 
 
 __all__ = [
+    "belongs_to_the_shop",
     "handle_failure",
     "handle_success",
     "resolve_checkout",
