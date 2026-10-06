@@ -35,11 +35,11 @@ test("an upgrade button opens the billing page on the plan's card", async () => 
   const loaded = await loadModule("source/host/extensions/transcript/agent-run-error.ts", "agent-run-error");
   try {
     const { checkoutDeepControlUrl, mapErrorDetailButtons } = loaded.module;
-    assert.equal(checkoutDeepControlUrl({ membershipToUpgradeTo: "pro_plus" }), "https://app.simeonlabs.com/billing?plan=pro");
-    assert.equal(checkoutDeepControlUrl({ membershipToUpgradeTo: "ultra", allowTrial: true }), "https://app.simeonlabs.com/billing?plan=max&allowTrial=true");
-    assert.equal(checkoutDeepControlUrl({}), "https://app.simeonlabs.com/billing?plan=standard");
+    assert.equal(checkoutDeepControlUrl({ membershipToUpgradeTo: "pro_plus" }), "https://api.simeonlabs.com/billing?plan=pro");
+    assert.equal(checkoutDeepControlUrl({ membershipToUpgradeTo: "ultra", allowTrial: true }), "https://api.simeonlabs.com/billing?plan=max&allowTrial=true");
+    assert.equal(checkoutDeepControlUrl({}), "https://api.simeonlabs.com/billing?plan=standard");
     const [choice] = mapErrorDetailButtons([{ label: "Upgrade", action: { case: "upgradeChoice", value: {} } }]);
-    assert.deepEqual(choice, { kind: "open-url", label: "Upgrade", url: "https://app.simeonlabs.com/billing" });
+    assert.deepEqual(choice, { kind: "open-url", label: "Upgrade", url: "https://api.simeonlabs.com/billing" });
   } finally {
     await loaded.dispose();
   }

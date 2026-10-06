@@ -208,12 +208,12 @@ class PlansService:
             is not None
         )
 
-        success = allowed_return_url(success_url) or settings.generate_frontend_url(
-            f"{BILLING_PATH}?upgraded=1"
+        success = allowed_return_url(success_url) or settings.generate_external_url(
+            f"{BILLING_PATH}?done=1"
         )
         joiner = "&" if "?" in success else "?"
         success = f"{success}{joiner}checkout_session_id={CHECKOUT_SESSION_PLACEHOLDER}"
-        cancel = allowed_return_url(cancel_url) or settings.generate_frontend_url(
+        cancel = allowed_return_url(cancel_url) or settings.generate_external_url(
             BILLING_PATH
         )
 
@@ -271,7 +271,7 @@ class PlansService:
         params: dict[str, Any] = {
             "customer": customer_id,
             "return_url": allowed_return_url(return_url)
-            or settings.generate_frontend_url(BILLING_PATH),
+            or settings.generate_external_url(BILLING_PATH),
         }
         if flow and subscription is not None:
             if flow == "cancel":

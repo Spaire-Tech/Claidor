@@ -440,7 +440,7 @@ class TestPortal:
             "type": "subscription_cancel",
             "subscription_cancel": {"subscription": "sub_test"},
         }
-        assert params["return_url"] == settings.generate_frontend_url("/billing")
+        assert params["return_url"] == settings.generate_external_url("/billing")
 
 
 @pytest.mark.asyncio

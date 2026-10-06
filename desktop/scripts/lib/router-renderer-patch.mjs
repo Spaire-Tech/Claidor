@@ -75,7 +75,7 @@ export const BRAND_PHRASE_REPLACEMENTS = Object.freeze([
   // opened the upstream's onboarding page. It opens Simeon's billing page;
   // once the plan is on Stripe, the window's next ask for its box succeeds
   // and the cover goes (docs/services-billing.md, section 3).
-  ["https://cursor.com/bot/onboarding", "https://app.simeonlabs.com/billing?plan=standard"],
+  ["https://cursor.com/bot/onboarding", "https://api.simeonlabs.com/billing?plan=standard"],
 ]);
 
 /**
