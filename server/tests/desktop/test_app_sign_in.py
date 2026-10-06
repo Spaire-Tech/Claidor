@@ -234,6 +234,53 @@ class TestLoginDeepControl:
         assert urlparse(response.headers["location"]).path == "/billing"
 
     @pytest.mark.auth
+    async def test_a_signed_in_person_can_say_it_is_not_them(
+        self, client: httpx.AsyncClient, user: User
+    ) -> None:
+        """The browser keeps the website's sign-in long after the app's,
+        so the page offers a way past the account it shows: a POST that
+        ends the browser's session and goes to the web login, with the
+        app's own link as the way back. Nothing is confirmed."""
+        verifier, challenge, uuid = _login_metadata()
+        page = await client.get(
+            "/loginDeepControl", params={"challenge": challenge, "uuid": uuid}
+        )
+        assert 'action="/loginDeepControl/switch"' in page.text
+        response = await client.post(
+            "/loginDeepControl/switch",
+            data={
+                "uuid": uuid,
+                "challenge": challenge,
+                "mode": "login",
+                "redirectTarget": "simeon",
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+        location = urlparse(response.headers["location"])
+        assert location.path == "/login"
+        back = parse_qs(location.query)["return_to"][0]
+        assert back.startswith(settings.generate_external_url("/loginDeepControl?"))
+        assert f"uuid={uuid}" in back
+        assert "redirectTarget=simeon" in back
+        cookie = response.headers["set-cookie"]
+        assert cookie.startswith(f"{settings.USER_SESSION_COOKIE_KEY}=")
+        assert "expires=" in cookie.lower()
+        poll = await client.post(
+            "/auth/poll", json={"uuid": uuid, "verifier": verifier}
+        )
+        assert poll.status_code == 404
+
+    async def test_the_switch_refuses_a_link_without_the_pair(
+        self, client: httpx.AsyncClient
+    ) -> None:
+        response = await client.post(
+            "/loginDeepControl/switch", data={"uuid": "x"}, follow_redirects=False
+        )
+        assert response.status_code == 200
+        assert "could not be completed" in response.text
+
+    @pytest.mark.auth
     async def test_a_link_without_the_pair_is_refused_outright(
         self, client: httpx.AsyncClient
     ) -> None:
