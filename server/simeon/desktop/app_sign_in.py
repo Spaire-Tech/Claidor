@@ -61,6 +61,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
 from simeon.auth.dependencies import WebUserOrAnonymous
 from simeon.auth.models import is_user
+from simeon.auth.service import auth as auth_service
 from simeon.config import settings
 from simeon.openapi import APITag
 from simeon.plans.service import PlansError
@@ -134,6 +135,9 @@ def _page(title: str, body: str, *, deep_link: str | None = None) -> HTMLRespons
         "p{margin:0 0 1rem;opacity:.85}"
         "button{font:inherit;font-weight:600;padding:.6rem 1.1rem;border:0;"
         "border-radius:.5rem;background:CanvasText;color:Canvas;cursor:pointer}"
+        "form+form{margin-top:1rem}"
+        "button.quiet{background:none;color:CanvasText;opacity:.7;padding:0;"
+        "font-weight:400;text-decoration:underline}"
         "code{opacity:.7;font-size:.85em}"
         "</style></head><body><main>"
         f"<h1>{escape(title)}</h1>{body}"
@@ -241,13 +245,59 @@ async def login_deep_control(
         )
         if value
     )
+    # The second form is for the person this page is not about: the
+    # browser keeps the website's own sign-in long after the app's, so
+    # signing out of the app and opening this link again showed the same
+    # account with no way past it (the founder, 6 October 2026). It ends
+    # the browser's session and goes to the web login, with this very
+    # link as the way back.
     return _page(
         f"Sign in to {PRODUCT}?",
         f"<p>{PRODUCT} on your Mac is asking to sign in as <strong>{email}</strong>."
         " Only continue if you just asked it to.</p>"
         f'<form method="post" action="/loginDeepControl">{fields}'
-        f'<button type="submit">Sign in as {email}</button></form>',
+        f'<button type="submit">Sign in as {email}</button></form>'
+        f'<form method="post" action="/loginDeepControl/switch">{fields}'
+        '<button type="submit" class="quiet">Not you? Use a different account</button>'
+        "</form>",
     )
+
+
+@router.post("/loginDeepControl/switch", name="desktop:deep_control_switch")
+async def switch_deep_control(
+    request: Request,
+    challenge: str = Form(default=""),
+    uuid: str = Form(default=""),
+    mode: str = Form(default="login"),
+    redirectTarget: str | None = Form(default=None),  # the app's own name
+    session: AsyncSession = Depends(get_db_session),
+) -> RedirectResponse | HTMLResponse:
+    """Ends the browser's website session and sends the person to the web
+    login, asking to be returned to the app's sign-in link. A POST from
+    the page itself, like the confirmation: a cross-site link must not be
+    able to sign somebody out of the website."""
+    if (
+        not _same_origin(request)
+        or not is_deep_control_param(uuid)
+        or not is_deep_control_param(challenge)
+    ):
+        return _page(
+            "That sign-in could not be completed",
+            f"<p>Open {PRODUCT} and try again.</p>",
+        )
+    kept = {"challenge": challenge, "uuid": uuid, "mode": mode}
+    if redirectTarget:
+        kept["redirectTarget"] = redirectTarget
+    return_to = settings.generate_external_url(f"/loginDeepControl?{urlencode(kept)}")
+    user_session = await auth_service.authenticate(session, request)
+    if user_session is not None:
+        await session.delete(user_session)
+    response = RedirectResponse(
+        settings.generate_frontend_url(f"/login?return_to={quote(return_to, safe='')}"),
+        303,
+        headers=NO_STORE,
+    )
+    return auth_service.clear_user_session_cookie(request, response)
 
 
 @router.post("/loginDeepControl", name="desktop:deep_control_confirm")
