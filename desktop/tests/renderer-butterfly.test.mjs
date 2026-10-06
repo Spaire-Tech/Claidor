@@ -1,6 +1,6 @@
 /**
  * The butterfly (6 October 2026, the founder): every agent is a butterfly in
- * its palette, with pale wings, a darker border, veins, a body and antennae,
+ * its palette, in full colour, with a darker border, veins, a body and antennae,
  * and no eyes; the window's mark engine keeps all of its motion, and the
  * spin's light trails and sparks take the agent's own colours.
  *
@@ -91,6 +91,7 @@ test("the call banner's and the mentions' copies are the same butterfly, cropped
   const svg = JSON.parse(markSource.match(/export const AGENT_MARK_SVG = ("(?:[^"\\]|\\.)*");/)[1]);
   const { butterflyMarkSvg, BUTTERFLY_OUTLINE, AGENT_MENTION_VIEWBOX, agentMentionsCss } = await import(patchModule);
   assert.equal(svg, butterflyMarkSvg({ id: "MARKID", from: "var(--ink-from)", mid: "var(--ink-mid)", to: "var(--ink-to)" }), "agent-mark.ts holds the patch's drawing");
+  assert.ok(!svg.includes("-wash"), "full colour: no pale wash over the wings");
   assert.ok(!svg.includes("--eye"), "no eyes");
   const points = BUTTERFLY_OUTLINE.slice(1, -1).split("L").map((p) => p.split(" ").map(Number));
   const [x, y, width, height] = AGENT_MENTION_VIEWBOX.split(" ").map(Number);
