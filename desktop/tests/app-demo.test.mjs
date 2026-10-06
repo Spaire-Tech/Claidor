@@ -66,7 +66,7 @@ test("Simeon's conversation plays through on its own, the same thread the websit
   backend.onServing();
   backend.onServing();
   await until(() => appended().some((e) => e.id === "m2a"));
-  const said = appended().map((e) => e.toAgent ? `to ${e.toAgent.name}` : e.fromAgent ? `from ${e.fromAgent.name}` : e.role === "user" ? `you: ${e.content}` : e.message?.type === "text" ? e.message.content : e.message?.type);
+  const said = appended().map((e) => e.kind === "event" ? `${e.event.type}: ${e.event.action} ${e.event.automationName}` : e.toAgent ? `to ${e.toAgent.name}` : e.fromAgent ? `from ${e.fromAgent.name}` : e.role === "user" ? `you: ${e.content}` : e.message?.type === "text" ? e.message.content : e.message?.type);
   assert.deepEqual(said, [
     "you: Morning. Where are we on Thursday's launch?",
     "Thursday is on track: 12 of 15 launch tickets are done in **Linear**, and the review is Thursday at 2 pm.",
@@ -74,6 +74,8 @@ test("Simeon's conversation plays through on its own, the same thread the websit
     "Scout pulled three customer quotes and Iris closed the last two tickets. The review doc is ready.",
     "attachment",
     "you: Looks great. Send the agenda to Dana and Marcus, and check in like this every Monday.",
+    // The window's own line, "Created routine · Monday launch check", as the phone shows it (6 October 2026).
+    "automation-changed: created Monday launch check",
     "Done. The agenda went out from **Gmail**.",
   ], "the whole story, once, in order, with no question to answer");
   const summaries = events.filter((e) => e.family === "outline" && e.payload.item.status === "completed").map((e) => e.payload.item.summary);
