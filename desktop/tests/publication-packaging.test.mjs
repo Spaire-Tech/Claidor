@@ -75,7 +75,8 @@ test("Router settings use the trusted backend and display recorded inference usa
   const localDocker = await readFile(path.join(repoRoot, "source", "electron-main", "box", "local-docker-host-connector.ts"), "utf8");
   const sharedRouter = await readFile(path.join(repoRoot, "source", "shared", "inference-router.ts"), "utf8");
   assert.doesNotMatch(rendererPatch, /id:"router",label:"Router"/);
-  assert.match(rendererPatch, /export function patchOriginalSettingsPanel\(source\) \{\n  return source;\n\}/);
+  assert.match(rendererPatch, /className:"simeon-plan-settings"/);
+  assert.match(rendererPatch, /if \(first < 0\) return source;/);
   assert.doesNotMatch(rendererPatch, /settings\.router-provider\.v1/);
   assert.match(preload, /getInferenceRouter: \(\) => edge\("getInferenceRouter"\)/);
   assert.match(preload, /getBoxRuntime: \(\) => edge\("getBoxRuntime"\)/);

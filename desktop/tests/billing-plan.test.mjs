@@ -78,7 +78,8 @@ test("the usage panel gains one plan mount, on the anchor the committed settings
   assert.equal(patched.split("simeon-plan-settings").length - 1, 1);
   assert.match(patched, /globalThis\.__simeonMountPlan&&globalThis\.__simeonMountPlan\(n\)/);
   assert.equal(patched.includes(SETTINGS_PLAN_BEFORE), false);
-  assert.throws(() => patchOriginalSettingsPanel("function Na(){}"), /settings plan anchor is missing or ambiguous/);
+  assert.equal(patchOriginalSettingsPanel("function Na(){}"), "function Na(){}");
+  assert.throws(() => patchOriginalSettingsPanel(SETTINGS_PLAN_BEFORE + SETTINGS_PLAN_BEFORE), /settings plan anchor is missing or ambiguous/);
 });
 
 test("the plan block names the trial and opens the portal, except cancel trial", async () => {

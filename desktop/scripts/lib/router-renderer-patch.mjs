@@ -1902,6 +1902,8 @@ export function patchOriginalSettingsRegistry(source) {
 }
 
 export function patchOriginalSettingsPanel(source) {
+  const first = source.indexOf(SETTINGS_PLAN_BEFORE);
+  if (first < 0) return source;
   return replaceExactlyOnce(source, SETTINGS_PLAN_BEFORE, SETTINGS_PLAN_AFTER, "settings plan");
 }
 
