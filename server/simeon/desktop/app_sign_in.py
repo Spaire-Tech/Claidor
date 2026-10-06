@@ -263,9 +263,7 @@ async def login_deep_control(
     )
 
 
-@router.post(
-    "/loginDeepControl/switch", name="desktop:deep_control_switch", response_model=None
-)
+@router.post("/loginDeepControl/switch", name="desktop:deep_control_switch")
 async def switch_deep_control(
     request: Request,
     challenge: str = Form(default=""),
