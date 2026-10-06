@@ -38,3 +38,5 @@ html body .sand-prompt-attach:active{transform:scale(.97)!important}
 html body .sand-prompt-attach .ui-icon{color:rgba(0,0,0,.78)!important}
 /* The demo keeps the agent pane closed: the chat header's avatar takes no clicks (the founder, 5 October 2026). */
 html body .sand-chat-header__identity{pointer-events:none!important}
+/* The demo has no routine behind "Created routine · Monday launch check": the line reads, but opens nothing (6 October 2026). */
+html body .sand-kit-system-event__chip{pointer-events:none!important}

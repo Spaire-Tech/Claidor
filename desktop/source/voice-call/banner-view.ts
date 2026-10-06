@@ -91,7 +91,8 @@ export function createBannerPainter(elements: BannerElements, options: { readonl
       }
       elements.avatar.innerHTML = agentMarkSvg(`call-${agent.agentId.slice(0, 12)}`);
       mark = elements.avatar.querySelector("svg");
-      eyes = mark?.querySelector<SVGGElement>("g[clip-path]") ?? null;
+      // The butterfly has no eyes (6 October 2026); its clipped group is the wings' details, which must not blink.
+      eyes = mark?.querySelector<SVGGElement>("g[data-eyes]") ?? null;
       eyes?.classList.add("eyes");
     },
     paint(view, isMuted) {
