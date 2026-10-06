@@ -1,6 +1,6 @@
 {
   "name": "simeon",
-  "version": "0.1.1",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "description": "Simeon — a team of always-on agents, on your Mac, with a computer of their own",

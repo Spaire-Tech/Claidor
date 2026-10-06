@@ -68,9 +68,8 @@ test("the voice-call anchors apply exactly once, and a second pass refuses", asy
   assert.throws(() => patchOriginalVoiceCallStylesheet(css), /already present/);
   const source = await readFile(path.join(repoRoot, "scripts/lib/router-renderer-patch.mjs"), "utf8");
   assert.match(source, /patchOriginalVoiceCall\(patchOriginalChatLayout\(/);
-  // Later patches join this list. Voice-call replacements stay in the recorded set.
-  assert.match(source, /\[[^\]]*\.\.\.VOICE_CALL_REPLACEMENTS,[^\]]*\]\.map\(\(\[label\]\) => label\)/);
-  assert.match(source, /features: \[[^\]]*"voice-call-button", "voice-picker"/);
+  assert.match(source, /\.\.\.VOICE_CALL_REPLACEMENTS, \.\.\.AGENT_PANE_REPLACEMENTS, \.\.\.HANDOFF_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT\]\.map/);
+  assert.match(source, /"voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "flight-results", "upstream-tokens"\]/);
 });
 
 test("the pinned 0.18.0 renderer carries each voice-call anchor once, and the patched chunk parses", async (t) => {
