@@ -106,7 +106,7 @@ test("the apply pass runs the butterfly patch on the mark chunk and records it",
   assert.match(source, /const markPatched = patchOriginalButterfly\(patchOriginalSidebarDiscs\(/);
   assert.match(source, /if \(!BUTTERFLY_REPLACEMENTS\.every\(\(\[, before\]\) => markChunks\[0\]\.source\.includes\(before\)\)\) throw new Error/);
   assert.match(source, /\.\.\.SIDEBAR_DISCS_REPLACEMENTS, \.\.\.BUTTERFLY_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT\]\.map\(\(\[label\]\) => label\)/);
-  assert.match(source, /"pane-three-tabs", "mark-butterfly", "mark-no-eyes", "spin-lights-agent-colours"\]/);
+  assert.match(source, /"pane-three-tabs", "mark-butterfly", "mark-no-eyes", "spin-lights-agent-colours"[,\]]/);
 });
 
 test("the pinned 0.18.0 renderer carries every butterfly anchor exactly once", async (t) => {
