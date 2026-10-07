@@ -67,6 +67,8 @@ export interface SandBrowserAutoReviewOptions {
   readonly boxIdentity: BoxIdentity;
   readonly autoReviewController?: SandAutoReviewController;
   readonly resolveDisplayNumber: (ctx: Context) => Promise<number | undefined>;
+  /** In shadow mode, told when the page-state probe failed and the review was skipped; the action still runs. */
+  readonly onShadowCaptureFailed?: (message: string) => void;
   readonly personalInstructions?: { readonly allowInstructions?: readonly string[]; readonly blockInstructions?: readonly string[] };
   readonly userAutoRunInstructions?: { readonly allowInstructions?: readonly string[]; readonly blockInstructions?: readonly string[] };
   readonly projectAutoRunInstructions?: { readonly allowInstructions?: readonly string[]; readonly blockInstructions?: readonly string[] };
@@ -90,7 +92,17 @@ export async function runSandBrowserAutoReviewPreflight(args: {
   if (options.mode === "off" || !isSandBrowserAutoReviewMutatingAction(args.exactAction)) return;
   if (options.mode === "enforce" && ["click", "mouse_click_xy", "drag"].includes(op) && normalizeSandBrowserElement(args.exactAction.element) == null) throw new SandBrowserAutoReviewBlockedError("Browser click and drag actions require an element field: a concise description of the intended target and purpose.");
   const classifierMode = options.mode === "shadow" ? "shadow" : "enforce";
-  const canonical = buildSandBrowserAutoReviewCanonicalTarget({ exactAction: args.exactAction, boxIdentity: options.boxIdentity, reviewState: await options.captureReviewState(args.ctx, args.toolCallId) }), fingerprint = fingerprintSandBrowserAutoReviewTarget(canonical);
+  // In shadow the review only watches: a page-state probe that fails must
+  // not stop the action (8 October 2026; until then every browser action
+  // died on "could not capture the current page state" whatever the mode,
+  // and the person's first real job ran on the desktop instead).
+  let reviewState: { displayStateIdentity: string; targetPageUrl?: string };
+  try { reviewState = await options.captureReviewState(args.ctx, args.toolCallId); } catch (error) {
+    if (options.mode !== "shadow" || (error instanceof Error && error.name === "AbortError")) throw error;
+    options.onShadowCaptureFailed?.(error instanceof Error ? error.message : String(error));
+    return;
+  }
+  const canonical = buildSandBrowserAutoReviewCanonicalTarget({ exactAction: args.exactAction, boxIdentity: options.boxIdentity, reviewState }), fingerprint = fingerprintSandBrowserAutoReviewTarget(canonical);
   const recheck = async (): Promise<void> => { if ((await options.captureReviewState(args.ctx, args.toolCallId)).displayStateIdentity !== canonical.displayStateIdentity) { options.autoReviewController?.reportDisplayRecheckFailed(options.agentId); throw new SandBrowserAutoReviewBlockedError("The page changed after review; take a fresh browser_snapshot and retry the action."); } };
   const runClassifier = () => runSandAutoReviewClassifier({
     ctx: args.ctx,

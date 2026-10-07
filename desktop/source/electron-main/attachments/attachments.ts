@@ -47,6 +47,16 @@ export interface AttachmentEdgeDeps {
   readonly randomUUID?: () => string;
 }
 
+/** The attachment's bytes whatever shape the bridge delivered them in, or null for nothing usable. */
+export function coerceAttachmentBytes(value: unknown): Uint8Array | null {
+  if (value instanceof Uint8Array) return value;
+  if (value instanceof ArrayBuffer) return new Uint8Array(value);
+  if (ArrayBuffer.isView(value)) return new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+  if (Array.isArray(value) && value.every((item) => typeof item === "number")) return Uint8Array.from(value);
+  if (typeof value === "object" && value != null && (value as { type?: unknown }).type === "Buffer" && Array.isArray((value as { data?: unknown }).data)) return Uint8Array.from((value as { data: number[] }).data);
+  return null;
+}
+function describeBytes(value: unknown): string { return value instanceof Uint8Array ? `Uint8Array(${value.byteLength})` : value instanceof ArrayBuffer ? `ArrayBuffer(${value.byteLength})` : Array.isArray(value) ? `array(${value.length})` : typeof value === "object" && value != null ? `object(${Object.prototype.toString.call(value)})` : typeof value; }
 export function errorClassOf(error: unknown): string { return error instanceof Error ? error.name || "Error" : typeof error; }
 export function isSafeFilename(value: unknown): value is string { return typeof value === "string" && value.length > 0 && value.length <= 255 && !value.includes("/") && !value.includes("\\") && !value.includes("\0"); }
 export function normalizeAttachmentSource(source: unknown): string | null {
@@ -84,15 +94,19 @@ export function createAttachmentEdgePort(deps: AttachmentEdgeDeps) {
     },
     async readText(source: unknown): Promise<string | null> { const path = normalizeAttachmentSource(source); if (path == null) return null; try { return await deps.legs.readAttachmentText({ path }); } catch (error) { report("read-text", error); return null; } },
     async readBytes(source: unknown, maxBytes?: unknown) { const path = normalizeAttachmentSource(source); if (path == null || !deps.previewKindNeedsBytes(deps.getFilePreviewKind(path))) return null; const cap = typeof maxBytes === "number" && Number.isFinite(maxBytes) && maxBytes > 0 ? Math.min(Math.floor(maxBytes), deps.previewByteCap) : deps.previewByteCap; return await readBoxBytes(path, cap); },
-    async stageBytes(filename: unknown, bytes: unknown) {
-      if (!isSafeFilename(filename) || !(bytes instanceof Uint8Array)) return { ok: false as const, reason: "failed" as const };
+    async stageBytes(filename: unknown, rawBytes: unknown) {
+      // The bytes arrive over the preload bridge; a copy that reached here as a
+      // Buffer, an ArrayBuffer, a DataView or a plain array still counts
+      // (8 October 2026: the founder's declarations page "couldn't attach").
+      const bytes = coerceAttachmentBytes(rawBytes);
+      if (!isSafeFilename(filename) || bytes == null) { console.error(`[simeon] attachment stage refused: filename=${isSafeFilename(filename) ? "ok" : "unsafe"} bytes=${describeBytes(rawBytes)}`); return { ok: false as const, reason: "failed" as const }; }
       if (bytes.byteLength === 0) return { ok: false as const, reason: "empty" as const };
       if (bytes.byteLength > deps.byteLimitForName(filename)) return { ok: false as const, reason: "too-large" as const };
-      try { const dir = deps.getStagingDir(); await mkdir(dir, { recursive: true }); const path = join(dir, `${(deps.now ?? Date.now)()}-${(deps.randomUUID ?? crypto.randomUUID)()}${extname(filename)}`); await writeFile(path, bytes); return { ok: true as const, path }; } catch (error) { report("stage", error); return { ok: false as const, reason: "failed" as const }; }
+      try { const dir = deps.getStagingDir(); await mkdir(dir, { recursive: true }); const path = join(dir, `${(deps.now ?? Date.now)()}-${(deps.randomUUID ?? crypto.randomUUID)()}${extname(filename)}`); await writeFile(path, bytes); return { ok: true as const, path }; } catch (error) { report("stage", error); console.error(`[simeon] attachment stage failed: ${error instanceof Error ? `${error.name}: ${error.message}` : String(error)}`); return { ok: false as const, reason: "failed" as const }; }
     },
     async commitStaged(rawPaths: unknown, rawFilenames: unknown): Promise<string[] | null> {
       const paths = Array.isArray(rawPaths) ? rawPaths : []; const filenames = Array.isArray(rawFilenames) ? rawFilenames : []; const committed: string[] = [];
-      for (let index = 0; index < paths.length; index += 1) { const stagedPath = paths[index]; const filename = filenames[index]; if (typeof stagedPath !== "string" || stagedPath.length === 0 || !isSafeFilename(filename) || !deps.isWithinStagingDir(stagedPath)) return null; let bytes: Buffer; try { bytes = await readFile(stagedPath); } catch (error) { report("commit", error); return null; } if (bytes.byteLength === 0) return null; try { committed.push((await deps.legs.uploadAttachment({ filename, bytesBase64: bytes.toString("base64") })).path); } catch (error) { report("commit", error); return null; } }
+      for (let index = 0; index < paths.length; index += 1) { const stagedPath = paths[index]; const filename = filenames[index]; if (typeof stagedPath !== "string" || stagedPath.length === 0 || !isSafeFilename(filename) || !deps.isWithinStagingDir(stagedPath)) return null; let bytes: Buffer; try { bytes = await readFile(stagedPath); } catch (error) { report("commit", error); return null; } if (bytes.byteLength === 0) return null; try { committed.push((await deps.legs.uploadAttachment({ filename, bytesBase64: bytes.toString("base64") })).path); } catch (error) { report("commit", error); console.error(`[simeon] attachment commit failed: ${error instanceof Error ? `${error.name}: ${error.message}` : String(error)}`); return null; } }
       return committed;
     },
     async discardStaged(stagedPath: unknown): Promise<void> { if (typeof stagedPath !== "string" || stagedPath.length === 0 || !deps.isWithinStagingDir(stagedPath)) return; await rm(stagedPath, { force: true }).catch((error: unknown) => report("discard", error)); },
