@@ -182,6 +182,22 @@ test("the Meet step: Simeon arrives large, turns once around himself, then settl
   assert.ok(patchOriginalCooStylesheet(".a{}").includes(MEET_CSS));
 });
 
+test("the computer step: the screen is 1.45 times the drawing, with the photograph on it, and Simeon walks the scaled path", async () => {
+  const { COMPUTER_STEP_REPLACEMENTS, COMPUTER_CSS, COMPUTER_SCREEN_SCALE, WALLPAPER_SOURCE, WALLPAPER_ASSET, patchOriginalCooStylesheet } = await import("../scripts/lib/router-renderer-patch.mjs");
+  const by = Object.fromEntries(COMPUTER_STEP_REPLACEMENTS.map(([label, , after]) => [label, after]));
+  assert.equal(COMPUTER_SCREEN_SCALE, 1.45);
+  assert.equal(by["computer-card-seat"], "$2e={x:0,y:0}");
+  assert.match(by["computer-cursor-path"], /^x:\$2e\.x\+n\.demoCursor\.x\*1\.45-U2e\.x\*0\.66,y:\$2e\.y\+n\.demoCursor\.y\*1\.45-U2e\.y\*0\.66,scale:0\.66,/);
+  assert.match(COMPUTER_CSS, /\.sand-onboarding__demo-card(:not\(#\\#\)){4}\{transform:scale\(1\.45\);background-color:#242a36\}/);
+  assert.match(COMPUTER_CSS, /computer-demo>div:first-child(:not\(#\\#\)){4}\{top:calc\(50% - 312px\)\}/);
+  assert.match(COMPUTER_CSS, /computer-demo>div:last-child(:not\(#\\#\)){4}\{top:calc\(50% \+ 256px\)\}/);
+  assert.ok(patchOriginalCooStylesheet(".a{}").includes(COMPUTER_CSS));
+  assert.equal(WALLPAPER_ASSET, "demo-computer-wallpaper-BO7Ye4dV.jpg");
+  const photo = await readFile(WALLPAPER_SOURCE);
+  assert.deepEqual([...photo.subarray(0, 3)], [0xff, 0xd8, 0xff], "the wallpaper source is a JPEG");
+  assert.ok(photo.length > 50_000 && photo.length < 400_000, `the photograph is sized for the app (${photo.length} bytes)`);
+});
+
 test("Simeon is the first agent, titled Chief of Staff, pinned or not as the person likes", async () => {
   const { FIRST_AGENT_REPLACEMENTS, SIMEON_COO_PROFILE } = await import("../scripts/lib/router-renderer-patch.mjs");
   assert.deepEqual({ name: SIMEON_COO_PROFILE.name, title: SIMEON_COO_PROFILE.title }, { name: "Simeon", title: "Chief of Staff" });

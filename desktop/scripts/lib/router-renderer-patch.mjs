@@ -270,6 +270,15 @@ export const MARK_REPLACEMENTS = Object.freeze([
 ]);
 export const APP_ICON_ASSET = "app-icon-C7NKj2u7.png";
 export const APP_ICON_SOURCE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../frontend/runtime-assets", APP_ICON_ASSET);
+/**
+ * The wallpaper on the computer step's screen (8 October 2026, the founder:
+ * "i wanna change the blue background with the attached", a photograph of a
+ * river under a storm at sunset). The pinned renderer carries its own blue
+ * gradient under this name; the photograph in frontend/wallpaper is written
+ * over it, 1536 by 1024, as the icon is.
+ */
+export const WALLPAPER_ASSET = "demo-computer-wallpaper-BO7Ye4dV.jpg";
+export const WALLPAPER_SOURCE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../frontend/wallpaper/computer-step.jpg");
 
 export function patchOriginalMarks(source) {
   let out = source;
@@ -1171,9 +1180,33 @@ export const MEET_CSS = `/* Simeon: the Meet step */
 @media (prefers-reduced-motion:reduce){.simeon-meet>div{opacity:1;transform:none;transition:none}.simeon-turn--in,.simeon-turn--on{animation:none}}
 `;
 
+/**
+ * The computer step's screen, a lot bigger (8 October 2026, the founder:
+ * "can we make the screen a lot bigger"). The card is the renderer's own
+ * hand-placed drawing at 441 by 300 (its window, tiles and buttons sit at
+ * fixed pixels), so it is scaled as one: 1.45 times, to 639 by 435, and
+ * moved down a little; the title sits higher and Next lower to clear it.
+ * Simeon, who plays the cursor on it, walks the same path scaled by the same
+ * factor, at a size to match.
+ */
+export const COMPUTER_SCREEN_SCALE = 1.45;
+const COMPUTER_CURSOR_SCALE = 0.66;
+const COMPUTER_CARD_Y = 0;
+const COMPUTER_TITLE_TOP = -312;
+const COMPUTER_FOOTER_TOP = 256;
+export const COMPUTER_STEP_REPLACEMENTS = Object.freeze([
+  ["computer-card-seat", "$2e={x:0,y:-21}", `$2e={x:0,y:${COMPUTER_CARD_Y}}`],
+  ["computer-cursor-path", 'x:$2e.x+n.demoCursor.x-U2e.x*Vve,y:$2e.y+n.demoCursor.y-U2e.y*Vve,scale:Vve,opacity:1,state:n.demoBeat<0?"thinking":"working"', `x:$2e.x+n.demoCursor.x*${COMPUTER_SCREEN_SCALE}-U2e.x*${COMPUTER_CURSOR_SCALE},y:$2e.y+n.demoCursor.y*${COMPUTER_SCREEN_SCALE}-U2e.y*${COMPUTER_CURSOR_SCALE},scale:${COMPUTER_CURSOR_SCALE},opacity:1,state:n.demoBeat<0?"thinking":"working"`],
+]);
+export const COMPUTER_CSS = `/* Simeon: the computer step's screen */
+.sand-onboarding__computer-demo>div:first-child${MEET_HI}{top:calc(50% - ${-COMPUTER_TITLE_TOP}px)}
+.sand-onboarding__computer-demo>div:last-child${MEET_HI}{top:calc(50% + ${COMPUTER_FOOTER_TOP}px)}
+.sand-onboarding__demo-card${MEET_HI}{transform:scale(${COMPUTER_SCREEN_SCALE});background-color:#242a36}
+`;
+
 export function patchOriginalCooStep(source) {
   let out = source;
-  for (const [label, before, after] of [...COO_REPLACEMENTS, ...FIRST_AGENT_REPLACEMENTS, ...NAME_STEP_REPLACEMENTS, ...MEET_STEP_REPLACEMENTS]) out = replaceExactlyOnce(out, before, after, label);
+  for (const [label, before, after] of [...COO_REPLACEMENTS, ...FIRST_AGENT_REPLACEMENTS, ...NAME_STEP_REPLACEMENTS, ...MEET_STEP_REPLACEMENTS, ...COMPUTER_STEP_REPLACEMENTS]) out = replaceExactlyOnce(out, before, after, label);
   return out;
 }
 
@@ -1195,7 +1228,7 @@ export const COO_CSS = `${COO_MARKER} */
 
 export function patchOriginalCooStylesheet(css) {
   if (css.includes(COO_MARKER)) throw new Error("Original renderer COO step block is already present.");
-  return `${css}\n${COO_CSS}\n${NAME_CSS}\n${MEET_CSS}\n${COO_LOCK_CSS}`;
+  return `${css}\n${COO_CSS}\n${NAME_CSS}\n${MEET_CSS}\n${COMPUTER_CSS}\n${COO_LOCK_CSS}`;
 }
 
 export function patchOriginalAgentPaneStylesheet(css) {
@@ -2251,6 +2284,10 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   const appIconBefore = await readFile(appIconTarget).catch(() => null);
   await copyFile(APP_ICON_SOURCE, appIconTarget);
   const appIconAfter = await readFile(appIconTarget);
+  const wallpaperTarget = path.join(assetsRoot, WALLPAPER_ASSET);
+  const wallpaperBefore = await readFile(wallpaperTarget).catch(() => null);
+  await copyFile(WALLPAPER_SOURCE, wallpaperTarget);
+  const wallpaperAfter = await readFile(wallpaperTarget);
   const marks = {
     chunk: path.relative(stageRoot, markChunks[0].target),
     replacements: [...[...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, ...SHAPE_REPLACEMENTS, ...COPY_REPLACEMENTS, ...LOGO_REPLACEMENTS, ...CHAT_LAYOUT_REPLACEMENTS, ...VOICE_CALL_REPLACEMENTS, ...AGENT_PANE_REPLACEMENTS, ...HANDOFF_REPLACEMENTS, ...SIDEBAR_DISCS_REPLACEMENTS, ...BUTTERFLY_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT].map(([label]) => label), "chat-header-card", "liquid-glass-chrome", "sidebar-discs", "shape-pickers-hidden", "title-tag-blue", "file-and-app-logos", "voice-call-styles", "agent-pane-styles", "switch-blue", "take-over-card-styles"],
@@ -2262,6 +2299,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     original: { bytes: Buffer.byteLength(markChunks[0].source), sha256: sha256(markChunks[0].source) },
     patched: { bytes: Buffer.byteLength(markPatched), sha256: sha256(markPatched) },
     appIcon: { path: `dist/renderer/assets/${APP_ICON_ASSET}`, original: appIconBefore == null ? null : { bytes: appIconBefore.length, sha256: sha256(appIconBefore) }, patched: { bytes: appIconAfter.length, sha256: sha256(appIconAfter) } },
+    wallpaper: { path: `dist/renderer/assets/${WALLPAPER_ASSET}`, original: wallpaperBefore == null ? null : { bytes: wallpaperBefore.length, sha256: sha256(wallpaperBefore) }, patched: { bytes: wallpaperAfter.length, sha256: sha256(wallpaperAfter) } },
     styles: styleAnchors,
   };
   // The name, over every chunk and the page, after the Settings patch landed.
@@ -2301,6 +2339,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     [marks.chunk, marks.original],
     [marks.userBubble.stylesheet, { bytes: Buffer.byteLength(bubbleSheets[0].css), sha256: sha256(bubbleSheets[0].css) }],
     [marks.appIcon.path, marks.appIcon.original],
+    [marks.wallpaper.path, marks.wallpaper.original],
     ...brandFiles.map((file) => [file.path, file.original]),
   ]) if (!firstOriginals.has(relative)) firstOriginals.set(relative, original);
   const files = [];
@@ -2337,7 +2376,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-mark", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "agent-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "meet-step-turn", "flight-results", "upstream-tokens", "sidebar-glass-discs", "pane-widest-default", "pane-three-tabs", "mark-butterfly", "mark-no-eyes", "spin-lights-agent-colours", "manage-plan-card"],
+    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-mark", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "agent-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "meet-step-turn", "computer-screen-large", "computer-wallpaper-photo", "flight-results", "upstream-tokens", "sidebar-glass-discs", "pane-widest-default", "pane-three-tabs", "mark-butterfly", "mark-no-eyes", "spin-lights-agent-colours", "manage-plan-card"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings", "upstream-tokens", "icon-font-file"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");
