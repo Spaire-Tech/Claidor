@@ -73,7 +73,8 @@ test("the discs stylesheet block hides the search bar, draws the discs in both t
   assert.ok(SIDEBAR_DISCS_CSS.includes("light-dark("), "the discs read in the dark too");
   assert.ok(SIDEBAR_DISCS_CSS.includes(".sand-agents-sidebar__header:has(.simeon-disc){height:60px!important;padding-right:12px!important}"));
   assert.ok(SIDEBAR_DISCS_CSS.includes(".simeon-rail-discs{gap:10px!important;padding-bottom:10px!important}"));
-  assert.ok(SIDEBAR_DISCS_CSS.includes(".sand-agents-sidebar__account .sand-kit-base-avatar{width:40px!important;height:40px!important;border-radius:999px!important;"));
+  assert.ok(SIDEBAR_DISCS_CSS.includes(".sand-agents-sidebar__account .sand-kit-base-avatar{width:32px!important;height:32px!important;border-radius:999px!important;"), "the account disc is smaller than the glass discs (8 October 2026: the B is too big next to Connect apps)");
+  assert.ok(SIDEBAR_DISCS_CSS.includes(".sand-agents-sidebar__account .sand-kit-base-avatar img{width:32px!important;height:32px!important;border-radius:999px!important;object-fit:cover!important}"), "a profile picture fits the disc");
   assert.deepEqual(styleAnchorClasses(SIDEBAR_DISCS_CSS).filter((name) => name.startsWith("sand-")), [
     "sand-agents-sidebar__account", "sand-agents-sidebar__header", "sand-agents-sidebar__new-actions", "sand-agents-sidebar__search", "sand-kit-base-avatar", "sand-prompt-attach",
   ]);

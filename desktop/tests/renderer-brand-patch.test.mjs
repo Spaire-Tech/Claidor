@@ -32,8 +32,9 @@ test("the sentences of the window that named Cursor are Simeon's, after the Grok
 });
 
 test("the full patch renames the staged renderer and records what it changed, and refuses a renderer that never said Grok Bot", async () => {
-  const { applyOriginalRendererRouterPatch, MARK_REPLACEMENTS, PALETTE_REPLACEMENTS, BUBBLE_REPLACEMENTS, SHAPE_REPLACEMENTS, COPY_REPLACEMENTS, LOGO_REPLACEMENTS, CHAT_LAYOUT_REPLACEMENTS, VOICE_CALL_REPLACEMENTS, AGENT_PANE_REPLACEMENTS, HANDOFF_REPLACEMENTS, SIDEBAR_DISCS_REPLACEMENTS, BUTTERFLY_REPLACEMENTS, COO_REPLACEMENTS, FIRST_AGENT_REPLACEMENTS, NAME_STEP_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT } = await import(patchModule);
-  const markAnchors = [...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, ...SHAPE_REPLACEMENTS, ...COPY_REPLACEMENTS, ...LOGO_REPLACEMENTS, ...CHAT_LAYOUT_REPLACEMENTS, ...VOICE_CALL_REPLACEMENTS, ...AGENT_PANE_REPLACEMENTS, ...HANDOFF_REPLACEMENTS, ...SIDEBAR_DISCS_REPLACEMENTS.slice(1), ...BUTTERFLY_REPLACEMENTS, ...COO_REPLACEMENTS, ...FIRST_AGENT_REPLACEMENTS, ...NAME_STEP_REPLACEMENTS.filter(([label]) => label !== "name-step-hero" && label !== "name-step-component")].map(([, before]) => before).join(";");
+  const { applyOriginalRendererRouterPatch, MARK_REPLACEMENTS, PALETTE_REPLACEMENTS, BUBBLE_REPLACEMENTS, SHAPE_REPLACEMENTS, COPY_REPLACEMENTS, LOGO_REPLACEMENTS, CHAT_LAYOUT_REPLACEMENTS, VOICE_CALL_REPLACEMENTS, AGENT_PANE_REPLACEMENTS, HANDOFF_REPLACEMENTS, SIDEBAR_DISCS_REPLACEMENTS, BUTTERFLY_REPLACEMENTS, COO_REPLACEMENTS, FIRST_AGENT_REPLACEMENTS, NAME_STEP_REPLACEMENTS, MEET_STEP_REPLACEMENTS, COMPUTER_STEP_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT } = await import(patchModule);
+  // The connect step's anchors are inside the Chief of Staff step's, so the fixture carries them once already.
+  const markAnchors = [...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, ...SHAPE_REPLACEMENTS, ...COPY_REPLACEMENTS, ...LOGO_REPLACEMENTS, ...CHAT_LAYOUT_REPLACEMENTS, ...VOICE_CALL_REPLACEMENTS, ...AGENT_PANE_REPLACEMENTS, ...HANDOFF_REPLACEMENTS, ...SIDEBAR_DISCS_REPLACEMENTS.slice(1), ...BUTTERFLY_REPLACEMENTS, ...COO_REPLACEMENTS, ...FIRST_AGENT_REPLACEMENTS, ...NAME_STEP_REPLACEMENTS.filter(([label]) => label !== "name-step-hero" && label !== "name-step-component"), ...MEET_STEP_REPLACEMENTS.filter(([label]) => label !== "meet-step-component"), ...COMPUTER_STEP_REPLACEMENTS].map(([, before]) => before).join(";");
   const source = await readFile(path.join(repoRoot, "scripts/lib/router-renderer-patch.mjs"), "utf8");
   const anchor = (name) => /const (\w+) = ('.*?');/.exec(source.split(`const ${name} = `)[1] == null ? "" : `const ${name} = ${source.split(`const ${name} = `)[1]}`)?.[2];
   const registry = JSON.parse(`"${anchor("REGISTRY_BEFORE").slice(1, -1).replace(/"/g, '\\"')}"`);
@@ -59,7 +60,7 @@ test("the full patch renames the staged renderer and records what it changed, an
     const provenance = JSON.parse(await readFile(path.join(stage, "dist", "renderer-router-extension.json"), "utf8"));
     assert.ok(provenance.features.includes("brand-simeon"));
     // verify.mjs checks every rewritten file against the hash after the last pass.
-    assert.deepEqual(provenance.files.map((file) => file.path).sort(), ["dist/renderer/assets/app-icon-C7NKj2u7.png", "dist/renderer/assets/index-abc.js", "dist/renderer/assets/other-def.js", "dist/renderer/assets/style.css", "dist/renderer/index.html"]);
+    assert.deepEqual(provenance.files.map((file) => file.path).sort(), ["dist/renderer/assets/app-icon-C7NKj2u7.png", "dist/renderer/assets/demo-computer-wallpaper-BO7Ye4dV.jpg", "dist/renderer/assets/index-abc.js", "dist/renderer/assets/other-def.js", "dist/renderer/assets/style.css", "dist/renderer/index.html"]);
     for (const file of provenance.files) {
       const bytes = await readFile(path.join(stage, file.path));
       assert.deepEqual(file.patched, { bytes: bytes.length, sha256: createHash("sha256").update(bytes).digest("hex") }, `${file.path} records its final bytes`);

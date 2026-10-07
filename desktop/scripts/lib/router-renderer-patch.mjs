@@ -270,6 +270,15 @@ export const MARK_REPLACEMENTS = Object.freeze([
 ]);
 export const APP_ICON_ASSET = "app-icon-C7NKj2u7.png";
 export const APP_ICON_SOURCE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../frontend/runtime-assets", APP_ICON_ASSET);
+/**
+ * The wallpaper on the computer step's screen (8 October 2026, the founder:
+ * "i wanna change the blue background with the attached", a photograph of a
+ * river under a storm at sunset). The pinned renderer carries its own blue
+ * gradient under this name; the photograph in frontend/wallpaper is written
+ * over it, 1536 by 1024, as the icon is.
+ */
+export const WALLPAPER_ASSET = "demo-computer-wallpaper-BO7Ye4dV.jpg";
+export const WALLPAPER_SOURCE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../frontend/wallpaper/computer-step.jpg");
 
 export function patchOriginalMarks(source) {
   let out = source;
@@ -978,39 +987,52 @@ export function patchOriginalFlightsStylesheet(css) {
  * "computer-demo"), drawn with the window's own pieces: the step layout and
  * title (`tye`), Back and Next (`nye`), stage placement (`fde`) and the
  * agents' own animated avatars (`sd`), in the twelve palettes. Simeon is the
- * flow's hero avatar, which glides to the centre (`QBn`); six agents leave
- * it one after another on an expo-out curve and settle in a ring, each
- * joined to it by a hairline that draws in, its job in grey beneath; then
- * one line of copy. People who reduce motion get the finished picture.
+ * flow's hero avatar, already at the centre from the Meet step (`QBn`).
+ *
+ * Redrawn 8 October 2026 after the founder's reference (a file graph: nodes
+ * faint, a blue curve drawing from the centre to each, the node coming to
+ * life as the line reaches it; "lines in blue, and an animation that sees
+ * it linking … make it spacious"): three agents a side, 300 px out, each a
+ * faint ghost until its curve arrives, the curves drawn one after another
+ * from Simeon's sides, each job in grey beneath; one line of copy under the
+ * title, which now reads "Simeon is your personal Chief of Staff" so the
+ * copy can say "He". People who reduce motion get the finished picture.
  */
 const COO_HERO_Y = -40;
+const COO_SIDE_X = 300;
 const COO_CREW = Object.freeze([
-  { id: "inbox", label: "Inbox", color: "violet", x: -244, y: -104 },
-  { id: "research", label: "Research", color: "red", x: -226, y: 36 },
-  { id: "travel", label: "Travel", color: "green", x: -86, y: 112 },
-  { id: "finance", label: "Finance", color: "magenta", x: 86, y: 112 },
-  { id: "sales", label: "Sales", color: "orange", x: 226, y: 36 },
-  { id: "content", label: "Content", color: "mint", x: 244, y: -104 },
+  { id: "inbox", label: "Inbox", color: "violet", x: -COO_SIDE_X, y: -140 },
+  { id: "research", label: "Research", color: "red", x: -COO_SIDE_X, y: -40 },
+  { id: "travel", label: "Travel", color: "green", x: -COO_SIDE_X, y: 60 },
+  { id: "finance", label: "Finance", color: "magenta", x: COO_SIDE_X, y: -140 },
+  { id: "sales", label: "Sales", color: "orange", x: COO_SIDE_X, y: -40 },
+  { id: "content", label: "Content", color: "mint", x: COO_SIDE_X, y: 60 },
 ]);
+/** The curve from Simeon's side to an agent's inner edge, in the web's frame (origin at Simeon): an S of two horizontal tangents. */
 const cooLine = ({ x, y }) => {
-  const dx = x, dy = y - COO_HERO_Y, length = Math.hypot(dx, dy), from = 74, to = length - 40;
-  const at = (d) => [Math.round((dx * d) / length), Math.round((dy * d) / length)];
-  const [x1, y1] = at(from), [x2, y2] = at(to);
-  return { x1, y1, x2, y2 };
+  const side = Math.sign(x), x1 = side * 60, x2 = x - side * 40, y2 = y - COO_HERO_Y, mx = Math.round((x1 + x2) / 2);
+  return `M${x1} 0C${mx} 0 ${mx} ${y2} ${x2} ${y2}`;
 };
+export const COO_COPY = "He hires an agent for every job you hand off.";
+/** The title and copy sit higher than the flow's own 264 px so the web has air beneath them (8 October: "more space between the design and the text up there"). */
+const COO_TITLE_TOP = -296;
+const COO_COPY_Y = -236;
+export const COO_TITLE = "Simeon is your personal Chief of Staff";
 const COO_SOURCE = [
-  `const __simeonCooCrew=${JSON.stringify(COO_CREW.map((a, i) => ({ ...a, ...cooLine(a), delay: 820 + i * 150 })))};`,
+  `const __simeonCooCrew=${JSON.stringify(COO_CREW.map((a, i) => ({ ...a, d: cooLine(a), delay: 700 + i * 180 })))};`,
   "function __simeonCooStep(n){const{headingId:t,onForward:r,onBack:i}=n,still=Fo();",
-  "const lines=p.jsx(fde,{x:0,y:" + COO_HERO_Y + ",ariaHidden:!0,className:\"simeon-coo__web\",children:p.jsxs(\"svg\",{width:640,height:440,viewBox:\"-320 -220 640 440\",children:[p.jsx(\"circle\",{className:\"simeon-coo__pulse\",cx:0,cy:0,r:64}),...__simeonCooCrew.map(a=>p.jsx(\"line\",{className:\"simeon-coo__line\",x1:a.x1,y1:a.y1,x2:a.x2,y2:a.y2,pathLength:1,style:{animationDelay:`${a.delay+140}ms`}},a.id))]})},\"web\");",
-  "const crew=__simeonCooCrew.map(a=>p.jsx(fde,{x:a.x,y:a.y,ariaHidden:!0,className:\"simeon-coo__seat\",children:p.jsxs(\"div\",{className:\"simeon-coo__agent\",style:{\"--simeon-coo-dx\":`${-a.x}px`,\"--simeon-coo-dy\":`${" + COO_HERO_Y + "-a.y}px`,animationDelay:`${a.delay}ms`},children:[p.jsx(\"div\",{className:\"simeon-coo__float\",style:{animationDelay:`${a.delay+900}ms`},children:p.jsx(sd,{\"aria-hidden\":!0,color:a.color,paused:still,shape:\"cloud\",sizePx:52,state:\"idle\"})}),p.jsx(\"span\",{className:\"simeon-coo__role\",style:{animationDelay:`${a.delay+420}ms`},children:a.label})]})},a.id));",
-  "const line=p.jsx(fde,{x:0,y:-196,className:\"simeon-coo__copy\",children:p.jsx(\"p\",{children:\"Simeon staffs an agent for whatever needs doing.\"})},\"copy\");",
-  "return p.jsx(tye,{className:re(\"sand-onboarding__coo\",\"simeon-coo\"),footer:p.jsx(nye,{onBack:i,onForward:r}),headingId:t,title:\"Your Personal Chief of Staff\",children:[lines,...crew,line]})}",
+  "const lines=p.jsx(fde,{x:0,y:" + COO_HERO_Y + ",ariaHidden:!0,className:\"simeon-coo__web\",children:p.jsx(\"svg\",{width:800,height:400,viewBox:\"-400 -200 800 400\",children:__simeonCooCrew.map(a=>p.jsx(\"path\",{className:\"simeon-coo__line\",d:a.d,pathLength:1,style:{animationDelay:`${a.delay}ms`}},a.id))})},\"web\");",
+  "const crew=__simeonCooCrew.map(a=>p.jsx(fde,{x:a.x,y:a.y,ariaHidden:!0,className:\"simeon-coo__seat\",children:p.jsxs(\"div\",{className:\"simeon-coo__agent\",style:{animationDelay:`${a.delay+520}ms`},children:[p.jsx(sd,{\"aria-hidden\":!0,color:a.color,paused:still,shape:\"cloud\",sizePx:56,state:\"idle\"}),p.jsx(\"span\",{className:\"simeon-coo__role\",children:a.label})]})},a.id));",
+  `const line=p.jsx(fde,{x:0,y:${COO_COPY_Y},className:"simeon-coo__copy",children:p.jsx("p",{children:${JSON.stringify(COO_COPY)}})},"copy");`,
+  `return p.jsx(tye,{className:re("sand-onboarding__coo","simeon-coo"),footer:p.jsx(nye,{onBack:i,onForward:r}),headingId:t,title:${JSON.stringify(COO_TITLE)},children:[lines,...crew,line]})}`,
 ].join("");
 
 export const COO_REPLACEMENTS = Object.freeze([
   // "Give each Agent a job" is left out of the flow (the founder, the same day: "remove the give each agent a job step"); the COO step says it now.
-  ["coo-step-list", 'const Gse=["landing","meet","computer-demo","jobs","tools","create"]', 'const Gse=["landing","meet","coo","computer-demo","name","tools"]'],
-  ["coo-computer-title", 'N="Grok Bot has its own computer and works just like you"', 'N="Your agents have their own computer and work just like you"'],
+  // The connect step (8 October 2026) sits between the Chief of Staff and the computer, so the computer's title says "They".
+  // The apps picker ("What do you use every day?") is out too (the founder, the same day: "a waste to have it there since it does connect them automatically"): the name is the last step.
+  ["coo-step-list", 'const Gse=["landing","meet","computer-demo","jobs","tools","create"]', 'const Gse=["landing","meet","coo","connect","computer-demo","name"]'],
+  ["coo-computer-title", 'N="Grok Bot has its own computer and works just like you"', 'N="They have their own computer and work just like you"'],
   ["coo-step-screen", 'case"computer-demo":return p.jsx(Yqn,{', 'case"coo":return p.jsx(__simeonCooStep,{headingId:xn,onBack:()=>x.goBack(ln),onForward:()=>x.advance(ln)});case"computer-demo":return p.jsx(Yqn,{'],
   ["coo-step-hero", 'case"computer-demo":return{...e,x:$2e.x+n.demoCursor.x', `case"coo":return{...e,x:0,y:${COO_HERO_Y},scale:1,opacity:1,state:"proud",transition:"standard",isGazing:!0};case"computer-demo":return{...e,x:$2e.x+n.demoCursor.x`],
   ["coo-step-component", "function sjn(n){", `${COO_SOURCE}function sjn(n){`],
@@ -1024,10 +1046,11 @@ export const COO_REPLACEMENTS = Object.freeze([
  * first agent, but its not pinned. it's changeable but only the name and
  * the avatar").
  *
- * - Next on the apps step runs the flow's own create-and-finish (`Pe`: the
- *   hand-off screen, the computer, the agent, the first-run cue) with
- *   Simeon's profile instead of the form's. The "create" step is out of the
- *   step list. The agent-creation path now carries a title, so Simeon's
+ * - Next on the last step (the name, since 8 October 2026; the apps step
+ *   before that) runs the flow's own create-and-finish (`Pe`: the hand-off
+ *   screen, the computer, the agent, the first-run cue) with Simeon's
+ *   profile instead of the form's. The "create" step is out of the step
+ *   list. The agent-creation path now carries a title, so Simeon's
  *   profile reads Chief of Staff.
  * - The Chief of Staff is the oldest agent titled "Chief of Staff" (or
  *   "COO", the title the day before). He is pinned, hidden, moved and
@@ -1062,10 +1085,11 @@ const NAME_SOURCE = [
   "const go=()=>{name.length>0&&a?.updateName!=null&&Promise.resolve(a.updateName(name)).catch(()=>{});r()};",
   "const field=p.jsx(fde,{x:0,y:4,className:\"simeon-name__field-seat\",children:p.jsx(\"form\",{onSubmit:e=>{e.preventDefault();go()},children:p.jsx(\"input\",{ref:ip,className:\"simeon-name__input\",type:\"text\",autoComplete:\"given-name\",spellCheck:!1,maxLength:60,placeholder:\"Your name\",\"aria-label\":\"Your name\",value:v,onChange:e=>{touched.current=!0;sv(e.target.value)}})})},\"field\");",
   "const note=p.jsx(fde,{x:0,y:44,className:\"simeon-name__note-seat\",children:p.jsx(\"p\",{className:\"simeon-name__note\",children:\"They’ll use it in chat and on calls. You can change it later.\"})},\"note\");",
-  "return p.jsx(tye,{className:re(\"sand-onboarding__name\",\"simeon-name\"),footer:p.jsx(nye,{onBack:i,onForward:go}),headingId:t,title:\"How should they call you?\",children:[field,note]})}",
+  "return p.jsx(tye,{className:re(\"sand-onboarding__name\",\"simeon-name\"),footer:p.jsx(nye,{onBack:i,onForward:go}),headingId:t,title:\"How should Simeon & Co call you?\",children:[field,note]})}",
 ].join("");
 export const NAME_STEP_REPLACEMENTS = Object.freeze([
-  ["name-step-screen", "case\"tools\":return p.jsx(Ljn,{", "case\"name\":return p.jsx(__simeonNameStep,{headingId:xn,onBack:()=>x.goBack(ln),onForward:()=>x.advance(ln)});case\"tools\":return p.jsx(Ljn,{"],
+  // Next on the name step, the last one, runs the flow's own create-and-finish (`Pe`), as Next on the apps step did while there was one.
+  ["name-step-screen", "case\"tools\":return p.jsx(Ljn,{", "case\"name\":return p.jsx(__simeonNameStep,{headingId:xn,onBack:()=>x.goBack(ln),onForward:()=>{Pe()}});case\"tools\":return p.jsx(Ljn,{"],
   ["name-step-agents", "case\"tools\":return{...t,x:r.x,y:r.y,scale:r.scale,opacity:1,state:\"idle\",transition:\"standard\",bob:YBn[e]}", "case\"name\":return{...t,...__simeonNameSeat[e],opacity:1,state:\"happy\",transition:\"bounce\",isGazing:!0};case\"tools\":return{...t,x:r.x,y:r.y,scale:r.scale,opacity:1,state:\"idle\",transition:\"standard\",bob:YBn[e]}"],
   ["name-step-hero", "case\"coo\":return{...e,x:0,y:", "case\"name\":return{...e,x:$2e.x,y:$2e.y,scale:Vve,opacity:0,state:\"happy\",transition:\"exit\"};case\"coo\":return{...e,x:0,y:"],
   ["name-step-component", "function __simeonCooStep(n){", `${NAME_SOURCE}function __simeonCooStep(n){`],
@@ -1106,34 +1130,108 @@ export const FIRST_AGENT_REPLACEMENTS = Object.freeze([
   ["coo-readonly-commit", "y=_=>{if(h.current){h.current=!1,m(s);return}", "y=_=>{if(n.readOnly===!0){m(s);return}if(h.current){h.current=!1,m(s);return}"],
 ]);
 
+/**
+ * "Meet Simeon" (7 October 2026, the founder: "remove all below. What i want
+ * is a big simeon avatar turning around itself, then minimize into meet
+ * simeon. needs to be smooth").
+ *
+ * The composer that typed a sentence under the avatar is gone. The step is
+ * four beats of the flow's own 35 ms scene clock (`Kjn`), and everything
+ * is the window's own motion: Simeon fades in large on an empty stage (the
+ * hero's "slow" spring, from unseen and a little smaller: 8 October, "after
+ * setting up simeon's computer, can the avatar fade in instead of just
+ * appearing"); the avatar turns once around its own axis (a 1.4 s turn in
+ * depth, eased both ways, in a box every placed avatar now sits in; the
+ * mark's own `spin` only draws light trails and keeps the body upright);
+ * then he shrinks in place to his seat on the "standard" spring while the
+ * title and Next rise in beneath. The seat is the spot he holds on the
+ * Chief of Staff step, so Next moves nothing but the words (8 October:
+ * "make it be the same where your personal chief of staff next step avatar
+ * is, so that the transition is smooth"); the title and Next sit closer to
+ * him than the flow's own layout puts them. People who reduce motion get
+ * the finished picture.
+ */
+const MEET_SEAT = Object.freeze({ x: 0, y: COO_HERO_Y, scale: 1 });
+const MEET_BIG = Object.freeze({ ...MEET_SEAT, scale: 2.3 });
+/** Ticks of the scene clock (35 ms): the fade-in begins; the turn begins; the avatar settles and the title appears. */
+const MEET_BEATS = Object.freeze([1, 16, 56]);
+/** The title and Next, closer to the avatar than the flow's own 264 and 200 px (the founder, 8 October: "too much space between everything"). */
+const MEET_TITLE_TOP = -168;
+const MEET_FOOTER_TOP = 56;
+const MEET_HI = ":not(#\\#):not(#\\#):not(#\\#):not(#\\#)";
+const MEET_SOURCE = "function __simeonMeetStep(n){const{headingId:t,onForward:r,beat:b}=n;return p.jsx(tye,{className:re(\"sand-onboarding__meet\",\"simeon-meet\",b>=3?\"simeon-meet--settled\":\"\"),footer:p.jsx(nye,{onForward:r}),headingId:t,title:\"Meet Simeon\"})}";
+export const MEET_STEP_REPLACEMENTS = Object.freeze([
+  ["meet-step-screen", 'case"meet":return p.jsx(Tjn,{headingId:xn,onForward:()=>x.advance(ln),typedCount:Njn(ce)})', 'case"meet":return p.jsx(__simeonMeetStep,{headingId:xn,onForward:()=>x.advance(ln),beat:Ejn(ce)})'],
+  ["meet-step-beats", "function Ejn(n){return n>=Sjn?1:n>=0?0:-1}", `const __simeonMeetBeats=${JSON.stringify(MEET_BEATS)};function Ejn(n){return n>=__simeonMeetBeats[2]?3:n>=__simeonMeetBeats[1]?2:n>=__simeonMeetBeats[0]?1:0}`],
+  // Beat 0: unseen at his seat, a little large. Beats 1 and 2: large, fading in on the slow spring, then turning. Beat 3: his seat, the same spot he holds on the Chief of Staff step.
+  ["meet-step-hero", 'case"meet":return n.meetBeat<0?{...e,...zoe,y:hWe.y,state:"waking",transition:"none"}:{...e,...hWe,scale:.8,opacity:1,state:n.meetBeat===0?"idle":"listening",transition:"bounce",isGazing:!0};', `case"meet":return n.meetBeat<1?{...e,x:${MEET_SEAT.x},y:${MEET_SEAT.y},scale:1.6,opacity:1,state:"happy",transition:"none",isGazing:!1,turn:"in"}:n.meetBeat<3?{...e,x:${MEET_BIG.x},y:${MEET_BIG.y},scale:${MEET_BIG.scale},opacity:1,state:"happy",transition:"slow",isGazing:!1,turn:n.meetBeat===2?"spin":"in"}:{...e,x:${MEET_SEAT.x},y:${MEET_SEAT.y},scale:${MEET_SEAT.scale},opacity:1,state:"idle",transition:"standard",isGazing:!0};`],
+  // Every placed avatar sits in one more box; the one whose placement says `spin` turns once around its own axis in it.
+  // The placed element is memoised on its class, handlers, style and child; `turn` joins that list (one more cache slot). "in" fades the box in; "spin" keeps that fade and turns it.
+  ["meet-step-turn-cache", "function mqn(n){const e=he.c(46),", "function mqn(n){const e=he.c(47),"],
+  ["meet-step-turn", 'let x;return e[40]!==m||e[41]!==f||e[42]!==h||e[43]!==v||e[44]!==b?(x=p.jsx("div",{className:m,onClick:f,onTransitionEnd:h,style:v,children:b}),e[40]=m,e[41]=f,e[42]=h,e[43]=v,e[44]=b,e[45]=x):x=e[45],x}', 'let x;return e[40]!==m||e[41]!==f||e[42]!==h||e[43]!==v||e[44]!==b||e[46]!==t.turn?(x=p.jsx("div",{className:m,onClick:f,onTransitionEnd:h,style:v,children:p.jsx("div",{className:t.turn==="spin"?"simeon-turn simeon-turn--on":t.turn==="in"?"simeon-turn simeon-turn--in":"simeon-turn",children:b})}),e[40]=m,e[41]=f,e[42]=h,e[43]=v,e[44]=b,e[46]=t.turn,e[45]=x):x=e[45],x}'],
+  ["meet-step-component", "function __simeonNameStep(n){", `${MEET_SOURCE}function __simeonNameStep(n){`],
+]);
+export const MEET_CSS = `/* Simeon: the Meet step */
+.simeon-meet>div:first-child${MEET_HI}{top:calc(50% - ${-MEET_TITLE_TOP}px)}
+.simeon-meet>div:last-child${MEET_HI}{top:calc(50% + ${MEET_FOOTER_TOP}px)}
+.simeon-meet>div{opacity:0;transform:translateY(6px);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1)}
+.simeon-meet--settled>div{opacity:1;transform:none}
+.simeon-turn--in{animation:simeon-meet-fade 1.2s cubic-bezier(.4,0,.2,1) both}
+.simeon-turn--on{animation:simeon-meet-fade 1.2s cubic-bezier(.4,0,.2,1) both,simeon-meet-turn 1.4s cubic-bezier(.65,0,.35,1) both;will-change:transform}
+@keyframes simeon-meet-fade{from{opacity:0}to{opacity:1}}
+@keyframes simeon-meet-turn{from{transform:perspective(900px) rotateY(0)}to{transform:perspective(900px) rotateY(360deg)}}
+@media (prefers-reduced-motion:reduce){.simeon-meet>div{opacity:1;transform:none;transition:none}.simeon-turn--in,.simeon-turn--on{animation:none}}
+`;
+
+/**
+ * The computer step's screen, a lot bigger (8 October 2026, the founder:
+ * "can we make the screen a lot bigger"). The card is the renderer's own
+ * hand-placed drawing at 441 by 300 (its window, tiles and buttons sit at
+ * fixed pixels), so it is scaled as one: 1.45 times, to 639 by 435, and
+ * moved down a little; the title sits higher and Next lower to clear it.
+ * Simeon, who plays the cursor on it, walks the same path scaled by the same
+ * factor, at a size to match.
+ */
+export const COMPUTER_SCREEN_SCALE = 1.45;
+const COMPUTER_CURSOR_SCALE = 0.66;
+const COMPUTER_CARD_Y = 0;
+const COMPUTER_TITLE_TOP = -312;
+const COMPUTER_FOOTER_TOP = 256;
+export const COMPUTER_STEP_REPLACEMENTS = Object.freeze([
+  ["computer-card-seat", "$2e={x:0,y:-21}", `$2e={x:0,y:${COMPUTER_CARD_Y}}`],
+  ["computer-cursor-path", 'x:$2e.x+n.demoCursor.x-U2e.x*Vve,y:$2e.y+n.demoCursor.y-U2e.y*Vve,scale:Vve,opacity:1,state:n.demoBeat<0?"thinking":"working"', `x:$2e.x+n.demoCursor.x*${COMPUTER_SCREEN_SCALE}-U2e.x*${COMPUTER_CURSOR_SCALE},y:$2e.y+n.demoCursor.y*${COMPUTER_SCREEN_SCALE}-U2e.y*${COMPUTER_CURSOR_SCALE},scale:${COMPUTER_CURSOR_SCALE},opacity:1,state:n.demoBeat<0?"thinking":"working"`],
+]);
+export const COMPUTER_CSS = `/* Simeon: the computer step's screen */
+.sand-onboarding__computer-demo>div:first-child${MEET_HI}{top:calc(50% - ${-COMPUTER_TITLE_TOP}px)}
+.sand-onboarding__computer-demo>div:last-child${MEET_HI}{top:calc(50% + ${COMPUTER_FOOTER_TOP}px)}
+.sand-onboarding__demo-card${MEET_HI}{transform:scale(${COMPUTER_SCREEN_SCALE});background-color:#242a36}
+`;
+
 export function patchOriginalCooStep(source) {
   let out = source;
-  for (const [label, before, after] of [...COO_REPLACEMENTS, ...FIRST_AGENT_REPLACEMENTS, ...NAME_STEP_REPLACEMENTS]) out = replaceExactlyOnce(out, before, after, label);
+  for (const [label, before, after] of [...COO_REPLACEMENTS, ...FIRST_AGENT_REPLACEMENTS, ...NAME_STEP_REPLACEMENTS, ...MEET_STEP_REPLACEMENTS, ...COMPUTER_STEP_REPLACEMENTS, ...CONNECT_STEP_REPLACEMENTS]) out = replaceExactlyOnce(out, before, after, label);
   return out;
 }
 
 export const COO_MARKER = "/* Simeon: the Chief of Staff welcome step";
-/** Motion on Apple's curves: expo-out to arrive, a long ease-in-out to breathe. Greys are the system's. */
+/** Curves in the app's blue, drawn on a standard ease; agents brighten on an expo-out. Greys are the system's. */
 export const COO_CSS = `${COO_MARKER} */
-.simeon-coo{--simeon-coo-ink:light-dark(rgba(60,60,67,.6),rgba(235,235,245,.6));--simeon-coo-hair:light-dark(rgba(60,60,67,.16),rgba(235,235,245,.18));--simeon-coo-arrive:cubic-bezier(.16,1,.3,1)}
+.simeon-coo{--simeon-coo-ink:light-dark(rgba(60,60,67,.6),rgba(235,235,245,.6));--simeon-coo-line:light-dark(rgba(10,132,255,.55),rgba(100,170,255,.65));--simeon-coo-arrive:cubic-bezier(.16,1,.3,1)}
+.simeon-coo>div:first-child${MEET_HI}{top:calc(50% - ${-COO_TITLE_TOP}px)}
 .simeon-coo__web svg{display:block;overflow:visible}
-.simeon-coo__line{stroke:var(--simeon-coo-hair);stroke-width:1;stroke-linecap:round;fill:none;stroke-dasharray:1;stroke-dashoffset:1;animation:simeon-coo-draw .8s var(--simeon-coo-arrive) both}
-.simeon-coo__pulse{fill:none;stroke:var(--simeon-coo-hair);stroke-width:1;transform-origin:0 0;opacity:0;animation:simeon-coo-pulse 1.8s cubic-bezier(.2,.7,.2,1) .7s both}
-.simeon-coo__agent{display:flex;flex-direction:column;align-items:center;gap:8px;animation:simeon-coo-arrive 1.15s var(--simeon-coo-arrive) both}
-.simeon-coo__float{animation:simeon-coo-float 4.8s ease-in-out infinite both}
-.simeon-coo__role{font-size:12px;line-height:16px;letter-spacing:-.01em;color:var(--simeon-coo-ink);white-space:nowrap;animation:simeon-coo-rise .6s var(--simeon-coo-arrive) both}
+.simeon-coo__line{stroke:var(--simeon-coo-line);stroke-width:1.5;stroke-linecap:round;fill:none;stroke-dasharray:1;stroke-dashoffset:1;animation:simeon-coo-draw .9s cubic-bezier(.4,0,.2,1) both}
+.simeon-coo__agent{display:flex;flex-direction:column;align-items:center;gap:8px;animation:simeon-coo-link .8s var(--simeon-coo-arrive) both}
+.simeon-coo__role{font-size:12px;line-height:16px;letter-spacing:-.01em;color:var(--simeon-coo-ink);white-space:nowrap}
 .simeon-coo__copy p{margin:0;font-size:15px;line-height:20px;letter-spacing:-.01em;color:var(--simeon-coo-ink);white-space:nowrap;text-align:center;animation:simeon-coo-rise .9s var(--simeon-coo-arrive) .35s both}
-@keyframes simeon-coo-arrive{from{opacity:0;transform:translate(var(--simeon-coo-dx),var(--simeon-coo-dy)) scale(.3)}14%{opacity:0}42%{opacity:1}to{opacity:1;transform:none}}
+@keyframes simeon-coo-link{from{opacity:.28;transform:scale(.92)}to{opacity:1;transform:none}}
 @keyframes simeon-coo-draw{to{stroke-dashoffset:0}}
-@keyframes simeon-coo-pulse{0%{opacity:.9;transform:scale(1)}100%{opacity:0;transform:scale(3.6)}}
-@keyframes simeon-coo-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
 @keyframes simeon-coo-rise{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){.simeon-coo__line,.simeon-coo__agent,.simeon-coo__float,.simeon-coo__role,.simeon-coo__copy p{animation:none;stroke-dashoffset:0;opacity:1;transform:none}.simeon-coo__pulse{display:none}}
+@media (prefers-reduced-motion:reduce){.simeon-coo__line,.simeon-coo__agent,.simeon-coo__copy p{animation:none;stroke-dashoffset:0;opacity:1;transform:none}}
 `;
 
 export function patchOriginalCooStylesheet(css) {
   if (css.includes(COO_MARKER)) throw new Error("Original renderer COO step block is already present.");
-  return `${css}\n${COO_CSS}\n${NAME_CSS}\n${COO_LOCK_CSS}`;
+  return `${css}\n${COO_CSS}\n${NAME_CSS}\n${MEET_CSS}\n${COMPUTER_CSS}\n${COO_LOCK_CSS}`;
 }
 
 export function patchOriginalAgentPaneStylesheet(css) {
@@ -1360,8 +1458,15 @@ export async function readLogoAssets(brandDir = BRAND_DIR) {
   const manifest = JSON.parse(await readFile(path.join(brandDir, APP_MENTIONS_MANIFEST), "utf8"));
   const mentions = await Promise.all(manifest.map(async (app) => ({ ...app, logo: dataUrl(await readFile(path.join(brandDir, "app-logos", app.logo)), app.logo) })));
   const tiles = await Promise.all(Object.entries(TILE_LOGO_SOURCES).map(async ([key, { file, pathStart }]) => ({ key, pathStart, logo: dataUrl(await readFile(path.join(brandDir, file)), file) })));
-  return { files: await read(FILE_ICON_SOURCES), apps: await read(APP_LOGO_SOURCES), mentions, tiles, wordmarkFont: dataUrl(await readFile(path.join(brandDir, WORDMARK_FONT)), WORDMARK_FONT) };
+  return { files: await read(FILE_ICON_SOURCES), apps: await read(APP_LOGO_SOURCES), mentions, tiles, connect: await read(CONNECT_LOGO_SOURCES), wordmarkFont: dataUrl(await readFile(path.join(brandDir, WORDMARK_FONT)), WORDMARK_FONT) };
 }
+
+/**
+ * The apps that slide behind the glass on the connect step, the twelve
+ * simeonlabs.com shows in the same scene, in its order and its colours
+ * (brand/connect-logos, copied from the site's logos folder).
+ */
+export const CONNECT_LOGO_SOURCES = Object.freeze({ slack: "connect-logos/slack.webp", gmail: "connect-logos/gmail.webp", notion: "connect-logos/notion.svg", figma: "connect-logos/figma.svg", linear: "connect-logos/linear.svg", "google-drive": "connect-logos/google-drive.svg", hubspot: "connect-logos/hubspot.svg", zoom: "connect-logos/zoom.webp", linkedin: "connect-logos/linkedin.svg", "google-calendar": "connect-logos/google-calendar.webp", stripe: "connect-logos/stripe.svg", salesforce: "connect-logos/salesforce.svg" });
 
 /**
  * The sign-in wordmark in Suravaram (3 October 2026, the founder: "'Simeon'
@@ -1405,7 +1510,7 @@ export function logosCss({ files, apps, mentions = [], tiles = [] }) {
 ${kinds.map(([kind]) => box(kind)).join(",")}{background:var(--simeon-file-logo) center/82% no-repeat;border-color:transparent;box-shadow:none}
 ${kinds.map(([kind]) => `${box(kind)}>*`).join(",")}{visibility:hidden}
 ${kinds.map(([kind, url]) => `${box(kind)}{--simeon-file-logo:url("${url}")}`).join("\n")}
-.sand-agents-sidebar__plugins-entry${HI}{position:relative;z-index:1;height:40px;margin:0 0 -40px 56px;padding:0;pointer-events:none}
+.sand-agents-sidebar__plugins-entry${HI}{position:relative;z-index:1;height:32px;margin:0 0 -32px 48px;padding:0;pointer-events:none}
 .sand-agents-sidebar__plugins-entry${HI}>*{pointer-events:auto}
 .sand-agents-sidebar__plugins${HI}{justify-content:flex-start;gap:6px;width:auto;height:40px;padding:0 6px;border:0;border-radius:8px;background:transparent;color:light-dark(${USER_BUBBLE_LIGHT},#8cb8e8);font-size:13px;font-weight:500}
 .sand-agents-sidebar__plugins${HI}:hover{background:transparent;color:light-dark(#1b4a7d,#a9ccf0)}
@@ -1603,7 +1708,51 @@ ${CHOICE_RADIO_CSS()}${AGENT_SHEET_CSS()}${SWITCH_AND_TILES_CSS()}.sand-agent-it
 
 export function patchOriginalLogosStylesheet(css, assets) {
   if (css.includes(LOGOS_MARKER)) throw new Error("Original renderer logos block is already present.");
-  return `${css}\n${logosCss(assets)}${agentMentionsCss()}${cardBlueCss()}`;
+  return `${css}\n${logosCss(assets)}${agentMentionsCss()}${cardBlueCss()}${connectCss(assets.connect ?? {})}`;
+}
+
+/**
+ * The connect step (8 October 2026, the founder: "one that comes before the
+ * computer. The text say: Your agents connect to the apps you already use,
+ * and its the same design as the website. that glass ish animation. only
+ * that instead of simeonlabs logo, its simeon, and put fade in both ends").
+ *
+ * The scene is simeonlabs.com's connector scene as it is live: a frosted
+ * glass tile at the centre, the apps sliding behind it one place every
+ * 1.6 s (a 0.55 s cubic ease, then a hold), the one resting behind the
+ * glass swelling so the tile takes its colour, the far ones blurring and
+ * thinning. The same arithmetic, in a frame the step owns, on a 920 by 260
+ * stage; the row fades out at both ends under a mask. Simeon is the flow's
+ * hero avatar, placed on the tile (`QBn`), the way the site puts its mark
+ * there. People who reduce motion see the row at rest.
+ */
+const CONNECT_W = 920;
+const CONNECT_H = 260;
+const CONNECT_TILE = 150;
+const CONNECT_Y = -20;
+export const CONNECT_TITLE = "Your agents connect to the apps you already use";
+const CONNECT_SOURCE = [
+  `const __simeonConnectApps=${JSON.stringify(Object.keys(CONNECT_LOGO_SOURCES))};`,
+  "function __simeonConnectStep(n){const{headingId:t,onForward:r,onBack:i}=n,still=Fo(),box=S.useRef(null);",
+  `S.useEffect(()=>{const el=box.current;if(!el)return;const orbs=[...el.querySelectorAll(".simeon-connect__orb")],W=${CONNECT_W},t=${CONNECT_TILE},size=t*.5,gap=t*1.05,lane=gap*orbs.length;let t0=null,id=0;const frame=now=>{if(t0==null)t0=now;const period=1600,move=550,k=still?0:(now-t0)/period,step=Math.floor(k),f=Math.min(1,(k-step)*period/move),ease=f<.5?4*f*f*f:1-Math.pow(-2*f+2,3)/2,shift=(step+ease)*gap;for(let j=0;j<orbs.length;j++){const orb=orbs[j];let x=(j*gap-shift)%lane;if(x<-lane/2)x+=lane;if(x>lane/2)x-=lane;const d=Math.abs(x)/(W/2),grow=1+.6*Math.max(0,1-Math.abs(x)/(gap*.6)),sz=size*grow;orb.style.width=orb.style.height=sz+"px";orb.style.transform="translate("+(W/2+x-sz/2)+"px,-50%)";orb.style.filter="blur("+Math.max(0,(d-.8)*22,(grow-1)*30).toFixed(1)+"px)";orb.style.opacity=Math.max(0,Math.min(1,1.9-d)).toFixed(2)}if(!still)id=requestAnimationFrame(frame)};id=requestAnimationFrame(frame);return()=>cancelAnimationFrame(id)},[still]);`,
+  `const orbit=p.jsx(fde,{x:0,y:${CONNECT_Y},ariaHidden:!0,className:"simeon-connect__seat",children:p.jsxs("div",{ref:box,className:"simeon-connect__orbit",children:[...__simeonConnectApps.map(a=>p.jsx("div",{className:"simeon-connect__orb","data-app":a},a)),p.jsx("div",{className:"simeon-connect__tile"},"tile")]})},"orbit");`,
+  `return p.jsx(tye,{className:re("sand-onboarding__connect","simeon-connect"),footer:p.jsx(nye,{onBack:i,onForward:r}),headingId:t,title:${JSON.stringify(CONNECT_TITLE)},children:[orbit]})}`,
+].join("");
+export const CONNECT_STEP_REPLACEMENTS = Object.freeze([
+  ["connect-step-screen", 'case"computer-demo":return p.jsx(Yqn,{', 'case"connect":return p.jsx(__simeonConnectStep,{headingId:xn,onBack:()=>x.goBack(ln),onForward:()=>x.advance(ln)});case"computer-demo":return p.jsx(Yqn,{'],
+  // Simeon takes the site's share of the tile (its mark is 68% of it): 1.3 times his 80 px on a 150 px tile.
+  ["connect-step-hero", 'case"computer-demo":return{...e,', `case"connect":return{...e,x:0,y:${CONNECT_Y},scale:1.3,opacity:1,state:"idle",transition:"standard",isGazing:!0};case"computer-demo":return{...e,`],
+  ["connect-step-component", "function __simeonMeetStep(n){", `${CONNECT_SOURCE}function __simeonMeetStep(n){`],
+]);
+export const CONNECT_MARKER = "/* Simeon: the connect step";
+export function connectCss(logos) {
+  const rim = Math.max(3, CONNECT_TILE * 0.04), t = CONNECT_TILE;
+  return `${CONNECT_MARKER}, the site's connector scene */
+.simeon-connect__orbit{position:relative;width:${CONNECT_W}px;height:${CONNECT_H}px;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 18%,#000 82%,transparent);mask-image:linear-gradient(90deg,transparent,#000 18%,#000 82%,transparent)}
+.simeon-connect__orb{position:absolute;left:0;top:50%;width:${t / 2}px;height:${t / 2}px;background:center/contain no-repeat;will-change:transform,filter,opacity}
+.simeon-connect__tile{position:absolute;left:50%;top:50%;width:${t}px;height:${t}px;transform:translate(-50%,-50%);border-radius:${Math.round(t * 0.235)}px;background:rgba(255,255,255,.4);-webkit-backdrop-filter:blur(32px) saturate(2);backdrop-filter:blur(32px) saturate(2);border:1px solid rgba(255,255,255,.9);box-shadow:inset 0 0 0 ${rim}px rgba(255,255,255,.72),inset 0 ${rim * 0.6}px ${rim * 0.8}px rgba(255,255,255,.95),inset 0 -${rim * 0.8}px ${rim * 2.2}px rgba(60,70,90,.14),0 ${t * 0.1}px ${t * 0.24}px -${t * 0.06}px rgba(30,40,60,.38),0 2px 5px rgba(30,40,60,.1)}
+${Object.entries(logos).map(([key, url]) => `.simeon-connect__orb[data-app="${key}"]{background-image:url("${url}")}`).join("\n")}
+`;
 }
 
 export const SHAPE_PICKER_MARKER = "/* Simeon: one shape, the cloud";
@@ -1906,9 +2055,10 @@ export const SIDEBAR_DISCS_CSS = `${SIDEBAR_DISCS_MARKER} (5 October 2026): sear
 .sand-agents-sidebar__header:has(.simeon-disc){height:60px!important;padding-right:12px!important}
 .sand-agents-sidebar__new-actions:has(.simeon-disc){gap:10px!important;align-items:center!important}
 .simeon-rail-discs{gap:10px!important;padding-bottom:10px!important}
-.sand-agents-sidebar__account>button{width:40px!important;height:40px!important;padding:0!important;border-radius:999px!important;display:grid!important;place-items:center!important}
-.sand-agents-sidebar__account .sand-kit-base-avatar{width:40px!important;height:40px!important;border-radius:999px!important;font-size:13px!important;font-weight:500!important;letter-spacing:.02em!important;color:light-dark(rgba(0,0,0,.72),rgba(255,255,255,.86))!important;background:linear-gradient(180deg,light-dark(rgba(255,255,255,.62),rgba(255,255,255,.16)),light-dark(rgba(255,255,255,.38),rgba(255,255,255,.08)))!important;-webkit-backdrop-filter:blur(14px) saturate(1.6)!important;backdrop-filter:blur(14px) saturate(1.6)!important;box-shadow:inset 0 1px 0 light-dark(rgba(255,255,255,.95),rgba(255,255,255,.28)),inset 0 0 0 .75px light-dark(rgba(255,255,255,.6),rgba(255,255,255,.12)),inset 0 -1px 1px rgba(0,0,0,.04),0 0 0 .5px light-dark(rgba(0,0,0,.07),rgba(0,0,0,.5)),0 1px 3px rgba(0,0,0,.06)!important;transition:transform .18s ease!important}
+.sand-agents-sidebar__account>button{width:32px!important;height:32px!important;padding:0!important;border-radius:999px!important;display:grid!important;place-items:center!important}
+.sand-agents-sidebar__account .sand-kit-base-avatar{width:32px!important;height:32px!important;border-radius:999px!important;font-size:12px!important;font-weight:500!important;letter-spacing:.02em!important;color:light-dark(rgba(0,0,0,.72),rgba(255,255,255,.86))!important;background:linear-gradient(180deg,light-dark(rgba(255,255,255,.62),rgba(255,255,255,.16)),light-dark(rgba(255,255,255,.38),rgba(255,255,255,.08)))!important;-webkit-backdrop-filter:blur(14px) saturate(1.6)!important;backdrop-filter:blur(14px) saturate(1.6)!important;box-shadow:inset 0 1px 0 light-dark(rgba(255,255,255,.95),rgba(255,255,255,.28)),inset 0 0 0 .75px light-dark(rgba(255,255,255,.6),rgba(255,255,255,.12)),inset 0 -1px 1px rgba(0,0,0,.04),0 0 0 .5px light-dark(rgba(0,0,0,.07),rgba(0,0,0,.5)),0 1px 3px rgba(0,0,0,.06)!important;transition:transform .18s ease!important}
 .sand-agents-sidebar__account .sand-kit-base-avatar>span{display:none!important}
+.sand-agents-sidebar__account .sand-kit-base-avatar img{width:32px!important;height:32px!important;border-radius:999px!important;object-fit:cover!important}
 .sand-agents-sidebar__account>button:hover .sand-kit-base-avatar{transform:scale(1.04)!important}
 .sand-prompt-attach{width:30px!important;height:30px!important;border-radius:999px!important;color:light-dark(rgba(0,0,0,.78),rgba(255,255,255,.86))!important;background:linear-gradient(180deg,light-dark(rgba(255,255,255,.62),rgba(255,255,255,.16)),light-dark(rgba(255,255,255,.38),rgba(255,255,255,.08)))!important;-webkit-backdrop-filter:blur(14px) saturate(1.6)!important;backdrop-filter:blur(14px) saturate(1.6)!important;box-shadow:inset 0 1px 0 light-dark(rgba(255,255,255,.95),rgba(255,255,255,.28)),inset 0 0 0 .75px light-dark(rgba(255,255,255,.6),rgba(255,255,255,.12)),inset 0 -1px 1px rgba(0,0,0,.04),0 0 0 .5px light-dark(rgba(0,0,0,.07),rgba(0,0,0,.5)),0 1px 3px rgba(0,0,0,.06)!important;transition:transform .18s ease!important}
 .sand-prompt-attach:hover{transform:scale(1.04)!important}
@@ -2189,6 +2339,10 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   const appIconBefore = await readFile(appIconTarget).catch(() => null);
   await copyFile(APP_ICON_SOURCE, appIconTarget);
   const appIconAfter = await readFile(appIconTarget);
+  const wallpaperTarget = path.join(assetsRoot, WALLPAPER_ASSET);
+  const wallpaperBefore = await readFile(wallpaperTarget).catch(() => null);
+  await copyFile(WALLPAPER_SOURCE, wallpaperTarget);
+  const wallpaperAfter = await readFile(wallpaperTarget);
   const marks = {
     chunk: path.relative(stageRoot, markChunks[0].target),
     replacements: [...[...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, ...SHAPE_REPLACEMENTS, ...COPY_REPLACEMENTS, ...LOGO_REPLACEMENTS, ...CHAT_LAYOUT_REPLACEMENTS, ...VOICE_CALL_REPLACEMENTS, ...AGENT_PANE_REPLACEMENTS, ...HANDOFF_REPLACEMENTS, ...SIDEBAR_DISCS_REPLACEMENTS, ...BUTTERFLY_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT].map(([label]) => label), "chat-header-card", "liquid-glass-chrome", "sidebar-discs", "shape-pickers-hidden", "title-tag-blue", "file-and-app-logos", "voice-call-styles", "agent-pane-styles", "switch-blue", "take-over-card-styles"],
@@ -2200,6 +2354,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     original: { bytes: Buffer.byteLength(markChunks[0].source), sha256: sha256(markChunks[0].source) },
     patched: { bytes: Buffer.byteLength(markPatched), sha256: sha256(markPatched) },
     appIcon: { path: `dist/renderer/assets/${APP_ICON_ASSET}`, original: appIconBefore == null ? null : { bytes: appIconBefore.length, sha256: sha256(appIconBefore) }, patched: { bytes: appIconAfter.length, sha256: sha256(appIconAfter) } },
+    wallpaper: { path: `dist/renderer/assets/${WALLPAPER_ASSET}`, original: wallpaperBefore == null ? null : { bytes: wallpaperBefore.length, sha256: sha256(wallpaperBefore) }, patched: { bytes: wallpaperAfter.length, sha256: sha256(wallpaperAfter) } },
     styles: styleAnchors,
   };
   // The name, over every chunk and the page, after the Settings patch landed.
@@ -2239,6 +2394,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     [marks.chunk, marks.original],
     [marks.userBubble.stylesheet, { bytes: Buffer.byteLength(bubbleSheets[0].css), sha256: sha256(bubbleSheets[0].css) }],
     [marks.appIcon.path, marks.appIcon.original],
+    [marks.wallpaper.path, marks.wallpaper.original],
     ...brandFiles.map((file) => [file.path, file.original]),
   ]) if (!firstOriginals.has(relative)) firstOriginals.set(relative, original);
   const files = [];
@@ -2275,7 +2431,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-mark", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "agent-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "flight-results", "upstream-tokens", "sidebar-glass-discs", "pane-widest-default", "pane-three-tabs", "mark-butterfly", "mark-no-eyes", "spin-lights-agent-colours", "manage-plan-card"],
+    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-mark", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "agent-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "meet-step-turn", "connect-step", "computer-screen-large", "computer-wallpaper-photo", "flight-results", "upstream-tokens", "sidebar-glass-discs", "pane-widest-default", "pane-three-tabs", "mark-butterfly", "mark-no-eyes", "spin-lights-agent-colours", "manage-plan-card"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings", "upstream-tokens", "icon-font-file"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");
