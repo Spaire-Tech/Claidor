@@ -34,7 +34,7 @@ test("eight agents and their group, every conversation a well-formed transcript 
   t.after(async () => { await backendModule.dispose(); await rpc.dispose(); });
   const backend = backendModule.module.createDemoBackend({ pushCoordinatorEvent: () => {}, pushMainEvent: () => {} });
   const roster = (await backend.coordinator("listAgents", {})).value;
-  assert.deepEqual(roster.map((agent) => agent.name).sort(), ["Iris", "Launch squad", "Mila", "Scout", "Simeon", "Theo"]);
+  assert.deepEqual(roster.map((agent) => agent.name).sort(), ["Iris", "Launch squad", "Scout", "Simeon", "Theo"]);
   const group = roster.find((agent) => agent.isGroup);
   assert.equal(group.name, "Launch squad");
   assert.deepEqual(group.memberIds, ["simeon", "scout", "iris"]);
