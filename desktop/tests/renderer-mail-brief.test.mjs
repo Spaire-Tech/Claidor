@@ -52,7 +52,8 @@ test("the brief wraps the flights card's place in the message and brings its own
   const pane = MAIL_REPLACEMENTS.find(([label]) => label === "mail-pane-body");
   assert.equal(pane[1], "p.jsx(__simeonFlightDetails,{offer:__fo.offer})", "an email opens in the agent's pane, in the flight's place");
   const source = MAIL_REPLACEMENTS.find(([label]) => label === "mail-components")[2];
-  assert.match(source, /p\.jsx\(As,\{color:"monochrome",variant:"primary",size:"md",type:"submit"[^}]*children:"Send email"\}\)/, "the reply is sent from the window's own button, as the email composer does");
+  assert.match(source, /S\.lazy\(\(\)=>import\("\.\/view-ClhdNXKM\.js"\)\.then\(m=>\(\{default:m\.__simeonEmailComposer\}\)\)\)/, "the reply opens the window's own email composer, loaded as its card loads it");
+  assert.match(source, /onSend:\(\)=>__simeonMailSet\(n\.k,"replied"\),onDiscard:n\.onDiscard/);
   assert.equal(message[1], FLIGHTS_REPLACEMENTS.find(([label]) => label === "flights-message")[2]);
   assert.ok(message[2].startsWith("(!h&&__simeonMailParse(r)!=null?p.jsx(__simeonMail,{content:r}):"));
   const css = patchOriginalMailStylesheet(":root{}");
@@ -62,4 +63,14 @@ test("the brief wraps the flights card's place in the message and brings its own
   // no white field behind the rows, no tinted avatars, no coloured chips.
   assert.doesNotMatch(css, /--m-group|--m-urgent|simeon-mail__avatar|simeon-mail__chip/);
   assert.throws(() => patchOriginalMailStylesheet(css), /already present/);
+});
+
+test("the email composer's chunk exports its form for the pane, once, and nothing else changes", async () => {
+  const { patchOriginalEmailComposerExport, EMAIL_COMPOSER_CHUNK } = await import(patchModule);
+  const chunk = 'import{c as ps}from"./index.js";function zs(f){const s=ps.c(138),{draft:a,status:t,onSend:z,onDiscard:k}=f;return null}function Ms(f){return null}export{Ms as default};';
+  assert.equal(patchOriginalEmailComposerExport(chunk), chunk.replace("export{Ms as default};", "export{Ms as default,zs as __simeonEmailComposer};"));
+  assert.equal(patchOriginalEmailComposerExport("export{Ms as default};"), "export{Ms as default};", "another card's chunk is left alone");
+  const pinned = path.join(repoRoot, "src/app/dist/renderer/assets", EMAIL_COMPOSER_CHUNK);
+  const { existsSync, readFileSync } = await import("node:fs");
+  if (existsSync(pinned)) assert.match(patchOriginalEmailComposerExport(readFileSync(pinned, "utf8")), /export\{Ms as default,zs as __simeonEmailComposer\};\s*$/, "the pinned chunk carries the form the brief opens");
 });
