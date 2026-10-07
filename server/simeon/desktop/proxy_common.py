@@ -54,7 +54,7 @@ def quota_exhausted_response(allowance: Allowance | None = None) -> JSONResponse
     the app's voice, search and image code already read as « credits
     exhausted »; a sentence that says what kind of allowance it was and
     where to go. The app shows the sentence as it is."""
-    url = billing_url()
+    url = billing_url(from_app=True)
     if allowance is None or allowance.free:
         message = (
             f"Monthly credits exhausted (code {QUOTA_EXHAUSTED_CODE}). "

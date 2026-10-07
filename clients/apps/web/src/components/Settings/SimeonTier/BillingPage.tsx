@@ -33,6 +33,17 @@ const Apple = () => (
 /** The latest Mac build, served by the API (`server/simeon/desktop/releases.py`). */
 const DOWNLOAD_URL = 'https://api.simeonlabs.com/desktop/download/mac'
 
+/**
+ * Brings the installed app to the front: the one link on its own scheme
+ * it accepts without a payload (`parseSandDeepLink`,
+ * desktop/source/shared/deep-link.ts). The API's sign-in page ends on it
+ * the same way.
+ */
+const OPEN_APP_URL = 'simeon://app/v1/open'
+
+/** This page's own path, for the addresses Stripe is given to come back to. */
+const BILLING_PATH = '/billing'
+
 interface BillingPageProps {
   /** The signed-in person's e-mail, for the "Signed in as" line. */
   email: string | null
@@ -44,6 +55,12 @@ interface BillingPageProps {
    * goes card, then app.
    */
   returnTo: string | null
+  /**
+   * `?from=app`: the app itself opened this page (the window's cover,
+   * Usage & Billing, a served error). Afterwards the person goes back
+   * to the app, which unlocks on its own; nothing to download.
+   */
+  fromApp: boolean
   /** `?upgraded=1`: the checkout just came back here. */
   upgraded: boolean
   /** `?checkout_session_id=`: the checkout that just came back, to copy in. */
@@ -64,6 +81,7 @@ const BillingPage = ({
   email,
   plan,
   returnTo,
+  fromApp,
   upgraded,
   checkoutSessionId,
 }: BillingPageProps) => {
@@ -115,6 +133,7 @@ const BillingPage = ({
         <AllSet
           sub={sub}
           returnTo={returnTo}
+          fromApp={fromApp}
           justPaid={upgraded || checkoutSessionId !== null}
           onAdjust={() => setAdjusting(true)}
         />
@@ -124,6 +143,7 @@ const BillingPage = ({
           subscribed={subscribed}
           highlight={plan}
           returnTo={returnTo}
+          fromApp={fromApp}
         />
       )}
     </div>
@@ -135,36 +155,47 @@ const BillingPage = ({
 const AllSet = ({
   sub,
   returnTo,
+  fromApp,
   justPaid,
   onAdjust,
 }: {
   sub: CurrentSubscription | undefined
   returnTo: string | null
+  fromApp: boolean
   justPaid: boolean
   onAdjust: () => void
 }) => {
   const trialing = sub?.status === 'trialing'
+
+  // Came from the app: go back to it, do not stand here. The Mac
+  // sign-in's way back finishes the sign-in (the API confirms it from
+  // the checkout's own id); the app's own links just bring it forward.
+  useEffect(() => {
+    if (returnTo) window.location.replace(returnTo)
+    else if (fromApp && justPaid) window.location.replace(OPEN_APP_URL)
+  }, [returnTo, fromApp, justPaid])
+
+  const started = justPaid && trialing ? 'Your 7 days have started. ' : ''
   return (
     <>
       <section className={styles.set}>
         <h1 className={styles.setTitle}>You&apos;re all set!</h1>
         <p className={styles.setLede}>
           {returnTo
-            ? 'Go back to Simeon to finish signing in'
-            : justPaid && trialing
-              ? 'Your 7 days have started. Download Simeon to get started'
-              : 'Download Simeon to get started'}
+            ? 'Taking you back to Simeon to finish signing in'
+            : fromApp
+              ? `${started}Go back to Simeon`
+              : `${started}Download Simeon to get started`}
         </p>
         <div className={styles.setActions}>
           {returnTo ? (
-            <>
-              <a className={styles.btn} href={returnTo}>
-                Continue signing in to Simeon
-              </a>
-              <a className={styles.setLink} href={DOWNLOAD_URL}>
-                Download Simeon for macOS
-              </a>
-            </>
+            <a className={styles.btn} href={returnTo}>
+              Continue signing in to Simeon
+            </a>
+          ) : fromApp ? (
+            <a className={styles.btn} href={OPEN_APP_URL}>
+              Open Simeon
+            </a>
           ) : (
             <a className={styles.btn} href={DOWNLOAD_URL}>
               <Apple />
@@ -230,11 +261,13 @@ const AdjustPlan = ({
   sub,
   subscribed,
   returnTo,
+  fromApp,
 }: {
   sub: CurrentSubscription | undefined
   subscribed: boolean
   highlight: PaidTierKey | null
   returnTo: string | null
+  fromApp: boolean
 }) => {
   const plans = usePlans()
   const startCheckout = useStartCheckout()
@@ -248,6 +281,10 @@ const AdjustPlan = ({
     )
   }, [plans.data])
 
+  // Where Stripe sends the person afterwards: the Mac sign-in's own
+  // page, this page saying so, or this page saying so and that the app
+  // is waiting (`from=app` survives the round trip).
+  const back = fromApp ? `${BILLING_PATH}?from=app` : undefined
   const choose = useCallback(
     async (tier: PaidTierKey) => {
       setPending(tier)
@@ -257,6 +294,7 @@ const AdjustPlan = ({
           const { portal_url } = await openPortal.mutateAsync({
             flow: 'update_confirm',
             tier,
+            return_url: back,
           })
           window.location.assign(portal_url)
           return
@@ -264,7 +302,9 @@ const AdjustPlan = ({
         const { checkout_url } = await startCheckout.mutateAsync({
           tier,
           billing_interval: 'month',
-          success_url: returnTo ?? undefined,
+          success_url:
+            returnTo ??
+            (fromApp ? `${BILLING_PATH}?upgraded=1&from=app` : undefined),
         })
         window.location.assign(checkout_url)
       } catch {
@@ -275,13 +315,13 @@ const AdjustPlan = ({
         setPending(null)
       }
     },
-    [openPortal, returnTo, startCheckout, subscribed],
+    [back, fromApp, openPortal, returnTo, startCheckout, subscribed],
   )
 
   const portal = useCallback(async () => {
     setPending('portal')
     try {
-      const { portal_url } = await openPortal.mutateAsync({})
+      const { portal_url } = await openPortal.mutateAsync({ return_url: back })
       window.location.assign(portal_url)
     } catch {
       toast({
@@ -290,7 +330,7 @@ const AdjustPlan = ({
       })
       setPending(null)
     }
-  }, [openPortal])
+  }, [back, openPortal])
 
   const currentIndex = sub ? PAID_TIERS.indexOf(sub.tier as PaidTierKey) : -1
 

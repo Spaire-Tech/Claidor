@@ -844,7 +844,7 @@ class DesktopService:
             ),
             "trialCancelable": allowance.trial_cancelable,
             "onDemand": None,
-            "upgradeUrl": None if allowance.free else billing_url(),
+            "upgradeUrl": None if allowance.free else billing_url(from_app=True),
         }
 
     async def profile_summary(

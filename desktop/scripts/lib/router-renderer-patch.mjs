@@ -74,7 +74,7 @@ export const BRAND_PHRASE_REPLACEMENTS = Object.freeze([
   // opened the upstream's onboarding page. It opens Simeon's billing page;
   // once the plan is on Stripe, the window's next ask for its box succeeds
   // and the cover goes (docs/services-billing.md, section 3).
-  ["https://cursor.com/bot/onboarding", "https://app.simeonlabs.com/billing?plan=standard"],
+  ["https://cursor.com/bot/onboarding", "https://app.simeonlabs.com/billing?plan=standard&from=app"],
 ]);
 
 /**
@@ -567,18 +567,17 @@ export function patchOriginalManagePlanPanel(source) {
 }
 
 export const MANAGE_PLAN_MARKER = "/* Simeon: the Manage plan card in Usage & Billing";
-export const managePlanCss = () => `${MANAGE_PLAN_MARKER} (6 October 2026). The upstream's card, redrawn: a bordered card under the meters, the plan and its reset date, a black pill to upgrade, a quiet pill to Stripe. */
-.simeon-manage-plan{margin-top:28px}
-.simeon-manage-plan__title{margin:0 0 10px;font-size:15px;font-weight:400;opacity:.6}
-.simeon-manage-plan__card{display:grid;gap:18px;padding:20px 22px;border:1px solid rgba(127,127,127,.28);border-radius:14px}
-.simeon-manage-plan__row{display:flex;align-items:center;justify-content:space-between;gap:16px}
-.simeon-manage-plan__name{font-size:17px;line-height:1.3}
-.simeon-manage-plan__sub{margin-top:3px;max-width:34em;font-size:15px;line-height:1.4;opacity:.6}
-.simeon-manage-plan__btn{flex:none;height:40px;padding:0 18px;border:0;border-radius:99px;background:#000;color:#fff;font:inherit;font-size:15px;cursor:pointer;white-space:nowrap}
+export const managePlanCss = () => `${MANAGE_PLAN_MARKER} (6 October 2026; resized 7 October, the founder: "you literally went off font, off design"). The usage card's own numbers, measured off the panel: 13px text, 12px secondary text and labels, a white card with a hairline and 16px corners, 14px inside, 24px pills in the usage card's blue, the quiet one grey. */
+.simeon-manage-plan{margin-top:32px}
+.simeon-manage-plan__title{margin:0 0 10px;font-size:12px;line-height:16px;font-weight:400;color:var(--sand-text-secondary)}
+.simeon-manage-plan__card{display:grid;gap:14px;padding:14px;border-radius:16px;background:light-dark(#fff,#2a2a2c);box-shadow:0 0 0 1px light-dark(rgba(0,0,0,.07),rgba(255,255,255,.08))}
+.simeon-manage-plan__row{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.simeon-manage-plan__name{font-size:13px;line-height:18px;color:var(--sand-text-primary)}
+.simeon-manage-plan__sub{margin-top:2px;max-width:40em;font-size:12px;line-height:16px;color:var(--sand-text-secondary)}
+.simeon-manage-plan__btn{flex:none;height:24px;padding:0 12px;border:0;border-radius:999px;background:#3c82f6;color:#fff;font:inherit;font-size:12px;line-height:24px;cursor:pointer;white-space:nowrap}
 .simeon-manage-plan__btn:disabled{opacity:.6;cursor:default}
-.simeon-manage-plan__btn--quiet{background:rgba(127,127,127,.16);color:inherit}
-.simeon-manage-plan__error{color:#ef8585;font-size:14px}
-@media (prefers-color-scheme:dark){.simeon-manage-plan__btn{background:#fff;color:#000}.simeon-manage-plan__btn--quiet{background:rgba(255,255,255,.14);color:inherit}}
+.simeon-manage-plan__btn--quiet{background:light-dark(rgba(120,120,128,.12),rgba(120,120,128,.24));color:var(--sand-text-primary)}
+.simeon-manage-plan__error{font-size:12px;line-height:16px;color:light-dark(#c4302b,#ff6b63)}
 `;
 export function patchOriginalManagePlanStylesheet(css) {
   if (css.includes(MANAGE_PLAN_MARKER)) throw new Error("Original renderer Manage plan block is already present.");

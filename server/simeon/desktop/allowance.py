@@ -69,10 +69,14 @@ def billing_exempt(user: User) -> bool:
     }
 
 
-def billing_url() -> str:
+def billing_url(*, from_app: bool = False) -> str:
     """The billing page on the web app (`clients/`), the one thing the web
-    app is for: a plan and a card, then Stripe's portal."""
-    return settings.generate_frontend_url(BILLING_PATH)
+    app is for: a plan and a card, then Stripe's portal. A link the app
+    itself opens says so (`from=app`), so the page afterwards sends the
+    person back to the app instead of offering the download."""
+    return settings.generate_frontend_url(
+        f"{BILLING_PATH}?from=app" if from_app else BILLING_PATH
+    )
 
 
 def month_bounds(now: datetime | None = None) -> tuple[datetime, datetime]:

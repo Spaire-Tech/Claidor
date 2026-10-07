@@ -60,6 +60,7 @@ export default async function Page(props: {
       email={user?.email ?? null}
       plan={planOf(searchParams.plan)}
       returnTo={returnToOf(searchParams.return_to)}
+      fromApp={first(searchParams.from) === 'app'}
       upgraded={searchParams.upgraded === '1'}
       checkoutSessionId={checkoutSessionOf(searchParams.checkout_session_id)}
     />
