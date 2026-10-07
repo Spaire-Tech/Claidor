@@ -2064,6 +2064,13 @@ export const SIDEBAR_DISCS_CSS = `${SIDEBAR_DISCS_MARKER} (5 October 2026): sear
 .sand-prompt-attach:hover{transform:scale(1.04)!important}
 .sand-prompt-attach:active{transform:scale(.97)!important}
 .sand-prompt-attach .ui-icon{color:inherit!important}
+/* Dark mode, somber (7 October 2026: "ours is light-ish - i dont want that"): the composer and every round control are one flat dark fill with a faint edge on the black, no glass gradient and no white top highlight. Light mode is unchanged. */
+:root{--simeon-dark-control:#212121;--simeon-dark-control-hover:#2a2a2a;--simeon-dark-edge:#2e2e2e}
+[data-theme*="dark"] .sand-kit-message-input-frame${HI}:not(#\\#){background:var(--simeon-dark-control)!important;border-color:var(--simeon-dark-edge)!important;box-shadow:none!important}
+[data-theme*="dark"] :is(.simeon-disc,.sand-prompt-attach,.sand-agents-sidebar__account .sand-kit-base-avatar,.sand-agents-sidebar__rail-new .sand-agents-sidebar__new,.sand-chat-header__name,.simeon-call-button)${HI}:not(#\\#){background:var(--simeon-dark-control)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;border-color:var(--simeon-dark-edge)!important;box-shadow:inset 0 0 0 1px var(--simeon-dark-edge)!important}
+[data-theme*="dark"] :is(.simeon-disc,.sand-prompt-attach,.sand-agents-sidebar__rail-new .sand-agents-sidebar__new,.simeon-call-button)${HI}:not(#\\#):hover{background:var(--simeon-dark-control-hover)!important}
+[data-theme*="dark"] .sand-agents-sidebar__account>button:hover .sand-kit-base-avatar${HI}:not(#\\#){background:var(--simeon-dark-control-hover)!important}
+[data-theme*="dark"] :is(.sand-chat-header__name,.simeon-call-button)${HI}:not(#\\#):not(#\\#){border:1px solid var(--simeon-dark-edge)!important;box-shadow:none!important}
 `;
 
 export function patchOriginalSidebarDiscsStylesheet(css) {
