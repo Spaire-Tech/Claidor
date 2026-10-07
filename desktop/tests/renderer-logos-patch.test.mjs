@@ -137,8 +137,8 @@ test("the sign-in wordmark is set in Suravaram, carried inside the stylesheet", 
 test("the Chief of Staff step sits after Meet Simeon, with Simeon at the centre and six agents linked to him by blue curves", async () => {
   const { COO_REPLACEMENTS, COO_CSS, COO_TITLE, COO_COPY, patchOriginalCooStylesheet } = await import("../scripts/lib/router-renderer-patch.mjs");
   const [list, title, screen, hero, component] = COO_REPLACEMENTS;
-  assert.match(list[2], /\["landing","meet","coo","computer-demo","name","tools"\]/, "the jobs and create steps are out; the name step follows the computer");
-  assert.equal(title[2], 'N="Your agents have their own computer and work just like you"');
+  assert.match(list[2], /\["landing","meet","coo","connect","computer-demo","name","tools"\]/, "the jobs and create steps are out; connect sits before the computer; the name step follows it");
+  assert.equal(title[2], 'N="They have their own computer and work just like you"');
   assert.match(screen[2], /^case"coo":return p\.jsx\(__simeonCooStep,\{headingId:xn,onBack:\(\)=>x\.goBack\(ln\),onForward:\(\)=>x\.advance\(ln\)\}\);/);
   assert.match(hero[2], /^case"coo":return\{\.\.\.e,x:0,y:-40,scale:1,opacity:1/);
   assert.equal(COO_TITLE, "Simeon is your personal Chief of Staff");
@@ -182,6 +182,30 @@ test("the Meet step: Simeon arrives large, turns once around himself, then settl
   assert.ok(patchOriginalCooStylesheet(".a{}").includes(MEET_CSS));
 });
 
+test("the connect step: the site's connector scene with Simeon on the glass, the row fading at both ends", async () => {
+  const { CONNECT_STEP_REPLACEMENTS, CONNECT_TITLE, CONNECT_LOGO_SOURCES, connectCss, readLogoAssets, patchOriginalLogosStylesheet } = await import("../scripts/lib/router-renderer-patch.mjs");
+  const by = Object.fromEntries(CONNECT_STEP_REPLACEMENTS.map(([label, , after]) => [label, after]));
+  assert.equal(CONNECT_TITLE, "Your agents connect to the apps you already use");
+  assert.match(by["connect-step-screen"], /^case"connect":return p\.jsx\(__simeonConnectStep,\{headingId:xn,onBack:\(\)=>x\.goBack\(ln\),onForward:\(\)=>x\.advance\(ln\)\}\);case"computer-demo":return p\.jsx\(Yqn,\{$/);
+  assert.match(by["connect-step-hero"], /^case"connect":return\{\.\.\.e,x:0,y:-20,scale:1,opacity:1,state:"idle",transition:"standard",isGazing:!0\};case"computer-demo":return\{\.\.\.e,$/, "Simeon sits on the tile");
+  const component = by["connect-step-component"];
+  assert.ok(component.includes(`title:${JSON.stringify(CONNECT_TITLE)}`));
+  assert.deepEqual(JSON.parse(/const __simeonConnectApps=(\[.*?\]);/.exec(component)[1]), Object.keys(CONNECT_LOGO_SOURCES));
+  assert.equal(Object.keys(CONNECT_LOGO_SOURCES).length, 12, "the site's twelve");
+  assert.match(component, /period=1600,move=550/, "one place every 1.6 s, the move 0.55 s, as the site");
+  assert.match(component, /grow=1\+\.6\*Math\.max\(0,1-Math\.abs\(x\)\/\(gap\*\.6\)\)/, "the logo behind the glass swells");
+  assert.match(component, /cancelAnimationFrame\(id\)/, "the frame stops with the step");
+  new Function("p", "fde", "tye", "nye", "re", "Fo", "S", component.replace(/function __simeonMeetStep\(n\)\{$/, ""));
+  const assets = await readLogoAssets();
+  assert.deepEqual(Object.keys(assets.connect), Object.keys(CONNECT_LOGO_SOURCES));
+  for (const url of Object.values(assets.connect)) assert.match(url, /^data:image\/(svg\+xml|webp);base64,/);
+  const css = connectCss(assets.connect);
+  assert.match(css, /mask-image:linear-gradient\(90deg,transparent,#000 18%,#000 82%,transparent\)/, "the row fades at both ends");
+  assert.match(css, /\.simeon-connect__tile\{[^}]*backdrop-filter:blur\(20px\) saturate\(1\.9\)/, "the glass");
+  assert.equal((css.match(/\.simeon-connect__orb\[data-app=/g) ?? []).length, 12);
+  assert.ok(patchOriginalLogosStylesheet(".a{}", assets).includes(css));
+});
+
 test("the computer step: the screen is 1.45 times the drawing, with the photograph on it, and Simeon walks the scaled path", async () => {
   const { COMPUTER_STEP_REPLACEMENTS, COMPUTER_CSS, COMPUTER_SCREEN_SCALE, WALLPAPER_SOURCE, WALLPAPER_ASSET, patchOriginalCooStylesheet } = await import("../scripts/lib/router-renderer-patch.mjs");
   const by = Object.fromEntries(COMPUTER_STEP_REPLACEMENTS.map(([label, , after]) => [label, after]));
@@ -223,7 +247,7 @@ test("the name step: the apps step's agents gather over one field, and the last 
   const by = Object.fromEntries(NAME_STEP_REPLACEMENTS.map(([label, , after]) => [label, after]));
   assert.match(by["name-step-screen"], /^case"name":return p\.jsx\(__simeonNameStep,/);
   assert.match(by["name-step-agents"], /^case"name":return\{\.\.\.t,\.\.\.__simeonNameSeat\[e\],opacity:1/);
-  assert.match(by["name-step-component"], /title:"How should they call you\?"/);
+  assert.match(by["name-step-component"], /title:"How should Simeon & Co call you\?"/);
   assert.match(by["name-step-component"], /a\.updateName\(name\)/, "saved through the account's own rename");
   assert.doesNotMatch(by["name-step-component"], /Hi, /, "no greeting bubble");
   for (const seat of ["weekly-standup", "invoice-chaser", "sales-forecast"]) assert.match(by["name-step-component"], new RegExp(`"${seat}":\\{"x"`));

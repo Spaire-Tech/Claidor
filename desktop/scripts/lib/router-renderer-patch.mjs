@@ -1030,8 +1030,9 @@ const COO_SOURCE = [
 
 export const COO_REPLACEMENTS = Object.freeze([
   // "Give each Agent a job" is left out of the flow (the founder, the same day: "remove the give each agent a job step"); the COO step says it now.
-  ["coo-step-list", 'const Gse=["landing","meet","computer-demo","jobs","tools","create"]', 'const Gse=["landing","meet","coo","computer-demo","name","tools"]'],
-  ["coo-computer-title", 'N="Grok Bot has its own computer and works just like you"', 'N="Your agents have their own computer and work just like you"'],
+  // The connect step (8 October 2026) sits between the Chief of Staff and the computer, so the computer's title says "They".
+  ["coo-step-list", 'const Gse=["landing","meet","computer-demo","jobs","tools","create"]', 'const Gse=["landing","meet","coo","connect","computer-demo","name","tools"]'],
+  ["coo-computer-title", 'N="Grok Bot has its own computer and works just like you"', 'N="They have their own computer and work just like you"'],
   ["coo-step-screen", 'case"computer-demo":return p.jsx(Yqn,{', 'case"coo":return p.jsx(__simeonCooStep,{headingId:xn,onBack:()=>x.goBack(ln),onForward:()=>x.advance(ln)});case"computer-demo":return p.jsx(Yqn,{'],
   ["coo-step-hero", 'case"computer-demo":return{...e,x:$2e.x+n.demoCursor.x', `case"coo":return{...e,x:0,y:${COO_HERO_Y},scale:1,opacity:1,state:"proud",transition:"standard",isGazing:!0};case"computer-demo":return{...e,x:$2e.x+n.demoCursor.x`],
   ["coo-step-component", "function sjn(n){", `${COO_SOURCE}function sjn(n){`],
@@ -1083,7 +1084,7 @@ const NAME_SOURCE = [
   "const go=()=>{name.length>0&&a?.updateName!=null&&Promise.resolve(a.updateName(name)).catch(()=>{});r()};",
   "const field=p.jsx(fde,{x:0,y:4,className:\"simeon-name__field-seat\",children:p.jsx(\"form\",{onSubmit:e=>{e.preventDefault();go()},children:p.jsx(\"input\",{ref:ip,className:\"simeon-name__input\",type:\"text\",autoComplete:\"given-name\",spellCheck:!1,maxLength:60,placeholder:\"Your name\",\"aria-label\":\"Your name\",value:v,onChange:e=>{touched.current=!0;sv(e.target.value)}})})},\"field\");",
   "const note=p.jsx(fde,{x:0,y:44,className:\"simeon-name__note-seat\",children:p.jsx(\"p\",{className:\"simeon-name__note\",children:\"They’ll use it in chat and on calls. You can change it later.\"})},\"note\");",
-  "return p.jsx(tye,{className:re(\"sand-onboarding__name\",\"simeon-name\"),footer:p.jsx(nye,{onBack:i,onForward:go}),headingId:t,title:\"How should they call you?\",children:[field,note]})}",
+  "return p.jsx(tye,{className:re(\"sand-onboarding__name\",\"simeon-name\"),footer:p.jsx(nye,{onBack:i,onForward:go}),headingId:t,title:\"How should Simeon & Co call you?\",children:[field,note]})}",
 ].join("");
 export const NAME_STEP_REPLACEMENTS = Object.freeze([
   ["name-step-screen", "case\"tools\":return p.jsx(Ljn,{", "case\"name\":return p.jsx(__simeonNameStep,{headingId:xn,onBack:()=>x.goBack(ln),onForward:()=>x.advance(ln)});case\"tools\":return p.jsx(Ljn,{"],
@@ -1206,7 +1207,7 @@ export const COMPUTER_CSS = `/* Simeon: the computer step's screen */
 
 export function patchOriginalCooStep(source) {
   let out = source;
-  for (const [label, before, after] of [...COO_REPLACEMENTS, ...FIRST_AGENT_REPLACEMENTS, ...NAME_STEP_REPLACEMENTS, ...MEET_STEP_REPLACEMENTS, ...COMPUTER_STEP_REPLACEMENTS]) out = replaceExactlyOnce(out, before, after, label);
+  for (const [label, before, after] of [...COO_REPLACEMENTS, ...FIRST_AGENT_REPLACEMENTS, ...NAME_STEP_REPLACEMENTS, ...MEET_STEP_REPLACEMENTS, ...COMPUTER_STEP_REPLACEMENTS, ...CONNECT_STEP_REPLACEMENTS]) out = replaceExactlyOnce(out, before, after, label);
   return out;
 }
 
@@ -1455,8 +1456,15 @@ export async function readLogoAssets(brandDir = BRAND_DIR) {
   const manifest = JSON.parse(await readFile(path.join(brandDir, APP_MENTIONS_MANIFEST), "utf8"));
   const mentions = await Promise.all(manifest.map(async (app) => ({ ...app, logo: dataUrl(await readFile(path.join(brandDir, "app-logos", app.logo)), app.logo) })));
   const tiles = await Promise.all(Object.entries(TILE_LOGO_SOURCES).map(async ([key, { file, pathStart }]) => ({ key, pathStart, logo: dataUrl(await readFile(path.join(brandDir, file)), file) })));
-  return { files: await read(FILE_ICON_SOURCES), apps: await read(APP_LOGO_SOURCES), mentions, tiles, wordmarkFont: dataUrl(await readFile(path.join(brandDir, WORDMARK_FONT)), WORDMARK_FONT) };
+  return { files: await read(FILE_ICON_SOURCES), apps: await read(APP_LOGO_SOURCES), mentions, tiles, connect: await read(CONNECT_LOGO_SOURCES), wordmarkFont: dataUrl(await readFile(path.join(brandDir, WORDMARK_FONT)), WORDMARK_FONT) };
 }
+
+/**
+ * The apps that slide behind the glass on the connect step, the twelve
+ * simeonlabs.com shows in the same scene, in its order and its colours
+ * (brand/connect-logos, copied from the site's logos folder).
+ */
+export const CONNECT_LOGO_SOURCES = Object.freeze({ slack: "connect-logos/slack.webp", gmail: "connect-logos/gmail.webp", notion: "connect-logos/notion.svg", figma: "connect-logos/figma.svg", linear: "connect-logos/linear.svg", "google-drive": "connect-logos/google-drive.svg", hubspot: "connect-logos/hubspot.svg", zoom: "connect-logos/zoom.webp", linkedin: "connect-logos/linkedin.svg", "google-calendar": "connect-logos/google-calendar.webp", stripe: "connect-logos/stripe.svg", salesforce: "connect-logos/salesforce.svg" });
 
 /**
  * The sign-in wordmark in Suravaram (3 October 2026, the founder: "'Simeon'
@@ -1698,7 +1706,50 @@ ${CHOICE_RADIO_CSS()}${AGENT_SHEET_CSS()}${SWITCH_AND_TILES_CSS()}.sand-agent-it
 
 export function patchOriginalLogosStylesheet(css, assets) {
   if (css.includes(LOGOS_MARKER)) throw new Error("Original renderer logos block is already present.");
-  return `${css}\n${logosCss(assets)}${agentMentionsCss()}${cardBlueCss()}`;
+  return `${css}\n${logosCss(assets)}${agentMentionsCss()}${cardBlueCss()}${connectCss(assets.connect ?? {})}`;
+}
+
+/**
+ * The connect step (8 October 2026, the founder: "one that comes before the
+ * computer. The text say: Your agents connect to the apps you already use,
+ * and its the same design as the website. that glass ish animation. only
+ * that instead of simeonlabs logo, its simeon, and put fade in both ends").
+ *
+ * The scene is simeonlabs.com's connector scene as it is live: a frosted
+ * glass tile at the centre, the apps sliding behind it one place every
+ * 1.6 s (a 0.55 s cubic ease, then a hold), the one resting behind the
+ * glass swelling so the tile takes its colour, the far ones blurring and
+ * thinning. The same arithmetic, in a frame the step owns, on a 920 by 260
+ * stage; the row fades out at both ends under a mask. Simeon is the flow's
+ * hero avatar, placed on the tile (`QBn`), the way the site puts its mark
+ * there. People who reduce motion see the row at rest.
+ */
+const CONNECT_W = 920;
+const CONNECT_H = 260;
+const CONNECT_TILE = 150;
+const CONNECT_Y = -20;
+export const CONNECT_TITLE = "Your agents connect to the apps you already use";
+const CONNECT_SOURCE = [
+  `const __simeonConnectApps=${JSON.stringify(Object.keys(CONNECT_LOGO_SOURCES))};`,
+  "function __simeonConnectStep(n){const{headingId:t,onForward:r,onBack:i}=n,still=Fo(),box=S.useRef(null);",
+  `S.useEffect(()=>{const el=box.current;if(!el)return;const orbs=[...el.querySelectorAll(".simeon-connect__orb")],W=${CONNECT_W},t=${CONNECT_TILE},size=t*.5,gap=t*1.05,lane=gap*orbs.length;let t0=null,id=0;const frame=now=>{if(t0==null)t0=now;const period=1600,move=550,k=still?0:(now-t0)/period,step=Math.floor(k),f=Math.min(1,(k-step)*period/move),ease=f<.5?4*f*f*f:1-Math.pow(-2*f+2,3)/2,shift=(step+ease)*gap;for(let j=0;j<orbs.length;j++){const orb=orbs[j];let x=(j*gap-shift)%lane;if(x<-lane/2)x+=lane;if(x>lane/2)x-=lane;const d=Math.abs(x)/(W/2),grow=1+.6*Math.max(0,1-Math.abs(x)/(gap*.6)),sz=size*grow;orb.style.width=orb.style.height=sz+"px";orb.style.transform="translate("+(W/2+x-sz/2)+"px,-50%)";orb.style.filter="blur("+Math.max(0,(d-.8)*22).toFixed(1)+"px)";orb.style.opacity=Math.max(0,Math.min(1,1.9-d)).toFixed(2)}if(!still)id=requestAnimationFrame(frame)};id=requestAnimationFrame(frame);return()=>cancelAnimationFrame(id)},[still]);`,
+  `const orbit=p.jsx(fde,{x:0,y:${CONNECT_Y},ariaHidden:!0,className:"simeon-connect__seat",children:p.jsxs("div",{ref:box,className:"simeon-connect__orbit",children:[...__simeonConnectApps.map(a=>p.jsx("div",{className:"simeon-connect__orb","data-app":a},a)),p.jsx("div",{className:"simeon-connect__tile"},"tile")]})},"orbit");`,
+  `return p.jsx(tye,{className:re("sand-onboarding__connect","simeon-connect"),footer:p.jsx(nye,{onBack:i,onForward:r}),headingId:t,title:${JSON.stringify(CONNECT_TITLE)},children:[orbit]})}`,
+].join("");
+export const CONNECT_STEP_REPLACEMENTS = Object.freeze([
+  ["connect-step-screen", 'case"computer-demo":return p.jsx(Yqn,{', 'case"connect":return p.jsx(__simeonConnectStep,{headingId:xn,onBack:()=>x.goBack(ln),onForward:()=>x.advance(ln)});case"computer-demo":return p.jsx(Yqn,{'],
+  ["connect-step-hero", 'case"computer-demo":return{...e,', `case"connect":return{...e,x:0,y:${CONNECT_Y},scale:1,opacity:1,state:"idle",transition:"standard",isGazing:!0};case"computer-demo":return{...e,`],
+  ["connect-step-component", "function __simeonMeetStep(n){", `${CONNECT_SOURCE}function __simeonMeetStep(n){`],
+]);
+export const CONNECT_MARKER = "/* Simeon: the connect step";
+export function connectCss(logos) {
+  const rim = Math.max(3, CONNECT_TILE * 0.04), t = CONNECT_TILE;
+  return `${CONNECT_MARKER}, the site's connector scene */
+.simeon-connect__orbit{position:relative;width:${CONNECT_W}px;height:${CONNECT_H}px;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 18%,#000 82%,transparent);mask-image:linear-gradient(90deg,transparent,#000 18%,#000 82%,transparent)}
+.simeon-connect__orb{position:absolute;left:0;top:50%;width:${t / 2}px;height:${t / 2}px;background:center/contain no-repeat;will-change:transform,filter,opacity}
+.simeon-connect__tile{position:absolute;left:50%;top:50%;width:${t}px;height:${t}px;transform:translate(-50%,-50%);border-radius:${Math.round(t * 0.235)}px;background:rgba(255,255,255,.4);-webkit-backdrop-filter:blur(20px) saturate(1.9);backdrop-filter:blur(20px) saturate(1.9);border:1px solid rgba(255,255,255,.9);box-shadow:inset 0 0 0 ${rim}px rgba(255,255,255,.72),inset 0 ${rim * 0.6}px ${rim * 0.8}px rgba(255,255,255,.95),inset 0 -${rim * 0.8}px ${rim * 2.2}px rgba(60,70,90,.14),0 ${t * 0.1}px ${t * 0.24}px -${t * 0.06}px rgba(30,40,60,.38),0 2px 5px rgba(30,40,60,.1)}
+${Object.entries(logos).map(([key, url]) => `.simeon-connect__orb[data-app="${key}"]{background-image:url("${url}")}`).join("\n")}
+`;
 }
 
 export const SHAPE_PICKER_MARKER = "/* Simeon: one shape, the cloud";
@@ -2376,7 +2427,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-mark", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "agent-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "meet-step-turn", "computer-screen-large", "computer-wallpaper-photo", "flight-results", "upstream-tokens", "sidebar-glass-discs", "pane-widest-default", "pane-three-tabs", "mark-butterfly", "mark-no-eyes", "spin-lights-agent-colours", "manage-plan-card"],
+    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-mark", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "agent-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "meet-step-turn", "connect-step", "computer-screen-large", "computer-wallpaper-photo", "flight-results", "upstream-tokens", "sidebar-glass-discs", "pane-widest-default", "pane-three-tabs", "mark-butterfly", "mark-no-eyes", "spin-lights-agent-colours", "manage-plan-card"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings", "upstream-tokens", "icon-font-file"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");
