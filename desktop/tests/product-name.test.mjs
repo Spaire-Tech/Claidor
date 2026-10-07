@@ -21,8 +21,9 @@ test("Settings copy names Simeon, not an earlier name", async () => {
   const panels = await read("frontend/src/recovered/features/settings/overlay/panels.tsx");
   assert.doesNotMatch(patch, /id:"router",label:"Router"/);
   assert.doesNotMatch(view, /id: "router"/);
-  // The window patch injects no Settings copy of its own any more.
-  assert.doesNotMatch(patch, /COMPONENT_SOURCE|RRouterProviders|signed-in Claidor account/);
+  // The Router settings panel (`COMPONENT_SOURCE`, "signed-in Claidor account") is gone; the
+  // Manage plan card (MANAGE_PLAN_COMPONENT_SOURCE, 6 October 2026) is Simeon's own copy.
+  assert.doesNotMatch(patch, /(?<![A-Z_])COMPONENT_SOURCE|RRouterProviders|signed-in Claidor account/);
   assert.match(router, /DEFAULT_ROUTER_PROVIDER: RouterProviderId = "simeon"/);
   assert.doesNotMatch(router, /signed-in Cursor account/);
   assert.match(panels, /Sign In with Simeon/);

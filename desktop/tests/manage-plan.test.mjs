@@ -33,7 +33,9 @@ test("the Manage plan anchors apply exactly once, and a second pass refuses", as
   const source = await readFile(patchModule, "utf8");
   assert.match(source, /patchOriginalManagePlan\(patchOriginalVoiceCall\(/);
   assert.match(source, /patchOriginalManagePlanStylesheet\(patchOriginalVoiceCallStylesheet\(/);
-  assert.match(source, /\["manage-plan", panelCandidates\[0\], patchOriginalManagePlanPanel\]/);
+  // One provenance row per chunk: the card is the Settings panel's change, not a third row.
+  assert.match(source, /\["panel", panelCandidates\[0\], \(source\) => patchOriginalManagePlanPanel\(patchOriginalSettingsPanel\(source\)\)\]/);
+  assert.doesNotMatch(source, /\["manage-plan", panelCandidates/);
 });
 
 test("the bridge carries openBillingPortal from the window to the server", async () => {
