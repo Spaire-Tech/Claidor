@@ -51,6 +51,7 @@ from simeon.config import settings
 from simeon.models import DesktopSession, User
 from simeon.routing import APIRouter
 
+from .app_results import tidy_result
 from .auth import get_desktop_or_box_session
 from .composio import composio_user_id, configured
 
@@ -75,7 +76,6 @@ _MAX_FEATURED = 80
 _MIN_IMPORTANT = 5
 _PAGE_LIMIT = 1000
 _MAX_PAGES = 5
-_OUTPUT_LIMIT = 60_000
 COMPOSIO_CALLBACK = "https://backend.composio.dev/api/v3/toolkits/auth/callback"
 NOT_CONFIGURED = "Apps are not switched on for this server yet."
 
@@ -361,11 +361,7 @@ def _rpc_error(request_id: Any, code: int, message: str) -> dict[str, Any]:
 
 
 def _call_content(data: Any) -> str:
-    text = data if isinstance(data, str) else json.dumps(data, ensure_ascii=False)
-    text = scrub(text)
-    if len(text) > _OUTPUT_LIMIT:
-        text = text[:_OUTPUT_LIMIT] + "… (cut)"
-    return text
+    return scrub(tidy_result(data))
 
 
 async def _handle(

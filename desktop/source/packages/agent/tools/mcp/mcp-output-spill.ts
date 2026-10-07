@@ -72,7 +72,7 @@ export async function spillLargeMcpTextOutput({
   return truncatedResult;
 }
 
-function buildTruncatedInlineContent(contentItems: readonly McpToolResultContentItem[]): McpToolResultContentItem[] {
+export function buildTruncatedInlineContent(contentItems: readonly McpToolResultContentItem[]): McpToolResultContentItem[] {
   const aggregateText = contentItems.filter(item =>
     item.content.case === "text" && item.content.value.outputLocation === undefined
   ).map(item => item.content.case === "text" ? item.content.value.text : "").join("\n\n");

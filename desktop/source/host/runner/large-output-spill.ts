@@ -5,6 +5,7 @@ import {
   MCP_TEXT_FILE_THRESHOLD_BYTES,
   materializeMcpTextOutput,
 } from "../../packages/agent-exec/agent-tools-file.js";
+import { buildTruncatedInlineContent } from "../../packages/agent/tools/mcp/mcp-output-spill.js";
 import type { McpResult } from "../../packages/proto/generated/agent/v1/mcp_exec_pb.js";
 import { OutputLocation } from "../../packages/proto/generated/agent/v1/utils_pb.js";
 
@@ -47,13 +48,17 @@ export function createSandMcpTextSpiller<C>(opts: {
       },
     });
 
-    if (materialized === undefined || materialized === result.result.value.content) {
+    if (materialized === result.result.value.content) {
       return result;
     }
 
+    // The file could not be written. Until 7 October 2026 the whole result
+    // then went to the model inline, with no limit at all (an inbox review
+    // read 60,000 characters per Gmail call). It is cut at the threshold
+    // instead, with a notice saying so.
     const spilled = result.clone();
     if (spilled.result.case === "success") {
-      spilled.result.value.content = materialized;
+      spilled.result.value.content = materialized ?? buildTruncatedInlineContent(spilled.result.value.content);
     }
     return spilled;
   };

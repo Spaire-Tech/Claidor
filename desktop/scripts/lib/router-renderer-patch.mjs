@@ -593,6 +593,55 @@ export function patchOriginalManagePlanStylesheet(css) {
   return `${css}\n${managePlanCss()}`;
 }
 
+/**
+ * Send and Discard on the email and Slack draft cards (7 October 2026, the
+ * founder: "the send email button dont work"). The pinned renderer drew both
+ * cards with empty callbacks (`function qs(){}function Cs(){}`), so a press
+ * never left the window, while the box already took `sendDraft` and
+ * `discardDraft` (host/extensions/transcript/draft-cards.ts) and the Mac's
+ * coordinator table already allowed them. The window's own coordinator table
+ * learns the two methods, the transcript client passes them on, and a small
+ * hook gives each card the agent it belongs to; the card then calls them with
+ * its entry id and, on Send, the fields as edited.
+ */
+const DRAFT_SEND_HOOK = "function __simeonDraftActions(){const a=Mee(),{transcript:t}=Qe(),r=S.useRef(null);r.current={a,t};return S.useMemo(()=>{const c=(m,x)=>{const v=r.current;if(v==null||v.a==null||typeof v.t?.[m]!==\"function\")return;Promise.resolve(v.t[m]({agentId:v.a,...x})).catch(e=>console.warn(`[simeon] ${m} failed`,e))};return{send:(entryId,draft)=>c(\"sendDraft\",{entryId,draft}),discard:entryId=>c(\"discardDraft\",{entryId})}},[])}";
+export const DRAFT_SEND_REPLACEMENTS = Object.freeze([
+  ["draft-send-methods", 'dismissWidget:{args:"object",reply:"record"},', 'dismissWidget:{args:"object",reply:"record"},sendDraft:{args:"object",reply:"void"},discardDraft:{args:"object",reply:"void"},'],
+  ["draft-send-domains", 'dismissWidget:"widgets",', 'dismissWidget:"widgets",sendDraft:"widgets",discardDraft:"widgets",'],
+  ["draft-send-transcript", "dismissWidget:j=>e.dismissWidget(j),", "dismissWidget:j=>e.dismissWidget(j),sendDraft:j=>e.sendDraft(j),discardDraft:j=>e.discardDraft(j),"],
+  ["draft-send-hook", "function Mee(){return S.useContext(_me)?.agentId??null}", `function Mee(){return S.useContext(_me)?.agentId??null}${DRAFT_SEND_HOOK}`],
+  ["draft-send-export", "export{UWn as $,", "export{__simeonDraftActions,UWn as $,"],
+]);
+
+export function patchOriginalDraftSend(source) {
+  if (source.includes("function __simeonDraftActions(){")) throw new Error("Original renderer draft Send hook is already present.");
+  let out = source;
+  for (const [label, before, after] of DRAFT_SEND_REPLACEMENTS) out = replaceExactlyOnce(out, before, after, label);
+  return out;
+}
+
+/** The two card chunks: each calls the hook and hands its entry id to Send and Discard. */
+export const DRAFT_CARD_CHUNKS = Object.freeze({
+  "view-ClhdNXKM.js": [
+    ["email-draft-import", 'import{c as ps,w as as,f as n,x as hs,y as es,j as e,m as fs,T as _,N as is,M as bs,E as ks}from"./index-UbX-y3il.js";', 'import{c as ps,w as as,f as n,x as hs,y as es,j as e,m as fs,T as _,N as is,M as bs,E as ks,__simeonDraftActions as __da}from"./index-UbX-y3il.js";'],
+    ["email-draft-hook", "function Ms(f){const s=ps.c(10),{entry:a,adjacency:t}=f,", "function Ms(f){const __d=__da(),s=ps.c(10),{entry:a,adjacency:t}=f,"],
+    ["email-draft-callbacks", "onDiscard:Cs,onSend:qs,", "onDiscard:()=>__d.discard(a.id),onSend:x=>__d.send(a.id,x),"],
+  ],
+  "view-DyaeCHiE.js": [
+    ["slack-draft-import", 'import{c as hs,w as rs,f as n,x as us,y as es,j as e,T as u,m as os,N as ds,P as fs,M as ps,E as js}from"./index-UbX-y3il.js";', 'import{c as hs,w as rs,f as n,x as us,y as es,j as e,T as u,m as os,N as ds,P as fs,M as ps,E as js,__simeonDraftActions as __da}from"./index-UbX-y3il.js";'],
+    ["slack-draft-hook", "function vs(_){const s=hs.c(10),{entry:a,adjacency:l}=_,", "function vs(_){const __d=__da(),s=hs.c(10),{entry:a,adjacency:l}=_,"],
+    ["slack-draft-callbacks", "onDiscard:zs,onSend:Ss,", "onDiscard:()=>__d.discard(a.id),onSend:x=>__d.send(a.id,x),"],
+  ],
+});
+
+export function patchOriginalDraftCard(source, name) {
+  const replacements = DRAFT_CARD_CHUNKS[name];
+  if (replacements == null) return source;
+  let out = source;
+  for (const [label, before, after] of replacements) out = replaceExactlyOnce(out, before, after, label);
+  return out;
+}
+
 export function patchOriginalVoiceCallStylesheet(css) {
   if (css.includes(VOICE_CALL_MARKER)) throw new Error("Original renderer voice-call block is already present.");
   return `${css}\n${voiceCallCss()}`;
@@ -2316,7 +2365,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   if (!SIDEBAR_DISCS_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer sidebar anchors (the header, the rail's new button, the search bar) are not all in the mark chunk.");
   if (!BUTTERFLY_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer mark engine anchors (the cloud's geometry, the body and eyes, the still renderer, the spin's lights) are not all in the mark chunk.");
   const logoAssets = await readLogoAssets();
-  const markPatched = patchOriginalButterfly(patchOriginalSidebarDiscs(patchOriginalCooStep(patchOriginalFlights(patchOriginalHandoff(patchOriginalAgentPane(patchOriginalManagePlan(patchOriginalVoiceCall(patchOriginalChatLayout(patchOriginalLogos(patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source))))), appMentionNames(logoAssets.mentions)))))))))));
+  const markPatched = patchOriginalButterfly(patchOriginalSidebarDiscs(patchOriginalCooStep(patchOriginalFlights(patchOriginalHandoff(patchOriginalAgentPane(patchOriginalManagePlan(patchOriginalVoiceCall(patchOriginalChatLayout(patchOriginalLogos(patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(patchOriginalDraftSend(markChunks[0].source)))))), appMentionNames(logoAssets.mentions)))))))))));
   // The stylesheet's light default of the same variable, for first paint.
   const stylesheets = (await readdir(assetsRoot)).filter((name) => name.endsWith(".css")).map((name) => path.join(assetsRoot, name));
   const bubbleSheets = [];
@@ -2376,7 +2425,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     try { source = await readFile(target, "utf8"); } catch { continue; }
     const branded = patchOriginalBrandStrings(source);
     const tokens = patchOriginalUpstreamTokens(branded.source);
-    const patched = tokens.source;
+    const patched = patchOriginalDraftCard(tokens.source, path.basename(target));
     const counts = branded.counts;
     brandSources.push(patched);
     for (const [label, count] of Object.entries(tokens.counts)) tokenTotals[label] += count;
@@ -2438,7 +2487,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-mark", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "agent-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "meet-step-turn", "connect-step", "computer-screen-large", "computer-wallpaper-photo", "flight-results", "upstream-tokens", "sidebar-glass-discs", "pane-widest-default", "pane-three-tabs", "mark-butterfly", "mark-no-eyes", "spin-lights-agent-colours", "manage-plan-card"],
+    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-mark", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "agent-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "meet-step-turn", "connect-step", "computer-screen-large", "computer-wallpaper-photo", "flight-results", "upstream-tokens", "sidebar-glass-discs", "pane-widest-default", "pane-three-tabs", "mark-butterfly", "mark-no-eyes", "spin-lights-agent-colours", "manage-plan-card", "draft-send"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings", "upstream-tokens", "icon-font-file"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");

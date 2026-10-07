@@ -388,6 +388,14 @@ and Ashby connect through Simeon. The provider behind them is never named in the
   path (Gmail's address, LinkedIn's name), saying `works` or `FAILED` with the provider's
   sentence. `--disconnect gmail` removes that app's sign-ins, so the next Add asks again. Notion
   is not one of these apps: it is served by Notion's own MCP server, signed in on the Mac.
+* **What a tool call hands back** (7 October 2026). `simeon/desktop/app_results.py` tidies
+  every result before the agent sees it: a mail's routing headers (DKIM, ARC, Received) go and
+  From, To, Cc, Subject, Date stay; encoded bodies become text, the HTML copy goes when a plain
+  one exists, quoted earlier replies fold to one line; ids, tokens and links stay whole. What is
+  left is cut at 30,000 characters with a hint to ask for less. One Gmail thread used to fill
+  the old 60,000 character cut and was paid for again on every later step. On the box, a result
+  over 40,000 bytes goes to a file under `.sand/tools/`; if that file cannot be written the
+  result is now cut with a notice instead of going to the model whole.
 * **The provider round trips.** Which accounts a person has connected is asked once a minute at
   most for the agent's tool calls (`connected_account_ids`); "not connected" is never kept, and
   disconnecting forgets it.
@@ -482,9 +490,13 @@ connector's tool, a custom MCP server, or the box browser through a computer-use
 The agent then reports with `MarkDraftDelivered`: sent, or failed (the card comes back
 editable).
 
-* **Known limits.** In the packaged app the card's Send and Discard buttons do nothing: the
-  shipped window's callbacks are empty, and no package-time patch binds them yet (there is no
-  draft patch in `desktop/scripts/lib/router-renderer-patch.mjs`).
+* **The buttons in the packaged app** (7 October 2026). The shipped window drew both cards
+  with empty callbacks, so Send and Discard did nothing. The `draft-send` patch in
+  `desktop/scripts/lib/router-renderer-patch.mjs` teaches the window's coordinator and
+  transcript client `sendDraft`/`discardDraft` and binds both cards to them with the card's
+  agent and entry id; the box first loads that agent's transcript (`ensureActionTarget`), as
+  approval cards do. A card that stays on "sending" means the agent's wake never finished:
+  read `/tmp/sand-host.log` for `tool=CallMcpTool` and `tool=MarkDraftDelivered`.
 * **Not yet verified.** Not run on a Mac.
 
 ## 9. Voice calls
