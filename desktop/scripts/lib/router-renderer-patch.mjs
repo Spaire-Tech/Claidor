@@ -1510,17 +1510,17 @@ export function logosCss({ files, apps, mentions = [], tiles = [] }) {
 ${kinds.map(([kind]) => box(kind)).join(",")}{background:var(--simeon-file-logo) center/82% no-repeat;border-color:transparent;box-shadow:none}
 ${kinds.map(([kind]) => `${box(kind)}>*`).join(",")}{visibility:hidden}
 ${kinds.map(([kind, url]) => `${box(kind)}{--simeon-file-logo:url("${url}")}`).join("\n")}
-.sand-agents-sidebar__plugins-entry${HI}{position:relative;z-index:1;height:32px;margin:0 0 -32px 48px;padding:0;pointer-events:none}
+.sand-agents-sidebar__plugins-entry${HI}{position:relative;z-index:1;display:flex;align-items:center;height:32px;margin:0 0 -32px 40px;padding:0;pointer-events:none}
 .sand-agents-sidebar__plugins-entry${HI}>*{pointer-events:auto}
-.sand-agents-sidebar__plugins${HI}{justify-content:flex-start;gap:6px;width:auto;height:40px;padding:0 6px;border:0;border-radius:8px;background:transparent;color:light-dark(${USER_BUBBLE_LIGHT},#8cb8e8);font-size:13px;font-weight:500}
+.sand-agents-sidebar__plugins${HI}{justify-content:flex-start;align-items:center;gap:10px;width:auto;height:32px;padding:0 6px;border:0;border-radius:8px;background:transparent;color:light-dark(${USER_BUBBLE_LIGHT},#8cb8e8);font-size:15px;line-height:1;font-weight:500;letter-spacing:-.005em}
 .sand-agents-sidebar__plugins${HI}:hover{background:transparent;color:light-dark(#1b4a7d,#a9ccf0)}
 .sand-agents-sidebar__account:not([data-collapsed="true"])${HI}{flex:0 0 auto;width:auto}
 .sand-agents-sidebar__account:not([data-collapsed="true"])${HI}>button>span:nth-child(2){display:none}
 .sand-agents-sidebar__rail-new .sand-agents-sidebar__new${HI}:not(#\\#){width:36px;height:36px;border-radius:999px;background:var(--sand-fill-neutral-subtle);box-shadow:inset 0 0 0 .5px var(--sand-border-default)}
 .sand-agents-sidebar__rail-new .sand-agents-sidebar__new${HI} .ui-icon{--icon-size:18px!important;color:var(--sand-text-secondary)}
 .simeon-connect-apps__label{white-space:nowrap}
-.simeon-connect-apps__logos{order:1;display:inline-flex;align-items:center;margin-left:2px}
-.simeon-connect-apps__logos>i{display:block;width:20px;height:20px;margin-left:-3px;border-radius:5px;background:#fff center/14px no-repeat;box-shadow:0 0 0 1px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.1)}
+.simeon-connect-apps__logos{order:1;display:inline-flex;align-items:center;margin-left:0}
+.simeon-connect-apps__logos>i{display:block;width:26px;height:26px;margin-left:-4px;border-radius:7px;background:#fff center/17px no-repeat;box-shadow:0 0 0 1px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.1)}
 .simeon-connect-apps__logos>i:first-child{margin-left:0;transform:rotate(-7deg)}
 .simeon-connect-apps__logos>i:last-child{transform:rotate(7deg)}
 ${Object.entries(apps).map(([app, url]) => `.simeon-connect-apps__logos>i[data-app="${app}"]{background-image:url("${url}")}`).join("\n")}
