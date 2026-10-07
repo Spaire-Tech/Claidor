@@ -44,13 +44,13 @@ export const VOICE_CALL_LINE_MAX_CHARS = 600;
 /** The call's language. ElevenLabs hears and speaks it; English until the app has a setting. */
 export const VOICE_CALL_LANGUAGE = "en";
 /**
- * The voice the picker shows as chosen when the agent has none: Jessica, the
+ * The voice the picker shows as chosen when the agent has none: Michael, the
  * server's own default (`VOICE_DEFAULT_VOICE_ID` in
- * `server/simeon/desktop/voice.py`). A call for such an agent sends no voice
+ * `server/simeon/desktop/voice.py`; Jessica until 6 October 2026). A call for such an agent sends no voice
  * at all and speaks in the platform agent's, which the server picked from
  * the voices the workspace has: a voice it does not have fails the call.
  */
-export const VOICE_CALL_DEFAULT_VOICE_ID = "r1KmysJdVYZjJCm4mL3b";
+export const VOICE_CALL_DEFAULT_VOICE_ID = "ljX1ZrXuDIIRVcmiVSyR";
 
 const collapse = (text: string): string => text.replace(/\s+/g, " ").trim();
 const clamp = (text: string, max: number): string => (text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text);

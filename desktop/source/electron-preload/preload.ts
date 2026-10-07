@@ -164,8 +164,9 @@ export function createDesktopPreloadBridge(options: {
     // pinned window by scripts/lib/router-renderer-patch.mjs.
     voiceCall: {
       getAvailability: () => edge("getVoiceCallAvailability"),
-      start: (agentId: string, agentName?: string) => edge("startVoiceCall", { agentId, agentName }),
-      noteAgent: (agentId: string | null, agentName?: string) => edge("noteVoiceCallAgent", { agentId, agentName }),
+      // The colour is the one the window draws the agent in, so the banner matches it (6 October 2026).
+      start: (agentId: string, agentName?: string, agentColor?: string) => edge("startVoiceCall", { agentId, agentName, agentColor }),
+      noteAgent: (agentId: string | null, agentName?: string, agentColor?: string) => edge("noteVoiceCallAgent", { agentId, agentName, agentColor }),
       listVoices: () => edge("listVoiceCallVoices"),
       getAgentVoice: (agentId: string) => edge("getAgentVoice", { agentId }),
       setAgentVoice: (agentId: string, voiceId: string | null) => edge("setAgentVoice", { agentId, voiceId }),

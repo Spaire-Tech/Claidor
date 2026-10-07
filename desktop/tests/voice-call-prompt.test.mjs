@@ -93,7 +93,7 @@ test("the overrides carry the prompt, greeting, language and the agent's voice, 
   // No voice chosen: the platform agent's own, which the server picked from
   // the workspace's voices (a voice it lacks fails the call: voice_not_found).
   assert.equal(prompt.buildVoiceCallOverrides({ agent: { name: "Ada" }, transcript: [], voiceId: "  ", pick: 0 }).tts, undefined);
-  assert.equal(prompt.VOICE_CALL_DEFAULT_VOICE_ID, "r1KmysJdVYZjJCm4mL3b");
+  assert.equal(prompt.VOICE_CALL_DEFAULT_VOICE_ID, "ljX1ZrXuDIIRVcmiVSyR");
 });
 
 test("the status line reads the task, then the agent's own activity", () => {
