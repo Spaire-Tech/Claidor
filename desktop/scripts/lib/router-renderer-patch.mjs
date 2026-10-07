@@ -427,16 +427,6 @@ export const VOICE_CALL_COMPONENTS_SOURCE = [
   "const save=()=>{if(!ok)return;ss(\"saving\");se(null);Promise.resolve(a.updateName(name)).then(()=>ss(\"done\"),()=>{ss(\"ask\");se(\"Couldn’t save your name. Try again.\")})};",
   `return p.jsx("div",{className:"simeon-name-sheet",role:"presentation",children:p.jsxs("form",{className:"simeon-name-sheet__card",role:"dialog","aria-modal":!0,"aria-labelledby":"simeon-name-sheet-title",onSubmit:e=>{e.preventDefault();save()},children:[p.jsx("h2",{id:"simeon-name-sheet-title",className:"simeon-name-sheet__title",children:"What should your agents call you?"}),p.jsx("p",{className:"simeon-name-sheet__note",children:"They’ll use it in chat and on calls. You can change it later."}),p.jsx("input",{ref:ip,id:"simeon-name-sheet-input",className:"simeon-name-sheet__input",type:"text",autoComplete:"given-name",maxLength:60,placeholder:"Your name",value:v,onChange:e=>sv(e.target.value),"aria-label":"Your name"}),er==null?null:p.jsx("p",{className:"simeon-name-sheet__error",role:"alert",children:er}),p.jsxs("div",{className:"simeon-name-sheet__actions",children:[p.jsx("button",{type:"button",className:"simeon-name-sheet__later",onClick:()=>ss("later"),children:"Not now"}),p.jsx("button",{type:"submit",className:"simeon-name-sheet__save",disabled:!ok,children:st==="saving"?"Saving…":"Continue"})]})]})})}`,
 ].join("");
-// An agent's message to another agent, read in the chat (7 October 2026, the founder: "We see
-// message from simeon, but in simeon chat we don't see anything. I wanna show that. It's the magic
-// of it."). The window drew such a message as one line, "Messaged Nora" / "Message from Simeon",
-// that opened in the side pane; the text itself was nowhere on the page. The line stays, and the
-// text follows it as a quiet grey block, in the sender's chat and the receiver's alike.
-const AGENT_BRIEF_HELPER_SOURCE = 'function __simeonWithBrief(row,entries){const texts=(Array.isArray(entries)?entries:[]).filter(x=>x!=null&&typeof x.content==="string"&&x.content.trim().length>0);return texts.length===0?row:p.jsxs("div",{className:"simeon-brief",children:[row,...texts.map(x=>p.jsx("p",{className:"simeon-brief__text",children:x.content},x.id))]})}';
-const AGENT_BRIEF_ROW_BEFORE = 'if(d.kind==="agent-comm-group"){let N;return e[5]!==d.summary?(N=p.jsx(vpt,{summary:d.summary}),e[5]=d.summary,e[6]=N):N=e[6],N}';
-const AGENT_BRIEF_ROW_AFTER = 'if(d.kind==="agent-comm-group"){let N;return e[5]!==d.summary||e[6]==null||e[6].props.entries!==d.entries?(N=p.jsx(vpt,{summary:d.summary,entries:d.entries}),e[5]=d.summary,e[6]=N):N=e[6],N}';
-const AGENT_BRIEF_TEXT_BEFORE = 'e[6]=o,e[7]=l,e[8]=c):c=e[8],c}function KPn(n){';
-const AGENT_BRIEF_TEXT_AFTER = 'e[6]=o,e[7]=l,e[8]=c):c=e[8],__simeonWithBrief(c,n.entries)}function KPn(n){';
 const VOICE_COMPONENTS_ANCHOR = "function e3n(n){";
 const VOICE_PICKER_BEFORE = 'let A;return e[21]!==E||e[22]!==v?(A=p.jsxs("div",{className:f,children:[v,E]}),e[21]=E,e[22]=v,e[23]=A):A=e[23],A}';
 const VOICE_PICKER_AFTER = 'return p.jsxs("div",{className:f,children:[v,E,p.jsx(__simeonVoicePicker,{agentId:t.id},"simeon-voice")]})}';
@@ -459,9 +449,7 @@ const VOICE_TUNNEL_HEADER_AFTER = "exchange:l||__simeonIsVoicePeer(e.tunnelPeer)
 const NAME_SHEET_BEFORE = 'p.jsx(BGn,{}),p.jsx(Yzn,{children:p.jsx($zn,{})})]';
 const NAME_SHEET_AFTER = 'p.jsx(BGn,{}),p.jsx(Yzn,{children:p.jsx($zn,{})}),p.jsx(__simeonNameSheet,{},"simeon-name-sheet")]';
 export const VOICE_CALL_REPLACEMENTS = Object.freeze([
-  ["voice-call-components", VOICE_COMPONENTS_ANCHOR, `${VOICE_CALL_COMPONENTS_SOURCE}${AGENT_BRIEF_HELPER_SOURCE}${VOICE_COMPONENTS_ANCHOR}`],
-  ["agent-brief-row-entries", AGENT_BRIEF_ROW_BEFORE, AGENT_BRIEF_ROW_AFTER],
-  ["agent-brief-text", AGENT_BRIEF_TEXT_BEFORE, AGENT_BRIEF_TEXT_AFTER],
+  ["voice-call-components", VOICE_COMPONENTS_ANCHOR, `${VOICE_CALL_COMPONENTS_SOURCE}${VOICE_COMPONENTS_ANCHOR}`],
   ["call-record-card", CALL_RECORD_BEFORE, CALL_RECORD_AFTER],
   ["voice-chat-event", VOICE_EVENT_BEFORE, VOICE_EVENT_AFTER],
   ["voice-chat-event-text", VOICE_EVENT_TEXT_BEFORE, VOICE_EVENT_TEXT_AFTER],
@@ -491,8 +479,6 @@ export const VOICE_CALL_MARKER = "/* Simeon: voice calls, the phone button and t
  * blue is declared further down the file.
  */
 export const voiceCallCss = () => `${VOICE_CALL_MARKER} (30 September 2026). */
-.simeon-brief{display:flex;flex-direction:column;align-items:center;gap:8px}
-.simeon-brief__text{box-sizing:border-box;width:min(100%,560px);margin:0;padding:10px 14px;border-radius:16px;background:light-dark(#e9e9eb,#2c2c2e);color:light-dark(#1d1d1f,#f5f5f7);font-size:14px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
 .sand-chat-header__identity-row:has(>.simeon-call-button){position:relative;flex:0 0 auto!important;width:max-content!important;max-width:100%}
 .simeon-call-button{position:absolute;left:100%;top:56px;margin-left:0;width:24px;height:24px;padding:0;display:grid;place-items:center;border-radius:999px;cursor:pointer;color:light-dark(${USER_BUBBLE_LIGHT},#8cb8e8);background:linear-gradient(180deg,light-dark(rgba(255,255,255,.92),rgba(255,255,255,.18)),light-dark(rgba(255,255,255,.72),rgba(255,255,255,.08)));-webkit-backdrop-filter:blur(20px) saturate(1.8);backdrop-filter:blur(20px) saturate(1.8);border:.5px solid light-dark(rgba(255,255,255,.9),rgba(255,255,255,.18));box-shadow:inset 0 1px 0 light-dark(#fff,rgba(255,255,255,.22)),0 0 0 .5px light-dark(rgba(20,20,40,.1),rgba(0,0,0,.45)),0 2px 8px -2px light-dark(rgba(20,20,40,.14),rgba(0,0,0,.5))}
 .simeon-call-button:hover{color:light-dark(#1b4a7d,#a9ccf0)}
@@ -2283,7 +2269,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-mark", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "agent-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "agent-brief-inline", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "flight-results", "upstream-tokens", "sidebar-glass-discs", "pane-widest-default", "pane-three-tabs", "mark-butterfly", "mark-no-eyes", "spin-lights-agent-colours", "manage-plan-card"],
+    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-mark", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "agent-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "flight-results", "upstream-tokens", "sidebar-glass-discs", "pane-widest-default", "pane-three-tabs", "mark-butterfly", "mark-no-eyes", "spin-lights-agent-colours", "manage-plan-card"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings", "upstream-tokens", "icon-font-file"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");

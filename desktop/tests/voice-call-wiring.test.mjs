@@ -47,14 +47,10 @@ test("an agent's voice round-trips through its profile, and a profile without on
 
 test("the voice-call anchors apply exactly once, and a second pass refuses", async () => {
   const { VOICE_CALL_REPLACEMENTS, patchOriginalVoiceCall, patchOriginalVoiceCallStylesheet, VOICE_CALL_MARKER } = await import(patchModule);
-  assert.deepEqual(VOICE_CALL_REPLACEMENTS.map(([label]) => label), ["voice-call-components", "agent-brief-row-entries", "agent-brief-text", "call-record-card", "voice-chat-event", "voice-chat-event-text", "voice-call-line", "voice-chat-own-line", "voice-chat-person-is-person", "voice-chat-agent-header", "name-sheet-at-root", "voice-picker-under-character-color", "call-button-beside-agent-name"]);
+  assert.deepEqual(VOICE_CALL_REPLACEMENTS.map(([label]) => label), ["voice-call-components", "call-record-card", "voice-chat-event", "voice-chat-event-text", "voice-call-line", "voice-chat-own-line", "voice-chat-person-is-person", "voice-chat-agent-header", "name-sheet-at-root", "voice-picker-under-character-color", "call-button-beside-agent-name"]);
   const chunk = VOICE_CALL_REPLACEMENTS.map(([, before]) => before).join(";\n");
   const patched = patchOriginalVoiceCall(chunk);
   assert.match(patched, /function __simeonCallButton\(n\)\{/);
-  // An agent's message to another agent reads in the chat under its "Messaged …" line (7 October 2026).
-  assert.match(patched, /function __simeonWithBrief\(row,entries\)\{/);
-  assert.match(patched, /p\.jsx\(vpt,\{summary:d\.summary,entries:d\.entries\}\)/);
-  assert.match(patched, /c=e\[8\],__simeonWithBrief\(c,n\.entries\)\}function KPn/);
   assert.match(patched, /function __simeonVoicePicker\(n\)\{/);
   // The button carries the colour the window resolved for the agent (its stored one, or the one hashed from its id).
   assert.match(patched, /p\.jsx\(__simeonCallButton,\{agentId:t\.id,agentName:t\.name,agentColor:Cee\(t\)\},"simeon-call"\)/);
