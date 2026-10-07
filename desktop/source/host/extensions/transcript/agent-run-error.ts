@@ -142,7 +142,8 @@ export function checkoutDeepControlUrl(action: {
   // (ledger F-431), then a pricing page simeonlabs.com never had. The
   // plan travels as a query so the page opens on that card.
   const plan = PLAN_OF_MEMBERSHIP[action.membershipToUpgradeTo ?? ""] ?? "standard";
-  let url = `${SIMEON_BILLING_URL}?plan=${plan}`;
+  // `from=app`: the page afterwards sends the person back here, not to the download.
+  let url = `${SIMEON_BILLING_URL}?plan=${plan}&from=app`;
   if (action.allowTrial === true) url += "&allowTrial=true";
   else if (action.allowTrial === false) url += "&allowTrial=false";
   return url;
@@ -179,7 +180,7 @@ export function mapErrorDetailButtons(
           kind: "open-url",
           label: button.label || "Upgrade",
           // The billing page, not the upstream's pricing page (F-132).
-          url: SIMEON_BILLING_URL,
+          url: `${SIMEON_BILLING_URL}?from=app`,
         });
         break;
       case "switchModel":

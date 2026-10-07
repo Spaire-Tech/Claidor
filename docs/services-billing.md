@@ -116,7 +116,11 @@ was; the public name and statement descriptor are what a person sees.
    required and no trialing or active subscription, it sends the browser
    to the web app's `/billing?plan=standard&return_to=<this page>`; the
    checkout returns there with `checkout_session_id`, the page copies it
-   in, and asks. So nobody is signed in to the app without a card on file.
+   in and, since the person just saved a card for this very sign-in in
+   this browser, confirms the sign-in without asking again (7 October
+   2026): the app's poll gets its pair and the page brings the app
+   forward. A checkout that is not theirs confirms nothing. So nobody is
+   signed in to the app without a card on file, and nobody clicks twice.
    With no session in the browser at all, the sign-in page goes to the
    API's Google sign-in first; the web app is not in the path.
 6. **The window's access cover**, for a person already signed in whose
@@ -127,19 +131,24 @@ was; the public name and statement descriptor are what a person sees.
    one who did. It shows its cover the moment `EnsureSandBox` refuses the
    box with `permission_denied` (`box_broker.require_a_plan`), the way the
    upstream app paywalls; the cover's button opens
-   `app.simeonlabs.com/billing?plan=standard` (the renderer patch,
-   `desktop/scripts/lib/router-renderer-patch.mjs`). The window keeps
-   asking for its box; once the plan is on Stripe the next ask succeeds
-   and the cover goes, with nothing to restart or sign in to again. Metered
-   calls get the same answer meanwhile: `402`, code `40200`, naming the
-   billing page.
+   `app.simeonlabs.com/billing?plan=standard&from=app` (the renderer
+   patch, `desktop/scripts/lib/router-renderer-patch.mjs`). The window
+   keeps asking for its box; once the plan is on Stripe the next ask
+   succeeds and the cover goes, with nothing to restart or sign in to
+   again. Metered calls get the same answer meanwhile: `402`, code
+   `40200`, naming the billing page. Every link the app opens carries
+   `from=app` (the cover, Usage & Billing's `upgradeUrl`, a served
+   error): the page afterwards says "Go back to Simeon" and brings the
+   app forward on its own link (`simeon://app/v1/open`) instead of
+   offering the download.
 7. **From the site.** "Try it free" opens the billing page with the plan
    chosen. A visitor with no account signs in with Google, saves a card,
    and the page comes back saying the 7 days have started, with the
    Download button (`api.simeonlabs.com/desktop/download/mac`) and one
    line: open Simeon and sign in with the same account. The app then finds
-   the trial already there and shows no cover. The same page serves a
-   person who already has the app; their app unlocks on its own.
+   the trial already there and shows no cover. Only a link from the site
+   ends on the download: one from the app ends on the app (above), and
+   the Mac sign-in's ends in the app signed in (5).
 
 ## 4. How the app's allowance follows the plan
 

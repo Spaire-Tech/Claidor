@@ -189,29 +189,33 @@ def _same_origin(request: Request) -> bool:
 # --- the browser's half ----------------------------------------------------
 
 
-async def _needs_a_plan(
-    session: AsyncSession, user: Any, *, checkout_session_id: str | None
+async def _copy_in_checkout(
+    session: AsyncSession, user: Any, checkout_session_id: str
 ) -> bool:
-    """Whether to send the person to the billing page before asking.
-    Never with billing not required (development, a self-hosted server):
-    then the free monthly allowance applies and there is nothing to
-    buy. A checkout that just came back is copied in first, so the
-    plan it started counts before Stripe's webhook has landed; a
-    checkout that cannot be read (someone else's, a made-up id) is
-    ignored and the allowance decides."""
-    allowance = await desktop.allowance(session, user)
-    if not allowance.none:
-        return False
-    if checkout_session_id:
-        try:
+    """The checkout that just sent the browser back: copied in now, so
+    the plan it started counts before Stripe's webhook has landed. True
+    when it is this person's own and made a subscription; a checkout
+    that cannot be read (someone else's, a made-up id) is False, and the
+    allowance decides."""
+    try:
+        return (
             await plans_service.sync_checkout_session(
                 session, user, checkout_session_id
             )
-        except PlansError:
-            return True
-        except Exception:
-            return True
-        allowance = await desktop.allowance(session, user)
+            is not None
+        )
+    except PlansError:
+        return False
+    except Exception:
+        return False
+
+
+async def _needs_a_plan(session: AsyncSession, user: Any) -> bool:
+    """Whether to send the person to the billing page before asking.
+    Never with billing not required (development, a self-hosted server):
+    then the free monthly allowance applies and there is nothing to
+    buy."""
+    allowance = await desktop.allowance(session, user)
     return allowance.none
 
 
@@ -240,15 +244,33 @@ async def login_deep_control(
     if not is_user(auth_subject):
         return RedirectResponse(sign_in_url(request, return_to), 303)
 
-    if await _needs_a_plan(
-        session, auth_subject.subject, checkout_session_id=checkout_session_id
-    ):
+    just_paid = bool(checkout_session_id) and await _copy_in_checkout(
+        session, auth_subject.subject, checkout_session_id or ""
+    )
+    if await _needs_a_plan(session, auth_subject.subject):
         return RedirectResponse(
             settings.generate_frontend_url(
                 f"{BILLING_PATH}?plan=standard&return_to={quote(return_to, safe='')}"
             ),
             303,
             headers=NO_STORE,
+        )
+    if just_paid:
+        # The person left this very sign-in for the billing page, saved a
+        # card there, and Stripe brought them back with the checkout's
+        # own id, which only their browser was given. That is the
+        # confirmation (the founder, 7 October 2026: "after buying the
+        # plan, if I came from the app, it should sign me in directly in
+        # the app"): the pair is written and the app, polling, signs in;
+        # the page brings it forward. Asking "Sign in as …?" again here
+        # was a second click for nothing.
+        await desktop.begin_deep_control(
+            session, auth_subject.subject, uuid=uuid, challenge=challenge
+        )
+        return _page(
+            f"You're signed in to {PRODUCT}",
+            f"<p>Your plan is on. You can close this tab and go back to {PRODUCT}.</p>",
+            deep_link=_deep_link(redirectTarget),
         )
 
     email = escape(auth_subject.subject.email)

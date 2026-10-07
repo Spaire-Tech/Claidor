@@ -176,7 +176,7 @@ class TestLoginDeepControl:
         assert 'method="post"' in response.text
 
     @pytest.mark.auth
-    async def test_a_checkout_that_just_came_back_opens_the_gate(
+    async def test_a_checkout_that_just_came_back_signs_the_app_in(
         self,
         client: httpx.AsyncClient,
         session: AsyncSession,
@@ -185,7 +185,9 @@ class TestLoginDeepControl:
     ) -> None:
         """Stripe sends the browser back here with `checkout_session_id`
         before its webhook has landed. The page copies the checkout's
-        subscription in and asks, instead of bouncing to billing again."""
+        subscription in and, since the person just saved a card for this
+        very sign-in, confirms it without asking again: the app's poll
+        gets its pair, and the page brings the app forward."""
         from tests.plans.test_service import stripe_subscription
 
         billing_on(mocker)
@@ -196,17 +198,25 @@ class TestLoginDeepControl:
             return_value=checkout,
         )
         mocker.patch("simeon.plans.service.settings.STRIPE_SECRET_KEY", "sk_test_x")
-        _, challenge, uuid = _login_metadata()
+        verifier, challenge, uuid = _login_metadata()
         response = await client.get(
             "/loginDeepControl",
             params={
                 "challenge": challenge,
                 "uuid": uuid,
                 "checkout_session_id": "cs_1",
+                "redirectTarget": "simeon",
             },
         )
         assert response.status_code == 200, response.headers.get("location")
-        assert 'method="post"' in response.text
+        assert "signed in" in response.text
+        assert 'method="post"' not in response.text
+        assert "simeon://app/v1/open" in response.text
+        poll = await client.post(
+            "/auth/poll", json={"uuid": uuid, "verifier": verifier}
+        )
+        assert poll.status_code == 200
+        assert "accessToken" in poll.json()
 
     @pytest.mark.auth
     async def test_someone_else_s_checkout_opens_nothing(
@@ -233,6 +243,10 @@ class TestLoginDeepControl:
         )
         assert response.status_code == 303
         assert urlparse(response.headers["location"]).path == "/billing"
+        poll = await client.post(
+            "/auth/poll", json={"uuid": uuid, "verifier": _login_metadata()[0]}
+        )
+        assert poll.status_code == 404
 
     @pytest.mark.auth
     async def test_a_signed_in_person_can_say_it_is_not_them(
