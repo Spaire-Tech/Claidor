@@ -181,6 +181,15 @@ export function createDemoBackend(hooks: DemoBackendHooks) {
           break;
         case "append": append(beat.agent, beat.entry); break;
         case "react": update(beat.agent, beat.entryId, (e: any) => ({ ...e, reactions: [...(e.reactions ?? []), { emoji: beat.emoji, by: beat.by }] })); break;
+        case "hire": {
+          const hired = beat.agent;
+          rows.set(hired.id, hired);
+          transcripts.set(hired.id, beat.entries.map((entry, index) => ({ ...entry, timestampMs: Date.now() + index })));
+          lastActivity.set(hired.id, Date.now());
+          unread.add(hired.id);
+          pushAgent(hired.id);
+          break;
+        }
       }
     }
   }

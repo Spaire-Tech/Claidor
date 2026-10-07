@@ -130,3 +130,21 @@ test("what the browser says when it cannot start is plain words", async () => {
     await dispose();
   }
 });
+
+test("a failed page-state probe says why (7 October 2026: the bare sentence left the founder's log unreadable)", async () => {
+  const tools = await load("source/host/runner/tools/sand-browser-tools.ts", "browser-tools-capture");
+  try {
+    const { captureFailureText } = tools.module;
+    assert.equal(captureFailureText(new Error("Another action is waiting for Auto-review approval; no new side effect may start yet.")), "Another action is waiting for Auto-review approval; no new side effect may start yet.");
+    assert.equal(captureFailureText({ message: "The box is not ready." }), "The box is not ready.");
+    assert.equal(captureFailureText("rpc failed"), "rpc failed");
+    assert.equal(captureFailureText(undefined), "the probe's shell gave no result");
+    const source = await readFile(path.join(repoRoot, "source/host/runner/tools/sand-browser-tools.ts"), "utf8");
+    // A cancelled turn is rethrown as the cancellation, not reported as a blocked review.
+    assert.match(source, /if \(error instanceof Error && error\.name === "AbortError"\) throw error;\n\s*throw new SandBrowserAutoReviewBlockedError\(`Browser Auto-review could not capture the current page state: \$\{captureFailureText\(error\)\}`\);/);
+    const computer = await readFile(path.join(repoRoot, "source/host/runner/tools/sand-computer-tool.ts"), "utf8");
+    assert.match(computer, /Computer Auto-review could not capture the current page state: \$\{captureFailureText\(error\)\}/);
+  } finally {
+    await tools.dispose();
+  }
+});

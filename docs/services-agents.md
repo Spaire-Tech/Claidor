@@ -338,6 +338,12 @@ and Ashby connect through Simeon. The provider behind them is never named in the
   card, the tools and the store work as in 7a. The bearer is the account's own token (the
   box's credential in the box); the stored "credential" is only a connected marker
   (`clientId: "simeon-apps"`).
+- **A sign-in without its permission** (7 October 2026). Google's consent screen shows one
+  checkbox per permission and leaves them unticked, so a Gmail sign-in that skipped the mail box
+  is "connected" and every read answers "Request had insufficient authentication scopes". The
+  tool's error now says the fix: `AuthenticateMcpServer` with `force_reauth` true, which signs
+  the app out on the server (before, `/connect` answered "connected" while the account existed
+  and the card never came back) and shows a fresh card; the person ticks every box this time.
 - **The availability check.** An app card offers Connect only when `GET /desktop/api/apps`
   answers `{"available": true}` (`vendor-mcp/apps-availability.ts`, cached one minute).
   Otherwise it stays "coming soon", and a sign-in answered 404 or 503 says "<App> is coming
@@ -562,7 +568,19 @@ the background while the call goes on, and says how it is going when asked.
     the voice quotes them). The agent wakes at once on a hidden `[inbound] From voice:<call>:`
     message carrying the voice channel's rules and how to answer; a run in progress is
     interrupted and the message says it landed mid-turn. A turn that sends nothing to the
-    call is nudged once.
+    call is nudged once; the nudge allows one line on the channel when the result is not
+    ready (7 October 2026: a balance check went to a background subagent and the caller
+    heard nothing until the call ended).
+  - **"Browser Auto-review could not capture the current page state."** Before a browser or
+    computer action is reviewed, the host reads the page through the box's shell (the CDP list
+    on the agent's display). That shell refuses in three cases: an Auto-review approval is
+    pending for the agent ("Another action is waiting…"), the box is not ready, or the turn was
+    cancelled. Since 7 October 2026 the message carries the shell's own reason, and a
+    cancellation stays a cancellation; before, every case read the same.
+  - **The launch of a background subagent is reviewed with the conversation.** Until 7 October
+    2026 the review for that surface read "Recent conversation: (none)" (the other surfaces
+    carried it), so a check the person had asked for on the call was blocked as "without a
+    clear request from you".
   - The agent answers with `SendMessage` with `channel` set to the call's address. That
     message goes to the call, not to the chat. Main reads the call's outbox every 1.2 s and
     pushes new messages into the call (`sendContextualUpdate`, then a one-line
@@ -729,6 +747,32 @@ Duffel answered, in full) and `desktop.flights.rate_limited`. An agent that brow
 calling the tool shows no `desktop.flights.search` line for that request.
 
 ## 11. Simeon, the Chief of Staff
+
+**He staffs (7 October 2026).** The founder: "Simeon main job is to delegate. Not take on
+action from the get go … onboarding should be him delegating. That also showcases him messaging
+the agent, him creating it, and giving him directions." `desktop/source/shared/agents/chief-of-staff.ts`:
+- His first run is his own cue, `SAND_CHIEF_OF_STAFF_KICKSTART_PROMPT`, chosen by the lifecycle for
+  the agent titled Chief of Staff (`agent-lifecycle.ts`): a hello, then one question, "What's the
+  first thing you'd hand to a person if you hired one today?", its options drawn from the apps
+  connected during setup (he reads GetMcpServerStatus first; he proposes no connectors for himself).
+  On the answer he hires with CreateAgent: a first name, a title that names the job, a description,
+  and a `brief`. Unclear answer: one more question, two at most, then he hires with what he has and
+  says what he assumed. "I don't know" or "what do you recommend": he recommends and says why. A
+  project that needs several roles: he says who he'd staff, three at most for a first team, and
+  creates each. Then "Anything else you'd hand off today?".
+- `CreateAgent` takes `title` and `brief`. With a brief the new agent runs no generic greeting: the
+  brief is sent as its first message, and the inbound wake (`agent-to-agent-messaging.ts`) puts the
+  staffed first-run cue in front of it: introduce yourself to the person as the one now on the job,
+  propose the app you need, start. The brief always reads "<first name> staffed you to …"
+  (`staffingMessage` puts the opening in front when the model forgot). The person's name reaches
+  the transcript manager through `setUserFullNameResolver`, set by the composition.
+- Every turn, his system prompt carries `## Chief of staff` (`system-prompt-assembly.ts`, by the
+  profile's title, which now reaches the runner): a task that fits an agent goes to that agent; one
+  that fits nobody gets a new agent; a project gets a small team; he does a thing himself only when
+  it is quicker than briefing someone; when the person is unsure he recommends.
+- The demo's onboarding (`desktop/demo/scenario.ts`, `onboardingScript`) plays the same scene: the
+  question, the hire (Nora, Inbox, appears in the sidebar with Simeon's brief and her first words
+  in her chat), the report. Not verified in the packaged app on a Mac yet.
 
 **For the person.** Onboarding ends by making Simeon, their Chief of Staff: the
 first agent, made for them (name Simeon, title Chief of Staff, Ocean), who manages

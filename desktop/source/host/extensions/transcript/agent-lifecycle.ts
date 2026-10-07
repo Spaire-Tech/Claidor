@@ -1,3 +1,4 @@
+import { isChiefOfStaffTitle, SAND_CHIEF_OF_STAFF_KICKSTART_PROMPT } from "../../../shared/agents/chief-of-staff.js";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { isSandAgentLimitError } from "../../../shared/agents/agents.js";
@@ -150,10 +151,14 @@ export class AgentLifecycle {
       async () => {
         this.tm.turnRuntime.activeRequestSources.set(session.id, "turn");
         try {
+          // The Chief of Staff opens by hiring, not by offering to help
+          // (7 October 2026, `shared/agents/chief-of-staff.ts`).
           const prompt =
             session.db.getAgentPurpose() === "disk-saver"
               ? SAND_DISK_SAVER_KICKSTART_PROMPT
-              : SAND_ONBOARDING_KICKSTART_PROMPT;
+              : isChiefOfStaffTitle(this.tm.sessionStore?.getAgentProfileText?.(session.id)?.title)
+                ? SAND_CHIEF_OF_STAFF_KICKSTART_PROMPT
+                : SAND_ONBOARDING_KICKSTART_PROMPT;
           // Hidden (nobody asked yet) but under the asked turn's budget:
           // The upstream app gave its first message the same 5,000-call cap as any
           // turn, and its cue may begin a described assignment at once.

@@ -198,6 +198,29 @@ async def active_account_ids(user: User, toolkit: str) -> list[str]:
     ]
 
 
+_SCOPE_MISSING = re.compile(
+    r"insufficient[ _]?(authentication[ _]?)?scopes?|ACCESS_TOKEN_SCOPE_INSUFFICIENT"
+    r"|insufficientPermissions",
+    re.IGNORECASE,
+)
+
+
+def scope_guidance(toolkit: str, error: str) -> str:
+    """A refusal for a missing permission, with the way out in front. Google's
+    consent screen shows one checkbox per permission and leaves them unticked;
+    a sign-in that skipped the mail box is "connected" and refuses every read
+    (7 October 2026, Gmail: "Request had insufficient authentication
+    scopes"). The agent is told the fix the person can actually do."""
+    if _SCOPE_MISSING.search(error) is None:
+        return error
+    return (
+        f"This {toolkit} sign-in was completed without the permission this needs. "
+        "Call AuthenticateMcpServer for this app with force_reauth true: it signs "
+        "the app out and shows a new sign-in card. Tell the user to tick every "
+        f"box on the permissions screen this time. The app said: {error}"
+    )
+
+
 class AppsUpstreamError(Exception):
     def __init__(self, message: str, status: int) -> None:
         super().__init__(message)
@@ -406,7 +429,9 @@ async def _handle(
         text = (
             _call_content(payload.get("data"))
             if ok
-            else scrub(str(payload.get("error") or "The app refused the call."))
+            else scope_guidance(
+                toolkit, scrub(str(payload.get("error") or "The app refused the call."))
+            )
         )
         return _rpc_result(
             request_id, {"content": [{"type": "text", "text": text}], "isError": not ok}

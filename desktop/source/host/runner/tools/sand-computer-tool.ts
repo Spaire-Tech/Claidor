@@ -3,6 +3,7 @@ import { buildHostShellArgs } from "../../box/box-shell-command.js";
 import { navigationProbeCommand } from "../sand-action-audit.js";
 import { SAND_BOX_NO_MONITOR_AVAILABLE_MESSAGE } from "../../ports/box.js";
 import { shellExecutorResource } from "../../../packages/agent-exec/shell.js";
+import { captureFailureText } from "./sand-browser-tools.js";
 import type { ResourceAccessor } from "../../../packages/agent-exec/resource-provider.js";
 import type { RemoteExecManager } from "../../../packages/agent-exec/remote.js";
 import type { Context } from "../../../packages/context/core.js";
@@ -214,10 +215,12 @@ async function captureComputerDisplayStateIdentity(
         toolCallId: `${toolCallId}:auto-review-state`,
       }),
     );
-  } catch {
-    throw new SandComputerAutoReviewBlockedError("Computer Auto-review could not capture the current page state.");
+  } catch (error) {
+    // The cause rides along (7 October 2026), as for the browser's probe (sand-browser-tools.ts).
+    if (error instanceof Error && error.name === "AbortError") throw error;
+    throw new SandComputerAutoReviewBlockedError(`Computer Auto-review could not capture the current page state: ${captureFailureText(error)}`);
   }
-  if (result?.result?.case !== "success") throw new SandComputerAutoReviewBlockedError("Computer Auto-review could not capture the current page state.");
+  if (result?.result?.case !== "success") throw new SandComputerAutoReviewBlockedError(`Computer Auto-review could not capture the current page state: ${captureFailureText(result?.result?.value)}`);
   if (result.result.value.exitCode !== 0) return SAND_COMPUTER_PAGE_STATE_CHROME_UNREACHABLE;
   return computeSandComputerPageStateIdentity(result.result.value.stdout ?? "");
 }

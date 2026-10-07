@@ -85,6 +85,8 @@ export interface AgentMediaDimensions {
 export interface AgentProfileForRunner {
   readonly name: string;
   readonly description: string;
+  /** The job under the name; "Chief of Staff" turns on that role's section of the prompt. */
+  readonly title?: string;
   readonly filePath: string;
   readonly settingsFilePath: string;
 }

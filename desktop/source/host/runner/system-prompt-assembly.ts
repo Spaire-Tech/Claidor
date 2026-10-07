@@ -38,6 +38,7 @@ import { renderWorkflowsSystemPrompt } from "../../shared/workflow-model.js";
 import { renderChannelsSystemPrompt, type ChannelConnectionSummary } from "../../shared/channel-messaging.js";
 import { renderAgentDirectorySystemPrompt, type AgentAddress, type AgentGroupAddress } from "../agents/agent-messaging.js";
 import { spotlightPromptSection } from "../../shared/sand-spotlight.js";
+import { chiefOfStaffSection, isChiefOfStaffTitle } from "../../shared/agents/chief-of-staff.js";
 import type { ConnectorManifest } from "../../shared/channels.js";
 
 export function modelVisibleLocation(location: string | null | undefined): string | null {
@@ -45,6 +46,7 @@ export function modelVisibleLocation(location: string | null | undefined): strin
 }
 
 export interface AgentProfileForPrompt extends AgentProfileIdentity {
+  readonly title?: string;
   readonly filePath: string;
   readonly settingsFilePath: string;
 }
@@ -287,6 +289,8 @@ export function createSystemPromptAssembly(deps: SystemPromptAssemblyDependencie
     if (profile != null) sections.push(profile);
     if (deps.isSharedRoomRunner) return sections.join("\n\n");
     const add = (value: string | null | undefined): void => { if (value != null && value.length > 0) sections.push(value); };
+    // The Chief of Staff's standing rule, by title (7 October 2026, `shared/agents/chief-of-staff.ts`).
+    if (!deps.isSubagentRunner && isChiefOfStaffTitle(deps.agentProfileProvider()?.title)) add(chiefOfStaffSection(deps.requestContext.resolve().userFullName));
     add(getUserIdentitySection());
     if (!deps.isSubagentRunner && !deps.isSystemPromptOverridden && deps.isMultitaskEnabled?.() === true) add(deps.multitaskSection);
     if (deps.isSystemPromptOverridden && !deps.isSubagentRunner && cloudDisabled) add(SAND_CLOUD_AGENTS_DISABLED_PROMPT_SECTION);
