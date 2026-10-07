@@ -148,11 +148,13 @@ test("the Chief of Staff step sits after Meet Simeon, with Simeon at the centre 
   assert.doesNotMatch(component[2], /whatever needs doing/, "the sign-in tagline's words are not repeated");
   assert.equal((component[2].match(/"label":/g) ?? []).length, 6);
   const crew = JSON.parse(/const __simeonCooCrew=(\[.*?\]);function/.exec(component[2])[1]);
-  assert.deepEqual(crew.map((a) => [a.x, a.y]), [[-300, -150], [-300, -40], [-300, 70], [300, -150], [300, -40], [300, 70]], "three a side, spaced");
-  assert.equal(crew[0].d, "M-60 0C-160 0 -160 -110 -260 -110", "a curve from Simeon's side to the agent's inner edge");
+  assert.deepEqual(crew.map((a) => [a.x, a.y]), [[-300, -140], [-300, -40], [-300, 60], [300, -140], [300, -40], [300, 60]], "three a side, spaced");
+  assert.equal(crew[0].d, "M-60 0C-160 0 -160 -100 -260 -100", "a curve from Simeon's side to the agent's inner edge");
   assert.equal(crew[4].d, "M60 0C160 0 160 0 260 0");
   assert.ok(crew.every((a, i) => a.delay === 700 + i * 180), "the curves draw one after another");
   new Function("p", "fde", "tye", "nye", "sd", "re", "Fo", component[2].replace(/function sjn\(n\)\{$/, ""));
+  assert.ok(component[2].includes('y:-236,className:"simeon-coo__copy"'), "the copy sits high");
+  assert.match(COO_CSS, /\.simeon-coo>div:first-child(:not\(#\\#\)){4}\{top:calc\(50% - 296px\)\}/, "the title sits higher than the flow puts it");
   assert.match(COO_CSS, /--simeon-coo-line:light-dark\(rgba\(10,132,255,\.55\)/, "the curves are blue");
   assert.match(COO_CSS, /@keyframes simeon-coo-link\{from\{opacity:\.28/, "an agent is a ghost until its curve arrives");
   assert.match(COO_CSS, /prefers-reduced-motion:reduce/);

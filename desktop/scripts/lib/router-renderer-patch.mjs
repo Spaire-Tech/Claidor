@@ -993,12 +993,12 @@ export function patchOriginalFlightsStylesheet(css) {
 const COO_HERO_Y = -40;
 const COO_SIDE_X = 300;
 const COO_CREW = Object.freeze([
-  { id: "inbox", label: "Inbox", color: "violet", x: -COO_SIDE_X, y: -150 },
+  { id: "inbox", label: "Inbox", color: "violet", x: -COO_SIDE_X, y: -140 },
   { id: "research", label: "Research", color: "red", x: -COO_SIDE_X, y: -40 },
-  { id: "travel", label: "Travel", color: "green", x: -COO_SIDE_X, y: 70 },
-  { id: "finance", label: "Finance", color: "magenta", x: COO_SIDE_X, y: -150 },
+  { id: "travel", label: "Travel", color: "green", x: -COO_SIDE_X, y: 60 },
+  { id: "finance", label: "Finance", color: "magenta", x: COO_SIDE_X, y: -140 },
   { id: "sales", label: "Sales", color: "orange", x: COO_SIDE_X, y: -40 },
-  { id: "content", label: "Content", color: "mint", x: COO_SIDE_X, y: 70 },
+  { id: "content", label: "Content", color: "mint", x: COO_SIDE_X, y: 60 },
 ]);
 /** The curve from Simeon's side to an agent's inner edge, in the web's frame (origin at Simeon): an S of two horizontal tangents. */
 const cooLine = ({ x, y }) => {
@@ -1006,13 +1006,16 @@ const cooLine = ({ x, y }) => {
   return `M${x1} 0C${mx} 0 ${mx} ${y2} ${x2} ${y2}`;
 };
 export const COO_COPY = "He hires an agent for every job you hand off.";
+/** The title and copy sit higher than the flow's own 264 px so the web has air beneath them (8 October: "more space between the design and the text up there"). */
+const COO_TITLE_TOP = -296;
+const COO_COPY_Y = -236;
 export const COO_TITLE = "Simeon is your personal Chief of Staff";
 const COO_SOURCE = [
   `const __simeonCooCrew=${JSON.stringify(COO_CREW.map((a, i) => ({ ...a, d: cooLine(a), delay: 700 + i * 180 })))};`,
   "function __simeonCooStep(n){const{headingId:t,onForward:r,onBack:i}=n,still=Fo();",
   "const lines=p.jsx(fde,{x:0,y:" + COO_HERO_Y + ",ariaHidden:!0,className:\"simeon-coo__web\",children:p.jsx(\"svg\",{width:800,height:400,viewBox:\"-400 -200 800 400\",children:__simeonCooCrew.map(a=>p.jsx(\"path\",{className:\"simeon-coo__line\",d:a.d,pathLength:1,style:{animationDelay:`${a.delay}ms`}},a.id))})},\"web\");",
   "const crew=__simeonCooCrew.map(a=>p.jsx(fde,{x:a.x,y:a.y,ariaHidden:!0,className:\"simeon-coo__seat\",children:p.jsxs(\"div\",{className:\"simeon-coo__agent\",style:{animationDelay:`${a.delay+520}ms`},children:[p.jsx(sd,{\"aria-hidden\":!0,color:a.color,paused:still,shape:\"cloud\",sizePx:56,state:\"idle\"}),p.jsx(\"span\",{className:\"simeon-coo__role\",children:a.label})]})},a.id));",
-  `const line=p.jsx(fde,{x:0,y:-200,className:"simeon-coo__copy",children:p.jsx("p",{children:${JSON.stringify(COO_COPY)}})},"copy");`,
+  `const line=p.jsx(fde,{x:0,y:${COO_COPY_Y},className:"simeon-coo__copy",children:p.jsx("p",{children:${JSON.stringify(COO_COPY)}})},"copy");`,
   `return p.jsx(tye,{className:re("sand-onboarding__coo","simeon-coo"),footer:p.jsx(nye,{onBack:i,onForward:r}),headingId:t,title:${JSON.stringify(COO_TITLE)},children:[lines,...crew,line]})}`,
 ].join("");
 
@@ -1178,6 +1181,7 @@ export const COO_MARKER = "/* Simeon: the Chief of Staff welcome step";
 /** Curves in the app's blue, drawn on a standard ease; agents brighten on an expo-out. Greys are the system's. */
 export const COO_CSS = `${COO_MARKER} */
 .simeon-coo{--simeon-coo-ink:light-dark(rgba(60,60,67,.6),rgba(235,235,245,.6));--simeon-coo-line:light-dark(rgba(10,132,255,.55),rgba(100,170,255,.65));--simeon-coo-arrive:cubic-bezier(.16,1,.3,1)}
+.simeon-coo>div:first-child${MEET_HI}{top:calc(50% - ${-COO_TITLE_TOP}px)}
 .simeon-coo__web svg{display:block;overflow:visible}
 .simeon-coo__line{stroke:var(--simeon-coo-line);stroke-width:1.5;stroke-linecap:round;fill:none;stroke-dasharray:1;stroke-dashoffset:1;animation:simeon-coo-draw .9s cubic-bezier(.4,0,.2,1) both}
 .simeon-coo__agent{display:flex;flex-direction:column;align-items:center;gap:8px;animation:simeon-coo-link .8s var(--simeon-coo-arrive) both}
