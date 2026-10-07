@@ -54,6 +54,10 @@ test("the brief wraps the flights card's place in the message and brings its own
   const source = MAIL_REPLACEMENTS.find(([label]) => label === "mail-components")[2];
   assert.match(source, /S\.lazy\(\(\)=>import\("\.\/view-ClhdNXKM\.js"\)\.then\(m=>\(\{default:m\.__simeonEmailComposer\}\)\)\)/, "the reply opens the window's own email composer, loaded as its card loads it");
   assert.match(source, /onSend:\(\)=>__simeonMailSet\(n\.k,"replied"\),onDiscard:n\.onDiscard/);
+  // "i literally said IFRAME. not panel" (7 October 2026): the composer opens in the chat, under its email.
+  assert.match(source, /onClick:\(\)=>__simeonMailSet\(k\+"#compose",composing\?null:"open"\)/);
+  assert.match(source, /composing&&\(!st\|\|st==="replied"\)\?p\.jsx\(__simeonMailCompose,/);
+  assert.doesNotMatch(source, /__simeonOpenMail\(k,e,"reply"\)/, "no reply in the side panel");
   assert.equal(message[1], FLIGHTS_REPLACEMENTS.find(([label]) => label === "flights-message")[2]);
   assert.ok(message[2].startsWith("(!h&&__simeonMailParse(r)!=null?p.jsx(__simeonMail,{content:r}):"));
   const css = patchOriginalMailStylesheet(":root{}");
@@ -62,6 +66,7 @@ test("the brief wraps the flights card's place in the message and brings its own
   // Calmer (the founder, 7 October 2026: "way too noisy … not those too accented colors … the white background"):
   // no white field behind the rows, no tinted avatars, no coloured chips.
   assert.doesNotMatch(css, /--m-group|--m-urgent|simeon-mail__avatar|simeon-mail__chip/);
+  assert.match(css, /\.sand-email-composer button\[type="submit"\]:not\(:disabled\)\{background-color:light-dark\(#255a93,#1f5087\)!important;color:#fff!important/, "the composer sends in the window's blue, as the chat does");
   assert.throws(() => patchOriginalMailStylesheet(css), /already present/);
 });
 
