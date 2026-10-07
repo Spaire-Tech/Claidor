@@ -1031,7 +1031,8 @@ const COO_SOURCE = [
 export const COO_REPLACEMENTS = Object.freeze([
   // "Give each Agent a job" is left out of the flow (the founder, the same day: "remove the give each agent a job step"); the COO step says it now.
   // The connect step (8 October 2026) sits between the Chief of Staff and the computer, so the computer's title says "They".
-  ["coo-step-list", 'const Gse=["landing","meet","computer-demo","jobs","tools","create"]', 'const Gse=["landing","meet","coo","connect","computer-demo","name","tools"]'],
+  // The apps picker ("What do you use every day?") is out too (the founder, the same day: "a waste to have it there since it does connect them automatically"): the name is the last step.
+  ["coo-step-list", 'const Gse=["landing","meet","computer-demo","jobs","tools","create"]', 'const Gse=["landing","meet","coo","connect","computer-demo","name"]'],
   ["coo-computer-title", 'N="Grok Bot has its own computer and works just like you"', 'N="They have their own computer and work just like you"'],
   ["coo-step-screen", 'case"computer-demo":return p.jsx(Yqn,{', 'case"coo":return p.jsx(__simeonCooStep,{headingId:xn,onBack:()=>x.goBack(ln),onForward:()=>x.advance(ln)});case"computer-demo":return p.jsx(Yqn,{'],
   ["coo-step-hero", 'case"computer-demo":return{...e,x:$2e.x+n.demoCursor.x', `case"coo":return{...e,x:0,y:${COO_HERO_Y},scale:1,opacity:1,state:"proud",transition:"standard",isGazing:!0};case"computer-demo":return{...e,x:$2e.x+n.demoCursor.x`],
@@ -1046,10 +1047,11 @@ export const COO_REPLACEMENTS = Object.freeze([
  * first agent, but its not pinned. it's changeable but only the name and
  * the avatar").
  *
- * - Next on the apps step runs the flow's own create-and-finish (`Pe`: the
- *   hand-off screen, the computer, the agent, the first-run cue) with
- *   Simeon's profile instead of the form's. The "create" step is out of the
- *   step list. The agent-creation path now carries a title, so Simeon's
+ * - Next on the last step (the name, since 8 October 2026; the apps step
+ *   before that) runs the flow's own create-and-finish (`Pe`: the hand-off
+ *   screen, the computer, the agent, the first-run cue) with Simeon's
+ *   profile instead of the form's. The "create" step is out of the step
+ *   list. The agent-creation path now carries a title, so Simeon's
  *   profile reads Chief of Staff.
  * - The Chief of Staff is the oldest agent titled "Chief of Staff" (or
  *   "COO", the title the day before). He is pinned, hidden, moved and
@@ -1087,7 +1089,8 @@ const NAME_SOURCE = [
   "return p.jsx(tye,{className:re(\"sand-onboarding__name\",\"simeon-name\"),footer:p.jsx(nye,{onBack:i,onForward:go}),headingId:t,title:\"How should Simeon & Co call you?\",children:[field,note]})}",
 ].join("");
 export const NAME_STEP_REPLACEMENTS = Object.freeze([
-  ["name-step-screen", "case\"tools\":return p.jsx(Ljn,{", "case\"name\":return p.jsx(__simeonNameStep,{headingId:xn,onBack:()=>x.goBack(ln),onForward:()=>x.advance(ln)});case\"tools\":return p.jsx(Ljn,{"],
+  // Next on the name step, the last one, runs the flow's own create-and-finish (`Pe`), as Next on the apps step did while there was one.
+  ["name-step-screen", "case\"tools\":return p.jsx(Ljn,{", "case\"name\":return p.jsx(__simeonNameStep,{headingId:xn,onBack:()=>x.goBack(ln),onForward:()=>{Pe()}});case\"tools\":return p.jsx(Ljn,{"],
   ["name-step-agents", "case\"tools\":return{...t,x:r.x,y:r.y,scale:r.scale,opacity:1,state:\"idle\",transition:\"standard\",bob:YBn[e]}", "case\"name\":return{...t,...__simeonNameSeat[e],opacity:1,state:\"happy\",transition:\"bounce\",isGazing:!0};case\"tools\":return{...t,x:r.x,y:r.y,scale:r.scale,opacity:1,state:\"idle\",transition:\"standard\",bob:YBn[e]}"],
   ["name-step-hero", "case\"coo\":return{...e,x:0,y:", "case\"name\":return{...e,x:$2e.x,y:$2e.y,scale:Vve,opacity:0,state:\"happy\",transition:\"exit\"};case\"coo\":return{...e,x:0,y:"],
   ["name-step-component", "function __simeonCooStep(n){", `${NAME_SOURCE}function __simeonCooStep(n){`],

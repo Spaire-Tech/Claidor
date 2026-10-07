@@ -137,7 +137,7 @@ test("the sign-in wordmark is set in Suravaram, carried inside the stylesheet", 
 test("the Chief of Staff step sits after Meet Simeon, with Simeon at the centre and six agents linked to him by blue curves", async () => {
   const { COO_REPLACEMENTS, COO_CSS, COO_TITLE, COO_COPY, patchOriginalCooStylesheet } = await import("../scripts/lib/router-renderer-patch.mjs");
   const [list, title, screen, hero, component] = COO_REPLACEMENTS;
-  assert.match(list[2], /\["landing","meet","coo","connect","computer-demo","name","tools"\]/, "the jobs and create steps are out; connect sits before the computer; the name step follows it");
+  assert.match(list[2], /\["landing","meet","coo","connect","computer-demo","name"\]$/, "the jobs, create and apps steps are out; connect sits before the computer; the name step is last");
   assert.equal(title[2], 'N="They have their own computer and work just like you"');
   assert.match(screen[2], /^case"coo":return p\.jsx\(__simeonCooStep,\{headingId:xn,onBack:\(\)=>x\.goBack\(ln\),onForward:\(\)=>x\.advance\(ln\)\}\);/);
   assert.match(hero[2], /^case"coo":return\{\.\.\.e,x:0,y:-40,scale:1,opacity:1/);
@@ -246,7 +246,7 @@ test("Simeon is the first agent, titled Chief of Staff, pinned or not as the per
 test("the name step: the apps step's agents gather over one field, and the last screen keeps only its line", async () => {
   const { NAME_STEP_REPLACEMENTS, NAME_CSS } = await import("../scripts/lib/router-renderer-patch.mjs");
   const by = Object.fromEntries(NAME_STEP_REPLACEMENTS.map(([label, , after]) => [label, after]));
-  assert.match(by["name-step-screen"], /^case"name":return p\.jsx\(__simeonNameStep,/);
+  assert.match(by["name-step-screen"], /^case"name":return p\.jsx\(__simeonNameStep,\{headingId:xn,onBack:\(\)=>x\.goBack\(ln\),onForward:\(\)=>\{Pe\(\)\}\}\);/, "Next on the name step makes Simeon and finishes");
   assert.match(by["name-step-agents"], /^case"name":return\{\.\.\.t,\.\.\.__simeonNameSeat\[e\],opacity:1/);
   assert.match(by["name-step-component"], /title:"How should Simeon & Co call you\?"/);
   assert.match(by["name-step-component"], /a\.updateName\(name\)/, "saved through the account's own rename");
