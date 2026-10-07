@@ -1493,9 +1493,13 @@ export const AGENT_BUBBLE_LIGHT = "#e9e9eb";
  *
  * Once answered (30 September 2026: "after you choose a choice in the picker
  * card, the thing appears there just randomly without context"), the card
- * keeps its grey card, the question stays as its title, and the answer sits
- * in a white field with the chosen dot and a check. The answered card is a
- * div, which the article/form/section card rule never reached.
+ * keeps its grey card and the question stays as its title. The answer is one
+ * line on the same grey: a thin blue check mark where the ring was, then the
+ * label (the founder, 7 October 2026: the white field read as a different
+ * card and the ring with its dot was noise; "something more premium like a
+ * thin blue check mark"). The renderer's own trailing check is not drawn.
+ * The answered card is a div, which the article/form/section card rule never
+ * reached.
  */
 const CHOICE_RADIO_CSS = () => `.sand-widget__options${HI}{background:var(--simeon-card-fill);border-color:transparent}
 .sand-widget-option__key${HI}{box-sizing:border-box;width:18px;height:18px;min-width:18px;padding:0;border-radius:999px;border:1.5px solid light-dark(rgba(20,20,20,.3),rgba(255,255,255,.4));background:transparent}
@@ -1503,9 +1507,11 @@ const CHOICE_RADIO_CSS = () => `.sand-widget__options${HI}{background:var(--sime
 .sand-widget-option:is(:hover,:focus-visible) .sand-widget-option__key${HI}{border-color:light-dark(${USER_BUBBLE_LIGHT},#5b9be0)}
 .sand-widget-option--selected .sand-widget-option__key${HI}{opacity:1;border-color:light-dark(${USER_BUBBLE_LIGHT},#5b9be0);background:radial-gradient(circle,light-dark(${USER_BUBBLE_LIGHT},#5b9be0) 0 4px,transparent 4.5px)}
 .sand-widget-option--selected [title="Selected"]${HI}{display:none}
-.sand-widget--resolved .sand-widget__options${HI}:not(#\\#){background:light-dark(#fff,rgba(255,255,255,.07));box-shadow:0 0 0 .5px light-dark(rgba(20,30,60,.10),rgba(255,255,255,.10))}
+.sand-widget--resolved .sand-widget__options${HI}:not(#\\#){background:transparent;box-shadow:none}
 .sand-widget--resolved .sand-widget-option__label${HI}{color:inherit;opacity:1}
-.sand-widget--resolved .sand-widget-option--selected [title="Selected"]${HI}:not(#\\#){display:inline-flex;color:light-dark(${USER_BUBBLE_LIGHT},#8cb8e8)}
+.sand-widget--resolved .sand-widget-option--selected .sand-widget-option__key${HI}:not(#\\#){position:relative;border-color:transparent;background:transparent}
+.sand-widget--resolved .sand-widget-option--selected .sand-widget-option__key${HI}::after{content:"";position:absolute;left:5px;top:1.5px;width:5px;height:10px;border-right:1.5px solid light-dark(${USER_BUBBLE_LIGHT},#8cb8e8);border-bottom:1.5px solid light-dark(${USER_BUBBLE_LIGHT},#8cb8e8);border-radius:0 0 1px 0;transform:rotate(45deg)}
+.sand-widget--resolved .sand-widget-option--selected [title="Selected"]${HI}:not(#\\#){display:none}
 `;
 
 /**
