@@ -437,6 +437,18 @@ function resolveBrowserTargetPageUrl(
   return typeof urls[viewId] === "string" ? normalizeNavigationUrl(urls[viewId] as string) : undefined;
 }
 
+/** What the page-state probe failed with, in one line, for the blocked message. */
+export function captureFailureText(cause: unknown): string {
+  if (cause instanceof Error) return cause.message.trim() || cause.name;
+  if (typeof cause === "string") return cause.trim() || "no reason given";
+  if (typeof cause === "object" && cause !== null) {
+    const record = cause as { message?: unknown; error?: unknown };
+    const text = typeof record.message === "string" ? record.message : typeof record.error === "string" ? record.error : "";
+    if (text.trim().length > 0) return text.trim();
+  }
+  return "the probe's shell gave no result";
+}
+
 async function captureBrowserReviewState(args: {
   readonly ctx: OperationContext;
   readonly resourceAccessor: ResourceAccessor<RemoteExecManager>;
@@ -457,10 +469,15 @@ async function captureBrowserReviewState(args: {
       workingDirectory: "/workspace",
       toolCallId: `${args.toolCallId}:auto-review-state`,
     }));
-  } catch {
-    throw new SandBrowserAutoReviewBlockedError("Browser Auto-review could not capture the current page state.");
+  } catch (error) {
+    // The cause rides along (7 October 2026): the probe's shell throws for a
+    // pending Auto-review approval, a box that is not ready, or a cancelled
+    // turn, and the bare sentence left the founder's log unreadable. A
+    // cancelled turn stays a cancellation.
+    if (error instanceof Error && error.name === "AbortError") throw error;
+    throw new SandBrowserAutoReviewBlockedError(`Browser Auto-review could not capture the current page state: ${captureFailureText(error)}`);
   }
-  if (result?.result?.case !== "success") throw new SandBrowserAutoReviewBlockedError("Browser Auto-review could not capture the current page state.");
+  if (result?.result?.case !== "success") throw new SandBrowserAutoReviewBlockedError(`Browser Auto-review could not capture the current page state: ${captureFailureText(result?.result?.value)}`);
   if (result.result.value.exitCode !== 0) return { displayStateIdentity: "chrome-unreachable" };
   const stdout = result.result.value.stdout ?? "";
   const markerIndex = stdout.indexOf(BROWSER_REVIEW_STATE_MARKER);

@@ -571,6 +571,12 @@ the background while the call goes on, and says how it is going when asked.
     call is nudged once; the nudge allows one line on the channel when the result is not
     ready (7 October 2026: a balance check went to a background subagent and the caller
     heard nothing until the call ended).
+  - **"Browser Auto-review could not capture the current page state."** Before a browser or
+    computer action is reviewed, the host reads the page through the box's shell (the CDP list
+    on the agent's display). That shell refuses in three cases: an Auto-review approval is
+    pending for the agent ("Another action is waiting…"), the box is not ready, or the turn was
+    cancelled. Since 7 October 2026 the message carries the shell's own reason, and a
+    cancellation stays a cancellation; before, every case read the same.
   - **The launch of a background subagent is reviewed with the conversation.** Until 7 October
     2026 the review for that surface read "Recent conversation: (none)" (the other surfaces
     carried it), so a check the person had asked for on the call was blocked as "without a
