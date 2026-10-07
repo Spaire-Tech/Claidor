@@ -87,6 +87,7 @@ const earlierCall = (prefix: string, minutesAgo: number, callId: string, seconds
 
 export const AGENTS: readonly DemoAgent[] = [
   { id: "simeon", name: "Simeon", title: "Chief of Staff", description: "Runs your day and hands work to the rest of the team.", color: "blue", minutesAgo: 0 },
+  { id: "mila", name: "Mila", title: "Inbox", description: "Runs the inbox: what needs Bass, what can wait, and the replies to approve.", color: "green", minutesAgo: 12 },
   { id: "theo", name: "Theo", title: "Bookkeeping", description: "Keeps the books, the runway and the invoices straight.", color: "green", minutesAgo: 70 },
   { id: "iris", name: "Iris", title: "Customer support", description: "Answers tickets from your help docs and flags the hard ones.", color: "violet", minutesAgo: 60 * 3 },
   { id: "scout", name: "Scout", title: "Customer research", description: "Reads what customers say and brings back what matters.", color: "orange", minutesAgo: 60 * 26 },
@@ -107,6 +108,12 @@ export const TRANSCRIPTS: Record<string, Entry[]> = {
     card("i0c", 60 * 48 - 1, { type: "connectors", connectors: ["Gmail", "Notion"] }),
     says("i0b", 60 * 48 - 3, "Both connected. I'll leave refunds and anything unhappy for you."),
     says("i1a", 70, "Yesterday: 23 tickets answered, a median of 4 minutes to reply. One is yours: **Brightline** is asking for a $960 refund for September."),
+  ],
+  mila: [
+    you("m0u", 14, "What needs me in my inbox this morning?"),
+    says("m0a", 13, "I went through the 31 emails since last night. Three need you, two deadlines land this week, and the rest can wait."),
+    says("m0b", 13, "```simeon-mail\n{\"title\": \"This morning's inbox\", \"subtitle\": \"3 need you · 2 deadlines this week · 9 can wait\", \"sections\": [{\"title\": \"Needs you\", \"items\": [{\"kind\": \"email\", \"from\": \"Maya Chen\", \"subject\": \"Redlines on the Northwind MSA\", \"why\": \"Legal needs your OK on the liability cap before Friday's signing.\", \"time\": \"9:12 AM\", \"due\": \"Due Fri\", \"urgent\": true, \"thread\": 4, \"unread\": true, \"reply\": \"Thanks Maya, the cap at 12 months of fees works for us. Approved, go ahead and send for signature.\"}, {\"kind\": \"email\", \"from\": \"Jon Park\", \"subject\": \"Partner meeting: can you send the deck?\", \"why\": \"Northstar wants the deck before Thursday's partner meeting.\", \"time\": \"8:40 AM\", \"due\": \"Today\", \"urgent\": true, \"unread\": true}, {\"kind\": \"email\", \"from\": \"Brightline Support\", \"subject\": \"Refund request for September\", \"why\": \"A $960 refund only you can approve. Iris flagged it.\", \"time\": \"Yesterday\", \"thread\": 3}]}, {\"title\": \"Deadlines\", \"items\": [{\"kind\": \"deadline\", \"title\": \"Q3 estimated tax payment\", \"date\": \"Oct 15\", \"day\": \"Wednesday\", \"source\": \"From Pilot\", \"urgent\": true}, {\"kind\": \"deadline\", \"title\": \"Northwind MSA signing\", \"date\": \"Oct 10\", \"day\": \"Friday\", \"source\": \"Maya Chen\"}]}, {\"title\": \"Tasks from your mail\", \"items\": [{\"kind\": \"task\", \"title\": \"Send the deck to Northstar\", \"from\": \"Jon Park asked this morning\", \"due\": \"Today\", \"urgent\": true}, {\"kind\": \"task\", \"title\": \"Book the offsite venue\", \"from\": \"Dana's thread, Monday\", \"due\": \"Next week\"}]}, {\"title\": \"People waiting on you\", \"items\": [{\"kind\": \"person\", \"name\": \"Maya Chen\", \"role\": \"Counsel, Hale & Ward\", \"note\": \"2 threads\"}, {\"kind\": \"person\", \"name\": \"Jon Park\", \"role\": \"Partner, Northstar Ventures\", \"note\": \"Since 8:40\"}]}]}\n```"),
+    says("m0c", 12, "I drafted the reply to Maya for you to approve. Want me to send Jon the deck from Drive?"),
   ],
   theo: [
     you("t0u", 60 * 5, "What's our runway?"),

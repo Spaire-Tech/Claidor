@@ -976,6 +976,86 @@ export function patchOriginalFlightsStylesheet(css) {
 }
 
 /**
+ * The mail brief (7 October 2026, the founder: "when Simeon reads a user's
+ * Gmail, it should be able to present emails, threads, tasks, people,
+ * deadlines, suggested replies … as clean cards/sections … I'm not looking
+ * for a full Gmail-style inbox"). An agent's message whose whole text is one
+ * ```simeon-mail block of JSON is drawn as a brief: a title and a one-line
+ * count, then sections ("Needs you", "Deadlines", "Tasks", "People") of
+ * grouped rows on the flights card's grammar: regular weights, size and grey
+ * for hierarchy, hairlines inset past the mark, one colour for what is urgent.
+ * Read-only for now; the actions come once the design is agreed. The text
+ * stays the message's own, so an older window and the phone still show it.
+ *
+ *   {"title":"This morning's inbox","subtitle":"3 need you · 9 can wait",
+ *    "sections":[{"title":"Needs you","items":[
+ *      {"kind":"email","from":"Maya Chen","subject":"Redlines on the MSA","why":"Legal needs your OK before Friday's signing.",
+ *       "time":"9:12 AM","due":"Due Fri","urgent":true,"thread":4,"unread":true,"reply":"Thanks Maya, approved…"}]},
+ *     {"title":"Deadlines","items":[{"kind":"deadline","title":"Q3 estimated tax","date":"Oct 15","day":"Wed","source":"From Pilot"}]},
+ *     {"title":"Tasks","items":[{"kind":"task","title":"Send the deck to Northstar","due":"Today","from":"Jon Park asked Tuesday"}]},
+ *     {"title":"People","items":[{"kind":"person","name":"Jon Park","role":"Partner, Northstar Ventures","note":"3 threads"}]}]}
+ *
+ * Six sections at most, eight rows each; a row without its main line is left out.
+ */
+const MAIL_SOURCE = String.raw`function __simeonMailParse(n){if(typeof n!=="string")return null;const m=/^\x60\x60\x60simeon-mail[^\n]*\n([\s\S]*?)\n?\x60\x60\x60$/.exec(n.trim());if(m==null)return null;try{const d=JSON.parse(m[1]);if(d==null||!Array.isArray(d.sections))return null;const s=v=>typeof v==="string"?v.trim():"",b=v=>v===true,c=v=>typeof v==="number"&&isFinite(v)&&v>1?Math.floor(v):0;const item=i=>{const k=s(i.kind);if(k==="email")return{kind:k,from:s(i.from),subject:s(i.subject),why:s(i.why),time:s(i.time),due:s(i.due),urgent:b(i.urgent),thread:c(i.thread),unread:b(i.unread),reply:s(i.reply)};if(k==="task")return{kind:k,title:s(i.title),due:s(i.due),from:s(i.from),urgent:b(i.urgent)};if(k==="deadline")return{kind:k,title:s(i.title),date:s(i.date),day:s(i.day),source:s(i.source),urgent:b(i.urgent)};if(k==="person")return{kind:k,name:s(i.name),role:s(i.role),note:s(i.note)};return null};const sections=d.sections.filter(x=>x!=null&&typeof x==="object"&&Array.isArray(x.items)).slice(0,6).map(x=>({title:s(x.title),items:x.items.filter(i=>i!=null&&typeof i==="object").map(item).filter(i=>i!=null&&(i.subject||i.title||i.name)).slice(0,8)})).filter(x=>x.items.length>0);return sections.length===0?null:{title:s(d.title),subtitle:s(d.subtitle),sections}}catch{return null}}const __simeonMailTones=["#3f7fd9","#d9673f","#2f9e6e","#9a63cf","#c58f1f","#2c97b3","#cc5a8b","#6f7f8f"];function __simeonMailTone(n){let h=0;for(const ch of String(n||""))h=(h*31+ch.charCodeAt(0))>>>0;return __simeonMailTones[h%__simeonMailTones.length]}function __simeonMailAvatar(n){return p.jsx("span",{className:"simeon-mail__avatar","aria-hidden":!0,style:{"--m-tone":__simeonMailTone(n.name)},children:__simeonInitials(n.name)})}function __simeonMailChip(n){return n.text?p.jsx("span",{className:n.urgent?"simeon-mail__chip simeon-mail__chip--urgent":"simeon-mail__chip",children:n.text}):null}function __simeonMailEmail(n){const e=n.item;return p.jsxs("li",{className:"simeon-mail__row simeon-mail__row--email","data-unread":e.unread?"true":void 0,children:[p.jsx(__simeonMailAvatar,{name:e.from}),p.jsxs("div",{className:"simeon-mail__body",children:[p.jsxs("div",{className:"simeon-mail__line",children:[p.jsx("span",{className:"simeon-mail__from",children:e.from}),e.time?p.jsx("span",{className:"simeon-mail__time",children:e.time}):null]}),p.jsx("div",{className:"simeon-mail__subject",children:e.subject}),e.why?p.jsx("div",{className:"simeon-mail__why",children:e.why}):null,e.due||e.thread?p.jsxs("div",{className:"simeon-mail__chips",children:[p.jsx(__simeonMailChip,{text:e.due,urgent:e.urgent}),e.thread?p.jsx(__simeonMailChip,{text:e.thread+" messages"}):null]}):null,e.reply?p.jsxs("div",{className:"simeon-mail__reply",children:[p.jsx("span",{className:"simeon-mail__reply-label",children:"Suggested reply"}),p.jsx("p",{children:e.reply})]}):null]})]})}function __simeonMailTask(n){const t=n.item;return p.jsxs("li",{className:"simeon-mail__row simeon-mail__row--task",children:[p.jsx("span",{className:"simeon-mail__check","aria-hidden":!0}),p.jsxs("div",{className:"simeon-mail__body",children:[p.jsx("div",{className:"simeon-mail__title",children:t.title}),t.from?p.jsx("div",{className:"simeon-mail__why",children:t.from}):null]}),p.jsx(__simeonMailChip,{text:t.due,urgent:t.urgent})]})}function __simeonMailDeadline(n){const d=n.item,m=/^([A-Za-z]{3,})\.?\s+(\d{1,2})$/.exec(d.date);return p.jsxs("li",{className:"simeon-mail__row simeon-mail__row--deadline",children:[p.jsxs("span",{className:d.urgent?"simeon-mail__date simeon-mail__date--urgent":"simeon-mail__date","aria-hidden":!0,children:[p.jsx("small",{children:m?m[1].slice(0,3):d.day}),p.jsx("b",{children:m?m[2]:d.date})]}),p.jsxs("div",{className:"simeon-mail__body",children:[p.jsx("div",{className:"simeon-mail__title",children:d.title}),[m?d.day:"",d.source].filter(Boolean).length>0?p.jsx("div",{className:"simeon-mail__why",children:[m?d.day:"",d.source].filter(Boolean).join(" · ")}):null]})]})}function __simeonMailPerson(n){const q=n.item;return p.jsxs("li",{className:"simeon-mail__row simeon-mail__row--person",children:[p.jsx(__simeonMailAvatar,{name:q.name}),p.jsxs("div",{className:"simeon-mail__body",children:[p.jsx("div",{className:"simeon-mail__title",children:q.name}),q.role?p.jsx("div",{className:"simeon-mail__why",children:q.role}):null]}),q.note?p.jsx("span",{className:"simeon-mail__note",children:q.note}):null]})}function __simeonMail(n){const d=__simeonMailParse(n.content);if(d==null)return null;const row={email:__simeonMailEmail,task:__simeonMailTask,deadline:__simeonMailDeadline,person:__simeonMailPerson};return p.jsxs("section",{className:"simeon-mail","aria-label":d.title||"Inbox",children:[d.title||d.subtitle?p.jsxs("header",{className:"simeon-mail__head",children:[d.title?p.jsx("h3",{children:d.title}):null,d.subtitle?p.jsx("p",{children:d.subtitle}):null]}):null,...d.sections.map((x,i)=>p.jsxs("div",{className:"simeon-mail__section",children:[x.title?p.jsx("h4",{children:x.title}):null,p.jsx("ul",{className:"simeon-mail__group",children:x.items.map((it,j)=>p.jsx(row[it.kind],{item:it},j))})]},i))]})}`;
+const MAIL_COMPONENTS_ANCHOR = FLIGHTS_COMPONENTS_ANCHOR;
+const MAIL_MESSAGE_BEFORE = FLIGHTS_MESSAGE_AFTER;
+const MAIL_MESSAGE_AFTER = `(!h&&__simeonMailParse(r)!=null?p.jsx(__simeonMail,{content:r}):${FLIGHTS_MESSAGE_AFTER})`;
+export const MAIL_REPLACEMENTS = Object.freeze([
+  ["mail-components", MAIL_COMPONENTS_ANCHOR, `${MAIL_SOURCE}${MAIL_COMPONENTS_ANCHOR}`],
+  ["mail-message", MAIL_MESSAGE_BEFORE, MAIL_MESSAGE_AFTER],
+]);
+
+/** Runs after the flights patch: it wraps the flights card's place in the message. */
+export function patchOriginalMail(source) {
+  let out = source;
+  for (const [label, before, after] of MAIL_REPLACEMENTS) out = replaceExactlyOnce(out, before, after, label);
+  return out;
+}
+
+export const MAIL_MARKER = "/* Simeon: mail brief";
+/** The flights card's tokens and scale; urgent is the one colour, in both themes. */
+export const mailCss = () => `${MAIL_MARKER} (7 October 2026). */
+.simeon-mail{--m-ink:light-dark(#1d1d1f,#f5f5f7);--m-ink-2:light-dark(#6e6e73,#98989d);--m-ink-3:light-dark(#c7c7cc,#545458);--m-line:light-dark(rgba(60,60,67,.14),rgba(84,84,88,.5));--m-group:light-dark(#ffffff,#1c1c1e);--m-fill:light-dark(rgba(120,120,128,.1),rgba(120,120,128,.2));--m-blue:light-dark(${USER_BUBBLE_LIGHT},#5e9be0);--m-urgent:light-dark(#c4421a,#ff8a5c);box-sizing:border-box;width:min(560px,100%);min-width:0;font-family:${PANE_FONT};font-weight:400;color:var(--m-ink);-webkit-font-smoothing:antialiased;font-feature-settings:"tnum" 1}
+.simeon-mail__head{padding:2px 0 4px}
+.simeon-mail__head h3{margin:0;font-size:15px;line-height:20px;font-weight:500;letter-spacing:-.01em}
+.simeon-mail__head p{margin:1px 0 0;font-size:13px;line-height:18px;color:var(--m-ink-2)}
+.simeon-mail__section h4{margin:14px 0 6px;font-size:13px;line-height:18px;font-weight:400;color:var(--m-ink-2)}
+.simeon-mail__group{list-style:none;margin:0;padding:0;border-radius:12px;background:var(--m-group);box-shadow:0 0 0 .5px var(--m-line);overflow:hidden}
+.simeon-mail__row{position:relative;display:grid;grid-template-columns:32px minmax(0,1fr) auto;align-items:start;column-gap:12px;padding:11px 14px}
+.simeon-mail__row+.simeon-mail__row::before{content:"";position:absolute;top:0;left:58px;right:0;height:.5px;background:var(--m-line)}
+.simeon-mail__row--email{grid-template-columns:32px minmax(0,1fr)}
+.simeon-mail__row--task,.simeon-mail__row--person{align-items:center}
+.simeon-mail__row[data-unread="true"]::after{content:"";position:absolute;left:5px;top:24px;width:6px;height:6px;border-radius:999px;background:var(--m-blue)}
+.simeon-mail__avatar{display:grid;place-items:center;width:32px;height:32px;border-radius:999px;background:color-mix(in srgb,var(--m-tone) 18%,transparent);color:var(--m-tone);font-size:12px;font-weight:600;letter-spacing:.02em}
+.simeon-mail__body{min-width:0}
+.simeon-mail__line{display:flex;align-items:baseline;gap:8px}
+.simeon-mail__from{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px;line-height:20px}
+.simeon-mail__row[data-unread="true"] .simeon-mail__from{font-weight:500}
+.simeon-mail__time{flex:0 0 auto;font-size:12px;line-height:16px;color:var(--m-ink-2)}
+.simeon-mail__subject{font-size:14px;line-height:19px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.simeon-mail__title{font-size:15px;line-height:20px}
+.simeon-mail__why{margin-top:1px;font-size:13px;line-height:18px;color:var(--m-ink-2)}
+.simeon-mail__chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.simeon-mail__chip{display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:999px;background:var(--m-fill);color:var(--m-ink-2);font-size:12px;line-height:16px;white-space:nowrap}
+.simeon-mail__chip--urgent{background:color-mix(in srgb,var(--m-urgent) 14%,transparent);color:var(--m-urgent)}
+.simeon-mail__reply{margin-top:9px;padding:9px 11px 10px;border-radius:10px;background:var(--m-fill)}
+.simeon-mail__reply-label{display:block;font-size:11px;line-height:14px;letter-spacing:.04em;text-transform:uppercase;color:var(--m-ink-2)}
+.simeon-mail__reply p{margin:3px 0 0;font-size:13px;line-height:18px;color:var(--m-ink)}
+.simeon-mail__check{width:18px;height:18px;margin:0 7px;border-radius:999px;box-shadow:inset 0 0 0 1.5px var(--m-ink-3)}
+.simeon-mail__date{display:grid;justify-items:center;align-content:center;width:32px;height:36px;border-radius:8px;background:var(--m-fill)}
+.simeon-mail__date small{font-size:10px;line-height:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--m-ink-2)}
+.simeon-mail__date b{font-size:15px;line-height:18px;font-weight:500}
+.simeon-mail__date--urgent small{color:var(--m-urgent)}
+.simeon-mail__note{font-size:13px;line-height:18px;color:var(--m-ink-2);white-space:nowrap}
+`;
+
+export function patchOriginalMailStylesheet(css) {
+  if (css.includes(MAIL_MARKER)) throw new Error("Original renderer mail brief block is already present.");
+  return `${css}\n${mailCss()}`;
+}
+
+/**
  * "Your Personal Chief of Staff", the welcome step after "Meet Simeon" (3
  * October 2026, the founder: "an animated very apple like, very premium thing
  * that says that simeon is your personal COO and that he staffs agents for
@@ -2316,7 +2396,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   if (!SIDEBAR_DISCS_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer sidebar anchors (the header, the rail's new button, the search bar) are not all in the mark chunk.");
   if (!BUTTERFLY_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer mark engine anchors (the cloud's geometry, the body and eyes, the still renderer, the spin's lights) are not all in the mark chunk.");
   const logoAssets = await readLogoAssets();
-  const markPatched = patchOriginalButterfly(patchOriginalSidebarDiscs(patchOriginalCooStep(patchOriginalFlights(patchOriginalHandoff(patchOriginalAgentPane(patchOriginalManagePlan(patchOriginalVoiceCall(patchOriginalChatLayout(patchOriginalLogos(patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source))))), appMentionNames(logoAssets.mentions)))))))))));
+  const markPatched = patchOriginalButterfly(patchOriginalSidebarDiscs(patchOriginalCooStep(patchOriginalMail(patchOriginalFlights(patchOriginalHandoff(patchOriginalAgentPane(patchOriginalManagePlan(patchOriginalVoiceCall(patchOriginalChatLayout(patchOriginalLogos(patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(markChunks[0].source))))), appMentionNames(logoAssets.mentions))))))))))));
   // The stylesheet's light default of the same variable, for first paint.
   const stylesheets = (await readdir(assetsRoot)).filter((name) => name.endsWith(".css")).map((name) => path.join(assetsRoot, name));
   const bubbleSheets = [];
@@ -2325,7 +2405,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     if (css.includes(BUBBLE_CSS_REPLACEMENT[1])) bubbleSheets.push({ target, css });
   }
   if (bubbleSheets.length !== 1) throw new Error(`Expected one stylesheet carrying the user bubble default, found ${bubbleSheets.length}.`);
-  const stylesheetPatched = patchOriginalSidebarDiscsStylesheet(patchOriginalCooStylesheet(patchOriginalWordmarkStylesheet(patchOriginalFlightsStylesheet(patchOriginalHandoffStylesheet(patchOriginalAgentPaneStylesheet(patchOriginalManagePlanStylesheet(patchOriginalVoiceCallStylesheet(patchOriginalLogosStylesheet(patchOriginalShapePickerStylesheet(patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)))), logoAssets)))))), logoAssets.wordmarkFont)));
+  const stylesheetPatched = patchOriginalSidebarDiscsStylesheet(patchOriginalCooStylesheet(patchOriginalWordmarkStylesheet(patchOriginalMailStylesheet(patchOriginalFlightsStylesheet(patchOriginalHandoffStylesheet(patchOriginalAgentPaneStylesheet(patchOriginalManagePlanStylesheet(patchOriginalVoiceCallStylesheet(patchOriginalLogosStylesheet(patchOriginalShapePickerStylesheet(patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)))), logoAssets))))))), logoAssets.wordmarkFont)));
   const chunkSources = [];
   for (const target of markCandidates) chunkSources.push(await readFile(target, "utf8"));
   // The blocks spell the window's tokens as the token pass below leaves them.
@@ -2438,7 +2518,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-mark", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "agent-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "meet-step-turn", "connect-step", "computer-screen-large", "computer-wallpaper-photo", "flight-results", "upstream-tokens", "sidebar-glass-discs", "pane-widest-default", "pane-three-tabs", "mark-butterfly", "mark-no-eyes", "spin-lights-agent-colours", "manage-plan-card"],
+    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-mark", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "agent-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "meet-step-turn", "connect-step", "computer-screen-large", "computer-wallpaper-photo", "flight-results", "mail-brief", "upstream-tokens", "sidebar-glass-discs", "pane-widest-default", "pane-three-tabs", "mark-butterfly", "mark-no-eyes", "spin-lights-agent-colours", "manage-plan-card"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings", "upstream-tokens", "icon-font-file"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");
