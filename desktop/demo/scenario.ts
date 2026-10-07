@@ -228,6 +228,8 @@ export function onboardingScript(agent: string, stage: number): Beat[] {
       typing(500, true),
       append(2000, says("o1a", 0, "Good call. Hiring someone for your inbox now.")),
       typing(2100, false),
+      // Simeon's own chat shows the brief he sent, as the host writes it when he sends (agent-to-agent-messaging.ts).
+      append(3300, toTeammate("o1t", 0, { id: nora.id, name: nora.name }, "Bass staffed you to run his inbox. Every morning, sort what needs him from what doesn't, draft the replies he should send and leave them for his approval, and flag anything from a customer within the hour. Report to him in your chat; tell me only what needs a decision.")),
       { at: 3400, kind: "hire", agent: nora, entries: [
         fromTeammate("n0", 0, simeon, "Bass staffed you to run his inbox. Every morning, sort what needs him from what doesn't, draft the replies he should send and leave them for his approval, and flag anything from a customer within the hour. Report to him in your chat; tell me only what needs a decision."),
         says("n1", 0, "Hi Bass, I'm Nora, on your inbox from today. First I'll sort this week's mail into what needs you and what doesn't, and draft the replies for you to approve. I need Gmail for that."),

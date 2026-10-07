@@ -770,6 +770,11 @@ the agent, him creating it, and giving him directions." `desktop/source/shared/a
   profile's title, which now reaches the runner): a task that fits an agent goes to that agent; one
   that fits nobody gets a new agent; a project gets a small team; he does a thing himself only when
   it is quicker than briefing someone; when the person is unsure he recommends.
+- **The brief is read in the chat** (the founder: "in simeon chat we don't see anything. I wanna
+  show that. It's the magic of it"). The window drew an agent's message to another agent as one
+  line, "Messaged Nora" / "Message from Simeon", opening in the side pane. The line stays and the
+  text follows it as a grey block, in the sender's chat and the receiver's (`router-renderer-patch.mjs`,
+  `agent-brief-row-entries`, `agent-brief-text`).
 - The demo's onboarding (`desktop/demo/scenario.ts`, `onboardingScript`) plays the same scene: the
   question, the hire (Nora, Inbox, appears in the sidebar with Simeon's brief and her first words
   in her chat), the report. Not verified in the packaged app on a Mac yet.
