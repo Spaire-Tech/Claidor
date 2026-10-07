@@ -80,7 +80,7 @@ failed check, a new issue).
   box stops firing those routines itself (`shouldScheduleLocally`) and the server owns them.
 - **Cron.** The worker actor `sand.listeners.fire_due_crons` (`listeners_tasks.py`) runs every
   minute and queues one fire per due routine, never a second while one is pending, then moves
-  the routine's next slot (`listeners_cron.py`), at least 15 minutes on (`ROUTINE_MIN_INTERVAL`
+  the routine's next slot (`listeners_cron.py`), with no shortest gap since 8 October 2026 (`ROUTINE_MIN_INTERVAL`
   in `listeners_service.py`; the Mac holds the same gap). A pending fire expires after two hours, so a
   computer that was off for a day runs a missed routine once, not once per missed slot.
 - **Events.** Webhooks arrive at the ingress routes (`listeners_ingress.py`), are checked,
@@ -576,7 +576,26 @@ the background while the call goes on, and says how it is going when asked.
     on the agent's display). That shell refuses in three cases: an Auto-review approval is
     pending for the agent ("Another action is waiting…"), the box is not ready, or the turn was
     cancelled. Since 7 October 2026 the message carries the shell's own reason, and a
-    cancellation stays a cancellation; before, every case read the same.
+    cancellation stays a cancellation; before, every case read the same. Since 8 October,
+    when the review only shadows (the default again, `sand_auto_review` off), a failed probe
+    no longer stops the action: the host logs `auto-review probe failed in shadow, action
+    allowed: <reason>` and the action runs. In enforce it still refuses, with the reason.
+  - **"Not run: this is the third time you have sent exactly this action to exactly this
+    screen."** The Computer tool's loop guard (8 October 2026, `sand-computer-tool.ts`): the
+    third identical action on a screen that did not change after the first two is refused
+    with that sentence, and never reaches the box. The insurance log of 6 October showed a
+    helper send the same click and ZIP code to the same screen four times over.
+  - **A form that needs the person's own details.** The computer and browser helpers are told
+    to stop at such a form (a quote, a booking, an application) with it on screen and report;
+    the main agent and a staffed agent hand the person the box with `request_box_help` so they
+    fill it in themselves, then dispatch the helper again. Never to swap the job for a safer
+    one, never to invent the details (8 October 2026, the same log).
+  - **"Couldn't attach" on the Mac.** The stage step now takes the bytes in any shape the
+    bridge delivers (Uint8Array, ArrayBuffer, Buffer, DataView, array) and writes a line to
+    the Mac's main log when it refuses or fails: `[simeon] attachment stage refused …` or
+    `[simeon] attachment stage failed: <error>`, and `[simeon] attachment commit failed:
+    <error>` when the upload to the host fails (for example "No active agent to attach to").
+    Read that line before reasoning about a failed attachment.
   - **The launch of a background subagent is reviewed with the conversation.** Until 7 October
     2026 the review for that surface read "Recent conversation: (none)" (the other surfaces
     carried it), so a check the person had asked for on the call was blocked as "without a
@@ -676,7 +695,7 @@ the API):
   `desktop.voice.foreign_conversation`.
 * **Known limits.** The allowance is checked when a call starts, not during it, and a call is
   billed only when the app says it ended: a call the app never ends is not billed. At about
-  33,000 credits a minute the hourly brake (200,000) stops a new call after roughly six
+  33,000 credits a minute the hourly brake (1,000,000 since 8 October 2026; 200,000 before) stops a new call after roughly six
   minutes of calling in an hour. ElevenLabs bills the voice's model on top of the minute; the
   margin is meant to cover it. The $0.08 figure was not read off ElevenLabs' price page. Two
   API processes making the first call at once can each create a platform agent; every later

@@ -93,7 +93,7 @@ export function staffedFirstRunCue(args: { readonly fromName: string; readonly p
   const user = first == null ? "your user" : `your user, ${first}`;
   return [
     `[first run] You were just created, and the message below from ${args.fromName} is your first: it is your staffing, the brief for your job. ${args.fromName} is another of your user's agents, not the user.`,
-    `In this one turn: read the brief, then write to ${user} with SendMessage: one or two sentences introducing yourself as the one now handling this and what you'll do first. If the job needs an app that isn't connected, propose it with ProposeConnector, one card per service, instead of describing setup. Then start whatever you can start.`,
+    `In this one turn: read the brief, then write to ${user} with SendMessage: one or two sentences introducing yourself as the one now handling this and what you'll do first. If the job needs an app that isn't connected, propose it with ProposeConnector, one card per service, instead of describing setup. Then start whatever you can start. When a step needs the user's own details on a site (a quote, a booking, an application), drive to that form and hand them your computer with request_box_help so they fill it in; never swap the job for a safer one and never invent their details.`,
     `You report to the user in this chat, and to ${args.fromName} only when the brief asks you to. Do not reply to ${args.fromName} just to acknowledge. Don't mention this cue.`,
   ].join("\n");
 }

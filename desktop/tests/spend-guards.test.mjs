@@ -51,18 +51,18 @@ async function drain(executor) {
   return result;
 }
 
-test("step caps: the upstream app's 5,000 for an asked turn, 40 for a hidden one, both overridable", async () => {
+test("step caps: the upstream app's 5,000 for an asked turn and, since 8 October 2026, for a hidden one; both overridable", async () => {
   const loaded = await loadModule("tests/fixtures/simeon-host-loop-entry.ts", "step-caps");
   try {
     const { module } = loaded;
     assert.equal(module.SAND_AGENT_MAX_STEPS, 5_000);
-    assert.equal(module.SAND_HIDDEN_TURN_MAX_STEPS, 40);
+    assert.equal(module.SAND_HIDDEN_TURN_MAX_STEPS, 5_000);
     assert.equal(module.resolveSandAgentStepCap({}, {}), 5_000);
-    assert.equal(module.resolveSandAgentStepCap({ hidden: true }, {}), 40);
+    assert.equal(module.resolveSandAgentStepCap({ hidden: true }, {}), 5_000);
     assert.equal(module.resolveSandAgentStepCap({ hidden: true }, { SAND_HIDDEN_TURN_MAX_STEPS: "12" }), 12);
     assert.equal(module.resolveSandAgentStepCap({ hidden: false }, { SAND_AGENT_MAX_STEPS: "300" }), 300);
     assert.equal(module.resolveSandAgentStepCap({ hidden: true }, { SAND_AGENT_MAX_STEPS: "20" }), 20, "a hidden turn never exceeds the asked cap");
-    assert.equal(module.resolveSandAgentStepCap({ hidden: true }, { SAND_HIDDEN_TURN_MAX_STEPS: "nope" }), 40);
+    assert.equal(module.resolveSandAgentStepCap({ hidden: true }, { SAND_HIDDEN_TURN_MAX_STEPS: "nope" }), 5_000);
     assert.match(module.stepBudgetExceededMessage(40, true), /without being asked.*40 model calls/);
   } finally {
     await loaded.dispose();
@@ -94,6 +94,31 @@ test("a hidden session refuses its 41st model call; an asked session keeps going
   }
 });
 
+test("a call that produces neither text nor a tool call writes an empty-answer line (8 October 2026)", async () => {
+  const loaded = await loadModule("tests/fixtures/simeon-host-loop-entry.ts", "empty-answer");
+  const unpin = pin(loaded.module, loaded.dataDir);
+  const previousFetch = globalThis.fetch;
+  const lines = [];
+  try {
+    loaded.module.setModelCallLog((line) => lines.push(line));
+    globalThis.fetch = async (input, init) => textStream("", JSON.parse(init?.body ?? "{}").model);
+    const state = [{ role: "system", content: "brief" }, { role: "user", content: [{ type: "text", text: "hi" }] }];
+    const result = await drain(loaded.module.createProviderPromptSession("simeon", { hidden: true, callReason: "wake" }).getExecutor(state));
+    await result.extendedUsage;
+    assert.equal(lines.length, 2);
+    assert.match(lines[0], / outcome=empty reason=wake$/);
+    assert.match(lines[1], /^\[simeon\] empty-answer model=gpt-6-sol effort=high reason=wake output=130 reasoning=90$/);
+    assert.equal(loaded.module.modelCallOutcome(0, 0), "empty");
+    assert.equal(loaded.module.modelCallOutcome(1, 0), "tools");
+    assert.equal(loaded.module.modelCallOutcome(0, 4), "text");
+  } finally {
+    loaded.module.setModelCallLog(null);
+    globalThis.fetch = previousFetch;
+    unpin();
+    await loaded.dispose();
+  }
+});
+
 test("every model call writes one line with its tokens, and cached tokens are counted", async () => {
   const loaded = await loadModule("tests/fixtures/simeon-host-loop-entry.ts", "call-log");
   const unpin = pin(loaded.module, loaded.dataDir);
@@ -109,7 +134,7 @@ test("every model call writes one line with its tokens, and cached tokens are co
     assert.equal(usage.inputTokens, 1_000, "input is what was not cached");
     assert.equal(usage.outputTokens, 130);
     assert.equal(lines.length, 1);
-    assert.match(lines[0], /^\[simeon\] model=gpt-6-sol effort=medium input=60000 cached=59000 output=130 reasoning=90 ms=\d+ tools=- offered=- budget=5000 prefix=sys:[0-9a-f]{8},tools:[0-9a-f]{8},key:-$/);
+    assert.match(lines[0], /^\[simeon\] model=gpt-6-sol effort=high input=60000 cached=59000 output=130 reasoning=90 ms=\d+ tools=- offered=- budget=5000 prefix=sys:[0-9a-f]{8},tools:[0-9a-f]{8},key:- outcome=text reason=chat$/);
     assert.equal(loaded.module.summarizeToolCalls([{ toolName: "SendMessage", args: { text: "hello there" } }, { toolName: "run_shell", args: { command: "ls" } }]), 'SendMessage({"text":"hello there"}) run_shell({"command":"ls"})');
   } finally {
     loaded.module.setModelCallLog(null);
@@ -204,13 +229,14 @@ test("the narration prints the failure's sentence, not only its type", async () 
   assert.equal((client.match(/causeDetail: error instanceof Error \? error\.message : String\(error\)/g) ?? []).length, 2);
 });
 
-test("the first message and a routine get the upstream app's 5,000 calls; nudges and wake-ups keep 40", async () => {
+test("the first message, a routine, nudges and wake-ups all get the upstream app's 5,000 calls; a hidden cap set in the environment names itself", async () => {
   const loaded = await loadModule("source/host/extensions/inference/provider-session.ts", "full-step-budget");
   try {
     const { createModelCallBudget, spendModelCall } = loaded.module;
     const env = {};
     assert.equal(createModelCallBudget({}, env).limit, 5000);
-    assert.equal(createModelCallBudget({ hidden: true }, env).limit, 40);
+    assert.equal(createModelCallBudget({ hidden: true }, env).limit, 5000);
+    assert.equal(createModelCallBudget({ hidden: true }, { SAND_HIDDEN_TURN_MAX_STEPS: "40" }).limit, 40);
     const full = createModelCallBudget({ hidden: true, fullStepBudget: true }, env);
     assert.equal(full.limit, 5000);
     assert.equal(full.hidden, true, "still a hidden run: it is not the person's turn");

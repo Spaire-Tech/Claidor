@@ -33,18 +33,18 @@ async function load(entry, name) {
   return { module, dispose: () => rm(dir, { recursive: true, force: true }) };
 }
 
-test("the box host reads Simeon's gate table, and auto-review enforces on it", async () => {
+test("the box host reads Simeon's gate table; auto-review is off in it, as the upstream ships it, and enforces only when a table says so", async () => {
   const experiments = await src("host/extensions/experiments/extension.ts");
   assert.match(experiments, /applySimeonGateDefaults\(new SandExperimentService\(\{/, "the host wraps its service the way the Mac does");
   const { module, dispose } = await load("source/shared/node/experiments/simeon-gate-defaults.ts", "gate-defaults");
   try {
-    assert.equal(module.simeonGateDefault("sand_auto_review", {}), true);
+    assert.equal(module.simeonGateDefault("sand_auto_review", {}), false, "off since 8 October 2026: shadow, no card, as the upstream ships it");
     assert.equal(module.simeonGateDefault("sand_product_analytics", {}), false);
-    assert.equal(module.simeonGateDefault("sand_auto_review", { SAND_FEATURE_GATE_OVERRIDES: "sand_auto_review=0" }), false, "the env kill switch still wins");
+    assert.equal(module.simeonGateDefault("sand_auto_review", { SAND_FEATURE_GATE_OVERRIDES: "sand_auto_review=1" }), true, "the environment can turn it on");
     const bare = { checkFeatureGate: () => false, getSnapshot: () => ({ featureGates: { sand_auto_review: false } }), subscribe: () => () => {}, getFeatureFlagOverridesRecord: () => ({}) };
     const wrapped = module.applySimeonGateDefaults(bare, {});
-    assert.equal(wrapped.checkFeatureGate("sand_auto_review"), true);
-    assert.equal(wrapped.getSnapshot().featureGates.sand_auto_review, true);
+    assert.equal(wrapped.checkFeatureGate("sand_auto_review"), false);
+    assert.equal(wrapped.getSnapshot().featureGates.sand_auto_review, false);
   } finally {
     await dispose();
   }

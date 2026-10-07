@@ -1064,6 +1064,8 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                   extractProductionTurnAutoReviewConversationContext,
                 getApprovalExpiryPolicy: () =>
                   sandAutoReviewApprovalExpiryPolicy("turn"),
+                onShadowCaptureFailed: (message: string) =>
+                  logHostLine(`${HOST_LOG_PREFIX} auto-review probe failed in shadow, action allowed: ${message}`),
                 resolveDisplayNumber: async (context: unknown) => {
                   await method(remoteBox, "ensureReady")?.(context, session.id);
                   const windowIndex = boxAgentWindowIndex(remoteBox as any, session.id);
@@ -1113,6 +1115,8 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                   extractProductionTurnAutoReviewConversationContext,
                 getApprovalExpiryPolicy: () =>
                   sandAutoReviewApprovalExpiryPolicy("turn"),
+                onShadowCaptureFailed: (message: string) =>
+                  logHostLine(`${HOST_LOG_PREFIX} auto-review probe failed in shadow, action allowed: ${message}`),
                 resolveDisplayNumber: async (context: unknown) => {
                   await method(remoteBox, "ensureReady")?.(context, session.id);
                   const windowIndex = boxAgentWindowIndex(remoteBox as any, session.id);

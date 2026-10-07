@@ -74,8 +74,9 @@ test("machinery sessions stay on Luna; unknown the upstream app model ids cannot
     assert.equal(simeonModelForSession(), "gpt-6-sol");
     assert.equal(simeonModelForSession({ cheap: true }), "gpt-6-luna");
     assert.equal(simeonModelForSession({ isSummarizationSession: true, modelId: "gemini-2.5-flash" }), "gpt-6-luna");
-    assert.equal(simeonModelForSession({ isComputerUseSubagent: true }), "gpt-6-luna");
-    assert.equal(simeonModelForSession({ isBrowserUseSubagent: true }), "gpt-6-luna");
+    // The helpers that act on a screen run on the main model, as the upstream's do (8 October 2026).
+    assert.equal(simeonModelForSession({ isComputerUseSubagent: true }), "gpt-6-sol");
+    assert.equal(simeonModelForSession({ isBrowserUseSubagent: true }), "gpt-6-sol");
     assert.equal(simeonModelForSession({ model: "gpt-6-luna" }), "gpt-6-luna");
     assert.equal(simeonModelForSession({ modelId: "gpt-6-luna" }), "gpt-6-luna");
     assert.equal(simeonModelForSession({ modelId: "grok-4.5" }), "gpt-6-sol");

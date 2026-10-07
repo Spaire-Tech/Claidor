@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { Buffer } from "node:buffer";
 import { buildHostShellArgs } from "../../box/box-shell-command.js";
 import { navigationProbeCommand } from "../sand-action-audit.js";
@@ -249,8 +250,40 @@ export function createScreenshotTool<Context>(deps: ComputerToolDependencies<Con
   };
 }
 
+/**
+ * The loop guard (8 October 2026). The insurance log of 6 October showed a
+ * helper send the same click and the same ZIP code to the same screen four
+ * times over; nothing in the upstream app stops that, its prompt only says
+ * "don't loop". The guard keys each action on the screen it acts on (the
+ * hash of the screenshot the previous action returned) and the exact
+ * action; the third identical pair in a row of recent actions is refused
+ * with a sentence that says so, and the model has to look again or report.
+ */
+export const SAND_COMPUTER_LOOP_LIMIT = 3;
+export const SAND_COMPUTER_LOOP_WINDOW = 12;
+export const SAND_COMPUTER_LOOP_MESSAGE = "Not run: this is the third time you have sent exactly this action to exactly this screen, and the screen did not change after the first two. Repeating it will not change anything. Look at the latest screenshot again and choose a different approach (another element, a scroll, a keyboard route, a reload), or stop and report what you see and what is blocking you.";
+export function createComputerLoopGuard(limit = SAND_COMPUTER_LOOP_LIMIT, window = SAND_COMPUTER_LOOP_WINDOW) {
+  const recent: string[] = [];
+  let screen = "";
+  return {
+    /** Says whether this action on the current screen is the `limit`th in a row of recent ones; records it when allowed. */
+    check(exactAction: unknown): boolean {
+      const key = `${screen}|${JSON.stringify(exactAction)}`;
+      if (recent.filter((entry) => entry === key).length >= limit - 1) { recent.length = 0; return false; }
+      recent.push(key);
+      if (recent.length > window) recent.shift();
+      return true;
+    },
+    /** The screen the next action acts on: the screenshot the last action returned. */
+    sawScreen(screenshotBase64: string | undefined): void {
+      screen = screenshotBase64 == null || screenshotBase64.length === 0 ? "" : createHash("sha1").update(screenshotBase64).digest("hex");
+    },
+  };
+}
+
 export function createComputerTool<Context>(deps: ComputerToolDependencies<Context>) {
   const parameters = buildComputerParameters(deps.autoReview);
+  const loopGuard = createComputerLoopGuard();
   return {
     id: "OPENAI_COMPUTER_USE", name: "Computer", parameters,
     async execute(raw: unknown, meta: { context: Context; toolCallId?: string; signal?: AbortSignal; stateHandler?: unknown; workspacePaths?: readonly string[] }): Promise<ComputerUseResult> {
@@ -259,6 +292,7 @@ export function createComputerTool<Context>(deps: ComputerToolDependencies<Conte
       const sequence = [primary, ...(then ?? [])];
       const actions = sequence.map(toAction);
       if (sequence.at(-1)?.action !== "screenshot") actions.push(toAction({ action: "screenshot" }));
+      if (primary.action !== "screenshot" && !loopGuard.check(toExactActionArgs(parsed))) return { result: { case: "error", value: { error: SAND_COMPUTER_LOOP_MESSAGE } } };
       if (deps.autoReview != null) {
         await runSandComputerAutoReviewPreflight({
           ctx: meta.context as unknown as import("../../../packages/context/core.js").Context,
@@ -283,11 +317,13 @@ export function createComputerTool<Context>(deps: ComputerToolDependencies<Conte
       const reported = reportedBatchPosition(sequence);
       if (reported != null) deps.onComputerAction?.(reported);
       const description = parsed.description?.trim();
-      return executeAndPersistComputerUse(meta.context, deps, {
+      const result = await executeAndPersistComputerUse(meta.context, deps, {
         toolCallId: meta.toolCallId ?? "", actions,
         ...(deps.isUnicodeTypingEnabled?.() === true ? { bindUnmappedCharacters: true } : {}),
         ...(description == null || description.length === 0 ? {} : { description }),
       });
+      loopGuard.sawScreen(result.result.case === "success" ? (result.result.value as ComputerUseSuccess).screenshot : undefined);
+      return result;
     },
     render: (output: ComputerUseResult) => ({ content: describeOutcome(output, "computer") }),
   };

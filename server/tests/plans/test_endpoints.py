@@ -31,7 +31,7 @@ class TestPlans:
         assert [item["tier"] for item in items] == ["standard", "pro", "max"]
         assert items[0]["monthly_price_cents"] == 2000
         assert items[0]["annual_price_cents"] == 19200
-        assert items[0]["weekly_credits"] == 750_000
+        assert items[0]["weekly_credits"] == 3_750_000
         assert items[0]["trial_days"] == 7
         assert items[2]["monthly_lookup_key"] == "simeon_max_month"
 

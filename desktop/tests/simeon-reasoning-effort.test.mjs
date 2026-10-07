@@ -7,13 +7,13 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { build } from "esbuild";
 
-// Reasoning effort follows the role. The upstream app ran its agent loop at high
-// (SAND_DEFAULT_MODEL_SELECTION, effort high); since 2 October 2026 the loop
-// starts at medium and climbs to high once a turn keeps working, the turns
-// that only react (a nudge, a background wake) run at low, and the cheap
-// roles — summarization, memory, the computer and browser subagents — stay
-// at low (SAND_COMPUTER_USE_MODEL_SELECTION, effort low). Read off the wire,
-// not off the helper alone: the fake Responses server records the body.
+// Reasoning effort follows the role, as the upstream app sets it: the agent
+// loop at high (SAND_DEFAULT_MODEL_SELECTION), the cheap roles (summarization,
+// memory) and the screen helpers (computer, browser) at low
+// (SAND_COMPUTER_USE_MODEL_SELECTION). From 2 to 8 October 2026 the loop ran a
+// ladder (medium, then low after tool results); the ladder stays with every
+// rung at high, and the environment can lower a rung. Read off the wire, not
+// off the helper alone: the fake Responses server records the body.
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -53,7 +53,7 @@ async function collect(executor) {
   await result.response;
 }
 
-test("effort follows the role: medium on the loop, low on the cheap sessions", async () => {
+test("effort follows the role: high on the loop, low on the cheap sessions and the screen helpers", async () => {
   const loaded = await loadHarness();
   const unpin = pin(loaded.module, loaded.dataDir);
   const previousFetch = globalThis.fetch;
@@ -71,10 +71,10 @@ test("effort follows the role: medium on the loop, low on the cheap sessions", a
     await collect(loaded.module.createProviderPromptSession("simeon", { isBrowserUseSubagent: true }).getExecutor(state));
 
     assert.deepEqual(requests.map((body) => [body.model, body.reasoning?.effort]), [
-      ["gpt-6-sol", "medium"],
+      ["gpt-6-sol", "high"],
       ["gpt-6-luna", "low"],
-      ["gpt-6-luna", "low"],
-      ["gpt-6-luna", "low"],
+      ["gpt-6-sol", "low"],
+      ["gpt-6-sol", "low"],
     ]);
   } finally {
     globalThis.fetch = previousFetch;
@@ -104,10 +104,10 @@ test("the text helper carries the effort too, and the environment can override b
     process.env.SAND_SIMEON_REASONING_EFFORT = "turbo";
     await loaded.module.runRoutedProviderText("simeon", messages);
 
-    assert.deepEqual(requests.map((body) => body.reasoning?.effort), ["medium", "low", "medium", "low", "medium"]);
-    assert.equal(loaded.module.DEFAULT_SIMEON_REASONING_EFFORT, "medium");
+    assert.deepEqual(requests.map((body) => body.reasoning?.effort), ["high", "low", "medium", "low", "high"]);
+    assert.equal(loaded.module.DEFAULT_SIMEON_REASONING_EFFORT, "high");
     assert.equal(loaded.module.DEFAULT_SIMEON_CHEAP_REASONING_EFFORT, "low");
-    assert.equal(loaded.module.simeonReasoningEffortForSession({ modelId: "gpt-6-luna" }, {}), "medium", "a model name is not a role; effort follows the role flags");
+    assert.equal(loaded.module.simeonReasoningEffortForSession({ modelId: "gpt-6-luna" }, {}), "high", "a model name is not a role; effort follows the role flags");
   } finally {
     globalThis.fetch = previousFetch;
     unpin();
@@ -138,7 +138,7 @@ test("GPT-6 reaches OpenAI as a reasoning model under its real name, and falls b
   }
 });
 
-test("effort follows the step: the request at the session's level, tool results at low, an error at high", async () => {
+test("effort per step: every rung at high since 8 October 2026; the environment can lower the step after a tool result", async () => {
   const loaded = await loadHarness();
   const unpin = pin(loaded.module, loaded.dataDir);
   const previousFetch = globalThis.fetch;
@@ -157,18 +157,18 @@ test("effort follows the step: the request at the session's level, tool results 
     const efforts = async (options, states) => { const session = loaded.module.createProviderPromptSession("simeon", options); for (const state of states) await collect(session.getExecutor(state)); return requests.splice(0).map((body) => body.reasoning?.effort); };
     const steps = [asked, [...asked, call, result], [...asked, call, failed], [...asked, call, result, { role: "user", content: "reminder from the loop" }]];
 
-    assert.deepEqual(await efforts(undefined, steps), ["medium", "low", "high", "medium"]);
-    assert.deepEqual(await efforts({ hidden: true, fullStepBudget: true, callReason: "routine" }, steps), ["medium", "low", "high", "medium"]);
-    assert.deepEqual(await efforts({ hidden: true, callReason: "agent_wake" }, steps), ["medium", "low", "high", "medium"]);
-    // A turn that only reacts starts at low.
-    assert.deepEqual(await efforts({ hidden: true, callReason: "nudge" }, steps), ["low", "low", "high", "low"]);
-    assert.deepEqual(await efforts({ hidden: true, callReason: "wake" }, steps), ["low", "low", "high", "low"]);
-    assert.deepEqual(await efforts({ hidden: true }, steps), ["low", "low", "high", "low"]);
-    // The cheap roles keep their own level.
+    assert.deepEqual(await efforts(undefined, steps), ["high", "high", "high", "high"]);
+    assert.deepEqual(await efforts({ hidden: true, fullStepBudget: true, callReason: "routine" }, steps), ["high", "high", "high", "high"]);
+    assert.deepEqual(await efforts({ hidden: true, callReason: "agent_wake" }, steps), ["high", "high", "high", "high"]);
+    // A turn that only reacts thinks as hard as any (low from 2 to 8 October 2026).
+    assert.deepEqual(await efforts({ hidden: true, callReason: "nudge" }, steps), ["high", "high", "high", "high"]);
+    assert.deepEqual(await efforts({ hidden: true, callReason: "wake" }, steps), ["high", "high", "high", "high"]);
+    assert.deepEqual(await efforts({ hidden: true }, steps), ["high", "high", "high", "high"]);
+    // The screen helpers keep their own level.
     assert.deepEqual(await efforts({ isComputerUseSubagent: true }, steps), ["low", "low", "low", "low"]);
-    // The step level can be raised without a rebuild.
+    // The step after a tool result can be lowered without a rebuild.
     process.env.SAND_SIMEON_TOOL_RESULT_EFFORT = "medium";
-    assert.deepEqual(await efforts(undefined, steps), ["medium", "medium", "high", "medium"]);
+    assert.deepEqual(await efforts(undefined, steps), ["high", "medium", "high", "high"]);
     delete process.env.SAND_SIMEON_TOOL_RESULT_EFFORT;
     // One level in the environment holds everywhere but the cheap roles.
     process.env.SAND_SIMEON_REASONING_EFFORT = "high";

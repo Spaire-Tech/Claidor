@@ -8,19 +8,26 @@
 // (`docs/services-core.md`). SAND_AGENT_MAX_STEPS and
 // SAND_HIDDEN_TURN_MAX_STEPS override the two numbers.
 export const SAND_AGENT_MAX_STEPS = 5_000;
-export const SAND_HIDDEN_TURN_MAX_STEPS = 40;
+// Restored to the asked turn's cap on 8 October 2026: a revival after a
+// helper finishes is a hidden turn, and it is exactly when a long job is
+// picked back up. SAND_HIDDEN_TURN_MAX_STEPS still lowers it.
+export const SAND_HIDDEN_TURN_MAX_STEPS = 5_000;
 export const SAND_AGENT_MAX_STEPS_ENV = "SAND_AGENT_MAX_STEPS";
 export const SAND_HIDDEN_TURN_MAX_STEPS_ENV = "SAND_HIDDEN_TURN_MAX_STEPS";
 // A routine's run, since 2 October 2026: 200 calls, not the asked turn's
 // 5,000. A routine runs unattended, often every day, so its worst run is
 // paid on every fire; 200 calls is a long task (a real turn rarely passes
 // 30) at a ceiling of a few dollars rather than tens.
-export const SAND_ROUTINE_MAX_STEPS = 200;
+// Restored to the asked turn's cap on 8 October 2026 (the founder: "bring
+// back everything"); SAND_ROUTINE_MAX_STEPS still lowers it.
+export const SAND_ROUTINE_MAX_STEPS = 5_000;
 export const SAND_ROUTINE_MAX_STEPS_ENV = "SAND_ROUTINE_MAX_STEPS";
 // How many messages agents may pass in a row, each waking the next, before a
 // person has to step in: three round trips (2 October 2026). The upstream app had
 // only a sentence in the prompt asking agents not to bounce back and forth.
-export const SAND_AGENT_MESSAGE_MAX_HOPS = 6;
+// No cap since 8 October 2026, as the upstream app has none; the refusal
+// machinery stays, and SAND_AGENT_MESSAGE_MAX_HOPS sets a cap on purpose.
+export const SAND_AGENT_MESSAGE_MAX_HOPS = Number.POSITIVE_INFINITY;
 export const SAND_AGENT_MESSAGE_MAX_HOPS_ENV = "SAND_AGENT_MESSAGE_MAX_HOPS";
 
 function readStepCap(env: NodeJS.ProcessEnv, name: string, fallback: number): number {

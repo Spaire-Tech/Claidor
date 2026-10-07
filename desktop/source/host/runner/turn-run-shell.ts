@@ -41,7 +41,6 @@ import {
   type TurnSettleHost,
   type TurnSettleResult,
 } from "./turn-settle.js";
-import { logPlainTextReplyDelivered, plainTextReplyToDeliver } from "./plain-text-reply.js";
 import type {
   InactiveTurnAgentStreamPath,
   InactiveTurnAgentStreamLifecycleInput,
@@ -793,20 +792,6 @@ export function createTurnRunShell(host: TurnRunShellHost) {
           baseContext: context,
           requestId,
         });
-        const reply = prepared.emitUpdate === undefined ? null : plainTextReplyToDeliver({
-          ...settle.snapshot(),
-          hidden: options.hidden === true,
-          isSubagentRunner: host.isSubagentRunner,
-        });
-        if (reply !== null) {
-          prepared.emitUpdate?.({
-            type: "send-message",
-            message: { type: "text", content: reply },
-            timestampMs: Date.now(),
-            ...(options.ackToken === undefined ? {} : { ackToken: options.ackToken }),
-          });
-          logPlainTextReplyDelivered(reply);
-        }
       }
     } catch (error) {
       endLifecycle();

@@ -60,7 +60,9 @@ function resolveAutomationStreamRetryPolicy(
 // whole month in a day; a routine past the cap waits until its oldest run of
 // the day is 24 hours old. Counted in memory: a restart of the host starts
 // the count again. Runs the person starts by hand are not counted.
-export const ROUTINE_MAX_RUNS_PER_DAY = 24;
+// No cap since 8 October 2026, as the upstream app has none (24 from 2
+// October to then); SAND_ROUTINE_MAX_RUNS_PER_DAY sets one on purpose.
+export const ROUTINE_MAX_RUNS_PER_DAY = Number.POSITIVE_INFINITY;
 const DAY_MS = 24 * 60 * 60_000;
 
 /** Records a run at `now` and says true, or says false when `cap` runs already fell in the last day. */

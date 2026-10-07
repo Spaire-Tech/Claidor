@@ -90,6 +90,8 @@ export interface SandComputerAutoReviewOptions {
   readonly boxIdentity: BoxIdentity;
   readonly autoReviewController?: SandAutoReviewController;
   readonly resolveDisplayNumber: (ctx: Context) => Promise<number | undefined>;
+  /** In shadow mode, told when the page-state probe failed and the review was skipped; the action still runs. */
+  readonly onShadowCaptureFailed?: (message: string) => void;
   readonly personalInstructions?: { readonly allowInstructions?: readonly string[]; readonly blockInstructions?: readonly string[] };
   readonly userAutoRunInstructions?: { readonly allowInstructions?: readonly string[]; readonly blockInstructions?: readonly string[] };
   readonly projectAutoRunInstructions?: { readonly allowInstructions?: readonly string[]; readonly blockInstructions?: readonly string[] };
@@ -152,7 +154,15 @@ export async function runSandComputerAutoReviewPreflight(args: {
   const { options } = args, action = args.exactAction.action;
   if (options.mode === "off" || !isSandComputerAutoReviewMutatingAction(action)) return;
   if (options.mode === "enforce" && requiresSandComputerDeclaredDescription(action) && normalizeSandComputerDescription(args.description) == null) throw new SandComputerAutoReviewBlockedError("Computer click and drag actions require a concise description field stating the intended UI target and purpose.");
-  const canonical = buildSandComputerAutoReviewCanonicalTarget({ exactAction: args.exactAction, ...(args.description == null ? {} : { description: args.description }), boxIdentity: options.boxIdentity, displayStateIdentity: await options.captureDisplayStateIdentity(args.ctx, args.toolCallId) });
+  // In shadow the review only watches: a display probe that fails must not
+  // stop the action (8 October 2026).
+  let displayStateIdentity: string;
+  try { displayStateIdentity = await options.captureDisplayStateIdentity(args.ctx, args.toolCallId); } catch (error) {
+    if (options.mode !== "shadow" || (error instanceof Error && error.name === "AbortError")) throw error;
+    options.onShadowCaptureFailed?.(error instanceof Error ? error.message : String(error));
+    return;
+  }
+  const canonical = buildSandComputerAutoReviewCanonicalTarget({ exactAction: args.exactAction, ...(args.description == null ? {} : { description: args.description }), boxIdentity: options.boxIdentity, displayStateIdentity });
   const recheck = async (): Promise<void> => { if (await options.captureDisplayStateIdentity(args.ctx, args.toolCallId) !== canonical.displayStateIdentity) { options.autoReviewController?.reportDisplayRecheckFailed(options.agentId); throw new SandComputerAutoReviewBlockedError("The page changed after review; inspect the latest screenshot and retry the action."); } };
   const classifierArgs = {
     options,
