@@ -251,7 +251,10 @@ test("sign-out posts the departing bearer to /desktop/api/auth/logout, best effo
     const failures = [];
     assert.equal(await revokeSimeonSession("t", { backendUrl: "https://api.simeonlabs.com", fetch: async () => new Response("", { status: 500 }), reportFailure: (error) => failures.push(error.message) }), false);
     assert.equal(await revokeSimeonSession("t", { backendUrl: "https://api.simeonlabs.com", fetch: async () => { throw new Error("ECONNREFUSED"); }, reportFailure: (error) => failures.push(error.message) }), false);
+    // The deadline timer is unref'd so it never keeps the app alive; here nothing else holds the loop open.
+    const keepLoopAlive = setInterval(() => {}, 1_000);
     assert.equal(await revokeSimeonSession("t", { backendUrl: "https://api.simeonlabs.com", timeoutMs: 20, fetch: (_input, init) => new Promise((_resolve, reject) => init.signal.addEventListener("abort", () => reject(init.signal.reason))), reportFailure: (error) => failures.push(error.message) }), false);
+    clearInterval(keepLoopAlive);
     assert.equal(await revokeSimeonSession("", { fetch: async () => { throw new Error("must not fetch"); } }), false);
     assert.deepEqual(failures, ["Sign-out on Simeon Labs' server answered 500.", "ECONNREFUSED", "Sign-out on Simeon Labs' server timed out."]);
   } finally {

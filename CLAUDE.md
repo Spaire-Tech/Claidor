@@ -77,6 +77,7 @@ python3 scripts/check_names.py
   internal testing only (`SAND_BOX_RUNTIME=local-docker`).
 - The server tests have failures that also fail on `main` (billing and
   subscription tests of the inherited shop code); compare against `main`
-  before calling a failure new. Three desktop tests also fail on `main`.
+  before calling a failure new. The desktop suite passes on `main` and gates
+  `npm run package`; a red suite means no app is built.
 - The shop code (checkout, subscriptions, payouts) is inherited and kept;
   Simeon does not sell through it today.

@@ -140,6 +140,8 @@ test("the starter reads the token file, retries a busy port, and never fails the
     assert.equal(readBoxStreamNetworkToken({ SAND_BOX_STREAM_NETWORK_TOKEN: ` ${TOKEN} ` }), TOKEN);
     const env = { SAND_BOX_STREAM_NETWORK_TOKEN: TOKEN };
     let calls = 0;
+    // The retry timer is unref'd so it never keeps the host alive; here nothing else holds the loop open.
+    const keepLoopAlive = setInterval(() => {}, 1_000);
     const started = await startBoxStreamGuardFromEnv({ env, log: () => {}, retryDelayMs: 1, start: async (options) => { calls += 1; assert.equal(options.token, TOKEN); if (calls < 3) throw new Error("EADDRINUSE"); return { ports: [16080], close: async () => {} }; } });
     assert.equal(calls, 3);
     assert.deepEqual(started.ports, [16080]);
@@ -147,6 +149,7 @@ test("the starter reads the token file, retries a busy port, and never fails the
     const gaveUp = await startBoxStreamGuardFromEnv({ env, log: (line) => lines.push(line), retryDelayMs: 1, maxAttempts: 2, start: async () => { throw new Error("EADDRINUSE"); } });
     assert.equal(gaveUp, undefined);
     assert.match(lines.at(-1), /box-stream guard could not start \(EADDRINUSE\)/);
+    clearInterval(keepLoopAlive);
   } finally {
     await loaded.dispose();
   }
