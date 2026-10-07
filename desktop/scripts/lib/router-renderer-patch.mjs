@@ -979,33 +979,41 @@ export function patchOriginalFlightsStylesheet(css) {
  * "computer-demo"), drawn with the window's own pieces: the step layout and
  * title (`tye`), Back and Next (`nye`), stage placement (`fde`) and the
  * agents' own animated avatars (`sd`), in the twelve palettes. Simeon is the
- * flow's hero avatar, which glides to the centre (`QBn`); six agents leave
- * it one after another on an expo-out curve and settle in a ring, each
- * joined to it by a hairline that draws in, its job in grey beneath; then
- * one line of copy. People who reduce motion get the finished picture.
+ * flow's hero avatar, already at the centre from the Meet step (`QBn`).
+ *
+ * Redrawn 8 October 2026 after the founder's reference (a file graph: nodes
+ * faint, a blue curve drawing from the centre to each, the node coming to
+ * life as the line reaches it; "lines in blue, and an animation that sees
+ * it linking … make it spacious"): three agents a side, 300 px out, each a
+ * faint ghost until its curve arrives, the curves drawn one after another
+ * from Simeon's sides, each job in grey beneath; one line of copy under the
+ * title, which now reads "Simeon is your personal Chief of Staff" so the
+ * copy can say "He". People who reduce motion get the finished picture.
  */
 const COO_HERO_Y = -40;
+const COO_SIDE_X = 300;
 const COO_CREW = Object.freeze([
-  { id: "inbox", label: "Inbox", color: "violet", x: -244, y: -104 },
-  { id: "research", label: "Research", color: "red", x: -226, y: 36 },
-  { id: "travel", label: "Travel", color: "green", x: -86, y: 112 },
-  { id: "finance", label: "Finance", color: "magenta", x: 86, y: 112 },
-  { id: "sales", label: "Sales", color: "orange", x: 226, y: 36 },
-  { id: "content", label: "Content", color: "mint", x: 244, y: -104 },
+  { id: "inbox", label: "Inbox", color: "violet", x: -COO_SIDE_X, y: -150 },
+  { id: "research", label: "Research", color: "red", x: -COO_SIDE_X, y: -40 },
+  { id: "travel", label: "Travel", color: "green", x: -COO_SIDE_X, y: 70 },
+  { id: "finance", label: "Finance", color: "magenta", x: COO_SIDE_X, y: -150 },
+  { id: "sales", label: "Sales", color: "orange", x: COO_SIDE_X, y: -40 },
+  { id: "content", label: "Content", color: "mint", x: COO_SIDE_X, y: 70 },
 ]);
+/** The curve from Simeon's side to an agent's inner edge, in the web's frame (origin at Simeon): an S of two horizontal tangents. */
 const cooLine = ({ x, y }) => {
-  const dx = x, dy = y - COO_HERO_Y, length = Math.hypot(dx, dy), from = 74, to = length - 40;
-  const at = (d) => [Math.round((dx * d) / length), Math.round((dy * d) / length)];
-  const [x1, y1] = at(from), [x2, y2] = at(to);
-  return { x1, y1, x2, y2 };
+  const side = Math.sign(x), x1 = side * 60, x2 = x - side * 40, y2 = y - COO_HERO_Y, mx = Math.round((x1 + x2) / 2);
+  return `M${x1} 0C${mx} 0 ${mx} ${y2} ${x2} ${y2}`;
 };
+export const COO_COPY = "He hires an agent for every job you hand off.";
+export const COO_TITLE = "Simeon is your personal Chief of Staff";
 const COO_SOURCE = [
-  `const __simeonCooCrew=${JSON.stringify(COO_CREW.map((a, i) => ({ ...a, ...cooLine(a), delay: 820 + i * 150 })))};`,
+  `const __simeonCooCrew=${JSON.stringify(COO_CREW.map((a, i) => ({ ...a, d: cooLine(a), delay: 700 + i * 180 })))};`,
   "function __simeonCooStep(n){const{headingId:t,onForward:r,onBack:i}=n,still=Fo();",
-  "const lines=p.jsx(fde,{x:0,y:" + COO_HERO_Y + ",ariaHidden:!0,className:\"simeon-coo__web\",children:p.jsxs(\"svg\",{width:640,height:440,viewBox:\"-320 -220 640 440\",children:[p.jsx(\"circle\",{className:\"simeon-coo__pulse\",cx:0,cy:0,r:64}),...__simeonCooCrew.map(a=>p.jsx(\"line\",{className:\"simeon-coo__line\",x1:a.x1,y1:a.y1,x2:a.x2,y2:a.y2,pathLength:1,style:{animationDelay:`${a.delay+140}ms`}},a.id))]})},\"web\");",
-  "const crew=__simeonCooCrew.map(a=>p.jsx(fde,{x:a.x,y:a.y,ariaHidden:!0,className:\"simeon-coo__seat\",children:p.jsxs(\"div\",{className:\"simeon-coo__agent\",style:{\"--simeon-coo-dx\":`${-a.x}px`,\"--simeon-coo-dy\":`${" + COO_HERO_Y + "-a.y}px`,animationDelay:`${a.delay}ms`},children:[p.jsx(\"div\",{className:\"simeon-coo__float\",style:{animationDelay:`${a.delay+900}ms`},children:p.jsx(sd,{\"aria-hidden\":!0,color:a.color,paused:still,shape:\"cloud\",sizePx:52,state:\"idle\"})}),p.jsx(\"span\",{className:\"simeon-coo__role\",style:{animationDelay:`${a.delay+420}ms`},children:a.label})]})},a.id));",
-  "const line=p.jsx(fde,{x:0,y:-196,className:\"simeon-coo__copy\",children:p.jsx(\"p\",{children:\"Simeon staffs an agent for whatever needs doing.\"})},\"copy\");",
-  "return p.jsx(tye,{className:re(\"sand-onboarding__coo\",\"simeon-coo\"),footer:p.jsx(nye,{onBack:i,onForward:r}),headingId:t,title:\"Your Personal Chief of Staff\",children:[lines,...crew,line]})}",
+  "const lines=p.jsx(fde,{x:0,y:" + COO_HERO_Y + ",ariaHidden:!0,className:\"simeon-coo__web\",children:p.jsx(\"svg\",{width:800,height:400,viewBox:\"-400 -200 800 400\",children:__simeonCooCrew.map(a=>p.jsx(\"path\",{className:\"simeon-coo__line\",d:a.d,pathLength:1,style:{animationDelay:`${a.delay}ms`}},a.id))})},\"web\");",
+  "const crew=__simeonCooCrew.map(a=>p.jsx(fde,{x:a.x,y:a.y,ariaHidden:!0,className:\"simeon-coo__seat\",children:p.jsxs(\"div\",{className:\"simeon-coo__agent\",style:{animationDelay:`${a.delay+520}ms`},children:[p.jsx(sd,{\"aria-hidden\":!0,color:a.color,paused:still,shape:\"cloud\",sizePx:56,state:\"idle\"}),p.jsx(\"span\",{className:\"simeon-coo__role\",children:a.label})]})},a.id));",
+  `const line=p.jsx(fde,{x:0,y:-200,className:"simeon-coo__copy",children:p.jsx("p",{children:${JSON.stringify(COO_COPY)}})},"copy");`,
+  `return p.jsx(tye,{className:re("sand-onboarding__coo","simeon-coo"),footer:p.jsx(nye,{onBack:i,onForward:r}),headingId:t,title:${JSON.stringify(COO_TITLE)},children:[lines,...crew,line]})}`,
 ].join("");
 
 export const COO_REPLACEMENTS = Object.freeze([
@@ -1167,22 +1175,18 @@ export function patchOriginalCooStep(source) {
 }
 
 export const COO_MARKER = "/* Simeon: the Chief of Staff welcome step";
-/** Motion on Apple's curves: expo-out to arrive, a long ease-in-out to breathe. Greys are the system's. */
+/** Curves in the app's blue, drawn on a standard ease; agents brighten on an expo-out. Greys are the system's. */
 export const COO_CSS = `${COO_MARKER} */
-.simeon-coo{--simeon-coo-ink:light-dark(rgba(60,60,67,.6),rgba(235,235,245,.6));--simeon-coo-hair:light-dark(rgba(60,60,67,.16),rgba(235,235,245,.18));--simeon-coo-arrive:cubic-bezier(.16,1,.3,1)}
+.simeon-coo{--simeon-coo-ink:light-dark(rgba(60,60,67,.6),rgba(235,235,245,.6));--simeon-coo-line:light-dark(rgba(10,132,255,.55),rgba(100,170,255,.65));--simeon-coo-arrive:cubic-bezier(.16,1,.3,1)}
 .simeon-coo__web svg{display:block;overflow:visible}
-.simeon-coo__line{stroke:var(--simeon-coo-hair);stroke-width:1;stroke-linecap:round;fill:none;stroke-dasharray:1;stroke-dashoffset:1;animation:simeon-coo-draw .8s var(--simeon-coo-arrive) both}
-.simeon-coo__pulse{fill:none;stroke:var(--simeon-coo-hair);stroke-width:1;transform-origin:0 0;opacity:0;animation:simeon-coo-pulse 1.8s cubic-bezier(.2,.7,.2,1) .7s both}
-.simeon-coo__agent{display:flex;flex-direction:column;align-items:center;gap:8px;animation:simeon-coo-arrive 1.15s var(--simeon-coo-arrive) both}
-.simeon-coo__float{animation:simeon-coo-float 4.8s ease-in-out infinite both}
-.simeon-coo__role{font-size:12px;line-height:16px;letter-spacing:-.01em;color:var(--simeon-coo-ink);white-space:nowrap;animation:simeon-coo-rise .6s var(--simeon-coo-arrive) both}
+.simeon-coo__line{stroke:var(--simeon-coo-line);stroke-width:1.5;stroke-linecap:round;fill:none;stroke-dasharray:1;stroke-dashoffset:1;animation:simeon-coo-draw .9s cubic-bezier(.4,0,.2,1) both}
+.simeon-coo__agent{display:flex;flex-direction:column;align-items:center;gap:8px;animation:simeon-coo-link .8s var(--simeon-coo-arrive) both}
+.simeon-coo__role{font-size:12px;line-height:16px;letter-spacing:-.01em;color:var(--simeon-coo-ink);white-space:nowrap}
 .simeon-coo__copy p{margin:0;font-size:15px;line-height:20px;letter-spacing:-.01em;color:var(--simeon-coo-ink);white-space:nowrap;text-align:center;animation:simeon-coo-rise .9s var(--simeon-coo-arrive) .35s both}
-@keyframes simeon-coo-arrive{from{opacity:0;transform:translate(var(--simeon-coo-dx),var(--simeon-coo-dy)) scale(.3)}14%{opacity:0}42%{opacity:1}to{opacity:1;transform:none}}
+@keyframes simeon-coo-link{from{opacity:.28;transform:scale(.92)}to{opacity:1;transform:none}}
 @keyframes simeon-coo-draw{to{stroke-dashoffset:0}}
-@keyframes simeon-coo-pulse{0%{opacity:.9;transform:scale(1)}100%{opacity:0;transform:scale(3.6)}}
-@keyframes simeon-coo-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
 @keyframes simeon-coo-rise{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){.simeon-coo__line,.simeon-coo__agent,.simeon-coo__float,.simeon-coo__role,.simeon-coo__copy p{animation:none;stroke-dashoffset:0;opacity:1;transform:none}.simeon-coo__pulse{display:none}}
+@media (prefers-reduced-motion:reduce){.simeon-coo__line,.simeon-coo__agent,.simeon-coo__copy p{animation:none;stroke-dashoffset:0;opacity:1;transform:none}}
 `;
 
 export function patchOriginalCooStylesheet(css) {

@@ -134,17 +134,27 @@ test("the sign-in wordmark is set in Suravaram, carried inside the stylesheet", 
   assert.throws(() => patchOriginalWordmarkStylesheet(".a{}", ""), /did not load/);
 });
 
-test("the Chief of Staff step sits after Meet Simeon, with Simeon at the centre and six agents leaving it", async () => {
-  const { COO_REPLACEMENTS, COO_CSS, patchOriginalCooStylesheet } = await import("../scripts/lib/router-renderer-patch.mjs");
+test("the Chief of Staff step sits after Meet Simeon, with Simeon at the centre and six agents linked to him by blue curves", async () => {
+  const { COO_REPLACEMENTS, COO_CSS, COO_TITLE, COO_COPY, patchOriginalCooStylesheet } = await import("../scripts/lib/router-renderer-patch.mjs");
   const [list, title, screen, hero, component] = COO_REPLACEMENTS;
   assert.match(list[2], /\["landing","meet","coo","computer-demo","name","tools"\]/, "the jobs and create steps are out; the name step follows the computer");
   assert.equal(title[2], 'N="Your agents have their own computer and work just like you"');
   assert.match(screen[2], /^case"coo":return p\.jsx\(__simeonCooStep,\{headingId:xn,onBack:\(\)=>x\.goBack\(ln\),onForward:\(\)=>x\.advance\(ln\)\}\);/);
   assert.match(hero[2], /^case"coo":return\{\.\.\.e,x:0,y:-40,scale:1,opacity:1/);
-  assert.match(component[2], /title:"Your Personal Chief of Staff"/);
-  assert.match(component[2], /Simeon staffs an agent for whatever needs doing\./);
+  assert.equal(COO_TITLE, "Simeon is your personal Chief of Staff");
+  assert.equal(COO_COPY, "He hires an agent for every job you hand off.");
+  assert.ok(component[2].includes(`title:${JSON.stringify(COO_TITLE)}`));
+  assert.ok(component[2].includes(JSON.stringify(COO_COPY)));
+  assert.doesNotMatch(component[2], /whatever needs doing/, "the sign-in tagline's words are not repeated");
   assert.equal((component[2].match(/"label":/g) ?? []).length, 6);
+  const crew = JSON.parse(/const __simeonCooCrew=(\[.*?\]);function/.exec(component[2])[1]);
+  assert.deepEqual(crew.map((a) => [a.x, a.y]), [[-300, -150], [-300, -40], [-300, 70], [300, -150], [300, -40], [300, 70]], "three a side, spaced");
+  assert.equal(crew[0].d, "M-60 0C-160 0 -160 -110 -260 -110", "a curve from Simeon's side to the agent's inner edge");
+  assert.equal(crew[4].d, "M60 0C160 0 160 0 260 0");
+  assert.ok(crew.every((a, i) => a.delay === 700 + i * 180), "the curves draw one after another");
   new Function("p", "fde", "tye", "nye", "sd", "re", "Fo", component[2].replace(/function sjn\(n\)\{$/, ""));
+  assert.match(COO_CSS, /--simeon-coo-line:light-dark\(rgba\(10,132,255,\.55\)/, "the curves are blue");
+  assert.match(COO_CSS, /@keyframes simeon-coo-link\{from\{opacity:\.28/, "an agent is a ghost until its curve arrives");
   assert.match(COO_CSS, /prefers-reduced-motion:reduce/);
   assert.throws(() => patchOriginalCooStylesheet(patchOriginalCooStylesheet(".a{}")), /already present/);
 });
