@@ -509,7 +509,7 @@ export const voiceCallCss = () => `${VOICE_CALL_MARKER} (30 September 2026). */
 .simeon-call-record[data-open="true"] .simeon-call-record__recap{grid-template-rows:1fr}
 .simeon-call-record__recap>div{overflow:hidden}
 .simeon-call-record__recap p{margin:8px 0 0;padding:8px 0 0 40px;border-top:1px solid light-dark(rgba(0,0,0,.08),rgba(255,255,255,.10))}
-.simeon-name-sheet{-webkit-app-region:no-drag;position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:16px;background:light-dark(rgba(0,0,0,.18),rgba(0,0,0,.45));-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.simeon-name-sheet{position:fixed;inset:0;z-index:2147483000;-webkit-app-region:no-drag;display:grid;place-items:center;padding:16px;background:light-dark(rgba(0,0,0,.18),rgba(0,0,0,.45));-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 .simeon-name-sheet__card{width:min(360px,100%);display:grid;gap:10px;padding:22px;border-radius:18px;background:light-dark(#fff,#2a2a2c);color:var(--sand-text-primary);box-shadow:0 24px 60px rgba(0,0,0,.22),0 0 0 1px light-dark(rgba(0,0,0,.06),rgba(255,255,255,.08))}
 .simeon-name-sheet__title{margin:0;font-size:17px;line-height:22px;font-weight:600}
 .simeon-name-sheet__note{margin:0;font-size:13px;line-height:18px;color:var(--sand-text-secondary)}
