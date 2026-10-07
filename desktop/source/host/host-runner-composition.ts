@@ -1274,14 +1274,17 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
       getPersonName: () => method(auth, "getUserFullName")?.() ?? null,
       update: async (
         id: string,
-        patch: { name?: string; description?: string }
+        patch: { name?: string; description?: string; avatarColor?: string }
       ) => {
         const current = (await method(transcript, "listAgents")?.())
           ?.find((agent: any) => agent.id === id);
         if (current == null || current.isGroup) return null;
         const summary = await method(transcript, "updateAgent")?.(id, {
           name: patch.name ?? current.name,
-          description: patch.description ?? current.description
+          description: patch.description ?? current.description,
+          // A teammate's colour, so the agent recolours a team in one call
+          // each instead of asking every teammate to draw itself (7 October 2026).
+          ...(patch.avatarColor === undefined ? {} : { avatarColor: patch.avatarColor })
         });
         return summary == null
           ? null

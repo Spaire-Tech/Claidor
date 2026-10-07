@@ -404,6 +404,10 @@ and Ashby connect through Simeon. The provider behind them is never named in the
   skeleton (`payload.parts`) and the `preview` copy go, since the text is in `messageText` and
   every attachment id is in `attachmentList`. A listing without text (`verbose=false`) keeps its
   preview. A message shaped like the Carlton budget email went from 3,694 to 1,884 characters.
+  For every message, a header that repeats its own `sender`, `to` or `subject` exactly goes,
+  and so does the preview's copy of the subject: a listing entry sent to nine people carried
+  the recipient list twice and the subject three times (5,249 → 3,362 characters for three
+  entries from the staffing log).
 * **The provider round trips.** Which accounts a person has connected is asked once a minute at
   most for the agent's tool calls (`connected_account_ids`); "not connected" is never kept, and
   disconnecting forgets it.
@@ -427,10 +431,25 @@ cropped and saved by the same upload path. The roster reads the picture into eve
 (`readAgentAvatarForSummary` in `host/extensions/session/session-summaries.ts`), and an avatar
 change made by the agent itself redraws the roster (`onAvatarChanged`).
 
+**Colours** (7 October 2026). An agent without a picture is drawn as the butterfly in one of
+12 colours (`AGENT_MARK_PALETTES`, `shared/voice-call/agent-mark.ts`); one with no colour
+stored is drawn in the default, Ocean. A new agent now gets the colour fewest agents have
+(`pickAgentColor` in `shared/agents/agent-colors.ts`, called by `mintAgentSession` in
+`host/extensions/transcript/agent-lifecycle.ts`), in an order that puts the most different
+colours first: Ember, Moss, Berry, Lagoon, and so on. Agents are created one at a time, so
+three hired in one step get three colours. A colour given at creation is kept. The agent can
+recolour a teammate with `UpdateAgent` `color` (a label such as `Moss`). Until then every
+new agent was blue. Asked to tell a team apart, the main agent messaged each teammate to draw
+its own picture: two refused, one generated an image, one wrote a script, and each reply woke
+the main agent on its whole conversation (the staffing log). Agents made before this keep the
+default until recoloured. `tests/agent-colors.test.mjs`.
+
 * **Settings on Render.** `SIMEON_OPENAI_API_KEY`.
 * **Log lines.** A failed Generate shows `edge/handler-failed: <the server's sentence>` in the
   editor; on the server, `desktop.proxy.upstream_refused`. The Mac keeps no log for this path.
-* **Not yet verified.** Neither flow has been measured on a Mac since the roster fix.
+* **Not yet verified.** Neither flow has been measured on a Mac since the roster fix. The
+  colours are tested offline only: three agents hired at once have not yet been seen in the
+  window.
 
 ### Keys an agent asks for in the chat
 

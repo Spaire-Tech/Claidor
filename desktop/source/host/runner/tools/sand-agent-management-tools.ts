@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { AGENT_COLOR_LABELS, agentColorIdFromName } from "../../../shared/agents/agent-colors.js";
 import { staffingMessage } from "../../../shared/agents/chief-of-staff.js";
 import {
   SAND_CREATE_AGENT_TOOL_NAME,
@@ -39,7 +40,7 @@ export interface AgentManagementDependencies {
   getPersonName?(): string | null;
   update(
     agentId: string,
-    patch: { readonly name?: string; readonly description?: string },
+    patch: { readonly name?: string; readonly description?: string; readonly avatarColor?: string },
   ): Promise<{ readonly id: string; readonly name: string } | null>;
 }
 
@@ -92,6 +93,9 @@ export const updateAgentParameters = z.object({
   agent_id: z.string().trim().min(1).describe("The id of the agent to update."),
   name: z.string().trim().optional().describe("A new name for the agent. Omit to leave the name unchanged."),
   description: z.string().trim().optional().describe("A new persona/description for the agent. Omit to leave it unchanged."),
+  color: z.string().trim().optional().describe(
+    `A new colour for the agent's butterfly in the sidebar and the chat, one of: ${AGENT_COLOR_LABELS.join(", ")}. Omit to leave it unchanged.`,
+  ),
 });
 
 export async function resolveSendToAgentImages(
@@ -169,19 +173,24 @@ export function createUpdateAgentTool(management: AgentManagementDependencies) {
   return defineCommunicateTool(management, {
     id: "PLATFORM_ACTION",
     name: SAND_UPDATE_AGENT_TOOL_NAME,
-    description: "Edit an existing agent's profile: its name and/or description. Only the fields you provide are changed; the rest are left exactly as they were, and there is no way to clear or delete an agent through this tool. Use it to refine a teammate you (or the user) created.",
+    description: "Edit an existing agent's profile: its name, description and/or colour. Only the fields you provide are changed; the rest are left exactly as they were, and there is no way to clear or delete an agent through this tool. Use it to refine a teammate you (or the user) created. Each new agent already gets a colour no other agent has while one is free; when the user wants teammates told apart, change their colours here, one call per agent, rather than asking each to make a picture.",
     parameters: updateAgentParameters,
     describeActivity: (args: z.infer<typeof updateAgentParameters>) => ({
       target: args.agent_id,
     }),
     async execute(_context, args: z.infer<typeof updateAgentParameters>, resolved) {
-      const patch: { name?: string; description?: string } = {};
+      const patch: { name?: string; description?: string; avatarColor?: string } = {};
       if (args.name != null && args.name.length > 0) patch.name = args.name;
       if (args.description != null && args.description.length > 0) {
         patch.description = args.description;
       }
-      if (patch.name == null && patch.description == null) {
-        return "Nothing to update: provide a new name and/or description.";
+      if (args.color != null && args.color.length > 0) {
+        const color = agentColorIdFromName(args.color);
+        if (color == null) return `Unknown colour "${args.color}". Use one of: ${AGENT_COLOR_LABELS.join(", ")}.`;
+        patch.avatarColor = color;
+      }
+      if (patch.name == null && patch.description == null && patch.avatarColor == null) {
+        return "Nothing to update: provide a new name, description and/or colour.";
       }
       const updated = await resolved.update(args.agent_id, patch);
       return updated == null

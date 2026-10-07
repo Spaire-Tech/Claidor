@@ -25,6 +25,10 @@ text is already in ``messageText``:
   a forward, where the quoted part is the content;
 - the MIME skeleton (``payload.parts``) and the ``preview`` copy go: the text
   is in ``messageText`` and every attachment is in ``attachmentList``.
+
+And for every message, with text or without: a header that repeats the
+message's own ``sender``, ``to`` or ``subject`` exactly goes, and so does the
+preview's copy of the subject.
 """
 
 import base64
@@ -238,6 +242,40 @@ def _slim_payload(payload: dict[str, Any]) -> dict[str, Any] | None:
     return None
 
 
+# A header and the top-level field that repeats it (Gmail's `sender`, `to`,
+# `subject`). A listing of 30 messages to nine people carried each recipient
+# list twice and each subject three times (the staffing log, 7 October 2026).
+_REPEATED_HEADERS = {"from": "sender", "to": "to", "subject": "subject"}
+
+
+def _top_level_headers(value: dict[str, Any]) -> dict[str, str]:
+    top: dict[str, str] = {}
+    for header, field in _REPEATED_HEADERS.items():
+        given = value.get(field)
+        if isinstance(given, str) and given.strip():
+            top[header] = given.strip()
+    return top
+
+
+def _without_repeated_headers(payload: Any, top: dict[str, str]) -> Any:
+    """The payload without headers the message already gives at its top."""
+    if not isinstance(payload, dict) or not top:
+        return payload
+    headers = payload.get("headers")
+    if not _is_header_list(headers):
+        return payload
+    kept = [
+        header
+        for header in headers
+        if not (
+            isinstance(header.get("value"), str)
+            and top.get(str(header.get("name", "")).lower()) == header["value"].strip()
+        )
+    ]
+    rest = {k: v for k, v in payload.items() if k != "headers"}
+    return {"headers": kept, **rest} if kept else rest
+
+
 def _tidy(
     value: Any, key: str = "", *, has_text: bool = False, forward: bool = False
 ) -> Any:
@@ -253,19 +291,31 @@ def _tidy(
         # The text is in messageText and the attachments in attachmentList:
         # the MIME skeleton and the preview copy say nothing new.
         listed = own_text and isinstance(value.get("attachmentList"), list)
+        # Who, to whom and the subject, as the message gives them at its top.
+        top = _top_level_headers(value)
         out: dict[str, Any] = {}
         for k, v in value.items():
             if k == "headers" and _is_header_list(v):
                 out[k] = _tidy_headers(v)
             elif k == "messageText" and isinstance(v, str):
                 out[k] = readable_text(v, fold_replies=not forward)
-            elif k == "payload" and listed and isinstance(v, dict):
-                slim = _slim_payload(v)
-                if slim is not None:
-                    out[k] = slim
-            elif k == "preview" and own_text and isinstance(v, dict):
-                rest = {pk: pv for pk, pv in v.items() if pk != "body"}
-                if rest and rest != {"subject": value.get("subject")}:
+            elif k == "payload" and isinstance(v, dict) and (listed or top):
+                payload = (
+                    _slim_payload(v)
+                    if listed
+                    else _tidy(v, k, has_text=within, forward=forward)
+                )
+                payload = _without_repeated_headers(payload, top)
+                if payload:
+                    out[k] = payload
+            elif k == "preview" and isinstance(v, dict) and (own_text or top):
+                rest = {
+                    pk: pv
+                    for pk, pv in v.items()
+                    if not (pk == "body" and own_text)
+                    and not (pk == "subject" and pv == value.get("subject"))
+                }
+                if rest:
                     out[k] = _tidy(rest, k, has_text=within, forward=forward)
             elif k == "parts" and isinstance(v, list):
                 out[k] = [
