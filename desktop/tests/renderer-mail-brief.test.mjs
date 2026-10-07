@@ -49,20 +49,21 @@ test("a simeon-mail block is one card: emails that need you, dated items, and th
 test("the brief wraps the flights card's place in the message and brings its own styles, once", async () => {
   const { MAIL_REPLACEMENTS, FLIGHTS_REPLACEMENTS, MAIL_MARKER, patchOriginalMailStylesheet } = await import(patchModule);
   const message = MAIL_REPLACEMENTS.find(([label]) => label === "mail-message");
-  const pane = MAIL_REPLACEMENTS.find(([label]) => label === "mail-pane-body");
-  assert.equal(pane[1], "p.jsx(__simeonFlightDetails,{offer:__fo.offer})", "an email opens in the agent's pane, in the flight's place");
+  assert.equal(MAIL_REPLACEMENTS.some(([label]) => label === "mail-pane-body"), false, "no side panel: an email opens in the window's dialog");
   const source = MAIL_REPLACEMENTS.find(([label]) => label === "mail-components")[2];
   assert.match(source, /S\.lazy\(\(\)=>import\("\.\/view-ClhdNXKM\.js"\)\.then\(m=>\(\{default:m\.__simeonEmailComposer\}\)\)\)/, "the reply opens the window's own email composer, loaded as its card loads it");
-  assert.match(source, /onSend:\(\)=>__simeonMailSet\(n\.k,"replied"\),onDiscard:n\.onDiscard/);
-  // "i literally said IFRAME. not panel" (7 October 2026): the composer opens in the chat, under its email.
-  assert.match(source, /onClick:\(\)=>__simeonMailSet\(k\+"#compose",composing\?null:"open"\)/);
-  assert.match(source, /composing&&\(!st\|\|st==="replied"\)\?p\.jsx\(__simeonMailCompose,/);
-  assert.doesNotMatch(source, /__simeonOpenMail\(k,e,"reply"\)/, "no reply in the side panel");
+  assert.match(source, /onSend:\(\)=>\{__simeonMailSet\(n\.k,"replied"\);__simeonMailSet\(n\.k\+"#view",null\)\},onDiscard:n\.onDiscard/, "Send marks the row replied and closes the dialog");
+  // "the setting page is iframe. the connect apps page is iframe" (7 October 2026): the thread and the
+  // reply open in the dialog Settings and Connect apps open in, over the window.
+  assert.match(source, /p\.jsxs\(Gt\.Root,\{className:"simeon-mail-dialog",open:!0,onOpenChange:v=>\{v\|\|close\(\)\},variant:"rich"/);
+  assert.match(source, /onClick:\(\)=>__simeonMailSet\(k\+"#view","reply"\),children:e\.draft\?"Review reply":"Reply"/);
+  assert.match(source, /onClick:\(\)=>__simeonMailSet\(k\+"#view","thread"\),children:"Open"/);
+  assert.doesNotMatch(source, /__simeonOpenMail|__simeonMailPane/, "no side panel");
   assert.equal(message[1], FLIGHTS_REPLACEMENTS.find(([label]) => label === "flights-message")[2]);
   assert.ok(message[2].startsWith("(!h&&__simeonMailParse(r)!=null?p.jsx(__simeonMail,{content:r}):"));
   const css = patchOriginalMailStylesheet(":root{}");
   assert.ok(css.includes(MAIL_MARKER));
-  assert.match(css, /\.simeon-mail,\.simeon-mail-pane\{--m-ink:light-dark\(/, "both themes from one set of tokens");
+  assert.match(css, /\.simeon-mail\{--m-ink:light-dark\(/, "both themes from one set of tokens");
   // Calmer (the founder, 7 October 2026: "way too noisy … not those too accented colors … the white background"):
   // no white field behind the rows, no tinted avatars, no coloured chips.
   assert.doesNotMatch(css, /--m-group|--m-urgent|simeon-mail__avatar|simeon-mail__chip/);
