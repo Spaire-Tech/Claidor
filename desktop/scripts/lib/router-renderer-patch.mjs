@@ -1107,9 +1107,47 @@ export const FIRST_AGENT_REPLACEMENTS = Object.freeze([
   ["coo-readonly-commit", "y=_=>{if(h.current){h.current=!1,m(s);return}", "y=_=>{if(n.readOnly===!0){m(s);return}if(h.current){h.current=!1,m(s);return}"],
 ]);
 
+/**
+ * "Meet Simeon" (7 October 2026, the founder: "remove all below. What i want
+ * is a big simeon avatar turning around itself, then minimize into meet
+ * simeon. needs to be smooth").
+ *
+ * The composer that typed a sentence under the avatar is gone. The step is
+ * three beats of the flow's own 35 ms scene clock (`Kjn`), and everything
+ * is the window's own motion: Simeon bounces in large at the centre of an
+ * empty stage (the hero's "bounce" spring, from the landing's hidden
+ * placement); the avatar turns once around its own axis (a 1.4 s turn in
+ * depth, eased both ways, in a box every placed avatar now sits in; the
+ * mark's own `spin` only draws light trails and keeps the body upright);
+ * then he glides to his seat at four fifths size on the "standard" spring
+ * while the title and Next rise in beneath. People who reduce motion get
+ * the finished picture.
+ */
+const MEET_BIG = Object.freeze({ y: -22, scale: 2.3 });
+/** Ticks of the scene clock (35 ms): the turn begins; the avatar settles and the title appears. */
+const MEET_BEATS = Object.freeze([10, 52]);
+const MEET_SOURCE = "function __simeonMeetStep(n){const{headingId:t,onForward:r,beat:b}=n;return p.jsx(tye,{className:re(\"sand-onboarding__meet\",\"simeon-meet\",b>=2?\"simeon-meet--settled\":\"\"),footer:p.jsx(nye,{onForward:r}),headingId:t,title:\"Meet Simeon\"})}";
+export const MEET_STEP_REPLACEMENTS = Object.freeze([
+  ["meet-step-screen", 'case"meet":return p.jsx(Tjn,{headingId:xn,onForward:()=>x.advance(ln),typedCount:Njn(ce)})', 'case"meet":return p.jsx(__simeonMeetStep,{headingId:xn,onForward:()=>x.advance(ln),beat:Ejn(ce)})'],
+  ["meet-step-beats", "function Ejn(n){return n>=Sjn?1:n>=0?0:-1}", `const __simeonMeetBeats=${JSON.stringify(MEET_BEATS)};function Ejn(n){return n>=__simeonMeetBeats[1]?2:n>=__simeonMeetBeats[0]?1:0}`],
+  ["meet-step-hero", 'case"meet":return n.meetBeat<0?{...e,...zoe,y:hWe.y,state:"waking",transition:"none"}:{...e,...hWe,scale:.8,opacity:1,state:n.meetBeat===0?"idle":"listening",transition:"bounce",isGazing:!0};', `case"meet":return n.meetBeat<2?{...e,x:0,y:${MEET_BIG.y},scale:${MEET_BIG.scale},opacity:1,state:"happy",transition:"bounce",isGazing:!1,spin:n.meetBeat===1}:{...e,...hWe,scale:.8,opacity:1,state:"idle",transition:"standard",isGazing:!0};`],
+  // Every placed avatar sits in one more box; the one whose placement says `spin` turns once around its own axis in it.
+  // The placed element is memoised on its class, handlers, style and child; `spin` joins that list (one more cache slot).
+  ["meet-step-turn-cache", "function mqn(n){const e=he.c(46),", "function mqn(n){const e=he.c(47),"],
+  ["meet-step-turn", 'let x;return e[40]!==m||e[41]!==f||e[42]!==h||e[43]!==v||e[44]!==b?(x=p.jsx("div",{className:m,onClick:f,onTransitionEnd:h,style:v,children:b}),e[40]=m,e[41]=f,e[42]=h,e[43]=v,e[44]=b,e[45]=x):x=e[45],x}', 'let x;return e[40]!==m||e[41]!==f||e[42]!==h||e[43]!==v||e[44]!==b||e[46]!==t.spin?(x=p.jsx("div",{className:m,onClick:f,onTransitionEnd:h,style:v,children:p.jsx("div",{className:t.spin===!0?"simeon-turn simeon-turn--on":"simeon-turn",children:b})}),e[40]=m,e[41]=f,e[42]=h,e[43]=v,e[44]=b,e[46]=t.spin,e[45]=x):x=e[45],x}'],
+  ["meet-step-component", "function __simeonNameStep(n){", `${MEET_SOURCE}function __simeonNameStep(n){`],
+]);
+export const MEET_CSS = `/* Simeon: the Meet step */
+.simeon-meet>div{opacity:0;transform:translateY(6px);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1)}
+.simeon-meet--settled>div{opacity:1;transform:none}
+.simeon-turn--on{animation:simeon-meet-turn 1.4s cubic-bezier(.65,0,.35,1) both;will-change:transform}
+@keyframes simeon-meet-turn{from{transform:perspective(900px) rotateY(0)}to{transform:perspective(900px) rotateY(360deg)}}
+@media (prefers-reduced-motion:reduce){.simeon-meet>div{opacity:1;transform:none;transition:none}.simeon-turn--on{animation:none}}
+`;
+
 export function patchOriginalCooStep(source) {
   let out = source;
-  for (const [label, before, after] of [...COO_REPLACEMENTS, ...FIRST_AGENT_REPLACEMENTS, ...NAME_STEP_REPLACEMENTS]) out = replaceExactlyOnce(out, before, after, label);
+  for (const [label, before, after] of [...COO_REPLACEMENTS, ...FIRST_AGENT_REPLACEMENTS, ...NAME_STEP_REPLACEMENTS, ...MEET_STEP_REPLACEMENTS]) out = replaceExactlyOnce(out, before, after, label);
   return out;
 }
 
@@ -1134,7 +1172,7 @@ export const COO_CSS = `${COO_MARKER} */
 
 export function patchOriginalCooStylesheet(css) {
   if (css.includes(COO_MARKER)) throw new Error("Original renderer COO step block is already present.");
-  return `${css}\n${COO_CSS}\n${NAME_CSS}\n${COO_LOCK_CSS}`;
+  return `${css}\n${COO_CSS}\n${NAME_CSS}\n${MEET_CSS}\n${COO_LOCK_CSS}`;
 }
 
 export function patchOriginalAgentPaneStylesheet(css) {
@@ -2276,7 +2314,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-mark", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "agent-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "flight-results", "upstream-tokens", "sidebar-glass-discs", "pane-widest-default", "pane-three-tabs", "mark-butterfly", "mark-no-eyes", "spin-lights-agent-colours", "manage-plan-card"],
+    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-mark", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "agent-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "meet-step-turn", "flight-results", "upstream-tokens", "sidebar-glass-discs", "pane-widest-default", "pane-three-tabs", "mark-butterfly", "mark-no-eyes", "spin-lights-agent-colours", "manage-plan-card"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings", "upstream-tokens", "icon-font-file"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");

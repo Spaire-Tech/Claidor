@@ -149,6 +149,24 @@ test("the Chief of Staff step sits after Meet Simeon, with Simeon at the centre 
   assert.throws(() => patchOriginalCooStylesheet(patchOriginalCooStylesheet(".a{}")), /already present/);
 });
 
+test("the Meet step: Simeon arrives large, turns once around himself, then settles under the title", async () => {
+  const { MEET_STEP_REPLACEMENTS, MEET_CSS, patchOriginalCooStylesheet } = await import("../scripts/lib/router-renderer-patch.mjs");
+  const by = Object.fromEntries(MEET_STEP_REPLACEMENTS.map(([label, , after]) => [label, after]));
+  assert.match(by["meet-step-screen"], /^case"meet":return p\.jsx\(__simeonMeetStep,\{headingId:xn,onForward:\(\)=>x\.advance\(ln\),beat:Ejn\(ce\)\}\)$/, "the composer step is replaced");
+  assert.match(by["meet-step-beats"], /const __simeonMeetBeats=\[10,52\];function Ejn\(n\)\{return n>=__simeonMeetBeats\[1\]\?2:n>=__simeonMeetBeats\[0\]\?1:0\}/);
+  assert.match(by["meet-step-hero"], /^case"meet":return n\.meetBeat<2\?\{\.\.\.e,x:0,y:-22,scale:2\.3,opacity:1,state:"happy",transition:"bounce",isGazing:!1,spin:n\.meetBeat===1\}:\{\.\.\.e,\.\.\.hWe,scale:\.8,opacity:1,state:"idle",transition:"standard",isGazing:!0\};$/);
+  assert.match(by["meet-step-turn"], /\|\|e\[46\]!==t\.spin\?/, "the turn joins the placed element's memo");
+  assert.match(by["meet-step-turn"], /className:t\.spin===!0\?"simeon-turn simeon-turn--on":"simeon-turn"/);
+  assert.equal(by["meet-step-turn-cache"], "function mqn(n){const e=he.c(47),");
+  assert.match(by["meet-step-component"], /title:"Meet Simeon"\}\)\}function __simeonNameStep\(n\)\{$/);
+  assert.doesNotMatch(by["meet-step-component"], /H2e|typedCount|composer/, "nothing is typed under the avatar any more");
+  assert.match(MEET_CSS, /\.simeon-turn--on\{animation:simeon-meet-turn 1\.4s/);
+  assert.match(MEET_CSS, /rotateY\(360deg\)/);
+  assert.match(MEET_CSS, /\.simeon-meet--settled>div\{opacity:1;transform:none\}/);
+  assert.match(MEET_CSS, /prefers-reduced-motion:reduce/);
+  assert.ok(patchOriginalCooStylesheet(".a{}").includes(MEET_CSS));
+});
+
 test("Simeon is the first agent, titled Chief of Staff, pinned or not as the person likes", async () => {
   const { FIRST_AGENT_REPLACEMENTS, SIMEON_COO_PROFILE } = await import("../scripts/lib/router-renderer-patch.mjs");
   assert.deepEqual({ name: SIMEON_COO_PROFILE.name, title: SIMEON_COO_PROFILE.title }, { name: "Simeon", title: "Chief of Staff" });
