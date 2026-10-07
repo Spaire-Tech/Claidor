@@ -748,6 +748,32 @@ calling the tool shows no `desktop.flights.search` line for that request.
 
 ## 11. Simeon, the Chief of Staff
 
+**He staffs (7 October 2026).** The founder: "Simeon main job is to delegate. Not take on
+action from the get go … onboarding should be him delegating. That also showcases him messaging
+the agent, him creating it, and giving him directions." `desktop/source/shared/agents/chief-of-staff.ts`:
+- His first run is his own cue, `SAND_CHIEF_OF_STAFF_KICKSTART_PROMPT`, chosen by the lifecycle for
+  the agent titled Chief of Staff (`agent-lifecycle.ts`): a hello, then one question, "What's the
+  first thing you'd hand to a person if you hired one today?", its options drawn from the apps
+  connected during setup (he reads GetMcpServerStatus first; he proposes no connectors for himself).
+  On the answer he hires with CreateAgent: a first name, a title that names the job, a description,
+  and a `brief`. Unclear answer: one more question, two at most, then he hires with what he has and
+  says what he assumed. "I don't know" or "what do you recommend": he recommends and says why. A
+  project that needs several roles: he says who he'd staff, three at most for a first team, and
+  creates each. Then "Anything else you'd hand off today?".
+- `CreateAgent` takes `title` and `brief`. With a brief the new agent runs no generic greeting: the
+  brief is sent as its first message, and the inbound wake (`agent-to-agent-messaging.ts`) puts the
+  staffed first-run cue in front of it: introduce yourself to the person as the one now on the job,
+  propose the app you need, start. The brief always reads "<first name> staffed you to …"
+  (`staffingMessage` puts the opening in front when the model forgot). The person's name reaches
+  the transcript manager through `setUserFullNameResolver`, set by the composition.
+- Every turn, his system prompt carries `## Chief of staff` (`system-prompt-assembly.ts`, by the
+  profile's title, which now reaches the runner): a task that fits an agent goes to that agent; one
+  that fits nobody gets a new agent; a project gets a small team; he does a thing himself only when
+  it is quicker than briefing someone; when the person is unsure he recommends.
+- The demo's onboarding (`desktop/demo/scenario.ts`, `onboardingScript`) plays the same scene: the
+  question, the hire (Nora, Inbox, appears in the sidebar with Simeon's brief and her first words
+  in her chat), the report. Not verified in the packaged app on a Mac yet.
+
 **For the person.** Onboarding ends by making Simeon, their Chief of Staff: the
 first agent, made for them (name Simeon, title Chief of Staff, Ocean), who manages
 their other agents and pulls them in for decisions. There is no "Create your first

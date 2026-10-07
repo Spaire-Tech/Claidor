@@ -166,6 +166,9 @@ export class TranscriptManager {
   readonly workflowCommands = new WorkflowCommands(this);
   readonly widgetResponses = new WidgetResponses(this);
   readonly voiceCalls = new VoiceCallChannel(this);
+  /** The person's name, for a staffed agent's first turn (`agent-to-agent-messaging.ts`); set by the composition. */
+  requestContextUserFullName: (() => string | undefined) | undefined;
+  setUserFullNameResolver(resolve: () => string | undefined): void { this.requestContextUserFullName = resolve; }
 
   memory: any = NO_MEMORY;
   contentSearch: any = NO_CONTENT_SEARCH;
