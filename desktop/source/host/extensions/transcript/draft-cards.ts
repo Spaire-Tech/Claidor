@@ -72,6 +72,9 @@ export class DraftCards {
 
   /** The person pressed Send: the edited fields are kept, the card shows `sending`, and the agent is woken to deliver. */
   async sendDraft(args: { readonly agentId: string; readonly entryId: string; readonly draft?: Record<string, unknown> }): Promise<TranscriptEntry | null> {
+    // The card lives in its agent's transcript, which is the one in memory
+    // only once that agent is the action target (as for a widget answer).
+    await this.tm.sessions.ensureActionTarget?.(args.agentId);
     const current = this.find(args.entryId);
     if (!isDraftEntry(current)) return null;
     if (current.draftSendState === "sending" || current.draftSendState === "sent") return current;
@@ -84,6 +87,7 @@ export class DraftCards {
 
   /** The person discarded the draft: the card is dismissed and the agent is told once. */
   async discardDraft(args: { readonly agentId: string; readonly entryId: string }): Promise<TranscriptEntry | null> {
+    await this.tm.sessions.ensureActionTarget?.(args.agentId);
     const current = this.find(args.entryId);
     if (!isDraftEntry(current)) return null;
     if (current.draftSendState === "sent") return current;
