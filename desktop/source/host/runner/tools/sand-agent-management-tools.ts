@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { staffingMessage } from "../../../shared/agents/chief-of-staff.js";
 import {
   SAND_CREATE_AGENT_TOOL_NAME,
   SAND_SEND_TO_AGENT_TOOL_NAME,
@@ -25,10 +26,17 @@ export interface SendToAgentDependencies<_Context = Context> {
 }
 
 export interface AgentManagementDependencies {
-  create(profile: { readonly name: string; readonly description: string }): Promise<{
+  create(
+    profile: { readonly name: string; readonly description: string; readonly title?: string },
+    options?: { readonly startIntroduction?: boolean },
+  ): Promise<{
     readonly id: string;
     readonly name: string;
   }>;
+  /** The brief as the new agent's first message, which starts it (`shared/agents/chief-of-staff.ts`). */
+  brief?(agentId: string, message: string): Promise<string>;
+  /** The person's name, for "<first name> staffed you to …". */
+  getPersonName?(): string | null;
   update(
     agentId: string,
     patch: { readonly name?: string; readonly description?: string },
@@ -68,9 +76,15 @@ export const sendToAgentParameters = z.object({
 });
 
 export const createAgentParameters = z.object({
-  name: z.string().trim().min(1).describe("A short, human-readable name for the new agent."),
+  name: z.string().trim().min(1).describe("A short, human-readable name for the new agent, like a person's first name."),
   description: z.string().trim().default("").describe(
     "The new agent's persona / instructions: what it is for and how it should behave. This becomes its profile and shapes its replies. Optional but strongly recommended.",
+  ),
+  title: z.string().trim().optional().describe(
+    "The job, in a word or two, shown under the name: Inbox, Calendar, Research, Bookkeeping. Give one when you are staffing.",
+  ),
+  brief: z.string().trim().optional().describe(
+    "The staffing brief: what the agent is to do first and how to report, written to the agent and delivered as its first message, which starts it. Begin it with \"<the user's first name> staffed you to …\". With a brief the agent does not run the generic introduction; it introduces itself to the user as the one now on the job and starts.",
   ),
 });
 
@@ -134,10 +148,18 @@ export function createCreateAgentTool(management: AgentManagementDependencies) {
     description: `Create a new agent (a new teammate assistant) for your user, with a name and an optional persona/description. Returns the new agent's id so you can immediately message it with SendToAgent. Use this to spin up a focused teammate for a job. You have no tool to delete an agent, so only create one when it is genuinely useful; the user can delete an agent themselves from the sidebar (right-click the agent \u2192 "Delete").`,
     parameters: createAgentParameters,
     async execute(_context, args: z.infer<typeof createAgentParameters>, resolved) {
+      const brief = args.brief?.trim() ?? "";
+      const isStaffing = brief.length > 0 && resolved.brief != null;
       const created = await resolved.create({
         name: args.name,
         description: args.description,
-      });
+        ...(args.title == null || args.title.length === 0 ? {} : { title: args.title }),
+      }, { startIntroduction: !isStaffing });
+      if (isStaffing) {
+        const message = staffingMessage(resolved.getPersonName?.() ?? null, brief);
+        await resolved.brief!(created.id, message);
+        return `Created agent "${created.name}" (id: ${created.id}) and delivered your brief as its first message: it introduces itself to the user in its own chat as the one now on the job and starts. Tell the user who you hired and where to find them; message it again with SendToAgent only when there is more to say.`;
+      }
       return `Created agent "${created.name}" (id: ${created.id}). It introduces itself to the user in its own chat now, so there is no need to ask it to. Message it with SendToAgent using that id to brief it.`;
     },
   });

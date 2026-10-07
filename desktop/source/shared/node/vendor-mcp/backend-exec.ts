@@ -239,6 +239,12 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
   // Sign-in for an app our server serves: the server says whether it is connected and, on the Mac, gives the link.
   const appAuthStatus = async (id: string, install: VendorMcpInstall, forceReauth: boolean): Promise<VendorMcpAuthStatus> => {
     const name = vendorMcpConnectorById(install.id)?.name ?? install.id;
+    // A forced re-sign-in drops the connected account first: the server's
+    // /connect answers "connected" while one exists, so without this the
+    // card never came back (7 October 2026: Gmail connected without its mail
+    // permission, "insufficient authentication scopes" on every read, and
+    // AuthenticateMcpServer with force_reauth could not reopen the sign-in).
+    if (forceReauth) await disconnectApp(install);
     const connected = forceReauth ? undefined : await appConnected(install);
     if (connected === true) { markApp(install, true); return { id, isAvailable: true, requiresAuth: false, hasValidToken: true, authUrl: "", error: "" }; }
     if (connected === false) markApp(install, false);

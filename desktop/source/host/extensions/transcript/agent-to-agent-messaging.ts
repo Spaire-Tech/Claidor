@@ -1,3 +1,4 @@
+import { staffedFirstRunCue } from "../../../shared/agents/chief-of-staff.js";
 import {
   buildAgentInboundWakePrompt,
   clampAgentMessage,
@@ -233,8 +234,16 @@ export class AgentToAgentMessaging {
             }
             const selectedImages = await loadAgentInboundImages(message.images);
             this.agentWakeHops.set(agentId, message.hop ?? 1);
+            // A brief as the agent's first message is its staffing (7 October
+            // 2026): the first turn reads it and introduces the agent to the
+            // person as the one now on the job, in place of the greeting the
+            // kickstart would run (`shared/agents/chief-of-staff.ts`).
+            const isStaffing = session.db.getIntroductionPending?.() === true && index === 0;
+            if (isStaffing) session.db.setIntroductionPending(false);
             const result = await runner.run(
-              buildAgentInboundWakePrompt(message),
+              isStaffing
+                ? `${staffedFirstRunCue({ fromName: message.from.name, personName: this.tm.requestContextUserFullName?.() ?? null })}\n\n${buildAgentInboundWakePrompt(message)}`
+                : buildAgentInboundWakePrompt(message),
               {
                 hidden: true,
                 callReason: "agent_wake",

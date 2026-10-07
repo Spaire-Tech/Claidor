@@ -161,7 +161,9 @@ export type Beat =
   | { readonly at: number; readonly kind: "typing"; readonly agent: string; readonly on: boolean }
   | { readonly at: number; readonly kind: "step"; readonly agent: string; readonly id: string; readonly name: string; readonly summary: string; readonly status: "running" | "completed"; readonly detail?: string; readonly target?: string }
   | { readonly at: number; readonly kind: "append"; readonly agent: string; readonly entry: Entry }
-  | { readonly at: number; readonly kind: "react"; readonly agent: string; readonly entryId: string; readonly emoji: string; readonly by: string };
+  | { readonly at: number; readonly kind: "react"; readonly agent: string; readonly entryId: string; readonly emoji: string; readonly by: string }
+  // A hire: a new agent appears in the sidebar with its chat already holding the brief it was staffed with and its first words.
+  | { readonly at: number; readonly kind: "hire"; readonly agent: DemoAgent; readonly entries: readonly Entry[] };
 
 const step = (at: number, id: string, name: string, doing: string, done: string, ms: number, detail?: string, target?: string): Beat[] => [
   { at, kind: "step", agent: "simeon", id, name, summary: doing, status: "running", ...(detail == null ? {} : { detail }), ...(target == null ? {} : { target }) },
@@ -196,12 +198,15 @@ export function openingScript(): Beat[] {
 }
 
 /**
- * A new account's first agent (`?onboarding`): what it says once the person
- * presses Get started, then after each answer. It follows the first-run cue
- * the real agent gets (`SAND_ONBOARDING_KICKSTART_PROMPT`,
- * source/shared/agents/onboarding.ts): a short hello, then a question card
- * with three or four options; once an answer shows where the work lives, the
- * connectors that fit, then the next question.
+ * A new account's first agent (`?onboarding`): Simeon, the Chief of Staff,
+ * once the person presses Get started, then after each answer. It follows
+ * his own first-run cue (`SAND_CHIEF_OF_STAFF_KICKSTART_PROMPT`,
+ * source/shared/agents/chief-of-staff.ts; the founder, 7 October 2026:
+ * "onboarding should be him delegating"): a hello and one question, "What's
+ * the first thing you'd hand to a person if you hired one today?"; on the
+ * answer he hires, in front of the person: a new agent appears in the
+ * sidebar, its chat opens on Simeon's brief ("Bass staffed you to …") and
+ * its first words, and Simeon says who he hired and where to find them.
  */
 export function onboardingScript(agent: string, stage: number): Beat[] {
   const typing = (at: number, on: boolean): Beat => ({ at, kind: "typing", agent, on });
@@ -211,24 +216,34 @@ export function onboardingScript(agent: string, stage: number): Beat[] {
   if (stage === 0) {
     return [
       typing(700, true),
-      append(2600, says("o0a", 0, "Hi Bass, I'm Simeon, your Chief of Staff. Before I start staffing your team, I'd like to know where you want me first.")),
-      append(3600, question("o0q", "What should I mainly help you with?", ["Run my day: calendar and inbox", "Keep my projects moving", "Prepare me for meetings", "Lead my other agents"], "Pick one, or type your own. You can hand me a real task instead, and I'll just start on it.")),
+      append(2600, says("o0a", 0, "Hi Bass, I'm Simeon, your Chief of Staff. I don't do the work myself: I hire the agents who do, brief them, and keep you out of the weeds. Let's hire your first one.")),
+      append(3600, question("o0q", "What's the first thing you'd hand to a person if you hired one today?", ["My inbox: sort it, draft the replies", "My calendar and meeting prep", "Research and writing", "The books: invoices and expenses"], "Pick one, or type your own. Not sure? Say so and I'll recommend.")),
       typing(3700, false),
     ];
   }
   if (stage === 1) {
+    const simeon = { id: agent, name: "Simeon" };
+    const nora: DemoAgent = { id: "agent-nora", name: "Nora", title: "Inbox", description: "Runs the inbox: sorts what needs Bass from what doesn't, drafts the replies he should send and leaves them for his approval, and flags anything from a customer within the hour.", color: "green", minutesAgo: 0 };
     return [
       typing(500, true),
-      append(2200, says("o1a", 0, "Good. For that I need to see your calendar and your email.")),
-      append(2600, card("o1c", 0, { type: "connector", connector: "Google Calendar", variant: "connect", reason: "To know your day and protect your time" })),
-      append(2800, card("o1g", 0, { type: "connector", connector: "Gmail", variant: "connect", reason: "To sort what needs you and draft replies" })),
-      append(3800, question("o1q", "How should I check in with you?", ["A short brief every morning", "Only when something needs me", "A recap at the end of the day"])),
-      typing(3900, false),
+      append(2000, says("o1a", 0, "Good call. Hiring someone for your inbox now.")),
+      typing(2100, false),
+      // Simeon's own chat shows the brief he sent, as the host writes it when he sends (agent-to-agent-messaging.ts).
+      append(3300, toTeammate("o1t", 0, { id: nora.id, name: nora.name }, "Bass staffed you to run his inbox. Every morning, sort what needs him from what doesn't, draft the replies he should send and leave them for his approval, and flag anything from a customer within the hour. Report to him in your chat; tell me only what needs a decision.")),
+      { at: 3400, kind: "hire", agent: nora, entries: [
+        fromTeammate("n0", 0, simeon, "Bass staffed you to run his inbox. Every morning, sort what needs him from what doesn't, draft the replies he should send and leave them for his approval, and flag anything from a customer within the hour. Report to him in your chat; tell me only what needs a decision."),
+        says("n1", 0, "Hi Bass, I'm Nora, on your inbox from today. First I'll sort this week's mail into what needs you and what doesn't, and draft the replies for you to approve. I need Gmail for that."),
+        card("n2", 0, { type: "connector", connector: "Gmail", variant: "connect", reason: "To read your inbox and draft replies" }),
+      ] },
+      typing(3600, true),
+      append(5400, says("o1b", 0, "Nora is set up for your inbox and I've briefed her: she sorts what needs you, drafts replies for you to approve, and flags customers within the hour. You'll hear from her in her own chat; she'll ask you to connect Gmail there.")),
+      append(6400, question("o1q", "Anything else you'd hand off today?", ["My calendar and meeting prep", "Research and writing", "That's all for now"])),
+      typing(6500, false),
     ];
   }
   return [
     typing(500, true),
-    append(2000, says("o2a", 0, "Got it. Connect those two and I'll send your first brief tomorrow at 8. Until then, hand me anything and I'll start on it.")),
+    append(2000, says("o2a", 0, "Then I'll keep an eye on Nora and pull you in only when a decision needs you. Hand me anything else whenever; I'll find the right person for it.")),
     typing(2100, false),
   ];
 }

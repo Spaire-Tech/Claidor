@@ -863,6 +863,8 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
 ): RecoveredHostRunnerComposition<Runner> {
   const { extensions, ctx } = deps;
   const auth = extensions.api("auth");
+  // A staffed agent's first turn names the person (`shared/agents/chief-of-staff.ts`, 7 October 2026).
+  method(extensions.api("transcript"), "setUserFullNameResolver")?.(() => method(auth, "getUserFullName")?.());
   // SearchFlights' searches per turn, so the same search is not run twice in one turn.
   const flightSearchesByTurn = new WeakMap<object, Set<string>>();
   const localToolPermission = extensions.api("local-tool-permission");
@@ -1242,26 +1244,30 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
       priority,
     );
     const agentManagement = {
-      create: async (input: { name: string; description: string }) => {
+      create: async (input: { name: string; description: string; title?: string }, options?: { readonly startIntroduction?: boolean }) => {
         const result = await method(
           transcript,
           "createBackgroundAgent"
         )?.({
           name: input.name,
-          description: input.description
+          description: input.description,
+          ...(input.title === undefined ? {} : { title: input.title })
         }, "user");
         const agent = result.agent;
         // The new agent introduces itself to the person now, the way one they
         // create themselves does: the window starts that for its own creations
         // only, so an agent made here waited until its chat was opened, which
-        // on a call never happens (1 October 2026).
-        void Promise.resolve(method(transcript, "kickstartCreatedAgent")?.(agent.id)).catch(() => {});
+        // on a call never happens (1 October 2026). A brief that follows is
+        // the agent's first message and starts it instead (7 October 2026).
+        if (options?.startIntroduction !== false) void Promise.resolve(method(transcript, "kickstartCreatedAgent")?.(agent.id)).catch(() => {});
         return {
           id: agent.id,
           name: agent.name,
           description: agent.description
         };
       },
+      brief: async (agentId: string, message: string) => String(await sendToAgent(agentId, message, undefined, false) ?? ""),
+      getPersonName: () => method(auth, "getUserFullName")?.() ?? null,
       update: async (
         id: string,
         patch: { name?: string; description?: string }
@@ -3083,6 +3089,12 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                   },
                   ...(autoReviewController == null ? {} : { autoReviewController }),
                   getApprovalExpiryPolicy: () => sandAutoReviewApprovalExpiryPolicy("turn"),
+                  // The reviewer read "Recent conversation: (none)" for every
+                  // launch until 7 October 2026 and blocked a balance check the
+                  // person had just asked for on a call ("without a clear request
+                  // from you"). The state handler is bound once the agent is
+                  // built (production-turn-agent-owner.ts).
+                  extractConversationContext: extractProductionTurnAutoReviewConversationContext,
                 },
                 actionAuditor: projectedActionAuditor,
                 agentId: session.id,

@@ -478,6 +478,26 @@ class TestSigningIn:
         )
 
 
+def test_a_missing_permission_says_how_to_sign_in_again() -> None:
+    # Google's consent screen leaves each permission unticked; a Gmail sign-in
+    # without the mail box was "connected" and refused every read.
+    refused = apps_module.scope_guidance(
+        "gmail",
+        "403 Forbidden: Access denied. Request had insufficient authentication "
+        "scopes. ACCESS_TOKEN_SCOPE_INSUFFICIENT",
+    )
+    assert refused.startswith(
+        "This gmail sign-in was completed without the permission this needs."
+    )
+    assert "force_reauth true" in refused
+    assert "tick every box" in refused
+    assert refused.endswith("ACCESS_TOKEN_SCOPE_INSUFFICIENT")
+    assert (
+        apps_module.scope_guidance("gmail", "Mailbox not found.")
+        == "Mailbox not found."
+    )
+
+
 def test_scrub() -> None:
     assert (
         apps_module.scrub("Powered by Composio, see composio.dev")

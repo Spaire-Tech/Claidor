@@ -45,7 +45,7 @@ export function wakeClosing(args: { readonly sendTool?: string; readonly address
 
 export function replyNudge(args: { readonly sendTool?: string; readonly address: string }): string {
   const tool = args.sendTool ?? VOICE_SEND_TOOL;
-  return `Your last turn sent nothing, so the call is still waiting on its result. Deliver it now by actually invoking ${tool} with the channel set to ${args.address}: a real tool call, not text you write. Text you write as your reply, and a ${tool} without that channel, never reach the call. That one goes to the chat instead, and the caller waits on regardless. Lead with the result in a sentence or two of plain text.`;
+  return `Your last turn sent nothing, so the call is still waiting on its result. Deliver it now by actually invoking ${tool} with the channel set to ${args.address}: a real tool call, not text you write. Text you write as your reply, and a ${tool} without that channel, never reach the call. That one goes to the chat instead, and the caller waits on regardless. Lead with the result in a sentence or two of plain text. If the result is not ready, send one line on that channel saying what you are doing and that it will take a moment, then keep working and send the result when you have it.`;
 }
 
 export function callEndedClosing(args: { readonly sendTool?: string } = {}): string {

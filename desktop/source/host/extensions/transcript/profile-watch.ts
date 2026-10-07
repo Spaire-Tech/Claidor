@@ -133,6 +133,7 @@ export class ProfileWatch {
   resolveAgentProfile(session: { dbPath: string }): {
     name: string;
     description: string;
+    title: string;
     filePath: string;
     settingsFilePath: string;
   } {
@@ -142,6 +143,7 @@ export class ProfileWatch {
     return {
       name: profile?.name.trim() || SAND_DEFAULT_AGENT_NAME,
       description: profile?.description ?? "",
+      title: profile?.title ?? "",
       filePath,
       settingsFilePath: getSandSettingsPath(dir),
     };
