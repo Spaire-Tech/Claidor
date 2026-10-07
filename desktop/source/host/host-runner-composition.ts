@@ -3083,6 +3083,12 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                   },
                   ...(autoReviewController == null ? {} : { autoReviewController }),
                   getApprovalExpiryPolicy: () => sandAutoReviewApprovalExpiryPolicy("turn"),
+                  // The reviewer read "Recent conversation: (none)" for every
+                  // launch until 7 October 2026 and blocked a balance check the
+                  // person had just asked for on a call ("without a clear request
+                  // from you"). The state handler is bound once the agent is
+                  // built (production-turn-agent-owner.ts).
+                  extractConversationContext: extractProductionTurnAutoReviewConversationContext,
                 },
                 actionAuditor: projectedActionAuditor,
                 agentId: session.id,

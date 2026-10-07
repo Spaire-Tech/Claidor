@@ -65,6 +65,11 @@ test("the classifier has two attempts of 30 s, the epoch and the turn begin on a
   const composition = await src("host/host-runner-composition.ts");
   assert.match(composition, /beginAutoReviewUserMessageEpoch: \(\) => \{\n\s*if \(!identity\.isSubagentRunner\) \{\n\s*autoReviewController\?\.beginUserMessageEpoch\(\);\n\s*method\(localToolPermission, "beginTurn"\)\?\.\(session\.id\);/);
   assert.match(composition, /subagentReview: \{\n\s*isSubagentRunner: isSharedRoomTurn,\n\s*mode: autoReviewModes\.subagentLaunch,/);
+  // The launch reviewer reads the conversation (7 October 2026): the extractor at the composition, the state handler bound once the agent is built.
+  assert.match(composition, /getApprovalExpiryPolicy: \(\) => sandAutoReviewApprovalExpiryPolicy\("turn"\),\n(\s*\/\/.*\n)*\s*extractConversationContext: extractProductionTurnAutoReviewConversationContext,\n\s*\},/);
+  const owner = await src("host/runner/production-turn-agent-owner.ts");
+  assert.match(owner, /getActiveStateHandler: \(\) => built\?\.getActiveStateHandler\(\),/);
+  assert.match(owner, /built = buildAgentForRun\(buildInput\);/);
 });
 
 test("the local audit line carries no inline secret", async () => {

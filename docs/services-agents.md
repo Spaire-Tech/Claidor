@@ -338,6 +338,12 @@ and Ashby connect through Simeon. The provider behind them is never named in the
   card, the tools and the store work as in 7a. The bearer is the account's own token (the
   box's credential in the box); the stored "credential" is only a connected marker
   (`clientId: "simeon-apps"`).
+- **A sign-in without its permission** (7 October 2026). Google's consent screen shows one
+  checkbox per permission and leaves them unticked, so a Gmail sign-in that skipped the mail box
+  is "connected" and every read answers "Request had insufficient authentication scopes". The
+  tool's error now says the fix: `AuthenticateMcpServer` with `force_reauth` true, which signs
+  the app out on the server (before, `/connect` answered "connected" while the account existed
+  and the card never came back) and shows a fresh card; the person ticks every box this time.
 - **The availability check.** An app card offers Connect only when `GET /desktop/api/apps`
   answers `{"available": true}` (`vendor-mcp/apps-availability.ts`, cached one minute).
   Otherwise it stays "coming soon", and a sign-in answered 404 or 503 says "<App> is coming
@@ -562,7 +568,13 @@ the background while the call goes on, and says how it is going when asked.
     the voice quotes them). The agent wakes at once on a hidden `[inbound] From voice:<call>:`
     message carrying the voice channel's rules and how to answer; a run in progress is
     interrupted and the message says it landed mid-turn. A turn that sends nothing to the
-    call is nudged once.
+    call is nudged once; the nudge allows one line on the channel when the result is not
+    ready (7 October 2026: a balance check went to a background subagent and the caller
+    heard nothing until the call ended).
+  - **The launch of a background subagent is reviewed with the conversation.** Until 7 October
+    2026 the review for that surface read "Recent conversation: (none)" (the other surfaces
+    carried it), so a check the person had asked for on the call was blocked as "without a
+    clear request from you".
   - The agent answers with `SendMessage` with `channel` set to the call's address. That
     message goes to the call, not to the chat. Main reads the call's outbox every 1.2 s and
     pushes new messages into the call (`sendContextualUpdate`, then a one-line

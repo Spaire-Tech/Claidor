@@ -218,8 +218,19 @@ export async function createProductionTurnAgentOwner(
     const baseResourceAccessor = await input.createResourceAccessor(input.context);
     const remoteBoxResourceAccessor = await input.createRemoteBoxResourceAccessor(input.context);
     const projectionInput = input.createTurnLocalResourceProjectionInput(baseResourceAccessor);
+    // The launch reviewer's conversation comes from the agent's own state
+    // handler, which exists only once the agent is built below: bound late.
+    let built: ReturnType<typeof buildAgentForRun> | undefined;
     const turnLocalResourceProjection = createTurnLocalResourceProjection({
       ...projectionInput,
+      ...(projectionInput.subagentReview === undefined
+        ? {}
+        : {
+          subagentReview: {
+            ...projectionInput.subagentReview,
+            getActiveStateHandler: () => built?.getActiveStateHandler(),
+          },
+        }),
       baseAccessor: baseResourceAccessor,
     });
     const resourceAccessor = turnLocalResourceProjection.resourceAccessor;
@@ -255,8 +266,9 @@ export async function createProductionTurnAgentOwner(
       turn,
       turnScope: runContext.scope,
     };
+    built = buildAgentForRun(buildInput);
     return {
-      built: buildAgentForRun(buildInput),
+      built,
       runContext,
       buildInput,
       dispose: () => runContext.dispose(),

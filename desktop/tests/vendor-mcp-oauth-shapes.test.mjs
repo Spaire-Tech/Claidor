@@ -215,6 +215,16 @@ test("apps our server serves (Figma, Asana, Gmail…) sign in, list and disconne
     assert.deepEqual(after.tools.map((tool) => tool.toolName), ["FIGMA_GET_FILE"]);
     assert.ok(calls.some((call) => call.method === "POST" && call.target === url && call.auth === "Bearer box-token"), "the box calls with its own credential");
 
+    // A forced re-sign-in while connected signs the app out on the server first (7 October 2026:
+    // a Gmail sign-in without its mail permission; /connect answered "connected" and no card came back).
+    calls.length = 0;
+    const again = await mac.checkAuthStatus({ serverId, accountKey: "default", oauthRedirectUri: "http://localhost:1/cb", forceReauth: true });
+    assert.equal(calls[0].method, "DELETE", "signed out before anything else");
+    assert.deepEqual([again.requiresAuth, again.authUrl], [true, "https://accounts.example.com/consent?x=1"]);
+    assert.equal(installs.module.vendorMcpInstallById(root, "figma").credential, undefined);
+    connected = true;
+    assert.equal((await box.validateTokens([{ serverUrl: url, accountKey: "default" }]))[0].hasValidToken, true);
+
     await mac.logoutAccount({ serverUrl: url, accountKey: "default" });
     assert.ok(calls.some((call) => call.method === "DELETE" && call.target === "https://api.simeonlabs.com/desktop/api/apps/figma"));
     assert.equal(installs.module.vendorMcpInstallById(root, "figma").credential, undefined);
