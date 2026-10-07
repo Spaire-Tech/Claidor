@@ -206,12 +206,14 @@ class Settings(BaseSettings):
     # was handed it) does not fail with 401 the moment the app refreshes.
     DESKTOP_REFRESH_GRACE: timedelta = timedelta(minutes=5)
     # Credits per calendar month per person; see simeon.desktop.service.
-    DESKTOP_MONTHLY_CREDITS: int = 3_000_000
+    DESKTOP_MONTHLY_CREDITS: int = 15_000_000
     # Credits per sliding hour per person: the brake on a runaway turn.
-    # 200,000 credits is about sixty cents at the price table. Measured
-    # 22 September 2026: one unattended first-run loop spent 1.9M credits
-    # in fifty minutes with nothing on screen (docs/services-core.md).
-    DESKTOP_HOURLY_CREDITS: int = 200_000
+    # 1,000,000 credits is about three dollars at the price table (200,000
+    # until 8 October 2026, when it stopped every real job halfway; every
+    # allowance is five times what it was since). Measured 22 September
+    # 2026: one unattended first-run loop spent 1.9M credits in fifty
+    # minutes with nothing on screen (docs/services-core.md).
+    DESKTOP_HOURLY_CREDITS: int = 1_000_000
     # Whether a person needs a plan on Stripe Billing (trialing or active,
     # `simeon.plans`) to sign in to the Mac app and make metered calls.
     # False = everyone gets the free monthly allowance (development, a

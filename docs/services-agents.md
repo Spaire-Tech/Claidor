@@ -695,7 +695,7 @@ the API):
   `desktop.voice.foreign_conversation`.
 * **Known limits.** The allowance is checked when a call starts, not during it, and a call is
   billed only when the app says it ended: a call the app never ends is not billed. At about
-  33,000 credits a minute the hourly brake (200,000) stops a new call after roughly six
+  33,000 credits a minute the hourly brake (1,000,000 since 8 October 2026; 200,000 before) stops a new call after roughly six
   minutes of calling in an hour. ElevenLabs bills the voice's model on top of the minute; the
   margin is meant to cover it. The $0.08 figure was not read off ElevenLabs' price page. Two
   API processes making the first call at once can each create a platform agent; every later

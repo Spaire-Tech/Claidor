@@ -342,8 +342,8 @@ class TestTierDefinitions:
 
         studio = get_definition(TierKey.pro)
         assert studio.monthly_price_cents == 6000
-        assert studio.weekly_credits == 2_500_000
-        assert studio.trial_credits == 1_000_000
+        assert studio.weekly_credits == 12_500_000
+        assert studio.trial_credits == 5_000_000
         assert studio.transaction_fee.percent_basis_points == 500
         assert studio.transaction_fee.fixed_cents == 30
         assert studio.limits.active_email_sequences is None
@@ -358,8 +358,8 @@ class TestTierDefinitions:
 
         starter = get_definition(TierKey.standard)
         assert starter.monthly_price_cents == 2000
-        assert starter.weekly_credits == 750_000
-        assert starter.trial_credits == 1_000_000
+        assert starter.weekly_credits == 3_750_000
+        assert starter.trial_credits == 5_000_000
         assert starter.transaction_fee.percent_basis_points == 700
         assert starter.transaction_fee.fixed_cents == 30
         assert starter.limits.active_email_sequences is None
@@ -396,8 +396,8 @@ class TestTierDefinitions:
 
         scale = get_definition(TierKey.max)
         assert scale.monthly_price_cents == 20000
-        assert scale.weekly_credits == 8_000_000
-        assert scale.trial_credits == 1_000_000
+        assert scale.weekly_credits == 40_000_000
+        assert scale.trial_credits == 5_000_000
         assert scale.transaction_fee.percent_basis_points == 300
         assert scale.transaction_fee.fixed_cents == 30
         # Scale caps video at 200 hours; only Legacy is fully unlimited.

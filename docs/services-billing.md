@@ -24,9 +24,14 @@ unset. The code stays with the inherited shop
 
 | Plan | Monthly | Yearly | Credits a week | Trial |
 |---|---|---|---|---|
-| Standard | $20 | $192 | 750,000 | 7 days, 1,000,000 credits once |
-| Pro | $60 | $576 | 2,500,000 | same |
-| Max | $200 | $1,920 | 8,000,000 | same |
+| Standard | $20 | $192 | 3,750,000 | 7 days, 5,000,000 credits once |
+| Pro | $60 | $576 | 12,500,000 | same |
+| Max | $200 | $1,920 | 40,000,000 | same |
+
+Every allowance is five times what it was until 8 October 2026 (the founder:
+"a simple onboarding run eats it all. multiply all by 5. at least for now").
+At list price the week's credits of each plan cost more than the plan when
+fully used; the plans are priced for the person who comes back.
 
 The numbers live in one place, `server/simeon/entitlements/tiers.py`
 (`weekly_credits`, `trial_credits`, `monthly_price_cents`), and
@@ -35,10 +40,13 @@ billing page reads them from the server (`GET /v1/plans/`); the site's
 pricing section repeats them by hand.
 
 A credit is one input token on the middle model at $3 per million
-(`services-core.md`, section 2). A typical task is about 100,000 credits.
+(`services-core.md`, section 2). A typical task is about 100,000 credits; a
+job on the computer (a form, a site driven by screenshots) is 300,000 to
+800,000, measured from the call sizes of the insurance log of 6 October 2026
+(the cost test set has not been run yet).
 Weekly credits count from Monday 00:00 UTC to the next Monday and do not
 carry over; Stripe cannot reset a meter weekly, so the week is counted by
-the server from `desktop_usage`. The hourly brake, 200,000 credits in a
+the server from `desktop_usage`. The hourly brake, 1,000,000 credits in a
 sliding hour, applies on every plan.
 
 ## 2. What is on Stripe

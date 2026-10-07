@@ -122,7 +122,7 @@ class TestResolveAllowance:
         assert allowance.status == "active"
         assert allowance.plan_name == "Pro"
         assert allowance.tier == "pro"
-        assert allowance.credits_limit == 2_500_000
+        assert allowance.credits_limit == 12_500_000
         start, end = week_bounds()
         assert (allowance.period_start, allowance.period_end) == (start, end)
         assert allowance.paid
@@ -143,7 +143,7 @@ class TestResolveAllowance:
         )
         allowance = await resolve_allowance(session, user)
         assert allowance.status == "past_due"
-        assert allowance.credits_limit == 750_000
+        assert allowance.credits_limit == 3_750_000
         assert allowance.paid
 
     async def test_a_trial_gets_its_own_window_and_credits(
@@ -164,7 +164,7 @@ class TestResolveAllowance:
         allowance = await resolve_allowance(session, user)
         assert allowance.status == STATUS_TRIALING
         assert allowance.plan_name == "Max"
-        assert allowance.credits_limit == 1_000_000
+        assert allowance.credits_limit == 5_000_000
         assert allowance.trial_end is not None
         assert allowance.period_end == allowance.trial_end
         assert allowance.trial_cancelable
@@ -242,7 +242,7 @@ class TestQuotaAndRefusal:
         quota = await desktop.quota(session, user)
         assert quota["planName"] == "Standard"
         assert quota["subscriptionStatus"] == "trialing"
-        assert quota["creditsLimit"] == 1_000_000
+        assert quota["creditsLimit"] == 5_000_000
         assert quota["tier"] == "standard"
         assert quota["trialEndsAt"] == quota["periodEnd"]
         assert quota["trialCancelable"] is True

@@ -29,16 +29,16 @@ LOOKUP_KEY_PREFIX = "simeon"
 #: What each product says on Stripe's checkout page and invoices.
 PRODUCT_DESCRIPTIONS: dict[TierKey, str] = {
     TierKey.standard: (
-        "For a light week of work. 750,000 credits a week, about seven tasks. "
+        "For a light week of work. 3,750,000 credits a week, about thirty tasks. "
         "Every agent and every feature, a cloud computer for each agent, "
         "routines that run while your Mac is closed."
     ),
     TierKey.pro: (
-        "For agents working every day. 2,500,000 credits a week, three times "
+        "For agents working every day. 12,500,000 credits a week, three times "
         "Standard, with room for routines that run every day."
     ),
     TierKey.max: (
-        "For a team of agents that never stops. 8,000,000 credits a week, "
+        "For a team of agents that never stops. 40,000,000 credits a week, "
         "eleven times Standard: agents on routines all week long."
     ),
 }
