@@ -28,7 +28,7 @@ test("the Manage plan anchors apply exactly once, and a second pass refuses", as
   assert.throws(() => patchOriginalManagePlanPanel(panel), /anchor is missing or ambiguous/);
   const css = patchOriginalManagePlanStylesheet(".x{}");
   assert.ok(css.includes(MANAGE_PLAN_MARKER));
-  assert.match(css, /\.simeon-manage-plan__btn\{flex:none;height:40px/);
+  assert.match(css, /\.simeon-manage-plan__btn\{flex:none;height:24px/);
   assert.throws(() => patchOriginalManagePlanStylesheet(css), /already present/);
   const source = await readFile(patchModule, "utf8");
   assert.match(source, /patchOriginalManagePlan\(patchOriginalVoiceCall\(/);
