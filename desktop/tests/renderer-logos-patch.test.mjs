@@ -194,6 +194,7 @@ test("the connect step: the site's connector scene with Simeon on the glass, the
   assert.equal(Object.keys(CONNECT_LOGO_SOURCES).length, 12, "the site's twelve");
   assert.match(component, /period=1600,move=550/, "one place every 1.6 s, the move 0.55 s, as the site");
   assert.match(component, /grow=1\+\.6\*Math\.max\(0,1-Math\.abs\(x\)\/\(gap\*\.6\)\)/, "the logo behind the glass swells");
+  assert.match(component, /blur\("\+Math\.max\(0,\(d-\.8\)\*22,\(grow-1\)\*30\)/, "the logo under the glass blurs itself into a wash, whatever the engine makes of backdrop-filter");
   assert.match(component, /cancelAnimationFrame\(id\)/, "the frame stops with the step");
   new Function("p", "fde", "tye", "nye", "re", "Fo", "S", component.replace(/function __simeonMeetStep\(n\)\{$/, ""));
   const assets = await readLogoAssets();
@@ -201,7 +202,7 @@ test("the connect step: the site's connector scene with Simeon on the glass, the
   for (const url of Object.values(assets.connect)) assert.match(url, /^data:image\/(svg\+xml|webp);base64,/);
   const css = connectCss(assets.connect);
   assert.match(css, /mask-image:linear-gradient\(90deg,transparent,#000 18%,#000 82%,transparent\)/, "the row fades at both ends");
-  assert.match(css, /\.simeon-connect__tile\{[^}]*background:rgba\(255,255,255,\.16\);[^}]*backdrop-filter:blur\(6px\) saturate\(1\.6\)/, "thin glass: the logo behind reads through");
+  assert.match(css, /\.simeon-connect__tile\{[^}]*background:rgba\(255,255,255,\.4\);[^}]*backdrop-filter:blur\(32px\) saturate\(2\)/, "frosted: the logo behind is a wash of its colour, not a shape");
   assert.equal((css.match(/\.simeon-connect__orb\[data-app=/g) ?? []).length, 12);
   assert.ok(patchOriginalLogosStylesheet(".a{}", assets).includes(css));
 });
