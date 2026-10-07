@@ -509,7 +509,7 @@ export const voiceCallCss = () => `${VOICE_CALL_MARKER} (30 September 2026). */
 .simeon-call-record[data-open="true"] .simeon-call-record__recap{grid-template-rows:1fr}
 .simeon-call-record__recap>div{overflow:hidden}
 .simeon-call-record__recap p{margin:8px 0 0;padding:8px 0 0 40px;border-top:1px solid light-dark(rgba(0,0,0,.08),rgba(255,255,255,.10))}
-.simeon-name-sheet{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:16px;background:light-dark(rgba(0,0,0,.18),rgba(0,0,0,.45));-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.simeon-name-sheet{-webkit-app-region:no-drag;position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:16px;background:light-dark(rgba(0,0,0,.18),rgba(0,0,0,.45));-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 .simeon-name-sheet__card{width:min(360px,100%);display:grid;gap:10px;padding:22px;border-radius:18px;background:light-dark(#fff,#2a2a2c);color:var(--sand-text-primary);box-shadow:0 24px 60px rgba(0,0,0,.22),0 0 0 1px light-dark(rgba(0,0,0,.06),rgba(255,255,255,.08))}
 .simeon-name-sheet__title{margin:0;font-size:17px;line-height:22px;font-weight:600}
 .simeon-name-sheet__note{margin:0;font-size:13px;line-height:18px;color:var(--sand-text-secondary)}
@@ -1406,7 +1406,8 @@ export function logosCss({ files, apps, mentions = [], tiles = [] }) {
 ${kinds.map(([kind]) => box(kind)).join(",")}{background:var(--simeon-file-logo) center/82% no-repeat;border-color:transparent;box-shadow:none}
 ${kinds.map(([kind]) => `${box(kind)}>*`).join(",")}{visibility:hidden}
 ${kinds.map(([kind, url]) => `${box(kind)}{--simeon-file-logo:url("${url}")}`).join("\n")}
-.sand-agents-sidebar__plugins-entry${HI}{position:relative;z-index:1;height:40px;margin:0 0 -40px 40px;padding:0}
+.sand-agents-sidebar__plugins-entry${HI}{position:relative;z-index:1;height:40px;margin:0 0 -40px 56px;padding:0;pointer-events:none}
+.sand-agents-sidebar__plugins-entry${HI}>*{pointer-events:auto}
 .sand-agents-sidebar__plugins${HI}{justify-content:flex-start;gap:6px;width:auto;height:40px;padding:0 6px;border:0;border-radius:8px;background:transparent;color:light-dark(${USER_BUBBLE_LIGHT},#8cb8e8);font-size:13px;font-weight:500}
 .sand-agents-sidebar__plugins${HI}:hover{background:transparent;color:light-dark(#1b4a7d,#a9ccf0)}
 .sand-agents-sidebar__account:not([data-collapsed="true"])${HI}{flex:0 0 auto;width:auto}
@@ -1783,6 +1784,12 @@ export const HEADER_CARD_CSS = `
 .sand-chat-header__title{align-items:center!important}
 .sand-chat-header__name{font-size:13px!important;line-height:18px!important;padding:3px 12px!important;border-radius:999px!important;background-color:var(--sand-fill-bubble-agent)!important;font-weight:500!important}
 .sand-chat-header__controls{position:absolute!important;right:0!important;top:50%!important;transform:translateY(-50%)!important}
+/* Simeon: what the title-bar drag strip must not swallow (7 October 2026, the founder: "some icons
+   don't click well … the x from settings when the page isn't in full screen"). The window's top
+   44–52 px are a drag region whenever it is not full screen; the window computes that region from
+   the elements that declare drag and no-drag, whatever lies on top. A dialog, a menu or our own
+   sheet drawn over the strip lost its clicks there. Each declares no-drag, which subtracts its box. */
+[role=dialog],[role=menu],[role=listbox],.sand-settings-dialog,.sand-plugins-dialog{-webkit-app-region:no-drag}
 `;
 export const HEADER_CARD_MARKER = "/* Simeon: the chat header is the agent's card";
 
