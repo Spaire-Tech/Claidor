@@ -2108,8 +2108,13 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   const changes = [];
   for (const [role, candidate, transform] of [
     ["registry", registryCandidates[0], patchOriginalSettingsRegistry],
-    ["panel", panelCandidates[0], patchOriginalSettingsPanel],
-    ["manage-plan", panelCandidates[0], patchOriginalManagePlanPanel],
+    // The Settings panel's one change is the Manage plan card under the usage
+    // meters (6 October 2026), recorded as the "panel" row: the verifier
+    // (macos-package-verification.mjs, readRendererExtensionRecord) takes one
+    // row per chunk and only the roles "registry" and "panel"; a third row,
+    // "manage-plan", on the same chunk failed the release's tests on the Air
+    // (7 October 2026).
+    ["panel", panelCandidates[0], (source) => patchOriginalManagePlanPanel(patchOriginalSettingsPanel(source))],
   ]) {
     const patched = transform(candidate.source);
     // A transform that returns its input (the Settings panel since the Router
