@@ -1738,7 +1738,8 @@ const CONNECT_SOURCE = [
 ].join("");
 export const CONNECT_STEP_REPLACEMENTS = Object.freeze([
   ["connect-step-screen", 'case"computer-demo":return p.jsx(Yqn,{', 'case"connect":return p.jsx(__simeonConnectStep,{headingId:xn,onBack:()=>x.goBack(ln),onForward:()=>x.advance(ln)});case"computer-demo":return p.jsx(Yqn,{'],
-  ["connect-step-hero", 'case"computer-demo":return{...e,', `case"connect":return{...e,x:0,y:${CONNECT_Y},scale:1,opacity:1,state:"idle",transition:"standard",isGazing:!0};case"computer-demo":return{...e,`],
+  // Simeon takes the site's share of the tile (its mark is 68% of it): 1.3 times his 80 px on a 150 px tile.
+  ["connect-step-hero", 'case"computer-demo":return{...e,', `case"connect":return{...e,x:0,y:${CONNECT_Y},scale:1.3,opacity:1,state:"idle",transition:"standard",isGazing:!0};case"computer-demo":return{...e,`],
   ["connect-step-component", "function __simeonMeetStep(n){", `${CONNECT_SOURCE}function __simeonMeetStep(n){`],
 ]);
 export const CONNECT_MARKER = "/* Simeon: the connect step";
@@ -1747,7 +1748,7 @@ export function connectCss(logos) {
   return `${CONNECT_MARKER}, the site's connector scene */
 .simeon-connect__orbit{position:relative;width:${CONNECT_W}px;height:${CONNECT_H}px;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 18%,#000 82%,transparent);mask-image:linear-gradient(90deg,transparent,#000 18%,#000 82%,transparent)}
 .simeon-connect__orb{position:absolute;left:0;top:50%;width:${t / 2}px;height:${t / 2}px;background:center/contain no-repeat;will-change:transform,filter,opacity}
-.simeon-connect__tile{position:absolute;left:50%;top:50%;width:${t}px;height:${t}px;transform:translate(-50%,-50%);border-radius:${Math.round(t * 0.235)}px;background:rgba(255,255,255,.4);-webkit-backdrop-filter:blur(20px) saturate(1.9);backdrop-filter:blur(20px) saturate(1.9);border:1px solid rgba(255,255,255,.9);box-shadow:inset 0 0 0 ${rim}px rgba(255,255,255,.72),inset 0 ${rim * 0.6}px ${rim * 0.8}px rgba(255,255,255,.95),inset 0 -${rim * 0.8}px ${rim * 2.2}px rgba(60,70,90,.14),0 ${t * 0.1}px ${t * 0.24}px -${t * 0.06}px rgba(30,40,60,.38),0 2px 5px rgba(30,40,60,.1)}
+.simeon-connect__tile{position:absolute;left:50%;top:50%;width:${t}px;height:${t}px;transform:translate(-50%,-50%);border-radius:${Math.round(t * 0.235)}px;background:rgba(255,255,255,.16);-webkit-backdrop-filter:blur(6px) saturate(1.6);backdrop-filter:blur(6px) saturate(1.6);border:1px solid rgba(255,255,255,.9);box-shadow:inset 0 0 0 ${rim * 0.5}px rgba(255,255,255,.55),inset 0 ${rim * 0.6}px ${rim * 0.8}px rgba(255,255,255,.8),inset 0 -${rim * 0.8}px ${rim * 2.2}px rgba(60,70,90,.1),0 ${t * 0.1}px ${t * 0.24}px -${t * 0.06}px rgba(30,40,60,.32),0 2px 5px rgba(30,40,60,.08)}
 ${Object.entries(logos).map(([key, url]) => `.simeon-connect__orb[data-app="${key}"]{background-image:url("${url}")}`).join("\n")}
 `;
 }

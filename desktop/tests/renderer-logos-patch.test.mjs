@@ -187,7 +187,7 @@ test("the connect step: the site's connector scene with Simeon on the glass, the
   const by = Object.fromEntries(CONNECT_STEP_REPLACEMENTS.map(([label, , after]) => [label, after]));
   assert.equal(CONNECT_TITLE, "Your agents connect to the apps you already use");
   assert.match(by["connect-step-screen"], /^case"connect":return p\.jsx\(__simeonConnectStep,\{headingId:xn,onBack:\(\)=>x\.goBack\(ln\),onForward:\(\)=>x\.advance\(ln\)\}\);case"computer-demo":return p\.jsx\(Yqn,\{$/);
-  assert.match(by["connect-step-hero"], /^case"connect":return\{\.\.\.e,x:0,y:-20,scale:1,opacity:1,state:"idle",transition:"standard",isGazing:!0\};case"computer-demo":return\{\.\.\.e,$/, "Simeon sits on the tile");
+  assert.match(by["connect-step-hero"], /^case"connect":return\{\.\.\.e,x:0,y:-20,scale:1\.3,opacity:1,state:"idle",transition:"standard",isGazing:!0\};case"computer-demo":return\{\.\.\.e,$/, "Simeon sits on the tile, large");
   const component = by["connect-step-component"];
   assert.ok(component.includes(`title:${JSON.stringify(CONNECT_TITLE)}`));
   assert.deepEqual(JSON.parse(/const __simeonConnectApps=(\[.*?\]);/.exec(component)[1]), Object.keys(CONNECT_LOGO_SOURCES));
@@ -201,7 +201,7 @@ test("the connect step: the site's connector scene with Simeon on the glass, the
   for (const url of Object.values(assets.connect)) assert.match(url, /^data:image\/(svg\+xml|webp);base64,/);
   const css = connectCss(assets.connect);
   assert.match(css, /mask-image:linear-gradient\(90deg,transparent,#000 18%,#000 82%,transparent\)/, "the row fades at both ends");
-  assert.match(css, /\.simeon-connect__tile\{[^}]*backdrop-filter:blur\(20px\) saturate\(1\.9\)/, "the glass");
+  assert.match(css, /\.simeon-connect__tile\{[^}]*background:rgba\(255,255,255,\.16\);[^}]*backdrop-filter:blur\(6px\) saturate\(1\.6\)/, "thin glass: the logo behind reads through");
   assert.equal((css.match(/\.simeon-connect__orb\[data-app=/g) ?? []).length, 12);
   assert.ok(patchOriginalLogosStylesheet(".a{}", assets).includes(css));
 });
