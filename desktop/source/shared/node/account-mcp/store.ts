@@ -16,6 +16,7 @@
 import { randomInt } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { connectorStoreDir } from "../connector-account-scope.js";
 
 export type McpStdioConfig = { readonly type?: "stdio"; readonly command: string; readonly args?: readonly string[]; readonly env?: Readonly<Record<string, string>>; readonly cwd?: string };
 export type McpRemoteConfig = { readonly type?: "http" | "sse"; readonly url: string; readonly headers?: Readonly<Record<string, string>>; readonly auth?: { readonly CLIENT_ID: string; readonly CLIENT_SECRET?: string; readonly scopes?: readonly string[] }; readonly tls?: { readonly caBundle: string } };
@@ -184,7 +185,7 @@ export function parseAccountMcpStore(raw: unknown): AccountMcpStore {
 }
 
 export function accountMcpStorePath(rootDir: string): string {
-  return join(rootDir, ACCOUNT_MCP_STORE_FILENAME);
+  return join(connectorStoreDir(rootDir), ACCOUNT_MCP_STORE_FILENAME);
 }
 
 export function loadAccountMcpStore(rootDir: string): AccountMcpStore {
