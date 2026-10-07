@@ -1113,36 +1113,51 @@ export const FIRST_AGENT_REPLACEMENTS = Object.freeze([
  * simeon. needs to be smooth").
  *
  * The composer that typed a sentence under the avatar is gone. The step is
- * three beats of the flow's own 35 ms scene clock (`Kjn`), and everything
- * is the window's own motion: Simeon bounces in large at the centre of an
- * empty stage (the hero's "bounce" spring, from the landing's hidden
- * placement); the avatar turns once around its own axis (a 1.4 s turn in
+ * four beats of the flow's own 35 ms scene clock (`Kjn`), and everything
+ * is the window's own motion: Simeon fades in large on an empty stage (the
+ * hero's "slow" spring, from unseen and a little smaller: 8 October, "after
+ * setting up simeon's computer, can the avatar fade in instead of just
+ * appearing"); the avatar turns once around its own axis (a 1.4 s turn in
  * depth, eased both ways, in a box every placed avatar now sits in; the
  * mark's own `spin` only draws light trails and keeps the body upright);
- * then he glides to his seat at four fifths size on the "standard" spring
- * while the title and Next rise in beneath. People who reduce motion get
+ * then he shrinks in place to his seat on the "standard" spring while the
+ * title and Next rise in beneath. The seat is the spot he holds on the
+ * Chief of Staff step, so Next moves nothing but the words (8 October:
+ * "make it be the same where your personal chief of staff next step avatar
+ * is, so that the transition is smooth"); the title and Next sit closer to
+ * him than the flow's own layout puts them. People who reduce motion get
  * the finished picture.
  */
-const MEET_BIG = Object.freeze({ y: -22, scale: 2.3 });
-/** Ticks of the scene clock (35 ms): the turn begins; the avatar settles and the title appears. */
-const MEET_BEATS = Object.freeze([10, 52]);
-const MEET_SOURCE = "function __simeonMeetStep(n){const{headingId:t,onForward:r,beat:b}=n;return p.jsx(tye,{className:re(\"sand-onboarding__meet\",\"simeon-meet\",b>=2?\"simeon-meet--settled\":\"\"),footer:p.jsx(nye,{onForward:r}),headingId:t,title:\"Meet Simeon\"})}";
+const MEET_SEAT = Object.freeze({ x: 0, y: COO_HERO_Y, scale: 1 });
+const MEET_BIG = Object.freeze({ ...MEET_SEAT, scale: 2.3 });
+/** Ticks of the scene clock (35 ms): the fade-in begins; the turn begins; the avatar settles and the title appears. */
+const MEET_BEATS = Object.freeze([1, 16, 56]);
+/** The title and Next, closer to the avatar than the flow's own 264 and 200 px (the founder, 8 October: "too much space between everything"). */
+const MEET_TITLE_TOP = -168;
+const MEET_FOOTER_TOP = 56;
+const MEET_HI = ":not(#\\#):not(#\\#):not(#\\#):not(#\\#)";
+const MEET_SOURCE = "function __simeonMeetStep(n){const{headingId:t,onForward:r,beat:b}=n;return p.jsx(tye,{className:re(\"sand-onboarding__meet\",\"simeon-meet\",b>=3?\"simeon-meet--settled\":\"\"),footer:p.jsx(nye,{onForward:r}),headingId:t,title:\"Meet Simeon\"})}";
 export const MEET_STEP_REPLACEMENTS = Object.freeze([
   ["meet-step-screen", 'case"meet":return p.jsx(Tjn,{headingId:xn,onForward:()=>x.advance(ln),typedCount:Njn(ce)})', 'case"meet":return p.jsx(__simeonMeetStep,{headingId:xn,onForward:()=>x.advance(ln),beat:Ejn(ce)})'],
-  ["meet-step-beats", "function Ejn(n){return n>=Sjn?1:n>=0?0:-1}", `const __simeonMeetBeats=${JSON.stringify(MEET_BEATS)};function Ejn(n){return n>=__simeonMeetBeats[1]?2:n>=__simeonMeetBeats[0]?1:0}`],
-  ["meet-step-hero", 'case"meet":return n.meetBeat<0?{...e,...zoe,y:hWe.y,state:"waking",transition:"none"}:{...e,...hWe,scale:.8,opacity:1,state:n.meetBeat===0?"idle":"listening",transition:"bounce",isGazing:!0};', `case"meet":return n.meetBeat<2?{...e,x:0,y:${MEET_BIG.y},scale:${MEET_BIG.scale},opacity:1,state:"happy",transition:"bounce",isGazing:!1,spin:n.meetBeat===1}:{...e,...hWe,scale:.8,opacity:1,state:"idle",transition:"standard",isGazing:!0};`],
+  ["meet-step-beats", "function Ejn(n){return n>=Sjn?1:n>=0?0:-1}", `const __simeonMeetBeats=${JSON.stringify(MEET_BEATS)};function Ejn(n){return n>=__simeonMeetBeats[2]?3:n>=__simeonMeetBeats[1]?2:n>=__simeonMeetBeats[0]?1:0}`],
+  // Beat 0: unseen at his seat, a little large. Beats 1 and 2: large, fading in on the slow spring, then turning. Beat 3: his seat, the same spot he holds on the Chief of Staff step.
+  ["meet-step-hero", 'case"meet":return n.meetBeat<0?{...e,...zoe,y:hWe.y,state:"waking",transition:"none"}:{...e,...hWe,scale:.8,opacity:1,state:n.meetBeat===0?"idle":"listening",transition:"bounce",isGazing:!0};', `case"meet":return n.meetBeat<1?{...e,x:${MEET_SEAT.x},y:${MEET_SEAT.y},scale:1.6,opacity:1,state:"happy",transition:"none",isGazing:!1,turn:"in"}:n.meetBeat<3?{...e,x:${MEET_BIG.x},y:${MEET_BIG.y},scale:${MEET_BIG.scale},opacity:1,state:"happy",transition:"slow",isGazing:!1,turn:n.meetBeat===2?"spin":"in"}:{...e,x:${MEET_SEAT.x},y:${MEET_SEAT.y},scale:${MEET_SEAT.scale},opacity:1,state:"idle",transition:"standard",isGazing:!0};`],
   // Every placed avatar sits in one more box; the one whose placement says `spin` turns once around its own axis in it.
-  // The placed element is memoised on its class, handlers, style and child; `spin` joins that list (one more cache slot).
+  // The placed element is memoised on its class, handlers, style and child; `turn` joins that list (one more cache slot). "in" fades the box in; "spin" keeps that fade and turns it.
   ["meet-step-turn-cache", "function mqn(n){const e=he.c(46),", "function mqn(n){const e=he.c(47),"],
-  ["meet-step-turn", 'let x;return e[40]!==m||e[41]!==f||e[42]!==h||e[43]!==v||e[44]!==b?(x=p.jsx("div",{className:m,onClick:f,onTransitionEnd:h,style:v,children:b}),e[40]=m,e[41]=f,e[42]=h,e[43]=v,e[44]=b,e[45]=x):x=e[45],x}', 'let x;return e[40]!==m||e[41]!==f||e[42]!==h||e[43]!==v||e[44]!==b||e[46]!==t.spin?(x=p.jsx("div",{className:m,onClick:f,onTransitionEnd:h,style:v,children:p.jsx("div",{className:t.spin===!0?"simeon-turn simeon-turn--on":"simeon-turn",children:b})}),e[40]=m,e[41]=f,e[42]=h,e[43]=v,e[44]=b,e[46]=t.spin,e[45]=x):x=e[45],x}'],
+  ["meet-step-turn", 'let x;return e[40]!==m||e[41]!==f||e[42]!==h||e[43]!==v||e[44]!==b?(x=p.jsx("div",{className:m,onClick:f,onTransitionEnd:h,style:v,children:b}),e[40]=m,e[41]=f,e[42]=h,e[43]=v,e[44]=b,e[45]=x):x=e[45],x}', 'let x;return e[40]!==m||e[41]!==f||e[42]!==h||e[43]!==v||e[44]!==b||e[46]!==t.turn?(x=p.jsx("div",{className:m,onClick:f,onTransitionEnd:h,style:v,children:p.jsx("div",{className:t.turn==="spin"?"simeon-turn simeon-turn--on":t.turn==="in"?"simeon-turn simeon-turn--in":"simeon-turn",children:b})}),e[40]=m,e[41]=f,e[42]=h,e[43]=v,e[44]=b,e[46]=t.turn,e[45]=x):x=e[45],x}'],
   ["meet-step-component", "function __simeonNameStep(n){", `${MEET_SOURCE}function __simeonNameStep(n){`],
 ]);
 export const MEET_CSS = `/* Simeon: the Meet step */
+.simeon-meet>div:first-child${MEET_HI}{top:calc(50% - ${-MEET_TITLE_TOP}px)}
+.simeon-meet>div:last-child${MEET_HI}{top:calc(50% + ${MEET_FOOTER_TOP}px)}
 .simeon-meet>div{opacity:0;transform:translateY(6px);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1)}
 .simeon-meet--settled>div{opacity:1;transform:none}
-.simeon-turn--on{animation:simeon-meet-turn 1.4s cubic-bezier(.65,0,.35,1) both;will-change:transform}
+.simeon-turn--in{animation:simeon-meet-fade 1.2s cubic-bezier(.4,0,.2,1) both}
+.simeon-turn--on{animation:simeon-meet-fade 1.2s cubic-bezier(.4,0,.2,1) both,simeon-meet-turn 1.4s cubic-bezier(.65,0,.35,1) both;will-change:transform}
+@keyframes simeon-meet-fade{from{opacity:0}to{opacity:1}}
 @keyframes simeon-meet-turn{from{transform:perspective(900px) rotateY(0)}to{transform:perspective(900px) rotateY(360deg)}}
-@media (prefers-reduced-motion:reduce){.simeon-meet>div{opacity:1;transform:none;transition:none}.simeon-turn--on{animation:none}}
+@media (prefers-reduced-motion:reduce){.simeon-meet>div{opacity:1;transform:none;transition:none}.simeon-turn--in,.simeon-turn--on{animation:none}}
 `;
 
 export function patchOriginalCooStep(source) {
