@@ -33,12 +33,14 @@ test("a simeon-mail block parses into sections of typed rows, and anything else 
   assert.equal(brief.title, "This morning's inbox");
   assert.deepEqual(brief.sections.map((section) => section.title), ["Needs you", "This week", "People"], "a section left with no rows is not drawn");
   assert.deepEqual(brief.sections[0].items, [{ kind: "email", from: "Maya Chen", subject: "Redlines", why: "Needs your OK", time: "9:12 AM", due: "Due Fri", urgent: true, thread: 4, unread: true, reply: "Approved." }]);
-  assert.deepEqual(brief.sections[1].items[0], { kind: "deadline", title: "Q3 tax", day: "Wednesday, Oct 15", time: "", note: "From Pilot" });
+  assert.deepEqual(brief.sections[1].items[0], { kind: "deadline", title: "Q3 tax", day: "Wednesday, Oct 15", time: "", note: "From Pilot", app: "" });
   assert.deepEqual(brief.sections[2].items.map((item) => item.kind), ["person", "task"]);
 
   // One section per message (the founder, 7 October 2026: "separate each message"): a title and its items alone.
-  const one = parse(block({ title: "Waiting on you", items: [{ kind: "person", name: "Jon Park", role: "Partner" }] }));
+  const one = parse(block({ title: "Waiting on you", app: "gmail", items: [{ kind: "person", name: "Jon Park", role: "Partner" }] }));
   assert.equal(one.title, "Waiting on you");
+  assert.equal(one.app, "gmail", "the app's own icon beside the title, from the window's app logos");
+  assert.equal(parse(block({ app: "../x", items: [{ kind: "task", title: "t", app: "Google Drive" }] })).app, "", "an app is a logo key, nothing else");
   assert.deepEqual(one.sections, [{ title: "", items: [{ kind: "person", name: "Jon Park", role: "Partner", note: "" }] }]);
 
   assert.equal(parse("Three emails need you."), null);

@@ -997,7 +997,7 @@ export function patchOriginalFlightsStylesheet(css) {
  *
  * Six sections at most, eight rows each; a row without its main line is left out.
  */
-const MAIL_SOURCE = String.raw`function __simeonMailParse(n){if(typeof n!=="string")return null;const m=/^\x60\x60\x60simeon-mail[^\n]*\n([\s\S]*?)\n?\x60\x60\x60$/.exec(n.trim());if(m==null)return null;try{const d=JSON.parse(m[1]);if(d==null||typeof d!=="object")return null;const s=v=>typeof v==="string"?v.trim():"",b=v=>v===true,c=v=>typeof v==="number"&&isFinite(v)&&v>1?Math.floor(v):0;const item=i=>{const k=s(i.kind);if(k==="email")return{kind:k,from:s(i.from),subject:s(i.subject),why:s(i.why),time:s(i.time),due:s(i.due),urgent:b(i.urgent),thread:c(i.thread),unread:b(i.unread),reply:s(i.reply)};if(k==="task"||k==="deadline"||k==="event")return{kind:k,title:s(i.title),day:s(i.day),time:s(i.time),note:s(i.note)};if(k==="person")return{kind:k,name:s(i.name),role:s(i.role),note:s(i.note)};return null};const raw=Array.isArray(d.sections)?d.sections:Array.isArray(d.items)?[{items:d.items}]:null;if(raw==null)return null;const sections=raw.filter(x=>x!=null&&typeof x==="object"&&Array.isArray(x.items)).slice(0,6).map(x=>({title:s(x.title),items:x.items.filter(i=>i!=null&&typeof i==="object").map(item).filter(i=>i!=null&&(i.subject||i.title||i.name)).slice(0,8)})).filter(x=>x.items.length>0);return sections.length===0?null:{title:s(d.title),subtitle:s(d.subtitle),sections}}catch{return null}}function __simeonMailEmail(n){const e=n.item,meta=[e.due,e.thread?e.thread+" messages":""].filter(Boolean);return p.jsxs("li",{className:"simeon-mail__row simeon-mail__email","data-unread":e.unread?"true":void 0,children:[p.jsxs("div",{className:"simeon-mail__line",children:[p.jsx("span",{className:"simeon-mail__from",children:e.from}),e.time?p.jsx("span",{className:"simeon-mail__time",children:e.time}):null]}),p.jsx("div",{className:"simeon-mail__subject",children:e.subject}),e.why?p.jsx("div",{className:"simeon-mail__why",children:e.why}):null,meta.length>0?p.jsx("div",{className:"simeon-mail__meta","data-urgent":e.urgent?"true":void 0,children:meta.join(" · ")}):null,e.reply?p.jsxs("blockquote",{className:"simeon-mail__reply",children:[p.jsx("span",{children:"Suggested reply"}),p.jsx("p",{children:e.reply})]}):null]})}function __simeonMailAgenda(n){const a=n.item;return p.jsxs("li",{className:"simeon-mail__row simeon-mail__agenda","data-kind":a.kind,children:[p.jsx("span",{className:"simeon-mail__when",children:a.kind==="task"?p.jsx("span",{className:"simeon-mail__check","aria-label":"To do"}):a.time||(a.kind==="deadline"?"Due":"")}),p.jsxs("div",{className:"simeon-mail__body",children:[p.jsx("div",{className:"simeon-mail__title",children:a.title}),[a.kind==="task"?a.time:"",a.note].filter(Boolean).length>0?p.jsx("div",{className:"simeon-mail__why",children:[a.kind==="task"?a.time:"",a.note].filter(Boolean).join(" · ")}):null]})]})}function __simeonMailPerson(n){const q=n.item;return p.jsxs("li",{className:"simeon-mail__row simeon-mail__person",children:[p.jsxs("div",{className:"simeon-mail__body",children:[p.jsx("div",{className:"simeon-mail__title",children:q.name}),q.role?p.jsx("div",{className:"simeon-mail__why",children:q.role}):null]}),q.note?p.jsx("span",{className:"simeon-mail__time",children:q.note}):null]})}function __simeonMailRows(items){const out=[];let day=null;items.forEach((it,j)=>{if(it.kind!=="email"&&it.kind!=="person"&&it.day&&it.day!==day){day=it.day;out.push(p.jsx("li",{className:"simeon-mail__day",children:it.day},"d"+j))}out.push(p.jsx(it.kind==="email"?__simeonMailEmail:it.kind==="person"?__simeonMailPerson:__simeonMailAgenda,{item:it},j))});return out}function __simeonMail(n){const d=__simeonMailParse(n.content);if(d==null)return null;return p.jsxs("section",{className:"simeon-mail","aria-label":d.title||d.sections[0].title||"Inbox",children:[d.title||d.subtitle?p.jsxs("header",{className:"simeon-mail__head",children:[d.title?p.jsx("h3",{children:d.title}):null,d.subtitle?p.jsx("p",{children:d.subtitle}):null]}):null,...d.sections.map((x,i)=>p.jsxs("div",{className:"simeon-mail__section",children:[x.title?p.jsx("h4",{children:x.title}):null,p.jsx("ul",{className:"simeon-mail__list",children:__simeonMailRows(x.items)})]},i))]})}`;
+const MAIL_SOURCE = String.raw`function __simeonMailParse(n){if(typeof n!=="string")return null;const m=/^\x60\x60\x60simeon-mail[^\n]*\n([\s\S]*?)\n?\x60\x60\x60$/.exec(n.trim());if(m==null)return null;try{const d=JSON.parse(m[1]);if(d==null||typeof d!=="object")return null;const s=v=>typeof v==="string"?v.trim():"",b=v=>v===true,c=v=>typeof v==="number"&&isFinite(v)&&v>1?Math.floor(v):0,a=v=>/^[a-z0-9-]{1,40}$/.test(s(v))?s(v):"";const item=i=>{const k=s(i.kind);if(k==="email")return{kind:k,from:s(i.from),subject:s(i.subject),why:s(i.why),time:s(i.time),due:s(i.due),urgent:b(i.urgent),thread:c(i.thread),unread:b(i.unread),reply:s(i.reply)};if(k==="task"||k==="deadline"||k==="event")return{kind:k,title:s(i.title),day:s(i.day),time:s(i.time),note:s(i.note),app:a(i.app)};if(k==="person")return{kind:k,name:s(i.name),role:s(i.role),note:s(i.note)};return null};const raw=Array.isArray(d.sections)?d.sections:Array.isArray(d.items)?[{items:d.items}]:null;if(raw==null)return null;const sections=raw.filter(x=>x!=null&&typeof x==="object"&&Array.isArray(x.items)).slice(0,6).map(x=>({title:s(x.title),items:x.items.filter(i=>i!=null&&typeof i==="object").map(item).filter(i=>i!=null&&(i.subject||i.title||i.name)).slice(0,8)})).filter(x=>x.items.length>0);return sections.length===0?null:{title:s(d.title),subtitle:s(d.subtitle),app:a(d.app),sections}}catch{return null}}function __simeonMailApp(n){return n.app?p.jsx("span",{className:"simeon-app simeon-mail__app","data-app":n.app,"aria-hidden":!0,children:p.jsx("span",{className:"simeon-app__logo"})}):null}function __simeonMailEmail(n){const e=n.item;return p.jsxs("li",{className:"simeon-mail__row simeon-mail__email","data-unread":e.unread?"true":void 0,children:[p.jsxs("div",{className:"simeon-mail__line",children:[p.jsx("span",{className:"simeon-mail__from",children:e.from}),e.time?p.jsx("span",{className:"simeon-mail__time",children:e.time}):null]}),p.jsx("div",{className:"simeon-mail__subject",children:e.subject}),e.why?p.jsx("div",{className:"simeon-mail__why",children:e.why}):null,e.due||e.thread?p.jsxs("div",{className:"simeon-mail__meta",children:[e.due?p.jsx("span",{className:e.urgent?"simeon-mail__due simeon-mail__due--urgent":"simeon-mail__due",children:e.due}):null,e.thread?p.jsx("span",{children:e.thread+" messages"}):null]}):null,e.reply?p.jsxs("blockquote",{className:"simeon-mail__reply",children:[p.jsx("span",{children:"Suggested reply"}),p.jsx("p",{children:e.reply})]}):null]})}function __simeonMailAgenda(n){const a=n.item,sub=[a.kind==="task"?a.time:"",a.note].filter(Boolean).join(" · ");return p.jsxs("li",{className:"simeon-mail__row simeon-mail__agenda","data-kind":a.kind,children:[p.jsx("span",{className:"simeon-mail__when",children:a.kind==="task"?p.jsx("span",{className:"simeon-mail__check","aria-label":"To do"}):a.time||(a.kind==="deadline"?"Due":"All day")}),p.jsxs("div",{className:"simeon-mail__body",children:[p.jsx("div",{className:"simeon-mail__title",children:a.title}),sub||a.app?p.jsxs("div",{className:"simeon-mail__why simeon-mail__source",children:[p.jsx(__simeonMailApp,{app:a.app}),sub?p.jsx("span",{children:sub}):null]}):null]})]})}function __simeonMailPerson(n){const q=n.item;return p.jsxs("li",{className:"simeon-mail__row simeon-mail__person",children:[p.jsx("span",{className:"simeon-mail__monogram","aria-hidden":!0,children:__simeonInitials(q.name)}),p.jsxs("div",{className:"simeon-mail__body",children:[p.jsx("div",{className:"simeon-mail__title",children:q.name}),q.role?p.jsx("div",{className:"simeon-mail__why",children:q.role}):null]}),q.note?p.jsx("span",{className:"simeon-mail__time",children:q.note}):null]})}function __simeonMailRows(items){const out=[];let day=null;items.forEach((it,j)=>{if(it.kind!=="email"&&it.kind!=="person"&&it.day&&it.day!==day){day=it.day;out.push(p.jsx("li",{className:"simeon-mail__day",children:it.day},"d"+j))}out.push(p.jsx(it.kind==="email"?__simeonMailEmail:it.kind==="person"?__simeonMailPerson:__simeonMailAgenda,{item:it},j))});return out}function __simeonMail(n){const d=__simeonMailParse(n.content);if(d==null)return null;return p.jsxs("section",{className:"simeon-mail","aria-label":d.title||d.sections[0].title||"Inbox",children:[d.title||d.subtitle?p.jsxs("header",{className:"simeon-mail__head","data-app":d.app?"true":void 0,children:[p.jsx(__simeonMailApp,{app:d.app}),d.title?p.jsx("h3",{children:d.title}):null,d.subtitle?p.jsx("p",{children:d.subtitle}):null]}):null,...d.sections.map((x,i)=>p.jsxs("div",{className:"simeon-mail__section",children:[x.title?p.jsx("h4",{children:x.title}):null,p.jsx("ul",{className:"simeon-mail__list",children:__simeonMailRows(x.items)})]},i))]})}`;
 const MAIL_COMPONENTS_ANCHOR = FLIGHTS_COMPONENTS_ANCHOR;
 const MAIL_MESSAGE_BEFORE = FLIGHTS_MESSAGE_AFTER;
 const MAIL_MESSAGE_AFTER = `(!h&&__simeonMailParse(r)!=null?p.jsx(__simeonMail,{content:r}):${FLIGHTS_MESSAGE_AFTER})`;
@@ -1015,38 +1015,44 @@ export function patchOriginalMail(source) {
 
 export const MAIL_MARKER = "/* Simeon: mail brief";
 /** The flights card's tokens and scale; urgent is the one colour, in both themes. */
-export const mailCss = () => `${MAIL_MARKER} (7 October 2026, calmer the same evening). */
-.simeon-mail{--m-ink:light-dark(#1d1d1f,#f5f5f7);--m-ink-2:light-dark(#6e6e73,#98989d);--m-ink-3:light-dark(#aeaeb2,#636366);--m-line:light-dark(rgba(60,60,67,.16),rgba(84,84,88,.55));--m-blue:light-dark(${USER_BUBBLE_LIGHT},#5e9be0);box-sizing:border-box;width:520px;max-width:100%;min-width:0;font-family:${PANE_FONT};font-weight:400;color:var(--m-ink);-webkit-font-smoothing:antialiased;font-feature-settings:"tnum" 1}
-.simeon-mail__head{padding:0 0 2px}
-.simeon-mail__head h3{margin:0;font-size:15px;line-height:20px;font-weight:600;letter-spacing:-.01em}
-.simeon-mail__head p{margin:1px 0 0;font-size:13px;line-height:18px;color:var(--m-ink-2)}
-.simeon-mail__section+.simeon-mail__section{margin-top:14px}
-.simeon-mail__section h4{margin:0 0 2px;font-size:15px;line-height:20px;font-weight:600;letter-spacing:-.01em}
-.simeon-mail__head+.simeon-mail__section h4{margin-top:10px}
+export const mailCss = () => `${MAIL_MARKER} (7 October 2026, third pass the same evening). */
+.simeon-mail{--m-ink:light-dark(#1d1d1f,#f5f5f7);--m-ink-2:light-dark(#6e6e73,#98989d);--m-line:light-dark(rgba(60,60,67,.14),rgba(84,84,88,.5));--m-blue:light-dark(${USER_BUBBLE_LIGHT},#8cb8e8);--m-blue-soft:light-dark(rgba(37,90,147,.35),rgba(140,184,232,.4));box-sizing:border-box;width:560px;max-width:100%;min-width:0;padding:4px 2px 2px;font-family:${PANE_FONT};font-weight:400;color:var(--m-ink);-webkit-font-smoothing:antialiased;font-feature-settings:"tnum" 1}
+.simeon-mail__head{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:10px;align-items:center;padding:0 0 10px}
+.simeon-mail__head:not([data-app]){grid-template-columns:minmax(0,1fr)}
+.simeon-mail__head h3{margin:0;font-size:17px;line-height:22px;font-weight:600;letter-spacing:-.02em}
+.simeon-mail__head p{grid-column:-2/-1;margin:2px 0 0;font-size:13px;line-height:18px;color:var(--m-ink-2)}
+.simeon-mail__head>.simeon-mail__app>.simeon-app__logo{width:22px;height:22px}
+.simeon-mail__app{display:inline-flex;flex:0 0 auto}
+.simeon-mail__app>.simeon-app__logo{width:14px;height:14px;margin:0;vertical-align:0}
+.simeon-mail__section+.simeon-mail__section{margin-top:18px}
+.simeon-mail__section h4{margin:0 0 4px;font-size:15px;line-height:20px;font-weight:600}
 .simeon-mail__list{list-style:none;margin:0;padding:0}
-.simeon-mail__row{position:relative;padding:10px 0}
+.simeon-mail__row{position:relative;padding:14px 0}
 .simeon-mail__row+.simeon-mail__row{box-shadow:inset 0 .5px 0 var(--m-line)}
-.simeon-mail__email{padding-left:14px}
-.simeon-mail__email[data-unread="true"]::before{content:"";position:absolute;left:0;top:17px;width:7px;height:7px;border-radius:999px;background:var(--m-blue)}
-.simeon-mail__line{display:flex;align-items:baseline;gap:8px}
-.simeon-mail__from{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px;line-height:20px;font-weight:600;letter-spacing:-.01em}
+.simeon-mail__email{padding-left:18px}
+.simeon-mail__email[data-unread="true"]::before{content:"";position:absolute;left:0;top:21px;width:8px;height:8px;border-radius:999px;background:var(--m-blue)}
+.simeon-mail__line{display:flex;align-items:baseline;gap:12px}
+.simeon-mail__from{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px;line-height:21px;font-weight:600;letter-spacing:-.01em}
 .simeon-mail__time{flex:0 0 auto;font-size:13px;line-height:18px;color:var(--m-ink-2);white-space:nowrap}
-.simeon-mail__subject{font-size:14px;line-height:19px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.simeon-mail__why{margin-top:1px;font-size:13px;line-height:18px;color:var(--m-ink-2)}
-.simeon-mail__meta{margin-top:3px;font-size:12px;line-height:16px;color:var(--m-ink-2)}
-.simeon-mail__meta[data-urgent="true"]{color:var(--m-ink)}
-.simeon-mail__reply{margin:8px 0 0;padding:0 0 0 10px;box-shadow:inset 2px 0 0 var(--m-line)}
-.simeon-mail__reply span{display:block;font-size:12px;line-height:16px;color:var(--m-ink-2)}
-.simeon-mail__reply p{margin:1px 0 0;font-size:13px;line-height:18px;color:var(--m-ink)}
-.simeon-mail__day{padding:12px 0 2px;font-size:13px;line-height:18px;font-weight:600;color:var(--m-ink-2)}
-.simeon-mail__day:first-child{padding-top:4px}
+.simeon-mail__subject{margin-top:2px;font-size:15px;line-height:21px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.simeon-mail__why{margin-top:3px;font-size:14px;line-height:20px;color:var(--m-ink-2)}
+.simeon-mail__meta{display:flex;gap:14px;margin-top:8px;font-size:13px;line-height:18px;color:var(--m-ink-2)}
+.simeon-mail__due--urgent{color:var(--m-blue);font-weight:500}
+.simeon-mail__reply{margin:12px 0 2px;padding:2px 0 2px 12px;box-shadow:inset 2px 0 0 var(--m-blue-soft)}
+.simeon-mail__reply span{display:block;font-size:12px;line-height:16px;font-weight:500;color:var(--m-blue)}
+.simeon-mail__reply p{margin:3px 0 0;font-size:14px;line-height:20px;color:var(--m-ink)}
+.simeon-mail__day{padding:18px 0 4px;font-size:13px;line-height:18px;font-weight:600;color:var(--m-blue)}
+.simeon-mail__day:first-child{padding-top:2px}
 .simeon-mail__day+.simeon-mail__row{box-shadow:none}
-.simeon-mail__agenda{display:grid;grid-template-columns:68px minmax(0,1fr);column-gap:10px;align-items:start}
-.simeon-mail__when{padding-top:1px;font-size:13px;line-height:18px;color:var(--m-ink-2)}
-.simeon-mail__check{display:block;width:18px;height:18px;margin-top:1px;border-radius:999px;box-shadow:inset 0 0 0 1.5px var(--m-ink-3)}
-.simeon-mail__title{font-size:15px;line-height:20px}
-.simeon-mail__person{display:flex;align-items:center;gap:12px}
+.simeon-mail__agenda{display:grid;grid-template-columns:72px minmax(0,1fr);column-gap:12px;align-items:start;padding:12px 0}
+.simeon-mail__when{padding-top:1px;font-size:13px;line-height:20px;color:var(--m-ink-2)}
+.simeon-mail__check{display:block;width:20px;height:20px;border-radius:999px;box-shadow:inset 0 0 0 1.5px var(--m-blue)}
+.simeon-mail__title{font-size:15px;line-height:21px}
+.simeon-mail__source{display:flex;align-items:center;gap:6px}
+.simeon-mail__person{display:flex;align-items:center;gap:14px;padding:12px 0}
 .simeon-mail__person .simeon-mail__body{flex:1 1 auto;min-width:0}
+.simeon-mail__monogram{display:grid;place-items:center;flex:0 0 auto;width:36px;height:36px;border-radius:999px;background:linear-gradient(180deg,light-dark(#a9adb6,#6e727a),light-dark(#878b95,#55585f));color:#fff;font-size:14px;font-weight:500;letter-spacing:.02em}
+.simeon-mail__person .simeon-mail__why{margin-top:1px}
 `;
 
 export function patchOriginalMailStylesheet(css) {
