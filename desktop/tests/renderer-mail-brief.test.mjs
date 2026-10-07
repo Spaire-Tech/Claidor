@@ -32,7 +32,8 @@ test("a simeon-mail block is one card: emails that need you, dated items, and th
   assert.equal(card.app, "gmail", "the app's own icon beside the title, from the window's app logos");
   assert.deepEqual(card.items.map((item) => item.kind), ["email", "event"], "an email with no subject and an unknown kind are left out");
   assert.deepEqual(card.items[0].draft, { to: ["maya@haleward.com"], subject: "Re: Redlines", body: "Approved." }, "the reply the agent prepared, for the composer");
-  assert.deepEqual(card.items[0].thread, [{ from: "Maya Chen", time: "Mon", body: "Attached." }], "the thread for the pane, empty messages dropped");
+  assert.deepEqual(card.items[0].thread, [{ from: "Maya Chen", time: "Mon", body: "Attached.", me: false, attachments: [] }], "the thread for the dialog, empty messages dropped");
+  assert.equal(parse(block({ items: [{ kind: "email", subject: "s", thread: [{ from: "You", body: "x" }, { from: "Bass", me: true, body: "y", attachments: ["deck.pdf", 3] }] }] })).items[0].thread.map((m) => [m.me, m.attachments.join()]).join("|"), "true,|true,deck.pdf", "your own messages are known by name or flag; files are names");
   assert.equal(card.items[0].from, "Maya Chen");
   assert.deepEqual(card.items[1], { kind: "event", title: "Partner meeting", weekday: "Thu", date: "Oct 9", time: "10:00 AM", note: "Zoom", app: "google-calendar", today: false });
   assert.deepEqual(card.rest, { label: "28 can wait · 3 handled by Iris", items: [{ from: "Stripe", subject: "Payout", note: "" + "Can wait" }] });
@@ -79,4 +80,22 @@ test("the email composer's chunk exports its form for the pane, once, and nothin
   const pinned = path.join(repoRoot, "src/app/dist/renderer/assets", EMAIL_COMPOSER_CHUNK);
   const { existsSync, readFileSync } = await import("node:fs");
   if (existsSync(pinned)) assert.match(patchOriginalEmailComposerExport(readFileSync(pinned, "utf8")), /export\{Ms as default,zs as __simeonEmailComposer\};\s*$/, "the pinned chunk carries the form the brief opens");
+});
+
+test("a long thread stays readable: quoted history is split off, the middle collapses, long messages are clipped", async () => {
+  const { MAIL_REPLACEMENTS, mailCss } = await import(patchModule);
+  const source = MAIL_REPLACEMENTS.find(([label]) => label === "mail-components")[2];
+  const split = new Function(`${source.slice(source.indexOf("function __simeonMailSplit("), source.indexOf("function __simeonMailMono("))}; return __simeonMailSplit;`)();
+  assert.deepEqual(split("Approved.\n\nOn Tue, Oct 7, 2026 at 10:15 AM Bass <b@x.com> wrote:\n> Thanks"), { main: "Approved.", quoted: "On Tue, Oct 7, 2026 at 10:15 AM Bass <b@x.com> wrote:\n> Thanks" });
+  assert.deepEqual(split("Sure\n> earlier line"), { main: "Sure", quoted: "> earlier line" });
+  assert.deepEqual(split("No quote here.\nSecond line."), { main: "No quote here.\nSecond line.", quoted: "" });
+  assert.deepEqual(split("> starts with a quote"), { main: "> starts with a quote", quoted: "" }, "a message that is only a quote is shown, not hidden");
+  // Only the latest message opens; past four, the first and the last three show and the middle hides behind one line.
+  assert.match(source, /\[open,setOpen\]=S\.useState\(\(\)=>new Set\(\[last\]\)\),\[all,setAll\]=S\.useState\(msgs\.length<=4\)/);
+  assert.match(source, /shown=all\?msgs\.map\(\(_,i\)=>i\):\[0,last-2,last-1,last\],hidden=all\?0:last-3/);
+  assert.match(source, /long=parts\.main\.length>900\|\|parts\.main\.split\("\\n"\)\.length>12/);
+  const css = mailCss();
+  assert.match(css, /\.simeon-mail-thread__scroll\{max-height:min\(60vh,620px\);overflow-y:auto/, "the dialog never outgrows the window; Review reply stays below the scroll");
+  assert.match(css, /\.simeon-mail-thread__text--clamped\{display:-webkit-box;-webkit-line-clamp:12;/);
+  assert.match(css, /\.simeon-mail-thread__mono--me\{background:light-dark\(#255a93,#1f5087\)/, "your own messages carry the window's blue");
 });
