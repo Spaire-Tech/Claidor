@@ -16,6 +16,15 @@ The rules are shape based, not app based, and each one only removes noise:
   a note of its size (an attachment id stays whole: the agent needs it);
 - quoted earlier messages (lines starting with ``>``) are folded to one line.
 Anything the rules do not recognise passes through unchanged.
+
+Added after the September inbox log (7 October 2026), for a message whose
+text is already in ``messageText``:
+- text that arrives as HTML (an Apple Mail reply) is turned into text;
+- an earlier reply chain under the message (an HTML quote, or Outlook's
+  ``From: ... Sent: ...`` block) is folded to one line, unless the message is
+  a forward, where the quoted part is the content;
+- the MIME skeleton (``payload.parts``) and the ``preview`` copy go: the text
+  is in ``messageText`` and every attachment is in ``attachmentList``.
 """
 
 import base64
@@ -23,10 +32,12 @@ import binascii
 import html
 import json
 import re
-from typing import Any
+from typing import Any, TypeGuard
 
 OUTPUT_LIMIT = 30_000
 _TEXT_LIMIT = 6_000
+# A reply chain shorter than this stays: folding it saves less than it risks.
+_CHAIN_FOLD_MIN = 800
 _KEPT_HEADERS = frozenset(
     {"from", "to", "cc", "bcc", "reply-to", "subject", "date", "message-id"}
 )
@@ -35,7 +46,22 @@ _KEEP_KEY = re.compile(r"(?i)(id|ids|token|url|uri|href|link|cursor)$")
 _TAGS = re.compile(r"(?is)<(script|style|head)\b.*?</\1>|<[^>]+>")
 _BLOCK_TAGS = re.compile(r"(?i)<\s*(br|/p|/div|/tr|/li|/h[1-6])\b[^>]*>")
 _BLANKS = re.compile(r"\n[ \t|]*(?:\n[ \t|]*)+")
-_SPACES = re.compile(r"[ \t ]+")
+_SPACES = re.compile(r"[ \t\xa0]+")
+_HTML_HINT = re.compile(
+    r"(?i)</(?:div|p|span|td|table|blockquote|body|html)\s*>|<br\s*/?>"
+)
+# Where a client starts the quoted earlier messages in HTML: Apple Mail and
+# most clients use <blockquote>, Gmail a gmail_quote div, Outlook a reply div.
+_HTML_QUOTE = re.compile(
+    r"(?i)<blockquote\b"
+    r"|<div\b[^>]*class=\"[^\"]*gmail_quote"
+    r"|<div\b[^>]*id=\"(?:divRplyFwdMsg|appendonsend)\""
+)
+_FORWARD_SUBJECT = re.compile(r"(?i)\bfwd?\s*:")
+_FORWARD_BODY = re.compile(r"(?i)forwarded message|begin forwarded")
+_CHAIN_FROM = re.compile(r"^\s*\**From:\**\s*\S")
+_CHAIN_SENT = re.compile(r"^\s*\**(?:Sent|Date):\**\s*\S")
+_CHAIN_RULE = re.compile(r"(?i)^\s*(?:_{10,}|-{3,}\s*original message\s*-{3,})\s*$")
 
 
 def _decode(data: str) -> str | None:
@@ -56,8 +82,60 @@ def _html_text(markup: str) -> str:
     return html.unescape(text)
 
 
-def readable_text(text: str) -> str:
-    """Plain text an agent reads: no quoted chains, no runs of blank lines."""
+def _cut_html_quote(markup: str) -> str:
+    """The markup above the first quoted earlier message, with a note."""
+    match = _HTML_QUOTE.search(markup)
+    if match is None or not _html_text(markup[: match.start()]).strip():
+        return markup
+    return markup[: match.start()] + "<br>[earlier quoted messages omitted]"
+
+
+def _fold_reply_chain(text: str) -> str:
+    """Folds an Outlook-style chain (``From: ... Sent: ...``) under a reply."""
+    lines = text.split("\n")
+    for index, line in enumerate(lines):
+        if index == 0:
+            continue
+        starts_chain = False
+        if _CHAIN_RULE.match(line):
+            starts_chain = any(
+                _CHAIN_FROM.match(nxt) for nxt in lines[index + 1 : index + 4]
+            )
+        elif _CHAIN_FROM.match(line):
+            starts_chain = any(
+                _CHAIN_SENT.match(nxt) for nxt in lines[index + 1 : index + 5]
+            )
+        if not starts_chain:
+            continue
+        before = "\n".join(lines[:index])
+        chain = "\n".join(lines[index:])
+        if not before.strip() or len(chain) < _CHAIN_FOLD_MIN:
+            return text
+        return (
+            before.rstrip()
+            + f"\n\n[earlier messages in this thread omitted: {len(chain)} characters;"
+            " read the thread for them]"
+        )
+    return text
+
+
+def readable_text(
+    text: str, *, html_text: bool | None = None, fold_replies: bool = False
+) -> str:
+    """Plain text an agent reads: no quoted chains, no runs of blank lines.
+
+    ``html_text`` says the text is HTML (None: guess from its tags).
+    ``fold_replies`` also folds an earlier reply chain; it is ignored for a
+    forward, whose quoted part is what was sent.
+    """
+    if fold_replies and _FORWARD_BODY.search(text):
+        fold_replies = False
+    if html_text is None:
+        html_text = _HTML_HINT.search(text) is not None
+    if html_text:
+        if fold_replies:
+            text = _cut_html_quote(text)
+        text = _html_text(text)
     text = text.replace("\r\n", "\n").replace("\r", "\n")
     lines: list[str] = []
     quoted = False
@@ -69,7 +147,10 @@ def readable_text(text: str) -> str:
             continue
         quoted = False
         lines.append(_SPACES.sub(" ", line).rstrip())
-    text = _BLANKS.sub("\n\n", "\n".join(lines)).strip()
+    text = "\n".join(lines)
+    if fold_replies:
+        text = _fold_reply_chain(text)
+    text = _BLANKS.sub("\n\n", text).strip()
     if len(text) > _TEXT_LIMIT:
         text = text[:_TEXT_LIMIT] + " … (rest of the text cut)"
     return text
@@ -94,7 +175,7 @@ def _tidy_headers(headers: list[Any]) -> list[Any]:
     return kept
 
 
-def _is_header_list(value: Any) -> bool:
+def _is_header_list(value: Any) -> TypeGuard[list[Any]]:
     return (
         isinstance(value, list)
         and len(value) > 0
@@ -105,7 +186,21 @@ def _is_header_list(value: Any) -> bool:
     )
 
 
-def _part_text(part: dict[str, Any]) -> str | None:
+def _subject_of(value: dict[str, Any]) -> str | None:
+    subject = value.get("subject")
+    if isinstance(subject, str):
+        return subject
+    headers = value.get("headers")
+    if _is_header_list(headers):
+        for header in headers:
+            if str(header.get("name", "")).lower() == "subject" and isinstance(
+                header.get("value"), str
+            ):
+                return header["value"]
+    return None
+
+
+def _part_text(part: dict[str, Any], *, fold_replies: bool) -> str | None:
     body = part.get("body")
     if not isinstance(body, dict) or not isinstance(body.get("data"), str):
         return None
@@ -113,9 +208,8 @@ def _part_text(part: dict[str, Any]) -> str | None:
     if decoded is None:
         return None
     mime = part.get("mimeType")
-    if isinstance(mime, str) and mime.lower() == "text/html":
-        decoded = _html_text(decoded)
-    return readable_text(decoded)
+    is_html = isinstance(mime, str) and mime.lower() == "text/html"
+    return readable_text(decoded, html_text=is_html, fold_replies=fold_replies)
 
 
 def _tidy_parts(parts: list[Any]) -> list[Any]:
@@ -136,23 +230,52 @@ def _tidy_parts(parts: list[Any]) -> list[Any]:
     return parts
 
 
-def _tidy(value: Any, key: str = "", *, has_text: bool = False) -> Any:
+def _slim_payload(payload: dict[str, Any]) -> dict[str, Any] | None:
+    """A message payload whose text and attachments are listed elsewhere."""
+    headers = payload.get("headers")
+    if _is_header_list(headers):
+        return {"headers": _tidy_headers(headers)}
+    return None
+
+
+def _tidy(
+    value: Any, key: str = "", *, has_text: bool = False, forward: bool = False
+) -> Any:
     if isinstance(value, dict):
         own_text = (
             isinstance(value.get("messageText"), str)
             and value["messageText"].strip() != ""
         )
         within = has_text or own_text
+        subject = _subject_of(value)
+        if subject is not None:
+            forward = _FORWARD_SUBJECT.search(subject) is not None
+        # The text is in messageText and the attachments in attachmentList:
+        # the MIME skeleton and the preview copy say nothing new.
+        listed = own_text and isinstance(value.get("attachmentList"), list)
         out: dict[str, Any] = {}
         for k, v in value.items():
             if k == "headers" and _is_header_list(v):
                 out[k] = _tidy_headers(v)
+            elif k == "messageText" and isinstance(v, str):
+                out[k] = readable_text(v, fold_replies=not forward)
+            elif k == "payload" and listed and isinstance(v, dict):
+                slim = _slim_payload(v)
+                if slim is not None:
+                    out[k] = slim
+            elif k == "preview" and own_text and isinstance(v, dict):
+                rest = {pk: pv for pk, pv in v.items() if pk != "body"}
+                if rest and rest != {"subject": value.get("subject")}:
+                    out[k] = _tidy(rest, k, has_text=within, forward=forward)
             elif k == "parts" and isinstance(v, list):
-                out[k] = [_tidy(p, k, has_text=within) for p in _tidy_parts(v)]
+                out[k] = [
+                    _tidy(p, k, has_text=within, forward=forward)
+                    for p in _tidy_parts(v)
+                ]
             elif k == "body" and isinstance(v, dict) and isinstance(v.get("data"), str):
                 if within:
                     continue
-                text = _part_text(value)
+                text = _part_text(value, fold_replies=not forward)
                 rest = {bk: bv for bk, bv in v.items() if bk not in ("data", "size")}
                 out[k] = (
                     {**rest, "text": text}
@@ -163,15 +286,12 @@ def _tidy(value: Any, key: str = "", *, has_text: bool = False) -> Any:
                     }
                 )
             else:
-                out[k] = _tidy(v, k, has_text=within)
+                out[k] = _tidy(v, k, has_text=within, forward=forward)
         return out
     if isinstance(value, list):
-        return [_tidy(item, key, has_text=has_text) for item in value]
-    if isinstance(value, str):
-        if key == "messageText":
-            return readable_text(value)
-        if _looks_encoded(key, value):
-            return f"[{len(value)} characters of encoded data omitted]"
+        return [_tidy(item, key, has_text=has_text, forward=forward) for item in value]
+    if isinstance(value, str) and _looks_encoded(key, value):
+        return f"[{len(value)} characters of encoded data omitted]"
     return value
 
 

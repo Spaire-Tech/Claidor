@@ -396,6 +396,14 @@ and Ashby connect through Simeon. The provider behind them is never named in the
   the old 60,000 character cut and was paid for again on every later step. On the box, a result
   over 40,000 bytes goes to a file under `.sand/tools/`; if that file cannot be written the
   result is now cut with a notice instead of going to the model whole.
+  Since the September inbox log (also 7 October), for a message whose text is in `messageText`:
+  text that arrives as HTML (an Apple Mail reply) is turned into text; the earlier reply chain
+  under it (an HTML quote, or Outlook's `From: ... Sent: ...` block of 800 characters or more)
+  folds to one line saying how much was left out, except in a forward (`Fwd:` in the subject, or
+  "Forwarded message" in the text), where the quoted part is what was sent; and the MIME
+  skeleton (`payload.parts`) and the `preview` copy go, since the text is in `messageText` and
+  every attachment id is in `attachmentList`. A listing without text (`verbose=false`) keeps its
+  preview. A message shaped like the Carlton budget email went from 3,694 to 1,884 characters.
 * **The provider round trips.** Which accounts a person has connected is asked once a minute at
   most for the agent's tool calls (`connected_account_ids`); "not connected" is never kept, and
   disconnecting forgets it.

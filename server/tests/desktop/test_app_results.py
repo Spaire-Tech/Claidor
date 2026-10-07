@@ -87,13 +87,11 @@ def test_a_full_message_keeps_what_the_agent_acts_on_and_drops_the_noise() -> No
     assert "move in fee of $500.00" in tidy["messageText"]
     assert "Yes, please proceed" not in tidy["messageText"]
     assert "[earlier quoted messages omitted]" in tidy["messageText"]
-    # The text is already in messageText: the encoded copies go, the attachment stays.
-    parts = tidy["payload"]["parts"]
-    assert [p["mimeType"] for p in parts] == ["text/plain", "application/pdf"]
-    assert "body" not in parts[0]
-    assert parts[1]["body"]["attachmentId"].startswith("ANGjdJ")
-    assert len(parts[1]["body"]["attachmentId"]) == 506
+    # The text is in messageText and the attachment in attachmentList: the
+    # MIME skeleton goes, the headers stay, the attachment id appears once.
+    assert set(tidy["payload"]) == {"headers"}
     assert tidy["attachmentList"][0]["attachmentId"] == "ANGjdJ" + "a" * 500
+    assert text.count("ANGjdJ") == 1
     assert tidy["messageId"] == "1a112c0d7a8f4865"
     assert tidy["threadId"] == "1a0cf02ead9052b3"
 
@@ -162,3 +160,93 @@ def test_a_result_that_cannot_be_tidied_still_comes_back() -> None:
             return "odd"
 
     assert "odd" in tidy_result({"value": Odd()})
+
+
+SIGNATURE = (
+    "\n\nRobin Bentley-Mackey\n\nAssociation Manager\n\nNotice: This message is"
+    " intended for the sole use of the individual and entity to which it is"
+    " addressed. It may contain information that is privileged.\n"
+)
+CHAIN = (
+    "\n________________________________\nFrom: Lori Bennett <lorib@example.com>\n"
+    "Sent: Saturday, September 19, 2026 9:26 PM\nTo: Robin; Bass\n"
+    "Subject: RE: WHV- IRS UNPAID TAXES FORM 1120H\n\nHello Robin and Bass:\n\n"
+    "I never got a reply as to the status of the check." + SIGNATURE * 6
+)
+
+
+def _listed(subject: str, text: str) -> dict:
+    return {
+        "attachmentList": [],
+        "messageId": "1a0fd88f6e11bc98",
+        "messageText": text,
+        "subject": subject,
+        "preview": {"body": text[:200], "subject": subject},
+        "payload": {
+            "headers": [{"name": "Subject", "value": subject}],
+            "mimeType": "multipart/alternative",
+            "parts": [{"filename": "", "headers": [], "mimeType": "text/plain"}],
+        },
+    }
+
+
+def test_an_outlook_reply_chain_under_a_reply_is_folded() -> None:
+    reply = "Good Morning Lori & Bass,\n\nThe letter confirms two checks were returned."
+    tidy = json.loads(
+        tidy_result(_listed("Re: WHV- IRS UNPAID TAXES", reply + SIGNATURE + CHAIN))
+    )
+    text = tidy["messageText"]
+    assert "two checks were returned" in text
+    assert "Robin Bentley-Mackey" in text
+    assert "I never got a reply" not in text
+    assert "[earlier messages in this thread omitted:" in text
+    assert "preview" not in tidy
+
+
+def test_a_forward_keeps_the_messages_it_carries() -> None:
+    note = "Hello Bass:\n\nPlease get this done today."
+    tidy = json.loads(
+        tidy_result(_listed("FW: Westwater August Financials", note + CHAIN))
+    )
+    assert "I never got a reply as to the status of the check" in tidy["messageText"]
+    assert "omitted" not in tidy["messageText"]
+
+
+def test_a_short_reply_chain_stays() -> None:
+    short = "Thanks.\n\nFrom: Lori\nSent: Monday\nTo: Bass\n\nCan you check?"
+    tidy = json.loads(tidy_result(_listed("Re: Check", short)))
+    assert "Can you check?" in tidy["messageText"]
+
+
+APPLE_REPLY = (
+    '<html class="apple-mail-supports-explicit-dark-mode"><head><meta charset="utf-8">'
+    '</head><body dir="auto">Hello Bass,&nbsp;<div><br></div><div>I would really like to'
+    " get this money back into my account.</div><div><br></div><div>Matt Rollins<br>"
+    '<div dir="ltr">Sent from my iPhone</div><div dir="ltr"><br><blockquote type="cite">'
+    "On Sep 3, 2026, at 9:38 AM, Invoices wrote:<br><br></blockquote></div>"
+    '<blockquote type="cite"><div dir="ltr">Mathew would like the second withdrawal'
+    " of $709.60 refunded.</div></blockquote></div></body></html>"
+)
+
+
+def test_a_reply_that_arrives_as_html_is_turned_into_text() -> None:
+    tidy = json.loads(tidy_result(_listed("Re: Strathmore #3", APPLE_REPLY)))
+    text = tidy["messageText"]
+    assert "<" not in text
+    assert "I would really like to get this money back" in text
+    assert "Sent from my iPhone" in text
+    assert "$709.60" not in text
+    assert "[earlier quoted messages omitted]" in text
+
+
+def test_an_html_forward_keeps_its_quoted_message() -> None:
+    forward = APPLE_REPLY.replace("Sent from my iPhone", "Begin forwarded message:")
+    tidy = json.loads(tidy_result(_listed("Strathmore #3", forward)))
+    assert "$709.60" in tidy["messageText"]
+
+
+def test_a_listing_without_text_keeps_its_preview_and_payload() -> None:
+    message = _listed("Parc Mercer #302 - Fob Fee", "")
+    tidy = json.loads(tidy_result(message))
+    assert tidy["preview"] == message["preview"]
+    assert tidy["payload"]["parts"] == message["payload"]["parts"]

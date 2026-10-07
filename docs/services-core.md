@@ -177,8 +177,8 @@ one input token at $3.00 per million.
 
 | Model id | Role | Price per million tokens |
 |---|---|---|
-| `gpt-6-sol` | `primary`: the agent loop, every reply the person reads | $2.00 in, $0.20 cached, $10.00 out |
-| `gpt-6-luna` | `cheap`: subagents, summaries, memory, computer and browser use | $0.10 in, $0.01 cached, $0.50 out |
+| `gpt-6-sol` | `primary`: the agent loop, every reply the person reads, its subagents (executor, computer and browser use) | $2.00 in, $0.20 cached, $10.00 out |
+| `gpt-6-luna` | `cheap`: summaries, memory, the auto-review classifier, and a step re-run after a rate limit | $0.10 in, $0.01 cached, $0.50 out |
 | `claude-sonnet-5` | `fallback`: only when the primary's provider is down | $3.00 in |
 | `gemini-2.5-flash` | `video`: the watch-video subagents | $0.30 in (to confirm) |
 | `gpt-5.6-terra`, `gpt-5.6-luna` | `retired`: still served to older app builds, never offered | $2.00 / $0.20 in |
