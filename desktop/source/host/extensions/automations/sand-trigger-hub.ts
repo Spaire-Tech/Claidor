@@ -6,7 +6,9 @@ import { triggerMatchesEvent } from "../../automations/automation-trigger.js";
 // The shortest gap between two runs of one routine (15 minutes): each run is
 // a whole agent turn, and "every minute" is almost always a mistake. The
 // server's ROUTINE_MIN_INTERVAL is the same (simeon/sand/listeners_service.py).
-export const ROUTINE_MIN_INTERVAL_MS = 15 * 60_000;
+// No gap since 8 October 2026, as the upstream app has none (15 minutes from
+// 2 October to then); the hold stays in the code for a gap set on purpose.
+export const ROUTINE_MIN_INTERVAL_MS = 0;
 
 export interface TriggerSourceStatus { state: string; detail?: string; scopeIssues?: readonly unknown[] }
 export interface TriggerSource { kind: string; setListeners(listeners: readonly EventTrigger[]): void; start(accept: (event: Record<string, unknown>) => boolean): Promise<void>; stop(): Promise<void>; getStatus(): TriggerSourceStatus }

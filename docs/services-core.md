@@ -193,19 +193,21 @@ refuses any model with no role: "This model is not offered by the desktop app."
 **Effort.** The app sends reasoning effort per call
 (`desktop/source/host/extensions/inference/provider-session.ts`):
 
-- The cheap roles (computer, browser and video helpers, summaries, memory,
-  safety checks) run at `low`.
-- A turn's first call, on what was asked, runs at `medium`: a message from the
-  person, a routine, another agent's message, a helper's task, a voice call's
-  task, the first message. A turn that only reacts (a reply nudge, a
-  background wake, an unnamed hidden turn) starts at `low`.
-- A call that follows tool results runs at `low` (`SAND_SIMEON_TOOL_RESULT_EFFORT`):
-  most steps of a task hand one tool's result to the next tool.
-- A call that follows a failed tool runs at `high`: recovering is hard thinking.
+- The agent loop runs at `high` on every call, as the upstream app runs it.
+- The cheap roles (summaries, memory, safety checks) run on the cheap model at
+  `low`. The computer, browser and video helpers run on the main model at
+  `low`, as the upstream's do (from 22 September to 8 October 2026 they ran
+  on the cheap model).
 - `SAND_SIMEON_REASONING_EFFORT` set to a level holds that level for every
-  non-cheap call.
+  non-cheap call; `SAND_SIMEON_TOOL_RESULT_EFFORT` lowers the calls that
+  follow a tool result.
 
-Until 2 October 2026 every call of the agent loop ran at `high`.
+From 2 to 8 October 2026 the loop ran a ladder (a turn's first call at
+`medium`, `low` after tool results and on nudges and wakes, `high` after a
+failed tool). The insurance log of 6 October showed what that bought: the
+agent coasted through the middle of a job and through every revival after a
+helper, repeated itself and went idle. Restored to `high`; the ladder's code
+stays with every rung at `high`.
 
 **Output ceiling.** Every call carries `max_output_tokens` 32,000
 (`SAND_SIMEON_MAX_OUTPUT_TOKENS`), thinking included. A call that reaches it
@@ -233,11 +235,17 @@ prompt by its longest unchanged start, so a new teammate or routine no longer
 sends the whole prompt back at full price. The `prefix=sys:…` hash on each
 `[simeon] model=` line changes only when that start changes.
 
-**Screenshots.** Older tool screenshots are replaced by a line saying so,
-five at a time, keeping at least the latest three (`SIMEON_KEPT_TOOL_IMAGES`,
-`SIMEON_TOOL_IMAGE_DROP_BATCH`). In batches, the history stays the same
-between drops and the cache misses once every five steps, not every step.
-Pictures the person attached are always kept.
+**Screenshots.** Every tool screenshot stays in the request, as in the
+upstream app. From 2 to 8 October 2026 only the latest three to seven stayed
+(`SIMEON_KEPT_TOOL_IMAGES`, now Infinity; `SIMEON_TOOL_IMAGE_DROP_BATCH`), and
+a helper repeating the same clicks could not see what it had done three
+steps before. The pruning stays in the code for a kept count set on purpose.
+
+**Empty answers.** Every `[simeon] model=` line ends with `outcome=` (`tools`,
+`text` or `empty`: a paid call that produced neither) and `reason=` (the
+call's `x-simeon-call-reason`). An empty call also writes
+`[simeon] empty-answer model=… effort=… reason=… output=… reasoning=…`, so
+`grep empty-answer` on the host log finds the calls that bought nothing.
 
 **Older model ids.** If the server does not offer `gpt-6-sol` or `gpt-6-luna`
 yet, the app retries the step on the model it replaced (`gpt-5.6-terra` or
@@ -275,22 +283,24 @@ In the app, a turn has a limit on how many model calls it may make
 |---|---|---|
 | A turn the person asked for | 5,000 calls | `SAND_AGENT_MAX_STEPS` |
 | The first message | 5,000 calls (`fullStepBudget`) | `SAND_AGENT_MAX_STEPS` |
-| A routine's run | 200 calls | `SAND_ROUTINE_MAX_STEPS` |
-| Any other hidden turn (reply nudges, wake-ups, memory extraction) | 40 calls | `SAND_HIDDEN_TURN_MAX_STEPS` |
+| A routine's run | 5,000 calls | `SAND_ROUTINE_MAX_STEPS` |
+| Any other hidden turn (reply nudges, wake-ups, memory extraction) | 5,000 calls | `SAND_HIDDEN_TURN_MAX_STEPS` |
 
-Three more limits on work nobody asked for (2 October 2026):
+The limits on work nobody asked for, added on 2 October 2026, were taken
+out on 8 October (the founder, after the insurance log of 6 October: "bring
+back everything"); each switch still sets a limit on purpose:
 
-- **Routines** run at most once every 15 minutes, whatever the schedule says:
-  on the Mac (`ROUTINE_MIN_INTERVAL_MS`, `sand-trigger-hub.ts`) and on the
-  server (`ROUTINE_MIN_INTERVAL`, `simeon/sand/listeners_service.py`). And at
-  most 24 unattended runs in 24 hours (`SAND_ROUTINE_MAX_RUNS_PER_DAY`,
-  `automation-run-path.ts`), counted in memory, so a restart starts the count
-  again; a dropped run shows as `daily_run_cap`.
-- **Agents messaging each other** may pass six messages in a row, each waking
-  the next (`SAND_AGENT_MESSAGE_MAX_HOPS`). The seventh is refused, and the
-  agent is told to tell the person instead.
-- **Reply nudges:** one, when a turn the person started ends without a reply
-  (`MAX_REPLY_NUDGES`; three until then).
+- **Routines** run on their schedule, with no shortest gap
+  (`ROUTINE_MIN_INTERVAL_MS` 0 on the Mac, `ROUTINE_MIN_INTERVAL` 0 on the
+  server) and no daily cap (`SAND_ROUTINE_MAX_RUNS_PER_DAY` sets one; a
+  dropped run shows as `daily_run_cap`).
+- **Agents messaging each other** have no cap on messages in a row
+  (`SAND_AGENT_MESSAGE_MAX_HOPS` sets one; the next is then refused and the
+  agent told to tell the person instead).
+- **Reply nudges:** three, as the upstream app does, when a turn the person
+  started ends without a reply (`MAX_REPLY_NUDGES`; one from 2 to 8 October).
+- **Plain-text replies** are not delivered by the host any more (3 to 8
+  October they were): a turn that writes its answer as bare text is nudged.
 
 How a turn stays short (3 October 2026, from the OpenAI log of a Gmail
 question that took about twenty calls; replayed offline in

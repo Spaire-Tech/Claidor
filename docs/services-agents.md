@@ -80,7 +80,7 @@ failed check, a new issue).
   box stops firing those routines itself (`shouldScheduleLocally`) and the server owns them.
 - **Cron.** The worker actor `sand.listeners.fire_due_crons` (`listeners_tasks.py`) runs every
   minute and queues one fire per due routine, never a second while one is pending, then moves
-  the routine's next slot (`listeners_cron.py`), at least 15 minutes on (`ROUTINE_MIN_INTERVAL`
+  the routine's next slot (`listeners_cron.py`), with no shortest gap since 8 October 2026 (`ROUTINE_MIN_INTERVAL`
   in `listeners_service.py`; the Mac holds the same gap). A pending fire expires after two hours, so a
   computer that was off for a day runs a missed routine once, not once per missed slot.
 - **Events.** Webhooks arrive at the ingress routes (`listeners_ingress.py`), are checked,

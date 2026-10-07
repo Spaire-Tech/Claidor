@@ -691,9 +691,10 @@ class TestCron:
         await session.refresh(row)
         assert row.next_fire_at is not None
         assert row.next_fire_at > slot
-        # Every five minutes asked, every fifteen kept: the slot after a fire
-        # is at least ROUTINE_MIN_INTERVAL away.
-        assert row.next_fire_at - (slot + timedelta(seconds=1)) >= timedelta(minutes=14)
+        # Every five minutes asked, every five minutes kept: no shortest gap
+        # since 8 October 2026 (ROUTINE_MIN_INTERVAL is zero), so the slot
+        # after a fire is the next one on the schedule.
+        assert row.next_fire_at - slot <= timedelta(minutes=5)
         assert row.next_fire_at.minute % 5 == 0
         # The next slot is due too, but the first fire is still pending: no second one.
         assert (

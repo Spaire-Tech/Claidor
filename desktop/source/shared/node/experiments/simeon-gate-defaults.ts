@@ -18,10 +18,11 @@ import { envGateOverride } from "./simeon-experiments.js";
 //
 // `sand_auto_review` — the risky-or-safe review of the agent's own actions
 // (a shell command, a computer action, a routine write) with the confirm
-// card. Off in the bundled table, so every surface resolved to shadow: one
-// Luna call per action, verdict discarded, no card. On since 25 September
-// 2026 (design-audit-ledger.md F-340), now that the classifier runs on Luna
-// through Simeon Labs' proxy and the box host reads this table.
+// card. Off in the bundled table, so every surface resolves to shadow: one
+// Luna call per action, verdict discarded, no card. On from 25 September
+// 2026 (design-audit-ledger.md F-340) to 8 October, when the founder's first
+// real job (the insurance log of 6 October) met the card over and over;
+// off again, as the upstream ships it.
 //
 // `sand_product_analytics` — the upstream app's event stream to the upstream's
 // AnalyticsService, which nothing serves here; off (F-378).
@@ -70,7 +71,7 @@ import { envGateOverride } from "./simeon-experiments.js";
 // want literally everything", 22 September).
 export const SIMEON_FEATURE_GATE_DEFAULTS: Readonly<Record<string, boolean>> = Object.freeze({
   sand_usage_page: true,
-  sand_auto_review: true,
+  sand_auto_review: false,
   sand_product_analytics: false,
   sand_multiplayer: true,
   sand_notify_bus: true,

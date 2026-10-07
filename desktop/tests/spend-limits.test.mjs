@@ -29,18 +29,19 @@ async function bundle(entry, name) {
   return { module, dispose: () => rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) };
 }
 
-test("a routine run gets 200 calls; the first message keeps 5,000; a nudge keeps 40", async () => {
+test("a routine run gets the asked turn's 5,000 calls since 8 October 2026 (200 when the environment says so); the first message and a nudge too", async () => {
   const loaded = await bundle("source/host/extensions/inference/provider-session.ts", "budget");
   try {
     const { createModelCallBudget, spendModelCall } = loaded.module;
     const env = {};
     const routine = createModelCallBudget({ hidden: true, fullStepBudget: true, callReason: "routine" }, env);
-    assert.equal(routine.limit, 200);
+    assert.equal(routine.limit, 5000);
     assert.equal(createModelCallBudget({ hidden: true, fullStepBudget: true, callReason: "first_message" }, env).limit, 5000);
-    assert.equal(createModelCallBudget({ hidden: true, callReason: "nudge" }, env).limit, 40);
+    assert.equal(createModelCallBudget({ hidden: true, callReason: "nudge" }, env).limit, 5000);
     assert.equal(createModelCallBudget({}, env).limit, 5000);
-    assert.equal(createModelCallBudget({ hidden: true, fullStepBudget: true, callReason: "routine" }, { SAND_ROUTINE_MAX_STEPS: "50" }).limit, 50);
-    assert.throws(() => spendModelCall({ ...routine, used: 200 }), /routine run reached its budget of 200 model calls \(SAND_ROUTINE_MAX_STEPS\)/);
+    const capped = createModelCallBudget({ hidden: true, fullStepBudget: true, callReason: "routine" }, { SAND_ROUTINE_MAX_STEPS: "200" });
+    assert.equal(capped.limit, 200);
+    assert.throws(() => spendModelCall({ ...capped, used: 200 }), /routine run reached its budget of 200 model calls \(SAND_ROUTINE_MAX_STEPS\)/);
   } finally {
     await loaded.dispose();
   }
@@ -58,10 +59,15 @@ function messagingHarness(module) {
   return { messaging: new module.AgentToAgentMessaging(tm), sent };
 }
 
-test("agents may pass six messages in a row; the seventh is refused and says to bring the person in", async () => {
+test("agents may pass messages without a cap since 8 October 2026; a cap set in the environment refuses the next and says to bring the person in", async () => {
   const loaded = await bundle("source/host/extensions/transcript/agent-to-agent-messaging.ts", "hops");
   try {
     const { messaging, sent } = messagingHarness(loaded.module);
+    assert.equal(loaded.module.resolveAgentMessageHopCap?.({}) ?? Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
+    messaging.agentWakeHops.set("coo", 60);
+    assert.match(await messaging.sendToAgent("coo", "writer", "Round sixty-one."), /^Sent to Ada/, "no cap unless the environment sets one");
+    messaging.agentWakeHops.delete("coo");
+    process.env.SAND_AGENT_MESSAGE_MAX_HOPS = "6";
     // From a turn the person started: hop 1.
     assert.match(await messaging.sendToAgent("coo", "writer", "Draft the memo."), /^Sent to Ada/);
     assert.equal(messaging.pendingAgentInbound.get("writer").at(-1).hop, 1);
@@ -75,31 +81,29 @@ test("agents may pass six messages in a row; the seventh is refused and says to 
     const refusal = await messaging.sendToAgent("coo", "writer", "One more round?");
     assert.match(refusal, /^Not sent: agents have passed 6 messages in a row/);
     assert.match(refusal, /tell them with SendMessage/);
-    assert.equal(messaging.pendingAgentInbound.get("writer").length, 1);
+    assert.equal(messaging.pendingAgentInbound.get("writer").length, 2);
     assert.equal(sent.length, before);
     // Once that turn is over, a message from the person's next turn starts again.
     messaging.agentWakeHops.delete("coo");
     assert.match(await messaging.sendToAgent("coo", "writer", "New task."), /^Sent to Ada/);
     assert.equal(messaging.pendingAgentInbound.get("writer").at(-1).hop, 1);
   } finally {
+    delete process.env.SAND_AGENT_MESSAGE_MAX_HOPS;
     await loaded.dispose();
   }
 });
 
-test("a routine due every minute runs at most once every 15 minutes on the Mac", async () => {
+test("a routine due every minute runs every minute on the Mac since 8 October 2026 (no 15-minute hold)", async () => {
   const loaded = await bundle("source/host/extensions/automations/sand-trigger-hub.ts", "trigger-hub");
   try {
     const { SandTriggerHub, ROUTINE_MIN_INTERVAL_MS } = loaded.module;
-    assert.equal(ROUTINE_MIN_INTERVAL_MS, 15 * 60_000);
+    assert.equal(ROUTINE_MIN_INTERVAL_MS, 0);
     const now = Date.now();
     const fired = [];
     const automation = { id: "tick", isEnabled: true, trigger: { type: "cron", schedule: "* * * * *" }, createdAt: now - 3_600_000, lastRunAt: now - 5 * 60_000 };
     const hub = new SandTriggerHub({ polling: { start: () => ({ dispose() {} }) }, sources: [], listAutomations: async () => [{ agentId: "a", automation }], fire: async () => undefined, fireCron: async (agentId, routine) => { fired.push(routine.id); }, isReady: () => true });
     await hub.reconcileNow();
-    assert.deepEqual(fired, [], "five minutes after its last run: not yet");
-    automation.lastRunAt = now - 16 * 60_000;
-    await hub.reconcileNow();
-    assert.deepEqual(fired, ["tick"], "sixteen minutes after: it runs");
+    assert.deepEqual(fired, ["tick"], "five minutes after its last run: it runs");
     await hub.reconcileNow();
     assert.deepEqual(fired, ["tick"], "and not again straight after its local fire");
   } finally {
@@ -107,11 +111,11 @@ test("a routine due every minute runs at most once every 15 minutes on the Mac",
   }
 });
 
-test("old tool screenshots leave the wire five at a time, so the history between drops stays the same; the person's pictures stay", async () => {
+test("every tool screenshot stays on the wire since 8 October 2026; the pruning stays in the code for a kept count set on purpose", async () => {
   const loaded = await bundle("source/host/extensions/inference/provider-session.ts", "screenshots");
   try {
     const { toCoreMessages, SIMEON_KEPT_TOOL_IMAGES, SIMEON_TOOL_IMAGE_DROP_BATCH } = loaded.module;
-    assert.equal(SIMEON_KEPT_TOOL_IMAGES, 3);
+    assert.equal(SIMEON_KEPT_TOOL_IMAGES, Number.POSITIVE_INFINITY);
     assert.equal(SIMEON_TOOL_IMAGE_DROP_BATCH, 5);
     const history = (steps) => {
       const messages = [{ role: "user", content: [{ type: "text", text: "Look at this" }, { type: "image", image: "PERSON", mimeType: "image/png" }] }];
@@ -123,10 +127,8 @@ test("old tool screenshots leave the wire five at a time, so the history between
     };
     const shots = (steps) => toCoreMessages(history(steps)).flatMap((message) => Array.isArray(message.content) ? message.content.filter((part) => part.type === "image").map((part) => part.image) : []);
     assert.deepEqual(shots(7), ["PERSON", "SHOT1", "SHOT2", "SHOT3", "SHOT4", "SHOT5", "SHOT6", "SHOT7"]);
-    assert.deepEqual(shots(8), ["PERSON", "SHOT6", "SHOT7", "SHOT8"]);
-    assert.deepEqual(shots(12), ["PERSON", "SHOT6", "SHOT7", "SHOT8", "SHOT9", "SHOT10", "SHOT11", "SHOT12"]);
-    assert.deepEqual(shots(13), ["PERSON", "SHOT11", "SHOT12", "SHOT13"]);
-    // Between two drops, each request starts with the previous one unchanged.
+    assert.deepEqual(shots(13), ["PERSON", ...Array.from({ length: 13 }, (_, i) => `SHOT${i + 1}`)], "all thirteen stay");
+    // Each request starts with the previous one unchanged.
     for (let steps = 8; steps <= 11; steps += 1) {
       const before = JSON.stringify(toCoreMessages(history(steps)));
       const after = JSON.stringify(toCoreMessages(history(steps + 1)));
@@ -141,11 +143,12 @@ test("old tool screenshots leave the wire five at a time, so the history between
   }
 });
 
-test("a routine runs unattended at most 24 times in 24 hours", async () => {
+test("a routine runs unattended without a daily cap since 8 October 2026; the slot counter still works for a cap set on purpose", async () => {
   const loaded = await bundle("source/host/extensions/transcript/automation-run-path.ts", "daily-cap");
   try {
     const { takeRoutineRunSlot, ROUTINE_MAX_RUNS_PER_DAY } = loaded.module;
-    assert.equal(ROUTINE_MAX_RUNS_PER_DAY, 24);
+    assert.equal(ROUTINE_MAX_RUNS_PER_DAY, Number.POSITIVE_INFINITY);
+    assert.equal(takeRoutineRunSlot([], 1, Number.POSITIVE_INFINITY), true);
     const times = [];
     const start = 1_800_000_000_000;
     const quarter = 15 * 60_000;

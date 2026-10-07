@@ -93,20 +93,17 @@ export { SIMEON_WORKING_CONTEXT_TOKENS };
 // GPT-5.6's and reads as low.
 export const SIMEON_REASONING_EFFORTS = ["none", "low", "medium", "high", "xhigh", "max"] as const;
 export type SimeonReasoningEffort = (typeof SIMEON_REASONING_EFFORTS)[number];
-// Effort per call since 2 October 2026 (`simeonEffortForCall`); until then
-// every call ran at high, so "hello" thought as hard as a research task
-// (docs/services-core.md, "Spend"). The hard thinking in a task is at its
-// start, understanding the request and making the plan, and when something
-// goes wrong; the steps between mostly hand a tool's result to the next
-// tool. So:
-// - a turn's first call, on what the person (or a routine, or another
-//   agent) asked, runs at the session's level: medium, or low for a turn
-//   that only reacts (a reply nudge, a background wake, an unnamed one);
-// - a call that follows tool results runs at SIMEON_TOOL_RESULT_EFFORT
-//   (low), or at high when one of those results is an error.
-export const DEFAULT_SIMEON_REASONING_EFFORT: SimeonReasoningEffort = "medium";
-export const SIMEON_LOW_EFFORT_CALL_REASONS: ReadonlySet<string> = new Set(["nudge", "wake", "background"]);
-export const SIMEON_TOOL_RESULT_EFFORT: SimeonReasoningEffort = "low";
+// Every call of the agent loop runs at high, as the upstream app runs it.
+// From 2 to 8 October 2026 the effort followed the step (medium on a turn's
+// first call, low after tool results, low for nudges and wakes); the
+// insurance log of 6 October showed what that bought: the agent coasted
+// through the middle of a job and through every revival, repeated itself
+// and went idle. The ladder's machinery stays (`simeonEffortForCall`) with
+// every rung at high, so SAND_SIMEON_TOOL_RESULT_EFFORT can still lower the
+// steps after tool results on purpose.
+export const DEFAULT_SIMEON_REASONING_EFFORT: SimeonReasoningEffort = "high";
+export const SIMEON_LOW_EFFORT_CALL_REASONS: ReadonlySet<string> = new Set();
+export const SIMEON_TOOL_RESULT_EFFORT: SimeonReasoningEffort = "high";
 export const SIMEON_RECOVERY_EFFORT: SimeonReasoningEffort = "high";
 export const SAND_SIMEON_TOOL_RESULT_EFFORT_ENV = "SAND_SIMEON_TOOL_RESULT_EFFORT";
 export const DEFAULT_SIMEON_CHEAP_REASONING_EFFORT: SimeonReasoningEffort = "low";
@@ -220,14 +217,22 @@ export function simeonCallReason(options?: SimeonSessionModelOptions): SimeonCal
   return "chat";
 }
 
-// The cheap roles, as the upstream app separates them: summarization and memory
-// (their gemini-2.5-flash), the computer-use, browser-use and video
-// subagents (their opus at effort low, their gemini for a video), and
-// anything a caller marks cheap.
+// The cheap roles, as the upstream app separates them: summarization and
+// memory (their gemini-2.5-flash) and anything a caller marks cheap. The
+// computer-use, browser-use and video helpers are not cheap: the upstream
+// runs them on its strongest model at effort low, and so does this app
+// again since 8 October 2026 (from 22 September to then they ran on the
+// cheap model, and the helper driving the desktop was the weakest model
+// in the app).
 export function isCheapSimeonSession(options?: SimeonSessionModelOptions): boolean {
   return options?.cheap === true
-    || options?.isSummarizationSession === true
-    || options?.isComputerUseSubagent === true
+    || options?.isSummarizationSession === true;
+}
+
+// The helpers that act for the agent on a screen or a video: the main
+// model, at the cheap level of effort, as the upstream app runs them.
+export function isHelperSimeonSession(options?: SimeonSessionModelOptions): boolean {
+  return options?.isComputerUseSubagent === true
     || options?.isBrowserUseSubagent === true
     || options?.isVideoSubagent === true;
 }
@@ -248,7 +253,7 @@ export function simeonModelForSession(options?: SimeonSessionModelOptions): stri
 // a turn that only reacts starts at low and everything else at medium, and
 // each call then follows its step (`simeonEffortForCall`).
 export function simeonReasoningEffortForSession(options?: SimeonSessionModelOptions, env: NodeJS.ProcessEnv = process.env): SimeonReasoningEffort {
-  if (isCheapSimeonSession(options)) return configuredSimeonCheapReasoningEffort(env);
+  if (isCheapSimeonSession(options) || isHelperSimeonSession(options)) return configuredSimeonCheapReasoningEffort(env);
   const explicit = explicitSimeonReasoningEffort(env);
   if (explicit !== undefined) return explicit;
   return SIMEON_LOW_EFFORT_CALL_REASONS.has(simeonCallReason(options)) ? "low" : DEFAULT_SIMEON_REASONING_EFFORT;
@@ -257,7 +262,7 @@ export function simeonReasoningEffortForSession(options?: SimeonSessionModelOpti
 // Whether a session's effort follows its steps: not on the cheap roles
 // (always their own level) and not when the environment sets one level.
 export function simeonEffortFollowsSteps(options?: SimeonSessionModelOptions, env: NodeJS.ProcessEnv = process.env): boolean {
-  return !isCheapSimeonSession(options) && explicitSimeonReasoningEffort(env) === undefined;
+  return !isCheapSimeonSession(options) && !isHelperSimeonSession(options) && explicitSimeonReasoningEffort(env) === undefined;
 }
 
 // The effort of one call, from what the call answers: the last message of
@@ -403,20 +408,15 @@ function partText(parts: readonly Loose[]): string {
   return parts.filter(part => part?.type === "text" && typeof part.text === "string").map(part => part.text as string).join("\n");
 }
 
-// How many tool screenshots the wire keeps: the latest few. Every Computer and
-// browser action returns a fresh screenshot and the loop keeps them all, so
-// by step 30 of a task each call re-sent 30 pictures (2 October 2026). The
-// helpers are told to act on the one fresh screenshot after each call; older
-// ones are replaced by a line saying so. Pictures the person attached are
-// never dropped: they arrive as user messages, not tool output.
-//
-// They go in batches of SIMEON_TOOL_IMAGE_DROP_BATCH. The provider's cache
-// matches a request from its start; dropping the oldest picture on every
-// step would change the history in the middle every step, and everything
-// after it would miss the cache every step. Dropped five at a time, the
-// history stays the same between drops and misses once per five steps. So
-// the wire carries between 3 and 7 screenshots.
-export const SIMEON_KEPT_TOOL_IMAGES = 3;
+// How many tool screenshots the wire keeps: all of them, as the upstream app
+// keeps them. From 2 to 8 October 2026 only the latest three to seven stayed
+// and older ones became a line of text, to spare the re-sending of thirty
+// pictures by step thirty; the insurance log of 6 October showed a helper
+// repeating the same clicks on the same screen four times, blind to what it
+// had done three steps before. The pruning stays in the code with the kept
+// count at Infinity, so a smaller SIMEON_KEPT_TOOL_IMAGES can be tried again
+// on purpose. Pictures the person attached are never dropped either way.
+export const SIMEON_KEPT_TOOL_IMAGES = Number.POSITIVE_INFINITY;
 export const SIMEON_TOOL_IMAGE_DROP_BATCH = 5;
 const TOOL_IMAGE_INTRO = "Image output of the tool call(s) above.";
 const TOOL_IMAGE_DROPPED = "Image output of the tool call(s) above. (Not shown again: only the latest screenshots are kept; take a new one if you need to look.)";
@@ -500,6 +500,14 @@ export interface ModelCallLogLine {
   // share their whole prefix; a `cached=0` with unchanged hashes is a cache
   // routing miss, not a prompt that moved. Added 26 September 2026.
   readonly prefix?: string;
+  // What the call produced: "tools" (one or more tool calls), "text" (words
+  // and nothing to run) or "empty" (neither: a paid call that did nothing).
+  // Added 8 October 2026 (the founder: "most of the cost were linked to no
+  // output logs. if we can catch those, that'd help us"); an empty call also
+  // writes its own `[simeon] empty-answer` line.
+  readonly outcome?: string;
+  // Why the call was made, the `x-simeon-call-reason` the usage row carries.
+  readonly reason?: string;
 }
 
 // One line per model call in the host log, so `docker exec … tail
@@ -507,7 +515,15 @@ export interface ModelCallLogLine {
 // the executor wrote nothing and a fifty-minute loop left no trace but
 // the bill.
 export function formatModelCallLogLine(line: ModelCallLogLine): string {
-  return `[simeon] model=${line.model} effort=${line.effort} input=${line.inputTokens} cached=${line.cachedTokens} output=${line.outputTokens} reasoning=${line.reasoningTokens} ms=${line.elapsedMs} tools=${line.tools}${line.offered === undefined ? "" : ` offered=${line.offered}`}${line.budget === undefined ? "" : ` budget=${line.budget}`}${line.prefix === undefined ? "" : ` prefix=${line.prefix}`}`;
+  return `[simeon] model=${line.model} effort=${line.effort} input=${line.inputTokens} cached=${line.cachedTokens} output=${line.outputTokens} reasoning=${line.reasoningTokens} ms=${line.elapsedMs} tools=${line.tools}${line.offered === undefined ? "" : ` offered=${line.offered}`}${line.budget === undefined ? "" : ` budget=${line.budget}`}${line.prefix === undefined ? "" : ` prefix=${line.prefix}`}${line.outcome === undefined ? "" : ` outcome=${line.outcome}`}${line.reason === undefined ? "" : ` reason=${line.reason}`}`;
+}
+
+/** What a call produced, for the log line and the empty-answer line. */
+export function modelCallOutcome(toolCalls: number, textLength: number): "tools" | "text" | "empty" {
+  return toolCalls > 0 ? "tools" : textLength > 0 ? "text" : "empty";
+}
+export function formatEmptyAnswerLogLine(args: { readonly model: string; readonly effort: string; readonly reason?: string; readonly outputTokens: number; readonly reasoningTokens: number }): string {
+  return `${HOST_LOG_PREFIX} empty-answer model=${args.model} effort=${args.effort} reason=${args.reason ?? "-"} output=${args.outputTokens} reasoning=${args.reasoningTokens}`;
 }
 
 function shortHash(value: string): string {
@@ -580,7 +596,7 @@ function logModelCallError(error: unknown, callInfo: { readonly model: string; r
   modelCallLog(`${HOST_LOG_PREFIX} model-error-schemas ${clipForHostLog(toolSchemaSummary(tools), 6000)}`);
 }
 
-function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: string, onUsage?: (usage: UsageRecord) => void, maxTokens = 0, callInfo?: { readonly model: string; readonly effort: string; readonly budget?: string; readonly prefix?: string }, tools?: ToolSet, messages?: readonly CoreMessage[], onRequestId?: (requestId: string) => void, onCutOff?: () => void) {
+function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: string, onUsage?: (usage: UsageRecord) => void, maxTokens = 0, callInfo?: { readonly model: string; readonly effort: string; readonly budget?: string; readonly prefix?: string; readonly reason?: string }, tools?: ToolSet, messages?: readonly CoreMessage[], onRequestId?: (requestId: string) => void, onCutOff?: () => void) {
   const startedAtMs = Date.now();
   const failure = deferred<never>();
   failure.promise.catch(() => undefined);
@@ -604,12 +620,15 @@ function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: 
   if (onRequestId != null) void race(result.response).then((response) => { const id = (response as { id?: unknown } | undefined)?.id; if (typeof id === "string" && id.length > 0) onRequestId(id); }, () => undefined);
   const metadata = race(result.providerMetadata).then(value => (value?.openai ?? {}) as Record<string, unknown>, () => ({} as Record<string, unknown>));
   const toolCalls = race(result.toolCalls).then((calls) => calls as readonly { readonly toolName?: string; readonly args?: unknown }[], () => []);
+  const textLength = race(result.text).then((text) => (typeof text === "string" ? text.length : 0), () => 0);
   void race(result.finishReason).then((reason) => { if (reason === "length") { modelCallLog(`${HOST_LOG_PREFIX} model-output-limit model=${callInfo?.model ?? "?"} limit=${configuredSimeonMaxOutputTokens()}`); onCutOff?.(); } }, () => undefined);
-  const extendedUsage = Promise.all([race(result.usage), metadata, toolCalls]).then(([value, openai, calls]) => {
+  const extendedUsage = Promise.all([race(result.usage), metadata, toolCalls, textLength]).then(([value, openai, calls, chars]) => {
     const cached = typeof openai.cachedPromptTokens === "number" ? openai.cachedPromptTokens : 0;
     const reasoning = typeof openai.reasoningTokens === "number" ? openai.reasoningTokens : 0;
     if (callInfo != null) {
-      modelCallLog(formatModelCallLogLine({ model: callInfo.model, effort: callInfo.effort, inputTokens: value.promptTokens, cachedTokens: cached, outputTokens: value.completionTokens, reasoningTokens: reasoning, elapsedMs: Date.now() - startedAtMs, tools: summarizeToolCalls(calls), offered: Object.keys(tools ?? {}).join(",") || "-", ...(callInfo.budget === undefined ? {} : { budget: callInfo.budget }), ...(callInfo.prefix === undefined ? {} : { prefix: callInfo.prefix }) }));
+      const outcome = modelCallOutcome(calls.length, chars);
+      modelCallLog(formatModelCallLogLine({ model: callInfo.model, effort: callInfo.effort, inputTokens: value.promptTokens, cachedTokens: cached, outputTokens: value.completionTokens, reasoningTokens: reasoning, elapsedMs: Date.now() - startedAtMs, tools: summarizeToolCalls(calls), offered: Object.keys(tools ?? {}).join(",") || "-", ...(callInfo.budget === undefined ? {} : { budget: callInfo.budget }), ...(callInfo.prefix === undefined ? {} : { prefix: callInfo.prefix }), outcome, ...(callInfo.reason === undefined ? {} : { reason: callInfo.reason }) }));
+      if (outcome === "empty") modelCallLog(formatEmptyAnswerLogLine({ model: callInfo.model, effort: callInfo.effort, ...(callInfo.reason === undefined ? {} : { reason: callInfo.reason }), outputTokens: value.completionTokens, reasoningTokens: reasoning }));
     }
     return { inputTokens: Math.max(0, value.promptTokens - cached), outputTokens: value.completionTokens, cacheReadTokens: cached, cacheWriteTokens: 0, maxTokens };
   });
@@ -712,7 +731,7 @@ function geminiExecutor(source: SimeonCredentialSource, messages: readonly Provi
         if (event.type === "tool-call") { calls.push({ toolName: event.toolName, args: event.args }); yield { type: "tool-call" as const, toolCallId: event.toolCallId, toolName: event.toolName, args: event.args }; continue; }
         const basic = { promptTokens: event.usage.inputTokens + event.usage.cacheReadTokens, completionTokens: event.usage.outputTokens, totalTokens: event.usage.inputTokens + event.usage.cacheReadTokens + event.usage.outputTokens };
         const extended = { inputTokens: event.usage.inputTokens, outputTokens: event.usage.outputTokens, cacheReadTokens: event.usage.cacheReadTokens, cacheWriteTokens: 0, maxTokens: SIMEON_WORKING_CONTEXT_TOKENS };
-        modelCallLog(formatModelCallLogLine({ model: modelId, effort: reasoningEffort, inputTokens: basic.promptTokens, cachedTokens: event.usage.cacheReadTokens, outputTokens: event.usage.outputTokens, reasoningTokens: event.usage.reasoningTokens, elapsedMs: Date.now() - startedAtMs, tools: summarizeToolCalls(calls), offered: tools?.map((tool) => tool.name).join(",") || "-", ...(budget === undefined ? {} : { budget: `${budget.limit}${budget.hidden ? " hidden=true" : ""}` }) }));
+        modelCallLog(formatModelCallLogLine({ model: modelId, effort: reasoningEffort, inputTokens: basic.promptTokens, cachedTokens: event.usage.cacheReadTokens, outputTokens: event.usage.outputTokens, reasoningTokens: event.usage.reasoningTokens, elapsedMs: Date.now() - startedAtMs, tools: summarizeToolCalls(calls), offered: tools?.map((tool) => tool.name).join(",") || "-", ...(budget === undefined ? {} : { budget: `${budget.limit}${budget.hidden ? " hidden=true" : ""}` }), outcome: modelCallOutcome(calls.length, text.length), ...(callReason === undefined ? {} : { reason: callReason }) }));
         if (event.responseId.length > 0) onRequestId?.(event.responseId);
         onUsage?.(extended);
         usage.resolve(basic);
@@ -736,7 +755,7 @@ function simeonExecutor(messages: readonly ProviderMessage[], invocationId: stri
   // model that cannot see the video is not an answer to a video question.
   if (isGeminiVideoModelId(requested)) return geminiExecutor(source, messages, invocationId, definitions, executeTool, onUsage, requested, reasoningEffort, budget, onRequestId, callReason);
   const cheap = configuredSimeonCheapModel();
-  const start = (id: string) => aiSdkExecutor(simeonLanguageModel(source, id, promptCacheKey, callReason), messages, invocationId, definitions, executeTool, onUsage, SIMEON_WORKING_CONTEXT_TOKENS, { reasoningEffort }, { model: id, effort: reasoningEffort, ...(budget === undefined ? {} : { budget: `${budget.limit}${budget.hidden ? " hidden=true" : ""}` }) }, onRequestId, promptCacheKey, budget === undefined ? undefined : () => { budget.cutOffs = (budget.cutOffs ?? 0) + 1; });
+  const start = (id: string) => aiSdkExecutor(simeonLanguageModel(source, id, promptCacheKey, callReason), messages, invocationId, definitions, executeTool, onUsage, SIMEON_WORKING_CONTEXT_TOKENS, { reasoningEffort }, { model: id, effort: reasoningEffort, ...(budget === undefined ? {} : { budget: `${budget.limit}${budget.hidden ? " hidden=true" : ""}` }), ...(callReason === undefined ? {} : { reason: callReason }) }, onRequestId, promptCacheKey, budget === undefined ? undefined : () => { budget.cutOffs = (budget.cutOffs ?? 0) + 1; });
 
   const startOrLegacy = (id: string) => {
     const legacy = LEGACY_SIMEON_MODELS[id];

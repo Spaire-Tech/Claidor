@@ -57,7 +57,9 @@ NEXT_POLL_AFTER_MS = 15_000
 #: says (2 October 2026): each run is a whole agent turn on the expensive
 #: model, and a schedule of "every minute" is almost always a mistake. The
 #: app holds the same gap on the Mac (`ROUTINE_MIN_INTERVAL_MS`).
-ROUTINE_MIN_INTERVAL = timedelta(minutes=15)
+#: No gap since 8 October 2026, as the upstream app has none; the hold stays
+#: for a gap set on purpose.
+ROUTINE_MIN_INTERVAL = timedelta(0)
 WEBHOOK_PLATFORMS = ("linear", "sentry", "pagerduty")
 
 GITHUB_KINDS = (
@@ -726,8 +728,13 @@ class ListenersService:
             slot = automation.next_fire_at
             # The next slot at least ROUTINE_MIN_INTERVAL away: a schedule
             # asking for every minute runs every fifteen (2 October 2026).
-            following = next_workflow_fire(
-                automation.workflow, now + ROUTINE_MIN_INTERVAL - timedelta(minutes=1)
+            following = (
+                next_workflow_fire(automation.workflow, now)
+                if ROUTINE_MIN_INTERVAL <= timedelta(0)
+                else next_workflow_fire(
+                    automation.workflow,
+                    now + ROUTINE_MIN_INTERVAL - timedelta(minutes=1),
+                )
             )
             await automations.update(
                 automation, update_dict={"next_fire_at": following}

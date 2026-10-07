@@ -50,10 +50,9 @@ export function createSimeonGenerateImageService(options: SimeonGenerateImageOpt
         json: {
           prompt: description,
           size: imageSizeForAspectRatio(aspectRatio),
-          // Medium unless a caller asks (the avatar asks for low): "auto" lets
-          // OpenAI pick high, about four times medium's price per picture
-          // (2 October 2026).
-          quality: options.quality ?? "medium",
+          // "auto" unless a caller asks (the avatar asks for low), as the
+          // upstream app sends it; medium from 2 to 8 October 2026.
+          quality: options.quality ?? "auto",
           ...(references.length === 0 ? {} : { reference_images: references.map((image) => ({ data: image.data, mime_type: image.mimeType })) }),
         },
       });

@@ -38,10 +38,11 @@ test("the production owner input carries hidden and binds the prompt-messages ge
   assert.match(owner, /\.\.\.\(input\.hidden === undefined \? \{\} : \{ hidden: input\.hidden \}\),/, "the owner forwards hidden to the run context");
 });
 
-test("a hidden session's budget is 40, an asked one's 5,000, and the model line says which", async () => {
+test("a hidden session's budget is the asked one's 5,000 (40 when the environment says so), and the model line says which", async () => {
   const { module, dispose } = await load("source/host/extensions/inference/provider-session.ts", "provider-session-budget");
   try {
-    const hidden = module.createModelCallBudget({ hidden: true }, {});
+    assert.equal(module.createModelCallBudget({ hidden: true }, {}).limit, 5000, "since 8 October 2026 a hidden turn gets the asked turn's cap");
+    const hidden = module.createModelCallBudget({ hidden: true }, { SAND_HIDDEN_TURN_MAX_STEPS: "40" });
     const asked = module.createModelCallBudget({}, {});
     assert.deepEqual([hidden.limit, hidden.hidden], [40, true]);
     assert.deepEqual([asked.limit, asked.hidden], [5000, false]);

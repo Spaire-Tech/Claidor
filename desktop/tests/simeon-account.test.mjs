@@ -197,7 +197,7 @@ test("sand_usage_page is on by Simeon's default, over the bundled table, under t
     assert.equal(service.checkFeatureGate("sand_usage_page"), true);
     assert.equal(service.checkFeatureGate("sand_box_egress_tunnel"), true, "a gate not in the table reaches the service");
     // sand_multiplayer (sharing) and sand_notify_bus (listeners) joined the table on 25 September 2026.
-    assert.deepEqual(service.getSnapshot().featureGates, { sand_usage_page: true, sand_box_egress_tunnel: true, sand_auto_review: true, sand_product_analytics: false, sand_multiplayer: true, sand_notify_bus: true, sand_browser_use_subagent: true, sand_focus_staleness_catch_up: true, sand_agent_network: true, sand_auto_disk_saver: true, sand_memory_dreaming: true });
+    assert.deepEqual(service.getSnapshot().featureGates, { sand_usage_page: true, sand_box_egress_tunnel: true, sand_auto_review: false, sand_product_analytics: false, sand_multiplayer: true, sand_notify_bus: true, sand_browser_use_subagent: true, sand_focus_staleness_catch_up: true, sand_agent_network: true, sand_auto_disk_saver: true, sand_memory_dreaming: true });
     const seen = [];
     service.subscribe((snapshot) => seen.push(snapshot.featureGates.sand_usage_page));
     for (const listener of listeners) listener(bundled.getSnapshot());
