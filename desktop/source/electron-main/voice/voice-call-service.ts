@@ -10,6 +10,7 @@
  * with fakes; `voice-call-window.ts` is the Electron half.
  */
 import { SimeonApiError } from "../../shared/node/simeon-backend/simeon-api.js";
+import { AGENT_MARK_PALETTES } from "../../shared/voice-call/agent-mark.js";
 import { createCallChannel, type CallChannel, type CallChannelLegs } from "../../shared/voice-call/handoff.js";
 import { RELAY_SOFT_FAIL } from "../../shared/voice-call/main-loop-voice.js";
 import type { VoiceCallConnectResult, VoiceCallPanelEvent, VoiceCallPanelMethod, VoiceCallSetup } from "../../shared/voice-call/panel-protocol.js";
@@ -125,6 +126,14 @@ export function connectFailureMessage(error: unknown): string {
 interface ActiveCall {
   readonly agentId: string;
   readonly hintName: string | null;
+  /**
+   * The colour the window draws the agent in, from the phone button. The
+   * roster carries a colour only when one was chosen; for the rest the
+   * window hashes one from the id, and the banner drew those agents in
+   * Ocean, a different butterfly from the chat's (6 October 2026, the
+   * founder: "another avatar appears in the calling banner").
+   */
+  readonly hintColor: string | null;
   readonly callId: string;
   channel: CallChannel | null;
   conversationId: string | null;
@@ -137,7 +146,7 @@ interface ActiveCall {
 }
 
 export interface VoiceCallService {
-  start(agentId: unknown, hintName?: unknown): { readonly status: "started" | "focused"; readonly agentId: string };
+  start(agentId: unknown, hintName?: unknown, hintColor?: unknown): { readonly status: "started" | "focused"; readonly agentId: string };
   handlePanel(method: VoiceCallPanelMethod, args: unknown): Promise<unknown>;
   windowClosed(): void;
   hangUp(): void;
@@ -149,7 +158,7 @@ export interface VoiceCallService {
   voicePreviewUrl(voiceId: unknown): Promise<string | null>;
   /** The person's thumbs on a finished call, from its card in the chat: true, false, or null to take it back. */
   rateCall(conversationId: unknown, like: unknown): Promise<{ readonly ok: boolean }>;
-  noteSelectedAgent(agentId: unknown, name: unknown): void;
+  noteSelectedAgent(agentId: unknown, name: unknown, color?: unknown): void;
   menuItem(): VoiceCallMenuItem | null;
   /** Settles the record of the last call; tests wait on it. */
   settled(): Promise<void>;
@@ -160,7 +169,7 @@ export function createVoiceCallService(options: VoiceCallServiceOptions): VoiceC
   const random = options.random ?? Math.random;
   const wait = options.wait ?? ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
   let call: ActiveCall | null = null;
-  let selected: { readonly agentId: string; readonly name: string } | null = null;
+  let selected: { readonly agentId: string; readonly name: string; readonly color: string | null } | null = null;
   let voices: { readonly atMs: number; readonly list: VoiceOption[] } | null = null;
   let finishing: Promise<void> = Promise.resolve();
 
@@ -181,13 +190,16 @@ export function createVoiceCallService(options: VoiceCallServiceOptions): VoiceC
     return fromHost ?? options.voiceStore.get(agentId);
   };
 
+  /** A palette id the banner can draw, or null. */
+  const paletteColor = (value: unknown): string | null => (typeof value === "string" && AGENT_MARK_PALETTES.some((palette) => palette.id === value) ? value : null);
+
   const requireAgentId = (value: unknown): string => {
     if (typeof value !== "string" || value.trim().length === 0) throw new Error("A voice call names the agent by its id.");
     return value.trim();
   };
 
   const newCallId = options.newCallId ?? (() => globalThis.crypto.randomUUID());
-  const newCall = (agentId: string, hintName: string | null): ActiveCall => ({ agentId, hintName, callId: newCallId(), channel: null, conversationId: null, connectedAtMs: null, isFinished: false, heard: [], personName: null });
+  const newCall = (agentId: string, hintName: string | null, hintColor: string | null): ActiveCall => ({ agentId, hintName, hintColor, callId: newCallId(), channel: null, conversationId: null, connectedAtMs: null, isFinished: false, heard: [], personName: null });
 
   const finishCall = (active: ActiveCall, conversationId: string | null, seconds: number): void => {
     if (active.isFinished) return;
@@ -289,7 +301,7 @@ export function createVoiceCallService(options: VoiceCallServiceOptions): VoiceC
   };
 
   const service: VoiceCallService = {
-    start(agentIdRaw, hintRaw) {
+    start(agentIdRaw, hintRaw, colorRaw) {
       if (!options.isEnabled()) throw new Error("Voice calls are switched off on this Mac (SIMEON_VOICE_CALLS).");
       const agentId = requireAgentId(agentIdRaw);
       if (call != null && options.window.isOpen()) {
@@ -297,7 +309,8 @@ export function createVoiceCallService(options: VoiceCallServiceOptions): VoiceC
         return { status: "focused", agentId: call.agentId };
       }
       const hint = typeof hintRaw === "string" && hintRaw.trim().length > 0 ? hintRaw.trim() : selected?.agentId === agentId ? selected.name : null;
-      call = newCall(agentId, hint);
+      const color = paletteColor(colorRaw) ?? (selected?.agentId === agentId ? selected.color : null);
+      call = newCall(agentId, hint, color);
       options.log(`call started for agent ${agentId}`);
       options.window.open();
       return { status: "started", agentId };
@@ -324,7 +337,7 @@ export function createVoiceCallService(options: VoiceCallServiceOptions): VoiceC
           const setup: VoiceCallSetup = {
             agentId: active.agentId,
             name: text(row?.name).trim() || active.hintName || "Agent",
-            color: typeof row?.avatarColor === "string" && row.avatarColor.length > 0 ? row.avatarColor : null,
+            color: paletteColor(row?.avatarColor) ?? active.hintColor,
             avatarDataUrl: /^data:image\/(png|jpeg|webp|gif);base64,/.test(avatar) ? avatar : null,
           };
           return setup;
@@ -356,7 +369,7 @@ export function createVoiceCallService(options: VoiceCallServiceOptions): VoiceC
         }
         case "callAgain":
           finishCall(active, null, Number.NaN);
-          call = newCall(active.agentId, active.hintName);
+          call = newCall(active.agentId, active.hintName, active.hintColor);
           options.log(`call again for agent ${active.agentId}`);
           options.window.reload();
           return null;
@@ -423,9 +436,9 @@ export function createVoiceCallService(options: VoiceCallServiceOptions): VoiceC
       const voice = (await loadVoices()).find((one) => one.id === voiceIdRaw);
       return voice == null || voice.previewUrl == null ? null : await options.previews.urlFor(voice);
     },
-    noteSelectedAgent(agentIdRaw, nameRaw) {
-      const next = typeof agentIdRaw === "string" && agentIdRaw.length > 0 ? { agentId: agentIdRaw, name: typeof nameRaw === "string" && nameRaw.trim().length > 0 ? nameRaw.trim() : "Agent" } : null;
-      if (next?.agentId === selected?.agentId && next?.name === selected?.name) return;
+    noteSelectedAgent(agentIdRaw, nameRaw, colorRaw) {
+      const next = typeof agentIdRaw === "string" && agentIdRaw.length > 0 ? { agentId: agentIdRaw, name: typeof nameRaw === "string" && nameRaw.trim().length > 0 ? nameRaw.trim() : "Agent", color: paletteColor(colorRaw) } : null;
+      if (next?.agentId === selected?.agentId && next?.name === selected?.name && next?.color === selected?.color) return;
       selected = next;
       options.onMenuChanged?.();
     },
@@ -436,7 +449,7 @@ export function createVoiceCallService(options: VoiceCallServiceOptions): VoiceC
       return {
         label: `Call ${target.name}`,
         enabled: true,
-        start: () => { try { service.start(target.agentId, target.name); } catch (error) { options.log(`menu: ${errorText(error)}`); } },
+        start: () => { try { service.start(target.agentId, target.name, target.color); } catch (error) { options.log(`menu: ${errorText(error)}`); } },
       };
     },
     settled: () => finishing,

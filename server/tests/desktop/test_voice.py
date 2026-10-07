@@ -296,20 +296,20 @@ class TestThePlatformAgent:
     ) -> None:
         # The first real call's agent was refused with `voice_not_found`: a
         # voice the workspace does not have fails the whole agent.
-        michael = "ljX1ZrXuDIIRVcmiVSyR"
-        fake.account_voices = [{"voice_id": michael, "name": "Michael (library)"}]
+        jerry = "1t1EeRixsJrKbiF1zwM6"
+        fake.account_voices = [{"voice_id": jerry, "name": "Jerry (library)"}]
         fake.voices = [{"voice_id": "default-1", "name": "Someone"}]
         agent_id = await ensure_agent(fake)
         tts = fake.agents[agent_id]["conversation_config"]["tts"]
-        assert tts["voice_id"] == michael, (
+        assert tts["voice_id"] == jerry, (
             "the first of the founder's voices the account has"
         )
 
         voice.forget_agent()
         fake.agents.clear()
         fake.account_voices = [
-            {"voice_id": michael, "name": "Michael"},
-            {"voice_id": voice.VOICE_DEFAULT_VOICE_ID, "name": "Jessica"},
+            {"voice_id": jerry, "name": "Jerry"},
+            {"voice_id": voice.VOICE_DEFAULT_VOICE_ID, "name": "Michael"},
         ]
         agent_id = await ensure_agent(fake)
         tts = fake.agents[agent_id]["conversation_config"]["tts"]
@@ -611,12 +611,20 @@ class TestTheVoicePicker:
     ) -> None:
         fake.account_voices = [
             {
+                "voice_id": "1t1EeRixsJrKbiF1zwM6",
+                "name": "Jerry - Warm and Friendly",
+                "description": "A warm voice for narration",
+                "labels": {"accent": "american"},
+                "preview_url": "https://cdn.test/jerry.mp3",
+            },
+            {
                 "voice_id": "ljX1ZrXuDIIRVcmiVSyR",
                 "name": "Michael - Deep, Resonant and Confident",
-                "description": "A deep voice for narration",
-                "labels": {"accent": "american"},
+                "description": None,
+                "labels": None,
                 "preview_url": "https://cdn.test/michael.mp3",
             },
+            # Removed on 6 October 2026: in the account, never offered.
             {
                 "voice_id": "r1KmysJdVYZjJCm4mL3b",
                 "name": "Jessica - Playful, Bright, Warm",
@@ -630,18 +638,18 @@ class TestTheVoicePicker:
         assert response.status_code == 200, response.text
         assert response.json() == [
             {
-                "id": "r1KmysJdVYZjJCm4mL3b",
-                "name": "Jessica",
-                "description": None,
-                "labels": {},
-                "preview_url": "https://cdn.test/jessica.mp3",
-            },
-            {
                 "id": "ljX1ZrXuDIIRVcmiVSyR",
                 "name": "Michael",
                 "description": None,
                 "labels": {},
                 "preview_url": "https://cdn.test/michael.mp3",
+            },
+            {
+                "id": "1t1EeRixsJrKbiF1zwM6",
+                "name": "Jerry",
+                "description": None,
+                "labels": {},
+                "preview_url": "https://cdn.test/jerry.mp3",
             },
         ]
         assert (await client.get(VOICES, headers=headers)).status_code == 200
@@ -664,11 +672,14 @@ class TestTheVoicePicker:
         ]
         assert fake.calls == ["list_voices_by_id", "list_default_voices"]
 
-    def test_fourteen_voices_each_once(self) -> None:
+    def test_twelve_voices_each_once(self) -> None:
         ids = [voice_id for voice_id, _ in voice.CURATED_VOICES]
-        assert len(ids) == 14
-        assert len(set(ids)) == 14
-        assert voice.CURATED_VOICES[0] == (voice.VOICE_DEFAULT_VOICE_ID, "Jessica")
+        assert len(ids) == 12
+        assert len(set(ids)) == 12
+        assert voice.CURATED_VOICES[0] == (voice.VOICE_DEFAULT_VOICE_ID, "Michael")
+        names = [name for _, name in voice.CURATED_VOICES]
+        assert "Jessica" not in names
+        assert "Kass" not in names
 
     async def test_no_key_is_503(
         self,

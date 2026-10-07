@@ -521,8 +521,9 @@ the background while the call goes on, and says how it is going when asked.
     ("You asked me to…"), with the person's name put in front by the server
     (`recap_for`). ElevenLabs' own `transcript_summary` speaks of "the user" and is not used. A conversation of another ElevenLabs agent, or one
     already billed to someone else, is answered 404.
-  - `GET /desktop/api/proxy/v1/voice/voices`: the picker's list: the founder's 14 voices
-    (`CURATED_VOICES`, Jessica first and the default), looked up by id in the account
+  - `GET /desktop/api/proxy/v1/voice/voices`: the picker's list: the founder's 12 voices
+    (`CURATED_VOICES`, Michael first and the default; Jessica and Kass were removed on
+    6 October 2026), looked up by id in the account
     (`/v2/voices?voice_ids=…`) and shown by their names only. Each must be added to the
     ElevenLabs account ("Add to my voices"); one it lacks is skipped, and with none of them
     the picker offers ElevenLabs' defaults. `[{id, name, description, labels, preview_url}]`,

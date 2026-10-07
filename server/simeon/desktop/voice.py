@@ -105,11 +105,12 @@ VOICE_TTS_MODEL = "eleven_flash_v2"
 VOICE_TTS_STABILITY = 0.7
 
 #: The voice a call speaks in when the app names none: the first of the
-#: founder's voices (`CURATED_VOICES`). The agent is created with whichever
-#: voice `_pick_voice` finds in the workspace, this one first; a voice
-#: ElevenLabs cannot find fails the whole agent (`voice_not_found`, the first
-#: real call, 30 September 2026).
-VOICE_DEFAULT_VOICE_ID = "r1KmysJdVYZjJCm4mL3b"
+#: founder's voices (`CURATED_VOICES`), Michael since Jessica left the list
+#: (the founder, 6 October 2026: "remove Jessica and Kass as voices"). The
+#: agent is created with whichever voice `_pick_voice` finds in the
+#: workspace, this one first; a voice ElevenLabs cannot find fails the whole
+#: agent (`voice_not_found`, the first real call, 30 September 2026).
+VOICE_DEFAULT_VOICE_ID = "ljX1ZrXuDIIRVcmiVSyR"
 
 #: Eric, one of ElevenLabs' default voices, which every workspace has: the
 #: voice of last resort when none of the founder's voices is in the account.
@@ -302,15 +303,14 @@ def agent_config(
 #: makes no sense. should be just names"). Each must be added to the
 #: ElevenLabs account ("Add to my voices"); one the account does not have is
 #: skipped, and with none of them the picker offers ElevenLabs' defaults.
+#: Jessica and Kass left the list on 6 October 2026.
 CURATED_VOICES: tuple[tuple[str, str], ...] = (
-    (VOICE_DEFAULT_VOICE_ID, "Jessica"),
-    ("ljX1ZrXuDIIRVcmiVSyR", "Michael"),
+    (VOICE_DEFAULT_VOICE_ID, "Michael"),
     ("1t1EeRixsJrKbiF1zwM6", "Jerry"),
     ("XcXEQzuLXRU9RcfWzEJt", "Veda"),
     ("s3TPKV1kjDlVtZbl4Ksh", "Adam"),
     ("UgBBYS2sOqTuMpoF3BR0", "Mark"),
     ("6OzrBCQf8cjERkYgzSg8", "Jamal"),
-    ("mhOEe36rlKIS1ExMEOyo", "Kass"),
     ("Cz0K1kOv9tD8l0b5Qu53", "Jon"),
     ("WI5pMmcGGS32yI7yttoP", "Amanda"),
     ("snyKKuaGYk1VUEh42zbW", "Chris"),

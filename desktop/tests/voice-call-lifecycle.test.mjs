@@ -225,7 +225,7 @@ test("the voice picker saves the agent's voice through updateAgent, keeps a Mac 
   const voices = memoryStore();
   let menuChanges = 0;
   const svc = service.createVoiceCallService({ legs, api: () => ({ listVoices: async () => api.parseVoiceOptions([{ id: "v1", name: "Alexandra", description: "Warm", labels: { accent: "american" }, preview_url: "https://x/y.mp3" }, { id: "", name: "bad" }]) }), window: fakeWindow(), voiceStore: voices, previews: { urlFor: async (voice) => `sand-media://attachment/${voice.id}` }, focusAgentChat: () => {}, isEnabled: () => true, log: () => {}, onMenuChanged: () => { menuChanges += 1; } });
-  assert.deepEqual(await svc.getAgentVoice("a1"), { voiceId: "r1KmysJdVYZjJCm4mL3b", isDefault: true });
+  assert.deepEqual(await svc.getAgentVoice("a1"), { voiceId: "ljX1ZrXuDIIRVcmiVSyR", isDefault: true });
   assert.deepEqual(await svc.setAgentVoice("a1", "v1"), { voiceId: "v1", isDefault: false });
   assert.deepEqual(calls.find(([name]) => name === "update")[1], { id: "a1", profile: { name: "Ada", description: "d", title: "t", voiceId: "v1" } });
   assert.equal(voices.map.get("a1"), "v1");
@@ -239,6 +239,26 @@ test("the voice picker saves the agent's voice through updateAgent, keeps a Mac 
   assert.equal(menuChanges, 1);
   svc.noteSelectedAgent("a1", "Ada");
   assert.equal(menuChanges, 1, "the same agent again changes nothing");
+});
+
+test("the banner wears the colour the window drew the agent in when the roster stores none", async () => {
+  // The founder, 6 October 2026: "when you call the agent, it's another avatar that appears in the
+  // calling banner". The window hashes a colour for an agent with none stored; the banner drew Ocean.
+  const { legs } = fakeLegs({ roster: [{ id: "a1", name: "Ada" }, { id: "a2", name: "Max", avatarColor: "red" }] });
+  const make = () => service.createVoiceCallService({ legs, api: () => ({ listVoices: async () => [] }), window: fakeWindow(), voiceStore: memoryStore(), previews: { urlFor: async () => null }, focusAgentChat: () => {}, isEnabled: () => true, log: () => {} });
+  let svc = make();
+  svc.start("a1", "Ada", "green");
+  assert.deepEqual(await svc.handlePanel("getSetup", {}), { agentId: "a1", name: "Ada", color: "green", avatarDataUrl: null });
+  svc = make();
+  svc.start("a2", "Max", "green");
+  assert.equal((await svc.handlePanel("getSetup", {})).color, "red", "a stored colour wins");
+  svc = make();
+  svc.start("a1", "Ada", "not-a-colour");
+  assert.equal((await svc.handlePanel("getSetup", {})).color, null, "only a palette colour is taken");
+  svc = make();
+  svc.noteSelectedAgent("a1", "Ada", "mint");
+  svc.menuItem().start();
+  assert.equal((await svc.handlePanel("getSetup", {})).color, "mint", "Agent › Call carries the noted colour");
 });
 
 test("the server's answers are read defensively", () => {

@@ -366,10 +366,13 @@ export const VOICE_CALL_COMPONENTS_SOURCE = [
   "function __simeonCallButton(n){",
   "const d=typeof window<\"u\"?window.desktop?.voiceCall:void 0,[a,s]=S.useState(null);",
   "S.useEffect(()=>{if(d==null)return;let l=!0;Promise.resolve(d.getAvailability()).then(v=>{l&&s(v)},()=>{});return()=>{l=!1}},[d]);",
-  "S.useEffect(()=>{if(d==null||n.agentId==null)return;Promise.resolve(d.noteAgent(n.agentId,n.agentName)).catch(()=>{});return()=>{Promise.resolve(d.noteAgent(null)).catch(()=>{})}},[d,n.agentId,n.agentName]);",
+  // The colour rides along (6 October 2026, the founder: "another avatar appears in the calling
+  // banner"): an agent with no stored colour is drawn by the window in a colour hashed from its
+  // id (`Cee`, AGENT_COLOR_RESOLVER), which the banner cannot work out on its own.
+  "S.useEffect(()=>{if(d==null||n.agentId==null)return;Promise.resolve(d.noteAgent(n.agentId,n.agentName,n.agentColor)).catch(()=>{});return()=>{Promise.resolve(d.noteAgent(null)).catch(()=>{})}},[d,n.agentId,n.agentName,n.agentColor]);",
   "if(d==null||a?.enabled!==!0)return null;",
   "const c=`Call ${n.agentName}`;",
-  `return p.jsx("button",{"aria-label":c,className:"simeon-call-button",onClick:e=>{e.stopPropagation(),Promise.resolve(d.start(n.agentId,n.agentName)).catch(()=>{})},title:c,type:"button",children:p.jsx("svg",{"aria-hidden":!0,viewBox:"0 0 24 24",children:p.jsx("path",{fill:"currentColor",d:"${PHONE_ICON_PATH}"})})})}`,
+  `return p.jsx("button",{"aria-label":c,className:"simeon-call-button",onClick:e=>{e.stopPropagation(),Promise.resolve(d.start(n.agentId,n.agentName,n.agentColor)).catch(()=>{})},title:c,type:"button",children:p.jsx("svg",{"aria-hidden":!0,viewBox:"0 0 24 24",children:p.jsx("path",{fill:"currentColor",d:"${PHONE_ICON_PATH}"})})})}`,
   // The voice picker.
   "function __simeonVoicePicker(n){",
   "const d=typeof window<\"u\"?window.desktop?.voiceCall:void 0,[v,sv]=S.useState(null),[c,sc]=S.useState(null),[x,sx]=S.useState(null),[g,sg]=S.useState(null),au=S.useRef(null);",
@@ -428,7 +431,7 @@ const VOICE_COMPONENTS_ANCHOR = "function e3n(n){";
 const VOICE_PICKER_BEFORE = 'let A;return e[21]!==E||e[22]!==v?(A=p.jsxs("div",{className:f,children:[v,E]}),e[21]=E,e[22]=v,e[23]=A):A=e[23],A}';
 const VOICE_PICKER_AFTER = 'return p.jsxs("div",{className:f,children:[v,E,p.jsx(__simeonVoicePicker,{agentId:t.id},"simeon-voice")]})}';
 const CALL_BUTTON_BEFORE = 'let B;e[97]!==N||e[98]!==E||e[99]!==A||e[100]!==I?(B=p.jsxs("div",{className:N,style:E,children:[A,I]}),e[97]=N,e[98]=E,e[99]=A,e[100]=I,e[101]=B):B=e[101];';
-const CALL_BUTTON_AFTER = 'const B=p.jsxs("div",{className:N,style:E,children:[A,p.jsx(__simeonCallButton,{agentId:t.id,agentName:t.name},"simeon-call"),I]});';
+const CALL_BUTTON_AFTER = 'const B=p.jsxs("div",{className:N,style:E,children:[A,p.jsx(__simeonCallButton,{agentId:t.id,agentName:t.name,agentColor:Cee(t)},"simeon-call"),I]});';
 const CALL_RECORD_BEFORE = 'p.jsx(JPn,{cachedLinkUrls:nMn,content:r,isStreaming:h,matcher:b,promoteStandaloneLinks:!1})';
 const CALL_RECORD_AFTER = `(!h&&__simeonCallRecordParse(r)!=null?p.jsx(__simeonCallRecord,{content:r}):${CALL_RECORD_BEFORE})`;
 const VOICE_EVENT_BEFORE = "function vpt(n){const e=he.c(9),{summary:t}=n;";

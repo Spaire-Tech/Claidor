@@ -52,7 +52,10 @@ test("the voice-call anchors apply exactly once, and a second pass refuses", asy
   const patched = patchOriginalVoiceCall(chunk);
   assert.match(patched, /function __simeonCallButton\(n\)\{/);
   assert.match(patched, /function __simeonVoicePicker\(n\)\{/);
-  assert.match(patched, /p\.jsx\(__simeonCallButton,\{agentId:t\.id,agentName:t\.name\},"simeon-call"\)/);
+  // The button carries the colour the window resolved for the agent (its stored one, or the one hashed from its id).
+  assert.match(patched, /p\.jsx\(__simeonCallButton,\{agentId:t\.id,agentName:t\.name,agentColor:Cee\(t\)\},"simeon-call"\)/);
+  assert.match(patched, /d\.start\(n\.agentId,n\.agentName,n\.agentColor\)/);
+  assert.match(patched, /d\.noteAgent\(n\.agentId,n\.agentName,n\.agentColor\)/);
   assert.match(patched, /children:\[v,E,p\.jsx\(__simeonVoicePicker,\{agentId:t\.id\},"simeon-voice"\)\]/);
   // The call record is drawn as the card once the message is complete; any other message as before.
   assert.match(patched, /\(!h&&__simeonCallRecordParse\(r\)!=null\?p\.jsx\(__simeonCallRecord,\{content:r\}\):p\.jsx\(JPn,/);
@@ -118,9 +121,9 @@ test("the preloads and the edge carry the voice methods; the banner window sits 
   const invoked = [];
   const mainEdge = new Proxy({ subscribe: () => () => {} }, { get: (target, name) => target[name] ?? ((args) => { invoked.push([name, args]); return Promise.resolve(null); }) });
   const desktop = main.createDesktopPreloadBridge({ ipc: { invoke: async () => null, sendSync: () => null, send: () => {}, on: () => {}, off: () => {} }, webFrame: { getZoomFactor: () => 1 }, mainEdge, initialState: { experimentSnapshot: null, themeState: null, egressTunnelEnabled: false, webauthnProxyEnabled: false, egressTunnelStatus: null }, env: {} });
-  await desktop.voiceCall.start("a1", "Ada");
+  await desktop.voiceCall.start("a1", "Ada", "green");
   await desktop.voiceCall.setAgentVoice("a1", "v1");
-  assert.deepEqual(invoked, [["startVoiceCall", { agentId: "a1", agentName: "Ada" }], ["setAgentVoice", { agentId: "a1", voiceId: "v1" }]]);
+  assert.deepEqual(invoked, [["startVoiceCall", { agentId: "a1", agentName: "Ada", agentColor: "green" }], ["setAgentVoice", { agentId: "a1", voiceId: "v1" }]]);
 
   const panel = await loadModule("source/electron-preload/preload-voice-call.ts", "preload-voice-call");
   const sent = [];
@@ -130,10 +133,10 @@ test("the preloads and the edge carry the voice methods; the banner window sits 
 
   const edge = await loadModule("source/electron-main/main-edge.ts", "main-edge");
   const rpc = await loadModule("source/shared/rpc/main.ts", "rpc-main");
-  const handlers = edge.createMainEdgeHandlers({ voiceCalls: { isEnabled: () => true, isCallActive: () => false, start: (id, name) => ({ status: "started", agentId: id, name }) } });
+  const handlers = edge.createMainEdgeHandlers({ voiceCalls: { isEnabled: () => true, isCallActive: () => false, start: (id, name, color) => ({ status: "started", agentId: id, name, color }) } });
   for (const name of Object.keys(rpc.MAIN_METHOD_TABLE)) assert.equal(typeof handlers[name], "function", `${name} has a handler`);
   assert.deepEqual(handlers.getVoiceCallAvailability({}), { enabled: true, inCall: false });
-  assert.deepEqual(handlers.startVoiceCall({ agentId: "a1", agentName: "Ada" }), { status: "started", agentId: "a1", name: "Ada" });
+  assert.deepEqual(handlers.startVoiceCall({ agentId: "a1", agentName: "Ada", agentColor: "green" }), { status: "started", agentId: "a1", name: "Ada", color: "green" });
   const coordinatorMain = await loadModule("source/shared/rpc/coordinator-main.ts", "coordinator-main");
   for (const name of ["voiceCall", "getAgentTranscriptTail", "updateAgent", "appendSendMessage"]) assert.equal(coordinatorMain.isCoordinatorMainMethod(name), true);
 
