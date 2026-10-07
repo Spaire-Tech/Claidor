@@ -370,7 +370,9 @@ and Ashby connect through Simeon. The provider behind them is never named in the
   tools by name, short description and arguments (`query: string, max_results?: integer`), so
   the model calls one straight from the list (every schema inline was tens of thousands of
   tokens, paid again by each later call). A blank `toolName` or `pattern` counts as absent, and
-  a tool not found names the ones that exist. Clicking Add waits up to 8 s for the install to
+  a tool not found names the ones that exist. A `pattern` ignores case since 7 October 2026:
+  `"search|thread|list_messages"` found nothing among Gmail's upper-case names, and three
+  agents each fetched the whole 60-tool listing instead (`get-mcp-tools.ts`). Clicking Add waits up to 8 s for the install to
   reach the cloud computer, and a proposal card's sign-in resumes the agent that proposed it
   (it was never told before, and went on saying the app "isn't installed").
 * **Apps added 3 October 2026, for founders.** Through our apps service, each with a sign-in the
