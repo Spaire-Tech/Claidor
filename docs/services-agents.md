@@ -284,9 +284,16 @@ the vendor's own sign-in, and the agent can then use their tools.
 - The browser sign-in runs only on the Mac, through the loopback
   (`http://localhost:8787/callback`). The computer never opens a sign-in and never spends a
   refresh token.
-- The store (`vendor-mcp-installs.json`, in `~/.simeon` on the Mac) travels both ways: the Mac
+- The store (`vendor-mcp-installs.json`) travels both ways: the Mac
   sends its copy on every MCP refresh and pulls the box's copy before the connect card looks
   for a row (`box-pull.ts`). Newer entries win; removals leave tombstones.
+- On the Mac both connector files (`vendor-mcp-installs.json`, `account-mcp-config.json`) sit in
+  `~/.simeon/accounts/<scope>/`, one folder per Simeon account, the scope being the settings'
+  account hash; signed out, the Mac reads `accounts/signed-out/`
+  (`shared/node/connector-account-scope.ts`). Until 7 October 2026 they sat once per Mac, so a
+  second account on the same Mac saw the first one's connectors and pushed them into its own
+  cloud computer. Files from before are adopted once by the account the Mac is scoped to. The
+  box belongs to one account and keeps its files in its data folder.
 - The agent reads and calls a connected connector's tools with GetMcpTools and CallMcpTool
   (`productionTurnMcpProjection` in `host/host-runner-composition.ts`).
 

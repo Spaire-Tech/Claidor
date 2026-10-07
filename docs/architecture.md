@@ -180,8 +180,9 @@ call.
 - **Data folder:** `~/.simeon`. On the first start that finds only
   `~/.caisra`, the app moves it there with one rename
   (`electron-main/startup/startup-data-root-migration.ts`). It holds, among
-  other things, `vendor-mcp-installs.json`, `account-mcp-config.json` and
-  `vendor-mcp-signin.log`.
+  other things, `vendor-mcp-signin.log` and, one folder per Simeon account,
+  `accounts/<scope>/vendor-mcp-installs.json` and `account-mcp-config.json`
+  (`shared/node/connector-account-scope.ts`, 7 October 2026).
 - **Electron user data:** `~/Library/Application Support/Simeon` (from the
   staged `productName`).
 - **Two ways to package** (since 5 October 2026, Track D piece 1).

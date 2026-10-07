@@ -76,8 +76,12 @@ test("the discs stylesheet block hides the search bar, draws the discs in both t
   assert.ok(SIDEBAR_DISCS_CSS.includes(".sand-agents-sidebar__account .sand-kit-base-avatar{width:32px!important;height:32px!important;border-radius:999px!important;"), "the account disc is smaller than the glass discs (8 October 2026: the B is too big next to Connect apps)");
   assert.ok(SIDEBAR_DISCS_CSS.includes(".sand-agents-sidebar__account .sand-kit-base-avatar img{width:32px!important;height:32px!important;border-radius:999px!important;object-fit:cover!important}"), "a profile picture fits the disc");
   assert.deepEqual(styleAnchorClasses(SIDEBAR_DISCS_CSS).filter((name) => name.startsWith("sand-")), [
-    "sand-agents-sidebar__account", "sand-agents-sidebar__header", "sand-agents-sidebar__new-actions", "sand-agents-sidebar__search", "sand-kit-base-avatar", "sand-prompt-attach",
+    "sand-agents-sidebar__account", "sand-agents-sidebar__header", "sand-agents-sidebar__new", "sand-agents-sidebar__new-actions", "sand-agents-sidebar__rail-new", "sand-agents-sidebar__search", "sand-chat-header__name", "sand-kit-base-avatar", "sand-kit-message-input-frame", "sand-prompt-attach",
   ]);
+  // Dark mode is somber (7 October 2026): the composer and the round controls are one flat fill with a faint edge, no glass.
+  assert.ok(SIDEBAR_DISCS_CSS.includes(":root{--simeon-dark-control:#212121;--simeon-dark-control-hover:#2a2a2a;--simeon-dark-edge:#2e2e2e}"));
+  assert.match(SIDEBAR_DISCS_CSS, /\[data-theme\*="dark"\] \.sand-kit-message-input-frame[^{]*\{background:var\(--simeon-dark-control\)!important;border-color:var\(--simeon-dark-edge\)!important;box-shadow:none!important\}/);
+  assert.match(SIDEBAR_DISCS_CSS, /\[data-theme\*="dark"\] :is\(\.simeon-disc,\.sand-prompt-attach,[^)]*\.sand-chat-header__name,\.simeon-call-button\)[^{]*\{background:var\(--simeon-dark-control\)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;/);
   assert.ok(SIDEBAR_DISCS_CSS.includes(".sand-prompt-attach{width:30px!important;height:30px!important;border-radius:999px!important;"), "the composer's attach button is the same disc at its own size");
   assert.throws(() => patchOriginalSidebarDiscsStylesheet(out), /already present/);
 });

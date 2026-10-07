@@ -1,4 +1,5 @@
 import { join } from "node:path";
+import { scopeConnectorStoresToAccount } from "../shared/node/connector-account-scope.js";
 
 import { createGetOrCreateMachineId } from "./account/machine-id.js";
 import {
@@ -247,6 +248,8 @@ export function createProductionSettingsBinding(
       if (created) throw new Error("Electron production settings service was created more than once.");
       created = true;
       const settingsStore = new SandSettingsStore(join(resolveRoot(), "settings.json"));
+      // Each Simeon account reads its own connectors on this Mac (shared/node/connector-account-scope.ts).
+      scopeConnectorStoresToAccount(() => settingsStore.getMcpCustomInstructionsAccountScope());
       let themeController: SandThemeController | undefined;
       let disposed = false;
       const requireThemeController = (): SandThemeController => {

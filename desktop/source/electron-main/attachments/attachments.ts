@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { open, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { extname, join } from "node:path";
 
@@ -102,7 +103,7 @@ export function createAttachmentEdgePort(deps: AttachmentEdgeDeps) {
       if (!isSafeFilename(filename) || bytes == null) { console.error(`[simeon] attachment stage refused: filename=${isSafeFilename(filename) ? "ok" : "unsafe"} bytes=${describeBytes(rawBytes)}`); return { ok: false as const, reason: "failed" as const }; }
       if (bytes.byteLength === 0) return { ok: false as const, reason: "empty" as const };
       if (bytes.byteLength > deps.byteLimitForName(filename)) return { ok: false as const, reason: "too-large" as const };
-      try { const dir = deps.getStagingDir(); await mkdir(dir, { recursive: true }); const path = join(dir, `${(deps.now ?? Date.now)()}-${(deps.randomUUID ?? crypto.randomUUID)()}${extname(filename)}`); await writeFile(path, bytes); return { ok: true as const, path }; } catch (error) { report("stage", error); console.error(`[simeon] attachment stage failed: ${error instanceof Error ? `${error.name}: ${error.message}` : String(error)}`); return { ok: false as const, reason: "failed" as const }; }
+      try { const dir = deps.getStagingDir(); await mkdir(dir, { recursive: true }); const path = join(dir, `${(deps.now ?? Date.now)()}-${(deps.randomUUID ?? randomUUID)()}${extname(filename)}`); await writeFile(path, bytes); return { ok: true as const, path }; } catch (error) { report("stage", error); console.error(`[simeon] attachment stage failed: ${error instanceof Error ? `${error.name}: ${error.message}` : String(error)}`); return { ok: false as const, reason: "failed" as const }; }
     },
     async commitStaged(rawPaths: unknown, rawFilenames: unknown): Promise<string[] | null> {
       const paths = Array.isArray(rawPaths) ? rawPaths : []; const filenames = Array.isArray(rawFilenames) ? rawFilenames : []; const committed: string[] = [];

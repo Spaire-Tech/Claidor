@@ -12,6 +12,7 @@ export const VENDOR_MCP_GROUP = {
   Marketing: "Marketing & Growth",
   Hiring: "Hiring & People",
   Social: "Social",
+  Learning: "Learning",
 } as const;
 
 export type VendorMcpGroup = (typeof VENDOR_MCP_GROUP)[keyof typeof VENDOR_MCP_GROUP];
@@ -131,6 +132,23 @@ export const VENDOR_MCP_CONNECTORS: readonly VendorMcpConnector[] = [
   app({ id: "discord", name: "Discord", category: G.Social, description: "Your servers, channels, and invites." }, "discord"),
   { id: "mercury", name: "Mercury", category: G.Finance, url: "https://mcp.mercury.com/mcp", description: "Business bank accounts, balances, and transactions. Read-only." },
   { id: "posthog", name: "PostHog", category: G.Developer, url: "https://mcp.posthog.com/mcp", description: "Product analytics, insights, and feature flags." },
+  // 7 October 2026, the founder's hand-picked list: only the toolkits whose
+  // Composio page marks the sign-in as Composio-managed OAuth, so Add works
+  // in one click. The rest of that list asks for the person's own API key or
+  // an OAuth app of ours (X, Spotify, Meta Ads, LinkedIn Ads) and waits.
+  app({ id: "google-ads", name: "Google Ads", category: G.Marketing, description: "Campaigns, ad groups, keywords, and performance." }, "googleads"),
+  app({ id: "tiktok-ads", name: "TikTok Ads", category: G.Marketing, description: "Campaigns, ads, audiences, and reports." }, "tiktok_ads"),
+  app({ id: "microsoft-excel", name: "Excel", category: G.FilesDocs, description: "Read and write workbooks in Microsoft 365." }, "excel"),
+  app({ id: "reddit", name: "Reddit", category: G.Social, description: "Search posts and comments, and post to communities." }, "reddit"),
+  app({ id: "pinterest", name: "Pinterest", category: G.Social, description: "Boards, pins, and their analytics." }, "pinterest"),
+  app({ id: "gumroad", name: "Gumroad", category: G.Finance, description: "Products, sales, and subscribers." }, "gumroad"),
+  app({ id: "google-classroom", name: "Google Classroom", category: G.Learning, description: "Courses, assignments, students, and grades." }, "google_classroom"),
+  app({ id: "gorgias", name: "Gorgias", category: G.Sales, description: "Support tickets, customers, and replies for your store." }, "gorgias"),
+  app({ id: "zoho-desk", name: "Zoho Desk", category: G.Sales, description: "Support tickets, contacts, and agents." }, "zoho_desk"),
+  app({ id: "zoho-bigin", name: "Bigin by Zoho", category: G.Sales, description: "Contacts, deals, and pipelines in a small-business CRM." }, "zoho_bigin"),
+  app({ id: "gong", name: "Gong", category: G.Sales, description: "Sales calls, transcripts, and deal insights." }, "gong"),
+  app({ id: "capsule-crm", name: "Capsule", category: G.Sales, description: "Contacts, opportunities, and tasks in your CRM." }, "capsule_crm"),
+  app({ id: "dialpad", name: "Dialpad", category: G.Sales, description: "Calls, texts, contacts, and call summaries." }, "dialpad"),
 ];
 
 const byId = new Map(VENDOR_MCP_CONNECTORS.map((item) => [item.id, item]));

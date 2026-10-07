@@ -1,5 +1,6 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { connectorStoreDir } from "../connector-account-scope.js";
 
 /**
  * What the vendor's sign-in left us (24 September 2026): a bearer token for
@@ -124,7 +125,7 @@ export function parseVendorMcpInstalls(parsed: unknown): VendorMcpInstall[] {
 }
 
 export function vendorMcpInstallsPath(rootDir: string): string {
-  return join(rootDir, "vendor-mcp-installs.json");
+  return join(connectorStoreDir(rootDir), "vendor-mcp-installs.json");
 }
 
 export function loadVendorMcpStore(rootDir: string): VendorMcpStore {
