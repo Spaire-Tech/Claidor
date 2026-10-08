@@ -281,14 +281,24 @@ test("the phone's + sheets and call: the window's own create actions, the Mac's 
   assert.match(source, /a\.isGroup!==!0&&a\.isHiddenFromSidebar!==!0/, "a group's members are agents the sidebar shows");
   assert.match(source, /item\("agent","New Agent"\),item\("group","New Group Chat"\)/);
   assert.match(source, /const __simeonPalettes=\[\{"id":"yellow","label":"Dusk"\}/, "the twelve palettes, as the window names them");
-  assert.match(source, /p\.jsx\(__simeonVoicePicker,\{agentId:c\.agentId\}\)/, "the call's settings are the Mac's voice picker");
+  // The call: the founder's layout, the Mac banner's buttons and nothing else (8 October 2026: "use our mac buttons. dont invent stuff").
+  const call = source.slice(source.indexOf("function __simeonPhoneCall(){"), source.indexOf("function __simeonPhoneLayer("));
+  assert.deepEqual([...call.matchAll(/btn\("simeon-call-(?:pill|full)__btn","([A-Za-z]+)"/g)].map((m) => m[1]), ["Transcript", "Transcript"], "Transcript, in the pill and full screen");
+  assert.equal((call.match(/muteBtn\("simeon-call-(?:pill|full)__btn"\)/g) ?? []).length, 2, "Mute, in both");
+  assert.equal((call.match(/endBtn\("simeon-call-(?:pill|full)__end"\)/g) ?? []).length, 2, "End, in both");
+  assert.doesNotMatch(source, /__simeonVoicePicker|"gear"|"voice"/, "no buttons the Mac's call does not have");
+  assert.match(source, /"talk":"<path d=\\"M5 7h14M5 12h14M5 17h9\\"\/>"/, "the banner's own Transcript glyph");
+  assert.match(source, /hidden:!tr/, "Transcript shows and hides the lines, as on the Mac");
+  assert.match(source, /function __simeonCallTime\(t\)\{[^}]*return h>0\?`\$\{h\}:\$\{String\(m\)\.padStart\(2,"0"\)\}:\$\{ss\}`:`\$\{m\}:\$\{ss\}`\}/, "the banner's clock, 0:16");
   assert.match(source, /d\.mute\?\.\(!c\.isMuted\)/);
   assert.match(source, /d\.hangUp\?\.\(\)/);
   assert.match(source, /if\(!__simeonPhoneOk\|\|d==null\|\|c==null\)return null;/, "nothing drawn on the Mac or without a call");
   assert.match(PHONE_HOME_CSS, /:root\{--simeon-call-card:#ffffff;/, "the Mac banner's card, white");
   assert.match(PHONE_HOME_CSS, /\[data-theme\*="dark"\]\{--simeon-call-card:#2a2a2d;/, "and #2a2a2d in the dark");
   assert.match(PHONE_HOME_CSS, /\.simeon-call-end\{[^}]*background:#ff3b30;/, "the banner's red");
-  assert.match(PHONE_HOME_CSS, /\.simeon-call-say--me\{align-self:flex-end;background:var\(--sand-fill-bubble-user\);color:#fff\}/, "the person's lines in the chat's own blue");
+  assert.match(PHONE_HOME_CSS, /\.simeon-call-say--me\{align-self:flex-end;text-align:right;color:var\(--sand-text-secondary\)\}/, "the founder's transcript: the person's lines at the right, grey");
+  assert.match(PHONE_HOME_CSS, /\.simeon-call-say--them\{align-self:flex-start;color:var\(--sand-text-primary\)\}/, "the agent's at the left");
+  assert.doesNotMatch(PHONE_HOME_CSS, /\.simeon-call-say[^{]*\{[^}]*background/, "plain lines, no bubbles");
   assert.match(PHONE_HOME_CSS, /\.simeon-phone-primary\{[^}]*background:var\(--sand-fill-bubble-user\);/, "Create and Next in the same blue");
 });
 

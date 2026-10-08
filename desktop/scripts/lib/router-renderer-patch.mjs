@@ -2318,16 +2318,21 @@ const PHONE_CREATE_SOURCE = [
 ].join("");
 /**
  * The call on a phone (8 October 2026, the founder's iPhone screenshots of
- * the call). The Mac's call is its own window (the banner,
- * source/voice-call/); a phone has no second window, so the window draws it,
- * with the banner's look: its glass card (white, #2a2a2d in the dark), its
- * waveform, its mic, mic-off and hang-up glyphs, its orange for muted, and
- * the live transcript in the chat's own bubbles.
+ * the call; then, the same day: "what i gave you is a design. for the call
+ * use our mac buttons. dont invent stuff out of the blue. where is the
+ * transcript button"). The Mac's call is its own window (the banner,
+ * source/voice-call/); a phone has no second window, so the window draws it:
+ * the founder's layout, the Mac banner's buttons (Mute, Transcript, End,
+ * with the banner's own glyphs and its orange for muted), card and colours.
  *   The pill: at the top of the chat (of the list, if the person goes back),
- *     the agent's butterfly, the waveform (the time while it rings), the
- *     voice, mute and the red hang-up. A tap opens the call full screen.
- *   Full screen: the butterfly large, the name, the time, what is said as it
- *     is said, and mute, voice and hang-up; the chevron folds it back.
+ *     the agent's butterfly, the waveform (the time while it rings), Mute,
+ *     Transcript and End, a handle under it. A tap, or Transcript, opens the
+ *     call full screen.
+ *   Full screen, the founder's transcript screen: the chevron that folds it
+ *     back, the butterfly large, the name, the time ("0:16", the banner's
+ *     own format), then what is said, as plain lines, the agent's at the
+ *     left, the person's at the right in grey, and Mute, Transcript and End.
+ *     Transcript shows and hides the lines, as it does on the Mac.
  * Drawn only where the window's `voiceCall` tells the call as it goes
  * (`subscribe`, `mute`, `hangUp`): the phone's, not the Mac's, whose call
  * stays in its banner.
@@ -2336,9 +2341,9 @@ const PHONE_CALL_ICONS = {
   mic: '<path fill="currentColor" stroke="none" d="M12 14.5a3.5 3.5 0 0 0 3.5-3.5V5.5a3.5 3.5 0 1 0-7 0V11a3.5 3.5 0 0 0 3.5 3.5z"/><path fill="none" d="M18.5 11a6.5 6.5 0 0 1-13 0M12 17.5V21"/>',
   micoff: '<path fill="currentColor" stroke="none" d="M12 14.5a3.5 3.5 0 0 0 3.5-3.5V5.5a3.5 3.5 0 1 0-7 0V11a3.5 3.5 0 0 0 3.5 3.5z"/><path fill="none" d="M18.5 11a6.5 6.5 0 0 1-13 0M12 17.5V21M4 3l16 18"/>',
   end: '<path fill="currentColor" stroke="none" d="M12 9.2c-2.1 0-4 .4-5.6 1.1l-.1 2.3c0 .5-.3.9-.7 1.1-.9.4-1.8 1-2.6 1.6-.4.3-1 .3-1.4-.1L.4 14a1.1 1.1 0 0 1 0-1.6C3.4 9.6 7.5 8 12 8s8.6 1.6 11.6 4.4c.5.4.5 1.1 0 1.6l-1.2 1.2c-.4.4-1 .4-1.4.1-.8-.6-1.7-1.2-2.6-1.6-.4-.2-.7-.6-.7-1.1l-.1-2.3A14 14 0 0 0 12 9.2z"/>',
-  // The call's settings (the founder's screenshots: a gear), which on a phone is the agent's voice, the Mac's voice picker.
-  voice: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
-  down: '<path d="M6 9.5l6 6 6-6"/>',
+  // The banner's Transcript glyph (source/voice-call/index.html, #i-talk).
+  talk: '<path d="M5 7h14M5 12h14M5 17h9"/>',
+  up: '<path d="M6 14.5l6-6 6 6"/>',
 };
 const PHONE_CALL_SOURCE = [
   `const __simeonCallIcons=${JSON.stringify(PHONE_CALL_ICONS)};`,
@@ -2346,20 +2351,22 @@ const PHONE_CALL_SOURCE = [
   "function __simeonCallSource(){const d=typeof window<\"u\"?window.desktop?.voiceCall:void 0;return d!=null&&typeof d.subscribe===\"function\"?d:null}",
   // The banner's waveform: bars that rise in the middle, a voice's loudness bar by bar (banner-view.ts).
   "function __simeonCallWave(n){const b=n.bars,lv=Array.isArray(n.levels)?n.levels:[],top=n.mode===\"speaking\"?24:14;return p.jsx(\"span\",{className:\"simeon-call-wave\",\"aria-hidden\":!0,children:Array.from({length:b},(_,i)=>{const w=Math.sin(Math.PI*(i+.5)/b),l=Math.max(0,Math.min(1,Number(lv[Math.floor(i*(lv.length||1)/b)])||0));return p.jsx(\"i\",{style:{height:`${(2+l*top*w).toFixed(1)}px`}},i)})})}",
-  "function __simeonPhoneCall(){const d=__simeonCallSource(),[c,sc]=S.useState(null),[big,sb]=S.useState(!1),[vo,sv]=S.useState(!1),[,tk]=S.useState(0),live=S.useRef(null);",
+  // The banner's own clock (formatCallDuration, voice-call-prompt.ts): 0:16, 1:02:03.
+  "function __simeonCallTime(t){const w=Math.max(0,Math.floor(Number(t)||0)),h=Math.floor(w/3600),m=Math.floor(w%3600/60),ss=String(w%60).padStart(2,\"0\");return h>0?`${h}:${String(m).padStart(2,\"0\")}:${ss}`:`${m}:${ss}`}",
+  "function __simeonPhoneCall(){const d=__simeonCallSource(),[c,sc]=S.useState(null),[big,sb]=S.useState(!1),[tr,st]=S.useState(!0),[,tk]=S.useState(0),live=S.useRef(null);",
   "S.useEffect(()=>d==null?void 0:d.subscribe(v=>sc(v??null)),[d]);",
   "const ph=c?.phase;S.useEffect(()=>{if(ph!==\"live\")return;const t=setInterval(()=>tk(x=>x+1),1e3);return()=>clearInterval(t)},[ph]);",
-  "const gone=c==null;S.useEffect(()=>{gone&&(sb(!1),sv(!1))},[gone]);",
-  "const said=c?.lines?.length??0;S.useEffect(()=>{const el=live.current;el!=null&&(el.scrollTop=el.scrollHeight)},[said,big]);",
+  "const gone=c==null;S.useEffect(()=>{gone&&(sb(!1),st(!0))},[gone]);",
+  "const said=c?.lines?.length??0;S.useEffect(()=>{const el=live.current;el!=null&&(el.scrollTop=el.scrollHeight)},[said,big,tr]);",
   "if(!__simeonPhoneOk||d==null||c==null)return null;",
-  "const secs=c.connectedAtMs==null?0:Math.max(0,Math.floor(((c.endedAtMs??Date.now())-c.connectedAtMs)/1e3)),time=c.phase===\"ended\"&&c.connectedAtMs==null?c.status||\"Call ended\":c.connectedAtMs!=null?__simeonVoiceDuration(secs):c.status||\"Calling…\";",
-  "const mute=e=>{e.stopPropagation();Promise.resolve(d.mute?.(!c.isMuted)).catch(()=>{})},end=e=>{e.stopPropagation();Promise.resolve(d.hangUp?.()).catch(()=>{})},voice=e=>{e.stopPropagation();sv(!0)};",
+  "const secs=c.connectedAtMs==null?0:Math.max(0,Math.floor(((c.endedAtMs??Date.now())-c.connectedAtMs)/1e3)),time=c.phase===\"ended\"&&c.connectedAtMs==null?c.status||\"Call ended\":c.connectedAtMs!=null?__simeonCallTime(secs):c.status||\"Calling…\";",
+  "const mute=e=>{e.stopPropagation();Promise.resolve(d.mute?.(!c.isMuted)).catch(()=>{})},end=e=>{e.stopPropagation();Promise.resolve(d.hangUp?.()).catch(()=>{})};",
   "const btn=(cls,label,icon,on,pressed)=>p.jsx(\"button\",{type:\"button\",className:\"simeon-disc \"+cls,\"aria-label\":label,...(pressed==null?{}:{\"aria-pressed\":pressed}),onClick:on,children:p.jsx(__simeonCallIcon,{name:icon})});",
-  "const endBtn=cls=>p.jsx(\"button\",{type:\"button\",className:\"simeon-call-end \"+cls,\"aria-label\":\"End call\",disabled:c.phase===\"ended\",onClick:end,children:p.jsx(__simeonCallIcon,{name:\"end\"})});",
+  "const muteBtn=cls=>btn(cls,c.isMuted?\"Unmute\":\"Mute\",c.isMuted?\"micoff\":\"mic\",mute,c.isMuted);",
+  "const endBtn=cls=>p.jsx(\"button\",{type:\"button\",className:\"simeon-call-end \"+cls,\"aria-label\":\"End\",disabled:c.phase===\"ended\",onClick:end,children:p.jsx(__simeonCallIcon,{name:\"end\"})});",
   "const mark=sz=>p.jsx(sd,{\"aria-hidden\":!0,color:c.agentColor??\"blue\",paused:c.phase===\"ended\",shape:\"cloud\",sizePx:sz,state:\"idle\"});",
-  "const sheet=vo?p.jsx(__simeonPhoneSheet,{title:\"Voice\",close:()=>sv(!1),children:p.jsx(\"div\",{className:\"simeon-call-voice\",children:p.jsx(__simeonVoicePicker,{agentId:c.agentId})})}):null;",
-  "if(!big)return p.jsxs(p.Fragment,{children:[p.jsxs(\"div\",{className:\"simeon-call-pill\",\"data-state\":c.phase,role:\"button\",tabIndex:0,\"aria-label\":`Call with ${c.agentName}, ${time}. Open the call`,onClick:()=>sb(!0),onKeyDown:e=>{(e.key===\"Enter\"||e.key===\" \")&&(e.preventDefault(),sb(!0))},children:[p.jsx(\"span\",{className:\"simeon-call-pill__mark\",children:mark(40)}),c.phase===\"live\"?p.jsx(__simeonCallWave,{levels:c.levels,bars:24,mode:c.mode}):p.jsx(\"span\",{className:\"simeon-call-pill__status\",children:time}),btn(\"simeon-call-pill__btn\",\"Voice\",\"voice\",voice),btn(\"simeon-call-pill__btn\",c.isMuted?\"Unmute\":\"Mute\",c.isMuted?\"micoff\":\"mic\",mute,c.isMuted),endBtn(\"simeon-call-pill__end\")]}),sheet]});",
-  "return p.jsxs(p.Fragment,{children:[p.jsxs(\"div\",{className:\"simeon-call-full\",\"data-state\":c.phase,role:\"dialog\",\"aria-label\":`Call with ${c.agentName}`,children:[btn(\"simeon-call-full__fold\",\"Minimise the call\",\"down\",()=>sb(!1)),p.jsxs(\"div\",{className:\"simeon-call-full__who\",children:[p.jsx(\"span\",{className:\"simeon-call-full__mark\",children:mark(120)}),p.jsx(\"div\",{className:\"simeon-call-full__name\",children:c.agentName}),p.jsx(\"div\",{className:\"simeon-call-full__time\",\"aria-live\":\"polite\",children:time})]}),p.jsx(\"div\",{className:\"simeon-call-full__live\",ref:live,role:\"log\",\"aria-label\":\"Transcript\",children:(c.lines??[]).map((l,i)=>p.jsx(\"p\",{className:\"simeon-call-say simeon-call-say--\"+(l.speaker===\"user\"?\"me\":\"them\"),children:l.text},i))}),p.jsxs(\"div\",{className:\"simeon-call-full__controls\",children:[btn(\"simeon-call-full__btn\",c.isMuted?\"Unmute\":\"Mute\",c.isMuted?\"micoff\":\"mic\",mute,c.isMuted),btn(\"simeon-call-full__btn\",\"Voice\",\"voice\",voice),endBtn(\"simeon-call-full__end\")]})]}),sheet]})}",
+  "if(!big)return p.jsxs(\"div\",{className:\"simeon-call-pill\",\"data-state\":c.phase,role:\"button\",tabIndex:0,\"aria-label\":`Call with ${c.agentName}, ${time}. Open the call`,onClick:()=>sb(!0),onKeyDown:e=>{(e.key===\"Enter\"||e.key===\" \")&&(e.preventDefault(),sb(!0))},children:[p.jsx(\"span\",{className:\"simeon-call-pill__mark\",children:mark(40)}),c.phase===\"live\"?p.jsx(__simeonCallWave,{levels:c.levels,bars:24,mode:c.mode}):p.jsx(\"span\",{className:\"simeon-call-pill__status\",children:time}),muteBtn(\"simeon-call-pill__btn\"),btn(\"simeon-call-pill__btn\",\"Transcript\",\"talk\",e=>{e.stopPropagation();st(!0);sb(!0)}),endBtn(\"simeon-call-pill__end\"),p.jsx(\"span\",{className:\"simeon-call-pill__handle\",\"aria-hidden\":!0})]});",
+  "return p.jsxs(\"div\",{className:\"simeon-call-full\",\"data-state\":c.phase,role:\"dialog\",\"aria-label\":`Call with ${c.agentName}`,children:[btn(\"simeon-call-full__fold\",\"Minimise the call\",\"up\",()=>sb(!1)),p.jsxs(\"div\",{className:\"simeon-call-full__who\",children:[p.jsx(\"span\",{className:\"simeon-call-full__mark\",children:mark(120)}),p.jsx(\"div\",{className:\"simeon-call-full__name\",children:c.agentName}),p.jsx(\"div\",{className:\"simeon-call-full__time\",\"aria-live\":\"polite\",children:time})]}),p.jsx(\"div\",{className:\"simeon-call-full__live\",ref:live,role:\"log\",\"aria-label\":\"Transcript\",hidden:!tr,children:(c.lines??[]).map((l,i)=>p.jsx(\"p\",{className:\"simeon-call-say simeon-call-say--\"+(l.speaker===\"user\"?\"me\":\"them\"),children:l.text},i))}),p.jsxs(\"div\",{className:\"simeon-call-full__controls\",children:[muteBtn(\"simeon-call-full__btn\"),btn(\"simeon-call-full__btn\",\"Transcript\",\"talk\",()=>st(v=>!v),tr),endBtn(\"simeon-call-full__end\")]})]})}",
   "function __simeonPhoneLayer(n){return p.jsxs(p.Fragment,{children:[p.jsx(__simeonPhoneSheets,{...n}),p.jsx(__simeonPhoneCall,{})]})}",
 ].join("");
 const PHONE_SIDEBAR_OPEN_BEFORE = "function DCe(n,e){return n.isCollapsed||can(n,e)}";
@@ -2445,7 +2452,7 @@ html[data-simeon-phone="chat"] .sand-new-chat-bar{padding-left:48px!important}
 /* The call on a phone: the Mac banner's card (banner.css) as a pill, and full screen. */
 :root{--simeon-call-card:#ffffff;--simeon-call-shadow:inset 0 1px 0 rgba(255,255,255,.85),0 0 0 .5px rgba(0,0,0,.08),0 18px 40px -14px rgba(0,0,0,.28),0 4px 10px -4px rgba(0,0,0,.12)}
 [data-theme*="dark"]{--simeon-call-card:#2a2a2d;--simeon-call-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 0 0 .5px rgba(0,0,0,.45),0 18px 40px -14px rgba(0,0,0,.5)}
-.simeon-call-pill{position:fixed;z-index:50;top:104px;left:12px;right:12px;height:72px;display:flex;align-items:center;gap:8px;padding:0 11px 0 14px;border-radius:999px;background:var(--simeon-call-card);color:var(--sand-text-primary);box-shadow:var(--simeon-call-shadow);cursor:default;animation:simeon-phone-pop .2s ease}
+.simeon-call-pill{position:fixed;z-index:50;top:104px;left:12px;right:12px;height:76px;display:flex;align-items:center;gap:8px;padding:0 11px 0 14px;border-radius:999px;background:var(--simeon-call-card);color:var(--sand-text-primary);box-shadow:var(--simeon-call-shadow);cursor:default;animation:simeon-phone-pop .2s ease}
 html[data-simeon-phone="list"] .simeon-call-pill{top:62px}
 .simeon-call-pill__mark{width:44px;height:44px;flex:none;display:grid;place-items:center}
 .simeon-call-pill__status{flex:1;min-width:0;font-size:15px;color:var(--sand-text-secondary);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -2455,29 +2462,32 @@ html[data-simeon-phone="list"] .simeon-call-pill{top:62px}
 .simeon-call-pill__btn{width:44px;height:44px}
 .simeon-call-pill svg,.simeon-call-full svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .simeon-call-pill__btn svg{width:20px;height:20px}
-.simeon-call-pill .simeon-disc[aria-pressed="true"],.simeon-call-full .simeon-disc[aria-pressed="true"]{color:#ff9f0a}
 .simeon-call-end{all:unset;box-sizing:border-box;flex:none;display:grid;place-items:center;border-radius:999px;background:#ff3b30;color:#fff;cursor:default}
 .simeon-call-end:disabled{opacity:.5}
 .simeon-call-pill__end{width:50px;height:50px}
 .simeon-call-pill__end svg{width:24px;height:24px}
+.simeon-call-pill__handle{position:absolute;left:50%;bottom:6px;width:36px;height:4px;margin-left:-18px;border-radius:2px;background:var(--sand-text-tertiary);opacity:.6}
+.simeon-call-pill .simeon-disc[aria-pressed="true"]:not([aria-label="Transcript"]),.simeon-call-full .simeon-disc[aria-label="Unmute"]{color:#ff9f0a}
+.simeon-call-full .simeon-disc[aria-label="Transcript"][aria-pressed="true"]{background:var(--sand-fill-ghost-selected)}
 .simeon-call-full{position:fixed;inset:0;z-index:55;display:flex;flex-direction:column;background:var(--sand-bg-base);color:var(--sand-text-primary);animation:simeon-phone-rise .26s cubic-bezier(.2,.8,.2,1)}
 .simeon-call-full__fold{position:absolute;top:12px;left:12px}
-.simeon-call-full__fold svg{width:20px;height:20px;stroke-width:2}
+.simeon-call-full__fold{width:48px;height:48px}
+.simeon-call-full__fold svg{width:22px;height:22px;stroke-width:2}
 .simeon-call-full__who{display:flex;flex-direction:column;align-items:center;gap:4px;padding:64px 24px 8px}
 .simeon-call-full__mark{width:124px;height:124px;display:grid;place-items:center}
 .simeon-call-full__name{margin-top:10px;font-size:22px;line-height:28px;font-weight:600;text-align:center}
 .simeon-call-full__time{font-size:16px;line-height:21px;color:var(--sand-text-secondary);font-variant-numeric:tabular-nums}
-.simeon-call-full__live{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:16px}
+.simeon-call-full__live{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:22px;padding:16px 28px}
+.simeon-call-full__live[hidden]{display:flex!important;visibility:hidden}
 .simeon-call-full__live>:first-child{margin-top:auto}
-.simeon-call-say{margin:0;max-width:80%;padding:9px 14px;border-radius:18px;font-size:16px;line-height:22px;overflow-wrap:anywhere}
-.simeon-call-say--me{align-self:flex-end;background:var(--sand-fill-bubble-user);color:#fff}
-.simeon-call-say--them{align-self:flex-start;background:var(--sand-fill-bubble-agent);color:var(--sand-text-primary)}
+.simeon-call-say{margin:0;max-width:86%;font-size:17px;line-height:24px;overflow-wrap:anywhere}
+.simeon-call-say--me{align-self:flex-end;text-align:right;color:var(--sand-text-secondary)}
+.simeon-call-say--them{align-self:flex-start;color:var(--sand-text-primary)}
 .simeon-call-full__controls{display:flex;align-items:center;gap:12px;padding:12px 20px 28px}
 .simeon-call-full__btn{width:56px;height:56px}
 .simeon-call-full__btn svg{width:24px;height:24px}
 .simeon-call-full__end{margin-left:auto;width:64px;height:64px}
 .simeon-call-full__end svg{width:28px;height:28px}
-.simeon-call-voice{padding:8px 20px}
 `;
 
 export function patchOriginalPhoneHomeStylesheet(css) {
