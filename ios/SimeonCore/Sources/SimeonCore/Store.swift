@@ -476,7 +476,7 @@ public final class AppStore {
   /** New Group Chat: named for its members, "Simeon, Iris", as the window names it. */
   public func createGroup(memberIds: [String]) async -> String? {
     guard let backend, memberIds.count >= 2 else { return nil }
-    let name = memberIds.compactMap { id in agents.first { $0.id == id }?.name }.joined(separator: ", ")
+    let name = String(memberIds.compactMap { id in agents.first { $0.id == id }?.name }.joined(separator: ", ").prefix(60))
     do {
       let id = try await backend.createGroup(name: name, memberIds: memberIds)
       await reloadRoster()
