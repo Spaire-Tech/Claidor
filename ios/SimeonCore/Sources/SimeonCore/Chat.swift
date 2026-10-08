@@ -213,10 +213,20 @@ public struct Bubble: Hashable, Sendable {
   public let showsAvatar: Bool
   public let reactions: [String]
   public let isStreaming: Bool
+  /** The message this one answers (`replyTo`), and its line as the window quotes it above the bubble. */
+  public let replyTo: String?
+  public let quote: String?
+  /** Milliseconds since the epoch: the time a sideways swipe shows. */
+  public let timestampMs: Double?
 
-  public init(id: String, text: String, fromPerson: Bool, author: Party?, showsName: Bool, showsAvatar: Bool, reactions: [String], isStreaming: Bool) {
+  public init(id: String, text: String, fromPerson: Bool, author: Party?, showsName: Bool, showsAvatar: Bool, reactions: [String], isStreaming: Bool, replyTo: String? = nil, quote: String? = nil, timestampMs: Double? = nil) {
     self.id = id; self.text = text; self.fromPerson = fromPerson; self.author = author
     self.showsName = showsName; self.showsAvatar = showsAvatar; self.reactions = reactions; self.isStreaming = isStreaming
+    self.replyTo = replyTo; self.quote = quote; self.timestampMs = timestampMs
+  }
+
+  func with(showsName: Bool? = nil, showsAvatar: Bool? = nil, author: Party?? = nil, quote: String?? = nil) -> Bubble {
+    Bubble(id: id, text: text, fromPerson: fromPerson, author: author ?? self.author, showsName: showsName ?? self.showsName, showsAvatar: showsAvatar ?? self.showsAvatar, reactions: reactions, isStreaming: isStreaming, replyTo: replyTo, quote: quote ?? self.quote, timestampMs: timestampMs)
   }
 
   /** Only emoji, three at most: drawn large with no bubble, as Messages does. */
@@ -297,7 +307,32 @@ public enum Chat {
       }
       index += 1
     }
+    rows = quoted(rows, entries)
     return isGroup ? markRuns(rows) : rows
+  }
+
+  /** A reply's quote over its bubble (`pCn`): the answered line, one line, cut at 96 characters; "(deleted)" when it is gone. */
+  static func quoted(_ rows: [ChatRow], _ entries: [Entry]) -> [ChatRow] {
+    guard rows.contains(where: { if case .bubble(let b) = $0 { return b.replyTo != nil }; return false }) else { return rows }
+    let byId = Dictionary(entries.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+    return rows.map { row in
+      guard case .bubble(let bubble) = row, let target = bubble.replyTo else { return row }
+      return .bubble(bubble.with(quote: .some(quoteLine(byId[target], limit: 96))))
+    }
+  }
+
+  /** The line a reply quotes: a message's words with the spaces run together, "Photo" for a picture, a file's name; cut at `limit` with "…". */
+  public static func quoteLine(_ entry: Entry?, limit: Int) -> String {
+    guard let entry else { return "(deleted)" }
+    var text: String
+    if let content = entry.content { text = content }
+    else if let content = entry.message?["content"]?.text { text = content }
+    else if let path = entry["file_path"]?.text ?? entry["filePath"]?.text ?? entry.message?["url"]?.text {
+      let name = fileName(ofURL: path)
+      text = ["png", "jpg", "jpeg", "gif", "webp", "heic"].contains((name as NSString).pathExtension.lowercased()) ? "Photo" : name
+    } else { text = "Message" }
+    text = text.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+    return text.count > limit ? String(text.prefix(limit)) + "…" : text
   }
 
   /** The window's `JIn`: one message is "Messaged" or "Message from"; only outgoing to several is a fan-out; else a thread. */
@@ -342,7 +377,7 @@ public enum Chat {
       guard let text = entry.content, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
       let fromPerson = entry.isFromPerson || entry.role == "user"
       if !fromPerson, let flights = FlightsCard.parse(text) { return .flights(id: entry.id, card: flights) }
-      return .bubble(Bubble(id: entry.id, text: text, fromPerson: fromPerson, author: fromPerson ? nil : entry.author, showsName: false, showsAvatar: false, reactions: reactions, isStreaming: entry.isStreaming))
+      return .bubble(Bubble(id: entry.id, text: text, fromPerson: fromPerson, author: fromPerson ? nil : entry.author, showsName: false, showsAvatar: false, reactions: reactions, isStreaming: entry.isStreaming, replyTo: entry["replyTo"]?.text, timestampMs: entry.timestampMs))
     case "user-attachment":
       let name = entry["file_name"]?.text ?? entry["fileName"]?.text ?? entry["file_path"]?.text.map(fileName(ofURL:)) ?? entry["filePath"]?.text.map(fileName(ofURL:)) ?? "Attachment"
       return .file(id: entry.id, name: name, url: entry["file_path"]?.string ?? entry["filePath"]?.string ?? "", fromPerson: true)
@@ -355,7 +390,7 @@ public enum Chat {
       case "text":
         guard let text = message["content"]?.string, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
         if let flights = FlightsCard.parse(text) { return .flights(id: entry.id, card: flights) }
-        return .bubble(Bubble(id: entry.id, text: text, fromPerson: false, author: entry.author, showsName: false, showsAvatar: false, reactions: reactions, isStreaming: entry["streaming"]?.bool ?? false))
+        return .bubble(Bubble(id: entry.id, text: text, fromPerson: false, author: entry.author, showsName: false, showsAvatar: false, reactions: reactions, isStreaming: entry["streaming"]?.bool ?? false, replyTo: entry["replyTo"]?.text, timestampMs: entry.timestampMs))
       case "attachment":
         guard let url = message["url"]?.text else { return nil }
         return .file(id: entry.id, name: fileName(ofURL: url), url: url, fromPerson: false)
@@ -392,7 +427,7 @@ public enum Chat {
         return nil
       default:
         if let text = message["content"]?.text {
-          return .bubble(Bubble(id: entry.id, text: text, fromPerson: false, author: entry.author, showsName: false, showsAvatar: false, reactions: reactions, isStreaming: false))
+          return .bubble(Bubble(id: entry.id, text: text, fromPerson: false, author: entry.author, showsName: false, showsAvatar: false, reactions: reactions, isStreaming: false, replyTo: entry["replyTo"]?.text, timestampMs: entry.timestampMs))
         }
         return .notice(id: entry.id, text: notShown)
       }
@@ -430,7 +465,7 @@ public enum Chat {
       }
       let previous = i > 0 ? rows[i - 1] : nil
       let next = i + 1 < rows.count ? rows[i + 1] : nil
-      out[i] = .bubble(Bubble(id: bubble.id, text: bubble.text, fromPerson: false, author: author, showsName: !sameAuthor(previous), showsAvatar: !sameAuthor(next), reactions: bubble.reactions, isStreaming: bubble.isStreaming))
+      out[i] = .bubble(bubble.with(showsName: !sameAuthor(previous), showsAvatar: !sameAuthor(next)))
     }
     return out
   }

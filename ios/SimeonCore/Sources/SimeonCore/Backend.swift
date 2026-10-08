@@ -78,7 +78,8 @@ public protocol AgentBackend: AnyObject, Sendable {
   func listAgents() async throws -> [Agent]
   func transcript(_ agentId: String) async throws -> [Entry]
   /** A message, with the files already on the agent's computer (`uploadAttachment`). */
-  func send(_ agentId: String, text: String, attachments: [AttachmentRef]) async throws
+  /** A message, with the files already on the agent's computer, answering `replyTo` when set (`sendPrompt`'s `replyToId`). */
+  func send(_ agentId: String, text: String, attachments: [AttachmentRef], replyTo: String?) async throws
   func markRead(_ agentId: String) async
   /** A new agent in a palette; its id. */
   func createAgent(name: String, colour: String) async throws -> String
@@ -146,13 +147,15 @@ public final class LiveBackend: AgentBackend, @unchecked Sendable {
     return (page["entries"]?.array ?? []).compactMap(Entry.init)
   }
 
-  public func send(_ agentId: String, text: String, attachments: [AttachmentRef]) async throws {
+  public func send(_ agentId: String, text: String, attachments: [AttachmentRef], replyTo: String?) async throws {
     // The host's argument names (host-gateway-api.ts, sendPrompt); the nonce lets a retried send land once.
-    _ = try await gateway.command("sendPrompt", [
+    var args: JSON = [
       "agentId": .string(agentId), "prompt": .string(text), "attachmentPaths": JSON(attachments.map(\.path)), "attachmentNames": JSON(attachments.map(\.name)),
-      "clientNonce": .string("ios-\(UUID().uuidString.lowercased())"),
+      "clientNonce": .string("ios-\(UUID().uuidString.lowercased())"), "directAddressedAcceptance": true,
       "composedAtMs": .number(Date().timeIntervalSince1970 * 1000),
-    ])
+    ]
+    if let replyTo { args = args.setting("replyToId", .string(replyTo)) }
+    _ = try await gateway.command("sendPrompt", args)
   }
 
   public func markRead(_ agentId: String) async {

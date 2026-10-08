@@ -20,6 +20,7 @@ struct ChatView: View {
   @State private var showsCall = false
   @State private var showsTranscript = false
   @State private var showsComputer = false
+  @State private var reply = ReplyDraft()
 
   // Each part below reads only what it draws, so typing a letter or the
   // call's waveform ticking redraws that part and not the conversation.
@@ -29,6 +30,7 @@ struct ChatView: View {
         ChatHeader(agentId: agentId, back: { dismiss() }, showsPage: $showsPage, showsCall: $showsCall, showsTranscript: $showsTranscript)
       }
       .safeAreaInset(edge: .bottom, spacing: 0) { ChatComposer(agentId: agentId) }
+      .environment(reply)
       .background(Ink.ground)
       .toolbar(.hidden, for: .navigationBar)
       .sheet(isPresented: $showsPage) { AgentPageSheet(agentId: agentId) }
@@ -47,6 +49,29 @@ struct ChatView: View {
   }
 }
 
+/** The message the person is answering (the Mac's Reply), shared by the bubbles' menu and the composer. */
+@MainActor
+@Observable
+final class ReplyDraft {
+  var target: Bubble?
+}
+
+/** How far a sideways drag has pulled the conversation (0 to 82 pt), to show each message's time. */
+private struct TimePeekKey: EnvironmentKey { static let defaultValue: CGFloat = 0 }
+/** Scrolls the conversation to a message: a reply's quote goes to what it answers. */
+private struct JumpKey: EnvironmentKey { static let defaultValue: (String) -> Void = { _ in } }
+
+extension EnvironmentValues {
+  var timePeek: CGFloat {
+    get { self[TimePeekKey.self] }
+    set { self[TimePeekKey.self] = newValue }
+  }
+  var jumpToMessage: (String) -> Void {
+    get { self[JumpKey.self] }
+    set { self[JumpKey.self] = newValue }
+  }
+}
+
 /** The conversation itself: redrawn when its rows change, and only then. */
 struct ChatMessages: View {
   let agentId: String
@@ -54,20 +79,34 @@ struct ChatMessages: View {
   let openComputer: () -> Void
   @Environment(AppStore.self) private var store
   @State private var width: CGFloat = 361
+  @State private var peek: CGFloat = 0
 
   var body: some View {
     let rows = store.rows(for: agentId)
-    ScrollView {
-      LazyVStack(alignment: .leading, spacing: 0) {
-        ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
-          ChatRowView(row: row, agentId: agentId, openPage: openPage, openComputer: openComputer)
-            .padding(.top, Self.gap(index > 0 ? rows[index - 1] : nil, row))
+    ScrollViewReader { reader in
+      ScrollView {
+        LazyVStack(alignment: .leading, spacing: 0) {
+          ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
+            ChatRowView(row: row, agentId: agentId, openPage: openPage, openComputer: openComputer)
+              .padding(.top, Self.gap(index > 0 ? rows[index - 1] : nil, row))
+          }
+          TypingSlot(agentId: agentId)
         }
-        TypingSlot(agentId: agentId)
+        .padding(.horizontal, 16)
+        .padding(.bottom, 14)
+        .environment(\.chatWidth, width)
+        .environment(\.timePeek, peek)
+        .environment(\.jumpToMessage) { id in withAnimation(.snappy) { reader.scrollTo(id, anchor: .center) } }
       }
-      .padding(.horizontal, 16)
-      .padding(.bottom, 14)
-      .environment(\.chatWidth, width)
+      // A sideways drag pulls your bubbles left, up to 82 pt, and shows each message's time (the window's `ZSn`); let go and it springs back.
+      .simultaneousGesture(
+        DragGesture(minimumDistance: 12)
+          .onChanged { drag in
+            guard abs(drag.translation.width) > abs(drag.translation.height) else { return }
+            peek = min(82, max(0, -drag.translation.width))
+          }
+          .onEnded { _ in withAnimation(.spring(response: 0.43, dampingFraction: 0.78)) { peek = 0 } }
+      )
     }
     .onGeometryChange(for: CGFloat.self) { $0.size.width - 32 } action: { width = max(200, $0) }
     .defaultScrollAnchor(.bottom)
@@ -215,6 +254,7 @@ struct ChatComposer: View {
   @State private var picking = false
   @State private var dictation = Dictation()
   @FocusState private var typing: Bool
+  @Environment(ReplyDraft.self) private var reply: ReplyDraft?
 
   var body: some View {
     VStack(spacing: 6) {
@@ -227,6 +267,22 @@ struct ChatComposer: View {
           }
           .padding(.horizontal, 4)
         }
+      }
+      VStack(alignment: .leading, spacing: 6) {
+      if let target = reply?.target {
+        // The quote being answered (`Kvn`): the arrow, the line cut at 72, and Cancel reply.
+        HStack(spacing: 6) {
+          Image(systemName: "arrowshape.turn.up.right").font(.system(size: 12)).foregroundStyle(Ink.tertiary)
+          Text(Self.replyLine(target)).font(.system(size: 14)).foregroundStyle(Ink.secondary).lineLimit(1)
+          Spacer(minLength: 0)
+          Button { reply?.target = nil } label: {
+            Image(systemName: "xmark").font(.system(size: 10, weight: .semibold)).foregroundStyle(Ink.secondary).frame(width: 20, height: 20)
+          }
+          .buttonStyle(.plain)
+          .accessibilityLabel("Cancel reply")
+        }
+        .padding(.leading, 8).padding(.trailing, 4).padding(.vertical, 4)
+        .background(Ink.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
       }
       HStack(alignment: .bottom, spacing: 8) {
         Button { picking = true } label: {
@@ -264,6 +320,7 @@ struct ChatComposer: View {
           .accessibilityLabel("Send")
         }
       }
+      }
       .padding(.leading, 8).padding(.trailing, 8).padding(.vertical, 7)
       .background(scheme == .dark ? Ink.control : Ink.ground, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
       .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Ink.edge, lineWidth: 1))
@@ -275,15 +332,23 @@ struct ChatComposer: View {
     .background(Ink.ground.opacity(0.001))
     .composerPicker(isPresented: $picking) { picked in attachments.append(contentsOf: picked) }
     .onChange(of: dictation.problem) { _, problem in if let problem { store.problem = problem } }
+    .onChange(of: reply?.target?.id) { _, id in if id != nil { typing = true } }
+  }
+
+  static func replyLine(_ bubble: Bubble) -> String {
+    let text = bubble.text.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+    return text.count > 72 ? String(text.prefix(72)) + "…" : text
   }
 
   private func send() {
     let text = draft
     let files = attachments
+    let answering = reply?.target?.id
     draft = ""
     attachments = []
+    reply?.target = nil
     dictation.stop()
-    Task { await store.send(text, to: agentId, attachments: files.map { ($0.name, $0.data) }) }
+    Task { await store.send(text, to: agentId, attachments: files.map { ($0.name, $0.data) }, replyTo: answering) }
   }
 }
 
@@ -347,8 +412,12 @@ struct BubbleView: View {
   @Environment(AppStore.self) private var store
   @Environment(\.colorScheme) private var scheme
   @Environment(\.chatWidth) private var width
+  @Environment(\.timePeek) private var peek
+  @Environment(\.jumpToMessage) private var jump
+  @Environment(ReplyDraft.self) private var reply: ReplyDraft?
 
-  private static let quickReactions = ["👍", "❤️", "😂", "🎉", "👀", "🙏"]
+  /** The window's reaction row (`dGe`). */
+  private static let quickReactions = ["👍", "👎", "❤️", "😂", "🎉", "😮"]
 
   var body: some View {
     HStack(alignment: .bottom, spacing: 8) {
@@ -363,12 +432,41 @@ struct BubbleView: View {
         if inGroup && bubble.showsName, let name = bubble.author?.name {
           Text(name).font(.system(size: 12)).foregroundStyle(Ink.secondary).padding(.leading, 12)
         }
+        if let quote = bubble.quote, let target = bubble.replyTo {
+          // What this answers (`pCn`): one line over the bubble; a tap goes to it.
+          Button { jump(target) } label: {
+            HStack(spacing: 4) {
+              Image(systemName: "arrowshape.turn.up.right").font(.system(size: 10))
+              Text(quote).lineLimit(1)
+            }
+            .font(.system(size: 13))
+            .foregroundStyle(Ink.tertiary)
+            .padding(.horizontal, 8).padding(.top, 4)
+          }
+          .buttonStyle(.plain)
+          .frame(maxWidth: ChatMetrics.bubbleMax(width), alignment: bubble.fromPerson ? .trailing : .leading)
+          .accessibilityLabel("Jump to replied message")
+        }
         content
           .contextMenu { menu }
           .overlay(alignment: bubble.fromPerson ? .bottomTrailing : .bottomLeading) { reactions }
           .padding(.bottom, bubble.reactions.isEmpty ? 0 : 16)
       }
+      .offset(x: bubble.fromPerson ? -peek : 0)
       if !bubble.fromPerson { Spacer(minLength: 0) }
+    }
+    .overlay(alignment: .trailing) {
+      // Its own time, revealed by the sideways drag (`sand-row-timestamp`).
+      if peek > 0, let ms = bubble.timestampMs {
+        Text(Date(timeIntervalSince1970: ms / 1000).formatted(date: .omitted, time: .shortened))
+          .font(.system(size: 12, weight: .medium)).monospacedDigit()
+          .foregroundStyle(Ink.secondary)
+          .lineLimit(1)
+          .padding(.leading, 10)
+          .opacity(peek / 82)
+          .offset(x: (1 - peek / 82) * 60)
+          .allowsHitTesting(false)
+      }
     }
   }
 
@@ -406,6 +504,9 @@ struct BubbleView: View {
       }
     }
     .controlGroupStyle(.compactMenu)
+    if let reply {
+      Button { reply.target = bubble } label: { Label("Reply", systemImage: bubble.fromPerson ? "arrowshape.turn.up.right" : "arrowshape.turn.up.left") }
+    }
     Button { UIPasteboard.general.string = bubble.text } label: { Label("Copy", systemImage: "doc.on.doc") }
   }
 

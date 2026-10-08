@@ -223,7 +223,7 @@ public final class AppStore {
   }
 
   /** A message, and the composer's files: each put on the agent's computer first (`uploadAttachment`), as the Mac does. */
-  public func send(_ text: String, to agentId: String, attachments files: [(name: String, data: Data)] = []) async {
+  public func send(_ text: String, to agentId: String, attachments files: [(name: String, data: Data)] = [], replyTo: String? = nil) async {
     let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
     guard let backend, !trimmed.isEmpty || !files.isEmpty else { return }
     var refs: [AttachmentRef] = []
@@ -237,7 +237,7 @@ public final class AppStore {
         return
       }
     }
-    do { try await backend.send(agentId, text: trimmed, attachments: refs) } catch { problem = "Your message didn't send: \(error.localizedDescription)" }
+    do { try await backend.send(agentId, text: trimmed, attachments: refs, replyTo: replyTo) } catch { problem = "Your message didn't send: \(error.localizedDescription)" }
   }
 
   public func answer(_ value: String, card entryId: String, in agentId: String) async {

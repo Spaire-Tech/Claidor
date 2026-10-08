@@ -349,7 +349,7 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
     do {
       if chat {
         let prompt = (["(On our call) \(task.isEmpty ? "Are you there?" : task)"] + (quote.isEmpty ? [] : ["My words: \"\(quote)\""]) + ["Answer here in a sentence or two of plain text; it is read out to me on the call."]).joined(separator: "\n")
-        try await backend.send(agentId, text: prompt, attachments: [])
+        try await backend.send(agentId, text: prompt, attachments: [], replyTo: nil)
       } else {
         var args: JSON = ["agentId": .string(agentId), "callId": .string(id), "kind": "request", "request": .string(task)]
         if !quote.isEmpty { args = args.setting("quotes", [.string(quote)]) }

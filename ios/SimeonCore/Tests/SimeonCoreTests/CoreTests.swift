@@ -210,7 +210,7 @@ final class GatewayTests: XCTestCase {
     ])
     let api = SimeonAPI(base: URL(string: "https://x")!, clientVersion: "1", vault: vault, http: http)
     let backend = LiveBackend(gateway: Gateway(api: api, http: http))
-    try await backend.send("theo", text: "Hi", attachments: [])
+    try await backend.send("theo", text: "Hi", attachments: [], replyTo: nil)
     let id = try await backend.createAgent(name: "Nora", colour: "green")
     let group = try await backend.createGroup(name: "Simeon, Iris", memberIds: ["simeon", "iris"])
     XCTAssertEqual(id, "agent-9")
@@ -725,5 +725,21 @@ final class MarkdownTests: XCTestCase {
     XCTAssertEqual(frame.artOpacity, 1, accuracy: 0.001)
     XCTAssertTrue(frame.dots.isEmpty)
     XCTAssertTrue(engine.isSettled)
+  }
+  func testAReplyQuotesWhatItAnswers() {
+    let now = 1_760_000_000_000.0
+    let entries: [Entry] = [
+      ["kind": "message", "id": "a1", "role": "assistant", "content": "Thursday is on track:\n12 of 15   tickets are done.", "timestampMs": .number(now - 60_000)],
+      ["kind": "message", "id": "u1", "role": "user", "content": "Which three are left?", "replyTo": "a1", "timestampMs": .number(now)],
+      ["kind": "message", "id": "u2", "role": "user", "content": "And this?", "replyTo": "gone", "timestampMs": .number(now + 1000)],
+    ].compactMap(Entry.init)
+    let bubbles = Chat.rows(entries).compactMap { row -> Bubble? in if case .bubble(let b) = row { return b }; return nil }
+    XCTAssertEqual(bubbles.count, 3)
+    XCTAssertNil(bubbles[0].quote)
+    XCTAssertEqual(bubbles[1].replyTo, "a1")
+    XCTAssertEqual(bubbles[1].quote, "Thursday is on track: 12 of 15 tickets are done.")
+    XCTAssertEqual(bubbles[1].timestampMs, now)
+    XCTAssertEqual(bubbles[2].quote, "(deleted)")
+    XCTAssertEqual(Chat.quoteLine(entries[0], limit: 10), "Thursday i…")
   }
 }

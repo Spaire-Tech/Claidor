@@ -201,12 +201,16 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
 
   public func transcript(_ agentId: String) async throws -> [Entry] { lock.withLock { transcripts[agentId] ?? [] } }
 
-  public func send(_ agentId: String, text: String, attachments: [AttachmentRef]) async throws {
+  public func send(_ agentId: String, text: String, attachments: [AttachmentRef], replyTo: String?) async throws {
     let now = Date().timeIntervalSince1970 * 1000
     for file in attachments {
       append(agentId, ["kind": "user-attachment", "id": .string("ua-\(UUID().uuidString.prefix(8))"), "file_path": .string(file.path), "file_name": .string(file.name), "timestampMs": .number(now)])
     }
-    if !text.isEmpty { append(agentId, DemoData.you("u-\(UUID().uuidString.prefix(8))", 0, text, now: now)) }
+    if !text.isEmpty {
+      var entry = DemoData.you("u-\(UUID().uuidString.prefix(8))", 0, text, now: now)
+      if let replyTo { entry = entry.setting("replyTo", .string(replyTo)) }
+      append(agentId, entry)
+    }
   }
 
   public func markRead(_ agentId: String) async { touch(agentId) { $0.hasUnread = false; $0.unreadCount = 0 } }

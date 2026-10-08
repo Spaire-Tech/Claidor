@@ -16,6 +16,50 @@ These notes are the Mac's own behaviour, read from its code. Each item says
 what the Mac does, where that lives, and what the phone does now. Fixes go
 one step at a time, in the order the founder picks.
 
+## Where each gap stands (8 October 2026, after the fixes)
+
+Everything below was ported from the Mac's own code and measured against
+the phone design. None of the screens has been compiled yet (see
+`README.md`, "What has and has not been checked").
+
+| Gap (section) | Now |
+|---|---|
+| Flight card (§1, §3.3) | The card: title, subtitle, rows with the airline circle, times, stops, price; a row opens the details (legs, fare rules). |
+| Brand names in text (§2) | All 75 names, anywhere in a message, with their logos and the readable light and dark colours. |
+| Agent names in text (§2) | The agent's butterfly before the name, in the Mac's colours. |
+| Question card (§3.1) | Rings, help text, "Type your own answer" with Submit, the X; answered and dismissed states. |
+| "N messages with" (§3.6) | The Mac's wording ("Messaged", "Message from", "N messages with", "N agents"); a tap opens the exchange read-only. |
+| Call button and calls (§1, §6) | The call button by the name; real calls through ElevenLabs' iPhone kit and the Mac's call protocol. Needs a device to try. |
+| The top bar (§1) | Solid, as the Mac's. |
+| The butterfly (§4) | The window's smoothed outline, size and gradient; group avatars in the Mac's layouts; the default colour by the id's hash. |
+| Its motion (§4) | The Mac's engine: idle sway, the lean and bob of working, the swing of searching, spins with the outline turning, the fold into three dots while thinking, the orbit while waiting, the dot flying off while messaging. A list row and the header move only while the agent works. Not drawn: the spin's light trails. The bubbles' small avatars hold still (on the Mac they sway by under a point). |
+| The agent at work (§3.9) | Its butterfly at 28 pt folding into the dots (one-to-one), or a member's at 22 pt beside what the group is doing. |
+| Markdown (§2) | Headings, lists (disc, circle, square; 1., a., i.), task lists, quotes, rules, tables that scroll, inline code, code blocks with Copy, links. |
+| New divider, reactions (§2) | Both. |
+| A message's menu (§2) | The window's reaction row (👍 👎 ❤️ 😂 🎉 😮), Reply and Copy. Reply puts the quoted line over the composer and sends `replyToId`; the sent bubble carries its quote, and a tap on it goes to the message it answers. Not on the phone: "More emoji" and "Start a thread". |
+| A message's time (§2) | A sideways drag pulls your bubbles left, up to 82 pt, and shows each message's time ("9:41 AM"); it springs back on release. |
+| Connectors card (§3.2) | Logo, name, reason, Add, the sign-in sheet, "Waiting for X authorization…", ✓ Added. Not yet: the Team badge, "N tools · Used by N teammates", Manage and Retry, Reopen, account pills, "Add another account", suggestion chips. |
+| Connect Slack / GitHub (§3.2) | The card, Connect opening the linking page, "Slack connected" once linked. |
+| Email and Slack drafts (§3.4) | Editable To, Subject and Body, Show more, Send and Discard, the states. |
+| Files (§3.5) | The real file icons, images and videos inline, a tap opens the preview. |
+| Voice call line (§3.7) | "Voice chat · 01:11"; a tap opens the call's lines. |
+| Routines line (§3.8) | "Created routine", folded runs, a tap opens the routine. |
+| Approvals, secrets, the computer hand-back (§3.10) | Allow once / Always allow / Deny; the password field and Save securely; Take over / I'm done / Skip. |
+| Settings (§5) | Account, Theme, Timezone, Auto-review with its rules, Connect apps, Usage & Billing with Manage Billing. |
+| Connect apps (§5) | Marketplace and Yours, Add with the sign-in sheet; an app's page with its accounts (sign in, rename, remove) and its tools, each with a switch. Not yet: Setup values and Details. |
+| The agent's page (§7) | Profile saved on leaving a field, Notifications, the avatar editor (Agent with the voice picker, Generate, Upload), the routine editor with every schedule, Test run, Delete and runs, group members. Upload and Generate keep the picture's middle square rather than offering a crop. |
+| The computer (§8) | Each agent's own screen, live. |
+| Notifications, the +, the mic (§9) | Straight from Apple (the server needs the APNs key), photos and files uploaded to the agent's computer, the phone's own dictation. |
+| New Agent, New Group Chat | Measured against the phone sheets. |
+| Search | Apple's search field with the window's tabs (All, Agents, Groups, Actions). |
+
+Still missing on the phone:
+- The welcome steps of a new account. A new account on the phone opens
+  on an empty list.
+- Threads ("Start a thread" and the thread view).
+
+---
+
 Sources. "patch" is `desktop/scripts/lib/router-renderer-patch.mjs` (our
 changes to the Mac window). "bundle" is the built window in
 `clients/apps/web/public/app/assets/` (`index-UbX-y3il.js`, the Settings
@@ -94,7 +138,9 @@ Bubble (bundle `_o={message:`; patch 1716, 1804):
 - A "New" divider (blue lines and the word "New").
 - Reaction pills, 22 pt, under the bubble.
 - A message's own time, revealed by a sideways swipe.
-- Copy, Reply and Delete in each message's menu.
+- In each message's menu: the reaction row, Reply, Start a thread and Copy.
+  (There is no Delete: only a send that failed can be deleted, from the
+  window's own outbox.)
 
 ## 3. Cards
 

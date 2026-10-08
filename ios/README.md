@@ -26,12 +26,14 @@ computer, and the app asks it and listens to it the way the web window does
   refreshes it. See `SimeonCore/Sources/SimeonCore/SignIn.swift` and
   `Tokens.swift`.
 - **The cloud computer.** The app asks the broker where the box is
-  (`EnsureSandBox`). It POSTs each command to `{gateway}/api/{method}`
-  (`listAgents`, `getAgentTranscriptWindow`, `sendPrompt`, `createAgent`,
-  `createGroup`, `respondToWidget`, `setAgentUnread`, `updateAgent`,
-  `getAgentAutomations`). It reads `{gateway}/events` for live changes:
-  the roster, each chat's entries, the steps an agent is on. See
-  `Gateway.swift` and `Backend.swift`.
+  (`EnsureSandBox`). It POSTs each command to `{gateway}/api/{method}`,
+  the same commands the web window sends (`listAgents`,
+  `getAgentTranscriptWindow`, `sendPrompt`, `respondToWidget`, `sendDraft`,
+  `uploadAttachment`, `desktopMcp`, `getHostSettings`,
+  `createAgentAutomation`, `ensureForeverBox`, `voiceCall` and the rest).
+  It reads `{gateway}/events` for live changes: the roster, each chat's
+  entries, the steps an agent is on. See `Gateway.swift`, `Backend.swift`
+  and `Store.swift`.
 - **The chats.** The host sends finished entries ("add", "update",
   "remove"). The app keeps them by id and draws them. It folds them the
   window's way: a time stamp after 15 minutes, "N messages with …" for
@@ -56,7 +58,10 @@ the Launch squad. It also runs the scripted call. No account is needed.
 | `agent:simeon` | Simeon's page |
 | `new-agent`, `new-group`, `search`, `settings` | That sheet |
 
-`--theme=light` or `--theme=dark` picks the appearance.
+`--theme=light` or `--theme=dark` picks the appearance. `--gallery` adds a
+"Cards" chat holding every card the Mac draws (questions, drafts, flights,
+connectors, approvals, secrets, files), for checking them side by side; it
+is never shown on a real account.
 `--api=http://127.0.0.1:8000` points the app at another server.
 
 ## Build and run it (a Mac)
@@ -108,27 +113,42 @@ macOS minutes cost ten times Linux ones, so it never runs by itself.
    because the bundle id is the same. Raise `CURRENT_PROJECT_VERSION` in
    `project.yml` for each upload.
 
-## Not in this version yet
+## Calls, notifications and the computer
 
-Everything below is in the web window on the phone today and still has to
-be built here. Each item names what it needs:
+- **Calls** use ElevenLabs' own iPhone kit (`elevenlabs-swift-sdk` 3.4.0,
+  added by `project.yml`; Xcode fetches it on the first build). The call
+  token comes from Simeon Labs' server (`/desktop/api/proxy/v1/voice/calls`),
+  which answers 503 while calls are switched off and 402 without credit.
+  The call speaks the Mac's protocol to the agent (`voiceCall`), written in
+  `SimeonCore/VoiceCall.swift`.
+- **Notifications** go straight from Simeon Labs' server to Apple. The app
+  asks once after sign-in and registers its Apple token at
+  `/desktop/push-devices`. The server needs an APNs key on Render:
+  `SIMEON_APNS_KEY_ID`, `SIMEON_APNS_TEAM_ID` and `SIMEON_APNS_KEY` (the
+  `.p8` file's contents), from the Apple developer account (Certificates,
+  Identifiers & Profiles → Keys → Apple Push Notifications service).
+  Without them the server logs `desktop.push.apns_not_configured` and
+  sends nothing to this app. The app's Push capability comes from
+  `Simeon/Simeon.entitlements`; signing with a personal (free) team
+  refuses it, so sign with the paid team Simeon publishes from.
+- **The computer**: each agent's own screen, live, through noVNC's client
+  (bundled in `Simeon/Computer/`, MPL 2.0) on the box's WebSocket.
 
-- **Notifications.** The server sends through Expo's push service
-  (`server/simeon/desktop/push.py`), which takes Expo tokens. A native app
-  has an Apple token, so the server needs a path straight to Apple (APNs),
-  plus a push key from the developer account.
-- **Attachments.** The composer's + is drawn but not wired; it needs
-  `uploadAttachment`.
-- **Dictation.** The mic is drawn; the keyboard's own dictation works
-  meanwhile.
-- **Real calls.** The call screens run on the demo's scripted call. A real
-  call needs ElevenLabs on the phone, the server's call token for the
-  phone, and microphone permission.
-- **The cloud computer's screen** on the agent's page. It is a placeholder;
-  it needs the box's screen in a web view.
-- **Connect apps.** A connector card shows its state; connecting one needs
-  the sign-in sheet flow the web window uses (`desktopMcp`).
-- **Brand logos** next to the names in messages. The names are in the
-  brands' colours; the logos are not drawn yet.
-- **Creating a routine.** The routines tab lists them; making one is still
-  done by asking the agent.
+## What has and has not been checked
+
+- `SimeonCore`'s tests (46) pass on Linux: the chat's rows for every card,
+  the call protocol against a fake voice, sign-in and tokens, the
+  butterfly's outline and motion checked against the window's own numbers.
+- The server's push tests pass, with Apple's endpoint mocked.
+- The computer view was run against a real VNC server in Chromium.
+- **The SwiftUI screens have not been compiled.** Every file parses, and
+  two full read-throughs against the iOS 26 SDK and the ElevenLabs kit's
+  source found no build errors. The first build on a Mac is the check;
+  `ios/scripts/mac.sh` copies any errors to the clipboard.
+- Nothing has run on an iPhone yet: calls, notifications (they also need
+  the APNs key above), dictation and the photo picker need a real device.
+
+## Still to do
+
+See `PARITY.md` for every difference from the Mac, item by item, with
+what is done and what is left.
