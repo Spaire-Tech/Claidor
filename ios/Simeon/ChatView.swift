@@ -16,6 +16,7 @@ struct ChatView: View {
   var opening: String? = nil
   @Environment(AppStore.self) private var store
   @Environment(\.dismiss) private var dismiss
+  @Environment(\.scenePhase) private var scenePhase
   @State private var showsPage = false
   @State private var showsCall = false
   @State private var showsTranscript = false
@@ -36,6 +37,9 @@ struct ChatView: View {
       .sheet(isPresented: $showsPage) { AgentPageSheet(agentId: agentId) }
       .sheet(isPresented: $showsComputer) { ComputerSheet(agentId: agentId) }
       .fullScreenCover(isPresented: $showsCall) { CallScreen(showsTranscript: $showsTranscript) }
+      .onDisappear { store.close(agentId) }
+      // Back from the background: what was said while the phone slept did not stream, so fetch it.
+      .onChange(of: scenePhase) { _, phase in if phase == .active { Task { await store.refresh(agentId) } } }
       .task {
         await store.open(agentId)
         guard let agent = store.agent(agentId) else { return }

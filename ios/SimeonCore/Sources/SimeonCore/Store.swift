@@ -102,7 +102,10 @@ public struct Account: Sendable, Equatable {
 @Observable
 public final class AppStore {
   public private(set) var agents: [Agent] = []
-  public private(set) var transcripts: [String: [Entry]] = [:]
+  /** Each chat's entries; the screens draw `chatRows`, so a change here alone redraws nothing. */
+  @ObservationIgnored public private(set) var transcripts: [String: [Entry]] = [:]
+  /** The chat on screen, if one is: it is the one fetched again after a reconnect or a missed line. */
+  public private(set) var openChat: String?
   /** Each open chat laid out (Chat.rows), kept with its entries so a redraw does not lay it out again. */
   public private(set) var chatRows: [String: [ChatRow]] = [:]
   /** The step an agent is on right now ("Checking Linear"), by agent. */
@@ -124,6 +127,12 @@ public final class AppStore {
   public private(set) var backend: AgentBackend?
   @ObservationIgnored private var listening: Task<Void, Never>?
   @ObservationIgnored private var running: [String: String] = [:]
+  /** Chats with streamed lines waiting to be laid out, at most every 90 ms, so a streaming answer does not lay the chat out per word. */
+  @ObservationIgnored private var pendingLayout: Set<String> = []
+  @ObservationIgnored private var layoutTask: Task<Void, Never>?
+  @ObservationIgnored private var refreshing: Set<String> = []
+  /** The newest line each chat was fetched again for, so a line the fetch does not carry (a thread's reply) is not fetched for twice. */
+  @ObservationIgnored private var caughtUp: [String: String] = [:]
 
   public init() {}
 
@@ -150,7 +159,8 @@ public final class AppStore {
     listening?.cancel()
     listening = nil
     backend = nil
-    agents = []; transcripts = [:]; chatRows = [:]; steps = [:]; call = nil; isLive = false; account = nil
+    agents = []; transcripts = [:]; chatRows = [:]; steps = [:]; call = nil; isLive = false; account = nil; openChat = nil
+    layoutTask?.cancel(); layoutTask = nil; pendingLayout = []; refreshing = []; caughtUp = [:]
     pendingAnswers = [:]; unreadAfter = [:]; apps = []; catalog = []
   }
 
@@ -167,18 +177,30 @@ public final class AppStore {
     switch event {
     case .agents(let list):
       agents = sortRoster(list)
+      catchUpOpenChat()
     case .agentUpserted(let agent):
       var next = agents.filter { $0.id != agent.id }
       next.append(agent)
       agents = sortRoster(next)
+      if agent.id == openChat { catchUpOpenChat() }
     case .transcript(let change):
       guard let current = transcripts[change.agentId] else { return }
-      setTranscript(change.agentId, change.applied(to: current))
+      var streaming = false
+      if case .upsert(_, let entry) = change { streaming = entry.isStreaming }
+      setTranscript(change.agentId, change.applied(to: current), soon: streaming)
     case .step(let agentId, let id, let summary, let isRunning):
       if isRunning { running[agentId] = id; steps[agentId] = summary }
       else if running[agentId] == id { running[agentId] = nil; steps[agentId] = nil }
     case .connection(let live):
+      // Back after a drop (the phone slept, the network changed): what was said meanwhile never streamed, so fetch it.
+      let recovered = live && !isLive
       isLive = live
+      if recovered, backend != nil {
+        Task {
+          await reloadRoster()
+          if let chat = openChat { await refresh(chat) }
+        }
+      }
     case .appsChanged:
       Task { await loadApps() }
     }
@@ -191,27 +213,84 @@ public final class AppStore {
 
   public func rows(for agentId: String) -> [ChatRow] { chatRows[agentId] ?? [] }
 
-  private func setTranscript(_ agentId: String, _ entries: [Entry]) {
+  private func setTranscript(_ agentId: String, _ entries: [Entry], soon: Bool = false) {
     transcripts[agentId] = entries
     for entry in entries where pendingAnswers[entry.id] != nil && (entry["respondedValue"]?.text != nil || entry["widgetDismissed"]?.bool == true) { pendingAnswers[entry.id] = nil }
-    chatRows[agentId] = Chat.rows(entries, isGroup: agent(agentId)?.isGroup ?? false, unreadAfter: unreadAfter[agentId])
+    if soon { scheduleLayout(agentId) } else { layOut(agentId) }
   }
 
-  /** A chat comes on screen: its entries, and it is read; the "New" line marks what came since it was last read. */
+  private func layOut(_ agentId: String) {
+    pendingLayout.remove(agentId)
+    let rows = Chat.rows(transcripts[agentId] ?? [], isGroup: agent(agentId)?.isGroup ?? false, unreadAfter: unreadAfter[agentId])
+    if chatRows[agentId] != rows { chatRows[agentId] = rows }
+  }
+
+  private func scheduleLayout(_ agentId: String) {
+    pendingLayout.insert(agentId)
+    guard layoutTask == nil else { return }
+    layoutTask = Task { [weak self] in
+      try? await Task.sleep(nanoseconds: 90_000_000)
+      guard let self, !Task.isCancelled else { return }
+      self.layoutTask = nil
+      for id in self.pendingLayout { self.layOut(id) }
+    }
+  }
+
+  /**
+   * A chat comes on screen: what the app already has at once, then the chat
+   * opened on the host as the window opens it (its newest lines, and its
+   * new ones streaming from now on); and it is read. The "New" line marks
+   * what came since it was last read.
+   */
   public func open(_ agentId: String) async {
     guard let backend else { return }
+    openChat = agentId
     let unread = agent(agentId).map { $0.hasUnread ? max($0.unreadCount, 1) : 0 } ?? 0
-    if transcripts[agentId] == nil {
-      do { transcripts[agentId] = try await backend.transcript(agentId) } catch {
-        transcripts[agentId] = []
-        problem = "Couldn't open this chat: \(error.localizedDescription)"
-      }
+    if let cached = transcripts[agentId] {
+      unreadAfter[agentId] = Self.unreadBoundary(cached, unread: unread)
+      setTranscript(agentId, cached)
     }
-    let entries = transcripts[agentId] ?? []
-    unreadAfter[agentId] = Self.unreadBoundary(entries, unread: unread)
-    setTranscript(agentId, entries)
+    await refresh(agentId, unread: unread)
     if let index = agents.firstIndex(where: { $0.id == agentId }) { agents[index].hasUnread = false; agents[index].unreadCount = 0 }
     await backend.markRead(agentId)
+  }
+
+  /** The chat left the screen. */
+  public func close(_ agentId: String) {
+    if openChat == agentId { openChat = nil }
+  }
+
+  /** The chat fetched again: its newest lines, with any that streamed in meanwhile kept. */
+  public func refresh(_ agentId: String, unread: Int? = nil) async {
+    guard let backend, !refreshing.contains(agentId) else { return }
+    refreshing.insert(agentId)
+    defer { refreshing.remove(agentId) }
+    do {
+      let fresh = try await backend.transcript(agentId)
+      let merged = Self.merge(fresh, live: transcripts[agentId] ?? [])
+      if let unread { unreadAfter[agentId] = Self.unreadBoundary(merged, unread: unread) }
+      setTranscript(agentId, merged)
+    } catch {
+      guard transcripts[agentId] == nil else { return }
+      setTranscript(agentId, [])
+      problem = "Couldn't open this chat: \(error.localizedDescription)"
+    }
+  }
+
+  /** The open chat's newest line is one the app has not seen (a line that did not stream): fetch the chat again. */
+  private func catchUpOpenChat() {
+    guard let chat = openChat, let newest = agent(chat)?.lastMessageId, let have = transcripts[chat], !refreshing.contains(chat) else { return }
+    guard !have.contains(where: { $0.id == newest }), caughtUp[chat] != newest else { return }
+    caughtUp[chat] = newest
+    Task { await refresh(chat) }
+  }
+
+  /** The fetched lines, and after them any live line the fetch had not seen yet. */
+  static func merge(_ fresh: [Entry], live: [Entry]) -> [Entry] {
+    guard !fresh.isEmpty else { return live }
+    let known = Set(fresh.map(\.id))
+    let newest = fresh.compactMap(\.timestampMs).max() ?? 0
+    return fresh + live.filter { !known.contains($0.id) && ($0.timestampMs ?? .infinity) >= newest }
   }
 
   /** Just before the oldest of the last `unread` lines an agent wrote; nil when nothing is unread. */

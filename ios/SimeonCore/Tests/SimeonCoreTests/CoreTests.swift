@@ -560,6 +560,39 @@ final class StoreTests: XCTestCase {
     XCTAssertEqual(store.agent(group)?.name, "Simeon, Iris")
   }
 
+  /**
+   * The founder's bug (8 October 2026): the agent answered, the list showed
+   * it, the chat never did. The host streams lines only for the chat it has
+   * open, and the app kept its first copy of a chat. Opening a chat now
+   * opens it on the host and fetches it again; a newest line the app lacks
+   * fetches it again too.
+   */
+  func testAnAnswerThatDidNotStreamStillShows() async throws {
+    let backend = QuietBackend()
+    let store = AppStore()
+    await store.attach(backend)
+    await store.open("theo")
+    XCTAssertEqual(backend.opened, ["theo"])
+    XCTAssertEqual(store.rows(for: "theo").compactMap(Self.text), ["Hi Theo"])
+
+    // The answer is written on the host, and only the roster says so.
+    backend.lines.append(["kind": "message", "id": "a2", "role": "assistant", "content": "Here it is.", "timestampMs": 2_000])
+    var theo = Agent(id: "theo", name: "Theo")
+    theo.lastMessageId = "a2"
+    store.apply(.agentUpserted(theo))
+    try await Task.sleep(nanoseconds: 100_000_000)
+    XCTAssertEqual(store.rows(for: "theo").compactMap(Self.text), ["Hi Theo", "Here it is."])
+
+    // Leaving and opening it again fetches it again.
+    store.close("theo")
+    backend.lines.append(["kind": "message", "id": "a3", "role": "assistant", "content": "And this.", "timestampMs": 3_000])
+    await store.open("theo")
+    XCTAssertEqual(store.rows(for: "theo").compactMap(Self.text), ["Hi Theo", "Here it is.", "And this."])
+    XCTAssertEqual(backend.opened, ["theo", "theo", "theo"])
+  }
+
+  static func text(_ row: ChatRow) -> String? { if case .bubble(let b) = row { return b.text }; return nil }
+
   func testTheCardsButtonsReachTheHost() async throws {
     let store = AppStore()
     await store.attach(DemoBackend(seed: DemoData.seed(gallery: true), pace: 0.01, call: nil))
@@ -742,4 +775,24 @@ final class MarkdownTests: XCTestCase {
     XCTAssertEqual(bubbles[2].quote, "(deleted)")
     XCTAssertEqual(Chat.quoteLine(entries[0], limit: 10), "Thursday i…")
   }
+}
+
+/** A host that answers without streaming anything: only fetches show what it holds. */
+final class QuietBackend: AgentBackend, @unchecked Sendable {
+  var lines: [JSON] = [["kind": "message", "id": "u1", "role": "user", "content": "Hi Theo", "timestampMs": 1_000]]
+  var opened: [String] = []
+  func listAgents() async throws -> [Agent] { [Agent(id: "theo", name: "Theo")] }
+  func transcript(_ agentId: String) async throws -> [Entry] { opened.append(agentId); return lines.compactMap(Entry.init) }
+  func send(_ agentId: String, text: String, attachments: [AttachmentRef], replyTo: String?) async throws {}
+  func markRead(_ agentId: String) async {}
+  func createAgent(name: String, colour: String) async throws -> String { "x" }
+  func createGroup(name: String, memberIds: [String]) async throws -> String { "g" }
+  func answer(_ agentId: String, entryId: String, value: String) async throws {}
+  func updateAgent(_ agentId: String, name: String, title: String, description: String) async throws {}
+  func routines(_ agentId: String) async throws -> [JSON] { [] }
+  func events() -> AsyncStream<BackendEvent> { AsyncStream { _ in } }
+  var call: CallEngine? { nil }
+  func command(_ method: String, _ args: JSON) async throws -> JSON { [:] }
+  func server(_ path: String, method: String?, body: JSON?) async throws -> JSON { [:] }
+  func screen(_ agentId: String) async throws -> ScreenState { ScreenState(socket: nil, state: "starting") }
 }

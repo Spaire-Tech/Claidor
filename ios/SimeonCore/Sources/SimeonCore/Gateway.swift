@@ -133,7 +133,8 @@ public struct GatewayConnection: Sendable, Equatable {
   public func eventsRequest() -> URLRequest {
     var request = URLRequest(url: URL(string: baseURL + Self.eventsPath)!)
     for (name, value) in headers(["accept": "text/event-stream"]) { request.setValue(value, forHTTPHeaderField: name) }
-    request.timeoutInterval = 60 * 60 * 24
+    // The host pings every 15 s (`SSE_HEARTBEAT_MS`); a stream silent for 45 s is dead (a phone that slept), so it errors and the loop reconnects.
+    request.timeoutInterval = 45
     return request
   }
 }

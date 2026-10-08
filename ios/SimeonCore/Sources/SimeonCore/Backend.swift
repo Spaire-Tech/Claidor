@@ -142,9 +142,17 @@ public final class LiveBackend: AgentBackend, @unchecked Sendable {
     return (answer.array ?? answer["agents"]?.array ?? []).compactMap(Agent.init(json:))
   }
 
+  /**
+   * A chat opened as the window opens one (`openAgentTail`, the last 500
+   * lines): the host makes it the chat on screen, so its new lines stream
+   * to the app as they are written (the host sends live lines only for that
+   * chat), and an agent waiting to introduce itself does so.
+   */
   public func transcript(_ agentId: String) async throws -> [Entry] {
-    let page = try await gateway.command("getAgentTranscriptWindow", ["id": .string(agentId)])
-    return (page["entries"]?.array ?? []).compactMap(Entry.init)
+    let page: JSON
+    do { page = try await gateway.command("openAgentTail", ["id": .string(agentId), "limit": 500]) }
+    catch { page = try await gateway.command("getAgentTranscriptTail", ["id": .string(agentId), "limit": 500]) }
+    return (page["entries"]?.array ?? page.array ?? []).compactMap(Entry.init)
   }
 
   public func send(_ agentId: String, text: String, attachments: [AttachmentRef], replyTo: String?) async throws {

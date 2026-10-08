@@ -51,6 +51,8 @@ public struct Agent: Identifiable, Hashable, Sendable {
   public var activityKind: String?
   public var activityTool: String?
   public var activityDetail: String?
+  /** The id of the chat's newest message (`lastMessageId`): when it changes and the open chat lacks it, the chat is fetched again. */
+  public var lastMessageId: String?
 
   public init(id: String, name: String, title: String = "", description: String = "", colour: String? = nil, avatarDataURL: String? = nil, isGroup: Bool = false, memberIds: [String] = [], lastMessagePreview: String? = nil, lastActivityAt: Double? = nil, hasUnread: Bool = false, unreadCount: Int = 0, isRunningTurn: Bool = false, isComposing: Bool = false, activityLabel: String? = nil, isHidden: Bool = false) {
     self.id = id; self.name = name; self.title = title; self.description = description; self.colour = colour
@@ -87,6 +89,7 @@ public struct Agent: Identifiable, Hashable, Sendable {
     activityKind = json["currentActivity"]?["kind"]?.text
     activityTool = json["currentActivity"]?["tool"]?.text
     activityDetail = json["currentActivity"]?["detail"]?.text
+    lastMessageId = json["lastMessageId"]?.text
   }
 
   /** The agent's palette: its stored colour, else the window's default for its id. */
