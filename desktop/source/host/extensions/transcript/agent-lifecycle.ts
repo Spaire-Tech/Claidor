@@ -117,22 +117,23 @@ export class AgentLifecycle {
   /**
    * The profile with a colour of its own when it brings none: the one fewest
    * agents are drawn in (`shared/agents/agent-colors.ts`). Until 7 October
-   * 2026 a new agent had none and every one was drawn in the default blue.
+   * 2026 a new agent had none and the window hashed one from its id, which
+   * gave three hires in a row the same colour.
    */
   async withAgentColor(profile: unknown): Promise<unknown> {
     if (profile == null || typeof profile !== "object") return profile;
     const given = (profile as { avatarColor?: unknown }).avatarColor;
     if (typeof given === "string" && given.trim().length > 0) return profile;
-    const colors: string[] = [];
+    const agents: { id: string; color: string }[] = [];
     try {
       const store = this.tm.sessionStore;
       const ids: string[] = typeof store.listAgentRecordIds === "function"
         ? await store.listAgentRecordIds()
         : await store.listAgentIds();
       for (const id of ids)
-        colors.push(readSandProfileFile(getSandProfilePath(store.getAgentDir(id)))?.avatarColor ?? "");
+        agents.push({ id, color: readSandProfileFile(getSandProfilePath(store.getAgentDir(id)))?.avatarColor ?? "" });
     } catch {}
-    return { ...profile, avatarColor: pickAgentColor(colors) };
+    return { ...profile, avatarColor: pickAgentColor(agents) };
   }
   async mintAgentSessionNow(
     profile: unknown,

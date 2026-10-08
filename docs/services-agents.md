@@ -434,17 +434,27 @@ cropped and saved by the same upload path. The roster reads the picture into eve
 change made by the agent itself redraws the roster (`onAvatarChanged`).
 
 **Colours** (7 October 2026). An agent without a picture is drawn as the butterfly in one of
-12 colours (`AGENT_MARK_PALETTES`, `shared/voice-call/agent-mark.ts`); one with no colour
-stored is drawn in the default, Ocean. A new agent now gets the colour fewest agents have
-(`pickAgentColor` in `shared/agents/agent-colors.ts`, called by `mintAgentSession` in
-`host/extensions/transcript/agent-lifecycle.ts`), in an order that puts the most different
-colours first: Ember, Moss, Berry, Lagoon, and so on. Agents are created one at a time, so
-three hired in one step get three colours. A colour given at creation is kept. The agent can
-recolour a teammate with `UpdateAgent` `color` (a label such as `Moss`). Until then every
-new agent was blue. Asked to tell a team apart, the main agent messaged each teammate to draw
-its own picture: two refused, one generated an image, one wrote a script, and each reply woke
-the main agent on its whole conversation (the staffing log). Agents made before this keep the
-default until recoloured. `tests/agent-colors.test.mjs`.
+12 colours (`AGENT_MARK_PALETTES`, `shared/voice-call/agent-mark.ts`). One with no colour
+stored is drawn in a colour hashed from its id, among the first ten: the window's own
+fallback, the upstream app's (`sle`, kept by `AGENT_COLOR_RESOLVER` in the renderer patch). It
+stored a colour only when the person picked one in onboarding or settings; an agent created
+by another agent had none and was left to the hash, which is even (about 10% per slot) but
+can repeat. In the staffing log Leo, Nina and Ava all hashed to Ocean, the blue the Chief of
+Staff is stored with, a one in a hundred draw. Asked to tell them apart, the main agent
+messaged each teammate to draw its own picture: two refused (the upstream app's own rule, "Never
+change your picture unless the user asks", and its "not the user" note on agent messages),
+one generated an image, one wrote a script, and each reply woke the main agent on its whole
+conversation.
+
+A new agent without a colour now gets the colour fewest agents are drawn in, an agent without
+one counting as its id's hash (`pickAgentColor` in `shared/agents/agent-colors.ts`, called by
+`mintAgentSession` in `host/extensions/transcript/agent-lifecycle.ts`). Ties go by a measured
+order: from Ocean, each next palette is the farthest from all before it (mean CIE Lab ΔE over
+the butterfly's three stops): Ember, Moss, Dusk, Lagoon, Sand, Mint, … Agents are created
+one at a time, so three hired in one step get three colours. A colour given at creation is
+kept. The agent can recolour a teammate with `UpdateAgent` `color` (a label such as `Moss`);
+The upstream app had no way for one agent to change another's look. Agents made before this keep
+their hashed colour until recoloured. `tests/agent-colors.test.mjs`.
 
 * **Settings on Render.** `SIMEON_OPENAI_API_KEY`.
 * **Log lines.** A failed Generate shows `edge/handler-failed: <the server's sentence>` in the
