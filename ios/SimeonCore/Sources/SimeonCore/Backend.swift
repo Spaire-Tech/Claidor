@@ -20,6 +20,19 @@ public enum BackendEvent: Sendable {
   case appsChanged
   /** The host's settings changed on some device (`host-settings`: the names of the fields), e.g. the pins. */
   case settingsChanged([String])
+
+  /** Its kind, and the chat it concerns, for the hang watch. */
+  public var name: String {
+    switch self {
+    case .agents(let list): return "the roster (\(list.count))"
+    case .agentUpserted(let agent): return "an update to \(agent.id)"
+    case .transcript(let change): return "a line in \(change.agentId)"
+    case .step(let agentId, _, _, _): return "a step of \(agentId)"
+    case .connection(let live): return live ? "the connection back" : "the connection lost"
+    case .appsChanged: return "an apps change"
+    case .settingsChanged: return "a settings change"
+    }
+  }
 }
 
 /** One change to a chat (`roster.emit` in host/extensions/transcript/roster-projection.ts). */

@@ -154,6 +154,8 @@ public final class AppStore {
   @ObservationIgnored private var outbox: [String: [Outgoing]] = [:]
   /** Lines that arrived while their chat was on screen, and messages just sent: they come in with the Mac's motion, once. */
   @ObservationIgnored public private(set) var arrived: Set<String> = []
+  /** Chats whose lines are on their way from the host: an empty chat shows it is loading, not frozen. */
+  public private(set) var fetching: Set<String> = []
   /** Where each chat's older lines start (`nextBeforeSeq`); nil once the first line is here. */
   public private(set) var olderBefore: [String: Int] = [:]
   public private(set) var loadingOlder: Set<String> = []
@@ -215,6 +217,7 @@ public final class AppStore {
   }
 
   public func apply(_ event: BackendEvent) {
+    Trace.mark("handling \(event.name)")
     switch event {
     case .agents(let list):
       let sorted = sortRoster(list)
@@ -403,7 +406,10 @@ public final class AppStore {
     var entries = transcripts[agentId] ?? []
     let waiting = outbox[agentId] ?? []
     entries += waiting.flatMap(Self.entries(for:))
-    var rows = Chat.rows(entries, isGroup: agent(agentId)?.isGroup ?? false, unreadAfter: unreadAfter[agentId])
+    Trace.mark("laying out \(agentId), \(entries.count) lines")
+    let isGroup = agent(agentId)?.isGroup ?? false
+    let after = unreadAfter[agentId]
+    var rows = Trace.timed("laying out \(agentId), \(entries.count) lines") { Chat.rows(entries, isGroup: isGroup, unreadAfter: after) }
     for item in waiting where item.state == .failed {
       let last = rows.lastIndex { row in row.id == item.id || row.id.hasPrefix(item.id + "-file") } ?? rows.count - 1
       rows.insert(.failedSend(id: "failed-\(item.id)", nonce: item.id), at: min(last + 1, rows.count))
@@ -479,6 +485,7 @@ public final class AppStore {
    */
   public func open(_ agentId: String) async {
     guard let backend else { return }
+    Trace.mark("opening \(agentId)")
     openChat = agentId
     let unread = agent(agentId).map { $0.hasUnread ? max($0.unreadCount, 1) : 0 } ?? 0
     if let cached = transcripts[agentId] {
@@ -499,7 +506,9 @@ public final class AppStore {
   public func refresh(_ agentId: String, unread: Int? = nil) async {
     guard let backend, !refreshing.contains(agentId) else { return }
     refreshing.insert(agentId)
-    defer { refreshing.remove(agentId) }
+    fetching.insert(agentId)
+    Trace.mark("waiting for \(agentId)'s lines")
+    defer { refreshing.remove(agentId); fetching.remove(agentId) }
     do {
       let page = try await backend.transcriptPage(agentId, before: nil)
       let fresh = page.entries

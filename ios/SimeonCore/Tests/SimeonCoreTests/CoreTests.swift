@@ -828,6 +828,12 @@ final class MarkdownTests: XCTestCase {
   /** The demo answers a command, then sends its event, as the host does: give the event its turn. */
   private func settle() async throws { try await Task.sleep(nanoseconds: 60_000_000) }
 
+  func testARepeatedLineIsDrawnOnce() {
+    let line: JSON = ["kind": "message", "id": "m1", "role": "assistant", "content": "Hello", "timestampMs": 1_000]
+    let rows = Chat.rows([line, line].compactMap(Entry.init))
+    XCTAssertEqual(rows.filter { $0.id == "m1" }.count, 1, "two rows with one id can stall a lazy list")
+  }
+
   func testTheComposerOffersNamesAfterAnAt() {
     XCTAssertEqual(Mentions.query("Ask @"), "")
     XCTAssertEqual(Mentions.query("Ask @Th"), "Th")

@@ -95,9 +95,14 @@ struct CardEdge: ViewModifier {
     if scheme == .dark {
       content
     } else {
+      // The shadow is cast by a plain shape behind the card, not by the card itself: cast by the card it was worked out from the text too, on every frame of a scroll.
       content
+        .background {
+          RoundedRectangle(cornerRadius: radius, style: .continuous)
+            .fill(Ink.bubbleTheirs)
+            .shadow(color: Color(.sRGB, red: 20 / 255, green: 30 / 255, blue: 60 / 255, opacity: 0.04), radius: 1, y: 1)
+        }
         .overlay(RoundedRectangle(cornerRadius: radius, style: .continuous).stroke(Color(.sRGB, red: 20 / 255, green: 30 / 255, blue: 60 / 255, opacity: 0.07), lineWidth: 0.5))
-        .shadow(color: Color(.sRGB, red: 20 / 255, green: 30 / 255, blue: 60 / 255, opacity: 0.04), radius: 1, y: 1)
     }
   }
 }

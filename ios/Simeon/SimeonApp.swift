@@ -15,6 +15,8 @@ struct SimeonApp: App {
   @State private var session = SessionController()
   @AppStorage("simeon.theme") private var theme = "system"
 
+  init() { HangWatch.start() }
+
   var body: some Scene {
     WindowGroup {
       RootView()

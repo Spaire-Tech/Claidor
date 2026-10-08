@@ -22,11 +22,13 @@ struct ChatView: View {
   @State private var showsTranscript = false
   @State private var showsComputer = false
   @State private var reply = ReplyDraft()
+  @State private var actions = ChatActions()
 
   // Each part below reads only what it draws, so typing a letter or the
   // call's waveform ticking redraws that part and not the conversation.
   var body: some View {
-    ChatMessages(agentId: agentId, openPage: { showsPage = true }, openComputer: { showsComputer = true })
+    ChatMessages(agentId: agentId)
+      .environment(actions)
       .safeAreaInset(edge: .top, spacing: 0) {
         ChatHeader(agentId: agentId, back: { dismiss() }, showsPage: $showsPage, showsCall: $showsCall, showsTranscript: $showsTranscript)
       }
@@ -38,6 +40,10 @@ struct ChatView: View {
       .sheet(isPresented: $showsPage) { AgentPageSheet(agentId: agentId).problemAlert() }
       .sheet(isPresented: $showsComputer) { ComputerSheet(agentId: agentId).problemAlert() }
       .fullScreenCover(isPresented: $showsCall) { CallScreen(showsTranscript: $showsTranscript) }
+      .onAppear {
+        actions.openPage = { showsPage = true }
+        actions.openComputer = { showsComputer = true }
+      }
       .onDisappear { store.close(agentId) }
       // Back from the background: what was said while the phone slept did not stream, so fetch it.
       .onChange(of: scenePhase) { _, phase in if phase == .active { Task { await store.refresh(agentId) } } }
@@ -52,6 +58,14 @@ struct ChatView: View {
         }
       }
   }
+}
+
+/** What a row can open (the agent's page, its computer), given once so the rows never need drawing again for it. */
+@MainActor
+@Observable
+final class ChatActions {
+  @ObservationIgnored var openPage: () -> Void = {}
+  @ObservationIgnored var openComputer: () -> Void = {}
 }
 
 /** The message the person is answering (the Mac's Reply), shared by the bubbles' menu and the composer. */
@@ -98,39 +112,45 @@ extension EnvironmentValues {
  */
 struct ChatMessages: View {
   let agentId: String
-  let openPage: () -> Void
-  let openComputer: () -> Void
   @Environment(AppStore.self) private var store
   @State private var width: CGFloat = 361
   @State private var peek = TimePeek()
   @State private var glow = JumpGlow()
-  @GestureState private var pulling: CGFloat = 0
   @State private var atBottom = true
   @State private var unseen = 0
   @State private var dividerSeen = false
   @State private var dividerDismissed = false
   @State private var settled = false
+  /** How many of the newest rows are drawn: a long chat opened at its end drew every message above it first, and stood still. More come in as you scroll up. */
+  @State private var window = ChatMessages.firstWindow
+  private static let firstWindow = 60
   private static let bottomId = "chat-bottom"
 
   var body: some View {
-    let rows = store.rows(for: agentId)
+    let all = store.rows(for: agentId)
+    let rows = all.count > window ? Array(all.suffix(window)) : all
+    let hidden = all.count - rows.count
+    let _ = Trace.mark("drawing \(agentId), \(rows.count) of \(all.count) rows")
     ScrollViewReader { reader in
       ScrollView {
         LazyVStack(alignment: .leading, spacing: 0) {
-          if store.olderBefore[agentId] != nil {
-            // Near the top: the lines before these (`getAgentTranscriptTail` with `beforeSeq`).
+          if hidden > 0 || store.olderBefore[agentId] != nil {
+            // Near the top: the rows above these, then the lines before them (`getAgentTranscriptTail` with `beforeSeq`).
             ProgressView()
               .frame(maxWidth: .infinity)
               .padding(.vertical, 14)
-              .onAppear { Task { await store.loadOlder(agentId) } }
+              .onAppear {
+                if hidden > 0 { window += ChatMessages.firstWindow } else { Task { await store.loadOlder(agentId) } }
+              }
           }
           ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
             Group {
               if case .unread = row {
-                ChatRowView(row: row, agentId: agentId, openPage: openPage, openComputer: openComputer)
+                ChatRowView(row: row, agentId: agentId).equatable()
                   .onScrollVisibilityChange(threshold: 0.2) { visible in if visible { dividerSeen = true } }
               } else {
-                ChatRowView(row: row, agentId: agentId, openPage: openPage, openComputer: openComputer)
+                // Equatable: a row is drawn again only when it changed, not each time the chat's own state moves.
+                ChatRowView(row: row, agentId: agentId).equatable()
               }
             }
             .modifier(Arrival(id: row.id, arriving: store.arrived.contains(row.id)))
@@ -145,7 +165,7 @@ struct ChatMessages: View {
         .environment(peek)
         .environment(glow)
         .environment(\.jumpToMessage) { id in
-          withAnimation(.snappy) { reader.scrollTo(id, anchor: .center) }
+          reveal(id) { withAnimation(.snappy) { reader.scrollTo(id, anchor: .center) } }
           glow.id = id
           Task { @MainActor in
             try? await Task.sleep(nanoseconds: 1_400_000_000)
@@ -153,35 +173,28 @@ struct ChatMessages: View {
           }
         }
       }
-      // A sideways drag pulls your bubbles left, up to 82 pt, and shows each message's time (the window's `ZSn`); let go, or lose the drag to the scroll, and it springs back.
-      .simultaneousGesture(
-        DragGesture(minimumDistance: 12)
-          .updating($pulling) { drag, state, _ in
-            guard abs(drag.translation.width) > abs(drag.translation.height) else { return }
-            state = min(82, max(0, -drag.translation.width))
-          }
-      )
-      .onChange(of: pulling) { _, x in
-        if x == 0 { withAnimation(.spring(response: 0.43, dampingFraction: 0.78)) { peek.x = 0 } } else { peek.x = x }
-      }
+      .modifier(PeekDrag(peek: peek))
       .onScrollGeometryChange(for: Bool.self) { geometry in
         geometry.contentSize.height - geometry.visibleRect.maxY < 120
       } action: { _, bottom in
         atBottom = bottom
         if bottom { unseen = 0 }
       }
-      // Counted from the last row before: older lines loaded at the top are not new.
-      .onChange(of: rows.last?.id) { old, _ in
-        guard !atBottom, let old else { return }
+      // New rows at the bottom: drawn too (the window grows by them), and counted on the pill when you are reading further up. Older lines loaded at the top are neither.
+      .onChange(of: all.last?.id) { old, _ in
+        guard let old else { return }
         let now = store.rows(for: agentId)
         guard let from = now.lastIndex(where: { $0.id == old }) else { return }
-        unseen += now[(from + 1)...].filter { row in if case .bubble(let b) = row { return !b.fromPerson }; return false }.count
+        let added = now[(from + 1)...]
+        window += added.count
+        guard !atBottom else { return }
+        unseen += added.filter { row in if case .bubble(let b) = row { return !b.fromPerson }; return false }.count
       }
       .overlay(alignment: .top) {
-        let waiting = Self.unreadCount(rows)
+        let waiting = Self.unreadCount(all)
         if settled && waiting > 0 && !dividerSeen && !dividerDismissed {
           NewMessagesPill(count: waiting, up: true) {
-            withAnimation(.snappy) { reader.scrollTo("unread-divider", anchor: .top) }
+            reveal("unread-divider") { withAnimation(.snappy) { reader.scrollTo("unread-divider", anchor: .top) } }
           } dismiss: { dividerDismissed = true }
           .padding(.top, 8)
           .transition(.move(edge: .top).combined(with: .opacity))
@@ -199,6 +212,10 @@ struct ChatMessages: View {
       .animation(.snappy, value: unseen > 0 && !atBottom)
       .animation(.snappy, value: dividerSeen || dividerDismissed)
     }
+    .overlay {
+      // Its lines on their way from the computer (a chat the host had closed takes a moment to open): say so.
+      if all.isEmpty && store.fetching.contains(agentId) { ProgressView() }
+    }
     .onGeometryChange(for: CGFloat.self) { $0.size.width - 32 } action: { width = max(200, $0) }
     .defaultScrollAnchor(.bottom)
     .defaultScrollAnchor(.bottom, for: .sizeChanges)
@@ -208,6 +225,17 @@ struct ChatMessages: View {
     .task {
       try? await Task.sleep(nanoseconds: 700_000_000)
       settled = true
+    }
+  }
+
+  /** A row above the drawn ones is drawn first, then scrolled to. */
+  private func reveal(_ id: String, then scroll: @escaping () -> Void) {
+    let all = store.rows(for: agentId)
+    guard let index = all.firstIndex(where: { $0.id == id }), all.count - index > window else { return scroll() }
+    window = all.count - index + 10
+    Task { @MainActor in
+      try? await Task.sleep(nanoseconds: 50_000_000)
+      scroll()
     }
   }
 
@@ -468,9 +496,13 @@ struct ChatComposer: View {
       // Growing a line, or a quote above, eases in as the Mac's composer does (`0.3 s` spring).
       .animation(.spring(response: 0.3, dampingFraction: 0.9), value: lineCount)
       .animation(.spring(response: 0.3, dampingFraction: 0.9), value: reply?.target?.id)
-      .background(scheme == .dark ? Ink.control : Ink.ground, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+      // The shadow on the shape alone: on the whole composer it was worked out again from the text on every keystroke.
+      .background {
+        RoundedRectangle(cornerRadius: 22, style: .continuous)
+          .fill(scheme == .dark ? Ink.control : Ink.ground)
+          .shadow(color: .black.opacity(scheme == .dark ? 0 : 0.05), radius: 4, y: 2)
+      }
       .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Ink.edge, lineWidth: 1))
-      .shadow(color: .black.opacity(scheme == .dark ? 0 : 0.05), radius: 4, y: 2)
     }
     .padding(.horizontal, 16)
     .padding(.top, 6)
@@ -509,12 +541,16 @@ struct ChatComposer: View {
 }
 
 /** One row of the chat. */
-struct ChatRowView: View {
+struct ChatRowView: View, Equatable {
   let row: ChatRow
   let agentId: String
-  let openPage: () -> Void
-  let openComputer: () -> Void
   @Environment(AppStore.self) private var store
+  @Environment(ChatActions.self) private var actions: ChatActions?
+
+  static func == (a: ChatRowView, b: ChatRowView) -> Bool { a.row == b.row && a.agentId == b.agentId }
+
+  private func openPage() { actions?.openPage() }
+  private func openComputer() { actions?.openComputer() }
 
   var body: some View {
     switch row {
@@ -582,7 +618,7 @@ struct BubbleView: View {
       if bubble.fromPerson { Spacer(minLength: 0) }
       if inGroup && !bubble.fromPerson {
         Group {
-          if bubble.showsAvatar, let author = bubble.author { ButterflyView(palette: store.agent(author.id)?.palette ?? .named(AgentPalette.defaultColour(forAgentId: author.id))) } else { Color.clear }
+          if bubble.showsAvatar, let author = bubble.author { ButterflyView(palette: .named(store.mentionNames.first { $0.id == author.id }?.colour ?? AgentPalette.defaultColour(forAgentId: author.id))) } else { Color.clear }
         }
         .frame(width: 22, height: 22)
       }
@@ -753,6 +789,30 @@ struct Arrival: ViewModifier {
         guard !shown else { return }
         store.settled(id)
         withAnimation(.timingCurve(0.23, 1, 0.32, 1, duration: 0.24)) { shown = true }
+      }
+  }
+}
+
+/**
+ * The sideways drag that shows each message's time (the window's `ZSn`):
+ * up to 82 pt; let go, or lose the drag to the scroll, and it springs back.
+ * Its state lives here, so a drag frame redraws this and not the chat.
+ */
+struct PeekDrag: ViewModifier {
+  let peek: TimePeek
+  @GestureState private var pulling: CGFloat = 0
+
+  func body(content: Content) -> some View {
+    content
+      .simultaneousGesture(
+        DragGesture(minimumDistance: 12)
+          .updating($pulling) { drag, state, _ in
+            guard abs(drag.translation.width) > abs(drag.translation.height) else { return }
+            state = min(82, max(0, -drag.translation.width))
+          }
+      )
+      .onChange(of: pulling) { _, x in
+        if x == 0 { withAnimation(.spring(response: 0.43, dampingFraction: 0.78)) { peek.x = 0 } } else { peek.x = x }
       }
   }
 }

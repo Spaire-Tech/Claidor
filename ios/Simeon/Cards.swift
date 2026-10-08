@@ -957,7 +957,7 @@ struct PeerStack: View {
   var body: some View {
     HStack(spacing: -size * 0.375) {
       ForEach(Array(peers.prefix(3).enumerated()), id: \.offset) { _, peer in
-        ButterflyView(palette: store.agent(peer.id)?.palette ?? .named(AgentPalette.defaultColour(forAgentId: peer.id)), style: .still)
+        ButterflyView(palette: .named(store.mentionNames.first { $0.id == peer.id }?.colour ?? AgentPalette.defaultColour(forAgentId: peer.id)), style: .still)
           .frame(width: size, height: size)
       }
     }

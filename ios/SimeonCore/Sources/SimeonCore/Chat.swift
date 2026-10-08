@@ -311,7 +311,17 @@ public enum Chat {
       index += 1
     }
     rows = quoted(rows, entries)
+    rows = unique(rows)
     return isGroup ? markRuns(rows) : rows
+  }
+
+  /** Each row once: the screen keys rows by id, and two with one id in a lazy list can stall its layout. A repeated line is the same line twice. */
+  static func unique(_ rows: [ChatRow]) -> [ChatRow] {
+    var seen = Set<String>()
+    seen.reserveCapacity(rows.count)
+    guard rows.contains(where: { !seen.insert($0.id).inserted }) else { return rows }
+    seen.removeAll(keepingCapacity: true)
+    return rows.filter { seen.insert($0.id).inserted }
   }
 
   /** A reply's quote over its bubble (`pCn`): the answered line, one line, cut at 96 characters; "(deleted)" when it is gone. */

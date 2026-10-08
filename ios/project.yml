@@ -83,7 +83,10 @@ schemes:
     build:
       targets:
         Simeon: all
+    # Run (⌘R) builds the app optimised, as TestFlight's: unoptimised, its
+    # butterflies' motion and the chat's drawing ran many times slower, which
+    # is not the app people get. Switch to Debug in the scheme to step through code.
     run:
-      config: Debug
+      config: Release
     archive:
       config: Release

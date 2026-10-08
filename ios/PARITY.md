@@ -313,6 +313,17 @@ complaint over all of them: the Mac's logic was left out.
 | "no pin, no holding the chat and having the option to archive, delete etc." | Not built. | The Mac's row menu, pins, hidden agents, Delete with its question, the status dots, and swipes (above). The Mac has no Archive: "Hide from sidebar" is its way to put a chat away, and it's on the menu. |
 | "no smoothness, especially with how static the composer is" | Not built. | The Mac's motion in the chat and the composer (above). |
 
+After he ran it (the same evening: "it lags terrible … you click a chat, and
+it freeze. nothing appears. cant go back"), measured on Linux: the app's own
+work is not it (a 500-line chat is laid out in about 11 ms, optimised or
+not). The cause is in the drawing, so the chat now draws its newest 60 rows
+and more as you scroll up (it drew every message above the newest before
+showing any), a row is drawn again only when it changed, the cards' and the
+composer's shadows are cast by their shape and not their text, the phone
+runs the optimised build, an empty chat shows a spinner while its lines
+come, and a hang watch writes to Xcode's console what the app was doing
+whenever the screen stands still.
+
 Checked on Linux: the list's commands, the pins shared through the host's
 settings, sending and Resend, older pages, and the streamed row, each with
 a test (53 tests pass). Not checked: none of the screens has run on an
