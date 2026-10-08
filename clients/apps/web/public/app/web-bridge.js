@@ -2477,7 +2477,7 @@
     };
   }
 
-  // ../../../../desktop/node_modules/@bufbuild/protobuf/dist/esm/private/assert.js
+  // node_modules/@bufbuild/protobuf/dist/esm/private/assert.js
   function assert(condition, msg) {
     if (!condition) {
       throw new Error(msg);
@@ -2509,7 +2509,7 @@
       throw new Error("invalid float 32: " + arg);
   }
 
-  // ../../../../desktop/node_modules/@bufbuild/protobuf/dist/esm/private/enum.js
+  // node_modules/@bufbuild/protobuf/dist/esm/private/enum.js
   var enumTypeSymbol = /* @__PURE__ */ Symbol("@bufbuild/protobuf/enum-type");
   function getEnumType(enumObject) {
     const t = enumObject[enumTypeSymbol];
@@ -2563,7 +2563,7 @@
     return Object.assign(Object.assign({}, value), { localName: value.name });
   }
 
-  // ../../../../desktop/node_modules/@bufbuild/protobuf/dist/esm/message.js
+  // node_modules/@bufbuild/protobuf/dist/esm/message.js
   var Message = class {
     /**
      * Compare with a message of the same type.
@@ -2666,7 +2666,7 @@
     }
   };
 
-  // ../../../../desktop/node_modules/@bufbuild/protobuf/dist/esm/private/message-type.js
+  // node_modules/@bufbuild/protobuf/dist/esm/private/message-type.js
   function makeMessageType(runtime, typeName, fields, opt) {
     var _a;
     const localName = (_a = opt === null || opt === void 0 ? void 0 : opt.localName) !== null && _a !== void 0 ? _a : typeName.substring(typeName.lastIndexOf(".") + 1);
@@ -2697,7 +2697,7 @@
     return type;
   }
 
-  // ../../../../desktop/node_modules/@bufbuild/protobuf/dist/esm/google/varint.js
+  // node_modules/@bufbuild/protobuf/dist/esm/google/varint.js
   function varint64read() {
     let lowBits = 0;
     let highBits = 0;
@@ -2877,7 +2877,7 @@
     return result >>> 0;
   }
 
-  // ../../../../desktop/node_modules/@bufbuild/protobuf/dist/esm/proto-int64.js
+  // node_modules/@bufbuild/protobuf/dist/esm/proto-int64.js
   function makeInt64Support() {
     const dv = new DataView(new ArrayBuffer(8));
     const ok = typeof BigInt === "function" && typeof dv.getBigInt64 === "function" && typeof dv.getBigUint64 === "function" && typeof dv.setBigInt64 === "function" && typeof dv.setBigUint64 === "function" && (typeof process != "object" || typeof define_process_env_default != "object" || define_process_env_default.BUF_BIGINT_DISABLE !== "1");
@@ -2969,7 +2969,7 @@
   }
   var protoInt64 = makeInt64Support();
 
-  // ../../../../desktop/node_modules/@bufbuild/protobuf/dist/esm/scalar.js
+  // node_modules/@bufbuild/protobuf/dist/esm/scalar.js
   var ScalarType;
   (function(ScalarType2) {
     ScalarType2[ScalarType2["DOUBLE"] = 1] = "DOUBLE";
@@ -2994,7 +2994,7 @@
     LongType2[LongType2["STRING"] = 1] = "STRING";
   })(LongType || (LongType = {}));
 
-  // ../../../../desktop/node_modules/@bufbuild/protobuf/dist/esm/private/scalars.js
+  // node_modules/@bufbuild/protobuf/dist/esm/private/scalars.js
   function scalarEquals(type, a, b) {
     if (a === b) {
       return true;
@@ -3057,7 +3057,7 @@
     }
   }
 
-  // ../../../../desktop/node_modules/@bufbuild/protobuf/dist/esm/binary-encoding.js
+  // node_modules/@bufbuild/protobuf/dist/esm/binary-encoding.js
   var WireType;
   (function(WireType2) {
     WireType2[WireType2["Varint"] = 0] = "Varint";
@@ -3432,7 +3432,7 @@
     }
   };
 
-  // ../../../../desktop/node_modules/@bufbuild/protobuf/dist/esm/private/extensions.js
+  // node_modules/@bufbuild/protobuf/dist/esm/private/extensions.js
   function makeExtension(runtime, typeName, extendee, field) {
     let fi;
     return {
@@ -3488,7 +3488,7 @@
     return unknownFields.filter((uf) => uf.no === field.no);
   }
 
-  // ../../../../desktop/node_modules/@bufbuild/protobuf/dist/esm/proto-base64.js
+  // node_modules/@bufbuild/protobuf/dist/esm/proto-base64.js
   var encTable = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".split("");
   var decTable = [];
   for (let i = 0; i < encTable.length; i++)
@@ -3593,7 +3593,7 @@
     }
   };
 
-  // ../../../../desktop/node_modules/@bufbuild/protobuf/dist/esm/extension-accessor.js
+  // node_modules/@bufbuild/protobuf/dist/esm/extension-accessor.js
   function getExtension(message, extension, options) {
     assertExtendee(extension, message);
     const opt = extension.runtime.bin.makeReadOptions(options);
@@ -3636,7 +3636,7 @@
     assert(extension.extendee.typeName == message.getType().typeName, `extension ${extension.typeName} can only be applied to message ${extension.extendee.typeName}`);
   }
 
-  // ../../../../desktop/node_modules/@bufbuild/protobuf/dist/esm/private/reflect.js
+  // node_modules/@bufbuild/protobuf/dist/esm/private/reflect.js
   function isFieldSet(field, target) {
     const localName = field.localName;
     if (field.repeated) {
@@ -3686,7 +3686,7 @@
     }
   }
 
-  // ../../../../desktop/node_modules/@bufbuild/protobuf/dist/esm/is-message.js
+  // node_modules/@bufbuild/protobuf/dist/esm/is-message.js
   function isMessage(arg, type) {
     if (arg === null || typeof arg != "object") {
       return false;
@@ -3701,7 +3701,7 @@
     return type === void 0 ? true : actualType.typeName == type.typeName;
   }
 
-  // ../../../../desktop/node_modules/@bufbuild/protobuf/dist/esm/private/field-wrapper.js
+  // node_modules/@bufbuild/protobuf/dist/esm/private/field-wrapper.js
   function wrapField(type, value) {
     if (isMessage(value) || !type.fieldWrapper) {
       return value;
@@ -3720,7 +3720,7 @@
     "google.protobuf.BytesValue": ScalarType.BYTES
   };
 
-  // ../../../../desktop/node_modules/@bufbuild/protobuf/dist/esm/private/json-format.js
+  // node_modules/@bufbuild/protobuf/dist/esm/private/json-format.js
   var jsonReadDefaults = {
     ignoreUnknownFields: false
   };
@@ -4257,7 +4257,7 @@
     }
   }
 
-  // ../../../../desktop/node_modules/@bufbuild/protobuf/dist/esm/private/binary-format.js
+  // node_modules/@bufbuild/protobuf/dist/esm/private/binary-format.js
   var unknownFieldsSymbol = /* @__PURE__ */ Symbol("@bufbuild/protobuf/unknown-fields");
   var readDefaults = {
     readUnknownFields: true,
@@ -4615,7 +4615,7 @@
     return [wireType, method];
   }
 
-  // ../../../../desktop/node_modules/@bufbuild/protobuf/dist/esm/private/util-common.js
+  // node_modules/@bufbuild/protobuf/dist/esm/private/util-common.js
   function makeUtilCommon() {
     return {
       setEnumType,
@@ -4820,7 +4820,7 @@
     return input instanceof Uint8Array ? input : new Uint8Array(input);
   }
 
-  // ../../../../desktop/node_modules/@bufbuild/protobuf/dist/esm/private/proto-runtime.js
+  // node_modules/@bufbuild/protobuf/dist/esm/private/proto-runtime.js
   function makeProtoRuntime(syntax, newFieldList, initFields) {
     return {
       syntax,
@@ -4842,7 +4842,7 @@
     };
   }
 
-  // ../../../../desktop/node_modules/@bufbuild/protobuf/dist/esm/private/field-list.js
+  // node_modules/@bufbuild/protobuf/dist/esm/private/field-list.js
   var InternalFieldList = class {
     constructor(fields, normalizer) {
       this._fields = fields;
@@ -4900,7 +4900,7 @@
     }
   };
 
-  // ../../../../desktop/node_modules/@bufbuild/protobuf/dist/esm/private/names.js
+  // node_modules/@bufbuild/protobuf/dist/esm/private/names.js
   function localFieldName(protoName, inOneof) {
     const name = protoCamelCase(protoName);
     if (inOneof) {
@@ -4980,7 +4980,7 @@
     return name;
   };
 
-  // ../../../../desktop/node_modules/@bufbuild/protobuf/dist/esm/private/field.js
+  // node_modules/@bufbuild/protobuf/dist/esm/private/field.js
   var InternalOneofInfo = class {
     constructor(name) {
       this.kind = "oneof";
@@ -5008,7 +5008,7 @@
     }
   };
 
-  // ../../../../desktop/node_modules/@bufbuild/protobuf/dist/esm/private/field-normalize.js
+  // node_modules/@bufbuild/protobuf/dist/esm/private/field-normalize.js
   function normalizeFieldInfos(fieldInfos, packedByDefault) {
     var _a, _b, _c, _d, _e, _f;
     const r = [];
@@ -5044,7 +5044,7 @@
     return r;
   }
 
-  // ../../../../desktop/node_modules/@bufbuild/protobuf/dist/esm/proto3.js
+  // node_modules/@bufbuild/protobuf/dist/esm/proto3.js
   var proto3 = makeProtoRuntime(
     "proto3",
     (fields) => {
@@ -5081,7 +5081,7 @@
     }
   );
 
-  // ../../../../desktop/node_modules/@bufbuild/protobuf/dist/esm/google/protobuf/timestamp_pb.js
+  // node_modules/@bufbuild/protobuf/dist/esm/google/protobuf/timestamp_pb.js
   var Timestamp = class _Timestamp extends Message {
     constructor(data) {
       super();
@@ -5177,7 +5177,7 @@
     }
   ]);
 
-  // ../../../../desktop/node_modules/@bufbuild/protobuf/dist/esm/google/protobuf/struct_pb.js
+  // node_modules/@bufbuild/protobuf/dist/esm/google/protobuf/struct_pb.js
   var NullValue;
   (function(NullValue2) {
     NullValue2[NullValue2["NULL_VALUE"] = 0] = "NULL_VALUE";

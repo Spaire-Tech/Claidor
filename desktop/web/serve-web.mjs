@@ -23,7 +23,11 @@
  * notification registration (`/desktop/push-devices`, listed at
  * `/stand-in/push-devices`) are stood in for as well.
  *
- *   node web/serve-web.mjs [--real] [--port 4174]
+ *   node web/serve-web.mjs [--real] [--port 4174] [--renderer <dir>]
+ *
+ * `--renderer` builds the page from that patched window instead of the
+ * website's copy (`build-web.mjs`), e.g. one patched here from today's
+ * `router-renderer-patch.mjs`.
  */
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -39,7 +43,8 @@ const args = process.argv.slice(2);
 const real = args.includes("--real");
 const port = Number(args[args.indexOf("--port") + 1] || process.env.SIMEON_WEB_PORT || 4174);
 const outDir = path.join(root, "dist/web");
-execFileSync(process.execPath, [path.join(root, "web/build-web.mjs"), "--out", outDir], { stdio: "inherit" });
+const renderer = args.includes("--renderer") ? args[args.indexOf("--renderer") + 1] : undefined;
+execFileSync(process.execPath, [path.join(root, "web/build-web.mjs"), "--out", outDir, ...(renderer == null ? [] : ["--renderer", renderer])], { stdio: "inherit" });
 
 const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".mjs": "text/javascript", ".css": "text/css", ".png": "image/png", ".svg": "image/svg+xml", ".woff2": "font/woff2", ".woff": "font/woff", ".json": "application/json", ".wasm": "application/wasm", ".webp": "image/webp", ".mp4": "video/mp4" };
 

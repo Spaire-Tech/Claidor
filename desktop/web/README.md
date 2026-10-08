@@ -132,6 +132,16 @@ The web app serves `/app` from `public/app` (`clients/apps/web/next.config.mjs`,
 the rewrite and its own CSP). After changing anything here, run
 `npm run web:build` and commit `clients/apps/web/public/app`.
 
+The website's copy is refreshed only when the site is rebuilt on a Mac, so it
+can lag the window patch. Since 8 October 2026 the committed build comes from
+the window patched with today's `scripts/lib/router-renderer-patch.mjs`
+(`applyOriginalRendererRouterPatch` over the upstream renderer's
+`dist/renderer`, staged as `<stage>/dist/renderer`):
+`node web/build-web.mjs --renderer <stage>/dist/renderer`, and
+`npm run web -- --renderer <stage>/dist/renderer` serves that same build.
+Either way the site demo's own scripts (scroll guard, demo bridge, gate,
+glass) are taken out of the page.
+
 The stand-in server (`serve-web.mjs`) answers the cookie trade, the profile,
 the models, the broker and the box's gateway from the website's scripted
 backend (`demo/backend.ts`), so the whole page runs, sign-in to a streaming
