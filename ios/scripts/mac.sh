@@ -14,8 +14,19 @@ say() { printf '\n\033[1m%s\033[0m\n' "$*"; }
 
 say "Checking Xcode"
 if ! xcodebuild -version >/dev/null 2>&1; then
-  echo "Xcode is not set up. Install Xcode from the App Store, open it once, then run this again."
-  exit 1
+  XCODE=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1 || true)
+  if [ -n "$XCODE" ]; then
+    # Xcode is there, but the Mac points at the command line tools (what a Node or Electron build needs).
+    echo "Xcode is installed ($XCODE) but the Mac is pointed at the command line tools."
+    echo "Switching to Xcode and accepting its licence: your Mac password, once."
+    sudo xcode-select -s "$XCODE/Contents/Developer"
+    sudo xcodebuild -license accept
+    sudo xcodebuild -runFirstLaunch
+  else
+    echo "Xcode is not installed. The App Store opens on it: install it (it is large), open it once, then run this again."
+    open "macappstore://apps.apple.com/app/xcode/id497799835" || true
+    exit 1
+  fi
 fi
 xcodebuild -version | head -1
 major=$(xcodebuild -version | head -1 | sed -E 's/Xcode ([0-9]+).*/\1/')
