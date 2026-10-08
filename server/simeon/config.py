@@ -286,6 +286,14 @@ class Settings(BaseSettings):
     DUFFEL_BASE_URL: str = "https://api.duffel.com"
     FLIGHT_SEARCHES_PER_HOUR: int = 30
 
+    # Pushes to the person's iPhone go through Expo's push service
+    # (simeon/desktop/push.py, 8 October 2026). Expo needs no key of ours
+    # unless "Enhanced Security for Push Notifications" is switched on for
+    # the project on expo.dev; then it refuses every push without this
+    # access token (expo.dev → Account settings → Access tokens), which is
+    # `SIMEON_EXPO_ACCESS_TOKEN` on Render. Empty sends without one.
+    EXPO_ACCESS_TOKEN: str = ""
+
     # The person's computer in the cloud (simeon/sand/box_broker.py, 25
     # September 2026). Empty provider: the broker answers `unavailable`
     # with one sentence and the app has no computer to run on.

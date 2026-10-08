@@ -1,4 +1,6 @@
-from typing import TypedDict
+import re
+from collections.abc import Sequence
+from typing import Any, TypedDict
 from uuid import UUID
 
 import structlog
@@ -7,8 +9,10 @@ from exponent_server_sdk import (
     PushClient,
     PushMessage,
     PushServerError,
+    PushTicket,
 )
 
+from simeon.config import settings
 from simeon.notification_recipient.service import (
     notification_recipient as notification_recipient_service,
 )
@@ -22,7 +26,60 @@ class PushMessageExtra(TypedDict, total=False):
     notification_id: str
 
 
-_push_client = PushClient()
+#: What Expo hands a phone (`getExpoPushTokenAsync`): `ExponentPushToken[…]`,
+#: or the newer spelling `ExpoPushToken[…]`, which Expo's own server
+#: libraries accept too.
+EXPO_PUSH_TOKEN = re.compile(
+    r"^(?:ExponentPushToken|ExpoPushToken)\[[^\[\]\s]{1,200}\]$"
+)
+
+#: A request to Expo that has not answered in this long is given up on; with
+#: no timeout at all `requests` would hold the worker forever.
+PUSH_TIMEOUT_SECONDS = 15
+
+
+def is_expo_push_token(token: str) -> bool:
+    return EXPO_PUSH_TOKEN.match(token) is not None
+
+
+class ExpoPushMessage(PushMessage):
+    """`PushMessage` for either spelling of the token. The SDK's own check
+    (`PushClient.is_exponent_push_token`) knows only `ExponentPushToken`
+    and raises `ValueError` for `ExpoPushToken[…]`, so the payload is built
+    for a stand-in token and the real one put back."""
+
+    def get_payload(self) -> dict[str, Any]:
+        if not is_expo_push_token(self.to):
+            raise ValueError("Invalid push token")
+        payload: dict[str, Any] = PushMessage.get_payload(
+            self._replace(to="ExponentPushToken[x]")
+        )
+        payload["to"] = self.to
+        return payload
+
+
+def _create_push_client() -> PushClient:
+    """Expo's client, with Simeon's access token when the project asks for
+    one (`EXPO_ACCESS_TOKEN`, Enhanced Security for Push Notifications)."""
+    client = PushClient(timeout=PUSH_TIMEOUT_SECONDS)
+    if settings.EXPO_ACCESS_TOKEN:
+        client.session.headers["Authorization"] = f"Bearer {settings.EXPO_ACCESS_TOKEN}"
+    return client
+
+
+_push_client = _create_push_client()
+
+
+def publish_push_messages(messages: Sequence[PushMessage]) -> list[PushTicket]:
+    """Several messages in one request to Expo, one ticket back for each,
+    in the same order. Blocking (`requests`): an async caller runs it in a
+    thread. A ticket's own error (`DeviceNotRegisteredError` and the rest)
+    is the caller's to read with `ticket.validate_response()`."""
+    try:
+        return list(_push_client.publish_multiple(list(messages)))
+    except PushServerError as exc:
+        log.error("notifications.push.server_error", error=str(exc))
+        raise
 
 
 def send_push_message(

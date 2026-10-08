@@ -310,8 +310,10 @@ async def get_sand_box_run_state(call: ConnectCall) -> dict[str, Any]:
 
 @service.unary("NotifySandAgentTurnFinished", auth="desktop-or-box")
 async def notify_sand_agent_turn_finished(call: ConnectCall) -> dict[str, Any]:
-    # the upstream app pushed this to the person's phone. There is no push service
-    # here; the turn is logged so a box that reports is a box that runs.
+    # the upstream app pushed this to the person's phone. A host built since
+    # 8 October 2026 posts `POST /desktop/push` instead (simeon/desktop/push.py),
+    # which does; this is what an older host still calls, and it is only
+    # logged, so a box that reports is a box that runs.
     log.info(
         "sand.box.turn_finished",
         user=str(call.caller.user_id),

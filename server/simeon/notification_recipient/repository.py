@@ -65,3 +65,17 @@ class NotificationRecipientRepository(
             NotificationRecipient.expo_push_token == expo_push_token
         )
         return await self.get_one_or_none(statement)
+
+    async def list_by_expo_token(
+        self, expo_push_token: str
+    ) -> Sequence[NotificationRecipient]:
+        """Every live row for one phone, whoever registered it. The unique
+        index is per person, so a phone two people signed in on can have
+        two (`simeon/desktop/push.py` keeps only the one registering it
+        now)."""
+        statement = (
+            self.get_base_statement()
+            .where(NotificationRecipient.expo_push_token == expo_push_token)
+            .order_by(NotificationRecipient.created_at)
+        )
+        return await self.get_all(statement)
