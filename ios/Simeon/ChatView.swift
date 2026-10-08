@@ -490,7 +490,7 @@ struct BubbleView: View {
         .frame(maxWidth: maxWidth, alignment: .trailing)
         .textSelection(.enabled)
     } else {
-      MarkdownView(blocks: Markdown.blocks(bubble.text), mentioning: Mentioning(agents: store.agents, personName: store.account?.name, dark: scheme == .dark))
+      MarkdownView(blocks: Markdown.cachedBlocks(bubble.text), mentioning: Mentioning(names: store.mentionNames, personName: store.account?.name, dark: scheme == .dark))
         .foregroundStyle(Ink.theirsText)
         .tint(Ink.link)
         .padding(.horizontal, 12).padding(.vertical, 8)

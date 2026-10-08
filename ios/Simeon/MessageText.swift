@@ -21,13 +21,13 @@ struct Mentioning: Equatable {
   var dark: Bool
 
   init(agents: [Agent], personName: String?, dark: Bool) {
-    self.agents = agents.filter { !$0.isGroup }.map { Mentions.AgentName(name: $0.name.trimmingCharacters(in: .whitespaces), id: $0.id, colour: $0.palette.id) }
-    self.personName = personName
-    self.dark = dark
+    self.init(names: agents.filter { !$0.isGroup }.map { Mentions.AgentName(name: $0.name.trimmingCharacters(in: .whitespaces), id: $0.id, colour: $0.palette.id) }, personName: personName, dark: dark)
   }
 
-  static func == (a: Mentioning, b: Mentioning) -> Bool {
-    a.dark == b.dark && a.personName == b.personName && a.agents.map { "\($0.id)=\($0.name)=\($0.colour)" } == b.agents.map { "\($0.id)=\($0.name)=\($0.colour)" }
+  init(names: [Mentions.AgentName], personName: String?, dark: Bool) {
+    self.agents = names
+    self.personName = personName
+    self.dark = dark
   }
 }
 

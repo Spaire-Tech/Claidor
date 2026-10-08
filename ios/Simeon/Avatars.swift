@@ -242,10 +242,19 @@ struct AgentAvatar: View {
     }
   }
 
-  static func image(_ dataURL: String?) -> UIImage? {
-    guard let dataURL, let comma = dataURL.firstIndex(of: ","), dataURL.hasPrefix("data:image") else { return nil }
-    return Data(base64Encoded: String(dataURL[dataURL.index(after: comma)...])).flatMap(UIImage.init(data:))
+  /** An agent's own picture, decoded once: a row asks again on every redraw, and a picture is tens of kilobytes of text. */
+  @MainActor static func image(_ dataURL: String?) -> UIImage? {
+    guard let dataURL, dataURL.hasPrefix("data:image") else { return nil }
+    let bytes = dataURL.utf8
+    let key = "\(bytes.count)|" + String(decoding: bytes.suffix(48), as: UTF8.self)
+    if let decoded = decoded[key] { return decoded }
+    guard let comma = dataURL.firstIndex(of: ","), let image = Data(base64Encoded: String(dataURL[dataURL.index(after: comma)...])).flatMap(UIImage.init(data:)) else { return nil }
+    if decoded.count > 200 { decoded.removeAll() }
+    decoded[key] = image
+    return image
   }
+
+  @MainActor private static var decoded: [String: UIImage] = [:]
 }
 
 /**
@@ -265,18 +274,20 @@ struct GroupCluster: View {
       let shown = overflow ? Array(members.prefix(3)) : members
       let slots = Butterfly.groupLayout(count: shown.count + (overflow ? 1 : 0), frame: frame)
       let gap = Butterfly.groupGap(frame: frame)
+      let photos = shown.map { AgentAvatar.image($0.avatarDataURL) }
+      let dark = scheme == .dark
       ZStack(alignment: .topLeading) {
         Canvas { context, _ in
           for (index, member) in shown.enumerated() {
             let slot = slots[index]
             let rect = CGRect(x: slot.x, y: slot.y, width: slot.size, height: slot.size)
             if index > 0 { cut(&context, around: rect, gap: gap) }
-            if let image = AgentAvatar.image(member.avatarDataURL) {
+            if let image = photos[index] {
               var photo = context
               photo.clip(to: Path(ellipseIn: rect))
               photo.draw(Image(uiImage: image), in: rect)
             } else {
-              MarkDrawing.draw(&context, in: rect, palette: member.palette, dark: scheme == .dark, style: .still)
+              MarkDrawing.draw(&context, in: rect, palette: member.palette, dark: dark, style: .still)
             }
           }
         }

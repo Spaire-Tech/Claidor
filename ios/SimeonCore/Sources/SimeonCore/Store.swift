@@ -101,7 +101,11 @@ public struct Account: Sendable, Equatable {
 @MainActor
 @Observable
 public final class AppStore {
-  public private(set) var agents: [Agent] = []
+  public private(set) var agents: [Agent] = [] {
+    didSet { noteNames() }
+  }
+  /** The agents' names and colours for the chat's text, changed only when one of them does, so a roster update (an agent's status) does not redraw every message. */
+  public private(set) var mentionNames: [Mentions.AgentName] = []
   /** Each chat's entries; the screens draw `chatRows`, so a change here alone redraws nothing. */
   @ObservationIgnored public private(set) var transcripts: [String: [Entry]] = [:]
   /** The chat on screen, if one is: it is the one fetched again after a reconnect or a missed line. */
@@ -207,6 +211,11 @@ public final class AppStore {
   }
 
   public func agent(_ id: String?) -> Agent? { agents.first { $0.id == id } }
+
+  private func noteNames() {
+    let names = agents.filter { !$0.isGroup }.map { Mentions.AgentName(name: $0.name.trimmingCharacters(in: .whitespaces), id: $0.id, colour: $0.palette.id) }
+    if names != mentionNames { mentionNames = names }
+  }
 
   /** The members of a group, as agents. */
   public func members(of group: Agent) -> [Agent] { group.memberIds.compactMap { id in agents.first { $0.id == id } } }
@@ -412,13 +421,21 @@ public final class AppStore {
 
   public func loadApps() async {
     guard let backend else { return }
-    if let state = try? await backend.command("desktopMcp", ["action": "listServers", "args": []]) {
+    // Both at once: each is a round trip to the person's computer.
+    let needsCatalog = catalog.isEmpty
+    async let servers = try? backend.command("desktopMcp", ["action": "listServers", "args": []])
+    async let list = needsCatalog ? try? backend.command("desktopMcp", ["action": "getCatalog", "args": []]) : nil
+    if let state = await servers {
       apps = (state["servers"]?.array ?? state.array ?? []).compactMap(ConnectedApp.init)
+      appsLoadedAt = Date()
     }
-    if catalog.isEmpty, let list = try? await backend.command("desktopMcp", ["action": "getCatalog", "args": []]) {
+    if let list = await list {
       catalog = (list.array ?? list["plugins"]?.array ?? []).compactMap(CatalogApp.init)
     }
   }
+
+  /** When the connected apps were last read, so Add does not read them again a moment later. */
+  @ObservationIgnored private var appsLoadedAt: Date?
 
   /** The app a card names ("Gmail"), from the catalog. */
   public func catalogApp(named name: String) -> CatalogApp? {
@@ -440,14 +457,18 @@ public final class AppStore {
    */
   public func connectApp(named name: String) async -> URL? {
     guard let backend else { return nil }
-    await loadApps()
+    if catalog.isEmpty || appsLoadedAt.map({ Date().timeIntervalSince($0) > 20 }) ?? true { await loadApps() }
     let key = name.lowercased()
     var server = apps.first { $0.name.lowercased() == key || ($0.pluginId != nil && $0.pluginId == catalogApp(named: name)?.id) }
     if server == nil, let plugin = catalogApp(named: name) {
       do {
-        let state = try await backend.command("desktopMcp", ["action": "installEntry", "args": [["entryId": .string(plugin.id)]]])
+        // The install and the vendor's server id at once (the second only names the server the first makes).
+        async let installed = backend.command("desktopMcp", ["action": "installEntry", "args": [["entryId": .string(plugin.id)]]])
+        async let vendorId = try? backend.command("desktopMcp", ["action": "vendorServerIdForPlugin", "args": [.string(plugin.id)]])
+        let state = try await installed
         apps = (state["servers"]?.array ?? []).compactMap(ConnectedApp.init)
-        if let vendor = try? await backend.command("desktopMcp", ["action": "vendorServerIdForPlugin", "args": [.string(plugin.id)]]), let id = vendor.text {
+        appsLoadedAt = Date()
+        if let vendor = await vendorId, let id = vendor.text {
           server = ConnectedApp(serverId: id, name: plugin.title, pluginId: plugin.id, accountKey: "default", status: "needs-auth", toolCount: 0)
         } else {
           server = apps.first { $0.pluginId == plugin.id }

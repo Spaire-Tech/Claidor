@@ -26,6 +26,19 @@ public struct MarkdownListItem: Hashable, Sendable {
 public enum MarkdownAlignment: Hashable, Sendable { case leading, center, trailing }
 
 public enum Markdown {
+  /** A message's blocks, parsed once: a bubble asks again on every redraw. */
+  public static func cachedBlocks(_ text: String) -> [MarkdownBlock] {
+    if let hit = cache.withLock({ $0[text] }) { return hit }
+    let parsed = blocks(text)
+    cache.withLock { store in
+      if store.count > 600 { store.removeAll(keepingCapacity: true) }
+      store[text] = parsed
+    }
+    return parsed
+  }
+
+  private static let cache = LockedBox<[String: [MarkdownBlock]]>([:])
+
   public static func blocks(_ text: String) -> [MarkdownBlock] {
     var parser = Parser(lines: text.replacingOccurrences(of: "\r\n", with: "\n").components(separatedBy: "\n"))
     return parser.blocks(until: { _ in false })
@@ -241,7 +254,7 @@ public enum Mentions {
     public let kind: Kind
   }
 
-  public struct AgentName: Sendable {
+  public struct AgentName: Sendable, Hashable {
     public let name: String
     public let id: String
     public let colour: String
@@ -278,4 +291,12 @@ public enum Mentions {
     }
     return matches.sorted { $0.location < $1.location }
   }
+}
+
+/** A value behind a lock, for caches read from any thread. */
+final class LockedBox<Value>: @unchecked Sendable {
+  private let lock = NSLock()
+  private var value: Value
+  init(_ value: Value) { self.value = value }
+  func withLock<T>(_ body: (inout Value) -> T) -> T { lock.lock(); defer { lock.unlock() }; return body(&value) }
 }

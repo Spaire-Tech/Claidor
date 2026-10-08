@@ -951,7 +951,7 @@ struct ExchangeSheet: View {
 
   var body: some View {
     let agent = store.agent(agentId)
-    let mentioning = Mentioning(agents: store.agents, personName: store.account?.name, dark: scheme == .dark)
+    let mentioning = Mentioning(names: store.mentionNames, personName: store.account?.name, dark: scheme == .dark)
     VStack(spacing: 0) {
       HStack(spacing: 10) {
         CloseDisc { dismiss() }
@@ -970,7 +970,7 @@ struct ExchangeSheet: View {
             VStack(alignment: mine ? .trailing : .leading, spacing: 3) {
               Text(mine ? "\(agent?.name ?? "") to \(entry.toAgent?.name ?? "")" : "\(entry.fromAgent?.name ?? "")")
                 .font(.system(size: 12)).foregroundStyle(Ink.secondary).padding(.horizontal, 12)
-              MarkdownView(blocks: Markdown.blocks(entry.content ?? ""), mentioning: mentioning)
+              MarkdownView(blocks: Markdown.cachedBlocks(entry.content ?? ""), mentioning: mentioning)
                 .foregroundStyle(Ink.theirsText)
                 .padding(.horizontal, 12).padding(.vertical, 8)
                 .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
