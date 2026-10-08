@@ -557,7 +557,6 @@ strong .simeon-agent,b .simeon-agent,h1 .simeon-agent,h2 .simeon-agent,h3 .simeo
 
 /* Simeon: the sidebar's round glass discs (5 October 2026): search and create in the header, the same two at the foot of the rail, the account initials, and the composer's attach button at its own size. Clear glass, a specular top edge, a hairline, a soft shadow; the same in the dark. */
 .sand-agents-sidebar__search{display:none!important}
-.simeon-disc.simeon-disc--theme{display:none}
 .simeon-disc{display:grid;place-items:center;width:40px;height:40px;padding:0;margin:0;border:0;border-radius:999px;appearance:none;cursor:default;outline:none;color:light-dark(rgba(0,0,0,.78),rgba(255,255,255,.86));background:linear-gradient(180deg,light-dark(rgba(255,255,255,.62),rgba(255,255,255,.16)),light-dark(rgba(255,255,255,.38),rgba(255,255,255,.08)));-webkit-backdrop-filter:blur(14px) saturate(1.6);backdrop-filter:blur(14px) saturate(1.6);box-shadow:inset 0 1px 0 light-dark(rgba(255,255,255,.95),rgba(255,255,255,.28)),inset 0 0 0 .75px light-dark(rgba(255,255,255,.6),rgba(255,255,255,.12)),inset 0 -1px 1px rgba(0,0,0,.04),0 0 0 .5px light-dark(rgba(0,0,0,.07),rgba(0,0,0,.5)),0 1px 3px rgba(0,0,0,.06);transition:transform .18s ease,box-shadow .18s ease,background .18s ease}
 .simeon-disc:hover{transform:scale(1.04)}
 .simeon-disc:active{transform:scale(.97)}
@@ -591,7 +590,6 @@ html[data-simeon-phone] .sand-sidebar-resize-handle{display:none!important}
 html[data-simeon-phone] .sand-agents-sidebar{border-right-width:0!important}
 html[data-simeon-phone] .sand-agents-sidebar__footer{position:absolute!important;top:0!important;left:0!important;height:60px!important;padding:0 0 0 16px!important;align-items:center!important;z-index:1}
 html[data-simeon-phone] .sand-agents-sidebar__plugins-entry{display:none!important}
-html[data-simeon-phone] .simeon-disc.simeon-disc--theme{display:grid}
 html[data-simeon-phone] .sand-agents-sidebar .sand-agent-item{zoom:1.2}
 html[data-simeon-phone] .sand-agents-sidebar .sand-agent-item__avatar{zoom:1.2}
 html[data-simeon-phone] .sand-agents-sidebar .sand-agent-item__name{font-weight:600!important}
@@ -602,3 +600,78 @@ html[data-simeon-phone="chat"] .simeon-disc.simeon-phone-back{display:grid}
 html[data-simeon-phone="chat"]:has(.sand-new-chat-bar) .simeon-disc.simeon-phone-back{top:2px}
 html[data-simeon-phone="chat"] .sand-new-chat-bar{padding-left:48px!important}
 }
+/* The + menu and its sheets: the Mac's menu card and the window's own tokens, at a phone's size. */
+@keyframes simeon-phone-fade{from{opacity:0}}
+@keyframes simeon-phone-pop{from{opacity:0;transform:scale(.94)}}
+@keyframes simeon-phone-rise{from{opacity:0;transform:translateY(28px)}}
+.simeon-phone-scrim{position:fixed;inset:0;z-index:60;background:var(--sand-bg-scrim);animation:simeon-phone-fade .18s ease}
+.simeon-phone-scrim--clear{background:transparent;animation:none}
+.simeon-phone-menu{position:absolute;top:58px;right:12px;min-width:236px;padding:6px;display:grid;gap:2px;border-radius:16px;background:var(--sand-bg-elevated);box-shadow:0 0 0 .5px var(--sand-border-default),0 18px 40px -12px rgba(0,0,0,.28),0 4px 12px -4px rgba(0,0,0,.12);transform-origin:top right;animation:simeon-phone-pop .16s ease}
+.simeon-phone-menu__item{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:12px;height:46px;padding:0 12px;border-radius:10px;font-size:16px;line-height:22px;font-weight:420;color:var(--sand-text-primary);cursor:default}
+.simeon-phone-menu__item:active{background:var(--sand-fill-ghost-hover)}
+.simeon-phone-menu__item svg,.simeon-phone-sheet svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.simeon-phone-menu__item svg{width:20px;height:20px;flex:none}
+.simeon-phone-sheet{position:absolute;top:44px;left:8px;right:8px;bottom:8px;display:flex;flex-direction:column;border-radius:32px;background:var(--sand-bg-base);color:var(--sand-text-primary);box-shadow:0 0 0 .5px var(--sand-border-default),0 -10px 40px -16px rgba(0,0,0,.3);overflow:hidden;animation:simeon-phone-rise .26s cubic-bezier(.2,.8,.2,1)}
+.simeon-phone-sheet__head{display:flex;align-items:center;gap:12px;padding:14px 14px 10px}
+.simeon-phone-sheet__title{flex:1;margin:0;font-size:17px;line-height:22px;font-weight:600;color:var(--sand-text-primary)}
+.simeon-phone-sheet__close svg{width:18px;height:18px;stroke-width:2}
+.simeon-phone-sheet__error{margin:8px 16px 0;font-size:14px;line-height:19px;color:var(--sand-text-danger);text-align:center}
+.simeon-phone-primary{all:unset;box-sizing:border-box;display:grid;place-items:center;height:52px;border-radius:999px;background:var(--sand-fill-bubble-user);color:#fff;font-size:17px;line-height:22px;font-weight:600;cursor:default}
+.simeon-phone-primary:disabled{background:var(--sand-fill-neutral-subtle);color:var(--sand-text-tertiary)}
+.simeon-phone-primary--small{height:40px;padding:0 18px;font-size:16px}
+.simeon-new-agent__preview{flex:1;min-height:170px;display:grid;place-items:center}
+.simeon-new-agent__name{all:unset;box-sizing:border-box;margin:0 16px;height:52px;padding:0 16px;border-radius:22px;background:var(--sand-bg-base);border:1px solid var(--sand-border-default);text-align:center;font-size:17px;color:var(--sand-text-primary)}
+.simeon-new-agent__name::placeholder{color:var(--sand-text-tertiary)}
+.simeon-new-agent__colors{display:grid;grid-template-columns:repeat(6,1fr);justify-items:center;gap:10px 0;padding:22px 12px 18px}
+.simeon-new-agent__color{all:unset;box-sizing:border-box;width:48px;height:48px;display:grid;place-items:center;border-radius:999px;cursor:default}
+.simeon-new-agent__color[aria-checked="true"]{box-shadow:inset 0 0 0 2px var(--sand-fill-bubble-user)}
+.simeon-new-agent__create{margin:0 16px 16px}
+.simeon-new-group__to{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 16px;min-height:48px;padding:6px 16px;border-radius:22px;border:1px solid var(--sand-border-default);font-size:17px}
+.simeon-new-group__to-label{color:var(--sand-text-secondary)}
+.simeon-new-group__to input{all:unset;flex:1;min-width:80px;height:34px;font-size:17px;color:var(--sand-text-primary)}
+.simeon-new-group__to input::placeholder{color:var(--sand-text-tertiary)}
+.simeon-new-group__chip{padding:4px 12px;border-radius:999px;background:var(--sand-fill-bubble-agent);font-size:15px;line-height:20px;font-weight:500}
+.simeon-new-group__list{flex:1;overflow-y:auto;padding:10px 8px 16px}
+.simeon-new-group__row{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:14px;width:100%;height:64px;padding:0 12px;border-radius:14px;cursor:default}
+.simeon-new-group__row:active{background:var(--sand-fill-ghost-hover)}
+.simeon-new-group__avatar{width:44px;height:44px;display:grid;place-items:center;flex:none}
+.simeon-new-group__name{flex:1;min-width:0;font-size:17px;line-height:22px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.simeon-new-group__check{width:26px;height:26px;display:grid;place-items:center;border-radius:999px;box-shadow:inset 0 0 0 1.5px var(--sand-border-strong);color:#fff}
+.simeon-new-group__row[aria-selected="true"] .simeon-new-group__check{background:var(--sand-fill-bubble-user);box-shadow:none}
+.simeon-new-group__check svg{width:16px;height:16px;stroke-width:2.4}
+/* The call on a phone: the Mac banner's card (banner.css) as a pill, and full screen. */
+:root{--simeon-call-card:#ffffff;--simeon-call-shadow:inset 0 1px 0 rgba(255,255,255,.85),0 0 0 .5px rgba(0,0,0,.08),0 18px 40px -14px rgba(0,0,0,.28),0 4px 10px -4px rgba(0,0,0,.12)}
+[data-theme*="dark"]{--simeon-call-card:#2a2a2d;--simeon-call-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 0 0 .5px rgba(0,0,0,.45),0 18px 40px -14px rgba(0,0,0,.5)}
+.simeon-call-pill{position:fixed;z-index:50;top:104px;left:12px;right:12px;height:72px;display:flex;align-items:center;gap:8px;padding:0 11px 0 14px;border-radius:999px;background:var(--simeon-call-card);color:var(--sand-text-primary);box-shadow:var(--simeon-call-shadow);cursor:default;animation:simeon-phone-pop .2s ease}
+html[data-simeon-phone="list"] .simeon-call-pill{top:62px}
+.simeon-call-pill__mark{width:44px;height:44px;flex:none;display:grid;place-items:center}
+.simeon-call-pill__status{flex:1;min-width:0;font-size:15px;color:var(--sand-text-secondary);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.simeon-call-wave{flex:1;min-width:0;height:30px;display:flex;align-items:center;gap:2px;padding:0 4px}
+.simeon-call-wave i{flex:1;min-width:0;border-radius:1px;background:currentColor;opacity:.55;transition:height .08s}
+.simeon-call-pill .simeon-disc,.simeon-call-full .simeon-disc{flex:none}
+.simeon-call-pill__btn{width:44px;height:44px}
+.simeon-call-pill svg,.simeon-call-full svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.simeon-call-pill__btn svg{width:20px;height:20px}
+.simeon-call-pill .simeon-disc[aria-pressed="true"],.simeon-call-full .simeon-disc[aria-pressed="true"]{color:#ff9f0a}
+.simeon-call-end{all:unset;box-sizing:border-box;flex:none;display:grid;place-items:center;border-radius:999px;background:#ff3b30;color:#fff;cursor:default}
+.simeon-call-end:disabled{opacity:.5}
+.simeon-call-pill__end{width:50px;height:50px}
+.simeon-call-pill__end svg{width:24px;height:24px}
+.simeon-call-full{position:fixed;inset:0;z-index:55;display:flex;flex-direction:column;background:var(--sand-bg-base);color:var(--sand-text-primary);animation:simeon-phone-rise .26s cubic-bezier(.2,.8,.2,1)}
+.simeon-call-full__fold{position:absolute;top:12px;left:12px}
+.simeon-call-full__fold svg{width:20px;height:20px;stroke-width:2}
+.simeon-call-full__who{display:flex;flex-direction:column;align-items:center;gap:4px;padding:64px 24px 8px}
+.simeon-call-full__mark{width:124px;height:124px;display:grid;place-items:center}
+.simeon-call-full__name{margin-top:10px;font-size:22px;line-height:28px;font-weight:600;text-align:center}
+.simeon-call-full__time{font-size:16px;line-height:21px;color:var(--sand-text-secondary);font-variant-numeric:tabular-nums}
+.simeon-call-full__live{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:16px}
+.simeon-call-full__live>:first-child{margin-top:auto}
+.simeon-call-say{margin:0;max-width:80%;padding:9px 14px;border-radius:18px;font-size:16px;line-height:22px;overflow-wrap:anywhere}
+.simeon-call-say--me{align-self:flex-end;background:var(--sand-fill-bubble-user);color:#fff}
+.simeon-call-say--them{align-self:flex-start;background:var(--sand-fill-bubble-agent);color:var(--sand-text-primary)}
+.simeon-call-full__controls{display:flex;align-items:center;gap:12px;padding:12px 20px 28px}
+.simeon-call-full__btn{width:56px;height:56px}
+.simeon-call-full__btn svg{width:24px;height:24px}
+.simeon-call-full__end{margin-left:auto;width:64px;height:64px}
+.simeon-call-full__end svg{width:28px;height:28px}
+.simeon-call-voice{padding:8px 20px}

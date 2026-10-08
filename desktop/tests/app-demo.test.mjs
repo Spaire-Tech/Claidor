@@ -114,3 +114,52 @@ test("the in-page bridge bundles for the browser, and leaves the composer and th
   assert.match(backend, /get\("theme"\)/);
   assert.match(backend, /matchMedia\("\(prefers-color-scheme: dark\)"\)/);
 });
+
+test("the review link's call: it rings, connects, says its lines, mutes, and leaves once hung up", async (t) => {
+  const { module, dispose } = await loadModule("demo/call.ts", "demo-call");
+  t.after(dispose);
+  t.mock.timers.enable({ apis: ["setTimeout", "setInterval"] });
+  let clock = 1_000;
+  const call = module.createDemoCall(() => clock);
+  const seen = [];
+  call.subscribe((state) => seen.push(state));
+  assert.equal(seen.at(-1), null, "no call yet");
+  assert.deepEqual(call.getAvailability(), { enabled: true });
+  assert.deepEqual(call.start("theo", "Theo", "green"), { started: true });
+  assert.deepEqual(call.start("iris", "Iris", "violet"), { started: false }, "one call at a time");
+  assert.equal(seen.at(-1).phase, "ringing");
+  assert.equal(seen.at(-1).status, "Calling…");
+  clock = 3_400;
+  t.mock.timers.tick(2_400);
+  assert.equal(seen.at(-1).phase, "live");
+  assert.equal(seen.at(-1).connectedAtMs, 3_400);
+  t.mock.timers.tick(15_000);
+  const lines = seen.at(-1).lines;
+  assert.deepEqual(lines.map((line) => line.speaker), ["agent", "user", "agent", "user", "agent"], "both sides speak, in turn");
+  assert.equal(seen.at(-1).levels.length, 24, "the waveform's bars");
+  call.mute(true);
+  assert.equal(seen.at(-1).isMuted, true);
+  clock = 20_000;
+  call.hangUp();
+  assert.equal(seen.at(-1).phase, "ended");
+  assert.equal(seen.at(-1).endedAtMs, 20_000);
+  t.mock.timers.tick(1_200);
+  assert.equal(seen.at(-1), null, "a finished call leaves by itself");
+  assert.equal(call.getAgentVoice("theo").isDefault, true);
+  assert.deepEqual(call.setAgentVoice("theo", "sarah"), { voiceId: "sarah", isDefault: false });
+  assert.equal(call.getAgentVoice("theo").voiceId, "sarah");
+});
+
+test("a group made from the phone's New Group Chat is a group of those agents, and opens", async (t) => {
+  const { module, dispose } = await loadModule("demo/backend.ts", "demo-backend-group");
+  t.after(dispose);
+  const pushed = [];
+  const backend = module.createDemoBackend({ pushCoordinatorEvent: (family, payload) => pushed.push([family, payload]), pushMainEvent: () => {} });
+  const made = (await backend.coordinator("createGroup", { name: "Theo, Iris", description: "", memberAgentIds: ["theo", "iris", "launch-squad", "nobody"] })).value;
+  assert.equal(made.agent.name, "Theo, Iris");
+  assert.equal(made.agent.isGroup, true);
+  assert.deepEqual(made.agent.memberIds, ["theo", "iris"], "agents only: not a group, not an unknown id");
+  assert.ok(pushed.some(([family, payload]) => family === "agent-upserted" && payload.activeAgentId === made.agent.id), "the new group is the open chat");
+  const roster = (await backend.coordinator("listAgents", {})).value;
+  assert.ok(roster.some((agent) => agent.id === made.agent.id));
+});

@@ -294,6 +294,20 @@ export function createDemoBackend(hooks: DemoBackendHooks) {
       if (args?.isKickstartRequested === true) void play(onboardingScript(id, 0));
       return { agent: summary(row) };
     },
+    // The phone's New Group Chat (and the Mac's new chat with several recipients): the window's `createGroup`.
+    createGroup: (args) => {
+      const memberIds = (Array.isArray(args?.memberAgentIds) ? args.memberAgentIds : []).filter((id: unknown) => typeof id === "string" && rows.has(id) && rows.get(id)?.isGroup !== true);
+      const id = `group-${rows.size + 1}`;
+      const row: Row = { id, name: String(args?.name ?? "New group"), title: "", description: String(args?.description ?? ""), color: "blue", minutesAgo: 0, isGroup: true, memberIds };
+      rows.set(id, row);
+      transcripts.set(id, []);
+      lastActivity.set(id, Date.now());
+      const previous = activeAgentId;
+      activeAgentId = id;
+      pushAgent(previous);
+      pushAgent(id);
+      return { agent: summary(row) };
+    },
     kickstartAgent: () => ({ isIntroductionInFlight: false }),
     dismissWidget: (args) => {
       update(args.agentId ?? activeAgentId, args.entryId, (e) => ({ ...e, widgetDismissed: true }));

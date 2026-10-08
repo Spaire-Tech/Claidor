@@ -272,33 +272,28 @@ test("onboarding on a phone: every scene laid out for the width it has, titles g
   assert.match(connectCss({}), /\.simeon-connect__orbit\{position:relative;width:min\(920px,100vw\);/, "no wider than the screen");
 });
 
-test("the phone's light and dark switch is the window's own theme; a group's butterflies in the chat header are a single agent's size", async () => {
-  const { SIDEBAR_DISCS_REPLACEMENTS, SIDEBAR_DISCS_CSS, HEADER_CARD_CSS } = await import("../scripts/lib/router-renderer-patch.mjs");
-  const discs = SIDEBAR_DISCS_REPLACEMENTS.find(([label]) => label === "sidebar-discs-components")[2];
-  // Run the discs' source with the window's theme hooks.
-  const run = (resolved) => {
-    const set = [];
-    const p = { jsx: (type, props) => ({ type, props }), jsxs: (type, props) => ({ type, props }), Fragment: "fragment" };
-    const make = new Function("p", "yo", "VZ", "uMt", `${discs.replace(/function pcn\(n\)\{$/, "")}return{theme:__simeonThemeDisc,discs:__simeonSidebarDiscs}`);
-    const out = make(p, () => null, () => ({ resolved, preference: resolved }), () => ({ setPreference: (v) => set.push(v) }));
-    return { ...out, set };
-  };
-  const light = run("light");
-  const moon = light.theme();
-  assert.equal(moon.props.icon, "moon");
-  assert.equal(moon.props.label, "Dark mode");
-  moon.props.onClick();
-  assert.deepEqual(light.set, ["dark"], "light switches to dark");
-  const dark = run("dark");
-  const sun = dark.theme();
-  assert.equal(sun.props.icon, "sun");
-  sun.props.onClick();
-  assert.deepEqual(dark.set, ["light"]);
-  const children = light.discs({ onOpenSearch: () => {}, onNewChat: () => {} }).props.children;
-  assert.equal(children.length, 3);
-  assert.equal(children[0].type, light.theme, "the switch comes first, before search and new chat");
-  assert.deepEqual(children.slice(1).map((c) => c.props.icon), ["search", "create"]);
-  assert.match(SIDEBAR_DISCS_CSS, /^\.simeon-disc\.simeon-disc--theme\{display:none\}$/m, "hidden on the Mac");
+test("the phone's + sheets and call: the window's own create actions, the Mac's call look", async () => {
+  const { PHONE_HOME_REPLACEMENTS, PHONE_HOME_CSS } = await import("../scripts/lib/router-renderer-patch.mjs");
+  const source = PHONE_HOME_REPLACEMENTS.find(([label]) => label === "phone-sidebar-open")[2];
+  assert.match(source, /n\.createAgent\(\{name:v,avatarColor:color,avatarShape:"cloud"\},\{isKickstartRequested:!0\}\)/, "New Agent: the window's createAgent, asked to introduce itself as the Mac's new chat does");
+  assert.match(source, /n\.createGroup\(\{name:picked\.map\(a=>a\.name\)\.join\(", "\)\.slice\(0,60\),description:"",memberAgentIds:picked\.map\(a=>a\.id\)\}\)/, "New Group Chat: named after its members, as the Mac names a group of recipients");
+  assert.match(source, /ok=picked\.length>=2&&!busy/, "a group is two agents or more");
+  assert.match(source, /a\.isGroup!==!0&&a\.isHiddenFromSidebar!==!0/, "a group's members are agents the sidebar shows");
+  assert.match(source, /item\("agent","New Agent"\),item\("group","New Group Chat"\)/);
+  assert.match(source, /const __simeonPalettes=\[\{"id":"yellow","label":"Dusk"\}/, "the twelve palettes, as the window names them");
+  assert.match(source, /p\.jsx\(__simeonVoicePicker,\{agentId:c\.agentId\}\)/, "the call's settings are the Mac's voice picker");
+  assert.match(source, /d\.mute\?\.\(!c\.isMuted\)/);
+  assert.match(source, /d\.hangUp\?\.\(\)/);
+  assert.match(source, /if\(!__simeonPhoneOk\|\|d==null\|\|c==null\)return null;/, "nothing drawn on the Mac or without a call");
+  assert.match(PHONE_HOME_CSS, /:root\{--simeon-call-card:#ffffff;/, "the Mac banner's card, white");
+  assert.match(PHONE_HOME_CSS, /\[data-theme\*="dark"\]\{--simeon-call-card:#2a2a2d;/, "and #2a2a2d in the dark");
+  assert.match(PHONE_HOME_CSS, /\.simeon-call-end\{[^}]*background:#ff3b30;/, "the banner's red");
+  assert.match(PHONE_HOME_CSS, /\.simeon-call-say--me\{align-self:flex-end;background:var\(--sand-fill-bubble-user\);color:#fff\}/, "the person's lines in the chat's own blue");
+  assert.match(PHONE_HOME_CSS, /\.simeon-phone-primary\{[^}]*background:var\(--sand-fill-bubble-user\);/, "Create and Next in the same blue");
+});
+
+test("a group's butterflies in the chat header are a single agent's size", async () => {
+  const { HEADER_CARD_CSS } = await import("../scripts/lib/router-renderer-patch.mjs");
   assert.match(HEADER_CARD_CSS, /\.sand-chat-header__avatar \.sand-group-avatar\{zoom:2\.6\}/, "20 px butterflies drawn at 52, a single agent's size");
   assert.match(HEADER_CARD_CSS, /\.sand-chat-header__avatar \.sand-agent-avatar,\.sand-chat-header__avatar \.sand-simeon-mark\{width:52px!important;height:52px!important\}/);
 });
@@ -307,7 +302,7 @@ test("the phone's home: the Mac's list full screen, a chat full screen, one at a
   const { PHONE_HOME_REPLACEMENTS, PHONE_HOME_CSS, PHONE_MAX_WIDTH, patchOriginalPhoneHome, patchOriginalPhoneHomeStylesheet } = await import("../scripts/lib/router-renderer-patch.mjs");
   const source = PHONE_HOME_REPLACEMENTS.find(([label]) => label === "phone-sidebar-open")[2];
   // The window's script in a page, with the window's own fold (`can`, 424 px for the chat).
-  const page = (userAgent) => {
+  const page = (userAgent, width = 393) => {
     const attrs = {};
     const body = { children: [], appendChild(el) { el.isConnected = true; this.children.push(el); } };
     const document = {
@@ -316,8 +311,8 @@ test("the phone's home: the Mac's list full screen, a chat full screen, one at a
       createElement: (tag) => ({ tag, isConnected: false, attrs: {}, listeners: {}, setAttribute(k, v) { this.attrs[k] = v; }, addEventListener(k, f) { this.listeners[k] = f; } }),
       addEventListener: () => {},
     };
-    const window = {};
-    const run = new Function("window", "document", "navigator", `${source}function can(n,e){return n.isCollapsed?!1:e<n.expandedWidth+424}return{DCe,go:__simeonPhoneGo}`);
+    const window = { innerWidth: width };
+    const run = new Function("window", "document", "navigator", `${source}function can(n,e){return n.isCollapsed?!1:e<n.expandedWidth+424}return{DCe,go:__simeonPhoneGo,plus:__simeonPhoneNew,ui:__simeonPhoneUi,done:__simeonPhoneDone,callSource:__simeonCallSource}`);
     return { ...run(window, document, { userAgent }), window, body, mode: () => attrs["data-simeon-phone"] ?? null };
   };
   const open = { isCollapsed: false, expandedWidth: 280 };
@@ -356,15 +351,45 @@ test("the phone's home: the Mac's list full screen, a chat full screen, one at a
   phone.window.__simeonPhoneShow("chat");
   assert.equal(phone.mode(), "chat", "the iPhone app's notification tap shows the chat (desktop/web/bridge.ts)");
 
+  // The +: on a phone a menu; on a Mac (or a wide window) the Mac's new chat.
+  let newChats = 0;
+  const newChat = () => { newChats += 1; return "new chat"; };
+  assert.equal(mac.plus(newChat), mac.plus(newChat), "one wrapper per callback");
+  assert.equal(page("Mozilla/5.0 (Macintosh) Electron/39.0.0", 393).plus(newChat)(), "new chat", "the Mac app's +, even narrow, is its new chat");
+  assert.equal(page("Mozilla/5.0 (iPhone)", 1280).plus(newChat)(), "new chat", "a wide browser window's + is the new chat");
+  assert.equal(newChats, 2);
+  const phonePlus = phone.plus(newChat);
+  assert.equal(phonePlus(), undefined);
+  assert.equal(newChats, 2, "a phone's + does not open a new chat");
+  assert.deepEqual(phone.ui(), { menu: true, sheet: null }, "it opens the menu");
+  phonePlus();
+  assert.deepEqual(phone.ui(), { menu: false, sheet: null }, "and closes it");
+  // A sheet's result opens the chat it made, whichever shape the window returns.
+  for (const made of [{ agent: { id: "a1" } }, { id: "a1" }]) {
+    const seen = [];
+    phone.done({ close: () => seen.push("closed"), openAgent: (id) => seen.push(id) }, made);
+    assert.deepEqual(seen, ["closed", "a1"]);
+  }
+  const failed = [];
+  phone.done({ close: () => failed.push("closed"), openAgent: (id) => failed.push(id) }, undefined);
+  assert.deepEqual(failed, ["closed"], "nothing to open, nothing opened");
+  // The call is drawn only where the window's voiceCall tells it as it goes: the phone's, not the Mac's banner.
+  assert.equal(phone.callSource(), null);
+  phone.window.desktop = { voiceCall: { start: () => {} } };
+  assert.equal(phone.callSource(), null, "the Mac's voiceCall (start, no subscribe) draws no call in the window");
+  const told = { start: () => {}, subscribe: () => () => {} };
+  phone.window.desktop = { voiceCall: told };
+  assert.equal(phone.callSource(), told);
+
   // Only the phone's width, only outside the Mac app; hidden screens keep their width beside the screen.
   assert.match(PHONE_HOME_CSS, /^\.simeon-disc\.simeon-phone-back\{display:none;/m, "the back disc is hidden everywhere else");
-  const phoneBlock = PHONE_HOME_CSS.slice(PHONE_HOME_CSS.indexOf(`@media (max-width:${PHONE_MAX_WIDTH - 0.02}px){`));
+  const mediaAt = PHONE_HOME_CSS.indexOf(`@media (max-width:${PHONE_MAX_WIDTH - 0.02}px){`);
+  const phoneBlock = PHONE_HOME_CSS.slice(mediaAt, PHONE_HOME_CSS.indexOf("\n}\n", mediaAt) + 3);
   for (const rule of phoneBlock.split("\n").slice(1, -2)) assert.match(rule, /^html\[data-simeon-phone/, `gated on the attribute the Mac app never sets: ${rule}`);
   assert.match(phoneBlock, /html\[data-simeon-phone="list"\] main\.sand-chat\{transform:translateX\(100%\)\}/);
   assert.match(phoneBlock, /html\[data-simeon-phone="chat"\] \.sand-agents-sidebar\{transform:translateX\(-100%\)\}/);
   assert.match(phoneBlock, /\.sand-agents-sidebar__footer\{position:absolute!important;top:0!important;left:0!important;/, "the account at the top");
   assert.match(phoneBlock, /\.sand-agents-sidebar__plugins-entry\{display:none!important\}/, "no Connect apps on the phone");
-  assert.match(phoneBlock, /html\[data-simeon-phone\] \.simeon-disc\.simeon-disc--theme\{display:grid\}/, "the light and dark switch shows on the phone");
   assert.match(phoneBlock, /\.sand-agents-sidebar \.sand-agent-item\{zoom:1\.2\}/, "the Mac's rows, larger");
   assert.match(phoneBlock, /\.sand-agent-item__avatar\{zoom:1\.2\}/, "the butterfly 36 px on the Mac, 52 on the phone");
   assert.match(phoneBlock, /\.sand-agent-item__name\{font-weight:600!important\}/);
@@ -376,7 +401,8 @@ test("the phone's home: the Mac's list full screen, a chat full screen, one at a
   const patched = patchOriginalPhoneHome(anchors);
   assert.match(patched, /Go=S\.useCallback\(Rs=>\{__simeonPhoneShow\("chat"\);Pc\(Rs\)\},\[Pc\]\)/);
   assert.match(patched, /onOpenSettings:vr,/);
-  assert.match(patched, /onNewChat:__simeonPhoneGo\(fl\)/);
+  assert.match(patched, /onNewChat:__simeonPhoneNew\(fl\)/);
+  assert.match(patched, /children:\[p\.jsx\(__simeonPhoneLayer,\{agents:lt,createAgent:Sn,createGroup:ln,openAgent:Go\},"simeon-phone-layer"\),p\.jsx\(u0n,/, "the + sheets and the call sit beside the sidebar, with the window's own create actions");
   assert.match(patched, /onOpenMessage:__simeonPhoneGo\(cr\)/);
   assert.throws(() => patchOriginalPhoneHome(`${anchors}\n${anchors}`), /phone-sidebar-open/);
 
