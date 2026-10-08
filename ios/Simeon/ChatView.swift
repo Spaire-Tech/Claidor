@@ -408,6 +408,7 @@ struct ChatComposer: View {
   private var mentionQuery: String? { Mentions.query(draft) }
 
   var body: some View {
+    let _ = Trace.mark("drawing the composer of \(agentId), \(draft.count) characters")
     VStack(spacing: 6) {
       if let query = mentionQuery {
         MentionPicker(query: query, chatId: agentId) { name in

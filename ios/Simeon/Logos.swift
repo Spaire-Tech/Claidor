@@ -1,6 +1,7 @@
 import SwiftUI
 import UIKit
 import WebKit
+import SimeonCore
 
 /**
  * Pictures from the web that iOS can't draw by itself: the airlines' logos
@@ -47,6 +48,7 @@ final class RemoteLogos: NSObject, WKNavigationDelegate {
 
   /** One SVG drawn at a time in the one hidden web view, then photographed. */
   private func draw(svg: Data) async -> UIImage? {
+    Trace.mark("drawing an airline's logo")
     while drawing { try? await Task.sleep(nanoseconds: 30_000_000) }
     drawing = true
     defer { drawing = false }

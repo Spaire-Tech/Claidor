@@ -126,6 +126,7 @@ final class Dictation {
   }
 
   private func begin(_ recognizer: SFSpeechRecognizer, _ write: @escaping (String) -> Void) throws {
+    Trace.mark("starting dictation")
     let session = AVAudioSession.sharedInstance()
     try session.setCategory(.record, mode: .measurement, options: .duckOthers)
     try session.setActive(true, options: .notifyOthersOnDeactivation)

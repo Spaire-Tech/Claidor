@@ -131,6 +131,7 @@ public final class AppStore {
   public func setDraft(_ text: String, for agentId: String) {
     let kept = text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : text
     guard drafts[agentId] != kept else { return }
+    Trace.mark("saving the draft of \(agentId)")
     drafts[agentId] = kept
     UserDefaults.standard.set(drafts, forKey: Self.draftsKey)
   }

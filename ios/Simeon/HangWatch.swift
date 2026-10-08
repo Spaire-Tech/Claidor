@@ -21,7 +21,16 @@ enum HangWatch {
         DispatchQueue.main.async { answered.signal() }
         if answered.wait(timeout: .now() + 0.25) == .timedOut {
           let during = Trace.now
-          answered.wait()
+          // Still stuck: say so while it lasts (at 2 s, 5 s, 10 s, then every 10 s), so a freeze that never ends is written too.
+          var marks: [Double] = [2, 5, 10]
+          while answered.wait(timeout: .now() + 0.5) == .timedOut {
+            let seconds = Double(DispatchTime.now().uptimeNanoseconds - asked) / 1e9
+            if let next = marks.first, seconds >= next {
+              marks.removeFirst()
+              if marks.isEmpty { marks = [next + 10] }
+              Trace.log("[simeon] the screen has stood still \(Int(seconds)) s so far, while \(during) (now: \(Trace.now))")
+            }
+          }
           let ms = (DispatchTime.now().uptimeNanoseconds - asked) / 1_000_000
           Trace.log("[simeon] the screen stood still \(ms) ms, while \(during)")
         }
