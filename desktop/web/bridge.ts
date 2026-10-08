@@ -11,10 +11,18 @@
  * The same script serves `/app/connected.html`, where a connected app's
  * sign-in lands (through the server's hosted callback): there it hands the
  * box the code and tells the person to come back.
+ *
+ * In Simeon's iPhone app (8 October 2026, `mobile/`) the page runs in the
+ * app's web view (`window.ReactNativeWebView`). The app signed in and
+ * injected the pair (`api.ts`); the page tells the app what a browser tab
+ * would have done itself (no session: the app's sign-in, not the website's
+ * login; a link: Safari's sheet; a vendor's sign-in: the system's sign-in
+ * sheet), and the app reaches into the page through `window.__simeonNative`
+ * (a tapped notification opens its agent, as a click on the Mac's does).
  */
 import { installPrimaryPreloadEntrypoint } from "../source/electron-preload/preload.js";
 import { createRendererPortServer } from "../source/node-agent-coordinator/renderer-port-server.js";
-import { SimeonApi, resolveApiBase, sessionTokenStore } from "./api.js";
+import { NATIVE_MESSAGE, SimeonApi, nativeShellOf, nativeTokenStore, resolveApiBase, sessionTokenStore, type NativeShell, type NativeSignedOutReason } from "./api.js";
 import { createWebBackend } from "./backend.js";
 
 declare const __SIMEON_WEB_VERSION__: string;
@@ -27,27 +35,96 @@ const trace = (...args: unknown[]) => { if (TRACE) console.log("[simeon web]", .
 const listeners = new Map<string, Set<Listener>>();
 const emit = (channel: string, event: any, payload?: any) => { for (const listener of listeners.get(channel) ?? []) listener(event, payload); };
 
+/** The iPhone app's web view, or null in a browser tab. */
+const native: NativeShell | null = nativeShellOf(window);
+
 const api = new SimeonApi({
   base: resolveApiBase(location),
-  store: sessionTokenStore(),
+  store: native == null ? sessionTokenStore() : nativeTokenStore(native, window),
   clientVersion: typeof __SIMEON_WEB_VERSION__ === "string" ? __SIMEON_WEB_VERSION__ : "0.1.0",
+  ...(native == null ? {} : { native }),
 });
 
-/** The web app's own login, told to come back here. */
+/** The web app's own login, told to come back here; in the iPhone app, the app's own sign-in. */
 function goSignIn(): void {
+  if (native != null) {
+    const reason: NativeSignedOutReason = "no-session";
+    native.postMessage({ type: NATIVE_MESSAGE.signedOut, reason });
+    return;
+  }
   const returnTo = `${location.pathname}${location.search}`;
   location.assign(`/login?return_to=${encodeURIComponent(returnTo)}`);
 }
+
+const FOCUS_AGENT_CHANNEL = "sand-rpc:main:e:focus-agent";
 
 let server: ReturnType<typeof createRendererPortServer> | null = null;
 const backend = createWebBackend({
   api,
   pushCoordinatorEvent: (family, payload) => server?.postEvent(family, payload),
-  pushMainEvent: (event, payload) => emit(`sand-rpc:main:e:${event}`, {}, payload),
-  pushIpcEvent: (channel, payload) => emit(channel, {}, payload),
+  pushMainEvent: (event, payload) => {
+    emit(`sand-rpc:main:e:${event}`, {}, payload);
+    if (event === "theme-changed") tellNativeTheme(payload);
+  },
+  pushIpcEvent: (channel, payload) => {
+    emit(channel, {}, payload);
+    // The box finished a connected-app sign-in: the app closes the sign-in sheet it is in.
+    if (channel === "sand:mcp-auth-event") native?.postMessage({ type: NATIVE_MESSAGE.mcpAuth });
+  },
   goSignIn,
+  ...(native == null ? {} : {
+    openSignIn: (url: string) => native.postMessage({ type: NATIVE_MESSAGE.open, url, purpose: "sign-in" }),
+    openLink: (url: string) => native.postMessage({ type: NATIVE_MESSAGE.open, url, purpose: "link" }),
+  }),
 });
 Reflect.set(window, "__simeonWeb", { api, backend });
+
+/** The window's theme, so the app draws the same ground behind the page and the matching status bar. */
+function tellNativeTheme(state: unknown): void {
+  const theme = state as { preference?: unknown; resolved?: unknown } | null;
+  if (native == null || theme == null || (theme.resolved !== "light" && theme.resolved !== "dark")) return;
+  native.postMessage({ type: NATIVE_MESSAGE.theme, preference: typeof theme.preference === "string" ? theme.preference : "system", resolved: theme.resolved });
+}
+
+/**
+ * What the iPhone app calls on the page (`injectJavaScript`). `openAgent`
+ * is the Mac's notification click (`os-notification-manager.ts` →
+ * `openAgent` → the main edge's `focus-agent`, which the window answers by
+ * opening that agent): the same event, pushed the same way.
+ *
+ * On a Mac the window is always up when a notification is clicked; on the
+ * phone a tap can launch the app, and a `focus-agent` pushed while the
+ * window is still loading its agents is lost (nothing listens yet) or
+ * undone (the window then opens the chat it opens at start). So the page
+ * waits for the window to be up, which it reads off the window's own report
+ * of the chat it shows (`sand:sentry-conversation`, sent on every change of
+ * chat), and only then opens the agent asked for; the app hears
+ * `simeon.ready` at that moment and sends later taps straight through.
+ */
+const WINDOW_UP_FALLBACK_MS = 30_000;
+let pendingAgentId: string | null = null;
+let windowUp = false;
+function openAgent(agentId: unknown): boolean {
+  if (typeof agentId !== "string" || agentId.length === 0) return false;
+  if (!windowUp) { pendingAgentId = agentId; return false; }
+  emit(FOCUS_AGENT_CHANNEL, {}, { id: agentId });
+  return true;
+}
+function windowIsUp(): void {
+  if (windowUp) return;
+  windowUp = true;
+  const waiting = pendingAgentId;
+  pendingAgentId = null;
+  // After the window has finished opening its first chat.
+  if (waiting != null) setTimeout(() => openAgent(waiting), 0);
+  native?.postMessage({ type: NATIVE_MESSAGE.ready });
+}
+/** The window reports the chat it shows; the first one means it is up. */
+function windowShows(payload: unknown): void {
+  const agentId = (payload as { agentId?: unknown } | null)?.agentId;
+  if (typeof agentId === "string" && agentId.length > 0) windowIsUp();
+}
+if (native != null) Reflect.set(window, "__simeonNative", { openAgent });
 
 /** `/app/connected.html`: the end of a connected app's sign-in, not the window. */
 const CONNECTED_PAGE = /\/connected\.html$/.test(location.pathname);
@@ -144,16 +221,22 @@ function installWindow(): void {
       return value;
     },
     sendSync(channel: string): any { return backend.sync(channel); },
-    send(channel: string, payload?: unknown): void { trace("send", channel, payload); },
+    send(channel: string, payload?: unknown): void {
+      trace("send", channel, payload);
+      if (channel === "sand:sentry-conversation") windowShows(payload);
+    },
     on(channel: string, listener: Listener): void {
       if (!listeners.has(channel)) listeners.set(channel, new Set());
       listeners.get(channel)!.add(listener);
+      // A window that never reports a chat (no agents yet) is up all the same, a little later.
+      if (channel === FOCUS_AGENT_CHANNEL && native != null) setTimeout(windowIsUp, WINDOW_UP_FALLBACK_MS);
     },
     off(channel: string, listener: Listener): void { listeners.get(channel)?.delete(listener); },
   };
 
   // Signed in after the fact (a port requested before the pair arrived).
   void ready.then(() => { if (portWanted) openCoordinatorPort(); });
+  tellNativeTheme(backend.sync("sand:theme-get-sync"));
 
   installPrimaryPreloadEntrypoint(
     {

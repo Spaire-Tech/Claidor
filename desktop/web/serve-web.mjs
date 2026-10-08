@@ -14,11 +14,19 @@
  * answers (`desktopMcp`), and a sign-in that goes to a pretend vendor on
  * this server, comes back through the hosted callback to
  * `/app/connected.html`, and finishes in the "box" (`completeMcpOAuth`),
- * which then tells the window (`mcp-auth`, `mcp-servers`).
+ * which then tells the window (`mcp-auth`, `mcp-servers`). The composer's
+ * files land in the "box" too (`uploadAttachment`; `/stand-in/uploads` lists
+ * them).
+ *
+ * The iPhone app (mobile/) can run against it in the iOS Simulator: the
+ * Mac's sign-in (`/loginDeepControl`, `/auth/poll`) and the phone's
+ * notification registration (`/desktop/push-devices`, listed at
+ * `/stand-in/push-devices`) are stood in for as well.
  *
  *   node web/serve-web.mjs [--real] [--port 4174]
  */
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { createServer } from "node:http";
 import { readFile, mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
@@ -70,6 +78,8 @@ const CATALOG = [
   { id: "gmail", displayName: "Gmail", category: "Mail & Calendar", description: "Search, read, draft, and manage email.", url: "https://api.simeonlabs.com/desktop/api/apps/mcp/gmail", serverId: "900001" },
 ];
 const mcpState = { installed: new Map(), pending: new Map() };
+/** What the composer uploaded, readable at `/stand-in/uploads` so a test can see the file reached the "box". */
+const uploads = [];
 const catalogView = (entry) => ({ id: entry.id, name: entry.id, displayName: entry.displayName, description: entry.description, category: entry.category, homepage: entry.url, connectors: [{ name: entry.displayName, description: entry.description }], skills: [], vendorMcpUrl: entry.url });
 const installedServer = (entry, row) => ({ id: entry.serverId, name: entry.displayName, serverIdentifier: entry.id, accountKey: "default", rowServerIdentifier: entry.id, transport: "http", url: entry.url, toolCount: row.connected ? 12 : 0, customInstructions: row.instructions ?? "", isTeamServer: false, pluginId: entry.id, status: row.connected ? "connected" : "needsAuth", accounts: [{ accountKey: "default", serverIdentifier: entry.id, status: row.connected ? "connected" : "needsAuth" }] });
 const byServerId = (serverId) => CATALOG.find((entry) => entry.serverId === String(serverId));
@@ -117,14 +127,61 @@ function completeMcpOAuth({ stateId, code }) {
   return { ok: true };
 }
 
+// The Mac's sign-in, as the iPhone app speaks it too (`app_sign_in.py`):
+// the page that asks, the confirmation, the poll. So a development build of
+// the iPhone app (mobile/README.md) signs in against this stand-in.
+const confirmedSignIns = new Map();
+const pushDevices = [];
+const REDIRECT_TARGET = /^[a-z][a-z0-9+.-]{1,31}$/;
+const challengeOf = (verifier) => createHash("sha256").update(verifier).digest("base64url");
+const page = (title, body) => `<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title><body style="font:17px system-ui;padding:40px;text-align:center"><h1 style="font-weight:500">${title}</h1>${body}</body>`;
+const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+
+async function fakeSignIn(req, res, url) {
+  if (url.pathname === "/loginDeepControl" && req.method === "GET") {
+    const fields = ["challenge", "uuid", "mode", "redirectTarget"].map((name) => `<input type="hidden" name="${name}" value="${escapeHtml(url.searchParams.get(name) ?? "")}">`).join("");
+    res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
+    res.end(page("Sign in to Simeon?", `<p>The stand-in signs you in as ${escapeHtml(profile.email)}.</p><form method="post" action="/loginDeepControl">${fields}<button id="confirm" type="submit" style="font:inherit;padding:12px 24px;border-radius:99px;border:0;background:#000;color:#fff">Sign in as ${escapeHtml(profile.email)}</button></form>`));
+    return true;
+  }
+  if (url.pathname === "/loginDeepControl" && req.method === "POST") {
+    const form = new URLSearchParams(await readBody(req));
+    const uuid = form.get("uuid") ?? "", challenge = form.get("challenge") ?? "", target = (form.get("redirectTarget") ?? "").toLowerCase();
+    if (uuid.length > 0 && challenge.length > 0) confirmedSignIns.set(uuid, challenge);
+    const jump = REDIRECT_TARGET.test(target) ? `<script>location.replace(${JSON.stringify(`${target}://app/v1/open`)})</script>` : "";
+    res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
+    res.end(page("You're signed in to Simeon", `<p>You can close this and go back to Simeon.</p>${jump}`));
+    return true;
+  }
+  if (url.pathname === "/auth/poll" && req.method === "POST") {
+    let body = {};
+    try { body = JSON.parse(await readBody(req) || "{}"); } catch { /* an empty poll */ }
+    const challenge = confirmedSignIns.get(String(body.uuid ?? ""));
+    if (challenge == null || typeof body.verifier !== "string" || challengeOf(body.verifier) !== challenge) return json(res, 404, { error: "not_found" }, { "cache-control": "no-store" }), true;
+    confirmedSignIns.delete(String(body.uuid));
+    return json(res, 200, { accessToken: "simeon_da_fake", refreshToken: "simeon_dr_fake" }, { "cache-control": "no-store" }), true;
+  }
+  // The iPhone app's notification registration (the server's own is written alongside, 8 October 2026).
+  if (url.pathname === "/desktop/push-devices" && (req.method === "POST" || req.method === "DELETE")) {
+    let body = {};
+    try { body = JSON.parse(await readBody(req) || "{}"); } catch { /* recorded as empty */ }
+    pushDevices.push({ method: req.method, authorization: req.headers.authorization ?? null, ...body });
+    return json(res, 200, { ok: true }), true;
+  }
+  if (url.pathname === "/stand-in/push-devices") return json(res, 200, pushDevices), true;
+  return false;
+}
+
 async function fakeApi(req, res, url) {
   const origin = `http://127.0.0.1:${port}`;
+  if (await fakeSignIn(req, res, url)) return undefined;
   if (req.method === "POST" && url.pathname === "/auth/web-session") return json(res, 200, { accessToken: "simeon_da_fake", refreshToken: "simeon_dr_fake", expiresAt: new Date(Date.now() + 3600_000).toISOString() }, { "cache-control": "no-store" });
   if (req.method === "POST" && url.pathname === "/oauth/token") return json(res, 200, { access_token: "simeon_da_fake", refresh_token: "simeon_dr_fake" });
   if (url.pathname === "/desktop/api/user/profile") return json(res, 200, { code: 0, data: profile });
   if (url.pathname === "/desktop/api/user/name") { const body = JSON.parse(await readBody(req) || "{}"); profile.preferredName = body.name ?? profile.preferredName; return json(res, 200, { code: 0, data: profile }); }
   if (url.pathname === "/desktop/api/models/available") return json(res, 200, { code: 0, data: [{ modelId: "gpt-6-sol", modelName: "Sol", provider: "openai", role: "primary", contextWindow: 400000, supportsImage: true, supportsToolCalling: true, agenticReady: true }, { modelId: "gpt-6-luna", modelName: "Luna", provider: "openai", role: "cheap" }] });
   if (url.pathname.startsWith("/desktop/api/")) { await readBody(req); return json(res, 200, { code: 0, data: {} }); }
+  if (url.pathname === "/stand-in/uploads") return json(res, 200, uploads);
   if (url.pathname === "/simeon.v1.ComputerService/EnsureSandBox") {
     await readBody(req);
     return json(res, 200, { cluster: "simeon", podId: "box-1", networkToken: "net", gatewayUrl: `${origin}/sand-box/box-1/p/1340`, gatewayToken: "gw", vncUrl: `${origin}/sand-box/box-1/p/6080/vnc.html?network_token=net`, forkVncBaseUrl: `${origin}/sand-box/box-1/p/6081` });
@@ -175,6 +232,8 @@ async function fakeApi(req, res, url) {
       // The host's shape (`host-box.ts`, BoxStatus): the agent's screen and its windows.
       if (method === "getForeverBoxStatus" || method === "ensureForeverBox") { const vncUrl = `${origin}/sand-box/box-1/p/6080/vnc.html?network_token=net`; return json(res, 200, { agentId: args?.id ?? "", state: "running", vncUrl, windows: [{ windowIndex: 0, vncUrl }] }); }
       if (method === "setBoxSecrets") return json(res, 200, { ok: true });
+      // A file from the composer, as the host writes it into the box (`attachments.upload`).
+      if (method === "uploadAttachment") { const size = Buffer.from(String(args?.bytesBase64 ?? ""), "base64").length; uploads.push({ filename: args?.filename, size }); return json(res, 200, { path: `/home/box/attachments/${Date.now()}-${String(args?.filename ?? "file")}` }); }
       if (method === "syncPluginSkills") return json(res, 200, []);
       if (method === "getPluginSyncStatus") return json(res, 200, { authBlocked: [] });
       if (method === "desktopMcp") { try { return json(res, 200, desktopMcp(origin, args) ?? null, { "x-sand-mint-dedupe": "1" }); } catch (error) { return json(res, 500, { error: error.message }); } }
