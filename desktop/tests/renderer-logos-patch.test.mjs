@@ -212,7 +212,7 @@ test("the computer step: the screen is 1.45 times the drawing, with the photogra
   const by = Object.fromEntries(COMPUTER_STEP_REPLACEMENTS.map(([label, , after]) => [label, after]));
   assert.equal(COMPUTER_SCREEN_SCALE, 1.45);
   assert.equal(by["computer-card-seat"], "$2e={x:0,y:0}");
-  assert.match(by["computer-cursor-path"], /^x:\$2e\.x\+n\.demoCursor\.x\*1\.45-U2e\.x\*0\.66,y:\$2e\.y\+n\.demoCursor\.y\*1\.45-U2e\.y\*0\.66,scale:0\.66,/);
+  assert.match(by["computer-cursor-path"], /^x:\$2e\.x\+n\.demoCursor\.x\*__simeonComputerK\(\)-U2e\.x\*__simeonComputerCursor\(\),y:\$2e\.y\+n\.demoCursor\.y\*__simeonComputerK\(\)-U2e\.y\*__simeonComputerCursor\(\),scale:__simeonComputerCursor\(\),/, "the screen's factor (1.45 on a Mac, the phone's on a phone) and the cursor in proportion");
   assert.match(COMPUTER_CSS, /\.sand-onboarding__demo-card(:not\(#\\#\)){4}\{transform:scale\(1\.45\);background-color:#242a36\}/);
   assert.match(COMPUTER_CSS, /computer-demo>div:first-child(:not\(#\\#\)){4}\{top:calc\(50% - 312px\)\}/);
   assert.match(COMPUTER_CSS, /computer-demo>div:last-child(:not\(#\\#\)){4}\{top:calc\(50% \+ 256px\)\}/);
@@ -221,6 +221,55 @@ test("the computer step: the screen is 1.45 times the drawing, with the photogra
   const photo = await readFile(WALLPAPER_SOURCE);
   assert.deepEqual([...photo.subarray(0, 3)], [0xff, 0xd8, 0xff], "the wallpaper source is a JPEG");
   assert.ok(photo.length > 50_000 && photo.length < 400_000, `the photograph is sized for the app (${photo.length} bytes)`);
+});
+
+test("onboarding on a phone: every scene laid out for the width it has, titles growing upwards, the flow scaled only when the screen is short", async () => {
+  const { COO_REPLACEMENTS, NAME_STEP_REPLACEMENTS, CONNECT_STEP_REPLACEMENTS, PHONE_ONBOARDING_CSS, PHONE_MAX_WIDTH, PHONE_ONBOARDING_HALF_HEIGHT, COMPUTER_CARD_W, connectCss, patchOriginalCooStylesheet } = await import("../scripts/lib/router-renderer-patch.mjs");
+  const coo = COO_REPLACEMENTS.find(([label]) => label === "coo-step-component")[2].replace(/function sjn\(n\)\{$/, "");
+  const name = NAME_STEP_REPLACEMENTS.find(([label]) => label === "name-step-component")[2].replace(/function __simeonCooStep\(n\)\{$/, "");
+  // The step code as the window runs it, in a window of a given size.
+  const at = (width, height) => {
+    const set = {};
+    const window = { innerWidth: width, innerHeight: height, addEventListener: () => {} };
+    const document = { activeElement: null, documentElement: { style: { setProperty: (k, v) => { set[k] = v; } } } };
+    const run = new Function("window", "document", "S", "p", "fde", "tye", "nye", "sd", "re", "Fo", `${coo}${name};return {cooAt:__simeonCooAt,k:__simeonComputerK,cursor:__simeonComputerCursor,seat:__simeonNameSeatAt,crew:__simeonCooCrew}`);
+    return { ...run(window, document), set };
+  };
+  const mac = at(1280, 800);
+  assert.deepEqual(mac.set, { "--simeon-vw": "1280", "--simeon-vh": "800" }, "the size reaches the CSS");
+  assert.equal(mac.cooAt(1280), mac.crew, "a Mac keeps the Chief of Staff's own layout");
+  assert.equal(mac.k(), 1.45);
+  assert.equal(mac.cursor(), 0.66, "the cursor exactly as before on a Mac");
+  assert.deepEqual(mac.seat("weekly-standup"), { x: -168, y: -64, scale: 0.62 });
+
+  const phone = at(393, 759);
+  const crew = phone.cooAt(393);
+  assert.ok(crew.every((a) => Math.abs(a.x) === 393 / 2 - 50), "the agents come in to 50 px from the screen's edge");
+  assert.ok(crew.every((a) => Math.abs(a.x) + 28 + 16 <= 393 / 2), "an agent and its margin fit");
+  assert.equal(crew[0].d, `M-60 0C-83 0 -83 -100 -106.5 -100`, "the curves are drawn to where the agents are");
+  assert.deepEqual(crew.map((a) => a.y), mac.crew.map((a) => a.y), "the same rows");
+  assert.equal(phone.k(), (393 - 32) / COMPUTER_CARD_W, "the computer as wide as the screen less 16 px a side");
+  assert.ok(Math.abs(phone.cursor() - phone.k() * 0.66 / 1.45) < 1e-12, "Simeon's cursor in proportion");
+  assert.equal(phone.seat("sales-forecast").x, 393 / 2 - 44, "the name step's side agents come in");
+  assert.equal(phone.seat("invoice-chaser").x, 0);
+  assert.ok(at(320, 568).cooAt(320).every((a) => Math.abs(a.x) >= 104), "never closer to Simeon than his curves allow");
+
+  // A narrow Mac window counts as a phone; the boundary is the same in the script and the stylesheet.
+  assert.notEqual(at(599, 800).cooAt(599), at(599, 800).crew);
+  assert.match(PHONE_ONBOARDING_CSS, new RegExp(`@media \\(max-width:${PHONE_MAX_WIDTH - 0.02}px\\)`));
+  assert.match(PHONE_ONBOARDING_CSS, new RegExp(`--simeon-onb-fit:min\\(1,calc\\(\\(var\\(--simeon-vh,2000\\) / 2 - 16\\) / ${PHONE_ONBOARDING_HALF_HEIGHT}\\)\\)`), "scaled only when the screen is too short for the tallest step");
+  assert.match(PHONE_ONBOARDING_CSS, /--simeon-computer-k:min\(1\.45,calc\(\(var\(--simeon-vw,1280\) - 32\) \/ 441\)\)/, "the stylesheet's factor is the script's");
+  assert.match(PHONE_ONBOARDING_CSS, /\.sand-onboarding__step,\.sand-onboarding__cast\{scale:var\(--simeon-onb-fit\);transform-origin:50% 50%\}/, "the step and the cast that travels between steps scale together, about the centre");
+  assert.match(PHONE_ONBOARDING_CSS, /\.sand-onboarding__step(:not\(#\\#\)){4},\.sand-onboarding__step main>div(:not\(#\\#\)){4}\{overflow:visible\}/, "a scaled step does not clip what it brought back on screen");
+  for (const step of ["simeon-coo", "simeon-connect", "simeon-name", "sand-onboarding__computer-demo"]) assert.match(PHONE_ONBOARDING_CSS, new RegExp(`\\.${step}>div:first-child(:not\\(#\\\\#\\)){4}\\{top:auto;bottom:calc\\(50% \\+ `), `${step}: the title grows upwards`);
+  assert.match(PHONE_ONBOARDING_CSS, /\.simeon-coo>div:first-child(:not\(#\\#\)){4}\{top:auto;bottom:calc\(50% \+ 262px\)\}/, "a two-line title ends just above the copy");
+  assert.match(PHONE_ONBOARDING_CSS, /h1\{font-size:clamp\(22px,7\.1vw,28px\);line-height:1\.2;text-wrap:balance\}/, "no title takes more than two lines");
+  assert.ok(patchOriginalCooStylesheet(".a{}").endsWith(PHONE_ONBOARDING_CSS), "after every step's own rules, so it wins on a phone");
+
+  const connect = CONNECT_STEP_REPLACEMENTS.find(([label]) => label === "connect-step-component")[2];
+  assert.match(connect, /let W=el\.clientWidth\|\|920;const fit=\(\)=>\{W=el\.clientWidth\|\|W\};window\.addEventListener\("resize",fit\)/, "the row of apps moves across the width it is drawn at");
+  assert.match(connect, /window\.removeEventListener\("resize",fit\)/);
+  assert.match(connectCss({}), /\.simeon-connect__orbit\{position:relative;width:min\(920px,100vw\);/, "no wider than the screen");
 });
 
 test("Simeon is the first agent, titled Chief of Staff, pinned or not as the person likes", async () => {
@@ -247,7 +296,7 @@ test("the name step: the apps step's agents gather over one field, and the last 
   const { NAME_STEP_REPLACEMENTS, NAME_CSS } = await import("../scripts/lib/router-renderer-patch.mjs");
   const by = Object.fromEntries(NAME_STEP_REPLACEMENTS.map(([label, , after]) => [label, after]));
   assert.match(by["name-step-screen"], /^case"name":return p\.jsx\(__simeonNameStep,\{headingId:xn,onBack:\(\)=>x\.goBack\(ln\),onForward:\(\)=>\{Pe\(\)\}\}\);/, "Next on the name step makes Simeon and finishes");
-  assert.match(by["name-step-agents"], /^case"name":return\{\.\.\.t,\.\.\.__simeonNameSeat\[e\],opacity:1/);
+  assert.match(by["name-step-agents"], /^case"name":return\{\.\.\.t,\.\.\.__simeonNameSeatAt\(e\),opacity:1/, "the seat for the width (the Mac's own above a phone's)");
   assert.match(by["name-step-component"], /title:"How should Simeon & Co call you\?"/);
   assert.match(by["name-step-component"], /a\.updateName\(name\)/, "saved through the account's own rename");
   assert.doesNotMatch(by["name-step-component"], /Hi, /, "no greeting bubble");

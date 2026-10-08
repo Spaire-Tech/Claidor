@@ -1067,11 +1067,59 @@ export const COO_COPY = "He hires an agent for every job you hand off.";
 const COO_TITLE_TOP = -296;
 const COO_COPY_Y = -236;
 export const COO_TITLE = "Simeon is your personal Chief of Staff";
+
+/**
+ * Onboarding on a phone (8 October 2026, the founder: "Make all the screens
+ * in onboarding fit please. Not cut off. Smart."). The flow is drawn round
+ * the window's centre in pixels for a Mac (agents 300 px out, a 920 px row
+ * of apps, a 639 px screen), so on an iPhone the wide scenes ran off both
+ * edges and two-line titles ran into what sits under them.
+ *
+ * Below PHONE_MAX_WIDTH (a phone, or a Mac window pulled very narrow) each
+ * scene is laid out for the width it has, not shrunk: the Chief of Staff's
+ * agents come in to the screen's edge, the row of apps is as wide as the
+ * screen, the computer is sized to it with Simeon's cursor walking the same
+ * scaled path, the name step's agents gather closer. Text keeps its size.
+ * Titles grow upwards from where their last line sits, so a second line
+ * never lands on the scene. And when the screen is short (an iPhone SE, or
+ * Safari's bars), the whole flow is scaled about the centre, evenly, just
+ * enough for its tallest step to fit (PHONE_ONBOARDING_CSS). A Mac window
+ * at its usual size is drawn exactly as before.
+ *
+ * The scenes read the window's size from one small store (`__simeonView`,
+ * kept on resize, also written to `--simeon-vw` / `--simeon-vh` for the
+ * CSS). A height that shrinks while a field has the focus is the keyboard
+ * coming up, not a smaller screen, and is not taken.
+ */
+export const PHONE_MAX_WIDTH = 600;
+/** Half the height the tallest phone step needs: the Chief of Staff's two-line title top (-330) to Next/Back's bottom (+284). */
+export const PHONE_ONBOARDING_HALF_HEIGHT = 330;
+/** The Chief of Staff's agents on a phone: their centre this far from the screen's edge (the agent's half width and its label's, plus a margin), and never closer to Simeon than this. */
+const COO_PHONE_EDGE = 50;
+const COO_PHONE_MIN_SIDE = 104;
+/** The computer step's screen on a Mac: its drawing (441 by 300) at 1.45 times, Simeon as its cursor at 0.66 (the computer step, below). On a phone: as wide as the screen less 16 px a side, never past 1.45, the cursor in proportion. */
+export const COMPUTER_SCREEN_SCALE = 1.45;
+const COMPUTER_CURSOR_SCALE = 0.66;
+export const COMPUTER_CARD_W = 441;
+const PHONE_GUTTER = 16;
+const VIEW_SOURCE = [
+  "var __simeonView={w:typeof window<\"u\"?window.innerWidth:1280,h:typeof window<\"u\"?window.innerHeight:800},__simeonViewSubs=new Set();",
+  "function __simeonViewSub(f){__simeonViewSubs.add(f);return()=>{__simeonViewSubs.delete(f)}}",
+  "function __simeonViewW(){return __simeonView.w}",
+  "if(typeof window<\"u\"&&typeof document<\"u\"){const up=()=>{const w=window.innerWidth,h=window.innerHeight,a=document.activeElement,typing=a!=null&&(a.tagName===\"INPUT\"||a.tagName===\"TEXTAREA\"||a.isContentEditable===!0);if(typing&&w===__simeonView.w&&h<__simeonView.h)return;__simeonView={w,h};const s=document.documentElement.style;s.setProperty(\"--simeon-vw\",String(w));s.setProperty(\"--simeon-vh\",String(h));__simeonViewSubs.forEach(f=>f())};window.addEventListener(\"resize\",up);up()}",
+  `function __simeonComputerK(){const w=__simeonViewW();return w<${PHONE_MAX_WIDTH}?Math.min(${COMPUTER_SCREEN_SCALE},(w-${2 * PHONE_GUTTER})/${COMPUTER_CARD_W}):${COMPUTER_SCREEN_SCALE}}`,
+  `function __simeonComputerCursor(){const w=__simeonViewW();return w<${PHONE_MAX_WIDTH}?__simeonComputerK()*${COMPUTER_CURSOR_SCALE}/${COMPUTER_SCREEN_SCALE}:${COMPUTER_CURSOR_SCALE}}`,
+].join("");
+
 const COO_SOURCE = [
+  VIEW_SOURCE,
   `const __simeonCooCrew=${JSON.stringify(COO_CREW.map((a, i) => ({ ...a, d: cooLine(a), delay: 700 + i * 180 })))};`,
-  "function __simeonCooStep(n){const{headingId:t,onForward:r,onBack:i}=n,still=Fo();",
-  "const lines=p.jsx(fde,{x:0,y:" + COO_HERO_Y + ",ariaHidden:!0,className:\"simeon-coo__web\",children:p.jsx(\"svg\",{width:800,height:400,viewBox:\"-400 -200 800 400\",children:__simeonCooCrew.map(a=>p.jsx(\"path\",{className:\"simeon-coo__line\",d:a.d,pathLength:1,style:{animationDelay:`${a.delay}ms`}},a.id))})},\"web\");",
-  "const crew=__simeonCooCrew.map(a=>p.jsx(fde,{x:a.x,y:a.y,ariaHidden:!0,className:\"simeon-coo__seat\",children:p.jsxs(\"div\",{className:\"simeon-coo__agent\",style:{animationDelay:`${a.delay+520}ms`},children:[p.jsx(sd,{\"aria-hidden\":!0,color:a.color,paused:still,shape:\"cloud\",sizePx:56,state:\"idle\"}),p.jsx(\"span\",{className:\"simeon-coo__role\",children:a.label})]})},a.id));",
+  // cooLine, at run time, for the phone's nearer agents.
+  `function __simeonCooLine(x,y){const s=Math.sign(x),x1=s*60,x2=x-s*40,y2=y-(${COO_HERO_Y}),mx=Math.round((x1+x2)/2);return"M"+x1+" 0C"+mx+" 0 "+mx+" "+y2+" "+x2+" "+y2}`,
+  `function __simeonCooAt(w){if(w>=${PHONE_MAX_WIDTH})return __simeonCooCrew;const side=Math.max(${COO_PHONE_MIN_SIDE},Math.min(${COO_SIDE_X},w/2-${COO_PHONE_EDGE}));return __simeonCooCrew.map(a=>{const x=Math.sign(a.x)*side;return{...a,x,d:__simeonCooLine(x,a.y)}})}`,
+  "function __simeonCooStep(n){const{headingId:t,onForward:r,onBack:i}=n,still=Fo(),cast=__simeonCooAt(S.useSyncExternalStore(__simeonViewSub,__simeonViewW));",
+  "const lines=p.jsx(fde,{x:0,y:" + COO_HERO_Y + ",ariaHidden:!0,className:\"simeon-coo__web\",children:p.jsx(\"svg\",{width:800,height:400,viewBox:\"-400 -200 800 400\",children:cast.map(a=>p.jsx(\"path\",{className:\"simeon-coo__line\",d:a.d,pathLength:1,style:{animationDelay:`${a.delay}ms`}},a.id))})},\"web\");",
+  "const crew=cast.map(a=>p.jsx(fde,{x:a.x,y:a.y,ariaHidden:!0,className:\"simeon-coo__seat\",children:p.jsxs(\"div\",{className:\"simeon-coo__agent\",style:{animationDelay:`${a.delay+520}ms`},children:[p.jsx(sd,{\"aria-hidden\":!0,color:a.color,paused:still,shape:\"cloud\",sizePx:56,state:\"idle\"}),p.jsx(\"span\",{className:\"simeon-coo__role\",children:a.label})]})},a.id));",
   `const line=p.jsx(fde,{x:0,y:${COO_COPY_Y},className:"simeon-coo__copy",children:p.jsx("p",{children:${JSON.stringify(COO_COPY)}})},"copy");`,
   `return p.jsx(tye,{className:re("sand-onboarding__coo","simeon-coo"),footer:p.jsx(nye,{onBack:i,onForward:r}),headingId:t,title:${JSON.stringify(COO_TITLE)},children:[lines,...crew,line]})}`,
 ].join("");
@@ -1126,8 +1174,11 @@ const COO_PIN_SOURCE = "var __simeonCooId=null;function __simeonFindCoo(n){let c
  * never needs to ask. Empty is allowed: Next skips, and the sheet asks later.
  */
 const NAME_SEATS = Object.freeze({ "weekly-standup": { x: -168, y: -64, scale: 0.62 }, "invoice-chaser": { x: 0, y: -96, scale: 0.72 }, "sales-forecast": { x: 168, y: -64, scale: 0.62 } });
+/** On a phone the two side agents come in so they stay this far (their centre) from the screen's edge. */
+const NAME_PHONE_EDGE = 44;
 const NAME_SOURCE = [
   `const __simeonNameSeat=${JSON.stringify(NAME_SEATS)};`,
+  `function __simeonNameSeatAt(e){const s=__simeonNameSeat[e],w=__simeonViewW();if(s==null||w>=${PHONE_MAX_WIDTH}||s.x===0)return s;return{...s,x:Math.sign(s.x)*Math.min(Math.abs(s.x),w/2-${NAME_PHONE_EDGE})}}`,
   "function __simeonNameStep(n){const{headingId:t,onForward:r,onBack:i}=n,d=typeof window<\"u\"?window.desktop:void 0,a=d?.cursorAccount,[v,sv]=S.useState(\"\"),ip=S.useRef(null),touched=S.useRef(!1);",
   "S.useEffect(()=>{let l=!0;Promise.resolve(a?.getNamePrompt?.()).then(q=>{l&&!touched.current&&typeof q?.suggested===\"string\"&&sv(q.suggested)},()=>{});const f=setTimeout(()=>ip.current?.focus(),450);return()=>{l=!1;clearTimeout(f)}},[]);",
   "const name=v.replace(/\\s+/g,\" \").trim().slice(0,60);",
@@ -1139,7 +1190,7 @@ const NAME_SOURCE = [
 export const NAME_STEP_REPLACEMENTS = Object.freeze([
   // Next on the name step, the last one, runs the flow's own create-and-finish (`Pe`), as Next on the apps step did while there was one.
   ["name-step-screen", "case\"tools\":return p.jsx(Ljn,{", "case\"name\":return p.jsx(__simeonNameStep,{headingId:xn,onBack:()=>x.goBack(ln),onForward:()=>{Pe()}});case\"tools\":return p.jsx(Ljn,{"],
-  ["name-step-agents", "case\"tools\":return{...t,x:r.x,y:r.y,scale:r.scale,opacity:1,state:\"idle\",transition:\"standard\",bob:YBn[e]}", "case\"name\":return{...t,...__simeonNameSeat[e],opacity:1,state:\"happy\",transition:\"bounce\",isGazing:!0};case\"tools\":return{...t,x:r.x,y:r.y,scale:r.scale,opacity:1,state:\"idle\",transition:\"standard\",bob:YBn[e]}"],
+  ["name-step-agents", "case\"tools\":return{...t,x:r.x,y:r.y,scale:r.scale,opacity:1,state:\"idle\",transition:\"standard\",bob:YBn[e]}", "case\"name\":return{...t,...__simeonNameSeatAt(e),opacity:1,state:\"happy\",transition:\"bounce\",isGazing:!0};case\"tools\":return{...t,x:r.x,y:r.y,scale:r.scale,opacity:1,state:\"idle\",transition:\"standard\",bob:YBn[e]}"],
   ["name-step-hero", "case\"coo\":return{...e,x:0,y:", "case\"name\":return{...e,x:$2e.x,y:$2e.y,scale:Vve,opacity:0,state:\"happy\",transition:\"exit\"};case\"coo\":return{...e,x:0,y:"],
   ["name-step-component", "function __simeonCooStep(n){", `${NAME_SOURCE}function __simeonCooStep(n){`],
   // The last screen keeps only its line ("Getting your team ready…", with its moving light): the mark and the name above it go, as on the boot screen.
@@ -1239,16 +1290,16 @@ export const MEET_CSS = `/* Simeon: the Meet step */
  * fixed pixels), so it is scaled as one: 1.45 times, to 639 by 435, and
  * moved down a little; the title sits higher and Next lower to clear it.
  * Simeon, who plays the cursor on it, walks the same path scaled by the same
- * factor, at a size to match.
+ * factor, at a size to match. On a phone the factor is the screen's
+ * (`__simeonComputerK`, the scale `COMPUTER_SCREEN_SCALE` and the cursor
+ * `COMPUTER_CURSOR_SCALE` are set with the phone layout, above).
  */
-export const COMPUTER_SCREEN_SCALE = 1.45;
-const COMPUTER_CURSOR_SCALE = 0.66;
 const COMPUTER_CARD_Y = 0;
 const COMPUTER_TITLE_TOP = -312;
 const COMPUTER_FOOTER_TOP = 256;
 export const COMPUTER_STEP_REPLACEMENTS = Object.freeze([
   ["computer-card-seat", "$2e={x:0,y:-21}", `$2e={x:0,y:${COMPUTER_CARD_Y}}`],
-  ["computer-cursor-path", 'x:$2e.x+n.demoCursor.x-U2e.x*Vve,y:$2e.y+n.demoCursor.y-U2e.y*Vve,scale:Vve,opacity:1,state:n.demoBeat<0?"thinking":"working"', `x:$2e.x+n.demoCursor.x*${COMPUTER_SCREEN_SCALE}-U2e.x*${COMPUTER_CURSOR_SCALE},y:$2e.y+n.demoCursor.y*${COMPUTER_SCREEN_SCALE}-U2e.y*${COMPUTER_CURSOR_SCALE},scale:${COMPUTER_CURSOR_SCALE},opacity:1,state:n.demoBeat<0?"thinking":"working"`],
+  ["computer-cursor-path", 'x:$2e.x+n.demoCursor.x-U2e.x*Vve,y:$2e.y+n.demoCursor.y-U2e.y*Vve,scale:Vve,opacity:1,state:n.demoBeat<0?"thinking":"working"', 'x:$2e.x+n.demoCursor.x*__simeonComputerK()-U2e.x*__simeonComputerCursor(),y:$2e.y+n.demoCursor.y*__simeonComputerK()-U2e.y*__simeonComputerCursor(),scale:__simeonComputerCursor(),opacity:1,state:n.demoBeat<0?"thinking":"working"'],
 ]);
 export const COMPUTER_CSS = `/* Simeon: the computer step's screen */
 .sand-onboarding__computer-demo>div:first-child${MEET_HI}{top:calc(50% - ${-COMPUTER_TITLE_TOP}px)}
@@ -1278,9 +1329,51 @@ export const COO_CSS = `${COO_MARKER} */
 @media (prefers-reduced-motion:reduce){.simeon-coo__line,.simeon-coo__agent,.simeon-coo__copy p{animation:none;stroke-dashoffset:0;opacity:1;transform:none}}
 `;
 
+/**
+ * Onboarding on a phone, the stylesheet's half (the layout's half and the
+ * why are at VIEW_SOURCE). Below PHONE_MAX_WIDTH:
+ * - each step's title is held by its last line (`bottom`), where a
+ *   one-line title ends on a Mac, so a second line grows upwards; its size
+ *   follows the width (28 px down to 22 px) and its lines are balanced, so
+ *   no title takes more than two;
+ * - the computer's screen takes `--simeon-computer-k`, the factor
+ *   `__simeonComputerK` gives Simeon's cursor, and its title and Next/Back
+ *   sit 28 px off the scaled screen;
+ * - lines that never wrapped on a Mac (the Chief of Staff's copy, the name
+ *   step's note) may, and the name field is no wider than the screen;
+ * - the flow (the step and the cast that travels between steps) is scaled
+ *   about the centre by `--simeon-onb-fit`, 1 when the screen is tall
+ *   enough for the tallest step (PHONE_ONBOARDING_HALF_HEIGHT each side of
+ *   the centre, plus 16 px), less when it is not: the same for every step,
+ *   so nothing jumps from one to the next. A scaled step would clip what it
+ *   brought back on screen to its own scaled box, so the step and its
+ *   content stop clipping; the flow's fixed frame still clips at the
+ *   screen's edge.
+ */
+export const PHONE_ONBOARDING_MARKER = "/* Simeon: onboarding on a phone";
+const COMPUTER_PHONE_CLEARANCE = 28;
+export const PHONE_ONBOARDING_CSS = `${PHONE_ONBOARDING_MARKER} */
+@media (max-width:${PHONE_MAX_WIDTH - 0.02}px){
+:root{--simeon-onb-fit:min(1,calc((var(--simeon-vh,2000) / 2 - ${PHONE_GUTTER}) / ${PHONE_ONBOARDING_HALF_HEIGHT}));--simeon-computer-k:min(${COMPUTER_SCREEN_SCALE},calc((var(--simeon-vw,1280) - ${2 * PHONE_GUTTER}) / ${COMPUTER_CARD_W}))}
+.sand-onboarding__step,.sand-onboarding__cast{scale:var(--simeon-onb-fit);transform-origin:50% 50%}
+.sand-onboarding__step${MEET_HI},.sand-onboarding__step main>div${MEET_HI}{overflow:visible}
+.sand-onboarding__heading${MEET_HI} h1{font-size:clamp(22px,7.1vw,28px);line-height:1.2;text-wrap:balance}
+.simeon-coo>div:first-child${MEET_HI}{top:auto;bottom:calc(50% + ${-COO_COPY_Y + 26}px)}
+.simeon-coo__copy,.simeon-name__note-seat{width:max-content;max-width:calc(100vw - ${3 * PHONE_GUTTER}px)}
+.simeon-coo__copy p{white-space:normal;text-wrap:balance}
+.simeon-connect>div:first-child${MEET_HI}{top:auto;bottom:calc(50% + 160px)}
+.sand-onboarding__demo-card${MEET_HI}{transform:scale(var(--simeon-computer-k))}
+.sand-onboarding__computer-demo>div:first-child${MEET_HI}{top:auto;bottom:calc(50% + 150px * var(--simeon-computer-k) + ${COMPUTER_PHONE_CLEARANCE}px)}
+.sand-onboarding__computer-demo>div:last-child${MEET_HI}{top:calc(50% + 150px * var(--simeon-computer-k) + ${COMPUTER_PHONE_CLEARANCE}px)}
+.simeon-name>div:first-child${MEET_HI}{top:auto;bottom:calc(50% + 150px)}
+.simeon-name__input{width:min(300px,calc(100vw - ${3 * PHONE_GUTTER}px))}
+.simeon-name__note{white-space:normal;text-wrap:balance}
+}
+`;
+
 export function patchOriginalCooStylesheet(css) {
   if (css.includes(COO_MARKER)) throw new Error("Original renderer COO step block is already present.");
-  return `${css}\n${COO_CSS}\n${NAME_CSS}\n${MEET_CSS}\n${COMPUTER_CSS}\n${COO_LOCK_CSS}`;
+  return `${css}\n${COO_CSS}\n${NAME_CSS}\n${MEET_CSS}\n${COMPUTER_CSS}\n${COO_LOCK_CSS}\n${PHONE_ONBOARDING_CSS}`;
 }
 
 export function patchOriginalAgentPaneStylesheet(css) {
@@ -1783,7 +1876,8 @@ export const CONNECT_TITLE = "Your agents connect to the apps you already use";
 const CONNECT_SOURCE = [
   `const __simeonConnectApps=${JSON.stringify(Object.keys(CONNECT_LOGO_SOURCES))};`,
   "function __simeonConnectStep(n){const{headingId:t,onForward:r,onBack:i}=n,still=Fo(),box=S.useRef(null);",
-  `S.useEffect(()=>{const el=box.current;if(!el)return;const orbs=[...el.querySelectorAll(".simeon-connect__orb")],W=${CONNECT_W},t=${CONNECT_TILE},size=t*.5,gap=t*1.05,lane=gap*orbs.length;let t0=null,id=0;const frame=now=>{if(t0==null)t0=now;const period=1600,move=550,k=still?0:(now-t0)/period,step=Math.floor(k),f=Math.min(1,(k-step)*period/move),ease=f<.5?4*f*f*f:1-Math.pow(-2*f+2,3)/2,shift=(step+ease)*gap;for(let j=0;j<orbs.length;j++){const orb=orbs[j];let x=(j*gap-shift)%lane;if(x<-lane/2)x+=lane;if(x>lane/2)x-=lane;const d=Math.abs(x)/(W/2),grow=1+.6*Math.max(0,1-Math.abs(x)/(gap*.6)),sz=size*grow;orb.style.width=orb.style.height=sz+"px";orb.style.transform="translate("+(W/2+x-sz/2)+"px,-50%)";orb.style.filter="blur("+Math.max(0,(d-.8)*22,(grow-1)*30).toFixed(1)+"px)";orb.style.opacity=Math.max(0,Math.min(1,1.9-d)).toFixed(2)}if(!still)id=requestAnimationFrame(frame)};id=requestAnimationFrame(frame);return()=>cancelAnimationFrame(id)},[still]);`,
+  // The row is as wide as the screen when that is narrower than the stage (a phone): W is its drawn width, kept on resize.
+  `S.useEffect(()=>{const el=box.current;if(!el)return;const orbs=[...el.querySelectorAll(".simeon-connect__orb")],t=${CONNECT_TILE},size=t*.5,gap=t*1.05,lane=gap*orbs.length;let W=el.clientWidth||${CONNECT_W};const fit=()=>{W=el.clientWidth||W};window.addEventListener("resize",fit);let t0=null,id=0;const frame=now=>{if(t0==null)t0=now;const period=1600,move=550,k=still?0:(now-t0)/period,step=Math.floor(k),f=Math.min(1,(k-step)*period/move),ease=f<.5?4*f*f*f:1-Math.pow(-2*f+2,3)/2,shift=(step+ease)*gap;for(let j=0;j<orbs.length;j++){const orb=orbs[j];let x=(j*gap-shift)%lane;if(x<-lane/2)x+=lane;if(x>lane/2)x-=lane;const d=Math.abs(x)/(W/2),grow=1+.6*Math.max(0,1-Math.abs(x)/(gap*.6)),sz=size*grow;orb.style.width=orb.style.height=sz+"px";orb.style.transform="translate("+(W/2+x-sz/2)+"px,-50%)";orb.style.filter="blur("+Math.max(0,(d-.8)*22,(grow-1)*30).toFixed(1)+"px)";orb.style.opacity=Math.max(0,Math.min(1,1.9-d)).toFixed(2)}if(!still)id=requestAnimationFrame(frame)};id=requestAnimationFrame(frame);return()=>{cancelAnimationFrame(id);window.removeEventListener("resize",fit)}},[still]);`,
   `const orbit=p.jsx(fde,{x:0,y:${CONNECT_Y},ariaHidden:!0,className:"simeon-connect__seat",children:p.jsxs("div",{ref:box,className:"simeon-connect__orbit",children:[...__simeonConnectApps.map(a=>p.jsx("div",{className:"simeon-connect__orb","data-app":a},a)),p.jsx("div",{className:"simeon-connect__tile"},"tile")]})},"orbit");`,
   `return p.jsx(tye,{className:re("sand-onboarding__connect","simeon-connect"),footer:p.jsx(nye,{onBack:i,onForward:r}),headingId:t,title:${JSON.stringify(CONNECT_TITLE)},children:[orbit]})}`,
 ].join("");
@@ -1797,7 +1891,7 @@ export const CONNECT_MARKER = "/* Simeon: the connect step";
 export function connectCss(logos) {
   const rim = Math.max(3, CONNECT_TILE * 0.04), t = CONNECT_TILE;
   return `${CONNECT_MARKER}, the site's connector scene */
-.simeon-connect__orbit{position:relative;width:${CONNECT_W}px;height:${CONNECT_H}px;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 18%,#000 82%,transparent);mask-image:linear-gradient(90deg,transparent,#000 18%,#000 82%,transparent)}
+.simeon-connect__orbit{position:relative;width:min(${CONNECT_W}px,100vw);height:${CONNECT_H}px;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 18%,#000 82%,transparent);mask-image:linear-gradient(90deg,transparent,#000 18%,#000 82%,transparent)}
 .simeon-connect__orb{position:absolute;left:0;top:50%;width:${t / 2}px;height:${t / 2}px;background:center/contain no-repeat;will-change:transform,filter,opacity}
 .simeon-connect__tile{position:absolute;left:50%;top:50%;width:${t}px;height:${t}px;transform:translate(-50%,-50%);border-radius:${Math.round(t * 0.235)}px;background:rgba(255,255,255,.4);-webkit-backdrop-filter:blur(32px) saturate(2);backdrop-filter:blur(32px) saturate(2);border:1px solid rgba(255,255,255,.9);box-shadow:inset 0 0 0 ${rim}px rgba(255,255,255,.72),inset 0 ${rim * 0.6}px ${rim * 0.8}px rgba(255,255,255,.95),inset 0 -${rim * 0.8}px ${rim * 2.2}px rgba(60,70,90,.14),0 ${t * 0.1}px ${t * 0.24}px -${t * 0.06}px rgba(30,40,60,.38),0 2px 5px rgba(30,40,60,.1)}
 ${Object.entries(logos).map(([key, url]) => `.simeon-connect__orb[data-app="${key}"]{background-image:url("${url}")}`).join("\n")}
