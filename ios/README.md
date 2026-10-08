@@ -103,13 +103,13 @@ macOS minutes cost ten times Linux ones, so it never runs by itself.
 
 ## To a real iPhone and TestFlight
 
-Run (⌘R) builds the app optimised (`project.yml`: the scheme runs
-Release), as people get it from TestFlight. While it runs from Xcode, its
-console shows a line whenever the screen stands still for more than a
-quarter of a second, with what the app was doing (`[simeon] the screen
-stood still 1840 ms, while laying out ava, 512 lines`), and any step that
-took longer than a frame (`[simeon] slow: …`). Copy those lines into the
-chat to find a lag.
+While the app runs from Xcode, its console shows a line whenever the
+screen stands still for more than a quarter of a second, with what the app
+was doing (`[simeon] the screen stood still 1840 ms, while laying out ava,
+512 lines`), and any step that took longer than a frame (`[simeon] slow:
+…`). Copy those lines into the chat to find a lag. Run (⌘R) builds Debug,
+which is slower than TestFlight's optimised build; for a fair feel of speed,
+set the scheme's Run to Release (Product → Scheme → Edit Scheme).
 
 1. In Xcode, open Signing & Capabilities for the Simeon target. Choose the
    Apple developer team Simeon publishes from, or set `DEVELOPMENT_TEAM`

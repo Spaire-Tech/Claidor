@@ -9,7 +9,11 @@ import SimeonCore
  * Xcode, the lines are in its console, ready to copy.
  */
 enum HangWatch {
-  static func start() {
+  @MainActor private static var started = false
+
+  @MainActor static func start() {
+    guard !started else { return }
+    started = true
     let thread = Thread {
       while true {
         let answered = DispatchSemaphore(value: 0)

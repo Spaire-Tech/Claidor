@@ -90,7 +90,8 @@ final class SessionController {
 
   private func makeAPI() -> SimeonAPI {
     let api = SimeonAPI(base: launch.api, clientVersion: Self.clientVersion, vault: vault)
-    Task { await api.onSessionEnded { Task { @MainActor [weak self] in self?.ended() } } }
+    let ended: @Sendable () -> Void = { [weak self] in Task { @MainActor in self?.ended() } }
+    Task { await api.onSessionEnded(ended) }
     return api
   }
 
@@ -223,7 +224,9 @@ final class AppConnector {
 final class SheetPresenter: NSObject, ASWebAuthenticationPresentationContextProviding {
   func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
     let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
-    return scenes.flatMap(\.windows).first { $0.isKeyWindow } ?? ASPresentationAnchor()
+    if let window = scenes.flatMap(\.windows).first(where: \.isKeyWindow) ?? scenes.flatMap(\.windows).first { return window }
+    // A sign-in is only ever started from the app's own window, so there is a scene to make one in.
+    return UIWindow(windowScene: scenes[0])
   }
 }
 

@@ -319,8 +319,7 @@ work is not it (a 500-line chat is laid out in about 11 ms, optimised or
 not). The cause is in the drawing, so the chat now draws its newest 60 rows
 and more as you scroll up (it drew every message above the newest before
 showing any), a row is drawn again only when it changed, the cards' and the
-composer's shadows are cast by their shape and not their text, the phone
-runs the optimised build, an empty chat shows a spinner while its lines
+composer's shadows are cast by their shape and not their text, an empty chat shows a spinner while its lines
 come, and a hang watch writes to Xcode's console what the app was doing
 whenever the screen stands still.
 

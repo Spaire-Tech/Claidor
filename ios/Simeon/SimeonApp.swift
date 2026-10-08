@@ -15,8 +15,6 @@ struct SimeonApp: App {
   @State private var session = SessionController()
   @AppStorage("simeon.theme") private var theme = "system"
 
-  init() { HangWatch.start() }
-
   var body: some Scene {
     WindowGroup {
       RootView()
@@ -24,6 +22,8 @@ struct SimeonApp: App {
         .environment(session.store)
         .preferredColorScheme(Self.scheme(session.launch.theme ?? theme))
         .task { await session.start() }
+        // After the first screen is up, never before it.
+        .task { HangWatch.start() }
     }
   }
 
