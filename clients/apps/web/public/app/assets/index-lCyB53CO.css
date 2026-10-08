@@ -580,3 +580,19 @@ strong .simeon-agent,b .simeon-agent,h1 .simeon-agent,h2 .simeon-agent,h3 .simeo
 [data-theme*="dark"] :is(.simeon-disc,.sand-prompt-attach,.sand-agents-sidebar__rail-new .sand-agents-sidebar__new,.simeon-call-button):not(#\#):not(#\#):not(#\#):not(#\#):hover{background:var(--simeon-dark-control-hover)!important}
 [data-theme*="dark"] .sand-agents-sidebar__account>button:hover .sand-kit-base-avatar:not(#\#):not(#\#):not(#\#):not(#\#){background:var(--simeon-dark-control-hover)!important}
 [data-theme*="dark"] :is(.sand-chat-header__name,.simeon-call-button):not(#\#):not(#\#):not(#\#):not(#\#):not(#\#){border:1px solid var(--simeon-dark-edge)!important;box-shadow:none!important}
+
+/* Simeon: the phone's home (8 October 2026): the Mac's agents list full screen, or the Mac's chat full screen, one at a time. */
+.simeon-disc.simeon-phone-back{display:none;position:fixed;top:12px;left:12px;z-index:40}
+@media (max-width:599.98px){
+html[data-simeon-phone] .sand-shell{grid-template-columns:minmax(0,1fr)!important}
+html[data-simeon-phone] .sand-sidebar-resize-handle{display:none!important}
+html[data-simeon-phone] .sand-agents-sidebar{border-right-width:0!important}
+html[data-simeon-phone] .sand-agents-sidebar__footer{position:absolute!important;top:0!important;left:0!important;height:60px!important;padding:0 0 0 16px!important;align-items:center!important;z-index:1}
+html[data-simeon-phone] .sand-agents-sidebar__plugins-entry{margin:0 0 12px!important}
+html[data-simeon-phone="list"] main.sand-chat,html[data-simeon-phone="chat"] .sand-agents-sidebar{position:fixed!important;inset:0!important;width:100%!important;visibility:hidden!important;pointer-events:none!important}
+html[data-simeon-phone="list"] main.sand-chat{transform:translateX(100%)}
+html[data-simeon-phone="chat"] .sand-agents-sidebar{transform:translateX(-100%)}
+html[data-simeon-phone="chat"] .simeon-disc.simeon-phone-back{display:grid}
+html[data-simeon-phone="chat"]:has(.sand-new-chat-bar) .simeon-disc.simeon-phone-back{top:2px}
+html[data-simeon-phone="chat"] .sand-new-chat-bar{padding-left:48px!important}
+}

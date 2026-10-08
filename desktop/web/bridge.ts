@@ -108,6 +108,9 @@ function openAgent(agentId: unknown): boolean {
   if (typeof agentId !== "string" || agentId.length === 0) return false;
   if (!windowUp) { pendingAgentId = agentId; return false; }
   emit(FOCUS_AGENT_CHANNEL, {}, { id: agentId });
+  // On a phone the window shows the list or a chat, one at a time
+  // (router-renderer-patch.mjs, the phone's home): a tap shows the chat.
+  (Reflect.get(window, "__simeonPhoneShow") as ((mode: string) => void) | undefined)?.("chat");
   return true;
 }
 function windowIsUp(): void {

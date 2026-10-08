@@ -31934,6 +31934,7 @@
       return false;
     }
     emit(FOCUS_AGENT_CHANNEL, {}, { id: agentId });
+    Reflect.get(window, "__simeonPhoneShow")?.("chat");
     return true;
   }
   function windowIsUp() {

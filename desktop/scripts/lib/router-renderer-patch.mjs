@@ -2222,6 +2222,92 @@ export function patchOriginalSidebarDiscsStylesheet(css) {
 }
 
 /**
+ * The phone's home (8 October 2026, step 1 with the founder: "all we needed
+ * to do was MAKE IT MOBILE"). Narrower than PHONE_MAX_WIDTH, outside the
+ * Mac app, the window shows one thing at a time: the Mac's own agents list
+ * full screen (the list), or the Mac's own chat full screen (the chat).
+ * Nothing is drawn new; the sidebar, its rows, discs and account are the
+ * Mac's.
+ *
+ *   1. The sidebar stays open: the window folds it to its rail when the
+ *      chat would be narrower than 424 px (`can`), which on a phone is
+ *      always, and a rail row is only a butterfly. On a phone `DCe` says
+ *      open, and the rows lay themselves out wide (`c0n` reads the
+ *      sidebar's own width).
+ *   2. `html[data-simeon-phone]` says which of the two shows: "list" at
+ *      start, "chat" once the person opens something the chat area shows:
+ *      a row (`Go`, which also opens an agent named in a chat), a new chat,
+ *      a profile, hidden chats, the full conversation or the async tasks
+ *      from the sidebar, and an agent, message or routine from search.
+ *      Settings and search are dialogs over either, and leave it as it
+ *      is. The iPhone app's notification tap says "chat" through
+ *      `window.__simeonPhoneShow` (desktop/web/bridge.ts).
+ *   3. The list's top is the account's initials at the left (the Mac keeps
+ *      them at the foot) and search and new chat at the right, as on the
+ *      Mac; Connect apps stays at the foot.
+ *   4. The chat's way back to the list is one of the Mac's discs at the top
+ *      left, until the chat's own phone layout (step 2).
+ *
+ * The screen not shown keeps its full width (so the rows stay wide and the
+ * chat keeps its place) and waits beside the screen, hidden: hidden in
+ * place, part of the list still painted through the chat in Chromium.
+ *
+ * The Mac app is left as it is at every width: `data-simeon-phone` is never
+ * set inside Electron, and `DCe` asks the same.
+ */
+const PHONE_BACK_ICON = '<path d="M14.5 5.5 8 12l6.5 6.5"/>';
+const PHONE_HOME_SOURCE = [
+  "var __simeonPhoneOk=typeof navigator<\"u\"&&!/Electron\\//.test(navigator.userAgent);",
+  `function __simeonIsPhone(w){return __simeonPhoneOk&&w<${PHONE_MAX_WIDTH}}`,
+  "function __simeonPhoneShow(m){__simeonPhoneOk&&typeof document<\"u\"&&document.documentElement.setAttribute(\"data-simeon-phone\",m===\"chat\"?\"chat\":\"list\")}",
+  "var __simeonPhoneWraps=new WeakMap();",
+  "function __simeonPhoneGo(f){if(typeof f!==\"function\")return f;let w=__simeonPhoneWraps.get(f);if(w==null){w=function(...a){__simeonPhoneShow(\"chat\");return f.apply(this,a)};__simeonPhoneWraps.set(f,w)}return w}",
+  "if(__simeonPhoneOk&&typeof document<\"u\"){__simeonPhoneShow(\"list\");window.__simeonPhoneShow=__simeonPhoneShow;",
+  "const b=document.createElement(\"button\");b.type=\"button\";b.className=\"simeon-disc simeon-phone-back\";b.setAttribute(\"aria-label\",\"Back\");",
+  `b.innerHTML=${JSON.stringify(`<svg viewBox="0 0 24 24" aria-hidden="true">${PHONE_BACK_ICON}</svg>`)};`,
+  "b.addEventListener(\"click\",()=>__simeonPhoneShow(\"list\"));const put=()=>{document.body!=null&&!b.isConnected&&document.body.appendChild(b)};document.body!=null?put():document.addEventListener(\"DOMContentLoaded\",put)}",
+].join("");
+const PHONE_SIDEBAR_OPEN_BEFORE = "function DCe(n,e){return n.isCollapsed||can(n,e)}";
+export const PHONE_HOME_REPLACEMENTS = Object.freeze([
+  ["phone-sidebar-open", PHONE_SIDEBAR_OPEN_BEFORE, `${PHONE_HOME_SOURCE}function DCe(n,e){return __simeonIsPhone(e)?!1:n.isCollapsed||can(n,e)}`],
+  ["phone-open-agent", "Go=S.useCallback(Rs=>{Pc(Rs)},[Pc]);ge.current=Go;", "Go=S.useCallback(Rs=>{__simeonPhoneShow(\"chat\");Pc(Rs)},[Pc]);ge.current=Go;"],
+  ["phone-new-chat", "onNewChat:fl,composeDraftLabel:Ho,", "onNewChat:__simeonPhoneGo(fl),composeDraftLabel:Ho,"],
+  ["phone-hidden-chats", "onOpenHiddenChats:KWe,", "onOpenHiddenChats:__simeonPhoneGo(KWe),"],
+  ["phone-profile", "onOpenProfile:Jr,onOpenSettings:vr,", "onOpenProfile:__simeonPhoneGo(Jr),onOpenSettings:vr,"],
+  ["phone-full-conversation", "onShowAsyncTasks:Es,onShowFullConversation:ds,", "onShowAsyncTasks:__simeonPhoneGo(Es),onShowFullConversation:__simeonPhoneGo(ds),"],
+  ["phone-search-opens", "onOpenAgent:gm,onOpenFile:pl,onOpenLink:Yl,onOpenMessage:cr,onOpenRoutine:Ua,", "onOpenAgent:__simeonPhoneGo(gm),onOpenFile:pl,onOpenLink:Yl,onOpenMessage:__simeonPhoneGo(cr),onOpenRoutine:__simeonPhoneGo(Ua),"],
+]);
+
+export function patchOriginalPhoneHome(source) {
+  let out = source;
+  for (const [label, before, after] of PHONE_HOME_REPLACEMENTS) out = replaceExactlyOnce(out, before, after, label);
+  return out;
+}
+
+export const PHONE_HOME_MARKER = "/* Simeon: the phone's home";
+export const PHONE_HOME_CSS = `${PHONE_HOME_MARKER} (8 October 2026): the Mac's agents list full screen, or the Mac's chat full screen, one at a time. */
+.simeon-disc.simeon-phone-back{display:none;position:fixed;top:12px;left:12px;z-index:40}
+@media (max-width:${PHONE_MAX_WIDTH - 0.02}px){
+html[data-simeon-phone] .sand-shell{grid-template-columns:minmax(0,1fr)!important}
+html[data-simeon-phone] .sand-sidebar-resize-handle{display:none!important}
+html[data-simeon-phone] .sand-agents-sidebar{border-right-width:0!important}
+html[data-simeon-phone] .sand-agents-sidebar__footer{position:absolute!important;top:0!important;left:0!important;height:60px!important;padding:0 0 0 16px!important;align-items:center!important;z-index:1}
+html[data-simeon-phone] .sand-agents-sidebar__plugins-entry{margin:0 0 12px!important}
+html[data-simeon-phone="list"] main.sand-chat,html[data-simeon-phone="chat"] .sand-agents-sidebar{position:fixed!important;inset:0!important;width:100%!important;visibility:hidden!important;pointer-events:none!important}
+html[data-simeon-phone="list"] main.sand-chat{transform:translateX(100%)}
+html[data-simeon-phone="chat"] .sand-agents-sidebar{transform:translateX(-100%)}
+html[data-simeon-phone="chat"] .simeon-disc.simeon-phone-back{display:grid}
+html[data-simeon-phone="chat"]:has(.sand-new-chat-bar) .simeon-disc.simeon-phone-back{top:2px}
+html[data-simeon-phone="chat"] .sand-new-chat-bar{padding-left:48px!important}
+}
+`;
+
+export function patchOriginalPhoneHomeStylesheet(css) {
+  if (css.includes(PHONE_HOME_MARKER)) throw new Error("Original renderer phone home block is already present.");
+  return `${css}\n${PHONE_HOME_CSS}`;
+}
+
+/**
  * The butterfly (6 October 2026, the founder: "what if the avatar was a
  * butterfly … i dont want to lose the animations"; then "i want actual
  * butterfly … i'm okay to lose the eyes. but i wanna keep the animation of
@@ -2458,8 +2544,9 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   if (!HANDOFF_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer take-over card anchor is not in the mark chunk.");
   if (!SIDEBAR_DISCS_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer sidebar anchors (the header, the rail's new button, the search bar) are not all in the mark chunk.");
   if (!BUTTERFLY_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer mark engine anchors (the cloud's geometry, the body and eyes, the still renderer, the spin's lights) are not all in the mark chunk.");
+  if (!PHONE_HOME_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer phone home anchors (the sidebar's fold, the open-agent callback, the sidebar's and search's openers) are not all in the mark chunk.");
   const logoAssets = await readLogoAssets();
-  const markPatched = patchOriginalButterfly(patchOriginalSidebarDiscs(patchOriginalCooStep(patchOriginalFlights(patchOriginalHandoff(patchOriginalAgentPane(patchOriginalManagePlan(patchOriginalVoiceCall(patchOriginalChatLayout(patchOriginalLogos(patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(patchOriginalDraftSend(markChunks[0].source)))))), appMentionNames(logoAssets.mentions)))))))))));
+  const markPatched = patchOriginalPhoneHome(patchOriginalButterfly(patchOriginalSidebarDiscs(patchOriginalCooStep(patchOriginalFlights(patchOriginalHandoff(patchOriginalAgentPane(patchOriginalManagePlan(patchOriginalVoiceCall(patchOriginalChatLayout(patchOriginalLogos(patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(patchOriginalDraftSend(markChunks[0].source)))))), appMentionNames(logoAssets.mentions))))))))))));
   // The stylesheet's light default of the same variable, for first paint.
   const stylesheets = (await readdir(assetsRoot)).filter((name) => name.endsWith(".css")).map((name) => path.join(assetsRoot, name));
   const bubbleSheets = [];
@@ -2468,7 +2555,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     if (css.includes(BUBBLE_CSS_REPLACEMENT[1])) bubbleSheets.push({ target, css });
   }
   if (bubbleSheets.length !== 1) throw new Error(`Expected one stylesheet carrying the user bubble default, found ${bubbleSheets.length}.`);
-  const stylesheetPatched = patchOriginalSidebarDiscsStylesheet(patchOriginalCooStylesheet(patchOriginalWordmarkStylesheet(patchOriginalFlightsStylesheet(patchOriginalHandoffStylesheet(patchOriginalAgentPaneStylesheet(patchOriginalManagePlanStylesheet(patchOriginalVoiceCallStylesheet(patchOriginalLogosStylesheet(patchOriginalShapePickerStylesheet(patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)))), logoAssets)))))), logoAssets.wordmarkFont)));
+  const stylesheetPatched = patchOriginalPhoneHomeStylesheet(patchOriginalSidebarDiscsStylesheet(patchOriginalCooStylesheet(patchOriginalWordmarkStylesheet(patchOriginalFlightsStylesheet(patchOriginalHandoffStylesheet(patchOriginalAgentPaneStylesheet(patchOriginalManagePlanStylesheet(patchOriginalVoiceCallStylesheet(patchOriginalLogosStylesheet(patchOriginalShapePickerStylesheet(patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)))), logoAssets)))))), logoAssets.wordmarkFont))));
   const chunkSources = [];
   for (const target of markCandidates) chunkSources.push(await readFile(target, "utf8"));
   // The blocks spell the window's tokens as the token pass below leaves them.
@@ -2495,7 +2582,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   const wallpaperAfter = await readFile(wallpaperTarget);
   const marks = {
     chunk: path.relative(stageRoot, markChunks[0].target),
-    replacements: [...[...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, ...SHAPE_REPLACEMENTS, ...COPY_REPLACEMENTS, ...LOGO_REPLACEMENTS, ...CHAT_LAYOUT_REPLACEMENTS, ...VOICE_CALL_REPLACEMENTS, ...AGENT_PANE_REPLACEMENTS, ...HANDOFF_REPLACEMENTS, ...SIDEBAR_DISCS_REPLACEMENTS, ...BUTTERFLY_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT].map(([label]) => label), "chat-header-card", "liquid-glass-chrome", "sidebar-discs", "shape-pickers-hidden", "title-tag-blue", "file-and-app-logos", "voice-call-styles", "agent-pane-styles", "switch-blue", "take-over-card-styles"],
+    replacements: [...[...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, ...SHAPE_REPLACEMENTS, ...COPY_REPLACEMENTS, ...LOGO_REPLACEMENTS, ...CHAT_LAYOUT_REPLACEMENTS, ...VOICE_CALL_REPLACEMENTS, ...AGENT_PANE_REPLACEMENTS, ...HANDOFF_REPLACEMENTS, ...SIDEBAR_DISCS_REPLACEMENTS, ...BUTTERFLY_REPLACEMENTS, ...PHONE_HOME_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT].map(([label]) => label), "chat-header-card", "liquid-glass-chrome", "sidebar-discs", "shape-pickers-hidden", "title-tag-blue", "file-and-app-logos", "voice-call-styles", "agent-pane-styles", "switch-blue", "take-over-card-styles", "phone-home"],
     userBubble: { light: USER_BUBBLE_LIGHT, dark: USER_BUBBLE_DARK, stylesheet: path.relative(stageRoot, bubbleSheets[0].target) },
     // The stylesheet's hashes, so `npm run verify` can check the packaged
     // file against what this patch wrote (25 September 2026: verify read
@@ -2581,7 +2668,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-mark", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "agent-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "meet-step-turn", "connect-step", "computer-screen-large", "computer-wallpaper-photo", "flight-results", "upstream-tokens", "sidebar-glass-discs", "pane-widest-default", "pane-three-tabs", "mark-butterfly", "mark-no-eyes", "spin-lights-agent-colours", "manage-plan-card", "draft-send"],
+    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-mark", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "agent-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "meet-step-turn", "connect-step", "computer-screen-large", "computer-wallpaper-photo", "flight-results", "upstream-tokens", "sidebar-glass-discs", "pane-widest-default", "pane-three-tabs", "mark-butterfly", "mark-no-eyes", "spin-lights-agent-colours", "manage-plan-card", "draft-send", "phone-home"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings", "upstream-tokens", "icon-font-file"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");

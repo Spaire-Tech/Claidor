@@ -272,6 +272,88 @@ test("onboarding on a phone: every scene laid out for the width it has, titles g
   assert.match(connectCss({}), /\.simeon-connect__orbit\{position:relative;width:min\(920px,100vw\);/, "no wider than the screen");
 });
 
+test("the phone's home: the Mac's list full screen, a chat full screen, one at a time, and the Mac app left as it is", async () => {
+  const { PHONE_HOME_REPLACEMENTS, PHONE_HOME_CSS, PHONE_MAX_WIDTH, patchOriginalPhoneHome, patchOriginalPhoneHomeStylesheet } = await import("../scripts/lib/router-renderer-patch.mjs");
+  const source = PHONE_HOME_REPLACEMENTS.find(([label]) => label === "phone-sidebar-open")[2];
+  // The window's script in a page, with the window's own fold (`can`, 424 px for the chat).
+  const page = (userAgent) => {
+    const attrs = {};
+    const body = { children: [], appendChild(el) { el.isConnected = true; this.children.push(el); } };
+    const document = {
+      body,
+      documentElement: { setAttribute: (k, v) => { attrs[k] = v; }, getAttribute: (k) => attrs[k] ?? null },
+      createElement: (tag) => ({ tag, isConnected: false, attrs: {}, listeners: {}, setAttribute(k, v) { this.attrs[k] = v; }, addEventListener(k, f) { this.listeners[k] = f; } }),
+      addEventListener: () => {},
+    };
+    const window = {};
+    const run = new Function("window", "document", "navigator", `${source}function can(n,e){return n.isCollapsed?!1:e<n.expandedWidth+424}return{DCe,go:__simeonPhoneGo}`);
+    return { ...run(window, document, { userAgent }), window, body, mode: () => attrs["data-simeon-phone"] ?? null };
+  };
+  const open = { isCollapsed: false, expandedWidth: 280 };
+  const folded = { isCollapsed: true, expandedWidth: 280 };
+
+  const mac = page("Mozilla/5.0 (Macintosh) AppleWebKit/537.36 Simeon/1.0.0 Chrome/142.0.0.0 Electron/39.0.0 Safari/537.36");
+  assert.equal(mac.mode(), null, "the Mac app never takes the phone's layout");
+  assert.equal(mac.body.children.length, 0, "and has no back disc");
+  assert.equal(mac.window.__simeonPhoneShow, undefined);
+  assert.equal(mac.DCe(open, 520), true, "a narrow Mac window still folds the sidebar to its rail");
+  assert.equal(mac.DCe(open, 1280), false);
+  assert.equal(mac.DCe(folded, 1280), true);
+  const macCall = (x) => x * 2;
+  assert.equal(mac.go(macCall)(4), 8);
+  assert.equal(mac.mode(), null, "opening something on the Mac changes nothing");
+
+  const phone = page("Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148");
+  assert.equal(phone.mode(), "list", "the phone opens on the list");
+  assert.equal(phone.DCe(open, 393), false, "on a phone the sidebar stays open, so its rows lay out wide");
+  assert.equal(phone.DCe(folded, 393), false, "even if it was folded on a wider screen");
+  assert.equal(phone.DCe(open, PHONE_MAX_WIDTH), true, "from the phone's boundary up, the window's own fold");
+  assert.equal(phone.DCe(folded, 1280), true);
+  let opened = null;
+  const openAgent = (id) => { opened = id; return "done"; };
+  const wrapped = phone.go(openAgent);
+  assert.equal(phone.go(openAgent), wrapped, "one wrapper per callback, so the sidebar's memo holds");
+  assert.equal(phone.go(undefined), undefined);
+  assert.equal(wrapped("agent-1"), "done");
+  assert.equal(opened, "agent-1", "the window still opens what was asked");
+  assert.equal(phone.mode(), "chat", "and the phone shows the chat");
+  const [back] = phone.body.children;
+  assert.equal(back.attrs["aria-label"], "Back");
+  assert.match(back.className, /^simeon-disc simeon-phone-back$/, "the back button is one of the Mac's discs");
+  back.listeners.click();
+  assert.equal(phone.mode(), "list", "back shows the list");
+  phone.window.__simeonPhoneShow("chat");
+  assert.equal(phone.mode(), "chat", "the iPhone app's notification tap shows the chat (desktop/web/bridge.ts)");
+
+  // Only the phone's width, only outside the Mac app; hidden screens keep their width beside the screen.
+  assert.match(PHONE_HOME_CSS, /^\.simeon-disc\.simeon-phone-back\{display:none;/m, "the back disc is hidden everywhere else");
+  const phoneBlock = PHONE_HOME_CSS.slice(PHONE_HOME_CSS.indexOf(`@media (max-width:${PHONE_MAX_WIDTH - 0.02}px){`));
+  for (const rule of phoneBlock.split("\n").slice(1, -2)) assert.match(rule, /^html\[data-simeon-phone/, `gated on the attribute the Mac app never sets: ${rule}`);
+  assert.match(phoneBlock, /html\[data-simeon-phone="list"\] main\.sand-chat\{transform:translateX\(100%\)\}/);
+  assert.match(phoneBlock, /html\[data-simeon-phone="chat"\] \.sand-agents-sidebar\{transform:translateX\(-100%\)\}/);
+  assert.match(phoneBlock, /\.sand-agents-sidebar__footer\{position:absolute!important;top:0!important;left:0!important;/, "the account at the top");
+  assert.ok(patchOriginalPhoneHomeStylesheet(".a{}").endsWith(PHONE_HOME_CSS));
+  assert.throws(() => patchOriginalPhoneHomeStylesheet(PHONE_HOME_CSS), /already present/);
+
+  // Every anchor once; Settings, a dialog over either screen, is left alone.
+  const anchors = PHONE_HOME_REPLACEMENTS.map(([, before]) => before).join("\n");
+  const patched = patchOriginalPhoneHome(anchors);
+  assert.match(patched, /Go=S\.useCallback\(Rs=>\{__simeonPhoneShow\("chat"\);Pc\(Rs\)\},\[Pc\]\)/);
+  assert.match(patched, /onOpenSettings:vr,/);
+  assert.match(patched, /onNewChat:__simeonPhoneGo\(fl\)/);
+  assert.match(patched, /onOpenMessage:__simeonPhoneGo\(cr\)/);
+  assert.throws(() => patchOriginalPhoneHome(`${anchors}\n${anchors}`), /phone-sidebar-open/);
+
+  // The apply pass runs it last on the mark chunk and the stylesheet, and records it.
+  const patchSource = await readFile(path.join(repoRoot, "scripts/lib/router-renderer-patch.mjs"), "utf8");
+  assert.match(patchSource, /const markPatched = patchOriginalPhoneHome\(patchOriginalButterfly\(/);
+  assert.match(patchSource, /const stylesheetPatched = patchOriginalPhoneHomeStylesheet\(patchOriginalSidebarDiscsStylesheet\(/);
+  assert.match(patchSource, /if \(!PHONE_HOME_REPLACEMENTS\.every\(\(\[, before\]\) => markChunks\[0\]\.source\.includes\(before\)\)\) throw new Error/);
+  assert.match(patchSource, /\.\.\.BUTTERFLY_REPLACEMENTS, \.\.\.PHONE_HOME_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT\]\.map/);
+  assert.match(patchSource, /"take-over-card-styles", "phone-home"\]/);
+  assert.match(patchSource, /"draft-send", "phone-home"\]/);
+});
+
 test("Simeon is the first agent, titled Chief of Staff, pinned or not as the person likes", async () => {
   const { FIRST_AGENT_REPLACEMENTS, SIMEON_COO_PROFILE } = await import("../scripts/lib/router-renderer-patch.mjs");
   assert.deepEqual({ name: SIMEON_COO_PROFILE.name, title: SIMEON_COO_PROFILE.title }, { name: "Simeon", title: "Chief of Staff" });
