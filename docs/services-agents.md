@@ -590,8 +590,25 @@ the background while the call goes on, and says how it is going when asked.
     6 October 2026), looked up by id in the account
     (`/v2/voices?voice_ids=…`) and shown by their names only. Each must be added to the
     ElevenLabs account ("Add to my voices"); one it lacks is skipped, and with none of them
-    the picker offers ElevenLabs' defaults. `[{id, name, description, labels, preview_url}]`,
-    description and labels empty, cached for an hour.
+    the picker offers ElevenLabs' defaults. `[{id, name, description, labels, gender,
+    preview_url}]`, description and labels empty, cached for an hour. `gender` is ElevenLabs'
+    own label when the voice has one, else `CURATED_VOICE_GENDERS` (Veda, Amanda, Chelsea and
+    Hope are women's voices). The voice listed as Jon is shown as Simeon since 8 October 2026
+    (`SIMEON_VOICE_ID`): the Chief of Staff's own.
+- Each agent's own voice (8 October 2026; the founder: "each agent should be assigned a
+  different voice … named like a woman, like Maya, default to a woman voice, not always the
+  same, and vice versa for men"). An agent with no voice gets one the first time it needs it
+  (a call, or its voice picker) and keeps it (`assignedVoice` in
+  `electron-main/voice/voice-call-service.ts`, saved through `updateAgent` like a picked
+  one). `pickAgentVoice` (`shared/voice-call/agent-voices.ts`) gives the Chief of Staff the
+  Simeon voice and no one else; any other agent the voice fewest agents have among those of
+  its name's gender, from the voices the account has. A name's gender comes from the US
+  Social Security baby-name counts (`shared/voice-call/name-genders.ts`: a name is a woman's or
+  a man's when at least 85% of those given it were; Jordan or Taylor are neither, and get any
+  voice). Between equally free voices the agent's id decides, so agents hired together differ.
+  Until then every agent without a picked voice spoke as Michael. The four women's voices are
+  spread over the first four women before one repeats. `tests/agent-voices.test.mjs`,
+  `tests/voice-call-lifecycle.test.mjs`.
 - Price: `VOICE_CALL_MODEL` in `server/simeon/desktop/pricing.py`, by the second, at $0.08 a
   minute times a 1.25 margin (`VOICE_CALL_MARGIN`): about 33,000 credits a minute. Usage rows
   carry provider `elevenlabs`.

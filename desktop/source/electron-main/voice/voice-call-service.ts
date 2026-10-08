@@ -25,6 +25,8 @@ import {
   VOICE_CALL_DEFAULT_VOICE_ID,
 } from "../../shared/voice-call/voice-call-prompt.js";
 import { CONVERSATION_ID_PATTERN, type VoiceCallApi, type VoiceOption } from "./voice-call-api.js";
+import { pickAgentVoice } from "../../shared/voice-call/agent-voices.js";
+import { isChiefOfStaffTitle } from "../../shared/agents/chief-of-staff.js";
 
 export interface VoiceCallLegs extends CallChannelLegs {
   appendSendMessage(args: { readonly agentId: string; readonly message: { readonly type: "text"; readonly content: string } }): Promise<unknown>;
@@ -268,12 +270,14 @@ export function createVoiceCallService(options: VoiceCallServiceOptions): VoiceC
     catch (error) { options.log(`connect: the person's name could not be read: ${errorText(error)}`); }
     if (call !== active || active.isFinished) return { ok: false, message: CALL_STATUS_COULD_NOT_CONNECT };
     active.personName = personName;
+    const voiceId = await assignedVoice(active.agentId, row);
+    if (call !== active || active.isFinished) return { ok: false, message: CALL_STATUS_COULD_NOT_CONNECT };
     const name = text(row?.name).trim() || active.hintName || "your agent";
     const overrides = buildVoiceCallOverrides({
       agent: { name, title: text(row?.title), description: text(row?.description) },
       transcript: transcriptLinesFromEntries(entries),
       teammates: teammatesOf(active.agentId),
-      voiceId: storedVoice(active.agentId, row),
+      voiceId,
       pick: random(),
       personName,
     });
@@ -298,6 +302,47 @@ export function createVoiceCallService(options: VoiceCallServiceOptions): VoiceC
     const list = await options.api().listVoices();
     voices = { atMs: now(), list };
     return list;
+  };
+
+  const saveVoice = async (agentId: string, row: Record<string, unknown>, voiceId: string | null): Promise<void> => {
+    await options.legs.updateAgent({
+      id: agentId,
+      profile: { name: text(row.name), description: text(row.description), ...(typeof row.title === "string" ? { title: row.title } : {}), voiceId: voiceId ?? "" },
+    });
+    options.voiceStore.set(agentId, voiceId);
+  };
+
+  /**
+   * The agent's voice, given one now if it has none (8 October 2026): its
+   * name's gender, the voice fewest agents have, Simeon's own for the Chief
+   * of Staff (`shared/voice-call/agent-voices.ts`), saved so it stays. Null
+   * (the default voice) when the voices cannot be listed.
+   */
+  const assignedVoice = async (agentId: string, row: Record<string, unknown> | null): Promise<string | null> => {
+    const stored = storedVoice(agentId, row);
+    if (stored != null || row == null) return stored;
+    let list: VoiceOption[];
+    try { list = await loadVoices(); }
+    catch (error) {
+      options.log(`voice: none given to agent ${agentId}, the voices could not be listed: ${errorText(error)}`);
+      return null;
+    }
+    const taken = roster
+      .filter((other) => typeof other.id === "string" && other.id !== agentId && other.isGroup !== true && other.remoteRoom == null)
+      .map((other) => storedVoice(text(other.id), other))
+      .filter((id): id is string => id != null);
+    const picked = pickAgentVoice({
+      agentId,
+      name: text(row.name),
+      isChiefOfStaff: isChiefOfStaffTitle(text(row.title)),
+      voices: list,
+      takenVoiceIds: taken,
+    });
+    if (picked == null) return null;
+    try { await saveVoice(agentId, row, picked); }
+    catch (error) { options.log(`voice: ${picked} given to agent ${agentId} for now, not saved: ${errorText(error)}`); return picked; }
+    options.log(`voice for agent ${agentId}: ${picked} (given by name, ${taken.length} other agents with voices)`);
+    return picked;
   };
 
   const service: VoiceCallService = {
@@ -402,7 +447,7 @@ export function createVoiceCallService(options: VoiceCallServiceOptions): VoiceC
       const agentId = requireAgentId(agentIdRaw);
       let row: Record<string, unknown> | null = null;
       try { row = await findAgent(agentId); } catch (error) { options.log(`voice: the roster could not be read: ${errorText(error)}`); }
-      const voiceId = storedVoice(agentId, row);
+      const voiceId = await assignedVoice(agentId, row);
       return { voiceId: voiceId ?? VOICE_CALL_DEFAULT_VOICE_ID, isDefault: voiceId == null };
     },
     async setAgentVoice(agentIdRaw, voiceIdRaw) {
@@ -411,11 +456,7 @@ export function createVoiceCallService(options: VoiceCallServiceOptions): VoiceC
       if (voiceId === undefined) throw new Error("That is not a voice id.");
       const row = await findAgent(agentId);
       if (row == null) throw new Error("No such agent.");
-      await options.legs.updateAgent({
-        id: agentId,
-        profile: { name: text(row.name), description: text(row.description), ...(typeof row.title === "string" ? { title: row.title } : {}), voiceId: voiceId ?? "" },
-      });
-      options.voiceStore.set(agentId, voiceId);
+      await saveVoice(agentId, row, voiceId);
       options.log(`voice for agent ${agentId}: ${voiceId ?? "default"}`);
       return { voiceId: voiceId ?? VOICE_CALL_DEFAULT_VOICE_ID, isDefault: voiceId == null };
     },

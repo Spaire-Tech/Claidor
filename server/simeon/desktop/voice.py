@@ -112,6 +112,10 @@ VOICE_TTS_STABILITY = 0.7
 #: agent (`voice_not_found`, the first real call, 30 September 2026).
 VOICE_DEFAULT_VOICE_ID = "ljX1ZrXuDIIRVcmiVSyR"
 
+#: The Chief of Staff's own voice, shown as Simeon (it was listed as Jon).
+#: The app gives it to him and to no other agent (8 October 2026).
+SIMEON_VOICE_ID = "Cz0K1kOv9tD8l0b5Qu53"
+
 #: Eric, one of ElevenLabs' default voices, which every workspace has: the
 #: voice of last resort when none of the founder's voices is in the account.
 VOICE_FALLBACK_VOICE_ID = "cjVigY5qzO86Huf0OWal"
@@ -303,7 +307,9 @@ def agent_config(
 #: makes no sense. should be just names"). Each must be added to the
 #: ElevenLabs account ("Add to my voices"); one the account does not have is
 #: skipped, and with none of them the picker offers ElevenLabs' defaults.
-#: Jessica and Kass left the list on 6 October 2026.
+#: Jessica and Kass left the list on 6 October 2026. Jon is shown as Simeon
+#: since 8 October 2026: it is the Chief of Staff's own voice (the founder:
+#: "Jon is Simeon main default voice").
 CURATED_VOICES: tuple[tuple[str, str], ...] = (
     (VOICE_DEFAULT_VOICE_ID, "Michael"),
     ("1t1EeRixsJrKbiF1zwM6", "Jerry"),
@@ -311,13 +317,30 @@ CURATED_VOICES: tuple[tuple[str, str], ...] = (
     ("s3TPKV1kjDlVtZbl4Ksh", "Adam"),
     ("UgBBYS2sOqTuMpoF3BR0", "Mark"),
     ("6OzrBCQf8cjERkYgzSg8", "Jamal"),
-    ("Cz0K1kOv9tD8l0b5Qu53", "Jon"),
+    (SIMEON_VOICE_ID, "Simeon"),
     ("WI5pMmcGGS32yI7yttoP", "Amanda"),
     ("snyKKuaGYk1VUEh42zbW", "Chris"),
     ("gfRt6Z3Z8aTbpLfexQ7N", "Boyd"),
     ("NHRgOEwqx5WZNClv5sat", "Chelsea"),
     ("5u41aNhyCU6hXOcjPPv0", "Hope"),
 )
+#: Each curated voice's gender, so the app gives an agent whose name is a
+#: woman's a woman's voice and a man's a man's (8 October 2026). ElevenLabs'
+#: own `gender` label wins when the voice carries one.
+CURATED_VOICE_GENDERS: dict[str, str] = {
+    VOICE_DEFAULT_VOICE_ID: "male",  # Michael
+    "1t1EeRixsJrKbiF1zwM6": "male",  # Jerry
+    "XcXEQzuLXRU9RcfWzEJt": "female",  # Veda
+    "s3TPKV1kjDlVtZbl4Ksh": "male",  # Adam
+    "UgBBYS2sOqTuMpoF3BR0": "male",  # Mark
+    "6OzrBCQf8cjERkYgzSg8": "male",  # Jamal
+    SIMEON_VOICE_ID: "male",  # Simeon
+    "WI5pMmcGGS32yI7yttoP": "female",  # Amanda
+    "snyKKuaGYk1VUEh42zbW": "male",  # Chris
+    "gfRt6Z3Z8aTbpLfexQ7N": "male",  # Boyd
+    "NHRgOEwqx5WZNClv5sat": "female",  # Chelsea
+    "5u41aNhyCU6hXOcjPPv0": "female",  # Hope
+}
 VOICES_CACHE_SECONDS = 3600.0
 
 #: ElevenLabs' conversation ids are `conv_` and letters and digits; this
@@ -1018,22 +1041,27 @@ def forget_voices() -> None:
     _voices.clear()
 
 
+def _voice_gender(voice: dict[str, Any]) -> str | None:
+    """ "female" or "male": ElevenLabs' label, else the curated list's."""
+    labels = voice.get("labels")
+    if isinstance(labels, dict):
+        labelled = labels.get("gender")
+        if isinstance(labelled, str) and labelled.lower() in ("female", "male"):
+            return labelled.lower()
+    voice_id = voice.get("voice_id")
+    return CURATED_VOICE_GENDERS.get(voice_id) if isinstance(voice_id, str) else None
+
+
 def _voice_row(voice: dict[str, Any], name: str | None = None) -> dict[str, Any]:
     """A picker row. A curated voice is shown by its name only; ElevenLabs'
-    own description and labels are left out."""
-    if name is not None:
-        return {
-            "id": voice.get("voice_id"),
-            "name": name,
-            "description": None,
-            "labels": {},
-            "preview_url": voice.get("preview_url"),
-        }
+    own description and labels are left out. `gender` lets the app match a
+    voice to an agent's name."""
     return {
         "id": voice.get("voice_id"),
-        "name": voice.get("name"),
+        "name": name if name is not None else voice.get("name"),
         "description": None,
         "labels": {},
+        "gender": _voice_gender(voice),
         "preview_url": voice.get("preview_url"),
     }
 
@@ -1060,7 +1088,7 @@ def curate(voices: list[dict[str, Any]]) -> list[dict[str, Any]]:
     dependencies=[Depends(get_proxy_caller)],
 )
 async def list_voices() -> Response:
-    """The voice picker: `[{id, name, description, labels, preview_url}]`."""
+    """The voice picker: `[{id, name, description, labels, gender, preview_url}]`."""
     if not provider_configured(DesktopProvider.elevenlabs):
         return _not_configured()
     api = client()
