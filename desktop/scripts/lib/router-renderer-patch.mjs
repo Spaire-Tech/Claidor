@@ -2379,9 +2379,11 @@ const PHONE_CALL_SOURCE = [
   "function __simeonPhoneLayer(n){const{openSettings:os,...rest}=n;",
   "S.useEffect(()=>{if(!__simeonPhoneOk||typeof os!==\"function\")return;const hit=e=>__simeonIsPhone(window.innerWidth)&&e.target instanceof Element&&e.target.closest(\".sand-agents-sidebar__account button\")!=null;const stop=e=>{hit(e)&&(e.preventDefault(),e.stopPropagation())};const open=e=>{hit(e)&&(e.preventDefault(),e.stopPropagation(),os(\"general\"))};document.addEventListener(\"pointerdown\",stop,!0);document.addEventListener(\"mousedown\",stop,!0);document.addEventListener(\"click\",open,!0);return()=>{document.removeEventListener(\"pointerdown\",stop,!0);document.removeEventListener(\"mousedown\",stop,!0);document.removeEventListener(\"click\",open,!0)}},[os]);",
   "return p.jsxs(p.Fragment,{children:[p.jsx(__simeonPhoneSheets,{...rest}),p.jsx(__simeonPhoneCall,{})]})}",
-  // Under Settings' General on a phone: Connect apps (the sidebar's button, which the phone's list has no room for) and the mark.
-  "function __simeonPhoneSettingsMore(){const[w,sw]=S.useState(()=>typeof window<\"u\"?window.innerWidth:1280);S.useEffect(()=>{const f=()=>sw(window.innerWidth);window.addEventListener(\"resize\",f);return()=>window.removeEventListener(\"resize\",f)},[]);if(!__simeonIsPhone(w))return null;",
-  "return p.jsxs(\"div\",{className:\"simeon-phone-settings-more\",children:[p.jsxs(\"button\",{type:\"button\",className:\"simeon-phone-settings-row\",onClick:()=>uSe(),children:[p.jsx(\"span\",{className:\"simeon-connect-apps__label\",children:\"Connect apps\"}),p.jsxs(\"span\",{\"aria-hidden\":!0,className:\"simeon-connect-apps__logos\",children:[p.jsx(\"i\",{\"data-app\":\"gmail\"}),p.jsx(\"i\",{\"data-app\":\"calendar\"}),p.jsx(\"i\",{\"data-app\":\"drive\"})]})]}),p.jsxs(\"div\",{className:\"simeon-phone-settings-mark\",children:[p.jsx(sd,{\"aria-hidden\":!0,color:\"blue\",paused:!1,shape:\"cloud\",sizePx:56,state:\"idle\"}),p.jsx(\"b\",{children:\"Simeon\"})]})]})}",
+  // Under Settings' General on a phone: Connect apps (the sidebar's button, which the phone's list has no room for), Sign Out (the
+  // account card's, moved to its own row at the foot as in the founder's screenshots, so the e-mail fits: "you're in mobile CLAUDE.
+  // why is the writing so big that you can't fit bass@simeon") and the mark.
+  "function __simeonPhoneSettingsMore(){const auth=Ctt(),[w,sw]=S.useState(()=>typeof window<\"u\"?window.innerWidth:1280);S.useEffect(()=>{const f=()=>sw(window.innerWidth);window.addEventListener(\"resize\",f);return()=>window.removeEventListener(\"resize\",f)},[]);if(!__simeonIsPhone(w))return null;",
+  "return p.jsxs(\"div\",{className:\"simeon-phone-settings-more\",children:[p.jsxs(\"button\",{type:\"button\",className:\"simeon-phone-settings-row\",onClick:()=>uSe(),children:[p.jsx(\"span\",{className:\"simeon-connect-apps__label\",children:\"Connect apps\"}),p.jsxs(\"span\",{\"aria-hidden\":!0,className:\"simeon-connect-apps__logos\",children:[p.jsx(\"i\",{\"data-app\":\"gmail\"}),p.jsx(\"i\",{\"data-app\":\"calendar\"}),p.jsx(\"i\",{\"data-app\":\"drive\"})]})]}),auth?.status?.kind===\"logged-in\"?p.jsx(\"button\",{type:\"button\",className:\"simeon-phone-settings-row simeon-phone-settings-row--danger\",onClick:()=>{Promise.resolve(auth.logout()).catch(()=>{})},children:\"Sign Out\"}):null,p.jsxs(\"div\",{className:\"simeon-phone-settings-mark\",children:[p.jsx(sd,{\"aria-hidden\":!0,color:\"blue\",paused:!1,shape:\"cloud\",sizePx:56,state:\"idle\"}),p.jsx(\"b\",{children:\"Simeon\"})]})]})}",
   "typeof globalThis<\"u\"&&(globalThis.__simeonPhoneSettingsMore=__simeonPhoneSettingsMore);",
 ].join("");
 const PHONE_SIDEBAR_OPEN_BEFORE = "function DCe(n,e){return n.isCollapsed||can(n,e)}";
@@ -2470,6 +2472,9 @@ html[data-simeon-phone] .sand-settings-panel__close{position:fixed!important;top
 html[data-simeon-phone] .sand-settings-panel__body{padding-top:70px}
 html[data-simeon-phone] .sand-settings-pane{padding:0!important}
 html[data-simeon-phone] .sand-settings-general{width:auto!important;max-width:none!important;padding:0 12px 8px!important;zoom:1.15}
+html[data-simeon-phone] .sand-account-card__action{display:none!important}
+html[data-simeon-phone] .sand-account-card__body{flex:1 1 auto!important;min-width:0!important;max-width:none!important}
+html[data-simeon-phone] .sand-account-card__meta,html[data-simeon-phone] .sand-account-card__id{max-width:none!important}
 }
 /* The + menu and its sheets: the Mac's menu card and the window's own tokens, at a phone's size. */
 @keyframes simeon-phone-fade{from{opacity:0}}
@@ -2517,6 +2522,7 @@ html[data-simeon-phone="list"] .simeon-call-chip{all:unset;box-sizing:border-box
 .simeon-phone-settings-more{display:grid;gap:18px;padding:18px 16px 32px}
 .simeon-phone-settings-row{all:unset;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:58px;padding:0 18px;border-radius:16px;background:var(--sand-bg-elevated);box-shadow:0 0 0 .5px var(--sand-border-default);font-size:17px;color:var(--sand-text-primary);cursor:default}
 .simeon-phone-settings-row .simeon-connect-apps__logos{order:0}
+.simeon-phone-settings-row--danger{color:var(--sand-text-danger)}
 .simeon-phone-settings-mark{display:grid;justify-items:center;gap:8px;padding-top:8px;color:var(--sand-text-primary);font-size:20px}
 /* The call on a phone: the Mac banner's card (banner.css) as a pill, and full screen. */
 :root{--simeon-call-card:#ffffff;--simeon-call-shadow:inset 0 1px 0 rgba(255,255,255,.85),0 0 0 .5px rgba(0,0,0,.08),0 18px 40px -14px rgba(0,0,0,.28),0 4px 10px -4px rgba(0,0,0,.12)}

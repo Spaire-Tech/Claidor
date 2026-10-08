@@ -318,6 +318,9 @@ test("the phone's top, Settings, search, the agent's page and the call's time on
   assert.match(source, /os\("general"\)/);
   assert.match(source, /onClick:\(\)=>uSe\(\),children:\[p\.jsx\("span",\{className:"simeon-connect-apps__label",children:"Connect apps"\}\)/, "Connect apps in Settings: the sidebar's button and the window's own opener");
   assert.match(source, /globalThis\.__simeonPhoneSettingsMore=__simeonPhoneSettingsMore/);
+  assert.match(source, /className:"simeon-phone-settings-row simeon-phone-settings-row--danger",onClick:\(\)=>\{Promise\.resolve\(auth\.logout\(\)\)/, "Sign Out on its own row at the foot, the account's own sign-out");
+  assert.match(phoneBlock, /\.sand-account-card__action\{display:none!important\}/, "not beside the e-mail, which then fits");
+  assert.match(phoneBlock, /\.sand-account-card__body\{flex:1 1 auto!important;min-width:0!important;max-width:none!important\}/);
   const general = PHONE_SETTINGS_PANEL_REPLACEMENTS[0][1];
   assert.match(patchOriginalPhoneSettingsPanel(`x;${general};y`), /a\.jsx\(Sa,\{auth:t\},"general"\),a\.jsx\(globalThis\.__simeonPhoneSettingsMore\?\?\(\(\)=>null\),\{\},"simeon-phone-more"\)/, "under General, nothing on the Mac");
   assert.match(source, /className:\\?"simeon-call-chip\\?"|className:"simeon-call-chip"/, "the call's time");

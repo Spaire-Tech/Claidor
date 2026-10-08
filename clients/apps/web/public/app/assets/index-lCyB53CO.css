@@ -630,6 +630,9 @@ html[data-simeon-phone] .sand-settings-panel__close{position:fixed!important;top
 html[data-simeon-phone] .sand-settings-panel__body{padding-top:70px}
 html[data-simeon-phone] .sand-settings-pane{padding:0!important}
 html[data-simeon-phone] .sand-settings-general{width:auto!important;max-width:none!important;padding:0 12px 8px!important;zoom:1.15}
+html[data-simeon-phone] .sand-account-card__action{display:none!important}
+html[data-simeon-phone] .sand-account-card__body{flex:1 1 auto!important;min-width:0!important;max-width:none!important}
+html[data-simeon-phone] .sand-account-card__meta,html[data-simeon-phone] .sand-account-card__id{max-width:none!important}
 }
 /* The + menu and its sheets: the Mac's menu card and the window's own tokens, at a phone's size. */
 @keyframes simeon-phone-fade{from{opacity:0}}
@@ -677,6 +680,7 @@ html[data-simeon-phone="list"] .simeon-call-chip{all:unset;box-sizing:border-box
 .simeon-phone-settings-more{display:grid;gap:18px;padding:18px 16px 32px}
 .simeon-phone-settings-row{all:unset;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:58px;padding:0 18px;border-radius:16px;background:var(--sand-bg-elevated);box-shadow:0 0 0 .5px var(--sand-border-default);font-size:17px;color:var(--sand-text-primary);cursor:default}
 .simeon-phone-settings-row .simeon-connect-apps__logos{order:0}
+.simeon-phone-settings-row--danger{color:var(--sand-text-danger)}
 .simeon-phone-settings-mark{display:grid;justify-items:center;gap:8px;padding-top:8px;color:var(--sand-text-primary);font-size:20px}
 /* The call on a phone: the Mac banner's card (banner.css) as a pill, and full screen. */
 :root{--simeon-call-card:#ffffff;--simeon-call-shadow:inset 0 1px 0 rgba(255,255,255,.85),0 0 0 .5px rgba(0,0,0,.08),0 18px 40px -14px rgba(0,0,0,.28),0 4px 10px -4px rgba(0,0,0,.12)}
