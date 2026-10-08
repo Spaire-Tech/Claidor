@@ -171,7 +171,7 @@ struct AgentRow: View {
   private var line: String {
     if agent.isBusy, let activity = agent.activityLabel { return activity }
     if agent.isComposing { return "Typing…" }
-    return agent.lastMessagePreview ?? agent.description
+    return agent.previewLine
   }
 }
 

@@ -404,20 +404,24 @@ struct AirlineMark: View {
   let name: String
   let logo: String
   var size: CGFloat = 36
+  @State private var image: UIImage?
 
   var body: some View {
     ZStack {
       Circle().fill(Color.white)
-      if let url = URL(string: logo), !logo.isEmpty {
-        AsyncImage(url: url) { phase in
-          if let image = phase.image { image.resizable().scaledToFit().frame(width: size * 0.61, height: size * 0.61) } else { initials }
-        }
+      // The airline's own logo (an SVG from the offer, drawn by RemoteLogos), else its initials, as the Mac's card falls back.
+      if let image {
+        Image(uiImage: image).resizable().scaledToFit().frame(width: size * 0.61, height: size * 0.61)
       } else {
         initials
       }
     }
     .frame(width: size, height: size)
     .overlay(Circle().stroke(Color.black.opacity(0.12), lineWidth: 0.5))
+    .task(id: logo) {
+      guard let url = URL(string: logo), !logo.isEmpty else { return }
+      image = await RemoteLogos.shared.image(for: url)
+    }
   }
 
   private var initials: some View {

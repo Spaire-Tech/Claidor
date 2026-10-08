@@ -53,6 +53,10 @@ public struct Agent: Identifiable, Hashable, Sendable {
   public var activityDetail: String?
   /** The id of the chat's newest message (`lastMessageId`): when it changes and the open chat lacks it, the chat is fetched again. */
   public var lastMessageId: String?
+  /** The chat's last line as the host sums it up (`lastEntry`: text, a link, or attachments). */
+  public var lastEntry: JSON?
+  /** Why the agent waits on the person (`awaitingUserResponse.reason`). */
+  public var waitingReason: String?
 
   public init(id: String, name: String, title: String = "", description: String = "", colour: String? = nil, avatarDataURL: String? = nil, isGroup: Bool = false, memberIds: [String] = [], lastMessagePreview: String? = nil, lastActivityAt: Double? = nil, hasUnread: Bool = false, unreadCount: Int = 0, isRunningTurn: Bool = false, isComposing: Bool = false, activityLabel: String? = nil, isHidden: Bool = false) {
     self.id = id; self.name = name; self.title = title; self.description = description; self.colour = colour
@@ -90,12 +94,91 @@ public struct Agent: Identifiable, Hashable, Sendable {
     activityTool = json["currentActivity"]?["tool"]?.text
     activityDetail = json["currentActivity"]?["detail"]?.text
     lastMessageId = json["lastMessageId"]?.text
+    if let entry = json["lastEntry"], entry != .null { lastEntry = entry }
+    waitingReason = json["awaitingUserResponse"]?["reason"]?.text
   }
 
   /** The agent's palette: its stored colour, else the window's default for its id. */
   public var palette: AgentPalette { AgentPalette.named(colour ?? AgentPalette.defaultColour(forAgentId: id)) }
   /** The agent is working: the window's typing dots. */
   public var isBusy: Bool { isRunningTurn || isComposing }
+}
+
+extension Agent {
+  /**
+   * The list row's second line, as the Mac's sidebar writes it
+   * (`sidebar.tsx`, `previewTextFromLastEntry`): "Waiting for you: …" when
+   * the agent waits on the person, else the last line with its Markdown
+   * taken out, "Sent a link · …", or "Sent 2 images".
+   */
+  public var previewLine: String {
+    if awaitingUserResponse, let reason = waitingReason, !reason.isEmpty { return "Waiting for you: \(reason)" }
+    if let entry = lastEntry, let line = Preview.line(entry), !line.isEmpty { return line }
+    if let preview = lastMessagePreview { return Preview.plain(preview) }
+    return description
+  }
+}
+
+/** The Mac's preview text (`sidebar-agent-preview-content.tsx`). */
+public enum Preview {
+  public static func line(_ entry: JSON) -> String? {
+    switch entry["kind"]?.string {
+    case "link": return entry["url"]?.text.map { "Sent a link · \($0)" }
+    case "attachment": return attachments(count: entry["count"]?.int ?? 1, kinds: entry["kinds"]?.object ?? [:])
+    case "text": return entry["text"]?.string.map(plain)
+    default: return nil
+    }
+  }
+
+  /** The window's Markdown replacements, in its order, then the spaces run together. */
+  static let replacements: [(NSRegularExpression, String)] = ([
+    ("`+", ""),
+    (#"!\[([^\]]*)\]\([^)]*\)"#, "$1"),
+    (#"\[([^\]]+)\]\([^)]*\)"#, "$1"),
+    (#"\$\$((?:[^$\\]|\\[\s\S])+?)\$\$"#, "$1"),
+    (#"\\\(([\s\S]+?)\\\)"#, "$1"),
+    (#"\\\[([\s\S]+?)\\\]"#, "$1"),
+    (#"\\\$"#, "\\$"),
+    (#"(?m)^\s{0,3}#{1,6}\s+"#, ""),
+    (#"(?m)^\s{0,3}>\s?"#, ""),
+    (#"(?m)^\s{0,3}(?:[-*+]|\d+[.)])\s+"#, ""),
+    (#"\*\*([^*]+)\*\*"#, "$1"),
+    ("__([^_]+)__", "$1"),
+    ("~~([^~]+)~~", "$1"),
+    (#"\*([^*\n]+)\*"#, "$1"),
+    (#"(?<!\w)_([^_\n]+)_(?!\w)"#, "$1"),
+    (#"\|"#, " "),
+  ] as [(String, String)]).map { (try! NSRegularExpression(pattern: $0.0), $0.1) }
+
+  public static func plain(_ markdown: String) -> String {
+    var text = markdown
+    for (pattern, template) in replacements {
+      text = pattern.stringByReplacingMatches(in: text, range: NSRange(text.startIndex..., in: text), withTemplate: template)
+    }
+    return text.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+  }
+
+  static let labels: [String: (String, String)] = [
+    "image": ("image", "images"), "video": ("video", "videos"), "audio": ("audio file", "audio files"), "pdf": ("PDF", "PDFs"),
+    "markdown": ("Markdown file", "Markdown files"), "table": ("spreadsheet", "spreadsheets"), "json": ("JSON file", "JSON files"),
+    "text": ("text file", "text files"), "document": ("document", "documents"), "archive": ("archive", "archives"), "file": ("file", "files"),
+  ]
+
+  static func label(_ kind: String, _ count: Int) -> String {
+    let words = labels[kind] ?? labels["file"]!
+    return "\(count) \(count == 1 ? words.0 : words.1)"
+  }
+
+  static func attachments(count: Int, kinds: [String: JSON]) -> String {
+    let total = max(1, count)
+    let present = kinds.compactMap { key, value -> (String, Int)? in
+      guard let n = value.int, n > 0 else { return nil }
+      return (labels[key] == nil ? "file" : key, n)
+    }.sorted { $0.0 < $1.0 }
+    if present.isEmpty { return "Sent \(label("file", total))" }
+    if present.count == 1 { return "Sent \(label(present[0].0, total))" }
+    return "Sent \(label("file", total)) · " + present.map { label($0.0, $0.1) }.joined(separator: ", ")
+  }
 }
 
 /** The roster in the list's order: newest activity first, hidden agents left out (`sortRoster`). */

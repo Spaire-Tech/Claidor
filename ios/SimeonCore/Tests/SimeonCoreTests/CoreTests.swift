@@ -775,6 +775,17 @@ final class MarkdownTests: XCTestCase {
     XCTAssertEqual(bubbles[2].quote, "(deleted)")
     XCTAssertEqual(Chat.quoteLine(entries[0], limit: 10), "Thursday i…")
   }
+  func testTheListLineIsTheMacs() {
+    XCTAssertEqual(Preview.plain("See [the doc](https://simeonlabs.com/doc) and **Stripe**: `refund` done.\n\n- one\n- two"), "See the doc and Stripe: refund done. one two")
+    XCTAssertEqual(Preview.plain("## Heading\n> quoted ~~old~~ _new_"), "Heading quoted old new")
+    XCTAssertEqual(Preview.line(["kind": "link", "url": "https://x.com"]), "Sent a link · https://x.com")
+    XCTAssertEqual(Preview.line(["kind": "attachment", "count": 2, "kinds": ["image": 2]]), "Sent 2 images")
+    XCTAssertEqual(Preview.line(["kind": "attachment", "count": 3, "kinds": ["image": 2, "pdf": 1]]), "Sent 3 files · 2 images, 1 PDF")
+    var agent = Agent(id: "a", name: "A", lastMessagePreview: "Here is [the link](https://x.com)")
+    XCTAssertEqual(agent.previewLine, "Here is the link")
+    agent.awaitingUserResponse = true; agent.waitingReason = "Approve the refund"
+    XCTAssertEqual(agent.previewLine, "Waiting for you: Approve the refund")
+  }
 }
 
 /** A host that answers without streaming anything: only fetches show what it holds. */
