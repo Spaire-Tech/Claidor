@@ -124,6 +124,17 @@ public final class AppStore {
   public private(set) var pendingAnswers: [String: String] = [:]
   /** Where the "New" line goes in each chat: after this time (ms), set when a chat with unread messages opens. */
   public private(set) var unreadAfter: [String: Double] = [:]
+  /** What the person has typed and not sent, by chat: kept on the phone, shown in the list as "Draft: …" (the Mac's `draftPrompt`). */
+  public private(set) var drafts: [String: String] = (UserDefaults.standard.dictionary(forKey: AppStore.draftsKey) as? [String: String]) ?? [:]
+  static let draftsKey = "simeon.drafts"
+
+  public func setDraft(_ text: String, for agentId: String) {
+    let kept = text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : text
+    guard drafts[agentId] != kept else { return }
+    drafts[agentId] = kept
+    UserDefaults.standard.set(drafts, forKey: Self.draftsKey)
+  }
+
   /** Connected apps, as the box's manager lists them (`desktopMcp listServers`), and the catalog to add more from. */
   public private(set) var apps: [ConnectedApp] = []
   public private(set) var catalog: [CatalogApp] = []

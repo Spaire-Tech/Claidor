@@ -337,6 +337,14 @@ struct ChatComposer: View {
     .composerPicker(isPresented: $picking) { picked in attachments.append(contentsOf: picked) }
     .onChange(of: dictation.problem) { _, problem in if let problem { store.problem = problem } }
     .onChange(of: reply?.target?.id) { _, id in if id != nil { typing = true } }
+    // The unsent draft stays with its chat, as on the Mac.
+    .onAppear { if draft.isEmpty, let kept = store.drafts[agentId] { draft = kept } }
+    // Saved when typing pauses, not per letter (the list redraws on a save).
+    .task(id: draft) {
+      try? await Task.sleep(nanoseconds: 600_000_000)
+      if !Task.isCancelled { store.setDraft(draft, for: agentId) }
+    }
+    .onDisappear { store.setDraft(draft, for: agentId) }
   }
 
   static func replyLine(_ bubble: Bubble) -> String {

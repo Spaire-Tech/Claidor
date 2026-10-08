@@ -142,6 +142,7 @@ struct HomeView: View {
 struct AgentRow: View {
   let agent: Agent
   let members: [Agent]
+  @Environment(AppStore.self) private var store
 
   var body: some View {
     HStack(alignment: .center, spacing: 12) {
@@ -168,9 +169,11 @@ struct AgentRow: View {
     .padding(.vertical, 4)
   }
 
+  /** The Mac sidebar's order: what it is doing while it works, else your unsent draft, else "Waiting for you: …" or the last line. */
   private var line: String {
     if agent.isBusy, let activity = agent.activityLabel { return activity }
     if agent.isComposing { return "Typing…" }
+    if let draft = store.drafts[agent.id] { return "Draft: " + draft.split(whereSeparator: \.isWhitespace).joined(separator: " ") }
     return agent.previewLine
   }
 }
