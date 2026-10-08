@@ -828,6 +828,22 @@ final class MarkdownTests: XCTestCase {
   /** The demo answers a command, then sends its event, as the host does: give the event its turn. */
   private func settle() async throws { try await Task.sleep(nanoseconds: 60_000_000) }
 
+  func testALongMessageIsCutForDrawing() {
+    let short = Chat.clipped("Hello", limit: 3_000)
+    XCTAssertEqual(short.text, "Hello"); XCTAssertFalse(short.clipped)
+    let lines = (1...400).map { "Line \($0) of the report." }.joined(separator: "\n")
+    let cut = Chat.clipped(lines, limit: 3_000)
+    XCTAssertTrue(cut.clipped)
+    XCTAssertLessThanOrEqual(cut.text.count, 3_001)
+    XCTAssertTrue(cut.text.hasSuffix("of the report."), "cut at a line break near the limit")
+    let blob = String(repeating: "A", count: 2_000_000)
+    XCTAssertEqual(Chat.clipped(blob, limit: 3_000).text.count, 3_001)
+    let code = Chat.clippedCode((1...500).map { _ in String(repeating: "x", count: 5_000) }.joined(separator: "\n"), lines: 200, width: 1_000)
+    XCTAssertTrue(code.clipped)
+    XCTAssertEqual(code.text.split(separator: "\n").count, 200)
+    XCTAssertEqual(code.text.split(separator: "\n").first?.count, 1_001)
+  }
+
   func testARepeatedLineIsDrawnOnce() {
     let line: JSON = ["kind": "message", "id": "m1", "role": "assistant", "content": "Hello", "timestampMs": 1_000]
     let rows = Chat.rows([line, line].compactMap(Entry.init))

@@ -164,7 +164,8 @@ public enum Preview {
   private static let plainCache = LockedBox<[String: String]>([:])
 
   static func strip(_ markdown: String) -> String {
-    var text = markdown
+    // The list shows one line: the first couple of thousand characters are plenty, and a message of megabytes is not run through sixteen patterns.
+    var text = markdown.count > 2_000 ? String(markdown.prefix(2_000)) : markdown
     for (pattern, template) in replacements {
       text = pattern.stringByReplacingMatches(in: text, range: NSRange(text.startIndex..., in: text), withTemplate: template)
     }

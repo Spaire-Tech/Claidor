@@ -191,6 +191,37 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
     }
   }
 
+  /** The row's kind in a word, for the hang watch ("bubble", "flights", "table"…). */
+  public var kind: String {
+    switch self {
+    case .stamp: return "stamp"
+    case .unread: return "new-line"
+    case .bubble(let bubble): return bubble.fromPerson ? "yours" : "bubble"
+    case .flights: return "flights"
+    case .file: return "file"
+    case .question: return "question"
+    case .draft: return "draft"
+    case .connectors: return "connectors"
+    case .listenerConnect: return "listener"
+    case .request: return "request"
+    case .teammates: return "teammates"
+    case .voiceCall: return "call"
+    case .routines: return "routines"
+    case .notice: return "notice"
+    case .failedSend: return "failed"
+    }
+  }
+
+  /** How much text the row carries (bytes): the hang watch names the longest. */
+  public var size: Int {
+    switch self {
+    case .bubble(let bubble): return bubble.text.utf8.count
+    case .draft(_, let card): return card.body.utf8.count
+    case .notice(_, let text): return text.utf8.count
+    default: return 0
+    }
+  }
+
   /** Whose side the row sits on, for spacing runs: the person, an agent, or the middle. */
   public var side: Side {
     switch self {
@@ -241,6 +272,32 @@ public struct Bubble: Hashable, Sendable {
 }
 
 public enum Chat {
+  /**
+   * A long text cut for drawing (the Mac folds a message past 664 pt behind
+   * "Show more"): at most `limit` characters, at the last line break in its
+   * final fifth when there is one; whether anything was left out.
+   */
+  public static func clipped(_ text: String, limit: Int) -> (text: String, clipped: Bool) {
+    guard text.utf8.count > limit, text.count > limit else { return (text, false) }
+    let end = text.index(text.startIndex, offsetBy: limit)
+    let head = text[..<end]
+    if let lineBreak = head.lastIndex(of: "\n"), text.distance(from: text.startIndex, to: lineBreak) > limit * 4 / 5 {
+      return (String(text[..<lineBreak]), true)
+    }
+    return (String(head) + "…", true)
+  }
+
+  /** A code block as drawn: at most `lines` lines, each at most `width` characters (a code block does not wrap, so one long line is laid out whole). */
+  public static func clippedCode(_ text: String, lines: Int, width: Int) -> (text: String, clipped: Bool) {
+    var clipped = false
+    var out: [Substring] = []
+    for line in text.split(separator: "\n", omittingEmptySubsequences: false) {
+      if out.count == lines { clipped = true; break }
+      if line.count > width { out.append(line.prefix(width) + "…"); clipped = true } else { out.append(line) }
+    }
+    return (out.joined(separator: "\n"), clipped)
+  }
+
   /** A new stamp after a quarter of an hour without a line, or on a new day (the window's `zIn`, `OIn = 900 s`). */
   public static let stampGap: TimeInterval = 15 * 60
   public static let notShown = "This message can't be shown in this version of Simeon."

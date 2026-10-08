@@ -1026,7 +1026,8 @@ struct ExchangeSheet: View {
             VStack(alignment: mine ? .trailing : .leading, spacing: 3) {
               Text(mine ? "\(agent?.name ?? "") to \(entry.toAgent?.name ?? "")" : "\(entry.fromAgent?.name ?? "")")
                 .font(.system(size: 12)).foregroundStyle(Ink.secondary).padding(.horizontal, 12)
-              MarkdownView(blocks: Markdown.cachedBlocks(entry.content ?? ""), mentioning: mentioning)
+              // Cut as the chat's bubbles are: a message of megabytes laid out whole holds the screen still.
+              MarkdownView(blocks: Markdown.cachedBlocks(Chat.clipped(entry.content ?? "", limit: 20_000).text), mentioning: mentioning)
                 .foregroundStyle(Ink.theirsText)
                 .padding(.horizontal, 12).padding(.vertical, 8)
                 .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 18, style: .continuous))

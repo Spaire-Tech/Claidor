@@ -317,15 +317,28 @@ struct MarkdownList: View {
 /** A fenced block: monospaced on the field's white, a hairline edge, sideways scrolling, Copy in its menu. */
 struct CodeBlockView: View {
   let text: String
+  @State private var expanded = false
 
   var body: some View {
+    // A code block does not wrap, so it is laid out whole: 200 lines of at most 1,000 characters each (2,000 lines open).
+    let shown = Chat.clippedCode(text, lines: expanded ? 2_000 : 200, width: 1_000)
+    VStack(alignment: .leading, spacing: 0) {
     ScrollView(.horizontal, showsIndicators: false) {
-      Text(text)
+      Text(shown.text)
         .font(.system(size: 13, design: .monospaced))
         .foregroundStyle(Ink.theirsText)
         .lineSpacing(3)
         .fixedSize(horizontal: true, vertical: true)
         .padding(.horizontal, 12).padding(.vertical, 6)
+    }
+    if shown.clipped || expanded {
+      Button { expanded.toggle() } label: {
+        Text(expanded ? "Show less" : "Show more").font(.system(size: 12, weight: .medium)).foregroundStyle(Ink.secondary)
+          .padding(.horizontal, 12).padding(.bottom, 8).padding(.top, 2)
+          .contentShape(.rect)
+      }
+      .buttonStyle(.plain)
+    }
     }
     .frame(maxWidth: .infinity, alignment: .leading)
     .background(Ink.field, in: RoundedRectangle(cornerRadius: 10, style: .continuous))

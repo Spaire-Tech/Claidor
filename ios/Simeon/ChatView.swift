@@ -130,7 +130,7 @@ struct ChatMessages: View {
     let all = store.rows(for: agentId)
     let rows = all.count > window ? Array(all.suffix(window)) : all
     let hidden = all.count - rows.count
-    let _ = Trace.mark("drawing \(agentId), \(rows.count) of \(all.count) rows")
+    let _ = Trace.mark("drawing \(agentId), \(rows.count) of \(all.count) rows (\(Dictionary(grouping: rows, by: \.kind).map { "\($0.value.count) \($0.key)" }.sorted().joined(separator: ", "))), the longest \(rows.map(\.size).max() ?? 0) bytes")
     ScrollViewReader { reader in
       ScrollView {
         LazyVStack(alignment: .leading, spacing: 0) {
@@ -614,6 +614,11 @@ struct BubbleView: View {
   @Environment(\.jumpToMessage) private var jump
   @Environment(ReplyDraft.self) private var reply: ReplyDraft?
   @State private var reacting: Set<String> = []
+  /** Show more on a long message (the Mac folds one past 664 pt). */
+  @State private var expanded = false
+
+  /** What is drawn of the message: 3,000 characters folded, 40,000 open. A message of megabytes (a file or an image pasted as text) laid out whole held the screen still for minutes. */
+  private var shown: (text: String, clipped: Bool) { Chat.clipped(bubble.text, limit: expanded ? 40_000 : 3_000) }
 
   /** The window's reaction row (`dGe`). */
   private static let quickReactions = ["👍", "👎", "❤️", "😂", "🎉", "😮"]
@@ -663,26 +668,48 @@ struct BubbleView: View {
   @ViewBuilder
   private var content: some View {
     let maxWidth = ChatMetrics.bubbleMax(width - (inGroup && !bubble.fromPerson ? 30 : 0))
+    let shown = shown
     if bubble.isLoneEmoji {
       Text(bubble.text.trimmingCharacters(in: .whitespacesAndNewlines)).font(.system(size: 32))
     } else if bubble.fromPerson {
-      Text(bubble.text)
-        .font(.system(size: MessageType.size))
-        .lineSpacing(MessageType.spacing(lineHeight: MessageType.mineLineHeight))
-        .foregroundStyle(Ink.mineText)
-        .fixedSize(horizontal: false, vertical: true)
+      VStack(alignment: .trailing, spacing: 6) {
+        Text(shown.text)
+          .font(.system(size: MessageType.size))
+          .lineSpacing(MessageType.spacing(lineHeight: MessageType.mineLineHeight))
+          .foregroundStyle(Ink.mineText)
+          .fixedSize(horizontal: false, vertical: true)
+        if shown.clipped || expanded { more(light: true) }
+      }
         .padding(.horizontal, 15).padding(.vertical, 10)
         .background(Ink.bubbleMine, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .frame(maxWidth: maxWidth, alignment: .trailing)
     } else {
-      MarkdownView(blocks: Markdown.cachedBlocks(bubble.text), mentioning: Mentioning(names: store.mentionNames, personName: store.account?.name, dark: scheme == .dark))
-        .foregroundStyle(Ink.theirsText)
-        .tint(Ink.link)
+      VStack(alignment: .leading, spacing: 6) {
+        MarkdownView(blocks: Markdown.cachedBlocks(shown.text), mentioning: Mentioning(names: store.mentionNames, personName: store.account?.name, dark: scheme == .dark))
+          .foregroundStyle(Ink.theirsText)
+          .tint(Ink.link)
+        if shown.clipped || expanded { more(light: false) }
+      }
         .padding(.horizontal, 12).padding(.vertical, 8)
         .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .modifier(CardEdge(radius: 18))
         .frame(maxWidth: maxWidth, alignment: .leading)
     }
+  }
+
+  /** "Show more" and "Show less", with their chevron (the Mac's fold). */
+  private func more(light: Bool) -> some View {
+    Button { withAnimation(.snappy) { expanded.toggle() } } label: {
+      HStack(spacing: 4) {
+        Text(expanded ? "Show less" : "Show more")
+        Image(systemName: expanded ? "chevron.up" : "chevron.down").font(.system(size: 10, weight: .semibold))
+      }
+      .font(.system(size: 13, weight: .medium))
+      .foregroundStyle(light ? Ink.mineText.opacity(0.85) : Ink.secondary)
+      .padding(.vertical, 4)
+      .contentShape(.rect)
+    }
+    .buttonStyle(.plain)
   }
 
   @ViewBuilder
