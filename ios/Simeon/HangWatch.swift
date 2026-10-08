@@ -34,6 +34,7 @@ enum HangWatch {
         DispatchQueue.main.async { answered.signal() }
         if answered.wait(timeout: .now() + 0.25) == .timedOut {
           let during = Trace.now
+          let before = Trace.tallied
           // Still stuck: say so while it lasts (at 2 s, 5 s, 10 s, then every 10 s), so a freeze that never ends is written too.
           var marks: [Double] = [2, 5, 10]
           while answered.wait(timeout: .now() + 0.5) == .timedOut {
@@ -44,6 +45,10 @@ enum HangWatch {
               Trace.log("[simeon] the screen has stood still \(Int(seconds)) s so far, while \(during) (now: \(Trace.now))")
               if next == 2 || next == 10 {
                 Trace.log("[simeon] the main thread is in:\n" + mainTrace().map { "[simeon]   \($0)" }.joined(separator: "\n"))
+                // What kept happening since the screen stopped: a loop is the counts that climb.
+                let now = Trace.tallied
+                let climbed = now.compactMap { name, count in count - (before[name] ?? 0) > 0 ? (name, count - (before[name] ?? 0)) : nil }.sorted { $0.1 > $1.1 }
+                Trace.log("[simeon] since the screen stopped, \(Int(seconds)) s:\n" + (climbed.isEmpty ? ["[simeon]   nothing of ours ran"] : climbed.prefix(40).map { "[simeon]   \($0.1) × \($0.0)" }).joined(separator: "\n"))
               }
             }
           }

@@ -27,6 +27,7 @@ struct ChatView: View {
   // Each part below reads only what it draws, so typing a letter or the
   // call's waveform ticking redraws that part and not the conversation.
   var body: some View {
+    let _ = Trace.tally("ChatView drawn")
     ChatMessages(agentId: agentId)
       .environment(actions)
       .safeAreaInset(edge: .top, spacing: 0) {
@@ -122,6 +123,7 @@ struct ChatMessages: View {
     let all = store.rows(for: agentId)
     let rows = all.count > window ? Array(all.suffix(window)) : all
     let hidden = all.count - rows.count
+    let _ = Trace.tally("ChatMessages drawn")
     let _ = Trace.mark("drawing \(agentId), \(rows.count) of \(all.count) rows (\(Dictionary(grouping: rows, by: \.kind).map { "\($0.value.count) \($0.key)" }.sorted().joined(separator: ", "))), the longest \(rows.map(\.size).max() ?? 0) bytes")
     ScrollViewReader { reader in
       ScrollView {
@@ -132,6 +134,7 @@ struct ChatMessages: View {
               .frame(maxWidth: .infinity)
               .padding(.vertical, 14)
               .onAppear {
+                Trace.tally("ChatMessages top reached")
                 if hidden > 0 { window += ChatMessages.firstWindow } else { Task { await store.loadOlder(agentId) } }
               }
           }
@@ -139,7 +142,7 @@ struct ChatMessages: View {
             Group {
               if case .unread = row {
                 ChatRowView(row: row, agentId: agentId).equatable()
-                  .onScrollVisibilityChange(threshold: 0.2) { visible in if visible { dividerSeen = true } }
+                  .onScrollVisibilityChange(threshold: 0.2) { visible in Trace.tally("ChatMessages divider seen"); if visible && !dividerSeen { dividerSeen = true } }
               } else {
                 // Equatable: a row is drawn again only when it changed, not each time the chat's own state moves.
                 ChatRowView(row: row, agentId: agentId).equatable()
@@ -161,6 +164,7 @@ struct ChatMessages: View {
       // A quote's tap goes to what it answers. Given to the rows once: handed down as a new closure on every
       // redraw of the chat, it made every bubble draw again each time the chat's own state moved.
       .onAppear {
+        Trace.tally("ChatMessages appeared")
         let lit = glow
         actions?.jump = { id in
           reveal(id) { withAnimation(.snappy) { reader.scrollTo(id, anchor: .center) } }
@@ -174,11 +178,13 @@ struct ChatMessages: View {
       .onScrollGeometryChange(for: Bool.self) { geometry in
         geometry.contentSize.height - geometry.visibleRect.maxY < 120
       } action: { _, bottom in
-        atBottom = bottom
-        if bottom { unseen = 0 }
+        Trace.tally("ChatMessages at-bottom changed")
+        if atBottom != bottom { atBottom = bottom }
+        if bottom && unseen != 0 { unseen = 0 }
       }
       // New rows at the bottom: drawn too (the window grows by them), and counted on the pill when you are reading further up. Older lines loaded at the top are neither.
       .onChange(of: all.last?.id) { old, _ in
+        Trace.tally("ChatMessages last row changed")
         guard let old else { return }
         let now = store.rows(for: agentId)
         guard let from = now.lastIndex(where: { $0.id == old }) else { return }
@@ -216,6 +222,7 @@ struct ChatMessages: View {
     // The chat's width, measured and kept for the rows to cap themselves at. In whole points, and kept only when it moves by
     // one or more: a width that came back a fraction different on each measure would redraw every row, again and again.
     .onGeometryChange(for: CGFloat.self) { ($0.size.width - 32).rounded(.down) } action: { measured in
+      Trace.tally("ChatMessages width measured")
       let next = max(200, measured)
       if abs(next - width) >= 1 { width = next }
     }
@@ -226,6 +233,7 @@ struct ChatMessages: View {
     // The pill for a "New" line above waits until the chat has settled at its end, so a line in view never flashes it.
     .task {
       try? await Task.sleep(nanoseconds: 700_000_000)
+      Trace.tally("ChatMessages settled")
       settled = true
     }
   }
@@ -272,6 +280,7 @@ struct TypingSlot: View {
   @Environment(AppStore.self) private var store
 
   var body: some View {
+    let _ = Trace.tally("TypingSlot drawn")
     if let agent = store.agent(agentId), agent.isBusy {
       TypingRow(agent: agent, step: agent.isGroup ? (agent.activityLabel ?? store.steps[agentId]) : nil)
         .padding(.top, 16)
@@ -295,6 +304,7 @@ struct ChatHeader: View {
   @Environment(AppStore.self) private var store
 
   var body: some View {
+    let _ = Trace.tally("ChatHeader drawn")
     VStack(spacing: 0) {
       ZStack(alignment: .top) {
         if let agent = store.agent(agentId) {
@@ -357,7 +367,7 @@ struct ChatHeader: View {
     .padding(.bottom, 26)
     .background { HeaderGround().allowsHitTesting(false) }
     .animation(.snappy, value: store.call?.agentId)
-    .onChange(of: store.call == nil) { _, gone in if gone { showsCall = false } }
+    .onChange(of: store.call == nil) { _, gone in Trace.tally("ChatHeader call changed"); if gone && showsCall { showsCall = false } }
   }
 }
 
@@ -411,6 +421,7 @@ struct ChatComposer: View {
 
   var body: some View {
     let _ = Trace.mark("drawing the composer of \(agentId), \(draft.count) characters")
+    let _ = Trace.tally("ChatComposer drawn")
     VStack(spacing: 6) {
       if let query = mentionQuery {
         MentionPicker(query: query, chatId: agentId) { name in
@@ -516,16 +527,20 @@ struct ChatComposer: View {
     .padding(.bottom, 8)
     .background(Ink.ground.opacity(0.001))
     .animation(.snappy(duration: 0.2), value: mentionQuery != nil)
-    .onAppear { name = store.agent(agentId)?.name ?? "" }
+    .onAppear {
+      Trace.tally("ChatComposer appeared")
+      let named = store.agent(agentId)?.name ?? ""
+      if name != named { name = named }
+    }
     .composerPicker(isPresented: $picking) { picked in attachments.append(contentsOf: picked) }
-    .onChange(of: dictation.problem) { _, problem in if let problem { store.problem = problem } }
-    .onChange(of: reply?.target?.id) { _, id in if id != nil { typing = true } }
+    .onChange(of: dictation.problem) { _, problem in Trace.tally("ChatComposer dictation problem"); if let problem { store.problem = problem } }
+    .onChange(of: reply?.target?.id) { _, id in Trace.tally("ChatComposer reply changed"); if id != nil { typing = true } }
     // The unsent draft stays with its chat, as on the Mac.
-    .onAppear { if draft.isEmpty, let kept = store.drafts[agentId] { draft = kept } }
+    .onAppear { Trace.tally("ChatComposer draft restored"); if draft.isEmpty, let kept = store.drafts[agentId], kept != draft { draft = kept } }
     // Saved when typing pauses, not per letter (the list redraws on a save).
     .task(id: draft) {
       try? await Task.sleep(nanoseconds: 600_000_000)
-      if !Task.isCancelled { store.setDraft(draft, for: agentId) }
+      if !Task.isCancelled { Trace.tally("ChatComposer draft saved"); store.setDraft(draft, for: agentId) }
     }
     .onDisappear { store.setDraft(draft, for: agentId) }
   }
@@ -560,6 +575,7 @@ struct ChatRowView: View, Equatable {
   private func openComputer() { actions?.openComputer() }
 
   var body: some View {
+    let _ = Trace.tally("row drawn: \(row.kind)")
     switch row {
     case .stamp(_, let date):
       Text(Chat.stampText(date)).font(.system(size: 12)).foregroundStyle(Ink.secondary)
@@ -626,6 +642,7 @@ struct BubbleView: View {
   private static let quickReactions = ["👍", "👎", "❤️", "😂", "🎉", "😮"]
 
   var body: some View {
+    let _ = Trace.tally("BubbleView drawn")
     HStack(alignment: .bottom, spacing: 8) {
       if bubble.fromPerson { Spacer(minLength: 0) }
       if inGroup && !bubble.fromPerson {
@@ -782,6 +799,7 @@ struct TypingRow: View {
   @Environment(AppStore.self) private var store
 
   var body: some View {
+    let _ = Trace.tally("TypingRow drawn")
     if agent.isGroup {
       let members = store.members(of: agent)
       HStack(spacing: 8) {
@@ -820,6 +838,7 @@ struct Arrival: ViewModifier {
       .scaleEffect(shown ? 1 : 0.94, anchor: .bottom)
       .offset(y: shown ? 0 : 12)
       .onAppear {
+        Trace.tally("row appeared")
         guard !shown else { return }
         store.settled(id)
         withAnimation(.timingCurve(0.23, 1, 0.32, 1, duration: 0.24)) { shown = true }
@@ -846,6 +865,7 @@ struct PeekDrag: ViewModifier {
           }
       )
       .onChange(of: pulling) { _, x in
+        Trace.tally("PeekDrag moved")
         if x == 0 { withAnimation(.spring(response: 0.43, dampingFraction: 0.78)) { peek.x = 0 } } else { peek.x = x }
       }
   }
@@ -867,6 +887,7 @@ struct PeekTime: View {
   @Environment(TimePeek.self) private var timePeek: TimePeek?
 
   var body: some View {
+    let _ = Trace.tally("PeekTime drawn")
     if let peek = timePeek, peek.x > 0 {
       Text(Date(timeIntervalSince1970: ms / 1000).formatted(date: .omitted, time: .shortened))
         .font(.system(size: 12, weight: .medium)).monospacedDigit()
@@ -886,6 +907,7 @@ struct Glow: ViewModifier {
   @Environment(JumpGlow.self) private var glow: JumpGlow?
 
   func body(content: Content) -> some View {
+    let _ = Trace.tally("Glow drawn")
     content.overlay {
       if glow?.id == id {
         RoundedRectangle(cornerRadius: 18, style: .continuous)

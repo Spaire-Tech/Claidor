@@ -34,6 +34,7 @@ struct HomeView: View {
   @State private var showsHidden = false
 
   var body: some View {
+    let _ = Trace.tally("HomeView drawn")
     NavigationStack(path: $path) {
       List {
         if !store.pinned.isEmpty {
@@ -158,7 +159,7 @@ struct HomeView: View {
         open(id)
       }
     }
-    .alert(deleting.map { "Delete “\($0.name)”" } ?? "", isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }), presenting: deleting) { agent in
+    .alert(deleting.map { "Delete “\($0.name)”" } ?? "", isPresented: Binding(get: { deleting != nil }, set: { shown in Trace.tally("Delete alert set"); if !shown && deleting != nil { deleting = nil } }), presenting: deleting) { agent in
       Button("Cancel", role: .cancel) {}
       Button("Delete", role: .destructive) {
         Task {
@@ -266,6 +267,7 @@ struct PinGrid<Actions: View>: View {
   private let columns = Array(repeating: GridItem(.fixed(96), spacing: 9.6), count: 3)
 
   var body: some View {
+    let _ = Trace.tally("PinGrid drawn")
     LazyVGrid(columns: columns, alignment: .center, spacing: 14.4) {
       ForEach(pins) { agent in
         Button { open(agent.id) } label: {
@@ -281,7 +283,10 @@ struct PinGrid<Actions: View>: View {
           Task { await store.movePin(moved, to: index) }
           return true
         } isTargeted: { over in
-          target = over ? agent.id : (target == agent.id ? nil : target)
+          Trace.tally("PinGrid drop target")
+          // Only a change is written: written on every call, a call made while the grid was drawn drew it again, and again.
+          let next = over ? agent.id : (target == agent.id ? nil : target)
+          if next != target { target = next }
         }
         .opacity(target == agent.id ? 0.55 : 1)
         .transition(.scale(scale: 0.8).combined(with: .opacity))
@@ -298,6 +303,7 @@ struct PinTile: View {
   let members: [Agent]
 
   var body: some View {
+    let _ = Trace.tally("PinTile drawn")
     VStack(spacing: 4) {
       AgentAvatar(agent: agent, members: members, moves: true)
         .frame(width: 72, height: 72)
@@ -424,6 +430,7 @@ struct AgentRow: View {
   @Environment(AppStore.self) private var store
 
   var body: some View {
+    let _ = Trace.tally("AgentRow drawn")
     HStack(alignment: .center, spacing: 12) {
       AgentAvatar(agent: agent, members: members, moves: true)
         .frame(width: 52, height: 52)
@@ -468,6 +475,7 @@ struct RowTime: View {
   @Environment(AppStore.self) private var store
 
   var body: some View {
+    let _ = Trace.tally("RowTime drawn")
     if let call = store.call, call.agentId == agent.id {
       CallChip(call: call)
     } else if let at = agent.lastActivityAt, at > 0 {
@@ -503,7 +511,8 @@ struct ProblemAlert: ViewModifier {
   @Environment(AppStore.self) private var store
 
   func body(content: Content) -> some View {
-    content.alert("Something went wrong", isPresented: Binding(get: { store.problem != nil }, set: { if !$0 { store.problem = nil } })) {
+    let _ = Trace.tally("ProblemAlert drawn")
+    content.alert("Something went wrong", isPresented: Binding(get: { store.problem != nil }, set: { shown in Trace.tally("ProblemAlert set"); if !shown && store.problem != nil { store.problem = nil } })) {
       Button("OK", role: .cancel) { store.problem = nil }
     } message: {
       Text(store.problem ?? "")

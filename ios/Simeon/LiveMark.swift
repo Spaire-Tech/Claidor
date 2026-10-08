@@ -27,6 +27,7 @@ struct LiveButterfly: View {
 
   var body: some View {
     let moving = !reduceMotion && !resting
+    let _ = Trace.tally("LiveButterfly drawn")
     // At most 60 frames a second, and a butterfly at rest at 30: on a 120 Hz screen each one drew twice as often as the eye needs.
     // Drawn on the main thread, as before 8 October 19:28: drawn off it (`rendersAsynchronously`) from then, chats began to freeze for good as they opened.
     TimelineView(.animation(minimumInterval: state == .idle ? 1.0 / 30 : 1.0 / 60, paused: !moving)) { context in
@@ -37,7 +38,8 @@ struct LiveButterfly: View {
     }
     .task(id: state) {
       guard stillWhenIdle else { return }
-      if state != .idle { resting = false; return }
+      Trace.tally("LiveButterfly state changed")
+      if state != .idle { if resting { resting = false }; return }
       // Back at rest: let the fold and any spin finish, then hold still.
       while !Task.isCancelled && !resting {
         try? await Task.sleep(for: .milliseconds(400))

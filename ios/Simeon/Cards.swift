@@ -109,6 +109,7 @@ struct QuestionCardView: View {
   @FocusState private var typingOwn: Bool
 
   var body: some View {
+    let _ = Trace.tally("QuestionCardView drawn")
     let pending = store.pendingAnswers[entryId]
     let answer = card.answer ?? ((pending?.isEmpty ?? true) ? nil : pending)
     Group {
@@ -680,6 +681,7 @@ struct FileCardView: View {
   private var isImage: Bool { FileKind.images.contains((name as NSString).pathExtension.lowercased()) }
 
   var body: some View {
+    let _ = Trace.tally("FileCardView drawn")
     Group {
       if isImage, let image {
         Image(uiImage: image).resizable().scaledToFit()
@@ -937,7 +939,7 @@ struct PulsingDot: View {
     Circle().fill(active ? Ink.blue : Ink.tertiary).frame(width: 7, height: 7)
       .opacity(active && on ? 0.35 : 1)
       .animation(active ? .easeInOut(duration: 0.9).repeatForever(autoreverses: true) : .default, value: on)
-      .onAppear { on = true }
+      .onAppear { Trace.tally("PulsingDot appeared"); if !on { on = true } }
   }
 }
 
@@ -963,6 +965,7 @@ struct PeerStack: View {
   @Environment(AppStore.self) private var store
 
   var body: some View {
+    let _ = Trace.tally("PeerStack drawn")
     HStack(spacing: -size * 0.375) {
       ForEach(Array(peers.prefix(3).enumerated()), id: \.offset) { _, peer in
         ButterflyView(palette: .named(store.mentionNames.first { $0.id == peer.id }?.colour ?? AgentPalette.defaultColour(forAgentId: peer.id)), style: .still)
@@ -980,6 +983,7 @@ struct TeammatesLine: View {
   @State private var open = false
 
   var body: some View {
+    let _ = Trace.tally("TeammatesLine drawn")
     EventLine {
       Text(exchange.label)
       Button { open = true } label: {

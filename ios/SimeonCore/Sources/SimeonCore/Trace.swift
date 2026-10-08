@@ -15,6 +15,13 @@ public enum Trace {
 
   public static func mark(_ what: String) { step.withLock { $0 = what } }
 
+  private static let tallies = LockedBox<[String: Int]>([:])
+
+  /** One more of `what` (a view drawn, a callback run): during a freeze the hang watch writes what kept happening, so a loop shows as the counts that keep climbing. */
+  public static func tally(_ what: String) { tallies.withLock { $0[what, default: 0] += 1 } }
+
+  public static var tallied: [String: Int] { tallies.withLock { $0 } }
+
   /** Runs `work` and writes its time when it took longer than a frame (16 ms). */
   @discardableResult
   public static func timed<T>(_ what: @autoclosure () -> String, _ work: () throws -> T) rethrows -> T {

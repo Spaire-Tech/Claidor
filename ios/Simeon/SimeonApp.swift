@@ -40,6 +40,7 @@ struct RootView: View {
   @Environment(SessionController.self) private var session
 
   var body: some View {
+    let _ = Trace.tally("RootView drawn")
     switch session.phase {
     case .starting:
       PlainScreen(title: "Simeon", busy: true)

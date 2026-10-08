@@ -264,6 +264,7 @@ struct ButterflyView: View {
   @Environment(\.colorScheme) private var scheme
 
   var body: some View {
+    let _ = Trace.tally("ButterflyView drawn")
     if style == .live, let motion {
       LiveButterfly(palette: palette, state: motion, stillWhenIdle: stillWhenIdle)
     } else {
@@ -285,6 +286,7 @@ struct AgentAvatar: View {
   var moves = false
 
   var body: some View {
+    let _ = Trace.tally("AgentAvatar drawn")
     if agent.isGroup {
       let shown = members.isEmpty ? [agent] : members
       if groupInARow { GroupStack(members: shown) } else { GroupCluster(members: shown) }

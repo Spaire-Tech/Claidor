@@ -109,7 +109,9 @@ was doing (`[simeon] the screen stood still 1840 ms, while laying out ava,
 512 lines`), and any step that took longer than a frame (`[simeon] slow:
 …`). A freeze that lasts two seconds also writes where the main thread is
 stuck, read from its own stack (`[simeon] the main thread is in:` and one
-line per call), again at ten seconds. Copy those lines into the chat to find a lag. Run (⌘R) builds Debug,
+line per call), again at ten seconds, and what of the app's own kept
+happening meanwhile (`[simeon]   48210 × ChatMessages drawn`): a loop is the
+count that climbs. Copy those lines into the chat to find a lag. Run (⌘R) builds Debug,
 which is slower than TestFlight's optimised build; for a fair feel of speed,
 set the scheme's Run to Release (Product → Scheme → Edit Scheme).
 
