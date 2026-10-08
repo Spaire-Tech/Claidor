@@ -34,7 +34,7 @@ test("the Manage plan anchors apply exactly once, and a second pass refuses", as
   assert.match(source, /patchOriginalManagePlan\(patchOriginalVoiceCall\(/);
   assert.match(source, /patchOriginalManagePlanStylesheet\(patchOriginalVoiceCallStylesheet\(/);
   // One provenance row per chunk: the card is the Settings panel's change, not a third row.
-  assert.match(source, /\["panel", panelCandidates\[0\], \(source\) => patchOriginalManagePlanPanel\(patchOriginalSettingsPanel\(source\)\)\]/);
+  assert.match(source, /\["panel", panelCandidates\[0\], \(source\) => (?:\w+\()*patchOriginalManagePlanPanel\(patchOriginalSettingsPanel\(source\)\)\)*\]/);
   assert.doesNotMatch(source, /\["manage-plan", panelCandidates/);
 });
 

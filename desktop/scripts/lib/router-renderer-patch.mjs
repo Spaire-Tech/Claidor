@@ -2254,6 +2254,13 @@ export function patchOriginalSidebarDiscsStylesheet(css) {
  *      page, not in the app.)
  *   4. The chat's way back to the list is one of the Mac's discs at the top
  *      left, until the chat's own phone layout (step 2).
+ *   5. The top's buttons a little larger than the Mac's (the founder, 8
+ *      October 2026: "have the buttons up (search icon, new chat, bf) etc be
+ *      slightly bigger"); BF opens Settings, as a sheet: the Mac's General,
+ *      one column, with Connect apps and the mark under it. The agent's page
+ *      (a tap on its avatar) and search are sheets too: the Mac's own, at a
+ *      phone's size. During a call the list shows the call's time, green,
+ *      beside search and + (the founder's screenshot), and the chat the pill.
  *
  * The screen not shown keeps its full width (so the rows stay wide and the
  * chat keeps its place) and waits beside the screen, hidden: hidden in
@@ -2365,22 +2372,45 @@ const PHONE_CALL_SOURCE = [
   "const muteBtn=cls=>btn(cls,c.isMuted?\"Unmute\":\"Mute\",c.isMuted?\"micoff\":\"mic\",mute,c.isMuted);",
   "const endBtn=cls=>p.jsx(\"button\",{type:\"button\",className:\"simeon-call-end \"+cls,\"aria-label\":\"End\",disabled:c.phase===\"ended\",onClick:end,children:p.jsx(__simeonCallIcon,{name:\"end\"})});",
   "const mark=sz=>p.jsx(sd,{\"aria-hidden\":!0,color:c.agentColor??\"blue\",paused:c.phase===\"ended\",shape:\"cloud\",sizePx:sz,state:\"idle\"});",
-  "if(!big)return p.jsxs(\"div\",{className:\"simeon-call-pill\",\"data-state\":c.phase,role:\"button\",tabIndex:0,\"aria-label\":`Call with ${c.agentName}, ${time}. Open the call`,onClick:()=>sb(!0),onKeyDown:e=>{(e.key===\"Enter\"||e.key===\" \")&&(e.preventDefault(),sb(!0))},children:[p.jsx(\"span\",{className:\"simeon-call-pill__mark\",children:mark(40)}),c.phase===\"live\"?p.jsx(__simeonCallWave,{levels:c.levels,bars:24,mode:c.mode}):p.jsx(\"span\",{className:\"simeon-call-pill__status\",children:time}),muteBtn(\"simeon-call-pill__btn\"),btn(\"simeon-call-pill__btn\",\"Transcript\",\"talk\",e=>{e.stopPropagation();st(!0);sb(!0)}),endBtn(\"simeon-call-pill__end\"),p.jsx(\"span\",{className:\"simeon-call-pill__handle\",\"aria-hidden\":!0})]});",
+  "const chip=p.jsx(\"button\",{type:\"button\",className:\"simeon-call-chip\",\"aria-label\":`Back to the call with ${c.agentName}, ${time}`,onClick:()=>sb(!0),children:time});",
+  "if(!big)return p.jsxs(p.Fragment,{children:[chip,p.jsxs(\"div\",{className:\"simeon-call-pill\",\"data-state\":c.phase,role:\"button\",tabIndex:0,\"aria-label\":`Call with ${c.agentName}, ${time}. Open the call`,onClick:()=>sb(!0),onKeyDown:e=>{(e.key===\"Enter\"||e.key===\" \")&&(e.preventDefault(),sb(!0))},children:[p.jsx(\"span\",{className:\"simeon-call-pill__mark\",children:mark(40)}),c.phase===\"live\"?p.jsx(__simeonCallWave,{levels:c.levels,bars:24,mode:c.mode}):p.jsx(\"span\",{className:\"simeon-call-pill__status\",children:time}),muteBtn(\"simeon-call-pill__btn\"),btn(\"simeon-call-pill__btn\",\"Transcript\",\"talk\",e=>{e.stopPropagation();st(!0);sb(!0)}),endBtn(\"simeon-call-pill__end\"),p.jsx(\"span\",{className:\"simeon-call-pill__handle\",\"aria-hidden\":!0})]})]});",
   "return p.jsxs(\"div\",{className:\"simeon-call-full\",\"data-state\":c.phase,role:\"dialog\",\"aria-label\":`Call with ${c.agentName}`,children:[btn(\"simeon-call-full__fold\",\"Minimise the call\",\"up\",()=>sb(!1)),p.jsxs(\"div\",{className:\"simeon-call-full__who\",children:[p.jsx(\"span\",{className:\"simeon-call-full__mark\",children:mark(120)}),p.jsx(\"div\",{className:\"simeon-call-full__name\",children:c.agentName}),p.jsx(\"div\",{className:\"simeon-call-full__time\",\"aria-live\":\"polite\",children:time})]}),p.jsx(\"div\",{className:\"simeon-call-full__live\",ref:live,role:\"log\",\"aria-label\":\"Transcript\",hidden:!tr,children:(c.lines??[]).map((l,i)=>p.jsx(\"p\",{className:\"simeon-call-say simeon-call-say--\"+(l.speaker===\"user\"?\"me\":\"them\"),children:l.text},i))}),p.jsxs(\"div\",{className:\"simeon-call-full__controls\",children:[muteBtn(\"simeon-call-full__btn\"),btn(\"simeon-call-full__btn\",\"Transcript\",\"talk\",()=>st(v=>!v),tr),endBtn(\"simeon-call-full__end\")]})]})}",
-  "function __simeonPhoneLayer(n){return p.jsxs(p.Fragment,{children:[p.jsx(__simeonPhoneSheets,{...n}),p.jsx(__simeonPhoneCall,{})]})}",
+  // BF opens Settings on a phone (the founder's screenshots: no menu), the window's own Settings ("general").
+  "function __simeonPhoneLayer(n){const{openSettings:os,...rest}=n;",
+  "S.useEffect(()=>{if(!__simeonPhoneOk||typeof os!==\"function\")return;const hit=e=>__simeonIsPhone(window.innerWidth)&&e.target instanceof Element&&e.target.closest(\".sand-agents-sidebar__account button\")!=null;const stop=e=>{hit(e)&&(e.preventDefault(),e.stopPropagation())};const open=e=>{hit(e)&&(e.preventDefault(),e.stopPropagation(),os(\"general\"))};document.addEventListener(\"pointerdown\",stop,!0);document.addEventListener(\"mousedown\",stop,!0);document.addEventListener(\"click\",open,!0);return()=>{document.removeEventListener(\"pointerdown\",stop,!0);document.removeEventListener(\"mousedown\",stop,!0);document.removeEventListener(\"click\",open,!0)}},[os]);",
+  "return p.jsxs(p.Fragment,{children:[p.jsx(__simeonPhoneSheets,{...rest}),p.jsx(__simeonPhoneCall,{})]})}",
+  // Under Settings' General on a phone: Connect apps (the sidebar's button, which the phone's list has no room for) and the mark.
+  "function __simeonPhoneSettingsMore(){const[w,sw]=S.useState(()=>typeof window<\"u\"?window.innerWidth:1280);S.useEffect(()=>{const f=()=>sw(window.innerWidth);window.addEventListener(\"resize\",f);return()=>window.removeEventListener(\"resize\",f)},[]);if(!__simeonIsPhone(w))return null;",
+  "return p.jsxs(\"div\",{className:\"simeon-phone-settings-more\",children:[p.jsxs(\"button\",{type:\"button\",className:\"simeon-phone-settings-row\",onClick:()=>uSe(),children:[p.jsx(\"span\",{className:\"simeon-connect-apps__label\",children:\"Connect apps\"}),p.jsxs(\"span\",{\"aria-hidden\":!0,className:\"simeon-connect-apps__logos\",children:[p.jsx(\"i\",{\"data-app\":\"gmail\"}),p.jsx(\"i\",{\"data-app\":\"calendar\"}),p.jsx(\"i\",{\"data-app\":\"drive\"})]})]}),p.jsxs(\"div\",{className:\"simeon-phone-settings-mark\",children:[p.jsx(sd,{\"aria-hidden\":!0,color:\"blue\",paused:!1,shape:\"cloud\",sizePx:56,state:\"idle\"}),p.jsx(\"b\",{children:\"Simeon\"})]})]})}",
+  "typeof globalThis<\"u\"&&(globalThis.__simeonPhoneSettingsMore=__simeonPhoneSettingsMore);",
 ].join("");
 const PHONE_SIDEBAR_OPEN_BEFORE = "function DCe(n,e){return n.isCollapsed||can(n,e)}";
 export const PHONE_HOME_REPLACEMENTS = Object.freeze([
   ["phone-sidebar-open", PHONE_SIDEBAR_OPEN_BEFORE, `${PHONE_HOME_SOURCE}${PHONE_CREATE_SOURCE}${PHONE_CALL_SOURCE}function DCe(n,e){return __simeonIsPhone(e)?!1:n.isCollapsed||can(n,e)}`],
+  // The agent's page opens only where it fits beside the chat (424 px and its 480); on a phone it is a sheet over the chat.
+  ["phone-pane-room", "function uan(n){return n.windowWidth>=Dlt(n.sidebar,n.paneWidth)}", "function uan(n){return __simeonIsPhone(n.windowWidth)||n.windowWidth>=Dlt(n.sidebar,n.paneWidth)}"],
   ["phone-open-agent", "Go=S.useCallback(Rs=>{Pc(Rs)},[Pc]);ge.current=Go;", "Go=S.useCallback(Rs=>{__simeonPhoneShow(\"chat\");Pc(Rs)},[Pc]);ge.current=Go;"],
   // On a phone the + is a menu (New Agent, New Group Chat); elsewhere the Mac's new chat.
   ["phone-new-chat", "onNewChat:fl,composeDraftLabel:Ho,", "onNewChat:__simeonPhoneNew(fl),composeDraftLabel:Ho,"],
-  ["phone-create-sheets", "children:[p.jsx(u0n,{currentAgentId:y,", "children:[p.jsx(__simeonPhoneLayer,{agents:lt,createAgent:Sn,createGroup:ln,openAgent:Go},\"simeon-phone-layer\"),p.jsx(u0n,{currentAgentId:y,"],
+  ["phone-create-sheets", "children:[p.jsx(u0n,{currentAgentId:y,", "children:[p.jsx(__simeonPhoneLayer,{agents:lt,createAgent:Sn,createGroup:ln,openAgent:Go,openSettings:vr},\"simeon-phone-layer\"),p.jsx(u0n,{currentAgentId:y,"],
   ["phone-hidden-chats", "onOpenHiddenChats:KWe,", "onOpenHiddenChats:__simeonPhoneGo(KWe),"],
   ["phone-profile", "onOpenProfile:Jr,onOpenSettings:vr,", "onOpenProfile:__simeonPhoneGo(Jr),onOpenSettings:vr,"],
   ["phone-full-conversation", "onShowAsyncTasks:Es,onShowFullConversation:ds,", "onShowAsyncTasks:__simeonPhoneGo(Es),onShowFullConversation:__simeonPhoneGo(ds),"],
+  // Search on a phone is a sheet with a close button at its top left (the founder's screenshot), inside the dialog.
+  ["phone-search-close", 'className:"sand-command-palette",initialFocus:P,onOpenChange:Z=>{Z||i()},open:r,rootStylexStyles:Vie.dialog,size:"md",children:[', 'className:"sand-command-palette",initialFocus:P,onOpenChange:Z=>{Z||i()},open:r,rootStylexStyles:Vie.dialog,size:"md",children:[p.jsx("button",{type:"button",className:"simeon-disc simeon-palette-close","aria-label":"Close search",onClick:()=>i(),children:p.jsx(__simeonPhoneIcon,{name:"close"})},"simeon-close"),'],
   ["phone-search-opens", "onOpenAgent:gm,onOpenFile:pl,onOpenLink:Yl,onOpenMessage:cr,onOpenRoutine:Ua,", "onOpenAgent:__simeonPhoneGo(gm),onOpenFile:pl,onOpenLink:Yl,onOpenMessage:__simeonPhoneGo(cr),onOpenRoutine:__simeonPhoneGo(Ua),"],
 ]);
+
+/** Settings' General, then (on a phone) Connect apps and the mark: the panel chunk's General page, the Manage plan card's way. */
+export const PHONE_SETTINGS_PANEL_REPLACEMENTS = Object.freeze([
+  ["phone-settings-more", GENERAL_BEFORE, 'Q=x==="general"?a.jsx(Te,{children:a.jsxs("div",{children:[a.jsx(Sa,{auth:t},"general"),a.jsx(globalThis.__simeonPhoneSettingsMore??(()=>null),{},"simeon-phone-more")]})}):null'],
+]);
+
+export function patchOriginalPhoneSettingsPanel(source) {
+  let out = source;
+  for (const [label, before, after] of PHONE_SETTINGS_PANEL_REPLACEMENTS) out = replaceExactlyOnce(out, before, after, label);
+  return out;
+}
 
 export function patchOriginalPhoneHome(source) {
   let out = source;
@@ -2398,7 +2428,12 @@ export const PHONE_HOME_CSS = `${PHONE_HOME_MARKER} (8 October 2026): the Mac's 
 html[data-simeon-phone] .sand-shell{grid-template-columns:minmax(0,1fr)!important}
 html[data-simeon-phone] .sand-sidebar-resize-handle{display:none!important}
 html[data-simeon-phone] .sand-agents-sidebar{border-right-width:0!important}
-html[data-simeon-phone] .sand-agents-sidebar__footer{position:absolute!important;top:0!important;left:0!important;height:60px!important;padding:0 0 0 16px!important;align-items:center!important;z-index:1}
+html[data-simeon-phone] .sand-agents-sidebar__footer{position:absolute!important;top:0!important;left:0!important;height:68px!important;padding:0 0 0 14px!important;align-items:center!important;z-index:1}
+html[data-simeon-phone] .sand-agents-sidebar__header:has(.simeon-disc){height:68px!important;padding-right:12px!important}
+html[data-simeon-phone] .sand-agents-sidebar__header .simeon-disc,html[data-simeon-phone] .simeon-disc.simeon-phone-back{width:46px;height:46px}
+html[data-simeon-phone] .sand-agents-sidebar__header .simeon-disc svg,html[data-simeon-phone] .simeon-disc.simeon-phone-back svg{width:21px;height:21px}
+html[data-simeon-phone] .sand-agents-sidebar__account>button,html[data-simeon-phone] .sand-agents-sidebar__account .sand-kit-base-avatar,html[data-simeon-phone] .sand-agents-sidebar__account .sand-kit-base-avatar img{width:46px!important;height:46px!important}
+html[data-simeon-phone] .sand-agents-sidebar__account .sand-kit-base-avatar{font-size:15px!important}
 html[data-simeon-phone] .sand-agents-sidebar__plugins-entry{display:none!important}
 html[data-simeon-phone] .sand-agents-sidebar .sand-agent-item{zoom:${PHONE_ROW_ZOOM}}
 html[data-simeon-phone] .sand-agents-sidebar .sand-agent-item__avatar{zoom:${PHONE_AVATAR_ZOOM}}
@@ -2408,7 +2443,33 @@ html[data-simeon-phone="list"] main.sand-chat{transform:translateX(100%)}
 html[data-simeon-phone="chat"] .sand-agents-sidebar{transform:translateX(-100%)}
 html[data-simeon-phone="chat"] .simeon-disc.simeon-phone-back{display:grid}
 html[data-simeon-phone="chat"]:has(.sand-new-chat-bar) .simeon-disc.simeon-phone-back{top:2px}
-html[data-simeon-phone="chat"] .sand-new-chat-bar{padding-left:48px!important}
+html[data-simeon-phone="chat"] .sand-new-chat-bar{padding-left:54px!important}
+html[data-simeon-phone] aside.sand-info-pane[data-open="true"]{position:fixed!important;z-index:58;top:44px;left:8px;right:8px;bottom:8px;width:auto!important;max-width:none!important;border-radius:32px;overflow:hidden;background:var(--sand-bg-base);box-shadow:0 0 0 .5px var(--sand-border-default),0 0 0 100vmax var(--sand-bg-scrim);animation:simeon-phone-rise .26s cubic-bezier(.2,.8,.2,1)}
+html[data-simeon-phone] aside.sand-info-pane[data-open="true"]{height:auto!important}
+html[data-simeon-phone] aside.sand-info-pane[data-open="true"] .sand-info-pane__inner{width:100%!important;min-width:0!important;max-width:none!important;height:100%!important}
+html[data-simeon-phone] .sand-info-pane__resize-handle{display:none!important}
+html[data-simeon-phone] aside.sand-info-pane[data-open="true"] button[aria-label="Close details"]{position:absolute!important;top:14px!important;left:14px!important;right:auto!important;z-index:2;width:40px!important;height:40px!important;border-radius:999px!important;background:linear-gradient(180deg,light-dark(rgba(255,255,255,.62),rgba(255,255,255,.16)),light-dark(rgba(255,255,255,.38),rgba(255,255,255,.08)))!important;box-shadow:0 0 0 .5px var(--sand-border-default),0 2px 6px -2px rgba(0,0,0,.18)!important}
+html[data-simeon-phone] .sand-command-palette{top:44px!important;left:8px!important;right:8px!important;bottom:8px!important;width:auto!important;max-width:none!important;height:auto!important;max-height:none!important;transform:none!important;margin:0!important;border-radius:32px!important;display:flex!important;flex-direction:column!important}
+html[data-simeon-phone] .sand-command-palette>div:has(>input[role="combobox"]){flex:none;height:48px;margin:14px 14px 6px 70px;padding:0 16px;gap:10px;border-radius:999px;background:var(--sand-fill-neutral-subtle)}
+html[data-simeon-phone] .sand-command-palette>div:has(>input[role="combobox"]) input{font-size:17px!important}
+html[data-simeon-phone] .sand-command-palette>[role="tablist"]{flex:none;padding:4px 16px 8px}
+html[data-simeon-phone] .sand-command-palette>[role="tablist"] [role="tab"]{font-size:15px!important;height:32px!important;padding:0 12px!important}
+html[data-simeon-phone] .sand-command-palette>[role="listbox"]{flex:1;height:auto!important;max-height:none!important}
+html[data-simeon-phone] .sand-command-palette [role="option"]{zoom:1.25}
+html[data-simeon-phone] .sand-command-palette [role="option"]>span:first-child{zoom:1.5}
+html[data-simeon-phone] .simeon-disc.simeon-palette-close{display:grid;position:absolute;z-index:2;top:14px;left:14px;width:48px;height:48px}
+html[data-simeon-phone] .simeon-palette-close svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+html[data-simeon-phone] .sand-settings-dialog{top:44px!important;left:8px!important;right:8px!important;bottom:8px!important;width:auto!important;max-width:none!important;height:auto!important;max-height:none!important;transform:none!important;margin:0!important;border-radius:32px!important}
+html[data-simeon-phone] .sand-settings-layout{display:flex!important;flex-direction:column!important;height:100%!important}
+html[data-simeon-phone] .sand-settings-nav{display:none!important}
+html[data-simeon-phone] .sand-settings-dialog:has(.sand-settings-nav__item+.sand-settings-nav__item) .sand-settings-nav{display:flex!important;flex-direction:row!important;gap:6px;width:auto!important;height:auto!important;padding:16px 16px 0 70px!important;border:0!important;background:transparent!important}
+html[data-simeon-phone] .sand-settings-nav__item{width:auto!important;height:36px!important;padding:0 14px!important;border-radius:999px!important;font-size:15px!important}
+html[data-simeon-phone] .sand-settings-panel{flex:1;min-height:0;width:100%!important;max-width:none!important}
+html[data-simeon-phone] .sand-settings-pane-header{display:none!important}
+html[data-simeon-phone] .sand-settings-panel__close{position:fixed!important;top:58px!important;left:22px!important;right:auto!important;z-index:5;width:44px!important;height:44px!important;border-radius:999px!important;background:linear-gradient(180deg,light-dark(rgba(255,255,255,.62),rgba(255,255,255,.16)),light-dark(rgba(255,255,255,.38),rgba(255,255,255,.08)))!important;box-shadow:0 0 0 .5px var(--sand-border-default),0 2px 6px -2px rgba(0,0,0,.18)!important}
+html[data-simeon-phone] .sand-settings-panel__body{padding-top:70px}
+html[data-simeon-phone] .sand-settings-pane{padding:0!important}
+html[data-simeon-phone] .sand-settings-general{width:auto!important;max-width:none!important;padding:0 12px 8px!important;zoom:1.15}
 }
 /* The + menu and its sheets: the Mac's menu card and the window's own tokens, at a phone's size. */
 @keyframes simeon-phone-fade{from{opacity:0}}
@@ -2416,7 +2477,7 @@ html[data-simeon-phone="chat"] .sand-new-chat-bar{padding-left:48px!important}
 @keyframes simeon-phone-rise{from{opacity:0;transform:translateY(28px)}}
 .simeon-phone-scrim{position:fixed;inset:0;z-index:60;background:var(--sand-bg-scrim);animation:simeon-phone-fade .18s ease}
 .simeon-phone-scrim--clear{background:transparent;animation:none}
-.simeon-phone-menu{position:absolute;top:58px;right:12px;min-width:236px;padding:6px;display:grid;gap:2px;border-radius:16px;background:var(--sand-bg-elevated);box-shadow:0 0 0 .5px var(--sand-border-default),0 18px 40px -12px rgba(0,0,0,.28),0 4px 12px -4px rgba(0,0,0,.12);transform-origin:top right;animation:simeon-phone-pop .16s ease}
+.simeon-phone-menu{position:absolute;top:64px;right:12px;min-width:236px;padding:6px;display:grid;gap:2px;border-radius:16px;background:var(--sand-bg-elevated);box-shadow:0 0 0 .5px var(--sand-border-default),0 18px 40px -12px rgba(0,0,0,.28),0 4px 12px -4px rgba(0,0,0,.12);transform-origin:top right;animation:simeon-phone-pop .16s ease}
 .simeon-phone-menu__item{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:12px;height:46px;padding:0 12px;border-radius:10px;font-size:16px;line-height:22px;font-weight:420;color:var(--sand-text-primary);cursor:default}
 .simeon-phone-menu__item:active{background:var(--sand-fill-ghost-hover)}
 .simeon-phone-menu__item svg,.simeon-phone-sheet svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -2449,6 +2510,14 @@ html[data-simeon-phone="chat"] .sand-new-chat-bar{padding-left:48px!important}
 .simeon-new-group__check{width:26px;height:26px;display:grid;place-items:center;border-radius:999px;box-shadow:inset 0 0 0 1.5px var(--sand-border-strong);color:#fff}
 .simeon-new-group__row[aria-selected="true"] .simeon-new-group__check{background:var(--sand-fill-bubble-user);box-shadow:none}
 .simeon-new-group__check svg{width:16px;height:16px;stroke-width:2.4}
+.simeon-disc.simeon-palette-close{display:none}
+.simeon-call-chip{display:none}
+html[data-simeon-phone="list"] .simeon-call-pill{display:none}
+html[data-simeon-phone="list"] .simeon-call-chip{all:unset;box-sizing:border-box;position:fixed;z-index:50;top:11px;right:124px;height:46px;padding:0 18px;display:grid;place-items:center;border-radius:999px;background:var(--sand-fill-success);color:#fff;font-size:17px;line-height:22px;font-weight:600;font-variant-numeric:tabular-nums;cursor:default;box-shadow:0 2px 8px -2px rgba(0,0,0,.2)}
+.simeon-phone-settings-more{display:grid;gap:18px;padding:18px 16px 32px}
+.simeon-phone-settings-row{all:unset;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:58px;padding:0 18px;border-radius:16px;background:var(--sand-bg-elevated);box-shadow:0 0 0 .5px var(--sand-border-default);font-size:17px;color:var(--sand-text-primary);cursor:default}
+.simeon-phone-settings-row .simeon-connect-apps__logos{order:0}
+.simeon-phone-settings-mark{display:grid;justify-items:center;gap:8px;padding-top:8px;color:var(--sand-text-primary);font-size:20px}
 /* The call on a phone: the Mac banner's card (banner.css) as a pill, and full screen. */
 :root{--simeon-call-card:#ffffff;--simeon-call-shadow:inset 0 1px 0 rgba(255,255,255,.85),0 0 0 .5px rgba(0,0,0,.08),0 18px 40px -14px rgba(0,0,0,.28),0 4px 10px -4px rgba(0,0,0,.12)}
 [data-theme*="dark"]{--simeon-call-card:#2a2a2d;--simeon-call-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 0 0 .5px rgba(0,0,0,.45),0 18px 40px -14px rgba(0,0,0,.5)}
@@ -2700,7 +2769,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // row per chunk and only the roles "registry" and "panel"; a third row,
     // "manage-plan", on the same chunk failed the release's tests on the Air
     // (7 October 2026).
-    ["panel", panelCandidates[0], (source) => patchOriginalManagePlanPanel(patchOriginalSettingsPanel(source))],
+    ["panel", panelCandidates[0], (source) => patchOriginalPhoneSettingsPanel(patchOriginalManagePlanPanel(patchOriginalSettingsPanel(source)))],
   ]) {
     const patched = transform(candidate.source);
     // A transform that returns its input (the Settings panel since the Router

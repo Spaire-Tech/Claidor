@@ -99,7 +99,8 @@ const ipcRenderer = {
 // New buttons, the composer's attach, and the agent's computer. Their presses
 // stop here, before the window's own handlers (menus open on pointerdown).
 const INERT_IN_DEMO = [
-  ".sand-agents-sidebar__account button",
+  // On the review link the account opens Settings, as BF does on the phone.
+  ...(REVIEW ? [] : [".sand-agents-sidebar__account button"]),
   ".sand-agents-sidebar__plugins",
   ".sand-agents-sidebar__new",
   ".sand-prompt-attach",

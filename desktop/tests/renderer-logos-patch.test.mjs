@@ -302,6 +302,29 @@ test("the phone's + sheets and call: the window's own create actions, the Mac's 
   assert.match(PHONE_HOME_CSS, /\.simeon-phone-primary\{[^}]*background:var\(--sand-fill-bubble-user\);/, "Create and Next in the same blue");
 });
 
+test("the phone's top, Settings, search, the agent's page and the call's time on the list", async () => {
+  const { PHONE_HOME_REPLACEMENTS, PHONE_HOME_CSS, PHONE_MAX_WIDTH, PHONE_SETTINGS_PANEL_REPLACEMENTS, patchOriginalPhoneSettingsPanel } = await import("../scripts/lib/router-renderer-patch.mjs");
+  const mediaAt = PHONE_HOME_CSS.indexOf(`@media (max-width:${PHONE_MAX_WIDTH - 0.02}px){`);
+  const phoneBlock = PHONE_HOME_CSS.slice(mediaAt, PHONE_HOME_CSS.indexOf("\n}\n", mediaAt) + 3);
+  assert.match(phoneBlock, /\.sand-agents-sidebar__header \.simeon-disc,html\[data-simeon-phone\] \.simeon-disc\.simeon-phone-back\{width:46px;height:46px\}/, "the top's buttons a little larger than the Mac's 40");
+  assert.match(phoneBlock, /\.sand-agents-sidebar__account \.sand-kit-base-avatar img\{width:46px!important;height:46px!important\}/, "BF the same size");
+  assert.match(phoneBlock, /aside\.sand-info-pane\[data-open="true"\]\{position:fixed!important;[^}]*border-radius:32px;/, "the agent's page, a sheet");
+  assert.match(phoneBlock, /\.sand-info-pane__inner\{[^}]*max-width:none!important;/, "its width, not what is left beside the chat");
+  assert.match(phoneBlock, /\.sand-command-palette\{top:44px!important;[^}]*border-radius:32px!important;/, "search, a sheet");
+  assert.match(phoneBlock, /\.sand-settings-dialog\{top:44px!important;[^}]*border-radius:32px!important\}/, "Settings, a sheet");
+  assert.match(phoneBlock, /\.sand-settings-nav\{display:none!important\}/, "one column: General");
+  const source = PHONE_HOME_REPLACEMENTS.find(([label]) => label === "phone-sidebar-open")[2];
+  assert.match(source, /e\.target\.closest\("\.sand-agents-sidebar__account button"\)!=null/, "BF opens Settings on a phone");
+  assert.match(source, /os\("general"\)/);
+  assert.match(source, /onClick:\(\)=>uSe\(\),children:\[p\.jsx\("span",\{className:"simeon-connect-apps__label",children:"Connect apps"\}\)/, "Connect apps in Settings: the sidebar's button and the window's own opener");
+  assert.match(source, /globalThis\.__simeonPhoneSettingsMore=__simeonPhoneSettingsMore/);
+  const general = PHONE_SETTINGS_PANEL_REPLACEMENTS[0][1];
+  assert.match(patchOriginalPhoneSettingsPanel(`x;${general};y`), /a\.jsx\(Sa,\{auth:t\},"general"\),a\.jsx\(globalThis\.__simeonPhoneSettingsMore\?\?\(\(\)=>null\),\{\},"simeon-phone-more"\)/, "under General, nothing on the Mac");
+  assert.match(source, /className:\\?"simeon-call-chip\\?"|className:"simeon-call-chip"/, "the call's time");
+  assert.match(PHONE_HOME_CSS, /html\[data-simeon-phone="list"\] \.simeon-call-pill\{display:none\}/, "on the list, not the pill");
+  assert.match(PHONE_HOME_CSS, /html\[data-simeon-phone="list"\] \.simeon-call-chip\{[^}]*right:124px;[^}]*background:var\(--sand-fill-success\);/, "the green time, beside search and +");
+});
+
 test("a group's butterflies in the chat header are a single agent's size", async () => {
   const { HEADER_CARD_CSS } = await import("../scripts/lib/router-renderer-patch.mjs");
   assert.match(HEADER_CARD_CSS, /\.sand-chat-header__avatar \.sand-group-avatar\{zoom:2\.6\}/, "20 px butterflies drawn at 52, a single agent's size");
@@ -412,7 +435,9 @@ test("the phone's home: the Mac's list full screen, a chat full screen, one at a
   assert.match(patched, /Go=S\.useCallback\(Rs=>\{__simeonPhoneShow\("chat"\);Pc\(Rs\)\},\[Pc\]\)/);
   assert.match(patched, /onOpenSettings:vr,/);
   assert.match(patched, /onNewChat:__simeonPhoneNew\(fl\)/);
-  assert.match(patched, /children:\[p\.jsx\(__simeonPhoneLayer,\{agents:lt,createAgent:Sn,createGroup:ln,openAgent:Go\},"simeon-phone-layer"\),p\.jsx\(u0n,/, "the + sheets and the call sit beside the sidebar, with the window's own create actions");
+  assert.match(patched, /children:\[p\.jsx\(__simeonPhoneLayer,\{agents:lt,createAgent:Sn,createGroup:ln,openAgent:Go,openSettings:vr\},"simeon-phone-layer"\),p\.jsx\(u0n,/, "the + sheets and the call sit beside the sidebar, with the window's own create actions and Settings");
+  assert.match(patched, /function uan\(n\)\{return __simeonIsPhone\(n\.windowWidth\)\|\|n\.windowWidth>=Dlt\(n\.sidebar,n\.paneWidth\)\}/, "the agent's page opens on a phone, where it is a sheet, not beside the chat");
+  assert.match(patched, /size:"md",children:\[p\.jsx\("button",\{type:"button",className:"simeon-disc simeon-palette-close","aria-label":"Close search",onClick:\(\)=>i\(\)/, "search's close, inside the dialog (taps outside a modal do not reach the page)");
   assert.match(patched, /onOpenMessage:__simeonPhoneGo\(cr\)/);
   assert.throws(() => patchOriginalPhoneHome(`${anchors}\n${anchors}`), /phone-sidebar-open/);
 
