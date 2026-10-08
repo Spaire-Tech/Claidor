@@ -13,26 +13,49 @@ struct ChatView: View {
   /** `call` or `call-full` or `agent`, from the screenshots' launch. */
   var opening: String? = nil
   @Environment(AppStore.self) private var store
-  @Environment(\.colorScheme) private var scheme
-  @State private var draft = ""
   @State private var showsPage = false
   @State private var showsCall = false
   @State private var showsTranscript = false
-  @FocusState private var typing: Bool
 
-  private var agent: Agent? { store.agent(agentId) }
+  // Each part below reads only what it draws, so typing a letter or the
+  // call's waveform ticking redraws that part and not the conversation.
+  var body: some View {
+    ChatMessages(agentId: agentId)
+      .safeAreaInset(edge: .top, spacing: 0) {
+        ChatHeader(agentId: agentId, showsPage: $showsPage, showsCall: $showsCall, showsTranscript: $showsTranscript)
+      }
+      .safeAreaInset(edge: .bottom, spacing: 0) { ChatComposer(agentId: agentId) }
+      .navigationBarTitleDisplayMode(.inline)
+      .toolbar {
+        ToolbarItem(placement: .principal) { ChatAvatarButton(agentId: agentId, showsPage: $showsPage) }
+      }
+      .sheet(isPresented: $showsPage) { AgentPageSheet(agentId: agentId) }
+      .fullScreenCover(isPresented: $showsCall) { CallScreen(showsTranscript: $showsTranscript) }
+      .task {
+        await store.open(agentId)
+        guard let agent = store.agent(agentId) else { return }
+        switch opening {
+        case "call": store.startCall(agent)
+        case "call-full": store.startCall(agent); showsTranscript = true; showsCall = true
+        case "agent": showsPage = true
+        default: break
+        }
+      }
+  }
+}
+
+/** The conversation itself: redrawn when its rows change, and only then. */
+struct ChatMessages: View {
+  let agentId: String
+  @Environment(AppStore.self) private var store
 
   var body: some View {
-    let rows = store.rows(for: agentId)
     ScrollView {
       LazyVStack(alignment: .leading, spacing: 6) {
-        ForEach(rows) { row in
+        ForEach(store.rows(for: agentId)) { row in
           ChatRowView(row: row, agentId: agentId)
         }
-        if let agent, agent.isBusy || store.steps[agentId] != nil {
-          TypingRow(agent: agent, step: store.steps[agentId])
-            .id("typing")
-        }
+        TypingSlot(agentId: agentId)
       }
       .padding(.horizontal, 12)
       .padding(.top, 8)
@@ -42,35 +65,48 @@ struct ChatView: View {
     .defaultScrollAnchor(.bottom, for: .sizeChanges)
     .scrollDismissesKeyboard(.interactively)
     .background(Ink.ground)
-    .safeAreaInset(edge: .top, spacing: 0) { header }
-    .safeAreaInset(edge: .bottom, spacing: 0) { composer }
-    .navigationBarTitleDisplayMode(.inline)
-    .toolbar {
-      ToolbarItem(placement: .principal) {
-        Button { showsPage = true } label: {
-          if let agent { AgentAvatar(agent: agent, members: store.members(of: agent), groupInARow: true).frame(width: agent.isGroup ? 64 : 44, height: 44) }
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("\(agent?.name ?? "Agent"), details")
-      }
-    }
-    .sheet(isPresented: $showsPage) { AgentPageSheet(agentId: agentId) }
-    .fullScreenCover(isPresented: $showsCall) { CallScreen(showsTranscript: $showsTranscript) }
-    .task {
-      await store.open(agentId)
-      switch opening {
-      case "call": if let agent { store.startCall(agent) }
-      case "call-full": if let agent { store.startCall(agent); showsTranscript = true; showsCall = true }
-      case "agent": showsPage = true
-      default: break
-      }
-    }
-    .onChange(of: store.call == nil) { _, gone in if gone { showsCall = false } }
   }
+}
 
-  private var header: some View {
+/** The agent at work, at the end of the conversation. */
+struct TypingSlot: View {
+  let agentId: String
+  @Environment(AppStore.self) private var store
+
+  var body: some View {
+    if let agent = store.agent(agentId), agent.isBusy || store.steps[agentId] != nil {
+      TypingRow(agent: agent, step: store.steps[agentId])
+    }
+  }
+}
+
+/** The butterfly in the bar: opens the agent's page. */
+struct ChatAvatarButton: View {
+  let agentId: String
+  @Binding var showsPage: Bool
+  @Environment(AppStore.self) private var store
+
+  var body: some View {
+    let agent = store.agent(agentId)
+    Button { showsPage = true } label: {
+      if let agent { AgentAvatar(agent: agent, members: store.members(of: agent), groupInARow: true).frame(width: agent.isGroup ? 64 : 44, height: 44) }
+    }
+    .buttonStyle(.plain)
+    .accessibilityLabel("\(agent?.name ?? "Agent"), details")
+  }
+}
+
+/** The name under the butterfly with the call button, and the call's pill while on a call. */
+struct ChatHeader: View {
+  let agentId: String
+  @Binding var showsPage: Bool
+  @Binding var showsCall: Bool
+  @Binding var showsTranscript: Bool
+  @Environment(AppStore.self) private var store
+
+  var body: some View {
     VStack(spacing: 8) {
-      if let agent {
+      if let agent = store.agent(agentId) {
         GlassEffectContainer(spacing: 8) {
           HStack(spacing: 8) {
             Button { showsPage = true } label: {
@@ -101,9 +137,18 @@ struct ChatView: View {
     .padding(.top, 2)
     .padding(.bottom, 6)
     .animation(.snappy, value: store.call?.agentId)
+    .onChange(of: store.call == nil) { _, gone in if gone { showsCall = false } }
   }
+}
 
-  private var composer: some View {
+/** The composer: what you type stays here, so a keystroke redraws only this. */
+struct ChatComposer: View {
+  let agentId: String
+  @Environment(AppStore.self) private var store
+  @State private var draft = ""
+  @FocusState private var typing: Bool
+
+  var body: some View {
     HStack(alignment: .bottom, spacing: 8) {
       Button {} label: {
         Image(systemName: "plus").font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.primary)
@@ -113,7 +158,7 @@ struct ChatView: View {
       .glassEffect(.regular.interactive(), in: .circle)
       .disabled(true)
       .accessibilityLabel("Attach")
-      TextField("Message \(agent?.name ?? "")", text: $draft, axis: .vertical)
+      TextField("Message \(store.agent(agentId)?.name ?? "")", text: $draft, axis: .vertical)
         .lineLimit(1...6)
         .font(.system(size: 17))
         .focused($typing)
@@ -438,7 +483,7 @@ struct TypingRow: View {
 
 struct TypingDots: View {
   var body: some View {
-    TimelineView(.animation) { context in
+    TimelineView(.animation(minimumInterval: 1.0 / 30)) { context in
       let t = context.date.timeIntervalSinceReferenceDate
       HStack(spacing: 4) {
         ForEach(0..<3, id: \.self) { index in

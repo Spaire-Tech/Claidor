@@ -32,6 +32,8 @@ public struct Account: Sendable, Equatable {
 public final class AppStore {
   public private(set) var agents: [Agent] = []
   public private(set) var transcripts: [String: [Entry]] = [:]
+  /** Each open chat laid out (Chat.rows), kept with its entries so a redraw does not lay it out again. */
+  public private(set) var chatRows: [String: [ChatRow]] = [:]
   /** The step an agent is on right now ("Checking Linear"), by agent. */
   public private(set) var steps: [String: String] = [:]
   public private(set) var call: CallState?
@@ -70,7 +72,7 @@ public final class AppStore {
     listening?.cancel()
     listening = nil
     backend = nil
-    agents = []; transcripts = [:]; steps = [:]; call = nil; isLive = false; account = nil
+    agents = []; transcripts = [:]; chatRows = [:]; steps = [:]; call = nil; isLive = false; account = nil
   }
 
   public func reloadRoster() async {
@@ -92,7 +94,7 @@ public final class AppStore {
       agents = sortRoster(next)
     case .transcript(let change):
       guard let current = transcripts[change.agentId] else { return }
-      transcripts[change.agentId] = change.applied(to: current)
+      setTranscript(change.agentId, change.applied(to: current))
     case .step(let agentId, let id, let summary, let isRunning):
       if isRunning { running[agentId] = id; steps[agentId] = summary }
       else if running[agentId] == id { running[agentId] = nil; steps[agentId] = nil }
@@ -106,16 +108,19 @@ public final class AppStore {
   /** The members of a group, as agents. */
   public func members(of group: Agent) -> [Agent] { group.memberIds.compactMap { id in agents.first { $0.id == id } } }
 
-  public func rows(for agentId: String) -> [ChatRow] {
-    Chat.rows(transcripts[agentId] ?? [], isGroup: agent(agentId)?.isGroup ?? false)
+  public func rows(for agentId: String) -> [ChatRow] { chatRows[agentId] ?? [] }
+
+  private func setTranscript(_ agentId: String, _ entries: [Entry]) {
+    transcripts[agentId] = entries
+    chatRows[agentId] = Chat.rows(entries, isGroup: agent(agentId)?.isGroup ?? false)
   }
 
   /** A chat comes on screen: its entries (once), and it is read. */
   public func open(_ agentId: String) async {
     guard let backend else { return }
     if transcripts[agentId] == nil {
-      do { transcripts[agentId] = try await backend.transcript(agentId) } catch {
-        transcripts[agentId] = []
+      do { setTranscript(agentId, try await backend.transcript(agentId)) } catch {
+        setTranscript(agentId, [])
         problem = "Couldn't open this chat: \(error.localizedDescription)"
       }
     }

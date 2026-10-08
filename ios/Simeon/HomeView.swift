@@ -28,7 +28,7 @@ struct HomeView: View {
           // A link with no chevron: the Mac's row has none.
           ZStack {
             NavigationLink(value: agent.id) { EmptyView() }.opacity(0)
-            AgentRow(agent: agent, members: store.members(of: agent), call: store.call?.agentId == agent.id ? store.call : nil)
+            AgentRow(agent: agent, members: store.members(of: agent))
           }
           .listRowBackground(Ink.listGround)
           .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
@@ -126,7 +126,6 @@ struct HomeView: View {
 struct AgentRow: View {
   let agent: Agent
   let members: [Agent]
-  let call: CallState?
 
   var body: some View {
     HStack(alignment: .center, spacing: 12) {
@@ -139,11 +138,7 @@ struct AgentRow: View {
             Text(agent.title).font(.system(size: 14)).foregroundStyle(Ink.title).lineLimit(1)
           }
           Spacer(minLength: 4)
-          if let call {
-            CallChip(call: call)
-          } else if let at = agent.lastActivityAt, at > 0 {
-            Text(Chat.listTime(Date(timeIntervalSince1970: at / 1000))).font(.system(size: 14)).foregroundStyle(Ink.secondary)
-          }
+          RowTime(agent: agent)
         }
         HStack(spacing: 8) {
           Text(line).font(.system(size: 15)).foregroundStyle(Ink.secondary).lineLimit(1)
@@ -161,6 +156,20 @@ struct AgentRow: View {
     if agent.isBusy, let activity = agent.activityLabel { return activity }
     if agent.isComposing { return "Typing…" }
     return agent.lastMessagePreview ?? agent.description
+  }
+}
+
+/** The row's time, or the call's green time on the agent you are talking to: the only part of a row the call redraws. */
+struct RowTime: View {
+  let agent: Agent
+  @Environment(AppStore.self) private var store
+
+  var body: some View {
+    if let call = store.call, call.agentId == agent.id {
+      CallChip(call: call)
+    } else if let at = agent.lastActivityAt, at > 0 {
+      Text(Chat.listTime(Date(timeIntervalSince1970: at / 1000))).font(.system(size: 14)).foregroundStyle(Ink.secondary)
+    }
   }
 }
 

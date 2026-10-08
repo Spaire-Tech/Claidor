@@ -182,12 +182,7 @@ public enum Chat {
    * "Wed, Oct 7 3:12 PM" this year, "Oct 7, 2025 3:12 PM" before.
    */
   public static func stampText(_ date: Date, now: Date = Date(), calendar: Calendar = .current, locale: Locale = .current) -> String {
-    let formatter = { (template: String) -> DateFormatter in
-      let f = DateFormatter()
-      f.locale = locale; f.calendar = calendar; f.timeZone = calendar.timeZone
-      f.setLocalizedDateFormatFromTemplate(template)
-      return f
-    }
+    let formatter = { (template: String) in Chat.formatter(template, calendar: calendar, locale: locale) }
     let clock = formatter("jmm").string(from: date)
     if calendar.isDate(date, inSameDayAs: now) { return "Today \(clock)" }
     if let yesterday = calendar.date(byAdding: .day, value: -1, to: now), calendar.isDate(date, inSameDayAs: yesterday) { return "Yesterday \(clock)" }
@@ -197,18 +192,29 @@ public enum Chat {
 
   /** The list's time the window's way (`l5e`): "6:34 AM" today, "Yesterday", the weekday this week, "10/7" this year, "10/7/25" before. */
   public static func listTime(_ date: Date, now: Date = Date(), calendar: Calendar = .current, locale: Locale = .current) -> String {
-    let formatter = { (template: String) -> DateFormatter in
-      let f = DateFormatter()
-      f.locale = locale; f.calendar = calendar; f.timeZone = calendar.timeZone
-      f.setLocalizedDateFormatFromTemplate(template)
-      return f
-    }
+    let formatter = { (template: String) in Chat.formatter(template, calendar: calendar, locale: locale) }
     let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: date), to: calendar.startOfDay(for: now)).day ?? 0
     if days <= 0 { return formatter("jmm").string(from: date) }
     if days == 1 { return "Yesterday" }
     if days < 7 { return formatter("EEEE").string(from: date) }
     if calendar.component(.year, from: date) == calendar.component(.year, from: now) { return formatter("Md").string(from: date) }
     return formatter("Mdyy").string(from: date)
+  }
+
+  private static let formattersLock = NSLock()
+  nonisolated(unsafe) private static var formatters: [String: DateFormatter] = [:]
+
+  /** A date formatter per template, made once: making one is slow, and every row of the list and every stamp asks. */
+  static func formatter(_ template: String, calendar: Calendar, locale: Locale) -> DateFormatter {
+    let key = "\(template)|\(locale.identifier)|\(calendar.identifier)|\(calendar.timeZone.identifier)"
+    return formattersLock.withLock {
+      if let made = formatters[key] { return made }
+      let made = DateFormatter()
+      made.locale = locale; made.calendar = calendar; made.timeZone = calendar.timeZone
+      made.setLocalizedDateFormatFromTemplate(template)
+      formatters[key] = made
+      return made
+    }
   }
 
   /** A call's length the Mac's way: "01:11", or "1:02:05" past the hour. */

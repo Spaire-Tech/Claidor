@@ -66,7 +66,21 @@ enum Brand {
  * An agent's message as rich text: Markdown's bold and italics, a brand in
  * its colour, and a teammate's name in their butterfly's colour.
  */
+@MainActor private var richTextCache: [String: AttributedString] = [:]
+
+@MainActor
 func richText(_ markdown: String, agents: [Agent], dark: Bool) -> AttributedString {
+  // Parsing Markdown is the slow part of drawing a bubble: each text is parsed once per theme and roster.
+  let roster = agents.lazy.filter { !$0.isGroup }.map { "\($0.name)=\($0.colour ?? "")" }.joined(separator: ",")
+  let key = "\(dark ? 1 : 0)|\(roster)|\(markdown)"
+  if let made = richTextCache[key] { return made }
+  if richTextCache.count > 400 { richTextCache.removeAll(keepingCapacity: true) }
+  let made = parseRichText(markdown, agents: agents, dark: dark)
+  richTextCache[key] = made
+  return made
+}
+
+private func parseRichText(_ markdown: String, agents: [Agent], dark: Bool) -> AttributedString {
   var text = (try? AttributedString(markdown: markdown, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace))) ?? AttributedString(markdown)
   let bold = text.runs.compactMap { run -> Range<AttributedString.Index>? in
     guard let intent = run.inlinePresentationIntent, intent.contains(.stronglyEmphasized) else { return nil }
