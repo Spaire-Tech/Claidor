@@ -18,6 +18,8 @@ public enum BackendEvent: Sendable {
   case connection(live: Bool)
   /** A connected app changed: a sign-in finished, one was added or removed (`mcp-auth`, `mcp-servers`). */
   case appsChanged
+  /** The host's settings changed on some device (`host-settings`: the names of the fields), e.g. the pins. */
+  case settingsChanged([String])
 }
 
 /** One change to a chat (`roster.emit` in host/extensions/transcript/roster-projection.ts). */
@@ -74,12 +76,21 @@ public enum TranscriptChange: Sendable, Equatable {
  * computer (LiveBackend) and the demo's agents (DemoBackend), so every
  * screen can be seen, and photographed, without an account.
  */
+/** Lines of a chat, newest last, and where the lines before them start (`nextBeforeSeq`), when there are more. */
+public struct TranscriptPage: Sendable {
+  public let entries: [Entry]
+  public let olderBefore: Int?
+  public init(entries: [Entry], olderBefore: Int?) { self.entries = entries; self.olderBefore = olderBefore }
+}
+
 public protocol AgentBackend: AnyObject, Sendable {
   func listAgents() async throws -> [Agent]
   func transcript(_ agentId: String) async throws -> [Entry]
+  /** The newest lines (`before` nil), or the hundred before `before` (`getAgentTranscriptTail` with `beforeSeq`, as the Mac's chat loads more on scrolling up). */
+  func transcriptPage(_ agentId: String, before: Int?) async throws -> TranscriptPage
   /** A message, with the files already on the agent's computer (`uploadAttachment`). */
   /** A message, with the files already on the agent's computer, answering `replyTo` when set (`sendPrompt`'s `replyToId`). */
-  func send(_ agentId: String, text: String, attachments: [AttachmentRef], replyTo: String?) async throws
+  func send(_ agentId: String, text: String, attachments: [AttachmentRef], replyTo: String?, nonce: String?) async throws
   func markRead(_ agentId: String) async
   /** A new agent in a palette; its id. */
   func createAgent(name: String, colour: String) async throws -> String
@@ -99,6 +110,18 @@ public protocol AgentBackend: AnyObject, Sendable {
   func server(_ path: String, method: String?, body: JSON?) async throws -> JSON
   /** The agent's own screen on the cloud computer (`ensureForeverBox`): starting, or its stream. */
   func screen(_ agentId: String) async throws -> ScreenState
+}
+
+extension AgentBackend {
+  /** A message with a nonce of its own (the call's requests, which nothing waits to see). */
+  public func send(_ agentId: String, text: String, attachments: [AttachmentRef], replyTo: String?) async throws {
+    try await send(agentId, text: text, attachments: attachments, replyTo: replyTo, nonce: nil)
+  }
+
+  /** A backend that keeps whole chats has no older page. */
+  public func transcriptPage(_ agentId: String, before: Int?) async throws -> TranscriptPage {
+    before == nil ? TranscriptPage(entries: try await transcript(agentId), olderBefore: nil) : TranscriptPage(entries: [], olderBefore: nil)
+  }
 }
 
 /** An agent's screen: still starting (with how far the image has come), or live at a WebSocket. */
@@ -149,17 +172,25 @@ public final class LiveBackend: AgentBackend, @unchecked Sendable {
    * chat), and an agent waiting to introduce itself does so.
    */
   public func transcript(_ agentId: String) async throws -> [Entry] {
-    let page: JSON
-    do { page = try await gateway.command("openAgentTail", ["id": .string(agentId), "limit": 500]) }
-    catch { page = try await gateway.command("getAgentTranscriptTail", ["id": .string(agentId), "limit": 500]) }
-    return (page["entries"]?.array ?? page.array ?? []).compactMap(Entry.init)
+    try await transcriptPage(agentId, before: nil).entries
   }
 
-  public func send(_ agentId: String, text: String, attachments: [AttachmentRef], replyTo: String?) async throws {
-    // The host's argument names (host-gateway-api.ts, sendPrompt); the nonce lets a retried send land once.
+  public func transcriptPage(_ agentId: String, before: Int?) async throws -> TranscriptPage {
+    let page: JSON
+    if let before {
+      page = try await gateway.command("getAgentTranscriptTail", ["id": .string(agentId), "limit": 100, "beforeSeq": .number(Double(before))])
+    } else {
+      do { page = try await gateway.command("openAgentTail", ["id": .string(agentId), "limit": 500]) }
+      catch { page = try await gateway.command("getAgentTranscriptTail", ["id": .string(agentId), "limit": 500]) }
+    }
+    return TranscriptPage(entries: (page["entries"]?.array ?? page.array ?? []).compactMap(Entry.init), olderBefore: page["nextBeforeSeq"]?.int)
+  }
+
+  public func send(_ agentId: String, text: String, attachments: [AttachmentRef], replyTo: String?, nonce: String?) async throws {
+    // The host's argument names (host-gateway-api.ts, sendPrompt). The nonce lets a resent message land once, and the host keeps it on the line it writes (`clientNonce`), so the app knows its own message when it comes back.
     var args: JSON = [
       "agentId": .string(agentId), "prompt": .string(text), "attachmentPaths": JSON(attachments.map(\.path)), "attachmentNames": JSON(attachments.map(\.name)),
-      "clientNonce": .string("ios-\(UUID().uuidString.lowercased())"), "directAddressedAcceptance": true,
+      "clientNonce": .string(nonce ?? "ios-\(UUID().uuidString.lowercased())"), "directAddressedAcceptance": true,
       "composedAtMs": .number(Date().timeIntervalSince1970 * 1000),
     ]
     if let replyTo { args = args.setting("replyToId", .string(replyTo)) }
@@ -229,6 +260,8 @@ public final class LiveBackend: AgentBackend, @unchecked Sendable {
       return TranscriptChange(payload).map { [.transcript($0)] } ?? []
     case "mcp-auth", "mcp-servers", "sand:mcp-auth-event":
       return [.appsChanged]
+    case "host-settings":
+      return [.settingsChanged(payload["fields"]?.array?.compactMap(\.text) ?? [])]
     case "outline":
       guard let agentId = payload["agentId"]?.text else { return [] }
       let items = payload["item"].map { [$0] } ?? payload["items"]?.array ?? []

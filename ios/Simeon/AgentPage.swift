@@ -35,6 +35,8 @@ struct AgentPageSheet: View {
                     Image(systemName: "pencil").font(.system(size: 14, weight: .medium)).foregroundStyle(Ink.primary)
                       .frame(width: 32, height: 32)
                       .background(Ink.bubbleTheirs, in: Circle())
+                      .frame(width: 44, height: 44)
+                      .contentShape(.circle)
                   }
                   .buttonStyle(.plain)
                   .accessibilityLabel("Edit agent avatar")
@@ -73,7 +75,7 @@ struct AgentPageSheet: View {
       }
       .background(Ink.ground)
       .toolbar { ToolbarItem(placement: .topBarLeading) { CloseButton() } }
-      .sheet(isPresented: $editingAvatar) { AvatarEditor(agentId: agentId) }
+      .sheet(isPresented: $editingAvatar) { AvatarEditor(agentId: agentId).problemAlert() }
     }
   }
 }
@@ -203,18 +205,22 @@ struct RoutinesTab: View {
     }
     .task { await reload() }
     .sheet(item: $editing, onDismiss: { Task { await reload() } }) { item in
-      RoutineEditor(agentId: agent.id, routine: item.routine, isNew: item.isNew)
+      RoutineEditor(agentId: agent.id, routine: item.routine, isNew: item.isNew).problemAlert()
     }
   }
 
   private var createButton: some View {
-    Button("Create Routine") {
+    Button {
       editing = EditingRoutine(id: UUID().uuidString, routine: Routine(id: "", name: "", prompt: "", schedule: Schedule.daily(hour: 9, minute: 0).cron), isNew: true)
+    } label: {
+      // The pill is the label, so all of it takes the tap, not just the words.
+      Text("Create Routine")
+        .font(.system(size: 16, weight: .medium))
+        .foregroundStyle(Ink.ground)
+        .padding(.horizontal, 22).frame(height: 40)
+        .background(Ink.primary, in: Capsule())
+        .contentShape(.capsule)
     }
-    .font(.system(size: 16, weight: .medium))
-    .foregroundStyle(Ink.ground)
-    .padding(.horizontal, 22).frame(height: 40)
-    .background(Ink.primary, in: Capsule())
     .buttonStyle(.plain)
   }
 
@@ -236,6 +242,8 @@ struct RoutineEditor: View {
   @Environment(AppStore.self) private var store
   @Environment(\.dismiss) private var dismiss
   @State private var original: Routine?
+  /** Create, Test run now or Delete on its way: one tap is one run (a double tap ran it twice). */
+  @State private var busy = false
 
   var body: some View {
     NavigationStack {
@@ -260,8 +268,16 @@ struct RoutineEditor: View {
         }
         if !isNew {
           Section {
-            Button { Task { await store.runRoutineNow(routine.id, agentId: agentId) } } label: { Label("Test run now", systemImage: "play") }
-            Button(role: .destructive) { Task { await store.deleteRoutine(routine.id, agentId: agentId); dismiss() } } label: { Label("Delete routine", systemImage: "trash") }
+            Button {
+              busy = true
+              Task { await store.runRoutineNow(routine.id, agentId: agentId); busy = false }
+            } label: { Label("Test run now", systemImage: "play") }
+            .disabled(busy)
+            Button(role: .destructive) {
+              busy = true
+              Task { await store.deleteRoutine(routine.id, agentId: agentId); dismiss() }
+            } label: { Label("Delete routine", systemImage: "trash") }
+            .disabled(busy)
           }
           if !routine.runs.isEmpty {
             Section("Runs") {
@@ -284,9 +300,10 @@ struct RoutineEditor: View {
         if isNew {
           ToolbarItem(placement: .topBarTrailing) {
             Button("Create") {
+              busy = true
               Task { await store.saveRoutine(routine, agentId: agentId, isNew: true); dismiss() }
             }
-            .disabled(routine.name.trimmingCharacters(in: .whitespaces).isEmpty || routine.prompt.trimmingCharacters(in: .whitespaces).isEmpty)
+            .disabled(busy || routine.name.trimmingCharacters(in: .whitespaces).isEmpty || routine.prompt.trimmingCharacters(in: .whitespaces).isEmpty)
           }
         }
       }
@@ -446,7 +463,7 @@ struct GroupMembers: View {
         Rectangle().fill(Ink.hairline).frame(height: 1)
       }
     }
-    .sheet(isPresented: $editing) { MembersEditor(group: group) }
+    .sheet(isPresented: $editing) { MembersEditor(group: group).problemAlert() }
   }
 }
 
@@ -455,6 +472,7 @@ struct MembersEditor: View {
   @Environment(AppStore.self) private var store
   @Environment(\.dismiss) private var dismiss
   @State private var picked: Set<String> = []
+  @State private var saving = false
 
   var body: some View {
     NavigationStack {
@@ -478,9 +496,10 @@ struct MembersEditor: View {
         ToolbarItem(placement: .topBarTrailing) {
           Button("Save") {
             let ids = store.agents.filter { picked.contains($0.id) }.map(\.id)
+            saving = true
             Task { await store.setMembers(group.id, ids); dismiss() }
           }
-          .disabled(picked.count < 2)
+          .disabled(saving || picked.count < 2)
         }
       }
       .onAppear { picked = Set(group.memberIds) }
@@ -566,6 +585,7 @@ struct AvatarEditor: View {
             .frame(width: 40, height: 40)
             .padding(4)
             .overlay(Circle().stroke(agent.palette.id == palette.id && agent.avatarDataURL == nil ? Ink.blue : .clear, lineWidth: 2))
+            .contentShape(.circle)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(palette.label)

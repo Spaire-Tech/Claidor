@@ -348,7 +348,8 @@ struct MarkdownTable: View {
       Grid(alignment: .leading, horizontalSpacing: 0, verticalSpacing: 0) {
         GridRow {
           ForEach(Array(header.enumerated()), id: \.offset) { index, cell in
-            InlineText.make(cell, size: 13, weight: .medium, colour: Ink.primary, mentioning: mentioning)
+            InlineText.make(cell, size: 13, weight: .medium, mentioning: mentioning)
+              .foregroundStyle(Ink.primary)
               .gridColumnAlignment(alignment(index))
               .padding(8)
           }
@@ -357,7 +358,8 @@ struct MarkdownTable: View {
           Divider().overlay(Ink.hairline).gridCellUnsizedAxes(.horizontal)
           GridRow {
             ForEach(Array(row.enumerated()), id: \.offset) { _, cell in
-              InlineText.make(cell, size: 13, colour: Ink.secondary, mentioning: mentioning)
+              InlineText.make(cell, size: 13, mentioning: mentioning)
+                .foregroundStyle(Ink.secondary)
                 .padding(8)
             }
           }

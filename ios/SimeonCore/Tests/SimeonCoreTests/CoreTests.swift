@@ -775,6 +775,68 @@ final class MarkdownTests: XCTestCase {
     XCTAssertEqual(bubbles[2].quote, "(deleted)")
     XCTAssertEqual(Chat.quoteLine(entries[0], limit: 10), "Thursday i…")
   }
+  /** The row menu's commands, as the Mac's sidebar sends them: pins shared through the host's settings, read, hide, duplicate, delete. */
+  @MainActor
+  func testTheListDoesWhatTheMacsMenuDoes() async throws {
+    let store = AppStore()
+    let backend = DemoBackend(seed: DemoData.seed(), pace: 0.01, call: nil)
+    await store.attach(backend)
+    XCTAssertTrue(store.pinned.isEmpty)
+    let all = store.listed.count
+
+    await store.setPinned("theo", true)
+    await store.setPinned("iris", true)
+    XCTAssertEqual(store.pinned.map(\.id), ["theo", "iris"])
+    XCTAssertFalse(store.listed.contains { $0.id == "theo" })
+    XCTAssertEqual(store.listed.count, all - 2)
+    let settings = try await backend.command("getHostSettings", [:])
+    XCTAssertEqual(settings["pinnedAgentIds"]?.array?.compactMap(\.text), ["theo", "iris"])
+    try await settle()
+    await store.movePin("iris", to: 0)
+    try await settle()
+    XCTAssertEqual(store.pinned.map(\.id), ["iris", "theo"])
+    await store.setPinned("theo", false)
+    XCTAssertEqual(store.pinned.map(\.id), ["iris"])
+
+    await store.setUnread("scout", true)
+    try await settle()
+    XCTAssertTrue(store.agent("scout")?.hasUnread ?? false)
+    await store.setUnread("scout", false)
+    try await settle()
+    XCTAssertFalse(store.agent("scout")?.hasUnread ?? true)
+
+    await store.setHidden("scout", true)
+    try await settle()
+    XCTAssertEqual(store.hiddenAgents.map(\.id), ["scout"])
+    XCTAssertFalse(store.listed.contains { $0.id == "scout" })
+    XCTAssertNotNil(store.agent("scout"), "a hidden agent stays in the roster: groups and mentions still need it")
+    await store.setHidden("scout", false)
+    try await settle()
+    XCTAssertTrue(store.hiddenAgents.isEmpty)
+
+    let copy = await store.duplicate("theo")
+    XCTAssertNotNil(copy)
+    try await settle()
+    XCTAssertEqual(store.agent(copy)?.name, "Theo copy")
+
+    let deleted = await store.delete(["iris"])
+    XCTAssertTrue(deleted)
+    XCTAssertNil(store.agent("iris"))
+    XCTAssertTrue(store.pinned.isEmpty, "a deleted agent leaves the pins")
+  }
+
+  /** The demo answers a command, then sends its event, as the host does: give the event its turn. */
+  private func settle() async throws { try await Task.sleep(nanoseconds: 60_000_000) }
+
+  func testTheComposerOffersNamesAfterAnAt() {
+    XCTAssertEqual(Mentions.query("Ask @"), "")
+    XCTAssertEqual(Mentions.query("Ask @Th"), "Th")
+    XCTAssertEqual(Mentions.query("@Iris"), "Iris")
+    XCTAssertNil(Mentions.query("mail me at bass@simeonlabs"), "an address is not a mention")
+    XCTAssertNil(Mentions.query("Ask @Theo now"))
+    XCTAssertEqual(Mentions.inserting("Theo", into: "Ask @Th"), "Ask @Theo ")
+  }
+
   func testTheListLineIsTheMacs() {
     XCTAssertEqual(Preview.plain("See [the doc](https://simeonlabs.com/doc) and **Stripe**: `refund` done.\n\n- one\n- two"), "See the doc and Stripe: refund done. one two")
     XCTAssertEqual(Preview.plain("## Heading\n> quoted ~~old~~ _new_"), "Heading quoted old new")
@@ -794,7 +856,7 @@ final class QuietBackend: AgentBackend, @unchecked Sendable {
   var opened: [String] = []
   func listAgents() async throws -> [Agent] { [Agent(id: "theo", name: "Theo")] }
   func transcript(_ agentId: String) async throws -> [Entry] { opened.append(agentId); return lines.compactMap(Entry.init) }
-  func send(_ agentId: String, text: String, attachments: [AttachmentRef], replyTo: String?) async throws {}
+  func send(_ agentId: String, text: String, attachments: [AttachmentRef], replyTo: String?, nonce: String?) async throws {}
   func markRead(_ agentId: String) async {}
   func createAgent(name: String, colour: String) async throws -> String { "x" }
   func createGroup(name: String, memberIds: [String]) async throws -> String { "g" }
@@ -802,6 +864,116 @@ final class QuietBackend: AgentBackend, @unchecked Sendable {
   func updateAgent(_ agentId: String, name: String, title: String, description: String) async throws {}
   func routines(_ agentId: String) async throws -> [JSON] { [] }
   func events() -> AsyncStream<BackendEvent> { AsyncStream { _ in } }
+  var call: CallEngine? { nil }
+  func command(_ method: String, _ args: JSON) async throws -> JSON { [:] }
+  func server(_ path: String, method: String?, body: JSON?) async throws -> JSON { [:] }
+  func screen(_ agentId: String) async throws -> ScreenState { ScreenState(socket: nil, state: "starting") }
+}
+
+/** The chat's Mac behaviours: a message shows at once and says when it failed; older lines load on scrolling up; a streamed answer redraws only itself. */
+@MainActor
+final class ChatDeliveryTests: XCTestCase {
+  func testASentMessageShowsAtOnceAndSaysWhenItFailed() async throws {
+    let backend = ScriptedBackend()
+    backend.failSends = true
+    let store = AppStore()
+    await store.attach(backend)
+    await store.open("theo")
+    await store.send("Book the flight", to: "theo")
+    let rows = store.rows(for: "theo")
+    guard case .bubble(let mine)? = rows.dropLast().last, case .failedSend(_, let nonce)? = rows.last else { return XCTFail("\(rows.map(\.id))") }
+    XCTAssertEqual(mine.text, "Book the flight")
+    XCTAssertTrue(mine.fromPerson)
+    XCTAssertEqual(nonce, mine.id)
+
+    // Resend: it goes, and the host's copy takes its place.
+    backend.failSends = false
+    await store.resend(nonce, in: "theo")
+    XCTAssertFalse(store.rows(for: "theo").contains { if case .failedSend = $0 { return true }; return false })
+    backend.push(.transcript(.upsert(agentId: "theo", entry: Entry(["kind": "message", "id": "u2", "role": "user", "content": "Book the flight", "timestampMs": 2_000])!)))
+    try await Task.sleep(nanoseconds: 50_000_000)
+    let ids = store.rows(for: "theo").compactMap { row -> String? in if case .bubble(let b) = row { return b.id }; return nil }
+    XCTAssertEqual(ids, ["u1", "u2"], "the waiting copy left when the host's arrived")
+    XCTAssertFalse(store.arrived.contains("u2"), "the host's copy replaces the waiting one in place, without coming in again")
+
+    // The host's copy is known by the nonce it was sent with, even when the host wrote its text differently.
+    await store.send("Thanks", to: "theo")
+    guard case .bubble(let waiting)? = store.rows(for: "theo").last else { return XCTFail() }
+    XCTAssertTrue(waiting.id.hasPrefix("ios-"))
+    backend.push(.transcript(.upsert(agentId: "theo", entry: Entry(["kind": "message", "id": "u3", "role": "user", "content": "Thanks!", "clientNonce": .string(waiting.id), "timestampMs": 3_000])!)))
+    try await Task.sleep(nanoseconds: 50_000_000)
+    XCTAssertEqual(store.rows(for: "theo").compactMap { row -> String? in if case .bubble(let b) = row { return b.id }; return nil }, ["u1", "u2", "u3"])
+
+    // Delete on a failed one: it only leaves the screen.
+    backend.failSends = true
+    await store.send("Second try", to: "theo")
+    guard case .failedSend(_, let second)? = store.rows(for: "theo").last else { return XCTFail() }
+    store.discardFailed(second, in: "theo")
+    XCTAssertFalse(store.rows(for: "theo").contains { $0.id == second })
+  }
+
+  func testOlderLinesLoadWhenScrolledUp() async throws {
+    let backend = ScriptedBackend()
+    backend.lines = (1...650).map { ["kind": "message", "id": .string("m\($0)"), "role": $0 % 2 == 0 ? "user" : "assistant", "content": .string("Line \($0)"), "timestampMs": .number(Double($0) * 1_000)] }
+    let store = AppStore()
+    await store.attach(backend)
+    await store.open("theo")
+    XCTAssertEqual(store.transcripts["theo"]?.count, 500)
+    XCTAssertEqual(store.olderBefore["theo"], 150)
+    await store.loadOlder("theo")
+    XCTAssertEqual(store.transcripts["theo"]?.count, 600)
+    XCTAssertEqual(store.transcripts["theo"]?.first?.id, "m51")
+    await store.loadOlder("theo")
+    XCTAssertEqual(store.transcripts["theo"]?.first?.id, "m1")
+    XCTAssertNil(store.olderBefore["theo"])
+    // A fetch of the newest lines keeps what was scrolled in.
+    await store.refresh("theo")
+    XCTAssertEqual(store.transcripts["theo"]?.count, 650)
+  }
+
+  func testAStreamedAnswerChangesOnlyItsRowAndMatchesAFullLayout() async throws {
+    let backend = ScriptedBackend()
+    let store = AppStore()
+    await store.attach(backend)
+    await store.open("theo")
+    func answer(_ text: String, streaming: Bool) -> Entry { Entry(["kind": "message", "id": "a1", "role": "assistant", "content": .string(text), "isStreaming": .bool(streaming), "timestampMs": 3_000])! }
+    backend.push(.transcript(.upsert(agentId: "theo", entry: answer("The", streaming: true))))
+    try await Task.sleep(nanoseconds: 150_000_000)
+    XCTAssertTrue(store.arrived.contains("a1"), "a line that arrives on screen comes in with the motion")
+    for text in ["The flight", "The flight is", "The flight is booked."] {
+      backend.push(.transcript(.upsert(agentId: "theo", entry: answer(text, streaming: true))))
+    }
+    try await Task.sleep(nanoseconds: 150_000_000)
+    guard case .bubble(let last)? = store.rows(for: "theo").last else { return XCTFail() }
+    XCTAssertEqual(last.text, "The flight is booked.")
+    XCTAssertEqual(store.rows(for: "theo"), Chat.rows(store.transcripts["theo"] ?? []), "the quick path draws what a full layout draws")
+  }
+}
+
+/** A host with one agent, Theo: pages its lines by `seq` (the index), fails sends on demand, and streams what a test pushes. */
+final class ScriptedBackend: AgentBackend, @unchecked Sendable {
+  var lines: [JSON] = [["kind": "message", "id": "u1", "role": "user", "content": "Hi Theo", "timestampMs": 1_000]]
+  var failSends = false
+  private var continuation: AsyncStream<BackendEvent>.Continuation?
+  func push(_ event: BackendEvent) { continuation?.yield(event) }
+  func listAgents() async throws -> [Agent] { [Agent(id: "theo", name: "Theo")] }
+  func transcript(_ agentId: String) async throws -> [Entry] { try await transcriptPage(agentId, before: nil).entries }
+  func transcriptPage(_ agentId: String, before: Int?) async throws -> TranscriptPage {
+    let end = before ?? lines.count
+    let size = before == nil ? 500 : 100
+    let start = max(0, end - size)
+    return TranscriptPage(entries: lines[start..<end].compactMap(Entry.init), olderBefore: start > 0 ? start : nil)
+  }
+  func send(_ agentId: String, text: String, attachments: [AttachmentRef], replyTo: String?, nonce: String?) async throws {
+    if failSends { throw GatewayError(message: "offline", refused: false) }
+  }
+  func markRead(_ agentId: String) async {}
+  func createAgent(name: String, colour: String) async throws -> String { "x" }
+  func createGroup(name: String, memberIds: [String]) async throws -> String { "g" }
+  func answer(_ agentId: String, entryId: String, value: String) async throws {}
+  func updateAgent(_ agentId: String, name: String, title: String, description: String) async throws {}
+  func routines(_ agentId: String) async throws -> [JSON] { [] }
+  func events() -> AsyncStream<BackendEvent> { AsyncStream { self.continuation = $0 } }
   var call: CallEngine? { nil }
   func command(_ method: String, _ args: JSON) async throws -> JSON { [:] }
   func server(_ path: String, method: String?, body: JSON?) async throws -> JSON { [:] }

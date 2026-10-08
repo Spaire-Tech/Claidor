@@ -32,7 +32,7 @@ public struct AppTool: Identifiable, Hashable, Sendable {
   public let name: String
   public let title: String?
   public let summary: String?
-  public let isDisabled: Bool
+  public var isDisabled: Bool
   public var id: String { name }
 
   init?(_ json: JSON) {
@@ -148,6 +148,30 @@ public final class AppStore {
   @ObservationIgnored private var refreshing: Set<String> = []
   /** The newest line each chat was fetched again for, so a line the fetch does not carry (a thread's reply) is not fetched for twice. */
   @ObservationIgnored private var caughtUp: [String: String] = [:]
+  /** A streamed answer's newest copy, when it is the only change waiting: just the last row is redrawn, not the whole chat laid out again. */
+  @ObservationIgnored private var streamingOnly: [String: Entry] = [:]
+  /** Messages on their way, by chat (see `send`). */
+  @ObservationIgnored private var outbox: [String: [Outgoing]] = [:]
+  /** Lines that arrived while their chat was on screen, and messages just sent: they come in with the Mac's motion, once. */
+  @ObservationIgnored public private(set) var arrived: Set<String> = []
+  /** Where each chat's older lines start (`nextBeforeSeq`); nil once the first line is here. */
+  public private(set) var olderBefore: [String: Int] = [:]
+  public private(set) var loadingOlder: Set<String> = []
+  /** Chats with older pages loaded: a fetch of the newest lines keeps them. */
+  @ObservationIgnored private var paged: Set<String> = []
+
+  /** A message the person sent, shown at once and kept until the host's own copy arrives (the Mac's outbox). */
+  struct Outgoing {
+    enum State { case sending, sent, failed }
+    let id: String
+    let text: String
+    let files: [(name: String, data: Data)]
+    let replyTo: String?
+    let at: Double
+    /** The chat's lines when it was sent: the host's copy is a line not among them. */
+    let known: Set<String>
+    var state: State
+  }
 
   public init() {}
 
@@ -165,18 +189,20 @@ public final class AppStore {
       }
     }
     backend.call?.observe { [weak self] state in
-      Task { @MainActor in self?.call = state }
+      Task { @MainActor in self?.take(state) }
     }
     await reloadRoster()
+    await loadPins()
   }
 
   public func detach() {
     listening?.cancel()
     listening = nil
     backend = nil
-    agents = []; transcripts = [:]; chatRows = [:]; steps = [:]; call = nil; isLive = false; account = nil; openChat = nil
+    agents = []; transcripts = [:]; chatRows = [:]; steps = [:]; call = nil; callLevels = []; isLive = false; account = nil; openChat = nil
     layoutTask?.cancel(); layoutTask = nil; pendingLayout = []; refreshing = []; caughtUp = [:]
-    pendingAnswers = [:]; unreadAfter = [:]; apps = []; catalog = []
+    pendingAnswers = [:]; unreadAfter = [:]; apps = []; catalog = []; pinnedIds = []
+    streamingOnly = [:]; outbox = [:]; arrived = []; olderBefore = [:]; loadingOlder = []; paged = []
   }
 
   public func reloadRoster() async {
@@ -191,9 +217,12 @@ public final class AppStore {
   public func apply(_ event: BackendEvent) {
     switch event {
     case .agents(let list):
-      agents = sortRoster(list)
+      let sorted = sortRoster(list)
+      if sorted != agents { agents = sorted }
       catchUpOpenChat()
     case .agentUpserted(let agent):
+      // The host sends the same agent again often (each step of a turn); only a change redraws the list.
+      if agents.contains(agent) { return }
       var next = agents.filter { $0.id != agent.id }
       next.append(agent)
       agents = sortRoster(next)
@@ -201,8 +230,24 @@ public final class AppStore {
     case .transcript(let change):
       guard let current = transcripts[change.agentId] else { return }
       var streaming = false
-      if case .upsert(_, let entry) = change { streaming = entry.isStreaming }
-      setTranscript(change.agentId, change.applied(to: current), soon: streaming)
+      if case .upsert(let agentId, let entry) = change {
+        streaming = entry.isStreaming
+        let isNew = !current.contains { $0.id == entry.id }
+        if isNew && agentId == openChat { arrived.insert(entry.id) }
+        // The answer growing at the end of the chat: only its own row changes, unless a whole layout is already waiting.
+        let growingLast = !isNew && streaming && current.last?.id == entry.id && outbox[agentId] == nil
+        let wholeWaiting = pendingLayout.contains(agentId) && streamingOnly[agentId] == nil
+        streamingOnly[agentId] = growingLast && !wholeWaiting ? entry : nil
+      } else {
+        streamingOnly[change.agentId] = nil
+      }
+      let next = change.applied(to: current)
+      if streamingOnly[change.agentId] != nil {
+        transcripts[change.agentId] = next
+        scheduleLayout(change.agentId)
+      } else {
+        setTranscript(change.agentId, next, soon: streaming)
+      }
     case .step(let agentId, let id, let summary, let isRunning):
       if isRunning { running[agentId] = id; steps[agentId] = summary }
       else if running[agentId] == id { running[agentId] = nil; steps[agentId] = nil }
@@ -218,14 +263,122 @@ public final class AppStore {
       }
     case .appsChanged:
       Task { await loadApps() }
+    case .settingsChanged(let fields):
+      if fields.isEmpty || fields.contains("pinnedAgentIds") { Task { await loadPins() } }
     }
   }
 
   public func agent(_ id: String?) -> Agent? { agents.first { $0.id == id } }
 
+  // MARK: The list, as the Mac's sidebar (pins, read, hidden, delete, duplicate)
+
+  /** The pinned agents, in their order (the host's `pinnedAgentIds`, shared with the Mac). */
+  public private(set) var pinnedIds: [String] = []
+
+  /** The pinned agents that still exist and are not hidden, in pin order. */
+  public var pinned: [Agent] { pinnedIds.compactMap { id in agents.first { $0.id == id && !$0.isHidden } } }
+  /** The list below the pins: every agent not pinned and not hidden, newest activity first. */
+  public var listed: [Agent] { let pins = Set(pinnedIds); return agents.filter { !$0.isHidden && !pins.contains($0.id) } }
+  public var hiddenAgents: [Agent] { agents.filter(\.isHidden) }
+
+  /** Bumped by each pin written here: a read of the host's pins that started before it would undo it, so it is dropped. */
+  @ObservationIgnored private var pinWrites = 0
+
+  public func loadPins() async {
+    let started = pinWrites
+    guard let settings = try? await backend?.command("getHostSettings", [:]), started == pinWrites else { return }
+    let ids = settings["pinnedAgentIds"]?.array?.compactMap(\.text) ?? []
+    if ids != pinnedIds { pinnedIds = ids }
+  }
+
+  /** Pin or unpin: the whole ordered list is written, as the Mac writes it (`setHostSettings({pinnedAgentIds})`); a new pin goes last. */
+  public func setPinned(_ agentId: String, _ pinned: Bool) async {
+    var next = pinnedIds.filter { $0 != agentId }
+    if pinned { next.append(agentId) }
+    await writePins(next, failure: pinned ? "Couldn't pin it" : "Couldn't unpin it")
+  }
+
+  /** Moves a pin to another pin's place (the Mac's drag in the pin grid). */
+  public func movePin(_ agentId: String, to index: Int) async {
+    guard let from = pinnedIds.firstIndex(of: agentId) else { return }
+    var next = pinnedIds
+    next.remove(at: from)
+    next.insert(agentId, at: min(max(index, 0), next.count))
+    await writePins(next, failure: "Couldn't move the pin")
+  }
+
+  /** Shown at once, then written; a refusal puts back what the host holds. */
+  private func writePins(_ next: [String], failure: String) async {
+    guard next != pinnedIds else { return }
+    pinWrites += 1
+    pinnedIds = next
+    if await command("setHostSettings", ["pinnedAgentIds": JSON(next)], failure: failure) == nil { await loadPins() }
+  }
+
+  /** Mark as Read / Mark as Unread (`setAgentUnread`), shown at once. */
+  public func setUnread(_ agentId: String, _ unread: Bool) async {
+    if let index = agents.firstIndex(where: { $0.id == agentId }) {
+      agents[index].hasUnread = unread
+      agents[index].unreadCount = unread ? max(agents[index].unreadCount, 1) : 0
+    }
+    await command("setAgentUnread", ["id": .string(agentId), "isUnread": .bool(unread), "atMs": .number(Date().timeIntervalSince1970 * 1000)], failure: "Couldn't change it")
+  }
+
+  /** Hide from the list, or show again (`setAgentHiddenFromSidebar`). A hidden agent keeps working and keeps its history. */
+  public func setHidden(_ agentId: String, _ hidden: Bool) async {
+    if let index = agents.firstIndex(where: { $0.id == agentId }) { agents[index].isHidden = hidden }
+    if await command("setAgentHiddenFromSidebar", ["id": .string(agentId), "isHidden": .bool(hidden)], failure: hidden ? "Couldn't hide it" : "Couldn't show it again") == nil {
+      await reloadRoster()
+    }
+  }
+
+  /** Deletes agents or groups and their chats (`deleteAgents`); false when the host refused. */
+  @discardableResult
+  public func delete(_ agentIds: [String]) async -> Bool {
+    guard let backend else { return false }
+    do { _ = try await backend.command("deleteAgents", ["ids": JSON(agentIds)]) } catch {
+      problem = "Deleting failed. Check your connection and try again."
+      return false
+    }
+    let gone = Set(agentIds)
+    agents.removeAll { gone.contains($0.id) }
+    if pinnedIds.contains(where: gone.contains) { pinnedIds.removeAll(where: gone.contains) }
+    for id in agentIds { transcripts[id] = nil; chatRows[id] = nil }
+    return true
+  }
+
+  /** A copy of an agent (`duplicateAgent`); the copy's id, to open it. */
+  @discardableResult
+  public func duplicate(_ agentId: String) async -> String? {
+    guard let answer = await command("duplicateAgent", ["id": .string(agentId)], failure: "Couldn't duplicate it") else { return nil }
+    await reloadRoster()
+    return answer["agent"]?["id"]?.text ?? answer["id"]?.text ?? answer["agentId"]?.text
+  }
+
   private func noteNames() {
     let names = agents.filter { !$0.isGroup }.map { Mentions.AgentName(name: $0.name.trimmingCharacters(in: .whitespaces), id: $0.id, colour: $0.palette.id) }
     if names != mentionNames { mentionNames = names }
+    let groups = Set(agents.filter(\.isGroup).map(\.id))
+    if groups != groupIds { groupIds = groups }
+  }
+
+  /** Which chats are groups, changed only when one is made or deleted: a chat's rows read it instead of the whole roster. */
+  public private(set) var groupIds: Set<String> = []
+
+  /** The waveform's bars, kept apart from the call: they change every 90 ms, and only the waveform should redraw with them. */
+  public private(set) var callLevels: [Double] = []
+
+  private func take(_ state: CallState?) {
+    guard var state else {
+      if call != nil { call = nil }
+      callLevels = []
+      return
+    }
+    let levels = state.levels
+    // The call keeps only whether there are bars, so its screens redraw when something else changes.
+    state.levels = levels.isEmpty ? [] : [1]
+    if state != call { call = state }
+    if levels != callLevels { callLevels = levels }
   }
 
   /** The members of a group, as agents. */
@@ -235,15 +388,77 @@ public final class AppStore {
 
   private func setTranscript(_ agentId: String, _ entries: [Entry], soon: Bool = false) {
     transcripts[agentId] = entries
+    streamingOnly[agentId] = nil
     for entry in entries where pendingAnswers[entry.id] != nil && (entry["respondedValue"]?.text != nil || entry["widgetDismissed"]?.bool == true) { pendingAnswers[entry.id] = nil }
+    settleOutbox(agentId, entries)
     if soon { scheduleLayout(agentId) } else { layOut(agentId) }
   }
 
   private func layOut(_ agentId: String) {
     pendingLayout.remove(agentId)
-    let rows = Chat.rows(transcripts[agentId] ?? [], isGroup: agent(agentId)?.isGroup ?? false, unreadAfter: unreadAfter[agentId])
+    if let entry = streamingOnly.removeValue(forKey: agentId), let rows = chatRows[agentId], let swapped = Self.replacingLast(rows, with: entry) {
+      if swapped != rows { chatRows[agentId] = swapped }
+      return
+    }
+    var entries = transcripts[agentId] ?? []
+    let waiting = outbox[agentId] ?? []
+    entries += waiting.flatMap(Self.entries(for:))
+    var rows = Chat.rows(entries, isGroup: agent(agentId)?.isGroup ?? false, unreadAfter: unreadAfter[agentId])
+    for item in waiting where item.state == .failed {
+      let last = rows.lastIndex { row in row.id == item.id || row.id.hasPrefix(item.id + "-file") } ?? rows.count - 1
+      rows.insert(.failedSend(id: "failed-\(item.id)", nonce: item.id), at: min(last + 1, rows.count))
+    }
     if chatRows[agentId] != rows { chatRows[agentId] = rows }
   }
+
+  /** The streamed answer's row with its new text, when it is the chat's last row; nil when the chat must be laid out again. */
+  static func replacingLast(_ rows: [ChatRow], with entry: Entry) -> [ChatRow]? {
+    guard case .bubble(let old)? = rows.last, old.id == entry.id, case .bubble(let new)? = Chat.row(for: entry) else { return nil }
+    var next = rows
+    next[next.count - 1] = .bubble(new.with(showsName: old.showsName, showsAvatar: old.showsAvatar, author: .some(old.author), quote: .some(old.quote)))
+    return next
+  }
+
+  /** A waiting message as the host would write it: its text, and a line per file. */
+  static func entries(for item: Outgoing) -> [Entry] {
+    var lines: [JSON] = item.files.enumerated().map { index, file in
+      ["kind": "user-attachment", "id": .string("\(item.id)-file\(index)"), "file_name": .string(file.name), "timestampMs": .number(item.at)]
+    }
+    if !item.text.isEmpty {
+      var message: JSON = ["kind": "message", "id": .string(item.id), "role": "user", "content": .string(item.text), "timestampMs": .number(item.at)]
+      if let reply = item.replyTo { message = message.setting("replyTo", .string(reply)) }
+      lines.append(message)
+    }
+    return lines.compactMap(Entry.init)
+  }
+
+  /** The host's copy of a waiting message arrived: the waiting one goes, and the host's takes its place without moving in again. */
+  private func settleOutbox(_ agentId: String, _ entries: [Entry]) {
+    guard var waiting = outbox[agentId], !waiting.isEmpty else { return }
+    var claimed: Set<String> = []
+    waiting.removeAll { item in
+      guard item.state != .failed else { return false }
+      let text = item.text.trimmingCharacters(in: .whitespacesAndNewlines)
+      let names = Set(item.files.map(\.name))
+      let copy = entries.first { entry in
+        guard !item.known.contains(entry.id), !claimed.contains(entry.id) else { return false }
+        // The host keeps the nonce it was sent with: that is this message, whatever the host made of its text.
+        if entry["clientNonce"]?.text == item.id { return true }
+        if !text.isEmpty {
+          return (entry.isFromPerson || entry.role == "user") && entry.content?.trimmingCharacters(in: .whitespacesAndNewlines) == text
+        }
+        return entry.kind == "user-attachment" && names.contains(entry["file_name"]?.text ?? entry["fileName"]?.text ?? "")
+      }
+      guard let copy else { return false }
+      claimed.insert(copy.id)
+      arrived.remove(copy.id)
+      return true
+    }
+    outbox[agentId] = waiting.isEmpty ? nil : waiting
+  }
+
+  /** The motion was played: a row scrolled away and back comes in still. */
+  public func settled(_ id: String) { arrived.remove(id) }
 
   private func scheduleLayout(_ agentId: String) {
     pendingLayout.insert(agentId)
@@ -286,8 +501,16 @@ public final class AppStore {
     refreshing.insert(agentId)
     defer { refreshing.remove(agentId) }
     do {
-      let fresh = try await backend.transcript(agentId)
-      let merged = Self.merge(fresh, live: transcripts[agentId] ?? [])
+      let page = try await backend.transcriptPage(agentId, before: nil)
+      let fresh = page.entries
+      var merged = Self.merge(fresh, live: transcripts[agentId] ?? [])
+      if paged.contains(agentId), let oldest = fresh.first?.timestampMs {
+        // Older pages scrolled in stay: the fetch carries only the newest lines.
+        let known = Set(merged.map(\.id))
+        merged = (transcripts[agentId] ?? []).filter { !known.contains($0.id) && ($0.timestampMs ?? 0) < oldest } + merged
+      } else {
+        olderBefore[agentId] = page.olderBefore
+      }
       if let unread { unreadAfter[agentId] = Self.unreadBoundary(merged, unread: unread) }
       setTranscript(agentId, merged)
     } catch {
@@ -321,22 +544,88 @@ public final class AppStore {
     return first - 1
   }
 
-  /** A message, and the composer's files: each put on the agent's computer first (`uploadAttachment`), as the Mac does. */
+  /** The hundred lines before the oldest one here (the Mac's chat, scrolled near its top). */
+  public func loadOlder(_ agentId: String) async {
+    guard let backend, let before = olderBefore[agentId], !loadingOlder.contains(agentId) else { return }
+    loadingOlder.insert(agentId)
+    defer { loadingOlder.remove(agentId) }
+    guard let page = try? await backend.transcriptPage(agentId, before: before) else { return }
+    let have = transcripts[agentId] ?? []
+    let known = Set(have.map(\.id))
+    paged.insert(agentId)
+    olderBefore[agentId] = page.olderBefore
+    setTranscript(agentId, page.entries.filter { !known.contains($0.id) } + have)
+  }
+
+  /**
+   * A message, and the composer's files (each put on the agent's computer
+   * first, `uploadAttachment`, as the Mac does). It shows at once, as the
+   * Mac's does, and stays until the host's copy arrives; if it cannot be
+   * sent it says "Failed to send" under it, with Resend and Delete.
+   */
   public func send(_ text: String, to agentId: String, attachments files: [(name: String, data: Data)] = [], replyTo: String? = nil) async {
     let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard let backend, !trimmed.isEmpty || !files.isEmpty else { return }
+    guard backend != nil, !trimmed.isEmpty || !files.isEmpty else { return }
+    let item = Outgoing(id: "ios-\(UUID().uuidString.lowercased())", text: trimmed, files: files, replyTo: replyTo, at: Date().timeIntervalSince1970 * 1000, known: Set((transcripts[agentId] ?? []).map(\.id)), state: .sending)
+    outbox[agentId, default: []].append(item)
+    arrived.insert(item.id)
+    for index in files.indices { arrived.insert("\(item.id)-file\(index)") }
+    layOut(agentId)
+    await deliver(item.id, in: agentId)
+  }
+
+  /** Resend on a message that failed. */
+  public func resend(_ id: String, in agentId: String) async {
+    guard outbox[agentId]?.contains(where: { $0.id == id && $0.state == .failed }) == true else { return }
+    await deliver(id, in: agentId)
+  }
+
+  /** Delete on a message that failed: it was never sent, so it only leaves the screen. */
+  public func discardFailed(_ id: String, in agentId: String) {
+    outbox[agentId]?.removeAll { $0.id == id }
+    if outbox[agentId]?.isEmpty == true { outbox[agentId] = nil }
+    layOut(agentId)
+  }
+
+  private func mark(_ id: String, in agentId: String, _ state: Outgoing.State) {
+    guard let index = outbox[agentId]?.firstIndex(where: { $0.id == id }) else { return }
+    outbox[agentId]?[index].state = state
+    layOut(agentId)
+  }
+
+  private func deliver(_ id: String, in agentId: String) async {
+    guard let backend, let item = outbox[agentId]?.first(where: { $0.id == id }) else { return }
+    mark(id, in: agentId, .sending)
     var refs: [AttachmentRef] = []
-    for file in files {
-      do {
+    do {
+      for file in item.files {
         let answer = try await backend.command("uploadAttachment", ["filename": .string(file.name), "bytesBase64": .string(file.data.base64EncodedString()), "agentId": .string(agentId)])
         guard let path = answer["path"]?.text else { throw GatewayError(message: "the computer kept no copy", refused: true) }
         refs.append(AttachmentRef(path: path, name: file.name))
-      } catch {
-        problem = "\(file.name) didn't upload: \(error.localizedDescription)"
-        return
       }
+      try await backend.send(agentId, text: item.text, attachments: refs, replyTo: item.replyTo, nonce: item.id)
+    } catch {
+      mark(id, in: agentId, .failed)
+      return
     }
-    do { try await backend.send(agentId, text: trimmed, attachments: refs, replyTo: replyTo) } catch { problem = "Your message didn't send: \(error.localizedDescription)" }
+    mark(id, in: agentId, .sent)
+    settleOutbox(agentId, transcripts[agentId] ?? [])
+    layOut(agentId)
+    // The host has it. If its copy did not stream (a dropped stream), fetch the chat; then the waiting one goes either way.
+    Task { [weak self] in
+      try? await Task.sleep(nanoseconds: 4_000_000_000)
+      await self?.settleLate(id, in: agentId)
+    }
+  }
+
+  private func settleLate(_ id: String, in agentId: String) async {
+    guard outbox[agentId]?.contains(where: { $0.id == id }) == true else { return }
+    await refresh(agentId)
+    if outbox[agentId]?.contains(where: { $0.id == id && $0.state == .sent }) == true {
+      outbox[agentId]?.removeAll { $0.id == id }
+      if outbox[agentId]?.isEmpty == true { outbox[agentId] = nil }
+      layOut(agentId)
+    }
   }
 
   public func answer(_ value: String, card entryId: String, in agentId: String) async {
@@ -430,18 +719,35 @@ public final class AppStore {
 
   // MARK: Connected apps (the Mac's Plugins, through `desktopMcp`)
 
+  /**
+   * The connected apps, read again. One read at a time: a card, the Connect
+   * apps sheet, an app event and the sign-in's poll often ask together, and
+   * an older answer landing last turned an Added card back into Add.
+   */
   public func loadApps() async {
+    if let running = appsLoad { return await running.value }
+    let load = Task { await readApps() }
+    appsLoad = load
+    await load.value
+    appsLoad = nil
+  }
+
+  @ObservationIgnored private var appsLoad: Task<Void, Never>?
+
+  private func readApps() async {
     guard let backend else { return }
     // Both at once: each is a round trip to the person's computer.
     let needsCatalog = catalog.isEmpty
     async let servers = try? backend.command("desktopMcp", ["action": "listServers", "args": []])
     async let list = needsCatalog ? try? backend.command("desktopMcp", ["action": "getCatalog", "args": []]) : nil
     if let state = await servers {
-      apps = (state["servers"]?.array ?? state.array ?? []).compactMap(ConnectedApp.init)
+      let next = (state["servers"]?.array ?? state.array ?? []).compactMap(ConnectedApp.init)
+      if next != apps { apps = next }
       appsLoadedAt = Date()
     }
     if let list = await list {
-      catalog = (list.array ?? list["plugins"]?.array ?? []).compactMap(CatalogApp.init)
+      let next = (list.array ?? list["plugins"]?.array ?? []).compactMap(CatalogApp.init)
+      if next != catalog { catalog = next }
     }
   }
 
@@ -468,7 +774,8 @@ public final class AppStore {
    */
   public func connectApp(named name: String) async -> URL? {
     guard let backend else { return nil }
-    if catalog.isEmpty || appsLoadedAt.map({ Date().timeIntervalSince($0) > 20 }) ?? true { await loadApps() }
+    // The box's app events keep the list current, so it is read here only when it never was.
+    if catalog.isEmpty || appsLoadedAt == nil { await loadApps() }
     let key = name.lowercased()
     var server = apps.first { $0.name.lowercased() == key || ($0.pluginId != nil && $0.pluginId == catalogApp(named: name)?.id) }
     if server == nil, let plugin = catalogApp(named: name) {
@@ -493,11 +800,22 @@ public final class AppStore {
     if server.status == "connected" { return nil }
     do {
       let started = try await backend.command("desktopMcp", ["action": "authenticateServer", "args": [.string(server.serverId), .string(server.accountKey), "connector_card"]])
-      return started["authorizationUrl"]?.text.flatMap(URL.init(string:))
+      return await signInStarted(started, name: name)
     } catch {
       problem = "Couldn't connect \(name): \(error.localizedDescription)"
       return nil
     }
+  }
+
+  /** The sign-in's page; or, when the box has none to offer, why (it was already signed in, or the app can't sign in here), said rather than silently dropped. */
+  private func signInStarted(_ started: JSON, name: String) async -> URL? {
+    if let url = started["authorizationUrl"]?.text.flatMap(URL.init(string:)) { return url }
+    if started["status"]?.string == "already-authenticated" {
+      await readApps()
+      return nil
+    }
+    problem = started["message"]?.text ?? "\(name) didn't offer a sign-in."
+    return nil
   }
 
   public func removeApp(_ app: ConnectedApp) async {
@@ -540,7 +858,7 @@ public final class AppStore {
   public func toggleTool(_ serverId: String, _ toolName: String) async -> [AppTool]? {
     do {
       let list = try await backend?.command("desktopMcp", ["action": "toggleMcpToolDisabled", "args": [["serverId": .string(serverId), "toolName": .string(toolName)]]])
-      await loadApps()
+      Task { await loadApps() }
       return (list?.array ?? []).compactMap(AppTool.init)
     } catch {
       problem = "Couldn't change \(toolName): \(error.localizedDescription)"
@@ -563,8 +881,8 @@ public final class AppStore {
   /** Sign in to one account of an app (`authenticateServer`), for the system's sign-in sheet. */
   public func signInURL(_ app: ConnectedApp) async -> URL? {
     do {
-      let started = try await backend?.command("desktopMcp", ["action": "authenticateServer", "args": [.string(app.serverId), .string(app.accountKey), "connector_card"]])
-      return started?["authorizationUrl"]?.text.flatMap(URL.init(string:))
+      guard let started = try await backend?.command("desktopMcp", ["action": "authenticateServer", "args": [.string(app.serverId), .string(app.accountKey), "connector_card"]]) else { return nil }
+      return await signInStarted(started, name: app.name)
     } catch {
       problem = "Couldn't sign in to \(app.name): \(error.localizedDescription)"
       return nil

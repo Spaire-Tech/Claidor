@@ -38,14 +38,29 @@ struct GreyButtonStyle: ButtonStyle {
   var capsule = false
 
   func makeBody(configuration: Configuration) -> some View {
-    let shape = RoundedRectangle(cornerRadius: capsule ? height / 2 : 8, style: .continuous)
-    return configuration.label
-      .font(.system(size: capsule ? 13 : 14))
-      .foregroundStyle(Ink.primary)
-      .padding(.horizontal, capsule ? 12 : 10)
-      .frame(height: height)
-      .background(Ink.pill.opacity(configuration.isPressed ? 2 : 1), in: shape)
-      .overlay(shape.stroke(Ink.edge, lineWidth: 1))
+    GreyButton(configuration: configuration, height: height, capsule: capsule)
+  }
+
+  /** Pressed it dims at once, disabled it fades, so a tap always shows (it was the same in all three states). */
+  private struct GreyButton: View {
+    let configuration: ButtonStyleConfiguration
+    let height: CGFloat
+    let capsule: Bool
+    @Environment(\.isEnabled) private var enabled
+
+    var body: some View {
+      let shape = RoundedRectangle(cornerRadius: capsule ? height / 2 : 8, style: .continuous)
+      configuration.label
+        .font(.system(size: capsule ? 13 : 14))
+        .foregroundStyle(Ink.primary)
+        .padding(.horizontal, capsule ? 12 : 10)
+        .frame(height: height)
+        .background(Ink.pill, in: shape)
+        .overlay(shape.stroke(Ink.edge, lineWidth: 1))
+        .contentShape(shape)
+        .opacity(!enabled ? 0.4 : configuration.isPressed ? 0.55 : 1)
+        .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+    }
   }
 }
 
@@ -57,6 +72,7 @@ struct CloseDisc: View {
     Button(action: action) {
       Image(systemName: "xmark").font(.system(size: 15, weight: .semibold)).foregroundStyle(Ink.primary)
         .frame(width: 40, height: 40)
+        .contentShape(.circle)
     }
     .buttonStyle(.plain)
     .glassEffect(.regular.interactive(), in: .circle)
@@ -122,7 +138,7 @@ struct QuestionCardView: View {
         Spacer(minLength: 0)
         Button { Task { await store.dismissQuestion(entryId, in: agentId) } } label: {
           Image(systemName: "xmark").font(.system(size: 11, weight: .semibold)).foregroundStyle(Ink.secondary)
-            .frame(width: 20, height: 20).contentShape(Rectangle())
+            .frame(width: 32, height: 32).contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Dismiss")
@@ -514,6 +530,8 @@ struct DraftCardView: View {
   @State private var bodyText = ""
   @State private var loaded = false
   @State private var expanded = false
+  /** Send or Discard on its way: both wait, so a second tap does not send twice. */
+  @State private var busy = false
 
   private var editable: Bool { card.state == "editable" && !card.isDismissed }
   private var isEmail: Bool { card.kind == .email }
@@ -561,9 +579,14 @@ struct DraftCardView: View {
             Button(isEmail ? "Send email" : "Send message") { send() }
               .buttonStyle(BlueButtonStyle())
               .disabled(isEmail && !validAddresses)
-            Button("Discard") { Task { await store.discardDraft(entryId, in: agentId) } }
-              .buttonStyle(GreyButtonStyle())
+            Button("Discard") {
+              busy = true
+              Task { await store.discardDraft(entryId, in: agentId); busy = false }
+            }
+            .buttonStyle(GreyButtonStyle())
+            if busy { ProgressView().controlSize(.small) }
           }
+          .disabled(busy)
         }
       }
     }
@@ -602,7 +625,8 @@ struct DraftCardView: View {
     let draft: JSON = isEmail
       ? ["to": JSON(addresses), "subject": .string(subject), "body": .string(bodyText)]
       : ["body": .string(bodyText)]
-    Task { await store.sendDraft(entryId, in: agentId, draft: draft) }
+    busy = true
+    Task { await store.sendDraft(entryId, in: agentId, draft: draft); busy = false }
   }
 }
 
@@ -659,7 +683,11 @@ struct FileCardView: View {
       }
     }
     .frame(maxWidth: .infinity, alignment: fromPerson ? .trailing : .leading)
-    .task { if isImage, image == nil, let data = await store.readFile(url, agentId: agentId, limit: 12 << 20) { image = UIImage(data: data) } }
+    // Decoded at the size it is shown, off the main thread: a full-size photo decoded on it froze scrolling.
+    .task {
+      guard isImage, image == nil, let data = await store.readFile(url, agentId: agentId, limit: 12 << 20) else { return }
+      image = await UIImage(data: data)?.byPreparingThumbnail(ofSize: CGSize(width: 900, height: 900))
+    }
     .sheet(item: $preview) { file in QuickLookSheet(file: file).ignoresSafeArea() }
   }
 
@@ -702,10 +730,13 @@ struct FileCardView: View {
         store.problem = "Couldn't open \(name): the computer didn't hand it over."
         return
       }
-      let folder = FileManager.default.temporaryDirectory.appendingPathComponent("simeon-files", isDirectory: true)
-      try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-      let file = folder.appendingPathComponent(name)
-      do { try data.write(to: file, options: .atomic); preview = PreviewFile(url: file) } catch { store.problem = "Couldn't open \(name)." }
+      let file = FileManager.default.temporaryDirectory.appendingPathComponent("simeon-files", isDirectory: true).appendingPathComponent(name)
+      // Written off the main thread: a file can be tens of megabytes.
+      let written = await Task.detached(priority: .userInitiated) { () -> Bool in
+        try? FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+        return (try? data.write(to: file, options: .atomic)) != nil
+      }.value
+      if written { preview = PreviewFile(url: file) } else { store.problem = "Couldn't open \(name)." }
     }
   }
 }
@@ -744,6 +775,8 @@ struct RequestCardView: View {
   @Environment(AppStore.self) private var store
   @Environment(\.chatWidth) private var width
   @State private var secret = ""
+  /** An answer on its way: the buttons wait, so one tap is one answer. */
+  @State private var busy = false
 
   var body: some View {
     Group {
@@ -779,14 +812,22 @@ struct RequestCardView: View {
           Button("Allow once") { resolve(requestId, "approved") }.buttonStyle(BlueButtonStyle())
           Button("Always allow") { resolve(requestId, "always") }.buttonStyle(GreyButtonStyle())
           Button("Deny") { resolve(requestId, "denied") }.buttonStyle(GreyButtonStyle())
+          if busy { ProgressView().controlSize(.small) }
         }
+        .disabled(busy)
       }
     }
     .card()
   }
 
   private func resolve(_ requestId: String, _ resolution: String) {
-    Task { await store.resolveApproval(requestId, resolution: resolution, entryId: entryId, in: agentId) }
+    run { await store.resolveApproval(requestId, resolution: resolution, entryId: entryId, in: agentId) }
+  }
+
+  private func run(_ work: @escaping () async -> Void) {
+    guard !busy else { return }
+    busy = true
+    Task { await work(); busy = false }
   }
 
   private func secretCard(label: String, description: String, provided: Bool) -> some View {
@@ -808,10 +849,10 @@ struct RequestCardView: View {
         Button("Save securely") {
           let value = secret
           secret = ""
-          Task { await store.submitSecret(value, entryId: entryId, in: agentId) }
+          run { await store.submitSecret(value, entryId: entryId, in: agentId) }
         }
         .buttonStyle(BlueButtonStyle())
-        .disabled(secret.trimmingCharacters(in: .whitespaces).isEmpty)
+        .disabled(busy || secret.trimmingCharacters(in: .whitespaces).isEmpty)
       }
     }
     .card()
@@ -842,11 +883,16 @@ struct RequestCardView: View {
         VStack(spacing: 6) {
           HStack(spacing: 8) {
             Button("Take over", action: openComputer).buttonStyle(PillButtonStyle(primary: true))
-            Button("I’m done") { Task { await store.handBackComputer(agentId) } }.buttonStyle(PillButtonStyle(primary: false))
+            Button("I’m done") { run { await store.handBackComputer(agentId) } }.buttonStyle(PillButtonStyle(primary: false))
+              .disabled(busy)
           }
-          Button("Skip") { Task { await store.handBackComputer(agentId, skip: true) } }
-            .font(.system(size: 13)).foregroundStyle(Ink.secondary).buttonStyle(.plain)
-            .frame(maxWidth: .infinity)
+          Button { run { await store.handBackComputer(agentId, skip: true) } } label: {
+            Text("Skip").font(.system(size: 13)).foregroundStyle(Ink.secondary)
+              .frame(maxWidth: .infinity, minHeight: 32)
+              .contentShape(.rect)
+          }
+          .buttonStyle(.plain)
+          .disabled(busy)
         }
       } else {
         Button("Open computer", action: openComputer).buttonStyle(PillButtonStyle(primary: false))
@@ -999,6 +1045,7 @@ struct VoiceCallLine: View {
         Image(systemName: "waveform").font(.system(size: 11, weight: .semibold)).padding(.trailing, 3)
         Text("Voice chat · \(Chat.callLength(seconds))")
       }
+      .contentShape(.rect)
     }
     .buttonStyle(.plain)
     .sheet(isPresented: $open) { CallRecordSheet(seconds: seconds, lines: lines) }

@@ -52,11 +52,21 @@ the phone design. None of the screens has been compiled yet (see
 | Notifications, the +, the mic (§9) | Straight from Apple (the server needs the APNs key), photos and files uploaded to the agent's computer, the phone's own dictation. |
 | New Agent, New Group Chat | Measured against the phone sheets. |
 | Search | Apple's search field with the window's tabs (All, Agents, Groups, Actions). |
+| The list's menu (§10) | A long press gives the Mac's row menu in its order and sections: Pin or Unpin, Mark as Read or Unread; Edit Profile, Duplicate (agents only); Copy conversation ID; Hide from sidebar, Delete. Delete asks first, in the Mac's words. |
+| Pins (§10) | Pinned agents sit in a grid above the rows, as the Mac's tiles zoomed ×1.2. Pins are the host's `pinnedAgentIds`, so the Mac and the phone share them. Drag a tile onto another to reorder. |
+| Hidden agents (§10) | "Hidden Agents N" at the end of the list, and in the + menu. It opens the hidden ones, each with Unhide; a tap opens its chat. |
+| Status dots (§10) | Orange when an agent waits on you ("Needs attention"), blue when unread, green at the butterfly while it works. |
+| Sending (§10) | Your message shows the moment you send it. If it doesn't reach the agent, it says "Failed to send" under it, with Resend and Delete. |
+| The chat's motion (§10) | New lines come in with the Mac's rise (240 ms, 12 pt, from 94 %). Older lines load as you near the top. "N new messages" pills show for a "New" line out of sight above, and for what arrives below while you read further up. A quote's jump lights the message. |
+| The composer (§10) | Send and the mic cross over in 200 ms. It grows a line at a time with the Mac's spring. "Reply…" shows while replying. "@" offers the agents' names. |
 
 Still missing on the phone:
 - The welcome steps of a new account. A new account on the phone opens
   on an empty list.
 - Threads ("Start a thread" and the thread view).
+- In the composer: "/" for skills, "#" for pull requests, ":" for emoji,
+  and "More emoji" in a message's menu.
+- Sections in the list ("Move to") and selecting several rows at once.
 
 ---
 
@@ -287,6 +297,26 @@ The phone has Account, Theme, a read-only time zone, Sign Out and the butterfly.
 - **The composer's + (attachments):** needs `uploadAttachment`.
 - **The mic:** needs dictation.
 - **Brand logos:** see §2.
+
+## 10. The founder's list (8 October 2026, evening)
+
+He listed five problems after using the app on his iPhone, and one
+complaint over all of them: the Mac's logic was left out.
+
+| His words | Cause, from the code | Now |
+|---|---|---|
+| "the buttons are not responsive at all … sometimes it works other time i have to double click" | Most round buttons took a tap only on the icon itself. The back disc (46 pt) answered on its 19 pt chevron, and the call button (26 pt) on its 11 pt glyph. Several buttons showed nothing until the box answered, so a second tap undid the first: tool switches, reactions, Send on a draft, the approvals. A grey button looked the same pressed, disabled or not. | Every button takes the tap on its whole shape. Buttons that call the box wait and show it. Reactions and switches hold until the box answers. The grey button dims when pressed and fades when disabled. The strip under the chat's header lets taps through to the messages. |
+| "the flight cards dont show the airlines logo" | Duffel's logos are SVG, which iOS can't draw by itself. | Fixed earlier the same day: drawn once, kept. |
+| "the app is slow … i click to add a connector … then wait" | Cancel on a sign-in sheet held every Add button for about 20 seconds. Add read the apps list again first. A sign-in the box couldn't start said nothing. Several reads of the apps list raced, and an old answer turned Added back into Add. Every butterfly drew 120 times a second on the main thread. A streamed answer laid the whole chat out again every 90 ms. A failed call that had already reached the box was sent a second time. | Cancel frees the buttons after two checks. Add doesn't re-read the list (the box's events keep it current). Each sign-in that can't start says why. The apps list is read once at a time. Butterflies draw at most 60 times a second (30 at rest), off the main thread. A streamed answer redraws only its own row. A call is sent again only when it surely never arrived. Replies are parsed by Foundation's parser. |
+| "the ai i asked a question, i dont see the answer" | The host streams lines only for the chat it has open. | Fixed earlier the same day: opening a chat opens it on the host, and a missed line fetches the chat again. |
+| "a link message appears [like this](https://…)" | The list showed the last line's raw Markdown. | Fixed earlier the same day: the Mac's own preview line. |
+| "no pin, no holding the chat and having the option to archive, delete etc." | Not built. | The Mac's row menu, pins, hidden agents, Delete with its question, the status dots, and swipes (above). The Mac has no Archive: "Hide from sidebar" is its way to put a chat away, and it's on the menu. |
+| "no smoothness, especially with how static the composer is" | Not built. | The Mac's motion in the chat and the composer (above). |
+
+Checked on Linux: the list's commands, the pins shared through the host's
+settings, sending and Resend, older pages, and the streamed row, each with
+a test (53 tests pass). Not checked: none of the screens has run on an
+iPhone yet; the taps, the motion and the pills need his hands on a device.
 
 ## Suggested order (the founder decides)
 

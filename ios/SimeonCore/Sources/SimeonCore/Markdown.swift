@@ -241,6 +241,21 @@ public enum Markdown {
  * dash before it, nor a word or a dash after it.
  */
 public enum Mentions {
+  /** The name being typed after an "@" at the end of the draft ("" just after the "@"), or nil when none is (the Mac's composer opens its list on "@"). */
+  public static func query(_ draft: String) -> String? {
+    guard let at = draft.lastIndex(of: "@") else { return nil }
+    if at > draft.startIndex, !draft[draft.index(before: at)].isWhitespace { return nil }
+    let typed = draft[draft.index(after: at)...]
+    guard typed.count <= 30, typed.allSatisfy({ $0.isLetter || $0.isNumber || $0 == "-" || $0 == "_" }) else { return nil }
+    return String(typed)
+  }
+
+  /** The draft with the "@…" being typed replaced by the chosen name and a space. */
+  public static func inserting(_ name: String, into draft: String) -> String {
+    guard query(draft) != nil, let at = draft.lastIndex(of: "@") else { return draft + "@\(name) " }
+    return String(draft[..<at]) + "@\(name) "
+  }
+
   public enum Kind: Hashable, Sendable {
     case brand(BrandMention)
     /** An agent: its id and palette. */
@@ -264,6 +279,20 @@ public enum Mentions {
   static let brandPattern: NSRegularExpression = pattern(Brands.mentions.map(\.name))
   static let brandByName: [String: BrandMention] = Dictionary(Brands.mentions.map { ($0.name, $0) }, uniquingKeysWith: { first, _ in first })
 
+  /** The names' pattern, built once per set of names: a streaming answer asks for it on every paragraph, every 90 ms. */
+  static func agentPattern(_ names: [String]) -> NSRegularExpression {
+    let key = names.sorted().joined(separator: "\u{1}")
+    if let made = agentPatterns.withLock({ $0[key] }) { return made }
+    let made = pattern(names)
+    agentPatterns.withLock { store in
+      if store.count > 32 { store.removeAll() }
+      store[key] = made
+    }
+    return made
+  }
+
+  private static let agentPatterns = LockedBox<[String: NSRegularExpression]>([:])
+
   static func pattern(_ names: [String]) -> NSRegularExpression {
     let escaped = names.sorted { $0.count > $1.count }.map(NSRegularExpression.escapedPattern(for:))
     return try! NSRegularExpression(pattern: "(?<![\\w@/.-])(?:\(escaped.joined(separator: "|")))(?![\\w-])")
@@ -282,7 +311,7 @@ public enum Mentions {
     if !named.isEmpty {
       var byName: [String: AgentName] = [:]
       for agent in named where byName[agent.name] == nil { byName[agent.name] = agent }
-      let agentPattern = pattern(Array(byName.keys))
+      let agentPattern = agentPattern(Array(byName.keys))
       for result in agentPattern.matches(in: text, range: whole) {
         let overlaps = matches.contains { NSIntersectionRange(NSRange(location: $0.location, length: $0.length), result.range).length > 0 }
         if overlaps { continue }

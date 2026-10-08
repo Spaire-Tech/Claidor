@@ -17,8 +17,10 @@ extension UIColor {
     self.init(red: rgb.r, green: rgb.g, blue: rgb.b, alpha: rgb.a)
   }
 
+  /** Both read once: the colour is resolved on every draw, and parsing its text each time showed up while scrolling. */
   static func dynamic(light: String, dark: String) -> UIColor {
-    UIColor { traits in UIColor(hex: traits.userInterfaceStyle == .dark ? dark : light) }
+    let lit = UIColor(hex: light), dim = UIColor(hex: dark)
+    return UIColor { traits in traits.userInterfaceStyle == .dark ? dim : lit }
   }
 }
 
@@ -66,6 +68,13 @@ enum Ink {
   /** An agent's title in the list ("Chief of Staff"). */
   static let title = Color.dynamic(light: "#255a93", dark: "#5090e2")
   static let unread = Color.dynamic(light: "#0a84ff", dark: "#0a84ff")
+  /** An agent waiting on the person ("Needs attention", `--sand-fill-warning`). */
+  static let attention = Color(RGB(hex: "#ff9800"))
+  /** The list's swipe buttons: Pin in orange, Hide in grey, as Messages colours its own. */
+  static let pinSwipe = Color(RGB(hex: "#ff9f0a"))
+  static let hideSwipe = Color(RGB(hex: "#8e8e93"))
+  /** A message a quote jumped to, lit a moment (the window's yellow, `--simeon-yellow`). */
+  static let jumpGlow = Color(RGB(hex: "#f1b467")).opacity(0.32)
   /** The "New" line (`--sand-text-accent`). */
   static let newLine = Color.dynamic(light: "#1a73d9", dark: "#4a9bf5")
   /** A call in progress, on the list (`--sand-fill-success`). */

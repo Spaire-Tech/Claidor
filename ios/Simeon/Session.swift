@@ -198,11 +198,17 @@ final class AppConnector {
   /** The vendor's page in the system's sign-in sheet, closed by itself once the box says the app is connected. */
   private func signIn(_ url: URL, store: AppStore, done: @escaping () -> Bool) async {
     let state = SheetState()
-    let session = ASWebAuthenticationSession(url: url, callback: .customScheme(SimeonConfig.urlScheme)) { _, _ in state.close(confirmed: true) }
+    // Closed on the vendor's confirm page: look a little longer. Cancelled: two looks, then the buttons are free again (Cancel used to hold every Add for 20 s).
+    let session = ASWebAuthenticationSession(url: url, callback: .customScheme(SimeonConfig.urlScheme)) { _, error in
+      state.close(confirmed: (error as? ASWebAuthenticationSessionError)?.code != .canceledLogin)
+    }
     session.presentationContextProvider = presenter
     session.prefersEphemeralWebBrowserSession = false
     self.session = session
-    session.start()
+    guard session.start() else {
+      store.problem = "The sign-in page didn't open. Try again."
+      return
+    }
     for _ in 0..<150 {
       try? await Task.sleep(nanoseconds: 2_000_000_000)
       await store.loadApps()

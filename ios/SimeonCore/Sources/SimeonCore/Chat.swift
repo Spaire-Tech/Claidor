@@ -179,12 +179,14 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
   case routines(id: String, action: String, routines: [RoutineRef])
   /** A card this version cannot draw: said so, as the Mac does. */
   case notice(id: String, text: String)
+  /** Under a message of yours that did not reach the agent: "Failed to send", Resend, Delete (the Mac's `sand-failed-send-actions`). */
+  case failedSend(id: String, nonce: String)
 
   public var id: String {
     switch self {
     case .stamp(let id, _), .unread(let id), .flights(let id, _), .file(let id, _, _, _), .question(let id, _), .draft(let id, _),
          .connectors(let id, _, _, _), .listenerConnect(let id, _, _), .request(let id, _), .teammates(let id, _, _), .voiceCall(let id, _, _), .routines(let id, _, _),
-         .notice(let id, _): return id
+         .notice(let id, _), .failedSend(let id, _): return id
     case .bubble(let bubble): return bubble.id
     }
   }
@@ -194,6 +196,7 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
     switch self {
     case .bubble(let bubble): return bubble.fromPerson ? .person : .agent(bubble.author?.id)
     case .file(_, _, _, let fromPerson): return fromPerson ? .person : .agent(nil)
+    case .failedSend: return .person
     case .flights, .question, .draft, .connectors, .listenerConnect, .request, .notice: return .agent(nil)
     default: return .middle
     }

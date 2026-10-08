@@ -150,7 +150,20 @@ public enum Preview {
     (#"\|"#, " "),
   ] as [(String, String)]).map { (try! NSRegularExpression(pattern: $0.0), $0.1) }
 
+  /** Kept per text: the list asks again on every redraw, and sixteen replacements per row add up while an agent streams. */
   public static func plain(_ markdown: String) -> String {
+    if let hit = plainCache.withLock({ $0[markdown] }) { return hit }
+    let text = strip(markdown)
+    plainCache.withLock { store in
+      if store.count > 400 { store.removeAll(keepingCapacity: true) }
+      store[markdown] = text
+    }
+    return text
+  }
+
+  private static let plainCache = LockedBox<[String: String]>([:])
+
+  static func strip(_ markdown: String) -> String {
     var text = markdown
     for (pattern, template) in replacements {
       text = pattern.stringByReplacingMatches(in: text, range: NSRange(text.startIndex..., in: text), withTemplate: template)
@@ -181,9 +194,9 @@ public enum Preview {
   }
 }
 
-/** The roster in the list's order: newest activity first, hidden agents left out (`sortRoster`). */
+/** The roster in the list's order: newest activity first. Hidden agents stay in it (groups and mentions still need them); the list leaves them out. */
 public func sortRoster(_ agents: [Agent]) -> [Agent] {
-  agents.filter { !$0.isHidden }.sorted { ($0.lastActivityAt ?? 0) > ($1.lastActivityAt ?? 0) }
+  agents.sorted { ($0.lastActivityAt ?? 0) > ($1.lastActivityAt ?? 0) }
 }
 
 /** One line of a conversation, as the host writes it (host/extensions/transcript). */

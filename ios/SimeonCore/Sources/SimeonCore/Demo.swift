@@ -201,7 +201,7 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
 
   public func transcript(_ agentId: String) async throws -> [Entry] { lock.withLock { transcripts[agentId] ?? [] } }
 
-  public func send(_ agentId: String, text: String, attachments: [AttachmentRef], replyTo: String?) async throws {
+  public func send(_ agentId: String, text: String, attachments: [AttachmentRef], replyTo: String?, nonce: String?) async throws {
     let now = Date().timeIntervalSince1970 * 1000
     for file in attachments {
       append(agentId, ["kind": "user-attachment", "id": .string("ua-\(UUID().uuidString.prefix(8))"), "file_path": .string(file.path), "file_name": .string(file.name), "timestampMs": .number(now)])
@@ -209,6 +209,7 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
     if !text.isEmpty {
       var entry = DemoData.you("u-\(UUID().uuidString.prefix(8))", 0, text, now: now)
       if let replyTo { entry = entry.setting("replyTo", .string(replyTo)) }
+      if let nonce { entry = entry.setting("clientNonce", .string(nonce)) }
       append(agentId, entry)
     }
   }
@@ -352,7 +353,34 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
       return lock.withLock { hostSettings }
     case "setHostSettings":
       lock.withLock { if let fields = args.object { for (key, value) in fields { hostSettings = hostSettings.setting(key, value) } } }
+      emit(.settingsChanged(args.object.map { Array($0.keys) } ?? []))
       return lock.withLock { hostSettings }
+    case "setAgentUnread":
+      touch(args["id"]?.text ?? "") { agent in
+        agent.hasUnread = args["isUnread"]?.bool ?? false
+        agent.unreadCount = agent.hasUnread ? max(agent.unreadCount, 1) : 0
+      }
+    case "setAgentHiddenFromSidebar":
+      touch(args["id"]?.text ?? "") { $0.isHidden = args["isHidden"]?.bool ?? false }
+    case "deleteAgents":
+      let gone = Set(args["ids"]?.array?.compactMap(\.text) ?? [])
+      let left = lock.withLock { () -> [Agent] in
+        agents.removeAll { gone.contains($0.id) }
+        for id in gone { transcripts[id] = nil }
+        if let pins = hostSettings["pinnedAgentIds"]?.array { hostSettings = hostSettings.setting("pinnedAgentIds", .array(pins.filter { !gone.contains($0.text ?? "") })) }
+        return agents
+      }
+      emit(.agents(left))
+    case "duplicateAgent":
+      guard let copy = lock.withLock({ () -> Agent? in
+        guard let original = agents.first(where: { $0.id == agentId }) else { return nil }
+        var copy = Agent(id: "copy-\(UUID().uuidString.prefix(6).lowercased())", name: "\(original.name) copy", title: original.title, description: original.description, colour: original.colour, lastActivityAt: Date().timeIntervalSince1970 * 1000)
+        copy.voiceId = original.voiceId
+        agents.append(copy)
+        return copy
+      }) else { throw GatewayError(message: "No such agent.", refused: true) }
+      emit(.agentUpserted(copy))
+      return ["agent": ["id": .string(copy.id), "name": .string(copy.name)]]
     case "setAgentNotifyOnUpdates":
       touch(args["id"]?.text ?? "") { $0.notifyOnUpdates = args["isEnabled"]?.bool ?? true }
     case "getAgentAutomations":
@@ -428,7 +456,7 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
     }
   }
 
-  private var hostSettings: JSON = ["autoReviewEnabled": true, "autoReviewInstructions": "", "userTimeZone": .string(TimeZone.current.identifier), "userTimeZoneOverride": nil]
+  private var hostSettings: JSON = ["pinnedAgentIds": [], "autoReviewEnabled": true, "autoReviewInstructions": "", "userTimeZone": .string(TimeZone.current.identifier), "userTimeZoneOverride": nil]
   private var connected: Set<String> = ["gmail", "notion"]
   private var pendingEmits: [(String, Entry)] = []
 

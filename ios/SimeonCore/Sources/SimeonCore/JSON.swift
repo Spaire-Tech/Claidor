@@ -43,8 +43,27 @@ public enum JSON: Hashable, Sendable {
   }
 
   public static func parse(_ data: Data) throws -> JSON {
-    try JSONDecoder().decode(JSON.self, from: data)
+    #if canImport(Darwin)
+    // Foundation's own parser: several times quicker than decoding case by case, and a chat's 500 lines arrive in one reply.
+    return JSON(foundation: try JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed]))
+    #else
+    return try JSONDecoder().decode(JSON.self, from: data)
+    #endif
   }
+
+  #if canImport(Darwin)
+  init(foundation value: Any) {
+    switch value {
+    case let number as NSNumber:
+      // A JSON true or false comes as the one boolean NSNumber; every other number is a number.
+      self = CFGetTypeID(number) == CFBooleanGetTypeID() ? .bool(number.boolValue) : .number(number.doubleValue)
+    case let text as String: self = .string(text)
+    case let items as [Any]: self = .array(items.map(JSON.init(foundation:)))
+    case let fields as [String: Any]: self = .object(fields.mapValues(JSON.init(foundation:)))
+    default: self = .null
+    }
+  }
+  #endif
 
   public static func parse(_ text: String) throws -> JSON {
     try parse(Data(text.utf8))

@@ -35,11 +35,13 @@ struct AttachmentChip: View {
         .frame(maxWidth: 140)
       Button(action: remove) {
         Image(systemName: "xmark.circle.fill").font(.system(size: 15)).foregroundStyle(Ink.tertiary)
+          .frame(width: 30, height: 30)
+          .contentShape(.circle)
       }
       .buttonStyle(.plain)
       .accessibilityLabel("Remove \(file.name)")
     }
-    .padding(.leading, 6).padding(.trailing, 8).padding(.vertical, 6)
+    .padding(.leading, 6).padding(.trailing, 2).padding(.vertical, 6)
     .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
   }
 }

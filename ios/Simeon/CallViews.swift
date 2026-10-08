@@ -21,7 +21,7 @@ struct CallPill: View {
           if call.phase == .live, let activity = call.activity {
             Text(activity).font(.system(size: 15)).foregroundStyle(Ink.secondary).lineLimit(1)
           } else if call.phase == .live && !call.levels.isEmpty {
-            Waveform(levels: call.levels).frame(height: 30)
+            LiveWaveform().frame(height: 30)
           } else {
             TimelineView(.periodic(from: .now, by: 1)) { context in
               Text(call.phase == .live ? Chat.callClock(call.seconds(now: context.date)) : call.status)
@@ -68,6 +68,7 @@ struct CallButtons: View {
           .font(.system(size: size * 0.42, weight: .medium))
           .foregroundStyle(call.isMuted ? Ink.callMuted : Ink.primary)
           .frame(width: size, height: size)
+          .contentShape(.circle)
       }
       .glassEffect(.regular.interactive(), in: .circle)
       .accessibilityLabel(call.isMuted ? "Unmute" : "Mute")
@@ -76,6 +77,7 @@ struct CallButtons: View {
           .font(.system(size: size * 0.4, weight: .medium))
           .foregroundStyle(Ink.primary)
           .frame(width: size, height: size)
+          .contentShape(.circle)
       }
       .glassEffect(showsTranscript ? .regular.tint(Ink.primary.opacity(0.12)).interactive() : .regular.interactive(), in: .circle)
       .accessibilityLabel("Transcript")
@@ -93,6 +95,12 @@ struct CallButtons: View {
     }
     .buttonStyle(.plain)
   }
+}
+
+/** The call's waveform, the only part that reads the bars as they tick. */
+struct LiveWaveform: View {
+  @Environment(AppStore.self) private var store
+  var body: some View { Waveform(levels: store.callLevels) }
 }
 
 /** The voice, bar by bar: louder while the agent speaks. */

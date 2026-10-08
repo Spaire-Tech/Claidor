@@ -143,7 +143,27 @@ public struct GatewayError: Error, LocalizedError, Sendable {
   public let message: String
   /** The host answered and refused (a 4xx): retrying the same call will not help. */
   public let refused: Bool
+  /** The HTTP status, when the box answered at all. */
+  public let status: Int?
   public var errorDescription: String? { message }
+
+  public init(message: String, refused: Bool, status: Int? = nil) {
+    self.message = message; self.refused = refused; self.status = status
+  }
+
+  /**
+   * Whether the call surely never reached the host: no connection, or the
+   * box's front door answering for a box that moved (502, 503, 504). Only
+   * then is it sent again; a call that timed out may have been done, and a
+   * second one would switch a tool back or run a routine twice.
+   */
+  public static func neverArrived(_ error: Error) -> Bool {
+    if let gateway = error as? GatewayError { return [502, 503, 504].contains(gateway.status ?? 0) }
+    if let url = error as? URLError {
+      return [.notConnectedToInternet, .networkConnectionLost, .cannotConnectToHost, .cannotFindHost, .dnsLookupFailed, .secureConnectionFailed].contains(url.code)
+    }
+    return false
+  }
 }
 
 /**
@@ -178,13 +198,11 @@ public actor Gateway {
   /** Forget where the box was: the next call asks the broker again (a restarted box can move). */
   public func invalidate() { connection = nil }
 
-  /** One command. A 5xx or a dropped connection asks the broker once more and retries once. */
+  /** One command. A call that never reached the box (no connection, a moved box) asks the broker once more and is sent once more; any other failure is the caller's. */
   public func command(_ method: String, _ args: JSON = [:]) async throws -> JSON {
     do {
       return try await send(method, args)
-    } catch let error as GatewayError where error.refused {
-      throw error
-    } catch {
+    } catch where GatewayError.neverArrived(error) {
       invalidate()
       return try await send(method, args)
     }
@@ -195,7 +213,7 @@ public actor Gateway {
     let answer = try await http.send(connection.commandRequest(method, args))
     guard answer.ok else {
       let detail = answer.json?["error"]?.text ?? answer.json?["message"]?.text ?? String(decoding: answer.body.prefix(300), as: UTF8.self)
-      throw GatewayError(message: "\(method): \(detail)", refused: answer.status < 500)
+      throw GatewayError(message: "\(method): \(detail)", refused: answer.status < 500, status: answer.status)
     }
     return answer.json ?? .null
   }

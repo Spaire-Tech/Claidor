@@ -52,6 +52,8 @@ SCREENS=(
   "11-call-full:call-full:theo:11"
   # Every card the Mac draws, in one chat (`--gallery`, never on a real account).
   "12-cards:chat:cards:6"
+  # The list with two agents pinned (`--screen=pins` pins Theo and the Launch squad in the demo).
+  "13-pins:pins:4"
 )
 
 for theme in light dark; do

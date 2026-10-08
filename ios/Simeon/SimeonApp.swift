@@ -89,15 +89,25 @@ struct PlainScreen: View {
 /**
  * The chat draws its own top (the phone design's back disc, butterfly and
  * name), so the system's bar is hidden there; this keeps the edge swipe
- * that goes back, which hiding the bar would otherwise switch off.
+ * that goes back, which hiding the bar would otherwise switch off. Set
+ * from inside the chat while it shows (it used to replace every navigation
+ * controller's own setup), and never during a push or pop already under
+ * way, where UIKit can stop taking touches.
  */
-extension UINavigationController: @retroactive UIGestureRecognizerDelegate {
-  override open func viewDidLoad() {
-    super.viewDidLoad()
-    interactivePopGestureRecognizer?.delegate = self
-  }
+struct BackSwipe: UIViewControllerRepresentable {
+  func makeUIViewController(context: Context) -> Keeper { Keeper() }
+  func updateUIViewController(_ keeper: Keeper, context: Context) {}
 
-  public func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-    viewControllers.count > 1
+  final class Keeper: UIViewController, UIGestureRecognizerDelegate {
+    override func viewDidAppear(_ animated: Bool) {
+      super.viewDidAppear(animated)
+      navigationController?.interactivePopGestureRecognizer?.isEnabled = true
+      navigationController?.interactivePopGestureRecognizer?.delegate = self
+    }
+
+    func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+      guard let navigation = navigationController else { return false }
+      return navigation.viewControllers.count > 1 && navigation.transitionCoordinator == nil
+    }
   }
 }

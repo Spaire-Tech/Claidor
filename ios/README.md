@@ -136,15 +136,17 @@ macOS minutes cost ten times Linux ones, so it never runs by itself.
 
 ## What has and has not been checked
 
-- `SimeonCore`'s tests (46) pass on Linux: the chat's rows for every card,
+- `SimeonCore`'s tests (53) pass on Linux: the chat's rows for every card,
   the call protocol against a fake voice, sign-in and tokens, the
-  butterfly's outline and motion checked against the window's own numbers.
+  butterfly's outline and motion checked against the window's own numbers,
+  the list's menu commands and shared pins, sending with Resend, older
+  pages, and a streamed answer redrawing only its row.
 - The server's push tests pass, with Apple's endpoint mocked.
 - The computer view was run against a real VNC server in Chromium.
-- **The SwiftUI screens have not been compiled.** Every file parses, and
-  two full read-throughs against the iOS 26 SDK and the ElevenLabs kit's
-  source found no build errors. The first build on a Mac is the check;
-  `ios/scripts/mac.sh` copies any errors to the clipboard.
+- The app built on the founder's Mac on 8 October 2026. Changes since then
+  parse and were read through against the iOS 26 SDK; the next build on
+  the Mac is their check, and `ios/scripts/mac.sh` copies any errors to
+  the clipboard.
 - Nothing has run on an iPhone yet: calls, notifications (they also need
   the APNs key above), dictation and the photo picker need a real device.
 

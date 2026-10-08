@@ -18,6 +18,7 @@ struct SettingsSheet: View {
   @State private var quota: JSON?
   @State private var showsApps = false
   @State private var copied = false
+  @State private var openingBilling = false
 
   var body: some View {
     NavigationStack {
@@ -36,6 +37,8 @@ struct SettingsSheet: View {
                   copied = true
                 } label: {
                   Image(systemName: copied ? "checkmark" : "doc.on.doc").font(.system(size: 13)).foregroundStyle(Ink.secondary)
+                    .frame(width: 30, height: 30)
+                    .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Copy email")
@@ -80,10 +83,18 @@ struct SettingsSheet: View {
           if let quota {
             UsageRow(quota: quota)
             Button {
-              Task { if let url = await store.billingPortal() { openURL(url) } }
+              openingBilling = true
+              Task {
+                if let url = await store.billingPortal() { openURL(url) }
+                openingBilling = false
+              }
             } label: {
-              Label("Manage Billing", systemImage: "arrow.up.right.square")
+              HStack {
+                Label("Manage Billing", systemImage: "arrow.up.right.square")
+                if openingBilling { Spacer(); ProgressView() }
+              }
             }
+            .disabled(openingBilling)
             if let upgrade = quota["upgradeUrl"]?.text.flatMap(URL.init(string:)) {
               Button { openURL(upgrade) } label: { Label("Upgrade", systemImage: "sparkles") }
             }
@@ -117,7 +128,7 @@ struct SettingsSheet: View {
       .navigationTitle("Settings")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar { ToolbarItem(placement: .topBarLeading) { CloseButton() } }
-      .sheet(isPresented: $showsApps) { ConnectAppsSheet() }
+      .sheet(isPresented: $showsApps) { ConnectAppsSheet().problemAlert() }
       .task {
         async let host = store.hostSettings()
         async let usage = store.quota()
@@ -427,6 +438,8 @@ struct ConnectedAppDetail: View {
   @State private var loadingTools = true
   @State private var renaming: ConnectedApp?
   @State private var newName = ""
+  @State private var switching: Set<String> = []
+  @State private var removing = false
   private var connector: AppConnector { AppConnector.shared }
 
   var body: some View {
@@ -478,7 +491,16 @@ struct ConnectedAppDetail: View {
           Text(connected ? "No tools listed." : "Sign in to see its tools.").foregroundStyle(Ink.secondary)
         }
         ForEach(tools) { tool in
-          Toggle(isOn: Binding(get: { !tool.isDisabled }, set: { _ in Task { if let next = await store.toggleTool(app.serverId, tool.name) { tools = next } } })) {
+          // The switch moves at once and holds until the box answers, so a second tap cannot undo the first.
+          Toggle(isOn: Binding(get: { !tool.isDisabled }, set: { on in
+            guard !switching.contains(tool.name), let index = tools.firstIndex(where: { $0.name == tool.name }) else { return }
+            tools[index].isDisabled = !on
+            switching.insert(tool.name)
+            Task {
+              if let next = await store.toggleTool(app.serverId, tool.name) { tools = next } else { tools[index].isDisabled = on }
+              switching.remove(tool.name)
+            }
+          })) {
             VStack(alignment: .leading, spacing: 2) {
               Text(tool.title ?? tool.name).font(.system(size: 16))
               if let summary = tool.summary, !summary.isEmpty {
@@ -487,12 +509,20 @@ struct ConnectedAppDetail: View {
             }
           }
           .tint(Ink.blue)
+          .disabled(switching.contains(tool.name))
         }
       }
       Section {
-        Button("Remove \(app.name)", role: .destructive) {
+        Button(role: .destructive) {
+          removing = true
           Task { await store.removeApp(app); dismiss() }
+        } label: {
+          HStack {
+            Text("Remove \(app.name)")
+            if removing { Spacer(); ProgressView() }
+          }
         }
+        .disabled(removing)
       }
     }
     .navigationTitle(app.name)
