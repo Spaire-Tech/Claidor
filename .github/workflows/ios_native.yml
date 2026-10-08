@@ -1,0 +1,77 @@
+name: iPhone app (native)
+
+# Builds the native iPhone app (ios/) for the iPhone Simulator, runs its
+# core's tests, and photographs every screen on the demo's agents, light and
+# dark. The screenshots are the run's artifact, and two small contact
+# sheets are printed at the end of the log (ios/scripts/sheet.py).
+#
+# By hand only, like the Mac app's build (desktop_mac.yml): GitHub bills
+# macOS runners at ten times the minute rate, and this run takes about ten
+# to fifteen minutes. The same build runs on any Mac for nothing
+# (ios/README.md).
+on:
+  workflow_dispatch:
+    inputs:
+      screenshots:
+        description: Photograph the screens in the Simulator
+        type: boolean
+        default: true
+
+concurrency:
+  group: ios-native-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: ios
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pick the newest Xcode 26 or later
+        run: |
+          ls -d /Applications/Xcode*.app
+          XCODE=$(ls -d /Applications/Xcode_2[6-9]*.app 2>/dev/null | sort -V | tail -1)
+          if [ -z "$XCODE" ]; then echo "No Xcode 26 on this runner"; exit 1; fi
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+          xcrun simctl list runtimes
+
+      - name: Core tests
+        run: swift test --package-path SimeonCore
+
+      - name: Make the Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen generate
+
+      - name: Build for the Simulator
+        run: |
+          set -o pipefail
+          xcodebuild -project Simeon.xcodeproj -scheme Simeon -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO build 2>&1 \
+            | grep -E "error:|warning: .*Simeon/|BUILD (SUCCEEDED|FAILED)|\*\* " || true
+          test -d build/Build/Products/Debug-iphonesimulator/Simeon.app
+
+      - name: Photograph the screens
+        if: ${{ inputs.screenshots }}
+        run: |
+          chmod +x scripts/screens.sh
+          scripts/screens.sh build/Build/Products/Debug-iphonesimulator/Simeon.app screens
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ inputs.screenshots }}
+        with:
+          name: iphone-screens
+          path: ios/screens/*.png
+          retention-days: 14
+
+      - name: Contact sheets
+        if: ${{ inputs.screenshots }}
+        run: |
+          python3 -m pip install --quiet --break-system-packages pillow || python3 -m pip install --quiet pillow
+          python3 scripts/sheet.py screens

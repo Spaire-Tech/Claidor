@@ -1,0 +1,68 @@
+# Simeon on the iPhone, native (SwiftUI). XcodeGen makes Simeon.xcodeproj
+# from this file (`xcodegen generate`, ios/README.md); the project itself is
+# not kept in git.
+name: Simeon
+options:
+  bundleIdPrefix: com.simeonlabs
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.2.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Automatic
+    # The Apple developer team Simeon publishes from: set it here, or in
+    # Xcode under Signing & Capabilities, once (ios/README.md).
+    DEVELOPMENT_TEAM: ""
+packages:
+  SimeonCore:
+    path: SimeonCore
+targets:
+  Simeon:
+    type: application
+    platform: iOS
+    sources:
+      - path: Simeon
+    dependencies:
+      - package: SimeonCore
+    info:
+      path: Simeon/Info.plist
+      properties:
+        CFBundleDisplayName: Simeon
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        # The phone's own scheme: the Mac app owns `simeon`, and the
+        # server's confirm page opens `simeon-ios://app/v1/open`.
+        CFBundleURLTypes:
+          - CFBundleURLName: com.simeonlabs.simeon.ios
+            CFBundleURLSchemes: [simeon-ios]
+        UILaunchScreen:
+          UIColorName: Ground
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        ITSAppUsesNonExemptEncryption: false
+        # Loopback and the local network over http, for a build pointed at
+        # the stand-in server on a Mac (`SIMEON_API`, ios/README.md).
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+    settings:
+      base:
+        # The same app as the Expo shell's (mobile/app.config.ts), so the
+        # native build replaces it on TestFlight and the App Store.
+        PRODUCT_BUNDLE_IDENTIFIER: com.simeonlabs.simeon.ios
+        TARGETED_DEVICE_FAMILY: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        ENABLE_PREVIEWS: YES
+schemes:
+  Simeon:
+    build:
+      targets:
+        Simeon: all
+    run:
+      config: Debug
+    archive:
+      config: Release

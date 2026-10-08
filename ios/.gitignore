@@ -1,0 +1,10 @@
+# Made by `xcodegen generate` from project.yml.
+Simeon.xcodeproj/
+Simeon/Info.plist
+# Builds, screenshots, SwiftPM.
+build/
+screens/
+SimeonCore/.build/
+SimeonCore/.swiftpm/
+*.xcuserstate
+xcuserdata/
