@@ -147,7 +147,11 @@ public struct Entry: Identifiable, Hashable, Sendable {
     case "connector":
       guard let name = message["connector"]?.text else { return nil }
       return message["variant"]?.string == "connected" ? "\(name) connected" : "Connect \(name)"
-    case "connectors": return message["connectors"]?.array.map { "Connected " + $0.compactMap(\.text).joined(separator: " and ") }
+    case "connectors":
+      // The window's preview (`Lvn`): "Connect Gmail, Notion", or "Connect tools".
+      let names = message["connectors"]?.array?.compactMap(\.text) ?? []
+      return names.isEmpty ? "Connect tools" : "Connect " + names.joined(separator: ", ")
+    case "listener-connect": return message["platform"]?.string == "slack" ? "Connect Slack" : "Connect GitHub"
     case "attachment": return message["url"]?.text.map(fileName(ofURL:)) ?? "Sent a file"
     default: return message["content"]?.text.map { by + plain($0) }
     }

@@ -171,6 +171,8 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
   case question(id: String, card: QuestionCard)
   case draft(id: String, card: DraftCard)
   case connectors(id: String, names: [String], connected: Bool, reason: String?)
+  /** "Connect Slack so this routine can fire" (`listener-connect`): Slack or GitHub, for routines that wake on them. */
+  case listenerConnect(id: String, platform: String, reason: String?)
   case request(id: String, card: RequestCard)
   case teammates(id: String, exchange: Exchange, entries: [Entry])
   case voiceCall(id: String, seconds: Int, lines: [CallLine])
@@ -181,7 +183,7 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
   public var id: String {
     switch self {
     case .stamp(let id, _), .unread(let id), .flights(let id, _), .file(let id, _, _, _), .question(let id, _), .draft(let id, _),
-         .connectors(let id, _, _, _), .request(let id, _), .teammates(let id, _, _), .voiceCall(let id, _, _), .routines(let id, _, _),
+         .connectors(let id, _, _, _), .listenerConnect(let id, _, _), .request(let id, _), .teammates(let id, _, _), .voiceCall(let id, _, _), .routines(let id, _, _),
          .notice(let id, _): return id
     case .bubble(let bubble): return bubble.id
     }
@@ -192,7 +194,7 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
     switch self {
     case .bubble(let bubble): return bubble.fromPerson ? .person : .agent(bubble.author?.id)
     case .file(_, _, _, let fromPerson): return fromPerson ? .person : .agent(nil)
-    case .flights, .question, .draft, .connectors, .request, .notice: return .agent(nil)
+    case .flights, .question, .draft, .connectors, .listenerConnect, .request, .notice: return .agent(nil)
     default: return .middle
     }
   }
@@ -376,6 +378,9 @@ public enum Chat {
       case "connector":
         guard let name = message["connector"]?.text else { return nil }
         return .connectors(id: entry.id, names: [name], connected: message["variant"]?.string == "connected", reason: message["reason"]?.text)
+      case "listener-connect":
+        guard let platform = message["platform"]?.text, platform == "slack" || platform == "github" else { return nil }
+        return .listenerConnect(id: entry.id, platform: platform, reason: message["reason"]?.text)
       case "auto-review-approval":
         guard let approval = message["approval"] else { return nil }
         return .request(id: entry.id, card: .approval(requestId: approval["requestId"]?.string ?? "", summary: approval["summary"]?.string ?? "", reason: approval["reason"]?.string ?? "", command: approval["command"]?.string ?? "", status: approval["status"]?.string ?? "pending"))

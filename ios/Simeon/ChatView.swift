@@ -316,6 +316,8 @@ struct ChatRowView: View {
       DraftCardView(entryId: id, agentId: agentId, card: card)
     case .connectors(_, let names, let connected, let reason):
       ConnectorsCardView(names: names, connected: connected, reason: reason)
+    case .listenerConnect(_, let platform, let reason):
+      ListenerConnectCard(platform: platform, reason: reason)
     case .request(let id, let card):
       RequestCardView(entryId: id, agentId: agentId, card: card, openComputer: openComputer)
     case .teammates(_, let exchange, let entries):

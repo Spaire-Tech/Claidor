@@ -270,6 +270,74 @@ struct ConnectorCard: View {
   }
 }
 
+/**
+ * "Connect Slack" (`sand-listener-connect-card`, view-3mdFcnEj.js): the
+ * app's logo, "Connect Slack" with why ("Connect Slack so this routine can
+ * fire.", or the window's own line), and Connect; once linked, "Slack
+ * connected" and a green check. Connect opens the linking page outside the
+ * app, as the Mac does, and the card asks every five seconds until linked.
+ */
+struct ListenerConnectCard: View {
+  let platform: String
+  let reason: String?
+  @Environment(AppStore.self) private var store
+  @Environment(\.openURL) private var openURL
+  @Environment(\.chatWidth) private var width
+  @State private var connected: Bool?
+  @State private var opening = false
+
+  private var name: String { platform == "slack" ? "Slack" : "GitHub" }
+  private var line: String {
+    if let reason, !reason.isEmpty { return "Connect \(name) \(reason)." }
+    return platform == "slack" ? "Link Slack so your agent can wake on messages, mentions, and reactions." : "Link GitHub so your agent can wake on PRs, comments, issues, and CI."
+  }
+
+  var body: some View {
+    HStack(spacing: 12) {
+      ConnectorTile(name: name, size: 32)
+      VStack(alignment: .leading, spacing: 2) {
+        Text(connected == true ? "\(name) connected" : "Connect \(name)").font(.system(size: 14, weight: .semibold)).foregroundStyle(Ink.primary)
+        if connected != true {
+          Text(line).font(.system(size: 13)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true)
+        }
+      }
+      Spacer(minLength: 0)
+      if connected == true {
+        Label("Connected", systemImage: "checkmark.circle.fill").font(.system(size: 12, weight: .medium)).foregroundStyle(Ink.primary).labelStyle(ConnectedLabel())
+      } else if connected == nil || opening {
+        ProgressView().controlSize(.small).accessibilityLabel("Checking connection status")
+      } else {
+        Button("Connect") {
+          opening = true
+          Task {
+            if let url = await store.listenerConnectURL(platform) { openURL(url) }
+            opening = false
+          }
+        }
+        .buttonStyle(BlueButtonStyle())
+      }
+    }
+    .card()
+    .frame(maxWidth: ChatMetrics.bubbleMax(width), alignment: .leading)
+    .task {
+      while !Task.isCancelled && connected != true {
+        connected = await store.listenerConnected(platform) ?? connected ?? false
+        try? await Task.sleep(nanoseconds: 5_000_000_000)
+      }
+    }
+  }
+}
+
+/** The green check beside "Connected". */
+private struct ConnectedLabel: LabelStyle {
+  func makeBody(configuration: Configuration) -> some View {
+    HStack(spacing: 4) {
+      configuration.icon.foregroundStyle(Ink.live)
+      configuration.title
+    }
+  }
+}
+
 // MARK: - Flights
 
 /** Flight results (patch FLIGHTS_SOURCE): the route over the date and terms, then a row per offer; a row opens the flight. */

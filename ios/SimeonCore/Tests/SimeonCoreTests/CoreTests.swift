@@ -316,6 +316,7 @@ final class ChatTests: XCTestCase {
       case .draft(_, let card): return "draft:\(card.kind.rawValue):\(card.status)"
       case .flights(_, let card): return "flights:\(card.offers.count)"
       case .connectors(_, let names, _, let reason): return "connector:\(names.joined()):\(reason ?? "")"
+      case .listenerConnect(_, let platform, let reason): return "listener:\(platform):\(reason ?? "")"
       case .request(_, let card):
         switch card {
         case .approval(_, let summary, _, _, let status): return "approval:\(summary):\(status)"
@@ -327,7 +328,7 @@ final class ChatTests: XCTestCase {
       default: return "other"
       }
     }
-    XCTAssertEqual(kinds, ["me", "them", "question", "question-answered", "question-dismissed", "draft:email:Ready to send", "draft:slack:Ready to send", "flights:2", "connector:Linear:To read the launch tickets.", "approval:Delete 3 files in ~/Downloads:pending", "secret:Stripe API key", "computer:waiting", "notice", "file:Payouts September.pdf"])
+    XCTAssertEqual(kinds, ["me", "them", "question", "question-answered", "question-dismissed", "draft:email:Ready to send", "draft:slack:Ready to send", "flights:2", "connector:Linear:To read the launch tickets.", "listener:slack:so this routine can fire", "approval:Delete 3 files in ~/Downloads:pending", "secret:Stripe API key", "computer:waiting", "notice", "file:Payouts September.pdf"])
     guard case .flights(_, let flights) = rows.first(where: { if case .flights = $0 { return true }; return false })! else { return XCTFail() }
     XCTAssertEqual(flights.title, "Seattle to Los Angeles")
     XCTAssertEqual(flights.offers[0].legs.count, 2)

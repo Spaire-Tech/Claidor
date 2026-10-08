@@ -68,6 +68,7 @@ public enum DemoData {
       card("x6", 84, ["type": "slack-draft", "draft": ["workspace": "Simeon Labs", "target": "#launch", "body": "Pricing page moves to the fast-follow list."]], now: now),
       says("x7", 83, flights, now: now),
       card("x8", 82, ["type": "connector", "variant": "connect", "connector": "Linear", "reason": "To read the launch tickets."], now: now),
+      card("x8b", 81.5, ["type": "listener-connect", "platform": "slack", "reason": "so this routine can fire"], now: now),
       card("x9", 81, ["type": "auto-review-approval", "approval": ["requestId": "r1", "surface": "shell", "summary": "Delete 3 files in ~/Downloads", "reason": "Cleaning up the exports you asked for.", "status": "pending", "command": "rm ~/Downloads/export-*.csv"]], now: now),
       card("x10", 80, ["type": "secret-request", "secretRequest": ["label": "Stripe API key", "description": "So I can read last month's payouts."]], now: now),
       card("x11", 79, ["type": "text", "content": "Sign in to the bank's site on the computer, then press I'm done."], now: now).setting("boxRequestId", "box-1"),
@@ -339,6 +340,10 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
       flush()
     case "desktopMcp":
       return demoApps(args["action"]?.text ?? "", args["args"]?.array ?? [])
+    case "getListenerIntegrations":
+      return ["integrations": [["platform": "slack", "isConnected": false], ["platform": "github", "isConnected": false]]]
+    case "getListenerConnectUrl":
+      return ["url": "https://simeonlabs.com"]
     case "getHostSettings":
       return lock.withLock { hostSettings }
     case "setHostSettings":
@@ -392,6 +397,8 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
       return ["seconds": body?["seconds"] ?? 0, "summary": "Bass asked to move the review; it's done.", "transcript": [["speaker": "agent", "text": "Hey Bass."], ["speaker": "user", "text": "Move the review to Friday."]]]
     case "billing/portal":
       return ["portalUrl": "https://simeonlabs.com/billing"]
+    case "proxy/v1/voice/voices":
+      return .array([("ljX1ZrXuDIIRVcmiVSyR", "Michael"), ("1t1EeRixsJrKbiF1zwM6", "Jerry"), ("XcXEQzuLXRU9RcfWzEJt", "Veda"), ("s3TPKV1kjDlVtZbl4Ksh", "Adam"), ("UgBBYS2sOqTuMpoF3BR0", "Mark"), ("6OzrBCQf8cjERkYgzSg8", "Jamal")].map { ["id": .string($0.0), "name": .string($0.1)] })
     default:
       throw GatewayError(message: "The demo has no \(path).", refused: true)
     }
@@ -437,6 +444,8 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
   }
 
   /** The demo's apps: a small catalog, two connected; Add connects at once (there is no vendor to sign in to). */
+  private var disabledTools: Set<String> = []
+
   private func demoApps(_ action: String, _ args: [JSON]) -> JSON {
     let catalog: [(String, String, String)] = [
       ("gmail", "Gmail", "Search, read, draft, and send email."), ("google-calendar", "Google Calendar", "See and plan your days."),
@@ -461,6 +470,16 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
       return ["removed": true, "state": lock.withLock { servers() }]
     case "vendorServerIdForPlugin":
       return nil
+    case "listServerTools", "toggleMcpToolDisabled":
+      let serverId = args.first?.text ?? args.first?["serverId"]?.text ?? ""
+      if action == "toggleMcpToolDisabled", let tool = args.first?["toolName"]?.text {
+        let key = "\(serverId)/\(tool)"
+        lock.withLock { if disabledTools.contains(key) { disabledTools.remove(key) } else { disabledTools.insert(key) } }
+      }
+      let off = lock.withLock { disabledTools }
+      return .array([("search", "Search", "Find what you ask for."), ("read", "Read", "Open one item."), ("create", "Create", "Make a new item.")].map { tool in
+        ["name": .string(tool.0), "title": .string(tool.1), "description": .string(tool.2), "isDisabled": .bool(off.contains("\(serverId)/\(tool.0)"))]
+      })
     default:
       return lock.withLock { servers() }
     }

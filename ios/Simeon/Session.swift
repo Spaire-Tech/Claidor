@@ -183,6 +183,20 @@ final class AppConnector {
     connecting = name
     defer { connecting = nil; session = nil }
     guard let url = await store.connectApp(named: name) else { return }
+    await signIn(url, store: store) { store.isConnected(name) }
+  }
+
+  /** One account of an app already added: its sign-in again (an account that needs it, from the app's page). */
+  func signIn(_ account: ConnectedApp, store: AppStore) async {
+    guard connecting == nil else { return }
+    connecting = account.name
+    defer { connecting = nil; session = nil }
+    guard let url = await store.signInURL(account) else { return }
+    await signIn(url, store: store) { store.accounts(of: account.serverId).contains { $0.accountKey == account.accountKey && $0.status == "connected" } }
+  }
+
+  /** The vendor's page in the system's sign-in sheet, closed by itself once the box says the app is connected. */
+  private func signIn(_ url: URL, store: AppStore, done: @escaping () -> Bool) async {
     let state = SheetState()
     let session = ASWebAuthenticationSession(url: url, callback: .customScheme(SimeonConfig.urlScheme)) { _, _ in state.close(confirmed: true) }
     session.presentationContextProvider = presenter
@@ -192,7 +206,7 @@ final class AppConnector {
     for _ in 0..<150 {
       try? await Task.sleep(nanoseconds: 2_000_000_000)
       await store.loadApps()
-      if store.isConnected(name) { session.cancel(); return }
+      if done() { session.cancel(); return }
       if !state.keepGoing() { return }
     }
     session.cancel()

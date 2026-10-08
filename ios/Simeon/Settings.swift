@@ -343,7 +343,7 @@ struct ConnectAppsSheet: View {
             }
           }
         } else {
-          let mine = store.apps.filter { query.isEmpty || $0.name.localizedCaseInsensitiveContains(query) }
+          let mine = store.appsOnce.filter { query.isEmpty || $0.name.localizedCaseInsensitiveContains(query) }
           if mine.isEmpty {
             Text("No apps yet. Add one from the Marketplace.").foregroundStyle(Ink.secondary)
           }
@@ -414,31 +414,79 @@ struct AppRow: View {
   }
 }
 
-/** One connected app: its account, its status, sign in again, or remove it. */
+/**
+ * One connected app (the Mac's connector page): its accounts, each with
+ * its state, sign-in, rename and remove; its tools, each with a switch
+ * that turns it off for every agent; and removing the app.
+ */
 struct ConnectedAppDetail: View {
   let app: ConnectedApp
   @Environment(AppStore.self) private var store
   @Environment(\.dismiss) private var dismiss
+  @State private var tools: [AppTool] = []
+  @State private var loadingTools = true
+  @State private var renaming: ConnectedApp?
+  @State private var newName = ""
   private var connector: AppConnector { AppConnector.shared }
 
   var body: some View {
+    let accounts = store.accounts(of: app.serverId)
+    let connected = accounts.contains { $0.status == "connected" }
     Form {
       Section {
         HStack(spacing: 14) {
           ConnectorTile(name: app.name, size: 56)
           VStack(alignment: .leading, spacing: 3) {
             Text(app.name).font(.system(size: 20, weight: .semibold))
-            Text(app.status == "connected" ? "Connected · \(app.toolCount) tools" : "Not signed in")
-              .font(.system(size: 14)).foregroundStyle(app.status == "connected" ? Ink.secondary : Ink.danger)
+            Text(connected ? "Connected · \(tools.isEmpty ? app.toolCount : tools.filter { !$0.isDisabled }.count) tools" : "Not signed in")
+              .font(.system(size: 14)).foregroundStyle(connected ? Ink.secondary : Ink.danger)
           }
         }
         .padding(.vertical, 6)
       }
-      Section("Account") {
-        LabeledContent("Account", value: app.accountKey == "default" ? "Default" : app.accountKey)
-        if app.status != "connected" {
-          Button(connector.connecting == app.name ? "Waiting for sign-in…" : "Sign in") { Task { await connector.connect(app.name, store: store) } }
-            .disabled(connector.connecting != nil)
+      Section("Accounts") {
+        ForEach(accounts.isEmpty ? [app] : accounts) { account in
+          HStack {
+            VStack(alignment: .leading, spacing: 2) {
+              Text(account.accountName).font(.system(size: 16))
+              Text(account.status == "connected" ? "Connected" : "Needs sign-in")
+                .font(.system(size: 13)).foregroundStyle(account.status == "connected" ? Ink.secondary : Ink.danger)
+            }
+            Spacer()
+            if account.status != "connected" {
+              if connector.connecting == account.name {
+                ProgressView().controlSize(.small)
+              } else {
+                Button("Sign in") { Task { await connector.signIn(account, store: store) } }
+                  .buttonStyle(GreyButtonStyle(capsule: true))
+                  .disabled(connector.connecting != nil)
+              }
+            }
+          }
+          .swipeActions {
+            if accounts.count > 1 {
+              Button("Remove", role: .destructive) { Task { await store.removeAccount(account) } }
+            }
+            Button("Rename") { newName = account.accountKey == "default" ? "" : account.accountKey; renaming = account }
+          }
+        }
+      }
+      Section("Tools") {
+        if loadingTools && tools.isEmpty {
+          HStack { ProgressView(); Text("Loading tools…").foregroundStyle(Ink.secondary) }
+        } else if tools.isEmpty {
+          Text(connected ? "No tools listed." : "Sign in to see its tools.").foregroundStyle(Ink.secondary)
+        }
+        ForEach(tools) { tool in
+          Toggle(isOn: Binding(get: { !tool.isDisabled }, set: { _ in Task { if let next = await store.toggleTool(app.serverId, tool.name) { tools = next } } })) {
+            VStack(alignment: .leading, spacing: 2) {
+              Text(tool.title ?? tool.name).font(.system(size: 16))
+              if let summary = tool.summary, !summary.isEmpty {
+                Text(summary).font(.system(size: 13)).foregroundStyle(Ink.secondary).lineLimit(2)
+              }
+            }
+          }
+          .tint(Ink.blue)
         }
       }
       Section {
@@ -449,5 +497,15 @@ struct ConnectedAppDetail: View {
     }
     .navigationTitle(app.name)
     .navigationBarTitleDisplayMode(.inline)
+    .task(id: connected) {
+      loadingTools = true
+      tools = await store.tools(of: app.serverId)
+      loadingTools = false
+    }
+    .alert("Rename account", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
+      TextField("Account name", text: $newName)
+      Button("Rename") { if let account = renaming { Task { await store.renameAccount(account, to: newName) } }; renaming = nil }
+      Button("Cancel", role: .cancel) { renaming = nil }
+    }
   }
 }

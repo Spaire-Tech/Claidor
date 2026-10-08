@@ -3,7 +3,8 @@ import Observation
 
 /** One connected app, as the box's manager lists it (`McpServerSummary`). */
 public struct ConnectedApp: Identifiable, Hashable, Sendable {
-  public let id: String
+  /** The box lists one row per account, all under the app's server id. */
+  public let serverId: String
   public let name: String
   public let pluginId: String?
   public let accountKey: String
@@ -11,13 +12,32 @@ public struct ConnectedApp: Identifiable, Hashable, Sendable {
   public let status: String
   public let toolCount: Int
 
-  public init(id: String, name: String, pluginId: String?, accountKey: String, status: String, toolCount: Int) {
-    self.id = id; self.name = name; self.pluginId = pluginId; self.accountKey = accountKey; self.status = status; self.toolCount = toolCount
+  public init(serverId: String, name: String, pluginId: String?, accountKey: String, status: String, toolCount: Int) {
+    self.serverId = serverId; self.name = name; self.pluginId = pluginId; self.accountKey = accountKey; self.status = status; self.toolCount = toolCount
   }
 
   init?(_ json: JSON) {
     guard let id = json["id"]?.text else { return nil }
-    self.init(id: id, name: json["name"]?.string ?? id, pluginId: json["pluginId"]?.text, accountKey: json["accountKey"]?.text ?? "default", status: json["status"]?.string ?? "", toolCount: json["toolCount"]?.int ?? 0)
+    self.init(serverId: id, name: json["name"]?.string ?? id, pluginId: json["pluginId"]?.text, accountKey: json["accountKey"]?.text ?? "default", status: json["status"]?.string ?? "", toolCount: json["toolCount"]?.int ?? 0)
+  }
+
+  /** One account of one app. */
+  public var id: String { "\(serverId)\u{1F}\(accountKey)" }
+  /** The account's name as the Mac shows it: "Default" for the first. */
+  public var accountName: String { accountKey == "default" ? "Default" : accountKey }
+}
+
+/** One tool a connected app gives the agents, and whether the person switched it off (`listServerTools`). */
+public struct AppTool: Identifiable, Hashable, Sendable {
+  public let name: String
+  public let title: String?
+  public let summary: String?
+  public let isDisabled: Bool
+  public var id: String { name }
+
+  init?(_ json: JSON) {
+    guard let name = json["name"]?.text else { return nil }
+    self.name = name; title = json["title"]?.text; summary = json["description"]?.text; isDisabled = json["isDisabled"]?.bool ?? false
   }
 }
 
@@ -349,7 +369,7 @@ public final class AppStore {
         let state = try await backend.command("desktopMcp", ["action": "installEntry", "args": [["entryId": .string(plugin.id)]]])
         apps = (state["servers"]?.array ?? []).compactMap(ConnectedApp.init)
         if let vendor = try? await backend.command("desktopMcp", ["action": "vendorServerIdForPlugin", "args": [.string(plugin.id)]]), let id = vendor.text {
-          server = ConnectedApp(id: id, name: plugin.title, pluginId: plugin.id, accountKey: "default", status: "needs-auth", toolCount: 0)
+          server = ConnectedApp(serverId: id, name: plugin.title, pluginId: plugin.id, accountKey: "default", status: "needs-auth", toolCount: 0)
         } else {
           server = apps.first { $0.pluginId == plugin.id }
         }
@@ -361,7 +381,7 @@ public final class AppStore {
     guard let server else { problem = "\(name) isn't in Simeon's apps yet."; return nil }
     if server.status == "connected" { return nil }
     do {
-      let started = try await backend.command("desktopMcp", ["action": "authenticateServer", "args": [.string(server.id), .string(server.accountKey), "connector_card"]])
+      let started = try await backend.command("desktopMcp", ["action": "authenticateServer", "args": [.string(server.serverId), .string(server.accountKey), "connector_card"]])
       return started["authorizationUrl"]?.text.flatMap(URL.init(string:))
     } catch {
       problem = "Couldn't connect \(name): \(error.localizedDescription)"
@@ -370,8 +390,74 @@ public final class AppStore {
   }
 
   public func removeApp(_ app: ConnectedApp) async {
-    await command("desktopMcp", ["action": "removeServer", "args": [.string(app.id)]], failure: "Couldn't remove \(app.name)")
+    await command("desktopMcp", ["action": "removeServer", "args": [.string(app.serverId)]], failure: "Couldn't remove \(app.name)")
     await loadApps()
+  }
+
+  /** Whether Slack or GitHub is linked for routines to wake on (`getListenerIntegrations`); nil while it is not known. */
+  public func listenerConnected(_ platform: String) async -> Bool? {
+    guard let answer = try? await backend?.command("getListenerIntegrations", [:]) else { return nil }
+    return (answer["integrations"]?.array ?? []).first { $0["platform"]?.string == platform }?["isConnected"]?.bool ?? false
+  }
+
+  /** The page that links Slack or GitHub (`getListenerConnectUrl`), opened outside the app as the Mac opens it. */
+  public func listenerConnectURL(_ platform: String) async -> URL? {
+    do {
+      let answer = try await backend?.command("getListenerConnectUrl", ["platform": .string(platform)])
+      return answer?["url"]?.text.flatMap(URL.init(string:))
+    } catch {
+      problem = "Couldn't open the link: \(error.localizedDescription)"
+      return nil
+    }
+  }
+
+  /** Each app once, in the box's order (its accounts are on its page). */
+  public var appsOnce: [ConnectedApp] {
+    var seen = Set<String>()
+    return apps.filter { seen.insert($0.serverId).inserted }
+  }
+
+  public func accounts(of serverId: String) -> [ConnectedApp] { apps.filter { $0.serverId == serverId } }
+
+  /** The app's tools, each with its switch (`listServerTools`). */
+  public func tools(of serverId: String) async -> [AppTool] {
+    guard let list = try? await backend?.command("desktopMcp", ["action": "listServerTools", "args": [.string(serverId)]]) else { return [] }
+    return (list.array ?? []).compactMap(AppTool.init)
+  }
+
+  /** Switch one tool off or back on for every agent (`toggleMcpToolDisabled`); the tools as they are now. */
+  public func toggleTool(_ serverId: String, _ toolName: String) async -> [AppTool]? {
+    do {
+      let list = try await backend?.command("desktopMcp", ["action": "toggleMcpToolDisabled", "args": [["serverId": .string(serverId), "toolName": .string(toolName)]]])
+      await loadApps()
+      return (list?.array ?? []).compactMap(AppTool.init)
+    } catch {
+      problem = "Couldn't change \(toolName): \(error.localizedDescription)"
+      return nil
+    }
+  }
+
+  public func renameAccount(_ app: ConnectedApp, to name: String) async {
+    let next = name.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !next.isEmpty, next != app.accountKey else { return }
+    await command("desktopMcp", ["action": "renameAccount", "args": [["serverId": .string(app.serverId), "accountKey": .string(app.accountKey), "newAccountKey": .string(next)]]], failure: "Couldn't rename the account")
+    await loadApps()
+  }
+
+  public func removeAccount(_ app: ConnectedApp) async {
+    await command("desktopMcp", ["action": "removeAccount", "args": [["serverId": .string(app.serverId), "accountKey": .string(app.accountKey)]]], failure: "Couldn't remove the account")
+    await loadApps()
+  }
+
+  /** Sign in to one account of an app (`authenticateServer`), for the system's sign-in sheet. */
+  public func signInURL(_ app: ConnectedApp) async -> URL? {
+    do {
+      let started = try await backend?.command("desktopMcp", ["action": "authenticateServer", "args": [.string(app.serverId), .string(app.accountKey), "connector_card"]])
+      return started?["authorizationUrl"]?.text.flatMap(URL.init(string:))
+    } catch {
+      problem = "Couldn't sign in to \(app.name): \(error.localizedDescription)"
+      return nil
+    }
   }
 
   /** New Agent: the agent's id, to open its chat. */
@@ -421,8 +507,56 @@ public final class AppStore {
     if let index = agents.firstIndex(where: { $0.id == agentId }) {
       agents[index].name = name.isEmpty ? agent.name : name; agents[index].title = title; agents[index].description = description
       if let colour { agents[index].colour = colour }
+      if let voiceId { agents[index].voiceId = voiceId }
     }
     await command("updateAgent", ["id": .string(agentId), "profile": profile], failure: "Couldn't save \(agent.name)")
+  }
+
+  /** A voice in the Mac's picker: its name only (the founder, 1 October 2026), and a sample to play when it has one. */
+  public struct VoiceChoice: Identifiable, Hashable, Sendable {
+    public let id: String
+    public let name: String
+    public let sample: URL?
+    public init(id: String, name: String, sample: URL?) { self.id = id; self.name = name; self.sample = sample }
+  }
+
+  /** The voice an agent with none saved speaks with (`VOICE_CALL_DEFAULT_VOICE_ID`, Michael). */
+  public static let defaultVoiceId = "ljX1ZrXuDIIRVcmiVSyR"
+
+  /** The voices to pick from (`GET …/proxy/v1/voice/voices`); none when calls are not switched on. */
+  public func voices() async -> [VoiceChoice] {
+    guard let list = try? await backend?.server("proxy/v1/voice/voices", method: nil, body: nil) else { return [] }
+    return (list.array ?? []).compactMap { row in
+      guard let id = row["id"]?.text, let name = row["name"]?.text else { return nil }
+      return VoiceChoice(id: id, name: name, sample: row["preview_url"]?.text.flatMap(URL.init(string:)))
+    }
+  }
+
+  /** The agent's voice, saved on the agent as the Mac saves it (`updateAgent` with `voiceId`). */
+  public func setVoice(_ agentId: String, _ voiceId: String) async {
+    guard let agent = agent(agentId) else { return }
+    await saveProfile(agentId, name: agent.name, title: agent.title, description: agent.description, voiceId: voiceId)
+  }
+
+  /**
+   * A picture drawn from a description, as the Mac's Generate tab draws one
+   * (`POST …/proxy/v1/images/generations`, the cheapest quality: it is a
+   * thumbnail). The PNG's bytes, or nil with `problem` set.
+   */
+  public func drawPicture(_ description: String) async -> Data? {
+    let text = description.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !text.isEmpty, let backend else { return nil }
+    do {
+      let answer = try await backend.server("proxy/v1/images/generations", method: "POST", body: ["prompt": .string(text), "size": "1024x1024", "quality": "low"])
+      guard let base64 = answer["data"]?[0]?["b64_json"]?.text, let bytes = Data(base64Encoded: base64) else {
+        problem = "The picture didn't come back. Try again."
+        return nil
+      }
+      return bytes
+    } catch {
+      problem = "Couldn't draw the picture: \(error.localizedDescription)"
+      return nil
+    }
   }
 
   public func setNotify(_ agentId: String, _ on: Bool) async {

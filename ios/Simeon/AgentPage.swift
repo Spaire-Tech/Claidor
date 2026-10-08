@@ -1,3 +1,4 @@
+import AVFoundation
 import PhotosUI
 import SwiftUI
 import SimeonCore
@@ -487,40 +488,49 @@ struct MembersEditor: View {
   }
 }
 
-/** The pencil (the Mac's avatar editor): the twelve colours as butterflies, or a photo, or back to the butterfly. */
+/**
+ * The pencil (the Mac's avatar editor, `c3n`): three tabs, as the Mac has
+ * them. Agent: the twelve colours as butterflies and, when calls are on,
+ * the Voice dropdown with a play button for the chosen voice's sample
+ * (`__simeonVoicePicker`, names only). Generate: "Describe your avatar…",
+ * Generate, then the picture to use or draw again. Upload: a photo, its
+ * middle square kept. A group starts on Upload and has no Agent tab.
+ */
 struct AvatarEditor: View {
   let agentId: String
   @Environment(AppStore.self) private var store
   @Environment(\.dismiss) private var dismiss
+  @State private var tab = Tab.agent
   @State private var photo: PhotosPickerItem?
+  @State private var description = ""
+  @State private var drawing = false
+  @State private var drawn: UIImage?
+  @State private var voices: [AppStore.VoiceChoice] = []
+  @State private var sample: AVPlayer?
+  @State private var playing: String?
+
+  enum Tab: String, CaseIterable, Identifiable {
+    case agent = "Agent", generate = "Generate", upload = "Upload"
+    var id: String { rawValue }
+  }
 
   var body: some View {
     NavigationStack {
       if let agent = store.agent(agentId) {
         ScrollView {
-          VStack(spacing: 24) {
-            AgentAvatar(agent: agent).frame(width: 110, height: 110)
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: 14) {
-              ForEach(AgentPalette.all, id: \.id) { palette in
-                Button {
-                  Task { await store.saveProfile(agent.id, name: agent.name, title: agent.title, description: agent.description, colour: palette.id) }
-                } label: {
-                  ButterflyView(palette: palette, style: .still)
-                    .frame(width: 40, height: 40)
-                    .padding(4)
-                    .overlay(Circle().stroke(agent.palette.id == palette.id && agent.avatarDataURL == nil ? Ink.blue : .clear, lineWidth: 2))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(palette.id)
-              }
+          VStack(spacing: 20) {
+            Group {
+              if let drawn { Image(uiImage: drawn).resizable().scaledToFill().clipShape(Circle()) } else { AgentAvatar(agent: agent, members: store.members(of: agent)) }
             }
-            PhotosPicker(selection: $photo, matching: .images) {
-              Label("Choose a photo", systemImage: "photo").frame(maxWidth: .infinity)
+            .frame(width: 110, height: 110)
+            Picker("Avatar source", selection: $tab) {
+              ForEach(agent.isGroup ? [Tab.generate, .upload] : Tab.allCases) { Text($0.rawValue).tag($0) }
             }
-            .buttonStyle(PillButtonStyle(primary: false))
-            if agent.avatarDataURL != nil {
-              Button("Use the butterfly") { Task { await store.setAvatar(agent.id, png: nil) } }
-                .buttonStyle(PillButtonStyle(primary: false))
+            .pickerStyle(.segmented)
+            switch tab {
+            case .agent: character(agent)
+            case .generate: generate(agent)
+            case .upload: upload(agent)
             }
           }
           .padding(20)
@@ -528,6 +538,9 @@ struct AvatarEditor: View {
         .navigationTitle("Avatar")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } } }
+        .onAppear { if agent.isGroup && tab == .agent { tab = .upload } }
+        .task { voices = agent.isGroup ? [] : await store.voices() }
+        .onDisappear { sample?.pause(); sample = nil; playing = nil }
         .onChange(of: photo) { _, item in
           guard let item else { return }
           Task {
@@ -539,6 +552,118 @@ struct AvatarEditor: View {
       }
     }
     .presentationDetents([.medium, .large])
+  }
+
+  /** The Agent tab: the colours, then the voice. */
+  @ViewBuilder
+  private func character(_ agent: Agent) -> some View {
+    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: 14) {
+      ForEach(AgentPalette.all, id: \.id) { palette in
+        Button {
+          Task { await store.saveProfile(agent.id, name: agent.name, title: agent.title, description: agent.description, colour: palette.id) }
+        } label: {
+          ButterflyView(palette: palette, style: .still)
+            .frame(width: 40, height: 40)
+            .padding(4)
+            .overlay(Circle().stroke(agent.palette.id == palette.id && agent.avatarDataURL == nil ? Ink.blue : .clear, lineWidth: 2))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(palette.label)
+      }
+    }
+    if !voices.isEmpty {
+      let current = agent.voiceId ?? AppStore.defaultVoiceId
+      let chosen = voices.first { $0.id == current } ?? voices.first
+      VStack(alignment: .leading, spacing: 6) {
+        Text("Voice").font(.system(size: 12, weight: .semibold)).foregroundStyle(Ink.secondary).padding(.horizontal, 2)
+        HStack(spacing: 8) {
+          Picker("Voice", selection: Binding(get: { chosen?.id ?? current }, set: { id in Task { await store.setVoice(agent.id, id) } })) {
+            ForEach(voices) { Text($0.name).tag($0.id) }
+          }
+          .pickerStyle(.menu)
+          .tint(Ink.primary)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .padding(.horizontal, 4)
+          .frame(height: 30)
+          .background(Ink.control, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+          Button { play(chosen) } label: {
+            Image(systemName: playing != nil && playing == chosen?.id ? "pause.fill" : "play.fill")
+              .font(.system(size: 12))
+              .foregroundStyle(Ink.primary)
+              .frame(width: 30, height: 30)
+              .background(Color(.sRGB, red: 120 / 255, green: 120 / 255, blue: 128 / 255, opacity: 0.12), in: Circle())
+          }
+          .buttonStyle(.plain)
+          .disabled(chosen?.sample == nil)
+          .opacity(chosen?.sample == nil ? 0.4 : 1)
+          .accessibilityLabel(playing == chosen?.id ? "Stop \(chosen?.name ?? "")" : "Play \(chosen?.name ?? "")")
+        }
+      }
+    }
+  }
+
+  /** The chosen voice's sample, or stop it. */
+  private func play(_ voice: AppStore.VoiceChoice?) {
+    sample?.pause()
+    guard let voice, let url = voice.sample, playing != voice.id else { sample = nil; playing = nil; return }
+    try? AVAudioSession.sharedInstance().setCategory(.playback)
+    let player = AVPlayer(url: url)
+    sample = player
+    playing = voice.id
+    player.play()
+  }
+
+  /** The Generate tab: a description, Generate, then the picture to use. */
+  @ViewBuilder
+  private func generate(_ agent: Agent) -> some View {
+    if drawing {
+      VStack(spacing: 12) {
+        Text(description.replacingOccurrences(of: "\n", with: " ")).font(.system(size: 15)).foregroundStyle(Ink.secondary).frame(maxWidth: .infinity, alignment: .leading)
+        ProgressView().accessibilityLabel("Generating avatar")
+      }
+    } else {
+      TextField("Describe your avatar…", text: $description, axis: .vertical)
+        .lineLimit(3...6)
+        .font(.system(size: 15))
+        .padding(12)
+        .background(Ink.control, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Ink.edge, lineWidth: 1))
+      if let drawn {
+        HStack(spacing: 10) {
+          Button("Use this picture") {
+            Task { await store.setAvatar(agent.id, png: Self.square(drawn, side: 512).pngData()); self.drawn = nil; dismiss() }
+          }
+          .buttonStyle(PillButtonStyle(primary: true))
+          Button("Draw again") { draw() }.buttonStyle(PillButtonStyle(primary: false))
+        }
+      } else {
+        Button("Generate") { draw() }
+          .buttonStyle(PillButtonStyle(primary: true))
+          .disabled(description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+      }
+    }
+  }
+
+  private func draw() {
+    drawing = true
+    Task {
+      let bytes = await store.drawPicture(description)
+      drawn = bytes.flatMap(UIImage.init(data:)) ?? drawn
+      drawing = false
+    }
+  }
+
+  /** The Upload tab: a photo, or back to the butterfly. */
+  @ViewBuilder
+  private func upload(_ agent: Agent) -> some View {
+    PhotosPicker(selection: $photo, matching: .images) {
+      Label("Choose a photo", systemImage: "photo").frame(maxWidth: .infinity)
+    }
+    .buttonStyle(PillButtonStyle(primary: false))
+    if agent.avatarDataURL != nil {
+      Button("Use the butterfly") { Task { await store.setAvatar(agent.id, png: nil) } }
+        .buttonStyle(PillButtonStyle(primary: false))
+    }
   }
 
   /** The middle square of a photo, at `side` points: the avatar's own shape. */
