@@ -170,9 +170,12 @@ struct ChatMessages: View {
         atBottom = bottom
         if bottom { unseen = 0 }
       }
-      .onChange(of: rows.count) { old, new in
-        guard !atBottom, new > old else { return }
-        unseen += store.rows(for: agentId).suffix(new - old).filter { row in if case .bubble(let b) = row { return !b.fromPerson }; return false }.count
+      // Counted from the last row before: older lines loaded at the top are not new.
+      .onChange(of: rows.last?.id) { old, _ in
+        guard !atBottom, let old else { return }
+        let now = store.rows(for: agentId)
+        guard let from = now.lastIndex(where: { $0.id == old }) else { return }
+        unseen += now[(from + 1)...].filter { row in if case .bubble(let b) = row { return !b.fromPerson }; return false }.count
       }
       .overlay(alignment: .top) {
         let waiting = Self.unreadCount(rows)

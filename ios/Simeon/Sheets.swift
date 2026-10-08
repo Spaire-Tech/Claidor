@@ -247,7 +247,7 @@ struct SearchSheet: View {
 
   private var agents: [Agent] {
     store.agents.filter { agent in
-      (scope == .all || (scope == .agents && !agent.isGroup) || (scope == .groups && agent.isGroup))
+      !agent.isHidden && (scope == .all || (scope == .agents && !agent.isGroup) || (scope == .groups && agent.isGroup))
         && (query.isEmpty || agent.name.localizedCaseInsensitiveContains(query) || agent.title.localizedCaseInsensitiveContains(query) || agent.description.localizedCaseInsensitiveContains(query))
     }
   }

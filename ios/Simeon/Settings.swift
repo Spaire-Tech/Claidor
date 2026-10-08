@@ -497,7 +497,8 @@ struct ConnectedAppDetail: View {
             tools[index].isDisabled = !on
             switching.insert(tool.name)
             Task {
-              if let next = await store.toggleTool(app.serverId, tool.name) { tools = next } else { tools[index].isDisabled = on }
+              if let next = await store.toggleTool(app.serverId, tool.name) { tools = next }
+              else if let now = tools.firstIndex(where: { $0.name == tool.name }) { tools[now].isDisabled = on }
               switching.remove(tool.name)
             }
           })) {

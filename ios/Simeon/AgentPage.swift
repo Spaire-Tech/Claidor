@@ -476,7 +476,8 @@ struct MembersEditor: View {
 
   var body: some View {
     NavigationStack {
-      List(store.agents.filter { !$0.isGroup }) { agent in
+      // Hidden agents stay out of the picker, unless already in the group (saving must not drop them).
+      List(store.agents.filter { !$0.isGroup && (!$0.isHidden || picked.contains($0.id)) }) { agent in
         Button {
           if picked.contains(agent.id) { picked.remove(agent.id) } else { picked.insert(agent.id) }
         } label: {

@@ -99,10 +99,22 @@ struct BackSwipe: UIViewControllerRepresentable {
   func updateUIViewController(_ keeper: Keeper, context: Context) {}
 
   final class Keeper: UIViewController, UIGestureRecognizerDelegate {
+    /** The swipe's own delegate, handed back when the chat goes: left with none, a swipe on the list could start a "back" to nowhere and hang. */
+    private weak var systemDelegate: UIGestureRecognizerDelegate?
+    private weak var navigation: UINavigationController?
+
     override func viewDidAppear(_ animated: Bool) {
       super.viewDidAppear(animated)
-      navigationController?.interactivePopGestureRecognizer?.isEnabled = true
-      navigationController?.interactivePopGestureRecognizer?.delegate = self
+      guard let navigation = navigationController, let swipe = navigation.interactivePopGestureRecognizer else { return }
+      self.navigation = navigation
+      if swipe.delegate !== self { systemDelegate = swipe.delegate }
+      swipe.isEnabled = true
+      swipe.delegate = self
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+      super.viewDidDisappear(animated)
+      if let swipe = navigation?.interactivePopGestureRecognizer, swipe.delegate === self { swipe.delegate = systemDelegate }
     }
 
     func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {

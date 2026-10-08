@@ -685,8 +685,10 @@ struct FileCardView: View {
     .frame(maxWidth: .infinity, alignment: fromPerson ? .trailing : .leading)
     // Decoded at the size it is shown, off the main thread: a full-size photo decoded on it froze scrolling.
     .task {
-      guard isImage, image == nil, let data = await store.readFile(url, agentId: agentId, limit: 12 << 20) else { return }
-      image = await UIImage(data: data)?.byPreparingThumbnail(ofSize: CGSize(width: 900, height: 900))
+      guard isImage, image == nil, let data = await store.readFile(url, agentId: agentId, limit: 12 << 20), let full = UIImage(data: data) else { return }
+      // Its own shape, at most 900 pt on its long side (the thumbnail is drawn at exactly the size asked).
+      let scale = min(1, 900 / max(full.size.width, full.size.height, 1))
+      image = await full.byPreparingThumbnail(ofSize: CGSize(width: full.size.width * scale, height: full.size.height * scale)) ?? full
     }
     .sheet(item: $preview) { file in QuickLookSheet(file: file).ignoresSafeArea() }
   }
