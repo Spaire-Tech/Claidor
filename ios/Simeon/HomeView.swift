@@ -92,6 +92,17 @@ struct HomeView: View {
       Text(store.problem ?? "")
     }
     .task(id: store.agents.isEmpty) { openAtLaunch() }
+    // A tapped notification opens that agent's chat (once the roster has it).
+    .task(id: OpenRequest(agent: Notifications.shared.openAgent, ready: !store.agents.isEmpty)) {
+      guard let agentId = Notifications.shared.openAgent, store.agent(agentId) != nil else { return }
+      Notifications.shared.openAgent = nil
+      open(agentId)
+    }
+  }
+
+  private struct OpenRequest: Equatable {
+    let agent: String?
+    let ready: Bool
   }
 
   private func open(_ agentId: String) {
@@ -122,26 +133,31 @@ struct HomeView: View {
   }
 }
 
-/** One agent or group in the list: the Mac's row at the phone's size (butterfly 52, name semibold, title in blue, the time, the last line). */
+/**
+ * One agent or group in the list: the Mac's row zoomed ×1.2 as the phone
+ * design has it (measured: the name 16.8 pt semibold, the title 13.2 pt in
+ * the chat's blue, the time 14.4 pt at 40 %, the last line 15.6 pt at 60 %,
+ * the butterfly 52).
+ */
 struct AgentRow: View {
   let agent: Agent
   let members: [Agent]
 
   var body: some View {
     HStack(alignment: .center, spacing: 12) {
-      AgentAvatar(agent: agent, members: members)
+      AgentAvatar(agent: agent, members: members, moves: true)
         .frame(width: 52, height: 52)
       VStack(alignment: .leading, spacing: 3) {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
-          Text(agent.name).font(.system(size: 17, weight: .semibold)).foregroundStyle(Ink.primary).lineLimit(1)
+          Text(agent.name).font(.system(size: 16.8, weight: .semibold)).foregroundStyle(Ink.primary).lineLimit(1)
           if !agent.title.isEmpty {
-            Text(agent.title).font(.system(size: 14)).foregroundStyle(Ink.title).lineLimit(1)
+            Text(agent.title).font(.system(size: 13.2)).foregroundStyle(Ink.bubbleMine).lineLimit(1)
           }
           Spacer(minLength: 4)
           RowTime(agent: agent)
         }
         HStack(spacing: 8) {
-          Text(line).font(.system(size: 15)).foregroundStyle(Ink.secondary).lineLimit(1)
+          Text(line).font(.system(size: 15.6)).foregroundStyle(Ink.secondary).lineLimit(1)
           Spacer(minLength: 0)
           if agent.hasUnread {
             Circle().fill(Ink.unread).frame(width: 10, height: 10).accessibilityLabel("Unread")
@@ -168,7 +184,7 @@ struct RowTime: View {
     if let call = store.call, call.agentId == agent.id {
       CallChip(call: call)
     } else if let at = agent.lastActivityAt, at > 0 {
-      Text(Chat.listTime(Date(timeIntervalSince1970: at / 1000))).font(.system(size: 14)).foregroundStyle(Ink.secondary)
+      Text(Chat.listTime(Date(timeIntervalSince1970: at / 1000))).font(.system(size: 14.4)).foregroundStyle(Ink.tertiary)
     }
   }
 }

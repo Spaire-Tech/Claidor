@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import SimeonCore
 
 /**
@@ -9,6 +10,8 @@ import SimeonCore
  */
 @main
 struct SimeonApp: App {
+  /** Apple's push token and taps on notifications reach the app through UIKit's delegate (Notifications.swift). */
+  @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
   @State private var session = SessionController()
   @AppStorage("simeon.theme") private var theme = "system"
 
@@ -59,7 +62,7 @@ struct PlainScreen: View {
   var body: some View {
     VStack(spacing: 0) {
       Spacer()
-      ButterflyView(palette: .named("blue")).frame(width: 96, height: 96).padding(.bottom, 20)
+      ButterflyView(palette: .named("blue"), motion: .idle).frame(width: 96, height: 96).padding(.bottom, 20)
       Text(title).font(.largeTitle.weight(.semibold)).foregroundStyle(Ink.primary)
       if let line {
         Text(line).font(.title3).foregroundStyle(Ink.secondary).multilineTextAlignment(.center).padding(.top, 10)
@@ -80,5 +83,21 @@ struct PlainScreen: View {
     .padding(.horizontal, 28)
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .background(Ink.ground)
+  }
+}
+
+/**
+ * The chat draws its own top (the phone design's back disc, butterfly and
+ * name), so the system's bar is hidden there; this keeps the edge swipe
+ * that goes back, which hiding the bar would otherwise switch off.
+ */
+extension UINavigationController: @retroactive UIGestureRecognizerDelegate {
+  override open func viewDidLoad() {
+    super.viewDidLoad()
+    interactivePopGestureRecognizer?.delegate = self
+  }
+
+  public func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+    viewControllers.count > 1
   }
 }

@@ -31,6 +31,8 @@ final class KeychainVault: TokenVault, @unchecked Sendable {
 /** What the app was started with: the demo, a screen to open, a theme (the screenshots), another server (a stand-in on a Mac). */
 struct Launch {
   let demo: Bool
+  /** The demo with a chat of every card the Mac draws ("Cards"), for the screenshots. */
+  let gallery: Bool
   let screen: String?
   let theme: String?
   let api: URL
@@ -42,7 +44,8 @@ struct Launch {
       arguments.first { $0.hasPrefix("--\(name)=") }.map { String($0.dropFirst(name.count + 3)) } ?? environment["SIMEON_\(name.uppercased())"]
     }
     let api = value("api").flatMap(URL.init(string:)) ?? SimeonConfig.defaultAPI
-    return Launch(demo: arguments.contains("--demo") || environment["SIMEON_DEMO"] == "1", screen: value("screen"), theme: value("theme"), api: api)
+    let gallery = arguments.contains("--gallery")
+    return Launch(demo: gallery || arguments.contains("--demo") || environment["SIMEON_DEMO"] == "1", gallery: gallery, screen: value("screen"), theme: value("theme"), api: api)
   }()
 }
 
@@ -78,7 +81,7 @@ final class SessionController {
   func start() async {
     if launch.demo {
       store.account = Account(name: "Bass Fall", email: "bass@simeonlabs.com")
-      await store.attach(DemoBackend(pace: 0.6))
+      await store.attach(DemoBackend(seed: DemoData.seed(gallery: launch.gallery), pace: 0.6))
       phase = .signedIn
       return
     }
@@ -91,16 +94,28 @@ final class SessionController {
     return api
   }
 
+  private let personName = PersonNameBox()
+
   private func enter() async {
     let api = makeAPI()
     self.api = api
     phase = .signedIn
-    await store.attach(LiveBackend(gateway: Gateway(api: api)))
-    if let profile = try? await api.profile() { store.account = Account(profile: profile) }
+    // The voice call: ElevenLabs' kit on the phone, the Mac's call protocol in SimeonCore (LiveCall).
+    let backend = LiveBackend(gateway: Gateway(api: api), api: api)
+    let names = personName
+    backend.call = LiveCall(backend: backend, transport: ElevenLabsVoice(), personName: { names.value })
+    await store.attach(backend)
+    // Ask for notifications once signed in, and register this phone with Apple and Simeon Labs.
+    Task { await Notifications.shared.start(api: api) }
+    if let profile = try? await api.profile() {
+      store.account = Account(profile: profile)
+      names.value = store.account?.name
+    }
   }
 
   private func ended() {
     store.detach()
+    Notifications.shared.forget()
     api = nil
     phase = .signedOut(message: "Your Simeon sign-in ended. Sign in again.")
   }
@@ -140,9 +155,47 @@ final class SessionController {
 
   func signOut() async {
     store.detach()
+    await Notifications.shared.stop()
     await api?.signOut()
     api = nil
     phase = .signedOut(message: nil)
+  }
+}
+
+/**
+ * Connecting an app the way the Mac's card does (`authenticateServer` with
+ * the trigger `connector_card`): the vendor's sign-in in the system's
+ * sign-in sheet, which shares Safari's cookies. The vendor sends the person
+ * back to Simeon Labs' page, which hands the code to the box; meanwhile the
+ * app asks the box every two seconds, and closes the sheet itself the
+ * moment the box says the app is connected.
+ */
+@MainActor
+@Observable
+final class AppConnector {
+  static let shared = AppConnector()
+  @ObservationIgnored private var session: ASWebAuthenticationSession?
+  private let presenter = SheetPresenter()
+  private(set) var connecting: String?
+
+  func connect(_ name: String, store: AppStore) async {
+    guard connecting == nil else { return }
+    connecting = name
+    defer { connecting = nil; session = nil }
+    guard let url = await store.connectApp(named: name) else { return }
+    let state = SheetState()
+    let session = ASWebAuthenticationSession(url: url, callback: .customScheme(SimeonConfig.urlScheme)) { _, _ in state.close(confirmed: true) }
+    session.presentationContextProvider = presenter
+    session.prefersEphemeralWebBrowserSession = false
+    self.session = session
+    session.start()
+    for _ in 0..<150 {
+      try? await Task.sleep(nanoseconds: 2_000_000_000)
+      await store.loadApps()
+      if store.isConnected(name) { session.cancel(); return }
+      if !state.keepGoing() { return }
+    }
+    session.cancel()
   }
 }
 

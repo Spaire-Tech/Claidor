@@ -3,33 +3,36 @@ import UIKit
 import SimeonCore
 
 /**
- * One chat (step 1, rounds 2 to 4): the butterfly at the top and the name
- * under it with the call button, the conversation, the composer at the
- * bottom. Tapping the butterfly or the name opens the agent's page; while
- * on a call the pill sits under the header and opens the full call.
+ * One chat, as the phone design draws the Mac's chat full screen (measured
+ * from the web window at 393 pt, 8 October 2026): the back disc at the top
+ * left, the agent's butterfly (52 pt) with its name pill under it and the
+ * call button beside the name, all over the page's own ground; the
+ * conversation; the composer. The butterfly or the name opens the agent's
+ * page; on a call, the pill sits under the header and opens the full call.
  */
 struct ChatView: View {
   let agentId: String
   /** `call` or `call-full` or `agent`, from the screenshots' launch. */
   var opening: String? = nil
   @Environment(AppStore.self) private var store
+  @Environment(\.dismiss) private var dismiss
   @State private var showsPage = false
   @State private var showsCall = false
   @State private var showsTranscript = false
+  @State private var showsComputer = false
 
   // Each part below reads only what it draws, so typing a letter or the
   // call's waveform ticking redraws that part and not the conversation.
   var body: some View {
-    ChatMessages(agentId: agentId)
+    ChatMessages(agentId: agentId, openPage: { showsPage = true }, openComputer: { showsComputer = true })
       .safeAreaInset(edge: .top, spacing: 0) {
-        ChatHeader(agentId: agentId, showsPage: $showsPage, showsCall: $showsCall, showsTranscript: $showsTranscript)
+        ChatHeader(agentId: agentId, back: { dismiss() }, showsPage: $showsPage, showsCall: $showsCall, showsTranscript: $showsTranscript)
       }
       .safeAreaInset(edge: .bottom, spacing: 0) { ChatComposer(agentId: agentId) }
-      .navigationBarTitleDisplayMode(.inline)
-      .toolbar {
-        ToolbarItem(placement: .principal) { ChatAvatarButton(agentId: agentId, showsPage: $showsPage) }
-      }
+      .background(Ink.ground)
+      .toolbar(.hidden, for: .navigationBar)
       .sheet(isPresented: $showsPage) { AgentPageSheet(agentId: agentId) }
+      .sheet(isPresented: $showsComputer) { ComputerSheet(agentId: agentId) }
       .fullScreenCover(isPresented: $showsCall) { CallScreen(showsTranscript: $showsTranscript) }
       .task {
         await store.open(agentId)
@@ -47,24 +50,48 @@ struct ChatView: View {
 /** The conversation itself: redrawn when its rows change, and only then. */
 struct ChatMessages: View {
   let agentId: String
+  let openPage: () -> Void
+  let openComputer: () -> Void
   @Environment(AppStore.self) private var store
+  @State private var width: CGFloat = 361
 
   var body: some View {
+    let rows = store.rows(for: agentId)
     ScrollView {
-      LazyVStack(alignment: .leading, spacing: 6) {
-        ForEach(store.rows(for: agentId)) { row in
-          ChatRowView(row: row, agentId: agentId)
+      LazyVStack(alignment: .leading, spacing: 0) {
+        ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
+          ChatRowView(row: row, agentId: agentId, openPage: openPage, openComputer: openComputer)
+            .padding(.top, Self.gap(index > 0 ? rows[index - 1] : nil, row))
         }
         TypingSlot(agentId: agentId)
       }
-      .padding(.horizontal, 12)
-      .padding(.top, 8)
-      .padding(.bottom, 12)
+      .padding(.horizontal, 16)
+      .padding(.bottom, 14)
+      .environment(\.chatWidth, width)
     }
+    .onGeometryChange(for: CGFloat.self) { $0.size.width - 32 } action: { width = max(200, $0) }
     .defaultScrollAnchor(.bottom)
     .defaultScrollAnchor(.bottom, for: .sizeChanges)
     .scrollDismissesKeyboard(.interactively)
     .background(Ink.ground)
+  }
+
+  /**
+   * The space above a row, the window's way: 4 between lines of the same
+   * side (each row's 2 pt padding), 16 when the speaker changes (the bubble's
+   * 12 pt margin), 12 around the lines in the middle; a stamp brings its own.
+   */
+  static func gap(_ previous: ChatRow?, _ row: ChatRow) -> CGFloat {
+    guard let previous else { return 4 }
+    if case .stamp = row { return 0 }
+    if case .stamp = previous { return 0 }
+    if case .unread = row { return 8 }
+    if case .unread = previous { return 4 }
+    switch (previous.side, row.side) {
+    case (.middle, _), (_, .middle): return 12
+    case let (a, b) where a != b: return 16
+    default: return 4
+    }
   }
 }
 
@@ -74,122 +101,189 @@ struct TypingSlot: View {
   @Environment(AppStore.self) private var store
 
   var body: some View {
-    if let agent = store.agent(agentId), agent.isBusy || store.steps[agentId] != nil {
-      TypingRow(agent: agent, step: store.steps[agentId])
+    if let agent = store.agent(agentId), agent.isBusy {
+      TypingRow(agent: agent, step: agent.isGroup ? (agent.activityLabel ?? store.steps[agentId]) : nil)
+        .padding(.top, 16)
+        .transition(.opacity)
     }
   }
 }
 
-/** The butterfly in the bar: opens the agent's page. */
-struct ChatAvatarButton: View {
-  let agentId: String
-  @Binding var showsPage: Bool
-  @Environment(AppStore.self) private var store
-
-  var body: some View {
-    let agent = store.agent(agentId)
-    Button { showsPage = true } label: {
-      if let agent { AgentAvatar(agent: agent, members: store.members(of: agent), groupInARow: true).frame(width: agent.isGroup ? 64 : 44, height: 44) }
-    }
-    .buttonStyle(.plain)
-    .accessibilityLabel("\(agent?.name ?? "Agent"), details")
-  }
-}
-
-/** The name under the butterfly with the call button, and the call's pill while on a call. */
+/**
+ * The top of the chat (`.sand-chat-header` on a phone): the back disc 46 pt
+ * at 12, 12; the butterfly 52 pt centred 4 pt down; the name pill under it
+ * (13 pt, 500); the call button 24 pt beside the name; the page's ground at
+ * 78 % with a blur behind, fading out over its last 30 pt.
+ */
 struct ChatHeader: View {
   let agentId: String
+  let back: () -> Void
   @Binding var showsPage: Bool
   @Binding var showsCall: Bool
   @Binding var showsTranscript: Bool
   @Environment(AppStore.self) private var store
 
   var body: some View {
-    VStack(spacing: 8) {
-      if let agent = store.agent(agentId) {
-        GlassEffectContainer(spacing: 8) {
-          HStack(spacing: 8) {
+    VStack(spacing: 0) {
+      ZStack(alignment: .top) {
+        if let agent = store.agent(agentId) {
+          VStack(spacing: 4) {
             Button { showsPage = true } label: {
-              Text(agent.name).font(.system(size: 15, weight: .medium)).foregroundStyle(Ink.primary)
-                .padding(.horizontal, 14).padding(.vertical, 7)
+              AgentAvatar(agent: agent, members: store.members(of: agent), groupInARow: true, moves: true)
+                .frame(width: agent.isGroup ? nil : 52, height: 52)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("\(agent.name), details")
+            Button { showsPage = true } label: {
+              Text(agent.name).font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.primary).lineLimit(1)
+                .padding(.horizontal, 12).padding(.vertical, 4)
             }
             .buttonStyle(.plain)
             .glassEffect(.regular.interactive(), in: .capsule)
-            if store.canCall {
-              Button { store.startCall(agent) } label: {
-                Image(systemName: "phone.fill").font(.system(size: 13, weight: .semibold)).foregroundStyle(Ink.title)
-                  .frame(width: 32, height: 32)
+            .overlay(alignment: .trailing) {
+              if store.canCall && !agent.isGroup {
+                Button { store.startCall(agent) } label: {
+                  Image(systemName: "phone.fill").font(.system(size: 11, weight: .semibold)).foregroundStyle(Ink.callGlyph)
+                    .frame(width: 26, height: 26)
+                }
+                .buttonStyle(.plain)
+                .glassEffect(.regular.interactive(), in: .circle)
+                .accessibilityLabel("Call \(agent.name)")
+                .disabled(store.call != nil)
+                .offset(x: 26 + 8)
               }
-              .buttonStyle(.plain)
-              .glassEffect(.regular.interactive(), in: .circle)
-              .accessibilityLabel("Call \(agent.name)")
-              .disabled(store.call != nil)
             }
           }
+          .padding(.top, 4)
+          .padding(.horizontal, 70)
         }
+        HStack {
+          Button(action: back) {
+            Image(systemName: "chevron.left").font(.system(size: 19, weight: .semibold)).foregroundStyle(Ink.primary)
+              .frame(width: 46, height: 46)
+          }
+          .buttonStyle(.plain)
+          .glassEffect(.regular.interactive(), in: .circle)
+          .accessibilityLabel("Back")
+          Spacer()
+        }
+        .padding(.leading, 12).padding(.top, 12)
       }
       if let call = store.call, call.agentId == agentId {
         CallPill(call: call, showsTranscript: $showsTranscript) { showsCall = true }
           .padding(.horizontal, 12)
+          .padding(.top, 12)
           .transition(.move(edge: .top).combined(with: .opacity))
       }
     }
-    .padding(.top, 2)
-    .padding(.bottom, 6)
+    .padding(.bottom, 26)
+    .frame(maxWidth: .infinity)
+    .background { HeaderGround() }
     .animation(.snappy, value: store.call?.agentId)
     .onChange(of: store.call == nil) { _, gone in if gone { showsCall = false } }
   }
 }
 
-/** The composer: what you type stays here, so a keystroke redraws only this. */
+/** The header's ground: the page's colour at 78 % over a blur of what scrolls under it, fading out over the last 30 pt. */
+struct HeaderGround: View {
+  var body: some View {
+    Rectangle()
+      .fill(.ultraThinMaterial)
+      .overlay(Ink.ground.opacity(0.78))
+      .mask {
+        VStack(spacing: 0) {
+          Color.black
+          LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom).frame(height: 30)
+        }
+      }
+      .ignoresSafeArea(edges: .top)
+  }
+}
+
+/**
+ * The composer (`.sand-prompt-shell`): one 44 pt line on the page's ground
+ * with a hairline edge, the + disc inside it at the left, the text at
+ * 14 pt, the blue send (or mic) at the right. What you type stays here, so
+ * a keystroke redraws only this.
+ */
 struct ChatComposer: View {
   let agentId: String
   @Environment(AppStore.self) private var store
+  @Environment(\.colorScheme) private var scheme
   @State private var draft = ""
+  @State private var attachments: [ComposerAttachment] = []
+  @State private var picking = false
+  @State private var dictation = Dictation()
   @FocusState private var typing: Bool
 
   var body: some View {
-    HStack(alignment: .bottom, spacing: 8) {
-      Button {} label: {
-        Image(systemName: "plus").font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.primary)
-          .frame(width: 36, height: 36)
+    VStack(spacing: 6) {
+      if !attachments.isEmpty {
+        ScrollView(.horizontal, showsIndicators: false) {
+          HStack(spacing: 8) {
+            ForEach(attachments) { file in
+              AttachmentChip(file: file) { attachments.removeAll { $0.id == file.id } }
+            }
+          }
+          .padding(.horizontal, 4)
+        }
       }
-      .buttonStyle(.plain)
-      .glassEffect(.regular.interactive(), in: .circle)
-      .disabled(true)
-      .accessibilityLabel("Attach")
-      TextField("Message \(store.agent(agentId)?.name ?? "")", text: $draft, axis: .vertical)
-        .lineLimit(1...6)
-        .font(.system(size: 17))
-        .focused($typing)
-        .padding(.vertical, 8)
-        .submitLabel(.send)
-      if draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-        Image(systemName: "mic.fill").font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
-          .frame(width: 34, height: 34)
-          .background(Ink.bubbleMine, in: Circle())
-          .opacity(0.9)
-          .accessibilityHidden(true)
-      } else {
-        Button(action: send) {
-          Image(systemName: "arrow.up").font(.system(size: 16, weight: .bold)).foregroundStyle(.white)
-            .frame(width: 34, height: 34)
-            .background(Ink.bubbleMine, in: Circle())
+      HStack(alignment: .bottom, spacing: 8) {
+        Button { picking = true } label: {
+          Image(systemName: "plus").font(.system(size: 15, weight: .medium)).foregroundStyle(Ink.primary.opacity(0.78))
+            .frame(width: 30, height: 30)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Send")
+        .glassEffect(.regular.interactive(), in: .circle)
+        .accessibilityLabel("Attach")
+        TextField("Message \(store.agent(agentId)?.name ?? "")", text: $draft, axis: .vertical)
+          .font(.system(size: MessageType.size))
+          .lineLimit(1...8)
+          .focused($typing)
+          .padding(.vertical, 5)
+        if dictation.isListening {
+          Button { dictation.stop() } label: {
+            Image(systemName: "stop.fill").font(.system(size: 11, weight: .bold)).foregroundStyle(.white)
+              .frame(width: 28, height: 28).background(Ink.danger, in: Circle())
+          }
+          .buttonStyle(.plain)
+          .accessibilityLabel("Stop dictation")
+        } else if draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && attachments.isEmpty {
+          Button { dictation.start { text in draft = text } } label: {
+            Image(systemName: "mic.fill").font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
+              .frame(width: 28, height: 28).background(Ink.bubbleMine, in: Circle())
+          }
+          .buttonStyle(.plain)
+          .accessibilityLabel("Dictate")
+        } else {
+          Button(action: send) {
+            Image(systemName: "arrow.up").font(.system(size: 14, weight: .bold)).foregroundStyle(.white)
+              .frame(width: 28, height: 28).background(Ink.bubbleMine, in: Circle())
+          }
+          .buttonStyle(.plain)
+          .accessibilityLabel("Send")
+        }
       }
+      .padding(.leading, 8).padding(.trailing, 8).padding(.vertical, 7)
+      .background(scheme == .dark ? Ink.control : Ink.ground, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+      .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Ink.edge, lineWidth: 1))
+      .shadow(color: .black.opacity(scheme == .dark ? 0 : 0.05), radius: 4, y: 2)
     }
-    .padding(.leading, 6).padding(.trailing, 6).padding(.vertical, 5)
-    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 23, style: .continuous))
-    .padding(.horizontal, 12)
-    .padding(.bottom, 6)
+    .padding(.horizontal, 16)
+    .padding(.top, 6)
+    .padding(.bottom, 8)
+    .background(Ink.ground.opacity(0.001))
+    .composerPicker(isPresented: $picking) { picked in attachments.append(contentsOf: picked) }
+    .onChange(of: dictation.problem) { _, problem in if let problem { store.problem = problem } }
   }
 
   private func send() {
     let text = draft
+    let files = attachments
     draft = ""
-    Task { await store.send(text, to: agentId) }
+    attachments = []
+    dictation.stop()
+    Task { await store.send(text, to: agentId, attachments: files.map { ($0.name, $0.data) }) }
   }
 }
 
@@ -197,301 +291,181 @@ struct ChatComposer: View {
 struct ChatRowView: View {
   let row: ChatRow
   let agentId: String
+  let openPage: () -> Void
+  let openComputer: () -> Void
   @Environment(AppStore.self) private var store
-  @Environment(\.colorScheme) private var scheme
 
   var body: some View {
     switch row {
     case .stamp(_, let date):
-      Text(Chat.stampText(date)).font(.system(size: 13)).foregroundStyle(Ink.secondary)
-        .frame(maxWidth: .infinity).padding(.vertical, 10)
+      Text(Chat.stampText(date)).font(.system(size: 12)).foregroundStyle(Ink.secondary)
+        .padding(.vertical, 6)
+        .frame(maxWidth: .infinity)
+        .padding(.top, 14).padding(.bottom, 8)
+    case .unread:
+      UnreadDivider()
     case .bubble(let bubble):
-      BubbleView(bubble: bubble, agents: store.agents, author: bubble.author.flatMap { store.agent($0.id) }, inGroup: store.agent(agentId)?.isGroup ?? false)
-    case .file(_, let name, _, let fromPerson):
-      FileCard(name: name).frame(maxWidth: .infinity, alignment: fromPerson ? .trailing : .leading)
+      BubbleView(bubble: bubble, agentId: agentId, inGroup: store.agent(agentId)?.isGroup ?? false)
+    case .flights(_, let card):
+      FlightsCardView(card: card)
+    case .file(_, let name, let url, let fromPerson):
+      FileCardView(name: name, url: url, agentId: agentId, fromPerson: fromPerson)
     case .question(let id, let card):
-      QuestionCardView(card: card) { value in Task { await store.answer(value, card: id, in: agentId) } }
+      QuestionCardView(entryId: id, agentId: agentId, card: card)
+    case .draft(let id, let card):
+      DraftCardView(entryId: id, agentId: agentId, card: card)
     case .connectors(_, let names, let connected, let reason):
-      ConnectorsCard(names: names, connected: connected, reason: reason)
-    case .teammates(_, let count, let peers, let entries):
-      TeammatesLine(count: count, peers: peers, entries: entries)
+      ConnectorsCardView(names: names, connected: connected, reason: reason)
+    case .request(let id, let card):
+      RequestCardView(entryId: id, agentId: agentId, card: card, openComputer: openComputer)
+    case .teammates(_, let exchange, let entries):
+      TeammatesLine(exchange: exchange, entries: entries, agentId: agentId)
     case .voiceCall(_, let seconds, let lines):
       VoiceCallLine(seconds: seconds, lines: lines)
-    case .routine(_, let action, let name):
-      RoutineLine(action: action, name: name)
+    case .routines(_, let action, let routines):
+      RoutinesLine(action: action, routines: routines) { _ in openPage() }
+    case .notice(_, let text):
+      EventLine { Text(text) }
     }
   }
 }
 
-/** A bubble: yours on the right in blue, an agent's on the left in grey; in a group the member's name above and butterfly beside. */
+/**
+ * A bubble (`.sand-message`): yours on the right in the chat's blue, 10 × 15
+ * with 14 pt text on 21 pt lines; an agent's on the left in the Messages
+ * grey, 8 × 12, its Markdown, brands and teammates dressed as on the Mac;
+ * both 18 pt round and at most the window's width. In a group, the member's
+ * name over the first of their bubbles and their butterfly beside the last.
+ * A lone emoji is drawn large with no bubble.
+ */
 struct BubbleView: View {
   let bubble: Bubble
-  let agents: [Agent]
-  let author: Agent?
+  let agentId: String
   let inGroup: Bool
+  @Environment(AppStore.self) private var store
   @Environment(\.colorScheme) private var scheme
+  @Environment(\.chatWidth) private var width
+
+  private static let quickReactions = ["👍", "❤️", "😂", "🎉", "👀", "🙏"]
 
   var body: some View {
     HStack(alignment: .bottom, spacing: 8) {
-      if bubble.fromPerson { Spacer(minLength: 56) }
+      if bubble.fromPerson { Spacer(minLength: 0) }
       if inGroup && !bubble.fromPerson {
         Group {
-          if bubble.showsAvatar, let author { ButterflyView(palette: author.palette, margin: 2) } else { Color.clear }
+          if bubble.showsAvatar, let author = bubble.author { ButterflyView(palette: store.agent(author.id)?.palette ?? .named(AgentPalette.defaultColour(forAgentId: author.id))) } else { Color.clear }
         }
-        .frame(width: 26, height: 26)
+        .frame(width: 22, height: 22)
       }
       VStack(alignment: bubble.fromPerson ? .trailing : .leading, spacing: 4) {
         if inGroup && bubble.showsName, let name = bubble.author?.name {
-          Text(name).font(.system(size: 13)).foregroundStyle(Ink.secondary).padding(.leading, 12)
+          Text(name).font(.system(size: 12)).foregroundStyle(Ink.secondary).padding(.leading, 12)
         }
-        Text(bubble.fromPerson ? AttributedString(bubble.text) : richText(bubble.text, agents: agents, dark: scheme == .dark))
-          .font(.system(size: 17))
-          .foregroundStyle(bubble.fromPerson ? Color.white : Ink.primary)
-          .padding(.horizontal, 14).padding(.vertical, 9)
-          .background(bubble.fromPerson ? Ink.bubbleMine : Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-          .overlay(alignment: bubble.fromPerson ? .bottomLeading : .bottomTrailing) {
-            if !bubble.reactions.isEmpty {
-              Text(bubble.reactions.joined()).font(.system(size: 13))
-                .padding(.horizontal, 5).padding(.vertical, 2)
-                .background(Ink.ground, in: Capsule())
-                .overlay(Capsule().stroke(Ink.hairline, lineWidth: 0.5))
-                .offset(x: bubble.fromPerson ? -10 : 10, y: 12)
-            }
-          }
-          .contextMenu {
-            Button { UIPasteboard.general.string = bubble.text } label: { Label("Copy", systemImage: "doc.on.doc") }
-          }
+        content
+          .contextMenu { menu }
+          .overlay(alignment: bubble.fromPerson ? .bottomTrailing : .bottomLeading) { reactions }
+          .padding(.bottom, bubble.reactions.isEmpty ? 0 : 16)
       }
-      .padding(.bottom, bubble.reactions.isEmpty ? 0 : 10)
-      if !bubble.fromPerson { Spacer(minLength: 56) }
+      if !bubble.fromPerson { Spacer(minLength: 0) }
     }
   }
-}
 
-/** A file an agent made or you sent: its kind's tile, its name, the download mark (the window's file card). */
-struct FileCard: View {
-  let name: String
-
-  var body: some View {
-    HStack(spacing: 12) {
-      let kind = Self.kind(of: name)
-      Image(systemName: kind.symbol).font(.system(size: 17, weight: .semibold)).foregroundStyle(.white)
-        .frame(width: 32, height: 32)
-        .background(kind.colour, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
-      Text(name).font(.system(size: 15)).foregroundStyle(Ink.primary).lineLimit(1)
-      Image(systemName: "icloud.and.arrow.down").font(.system(size: 15)).foregroundStyle(Ink.secondary)
-    }
-    .padding(.horizontal, 14).padding(.vertical, 12)
-    .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-  }
-
-  static func kind(of name: String) -> (symbol: String, colour: Color) {
-    switch (name as NSString).pathExtension.lowercased() {
-    case "xlsx", "xls", "csv", "numbers": return ("tablecells", Color(RGB(hex: "#1d8b4f")))
-    case "docx", "doc", "pages", "md", "txt": return ("doc.text", Color(RGB(hex: "#2b5fb4")))
-    case "pdf": return ("doc.richtext", Color(RGB(hex: "#d4382c")))
-    case "pptx", "key": return ("rectangle.on.rectangle", Color(RGB(hex: "#d0592a")))
-    case "png", "jpg", "jpeg", "heic", "gif", "webp": return ("photo", Color(RGB(hex: "#7a5af5")))
-    default: return ("doc", Color(RGB(hex: "#6e6e73")))
+  @ViewBuilder
+  private var content: some View {
+    let maxWidth = ChatMetrics.bubbleMax(width - (inGroup && !bubble.fromPerson ? 30 : 0))
+    if bubble.isLoneEmoji {
+      Text(bubble.text.trimmingCharacters(in: .whitespacesAndNewlines)).font(.system(size: 32))
+    } else if bubble.fromPerson {
+      Text(bubble.text)
+        .font(.system(size: MessageType.size))
+        .lineSpacing(MessageType.spacing(lineHeight: MessageType.mineLineHeight))
+        .foregroundStyle(Ink.mineText)
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(.horizontal, 15).padding(.vertical, 10)
+        .background(Ink.bubbleMine, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .frame(maxWidth: maxWidth, alignment: .trailing)
+        .textSelection(.enabled)
+    } else {
+      MarkdownView(blocks: Markdown.blocks(bubble.text), mentioning: Mentioning(agents: store.agents, personName: store.account?.name, dark: scheme == .dark))
+        .foregroundStyle(Ink.theirsText)
+        .tint(Ink.link)
+        .padding(.horizontal, 12).padding(.vertical, 8)
+        .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .modifier(CardEdge(radius: 18))
+        .frame(maxWidth: maxWidth, alignment: .leading)
     }
   }
-}
 
-/** A question card: the agent's question, the choices, your own answer; the choice made, once answered (the window's widget). */
-struct QuestionCardView: View {
-  let card: QuestionCard
-  let answer: (String) -> Void
-  @State private var own = ""
+  @ViewBuilder
+  private var menu: some View {
+    ControlGroup {
+      ForEach(Self.quickReactions, id: \.self) { emoji in
+        Button(emoji) { Task { await store.react(emoji, to: bubble.id, in: agentId) } }
+      }
+    }
+    .controlGroupStyle(.compactMenu)
+    Button { UIPasteboard.general.string = bubble.text } label: { Label("Copy", systemImage: "doc.on.doc") }
+  }
 
-  var body: some View {
-    VStack(alignment: .leading, spacing: 10) {
-      Text(card.prompt).font(.system(size: 16, weight: .medium)).foregroundStyle(Ink.primary)
-      if let help = card.help { Text(help).font(.system(size: 14)).foregroundStyle(Ink.secondary) }
-      VStack(spacing: 0) {
-        ForEach(card.options, id: \.self) { option in
-          Button { answer(option) } label: {
-            HStack(spacing: 10) {
-              Image(systemName: card.answer == option ? "checkmark.circle.fill" : "circle")
-                .font(.system(size: 18)).foregroundStyle(card.answer == option ? Ink.title : Ink.tertiary)
-              Text(option).font(.system(size: 15)).foregroundStyle(Ink.primary).multilineTextAlignment(.leading)
-              Spacer(minLength: 0)
-            }
-            .padding(.vertical, 9)
-            .contentShape(Rectangle())
+  @ViewBuilder
+  private var reactions: some View {
+    if !bubble.reactions.isEmpty {
+      HStack(spacing: 4) {
+        ForEach(Array(Self.counted(bubble.reactions).enumerated()), id: \.offset) { _, item in
+          HStack(spacing: 3) {
+            Text(item.emoji).font(.system(size: 14))
+            if item.count > 1 { Text("\(item.count)").font(.system(size: 12)).foregroundStyle(Ink.secondary) }
           }
-          .buttonStyle(.plain)
-          .disabled(card.answer != nil)
-          .opacity(card.answer == nil || card.answer == option ? 1 : 0.45)
-          if option != card.options.last { Divider() }
+          .padding(.leading, 7).padding(.trailing, 8)
+          .frame(height: 22)
+          .background(Ink.reaction, in: Capsule())
+          .overlay(Capsule().stroke(Ink.ground, lineWidth: 2))
+          .onTapGesture { Task { await store.react(item.emoji, to: bubble.id, in: agentId) } }
         }
       }
-      if card.allowsOwnAnswer && card.answer == nil {
-        TextField("Type your own answer", text: $own)
-          .font(.system(size: 15))
-          .padding(.horizontal, 12).padding(.vertical, 8)
-          .background(Ink.ground, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-          .submitLabel(.send)
-          .onSubmit { if !own.trimmingCharacters(in: .whitespaces).isEmpty { answer(own) } }
-      } else if let given = card.answer, !card.options.contains(given) {
-        Text(given).font(.system(size: 15)).foregroundStyle(Ink.primary)
-      }
+      .padding(.horizontal, 10)
+      .offset(y: 16)
     }
-    .padding(14)
-    .frame(maxWidth: 320, alignment: .leading)
-    .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+  }
+
+  static func counted(_ emoji: [String]) -> [(emoji: String, count: Int)] {
+    var out: [(emoji: String, count: Int)] = []
+    for e in emoji { if let i = out.firstIndex(where: { $0.emoji == e }) { out[i].count += 1 } else { out.append((e, 1)) } }
+    return out
   }
 }
 
-/** Connected apps, or one to connect, as a small card. */
-struct ConnectorsCard: View {
-  let names: [String]
-  let connected: Bool
-  let reason: String?
-
-  var body: some View {
-    HStack(spacing: 10) {
-      Image(systemName: connected ? "checkmark.circle.fill" : "link.circle.fill")
-        .font(.system(size: 20)).foregroundStyle(connected ? Ink.live : Ink.title)
-      VStack(alignment: .leading, spacing: 2) {
-        Text(connected ? "Connected \(names.joined(separator: " and "))" : "Connect \(names.joined(separator: " and "))")
-          .font(.system(size: 15, weight: .medium)).foregroundStyle(Ink.primary)
-        if let reason { Text(reason).font(.system(size: 13)).foregroundStyle(Ink.secondary) }
-      }
-    }
-    .padding(.horizontal, 14).padding(.vertical, 10)
-    .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-  }
-}
-
-/** "4 messages with 🦋🦋 2 agents": agents talking to each other, folded; a tap shows what they said. */
-struct TeammatesLine: View {
-  let count: Int
-  let peers: [Party]
-  let entries: [Entry]
-  @Environment(AppStore.self) private var store
-  @State private var open = false
-
-  var body: some View {
-    VStack(spacing: 8) {
-      Button { withAnimation(.snappy) { open.toggle() } } label: {
-        HStack(spacing: 5) {
-          Text("\(count) messages with")
-          HStack(spacing: -4) {
-            ForEach(peers, id: \.id) { peer in
-              ButterflyView(palette: store.agent(peer.id)?.palette ?? .named(nil), margin: 2).frame(width: 18, height: 18)
-            }
-          }
-          Text(peers.count == 1 ? peers[0].name : "\(peers.count) agents")
-          Image(systemName: open ? "chevron.up" : "chevron.down").font(.system(size: 10, weight: .semibold))
-        }
-        .font(.system(size: 13))
-        .foregroundStyle(Ink.secondary)
-      }
-      .buttonStyle(.plain)
-      if open {
-        VStack(alignment: .leading, spacing: 8) {
-          ForEach(entries) { entry in
-            VStack(alignment: .leading, spacing: 2) {
-              Text(entry.toAgent != nil ? "To \(entry.toAgent!.name)" : "From \(entry.fromAgent?.name ?? "")")
-                .font(.system(size: 12, weight: .medium)).foregroundStyle(Ink.secondary)
-              Text(entry.content ?? "").font(.system(size: 15)).foregroundStyle(Ink.primary)
-            }
-          }
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Ink.bubbleTheirs.opacity(0.6), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-      }
-    }
-    .frame(maxWidth: .infinity)
-    .padding(.vertical, 4)
-  }
-}
-
-/** A call, as one line: "Voice chat · 01:11"; a tap shows what was said. */
-struct VoiceCallLine: View {
-  let seconds: Int
-  let lines: [CallLine]
-  @State private var open = false
-
-  var body: some View {
-    VStack(spacing: 8) {
-      Button { withAnimation(.snappy) { open.toggle() } } label: {
-        HStack(spacing: 5) {
-          Image(systemName: "waveform").font(.system(size: 12, weight: .semibold))
-          Text("Voice chat · \(Chat.callLength(seconds))")
-        }
-        .font(.system(size: 13))
-        .foregroundStyle(Ink.secondary)
-      }
-      .buttonStyle(.plain)
-      .disabled(lines.isEmpty)
-      if open {
-        VStack(spacing: 8) {
-          ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
-            Text(line.text)
-              .font(.system(size: 15))
-              .foregroundStyle(line.fromPerson ? Ink.secondary : Ink.primary)
-              .multilineTextAlignment(line.fromPerson ? .trailing : .leading)
-              .frame(maxWidth: .infinity, alignment: line.fromPerson ? .trailing : .leading)
-          }
-        }
-        .padding(.horizontal, 8)
-      }
-    }
-    .frame(maxWidth: .infinity)
-    .padding(.vertical, 4)
-  }
-}
-
-/** "Created routine ⏱ Monday launch check". */
-struct RoutineLine: View {
-  let action: String
-  let name: String
-
-  var body: some View {
-    HStack(spacing: 5) {
-      Text(action == "deleted" ? "Removed routine" : action == "updated" ? "Changed routine" : "Created routine")
-      Image(systemName: "clock").font(.system(size: 12))
-      Text(name)
-    }
-    .font(.system(size: 13))
-    .foregroundStyle(Ink.secondary)
-    .frame(maxWidth: .infinity)
-    .padding(.vertical, 4)
-  }
-}
-
-/** The agent at work: its butterfly, the step it is on, three dots. */
+/**
+ * The agent at work, as the Mac's chat shows it (`sand-activity-mark`):
+ * in a one-to-one chat its butterfly alone, 28 pt, moving as it works:
+ * folded into three dots while it thinks, five dots circling while it
+ * waits on someone, a dot flying off while it messages another agent. In
+ * a group (`sand-activity-line`), one member's butterfly at 22 pt, working,
+ * beside what the group is doing ("Searching the web").
+ */
 struct TypingRow: View {
   let agent: Agent
   let step: String?
+  @Environment(AppStore.self) private var store
 
   var body: some View {
-    HStack(spacing: 8) {
-      ButterflyView(palette: agent.palette, margin: 2).frame(width: 22, height: 22)
-      if let step {
-        Text(step).font(.system(size: 14)).foregroundStyle(Ink.secondary).lineLimit(1)
-      }
-      TypingDots()
-        .padding(.horizontal, 12).padding(.vertical, 10)
-        .background(Ink.bubbleTheirs, in: Capsule())
-    }
-    .padding(.top, 4)
-  }
-}
-
-struct TypingDots: View {
-  var body: some View {
-    TimelineView(.animation(minimumInterval: 1.0 / 30)) { context in
-      let t = context.date.timeIntervalSinceReferenceDate
-      HStack(spacing: 4) {
-        ForEach(0..<3, id: \.self) { index in
-          Circle().fill(Ink.secondary).frame(width: 7, height: 7)
-            .opacity(0.35 + 0.65 * max(0, sin((t * 4) - Double(index) * 0.8)))
+    if agent.isGroup {
+      let members = store.members(of: agent)
+      HStack(spacing: 8) {
+        if let member = members.first(where: \.isBusy) ?? members.first {
+          ButterflyView(palette: member.palette, motion: .working).frame(width: 22, height: 22)
         }
+        Text(step ?? "Working…").font(.system(size: 14)).foregroundStyle(Ink.secondary).lineLimit(1)
       }
+      .padding(.leading, 8)
+      .frame(height: 36)
+      .accessibilityElement(children: .combine)
+    } else {
+      ButterflyView(palette: agent.palette, motion: agent.markState == .idle ? .working : agent.markState)
+        .frame(width: 28, height: 28)
+        .padding(.leading, 8)
+        .frame(height: 36)
+        .accessibilityLabel(agent.markState == .thinking ? "\(agent.name) is typing" : "\(agent.name) is working")
     }
-    .accessibilityLabel("Typing")
   }
 }

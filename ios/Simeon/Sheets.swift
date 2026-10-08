@@ -27,7 +27,7 @@ struct NewAgentSheet: View {
     NavigationStack {
       VStack(spacing: 20) {
         Spacer(minLength: 0)
-        ButterflyView(palette: palette, margin: 6)
+        ButterflyView(palette: palette, motion: .idle)
           .frame(width: 190, height: 190)
           .animation(.snappy, value: palette.id)
         Spacer(minLength: 0)
@@ -42,7 +42,7 @@ struct NewAgentSheet: View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 6), spacing: 10) {
           ForEach(AgentPalette.all) { choice in
             Button { palette = choice } label: {
-              ButterflyView(palette: choice, margin: 3)
+              ButterflyView(palette: choice)
                 .frame(width: 44, height: 44)
                 .padding(3)
                 .overlay(Circle().stroke(choice.id == palette.id ? Ink.title : .clear, lineWidth: 2))
@@ -253,204 +253,6 @@ struct SearchSheet: View {
       .navigationTitle("Search")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar { ToolbarItem(placement: .topBarLeading) { CloseButton() } }
-    }
-  }
-}
-
-/**
- * Settings (round 4 and its fix): the account (name and email, which fits),
- * the theme, the time zone, then Sign Out on its own row at the end and
- * the butterfly with "Simeon".
- */
-struct SettingsSheet: View {
-  @Environment(AppStore.self) private var store
-  @Environment(SessionController.self) private var session
-  @AppStorage("simeon.theme") private var theme = "system"
-
-  var body: some View {
-    NavigationStack {
-      Form {
-        Section("Account") {
-          HStack(spacing: 12) {
-            Initials(letters: store.account?.initials ?? "", size: 44)
-              .background(Ink.bubbleTheirs, in: Circle())
-            VStack(alignment: .leading, spacing: 2) {
-              Text(store.account?.name ?? "").font(.system(size: 17, weight: .medium))
-              Text(store.account?.email ?? "").font(.system(size: 15)).foregroundStyle(Ink.secondary)
-                .lineLimit(1).minimumScaleFactor(0.8)
-                .textSelection(.enabled)
-            }
-          }
-          .padding(.vertical, 2)
-        }
-        Section("Appearance") {
-          Picker("Theme", selection: $theme) {
-            Text("Follow System").tag("system")
-            Text("Light").tag("light")
-            Text("Dark").tag("dark")
-          }
-        }
-        Section("Agent") {
-          LabeledContent("Timezone", value: "Auto-detect (\(TimeZone.current.abbreviation() ?? TimeZone.current.identifier))")
-        }
-        Section {
-          Button("Sign Out", role: .destructive) { Task { await session.signOut() } }
-        }
-        Section {
-          VStack(spacing: 6) {
-            ButterflyView(palette: .named("blue"), margin: 4).frame(width: 48, height: 48)
-            Text("Simeon").font(.system(size: 17, weight: .semibold))
-            Text(SessionController.clientVersion).font(.system(size: 12)).foregroundStyle(Ink.tertiary)
-          }
-          .frame(maxWidth: .infinity)
-          .listRowBackground(Color.clear)
-        }
-      }
-      .navigationTitle("Settings")
-      .navigationBarTitleDisplayMode(.inline)
-      .toolbar { ToolbarItem(placement: .topBarLeading) { CloseButton() } }
-    }
-  }
-}
-
-/**
- * The agent's page (round 4: "like mac but fit for mobile, with routines,
- * computer"): the butterfly, the name and title, three tabs: the profile
- * (name, title, description), its routines, its computer. A group's page
- * lists its members.
- */
-struct AgentPageSheet: View {
-  let agentId: String
-  @Environment(AppStore.self) private var store
-  @Environment(\.dismiss) private var dismiss
-  @State private var tab = 0
-  @State private var name = ""
-  @State private var title = ""
-  @State private var about = ""
-  @State private var routines: [JSON] = []
-
-  var body: some View {
-    NavigationStack {
-      if let agent = store.agent(agentId) {
-        ScrollView {
-          VStack(spacing: 18) {
-            AgentAvatar(agent: agent, members: store.members(of: agent))
-              .frame(width: 96, height: 96)
-              .padding(10)
-              .background(Ink.bubbleTheirs.opacity(0.5), in: Circle())
-            VStack(spacing: 2) {
-              Text(agent.name).font(.system(size: 24, weight: .semibold))
-              if !agent.title.isEmpty { Text(agent.title).font(.system(size: 16)).foregroundStyle(Ink.secondary) }
-            }
-            if agent.isGroup {
-              members(agent)
-            } else {
-              Picker("Page", selection: $tab) {
-                Image(systemName: "person").tag(0).accessibilityLabel("Profile")
-                Image(systemName: "clock").tag(1).accessibilityLabel("Routines")
-                Image(systemName: "desktopcomputer").tag(2).accessibilityLabel("Computer")
-              }
-              .pickerStyle(.segmented)
-              switch tab {
-              case 0: profile(agent)
-              case 1: routinesTab
-              default: computer(agent)
-              }
-            }
-          }
-          .padding(.horizontal, 20)
-          .padding(.vertical, 8)
-        }
-        .toolbar {
-          ToolbarItem(placement: .topBarTrailing) { CloseButton() }
-        }
-        .task {
-          name = agent.name; title = agent.title; about = agent.description
-          routines = await store.routines(agentId)
-        }
-      }
-    }
-  }
-
-  private func profile(_ agent: Agent) -> some View {
-    VStack(alignment: .leading, spacing: 0) {
-      field("Name", $name)
-      Divider()
-      field("Title", $title)
-      Divider()
-      field("Description", $about, axis: .vertical)
-      Divider()
-      if name != agent.name || title != agent.title || about != agent.description {
-        Button("Save") { Task { await store.updateProfile(agentId, name: name, title: title, description: about) } }
-          .buttonStyle(.glassProminent)
-          .frame(maxWidth: .infinity)
-          .padding(.top, 16)
-      }
-    }
-  }
-
-  private func field(_ label: String, _ value: Binding<String>, axis: Axis = .horizontal) -> some View {
-    VStack(alignment: .leading, spacing: 4) {
-      Text(label).font(.system(size: 13)).foregroundStyle(Ink.secondary)
-      TextField(label, text: value, axis: axis).font(.system(size: 17)).lineLimit(1...6)
-    }
-    .padding(.vertical, 12)
-  }
-
-  private var routinesTab: some View {
-    Group {
-      if routines.isEmpty {
-        VStack(spacing: 12) {
-          Image(systemName: "clock").font(.system(size: 22)).foregroundStyle(Ink.primary)
-            .frame(width: 56, height: 56)
-            .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-          Text("Routines are recurring tasks this agent runs on a schedule.")
-            .font(.system(size: 15)).foregroundStyle(Ink.secondary).multilineTextAlignment(.center)
-        }
-        .padding(.top, 24)
-      } else {
-        VStack(spacing: 0) {
-          ForEach(Array(routines.enumerated()), id: \.offset) { _, routine in
-            HStack(spacing: 12) {
-              Image(systemName: "clock").foregroundStyle(Ink.title)
-              VStack(alignment: .leading, spacing: 2) {
-                Text(routine["name"]?.text ?? "Routine").font(.system(size: 17))
-                if let schedule = routine["schedule"]?.text ?? routine["cron"]?.text { Text(schedule).font(.system(size: 14)).foregroundStyle(Ink.secondary) }
-              }
-              Spacer()
-            }
-            .padding(.vertical, 12)
-            Divider()
-          }
-        }
-      }
-    }
-  }
-
-  private func computer(_ agent: Agent) -> some View {
-    VStack(spacing: 8) {
-      RoundedRectangle(cornerRadius: 16, style: .continuous)
-        .fill(Color(RGB(hex: "#1f3b73")))
-        .aspectRatio(16 / 10, contentMode: .fit)
-        .overlay(Image(systemName: "desktopcomputer").font(.system(size: 30)).foregroundStyle(.white.opacity(0.6)))
-      Text("\(agent.name)'s screen").font(.system(size: 13)).foregroundStyle(Ink.secondary)
-    }
-  }
-
-  private func members(_ group: Agent) -> some View {
-    VStack(spacing: 0) {
-      ForEach(store.members(of: group)) { member in
-        HStack(spacing: 12) {
-          AgentAvatar(agent: member).frame(width: 40, height: 40)
-          VStack(alignment: .leading, spacing: 2) {
-            Text(member.name).font(.system(size: 17))
-            if !member.title.isEmpty { Text(member.title).font(.system(size: 14)).foregroundStyle(Ink.title) }
-          }
-          Spacer()
-        }
-        .padding(.vertical, 8)
-        Divider()
-      }
     }
   }
 }

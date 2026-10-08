@@ -50,6 +50,8 @@ SCREENS=(
   "9-agent-page:agent:simeon:5"
   "10-call-pill:call:theo:11"
   "11-call-full:call-full:theo:11"
+  # Every card the Mac draws, in one chat (`--gallery`, never on a real account).
+  "12-cards:chat:cards:6"
 )
 
 for theme in light dark; do
@@ -60,7 +62,9 @@ for theme in light dark; do
     wait="${rest##*:}"
     screen="${rest%:*}"
     xcrun simctl terminate "$DEVICE" "$BUNDLE" 2>/dev/null || true
-    if [ -n "$screen" ]; then
+    if [ "$screen" = "chat:cards" ]; then
+      xcrun simctl launch "$DEVICE" "$BUNDLE" --gallery "--screen=$screen" "--theme=$theme" >/dev/null
+    elif [ -n "$screen" ]; then
       xcrun simctl launch "$DEVICE" "$BUNDLE" --demo "--screen=$screen" "--theme=$theme" >/dev/null
     else
       xcrun simctl launch "$DEVICE" "$BUNDLE" --demo "--theme=$theme" >/dev/null
