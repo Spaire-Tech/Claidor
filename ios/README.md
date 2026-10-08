@@ -61,7 +61,20 @@ the Launch squad. It also runs the scripted call. No account is needed.
 
 ## Build and run it (a Mac)
 
-You need Xcode 26 or later and XcodeGen (`brew install xcodegen`).
+One command does it all: it makes the project, builds the app for the
+iPhone Simulator, photographs every screen on the demo (light and dark,
+into `ios/screens`), and leaves the app open in the Simulator. If the build
+fails it copies the errors to the clipboard.
+
+```sh
+ios/scripts/mac.sh
+```
+
+It needs Xcode 26 or later (from the App Store, opened once). It installs
+XcodeGen with Homebrew if it is missing, and downloads the iPhone
+Simulator if Xcode has none.
+
+By hand:
 
 ```sh
 cd ios
