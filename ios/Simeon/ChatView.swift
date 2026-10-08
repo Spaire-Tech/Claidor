@@ -458,6 +458,7 @@ struct ChatComposer: View {
           .lineLimit(1...8)
           .focused($typing)
           .padding(.vertical, 5)
+          .frame(maxWidth: .infinity, alignment: .leading)
         ZStack {
           switch mode {
           case .stop:
@@ -502,8 +503,11 @@ struct ChatComposer: View {
         RoundedRectangle(cornerRadius: 22, style: .continuous)
           .fill(scheme == .dark ? Ink.control : Ink.ground)
           .shadow(color: .black.opacity(scheme == .dark ? 0 : 0.05), radius: 4, y: 2)
+          // A tap anywhere on the bubble that is not a button goes to the text, as in Messages. The text alone is
+          // one 14 pt line (about 17 pt) of a 44 pt bubble: taps above or below it, or on its padding, did nothing.
+          .onTapGesture { typing = true }
       }
-      .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Ink.edge, lineWidth: 1))
+      .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Ink.edge, lineWidth: 1).allowsHitTesting(false))
     }
     .padding(.horizontal, 16)
     .padding(.top, 6)

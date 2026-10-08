@@ -128,15 +128,18 @@ struct ProfileTab: View {
 
   private func row(_ label: String, _ value: Binding<String>, tag: Int, axis: Axis = .horizontal) -> some View {
     VStack(alignment: .leading, spacing: 4) {
-      Text(label).font(.system(size: 13)).foregroundStyle(Ink.secondary)
+      Text(label).font(.system(size: 13)).foregroundStyle(Ink.secondary).allowsHitTesting(false)
       TextField(label, text: value, axis: axis)
         .font(.system(size: 15)).foregroundStyle(Ink.primary)
         .lineLimit(1...8)
         .focused($field, equals: tag)
         .submitLabel(.done)
         .onSubmit { field = nil }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
     .padding(.vertical, 12)
+    // The whole row takes the tap: the label above the field and the row's padding passed it to nothing.
+    .background { Color.clear.contentShape(.rect).onTapGesture { field = tag } }
   }
 
   private func fixed(_ label: String, _ value: String) -> some View {
@@ -523,6 +526,7 @@ struct AvatarEditor: View {
   @State private var tab = Tab.agent
   @State private var photo: PhotosPickerItem?
   @State private var description = ""
+  @FocusState private var describing: Bool
   @State private var drawing = false
   @State private var drawn: UIImage?
   @State private var voices: [AppStore.VoiceChoice] = []
@@ -646,9 +650,11 @@ struct AvatarEditor: View {
       TextField("Describe your avatar…", text: $description, axis: .vertical)
         .lineLimit(3...6)
         .font(.system(size: 15))
+        .focused($describing)
         .padding(12)
-        .background(Ink.control, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Ink.edge, lineWidth: 1))
+        // The whole box takes the tap, not only the lines of text inside its padding.
+        .background { RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Ink.control).onTapGesture { describing = true } }
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Ink.edge, lineWidth: 1).allowsHitTesting(false))
       if let drawn {
         HStack(spacing: 10) {
           Button("Use this picture") {

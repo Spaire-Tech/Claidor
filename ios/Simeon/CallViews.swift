@@ -42,7 +42,9 @@ struct CallPill: View {
       }
     }
     .overlay(alignment: .bottom) {
-      Capsule().fill(Ink.tertiary.opacity(0.6)).frame(width: 36, height: 4).padding(.bottom, 6)
+      // The handle is 36 × 4 pt; its tap area is the 80 × 22 pt around it.
+      Capsule().fill(Ink.tertiary.opacity(0.6)).frame(width: 36, height: 4)
+        .frame(width: 80, height: 22).contentShape(.rect)
         .onTapGesture(perform: expand)
     }
     .background(Ink.callCard, in: RoundedRectangle(cornerRadius: 38, style: .continuous))

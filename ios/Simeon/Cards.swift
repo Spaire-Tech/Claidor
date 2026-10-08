@@ -106,6 +106,7 @@ struct QuestionCardView: View {
   @Environment(AppStore.self) private var store
   @Environment(\.chatWidth) private var width
   @State private var own = ""
+  @FocusState private var typingOwn: Bool
 
   var body: some View {
     let pending = store.pendingAnswers[entryId]
@@ -168,9 +169,11 @@ struct QuestionCardView: View {
           TextField("Type your own answer", text: $own, axis: .vertical)
             .font(.system(size: 14))
             .lineLimit(1...5)
+            .focused($typingOwn)
             .padding(.horizontal, 10).padding(.vertical, 6)
-            .background(Ink.field, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Ink.edge, lineWidth: 1))
+            // The whole box takes the tap, not only the line of text inside its padding.
+            .background { RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Ink.field).onTapGesture { typingOwn = true } }
+            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Ink.edge, lineWidth: 1).allowsHitTesting(false))
             .submitLabel(.send)
             .onSubmit { give(own) }
           if !own.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -530,6 +533,7 @@ struct DraftCardView: View {
   @State private var bodyText = ""
   @State private var loaded = false
   @State private var expanded = false
+  @FocusState private var focused: Int?
   /** Send or Discard on its way: both wait, so a second tap does not send twice. */
   @State private var busy = false
 
@@ -553,9 +557,9 @@ struct DraftCardView: View {
         VStack(spacing: 0) {
           if isEmail {
             if !card.from.isEmpty { field("From") { Text(card.from).font(.system(size: 14)).foregroundStyle(Ink.secondary).lineLimit(1) }; line }
-            field("To") { TextField("name@company.com", text: $to).font(.system(size: 14)).keyboardType(.emailAddress).textInputAutocapitalization(.never).autocorrectionDisabled().disabled(!editable) }
+            field("To", focus: { focused = 0 }) { TextField("name@company.com", text: $to).font(.system(size: 14)).keyboardType(.emailAddress).textInputAutocapitalization(.never).autocorrectionDisabled().disabled(!editable).focused($focused, equals: 0) }
             line
-            field("Subject") { TextField("Subject", text: $subject).font(.system(size: 14)).disabled(!editable) }
+            field("Subject", focus: { focused = 1 }) { TextField("Subject", text: $subject).font(.system(size: 14)).disabled(!editable).focused($focused, equals: 1) }
           } else {
             if !card.workspace.isEmpty { field("Workspace") { Text(card.workspace).font(.system(size: 14)).foregroundStyle(Ink.secondary) }; line }
             field("To") { Text(card.target).font(.system(size: 14)).foregroundStyle(Ink.secondary) }
@@ -568,7 +572,9 @@ struct DraftCardView: View {
             .lineSpacing(MessageType.spacing(size: 14, lineHeight: 22))
             .lineLimit(expanded || !editable ? 3...40 : 3...10)
             .disabled(!editable)
+            .focused($focused, equals: 2)
             .padding(10)
+            .background { Color.clear.contentShape(.rect).onTapGesture { if editable { focused = 2 } } }
           if bodyText.count > 500 && !expanded {
             Button("Show more") { expanded = true }.font(.system(size: 13)).foregroundStyle(Ink.link).padding(.horizontal, 10).padding(.bottom, 8)
           }
@@ -611,14 +617,16 @@ struct DraftCardView: View {
 
   private var line: some View { Rectangle().fill(Ink.hairline).frame(height: 1) }
 
-  private func field<Content: View>(_ label: String, @ViewBuilder content: () -> Content) -> some View {
+  /** A row of the draft: its label, its field. The whole row takes the tap (the label and the padding passed it to nothing). */
+  private func field<Content: View>(_ label: String, focus: (() -> Void)? = nil, @ViewBuilder content: () -> Content) -> some View {
     HStack(spacing: 8) {
-      Text(label).font(.system(size: 12)).foregroundStyle(Ink.tertiary)
+      Text(label).font(.system(size: 12)).foregroundStyle(Ink.tertiary).allowsHitTesting(false)
       content()
       Spacer(minLength: 0)
     }
     .padding(.horizontal, 10).padding(.vertical, 7)
     .frame(minHeight: 37)
+    .background { Color.clear.contentShape(.rect).onTapGesture { if editable { focus?() } } }
   }
 
   private func send() {

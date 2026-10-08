@@ -120,6 +120,7 @@ struct NewGroupSheet: View {
   @State private var query = ""
   @State private var busy = false
   @State private var failed = false
+  @FocusState private var searching: Bool
 
   private var candidates: [Agent] {
     let q = query.trimmingCharacters(in: .whitespaces).lowercased()
@@ -130,7 +131,7 @@ struct NewGroupSheet: View {
     NavigationStack {
       VStack(spacing: 0) {
         HStack(spacing: 6) {
-          Text("To:").foregroundStyle(Ink.secondary)
+          Text("To:").foregroundStyle(Ink.secondary).allowsHitTesting(false)
           ForEach(picked, id: \.self) { id in
             Text(store.agent(id)?.name ?? id)
               .font(.system(size: 15, weight: .medium))
@@ -138,6 +139,7 @@ struct NewGroupSheet: View {
               .background(Ink.bubbleTheirs, in: Capsule())
           }
           TextField(picked.isEmpty ? "Search agents" : "", text: $query)
+            .focused($searching)
             .frame(minWidth: 80)
             .frame(height: 34)
             .accessibilityLabel("Search agents")
@@ -145,7 +147,9 @@ struct NewGroupSheet: View {
         .font(.system(size: 17))
         .padding(.horizontal, 16).padding(.vertical, 6)
         .frame(minHeight: 48)
-        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Ink.edge, lineWidth: 1))
+        // The whole capsule takes the tap, not only the field inside its padding.
+        .background { Color.clear.contentShape(.rect).onTapGesture { searching = true } }
+        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Ink.edge, lineWidth: 1).allowsHitTesting(false))
         .padding(.horizontal, 16)
         if failed {
           Text("Couldn’t create the group. Try again.").font(.system(size: 14)).foregroundStyle(Ink.danger).padding(.top, 8)
