@@ -127,16 +127,18 @@ struct ChatMessages: View {
     let _ = Trace.mark("drawing \(agentId), \(rows.count) of \(all.count) rows (\(Dictionary(grouping: rows, by: \.kind).map { "\($0.value.count) \($0.key)" }.sorted().joined(separator: ", "))), the longest \(rows.map(\.size).max() ?? 0) bytes")
     ScrollViewReader { reader in
       ScrollView {
-        LazyVStack(alignment: .leading, spacing: 0) {
+        // A plain stack, not a lazy one: every row is measured as it is, once. A lazy stack guesses the height of the rows it
+        // has not drawn, and held to the bottom (below) each corrected guess moves the view and brings other rows in: the kind
+        // of loop Ava's chat froze in (SwiftUI applying changes without end, none of the app's code on the stack). The window
+        // keeps the stack to the newest rows.
+        VStack(alignment: .leading, spacing: 0) {
           if hidden > 0 || store.olderBefore[agentId] != nil {
-            // Near the top: the rows above these, then the lines before them (`getAgentTranscriptTail` with `beforeSeq`).
+            // Near the top (below): the rows above these, then the lines before them (`getAgentTranscriptTail` with `beforeSeq`).
             ProgressView()
               .frame(maxWidth: .infinity)
               .padding(.vertical, 14)
-              .onAppear {
-                Trace.tally("ChatMessages top reached")
-                if hidden > 0 { window += ChatMessages.firstWindow } else { Task { await store.loadOlder(agentId) } }
-              }
+              // Every row already drawn and still more lines before them: fetch those once (a chat too short to scroll).
+              .onAppear { if hidden == 0, store.olderBefore[agentId] != nil { Task { await store.loadOlder(agentId) } } }
           }
           ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
             Group {
@@ -174,6 +176,14 @@ struct ChatMessages: View {
             if lit.id == id { withAnimation(.easeOut(duration: 0.5)) { lit.id = nil } }
           }
         }
+      }
+      // Scrolled near the top: more rows, then older lines. Only ever more, so it cannot go back and forth.
+      .onScrollGeometryChange(for: Bool.self) { geometry in
+        geometry.contentSize.height > geometry.containerSize.height && geometry.visibleRect.minY < 300
+      } action: { _, nearTop in
+        Trace.tally("ChatMessages top reached")
+        guard nearTop else { return }
+        if store.rows(for: agentId).count > window { window += ChatMessages.firstWindow } else if store.olderBefore[agentId] != nil { Task { await store.loadOlder(agentId) } }
       }
       .onScrollGeometryChange(for: Bool.self) { geometry in
         geometry.contentSize.height - geometry.visibleRect.maxY < 120
