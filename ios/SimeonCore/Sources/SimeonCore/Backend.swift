@@ -1,5 +1,13 @@
 import Foundation
 
+/** A file the composer put on the agent's computer, by its path there and its name. */
+public struct AttachmentRef: Sendable, Hashable {
+  public let path: String
+  public let name: String
+
+  public init(path: String, name: String) { self.path = path; self.name = name }
+}
+
 /** What changes while the app is open, from the host's event stream. */
 public enum BackendEvent: Sendable {
   case agents([Agent])
@@ -8,6 +16,8 @@ public enum BackendEvent: Sendable {
   /** A step the agent is on ("Checking Linear"), or done with. */
   case step(agentId: String, id: String, summary: String, running: Bool)
   case connection(live: Bool)
+  /** A connected app changed: a sign-in finished, one was added or removed (`mcp-auth`, `mcp-servers`). */
+  case appsChanged
 }
 
 /** One change to a chat (`roster.emit` in host/extensions/transcript/roster-projection.ts). */
@@ -67,7 +77,8 @@ public enum TranscriptChange: Sendable, Equatable {
 public protocol AgentBackend: AnyObject, Sendable {
   func listAgents() async throws -> [Agent]
   func transcript(_ agentId: String) async throws -> [Entry]
-  func send(_ agentId: String, text: String) async throws
+  /** A message, with the files already on the agent's computer (`uploadAttachment`). */
+  func send(_ agentId: String, text: String, attachments: [AttachmentRef]) async throws
   func markRead(_ agentId: String) async
   /** A new agent in a palette; its id. */
   func createAgent(name: String, colour: String) async throws -> String
@@ -81,15 +92,49 @@ public protocol AgentBackend: AnyObject, Sendable {
   func events() -> AsyncStream<BackendEvent>
   /** The voice call, where there is one (the demo's, for now). */
   var call: CallEngine? { get }
+  /** Any of the host's gateway commands (host/gateway-protocol.ts): the cards, Settings and the agent's page use them as the Mac's window does. */
+  func command(_ method: String, _ args: JSON) async throws -> JSON
+  /** One `/desktop/api/…` call on Simeon Labs' server (usage, billing, calls), in the app's envelope. */
+  func server(_ path: String, method: String?, body: JSON?) async throws -> JSON
+  /** The agent's own screen on the cloud computer (`ensureForeverBox`): starting, or its stream. */
+  func screen(_ agentId: String) async throws -> ScreenState
+}
+
+/** An agent's screen: still starting (with how far the image has come), or live at a WebSocket. */
+public struct ScreenState: Sendable, Equatable {
+  public let socket: URL?
+  public let state: String
+  public let percent: Int?
+
+  public init(socket: URL?, state: String, percent: Int? = nil) { self.socket = socket; self.state = state; self.percent = percent }
 }
 
 /** The person's cloud computer, through Simeon Labs' proxy. */
 public final class LiveBackend: AgentBackend, @unchecked Sendable {
   public let gateway: Gateway
+  public let api: SimeonAPI?
 
-  public init(gateway: Gateway) { self.gateway = gateway }
+  /** The voice call (`LiveCall`), set by the app once it has its voice kit. */
+  public var call: CallEngine?
 
-  public var call: CallEngine? { nil }
+  public init(gateway: Gateway, api: SimeonAPI? = nil) { self.gateway = gateway; self.api = api }
+
+  public func command(_ method: String, _ args: JSON) async throws -> JSON { try await gateway.command(method, args) }
+
+  public func server(_ path: String, method: String?, body: JSON?) async throws -> JSON {
+    guard let api else { throw SimeonAPIError(message: "Sign in to Simeon first.", status: 401) }
+    return try await api.data(path, method: method, json: body)
+  }
+
+  public func screen(_ agentId: String) async throws -> ScreenState {
+    let status = try await gateway.command("ensureForeverBox", ["id": .string(agentId)])
+    let state = status["state"]?.string ?? "starting"
+    let percent = status["pull"]?["percent"]?.int
+    guard let vnc = status["vncUrl"]?.text else { return ScreenState(socket: nil, state: state, percent: percent) }
+    let connection = try await gateway.currentConnection()
+    return ScreenState(socket: connection.screenSocket(for: vnc), state: state, percent: percent)
+  }
+
 
   public func listAgents() async throws -> [Agent] {
     let answer = try await gateway.command("listAgents")
@@ -101,10 +146,10 @@ public final class LiveBackend: AgentBackend, @unchecked Sendable {
     return (page["entries"]?.array ?? []).compactMap(Entry.init)
   }
 
-  public func send(_ agentId: String, text: String) async throws {
+  public func send(_ agentId: String, text: String, attachments: [AttachmentRef]) async throws {
     // The host's argument names (host-gateway-api.ts, sendPrompt); the nonce lets a retried send land once.
     _ = try await gateway.command("sendPrompt", [
-      "agentId": .string(agentId), "prompt": .string(text), "attachmentPaths": [], "attachmentNames": [],
+      "agentId": .string(agentId), "prompt": .string(text), "attachmentPaths": JSON(attachments.map(\.path)), "attachmentNames": JSON(attachments.map(\.name)),
       "clientNonce": .string("ios-\(UUID().uuidString.lowercased())"),
       "composedAtMs": .number(Date().timeIntervalSince1970 * 1000),
     ])
@@ -171,6 +216,8 @@ public final class LiveBackend: AgentBackend, @unchecked Sendable {
       return (payload["agent"]).flatMap(Agent.init(json:)).map { [.agentUpserted($0)] } ?? []
     case "transcript":
       return TranscriptChange(payload).map { [.transcript($0)] } ?? []
+    case "mcp-auth", "mcp-servers", "sand:mcp-auth-event":
+      return [.appsChanged]
     case "outline":
       guard let agentId = payload["agentId"]?.text else { return [] }
       let items = payload["item"].map { [$0] } ?? payload["items"]?.array ?? []

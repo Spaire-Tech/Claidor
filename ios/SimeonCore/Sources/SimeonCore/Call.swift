@@ -17,6 +17,8 @@ public struct CallState: Sendable, Equatable {
   public var lines: [CallLine]
   public var connectedAt: Date?
   public var endedAt: Date?
+  /** What the agent is doing for the call ("Sending the agenda to Dana…"), the banner's status line. */
+  public var activity: String? = nil
 
   /** Seconds since the call connected (or until it ended). */
   public func seconds(now: Date = Date()) -> Int {

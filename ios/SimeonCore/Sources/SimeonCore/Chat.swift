@@ -1,46 +1,203 @@
 import Foundation
 
+/** One choice on a question card: its label and, when the agent gave one, a line under it. */
+public struct QuestionOption: Hashable, Sendable {
+  public let label: String
+  public let description: String?
+
+  public init(label: String, description: String? = nil) { self.label = label; self.description = description }
+}
+
 /** A question card (`send-message` of type `widget`), with the answer once given. */
 public struct QuestionCard: Hashable, Sendable {
   public let prompt: String
   public let help: String?
-  public let options: [String]
+  public let options: [QuestionOption]
   public let allowsOwnAnswer: Bool
   /** What the person answered (`respondedValue`); nil while it waits. */
   public let answer: String?
   public let isDismissed: Bool
+  /** Skipped: the person wrote instead of answering (`widgetSkipped`); the card is closed. */
+  public let isSkipped: Bool
+
+  public var labels: [String] { options.map(\.label) }
+  public var isOpen: Bool { answer == nil && !isDismissed && !isSkipped }
 }
 
-/** A call's line in the chat: its length and what was said. */
+/** An email or a Slack message the agent drafted, for the person to send or discard (host/extensions/transcript/draft-cards.ts). */
+public struct DraftCard: Hashable, Sendable {
+  public enum Kind: String, Sendable { case email, slack }
+  public let kind: Kind
+  public let from: String
+  public let to: [String]
+  public let cc: [String]
+  public let subject: String
+  public let body: String
+  public let workspace: String
+  public let target: String
+  public let thread: String
+  /** `editable`, `sending` or `sent` (`draftSendState`). */
+  public let state: String
+  public let isDismissed: Bool
+
+  init?(message: JSON, entry: Entry) {
+    guard let draft = message["draft"] else { return nil }
+    kind = message["type"]?.string == "slack-draft" ? .slack : .email
+    let list = { (value: JSON?) -> [String] in value?.array?.compactMap(\.text) ?? value?.text.map { [$0] } ?? [] }
+    from = draft["from"]?.string ?? ""
+    to = list(draft["to"])
+    cc = list(draft["cc"])
+    subject = draft["subject"]?.string ?? ""
+    body = draft["body"]?.string ?? ""
+    workspace = draft["workspace"]?.string ?? ""
+    target = draft["target"]?.string ?? ""
+    thread = draft["thread"]?.string ?? ""
+    state = entry["draftSendState"]?.string ?? "editable"
+    isDismissed = entry["widgetDismissed"]?.bool ?? false
+  }
+
+  /** What the card says beside its title ("Ready to send", "Sending…", "Sent", "Discarded"). */
+  public var status: String {
+    if isDismissed { return "Discarded" }
+    switch state {
+    case "sending": return "Sending…"
+    case "sent": return "Sent"
+    default: return "Ready to send"
+    }
+  }
+}
+
+/** One airline offer on a flights card (the patch's `__simeonFlightsParse`). */
+public struct FlightOffer: Hashable, Sendable {
+  public let airline, logo, price, priceNote, date: String
+  public let from, fromCity, to, toCity, depart, arrive, duration, stops: String
+  public let refundable, changeable, bags, returnTimes: String
+  public let legs: [FlightLeg]
+}
+
+public struct FlightLeg: Hashable, Sendable {
+  public let from, fromCity, to, toCity, depart, arrive, flight, carrier, logo, cabin, duration, layover, heading, departDay, arriveDay: String
+}
+
+/**
+ * Flight results: an agent's message that is exactly one ```` ```simeon-flights ````
+ * block of JSON (patch: FLIGHTS_SOURCE), up to eight offers.
+ */
+public struct FlightsCard: Hashable, Sendable {
+  public let title: String
+  public let subtitle: String
+  public let offers: [FlightOffer]
+
+  public static func parse(_ text: String) -> FlightsCard? {
+    guard let body = Markdown.soleFence(text, language: "simeon-flights"), let json = try? JSON.parse(Data(body.utf8)) else { return nil }
+    let s = { (value: JSON?) -> String in value?.string?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "" }
+    let offers = (json["offers"]?.array ?? []).filter { $0.object != nil }.prefix(8).map { o -> FlightOffer in
+      let legs = (o["legs"]?.array ?? []).filter { $0.object != nil }.map { l in
+        FlightLeg(from: s(l["from"]), fromCity: s(l["fromCity"]), to: s(l["to"]), toCity: s(l["toCity"]), depart: s(l["depart"]), arrive: s(l["arrive"]), flight: s(l["flight"]), carrier: s(l["carrier"]), logo: s(l["logo"]), cabin: s(l["cabin"]), duration: s(l["duration"]), layover: s(l["layover"]), heading: s(l["heading"]), departDay: s(l["departDay"]), arriveDay: s(l["arriveDay"]))
+      }
+      return FlightOffer(airline: s(o["airline"]), logo: s(o["logo"]), price: s(o["price"]), priceNote: s(o["priceNote"]), date: s(o["date"]), from: s(o["from"]), fromCity: s(o["fromCity"]), to: s(o["to"]), toCity: s(o["toCity"]), depart: s(o["depart"]), arrive: s(o["arrive"]), duration: s(o["duration"]), stops: s(o["stops"]), refundable: s(o["refundable"]), changeable: s(o["changeable"]), bags: s(o["bags"]), returnTimes: s(o["returnTimes"]), legs: legs)
+    }
+    guard !offers.isEmpty else { return nil }
+    return FlightsCard(title: s(json["title"]), subtitle: s(json["subtitle"]), offers: Array(offers))
+  }
+
+  /** "AA" for American Airlines: the mark when the airline has no logo (`__simeonInitials`). */
+  public static func initials(_ name: String) -> String {
+    let words = name.split(whereSeparator: \.isWhitespace).map(String.init).filter { !$0.isEmpty && !["airline", "airlines", "airways", "air"].contains($0.lowercased()) }
+    if words.count > 1 { return (String(words[0].prefix(1)) + String(words[1].prefix(1))).uppercased() }
+    return String((words.first ?? "?").prefix(2)).uppercased()
+  }
+}
+
+/** Agents talking to each other, folded (the window's `JIn`/`WPn`): one message, a fan-out, or a thread. */
+public enum Exchange: Hashable, Sendable {
+  case single(inbound: Bool, peer: Party)
+  case fanout(peers: [Party])
+  case thread(count: Int, peers: [Party])
+
+  /** The words before the agents' chip: "Message from", "Messaged", "4 messages with". */
+  public var label: String {
+    switch self {
+    case .single(let inbound, _): return inbound ? "Message from" : "Messaged"
+    case .fanout: return "Messaged"
+    case .thread(let count, _): return "\(count) messages with"
+    }
+  }
+
+  public var peers: [Party] {
+    switch self {
+    case .single(_, let peer): return [peer]
+    case .fanout(let peers), .thread(_, let peers): return peers
+    }
+  }
+}
+
+/** A routine named in a "Created routine" line. */
+public struct RoutineRef: Hashable, Sendable {
+  public let id: String
+  public let name: String
+}
+
+/** The cards that wait on the person: an auto-review approval, a secret, or the computer handed over. */
+public enum RequestCard: Hashable, Sendable {
+  /** `auto-review-approval`: Allow once, Always allow, Deny (`resolveAutoReviewApproval`). */
+  case approval(requestId: String, summary: String, reason: String, command: String, status: String)
+  /** `secret-request`: a password field and Save securely (`submitSecret`). */
+  case secret(label: String, description: String, provided: Bool)
+  /** A message with `boxRequestId`: "Your turn on the computer" (`handBackForeverBox`). */
+  case computer(requestId: String, instruction: String, resolution: String?)
+}
+
+/** The call a chat line stands for: how long, and what was said. */
 public struct CallLine: Hashable, Sendable {
   public let fromPerson: Bool
   public let text: String
+
+  public init(fromPerson: Bool, text: String) { self.fromPerson = fromPerson; self.text = text }
 }
 
 /**
  * One row of a chat as the phone draws it, in the window's own order and
- * folding (the founder's phone design, 8 October 2026): a time stamp when
- * an hour has passed, the person's bubbles on the right, an agent's on the
- * left, files, question cards, "N messages with …" for agents talking to
- * each other, a call as one "Voice chat" line, a routine as one line.
+ * folding (`npt`, `WIn`): a time stamp after a quarter of an hour, the
+ * "New" line before the first unread message, the person's bubbles on the
+ * right, an agent's on the left, and every card the Mac draws.
  */
 public enum ChatRow: Identifiable, Hashable, Sendable {
   case stamp(id: String, date: Date)
+  case unread(id: String)
   case bubble(Bubble)
+  case flights(id: String, card: FlightsCard)
   case file(id: String, name: String, url: String, fromPerson: Bool)
   case question(id: String, card: QuestionCard)
+  case draft(id: String, card: DraftCard)
   case connectors(id: String, names: [String], connected: Bool, reason: String?)
-  case teammates(id: String, count: Int, peers: [Party], entries: [Entry])
+  case request(id: String, card: RequestCard)
+  case teammates(id: String, exchange: Exchange, entries: [Entry])
   case voiceCall(id: String, seconds: Int, lines: [CallLine])
-  case routine(id: String, action: String, name: String)
+  case routines(id: String, action: String, routines: [RoutineRef])
+  /** A card this version cannot draw: said so, as the Mac does. */
+  case notice(id: String, text: String)
 
   public var id: String {
     switch self {
-    case .stamp(let id, _), .file(let id, _, _, _), .question(let id, _), .connectors(let id, _, _, _),
-         .teammates(let id, _, _, _), .voiceCall(let id, _, _), .routine(let id, _, _): return id
+    case .stamp(let id, _), .unread(let id), .flights(let id, _), .file(let id, _, _, _), .question(let id, _), .draft(let id, _),
+         .connectors(let id, _, _, _), .request(let id, _), .teammates(let id, _, _), .voiceCall(let id, _, _), .routines(let id, _, _),
+         .notice(let id, _): return id
     case .bubble(let bubble): return bubble.id
     }
   }
+
+  /** Whose side the row sits on, for spacing runs: the person, an agent, or the middle. */
+  public var side: Side {
+    switch self {
+    case .bubble(let bubble): return bubble.fromPerson ? .person : .agent(bubble.author?.id)
+    case .file(_, _, _, let fromPerson): return fromPerson ? .person : .agent(nil)
+    case .flights, .question, .draft, .connectors, .request, .notice: return .agent(nil)
+    default: return .middle
+    }
+  }
+
+  public enum Side: Hashable, Sendable { case person, agent(String?), middle }
 }
 
 public struct Bubble: Hashable, Sendable {
@@ -54,18 +211,41 @@ public struct Bubble: Hashable, Sendable {
   public let showsAvatar: Bool
   public let reactions: [String]
   public let isStreaming: Bool
+
+  public init(id: String, text: String, fromPerson: Bool, author: Party?, showsName: Bool, showsAvatar: Bool, reactions: [String], isStreaming: Bool) {
+    self.id = id; self.text = text; self.fromPerson = fromPerson; self.author = author
+    self.showsName = showsName; self.showsAvatar = showsAvatar; self.reactions = reactions; self.isStreaming = isStreaming
+  }
+
+  /** Only emoji, three at most: drawn large with no bubble, as Messages does. */
+  public var isLoneEmoji: Bool {
+    let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmed.isEmpty, trimmed.count <= 3 else { return false }
+    return trimmed.allSatisfy { ch in ch.unicodeScalars.contains { $0.properties.isEmojiPresentation } || (ch.unicodeScalars.count > 1 && ch.unicodeScalars.first!.properties.isEmoji) }
+  }
 }
 
 public enum Chat {
   /** A new stamp after a quarter of an hour without a line, or on a new day (the window's `zIn`, `OIn = 900 s`). */
   public static let stampGap: TimeInterval = 15 * 60
+  public static let notShown = "This message can't be shown in this version of Simeon."
 
-  public static func rows(_ entries: [Entry], isGroup: Bool = false) -> [ChatRow] {
+  /**
+   * The chat's rows. `unreadAfter` (milliseconds) puts the "New" line before
+   * the first agent's line written after it, as the window's
+   * `unreadBoundaryAt` does.
+   */
+  public static func rows(_ entries: [Entry], isGroup: Bool = false, unreadAfter: Double? = nil) -> [ChatRow] {
     var rows: [ChatRow] = []
     var lastShown: Date?
     var index = 0
+    var dividerPlaced = unreadAfter == nil
 
     func stamp(before entry: Entry) {
+      if !dividerPlaced, let after = unreadAfter, !entry.isFromPerson, let at = entry.timestampMs, at > after {
+        rows.append(.unread(id: "unread-divider"))
+        dividerPlaced = true
+      }
       guard let date = entry.date else { return }
       if lastShown == nil || abs(date.timeIntervalSince(lastShown!)) >= stampGap || !Calendar.current.isDate(date, inSameDayAs: lastShown!) {
         rows.append(.stamp(id: "stamp-\(entry.id)", date: date))
@@ -92,9 +272,19 @@ public enum Chat {
         if let call {
           rows.append(.voiceCall(id: entry.id, seconds: call.seconds, lines: run.map { CallLine(fromPerson: $0.fromAgent != nil, text: $0.content ?? "") }))
         } else {
-          var peers: [Party] = []
-          for party in run.compactMap(\.teammate) where !peers.contains(where: { $0.id == party.id }) { peers.append(party) }
-          rows.append(.teammates(id: entry.id, count: run.count, peers: peers, entries: run))
+          rows.append(.teammates(id: entry.id, exchange: exchange(run), entries: run))
+        }
+        index = next
+        continue
+      }
+      // Routines changed one after another fold into one line (`WIn`, `_In`).
+      if entry.kind == "event", entry.event?["type"]?.string == "automation-changed" {
+        var run: [Entry] = [entry]
+        var next = index + 1
+        while next < entries.count, entries[next].kind == "event", entries[next].event?["type"]?.string == "automation-changed" { run.append(entries[next]); next += 1 }
+        stamp(before: entry)
+        for (n, outcome) in routineOutcomes(run).enumerated() {
+          rows.append(.routines(id: n == 0 ? entry.id : "\(entry.id)-\(outcome.action)", action: outcome.action, routines: outcome.routines))
         }
         index = next
         continue
@@ -108,38 +298,98 @@ public enum Chat {
     return isGroup ? markRuns(rows) : rows
   }
 
+  /** The window's `JIn`: one message is "Messaged" or "Message from"; only outgoing to several is a fan-out; else a thread. */
+  static func exchange(_ run: [Entry]) -> Exchange {
+    var peers: [Party] = []
+    for party in run.compactMap(\.teammate) where !peers.contains(where: { $0.id == party.id }) { peers.append(party) }
+    if run.count == 1, let peer = peers.first { return .single(inbound: run[0].fromAgent != nil, peer: peer) }
+    if run.allSatisfy({ $0.toAgent != nil }) && peers.count >= 2 { return .fanout(peers: peers) }
+    return .thread(count: run.count, peers: peers)
+  }
+
+  /** The window's `_In`: per routine its last action ("deleted" wins, a creation stays a creation), grouped by action in first-seen order. */
+  static func routineOutcomes(_ run: [Entry]) -> [(action: String, routines: [RoutineRef])] {
+    var order: [String] = []
+    var state: [String: (name: String, created: Bool, last: String)] = [:]
+    for entry in run {
+      guard let event = entry.event, let id = event["automationId"]?.text ?? event["automationName"]?.text else { continue }
+      let action = event["action"]?.string ?? "updated"
+      let name = event["automationName"]?.string ?? ""
+      if let known = state[id] { state[id] = (name, known.created || action == "created", action) }
+      else { order.append(id); state[id] = (name, action == "created", action) }
+    }
+    var out: [(action: String, routines: [RoutineRef])] = []
+    for id in order {
+      guard let s = state[id] else { continue }
+      let action = s.last == "deleted" ? "deleted" : s.created ? "created" : s.last
+      let ref = RoutineRef(id: id, name: s.name)
+      if let i = out.firstIndex(where: { $0.action == action }) { out[i].routines.append(ref) } else { out.append((action, [ref])) }
+    }
+    return out
+  }
+
+  /** "Created", "Updated", "Enabled", "Disabled", "Deleted", else "Changed" (`Y5e`). */
+  public static func routineVerb(_ action: String) -> String {
+    ["created": "Created", "updated": "Updated", "enabled": "Enabled", "disabled": "Disabled", "deleted": "Deleted"][action] ?? "Changed"
+  }
+
   static func row(for entry: Entry) -> ChatRow? {
     let reactions = entry.reactions.map(\.emoji)
     switch entry.kind {
     case "message", "user-message", "human-message":
       guard let text = entry.content, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
       let fromPerson = entry.isFromPerson || entry.role == "user"
+      if !fromPerson, let flights = FlightsCard.parse(text) { return .flights(id: entry.id, card: flights) }
       return .bubble(Bubble(id: entry.id, text: text, fromPerson: fromPerson, author: fromPerson ? nil : entry.author, showsName: false, showsAvatar: false, reactions: reactions, isStreaming: entry.isStreaming))
     case "user-attachment":
-      let name = entry["file_name"]?.text ?? entry["file_path"]?.text.map(fileName(ofURL:)) ?? "Attachment"
-      return .file(id: entry.id, name: name, url: entry["file_path"]?.string ?? "", fromPerson: true)
+      let name = entry["file_name"]?.text ?? entry["fileName"]?.text ?? entry["file_path"]?.text.map(fileName(ofURL:)) ?? entry["filePath"]?.text.map(fileName(ofURL:)) ?? "Attachment"
+      return .file(id: entry.id, name: name, url: entry["file_path"]?.string ?? entry["filePath"]?.string ?? "", fromPerson: true)
     case "send-message":
       guard let message = entry.message else { return nil }
+      if let requestId = entry["boxRequestId"]?.text {
+        return .request(id: entry.id, card: .computer(requestId: requestId, instruction: message["content"]?.string ?? "", resolution: entry["boxResolution"]?.text))
+      }
       switch message["type"]?.string {
+      case "text":
+        guard let text = message["content"]?.string, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+        if let flights = FlightsCard.parse(text) { return .flights(id: entry.id, card: flights) }
+        return .bubble(Bubble(id: entry.id, text: text, fromPerson: false, author: entry.author, showsName: false, showsAvatar: false, reactions: reactions, isStreaming: entry["streaming"]?.bool ?? false))
       case "attachment":
         guard let url = message["url"]?.text else { return nil }
         return .file(id: entry.id, name: fileName(ofURL: url), url: url, fromPerson: false)
       case "widget":
         guard let widget = message["widget"], let prompt = widget["prompt"]?.text else { return nil }
+        let options = (widget["options"]?.array ?? []).compactMap { option -> QuestionOption? in
+          guard let label = option["label"]?.text ?? option.text else { return nil }
+          return QuestionOption(label: label, description: option["description"]?.text)
+        }
         return .question(id: entry.id, card: QuestionCard(
-          prompt: prompt, help: widget["helpText"]?.text,
-          options: widget["options"]?.array?.compactMap { $0["label"]?.text } ?? [],
+          prompt: prompt, help: widget["helpText"]?.text, options: options,
           allowsOwnAnswer: widget["allowCustom"]?.bool ?? false,
-          answer: entry["respondedValue"]?.text, isDismissed: entry["widgetDismissed"]?.bool ?? false))
+          answer: entry["respondedValue"]?.text, isDismissed: entry["widgetDismissed"]?.bool ?? false,
+          isSkipped: entry["widgetSkipped"]?.bool ?? false))
+      case "email-draft", "slack-draft":
+        return DraftCard(message: message, entry: entry).map { .draft(id: entry.id, card: $0) }
       case "connectors":
         let names = message["connectors"]?.array?.compactMap(\.text) ?? []
-        return names.isEmpty ? nil : .connectors(id: entry.id, names: names, connected: true, reason: nil)
+        return names.isEmpty ? nil : .connectors(id: entry.id, names: names, connected: false, reason: nil)
       case "connector":
         guard let name = message["connector"]?.text else { return nil }
         return .connectors(id: entry.id, names: [name], connected: message["variant"]?.string == "connected", reason: message["reason"]?.text)
+      case "auto-review-approval":
+        guard let approval = message["approval"] else { return nil }
+        return .request(id: entry.id, card: .approval(requestId: approval["requestId"]?.string ?? "", summary: approval["summary"]?.string ?? "", reason: approval["reason"]?.string ?? "", command: approval["command"]?.string ?? "", status: approval["status"]?.string ?? "pending"))
+      case "secret-request":
+        guard let secret = message["secretRequest"] else { return nil }
+        return .request(id: entry.id, card: .secret(label: secret["label"]?.string ?? "A secret", description: secret["description"]?.string ?? "", provided: entry["secretProvided"]?.bool ?? false))
+      case "local-tool-permission", "permission-request":
+        // The Mac's own computer asks these; the phone has no part in them.
+        return nil
       default:
-        guard let text = message["content"]?.text else { return nil }
-        return .bubble(Bubble(id: entry.id, text: text, fromPerson: false, author: entry.author, showsName: false, showsAvatar: false, reactions: reactions, isStreaming: false))
+        if let text = message["content"]?.text {
+          return .bubble(Bubble(id: entry.id, text: text, fromPerson: false, author: entry.author, showsName: false, showsAvatar: false, reactions: reactions, isStreaming: false))
+        }
+        return .notice(id: entry.id, text: notShown)
       }
     case "event":
       guard let event = entry.event else { return nil }
@@ -150,9 +400,12 @@ public enum Chat {
           return CallLine(fromPerson: line["speaker"]?.string == "user", text: text)
         }
         return .voiceCall(id: entry.id, seconds: event["seconds"]?.int ?? 0, lines: lines)
-      case "automation-changed":
-        guard let name = event["automationName"]?.text else { return nil }
-        return .routine(id: entry.id, action: event["action"]?.string ?? "created", name: name)
+      case "name-changed":
+        return event["to"]?.text.map { .notice(id: entry.id, text: "Renamed to \($0)") }
+      case "channel-connected":
+        return event["label"]?.text.map { .notice(id: entry.id, text: "Connected to \($0)") }
+      case "channel-disconnected":
+        return event["label"]?.text.map { .notice(id: entry.id, text: "Disconnected from \($0)") }
       default:
         return nil
       }
@@ -199,6 +452,11 @@ public enum Chat {
     if days < 7 { return formatter("EEEE").string(from: date) }
     if calendar.component(.year, from: date) == calendar.component(.year, from: now) { return formatter("Md").string(from: date) }
     return formatter("Mdyy").string(from: date)
+  }
+
+  /** A message's own time, shown when the chat is pulled sideways ("10:15 AM"). */
+  public static func clockText(_ date: Date, calendar: Calendar = .current, locale: Locale = .current) -> String {
+    formatter("jmm", calendar: calendar, locale: locale).string(from: date)
   }
 
   private static let formattersLock = NSLock()

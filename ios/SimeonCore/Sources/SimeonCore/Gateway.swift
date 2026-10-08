@@ -64,16 +64,57 @@ public struct GatewayConnection: Sendable, Equatable {
   public let networkToken: String?
   /** The cloud computer's screen through the proxy, when it has one. */
   public let screenURL: String?
+  /** Where each agent's own screen answers through the proxy (`forkVncBaseUrl`, the box's port 6081). */
+  public let forkScreenBase: String?
 
-  public init(baseURL: String, token: String?, networkToken: String?, screenURL: String? = nil) {
-    self.baseURL = baseURL; self.token = token; self.networkToken = networkToken; self.screenURL = screenURL
+  public init(baseURL: String, token: String?, networkToken: String?, screenURL: String? = nil, forkScreenBase: String? = nil) {
+    self.baseURL = baseURL; self.token = token; self.networkToken = networkToken; self.screenURL = screenURL; self.forkScreenBase = forkScreenBase
   }
 
   public init(box: JSON) throws {
     guard let base = box["gatewayUrl"]?.text else {
       throw SimeonAPIError(message: "Simeon's cloud computer has no gateway address yet. Try again in a moment.", status: 0)
     }
-    self.init(baseURL: base.trimmingTrailingSlashes, token: box["gatewayToken"]?.text, networkToken: box["networkToken"]?.text, screenURL: box["vncUrl"]?.text)
+    self.init(baseURL: base.trimmingTrailingSlashes, token: box["gatewayToken"]?.text, networkToken: box["networkToken"]?.text, screenURL: box["vncUrl"]?.text, forkScreenBase: box["forkVncBaseUrl"]?.text?.trimmingTrailingSlashes)
+  }
+
+  /**
+   * The WebSocket of an agent's screen, from the address the box gives
+   * (`ensureForeverBox`: noVNC's page on loopback port 6080 or 6081, with
+   * the display's `token` inside its `path`), through the proxy, the way
+   * `proxifyBoxVncUrl` and `buildSandBoxNoVncUrl` build the page's: only the
+   * stream, which the app's own noVNC opens (noVNC's page would load its
+   * files without the network token, and the proxy refuses those).
+   */
+  public func screenSocket(for vncUrl: String) -> URL? {
+    guard let page = URLComponents(string: vncUrl) else { return nil }
+    let wake = "resume_lower_s=900&resume_upper_s=18000"
+    let host = page.host ?? ""
+    if host == "127.0.0.1" || host == "localhost" {
+      guard let networkToken else { return nil }
+      if page.port == 6081, let base = forkScreenBase {
+        let inner = page.queryItems?.first { $0.name == "path" }?.value ?? ""
+        let token = inner.split(separator: "?", maxSplits: 1).dropFirst().first.flatMap { URLComponents(string: "x:?\($0)")?.queryItems?.first { $0.name == "token" }?.value }
+        let tokenParam = token.map { "token=\($0)&" } ?? ""
+        return Self.socket(base + "/websockify?\(tokenParam)network_token=\(networkToken)&\(wake)")
+      }
+      if page.port == 6080, let primary = screenURL { return screenSocket(for: primary) }
+      return nil
+    }
+    // A page already through the proxy: its folder, then its `path`.
+    guard let path = page.queryItems?.first(where: { $0.name == "path" })?.value else { return nil }
+    var folder = page
+    folder.query = nil
+    folder.fragment = nil
+    folder.path = (folder.path as NSString).deletingLastPathComponent
+    guard let base = folder.string else { return nil }
+    return Self.socket(base.trimmingTrailingSlashes + "/" + path)
+  }
+
+  static func socket(_ http: String) -> URL? {
+    if http.hasPrefix("https://") { return URL(string: "wss://" + http.dropFirst(8)) }
+    if http.hasPrefix("http://") { return URL(string: "ws://" + http.dropFirst(7)) }
+    return URL(string: http)
   }
 
   public func headers(_ extra: [String: String] = [:]) -> [String: String] {

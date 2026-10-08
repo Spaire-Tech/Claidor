@@ -1,6 +1,57 @@
 import Foundation
 import Observation
 
+/** One connected app, as the box's manager lists it (`McpServerSummary`). */
+public struct ConnectedApp: Identifiable, Hashable, Sendable {
+  public let id: String
+  public let name: String
+  public let pluginId: String?
+  public let accountKey: String
+  /** `connected`, or what stops it (`error`, a sign-in still to do). */
+  public let status: String
+  public let toolCount: Int
+
+  public init(id: String, name: String, pluginId: String?, accountKey: String, status: String, toolCount: Int) {
+    self.id = id; self.name = name; self.pluginId = pluginId; self.accountKey = accountKey; self.status = status; self.toolCount = toolCount
+  }
+
+  init?(_ json: JSON) {
+    guard let id = json["id"]?.text else { return nil }
+    self.init(id: id, name: json["name"]?.string ?? id, pluginId: json["pluginId"]?.text, accountKey: json["accountKey"]?.text ?? "default", status: json["status"]?.string ?? "", toolCount: json["toolCount"]?.int ?? 0)
+  }
+}
+
+/** One app the catalog offers (`CatalogPlugin`). */
+public struct CatalogApp: Identifiable, Hashable, Sendable {
+  public let id: String
+  public let name: String
+  public let title: String
+  public let summary: String
+  public let category: String
+  public let comingSoon: Bool
+
+  init?(_ json: JSON) {
+    guard let id = json["id"]?.text ?? json["pluginId"]?.text else { return nil }
+    self.id = id
+    name = json["name"]?.string ?? id
+    title = json["displayName"]?.text ?? json["name"]?.text ?? id
+    summary = json["description"]?.string ?? ""
+    category = json["category"]?.string ?? ""
+    comingSoon = json["comingSoon"]?.bool ?? false
+  }
+
+  public init(id: String, name: String, title: String, summary: String, category: String = "", comingSoon: Bool = false) {
+    self.id = id; self.name = name; self.title = title; self.summary = summary; self.category = category; self.comingSoon = comingSoon
+  }
+
+  /** The logo's name in the app's images (`Connectors/<slug>`). */
+  public var logoKey: String { Self.slug(title) }
+
+  public static func slug(_ name: String) -> String {
+    name.lowercased().replacingOccurrences(of: ".", with: "-").split(whereSeparator: { !$0.isLetter && !$0.isNumber }).joined(separator: "-")
+  }
+}
+
 /** The signed-in person, from `user/profile`. */
 public struct Account: Sendable, Equatable {
   public let name: String
@@ -42,6 +93,13 @@ public final class AppStore {
   public var account: Account?
   /** Something went wrong that the person should hear about, once. */
   public var problem: String?
+  /** An answer the person gave that the host has not echoed yet: the card shows it at once (the window's optimistic answer). */
+  public private(set) var pendingAnswers: [String: String] = [:]
+  /** Where the "New" line goes in each chat: after this time (ms), set when a chat with unread messages opens. */
+  public private(set) var unreadAfter: [String: Double] = [:]
+  /** Connected apps, as the box's manager lists them (`desktopMcp listServers`), and the catalog to add more from. */
+  public private(set) var apps: [ConnectedApp] = []
+  public private(set) var catalog: [CatalogApp] = []
 
   public private(set) var backend: AgentBackend?
   @ObservationIgnored private var listening: Task<Void, Never>?
@@ -73,6 +131,7 @@ public final class AppStore {
     listening = nil
     backend = nil
     agents = []; transcripts = [:]; chatRows = [:]; steps = [:]; call = nil; isLive = false; account = nil
+    pendingAnswers = [:]; unreadAfter = [:]; apps = []; catalog = []
   }
 
   public func reloadRoster() async {
@@ -100,6 +159,8 @@ public final class AppStore {
       else if running[agentId] == id { running[agentId] = nil; steps[agentId] = nil }
     case .connection(let live):
       isLive = live
+    case .appsChanged:
+      Task { await loadApps() }
     }
   }
 
@@ -112,31 +173,205 @@ public final class AppStore {
 
   private func setTranscript(_ agentId: String, _ entries: [Entry]) {
     transcripts[agentId] = entries
-    chatRows[agentId] = Chat.rows(entries, isGroup: agent(agentId)?.isGroup ?? false)
+    for entry in entries where pendingAnswers[entry.id] != nil && (entry["respondedValue"]?.text != nil || entry["widgetDismissed"]?.bool == true) { pendingAnswers[entry.id] = nil }
+    chatRows[agentId] = Chat.rows(entries, isGroup: agent(agentId)?.isGroup ?? false, unreadAfter: unreadAfter[agentId])
   }
 
-  /** A chat comes on screen: its entries (once), and it is read. */
+  /** A chat comes on screen: its entries, and it is read; the "New" line marks what came since it was last read. */
   public func open(_ agentId: String) async {
     guard let backend else { return }
+    let unread = agent(agentId).map { $0.hasUnread ? max($0.unreadCount, 1) : 0 } ?? 0
     if transcripts[agentId] == nil {
-      do { setTranscript(agentId, try await backend.transcript(agentId)) } catch {
-        setTranscript(agentId, [])
+      do { transcripts[agentId] = try await backend.transcript(agentId) } catch {
+        transcripts[agentId] = []
         problem = "Couldn't open this chat: \(error.localizedDescription)"
       }
     }
+    let entries = transcripts[agentId] ?? []
+    unreadAfter[agentId] = Self.unreadBoundary(entries, unread: unread)
+    setTranscript(agentId, entries)
     if let index = agents.firstIndex(where: { $0.id == agentId }) { agents[index].hasUnread = false; agents[index].unreadCount = 0 }
     await backend.markRead(agentId)
   }
 
-  public func send(_ text: String, to agentId: String) async {
+  /** Just before the oldest of the last `unread` lines an agent wrote; nil when nothing is unread. */
+  static func unreadBoundary(_ entries: [Entry], unread: Int) -> Double? {
+    guard unread > 0 else { return nil }
+    let theirs = entries.filter { !$0.isFromPerson && $0.timestampMs != nil && ($0.kind == "message" || $0.kind == "send-message") && $0.teammate == nil }
+    guard let first = theirs.suffix(unread).first?.timestampMs else { return nil }
+    return first - 1
+  }
+
+  /** A message, and the composer's files: each put on the agent's computer first (`uploadAttachment`), as the Mac does. */
+  public func send(_ text: String, to agentId: String, attachments files: [(name: String, data: Data)] = []) async {
     let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard let backend, !trimmed.isEmpty else { return }
-    do { try await backend.send(agentId, text: trimmed) } catch { problem = "Your message didn't send: \(error.localizedDescription)" }
+    guard let backend, !trimmed.isEmpty || !files.isEmpty else { return }
+    var refs: [AttachmentRef] = []
+    for file in files {
+      do {
+        let answer = try await backend.command("uploadAttachment", ["filename": .string(file.name), "bytesBase64": .string(file.data.base64EncodedString()), "agentId": .string(agentId)])
+        guard let path = answer["path"]?.text else { throw GatewayError(message: "the computer kept no copy", refused: true) }
+        refs.append(AttachmentRef(path: path, name: file.name))
+      } catch {
+        problem = "\(file.name) didn't upload: \(error.localizedDescription)"
+        return
+      }
+    }
+    do { try await backend.send(agentId, text: trimmed, attachments: refs) } catch { problem = "Your message didn't send: \(error.localizedDescription)" }
   }
 
   public func answer(_ value: String, card entryId: String, in agentId: String) async {
     guard let backend else { return }
-    do { try await backend.answer(agentId, entryId: entryId, value: value) } catch { problem = error.localizedDescription }
+    pendingAnswers[entryId] = value
+    do { try await backend.answer(agentId, entryId: entryId, value: value) } catch {
+      pendingAnswers[entryId] = nil
+      problem = "Your answer didn't reach \(agent(agentId)?.name ?? "the agent"): \(error.localizedDescription)"
+    }
+  }
+
+  // MARK: The cards' buttons, as the Mac's window calls them (host/gateway-protocol.ts)
+
+  /** Runs one gateway command; a refusal becomes the problem line and nil. */
+  @discardableResult
+  public func command(_ method: String, _ args: JSON, failure: String? = nil) async -> JSON? {
+    guard let backend else { return nil }
+    do { return try await backend.command(method, args) } catch {
+      problem = "\(failure ?? "That didn't work"): \(error.localizedDescription)"
+      return nil
+    }
+  }
+
+  /** The question card's X (`dismissWidget`). */
+  public func dismissQuestion(_ entryId: String, in agentId: String) async {
+    pendingAnswers[entryId] = ""
+    if await command("dismissWidget", ["entryId": .string(entryId), "agentId": .string(agentId)], failure: "Couldn't dismiss the question") == nil { pendingAnswers[entryId] = nil }
+  }
+
+  /** Send on an email or Slack draft, with what the person changed in it (`sendDraft`). */
+  public func sendDraft(_ entryId: String, in agentId: String, draft: JSON) async {
+    await command("sendDraft", ["agentId": .string(agentId), "entryId": .string(entryId), "draft": draft], failure: "The draft didn't send")
+  }
+
+  public func discardDraft(_ entryId: String, in agentId: String) async {
+    await command("discardDraft", ["agentId": .string(agentId), "entryId": .string(entryId)], failure: "Couldn't discard the draft")
+  }
+
+  /** A reaction on a message (`reactToMessage`); the same emoji again takes it back. */
+  public func react(_ emoji: String, to entryId: String, in agentId: String) async {
+    await command("reactToMessage", ["entryId": .string(entryId), "emoji": .string(emoji), "agentId": .string(agentId)], failure: "Couldn't react")
+  }
+
+  /** Allow once (`approved`), Always allow (`always`) or Deny (`denied`) on an auto-review approval. */
+  public func resolveApproval(_ requestId: String, resolution: String, entryId: String, in agentId: String) async {
+    await command("resolveAutoReviewApproval", ["requestId": .string(requestId), "resolution": .string(resolution), "entryId": .string(entryId), "agentId": .string(agentId)], failure: "Couldn't answer the approval")
+  }
+
+  public func submitSecret(_ value: String, entryId: String, in agentId: String) async {
+    await command("submitSecret", ["entryId": .string(entryId), "value": .string(value), "agentId": .string(agentId)], failure: "The secret wasn't saved")
+  }
+
+  /** "I'm done" on the computer hand-off; `skip` cancels the step instead. */
+  public func handBackComputer(_ agentId: String, skip: Bool = false) async {
+    let trigger: JSON = skip ? ["resolution": "cancelled", "trigger": "skip"] : "button"
+    await command("handBackForeverBox", ["id": .string(agentId), "trigger": trigger], failure: "Couldn't hand the computer back")
+  }
+
+  // MARK: The computer
+
+  /** The agent's screen on the cloud computer (`ensureForeverBox`): starting, or live. */
+  public func screen(_ agentId: String) async throws -> ScreenState {
+    guard let backend else { throw GatewayError(message: "Not signed in.", refused: true) }
+    return try await backend.screen(agentId)
+  }
+
+  // MARK: Files
+
+  /**
+   * A file an agent sent or the person attached, read from the box in 4 MiB
+   * pieces (`readAttachmentChunk`), as the Mac's preview reads it; nil when
+   * the box will not hand it over.
+   */
+  public func readFile(_ url: String, agentId: String, limit: Int = 60 << 20) async -> Data? {
+    guard let backend else { return nil }
+    let path = url.hasPrefix("file://") ? (URL(string: url)?.path ?? String(url.dropFirst(7))) : url
+    var data = Data()
+    var total = Int.max
+    while data.count < min(total, limit) {
+      guard let piece = try? await backend.command("readAttachmentChunk", ["path": .string(path), "agentId": .string(agentId), "offset": .number(Double(data.count)), "length": .number(Double(4 << 20))]) else { return data.isEmpty ? nil : data }
+      total = piece["totalSize"]?.int ?? data.count
+      guard let base64 = piece["bytesBase64"]?.string, let bytes = Data(base64Encoded: base64), !bytes.isEmpty else { break }
+      data.append(bytes)
+    }
+    if data.isEmpty, let image = try? await backend.command("readAttachmentImage", ["path": .string(path)]) {
+      let url = image["dataUrl"]?.string ?? image["url"]?.string ?? image.string ?? ""
+      if let comma = url.firstIndex(of: ","), let bytes = Data(base64Encoded: String(url[url.index(after: comma)...])) { return bytes }
+    }
+    return data.isEmpty ? nil : data
+  }
+
+  // MARK: Connected apps (the Mac's Plugins, through `desktopMcp`)
+
+  public func loadApps() async {
+    guard let backend else { return }
+    if let state = try? await backend.command("desktopMcp", ["action": "listServers", "args": []]) {
+      apps = (state["servers"]?.array ?? state.array ?? []).compactMap(ConnectedApp.init)
+    }
+    if catalog.isEmpty, let list = try? await backend.command("desktopMcp", ["action": "getCatalog", "args": []]) {
+      catalog = (list.array ?? list["plugins"]?.array ?? []).compactMap(CatalogApp.init)
+    }
+  }
+
+  /** The app a card names ("Gmail"), from the catalog. */
+  public func catalogApp(named name: String) -> CatalogApp? {
+    let key = name.lowercased()
+    return catalog.first { $0.title.lowercased() == key || $0.name.lowercased() == key || $0.id.lowercased() == key }
+  }
+
+  /** Whether an app the card names is connected. */
+  public func isConnected(_ name: String) -> Bool {
+    let key = name.lowercased()
+    let plugin = catalogApp(named: name)?.id
+    return apps.contains { $0.status == "connected" && ($0.name.lowercased() == key || ($0.pluginId != nil && $0.pluginId == plugin)) }
+  }
+
+  /**
+   * Connect an app as the card's Add does on the Mac: install it from the
+   * catalog when it is not there, then start its sign-in; the sign-in's web
+   * address, for the system's sign-in sheet.
+   */
+  public func connectApp(named name: String) async -> URL? {
+    guard let backend else { return nil }
+    await loadApps()
+    let key = name.lowercased()
+    var server = apps.first { $0.name.lowercased() == key || ($0.pluginId != nil && $0.pluginId == catalogApp(named: name)?.id) }
+    if server == nil, let plugin = catalogApp(named: name) {
+      do {
+        let state = try await backend.command("desktopMcp", ["action": "installEntry", "args": [["entryId": .string(plugin.id)]]])
+        apps = (state["servers"]?.array ?? []).compactMap(ConnectedApp.init)
+        if let vendor = try? await backend.command("desktopMcp", ["action": "vendorServerIdForPlugin", "args": [.string(plugin.id)]]), let id = vendor.text {
+          server = ConnectedApp(id: id, name: plugin.title, pluginId: plugin.id, accountKey: "default", status: "needs-auth", toolCount: 0)
+        } else {
+          server = apps.first { $0.pluginId == plugin.id }
+        }
+      } catch {
+        problem = "Couldn't add \(name): \(error.localizedDescription)"
+        return nil
+      }
+    }
+    guard let server else { problem = "\(name) isn't in Simeon's apps yet."; return nil }
+    if server.status == "connected" { return nil }
+    do {
+      let started = try await backend.command("desktopMcp", ["action": "authenticateServer", "args": [.string(server.id), .string(server.accountKey), "connector_card"]])
+      return started["authorizationUrl"]?.text.flatMap(URL.init(string:))
+    } catch {
+      problem = "Couldn't connect \(name): \(error.localizedDescription)"
+      return nil
+    }
+  }
+
+  public func removeApp(_ app: ConnectedApp) async {
+    await command("desktopMcp", ["action": "removeServer", "args": [.string(app.id)]], failure: "Couldn't remove \(app.name)")
+    await loadApps()
   }
 
   /** New Agent: the agent's id, to open its chat. */
@@ -173,6 +408,84 @@ public final class AppStore {
 
   public func routines(_ agentId: String) async -> [JSON] {
     (try? await backend?.routines(agentId)) ?? []
+  }
+
+  // MARK: The agent's page
+
+  /** Name, title and description, saved as the Mac saves them on leaving a field (`updateAgent` always carries name and description). */
+  public func saveProfile(_ agentId: String, name: String, title: String, description: String, colour: String? = nil, voiceId: String? = nil) async {
+    guard let agent = agent(agentId) else { return }
+    var profile: JSON = ["name": .string(name.isEmpty ? agent.name : name), "description": .string(description), "title": .string(title)]
+    if let colour { profile = profile.setting("avatarColor", .string(colour)) }
+    if let voiceId { profile = profile.setting("voiceId", .string(voiceId)) }
+    if let index = agents.firstIndex(where: { $0.id == agentId }) {
+      agents[index].name = name.isEmpty ? agent.name : name; agents[index].title = title; agents[index].description = description
+      if let colour { agents[index].colour = colour }
+    }
+    await command("updateAgent", ["id": .string(agentId), "profile": profile], failure: "Couldn't save \(agent.name)")
+  }
+
+  public func setNotify(_ agentId: String, _ on: Bool) async {
+    if let index = agents.firstIndex(where: { $0.id == agentId }) { agents[index].notifyOnUpdates = on }
+    await command("setAgentNotifyOnUpdates", ["id": .string(agentId), "isEnabled": .bool(on)], failure: "Couldn't change notifications")
+  }
+
+  /** A picture for the agent (PNG), or nil to go back to its butterfly (`setAgentAvatarBytes`). */
+  public func setAvatar(_ agentId: String, png: Data?) async {
+    await command("setAgentAvatarBytes", ["id": .string(agentId), "pngBase64": png.map { .string($0.base64EncodedString()) } ?? .null], failure: "Couldn't change the picture")
+    await reloadRoster()
+  }
+
+  public func setMembers(_ groupId: String, _ memberIds: [String]) async {
+    if let index = agents.firstIndex(where: { $0.id == groupId }) { agents[index].memberIds = memberIds }
+    await command("setGroupMembers", ["id": .string(groupId), "memberAgentIds": JSON(memberIds)], failure: "Couldn't change the group")
+  }
+
+  public func routineList(_ agentId: String) async -> [Routine] {
+    await routines(agentId).compactMap(Routine.init(json:))
+  }
+
+  /** A new routine, or the same one changed; it saves itself, as on the Mac. */
+  public func saveRoutine(_ routine: Routine, agentId: String, isNew: Bool) async {
+    if isNew {
+      await command("createAgentAutomation", ["id": .string(agentId), "spec": routine.spec], failure: "Couldn't create the routine")
+    } else {
+      await command("updateAgentAutomation", ["id": .string(agentId), "automationId": .string(routine.id), "spec": routine.spec], failure: "Couldn't save the routine")
+    }
+  }
+
+  public func setRoutineEnabled(_ routineId: String, agentId: String, _ on: Bool) async {
+    await command("setAgentAutomationEnabled", ["id": .string(agentId), "automationId": .string(routineId), "isEnabled": .bool(on)], failure: "Couldn't change the routine")
+  }
+
+  public func deleteRoutine(_ routineId: String, agentId: String) async {
+    await command("deleteAgentAutomation", ["id": .string(agentId), "automationId": .string(routineId)], failure: "Couldn't delete the routine")
+  }
+
+  public func runRoutineNow(_ routineId: String, agentId: String) async {
+    await command("runAgentAutomationNow", ["id": .string(agentId), "automationId": .string(routineId)], failure: "Couldn't run the routine")
+  }
+
+  // MARK: Settings
+
+  /** The host's settings (`getHostSettings`): the time zone, Auto-review. */
+  public func hostSettings() async -> JSON? { await command("getHostSettings", [:], failure: "Couldn't load your settings") }
+
+  @discardableResult
+  public func setHostSettings(_ update: JSON) async -> JSON? { await command("setHostSettings", update, failure: "Couldn't save the setting") }
+
+  /** This period's usage (`/desktop/api/user/quota`). */
+  public func quota() async -> JSON? { try? await backend?.server("user/quota", method: nil, body: nil) }
+
+  /** Stripe's billing page for the account (`/desktop/api/billing/portal`). */
+  public func billingPortal() async -> URL? {
+    do {
+      let answer = try await backend?.server("billing/portal", method: "POST", body: [:])
+      return answer?["portalUrl"]?.text.flatMap(URL.init(string:))
+    } catch {
+      problem = "Couldn't open billing: \(error.localizedDescription)"
+      return nil
+    }
   }
 
   // MARK: The call

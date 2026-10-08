@@ -97,4 +97,114 @@ public enum Butterfly {
 
   /** The wings' own box in the square, the rim included (x 3.3 to 225.3, y 30.6 to 191.6): what a tight avatar crops to. */
   public static let wingBox = (minX: 3.3, minY: 30.6, maxX: 225.3, maxY: 191.6)
+
+  // MARK: The window's mark (the engine's own outline, size and colours)
+
+  /** A cubic Bézier segment: start, two controls, end. */
+  public struct Segment: Sendable, Equatable {
+    public let from: Point, c1: Point, c2: Point, to: Point
+  }
+
+  public struct Point: Sendable, Equatable {
+    public let x: Double, y: Double
+    public init(_ x: Double, _ y: Double) { self.x = x; self.y = y }
+  }
+
+  /** The engine rounds every number it writes to two places (`Nr`). */
+  static func nr(_ value: Double) -> Double { (value * 100).rounded() / 100 }
+
+  /**
+   * A closed smooth curve through the points, as the engine draws a shape
+   * (`Ztt`): a Catmull-Rom spline written as cubic Béziers.
+   */
+  public static func smooth(_ points: [Point]) -> [Segment] {
+    let n = points.count
+    return (0..<n).map { s in
+      let r = points[(s - 1 + n) % n], i = points[s], o = points[(s + 1) % n], l = points[(s + 2) % n]
+      return Segment(
+        from: Point(nr(i.x), nr(i.y)),
+        c1: Point(nr(i.x + (o.x - r.x) / 6), nr(i.y + (o.y - r.y) / 6)),
+        c2: Point(nr(o.x - (l.x - i.x) / 6), nr(o.y - (l.y - i.y) / 6)),
+        to: Point(nr(o.x), nr(o.y)))
+    }
+  }
+
+  /** Points along the curve, every 4 units or so (`$Be`): what the engine measures a shape's box from. */
+  public static func samples(_ segments: [Segment]) -> [Point] {
+    var points: [Point] = segments.first.map { [$0.from] } ?? []
+    for segment in segments {
+      let length = hypot(segment.c1.x - segment.from.x, segment.c1.y - segment.from.y) + hypot(segment.c2.x - segment.c1.x, segment.c2.y - segment.c1.y) + hypot(segment.to.x - segment.c2.x, segment.to.y - segment.c2.y)
+      let steps = max(2, Int((length / 4).rounded(.up)))
+      for k in 1...steps {
+        let t = Double(k) / Double(steps), u = 1 - t
+        let a = u * u * u, b = 3 * u * u * t, c = 3 * u * t * t, d = t * t * t
+        points.append(Point(a * segment.from.x + b * segment.c1.x + c * segment.c2.x + d * segment.to.x, a * segment.from.y + b * segment.c1.y + c * segment.c2.y + d * segment.to.y))
+      }
+    }
+    return points
+  }
+
+  /**
+   * The wings as the window draws them: the 200 reach points smoothed
+   * (`Yse`), then centred in the square and scaled so their larger side is
+   * 228.44 (`p_t`, `h_t`; clamped to 0.9-1.35): about 2.98 down and x1.039.
+   */
+  public static let wings: [Segment] = {
+    let raw = smooth(outline.map { Point($0.x, $0.y) })
+    let points = samples(raw)
+    let minX = points.map(\.x).min()!, maxX = points.map(\.x).max()!
+    let minY = points.map(\.y).min()!, maxY = points.map(\.y).max()!
+    let dx = centre - (minX + maxX) / 2, dy = centre - (minY + maxY) / 2
+    let scale = min(max(228.44 / max(maxX - minX, maxY - minY), 0.9), 1.35)
+    let move = { (p: Point) in Point(nr(centre + (p.x + dx - centre) * scale), nr(centre + (p.y + dy - centre) * scale)) }
+    return raw.map { Segment(from: move($0.from), c1: move($0.c1), c2: move($0.c2), to: move($0.to)) }
+  }()
+
+  /** The box of the wings as drawn. */
+  public static let wingsBox: (minX: Double, minY: Double, maxX: Double, maxY: Double) = {
+    let points = samples(wings)
+    return (points.map(\.x).min()!, points.map(\.y).min()!, points.map(\.x).max()!, points.map(\.y).max()!)
+  }()
+
+  /** The mark is drawn x259/229 about the centre (`$de * c4e`), in a 259-unit view from -15: the wings span the avatar's full width. */
+  public static let markScale = 259.0 / 229.0
+  public static let viewOrigin = -15.0
+  public static let viewSide = 259.0
+
+  // MARK: Group avatars (the window's `mnt`, `fnt`)
+
+  /** Where each member sits in a group's square avatar of side `frame`: two at 2/3, three at 5/9, four in a grid. */
+  public static func groupLayout(count: Int, frame: Double) -> [(x: Double, y: Double, size: Double)] {
+    if count <= 1 { return [(0, 0, frame)] }
+    if count == 2 {
+      let size = frame * 2 / 3, step = frame - size
+      return [(0, 0, size), (step, step, size)]
+    }
+    let size = frame * 5 / 9, step = frame - size
+    if count == 3 { return [(step / 2, 0, size), (0, step, size), (step, step, size)] }
+    return [(0, 0, size), (step, 0, size), (0, step, size), (step, step, size)]
+  }
+
+  /** The gap cut around a later member, by the frame's size (`ONe` 2 at 36 px). */
+  public static func groupGap(frame: Double) -> Double { 2 * frame / 36 }
+}
+
+extension AgentPalette {
+  /**
+   * The colour an agent with none stored wears: the window's `sle`, a hash
+   * of its id (FNV-1a, then mulberry32) into the first ten palettes.
+   */
+  public static func defaultColour(forAgentId id: String) -> String {
+    var hash: UInt32 = 2166136261
+    for unit in id.utf16 { hash ^= UInt32(unit); hash = hash &* 16777619 }
+    let seed = hash ^ (1 &* 2654435769)
+    var state = seed ^ (1 &* 2654435769)
+    // mulberry32, one draw.
+    state = state &+ 1831565813
+    var t = (state ^ (state >> 15)) &* (1 | state)
+    t = (t &+ ((t ^ (t >> 7)) &* (61 | t))) ^ t
+    let draw = Double(t ^ (t >> 14)) / 4294967296
+    let index = Int(draw * 10)
+    return all.indices.contains(index) ? all[index].id : "black"
+  }
 }

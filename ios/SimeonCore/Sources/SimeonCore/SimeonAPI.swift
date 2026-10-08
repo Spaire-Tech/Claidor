@@ -122,6 +122,23 @@ public actor SimeonAPI {
     return parsed["code"] == nil ? parsed : (parsed["data"] ?? .null)
   }
 
+  /**
+   * The phone's notifications (`server/simeon/desktop/push.py`): Apple's
+   * device token for this phone, at `/desktop/push-devices`, or taken off it
+   * on sign-out. `sandbox` for a build run from Xcode.
+   */
+  public func registerPushDevice(apnsToken: String, sandbox: Bool, remove: Bool = false) async throws {
+    var request = URLRequest(url: url("/desktop/push-devices"))
+    request.httpMethod = remove ? "DELETE" : "POST"
+    let body: JSON = ["apns_token": .string(apnsToken), "apns_environment": .string(sandbox ? "sandbox" : "production"), "platform": "ios"]
+    request.httpBody = try body.data()
+    request.setValue("application/json", forHTTPHeaderField: "content-type")
+    try await authorized(&request)
+    let answer = try await http.send(request)
+    if answer.status == 401 { sessionEnded() }
+    guard answer.ok else { throw SimeonAPIError(message: "Simeon Labs' server answered push-devices with \(answer.status).", status: answer.status) }
+  }
+
   /** One unary call on the box broker, Connect JSON (`server/simeon/sand/connect.py`). */
   public func connect(_ method: String, _ message: JSON = [:]) async throws -> JSON {
     var request = URLRequest.post(url("/\(Self.connectService)/\(method)"), json: message, headers: ["connect-protocol-version": "1"])

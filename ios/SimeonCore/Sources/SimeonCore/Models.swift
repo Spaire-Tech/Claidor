@@ -42,6 +42,15 @@ public struct Agent: Identifiable, Hashable, Sendable {
   public var isComposing: Bool
   public var activityLabel: String?
   public var isHidden: Bool
+  /** "Notifications" on the agent's page (`notifyOnUpdatesEnabled`). */
+  public var notifyOnUpdates: Bool = true
+  public var voiceId: String?
+  /** Running a turn or one of its helpers (`isRunning`), waiting on the person (`awaitingUserResponse`), and what it is doing (`currentActivity`): its butterfly's state. */
+  public var isRunning = false
+  public var awaitingUserResponse = false
+  public var activityKind: String?
+  public var activityTool: String?
+  public var activityDetail: String?
 
   public init(id: String, name: String, title: String = "", description: String = "", colour: String? = nil, avatarDataURL: String? = nil, isGroup: Bool = false, memberIds: [String] = [], lastMessagePreview: String? = nil, lastActivityAt: Double? = nil, hasUnread: Bool = false, unreadCount: Int = 0, isRunningTurn: Bool = false, isComposing: Bool = false, activityLabel: String? = nil, isHidden: Bool = false) {
     self.id = id; self.name = name; self.title = title; self.description = description; self.colour = colour
@@ -71,9 +80,17 @@ public struct Agent: Identifiable, Hashable, Sendable {
       activityLabel: json["currentActivity"]?["label"]?.text,
       isHidden: json["isHiddenFromSidebar"]?.bool ?? false
     )
+    notifyOnUpdates = json["notifyOnUpdatesEnabled"]?.bool ?? true
+    voiceId = json["voiceId"]?.text
+    isRunning = json["isRunning"]?.bool ?? isRunningTurn
+    if let awaiting = json["awaitingUserResponse"], awaiting != .null { awaitingUserResponse = true }
+    activityKind = json["currentActivity"]?["kind"]?.text
+    activityTool = json["currentActivity"]?["tool"]?.text
+    activityDetail = json["currentActivity"]?["detail"]?.text
   }
 
-  public var palette: AgentPalette { AgentPalette.named(colour) }
+  /** The agent's palette: its stored colour, else the window's default for its id. */
+  public var palette: AgentPalette { AgentPalette.named(colour ?? AgentPalette.defaultColour(forAgentId: id)) }
   /** The agent is working: the window's typing dots. */
   public var isBusy: Bool { isRunningTurn || isComposing }
 }

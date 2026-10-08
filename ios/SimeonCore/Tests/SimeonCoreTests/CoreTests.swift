@@ -210,7 +210,7 @@ final class GatewayTests: XCTestCase {
     ])
     let api = SimeonAPI(base: URL(string: "https://x")!, clientVersion: "1", vault: vault, http: http)
     let backend = LiveBackend(gateway: Gateway(api: api, http: http))
-    try await backend.send("theo", text: "Hi")
+    try await backend.send("theo", text: "Hi", attachments: [])
     let id = try await backend.createAgent(name: "Nora", colour: "green")
     let group = try await backend.createGroup(name: "Simeon, Iris", memberIds: ["simeon", "iris"])
     XCTAssertEqual(id, "agent-9")
@@ -225,6 +225,14 @@ final class GatewayTests: XCTestCase {
     XCTAssertEqual(create["avatarShape"], "cloud")
     XCTAssertEqual(create["isKickstartRequested"], true)
     XCTAssertEqual(try JSON.parse(http.sent[3].httpBody!)["memberAgentIds"], ["simeon", "iris"])
+  }
+
+  func testAnAgentsScreenGoesThroughTheProxy() throws {
+    let connection = try GatewayConnection(box: ["gatewayUrl": "https://api.simeonlabs.com/sand-box/b1/p/8790", "networkToken": "NT", "vncUrl": "https://api.simeonlabs.com/sand-box/b1/p/6080/vnc.html?network_token=NT&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Fnetwork_token%3DNT%26resume_lower_s%3D900%26resume_upper_s%3D18000", "forkVncBaseUrl": "https://api.simeonlabs.com/sand-box/b1/p/6081/"])
+    XCTAssertEqual(connection.screenSocket(for: "http://127.0.0.1:6081/vnc.html?autoconnect=1&path=websockify%3Ftoken%3D3")?.absoluteString,
+                   "wss://api.simeonlabs.com/sand-box/b1/p/6081/websockify?token=3&network_token=NT&resume_lower_s=900&resume_upper_s=18000")
+    XCTAssertEqual(connection.screenSocket(for: "http://127.0.0.1:6080/vnc.html")?.absoluteString,
+                   "wss://api.simeonlabs.com/sand-box/b1/p/6080/websockify?network_token=NT&resume_lower_s=900&resume_upper_s=18000")
   }
 
   func testHostEventsMapToTheScreens() {
@@ -250,12 +258,12 @@ final class ChatTests: XCTestCase {
       case .stamp: return "stamp"
       case .bubble(let b): return b.fromPerson ? "me" : "them"
       case .file(_, let name, _, _): return "file:\(name)"
-      case .teammates(_, let count, let peers, _): return "teammates:\(count):\(peers.map(\.name).joined(separator: "+"))"
-      case .routine(_, _, let name): return "routine:\(name)"
+      case .teammates(_, let exchange, _): return "teammates:\(exchange.label):\(exchange.peers.map(\.name).joined(separator: "+"))"
+      case .routines(_, let action, let list): return "routine:\(action):\(list.map(\.name).joined(separator: "+"))"
       default: return "other"
       }
     }
-    XCTAssertEqual(kinds, ["stamp", "me", "them", "teammates:4:Scout+Iris", "them", "file:Launch review.docx", "me", "routine:Monday launch check", "them"])
+    XCTAssertEqual(kinds, ["stamp", "me", "them", "teammates:4 messages with:Scout+Iris", "them", "file:Launch review.docx", "me", "routine:created:Monday launch check", "them"])
     guard case .bubble(let thumbs) = rows[6] else { return XCTFail() }
     XCTAssertEqual(thumbs.reactions, ["\u{1F44D}"])
   }
@@ -289,12 +297,87 @@ final class ChatTests: XCTestCase {
     ]
     let rows = Chat.rows(entries)
     guard case .question(_, let card) = rows[0] else { return XCTFail() }
-    XCTAssertEqual(card.options, ["Inbox", "Calendar"])
+    XCTAssertEqual(card.labels, ["Inbox", "Calendar"])
     XCTAssertEqual(card.answer, "Inbox")
+    XCTAssertFalse(card.isOpen)
     guard case .connectors(_, let names, let connected, _) = rows[1] else { return XCTFail() }
     XCTAssertEqual(names, ["Gmail", "Notion"])
-    XCTAssertTrue(connected)
+    XCTAssertFalse(connected)
     XCTAssertEqual(rows.count, 2)
+  }
+
+  func testEveryCardTheMacDraws() {
+    let rows = Chat.rows(DemoData.seed(now: now, gallery: true).transcripts["cards"]!)
+    let kinds = rows.compactMap { row -> String? in
+      switch row {
+      case .stamp: return nil
+      case .bubble(let b): return b.fromPerson ? "me" : "them"
+      case .question(_, let card): return card.isOpen ? "question" : card.isDismissed ? "question-dismissed" : "question-answered"
+      case .draft(_, let card): return "draft:\(card.kind.rawValue):\(card.status)"
+      case .flights(_, let card): return "flights:\(card.offers.count)"
+      case .connectors(_, let names, _, let reason): return "connector:\(names.joined()):\(reason ?? "")"
+      case .request(_, let card):
+        switch card {
+        case .approval(_, let summary, _, _, let status): return "approval:\(summary):\(status)"
+        case .secret(let label, _, _): return "secret:\(label)"
+        case .computer(_, _, let resolution): return "computer:\(resolution ?? "waiting")"
+        }
+      case .notice(_, let text): return text == Chat.notShown ? "notice" : text
+      case .file(_, let name, _, _): return "file:\(name)"
+      default: return "other"
+      }
+    }
+    XCTAssertEqual(kinds, ["me", "them", "question", "question-answered", "question-dismissed", "draft:email:Ready to send", "draft:slack:Ready to send", "flights:2", "connector:Linear:To read the launch tickets.", "approval:Delete 3 files in ~/Downloads:pending", "secret:Stripe API key", "computer:waiting", "notice", "file:Payouts September.pdf"])
+    guard case .flights(_, let flights) = rows.first(where: { if case .flights = $0 { return true }; return false })! else { return XCTFail() }
+    XCTAssertEqual(flights.title, "Seattle to Los Angeles")
+    XCTAssertEqual(flights.offers[0].legs.count, 2)
+    XCTAssertEqual(FlightsCard.initials("American Airlines"), "AM")
+    XCTAssertEqual(FlightsCard.initials("Alaska Airlines"), "AL")
+    XCTAssertEqual(FlightsCard.initials("Delta Air Lines"), "DL")
+    guard case .question(_, let question) = rows.first(where: { if case .question = $0 { return true }; return false })! else { return XCTFail() }
+    XCTAssertEqual(question.options[0], QuestionOption(label: "Pro", description: "$20 a month"))
+  }
+
+  func testExchangesAndRoutinesAreWordedLikeTheWindow() {
+    let scout = Party(id: "scout", name: "Scout"), iris = Party(id: "iris", name: "Iris")
+    let to = { (id: String, peer: Party) in Entry(["kind": "message", "id": .string(id), "role": "assistant", "content": "hi", "toAgent": ["id": .string(peer.id), "name": .string(peer.name)]])! }
+    let from = { (id: String, peer: Party) in Entry(["kind": "message", "id": .string(id), "role": "user", "content": "hi", "fromAgent": ["id": .string(peer.id), "name": .string(peer.name)]])! }
+    XCTAssertEqual(Chat.exchange([to("a", scout)]).label, "Messaged")
+    XCTAssertEqual(Chat.exchange([from("a", scout)]).label, "Message from")
+    XCTAssertEqual(Chat.exchange([to("a", scout), to("b", iris)]), .fanout(peers: [scout, iris]))
+    XCTAssertEqual(Chat.exchange([to("a", scout), from("b", scout)]).label, "2 messages with")
+    let routine = { (id: String, action: String, name: String) in Entry(["kind": "event", "id": .string(id), "event": ["type": "automation-changed", "action": .string(action), "automationId": .string(name), "automationName": .string(name)]])! }
+    let rows = Chat.rows([routine("r1", "created", "Daily brief"), routine("r2", "created", "Monday check"), routine("r3", "updated", "Daily brief"), routine("r4", "deleted", "Old one")])
+    let lines = rows.compactMap { row -> String? in if case .routines(_, let action, let list) = row { return "\(Chat.routineVerb(action)) \(list.map(\.name).joined(separator: "+"))" }; return nil }
+    XCTAssertEqual(lines, ["Created Daily brief+Monday check", "Deleted Old one"])
+  }
+
+  func testTheNewLineGoesBeforeTheFirstUnreadAgentLine() {
+    let entries = [
+      Entry(["kind": "message", "id": "u", "role": "user", "content": "hi", "timestampMs": 1000])!,
+      Entry(["kind": "send-message", "id": "a", "message": ["type": "text", "content": "one"], "timestampMs": 2000])!,
+      Entry(["kind": "send-message", "id": "b", "message": ["type": "text", "content": "two"], "timestampMs": 3000])!,
+    ]
+    let rows = Chat.rows(entries, unreadAfter: 2500)
+    XCTAssertEqual(rows.map(\.id).filter { !$0.hasPrefix("stamp") }, ["u", "a", "unread-divider", "b"])
+  }
+
+  func testSchedulesReadAndWriteTheMacsChoices() {
+    XCTAssertEqual(Schedule(cron: "0 9 * * 1"), .weekly(weekday: 1, hour: 9, minute: 0))
+    XCTAssertEqual(Schedule(cron: "0 9 * * 1").summary, "Every Monday at 9:00 AM")
+    XCTAssertEqual(Schedule(cron: "30 8 * * 1-5").summary, "Weekdays at 8:30 AM")
+    XCTAssertEqual(Schedule(cron: "0 18 * * *").summary, "Every day at 6:00 PM")
+    XCTAssertEqual(Schedule(cron: "15 * * * *").summary, "Every hour at :15")
+    XCTAssertEqual(Schedule(cron: "0 9 1 * *").summary, "Every month on the 1st at 9:00 AM")
+    XCTAssertEqual(Schedule(cron: "*/30 * * * *").summary, "Every 30 minutes")
+    XCTAssertEqual(Schedule(cron: "0 */4 * * *"), .everyHours(4))
+    XCTAssertEqual(Schedule(cron: "0 9 * 6 *"), .custom("0 9 * 6 *"))
+    for schedule in [Schedule.daily(hour: 7, minute: 5), .weekdays(hour: 17, minute: 45), .weekly(weekday: 5, hour: 12, minute: 0), .monthly(day: 15, hour: 9, minute: 30), .hourly(minute: 0), .everyMinutes(10)] {
+      XCTAssertEqual(Schedule(cron: schedule.cron), schedule)
+    }
+    let routine = Routine(json: ["id": "r1", "name": "Brief", "prompt": "Brief me", "trigger": ["type": "cron", "schedule": "0 8 * * 1-5"], "isEnabled": false])!
+    XCTAssertEqual(routine.summary, "Weekdays at 8:00 AM")
+    XCTAssertEqual(routine.spec["trigger"]?["schedule"], "0 8 * * 1-5")
   }
 
   func testTranscriptChangesSwapByIdOrAppend() {
@@ -343,6 +426,35 @@ final class ButterflyAndPaletteTests: XCTestCase {
     XCTAssertEqual(Butterfly.veins.count, 14)
   }
 
+  func testTheWingsAreTheWindowsOwn() {
+    // node: the window's own Ztt/Yse/p_t (index-UbX-y3il.js) on the same reach: first point and box after normalising.
+    XCTAssertEqual(Butterfly.wings.count, 200)
+    XCTAssertEqual(Butterfly.wings[0].from, Butterfly.Point(184.34, 117.37))
+    XCTAssertEqual(Butterfly.wings[0].c1, Butterfly.Point(182.92, 118.1))
+    let box = Butterfly.wingsBox
+    XCTAssertEqual(box.minX, 0.048, accuracy: 0.06)
+    XCTAssertEqual(box.maxX, 228.493, accuracy: 0.06)
+    XCTAssertEqual(box.minY, 31.982, accuracy: 0.06)
+    XCTAssertEqual(box.maxY, 196.559, accuracy: 0.06)
+  }
+
+  func testDefaultColourIsTheWindowsHash() {
+    // node: unt(cnt(id)) from the window, into the patched palette order.
+    XCTAssertEqual(AgentPalette.defaultColour(forAgentId: "simeon"), "cyan")
+    XCTAssertEqual(AgentPalette.defaultColour(forAgentId: "theo"), "gray")
+    XCTAssertEqual(AgentPalette.defaultColour(forAgentId: "agent-1"), "cyan")
+    XCTAssertEqual(AgentPalette.defaultColour(forAgentId: "3f2a9c1e-0000-4abc-9def-1234567890ab"), "gray")
+    XCTAssertEqual(Agent(id: "theo", name: "Theo").palette.id, "gray")
+  }
+
+  func testGroupLayoutIsTheWindows() {
+    let three = Butterfly.groupLayout(count: 3, frame: 36)
+    XCTAssertEqual(three.map(\.size), [20, 20, 20])
+    XCTAssertEqual(three[0].x, 8, accuracy: 1e-9)
+    XCTAssertEqual(three[2].y, 16, accuracy: 1e-9)
+    XCTAssertEqual(Butterfly.groupLayout(count: 2, frame: 36)[1].x, 12, accuracy: 1e-9)
+  }
+
   func testPalettes() {
     XCTAssertEqual(AgentPalette.all.count, 12)
     XCTAssertEqual(AgentPalette.named("nope").id, "blue")
@@ -357,6 +469,68 @@ final class ButterflyAndPaletteTests: XCTestCase {
     XCTAssertEqual(try JSON.parse(try value.data()), value)
     XCTAssertEqual(String(decoding: try JSON(1791400000000).data(), as: UTF8.self), "1791400000000")
   }
+}
+
+final class FakeVoice: VoiceTransport, @unchecked Sendable {
+  let lock = NSLock()
+  var events: (@Sendable (VoiceEvent) -> Void)?
+  var started: (token: String, prompt: String, first: String, voice: String?)?
+  var said: [String] = []
+  var results: [String: String] = [:]
+  var ended = false
+
+  func start(token: String, prompt: String, firstMessage: String, voiceId: String?, language: String, events: @escaping @Sendable (VoiceEvent) -> Void) async throws {
+    lock.withLock { started = (token, prompt, firstMessage, voiceId); self.events = events }
+    events(.connected(conversationId: nil))
+  }
+  func setMuted(_ muted: Bool) async {}
+  func say(context: String, nudge: String) async { lock.withLock { said.append(context) } }
+  func toolResult(id: String, result: String) async { lock.withLock { results[id] = result } }
+  func end() async { lock.withLock { ended = true } }
+  func emit(_ event: VoiceEvent) { lock.withLock { events }?(event) }
+}
+
+final class VoiceCallTests: XCTestCase {
+  func testTheVoiceSpeaksAsTheAgentWithTheMacsWords() {
+    let prompt = VoiceCallText.prompt(name: "Theo", title: "Bookkeeping", description: "Keeps the books.", transcript: [.init(fromPerson: true, text: "What's our runway?")], personName: "Bass", teammates: [("Iris", "Customer support"), ("Theo", "")])
+    XCTAssertTrue(prompt.hasPrefix("You are Theo, Bookkeeping, one of Bass's Simeon agents, on a live phone call with Bass."))
+    XCTAssertTrue(prompt.contains("Your teammates, other agents on Bass's team that you can message, ask and hand work to: Iris (Customer support)."))
+    XCTAssertTrue(prompt.contains("Bass: What's our runway?"))
+    XCTAssertEqual(VoiceCallText.firstMessage(name: "Theo", pick: 0, personName: "Bass"), "Hey Bass, it's Theo. What's up?")
+    XCTAssertEqual(VoiceCallText.firstMessage(name: "Theo", pick: 0.99, personName: nil), "Theo here. What's on your mind?")
+    XCTAssertEqual(VoiceCallText.workingLabel("Please send the agenda to Dana and Marcus."), "Sending the agenda to Dana and Marcus…")
+    XCTAssertEqual(VoiceCallText.workingLabel("Make a slide"), "Making a slide…")
+    XCTAssertEqual(VoiceCallText.workingLabel("The usual"), "Working on it…")
+  }
+
+  func testACallRelaysTheTaskSaysTheAnswerAndLeavesItsRecord() async throws {
+    let backend = DemoBackend(seed: DemoData.seed(), pace: 0.01, call: nil)
+    let voice = FakeVoice()
+    let call = LiveCall(backend: backend, transport: voice, personName: { "Bass" }, pause: { _ in try? await Task.sleep(nanoseconds: 2_000_000) })
+    let states = StateLog()
+    call.observe { states.add($0) }
+    call.start(agentId: "theo", agentName: "Theo", colour: "green")
+    try await Task.sleep(nanoseconds: 100_000_000)
+    XCTAssertEqual(voice.lock.withLock { voice.started?.token }, "demo-token")
+    XCTAssertTrue(voice.lock.withLock { voice.started?.prompt ?? "" }.contains("You are Theo, Bookkeeping"))
+    XCTAssertEqual(states.last??.phase, .live)
+    voice.emit(.tool(name: "send_task", id: "t1", parameters: ["task": "Send the reminders"]))
+    try await Task.sleep(nanoseconds: 150_000_000)
+    XCTAssertEqual(voice.lock.withLock { voice.results["t1"] }, VoiceCallText.sendTaskAccepted)
+    XCTAssertEqual(voice.lock.withLock { voice.said.first }, VoiceCallText.workCameBack(["Done: Send the reminders"]))
+    voice.emit(.line(fromPerson: true, text: "Thanks"))
+    voice.emit(.ended)
+    try await Task.sleep(nanoseconds: 200_000_000)
+    XCTAssertEqual(backend.voiceRecords.last?["recap"], "Bass asked to move the review; it's done.")
+    XCTAssertNil(states.last ?? nil)
+  }
+}
+
+final class StateLog: @unchecked Sendable {
+  private let lock = NSLock()
+  private var all: [CallState?] = []
+  func add(_ state: CallState?) { lock.withLock { all.append(state) } }
+  var last: CallState?? { lock.withLock { all.last } }
 }
 
 @MainActor
@@ -383,5 +557,172 @@ final class StoreTests: XCTestCase {
 
     let group = await store.createGroup(memberIds: ["simeon", "iris"])
     XCTAssertEqual(store.agent(group)?.name, "Simeon, Iris")
+  }
+
+  func testTheCardsButtonsReachTheHost() async throws {
+    let store = AppStore()
+    await store.attach(DemoBackend(seed: DemoData.seed(gallery: true), pace: 0.01, call: nil))
+    await store.open("cards")
+    await store.dismissQuestion("x2", in: "cards")
+    try await Task.sleep(nanoseconds: 50_000_000)
+    guard case .question(_, let card)? = store.rows(for: "cards").first(where: { $0.id == "x2" }) else { return XCTFail() }
+    XCTAssertTrue(card.isDismissed)
+    await store.sendDraft("x5", in: "cards", draft: ["subject": "Your refund is on its way"])
+    try await Task.sleep(nanoseconds: 100_000_000)
+    guard case .draft(_, let draft)? = store.rows(for: "cards").first(where: { $0.id == "x5" }) else { return XCTFail() }
+    XCTAssertEqual(draft.subject, "Your refund is on its way")
+    XCTAssertEqual(draft.status, "Sent")
+    await store.loadApps()
+    XCTAssertTrue(store.isConnected("Gmail"))
+    XCTAssertFalse(store.isConnected("Linear"))
+    _ = await store.connectApp(named: "Linear")
+    XCTAssertTrue(store.isConnected("Linear"))
+    await store.open("launch-squad")
+    XCTAssertTrue(store.rows(for: "launch-squad").contains { $0.id == "unread-divider" })
+  }
+}
+
+final class MarkdownTests: XCTestCase {
+  func testBlocks() {
+    let text = """
+    # Plan
+    Here is **the** list:
+
+    - one
+    - two
+      - nested
+    1. first
+    2. second
+    - [ ] todo
+    - [x] done
+
+    > quoted
+    > more
+
+    ```swift
+    let a = 1
+    ```
+
+    | Name | Price |
+    |:-----|------:|
+    | Tea  | 3     |
+
+    ---
+    """
+    let blocks = Markdown.blocks(text)
+    XCTAssertEqual(blocks.first, .heading(level: 1, text: "Plan"))
+    XCTAssertEqual(blocks[1], .paragraph("Here is **the** list:"))
+    guard case .list(false, _, let items) = blocks[2] else { return XCTFail("\(blocks[2])") }
+    XCTAssertEqual(items.count, 2)
+    XCTAssertEqual(items[1].blocks.count, 2)
+    guard case .list(true, 1, let numbered) = blocks[3] else { return XCTFail("\(blocks[3])") }
+    XCTAssertEqual(numbered.count, 2)
+    guard case .list(false, _, let tasks) = blocks[4] else { return XCTFail("\(blocks[4])") }
+    XCTAssertEqual(tasks.map(\.checked), [false, true])
+    XCTAssertEqual(blocks[5], .quote([.paragraph("quoted\nmore")]))
+    XCTAssertEqual(blocks[6], .code(language: "swift", text: "let a = 1"))
+    XCTAssertEqual(blocks[7], .table(header: ["Name", "Price"], alignments: [.leading, .trailing], rows: [["Tea", "3"]]))
+    XCTAssertEqual(blocks[8], .rule)
+    XCTAssertEqual(blocks.count, 9)
+  }
+
+  func testSoleFence() {
+    XCTAssertEqual(Markdown.soleFence("```simeon-flights\n{\"a\":1}\n```", language: "simeon-flights"), "{\"a\":1}")
+    XCTAssertNil(Markdown.soleFence("Look:\n```simeon-flights\n{}\n```", language: "simeon-flights"))
+  }
+
+  func testMentions() {
+    let agents = [Mentions.AgentName(name: "Theo", id: "theo", colour: "gray"), Mentions.AgentName(name: "Bass", id: "bass", colour: "cyan")]
+    let text = "Theo sent it to Google Calendar and Stripe, not @Stripe or Theodore. Bass"
+    let found = Mentions.find(in: text, agents: agents, personName: "Bass")
+    let names = found.map { (text as NSString).substring(with: NSRange(location: $0.location, length: $0.length)) }
+    XCTAssertEqual(names, ["Theo", "Google Calendar", "Stripe"])
+    guard case .brand(let calendar) = found[1].kind else { return XCTFail() }
+    XCTAssertEqual(calendar.key, "google-calendar")
+    guard case .agent(let id, let colour) = found[0].kind else { return XCTFail() }
+    XCTAssertEqual(id, "theo"); XCTAssertEqual(colour, "gray")
+  }
+  // MARK: The butterfly's motion (the window's mark engine, measured 8 October 2026)
+
+  func testMarkRingAndTurnMatchTheWindow() {
+    // The window's numbers for the butterfly (`Jo.cloud.ring`, `turnAt`), read by running its own code.
+    func near(_ p: Butterfly.Point, _ x: Double, _ y: Double, file: StaticString = #filePath, line: UInt = #line) {
+      XCTAssertEqual(p.x, x, accuracy: 0.05, file: file, line: line); XCTAssertEqual(p.y, y, accuracy: 0.05, file: file, line: line)
+    }
+    XCTAssertEqual(MarkShape.ring.count, 96)
+    near(MarkShape.ring[0], 189.8823, 114.2705)
+    near(MarkShape.ring[24], 114.2705, 156.0613)
+    near(MarkShape.ring[50], 22.2798, 102.1597)
+    near(MarkShape.ring[77], 134.7351, 53.9837)
+    let quarter = MarkShape.turned(.pi / 2)
+    near(quarter[0], 156.1828, 114.2705)
+    near(quarter[24], 114.2705, 172.0632)
+    near(quarter[60], 52.5051, 52.5051)
+    near(MarkShape.turned(1)[0], 162.5328, 114.2705)
+    near(MarkShape.turned(.pi)[60], 32.1354, 32.1354)
+  }
+
+  func testMarkStateFromTheRoster() {
+    var agent = Agent(id: "a", name: "Theo")
+    XCTAssertEqual(agent.markState, .idle)
+    agent.isRunning = true
+    XCTAssertEqual(agent.markState, .working)
+    agent.activityKind = "thinking"
+    XCTAssertEqual(agent.markState, .thinking)
+    agent.activityKind = "tool"; agent.activityTool = "WebSearch"
+    XCTAssertEqual(agent.markState, .searching)
+    agent.activityTool = "SendToAgent"
+    XCTAssertEqual(agent.markState, .sending)
+    agent.activityTool = "Task"
+    XCTAssertEqual(agent.markState, .orbit)
+    agent.activityTool = "GenerateImage"
+    XCTAssertEqual(agent.markState, .loading)
+    agent.activityTool = "browser_click"
+    XCTAssertEqual(agent.markState, .searching)
+    agent.isComposing = true
+    XCTAssertEqual(agent.markState, .thinking)
+    agent.awaitingUserResponse = true
+    XCTAssertEqual(agent.markState, .idle)
+    let parsed = Agent(json: ["id": "b", "name": "B", "isRunning": true, "currentActivity": ["kind": "tool", "tool": "WebFetch"], "awaitingUserResponse": .null])
+    XCTAssertEqual(parsed?.markState, .searching)
+  }
+
+  func testMarkPoseFollowsTheState() {
+    let engine = MarkEngine(random: { 0.5 })
+    var frame = MarkFrame.rest
+    for step in 0...240 { frame = engine.frame(at: Double(step) / 60, state: .idle, sizePoints: 52) }
+    // Idle sways by about a unit and turns a fraction of a degree (turn x 0.17).
+    XCTAssertLessThan(abs(frame.dx), 1.2)
+    XCTAssertLessThan(abs(frame.rotation), 0.5)
+    XCTAssertNil(frame.outline)
+    XCTAssertTrue(engine.isSettled)
+    // Working leans in (tilt 3, roll 1.5 to 4.5) and spins within its first 2.4 s.
+    var spun = false
+    for step in 241...600 {
+      frame = engine.frame(at: Double(step) / 60, state: .working, sizePoints: 52)
+      if frame.outline != nil { spun = true }
+    }
+    XCTAssertTrue(spun)
+    XCTAssertEqual(frame.dx, 3, accuracy: 0.3)
+    XCTAssertFalse(engine.isSettled)
+  }
+
+  func testMarkFoldsIntoThreeDotsWhileThinking() {
+    let engine = MarkEngine(random: { 0.5 })
+    var frame = MarkFrame.rest
+    for step in 0...180 { frame = engine.frame(at: Double(step) / 60, state: .thinking, sizePoints: 30) }
+    XCTAssertEqual(frame.outline, MarkShape.circle)
+    XCTAssertEqual(frame.artOpacity, 0)
+    XCTAssertEqual(frame.dots.count, 2)
+    // The orb is the middle dot: about 22 units across a 114 radius.
+    XCTAssertEqual(frame.scaleX, 22 / Butterfly.centre, accuracy: 0.06)
+    // A 30 pt mark zooms in on its dots (1.5 / 1.131).
+    XCTAssertEqual(frame.zoom, 1.5 / Butterfly.markScale, accuracy: 0.01)
+    // Back to resting: the wings come back.
+    for step in 181...420 { frame = engine.frame(at: Double(step) / 60, state: .idle, sizePoints: 30) }
+    XCTAssertNil(frame.outline)
+    XCTAssertEqual(frame.artOpacity, 1, accuracy: 0.001)
+    XCTAssertTrue(frame.dots.isEmpty)
+    XCTAssertTrue(engine.isSettled)
   }
 }

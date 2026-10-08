@@ -51,7 +51,32 @@ public enum DemoData {
     public let transcripts: [String: [Entry]]
   }
 
-  public static func seed(now: Double = Date().timeIntervalSince1970 * 1000) -> Seed {
+  /**
+   * Every card the Mac draws, in one chat ("Cards"), so the screenshots
+   * show each one against the Mac's own (`--gallery`; never in the founder's
+   * account, where the agents write the cards).
+   */
+  static func gallery(now: Double) -> [JSON] {
+    let flights = "```simeon-flights\n{\"title\":\"Seattle to Los Angeles\",\"subtitle\":\"Fri, Oct 2 · Refundable · 1 adult\",\"offers\":[{\"airline\":\"American Airlines\",\"price\":\"$361.20\",\"priceNote\":\"1 adult · Economy · One way\",\"date\":\"Fri, Oct 2\",\"from\":\"SEA\",\"to\":\"LAX\",\"depart\":\"6:00 AM\",\"arrive\":\"12:18 PM\",\"duration\":\"6h 18m\",\"stops\":\"1 stop · PHX 1h 38m\",\"refundable\":\"Full refund\",\"bags\":\"1 carry-on\",\"legs\":[{\"from\":\"SEA\",\"to\":\"PHX\",\"depart\":\"6:00 AM\",\"arrive\":\"9:10 AM\",\"flight\":\"AA 3792\",\"cabin\":\"Economy\",\"duration\":\"3h 10m\",\"layover\":\"1h 38m in Phoenix\"},{\"from\":\"PHX\",\"to\":\"LAX\",\"depart\":\"10:48 AM\",\"arrive\":\"12:18 PM\",\"flight\":\"AA 2210\",\"cabin\":\"Economy\",\"duration\":\"1h 30m\"}]},{\"airline\":\"Alaska Airlines\",\"price\":\"$402\",\"depart\":\"8:05 AM\",\"arrive\":\"10:44 AM\",\"duration\":\"2h 39m\",\"stops\":\"Nonstop\"}]}\n```"
+    return [
+      you("x0u", 90, "Show me everything you can send me.", now: now),
+      says("x1", 89, "## A heading\n\nSome `inline code`, *italic*, ~~struck~~ and [a link](https://simeonlabs.com). Iris and Theo use **Stripe** and Google Calendar.\n\n- bullet one\n  - nested bullet\n- [ ] a task\n- [x] a done task\n\n> a quote from someone\n\n```js\nconst a = 1;\n```\n\n| Name | Price |\n|:--|--:|\n| Tea | 3 |\n| Coffee | 4 |\n\n---\n\n### Smaller heading\n\nEnd.", now: now),
+      card("x2", 88, ["type": "widget", "widget": ["prompt": "Which plan should I buy?", "helpText": "Both renew monthly.", "options": [["label": "Pro", "description": "$20 a month"], ["label": "Team"]], "allowCustom": true]], now: now),
+      card("x3", 87, ["type": "widget", "widget": ["prompt": "Send the reminder now?", "options": [["label": "Yes"], ["label": "Later"]]]], now: now).setting("respondedValue", "Yes"),
+      card("x4", 86, ["type": "widget", "widget": ["prompt": "Archive the old tickets?", "options": [["label": "Yes"], ["label": "No"]]]], now: now).setting("widgetDismissed", true),
+      card("x5", 85, ["type": "email-draft", "draft": ["from": "bass@simeonlabs.com", "to": ["dana@brightline.com"], "subject": "Your refund", "body": "Hi Dana,\n\nThe $960 refund for September is on its way. It should reach your card in 5 to 10 days.\n\nBest,\nBass"]], now: now),
+      card("x6", 84, ["type": "slack-draft", "draft": ["workspace": "Simeon Labs", "target": "#launch", "body": "Pricing page moves to the fast-follow list."]], now: now),
+      says("x7", 83, flights, now: now),
+      card("x8", 82, ["type": "connector", "variant": "connect", "connector": "Linear", "reason": "To read the launch tickets."], now: now),
+      card("x9", 81, ["type": "auto-review-approval", "approval": ["requestId": "r1", "surface": "shell", "summary": "Delete 3 files in ~/Downloads", "reason": "Cleaning up the exports you asked for.", "status": "pending", "command": "rm ~/Downloads/export-*.csv"]], now: now),
+      card("x10", 80, ["type": "secret-request", "secretRequest": ["label": "Stripe API key", "description": "So I can read last month's payouts."]], now: now),
+      card("x11", 79, ["type": "text", "content": "Sign in to the bank's site on the computer, then press I'm done."], now: now).setting("boxRequestId", "box-1"),
+      card("x12", 78, ["type": "cloud-agent", "bcId": "bc-1"], now: now),
+      file("x13", 77, "exports/Payouts September.pdf", now: now),
+    ]
+  }
+
+  public static func seed(now: Double = Date().timeIntervalSince1970 * 1000, gallery withGallery: Bool = false) -> Seed {
     let scout = Party(id: "scout", name: "Scout"), iris = Party(id: "iris", name: "Iris")
     let rows: [(String, String, String, String, String, Double)] = [
       ("simeon", "Simeon", "Chief of Staff", "Runs your day and hands work to the rest of the team.", "blue", 0),
@@ -113,11 +138,13 @@ public enum DemoData {
       you("g1u", 45, "Do it.", now: now),
       byAuthor("simeon", says("g1m", 40, "Done. Moved in **Linear** and posted in #launch on **Slack**.", now: now)),
     ]
+    if withGallery { transcripts["cards"] = gallery(now: now) }
     var entries: [String: [Entry]] = [:]
     for (id, list) in transcripts { entries[id] = list.compactMap(Entry.init) }
     var agents = rows.map { row in
       Agent(id: row.0, name: row.1, title: row.2, description: row.3, colour: row.4, lastActivityAt: now - row.5 * 60_000)
     }
+    if withGallery { agents.append(Agent(id: "cards", name: "Cards", title: "Every card", description: "Every card the Mac draws.", colour: "magenta", lastActivityAt: now - 77 * 60_000)) }
     agents.append(Agent(id: "launch-squad", name: "Launch squad", description: "Thursday's launch, with Simeon, Scout and Iris.", colour: "blue", isGroup: true, memberIds: ["simeon", "scout", "iris"], lastActivityAt: now - 40 * 60_000, hasUnread: true, unreadCount: 1))
     for index in agents.indices {
       let list = entries[agents[index].id] ?? []
@@ -173,9 +200,12 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
 
   public func transcript(_ agentId: String) async throws -> [Entry] { lock.withLock { transcripts[agentId] ?? [] } }
 
-  public func send(_ agentId: String, text: String) async throws {
+  public func send(_ agentId: String, text: String, attachments: [AttachmentRef]) async throws {
     let now = Date().timeIntervalSince1970 * 1000
-    append(agentId, DemoData.you("u-\(UUID().uuidString.prefix(8))", 0, text, now: now))
+    for file in attachments {
+      append(agentId, ["kind": "user-attachment", "id": .string("ua-\(UUID().uuidString.prefix(8))"), "file_path": .string(file.path), "file_name": .string(file.name), "timestampMs": .number(now)])
+    }
+    if !text.isEmpty { append(agentId, DemoData.you("u-\(UUID().uuidString.prefix(8))", 0, text, now: now)) }
   }
 
   public func markRead(_ agentId: String) async { touch(agentId) { $0.hasUnread = false; $0.unreadCount = 0 } }
@@ -240,8 +270,200 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
     touch(agentId) { $0.name = name; $0.title = title; $0.description = description }
   }
 
+  private var demoRoutines: [String: [JSON]] = ["simeon": [["id": "demo-monday-launch-check", "name": "Monday launch check", "prompt": "Check where Thursday's launch stands and tell Bass what needs him.", "schedule": "0 9 * * 1", "triggerDescription": "Every Monday at 9:00 AM", "isEnabled": true]]]
+
   public func routines(_ agentId: String) async throws -> [JSON] {
-    agentId == "simeon" ? [["id": "demo-monday-launch-check", "name": "Monday launch check", "schedule": "Every Monday at 9:00 AM"]] : []
+    lock.withLock { demoRoutines[agentId] ?? [] }
+  }
+
+  private func routineCommand(_ method: String, _ args: JSON) {
+    let agentId = args["id"]?.text ?? ""
+    lock.withLock {
+      var list = demoRoutines[agentId] ?? []
+      switch method {
+      case "createAgentAutomation":
+        if let spec = args["spec"] { list.append(["id": .string("r-\(UUID().uuidString.prefix(6).lowercased())"), "name": spec["name"] ?? "Routine", "prompt": spec["prompt"] ?? "", "schedule": spec["trigger"]?["schedule"] ?? "", "isEnabled": spec["isEnabled"] ?? true]) }
+      case "updateAgentAutomation":
+        if let index = list.firstIndex(where: { $0["id"] == args["automationId"] }), let spec = args["spec"] {
+          list[index] = ["id": list[index]["id"] ?? "", "name": spec["name"] ?? "Routine", "prompt": spec["prompt"] ?? "", "schedule": spec["trigger"]?["schedule"] ?? "", "isEnabled": spec["isEnabled"] ?? true]
+        }
+      case "setAgentAutomationEnabled":
+        if let index = list.firstIndex(where: { $0["id"] == args["automationId"] }) { list[index] = list[index].setting("isEnabled", args["isEnabled"] ?? true) }
+      case "deleteAgentAutomation":
+        list.removeAll { $0["id"] == args["automationId"] }
+      default: break
+      }
+      demoRoutines[agentId] = list
+    }
+  }
+
+  /** The gateway's other commands, answered the way the box would, so every card's button can be tried in the demo. */
+  public func command(_ method: String, _ args: JSON) async throws -> JSON {
+    let agentId = args["agentId"]?.text ?? args["id"]?.text ?? ""
+    let entryId = args["entryId"]?.text ?? ""
+    switch method {
+    case "dismissWidget":
+      stamp(agentId, entryId) { $0.setting("widgetDismissed", true) }
+    case "sendDraft":
+      stamp(agentId, entryId) { entry in
+        var message = entry["message"] ?? [:]
+        if let draft = args["draft"], let old = message["draft"]?.object, let new = draft.object { message = message.setting("draft", .object(old.merging(new) { _, n in n })) }
+        return entry.setting("message", message).setting("draftSendState", "sending")
+      }
+      later(1.2) { [weak self] in self?.stamp(agentId, entryId) { $0.setting("draftSendState", "sent") } }
+    case "discardDraft":
+      stamp(agentId, entryId) { $0.setting("widgetDismissed", true) }
+    case "reactToMessage":
+      let emoji = args["emoji"]?.text ?? ""
+      stamp(agentId, entryId) { entry in
+        var list = entry["reactions"]?.array ?? []
+        if let index = list.firstIndex(where: { $0["emoji"]?.text == emoji && $0["by"]?.text == "user" }) { list.remove(at: index) } else { list.append(["emoji": .string(emoji), "by": "user"]) }
+        return entry.setting("reactions", .array(list))
+      }
+    case "resolveAutoReviewApproval":
+      let status = args["resolution"]?.text == "denied" ? "denied" : "approved"
+      stamp(agentId, entryId) { entry in
+        let message = entry["message"] ?? [:]
+        return entry.setting("message", message.setting("approval", (message["approval"] ?? [:]).setting("status", .string(status))))
+      }
+    case "submitSecret":
+      stamp(agentId, entryId) { $0.setting("secretProvided", true) }
+    case "handBackForeverBox":
+      lock.withLock {
+        for (agent, list) in transcripts {
+          for (index, entry) in list.enumerated() where entry["boxRequestId"] != nil && entry["boxResolution"] == nil {
+            if let updated = Entry(entry.raw.setting("boxResolution", args["trigger"]?.object != nil ? "dismissed" : "handed_back")) { transcripts[agent]?[index] = updated; pendingEmits.append((agent, updated)) }
+          }
+        }
+      }
+      flush()
+    case "desktopMcp":
+      return demoApps(args["action"]?.text ?? "", args["args"]?.array ?? [])
+    case "getHostSettings":
+      return lock.withLock { hostSettings }
+    case "setHostSettings":
+      lock.withLock { if let fields = args.object { for (key, value) in fields { hostSettings = hostSettings.setting(key, value) } } }
+      return lock.withLock { hostSettings }
+    case "setAgentNotifyOnUpdates":
+      touch(args["id"]?.text ?? "") { $0.notifyOnUpdates = args["isEnabled"]?.bool ?? true }
+    case "getAgentAutomations":
+      return .array(try await routines(agentId))
+    case "createAgentAutomation", "updateAgentAutomation", "setAgentAutomationEnabled", "deleteAgentAutomation":
+      routineCommand(method, args)
+      return .array(try await routines(args["id"]?.text ?? ""))
+    case "updateAgent":
+      let profile = args["profile"] ?? [:]
+      touch(args["id"]?.text ?? "") { agent in
+        if let name = profile["name"]?.text { agent.name = name }
+        agent.title = profile["title"]?.string ?? agent.title
+        agent.description = profile["description"]?.string ?? agent.description
+        if let colour = profile["avatarColor"]?.text { agent.colour = colour }
+      }
+    case "setGroupMembers":
+      touch(args["id"]?.text ?? "") { $0.memberIds = args["memberAgentIds"]?.array?.compactMap(\.text) ?? $0.memberIds }
+    case "voiceCall":
+      return lock.withLock { demoVoice(args) }
+    case "getAgentTranscriptTail":
+      let list = lock.withLock { transcripts[args["id"]?.text ?? ""] ?? [] }
+      return ["entries": .array(list.suffix(args["limit"]?.int ?? 30).map(\.raw))]
+    case "appendSendMessage":
+      let now = Date().timeIntervalSince1970 * 1000
+      append(agentId, ["kind": "send-message", "id": .string("c-\(UUID().uuidString.prefix(8))"), "message": args["message"] ?? [:], "timestampMs": .number(now)])
+    case "uploadAttachment":
+      return ["path": .string("/home/box/attachments/\(args["filename"]?.text ?? "file")")]
+    case "ensureForeverBox", "getForeverBoxStatus":
+      return ["status": "starting", "vncUrl": nil]
+    default:
+      break
+    }
+    return [:]
+  }
+
+  public func screen(_ agentId: String) async throws -> ScreenState { ScreenState(socket: nil, state: "demo") }
+
+  public func server(_ path: String, method: String?, body: JSON?) async throws -> JSON {
+    switch path {
+    case "user/quota":
+      let end = ISO8601DateFormatter().string(from: Date().addingTimeInterval(9 * 86_400))
+      return ["planName": "Pro", "subscriptionStatus": "active", "creditsLimit": 2000, "creditsUsed": 684, "creditsRemaining": 1316, "periodEnd": .string(end), "tier": "pro", "upgradeUrl": "https://simeonlabs.com/pricing"]
+    case "proxy/v1/voice/calls":
+      return ["token": "demo-token", "conversation_id": "conv_demo", "agent_id": "agent_demo"]
+    case let call where call.hasPrefix("proxy/v1/voice/calls/") && call.hasSuffix("/end"):
+      return ["seconds": body?["seconds"] ?? 0, "summary": "Bass asked to move the review; it's done.", "transcript": [["speaker": "agent", "text": "Hey Bass."], ["speaker": "user", "text": "Move the review to Friday."]]]
+    case "billing/portal":
+      return ["portalUrl": "https://simeonlabs.com/billing"]
+    default:
+      throw GatewayError(message: "The demo has no \(path).", refused: true)
+    }
+  }
+
+  /** The demo's side of `voice:<call>`: a request is answered on the outbox a moment later. */
+  private var voiceOutbox: [JSON] = []
+  public private(set) var voiceRecords: [JSON] = []
+
+  private func demoVoice(_ args: JSON) -> JSON {
+    switch args["kind"]?.string {
+    case "request":
+      voiceOutbox.append(["seq": .number(Double(voiceOutbox.count + 1)), "text": .string("Done: \(args["request"]?.text ?? "it")")])
+      return ["ok": true]
+    case "outbox":
+      let after = args["after"]?.double ?? 0
+      return ["messages": .array(voiceOutbox.filter { ($0["seq"]?.double ?? 0) > after })]
+    case "ended":
+      voiceRecords.append(args["record"] ?? [:])
+      return ["exchange": .number(Double(args["record"]?["transcript"]?.array?.count ?? 0))]
+    default:
+      return ["ok": true]
+    }
+  }
+
+  private var hostSettings: JSON = ["autoReviewEnabled": true, "autoReviewInstructions": "", "userTimeZone": .string(TimeZone.current.identifier), "userTimeZoneOverride": nil]
+  private var connected: Set<String> = ["gmail", "notion"]
+  private var pendingEmits: [(String, Entry)] = []
+
+  private func flush() {
+    let emits: [(String, Entry)] = lock.withLock { let all = pendingEmits; pendingEmits = []; return all }
+    for (agent, entry) in emits { emit(.transcript(.upsert(agentId: agent, entry: entry))) }
+  }
+
+  /** Changes one entry the way the host does, and says so. */
+  private func stamp(_ agentId: String, _ entryId: String, _ change: (JSON) -> JSON) {
+    let updated: Entry? = lock.withLock {
+      guard let index = transcripts[agentId]?.firstIndex(where: { $0.id == entryId }), let entry = transcripts[agentId]?[index], let next = Entry(change(entry.raw)) else { return nil }
+      transcripts[agentId]?[index] = next
+      return next
+    }
+    if let updated { emit(.transcript(.upsert(agentId: agentId, entry: updated))) }
+  }
+
+  /** The demo's apps: a small catalog, two connected; Add connects at once (there is no vendor to sign in to). */
+  private func demoApps(_ action: String, _ args: [JSON]) -> JSON {
+    let catalog: [(String, String, String)] = [
+      ("gmail", "Gmail", "Search, read, draft, and send email."), ("google-calendar", "Google Calendar", "See and plan your days."),
+      ("google-drive", "Google Drive", "Find and read your files."), ("notion", "Notion", "Search, read, and write pages."),
+      ("linear", "Linear", "Read and update issues."), ("slack", "Slack", "Read channels and post messages."),
+      ("stripe", "Stripe", "Payments, customers and invoices."), ("hubspot", "HubSpot", "Contacts, deals and companies."),
+    ]
+    let servers = { () -> JSON in
+      .object(["servers": .array(self.connected.sorted().compactMap { id in
+        catalog.first { $0.0 == id }.map { ["id": .string("demo-\($0.0)"), "name": .string($0.1), "pluginId": .string($0.0), "accountKey": "default", "status": "connected", "toolCount": 12, "isTeamServer": false, "transport": "http", "customInstructions": ""] }
+      })])
+    }
+    switch action {
+    case "getCatalog":
+      return .array(catalog.map { ["id": .string($0.0), "name": .string($0.1), "displayName": .string($0.1), "description": .string($0.2)] })
+    case "installEntry":
+      if let id = args.first?["entryId"]?.text { lock.withLock { _ = connected.insert(id) } }
+      emit(.appsChanged)
+      return lock.withLock { servers() }
+    case "removeServer":
+      if let id = args.first?.text { lock.withLock { _ = connected.remove(id.replacingOccurrences(of: "demo-", with: "")) } }
+      return ["removed": true, "state": lock.withLock { servers() }]
+    case "vendorServerIdForPlugin":
+      return nil
+    default:
+      return lock.withLock { servers() }
+    }
   }
 
   public func events() -> AsyncStream<BackendEvent> {
