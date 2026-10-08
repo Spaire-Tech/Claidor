@@ -69,8 +69,8 @@ scripts/screens.sh build/Build/Products/Debug-iphonesimulator/Simeon.app screens
 open screens
 
 say "Opening the app in the Simulator, on the demo"
-# Xcode keeps the Simulator inside itself; LaunchServices does not always know it by name.
-open "$(xcode-select -p)/Applications/Simulator.app" || open -a Simulator || true
+# By its bundle id: where Xcode keeps the Simulator app has changed between versions.
+open -b com.apple.iphonesimulator || echo "Open the Simulator from Xcode: Xcode menu, Open Developer Tool, Simulator."
 xcrun simctl ui booted appearance light || true
 xcrun simctl launch booted com.simeonlabs.simeon.ios --demo >/dev/null
 echo "Done. The screenshots are in ios/screens (the Finder window that opened): drag them into the chat."
