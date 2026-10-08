@@ -180,21 +180,74 @@ enum MarkDrawing {
     }
   }
 
-  /** A mention's butterfly as an image, for drawing inside a line of text; one per palette, size and theme. */
+  /**
+   * A mention's butterfly as an image, for drawing inside a line of text; one
+   * per palette, size and theme. It is asked for while a message is being
+   * drawn, so it is drawn here with Core Graphics: it was a whole second
+   * SwiftUI render (`ImageRenderer` of a `Canvas`) run inside the chat's own.
+   */
   @MainActor static func mentionImage(_ palette: AgentPalette, height: CGFloat, dark: Bool) -> UIImage {
     let key = "\(palette.id)|\(Int(height * 10))|\(dark)"
     if let made = mentionImages[key] { return made }
     let size = CGSize(width: height * mentionView.width / mentionView.height, height: height)
-    let renderer = ImageRenderer(content: Canvas { context, canvasSize in
-      draw(&context, in: CGRect(origin: .zero, size: canvasSize), palette: palette, dark: dark, style: .mention)
-    }.frame(width: size.width, height: size.height))
-    renderer.scale = UITraitCollection.current.displayScale
-    let image = renderer.uiImage ?? UIImage()
+    let image = UIGraphicsImageRenderer(size: size, format: .preferred()).image { context in
+      drawResting(context.cgContext, in: CGRect(origin: .zero, size: size), palette: palette, dark: dark, style: .mention)
+    }
     mentionImages[key] = image
     return image
   }
 
   @MainActor private static var mentionImages: [String: UIImage] = [:]
+
+  /** `draw` at rest, in Core Graphics, for a butterfly drawn into an image rather than a view: the same paths, gradient and strokes. */
+  static func drawResting(_ cg: CGContext, in rect: CGRect, palette: AgentPalette, dark: Bool, style: MarkStyle) {
+    cg.saveGState()
+    defer { cg.restoreGState() }
+    cg.concatenate(transform(in: rect, style: style))
+    let wings = (style == .mention ? ButterflyPaths.outline : ButterflyPaths.wings).cgPath
+    let box = wings.boundingBoxOfPath
+    let colour = { (rgb: RGB, alpha: Double) in CGColor(srgbRed: rgb.r, green: rgb.g, blue: rgb.b, alpha: rgb.a * alpha) }
+    let start: CGPoint, end: CGPoint
+    if style == .still {
+      start = CGPoint(x: box.midX, y: box.minY); end = CGPoint(x: box.midX, y: box.maxY)
+    } else {
+      let a = 0.15 / (box.width * 1.0225), b = 1 / (box.height * 1.0225), n = a * a + b * b
+      start = CGPoint(x: box.minX, y: box.minY); end = CGPoint(x: box.minX + a / n, y: box.minY + b / n)
+    }
+    if let space = CGColorSpace(name: CGColorSpace.sRGB),
+       let ink = CGGradient(colorsSpace: space, colors: [colour(palette.top, 1), colour(palette.mid, 1), colour(palette.bottom, 1)] as CFArray, locations: [0, 0.55, 1]) {
+      cg.saveGState()
+      cg.addPath(wings)
+      cg.clip()
+      cg.drawLinearGradient(ink, start: start, end: end, options: [.drawsBeforeStartLocation, .drawsAfterEndLocation])
+      cg.restoreGState()
+    }
+    func stroke(_ path: CGPath, _ ink: CGColor, width: CGFloat, cap: CGLineCap = .butt, join: CGLineJoin = .miter) {
+      cg.addPath(path)
+      cg.setStrokeColor(ink)
+      cg.setLineWidth(width)
+      cg.setLineCap(cap)
+      cg.setLineJoin(join)
+      cg.strokePath()
+    }
+    func fill(_ path: CGPath, _ ink: CGColor) {
+      cg.addPath(path)
+      cg.setFillColor(ink)
+      cg.fillPath()
+    }
+    // The rim; inside the wings the veins and the border band; the antennae, their knobs and the body.
+    stroke(wings, colour(palette.edge, 1), width: 2.2, join: .round)
+    cg.saveGState()
+    cg.addPath(wings)
+    cg.clip()
+    stroke(ButterflyPaths.veins.cgPath, colour(palette.edge, 0.22), width: 0.9, cap: .round)
+    stroke((style == .still ? ButterflyPaths.wings : ButterflyPaths.outline).cgPath, colour(palette.edge, 0.22), width: 22, join: .round)
+    cg.restoreGState()
+    let feelers = colour(style == .still || !dark ? palette.body : palette.feelersOnDark, 1)
+    stroke(ButterflyPaths.antennae.cgPath, feelers, width: 1.8, cap: .round)
+    fill(ButterflyPaths.knobs.cgPath, feelers)
+    fill(ButterflyPaths.body.cgPath, colour(palette.body, 1))
+  }
 }
 
 /**
@@ -242,19 +295,19 @@ struct AgentAvatar: View {
     }
   }
 
-  /** An agent's own picture, decoded once: a row asks again on every redraw, and a picture is tens of kilobytes of text. */
+  /** An agent's own picture, decoded once: a row asks again on every redraw, and a picture is tens of kilobytes of text. One that cannot be decoded is remembered too, or it was decoded again on every redraw. */
   @MainActor static func image(_ dataURL: String?) -> UIImage? {
     guard let dataURL, dataURL.hasPrefix("data:image") else { return nil }
     let bytes = dataURL.utf8
     let key = "\(bytes.count)|" + String(decoding: bytes.suffix(48), as: UTF8.self)
-    if let decoded = decoded[key] { return decoded }
-    guard let comma = dataURL.firstIndex(of: ","), let image = Data(base64Encoded: String(dataURL[dataURL.index(after: comma)...])).flatMap(UIImage.init(data:)) else { return nil }
+    if let known = decoded[key] { return known }
+    let image = dataURL.firstIndex(of: ",").flatMap { comma in Data(base64Encoded: String(dataURL[dataURL.index(after: comma)...])) }.flatMap(UIImage.init(data:))
     if decoded.count > 200 { decoded.removeAll() }
-    decoded[key] = image
+    decoded[key] = .some(image)
     return image
   }
 
-  @MainActor private static var decoded: [String: UIImage] = [:]
+  @MainActor private static var decoded: [String: UIImage?] = [:]
 }
 
 /**

@@ -15,7 +15,6 @@ struct LiveButterfly: View {
   var stillWhenIdle = false
   @State private var engine = MarkEngine()
   @State private var resting: Bool
-  @State private var side: CGFloat = 28
   @Environment(\.colorScheme) private var scheme
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -29,15 +28,13 @@ struct LiveButterfly: View {
   var body: some View {
     let moving = !reduceMotion && !resting
     // At most 60 frames a second, and a butterfly at rest at 30: on a 120 Hz screen each one drew twice as often as the eye needs.
+    // Drawn on the main thread, as before 8 October 19:28: drawn off it (`rendersAsynchronously`) from then, chats began to freeze for good as they opened.
     TimelineView(.animation(minimumInterval: state == .idle ? 1.0 / 30 : 1.0 / 60, paused: !moving)) { context in
-      // The pose is worked out here, on the main thread; the drawing, the heavy part, is done off it.
-      let frame = moving ? engine.frame(at: context.date.timeIntervalSinceReferenceDate, state: state, sizePoints: side) : .rest
-      let dark = scheme == .dark
-      Canvas(rendersAsynchronously: true) { graphics, size in
-        MarkDrawing.draw(&graphics, in: CGRect(origin: .zero, size: size), palette: palette, dark: dark, style: .live, frame: frame)
+      Canvas { graphics, size in
+        let frame = moving ? engine.frame(at: context.date.timeIntervalSinceReferenceDate, state: state, sizePoints: size.width) : .rest
+        MarkDrawing.draw(&graphics, in: CGRect(origin: .zero, size: size), palette: palette, dark: scheme == .dark, style: .live, frame: frame)
       }
     }
-    .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { side = $0 }
     .task(id: state) {
       guard stillWhenIdle else { return }
       if state != .idle { resting = false; return }

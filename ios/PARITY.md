@@ -307,7 +307,7 @@ complaint over all of them: the Mac's logic was left out.
 |---|---|---|
 | "the buttons are not responsive at all … sometimes it works other time i have to double click" | Most round buttons took a tap only on the icon itself. The back disc (46 pt) answered on its 19 pt chevron, and the call button (26 pt) on its 11 pt glyph. Several buttons showed nothing until the box answered, so a second tap undid the first: tool switches, reactions, Send on a draft, the approvals. A grey button looked the same pressed, disabled or not. | Every button takes the tap on its whole shape. Buttons that call the box wait and show it. Reactions and switches hold until the box answers. The grey button dims when pressed and fades when disabled. The strip under the chat's header lets taps through to the messages. |
 | "the flight cards dont show the airlines logo" | Duffel's logos are SVG, which iOS can't draw by itself. | Fixed earlier the same day: drawn once, kept. |
-| "the app is slow … i click to add a connector … then wait" | Cancel on a sign-in sheet held every Add button for about 20 seconds. Add read the apps list again first. A sign-in the box couldn't start said nothing. Several reads of the apps list raced, and an old answer turned Added back into Add. Every butterfly drew 120 times a second on the main thread. A streamed answer laid the whole chat out again every 90 ms. A failed call that had already reached the box was sent a second time. | Cancel frees the buttons after two checks. Add doesn't re-read the list (the box's events keep it current). Each sign-in that can't start says why. The apps list is read once at a time. Butterflies draw at most 60 times a second (30 at rest), off the main thread. A streamed answer redraws only its own row. A call is sent again only when it surely never arrived. Replies are parsed by Foundation's parser. |
+| "the app is slow … i click to add a connector … then wait" | Cancel on a sign-in sheet held every Add button for about 20 seconds. Add read the apps list again first. A sign-in the box couldn't start said nothing. Several reads of the apps list raced, and an old answer turned Added back into Add. Every butterfly drew 120 times a second on the main thread. A streamed answer laid the whole chat out again every 90 ms. A failed call that had already reached the box was sent a second time. | Cancel frees the buttons after two checks. Add doesn't re-read the list (the box's events keep it current). Each sign-in that can't start says why. The apps list is read once at a time. Butterflies draw at most 60 times a second (30 at rest). A streamed answer redraws only its own row. A call is sent again only when it surely never arrived. Replies are parsed by Foundation's parser. |
 | "the ai i asked a question, i dont see the answer" | The host streams lines only for the chat it has open. | Fixed earlier the same day: opening a chat opens it on the host, and a missed line fetches the chat again. |
 | "a link message appears [like this](https://…)" | The list showed the last line's raw Markdown. | Fixed earlier the same day: the Mac's own preview line. |
 | "no pin, no holding the chat and having the option to archive, delete etc." | Not built. | The Mac's row menu, pins, hidden agents, Delete with its question, the status dots, and swipes (above). The Mac has no Archive: "Hide from sidebar" is its way to put a chat away, and it's on the menu. |
@@ -323,9 +323,25 @@ composer's shadows are cast by their shape and not their text, an empty chat sho
 come, and a hang watch writes to Xcode's console what the app was doing
 whenever the screen stands still.
 
+Then Ava's chat froze for good as it opened ("the screen has stood still 90 s,
+while drawing d36b4b67…, 12 of 12 rows"), and he had opened it before. The
+code's history puts it in the 19:28 change (eb6c9826). From 11:31 a name
+in a message (Simeon, Leo, Ava in Ava's chat) had its butterfly made by a
+second SwiftUI render (`ImageRenderer` of a `Canvas`), run inside the chat's
+own render on the main thread. Chats still opened. At 19:28 the moving
+butterflies were also drawn by SwiftUI, off the main thread
+(`Canvas(rendersAsynchronously:)`). The freezes were reported at 20:40.
+Ava's messages go through the app's own code in a few milliseconds
+(`testAvasChatIsQuickInTheCore`). Now the names' butterflies are drawn with
+Core Graphics, no SwiftUI render inside another, and the moving butterflies
+are drawn on the main thread again, as they were while chats opened. Also:
+a quote's jump no longer redraws every bubble each time the chat's state
+moves, and an avatar picture that can't be decoded isn't decoded again on
+every redraw.
+
 Checked on Linux: the list's commands, the pins shared through the host's
 settings, sending and Resend, older pages, and the streamed row, each with
-a test (53 tests pass). Not checked: none of the screens has run on an
+a test (56 tests pass). Not checked: none of the screens has run on an
 iPhone yet; the taps, the motion and the pills need his hands on a device.
 
 ## Suggested order (the founder decides)

@@ -60,12 +60,13 @@ struct ChatView: View {
   }
 }
 
-/** What a row can open (the agent's page, its computer), given once so the rows never need drawing again for it. */
+/** What a row can do (open the agent's page or its computer, go to the message a quote answers), given once so the rows never need drawing again for it. */
 @MainActor
 @Observable
 final class ChatActions {
   @ObservationIgnored var openPage: () -> Void = {}
   @ObservationIgnored var openComputer: () -> Void = {}
+  @ObservationIgnored var jump: (String) -> Void = { _ in }
 }
 
 /** The message the person is answering (the Mac's Reply), shared by the bubbles' menu and the composer. */
@@ -93,16 +94,6 @@ final class JumpGlow {
   var id: String?
 }
 
-/** Scrolls the conversation to a message: a reply's quote goes to what it answers. */
-private struct JumpKey: EnvironmentKey { static let defaultValue: (String) -> Void = { _ in } }
-
-extension EnvironmentValues {
-  var jumpToMessage: (String) -> Void {
-    get { self[JumpKey.self] }
-    set { self[JumpKey.self] = newValue }
-  }
-}
-
 /**
  * The conversation itself: redrawn when its rows change, and only then.
  * As the Mac's: a new line comes in with a short rise; older lines load as
@@ -113,6 +104,7 @@ extension EnvironmentValues {
 struct ChatMessages: View {
   let agentId: String
   @Environment(AppStore.self) private var store
+  @Environment(ChatActions.self) private var actions: ChatActions?
   @State private var width: CGFloat = 361
   @State private var peek = TimePeek()
   @State private var glow = JumpGlow()
@@ -164,16 +156,21 @@ struct ChatMessages: View {
         .environment(\.chatWidth, width)
         .environment(peek)
         .environment(glow)
-        .environment(\.jumpToMessage) { id in
+      }
+      .modifier(PeekDrag(peek: peek))
+      // A quote's tap goes to what it answers. Given to the rows once: handed down as a new closure on every
+      // redraw of the chat, it made every bubble draw again each time the chat's own state moved.
+      .onAppear {
+        let lit = glow
+        actions?.jump = { id in
           reveal(id) { withAnimation(.snappy) { reader.scrollTo(id, anchor: .center) } }
-          glow.id = id
+          lit.id = id
           Task { @MainActor in
             try? await Task.sleep(nanoseconds: 1_400_000_000)
-            if glow.id == id { withAnimation(.easeOut(duration: 0.5)) { glow.id = nil } }
+            if lit.id == id { withAnimation(.easeOut(duration: 0.5)) { lit.id = nil } }
           }
         }
       }
-      .modifier(PeekDrag(peek: peek))
       .onScrollGeometryChange(for: Bool.self) { geometry in
         geometry.contentSize.height - geometry.visibleRect.maxY < 120
       } action: { _, bottom in
@@ -611,7 +608,7 @@ struct BubbleView: View {
   @Environment(AppStore.self) private var store
   @Environment(\.colorScheme) private var scheme
   @Environment(\.chatWidth) private var width
-  @Environment(\.jumpToMessage) private var jump
+  @Environment(ChatActions.self) private var actions: ChatActions?
   @Environment(ReplyDraft.self) private var reply: ReplyDraft?
   @State private var reacting: Set<String> = []
   /** Show more on a long message (the Mac folds one past 664 pt). */
@@ -638,7 +635,7 @@ struct BubbleView: View {
         }
         if let quote = bubble.quote, let target = bubble.replyTo {
           // What this answers (`pCn`): one line over the bubble; a tap goes to it.
-          Button { jump(target) } label: {
+          Button { actions?.jump(target) } label: {
             HStack(spacing: 4) {
               Image(systemName: "arrowshape.turn.up.right").font(.system(size: 10))
               Text(quote).lineLimit(1)

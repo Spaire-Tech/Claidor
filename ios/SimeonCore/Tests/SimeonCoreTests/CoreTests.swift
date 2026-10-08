@@ -676,6 +676,23 @@ final class MarkdownTests: XCTestCase {
     guard case .agent(let id, let colour) = found[0].kind else { return XCTFail() }
     XCTAssertEqual(id, "theo"); XCTAssertEqual(colour, "gray")
   }
+
+  func testAvasChatIsQuickInTheCore() {
+    // The chat that froze on the founder's iPhone (8 October 2026), as he pasted it: the core's part is a few milliseconds.
+    let lines = [
+      "Hi Bass, I\u{2019}m Ava. I\u{2019}ll find where customer feedback actually lives, then pull out the strongest themes with source links and flag what\u{2019}s only a one-off comment.",
+      "I don\u{2019}t have Simeon customer feedback yet. The connected Gmail account is for Prime Seattle, and I found no Simeon-related messages or feedback labels there, so I won\u{2019}t treat that mail as product evidence.",
+      "My avatar is now a violet customer-voice icon, distinct from the others. I\u{2019}m still waiting on the location of Simeon\u{2019}s feedback before I can give Leo or you evidence-backed themes.",
+    ]
+    let agents = [Mentions.AgentName(name: "Simeon", id: "simeon", colour: "blue"), Mentions.AgentName(name: "Ava", id: "ava", colour: "violet"), Mentions.AgentName(name: "Leo", id: "leo", colour: "red")]
+    let start = Date()
+    let found = lines.map { line in
+      XCTAssertEqual(Markdown.blocks(line).count, 1)
+      return Mentions.find(in: line, agents: agents, personName: "Bass Fall").map { (line as NSString).substring(with: NSRange(location: $0.location, length: $0.length)) }
+    }
+    XCTAssertEqual(found, [["Ava"], ["Simeon", "Gmail"], ["Simeon", "Leo"]])
+    XCTAssertLessThan(Date().timeIntervalSince(start), 0.1)
+  }
   // MARK: The butterfly's motion (the window's mark engine, measured 8 October 2026)
 
   func testMarkRingAndTurnMatchTheWindow() {
