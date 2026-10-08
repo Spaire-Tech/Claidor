@@ -117,6 +117,48 @@ export function buildAgentInboundWakePrompt(args: {
   return lines.join("\n");
 }
 
+/**
+ * One wake for several agent messages that arrived together (8 October
+ * 2026). Each used to wake its agent for a turn of its own on the whole
+ * conversation: in the founder's staffing log the Chief of Staff, at 161k
+ * tokens a call, took a separate turn for each teammate's reply.
+ */
+export function buildAgentInboundBatchWakePrompt(messages: readonly {
+  readonly from: AgentAddress;
+  readonly text: string;
+  readonly images?: readonly { readonly url: string; readonly alt?: string }[];
+}[]): string {
+  const senders = [...new Map(messages.map((message) => [message.from.id, message.from])).values()];
+  const lines = [
+    `${AGENT_INBOUND_WAKE_CUE} ${messages.length} messages just arrived from your user's other agents: ${senders.map((from) => `${from.name} (id: ${from.id})`).join(", ")}.`,
+    "These are other assistants reaching out — not the user typing here. They arrived asynchronously, and your user can already see them in this chat.",
+  ];
+  for (const message of messages) {
+    lines.push("", `${message.from.name}: ${message.text}`);
+    const images = message.images ?? [];
+    if (images.length > 0) {
+      lines.push(`${message.from.name} attached ${images.length === 1 ? "an image" : `${images.length} images`} to this message:`);
+      for (const image of images) {
+        const alt = image.alt != null && image.alt.trim().length > 0
+          ? ` — ${clampLine(image.alt, 200)}`
+          : "";
+        lines.push(`- ${image.url}${alt}`);
+      }
+    }
+  }
+  if (messages.some((message) => (message.images ?? []).length > 0)) {
+    lines.push(
+      "",
+      "Local image files are shown to you alongside these messages. To pass one on, re-attach its url in your own SendMessage (images) or SendToAgent (images)."
+    );
+  }
+  lines.push(
+    "",
+    `Read them together and handle them in this one turn. Where one needs a reply or an action, handle it: reply to its sender with ${SAND_SEND_TO_AGENT_TOOL_NAME} (their id above), which reaches them on a later turn — not a live back-and-forth — and use SendMessage to tell your user only when you have a real result to share. Where one is just an FYI with nothing for you to do, it is fine to stay silent — no need to reply just to acknowledge it.`
+  );
+  return lines.join("\n");
+}
+
 export function buildAdminBroadcastWakePrompt(message: string): string {
   return [
     `${ADMIN_BROADCAST_WAKE_CUE} A direct message from your user — the owner who runs you — broadcast to their agents.`,

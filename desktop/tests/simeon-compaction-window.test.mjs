@@ -57,10 +57,32 @@ test("Simeon reports the working window, not Terra's 1.05M physical one", async 
   const host = await readFile(path.join(repoRoot, "source/host/host-runner-composition.ts"), "utf8");
   try {
     assert.equal(window.module.SIMEON_WORKING_CONTEXT_TOKENS, 200_000);
-    assert.match(providers, /aiSdkExecutor\([^\n]+SIMEON_WORKING_CONTEXT_TOKENS, \{ reasoningEffort \}, \{ model: id, effort: reasoningEffort[^\n]*\}\)/);
+    // Summarization reads its own, smaller window (8 October 2026).
+    assert.equal(window.module.SIMEON_SUMMARIZATION_WINDOW_TOKENS, 120_000);
+    assert.match(providers, /aiSdkExecutor\([^\n]+SIMEON_SUMMARIZATION_WINDOW_TOKENS, \{ reasoningEffort \}, \{ model: id, effort: reasoningEffort[^\n]*\}\)/);
+    assert.match(providers, /cacheWriteTokens: 0, maxTokens: SIMEON_SUMMARIZATION_WINDOW_TOKENS \}/);
     assert.match(host, /agentTokenLimit: SIMEON_WORKING_CONTEXT_TOKENS/);
     assert.doesNotMatch(providers, /maxTokens: 0 \}\)\);\n  if \(onUsage/);
   } finally {
+    await window.dispose();
+  }
+});
+
+test("a long conversation is summarized from about 108k tokens, not 180k (8 October 2026)", async () => {
+  // The staffing log: the Chief of Staff sent 161k tokens on every call and
+  // nothing summarized it, because summarizing began at 180k.
+  const loaded = await load("source/packages/agent-summarization/background-summarization.ts", "compaction-window-120k");
+  const window = await load("source/shared/inference/simeon-context-window.ts", "simeon-window-120k");
+  try {
+    const { getBackgroundSummarizationTriggerThreshold, shouldStartBackgroundSummarization } = loaded.module;
+    const W = window.module.SIMEON_SUMMARIZATION_WINDOW_TOKENS;
+    assert.equal(getBackgroundSummarizationTriggerThreshold(W, simeonBudget), 108_000);
+    assert.equal(shouldStartBackgroundSummarization(107_999, W, simeonBudget), false);
+    assert.equal(shouldStartBackgroundSummarization(161_000, W, simeonBudget), true);
+    // A new agent's first call (~49k: prompt and tools) is far below it.
+    assert.equal(shouldStartBackgroundSummarization(49_500, W, simeonBudget), false);
+  } finally {
+    await loaded.dispose();
     await window.dispose();
   }
 });

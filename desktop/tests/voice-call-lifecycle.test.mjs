@@ -225,7 +225,8 @@ test("the voice picker saves the agent's voice through updateAgent, keeps a Mac 
   const voices = memoryStore();
   let menuChanges = 0;
   const svc = service.createVoiceCallService({ legs, api: () => ({ listVoices: async () => api.parseVoiceOptions([{ id: "v1", name: "Alexandra", description: "Warm", labels: { accent: "american" }, preview_url: "https://x/y.mp3" }, { id: "", name: "bad" }]) }), window: fakeWindow(), voiceStore: voices, previews: { urlFor: async (voice) => `sand-media://attachment/${voice.id}` }, focusAgentChat: () => {}, isEnabled: () => true, log: () => {}, onMenuChanged: () => { menuChanges += 1; } });
-  assert.deepEqual(await svc.getAgentVoice("a1"), { voiceId: "ljX1ZrXuDIIRVcmiVSyR", isDefault: true });
+  // An agent with no voice is given one when its picker opens (8 October 2026): here the only one listed.
+  assert.deepEqual(await svc.getAgentVoice("a1"), { voiceId: "v1", isDefault: false });
   assert.deepEqual(await svc.setAgentVoice("a1", "v1"), { voiceId: "v1", isDefault: false });
   assert.deepEqual(calls.find(([name]) => name === "update")[1], { id: "a1", profile: { name: "Ada", description: "d", title: "t", voiceId: "v1" } });
   assert.equal(voices.map.get("a1"), "v1");
@@ -239,6 +240,54 @@ test("the voice picker saves the agent's voice through updateAgent, keeps a Mac 
   assert.equal(menuChanges, 1);
   svc.noteSelectedAgent("a1", "Ada");
   assert.equal(menuChanges, 1, "the same agent again changes nothing");
+});
+
+test("each agent is given its own voice by its name, Simeon's for the Chief of Staff, and keeps it (8 October 2026)", async () => {
+  // The founder: "each agent should be assigned a different voice … if the agent is named like a woman, like
+  // Maya, default to a woman voice, not always the same, and vice versa for men". Jon is shown as Simeon.
+  const rows = [
+    { id: "coo", name: "Simeon", description: "", title: "Chief of Staff" },
+    { id: "maya", name: "Maya", description: "", title: "Inbox" },
+    { id: "leo", name: "Leo", description: "", title: "Growth" },
+    { id: "nina", name: "Nina", description: "", title: "Finance" },
+    { id: "ava", name: "Ava", description: "", title: "Customer Voice" },
+    { id: "set", name: "Kim", description: "", voiceId: "1t1EeRixsJrKbiF1zwM6" },
+  ];
+  const { legs, calls } = fakeLegs({ roster: rows });
+  // The server's list: names as the picker shows them, gender from the server (Veda's left out to use the Mac's copy).
+  const listed = api.parseVoiceOptions([
+    { id: "ljX1ZrXuDIIRVcmiVSyR", name: "Michael", gender: "male" },
+    { id: "1t1EeRixsJrKbiF1zwM6", name: "Jerry", gender: "male" },
+    { id: "XcXEQzuLXRU9RcfWzEJt", name: "Veda" },
+    { id: "Cz0K1kOv9tD8l0b5Qu53", name: "Simeon", gender: "male" },
+    { id: "WI5pMmcGGS32yI7yttoP", name: "Amanda", gender: "female" },
+    { id: "NHRgOEwqx5WZNClv5sat", name: "Chelsea", gender: "female" },
+    { id: "5u41aNhyCU6hXOcjPPv0", name: "Hope", gender: "female" },
+    { id: "6OzrBCQf8cjERkYgzSg8", name: "Jamal", gender: "male" },
+  ]);
+  assert.equal(listed.find((voice) => voice.id === "WI5pMmcGGS32yI7yttoP").gender, "female");
+  assert.equal(listed.find((voice) => voice.id === "XcXEQzuLXRU9RcfWzEJt").gender, null);
+  const store = memoryStore();
+  const svc = service.createVoiceCallService({ legs, api: () => ({ listVoices: async () => listed }), window: fakeWindow(), voiceStore: store, previews: { urlFor: async () => null }, focusAgentChat: () => {}, isEnabled: () => true, log: () => {} });
+  const given = {};
+  for (const row of rows.slice(0, 5)) {
+    given[row.name] = (await svc.getAgentVoice(row.id)).voiceId;
+    row.voiceId = given[row.name]; // the host's roster now carries it
+  }
+  const names = Object.fromEntries(listed.map((voice) => [voice.id, voice.name]));
+  assert.equal(names[given.Simeon], "Simeon");
+  const women = new Set(["Veda", "Amanda", "Chelsea", "Hope"]);
+  for (const name of ["Maya", "Nina", "Ava"]) assert.ok(women.has(names[given[name]]), `${name}: ${names[given[name]]}`);
+  assert.equal(new Set([given.Maya, given.Nina, given.Ava]).size, 3, "three women, three voices");
+  assert.ok(["Michael", "Jamal"].includes(names[given.Leo]), `Leo: ${names[given.Leo]} (Jerry is Kim's, Simeon is Simeon's)`);
+  // Saved through the host, with the Mac's copy, and kept: asking again gives the same and saves nothing.
+  const updates = calls.filter(([name]) => name === "update");
+  assert.equal(updates.length, 5);
+  assert.deepEqual(updates[1][1], { id: "maya", profile: { name: "Maya", description: "", title: "Inbox", voiceId: given.Maya } });
+  assert.equal(store.map.get("maya"), given.Maya);
+  assert.deepEqual(await svc.getAgentVoice("maya"), { voiceId: given.Maya, isDefault: false });
+  assert.deepEqual(await svc.getAgentVoice("set"), { voiceId: "1t1EeRixsJrKbiF1zwM6", isDefault: false }, "a chosen voice stays");
+  assert.equal(calls.filter(([name]) => name === "update").length, 5);
 });
 
 test("the banner wears the colour the window drew the agent in when the roster stores none", async () => {

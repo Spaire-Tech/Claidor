@@ -9,6 +9,8 @@ import {
   cloneAgentDisplayName,
 } from "../../agents/agent-clone.js";
 import { CANONICAL_AVATAR_FILENAME } from "../../agents/agent-avatar.js";
+import { getSandProfilePath, readSandProfileFile } from "../../agents/agent-profile.js";
+import { pickAgentColor } from "../../../shared/agents/agent-colors.js";
 import { getAgentAutomationsDir } from "../../automations/automation-store.js";
 import {
   SAND_DISK_SAVER_KICKSTART_PROMPT,
@@ -100,13 +102,46 @@ export class AgentLifecycle {
       session.db.close();
     }
   }
-  async mintAgentSession(
+  // Agents are minted one at a time, so three hired in one step each see
+  // the colours the others took (`withAgentColor`).
+  #minting: Promise<unknown> = Promise.resolve();
+  mintAgentSession(
+    profile: unknown,
+    origin: string,
+    options: CreateOptions,
+  ): Promise<any> {
+    const minted = this.#minting.then(() => this.mintAgentSessionNow(profile, origin, options));
+    this.#minting = minted.catch(() => {});
+    return minted;
+  }
+  /**
+   * The profile with a colour of its own when it brings none: the one fewest
+   * agents are drawn in (`shared/agents/agent-colors.ts`). Until 7 October
+   * 2026 a new agent had none and the window hashed one from its id, which
+   * gave three hires in a row the same colour.
+   */
+  async withAgentColor(profile: unknown): Promise<unknown> {
+    if (profile == null || typeof profile !== "object") return profile;
+    const given = (profile as { avatarColor?: unknown }).avatarColor;
+    if (typeof given === "string" && given.trim().length > 0) return profile;
+    const agents: { id: string; color: string }[] = [];
+    try {
+      const store = this.tm.sessionStore;
+      const ids: string[] = typeof store.listAgentRecordIds === "function"
+        ? await store.listAgentRecordIds()
+        : await store.listAgentIds();
+      for (const id of ids)
+        agents.push({ id, color: readSandProfileFile(getSandProfilePath(store.getAgentDir(id)))?.avatarColor ?? "" });
+    } catch {}
+    return { ...profile, avatarColor: pickAgentColor(agents) };
+  }
+  async mintAgentSessionNow(
     profile: unknown,
     origin: string,
     options: CreateOptions,
   ): Promise<any> {
     const session = await this.tm.sessionStore.createSession(
-      profile,
+      await this.withAgentColor(profile),
       origin,
       options.purpose,
     );

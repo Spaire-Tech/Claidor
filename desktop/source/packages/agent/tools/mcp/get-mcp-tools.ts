@@ -249,9 +249,13 @@ function validateArgs(args: GetMcpToolsArgsInput, dynamic: boolean): void {
   if (args.pattern !== undefined && args.pattern.length > MAX_REGEX_PATTERN_LENGTH) throw metaError(`pattern cannot exceed ${MAX_REGEX_PATTERN_LENGTH} characters.`, ToolErrorClassification.INVALID_ARGS);
 }
 
+// The search ignores case. Connector tool names are upper case
+// (GMAIL_LIST_THREADS) and agents search in lower case: on 7 October 2026
+// "search|thread|get_message|list_messages" found nothing on Gmail, and three
+// agents each fetched the whole 60-tool listing instead (the staffing log).
 function compileSearchRegex(pattern: string): { test(input: string): boolean } {
   try {
-    const compiled = RE2JS.compile(pattern);
+    const compiled = RE2JS.compile(pattern, RE2JS.CASE_INSENSITIVE);
     return { test: input => compiled.matcher(input).find() };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

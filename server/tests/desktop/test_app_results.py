@@ -83,17 +83,17 @@ def test_a_full_message_keeps_what_the_agent_acts_on_and_drops_the_noise() -> No
     tidy = json.loads(text)["messages"][0]
     assert len(text) < before / 5
     headers = {h["name"] for h in tidy["payload"]["headers"]}
-    assert headers == {"From", "Cc", "Subject"}
+    # From repeats `sender` exactly and goes; this Subject differs and stays.
+    assert headers == {"Cc", "Subject"}
+    assert tidy["sender"] == "Prime Seattle <office@primeseattle.com>"
     assert "move in fee of $500.00" in tidy["messageText"]
     assert "Yes, please proceed" not in tidy["messageText"]
     assert "[earlier quoted messages omitted]" in tidy["messageText"]
-    # The text is already in messageText: the encoded copies go, the attachment stays.
-    parts = tidy["payload"]["parts"]
-    assert [p["mimeType"] for p in parts] == ["text/plain", "application/pdf"]
-    assert "body" not in parts[0]
-    assert parts[1]["body"]["attachmentId"].startswith("ANGjdJ")
-    assert len(parts[1]["body"]["attachmentId"]) == 506
+    # The text is in messageText and the attachment in attachmentList: the
+    # MIME skeleton goes, the headers stay, the attachment id appears once.
+    assert set(tidy["payload"]) == {"headers"}
     assert tidy["attachmentList"][0]["attachmentId"] == "ANGjdJ" + "a" * 500
+    assert text.count("ANGjdJ") == 1
     assert tidy["messageId"] == "1a112c0d7a8f4865"
     assert tidy["threadId"] == "1a0cf02ead9052b3"
 
@@ -162,3 +162,178 @@ def test_a_result_that_cannot_be_tidied_still_comes_back() -> None:
             return "odd"
 
     assert "odd" in tidy_result({"value": Odd()})
+
+
+SIGNATURE = (
+    "\n\nRobin Bentley-Mackey\n\nAssociation Manager\n\nNotice: This message is"
+    " intended for the sole use of the individual and entity to which it is"
+    " addressed. It may contain information that is privileged.\n"
+)
+CHAIN = (
+    "\n________________________________\nFrom: Lori Bennett <lorib@example.com>\n"
+    "Sent: Saturday, September 19, 2026 9:26 PM\nTo: Robin; Bass\n"
+    "Subject: RE: WHV- IRS UNPAID TAXES FORM 1120H\n\nHello Robin and Bass:\n\n"
+    "I never got a reply as to the status of the check." + SIGNATURE * 6
+)
+
+
+def _listed(subject: str, text: str) -> dict:
+    return {
+        "attachmentList": [],
+        "messageId": "1a0fd88f6e11bc98",
+        "messageText": text,
+        "subject": subject,
+        "preview": {"body": text[:200], "subject": subject},
+        "payload": {
+            "headers": [{"name": "Subject", "value": subject}],
+            "mimeType": "multipart/alternative",
+            "parts": [{"filename": "", "headers": [], "mimeType": "text/plain"}],
+        },
+    }
+
+
+def test_an_outlook_reply_chain_under_a_reply_is_folded() -> None:
+    reply = "Good Morning Lori & Bass,\n\nThe letter confirms two checks were returned."
+    tidy = json.loads(
+        tidy_result(_listed("Re: WHV- IRS UNPAID TAXES", reply + SIGNATURE + CHAIN))
+    )
+    text = tidy["messageText"]
+    assert "two checks were returned" in text
+    assert "Robin Bentley-Mackey" in text
+    assert "I never got a reply" not in text
+    assert "[earlier messages in this thread omitted:" in text
+    assert "preview" not in tidy
+
+
+def test_a_forward_keeps_the_messages_it_carries() -> None:
+    note = "Hello Bass:\n\nPlease get this done today."
+    tidy = json.loads(
+        tidy_result(_listed("FW: Westwater August Financials", note + CHAIN))
+    )
+    assert "I never got a reply as to the status of the check" in tidy["messageText"]
+    assert "omitted" not in tidy["messageText"]
+
+
+def test_a_short_reply_chain_stays() -> None:
+    short = "Thanks.\n\nFrom: Lori\nSent: Monday\nTo: Bass\n\nCan you check?"
+    tidy = json.loads(tidy_result(_listed("Re: Check", short)))
+    assert "Can you check?" in tidy["messageText"]
+
+
+APPLE_REPLY = (
+    '<html class="apple-mail-supports-explicit-dark-mode"><head><meta charset="utf-8">'
+    '</head><body dir="auto">Hello Bass,&nbsp;<div><br></div><div>I would really like to'
+    " get this money back into my account.</div><div><br></div><div>Matt Rollins<br>"
+    '<div dir="ltr">Sent from my iPhone</div><div dir="ltr"><br><blockquote type="cite">'
+    "On Sep 3, 2026, at 9:38 AM, Invoices wrote:<br><br></blockquote></div>"
+    '<blockquote type="cite"><div dir="ltr">Mathew would like the second withdrawal'
+    " of $709.60 refunded.</div></blockquote></div></body></html>"
+)
+
+
+def test_a_reply_that_arrives_as_html_is_turned_into_text() -> None:
+    tidy = json.loads(tidy_result(_listed("Re: Strathmore #3", APPLE_REPLY)))
+    text = tidy["messageText"]
+    assert "<" not in text
+    assert "I would really like to get this money back" in text
+    assert "Sent from my iPhone" in text
+    assert "$709.60" not in text
+    assert "[earlier quoted messages omitted]" in text
+
+
+def test_an_html_forward_keeps_its_quoted_message() -> None:
+    forward = APPLE_REPLY.replace("Sent from my iPhone", "Begin forwarded message:")
+    tidy = json.loads(tidy_result(_listed("Strathmore #3", forward)))
+    assert "$709.60" in tidy["messageText"]
+
+
+def test_a_listing_without_text_keeps_its_preview_and_payload() -> None:
+    message = _listed("Parc Mercer #302 - Fob Fee", "")
+    message["preview"]["body"] = "Hi Bass, the fob fee for #302 was charged twice."
+    tidy = json.loads(tidy_result(message))
+    # The preview is the only text: it stays, without its copy of the subject.
+    assert tidy["preview"] == {"body": message["preview"]["body"]}
+    assert tidy["payload"]["parts"] == message["payload"]["parts"]
+    assert "headers" not in tidy["payload"]
+    assert tidy["subject"] == "Parc Mercer #302 - Fob Fee"
+
+
+TEAM = ", ".join(
+    f"{name} <{mail}@primeseattle.com>"
+    for name, mail in [
+        ("Prime Seattle", "office"),
+        ("Deb Carter", "debcarter"),
+        ("Ladonna Booker", "ladonna"),
+        ("Robin Bentley-Mackey", "robin"),
+        ("Mattie Cruth", "mattie"),
+        ("Sid Horvath", "shorvath"),
+        ("Bassirou Fall", "bassirou"),
+        ("Farhad Safi", "farhad"),
+        ("Will Bennett", "will"),
+    ]
+)
+
+
+def _gmail_listing_entry() -> dict:
+    # One entry of GMAIL_FETCH_EMAILS without text, as the staffing log has it.
+    subject = "RE: CINC SMB Live Q4 Webinars and Office Hours - Save Your Spot"
+    sender = "Lori Bennett <lorib@primeseattle.com>"
+    return {
+        "attachmentList": [],
+        "display_url": "https://mail.google.com/mail/u/0/#inbox/1a11792c13914f2f",
+        "labelIds": ["IMPORTANT", "CATEGORY_PERSONAL", "INBOX"],
+        "messageId": "1a11792c13914f2f",
+        "messageText": "",
+        "messageTimestamp": "2026-10-07T18:13:58Z",
+        "payload": {
+            "headers": [
+                {"name": "From", "value": sender},
+                {"name": "Date", "value": "Wed, 7 Oct 2026 11:13:58 -0700"},
+                {
+                    "name": "Message-ID",
+                    "value": "<8a665ea524eb0d1f26d4dd56dafba178@mail.gmail.com>",
+                },
+                {"name": "Subject", "value": subject},
+                {"name": "To", "value": TEAM},
+                {"name": "Cc", "value": "Ops <ops@primeseattle.com>"},
+            ],
+            "mimeType": "multipart/related",
+        },
+        "preview": {
+            "body": "Gee – how did I know this would happen? It works a second time.",
+            "subject": subject,
+        },
+        "sender": sender,
+        "subject": subject,
+        "threadId": "1a1176d5a6b2bc46",
+        "to": TEAM,
+    }
+
+
+def test_a_listing_names_sender_recipients_and_subject_once() -> None:
+    entry = _gmail_listing_entry()
+    listing = {"messages": [entry] * 3, "nextPageToken": "", "resultSizeEstimate": 3}
+    before = json.dumps(listing, ensure_ascii=False, separators=(",", ":"))
+    text = tidy_result(listing)
+    tidy = json.loads(text)["messages"][0]
+    assert tidy["sender"] == entry["sender"]
+    assert tidy["to"] == TEAM
+    assert tidy["subject"] == entry["subject"]
+    assert [h["name"] for h in tidy["payload"]["headers"]] == [
+        "Date",
+        "Message-ID",
+        "Cc",
+    ]
+    assert tidy["preview"] == {"body": entry["preview"]["body"]}
+    assert text.count("Ladonna Booker") == 3
+    assert text.count("Save Your Spot") == 3
+    # Measured: 5,249 -> 3,362 characters for three of these entries.
+    assert len(text) < len(before) * 0.65
+
+
+def test_a_header_that_differs_from_the_top_level_stays() -> None:
+    entry = _gmail_listing_entry()
+    entry["to"] = "Bassirou Fall <bassirou@primeseattle.com>"
+    tidy = json.loads(tidy_result(entry))
+    to_headers = [h for h in tidy["payload"]["headers"] if h["name"] == "To"]
+    assert to_headers == [{"name": "To", "value": TEAM}]

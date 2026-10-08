@@ -31,7 +31,8 @@ import {
   SAND_MCP_MULTI_ACCOUNT_PROMPT_SECTION,
   SAND_SYSTEM_PROMPT_CLOUD_AGENTS_DISABLED,
 } from "./system-prompt.js";
-import { renderAutomationListSystemPrompt, renderAutomationsSystemPrompt, type AutomationRecord } from "../automations/automation.js";
+import { renderAutomationListSystemPrompt, renderAutomationsPointerSystemPrompt, renderAutomationsSystemPrompt, type AutomationRecord } from "../automations/automation.js";
+import { ROUTINES_GUIDE_REFERENCE_PATH } from "./box-reference-docs.js";
 import { renderTimeZoneSystemPrompt } from "../../shared/timezone.js";
 import { renderUserIdentitySystemPrompt } from "../sand-user-identity.js";
 import { renderWorkflowsSystemPrompt } from "../../shared/workflow-model.js";
@@ -232,12 +233,14 @@ export function createSystemPromptAssembly(deps: SystemPromptAssemblyDependencie
   function getAutomationsSection(): string | null {
     const store = deps.automationStore();
     if (store == null) return null;
-    const rendered = renderAutomationsSystemPrompt(
-      (store.listDefinitions?.() ?? store.list()).slice(0, 100),
-      modelVisibleLocation(store.getLocation()),
-      deps.requestContext.resolve().timeZone,
-      { omitList: true },
-    );
+    const automations = (store.listDefinitions?.() ?? store.list()).slice(0, 100);
+    const location = modelVisibleLocation(store.getLocation());
+    const timeZone = deps.requestContext.resolve().timeZone;
+    // An agent with no routines gets a pointer to the guide, not the guide
+    // (8 October 2026): about 16,000 characters off each of its calls.
+    const rendered = automations.length === 0
+      ? renderAutomationsPointerSystemPrompt(location, timeZone, ROUTINES_GUIDE_REFERENCE_PATH)
+      : renderAutomationsSystemPrompt(automations, location, timeZone, { omitList: true });
     return rendered.length > 0 ? rendered : null;
   }
 

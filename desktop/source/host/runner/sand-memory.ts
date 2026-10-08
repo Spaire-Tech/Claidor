@@ -46,11 +46,27 @@ export function getEpisodeInterval(env: NodeJS.ProcessEnv = process.env): number
 
 const TRIVIAL_EXCHANGES = new Set(["hi", "hey", "hello", "yo", "sup", "thanks", "thank you", "ty", "thx", "ok", "okay", "k", "kk", "cool", "nice", "great", "awesome", "perfect", "yes", "yep", "yeah", "no", "nope", "sure", "got it", "gotcha", "lol", "haha", "np", "done", "good", "bye"]);
 
+// The words a short reply is made of when it carries nothing to remember:
+// acknowledgements, thanks, go-aheads and greetings. The whole-phrase list
+// above let "ok no worries" through to two memory calls (the staffing log,
+// 7 October 2026); a short message made only of these words is now trivial.
+const TRIVIAL_WORDS = new Set([
+  "ok", "okay", "okk", "k", "kk", "kkk", "alright", "alrighty", "right", "sure", "yes", "yep", "yeah", "yup", "ya",
+  "no", "nope", "nah", "thanks", "thank", "thx", "ty", "you", "u", "cool", "nice", "great", "awesome", "perfect",
+  "good", "fine", "sweet", "sounds", "got", "it", "gotcha", "noted", "understood", "makes", "sense", "agreed", "deal",
+  "lol", "haha", "hah", "np", "problem", "worries", "worry", "done", "bye", "later", "see", "cheers", "hi", "hey",
+  "hello", "yo", "sup", "will", "do", "go", "ahead", "for", "now", "all", "set", "much", "so", "very", "then",
+  "that", "works", "oh", "ah", "wow", "please", "pls", "plz", "and", "the", "a",
+]);
+
 export function isMemorableExchange(userMessage: string): boolean {
   const user = userMessage.trim();
   if (user.length === 0) return false;
   if (user.length > 40 || user.includes("?")) return true;
-  return !TRIVIAL_EXCHANGES.has(user.toLowerCase().replace(/[\s!.…,~)\]]+$/g, "").replace(/\s+/g, " ").trim());
+  const lower = user.toLowerCase();
+  if (TRIVIAL_EXCHANGES.has(lower.replace(/[\s!.…,~)\]]+$/g, "").replace(/\s+/g, " ").trim())) return false;
+  const words = lower.match(/[\p{L}\p{N}']+/gu) ?? [];
+  return words.some((word) => !TRIVIAL_WORDS.has(word));
 }
 
 export function normalizeMemoryContent(raw: string): string {

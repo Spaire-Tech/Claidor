@@ -37,6 +37,8 @@ export interface VoiceOption {
   readonly description: string;
   readonly labels: Readonly<Record<string, string>>;
   readonly previewUrl: string | null;
+  /** "female" or "male" when the server says (8 October 2026), for matching a voice to an agent's name. */
+  readonly gender?: "female" | "male" | null;
 }
 
 export interface VoiceCallApi {
@@ -89,6 +91,7 @@ export function parseVoiceOptions(body: unknown): VoiceOption[] {
       description: typeof row.description === "string" ? row.description.trim() : "",
       labels,
       previewUrl: typeof row.preview_url === "string" && /^https:\/\//.test(row.preview_url) ? row.preview_url : null,
+      gender: row.gender === "female" || row.gender === "male" ? row.gender : null,
     });
   }
   return voices;

@@ -370,7 +370,9 @@ and Ashby connect through Simeon. The provider behind them is never named in the
   tools by name, short description and arguments (`query: string, max_results?: integer`), so
   the model calls one straight from the list (every schema inline was tens of thousands of
   tokens, paid again by each later call). A blank `toolName` or `pattern` counts as absent, and
-  a tool not found names the ones that exist. Clicking Add waits up to 8 s for the install to
+  a tool not found names the ones that exist. A `pattern` ignores case since 7 October 2026:
+  `"search|thread|list_messages"` found nothing among Gmail's upper-case names, and three
+  agents each fetched the whole 60-tool listing instead (`get-mcp-tools.ts`). Clicking Add waits up to 8 s for the install to
   reach the cloud computer, and a proposal card's sign-in resumes the agent that proposed it
   (it was never told before, and went on saying the app "isn't installed").
 * **Apps added 3 October 2026, for founders.** Through our apps service, each with a sign-in the
@@ -396,6 +398,18 @@ and Ashby connect through Simeon. The provider behind them is never named in the
   the old 60,000 character cut and was paid for again on every later step. On the box, a result
   over 40,000 bytes goes to a file under `.sand/tools/`; if that file cannot be written the
   result is now cut with a notice instead of going to the model whole.
+  Since the September inbox log (also 7 October), for a message whose text is in `messageText`:
+  text that arrives as HTML (an Apple Mail reply) is turned into text; the earlier reply chain
+  under it (an HTML quote, or Outlook's `From: ... Sent: ...` block of 800 characters or more)
+  folds to one line saying how much was left out, except in a forward (`Fwd:` in the subject, or
+  "Forwarded message" in the text), where the quoted part is what was sent; and the MIME
+  skeleton (`payload.parts`) and the `preview` copy go, since the text is in `messageText` and
+  every attachment id is in `attachmentList`. A listing without text (`verbose=false`) keeps its
+  preview. A message shaped like the Carlton budget email went from 3,694 to 1,884 characters.
+  For every message, a header that repeats its own `sender`, `to` or `subject` exactly goes,
+  and so does the preview's copy of the subject: a listing entry sent to nine people carried
+  the recipient list twice and the subject three times (5,249 → 3,362 characters for three
+  entries from the staffing log).
 * **The provider round trips.** Which accounts a person has connected is asked once a minute at
   most for the agent's tool calls (`connected_account_ids`); "not connected" is never kept, and
   disconnecting forgets it.
@@ -419,10 +433,35 @@ cropped and saved by the same upload path. The roster reads the picture into eve
 (`readAgentAvatarForSummary` in `host/extensions/session/session-summaries.ts`), and an avatar
 change made by the agent itself redraws the roster (`onAvatarChanged`).
 
+**Colours** (7 October 2026). An agent without a picture is drawn as the butterfly in one of
+12 colours (`AGENT_MARK_PALETTES`, `shared/voice-call/agent-mark.ts`). One with no colour
+stored is drawn in a colour hashed from its id, among the first ten: the window's own
+fallback, the upstream app's (`sle`, kept by `AGENT_COLOR_RESOLVER` in the renderer patch). It
+stored a colour only when the person picked one in onboarding or settings; an agent created
+by another agent had none and was left to the hash, which is even (about 10% per slot) but
+can repeat. In the staffing log Leo, Nina and Ava all hashed to Ocean, the blue the Chief of
+Staff is stored with, a one in a hundred draw. Asked to tell them apart, the main agent
+messaged each teammate to draw its own picture: two refused (the upstream app's own rule, "Never
+change your picture unless the user asks", and its "not the user" note on agent messages),
+one generated an image, one wrote a script, and each reply woke the main agent on its whole
+conversation.
+
+A new agent without a colour now gets the colour fewest agents are drawn in, an agent without
+one counting as its id's hash (`pickAgentColor` in `shared/agents/agent-colors.ts`, called by
+`mintAgentSession` in `host/extensions/transcript/agent-lifecycle.ts`). Ties go by a measured
+order: from Ocean, each next palette is the farthest from all before it (mean CIE Lab ΔE over
+the butterfly's three stops): Ember, Moss, Dusk, Lagoon, Sand, Mint, … Agents are created
+one at a time, so three hired in one step get three colours. A colour given at creation is
+kept. The agent can recolour a teammate with `UpdateAgent` `color` (a label such as `Moss`);
+The upstream app had no way for one agent to change another's look. Agents made before this keep
+their hashed colour until recoloured. `tests/agent-colors.test.mjs`.
+
 * **Settings on Render.** `SIMEON_OPENAI_API_KEY`.
 * **Log lines.** A failed Generate shows `edge/handler-failed: <the server's sentence>` in the
   editor; on the server, `desktop.proxy.upstream_refused`. The Mac keeps no log for this path.
-* **Not yet verified.** Neither flow has been measured on a Mac since the roster fix.
+* **Not yet verified.** Neither flow has been measured on a Mac since the roster fix. The
+  colours are tested offline only: three agents hired at once have not yet been seen in the
+  window.
 
 ### Keys an agent asks for in the chat
 
@@ -551,8 +590,25 @@ the background while the call goes on, and says how it is going when asked.
     6 October 2026), looked up by id in the account
     (`/v2/voices?voice_ids=…`) and shown by their names only. Each must be added to the
     ElevenLabs account ("Add to my voices"); one it lacks is skipped, and with none of them
-    the picker offers ElevenLabs' defaults. `[{id, name, description, labels, preview_url}]`,
-    description and labels empty, cached for an hour.
+    the picker offers ElevenLabs' defaults. `[{id, name, description, labels, gender,
+    preview_url}]`, description and labels empty, cached for an hour. `gender` is ElevenLabs'
+    own label when the voice has one, else `CURATED_VOICE_GENDERS` (Veda, Amanda, Chelsea and
+    Hope are women's voices). The voice listed as Jon is shown as Simeon since 8 October 2026
+    (`SIMEON_VOICE_ID`): the Chief of Staff's own.
+- Each agent's own voice (8 October 2026; the founder: "each agent should be assigned a
+  different voice … named like a woman, like Maya, default to a woman voice, not always the
+  same, and vice versa for men"). An agent with no voice gets one the first time it needs it
+  (a call, or its voice picker) and keeps it (`assignedVoice` in
+  `electron-main/voice/voice-call-service.ts`, saved through `updateAgent` like a picked
+  one). `pickAgentVoice` (`shared/voice-call/agent-voices.ts`) gives the Chief of Staff the
+  Simeon voice and no one else; any other agent the voice fewest agents have among those of
+  its name's gender, from the voices the account has. A name's gender comes from the US
+  Social Security baby-name counts (`shared/voice-call/name-genders.ts`: a name is a woman's or
+  a man's when at least 85% of those given it were; Jordan or Taylor are neither, and get any
+  voice). Between equally free voices the agent's id decides, so agents hired together differ.
+  Until then every agent without a picked voice spoke as Michael. The four women's voices are
+  spread over the first four women before one repeats. `tests/agent-voices.test.mjs`,
+  `tests/voice-call-lifecycle.test.mjs`.
 - Price: `VOICE_CALL_MODEL` in `server/simeon/desktop/pricing.py`, by the second, at $0.08 a
   minute times a 1.25 margin (`VOICE_CALL_MARGIN`): about 33,000 credits a minute. Usage rows
   carry provider `elevenlabs`.

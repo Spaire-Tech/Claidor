@@ -105,6 +105,22 @@ test("a small server still comes with its schemas in one call", async () => {
   }
 });
 
+test("a pattern search ignores case, so a lower-case search finds upper-case tool names", async () => {
+  // The staffing log (7 October 2026): this exact pattern found nothing on
+  // Gmail, and three agents fetched the whole 60-tool listing instead.
+  const { module, dispose } = await load();
+  try {
+    const tools = ["GMAIL_FETCH_MESSAGE_BY_THREAD_ID", "GMAIL_LIST_THREADS", "GMAIL_SEND_EMAIL"].map((toolName) => new module.McpToolDescriptor({ toolName, description: "Gmail.", inputSchemaJson: SCHEMA }));
+    const options = new module.McpMetaToolOptions({ mcpDescriptors: [new module.McpDescriptor({ serverIdentifier: "gmail", serverName: "Gmail", tools })] });
+    const tool = module.createGetMcpToolsTool(options);
+    const result = await call(module, tool, { server: "gmail", pattern: "search|thread|get_message|list_messages" });
+    assert.equal(result.ok, true, result.text);
+    assert.deepEqual(JSON.parse(result.text).matches.map((row) => row.tool), ["GMAIL_FETCH_MESSAGE_BY_THREAD_ID", "GMAIL_LIST_THREADS"]);
+  } finally {
+    await dispose();
+  }
+});
+
 test("a pattern search gives each tool's arguments too, so it is called straight from the result", async () => {
   const { module, dispose } = await load();
   try {

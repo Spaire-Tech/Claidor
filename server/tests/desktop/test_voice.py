@@ -642,6 +642,7 @@ class TestTheVoicePicker:
                 "name": "Michael",
                 "description": None,
                 "labels": {},
+                "gender": "male",
                 "preview_url": "https://cdn.test/michael.mp3",
             },
             {
@@ -649,6 +650,7 @@ class TestTheVoicePicker:
                 "name": "Jerry",
                 "description": None,
                 "labels": {},
+                "gender": "male",
                 "preview_url": "https://cdn.test/jerry.mp3",
             },
         ]
@@ -680,6 +682,43 @@ class TestTheVoicePicker:
         names = [name for _, name in voice.CURATED_VOICES]
         assert "Jessica" not in names
         assert "Kass" not in names
+
+    def test_jon_is_shown_as_simeon_and_every_voice_has_a_gender(self) -> None:
+        # The founder, 8 October 2026: "Jon is Simeon main default voice.
+        # Change the name Jon, by Simeon."
+        names = dict(voice.CURATED_VOICES)
+        assert names[voice.SIMEON_VOICE_ID] == "Simeon"
+        assert "Jon" not in names.values()
+        assert set(voice.CURATED_VOICE_GENDERS) == set(names)
+        women = sorted(
+            names[voice_id]
+            for voice_id, gender in voice.CURATED_VOICE_GENDERS.items()
+            if gender == "female"
+        )
+        assert women == ["Amanda", "Chelsea", "Hope", "Veda"]
+
+    def test_a_row_takes_elevenlabs_gender_label_first(self) -> None:
+        rows = voice.curate(
+            [
+                {
+                    "voice_id": voice.SIMEON_VOICE_ID,
+                    "name": "Jon - Calm",
+                    "labels": None,
+                    "preview_url": "p",
+                },
+                {
+                    "voice_id": "XcXEQzuLXRU9RcfWzEJt",
+                    "name": "Veda",
+                    "labels": {"gender": "Male"},
+                    "preview_url": "q",
+                },
+            ]
+        )
+        by_id = {row["id"]: row for row in rows}
+        assert by_id[voice.SIMEON_VOICE_ID]["name"] == "Simeon"
+        assert by_id[voice.SIMEON_VOICE_ID]["gender"] == "male"
+        assert by_id["XcXEQzuLXRU9RcfWzEJt"]["gender"] == "male"
+        assert voice._voice_row({"voice_id": "x", "name": "Eric"})["gender"] is None
 
     async def test_no_key_is_503(
         self,

@@ -942,6 +942,13 @@ export class SandAgentRunner<T = unknown> {
    * Returns the generated state snapshot owned by the attached AgentStore.
    * The binary round trip preserves the immutable caller's clone boundary;
    * callers cannot mutate the store's live checkpoint through this value.
+   *
+   * A subagent (a Task child) starts empty until its first checkpoint. It is
+   * bound to the agent's store for memory and blobs, and until 7 October
+   * 2026 this fell through to that store, so an executor began with the
+   * agent's whole conversation and paid for it on every step (the
+   * September inbox log). The upstream rule is the same: a new child gets an
+   * empty state unless a mapper says otherwise (`applyConversationStateMapping`).
    */
   getAgentConversationStateStructure(): ConversationStateStructureMessage {
     if (this.#productionConversationStateStructure !== undefined) {
@@ -949,6 +956,7 @@ export class SandAgentRunner<T = unknown> {
         this.#productionConversationStateStructure.toBinary(),
       );
     }
+    if (this.isSubagentRunner) return new ConversationStateStructure();
     const owner = this.#agentStore as {
       getConversationStateStructure?: () => ConversationStateStructureMessage;
     } | undefined;

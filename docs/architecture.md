@@ -45,11 +45,18 @@ The app is Electron, macOS on Apple Silicon only. Its code lives under
 A chat turn runs the host's full agent loop in the box
 (`host/runner/turn-run-shell.ts`). The loop keeps one transcript per agent,
 carries tool calls into the next turn, and can start teammates and subagents.
+A subagent (a Task child, such as the executor) starts with an empty
+conversation: its own system prompt and the task the agent wrote, nothing
+else. It is bound to the agent's store for memory and files only. Until
+7 October 2026 it began with the agent's whole conversation and paid for it
+on every step (`getAgentConversationStateStructure` in
+`host/runner/sand-agent-runner.ts`; `tests/subagent-starting-state.test.mjs`).
 Every model call goes to Simeon Labs' proxy through the `simeon` model
 provider (`host/extensions/inference/provider-session.ts`). Settings files
 written before 29 September 2026 name it `claidor`, which is still read. The default models are
-`gpt-6-sol` for the loop and `gpt-6-luna` for cheap work (summaries, memory,
-computer and browser subagents, the auto-review classifier). The server
+`gpt-6-sol` for the loop and its subagents (the computer and browser helpers
+at low effort; the video helpers use the video model) and `gpt-6-luna` for cheap work (summaries, memory,
+the auto-review classifier; `isCheapSimeonSession` in `provider-session.ts`). The server
 decides which models are offered (`server/simeon/desktop/pricing.py`).
 
 ## The cloud computer (the "box")

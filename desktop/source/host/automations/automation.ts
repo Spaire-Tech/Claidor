@@ -114,6 +114,39 @@ export function renderAutomationsSystemPrompt(
   return lines.join("\n");
 }
 
+/**
+ * The routines section for an agent with none (8 October 2026): a pointer to
+ * the guide instead of the guide. The guide (about 16,000 characters) went
+ * out on every call of every agent, routines or not, as in the upstream app;
+ * it is now also a reference file in the box (`box-reference-docs.ts`), read
+ * when the agent first makes or changes a routine. An agent with routines
+ * keeps the whole guide in its prompt.
+ */
+export function renderAutomationsPointerSystemPrompt(
+  location: string | null | undefined,
+  timeZone: string | undefined,
+  guidePath: string,
+): string {
+  if (location == null) return "";
+  const zone = timeZone != null && timeZone.length > 0 ? ` (timezone ${timeZone})` : "";
+  const trigger = isListenerRelayServed() ? " or an event trigger" : "";
+  return [
+    `Routines (your scheduling/automation feature) — your standing orders: each is a saved prompt plus a schedule${trigger} that fires it on time. You have none yet. They live in a folder at ${location}.`,
+    'Reach for one whenever a request is recurring, time-based, or a "let me know when X" / "keep an eye on Y": that is what they are for.',
+    `Before you create, change or explain a routine, read the full routines guide at ${guidePath} with Read: it has the update_state shapes, how to write the routine's prompt, and the schedule rules and defaults. Schedules are in the user's local time${zone}.`,
+  ].join("\n");
+}
+
+/** The whole guide as a reference file: the agent's folder and time zone are in its prompt. */
+export function renderAutomationsGuideReferenceDoc(): string {
+  return [
+    "# Routines",
+    "",
+    renderAutomationsSystemPrompt([], "your routines folder (named in the Routines section of your prompt)", undefined, { omitList: true }),
+    "",
+  ].join("\n");
+}
+
 export function renderAutomationListSystemPrompt(automations: readonly AutomationRecord[]): string {
   if (automations.length === 0) return "No routines yet.";
   const lines = ["Current routines:"];
