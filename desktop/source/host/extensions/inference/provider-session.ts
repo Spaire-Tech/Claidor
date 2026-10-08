@@ -15,7 +15,7 @@ import { asError } from "../../../shared/errors.js";
 import { withCheapRateLimitFallback } from "../../../shared/inference/cheap-rate-limit-fallback.js";
 import { clipForHostLog, HOST_LOG_PREFIX, logHostLine, setHostLogSink } from "../../../shared/host-log.js";
 import { redactSandAutoReviewInlineSecrets } from "../../../shared/sand-auto-review-redact.js";
-import { SIMEON_WORKING_CONTEXT_TOKENS } from "../../../shared/inference/simeon-context-window.js";
+import { SIMEON_SUMMARIZATION_WINDOW_TOKENS, SIMEON_WORKING_CONTEXT_TOKENS } from "../../../shared/inference/simeon-context-window.js";
 import { resolveSandAgentStepCap, stepBudgetExceededMessage } from "../../../shared/inference/turn-step-budget.js";
 import { readSimeonEnv, type SandInferenceProvider } from "../../../shared/inference-router.js";
 import { simeonProxyBaseUrl } from "../../../shared/node/simeon-backend/simeon-api.js";
@@ -730,7 +730,7 @@ function geminiExecutor(source: SimeonCredentialSource, messages: readonly Provi
         if (event.type === "text-delta") { text += event.delta; yield { type: "text-delta" as const, textDelta: event.delta }; continue; }
         if (event.type === "tool-call") { calls.push({ toolName: event.toolName, args: event.args }); yield { type: "tool-call" as const, toolCallId: event.toolCallId, toolName: event.toolName, args: event.args }; continue; }
         const basic = { promptTokens: event.usage.inputTokens + event.usage.cacheReadTokens, completionTokens: event.usage.outputTokens, totalTokens: event.usage.inputTokens + event.usage.cacheReadTokens + event.usage.outputTokens };
-        const extended = { inputTokens: event.usage.inputTokens, outputTokens: event.usage.outputTokens, cacheReadTokens: event.usage.cacheReadTokens, cacheWriteTokens: 0, maxTokens: SIMEON_WORKING_CONTEXT_TOKENS };
+        const extended = { inputTokens: event.usage.inputTokens, outputTokens: event.usage.outputTokens, cacheReadTokens: event.usage.cacheReadTokens, cacheWriteTokens: 0, maxTokens: SIMEON_SUMMARIZATION_WINDOW_TOKENS };
         modelCallLog(formatModelCallLogLine({ model: modelId, effort: reasoningEffort, inputTokens: basic.promptTokens, cachedTokens: event.usage.cacheReadTokens, outputTokens: event.usage.outputTokens, reasoningTokens: event.usage.reasoningTokens, elapsedMs: Date.now() - startedAtMs, tools: summarizeToolCalls(calls), offered: tools?.map((tool) => tool.name).join(",") || "-", ...(budget === undefined ? {} : { budget: `${budget.limit}${budget.hidden ? " hidden=true" : ""}` }), outcome: modelCallOutcome(calls.length, text.length), ...(callReason === undefined ? {} : { reason: callReason }) }));
         if (event.responseId.length > 0) onRequestId?.(event.responseId);
         onUsage?.(extended);
@@ -755,7 +755,7 @@ function simeonExecutor(messages: readonly ProviderMessage[], invocationId: stri
   // model that cannot see the video is not an answer to a video question.
   if (isGeminiVideoModelId(requested)) return geminiExecutor(source, messages, invocationId, definitions, executeTool, onUsage, requested, reasoningEffort, budget, onRequestId, callReason);
   const cheap = configuredSimeonCheapModel();
-  const start = (id: string) => aiSdkExecutor(simeonLanguageModel(source, id, promptCacheKey, callReason), messages, invocationId, definitions, executeTool, onUsage, SIMEON_WORKING_CONTEXT_TOKENS, { reasoningEffort }, { model: id, effort: reasoningEffort, ...(budget === undefined ? {} : { budget: `${budget.limit}${budget.hidden ? " hidden=true" : ""}` }), ...(callReason === undefined ? {} : { reason: callReason }) }, onRequestId, promptCacheKey, budget === undefined ? undefined : () => { budget.cutOffs = (budget.cutOffs ?? 0) + 1; });
+  const start = (id: string) => aiSdkExecutor(simeonLanguageModel(source, id, promptCacheKey, callReason), messages, invocationId, definitions, executeTool, onUsage, SIMEON_SUMMARIZATION_WINDOW_TOKENS, { reasoningEffort }, { model: id, effort: reasoningEffort, ...(budget === undefined ? {} : { budget: `${budget.limit}${budget.hidden ? " hidden=true" : ""}` }), ...(callReason === undefined ? {} : { reason: callReason }) }, onRequestId, promptCacheKey, budget === undefined ? undefined : () => { budget.cutOffs = (budget.cutOffs ?? 0) + 1; });
 
   const startOrLegacy = (id: string) => {
     const legacy = LEGACY_SIMEON_MODELS[id];

@@ -344,14 +344,19 @@ export function createTurnSettle(
       }
     }
 
+    // A trivial reply ("ok no worries", "thanks") is not remembered on either
+    // memory path. Until 8 October 2026 the synthesis path skipped this
+    // filter (as the upstream app's trial did), so every such reply cost two
+    // cheap-model calls a minute later (the staffing log).
     const shouldRemember =
       !host.isRunSuperseded()
       && scope.memoryStore != null
       && !args.hidden
       && args.trimmedPrompt.length > 0
       && (
-        scope.memoryStore.recordMemoryEvidence != null
-        || scope.isMemorableExchange?.(args.trimmedPrompt) === true
+        scope.isMemorableExchange != null
+          ? scope.isMemorableExchange(args.trimmedPrompt)
+          : scope.memoryStore.recordMemoryEvidence != null
       );
 
     if (shouldRemember && scope.memoryStore != null) {

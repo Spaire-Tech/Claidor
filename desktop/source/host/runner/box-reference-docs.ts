@@ -1,6 +1,7 @@
 import { rm } from "node:fs/promises";
 import { join } from "node:path";
 import { writeFileAtomic } from "../../shared/node/atomic-write.js";
+import { renderAutomationsGuideReferenceDoc } from "../automations/automation.js";
 import {
   ensureDataRootAlias,
   getSandRootDir,
@@ -16,6 +17,10 @@ export const SAND_BOX_DEBUGGING_REFERENCE_PATH =
   `${SAND_BOX_REFERENCE_DIR}/${DEBUGGING_THE_BOX_FILE}`;
 export const SAND_APP_UI_REFERENCE_PATH =
   `${SAND_BOX_REFERENCE_DIR}/${SAND_APP_UI_FILE}`;
+// The routines guide, for an agent with no routines yet (8 October 2026,
+// `renderAutomationsPointerSystemPrompt`).
+export const ROUTINES_GUIDE_FILE = "routines.md";
+export const ROUTINES_GUIDE_REFERENCE_PATH = `${SAND_BOX_REFERENCE_DIR}/${ROUTINES_GUIDE_FILE}`;
 
 export const SAND_BOX_DEBUGGING_REFERENCE_DOC = [
   "# Debugging the box",
@@ -55,7 +60,11 @@ export async function writeSandBoxReferenceDocs(
 ): Promise<string[]> {
   const encoder = new TextEncoder();
   const written: string[] = [];
-  for (const doc of SAND_BOX_REFERENCE_DOCS) {
+  const docs = [
+    ...SAND_BOX_REFERENCE_DOCS,
+    { fileName: ROUTINES_GUIDE_FILE, contents: renderAutomationsGuideReferenceDoc() },
+  ];
+  for (const doc of docs) {
     const path = join(referenceDir, doc.fileName);
     await writeFileAtomic(path, encoder.encode(doc.contents));
     written.push(path);

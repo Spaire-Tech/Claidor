@@ -1,5 +1,6 @@
 import { staffedFirstRunCue } from "../../../shared/agents/chief-of-staff.js";
 import {
+  buildAgentInboundBatchWakePrompt,
   buildAgentInboundWakePrompt,
   clampAgentMessage,
 } from "../../agents/agent-messaging.js";
@@ -54,6 +55,37 @@ export function mergeAgentInboundQueue<T extends { priority?: boolean }>(
   return [...newer.priority, ...older.priority, ...older.rest, ...newer.rest];
 }
 
+/**
+ * The turns a batch of agent messages is run in (8 October 2026): a priority
+ * message alone, a new agent's staffing brief (`firstAlone`) alone, and every
+ * other message together in one turn. Until then each message was a turn of
+ * its own on the agent's whole conversation, as in the upstream app.
+ */
+export function groupAgentInboundTurns<T extends { priority?: boolean }>(
+  messages: readonly T[],
+  firstAlone: boolean,
+): T[][] {
+  const turns: T[][] = [];
+  let together: T[] = [];
+  for (const [index, message] of messages.entries()) {
+    if (message.priority === true || (index === 0 && firstAlone)) {
+      if (together.length > 0) turns.push(together);
+      together = [];
+      turns.push([message]);
+    } else together.push(message);
+  }
+  if (together.length > 0) turns.push(together);
+  return turns;
+}
+
+/**
+ * How long a reply in an agent back-and-forth waits before it wakes its
+ * agent, so the replies that come back together wake it once (8 October
+ * 2026). A message sent from a turn the person or a routine started (hop 1)
+ * and a priority message still wake at once.
+ */
+export const AGENT_REPLY_SETTLE_MS = 15_000;
+
 export class AgentToAgentMessaging {
   readonly pendingAgentInbound = new Map<string, AgentInboundMessage[]>();
   readonly revivingAgentInboundIds = new Set<string>();
@@ -61,6 +93,9 @@ export class AgentToAgentMessaging {
   // that turn runs (runAgentInboundWake). A message it sends then is one hop
   // further; one sent from any other turn starts again at 1.
   readonly agentWakeHops = new Map<string, number>();
+  // A pending wake for replies that settle together (AGENT_REPLY_SETTLE_MS).
+  readonly agentReplyTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  agentReplySettleMs = AGENT_REPLY_SETTLE_MS;
   constructor(readonly tm: TranscriptManagerLike) {}
 
   async sendToAgent(
@@ -134,7 +169,8 @@ export class AgentToAgentMessaging {
       queued.push(inbound);
       this.pendingAgentInbound.set(toAgentId, queued);
     }
-    void this.reviveForAgentInbound(toAgentId);
+    if (priority || hop < 2) void this.reviveForAgentInbound(toAgentId);
+    else this.scheduleAgentReplyWake(toAgentId);
     return priority
       ? `Sent to ${target.name} as a priority message — it will interrupt their current non-user work and wake them now. This is asynchronous — if they reply, it'll arrive later as a new message that wakes you; don't wait on it now.`
       : `Sent to ${target.name}. This is asynchronous — if they reply, it'll arrive later as a new message that wakes you; don't wait on it now.`;
@@ -162,6 +198,16 @@ export class AgentToAgentMessaging {
         hadActiveRun: hadDirectRun || hadGroupRun,
         wasInFlight,
       });
+  }
+
+  scheduleAgentReplyWake(agentId: string): void {
+    if (this.agentReplyTimers.has(agentId)) return;
+    const timer = setTimeout(() => {
+      this.agentReplyTimers.delete(agentId);
+      void this.reviveForAgentInbound(agentId);
+    }, this.agentReplySettleMs);
+    (timer as { unref?: () => void }).unref?.();
+    this.agentReplyTimers.set(agentId, timer);
   }
 
   async reviveForAgentInbound(agentId: string): Promise<void> {
@@ -213,15 +259,22 @@ export class AgentToAgentMessaging {
         this.tm.turnRuntime.activeRequestSources.set(session.id, "agent");
         this.tm.backgroundWakes.dmPreemptedWakeAgentIds.delete(session.id);
         try {
-          for (const [index, message] of messages.entries()) {
+          // One turn for the messages that arrived together; a priority
+          // message and a staffing brief keep a turn of their own.
+          const turns = groupAgentInboundTurns(
+            messages,
+            session.db.getIntroductionPending?.() === true,
+          );
+          for (const [index, turn] of turns.entries()) {
             if (
               index > 0 &&
               (this.pendingAgentInbound.get(agentId) ?? []).some(
                 (pending) => pending.priority === true,
               )
             ) {
-              const deferred = messages
+              const deferred = turns
                 .slice(index)
+                .flat()
                 .map((remaining) => ({ ...remaining, isDisplayed: true }));
               this.pendingAgentInbound.set(
                 agentId,
@@ -232,18 +285,28 @@ export class AgentToAgentMessaging {
               );
               return;
             }
-            const selectedImages = await loadAgentInboundImages(message.images);
-            this.agentWakeHops.set(agentId, message.hop ?? 1);
+            const message = turn[0]!;
+            const selectedImages = await loadAgentInboundImages(
+              turn.flatMap((queued) => queued.images ?? []),
+            );
+            this.agentWakeHops.set(
+              agentId,
+              Math.max(...turn.map((queued) => queued.hop ?? 1)),
+            );
             // A brief as the agent's first message is its staffing (7 October
             // 2026): the first turn reads it and introduces the agent to the
             // person as the one now on the job, in place of the greeting the
             // kickstart would run (`shared/agents/chief-of-staff.ts`).
             const isStaffing = session.db.getIntroductionPending?.() === true && index === 0;
             if (isStaffing) session.db.setIntroductionPending(false);
+            const prompt =
+              turn.length === 1
+                ? buildAgentInboundWakePrompt(message)
+                : buildAgentInboundBatchWakePrompt(turn);
             const result = await runner.run(
               isStaffing
-                ? `${staffedFirstRunCue({ fromName: message.from.name, personName: this.tm.requestContextUserFullName?.() ?? null })}\n\n${buildAgentInboundWakePrompt(message)}`
-                : buildAgentInboundWakePrompt(message),
+                ? `${staffedFirstRunCue({ fromName: message.from.name, personName: this.tm.requestContextUserFullName?.() ?? null })}\n\n${prompt}`
+                : prompt,
               {
                 hidden: true,
                 callReason: "agent_wake",
@@ -257,8 +320,9 @@ export class AgentToAgentMessaging {
               );
             if (result.aborted && result.quiescedForUpgrade !== true) {
               if (!preempted || this.tm.sessions.isAgentGone(agentId)) return;
-              const redrivable = messages
+              const redrivable = turns
                 .slice(index)
+                .flat()
                 .filter((remaining) => remaining.isRedriven !== true)
                 .map((remaining) => ({
                   ...remaining,

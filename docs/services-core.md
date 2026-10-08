@@ -329,7 +329,45 @@ question that took about twenty calls; replayed offline in
   person sends and stays in the history.
 - **Memory upkeep** waits for a quiet minute and reads the burst in one pass;
   a refused proposal is not retried; the assistant's own claims about its
-  setup are not remembered.
+  setup are not remembered. A trivial reply is not remembered at all
+  (8 October 2026): "ok no worries", "thanks", "kk go" and other short
+  messages made only of acknowledgement words skip memory on both paths
+  (`isMemorableExchange`, `host/runner/sand-memory.ts`; `turn-settle.ts`).
+  The synthesis path used to skip that filter, as the upstream app's trial
+  did, and each such reply cost two cheap-model calls a minute later.
+
+What the staffing log changed (8 October 2026; the founder's log of hiring
+three agents, where the 1M tokens-a-minute limit was hit nine times in about
+three minutes):
+
+- **Agent messages that arrive together wake their agent once.** Messages
+  queued for an agent run as one turn (`groupAgentInboundTurns`,
+  `buildAgentInboundBatchWakePrompt`); a priority message and a new agent's
+  staffing brief keep a turn of their own. A reply in a back-and-forth (a
+  message sent from a turn another agent's message woke) waits 15 s
+  (`AGENT_REPLY_SETTLE_MS`) so the replies that come back together share that
+  turn; a message from a turn the person or a routine started, and a priority
+  one, wake at once (`host/extensions/transcript/agent-to-agent-messaging.ts`).
+  Before, each message was a turn of its own on the whole conversation, as in
+  the upstream app: the Chief of Staff, at 161k tokens a call, took one per
+  teammate reply.
+- **A long conversation is summarized from about 108k tokens, not 180k.**
+  Summarization reads `SIMEON_SUMMARIZATION_WINDOW_TOKENS` (120,000;
+  `shared/inference/simeon-context-window.ts`): it starts at 90% and the
+  summary is swapped in at 95%. Above 150k a turn waits for the summary. The
+  skills list keeps its budget on the 200k working window. The upstream app
+  read the window per model from its server; ours is fixed. The cost: older
+  detail is compressed sooner.
+- **An agent with no routines gets a pointer to the routines guide, not the
+  guide.** About 16,000 characters (3,900 tokens) came off each of its calls;
+  the guide is `/home/box/reference/routines.md`, written with the other
+  reference files (`renderAutomationsPointerSystemPrompt`,
+  `host/automations/automation.ts`; `box-reference-docs.ts`), and an agent
+  with routines keeps it in its prompt. The upstream app's switch that hides
+  most tools behind a lookup (`simeon_dynamic_tools`) stays off: it would hide
+  CreateAgent, SendToAgent, update_state and Task too, each then costing an
+  extra call on the whole conversation to find, while the tool list itself is
+  billed at the cached rate after an agent's first call.
 
 Check a run with the `[simeon] model=` lines in `/tmp/sand-host.log`: a
 greeting is one line, a connector question two or three, and the `prefix=sys:`
