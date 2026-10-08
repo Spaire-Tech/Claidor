@@ -107,7 +107,9 @@ While the app runs from Xcode, its console shows a line whenever the
 screen stands still for more than a quarter of a second, with what the app
 was doing (`[simeon] the screen stood still 1840 ms, while laying out ava,
 512 lines`), and any step that took longer than a frame (`[simeon] slow:
-…`). Copy those lines into the chat to find a lag. Run (⌘R) builds Debug,
+…`). A freeze that lasts two seconds also writes where the main thread is
+stuck, read from its own stack (`[simeon] the main thread is in:` and one
+line per call), again at ten seconds. Copy those lines into the chat to find a lag. Run (⌘R) builds Debug,
 which is slower than TestFlight's optimised build; for a fair feel of speed,
 set the scheme's Run to Release (Product → Scheme → Edit Scheme).
 

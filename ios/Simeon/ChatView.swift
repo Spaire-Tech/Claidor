@@ -213,7 +213,12 @@ struct ChatMessages: View {
       // Its lines on their way from the computer (a chat the host had closed takes a moment to open): say so.
       if all.isEmpty && store.fetching.contains(agentId) { ProgressView() }
     }
-    .onGeometryChange(for: CGFloat.self) { $0.size.width - 32 } action: { width = max(200, $0) }
+    // The chat's width, measured and kept for the rows to cap themselves at. In whole points, and kept only when it moves by
+    // one or more: a width that came back a fraction different on each measure would redraw every row, again and again.
+    .onGeometryChange(for: CGFloat.self) { ($0.size.width - 32).rounded(.down) } action: { measured in
+      let next = max(200, measured)
+      if abs(next - width) >= 1 { width = next }
+    }
     .defaultScrollAnchor(.bottom)
     .defaultScrollAnchor(.bottom, for: .sizeChanges)
     .scrollDismissesKeyboard(.interactively)
