@@ -335,6 +335,61 @@ class TestLoginDeepControl:
         assert "sand://" not in response.text
 
     @pytest.mark.auth
+    async def test_the_iphone_names_its_own_scheme_and_the_page_says_so(
+        self, client: httpx.AsyncClient
+    ) -> None:
+        """The iPhone app (`mobile/`, 8 October 2026) signs in through
+        these same routes with `redirectTarget=simeon-ios`
+        (`mobile/src/core/sign-in.ts`). The page says it is the iPhone
+        asking, the confirmation opens the phone's scheme (which closes
+        its sign-in sheet) and never the Mac's, and the pair comes from
+        the poll as it does for the Mac."""
+        verifier, challenge, uuid = _login_metadata()
+        page = await client.get(
+            "/loginDeepControl",
+            params={
+                "challenge": challenge,
+                "uuid": uuid,
+                "mode": "login",
+                "redirectTarget": "simeon-ios",
+            },
+        )
+        assert page.status_code == 200
+        assert "on your iPhone is asking to sign in" in page.text
+        assert "on your Mac" not in page.text
+        assert 'name="redirectTarget" value="simeon-ios"' in page.text
+        confirmed = await _confirm(
+            client, uuid=uuid, challenge=challenge, redirect_target="simeon-ios"
+        )
+        assert confirmed.status_code == 200
+        assert "simeon-ios://app/v1/open" in confirmed.text
+        assert "simeon://" not in confirmed.text
+        poll = await client.post(
+            "/auth/poll",
+            json={"uuid": uuid, "verifier": verifier},
+            headers={"x-simeon-client-version": "ios-0.1.0"},
+        )
+        assert poll.status_code == 200
+        assert set(poll.json()) == {"accessToken", "refreshToken"}
+
+    @pytest.mark.auth
+    async def test_the_mac_s_page_still_says_mac(
+        self, client: httpx.AsyncClient
+    ) -> None:
+        """Only the phone's own scheme changes the words: the Mac's
+        `simeon`, a build from before 23 September that sent `sand`, and
+        no target at all are the Mac asking, as before."""
+        for target in (None, "simeon", "sand", "SIMEON-IOS-NOT"):
+            _, challenge, uuid = _login_metadata()
+            params = {"challenge": challenge, "uuid": uuid, "mode": "login"}
+            if target is not None:
+                params["redirectTarget"] = target
+            page = await client.get("/loginDeepControl", params=params)
+            assert page.status_code == 200
+            assert "on your Mac is asking to sign in" in page.text, target
+            assert "iPhone" not in page.text, target
+
+    @pytest.mark.auth
     async def test_a_redirect_target_that_is_not_a_scheme_builds_no_link(
         self, client: httpx.AsyncClient
     ) -> None:
