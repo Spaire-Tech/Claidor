@@ -294,6 +294,20 @@ class Settings(BaseSettings):
     # `SIMEON_EXPO_ACCESS_TOKEN` on Render. Empty sends without one.
     EXPO_ACCESS_TOKEN: str = ""
 
+    # Pushes straight to Apple for the native iPhone app (ios/, 8 October
+    # 2026; `simeon/desktop/apns.py`), which registers its own APNs device
+    # token instead of an Expo one. An APNs auth key from the Apple
+    # developer account (Certificates, Identifiers & Profiles → Keys →
+    # "Apple Push Notifications service"): its Key ID, the Team ID, and the
+    # .p8 file's contents (`SIMEON_APNS_KEY`, newlines kept or written as
+    # \n). Empty means pushes to the native app are skipped and logged
+    # (`desktop.push.apns_not_configured`); the Expo app's are unaffected.
+    APNS_KEY_ID: str = ""
+    APNS_TEAM_ID: str = ""
+    APNS_KEY: str = ""
+    #: The app the pushes are for: the native app's bundle id.
+    APNS_TOPIC: str = "com.simeonlabs.simeon.ios"
+
     # The person's computer in the cloud (simeon/sand/box_broker.py, 25
     # September 2026). Empty provider: the broker answers `unavailable`
     # with one sentence and the app has no computer to run on.

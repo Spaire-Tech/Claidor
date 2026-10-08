@@ -562,3 +562,162 @@ async def test_what_expo_receives(
     }
     # The second phone's ticket said it is gone.
     assert [d.expo_push_token for d in await _live_devices(session, user)] == [TOKEN]
+
+
+# --- the native app: Apple's own device tokens (`apns.py`) -------------------
+
+APNS_HEX = "ab" * 32
+
+
+def _apns_key() -> str:
+    """A throwaway P-256 key, as the .p8 file APNs keys come in."""
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import ec
+
+    key = ec.generate_private_key(ec.SECP256R1())
+    return key.private_bytes(
+        serialization.Encoding.PEM,
+        serialization.PrivateFormat.PKCS8,
+        serialization.NoEncryption(),
+    ).decode()
+
+
+@pytest.mark.asyncio
+class TestNativeAppDevices:
+    async def test_registers_apples_token_with_its_environment(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        access, _ = await _signed_in(client, session, user)
+        built = await client.post(
+            DEVICES,
+            json={"apns_token": APNS_HEX.upper(), "platform": "ios"},
+            headers=_bearer(access),
+        )
+        assert built.status_code == 200, built.text
+        assert built.json()["expo_push_token"] == f"apns:{APNS_HEX}"
+        xcode = await client.post(
+            DEVICES,
+            json={"apns_token": "cd" * 32, "apns_environment": "sandbox"},
+            headers=_bearer(access),
+        )
+        assert xcode.status_code == 200, xcode.text
+        assert xcode.json()["expo_push_token"] == f"apns-sandbox:{'cd' * 32}"
+        removed = await client.request(
+            "DELETE", DEVICES, json={"apns_token": APNS_HEX}, headers=_bearer(access)
+        )
+        assert removed.json() == {"removed": 1}
+        assert [
+            device.expo_push_token for device in await _live_devices(session, user)
+        ] == [f"apns-sandbox:{'cd' * 32}"]
+
+    @pytest.mark.parametrize(
+        "body",
+        [
+            {"apns_token": "not hex"},
+            {"apns_token": "ab"},
+            {"apns_token": APNS_HEX, "expo_push_token": TOKEN},
+            {"apns_token": APNS_HEX, "apns_environment": "staging"},
+        ],
+    )
+    async def test_refuses_a_bad_apns_token(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        body: dict[str, str],
+    ) -> None:
+        access, _ = await _signed_in(client, session, user)
+        response = await client.post(DEVICES, json=body, headers=_bearer(access))
+        assert response.status_code == 422, response.text
+
+
+@pytest.mark.asyncio
+class TestSendToApple:
+    async def test_each_phone_gets_apples_push_and_a_gone_one_is_removed(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        from simeon.desktop import apns
+
+        await _device(save_fixture, user, f"apns:{APNS_HEX}")
+        await _device(save_fixture, user, f"apns-sandbox:{'cd' * 32}")
+        mocker.patch.object(settings, "APNS_KEY_ID", "KEY123")
+        mocker.patch.object(settings, "APNS_TEAM_ID", "TEAM456")
+        mocker.patch.object(settings, "APNS_KEY", _apns_key())
+        apns._provider = None
+        seen: list[httpx.Request] = []
+
+        def answer(request: httpx.Request) -> httpx.Response:
+            seen.append(request)
+            if request.url.host == "api.sandbox.push.apple.com":
+                return httpx.Response(410, json={"reason": "Unregistered"})
+            return httpx.Response(200)
+
+        mocker.patch(
+            "simeon.desktop.apns.client",
+            side_effect=lambda: httpx.AsyncClient(
+                transport=httpx.MockTransport(answer)
+            ),
+        )
+        publish = mocker.patch("simeon.desktop.push_tasks.publish_push_messages")
+        await desktop_push_send(
+            user_id=str(user.id),
+            agent_id="agent-1",
+            kind="agent-needs-input",
+            title="Ada needs you",
+            body="Which card should I use?",
+        )
+
+        publish.assert_not_called()
+        assert sorted(str(request.url) for request in seen) == sorted(
+            [
+                f"https://api.push.apple.com/3/device/{APNS_HEX}",
+                f"https://api.sandbox.push.apple.com/3/device/{'cd' * 32}",
+            ]
+        )
+        first = seen[0]
+        assert first.headers["apns-topic"] == "com.simeonlabs.simeon.ios"
+        assert first.headers["apns-push-type"] == "alert"
+        assert first.headers["apns-priority"] == "10"
+        assert first.headers["authorization"].startswith("bearer ")
+        import jwt as pyjwt
+
+        header = pyjwt.get_unverified_header(
+            first.headers["authorization"].split(" ", 1)[1]
+        )
+        assert header == {"alg": "ES256", "kid": "KEY123", "typ": "JWT"}
+        assert json.loads(first.content) == {
+            "aps": {
+                "alert": {"title": "Ada needs you", "body": "Which card should I use?"},
+                "sound": "default",
+                "badge": 1,
+            },
+            "agentId": "agent-1",
+            "kind": "agent-needs-input",
+        }
+        assert [
+            device.expo_push_token for device in await _live_devices(session, user)
+        ] == [f"apns:{APNS_HEX}"]
+
+    async def test_without_a_key_nothing_goes_to_apple(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        await _device(save_fixture, user, f"apns:{APNS_HEX}")
+        mocker.patch.object(settings, "APNS_KEY", "")
+        client = mocker.patch("simeon.desktop.apns.client")
+        await desktop_push_send(
+            user_id=str(user.id),
+            agent_id="agent-1",
+            kind="agent-done",
+            title="Ada",
+            body="Done.",
+        )
+        client.assert_not_called()
+        assert len(await _live_devices(session, user)) == 1

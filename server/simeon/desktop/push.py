@@ -12,6 +12,9 @@ Three routes, all under `/desktop`:
 
 - `POST /desktop/push-devices` `{expo_push_token, platform}`: the phone
   app, signed in like the Mac (`get_desktop_session`), registers itself.
+  The native app (`ios/`) sends `{apns_token, apns_environment}` instead:
+  Apple's own device token, kept as `apns:<hex>` (`apns-sandbox:<hex>`
+  for a build run from Xcode) and sent to straight (`apns.py`).
   Calling it again changes nothing; a token another person registered
   moves to this one, because a phone gets the pushes of whoever is signed
   in on it now.
@@ -40,7 +43,7 @@ from uuid import UUID
 import structlog
 from fastapi import Depends
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from simeon.models import DesktopSession
 from simeon.models.notification_recipient import NotificationRecipient
@@ -52,6 +55,7 @@ from simeon.redis import Redis, get_redis
 from simeon.routing import APIRouter
 from simeon.worker import enqueue_job
 
+from . import apns
 from .auth import get_desktop_or_box_session, get_desktop_session
 
 log = structlog.get_logger()
@@ -75,19 +79,40 @@ def clip(text: str, limit: int) -> str:
 
 
 class PushDeviceBody(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    expo_push_token: str = Field(max_length=255)
+    """One phone: the Expo app's push token, or the native app's APNs token."""
 
-    @field_validator("expo_push_token")
-    @classmethod
-    def _expo_token(cls, value: str) -> str:
-        token = value.strip()
-        if not is_expo_push_token(token):
+    model_config = ConfigDict(extra="ignore")
+    expo_push_token: str | None = Field(default=None, max_length=255)
+    apns_token: str | None = Field(default=None, max_length=200)
+    #: `sandbox` for a build run from Xcode; TestFlight and the App Store are `production`.
+    apns_environment: Literal["production", "sandbox"] = "production"
+
+    @model_validator(mode="after")
+    def _one_token(self) -> PushDeviceBody:
+        expo = (self.expo_push_token or "").strip()
+        device = (self.apns_token or "").strip().lower()
+        if bool(expo) == bool(device):
+            raise ValueError("Send one of expo_push_token or apns_token.")
+        if expo and not is_expo_push_token(expo):
             raise ValueError(
                 "expo_push_token must be an Expo push token, "
                 "ExponentPushToken[…] or ExpoPushToken[…]."
             )
-        return token
+        if device and not apns.is_apns_device_token(device):
+            raise ValueError("apns_token must be the device token in hexadecimal.")
+        self.expo_push_token = expo or None
+        self.apns_token = device or None
+        return self
+
+    @property
+    def token(self) -> str:
+        """What the row keeps: the Expo token as is, an APNs token with its prefix."""
+        if self.apns_token is not None:
+            return apns.stored_token(
+                self.apns_token, sandbox=self.apns_environment == "sandbox"
+            )
+        assert self.expo_push_token is not None
+        return self.expo_push_token
 
 
 class PushDeviceRegisterBody(PushDeviceBody):
@@ -153,7 +178,7 @@ async def register_push_device(
     session: AsyncSession = Depends(get_db_session),
 ) -> JSONResponse:
     device = await register_device(
-        session, desktop_session.user_id, body.expo_push_token, body.platform
+        session, desktop_session.user_id, body.token, body.platform
     )
     log.info(
         "desktop.push.device_registered",
@@ -176,9 +201,7 @@ async def remove_push_device(
     desktop_session: DesktopSession = Depends(get_desktop_session),
     session: AsyncSession = Depends(get_db_session),
 ) -> JSONResponse:
-    removed = await remove_device(
-        session, desktop_session.user_id, body.expo_push_token
-    )
+    removed = await remove_device(session, desktop_session.user_id, body.token)
     log.info(
         "desktop.push.device_unregistered",
         user_id=str(desktop_session.user_id),
