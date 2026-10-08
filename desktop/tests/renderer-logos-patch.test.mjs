@@ -272,6 +272,37 @@ test("onboarding on a phone: every scene laid out for the width it has, titles g
   assert.match(connectCss({}), /\.simeon-connect__orbit\{position:relative;width:min\(920px,100vw\);/, "no wider than the screen");
 });
 
+test("the phone's light and dark switch is the window's own theme; a group's butterflies in the chat header are a single agent's size", async () => {
+  const { SIDEBAR_DISCS_REPLACEMENTS, SIDEBAR_DISCS_CSS, HEADER_CARD_CSS } = await import("../scripts/lib/router-renderer-patch.mjs");
+  const discs = SIDEBAR_DISCS_REPLACEMENTS.find(([label]) => label === "sidebar-discs-components")[2];
+  // Run the discs' source with the window's theme hooks.
+  const run = (resolved) => {
+    const set = [];
+    const p = { jsx: (type, props) => ({ type, props }), jsxs: (type, props) => ({ type, props }), Fragment: "fragment" };
+    const make = new Function("p", "yo", "VZ", "uMt", `${discs.replace(/function pcn\(n\)\{$/, "")}return{theme:__simeonThemeDisc,discs:__simeonSidebarDiscs}`);
+    const out = make(p, () => null, () => ({ resolved, preference: resolved }), () => ({ setPreference: (v) => set.push(v) }));
+    return { ...out, set };
+  };
+  const light = run("light");
+  const moon = light.theme();
+  assert.equal(moon.props.icon, "moon");
+  assert.equal(moon.props.label, "Dark mode");
+  moon.props.onClick();
+  assert.deepEqual(light.set, ["dark"], "light switches to dark");
+  const dark = run("dark");
+  const sun = dark.theme();
+  assert.equal(sun.props.icon, "sun");
+  sun.props.onClick();
+  assert.deepEqual(dark.set, ["light"]);
+  const children = light.discs({ onOpenSearch: () => {}, onNewChat: () => {} }).props.children;
+  assert.equal(children.length, 3);
+  assert.equal(children[0].type, light.theme, "the switch comes first, before search and new chat");
+  assert.deepEqual(children.slice(1).map((c) => c.props.icon), ["search", "create"]);
+  assert.match(SIDEBAR_DISCS_CSS, /^\.simeon-disc\.simeon-disc--theme\{display:none\}$/m, "hidden on the Mac");
+  assert.match(HEADER_CARD_CSS, /\.sand-chat-header__avatar \.sand-group-avatar\{zoom:2\.6\}/, "20 px butterflies drawn at 52, a single agent's size");
+  assert.match(HEADER_CARD_CSS, /\.sand-chat-header__avatar \.sand-agent-avatar,\.sand-chat-header__avatar \.sand-simeon-mark\{width:52px!important;height:52px!important\}/);
+});
+
 test("the phone's home: the Mac's list full screen, a chat full screen, one at a time, and the Mac app left as it is", async () => {
   const { PHONE_HOME_REPLACEMENTS, PHONE_HOME_CSS, PHONE_MAX_WIDTH, patchOriginalPhoneHome, patchOriginalPhoneHomeStylesheet } = await import("../scripts/lib/router-renderer-patch.mjs");
   const source = PHONE_HOME_REPLACEMENTS.find(([label]) => label === "phone-sidebar-open")[2];
@@ -332,6 +363,11 @@ test("the phone's home: the Mac's list full screen, a chat full screen, one at a
   assert.match(phoneBlock, /html\[data-simeon-phone="list"\] main\.sand-chat\{transform:translateX\(100%\)\}/);
   assert.match(phoneBlock, /html\[data-simeon-phone="chat"\] \.sand-agents-sidebar\{transform:translateX\(-100%\)\}/);
   assert.match(phoneBlock, /\.sand-agents-sidebar__footer\{position:absolute!important;top:0!important;left:0!important;/, "the account at the top");
+  assert.match(phoneBlock, /\.sand-agents-sidebar__plugins-entry\{display:none!important\}/, "no Connect apps on the phone");
+  assert.match(phoneBlock, /html\[data-simeon-phone\] \.simeon-disc\.simeon-disc--theme\{display:grid\}/, "the light and dark switch shows on the phone");
+  assert.match(phoneBlock, /\.sand-agents-sidebar \.sand-agent-item\{zoom:1\.2\}/, "the Mac's rows, larger");
+  assert.match(phoneBlock, /\.sand-agent-item__avatar\{zoom:1\.2\}/, "the butterfly 36 px on the Mac, 52 on the phone");
+  assert.match(phoneBlock, /\.sand-agent-item__name\{font-weight:600!important\}/);
   assert.ok(patchOriginalPhoneHomeStylesheet(".a{}").endsWith(PHONE_HOME_CSS));
   assert.throws(() => patchOriginalPhoneHomeStylesheet(PHONE_HOME_CSS), /already present/);
 

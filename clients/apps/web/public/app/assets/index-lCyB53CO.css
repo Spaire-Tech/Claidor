@@ -17,6 +17,7 @@
 .sand-chat-header__avatar .sand-agent-avatar,.sand-chat-header__avatar .sand-simeon-mark{width:52px!important;height:52px!important}
 .sand-chat-header__avatar .sand-simeon-mark>svg{width:52px!important;height:52px!important}
 .sand-chat-header__avatar img.sand-agent-avatar{border-radius:50%!important;object-fit:cover!important}
+.sand-chat-header__avatar .sand-group-avatar{zoom:2.6}
 .sand-chat-header__title{align-items:center!important}
 .sand-chat-header__name{font-size:13px!important;line-height:18px!important;padding:3px 12px!important;border-radius:999px!important;background-color:var(--sand-fill-bubble-agent)!important;font-weight:500!important}
 .sand-chat-header__controls{position:absolute!important;right:0!important;top:50%!important;transform:translateY(-50%)!important}
@@ -556,6 +557,7 @@ strong .simeon-agent,b .simeon-agent,h1 .simeon-agent,h2 .simeon-agent,h3 .simeo
 
 /* Simeon: the sidebar's round glass discs (5 October 2026): search and create in the header, the same two at the foot of the rail, the account initials, and the composer's attach button at its own size. Clear glass, a specular top edge, a hairline, a soft shadow; the same in the dark. */
 .sand-agents-sidebar__search{display:none!important}
+.simeon-disc.simeon-disc--theme{display:none}
 .simeon-disc{display:grid;place-items:center;width:40px;height:40px;padding:0;margin:0;border:0;border-radius:999px;appearance:none;cursor:default;outline:none;color:light-dark(rgba(0,0,0,.78),rgba(255,255,255,.86));background:linear-gradient(180deg,light-dark(rgba(255,255,255,.62),rgba(255,255,255,.16)),light-dark(rgba(255,255,255,.38),rgba(255,255,255,.08)));-webkit-backdrop-filter:blur(14px) saturate(1.6);backdrop-filter:blur(14px) saturate(1.6);box-shadow:inset 0 1px 0 light-dark(rgba(255,255,255,.95),rgba(255,255,255,.28)),inset 0 0 0 .75px light-dark(rgba(255,255,255,.6),rgba(255,255,255,.12)),inset 0 -1px 1px rgba(0,0,0,.04),0 0 0 .5px light-dark(rgba(0,0,0,.07),rgba(0,0,0,.5)),0 1px 3px rgba(0,0,0,.06);transition:transform .18s ease,box-shadow .18s ease,background .18s ease}
 .simeon-disc:hover{transform:scale(1.04)}
 .simeon-disc:active{transform:scale(.97)}
@@ -588,7 +590,11 @@ html[data-simeon-phone] .sand-shell{grid-template-columns:minmax(0,1fr)!importan
 html[data-simeon-phone] .sand-sidebar-resize-handle{display:none!important}
 html[data-simeon-phone] .sand-agents-sidebar{border-right-width:0!important}
 html[data-simeon-phone] .sand-agents-sidebar__footer{position:absolute!important;top:0!important;left:0!important;height:60px!important;padding:0 0 0 16px!important;align-items:center!important;z-index:1}
-html[data-simeon-phone] .sand-agents-sidebar__plugins-entry{margin:0 0 12px!important}
+html[data-simeon-phone] .sand-agents-sidebar__plugins-entry{display:none!important}
+html[data-simeon-phone] .simeon-disc.simeon-disc--theme{display:grid}
+html[data-simeon-phone] .sand-agents-sidebar .sand-agent-item{zoom:1.2}
+html[data-simeon-phone] .sand-agents-sidebar .sand-agent-item__avatar{zoom:1.2}
+html[data-simeon-phone] .sand-agents-sidebar .sand-agent-item__name{font-weight:600!important}
 html[data-simeon-phone="list"] main.sand-chat,html[data-simeon-phone="chat"] .sand-agents-sidebar{position:fixed!important;inset:0!important;width:100%!important;visibility:hidden!important;pointer-events:none!important}
 html[data-simeon-phone="list"] main.sand-chat{transform:translateX(100%)}
 html[data-simeon-phone="chat"] .sand-agents-sidebar{transform:translateX(-100%)}

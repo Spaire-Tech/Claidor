@@ -2056,7 +2056,10 @@ export function patchOriginalBubbleStylesheet(css) {
  * inside it, which carries its own inline width/height from the animator's
  * size prop; the first build missed the SVG and drew a 20 px mark at the
  * top of an 88 px box, "genuinely terrible"), so it is the same animated
- * mark, larger, the name is a pill, and the controls (computer, info)
+ * mark, larger (a group's three butterflies, drawn at 20 px each, were
+ * missed until 8 October 2026, the founder: "the 3 are small, and should be
+ * the same size as the others": the stack is zoomed 2.6 times, 52 px each,
+ * its overlap with it; they are SVG images, so they stay sharp), the name is a pill, and the controls (computer, info)
  * stay at the right edge. Scoped with :has() to the identity variant of
  * the header, so the thread breadcrumb and the agent-exchange variants keep
  * their layout. The transcript already offsets by the toolbar's measured
@@ -2072,6 +2075,7 @@ export const HEADER_CARD_CSS = `
 .sand-chat-header__avatar .sand-agent-avatar,.sand-chat-header__avatar .sand-simeon-mark{width:52px!important;height:52px!important}
 .sand-chat-header__avatar .sand-simeon-mark>svg{width:52px!important;height:52px!important}
 .sand-chat-header__avatar img.sand-agent-avatar{border-radius:50%!important;object-fit:cover!important}
+.sand-chat-header__avatar .sand-group-avatar{zoom:2.6}
 .sand-chat-header__title{align-items:center!important}
 .sand-chat-header__name{font-size:13px!important;line-height:18px!important;padding:3px 12px!important;border-radius:999px!important;background-color:var(--sand-fill-bubble-agent)!important;font-weight:500!important}
 .sand-chat-header__controls{position:absolute!important;right:0!important;top:50%!important;transform:translateY(-50%)!important}
@@ -2136,11 +2140,16 @@ const DISC_ICONS = {
   search: '<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>',
   // The founder's compose glyph (5 October 2026): a square and a pencil.
   create: '<path d="M12 4.5H6.5A2.5 2.5 0 0 0 4 7v10.5A2.5 2.5 0 0 0 6.5 20H17a2.5 2.5 0 0 0 2.5-2.5V12M18.3 3.7a1.9 1.9 0 0 1 2.7 2.7L13 14.4l-3.6.9.9-3.6z"/>',
+  // The phone's light and dark switch (8 October 2026, the founder: "have a dark icon to switch from dark and light in simeon mobile").
+  moon: '<path d="M19.5 14.6A7.8 7.8 0 0 1 9.4 4.5a7.8 7.8 0 1 0 10.1 10.1z"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2.8v2M12 19.2v2M2.8 12h2M19.2 12h2M5.5 5.5l1.4 1.4M17.1 17.1l1.4 1.4M5.5 18.5l1.4-1.4M17.1 6.9l1.4-1.4"/>',
 };
 const SIDEBAR_DISCS_SOURCE = [
   `const __simeonDiscIcons=${JSON.stringify(DISC_ICONS)};`,
   'function __simeonDisc(n){const{icon:i,label:l,className:c,onClick:o}=n;return p.jsx(yo,{content:l,children:p.jsx("button",{type:"button","aria-label":l,className:"simeon-disc "+c,onClick:o,children:p.jsx("svg",{viewBox:"0 0 24 24","aria-hidden":!0,dangerouslySetInnerHTML:{__html:__simeonDiscIcons[i]}})})})}',
-  'function __simeonSidebarDiscs(n){const{onOpenSearch:s,onNewChat:c}=n;return p.jsxs(p.Fragment,{children:[p.jsx(__simeonDisc,{icon:"search",label:"Search",className:"simeon-disc--search",onClick:()=>{typeof s=="function"&&s()}},"search"),p.jsx(__simeonDisc,{icon:"create",label:"New chat",className:"simeon-disc--create",onClick:c},"create")]})}',
+  // The window's own theme: `VZ` reads it, `uMt` sets it, as Settings' Theme does. Drawn everywhere, shown on a phone only (PHONE_HOME_CSS).
+  'function __simeonThemeDisc(){const{resolved:r}=VZ(),{setPreference:s}=uMt(),d=r==="dark";return p.jsx(__simeonDisc,{icon:d?"sun":"moon",label:d?"Light mode":"Dark mode",className:"simeon-disc--theme",onClick:()=>{s(d?"light":"dark")}})}',
+  'function __simeonSidebarDiscs(n){const{onOpenSearch:s,onNewChat:c}=n;return p.jsxs(p.Fragment,{children:[p.jsx(__simeonThemeDisc,{},"theme"),p.jsx(__simeonDisc,{icon:"search",label:"Search",className:"simeon-disc--search",onClick:()=>{typeof s=="function"&&s()}},"search"),p.jsx(__simeonDisc,{icon:"create",label:"New chat",className:"simeon-disc--create",onClick:c},"create")]})}',
 ].join("");
 const SIDEBAR_HEADER_ANCHOR = "function pcn(n){";
 const SIDEBAR_HEADER_HEAD_BEFORE = "function pcn(n){const e=he.c(13),{isSelecting:t,selectedCount:s,sectionableSelectedCount:r,areSectionsSupported:i,sections:o,onMoveSelectionToNewSection:l,onMoveSelectionToSection:c,onRequestDeleteSelected:u,onClearSelection:d,onOpenNetwork:m,onOpenBroadcast:f,onNewChat:h}=n;let y;if(e[0]!==i||e[1]!==t||e[2]!==d||e[3]!==l||e[4]!==c||e[5]!==h||e[6]!==f||e[7]!==m||e[8]!==u||e[9]!==r||e[10]!==o||e[11]!==s){";
@@ -2190,6 +2199,7 @@ export function patchOriginalSidebarDiscs(source) {
 export const SIDEBAR_DISCS_MARKER = "/* Simeon: the sidebar's round glass discs";
 export const SIDEBAR_DISCS_CSS = `${SIDEBAR_DISCS_MARKER} (5 October 2026): search and create in the header, the same two at the foot of the rail, the account initials, and the composer's attach button at its own size. Clear glass, a specular top edge, a hairline, a soft shadow; the same in the dark. */
 .sand-agents-sidebar__search{display:none!important}
+.simeon-disc.simeon-disc--theme{display:none}
 .simeon-disc{display:grid;place-items:center;width:40px;height:40px;padding:0;margin:0;border:0;border-radius:999px;appearance:none;cursor:default;outline:none;color:light-dark(rgba(0,0,0,.78),rgba(255,255,255,.86));background:linear-gradient(180deg,light-dark(rgba(255,255,255,.62),rgba(255,255,255,.16)),light-dark(rgba(255,255,255,.38),rgba(255,255,255,.08)));-webkit-backdrop-filter:blur(14px) saturate(1.6);backdrop-filter:blur(14px) saturate(1.6);box-shadow:inset 0 1px 0 light-dark(rgba(255,255,255,.95),rgba(255,255,255,.28)),inset 0 0 0 .75px light-dark(rgba(255,255,255,.6),rgba(255,255,255,.12)),inset 0 -1px 1px rgba(0,0,0,.04),0 0 0 .5px light-dark(rgba(0,0,0,.07),rgba(0,0,0,.5)),0 1px 3px rgba(0,0,0,.06);transition:transform .18s ease,box-shadow .18s ease,background .18s ease}
 .simeon-disc:hover{transform:scale(1.04)}
 .simeon-disc:active{transform:scale(.97)}
@@ -2243,8 +2253,9 @@ export function patchOriginalSidebarDiscsStylesheet(css) {
  *      is. The iPhone app's notification tap says "chat" through
  *      `window.__simeonPhoneShow` (desktop/web/bridge.ts).
  *   3. The list's top is the account's initials at the left (the Mac keeps
- *      them at the foot) and search and new chat at the right, as on the
- *      Mac; Connect apps stays at the foot.
+ *      them at the foot) and, at the right, light and dark, search and new
+ *      chat; no Connect apps at the foot (the founder, 8 October 2026:
+ *      "remove the connect apps below"). The rows are the Mac's, larger.
  *   4. The chat's way back to the list is one of the Mac's discs at the top
  *      left, until the chat's own phone layout (step 2).
  *
@@ -2284,6 +2295,9 @@ export function patchOriginalPhoneHome(source) {
   return out;
 }
 
+/** The rows on a phone (the founder, 8 October 2026: "have the chat list be bigger and not thin"): the Mac's row at 1.2 times, its butterfly at 1.2 times again (36 px on the Mac, 52 on the phone), the name semibold. */
+export const PHONE_ROW_ZOOM = 1.2;
+export const PHONE_AVATAR_ZOOM = 1.2;
 export const PHONE_HOME_MARKER = "/* Simeon: the phone's home";
 export const PHONE_HOME_CSS = `${PHONE_HOME_MARKER} (8 October 2026): the Mac's agents list full screen, or the Mac's chat full screen, one at a time. */
 .simeon-disc.simeon-phone-back{display:none;position:fixed;top:12px;left:12px;z-index:40}
@@ -2292,7 +2306,11 @@ html[data-simeon-phone] .sand-shell{grid-template-columns:minmax(0,1fr)!importan
 html[data-simeon-phone] .sand-sidebar-resize-handle{display:none!important}
 html[data-simeon-phone] .sand-agents-sidebar{border-right-width:0!important}
 html[data-simeon-phone] .sand-agents-sidebar__footer{position:absolute!important;top:0!important;left:0!important;height:60px!important;padding:0 0 0 16px!important;align-items:center!important;z-index:1}
-html[data-simeon-phone] .sand-agents-sidebar__plugins-entry{margin:0 0 12px!important}
+html[data-simeon-phone] .sand-agents-sidebar__plugins-entry{display:none!important}
+html[data-simeon-phone] .simeon-disc.simeon-disc--theme{display:grid}
+html[data-simeon-phone] .sand-agents-sidebar .sand-agent-item{zoom:${PHONE_ROW_ZOOM}}
+html[data-simeon-phone] .sand-agents-sidebar .sand-agent-item__avatar{zoom:${PHONE_AVATAR_ZOOM}}
+html[data-simeon-phone] .sand-agents-sidebar .sand-agent-item__name{font-weight:600!important}
 html[data-simeon-phone="list"] main.sand-chat,html[data-simeon-phone="chat"] .sand-agents-sidebar{position:fixed!important;inset:0!important;width:100%!important;visibility:hidden!important;pointer-events:none!important}
 html[data-simeon-phone="list"] main.sand-chat{transform:translateX(100%)}
 html[data-simeon-phone="chat"] .sand-agents-sidebar{transform:translateX(-100%)}
