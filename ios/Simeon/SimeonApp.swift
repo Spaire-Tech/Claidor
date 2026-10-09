@@ -23,6 +23,10 @@ struct SimeonApp: App {
         .environment(session)
         .environment(session.store)
         .preferredColorScheme(Self.scheme(session.launch.theme ?? theme))
+        // One size of type everywhere, the chat's (the founder, 9 October 2026: "i want all to be the size of chat"). The chat
+        // is drawn in fixed sizes; rows left to the system (Settings' rows, pickers, menus) grew with the phone's Text Size and
+        // stood bigger than it. The phone's setting no longer changes the app; it never changed the chat.
+        .dynamicTypeSize(.large)
         // The window's own style as well: a sheet already open (Settings, where the choice is made) took the new
         // appearance only once closed (the founder, 9 October 2026), as the root's preference reaches the root alone.
         .onChange(of: session.launch.theme ?? theme, initial: true) { _, name in Self.applyToWindows(name) }
@@ -32,11 +36,12 @@ struct SimeonApp: App {
     }
   }
 
-  /** Every window of the app in the chosen style, and the sheets they hold with them. */
+  /** Every window of the app in the chosen style, and the sheets they hold with them; the type at its one size there too (menus, sheets). */
   @MainActor
   static func applyToWindows(_ name: String) {
     let style: UIUserInterfaceStyle = name == "light" ? .light : name == "dark" ? .dark : .unspecified
     for case let scene as UIWindowScene in UIApplication.shared.connectedScenes {
+      if scene.traitOverrides.preferredContentSizeCategory != .large { scene.traitOverrides.preferredContentSizeCategory = .large }
       for window in scene.windows where window.overrideUserInterfaceStyle != style { window.overrideUserInterfaceStyle = style }
     }
   }

@@ -27,7 +27,7 @@ struct SettingsSheet: View {
                 .background(Ink.bubbleTheirs, in: Circle())
               VStack(alignment: .leading, spacing: 2) {
                 Text(store.account?.name ?? "").font(.system(size: 17)).foregroundStyle(Ink.primary)
-                Text(store.account?.email ?? "").font(.system(size: 15)).foregroundStyle(Ink.secondary)
+                Text(store.account?.email ?? "").font(.system(size: 13)).foregroundStyle(Ink.secondary)
                   .lineLimit(1).minimumScaleFactor(0.75)
               }
             }
@@ -42,7 +42,7 @@ struct SettingsSheet: View {
             HStack {
               VStack(alignment: .leading, spacing: 3) {
                 Text("Connect apps").foregroundStyle(Ink.primary)
-                Text("Tools and skills for your agents").font(.system(size: 15)).foregroundStyle(Ink.secondary)
+                Text("Tools and skills for your agents").font(.system(size: 13)).foregroundStyle(Ink.secondary)
               }
               Spacer()
               Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Ink.tertiary)
@@ -56,7 +56,7 @@ struct SettingsSheet: View {
             VStack(alignment: .leading, spacing: 3) {
               Text("Auto-review")
               Text("Simeon checks each action before it runs and asks you first when needed.")
-                .font(.system(size: 15)).foregroundStyle(Ink.secondary)
+                .font(.system(size: 13)).foregroundStyle(Ink.secondary)
             }
           }
           .tint(Ink.live)
@@ -69,7 +69,7 @@ struct SettingsSheet: View {
             VStack(alignment: .leading, spacing: 3) {
               Text("Set Time Zone Automatically")
               Text("Your agents' computer follows this phone's time zone.")
-                .font(.system(size: 15)).foregroundStyle(Ink.secondary)
+                .font(.system(size: 13)).foregroundStyle(Ink.secondary)
             }
           }
           .tint(Ink.live)
@@ -99,7 +99,7 @@ struct SettingsSheet: View {
         Section {
           VStack(spacing: 8) {
             ButterflyView(palette: .named("blue")).frame(width: 56, height: 56)
-            Text("Simeon").font(.system(size: 20, weight: .semibold))
+            Text("Simeon").font(.system(size: 17, weight: .semibold))
             Text(SessionController.clientVersion).font(.system(size: 12)).foregroundStyle(Ink.tertiary)
           }
           .frame(maxWidth: .infinity)
@@ -167,7 +167,7 @@ struct AccountPage: View {
         VStack(spacing: 10) {
           Initials(letters: store.account?.initials ?? "", size: 72)
             .background(Ink.bubbleTheirs, in: Circle())
-          Text(store.account?.name ?? "").font(.system(size: 22, weight: .semibold)).foregroundStyle(Ink.primary)
+          Text(store.account?.name ?? "").font(.system(size: 20, weight: .semibold)).foregroundStyle(Ink.primary)
         }
         .frame(maxWidth: .infinity)
         .listRowBackground(Color.clear)
@@ -240,7 +240,7 @@ struct UsagePage: View {
             HStack(alignment: .firstTextBaseline) {
               Text(usage.title).font(.system(size: 17)).foregroundStyle(Ink.primary)
               Spacer()
-              if let resets = usage.resets { Text(resets).font(.system(size: 15)).foregroundStyle(Ink.tertiary) }
+              if let resets = usage.resets { Text(resets).font(.system(size: 13)).foregroundStyle(Ink.tertiary) }
             }
             GeometryReader { geometry in
               ZStack(alignment: .leading) {
@@ -249,7 +249,7 @@ struct UsagePage: View {
               }
             }
             .frame(height: 6)
-            Text("\(usage.percent)%").font(.system(size: 15)).foregroundStyle(Ink.secondary)
+            Text("\(usage.percent)%").font(.system(size: 13)).foregroundStyle(Ink.secondary)
           }
           .padding(.vertical, 6)
           .accessibilityElement(children: .combine)
@@ -356,7 +356,7 @@ struct AutoReviewRules: View {
     Form {
       Section {
         Text("Write one short, natural-language rule for each action. \"Ask first\" takes priority if rules conflict.")
-          .font(.system(size: 14)).foregroundStyle(Ink.secondary)
+          .font(.system(size: 13)).foregroundStyle(Ink.secondary)
       }
       if !allow.isEmpty {
         Section("Allow automatically") {
@@ -372,7 +372,7 @@ struct AutoReviewRules: View {
       }
       Section {
         VStack(alignment: .leading, spacing: 8) {
-          Text("When Simeon wants to:").font(.system(size: 15))
+          Text("When Simeon wants to:").font(.system(size: 13)).foregroundStyle(Ink.secondary)
           TextField("e.g. reply to emails for me", text: $wants, axis: .vertical).lineLimit(1...4)
         }
         Picker("It should:", selection: $should) {
@@ -440,7 +440,7 @@ struct ConnectAppsSheet: View {
               HStack(spacing: 12) {
                 ConnectorTile(name: app.name, size: 40)
                 VStack(alignment: .leading, spacing: 2) {
-                  Text(app.name).font(.system(size: 16, weight: .medium))
+                  Text(app.name).font(.system(size: 17))
                   Text(app.status == "connected" ? "\(app.toolCount) tools" : "Needs sign-in")
                     .font(.system(size: 13)).foregroundStyle(app.status == "connected" ? Ink.secondary : Ink.danger)
                 }
@@ -485,7 +485,7 @@ struct AppRow: View {
     HStack(spacing: 12) {
       ConnectorTile(name: app.title, size: 40)
       VStack(alignment: .leading, spacing: 2) {
-        Text(app.title).font(.system(size: 16, weight: .medium)).foregroundStyle(Ink.primary)
+        Text(app.title).font(.system(size: 17)).foregroundStyle(Ink.primary)
         if !app.summary.isEmpty { Text(app.summary).font(.system(size: 13)).foregroundStyle(Ink.secondary).lineLimit(2) }
       }
       Spacer(minLength: 8)
@@ -544,7 +544,7 @@ struct ConnectedAppDetail: View {
           VStack(alignment: .leading, spacing: 3) {
             Text(app.name).font(.system(size: 20, weight: .semibold))
             Text(connected ? "Connected · \(tools.isEmpty ? app.toolCount : tools.filter { !$0.isDisabled }.count) tools" : "Not signed in")
-              .font(.system(size: 14)).foregroundStyle(connected ? Ink.secondary : Ink.danger)
+              .font(.system(size: 13)).foregroundStyle(connected ? Ink.secondary : Ink.danger)
           }
         }
         .padding(.vertical, 6)
@@ -553,7 +553,7 @@ struct ConnectedAppDetail: View {
         ForEach(accounts.isEmpty ? [app] : accounts) { account in
           HStack {
             VStack(alignment: .leading, spacing: 2) {
-              Text(account.accountName).font(.system(size: 16))
+              Text(account.accountName).font(.system(size: 17))
               Text(account.status == "connected" ? "Connected" : "Needs sign-in")
                 .font(.system(size: 13)).foregroundStyle(account.status == "connected" ? Ink.secondary : Ink.danger)
             }
@@ -598,7 +598,7 @@ struct ConnectedAppDetail: View {
             }
           })) {
             VStack(alignment: .leading, spacing: 2) {
-              Text(tool.title ?? tool.name).font(.system(size: 16))
+              Text(tool.title ?? tool.name).font(.system(size: 17))
               if let summary = tool.summary, !summary.isEmpty {
                 Text(summary).font(.system(size: 13)).foregroundStyle(Ink.secondary).lineLimit(2)
               }

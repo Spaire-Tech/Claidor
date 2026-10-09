@@ -721,6 +721,38 @@ stop an agent's work from outside its turn.
   is now set on the app's windows as well as its root view, which an open
   sheet didn't follow.
 
+## 24. One size of type; the computer's wallpaper (9 October 2026)
+
+"We dont have a proper font size in the app. settings fonts are too big.
+chat is perfect, but i want all to be the size of chat … same for the new
+connector extra we added."
+
+- The cause: the chat is drawn in fixed sizes (17 pt on 23 pt lines), while
+  Settings' rows, pickers and menus were left to the system's text styles,
+  which grow with the phone's Text Size. Above the default, every plain row
+  stood bigger than the chat. The app now keeps the default size everywhere
+  (`dynamicTypeSize(.large)` and the window scene's content size), so those
+  rows are the chat's 17. The phone's Text Size no longer changes the app; it
+  never changed the chat.
+- Settings, Connect apps and an app's page on one scale: 17 for rows and
+  names (16 before in the apps lists), 13 grey for every description (15 or
+  14 before), 20 semibold for a page's heading (22 on Account), 17 for the
+  mark's name at the foot (20).
+- The sheet before connecting: the title 20 semibold (24 bold), the logo 56
+  (64), the description 15 (16); the points stay at the chat's 17 and 15.
+- The chat list is untouched.
+
+**The computer's wallpaper**: the founder's photograph of a river under a
+storm at sunset (the one the onboarding's computer step shows). The
+computers in service run the earlier maker's image, so the host paints it:
+it writes the picture to `/tmp/simeon-wallpaper` and runs the image's own
+`sand-wallpaper` pointed there (`SAND_WALLPAPER_TONE_DIR`), at start, half a
+minute and three minutes in, and at each change of tone. Checked here with
+that image's own script (taken from its published layer) on an X server: it
+painted the photograph. Simeon's own image (`box/wallpapers`) carries the
+same picture. It reaches the computers with the next host bundle
+(`npm run publish:host-bundle`).
+
 ## Suggested order (the founder decides)
 
 1. The chat's look: the bubble, the top bar, markdown, brand names with logos, agent names with butterflies.

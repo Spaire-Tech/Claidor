@@ -354,18 +354,18 @@ struct ConnectConsentSheet: View {
     VStack(spacing: 0) {
       ScrollView {
         VStack(spacing: 0) {
-          ConnectorTile(name: consent.title, size: 64)
+          ConnectorTile(name: consent.title, size: 56)
             .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
             .padding(.top, 30)
             .accessibilityHidden(true)
           Text(consent.title)
-            .font(.system(size: 24, weight: .bold))
+            .font(.system(size: 20, weight: .semibold))
             .foregroundStyle(Ink.primary)
             .padding(.top, 14)
             .accessibilityAddTraits(.isHeader)
           if !consent.summary.isEmpty {
             Text(consent.summary)
-              .font(.system(size: 16))
+              .font(.system(size: 15))
               .foregroundStyle(Ink.secondary)
               .multilineTextAlignment(.center)
               .fixedSize(horizontal: false, vertical: true)
