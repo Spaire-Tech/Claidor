@@ -105,6 +105,21 @@ NO_STORE = {"Cache-Control": "no-store"}
 PRODUCT = "Simeon"
 
 
+#: The iPhone app's own scheme (`mobile/`, 8 October 2026). The phone signs
+#: in exactly as the Mac does, through these routes; it names this scheme,
+#: so the confirm page opens `simeon-ios://app/v1/open`, which closes the
+#: phone's sign-in sheet, and says it is the iPhone asking.
+IOS_REDIRECT_TARGET = "simeon-ios"
+
+
+def _device(redirect_target: str | None) -> str:
+    """Which of the person's devices is asking, in the page's words. The
+    page says it so the person can tell a sign-in they started from one
+    they did not; anything but the phone's scheme is the Mac app."""
+    token = (redirect_target or "").strip().lower()
+    return "iPhone" if token == IOS_REDIRECT_TARGET else "Mac"
+
+
 def _deep_link(redirect_target: str | None) -> str | None:
     if redirect_target is None:
         return None
@@ -292,7 +307,8 @@ async def login_deep_control(
     # link as the way back.
     return _page(
         f"Sign in to {PRODUCT}?",
-        f"<p>{PRODUCT} on your Mac is asking to sign in as <strong>{email}</strong>."
+        f"<p>{PRODUCT} on your {_device(redirectTarget)} is asking to sign in as"
+        f" <strong>{email}</strong>."
         " Only continue if you just asked it to.</p>"
         f'<form method="post" action="/loginDeepControl">{fields}'
         f'<button type="submit">Sign in as {email}</button></form>'

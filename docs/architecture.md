@@ -159,6 +159,33 @@ is the box's noVNC page in a frame through the proxy. The agent's hands on
 the person's own machine, WebAuthn, voice calls and the updater stay with
 the Mac app.
 
+## Simeon on the iPhone (`mobile/`)
+
+An Expo app (8 October 2026; `mobile/README.md`) that shows Simeon on the
+web, the page at `app.simeonlabs.com/app`, full screen in a WKWebView, and
+adds what a browser tab cannot do. It signs in the Mac's way: the system's
+sign-in sheet (`ASWebAuthenticationSession`, which Google accepts and an
+embedded web view it refuses) opens `/loginDeepControl` with
+`redirectTarget=simeon-ios`, the app polls `/auth/poll` with its verifier,
+and the confirm page's `simeon-ios://app/v1/open` closes the sheet. The pair
+lives in the Keychain and is put on the page before its first script runs;
+inside the app (`window.ReactNativeWebView`) `desktop/web/api.ts` uses it
+instead of trading the website cookie, posts every refreshed pair back
+(the refresh token rotates, so only the page refreshes while it runs) and
+says when the session is over (the app's sign-in replaces the website's
+`/login`). On sign-out the app takes the phone off the notification list
+(`DELETE /desktop/push-devices`) with the live pair, then ends the session
+(`/desktop/api/auth/logout`). It registers the phone's Expo push token
+(`POST /desktop/push-devices`) after sign-in and at launch, keeps
+notifications quiet while it is open, and a tapped one opens its agent
+through `window.__simeonNative.openAgent` (`desktop/web/bridge.ts`), which
+pushes the main event the Mac's notification click pushes (`focus-agent`).
+Every top-level navigation is decided in `mobile/src/core/routing.ts`: only
+the window's own pages load in the web view; sign-ins go to the sign-in
+sheet, other links to Safari's. A connected app's sign-in finishes on
+`/app/connected.html` inside the sheet, with Safari's Simeon cookie. No
+microphone in this version (no voice calls, no dictation).
+
 ## The website (`sites/simeonlabs.com`)
 
 A static site served by Vercel from `public/`. Its hero plays the patched app
@@ -173,6 +200,9 @@ the billing page if they have no plan yet; `docs/services-billing.md`), then
 opens `simeon://app/v1/open`. Meanwhile the app polls `/auth/poll` for its
 token pair and later refreshes with `/oauth/token`. The access token is the
 opaque desktop token inside a signed JWT, so the app can read its expiry.
+The iPhone app signs in the same way, naming its own scheme
+(`redirectTarget=simeon-ios`); the confirm page then says the iPhone is
+asking and opens `simeon-ios://app/v1/open`.
 
 The packaged app carries its backend in `LSEnvironment`: `SIMEON_API_BASE_URL`
 and `SIMEON_WEBSITE_URL` (read by the login manager) and `SAND_BACKEND_URL`

@@ -212,7 +212,7 @@ test("the computer step: the screen is 1.45 times the drawing, with the photogra
   const by = Object.fromEntries(COMPUTER_STEP_REPLACEMENTS.map(([label, , after]) => [label, after]));
   assert.equal(COMPUTER_SCREEN_SCALE, 1.45);
   assert.equal(by["computer-card-seat"], "$2e={x:0,y:0}");
-  assert.match(by["computer-cursor-path"], /^x:\$2e\.x\+n\.demoCursor\.x\*1\.45-U2e\.x\*0\.66,y:\$2e\.y\+n\.demoCursor\.y\*1\.45-U2e\.y\*0\.66,scale:0\.66,/);
+  assert.match(by["computer-cursor-path"], /^x:\$2e\.x\+n\.demoCursor\.x\*__simeonComputerK\(\)-U2e\.x\*__simeonComputerCursor\(\),y:\$2e\.y\+n\.demoCursor\.y\*__simeonComputerK\(\)-U2e\.y\*__simeonComputerCursor\(\),scale:__simeonComputerCursor\(\),/, "the screen's factor (1.45 on a Mac, the phone's on a phone) and the cursor in proportion");
   assert.match(COMPUTER_CSS, /\.sand-onboarding__demo-card(:not\(#\\#\)){4}\{transform:scale\(1\.45\);background-color:#242a36\}/);
   assert.match(COMPUTER_CSS, /computer-demo>div:first-child(:not\(#\\#\)){4}\{top:calc\(50% - 312px\)\}/);
   assert.match(COMPUTER_CSS, /computer-demo>div:last-child(:not\(#\\#\)){4}\{top:calc\(50% \+ 256px\)\}/);
@@ -221,6 +221,237 @@ test("the computer step: the screen is 1.45 times the drawing, with the photogra
   const photo = await readFile(WALLPAPER_SOURCE);
   assert.deepEqual([...photo.subarray(0, 3)], [0xff, 0xd8, 0xff], "the wallpaper source is a JPEG");
   assert.ok(photo.length > 50_000 && photo.length < 400_000, `the photograph is sized for the app (${photo.length} bytes)`);
+});
+
+test("onboarding on a phone: every scene laid out for the width it has, titles growing upwards, the flow scaled only when the screen is short", async () => {
+  const { COO_REPLACEMENTS, NAME_STEP_REPLACEMENTS, CONNECT_STEP_REPLACEMENTS, PHONE_ONBOARDING_CSS, PHONE_MAX_WIDTH, PHONE_ONBOARDING_HALF_HEIGHT, COMPUTER_CARD_W, connectCss, patchOriginalCooStylesheet } = await import("../scripts/lib/router-renderer-patch.mjs");
+  const coo = COO_REPLACEMENTS.find(([label]) => label === "coo-step-component")[2].replace(/function sjn\(n\)\{$/, "");
+  const name = NAME_STEP_REPLACEMENTS.find(([label]) => label === "name-step-component")[2].replace(/function __simeonCooStep\(n\)\{$/, "");
+  // The step code as the window runs it, in a window of a given size.
+  const at = (width, height) => {
+    const set = {};
+    const window = { innerWidth: width, innerHeight: height, addEventListener: () => {} };
+    const document = { activeElement: null, documentElement: { style: { setProperty: (k, v) => { set[k] = v; } } } };
+    const run = new Function("window", "document", "S", "p", "fde", "tye", "nye", "sd", "re", "Fo", `${coo}${name};return {cooAt:__simeonCooAt,k:__simeonComputerK,cursor:__simeonComputerCursor,seat:__simeonNameSeatAt,crew:__simeonCooCrew}`);
+    return { ...run(window, document), set };
+  };
+  const mac = at(1280, 800);
+  assert.deepEqual(mac.set, { "--simeon-vw": "1280", "--simeon-vh": "800" }, "the size reaches the CSS");
+  assert.equal(mac.cooAt(1280), mac.crew, "a Mac keeps the Chief of Staff's own layout");
+  assert.equal(mac.k(), 1.45);
+  assert.equal(mac.cursor(), 0.66, "the cursor exactly as before on a Mac");
+  assert.deepEqual(mac.seat("weekly-standup"), { x: -168, y: -64, scale: 0.62 });
+
+  const phone = at(393, 759);
+  const crew = phone.cooAt(393);
+  assert.ok(crew.every((a) => Math.abs(a.x) === 393 / 2 - 50), "the agents come in to 50 px from the screen's edge");
+  assert.ok(crew.every((a) => Math.abs(a.x) + 28 + 16 <= 393 / 2), "an agent and its margin fit");
+  assert.equal(crew[0].d, `M-60 0C-83 0 -83 -100 -106.5 -100`, "the curves are drawn to where the agents are");
+  assert.deepEqual(crew.map((a) => a.y), mac.crew.map((a) => a.y), "the same rows");
+  assert.equal(phone.k(), (393 - 32) / COMPUTER_CARD_W, "the computer as wide as the screen less 16 px a side");
+  assert.ok(Math.abs(phone.cursor() - phone.k() * 0.66 / 1.45) < 1e-12, "Simeon's cursor in proportion");
+  assert.equal(phone.seat("sales-forecast").x, 393 / 2 - 44, "the name step's side agents come in");
+  assert.equal(phone.seat("invoice-chaser").x, 0);
+  assert.ok(at(320, 568).cooAt(320).every((a) => Math.abs(a.x) >= 104), "never closer to Simeon than his curves allow");
+
+  // A narrow Mac window counts as a phone; the boundary is the same in the script and the stylesheet.
+  assert.notEqual(at(599, 800).cooAt(599), at(599, 800).crew);
+  assert.match(PHONE_ONBOARDING_CSS, new RegExp(`@media \\(max-width:${PHONE_MAX_WIDTH - 0.02}px\\)`));
+  assert.match(PHONE_ONBOARDING_CSS, new RegExp(`--simeon-onb-fit:min\\(1,calc\\(\\(var\\(--simeon-vh,2000\\) / 2 - 16\\) / ${PHONE_ONBOARDING_HALF_HEIGHT}\\)\\)`), "scaled only when the screen is too short for the tallest step");
+  assert.match(PHONE_ONBOARDING_CSS, /--simeon-computer-k:min\(1\.45,calc\(\(var\(--simeon-vw,1280\) - 32\) \/ 441\)\)/, "the stylesheet's factor is the script's");
+  assert.match(PHONE_ONBOARDING_CSS, /\.sand-onboarding__step,\.sand-onboarding__cast\{scale:var\(--simeon-onb-fit\);transform-origin:50% 50%\}/, "the step and the cast that travels between steps scale together, about the centre");
+  assert.match(PHONE_ONBOARDING_CSS, /\.sand-onboarding__step(:not\(#\\#\)){4},\.sand-onboarding__step main>div(:not\(#\\#\)){4}\{overflow:visible\}/, "a scaled step does not clip what it brought back on screen");
+  for (const step of ["simeon-coo", "simeon-connect", "simeon-name", "sand-onboarding__computer-demo"]) assert.match(PHONE_ONBOARDING_CSS, new RegExp(`\\.${step}>div:first-child(:not\\(#\\\\#\\)){4}\\{top:auto;bottom:calc\\(50% \\+ `), `${step}: the title grows upwards`);
+  assert.match(PHONE_ONBOARDING_CSS, /\.simeon-coo>div:first-child(:not\(#\\#\)){4}\{top:auto;bottom:calc\(50% \+ 262px\)\}/, "a two-line title ends just above the copy");
+  assert.match(PHONE_ONBOARDING_CSS, /h1\{font-size:clamp\(22px,7\.1vw,28px\);line-height:1\.2;text-wrap:balance\}/, "no title takes more than two lines");
+  assert.ok(patchOriginalCooStylesheet(".a{}").endsWith(PHONE_ONBOARDING_CSS), "after every step's own rules, so it wins on a phone");
+
+  const connect = CONNECT_STEP_REPLACEMENTS.find(([label]) => label === "connect-step-component")[2];
+  assert.match(connect, /let W=el\.clientWidth\|\|920;const fit=\(\)=>\{W=el\.clientWidth\|\|W\};window\.addEventListener\("resize",fit\)/, "the row of apps moves across the width it is drawn at");
+  assert.match(connect, /window\.removeEventListener\("resize",fit\)/);
+  assert.match(connectCss({}), /\.simeon-connect__orbit\{position:relative;width:min\(920px,100vw\);/, "no wider than the screen");
+});
+
+test("the phone's + sheets and call: the window's own create actions, the Mac's call look", async () => {
+  const { PHONE_HOME_REPLACEMENTS, PHONE_HOME_CSS } = await import("../scripts/lib/router-renderer-patch.mjs");
+  const source = PHONE_HOME_REPLACEMENTS.find(([label]) => label === "phone-sidebar-open")[2];
+  assert.match(source, /n\.createAgent\(\{name:v,avatarColor:color,avatarShape:"cloud"\},\{isKickstartRequested:!0\}\)/, "New Agent: the window's createAgent, asked to introduce itself as the Mac's new chat does");
+  assert.match(source, /n\.createGroup\(\{name:picked\.map\(a=>a\.name\)\.join\(", "\)\.slice\(0,60\),description:"",memberAgentIds:picked\.map\(a=>a\.id\)\}\)/, "New Group Chat: named after its members, as the Mac names a group of recipients");
+  assert.match(source, /ok=picked\.length>=2&&!busy/, "a group is two agents or more");
+  assert.match(source, /a\.isGroup!==!0&&a\.isHiddenFromSidebar!==!0/, "a group's members are agents the sidebar shows");
+  assert.match(source, /item\("agent","New Agent"\),item\("group","New Group Chat"\)/);
+  assert.match(source, /const __simeonPalettes=\[\{"id":"yellow","label":"Dusk"\}/, "the twelve palettes, as the window names them");
+  // The call: the founder's layout, the Mac banner's buttons and nothing else (8 October 2026: "use our mac buttons. dont invent stuff").
+  const call = source.slice(source.indexOf("function __simeonPhoneCall(){"), source.indexOf("function __simeonPhoneLayer("));
+  assert.deepEqual([...call.matchAll(/btn\("simeon-call-(?:pill|full)__btn","([A-Za-z]+)"/g)].map((m) => m[1]), ["Transcript", "Transcript"], "Transcript, in the pill and full screen");
+  assert.equal((call.match(/muteBtn\("simeon-call-(?:pill|full)__btn"\)/g) ?? []).length, 2, "Mute, in both");
+  assert.equal((call.match(/endBtn\("simeon-call-(?:pill|full)__end"\)/g) ?? []).length, 2, "End, in both");
+  assert.doesNotMatch(source, /__simeonVoicePicker|"gear"|"voice"/, "no buttons the Mac's call does not have");
+  assert.match(source, /"talk":"<path d=\\"M5 7h14M5 12h14M5 17h9\\"\/>"/, "the banner's own Transcript glyph");
+  assert.match(source, /hidden:!tr/, "Transcript shows and hides the lines, as on the Mac");
+  assert.match(source, /function __simeonCallTime\(t\)\{[^}]*return h>0\?`\$\{h\}:\$\{String\(m\)\.padStart\(2,"0"\)\}:\$\{ss\}`:`\$\{m\}:\$\{ss\}`\}/, "the banner's clock, 0:16");
+  assert.match(source, /d\.mute\?\.\(!c\.isMuted\)/);
+  assert.match(source, /d\.hangUp\?\.\(\)/);
+  assert.match(source, /if\(!__simeonPhoneOk\|\|d==null\|\|c==null\)return null;/, "nothing drawn on the Mac or without a call");
+  assert.match(PHONE_HOME_CSS, /:root\{--simeon-call-card:#ffffff;/, "the Mac banner's card, white");
+  assert.match(PHONE_HOME_CSS, /\[data-theme\*="dark"\]\{--simeon-call-card:#2a2a2d;/, "and #2a2a2d in the dark");
+  assert.match(PHONE_HOME_CSS, /\.simeon-call-end\{[^}]*background:#ff3b30;/, "the banner's red");
+  assert.match(PHONE_HOME_CSS, /\.simeon-call-say--me\{align-self:flex-end;text-align:right;color:var\(--sand-text-secondary\)\}/, "the founder's transcript: the person's lines at the right, grey");
+  assert.match(PHONE_HOME_CSS, /\.simeon-call-say--them\{align-self:flex-start;color:var\(--sand-text-primary\)\}/, "the agent's at the left");
+  assert.doesNotMatch(PHONE_HOME_CSS, /\.simeon-call-say[^{]*\{[^}]*background/, "plain lines, no bubbles");
+  assert.match(PHONE_HOME_CSS, /\.simeon-phone-primary\{[^}]*background:var\(--sand-fill-bubble-user\);/, "Create and Next in the same blue");
+});
+
+test("the phone's top, Settings, search, the agent's page and the call's time on the list", async () => {
+  const { PHONE_HOME_REPLACEMENTS, PHONE_HOME_CSS, PHONE_MAX_WIDTH, PHONE_SETTINGS_PANEL_REPLACEMENTS, patchOriginalPhoneSettingsPanel } = await import("../scripts/lib/router-renderer-patch.mjs");
+  const mediaAt = PHONE_HOME_CSS.indexOf(`@media (max-width:${PHONE_MAX_WIDTH - 0.02}px){`);
+  const phoneBlock = PHONE_HOME_CSS.slice(mediaAt, PHONE_HOME_CSS.indexOf("\n}\n", mediaAt) + 3);
+  assert.match(phoneBlock, /\.sand-agents-sidebar__header \.simeon-disc,html\[data-simeon-phone\] \.simeon-disc\.simeon-phone-back\{width:46px;height:46px\}/, "the top's buttons a little larger than the Mac's 40");
+  assert.match(phoneBlock, /\.sand-agents-sidebar__account \.sand-kit-base-avatar img\{width:46px!important;height:46px!important\}/, "BF the same size");
+  assert.match(phoneBlock, /aside\.sand-info-pane\[data-open="true"\]\{position:fixed!important;[^}]*border-radius:32px;/, "the agent's page, a sheet");
+  assert.match(phoneBlock, /\.sand-info-pane__inner\{[^}]*max-width:none!important;/, "its width, not what is left beside the chat");
+  assert.match(phoneBlock, /\.sand-command-palette\{top:44px!important;[^}]*border-radius:32px!important;/, "search, a sheet");
+  assert.match(phoneBlock, /\.sand-settings-dialog\{top:44px!important;[^}]*border-radius:32px!important\}/, "Settings, a sheet");
+  assert.match(phoneBlock, /\.sand-settings-nav\{display:none!important\}/, "one column: General");
+  const source = PHONE_HOME_REPLACEMENTS.find(([label]) => label === "phone-sidebar-open")[2];
+  assert.match(source, /e\.target\.closest\("\.sand-agents-sidebar__account button"\)!=null/, "BF opens Settings on a phone");
+  assert.match(source, /os\("general"\)/);
+  assert.match(source, /onClick:\(\)=>uSe\(\),children:\[p\.jsx\("span",\{className:"simeon-connect-apps__label",children:"Connect apps"\}\)/, "Connect apps in Settings: the sidebar's button and the window's own opener");
+  assert.match(source, /globalThis\.__simeonPhoneSettingsMore=__simeonPhoneSettingsMore/);
+  assert.match(source, /className:"simeon-phone-settings-row simeon-phone-settings-row--danger",onClick:\(\)=>\{Promise\.resolve\(auth\.logout\(\)\)/, "Sign Out on its own row at the foot, the account's own sign-out");
+  assert.match(phoneBlock, /\.sand-account-card__action\{display:none!important\}/, "not beside the e-mail, which then fits");
+  assert.match(phoneBlock, /\.sand-account-card__body\{flex:1 1 auto!important;min-width:0!important;max-width:none!important\}/);
+  const general = PHONE_SETTINGS_PANEL_REPLACEMENTS[0][1];
+  assert.match(patchOriginalPhoneSettingsPanel(`x;${general};y`), /a\.jsx\(Sa,\{auth:t\},"general"\),a\.jsx\(globalThis\.__simeonPhoneSettingsMore\?\?\(\(\)=>null\),\{\},"simeon-phone-more"\)/, "under General, nothing on the Mac");
+  assert.match(source, /className:\\?"simeon-call-chip\\?"|className:"simeon-call-chip"/, "the call's time");
+  assert.match(PHONE_HOME_CSS, /html\[data-simeon-phone="list"\] \.simeon-call-pill\{display:none\}/, "on the list, not the pill");
+  assert.match(PHONE_HOME_CSS, /html\[data-simeon-phone="list"\] \.simeon-call-chip\{[^}]*right:124px;[^}]*background:var\(--sand-fill-success\);/, "the green time, beside search and +");
+});
+
+test("a group's butterflies in the chat header are a single agent's size", async () => {
+  const { HEADER_CARD_CSS } = await import("../scripts/lib/router-renderer-patch.mjs");
+  assert.match(HEADER_CARD_CSS, /\.sand-chat-header__avatar \.sand-group-avatar\{zoom:2\.6\}/, "20 px butterflies drawn at 52, a single agent's size");
+  assert.match(HEADER_CARD_CSS, /\.sand-chat-header__avatar \.sand-agent-avatar,\.sand-chat-header__avatar \.sand-simeon-mark\{width:52px!important;height:52px!important\}/);
+});
+
+test("the phone's home: the Mac's list full screen, a chat full screen, one at a time, and the Mac app left as it is", async () => {
+  const { PHONE_HOME_REPLACEMENTS, PHONE_HOME_CSS, PHONE_MAX_WIDTH, patchOriginalPhoneHome, patchOriginalPhoneHomeStylesheet } = await import("../scripts/lib/router-renderer-patch.mjs");
+  const source = PHONE_HOME_REPLACEMENTS.find(([label]) => label === "phone-sidebar-open")[2];
+  // The window's script in a page, with the window's own fold (`can`, 424 px for the chat).
+  const page = (userAgent, width = 393) => {
+    const attrs = {};
+    const body = { children: [], appendChild(el) { el.isConnected = true; this.children.push(el); } };
+    const document = {
+      body,
+      documentElement: { setAttribute: (k, v) => { attrs[k] = v; }, getAttribute: (k) => attrs[k] ?? null },
+      createElement: (tag) => ({ tag, isConnected: false, attrs: {}, listeners: {}, setAttribute(k, v) { this.attrs[k] = v; }, addEventListener(k, f) { this.listeners[k] = f; } }),
+      addEventListener: () => {},
+    };
+    const window = { innerWidth: width };
+    const run = new Function("window", "document", "navigator", `${source}function can(n,e){return n.isCollapsed?!1:e<n.expandedWidth+424}return{DCe,go:__simeonPhoneGo,plus:__simeonPhoneNew,ui:__simeonPhoneUi,done:__simeonPhoneDone,callSource:__simeonCallSource}`);
+    return { ...run(window, document, { userAgent }), window, body, mode: () => attrs["data-simeon-phone"] ?? null };
+  };
+  const open = { isCollapsed: false, expandedWidth: 280 };
+  const folded = { isCollapsed: true, expandedWidth: 280 };
+
+  const mac = page("Mozilla/5.0 (Macintosh) AppleWebKit/537.36 Simeon/1.0.0 Chrome/142.0.0.0 Electron/39.0.0 Safari/537.36");
+  assert.equal(mac.mode(), null, "the Mac app never takes the phone's layout");
+  assert.equal(mac.body.children.length, 0, "and has no back disc");
+  assert.equal(mac.window.__simeonPhoneShow, undefined);
+  assert.equal(mac.DCe(open, 520), true, "a narrow Mac window still folds the sidebar to its rail");
+  assert.equal(mac.DCe(open, 1280), false);
+  assert.equal(mac.DCe(folded, 1280), true);
+  const macCall = (x) => x * 2;
+  assert.equal(mac.go(macCall)(4), 8);
+  assert.equal(mac.mode(), null, "opening something on the Mac changes nothing");
+
+  const phone = page("Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148");
+  assert.equal(phone.mode(), "list", "the phone opens on the list");
+  assert.equal(phone.DCe(open, 393), false, "on a phone the sidebar stays open, so its rows lay out wide");
+  assert.equal(phone.DCe(folded, 393), false, "even if it was folded on a wider screen");
+  assert.equal(phone.DCe(open, PHONE_MAX_WIDTH), true, "from the phone's boundary up, the window's own fold");
+  assert.equal(phone.DCe(folded, 1280), true);
+  let opened = null;
+  const openAgent = (id) => { opened = id; return "done"; };
+  const wrapped = phone.go(openAgent);
+  assert.equal(phone.go(openAgent), wrapped, "one wrapper per callback, so the sidebar's memo holds");
+  assert.equal(phone.go(undefined), undefined);
+  assert.equal(wrapped("agent-1"), "done");
+  assert.equal(opened, "agent-1", "the window still opens what was asked");
+  assert.equal(phone.mode(), "chat", "and the phone shows the chat");
+  const [back] = phone.body.children;
+  assert.equal(back.attrs["aria-label"], "Back");
+  assert.match(back.className, /^simeon-disc simeon-phone-back$/, "the back button is one of the Mac's discs");
+  back.listeners.click();
+  assert.equal(phone.mode(), "list", "back shows the list");
+  phone.window.__simeonPhoneShow("chat");
+  assert.equal(phone.mode(), "chat", "the iPhone app's notification tap shows the chat (desktop/web/bridge.ts)");
+
+  // The +: on a phone a menu; on a Mac (or a wide window) the Mac's new chat.
+  let newChats = 0;
+  const newChat = () => { newChats += 1; return "new chat"; };
+  assert.equal(mac.plus(newChat), mac.plus(newChat), "one wrapper per callback");
+  assert.equal(page("Mozilla/5.0 (Macintosh) Electron/39.0.0", 393).plus(newChat)(), "new chat", "the Mac app's +, even narrow, is its new chat");
+  assert.equal(page("Mozilla/5.0 (iPhone)", 1280).plus(newChat)(), "new chat", "a wide browser window's + is the new chat");
+  assert.equal(newChats, 2);
+  const phonePlus = phone.plus(newChat);
+  assert.equal(phonePlus(), undefined);
+  assert.equal(newChats, 2, "a phone's + does not open a new chat");
+  assert.deepEqual(phone.ui(), { menu: true, sheet: null }, "it opens the menu");
+  phonePlus();
+  assert.deepEqual(phone.ui(), { menu: false, sheet: null }, "and closes it");
+  // A sheet's result opens the chat it made, whichever shape the window returns.
+  for (const made of [{ agent: { id: "a1" } }, { id: "a1" }]) {
+    const seen = [];
+    phone.done({ close: () => seen.push("closed"), openAgent: (id) => seen.push(id) }, made);
+    assert.deepEqual(seen, ["closed", "a1"]);
+  }
+  const failed = [];
+  phone.done({ close: () => failed.push("closed"), openAgent: (id) => failed.push(id) }, undefined);
+  assert.deepEqual(failed, ["closed"], "nothing to open, nothing opened");
+  // The call is drawn only where the window's voiceCall tells it as it goes: the phone's, not the Mac's banner.
+  assert.equal(phone.callSource(), null);
+  phone.window.desktop = { voiceCall: { start: () => {} } };
+  assert.equal(phone.callSource(), null, "the Mac's voiceCall (start, no subscribe) draws no call in the window");
+  const told = { start: () => {}, subscribe: () => () => {} };
+  phone.window.desktop = { voiceCall: told };
+  assert.equal(phone.callSource(), told);
+
+  // Only the phone's width, only outside the Mac app; hidden screens keep their width beside the screen.
+  assert.match(PHONE_HOME_CSS, /^\.simeon-disc\.simeon-phone-back\{display:none;/m, "the back disc is hidden everywhere else");
+  const mediaAt = PHONE_HOME_CSS.indexOf(`@media (max-width:${PHONE_MAX_WIDTH - 0.02}px){`);
+  const phoneBlock = PHONE_HOME_CSS.slice(mediaAt, PHONE_HOME_CSS.indexOf("\n}\n", mediaAt) + 3);
+  for (const rule of phoneBlock.split("\n").slice(1, -2)) assert.match(rule, /^html\[data-simeon-phone/, `gated on the attribute the Mac app never sets: ${rule}`);
+  assert.match(phoneBlock, /html\[data-simeon-phone="list"\] main\.sand-chat\{transform:translateX\(100%\)\}/);
+  assert.match(phoneBlock, /html\[data-simeon-phone="chat"\] \.sand-agents-sidebar\{transform:translateX\(-100%\)\}/);
+  assert.match(phoneBlock, /\.sand-agents-sidebar__footer\{position:absolute!important;top:0!important;left:0!important;/, "the account at the top");
+  assert.match(phoneBlock, /\.sand-agents-sidebar__plugins-entry\{display:none!important\}/, "no Connect apps on the phone");
+  assert.match(phoneBlock, /\.sand-agents-sidebar \.sand-agent-item\{zoom:1\.2\}/, "the Mac's rows, larger");
+  assert.match(phoneBlock, /\.sand-agent-item__avatar\{zoom:1\.2\}/, "the butterfly 36 px on the Mac, 52 on the phone");
+  assert.match(phoneBlock, /\.sand-agent-item__name\{font-weight:600!important\}/);
+  assert.ok(patchOriginalPhoneHomeStylesheet(".a{}").endsWith(PHONE_HOME_CSS));
+  assert.throws(() => patchOriginalPhoneHomeStylesheet(PHONE_HOME_CSS), /already present/);
+
+  // Every anchor once; Settings, a dialog over either screen, is left alone.
+  const anchors = PHONE_HOME_REPLACEMENTS.map(([, before]) => before).join("\n");
+  const patched = patchOriginalPhoneHome(anchors);
+  assert.match(patched, /Go=S\.useCallback\(Rs=>\{__simeonPhoneShow\("chat"\);Pc\(Rs\)\},\[Pc\]\)/);
+  assert.match(patched, /onOpenSettings:vr,/);
+  assert.match(patched, /onNewChat:__simeonPhoneNew\(fl\)/);
+  assert.match(patched, /children:\[p\.jsx\(__simeonPhoneLayer,\{agents:lt,createAgent:Sn,createGroup:ln,openAgent:Go,openSettings:vr\},"simeon-phone-layer"\),p\.jsx\(u0n,/, "the + sheets and the call sit beside the sidebar, with the window's own create actions and Settings");
+  assert.match(patched, /function uan\(n\)\{return __simeonIsPhone\(n\.windowWidth\)\|\|n\.windowWidth>=Dlt\(n\.sidebar,n\.paneWidth\)\}/, "the agent's page opens on a phone, where it is a sheet, not beside the chat");
+  assert.match(patched, /size:"md",children:\[p\.jsx\("button",\{type:"button",className:"simeon-disc simeon-palette-close","aria-label":"Close search",onClick:\(\)=>i\(\)/, "search's close, inside the dialog (taps outside a modal do not reach the page)");
+  assert.match(patched, /onOpenMessage:__simeonPhoneGo\(cr\)/);
+  assert.throws(() => patchOriginalPhoneHome(`${anchors}\n${anchors}`), /phone-sidebar-open/);
+
+  // The apply pass runs it last on the mark chunk and the stylesheet, and records it.
+  const patchSource = await readFile(path.join(repoRoot, "scripts/lib/router-renderer-patch.mjs"), "utf8");
+  assert.match(patchSource, /const markPatched = patchOriginalPhoneHome\(patchOriginalButterfly\(/);
+  assert.match(patchSource, /const stylesheetPatched = patchOriginalPhoneHomeStylesheet\(patchOriginalSidebarDiscsStylesheet\(/);
+  assert.match(patchSource, /if \(!PHONE_HOME_REPLACEMENTS\.every\(\(\[, before\]\) => markChunks\[0\]\.source\.includes\(before\)\)\) throw new Error/);
+  assert.match(patchSource, /\.\.\.BUTTERFLY_REPLACEMENTS, \.\.\.PHONE_HOME_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT\]\.map/);
+  assert.match(patchSource, /"take-over-card-styles", "phone-home"\]/);
+  assert.match(patchSource, /"draft-send", "phone-home"\]/);
 });
 
 test("Simeon is the first agent, titled Chief of Staff, pinned or not as the person likes", async () => {
@@ -247,7 +478,7 @@ test("the name step: the apps step's agents gather over one field, and the last 
   const { NAME_STEP_REPLACEMENTS, NAME_CSS } = await import("../scripts/lib/router-renderer-patch.mjs");
   const by = Object.fromEntries(NAME_STEP_REPLACEMENTS.map(([label, , after]) => [label, after]));
   assert.match(by["name-step-screen"], /^case"name":return p\.jsx\(__simeonNameStep,\{headingId:xn,onBack:\(\)=>x\.goBack\(ln\),onForward:\(\)=>\{Pe\(\)\}\}\);/, "Next on the name step makes Simeon and finishes");
-  assert.match(by["name-step-agents"], /^case"name":return\{\.\.\.t,\.\.\.__simeonNameSeat\[e\],opacity:1/);
+  assert.match(by["name-step-agents"], /^case"name":return\{\.\.\.t,\.\.\.__simeonNameSeatAt\(e\),opacity:1/, "the seat for the width (the Mac's own above a phone's)");
   assert.match(by["name-step-component"], /title:"How should Simeon & Co call you\?"/);
   assert.match(by["name-step-component"], /a\.updateName\(name\)/, "saved through the account's own rename");
   assert.doesNotMatch(by["name-step-component"], /Hi, /, "no greeting bubble");

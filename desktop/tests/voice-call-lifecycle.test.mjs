@@ -81,7 +81,8 @@ function fakeLegs({ tail = [], roster = [] } = {}) {
     listAgents: async () => legs.roster,
     getAgentTranscriptTail: async (args) => { calls.push(["tail", args]); return { entries: legs.tail }; },
     appendSendMessage: async (args) => { calls.push(["append", args]); return { id: "s9" }; },
-    updateAgent: async (args) => { calls.push(["update", args]); return {}; },
+    // As the host does: the profile's voice is on the roster's row from then on.
+    updateAgent: async (args) => { calls.push(["update", args]); const row = legs.roster.find((one) => one.id === args.id); if (row != null && typeof args.profile?.voiceId === "string") row.voiceId = args.profile.voiceId; return {}; },
   };
   return { legs, calls };
 }
@@ -283,11 +284,79 @@ test("each agent is given its own voice by its name, Simeon's for the Chief of S
   // Saved through the host, with the Mac's copy, and kept: asking again gives the same and saves nothing.
   const updates = calls.filter(([name]) => name === "update");
   assert.equal(updates.length, 5);
-  assert.deepEqual(updates[1][1], { id: "maya", profile: { name: "Maya", description: "", title: "Inbox", voiceId: given.Maya } });
+  assert.deepEqual(updates.find(([, args]) => args.id === "maya")[1], { id: "maya", profile: { name: "Maya", description: "", title: "Inbox", voiceId: given.Maya } });
   assert.equal(store.map.get("maya"), given.Maya);
   assert.deepEqual(await svc.getAgentVoice("maya"), { voiceId: given.Maya, isDefault: false });
   assert.deepEqual(await svc.getAgentVoice("set"), { voiceId: "1t1EeRixsJrKbiF1zwM6", isDefault: false }, "a chosen voice stays");
   assert.equal(calls.filter(([name]) => name === "update").length, 5);
+});
+
+test("a voice taken off the list is none: the agent is given one by its name, and its call speaks in it (9 October 2026)", async () => {
+  // The founder: "you brought back voices like jessica that i deleted … every voice says "michael" by default, even
+  // tho its a different voice". Nina and Leo still held Jessica, gone from the list: their pickers showed the list's
+  // first (Michael) while their calls spoke as Jessica.
+  const jessica = "cgSgspJ2msm6clMCkdW9";
+  const rows = [
+    { id: "nina", name: "Nina", description: "", title: "Finance", voiceId: jessica },
+    { id: "leo", name: "Leo", description: "", title: "Growth", voiceId: jessica },
+    { id: "kim", name: "Kim", description: "", voiceId: "1t1EeRixsJrKbiF1zwM6" },
+  ];
+  const { legs, calls } = fakeLegs({ roster: rows, tail: [] });
+  const listed = api.parseVoiceOptions([
+    { id: "ljX1ZrXuDIIRVcmiVSyR", name: "Michael", gender: "male" },
+    { id: "1t1EeRixsJrKbiF1zwM6", name: "Jerry", gender: "male" },
+    { id: "WI5pMmcGGS32yI7yttoP", name: "Amanda", gender: "female" },
+    { id: "NHRgOEwqx5WZNClv5sat", name: "Chelsea", gender: "female" },
+  ]);
+  const store = memoryStore();
+  store.set("nina", jessica);
+  const voiceApi = { listVoices: async () => listed, startCall: async () => ({ token: "tok", conversationId: null, agentId: "el" }), endCall: async () => ({ seconds: 0, summary: null, transcript: [] }) };
+  const svc = service.createVoiceCallService({ legs, api: () => voiceApi, window: fakeWindow(), voiceStore: store, previews: { urlFor: async () => null }, focusAgentChat: () => {}, isEnabled: () => true, log: () => {}, random: () => 0, wait: async () => {}, newCallId: () => "call-1", schedule: manualScheduler().schedule });
+  const nina = await svc.getAgentVoice("nina");
+  assert.equal(nina.isDefault, false);
+  assert.ok(["WI5pMmcGGS32yI7yttoP", "NHRgOEwqx5WZNClv5sat"].includes(nina.voiceId), `Nina: ${nina.voiceId}`);
+  assert.equal(store.map.get("nina"), nina.voiceId, "the Mac's copy no longer holds Jessica");
+  // One pass gave Leo his too, a man's voice Kim does not have.
+  const leo = calls.find(([name, args]) => name === "update" && args.id === "leo")[1].profile.voiceId;
+  assert.equal(leo, "ljX1ZrXuDIIRVcmiVSyR");
+  assert.equal(calls.some(([name, args]) => name === "update" && args.id === "kim"), false, "a listed voice stays");
+  // Leo's call speaks in the voice his picker shows, never Jessica.
+  svc.start("leo");
+  const connected = await svc.handlePanel("connect", {});
+  assert.equal(connected.overrides.tts.voiceId, leo);
+  assert.deepEqual(await svc.getAgentVoice("leo"), { voiceId: leo, isDefault: false });
+  assert.equal(calls.filter(([name]) => name === "update").length, 2, "given once");
+});
+
+test("every agent is given its voice as soon as the window names one, not at its first call (9 October 2026)", async () => {
+  const rows = [
+    { id: "a1", name: "Maya", description: "" },
+    { id: "a2", name: "Leo", description: "" },
+    { id: "g1", name: "Team", description: "", isGroup: true },
+    { id: "r1", name: "Shared", description: "", remoteRoom: { id: "x" } },
+  ];
+  const { legs, calls } = fakeLegs({ roster: rows });
+  let lists = 0;
+  const listed = api.parseVoiceOptions([{ id: "ljX1ZrXuDIIRVcmiVSyR", name: "Michael", gender: "male" }, { id: "WI5pMmcGGS32yI7yttoP", name: "Amanda", gender: "female" }]);
+  let clock = 1_000_000;
+  const make = (enabled) => service.createVoiceCallService({ legs, api: () => ({ listVoices: async () => { lists += 1; return listed; } }), window: fakeWindow(), voiceStore: memoryStore(), previews: { urlFor: async () => null }, focusAgentChat: () => {}, isEnabled: () => enabled, log: () => {}, now: () => clock });
+  const flush = async () => { for (let i = 0; i < 10; i++) await new Promise((resolve) => setImmediate(resolve)); };
+  make(false).noteSelectedAgent("a1", "Maya");
+  await flush();
+  assert.equal(lists, 0, "calls switched off: nothing asked");
+  const svc = make(true);
+  svc.noteSelectedAgent("a1", "Maya");
+  await flush();
+  const updates = () => calls.filter(([name]) => name === "update").map(([, args]) => [args.id, args.profile.voiceId]);
+  assert.deepEqual(updates(), [["a1", "WI5pMmcGGS32yI7yttoP"], ["a2", "ljX1ZrXuDIIRVcmiVSyR"]], "groups and shared rooms have no voice");
+  svc.noteSelectedAgent("a2", "Leo");
+  await flush();
+  assert.equal(updates().length, 2);
+  clock += service.ASSIGN_VOICES_EVERY_MS;
+  legs.roster.push({ id: "a3", name: "Nina", description: "" });
+  svc.noteSelectedAgent("a1", "Maya");
+  await flush();
+  assert.deepEqual(updates().at(-1), ["a3", "WI5pMmcGGS32yI7yttoP"], "a new agent gets hers on the next pass");
 });
 
 test("the banner wears the colour the window drew the agent in when the roster stores none", async () => {

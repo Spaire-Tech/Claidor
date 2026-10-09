@@ -45,7 +45,10 @@ async def get_desktop_or_box_session(
     The profile route takes this one, because the box's host reads the
     person's name from it (`user-full-name-service.ts`), and since 25
     September 2026 the two memory routes, because the host that keeps
-    the memory files runs in the box (`host/extensions/memory-sync/`)."""
+    the memory files runs in the box (`host/extensions/memory-sync/`).
+    Since 8 October 2026 also `POST /desktop/push`, because the host in
+    the box is what sees an agent finish and tells the person's phone
+    (`push.py`)."""
     token = bearer_token(request)
     if token is None:
         raise DesktopUnauthenticated()

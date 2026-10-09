@@ -8,6 +8,15 @@
  * `server/simeon/desktop/app_sign_in.py`) and keeps it for the tab in
  * sessionStorage: gone when the tab closes, never shared across tabs, never
  * written to disk by us.
+ *
+ * Simeon on the iPhone (8 October 2026, `mobile/`) shows this same page in a
+ * WKWebView. The app signs in itself, the Mac's way (`/loginDeepControl`,
+ * `/auth/poll`), keeps the pair in the Keychain and puts it on the window
+ * before the page loads (NATIVE_TOKENS_GLOBAL). Inside the app
+ * (`window.ReactNativeWebView`) the page trades no cookie (the web view has
+ * none), sends every refreshed pair back to the app (the refresh token
+ * rotates, so the Keychain must hold the live one), and tells the app the
+ * session is over instead of going to the website's login.
  */
 
 export const WEB_SESSION_PATH = "/auth/web-session";
@@ -64,6 +73,63 @@ export interface TokenStore {
   write(tokens: WebTokens | null): void;
 }
 
+/** A pair in the stored shape, or null; `expiresAtMs` read off the envelope when the writer left it out (the iPhone app keeps what `/auth/poll` gave it). */
+export function parseWebTokens(value: unknown, nowMs: number): WebTokens | null {
+  if (value == null || typeof value !== "object") return null;
+  const { accessToken, refreshToken, expiresAtMs } = value as Partial<Record<keyof WebTokens, unknown>>;
+  if (typeof accessToken !== "string" || accessToken.length === 0 || typeof refreshToken !== "string" || refreshToken.length === 0) return null;
+  return { accessToken, refreshToken, expiresAtMs: typeof expiresAtMs === "number" && Number.isFinite(expiresAtMs) ? expiresAtMs : expiryOfAccessToken(accessToken, nowMs) };
+}
+
+// --- inside Simeon's iPhone app ----------------------------------------------
+
+/** Where the app puts the pair before the page's first script runs (`injectedJavaScriptBeforeContentLoaded`). */
+export const NATIVE_TOKENS_GLOBAL = "__simeonNativeTokens";
+/**
+ * The page's messages to the app, one JSON string each on
+ * `window.ReactNativeWebView.postMessage` (read by `mobile/src/core/messages.ts`):
+ * a refreshed pair; the end of the session; a link or a sign-in to open
+ * outside the web view; a finished connected-app sign-in; the window's
+ * theme; and the window being up (ready to open an agent).
+ */
+export const NATIVE_MESSAGE = {
+  tokens: "simeon.tokens",
+  signedOut: "simeon.signed-out",
+  open: "simeon.open",
+  mcpAuth: "simeon.mcp-auth",
+  theme: "simeon.theme",
+  ready: "simeon.ready",
+} as const;
+/** Why the page has no session: the person signed out (the app ends it on the server), the server ended it, or there never was one. */
+export type NativeSignedOutReason = "logout" | "expired" | "no-session";
+
+export interface NativeShell { postMessage(message: { readonly type: string } & Record<string, unknown>): void }
+
+/** The app's web view, when the page is in one: `window.ReactNativeWebView` (react-native-webview), else null, which is a browser tab. */
+export function nativeShellOf(scope: object): NativeShell | null {
+  const view = Reflect.get(scope, "ReactNativeWebView") as { postMessage?: unknown } | undefined;
+  if (view == null || typeof view.postMessage !== "function") return null;
+  const post = view.postMessage as (data: string) => void;
+  return { postMessage: (message) => { try { post.call(view, JSON.stringify(message)); } catch { /* the app is going away */ } } };
+}
+
+/**
+ * The pair the app handed the page. Reads what it injected; every new pair
+ * goes back to the app at once, which writes it to the Keychain and injects
+ * it into the next load. A pair that is gone (`write(null)`) is not posted:
+ * the page says why it is gone (`signed-out`), and the app deregisters this
+ * phone's notifications with the pair it still holds before forgetting it.
+ */
+export function nativeTokenStore(shell: NativeShell, scope: object, now: () => number = () => Date.now()): TokenStore {
+  return {
+    read: () => parseWebTokens(Reflect.get(scope, NATIVE_TOKENS_GLOBAL), now()),
+    write(tokens) {
+      Reflect.set(scope, NATIVE_TOKENS_GLOBAL, tokens);
+      if (tokens != null) shell.postMessage({ type: NATIVE_MESSAGE.tokens, tokens });
+    },
+  };
+}
+
 export function sessionTokenStore(storage: Storage = sessionStorage): TokenStore {
   return {
     read() {
@@ -91,6 +157,8 @@ export interface SimeonApiOptions {
   readonly now?: () => number;
   /** `x-simeon-client-version`: what the server is told the client is. */
   readonly clientVersion: string;
+  /** Inside Simeon's iPhone app: the app's web view, which signs in, keeps the pair and ends the session (see the top of this file). */
+  readonly native?: NativeShell;
 }
 
 export class SimeonApi {
@@ -119,6 +187,10 @@ export class SimeonApi {
    * in on the web app; the caller sends them to its login page.
    */
   async signInFromCookie(): Promise<boolean> {
+    // In the iPhone app the pair comes from the app and nowhere else: its
+    // web view holds no website cookie, and a session traded here would be
+    // one the app never learns of, so could not end.
+    if (this.options.native != null) return false;
     const response = await this.doFetch(`${this.base}${WEB_SESSION_PATH}`, { method: "POST", credentials: "include", headers: { accept: "application/json" } });
     if (response.status === 401) return false;
     if (!response.ok) throw new SimeonApiError(`Signing in to Simeon on the web failed (${response.status}).`, response.status);
@@ -131,6 +203,13 @@ export class SimeonApi {
   setTokens(tokens: WebTokens | null): void {
     this.tokens = tokens;
     this.options.store.write(tokens);
+  }
+
+  /** The server ended the session (a spent refresh token, a 401): the pair is dropped, and the iPhone app is told, to show its own sign-in. */
+  private sessionEnded(): void {
+    this.setTokens(null);
+    const reason: NativeSignedOutReason = "expired";
+    this.options.native?.postMessage({ type: NATIVE_MESSAGE.signedOut, reason });
   }
 
   /** A live access token, refreshed first when the hour is nearly up. Null when signed out. */
@@ -165,12 +244,12 @@ export class SimeonApi {
       // The server answers 200 with `shouldLogout` for a spent token and a
       // non-2xx only for a malformed request; either way, nothing to keep.
       if (response.status >= 500 || response.status === 429) return current;
-      this.setTokens(null);
+      this.sessionEnded();
       return null;
     }
     const body = await response.json() as { access_token?: unknown; refresh_token?: unknown; shouldLogout?: unknown };
     if (body.shouldLogout === true || typeof body.access_token !== "string" || typeof body.refresh_token !== "string") {
-      this.setTokens(null);
+      this.sessionEnded();
       return null;
     }
     const next = { accessToken: body.access_token, refreshToken: body.refresh_token, expiresAtMs: expiryOfAccessToken(body.access_token, this.now()) };
@@ -178,10 +257,21 @@ export class SimeonApi {
     return next;
   }
 
-  /** Signs this tab's session out on the server and forgets the pair. */
+  /**
+   * Signs this tab's session out on the server and forgets the pair. In the
+   * iPhone app the app ends it: it first takes this phone off the
+   * notification list with the live pair (`DELETE /desktop/push-devices`),
+   * which a session already ended here could no longer do, then posts
+   * `auth/logout` itself.
+   */
   async signOut(): Promise<void> {
     const token = this.tokens?.accessToken;
     this.setTokens(null);
+    if (this.options.native != null) {
+      const reason: NativeSignedOutReason = "logout";
+      this.options.native.postMessage({ type: NATIVE_MESSAGE.signedOut, reason });
+      return;
+    }
     if (token == null) return;
     try { await this.doFetch(`${this.base}${DESKTOP_API_PREFIX}auth/logout`, { method: "POST", headers: { authorization: `Bearer ${token}` } }); } catch { /* best effort */ }
   }
@@ -205,7 +295,7 @@ export class SimeonApi {
       ...(request.json === undefined ? {} : { body: JSON.stringify(request.json) }),
       ...(request.signal === undefined ? {} : { signal: request.signal }),
     });
-    if (response.status === 401) { this.setTokens(null); }
+    if (response.status === 401) { this.sessionEnded(); }
     if (!response.ok) throw new SimeonApiError(`Simeon Labs' server answered ${path} with ${response.status}.`, response.status);
     const parsed = await response.json().catch(() => null) as { code?: unknown; data?: unknown; message?: unknown } | null;
     if (parsed == null || typeof parsed !== "object") throw new SimeonApiError(`Simeon Labs' server answered ${path} with something that is not JSON.`, response.status);

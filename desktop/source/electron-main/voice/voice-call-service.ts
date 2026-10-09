@@ -93,6 +93,8 @@ export interface VoicePickerOption {
 
 export const VOICE_TRANSCRIPT_TAIL_LIMIT = 80;
 export const VOICES_CACHE_MS = 10 * 60_000;
+/** How often a window naming an agent has every agent given its voice (`assignMissingVoices`). */
+export const ASSIGN_VOICES_EVERY_MS = 60_000;
 /** The summary is written by ElevenLabs a little after the call; asked again after these waits. */
 export const SUMMARY_RETRY_WAITS_MS: readonly number[] = [5_000, 10_000];
 export const VOICE_ID_PATTERN = /^[A-Za-z0-9]{1,64}$/;
@@ -176,11 +178,12 @@ export function createVoiceCallService(options: VoiceCallServiceOptions): VoiceC
   let finishing: Promise<void> = Promise.resolve();
 
   let roster: readonly Record<string, unknown>[] = [];
-  const findAgent = async (agentId: string): Promise<Record<string, unknown> | null> => {
+  const readRoster = async (): Promise<readonly Record<string, unknown>[]> => {
     const agents = await options.legs.listAgents();
     roster = (Array.isArray(agents) ? agents : []).filter(isRecord);
-    return roster.find((row) => row.id === agentId) ?? null;
+    return roster;
   };
+  const findAgent = async (agentId: string): Promise<Record<string, unknown> | null> => (await readRoster()).find((row) => row.id === agentId) ?? null;
   /** The agent's teammates by name: the rest of the roster, groups and shared rooms left out. */
   const teammatesOf = (agentId: string): { name: string; title?: string }[] =>
     roster
@@ -312,37 +315,78 @@ export function createVoiceCallService(options: VoiceCallServiceOptions): VoiceC
     options.voiceStore.set(agentId, voiceId);
   };
 
+  /** A stored voice still on the account's list; one taken off it (Jessica, 6 October 2026) is none. An empty list judges nothing. */
+  const keptVoice = (agentId: string, row: Record<string, unknown> | null, list: readonly VoiceOption[]): string | null => {
+    const stored = storedVoice(agentId, row);
+    return stored == null || list.length === 0 || list.some((voice) => voice.id === stored) ? stored : null;
+  };
+
+  let assigning: Promise<ReadonlyMap<string, string>> | null = null;
+  let lastAssignedAtMs = 0;
   /**
-   * The agent's voice, given one now if it has none (8 October 2026): its
-   * name's gender, the voice fewest agents have, Simeon's own for the Chief
-   * of Staff (`shared/voice-call/agent-voices.ts`), saved so it stays. Null
-   * (the default voice) when the voices cannot be listed.
+   * Every agent's voice, given now to each agent without one on the list (9
+   * October 2026, the founder: "theres no smart attribution of voices …
+   * every voice says "michael" by default, even tho its a different voice").
+   * Until then an agent got its voice only when a call or its picker asked,
+   * and an agent holding a voice taken off the list (Jessica) kept speaking
+   * in it while its picker showed the list's first, Michael. Agents in id
+   * order, so the phone, doing the same (ios/SimeonCore AgentVoices.swift),
+   * gives the same voices. One pass at a time; the voices it ends with, by
+   * agent.
+   */
+  const assignMissingVoices = (): Promise<ReadonlyMap<string, string>> => {
+    const run = async (): Promise<ReadonlyMap<string, string>> => {
+      const given = new Map<string, string>();
+      let list: VoiceOption[];
+      try { list = await loadVoices(); }
+      catch (error) { options.log(`voice: none given, the voices could not be listed: ${errorText(error)}`); return given; }
+      let rows: readonly Record<string, unknown>[];
+      try { rows = await readRoster(); }
+      catch (error) { options.log(`voice: none given, the roster could not be read: ${errorText(error)}`); return given; }
+      const people = rows
+        .filter((row) => typeof row.id === "string" && row.id.length > 0 && row.isGroup !== true && row.remoteRoom == null)
+        .sort((a, b) => (text(a.id) < text(b.id) ? -1 : text(a.id) > text(b.id) ? 1 : 0));
+      for (const row of people) { const kept = keptVoice(text(row.id), row, list); if (kept != null) given.set(text(row.id), kept); }
+      if (list.length === 0) return given;
+      for (const row of people) {
+        const agentId = text(row.id);
+        if (given.has(agentId)) continue;
+        const was = storedVoice(agentId, row);
+        const taken = [...given.values()];
+        const picked = pickAgentVoice({ agentId, name: text(row.name), isChiefOfStaff: isChiefOfStaffTitle(text(row.title)), voices: list, takenVoiceIds: taken });
+        if (picked == null) continue;
+        given.set(agentId, picked);
+        try { await saveVoice(agentId, row, picked); }
+        catch (error) { options.log(`voice: ${picked} given to agent ${agentId} for now, not saved: ${errorText(error)}`); continue; }
+        options.log(`voice for agent ${agentId}: ${picked} (given by name${was == null ? "" : `, ${was} is no longer listed`}, ${taken.length} other agents with voices)`);
+      }
+      return given;
+    };
+    assigning ??= run().finally(() => { assigning = null; });
+    return assigning;
+  };
+
+  /**
+   * The agent's voice, given one now if it has none on the list (8 October
+   * 2026): its name's gender, the voice fewest agents have, Simeon's own for
+   * the Chief of Staff (`shared/voice-call/agent-voices.ts`), saved so it
+   * stays. Null (the agent's own voice, Michael) when the voices cannot be
+   * listed or none is left to give.
    */
   const assignedVoice = async (agentId: string, row: Record<string, unknown> | null): Promise<string | null> => {
-    const stored = storedVoice(agentId, row);
-    if (stored != null || row == null) return stored;
+    if (row == null) return storedVoice(agentId, row);
     let list: VoiceOption[];
     try { list = await loadVoices(); }
     catch (error) {
       options.log(`voice: none given to agent ${agentId}, the voices could not be listed: ${errorText(error)}`);
-      return null;
+      return storedVoice(agentId, row);
     }
-    const taken = roster
-      .filter((other) => typeof other.id === "string" && other.id !== agentId && other.isGroup !== true && other.remoteRoom == null)
-      .map((other) => storedVoice(text(other.id), other))
-      .filter((id): id is string => id != null);
-    const picked = pickAgentVoice({
-      agentId,
-      name: text(row.name),
-      isChiefOfStaff: isChiefOfStaffTitle(text(row.title)),
-      voices: list,
-      takenVoiceIds: taken,
-    });
-    if (picked == null) return null;
-    try { await saveVoice(agentId, row, picked); }
-    catch (error) { options.log(`voice: ${picked} given to agent ${agentId} for now, not saved: ${errorText(error)}`); return picked; }
-    options.log(`voice for agent ${agentId}: ${picked} (given by name, ${taken.length} other agents with voices)`);
-    return picked;
+    const kept = keptVoice(agentId, row, list);
+    if (kept != null || list.length === 0) return kept;
+    // A pass already under way may have started before this agent was hired: then one more.
+    let given = await assignMissingVoices();
+    if (!given.has(agentId)) given = await assignMissingVoices();
+    return given.get(agentId) ?? null;
   };
 
   const service: VoiceCallService = {
@@ -479,6 +523,11 @@ export function createVoiceCallService(options: VoiceCallServiceOptions): VoiceC
     },
     noteSelectedAgent(agentIdRaw, nameRaw, colorRaw) {
       const next = typeof agentIdRaw === "string" && agentIdRaw.length > 0 ? { agentId: agentIdRaw, name: typeof nameRaw === "string" && nameRaw.trim().length > 0 ? nameRaw.trim() : "Agent", color: paletteColor(colorRaw) } : null;
+      // The window names an agent as soon as it shows one: every agent gets its voice then, not at its first call.
+      if (next != null && options.isEnabled() && now() - lastAssignedAtMs >= ASSIGN_VOICES_EVERY_MS) {
+        lastAssignedAtMs = now();
+        void assignMissingVoices().catch(() => {});
+      }
       if (next?.agentId === selected?.agentId && next?.name === selected?.name && next?.color === selected?.color) return;
       selected = next;
       options.onMenuChanged?.();

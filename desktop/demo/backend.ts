@@ -51,7 +51,7 @@ export function createDemoBackend(hooks: DemoBackendHooks) {
   // Follows the Mac's appearance, so dark mode can be checked from the hosted link; `?theme=light` or `?theme=dark` forces one.
   const asked = typeof location !== "undefined" ? new URLSearchParams(location.search).get("theme") : null;
   const dark = asked === "dark" || (asked !== "light" && typeof matchMedia !== "undefined" && matchMedia("(prefers-color-scheme: dark)").matches);
-  const theme = dark ? { preference: "dark", resolved: "dark" } : { preference: "light", resolved: "light" };
+  let theme = dark ? { preference: "dark", resolved: "dark" } : { preference: "light", resolved: "light" };
   // `?onboarding`: a brand-new account, as the real window first meets it (the
   // founder, 3 October 2026: "build a demo here of the real onboarding").
   const params = typeof location !== "undefined" ? new URLSearchParams(location.search) : new URLSearchParams();
@@ -198,7 +198,13 @@ export function createDemoBackend(hooks: DemoBackendHooks) {
 
   const main: Record<string, (args: any) => unknown> = {
     getThemeState: () => theme,
-    setThemePreference: () => theme,
+    // The phone's light and dark switch (and Settings' Theme) changes it for this page, as the web window does.
+    setThemePreference: (args: any) => {
+      const preference = args?.preference === "dark" || args?.preference === "light" ? args.preference : dark ? "dark" : "light";
+      theme = { preference, resolved: preference };
+      hooks.pushMainEvent("theme-changed", theme);
+      return theme;
+    },
     getOnboardingSeen: () => onboardingSeen,
     setOnboardingSeen: (args: any) => { onboardingSeen = args?.seen ?? args?.value ?? true; return undefined; },
     getWindowState: () => ({ isFullScreen: false, isMaximized: false, isFocused: true }),
@@ -286,6 +292,20 @@ export function createDemoBackend(hooks: DemoBackendHooks) {
       pushAgent(previous);
       pushAgent(id);
       if (args?.isKickstartRequested === true) void play(onboardingScript(id, 0));
+      return { agent: summary(row) };
+    },
+    // The phone's New Group Chat (and the Mac's new chat with several recipients): the window's `createGroup`.
+    createGroup: (args) => {
+      const memberIds = (Array.isArray(args?.memberAgentIds) ? args.memberAgentIds : []).filter((id: unknown) => typeof id === "string" && rows.has(id) && rows.get(id)?.isGroup !== true);
+      const id = `group-${rows.size + 1}`;
+      const row: Row = { id, name: String(args?.name ?? "New group"), title: "", description: String(args?.description ?? ""), color: "blue", minutesAgo: 0, isGroup: true, memberIds };
+      rows.set(id, row);
+      transcripts.set(id, []);
+      lastActivity.set(id, Date.now());
+      const previous = activeAgentId;
+      activeAgentId = id;
+      pushAgent(previous);
+      pushAgent(id);
       return { agent: summary(row) };
     },
     kickstartAgent: () => ({ isIntroductionInFlight: false }),

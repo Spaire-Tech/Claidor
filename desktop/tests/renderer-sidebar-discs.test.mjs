@@ -89,10 +89,10 @@ test("the discs stylesheet block hides the search bar, draws the discs in both t
 test("the apply pass runs the discs patch on the mark chunk and the stylesheet, and records it", async () => {
   const source = await readFile(path.join(repoRoot, "scripts/lib/router-renderer-patch.mjs"), "utf8");
   assert.match(source, /const markPatched = (?:\w+\()*patchOriginalSidebarDiscs\(patchOriginalCooStep\(/);
-  assert.match(source, /const stylesheetPatched = patchOriginalSidebarDiscsStylesheet\(patchOriginalCooStylesheet\(/);
+  assert.match(source, /const stylesheetPatched = (?:\w+\()*patchOriginalSidebarDiscsStylesheet\(patchOriginalCooStylesheet\(/);
   assert.match(source, /if \(!SIDEBAR_DISCS_REPLACEMENTS\.every\(\(\[, before\]\) => markChunks\[0\]\.source\.includes\(before\)\)\) throw new Error/);
   assert.match(source, /sidebarDiscs: countStyleAnchors\(styleAnchorClasses\(SIDEBAR_DISCS_CSS\)\.filter\(\(name\) => name\.startsWith\("sand-"\)\)/);
-  assert.match(source, /\.\.\.SIDEBAR_DISCS_REPLACEMENTS, \.\.\.BUTTERFLY_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT\]\.map\(\(\[label\]\) => label\), "chat-header-card", "liquid-glass-chrome", "sidebar-discs",/);
+  assert.match(source, /\.\.\.SIDEBAR_DISCS_REPLACEMENTS, \.\.\.BUTTERFLY_REPLACEMENTS, (?:\.\.\.\w+, )*BUBBLE_CSS_REPLACEMENT\]\.map\(\(\[label\]\) => label\), "chat-header-card", "liquid-glass-chrome", "sidebar-discs",/);
   assert.match(source, /"upstream-tokens", "sidebar-glass-discs", "pane-widest-default", "pane-three-tabs",/);
 });
 

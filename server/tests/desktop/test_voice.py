@@ -657,22 +657,33 @@ class TestTheVoicePicker:
         assert (await client.get(VOICES, headers=headers)).status_code == 200
         assert fake.calls == ["list_voices_by_id"]
 
-    async def test_without_any_of_them_the_defaults_are_offered(
+    async def test_without_any_of_them_no_other_voice_is_offered(
         self,
         client: httpx.AsyncClient,
         session: AsyncSession,
         user: User,
         fake: FakeElevenLabs,
     ) -> None:
+        # The founder, 9 October 2026: the defaults brought back Jessica,
+        # whom the founder had taken off the list. Only the founder's voices
+        # are ever offered.
         fake.voices = [
-            {"voice_id": "cjVigY5qzO86Huf0OWal", "name": "Eric", "description": "x"}
+            {"voice_id": "cgSgspJ2msm6clMCkdW9", "name": "Jessica", "description": "x"}
         ]
+        fake.account_voices = [{"voice_id": "cgSgspJ2msm6clMCkdW9", "name": "Jessica"}]
         headers = await _signed_in(client, session, user)
         rows = (await client.get(VOICES, headers=headers)).json()
-        assert [(row["id"], row["name"], row["description"]) for row in rows] == [
-            ("cjVigY5qzO86Huf0OWal", "Eric", None)
-        ]
-        assert fake.calls == ["list_voices_by_id", "list_default_voices"]
+        assert rows == []
+        assert fake.calls == ["list_voices_by_id"]
+
+    def test_a_change_to_the_voices_rewrites_the_agent(self) -> None:
+        # On 6 October 2026 the default moved from Jessica to Michael with no
+        # new version, and the agent kept speaking as Jessica.
+        assert voice.VOICES_FINGERPRINT in VOICE_AGENT_VERSION_TAG
+        assert VOICE_AGENT_VERSION_TAG.startswith(
+            f"simeon-voice-config-v{voice.VOICE_AGENT_CONFIG_VERSION}-"
+        )
+        assert voice.VOICE_AGENT_CONFIG_VERSION >= 9
 
     def test_twelve_voices_each_once(self) -> None:
         ids = [voice_id for voice_id, _ in voice.CURATED_VOICES]

@@ -86,6 +86,7 @@ from .proxy_common import budget_refusal
 from .proxy_common import error_response as _error
 from .proxy_common import log_upstream_refusal as _log_upstream_refusal
 from .proxy_common import upstream_timeout as _timeout
+from .push import router as push_router
 from .releases import router as releases_router
 from .service import (
     AUTH_CODE_INVALID,
@@ -1454,6 +1455,10 @@ router.include_router(voice_router)
 router.include_router(apps_router)
 router.include_router(flights_router)
 router.include_router(releases_router)
+
+# Pushes to the person's iPhone (`push.py`): the phone registers at
+# `/desktop/push-devices`, the box's host posts `/desktop/push`.
+router.include_router(push_router)
 
 
 # Apps through Composio: the app's six calls, forwarded with Simeon's

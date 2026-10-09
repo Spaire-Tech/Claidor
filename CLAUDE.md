@@ -13,6 +13,8 @@ product people see is **Simeon** (spelled Simeon, never Simon).
 | `runner/` | The cloud runner (Node): queued work while the Mac is closed. |
 | `box/` | The cloud computer image (Dockerfile, supervisor, desktop scripts). `box/README.md`. |
 | `clients/` | The web app at `app.simeonlabs.com` (sign-in pages, account dashboard). Patterns: `clients/CLAUDE.md`. |
+| `mobile/` | The iPhone app (Expo): the web window (`desktop/web/`) in a native shell with sign-in, notifications and opening an agent from one. `mobile/README.md`. |
+| `ios/` | The native iPhone app (SwiftUI), the phone design in Apple's own parts; it replaces `mobile/` once it has run on an iPhone. `ios/README.md`. |
 | `sites/simeonlabs.com/` | The public website and its live demo. |
 | `docs/` | Start at `docs/README.md`. |
 | `render.yaml` | The Render services (API, worker, runner, Postgres, Redis). |
@@ -66,6 +68,13 @@ cd clients && pnpm typecheck && pnpm test && pnpm lint
 
 # Runner
 cd runner && npm test
+
+# iPhone app (builds, TestFlight: mobile/README.md)
+cd mobile && npm install && npx tsc --noEmit && npm test && npx expo run:ios
+
+# Native iPhone app (ios/README.md; the core's tests run on Linux too)
+cd ios/SimeonCore && swift test
+cd ios && xcodegen generate && open Simeon.xcodeproj
 
 # Earlier names
 python3 scripts/check_names.py

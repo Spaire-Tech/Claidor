@@ -7,10 +7,12 @@
 import { installPrimaryPreloadEntrypoint } from "../source/electron-preload/preload.js";
 import { createRendererPortServer } from "../source/node-agent-coordinator/renderer-port-server.js";
 import { createDemoBackend } from "./backend.js";
+import { createDemoCall } from "./call.js";
 
 type Listener = (event: any, payload?: any) => void;
 
 const TRACE = new URLSearchParams(location.search).has("trace");
+const REVIEW = new URLSearchParams(location.search).has("review");
 const trace = (...args: unknown[]) => {
   if (TRACE) console.log("[demo]", ...args);
 };
@@ -30,6 +32,16 @@ const backend = createDemoBackend({
 
 let server: ReturnType<typeof createRendererPortServer> | null = null;
 Reflect.set(window, "__simeonDemo", backend);
+
+// The review link's light and dark switch (8 October 2026, the founder: "the dark/light icon is not
+// going to be in the app. its just for me"): the link's own page, around the phone, asks; the demo
+// answers as Settings' Theme does.
+window.addEventListener("message", (event) => {
+  if (event.origin !== location.origin) return;
+  const data = event.data as { type?: unknown; preference?: unknown } | null;
+  if (data?.type !== "simeon-demo-theme" || (data.preference !== "light" && data.preference !== "dark")) return;
+  void backend.main("setThemePreference", { preference: data.preference });
+});
 
 function openCoordinatorPort(): void {
   const channel = new MessageChannel();
@@ -87,7 +99,8 @@ const ipcRenderer = {
 // New buttons, the composer's attach, and the agent's computer. Their presses
 // stop here, before the window's own handlers (menus open on pointerdown).
 const INERT_IN_DEMO = [
-  ".sand-agents-sidebar__account button",
+  // On the review link the account opens Settings, as BF does on the phone.
+  ...(REVIEW ? [] : [".sand-agents-sidebar__account button"]),
   ".sand-agents-sidebar__plugins",
   ".sand-agents-sidebar__new",
   ".sand-prompt-attach",
@@ -144,7 +157,8 @@ installPrimaryPreloadEntrypoint(
   {
     ipcRenderer,
     webFrame: { getZoomFactor: () => 1 },
-    contextBridge: { exposeInMainWorld: (name, value) => Reflect.set(window, name, value) },
+    // The review link's calls (`?review`, call.ts): a scripted call behind the window's own phone button.
+    contextBridge: { exposeInMainWorld: (name, value) => Reflect.set(window, name, name === "desktop" && REVIEW ? { ...(value as object), voiceCall: createDemoCall() } : value) },
   },
   {} as NodeJS.ProcessEnv,
 );

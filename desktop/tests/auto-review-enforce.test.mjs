@@ -115,7 +115,11 @@ test("the box carries the telemetry guards and makes no the upstream app pre-fli
   assert.match(docker, /LOCAL_DOCKER_SCHEMA_VERSION = "12"/);
   for (const key of ["SAND_DISABLE_TELEMETRY=1", "SAND_DISABLE_ANALYTICS=1", "SAND_BOX_LOG_SHIP_DISABLED=1"]) assert.ok(docker.includes(`"--env", "${key}"`), key);
   assert.match(await src("shared/node/simeon-backend/simeon-inference.ts"), /privacyLookup \|\| !isConnectServed\(options\.env, DASHBOARD_SERVICE_NAME\) \? "true"/);
-  assert.match(await src("host/extensions/notifications/extension.ts"), /start: \(context\) => \{ if \(!isConnectServed\(process\.env, ComputerService\.typeName\)\) return \{\};/);
+  // Since 8 October 2026 the box's notifications go to Simeon's own `POST /desktop/push`, only from the
+  // host in the person's computer, never over the upstream app's ComputerService RPC (tests/phone-push.test.mjs).
+  const notifications = await src("host/extensions/notifications/extension.ts");
+  assert.match(notifications, /start: \(context\) => \{ if \(!isSandPhonePushEnabled\(process\.env\)\) return \{\};/);
+  assert.doesNotMatch(notifications, /createSimeonBackendClient|notifySandAgentTurnFinished/);
   assert.match(await src("shared/node/experiments/simeon-experiments.ts"), /loggingEnabled: isConnectServed\(process\.env, "cursor\.statsig-bootstrap"\) \? "always" : "disabled"/);
   assert.match(await src("electron-main/startup/desktop-user-data-bootstrap.ts"), /"sand-statsig-bootstrap\.json"\]\);/);
   assert.match(await src("shared/observability/sentry.ts"), /SAND_SENTRY_DSN = "";/);

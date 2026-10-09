@@ -1067,11 +1067,59 @@ export const COO_COPY = "He hires an agent for every job you hand off.";
 const COO_TITLE_TOP = -296;
 const COO_COPY_Y = -236;
 export const COO_TITLE = "Simeon is your personal Chief of Staff";
+
+/**
+ * Onboarding on a phone (8 October 2026, the founder: "Make all the screens
+ * in onboarding fit please. Not cut off. Smart."). The flow is drawn round
+ * the window's centre in pixels for a Mac (agents 300 px out, a 920 px row
+ * of apps, a 639 px screen), so on an iPhone the wide scenes ran off both
+ * edges and two-line titles ran into what sits under them.
+ *
+ * Below PHONE_MAX_WIDTH (a phone, or a Mac window pulled very narrow) each
+ * scene is laid out for the width it has, not shrunk: the Chief of Staff's
+ * agents come in to the screen's edge, the row of apps is as wide as the
+ * screen, the computer is sized to it with Simeon's cursor walking the same
+ * scaled path, the name step's agents gather closer. Text keeps its size.
+ * Titles grow upwards from where their last line sits, so a second line
+ * never lands on the scene. And when the screen is short (an iPhone SE, or
+ * Safari's bars), the whole flow is scaled about the centre, evenly, just
+ * enough for its tallest step to fit (PHONE_ONBOARDING_CSS). A Mac window
+ * at its usual size is drawn exactly as before.
+ *
+ * The scenes read the window's size from one small store (`__simeonView`,
+ * kept on resize, also written to `--simeon-vw` / `--simeon-vh` for the
+ * CSS). A height that shrinks while a field has the focus is the keyboard
+ * coming up, not a smaller screen, and is not taken.
+ */
+export const PHONE_MAX_WIDTH = 600;
+/** Half the height the tallest phone step needs: the Chief of Staff's two-line title top (-330) to Next/Back's bottom (+284). */
+export const PHONE_ONBOARDING_HALF_HEIGHT = 330;
+/** The Chief of Staff's agents on a phone: their centre this far from the screen's edge (the agent's half width and its label's, plus a margin), and never closer to Simeon than this. */
+const COO_PHONE_EDGE = 50;
+const COO_PHONE_MIN_SIDE = 104;
+/** The computer step's screen on a Mac: its drawing (441 by 300) at 1.45 times, Simeon as its cursor at 0.66 (the computer step, below). On a phone: as wide as the screen less 16 px a side, never past 1.45, the cursor in proportion. */
+export const COMPUTER_SCREEN_SCALE = 1.45;
+const COMPUTER_CURSOR_SCALE = 0.66;
+export const COMPUTER_CARD_W = 441;
+const PHONE_GUTTER = 16;
+const VIEW_SOURCE = [
+  "var __simeonView={w:typeof window<\"u\"?window.innerWidth:1280,h:typeof window<\"u\"?window.innerHeight:800},__simeonViewSubs=new Set();",
+  "function __simeonViewSub(f){__simeonViewSubs.add(f);return()=>{__simeonViewSubs.delete(f)}}",
+  "function __simeonViewW(){return __simeonView.w}",
+  "if(typeof window<\"u\"&&typeof document<\"u\"){const up=()=>{const w=window.innerWidth,h=window.innerHeight,a=document.activeElement,typing=a!=null&&(a.tagName===\"INPUT\"||a.tagName===\"TEXTAREA\"||a.isContentEditable===!0);if(typing&&w===__simeonView.w&&h<__simeonView.h)return;__simeonView={w,h};const s=document.documentElement.style;s.setProperty(\"--simeon-vw\",String(w));s.setProperty(\"--simeon-vh\",String(h));__simeonViewSubs.forEach(f=>f())};window.addEventListener(\"resize\",up);up()}",
+  `function __simeonComputerK(){const w=__simeonViewW();return w<${PHONE_MAX_WIDTH}?Math.min(${COMPUTER_SCREEN_SCALE},(w-${2 * PHONE_GUTTER})/${COMPUTER_CARD_W}):${COMPUTER_SCREEN_SCALE}}`,
+  `function __simeonComputerCursor(){const w=__simeonViewW();return w<${PHONE_MAX_WIDTH}?__simeonComputerK()*${COMPUTER_CURSOR_SCALE}/${COMPUTER_SCREEN_SCALE}:${COMPUTER_CURSOR_SCALE}}`,
+].join("");
+
 const COO_SOURCE = [
+  VIEW_SOURCE,
   `const __simeonCooCrew=${JSON.stringify(COO_CREW.map((a, i) => ({ ...a, d: cooLine(a), delay: 700 + i * 180 })))};`,
-  "function __simeonCooStep(n){const{headingId:t,onForward:r,onBack:i}=n,still=Fo();",
-  "const lines=p.jsx(fde,{x:0,y:" + COO_HERO_Y + ",ariaHidden:!0,className:\"simeon-coo__web\",children:p.jsx(\"svg\",{width:800,height:400,viewBox:\"-400 -200 800 400\",children:__simeonCooCrew.map(a=>p.jsx(\"path\",{className:\"simeon-coo__line\",d:a.d,pathLength:1,style:{animationDelay:`${a.delay}ms`}},a.id))})},\"web\");",
-  "const crew=__simeonCooCrew.map(a=>p.jsx(fde,{x:a.x,y:a.y,ariaHidden:!0,className:\"simeon-coo__seat\",children:p.jsxs(\"div\",{className:\"simeon-coo__agent\",style:{animationDelay:`${a.delay+520}ms`},children:[p.jsx(sd,{\"aria-hidden\":!0,color:a.color,paused:still,shape:\"cloud\",sizePx:56,state:\"idle\"}),p.jsx(\"span\",{className:\"simeon-coo__role\",children:a.label})]})},a.id));",
+  // cooLine, at run time, for the phone's nearer agents.
+  `function __simeonCooLine(x,y){const s=Math.sign(x),x1=s*60,x2=x-s*40,y2=y-(${COO_HERO_Y}),mx=Math.round((x1+x2)/2);return"M"+x1+" 0C"+mx+" 0 "+mx+" "+y2+" "+x2+" "+y2}`,
+  `function __simeonCooAt(w){if(w>=${PHONE_MAX_WIDTH})return __simeonCooCrew;const side=Math.max(${COO_PHONE_MIN_SIDE},Math.min(${COO_SIDE_X},w/2-${COO_PHONE_EDGE}));return __simeonCooCrew.map(a=>{const x=Math.sign(a.x)*side;return{...a,x,d:__simeonCooLine(x,a.y)}})}`,
+  "function __simeonCooStep(n){const{headingId:t,onForward:r,onBack:i}=n,still=Fo(),cast=__simeonCooAt(S.useSyncExternalStore(__simeonViewSub,__simeonViewW));",
+  "const lines=p.jsx(fde,{x:0,y:" + COO_HERO_Y + ",ariaHidden:!0,className:\"simeon-coo__web\",children:p.jsx(\"svg\",{width:800,height:400,viewBox:\"-400 -200 800 400\",children:cast.map(a=>p.jsx(\"path\",{className:\"simeon-coo__line\",d:a.d,pathLength:1,style:{animationDelay:`${a.delay}ms`}},a.id))})},\"web\");",
+  "const crew=cast.map(a=>p.jsx(fde,{x:a.x,y:a.y,ariaHidden:!0,className:\"simeon-coo__seat\",children:p.jsxs(\"div\",{className:\"simeon-coo__agent\",style:{animationDelay:`${a.delay+520}ms`},children:[p.jsx(sd,{\"aria-hidden\":!0,color:a.color,paused:still,shape:\"cloud\",sizePx:56,state:\"idle\"}),p.jsx(\"span\",{className:\"simeon-coo__role\",children:a.label})]})},a.id));",
   `const line=p.jsx(fde,{x:0,y:${COO_COPY_Y},className:"simeon-coo__copy",children:p.jsx("p",{children:${JSON.stringify(COO_COPY)}})},"copy");`,
   `return p.jsx(tye,{className:re("sand-onboarding__coo","simeon-coo"),footer:p.jsx(nye,{onBack:i,onForward:r}),headingId:t,title:${JSON.stringify(COO_TITLE)},children:[lines,...crew,line]})}`,
 ].join("");
@@ -1126,8 +1174,11 @@ const COO_PIN_SOURCE = "var __simeonCooId=null;function __simeonFindCoo(n){let c
  * never needs to ask. Empty is allowed: Next skips, and the sheet asks later.
  */
 const NAME_SEATS = Object.freeze({ "weekly-standup": { x: -168, y: -64, scale: 0.62 }, "invoice-chaser": { x: 0, y: -96, scale: 0.72 }, "sales-forecast": { x: 168, y: -64, scale: 0.62 } });
+/** On a phone the two side agents come in so they stay this far (their centre) from the screen's edge. */
+const NAME_PHONE_EDGE = 44;
 const NAME_SOURCE = [
   `const __simeonNameSeat=${JSON.stringify(NAME_SEATS)};`,
+  `function __simeonNameSeatAt(e){const s=__simeonNameSeat[e],w=__simeonViewW();if(s==null||w>=${PHONE_MAX_WIDTH}||s.x===0)return s;return{...s,x:Math.sign(s.x)*Math.min(Math.abs(s.x),w/2-${NAME_PHONE_EDGE})}}`,
   "function __simeonNameStep(n){const{headingId:t,onForward:r,onBack:i}=n,d=typeof window<\"u\"?window.desktop:void 0,a=d?.cursorAccount,[v,sv]=S.useState(\"\"),ip=S.useRef(null),touched=S.useRef(!1);",
   "S.useEffect(()=>{let l=!0;Promise.resolve(a?.getNamePrompt?.()).then(q=>{l&&!touched.current&&typeof q?.suggested===\"string\"&&sv(q.suggested)},()=>{});const f=setTimeout(()=>ip.current?.focus(),450);return()=>{l=!1;clearTimeout(f)}},[]);",
   "const name=v.replace(/\\s+/g,\" \").trim().slice(0,60);",
@@ -1139,7 +1190,7 @@ const NAME_SOURCE = [
 export const NAME_STEP_REPLACEMENTS = Object.freeze([
   // Next on the name step, the last one, runs the flow's own create-and-finish (`Pe`), as Next on the apps step did while there was one.
   ["name-step-screen", "case\"tools\":return p.jsx(Ljn,{", "case\"name\":return p.jsx(__simeonNameStep,{headingId:xn,onBack:()=>x.goBack(ln),onForward:()=>{Pe()}});case\"tools\":return p.jsx(Ljn,{"],
-  ["name-step-agents", "case\"tools\":return{...t,x:r.x,y:r.y,scale:r.scale,opacity:1,state:\"idle\",transition:\"standard\",bob:YBn[e]}", "case\"name\":return{...t,...__simeonNameSeat[e],opacity:1,state:\"happy\",transition:\"bounce\",isGazing:!0};case\"tools\":return{...t,x:r.x,y:r.y,scale:r.scale,opacity:1,state:\"idle\",transition:\"standard\",bob:YBn[e]}"],
+  ["name-step-agents", "case\"tools\":return{...t,x:r.x,y:r.y,scale:r.scale,opacity:1,state:\"idle\",transition:\"standard\",bob:YBn[e]}", "case\"name\":return{...t,...__simeonNameSeatAt(e),opacity:1,state:\"happy\",transition:\"bounce\",isGazing:!0};case\"tools\":return{...t,x:r.x,y:r.y,scale:r.scale,opacity:1,state:\"idle\",transition:\"standard\",bob:YBn[e]}"],
   ["name-step-hero", "case\"coo\":return{...e,x:0,y:", "case\"name\":return{...e,x:$2e.x,y:$2e.y,scale:Vve,opacity:0,state:\"happy\",transition:\"exit\"};case\"coo\":return{...e,x:0,y:"],
   ["name-step-component", "function __simeonCooStep(n){", `${NAME_SOURCE}function __simeonCooStep(n){`],
   // The last screen keeps only its line ("Getting your team ready…", with its moving light): the mark and the name above it go, as on the boot screen.
@@ -1239,16 +1290,16 @@ export const MEET_CSS = `/* Simeon: the Meet step */
  * fixed pixels), so it is scaled as one: 1.45 times, to 639 by 435, and
  * moved down a little; the title sits higher and Next lower to clear it.
  * Simeon, who plays the cursor on it, walks the same path scaled by the same
- * factor, at a size to match.
+ * factor, at a size to match. On a phone the factor is the screen's
+ * (`__simeonComputerK`, the scale `COMPUTER_SCREEN_SCALE` and the cursor
+ * `COMPUTER_CURSOR_SCALE` are set with the phone layout, above).
  */
-export const COMPUTER_SCREEN_SCALE = 1.45;
-const COMPUTER_CURSOR_SCALE = 0.66;
 const COMPUTER_CARD_Y = 0;
 const COMPUTER_TITLE_TOP = -312;
 const COMPUTER_FOOTER_TOP = 256;
 export const COMPUTER_STEP_REPLACEMENTS = Object.freeze([
   ["computer-card-seat", "$2e={x:0,y:-21}", `$2e={x:0,y:${COMPUTER_CARD_Y}}`],
-  ["computer-cursor-path", 'x:$2e.x+n.demoCursor.x-U2e.x*Vve,y:$2e.y+n.demoCursor.y-U2e.y*Vve,scale:Vve,opacity:1,state:n.demoBeat<0?"thinking":"working"', `x:$2e.x+n.demoCursor.x*${COMPUTER_SCREEN_SCALE}-U2e.x*${COMPUTER_CURSOR_SCALE},y:$2e.y+n.demoCursor.y*${COMPUTER_SCREEN_SCALE}-U2e.y*${COMPUTER_CURSOR_SCALE},scale:${COMPUTER_CURSOR_SCALE},opacity:1,state:n.demoBeat<0?"thinking":"working"`],
+  ["computer-cursor-path", 'x:$2e.x+n.demoCursor.x-U2e.x*Vve,y:$2e.y+n.demoCursor.y-U2e.y*Vve,scale:Vve,opacity:1,state:n.demoBeat<0?"thinking":"working"', 'x:$2e.x+n.demoCursor.x*__simeonComputerK()-U2e.x*__simeonComputerCursor(),y:$2e.y+n.demoCursor.y*__simeonComputerK()-U2e.y*__simeonComputerCursor(),scale:__simeonComputerCursor(),opacity:1,state:n.demoBeat<0?"thinking":"working"'],
 ]);
 export const COMPUTER_CSS = `/* Simeon: the computer step's screen */
 .sand-onboarding__computer-demo>div:first-child${MEET_HI}{top:calc(50% - ${-COMPUTER_TITLE_TOP}px)}
@@ -1278,9 +1329,51 @@ export const COO_CSS = `${COO_MARKER} */
 @media (prefers-reduced-motion:reduce){.simeon-coo__line,.simeon-coo__agent,.simeon-coo__copy p{animation:none;stroke-dashoffset:0;opacity:1;transform:none}}
 `;
 
+/**
+ * Onboarding on a phone, the stylesheet's half (the layout's half and the
+ * why are at VIEW_SOURCE). Below PHONE_MAX_WIDTH:
+ * - each step's title is held by its last line (`bottom`), where a
+ *   one-line title ends on a Mac, so a second line grows upwards; its size
+ *   follows the width (28 px down to 22 px) and its lines are balanced, so
+ *   no title takes more than two;
+ * - the computer's screen takes `--simeon-computer-k`, the factor
+ *   `__simeonComputerK` gives Simeon's cursor, and its title and Next/Back
+ *   sit 28 px off the scaled screen;
+ * - lines that never wrapped on a Mac (the Chief of Staff's copy, the name
+ *   step's note) may, and the name field is no wider than the screen;
+ * - the flow (the step and the cast that travels between steps) is scaled
+ *   about the centre by `--simeon-onb-fit`, 1 when the screen is tall
+ *   enough for the tallest step (PHONE_ONBOARDING_HALF_HEIGHT each side of
+ *   the centre, plus 16 px), less when it is not: the same for every step,
+ *   so nothing jumps from one to the next. A scaled step would clip what it
+ *   brought back on screen to its own scaled box, so the step and its
+ *   content stop clipping; the flow's fixed frame still clips at the
+ *   screen's edge.
+ */
+export const PHONE_ONBOARDING_MARKER = "/* Simeon: onboarding on a phone";
+const COMPUTER_PHONE_CLEARANCE = 28;
+export const PHONE_ONBOARDING_CSS = `${PHONE_ONBOARDING_MARKER} */
+@media (max-width:${PHONE_MAX_WIDTH - 0.02}px){
+:root{--simeon-onb-fit:min(1,calc((var(--simeon-vh,2000) / 2 - ${PHONE_GUTTER}) / ${PHONE_ONBOARDING_HALF_HEIGHT}));--simeon-computer-k:min(${COMPUTER_SCREEN_SCALE},calc((var(--simeon-vw,1280) - ${2 * PHONE_GUTTER}) / ${COMPUTER_CARD_W}))}
+.sand-onboarding__step,.sand-onboarding__cast{scale:var(--simeon-onb-fit);transform-origin:50% 50%}
+.sand-onboarding__step${MEET_HI},.sand-onboarding__step main>div${MEET_HI}{overflow:visible}
+.sand-onboarding__heading${MEET_HI} h1{font-size:clamp(22px,7.1vw,28px);line-height:1.2;text-wrap:balance}
+.simeon-coo>div:first-child${MEET_HI}{top:auto;bottom:calc(50% + ${-COO_COPY_Y + 26}px)}
+.simeon-coo__copy,.simeon-name__note-seat{width:max-content;max-width:calc(100vw - ${3 * PHONE_GUTTER}px)}
+.simeon-coo__copy p{white-space:normal;text-wrap:balance}
+.simeon-connect>div:first-child${MEET_HI}{top:auto;bottom:calc(50% + 160px)}
+.sand-onboarding__demo-card${MEET_HI}{transform:scale(var(--simeon-computer-k))}
+.sand-onboarding__computer-demo>div:first-child${MEET_HI}{top:auto;bottom:calc(50% + 150px * var(--simeon-computer-k) + ${COMPUTER_PHONE_CLEARANCE}px)}
+.sand-onboarding__computer-demo>div:last-child${MEET_HI}{top:calc(50% + 150px * var(--simeon-computer-k) + ${COMPUTER_PHONE_CLEARANCE}px)}
+.simeon-name>div:first-child${MEET_HI}{top:auto;bottom:calc(50% + 150px)}
+.simeon-name__input{width:min(300px,calc(100vw - ${3 * PHONE_GUTTER}px))}
+.simeon-name__note{white-space:normal;text-wrap:balance}
+}
+`;
+
 export function patchOriginalCooStylesheet(css) {
   if (css.includes(COO_MARKER)) throw new Error("Original renderer COO step block is already present.");
-  return `${css}\n${COO_CSS}\n${NAME_CSS}\n${MEET_CSS}\n${COMPUTER_CSS}\n${COO_LOCK_CSS}`;
+  return `${css}\n${COO_CSS}\n${NAME_CSS}\n${MEET_CSS}\n${COMPUTER_CSS}\n${COO_LOCK_CSS}\n${PHONE_ONBOARDING_CSS}`;
 }
 
 export function patchOriginalAgentPaneStylesheet(css) {
@@ -1783,7 +1876,8 @@ export const CONNECT_TITLE = "Your agents connect to the apps you already use";
 const CONNECT_SOURCE = [
   `const __simeonConnectApps=${JSON.stringify(Object.keys(CONNECT_LOGO_SOURCES))};`,
   "function __simeonConnectStep(n){const{headingId:t,onForward:r,onBack:i}=n,still=Fo(),box=S.useRef(null);",
-  `S.useEffect(()=>{const el=box.current;if(!el)return;const orbs=[...el.querySelectorAll(".simeon-connect__orb")],W=${CONNECT_W},t=${CONNECT_TILE},size=t*.5,gap=t*1.05,lane=gap*orbs.length;let t0=null,id=0;const frame=now=>{if(t0==null)t0=now;const period=1600,move=550,k=still?0:(now-t0)/period,step=Math.floor(k),f=Math.min(1,(k-step)*period/move),ease=f<.5?4*f*f*f:1-Math.pow(-2*f+2,3)/2,shift=(step+ease)*gap;for(let j=0;j<orbs.length;j++){const orb=orbs[j];let x=(j*gap-shift)%lane;if(x<-lane/2)x+=lane;if(x>lane/2)x-=lane;const d=Math.abs(x)/(W/2),grow=1+.6*Math.max(0,1-Math.abs(x)/(gap*.6)),sz=size*grow;orb.style.width=orb.style.height=sz+"px";orb.style.transform="translate("+(W/2+x-sz/2)+"px,-50%)";orb.style.filter="blur("+Math.max(0,(d-.8)*22,(grow-1)*30).toFixed(1)+"px)";orb.style.opacity=Math.max(0,Math.min(1,1.9-d)).toFixed(2)}if(!still)id=requestAnimationFrame(frame)};id=requestAnimationFrame(frame);return()=>cancelAnimationFrame(id)},[still]);`,
+  // The row is as wide as the screen when that is narrower than the stage (a phone): W is its drawn width, kept on resize.
+  `S.useEffect(()=>{const el=box.current;if(!el)return;const orbs=[...el.querySelectorAll(".simeon-connect__orb")],t=${CONNECT_TILE},size=t*.5,gap=t*1.05,lane=gap*orbs.length;let W=el.clientWidth||${CONNECT_W};const fit=()=>{W=el.clientWidth||W};window.addEventListener("resize",fit);let t0=null,id=0;const frame=now=>{if(t0==null)t0=now;const period=1600,move=550,k=still?0:(now-t0)/period,step=Math.floor(k),f=Math.min(1,(k-step)*period/move),ease=f<.5?4*f*f*f:1-Math.pow(-2*f+2,3)/2,shift=(step+ease)*gap;for(let j=0;j<orbs.length;j++){const orb=orbs[j];let x=(j*gap-shift)%lane;if(x<-lane/2)x+=lane;if(x>lane/2)x-=lane;const d=Math.abs(x)/(W/2),grow=1+.6*Math.max(0,1-Math.abs(x)/(gap*.6)),sz=size*grow;orb.style.width=orb.style.height=sz+"px";orb.style.transform="translate("+(W/2+x-sz/2)+"px,-50%)";orb.style.filter="blur("+Math.max(0,(d-.8)*22,(grow-1)*30).toFixed(1)+"px)";orb.style.opacity=Math.max(0,Math.min(1,1.9-d)).toFixed(2)}if(!still)id=requestAnimationFrame(frame)};id=requestAnimationFrame(frame);return()=>{cancelAnimationFrame(id);window.removeEventListener("resize",fit)}},[still]);`,
   `const orbit=p.jsx(fde,{x:0,y:${CONNECT_Y},ariaHidden:!0,className:"simeon-connect__seat",children:p.jsxs("div",{ref:box,className:"simeon-connect__orbit",children:[...__simeonConnectApps.map(a=>p.jsx("div",{className:"simeon-connect__orb","data-app":a},a)),p.jsx("div",{className:"simeon-connect__tile"},"tile")]})},"orbit");`,
   `return p.jsx(tye,{className:re("sand-onboarding__connect","simeon-connect"),footer:p.jsx(nye,{onBack:i,onForward:r}),headingId:t,title:${JSON.stringify(CONNECT_TITLE)},children:[orbit]})}`,
 ].join("");
@@ -1797,7 +1891,7 @@ export const CONNECT_MARKER = "/* Simeon: the connect step";
 export function connectCss(logos) {
   const rim = Math.max(3, CONNECT_TILE * 0.04), t = CONNECT_TILE;
   return `${CONNECT_MARKER}, the site's connector scene */
-.simeon-connect__orbit{position:relative;width:${CONNECT_W}px;height:${CONNECT_H}px;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 18%,#000 82%,transparent);mask-image:linear-gradient(90deg,transparent,#000 18%,#000 82%,transparent)}
+.simeon-connect__orbit{position:relative;width:min(${CONNECT_W}px,100vw);height:${CONNECT_H}px;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 18%,#000 82%,transparent);mask-image:linear-gradient(90deg,transparent,#000 18%,#000 82%,transparent)}
 .simeon-connect__orb{position:absolute;left:0;top:50%;width:${t / 2}px;height:${t / 2}px;background:center/contain no-repeat;will-change:transform,filter,opacity}
 .simeon-connect__tile{position:absolute;left:50%;top:50%;width:${t}px;height:${t}px;transform:translate(-50%,-50%);border-radius:${Math.round(t * 0.235)}px;background:rgba(255,255,255,.4);-webkit-backdrop-filter:blur(32px) saturate(2);backdrop-filter:blur(32px) saturate(2);border:1px solid rgba(255,255,255,.9);box-shadow:inset 0 0 0 ${rim}px rgba(255,255,255,.72),inset 0 ${rim * 0.6}px ${rim * 0.8}px rgba(255,255,255,.95),inset 0 -${rim * 0.8}px ${rim * 2.2}px rgba(60,70,90,.14),0 ${t * 0.1}px ${t * 0.24}px -${t * 0.06}px rgba(30,40,60,.38),0 2px 5px rgba(30,40,60,.1)}
 ${Object.entries(logos).map(([key, url]) => `.simeon-connect__orb[data-app="${key}"]{background-image:url("${url}")}`).join("\n")}
@@ -1962,7 +2056,10 @@ export function patchOriginalBubbleStylesheet(css) {
  * inside it, which carries its own inline width/height from the animator's
  * size prop; the first build missed the SVG and drew a 20 px mark at the
  * top of an 88 px box, "genuinely terrible"), so it is the same animated
- * mark, larger, the name is a pill, and the controls (computer, info)
+ * mark, larger (a group's three butterflies, drawn at 20 px each, were
+ * missed until 8 October 2026, the founder: "the 3 are small, and should be
+ * the same size as the others": the stack is zoomed 2.6 times, 52 px each,
+ * its overlap with it; they are SVG images, so they stay sharp), the name is a pill, and the controls (computer, info)
  * stay at the right edge. Scoped with :has() to the identity variant of
  * the header, so the thread breadcrumb and the agent-exchange variants keep
  * their layout. The transcript already offsets by the toolbar's measured
@@ -1978,6 +2075,7 @@ export const HEADER_CARD_CSS = `
 .sand-chat-header__avatar .sand-agent-avatar,.sand-chat-header__avatar .sand-simeon-mark{width:52px!important;height:52px!important}
 .sand-chat-header__avatar .sand-simeon-mark>svg{width:52px!important;height:52px!important}
 .sand-chat-header__avatar img.sand-agent-avatar{border-radius:50%!important;object-fit:cover!important}
+.sand-chat-header__avatar .sand-group-avatar{zoom:2.6}
 .sand-chat-header__title{align-items:center!important}
 .sand-chat-header__name{font-size:13px!important;line-height:18px!important;padding:3px 12px!important;border-radius:999px!important;background-color:var(--sand-fill-bubble-agent)!important;font-weight:500!important}
 .sand-chat-header__controls{position:absolute!important;right:0!important;top:50%!important;transform:translateY(-50%)!important}
@@ -2125,6 +2223,351 @@ export const SIDEBAR_DISCS_CSS = `${SIDEBAR_DISCS_MARKER} (5 October 2026): sear
 export function patchOriginalSidebarDiscsStylesheet(css) {
   if (css.includes(SIDEBAR_DISCS_MARKER)) throw new Error("Original renderer sidebar discs block is already present.");
   return `${css}\n${SIDEBAR_DISCS_CSS}`;
+}
+
+/**
+ * The phone's home (8 October 2026, step 1 with the founder: "all we needed
+ * to do was MAKE IT MOBILE"). Narrower than PHONE_MAX_WIDTH, outside the
+ * Mac app, the window shows one thing at a time: the Mac's own agents list
+ * full screen (the list), or the Mac's own chat full screen (the chat).
+ * Nothing is drawn new; the sidebar, its rows, discs and account are the
+ * Mac's.
+ *
+ *   1. The sidebar stays open: the window folds it to its rail when the
+ *      chat would be narrower than 424 px (`can`), which on a phone is
+ *      always, and a rail row is only a butterfly. On a phone `DCe` says
+ *      open, and the rows lay themselves out wide (`c0n` reads the
+ *      sidebar's own width).
+ *   2. `html[data-simeon-phone]` says which of the two shows: "list" at
+ *      start, "chat" once the person opens something the chat area shows:
+ *      a row (`Go`, which also opens an agent named in a chat), a new
+ *      agent or group made with the + (PHONE_CREATE_SOURCE), a profile, hidden chats, the full conversation or the async tasks
+ *      from the sidebar, and an agent, message or routine from search.
+ *      Settings and search are dialogs over either, and leave it as it
+ *      is. The iPhone app's notification tap says "chat" through
+ *      `window.__simeonPhoneShow` (desktop/web/bridge.ts).
+ *   3. The list's top is the account's initials at the left (the Mac keeps
+ *      them at the foot) and search and + at the right; no Connect apps at
+ *      the foot (the founder, 8 October 2026: "remove the connect apps
+ *      below"). The rows are the Mac's, larger. (The light and dark switch
+ *      the founder asked for is "just for me": it is on the review link's
+ *      page, not in the app.)
+ *   4. The chat's way back to the list is one of the Mac's discs at the top
+ *      left, until the chat's own phone layout (step 2).
+ *   5. The top's buttons a little larger than the Mac's (the founder, 8
+ *      October 2026: "have the buttons up (search icon, new chat, bf) etc be
+ *      slightly bigger"); BF opens Settings, as a sheet: the Mac's General,
+ *      one column, with Connect apps and the mark under it. The agent's page
+ *      (a tap on its avatar) and search are sheets too: the Mac's own, at a
+ *      phone's size. During a call the list shows the call's time, green,
+ *      beside search and + (the founder's screenshot), and the chat the pill.
+ *
+ * The screen not shown keeps its full width (so the rows stay wide and the
+ * chat keeps its place) and waits beside the screen, hidden: hidden in
+ * place, part of the list still painted through the chat in Chromium.
+ *
+ * The Mac app is left as it is at every width: `data-simeon-phone` is never
+ * set inside Electron, and `DCe` asks the same.
+ */
+const PHONE_BACK_ICON = '<path d="M14.5 5.5 8 12l6.5 6.5"/>';
+const PHONE_HOME_SOURCE = [
+  "var __simeonPhoneOk=typeof navigator<\"u\"&&!/Electron\\//.test(navigator.userAgent);",
+  `function __simeonIsPhone(w){return __simeonPhoneOk&&w<${PHONE_MAX_WIDTH}}`,
+  "function __simeonPhoneShow(m){__simeonPhoneOk&&typeof document<\"u\"&&document.documentElement.setAttribute(\"data-simeon-phone\",m===\"chat\"?\"chat\":\"list\")}",
+  "var __simeonPhoneWraps=new WeakMap();",
+  "function __simeonPhoneGo(f){if(typeof f!==\"function\")return f;let w=__simeonPhoneWraps.get(f);if(w==null){w=function(...a){__simeonPhoneShow(\"chat\");return f.apply(this,a)};__simeonPhoneWraps.set(f,w)}return w}",
+  "if(__simeonPhoneOk&&typeof document<\"u\"){__simeonPhoneShow(\"list\");window.__simeonPhoneShow=__simeonPhoneShow;",
+  "const b=document.createElement(\"button\");b.type=\"button\";b.className=\"simeon-disc simeon-phone-back\";b.setAttribute(\"aria-label\",\"Back\");",
+  `b.innerHTML=${JSON.stringify(`<svg viewBox="0 0 24 24" aria-hidden="true">${PHONE_BACK_ICON}</svg>`)};`,
+  "b.addEventListener(\"click\",()=>__simeonPhoneShow(\"list\"));const put=()=>{document.body!=null&&!b.isConnected&&document.body.appendChild(b)};document.body!=null?put():document.addEventListener(\"DOMContentLoaded\",put)}",
+].join("");
+/**
+ * The phone's + (8 October 2026, the founder's iPhone screenshots "for the
+ * new chat button"): on a phone the sidebar's create disc opens a menu, New
+ * Agent and New Group Chat, the way the Mac's menus look (the account
+ * menu's card and rows, at a phone's size), and each opens a sheet:
+ *   New Agent: a butterfly in the colour picked, its name, the twelve
+ *     palettes as butterflies (every agent is a butterfly; there is no
+ *     shape to pick), Create. It is the window's own `createAgent`, asked to
+ *     introduce itself, as the Mac's new chat does; the chat opens.
+ *   New Group Chat: To:, the agents to tick, Next. It is the window's own
+ *     `createGroup`, named after its members as the Mac's new chat names a
+ *     group of recipients; the group's chat opens.
+ * Elsewhere the disc is the Mac's new chat, as before.
+ */
+const PHONE_CREATE_ICONS = {
+  close: '<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>',
+  agent: DISC_ICONS.create,
+  group: '<circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19.5a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="9.5" r="2.6"/><path d="M15.6 14.3A4.6 4.6 0 0 1 20.8 19"/>',
+  check: '<path d="M6.5 12.5l3.6 3.6 7.4-8"/>',
+};
+const PHONE_CREATE_SOURCE = [
+  "var __simeonPhoneUiState={menu:!1,sheet:null},__simeonPhoneUiSubs=new Set();",
+  "function __simeonPhoneUi(){return __simeonPhoneUiState}",
+  "function __simeonPhoneUiSub(f){__simeonPhoneUiSubs.add(f);return()=>{__simeonPhoneUiSubs.delete(f)}}",
+  "function __simeonPhoneUiSet(o){__simeonPhoneUiState={...__simeonPhoneUiState,...o};__simeonPhoneUiSubs.forEach(f=>f())}",
+  "var __simeonPhoneNewWraps=new WeakMap();",
+  "function __simeonPhoneNew(f){if(typeof f!==\"function\")return f;let w=__simeonPhoneNewWraps.get(f);if(w==null){w=function(...a){if(typeof window<\"u\"&&__simeonIsPhone(window.innerWidth)){__simeonPhoneUiSet({menu:!__simeonPhoneUiState.menu,sheet:null});return}return f.apply(this,a)};__simeonPhoneNewWraps.set(f,w)}return w}",
+  `const __simeonPhoneIcons=${JSON.stringify(PHONE_CREATE_ICONS)};`,
+  "function __simeonPhoneIcon(n){return p.jsx(\"svg\",{viewBox:\"0 0 24 24\",\"aria-hidden\":!0,dangerouslySetInnerHTML:{__html:__simeonPhoneIcons[n.name]}})}",
+  `const __simeonPalettes=${JSON.stringify(AGENT_PALETTES.map(({ id, label }) => ({ id, label })))};`,
+  "function __simeonPhoneSheets(n){const ui=S.useSyncExternalStore(__simeonPhoneUiSub,__simeonPhoneUi,__simeonPhoneUi);if(!__simeonPhoneOk||!ui.menu&&ui.sheet==null)return null;const close=()=>__simeonPhoneUiSet({menu:!1,sheet:null});return ui.sheet===\"agent\"?p.jsx(__simeonNewAgentSheet,{...n,close}):ui.sheet===\"group\"?p.jsx(__simeonNewGroupSheet,{...n,close}):p.jsx(__simeonPhoneMenu,{close,pick:k=>__simeonPhoneUiSet({menu:!1,sheet:k})})}",
+  "function __simeonPhoneMenu(n){const item=(k,label)=>p.jsxs(\"button\",{type:\"button\",role:\"menuitem\",className:\"simeon-phone-menu__item\",onClick:()=>n.pick(k),children:[p.jsx(__simeonPhoneIcon,{name:k}),p.jsx(\"span\",{children:label})]},k);return p.jsx(\"div\",{className:\"simeon-phone-scrim simeon-phone-scrim--clear\",onClick:n.close,children:p.jsxs(\"div\",{className:\"simeon-phone-menu\",role:\"menu\",\"aria-label\":\"New\",onClick:e=>e.stopPropagation(),children:[item(\"agent\",\"New Agent\"),item(\"group\",\"New Group Chat\")]})})}",
+  "function __simeonPhoneSheet(n){const c=n.close;S.useEffect(()=>{const k=e=>{e.key===\"Escape\"&&c()};window.addEventListener(\"keydown\",k);return()=>window.removeEventListener(\"keydown\",k)},[c]);return p.jsx(\"div\",{className:\"simeon-phone-scrim\",onClick:c,children:p.jsxs(\"div\",{className:\"simeon-phone-sheet\",role:\"dialog\",\"aria-modal\":!0,\"aria-label\":n.title,onClick:e=>e.stopPropagation(),children:[p.jsxs(\"div\",{className:\"simeon-phone-sheet__head\",children:[p.jsx(\"button\",{type:\"button\",className:\"simeon-disc simeon-phone-sheet__close\",\"aria-label\":\"Close\",onClick:c,children:p.jsx(__simeonPhoneIcon,{name:\"close\"})}),p.jsx(\"h2\",{className:\"simeon-phone-sheet__title\",children:n.title}),n.action??null]}),n.children]})})}",
+  "function __simeonPhoneDone(n,r){const id=r?.agent?.id??r?.id;n.close();typeof id===\"string\"&&n.openAgent(id)}",
+  "function __simeonNewAgentSheet(n){const[name,sn]=S.useState(\"\"),[color,sc]=S.useState(\"blue\"),[busy,sb]=S.useState(!1),[err,se]=S.useState(null),v=name.replace(/\\s+/g,\" \").trim(),ok=v.length>0&&v.length<=60&&!busy;",
+  "const create=()=>{if(!ok)return;sb(!0);se(null);Promise.resolve(n.createAgent({name:v,avatarColor:color,avatarShape:\"cloud\"},{isKickstartRequested:!0})).then(r=>__simeonPhoneDone(n,r),()=>{sb(!1);se(\"Couldn’t create the agent. Try again.\")})};",
+  "return p.jsxs(__simeonPhoneSheet,{title:\"New Agent\",close:n.close,children:[p.jsx(\"div\",{className:\"simeon-new-agent__preview\",children:p.jsx(sd,{\"aria-hidden\":!0,color,paused:!1,shape:\"cloud\",sizePx:150,state:\"idle\"})}),p.jsx(\"input\",{className:\"simeon-new-agent__name\",value:name,onChange:e=>sn(e.target.value),placeholder:\"Name your agent\",\"aria-label\":\"Name\",maxLength:60,enterKeyHint:\"done\",onKeyDown:e=>{e.key===\"Enter\"&&(e.preventDefault(),create())}}),p.jsx(\"div\",{className:\"simeon-new-agent__colors\",role:\"radiogroup\",\"aria-label\":\"Colour\",children:__simeonPalettes.map(c=>p.jsx(\"button\",{type:\"button\",role:\"radio\",\"aria-checked\":c.id===color,\"aria-label\":c.label,className:\"simeon-new-agent__color\",onClick:()=>sc(c.id),children:p.jsx(sd,{\"aria-hidden\":!0,color:c.id,paused:!0,shape:\"cloud\",sizePx:34,state:\"idle\"})},c.id))}),err==null?null:p.jsx(\"p\",{className:\"simeon-phone-sheet__error\",role:\"status\",children:err}),p.jsx(\"button\",{type:\"button\",className:\"simeon-phone-primary simeon-new-agent__create\",disabled:!ok,onClick:create,children:busy?\"Creating…\":\"Create\"})]})}",
+  "function __simeonNewGroupSheet(n){const[q,sq]=S.useState(\"\"),[sel,ss]=S.useState([]),[busy,sb]=S.useState(!1),[err,se]=S.useState(null),all=(n.agents??[]).filter(a=>a!=null&&a.isGroup!==!0&&a.isHiddenFromSidebar!==!0),f=q.trim().toLowerCase(),shown=f.length===0?all:all.filter(a=>String(a.name??\"\").toLowerCase().includes(f)),picked=sel.map(id=>all.find(a=>a.id===id)).filter(a=>a!=null),ok=picked.length>=2&&!busy;",
+  "const toggle=id=>ss(s=>s.includes(id)?s.filter(x=>x!==id):[...s,id]);",
+  "const next=()=>{if(!ok)return;sb(!0);se(null);Promise.resolve(n.createGroup({name:picked.map(a=>a.name).join(\", \").slice(0,60),description:\"\",memberAgentIds:picked.map(a=>a.id)})).then(r=>__simeonPhoneDone(n,r),()=>{sb(!1);se(\"Couldn’t create the group. Try again.\")})};",
+  "return p.jsxs(__simeonPhoneSheet,{title:\"New Group Chat\",close:n.close,action:p.jsx(\"button\",{type:\"button\",className:\"simeon-phone-primary simeon-phone-primary--small\",disabled:!ok,onClick:next,children:busy?\"Creating…\":\"Next\"}),children:[p.jsxs(\"label\",{className:\"simeon-new-group__to\",children:[p.jsx(\"span\",{className:\"simeon-new-group__to-label\",children:\"To:\"}),picked.map(a=>p.jsx(\"span\",{className:\"simeon-new-group__chip\",children:a.name},a.id)),p.jsx(\"input\",{value:q,onChange:e=>sq(e.target.value),placeholder:picked.length===0?\"Search agents\":\"\",\"aria-label\":\"Search agents\"})]}),err==null?null:p.jsx(\"p\",{className:\"simeon-phone-sheet__error\",role:\"status\",children:err}),p.jsx(\"div\",{className:\"simeon-new-group__list\",role:\"listbox\",\"aria-multiselectable\":!0,\"aria-label\":\"Agents\",children:shown.map(a=>{const on=sel.includes(a.id);return p.jsxs(\"button\",{type:\"button\",role:\"option\",\"aria-selected\":on,className:\"simeon-new-group__row\",onClick:()=>toggle(a.id),children:[p.jsx(\"span\",{className:\"simeon-new-group__avatar\",children:p.jsx(ml,{agent:a,fillPx:40,isStatic:!0,size:\"md\"})}),p.jsx(\"span\",{className:\"simeon-new-group__name\",children:a.name}),p.jsx(\"span\",{className:\"simeon-new-group__check\",children:on?p.jsx(__simeonPhoneIcon,{name:\"check\"}):null})]},a.id)})})]})}",
+].join("");
+/**
+ * The call on a phone (8 October 2026, the founder's iPhone screenshots of
+ * the call; then, the same day: "what i gave you is a design. for the call
+ * use our mac buttons. dont invent stuff out of the blue. where is the
+ * transcript button"). The Mac's call is its own window (the banner,
+ * source/voice-call/); a phone has no second window, so the window draws it:
+ * the founder's layout, the Mac banner's buttons (Mute, Transcript, End,
+ * with the banner's own glyphs and its orange for muted), card and colours.
+ *   The pill: at the top of the chat (of the list, if the person goes back),
+ *     the agent's butterfly, the waveform (the time while it rings), Mute,
+ *     Transcript and End, a handle under it. A tap, or Transcript, opens the
+ *     call full screen.
+ *   Full screen, the founder's transcript screen: the chevron that folds it
+ *     back, the butterfly large, the name, the time ("0:16", the banner's
+ *     own format), then what is said, as plain lines, the agent's at the
+ *     left, the person's at the right in grey, and Mute, Transcript and End.
+ *     Transcript shows and hides the lines, as it does on the Mac.
+ * Drawn only where the window's `voiceCall` tells the call as it goes
+ * (`subscribe`, `mute`, `hangUp`): the phone's, not the Mac's, whose call
+ * stays in its banner.
+ */
+const PHONE_CALL_ICONS = {
+  mic: '<path fill="currentColor" stroke="none" d="M12 14.5a3.5 3.5 0 0 0 3.5-3.5V5.5a3.5 3.5 0 1 0-7 0V11a3.5 3.5 0 0 0 3.5 3.5z"/><path fill="none" d="M18.5 11a6.5 6.5 0 0 1-13 0M12 17.5V21"/>',
+  micoff: '<path fill="currentColor" stroke="none" d="M12 14.5a3.5 3.5 0 0 0 3.5-3.5V5.5a3.5 3.5 0 1 0-7 0V11a3.5 3.5 0 0 0 3.5 3.5z"/><path fill="none" d="M18.5 11a6.5 6.5 0 0 1-13 0M12 17.5V21M4 3l16 18"/>',
+  end: '<path fill="currentColor" stroke="none" d="M12 9.2c-2.1 0-4 .4-5.6 1.1l-.1 2.3c0 .5-.3.9-.7 1.1-.9.4-1.8 1-2.6 1.6-.4.3-1 .3-1.4-.1L.4 14a1.1 1.1 0 0 1 0-1.6C3.4 9.6 7.5 8 12 8s8.6 1.6 11.6 4.4c.5.4.5 1.1 0 1.6l-1.2 1.2c-.4.4-1 .4-1.4.1-.8-.6-1.7-1.2-2.6-1.6-.4-.2-.7-.6-.7-1.1l-.1-2.3A14 14 0 0 0 12 9.2z"/>',
+  // The banner's Transcript glyph (source/voice-call/index.html, #i-talk).
+  talk: '<path d="M5 7h14M5 12h14M5 17h9"/>',
+  up: '<path d="M6 14.5l6-6 6 6"/>',
+};
+const PHONE_CALL_SOURCE = [
+  `const __simeonCallIcons=${JSON.stringify(PHONE_CALL_ICONS)};`,
+  "function __simeonCallIcon(n){return p.jsx(\"svg\",{viewBox:\"0 0 24 24\",\"aria-hidden\":!0,dangerouslySetInnerHTML:{__html:__simeonCallIcons[n.name]}})}",
+  "function __simeonCallSource(){const d=typeof window<\"u\"?window.desktop?.voiceCall:void 0;return d!=null&&typeof d.subscribe===\"function\"?d:null}",
+  // The banner's waveform: bars that rise in the middle, a voice's loudness bar by bar (banner-view.ts).
+  "function __simeonCallWave(n){const b=n.bars,lv=Array.isArray(n.levels)?n.levels:[],top=n.mode===\"speaking\"?24:14;return p.jsx(\"span\",{className:\"simeon-call-wave\",\"aria-hidden\":!0,children:Array.from({length:b},(_,i)=>{const w=Math.sin(Math.PI*(i+.5)/b),l=Math.max(0,Math.min(1,Number(lv[Math.floor(i*(lv.length||1)/b)])||0));return p.jsx(\"i\",{style:{height:`${(2+l*top*w).toFixed(1)}px`}},i)})})}",
+  // The banner's own clock (formatCallDuration, voice-call-prompt.ts): 0:16, 1:02:03.
+  "function __simeonCallTime(t){const w=Math.max(0,Math.floor(Number(t)||0)),h=Math.floor(w/3600),m=Math.floor(w%3600/60),ss=String(w%60).padStart(2,\"0\");return h>0?`${h}:${String(m).padStart(2,\"0\")}:${ss}`:`${m}:${ss}`}",
+  "function __simeonPhoneCall(){const d=__simeonCallSource(),[c,sc]=S.useState(null),[big,sb]=S.useState(!1),[tr,st]=S.useState(!0),[,tk]=S.useState(0),live=S.useRef(null);",
+  "S.useEffect(()=>d==null?void 0:d.subscribe(v=>sc(v??null)),[d]);",
+  "const ph=c?.phase;S.useEffect(()=>{if(ph!==\"live\")return;const t=setInterval(()=>tk(x=>x+1),1e3);return()=>clearInterval(t)},[ph]);",
+  "const gone=c==null;S.useEffect(()=>{gone&&(sb(!1),st(!0))},[gone]);",
+  "const said=c?.lines?.length??0;S.useEffect(()=>{const el=live.current;el!=null&&(el.scrollTop=el.scrollHeight)},[said,big,tr]);",
+  "if(!__simeonPhoneOk||d==null||c==null)return null;",
+  "const secs=c.connectedAtMs==null?0:Math.max(0,Math.floor(((c.endedAtMs??Date.now())-c.connectedAtMs)/1e3)),time=c.phase===\"ended\"&&c.connectedAtMs==null?c.status||\"Call ended\":c.connectedAtMs!=null?__simeonCallTime(secs):c.status||\"Calling…\";",
+  "const mute=e=>{e.stopPropagation();Promise.resolve(d.mute?.(!c.isMuted)).catch(()=>{})},end=e=>{e.stopPropagation();Promise.resolve(d.hangUp?.()).catch(()=>{})};",
+  "const btn=(cls,label,icon,on,pressed)=>p.jsx(\"button\",{type:\"button\",className:\"simeon-disc \"+cls,\"aria-label\":label,...(pressed==null?{}:{\"aria-pressed\":pressed}),onClick:on,children:p.jsx(__simeonCallIcon,{name:icon})});",
+  "const muteBtn=cls=>btn(cls,c.isMuted?\"Unmute\":\"Mute\",c.isMuted?\"micoff\":\"mic\",mute,c.isMuted);",
+  "const endBtn=cls=>p.jsx(\"button\",{type:\"button\",className:\"simeon-call-end \"+cls,\"aria-label\":\"End\",disabled:c.phase===\"ended\",onClick:end,children:p.jsx(__simeonCallIcon,{name:\"end\"})});",
+  "const mark=sz=>p.jsx(sd,{\"aria-hidden\":!0,color:c.agentColor??\"blue\",paused:c.phase===\"ended\",shape:\"cloud\",sizePx:sz,state:\"idle\"});",
+  "const chip=p.jsx(\"button\",{type:\"button\",className:\"simeon-call-chip\",\"aria-label\":`Back to the call with ${c.agentName}, ${time}`,onClick:()=>sb(!0),children:time});",
+  "if(!big)return p.jsxs(p.Fragment,{children:[chip,p.jsxs(\"div\",{className:\"simeon-call-pill\",\"data-state\":c.phase,role:\"button\",tabIndex:0,\"aria-label\":`Call with ${c.agentName}, ${time}. Open the call`,onClick:()=>sb(!0),onKeyDown:e=>{(e.key===\"Enter\"||e.key===\" \")&&(e.preventDefault(),sb(!0))},children:[p.jsx(\"span\",{className:\"simeon-call-pill__mark\",children:mark(40)}),c.phase===\"live\"?p.jsx(__simeonCallWave,{levels:c.levels,bars:24,mode:c.mode}):p.jsx(\"span\",{className:\"simeon-call-pill__status\",children:time}),muteBtn(\"simeon-call-pill__btn\"),btn(\"simeon-call-pill__btn\",\"Transcript\",\"talk\",e=>{e.stopPropagation();st(!0);sb(!0)}),endBtn(\"simeon-call-pill__end\"),p.jsx(\"span\",{className:\"simeon-call-pill__handle\",\"aria-hidden\":!0})]})]});",
+  "return p.jsxs(\"div\",{className:\"simeon-call-full\",\"data-state\":c.phase,role:\"dialog\",\"aria-label\":`Call with ${c.agentName}`,children:[btn(\"simeon-call-full__fold\",\"Minimise the call\",\"up\",()=>sb(!1)),p.jsxs(\"div\",{className:\"simeon-call-full__who\",children:[p.jsx(\"span\",{className:\"simeon-call-full__mark\",children:mark(120)}),p.jsx(\"div\",{className:\"simeon-call-full__name\",children:c.agentName}),p.jsx(\"div\",{className:\"simeon-call-full__time\",\"aria-live\":\"polite\",children:time})]}),p.jsx(\"div\",{className:\"simeon-call-full__live\",ref:live,role:\"log\",\"aria-label\":\"Transcript\",hidden:!tr,children:(c.lines??[]).map((l,i)=>p.jsx(\"p\",{className:\"simeon-call-say simeon-call-say--\"+(l.speaker===\"user\"?\"me\":\"them\"),children:l.text},i))}),p.jsxs(\"div\",{className:\"simeon-call-full__controls\",children:[muteBtn(\"simeon-call-full__btn\"),btn(\"simeon-call-full__btn\",\"Transcript\",\"talk\",()=>st(v=>!v),tr),endBtn(\"simeon-call-full__end\")]})]})}",
+  // BF opens Settings on a phone (the founder's screenshots: no menu), the window's own Settings ("general").
+  "function __simeonPhoneLayer(n){const{openSettings:os,...rest}=n;",
+  "S.useEffect(()=>{if(!__simeonPhoneOk||typeof os!==\"function\")return;const hit=e=>__simeonIsPhone(window.innerWidth)&&e.target instanceof Element&&e.target.closest(\".sand-agents-sidebar__account button\")!=null;const stop=e=>{hit(e)&&(e.preventDefault(),e.stopPropagation())};const open=e=>{hit(e)&&(e.preventDefault(),e.stopPropagation(),os(\"general\"))};document.addEventListener(\"pointerdown\",stop,!0);document.addEventListener(\"mousedown\",stop,!0);document.addEventListener(\"click\",open,!0);return()=>{document.removeEventListener(\"pointerdown\",stop,!0);document.removeEventListener(\"mousedown\",stop,!0);document.removeEventListener(\"click\",open,!0)}},[os]);",
+  "return p.jsxs(p.Fragment,{children:[p.jsx(__simeonPhoneSheets,{...rest}),p.jsx(__simeonPhoneCall,{})]})}",
+  // Under Settings' General on a phone: Connect apps (the sidebar's button, which the phone's list has no room for), Sign Out (the
+  // account card's, moved to its own row at the foot as in the founder's screenshots, so the e-mail fits: "you're in mobile CLAUDE.
+  // why is the writing so big that you can't fit bass@simeon") and the mark.
+  "function __simeonPhoneSettingsMore(){const auth=Ctt(),[w,sw]=S.useState(()=>typeof window<\"u\"?window.innerWidth:1280);S.useEffect(()=>{const f=()=>sw(window.innerWidth);window.addEventListener(\"resize\",f);return()=>window.removeEventListener(\"resize\",f)},[]);if(!__simeonIsPhone(w))return null;",
+  "return p.jsxs(\"div\",{className:\"simeon-phone-settings-more\",children:[p.jsxs(\"button\",{type:\"button\",className:\"simeon-phone-settings-row\",onClick:()=>uSe(),children:[p.jsx(\"span\",{className:\"simeon-connect-apps__label\",children:\"Connect apps\"}),p.jsxs(\"span\",{\"aria-hidden\":!0,className:\"simeon-connect-apps__logos\",children:[p.jsx(\"i\",{\"data-app\":\"gmail\"}),p.jsx(\"i\",{\"data-app\":\"calendar\"}),p.jsx(\"i\",{\"data-app\":\"drive\"})]})]}),auth?.status?.kind===\"logged-in\"?p.jsx(\"button\",{type:\"button\",className:\"simeon-phone-settings-row simeon-phone-settings-row--danger\",onClick:()=>{Promise.resolve(auth.logout()).catch(()=>{})},children:\"Sign Out\"}):null,p.jsxs(\"div\",{className:\"simeon-phone-settings-mark\",children:[p.jsx(sd,{\"aria-hidden\":!0,color:\"blue\",paused:!1,shape:\"cloud\",sizePx:56,state:\"idle\"}),p.jsx(\"b\",{children:\"Simeon\"})]})]})}",
+  "typeof globalThis<\"u\"&&(globalThis.__simeonPhoneSettingsMore=__simeonPhoneSettingsMore);",
+].join("");
+const PHONE_SIDEBAR_OPEN_BEFORE = "function DCe(n,e){return n.isCollapsed||can(n,e)}";
+export const PHONE_HOME_REPLACEMENTS = Object.freeze([
+  ["phone-sidebar-open", PHONE_SIDEBAR_OPEN_BEFORE, `${PHONE_HOME_SOURCE}${PHONE_CREATE_SOURCE}${PHONE_CALL_SOURCE}function DCe(n,e){return __simeonIsPhone(e)?!1:n.isCollapsed||can(n,e)}`],
+  // The agent's page opens only where it fits beside the chat (424 px and its 480); on a phone it is a sheet over the chat.
+  ["phone-pane-room", "function uan(n){return n.windowWidth>=Dlt(n.sidebar,n.paneWidth)}", "function uan(n){return __simeonIsPhone(n.windowWidth)||n.windowWidth>=Dlt(n.sidebar,n.paneWidth)}"],
+  ["phone-open-agent", "Go=S.useCallback(Rs=>{Pc(Rs)},[Pc]);ge.current=Go;", "Go=S.useCallback(Rs=>{__simeonPhoneShow(\"chat\");Pc(Rs)},[Pc]);ge.current=Go;"],
+  // On a phone the + is a menu (New Agent, New Group Chat); elsewhere the Mac's new chat.
+  ["phone-new-chat", "onNewChat:fl,composeDraftLabel:Ho,", "onNewChat:__simeonPhoneNew(fl),composeDraftLabel:Ho,"],
+  ["phone-create-sheets", "children:[p.jsx(u0n,{currentAgentId:y,", "children:[p.jsx(__simeonPhoneLayer,{agents:lt,createAgent:Sn,createGroup:ln,openAgent:Go,openSettings:vr},\"simeon-phone-layer\"),p.jsx(u0n,{currentAgentId:y,"],
+  ["phone-hidden-chats", "onOpenHiddenChats:KWe,", "onOpenHiddenChats:__simeonPhoneGo(KWe),"],
+  ["phone-profile", "onOpenProfile:Jr,onOpenSettings:vr,", "onOpenProfile:__simeonPhoneGo(Jr),onOpenSettings:vr,"],
+  ["phone-full-conversation", "onShowAsyncTasks:Es,onShowFullConversation:ds,", "onShowAsyncTasks:__simeonPhoneGo(Es),onShowFullConversation:__simeonPhoneGo(ds),"],
+  // Search on a phone is a sheet with a close button at its top left (the founder's screenshot), inside the dialog.
+  ["phone-search-close", 'className:"sand-command-palette",initialFocus:P,onOpenChange:Z=>{Z||i()},open:r,rootStylexStyles:Vie.dialog,size:"md",children:[', 'className:"sand-command-palette",initialFocus:P,onOpenChange:Z=>{Z||i()},open:r,rootStylexStyles:Vie.dialog,size:"md",children:[p.jsx("button",{type:"button",className:"simeon-disc simeon-palette-close","aria-label":"Close search",onClick:()=>i(),children:p.jsx(__simeonPhoneIcon,{name:"close"})},"simeon-close"),'],
+  ["phone-search-opens", "onOpenAgent:gm,onOpenFile:pl,onOpenLink:Yl,onOpenMessage:cr,onOpenRoutine:Ua,", "onOpenAgent:__simeonPhoneGo(gm),onOpenFile:pl,onOpenLink:Yl,onOpenMessage:__simeonPhoneGo(cr),onOpenRoutine:__simeonPhoneGo(Ua),"],
+]);
+
+/** Settings' General, then (on a phone) Connect apps and the mark: the panel chunk's General page, the Manage plan card's way. */
+export const PHONE_SETTINGS_PANEL_REPLACEMENTS = Object.freeze([
+  ["phone-settings-more", GENERAL_BEFORE, 'Q=x==="general"?a.jsx(Te,{children:a.jsxs("div",{children:[a.jsx(Sa,{auth:t},"general"),a.jsx(globalThis.__simeonPhoneSettingsMore??(()=>null),{},"simeon-phone-more")]})}):null'],
+]);
+
+export function patchOriginalPhoneSettingsPanel(source) {
+  let out = source;
+  for (const [label, before, after] of PHONE_SETTINGS_PANEL_REPLACEMENTS) out = replaceExactlyOnce(out, before, after, label);
+  return out;
+}
+
+export function patchOriginalPhoneHome(source) {
+  let out = source;
+  for (const [label, before, after] of PHONE_HOME_REPLACEMENTS) out = replaceExactlyOnce(out, before, after, label);
+  return out;
+}
+
+/** The rows on a phone (the founder, 8 October 2026: "have the chat list be bigger and not thin"): the Mac's row at 1.2 times, its butterfly at 1.2 times again (36 px on the Mac, 52 on the phone), the name semibold. */
+export const PHONE_ROW_ZOOM = 1.2;
+export const PHONE_AVATAR_ZOOM = 1.2;
+export const PHONE_HOME_MARKER = "/* Simeon: the phone's home";
+export const PHONE_HOME_CSS = `${PHONE_HOME_MARKER} (8 October 2026): the Mac's agents list full screen, or the Mac's chat full screen, one at a time. */
+.simeon-disc.simeon-phone-back{display:none;position:fixed;top:12px;left:12px;z-index:40}
+@media (max-width:${PHONE_MAX_WIDTH - 0.02}px){
+html[data-simeon-phone] .sand-shell{grid-template-columns:minmax(0,1fr)!important}
+html[data-simeon-phone] .sand-sidebar-resize-handle{display:none!important}
+html[data-simeon-phone] .sand-agents-sidebar{border-right-width:0!important}
+html[data-simeon-phone] .sand-agents-sidebar__footer{position:absolute!important;top:0!important;left:0!important;height:68px!important;padding:0 0 0 14px!important;align-items:center!important;z-index:1}
+html[data-simeon-phone] .sand-agents-sidebar__header:has(.simeon-disc){height:68px!important;padding-right:12px!important}
+html[data-simeon-phone] .sand-agents-sidebar__header .simeon-disc,html[data-simeon-phone] .simeon-disc.simeon-phone-back{width:46px;height:46px}
+html[data-simeon-phone] .sand-agents-sidebar__header .simeon-disc svg,html[data-simeon-phone] .simeon-disc.simeon-phone-back svg{width:21px;height:21px}
+html[data-simeon-phone] .sand-agents-sidebar__account>button,html[data-simeon-phone] .sand-agents-sidebar__account .sand-kit-base-avatar,html[data-simeon-phone] .sand-agents-sidebar__account .sand-kit-base-avatar img{width:46px!important;height:46px!important}
+html[data-simeon-phone] .sand-agents-sidebar__account .sand-kit-base-avatar{font-size:15px!important}
+html[data-simeon-phone] .sand-agents-sidebar__plugins-entry{display:none!important}
+html[data-simeon-phone] .sand-agents-sidebar .sand-agent-item{zoom:${PHONE_ROW_ZOOM}}
+html[data-simeon-phone] .sand-agents-sidebar .sand-agent-item__avatar{zoom:${PHONE_AVATAR_ZOOM}}
+html[data-simeon-phone] .sand-agents-sidebar .sand-agent-item__name{font-weight:600!important}
+html[data-simeon-phone="list"] main.sand-chat,html[data-simeon-phone="chat"] .sand-agents-sidebar{position:fixed!important;inset:0!important;width:100%!important;visibility:hidden!important;pointer-events:none!important}
+html[data-simeon-phone="list"] main.sand-chat{transform:translateX(100%)}
+html[data-simeon-phone="chat"] .sand-agents-sidebar{transform:translateX(-100%)}
+html[data-simeon-phone="chat"] .simeon-disc.simeon-phone-back{display:grid}
+html[data-simeon-phone="chat"]:has(.sand-new-chat-bar) .simeon-disc.simeon-phone-back{top:2px}
+html[data-simeon-phone="chat"] .sand-new-chat-bar{padding-left:54px!important}
+html[data-simeon-phone] aside.sand-info-pane[data-open="true"]{position:fixed!important;z-index:58;top:44px;left:8px;right:8px;bottom:8px;width:auto!important;max-width:none!important;border-radius:32px;overflow:hidden;background:var(--sand-bg-base);box-shadow:0 0 0 .5px var(--sand-border-default),0 0 0 100vmax var(--sand-bg-scrim);animation:simeon-phone-rise .26s cubic-bezier(.2,.8,.2,1)}
+html[data-simeon-phone] aside.sand-info-pane[data-open="true"]{height:auto!important}
+html[data-simeon-phone] aside.sand-info-pane[data-open="true"] .sand-info-pane__inner{width:100%!important;min-width:0!important;max-width:none!important;height:100%!important}
+html[data-simeon-phone] .sand-info-pane__resize-handle{display:none!important}
+html[data-simeon-phone] aside.sand-info-pane[data-open="true"] button[aria-label="Close details"]{position:absolute!important;top:14px!important;left:14px!important;right:auto!important;z-index:2;width:40px!important;height:40px!important;border-radius:999px!important;background:linear-gradient(180deg,light-dark(rgba(255,255,255,.62),rgba(255,255,255,.16)),light-dark(rgba(255,255,255,.38),rgba(255,255,255,.08)))!important;box-shadow:0 0 0 .5px var(--sand-border-default),0 2px 6px -2px rgba(0,0,0,.18)!important}
+html[data-simeon-phone] .sand-command-palette{top:44px!important;left:8px!important;right:8px!important;bottom:8px!important;width:auto!important;max-width:none!important;height:auto!important;max-height:none!important;transform:none!important;margin:0!important;border-radius:32px!important;display:flex!important;flex-direction:column!important}
+html[data-simeon-phone] .sand-command-palette>div:has(>input[role="combobox"]){flex:none;height:48px;margin:14px 14px 6px 70px;padding:0 16px;gap:10px;border-radius:999px;background:var(--sand-fill-neutral-subtle)}
+html[data-simeon-phone] .sand-command-palette>div:has(>input[role="combobox"]) input{font-size:17px!important}
+html[data-simeon-phone] .sand-command-palette>[role="tablist"]{flex:none;padding:4px 16px 8px}
+html[data-simeon-phone] .sand-command-palette>[role="tablist"] [role="tab"]{font-size:15px!important;height:32px!important;padding:0 12px!important}
+html[data-simeon-phone] .sand-command-palette>[role="listbox"]{flex:1;height:auto!important;max-height:none!important}
+html[data-simeon-phone] .sand-command-palette [role="option"]{zoom:1.25}
+html[data-simeon-phone] .sand-command-palette [role="option"]>span:first-child{zoom:1.5}
+html[data-simeon-phone] .simeon-disc.simeon-palette-close{display:grid;position:absolute;z-index:2;top:14px;left:14px;width:48px;height:48px}
+html[data-simeon-phone] .simeon-palette-close svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+html[data-simeon-phone] .sand-settings-dialog{top:44px!important;left:8px!important;right:8px!important;bottom:8px!important;width:auto!important;max-width:none!important;height:auto!important;max-height:none!important;transform:none!important;margin:0!important;border-radius:32px!important}
+html[data-simeon-phone] .sand-settings-layout{display:flex!important;flex-direction:column!important;height:100%!important}
+html[data-simeon-phone] .sand-settings-nav{display:none!important}
+html[data-simeon-phone] .sand-settings-dialog:has(.sand-settings-nav__item+.sand-settings-nav__item) .sand-settings-nav{display:flex!important;flex-direction:row!important;gap:6px;width:auto!important;height:auto!important;padding:16px 16px 0 70px!important;border:0!important;background:transparent!important}
+html[data-simeon-phone] .sand-settings-nav__item{width:auto!important;height:36px!important;padding:0 14px!important;border-radius:999px!important;font-size:15px!important}
+html[data-simeon-phone] .sand-settings-panel{flex:1;min-height:0;width:100%!important;max-width:none!important}
+html[data-simeon-phone] .sand-settings-pane-header{display:none!important}
+html[data-simeon-phone] .sand-settings-panel__close{position:fixed!important;top:58px!important;left:22px!important;right:auto!important;z-index:5;width:44px!important;height:44px!important;border-radius:999px!important;background:linear-gradient(180deg,light-dark(rgba(255,255,255,.62),rgba(255,255,255,.16)),light-dark(rgba(255,255,255,.38),rgba(255,255,255,.08)))!important;box-shadow:0 0 0 .5px var(--sand-border-default),0 2px 6px -2px rgba(0,0,0,.18)!important}
+html[data-simeon-phone] .sand-settings-panel__body{padding-top:70px}
+html[data-simeon-phone] .sand-settings-pane{padding:0!important}
+html[data-simeon-phone] .sand-settings-general{width:auto!important;max-width:none!important;padding:0 12px 8px!important;zoom:1.15}
+html[data-simeon-phone] .sand-account-card__action{display:none!important}
+html[data-simeon-phone] .sand-account-card__body{flex:1 1 auto!important;min-width:0!important;max-width:none!important}
+html[data-simeon-phone] .sand-account-card__meta,html[data-simeon-phone] .sand-account-card__id{max-width:none!important}
+}
+/* The + menu and its sheets: the Mac's menu card and the window's own tokens, at a phone's size. */
+@keyframes simeon-phone-fade{from{opacity:0}}
+@keyframes simeon-phone-pop{from{opacity:0;transform:scale(.94)}}
+@keyframes simeon-phone-rise{from{opacity:0;transform:translateY(28px)}}
+.simeon-phone-scrim{position:fixed;inset:0;z-index:60;background:var(--sand-bg-scrim);animation:simeon-phone-fade .18s ease}
+.simeon-phone-scrim--clear{background:transparent;animation:none}
+.simeon-phone-menu{position:absolute;top:64px;right:12px;min-width:236px;padding:6px;display:grid;gap:2px;border-radius:16px;background:var(--sand-bg-elevated);box-shadow:0 0 0 .5px var(--sand-border-default),0 18px 40px -12px rgba(0,0,0,.28),0 4px 12px -4px rgba(0,0,0,.12);transform-origin:top right;animation:simeon-phone-pop .16s ease}
+.simeon-phone-menu__item{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:12px;height:46px;padding:0 12px;border-radius:10px;font-size:16px;line-height:22px;font-weight:420;color:var(--sand-text-primary);cursor:default}
+.simeon-phone-menu__item:active{background:var(--sand-fill-ghost-hover)}
+.simeon-phone-menu__item svg,.simeon-phone-sheet svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.simeon-phone-menu__item svg{width:20px;height:20px;flex:none}
+.simeon-phone-sheet{position:absolute;top:44px;left:8px;right:8px;bottom:8px;display:flex;flex-direction:column;border-radius:32px;background:var(--sand-bg-base);color:var(--sand-text-primary);box-shadow:0 0 0 .5px var(--sand-border-default),0 -10px 40px -16px rgba(0,0,0,.3);overflow:hidden;animation:simeon-phone-rise .26s cubic-bezier(.2,.8,.2,1)}
+.simeon-phone-sheet__head{display:flex;align-items:center;gap:12px;padding:14px 14px 10px}
+.simeon-phone-sheet__title{flex:1;margin:0;font-size:17px;line-height:22px;font-weight:600;color:var(--sand-text-primary)}
+.simeon-phone-sheet__close svg{width:18px;height:18px;stroke-width:2}
+.simeon-phone-sheet__error{margin:8px 16px 0;font-size:14px;line-height:19px;color:var(--sand-text-danger);text-align:center}
+.simeon-phone-primary{all:unset;box-sizing:border-box;display:grid;place-items:center;height:52px;border-radius:999px;background:var(--sand-fill-bubble-user);color:#fff;font-size:17px;line-height:22px;font-weight:600;cursor:default}
+.simeon-phone-primary:disabled{background:var(--sand-fill-neutral-subtle);color:var(--sand-text-tertiary)}
+.simeon-phone-primary--small{height:40px;padding:0 18px;font-size:16px}
+.simeon-new-agent__preview{flex:1;min-height:170px;display:grid;place-items:center}
+.simeon-new-agent__name{all:unset;box-sizing:border-box;margin:0 16px;height:52px;padding:0 16px;border-radius:22px;background:var(--sand-bg-base);border:1px solid var(--sand-border-default);text-align:center;font-size:17px;color:var(--sand-text-primary)}
+.simeon-new-agent__name::placeholder{color:var(--sand-text-tertiary)}
+.simeon-new-agent__colors{display:grid;grid-template-columns:repeat(6,1fr);justify-items:center;gap:10px 0;padding:22px 12px 18px}
+.simeon-new-agent__color{all:unset;box-sizing:border-box;width:48px;height:48px;display:grid;place-items:center;border-radius:999px;cursor:default}
+.simeon-new-agent__color[aria-checked="true"]{box-shadow:inset 0 0 0 2px var(--sand-fill-bubble-user)}
+.simeon-new-agent__create{margin:0 16px 16px}
+.simeon-new-group__to{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 16px;min-height:48px;padding:6px 16px;border-radius:22px;border:1px solid var(--sand-border-default);font-size:17px}
+.simeon-new-group__to-label{color:var(--sand-text-secondary)}
+.simeon-new-group__to input{all:unset;flex:1;min-width:80px;height:34px;font-size:17px;color:var(--sand-text-primary)}
+.simeon-new-group__to input::placeholder{color:var(--sand-text-tertiary)}
+.simeon-new-group__chip{padding:4px 12px;border-radius:999px;background:var(--sand-fill-bubble-agent);font-size:15px;line-height:20px;font-weight:500}
+.simeon-new-group__list{flex:1;overflow-y:auto;padding:10px 8px 16px}
+.simeon-new-group__row{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:14px;width:100%;height:64px;padding:0 12px;border-radius:14px;cursor:default}
+.simeon-new-group__row:active{background:var(--sand-fill-ghost-hover)}
+.simeon-new-group__avatar{width:44px;height:44px;display:grid;place-items:center;flex:none}
+.simeon-new-group__name{flex:1;min-width:0;font-size:17px;line-height:22px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.simeon-new-group__check{width:26px;height:26px;display:grid;place-items:center;border-radius:999px;box-shadow:inset 0 0 0 1.5px var(--sand-border-strong);color:#fff}
+.simeon-new-group__row[aria-selected="true"] .simeon-new-group__check{background:var(--sand-fill-bubble-user);box-shadow:none}
+.simeon-new-group__check svg{width:16px;height:16px;stroke-width:2.4}
+.simeon-disc.simeon-palette-close{display:none}
+.simeon-call-chip{display:none}
+html[data-simeon-phone="list"] .simeon-call-pill{display:none}
+html[data-simeon-phone="list"] .simeon-call-chip{all:unset;box-sizing:border-box;position:fixed;z-index:50;top:11px;right:124px;height:46px;padding:0 18px;display:grid;place-items:center;border-radius:999px;background:var(--sand-fill-success);color:#fff;font-size:17px;line-height:22px;font-weight:600;font-variant-numeric:tabular-nums;cursor:default;box-shadow:0 2px 8px -2px rgba(0,0,0,.2)}
+.simeon-phone-settings-more{display:grid;gap:18px;padding:18px 16px 32px}
+.simeon-phone-settings-row{all:unset;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:58px;padding:0 18px;border-radius:16px;background:var(--sand-bg-elevated);box-shadow:0 0 0 .5px var(--sand-border-default);font-size:17px;color:var(--sand-text-primary);cursor:default}
+.simeon-phone-settings-row .simeon-connect-apps__logos{order:0}
+.simeon-phone-settings-row--danger{color:var(--sand-text-danger)}
+.simeon-phone-settings-mark{display:grid;justify-items:center;gap:8px;padding-top:8px;color:var(--sand-text-primary);font-size:20px}
+/* The call on a phone: the Mac banner's card (banner.css) as a pill, and full screen. */
+:root{--simeon-call-card:#ffffff;--simeon-call-shadow:inset 0 1px 0 rgba(255,255,255,.85),0 0 0 .5px rgba(0,0,0,.08),0 18px 40px -14px rgba(0,0,0,.28),0 4px 10px -4px rgba(0,0,0,.12)}
+[data-theme*="dark"]{--simeon-call-card:#2a2a2d;--simeon-call-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 0 0 .5px rgba(0,0,0,.45),0 18px 40px -14px rgba(0,0,0,.5)}
+.simeon-call-pill{position:fixed;z-index:50;top:104px;left:12px;right:12px;height:76px;display:flex;align-items:center;gap:8px;padding:0 11px 0 14px;border-radius:999px;background:var(--simeon-call-card);color:var(--sand-text-primary);box-shadow:var(--simeon-call-shadow);cursor:default;animation:simeon-phone-pop .2s ease}
+html[data-simeon-phone="list"] .simeon-call-pill{top:62px}
+.simeon-call-pill__mark{width:44px;height:44px;flex:none;display:grid;place-items:center}
+.simeon-call-pill__status{flex:1;min-width:0;font-size:15px;color:var(--sand-text-secondary);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.simeon-call-wave{flex:1;min-width:0;height:30px;display:flex;align-items:center;gap:2px;padding:0 4px}
+.simeon-call-wave i{flex:1;min-width:0;border-radius:1px;background:currentColor;opacity:.55;transition:height .08s}
+.simeon-call-pill .simeon-disc,.simeon-call-full .simeon-disc{flex:none}
+.simeon-call-pill__btn{width:44px;height:44px}
+.simeon-call-pill svg,.simeon-call-full svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.simeon-call-pill__btn svg{width:20px;height:20px}
+.simeon-call-end{all:unset;box-sizing:border-box;flex:none;display:grid;place-items:center;border-radius:999px;background:#ff3b30;color:#fff;cursor:default}
+.simeon-call-end:disabled{opacity:.5}
+.simeon-call-pill__end{width:50px;height:50px}
+.simeon-call-pill__end svg{width:24px;height:24px}
+.simeon-call-pill__handle{position:absolute;left:50%;bottom:6px;width:36px;height:4px;margin-left:-18px;border-radius:2px;background:var(--sand-text-tertiary);opacity:.6}
+.simeon-call-pill .simeon-disc[aria-pressed="true"]:not([aria-label="Transcript"]),.simeon-call-full .simeon-disc[aria-label="Unmute"]{color:#ff9f0a}
+.simeon-call-full .simeon-disc[aria-label="Transcript"][aria-pressed="true"]{background:var(--sand-fill-ghost-selected)}
+.simeon-call-full{position:fixed;inset:0;z-index:55;display:flex;flex-direction:column;background:var(--sand-bg-base);color:var(--sand-text-primary);animation:simeon-phone-rise .26s cubic-bezier(.2,.8,.2,1)}
+.simeon-call-full__fold{position:absolute;top:12px;left:12px}
+.simeon-call-full__fold{width:48px;height:48px}
+.simeon-call-full__fold svg{width:22px;height:22px;stroke-width:2}
+.simeon-call-full__who{display:flex;flex-direction:column;align-items:center;gap:4px;padding:64px 24px 8px}
+.simeon-call-full__mark{width:124px;height:124px;display:grid;place-items:center}
+.simeon-call-full__name{margin-top:10px;font-size:22px;line-height:28px;font-weight:600;text-align:center}
+.simeon-call-full__time{font-size:16px;line-height:21px;color:var(--sand-text-secondary);font-variant-numeric:tabular-nums}
+.simeon-call-full__live{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:22px;padding:16px 28px}
+.simeon-call-full__live[hidden]{display:flex!important;visibility:hidden}
+.simeon-call-full__live>:first-child{margin-top:auto}
+.simeon-call-say{margin:0;max-width:86%;font-size:17px;line-height:24px;overflow-wrap:anywhere}
+.simeon-call-say--me{align-self:flex-end;text-align:right;color:var(--sand-text-secondary)}
+.simeon-call-say--them{align-self:flex-start;color:var(--sand-text-primary)}
+.simeon-call-full__controls{display:flex;align-items:center;gap:12px;padding:12px 20px 28px}
+.simeon-call-full__btn{width:56px;height:56px}
+.simeon-call-full__btn svg{width:24px;height:24px}
+.simeon-call-full__end{margin-left:auto;width:64px;height:64px}
+.simeon-call-full__end svg{width:28px;height:28px}
+`;
+
+export function patchOriginalPhoneHomeStylesheet(css) {
+  if (css.includes(PHONE_HOME_MARKER)) throw new Error("Original renderer phone home block is already present.");
+  return `${css}\n${PHONE_HOME_CSS}`;
 }
 
 /**
@@ -2332,7 +2775,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // row per chunk and only the roles "registry" and "panel"; a third row,
     // "manage-plan", on the same chunk failed the release's tests on the Air
     // (7 October 2026).
-    ["panel", panelCandidates[0], (source) => patchOriginalManagePlanPanel(patchOriginalSettingsPanel(source))],
+    ["panel", panelCandidates[0], (source) => patchOriginalPhoneSettingsPanel(patchOriginalManagePlanPanel(patchOriginalSettingsPanel(source)))],
   ]) {
     const patched = transform(candidate.source);
     // A transform that returns its input (the Settings panel since the Router
@@ -2364,8 +2807,9 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   if (!HANDOFF_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer take-over card anchor is not in the mark chunk.");
   if (!SIDEBAR_DISCS_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer sidebar anchors (the header, the rail's new button, the search bar) are not all in the mark chunk.");
   if (!BUTTERFLY_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer mark engine anchors (the cloud's geometry, the body and eyes, the still renderer, the spin's lights) are not all in the mark chunk.");
+  if (!PHONE_HOME_REPLACEMENTS.every(([, before]) => markChunks[0].source.includes(before))) throw new Error("Original renderer phone home anchors (the sidebar's fold, the open-agent callback, the sidebar's and search's openers) are not all in the mark chunk.");
   const logoAssets = await readLogoAssets();
-  const markPatched = patchOriginalButterfly(patchOriginalSidebarDiscs(patchOriginalCooStep(patchOriginalFlights(patchOriginalHandoff(patchOriginalAgentPane(patchOriginalManagePlan(patchOriginalVoiceCall(patchOriginalChatLayout(patchOriginalLogos(patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(patchOriginalDraftSend(markChunks[0].source)))))), appMentionNames(logoAssets.mentions)))))))))));
+  const markPatched = patchOriginalPhoneHome(patchOriginalButterfly(patchOriginalSidebarDiscs(patchOriginalCooStep(patchOriginalFlights(patchOriginalHandoff(patchOriginalAgentPane(patchOriginalManagePlan(patchOriginalVoiceCall(patchOriginalChatLayout(patchOriginalLogos(patchOriginalCopy(patchOriginalShapes(patchOriginalBubble(patchOriginalPalette(patchOriginalMarks(patchOriginalDraftSend(markChunks[0].source)))))), appMentionNames(logoAssets.mentions))))))))))));
   // The stylesheet's light default of the same variable, for first paint.
   const stylesheets = (await readdir(assetsRoot)).filter((name) => name.endsWith(".css")).map((name) => path.join(assetsRoot, name));
   const bubbleSheets = [];
@@ -2374,7 +2818,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     if (css.includes(BUBBLE_CSS_REPLACEMENT[1])) bubbleSheets.push({ target, css });
   }
   if (bubbleSheets.length !== 1) throw new Error(`Expected one stylesheet carrying the user bubble default, found ${bubbleSheets.length}.`);
-  const stylesheetPatched = patchOriginalSidebarDiscsStylesheet(patchOriginalCooStylesheet(patchOriginalWordmarkStylesheet(patchOriginalFlightsStylesheet(patchOriginalHandoffStylesheet(patchOriginalAgentPaneStylesheet(patchOriginalManagePlanStylesheet(patchOriginalVoiceCallStylesheet(patchOriginalLogosStylesheet(patchOriginalShapePickerStylesheet(patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)))), logoAssets)))))), logoAssets.wordmarkFont)));
+  const stylesheetPatched = patchOriginalPhoneHomeStylesheet(patchOriginalSidebarDiscsStylesheet(patchOriginalCooStylesheet(patchOriginalWordmarkStylesheet(patchOriginalFlightsStylesheet(patchOriginalHandoffStylesheet(patchOriginalAgentPaneStylesheet(patchOriginalManagePlanStylesheet(patchOriginalVoiceCallStylesheet(patchOriginalLogosStylesheet(patchOriginalShapePickerStylesheet(patchOriginalGlassStylesheet(patchOriginalHeaderStylesheet(patchOriginalBubbleStylesheet(bubbleSheets[0].css)))), logoAssets)))))), logoAssets.wordmarkFont))));
   const chunkSources = [];
   for (const target of markCandidates) chunkSources.push(await readFile(target, "utf8"));
   // The blocks spell the window's tokens as the token pass below leaves them.
@@ -2401,7 +2845,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
   const wallpaperAfter = await readFile(wallpaperTarget);
   const marks = {
     chunk: path.relative(stageRoot, markChunks[0].target),
-    replacements: [...[...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, ...SHAPE_REPLACEMENTS, ...COPY_REPLACEMENTS, ...LOGO_REPLACEMENTS, ...CHAT_LAYOUT_REPLACEMENTS, ...VOICE_CALL_REPLACEMENTS, ...AGENT_PANE_REPLACEMENTS, ...HANDOFF_REPLACEMENTS, ...SIDEBAR_DISCS_REPLACEMENTS, ...BUTTERFLY_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT].map(([label]) => label), "chat-header-card", "liquid-glass-chrome", "sidebar-discs", "shape-pickers-hidden", "title-tag-blue", "file-and-app-logos", "voice-call-styles", "agent-pane-styles", "switch-blue", "take-over-card-styles"],
+    replacements: [...[...MARK_REPLACEMENTS, ...PALETTE_REPLACEMENTS, ...BUBBLE_REPLACEMENTS, ...SHAPE_REPLACEMENTS, ...COPY_REPLACEMENTS, ...LOGO_REPLACEMENTS, ...CHAT_LAYOUT_REPLACEMENTS, ...VOICE_CALL_REPLACEMENTS, ...AGENT_PANE_REPLACEMENTS, ...HANDOFF_REPLACEMENTS, ...SIDEBAR_DISCS_REPLACEMENTS, ...BUTTERFLY_REPLACEMENTS, ...PHONE_HOME_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT].map(([label]) => label), "chat-header-card", "liquid-glass-chrome", "sidebar-discs", "shape-pickers-hidden", "title-tag-blue", "file-and-app-logos", "voice-call-styles", "agent-pane-styles", "switch-blue", "take-over-card-styles", "phone-home"],
     userBubble: { light: USER_BUBBLE_LIGHT, dark: USER_BUBBLE_DARK, stylesheet: path.relative(stageRoot, bubbleSheets[0].target) },
     // The stylesheet's hashes, so `npm run verify` can check the packaged
     // file against what this patch wrote (25 September 2026: verify read
@@ -2487,7 +2931,7 @@ export async function applyOriginalRendererRouterPatch({ stageRoot }) {
     // The router-provider and usage-panel features were listed here while
     // `patchOriginalSettingsPanel` returned its input (F-199): a no-op is
     // not a feature, and a chunk it did not change is not a chunk above.
-    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-mark", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "agent-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "meet-step-turn", "connect-step", "computer-screen-large", "computer-wallpaper-photo", "flight-results", "upstream-tokens", "sidebar-glass-discs", "pane-widest-default", "pane-three-tabs", "mark-butterfly", "mark-no-eyes", "spin-lights-agent-colours", "manage-plan-card", "draft-send"],
+    features: ["brand-simeon", "landing-mark-cloud", "hero-mark-cloud", "loading-logo-mark", "app-icon-simeon", "agent-palettes-twelve", "user-bubble-blue", "user-bubble-sky-wash", "chat-header-card", "liquid-glass-chrome", "marks-ocean", "shapes-cloud-only", "onboarding-copy", "title-tag-blue", "file-logos", "connect-apps-button", "app-mentions", "agent-mentions", "cards-blue", "cards-white", "notion-light", "agent-bubble-messages-grey", "cards-grey", "exchange-header-centred", "choice-radio", "sidebar-glass-only", "selected-row-white", "header-name-glass", "send-blue", "slack-logo", "file-title-centred", "chat-docked-when-empty", "agent-message-sheet", "cards-sheet", "user-bubble-sheet", "sidebar-sheet", "voice-call-button", "voice-picker", "wordmark-suravaram", "coo-step", "first-agent-simeon", "name-step", "meet-step-turn", "connect-step", "computer-screen-large", "computer-wallpaper-photo", "flight-results", "upstream-tokens", "sidebar-glass-discs", "pane-widest-default", "pane-three-tabs", "mark-butterfly", "mark-no-eyes", "spin-lights-agent-colours", "manage-plan-card", "draft-send", "phone-home"],
     transformations: ["settings-registry", "marks", "app-icon", "brand-strings", "upstream-tokens", "icon-font-file"],
   };
   const provenancePath = path.join(stageRoot, "dist", "renderer-router-extension.json");

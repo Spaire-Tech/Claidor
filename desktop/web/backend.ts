@@ -19,6 +19,7 @@
  * and comes back through the server's hosted callback to
  * `/app/connected.html`, which hands the box the code (`bridge.ts`).
  */
+import { attachmentByteLimitForName } from "../source/shared/media/attachment-limits.js";
 import { SimeonApi, SimeonApiError } from "./api.js";
 import { createWebGateway, type WebGateway } from "./gateway.js";
 
@@ -30,8 +31,10 @@ export interface WebBackendHooks {
   readonly pushIpcEvent: (channel: string, payload: unknown) => void;
   /** Sends the person to the web app's sign-in, to come back here after. */
   readonly goSignIn: () => void;
-  /** Opens a vendor's sign-in page; a new tab here, the browser on a Mac. */
+  /** Opens a vendor's sign-in page; a new tab here, the browser on a Mac, the system's sign-in sheet in the iPhone app. */
   readonly openSignIn?: (url: string) => void;
+  /** Opens a link the window hands out (`openExternal`); a new tab here, Safari's sheet in the iPhone app. */
+  readonly openLink?: (url: string) => void;
   readonly storage?: Storage;
   readonly matchDark?: () => boolean;
   /** For tests: the gateway to use instead of one on the API. */
@@ -118,6 +121,30 @@ function writeJson(storage: Storage | undefined, key: string, value: unknown): v
 
 const LOCAL = "simeon.web.";
 
+/** The staging prefix the page's in-memory files carry, in place of the Mac's staging folder. */
+export const WEB_STAGED_PREFIX = "web-staged:";
+
+/** The bytes the preload hands over, in whatever shape they crossed in (as the Mac's `coerceAttachmentBytes`). */
+export function attachmentBytesOf(value: unknown): Uint8Array | null {
+  if (value instanceof Uint8Array) return value;
+  if (value instanceof ArrayBuffer) return new Uint8Array(value);
+  if (ArrayBuffer.isView(value)) return new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+  if (Array.isArray(value) && value.every((item) => typeof item === "number")) return Uint8Array.from(value as number[]);
+  return null;
+}
+
+/** A file name the box may write: the Mac's `isSafeFilename`. */
+export function isSafeAttachmentName(value: unknown): value is string {
+  return typeof value === "string" && value.length > 0 && value.length <= 255 && !value.includes("/") && !value.includes("\\") && !value.includes("\0");
+}
+
+/** Base64 for `uploadAttachment`, in slices, so a 25 MB file does not overflow `String.fromCharCode`'s arguments. */
+export function bytesToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  for (let offset = 0; offset < bytes.length; offset += 0x8000) binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
+  return btoa(binary);
+}
+
 export function createWebBackend(hooks: WebBackendHooks) {
   const { api } = hooks;
   const storage = hooks.storage ?? (typeof localStorage === "undefined" ? undefined : localStorage);
@@ -167,9 +194,32 @@ export function createWebBackend(hooks: WebBackendHooks) {
   const setHostSettings = (update: Record<string, unknown>) => gateway.main("setHostSettings", update) as Promise<Record<string, unknown>>;
   /** The window's connected-apps calls, answered by the manager in the box (`mcp-service.ts`, `window`). */
   const mcp = <T = unknown>(action: string, ...args: unknown[]) => gateway.main("desktopMcp", { action, args }) as Promise<T>;
-  const openSignIn = hooks.openSignIn ?? ((url: string) => { if (typeof window !== "undefined") window.open(url, "_blank", "noopener"); });
+  const newTab = (url: string) => { if (typeof window !== "undefined") window.open(url, "_blank", "noopener"); };
+  const openSignIn = hooks.openSignIn ?? newTab;
+  const openLink = hooks.openLink ?? newTab;
   /** A started sign-in, as the manager reports it. */
   interface AuthStart { readonly status?: string; readonly authorizationUrl?: string; readonly serverName?: string }
+  /**
+   * Sign-ins the manager started for a Connect the window then opens itself
+   * (`sand:mcp-auth`, then `openExternal`), so that open is known for a
+   * sign-in: the iPhone app puts those in the system's sign-in sheet, which
+   * shares Safari's cookies, and plain links in Safari's (8 October 2026).
+   * In a browser both are a new tab.
+   */
+  const startedSignIns = new Set<string>();
+  const noteStarted = (started: AuthStart | null | undefined): void => {
+    if (started?.status === "started" && typeof started.authorizationUrl === "string") startedSignIns.add(started.authorizationUrl);
+  };
+
+  /**
+   * Attachments (8 October 2026). The Mac stages the composer's files on
+   * disk and, when the message goes, uploads each to the box
+   * (`uploadAttachment`, `attachments.ts`); the page keeps them in memory
+   * instead and uploads them the same way, so the + in the composer works
+   * in a browser and in the iPhone app's web view.
+   */
+  const stagedFiles = new Map<string, { readonly filename: string; readonly bytes: Uint8Array }>();
+  let stagedCount = 0;
 
   const notHere = (what: string) => { throw new SimeonApiError(`${what} needs Simeon on your Mac.`, 501); };
 
@@ -268,7 +318,12 @@ export function createWebBackend(hooks: WebBackendHooks) {
     resizeWindowWidth: () => 0,
     setTitleBarOverlayTone: () => undefined,
     markDeepLinksReady: () => undefined,
-    openExternal: (args: any) => { const url = typeof args?.url === "string" ? args.url : typeof args === "string" ? args : null; if (url != null && /^https?:\/\//.test(url)) window.open(url, "_blank", "noopener"); return undefined; },
+    openExternal: (args: any) => {
+      const url = typeof args?.url === "string" ? args.url : typeof args === "string" ? args : null;
+      if (url == null || !/^https?:\/\//.test(url)) return undefined;
+      if (startedSignIns.delete(url)) openSignIn(url); else openLink(url);
+      return undefined;
+    },
     openCloudAgent: () => undefined,
     getLinkMetadata: () => null,
     resolveAttachmentMedia: () => null,
@@ -303,10 +358,41 @@ export function createWebBackend(hooks: WebBackendHooks) {
     generateAgentAvatarImage: () => notHere("Drawing an avatar"),
     readAttachmentText: () => notHere("Reading that file"),
     readAttachmentBytes: () => notHere("Reading that file"),
-    stageAttachmentBytes: () => notHere("Attaching a file"),
+    stageAttachmentBytes: (args: any) => {
+      const filename = args?.filename;
+      const bytes = attachmentBytesOf(args?.bytes);
+      if (!isSafeAttachmentName(filename) || bytes == null) return { ok: false, reason: "failed" };
+      if (bytes.byteLength === 0) return { ok: false, reason: "empty" };
+      if (bytes.byteLength > attachmentByteLimitForName(filename)) return { ok: false, reason: "too-large" };
+      stagedCount += 1;
+      const path = `${WEB_STAGED_PREFIX}${Date.now()}-${stagedCount}`;
+      stagedFiles.set(path, { filename, bytes: bytes.slice() });
+      return { ok: true, path };
+    },
     downloadAttachment: () => notHere("Saving that file"),
-    commitStagedAttachments: () => [],
-    discardStagedAttachment: () => undefined,
+    // The box's paths for the sent files, in order, or null when any one
+    // failed (the window then keeps the message, as on a Mac).
+    commitStagedAttachments: async (args: any) => {
+      const paths: unknown[] = Array.isArray(args?.paths) ? args.paths : [];
+      const filenames: unknown[] = Array.isArray(args?.filenames) ? args.filenames : [];
+      const committed: string[] = [];
+      for (let index = 0; index < paths.length; index += 1) {
+        const path = paths[index], filename = filenames[index];
+        const file = typeof path === "string" ? stagedFiles.get(path) : undefined;
+        if (file == null || !isSafeAttachmentName(filename)) return null;
+        try {
+          const uploaded = await gateway.main("uploadAttachment", { filename, bytesBase64: bytesToBase64(file.bytes) }) as { path?: unknown } | null;
+          if (typeof uploaded?.path !== "string" || uploaded.path.length === 0) return null;
+          committed.push(uploaded.path);
+        } catch (error) {
+          console.error(`[simeon web] attachment upload failed: ${error instanceof Error ? error.message : String(error)}`);
+          return null;
+        }
+      }
+      for (const path of paths) if (typeof path === "string") stagedFiles.delete(path);
+      return committed;
+    },
+    discardStagedAttachment: (args: any) => { if (typeof args?.path === "string") stagedFiles.delete(args.path); return undefined; },
     getDesktopEnvironment: () => ({ platform: "web" }),
   };
 
@@ -379,7 +465,11 @@ export function createWebBackend(hooks: WebBackendHooks) {
         case "sand:mcp-remove": return mcp("removeServer", payload?.serverId);
         case "sand:mcp-uninstall-plugin": return mcp("uninstallPlugin", payload?.pluginId);
         // The window opens the link itself (`openExternal`), as on a Mac.
-        case "sand:mcp-auth": return mcp("authenticateServer", payload?.serverId, payload?.accountKey ?? "default", payload?.trigger === "connector_card" ? "connector_card" : undefined);
+        case "sand:mcp-auth": {
+          const started = await mcp<AuthStart>("authenticateServer", payload?.serverId, payload?.accountKey ?? "default", payload?.trigger === "connector_card" ? "connector_card" : undefined);
+          noteStarted(started);
+          return started;
+        }
         case "sand:mcp-rename-account": return mcp("renameAccount", payload);
         case "sand:mcp-remove-account": return mcp("removeAccount", payload);
         case "sand:mcp-set-instructions": return mcp("setServerCustomInstructions", payload);

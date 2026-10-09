@@ -3,8 +3,8 @@
 This page covers the features where Simeon Labs' server (`server/`, Python package `simeon`,
 at `https://api.simeonlabs.com`) works for the Simeon app (`desktop/`) beyond sign-in and the
 model proxy: cloud agents, routines and listeners, sharing, messaging channels, video, skill
-publish, connectors, a few agent features (avatars, group chats, auto-review, drafts), and
-voice calls.
+publish, connectors, a few agent features (avatars, group chats, auto-review, drafts), voice
+calls, flight search, and notifications on the person's iPhone.
 
 Conventions used below:
 
@@ -552,14 +552,17 @@ the background while the call goes on, and says how it is going when asked.
 - One ElevenLabs agent, "Simeon voice", serves every Simeon agent. The app overrides its
   prompt, first message, language and voice per call, so each agent keeps its own name and
   voice. The server finds it by name (`GET /v1/convai/agents?search=`) or creates it on first
-  use, and rewrites it whenever `VOICE_AGENT_CONFIG_VERSION` in
-  `server/simeon/desktop/voice.py` changes (the version is a tag on the agent; the id is
-  remembered per process). Its configuration: authentication required, the four overrides
+  use, and rewrites it whenever its version tag changes: `VOICE_AGENT_CONFIG_VERSION` in
+  `server/simeon/desktop/voice.py` and, since 9 October 2026, a fingerprint of the voices
+  (`VOICES_FINGERPRINT`: the default and `CURATED_VOICES` in order), so a change to the list
+  rewrites it too (the id is remembered per process). On 6 October Michael replaced Jessica as
+  the default without a new version: the agent kept Jessica as its own voice, and every call
+  that named no voice spoke as Jessica. Version 9 rewrote it. Its configuration: authentication required, the four overrides
   above and no others, `gemini-2.5-flash` as the voice's model with `thinking_budget: 0` (2.5 Flash thinks
   before every reply by default, and the replies waited on it), `eleven_flash_v2` for
   speech (an English agent is refused on any other), a voice the workspace has (the first of the
-  founder's voices the account has, else the first ElevenLabs default, else Eric: a missing
-  voice is refused with `voice_not_found`), `end_call` and `skip_turn`, a 7 s turn timeout,
+  founder's voices the account has, Michael; else Eric when listed or nothing is; else the
+  first ElevenLabs default: a missing voice is refused with `voice_not_found`), `end_call` and `skip_turn`, a 7 s turn timeout,
   `turn_eagerness: eager` and `speculative_turn` (it answers soon after the caller stops and
   starts thinking during the pause, which costs a little more), the call ended after 25 s of
   silence, 30 minutes at most, and no voice recording kept. The per-call prompt carries the
@@ -590,17 +593,25 @@ the background while the call goes on, and says how it is going when asked.
     6 October 2026), looked up by id in the account
     (`/v2/voices?voice_ids=…`) and shown by their names only. Each must be added to the
     ElevenLabs account ("Add to my voices"); one it lacks is skipped, and with none of them
-    the picker offers ElevenLabs' defaults. `[{id, name, description, labels, gender,
+    the list is empty: no other voice is ever offered (until 9 October 2026 the picker fell
+    back to ElevenLabs' defaults, which brought Jessica back). `[{id, name, description, labels, gender,
     preview_url}]`, description and labels empty, cached for an hour. `gender` is ElevenLabs'
     own label when the voice has one, else `CURATED_VOICE_GENDERS` (Veda, Amanda, Chelsea and
     Hope are women's voices). The voice listed as Jon is shown as Simeon since 8 October 2026
     (`SIMEON_VOICE_ID`): the Chief of Staff's own.
 - Each agent's own voice (8 October 2026; the founder: "each agent should be assigned a
   different voice … named like a woman, like Maya, default to a woman voice, not always the
-  same, and vice versa for men"). An agent with no voice gets one the first time it needs it
-  (a call, or its voice picker) and keeps it (`assignedVoice` in
-  `electron-main/voice/voice-call-service.ts`, saved through `updateAgent` like a picked
-  one). `pickAgentVoice` (`shared/voice-call/agent-voices.ts`) gives the Chief of Staff the
+  same, and vice versa for men"). Every agent without a voice on the list gets one and keeps
+  it (`assignMissingVoices` in `electron-main/voice/voice-call-service.ts`, saved through
+  `updateAgent` like a picked one): on the Mac as soon as the window names an agent (at most
+  once a minute), and before any call or picker that needs it (`assignedVoice`); on the
+  iPhone when it attaches, when an avatar editor opens and before a call
+  (`AppStore.ensureVoice`, `ios/SimeonCore/.../AgentVoices.swift`, the same rules and hash, so
+  both give an agent the same voice). A stored voice no longer on the list (Jessica) counts as
+  none and is replaced (9 October 2026, the founder: "every voice says "michael" by default,
+  even tho its a different voice": the pickers showed the list's first while the calls spoke
+  in the stored or the platform agent's voice). Agents are given theirs in id order; groups
+  and shared rooms have none. Log: `voice for agent <id>: <voice> (given by name…)`. `pickAgentVoice` (`shared/voice-call/agent-voices.ts`) gives the Chief of Staff the
   Simeon voice and no one else; any other agent the voice fewest agents have among those of
   its name's gender, from the voices the account has. A name's gender comes from the US
   Social Security baby-name counts (`shared/voice-call/name-genders.ts`: a name is a woman's or
@@ -608,7 +619,9 @@ the background while the call goes on, and says how it is going when asked.
   voice). Between equally free voices the agent's id decides, so agents hired together differ.
   Until then every agent without a picked voice spoke as Michael. The four women's voices are
   spread over the first four women before one repeats. `tests/agent-voices.test.mjs`,
-  `tests/voice-call-lifecycle.test.mjs`.
+  `tests/voice-call-lifecycle.test.mjs`, `AgentVoiceTests` in the iPhone core (its expected
+  voices are the Mac code's own answers; its name lists are generated from the Mac's by
+  `node ios/scripts/make-name-genders.mjs`, and a test fails when they differ).
 - Price: `VOICE_CALL_MODEL` in `server/simeon/desktop/pricing.py`, by the second, at $0.08 a
   minute times a 1.25 margin (`VOICE_CALL_MARGIN`): about 33,000 credits a minute. Usage rows
   carry provider `elevenlabs`.
@@ -892,3 +905,98 @@ step ("What do you use every day?") offers "Skip for later" under Next.
 **When it misbehaves.** If Simeon's title can be edited, check it in the roster: it
 must be "Chief of Staff". If creation fails, the hand-off screen shows "Simeon
 couldn't finish setting up" with Try again, which creates him again.
+
+## 12. Phone notifications
+
+**For the person (8 October 2026).** The founder: "i want the app ready. mobile ios... plus
+other stuff, like notification etc." When an agent finishes a turn or needs them, the person's
+iPhone gets a push, with the Mac open or closed: the same news the Mac shows, in the same
+words (the agent's name and its last message, or "<name> needs you" and what it needs). The
+push carries `data: {agentId, kind}` for the iPhone app to open that agent. An agent whose
+notifications are off, or a hidden one, sends none, exactly as on the Mac. The Mac's own
+notifications are unchanged.
+
+**How it works.**
+
+- The host in the box emits the agents list the Mac's notification manager reads
+  (`host/sand-host.ts`, `wireEvents`: `notification-baseline` at start, then
+  `notification-agents` and `notification-agent-upserted`). `host/extensions/notifications/`
+  runs the Mac's own decision over it (`SandOsNotificationDecider` in
+  `shared/os-notification.ts`), with the window taken as unfocused. The agents as found at
+  start are the baseline and never fire, so a restart is not news. It runs only where the box's
+  supervisor starts the host (`SAND_HOST_IN_BOX=1`, `box/bin/simeon-supervisor.mjs`): in the
+  person's cloud computer, and in the local Docker computer for internal testing, which pushes
+  to the tester's own phone.
+- For each notification it posts `POST /desktop/push` `{agent_id, kind, title, body}` with the
+  box's own credential (`get_desktop_or_box_session`). `kind` is `agent-done` or
+  `agent-needs-input`; title and body are `buildNotificationContent`'s. Fire and forget with a
+  10-second deadline: a turn never waits on it. The same agent's same news at most once in 30
+  seconds.
+- The server (`server/simeon/desktop/push.py`) answers `{"sent": 0}` when the person has no
+  phone (the host posts blindly), drops a push past the caps with `{"sent": 0, "capped": …}`
+  (one per agent and kind every 30 seconds, 20 a minute for a person), clips the title to 120
+  characters and the body to 400, and otherwise queues `desktop.push.send` and answers 202
+  `{"queued": <phones>}`. The worker (`push_tasks.py`) sends one Expo push to each phone in one
+  request, through the client the inherited notifications use
+  (`simeon/notifications/tasks/push.py`): sound, badge 1, priority `high` for
+  `agent-needs-input` and Expo's default (immediate on iOS) for `agent-done`, kept by Expo for
+  a day while the phone is off. Nothing is retried. A phone whose ticket says
+  `DeviceNotRegistered` is removed.
+- The phone registers itself after sign-in: `POST /desktop/push-devices`
+  `{"expo_push_token": "ExponentPushToken[…]", "platform": "ios"}` (`ExpoPushToken[…]` is taken
+  too; anything else is 422), with the desktop token the app's sign-in gives (`/auth/poll`,
+  `/oauth/token`), never the box's. Posting again changes nothing; a phone someone else
+  registered moves to the person signed in on it now. Sign-out: `DELETE /desktop/push-devices`
+  `{"expo_push_token": …}` answers `{"removed": n}`. The phones are `notification_recipients`
+  rows, the table the inherited `/v1/notifications/recipients` routes keep; those routes ask
+  for web scopes, and the auth middleware reads a desktop token as nobody, so the phone uses
+  these instead.
+- Before this the box told the server over the upstream app's
+  `ComputerService.NotifySandAgentTurnFinished`, which the server only logs
+  (`sand.box.turn_finished`). A box whose host predates 8 October 2026 still does, and that
+  person's phone hears nothing until the host updates.
+
+**Settings on Render.**
+
+- None is required: Expo's push service takes a push without a key of ours.
+- `SIMEON_EXPO_ACCESS_TOKEN`: only when "Enhanced Security for Push Notifications" is switched
+  on for the Expo project; Expo then refuses every push without it. An access token from
+  expo.dev (Account settings, Access tokens). Empty sends without one.
+- Not on Render, on the founder's side: Apple's push key for the iPhone app's bundle, uploaded
+  to Expo with `eas credentials` (iOS, Push Notifications). Without it Expo takes the push and
+  Apple never delivers it.
+
+**When it misbehaves.**
+
+- Box log: one line per notification, `[simeon] phone push posted agent=… kind=… status=202
+  {"queued":1}`, or `[simeon] phone push failed agent=… kind=…` with the status and the
+  server's answer, or the error (a timeout, no credential yet). No line at all means the
+  decision found nothing to say: notifications off for that agent, a hidden agent, the same
+  news within 30 seconds, or a host from before this.
+- Server log: `desktop.push.queued`, `desktop.push.capped` (with `reason`: `same_push` or
+  `per_minute`), then from the worker `desktop.push.sent` (`sent` out of `devices`),
+  `desktop.push.failed` (Expo unreachable, or it refused the whole request),
+  `desktop.push.refused` (one phone's ticket error, with Expo's details) and
+  `desktop.push.device_removed`. The phone's side: `desktop.push.device_registered`,
+  `desktop.push.device_moved`, `desktop.push.device_unregistered`.
+- `{"sent": 0}` on every push: no phone is registered for that person. Look for their rows in
+  `notification_recipients` with `deleted_at` empty.
+- `desktop.push.sent` with `sent=1` and nothing on the phone: Expo took it and Apple did not
+  deliver. The server reads tickets, not receipts; Expo's push receipts (or its dashboard) say
+  why, most often the push key (`eas credentials`).
+
+**Known limits.**
+
+- A person looking at the Mac still gets the push on the phone: the box takes the Mac's window
+  as unfocused. (The host does know whether it is focused, `windowFocusedAtMs` on the events
+  above; the upstream app sent no push while the window was focused and the Mac had been heard
+  from in the last five minutes.) The iPhone app hides the banner itself while it is in the
+  foreground.
+- Receipts are not read, so a phone whose app was deleted is only removed when a ticket says
+  so; Expo mostly says it in the receipt, later. It is asked again, harmlessly, until then.
+- A phone's registration belongs to the person, not to the phone's sign-in session: it lasts
+  until the phone unregisters, someone else registers it, or Expo calls it gone.
+
+**Not yet verified.** No push has reached a real iPhone: the tests replace Expo with a fake,
+and the host's half ran in tests, not in a cloud computer. The iPhone app's side is built
+separately.

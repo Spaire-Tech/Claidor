@@ -7,6 +7,7 @@ from simeon.customer_meter import tasks as customer_meter
 from simeon.customer_notifications import tasks as customer_notifications
 from simeon.customer_seat import tasks as customer_seat
 from simeon.customer_session import tasks as customer_session
+from simeon.desktop import push_tasks as desktop_push
 from simeon.email import tasks as email
 from simeon.email_broadcast import tasks as email_broadcast
 from simeon.email_sequence import tasks as email_sequence
@@ -50,6 +51,7 @@ __all__ = [
     "customer_notifications",
     "customer_seat",
     "customer_session",
+    "desktop_push",
     "email",
     "email_broadcast",
     "email_sequence",

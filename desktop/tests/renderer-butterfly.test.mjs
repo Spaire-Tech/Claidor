@@ -104,9 +104,9 @@ test("the call banner's and the mentions' copies are the same butterfly, cropped
 
 test("the apply pass runs the butterfly patch on the mark chunk and records it", async () => {
   const source = await readFile(path.join(repoRoot, "scripts/lib/router-renderer-patch.mjs"), "utf8");
-  assert.match(source, /const markPatched = patchOriginalButterfly\(patchOriginalSidebarDiscs\(/);
+  assert.match(source, /const markPatched = (?:\w+\()*patchOriginalButterfly\(patchOriginalSidebarDiscs\(/);
   assert.match(source, /if \(!BUTTERFLY_REPLACEMENTS\.every\(\(\[, before\]\) => markChunks\[0\]\.source\.includes\(before\)\)\) throw new Error/);
-  assert.match(source, /\.\.\.SIDEBAR_DISCS_REPLACEMENTS, \.\.\.BUTTERFLY_REPLACEMENTS, BUBBLE_CSS_REPLACEMENT\]\.map\(\(\[label\]\) => label\)/);
+  assert.match(source, /\.\.\.SIDEBAR_DISCS_REPLACEMENTS, \.\.\.BUTTERFLY_REPLACEMENTS, (?:\.\.\.\w+, )*BUBBLE_CSS_REPLACEMENT\]\.map\(\(\[label\]\) => label\)/);
   assert.match(source, /"pane-three-tabs", "mark-butterfly", "mark-no-eyes", "spin-lights-agent-colours"[,\]]/);
 });
 

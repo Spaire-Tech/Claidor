@@ -71,9 +71,48 @@ A vendor registered by hand in its console (`clientId` in the catalog) must
 also list the hosted callback as a redirect URI; a dynamically registered
 one registers it on every sign-in.
 
+Attachments (8 October 2026): the composer's + is the page's own file
+picker. The Mac stages a file on disk and uploads it to the box when the
+message goes (`uploadAttachment`); the page keeps the file in memory and
+uploads it the same way (`stageAttachmentBytes`, `commitStagedAttachments`
+in `backend.ts`). Saving a file from a chat still needs the Mac.
+
 Not on the web, by design: the local-exec daemon (the agent's hands on the
 person's own Mac), WebAuthn, voice calls, the updater, the egress tunnel.
 Each answers "needs Simeon on your Mac" in the shape the window draws.
+
+## In the iPhone app
+
+The iPhone app (`mobile/`, 8 October 2026) shows this page in a WKWebView,
+and react-native-webview gives the page `window.ReactNativeWebView`. When
+that is there:
+
+- the app has signed in itself (the Mac's `/loginDeepControl` and
+  `/auth/poll`) and put the pair on the window before the page's first
+  script (`__simeonNativeTokens`); the page uses it and trades no cookie;
+- every refreshed pair goes back to the app (`{type: "simeon.tokens"}`),
+  which keeps it in the Keychain: the refresh token rotates, so the copy
+  the app injects into the next load must be the newest;
+- no session, a session the server ended, and signing out post
+  `{type: "simeon.signed-out", reason}` instead of going to `/login`; on
+  sign-out the app, not the page, ends the session, after taking the phone
+  off the notification list with the live pair;
+- links and connected-app sign-ins go to the app (`{type: "simeon.open",
+  purpose}`): Safari's sheet for a link, the system's sign-in sheet for a
+  sign-in, which ends on `/app/connected.html` there with Safari's cookie;
+  the box's `mcp-auth` posts `{type: "simeon.mcp-auth"}` and the app
+  closes the sheet;
+- `window.__simeonNative.openAgent(id)` opens an agent the way the Mac's
+  notification click does (the main event `focus-agent`, `{ id }`). Asked
+  for before the window is up (a tap that launched the app), it waits for
+  the window to report the chat it shows (`sand:sentry-conversation`), so
+  the window's own first chat does not undo it, and the page posts
+  `{type: "simeon.ready"}` then;
+- the window's theme goes to the app (`{type: "simeon.theme"}`) for the
+  ground behind the page and the status bar.
+
+In a browser tab none of this applies; `tests/app-web-iphone.test.mjs`
+holds both.
 
 ## Building and running
 
@@ -82,7 +121,7 @@ cd desktop
 npm run web:build     # builds into clients/apps/web/public/app (committed)
 npm run web           # serves it on 127.0.0.1:4174 with a stand-in server and box
 npm run web -- --real # serves it against the API on 127.0.0.1:8000
-npm test              # tests/app-web.test.mjs among the rest
+npm test              # tests/app-web.test.mjs and app-web-iphone.test.mjs among the rest
 ```
 
 The window is the same patched renderer the website hosts under
@@ -93,10 +132,23 @@ The web app serves `/app` from `public/app` (`clients/apps/web/next.config.mjs`,
 the rewrite and its own CSP). After changing anything here, run
 `npm run web:build` and commit `clients/apps/web/public/app`.
 
+The website's copy is refreshed only when the site is rebuilt on a Mac, so it
+can lag the window patch. Since 8 October 2026 the committed build comes from
+the window patched with today's `scripts/lib/router-renderer-patch.mjs`
+(`applyOriginalRendererRouterPatch` over the upstream renderer's
+`dist/renderer`, staged as `<stage>/dist/renderer`):
+`node web/build-web.mjs --renderer <stage>/dist/renderer`, and
+`npm run web -- --renderer <stage>/dist/renderer` serves that same build.
+Either way the site demo's own scripts (scroll guard, demo bridge, gate,
+glass) are taken out of the page.
+
 The stand-in server (`serve-web.mjs`) answers the cookie trade, the profile,
 the models, the broker and the box's gateway from the website's scripted
 backend (`demo/backend.ts`), so the whole page runs, sign-in to a streaming
 reply, before any real server is involved. It stands in for connected apps
 too: a small catalog, the manager's answers, a pretend vendor at
 `/vendor/authorize`, the hosted callback and the box's completion, so the
-whole sign-in runs in a browser from Connect to Connected.
+whole sign-in runs in a browser from Connect to Connected. The composer's
+uploads land in its pretend box (`/stand-in/uploads`), and the iPhone app's
+sign-in and notification registration are stood in for, so a development
+build of the app runs against it in the iOS Simulator (`mobile/README.md`).
