@@ -281,6 +281,9 @@ struct ConnectorCard: View {
   var markedConnected = false
   @Environment(AppStore.self) private var store
   @Environment(\.chatWidth) private var width
+  /** What the person reads before the sign-in page opens; Connect there starts the same connecting as before. */
+  @State private var asking: ConnectConsent?
+  @State private var confirmed = false
   private var connector: AppConnector { AppConnector.shared }
 
   var body: some View {
@@ -300,13 +303,109 @@ struct ConnectorCard: View {
       } else if waiting {
         ProgressView().controlSize(.small)
       } else {
-        Button("Add") { Task { await connector.connect(name, store: store) } }
+        Button("Add") { asking = ConnectConsent(app: app, name: name) }
           .buttonStyle(GreyButtonStyle(capsule: true))
           .disabled(connector.connecting != nil)
       }
     }
     .card()
     .frame(maxWidth: ChatMetrics.bubbleMax(width), alignment: .leading)
+    // The sign-in page opens once the sheet has gone: iOS opens it over the app, not over a sheet on its way out.
+    .sheet(item: $asking, onDismiss: {
+      guard confirmed else { return }
+      confirmed = false
+      Task { await connector.connect(name, store: store) }
+    }) { consent in
+      ConnectConsentSheet(consent: consent) { confirmed = true }
+    }
+  }
+}
+
+/**
+ * Before an app's sign-in page opens, every time (the founder, 9 October
+ * 2026): the app's logo, name and what it does; three points (what the
+ * agents reach in it, that the person stays in charge, that agents can get
+ * things wrong); the small print (who handles the sign-in, Composio for the
+ * apps it serves; where the information goes; the app's own terms) and,
+ * for some apps, one more thing about that app. Connect, or Cancel.
+ * ConnectConsent (SimeonCore) writes it for each app.
+ */
+struct ConnectConsentSheet: View {
+  let consent: ConnectConsent
+  let connect: () -> Void
+  @Environment(\.dismiss) private var dismiss
+
+  var body: some View {
+    VStack(spacing: 0) {
+      ScrollView {
+        VStack(spacing: 0) {
+          ConnectorTile(name: consent.title, size: 64)
+            .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
+            .padding(.top, 30)
+            .accessibilityHidden(true)
+          Text(consent.title)
+            .font(.system(size: 24, weight: .bold))
+            .foregroundStyle(Ink.primary)
+            .padding(.top, 14)
+            .accessibilityAddTraits(.isHeader)
+          if !consent.summary.isEmpty {
+            Text(consent.summary)
+              .font(.system(size: 16))
+              .foregroundStyle(Ink.secondary)
+              .multilineTextAlignment(.center)
+              .fixedSize(horizontal: false, vertical: true)
+              .padding(.top, 6)
+              .padding(.horizontal, 28)
+          }
+          VStack(alignment: .leading, spacing: 22) {
+            ForEach(Array(consent.points.enumerated()), id: \.offset) { _, point in
+              HStack(alignment: .top, spacing: 14) {
+                Image(systemName: point.symbol)
+                  .font(.system(size: 20, weight: .regular))
+                  .foregroundStyle(Ink.blue)
+                  .frame(width: 28)
+                  .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 3) {
+                  Text(point.title).font(.system(size: 17, weight: .semibold)).foregroundStyle(Ink.primary)
+                  Text(point.body).font(.system(size: 15)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true)
+                }
+              }
+              .accessibilityElement(children: .combine)
+            }
+          }
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .padding(.horizontal, 24)
+          .padding(.top, 28)
+          Rectangle().fill(Ink.hairline).frame(height: 0.5).padding(.top, 26)
+          VStack(alignment: .leading, spacing: 12) {
+            ForEach(consent.smallPrint + (consent.note.map { [$0] } ?? []), id: \.self) { line in
+              Text(line).font(.system(size: 13)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true)
+            }
+          }
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .padding(.horizontal, 24)
+          .padding(.vertical, 18)
+        }
+      }
+      VStack(spacing: 4) {
+        Button {
+          connect()
+          dismiss()
+        } label: {
+          Text("Connect").font(.system(size: 17, weight: .semibold)).frame(maxWidth: .infinity).frame(height: 50)
+        }
+        .buttonStyle(.glassProminent)
+        Button { dismiss() } label: {
+          Text("Cancel").font(.system(size: 17)).foregroundStyle(Ink.primary).frame(maxWidth: .infinity).frame(height: 44).contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+      }
+      .padding(.horizontal, 24)
+      .padding(.top, 10)
+      .padding(.bottom, 8)
+    }
+    .presentationDetents([.large])
+    .presentationDragIndicator(.visible)
   }
 }
 

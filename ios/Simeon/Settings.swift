@@ -476,6 +476,9 @@ struct ConnectAppsSheet: View {
 struct AppRow: View {
   let app: CatalogApp
   @Environment(AppStore.self) private var store
+  /** What the person reads before the sign-in page opens (ConnectConsentSheet). */
+  @State private var asking: ConnectConsent?
+  @State private var confirmed = false
   private var connector: AppConnector { AppConnector.shared }
 
   var body: some View {
@@ -493,12 +496,20 @@ struct AppRow: View {
       } else if connector.connecting == app.title {
         ProgressView().controlSize(.small)
       } else {
-        Button("Add") { Task { await connector.connect(app.title, store: store) } }
+        Button("Add") { asking = ConnectConsent(app: app, name: app.title) }
           .buttonStyle(GreyButtonStyle(capsule: true))
           .disabled(connector.connecting != nil)
       }
     }
     .padding(.vertical, 4)
+    // The sign-in page opens once the sheet has gone.
+    .sheet(item: $asking, onDismiss: {
+      guard confirmed else { return }
+      confirmed = false
+      Task { await connector.connect(app.title, store: store) }
+    }) { consent in
+      ConnectConsentSheet(consent: consent) { confirmed = true }
+    }
   }
 }
 
@@ -517,6 +528,10 @@ struct ConnectedAppDetail: View {
   @State private var newName = ""
   @State private var switching: Set<String> = []
   @State private var removing = false
+  /** An account's sign-in, asked first as every connect is (ConnectConsentSheet). */
+  @State private var asking: ConnectConsent?
+  @State private var signingIn: ConnectedApp?
+  @State private var confirmed = false
   private var connector: AppConnector { AppConnector.shared }
 
   var body: some View {
@@ -547,7 +562,10 @@ struct ConnectedAppDetail: View {
               if connector.connecting == account.name {
                 ProgressView().controlSize(.small)
               } else {
-                Button("Sign in") { Task { await connector.signIn(account, store: store) } }
+                Button("Sign in") {
+                  signingIn = account
+                  asking = ConnectConsent(app: store.catalogApp(named: account.name), name: account.name)
+                }
                   .buttonStyle(GreyButtonStyle(capsule: true))
                   .disabled(connector.connecting != nil)
               }
@@ -614,6 +632,16 @@ struct ConnectedAppDetail: View {
       TextField("Account name", text: $newName)
       Button("Rename") { if let account = renaming { Task { await store.renameAccount(account, to: newName) } }; renaming = nil }
       Button("Cancel", role: .cancel) { renaming = nil }
+    }
+    // The sign-in page opens once the sheet has gone.
+    .sheet(item: $asking, onDismiss: {
+      let account = signingIn
+      signingIn = nil
+      guard confirmed, let account else { confirmed = false; return }
+      confirmed = false
+      Task { await connector.signIn(account, store: store) }
+    }) { consent in
+      ConnectConsentSheet(consent: consent) { confirmed = true }
     }
   }
 }

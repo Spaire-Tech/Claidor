@@ -49,6 +49,10 @@ public struct CatalogApp: Identifiable, Hashable, Sendable {
   public let summary: String
   public let category: String
   public let comingSoon: Bool
+  /** The app's own server, when it serves itself (`vendorMcpUrl`); ours, for the apps Composio serves (`/desktop/api/apps/mcp/…`). */
+  public let serverURL: String?
+  /** Composio's name for it, when the catalog gives one (`composioToolkit`). */
+  public let composioToolkit: String?
 
   init?(_ json: JSON) {
     guard let id = json["id"]?.text ?? json["pluginId"]?.text else { return nil }
@@ -58,10 +62,13 @@ public struct CatalogApp: Identifiable, Hashable, Sendable {
     summary = json["description"]?.string ?? ""
     category = json["category"]?.string ?? ""
     comingSoon = json["comingSoon"]?.bool ?? false
+    serverURL = json["vendorMcpUrl"]?.text
+    composioToolkit = json["composioToolkit"]?.text
   }
 
-  public init(id: String, name: String, title: String, summary: String, category: String = "", comingSoon: Bool = false) {
+  public init(id: String, name: String, title: String, summary: String, category: String = "", comingSoon: Bool = false, serverURL: String? = nil, composioToolkit: String? = nil) {
     self.id = id; self.name = name; self.title = title; self.summary = summary; self.category = category; self.comingSoon = comingSoon
+    self.serverURL = serverURL; self.composioToolkit = composioToolkit
   }
 
   /** The logo's name in the app's images (`Connectors/<slug>`). */

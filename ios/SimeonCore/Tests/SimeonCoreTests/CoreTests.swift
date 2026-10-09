@@ -1336,3 +1336,44 @@ final class SearchTests: XCTestCase {
     XCTAssertEqual(Chat.rowId(for: "m100", in: rows), "m100")
   }
 }
+
+/** What the person reads before an app's sign-in (ConnectConsent.swift). */
+final class ConnectConsentTests: XCTestCase {
+  func testEachAppFillsTheTemplate() {
+    let stripe = CatalogApp(id: "stripe", name: "stripe", title: "Stripe", summary: "Customers, payments, subscriptions, and invoices.", serverURL: "https://mcp.stripe.com")
+    let consent = ConnectConsent(app: stripe, name: "Stripe")
+    XCTAssertEqual(consent.title, "Stripe")
+    XCTAssertEqual(consent.points.map(\.title), ["Put Stripe to work", "You stay in charge", "Check their work"])
+    XCTAssertEqual(consent.points[0].body, "Your agents can read and use customers, payments, subscriptions and invoices in Stripe.")
+    XCTAssertEqual(consent.route, .vendor(host: "mcp.stripe.com"))
+    XCTAssertTrue(consent.smallPrint[0].contains("Stripe's own page"))
+    XCTAssertFalse(consent.smallPrint.joined().contains("Composio"), "only the apps Composio serves name it")
+    XCTAssertEqual(consent.note, "Anything that moves money in Stripe is real. Ask your agents to check with you before they move any.")
+  }
+
+  func testComposioIsNamedForTheAppsItServes() {
+    let gmail = CatalogApp(id: "gmail", name: "gmail", title: "Gmail", summary: "Search, read, draft, and manage email.", serverURL: "https://api.simeonlabs.com/desktop/api/apps/mcp/gmail")
+    let consent = ConnectConsent(app: gmail, name: "Gmail")
+    XCTAssertEqual(consent.route, .composio)
+    XCTAssertTrue(consent.smallPrint[0].hasPrefix("Composio, the service Simeon uses to connect apps"))
+    XCTAssertEqual(consent.note, "Emails your agents send go out from your own address.")
+    let byToolkit = CatalogApp(id: "notion", name: "notion", title: "Notion", summary: "", composioToolkit: "notion")
+    XCTAssertEqual(ConnectConsent(app: byToolkit, name: "Notion").route, .composio)
+  }
+
+  func testTheExtraLayerAndTheUnknown() {
+    let shopify = ConnectConsent(app: CatalogApp(id: "shopify", name: "shopify", title: "Shopify", summary: "Orders, products, customers, and your store."), name: "Shopify")
+    XCTAssertTrue(shopify.note?.contains("live store") == true)
+    let mercury = ConnectConsent(app: CatalogApp(id: "mercury", name: "mercury", title: "Mercury", summary: ""), name: "Mercury")
+    XCTAssertEqual(mercury.points[0].body, "Your agents can read your accounts, balances and transactions in Mercury.")
+    let linkedin = ConnectConsent(app: CatalogApp(id: "linkedin", name: "linkedin", title: "LinkedIn", summary: ""), name: "LinkedIn")
+    XCTAssertEqual(linkedin.points[0].body, "Your agents can read your profile and publish posts on LinkedIn.")
+    let unknown = ConnectConsent(app: nil, name: "Acme CRM")
+    XCTAssertEqual(unknown.route, .unknown)
+    XCTAssertEqual(unknown.points[0].body, "Your agents can read and use what's in your Acme CRM account.")
+    XCTAssertNil(unknown.note)
+    for consent in [shopify, mercury, linkedin, unknown] {
+      XCTAssertFalse((consent.points.map(\.body) + consent.smallPrint).joined().contains("Muse"))
+    }
+  }
+}

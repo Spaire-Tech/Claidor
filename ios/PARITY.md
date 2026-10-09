@@ -595,6 +595,39 @@ The search core is in `Search.swift` (tested); the old search sheet, which
 only a screenshot's launch opened, is gone (`--screen=search` focuses the
 field).
 
+## 21. Before an app's sign-in, every time (9 October 2026)
+
+"Before connecting, when they click on the connector, this appears … a
+template that change slightly for each … do mention briefly composio." A
+sheet now comes up before every app sign-in page opens, in our own words
+(the reference was another product's; none of its text is used):
+
+- Where: Add on a connector card in the chat, Add in Settings → Connect
+  apps, and Sign in on an added app's account. Nothing else opens a
+  sign-in page on the phone.
+- What it says: the app's logo, name and what it does; three points (what
+  the agents can reach in that app, that auto-review and Settings keep the
+  person in charge, that agents can get things wrong); then the small
+  print: who handles the sign-in, where what the agents read goes, and the
+  app's own terms.
+- Each app's part: what the agents reach is written per app (about 70, from
+  the catalog; read only for Mercury and Figma, LinkedIn said its own way);
+  some apps get one more line (Shopify's live store, the apps that move
+  money, GitHub's repositories, the ad accounts' budgets, email sent from
+  your own address, and a few more).
+- Composio is named, in one line, only for the apps it serves (those the
+  server reaches at `/desktop/api/apps/mcp/…` or the catalog gives a
+  `composioToolkit`); for an app on its own server the line names that
+  server instead. `server/simeon/desktop/apps.py` still carries the 28
+  September note to keep Composio out of sight; this sheet follows the
+  newer instruction.
+- Connect closes the sheet, then the connecting starts exactly as it did
+  before (`AppConnector.connect` / `signIn`, unchanged); Cancel or a swipe
+  down starts nothing.
+
+The text is built in `ConnectConsent.swift` (tested); the sheet is
+`ConnectConsentSheet` in `Cards.swift`.
+
 ## Suggested order (the founder decides)
 
 1. The chat's look: the bubble, the top bar, markdown, brand names with logos, agent names with butterflies.
