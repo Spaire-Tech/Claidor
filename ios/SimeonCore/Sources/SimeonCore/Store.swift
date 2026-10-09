@@ -170,6 +170,10 @@ public final class AppStore {
   public private(set) var loadingOlder: Set<String> = []
   /** Chats with older pages loaded: a fetch of the newest lines keeps them. */
   @ObservationIgnored private var paged: Set<String> = []
+  /** The voices last listed, and when (`voices()`). */
+  @ObservationIgnored private var voiceList: (at: Date, list: [VoiceChoice])?
+  /** The pass giving agents their voices, while one runs (`assignMissingVoices`). */
+  @ObservationIgnored private var assigning: Task<[String: String], Never>?
   /** A line search found, to show once its chat is open (agent → entry; Search.swift). */
   public var revealing: [String: String] = [:]
   /** Simeon, once the first run's hand-off made him: a second try does not make another (Onboarding.swift). */
@@ -208,6 +212,8 @@ public final class AppStore {
     }
     await reloadRoster()
     await loadPins()
+    // Every agent its own voice from the start, not at its first call (the Mac does the same on opening).
+    Task { await assignMissingVoices() }
   }
 
   public func detach() {
@@ -218,6 +224,7 @@ public final class AppStore {
     layoutTask?.cancel(); layoutTask = nil; pendingLayout = []; refreshing = []; caughtUp = [:]
     pendingAnswers = [:]; unreadAfter = [:]; apps = []; catalog = []; pinnedIds = []
     streamingOnly = [:]; outbox = [:]; arrived = []; olderBefore = [:]; loadingOlder = []; paged = []; firstRunAgentId = nil; revealing = [:]
+    voiceList = nil
   }
 
   public func reloadRoster() async {
@@ -1023,24 +1030,78 @@ public final class AppStore {
     await command("updateAgent", ["id": .string(agentId), "profile": profile], failure: "Couldn't save \(agent.name)")
   }
 
-  /** A voice in the Mac's picker: its name only (the founder, 1 October 2026), and a sample to play when it has one. */
+  /** A voice in the Mac's picker: its name only (the founder, 1 October 2026), a sample to play when it has one, and its gender ("female", "male") to match an agent's name. */
   public struct VoiceChoice: Identifiable, Hashable, Sendable {
     public let id: String
     public let name: String
     public let sample: URL?
-    public init(id: String, name: String, sample: URL?) { self.id = id; self.name = name; self.sample = sample }
+    public let gender: String?
+    public init(id: String, name: String, sample: URL?, gender: String? = nil) { self.id = id; self.name = name; self.sample = sample; self.gender = gender }
   }
 
-  /** The voice an agent with none saved speaks with (`VOICE_CALL_DEFAULT_VOICE_ID`, Michael). */
+  /** The voice an agent with none saved speaks with (`VOICE_CALL_DEFAULT_VOICE_ID`, Michael: the platform agent's own). */
   public static let defaultVoiceId = "ljX1ZrXuDIIRVcmiVSyR"
 
-  /** The voices to pick from (`GET …/proxy/v1/voice/voices`); none when calls are not switched on. */
+  /** The voices to pick from (`GET …/proxy/v1/voice/voices`: the founder's, never ElevenLabs' others); none when calls are not switched on. Kept ten minutes, as the Mac keeps them. */
   public func voices() async -> [VoiceChoice] {
+    if let voiceList, Date().timeIntervalSince(voiceList.at) < 600 { return voiceList.list }
     guard let list = try? await backend?.server("proxy/v1/voice/voices", method: nil, body: nil) else { return [] }
-    return (list.array ?? []).compactMap { row in
+    let rows: [VoiceChoice] = (list.array ?? []).compactMap { row in
       guard let id = row["id"]?.text, let name = row["name"]?.text else { return nil }
-      return VoiceChoice(id: id, name: name, sample: row["preview_url"]?.text.flatMap(URL.init(string:)))
+      let gender = row["gender"]?.text.map { $0.lowercased() }
+      return VoiceChoice(id: id, name: name, sample: row["preview_url"]?.text.flatMap(URL.init(string:)), gender: gender == "female" || gender == "male" ? gender : nil)
     }
+    if !rows.isEmpty { voiceList = (Date(), rows) }
+    return rows
+  }
+
+  /**
+   * The agent's voice for its picker and its call: its own while it is on the
+   * list, else one given now by its name (`AgentVoices`), with every other
+   * agent missing one. Nil is the agent's own voice, Michael.
+   */
+  public func ensureVoice(_ agentId: String) async -> String? {
+    if agent(agentId) == nil { await reloadRoster() }
+    let list = await voices()
+    if let kept = AgentVoices.kept(agent(agentId)?.voiceId, listed: list) { return kept }
+    guard !list.isEmpty, agent(agentId) != nil else { return nil }
+    // A pass already under way may have started before this agent was hired: then one more.
+    var all = await assignMissingVoices()
+    if all[agentId] == nil { all = await assignMissingVoices() }
+    return all[agentId]
+  }
+
+  /**
+   * Gives each agent without a voice on the list its own, as the Mac does on
+   * opening (`assignMissingVoices`), and saves it on the agent (`updateAgent`
+   * with `voiceId`). One pass at a time; every agent's voice after it.
+   */
+  @discardableResult
+  public func assignMissingVoices() async -> [String: String] {
+    if let assigning { return await assigning.value }
+    let task = Task { await self.giveMissingVoices() }
+    assigning = task
+    let all = await task.value
+    assigning = nil
+    return all
+  }
+
+  private func giveMissingVoices() async -> [String: String] {
+    let list = await voices()
+    let plan = AgentVoices.plan(agents: agents, voices: list)
+    for (agentId, voiceId) in plan.given {
+      guard let backend, let agent = agent(agentId) else { continue }
+      let was = agent.voiceId
+      if let index = agents.firstIndex(where: { $0.id == agentId }) { agents[index].voiceId = voiceId }
+      let profile: JSON = ["name": .string(agent.name), "description": .string(agent.description), "title": .string(agent.title), "voiceId": .string(voiceId)]
+      do {
+        _ = try await backend.command("updateAgent", ["id": .string(agentId), "profile": profile])
+        Trace.mark("voice for \(agentId): \(voiceId) (given by name\(was.map { ", \($0) is no longer listed" } ?? ""))")
+      } catch {
+        Trace.mark("voice \(voiceId) given to \(agentId) for now, not saved: \(error.localizedDescription)")
+      }
+    }
+    return plan.voices
   }
 
   /** The agent's voice, saved on the agent as the Mac saves it (`updateAgent` with `voiceId`). */

@@ -578,7 +578,13 @@ struct AvatarEditor: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } } }
         .onAppear { if agent.isGroup && tab == .agent { tab = .upload } }
-        .task { voices = agent.isGroup ? [] : await store.voices() }
+        // The picker shows once the agent's voice is settled: its own while listed, else one given by its name now (AgentVoices).
+        .task {
+          guard !agent.isGroup else { return }
+          let list = await store.voices()
+          _ = await store.ensureVoice(agent.id)
+          voices = list
+        }
         .onDisappear { sample?.pause(); sample = nil; playing = nil }
         .onChange(of: photo) { _, item in
           guard let item else { return }
@@ -612,7 +618,7 @@ struct AvatarEditor: View {
       }
     }
     if !voices.isEmpty {
-      let current = agent.voiceId ?? AppStore.defaultVoiceId
+      let current = AgentVoices.kept(agent.voiceId, listed: voices) ?? AppStore.defaultVoiceId
       let chosen = voices.first { $0.id == current } ?? voices.first
       VStack(alignment: .leading, spacing: 6) {
         Text("Voice").font(.system(size: 12, weight: .semibold)).foregroundStyle(Ink.secondary).padding(.horizontal, 2)

@@ -36,6 +36,7 @@ request leaves the machine.
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import re
 import time
@@ -77,10 +78,13 @@ router = APIRouter(include_in_schema=False)
 VOICE_AGENT_NAME = "Simeon voice"
 
 #: Bump when anything in `agent_config` or `CLIENT_TOOLS` changes: the next
-#: call finds the agent without this version's tag and rewrites it.
-VOICE_AGENT_CONFIG_VERSION = 8
-VOICE_AGENT_VERSION_TAG = f"simeon-voice-config-v{VOICE_AGENT_CONFIG_VERSION}"
-VOICE_AGENT_TAGS = ["simeon", "simeon-voice", VOICE_AGENT_VERSION_TAG]
+#: call finds the agent without this version's tag and rewrites it. The tag
+#: also carries a fingerprint of the voices (`VOICE_AGENT_VERSION_TAG`,
+#: below them), so a change to the list rewrites the agent too: on 6 October
+#: 2026 Jessica left the list and Michael became the default without a bump,
+#: the agent kept Jessica as its own voice, and every call that named no
+#: voice still spoke as Jessica (the founder, 9 October 2026).
+VOICE_AGENT_CONFIG_VERSION = 9
 
 #: The model that thinks during the call. Fast over clever: the call's
 #: real work runs in the person's own agent behind the call (`send_task`), and a
@@ -343,6 +347,16 @@ CURATED_VOICE_GENDERS: dict[str, str] = {
 }
 VOICES_CACHE_SECONDS = 3600.0
 
+#: The voices' fingerprint in the agent's version tag: the default and the
+#: list in order decide the agent's own voice (`_pick_voice`).
+VOICES_FINGERPRINT = hashlib.sha256(
+    json.dumps([VOICE_DEFAULT_VOICE_ID, CURATED_VOICES]).encode()
+).hexdigest()[:8]
+VOICE_AGENT_VERSION_TAG = (
+    f"simeon-voice-config-v{VOICE_AGENT_CONFIG_VERSION}-{VOICES_FINGERPRINT}"
+)
+VOICE_AGENT_TAGS = ["simeon", "simeon-voice", VOICE_AGENT_VERSION_TAG]
+
 #: ElevenLabs' conversation ids are `conv_` and letters and digits; this
 #: is looser than that and strict enough that the id is safe on a path.
 CONVERSATION_ID = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
@@ -578,7 +592,8 @@ async def _available_voices(api: ElevenLabsClient) -> list[dict[str, Any]]:
 
 async def _pick_voice(api: ElevenLabsClient) -> str:
     """A voice the workspace has, for the agent's own: the first curated one
-    it has, else the first default voice, else Eric."""
+    it has, else Eric, else the first default voice (never one the founder
+    took off the list by chance of order: Jessica was the defaults' first)."""
     try:
         listed = [
             one["voice_id"]
@@ -591,7 +606,9 @@ async def _pick_voice(api: ElevenLabsClient) -> str:
     for voice_id, _ in CURATED_VOICES:
         if voice_id in listed:
             return voice_id
-    return listed[0] if listed else VOICE_FALLBACK_VOICE_ID
+    if VOICE_FALLBACK_VOICE_ID in listed or not listed:
+        return VOICE_FALLBACK_VOICE_ID
+    return listed[0]
 
 
 async def _sync_agent(api: ElevenLabsClient) -> str:
@@ -1068,17 +1085,16 @@ def _voice_row(voice: dict[str, Any], name: str | None = None) -> dict[str, Any]
 
 def curate(voices: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """The curated voices among `voices`, in `CURATED_VOICES`' order and by
-    their names. Should none of them be there, every voice listed rather than
-    an empty picker."""
+    their names, and never any other: with none of them in the account the
+    picker is empty and calls speak in the agent's own voice. It once fell
+    back to ElevenLabs' defaults, which brought back voices the founder had
+    taken off the list (Jessica; 9 October 2026)."""
     by_id = {one.get("voice_id"): one for one in voices}
-    picked = [
+    return [
         _voice_row(by_id[voice_id], name)
         for voice_id, name in CURATED_VOICES
         if voice_id in by_id
     ]
-    if picked:
-        return picked
-    return [_voice_row(one) for one in voices if isinstance(one.get("voice_id"), str)]
 
 
 @router.get(
@@ -1099,7 +1115,9 @@ async def list_voices() -> Response:
             cached[1], headers={"cache-control": "private, max-age=3600"}
         )
     try:
-        voices = curate(await _available_voices(api))
+        voices = curate(
+            await api.list_voices_by_id([voice_id for voice_id, _ in CURATED_VOICES])
+        )
     except ElevenLabsError as error:
         return _upstream_failed(error, "the list of voices")
     _voices[api.cache_key] = (now + VOICES_CACHE_SECONDS, voices)

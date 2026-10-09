@@ -45,6 +45,8 @@ public struct Agent: Identifiable, Hashable, Sendable {
   /** "Notifications" on the agent's page (`notifyOnUpdatesEnabled`). */
   public var notifyOnUpdates: Bool = true
   public var voiceId: String?
+  /** Someone else's room shared with the person (`remoteRoom`): no voice of its own, as on the Mac. */
+  public var isRemoteRoom = false
   /** Running a turn or one of its helpers (`isRunning`), waiting on the person (`awaitingUserResponse`), and what it is doing (`currentActivity`): its butterfly's state. */
   public var isRunning = false
   public var awaitingUserResponse = false
@@ -90,6 +92,7 @@ public struct Agent: Identifiable, Hashable, Sendable {
     )
     notifyOnUpdates = json["notifyOnUpdatesEnabled"]?.bool ?? true
     voiceId = json["voiceId"]?.text
+    if let room = json["remoteRoom"], room != .null { isRemoteRoom = true }
     isRunning = json["isRunning"]?.bool ?? isRunningTurn
     if let awaiting = json["awaitingUserResponse"], awaiting != .null { awaitingUserResponse = true }
     activityKind = json["currentActivity"]?["kind"]?.text

@@ -1500,3 +1500,101 @@ final class ExchangePageTests: XCTestCase {
     XCTAssertEqual(Chat.menuOrder([sid, iris, Party(id: "d", name: "deploy")]).map(\.name), ["deploy", "Iris", "Sid"])
   }
 }
+
+/**
+ * Each agent's own voice on the phone, the Mac's way (9 October 2026, the
+ * founder: "you brought back voices like jessica that i deleted. theres no
+ * smart attribution of voices … both on mac and on the phone"). The expected
+ * values are what the Mac's own code gives (agent-voices.ts and
+ * `assignMissingVoices`, run under node on the same input).
+ */
+@MainActor
+final class AgentVoiceTests: XCTestCase {
+  static let curated: [(String, String)] = [("ljX1ZrXuDIIRVcmiVSyR", "Michael"), ("1t1EeRixsJrKbiF1zwM6", "Jerry"), ("XcXEQzuLXRU9RcfWzEJt", "Veda"), ("s3TPKV1kjDlVtZbl4Ksh", "Adam"), ("UgBBYS2sOqTuMpoF3BR0", "Mark"), ("6OzrBCQf8cjERkYgzSg8", "Jamal"), ("Cz0K1kOv9tD8l0b5Qu53", "Simeon"), ("WI5pMmcGGS32yI7yttoP", "Amanda"), ("snyKKuaGYk1VUEh42zbW", "Chris"), ("gfRt6Z3Z8aTbpLfexQ7N", "Boyd"), ("NHRgOEwqx5WZNClv5sat", "Chelsea"), ("5u41aNhyCU6hXOcjPPv0", "Hope")]
+  static var listed: [AppStore.VoiceChoice] { curated.map { AppStore.VoiceChoice(id: $0.0, name: $0.1, sample: nil) } }
+
+  func testANamesGenderIsTheMacs() {
+    let mac: [(String, String?)] = [("Maya", "female"), ("Nina", "female"), ("Ava", "female"), ("Zoë", "female"), ("Ana Lucía", "female"), ("Fatou", "female"), ("Isla", "female"), ("Ms Taylor", "female"), ("Dr. Amara", "female"), ("Leo", "male"), ("Simeon", "male"), ("Jon", "male"), ("Mark", "male"), ("Bassirou", "male"), ("Theo", "male"), ("Mr. Kim", "male"), ("Sir Elton", "male"), ("Jordan", nil), ("Taylor", nil), ("Riley", nil), ("Sage", nil), ("Atlas", nil), ("", nil), ("  ", nil), ("Chloé-Anne", "female"), ("MAYA", "female"), ("Dr Jordan Lee", nil), ("Jessica", "female")]
+    for (name, gender) in mac { XCTAssertEqual(AgentVoices.nameGender(name), gender, name) }
+  }
+
+  func testTheTieBetweenFreeVoicesIsTheMacsHash() {
+    let seven = (1...7).map { AppStore.VoiceChoice(id: "v\($0)", name: "v\($0)", sample: nil) }
+    let mac = [("a", "v6"), ("b", "v7"), ("coo", "v1"), ("maya", "v5"), ("agent-12", "v7"), ("0f6b7c1e-3c2a-4b8e-9d1f-1234567890ab", "v3"), ("é", "v1"), ("日本", "v5")]
+    for (id, voice) in mac { XCTAssertEqual(AgentVoices.pick(agentId: id, name: "Jordan", isChiefOfStaff: false, voices: seven, taken: []), voice, id) }
+  }
+
+  func testOnePassGivesTheVoicesTheMacGives() {
+    func agent(_ id: String, _ name: String, _ title: String, voice: String? = nil, group: Bool = false, room: Bool = false) -> Agent {
+      var row = Agent(id: id, name: name, title: title, isGroup: group)
+      row.voiceId = voice; row.isRemoteRoom = room
+      return row
+    }
+    let roster = [
+      agent("7d1c", "Simeon", "Chief of Staff"),
+      agent("a91f", "Maya", "Inbox", voice: "cgSgspJ2msm6clMCkdW9"), // Jessica, taken off the list
+      agent("b22e", "Leo", "Growth"),
+      agent("c3", "Nina", "Finance", voice: "WI5pMmcGGS32yI7yttoP"),
+      agent("d4", "Jordan", "Research"),
+      agent("e5", "Ava", ""),
+      agent("f6", "Team", "", group: true),
+      agent("g7", "Theo", "Books", voice: ""),
+      agent("h8", "Shared", "", room: true),
+    ]
+    let plan = AgentVoices.plan(agents: roster, voices: Self.listed)
+    let mac = [("7d1c", "Cz0K1kOv9tD8l0b5Qu53"), ("a91f", "5u41aNhyCU6hXOcjPPv0"), ("b22e", "6OzrBCQf8cjERkYgzSg8"), ("d4", "snyKKuaGYk1VUEh42zbW"), ("e5", "NHRgOEwqx5WZNClv5sat"), ("g7", "UgBBYS2sOqTuMpoF3BR0")]
+    XCTAssertEqual(plan.given.map { "\($0.agentId)=\($0.voiceId)" }, mac.map { "\($0.0)=\($0.1)" })
+    XCTAssertEqual(plan.voices["c3"], "WI5pMmcGGS32yI7yttoP", "a listed voice stays")
+    XCTAssertNil(plan.voices["f6"]); XCTAssertNil(plan.voices["h8"])
+    XCTAssertFalse(plan.voices.values.contains("cgSgspJ2msm6clMCkdW9"), "nobody keeps Jessica")
+    // Nothing listed: nothing judged, nothing given.
+    XCTAssertTrue(AgentVoices.plan(agents: roster, voices: []).given.isEmpty)
+    XCTAssertEqual(AgentVoices.kept("cgSgspJ2msm6clMCkdW9", listed: []), "cgSgspJ2msm6clMCkdW9")
+    XCTAssertNil(AgentVoices.kept("cgSgspJ2msm6clMCkdW9", listed: Self.listed))
+    XCTAssertNil(AgentVoices.kept("../x", listed: []))
+  }
+
+  func testTheNameListsAreTheMacs() throws {
+    let repo = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+    let source = try String(contentsOf: repo.appendingPathComponent("desktop/source/shared/voice-call/name-genders.ts"), encoding: .utf8)
+    func words(_ name: String) -> [String] {
+      let start = source.range(of: "export const \(name) =")!.upperBound
+      let end = source[start...].firstIndex(of: ";")!
+      var joined = ""
+      var inside = false
+      for character in source[start..<end] {
+        if character == "\"" { inside.toggle() } else if inside { joined.append(character) }
+      }
+      return joined.split(separator: " ").map(String.init)
+    }
+    XCTAssertEqual(GeneratedNameGenders.women.split(whereSeparator: \.isWhitespace).map(String.init), words("WOMEN_NAMES"), "run: node ios/scripts/make-name-genders.mjs")
+    XCTAssertEqual(GeneratedNameGenders.men.split(whereSeparator: \.isWhitespace).map(String.init), words("MEN_NAMES"), "run: node ios/scripts/make-name-genders.mjs")
+    let mac = try String(contentsOf: repo.appendingPathComponent("desktop/source/shared/voice-call/agent-voices.ts"), encoding: .utf8)
+    for (id, gender) in AgentVoices.curatedGenders { XCTAssertTrue(mac.contains("\(id)\": \"\(gender)\"") || mac.contains("\(id): \"\(gender)\""), id) }
+    XCTAssertTrue(mac.contains("SIMEON_VOICE_ID = \"\(AgentVoices.simeonVoiceId)\""))
+  }
+
+  func testThePickerAndTheCallShowAndSpeakTheSameVoice() async throws {
+    let store = AppStore()
+    let backend = DemoBackend(seed: DemoData.seed(), pace: 0.01, call: nil)
+    await store.attach(backend)
+    let all = await store.assignMissingVoices()
+    // The demo lists six voices, Veda the only woman's; Simeon's own is not among them.
+    for agent in store.agents where !agent.isGroup {
+      XCTAssertNotNil(all[agent.id], agent.name)
+      XCTAssertEqual(store.agent(agent.id)?.voiceId, all[agent.id], agent.name)
+    }
+    XCTAssertEqual(all["iris"], "XcXEQzuLXRU9RcfWzEJt", "Iris: a woman's name, a woman's voice")
+    let theo = await store.ensureVoice("theo")
+    XCTAssertEqual(theo, all["theo"])
+    // Saved on the agent, so the Mac and the next launch read it too.
+    let rows = try await backend.listAgents()
+    XCTAssertEqual(rows.first { $0.id == "theo" }?.voiceId, theo)
+    let voice = FakeVoice()
+    let call = LiveCall(backend: backend, transport: voice, personName: { "Bass" }, voiceFor: { id in await store.ensureVoice(id) }, pause: { _ in try? await Task.sleep(nanoseconds: 2_000_000) })
+    call.start(agentId: "theo", agentName: "Theo", colour: "green")
+    try await Task.sleep(nanoseconds: 150_000_000)
+    XCTAssertEqual(voice.lock.withLock { voice.started?.voice }, theo)
+    call.hangUp()
+  }
+}

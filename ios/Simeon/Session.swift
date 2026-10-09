@@ -116,7 +116,8 @@ final class SessionController {
     // The voice call: ElevenLabs' kit on the phone, the Mac's call protocol in SimeonCore (LiveCall).
     let backend = LiveBackend(gateway: Gateway(api: api), api: api)
     let names = personName
-    backend.call = LiveCall(backend: backend, transport: ElevenLabsVoice(), personName: { names.value })
+    let store = store
+    backend.call = LiveCall(backend: backend, transport: ElevenLabsVoice(), personName: { names.value }, voiceFor: { agentId in await store.ensureVoice(agentId) })
     await store.attach(backend)
     async let profile = api.profile()
     await checkFirstRun()

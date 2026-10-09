@@ -552,14 +552,17 @@ the background while the call goes on, and says how it is going when asked.
 - One ElevenLabs agent, "Simeon voice", serves every Simeon agent. The app overrides its
   prompt, first message, language and voice per call, so each agent keeps its own name and
   voice. The server finds it by name (`GET /v1/convai/agents?search=`) or creates it on first
-  use, and rewrites it whenever `VOICE_AGENT_CONFIG_VERSION` in
-  `server/simeon/desktop/voice.py` changes (the version is a tag on the agent; the id is
-  remembered per process). Its configuration: authentication required, the four overrides
+  use, and rewrites it whenever its version tag changes: `VOICE_AGENT_CONFIG_VERSION` in
+  `server/simeon/desktop/voice.py` and, since 9 October 2026, a fingerprint of the voices
+  (`VOICES_FINGERPRINT`: the default and `CURATED_VOICES` in order), so a change to the list
+  rewrites it too (the id is remembered per process). On 6 October Michael replaced Jessica as
+  the default without a new version: the agent kept Jessica as its own voice, and every call
+  that named no voice spoke as Jessica. Version 9 rewrote it. Its configuration: authentication required, the four overrides
   above and no others, `gemini-2.5-flash` as the voice's model with `thinking_budget: 0` (2.5 Flash thinks
   before every reply by default, and the replies waited on it), `eleven_flash_v2` for
   speech (an English agent is refused on any other), a voice the workspace has (the first of the
-  founder's voices the account has, else the first ElevenLabs default, else Eric: a missing
-  voice is refused with `voice_not_found`), `end_call` and `skip_turn`, a 7 s turn timeout,
+  founder's voices the account has, Michael; else Eric when listed or nothing is; else the
+  first ElevenLabs default: a missing voice is refused with `voice_not_found`), `end_call` and `skip_turn`, a 7 s turn timeout,
   `turn_eagerness: eager` and `speculative_turn` (it answers soon after the caller stops and
   starts thinking during the pause, which costs a little more), the call ended after 25 s of
   silence, 30 minutes at most, and no voice recording kept. The per-call prompt carries the
@@ -590,17 +593,25 @@ the background while the call goes on, and says how it is going when asked.
     6 October 2026), looked up by id in the account
     (`/v2/voices?voice_ids=…`) and shown by their names only. Each must be added to the
     ElevenLabs account ("Add to my voices"); one it lacks is skipped, and with none of them
-    the picker offers ElevenLabs' defaults. `[{id, name, description, labels, gender,
+    the list is empty: no other voice is ever offered (until 9 October 2026 the picker fell
+    back to ElevenLabs' defaults, which brought Jessica back). `[{id, name, description, labels, gender,
     preview_url}]`, description and labels empty, cached for an hour. `gender` is ElevenLabs'
     own label when the voice has one, else `CURATED_VOICE_GENDERS` (Veda, Amanda, Chelsea and
     Hope are women's voices). The voice listed as Jon is shown as Simeon since 8 October 2026
     (`SIMEON_VOICE_ID`): the Chief of Staff's own.
 - Each agent's own voice (8 October 2026; the founder: "each agent should be assigned a
   different voice … named like a woman, like Maya, default to a woman voice, not always the
-  same, and vice versa for men"). An agent with no voice gets one the first time it needs it
-  (a call, or its voice picker) and keeps it (`assignedVoice` in
-  `electron-main/voice/voice-call-service.ts`, saved through `updateAgent` like a picked
-  one). `pickAgentVoice` (`shared/voice-call/agent-voices.ts`) gives the Chief of Staff the
+  same, and vice versa for men"). Every agent without a voice on the list gets one and keeps
+  it (`assignMissingVoices` in `electron-main/voice/voice-call-service.ts`, saved through
+  `updateAgent` like a picked one): on the Mac as soon as the window names an agent (at most
+  once a minute), and before any call or picker that needs it (`assignedVoice`); on the
+  iPhone when it attaches, when an avatar editor opens and before a call
+  (`AppStore.ensureVoice`, `ios/SimeonCore/.../AgentVoices.swift`, the same rules and hash, so
+  both give an agent the same voice). A stored voice no longer on the list (Jessica) counts as
+  none and is replaced (9 October 2026, the founder: "every voice says "michael" by default,
+  even tho its a different voice": the pickers showed the list's first while the calls spoke
+  in the stored or the platform agent's voice). Agents are given theirs in id order; groups
+  and shared rooms have none. Log: `voice for agent <id>: <voice> (given by name…)`. `pickAgentVoice` (`shared/voice-call/agent-voices.ts`) gives the Chief of Staff the
   Simeon voice and no one else; any other agent the voice fewest agents have among those of
   its name's gender, from the voices the account has. A name's gender comes from the US
   Social Security baby-name counts (`shared/voice-call/name-genders.ts`: a name is a woman's or
@@ -608,7 +619,9 @@ the background while the call goes on, and says how it is going when asked.
   voice). Between equally free voices the agent's id decides, so agents hired together differ.
   Until then every agent without a picked voice spoke as Michael. The four women's voices are
   spread over the first four women before one repeats. `tests/agent-voices.test.mjs`,
-  `tests/voice-call-lifecycle.test.mjs`.
+  `tests/voice-call-lifecycle.test.mjs`, `AgentVoiceTests` in the iPhone core (its expected
+  voices are the Mac code's own answers; its name lists are generated from the Mac's by
+  `node ios/scripts/make-name-genders.mjs`, and a test fails when they differ).
 - Price: `VOICE_CALL_MODEL` in `server/simeon/desktop/pricing.py`, by the second, at $0.08 a
   minute times a 1.25 margin (`VOICE_CALL_MARGIN`): about 33,000 credits a minute. Usage rows
   carry provider `elevenlabs`.

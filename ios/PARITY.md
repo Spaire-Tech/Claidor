@@ -774,6 +774,34 @@ same picture. It reaches the computers with the next host bundle
   gesture on a clear view, which still missed the top of the butterfly),
   with the bar's glass behind it turned off.
 
+## 26. Each agent's own voice, and no deleted ones (9 October 2026)
+
+The founder: "you brought back voices like jessica that i deleted. theres
+no smart attribution of voices as well. every voice says "michael" by
+default, even tho its a different voice … both on mac and on the phone."
+Three causes, found in the code:
+
+- **The server.** The platform agent's own voice (the one a call naming
+  no voice speaks in) was still Jessica: on 6 October Michael became the
+  default without a new config version, so the agent was never rewritten.
+  Its version tag now carries a fingerprint of the voice list, so any change
+  to the list rewrites it (version 9 does now). The picker's list no longer
+  falls back to ElevenLabs' defaults, which is how Jessica came back.
+- **The Mac.** An agent holding a voice taken off the list kept speaking in
+  it while its picker showed the list's first, Michael. Such a voice now
+  counts as none and is replaced by name. And every agent gets its voice
+  as soon as the window shows one, not at its first call.
+- **The phone** gave no agent a voice: its picker showed Michael for any
+  agent without one while the call spoke in the platform agent's voice. It
+  now gives voices as the Mac does (`AgentVoices.swift`: the same rules, the
+  same name lists, generated from the Mac's, and the same hash), when it
+  attaches, when an avatar editor opens and before a call. The picker shows
+  only once the agent's voice is settled, and the call speaks in the voice
+  the picker shows.
+
+`AgentVoiceTests` hold the phone to the Mac's own answers, worked out by
+running the Mac's code on the same agents.
+
 ## Suggested order (the founder decides)
 
 1. The chat's look: the bubble, the top bar, markdown, brand names with logos, agent names with butterflies.

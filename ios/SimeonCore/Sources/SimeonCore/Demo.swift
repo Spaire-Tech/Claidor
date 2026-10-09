@@ -397,6 +397,7 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
         agent.title = profile["title"]?.string ?? agent.title
         agent.description = profile["description"]?.string ?? agent.description
         if let colour = profile["avatarColor"]?.text { agent.colour = colour }
+        if let voice = profile["voiceId"]?.text { agent.voiceId = voice.isEmpty ? nil : voice }
       }
     case "setGroupMembers":
       touch(args["id"]?.text ?? "") { $0.memberIds = args["memberAgentIds"]?.array?.compactMap(\.text) ?? $0.memberIds }

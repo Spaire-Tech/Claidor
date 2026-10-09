@@ -203,6 +203,8 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
   private weak var backend: AgentBackend?
   private let transport: VoiceTransport
   private let personName: @Sendable () -> String?
+  /** The agent's voice for the call, given now if it has none on the list (`AppStore.ensureVoice`); without it, the roster's. */
+  private let voiceFor: (@Sendable (String) async -> String?)?
   private let pause: @Sendable (Double) async -> Void
   private var state: CallState?
   private var listeners: [@Sendable (CallState?) -> Void] = []
@@ -218,8 +220,8 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
   private var speaking = false
   private var activity = 0.0
 
-  public init(backend: AgentBackend, transport: VoiceTransport, personName: @escaping @Sendable () -> String?, pause: @escaping @Sendable (Double) async -> Void = { try? await Task.sleep(nanoseconds: UInt64($0 * 1_000_000_000)) }) {
-    self.backend = backend; self.transport = transport; self.personName = personName; self.pause = pause
+  public init(backend: AgentBackend, transport: VoiceTransport, personName: @escaping @Sendable () -> String?, voiceFor: (@Sendable (String) async -> String?)? = nil, pause: @escaping @Sendable (Double) async -> Void = { try? await Task.sleep(nanoseconds: UInt64($0 * 1_000_000_000)) }) {
+    self.backend = backend; self.transport = transport; self.personName = personName; self.voiceFor = voiceFor; self.pause = pause
   }
 
   public func observe(_ listener: @escaping @Sendable (CallState?) -> Void) {
@@ -277,9 +279,13 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
     let name = row?.name ?? agentName
     let prompt = VoiceCallText.prompt(name: name, title: row?.title ?? "", description: row?.description ?? "", transcript: VoiceCallText.lines(entries), personName: person, teammates: teammates)
     let greeting = VoiceCallText.firstMessage(name: name, pick: Double.random(in: 0..<1), personName: person)
+    // The voice its picker shows, never one taken off the list (9 October 2026); nil is the agent's own, Michael.
+    let voiceId: String?
+    if let voiceFor { voiceId = await voiceFor(agentId) } else { voiceId = row?.voiceId }
+    guard !isFinished else { return fail(VoiceCallText.couldNotConnect) }
     await open(agentId: agentId)
     do {
-      try await transport.start(token: token, prompt: prompt, firstMessage: greeting, voiceId: row?.voiceId, language: VoiceCallText.language) { [weak self] event in
+      try await transport.start(token: token, prompt: prompt, firstMessage: greeting, voiceId: voiceId, language: VoiceCallText.language) { [weak self] event in
         self?.handle(event, agentId: agentId)
       }
     } catch {
