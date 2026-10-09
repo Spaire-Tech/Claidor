@@ -63,6 +63,8 @@ public struct Agent: Identifiable, Hashable, Sendable {
   public var waitingReason: String?
   /** When it was made (ms): the oldest one titled Chief of Staff is the Chief of Staff. */
   public var createdAt: Double?
+  /** What it is for, when the app made it for something (`purpose`: "disk-saver"). */
+  public var purpose: String?
 
   public init(id: String, name: String, title: String = "", description: String = "", colour: String? = nil, avatarDataURL: String? = nil, isGroup: Bool = false, memberIds: [String] = [], lastMessagePreview: String? = nil, lastActivityAt: Double? = nil, hasUnread: Bool = false, unreadCount: Int = 0, isRunningTurn: Bool = false, isComposing: Bool = false, activityLabel: String? = nil, isHidden: Bool = false) {
     self.id = id; self.name = name; self.title = title; self.description = description; self.colour = colour
@@ -105,6 +107,7 @@ public struct Agent: Identifiable, Hashable, Sendable {
     if let entry = json["lastEntry"], entry != .null { lastEntry = entry }
     waitingReason = json["awaitingUserResponse"]?["reason"]?.text
     createdAt = json["createdAt"]?.double
+    purpose = json["purpose"]?.text
   }
 
   /**

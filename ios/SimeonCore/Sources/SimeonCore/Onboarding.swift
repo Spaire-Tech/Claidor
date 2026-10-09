@@ -36,10 +36,15 @@ public enum Onboarding {
   public static let failed = "Simeon couldn’t finish setting up"
   public static let unreachable = "Can't reach your computer right now. Check your connection and try again."
 
-  /** The hand-off's one line (the window's `jqn`), the computer's percentage when it is known. */
-  public static func handOffLine(ready: Bool, percent: Int? = nil) -> String {
+  /**
+   * The hand-off's one line (the window's `jqn`, `Xqn`), from the newest
+   * status of any agent's computer: its image's percentage while it is
+   * pulled, "Waking your computer…" while it sleeps.
+   */
+  public static func handOffLine(ready: Bool, percent: Int? = nil, sleeping: Bool = false) -> String {
     if ready { return "Getting your team ready…" }
     if let percent { return "Setting up your Simeon… \(percent)%" }
+    if sleeping { return "Waking your computer…" }
     return "Setting up your Simeon…"
   }
 

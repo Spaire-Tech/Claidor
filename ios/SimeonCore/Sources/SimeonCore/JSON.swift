@@ -31,6 +31,11 @@ public enum JSON: Hashable, Sendable {
   public var array: [JSON]? { if case .array(let items) = self { return items }; return nil }
   public var object: [String: JSON]? { if case .object(let fields) = self { return fields }; return nil }
   public var isNull: Bool { if case .null = self { return true }; return false }
+  /** Itself, or nil for JSON's null (`nil` written in JSON's place is JSON's null, not Swift's). */
+  public var present: JSON? {
+    if case .null = self { return Optional<JSON>.none }
+    return self
+  }
 
   /** A non-empty string, else nil: the shape most optional text fields take. */
   public var text: String? { string.flatMap { $0.isEmpty ? nil : $0 } }

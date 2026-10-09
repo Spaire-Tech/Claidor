@@ -24,7 +24,7 @@ public struct Routine: Identifiable, Hashable, Sendable {
     self.id = id
     name = json["name"]?.string ?? "Routine"
     prompt = json["prompt"]?.string ?? ""
-    trigger = json["trigger"].flatMap { $0.isNull ? nil : $0 } ?? json["schedule"]?.text.map { ["type": "cron", "schedule": .string($0)] }
+    trigger = json["trigger"]?.present ?? json["schedule"]?.text.map { ["type": "cron", "schedule": .string($0)] }
     let firstCron = TriggerRow.rows(trigger).lazy.compactMap { row -> String? in if case .schedule(let line) = row { return line } else { return nil } }.first
     schedule = json["schedule"]?.string ?? firstCron ?? ""
     summary = json["triggerDescription"]?.text ?? Schedule(cron: schedule).summary

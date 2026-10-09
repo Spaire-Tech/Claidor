@@ -361,14 +361,14 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
     case "submitSecret":
       stamp(agentId, entryId) { $0.setting("secretProvided", true) }
     case "handBackForeverBox":
+      // The host writes "completed" for both buttons (box-handoff-service.ts `decideBoxHandBack`), so the card says "Done" either way.
       lock.withLock {
-        for (agent, list) in transcripts {
-          for (index, entry) in list.enumerated() where entry["boxRequestId"] != nil && entry["boxResolution"] == nil {
-            if let updated = Entry(entry.raw.setting("boxResolution", args["trigger"]?.object != nil ? "dismissed" : "handed_back")) { transcripts[agent]?[index] = updated; pendingEmits.append((agent, updated)) }
-          }
+        for (index, entry) in (transcripts[agentId] ?? []).enumerated() where entry["boxRequestId"] != nil && entry["boxResolution"] == nil {
+          if let updated = Entry(entry.raw.setting("boxResolution", "completed")) { transcripts[agentId]?[index] = updated; pendingEmits.append((agentId, updated)) }
         }
       }
       flush()
+      emit(.computer(boxStatus(agentId)))
     case "desktopMcp":
       return demoApps(args["action"]?.text ?? "", args["args"]?.array ?? [])
     case "getListenerIntegrations":
@@ -439,7 +439,7 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
     case "uploadAttachment":
       return ["path": .string("/home/box/attachments/\(args["filename"]?.text ?? "file")")]
     case "ensureForeverBox", "getForeverBoxStatus":
-      return ["status": "starting", "vncUrl": nil]
+      return boxStatus(agentId)
     case "countAgents":
       return .number(Double(lock.withLock { agents.count }))
     case "createAgent":
@@ -556,6 +556,54 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
   private func flush() {
     let emits: [(String, Entry)] = lock.withLock { let all = pendingEmits; pendingEmits = []; return all }
     for (agent, entry) in emits { emit(.transcript(.upsert(agentId: agent, entry: entry))) }
+  }
+
+  /** The demo's last rebuild step, as the server's stream would have it. */
+  private var demoMigration: MigrationEvent?
+
+  public func updateComputer(force: Bool) async throws -> RecreateAnswer { rebuildComputer(wiping: false) }
+  public func resetComputer() async throws -> RecreateAnswer { rebuildComputer(wiping: true) }
+  public func migrationStatus() async -> MigrationEvent? { lock.withLock { demoMigration } }
+
+  /**
+   * A rebuild played out as the server and the box would: the steps
+   * recorded, the stream dropping while the computer is replaced, and back.
+   */
+  private func rebuildComputer(wiping: Bool) -> RecreateAnswer {
+    let operation = "demo-\(UUID().uuidString.prefix(8).lowercased())"
+    let pace = self.pace
+    Task { [weak self] in
+      func step(_ phase: MigrationPhase) {
+        guard let self else { return }
+        let event = MigrationEvent(operationId: operation, phase: phase, detail: "")
+        self.lock.withLock { self.demoMigration = event }
+        self.emit(.migration(event))
+      }
+      func wait(_ seconds: Double) async { try? await Task.sleep(nanoseconds: UInt64(seconds * pace * 1_000_000_000)) }
+      step(.creating)
+      await wait(0.8)
+      self?.emit(.connection(live: false))
+      if wiping { step(.wiping) }
+      await wait(2.5)
+      step(.done)
+      await wait(1.2)
+      self?.emit(.connection(live: true))
+    }
+    return .started(operationId: operation)
+  }
+
+  /**
+   * The demo's computer, as the host would report it: no screen (the demo
+   * has none), and the hand-off its chat is waiting on, if any (`handoff`,
+   * `sand-host.ts` `decorateForeverBoxStatus`).
+   */
+  private func boxStatus(_ agentId: String) -> JSON {
+    let waiting: Entry? = lock.withLock { transcripts[agentId]?.last { $0["boxRequestId"] != nil && $0["boxResolution"] == nil } }
+    var status: JSON = ["agentId": .string(agentId), "state": "absent", "vncUrl": nil]
+    if let waiting, let requestId = waiting["boxRequestId"] {
+      status = status.setting("handoff", ["requestId": requestId, "instruction": waiting["message"]?["content"] ?? ""])
+    }
+    return status
   }
 
   /** Changes one entry the way the host does, and says so. */

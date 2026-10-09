@@ -116,20 +116,24 @@ public struct Account: Sendable, Equatable {
 @Observable
 public final class AppStore {
   public private(set) var agents: [Agent] = [] {
-    didSet { noteNames() }
+    didSet { noteNames(); rebuild.selectionChanged(rebuildInputs) }
   }
   /** The agents' names and colours for the chat's text, changed only when one of them does, so a roster update (an agent's status) does not redraw every message. */
   public private(set) var mentionNames: [Mentions.AgentName] = []
   /** Each chat's entries; the screens draw `chatRows`, so a change here alone redraws nothing. */
   @ObservationIgnored public private(set) var transcripts: [String: [Entry]] = [:]
   /** The chat on screen, if one is: it is the one fetched again after a reconnect or a missed line. */
-  public private(set) var openChat: String?
+  public private(set) var openChat: String? {
+    didSet { if openChat != oldValue { rebuild.selectionChanged(rebuildInputs) } }
+  }
   /** Each open chat laid out (Chat.rows), kept with its entries so a redraw does not lay it out again. */
   public private(set) var chatRows: [String: [ChatRow]] = [:]
   /** The step an agent is on right now ("Checking Linear"), by agent. */
   public private(set) var steps: [String: String] = [:]
   public private(set) var call: CallState?
-  public private(set) var isLive = false
+  public private(set) var isLive = false {
+    didSet { if isLive != oldValue { rebuild.transportChanged(rebuildInputs) } }
+  }
   public private(set) var isLoading = false
   public var account: Account?
   /** Something went wrong that the person should hear about, once. */
@@ -158,6 +162,34 @@ public final class AppStore {
   @ObservationIgnored var sectionWrites = 0
   /** Counts the sections made here, for their ids (the window's `idSeed`). */
   @ObservationIgnored var sectionSeed = 0
+
+  /** Each agent's computer: its status, read and pushed, and who is looking (CloudComputer.swift, StoreComputer.swift). */
+  public internal(set) var computer = ComputerBook() {
+    didSet {
+      if computer.status(rebuildBox) != oldValue.status(rebuildBox) || computer.isEnsuring(rebuildBox) != oldValue.isEnsuring(rebuildBox) { rebuild.statusChanged(rebuildInputs) }
+      if computer.diskPressure != oldValue.diskPressure { diskPressureChanged() }
+    }
+  }
+  /** The agents could not be read the last time they were asked for (the sidebar's "Can't reach your computer"). */
+  public private(set) var rosterFailed = false
+  /** Retry is reading them again ("Retrying…"). */
+  public private(set) var rosterRetrying = false
+  /** The phone says so in an alert; the Mac's sidebar says it in place, as the window does. */
+  @ObservationIgnored public var reportsRosterFailure = true
+  /** Simeon's computer being rebuilt, or the stream away (RebuildDriver.swift). */
+  public let rebuild = RebuildDriver()
+  /** Roster pushes skipped while the computer was rebuilt: the list is read again after. */
+  @ObservationIgnored var rosterHeld = false
+  /** A Disk Saver being made, so a second click waits for it. */
+  @ObservationIgnored var diskSaverCreation: Task<String?, Never>?
+  /** Disk Saver was set to work for this time the disk ran low. */
+  @ObservationIgnored var diskAuditDone = false
+  /** Each agent's subagents as the host lists them (`getSubagents`, `subagents`): its helpers' screens. */
+  public internal(set) var subagentsByAgent: [String: [JSON]] = [:]
+  /** The agent's pointer on its computer, the last place it moved or clicked (`computer-action`). */
+  public internal(set) var pointers: [String: AgentPointer] = [:]
+  /** When the computer was last read again for the window coming forward or the stream coming back. */
+  @ObservationIgnored var lastComputerCatchUp = Date.distantPast
 
   /** Connected apps, as the box's manager lists them (`desktopMcp listServers`), and the catalog to add more from. */
   public private(set) var apps: [ConnectedApp] = []
@@ -249,6 +281,7 @@ public final class AppStore {
     backend.call?.observe { [weak self] state in
       Task { @MainActor in self?.take(state) }
     }
+    connectRebuild(backend)
     await reloadRoster()
     await loadPins()
     await loadSections()
@@ -265,6 +298,8 @@ public final class AppStore {
     pendingAnswers = [:]; unreadAfter = [:]; apps = []; catalog = []; pinnedIds = []; routinesByAgent = [:]; sidebarSections = nil
     streamingOnly = [:]; outbox = [:]; arrived = []; olderBefore = [:]; loadingOlder = []; paged = []; firstRunAgentId = nil; revealing = [:]
     openThreads = [:]; threadRows = [:]; threadRoots = [:]; loadFailed = []; isDown = false
+    computer = ComputerBook(); subagentsByAgent = [:]; pointers = [:]; lastComputerCatchUp = .distantPast
+    rebuild.reset(); rosterHeld = false; diskSaverCreation = nil; diskAuditDone = false; rosterFailed = false
     voiceList = nil
     sentFiles = []
   }
@@ -273,14 +308,31 @@ public final class AppStore {
     guard let backend else { return }
     do {
       agents = readingOpenChat(sortRoster(try await backend.listAgents()))
+      rosterFailed = false
     } catch {
-      problem = "Couldn't reach your agents: \(error.localizedDescription)"
+      rosterFailed = true
+      if reportsRosterFailure { problem = "Couldn't reach your agents: \(error.localizedDescription)" }
     }
+  }
+
+  /**
+   * The sidebar's Retry under "Can't reach your computer" and "Reconnecting
+   * to your computer…": the computer asked for again (the window restarts
+   * its connection), then the agents read again.
+   */
+  public func retryRoster() async {
+    rosterRetrying = true
+    defer { rosterRetrying = false }
+    if let live = backend as? LiveBackend { await live.gateway.invalidate() }
+    await reloadRoster()
   }
 
   public func apply(_ event: BackendEvent) {
     Trace.mark("handling \(event.name)")
     switch event {
+    case .agents where rebuild.isHardLocked, .agentUpserted where rebuild.isHardLocked:
+      // The agents' list holds still while the computer is rebuilt, and is read again after (`roster.setFrozen`).
+      rosterHeld = true
     case .agents(let list):
       let sorted = readingOpenChat(sortRoster(list))
       if sorted != agents { agents = sorted }
@@ -321,7 +373,9 @@ public final class AppStore {
       let recovered = live && !isLive
       isLive = live
       if isDown == live { setDown(!live) }
-      if recovered, backend != nil {
+      if recovered, let backend {
+        computerReconnected()
+        Task { rebuild.migrationReadBack(await backend.migrationStatus()) }
         Task {
           await reloadRoster()
           if let chat = openChat { await refresh(chat) }
@@ -335,6 +389,10 @@ public final class AppStore {
     case .automations(let agentId, let rows):
       let list = rows.compactMap(Routine.init(json:))
       if routinesByAgent[agentId] != list { routinesByAgent[agentId] = list }
+    case .computer, .diskPressure, .computerAction, .subagents:
+      applyComputer(event)
+    case .migration(let step):
+      rebuild.migrationEvent(step)
     }
   }
 
@@ -947,6 +1005,8 @@ public final class AppStore {
 
   /** Resend on a message that failed. */
   public func resend(_ id: String, in agentId: String) async {
+    // Not while the computer is rebuilt (`rebuild-locked`).
+    if isSendingPaused { return }
     guard outbox[agentId]?.contains(where: { $0.id == id && $0.state == .failed }) == true else { return }
     await deliver(id, in: agentId)
   }
@@ -1053,12 +1113,6 @@ public final class AppStore {
 
   public func submitSecret(_ value: String, entryId: String, in agentId: String) async {
     await command("submitSecret", ["entryId": .string(entryId), "value": .string(value), "agentId": .string(agentId)], failure: "The secret wasn't saved")
-  }
-
-  /** "I'm done" on the computer hand-off; `skip` cancels the step instead. */
-  public func handBackComputer(_ agentId: String, skip: Bool = false) async {
-    let trigger: JSON = skip ? ["resolution": "cancelled", "trigger": "skip"] : "button"
-    await command("handBackForeverBox", ["id": .string(agentId), "trigger": trigger], failure: "Couldn't hand the computer back")
   }
 
   // MARK: The computer

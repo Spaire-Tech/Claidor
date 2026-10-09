@@ -20,7 +20,8 @@ let package = Package(
     // The Mac window's emoji list (emojibase, MIT; Resources/EMOJIBASE-LICENSE.txt), made by ios/scripts/make-emoji.mjs.
     .target(name: "SimeonCore", resources: [.copy("Resources/emoji.json"), .copy("Resources/EMOJIBASE-LICENSE.txt")], swiftSettings: [.swiftLanguageMode(.v5)]),
     .target(name: "SimeonMacCore", dependencies: ["SimeonCore"], swiftSettings: [.swiftLanguageMode(.v5)]),
-    .testTarget(name: "SimeonCoreTests", dependencies: ["SimeonCore"], swiftSettings: [.swiftLanguageMode(.v5)]),
+    // Fixtures/: what the shipped window's own code answered, to check the ports against (the tests say which).
+    .testTarget(name: "SimeonCoreTests", dependencies: ["SimeonCore"], resources: [.copy("Fixtures")], swiftSettings: [.swiftLanguageMode(.v5)]),
     .testTarget(name: "SimeonMacCoreTests", dependencies: ["SimeonMacCore"], swiftSettings: [.swiftLanguageMode(.v5)]),
   ]
 )

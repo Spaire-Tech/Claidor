@@ -1251,6 +1251,8 @@ final class OnboardingTests: XCTestCase {
     XCTAssertEqual(OnboardingStep.name.next, .handOff)
     XCTAssertEqual(Onboarding.handOffLine(ready: false), "Setting up your Simeon…")
     XCTAssertEqual(Onboarding.handOffLine(ready: true), "Getting your team ready…")
+    XCTAssertEqual(Onboarding.handOffLine(ready: false, percent: 42, sleeping: true), "Setting up your Simeon… 42%")
+    XCTAssertEqual(Onboarding.handOffLine(ready: false, sleeping: true), "Waking your computer…")
   }
 
   func testTheScenesFitAPhone() {
