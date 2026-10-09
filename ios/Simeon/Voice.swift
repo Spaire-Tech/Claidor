@@ -164,7 +164,7 @@ final class VoiceCallLog: @unchecked Sendable {
         try? stamped.write(to: file)
       }
     }
-    FileHandle.standardError.write(Data("[simeon] voice-call \(line)\n".utf8))
+    try? FileHandle.standardError.write(contentsOf: Data("[simeon] voice-call \(line)\n".utf8))
   }
 }
 #endif

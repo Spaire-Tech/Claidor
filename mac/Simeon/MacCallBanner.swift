@@ -46,7 +46,7 @@ final class MacCallBanner {
       return
     }
     height = Self.initialHeight
-    let panel = NSPanel(contentRect: frame(for: height, on: Self.screenUnderPointer()), styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+    let panel = BannerPanel(contentRect: frame(for: height, on: Self.screenUnderPointer()), styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
     panel.title = "Simeon call"
     panel.isFloatingPanel = true
     panel.level = .floating
@@ -56,10 +56,13 @@ final class MacCallBanner {
     panel.isOpaque = false
     panel.hasShadow = false
     panel.hidesOnDeactivate = false
-    panel.becomesKeyOnlyIfNeeded = true
+    // A click makes it key, as the Electron panel (focusable) is, so the transcript can be selected and copied; it never brings Simeon forward.
+    panel.becomesKeyOnlyIfNeeded = false
     panel.isReleasedWhenClosed = false
     panel.animationBehavior = .utilityWindow
     let host = BannerHostingView(rootView: AnyView(MacCallBannerView(resize: { [weak self] in self?.resize(to: $0) }).environment(store)))
+    // The panel's size is the banner's to set (`resize`), not the hosting view's own constraints.
+    host.sizingOptions = []
     panel.contentView = host
     self.panel = panel
     panel.orderFrontRegardless()
@@ -87,7 +90,11 @@ final class MacCallBanner {
     let top = frame.maxY
     frame.size.height = next + Self.margin.top + Self.margin.bottom
     frame.origin.y = top - frame.size.height
-    panel.setFrame(frame, display: true, animate: true)
+    // Animated without holding the main thread (`setFrame(_:display:animate:)` waits for the animation to end).
+    NSAnimationContext.runAnimationGroup { context in
+      context.duration = 0.18
+      panel.animator().setFrame(frame, display: true)
+    }
   }
 
   private func frame(for bannerHeight: Double, on screen: NSScreen?) -> NSRect {
@@ -107,6 +114,11 @@ final class MacCallBanner {
   /** A click on the banner works without bringing Simeon forward (`acceptFirstMouse`). */
   private final class BannerHostingView: NSHostingView<AnyView> {
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+  }
+
+  /** A borderless panel can take the keys only when it says so. */
+  private final class BannerPanel: NSPanel {
+    override var canBecomeKey: Bool { true }
   }
 }
 
@@ -136,6 +148,10 @@ struct MacCallBannerView: View {
     }
     .padding(EdgeInsets(top: MacCallBanner.margin.top, leading: MacCallBanner.margin.left, bottom: MacCallBanner.margin.bottom, trailing: MacCallBanner.margin.right))
     .fixedSize()
+    // Pinned to the top while the panel grows or shrinks under it.
+    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    // A Close or a new call's banner: the old call's 20 s never put the next one away.
+    .onDisappear { dismissing?.cancel(); dismissing = nil }
   }
 
   private var fill: Color { scheme == .dark ? Color(red: 0.165, green: 0.165, blue: 0.176) : .white }
@@ -282,9 +298,11 @@ struct MacCallBannerView: View {
     dismissing?.cancel()
     dismissing = nil
     guard CallBanner.look(call) == .failed, !hovering else { return }
+    let endedAt = call.endedAt
     dismissing = Task {
       try? await Task.sleep(nanoseconds: UInt64(CallBanner.failedStays * 1_000_000_000))
-      guard !Task.isCancelled else { return }
+      // Only the failure it was set for: not a call started since.
+      guard !Task.isCancelled, let now = store.call, now.failed, now.endedAt == endedAt else { return }
       store.dismissCall()
     }
   }
