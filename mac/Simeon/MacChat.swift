@@ -6,10 +6,10 @@ import SimeonCore
 /**
  * The open agent's chat, the window's detail: the iPhone's conversation
  * (`ChatMessages`, every row and card) and composer (`ChatComposer`), with
- * the call's pill above while one is on. Its name sits in the middle of the
- * toolbar, as the Electron window's header has it (the butterfly and the
- * name; a click opens the agent's page); Call, the computer and the page are
- * toolbar buttons. A message's actions are its right-click menu. A thread
+ * the call in its own banner (`MacCallBanner`), not in the chat. Its name
+ * sits in the middle of the toolbar, as the Electron window's header has it
+ * (the butterfly and the name; a click opens the agent's page); Call, the
+ * computer and the page are toolbar buttons. A message's actions are its right-click menu. A thread
  * opens in the chat's place, under its breadcrumb (the agent › the thread;
  * Esc goes back), as the window's thread view does.
  */
@@ -23,8 +23,6 @@ struct MacChat: View {
   @State private var actions = ChatActions()
   @State private var messageMenu = MessageMenu()
   @State private var reply = ReplyDraft()
-  @State private var showsCall = false
-  @State private var showsTranscript = false
   @State private var exchange: ExchangeRoute?
   @State private var finding = false
   @State private var findQuery = ""
@@ -50,7 +48,6 @@ struct MacChat: View {
             MacFindBar(query: $findQuery, matches: findMatches, current: findCurrent, step: findStep, close: closeFind)
               .transition(.move(edge: .top).combined(with: .opacity))
           }
-          ChatCallSlot(agentId: agentId, showsCall: $showsCall, showsTranscript: $showsTranscript)
         }
         .animation(.snappy(duration: 0.2), value: finding)
       }
@@ -98,16 +95,13 @@ struct MacChat: View {
           }
           ToolbarItemGroup(placement: .primaryAction) {
             if store.canCall && agent?.isGroup == false {
-              Button { if let agent { store.startCall(agent) } } label: { Label("Call", systemImage: "phone") }
-                .disabled(agent == nil || store.call != nil)
+              // One call at a time: while one is on, Call brings its banner forward (`voice-call-window.ts`).
+              Button { if let agent { MacCallBanner.call(agent, store: store) } } label: { Label("Call", systemImage: "phone") }
+                .disabled(agent == nil)
                 .help("Call \(agent?.name ?? "")")
             }
           }
         }
-      }
-      .sheet(isPresented: $showsCall) {
-        CallScreen(showsTranscript: $showsTranscript)
-          .frame(width: 420, height: 640)
       }
       .sheet(item: $exchange) { route in
         NavigationStack {

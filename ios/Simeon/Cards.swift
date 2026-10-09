@@ -1599,6 +1599,61 @@ struct VoiceCallLine: View {
   }
 }
 
+/**
+ * A call an older host wrote into the chat as the agent's message ("Voice
+ * call · 2:48", then its recap; `__simeonCallRecord`): in the agent's
+ * bubble, the phone in a 30 pt circle, "Voice call" and its length, a
+ * chevron; a click opens the recap under a hairline, set in 40 pt. 340 pt
+ * wide at most.
+ */
+struct CallRecordRow: View {
+  let record: CallRecord
+  @State private var open = false
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+  private static let disc = Color.dynamic(light: "#0000000f", dark: "#ffffff1a")
+  private static let rule = Color.dynamic(light: "#00000014", dark: "#ffffff1a")
+
+  var body: some View {
+    let recap = record.recap
+    VStack(alignment: .leading, spacing: 0) {
+      Button { if recap != nil { withAnimation(reduceMotion ? nil : .easeOut(duration: 0.22)) { open.toggle() } } } label: {
+        HStack(spacing: 10) {
+          Image(systemName: "phone.fill").font(.system(size: 14)).foregroundStyle(Ink.primary)
+            .frame(width: 30, height: 30)
+            .background(Self.disc, in: Circle())
+          VStack(alignment: .leading, spacing: 1) {
+            Text("Voice call").font(.system(size: MessageType.size, weight: .semibold)).foregroundStyle(Ink.theirsText)
+            Text(record.duration).font(.system(size: 13)).monospacedDigit().foregroundStyle(Ink.secondary)
+          }
+          .frame(maxWidth: .infinity, alignment: .leading)
+          if recap != nil {
+            Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(Ink.secondary)
+              .rotationEffect(.degrees(open ? 90 : 0))
+          }
+        }
+        .contentShape(.rect)
+      }
+      .buttonStyle(.plain)
+      .accessibilityValue(recap == nil ? "" : open ? "expanded" : "collapsed")
+      if open, let recap {
+        Text(recap)
+          .font(.system(size: MessageType.size))
+          .lineSpacing(MessageType.spacing())
+          .foregroundStyle(Ink.theirsText)
+          .textSelection(.enabled)
+          .fixedSize(horizontal: false, vertical: true)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .padding(.leading, 40).padding(.top, 8)
+          .overlay(alignment: .top) { Self.rule.frame(height: 1) }
+          .padding(.top, 8)
+          .transition(.opacity)
+      }
+    }
+    .frame(maxWidth: 340, alignment: .leading)
+  }
+}
+
 struct CallRecordSheet: View {
   let seconds: Int
   let lines: [CallLine]

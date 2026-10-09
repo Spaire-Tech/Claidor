@@ -198,14 +198,34 @@ Node on random events (`ComputerRebuild.swift`, `RebuildDriver.swift`).
 The demo plays an update or a reset out (`mac/scripts/build.sh --demo`,
 then ⌘K, "Update Simeon's Computer").
 
+What slice 5 adds, the call as the Electron app has it: the banner, a
+panel of its own at the top right of the screen under the pointer, above
+every window and on every Space, that never takes the keys from what the
+person is doing and stays when the main window is closed. It rings twice
+and up to seven times, shows "Calling…" and a red hang-up, then the
+waveform or what the agent is doing, the time, Mute, Transcript (what
+both say, in the chat's bubbles) and End; "Call ended · m:ss" leaves after
+1.2 s, a failure ("Couldn't connect", "Calls aren't switched on yet",
+"Out of credit for calls", "Simeon can't use the microphone") stays 20 s,
+longer while the pointer is on it, with Close. Call in the toolbar and
+Agent › Call *name* bring the banner forward while a call is on.
+`SIMEON_VOICE_CALLS=0` switches calls off; each step goes to
+`~/Library/Application Support/Simeon/voice-call.log`. A call an older
+host wrote as a message ("Voice call · 2:48" and its recap) is drawn as
+the window draws it. The rules are in SimeonCore (`CallBanner`,
+`CallRecord`, `LiveCall`); the demo's call is scripted (`DemoCall`) and
+never fails, so the failure's banner shows only on a real call.
+
 ## What can and cannot be checked here
 
 - `SimeonCore` and `SimeonMacCore` build and their tests run on Linux
   (`cd ios/SimeonCore && swift test`): the links the app opens, the
   sidebar's order for ⌘1 to ⌘9 and ⌥↑ ⌥↓, slice 3's rules (the To:
   search, sections, schedules and events) and slice 4's (the computer's
-  words, the status store, the rebuild lock and its steps) against values
-  made by running the window's own functions.
+  words, the status store, the rebuild lock and its steps) and slice 5's
+  (the banner's looks and words, the waveform, the older call record, the
+  switch, the Mac's tones, a failed call waiting to be closed) against
+  values made by running the window's own functions.
 - The app's own files, the Mac's and the shared iPhone ones, can only be
   parsed off a Mac (`swiftc -parse`), not compiled: SwiftUI and AppKit are
   not here. Every slice is built and run on the founder's Mac before it

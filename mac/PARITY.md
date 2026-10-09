@@ -292,10 +292,10 @@ The menus, zoom and full screen are in §9.
 
 | What | Where | Phone | Mac |
 |---|---|---|---|
-| Start from the name or Agent › Call *name*; one call at a time | patch 375-384, main `application-menu.ts` | yes (the button) | written |
-| The call: the rings, the avatar, the name, what the agent is doing ("Calling…", "Using Gmail…"), the waveform, Mute, Transcript, End; "Call ended · m:ss" with the hang-up; "Couldn't connect", "Calls aren't switched on yet" (503), "Out of credit for calls" (402) | `desktop/source/voice-call/` | yes (the phone's call screen; a floating banner on the Mac, §6) | part: the phone's call screen as a sheet (the banner is slice 5) |
+| Start from the name or Agent › Call *name*; one call at a time | patch 375-384, main `application-menu.ts` | yes (the button) | written: the toolbar's Call and Agent › Call *name* ("Call Agent", greyed, with no agent open; neither while `SIMEON_VOICE_CALLS` switches calls off); during a call both bring its banner forward (`MacCallBanner.call`) |
+| The call: the rings, the avatar, the name, what the agent is doing ("Calling…", "Using Gmail…"), the waveform, Mute, Transcript, End; "Call ended · m:ss" with the hang-up; "Couldn't connect", "Calls aren't switched on yet" (503), "Out of credit for calls" (402) | `desktop/source/voice-call/` | yes (the phone's call screen; a floating banner on the Mac, §6) | written (`MacCallBanner`, `CallBanner` in the core): the banner's look for each moment (`data-state`), its status line, the 46-bar waveform, the transcript in the chat's bubbles ("What you both say shows up here."), Mute or Unmute, Transcript, End, the red hang-up while it rings, Close on a failure; the rings and hang-up at the Mac banner's loudness |
 | "Voice chat · 01:49" in the chat, opening the call | patch 403-457 | yes | written |
-| The older "Voice call · m:ss" record with its recap | patch 396-402 | partly (as text) | |
+| The older "Voice call · m:ss" record with its recap | patch 396-402 | yes (`CallRecordRow`) | written (`CallRecordRow`, `CallRecord`): in the agent's bubble, the phone in its circle, "Voice call" and the length; a click opens the recap |
 
 ### 2.18 Settings
 
@@ -472,8 +472,8 @@ The Swift app does each of these itself:
 | **Avatars**: pick a file (25 MB, scaled to 1024 px), generate one (`/desktop/api/proxy/v1/images/generations`) | `pickAvatarSource`, `pickAvatarFile`, `generateAgentAvatarImage` | yes (`AgentPage.swift`) | written |
 | **Dictation** through the server (`/desktop/api/proxy/v1/audio/transcriptions`) | `transcribeAudio` | partly (Apple's on-device dictation) | |
 | **Calls**: availability, start, the voice picker, previews, each agent's voice | `voiceCall.*`, main `voice/` | yes (`VoiceCall.swift`, `CallViews.swift`, `AgentVoices.swift`, `CallTones.swift`) | written |
-| Thumbs on a finished call (`/voice/calls/{id}/feedback`); the window draws none today | `voiceCall.rateCall` | no | |
-| The call as a floating banner (360 pt, top right under the menu bar, every Space, no focus taken; leaves 1.2 s after the end, a failure stays 20 s) | `desktop/source/voice-call/`, main `voice/voice-call-window.ts` | no (a full screen on the phone) | |
+| Thumbs on a finished call (`/voice/calls/{id}/feedback`); the window draws none today | `voiceCall.rateCall` | no | not built: the shipped window draws no thumbs, so neither does the Mac |
+| The call as a floating banner (360 pt, top right under the menu bar, every Space, no focus taken; leaves 1.2 s after the end, a failure stays 20 s) | `desktop/source/voice-call/`, main `voice/voice-call-window.ts` | no (a full screen on the phone) | written (`MacCallBanner`): an `NSPanel` that never takes the keys, on every Space, at the top right of the screen under the pointer; it grows with the transcript (40 to 480 pt) from its top; a click works without bringing Simeon forward; it opens and closes with the call whichever windows are open |
 | **Connectors**: the 79-connector catalog, install, accounts, custom servers by URL, tools on and off, custom instructions, team numbers, logos | `mcp.*`, main `mcp/desktop-mcp-manager.ts` | partly (no custom servers, instructions, team numbers, uninstall) | |
 | `simeon://app/v1/plugin/add?id=` opens a connector to add | main `deep-link/`, `shared/deep-link.ts` | no | |
 | **Secrets**: list, reveal, add, remove, pushed to the box. The window has no page for them today; the card that asks for one goes to the box itself (`submitSecret`) | `secrets.*`, main `secrets/` | yes (the card) | written |
@@ -550,7 +550,7 @@ itself.
 | "Move Simeon to the Applications folder?" | main `startup/move-to-applications-folder.ts` | n/a | |
 | Tokens in the Keychain; secrets and the box address stored encrypted | main `secrets/secret-store.ts` | yes (`KeychainVault`) | written |
 | The data folder `~/.simeon` | main `startup/startup-data-root-migration.ts` | n/a | |
-| Logs a person can send: `computer-stream.log`, `voice-call.log`, `~/.simeon/vendor-mcp-signin.log` | main | partly (`HangWatch.swift`) | |
+| Logs a person can send: `computer-stream.log`, `voice-call.log`, `~/.simeon/vendor-mcp-signin.log` | main | partly (`HangWatch.swift`) | part: `computer-stream.log` (`ComputerStreamLog`) and `voice-call.log` (`VoiceCallLog`: the same lines as the Electron service, "call started for agent …", "connect: token issued …", "connected: conversation …", "call ended: 43s", appended with their time in `~/Library/Application Support/Simeon`) |
 
 ## 10. Build and release
 
@@ -604,7 +604,10 @@ Each slice ends with a build on the founder's Mac and their screenshots.
    Written. Presence is not built (nothing in the window reads it), nor
    teaching (its gate is off), nor the telemetry the window sends.
 5. **Calls.** The floating banner, Agent › Call, the rings and hang-up,
-   the voice picker, thumbs.
+   the voice picker, thumbs. Written. The voice picker is slice 3's (the
+   agent's avatar editor). Thumbs are not built: the shipped window draws
+   none. "Call again" and "Open chat" are not built: the service answers
+   them, but the shipped banner has no button for either.
 6. **Settings, all of it.** Connect apps with everything in §2.19
    (Setup values, Details, filters, skills), Models, Time zone,
    Auto-review, Usage and Billing with the trial, privacy, the access

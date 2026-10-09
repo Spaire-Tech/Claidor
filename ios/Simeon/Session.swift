@@ -146,7 +146,14 @@ final class SessionController {
     let backend = LiveBackend(gateway: Gateway(api: api), api: api)
     let names = personName
     let store = store
+    #if os(macOS)
+    // The Mac's: none while `SIMEON_VOICE_CALLS` switches calls off; a failed call stays on the banner until it is closed (or its 20 s); each step in `voice-call.log`.
+    if voiceCallsEnabled() {
+      backend.call = LiveCall(backend: backend, transport: ElevenLabsVoice(), personName: { names.value }, voiceFor: { agentId in await store.ensureVoice(agentId) }, tones: CallTonePlayer(), failedStays: nil, log: { VoiceCallLog.shared.write($0) })
+    }
+    #else
     backend.call = LiveCall(backend: backend, transport: ElevenLabsVoice(), personName: { names.value }, voiceFor: { agentId in await store.ensureVoice(agentId) }, tones: CallTonePlayer())
+    #endif
     // The profile is asked for first and applied the moment it answers, beside the roster.
     Task { [weak self] in
       guard let profile = try? await api.profile(), let self, self.api === api else { return }

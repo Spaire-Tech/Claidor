@@ -1554,4 +1554,6 @@ public final class AppStore {
 
   public func mute(_ muted: Bool) { backend?.call?.mute(muted) }
   public func hangUp() { backend?.call?.hangUp() }
+  /** A finished or failed call put away (the banner's Close). */
+  public func dismissCall() { backend?.call?.dismiss() }
 }

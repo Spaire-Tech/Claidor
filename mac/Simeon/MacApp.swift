@@ -28,6 +28,8 @@ struct SimeonMacApp: App {
         .onChange(of: session.launch.theme ?? theme, initial: true) { _, name in MacAppearance.apply(name) }
         .task { await session.start() }
         .task { HangWatch.start() }
+        // The call's banner, a panel of its own above every window (`MacCallBanner`).
+        .task { MacCallBanner.shared.follow(session.store) }
         // A link to the app (back from the browser's sign-in, a connector to add) comes to this window, not a new one.
         .onOpenURL { url in navigation.open(url) }
         .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
@@ -327,8 +329,12 @@ struct AgentMenuItems: View {
 
   var body: some View {
     let agent = agent
-    Button(agent.map { "Call \($0.name)" } ?? "Call") { if let agent { store.startCall(agent) } }
-      .disabled(agent == nil || agent?.isGroup == true || !store.canCall || store.call != nil)
+    // Agent › Call <name> (`menuItem`): the agent open in the window, else a disabled "Call Agent"; none while calls are switched off. During a call it brings the banner forward.
+    if store.canCall {
+      let callee = agent?.isGroup == false ? agent : nil
+      Button(callee.map { "Call \($0.name)" } ?? "Call Agent") { if let callee { MacCallBanner.call(callee, store: store) } }
+        .disabled(callee == nil)
+    }
     Button("Edit Profile") { if let agent { navigation.openPane(.profile, agent: agent.id) } }
       .disabled(agent == nil)
     Button("Open Computer") { if let agent { store.openComputer(agent.id); openWindow(id: "computer", value: agent.id) } }

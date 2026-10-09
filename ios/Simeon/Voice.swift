@@ -91,8 +91,17 @@ final class CallTonePlayer: CallTonePlaying, @unchecked Sendable {
   private var ringer: AVAudioPlayer?
   private var ender: AVAudioPlayer?
 
+  #if os(macOS)
+  /** The Mac banner's own loudness: a Mac's speakers are louder than a phone's. */
+  private static let ringPeak = CallTones.macRingPeak
+  private static let hangUpPeak = CallTones.macHangUpPeak
+  #else
+  private static let ringPeak = CallTones.ringPeak
+  private static let hangUpPeak = CallTones.hangUpPeak
+  #endif
+
   func ring(cycles: Int) async {
-    let player = Self.player(CallTones.wav(CallTones.ringSamples(cycles: cycles)))
+    let player = Self.player(CallTones.wav(CallTones.ringSamples(cycles: cycles, peak: Self.ringPeak)))
     lock.withLock { ringer?.stop(); ringer = player }
     player?.play()
     try? await Task.sleep(nanoseconds: UInt64(Double(cycles) * CallTones.ringCycleSeconds * 1_000_000_000))
@@ -104,7 +113,7 @@ final class CallTonePlayer: CallTonePlaying, @unchecked Sendable {
   }
 
   func hangUp() {
-    let player = Self.player(CallTones.wav(CallTones.hangUpSamples()))
+    let player = Self.player(CallTones.wav(CallTones.hangUpSamples(peak: Self.hangUpPeak)))
     lock.withLock { ender = player }
     player?.play()
   }
@@ -120,6 +129,45 @@ final class CallTonePlayer: CallTonePlaying, @unchecked Sendable {
     return player
   }
 }
+
+#if os(macOS)
+/**
+ * The Mac's `voice-call.log` (`createVoiceCallLog`): a line per step of a
+ * call, its time first, appended in the app's folder
+ * (`~/Library/Application Support/Simeon`) and echoed to stderr as
+ * `[simeon] voice-call`.
+ */
+final class VoiceCallLog: @unchecked Sendable {
+  static let shared = VoiceCallLog()
+
+  private let lock = NSLock()
+  private let file: URL
+  private let stamp: ISO8601DateFormatter
+
+  private init() {
+    let folder = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!.appendingPathComponent("Simeon", isDirectory: true)
+    file = folder.appendingPathComponent("voice-call.log")
+    stamp = ISO8601DateFormatter()
+    stamp.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+  }
+
+  func write(_ line: String) {
+    let text = line.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+    lock.withLock {
+      let stamped = Data("\(stamp.string(from: Date())) \(text)\n".utf8)
+      try? FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+      if let handle = try? FileHandle(forWritingTo: file) {
+        _ = try? handle.seekToEnd()
+        try? handle.write(contentsOf: stamped)
+        try? handle.close()
+      } else {
+        try? stamped.write(to: file)
+      }
+    }
+    FileHandle.standardError.write(Data("[simeon] voice-call \(line)\n".utf8))
+  }
+}
+#endif
 
 /** The person's name for the call's prompt, read by the call off the main thread. */
 final class PersonNameBox: @unchecked Sendable {

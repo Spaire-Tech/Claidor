@@ -27,11 +27,14 @@ public enum CallTones {
   static let hangUpNoteSeconds = 0.13
   static let hangUpGapSeconds = 0.04
   static let sampleRate = 44_100
-  static let ringPeak = 0.3
-  static let hangUpPeak = 0.35
+  public static let ringPeak = 0.3
+  public static let hangUpPeak = 0.35
+  /** The Mac banner's own loudness (`RING_GAIN` 0.05 on each of the two tones, `HANG_UP_GAIN` 0.07): a Mac's speakers are louder than a phone's. */
+  public static let macRingPeak = 0.1
+  public static let macHangUpPeak = 0.07
 
   /** `cycles` rings, each its tone and its quiet. */
-  public static func ringSamples(cycles: Int) -> [Float] {
+  public static func ringSamples(cycles: Int, peak: Double = ringPeak) -> [Float] {
     let rate = Double(sampleRate)
     let cycle = Int(ringCycleSeconds * rate)
     let tone = Int(ringToneSeconds * rate)
@@ -42,14 +45,14 @@ public enum CallTones {
         let t = Double(n) / rate
         let gain = min(1, Double(n) / edge, Double(tone - n) / edge)
         let wave = ringFrequencies.reduce(0) { $0 + sin(2 * .pi * $1 * t) } / Double(ringFrequencies.count)
-        samples[index * cycle + n] = Float(wave * gain * ringPeak)
+        samples[index * cycle + n] = Float(wave * gain * peak)
       }
     }
     return samples
   }
 
   /** The two falling notes: a 0.012 s rise, then a fall to a thousandth over the note. */
-  public static func hangUpSamples() -> [Float] {
+  public static func hangUpSamples(peak: Double = hangUpPeak) -> [Float] {
     let rate = Double(sampleRate)
     let note = Int(hangUpNoteSeconds * rate)
     let gap = Int(hangUpGapSeconds * rate)
@@ -59,7 +62,7 @@ public enum CallTones {
       for n in 0..<note {
         let t = Double(n) / rate
         let gain = Double(n) < attack ? Double(n) / attack : pow(0.001, (Double(n) - attack) / (Double(note) - attack))
-        samples.append(Float(sin(2 * .pi * frequency * t) * gain * hangUpPeak))
+        samples.append(Float(sin(2 * .pi * frequency * t) * gain * peak))
       }
       samples.append(contentsOf: [Float](repeating: 0, count: gap))
     }

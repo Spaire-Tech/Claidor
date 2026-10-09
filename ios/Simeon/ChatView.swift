@@ -1101,12 +1101,17 @@ struct BubbleView: View {
     } else {
       VStack(alignment: .leading, spacing: 6) {
         VStack(alignment: .leading, spacing: 6) {
-          MarkdownView(blocks: Markdown.cachedBlocks(shown.text), mentioning: Mentioning(names: store.mentionNames, personName: store.account?.name, dark: scheme == .dark))
-            .foregroundStyle(Ink.theirsText)
-            .tint(Ink.link)
-            // A diagram waits until the message is written (the window's rule).
-            .environment(\.messageStreaming, bubble.isStreaming)
-          if shown.clipped || expanded { more(light: false) }
+          if !bubble.isStreaming, let record = CallRecord.parse(bubble.text) {
+            // A call an older host wrote as a message: its row, which opens on the recap (the window's).
+            CallRecordRow(record: record)
+          } else {
+            MarkdownView(blocks: Markdown.cachedBlocks(shown.text), mentioning: Mentioning(names: store.mentionNames, personName: store.account?.name, dark: scheme == .dark))
+              .foregroundStyle(Ink.theirsText)
+              .tint(Ink.link)
+              // A diagram waits until the message is written (the window's rule).
+              .environment(\.messageStreaming, bubble.isStreaming)
+            if shown.clipped || expanded { more(light: false) }
+          }
         }
           .padding(.horizontal, 12).padding(.vertical, 8)
           .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
