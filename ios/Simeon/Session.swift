@@ -33,6 +33,8 @@ struct Launch {
   let demo: Bool
   /** The demo with a chat of every card the Mac draws ("Cards"), for the screenshots. */
   let gallery: Bool
+  /** The demo as a new account: no agents, the first run (`--onboarding`). */
+  let onboarding: Bool
   let screen: String?
   let theme: String?
   let api: URL
@@ -45,7 +47,8 @@ struct Launch {
     }
     let api = value("api").flatMap(URL.init(string:)) ?? SimeonConfig.defaultAPI
     let gallery = arguments.contains("--gallery")
-    return Launch(demo: gallery || arguments.contains("--demo") || environment["SIMEON_DEMO"] == "1", gallery: gallery, screen: value("screen"), theme: value("theme"), api: api)
+    let onboarding = arguments.contains("--onboarding")
+    return Launch(demo: gallery || onboarding || arguments.contains("--demo") || environment["SIMEON_DEMO"] == "1", gallery: gallery, onboarding: onboarding, screen: value("screen"), theme: value("theme"), api: api)
   }()
 }
 
@@ -65,6 +68,12 @@ final class SessionController {
   }
 
   private(set) var phase: Phase = .starting
+  /** The first run (Onboarding.swift): being looked up, to do, or done. Only a new account does it. */
+  enum FirstRunGate: Equatable { case checking, needed, done }
+  private(set) var firstRun: FirstRunGate = .done
+  /** The name the server suggests for the person (`user/profile`), for the onboarding's name step. */
+  private(set) var suggestedName: String?
+  @ObservationIgnored private var askedForNotifications = false
   let store = AppStore()
   private let vault = KeychainVault()
   @ObservationIgnored private var api: SimeonAPI?
@@ -81,7 +90,9 @@ final class SessionController {
   func start() async {
     if launch.demo {
       store.account = Account(name: "Bass Fall", email: "bass@simeonlabs.com")
-      await store.attach(DemoBackend(seed: DemoData.seed(gallery: launch.gallery), pace: 0.6))
+      await store.attach(DemoBackend(seed: launch.onboarding ? .empty : DemoData.seed(gallery: launch.gallery), pace: 0.6))
+      suggestedName = "Bass"
+      firstRun = launch.onboarding ? .needed : .done
       phase = .signedIn
       return
     }
@@ -100,24 +111,59 @@ final class SessionController {
   private func enter() async {
     let api = makeAPI()
     self.api = api
+    firstRun = .checking
     phase = .signedIn
     // The voice call: ElevenLabs' kit on the phone, the Mac's call protocol in SimeonCore (LiveCall).
     let backend = LiveBackend(gateway: Gateway(api: api), api: api)
     let names = personName
     backend.call = LiveCall(backend: backend, transport: ElevenLabsVoice(), personName: { names.value })
     await store.attach(backend)
-    // Ask for notifications once signed in, and register this phone with Apple and Simeon Labs.
-    Task { await Notifications.shared.start(api: api) }
-    if let profile = try? await api.profile() {
+    async let profile = api.profile()
+    await checkFirstRun()
+    if let profile = try? await profile {
       store.account = Account(profile: profile)
       names.value = store.account?.name
+      suggestedName = profile["preferredName"]?.text ?? profile["suggestedName"]?.text
     }
+  }
+
+  /**
+   * The Mac's start-up gate: a new account (never onboarded, no agents) gets
+   * the first run. A computer that does not answer is asked once more after
+   * 2.5 s; then the first run shows, as on the Mac, and steps aside if the
+   * agents turn up (its hand-off checks again before making anything).
+   */
+  private func checkFirstRun() async {
+    var answer = await store.firstRun()
+    if answer == .unknown && phase == .signedIn {
+      try? await Task.sleep(nanoseconds: 2_500_000_000)
+      if store.agents.isEmpty { answer = await store.firstRun() } else { answer = .seen }
+    }
+    guard phase == .signedIn else { return }
+    firstRun = answer == .seen ? .done : .needed
+    if firstRun == .done { askForNotifications() }
+  }
+
+  /** The first run is over: Simeon's chat opens (when he was just made), and only now does the phone ask about notifications. */
+  func finishOnboarding(opening agentId: String?) {
+    if let agentId { Notifications.shared.openAgent = agentId }
+    firstRun = .done
+    askForNotifications()
+  }
+
+  /** Ask for notifications once signed in, and register this phone with Apple and Simeon Labs. */
+  private func askForNotifications() {
+    guard let api, !askedForNotifications else { return }
+    askedForNotifications = true
+    Task { await Notifications.shared.start(api: api) }
   }
 
   private func ended() {
     store.detach()
     Notifications.shared.forget()
     api = nil
+    askedForNotifications = false
+    firstRun = .done
     phase = .signedOut(message: "Your Simeon sign-in ended. Sign in again.")
   }
 
@@ -159,6 +205,8 @@ final class SessionController {
     await Notifications.shared.stop()
     await api?.signOut()
     api = nil
+    askedForNotifications = false
+    firstRun = .done
     phase = .signedOut(message: nil)
   }
 }

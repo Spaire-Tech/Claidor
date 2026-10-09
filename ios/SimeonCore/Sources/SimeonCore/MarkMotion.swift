@@ -111,6 +111,10 @@ public struct MarkFrame: Sendable, Equatable {
   public var rings: [MarkRing] = []
   /** The view zooms in by this about its centre (a small mark's glyph). */
   public var zoom = 1.0
+  /** How far the butterfly has turned (radians): a turn's progress, or the whirl's endless spin. The light trails follow it. */
+  public var spinAngle = 0.0
+  /** Making a picture: the whirl keeps throwing light trails. */
+  public var whirling = false
 
   public static let rest = MarkFrame()
 }
@@ -133,7 +137,8 @@ struct MarkSpring {
  * spins a working or searching agent does every few seconds (the outline
  * turned as a set of spheres), and the fold into a glyph while it thinks
  * or waits (the wings morph into a small orb, the details fade, and the
- * three dots ripple). The spin's light trails are not drawn here.
+ * three dots ripple). The spin's light trails follow its `spinAngle`
+ * (LightTrails).
  */
 public final class MarkEngine {
   private let random: () -> Double
@@ -149,6 +154,8 @@ public final class MarkEngine {
   private var fadingGlyph: MarkGlyph?
   private var lastGlyphTarget: MarkGlyph?
   private var glyphStartMs = -1e9
+  /** The whirl's own turn while it makes a picture (`Ft`). */
+  private var whirlAngle = 0.0
 
   public init(random: @escaping () -> Double = { Double.random(in: 0..<1) }) {
     self.random = random
@@ -185,6 +192,12 @@ public final class MarkEngine {
     if crossfade.x > 0.996 { fadingGlyph = nil }
 
     pose(ms, state)
+    // Making a picture, the orb spins without end: up to 7 rad/s by half a second, easing to 3 by 1.3 s (`Ft`).
+    if state == .loading {
+      let z = (ms - stateStartMs) / 1000
+      let speed = z < 0.5 ? 7 * easeInOutCubic(z / 0.5) : z < 1.3 ? 7 + (3 - 7) * easeInOutCubic((z - 0.5) / 0.8) : 3 + 0.3 * sin(z * 0.5)
+      whirlAngle += speed * dt
+    }
 
     let steps = max(1, Int((dt / (1.0 / 120)).rounded(.up)))
     let h = dt / Double(steps)
@@ -193,7 +206,9 @@ public final class MarkEngine {
       turn.step(5, 0.9, h); tilt.step(3.5, 1, h); roll.step(4, 1, h); squash.step(10, 0.8, h)
       fold.step(14, 1, h); crossfade.step(11, 1, h)
     }
-    return render(ms, sizePoints)
+    var frame = render(ms, sizePoints)
+    if spin == nil && state == .loading { frame.spinAngle = whirlAngle; frame.whirling = true }
+    return frame
   }
 
   /** Each state's pose targets (`Gr`), and its spins. */
@@ -274,6 +289,7 @@ public final class MarkEngine {
       } : ring
     }
     frame.artOpacity = max(0, 1 - 2.2 * morph)
+    frame.spinAngle = spinAngle
 
     func amount(_ g: MarkGlyph) -> Double { g == glyph ? folded * mix : g == fading ? folded * (1 - mix) : 0 }
     let orb = glyph.map { $0.orbRadius * mix + (fading?.orbRadius ?? $0.orbRadius) * (1 - mix) } ?? 19

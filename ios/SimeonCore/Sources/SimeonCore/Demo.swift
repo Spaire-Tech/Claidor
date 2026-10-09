@@ -410,6 +410,18 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
       return ["path": .string("/home/box/attachments/\(args["filename"]?.text ?? "file")")]
     case "ensureForeverBox", "getForeverBoxStatus":
       return ["status": "starting", "vncUrl": nil]
+    case "countAgents":
+      return .number(Double(lock.withLock { agents.count }))
+    case "createAgent":
+      // The first run's Simeon (Onboarding.swift): the profile it is sent, introduced as the Mac's Chief of Staff introduces himself.
+      let id = "agent-\(UUID().uuidString.prefix(6).lowercased())"
+      let agent = Agent(id: id, name: args["name"]?.text ?? "Simeon", title: args["title"]?.string ?? "", description: args["description"]?.string ?? "", colour: args["avatarColor"]?.text ?? "blue", lastActivityAt: Date().timeIntervalSince1970 * 1000)
+      lock.withLock { agents.append(agent); transcripts[id] = [] }
+      emit(.agentUpserted(agent))
+      playOnboarding(id)
+      return ["agent": ["id": .string(id)]]
+    case "kickstartAgent":
+      return ["isIntroductionInFlight": true]
     default:
       break
     }
@@ -429,6 +441,8 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
       return ["seconds": body?["seconds"] ?? 0, "summary": "Bass asked to move the review; it's done.", "transcript": [["speaker": "agent", "text": "Hey Bass."], ["speaker": "user", "text": "Move the review to Friday."]]]
     case "billing/portal":
       return ["portalUrl": "https://simeonlabs.com/billing"]
+    case "user/name":
+      return ["preferredName": body?["name"] ?? .null]
     case "proxy/v1/voice/voices":
       return .array([("ljX1ZrXuDIIRVcmiVSyR", "Michael"), ("1t1EeRixsJrKbiF1zwM6", "Jerry"), ("XcXEQzuLXRU9RcfWzEJt", "Veda"), ("s3TPKV1kjDlVtZbl4Ksh", "Adam"), ("UgBBYS2sOqTuMpoF3BR0", "Mark"), ("6OzrBCQf8cjERkYgzSg8", "Jamal")].map { ["id": .string($0.0), "name": .string($0.1)] })
     default:

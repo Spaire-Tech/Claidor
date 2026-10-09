@@ -292,17 +292,30 @@ struct ChatMessages: View {
   }
 }
 
-/** The agent at work, at the end of the conversation. */
+/**
+ * The agent at work, at the end of the conversation, while it writes or
+ * runs (the window's activity row: `isComposingMessage`, or `isRunning`
+ * and not waiting on you). It comes in as the Mac's does (0.18 s, from
+ * 92 %, `cubic-bezier(.22,1,.36,1)`) and goes the same way in 0.14 s.
+ */
 struct TypingSlot: View {
   let agentId: String
   @Environment(AppStore.self) private var store
 
   var body: some View {
-    if let agent = store.agent(agentId), agent.isBusy {
-      TypingRow(agent: agent, step: agent.isGroup ? (agent.activityLabel ?? store.steps[agentId]) : nil)
-        .padding(.top, 16)
-        .transition(.opacity)
+    let agent = store.agent(agentId)
+    let working = agent.map { $0.isBusy || ($0.isRunning && !$0.awaitingUserResponse) } ?? false
+    ZStack(alignment: .leading) {
+      if working, let agent {
+        TypingRow(agent: agent, step: agent.isGroup ? (agent.activityLabel ?? store.steps[agentId]) : nil)
+          .padding(.top, 16)
+          .transition(.asymmetric(
+            insertion: .scale(scale: 0.92, anchor: .leading).combined(with: .opacity).animation(.timingCurve(0.22, 1, 0.36, 1, duration: 0.18)),
+            removal: .scale(scale: 0.92, anchor: .leading).combined(with: .opacity).animation(.easeIn(duration: 0.14))))
+      }
     }
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .animation(.timingCurve(0.22, 1, 0.36, 1, duration: 0.18), value: working)
   }
 }
 
@@ -613,6 +626,8 @@ struct BubbleView: View {
   @Environment(ReplyDraft.self) private var reply: ReplyDraft?
   @Environment(MessageMenu.self) private var messageMenu: MessageMenu?
   @State private var reacting: Set<String> = []
+  /** The reactions it had when it came on screen: only one added after pops in (the Mac's `FEn`). */
+  @State private var reactionsSeen: Set<String>?
   /** Show more on a long message (the Mac folds one past 664 pt). */
   @State private var expanded = false
 
@@ -718,7 +733,7 @@ struct BubbleView: View {
   private var reactions: some View {
     if !bubble.reactions.isEmpty {
       HStack(spacing: 4) {
-        ForEach(Array(Self.counted(bubble.reactions).enumerated()), id: \.offset) { _, item in
+        ForEach(Self.counted(bubble.reactions), id: \.emoji) { item in
           HStack(spacing: 3) {
             Text(item.emoji).font(.system(size: 14))
             if item.count > 1 { Text("\(item.count)").font(.system(size: 12)).foregroundStyle(Ink.secondary) }
@@ -730,11 +745,14 @@ struct BubbleView: View {
           .opacity(reacting.contains(item.emoji) ? 0.5 : 1)
           .contentShape(Capsule())
           .onTapGesture { react(item.emoji) }
+          .modifier(ReactionPop(pops: reactionsSeen.map { !$0.contains(item.emoji) } ?? false))
         }
       }
       .padding(.horizontal, 10)
       .offset(y: 16)
     }
+    Color.clear.frame(width: 0, height: 0)
+      .onAppear { if reactionsSeen == nil { reactionsSeen = Set(bubble.reactions) } }
   }
 
   /** One reaction at a time per emoji: the host toggles it, so a second tap before it answers would take it back. */
@@ -756,11 +774,15 @@ struct BubbleView: View {
 
 /**
  * The agent at work, as the Mac's chat shows it (`sand-activity-mark`):
- * in a one-to-one chat its butterfly alone, 28 pt, moving as it works:
- * folded into three dots while it thinks, five dots circling while it
- * waits on someone, a dot flying off while it messages another agent. In
- * a group (`sand-activity-line`), one member's butterfly at 22 pt, working,
- * beside what the group is doing ("Searching the web").
+ * in a one-to-one chat its butterfly, 28 pt, moving as it works (folded
+ * into three dots while it thinks, five dots circling while it waits on
+ * someone, a dot flying off while it messages another agent, whirling
+ * while it makes a picture, a turn with its light trails every few seconds
+ * while it runs commands), and beside it what it is doing, under the
+ * Mac's moving light: "Running commands", "Searching the web", "Messaging
+ * Iris" (the Mac shows the words when the pointer is over the row; a phone
+ * has no pointer, so they always show). In a group (`sand-activity-line`),
+ * one member's butterfly at 22 pt beside who is at work.
  */
 struct TypingRow: View {
   let agent: Agent
@@ -769,23 +791,239 @@ struct TypingRow: View {
 
   var body: some View {
     if agent.isGroup {
-      let members = store.members(of: agent)
+      GroupActivityLine(agent: agent, step: step)
+    } else {
+      let line = agent.activityLine(named: { store.agent($0)?.name })
       HStack(spacing: 8) {
-        if let member = members.first(where: \.isBusy) ?? members.first {
-          ButterflyView(palette: member.palette, motion: .working).frame(width: 22, height: 22)
-        }
-        Text(step ?? "Working…").font(.system(size: 14)).foregroundStyle(Ink.secondary).lineLimit(1)
+        ButterflyView(palette: agent.palette, motion: agent.markState == .idle ? .working : agent.markState)
+          .frame(width: 28, height: 28)
+          .modifier(MarkPop())
+        if let line { ActivityLabel(line: line) }
       }
       .padding(.leading, 8)
       .frame(height: 36)
-      .accessibilityElement(children: .combine)
-    } else {
-      ButterflyView(palette: agent.palette, motion: agent.markState == .idle ? .working : agent.markState)
-        .frame(width: 28, height: 28)
-        .padding(.leading, 8)
-        .frame(height: 36)
-        .accessibilityLabel(agent.markState == .thinking ? "\(agent.name) is typing" : "\(agent.name) is working")
+      .accessibilityElement(children: .ignore)
+      .accessibilityLabel(line.map { "\(agent.name): \($0.text)" } ?? (agent.markState == .thinking ? "\(agent.name) is typing" : "\(agent.name) is working"))
     }
+  }
+}
+
+/** The butterfly's own entrance into the row (0.34 s from 60 %, a little past and back, 0.22 s after the row). */
+struct MarkPop: ViewModifier {
+  @State private var shown = false
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+  func body(content: Content) -> some View {
+    content
+      .scaleEffect(shown ? 1 : 0.6)
+      .opacity(shown ? 1 : 0)
+      .onAppear {
+        guard !shown else { return }
+        if reduceMotion { shown = true; return }
+        withAnimation(.timingCurve(0.34, 1.56, 0.64, 1, duration: 0.34).delay(0.22)) { shown = true }
+      }
+  }
+}
+
+/**
+ * What the agent is doing, in words (`TJn`): its little picture and the
+ * line under the moving light. A new activity comes in from 4 pt below
+ * (0.18 s); one that changes again within 0.8 s waits its turn, so the
+ * words do not flicker; after a minute at it, how long (" · 3m").
+ */
+struct ActivityLabel: View {
+  let line: ActivityLine
+  @State private var shown: ActivityLine?
+  @State private var shownAt = Date.distantPast
+  @State private var startedAt = Date()
+
+  var body: some View {
+    let current = shown ?? line
+    ZStack(alignment: .leading) {
+      HStack(spacing: 6) {
+        ActivityIcon(icon: current.icon)
+        ShimmerText(text: current.text)
+        TimelineView(.periodic(from: startedAt, by: 30)) { context in
+          if let elapsed = ActivityLine.elapsed(context.date.timeIntervalSince(startedAt)) {
+            Text("· \(elapsed)").font(.system(size: 12)).foregroundStyle(Ink.tertiary).monospacedDigit()
+          }
+        }
+      }
+      .lineLimit(1)
+      .id(current.key)
+      .transition(.asymmetric(insertion: .opacity.combined(with: .offset(y: 4)), removal: .opacity))
+    }
+    .animation(.timingCurve(0.22, 1, 0.36, 1, duration: 0.18), value: current.key)
+    .task(id: line) {
+      if let shown, shown == line { return }
+      let wait = 0.8 - Date().timeIntervalSince(shownAt)
+      if shown != nil && wait > 0 {
+        try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000))
+        guard !Task.isCancelled else { return }
+      }
+      if shown?.key != line.key { startedAt = Date() }
+      shown = line
+      shownAt = Date()
+    }
+  }
+}
+
+/** The activity's little picture: the window's glyph as the system's symbol, the app's logo, or the agent being messaged. */
+struct ActivityIcon: View {
+  let icon: ActivityLine.Icon
+  @Environment(AppStore.self) private var store
+
+  var body: some View {
+    Group {
+      switch icon {
+      case .glyph(let name):
+        Image(systemName: Self.symbol(name)).font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.secondary)
+      case .connector(let service):
+        if let logo = UIImage(named: "Connectors/\(CatalogApp.slug(service))") {
+          Image(uiImage: logo).resizable().scaledToFit()
+        } else {
+          Image(systemName: "powerplug").font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.secondary)
+        }
+      case .agent(let id):
+        if let agent = store.agent(id) { AgentAvatar(agent: agent) } else {
+          Image(systemName: "bubble.left").font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.secondary)
+        }
+      }
+    }
+    .frame(width: 16, height: 16)
+  }
+
+  /** The window's glyphs, as SF Symbols. */
+  static func symbol(_ glyph: String) -> String {
+    switch glyph {
+    case "thinking-medium": return "brain"
+    case "magnifying-glass": return "magnifyingglass"
+    case "globe": return "globe"
+    case "book-open": return "book"
+    case "pencil": return "pencil"
+    case "laptop": return "laptopcomputer"
+    case "terminal": return "apple.terminal"
+    case "hourglass": return "hourglass"
+    case "image": return "photo"
+    case "cursor-logo": return "chevron.left.forwardslash.chevron.right"
+    case "device-desktop": return "desktopcomputer"
+    case "person-chat-bubble": return "bubble.left"
+    case "plug": return "powerplug"
+    default: return "wrench.adjustable"
+    }
+  }
+}
+
+/**
+ * The Mac's moving light over a line (`sand-shimmer-text`): the words in the
+ * text colour at 40 %, a band of full colour sweeping across them every
+ * 2.2 s, eased both ways (a gradient twice their width, stops at 0, 25, 60,
+ * 75 and 100 %, moved from 200 % to -200 %). Still for people who reduce
+ * motion, in the secondary colour.
+ */
+struct ShimmerText: View {
+  let text: String
+  var font: Font = .system(size: 15, weight: .medium)
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+  var body: some View {
+    if reduceMotion {
+      Text(text).font(font).foregroundStyle(Ink.secondary)
+    } else {
+      TimelineView(.animation(minimumInterval: 1.0 / 30)) { context in
+        let t = context.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 2.2) / 2.2
+        let eased = t * t * (3 - 2 * t)
+        let x = -(2 - 4 * eased)
+        Text(text).font(font).foregroundStyle(LinearGradient(
+          stops: [.init(color: Ink.tertiary, location: 0), .init(color: Ink.tertiary, location: 0.25), .init(color: Ink.primary, location: 0.6), .init(color: Ink.tertiary, location: 0.75), .init(color: Ink.tertiary, location: 1)],
+          startPoint: UnitPoint(x: x, y: 0.5), endPoint: UnitPoint(x: x + 2, y: 0.5)))
+      }
+    }
+  }
+}
+
+/**
+ * A group at work (`sand-activity-line`): one member's butterfly, 22 pt,
+ * and who is at it ("Theo is typing…", "Theo and Iris are working…",
+ * "Theo, Iris and 2 others are working…"), or the group's current step;
+ * a new line rolls up into place (0.3 s) and holds at least 1.2 s.
+ */
+struct GroupActivityLine: View {
+  let agent: Agent
+  let step: String?
+  @Environment(AppStore.self) private var store
+  @State private var shown: String?
+  @State private var shownAt = Date.distantPast
+
+  var body: some View {
+    let members = store.members(of: agent)
+    let text = Self.line(members: members, step: step)
+    let current = shown ?? text
+    HStack(spacing: 8) {
+      if let member = members.first(where: { $0.isBusy || $0.isRunning }) ?? members.first {
+        ButterflyView(palette: member.palette, motion: member.markState == .idle ? .working : member.markState).frame(width: 22, height: 22)
+      }
+      ZStack(alignment: .leading) {
+        ShimmerText(text: current, font: .system(size: 14))
+          .lineLimit(1)
+          .id(current)
+          .transition(.push(from: .bottom))
+      }
+      .clipped()
+      .animation(.easeInOut(duration: 0.3), value: current)
+    }
+    .padding(.leading, 8)
+    .frame(height: 36)
+    .accessibilityElement(children: .combine)
+    .task(id: text) {
+      if shown == text { return }
+      let wait = 1.2 - Date().timeIntervalSince(shownAt)
+      if shown != nil && wait > 0 {
+        try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000))
+        guard !Task.isCancelled else { return }
+      }
+      shown = text
+      shownAt = Date()
+    }
+  }
+
+  static func line(members: [Agent], step: String?) -> String {
+    let typing = members.filter(\.isComposing).map(\.name)
+    let working = members.filter { !$0.isComposing && ($0.isRunning || $0.isRunningTurn) && !$0.awaitingUserResponse }.map(\.name)
+    if !typing.isEmpty { return names(typing) + (typing.count == 1 ? " is typing…" : " are typing…") }
+    if let step, !step.isEmpty { return step }
+    if !working.isEmpty { return names(working) + (working.count == 1 ? " is working…" : " are working…") }
+    return "Working…"
+  }
+
+  static func names(_ list: [String]) -> String {
+    switch list.count {
+    case 1: return list[0]
+    case 2: return "\(list[0]) and \(list[1])"
+    case 3: return "\(list[0]), \(list[1]) and \(list[2])"
+    default: return "\(list[0]), \(list[1]) and \(list.count - 2) others"
+    }
+  }
+}
+
+/** A reaction added while its message is on screen (`FEn`): in from 45 %, past to 108 % and back, 0.3 s, from its top. */
+struct ReactionPop: ViewModifier {
+  let pops: Bool
+  @State private var scale: CGFloat = 1
+  @State private var shown = true
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+  func body(content: Content) -> some View {
+    content
+      .scaleEffect(scale, anchor: .top)
+      .opacity(shown ? 1 : 0)
+      .onAppear {
+        guard pops, !reduceMotion else { return }
+        scale = 0.45; shown = false
+        withAnimation(.timingCurve(0.22, 1, 0.36, 1, duration: 0.195)) { scale = 1.08; shown = true } completion: {
+          withAnimation(.easeOut(duration: 0.105)) { scale = 1 }
+        }
+      }
   }
 }
 

@@ -122,13 +122,16 @@ enum MarkDrawing {
    * box). A live mark takes the engine's frame: the glyph's dots behind,
    * then the body moved, its outline turned or folded, its details faded.
    */
-  static func draw(_ context: inout GraphicsContext, in rect: CGRect, palette: AgentPalette, dark: Bool, style: MarkStyle, frame: MarkFrame = .rest) {
+  static func draw(_ context: inout GraphicsContext, in rect: CGRect, palette: AgentPalette, dark: Bool, style: MarkStyle, frame: MarkFrame = .rest, trails: [TrailRibbon] = []) {
     var ctx = context
     ctx.concatenate(transform(in: rect, style: style))
     if frame.zoom != 1 {
       let c = viewCentre
       ctx.concatenate(CGAffineTransform(translationX: c, y: c).scaledBy(x: frame.zoom, y: frame.zoom).translatedBy(x: -c, y: -c))
     }
+    // The spin's light trails: their halves behind the butterfly first, the halves in front last.
+    drawTrails(&ctx, trails, front: false)
+    defer { drawTrails(&ctx, trails, front: true) }
     let c = Butterfly.centre
     // The glyph's parts, in the palette's flat colour (`--fg`, its middle stop), behind the body.
     let flat = Color(palette.mid)
@@ -177,6 +180,28 @@ enum MarkDrawing {
       layer.stroke(ButterflyPaths.antennae, with: .color(feelers), style: StrokeStyle(lineWidth: 1.8, lineCap: .round))
       layer.fill(ButterflyPaths.knobs, with: .color(feelers))
       layer.fill(ButterflyPaths.body, with: .color(Color(palette.body)))
+    }
+  }
+
+  /** Each trail's runs on one side of the butterfly, filled along it with its five stops (the window's `linearGradient` in user space, tail to head). */
+  static func drawTrails(_ ctx: inout GraphicsContext, _ trails: [TrailRibbon], front: Bool) {
+    for trail in trails {
+      let runs = front ? trail.front : trail.back
+      guard !runs.isEmpty, trail.opacity > 0.001 else { continue }
+      var path = Path()
+      for run in runs {
+        guard let first = run.first else { continue }
+        path.move(to: CGPoint(x: first.x, y: first.y))
+        for point in run.dropFirst() { path.addLine(to: CGPoint(x: point.x, y: point.y)) }
+        path.closeSubpath()
+      }
+      let stops = trail.stops.enumerated().map { index, stop -> Gradient.Stop in
+        let rgb = stop.rgb
+        return Gradient.Stop(color: Color(.sRGB, red: rgb.r, green: rgb.g, blue: rgb.b), location: Double(index) / Double(max(trail.stops.count - 1, 1)))
+      }
+      var layer = ctx
+      layer.opacity = trail.opacity
+      layer.fill(path, with: .linearGradient(Gradient(stops: stops), startPoint: CGPoint(x: trail.from.x, y: trail.from.y), endPoint: CGPoint(x: trail.to.x, y: trail.to.y)))
     }
   }
 

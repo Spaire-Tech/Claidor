@@ -4,16 +4,18 @@ import SimeonCore
 /**
  * A butterfly that moves as the Mac's does (SimeonCore's `MarkEngine`, the
  * window's mark engine): it sways at rest, leans and bobs while its agent
- * works, swings while it searches, spins now and then, and folds into three
- * dots while it thinks. Drawn each display frame while it moves; a list
- * row's butterfly holds still while its agent rests, as the Mac's sidebar
- * pauses it. With Reduce Motion on it stays still.
+ * works, swings while it searches, spins now and then with the spin's light
+ * trails circling it in its own colours, folds into three dots while it
+ * thinks, and whirls while it makes a picture. Drawn each display frame
+ * while it moves; a list row's butterfly holds still while its agent rests,
+ * as the Mac's sidebar pauses it. With Reduce Motion on it stays still.
  */
 struct LiveButterfly: View {
   let palette: AgentPalette
   var state: MarkState = .idle
   var stillWhenIdle = false
   @State private var engine = MarkEngine()
+  @State private var trails = LightTrails()
   @State private var resting: Bool
   @Environment(\.colorScheme) private var scheme
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -30,12 +32,7 @@ struct LiveButterfly: View {
     Group {
       if moving {
         // At most 60 frames a second, and a butterfly at rest at 30: on a 120 Hz screen each one drew twice as often as the eye needs.
-        TimelineView(.animation(minimumInterval: state == .idle ? 1.0 / 30 : 1.0 / 60, paused: false)) { context in
-          Canvas { graphics, size in
-            let frame = engine.frame(at: context.date.timeIntervalSinceReferenceDate, state: state, sizePoints: size.width)
-            MarkDrawing.draw(&graphics, in: CGRect(origin: .zero, size: size), palette: palette, dark: scheme == .dark, style: .live, frame: frame)
-          }
-        }
+        MarkCanvas(palette: palette, engine: engine, trails: trails, state: state, fps: state == .idle ? 30 : 60)
       } else {
         // Still: the image drawn once, not a canvas drawn again on every redraw.
         Image(uiImage: MarkDrawing.image(palette, style: .live, dark: scheme == .dark))
@@ -45,12 +42,55 @@ struct LiveButterfly: View {
     .task(id: state) {
       guard stillWhenIdle else { return }
       if state != .idle { if resting { resting = false }; return }
-      // Back at rest: let the fold and any spin finish, then hold still.
+      // Back at rest: let the fold, any spin and its trails finish, then hold still.
       while !Task.isCancelled && !resting {
         try? await Task.sleep(for: .milliseconds(400))
-        if engine.isSettled { resting = true }
+        if engine.isSettled && !trails.hasLife { resting = true }
       }
     }
     .accessibilityHidden(true)
+  }
+}
+
+/**
+ * The live butterfly's canvas. It reaches past the butterfly's own square
+ * (`reach`), without taking more room, so the spin's light trails can circle
+ * outside it as they do on the Mac; the half of each trail behind the
+ * butterfly is drawn under its body, the half in front over it.
+ */
+struct MarkCanvas: View {
+  let palette: AgentPalette
+  let engine: MarkEngine
+  let trails: LightTrails
+  let state: MarkState
+  var fps: Double = 60
+  @State private var side: CGFloat = 0
+  @Environment(\.colorScheme) private var scheme
+  static let reach: CGFloat = 1.7
+
+  var body: some View {
+    // Its own square takes taps, as the canvas did (the chat's header opens the agent's page from it); the trails past it do not.
+    Color.clear
+      .contentShape(.rect)
+      .onGeometryChange(for: CGFloat.self) { min($0.size.width, $0.size.height).rounded() } action: { if abs($0 - side) >= 1 { side = $0 } }
+      .overlay {
+        if side > 0 {
+          let side = side
+          TimelineView(.animation(minimumInterval: 1.0 / fps, paused: false)) { context in
+            Canvas { graphics, size in
+              let now = context.date.timeIntervalSinceReferenceDate
+              let frame = engine.frame(at: now, state: state, sizePoints: side)
+              trails.update(nowMs: now * 1000, spinAngle: frame.spinAngle, sizeScale: LightTrails.sizeScale(points: side), sustain: frame.whirling, palette: palette)
+              let box = CGRect(x: (size.width - side) / 2, y: (size.height - side) / 2, width: side, height: side)
+              MarkDrawing.draw(&graphics, in: box, palette: palette, dark: scheme == .dark, style: .live, frame: frame, trails: trails.drawn)
+            }
+            .frame(width: side * Self.reach, height: side * Self.reach)
+          }
+          .allowsHitTesting(false)
+        } else {
+          Image(uiImage: MarkDrawing.image(palette, style: .live, dark: scheme == .dark))
+            .resizable().interpolation(.high).scaledToFit()
+        }
+      }
   }
 }

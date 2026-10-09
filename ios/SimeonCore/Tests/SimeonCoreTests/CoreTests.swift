@@ -1049,3 +1049,186 @@ final class ScriptedBackend: AgentBackend, @unchecked Sendable {
   func server(_ path: String, method: String?, body: JSON?) async throws -> JSON { [:] }
   func screen(_ agentId: String) async throws -> ScreenState { ScreenState(socket: nil, state: "starting") }
 }
+
+/** The first run, the Mac's (Onboarding.swift): the gate, the hand-off, the scene's arithmetic. */
+@MainActor
+final class OnboardingTests: XCTestCase {
+  func testOnlyANewAccountGetsTheFirstRun() async throws {
+    let fresh = AppStore()
+    await fresh.attach(DemoBackend(seed: .empty, pace: 0.01, call: nil))
+    let first = await fresh.firstRun()
+    XCTAssertEqual(first, .needed)
+
+    let known = AppStore()
+    let backend = DemoBackend(seed: DemoData.seed(), pace: 0.01, call: nil)
+    await known.attach(backend)
+    let second = await known.firstRun()
+    XCTAssertEqual(second, .seen, "an account with agents has been onboarded")
+    let settings = try await backend.command("getHostSettings", [:])
+    XCTAssertEqual(settings["hasSeenOnboarding"]?.bool, true, "and the host is told, as the Mac tells it")
+  }
+
+  func testTheHandOffMakesSimeonOnce() async throws {
+    let backend = DemoBackend(seed: .empty, pace: 0.01, call: nil)
+    let store = AppStore()
+    await store.attach(backend)
+    var waited = 0.0
+    var readyCalls = 0
+    let id = try await store.handOff(ready: { readyCalls += 1 }, wait: { waited += $0 })
+    XCTAssertNotNil(id)
+    XCTAssertEqual(readyCalls, 1)
+    XCTAssertGreaterThan(waited, 1.4, "the line shows a second and a half at the least")
+    let simeon = try XCTUnwrap(store.agent(id))
+    XCTAssertEqual(simeon.name, "Simeon")
+    XCTAssertEqual(simeon.title, "Chief of Staff")
+    XCTAssertEqual(simeon.colour, "blue")
+    let settings = try await backend.command("getHostSettings", [:])
+    XCTAssertEqual(settings["hasSeenOnboarding"]?.bool, true)
+    let again = await store.firstRun()
+    XCTAssertEqual(again, .seen)
+
+    // Another phone, or a second try on this one, on an account already onboarded: nothing more is made.
+    let other = AppStore()
+    await other.attach(backend)
+    let second = try await other.handOff(ready: {}, wait: { _ in })
+    XCTAssertNil(second)
+    XCTAssertEqual(store.agents.count, 1)
+    let count = try await backend.command("countAgents", [:])
+    XCTAssertEqual(count.int, 1)
+  }
+
+  func testTheNameIsSavedAsTheMacSavesIt() {
+    XCTAssertEqual(Onboarding.normalizedName("  Bass \n  Fall "), "Bass Fall")
+    XCTAssertEqual(Onboarding.normalizedName(String(repeating: "a", count: 80)).count, 60)
+    XCTAssertEqual(Onboarding.normalizedName("   "), "")
+  }
+
+  func testTheStepsInTheMacsOrder() {
+    XCTAssertEqual(OnboardingStep.allCases.map(\.title).filter { !$0.isEmpty }, [
+      "Meet Simeon", "Simeon is your personal Chief of Staff", "Your agents connect to the apps you already use",
+      "They have their own computer and work just like you", "How should Simeon & Co call you?",
+    ])
+    XCTAssertFalse(OnboardingStep.meet.hasBack)
+    XCTAssertEqual(OnboardingStep.chiefOfStaff.previous, .meet)
+    XCTAssertEqual(OnboardingStep.name.next, .handOff)
+    XCTAssertEqual(Onboarding.handOffLine(ready: false), "Setting up your Simeon…")
+    XCTAssertEqual(Onboarding.handOffLine(ready: true), "Getting your team ready…")
+  }
+
+  func testTheScenesFitAPhone() {
+    // The Chief of Staff's agents: 300 pt out on a Mac, 50 pt from a 393 pt phone's edge, never nearer Simeon than 104.
+    XCTAssertEqual(Onboarding.crew(width: 1280).map(\.x), [-300, -300, -300, 300, 300, 300])
+    XCTAssertEqual(Onboarding.crew(width: 393)[0].x, -146.5)
+    XCTAssertEqual(Onboarding.crew(width: 180)[3].x, 104)
+    let curve = Onboarding.curve(to: Onboarding.crew[0])
+    XCTAssertEqual(curve.start.x, -60); XCTAssertEqual(curve.end.x, -260); XCTAssertEqual(curve.end.y, -100); XCTAssertEqual(curve.control1.x, -160)
+    // The apps: the one behind the glass swells 1.6 times; the row moves one place each 1.6 s.
+    let resting = Onboarding.orb(0, count: 12, elapsed: 0, width: 393)
+    XCTAssertEqual(resting.x, 0); XCTAssertEqual(resting.size, 120, accuracy: 0.001); XCTAssertEqual(resting.opacity, 1)
+    let moved = Onboarding.orb(1, count: 12, elapsed: 1.6, width: 393)
+    XCTAssertEqual(moved.x, 0, accuracy: 0.001)
+    let far = Onboarding.orb(2, count: 12, elapsed: 0, width: 393)
+    XCTAssertEqual(far.x, 315, accuracy: 0.001); XCTAssertEqual(far.opacity, 0.297, accuracy: 0.01)
+    // The computer: as wide as the phone less 16 pt a side, never past 1.45.
+    XCTAssertEqual(Onboarding.screenScale(width: 393), 361.0 / 441, accuracy: 0.0001)
+    XCTAssertEqual(Onboarding.screenScale(width: 1280), 1.45)
+    let place = Onboarding.cursorPlace(beat: 0, width: 1280)
+    XCTAssertEqual(place.x, -78.3 * 1.45 + 59.8 * 0.66, accuracy: 0.001)
+    XCTAssertEqual(Onboarding.computerFrame(-1).y, 30)
+    XCTAssertEqual(Onboarding.computerFrame(99).pressed, "b-button")
+    XCTAssertEqual(Onboarding.nameSeats(width: 393).map(\.x), [-152.5, 0, 152.5])
+  }
+}
+
+/** The spin's light trails (LightTrails.swift, the window's `E_t`). */
+final class LightTrailsTests: XCTestCase {
+  func run(_ state: MarkState, seconds: Double, turn: Bool, trails: LightTrails, engine: MarkEngine, from start: Double = 1000) -> (most: Int, end: Double) {
+    var now = start, most = 0
+    _ = engine.frame(at: now, state: state, sizePoints: 28)
+    if turn { engine.turnNow() }
+    for _ in 0..<Int(seconds * 60) {
+      now += 1.0 / 60
+      let frame = engine.frame(at: now, state: state, sizePoints: 28)
+      trails.update(nowMs: now * 1000, spinAngle: frame.spinAngle, sizeScale: LightTrails.sizeScale(points: 28), sustain: frame.whirling, palette: .named("blue"))
+      most = max(most, trails.drawn.count)
+    }
+    return (most, now)
+  }
+
+  func testATurnThrowsTrailsThatDrawInAfterIt() {
+    var seed: UInt64 = 7
+    let random = { () -> Double in seed = seed &* 6364136223846793005 &+ 1442695040888963407; return Double(seed >> 11) / Double(1 << 53) }
+    let engine = MarkEngine(random: random), trails = LightTrails(random: random)
+    let turn = run(.idle, seconds: 2, turn: true, trails: trails, engine: engine)
+    XCTAssertGreaterThanOrEqual(turn.most, 3, "three to five ribbons")
+    XCTAssertLessThanOrEqual(turn.most, 5)
+    let after = run(.idle, seconds: 3, turn: false, trails: trails, engine: engine, from: turn.end)
+    XCTAssertFalse(trails.hasLife, "they draw in and go once the turn is over")
+    XCTAssertEqual(after.most <= 5, true)
+  }
+
+  func testTheWhirlKeepsThrowingThem() {
+    let engine = MarkEngine(random: { 0.5 }), trails = LightTrails(random: { 0.5 })
+    let early = run(.loading, seconds: 3, turn: false, trails: trails, engine: engine)
+    XCTAssertGreaterThan(early.most, 0)
+    _ = run(.loading, seconds: 9, turn: false, trails: trails, engine: engine, from: early.end)
+    XCTAssertTrue(trails.hasLife, "a new set once the last has drawn in")
+  }
+
+  func testATrailRunsBetweenTwoStopsOfThePalette() {
+    let ocean = AgentPalette.named("blue")
+    let inks = [ocean.top, ocean.mid, ocean.bottom].map(TrailColour.init)
+    for ink in inks {
+      XCTAssertLessThanOrEqual(ink.saturation, 88)
+      XCTAssertGreaterThanOrEqual(ink.lightness, 52); XCTAssertLessThanOrEqual(ink.lightness, 74)
+    }
+    let back = TrailColour(hue: 210, saturation: 60, lightness: 50).rgb
+    XCTAssertEqual(back.r, 0.2, accuracy: 0.01); XCTAssertEqual(back.g, 0.5, accuracy: 0.01); XCTAssertEqual(back.b, 0.8, accuracy: 0.01)
+  }
+}
+
+/** The words beside a working butterfly (Activity.swift, the window's `dse`). */
+final class ActivityLineTests: XCTestCase {
+  func testTheMacsWords() {
+    XCTAssertEqual(ActivityLine.of(kind: "thinking", tool: nil, detail: nil).text, "Thinking")
+    XCTAssertEqual(ActivityLine.of(kind: "tool", tool: "Shell", detail: nil).text, "Running commands")
+    XCTAssertEqual(ActivityLine.of(kind: "tool", tool: "Shell", detail: "notes.md").text, "Drafting the file")
+    XCTAssertEqual(ActivityLine.of(kind: "tool", tool: "ExternalShell", detail: nil).text, "On your computer")
+    XCTAssertEqual(ActivityLine.of(kind: "tool", tool: "WebSearch", detail: "flights").text, "Searching the web")
+    XCTAssertEqual(ActivityLine.of(kind: "tool", tool: "WebFetch", detail: nil).text, "Reading the web")
+    XCTAssertEqual(ActivityLine.of(kind: "tool", tool: "GenerateImage", detail: nil).text, "Generating a photo")
+    XCTAssertEqual(ActivityLine.of(kind: "tool", tool: "SendToAgent", detail: nil, target: "iris", targetName: "Iris").text, "Messaging Iris")
+    XCTAssertEqual(ActivityLine.of(kind: "tool", tool: "SendToAgent", detail: nil, target: "iris", targetName: "Iris").icon, .agent("iris"))
+    XCTAssertEqual(ActivityLine.of(kind: "tool", tool: "SendToAgent", detail: nil).text, "Messaging another assistant")
+    XCTAssertEqual(ActivityLine.of(kind: "tool", tool: "CallMcpTool", detail: "linear").text, "Connecting to Linear")
+    XCTAssertEqual(ActivityLine.of(kind: "tool", tool: "CallMcpTool", detail: nil).text, "Connecting to a third party app")
+    XCTAssertEqual(ActivityLine.of(kind: "tool", tool: "browser_click", detail: nil).text, "Browsing the web")
+    XCTAssertEqual(ActivityLine.of(kind: "tool", tool: "CheckSubagent", detail: nil).text, "Waiting on another agent")
+    XCTAssertEqual(ActivityLine.of(kind: "tool", tool: "Mystery", detail: nil).text, "Working")
+    XCTAssertEqual(ActivityLine.of(kind: nil, tool: nil, detail: nil).text, "Working")
+    // The label comes in again only when the verb or the picture changes.
+    XCTAssertEqual(ActivityLine.of(kind: "tool", tool: "Shell", detail: nil).key, ActivityLine.of(kind: "tool", tool: "BoxShell", detail: nil).key)
+  }
+
+  func testTheAgentsLine() {
+    var agent = Agent(id: "theo", name: "Theo", isRunningTurn: true)
+    agent.activityKind = "tool"; agent.activityTool = "Shell"
+    XCTAssertEqual(agent.activityLine()?.text, "Running commands")
+    agent.isComposing = true
+    XCTAssertEqual(agent.activityLine()?.text, "Typing…")
+    agent.isComposing = false; agent.awaitingUserResponse = true
+    XCTAssertNil(agent.activityLine(), "waiting on you is not working")
+    let json: JSON = ["id": "scout", "name": "Scout", "isRunning": true, "currentActivity": ["kind": "tool", "tool": "SendToAgent", "target": "iris"]]
+    let parsed = try! XCTUnwrap(Agent(json: json))
+    XCTAssertEqual(parsed.activityLine(named: { $0 == "iris" ? "Iris" : nil })?.text, "Messaging Iris")
+  }
+
+  func testTheTimeItHasBeenAtIt() {
+    XCTAssertNil(ActivityLine.elapsed(59))
+    XCTAssertEqual(ActivityLine.elapsed(61), "1m")
+    XCTAssertEqual(ActivityLine.elapsed(3 * 60 + 20), "3m")
+    XCTAssertEqual(ActivityLine.elapsed(3600), "1h")
+    XCTAssertEqual(ActivityLine.elapsed(3900), "1h 5m")
+    XCTAssertEqual(ActivityLine.of(kind: "tool", tool: "Task", detail: String(repeating: "x", count: 90)).text.count <= 60, true)
+  }
+}

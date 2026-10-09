@@ -62,6 +62,8 @@ the Launch squad. It also runs the scripted call. No account is needed.
 "Cards" chat holding every card the Mac draws (questions, drafts, flights,
 connectors, approvals, secrets, files), for checking them side by side; it
 is never shown on a real account.
+`--onboarding` runs the demo as a new account: no agents, so the first run
+plays (Meet Simeon to the hand-off) and ends in Simeon's chat.
 `--api=http://127.0.0.1:8000` points the app at another server.
 
 ## Build and run it (a Mac)

@@ -459,6 +459,69 @@ or at the sign-in. At least one turn, never more than three seconds, then
 it fades. It shows on every start, and again on coming back after a
 quarter of an hour away.
 
+## 16. The first run (9 October 2026)
+
+"Design onboarding … with apple design." The Mac's flow as it ships (the
+patch's step list `landing, meet, coo, connect, computer-demo, name`, then
+the hand-off), on the phone with Apple's parts: the bold title, Continue as
+a glass button at the bottom and Back under it, the name field with Return
+as Continue, the apps' tile in Liquid Glass. The scenes and their motion are
+the Mac's, from its numbers (`Onboarding.swift`, tested):
+
+- Meet Simeon: the butterfly fades in large (1.2 s), grows on the slow
+  spring, turns once in depth (1.4 s), then settles at his seat on the
+  standard spring while the title and Continue rise in (0.8 s).
+- The Chief of Staff: six agents (Inbox, Research, Travel, Finance, Sales,
+  Content) 50 pt from the screen's edge, a blue curve drawn to each from
+  Simeon's side (0.9 s each, 0.18 s apart), each agent brightening as its
+  curve arrives; "He hires an agent for every job you hand off."
+- The apps: the site's row of twelve logos sliding behind the tile one
+  place every 1.6 s, the one behind the glass swelling, the far ones
+  blurring, faded at both ends; Simeon on the tile.
+- The computer: the Mac's little screen (its wallpaper, two windows),
+  Simeon as the cursor pressing tiles, closing a window, a beat every 0.9 s.
+- The name: three agents bounce in over the field, the server's suggested
+  name in it; saved through `POST user/name` as the Mac saves it.
+- The hand-off: "Setting up your Simeon…" under the moving light while the
+  computer answers (asked every 2.5 s, a minute at most), then "Getting
+  your team ready…"; Simeon is made as the Mac makes him (`createAgent` with
+  the Chief of Staff's profile, `kickstartAgent`), the first run is marked
+  done on the host (`hasSeenOnboarding`, the flag the Mac and the web
+  window read), and his chat opens. Try Again never makes a second Simeon.
+
+Only a new account sees it: the Mac's gate (`getHostSettings`, then
+`countAgents`; an account with agents is marked done). A computer that does
+not answer is asked once more, then the first run shows as on the Mac and
+steps aside if agents turn up. Notifications are asked for after it, not
+over its first screen. The sign-in screen has the Mac's tagline.
+
+## 17. The Mac's motion in the chat (9 October 2026)
+
+"I dont see the app animations from the mac, the swirling etc the 'running
+command' chat animation." What the Mac draws, and the phone now too:
+
+- The swirling: the spin's light trails (`E_t`), three to five tapered
+  ribbons flung onto a tilted orbit when the butterfly turns fast, in two
+  neighbouring stops of the agent's palette, half behind it and half in
+  front, drawing in once the turn ends (`LightTrails.swift`, tested). A
+  working agent turns every 6 to 9 s; one making a picture whirls without
+  end and keeps throwing them. The launch's butterfly has them too.
+- "Running commands": the Mac's table of what an agent is doing (`dse`,
+  `Activity.swift`, tested: "Thinking", "Searching the web", "Reading the
+  web", "Running commands", "Drafting the file", "Messaging Iris",
+  "Connecting to Linear"…), beside the working butterfly at the end of the
+  chat, under the Mac's moving light (2.2 s), coming in from 4 pt below as
+  it changes, held at least 0.8 s, with " · 3m" after a minute. The phone
+  read a `label` the host never sends, so it showed no words before. The
+  Mac shows them when the pointer is over the row; a phone has no pointer,
+  so they always show.
+- The row comes in from 92 % (0.18 s) and goes the same way (0.14 s); the
+  butterfly pops in after it (0.34 s, from 60 %).
+- A group shows who is at it ("Theo and Iris are working…"), rolling up as
+  it changes, held 1.2 s.
+- A reaction added while its message is on screen pops in (0.3 s, from 45 %
+  past 108 %).
+
 ## Suggested order (the founder decides)
 
 1. The chat's look: the bubble, the top bar, markdown, brand names with logos, agent names with butterflies.

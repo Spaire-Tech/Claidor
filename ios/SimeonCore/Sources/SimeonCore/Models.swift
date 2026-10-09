@@ -51,6 +51,8 @@ public struct Agent: Identifiable, Hashable, Sendable {
   public var activityKind: String?
   public var activityTool: String?
   public var activityDetail: String?
+  /** The agent it is messaging (`currentActivity.target`): "Messaging Iris". */
+  public var activityTarget: String?
   /** The id of the chat's newest message (`lastMessageId`): when it changes and the open chat lacks it, the chat is fetched again. */
   public var lastMessageId: String?
   /** The chat's last line as the host sums it up (`lastEntry`: text, a link, or attachments). */
@@ -93,6 +95,7 @@ public struct Agent: Identifiable, Hashable, Sendable {
     activityKind = json["currentActivity"]?["kind"]?.text
     activityTool = json["currentActivity"]?["tool"]?.text
     activityDetail = json["currentActivity"]?["detail"]?.text
+    activityTarget = json["currentActivity"]?["target"]?.text
     lastMessageId = json["lastMessageId"]?.text
     if let entry = json["lastEntry"], entry != .null { lastEntry = entry }
     waitingReason = json["awaitingUserResponse"]?["reason"]?.text
