@@ -87,6 +87,8 @@ public struct FlightsCard: Hashable, Sendable {
   public let title: String
   public let subtitle: String
   public let offers: [FlightOffer]
+  /** Duffel's test mode: pretend fares (the server's `test`, or "Test results" in the subtitle of a card from before it sent one). */
+  public var isTest = false
 
   public static func parse(_ text: String) -> FlightsCard? {
     guard let body = Markdown.soleFence(text, language: "simeon-flights"), let json = try? JSON.parse(Data(body.utf8)) else { return nil }
@@ -98,7 +100,9 @@ public struct FlightsCard: Hashable, Sendable {
       return FlightOffer(airline: s(o["airline"]), logo: s(o["logo"]), price: s(o["price"]), priceNote: s(o["priceNote"]), date: s(o["date"]), from: s(o["from"]), fromCity: s(o["fromCity"]), to: s(o["to"]), toCity: s(o["toCity"]), depart: s(o["depart"]), arrive: s(o["arrive"]), duration: s(o["duration"]), stops: s(o["stops"]), refundable: s(o["refundable"]), changeable: s(o["changeable"]), bags: s(o["bags"]), returnTimes: s(o["returnTimes"]), legs: legs)
     }
     guard !offers.isEmpty else { return nil }
-    return FlightsCard(title: s(json["title"]), subtitle: s(json["subtitle"]), offers: Array(offers))
+    let subtitle = s(json["subtitle"])
+    let test = json["test"]?.bool == true || subtitle.components(separatedBy: " · ").contains("Test results")
+    return FlightsCard(title: s(json["title"]), subtitle: subtitle, offers: Array(offers), isTest: test)
   }
 
   /** "AA" for American Airlines: the mark when the airline has no logo (`__simeonInitials`). */

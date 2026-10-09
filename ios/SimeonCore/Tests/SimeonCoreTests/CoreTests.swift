@@ -328,10 +328,10 @@ final class ChatTests: XCTestCase {
       default: return "other"
       }
     }
-    XCTAssertEqual(kinds, ["me", "them", "question", "question-answered", "question-dismissed", "draft:email:Ready to send", "draft:slack:Ready to send", "flights:2", "connector:Linear:To read the launch tickets.", "listener:slack:so this routine can fire", "approval:Delete 3 files in ~/Downloads:pending", "secret:Stripe API key", "computer:waiting", "notice", "file:Payouts September.pdf"])
+    XCTAssertEqual(kinds, ["me", "them", "question", "question-answered", "question-dismissed", "draft:email:Ready to send", "draft:slack:Ready to send", "flights:4", "flights:2", "connector:Linear:To read the launch tickets.", "listener:slack:so this routine can fire", "approval:Delete 3 files in ~/Downloads:pending", "secret:Stripe API key", "computer:waiting", "notice", "file:Payouts September.pdf"])
     guard case .flights(_, let flights) = rows.first(where: { if case .flights = $0 { return true }; return false })! else { return XCTFail() }
     XCTAssertEqual(flights.title, "Seattle to Los Angeles")
-    XCTAssertEqual(flights.offers[0].legs.count, 2)
+    XCTAssertEqual(flights.offers[3].legs.count, 2)
     XCTAssertEqual(FlightsCard.initials("American Airlines"), "AM")
     XCTAssertEqual(FlightsCard.initials("Alaska Airlines"), "AL")
     XCTAssertEqual(FlightsCard.initials("Delta Air Lines"), "DL")
@@ -1375,5 +1375,94 @@ final class ConnectConsentTests: XCTestCase {
     for consent in [shopify, mercury, linkedin, unknown] {
       XCTAssertFalse((consent.points.map(\.body) + consent.smallPrint).joined().contains("Muse"))
     }
+  }
+}
+
+final class FlightCardTests: XCTestCase {
+  private func gallery() -> [FlightsCard] {
+    Chat.rows(DemoData.seed(now: 1_760_000_000_000, gallery: true).transcripts["cards"]!).compactMap { row in
+      if case .flights(_, let card) = row { return card }
+      return nil
+    }
+  }
+
+  func testTheTextFitsTheRow() {
+    XCTAssertEqual(FlightText.clock("2:30 PM"), "2:30pm")
+    XCTAssertEqual(FlightText.clock("12:18 PM"), "12:18pm")
+    XCTAssertEqual(FlightText.clock("6:40 AM +1"), "6:40am+1")
+    XCTAssertEqual(FlightText.clock("6:40 AM +1", days: false), "6:40am")
+    XCTAssertEqual(FlightText.clock("14:30"), "14:30")
+    XCTAssertEqual(FlightText.clock(""), "")
+    XCTAssertEqual(FlightText.minutes("2h 40m"), 160)
+    XCTAssertEqual(FlightText.minutes("2h40m"), 160)
+    XCTAssertEqual(FlightText.minutes("3h"), 180)
+    XCTAssertEqual(FlightText.minutes("45m"), 45)
+    XCTAssertNil(FlightText.minutes(""))
+    XCTAssertNil(FlightText.minutes("layover length not stated"))
+    XCTAssertEqual(FlightText.span("6h 05m"), "6h05m")
+    XCTAssertEqual(FlightText.span("2h 40m"), "2h40m")
+    XCTAssertEqual(FlightText.span("26h"), "26h")
+    XCTAssertEqual(FlightText.stopCount("Nonstop"), "")
+    XCTAssertEqual(FlightText.stopCount("1 stop · PHX 1h 38m"), "1 stop")
+    XCTAssertEqual(FlightText.stops("2 stops · PHX 1h 38m, DEN 50m"), "2 stops")
+  }
+
+  func testTheCardReadsAsMuseLaysItOut() {
+    let cards = gallery()
+    XCTAssertEqual(cards.count, 2)
+    let oneWay = cards[0], roundTrip = cards[1]
+    XCTAssertEqual(oneWay.heading, "Seattle to Los Angeles — Sat, Oct 10")
+    XCTAssertEqual(oneWay.aside, "")
+    XCTAssertFalse(oneWay.isTest)
+    XCTAssertEqual(oneWay.offers[0].outbound, FlightTimes(depart: "2:30pm", label: "2h40m", arrive: "5:10pm"))
+    XCTAssertEqual(oneWay.offers[3].outbound, FlightTimes(depart: "11:40am", label: "4h35m · 1 stop", arrive: "4:15pm"))
+    XCTAssertNil(oneWay.offers[0].inbound)
+    XCTAssertEqual(oneWay.offers[0].shape, "Nonstop · 2h40m")
+    XCTAssertEqual(oneWay.offers[0].ways.count, 1)
+    XCTAssertEqual(oneWay.offers[0].ways[0].title, "")
+    XCTAssertEqual(oneWay.offers[0].terms, ["No refund if you cancel", "Changes for a $99.00 fee", "1 carry-on"])
+    XCTAssertEqual(oneWay.offers[3].terms, ["Refund minus $25.00 if you cancel", "Free changes", "2 checked bags"])
+    XCTAssertEqual(oneWay.offers[2].terms, ["No refund if you cancel", "Change rules not stated", "No bags included"])
+    let leg = oneWay.offers[0].legs[0]
+    XCTAssertEqual(leg.departing, "Sat, Oct 10 at 2:30pm")
+    XCTAssertEqual(leg.flightLines, ["DL 2830 · Delta Air Lines"])
+    XCTAssertEqual(oneWay.offers[3].legs[0].layoverLine, "1h 05m layover in Sacramento")
+
+    XCTAssertEqual(roundTrip.heading, "San Francisco to New York — Fri, Oct 16 – Sun, Oct 18")
+    XCTAssertEqual(roundTrip.aside, "Refundable · 2 adults")
+    let united = roundTrip.offers[1]
+    XCTAssertEqual(united.outbound, FlightTimes(depart: "10:05pm", label: "5h35m", arrive: "6:40am+1"))
+    // 2h 35m, 1h 10m in Chicago, 4h 20m.
+    XCTAssertEqual(united.inbound, FlightTimes(depart: "8:00am", label: "8h05m · 1 stop", arrive: "1:05pm"))
+    XCTAssertEqual(roundTrip.offers[0].inbound, FlightTimes(depart: "6:15pm", label: "6h36m", arrive: "9:51pm"))
+    XCTAssertEqual(united.ways.map(\.title), ["Outbound · Fri, Oct 16", "Return · Sun, Oct 18"])
+    XCTAssertEqual(united.ways.map(\.legs.count), [1, 2])
+    // The day says it lands the next morning; the "+1" would say it twice.
+    XCTAssertEqual(united.legs[0].arriving, "Sat, Oct 17 at 6:40am")
+    XCTAssertEqual(united.legs[2].flightLines, ["UA 1281 · United Airlines", "Operated by SkyWest"])
+  }
+
+  func testATestSearchSaysSo() {
+    let text = "```simeon-flights\n{\"title\":\"A to B\",\"subtitle\":\"Test results · Fri, Oct 2 · 1 adult\",\"offers\":[{\"airline\":\"Duffel Airways\",\"price\":\"$1.00\"}]}\n```"
+    let card = FlightsCard.parse(text)!
+    XCTAssertTrue(card.isTest)
+    XCTAssertEqual(card.heading, "A to B — Fri, Oct 2")
+    XCTAssertEqual(card.aside, "Test results")
+    let flagged = FlightsCard.parse("```simeon-flights\n{\"title\":\"A to B\",\"subtitle\":\"Fri, Oct 2\",\"test\":true,\"offers\":[{\"airline\":\"X\"}]}\n```")!
+    XCTAssertTrue(flagged.isTest)
+  }
+
+  func testALogoFitsItsCircleByItsShape() {
+    let square = AirlineLogo.box(width: 80, height: 80, diameter: 40)
+    XCTAssertEqual(square.width, 26.0, accuracy: 0.1)
+    XCTAssertEqual(square.height, square.width, accuracy: 0.001)
+    // Alaska's wordmark (269 × 80) runs nearly across the circle instead of shrinking into a square.
+    let wordmark = AirlineLogo.box(width: 269, height: 80, diameter: 40)
+    XCTAssertGreaterThan(wordmark.width, 34)
+    XCTAssertLessThan(wordmark.width, 40)
+    XCTAssertEqual(wordmark.width / wordmark.height, 269.0 / 80.0, accuracy: 0.001)
+    // Its corners stay inside the circle.
+    XCTAssertLessThanOrEqual((wordmark.width * wordmark.width + wordmark.height * wordmark.height).squareRoot(), 40)
+    XCTAssertEqual(AirlineLogo.box(width: 0, height: 10, diameter: 40).width, 0)
   }
 }

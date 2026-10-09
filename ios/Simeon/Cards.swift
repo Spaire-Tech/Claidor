@@ -479,7 +479,18 @@ private struct ConnectedLabel: LabelStyle {
 
 // MARK: - Flights
 
-/** Flight results (patch FLIGHTS_SOURCE): the route over the date and terms, then a row per offer; a row opens the flight. */
+/**
+ * Flight results, laid out as Muse lays out its own (the founder, 9 October
+ * 2026: "i found an absolute better design from muse and i want that for
+ * all flights suggestions. everything should fit"): the route and its date
+ * as one heading, then a row per offer, the airline's round logo beside
+ * "Delta Air Lines · $233.40" and the times on a dashed line with the time
+ * in the air between them (a round trip's way back on a second line). A row
+ * opens the flight. The card runs nearly the chat's width, wider than a
+ * bubble, so the lines fit; a line still too long for it puts the time in
+ * the air under the times instead of cutting anything. Its words are
+ * FlightText's (SimeonCore, tested).
+ */
 struct FlightsCardView: View {
   let card: FlightsCard
   @Environment(\.chatWidth) private var width
@@ -489,27 +500,41 @@ struct FlightsCardView: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 0) {
-      if !card.title.isEmpty || !card.subtitle.isEmpty {
-        VStack(alignment: .leading, spacing: 1) {
-          if !card.title.isEmpty { Text(card.title).font(.system(size: 15, weight: .medium)).tracking(-0.15).foregroundStyle(Ink.theirsText) }
-          if !card.subtitle.isEmpty { Text(card.subtitle).font(.system(size: 13)).foregroundStyle(Ink.fineGrey) }
+      if !card.heading.isEmpty || !card.aside.isEmpty {
+        VStack(alignment: .leading, spacing: 2) {
+          if !card.heading.isEmpty {
+            Text(card.heading).font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.theirsText).fixedSize(horizontal: false, vertical: true)
+          }
+          if !card.aside.isEmpty {
+            Text(card.aside).font(.system(size: 13)).foregroundStyle(Ink.fineGrey).fixedSize(horizontal: false, vertical: true)
+          }
         }
-        .padding(.top, 2).padding(.bottom, 8)
+        .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 4)
       }
       VStack(spacing: 0) {
         ForEach(Array(card.offers.enumerated()), id: \.offset) { index, offer in
-          if index > 0 { Rectangle().fill(Ink.hairline).frame(height: 0.5).padding(.leading, 58).padding(.trailing, 10) }
           Button { open = OpenFlight(id: index, offer: offer) } label: { FlightRow(offer: offer) }
-            .buttonStyle(.plain)
+            .buttonStyle(FlightRowStyle())
         }
       }
-      .padding(.horizontal, -10)
+      .padding(.horizontal, 6).padding(.vertical, 6)
     }
-    .padding(.horizontal, 12).padding(.vertical, 8)
-    .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-    .modifier(CardEdge(radius: 18))
-    .frame(maxWidth: ChatMetrics.bubbleMax(width), alignment: .leading)
-    .sheet(item: $open) { flight in FlightDetails(offer: flight.offer).presentationDetents([.large]) }
+    .frame(width: Self.cardWidth(width), alignment: .leading)
+    .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+    .modifier(CardEdge(radius: 22))
+    .sheet(item: $open) { flight in FlightDetails(offer: flight.offer, test: card.isTest) }
+  }
+
+  /** Nearly the chat's width, as Muse's card runs: a bubble's limit would leave the times no room. */
+  static func cardWidth(_ width: CGFloat) -> CGFloat { min(max(width - 16, 260), 480) }
+}
+
+/** A row pressed: the grey of a pressed list row behind it. */
+struct FlightRowStyle: ButtonStyle {
+  func makeBody(configuration: Configuration) -> some View {
+    configuration.label
+      .background(Color(.systemFill).opacity(configuration.isPressed ? 1 : 0), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+      .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
   }
 }
 
@@ -517,32 +542,77 @@ struct FlightRow: View {
   let offer: FlightOffer
 
   var body: some View {
-    HStack(spacing: 12) {
-      AirlineMark(name: offer.airline, logo: offer.logo, size: 36)
-      VStack(alignment: .leading, spacing: 1) {
-        Text([offer.depart, offer.arrive].filter { !$0.isEmpty }.joined(separator: " – "))
-          .font(.system(size: 17)).tracking(-0.15).foregroundStyle(Ink.theirsText).lineLimit(1)
-        Text([offer.airline, offer.duration, offer.stops.components(separatedBy: " · ").first ?? ""].filter { !$0.isEmpty }.joined(separator: " · "))
-          .font(.system(size: 13)).foregroundStyle(Ink.fineGrey).lineLimit(1)
-        if let range = offer.stops.range(of: " · ") {
-          Text("\(offer.stops[range.upperBound...]) layover").font(.system(size: 13)).foregroundStyle(Ink.fineGrey).lineLimit(1)
-        }
-        if !offer.returnTimes.isEmpty { Text(offer.returnTimes).font(.system(size: 13)).foregroundStyle(Ink.fineGrey).lineLimit(1) }
+    HStack(alignment: .center, spacing: 12) {
+      AirlineMark(name: offer.airline, logo: offer.logo, size: 40)
+      VStack(alignment: .leading, spacing: 4) {
+        Text([offer.airline, offer.price].filter { !$0.isEmpty }.joined(separator: " · "))
+          .font(.system(size: 17)).foregroundStyle(Ink.theirsText)
+          .fixedSize(horizontal: false, vertical: true)
+        FlightTimesLine(times: offer.outbound)
+        if let back = offer.inbound { FlightTimesLine(times: back) }
       }
       .frame(maxWidth: .infinity, alignment: .leading)
-      Text(offer.price).font(.system(size: 15)).tracking(-0.15).monospacedDigit().foregroundStyle(Ink.theirsText).lineLimit(1).fixedSize()
-      Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(Ink.chevron)
     }
-    .padding(10)
-    .contentShape(Rectangle())
+    .padding(.horizontal, 10).padding(.vertical, 9)
+    .contentShape(.rect)
+    .accessibilityElement(children: .combine)
   }
 }
 
-/** The airline's logo on a white disc, or its initials (`__simeonAirlineMark`). */
+/** "2:30pm ----- 2h40m ----- 5:10pm"; too long for the row, the time in the air goes under the times. */
+struct FlightTimesLine: View {
+  let times: FlightTimes
+
+  var body: some View {
+    ViewThatFits(in: .horizontal) {
+      HStack(spacing: 6) {
+        Text(times.depart).fixedSize()
+        FlightDashes()
+        if !times.label.isEmpty {
+          Text(times.label).font(.system(size: 12)).fixedSize()
+          FlightDashes()
+        }
+        Text(times.arrive).fixedSize()
+      }
+      VStack(alignment: .leading, spacing: 1) {
+        Text([times.depart, times.arrive].filter { !$0.isEmpty }.joined(separator: " – ")).fixedSize(horizontal: false, vertical: true)
+        if !times.label.isEmpty { Text(times.label).font(.system(size: 12)).fixedSize(horizontal: false, vertical: true) }
+      }
+    }
+    .font(.system(size: 15))
+    .foregroundStyle(Ink.fineGrey)
+  }
+}
+
+/** The dashed rule between a row's times; it takes what the line leaves, at least 12 pt. */
+struct FlightDashes: View {
+  var body: some View {
+    FlightDashLine()
+      .stroke(Ink.fineGrey.opacity(0.55), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+      .frame(minWidth: 12, maxWidth: .infinity)
+      .frame(height: 1)
+      .accessibilityHidden(true)
+  }
+}
+
+struct FlightDashLine: Shape {
+  func path(in rect: CGRect) -> Path {
+    var path = Path()
+    path.move(to: CGPoint(x: rect.minX, y: rect.midY))
+    path.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
+    return path
+  }
+}
+
+/**
+ * The airline's logo on a white disc, or its initials (`__simeonAirlineMark`).
+ * The logo is sized by its own shape (`AirlineLogo.box`): a square symbol
+ * fills about two thirds of the disc, a wordmark runs nearly across it.
+ */
 struct AirlineMark: View {
   let name: String
   let logo: String
-  var size: CGFloat = 36
+  var size: CGFloat = 40
   @State private var image: UIImage?
 
   var body: some View {
@@ -550,13 +620,15 @@ struct AirlineMark: View {
       Circle().fill(Color.white)
       // The airline's own logo (an SVG from the offer, drawn by RemoteLogos), else its initials, as the Mac's card falls back.
       if let image {
-        Image(uiImage: image).resizable().scaledToFit().frame(width: size * 0.61, height: size * 0.61)
+        let box = AirlineLogo.box(width: Double(image.size.width), height: Double(image.size.height), diameter: Double(size))
+        Image(uiImage: image).resizable().interpolation(.high).frame(width: box.width, height: box.height)
       } else {
         initials
       }
     }
     .frame(width: size, height: size)
-    .overlay(Circle().stroke(Color.black.opacity(0.12), lineWidth: 0.5))
+    .overlay(Circle().strokeBorder(Color.black.opacity(0.1), lineWidth: 0.5))
+    .accessibilityHidden(true)
     .task(id: logo) {
       guard let url = URL(string: logo), !logo.isEmpty else { return }
       image = await RemoteLogos.shared.image(for: url)
@@ -568,73 +640,139 @@ struct AirlineMark: View {
   }
 }
 
-/** One offer, drawn as the agent's page draws a profile: the mark, the route, then Price, each leg and the fare's terms. */
+/**
+ * One flight, opened as Muse opens one: the route over its stops and time,
+ * the close button at the right; the total in green; a card per flight
+ * (from and to with the airline's logo, departing and arriving, then the
+ * flight, the cabin and the time in the air), the layover between two, a
+ * round trip's two ways under their own titles; then the fare's terms. The
+ * sheet is as tall as what it holds. No Book button: booking isn't built
+ * (the founder had it taken off on 2 October 2026).
+ */
 struct FlightDetails: View {
   let offer: FlightOffer
+  var test = false
   @Environment(\.dismiss) private var dismiss
+  @State private var headHeight: CGFloat = 80
+  @State private var bodyHeight: CGFloat = 440
 
   var body: some View {
     let from = offer.from.isEmpty ? (offer.legs.first?.from ?? "") : offer.from
     let to = offer.to.isEmpty ? (offer.legs.last?.to ?? "") : offer.to
-    ScrollView {
-      VStack(spacing: 0) {
-        VStack(spacing: 0) {
-          AirlineMark(name: offer.airline, logo: offer.logo, size: 72)
-          Text("\(from) → \(to)").font(.system(size: 22, weight: .semibold)).foregroundStyle(Ink.primary).padding(.top, 14)
-          Text([offer.date, offer.duration, offer.stops.components(separatedBy: " · ").first ?? ""].filter { !$0.isEmpty }.joined(separator: " · "))
-            .font(.system(size: 17)).foregroundStyle(Ink.secondary).padding(.top, 2)
+    VStack(spacing: 0) {
+      ZStack {
+        VStack(spacing: 2) {
+          Text([from, to].filter { !$0.isEmpty }.joined(separator: " to "))
+            .font(.system(size: 17, weight: .semibold)).foregroundStyle(Ink.primary)
+            .accessibilityAddTraits(.isHeader)
+          if !offer.shape.isEmpty { Text(offer.shape).font(.system(size: 15)).foregroundStyle(Ink.secondary) }
         }
-        .padding(.top, 12)
-        VStack(alignment: .leading, spacing: 22) {
-          if !offer.price.isEmpty { section("Price") { row("Total", offer.price, note: offer.priceNote) } }
-          ForEach(Array(offer.legs.enumerated()), id: \.offset) { index, leg in
-            section([leg.heading, "\(leg.from) → \(leg.to)"].filter { !$0.isEmpty }.joined(separator: " · ")) {
-              row("Departs", [leg.departDay, leg.depart].filter { !$0.isEmpty }.joined(separator: " · "))
-              row("Arrives", [leg.arriveDay, leg.arrive].filter { !$0.isEmpty }.joined(separator: " · "))
-              row("Flight", [leg.flight, leg.carrier != offer.airline ? leg.carrier : ""].filter { !$0.isEmpty }.joined(separator: " · "))
-              row("Cabin", leg.cabin)
-              row("Time in the air", leg.duration)
-              if !leg.layover.isEmpty && index < offer.legs.count - 1 {
-                Text(leg.layover.replacingOccurrences(of: " in ", with: " layover in ")).font(.system(size: 13)).foregroundStyle(Ink.secondary).padding(.top, 10)
+        .multilineTextAlignment(.center)
+        .padding(.horizontal, 52)
+        HStack {
+          Spacer(minLength: 0)
+          CloseDisc { dismiss() }
+        }
+      }
+      .padding(.horizontal, 16).padding(.top, 20).padding(.bottom, 8)
+      .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { headHeight = $0 }
+      ScrollView {
+        VStack(alignment: .leading, spacing: 16) {
+          if !offer.price.isEmpty { total }
+          ForEach(Array(offer.ways.enumerated()), id: \.offset) { _, way in
+            VStack(alignment: .leading, spacing: 10) {
+              if !way.title.isEmpty {
+                Text(way.title).font(.system(size: 13)).foregroundStyle(Ink.secondary).padding(.horizontal, 4)
+              }
+              ForEach(Array(way.legs.enumerated()), id: \.offset) { index, leg in
+                FlightLegCard(leg: leg, logo: leg.logo.isEmpty ? offer.logo : leg.logo)
+                if index < way.legs.count - 1, !leg.layoverLine.isEmpty {
+                  Label(leg.layoverLine, systemImage: "clock")
+                    .font(.system(size: 15)).foregroundStyle(Ink.secondary)
+                    .padding(.horizontal, 6)
+                }
               }
             }
           }
-          if !(offer.refundable + offer.changeable + offer.bags).isEmpty {
-            section("Fare") {
-              row("Cancellation", offer.refundable)
-              row("Changes", offer.changeable)
-              row("Bags", offer.bags)
+          if !offer.terms.isEmpty {
+            VStack(alignment: .leading, spacing: 4) {
+              ForEach(offer.terms, id: \.self) { line in Text(line).fixedSize(horizontal: false, vertical: true) }
             }
+            .font(.system(size: 15)).foregroundStyle(Ink.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16)
+            .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
           }
         }
-        .padding(.top, 30)
+        .padding(.horizontal, 16).padding(.top, 6).padding(.bottom, 24)
+        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { bodyHeight = $0 }
       }
-      .padding(.horizontal, 20).padding(.bottom, 30)
+      .scrollBounceBehavior(.basedOnSize)
     }
     .background(Ink.ground)
-    .overlay(alignment: .topLeading) { CloseDisc { dismiss() }.padding(14) }
+    .presentationDetents([.height(headHeight + bodyHeight)])
+    .presentationDragIndicator(.visible)
   }
 
-  private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
-    VStack(alignment: .leading, spacing: 0) {
-      Text(title).font(.system(size: 13)).foregroundStyle(Ink.secondary).padding(.bottom, 2)
-      content()
+  /** "Total Price" and the price in green, what it covers under it. */
+  private var total: some View {
+    VStack(alignment: .leading, spacing: 2) {
+      HStack(alignment: .firstTextBaseline, spacing: 12) {
+        Text("Total Price").font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.primary)
+        Spacer(minLength: 0)
+        Text(offer.price).font(.system(size: 20, weight: .semibold)).foregroundStyle(Ink.fare)
+      }
+      ForEach([offer.priceNote, test ? "Test results, not real fares" : ""].filter { !$0.isEmpty }, id: \.self) { line in
+        Text(line).font(.system(size: 13)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true)
+      }
     }
+    .padding(.horizontal, 4)
+  }
+}
+
+/** One flight in the sheet: from and to with the airline's logo, departing and arriving, then the flight, the cabin and the time in the air. */
+struct FlightLegCard: View {
+  let leg: FlightLeg
+  let logo: String
+
+  var body: some View {
+    let details = (leg.flightLines + [leg.cabin, leg.duration.isEmpty ? "" : "\(leg.duration) in the air"]).filter { !$0.isEmpty }
+    VStack(alignment: .leading, spacing: 0) {
+      HStack(alignment: .center, spacing: 12) {
+        Text([leg.from, leg.to].filter { !$0.isEmpty }.joined(separator: " to "))
+          .font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.primary)
+        Spacer(minLength: 0)
+        AirlineMark(name: leg.carrier, logo: logo, size: 30)
+      }
+      VStack(alignment: .leading, spacing: 10) {
+        moment("arrow.up.right", "Departing", leg.departing)
+        moment("arrow.down.left", "Arriving", leg.arriving)
+      }
+      .padding(.top, 12)
+      if !details.isEmpty {
+        Rectangle().fill(Ink.hairline).frame(height: 0.5).padding(.vertical, 14)
+        VStack(alignment: .leading, spacing: 3) {
+          ForEach(details, id: \.self) { line in Text(line).fixedSize(horizontal: false, vertical: true) }
+        }
+        .font(.system(size: 15)).foregroundStyle(Ink.secondary)
+      }
+    }
+    .padding(16)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
   }
 
   @ViewBuilder
-  private func row(_ label: String, _ value: String, note: String = "") -> some View {
+  private func moment(_ symbol: String, _ label: String, _ value: String) -> some View {
     if !value.isEmpty {
-      HStack(alignment: .firstTextBaseline, spacing: 16) {
-        Text(label).font(.system(size: 15)).foregroundStyle(Ink.primary)
-        Spacer(minLength: 0)
-        VStack(alignment: .trailing, spacing: 0) {
-          Text(value).font(.system(size: 15)).foregroundStyle(Ink.secondary).multilineTextAlignment(.trailing)
-          if !note.isEmpty { Text(note).font(.system(size: 13)).foregroundStyle(Ink.secondary) }
-        }
+      HStack(alignment: .firstTextBaseline, spacing: 12) {
+        Image(systemName: symbol).font(.system(size: 15, weight: .medium)).foregroundStyle(Ink.secondary).frame(width: 18)
+        Text(label).font(.system(size: 17)).foregroundStyle(Ink.primary).frame(width: 86, alignment: .leading)
+        Text(value).font(.system(size: 17)).foregroundStyle(Ink.primary)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .fixedSize(horizontal: false, vertical: true)
       }
-      .padding(.vertical, 11)
-      .overlay(alignment: .bottom) { Rectangle().fill(Ink.hairline).frame(height: 0.5) }
+      .accessibilityElement(children: .combine)
     }
   }
 }

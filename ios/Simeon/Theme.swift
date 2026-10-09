@@ -65,6 +65,8 @@ enum Ink {
   /** The flights card's greys (`--f-ink-2`, `--f-ink-3`). */
   static let fineGrey = Color.dynamic(light: "#86868b", dark: "#98989d")
   static let chevron = Color.dynamic(light: "#c7c7cc", dark: "#48484a")
+  /** A flight's total, green as Muse's (the system's green; the darker one on white, where the bright one is hard to read). */
+  static let fare = Color.dynamic(light: "#248a3d", dark: "#30d158")
   /** An agent's title in the list ("Chief of Staff"). */
   static let title = Color.dynamic(light: "#255a93", dark: "#5090e2")
   static let unread = Color.dynamic(light: "#0a84ff", dark: "#0a84ff")

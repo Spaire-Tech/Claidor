@@ -24,7 +24,7 @@ the phone design. None of the screens has been compiled yet (see
 
 | Gap (section) | Now |
 |---|---|
-| Flight card (§1, §3.3) | The card: title, subtitle, rows with the airline circle, times, stops, price; a row opens the details (legs, fare rules). |
+| Flight card (§1, §3.3) | In Muse's layout since 9 October (§22): the route and date, rows with the airline's round logo, "airline · price" and the times on a dashed line; a row opens the flight (total, a card per flight, the fare's terms). |
 | Brand names in text (§2) | All 75 names, anywhere in a message, with their logos and the readable light and dark colours. |
 | Agent names in text (§2) | The agent's butterfly before the name, in the Mac's colours. |
 | Question card (§3.1) | Rings, help text, "Type your own answer" with Submit, the X; answered and dismissed states. |
@@ -627,6 +627,49 @@ sheet now comes up before every app sign-in page opens, in our own words
 
 The text is built in `ConnectConsent.swift` (tested); the sheet is
 `ConnectConsentSheet` in `Cards.swift`.
+
+## 22. Flights in Muse's layout, and the logos (9 October 2026)
+
+"The logo doesnt show well at all … i found an absolute better design from
+muse and i want that for all flights suggestions. everything should fit."
+
+Why the logos looked wrong, from the files themselves: Duffel's
+`logo_symbol_url` is a square symbol for most airlines (Delta 74 × 60,
+Southwest 80 × 80) but a long wordmark for others (Alaska 269 × 80, JetBlue
+237 × 80, Spirit 290 × 80, Allegiant 159 × 80, KLM 135 × 80). The mark fit
+every logo into the same 22 pt square inside a 36 pt circle, so a wordmark
+came out about 6 pt tall. The SVG was also drawn by photographing a web
+view placed off the screen, which WebKit need not paint at all.
+
+- The logo is now painted onto a canvas by WebKit and read back as a PNG
+  (the photograph stays only as a fallback), cut to its own edges, and
+  sized in its circle by its shape (`AirlineLogo.box`): a symbol fills
+  about two thirds of the circle, a wordmark runs nearly across it. A
+  picture with nothing on it shows the airline's initials. Pictures kept
+  by the old way are dropped (a new cache folder).
+- Duffel has no symbol for some airlines: Alaska shows its wordmark, not
+  the face Muse shows.
+- The card: "Seattle to Los Angeles — Sat, Oct 10" as one heading (test
+  results, refundable-only or more than one traveller under it), then a row
+  per offer: the logo in a 40 pt white circle, "Delta Air Lines · $233.40",
+  and "2:30pm ---- 2h40m ---- 5:10pm" (with "· 1 stop" when it stops; a
+  round trip's way back on a second line). The card runs nearly the chat's
+  width so the lines fit, and a line still too long puts the time in the
+  air under the times instead of cutting anything. No chevrons or lines
+  between rows, as in Muse's card.
+- A row opens the flight in a sheet as tall as what it holds: the route
+  with its stops and time, Total Price in green with what it covers, a card
+  per flight (from and to with the airline's logo, Departing and Arriving
+  with their day, the flight number and airline, the cabin, time in the
+  air), the layover between two, a round trip's Outbound and Return, and
+  the fare's terms in plain lines ("No refund if you cancel", "Changes for
+  a $99.00 fee", "1 carry-on").
+- Not copied: Muse's Book button. Booking isn't built, and the founder had
+  the button taken off on 2 October.
+- The server's card is unchanged; the words are rewritten on the phone
+  (`Flights.swift` in SimeonCore, tested). The Mac's card is unchanged.
+- The demo's Cards chat (`--gallery`) has the screenshot's four flights and
+  a round trip.
 
 ## Suggested order (the founder decides)
 
