@@ -2,12 +2,12 @@ import SwiftUI
 import UIKit
 import SimeonCore
 
-/** A message's type: 15 pt on a 21 pt line, a point up from the Mac's 14 on 20 (`.sand-message-prose`) so it reads easily on a phone. */
+/** A message's type: 17 pt on a 23 pt line, the size Messages sets (the founder asked twice for bigger; the Mac's is 14 on 20, `.sand-message-prose`). */
 enum MessageType {
-  static let size: CGFloat = 15
-  static let lineHeight: CGFloat = 21
-  /** The person's bubble sets its text a point looser (22 pt). */
-  static let mineLineHeight: CGFloat = 22
+  static let size: CGFloat = 17
+  static let lineHeight: CGFloat = 23
+  /** The person's bubble sets its text a point looser (24 pt). */
+  static let mineLineHeight: CGFloat = 24
 
   static func spacing(size: CGFloat = size, lineHeight: CGFloat = lineHeight) -> CGFloat {
     max(0, lineHeight - UIFont.systemFont(ofSize: size).lineHeight)
@@ -223,9 +223,9 @@ struct MarkdownBlockView: View {
         .lineSpacing(MessageType.spacing())
         .fixedSize(horizontal: false, vertical: true)
     case .heading(let level, let text):
-      // A point over the Mac's: h1 23 / 29, h2 18 / 25, h3 and below the message's own 15 / 21 with 8 above; all 600.
-      let size: CGFloat = level == 1 ? 23 : level == 2 ? 18 : MessageType.size
-      let line: CGFloat = level == 1 ? 29 : level == 2 ? 25 : MessageType.lineHeight
+      // Over the Mac's, with the message's 17: h1 25 / 31, h2 20 / 27, h3 and below the message's own 17 / 23 with 8 above; all 600.
+      let size: CGFloat = level == 1 ? 25 : level == 2 ? 20 : MessageType.size
+      let line: CGFloat = level == 1 ? 31 : level == 2 ? 27 : MessageType.lineHeight
       InlineText.make(text, size: size, weight: .semibold, mentioning: mentioning)
         .lineSpacing(MessageType.spacing(size: size, lineHeight: line))
         .fixedSize(horizontal: false, vertical: true)
@@ -325,7 +325,7 @@ struct CodeBlockView: View {
     VStack(alignment: .leading, spacing: 0) {
     ScrollView(.horizontal, showsIndicators: false) {
       Text(shown.text)
-        .font(.system(size: 14, design: .monospaced))
+        .font(.system(size: 16, design: .monospaced))
         .foregroundStyle(Ink.theirsText)
         .lineSpacing(3)
         .fixedSize(horizontal: true, vertical: true)
@@ -361,7 +361,7 @@ struct MarkdownTable: View {
       Grid(alignment: .leading, horizontalSpacing: 0, verticalSpacing: 0) {
         GridRow {
           ForEach(Array(header.enumerated()), id: \.offset) { index, cell in
-            InlineText.make(cell, size: 14, weight: .medium, mentioning: mentioning)
+            InlineText.make(cell, size: 16, weight: .medium, mentioning: mentioning)
               .foregroundStyle(Ink.primary)
               .gridColumnAlignment(alignment(index))
               .padding(8)
@@ -371,7 +371,7 @@ struct MarkdownTable: View {
           Divider().overlay(Ink.hairline).gridCellUnsizedAxes(.horizontal)
           GridRow {
             ForEach(Array(row.enumerated()), id: \.offset) { _, cell in
-              InlineText.make(cell, size: 14, mentioning: mentioning)
+              InlineText.make(cell, size: 16, mentioning: mentioning)
                 .foregroundStyle(Ink.secondary)
                 .padding(8)
             }

@@ -40,8 +40,16 @@ struct SimeonApp: App {
 
 struct RootView: View {
   @Environment(SessionController.self) private var session
+  @Environment(\.scenePhase) private var scenePhase
 
   var body: some View {
+    phaseView
+      // A chat left open behind a locked phone is not being read (AppStore.isForeground).
+      .onChange(of: scenePhase) { _, phase in session.store.isForeground = phase == .active }
+  }
+
+  @ViewBuilder
+  private var phaseView: some View {
     switch session.phase {
     case .starting:
       // Under the launch cover.

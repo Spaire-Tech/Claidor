@@ -72,7 +72,10 @@ struct ChatView: View {
       }
       .onDisappear { store.close(agentId) }
       // Back from the background: what was said while the phone slept did not stream, so fetch it.
-      .onChange(of: scenePhase) { _, phase in if phase == .active { Task { await store.refresh(agentId) } } }
+      // Back in front with the chat on screen: what came meanwhile is read now.
+      .onChange(of: scenePhase) { _, phase in
+        if phase == .active { Task { await store.refresh(agentId); store.markChatRead(agentId) } }
+      }
       .task {
         await store.open(agentId)
         guard let agent = store.agent(agentId) else { return }
@@ -835,10 +838,11 @@ struct MarkPop: ViewModifier {
 }
 
 /**
- * What the agent is doing, in words (`TJn`): its little picture and the
- * line under the moving light. A new activity comes in from 4 pt below
- * (0.18 s); one that changes again within 0.8 s waits its turn, so the
- * words do not flicker; after a minute at it, how long (" · 3m").
+ * What the agent is doing, in words (`TJn`), under the moving light; no
+ * picture beside them (the founder, 9 October 2026: "no tool please"). A
+ * new activity comes in from 4 pt below (0.18 s); one that changes again
+ * within 0.8 s waits its turn, so the words do not flicker; after a minute
+ * at it, how long (" · 3m").
  */
 struct ActivityLabel: View {
   let line: ActivityLine
@@ -850,7 +854,6 @@ struct ActivityLabel: View {
     let current = shown ?? line
     ZStack(alignment: .leading) {
       HStack(spacing: 6) {
-        ActivityIcon(icon: current.icon)
         ShimmerText(text: current.text)
         TimelineView(.periodic(from: startedAt, by: 30)) { context in
           if let elapsed = ActivityLine.elapsed(context.date.timeIntervalSince(startedAt)) {
@@ -873,52 +876,6 @@ struct ActivityLabel: View {
       if shown?.key != line.key { startedAt = Date() }
       shown = line
       shownAt = Date()
-    }
-  }
-}
-
-/** The activity's little picture: the window's glyph as the system's symbol, the app's logo, or the agent being messaged. */
-struct ActivityIcon: View {
-  let icon: ActivityLine.Icon
-  @Environment(AppStore.self) private var store
-
-  var body: some View {
-    Group {
-      switch icon {
-      case .glyph(let name):
-        Image(systemName: Self.symbol(name)).font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.secondary)
-      case .connector(let service):
-        if let logo = UIImage(named: "Connectors/\(CatalogApp.slug(service))") {
-          Image(uiImage: logo).resizable().scaledToFit()
-        } else {
-          Image(systemName: "powerplug").font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.secondary)
-        }
-      case .agent(let id):
-        if let agent = store.agent(id) { AgentAvatar(agent: agent) } else {
-          Image(systemName: "bubble.left").font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.secondary)
-        }
-      }
-    }
-    .frame(width: 16, height: 16)
-  }
-
-  /** The window's glyphs, as SF Symbols. */
-  static func symbol(_ glyph: String) -> String {
-    switch glyph {
-    case "thinking-medium": return "brain"
-    case "magnifying-glass": return "magnifyingglass"
-    case "globe": return "globe"
-    case "book-open": return "book"
-    case "pencil": return "pencil"
-    case "laptop": return "laptopcomputer"
-    case "terminal": return "apple.terminal"
-    case "hourglass": return "hourglass"
-    case "image": return "photo"
-    case "cursor-logo": return "chevron.left.forwardslash.chevron.right"
-    case "device-desktop": return "desktopcomputer"
-    case "person-chat-bubble": return "bubble.left"
-    case "plug": return "powerplug"
-    default: return "wrench.adjustable"
     }
   }
 }

@@ -581,6 +581,29 @@ final class StoreTests: XCTestCase {
     XCTAssertEqual(backend.opened, ["theo"])
   }
 
+  /** What came while the chat was on screen was read: going back does not show it unread (9 October 2026). */
+  func testAChatOnScreenStaysRead() async throws {
+    let backend = QuietBackend()
+    let store = AppStore()
+    await store.attach(backend)
+    await store.open("theo")
+    XCTAssertEqual(backend.read, ["theo"])
+    // An answer comes in while the chat is open: the host's roster says unread.
+    var theo = Agent(id: "theo", name: "Theo", hasUnread: true, unreadCount: 1)
+    theo.lastActivityAt = 2_000
+    store.apply(.agentUpserted(theo))
+    XCTAssertEqual(store.agent("theo")?.hasUnread, false, "the chat on screen is read")
+    try await Task.sleep(nanoseconds: 50_000_000)
+    XCTAssertEqual(backend.read.count, 2, "and the host is told")
+    // Going back: read too, and an answer that lands after it is unread again.
+    store.close("theo")
+    try await Task.sleep(nanoseconds: 50_000_000)
+    XCTAssertEqual(backend.read.count, 3)
+    theo.lastActivityAt = 3_000
+    store.apply(.agentUpserted(theo))
+    XCTAssertEqual(store.agent("theo")?.hasUnread, true, "a chat not on screen keeps the host's word")
+  }
+
   func testAnAnswerThatDidNotStreamStillShows() async throws {
     let backend = QuietBackend()
     let store = AppStore()
@@ -927,7 +950,8 @@ final class QuietBackend: AgentBackend, @unchecked Sendable {
   func listAgents() async throws -> [Agent] { [Agent(id: "theo", name: "Theo")] }
   func transcript(_ agentId: String) async throws -> [Entry] { opened.append(agentId); return lines.compactMap(Entry.init) }
   func send(_ agentId: String, text: String, attachments: [AttachmentRef], replyTo: String?, nonce: String?) async throws {}
-  func markRead(_ agentId: String) async {}
+  var read: [String] = []
+  func markRead(_ agentId: String) async { read.append(agentId) }
   func createAgent(name: String, colour: String) async throws -> String { "x" }
   func createGroup(name: String, memberIds: [String]) async throws -> String { "g" }
   func answer(_ agentId: String, entryId: String, value: String) async throws {}

@@ -214,7 +214,7 @@ public final class AppStore {
   public func reloadRoster() async {
     guard let backend else { return }
     do {
-      agents = sortRoster(try await backend.listAgents())
+      agents = readingOpenChat(sortRoster(try await backend.listAgents()))
     } catch {
       problem = "Couldn't reach your agents: \(error.localizedDescription)"
     }
@@ -224,7 +224,7 @@ public final class AppStore {
     Trace.mark("handling \(event.name)")
     switch event {
     case .agents(let list):
-      let sorted = sortRoster(list)
+      let sorted = readingOpenChat(sortRoster(list))
       if sorted != agents { agents = sorted }
       catchUpOpenChat()
     case .agentUpserted(let agent):
@@ -232,7 +232,7 @@ public final class AppStore {
       if agents.contains(agent) { return }
       var next = agents.filter { $0.id != agent.id }
       next.append(agent)
-      agents = sortRoster(next)
+      agents = readingOpenChat(sortRoster(next))
       if agent.id == openChat { catchUpOpenChat() }
     case .transcript(let change):
       guard let current = transcripts[change.agentId] else { return }
@@ -514,9 +514,56 @@ public final class AppStore {
     setTranscript(agentId, entries)
   }
 
-  /** The chat left the screen. */
+  /** The chat left the screen: all of it was read, whatever came while it was open. */
   public func close(_ agentId: String) {
     if openChat == agentId { openChat = nil }
+    markChatRead(agentId)
+  }
+
+  /**
+   * Whether the app is in front (the app sets it from its scene): a chat left
+   * open behind a locked phone is not being read.
+   */
+  @ObservationIgnored public var isForeground = true
+
+  /** The chat on screen is read: here at once, and on the host. */
+  public func markChatRead(_ agentId: String) {
+    if let index = agents.firstIndex(where: { $0.id == agentId }), agents[index].hasUnread || agents[index].unreadCount > 0 {
+      agents[index].hasUnread = false
+      agents[index].unreadCount = 0
+    }
+    markReadSoon(agentId)
+  }
+
+  /**
+   * The host counts a chat unread when anything in it is newer than its last
+   * reading (`lastActivityAt > lastViewedAt`), so a line that comes into the
+   * chat on screen makes it unread again, and going back showed it unread
+   * (the founder, 9 October 2026). While it is on screen, the roster's word
+   * for it is "read", and the host is told so.
+   */
+  private func readingOpenChat(_ list: [Agent]) -> [Agent] {
+    guard isForeground, let open = openChat, let index = list.firstIndex(where: { $0.id == open }), list[index].hasUnread || list[index].unreadCount > 0 else { return list }
+    var read = list
+    read[index].hasUnread = false
+    read[index].unreadCount = 0
+    markReadSoon(open)
+    return read
+  }
+
+  @ObservationIgnored private var marking: Set<String> = []
+  @ObservationIgnored private var markAgain: Set<String> = []
+
+  /** One `setAgentUnread` at a time per chat; one more after it if more came meanwhile. */
+  private func markReadSoon(_ agentId: String) {
+    guard let backend else { return }
+    if marking.contains(agentId) { markAgain.insert(agentId); return }
+    marking.insert(agentId)
+    Task {
+      await backend.markRead(agentId)
+      marking.remove(agentId)
+      if markAgain.remove(agentId) != nil { markReadSoon(agentId) }
+    }
   }
 
   /** The chat fetched again: its newest lines, with any that streamed in meanwhile kept. */

@@ -548,6 +548,26 @@ all buttons." What the code showed, button by button:
 Every other button was checked for the same: its whole shape takes the
 tap (a list row, a bar button, or a label with its own `contentShape`).
 
+## 19. Round of 9 October, night
+
+- Read stays read. The host counts a chat unread when anything in it is
+  newer than its last reading (`lastActivityAt > lastViewedAt`,
+  `session-summaries.ts`); the phone marked a chat read only as it opened,
+  so an answer that came while it was on screen made it unread again, and
+  going back showed it unread. Now the chat on screen stays read as lines
+  come (the host is told, one call at a time), leaving it marks it read,
+  and coming back to the app with it open does too. A chat left open
+  behind a locked phone is not marked (`AppStore.isForeground`). Tested.
+- The list's rows: the agent's title is back beside the name, in a small
+  grey tag (the system's own fill), as the founder's reference has it;
+  only when it fits whole, the name never cut for it. The butterfly is
+  52 pt (from 46), in proportion with the name's line and the two of the
+  preview.
+- The chat's text is 17 pt on 23 pt lines, the size Messages sets (it was
+  15); headings, tables, code and the cards' text grew with it.
+- The words beside a working agent have no picture before them ("no tool
+  please").
+
 ## Suggested order (the founder decides)
 
 1. The chat's look: the bubble, the top bar, markdown, brand names with logos, agent names with butterflies.

@@ -532,16 +532,25 @@ struct AgentRow: View, Equatable {
       }
       .frame(width: 22)
       AgentAvatar(agent: agent, members: members)
-        .frame(width: 46, height: 46)
+        .frame(width: 52, height: 52)
         .overlay(alignment: .bottomTrailing) {
-          if let dot = status.cornerOnRow { StatusDot(colour: dot, size: 9.6).offset(x: -1, y: -1) }
+          if let dot = status.cornerOnRow { StatusDot(colour: dot, size: 10.8).offset(x: -1, y: -1) }
         }
-        .padding(.trailing, 10)
-      VStack(alignment: .leading, spacing: 2) {
+        .padding(.trailing, 12)
+      VStack(alignment: .leading, spacing: 3) {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
-          Text(agent.name).font(.system(size: 17, weight: .semibold)).foregroundStyle(Ink.primary).lineLimit(1)
+          // The name, and the agent's title in a grey tag beside it when it fits whole (the founder's reference, 9 October 2026).
+          ViewThatFits(in: .horizontal) {
+            HStack(alignment: .firstTextBaseline, spacing: 7) {
+              name
+              if !agent.title.isEmpty { TitleTag(title: agent.title) }
+            }
+            name
+          }
+          .layoutPriority(1)
           Spacer(minLength: 6)
-          RowTime(agent: agent)
+          // The time keeps its whole width; the name gives way first.
+          RowTime(agent: agent).fixedSize()
           Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Ink.tertiary)
         }
         Text(line).font(.system(size: 15)).foregroundStyle(Ink.secondary)
@@ -554,12 +563,32 @@ struct AgentRow: View, Equatable {
     .contentShape(.rect)
   }
 
+  private var name: some View {
+    Text(agent.name).font(.system(size: 17, weight: .semibold)).foregroundStyle(Ink.primary).lineLimit(1)
+  }
+
   /** The Mac sidebar's order: what it is doing while it works, else your unsent draft, else "Waiting for you: …" or the last line. */
   private var line: String {
     if agent.isBusy, let activity = agent.activityLabel { return activity }
     if agent.isComposing { return "Typing…" }
     if let draft = store.drafts[agent.id] { return "Draft: " + draft.split(whereSeparator: \.isWhitespace).joined(separator: " ") }
     return agent.previewLine
+  }
+}
+
+/** An agent's title as a list row shows it: a small grey tag, the system's own fill, as Apple tags a word beside a name. */
+struct TitleTag: View {
+  let title: String
+
+  var body: some View {
+    Text(title)
+      .font(.system(size: 13, weight: .medium))
+      .foregroundStyle(Ink.secondary)
+      .lineLimit(1)
+      .fixedSize()
+      .padding(.horizontal, 7)
+      .padding(.vertical, 2.5)
+      .background(Color(.tertiarySystemFill), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
   }
 }
 
