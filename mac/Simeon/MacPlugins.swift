@@ -81,7 +81,7 @@ final class PluginsModel {
   // MARK: Reading
 
   private func call(_ method: String, _ args: JSON) async throws -> JSON {
-    guard let backend = store?.backend else { throw SimeonAPIError(message: "Sign in to Simeon first.", status: 401) }
+    guard let backend = store?.backend else { throw GatewayError(message: "Sign in to Simeon first.", refused: true) }
     return try await backend.command(method, args)
   }
 
@@ -258,7 +258,8 @@ final class PluginsModel {
         }
       }
       self.setup = nil
-      if !path.isEmpty { path.removeLast() }
+      // Back to where Add or Edit Values was pressed, unless the person went back already.
+      if path.last == .setup(setup.entryId) { path.removeLast() }
     }
   }
 
@@ -278,7 +279,7 @@ final class PluginsModel {
         _ = try? await call("syncPluginSkills", [:])
         await loadSkills(agentId)
       }
-      if removed && entry == nil && !path.isEmpty { path.removeLast() }
+      if removed && entry == nil && path.last == .installed(serverId) { path.removeLast() }
     }
   }
 
@@ -403,7 +404,7 @@ final class PluginsModel {
       let answer = try await call("deleteAgentWorkflow", ["id": .string(agentId), "workflowId": .string(skill.id)])
       if let list = answer.array { skills = list.compactMap(AgentSkill.init(json:)) }
       show(Plugins.Notice(isError: false, text: "Deleted \(skill.name)"))
-      if !path.isEmpty { path.removeLast() }
+      if path.last == .skill(skill.id) { path.removeLast() }
     } catch {
       fail(error)
     }
@@ -426,7 +427,10 @@ final class PluginsModel {
       ])
       guard let id = answer["agent"]?["id"]?.text else { throw GatewayError(message: "createAgent: no agent in the answer", refused: true) }
       await store.reloadRoster()
-      try await store.backend?.send(id, text: Plugins.setupAgentRequest, attachments: [], replyTo: nil)
+      // The agent exists now: it opens even if its first message could not be sent, which the notice says.
+      do { try await store.backend?.send(id, text: Plugins.setupAgentRequest, attachments: [], replyTo: nil) } catch {
+        show(Plugins.Notice(isError: true, text: "Couldn't start the agent: \(error.localizedDescription)"))
+      }
       return id
     } catch {
       show(Plugins.Notice(isError: true, text: "Couldn't start the agent: \(error.localizedDescription)"))
@@ -458,6 +462,13 @@ struct MacPlugins: View {
     .searchable(text: $model.query, placement: .toolbar, prompt: "Search plugins")
     .searchFocused($searchFocused)
     .overlay(alignment: .bottom) { PluginsNoticeView() .environment(model) }
+    // ⌘F with no agent open (the Agent menu's Find is off then): the search, as the overlay's own ⌘F.
+    .background {
+      Button("") { if model.path.isEmpty { searchFocused = true } }
+        .keyboardShortcut("f")
+        .opacity(0).frame(width: 0, height: 0)
+        .accessibilityHidden(true)
+    }
     .background { WindowReader(window: $hostWindow) }
     .frame(minWidth: 760, minHeight: 520)
     .task {
@@ -711,7 +722,7 @@ private struct ServerState: View {
 
   var body: some View {
     HStack(spacing: 8) {
-      if showsPill { StatusPill(status: server.status, detail: server.statusDetail) }
+      if showsPill { PluginStatusPill(status: server.status, detail: server.statusDetail) }
       if server.status == "needsAuth" {
         let key = model.pendingKey(server, accountKey: accountKey)
         let pending = model.pending[key]
@@ -727,7 +738,7 @@ private struct ServerState: View {
   }
 }
 
-private struct StatusPill: View {
+private struct PluginStatusPill: View {
   let status: String
   let detail: String?
 
@@ -807,9 +818,14 @@ private struct PluginsPage: View {
     }
   }
 
-  /** A page that can no longer be drawn goes back to the list. */
+  /** A page that can't be drawn yet waits for the catalog; one that never can goes back, from itself only. */
+  @ViewBuilder
   private var missing: some View {
-    Color.clear.onAppear { if !model.path.isEmpty { model.path.removeLast() } }
+    if !model.catalogLoaded {
+      ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+    } else {
+      Color.clear.onAppear { if let index = model.path.lastIndex(of: page) { model.path.removeSubrange(index...) } }
+    }
   }
 }
 
@@ -1069,7 +1085,7 @@ private struct SetupPage: View {
         ForEach(fields) { field in
           let invalid = tried && missing.contains(field)
           VStack(alignment: .leading, spacing: 5) {
-            (Text(field.label) + (field.isRequired ? Text("") : Text(" (optional)").foregroundStyle(.tertiary))).font(.system(size: 13, weight: .medium))
+            Text("\(Text(field.label))\(field.isRequired ? Text("") : Text(" (optional)").foregroundStyle(.tertiary))").font(.system(size: 13, weight: .medium))
             Group {
               if field.isSecret {
                 SecureField(field.placeholder ?? field.key, text: binding(field))

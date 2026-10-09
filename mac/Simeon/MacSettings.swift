@@ -123,8 +123,16 @@ struct MacAccountCard: View {
     case .signingIn:
       Button("Cancel") { session.cancelSignIn() }
     default:
-      Button("Sign In") { openWindow(id: "main") }
-        .buttonStyle(.borderedProminent)
+      Button("Sign In") {
+        // The window with the sign-in, brought forward; a new one only when there is none.
+        if let window = NSApp.windows.first(where: { $0.identifier?.rawValue.hasPrefix("main") == true }) {
+          window.makeKeyAndOrderFront(nil)
+          NSApp.activate()
+        } else {
+          openWindow(id: "main")
+        }
+      }
+      .buttonStyle(.borderedProminent)
     }
   }
 
@@ -188,7 +196,7 @@ struct MacTimeZoneRow: View {
       ForEach(TimeZoneChoices.values(override: override, known: Self.known), id: \.self) { value in
         let zone = value == TimeZoneChoices.automatic ? detected : value
         let label = value == TimeZoneChoices.automatic ? TimeZoneChoices.automaticLabel(detected: detected) : TimeZoneChoices.label(value)
-        (Text(label) + Text("  " + Self.time(now, in: zone)).foregroundStyle(.tertiary)).tag(value)
+        Text("\(Text(label))  \(Text(Self.time(now, in: zone)).foregroundStyle(.tertiary))").tag(value)
       }
     }
     .disabled(saving || settings == nil)
@@ -199,7 +207,8 @@ struct MacTimeZoneRow: View {
     settings = (settings ?? [:]).setting("userTimeZoneOverride", zone.isEmpty ? nil : .string(zone))
     saving = true
     Task {
-      if let next = await store.setHostSettings(["userTimeZoneOverride": .string(zone)]) { settings = next }
+      // A save that failed puts back what the computer has.
+      if let next = await store.setHostSettings(["userTimeZoneOverride": .string(zone)]) { settings = next } else { settings = await store.hostSettings() }
       saving = false
     }
   }
@@ -363,7 +372,7 @@ struct MacAutoReview: View {
     settings = (settings ?? [:]).setting("autoReviewInstructions", next.json)
     saving = true
     Task {
-      if let answer = await store.setHostSettings(["autoReviewInstructions": next.json]) { settings = answer }
+      if let answer = await store.setHostSettings(["autoReviewInstructions": next.json]) { settings = answer } else { settings = await store.hostSettings() }
       saving = false
     }
   }

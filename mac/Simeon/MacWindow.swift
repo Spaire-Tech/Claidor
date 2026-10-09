@@ -22,13 +22,14 @@ struct MacRoot: View {
           .toolbar(.hidden, for: .windowToolbar)
       case .signedIn:
         ZStack {
-          if session.firstRun == .needed {
-            OnboardingFlow()
+          if store.showsAccessCover {
+            // The computer refused this account before its agents were ever read: the window's access cover (`mzn`),
+            // ahead of the first run, which can't be decided without the computer.
+            MacAccessCover()
               .toolbar(.hidden, for: .windowToolbar)
               .transition(.opacity)
-          } else if store.showsAccessCover {
-            // The computer refused this account before its agents were ever read: the window's access cover (`mzn`).
-            MacAccessCover()
+          } else if session.firstRun == .needed {
+            OnboardingFlow()
               .toolbar(.hidden, for: .windowToolbar)
               .transition(.opacity)
           } else if store.agents.isEmpty && (store.isLoading || session.firstRun == .checking) {
@@ -48,6 +49,8 @@ struct MacRoot: View {
       store.isForeground = true
       // The window coming forward reads the computers again (at most once a minute, not mid-rebuild).
       store.windowCameForward(rebuilding: store.rebuild.isHardLocked)
+      // A plan bought on the web while Simeon was behind: the notice and the paused Send follow.
+      Task { await store.refreshAccess() }
     }
     // The sidebar says when the agents cannot be read; no alert on top of it (the window's). The rebuild is shown here.
     .onAppear { store.reportsRosterFailure = false; store.followsRebuild = true }
@@ -308,6 +311,7 @@ struct MacNameSheet: View {
  */
 struct MacAccessCover: View {
   @Environment(AppStore.self) private var store
+  @Environment(SessionController.self) private var session
   @Environment(\.openURL) private var openURL
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -340,9 +344,13 @@ struct MacAccessCover: View {
     .task {
       while !Task.isCancelled && store.showsAccessCover {
         try? await Task.sleep(nanoseconds: 4_000_000_000)
-        guard !Task.isCancelled, store.showsAccessCover else { return }
+        guard !Task.isCancelled, store.showsAccessCover else { break }
         await store.retryRoster()
       }
+      // The computer answered: what this account may do is read again, and whether it has had its first run.
+      guard !Task.isCancelled else { return }
+      await store.refreshAccess()
+      await session.recheckFirstRun()
     }
   }
 }

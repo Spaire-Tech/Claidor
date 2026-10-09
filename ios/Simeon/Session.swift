@@ -97,6 +97,8 @@ final class SessionController {
   private let vault = KeychainVault()
   @ObservationIgnored private var api: SimeonAPI?
   @ObservationIgnored private var sheet: ASWebAuthenticationSession?
+  /** The sign-in's poll, closed by Settings' Cancel (the sheet's own cancel calls nothing back). */
+  @ObservationIgnored private var sheetState: SheetState?
   private let presenter = SheetPresenter()
   let launch = Launch.current
 
@@ -240,6 +242,8 @@ final class SessionController {
     defer { signingInWith = nil }
     let metadata = SignIn.freshMetadata()
     let state = SheetState()
+    sheetState = state
+    defer { sheetState = nil }
     let session = ASWebAuthenticationSession(url: SignIn.loginURL(api: launch.api, metadata: metadata, provider: provider, redirectTarget: AppPlatform.urlScheme), callback: .customScheme(AppPlatform.urlScheme)) { url, _ in
       // Confirmed (the page opened simeon-ios://…) or closed: poll a little longer either way, as the Mac's pair is written as the page is answered.
       state.close(confirmed: url != nil)
@@ -273,7 +277,14 @@ final class SessionController {
 
   /** Settings' Cancel while signing in: the sign-in sheet closed, as its own Cancel does. */
   func cancelSignIn() {
+    sheetState?.close(confirmed: false)
     sheet?.cancel()
+  }
+
+  /** The first run decided again (after the access cover: the computer could not be asked before). */
+  func recheckFirstRun() async {
+    guard firstRun != .done else { return }
+    await checkFirstRun()
   }
 
   func signOut() async {

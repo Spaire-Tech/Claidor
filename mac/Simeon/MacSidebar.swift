@@ -900,6 +900,7 @@ struct MacAbout: View {
       Button(copied ? "Copied" : "Copy version info") {
         UIPasteboard.general.string = ["Version: \(SessionController.clientVersion)", "Release Track: stable", "OS: darwin"].joined(separator: "\n")
         copied = true
+        Task { try? await Task.sleep(nanoseconds: 2_000_000_000); copied = false }
       }
     }
     .padding(24)
