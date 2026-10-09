@@ -154,8 +154,12 @@ struct HomeView: View {
         // The account at the top left, straight to Settings.
         ToolbarItem(placement: .topBarLeading) {
           Button { sheet = .settings } label: {
-            Text(store.account?.initials.isEmpty == false ? store.account!.initials : "?")
-              .font(.system(size: 15, weight: .semibold))
+            // The initials once the account is known (remembered from the last launch, then the profile); a person, never a "?", before that.
+            if let initials = store.account?.initials, !initials.isEmpty {
+              Text(initials).font(.system(size: 15, weight: .semibold))
+            } else {
+              Image(systemName: "person.fill").font(.system(size: 14, weight: .semibold))
+            }
           }
           .accessibilityLabel("Settings")
         }
