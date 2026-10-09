@@ -110,9 +110,11 @@ final class CallTonePlayer: CallTonePlaying, @unchecked Sendable {
   }
 
   private static func player(_ wav: Data) -> AVAudioPlayer? {
+    #if os(iOS)
     let session = AVAudioSession.sharedInstance()
     try? session.setCategory(.playback, mode: .default)
     try? session.setActive(true)
+    #endif
     let player = try? AVAudioPlayer(data: wav, fileTypeHint: AVFileType.wav.rawValue)
     player?.prepareToPlay()
     return player

@@ -77,6 +77,10 @@ cd mobile && npm install && npx tsc --noEmit && npm test && npx expo run:ios
 cd ios/SimeonCore && swift test
 cd ios && xcodegen generate && open Simeon.xcodeproj
 
+# Native Mac app (mac/README.md; it builds the iPhone's views too, so build both after changing them)
+mac/scripts/build.sh
+cd mac && xcodegen generate && open SimeonMac.xcodeproj
+
 # Earlier names
 python3 scripts/check_names.py
 ```

@@ -56,10 +56,19 @@ struct ComposerPicker: ViewModifier {
 
   func body(content: Content) -> some View {
     content
+      #if os(iOS)
       .confirmationDialog("Attach", isPresented: $isPresented) {
         Button("Photo Library") { photos = true }
         Button("Files") { files = true }
       }
+      #else
+      // On the Mac + opens the file chooser at once, as the Mac's window does (its sidebar reaches Photos too).
+      .onChange(of: isPresented) { _, asked in
+        guard asked else { return }
+        isPresented = false
+        files = true
+      }
+      #endif
       .photosPicker(isPresented: $photos, selection: $selection, maxSelectionCount: 10, matching: .any(of: [.images, .videos]))
       .onChange(of: selection) { _, items in
         guard !items.isEmpty else { return }
@@ -127,9 +136,11 @@ final class Dictation {
 
   private func begin(_ recognizer: SFSpeechRecognizer, _ write: @escaping (String) -> Void) throws {
     Trace.mark("starting dictation")
+    #if os(iOS)
     let session = AVAudioSession.sharedInstance()
     try session.setCategory(.record, mode: .measurement, options: .duckOthers)
     try session.setActive(true, options: .notifyOthersOnDeactivation)
+    #endif
     let engine = AVAudioEngine()
     let request = SFSpeechAudioBufferRecognitionRequest()
     request.shouldReportPartialResults = true
@@ -162,6 +173,8 @@ final class Dictation {
     task?.finish()
     engine = nil; request = nil; task = nil
     isListening = false
+    #if os(iOS)
     try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    #endif
   }
 }

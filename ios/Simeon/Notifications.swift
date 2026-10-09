@@ -1,5 +1,7 @@
 import SwiftUI
+#if os(iOS)
 import UIKit
+#endif
 import UserNotifications
 import SimeonCore
 
@@ -34,7 +36,9 @@ final class Notifications {
     let center = UNUserNotificationCenter.current()
     let granted = (try? await center.requestAuthorization(options: [.alert, .badge, .sound])) ?? false
     guard granted else { return }
+    #if os(iOS)
     UIApplication.shared.registerForRemoteNotifications()
+    #endif
     if let token { await send(token) }
   }
 
@@ -63,6 +67,7 @@ final class Notifications {
   }
 }
 
+#if os(iOS)
 /** The app's delegate, for what only UIKit hears: Apple's token, and a notification shown or tapped. */
 final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
   func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
@@ -87,3 +92,4 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     await MainActor.run { Notifications.shared.openAgent = agentId }
   }
 }
+#endif

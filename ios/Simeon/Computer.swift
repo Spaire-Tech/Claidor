@@ -1,8 +1,11 @@
 import SwiftUI
+#if os(iOS)
 import UIKit
+#endif
 import WebKit
 import SimeonCore
 
+#if os(iOS)
 /**
  * An agent's own screen on the cloud computer (the Mac's Computer panel):
  * `ensureForeverBox` for the agent, then its stream through Simeon Labs'
@@ -239,7 +242,43 @@ struct LiveScreen: UIViewRepresentable {
     view.evaluateJavaScript("window.simeonClose && window.simeonClose()")
     view.configuration.userContentController.removeScriptMessageHandler(forName: "simeon")
   }
+}
+#else
+/** The same page in AppKit's web view (the Mac app): a click gives it the keys, so typing goes to the computer. */
+struct LiveScreen: NSViewRepresentable {
+  let socket: URL
+  let viewOnly: Bool
+  @Binding var phase: String
+  var link: ScreenLink? = nil
 
+  func makeCoordinator() -> Coordinator { Coordinator(phase: $phase, link: link) }
+
+  func makeNSView(context: Context) -> WKWebView {
+    let configuration = WKWebViewConfiguration()
+    configuration.userContentController.add(context.coordinator, name: "simeon")
+    let view = WKWebView(frame: .zero, configuration: configuration)
+    view.setValue(false, forKey: "drawsBackground")
+    view.underPageBackgroundColor = .black
+    view.loadHTMLString(Self.page(socket: socket, viewOnly: viewOnly, focusOnClick: true), baseURL: URL(string: "https://app.simeonlabs.com/"))
+    context.coordinator.viewOnly = viewOnly
+    link?.view = view
+    return view
+  }
+
+  func updateNSView(_ view: WKWebView, context: Context) {
+    guard context.coordinator.viewOnly != viewOnly else { return }
+    context.coordinator.viewOnly = viewOnly
+    view.evaluateJavaScript("window.simeonViewOnly(\(viewOnly ? "true" : "false"))")
+  }
+
+  static func dismantleNSView(_ view: WKWebView, coordinator: Coordinator) {
+    view.evaluateJavaScript("window.simeonClose && window.simeonClose()")
+    view.configuration.userContentController.removeScriptMessageHandler(forName: "simeon")
+  }
+}
+#endif
+
+extension LiveScreen {
   final class Coordinator: NSObject, WKScriptMessageHandler {
     var phase: Binding<String>
     let link: ScreenLink?
@@ -258,7 +297,8 @@ struct LiveScreen: UIViewRepresentable {
     return text
   }()
 
-  static func page(socket: URL, viewOnly: Bool) -> String {
+  /** `focusOnClick`: the Mac's screen takes the keyboard when clicked; the phone types through its own keyboard (KeyCatcher). */
+  static func page(socket: URL, viewOnly: Bool, focusOnClick: Bool = false) -> String {
     let address = (try? String(data: JSONSerialization.data(withJSONObject: [socket.absoluteString]), encoding: .utf8)) ?? "[\"\"]"
     return """
     <!doctype html><html><head><meta charset="utf-8">
@@ -273,7 +313,7 @@ struct LiveScreen: UIViewRepresentable {
       function open(){
         if(closed||typeof RFB!=="function"){post({phase:"failed"});return}
         rfb=new RFB(document.getElementById("screen"),address,{shared:true});
-        rfb.scaleViewport=true;rfb.resizeSession=false;rfb.viewOnly=\(viewOnly ? "true" : "false");rfb.background="#000";rfb.focusOnClick=false;
+        rfb.scaleViewport=true;rfb.resizeSession=false;rfb.viewOnly=\(viewOnly ? "true" : "false");rfb.background="#000";rfb.focusOnClick=\(focusOnClick ? "true" : "false");
         rfb.addEventListener("connect",function(){tries=0;post({phase:"connected"})});
         rfb.addEventListener("clipboard",function(e){post({clipboard:(e.detail&&e.detail.text)||""})});
         rfb.addEventListener("disconnect",function(){post({phase:"disconnected"});if(!closed&&tries<20){tries++;setTimeout(open,Math.min(1000*tries,5000))}});
@@ -315,6 +355,7 @@ final class ScreenLink {
   }
 }
 
+#if os(iOS)
 /**
  * The phone's keyboard for the computer: a view no one sees that takes the
  * keyboard while `isActive`, and hands each letter (and return) and each
@@ -365,3 +406,4 @@ struct KeyCatcher: UIViewRepresentable {
     }
   }
 }
+#endif

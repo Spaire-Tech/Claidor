@@ -1,5 +1,7 @@
 import SwiftUI
+#if os(iOS)
 import UIKit
+#endif
 import SimeonCore
 
 extension Color {
@@ -20,7 +22,12 @@ extension UIColor {
   /** Both read once: the colour is resolved on every draw, and parsing its text each time showed up while scrolling. */
   static func dynamic(light: String, dark: String) -> UIColor {
     let lit = UIColor(hex: light), dim = UIColor(hex: dark)
+    #if os(iOS)
     return UIColor { traits in traits.userInterfaceStyle == .dark ? dim : lit }
+    #else
+    // The Mac: resolved by the appearance it is drawn in (the window's, or the one the app is set to).
+    return NSColor(name: nil) { appearance in appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? dim : lit }
+    #endif
   }
 }
 

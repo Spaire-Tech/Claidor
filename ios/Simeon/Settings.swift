@@ -1,5 +1,7 @@
 import SwiftUI
+#if os(iOS)
 import UIKit
+#endif
 import SimeonCore
 
 /**
@@ -51,47 +53,16 @@ struct SettingsSheet: View {
           }
           .padding(.vertical, 2)
         }
-        Section("Agents") {
-          Toggle(isOn: autoReview) {
-            VStack(alignment: .leading, spacing: 3) {
-              Text("Auto-review")
-              Text("Simeon checks each action before it runs and asks you first when needed.")
-                .font(.system(size: 13)).foregroundStyle(Ink.secondary)
-            }
-          }
-          .tint(Ink.blue)
-          NavigationLink {
-            AutoReviewRules(settings: $settings)
-          } label: {
-            LabeledContent("Auto-review Rules", value: rulesCount == 0 ? "None" : "\(rulesCount)")
-          }
-          Toggle(isOn: automaticZone) {
-            VStack(alignment: .leading, spacing: 3) {
-              Text("Set Time Zone Automatically")
-              Text("Your agents' computer follows this phone's time zone.")
-                .font(.system(size: 13)).foregroundStyle(Ink.secondary)
-            }
-          }
-          .tint(Ink.blue)
-          if automaticZone.wrappedValue {
-            LabeledContent("Time Zone", value: zoneName)
-          } else {
-            NavigationLink {
-              TimeZonePicker(current: settings?["userTimeZoneOverride"]?.string ?? "", detected: detectedZone) { zone in
-                Task { if let next = await store.setHostSettings(["userTimeZoneOverride": .string(zone)]) { settings = next } }
-              }
-            } label: {
-              LabeledContent("Time Zone", value: zoneName)
-            }
-          }
-        }
+        AgentSettingsSection(settings: $settings)
         Section {
           Picker("Appearance", selection: $theme) {
             Text("System").tag("system")
             Text("Light").tag("light")
             Text("Dark").tag("dark")
           }
+          #if os(iOS)
           .pickerStyle(.navigationLink)
+          #endif
         }
         Section {
           Button("Sign Out", role: .destructive) { Task { await session.signOut() } }
@@ -107,8 +78,8 @@ struct SettingsSheet: View {
         }
       }
       .navigationTitle("Settings")
-      .navigationBarTitleDisplayMode(.inline)
-      .toolbar { ToolbarItem(placement: .topBarLeading) { CloseButton() } }
+      .inlineBarTitle()
+      .toolbar { ToolbarItem(placement: .leadingBar) { CloseButton() } }
       .sheet(isPresented: $showsApps) { ConnectAppsSheet().problemAlert() }
       .task {
         async let host = store.hostSettings()
@@ -118,15 +89,66 @@ struct SettingsSheet: View {
       }
     }
   }
+}
+
+/**
+ * The agents' settings, the same on the iPhone and the Mac: Auto-review and
+ * its rules, and the time zone the agents' computer keeps (set
+ * automatically, or chosen). `settings` is the box's host settings, read
+ * once by the page that holds this section.
+ */
+struct AgentSettingsSection: View {
+  @Binding var settings: JSON?
+  @Environment(AppStore.self) private var store
+
+  /** This device, as the time zone's line names it. */
+  private var device: String { AppPlatform.isMac ? "Mac" : "phone" }
+
+  var body: some View {
+    Section("Agents") {
+      Toggle(isOn: autoReview) {
+        VStack(alignment: .leading, spacing: 3) {
+          Text("Auto-review")
+          Text("Simeon checks each action before it runs and asks you first when needed.")
+            .font(.system(size: 13)).foregroundStyle(Ink.secondary)
+        }
+      }
+      .tint(Ink.blue)
+      NavigationLink {
+        AutoReviewRules(settings: $settings)
+      } label: {
+        LabeledContent("Auto-review Rules", value: rulesCount == 0 ? "None" : "\(rulesCount)")
+      }
+      Toggle(isOn: automaticZone) {
+        VStack(alignment: .leading, spacing: 3) {
+          Text("Set Time Zone Automatically")
+          Text("Your agents' computer follows this \(device)'s time zone.")
+            .font(.system(size: 13)).foregroundStyle(Ink.secondary)
+        }
+      }
+      .tint(Ink.blue)
+      if automaticZone.wrappedValue {
+        LabeledContent("Time Zone", value: zoneName)
+      } else {
+        NavigationLink {
+          TimeZonePicker(current: settings?["userTimeZoneOverride"]?.string ?? "", detected: detectedZone) { zone in
+            Task { if let next = await store.setHostSettings(["userTimeZoneOverride": .string(zone)]) { settings = next } }
+          }
+        } label: {
+          LabeledContent("Time Zone", value: zoneName)
+        }
+      }
+    }
+  }
 
   private var detectedZone: String { settings?["userTimeZone"]?.text ?? TimeZone.current.identifier }
 
-  /** The zone the agents' computer keeps: the one chosen, else this phone's. */
+  /** The zone the agents' computer keeps: the one chosen, else this device's. */
   private var zoneName: String {
     (settings?["userTimeZoneOverride"]?.text ?? detectedZone).replacingOccurrences(of: "_", with: " ")
   }
 
-  /** Automatic while no zone is chosen (`userTimeZoneOverride` empty); turned off, it keeps this phone's zone until another is chosen. */
+  /** Automatic while no zone is chosen (`userTimeZoneOverride` empty); turned off, it keeps this device's zone until another is chosen. */
   private var automaticZone: Binding<Bool> {
     Binding(
       get: { settings?["userTimeZoneOverride"]?.text == nil },
@@ -189,7 +211,7 @@ struct AccountPage: View {
       }
     }
     .navigationTitle("Account")
-    .navigationBarTitleDisplayMode(.inline)
+    .inlineBarTitle()
   }
 }
 
@@ -276,7 +298,7 @@ struct UsagePage: View {
       }
     }
     .navigationTitle("Usage")
-    .navigationBarTitleDisplayMode(.inline)
+    .inlineBarTitle()
   }
 
   /** The plans page when there is one to move to, else the billing portal. */
@@ -322,7 +344,7 @@ struct TimeZonePicker: View {
     }
     .searchable(text: $query, prompt: "Search")
     .navigationTitle("Timezone")
-    .navigationBarTitleDisplayMode(.inline)
+    .inlineBarTitle()
   }
 
   private var zones: [String] {
@@ -391,7 +413,7 @@ struct AutoReviewRules: View {
       }
     }
     .navigationTitle("Auto-review Rules")
-    .navigationBarTitleDisplayMode(.inline)
+    .inlineBarTitle()
   }
 
   private func save(allow: [String], ask: [String]) {
@@ -449,11 +471,13 @@ struct ConnectAppsSheet: View {
           }
         }
       }
+      #if os(iOS)
       .listStyle(.insetGrouped)
+      #endif
       .searchable(text: $query, prompt: "Search apps")
       .navigationTitle("Connect apps")
-      .navigationBarTitleDisplayMode(.inline)
-      .toolbar { ToolbarItem(placement: .topBarLeading) { CloseButton() } }
+      .inlineBarTitle()
+      .toolbar { ToolbarItem(placement: .leadingBar) { CloseButton() } }
       .task { await store.loadApps() }
       .refreshable { await store.loadApps() }
     }
@@ -622,7 +646,7 @@ struct ConnectedAppDetail: View {
       }
     }
     .navigationTitle(app.name)
-    .navigationBarTitleDisplayMode(.inline)
+    .inlineBarTitle()
     .task(id: connected) {
       loadingTools = true
       tools = await store.tools(of: app.serverId)

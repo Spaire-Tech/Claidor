@@ -1,6 +1,8 @@
 import SwiftUI
+#if os(iOS)
 import UIKit
 import QuickLook
+#endif
 import SimeonCore
 
 /** How wide the chat is, so a bubble or card can cap itself at the window's `min(88%, 640px, 100% - 82px)`. */
@@ -266,12 +268,14 @@ struct ConnectorTile: View {
   }
 }
 
+#if os(iOS)
 extension UIImage {
-  /** The asset's own picture for light or dark: SwiftUI draws a UIImage as it was first resolved, not as the appearance changes. */
+  /** The asset's own picture for light or dark: SwiftUI draws a UIImage as it was first resolved, not as the appearance changes. (The Mac's: mac/Simeon/UIKitOnMac.swift.) */
   func resolved(_ scheme: ColorScheme) -> UIImage {
     imageAsset?.image(with: UITraitCollection(userInterfaceStyle: scheme == .dark ? .dark : .light)) ?? self
   }
 }
+#endif
 
 /** The connect cards (`connector`, `connectors`): one card per app, its tile, its name, why, and Add (or ✓ Added). */
 struct ConnectorsCardView: View {
@@ -834,7 +838,7 @@ struct DraftCardView: View {
         VStack(spacing: 0) {
           if isEmail {
             if !card.from.isEmpty { field("From") { Text(card.from).font(.system(size: 17)).foregroundStyle(Ink.secondary).lineLimit(1) }; line }
-            field("To", focus: { focused = 0 }) { TextField("name@company.com", text: $to).font(.system(size: 17)).keyboardType(.emailAddress).textInputAutocapitalization(.never).autocorrectionDisabled().disabled(!editable).focused($focused, equals: 0) }
+            field("To", focus: { focused = 0 }) { TextField("name@company.com", text: $to).font(.system(size: 17)).emailField().autocorrectionDisabled().disabled(!editable).focused($focused, equals: 0) }
             line
             field("Subject", focus: { focused = 1 }) { TextField("Subject", text: $subject).font(.system(size: 17)).disabled(!editable).focused($focused, equals: 1) }
           } else {
@@ -1030,7 +1034,12 @@ struct FileCardView: View {
       ChatImages.keep(thumbnail, under: keys)
       image = thumbnail
     }
+    #if os(iOS)
     .sheet(item: $preview) { file in QuickLookSheet(file: file).ignoresSafeArea() }
+    #else
+    // The Mac's Quick Look panel, as Finder opens it.
+    .quickLookPreview(Binding(get: { preview?.url }, set: { preview = $0.map(PreviewFile.init(url:)) }))
+    #endif
   }
 
   private var card: some View {
@@ -1085,6 +1094,7 @@ struct FileCardView: View {
 
 struct PreviewFile: Identifiable { let url: URL; var id: URL { url } }
 
+#if os(iOS)
 /** The system's preview (Quick Look): images, PDFs, text, and Word, Excel and PowerPoint files, with Share to save. */
 struct QuickLookSheet: UIViewControllerRepresentable {
   let file: PreviewFile
@@ -1106,6 +1116,7 @@ struct QuickLookSheet: UIViewControllerRepresentable {
     func previewController(_ controller: QLPreviewController, previewItemAt index: Int) -> QLPreviewItem { url as NSURL }
   }
 }
+#endif
 
 // MARK: - Requests: approvals, secrets, the computer
 
@@ -1184,7 +1195,7 @@ struct RequestCardView: View {
       if !provided {
         SecureField("Paste it here", text: $secret)
           .font(.system(size: 17))
-          .textInputAutocapitalization(.never).autocorrectionDisabled()
+          .typedAsIs().autocorrectionDisabled()
           .padding(.horizontal, 10).frame(height: 34)
           .background(Ink.field, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
           .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Ink.edge, lineWidth: 1))
@@ -1430,7 +1441,7 @@ struct ExchangePage: View {
         .frame(maxWidth: .infinity)
     }
     .background(Ink.ground)
-    .navigationBarTitleDisplayMode(.inline)
+    .inlineBarTitle()
   }
 }
 

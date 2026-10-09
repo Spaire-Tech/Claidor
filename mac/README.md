@@ -6,7 +6,8 @@ in swift. literally everything … and more importantly, take apple design
 again". This folder holds that app. `PARITY.md` lists everything the Electron
 app does, one line each, with where it goes in Swift and whether it is done.
 
-Nothing is built here yet. The first step was the list.
+Slice 1, the window, is written (9 October 2026). It has not been built yet:
+the next step is a build on the founder's Mac (below).
 
 ## Why
 
@@ -54,15 +55,25 @@ What stays where it is:
 
 ## Where the code goes
 
-- `mac/project.yml`: XcodeGen makes `Simeon.xcodeproj` from it, as for the
-  iPhone. One macOS target, `SimeonMac`, needing macOS 26.
-- `mac/Simeon/`: what only the Mac has (the window's layout, menus,
-  Settings window, menu bar extra, the call window, the agent's hands on
-  this Mac, updates).
-- Shared with the iPhone: `ios/SimeonCore` as a package, and the iPhone's
-  view files (`ios/Simeon/*.swift`) listed by path in the target's sources
-  wherever a view fits both. Where they differ, `#if os(macOS)` in the
-  shared file, or a Mac file of its own when most of it differs. A view is
+- `mac/project.yml`: XcodeGen makes `SimeonMac.xcodeproj` from it, as for
+  the iPhone. One macOS app, `Simeon`, needing macOS 26 (Apple's design of
+  this year, as the iPhone app needs iOS 26).
+- `mac/Simeon/`: what only the Mac has. `MacApp.swift` (the app, its
+  windows, the menus and keys), `MacWindow.swift` (the window: sidebar,
+  pins, rows, their menus, the account), `MacChat.swift` (the chat, its
+  toolbar, a message's right-click menu, Jump To), `MacSettings.swift`,
+  `MacComputer.swift` (an agent's computer in its own window), and
+  `UIKitOnMac.swift` (below).
+- Shared with the iPhone: `ios/SimeonCore` as a package, and every view
+  file of `ios/Simeon/` built into the Mac app as it is. What only the
+  phone has (its list screen, its chat screen, its gestures, its keyboard,
+  its sheets for a held message and for the computer) stays behind
+  `#if os(iOS)` in those files; where the Mac does it its own way, the
+  `#else` beside it says how. On the Mac, the names of UIKit's picture,
+  colour and font types stand for AppKit's, and the few UIKit calls the
+  shared views make are answered by `mac/Simeon/UIKitOnMac.swift`.
+  `ios/Simeon/Platform.swift` holds what differs where the two meet (the
+  app's URL scheme, the Keychain item, a sheet's bar buttons). A view is
   never copied: a copy drifts.
 - Mac-only logic with no screen (the agent's hands on this Mac and its
   refused paths, the deep-link rules, when to notify, the Dock badge's
@@ -95,11 +106,39 @@ founder's Mac, not before.
 
 ## Build and run it (a Mac)
 
-Not yet: the first slice adds `project.yml` and the commands, as in
-`ios/README.md`.
+One command, from the repository:
+
+```sh
+mac/scripts/build.sh            # make the project, build, open the app
+mac/scripts/build.sh --demo     # open it on the demo's agents, no sign-in
+```
+
+It needs Xcode 26 (and installs XcodeGen with Homebrew if it is missing).
+The app opens only on macOS 26 or later; on an older macOS it still builds,
+and says so. If the build fails, its errors are copied to the clipboard
+(and kept in `mac/build/errors.txt`): paste them in the chat.
+
+By hand: `cd mac && xcodegen generate && open SimeonMac.xcodeproj`, then
+Run. Signing: without a team in `project.yml` the app is signed to run on
+this Mac only, which is enough to try it.
+
+What slice 1 has: the sign-in (the iPhone's screen), a new account's first
+run, the window with the agents in the sidebar (pins, rows, their status,
+the right-click menu, search, Hidden Agents, the account), the chat with
+every row and card the iPhone draws, the composer (Return sends, + opens
+the file chooser), the toolbar (the agent, Call, its computer, its page),
+Jump To (⌘K), New Agent (⌘N) and New Group Chat (⇧⌘N), the agent's page
+as a sheet, an agent's computer in its own window, Connect Apps (⇧⌘M) in
+its own window, Settings (⌘,), and the Agent menu with the Electron
+window's keys. `PARITY.md` marks each line it covers ("written").
 
 ## What can and cannot be checked here
 
-- `SimeonCore` builds and its tests run on Linux (`swift test`).
-- The app's own files can only be parsed off a Mac (`swiftc -parse`).
-  Every slice is built and run on the founder's Mac before it counts.
+- `SimeonCore` and `SimeonMacCore` build and their tests run on Linux
+  (`cd ios/SimeonCore && swift test`): the links the app opens and the
+  sidebar's order for ⌘1 to ⌘9 and ⌥↑ ⌥↓ among them.
+- The app's own files, the Mac's and the shared iPhone ones, can only be
+  parsed off a Mac (`swiftc -parse`), not compiled: SwiftUI and AppKit are
+  not here. Every slice is built and run on the founder's Mac before it
+  counts, and the iPhone app is built again with it, since its files
+  changed too.

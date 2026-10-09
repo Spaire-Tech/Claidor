@@ -1,7 +1,10 @@
 import SwiftUI
+#if os(iOS)
 import UIKit
+#endif
 import SimeonCore
 
+#if os(iOS)
 /**
  * One chat, as the phone design draws the Mac's chat full screen (measured
  * from the web window at 393 pt, 8 October 2026): the back disc at the top
@@ -47,7 +50,7 @@ struct ChatView: View {
       .background(Ink.ground)
       // The system's own bar, as Messages has it: its back button, and its swipe from the left edge that goes back with
       // the screen following the finger. The chat had hidden it for a bar of its own, and hidden, it does not swipe.
-      .navigationBarTitleDisplayMode(.inline)
+      .inlineBarTitle()
       .toolbar {
         // The butterfly is drawn up in the bar's row (ChatHeadline), but there the bar takes the touch, not the drawing: a
         // tap on the butterfly did nothing and only its name opened the page (the founder, 9 October 2026). The bar's
@@ -65,7 +68,7 @@ struct ChatView: View {
         }
         .sharedBackgroundVisibility(.hidden)
         if store.canCall && !store.groupIds.contains(agentId) {
-          ToolbarItem(placement: .topBarTrailing) { ChatCallButton(agentId: agentId) }
+          ToolbarItem(placement: .trailingBar) { ChatCallButton(agentId: agentId) }
         }
       }
       // A long press on a message: the reactions and what can be done with it, in a sheet from the bottom.
@@ -100,6 +103,7 @@ struct ChatView: View {
       }
   }
 }
+#endif
 
 /** What a row can do (open the agent's page or its computer, go to the message a quote answers), given once so the rows never need drawing again for it. */
 @MainActor
@@ -202,7 +206,9 @@ struct ChatMessages: View {
         .environment(peek)
         .environment(glow)
       }
+      #if os(iOS)
       .gesture(PeekPan(peek: peek))
+      #endif
       // A quote's tap goes to what it answers. Given to the rows once: handed down as a new closure on every
       // redraw of the chat, it made every bubble draw again each time the chat's own state moved.
       .onAppear {
@@ -282,7 +288,9 @@ struct ChatMessages: View {
     }
     .defaultScrollAnchor(.bottom)
     .defaultScrollAnchor(.bottom, for: .sizeChanges)
+    #if os(iOS)
     .scrollDismissesKeyboard(.interactively)
+    #endif
     .background(Ink.ground)
     // The pill for a "New" line above waits until the chat has settled at its end, so a line in view never flashes it.
     .task {
@@ -507,6 +515,10 @@ struct ChatComposer: View {
             .font(.system(size: 17))
             .lineLimit(1...6)
             .focused($typing)
+            #if os(macOS)
+            // Return sends, as the Mac's window does; Option-Return starts a new line.
+            .onSubmit { if mode == .send { send() } }
+            #endif
             .padding(.leading, 16)
             .padding(.vertical, 9)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -562,6 +574,10 @@ struct ChatComposer: View {
     .composerPicker(isPresented: $picking) { picked in attachments.append(contentsOf: picked) }
     .onChange(of: dictation.problem) { _, problem in if let problem { store.problem = problem } }
     .onChange(of: reply?.target?.id) { _, id in if id != nil { typing = true } }
+    #if os(macOS)
+    // ⌘L and ⌘I put the cursor here (the Mac's Agent menu).
+    .onReceive(NotificationCenter.default.publisher(for: .simeonFocusComposer)) { _ in typing = true }
+    #endif
     // The unsent draft stays with its chat, as on the Mac.
     .onAppear { if draft.isEmpty, let kept = store.drafts[agentId], kept != draft { draft = kept } }
     // Saved when typing pauses, not per letter (the list redraws on a save).
@@ -704,10 +720,15 @@ struct BubbleView: View {
           // Held: the reactions and the message's actions in a sheet from the bottom. UIKit's own long press, as Messages
           // has it: a finger that moves is a scroll, and the press gives way. SwiftUI's long press held the finger, and a
           // scroll that started on a message did not move.
+          #if os(iOS)
           .gesture(MessageHold {
             UIImpactFeedbackGenerator(style: .medium).impactOccurred()
             messageMenu?.target = MessageTarget(bubble: bubble)
           })
+          #else
+          // On the Mac a message's actions are its right-click menu (mac/Simeon/MacChat.swift).
+          .contextMenu { MessageContextMenu(bubble: bubble, agentId: agentId) }
+          #endif
           .overlay(alignment: bubble.fromPerson ? .bottomTrailing : .bottomLeading) { reactions }
           .padding(.bottom, bubble.reactions.isEmpty ? 0 : 16)
       }
@@ -1042,6 +1063,7 @@ struct Arrival: ViewModifier {
   }
 }
 
+#if os(iOS)
 /**
  * The sideways drag that shows each message's time (the window's `ZSn`):
  * up to 82 pt; let go and it springs back. UIKit's pan, starting only for a
@@ -1094,6 +1116,7 @@ struct MessageHold: UIGestureRecognizerRepresentable {
     if press.state == .began { action() }
   }
 }
+#endif
 
 /** Your bubble pulled left by the sideways drag. */
 struct PeekShift: ViewModifier {
@@ -1252,6 +1275,7 @@ struct MessageTarget: Identifiable {
   var id: String { bubble.id }
 }
 
+#if os(iOS)
 /**
  * A held message's sheet (the founder's reference, 9 October 2026): the
  * reactions in two rows of six, the last one opening the emoji keyboard
@@ -1409,9 +1433,9 @@ struct SelectTextSheet: View {
     NavigationStack {
       SelectableText(text: text)
         .navigationTitle("Select Text")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineBarTitle()
         .toolbar {
-          ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } }
+          ToolbarItem(placement: .trailingBar) { Button("Done") { dismiss() } }
         }
     }
   }
@@ -1436,3 +1460,4 @@ struct SelectableText: UIViewRepresentable {
     if view.text != text { view.text = text }
   }
 }
+#endif

@@ -2,12 +2,14 @@ import AuthenticationServices
 import Foundation
 import Security
 import SwiftUI
+#if os(iOS)
 import UIKit
+#endif
 import SimeonCore
 
 /** The pair in the Keychain, this device only, readable after the first unlock (so a notification's tap finds it). */
 final class KeychainVault: TokenVault, @unchecked Sendable {
-  private let service = "com.simeonlabs.simeon.ios"
+  private let service = AppPlatform.keychainService
   private let account = "session"
 
   func read() -> SessionTokens? {
@@ -95,7 +97,7 @@ final class SessionController {
   static var clientVersion: String {
     let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"
     let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "0"
-    return "ios-\(version)+\(build)"
+    return "\(AppPlatform.clientPrefix)-\(version)+\(build)"
   }
 
   func start() async {
@@ -223,7 +225,7 @@ final class SessionController {
     defer { signingInWith = nil }
     let metadata = SignIn.freshMetadata()
     let state = SheetState()
-    let session = ASWebAuthenticationSession(url: SignIn.loginURL(api: launch.api, metadata: metadata, provider: provider), callback: .customScheme(SimeonConfig.urlScheme)) { url, _ in
+    let session = ASWebAuthenticationSession(url: SignIn.loginURL(api: launch.api, metadata: metadata, provider: provider, redirectTarget: AppPlatform.urlScheme), callback: .customScheme(AppPlatform.urlScheme)) { url, _ in
       // Confirmed (the page opened simeon-ios://…) or closed: poll a little longer either way, as the Mac's pair is written as the page is answered.
       state.close(confirmed: url != nil)
     }
@@ -303,7 +305,7 @@ final class AppConnector {
   private func signIn(_ url: URL, store: AppStore, done: @escaping () -> Bool) async {
     let state = SheetState()
     // Closed on the vendor's confirm page: look a little longer. Cancelled: two looks, then the buttons are free again (Cancel used to hold every Add for 20 s).
-    let session = ASWebAuthenticationSession(url: url, callback: .customScheme(SimeonConfig.urlScheme)) { _, error in
+    let session = ASWebAuthenticationSession(url: url, callback: .customScheme(AppPlatform.urlScheme)) { _, error in
       state.close(confirmed: (error as? ASWebAuthenticationSessionError)?.code != .canceledLogin)
     }
     session.presentationContextProvider = presenter
@@ -326,10 +328,15 @@ final class AppConnector {
 /** Where the sign-in sheet shows: the app's window. */
 final class SheetPresenter: NSObject, ASWebAuthenticationPresentationContextProviding {
   func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+    #if os(iOS)
     let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
     if let window = scenes.flatMap(\.windows).first(where: \.isKeyWindow) ?? scenes.flatMap(\.windows).first { return window }
     // A sign-in is only ever started from the app's own window, so there is a scene to make one in.
     return UIWindow(windowScene: scenes[0])
+    #else
+    // The Mac: the window the sign-in was started from.
+    return NSApp.keyWindow ?? NSApp.mainWindow ?? NSApp.windows.first ?? ASPresentationAnchor()
+    #endif
   }
 }
 

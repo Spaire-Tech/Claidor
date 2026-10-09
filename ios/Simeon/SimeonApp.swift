@@ -1,7 +1,10 @@
 import SwiftUI
+#if os(iOS)
 import UIKit
+#endif
 import SimeonCore
 
+#if os(iOS)
 /**
  * Simeon on the iPhone, native: the phone screens the founder designed on
  * 8 October 2026 (the list, a chat, the + menu and its sheets, the agent's
@@ -88,6 +91,7 @@ struct RootView: View {
     }
   }
 }
+#endif
 
 /**
  * Signing in, in the design of the founder's reference (9 October 2026,
@@ -793,8 +797,10 @@ struct NameStep: View {
       TextField(Onboarding.namePlaceholder, text: $name)
         .font(.system(size: 17))
         .multilineTextAlignment(.center)
+        #if os(iOS)
         .textContentType(.givenName)
         .textInputAutocapitalization(.words)
+        #endif
         .autocorrectionDisabled()
         .submitLabel(.continue)
         .onSubmit(submit)

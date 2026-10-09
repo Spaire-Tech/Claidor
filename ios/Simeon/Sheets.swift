@@ -89,8 +89,8 @@ struct NewAgentSheet: View {
       }
       .background(Ink.ground)
       .navigationTitle("New Agent")
-      .navigationBarTitleDisplayMode(.inline)
-      .toolbar { ToolbarItem(placement: .topBarLeading) { CloseButton() } }
+      .inlineBarTitle()
+      .toolbar { ToolbarItem(placement: .leadingBar) { CloseButton() } }
     }
   }
 
@@ -185,10 +185,10 @@ struct NewGroupSheet: View {
       }
       .background(Ink.ground)
       .navigationTitle("New Group Chat")
-      .navigationBarTitleDisplayMode(.inline)
+      .inlineBarTitle()
       .toolbar {
-        ToolbarItem(placement: .topBarLeading) { CloseButton() }
-        ToolbarItem(placement: .topBarTrailing) {
+        ToolbarItem(placement: .leadingBar) { CloseButton() }
+        ToolbarItem(placement: .trailingBar) {
           Button(busy ? "Creating…" : "Next", action: create)
             .buttonStyle(PhonePrimaryStyle(small: true))
             .disabled(picked.count < 2 || busy)

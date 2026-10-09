@@ -82,7 +82,7 @@ struct AgentPageSheet: View {
         }
       }
       .background(Ink.ground)
-      .toolbar { ToolbarItem(placement: .topBarLeading) { CloseButton() } }
+      .toolbar { ToolbarItem(placement: .leadingBar) { CloseButton() } }
       .sheet(isPresented: $editingAvatar) { AvatarEditor(agentId: agentId).problemAlert() }
     }
   }
@@ -312,11 +312,11 @@ struct RoutineEditor: View {
         }
       }
       .navigationTitle(isNew ? "New Routine" : routine.name)
-      .navigationBarTitleDisplayMode(.inline)
+      .inlineBarTitle()
       .toolbar {
-        ToolbarItem(placement: .topBarLeading) { CloseButton() }
+        ToolbarItem(placement: .leadingBar) { CloseButton() }
         if isNew {
-          ToolbarItem(placement: .topBarTrailing) {
+          ToolbarItem(placement: .trailingBar) {
             Button("Create") {
               busy = true
               Task { await store.saveRoutine(routine, agentId: agentId, isNew: true); dismiss() }
@@ -367,7 +367,7 @@ struct SchedulePicker: View {
     case .everyHours(let n):
       Stepper("Every \(n) hours", value: Binding(get: { n }, set: { cron = Schedule.everyHours($0).cron }), in: 1...12)
     case .custom:
-      TextField("Cron, e.g. 0 9 * * 1", text: $cron).font(.system(size: 15, design: .monospaced)).textInputAutocapitalization(.never).autocorrectionDisabled()
+      TextField("Cron, e.g. 0 9 * * 1", text: $cron).font(.system(size: 15, design: .monospaced)).typedAsIs().autocorrectionDisabled()
     }
     Text(schedule.summary).font(.system(size: 13)).foregroundStyle(Ink.secondary)
   }
@@ -419,10 +419,20 @@ struct ComputerTab: View {
   @State private var screen: ScreenState?
   @State private var phase = "starting"
   @State private var open = false
+  #if os(macOS)
+  /** On the Mac the computer opens in a window of its own (mac/Simeon/MacComputer.swift). */
+  @Environment(\.openWindow) private var openWindow
+  #endif
 
   var body: some View {
     VStack(spacing: 10) {
-      Button { open = true } label: {
+      Button {
+        #if os(macOS)
+        openWindow(id: "computer", value: agent.id)
+        #else
+        open = true
+        #endif
+      } label: {
         ZStack {
           RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color(RGB(hex: "#1f3b73")))
           if let socket = screen?.socket {
@@ -450,7 +460,9 @@ struct ComputerTab: View {
         try? await Task.sleep(nanoseconds: 3_000_000_000)
       }
     }
+    #if os(iOS)
     .sheet(isPresented: $open) { ComputerSheet(agentId: agent.id) }
+    #endif
   }
 }
 
@@ -509,10 +521,10 @@ struct MembersEditor: View {
         }
       }
       .navigationTitle("Members")
-      .navigationBarTitleDisplayMode(.inline)
+      .inlineBarTitle()
       .toolbar {
-        ToolbarItem(placement: .topBarLeading) { CloseButton() }
-        ToolbarItem(placement: .topBarTrailing) {
+        ToolbarItem(placement: .leadingBar) { CloseButton() }
+        ToolbarItem(placement: .trailingBar) {
           Button("Save") {
             let ids = store.agents.filter { picked.contains($0.id) }.map(\.id)
             saving = true
@@ -575,8 +587,8 @@ struct AvatarEditor: View {
           .padding(20)
         }
         .navigationTitle("Avatar")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } } }
+        .inlineBarTitle()
+        .toolbar { ToolbarItem(placement: .trailingBar) { Button("Done") { dismiss() } } }
         .onAppear { if agent.isGroup && tab == .agent { tab = .upload } }
         // The picker shows once the agent's voice is settled: its own while listed, else one given by its name now (AgentVoices).
         .task {
@@ -653,7 +665,9 @@ struct AvatarEditor: View {
   private func play(_ voice: AppStore.VoiceChoice?) {
     sample?.pause()
     guard let voice, let url = voice.sample, playing != voice.id else { sample = nil; playing = nil; return }
+    #if os(iOS)
     try? AVAudioSession.sharedInstance().setCategory(.playback)
+    #endif
     let player = AVPlayer(url: url)
     sample = player
     playing = voice.id

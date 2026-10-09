@@ -1,5 +1,7 @@
 import SwiftUI
+#if os(iOS)
 import UIKit
+#endif
 import SimeonCore
 
 /** The sheets the list opens: New Agent and New Group Chat from the compose button, Settings from the account button (search is the list's own field). */
@@ -8,6 +10,7 @@ enum HomeSheet: String, Identifiable {
   var id: String { rawValue }
 }
 
+#if os(iOS)
 /**
  * The list, as Messages draws it (the founder, 9 October 2026: "exactly like
  * iMessage"): rows with the butterfly, the name, the last line's time and a
@@ -148,11 +151,11 @@ struct HomeView: View {
       .safeAreaBar(edge: .bottom, spacing: 0) {
         ListBottomBar(query: $query, focus: $searchFocused, newAgent: { sheet = .newAgent }, newGroup: { sheet = .newGroup })
       }
-      .navigationBarTitleDisplayMode(.inline)
+      .inlineBarTitle()
       .navigationTitle("Messages")
       .toolbar {
         // The account at the top left, straight to Settings.
-        ToolbarItem(placement: .topBarLeading) {
+        ToolbarItem(placement: .leadingBar) {
           Button { sheet = .settings } label: {
             // The initials once the account is known (remembered from the last launch, then the profile); a person, never a "?", before that.
             if let initials = store.account?.initials, !initials.isEmpty {
@@ -164,7 +167,7 @@ struct HomeView: View {
           .accessibilityLabel("Settings")
         }
         // The filter at the top right, as Messages': every chat, the hidden ones, or only the unread.
-        ToolbarItem(placement: .topBarTrailing) {
+        ToolbarItem(placement: .trailingBar) {
           Menu {
             Toggle(isOn: Binding(get: { filter == .all }, set: { if $0 { filter = .all } })) {
               Label("Messages", systemImage: "bubble.left.and.bubble.right")
@@ -360,6 +363,7 @@ struct ListBottomBar: View {
     .padding(.bottom, 4)
   }
 }
+#endif
 
 /** An agent's id as a sheet's item, and a routine of it to open at once (from search). */
 struct AgentRef: Identifiable, Hashable {
@@ -526,10 +530,10 @@ struct HiddenAgentsSheet: View {
         }
       }
       .navigationTitle("Hidden Agents")
-      .navigationBarTitleDisplayMode(.inline)
+      .inlineBarTitle()
       .toolbar {
         // The bar's own button: it draws its glass itself, and a glass disc inside it was glass on glass, each taking the touch.
-        ToolbarItem(placement: .topBarTrailing) { CloseButton() }
+        ToolbarItem(placement: .trailingBar) { CloseButton() }
       }
       .onChange(of: store.hiddenAgents.isEmpty) { _, empty in if empty { dismiss() } }
     }
@@ -876,7 +880,9 @@ struct SearchResults: View {
       }
       .listStyle(.plain)
       .scrollContentBackground(.hidden)
+      #if os(iOS)
       .scrollDismissesKeyboard(.immediately)
+      #endif
     }
   }
 

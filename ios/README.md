@@ -7,6 +7,10 @@ Settings and the call) with Apple's own parts. Its bars, sheets, menus,
 buttons and the composer get iOS 26's Liquid Glass, and back is the native
 swipe.
 
+Its views are built into the native Mac app too (`mac/README.md`): what
+only the phone has stays behind `#if os(iOS)`, so a change here is built
+for both apps (`ios/scripts/mac.sh` and `mac/scripts/build.sh`).
+
 It replaces the Expo shell in `mobile/`, which shows the web window in a
 web view. It is the same app on the App Store (bundle id
 `com.simeonlabs.simeon.ios`, URL scheme `simeon-ios`), so a build of this

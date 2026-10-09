@@ -1,13 +1,25 @@
 import SwiftUI
+#if os(iOS)
 import UIKit
+#endif
 import SimeonCore
 
-/** A message's type: 17 pt on a 23 pt line, the size Messages sets (the founder asked twice for bigger; the Mac's is 14 on 20, `.sand-message-prose`). */
+/**
+ * A message's type: on the iPhone 17 pt on a 23 pt line, the size Messages
+ * sets (the founder asked twice for bigger); on the Mac the Mac window's,
+ * 14 on 20 (`.sand-message-prose`).
+ */
 enum MessageType {
+  #if os(macOS)
+  static let size: CGFloat = 14
+  static let lineHeight: CGFloat = 20
+  static let mineLineHeight: CGFloat = 21
+  #else
   static let size: CGFloat = 17
   static let lineHeight: CGFloat = 23
   /** The person's bubble sets its text a point looser (24 pt). */
   static let mineLineHeight: CGFloat = 24
+  #endif
 
   static func spacing(size: CGFloat = size, lineHeight: CGFloat = lineHeight) -> CGFloat {
     max(0, lineHeight - UIFont.systemFont(ofSize: size).lineHeight)
