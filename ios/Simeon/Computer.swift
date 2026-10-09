@@ -159,7 +159,8 @@ struct LiveScreen: UIViewRepresentable {
   let socket: URL
   let viewOnly: Bool
   @Binding var phase: String
-  let link: ScreenLink
+  /** The sheet's hold on the page (keys, the clipboard); none where the screen is only watched (the agent's page). */
+  var link: ScreenLink? = nil
 
   func makeCoordinator() -> Coordinator { Coordinator(phase: $phase, link: link) }
 
@@ -173,7 +174,7 @@ struct LiveScreen: UIViewRepresentable {
     view.scrollView.bounces = false
     view.loadHTMLString(Self.page(socket: socket, viewOnly: viewOnly), baseURL: URL(string: "https://app.simeonlabs.com/"))
     context.coordinator.viewOnly = viewOnly
-    link.view = view
+    link?.view = view
     return view
   }
 
@@ -190,13 +191,13 @@ struct LiveScreen: UIViewRepresentable {
 
   final class Coordinator: NSObject, WKScriptMessageHandler {
     var phase: Binding<String>
-    let link: ScreenLink
+    let link: ScreenLink?
     var viewOnly = true
-    init(phase: Binding<String>, link: ScreenLink) { self.phase = phase; self.link = link }
+    init(phase: Binding<String>, link: ScreenLink?) { self.phase = phase; self.link = link }
 
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
       guard let body = message.body as? [String: Any] else { return }
-      if let text = body["clipboard"] as? String { link.clipboard = text }
+      if let text = body["clipboard"] as? String { link?.clipboard = text }
       if let next = body["phase"] as? String { phase.wrappedValue = next }
     }
   }
@@ -305,6 +306,7 @@ struct KeyCatcher: UIViewRepresentable {
     var smartDashesType: UITextSmartDashesType = .no
     var spellCheckingType: UITextSpellCheckingType = .no
 
+    @discardableResult
     override func resignFirstResponder() -> Bool {
       let resigned = super.resignFirstResponder()
       if resigned { onEnd() }
