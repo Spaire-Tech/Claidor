@@ -419,7 +419,8 @@ public enum Chat {
   public static func rows(_ entries: [Entry], isGroup: Bool = false, unreadAfter: Double? = nil) -> [ChatRow] {
     // A thread's replies (`branched`) live in the thread, not in the chat: the chat shows "N replies" under the message they answer.
     guard entries.contains(where: \.isBranched) else { return layout(entries, isGroup: isGroup, unreadAfter: unreadAfter) }
-    let rows = layout(entries.filter { !$0.isBranched }, isGroup: isGroup, unreadAfter: unreadAfter)
+    // Quotes read every line: a message in the chat can answer a reply in a thread.
+    let rows = layout(entries.filter { !$0.isBranched }, quoting: entries, isGroup: isGroup, unreadAfter: unreadAfter)
     let counts = threadCounts(entries)
     guard !counts.isEmpty else { return rows }
     var out: [ChatRow] = []
@@ -445,7 +446,7 @@ public enum Chat {
    * message it started from, then every reply in it, oldest first.
    */
   public static func threadRows(_ rootId: String, in entries: [Entry], isGroup: Bool = false) -> [ChatRow] {
-    layout(threadEntries(rootId, in: entries), isGroup: isGroup, unreadAfter: nil)
+    layout(threadEntries(rootId, in: entries), quoting: entries, isGroup: isGroup, unreadAfter: nil)
   }
 
   /** The thread's lines: its first message (wherever it is), then the replies that lead back to it. */
@@ -527,7 +528,8 @@ public enum Chat {
     return url
   }
 
-  static func layout(_ entries: [Entry], isGroup: Bool, unreadAfter: Double?) -> [ChatRow] {
+  /** The rows of `entries`; a reply's quote is looked up in `quoting` (all the chat's lines), else in `entries`. */
+  static func layout(_ entries: [Entry], quoting: [Entry]? = nil, isGroup: Bool, unreadAfter: Double?) -> [ChatRow] {
     var rows: [ChatRow] = []
     var lastShown: Date?
     var index = 0
@@ -587,7 +589,7 @@ public enum Chat {
       }
       index += 1
     }
-    rows = quoted(rows, entries)
+    rows = quoted(rows, quoting ?? entries)
     rows = unique(rows)
     return isGroup ? markRuns(rows) : rows
   }

@@ -40,7 +40,7 @@ struct MacChat: View {
       .safeAreaBar(edge: .top, spacing: 0) {
         VStack(spacing: 0) {
           if let thread {
-            ThreadHeader(agentId: agentId, rootId: thread) { leaveThread() }
+            ThreadHeader(agentId: agentId, rootId: thread, escapes: !finding) { leaveThread() }
               .transition(.move(edge: .top).combined(with: .opacity))
           }
           if finding {
@@ -244,6 +244,8 @@ struct MacFindBar: View {
           step(press.modifiers.contains(.shift) ? -1 : 1)
           return .handled
         }
+        // Should the field take Return before the key press is heard, its submit steps instead.
+        .onSubmit { step(NSEvent.modifierFlags.contains(.shift) ? -1 : 1) }
         .onExitCommand(perform: close)
       if !query.trimmingCharacters(in: .whitespaces).isEmpty {
         Text(matches.isEmpty ? "No matches" : "\(ChatFind.ordinal(matches, current)) of \(matches.count)")
@@ -396,6 +398,10 @@ struct MessageContextMenu: View {
     }
     Button { Task { await store.setUnread(agentId, true) } } label: { Label("Mark as Unread", systemImage: "message.badge") }
     Divider()
+    if let link = bubble.loneLink {
+      Button { NSWorkspace.shared.open(link) } label: { Label("Open Link", systemImage: "safari") }
+      Button { UIPasteboard.general.string = link.absoluteString } label: { Label("Copy Link", systemImage: "link") }
+    }
     Button { UIPasteboard.general.string = bubble.text } label: { Label("Copy", systemImage: "doc.on.doc") }
   }
 }

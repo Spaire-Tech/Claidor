@@ -29,6 +29,8 @@ extension EnvironmentValues {
 struct ImageGallery: View {
   let images: [ChatImage]
   let agentId: String
+  /** The message the pictures are in: its menu follows the picture's on the Mac. */
+  var bubble: Bubble? = nil
   @Environment(\.chatWidth) private var width
 
   static let rowHeight: CGFloat = 192
@@ -43,7 +45,7 @@ struct ImageGallery: View {
     let height = Self.rowHeight * scale
     HStack(spacing: Self.gap) {
       ForEach(Array(shown.enumerated()), id: \.offset) { index, image in
-        GalleryTile(image: image, agentId: agentId, more: index == shown.count - 1 ? images.count - shown.count : 0)
+        GalleryTile(image: image, agentId: agentId, more: index == shown.count - 1 ? images.count - shown.count : 0, bubble: bubble)
           .frame(width: height * CGFloat(image.aspect), height: height)
       }
     }
@@ -58,6 +60,7 @@ struct GalleryTile: View {
   let agentId: String
   /** Pictures past the third: "+N" over the last tile. */
   let more: Int
+  var bubble: Bubble? = nil
   @Environment(AppStore.self) private var store
   @State private var loaded: UIImage?
   @State private var failed = false
@@ -88,6 +91,10 @@ struct GalleryTile: View {
       Button("Open") { open() }
       if let shown { Button("Copy Image") { MacFiles.copy(shown) } }
       Button("Save Image…") { save() }
+      if let bubble {
+        Divider()
+        MessageContextMenu(bubble: bubble, agentId: agentId)
+      }
     }
     .quickLookPreview(Binding(get: { preview?.url }, set: { preview = $0.map(PreviewFile.init(url:)) }))
     #else
@@ -195,10 +202,6 @@ struct LinkCard: View {
     .accessibilityLabel("Link, \(shown?.title ?? host)")
     #if os(macOS)
     .help(url.absoluteString)
-    .contextMenu {
-      Button("Open Link") { openURL(url) }
-      Button("Copy Link") { UIPasteboard.general.string = url.absoluteString }
-    }
     #endif
     .task(id: url) { if preview == nil { preview = await LinkPreviews.load(url) } }
   }
@@ -300,10 +303,14 @@ struct ThreadLinkRow: View {
 struct ThreadHeader: View {
   let agentId: String
   let rootId: String
+  /** Esc goes back; not while find is open, whose own Esc closes it first. */
+  var escapes = true
   let close: () -> Void
   @Environment(AppStore.self) private var store
 
   var body: some View {
+    // Read so the name follows the thread as its lines arrive (the first message may come with `getAgentThread`).
+    let _ = store.threadRows[agentId]?.count
     HStack(spacing: 6) {
       Button(action: close) {
         HStack(spacing: 3) {
@@ -315,7 +322,7 @@ struct ThreadHeader: View {
       }
       .buttonStyle(.plain)
       #if os(macOS)
-      .keyboardShortcut(.cancelAction)
+      .keyboardShortcut(escapes ? .cancelAction : nil)
       #endif
       Image(systemName: "chevron.right").font(.system(size: 9, weight: .semibold)).foregroundStyle(Ink.tertiary)
       Text(store.threadTitle(rootId, in: agentId))

@@ -478,6 +478,8 @@ struct ChatComposer: View {
   /** What was picked from "/", "@" and "#" for this message: it rides in its document (`richText`). */
   @State private var picked: [ComposerMenus.Skill] = []
   @State private var pickedPulls: [ComposerMenus.PullRequest] = []
+  /** The pull requests the chat linked, read when a "#" starts (not on every key). */
+  @State private var chatPulls: [ComposerMenus.PullRequest] = []
   /** The emoji picked lately, first after ":" (the window's recents). */
   @AppStorage("simeon.emoji.recent") private var recentEmoji = ""
 
@@ -635,6 +637,9 @@ struct ChatComposer: View {
     .padding(.top, 6)
     .padding(.bottom, 8)
     .animation(.snappy(duration: 0.2), value: mentionQuery != nil)
+    .onChange(of: pullQuery != nil) { _, typing in
+      if typing { chatPulls = ComposerMenus.pullRequests(in: store.transcripts[agentId] ?? []) }
+    }
     .onAppear {
       let named = store.agent(agentId)?.name ?? ""
       if name != named { name = named }
@@ -675,7 +680,7 @@ struct ChatComposer: View {
 
   /** The pull requests the chat linked that an "#…" being typed matches. */
   private func pullRequests(_ query: String) -> [ComposerMenus.PullRequest] {
-    ComposerMenus.filter(ComposerMenus.pullRequests(in: store.transcripts[agentId] ?? []), query)
+    ComposerMenus.filter(chatPulls, query)
   }
 
   private func send() {
@@ -853,7 +858,7 @@ struct BubbleView: View {
       LinkCard(url: link, fromPerson: bubble.fromPerson)
     } else if !bubble.images.isEmpty && bubble.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
       // Pictures alone: the gallery without a bubble.
-      ImageGallery(images: bubble.images, agentId: agentId)
+      ImageGallery(images: bubble.images, agentId: agentId, bubble: bubble)
     } else if bubble.isLoneEmoji {
       Text(bubble.text.trimmingCharacters(in: .whitespacesAndNewlines)).font(.system(size: 32))
     } else if bubble.fromPerson {
@@ -883,7 +888,7 @@ struct BubbleView: View {
           .modifier(CardEdge(radius: 18))
           .frame(maxWidth: maxWidth, alignment: .leading)
         // The agent's pictures, under its words.
-        if !bubble.images.isEmpty { ImageGallery(images: bubble.images, agentId: agentId) }
+        if !bubble.images.isEmpty { ImageGallery(images: bubble.images, agentId: agentId, bubble: bubble) }
       }
     }
   }
@@ -1558,6 +1563,7 @@ struct MessageActionsSheet: View {
   @Environment(AppStore.self) private var store
   @Environment(ReplyDraft.self) private var reply: ReplyDraft?
   @Environment(ChatActions.self) private var actions: ChatActions?
+  @Environment(\.chatThread) private var thread
   @Environment(\.dismiss) private var dismiss
   @State private var choosingEmoji = false
   @State private var selecting = false
@@ -1597,9 +1603,8 @@ struct MessageActionsSheet: View {
           .buttonStyle(.plain)
           .accessibilityLabel("Another reaction")
         }
-        group([
-          Action(title: "Reply", symbol: "arrowshape.turn.up.left") { reply?.target = bubble; dismiss() },
-        ] + startThread + [
+        // Inside a thread every message answers it: no Reply, no new thread.
+        group((thread == nil ? [Action(title: "Reply", symbol: "arrowshape.turn.up.left") { reply?.target = bubble; dismiss() }] : []) + startThread + [
           Action(title: "Mark as Unread", symbol: "message.badge") { Task { await store.setUnread(agentId, true) }; dismiss() },
         ])
         group([
@@ -1618,7 +1623,7 @@ struct MessageActionsSheet: View {
 
   /** "Start a Thread" in the chat (not in a thread, which has no actions to open one). */
   private var startThread: [Action] {
-    guard let open = actions?.openThread else { return [] }
+    guard thread == nil, let open = actions?.openThread else { return [] }
     return [Action(title: "Start a Thread", symbol: "bubble.left.and.bubble.right") { dismiss(); open(bubble.id) }]
   }
 
@@ -1667,13 +1672,19 @@ struct ThreadSheet: View {
         .safeAreaBar(edge: .bottom, spacing: 0) { ChatComposer(agentId: agentId, thread: rootId) }
         .environment(reply)
         .background(Ink.ground)
-        .navigationTitle(store.threadTitle(rootId, in: agentId))
+        .navigationTitle(threadTitle)
         .inlineBarTitle()
         .toolbar { ToolbarItem(placement: .trailingBar) { Button("Done") { dismiss() } } }
         .sheet(item: Binding(get: { messageMenu.target }, set: { messageMenu.target = $0 })) { target in
-          MessageActionsSheet(bubble: target.bubble, agentId: agentId).environment(reply)
+          MessageActionsSheet(bubble: target.bubble, agentId: agentId).environment(reply).environment(\.chatThread, rootId)
         }
     }
+  }
+
+  /** The thread's name, following its lines as they arrive. */
+  private var threadTitle: String {
+    _ = store.threadRows[agentId]?.count
+    return store.threadTitle(rootId, in: agentId)
   }
 }
 

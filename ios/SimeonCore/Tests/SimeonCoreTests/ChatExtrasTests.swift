@@ -116,6 +116,10 @@ final class ChatThreadTests: XCTestCase {
     // A plain reply (not branched) stays in the chat with its quote.
     guard case .bubble(let quoted)? = rows.first(where: { $0.id == "q1" }) else { return XCTFail() }
     XCTAssertEqual(quoted.quote, "Draft the brief")
+    // A chat message answering a reply in a thread quotes it, not "(deleted)".
+    let answering = chat + [line("a1", "About that", replyTo: "r2", at: 6_000)]
+    guard case .bubble(let about)? = Chat.rows(answering).first(where: { $0.id == "a1" }) else { return XCTFail() }
+    XCTAssertEqual(about.quote, "Shorter please")
   }
 
   func testAThreadIsItsFirstMessageThenItsReplies() {
@@ -190,10 +194,19 @@ final class ChatQueueAndThreadTests: XCTestCase {
   func testAMessageWaitsWhileOfflineAndGoesWhenBackMarkedAsWrittenOffline() async throws {
     let backend = ScriptedBackend()
     let store = AppStore()
+    store.offlineGrace = 0.1
     await store.attach(backend)
     await store.open("theo")
+    // A drop that comes back within the grace is not "offline".
     backend.push(.connection(live: false))
-    try await Task.sleep(nanoseconds: 50_000_000)
+    try await Task.sleep(nanoseconds: 30_000_000)
+    XCTAssertFalse(store.isDown)
+    backend.push(.connection(live: true))
+    try await Task.sleep(nanoseconds: 200_000_000)
+    XCTAssertFalse(store.isDown)
+    // One that lasts is.
+    backend.push(.connection(live: false))
+    try await Task.sleep(nanoseconds: 300_000_000)
     XCTAssertTrue(store.isDown)
     await store.send("Book it", to: "theo")
     await store.send("Cancel me", to: "theo")

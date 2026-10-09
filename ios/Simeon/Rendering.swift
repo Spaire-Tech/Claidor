@@ -131,6 +131,15 @@ struct RenderedBlock: View {
 
   private var isDiagram: Bool { if case .mermaid = kind { return true }; return false }
 
+  /** What VoiceOver reads: "Diagram", the TeX, or the paragraph with its TeX in place. */
+  private var accessibleText: String {
+    switch kind {
+    case .mermaid: return "Diagram"
+    case .math(let tex, _): return "Maths: \(tex)"
+    case .mathText(let text): return text.replacingOccurrences(of: "$$", with: " ")
+    }
+  }
+
   var body: some View {
     let page = RenderPage.html(kind, dark: scheme == .dark, ink: scheme == .dark ? "#fcfcfc" : "#1d1d1f")
     RenderWebView(html: page, height: $height, interactive: false, onFail: onFail)
@@ -138,7 +147,7 @@ struct RenderedBlock: View {
       .frame(maxWidth: .infinity, alignment: .leading)
       .contentShape(.rect)
       .onTapGesture { if isDiagram { showsFull = true } }
-      .accessibilityLabel(isDiagram ? "Diagram" : "Maths")
+      .accessibilityLabel(accessibleText)
       .accessibilityAddTraits(isDiagram ? .isButton : [])
       .sheet(isPresented: $showsFull) {
         RenderedFull(kind: kind)

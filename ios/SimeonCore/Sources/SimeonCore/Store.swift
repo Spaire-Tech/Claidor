@@ -182,6 +182,8 @@ public final class AppStore {
   public private(set) var threadRows: [String: [ChatRow]] = [:]
   /** A thread's lines as the host gave them (`getAgentThread`), for replies older than the chat's loaded lines. */
   @ObservationIgnored private var threadFetched: [String: [Entry]] = [:]
+  /** Each chat's thread replies and the first message of their thread, made with its layout (a quote asks on every draw). */
+  @ObservationIgnored private var threadRoots: [String: [String: String]] = [:]
   /** Chats that could not be fetched and have nothing to show: "Couldn't load this conversation" and Retry. */
   public private(set) var loadFailed: Set<String> = []
   /**
@@ -190,6 +192,14 @@ public final class AppStore {
    * does, marked as written offline. Unknown is not down.
    */
   public private(set) var isDown = false
+  /**
+   * How long the event stream must stay down before the computer counts as
+   * out of reach: the stream drops and comes back on its own (the server
+   * closing it, a reconnect's wait, a phone waking), and a message typed in
+   * such a gap is not one written offline.
+   */
+  @ObservationIgnored public var offlineGrace: TimeInterval = 5
+  @ObservationIgnored private var downSoon: Task<Void, Never>?
   /** Simeon, once the first run's hand-off made him: a second try does not make another (Onboarding.swift). */
   @ObservationIgnored var firstRunAgentId: String?
 
@@ -245,7 +255,8 @@ public final class AppStore {
     layoutTask?.cancel(); layoutTask = nil; pendingLayout = []; refreshing = []; caughtUp = [:]
     pendingAnswers = [:]; unreadAfter = [:]; apps = []; catalog = []; pinnedIds = []
     streamingOnly = [:]; outbox = [:]; arrived = []; olderBefore = [:]; loadingOlder = []; paged = []; firstRunAgentId = nil; revealing = [:]
-    openThreads = [:]; threadRows = [:]; threadFetched = [:]; loadFailed = []; isDown = false
+    openThreads = [:]; threadRows = [:]; threadFetched = [:]; threadRoots = [:]; loadFailed = []; isDown = false
+    downSoon?.cancel(); downSoon = nil
     voiceList = nil
     sentFiles = []
   }
@@ -301,10 +312,18 @@ public final class AppStore {
       // Back after a drop (the phone slept, the network changed): what was said meanwhile never streamed, so fetch it.
       let recovered = live && !isLive
       isLive = live
-      let wasDown = isDown
-      if isDown == live { isDown = !live }
-      if wasDown != isDown { for chat in outbox.keys where outbox[chat]?.contains(where: { $0.state == .queued }) == true { layOut(chat) } }
-      if live && wasDown { flushQueued() }
+      if live {
+        downSoon?.cancel(); downSoon = nil
+        if isDown { setDown(false) }
+      } else if !isDown, downSoon == nil {
+        let grace = offlineGrace
+        downSoon = Task { [weak self] in
+          try? await Task.sleep(nanoseconds: UInt64(max(0, grace) * 1_000_000_000))
+          guard let self, !Task.isCancelled else { return }
+          self.downSoon = nil
+          if !self.isLive { self.setDown(true) }
+        }
+      }
       if recovered, backend != nil {
         Task {
           await reloadRoster()
@@ -457,7 +476,9 @@ public final class AppStore {
 
   private func layOut(_ agentId: String) {
     pendingLayout.remove(agentId)
-    if let entry = streamingOnly.removeValue(forKey: agentId), let rows = chatRows[agentId], let swapped = Self.replacingLast(rows, with: entry) {
+    // Only the streamed row redrawn, unless a thread is open: its rows are laid out with the chat's.
+    let streamed = streamingOnly.removeValue(forKey: agentId)
+    if openThreads[agentId] == nil, let entry = streamed, let rows = chatRows[agentId], let swapped = Self.replacingLast(rows, with: entry) {
       if swapped != rows { chatRows[agentId] = swapped }
       return
     }
@@ -470,12 +491,23 @@ public final class AppStore {
     var rows = Trace.timed("laying out \(agentId), \(entries.count) lines") { Chat.rows(entries, isGroup: isGroup, unreadAfter: after) }
     rows = Self.withSendStates(rows, waiting)
     if chatRows[agentId] != rows { chatRows[agentId] = rows }
+    threadRoots[agentId] = Self.threadRoots(entries + (threadFetched[agentId] ?? []))
     if let root = openThreads[agentId] {
       let known = Set(entries.map(\.id))
       let all = (threadFetched[agentId] ?? []).filter { !known.contains($0.id) } + entries
       let thread = Self.withSendStates(Chat.threadRows(root, in: all, isGroup: isGroup), waiting)
       if threadRows[agentId] != thread { threadRows[agentId] = thread }
     }
+  }
+
+  /** Each thread reply's first message, by the reply's id. */
+  static func threadRoots(_ entries: [Entry]) -> [String: String] {
+    let branched = entries.filter(\.isBranched)
+    guard !branched.isEmpty else { return [:] }
+    let byId = Dictionary(branched.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+    var out: [String: String] = [:]
+    for entry in branched { out[entry.id] = Chat.threadRoot(of: entry, branched: byId) }
+    return out
   }
 
   /** "Failed to send" or "Waiting to send…" under each waiting message that has a row here (the chat or its thread). */
@@ -744,6 +776,13 @@ public final class AppStore {
     return true
   }
 
+  /** Out of reach, or back: held messages say which; back, they go. */
+  private func setDown(_ down: Bool) {
+    isDown = down
+    for chat in outbox.keys where outbox[chat]?.contains(where: { $0.state == .queued }) == true { layOut(chat) }
+    if !down { flushQueued() }
+  }
+
   /** The computer is back: each chat's held messages go, one after another, in the order they were written. */
   private func flushQueued() {
     for (chat, items) in outbox {
@@ -798,11 +837,7 @@ public final class AppStore {
 
   /** The first message of the thread a line is in, when it is a reply in one (a quote that answers a line out of the chat opens its thread). */
   public func threadRoot(of entryId: String, in agentId: String) -> String? {
-    let entries = (transcripts[agentId] ?? []) + (threadFetched[agentId] ?? [])
-    let branched = entries.filter(\.isBranched)
-    guard let entry = branched.first(where: { $0.id == entryId }) else { return nil }
-    let byId = Dictionary(branched.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-    return Chat.threadRoot(of: entry, branched: byId)
+    threadRoots[agentId]?[entryId]
   }
 
   /** The thread's first message, for its header ("Back to Theo › Draft the brief"). */
