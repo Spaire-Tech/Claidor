@@ -44,6 +44,8 @@ struct MacChat: View {
       .environment(messageMenu)
       .safeAreaBar(edge: .top, spacing: 0) {
         VStack(spacing: 0) {
+          // Low disk, under the toolbar (`D8n`).
+          MacDiskBanner()
           if finding {
             MacFindBar(query: $findQuery, matches: findMatches, current: findCurrent, step: findStep, close: closeFind)
               .transition(.move(edge: .top).combined(with: .opacity))
@@ -132,15 +134,19 @@ struct MacChat: View {
       .onAppear {
         actions.openPage = { openPage() }
         actions.openRoutine = { id in navigation.openPane(.routines, agent: agentId, routine: id) }
-        actions.openComputer = { openWindow(id: "computer", value: agentId) }
+        // The hand-off card's Take over and Open computer: the computer started, its window open (`XOn` `_`, trigger "handoff").
+        actions.openComputer = { store.openComputer(agentId); openWindow(id: "computer", value: agentId) }
         actions.openExchange = { exchange = $0 }
         actions.openThread = { root in store.openThread(root, in: agentId) }
         actions.slashActions = { slashActions() }
         actions.runSlashAction = { id in runSlashAction(id) }
         watchPaste()
+        // The open agent's computer is followed while its chat shows (`XOn`'s `NTn`): its hand-off makes the card wait.
+        if agent?.isGroup != true { store.watchComputer(agentId) }
       }
       .task { await store.open(agentId) }
       .onDisappear {
+        if agent?.isGroup != true { store.unwatchComputer(agentId) }
         store.closeThread(in: agentId)
         store.close(agentId)
         if let pasteMonitor { NSEvent.removeMonitor(pasteMonitor) }
@@ -180,6 +186,9 @@ struct MacChat: View {
     out.append(.init(id: "theme:system", label: "Theme: System", keywords: ["appearance", "os", "auto", "follow"], detail: "Settings · Appearance"))
     out.append(.init(id: "theme:light", label: "Theme: Light", keywords: ["appearance", "day", "bright"], detail: "Settings · Appearance"))
     out.append(.init(id: "theme:dark", label: "Theme: Dark", keywords: ["appearance", "night", "mode"], detail: "Settings · Appearance"))
+    if store.updateFacts.paletteAction != nil {
+      out.append(.init(id: "update:computer", label: "Update Simeon's Computer", keywords: ["box", "image", "machine", "recreate", "latest", "shared"], detail: "Updates"))
+    }
     return out
   }
 
@@ -194,6 +203,10 @@ struct MacChat: View {
     case "theme:system", "theme:light", "theme:dark":
       theme = String(id.dropFirst("theme:".count))
       MacAppearance.apply(theme)
+    case "update:computer":
+      if let action = store.updateFacts.paletteAction {
+        navigation.updateConfirm = .init(busy: action == .busyOverride, workingNames: store.updateFacts.workingNames)
+      }
     default: break
     }
   }
@@ -621,7 +634,10 @@ struct MacPalette: View {
           case .settings: close(); openSettings()
           }
         },
-        showHidden: { navigation.sheet = .hiddenAgents }
+        showHidden: { navigation.sheet = .hiddenAgents },
+        updateComputer: store.updateFacts.paletteAction.map { action in
+          { close(); navigation.updateConfirm = .init(busy: action == .busyOverride, workingNames: store.updateFacts.workingNames) }
+        }
       )
     }
     .frame(width: 640, height: 540)

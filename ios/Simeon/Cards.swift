@@ -1187,8 +1187,8 @@ struct RequestCardView: View {
         approval(requestId: requestId, summary: summary, reason: reason, command: command, status: status)
       case .secret(let label, let description, let provided):
         secretCard(label: label, description: description, provided: provided)
-      case .computer(_, let instruction, let resolution):
-        computer(instruction: instruction, resolution: resolution)
+      case .computer(let requestId, let instruction, let resolution):
+        computer(requestId: requestId, instruction: instruction, resolution: resolution)
       }
     }
     .frame(maxWidth: ChatMetrics.bubbleMax(width), alignment: .leading)
@@ -1260,10 +1260,20 @@ struct RequestCardView: View {
     .card()
   }
 
-  /** "Your turn on the computer" (patch HANDOFF_CARD_SOURCE): a white computer tile, the status, the instruction, Take over / I'm done / Skip. */
-  private func computer(instruction: String, resolution: String?) -> some View {
-    let waiting = resolution == nil
-    let done = ["handed_back": "Done", "replied": "Answered", "dismissed": "Skipped"][resolution ?? ""] ?? "Done"
+  /**
+   * "Your turn on the computer" (patch HANDOFF_CARD_SOURCE): a white
+   * computer tile, the status, the instruction, the screen as it was when
+   * the agent asked, Take over / I'm done / Skip. It waits while the
+   * computer says this request is pending (`Obn`); before its status is
+   * read, while the line has no answer yet.
+   */
+  private func computer(requestId: String, instruction: String, resolution: String?) -> some View {
+    let pending = store.computer.status(agentId)?.handoff
+    let known = store.computer.readState(agentId) == .known
+    let waiting = known ? pending?.requestId == requestId : resolution == nil
+    let shownInstruction = waiting ? (pending?.instruction ?? instruction) : instruction
+    let done = ["handed_back": "Done", "replied": "Answered", "dismissed": "Skipped"][resolution ?? "handed_back"] ?? "Done"
+    let snapshot = waiting ? pending?.snapshotDataUrl.flatMap(Self.picture) : nil
     return VStack(alignment: .leading, spacing: 12) {
       HStack(spacing: 12) {
         Image(systemName: "display").font(.system(size: 19)).foregroundStyle(Ink.primary)
@@ -1278,8 +1288,18 @@ struct RequestCardView: View {
         }
         Spacer(minLength: 0)
       }
-      if !instruction.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-        Text(instruction).font(.system(size: 15)).foregroundStyle(Ink.primary).fixedSize(horizontal: false, vertical: true)
+      if !shownInstruction.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        Text(shownInstruction.trimmingCharacters(in: .whitespacesAndNewlines)).font(.system(size: 15)).foregroundStyle(waiting ? Ink.primary : Ink.secondary).fixedSize(horizontal: false, vertical: true)
+      }
+      if let snapshot {
+        Button(action: openComputer) {
+          Image(uiImage: snapshot).resizable().aspectRatio(ComputerScreen.width / ComputerScreen.height, contentMode: .fill)
+            .frame(maxWidth: .infinity)
+            .aspectRatio(ComputerScreen.width / ComputerScreen.height, contentMode: .fit)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Take over the computer")
       }
       if waiting {
         VStack(spacing: 6) {
@@ -1295,12 +1315,19 @@ struct RequestCardView: View {
           }
           .buttonStyle(.plain)
           .disabled(busy)
+          .help("Cancel this request without doing the step; the agent continues without it")
         }
       } else {
         Button("Open computer", action: openComputer).buttonStyle(PillButtonStyle(primary: false))
       }
     }
     .card(radius: 18, padding: 14)
+  }
+
+  /** The screen the agent saw when it asked (`data:image/webp;base64,…`). */
+  static func picture(_ dataURL: String) -> UIImage? {
+    guard let comma = dataURL.firstIndex(of: ","), let data = Data(base64Encoded: String(dataURL[dataURL.index(after: comma)...])) else { return nil }
+    return UIImage(data: data)
   }
 }
 

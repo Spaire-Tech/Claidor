@@ -689,7 +689,7 @@ struct ChatComposer: View {
                   .frame(width: 36, height: 36).contentShape(.circle)
               }
               .accessibilityLabel("Send")
-              .disabled(hook?.sendDisabled == true)
+              .disabled(hook?.sendDisabled == true || store.isSendingPaused)
               .transition(.scale(scale: 0.6).combined(with: .opacity))
             }
           }
@@ -888,6 +888,8 @@ struct ChatComposer: View {
   }
 
   private func send() {
+    // Nothing goes while Simeon's computer is being rebuilt (`isSendingPaused`).
+    if store.isSendingPaused { return }
     // The words as sent, trimmed; the document as the editor holds it, picks and all (`richText`).
     let text = ComposerDocument.prompt(draft)
     let rich = ComposerDocument.richText(draft, chips: chips)

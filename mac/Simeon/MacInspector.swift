@@ -97,7 +97,7 @@ struct MacAgentPane: View {
             if agent.isGroup {
               if !agent.isRemoteRoom { MacMembers(group: agent) }
             } else {
-              ComputerTab(agent: agent)
+              MacComputerPreview(agent: agent)
             }
           }
         }

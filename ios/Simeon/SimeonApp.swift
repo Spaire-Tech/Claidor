@@ -851,7 +851,10 @@ struct HandOffStep: View {
           .buttonStyle(.glass)
           .padding(.top, 8)
       } else {
-        ShimmerText(text: Onboarding.handOffLine(ready: ready), font: .system(size: 17, weight: .medium))
+        // The newest status of any agent's computer says how far its image is, or that it sleeps (`zjn`).
+        let latest = store.latestComputerStatus
+        ShimmerText(text: Onboarding.handOffLine(ready: ready, percent: latest?.isPulling == true ? Int((latest?.pullPercent ?? 0).rounded()) : nil,
+                                                 sleeping: latest?.state == "hibernated"), font: .system(size: 17, weight: .medium))
       }
     }
     .padding(.horizontal, 32)

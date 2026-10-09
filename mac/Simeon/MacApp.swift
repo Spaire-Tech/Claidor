@@ -104,6 +104,17 @@ final class MacNavigation {
 
   var selected: String?
   var sheet: Sheet?
+  /** "Update Simeon's Computer?" up, from the palette or the sidebar's pill. */
+  var updateConfirm: UpdateConfirm?
+  /** "Recover Simeon's Computer?" asked from "Couldn't Reach Simeon's Computer". */
+  var recoverAsked = false
+
+  /** The update question: with agents at work ("An agent is working") or not. */
+  struct UpdateConfirm: Identifiable {
+    let id = UUID()
+    let busy: Bool
+    let workingNames: [String]
+  }
   var sidebarShown = true
   /** A connector to add from a `plugin/add` link: the window opens Connect apps for it. */
   var connectAppsAsked = false
@@ -320,7 +331,7 @@ struct AgentMenuItems: View {
       .disabled(agent == nil || agent?.isGroup == true || !store.canCall || store.call != nil)
     Button("Edit Profile") { if let agent { navigation.openPane(.profile, agent: agent.id) } }
       .disabled(agent == nil)
-    Button("Open Computer") { if let agent { openWindow(id: "computer", value: agent.id) } }
+    Button("Open Computer") { if let agent { store.openComputer(agent.id); openWindow(id: "computer", value: agent.id) } }
       .disabled(agent == nil || agent?.isGroup == true)
     Button("Message Field") { NotificationCenter.default.post(name: .simeonFocusComposer, object: nil) }
       .keyboardShortcut("l")

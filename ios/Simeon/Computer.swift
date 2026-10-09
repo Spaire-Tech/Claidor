@@ -215,8 +215,9 @@ struct LiveScreen: UIViewRepresentable {
   @Binding var phase: String
   /** The sheet's hold on the page (keys, the clipboard); none where the screen is only watched (the agent's page). */
   var link: ScreenLink? = nil
+  var events: ScreenEvents? = nil
 
-  func makeCoordinator() -> Coordinator { Coordinator(phase: $phase, link: link) }
+  func makeCoordinator() -> Coordinator { Coordinator(phase: $phase, link: link, events: events) }
 
   func makeUIView(context: Context) -> WKWebView {
     let configuration = WKWebViewConfiguration()
@@ -226,7 +227,8 @@ struct LiveScreen: UIViewRepresentable {
     view.backgroundColor = .black
     view.scrollView.isScrollEnabled = false
     view.scrollView.bounces = false
-    view.loadHTMLString(Self.page(socket: socket, viewOnly: viewOnly), baseURL: URL(string: "https://app.simeonlabs.com/"))
+    view.navigationDelegate = context.coordinator
+    context.coordinator.load(view, page: Self.page(socket: socket, viewOnly: viewOnly))
     context.coordinator.viewOnly = viewOnly
     link?.view = view
     return view
@@ -244,25 +246,39 @@ struct LiveScreen: UIViewRepresentable {
   }
 }
 #else
-/** The same page in AppKit's web view (the Mac app): a click gives it the keys, so typing goes to the computer. */
+/**
+ * The same page in AppKit's web view (the Mac app). Watched (the pane's
+ * preview, the helpers' strip) it takes no click; interactive (the
+ * computer's window) a click gives it the keys, ⌘A ⌘C ⌘V ⌘X ⌘Z reach the
+ * computer as Ctrl, and the arrows also switch between helpers' screens.
+ */
 struct LiveScreen: NSViewRepresentable {
   let socket: URL
   let viewOnly: Bool
   @Binding var phase: String
   var link: ScreenLink? = nil
+  var events: ScreenEvents? = nil
+  /** The computer's window, where the person uses it (`sandInteractive=1`). */
+  var interactive = false
 
-  func makeCoordinator() -> Coordinator { Coordinator(phase: $phase, link: link) }
+  func makeCoordinator() -> Coordinator { Coordinator(phase: $phase, link: link, events: events) }
 
   func makeNSView(context: Context) -> ScreenWebView {
     let configuration = WKWebViewConfiguration()
     configuration.userContentController.add(context.coordinator, name: "simeon")
     let view = ScreenWebView(frame: .zero, configuration: configuration)
     view.passive = viewOnly
+    view.events = events
     view.setValue(false, forKey: "drawsBackground")
     view.underPageBackgroundColor = .black
-    view.loadHTMLString(Self.page(socket: socket, viewOnly: viewOnly, focusOnClick: true), baseURL: URL(string: "https://app.simeonlabs.com/"))
+    // The screen's page is never zoomed (`setVisualZoomLevelLimits(1, 1)`).
+    view.allowsMagnification = false
+    view.navigationDelegate = context.coordinator
+    events?.log("attach webview box=\(socket.host ?? "") interactive=\(interactive)")
+    context.coordinator.load(view, page: Self.page(socket: socket, viewOnly: viewOnly, focusOnClick: true, interactive: interactive))
     context.coordinator.viewOnly = viewOnly
     link?.view = view
+    events?.view = view
     return view
   }
 
@@ -281,22 +297,85 @@ struct LiveScreen: NSViewRepresentable {
   /** A screen only watched takes no click: the click goes to what holds it (the agent's page opens the computer's window). */
   final class ScreenWebView: WKWebView {
     var passive = false
+    weak var events: ScreenEvents?
     override func hitTest(_ point: NSPoint) -> NSView? { passive ? nil : super.hitTest(point) }
+    /** A click on the screen sends this Mac's clipboard first (`mousedown`, capture). */
+    override func mouseDown(with event: NSEvent) {
+      events?.pointerDown()
+      super.mouseDown(with: event)
+    }
   }
 }
 #endif
 
+/**
+ * What a screen's page tells the view holding it: a line for the stream's
+ * log, an arrow pressed in it, the computer's clipboard, a click. And what
+ * the view sends back: this Mac's clipboard. Each callback is optional.
+ */
+@MainActor
+final class ScreenEvents {
+  weak var view: WKWebView?
+  var onLog: (String) -> Void = { _ in }
+  var onHostKey: (String) -> Void = { _ in }
+  var onClipboard: (String) -> Void = { _ in }
+  var onPointerDown: () -> Void = {}
+
+  func log(_ line: String) { onLog(line) }
+  func pointerDown() { onPointerDown() }
+
+  /** This Mac's text onto the computer's clipboard, as noVNC pastes it (`rfb.clipboardPasteFrom`); no key is pressed. */
+  func paste(_ text: String) {
+    view?.evaluateJavaScript("window.simeonClipboardIn && window.simeonClipboardIn(\(ScreenLink.quoted(text)))")
+  }
+}
+
 extension LiveScreen {
-  final class Coordinator: NSObject, WKScriptMessageHandler {
+  final class Coordinator: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
     var phase: Binding<String>
     let link: ScreenLink?
+    let events: ScreenEvents?
     var viewOnly = true
-    init(phase: Binding<String>, link: ScreenLink?) { self.phase = phase; self.link = link }
+    /** The page, to load again after a crash. */
+    private var page = ""
+    /** A crashed page loads again, until it has crashed more than three times a minute apart (`sbn`, `rbn`). */
+    private var crashes = ScreenCrashes()
+    init(phase: Binding<String>, link: ScreenLink?, events: ScreenEvents?) { self.phase = phase; self.link = link; self.events = events }
+
+    func load(_ view: WKWebView, page: String) {
+      self.page = page
+      view.loadHTMLString(page, baseURL: URL(string: "https://app.simeonlabs.com/"))
+    }
 
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
       guard let body = message.body as? [String: Any] else { return }
-      if let text = body["clipboard"] as? String { link?.clipboard = text }
+      if let text = body["clipboard"] as? String {
+        link?.clipboard = text
+        MainActor.assumeIsolated { events?.onClipboard(text) }
+      }
       if let next = body["phase"] as? String { phase.wrappedValue = next }
+      if let line = body["log"] as? String { MainActor.assumeIsolated { events?.log("guest console[\(body["level"] as? String ?? "info")] " + line) } }
+      if let key = body["hostKey"] as? String { MainActor.assumeIsolated { events?.onHostKey(key) } }
+    }
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+      MainActor.assumeIsolated { events?.log("guest loaded url=about:screen") }
+    }
+
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+      let error = error as NSError
+      MainActor.assumeIsolated { events?.log("guest load FAILED code=\(error.code) (\(error.localizedDescription)) url=about:screen mainFrame=true") }
+    }
+
+    /** The page's process died: loaded again, or "Screen preview unavailable" after too many (`render-process-gone`). */
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+      MainActor.assumeIsolated { events?.log("guest renderer gone reason=crashed") }
+      if crashes.crashed() {
+        phase.wrappedValue = "starting"
+        load(webView, page: page)
+      } else {
+        phase.wrappedValue = "unavailable"
+      }
     }
   }
 
@@ -305,28 +384,67 @@ extension LiveScreen {
     return text
   }()
 
-  /** `focusOnClick`: the Mac's screen takes the keyboard when clicked; the phone types through its own keyboard (KeyCatcher). */
-  static func page(socket: URL, viewOnly: Bool, focusOnClick: Bool = false) -> String {
+  /**
+   * `focusOnClick`: the Mac's screen takes the keyboard when clicked; the
+   * phone types through its own keyboard (KeyCatcher). `interactive`: the
+   * Mac's computer window, with ⌘ keys sent as Ctrl and the arrows told to
+   * the window (`preload-vnc.ts`). Every page reports its state in the
+   * lines the window's log reads (`[SimeonScreen] state=…`).
+   */
+  static func page(socket: URL, viewOnly: Bool, focusOnClick: Bool = false, interactive: Bool = false) -> String {
     let address = (try? String(data: JSONSerialization.data(withJSONObject: [socket.absoluteString]), encoding: .utf8)) ?? "[\"\"]"
     return """
     <!doctype html><html><head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
     <style>html,body{margin:0;height:100%;background:#000;overflow:hidden;-webkit-user-select:none}#screen{position:fixed;inset:0}</style>
     </head><body><div id="screen"></div>
+    <script>
+    window.addEventListener("error",function(e){try{window.webkit.messageHandlers.simeon.postMessage({log:"[SimeonScreen] page error: "+e.message+" at "+(e.filename||"")+":"+(e.lineno||0),level:"info"})}catch(_){}});
+    window.addEventListener("unhandledrejection",function(e){try{window.webkit.messageHandlers.simeon.postMessage({log:"[SimeonScreen] page error: "+String(e.reason),level:"info"})}catch(_){}});
+    </script>
     <script>\(client)</script>
     <script>
     (function(){
       var post=function(m){try{window.webkit.messageHandlers.simeon.postMessage(m)}catch(e){}};
-      var address=\(address)[0], rfb=null, closed=false, tries=0;
+      var state=function(s,status,dialog){post({log:"[SimeonScreen] state="+s+" status=\\""+status+"\\" dialog="+(dialog||"none")})};
+      var address=\(address)[0], rfb=null, closed=false, tries=0, everConnected=false;
       function open(){
-        if(closed||typeof RFB!=="function"){post({phase:"failed"});return}
+        if(closed)return;
+        if(typeof RFB!=="function"){post({phase:"failed"});post({log:"[SimeonScreen] noVNC did not start after 5000ms; root class=\\"\\" scripts=0"});return}
+        state("connecting","Connecting");
         rfb=new RFB(document.getElementById("screen"),address,{shared:true});
         rfb.scaleViewport=true;rfb.resizeSession=false;rfb.viewOnly=\(viewOnly ? "true" : "false");rfb.background="#000";rfb.focusOnClick=\(focusOnClick ? "true" : "false");
-        rfb.addEventListener("connect",function(){tries=0;post({phase:"connected"})});
+        rfb.addEventListener("connect",function(){tries=0;everConnected=true;post({phase:"connected"});state("connected","Connected")});
         rfb.addEventListener("clipboard",function(e){post({clipboard:(e.detail&&e.detail.text)||""})});
-        rfb.addEventListener("disconnect",function(){post({phase:"disconnected"});if(!closed&&tries<20){tries++;setTimeout(open,Math.min(1000*tries,5000))}});
+        rfb.addEventListener("credentialsrequired",function(){state("connecting","","noVNC_credentials_dlg")});
+        rfb.addEventListener("disconnect",function(e){
+          var clean=e&&e.detail&&e.detail.clean;
+          state("disconnected",!everConnected?"Failed to connect to server":clean?"Disconnected":"Something went wrong, connection is closed");
+          post({phase:"disconnected"});if(!closed&&tries<20){tries++;setTimeout(open,Math.min(1000*tries,5000))}
+        });
       }
       window.simeonViewOnly=function(v){if(rfb)rfb.viewOnly=v};
+      // This Mac's clipboard onto the computer's, as noVNC pastes it: no key pressed (`buildHostClipboardPasteScript`).
+      window.simeonClipboardIn=function(t){if(rfb&&t)rfb.clipboardPasteFrom(t)};
+      if(\(interactive ? "true" : "false")){
+        // ⌘A ⌘C ⌘V ⌘X ⌘Z (with ⇧ or not), by the key's place, sent as Ctrl after letting go of ⌘, ⌥ and the Super keys (`buildVncMacKeyMappingScript`).
+        var SHORTCUTS={KeyA:0x61,KeyC:0x63,KeyV:0x76,KeyX:0x78,KeyZ:0x7a};
+        var HELD=[[0xffe7,"MetaLeft"],[0xffe8,"MetaRight"],[0xffe9,"AltLeft"],[0xffea,"AltRight"],[0xffeb,"SuperLeft"],[0xffec,"SuperRight"]];
+        document.addEventListener("keydown",function(e){
+          if(!e.metaKey||!(e.code in SHORTCUTS)||!rfb||!rfb.sendKey)return;
+          e.preventDefault();e.stopImmediatePropagation();
+          for(var i=0;i<HELD.length;i++){try{rfb.sendKey(HELD[i][0],HELD[i][1],false)}catch(_){}}
+          rfb.sendKey(0xffe3,"ControlLeft",true);
+          if(e.shiftKey)rfb.sendKey(0xffe1,"ShiftLeft",true);
+          rfb.sendKey(SHORTCUTS[e.code],e.code,true);rfb.sendKey(SHORTCUTS[e.code],e.code,false);
+          if(e.shiftKey)rfb.sendKey(0xffe1,"ShiftLeft",false);
+          rfb.sendKey(0xffe3,"ControlLeft",false);
+        },true);
+        // The arrows are told to the window too, which switches between helpers' screens; they still reach the computer (`installVncHostKeyForwarder`).
+        document.addEventListener("keydown",function(e){
+          if(e.key==="ArrowUp"||e.key==="ArrowDown"||e.key==="ArrowLeft"||e.key==="ArrowRight")post({hostKey:e.key});
+        },true);
+      }
       // The phone's keyboard and clipboard (they take over: the computer takes keys only from one in control).
       var CTRL=0xffe3;
       function key(k,code,down){if(rfb){rfb.viewOnly=false;rfb.sendKey(k,code||null,down)}}

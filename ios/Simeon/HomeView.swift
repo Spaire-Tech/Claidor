@@ -744,6 +744,8 @@ struct SearchResults: View {
   let openRoutine: (RoutineHit) -> Void
   let openSheet: (HomeSheet) -> Void
   let showHidden: () -> Void
+  /** "Update Simeon's Computer", where it is offered (the Mac's palette, `HOn`): last of the actions. */
+  var updateComputer: (() -> Void)? = nil
   @Environment(AppStore.self) private var store
   @Environment(\.openURL) private var openURL
   @AppStorage("simeon.theme") private var theme = "system"
@@ -837,6 +839,9 @@ struct SearchResults: View {
     list.append(SearchAction(id: "settings", label: "Settings", detail: "Settings", symbol: "gearshape", keywords: ["general", "account", "usage", "billing", "plan", "limit", "time zone", "auto-review", "plugins", "connect apps", "connectors", "tools", "skills", "mcp"]) { openSheet(.settings) })
     for (value, name, symbol) in [("system", "System", "circle.lefthalf.filled"), ("light", "Light", "sun.max"), ("dark", "Dark", "moon")] {
       list.append(SearchAction(id: "theme-\(value)", label: "Theme: \(name)", detail: "Settings · Appearance", symbol: symbol, keywords: ["appearance", "mode", "theme"], current: theme == value) { theme = value })
+    }
+    if let updateComputer {
+      list.append(SearchAction(id: "update:computer", label: "Update Simeon's Computer", detail: "Updates", symbol: "desktopcomputer", keywords: ["box", "image", "machine", "recreate", "latest", "shared"], run: updateComputer))
     }
     return list
   }

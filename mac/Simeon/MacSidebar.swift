@@ -105,7 +105,16 @@ struct MacSidebar: View {
     .onChange(of: store.agents.map(\.id)) { _, ids in navigation.selection.keep(Set(ids)) }
     .animation(.spring(response: 0.38, dampingFraction: 0.86), value: unpinned.map(\.id))
     .animation(.spring(response: 0.38, dampingFraction: 0.86), value: store.pinnedIds)
-    .safeAreaInset(edge: .bottom, spacing: 0) { if !rail { MacAccountBar() } }
+    // A list already shown that could not be read again: "Reconnecting to your computer…" over it (`npn`).
+    .safeAreaInset(edge: .top, spacing: 0) { if store.rosterFailed && !store.agents.isEmpty && !rail { MacSidebarReconnecting() } }
+    .safeAreaInset(edge: .bottom, spacing: 0) {
+      if !rail {
+        VStack(alignment: .leading, spacing: 6) {
+          MacUpdatePill().controlSize(.small).padding(.horizontal, 12)
+          MacAccountBar()
+        }
+      }
+    }
     .toolbar { toolbar }
   }
 
@@ -286,6 +295,8 @@ struct MacSidebar: View {
   private func emptyState(unpinned: [Agent], pins: [Agent]) -> some View {
     if !query.trimmingCharacters(in: .whitespaces).isEmpty {
       if found.isEmpty { Text("No results").font(.system(size: 13)).foregroundStyle(.secondary) }
+    } else if store.agents.isEmpty && store.rosterFailed && !rail {
+      MacSidebarConnection()
     } else if store.agents.isEmpty && navigation.newChat.creating == nil && !store.isLoading && !rail {
       Text("No saved agents yet.").font(.system(size: 13)).foregroundStyle(.secondary)
     } else if !store.agents.isEmpty && visible.isEmpty && !rail {

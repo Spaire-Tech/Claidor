@@ -21,11 +21,18 @@ reused, laid out for the Mac), **partly** (what is missing is named), **no**
 written; **written** (the code is there, not yet built on a Mac); **part:**
 what is there, when only some of it is; then **built** (it compiles) and
 **checked** (seen working on the founder's Mac). Slices 1 (the window),
-2 (the chat) and 3 (agents) are written: nothing is built or checked yet.
+2 (the chat), 3 (agents) and 4 (the computer) are written: nothing is
+built or checked yet.
 What slice 2 added is shared with the iPhone, so its "Phone" column says
 yes too; the iPhone app is built again with it. Slice 3's screens are the
 Mac's own (`mac/Simeon/Mac*.swift`), on rules in the shared core that the
-iPhone can use later; the iPhone's screens are unchanged.
+iPhone can use later; the iPhone's screens are unchanged. Slice 4 is the
+same: its rules are in the shared core (`CloudComputer.swift`,
+`ComputerRebuild.swift`, `RebuildDriver.swift`, `MigrationWatch.swift`),
+the lock's checked against the window's own code run in Node
+(`Tests/SimeonCoreTests/Fixtures/rebuild-lock.json`); the iPhone keeps its
+own computer sheet, and its hand-off card and Skip now send what the
+window sends (`dismissed`).
 
 Sources: "patch" is `desktop/scripts/lib/router-renderer-patch.mjs`;
 "main" is `desktop/source/electron-main/`; "coordinator" is
@@ -102,7 +109,7 @@ that is off say so; the gates' values are in
 | What | Where | Phone | Mac |
 |---|---|---|---|
 | Landing, Meet Simeon, Chief of Staff (six agents and the curves), Connect (the logos behind glass), the computer (1.45×, Simeon as the cursor), your name | patch 1027-1308, 1856-1899 | yes (`OnboardingFlow`, `Onboarding.swift`) | written |
-| The hand-off: "Waking your computer…", "Setting up your Simeon…", "Getting your team ready…", then Simeon, Chief of Staff, is created and says hello; "Simeon couldn't finish setting up" with Try again | patch 1214-1231 | yes (`HandOffStep`) | part: all but "Waking your computer…" (the app does not yet know the computer is asleep, slice 4) |
+| The hand-off: "Waking your computer…", "Setting up your Simeon…", "Getting your team ready…", then Simeon, Chief of Staff, is created and says hello; "Simeon couldn't finish setting up" with Try again | patch 1214-1231 | yes (`HandOffStep`) | written ("Waking your computer…" from the newest status of any agent's computer, as the window; no shipped host reports a sleeping computer, so it is not expected to show) |
 | Whether to show it: `hasSeenOnboarding`, else `countAgents` | `desktop/web/backend.ts` | yes (`FirstRun`) | written |
 | The boot screen: "Setting up Simeon's computer" in a moving light, while the agents are first read | bundle `C0t` | partly (the turning butterfly) | written (`MacSettingUp`) |
 | The name sheet once the first run is over and no name was given: "What should your agents call you?", Not now, Continue ("Saving…"), "Couldn’t save your name. Try again." | bundle `__simeonNameSheet` | no | written (`MacNameSheet`) |
@@ -135,14 +142,14 @@ The menus, zoom and full screen are in §9.
 | Rename in the row: a double-click; Return keeps it, Esc lets it go, leaving it keeps it; empty or unchanged is not saved | bundle `yut` | partly (in Profile) | written (`MacRenameField`) |
 | Hidden Agents (520 wide) with Unhide, "No hidden bots"; "All bots are hidden" with Show Hidden Agents | bundle `view-Cbx1-ckK.js` | yes (`HiddenAgentsSheet`) | written (`MacHiddenAgents`) |
 | The compact rail (while the agent pane is open: butterflies only, open sections only, no drag or rename); ⌘B; the sidebar's width dragged | bundle `Mpn`, patch 717-719 | n/a | part: the rail while the pane is open; ⌘B and ⌃⌘S hide the sidebar |
-| "Connecting to your computer…", "Can't reach your computer" with Retry, "Reconnecting to your computer…" | recovered `roster/status.tsx`, `reconnect-notice.tsx` | partly ("No saved agents yet." only) | |
+| "Can't reach your computer" with Retry and Recover computer (a reset at once, no question, as the window's sidebar), "Retrying…", "Recovering…"; "Reconnecting to your computer…" with Retry over a list already shown | bundle `tpn`, `npn`, `COn` | partly ("No saved agents yet." only) | part (`MacSidebarConnection`): Retry asks for the box again and reads the agents; "Connecting to your computer…" is the boot screen's; not the 4 s retry of a refusal with a retry hint, "Your computer isn't set up" (access blocked), nor "Simeon is Paused" (box blocked) |
 
 ### 2.5 Search and the ⌘K palette
 
 | What | Where | Phone | Mac |
 |---|---|---|---|
 | Tabs All, Messages, Agents, Groups, Files, Links, Routines, Actions; arrows between tabs; Current and Hidden badges; a result opens at its line | production `CommandPalette.tsx`, `command-palette-*-provider.ts` | yes (`SearchResults`, `Search.swift`) | written (⌘K) |
-| Actions: Org Chart, Open Hidden Agents, Members, Channels, Chat Settings, Settings › General and Usage & Billing, Connect apps, Theme, Update Simeon's Computer, Join or New shared room | production `command-palette-root-commands.ts` | partly (New Agent, New Group Chat, Hidden Agents, Settings, Theme) | part: the phone's (New Agent and New Group Chat open the new chat; a routine opens its agent's Routines tab, as the window does) |
+| Actions: Org Chart, Open Hidden Agents, Members, Channels, Chat Settings, Settings › General and Usage & Billing, Connect apps, Theme, Update Simeon's Computer, Join or New shared room | production `command-palette-root-commands.ts` | partly (New Agent, New Group Chat, Hidden Agents, Settings, Theme) | part: the phone's (New Agent and New Group Chat open the new chat; a routine opens its agent's Routines tab, as the window does), and Update Simeon's Computer last, in the palette and after "/", while the selected agent's computer has not said it is up to date (`UOn`) |
 
 ### 2.6 New agents and groups
 
@@ -264,15 +271,22 @@ The menus, zoom and full screen are in §9.
 
 | What | Where | Phone | Mac |
 |---|---|---|---|
-| The Computer tab: the preview, Open computer, Retry, "Needs your attention" | recovered `computer/shell/view.tsx` | yes (`ComputerTab`) | written |
-| Full size: the live screen, Take over, I'm done, Skip, full screen, the conversation beside it | recovered `computer/shell/view.tsx` | yes (`ComputerSheet`, `LiveScreen`) | part: its own window, Take Over, I'm Done, Skip Step |
-| The strip of helpers' screens: switch between them, "Show N more screens" | recovered `computer/shell/model.ts` | no | |
-| The clipboard both ways by itself; ⌘ keys sent as Ctrl | `desktop/source/electron-preload/preload-vnc.ts` | partly (by hand) | |
-| "Switching to X's screen…", "Can't reach X's screen" with Retry, "Setting up the computer N %", "Booting up the computer" | recovered `computer/shell/model.ts` | partly | part |
-| The rebuild banner: Starting, Recreating, Updating, Resetting, Recovering, with its progress | recovered `computer/rebuild/` | no | |
-| Update or Reset Simeon's Computer: "An agent is working…", Update when done, Update anyway, Not now | recovered `computer/update/confirmation.ts` | no | |
-| "Computer is low on disk space", Open Disk Saver | bundle | no | |
-| Teach a task: Start recording, Stop & save, Discard (gate off) | recovered `computer/teach-recording/` | no | |
+| The status of each agent's computer: read under 15 s (a late answer still taken), kept once had (so "Can't reach…" shows only before the first), started when its window opens and again on Retry, the stream's return and the window coming forward (read again at most once a minute, not during a rebuild); 32 kept | bundle `TTn`, `NTn`, `qoe`, `SVn` | no (the phone asks `ensureForeverBox` every 3 s) | written (`ComputerBook`, `StoreComputer.swift`) |
+| The Computer tab (`_bn`): "Needs your attention" with Skip this step and I'm done, continue (they answer and open nothing); the screen watched only, 1280 × 800 scaled, a spinner while it connects; "Booting up the computer", "Setting up the computer" N %, "Can't reach {name}'s screen" with Retry; the bare desktop icon when there is nothing to say; "Open" on hover, a click anywhere opens the computer; the agent's pointer from `computer-action`, gliding, pressing on a click; "{name}'s screen" under it; "Screen preview unavailable" after more than three crashes a minute apart | bundle `_bn`, `$1t`, `U1t`, `Abn`, `DAe` | partly (`ComputerTab`) | written (`MacComputerPreview`); not the window's three warm screens (switching agents connects again), and it keeps showing while the computer's window is open (the window's preview hides under its full view) |
+| The full view (`bbn`): "{name}'s screen", always the person's to use (no Take over), the largest 16:10 that fits; "Switching to {name}'s screen…", "Can't reach…" with Retry, "Setting up the computer" N %, "This agent runs on your machine. There's no separate desktop to stream.", "Booting up the computer"; the hand-off's banner whose Skip this step and I'm done, continue answer, close it and go back to the message field; "Exit fullscreen"; closing hands nothing back | bundle `bbn`, `pbn`, `XOn` | partly (`ComputerSheet`: the phone's own layout) | written (`MacComputerWindow`), in a window of its own as §1 has it: so selecting another agent does not close it, as it closes the window's overlay |
+| The strip of helpers' screens (running computer-use subagents, in the host's order, "Subagent" untitled): the others, up to four, else three and "and N more" with its menu "More screens"; "Switch to {title}"; the focused one's title under the stage; ↑← ↓→ between them, from the window or from inside the screen. Every helper shows the agent's own screen, as the window gives each the agent's address | bundle `MTn`, `CTn`, `fbn`, `mbn`, `wbn` | no | written (`MacHelperStrip`) |
+| The clipboard both ways while the full view is open: the computer's copied text onto this Mac's (not what was just sent either way), this Mac's onto the computer's on a click in it, the window coming forward or the view opening, 0.2 s apart at most, pasted as noVNC pastes, no key pressed; ⌘A ⌘C ⌘V ⌘X ⌘Z (with ⇧) sent as Ctrl after letting go of ⌘, ⌥ and Super | `preload-vnc.ts`, `box-vnc-clipboard-paste.ts` | partly (by hand) | written (`ClipboardBridge`, the page in `Computer.swift`): the computer's text arrives as noVNC hears it, not by reading every 500 ms; the ⌘ keys are caught in the page, to check on a Mac that the Edit menu does not take them first |
+| The person's presence on the screen | `preload-vnc.ts` `installVncUserPresenceReporter` | no | not built: the window keeps it and nothing reads it |
+| The hand-off card in the chat waits while the computer says that request is pending, with the screen as the agent saw it ("Take over the computer"); Skip's own line ("Cancel this request without doing the step; the agent continues without it"); Skip sends `dismissed`, and either button settles as "Done" (the host writes `completed` for both) | bundle `Obn`, `__simeonHandoffCard`, host `box-handoff-service.ts` | partly | written (shared with the phone; before the status is read, the line's own answer decides) |
+| The rebuild lock: an update, a reset or a recovery asked for, the server's own (`box-migration`), or the image being pulled; "Reconnecting" after the stream is down 2.5 s with an agent selected; when it lets go (a second after the stream is back, or the computer ready again) | bundle `Kae`, `yft`, `e6n`, `H$n` | no | written (`RebuildLock`, checked against the bundle's own code on 2,080 random steps; `RebuildDriver`) |
+| The update in the background: the pill at the top with its ring and its step ("Updating Simeon's Computer"); a click brings the dialog | bundle `h8n`, `A1t` | no | written (`MacRebuildBanner`) |
+| The reset and the recovery in front: a dialog that cannot be closed, its steps (Getting ready, Wiping your data, Creating…, Starting…, Cleaning up, Reconnecting), the bar and its percent (never back), Continue in Background | bundle `d8n`, `J1t` | no | written (`MacRebuildDialog`) |
+| The stream away: "Reconnecting", "Checking connection", "Simeon's computer restarting"; after 120 s "Couldn't Reach Simeon's Computer" (Retry only waits again; Recover Simeon's Computer asks "Recover Simeon's Computer?") and "Taking longer than expected" (Keep waiting, Continue in Background); "Update failed", "Reset failed", "Recover failed" with Dismiss and Retry | bundle `k8n`, `j8n`, `B$n` | no | written (`MacRebuildSurfaces`) |
+| While a rebuild runs: sending waits, a failed message is not sent again, the agents' list holds still and is read again after, the window coming forward reads nothing | bundle `hve`, `GOn`, `gTe` | no | written |
+| Update Simeon's Computer: "Update Simeon's Computer?" (Not now), "An agent is working" / "Update while agents are working?" (Cancel, Update anyway, Update when done); "Update when done" waits for no agent at work; the sidebar's Update and Queued pills; the refusals in red | bundle `K1t`, `FAe`, `Gbn`, `zAe`, `RAe`, `nTn` | no | written (`MacUpdateConfirmSheet`, `MacUpdatePill`). Our server always says the computer is up to date, so the entry goes once that is read and the pill never shows |
+| Reset and recover (`ForceRecreateSandBox`), update (`RecreateSandBox`), and the server's steps (`WatchSandBoxMigration`: read again 3 s after it ends, from where it stopped; a silent stream dropped after 30 s, twenty times) | main `box-recovery.ts`, `box-migration-watcher.ts`, `box-host-connector.ts` | no | written (`MigrationRelay`, `LiveBackend`). On our server Reset and Recover wipe the computer's files, though the Recover words say they are kept (as in the Electron app) |
+| "Computer is low on disk space" (or critically) under the toolbar, "Disk Saver is auditing usage…", Go to Disk Saver ("Opening Disk Saver…"): opens the Disk Saver agent, or makes one; the automatic Disk Saver once each time the disk runs low (`requestDiskSaverAudit`, or a new Disk Saver, not opened) | bundle `D8n`, `z8n`, `$8n` | no | written (`MacDiskBanner`, `StoreRebuild.swift`) |
+| Teach a task: Start recording, Stop & save, Discard | bundle `gbn`, `ybn`; gate `sand_teach_by_demonstration` | no | not built: the gate is off in what ships |
 
 ### 2.17 Calls
 
@@ -377,9 +391,9 @@ and `VoiceCall.swift`. Every command the Mac sends today has a line.
 | Files | `uploadAttachment`, `readAttachmentImage`, `readAttachmentChunk` | yes | written |
 | | `readAttachmentText` | no | |
 | Calls | `voiceCall` | yes | written |
-| The computer | `ensureForeverBox`, `handBackForeverBox` | yes | written |
+| The computer | `ensureForeverBox`, `handBackForeverBox`, `getForeverBoxStatus`, `getSubagents`, `requestDiskSaverAudit` | yes (the first two) | written |
 | | `getCloudAgentInfo` | yes | written |
-| | `getForeverBoxStatus`, `updateForeverBox`, `getHostStatus`, `requestDiskSaverAudit`, `isEgressTunnelAvailable` | no | |
+| | `updateForeverBox` (the Mac's dev fallback only), `getHostStatus` (the Electron app's own idle check), `isEgressTunnelAvailable` | no | |
 | Teaching (gate off) and trays (no screen in the window today) | `startTeachRecording`, `stopTeachRecording`, `getTeachRecordingStatus`, `getTrays`, `dismissTray`, `clearTrays` | no | |
 
 A command whose screen is missing or switched off in the window comes over
@@ -414,10 +428,11 @@ How the Mac calls them, beyond what `Gateway.swift` does now:
 | `mcp-servers`, `mcp-auth` | connectors and their sign-ins | yes | written |
 | `outline` | the agent's steps | partly (tool calls only) | |
 | `client-side-tool-v2` | tool cards, decoded from protobuf (coordinator `client-side-tool-v2-relay.ts`) | no | |
-| `subagents`, `async-tasks` | work an agent handed off | no | |
+| `subagents` | an agent's helpers (their screens) | no | written |
+| `async-tasks` | work an agent handed off | no | |
 | `agents-automation` | an agent's routines | no | written |
 | `workflows`, `memory`, `sharing` | changes to those | no | |
-| `forever-box`, `box-disk-pressure`, `computer-action` | the computer's state, its disk, what the agent does on it | no | |
+| `forever-box`, `box-disk-pressure`, `computer-action` | the computer's state, its disk, what the agent does on it | no | written |
 | `tray`, `teach-recording` | trays and teaching | no | |
 
 ## 5. What the coordinator did
@@ -469,9 +484,9 @@ The Swift app does each of these itself:
 | Theme: system, light, dark | `theme.*`, main `prefs/theme-controller.ts` | yes | written |
 | Onboarding seen, skip | `onboarding.*` | yes | written |
 | **The agent's hands on this Mac** (§7) | `localToolPermission.*` | n/a | |
-| **The computer**: reset it, update it keeping its data, the move's progress (backing up, creating, moving, cleaning up, done, failed) | `foreverBox.forceRecreate`, `update`, `getBoxMigrationStatus`, main `box/box-recovery.ts` | no | |
-| The computer panel: clipboard both ways (every 500 ms while visible), ⌘A/C/V/X/Z sent as Ctrl, the person's presence, arrow keys | `desktop/source/electron-preload/preload-vnc.ts` | partly (`Computer.swift`: its own clipboard and keys, no presence) | |
-| "Can't reach…" with the last reason after 20 s of spinner; the log at `computer-stream.log` | `computer-stream-notice.ts`, main `vnc/computer-stream-log.ts` | no | |
+| **The computer**: reset it, update it keeping its data, the move's progress (backing up, creating, moving, cleaning up, done, failed) | `foreverBox.forceRecreate`, `update`, `getBoxMigrationStatus`, main `box/box-recovery.ts` | no | written (§2.16) |
+| The computer panel: clipboard both ways (every 500 ms while visible), ⌘A/C/V/X/Z sent as Ctrl, the person's presence, arrow keys | `desktop/source/electron-preload/preload-vnc.ts` | partly (`Computer.swift`: its own clipboard and keys, no presence) | written (§2.16; presence not built, nothing reads it) |
+| "The computer's screen isn't connecting." with the last reason after 20 s of spinner, "The computer's status could not be read." under "Can't reach…" at once, each with "Details:" and the log's place; the log at `~/Library/Application Support/Simeon/computer-stream.log`, emptied at each launch | `computer-stream-notice.ts`, `shared/computer-stream.ts`, main `vnc/computer-stream-log.ts` | no | written (`ComputerStreamLog`, `ComputerStreamReason`): the app's own noVNC writes the lines the box's page would (`[SimeonScreen] state=…`), so the same reasons come out; the network token is left out of the lines |
 | Security keys for the agent's browser (§8) | `foreverBox.webauthnProxy.*` | no | |
 | The egress tunnel: the box's traffic leaves through this Mac (off by default) | `foreverBox.egressTunnel.*`, `shared/node/egress-tunnel/` | no | |
 | Feature gates and their defaults (`shared/node/experiments/simeon-gate-defaults.ts`) | `experiments.*` | partly (reads `isGlobalSearchEnabled`) | |
@@ -586,6 +601,8 @@ Each slice ends with a build on the founder's Mac and their screenshots.
 4. **The computer.** The Computer tab and its own window, the clipboard
    by itself and the ⌘ keys, presence, the helpers' strip, reset and
    update with the rebuild banner, low disk, the "Can't reach…" notice.
+   Written. Presence is not built (nothing in the window reads it), nor
+   teaching (its gate is off), nor the telemetry the window sends.
 5. **Calls.** The floating banner, Agent › Call, the rings and hang-up,
    the voice picker, thumbs.
 6. **Settings, all of it.** Connect apps with everything in §2.19

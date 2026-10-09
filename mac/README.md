@@ -6,9 +6,9 @@ in swift. literally everything … and more importantly, take apple design
 again". This folder holds that app. `PARITY.md` lists everything the Electron
 app does, one line each, with where it goes in Swift and whether it is done.
 
-Slices 1 (the window), 2 (the chat) and 3 (agents) are written (9 October
-2026). None has been built yet: the next step is a build on the founder's
-Mac (below).
+Slices 1 (the window), 2 (the chat), 3 (agents) and 4 (the computer) are
+written (9 October 2026). None has been built yet: the next step is a
+build on the founder's Mac (below).
 
 ## Why
 
@@ -179,13 +179,33 @@ are in SimeonCore (`NewChat`, `SidebarSections`, `RoutineTriggers`,
 `AvatarCrop`, `StoreAgents`). The New Agent and New Group Chat sheets and
 the agent's page as a sheet are gone from the Mac (the iPhone keeps them).
 
+What slice 4 adds, each agent's computer as the shipped window shows it:
+the Computer tab's preview (watched only, the agent's pointer over it,
+"Needs your attention" with its two buttons, Open on hover) and the
+computer's window, "{name}'s screen", always the person's to use, with the
+hand-off's banner, the helpers' strip and the arrows between them, the
+clipboard both ways while it is open and ⌘A ⌘C ⌘V ⌘X ⌘Z sent as Ctrl;
+the status read as the window reads it (15 s, kept once had, started when
+the window opens, read again when the stream comes back or the window
+comes forward); the words for a screen not there yet, and under a stuck
+one the last reason from `~/Library/Application Support/Simeon/computer-stream.log`;
+the rebuild (Update Simeon's Computer from the palette and "/", its
+questions, the pill at the top or the dialog with its steps, "Reconnecting"
+when the stream drops, the two-minute and failure dialogs), low disk with
+Disk Saver, and the sidebar's "Can't reach your computer". The rebuild's
+lock is ported from the bundle and checked against its own code run in
+Node on random events (`ComputerRebuild.swift`, `RebuildDriver.swift`).
+The demo plays an update or a reset out (`mac/scripts/build.sh --demo`,
+then ⌘K, "Update Simeon's Computer").
+
 ## What can and cannot be checked here
 
 - `SimeonCore` and `SimeonMacCore` build and their tests run on Linux
   (`cd ios/SimeonCore && swift test`): the links the app opens, the
-  sidebar's order for ⌘1 to ⌘9 and ⌥↑ ⌥↓, and slice 3's rules (the To:
-  search, sections, schedules and events) against values made by running
-  the window's own functions.
+  sidebar's order for ⌘1 to ⌘9 and ⌥↑ ⌥↓, slice 3's rules (the To:
+  search, sections, schedules and events) and slice 4's (the computer's
+  words, the status store, the rebuild lock and its steps) against values
+  made by running the window's own functions.
 - The app's own files, the Mac's and the shared iPhone ones, can only be
   parsed off a Mac (`swiftc -parse`), not compiled: SwiftUI and AppKit are
   not here. Every slice is built and run on the founder's Mac before it

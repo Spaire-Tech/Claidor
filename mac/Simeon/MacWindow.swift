@@ -39,7 +39,13 @@ struct MacRoot: View {
     }
     // The Electron window's smallest (`window-chrome.ts`).
     .frame(minWidth: 680, minHeight: 520)
-    .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in store.isForeground = true }
+    .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+      store.isForeground = true
+      // The window coming forward reads the computers again (at most once a minute, not mid-rebuild).
+      store.windowCameForward(rebuilding: store.rebuild.isHardLocked)
+    }
+    // The sidebar says when the agents cannot be read; no alert on top of it (the window's).
+    .onAppear { store.reportsRosterFailure = false }
     .onReceive(NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)) { _ in store.isForeground = false }
   }
 }
@@ -89,6 +95,8 @@ struct MacWindow: View {
           }
         }
     }
+    // Simeon's computer rebuilt or out of reach: the pills at the top, the dialogs (MacRebuild.swift).
+    .modifier(MacRebuildSurfaces())
     // Esc closes the pane when nothing in front of it took the key (the window's `CDn`).
     .onExitCommand { if navigation.paneOpen { navigation.closePane() } }
     .onChange(of: paneVisible, initial: true) { _, now in navigation.paneShown = now }
