@@ -22,13 +22,13 @@ struct SimeonApp: App {
         .overlay { LaunchCover() }
         .environment(session)
         .environment(session.store)
-        .preferredColorScheme(Self.scheme(session.launch.theme ?? theme))
         // One size of type everywhere, the chat's (the founder, 9 October 2026: "i want all to be the size of chat"). The chat
         // is drawn in fixed sizes; rows left to the system (Settings' rows, pickers, menus) grew with the phone's Text Size and
         // stood bigger than it. The phone's setting no longer changes the app; it never changed the chat.
         .dynamicTypeSize(.large)
-        // The window's own style as well: a sheet already open (Settings, where the choice is made) took the new
-        // appearance only once closed (the founder, 9 October 2026), as the root's preference reaches the root alone.
+        // The appearance is set on the windows, and only there. With SwiftUI's preferredColorScheme at the root as well, each
+        // sheet was given the style of the moment it opened as its own, so Settings, open while the choice was made, kept the
+        // old one until closed (the founder, 9 October 2026, twice). A window's style reaches every sheet it holds at once.
         .onChange(of: session.launch.theme ?? theme, initial: true) { _, name in Self.applyToWindows(name) }
         .task { await session.start() }
         // After the first screen is up, never before it.

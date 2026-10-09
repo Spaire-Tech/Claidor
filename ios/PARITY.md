@@ -753,6 +753,27 @@ painted the photograph. Simeon's own image (`box/wallpapers`) carries the
 same picture. It reaches the computers with the next host bundle
 (`npm run publish:host-bundle`).
 
+## 25. Fixes from the founder's device (9 October 2026, evening)
+
+- **Appearance, again.** The Settings sheet stayed dark after choosing Light.
+  The app set the style twice: SwiftUI's preferredColorScheme at the root
+  and the windows' own style. The first gives each sheet the style of the
+  moment it opened as its own, which outranks the window's. The root's
+  preference is gone; the style is set on the windows only, and an open
+  sheet follows it at once.
+- **Airline logos in dark mode** sit on the dark disc, not a white one.
+  Duffel has no logos for dark backgrounds (every `for-dark-background`
+  address answers 404), so the parts of a logo that read at less than 2:1
+  on the disc are lightened in their own hue (Alaska's, JetBlue's, Spirit's,
+  Lufthansa's marks; greys go near white); the rest are left as they are.
+  Tried on 34 airlines' logos before writing it.
+- **Connect** on the sheet before an app's sign-in is our blue with white
+  words (it took the list's tint, white in dark mode, with white words).
+- **Settings' switches** are our blue (they were green).
+- **The chat's butterfly**: the bar's middle is now a button (it was a tap
+  gesture on a clear view, which still missed the top of the butterfly),
+  with the bar's glass behind it turned off.
+
 ## Suggested order (the founder decides)
 
 1. The chat's look: the bubble, the top bar, markdown, brand names with logos, agent names with butterflies.

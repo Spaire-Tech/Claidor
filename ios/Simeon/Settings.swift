@@ -59,7 +59,7 @@ struct SettingsSheet: View {
                 .font(.system(size: 13)).foregroundStyle(Ink.secondary)
             }
           }
-          .tint(Ink.live)
+          .tint(Ink.blue)
           NavigationLink {
             AutoReviewRules(settings: $settings)
           } label: {
@@ -72,7 +72,7 @@ struct SettingsSheet: View {
                 .font(.system(size: 13)).foregroundStyle(Ink.secondary)
             }
           }
-          .tint(Ink.live)
+          .tint(Ink.blue)
           if automaticZone.wrappedValue {
             LabeledContent("Time Zone", value: zoneName)
           } else {

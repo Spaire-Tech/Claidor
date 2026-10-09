@@ -52,13 +52,18 @@ struct ChatView: View {
         // The butterfly is drawn up in the bar's row (ChatHeadline), but there the bar takes the touch, not the drawing: a
         // tap on the butterfly did nothing and only its name opened the page (the founder, 9 October 2026). The bar's
         // middle, where the butterfly is, takes it now; the drawing is unchanged.
+        // A button, not a tap gesture on a clear view: the bar's middle took no tap that way either, and the top of the
+        // butterfly still did nothing (the founder, 9 October 2026, again). The bar's glass behind it is off: nothing shows.
         ToolbarItem(placement: .principal) {
-          Color.clear
-            .frame(width: 180, height: 44)
-            .contentShape(.rect)
-            .onTapGesture { showsPage = true }
-            .accessibilityHidden(true)
+          Button { showsPage = true } label: {
+            Color.clear
+              .frame(width: 180, height: 44)
+              .contentShape(.rect)
+          }
+          .buttonStyle(.plain)
+          .accessibilityHidden(true)
         }
+        .sharedBackgroundVisibility(.hidden)
         if store.canCall && !store.groupIds.contains(agentId) {
           ToolbarItem(placement: .topBarTrailing) { ChatCallButton(agentId: agentId) }
         }

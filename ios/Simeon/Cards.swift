@@ -407,9 +407,11 @@ struct ConnectConsentSheet: View {
           connect()
           dismiss()
         } label: {
-          Text("Connect").font(.system(size: 17, weight: .semibold)).frame(maxWidth: .infinity).frame(height: 50)
+          Text("Connect").font(.system(size: 17, weight: .semibold)).foregroundStyle(.white).frame(maxWidth: .infinity).frame(height: 50)
         }
         .buttonStyle(.glassProminent)
+        // Our blue: the list's tint (the primary ink, white in dark) made it a white button with white words.
+        .tint(Ink.blue)
         Button { dismiss() } label: {
           Text("Cancel").font(.system(size: 17)).foregroundStyle(Ink.primary).frame(maxWidth: .infinity).frame(height: 44).contentShape(.rect)
         }
@@ -628,11 +630,13 @@ struct AirlineMark: View {
   let name: String
   let logo: String
   var size: CGFloat = 40
+  @Environment(\.colorScheme) private var scheme
   @State private var image: UIImage?
 
   var body: some View {
     ZStack {
-      Circle().fill(Color.white)
+      // White in light; in dark the dark disc, with the logo's too-dark parts lightened (RemoteLogos.forDarkDisc).
+      Circle().fill(Ink.tile)
       // The airline's own logo (an SVG from the offer, drawn by RemoteLogos), else its initials, as the Mac's card falls back.
       if let image {
         let box = AirlineLogo.box(width: Double(image.size.width), height: Double(image.size.height), diameter: Double(size))
@@ -642,16 +646,16 @@ struct AirlineMark: View {
       }
     }
     .frame(width: size, height: size)
-    .overlay(Circle().strokeBorder(Color.black.opacity(0.1), lineWidth: 0.5))
+    .overlay(Circle().strokeBorder(Ink.tileEdge, lineWidth: 0.5))
     .accessibilityHidden(true)
-    .task(id: logo) {
+    .task(id: "\(logo)|\(scheme == .dark)") {
       guard let url = URL(string: logo), !logo.isEmpty else { return }
-      image = await RemoteLogos.shared.image(for: url)
+      image = await RemoteLogos.shared.image(for: url, dark: scheme == .dark)
     }
   }
 
   private var initials: some View {
-    Text(FlightsCard.initials(name)).font(.system(size: size / 3, weight: .medium)).foregroundStyle(Color(red: 0.43, green: 0.43, blue: 0.45))
+    Text(FlightsCard.initials(name)).font(.system(size: size / 3, weight: .medium)).foregroundStyle(Ink.tileInitial)
   }
 }
 
