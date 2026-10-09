@@ -36,8 +36,8 @@ struct AgentPageSheet: View {
                 AgentAvatar(agent: agent, members: store.members(of: agent))
                   .frame(width: agent.isGroup ? 90 : 66, height: agent.isGroup ? 60 : 66)
                   .frame(width: 96, height: 96)
-                  .background(Color.white, in: Circle())
-                  .overlay(Circle().stroke(Color.black.opacity(0.08), lineWidth: 1))
+                  .background(Ink.tile, in: Circle())
+                  .overlay(Circle().stroke(Ink.tileEdge, lineWidth: 1))
                 if !agent.isGroup {
                   Button { editingAvatar = true } label: {
                     Image(systemName: "pencil").font(.system(size: 14, weight: .medium)).foregroundStyle(Ink.primary)

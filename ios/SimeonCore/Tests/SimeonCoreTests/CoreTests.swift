@@ -1466,3 +1466,37 @@ final class FlightCardTests: XCTestCase {
     XCTAssertEqual(AirlineLogo.box(width: 0, height: 10, diameter: 40).width, 0)
   }
 }
+
+final class ExchangePageTests: XCTestCase {
+  private func said(_ id: String, at seconds: Double, to peer: Party? = nil, from other: Party? = nil, _ text: String) -> Entry {
+    var raw: [String: JSON] = ["kind": "message", "id": .string(id), "content": .string(text), "timestampMs": .number(1_760_000_000_000 + seconds * 1000)]
+    if let peer { raw["role"] = "assistant"; raw["toAgent"] = ["id": .string(peer.id), "name": .string(peer.name)] }
+    if let other { raw["role"] = "user"; raw["fromAgent"] = ["id": .string(other.id), "name": .string(other.name)] }
+    return Entry(JSON.object(raw))!
+  }
+
+  func testEachPairHasItsOwnPage() {
+    let scout = Party(id: "scout", name: "Scout"), sid = Party(id: "sid", name: "Sid"), iris = Party(id: "iris", name: "Iris")
+    let call = Party(id: "voice-call:abc:30", name: "Call")
+    let entries = [
+      said("a", at: 0, to: sid, "Test from Scout. No reply needed."),
+      said("b", at: 1, to: iris, "Test from Scout. No reply needed."),
+      said("c", at: 60, to: sid, "Please reply with a one-line hello."),
+      said("d", at: 90, from: sid, "Hello from Sid."),
+      said("e", at: 95, to: call, "a call's line"),
+      said("f", at: 20 * 60, to: sid, "Thanks."),
+    ]
+    let rows = Chat.exchangeRows(entries, agent: scout, peerId: "sid")
+    let shape = rows.map { row -> String in
+      switch row {
+      case .stamp(let id, _): return "stamp:\(id)"
+      case .message(let id, let sender, _, let first, let last): return "\(id):\(sender.name):\(first ? "first" : "-"):\(last ? "last" : "-")"
+      }
+    }
+    XCTAssertEqual(shape, ["stamp:stamp-a", "a:Scout:first:-", "c:Scout:-:last", "d:Sid:first:last", "stamp:stamp-f", "f:Scout:first:last"])
+    // Iris's page holds only what went to Iris.
+    XCTAssertEqual(Chat.exchangeRows(entries, agent: scout, peerId: "iris").count, 2)
+    XCTAssertEqual(Chat.exchangeRows(entries, agent: scout, peerId: "nobody"), [])
+    XCTAssertEqual(Chat.menuOrder([sid, iris, Party(id: "d", name: "deploy")]).map(\.name), ["deploy", "Iris", "Sid"])
+  }
+}

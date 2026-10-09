@@ -3,6 +3,16 @@
     {
       "filename": "intercom.png",
       "idiom": "universal"
+    },
+    {
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        }
+      ],
+      "filename": "intercom-dark.png",
+      "idiom": "universal"
     }
   ],
   "info": {

@@ -3,6 +3,16 @@
     {
       "filename": "mercury.png",
       "idiom": "universal"
+    },
+    {
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        }
+      ],
+      "filename": "mercury-dark.png",
+      "idiom": "universal"
     }
   ],
   "info": {

@@ -240,21 +240,36 @@ struct QuestionCardView: View {
 // MARK: - Connected apps
 
 /** An app's tile: its mark on white, 40 pt with 11 pt corners (`.sand-tool-icon`). */
+/**
+ * An app's logo on its tile: white in light, dark in dark mode, with the
+ * logo's dark version where the app has one (GitHub's and Intercom's from
+ * Composio's dark theme, Mercury's from its own file; the others' marks read
+ * on a dark tile as they are). make-assets.mjs writes the pairs.
+ */
 struct ConnectorTile: View {
   let name: String
   var size: CGFloat = 40
+  @Environment(\.colorScheme) private var scheme
 
   var body: some View {
+    let shape = RoundedRectangle(cornerRadius: size * 11 / 40, style: .continuous)
     ZStack {
-      RoundedRectangle(cornerRadius: size * 11 / 40, style: .continuous).fill(Color.white)
+      shape.fill(Ink.tile)
       if let logo = MentionArt.connector(name) {
-        Image(uiImage: logo).resizable().scaledToFit().frame(width: size * 0.6, height: size * 0.6)
+        Image(uiImage: logo.resolved(scheme)).resizable().scaledToFit().frame(width: size * 0.6, height: size * 0.6)
       } else {
-        Text(String(name.prefix(1)).uppercased()).font(.system(size: size * 0.42, weight: .semibold)).foregroundStyle(Color(white: 0.35))
+        Text(String(name.prefix(1)).uppercased()).font(.system(size: size * 0.42, weight: .semibold)).foregroundStyle(Ink.tileInitial)
       }
     }
     .frame(width: size, height: size)
-    .overlay(RoundedRectangle(cornerRadius: size * 11 / 40, style: .continuous).stroke(Color.black.opacity(0.08), lineWidth: 0.5))
+    .overlay(shape.stroke(Ink.tileEdge, lineWidth: 0.5))
+  }
+}
+
+extension UIImage {
+  /** The asset's own picture for light or dark: SwiftUI draws a UIImage as it was first resolved, not as the appearance changes. */
+  func resolved(_ scheme: ColorScheme) -> UIImage {
+    imageAsset?.image(with: UITraitCollection(userInterfaceStyle: scheme == .dark ? .dark : .light)) ?? self
   }
 }
 
@@ -1230,75 +1245,176 @@ struct PeerStack: View {
   }
 }
 
-/** "Messaged Scout", "Message from Iris", "4 messages with 🦋🦋 2 agents": a tap shows what they said. */
+/**
+ * "Messaged 🦋🦋🦋 3 agents", "Message from Iris", "4 messages with 🦋 Sid":
+ * each agent it names has a page of its own with this one (the founder, 9
+ * October 2026: "when an agent message many at the same time, its not all
+ * in one chat. its each by each"). One agent: the line opens its page. More:
+ * a menu of them, by name, and the one picked opens.
+ */
 struct TeammatesLine: View {
   let exchange: Exchange
   let entries: [Entry]
   let agentId: String
-  @State private var open = false
+  @Environment(ChatActions.self) private var actions: ChatActions?
+  /** Where no chat can push the page (a chat's preview): a sheet. */
+  @State private var shown: ExchangeRoute?
 
   var body: some View {
+    let peers = Chat.menuOrder(exchange.peers)
     EventLine {
       Text(exchange.label)
-      Button { open = true } label: {
-        HStack(spacing: 4) {
-          PeerStack(peers: exchange.peers)
-          Text(exchange.peers.count == 1 ? exchange.peers[0].name : "\(exchange.peers.count) agents")
+      if peers.count > 1 {
+        Menu {
+          ForEach(peers, id: \.id) { peer in Button(peer.name) { open(peer) } }
+        } label: {
+          chip
         }
-        .padding(.vertical, 4).padding(.leading, 4).padding(.trailing, 6)
-        .contentShape(Capsule())
+      } else {
+        Button { if let peer = peers.first { open(peer) } } label: { chip }
+          .buttonStyle(.plain)
       }
-      .buttonStyle(.plain)
     }
-    .sheet(isPresented: $open) { ExchangeSheet(agentId: agentId, peers: exchange.peers, entries: entries) }
+    .sheet(item: $shown) { route in NavigationStack { ExchangePage(route: route, fallback: entries) } }
+  }
+
+  private var chip: some View {
+    HStack(spacing: 4) {
+      PeerStack(peers: exchange.peers)
+      Text(exchange.peers.count == 1 ? exchange.peers[0].name : "\(exchange.peers.count) agents")
+    }
+    .padding(.vertical, 4).padding(.leading, 4).padding(.trailing, 6)
+    .contentShape(Capsule())
+  }
+
+  private func open(_ peer: Party) {
+    let route = ExchangeRoute(agentId: agentId, peer: peer)
+    if let actions { actions.openExchange(route) } else { shown = route }
   }
 }
 
-/** Two agents' exchange, read-only (the window's overlay): this agent's words on the right, the teammate's on the left. */
-struct ExchangeSheet: View {
+/** The page of one agent's messages with another, pushed from its chat. */
+struct ExchangeRoute: Hashable, Identifiable {
   let agentId: String
-  let peers: [Party]
-  let entries: [Entry]
+  let peer: Party
+  var id: String { "\(agentId)|\(peer.id)" }
+}
+
+/**
+ * Two agents' messages to each other, read-only, as the reference draws the page (the
+ * founder's screenshot, 9 October 2026), with the two of them at the top
+ * centre as our chat has its agent ("leave us on center top"): the time over
+ * each stretch, the sender's name over their run of grey bubbles, their
+ * butterfly beside its last, the page held to its newest line, and
+ * "Read-only" at the foot. Its lines are everything the two said to each
+ * other in this agent's chat (`Chat.exchangeRows`, tested), newest at the
+ * bottom.
+ */
+struct ExchangePage: View {
+  let route: ExchangeRoute
+  /** The line's own messages, for a chat whose lines the app doesn't hold (a preview). */
+  var fallback: [Entry] = []
   @Environment(AppStore.self) private var store
-  @Environment(\.dismiss) private var dismiss
   @Environment(\.colorScheme) private var scheme
+  @State private var width: CGFloat = 361
 
   var body: some View {
-    let agent = store.agent(agentId)
+    // Read so the page follows the chat as it grows; the lines themselves are the chat's kept entries.
+    let _ = store.rows(for: route.agentId)
+    let me = Party(id: route.agentId, name: store.agent(route.agentId)?.name ?? "")
+    let rows = Chat.exchangeRows(store.transcripts[route.agentId] ?? fallback, agent: me, peerId: route.peer.id)
     let mentioning = Mentioning(names: store.mentionNames, personName: store.account?.name, dark: scheme == .dark)
-    VStack(spacing: 0) {
-      HStack(spacing: 10) {
-        CloseDisc { dismiss() }
-        Spacer()
-        if let agent { AgentAvatar(agent: agent).frame(width: 30, height: 30) }
-        Image(systemName: "arrow.left.arrow.right").font(.system(size: 12, weight: .semibold)).foregroundStyle(Ink.tertiary)
-        PeerStack(peers: peers, size: 30)
-        Spacer()
-        Color.clear.frame(width: 40, height: 40)
-      }
-      .padding(14)
-      ScrollView {
-        LazyVStack(alignment: .leading, spacing: 8) {
-          ForEach(entries) { entry in
-            let mine = entry.toAgent != nil
-            VStack(alignment: mine ? .trailing : .leading, spacing: 3) {
-              Text(mine ? "\(agent?.name ?? "") to \(entry.toAgent?.name ?? "")" : "\(entry.fromAgent?.name ?? "")")
-                .font(.system(size: 12)).foregroundStyle(Ink.secondary).padding(.horizontal, 12)
-              // Cut as the chat's bubbles are: a message of megabytes laid out whole holds the screen still.
-              MarkdownView(blocks: Markdown.cachedBlocks(Chat.clipped(entry.content ?? "", limit: 20_000).text), mentioning: mentioning)
-                .foregroundStyle(Ink.theirsText)
-                .padding(.horizontal, 12).padding(.vertical, 8)
-                .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                .frame(maxWidth: 300, alignment: mine ? .trailing : .leading)
+    ScrollView {
+      LazyVStack(alignment: .leading, spacing: 0) {
+        ForEach(rows) { row in
+          switch row {
+          case .stamp(_, let date):
+            Text(Chat.stampText(date)).font(.system(size: 12)).foregroundStyle(Ink.secondary)
+              .frame(maxWidth: .infinity)
+              .padding(.top, 18).padding(.bottom, 4)
+          case .message(_, let sender, let text, let first, let last):
+            HStack(alignment: .bottom, spacing: 8) {
+              ZStack {
+                if last { PartyAvatar(party: sender, size: 28) }
+              }
+              .frame(width: 28)
+              VStack(alignment: .leading, spacing: 3) {
+                if first {
+                  Text(sender.name).font(.system(size: 13)).foregroundStyle(Ink.secondary).padding(.leading, 12)
+                }
+                // Cut as the chat's bubbles are: a message of megabytes laid out whole holds the screen still.
+                MarkdownView(blocks: Markdown.cachedBlocks(Chat.clipped(text, limit: 20_000).text), mentioning: mentioning)
+                  .foregroundStyle(Ink.theirsText)
+                  .padding(.horizontal, 12).padding(.vertical, 8)
+                  .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                  .frame(maxWidth: ChatMetrics.bubbleMax(width - 36), alignment: .leading)
+              }
+              Spacer(minLength: 0)
             }
-            .frame(maxWidth: .infinity, alignment: mine ? .trailing : .leading)
+            .padding(.top, first ? 10 : 3)
           }
         }
-        .padding(.horizontal, 16).padding(.bottom, 24)
       }
+      .padding(.horizontal, 16).padding(.bottom, 16)
+    }
+    .defaultScrollAnchor(.bottom)
+    .onGeometryChange(for: CGFloat.self) { ($0.size.width - 32).rounded(.down) } action: { measured in
+      if abs(measured - width) >= 1 { width = measured }
+    }
+    .safeAreaBar(edge: .top, spacing: 0) { ExchangeHeadline(me: me, peer: route.peer) }
+    .safeAreaBar(edge: .bottom, spacing: 0) {
+      Label("Read-only", systemImage: "lock")
+        .font(.system(size: 15)).foregroundStyle(Ink.secondary)
+        .padding(.horizontal, 18).frame(height: 40)
+        .glassEffect(.regular, in: .capsule)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity)
     }
     .background(Ink.ground)
-    .presentationDetents([.medium, .large])
+    .navigationBarTitleDisplayMode(.inline)
+  }
+}
+
+/** The two agents at the top centre, the way a chat shows its agent: their butterflies, one over the other, and their names. */
+struct ExchangeHeadline: View {
+  let me: Party
+  let peer: Party
+
+  var body: some View {
+    VStack(spacing: 4) {
+      HStack(spacing: -12) {
+        PartyAvatar(party: me, size: 44)
+        PartyAvatar(party: peer, size: 44)
+      }
+      .frame(height: 52)
+      Text("\(me.name) and \(peer.name)").font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.primary).lineLimit(1)
+        .padding(.horizontal, 12).padding(.vertical, 4)
+        .glassEffect(.regular, in: .capsule)
+    }
+    .padding(.horizontal, 70)
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel("\(me.name) and \(peer.name)")
+    .allowsHitTesting(false)
+    // Up into the bar's row, beside its back button, as the chat's.
+    .padding(.top, -34)
+    .padding(.bottom, 6)
+    .frame(maxWidth: .infinity)
+  }
+}
+
+/** An agent named on a line: its avatar when the app knows it, else its butterfly in its colour. */
+struct PartyAvatar: View {
+  let party: Party
+  var size: CGFloat = 28
+  @Environment(AppStore.self) private var store
+
+  var body: some View {
+    if let agent = store.agent(party.id) {
+      AgentAvatar(agent: agent, members: store.members(of: agent)).frame(width: size, height: size)
+    } else {
+      ButterflyView(palette: .named(store.mentionNames.first { $0.id == party.id }?.colour ?? AgentPalette.defaultColour(forAgentId: party.id)), style: .still)
+        .frame(width: size, height: size)
+    }
   }
 }
 

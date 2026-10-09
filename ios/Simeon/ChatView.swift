@@ -21,6 +21,10 @@ struct ChatView: View {
   @State private var showsCall = false
   @State private var showsTranscript = false
   @State private var showsComputer = false
+  /** Two agents' page, pushed over the chat from an exchange line (TeammatesLine). */
+  @State private var exchange: ExchangeRoute?
+  /** The opening asked for (a call, the agent's page) is done once: coming back from a page pushed over the chat runs `.task` again. */
+  @State private var openedAsAsked = false
   @State private var reply = ReplyDraft()
   @State private var actions = ChatActions()
   @State private var messageMenu = MessageMenu()
@@ -66,9 +70,11 @@ struct ChatView: View {
       .sheet(isPresented: $showsPage) { AgentPageSheet(agentId: agentId).problemAlert() }
       .sheet(isPresented: $showsComputer) { ComputerSheet(agentId: agentId).problemAlert() }
       .fullScreenCover(isPresented: $showsCall) { CallScreen(showsTranscript: $showsTranscript) }
+      .navigationDestination(item: $exchange) { route in ExchangePage(route: route) }
       .onAppear {
         actions.openPage = { showsPage = true }
         actions.openComputer = { showsComputer = true }
+        actions.openExchange = { exchange = $0 }
       }
       .onDisappear { store.close(agentId) }
       // Back from the background: what was said while the phone slept did not stream, so fetch it.
@@ -78,7 +84,8 @@ struct ChatView: View {
       }
       .task {
         await store.open(agentId)
-        guard let agent = store.agent(agentId) else { return }
+        guard !openedAsAsked, let agent = store.agent(agentId) else { return }
+        openedAsAsked = true
         switch opening {
         case "call": store.startCall(agent)
         case "call-full": store.startCall(agent); showsTranscript = true; showsCall = true
@@ -95,6 +102,7 @@ struct ChatView: View {
 final class ChatActions {
   @ObservationIgnored var openPage: () -> Void = {}
   @ObservationIgnored var openComputer: () -> Void = {}
+  @ObservationIgnored var openExchange: (ExchangeRoute) -> Void = { _ in }
   @ObservationIgnored var jump: (String) -> Void = { _ in }
 }
 

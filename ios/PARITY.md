@@ -677,6 +677,50 @@ view placed off the screen, which WebKit need not paint at all.
 - The demo's Cards chat (`--gallery`) has the screenshot's four flights and
   a round trip.
 
+## 23. Agents' pages, the computer, dark mode (9 October 2026)
+
+**Agents talking to each other.** "When an agent message many at the same
+time, its not all in one chat. its each by each", with the founder's
+screenshots as the reference and "the avatars … leave us on center top".
+
+- The line in the chat stays ("Messaged 🦋🦋🦋 3 agents"). With one agent
+  it opens that agent's page; with several, a menu of them by name, and the
+  one picked opens.
+- The page is pushed over the chat (back button and swipe): the two
+  butterflies and "Scout and Sid" at the top centre as a chat has its agent,
+  the time over each stretch, the sender's name over each run of grey
+  bubbles, their butterfly beside its last, held to the newest line, and
+  "Read-only" at the foot. It holds everything the two said to each other in
+  this chat, whichever line folded it (`Chat.exchangeRows`, tested).
+- Coming back from it no longer repeats how the chat was opened (a call or
+  the agent's page from a notification).
+
+**The computer.** "When it opens in full, please design it this way":
+"You're in control" (or "Sid's computer") over a hint at the top, the check
+at its right (I'm done, as before), the screen across the phone's whole
+width, and at the foot Skip step (only while the agent waits on the person,
+as the card's Skip) beside one capsule of the clipboard, the keyboard and the
+hand (take over / give back). Always dark. Not done: the screen keeps the
+computer's 1280 by 800 shape. The reference's is phone-shaped because its
+computer changes size; ours can't safely: the agents are told "Display is 1280×800"
+and click by it (`desktop/source/host/box/box-monitor-layout.ts`), the
+teach recordings capture that size, and the box's X server (Xvfb) is started
+at it. Nor is there a "Stop task": neither the Mac nor the host has a way to
+stop an agent's work from outside its turn.
+
+**Dark mode.**
+
+- App logos sit on a dark tile in dark mode, not a white one. Measured on
+  that tile, three of the 79 marks vanish (GitHub, Intercom, Mercury): the
+  first two now use Composio's dark versions (`?theme=dark`, the only ones
+  its dark theme changes), kept in `desktop/brand/connector-logos-dark/`,
+  and Mercury its own file's dark style. The rest carry their own colours
+  or boxes and read as they are.
+- The agent page's avatar sits on a dark disc in dark mode.
+- Appearance in Settings takes effect at once on the open sheet: the choice
+  is now set on the app's windows as well as its root view, which an open
+  sheet didn't follow.
+
 ## Suggested order (the founder decides)
 
 1. The chat's look: the bubble, the top bar, markdown, brand names with logos, agent names with butterflies.

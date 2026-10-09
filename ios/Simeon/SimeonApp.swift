@@ -23,9 +23,21 @@ struct SimeonApp: App {
         .environment(session)
         .environment(session.store)
         .preferredColorScheme(Self.scheme(session.launch.theme ?? theme))
+        // The window's own style as well: a sheet already open (Settings, where the choice is made) took the new
+        // appearance only once closed (the founder, 9 October 2026), as the root's preference reaches the root alone.
+        .onChange(of: session.launch.theme ?? theme, initial: true) { _, name in Self.applyToWindows(name) }
         .task { await session.start() }
         // After the first screen is up, never before it.
         .task { HangWatch.start() }
+    }
+  }
+
+  /** Every window of the app in the chosen style, and the sheets they hold with them. */
+  @MainActor
+  static func applyToWindows(_ name: String) {
+    let style: UIUserInterfaceStyle = name == "light" ? .light : name == "dark" ? .dark : .unspecified
+    for case let scene as UIWindowScene in UIApplication.shared.connectedScenes {
+      for window in scene.windows where window.overrideUserInterfaceStyle != style { window.overrideUserInterfaceStyle = style }
     }
   }
 
@@ -561,10 +573,11 @@ struct ConnectStep: View {
 /** A connected app's logo from the app's images (`Connectors/<slug>`). */
 struct ConnectLogo: View {
   let app: String
+  @Environment(\.colorScheme) private var scheme
 
   var body: some View {
     if let image = UIImage(named: "Connectors/\(app)") {
-      Image(uiImage: image).resizable().interpolation(.high).scaledToFit()
+      Image(uiImage: image.resolved(scheme)).resizable().interpolation(.high).scaledToFit()
     } else {
       Color.clear
     }

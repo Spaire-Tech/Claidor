@@ -65,6 +65,14 @@ enum Ink {
   /** The flights card's greys (`--f-ink-2`, `--f-ink-3`). */
   static let fineGrey = Color.dynamic(light: "#86868b", dark: "#98989d")
   static let chevron = Color.dynamic(light: "#c7c7cc", dark: "#48484a")
+  /**
+   * An app's logo tile and an agent's avatar disc: white in light; in dark,
+   * a dark tile with a faint edge, as Apple's own dark icons sit (the
+   * founder, 9 October 2026: no white backgrounds in dark mode).
+   */
+  static let tile = Color.dynamic(light: "#ffffff", dark: "#232325")
+  static let tileEdge = Color.dynamic(light: "#14141414", dark: "#ffffff1f")
+  static let tileInitial = Color.dynamic(light: "#595959", dark: "#b4b4b8")
   /** A flight's total, green as Muse's (the system's green; the darker one on white, where the bright one is hard to read). */
   static let fare = Color.dynamic(light: "#248a3d", dark: "#30d158")
   /** An agent's title in the list ("Chief of Staff"). */

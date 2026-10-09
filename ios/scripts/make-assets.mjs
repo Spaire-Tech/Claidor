@@ -11,7 +11,12 @@
  * - ios/Simeon/Assets.xcassets/FileIcons/<kind>: the PDF, Word, Excel and
  *   PowerPoint artwork of a file card (file-icons/).
  * - ios/Simeon/Assets.xcassets/Connectors/<id>: the 79 connectors' marks of
- *   the Plugins screen (connector-logos/).
+ *   the Plugins screen (connector-logos/), each with its dark version where
+ *   it has one: a file in connector-logos-dark/ (GitHub's and Intercom's,
+ *   from Composio's logo service with `?theme=dark`), or the mark's own file
+ *   drawn in dark mode when it styles itself for it (Mercury's). The other
+ *   marks read on the dark tile as they are; Composio's dark theme changes
+ *   no other of them.
  * - ios/SimeonCore/Sources/SimeonCore/GeneratedBrands.swift: every spelling
  *   a message can name (with the Mac's aliases and exclusions) and its
  *   colour in light and dark, worked out by the Mac's own `readableOn`; and
@@ -39,9 +44,11 @@ const MIME = { ".svg": "image/svg+xml", ".webp": "image/webp", ".png": "image/pn
 
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM ?? "/opt/pw-browsers/chromium", args: ["--no-sandbox"] });
 const page = await (await browser.newContext({ viewport: { width: SIDE, height: SIDE }, deviceScaleFactor: 1 })).newPage();
+const darkPage = await (await browser.newContext({ viewport: { width: SIDE, height: SIDE }, deviceScaleFactor: 1, colorScheme: "dark" })).newPage();
 
-/** One source file drawn into a transparent square, as PNG bytes. */
-async function rasterize(file) {
+/** One source file drawn into a transparent square, as PNG bytes (in dark mode on `darkPage`). */
+async function rasterize(file, on = page) {
+  const page = on;
   const bytes = await readFile(file);
   const url = `data:${MIME[path.extname(file)]};base64,${bytes.toString("base64")}`;
   await page.setContent(`<html><body style="margin:0;background:transparent"><img id="i" src="${url}" style="width:${SIDE}px;height:${SIDE}px;object-fit:contain;display:block"></body></html>`);
@@ -49,12 +56,16 @@ async function rasterize(file) {
   return page.locator("#i").screenshot({ omitBackground: true, type: "png" });
 }
 
-async function imageset(group, name, png, template) {
+async function imageset(group, name, png, template, darkPng = null) {
   const dir = path.join(assets, group, `${name}.imageset`);
   await mkdir(dir, { recursive: true });
   await writeFile(path.join(dir, `${name}.png`), png);
+  if (darkPng) await writeFile(path.join(dir, `${name}-dark.png`), darkPng);
   const contents = {
-    images: [{ filename: `${name}.png`, idiom: "universal" }],
+    images: [
+      { filename: `${name}.png`, idiom: "universal" },
+      ...(darkPng ? [{ appearances: [{ appearance: "luminosity", value: "dark" }], filename: `${name}-dark.png`, idiom: "universal" }] : []),
+    ],
     info: { author: "xcode", version: 1 },
     ...(template ? { properties: { "template-rendering-intent": "template" } } : { properties: { "template-rendering-intent": "original" } }),
   };
@@ -79,10 +90,16 @@ for (const [kind, file] of Object.entries(FILE_ICON_SOURCES)) await imageset("Fi
 // Connector marks.
 await group("Connectors");
 const { readdir } = await import("node:fs/promises");
+const { existsSync } = await import("node:fs");
 for (const file of (await readdir(path.join(brand, "connector-logos"))).sort()) {
   const ext = path.extname(file);
   if (!MIME[ext]) continue;
-  await imageset("Connectors", path.basename(file, ext), await rasterize(path.join(brand, "connector-logos", file)), false);
+  const id = path.basename(file, ext);
+  const source = path.join(brand, "connector-logos", file);
+  const darkFile = path.join(brand, "connector-logos-dark", `${id}.svg`);
+  const selfStyled = ext === ".svg" && (await readFile(source, "utf8")).includes("prefers-color-scheme");
+  const dark = existsSync(darkFile) ? await rasterize(darkFile) : selfStyled ? await rasterize(source, darkPage) : null;
+  await imageset("Connectors", id, await rasterize(source), false, dark);
 }
 await browser.close();
 

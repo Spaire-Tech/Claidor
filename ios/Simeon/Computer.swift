@@ -7,10 +7,16 @@ import SimeonCore
  * An agent's own screen on the cloud computer (the Mac's Computer panel):
  * `ensureForeverBox` for the agent, then its stream through Simeon Labs'
  * proxy, drawn by noVNC (bundled, MPL 2.0, `Computer/NOVNC-LICENSE.txt`)
- * scaled to fit. It only watches until "Take over"; then a tap is a click
- * and a drag moves the mouse. Under the screen, as the founder's reference
- * has them: the clipboard at the left (Paste from Phone, Copy to Phone) and
- * the keyboard at the right, typing into the computer; either takes over.
+ * scaled to fit. Laid out as the founder's reference lays out its own (the
+ * screenshot, 9 October 2026): what is happening at the top ("You're in
+ * control") with Done at its right, the screen across the phone's whole
+ * width, and at the foot Skip step (while the agent waits on the person)
+ * beside one capsule of the clipboard, the keyboard and the hand. The hand
+ * takes over and gives back: taken over, a tap is a click and a drag moves
+ * the mouse. The keyboard types into the computer and the clipboard pastes
+ * from the phone or copies to it; either takes over. The sheet is always
+ * dark, as a screen's surround is. The computer's own screen stays 1280 by
+ * 800: the agents click by that size (`host/box/box-monitor-layout.ts`).
  * Closing it closes the stream.
  */
 struct ComputerSheet: View {
@@ -27,24 +33,38 @@ struct ComputerSheet: View {
   @State private var note: String?
 
   var body: some View {
-    VStack(spacing: 14) {
+    let name = store.agent(agentId)?.name ?? "The agent"
+    let live = screen?.socket != nil && phase == "connected"
+    VStack(spacing: 0) {
+      // The top: what is happening, and Done (the hand back, as "I'm done" was).
       ZStack {
-        Text("Computer").font(.system(size: 17, weight: .semibold)).foregroundStyle(Ink.primary)
+        VStack(spacing: 2) {
+          Text(control ? "You're in control" : "\(name)'s computer")
+            .font(.system(size: 17, weight: .semibold)).foregroundStyle(.white)
+          Text(note ?? (control ? "Tap to click, drag to move" : live ? "Tap the hand to take over" : "Watching"))
+            .font(.system(size: 15)).foregroundStyle(.white.opacity(0.55))
+            .contentTransition(.opacity)
+        }
+        .lineLimit(1)
+        .padding(.horizontal, 60)
+        .animation(.easeOut(duration: 0.2), value: note)
         HStack {
-          CloseDisc { dismiss() }
-          Spacer()
-          if screen?.socket != nil {
-            Button(control ? "Watch" : "Take over") { control.toggle() }
-              .buttonStyle(PillButtonStyle(primary: !control)).fixedSize()
+          Spacer(minLength: 0)
+          Button { Task { await store.handBackComputer(agentId); dismiss() } } label: {
+            Image(systemName: "checkmark").font(.system(size: 19, weight: .semibold)).foregroundStyle(.white)
+              .frame(width: 48, height: 48)
           }
+          .buttonStyle(GlassDisc())
+          .accessibilityLabel("I'm done with the computer")
         }
       }
-      .padding(.horizontal, 14).padding(.top, 14)
+      .padding(.horizontal, 16).padding(.top, 22).padding(.bottom, 16)
+      .background(Color(white: 0.11))
+      Spacer(minLength: 12)
       ZStack {
-        RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.black)
+        Color.black
         if let socket = screen?.socket {
           LiveScreen(socket: socket, viewOnly: !control, phase: $phase, link: link)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         if let problem {
           VStack(spacing: 10) {
@@ -52,7 +72,7 @@ struct ComputerSheet: View {
             Button("Try again") { self.problem = nil; attempt += 1 }.buttonStyle(PillButtonStyle(primary: false)).fixedSize()
           }
           .padding(24)
-        } else if screen?.socket == nil || phase != "connected" {
+        } else if !live {
           VStack(spacing: 10) {
             ProgressView().tint(.white)
             Text(status).font(.system(size: 14)).foregroundStyle(.white.opacity(0.75))
@@ -60,43 +80,75 @@ struct ComputerSheet: View {
         }
       }
       .aspectRatio(1280.0 / 800.0, contentMode: .fit)
-      .padding(.horizontal, 12)
-      if let note {
-        Text(note).font(.system(size: 13)).foregroundStyle(Ink.secondary)
-      } else if control {
-        Text("You're in control: tap to click, drag to move.").font(.system(size: 13)).foregroundStyle(Ink.secondary)
-      }
-      Spacer(minLength: 0)
-      if screen?.socket != nil && phase == "connected" {
-        HStack {
-          Menu {
-            Button { pasteFromPhone() } label: { Label("Paste from Phone", systemImage: "doc.on.clipboard") }
-            Button { copyToPhone() } label: { Label("Copy to Phone", systemImage: "doc.on.doc") }
-          } label: {
-            Image(systemName: "doc.on.clipboard").font(.system(size: 18, weight: .medium)).foregroundStyle(Ink.primary)
-              .frame(width: 48, height: 48).contentShape(.circle)
-              .glassEffect(.regular, in: .circle)
-          }
-          .accessibilityLabel("Clipboard")
-          Spacer()
-          Button { control = true; typing.toggle() } label: {
-            Image(systemName: typing ? "keyboard.chevron.compact.down" : "keyboard").font(.system(size: 18, weight: .medium)).foregroundStyle(Ink.primary)
-              .frame(width: 48, height: 48)
-          }
-          .buttonStyle(GlassDisc())
-          .accessibilityLabel(typing ? "Hide keyboard" : "Keyboard")
-        }
-        .padding(.horizontal, 16)
-        // The keyboard itself: what is typed goes to the computer, key by key.
-        .background { KeyCatcher(isActive: $typing, type: { link.type($0) }, delete: { link.key(0xff08) }).frame(width: 0, height: 0) }
-      }
-      Button("I’m done with the computer") { Task { await store.handBackComputer(agentId); dismiss() } }
-        .buttonStyle(PillButtonStyle(primary: false))
-        .padding(.horizontal, 20).padding(.bottom, 10)
+      .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+      .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(.white.opacity(0.08), lineWidth: 0.5))
+      Spacer(minLength: 12)
+      controls(live: live)
+        .padding(.bottom, 10)
     }
-    .background(Ink.ground)
+    .background(Color.black)
+    .environment(\.colorScheme, .dark)
     .presentationDetents([.large])
+    .presentationBackground(.black)
     .task(id: attempt) { await load() }
+  }
+
+  /** Skip step while the agent waits on the person; the clipboard, the keyboard and the hand. */
+  private func controls(live: Bool) -> some View {
+    HStack(spacing: 12) {
+      if waitingOnPerson {
+        Button { Task { await store.handBackComputer(agentId, skip: true); dismiss() } } label: {
+          Text("Skip step").font(.system(size: 17, weight: .medium)).foregroundStyle(.white)
+            .padding(.horizontal, 26).frame(height: 54)
+            .background(Color(white: 0.17), in: Capsule())
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+      }
+      HStack(spacing: 0) {
+        Menu {
+          Button { pasteFromPhone() } label: { Label("Paste from Phone", systemImage: "doc.on.clipboard") }
+          Button { copyToPhone() } label: { Label("Copy to Phone", systemImage: "doc.on.doc") }
+        } label: {
+          Image(systemName: "doc.on.clipboard").font(.system(size: 19, weight: .medium)).foregroundStyle(.white)
+            .frame(width: 58, height: 54).contentShape(.rect)
+        }
+        .accessibilityLabel("Clipboard")
+        Button { control = true; typing.toggle() } label: {
+          Image(systemName: typing ? "keyboard.chevron.compact.down" : "keyboard").font(.system(size: 19, weight: .medium)).foregroundStyle(.white)
+            .frame(width: 58, height: 54).contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(typing ? "Hide keyboard" : "Keyboard")
+        Button {
+          control.toggle()
+          if !control { typing = false }
+        } label: {
+          Image(systemName: control ? "hand.point.up.left.fill" : "hand.point.up.left").font(.system(size: 19, weight: .medium))
+            .foregroundStyle(control ? Color.black : Color.white)
+            .frame(width: 44, height: 44)
+            .background(Color.white.opacity(control ? 1 : 0), in: Circle())
+            .frame(width: 58, height: 54).contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(control ? "Give control back" : "Take over")
+      }
+      .padding(.horizontal, 6)
+      .background(Color(white: 0.17), in: Capsule())
+      .disabled(!live)
+      .opacity(live ? 1 : 0.45)
+      // The keyboard itself: what is typed goes to the computer, key by key.
+      .background { KeyCatcher(isActive: $typing, type: { link.type($0) }, delete: { link.key(0xff08) }).frame(width: 0, height: 0) }
+    }
+    .animation(.easeOut(duration: 0.15), value: control)
+  }
+
+  /** The agent has handed the computer over and waits ("Your turn on the computer" not yet answered). */
+  private var waitingOnPerson: Bool {
+    store.rows(for: agentId).contains { row in
+      if case .request(_, .computer(_, _, let resolution)) = row { return resolution == nil }
+      return false
+    }
   }
 
   /** The phone's clipboard onto the computer's, pasted where its cursor is. */
