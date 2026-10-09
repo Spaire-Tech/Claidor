@@ -809,15 +809,17 @@ logo, below SimeonLabs - with our logo name font (see website) - then
 continue with apple - and below google - with the privacy below … same for
 everything … make sure everything match." Then, of the first try: the logos
 out of proportion with the words, "sign in to simeon - simeon on your phone
-is asking etc.. its noise. remove", and "use our existing iphone design".
+is asking etc.. its noise. remove", and "use our existing iphone design";
+then "the apple button make it white/black. not blue" and the Terms line
+"should be in the second screen to".
 
 - **The screen** (`SignInScreen` in SimeonApp.swift): simeonlabs.com's mark
   (the app icon's four petals, from the site's `favicon.svg`) and the
   "SimeonLabs" wordmark (the site bar's own picture) in the middle of the
   space above the buttons, on the app's ground. The buttons are the app's
-  own: Continue with Apple in our blue glass (as Continue in the first run
-  and Connect), Continue with Google in the plain glass, 17-point semibold,
-  50 points tall, the first run's margins. The logos are sized from the
+  own glass buttons: Continue with Apple black on light and white on dark,
+  Continue with Google in the plain glass, 17-point semibold, 50 points
+  tall, the first run's margins. The logos are sized from the
   reference, measured: Apple's 16 points and Google's "G" 15 beside
   17-point words (1.35 and 1.2 times the capitals' height there), 8 points
   before the words. "By continuing, you agree to our Terms & Privacy
@@ -830,16 +832,16 @@ is asking etc.. its noise. remove", and "use our existing iphone design".
   page. Apple needs Simeon's Apple keys on the server
   (docs/services-core.md §1); until then the Apple button opens a page that
   says Sign in with Apple is coming soon and offers Google.
-- **The page after Google or Apple** is the mark, the wordmark and two
-  buttons: Continue as the account (our blue) and Use a different account
-  (glass); no heading, no line about the device. The tap stays: without it,
+- **The page after Google or Apple** is the mark, the wordmark, two
+  buttons (Continue as the account in our blue, Use a different account in
+  glass) and the same Terms and Privacy line under them; no heading, no
+  line about the device. The tap stays: without it,
   whoever got a signed-in person to open a sign-in link of their own making
   would be signed in as that person.
 - **Not yet:** the Terms and Privacy links go to
   `simeonlabs.com/legal/terms-of-service` and `/legal/privacy-policy`, the
   addresses the Mac's window and the web app already use; both answer 404
-  until those pages are written. Apple's guidelines ask for a black or white
-  Sign in with Apple button; App Review may ask for that instead of our blue.
+  until those pages are written.
 
 ## Suggested order (the founder decides)
 

@@ -170,10 +170,10 @@ struct SignInScreen: View {
 }
 
 /**
- * One of the sign-in screen's two buttons, in the app's own buttons (the
- * founder, 9 October 2026: "use our existing iphone design"): Apple's in our
- * blue glass, as Continue in the first run and Connect before an app's
- * sign-in; Google's in the plain glass. The logos are sized to the words as
+ * One of the sign-in screen's two buttons, in the app's own glass buttons
+ * (the founder, 9 October 2026: "use our existing iphone design"): Apple's
+ * black on light and white on dark ("the apple button make it white/black.
+ * not blue", as Apple asks of its own), Google's in the plain glass. The logos are sized to the words as
  * in the reference (measured on it: Apple's about 1.35 times the capitals'
  * height, Google's "G" about 1.2 times, 8 to 9 points before the words): 16
  * and 15 points beside 17-point type, whose capitals are 12, 8 points apart.
@@ -185,9 +185,10 @@ struct SignInButton: View {
 
   var body: some View {
     if provider == .apple {
-      Button(action: action) { label(ink: .white) }
+      // The ink as the glass's tint and the ground for the words: black with white words on light, the reverse on dark.
+      Button(action: action) { label(ink: Ink.ground) }
         .buttonStyle(.glassProminent)
-        .tint(Ink.blue)
+        .tint(Ink.primary)
     } else {
       Button(action: action) { label(ink: Ink.primary) }
         .buttonStyle(.glass)

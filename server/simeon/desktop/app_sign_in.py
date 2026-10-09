@@ -146,6 +146,18 @@ def _deep_link(redirect_target: str | None) -> str | None:
     return f"{token}{DEEP_LINK_PATH}" if REDIRECT_TARGET.match(token) else None
 
 
+#: The line under the sign-in buttons, as under the iPhone's (the founder,
+#: 9 October 2026: "by continuing you're agreeing etc.. should be in the
+#: second screen to"). The addresses the app, the Mac's window and the web
+#: app link.
+LEGAL = (
+    '<p class="legal">By continuing, you agree to our'
+    ' <a href="https://www.simeonlabs.com/legal/terms-of-service">Terms</a> &amp;'
+    ' <a href="https://www.simeonlabs.com/legal/privacy-policy">Privacy Policy</a>.'
+    "</p>"
+)
+
+
 def _page(
     title: str,
     body: str,
@@ -219,6 +231,10 @@ def _page(
         ".pill.glass{background:var(--glass);color:var(--ink);"
         "box-shadow:inset 0 0 0 1px var(--glass-edge),0 1px 3px rgba(0,0,0,.06)}"
         ".pill:active{opacity:.7}"
+        ".legal{margin:16px 0 0;font-size:13px;line-height:1.35;text-align:center;"
+        "color:var(--ink2)}"
+        ".legal a{color:var(--ink);font-weight:600;text-decoration:underline dotted;"
+        "text-underline-offset:2px}"
         ".pill svg{flex:none;width:15px;height:15px}"
         "</style></head><body>"
         "<main>"
@@ -318,7 +334,7 @@ async def login_deep_control(
                 "Sign in with Apple is coming soon",
                 "<p>For now, continue with Google.</p>",
                 actions=f'<a class="pill glass" href="{escape(google, quote=True)}">'
-                f"{GOOGLE_G_SVG}Continue with Google</a>",
+                f"{GOOGLE_G_SVG}Continue with Google</a>{LEGAL}",
             )
         return RedirectResponse(sign_in_url(request, return_to, way), 303)
 
@@ -380,7 +396,7 @@ async def login_deep_control(
         f'<button class="pill" type="submit">Continue as {email}</button></form>'
         f'<form method="post" action="/loginDeepControl/switch">{fields}'
         '<button class="pill glass" type="submit">Use a different account</button>'
-        "</form>",
+        f"</form>{LEGAL}",
     )
 
 
