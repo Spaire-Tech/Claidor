@@ -7,7 +7,7 @@ import SimeonCore
  * Mermaid for a ```mermaid block, KaTeX for maths (both MIT, in
  * `Rendering/`, fetched by `ios/scripts/make-renderers.sh`). Each is a
  * small web page in the bubble, sized to what it drew, in the chat's
- * colours; a diagram opens full size with a click (pinch or ⌘+ to zoom).
+ * colours; a diagram opens in its preview with a click, to zoom.
  */
 enum RenderAssets {
   static func text(_ name: String, _ ext: String) -> String {
@@ -48,14 +48,21 @@ enum RenderAssets {
 /** What a rendered block draws. */
 enum RenderKind: Hashable {
   case mermaid(String)
-  /** TeX, on its own line (`$$…$$`) or within a line (`$…$`). */
+  /** TeX: on its own lines (between `$$` lines, or a ```math fence) when `display`, else within a line. */
   case math(String, display: Bool)
+  /** A paragraph with `$$…$$` maths within its lines (Markdown.inlineMath): its words as text, its maths drawn. */
+  case mathText(String)
+}
+
+extension EnvironmentValues {
+  /** The message is still being written: a diagram waits for its end (the window draws Mermaid only once a message is done). */
+  @Entry var messageStreaming = false
 }
 
 enum RenderPage {
   /** The page for `kind`, in the chat's ink (`ink`, a CSS colour), telling the app its height (`size`). */
   static func html(_ kind: RenderKind, dark: Bool, ink: String, full: Bool = false) -> String {
-    let report = "function size(){var h=Math.ceil(document.getElementById('d').getBoundingClientRect().height);try{window.webkit.messageHandlers.size.postMessage(h)}catch(e){}}"
+    let report = "function size(){var h=Math.ceil(document.getElementById('d').getBoundingClientRect().height);try{window.webkit.messageHandlers.size.postMessage(h)}catch(e){}}function failed(){try{window.webkit.messageHandlers.failed.postMessage(1)}catch(e){}}"
     let head = """
     <!doctype html><html><head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1\(full ? "" : ",maximum-scale=1,user-scalable=no")">
@@ -74,7 +81,7 @@ enum RenderPage {
           mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:'\(dark ? "dark" : "default")',fontFamily:'-apple-system,system-ui,sans-serif'});
           var r=await mermaid.render('simeon-diagram',\(RenderAssets.quoted(source)));
           document.getElementById('d').innerHTML=r.svg;
-        }catch(e){document.getElementById('d').innerHTML='<div class="err">This diagram could not be drawn.</div>'}
+        }catch(e){failed();return}
         size();
       })();
       </script></body></html>
@@ -90,13 +97,34 @@ enum RenderPage {
       size();
       </script></body></html>
       """
+    case .mathText(let paragraph):
+      // The words as text and each `$$…$$` drawn by KaTeX in its place, at the message's size and line.
+      let parts = (Markdown.inlineMath(paragraph) ?? [(false, paragraph)]).map { part in
+        part.math ? "<span class=\"m\" data-tex=\"\(escaped(part.text))\"></span>" : escaped(part.text).replacingOccurrences(of: "\n", with: "<br>")
+      }.joined()
+      return head + """
+      <style>\(RenderAssets.katexStyle)#d{display:block;font-size:\(Int(MessageType.size))px;line-height:\(Int(MessageType.lineHeight))px;white-space:normal}.katex{font-size:1.05em}</style></head><body><div id="d">\(parts)</div>
+      <script>\(RenderAssets.katex)</script>
+      <script>\(report)
+      document.querySelectorAll('.m').forEach(function(el){try{katex.render(el.getAttribute('data-tex'),el,{displayMode:false,throwOnError:false,output:'html'})}catch(e){el.textContent=el.getAttribute('data-tex')}});
+      if(document.fonts&&document.fonts.ready){document.fonts.ready.then(size)}else{size()}
+      size();
+      </script></body></html>
+      """
     }
+  }
+
+  /** Text as HTML reads it. */
+  static func escaped(_ text: String) -> String {
+    text.replacingOccurrences(of: "&", with: "&amp;").replacingOccurrences(of: "<", with: "&lt;").replacingOccurrences(of: ">", with: "&gt;").replacingOccurrences(of: "\"", with: "&quot;")
   }
 }
 
-/** A diagram or maths in a message: the page sized to what it drew; a diagram opens full size. */
+/** A diagram or maths in a message: the page sized to what it drew; a diagram opens in its preview. */
 struct RenderedBlock: View {
   let kind: RenderKind
+  /** Mermaid could not read it: the caller shows why, with the code. */
+  var onFail: () -> Void = {}
   @Environment(\.colorScheme) private var scheme
   @State private var height: CGFloat = 24
   @State private var showsFull = false
@@ -105,34 +133,96 @@ struct RenderedBlock: View {
 
   var body: some View {
     let page = RenderPage.html(kind, dark: scheme == .dark, ink: scheme == .dark ? "#fcfcfc" : "#1d1d1f")
-    RenderWebView(html: page, height: $height, interactive: false)
+    RenderWebView(html: page, height: $height, interactive: false, onFail: onFail)
       .frame(height: max(height, 18))
       .frame(maxWidth: .infinity, alignment: .leading)
       .contentShape(.rect)
       .onTapGesture { if isDiagram { showsFull = true } }
       .accessibilityLabel(isDiagram ? "Diagram" : "Maths")
+      .accessibilityAddTraits(isDiagram ? .isButton : [])
       .sheet(isPresented: $showsFull) {
         RenderedFull(kind: kind)
-          .macSheetSize(width: 760, height: 560)
+          .macSheetSize(width: 860, height: 640)
       }
   }
 }
 
-/** A diagram full size: zoom with a pinch (⌘+ and ⌘- on the Mac too), Done to close. */
+/**
+ * A ```mermaid block: the diagram once the message is written (the code
+ * while it streams), and when Mermaid cannot read it, the window's
+ * "Couldn't render this diagram." over the code.
+ */
+struct MermaidBlock: View {
+  let source: String
+  @Environment(\.messageStreaming) private var streaming
+  @State private var failed = false
+
+  var body: some View {
+    if streaming {
+      CodeBlockView(text: source)
+    } else if failed {
+      VStack(alignment: .leading, spacing: 6) {
+        Label("Couldn't render this diagram.", systemImage: "exclamationmark.triangle")
+          .font(.system(size: 12)).foregroundStyle(Ink.secondary)
+        CodeBlockView(text: source)
+      }
+    } else {
+      RenderedBlock(kind: .mermaid(source)) { failed = true }
+    }
+  }
+}
+
+/**
+ * The diagram's preview (the window's "Diagram preview"): Zoom Out, Zoom
+ * In and Fit to Screen, and their keys (− or _, + or =, 0 or F), from a
+ * tenth to eight times, each step 1.4 times; Done to close.
+ */
 struct RenderedFull: View {
   let kind: RenderKind
   @Environment(\.colorScheme) private var scheme
   @Environment(\.dismiss) private var dismiss
   @State private var height: CGFloat = 0
+  @State private var zoom: CGFloat = 1
+
+  static let zoomRange: ClosedRange<CGFloat> = 0.1...8
+  static let zoomStep: CGFloat = 1.4
 
   var body: some View {
     NavigationStack {
-      RenderWebView(html: RenderPage.html(kind, dark: scheme == .dark, ink: scheme == .dark ? "#fcfcfc" : "#1d1d1f", full: true), height: $height, interactive: true)
+      RenderWebView(html: RenderPage.html(kind, dark: scheme == .dark, ink: scheme == .dark ? "#fcfcfc" : "#1d1d1f", full: true), height: $height, interactive: true, zoom: zoom)
         .background(Ink.ground)
-        .navigationTitle("Diagram")
+        .navigationTitle("Diagram preview")
         .inlineBarTitle()
-        .toolbar { ToolbarItem(placement: .trailingBar) { Button("Done") { dismiss() } } }
+        .toolbar {
+          ToolbarItem(placement: .leadingBar) {
+            ControlGroup {
+              Button { step(1 / Self.zoomStep) } label: { Label("Zoom Out", systemImage: "minus.magnifyingglass") }
+                .keyboardShortcut("-", modifiers: [])
+                .disabled(zoom <= Self.zoomRange.lowerBound)
+              Button { zoom = 1 } label: { Label("Fit to Screen", systemImage: "arrow.up.left.and.down.right.magnifyingglass") }
+                .keyboardShortcut("0", modifiers: [])
+              Button { step(Self.zoomStep) } label: { Label("Zoom In", systemImage: "plus.magnifyingglass") }
+                .keyboardShortcut("+", modifiers: [])
+                .disabled(zoom >= Self.zoomRange.upperBound)
+            }
+          }
+          ToolbarItem(placement: .trailingBar) { Button("Done") { dismiss() } }
+        }
+        // The other keys the window takes: "=" for in, "_" for out, "f" to fit.
+        .background {
+          Group {
+            Button("") { step(Self.zoomStep) }.keyboardShortcut("=", modifiers: [])
+            Button("") { step(1 / Self.zoomStep) }.keyboardShortcut("_", modifiers: [])
+            Button("") { zoom = 1 }.keyboardShortcut("f", modifiers: [])
+          }
+          .opacity(0)
+          .accessibilityHidden(true)
+        }
     }
+  }
+
+  private func step(_ factor: CGFloat) {
+    zoom = min(max(zoom * factor, Self.zoomRange.lowerBound), Self.zoomRange.upperBound)
   }
 }
 
@@ -141,15 +231,20 @@ struct RenderWebView {
   let html: String
   @Binding var height: CGFloat
   let interactive: Bool
+  /** The page's zoom (`pageZoom`), for the diagram's preview. */
+  var zoom: CGFloat = 1
+  var onFail: () -> Void = {}
 
-  func makeCoordinator() -> Coordinator { Coordinator(height: $height) }
+  func makeCoordinator() -> Coordinator { Coordinator(height: $height, onFail: onFail) }
 
   final class Coordinator: NSObject, WKScriptMessageHandler {
     var height: Binding<CGFloat>
+    var onFail: () -> Void
     var loaded = ""
-    init(height: Binding<CGFloat>) { self.height = height }
+    init(height: Binding<CGFloat>, onFail: @escaping () -> Void) { self.height = height; self.onFail = onFail }
 
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
+      if message.name == "failed" { onFail(); return }
       guard let value = message.body as? Double ?? (message.body as? Int).map(Double.init), value > 0 else { return }
       let next = CGFloat(value)
       if abs(next - height.wrappedValue) >= 1 { height.wrappedValue = next }
@@ -159,6 +254,7 @@ struct RenderWebView {
   fileprivate func makeView(_ coordinator: Coordinator) -> WKWebView {
     let configuration = WKWebViewConfiguration()
     configuration.userContentController.add(coordinator, name: "size")
+    configuration.userContentController.add(coordinator, name: "failed")
     let view = WKWebView(frame: .zero, configuration: configuration)
     #if os(iOS)
     view.isOpaque = false
@@ -175,6 +271,8 @@ struct RenderWebView {
   }
 
   fileprivate func load(_ view: WKWebView, _ coordinator: Coordinator) {
+    coordinator.onFail = onFail
+    if abs(view.pageZoom - zoom) > 0.001 { view.pageZoom = zoom }
     guard coordinator.loaded != html else { return }
     coordinator.loaded = html
     view.loadHTMLString(html, baseURL: nil)
@@ -182,6 +280,7 @@ struct RenderWebView {
 
   fileprivate static func dismantle(_ view: WKWebView) {
     view.configuration.userContentController.removeScriptMessageHandler(forName: "size")
+    view.configuration.userContentController.removeScriptMessageHandler(forName: "failed")
   }
 }
 

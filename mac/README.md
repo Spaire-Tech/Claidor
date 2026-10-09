@@ -6,8 +6,8 @@ in swift. literally everything … and more importantly, take apple design
 again". This folder holds that app. `PARITY.md` lists everything the Electron
 app does, one line each, with where it goes in Swift and whether it is done.
 
-Slice 1, the window, is written (9 October 2026). It has not been built yet:
-the next step is a build on the founder's Mac (below).
+Slices 1 (the window) and 2 (the chat) are written (9 October 2026). Neither
+has been built yet: the next step is a build on the founder's Mac (below).
 
 ## Why
 
@@ -111,6 +111,7 @@ One command, from the repository:
 ```sh
 mac/scripts/build.sh            # make the project, build, open the app
 mac/scripts/build.sh --demo     # open it on the demo's agents, no sign-in
+mac/scripts/build.sh --gallery  # the demo, with a chat holding every card
 ```
 
 It needs Xcode 26 (and installs XcodeGen with Homebrew if it is missing).
@@ -134,6 +135,20 @@ Jump To (⌘K), New Agent (⌘N) and New Group Chat (⇧⌘N), the agent's page
 as a sheet, an agent's computer in its own window, Connect Apps (⇧⌘M) in
 its own window, Settings (⌘,), and the Agent menu with the Electron
 window's keys. `PARITY.md` marks each line it covers ("written").
+
+What slice 2 adds, the chat as the window has it: threads (Start a Thread,
+"N replies", the thread in the chat's place with "‹ Back to …"), find in
+the chat (⌘F, ⌘G, ⇧⌘G), the right-click menu with More Emoji…, files
+dropped or pasted into the composer, Save on a file, a picture's Open, Copy
+Image and Save Image…, an agent's pictures in a gallery, a lone link as a
+card, Mermaid diagrams with their preview and zoom, maths, the cloud-agent
+card, the host's notices, "Waiting to send…", "Will send when reconnected"
+and "Sent while offline", "Couldn't load this conversation" with Retry,
+and the composer's "/" skills, "#" pull requests, "@everyone" and ":"
+emoji. All of it is shared with the iPhone, which gets it too (threads open
+in a sheet there). `mac/scripts/build.sh --demo` shows a thread in the
+Simeon chat; `mac/scripts/build.sh --gallery` adds a chat with every card,
+the new ones at its end.
 
 ## What can and cannot be checked here
 

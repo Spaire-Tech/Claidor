@@ -234,6 +234,9 @@ public struct Entry: Identifiable, Hashable, Sendable {
     (raw["reactions"]?.array ?? []).compactMap { r in r["emoji"]?.text.map { ($0, r["by"]?.string ?? "") } }
   }
 
+  /** A reply in a thread (`branched`): it is drawn in the thread, not in the chat. */
+  public var isBranched: Bool { raw["branched"]?.bool == true }
+
   /** The person's own message. */
   public var isFromPerson: Bool {
     (kind == "message" && role == "user" && fromAgent == nil) || kind == "user-message" || kind == "human-message" || kind == "user-attachment"

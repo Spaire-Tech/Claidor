@@ -17,6 +17,13 @@ public enum DemoData {
     ["kind": "send-message", "id": .string(id), "message": ["type": "text", "content": .string(content)], "timestampMs": at(minutesAgo, now: now)]
   }
 
+  enum Notice {
+    /** A line the host writes in the middle of a chat (`kind: "notice"`). */
+    static func line(_ id: String, _ minutesAgo: Double, _ text: String, now: Double) -> JSON {
+      ["kind": "notice", "id": .string(id), "text": .string(text), "timestampMs": at(minutesAgo, now: now)]
+    }
+  }
+
   static func card(_ id: String, _ minutesAgo: Double, _ message: JSON, now: Double) -> JSON {
     ["kind": "send-message", "id": .string(id), "message": message, "timestampMs": at(minutesAgo, now: now)]
   }
@@ -76,6 +83,11 @@ public enum DemoData {
       card("x11", 79, ["type": "text", "content": "Sign in to the bank's site on the computer, then press I'm done."], now: now).setting("boxRequestId", "box-1"),
       card("x12", 78, ["type": "cloud-agent", "bcId": "bc-1"], now: now),
       file("x13", 77, "exports/Payouts September.pdf", now: now),
+      says("x14", 76, "$$\nE = mc^2\n$$\n\nThe area of a circle is $$\\pi r^2$$, so doubling the radius makes it four times bigger.", now: now),
+      says("x15", 75, "```mermaid\ngraph LR\n  A[Ticket] --> B{Refund?}\n  B -->|Yes| C[You]\n  B -->|No| D[Iris answers]\n```", now: now),
+      says("x16", 74, "https://simeonlabs.com", now: now),
+      card("x17", 73, ["type": "text", "content": "Two posters for the launch page.", "images": [["url": "https://simeonlabs.com/app-poster-wide.jpg", "alt": "The wide poster"], ["url": "https://simeonlabs.com/app-poster-tall.jpg", "alt": "The tall poster"]]], now: now),
+      Notice.line("x18", 72, "Iris joined the group", now: now),
     ]
   }
 
@@ -91,6 +103,9 @@ public enum DemoData {
       "simeon": [
         you("m0u", 0, "Morning. Where are we on Thursday's launch?", now: now),
         says("m0a", 0, "Thursday is on track: 12 of 15 launch tickets are done in **Linear**, and the review is Thursday at 2 pm.", now: now),
+        // A thread on the launch question: in the thread, not in the chat ("2 replies" under it).
+        you("m0r1", 0, "Who's presenting the pricing slide?", now: now).setting("replyTo", "m0u").setting("branched", true),
+        says("m0r2", 0, "Marcus is. I put it third, after the customer quotes.", now: now).setting("replyTo", "m0r1").setting("branched", true),
         toTeammate("m4t", 0, scout, "Can you pull three customer quotes for Thursday's review?", now: now),
         fromTeammate("m4f", 0, scout, "Here are three, all about the new setup flow. They're in the review doc.", now: now),
         toTeammate("m5t", 0, iris, "Where are the last launch tickets?", now: now),
@@ -203,14 +218,17 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
 
   public func transcript(_ agentId: String) async throws -> [Entry] { lock.withLock { transcripts[agentId] ?? [] } }
 
-  public func send(_ agentId: String, text: String, attachments: [AttachmentRef], replyTo: String?, nonce: String?) async throws {
+  public func send(_ agentId: String, text: String, attachments: [AttachmentRef], options: SendOptions, nonce: String?) async throws {
     let now = Date().timeIntervalSince1970 * 1000
+    let replyTo = options.replyTo
     for file in attachments {
       append(agentId, ["kind": "user-attachment", "id": .string("ua-\(UUID().uuidString.prefix(8))"), "file_path": .string(file.path), "file_name": .string(file.name), "timestampMs": .number(now)])
     }
     if !text.isEmpty {
       var entry = DemoData.you("u-\(UUID().uuidString.prefix(8))", 0, text, now: now)
       if let replyTo { entry = entry.setting("replyTo", .string(replyTo)) }
+      if replyTo != nil && options.isFork { entry = entry.setting("branched", true) }
+      if let at = options.composedAtMs { entry = entry.setting("sentWhileOfflineAtMs", .number(at)) }
       if let nonce { entry = entry.setting("clientNonce", .string(nonce)) }
       append(agentId, entry)
     }
@@ -387,6 +405,20 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
       touch(args["id"]?.text ?? "") { $0.notifyOnUpdates = args["isEnabled"]?.bool ?? true }
     case "getAgentAutomations":
       return .array(try await routines(agentId))
+    case "getAgentThread":
+      // The thread from the demo's own lines: its first message and the replies that lead back to it.
+      let rootId = args["rootId"]?.text ?? ""
+      let entries = lock.withLock { transcripts[agentId] ?? [] }
+      return ["entries": .array(Chat.threadEntries(rootId, in: entries).map(\.raw))]
+    case "getAgentWorkflows":
+      // "/" offers these; the morning brief has a schedule, so "@" offers it as a routine.
+      return ["workflows": [
+        ["id": "skill-weekly", "name": "Weekly report", "trigger": nil, "isEnabledForAgent": true],
+        ["id": "skill-invoice", "name": "Chase an invoice", "trigger": nil, "isEnabledForAgent": true],
+        ["id": "routine-brief", "name": "Morning brief", "scheduleDescription": "Weekdays at 9", "trigger": ["schedule": "0 9 * * 1-5", "isEnabled": true]],
+      ]]
+    case "getCloudAgentInfo":
+      return ["bcId": .string(args["bcId"]?.text ?? ""), "status": "running", "name": "Fix the login redirect", "prompt": "Users land on a blank page after signing in with Google. Find why and open a pull request.", "branchName": "fix/login-redirect", "prUrl": "https://github.com/simeonlabs/app/pull/412", "prState": "open", "prNumber": 412, "filesChanged": 3, "linesAdded": 48, "linesRemoved": 6]
     case "createAgentAutomation", "updateAgentAutomation", "setAgentAutomationEnabled", "deleteAgentAutomation":
       routineCommand(method, args)
       return .array(try await routines(args["id"]?.text ?? ""))

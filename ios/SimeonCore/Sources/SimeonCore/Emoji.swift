@@ -80,18 +80,35 @@ public enum EmojiCatalog {
 
   /**
    * The ":" being typed at the end of a draft, as the window's composer
-   * reads it: a colon at the start or after a space, then at least two
-   * letters, digits, "_", "+" or "-", and nothing after.
+   * reads it (`(^|[^\p{L}\p{N}_:/])(:([a-z0-9_+-]{0,50}))$`): a colon at the
+   * start or after anything but a letter, a digit, "_", ":" or "/" (so not
+   * in "10:30" or "https://"), then two to fifty of a–z, 0–9, "_", "+" or
+   * "-", and nothing after.
    */
   public static func query(_ draft: String) -> String? {
     guard let colon = draft.lastIndex(of: ":") else { return nil }
     if colon > draft.startIndex {
       let before = draft[draft.index(before: colon)]
-      guard before == " " || before == "\n" else { return nil }
+      guard !(before.isLetter || before.isNumber || before == "_" || before == ":" || before == "/") else { return nil }
     }
     let typed = draft[draft.index(after: colon)...]
-    guard typed.count >= 2, typed.allSatisfy({ $0.isLetter || $0.isNumber || $0 == "_" || $0 == "+" || $0 == "-" }) else { return nil }
+    guard (2...50).contains(typed.count), typed.allSatisfy({ ("a"..."z").contains($0) || ("0"..."9").contains($0) || $0 == "_" || $0 == "+" || $0 == "-" }) else { return nil }
     return String(typed)
+  }
+
+  /** What ":" offers for `query`: the ones picked lately that match it first, then the rest, twelve at most (the window's list). */
+  public static func suggestions(_ query: String, recent: [String], limit: Int = 12) -> [Emoji] {
+    let found = search(query, limit: 200)
+    let picked = recent.compactMap { character in found.first { $0.character == character } }
+    var out = picked
+    var taken = Set(picked.map(\.character))
+    for emoji in found where out.count < limit && taken.insert(emoji.character).inserted { out.append(emoji) }
+    return Array(out.prefix(limit))
+  }
+
+  /** The emoji picked lately, newest first, after `emoji` is picked: at most 24. */
+  public static func remembering(_ emoji: String, in recent: [String]) -> [String] {
+    Array(([emoji] + recent.filter { $0 != emoji }).prefix(24))
   }
 
   /** The draft with its ":query" at the end swapped for the emoji and a space. */

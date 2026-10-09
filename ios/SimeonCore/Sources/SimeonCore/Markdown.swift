@@ -4,8 +4,9 @@ import Foundation
  * An agent's message as blocks, the way the Mac's window lays it out
  * (react-markdown with GitHub's extensions, bundle `const kPn=`): headings,
  * paragraphs, lists (bullets, numbers, tasks, nested), quotes, fenced code,
- * tables and rules. The text inside a block stays Markdown; the app draws
- * its bold, italics, code, links and strikethrough.
+ * tables, rules and maths (`$$` on its own lines, or a ```` ```math ````
+ * fence). The text inside a block stays Markdown; the app draws its bold,
+ * italics, code, links, strikethrough and `$$…$$` maths within a line.
  */
 public indirect enum MarkdownBlock: Hashable, Sendable {
   case paragraph(String)
@@ -15,6 +16,8 @@ public indirect enum MarkdownBlock: Hashable, Sendable {
   case code(language: String?, text: String)
   case table(header: [String], alignments: [MarkdownAlignment], rows: [[String]])
   case rule
+  /** TeX on its own lines: between `$$` lines, or a ```` ```math ```` fence (remark-math's display maths). */
+  case math(String)
 }
 
 public struct MarkdownListItem: Hashable, Sendable {
@@ -42,6 +45,33 @@ public enum Markdown {
   public static func blocks(_ text: String) -> [MarkdownBlock] {
     var parser = Parser(lines: text.replacingOccurrences(of: "\r\n", with: "\n").components(separatedBy: "\n"))
     return parser.blocks(until: { _ in false })
+  }
+
+  /**
+   * A paragraph with maths in it (`$$…$$` within a line, remark-math's
+   * inline maths; a single `$` is a dollar), cut into its words and its
+   * maths, in order; nil when it has none.
+   */
+  public static func inlineMath(_ text: String) -> [(math: Bool, text: String)]? {
+    guard text.contains("$$") else { return nil }
+    var parts: [(math: Bool, text: String)] = []
+    var rest = Substring(text)
+    while let open = rest.range(of: "$$") {
+      let after = rest[open.upperBound...]
+      guard let close = after.range(of: "$$") else { break }
+      let tex = after[..<close.lowerBound]
+      guard !tex.trimmingCharacters(in: .whitespaces).isEmpty else {
+        parts.append((false, String(rest[..<close.upperBound])))
+        rest = after[close.upperBound...]
+        continue
+      }
+      if open.lowerBound > rest.startIndex { parts.append((false, String(rest[..<open.lowerBound]))) }
+      parts.append((true, String(tex)))
+      rest = after[close.upperBound...]
+    }
+    guard parts.contains(where: \.math) else { return nil }
+    if !rest.isEmpty { parts.append((false, String(rest))) }
+    return parts
   }
 
   /** Whether a message is exactly one fenced block of `language` (the flights card's rule), and its body. */
@@ -78,7 +108,20 @@ public enum Markdown {
           var body: [String] = []
           while index < lines.count, !lines[index].trimmingCharacters(in: .whitespaces).hasPrefix(fence.marker) { body.append(lines[index]); index += 1 }
           index += 1
-          out.append(.code(language: fence.language, text: body.joined(separator: "\n")))
+          if fence.language?.lowercased() == "math" { out.append(.math(body.joined(separator: "\n"))) }
+          else { out.append(.code(language: fence.language, text: body.joined(separator: "\n"))) }
+          continue
+        }
+        // Display maths: "$$" alone on a line, up to the next line ending in "$$".
+        if trimmed == "$$" {
+          flush(); index += 1
+          var body: [String] = []
+          while index < lines.count {
+            let t = lines[index].trimmingCharacters(in: .whitespaces)
+            if t.hasSuffix("$$") { let head = String(t.dropLast(2)); if !head.isEmpty { body.append(head) }; index += 1; break }
+            body.append(lines[index]); index += 1
+          }
+          out.append(.math(body.joined(separator: "\n")))
           continue
         }
         if let heading = Self.heading(trimmed) { flush(); out.append(heading); index += 1; continue }

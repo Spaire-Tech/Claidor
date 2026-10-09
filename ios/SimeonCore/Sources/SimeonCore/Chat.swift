@@ -185,12 +185,18 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
   case notice(id: String, text: String)
   /** Under a message of yours that did not reach the agent: "Failed to send", Resend, Delete (the Mac's `sand-failed-send-actions`). */
   case failedSend(id: String, nonce: String)
+  /** Under a message held while the computer was out of reach: "Waiting to send…" or "Will send when reconnected", and Cancel (`sand-queued-send-notice`). */
+  case queuedSend(id: String, nonce: String)
+  /** Under a message that has a thread: "1 reply", "3 replies", which opens it (`sand-thread-affordance`), on the message's side. */
+  case thread(id: String, rootId: String, count: Int, side: Side)
+  /** A cloud agent the agent started (`cloud-agent`, its `bcId`): its state read from the host (`getCloudAgentInfo`). */
+  case cloudAgent(id: String, bcId: String)
 
   public var id: String {
     switch self {
     case .stamp(let id, _), .unread(let id), .flights(let id, _), .file(let id, _, _, _), .question(let id, _), .draft(let id, _),
          .connectors(let id, _, _, _), .listenerConnect(let id, _, _), .request(let id, _), .teammates(let id, _, _), .voiceCall(let id, _, _), .routines(let id, _, _),
-         .notice(let id, _), .failedSend(let id, _): return id
+         .notice(let id, _), .failedSend(let id, _), .queuedSend(let id, _), .thread(let id, _, _, _), .cloudAgent(let id, _): return id
     case .bubble(let bubble): return bubble.id
     }
   }
@@ -213,6 +219,9 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
     case .routines: return "routines"
     case .notice: return "notice"
     case .failedSend: return "failed"
+    case .queuedSend: return "queued"
+    case .thread: return "thread"
+    case .cloudAgent: return "cloud-agent"
     }
   }
 
@@ -231,8 +240,9 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
     switch self {
     case .bubble(let bubble): return bubble.fromPerson ? .person : .agent(bubble.author?.id)
     case .file(_, _, _, let fromPerson): return fromPerson ? .person : .agent(nil)
-    case .failedSend: return .person
-    case .flights, .question, .draft, .connectors, .listenerConnect, .request, .notice: return .agent(nil)
+    case .failedSend, .queuedSend: return .person
+    case .thread(_, _, _, let side): return side
+    case .flights, .question, .draft, .connectors, .listenerConnect, .request, .notice, .cloudAgent: return .agent(nil)
     default: return .middle
     }
   }
@@ -256,22 +266,117 @@ public struct Bubble: Hashable, Sendable {
   public let quote: String?
   /** Milliseconds since the epoch: the time a sideways swipe shows. */
   public let timestampMs: Double?
+  /** An agent's pictures (`message.images`), drawn under its words. */
+  public let images: [ChatImage]
+  /** A message of yours held while the computer was out of reach, when it was written (`sentWhileOfflineAtMs`): "Sent while offline · Oct 9, 3:12 PM" under it. */
+  public let sentOfflineAtMs: Double?
 
-  public init(id: String, text: String, fromPerson: Bool, author: Party?, showsName: Bool, showsAvatar: Bool, reactions: [String], isStreaming: Bool, replyTo: String? = nil, quote: String? = nil, timestampMs: Double? = nil) {
+  public init(id: String, text: String, fromPerson: Bool, author: Party?, showsName: Bool, showsAvatar: Bool, reactions: [String], isStreaming: Bool, replyTo: String? = nil, quote: String? = nil, timestampMs: Double? = nil, images: [ChatImage] = [], sentOfflineAtMs: Double? = nil) {
     self.id = id; self.text = text; self.fromPerson = fromPerson; self.author = author
     self.showsName = showsName; self.showsAvatar = showsAvatar; self.reactions = reactions; self.isStreaming = isStreaming
-    self.replyTo = replyTo; self.quote = quote; self.timestampMs = timestampMs
+    self.replyTo = replyTo; self.quote = quote; self.timestampMs = timestampMs; self.images = images; self.sentOfflineAtMs = sentOfflineAtMs
   }
 
   func with(showsName: Bool? = nil, showsAvatar: Bool? = nil, author: Party?? = nil, quote: String?? = nil) -> Bubble {
-    Bubble(id: id, text: text, fromPerson: fromPerson, author: author ?? self.author, showsName: showsName ?? self.showsName, showsAvatar: showsAvatar ?? self.showsAvatar, reactions: reactions, isStreaming: isStreaming, replyTo: replyTo, quote: quote ?? self.quote, timestampMs: timestampMs)
+    Bubble(id: id, text: text, fromPerson: fromPerson, author: author ?? self.author, showsName: showsName ?? self.showsName, showsAvatar: showsAvatar ?? self.showsAvatar, reactions: reactions, isStreaming: isStreaming, replyTo: replyTo, quote: quote ?? self.quote, timestampMs: timestampMs, images: images, sentOfflineAtMs: sentOfflineAtMs)
+  }
+
+  /**
+   * The one link a message is, drawn as a card (the window's `url-card.ts`):
+   * the trimmed text is a bare `https:` address or exactly `[words](https:…)`,
+   * and the message is finished and has no pictures.
+   */
+  public var loneLink: URL? {
+    guard !isStreaming, images.isEmpty else { return nil }
+    return Chat.loneLink(text)
   }
 
   /** Only emoji, three at most: drawn large with no bubble, as Messages does. */
   public var isLoneEmoji: Bool {
+    guard images.isEmpty else { return false }
     let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !trimmed.isEmpty, trimmed.count <= 3 else { return false }
     return trimmed.allSatisfy { ch in ch.unicodeScalars.contains { $0.properties.isEmojiPresentation } || (ch.unicodeScalars.count > 1 && ch.unicodeScalars.first!.properties.isEmoji) }
+  }
+}
+
+/**
+ * A cloud agent's state, as `getCloudAgentInfo` answers (the window's
+ * `cloud-agent.tsx`): its name, what it was asked, how far it is, its
+ * branch and pull request, and what it changed.
+ */
+public struct CloudAgentInfo: Hashable, Sendable {
+  public enum Status: String, Sendable { case creating, running, finished, error, expired, unknown }
+  public let name: String
+  public let prompt: String
+  public let status: Status
+  public let branch: String
+  public let pullRequestURL: String
+  public let pullRequestState: String
+  public let pullRequestNumber: Int?
+  public let filesChanged: Int
+  public let linesAdded: Int
+  public let linesRemoved: Int
+
+  public init?(_ json: JSON) {
+    guard json.object != nil else { return nil }
+    let text = { (key: String) in json[key]?.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "" }
+    name = text("name"); prompt = text("prompt"); branch = text("branchName")
+    status = Status(rawValue: text("status")) ?? .unknown
+    pullRequestURL = text("prUrl"); pullRequestState = text("prState")
+    pullRequestNumber = json["prNumber"]?.int.flatMap { $0 > 0 ? $0 : nil }
+    filesChanged = json["filesChanged"]?.int ?? 0
+    linesAdded = json["linesAdded"]?.int ?? 0
+    linesRemoved = json["linesRemoved"]?.int ?? 0
+  }
+
+  /** The badge: "Creating", "Running", "Done", "Error", "Expired", "Status unavailable". */
+  public var statusLabel: String {
+    switch status {
+    case .creating: return "Creating"
+    case .running: return "Running"
+    case .finished: return "Done"
+    case .error: return "Error"
+    case .expired: return "Expired"
+    case .unknown: return "Status unavailable"
+    }
+  }
+
+  /** Still working: the card asks again every five seconds (the window's `livePollMs`). */
+  public var isLive: Bool { status == .creating || status == .running || status == .unknown }
+
+  /** "3 files changed". */
+  public var changedLabel: String? { filesChanged > 0 ? "\(filesChanged) file\(filesChanged == 1 ? "" : "s") changed" : nil }
+
+  /** Where Open goes (`cloudAgentWebUrl`): Simeon's page for the run. */
+  public static func webURL(_ bcId: String) -> URL? {
+    URL(string: "https://app.simeonlabs.com/agents/" + (bcId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed.subtracting(CharacterSet(charactersIn: "/"))) ?? bcId))
+  }
+}
+
+/** A picture an agent sent with a message (`message.images`): a `file://` path on its computer or an `https` address, and its shape when known. */
+public struct ChatImage: Hashable, Sendable {
+  public let url: String
+  public let alt: String
+  public let width: Double?
+  public let height: Double?
+
+  public init(url: String, alt: String = "", width: Double? = nil, height: Double? = nil) {
+    self.url = url; self.alt = alt; self.width = width; self.height = height
+  }
+
+  init?(_ json: JSON) {
+    guard let url = json["url"]?.text ?? json.text, url.hasPrefix("file://") || url.hasPrefix("https://") || url.hasPrefix("/") else { return nil }
+    self.url = url
+    alt = json["alt"]?.string ?? ""
+    width = json["width"]?.double.flatMap { $0 > 0 ? $0 : nil }
+    height = json["height"]?.double.flatMap { $0 > 0 ? $0 : nil }
+  }
+
+  /** Width over height; 4:3 when the shape is not known (the window's gallery). */
+  public var aspect: Double {
+    guard let width, let height else { return 4.0 / 3.0 }
+    return width / height
   }
 }
 
@@ -312,6 +417,117 @@ public enum Chat {
    * `unreadBoundaryAt` does.
    */
   public static func rows(_ entries: [Entry], isGroup: Bool = false, unreadAfter: Double? = nil) -> [ChatRow] {
+    // A thread's replies (`branched`) live in the thread, not in the chat: the chat shows "N replies" under the message they answer.
+    guard entries.contains(where: \.isBranched) else { return layout(entries, isGroup: isGroup, unreadAfter: unreadAfter) }
+    let rows = layout(entries.filter { !$0.isBranched }, isGroup: isGroup, unreadAfter: unreadAfter)
+    let counts = threadCounts(entries)
+    guard !counts.isEmpty else { return rows }
+    var out: [ChatRow] = []
+    out.reserveCapacity(rows.count + counts.count)
+    for row in rows {
+      out.append(row)
+      if let count = counts[row.id], !isSendState(row) {
+        out.append(.thread(id: "thread-\(row.id)", rootId: row.id, count: count, side: row.side))
+      }
+    }
+    return out
+  }
+
+  private static func isSendState(_ row: ChatRow) -> Bool {
+    switch row {
+    case .failedSend, .queuedSend, .thread, .stamp, .unread: return true
+    default: return false
+    }
+  }
+
+  /**
+   * A thread on its own (the window's thread view, `getAgentThread`): the
+   * message it started from, then every reply in it, oldest first.
+   */
+  public static func threadRows(_ rootId: String, in entries: [Entry], isGroup: Bool = false) -> [ChatRow] {
+    layout(threadEntries(rootId, in: entries), isGroup: isGroup, unreadAfter: nil)
+  }
+
+  /** The thread's lines: its first message (wherever it is), then the replies that lead back to it. */
+  public static func threadEntries(_ rootId: String, in entries: [Entry]) -> [Entry] {
+    let branched = entries.filter(\.isBranched)
+    let byId = Dictionary(branched.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+    var seen = Set<String>()
+    let replies = branched.filter { threadRoot(of: $0, branched: byId) == rootId && seen.insert($0.id).inserted }
+    guard let root = entries.first(where: { $0.id == rootId }) else { return replies }
+    return [root] + replies
+  }
+
+  /** How many replies each thread has, by the id of the message it started from (the host's `branchReplyCounts`). */
+  public static func threadCounts(_ entries: [Entry]) -> [String: Int] {
+    let branched = entries.filter(\.isBranched)
+    guard !branched.isEmpty else { return [:] }
+    let byId = Dictionary(branched.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+    var counts: [String: Int] = [:]
+    var seen = Set<String>()
+    for entry in branched where seen.insert(entry.id).inserted {
+      if let root = threadRoot(of: entry, branched: byId) { counts[root, default: 0] += 1 }
+    }
+    return counts
+  }
+
+  /**
+   * The message a reply's thread started from (shared/transcript-threads.ts,
+   * `resolveBranchRoot`): up its `replyTo`s through other replies to the
+   * first line that is not one. Nil for a line that answers nothing, or a
+   * loop.
+   */
+  public static func threadRoot(of entry: Entry, branched byId: [String: Entry]) -> String? {
+    var current = entry
+    var seen: Set<String> = [entry.id]
+    while true {
+      guard let parent = current["replyTo"]?.text else { return nil }
+      guard let next = byId[parent] else { return parent }
+      guard seen.insert(parent).inserted else { return nil }
+      current = next
+    }
+  }
+
+  /**
+   * A thread's name in its header (the window's `replyPreviewLabel`): its
+   * first message's words, up to 40 characters (cut at 39, its trailing
+   * punctuation dropped, and "…"); "Photo" for a picture, a file's name, a
+   * lone link's host; else "Thread".
+   */
+  public static func threadTitle(_ root: Entry?) -> String {
+    guard let root else { return "Thread" }
+    let raw = root.content ?? root.message?["content"]?.text ?? ""
+    let text = raw.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+    if let link = loneLink(text) { return link.host ?? "Thread" }
+    if !text.isEmpty {
+      guard text.count > 40 else { return text }
+      var head = String(text.prefix(39))
+      while let last = head.last, last.isWhitespace || ":;,.!?\u{2013}\u{2014}-".contains(last) { head.removeLast() }
+      return head + "…"
+    }
+    if !(root.message?["images"]?.array ?? []).isEmpty { return "Photo" }
+    if let path = root["file_path"]?.text ?? root["filePath"]?.text ?? root.message?["url"]?.text {
+      let name = root["file_name"]?.text ?? root["fileName"]?.text ?? fileName(ofURL: path)
+      return ["png", "jpg", "jpeg", "gif", "webp", "heic"].contains((name as NSString).pathExtension.lowercased()) ? "Photo" : name
+    }
+    return "Thread"
+  }
+
+  /** A text that is one link and nothing else: a bare `https:` address, or exactly `[words](https:…)`. */
+  public static func loneLink(_ text: String) -> URL? {
+    let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmed.isEmpty, !trimmed.contains(where: \.isWhitespace) || trimmed.hasPrefix("[") else { return nil }
+    var address = trimmed
+    if trimmed.hasPrefix("[") {
+      guard trimmed.hasSuffix(")"), let middle = trimmed.range(of: "]("), !trimmed[trimmed.index(after: trimmed.startIndex)..<middle.lowerBound].contains("]") else { return nil }
+      address = String(trimmed[middle.upperBound..<trimmed.index(before: trimmed.endIndex)])
+      guard !address.contains(where: \.isWhitespace) else { return nil }
+    }
+    guard address.lowercased().hasPrefix("https://"), let url = URL(string: address), let host = url.host, !host.isEmpty else { return nil }
+    return url
+  }
+
+  static func layout(_ entries: [Entry], isGroup: Bool, unreadAfter: Double?) -> [ChatRow] {
     var rows: [ChatRow] = []
     var lastShown: Date?
     var index = 0
@@ -400,7 +616,8 @@ public enum Chat {
     guard let entry else { return "(deleted)" }
     var text: String
     if let content = entry.content { text = content }
-    else if let content = entry.message?["content"]?.text { text = content }
+    else if let content = entry.message?["content"]?.text, !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { text = content }
+    else if !(entry.message?["images"]?.array ?? []).isEmpty { text = "Photo" }
     else if let path = entry["file_path"]?.text ?? entry["filePath"]?.text ?? entry.message?["url"]?.text {
       let name = fileName(ofURL: path)
       text = ["png", "jpg", "jpeg", "gif", "webp", "heic"].contains((name as NSString).pathExtension.lowercased()) ? "Photo" : name
@@ -451,7 +668,10 @@ public enum Chat {
       guard let text = entry.content, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
       let fromPerson = entry.isFromPerson || entry.role == "user"
       if !fromPerson, let flights = FlightsCard.parse(text) { return .flights(id: entry.id, card: flights) }
-      return .bubble(Bubble(id: entry.id, text: text, fromPerson: fromPerson, author: fromPerson ? nil : entry.author, showsName: false, showsAvatar: false, reactions: reactions, isStreaming: entry.isStreaming, replyTo: entry["replyTo"]?.text, timestampMs: entry.timestampMs))
+      return .bubble(Bubble(id: entry.id, text: text, fromPerson: fromPerson, author: fromPerson ? nil : entry.author, showsName: false, showsAvatar: false, reactions: reactions, isStreaming: entry.isStreaming, replyTo: entry["replyTo"]?.text, timestampMs: entry.timestampMs, sentOfflineAtMs: fromPerson ? entry["sentWhileOfflineAtMs"]?.double : nil))
+    case "notice":
+      guard let text = entry["text"]?.text ?? entry.content, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+      return .notice(id: entry.id, text: text)
     case "user-attachment":
       let name = entry["file_name"]?.text ?? entry["fileName"]?.text ?? entry["file_path"]?.text.map(fileName(ofURL:)) ?? entry["filePath"]?.text.map(fileName(ofURL:)) ?? "Attachment"
       return .file(id: entry.id, name: name, url: entry["file_path"]?.string ?? entry["filePath"]?.string ?? "", fromPerson: true)
@@ -462,9 +682,12 @@ public enum Chat {
       }
       switch message["type"]?.string {
       case "text":
-        guard let text = message["content"]?.string, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
-        if let flights = FlightsCard.parse(text) { return .flights(id: entry.id, card: flights) }
-        return .bubble(Bubble(id: entry.id, text: text, fromPerson: false, author: entry.author, showsName: false, showsAvatar: false, reactions: reactions, isStreaming: entry["streaming"]?.bool ?? false, replyTo: entry["replyTo"]?.text, timestampMs: entry.timestampMs))
+        let text = message["content"]?.string ?? ""
+        let images = (message["images"]?.array ?? []).compactMap(ChatImage.init)
+        // A message may be pictures alone: the gallery without words.
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !images.isEmpty else { return nil }
+        if images.isEmpty, let flights = FlightsCard.parse(text) { return .flights(id: entry.id, card: flights) }
+        return .bubble(Bubble(id: entry.id, text: text, fromPerson: false, author: entry.author, showsName: false, showsAvatar: false, reactions: reactions, isStreaming: entry["streaming"]?.bool ?? false, replyTo: entry["replyTo"]?.text, timestampMs: entry.timestampMs, images: images))
       case "attachment":
         guard let url = message["url"]?.text else { return nil }
         return .file(id: entry.id, name: fileName(ofURL: url), url: url, fromPerson: false)
@@ -496,6 +719,9 @@ public enum Chat {
       case "secret-request":
         guard let secret = message["secretRequest"] else { return nil }
         return .request(id: entry.id, card: .secret(label: secret["label"]?.string ?? "A secret", description: secret["description"]?.string ?? "", provided: entry["secretProvided"]?.bool ?? false))
+      case "cloud-agent":
+        guard let bcId = message["bcId"]?.text, !bcId.isEmpty else { return nil }
+        return .cloudAgent(id: entry.id, bcId: bcId)
       case "local-tool-permission", "permission-request":
         // The Mac's own computer asks these; the phone has no part in them.
         return nil

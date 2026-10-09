@@ -103,9 +103,8 @@ public protocol AgentBackend: AnyObject, Sendable {
   func transcriptPage(_ agentId: String, before: Int?) async throws -> TranscriptPage
   /** A chat's newest lines, read without opening it on the host (`getAgentTranscriptTail`): the preview a long press in the list shows, which must not mark it read. */
   func tail(_ agentId: String, limit: Int) async throws -> [Entry]
-  /** A message, with the files already on the agent's computer (`uploadAttachment`). */
-  /** A message, with the files already on the agent's computer, answering `replyTo` when set (`sendPrompt`'s `replyToId`). */
-  func send(_ agentId: String, text: String, attachments: [AttachmentRef], replyTo: String?, nonce: String?) async throws
+  /** A message, with the files already on the agent's computer (`uploadAttachment`), and what goes with it (`SendOptions`). */
+  func send(_ agentId: String, text: String, attachments: [AttachmentRef], options: SendOptions, nonce: String?) async throws
   func markRead(_ agentId: String) async
   /** A new agent in a palette; its id. */
   func createAgent(name: String, colour: String) async throws -> String
@@ -127,10 +126,29 @@ public protocol AgentBackend: AnyObject, Sendable {
   func screen(_ agentId: String) async throws -> ScreenState
 }
 
+/**
+ * What goes with a message besides its words and files, as `sendPrompt`
+ * takes it (host-gateway-api.ts).
+ */
+public struct SendOptions: Sendable, Equatable {
+  /** The message this one answers (`replyToId`). */
+  public var replyTo: String?
+  /** A reply in a thread (`isFork`, with `replyTo` the thread's first message): the host keeps it out of the main chat (`branched`). */
+  public var isFork: Bool
+  /** The composer's document (TipTap's JSON, `richText`): a skill picked with "/" rides in it, and the host expands it. */
+  public var richText: String?
+  /** When it was written, for a message held while the computer was out of reach (`composedAtMs`): the host tells the agent, and the chat says "Sent while offline". Nil for every other message. */
+  public var composedAtMs: Double?
+
+  public init(replyTo: String? = nil, isFork: Bool = false, richText: String? = nil, composedAtMs: Double? = nil) {
+    self.replyTo = replyTo; self.isFork = isFork; self.richText = richText; self.composedAtMs = composedAtMs
+  }
+}
+
 extension AgentBackend {
   /** A message with a nonce of its own (the call's requests, which nothing waits to see). */
   public func send(_ agentId: String, text: String, attachments: [AttachmentRef], replyTo: String?) async throws {
-    try await send(agentId, text: text, attachments: attachments, replyTo: replyTo, nonce: nil)
+    try await send(agentId, text: text, attachments: attachments, options: SendOptions(replyTo: replyTo), nonce: nil)
   }
 
   /** A backend that keeps whole chats reads its end. */
@@ -211,15 +229,30 @@ public final class LiveBackend: AgentBackend, @unchecked Sendable {
     return (page["entries"]?.array ?? page.array ?? []).compactMap(Entry.init)
   }
 
-  public func send(_ agentId: String, text: String, attachments: [AttachmentRef], replyTo: String?, nonce: String?) async throws {
-    // The host's argument names (host-gateway-api.ts, sendPrompt). The nonce lets a resent message land once, and the host keeps it on the line it writes (`clientNonce`), so the app knows its own message when it comes back.
+  public func send(_ agentId: String, text: String, attachments: [AttachmentRef], options: SendOptions, nonce: String?) async throws {
+    _ = try await gateway.command("sendPrompt", Self.sendArguments(agentId, text: text, attachments: attachments, options: options, nonce: nonce))
+  }
+
+  /**
+   * `sendPrompt`'s arguments, in the host's names (host-gateway-api.ts). The
+   * nonce lets a resent message land once, and the host keeps it on the line
+   * it writes (`clientNonce`), so the app knows its own message when it comes
+   * back. `composedAtMs` only for a message held offline: the host writes
+   * "Composed offline at …" into the agent's prompt for it, so sent with every
+   * message it told the agent each one was written offline.
+   */
+  static func sendArguments(_ agentId: String, text: String, attachments: [AttachmentRef], options: SendOptions, nonce: String?) -> JSON {
     var args: JSON = [
       "agentId": .string(agentId), "prompt": .string(text), "attachmentPaths": JSON(attachments.map(\.path)), "attachmentNames": JSON(attachments.map(\.name)),
       "clientNonce": .string(nonce ?? "ios-\(UUID().uuidString.lowercased())"), "directAddressedAcceptance": true,
-      "composedAtMs": .number(Date().timeIntervalSince1970 * 1000),
     ]
-    if let replyTo { args = args.setting("replyToId", .string(replyTo)) }
-    _ = try await gateway.command("sendPrompt", args)
+    if let replyTo = options.replyTo {
+      args = args.setting("replyToId", .string(replyTo))
+      if options.isFork { args = args.setting("isFork", true) }
+    }
+    if let rich = options.richText, !rich.isEmpty { args = args.setting("richText", .string(rich)) }
+    if let at = options.composedAtMs { args = args.setting("composedAtMs", .number(at)) }
+    return args
   }
 
   public func markRead(_ agentId: String) async {

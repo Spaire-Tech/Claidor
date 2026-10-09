@@ -20,8 +20,10 @@ reused, laid out for the Mac), **partly** (what is missing is named), **no**
 (new Swift code). "Mac" is this app's state: blank until its code is
 written; **written** (the code is there, not yet built on a Mac); **part:**
 what is there, when only some of it is; then **built** (it compiles) and
-**checked** (seen working on the founder's Mac). Slice 1 (the window) is
-written: nothing is built or checked yet.
+**checked** (seen working on the founder's Mac). Slices 1 (the window) and
+2 (the chat) are written: nothing is built or checked yet. What slice 2
+added is shared with the iPhone, so its "Phone" column says yes too; the
+iPhone app is built again with it.
 
 Sources: "patch" is `desktop/scripts/lib/router-renderer-patch.mjs`;
 "main" is `desktop/source/electron-main/`; "coordinator" is
@@ -107,7 +109,7 @@ that is off say so; the gates' values are in
 
 | What | Where | Phone | Mac |
 |---|---|---|---|
-| ⌘N New Agent, ⌘K jump to, ⌘, Settings, ⇧⌘M Connect apps, ⌘I or ⌘L to the composer, ⇧⌘F search agents, ⌥↑ ⌥↓ the previous or next agent, ⌘[ ⌘] back and forward, ⌘1–9 a sidebar agent, ⌘B the compact sidebar, ⌘F find in the chat, Esc close | recovered `window-chrome/global-keyboard-shortcuts.ts` | no | part: all but ⇧⌘F, ⌘[ ⌘] and ⌘F |
+| ⌘N New Agent, ⌘K jump to, ⌘, Settings, ⇧⌘M Connect apps, ⌘I or ⌘L to the composer, ⇧⌘F search agents, ⌥↑ ⌥↓ the previous or next agent, ⌘[ ⌘] back and forward, ⌘1–9 a sidebar agent, ⌘B the compact sidebar, ⌘F find in the chat, Esc close | recovered `window-chrome/global-keyboard-shortcuts.ts` | no | part: all but ⇧⌘F and ⌘[ ⌘] |
 | The connection's badge: Connected, Connecting, Disconnected | recovered `window-chrome/status-badge.tsx` | no | |
 | "Something went wrong" with Reload and Copy error | recovered `error-boundary/` | partly (an alert) | part: an alert |
 
@@ -153,7 +155,7 @@ The menus, zoom and full screen are in §9.
 |---|---|---|---|
 | Centred: the 52 pt butterfly (a group's stack), the name in a white glass pill; the avatar opens the agent pane; Call beside the name; the working dot | patch 2046-2094, 375-384 | yes (`ChatHeadline`, `ChatCallButton`) | written (the toolbar) |
 | A shared room's badge and Manage shared room | recovered `agent-info/shared-room/trigger.tsx` | no | |
-| A thread's header with its way back | recovered `reply-thread-controller.ts` | no | |
+| A thread's header with its way back | recovered `reply-thread-controller.ts` | yes (a sheet with the thread's name and Done) | written ("‹ Back to *name*" › the thread's name; Esc goes back) |
 
 ### 2.8 Messages
 
@@ -161,28 +163,28 @@ The menus, zoom and full screen are in §9.
 |---|---|---|---|
 | Bubbles: the agent's Messages grey, yours flat blue (#255a93, dark #1f5087), 18 pt corners, a lone emoji at 32 pt | patch 1983-2044 | yes | written |
 | Markdown: headings, lists, task lists, quotes, rules, tables, strikethrough, code with colours and Copy code | recovered `transcript.tsx` | yes (`MessageText.swift`, `Markdown.swift`) | written |
-| Mermaid diagrams: in the chat, full size, zoom, fit | recovered `mermaid.tsx` | no | |
-| Maths (KaTeX) | recovered `math.tsx` | no | |
+| Mermaid diagrams: in the chat once the message is written, "Couldn't render this diagram." over the code, the "Diagram preview" with Zoom Out, Zoom In, Fit to Screen and their keys (− _, + =, 0 F; a tenth to eight times) | recovered `mermaid.tsx` | yes (`Rendering.swift`, Mermaid 11.17.2) | written |
+| Maths (KaTeX 0.16.45): `$$` lines and ```` ```math ```` on their own lines, `$$…$$` within a line; a lone `$` stays a dollar | recovered `math.tsx` | yes (`Rendering.swift`, `Markdown.inlineMath`) | written |
 | 75 brand names with their logo and colour; agent names with their butterfly | patch 1409-1536 | yes | written |
 | @name chips in a group | ios `PARITY.md` §2 | no | |
-| A lone link as a card (title, picture, site) | recovered `transcript-card/views/link-card.tsx` | no | |
-| Pictures attached to an agent's message | recovered `send-message-text.ts` | no | |
+| A lone link as a card: the site's icon (a globe), the page's title (else its host), the host (else the whole address), its picture; a click opens it | recovered `transcript-card/views/link-card.tsx` | yes (`LinkCard`, LinkPresentation) | written |
+| Pictures attached to an agent's message: a row 192 high, 6 apart, three at most and "+N", each its own shape (4:3 unknown), the row at most 86 % of the chat, 560 and the chat less 82; pictures alone without a bubble; a click opens Quick Look | recovered `send-message-text.ts` | yes (`ImageGallery`) | written (and Open, Copy Image, Save Image… on right click) |
 | A pull request's link opens in the review app | patch 172-174, 1570 | partly (Safari) | |
 | The New divider, times after 15 minutes, older lines as you scroll up, "N new messages", a jump to a line with a glow | ios `PARITY.md` §2, §10 | yes | written |
-| "Couldn't load conversation" with Retry | recovered `transcript-load-error.tsx` | partly | part |
-| The host's notices in the chat (shared rooms) | recovered `cards/notice/` | no | |
+| "Couldn't load this conversation. Check your connection and try again." with Retry | recovered `transcript-load-error.tsx` | yes (`ChatLoadFailed`) | written |
+| The host's notices in the chat (`kind: "notice"`, shared rooms) | recovered `cards/notice/` | yes | written |
 | "This message can't be shown in this version of Simeon" | recovered `transcript-card/resolver.ts` | yes | written |
 
 ### 2.9 A message's actions
 
 | What | Where | Phone | Mac |
 |---|---|---|---|
-| The menu: 👍 👎 ❤️ 😂 🎉 😮, More emoji (a picker with search), Reply, Start a thread, Copy | recovered `reaction-picker.tsx`, `emoji-picker-content.tsx`, `message-actions.tsx` | partly (no thread; the emoji keyboard for more) | part: reactions, Reply, Copy (right click) |
+| The menu: 👍 👎 ❤️ 😂 🎉 😮, More emoji (a picker with search), Reply, Start a thread, Copy | recovered `reaction-picker.tsx`, `emoji-picker-content.tsx`, `message-actions.tsx` | yes (the emoji keyboard for more) | written (right click; More Emoji… a picker with search, without the window's categories; Mark as Unread too) |
 | Reactions under the bubble; yours toggle | | yes | written |
-| Reply: the quote over the composer, in the sent bubble, a click jumps to it; a quote's preview on hover | recovered `reply-preview.tsx`, `referenced-message-preview.tsx` | yes (no hover preview) | written (no hover preview) |
-| Threads: Start a thread, View thread with its count, the thread | recovered `thread-affordance.tsx`, `thread-loader.ts` | no | |
-| Find in the chat (⌘F), previous and next | recovered `find-in-chat.tsx` | no | |
-| Sending: "Waiting to send…", "Will send when reconnected" with Cancel; "Failed to send" with Resend and Delete | recovered `transcript.tsx` | partly (Failed only) | part: Failed to send |
+| Reply: the quote over the composer, in the sent bubble, a click jumps to it ("Open reply thread" when what it answers is in a thread); a quote's preview on hover | recovered `reply-preview.tsx`, `referenced-message-preview.tsx` | yes (no hover preview) | written |
+| Threads: Start a thread (not inside one), "1 reply", "N replies" under the message ("View thread" on hover), the thread: its first message and its replies (`getAgentThread`), a reply sent in it stays in it (`isFork`); its replies kept out of the chat | recovered `thread-affordance.tsx`, `thread-loader.ts`, shared `transcript-threads.ts` | yes (`Chat.threadRows`, `ThreadSheet`) | written |
+| Find in the chat (⌘F): every time the words appear (case and accents aside), from the newest, "3 of 12" (red when none), Return and Shift-Return, ⌘G and ⇧⌘G, Esc; inside a thread, the thread's lines | recovered `find-in-chat.tsx`, `find-in-chat-controller.ts` | no (no find on the phone) | written |
+| Sending: "Waiting to send…", "Will send when reconnected" with Cancel ("This message is already sending and can't be canceled."); "Sent while offline · *date*"; "Failed to send" with Resend and Delete. Only a message held offline says when it was written (`composedAtMs`): the phone said it of every message | recovered `transcript.tsx`, `submission.ts` | yes | written |
 
 ### 2.10 The agent at work
 
@@ -196,13 +198,13 @@ The menus, zoom and full screen are in §9.
 
 | What | Where | Phone | Mac |
 |---|---|---|---|
-| "Message *name*", "Message group" | bundle | partly ("Message") | part |
+| "Message *name*", "Message group"; "Reply in thread" in a thread | bundle | partly ("Message") | written |
 | +: Attach files; Teach a task (gate off) | bundle | yes (attach) | written (the file chooser) |
-| Files dropped or pasted ("Drop files to add to chat") | recovered `composer.tsx` | no | |
+| Files dropped or pasted ("Drop files to add to chat") | recovered `composer.tsx` | no (the phone's + chooser) | written |
 | Attachments staged, then sent with the message | `desktop/web/backend.ts` | yes | written |
 | Dictation: "Listening…", "Transcribing…" | recovered `voice.tsx` | yes (Apple's dictation) | written (Apple's dictation) |
-| @ for agents, @everyone in a group | recovered `rich-text-editor.tsx` | partly (no @everyone) | part: no @everyone |
-| / for skills, # for pull requests, : for emoji, connector references | recovered `rich-text-editor.tsx`, `editor-*-reference-provider.ts` | no | |
+| @ for agents, @everyone in a group of two or more, routines | recovered `rich-text-editor.tsx`, `editor-suggestion-provider.ts` | yes | written |
+| / for skills (`getAgentWorkflows`; the message carries the skill as the window's `workflowReference` in `richText`), # for the pull requests the chat linked (`prReference`), : for emoji (twelve, recent first, the window's rule for when a ":" starts one), connector references | recovered `rich-text-editor.tsx`, `editor-*-reference-provider.ts` | yes | part: no connector references |
 | A draft kept per chat ("Draft:" in the list) | recovered `draft-state.ts` | yes | written |
 | The blue Send, Enter sends, Send and the mic swap | patch 1838 | yes | written (Return sends) |
 
@@ -218,7 +220,7 @@ The menus, zoom and full screen are in §9.
 | A secret: the field, Save securely, "Stored securely, never shown to your agent." | recovered `views/secret-request.tsx` | yes | written |
 | Your turn on the computer: Take over, I'm done, Skip; Done, Answered, Skipped, Open computer | patch 828-880 | yes | written |
 | "Allow Simeon and all agents to run commands on your local computer?": Always allow, Allow once, Never, Deny once; the team's policy | recovered `permissions/local-tool/` | no (the Mac's only, §7) | |
-| A cloud agent: Creating, Running, Done, Error, Expired; branch, PR, View PR, Open | recovered `views/cloud-agent.tsx` | no | |
+| A cloud agent: Creating, Running, Done, Error, Expired; branch, PR, View PR, Open (`getCloudAgentInfo`, every 5 s while it works) | recovered `views/cloud-agent.tsx` | yes (`CloudAgentCard`) | written |
 | Flights, and a flight's details | patch 882-1025 | yes (Muse's layout) | written |
 | Agents talking: Messaged, Message from, N messages with, N agents ▾, the read-only exchange | ios `PARITY.md` §3.6 | yes | written |
 | Routine lines | recovered `cards/timeline-event-automation.tsx` | yes | written |
@@ -228,7 +230,7 @@ The menus, zoom and full screen are in §9.
 
 | What | Where | Phone | Mac |
 |---|---|---|---|
-| The file card: the real logos, name and extension, size, a Save button | patch 1418-1435, 1652-1670 | partly (no Save button) | part: no Save button |
+| The file card: the real logos, name and extension, size, a Save button | patch 1418-1435, 1652-1670 | partly (no Save button) | written (Save… to a folder; a picture's right click: Open, Copy Image, Save Image…) |
 | Pictures and videos in the chat, a gallery for several, audio played in place | recovered `views/attachment.tsx` | partly (pictures; video and audio in Quick Look) | part: pictures; the rest in Quick Look |
 | The viewer: previous, next, arrows, Esc | recovered `media-viewer.tsx` | partly (Quick Look) | part: Quick Look |
 | PDFs (pages, zoom) and spreadsheets (sheets, a cell's detail) | recovered `pdf-viewer.tsx`, `spreadsheet-viewer.tsx` | yes (Quick Look, which the Mac has too) | written (Quick Look) |
@@ -346,8 +348,9 @@ and `VoiceCall.swift`. Every command the Mac sends today has a line.
 | Area | Commands | Phone | Mac |
 |---|---|---|---|
 | Reading a chat | `openAgentTail`, `getAgentTranscriptTail` | yes | written |
-| | `getAgentTranscriptWindow` (older pages, with thread counts), `getAgentThread` | no | |
-| Sending | `sendPrompt` (with `replyToId`, nonce), `appendSendMessage` | yes | written |
+| | `getAgentThread` | yes | written |
+| | `getAgentTranscriptWindow` (older pages, with thread counts; the app counts threads from the lines it has) | no | |
+| Sending | `sendPrompt` (with `replyToId`, `isFork`, `richText`, nonce, and `composedAtMs` for a message held offline), `appendSendMessage` | yes | written |
 | | `promptAcceptanceStatus`, `appendConnectorCard` | no | |
 | Cards and reactions | `respondToWidget`, `dismissWidget`, `submitSecret`, `sendDraft`, `discardDraft`, `reactToMessage` | yes | written |
 | Approvals | `resolveAutoReviewApproval` | yes | written |
@@ -356,7 +359,7 @@ and `VoiceCall.swift`. Every command the Mac sends today has a line.
 | | `setWindowFocused` (the box knows the person is looking), `getAgentAvatar`, `getSubagents`, `getAsyncTasks`, `getConversationOutline`, `broadcastToAgents`, `isAgentNetworkEnabled`, `setAgentNotificationsEnabled` | no | |
 | Search | `searchAgents`, `searchMedia`, `isGlobalSearchEnabled` | yes | written |
 | Routines | `getAgentAutomations`, `listAllAutomations`, `createAgentAutomation`, `updateAgentAutomation`, `setAgentAutomationEnabled`, `deleteAgentAutomation`, `runAgentAutomationNow` | yes | written |
-| Workflows (no screen of their own in the window) | `getAgentWorkflows`, `createAgentWorkflow`, `updateAgentWorkflow`, `setAgentWorkflowEnabled`, `deleteAgentWorkflow`, `runAgentWorkflowNow`, `importAgentWorkflowText`, `importAgentWorkflowUrl` | no | |
+| Workflows (no screen of their own in the window; `getAgentWorkflows` feeds "/" and "@", written) | `getAgentWorkflows`, `createAgentWorkflow`, `updateAgentWorkflow`, `setAgentWorkflowEnabled`, `deleteAgentWorkflow`, `runAgentWorkflowNow`, `importAgentWorkflowText`, `importAgentWorkflowUrl` | no | |
 | Skills | `skillsCatalog`, `portAgentLocalSkills`, `syncPluginSkills`, `getPluginSyncStatus`, `getSkillPublishTargets`, `publishSkill`, `resyncPublishedSkill`, `unpublishSkill` | no | |
 | Connectors | `desktopMcp`: `listServers`, `getCatalog`, `installEntry`, `vendorServerIdForPlugin`, `authenticateServer`, `removeServer`, `listServerTools`, `toggleMcpToolDisabled`, `renameAccount`, `removeAccount` | yes | written |
 | | `desktopMcp`: `listEffectivePlugins`, `resolvePluginLogo`, `updatePluginInstall`, `uninstallPlugin`, `setServerCustomInstructions`; `searchPlugins`, `getPlugin`, `installPlugin`; `refreshMcp`, `listBoxMcpServers`, `completeMcpOAuth` | no | |
@@ -372,7 +375,8 @@ and `VoiceCall.swift`. Every command the Mac sends today has a line.
 | | `readAttachmentText` | no | |
 | Calls | `voiceCall` | yes | written |
 | The computer | `ensureForeverBox`, `handBackForeverBox` | yes | written |
-| | `getForeverBoxStatus`, `updateForeverBox`, `getHostStatus`, `requestDiskSaverAudit`, `getCloudAgentInfo`, `isEgressTunnelAvailable` | no | |
+| | `getCloudAgentInfo` | yes | written |
+| | `getForeverBoxStatus`, `updateForeverBox`, `getHostStatus`, `requestDiskSaverAudit`, `isEgressTunnelAvailable` | no | |
 | Teaching (gate off) and trays (no screen in the window today) | `startTeachRecording`, `stopTeachRecording`, `getTeachRecordingStatus`, `getTrays`, `dismissTray`, `clearTrays` | no | |
 
 A command whose screen is missing or switched off in the window comes over

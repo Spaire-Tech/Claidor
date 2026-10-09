@@ -31,6 +31,8 @@ struct ChatView: View {
   @State private var reply = ReplyDraft()
   @State private var actions = ChatActions()
   @State private var messageMenu = MessageMenu()
+  /** The thread open over the chat (its first message's id). */
+  @State private var thread: ThreadRoute?
 
   // Each part below reads only what it draws, so typing a letter or the
   // call's waveform ticking redraws that part and not the conversation.
@@ -73,7 +75,11 @@ struct ChatView: View {
       }
       // A long press on a message: the reactions and what can be done with it, in a sheet from the bottom.
       .sheet(item: Binding(get: { messageMenu.target }, set: { messageMenu.target = $0 })) { target in
-        MessageActionsSheet(bubble: target.bubble, agentId: agentId).environment(reply)
+        MessageActionsSheet(bubble: target.bubble, agentId: agentId).environment(reply).environment(actions)
+      }
+      // A thread over the chat: its first message and its replies, and a composer that answers there.
+      .sheet(item: $thread, onDismiss: { store.closeThread(in: agentId) }) { route in
+        ThreadSheet(agentId: agentId, rootId: route.rootId).problemAlert()
       }
       .sheet(isPresented: $showsPage) { AgentPageSheet(agentId: agentId).problemAlert() }
       .sheet(isPresented: $showsComputer) { ComputerSheet(agentId: agentId).problemAlert() }
@@ -83,6 +89,10 @@ struct ChatView: View {
         actions.openPage = { showsPage = true }
         actions.openComputer = { showsComputer = true }
         actions.openExchange = { exchange = $0 }
+        actions.openThread = { root in
+          thread = ThreadRoute(rootId: root)
+          Task { await store.openThread(root, in: agentId) }
+        }
       }
       .onDisappear { store.close(agentId) }
       // Back from the background: what was said while the phone slept did not stream, so fetch it.
@@ -113,6 +123,8 @@ final class ChatActions {
   @ObservationIgnored var openComputer: () -> Void = {}
   @ObservationIgnored var openExchange: (ExchangeRoute) -> Void = { _ in }
   @ObservationIgnored var jump: (String) -> Void = { _ in }
+  /** Opens a thread by its first message's id (a thread's "N replies", "Start a Thread", a quote of a reply in one). */
+  @ObservationIgnored var openThread: (String) -> Void = { _ in }
 }
 
 /** The message the person is answering (the Mac's Reply), shared by the bubbles' menu and the composer. */
@@ -149,6 +161,8 @@ final class JumpGlow {
  */
 struct ChatMessages: View {
   let agentId: String
+  /** A thread of the chat instead of the chat (its first message's id): its rows, no older pages. */
+  var thread: String? = nil
   @Environment(AppStore.self) private var store
   @Environment(ChatActions.self) private var actions: ChatActions?
   @State private var width: CGFloat = 361
@@ -164,8 +178,11 @@ struct ChatMessages: View {
   private static let firstWindow = 40
   private static let bottomId = "chat-bottom"
 
+  /** The rows on screen: the chat's, or the open thread's. */
+  private var allRows: [ChatRow] { thread == nil ? store.rows(for: agentId) : store.threadRows[agentId] ?? [] }
+
   var body: some View {
-    let all = store.rows(for: agentId)
+    let all = allRows
     let rows = all.count > window ? Array(all.suffix(window)) : all
     let hidden = all.count - rows.count
     let _ = Trace.mark("drawing \(agentId), \(rows.count) of \(all.count) rows")
@@ -176,13 +193,13 @@ struct ChatMessages: View {
         // of loop Ava's chat froze in (SwiftUI applying changes without end, none of the app's code on the stack). The window
         // keeps the stack to the newest rows.
         VStack(alignment: .leading, spacing: 0) {
-          if hidden > 0 || store.olderBefore[agentId] != nil {
+          if hidden > 0 || (thread == nil && store.olderBefore[agentId] != nil) {
             // Near the top (below): the rows above these, then the lines before them (`getAgentTranscriptTail` with `beforeSeq`).
             ProgressView()
               .frame(maxWidth: .infinity)
               .padding(.vertical, 14)
               // Every row already drawn and still more lines before them: fetch those once (a chat too short to scroll).
-              .onAppear { if hidden == 0, store.olderBefore[agentId] != nil { Task { await store.loadOlder(agentId) } } }
+              .onAppear { if hidden == 0, thread == nil, store.olderBefore[agentId] != nil { Task { await store.loadOlder(agentId) } } }
           }
           ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
             Group {
@@ -197,12 +214,13 @@ struct ChatMessages: View {
             .modifier(Arrival(id: row.id, arriving: store.arrived.contains(row.id)))
             .padding(.top, Self.gap(index > 0 ? rows[index - 1] : nil, row))
           }
-          TypingSlot(agentId: agentId)
+          if thread == nil { TypingSlot(agentId: agentId) }
           Color.clear.frame(height: 1).id(Self.bottomId)
         }
         .padding(.horizontal, 16)
         .padding(.bottom, 14)
         .environment(\.chatWidth, width)
+        .environment(\.chatThread, thread)
         .environment(peek)
         .environment(glow)
       }
@@ -224,7 +242,7 @@ struct ChatMessages: View {
       }
       // A line search found (the Mac's `revealSearchHit`): older pages until it is in, then to it, and it glows.
       .task(id: store.revealing[agentId]) {
-        guard let entry = store.revealing[agentId] else { return }
+        guard thread == nil, let entry = store.revealing[agentId] else { return }
         _ = await store.loadUntil(entry, in: agentId)
         store.revealing[agentId] = nil
         guard let rowId = Chat.rowId(for: entry, in: store.rows(for: agentId)) else { return }
@@ -236,7 +254,7 @@ struct ChatMessages: View {
         geometry.contentSize.height > geometry.containerSize.height && geometry.visibleRect.minY < 300
       } action: { _, nearTop in
         guard nearTop else { return }
-        if store.rows(for: agentId).count > window { window += ChatMessages.firstWindow } else if store.olderBefore[agentId] != nil { Task { await store.loadOlder(agentId) } }
+        if allRows.count > window { window += ChatMessages.firstWindow } else if thread == nil, store.olderBefore[agentId] != nil { Task { await store.loadOlder(agentId) } }
       }
       .onScrollGeometryChange(for: Bool.self) { geometry in
         geometry.contentSize.height - geometry.visibleRect.maxY < 120
@@ -247,7 +265,7 @@ struct ChatMessages: View {
       // New rows at the bottom: drawn too (the window grows by them), and counted on the pill when you are reading further up. Older lines loaded at the top are neither.
       .onChange(of: all.last?.id) { old, _ in
         guard let old else { return }
-        let now = store.rows(for: agentId)
+        let now = allRows
         guard let from = now.lastIndex(where: { $0.id == old }) else { return }
         let added = now[(from + 1)...]
         window += added.count
@@ -279,6 +297,8 @@ struct ChatMessages: View {
     .overlay {
       // Its lines on their way from the computer (a chat the host had closed takes a moment to open): say so.
       if all.isEmpty && store.fetching.contains(agentId) { ProgressView() }
+      // Nothing came and the fetch failed: the window's "Couldn't load this conversation" and Retry.
+      else if all.isEmpty && thread == nil && store.loadFailed.contains(agentId) { ChatLoadFailed(agentId: agentId) }
     }
     // The chat's width, measured and kept for the rows to cap themselves at. In whole points, and kept only when it moves by
     // one or more: a width that came back a fraction different on each measure would redraw every row, again and again.
@@ -301,7 +321,7 @@ struct ChatMessages: View {
 
   /** A row above the drawn ones is drawn first, then scrolled to. */
   private func reveal(_ id: String, then scroll: @escaping () -> Void) {
-    let all = store.rows(for: agentId)
+    let all = allRows
     guard let index = all.firstIndex(where: { $0.id == id }), all.count - index > window else { return scroll() }
     window = all.count - index + 10
     Task { @MainActor in
@@ -440,6 +460,8 @@ struct ChatCallSlot: View {
  */
 struct ChatComposer: View {
   let agentId: String
+  /** Writing in a thread (its first message's id): every message answers it there (`isFork`). */
+  var thread: String? = nil
   @Environment(AppStore.self) private var store
   @Environment(\.colorScheme) private var scheme
   @State private var draft = ""
@@ -450,6 +472,14 @@ struct ChatComposer: View {
   @Environment(ReplyDraft.self) private var reply: ReplyDraft?
   /** The agent's name for the placeholder, read once: reading it in the body would redraw the field on every roster change. */
   @State private var name = ""
+  /** The agent's skills ("/") and routines ("@"), read once the chat is open (`getAgentWorkflows`). */
+  @State private var skills: [ComposerMenus.Skill] = []
+  @State private var routines: [ComposerMenus.Skill] = []
+  /** What was picked from "/", "@" and "#" for this message: it rides in its document (`richText`). */
+  @State private var picked: [ComposerMenus.Skill] = []
+  @State private var pickedPulls: [ComposerMenus.PullRequest] = []
+  /** The emoji picked lately, first after ":" (the window's recents). */
+  @AppStorage("simeon.emoji.recent") private var recentEmoji = ""
 
   enum Mode { case send, mic, stop }
 
@@ -463,9 +493,15 @@ struct ChatComposer: View {
 
   /** What follows an "@" being typed at the end, if one is. */
   private var mentionQuery: String? { Mentions.query(draft) }
+  private var skillQuery: String? { skills.isEmpty ? nil : ComposerMenus.query(draft, after: "/") }
+  private var pullQuery: String? { ComposerMenus.query(draft, after: "#") }
+
+  /** Where the draft is kept: the chat's, or its thread's. */
+  private var draftKey: String { thread.map { "\(agentId)#thread-\($0)" } ?? agentId }
 
   /** "Message" on the iPhone; on the Mac the window's "Message *name*" ("Message group" in a group). "Reply" while replying. */
   private var placeholder: String {
+    if thread != nil { return "Reply in thread" }
     if reply?.target != nil { return "Reply" }
     #if os(macOS)
     if store.groupIds.contains(agentId) { return "Message group" }
@@ -479,13 +515,29 @@ struct ChatComposer: View {
     let _ = Trace.mark("drawing the composer of \(agentId), \(draft.count) characters")
     VStack(spacing: 6) {
       if let query = mentionQuery {
-        MentionPicker(query: query, chatId: agentId) { name in
+        MentionPicker(query: query, chatId: agentId, routines: routines) { name in
           draft = Mentions.inserting(name, into: draft)
+        } pickRoutine: { routine in
+          draft = Mentions.inserting(routine.name, into: draft)
+          picked.append(routine)
+        }
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+      } else if let query = skillQuery, !ComposerMenus.filter(skills, query).isEmpty {
+        SkillPicker(skills: ComposerMenus.filter(skills, query)) { skill in
+          draft = ComposerMenus.replacing(after: "/", in: draft, with: "@" + skill.name)
+          picked.append(skill)
+        }
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+      } else if let query = pullQuery, !pullRequests(query).isEmpty {
+        PullRequestPicker(pulls: pullRequests(query)) { pull in
+          draft = ComposerMenus.replacing(after: "#", in: draft, with: "#\(pull.number)")
+          pickedPulls.append(pull)
         }
         .transition(.move(edge: .bottom).combined(with: .opacity))
       } else if let query = EmojiCatalog.query(draft) {
-        EmojiSuggestions(query: query) { emoji in
+        EmojiSuggestions(query: query, recent: recentEmoji.split(separator: " ").map(String.init)) { emoji in
           draft = EmojiCatalog.inserting(emoji, into: draft)
+          recentEmoji = EmojiCatalog.remembering(emoji, in: recentEmoji.split(separator: " ").map(String.init)).joined(separator: " ")
         }
         .transition(.move(edge: .bottom).combined(with: .opacity))
       }
@@ -499,7 +551,7 @@ struct ChatComposer: View {
           .padding(.horizontal, 4)
         }
       }
-      if let target = reply?.target {
+      if thread == nil, let target = reply?.target {
         // The message being answered: the arrow, its line, and Cancel, on glass above the field.
         HStack(spacing: 8) {
           Image(systemName: "arrowshape.turn.up.left").font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.secondary)
@@ -587,6 +639,12 @@ struct ChatComposer: View {
       let named = store.agent(agentId)?.name ?? ""
       if name != named { name = named }
     }
+    // "/" and "@" offer the agent's skills and routines, read once per chat.
+    .task(id: agentId) {
+      let answer = await store.workflows(agentId)
+      skills = ComposerMenus.skills(from: answer)
+      routines = ComposerMenus.skills(from: answer, scheduled: true)
+    }
     .composerPicker(isPresented: $picking) { picked in attachments.append(contentsOf: picked) }
     .onChange(of: dictation.problem) { _, problem in if let problem { store.problem = problem } }
     .onChange(of: reply?.target?.id) { _, id in if id != nil { typing = true } }
@@ -600,14 +658,14 @@ struct ChatComposer: View {
       typing = true
     }
     #endif
-    // The unsent draft stays with its chat, as on the Mac.
-    .onAppear { if draft.isEmpty, let kept = store.drafts[agentId], kept != draft { draft = kept } }
+    // The unsent draft stays with its chat (or its thread), as on the Mac.
+    .onAppear { if draft.isEmpty, let kept = store.drafts[draftKey], kept != draft { draft = kept } }
     // Saved when typing pauses, not per letter (the list redraws on a save).
     .task(id: draft) {
       try? await Task.sleep(nanoseconds: 600_000_000)
-      if !Task.isCancelled { store.setDraft(draft, for: agentId) }
+      if !Task.isCancelled { store.setDraft(draft, for: draftKey) }
     }
-    .onDisappear { store.setDraft(draft, for: agentId) }
+    .onDisappear { store.setDraft(draft, for: draftKey) }
   }
 
   static func replyLine(_ bubble: Bubble) -> String {
@@ -615,18 +673,29 @@ struct ChatComposer: View {
     return text.count > 72 ? String(text.prefix(72)) + "…" : text
   }
 
+  /** The pull requests the chat linked that an "#…" being typed matches. */
+  private func pullRequests(_ query: String) -> [ComposerMenus.PullRequest] {
+    ComposerMenus.filter(ComposerMenus.pullRequests(in: store.transcripts[agentId] ?? []), query)
+  }
+
   private func send() {
     let text = draft
     let files = attachments
-    let answering = reply?.target?.id
+    // In a thread every message answers its first one; else the message Reply was chosen on.
+    let answering = thread ?? reply?.target?.id
+    // What was picked from "/", "@" and "#", as the host reads it (a skill's reference it expands).
+    let rich = ComposerMenus.richText(text.trimmingCharacters(in: .whitespacesAndNewlines), skills: picked, pullRequests: pickedPulls)
     draft = ""
     attachments = []
-    reply?.target = nil
+    picked = []
+    pickedPulls = []
+    if thread == nil { reply?.target = nil }
     dictation.stop()
     // The composer's pictures are shown in the chat as they are, before anything goes to the computer.
     let id = AppStore.newMessageId()
     for (index, file) in files.enumerated() { if let preview = file.preview { ChatImages.keep(preview, under: [AppStore.outboxFileURL(id, index)]) } }
-    Task { await store.send(text, to: agentId, attachments: files.map { ($0.name, $0.data) }, replyTo: answering, id: id) }
+    let inThread = thread != nil
+    Task { await store.send(text, to: agentId, attachments: files.map { ($0.name, $0.data) }, replyTo: answering, inThread: inThread, richText: rich, id: id) }
   }
 }
 
@@ -677,6 +746,12 @@ struct ChatRowView: View, Equatable {
       EventLine { Text(text) }
     case .failedSend(_, let nonce):
       FailedSendRow(nonce: nonce, agentId: agentId)
+    case .queuedSend(_, let nonce):
+      QueuedSendRow(nonce: nonce, agentId: agentId)
+    case .thread(_, let rootId, let count, let side):
+      ThreadLinkRow(rootId: rootId, count: count, side: side)
+    case .cloudAgent(_, let bcId):
+      CloudAgentCard(bcId: bcId)
     }
   }
 }
@@ -699,6 +774,7 @@ struct BubbleView: View {
   @Environment(ChatActions.self) private var actions: ChatActions?
   @Environment(ReplyDraft.self) private var reply: ReplyDraft?
   @Environment(MessageMenu.self) private var messageMenu: MessageMenu?
+  @Environment(\.chatThread) private var thread
   @State private var reacting: Set<String> = []
   /** The reactions it had when it came on screen: only one added after pops in (the Mac's `FEn`). */
   @State private var reactionsSeen: Set<String>?
@@ -722,8 +798,9 @@ struct BubbleView: View {
           Text(name).font(.system(size: 12)).foregroundStyle(Ink.secondary).padding(.leading, 12)
         }
         if let quote = bubble.quote, let target = bubble.replyTo {
-          // What this answers (`pCn`): one line over the bubble; a tap goes to it.
-          Button { actions?.jump(target) } label: {
+          // What this answers (`pCn`): one line over the bubble; a tap goes to it, or opens the thread it is in when it is a reply in one.
+          let threadOfTarget = thread == nil ? store.threadRoot(of: target, in: agentId) : nil
+          Button { if let threadOfTarget { actions?.openThread(threadOfTarget) } else { actions?.jump(target) } } label: {
             HStack(spacing: 4) {
               Image(systemName: "arrowshape.turn.up.right").font(.system(size: 10))
               Text(quote).lineLimit(1)
@@ -735,7 +812,7 @@ struct BubbleView: View {
           }
           .buttonStyle(.plain)
           .frame(maxWidth: ChatMetrics.bubbleMax(width), alignment: bubble.fromPerson ? .trailing : .leading)
-          .accessibilityLabel("Jump to replied message")
+          .accessibilityLabel(threadOfTarget == nil ? "Jump to replied message" : "Open reply thread")
           #if os(macOS)
           // The window's preview of what a quote answers, on hover.
           .help(Self.answered(target, in: store.rows(for: agentId)) ?? quote)
@@ -757,6 +834,7 @@ struct BubbleView: View {
           #endif
           .overlay(alignment: bubble.fromPerson ? .bottomTrailing : .bottomLeading) { reactions }
           .padding(.bottom, bubble.reactions.isEmpty ? 0 : 16)
+        if let offline = bubble.sentOfflineAtMs { SentOfflineLine(ms: offline) }
       }
       .modifier(PeekShift(moves: bubble.fromPerson))
       if !bubble.fromPerson { Spacer(minLength: 0) }
@@ -770,7 +848,13 @@ struct BubbleView: View {
   private var content: some View {
     let maxWidth = ChatMetrics.bubbleMax(width - (inGroup && !bubble.fromPerson ? 30 : 0))
     let shown = shown
-    if bubble.isLoneEmoji {
+    if let link = bubble.loneLink {
+      // A message that is one link: its card (the window's `url-card.ts`).
+      LinkCard(url: link, fromPerson: bubble.fromPerson)
+    } else if !bubble.images.isEmpty && bubble.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+      // Pictures alone: the gallery without a bubble.
+      ImageGallery(images: bubble.images, agentId: agentId)
+    } else if bubble.isLoneEmoji {
       Text(bubble.text.trimmingCharacters(in: .whitespacesAndNewlines)).font(.system(size: 32))
     } else if bubble.fromPerson {
       VStack(alignment: .trailing, spacing: 6) {
@@ -786,15 +870,21 @@ struct BubbleView: View {
         .frame(maxWidth: maxWidth, alignment: .trailing)
     } else {
       VStack(alignment: .leading, spacing: 6) {
-        MarkdownView(blocks: Markdown.cachedBlocks(shown.text), mentioning: Mentioning(names: store.mentionNames, personName: store.account?.name, dark: scheme == .dark))
-          .foregroundStyle(Ink.theirsText)
-          .tint(Ink.link)
-        if shown.clipped || expanded { more(light: false) }
+        VStack(alignment: .leading, spacing: 6) {
+          MarkdownView(blocks: Markdown.cachedBlocks(shown.text), mentioning: Mentioning(names: store.mentionNames, personName: store.account?.name, dark: scheme == .dark))
+            .foregroundStyle(Ink.theirsText)
+            .tint(Ink.link)
+            // A diagram waits until the message is written (the window's rule).
+            .environment(\.messageStreaming, bubble.isStreaming)
+          if shown.clipped || expanded { more(light: false) }
+        }
+          .padding(.horizontal, 12).padding(.vertical, 8)
+          .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+          .modifier(CardEdge(radius: 18))
+          .frame(maxWidth: maxWidth, alignment: .leading)
+        // The agent's pictures, under its words.
+        if !bubble.images.isEmpty { ImageGallery(images: bubble.images, agentId: agentId) }
       }
-        .padding(.horizontal, 12).padding(.vertical, 8)
-        .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .modifier(CardEdge(radius: 18))
-        .frame(maxWidth: maxWidth, alignment: .leading)
     }
   }
 
@@ -1265,18 +1355,20 @@ struct FailedSendRow: View {
 }
 
 /**
- * The emoji offered after a ":" (the window's composer list): up to five
- * whose short name or name starts with what was typed, each with its name;
- * a tap writes it in place of the ":" and what followed.
+ * The emoji offered after a ":" (the window's composer list): up to twelve,
+ * the ones picked lately first, then those whose short name or name starts
+ * with what was typed, each with its name; a tap writes it in place of the
+ * ":" and what followed.
  */
 struct EmojiSuggestions: View {
   let query: String
+  var recent: [String] = []
   let pick: (String) -> Void
 
   var body: some View {
-    let found = EmojiCatalog.search(query, limit: 5)
+    let found = EmojiCatalog.suggestions(query, recent: recent)
     if !found.isEmpty {
-      VStack(spacing: 0) {
+      SuggestionList(rows: found.count, rowHeight: 36) {
         ForEach(found, id: \.character) { emoji in
           Button { pick(emoji.character) } label: {
             HStack(spacing: 10) {
@@ -1292,17 +1384,90 @@ struct EmojiSuggestions: View {
           .buttonStyle(.plain)
         }
       }
-      .padding(.vertical, 4)
-      .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
   }
 }
 
-/** The names offered after an "@" (the Mac's composer list): agents whose name starts with what was typed, a tap writes it in. */
+/** A composer list over the field (":", "/", "#", "@"): on glass, scrolling past six rows. */
+struct SuggestionList<Content: View>: View {
+  let rows: Int
+  var rowHeight: CGFloat = 40
+  @ViewBuilder let content: Content
+
+  var body: some View {
+    ScrollView {
+      VStack(spacing: 0) { content }
+        .padding(.vertical, 4)
+    }
+    .scrollBounceBehavior(.basedOnSize)
+    .frame(height: min(CGFloat(rows) * rowHeight + 8, 6 * rowHeight + 8))
+    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+  }
+}
+
+/** The skills offered after a "/" (the window's "Reference a skill"): a pick writes "@name" and the message carries the skill. */
+struct SkillPicker: View {
+  let skills: [ComposerMenus.Skill]
+  let pick: (ComposerMenus.Skill) -> Void
+
+  var body: some View {
+    SuggestionList(rows: skills.count) {
+      ForEach(skills) { skill in
+        Button { pick(skill) } label: {
+          HStack(spacing: 10) {
+            Image(systemName: "wand.and.stars").font(.system(size: 14)).foregroundStyle(Ink.blue).frame(width: 24)
+            Text(skill.name).font(.system(size: 15)).foregroundStyle(Ink.primary).lineLimit(1)
+            Spacer(minLength: 0)
+          }
+          .padding(.horizontal, 12)
+          .frame(height: 40)
+          .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+      }
+    }
+    .accessibilityLabel("Reference a skill")
+  }
+}
+
+/** The pull requests offered after a "#": the ones the chat linked, newest first. */
+struct PullRequestPicker: View {
+  let pulls: [ComposerMenus.PullRequest]
+  let pick: (ComposerMenus.PullRequest) -> Void
+
+  var body: some View {
+    SuggestionList(rows: pulls.count) {
+      ForEach(pulls) { pull in
+        Button { pick(pull) } label: {
+          HStack(spacing: 10) {
+            Image(systemName: "arrow.triangle.pull").font(.system(size: 14)).foregroundStyle(Ink.secondary).frame(width: 24)
+            Text("#\(pull.number)").font(.system(size: 15, weight: .medium)).foregroundStyle(Ink.primary)
+            Text(URL(string: pull.url).map { $0.pathComponents.dropFirst().prefix(2).joined(separator: "/") } ?? "")
+              .font(.system(size: 13)).foregroundStyle(Ink.secondary).lineLimit(1)
+            Spacer(minLength: 0)
+          }
+          .padding(.horizontal, 12)
+          .frame(height: 40)
+          .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+      }
+    }
+    .accessibilityLabel("Pull request")
+  }
+}
+
+/**
+ * What "@" offers (the Mac's composer list): in a group of two or more,
+ * "everyone" first; the agents whose name starts with what was typed (a
+ * group's own members); then the agent's routines. A pick writes the name.
+ */
 struct MentionPicker: View {
   let query: String
   let chatId: String
+  var routines: [ComposerMenus.Skill] = []
   let pick: (String) -> Void
+  var pickRoutine: (ComposerMenus.Skill) -> Void = { _ in }
   @Environment(AppStore.self) private var store
 
   private var names: [Mentions.AgentName] {
@@ -1311,9 +1476,46 @@ struct MentionPicker: View {
     return Array(pool.filter { query.isEmpty || $0.name.lowercased().hasPrefix(query.lowercased()) }.prefix(5))
   }
 
+  /** "@everyone" in a group of two or more (the window's `__everyone__`). */
+  private var offersEveryone: Bool {
+    guard let chat = store.agent(chatId), chat.isGroup, chat.memberIds.count >= 2 else { return false }
+    return query.isEmpty || ComposerMenus.everyone.hasPrefix(query.lowercased()) || "all".hasPrefix(query.lowercased())
+  }
+
+  private var matchingRoutines: [ComposerMenus.Skill] { Array(ComposerMenus.filter(routines, query).prefix(4)) }
+
   var body: some View {
-    if !names.isEmpty {
-      VStack(spacing: 0) {
+    let rows = names.count + (offersEveryone ? 1 : 0) + matchingRoutines.count
+    if rows > 0 {
+      SuggestionList(rows: rows) {
+        if offersEveryone {
+          Button { pick(ComposerMenus.everyone) } label: {
+            HStack(spacing: 10) {
+              Image(systemName: "person.3.fill").font(.system(size: 13)).foregroundStyle(Ink.blue).frame(width: 24, height: 24)
+              Text("everyone").font(.system(size: 15)).foregroundStyle(Ink.primary)
+              Text("Everyone in this group").font(.system(size: 13)).foregroundStyle(Ink.secondary)
+              Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 12)
+            .frame(height: 40)
+            .contentShape(.rect)
+          }
+          .buttonStyle(.plain)
+        }
+        ForEach(matchingRoutines) { routine in
+          Button { pickRoutine(routine) } label: {
+            HStack(spacing: 10) {
+              Image(systemName: "clock.arrow.circlepath").font(.system(size: 14)).foregroundStyle(Ink.secondary).frame(width: 24, height: 24)
+              Text(routine.name).font(.system(size: 15)).foregroundStyle(Ink.primary).lineLimit(1)
+              if let when = routine.subtitle { Text(when).font(.system(size: 13)).foregroundStyle(Ink.secondary).lineLimit(1) }
+              Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 12)
+            .frame(height: 40)
+            .contentShape(.rect)
+          }
+          .buttonStyle(.plain)
+        }
         ForEach(names, id: \.id) { name in
           Button { pick(name.name) } label: {
             HStack(spacing: 10) {
@@ -1328,8 +1530,6 @@ struct MentionPicker: View {
           .buttonStyle(.plain)
         }
       }
-      .padding(.vertical, 4)
-      .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
   }
 }
@@ -1357,6 +1557,7 @@ struct MessageActionsSheet: View {
   let agentId: String
   @Environment(AppStore.self) private var store
   @Environment(ReplyDraft.self) private var reply: ReplyDraft?
+  @Environment(ChatActions.self) private var actions: ChatActions?
   @Environment(\.dismiss) private var dismiss
   @State private var choosingEmoji = false
   @State private var selecting = false
@@ -1398,6 +1599,7 @@ struct MessageActionsSheet: View {
         }
         group([
           Action(title: "Reply", symbol: "arrowshape.turn.up.left") { reply?.target = bubble; dismiss() },
+        ] + startThread + [
           Action(title: "Mark as Unread", symbol: "message.badge") { Task { await store.setUnread(agentId, true) }; dismiss() },
         ])
         group([
@@ -1412,6 +1614,12 @@ struct MessageActionsSheet: View {
     .presentationDragIndicator(.visible)
     .background { EmojiKeyboard(isActive: $choosingEmoji) { emoji in react(emoji) }.frame(width: 0, height: 0) }
     .sheet(isPresented: $selecting) { SelectTextSheet(text: bubble.text) }
+  }
+
+  /** "Start a Thread" in the chat (not in a thread, which has no actions to open one). */
+  private var startThread: [Action] {
+    guard let open = actions?.openThread else { return [] }
+    return [Action(title: "Start a Thread", symbol: "bubble.left.and.bubble.right") { dismiss(); open(bubble.id) }]
   }
 
   private func group(_ actions: [Action]) -> some View {
@@ -1438,6 +1646,34 @@ struct MessageActionsSheet: View {
   private func react(_ emoji: String) {
     Task { await store.react(emoji, to: bubble.id, in: agentId) }
     dismiss()
+  }
+}
+
+/** A thread opened over the iPhone's chat: its name, its messages, a composer that answers in it. */
+struct ThreadSheet: View {
+  let agentId: String
+  let rootId: String
+  @Environment(AppStore.self) private var store
+  @Environment(\.dismiss) private var dismiss
+  @State private var actions = ChatActions()
+  @State private var messageMenu = MessageMenu()
+  @State private var reply = ReplyDraft()
+
+  var body: some View {
+    NavigationStack {
+      ChatMessages(agentId: agentId, thread: rootId)
+        .environment(actions)
+        .environment(messageMenu)
+        .safeAreaBar(edge: .bottom, spacing: 0) { ChatComposer(agentId: agentId, thread: rootId) }
+        .environment(reply)
+        .background(Ink.ground)
+        .navigationTitle(store.threadTitle(rootId, in: agentId))
+        .inlineBarTitle()
+        .toolbar { ToolbarItem(placement: .trailingBar) { Button("Done") { dismiss() } } }
+        .sheet(item: Binding(get: { messageMenu.target }, set: { messageMenu.target = $0 })) { target in
+          MessageActionsSheet(bubble: target.bubble, agentId: agentId).environment(reply)
+        }
+    }
   }
 }
 

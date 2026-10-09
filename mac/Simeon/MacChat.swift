@@ -8,7 +8,9 @@ import SimeonCore
  * the call's pill above while one is on. Its name sits in the middle of the
  * toolbar, as the Electron window's header has it (the butterfly and the
  * name; a click opens the agent's page); Call, the computer and the page are
- * toolbar buttons. A message's actions are its right-click menu.
+ * toolbar buttons. A message's actions are its right-click menu. A thread
+ * opens in the chat's place, under "‹ Back to …" (Esc goes back), as the
+ * window's thread view does.
  */
 struct MacChat: View {
   let agentId: String
@@ -23,18 +25,24 @@ struct MacChat: View {
   @State private var exchange: ExchangeRoute?
   @State private var finding = false
   @State private var findQuery = ""
-  @State private var findCurrent: String?
+  @State private var findCurrent: ChatFind.Match?
   @State private var dropping = false
   @State private var hostWindow: NSWindow?
   @State private var pasteMonitor: Any?
 
   var body: some View {
     let agent = store.agent(agentId)
-    ChatMessages(agentId: agentId)
+    let thread = store.openThreads[agentId]
+    ChatMessages(agentId: agentId, thread: thread)
+      .id(thread ?? "chat")
       .environment(actions)
       .environment(messageMenu)
       .safeAreaBar(edge: .top, spacing: 0) {
         VStack(spacing: 0) {
+          if let thread {
+            ThreadHeader(agentId: agentId, rootId: thread) { leaveThread() }
+              .transition(.move(edge: .top).combined(with: .opacity))
+          }
           if finding {
             MacFindBar(query: $findQuery, matches: findMatches, current: findCurrent, step: findStep, close: closeFind)
               .transition(.move(edge: .top).combined(with: .opacity))
@@ -42,8 +50,9 @@ struct MacChat: View {
           ChatCallSlot(agentId: agentId, showsCall: $showsCall, showsTranscript: $showsTranscript)
         }
         .animation(.snappy(duration: 0.2), value: finding)
+        .animation(.snappy(duration: 0.2), value: thread)
       }
-      .safeAreaBar(edge: .bottom, spacing: 0) { ChatComposer(agentId: agentId) }
+      .safeAreaBar(edge: .bottom, spacing: 0) { ChatComposer(agentId: agentId, thread: thread).id(thread ?? "chat") }
       .environment(reply)
       .background(Ink.ground)
       .background { WindowReader(window: $hostWindow) }
@@ -109,17 +118,23 @@ struct MacChat: View {
         }
       }
       .onChange(of: findQuery) { _, _ in
-        findCurrent = nil
-        findStep(1)
+        // As you type, to the newest match (a chat is read from its end), as the window's find counts from it.
+        findCurrent = ChatFind.first(findMatches)
+        if let findCurrent { actions.jump(findCurrent.rowId) }
+      }
+      .onChange(of: thread) { _, _ in
+        findCurrent = ChatFind.first(findMatches)
       }
       .onAppear {
         actions.openPage = { openPage() }
         actions.openComputer = { openWindow(id: "computer", value: agentId) }
         actions.openExchange = { exchange = $0 }
+        actions.openThread = { root in Task { await store.openThread(root, in: agentId) } }
         watchPaste()
       }
       .task { await store.open(agentId) }
       .onDisappear {
+        store.closeThread(in: agentId)
         store.close(agentId)
         if let pasteMonitor { NSEvent.removeMonitor(pasteMonitor) }
         pasteMonitor = nil
@@ -128,15 +143,24 @@ struct MacChat: View {
 
   private func openPage() { navigation.sheet = .agentPage(agentId, routine: nil) }
 
+  /** Back from a thread to the chat ("‹ Back to …", Esc). */
+  private func leaveThread() {
+    withAnimation(.snappy(duration: 0.2)) { store.closeThread(in: agentId) }
+  }
+
   // MARK: Find in the chat
 
-  private var findMatches: [String] { ChatFind.matches(findQuery, in: store.rows(for: agentId)) }
+  /** Every time the words appear in what is on screen: the chat, or the open thread (the window searches the thread's lines there). */
+  private var findMatches: [ChatFind.Match] {
+    let rows = store.openThreads[agentId] == nil ? store.rows(for: agentId) : store.threadRows[agentId] ?? []
+    return ChatFind.matches(findQuery, in: rows)
+  }
 
   /** To the next or previous match, lit as a quote's jump lights its message. */
   private func findStep(_ by: Int) {
     guard finding, let next = ChatFind.next(findMatches, from: findCurrent, step: by) else { return }
     findCurrent = next
-    actions.jump(next)
+    actions.jump(next.rowId)
   }
 
   private func closeFind() {
@@ -199,12 +223,13 @@ extension Notification.Name {
 
 /**
  * Find in the chat (⌘F, the window's `find-in-chat.tsx`): the field, "2 of
- * 5", up and down (⇧⌘G, ⌘G or Return), Done (Esc).
+ * 5" (every time the words appear, in red when none do), up and down
+ * (⇧⌘G and ⌘G, Shift-Return and Return), Done (Esc).
  */
 struct MacFindBar: View {
   @Binding var query: String
-  let matches: [String]
-  let current: String?
+  let matches: [ChatFind.Match]
+  let current: ChatFind.Match?
   let step: (Int) -> Void
   let close: () -> Void
   @FocusState private var focused: Bool
@@ -215,11 +240,14 @@ struct MacFindBar: View {
       TextField("Find in chat", text: $query)
         .textFieldStyle(.plain)
         .focused($focused)
-        .onSubmit { step(1) }
+        .onKeyPress(.return, phases: .down) { press in
+          step(press.modifiers.contains(.shift) ? -1 : 1)
+          return .handled
+        }
         .onExitCommand(perform: close)
-      if !query.isEmpty {
-        Text(matches.isEmpty ? "No matches" : "\((current.flatMap { matches.firstIndex(of: $0) } ?? 0) + 1) of \(matches.count)")
-          .font(.system(size: 12)).foregroundStyle(.secondary).monospacedDigit()
+      if !query.trimmingCharacters(in: .whitespaces).isEmpty {
+        Text(matches.isEmpty ? "No matches" : "\(ChatFind.ordinal(matches, current)) of \(matches.count)")
+          .font(.system(size: 12)).foregroundStyle(matches.isEmpty ? Ink.danger : .secondary).monospacedDigit()
       }
       ControlGroup {
         Button { step(-1) } label: { Image(systemName: "chevron.up") }.help("Previous (⇧⌘G)")
@@ -338,8 +366,9 @@ struct MacChatTitle: View {
 
 /**
  * A message's right-click menu (the Electron window's message menu,
- * `message-actions.tsx`): its reactions in one row (👍 👎 ❤️ 😂 🎉 😮), then
- * Reply and Copy.
+ * `message-actions.tsx`): its reactions in one row (👍 👎 ❤️ 😂 🎉 😮) and
+ * More Emoji…, then Reply and Start a Thread (not inside a thread), Mark as
+ * Unread, and Copy.
  */
 struct MessageContextMenu: View {
   let bubble: Bubble
@@ -347,6 +376,8 @@ struct MessageContextMenu: View {
   @Environment(AppStore.self) private var store
   @Environment(ReplyDraft.self) private var reply: ReplyDraft?
   @Environment(MessageMenu.self) private var messageMenu: MessageMenu?
+  @Environment(ChatActions.self) private var actions: ChatActions?
+  @Environment(\.chatThread) private var thread
 
   static let reactions = ["👍", "👎", "❤️", "😂", "🎉", "😮"]
 
@@ -359,7 +390,10 @@ struct MessageContextMenu: View {
     .controlGroupStyle(.palette)
     Button { messageMenu?.target = MessageTarget(bubble: bubble) } label: { Label("More Emoji…", systemImage: "face.smiling") }
     Divider()
-    Button { reply?.target = bubble } label: { Label("Reply", systemImage: "arrowshape.turn.up.left") }
+    if thread == nil {
+      Button { reply?.target = bubble } label: { Label("Reply", systemImage: "arrowshape.turn.up.left") }
+      Button { actions?.openThread(bubble.id) } label: { Label("Start a Thread", systemImage: "bubble.left.and.bubble.right") }
+    }
     Button { Task { await store.setUnread(agentId, true) } } label: { Label("Mark as Unread", systemImage: "message.badge") }
     Divider()
     Button { UIPasteboard.general.string = bubble.text } label: { Label("Copy", systemImage: "doc.on.doc") }

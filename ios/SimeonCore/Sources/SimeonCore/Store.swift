@@ -176,20 +176,41 @@ public final class AppStore {
   @ObservationIgnored private var assigning: Task<[String: String], Never>?
   /** A line search found, to show once its chat is open (agent → entry; Search.swift). */
   public var revealing: [String: String] = [:]
+  /** The thread open in each chat (agent → the id of its first message), laid out in `threadRows`. */
+  public private(set) var openThreads: [String: String] = [:]
+  /** Each open thread laid out (Chat.threadRows): its first message and its replies. */
+  public private(set) var threadRows: [String: [ChatRow]] = [:]
+  /** A thread's lines as the host gave them (`getAgentThread`), for replies older than the chat's loaded lines. */
+  @ObservationIgnored private var threadFetched: [String: [Entry]] = [:]
+  /** Chats that could not be fetched and have nothing to show: "Couldn't load this conversation" and Retry. */
+  public private(set) var loadFailed: Set<String> = []
+  /**
+   * The computer out of reach (the event stream said so, and has not come
+   * back): a message waits ("Will send when reconnected") and goes when it
+   * does, marked as written offline. Unknown is not down.
+   */
+  public private(set) var isDown = false
   /** Simeon, once the first run's hand-off made him: a second try does not make another (Onboarding.swift). */
   @ObservationIgnored var firstRunAgentId: String?
 
   /** A message the person sent, shown at once and kept until the host's own copy arrives (the Mac's outbox). */
   struct Outgoing {
-    enum State { case sending, sent, failed }
+    /** Held while the computer is out of reach, on its way, with the host, or refused. */
+    enum State { case queued, sending, sent, failed }
     let id: String
     let text: String
     let files: [(name: String, data: Data)]
     let replyTo: String?
+    /** A reply in the thread of `replyTo` (`isFork`). */
+    var thread = false
+    /** The composer's document, when a skill was picked with "/" (`richText`). */
+    var richText: String?
     let at: Double
     /** The chat's lines when it was sent: the host's copy is a line not among them. */
     let known: Set<String>
     var state: State
+    /** Held while the computer was out of reach: when it was written, sent with it (`composedAtMs`). */
+    var composedOffline = false
   }
 
   public init() {}
@@ -224,6 +245,7 @@ public final class AppStore {
     layoutTask?.cancel(); layoutTask = nil; pendingLayout = []; refreshing = []; caughtUp = [:]
     pendingAnswers = [:]; unreadAfter = [:]; apps = []; catalog = []; pinnedIds = []
     streamingOnly = [:]; outbox = [:]; arrived = []; olderBefore = [:]; loadingOlder = []; paged = []; firstRunAgentId = nil; revealing = [:]
+    openThreads = [:]; threadRows = [:]; threadFetched = [:]; loadFailed = []; isDown = false
     voiceList = nil
     sentFiles = []
   }
@@ -279,6 +301,10 @@ public final class AppStore {
       // Back after a drop (the phone slept, the network changed): what was said meanwhile never streamed, so fetch it.
       let recovered = live && !isLive
       isLive = live
+      let wasDown = isDown
+      if isDown == live { isDown = !live }
+      if wasDown != isDown { for chat in outbox.keys where outbox[chat]?.contains(where: { $0.state == .queued }) == true { layOut(chat) } }
+      if live && wasDown { flushQueued() }
       if recovered, backend != nil {
         Task {
           await reloadRoster()
@@ -442,11 +468,24 @@ public final class AppStore {
     let isGroup = agent(agentId)?.isGroup ?? false
     let after = unreadAfter[agentId]
     var rows = Trace.timed("laying out \(agentId), \(entries.count) lines") { Chat.rows(entries, isGroup: isGroup, unreadAfter: after) }
-    for item in waiting where item.state == .failed {
-      let last = rows.lastIndex { row in row.id == item.id || row.id.hasPrefix(item.id + "-file") } ?? rows.count - 1
-      rows.insert(.failedSend(id: "failed-\(item.id)", nonce: item.id), at: min(last + 1, rows.count))
-    }
+    rows = Self.withSendStates(rows, waiting)
     if chatRows[agentId] != rows { chatRows[agentId] = rows }
+    if let root = openThreads[agentId] {
+      let known = Set(entries.map(\.id))
+      let all = (threadFetched[agentId] ?? []).filter { !known.contains($0.id) } + entries
+      let thread = Self.withSendStates(Chat.threadRows(root, in: all, isGroup: isGroup), waiting)
+      if threadRows[agentId] != thread { threadRows[agentId] = thread }
+    }
+  }
+
+  /** "Failed to send" or "Waiting to send…" under each waiting message that has a row here (the chat or its thread). */
+  static func withSendStates(_ rows: [ChatRow], _ waiting: [Outgoing]) -> [ChatRow] {
+    var rows = rows
+    for item in waiting where item.state == .failed || item.state == .queued {
+      guard let last = rows.lastIndex(where: { row in row.id == item.id || row.id.hasPrefix(item.id + "-file") }) else { continue }
+      rows.insert(item.state == .failed ? .failedSend(id: "failed-\(item.id)", nonce: item.id) : .queuedSend(id: "queued-\(item.id)", nonce: item.id), at: last + 1)
+    }
+    return rows
   }
 
   /** The streamed answer's row with its new text, when it is the chat's last row; nil when the chat must be laid out again. */
@@ -470,6 +509,10 @@ public final class AppStore {
       if let reply = item.replyTo { message = message.setting("replyTo", .string(reply)) }
       lines.append(message)
     }
+    // A reply in a thread waits in the thread, as the host will keep it.
+    if item.thread, let root = item.replyTo {
+      lines = lines.map { line in line.setting("branched", true).setting("replyTo", line["replyTo"] ?? .string(root)) }
+    }
     return lines.compactMap(Entry.init)
   }
 
@@ -478,7 +521,7 @@ public final class AppStore {
     guard var waiting = outbox[agentId], !waiting.isEmpty else { return }
     var claimed: Set<String> = []
     waiting.removeAll { item in
-      guard item.state != .failed else { return false }
+      guard item.state != .failed, item.state != .queued else { return false }
       let text = item.text.trimmingCharacters(in: .whitespacesAndNewlines)
       let names = Set(item.files.map(\.name))
       let copy = entries.first { entry in
@@ -616,11 +659,13 @@ public final class AppStore {
         olderBefore[agentId] = page.olderBefore
       }
       if let unread { unreadAfter[agentId] = Self.unreadBoundary(merged, unread: unread) }
+      loadFailed.remove(agentId)
       setTranscript(agentId, merged)
     } catch {
-      guard transcripts[agentId] == nil else { return }
+      // Nothing to show: the chat says it could not load, with Retry (the window's "Couldn't load this conversation").
+      guard transcripts[agentId] == nil || transcripts[agentId]?.isEmpty == true else { return }
+      loadFailed.insert(agentId)
       setTranscript(agentId, [])
-      problem = "Couldn't open this chat: \(error.localizedDescription)"
     }
   }
 
@@ -667,16 +712,103 @@ public final class AppStore {
    * Mac's does, and stays until the host's copy arrives; if it cannot be
    * sent it says "Failed to send" under it, with Resend and Delete.
    */
-  public func send(_ text: String, to agentId: String, attachments files: [(name: String, data: Data)] = [], replyTo: String? = nil, id: String? = nil) async {
+  public func send(_ text: String, to agentId: String, attachments files: [(name: String, data: Data)] = [], replyTo: String? = nil, inThread: Bool = false, richText: String? = nil, id: String? = nil) async {
     let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
     guard backend != nil, !trimmed.isEmpty || !files.isEmpty else { return }
-    let item = Outgoing(id: id ?? Self.newMessageId(), text: trimmed, files: files, replyTo: replyTo, at: Date().timeIntervalSince1970 * 1000, known: Set((transcripts[agentId] ?? []).map(\.id)), state: .sending)
+    var item = Outgoing(id: id ?? Self.newMessageId(), text: trimmed, files: files, replyTo: replyTo, at: Date().timeIntervalSince1970 * 1000, known: Set((transcripts[agentId] ?? []).map(\.id)), state: isDown ? .queued : .sending)
+    item.thread = inThread && replyTo != nil
+    item.richText = richText
+    item.composedOffline = isDown
     for (index, file) in files.enumerated() { keepSent(file.data, under: Self.outboxFileURL(item.id, index)) }
     outbox[agentId, default: []].append(item)
     arrived.insert(item.id)
     for index in files.indices { arrived.insert("\(item.id)-file\(index)") }
     layOut(agentId)
+    // Out of reach: it waits, and goes when the computer is back (`flushQueued`).
+    guard !isDown else { return }
     await deliver(item.id, in: agentId)
+  }
+
+  /**
+   * Cancel on a held message: it never left, so it only leaves the screen.
+   * False when it is already on its way (the window's "This message is
+   * already sending and can't be canceled.").
+   */
+  @discardableResult
+  public func cancelQueued(_ id: String, in agentId: String) -> Bool {
+    guard outbox[agentId]?.contains(where: { $0.id == id && $0.state == .queued }) == true else {
+      if outbox[agentId]?.contains(where: { $0.id == id }) == true { problem = "This message is already sending and can't be canceled." }
+      return false
+    }
+    discardFailed(id, in: agentId)
+    return true
+  }
+
+  /** The computer is back: each chat's held messages go, one after another, in the order they were written. */
+  private func flushQueued() {
+    for (chat, items) in outbox {
+      let held = items.filter { $0.state == .queued }.map(\.id)
+      guard !held.isEmpty else { continue }
+      Task {
+        for id in held {
+          guard !isDown, outbox[chat]?.contains(where: { $0.id == id && $0.state == .queued }) == true else { continue }
+          await deliver(id, in: chat)
+        }
+      }
+    }
+  }
+
+  // MARK: The composer's lists
+
+  /** The agent's skills and routines (`getAgentWorkflows`), for "/" and "@"; empty, quietly, when they can't be read. */
+  public func workflows(_ agentId: String) async -> JSON {
+    guard let backend else { return [] }
+    return (try? await backend.command("getAgentWorkflows", ["id": .string(agentId)])) ?? []
+  }
+
+  /** A cloud agent's state (`getCloudAgentInfo`); nil, quietly, when it can't be read (the card says so and asks again). */
+  public func cloudAgent(_ bcId: String) async -> CloudAgentInfo? {
+    guard let backend, let answer = try? await backend.command("getCloudAgentInfo", ["bcId": .string(bcId), "includeFiles": false]) else { return nil }
+    return CloudAgentInfo(answer)
+  }
+
+  // MARK: Threads (the window's thread view)
+
+  /**
+   * A thread comes on screen in its chat: laid out at once from the lines
+   * here, then with the host's whole thread (`getAgentThread`), for replies
+   * older than the lines loaded. Its new replies stream with the chat's.
+   */
+  public func openThread(_ rootId: String, in agentId: String) async {
+    openThreads[agentId] = rootId
+    layOut(agentId)
+    guard let answer = await command("getAgentThread", ["id": .string(agentId), "rootId": .string(rootId)], failure: "Couldn't load this thread") else { return }
+    guard openThreads[agentId] == rootId else { return }
+    threadFetched[agentId] = (answer["entries"]?.array ?? answer.array ?? []).compactMap(Entry.init)
+    layOut(agentId)
+  }
+
+  /** Back to the chat (Esc, "Back to …"). */
+  public func closeThread(in agentId: String) {
+    guard openThreads[agentId] != nil else { return }
+    openThreads[agentId] = nil
+    threadRows[agentId] = nil
+    threadFetched[agentId] = nil
+  }
+
+  /** The first message of the thread a line is in, when it is a reply in one (a quote that answers a line out of the chat opens its thread). */
+  public func threadRoot(of entryId: String, in agentId: String) -> String? {
+    let entries = (transcripts[agentId] ?? []) + (threadFetched[agentId] ?? [])
+    let branched = entries.filter(\.isBranched)
+    guard let entry = branched.first(where: { $0.id == entryId }) else { return nil }
+    let byId = Dictionary(branched.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+    return Chat.threadRoot(of: entry, branched: byId)
+  }
+
+  /** The thread's first message, for its header ("Back to Theo › Draft the brief"). */
+  public func threadTitle(_ rootId: String, in agentId: String) -> String {
+    let entries = (transcripts[agentId] ?? []) + (threadFetched[agentId] ?? [])
+    return Chat.threadTitle(entries.first { $0.id == rootId })
   }
 
   /** A message's id before it is sent, so the composer can name its files' places (`outboxFileURL`) first. */
@@ -733,7 +865,8 @@ public final class AppStore {
         let key = Self.outboxFileURL(item.id, index)
         if let kept = sentFiles.lastIndex(where: { $0.keys.contains(key) }), !sentFiles[kept].keys.contains(path) { sentFiles[kept].keys.append(path) }
       }
-      try await backend.send(agentId, text: item.text, attachments: refs, replyTo: item.replyTo, nonce: item.id)
+      let options = SendOptions(replyTo: item.replyTo, isFork: item.thread, richText: item.richText, composedAtMs: item.composedOffline ? item.at : nil)
+      try await backend.send(agentId, text: item.text, attachments: refs, options: options, nonce: item.id)
     } catch {
       mark(id, in: agentId, .failed)
       return

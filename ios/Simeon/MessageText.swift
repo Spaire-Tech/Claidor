@@ -231,9 +231,14 @@ struct MarkdownBlockView: View {
   var body: some View {
     switch block {
     case .paragraph(let text):
-      InlineText.make(text, mentioning: mentioning)
-        .lineSpacing(MessageType.spacing())
-        .fixedSize(horizontal: false, vertical: true)
+      if Markdown.inlineMath(text) != nil {
+        // `$$…$$` within its lines: the paragraph drawn with its maths (Rendering.swift).
+        RenderedBlock(kind: .mathText(text))
+      } else {
+        InlineText.make(text, mentioning: mentioning)
+          .lineSpacing(MessageType.spacing())
+          .fixedSize(horizontal: false, vertical: true)
+      }
     case .heading(let level, let text):
       // Over the Mac's, with the message's 17: h1 25 / 31, h2 20 / 27, h3 and below the message's own 17 / 23 with 8 above; all 600.
       let size: CGFloat = level == 1 ? 25 : level == 2 ? 20 : MessageType.size
@@ -255,7 +260,7 @@ struct MarkdownBlockView: View {
     case .code(let language, let text):
       // A ```mermaid block is a diagram, as the window draws it (Rendering.swift).
       if language?.lowercased() == "mermaid" {
-        RenderedBlock(kind: .mermaid(text))
+        MermaidBlock(source: text)
       } else {
         CodeBlockView(text: text)
       }
@@ -263,6 +268,8 @@ struct MarkdownBlockView: View {
       MarkdownTable(header: header, alignments: alignments, rows: rows, mentioning: mentioning)
     case .rule:
       Color.clear.frame(height: 1)
+    case .math(let tex):
+      RenderedBlock(kind: .math(tex, display: true))
     }
   }
 }
