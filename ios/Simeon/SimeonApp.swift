@@ -41,7 +41,8 @@ struct SimeonApp: App {
   static func applyToWindows(_ name: String) {
     let style: UIUserInterfaceStyle = name == "light" ? .light : name == "dark" ? .dark : .unspecified
     for case let scene as UIWindowScene in UIApplication.shared.connectedScenes {
-      if scene.traitOverrides.preferredContentSizeCategory != .large { scene.traitOverrides.preferredContentSizeCategory = .large }
+      // Set, never read: reading an override that was never set aborts the app ("Can't return value for trait … that has no override").
+      scene.traitOverrides.preferredContentSizeCategory = .large
       for window in scene.windows where window.overrideUserInterfaceStyle != style { window.overrideUserInterfaceStyle = style }
     }
   }
