@@ -595,6 +595,12 @@ The search core is in `Search.swift` (tested); the old search sheet, which
 only a screenshot's launch opened, is gone (`--screen=search` focuses the
 field).
 
+The first build of it failed ("Generic parameter 'Leading' could not be
+inferred", six times in `HomeView.swift`): the bold-letters helper was a
+static on the generic `SearchRow`, which a bare `SearchRow.bold` can't
+name. It is its own type now (`SearchText`), and joins its runs by
+interpolation, as iOS 26 asks in place of `Text + Text`.
+
 ## 21. Before an app's sign-in, every time (9 October 2026)
 
 "Before connecting, when they click on the connector, this appears … a

@@ -904,7 +904,7 @@ struct SearchResults: View {
   private func chatRow(_ found: Found<Agent>) -> some View {
     let agent = found.item
     let line = agent.isGroup ? store.members(of: agent).map(\.name).joined(separator: ", ") : agent.description
-    return SearchRow(title: SearchRow.bold(agent.name, found.hits), subtitle: line.isEmpty ? nil : line, tag: agent.isHidden ? "Hidden" : (agent.isGroup ? nil : (agent.title.isEmpty ? nil : agent.title))) {
+    return SearchRow(title: SearchText.bold(agent.name, found.hits), subtitle: line.isEmpty ? nil : line, tag: agent.isHidden ? "Hidden" : (agent.isGroup ? nil : (agent.title.isEmpty ? nil : agent.title))) {
       AgentAvatar(agent: agent, members: store.members(of: agent))
     } action: { openChat(agent.id) }
   }
@@ -912,14 +912,14 @@ struct SearchResults: View {
   private func messageRow(_ found: Found<MessageHit>) -> some View {
     let hit = found.item
     let chat = store.agent(hit.agentId)
-    return SearchRow(title: SearchRow.bold(hit.snippet, found.hits), subtitle: Search.messageLine(hit, chat: chat), titleLines: 2) {
+    return SearchRow(title: SearchText.bold(hit.snippet, found.hits), subtitle: Search.messageLine(hit, chat: chat), titleLines: 2) {
       if let chat { AgentAvatar(agent: chat, members: store.members(of: chat)) } else { SearchTile(symbol: "bubble.left") }
     } action: { openEntry(hit.agentId, hit.entryId) }
   }
 
   private func fileRow(_ found: Found<FileHit>) -> some View {
     let hit = found.item
-    return SearchRow(title: SearchRow.bold(hit.fileName, found.hits), subtitle: Search.fileLine(hit, chat: store.agent(hit.agentId))) {
+    return SearchRow(title: SearchText.bold(hit.fileName, found.hits), subtitle: Search.fileLine(hit, chat: store.agent(hit.agentId))) {
       if let artwork = FileKind.artwork(hit.fileName) {
         Image(artwork).resizable().scaledToFit().padding(4)
       } else {
@@ -930,7 +930,7 @@ struct SearchResults: View {
 
   private func linkRow(_ found: Found<LinkHit>) -> some View {
     let link = found.item
-    return SearchRow(title: SearchRow.bold(link.title, found.hits), subtitle: link.label == nil ? store.agent(link.agentId)?.name : link.shortAddress) {
+    return SearchRow(title: SearchText.bold(link.title, found.hits), subtitle: link.label == nil ? store.agent(link.agentId)?.name : link.shortAddress) {
       SearchTile(symbol: "link")
     } action: { if let url = URL(string: link.url) { openURL(url) } }
   }
@@ -939,14 +939,14 @@ struct SearchResults: View {
     let hit = found.item
     let agent = store.agent(hit.agentId)
     let line = [hit.routine.isEnabled ? hit.routine.summary : "Paused", agent?.name].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
-    return SearchRow(title: SearchRow.bold(hit.routine.name, found.hits), subtitle: line, trailing: hit.date.map { Chat.listTime(Date(timeIntervalSince1970: $0 / 1000)) }) {
+    return SearchRow(title: SearchText.bold(hit.routine.name, found.hits), subtitle: line, trailing: hit.date.map { Chat.listTime(Date(timeIntervalSince1970: $0 / 1000)) }) {
       SearchTile(symbol: "clock")
     } action: { openRoutine(hit) }
   }
 
   private func actionRow(_ found: Found<SearchAction>) -> some View {
     let action = found.item
-    return SearchRow(title: SearchRow.bold(action.label, found.hits), subtitle: action.detail, checked: action.current) {
+    return SearchRow(title: SearchText.bold(action.label, found.hits), subtitle: action.detail, checked: action.current) {
       SearchTile(symbol: action.symbol)
     } action: { action.run() }
   }
@@ -1022,25 +1022,39 @@ struct SearchRow<Leading: View>: View {
     }
     .buttonStyle(.plain)
   }
+}
 
-  /** The text with the letters at `hits` (the matched ones) in bold, as the Mac draws them (`xFn`). */
+/**
+ * A search result's title with the letters at `hits` (the matched ones) in
+ * bold, as the Mac draws them (`xFn`). Its own type, not a static on
+ * SearchRow: a bare `SearchRow.bold` names no leading view, and Swift can't
+ * build without one (the founder's build, 9 October 2026: "Generic
+ * parameter 'Leading' could not be inferred"). The runs are joined by
+ * interpolation, as iOS 26 asks in place of `Text + Text`.
+ */
+enum SearchText {
   static func bold(_ text: String, _ hits: [Int]) -> Text {
-    guard !hits.isEmpty else { return Text(text) }
+    guard !hits.isEmpty else { return Text(verbatim: text) }
     let marked = Set(hits)
-    var out = Text("")
+    var out = Text(verbatim: "")
     var run = ""
     var runBold = false
     for (index, character) in text.enumerated() {
       let isBold = marked.contains(index)
       if isBold != runBold && !run.isEmpty {
-        out = out + (runBold ? Text(run).fontWeight(.semibold) : Text(run))
+        out = joined(out, run, bold: runBold)
         run = ""
       }
       runBold = isBold
       run.append(character)
     }
-    if !run.isEmpty { out = out + (runBold ? Text(run).fontWeight(.semibold) : Text(run)) }
+    if !run.isEmpty { out = joined(out, run, bold: runBold) }
     return out
+  }
+
+  private static func joined(_ text: Text, _ run: String, bold: Bool) -> Text {
+    let piece = bold ? Text(verbatim: run).fontWeight(.semibold) : Text(verbatim: run)
+    return Text("\(text)\(piece)")
   }
 }
 

@@ -621,7 +621,7 @@ struct AirlineMark: View {
       // The airline's own logo (an SVG from the offer, drawn by RemoteLogos), else its initials, as the Mac's card falls back.
       if let image {
         let box = AirlineLogo.box(width: Double(image.size.width), height: Double(image.size.height), diameter: Double(size))
-        Image(uiImage: image).resizable().interpolation(.high).frame(width: box.width, height: box.height)
+        Image(uiImage: image).resizable().interpolation(.high).frame(width: CGFloat(box.width), height: CGFloat(box.height))
       } else {
         initials
       }

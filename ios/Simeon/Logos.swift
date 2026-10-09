@@ -71,7 +71,7 @@ final class RemoteLogos: NSObject, WKNavigationDelegate {
     defer { drawing = false }
     let web = webView()
     if !pageReady {
-      await open(web, "<html><head><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"></head><body style=\"margin:0;background:transparent\"></body></html>")
+      await navigate(web, "<html><head><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"></head><body style=\"margin:0;background:transparent\"></body></html>")
       pageReady = true
     }
     if let painted = await paint(svg, in: web) { return painted }
@@ -130,7 +130,7 @@ final class RemoteLogos: NSObject, WKNavigationDelegate {
     <html><head><meta name="viewport" content="width=\(side),initial-scale=1"><style>html,body{margin:0;padding:0;background:transparent}img{display:block;width:\(side)px;height:\(side)px;object-fit:contain}</style></head>
     <body><img src="data:image/svg+xml;base64,\(Data(svg.utf8).base64EncodedString())"></body></html>
     """
-    await open(web, html)
+    await navigate(web, html)
     // The page needs loading again before the next painting.
     pageReady = false
     // The image paints a moment after the page says it has loaded.
@@ -142,7 +142,7 @@ final class RemoteLogos: NSObject, WKNavigationDelegate {
     }
   }
 
-  private func open(_ web: WKWebView, _ html: String) async {
+  private func navigate(_ web: WKWebView, _ html: String) async {
     await withCheckedContinuation { continuation in
       loaded = continuation
       web.loadHTMLString(html, baseURL: nil)
