@@ -980,6 +980,8 @@ enum ChatImages {
  * second, we see the pic … as an attachment, then the pic come").
  */
 struct FileCardView: View {
+  /** The line it is in: a card has the message's actions. */
+  var entryId: String = ""
   let name: String
   let url: String
   let agentId: String
@@ -1007,11 +1009,11 @@ struct FileCardView: View {
           .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
           .onTapGesture { open() }
           #if os(macOS)
-          // The window's picture menu (`avatar-images.ts`): open it, copy it, save it.
+          // Electron's picture menu (`avatar-images.ts`), then the message's; its Copy copies the picture.
           .contextMenu {
-            Button("Open") { open() }
-            Button("Copy Image") { MacFiles.copy(shown) }
-            Button("Save Image…") { save() }
+            ImageMenuItems(image: shown, bytes: { await store.readFile(url, agentId: agentId) })
+            Divider()
+            MessageContextMenu(bubble: asMessage, agentId: agentId, copy: { MacFiles.copy(shown) })
           }
           #endif
       } else if isImage && !unreadable {
@@ -1072,10 +1074,13 @@ struct FileCardView: View {
           ProgressView().controlSize(.small)
         } else {
           #if os(macOS)
-          // The window's save button: the file from the computer into a folder of this Mac.
-          Button { save() } label: { Image(systemName: "arrow.down.circle").font(.system(size: 15)).foregroundStyle(Ink.secondary) }
-            .buttonStyle(.plain)
-            .help("Save \(name)")
+          // The window's save button, on an agent's file only (yours has none): the file from the computer into a folder of
+          // this Mac. An icon with no tooltip, "Save <name>" to VoiceOver.
+          if !fromPerson {
+            Button { save() } label: { Image(systemName: "arrow.down.circle").font(.system(size: 15)).foregroundStyle(Ink.secondary) }
+              .buttonStyle(.plain)
+              .accessibilityLabel("Save \(name)")
+          }
           #else
           Image(systemName: "icloud.and.arrow.down").font(.system(size: 14)).foregroundStyle(Ink.secondary)
           #endif
@@ -1090,6 +1095,14 @@ struct FileCardView: View {
     .fixedSize(horizontal: true, vertical: false)
     .contentShape(Rectangle())
     .onTapGesture { open() }
+    #if os(macOS)
+    .contextMenu { MessageContextMenu(bubble: asMessage, agentId: agentId) }
+    #endif
+  }
+
+  /** This line as the message menu takes it. */
+  private var asMessage: Bubble {
+    Bubble(id: entryId, text: "", fromPerson: fromPerson, author: nil, showsName: false, showsAvatar: false, reactions: [], isStreaming: false)
   }
 
   #if os(macOS)

@@ -60,9 +60,24 @@ extension EnvironmentValues {
 }
 
 enum RenderPage {
-  /** The page for `kind`, in the chat's ink (`ink`, a CSS colour), telling the app its height (`size`). */
+  /**
+   * How the window draws TeX (rehype-katex after its `JYt` pass): an "_"
+   * inside \\text{…} escaped when only that makes it draw; strict first,
+   * then forgiving; else the source in red (#cc0000) with the error as its
+   * tooltip.
+   */
+  static let katexDraw = #"""
+  var EY=/\\(emph|text|textbf|textit|textmd|textnormal|textrm|textsf|texttt|textup)([ \t\r\n]*)\{([^{}]*)\}/g,CY=/\$|\\[()]|\\verb|%/;
+  function IY(n){var e="",t=0;for(var s of n){if(s==="\\"){e+=s;t+=1;continue}s==="_"&&t%2===0?e+="\\_":e+=s;t=0}return e}
+  function AY(n){return n.replace(EY,function(e,t,s,r){return CY.test(r)?e:"\\"+t+s+"{"+IY(r)+"}"})}
+  function ok(n,d){try{katex.renderToString(n,{displayMode:d,throwOnError:true});return true}catch(e){return false}}
+  function fix(n,d){var t=AY(n);return t===n||ok(n,d)||!ok(t,d)?n:t}
+  function draw(el,tex,d){tex=fix(tex,d);try{katex.render(tex,el,{displayMode:d,throwOnError:true})}catch(first){try{katex.render(tex,el,{displayMode:d,strict:'ignore',throwOnError:false})}catch(e){el.innerHTML='';var s=document.createElement('span');s.className='katex-error';s.style.color='#cc0000';s.title=String(e);s.textContent=tex;el.appendChild(s)}}}
+  """#
+
+  /** The page for `kind`, in the chat's ink (`ink`, a CSS colour), telling the app its height (`size`) and, full size, the drawing's own size (`natural`). */
   static func html(_ kind: RenderKind, dark: Bool, ink: String, full: Bool = false) -> String {
-    let report = "function size(){var h=Math.ceil(document.getElementById('d').getBoundingClientRect().height);try{window.webkit.messageHandlers.size.postMessage(h)}catch(e){}}function failed(){try{window.webkit.messageHandlers.failed.postMessage(1)}catch(e){}}"
+    let report = "function size(){var r=document.getElementById('d').getBoundingClientRect();try{window.webkit.messageHandlers.size.postMessage(Math.ceil(r.height))}catch(e){}try{window.webkit.messageHandlers.natural.postMessage([Math.ceil(r.width),Math.ceil(r.height)])}catch(e){}}function failed(){try{window.webkit.messageHandlers.failed.postMessage(1)}catch(e){}}"
     let head = """
     <!doctype html><html><head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1\(full ? "" : ",maximum-scale=1,user-scalable=no")">
@@ -78,8 +93,10 @@ enum RenderPage {
       <script>\(report)
       (async function(){
         try{
-          mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:'\(dark ? "dark" : "default")',fontFamily:'-apple-system,system-ui,sans-serif'});
-          var r=await mermaid.render('simeon-diagram',\(RenderAssets.quoted(source)));
+          mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:'\(dark ? "dark" : "default")',fontFamily:'inherit'});
+          var code=\(RenderAssets.quoted(source));
+          if(await mermaid.parse(code,{suppressErrors:true})===false){failed();return}
+          var r=await mermaid.render('simeon-diagram',code);
           document.getElementById('d').innerHTML=r.svg;
         }catch(e){failed();return}
         size();
@@ -90,9 +107,8 @@ enum RenderPage {
       return head + """
       <style>\(RenderAssets.katexStyle)</style></head><body><div id="d"></div>
       <script>\(RenderAssets.katex)</script>
-      <script>\(report)
-      try{katex.render(\(RenderAssets.quoted(tex)),document.getElementById('d'),{displayMode:\(display ? "true" : "false"),throwOnError:false,output:'html'})}
-      catch(e){document.getElementById('d').textContent=\(RenderAssets.quoted(tex))}
+      <script>\(report)\(katexDraw)
+      draw(document.getElementById('d'),\(RenderAssets.quoted(tex)),\(display ? "true" : "false"));
       if(document.fonts&&document.fonts.ready){document.fonts.ready.then(size)}else{size()}
       size();
       </script></body></html>
@@ -105,8 +121,8 @@ enum RenderPage {
       return head + """
       <style>\(RenderAssets.katexStyle)#d{display:block;font-size:\(Int(MessageType.size))px;line-height:\(Int(MessageType.lineHeight))px;white-space:normal}.katex{font-size:1.05em}</style></head><body><div id="d">\(parts)</div>
       <script>\(RenderAssets.katex)</script>
-      <script>\(report)
-      document.querySelectorAll('.m').forEach(function(el){try{katex.render(el.getAttribute('data-tex'),el,{displayMode:false,throwOnError:false,output:'html'})}catch(e){el.textContent=el.getAttribute('data-tex')}});
+      <script>\(report)\(katexDraw)
+      document.querySelectorAll('.m').forEach(function(el){draw(el,el.getAttribute('data-tex'),false)});
       if(document.fonts&&document.fonts.ready){document.fonts.ready.then(size)}else{size()}
       size();
       </script></body></html>
@@ -147,8 +163,17 @@ struct RenderedBlock: View {
       .frame(maxWidth: .infinity, alignment: .leading)
       .contentShape(.rect)
       .onTapGesture { if isDiagram { showsFull = true } }
-      .accessibilityLabel(accessibleText)
+      .accessibilityLabel(isDiagram ? "Open diagram full screen" : accessibleText)
       .accessibilityAddTraits(isDiagram ? .isButton : [])
+      .overlay(alignment: .topTrailing) {
+        if isDiagram {
+          // The window's own button for it too.
+          Button { showsFull = true } label: { Image(systemName: "arrow.up.left.and.arrow.down.right").font(.system(size: 11, weight: .semibold)) }
+            .buttonStyle(.borderless)
+            .padding(4)
+            .accessibilityLabel("Open diagram full screen")
+        }
+      }
       .sheet(isPresented: $showsFull) {
         RenderedFull(kind: kind)
           .macSheetSize(width: 860, height: 640)
@@ -182,56 +207,80 @@ struct MermaidBlock: View {
 }
 
 /**
- * The diagram's preview (the window's "Diagram preview"): Zoom Out, Zoom
- * In and Fit to Screen, and their keys (− or _, + or =, 0 or F), from a
- * tenth to eight times, each step 1.4 times; Done to close.
+ * The diagram's preview (the window's "Diagram preview", with no title on
+ * screen): Zoom out, Zoom in and Fit to screen, and their keys (− or _, +
+ * or =, 0 or F); it opens fitted (never past its own size), zooms by 1.4
+ * from the smaller of a tenth and the fit to eight times; a double click
+ * fits it when zoomed in, else zooms in twice over; Close diagram preview
+ * or Esc closes it.
  */
 struct RenderedFull: View {
   let kind: RenderKind
   @Environment(\.colorScheme) private var scheme
   @Environment(\.dismiss) private var dismiss
   @State private var height: CGFloat = 0
+  @State private var natural: CGSize = .zero
+  @State private var room: CGSize = .zero
   @State private var zoom: CGFloat = 1
+  @State private var fitted = false
 
-  static let zoomRange: ClosedRange<CGFloat> = 0.1...8
+  static let maxZoom: CGFloat = 8
   static let zoomStep: CGFloat = 1.4
+
+  /** The scale that shows it whole, never past its own size (`l1t`). */
+  private var fit: CGFloat {
+    guard natural.width > 0, natural.height > 0, room.width > 0, room.height > 0 else { return 1 }
+    return min(1, room.width / natural.width, room.height / natural.height)
+  }
+
+  private var minZoom: CGFloat { min(0.1, fit) }
 
   var body: some View {
     NavigationStack {
-      RenderWebView(html: RenderPage.html(kind, dark: scheme == .dark, ink: scheme == .dark ? "#fcfcfc" : "#1d1d1f", full: true), height: $height, interactive: true, zoom: zoom)
-        .background(Ink.ground)
-        .navigationTitle("Diagram preview")
-        .inlineBarTitle()
-        .toolbar {
-          ToolbarItem(placement: .leadingBar) {
-            ControlGroup {
-              Button { step(1 / Self.zoomStep) } label: { Label("Zoom Out", systemImage: "minus.magnifyingglass") }
-                .keyboardShortcut("-", modifiers: [])
-                .disabled(zoom <= Self.zoomRange.lowerBound)
-              Button { zoom = 1 } label: { Label("Fit to Screen", systemImage: "arrow.up.left.and.down.right.magnifyingglass") }
-                .keyboardShortcut("0", modifiers: [])
-              Button { step(Self.zoomStep) } label: { Label("Zoom In", systemImage: "plus.magnifyingglass") }
-                .keyboardShortcut("+", modifiers: [])
-                .disabled(zoom >= Self.zoomRange.upperBound)
-            }
+      GeometryReader { proxy in
+        RenderWebView(html: RenderPage.html(kind, dark: scheme == .dark, ink: scheme == .dark ? "#fcfcfc" : "#1d1d1f", full: true), height: $height, natural: $natural, interactive: true, zoom: zoom)
+          .onAppear { room = proxy.size }
+          .onChange(of: proxy.size) { _, size in room = size }
+      }
+      .background(Ink.ground)
+      .onTapGesture(count: 2) { zoom > fit + 0.001 ? (zoom = fit) : step(Self.zoomStep * Self.zoomStep) }
+      .onChange(of: natural) { _, _ in if !fitted && natural.width > 0 { fitted = true; zoom = fit } }
+      .accessibilityLabel("Diagram preview")
+      .toolbar {
+        ToolbarItem(placement: .leadingBar) {
+          ControlGroup {
+            Button { step(1 / Self.zoomStep) } label: { Label("Zoom out", systemImage: "minus.magnifyingglass") }
+              .keyboardShortcut("-", modifiers: [])
+              .disabled(zoom <= minZoom + 0.0001)
+            Button { step(Self.zoomStep) } label: { Label("Zoom in", systemImage: "plus.magnifyingglass") }
+              .keyboardShortcut("+", modifiers: [])
+              .disabled(zoom >= Self.maxZoom)
+            Button { zoom = fit } label: { Label("Fit to screen", systemImage: "arrow.down.right.and.arrow.up.left") }
+              .keyboardShortcut("0", modifiers: [])
           }
-          ToolbarItem(placement: .trailingBar) { Button("Done") { dismiss() } }
         }
-        // The other keys the window takes: "=" for in, "_" for out, "f" to fit.
-        .background {
-          Group {
-            Button("") { step(Self.zoomStep) }.keyboardShortcut("=", modifiers: [])
-            Button("") { step(1 / Self.zoomStep) }.keyboardShortcut("_", modifiers: [])
-            Button("") { zoom = 1 }.keyboardShortcut("f", modifiers: [])
-          }
-          .opacity(0)
-          .accessibilityHidden(true)
+        ToolbarItem(placement: .trailingBar) {
+          Button { dismiss() } label: { Image(systemName: "xmark") }
+            .keyboardShortcut(.cancelAction)
+            .accessibilityLabel("Close diagram preview")
         }
+      }
+      // The other keys the window takes: "=" for in, "_" for out, "f" or "F" to fit.
+      .background {
+        Group {
+          Button("") { step(Self.zoomStep) }.keyboardShortcut("=", modifiers: [])
+          Button("") { step(1 / Self.zoomStep) }.keyboardShortcut("_", modifiers: [])
+          Button("") { zoom = fit }.keyboardShortcut("f", modifiers: [])
+          Button("") { zoom = fit }.keyboardShortcut("f", modifiers: .shift)
+        }
+        .opacity(0)
+        .accessibilityHidden(true)
+      }
     }
   }
 
   private func step(_ factor: CGFloat) {
-    zoom = min(max(zoom * factor, Self.zoomRange.lowerBound), Self.zoomRange.upperBound)
+    zoom = min(max(zoom * factor, minZoom), Self.maxZoom)
   }
 }
 
@@ -239,21 +288,31 @@ struct RenderedFull: View {
 struct RenderWebView {
   let html: String
   @Binding var height: CGFloat
+  /** The drawing's own size, for the preview's fit. */
+  var natural: Binding<CGSize> = .constant(.zero)
   let interactive: Bool
   /** The page's zoom (`pageZoom`), for the diagram's preview. */
   var zoom: CGFloat = 1
   var onFail: () -> Void = {}
 
-  func makeCoordinator() -> Coordinator { Coordinator(height: $height, onFail: onFail) }
+  func makeCoordinator() -> Coordinator { Coordinator(height: $height, natural: natural, onFail: onFail) }
 
   final class Coordinator: NSObject, WKScriptMessageHandler {
     var height: Binding<CGFloat>
+    var natural: Binding<CGSize>
     var onFail: () -> Void
     var loaded = ""
-    init(height: Binding<CGFloat>, onFail: @escaping () -> Void) { self.height = height; self.onFail = onFail }
+    init(height: Binding<CGFloat>, natural: Binding<CGSize>, onFail: @escaping () -> Void) { self.height = height; self.natural = natural; self.onFail = onFail }
 
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
       if message.name == "failed" { onFail(); return }
+      if message.name == "natural" {
+        if let pair = message.body as? [Any], pair.count == 2, let w = (pair[0] as? NSNumber)?.doubleValue, let h = (pair[1] as? NSNumber)?.doubleValue {
+          let size = CGSize(width: w, height: h)
+          if natural.wrappedValue != size { natural.wrappedValue = size }
+        }
+        return
+      }
       guard let value = message.body as? Double ?? (message.body as? Int).map(Double.init), value > 0 else { return }
       let next = CGFloat(value)
       if abs(next - height.wrappedValue) >= 1 { height.wrappedValue = next }
@@ -264,6 +323,7 @@ struct RenderWebView {
     let configuration = WKWebViewConfiguration()
     configuration.userContentController.add(coordinator, name: "size")
     configuration.userContentController.add(coordinator, name: "failed")
+    configuration.userContentController.add(coordinator, name: "natural")
     let view = WKWebView(frame: .zero, configuration: configuration)
     #if os(iOS)
     view.isOpaque = false
@@ -290,6 +350,7 @@ struct RenderWebView {
   fileprivate static func dismantle(_ view: WKWebView) {
     view.configuration.userContentController.removeScriptMessageHandler(forName: "size")
     view.configuration.userContentController.removeScriptMessageHandler(forName: "failed")
+    view.configuration.userContentController.removeScriptMessageHandler(forName: "natural")
   }
 }
 

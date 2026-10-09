@@ -76,6 +76,17 @@
     {
       "kind": "contract",
       "names": [
+        "polar"
+      ],
+      "paths": [
+        "ios/SimeonCore/Sources/SimeonCore/Resources/emoji.json"
+      ],
+      "match": "polar_bear",
+      "reason": "The emoji list the native apps copy from the window (emojibase's data, ios/scripts/make-emoji.mjs): the polar bear emoji's name and shortcode \"polar_bear\", which the window's search and recents use; not the earlier name."
+    },
+    {
+      "kind": "contract",
+      "names": [
         "anysphere",
         "grok"
       ],

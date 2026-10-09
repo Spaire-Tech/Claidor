@@ -950,7 +950,7 @@ final class MarkdownTests: XCTestCase {
     XCTAssertEqual(bubbles[1].quote, "Thursday is on track: 12 of 15 tickets are done.")
     XCTAssertEqual(bubbles[1].timestampMs, now)
     XCTAssertEqual(bubbles[2].quote, "(deleted)")
-    XCTAssertEqual(Chat.quoteLine(entries[0], limit: 10), "Thursday i…")
+    XCTAssertEqual(Chat.quoteLine(entries[0], limit: 10), "Thursday…", "cut at nine, its trailing space dropped, then the ellipsis")
   }
   /** The row menu's commands, as the Mac's sidebar sends them: pins shared through the host's settings, read, hide, duplicate, delete. */
   @MainActor
@@ -1028,12 +1028,12 @@ final class MarkdownTests: XCTestCase {
   }
 
   func testTheComposerOffersNamesAfterAnAt() {
-    XCTAssertEqual(Mentions.query("Ask @"), "")
-    XCTAssertEqual(Mentions.query("Ask @Th"), "Th")
-    XCTAssertEqual(Mentions.query("@Iris"), "Iris")
-    XCTAssertNil(Mentions.query("mail me at bass@simeonlabs"), "an address is not a mention")
-    XCTAssertNil(Mentions.query("Ask @Theo now"))
-    XCTAssertEqual(Mentions.inserting("Theo", into: "Ask @Th"), "Ask @Theo ")
+    XCTAssertEqual(ComposerLists.trigger("@", in: "Ask @")?.query, "")
+    XCTAssertEqual(ComposerLists.trigger("@", in: "Ask @Th")?.query, "Th")
+    XCTAssertEqual(ComposerLists.trigger("@", in: "@Iris")?.query, "Iris")
+    XCTAssertNil(ComposerLists.trigger("@", in: "mail me at bass@simeonlabs"), "an address is not a mention")
+    XCTAssertEqual(ComposerLists.trigger("@", in: "Ask @Theo now")?.query, "Theo now", "the window's list reads on across one space at a time")
+    XCTAssertEqual(ComposerDocument.picking(.mention(id: "t", label: "Theo"), from: 4, in: "Ask @Th", chips: []).draft, "Ask @Theo ")
   }
 
   func testTheListLineIsTheMacs() {

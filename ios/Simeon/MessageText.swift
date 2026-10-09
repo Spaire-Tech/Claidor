@@ -338,10 +338,15 @@ struct MarkdownList: View {
   }
 }
 
-/** A fenced block: monospaced on the field's white, a hairline edge, sideways scrolling, Copy in its menu. */
+/**
+ * A fenced block: monospaced on the field's white, a hairline edge,
+ * sideways scrolling, and the window's "Copy code" button at its corner
+ * ("Copied" with a tick for two seconds).
+ */
 struct CodeBlockView: View {
   let text: String
   @State private var expanded = false
+  @State private var copied = false
 
   var body: some View {
     // A code block does not wrap, so it is laid out whole: 200 lines of at most 1,000 characters each (2,000 lines open).
@@ -367,8 +372,31 @@ struct CodeBlockView: View {
     .frame(maxWidth: .infinity, alignment: .leading)
     .background(Ink.field, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Ink.hairline, lineWidth: 1))
+    .overlay(alignment: .topTrailing) {
+      Button(action: copy) {
+        Image(systemName: copied ? "checkmark" : "doc.on.doc").font(.system(size: 11, weight: .medium)).foregroundStyle(Ink.secondary)
+          .frame(width: 24, height: 24).contentShape(.rect)
+      }
+      .buttonStyle(.plain)
+      .padding(4)
+      .accessibilityLabel(copied ? "Copied" : "Copy code")
+      #if os(macOS)
+      .help(copied ? "Copied" : "Copy code")
+      #endif
+    }
+    #if os(iOS)
     .contextMenu {
-      Button { UIPasteboard.general.string = text } label: { Label("Copy", systemImage: "doc.on.doc") }
+      Button(action: copy) { Label("Copy", systemImage: "doc.on.doc") }
+    }
+    #endif
+  }
+
+  private func copy() {
+    UIPasteboard.general.string = text
+    copied = true
+    Task { @MainActor in
+      try? await Task.sleep(nanoseconds: 2_000_000_000)
+      copied = false
     }
   }
 }

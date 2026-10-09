@@ -48,30 +48,77 @@ public enum Markdown {
   }
 
   /**
-   * A paragraph with maths in it (`$$…$$` within a line, remark-math's
-   * inline maths; a single `$` is a dollar), cut into its words and its
-   * maths, in order; nil when it has none.
+   * A paragraph with maths in it, cut into its words and its maths, in
+   * order (the window's remark-math): `$$…$$` (the closing run of `$` as
+   * long as the opening one; a single `$` is a dollar), `\(…\)`, and
+   * `\[…\]` within a line; nil when it has none. A space on both sides
+   * of the maths is padding and left out.
    */
   public static func inlineMath(_ text: String) -> [(math: Bool, text: String)]? {
-    guard text.contains("$$") else { return nil }
+    guard text.contains("$$") || text.contains("\\(") || text.contains("\\[") else { return nil }
+    let chars = Array(text)
     var parts: [(math: Bool, text: String)] = []
-    var rest = Substring(text)
-    while let open = rest.range(of: "$$") {
-      let after = rest[open.upperBound...]
-      guard let close = after.range(of: "$$") else { break }
-      let tex = after[..<close.lowerBound]
-      guard !tex.trimmingCharacters(in: .whitespaces).isEmpty else {
-        parts.append((false, String(rest[..<close.upperBound])))
-        rest = after[close.upperBound...]
+    var plain = ""
+    var index = 0
+    func flushPlain() { if !plain.isEmpty { parts.append((false, plain)); plain = "" } }
+    while index < chars.count {
+      let previous: Character? = index > 0 ? chars[index - 1] : nil
+      if chars[index] == "$", previous != "$" {
+        var run = 0
+        while index + run < chars.count, chars[index + run] == "$" { run += 1 }
+        if run >= 2, let close = closingDollars(chars, from: index + run, run: run) {
+          flushPlain()
+          parts.append((true, padded(String(chars[(index + run)..<close]))))
+          index = close + run
+          continue
+        }
+        plain += String(chars[index..<(index + run)])
+        index += run
         continue
       }
-      if open.lowerBound > rest.startIndex { parts.append((false, String(rest[..<open.lowerBound]))) }
-      parts.append((true, String(tex)))
-      rest = after[close.upperBound...]
+      if chars[index] == "\\", previous != "\\", index + 1 < chars.count, chars[index + 1] == "(" || chars[index + 1] == "[" {
+        let closer: Character = chars[index + 1] == "(" ? ")" : "]"
+        var probe = index + 2
+        var found: Int?
+        while probe + 1 < chars.count {
+          if chars[probe] == "\\" && chars[probe + 1] == closer { found = probe; break }
+          probe += 1
+        }
+        if let found {
+          flushPlain()
+          parts.append((true, padded(String(chars[(index + 2)..<found]))))
+          index = found + 2
+          continue
+        }
+      }
+      plain.append(chars[index])
+      index += 1
     }
-    guard parts.contains(where: \.math) else { return nil }
-    if !rest.isEmpty { parts.append((false, String(rest))) }
-    return parts
+    flushPlain()
+    return parts.contains(where: \.math) ? parts : nil
+  }
+
+  /** Where a run of exactly `run` dollars closes maths opened at `from`; runs of another length are part of it. */
+  private static func closingDollars(_ chars: [Character], from start: Int, run: Int) -> Int? {
+    var index = start
+    while index < chars.count {
+      if chars[index] == "$" {
+        var length = 0
+        while index + length < chars.count, chars[index + length] == "$" { length += 1 }
+        if length == run { return index }
+        index += length
+      } else {
+        index += 1
+      }
+    }
+    return nil
+  }
+
+  /** remark-math's padding: a space or line break on both sides, around something, is left out. */
+  private static func padded(_ tex: String) -> String {
+    guard tex.count >= 2, let first = tex.first, let last = tex.last, first == " " || first == "\n", last == " " || last == "\n",
+          !tex.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return tex }
+    return String(tex.dropFirst().dropLast())
   }
 
   /** Whether a message is exactly one fenced block of `language` (the flights card's rule), and its body. */
@@ -89,6 +136,13 @@ public enum Markdown {
   struct Parser {
     let lines: [String]
     var index = 0
+
+    /** The number of "$" opening a display block on this line: two or more, and no "$" after them (else it is a line's maths). */
+    static func dollarFence(_ line: String) -> Int? {
+      let run = line.prefix { $0 == "$" }.count
+      guard run >= 2, !line.dropFirst(run).contains("$") else { return nil }
+      return run
+    }
 
     init(lines: [String]) { self.lines = lines }
 
@@ -112,17 +166,40 @@ public enum Markdown {
           else { out.append(.code(language: fence.language, text: body.joined(separator: "\n"))) }
           continue
         }
-        // Display maths: "$$" alone on a line, up to the next line ending in "$$".
-        if trimmed == "$$" {
+        // Display maths (the window's remark-math): a line opening with two or more "$" and no other "$" after them, up to a
+        // line of at least as many "$" alone (or the end); or "\[" opening a line, up to a line "\]" alone, or "\[ … \]" on one.
+        if let fence = Self.dollarFence(trimmed) {
           flush(); index += 1
           var body: [String] = []
           while index < lines.count {
             let t = lines[index].trimmingCharacters(in: .whitespaces)
-            if t.hasSuffix("$$") { let head = String(t.dropLast(2)); if !head.isEmpty { body.append(head) }; index += 1; break }
+            if t.count >= fence, t.allSatisfy({ $0 == "$" }) { index += 1; break }
             body.append(lines[index]); index += 1
           }
           out.append(.math(body.joined(separator: "\n")))
           continue
+        }
+        if trimmed.hasPrefix("\\[") {
+          let rest = trimmed.dropFirst(2)
+          if rest.contains("\\]") {
+            if rest.trimmingCharacters(in: .whitespaces).hasSuffix("\\]") {
+              flush(); index += 1
+              let inner = rest.trimmingCharacters(in: .whitespaces).dropLast(2)
+              out.append(.math(inner.trimmingCharacters(in: .whitespaces)))
+              continue
+            }
+          } else {
+            flush(); index += 1
+            var body: [String] = []
+            let head = rest.trimmingCharacters(in: .whitespaces)
+            if !head.isEmpty { body.append(head) }
+            while index < lines.count {
+              if lines[index].trimmingCharacters(in: .whitespaces) == "\\]" { index += 1; break }
+              body.append(lines[index]); index += 1
+            }
+            out.append(.math(body.joined(separator: "\n")))
+            continue
+          }
         }
         if let heading = Self.heading(trimmed) { flush(); out.append(heading); index += 1; continue }
         if Self.isRule(trimmed) { flush(); out.append(.rule); index += 1; continue }
@@ -284,21 +361,6 @@ public enum Markdown {
  * dash before it, nor a word or a dash after it.
  */
 public enum Mentions {
-  /** The name being typed after an "@" at the end of the draft ("" just after the "@"), or nil when none is (the Mac's composer opens its list on "@"). */
-  public static func query(_ draft: String) -> String? {
-    guard let at = draft.lastIndex(of: "@") else { return nil }
-    if at > draft.startIndex, !draft[draft.index(before: at)].isWhitespace { return nil }
-    let typed = draft[draft.index(after: at)...]
-    guard typed.count <= 30, typed.allSatisfy({ $0.isLetter || $0.isNumber || $0 == "-" || $0 == "_" }) else { return nil }
-    return String(typed)
-  }
-
-  /** The draft with the "@…" being typed replaced by the chosen name and a space. */
-  public static func inserting(_ name: String, into draft: String) -> String {
-    guard query(draft) != nil, let at = draft.lastIndex(of: "@") else { return draft + "@\(name) " }
-    return String(draft[..<at]) + "@\(name) "
-  }
-
   public enum Kind: Hashable, Sendable {
     case brand(BrandMention)
     /** An agent: its id and palette. */

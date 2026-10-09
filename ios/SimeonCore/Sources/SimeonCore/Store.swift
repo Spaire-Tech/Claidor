@@ -11,14 +11,21 @@ public struct ConnectedApp: Identifiable, Hashable, Sendable {
   /** `connected`, or what stops it (`error`, a sign-in still to do). */
   public let status: String
   public let toolCount: Int
+  /** The name tools are called under (`serverIdentifier`), the id "@" keys its row by. */
+  public var serverIdentifier: String
+  public var url: String?
+  /** One the person's team added, not the person. */
+  public var isTeamServer = false
 
-  public init(serverId: String, name: String, pluginId: String?, accountKey: String, status: String, toolCount: Int) {
+  public init(serverId: String, name: String, pluginId: String?, accountKey: String, status: String, toolCount: Int, serverIdentifier: String? = nil, url: String? = nil, isTeamServer: Bool = false) {
     self.serverId = serverId; self.name = name; self.pluginId = pluginId; self.accountKey = accountKey; self.status = status; self.toolCount = toolCount
+    self.serverIdentifier = serverIdentifier ?? name; self.url = url; self.isTeamServer = isTeamServer
   }
 
   init?(_ json: JSON) {
     guard let id = json["id"]?.text else { return nil }
-    self.init(serverId: id, name: json["name"]?.string ?? id, pluginId: json["pluginId"]?.text, accountKey: json["accountKey"]?.text ?? "default", status: json["status"]?.string ?? "", toolCount: json["toolCount"]?.int ?? 0)
+    self.init(serverId: id, name: json["name"]?.string ?? id, pluginId: json["pluginId"]?.text, accountKey: json["accountKey"]?.text ?? "default", status: json["status"]?.string ?? "", toolCount: json["toolCount"]?.int ?? 0,
+              serverIdentifier: json["serverIdentifier"]?.text, url: json["url"]?.text, isTeamServer: json["isTeamServer"]?.bool ?? false)
   }
 
   /** One account of one app. */
@@ -745,18 +752,65 @@ public final class AppStore {
   }
 
   /**
-   * Cancel on a held message: it never left, so it only leaves the screen.
-   * False when it is already on its way (the window's "This message is
-   * already sending and can't be canceled.").
+   * Cancel on a held message: it never left, so it leaves the screen and
+   * what was written goes back to its composer. False, with the window's
+   * "This message is already sending and can't be canceled." in the
+   * composer, when it is no longer held.
    */
   @discardableResult
   public func cancelQueued(_ id: String, in agentId: String) -> Bool {
-    guard outbox[agentId]?.contains(where: { $0.id == id && $0.state == .queued }) == true else {
-      if outbox[agentId]?.contains(where: { $0.id == id }) == true { problem = "This message is already sending and can't be canceled." }
+    guard let item = outbox[agentId]?.first(where: { $0.id == id && $0.state == .queued }) else {
+      showComposerNotice("This message is already sending and can't be canceled.", in: agentId)
       return false
     }
     discardFailed(id, in: agentId)
+    // What was written goes back to the composer it came from, if that one is empty (the window's cancel).
+    let scope = Self.draftScope(agentId, thread: item.thread ? item.replyTo : nil)
+    canceledDraft = CanceledDraft(scope: scope, text: item.text, files: item.files, replyTo: item.thread ? nil : item.replyTo, richText: item.richText)
     return true
+  }
+
+  /** Where a composer's draft is kept: the chat's id, or its thread's ("<chat>#thread-<first message>"). */
+  public static func draftScope(_ agentId: String, thread: String?) -> String {
+    thread.map { "\(agentId)#thread-\($0)" } ?? agentId
+  }
+
+  /** A message canceled before it went: what goes back into its composer. */
+  public struct CanceledDraft: Identifiable {
+    public let id = UUID()
+    /** The composer it came from (`draftScope`). */
+    public let scope: String
+    public let text: String
+    public let files: [(name: String, data: Data)]
+    /** The message it answered, outside a thread. */
+    public let replyTo: String?
+    public let richText: String?
+  }
+
+  /** The last message canceled, until its composer takes it back. */
+  public private(set) var canceledDraft: CanceledDraft?
+
+  /** The composer took the canceled message back, or had words of its own. */
+  public func takeCanceledDraft(_ id: UUID) {
+    if canceledDraft?.id == id { canceledDraft = nil }
+  }
+
+  /** A line in the composer for six seconds (the window's `sand-prompt-error-notice`), as "This message is already sending and can't be canceled." */
+  public struct ComposerNotice: Equatable {
+    public let id = UUID()
+    public let agentId: String
+    public let text: String
+  }
+
+  public private(set) var composerNotice: ComposerNotice?
+
+  public func showComposerNotice(_ text: String, in agentId: String, seconds: Double = 6) {
+    let notice = ComposerNotice(agentId: agentId, text: text)
+    composerNotice = notice
+    Task { @MainActor [weak self] in
+      try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+      if self?.composerNotice?.id == notice.id { self?.composerNotice = nil }
+    }
   }
 
   /** Out of reach, or back: held messages say which; back, they go. */
@@ -786,10 +840,11 @@ public final class AppStore {
     return (try? await backend.command("getAgentWorkflows", ["id": .string(agentId)])) ?? []
   }
 
-  /** A cloud agent's state (`getCloudAgentInfo`); nil, quietly, when it can't be read (the card says so and asks again). */
-  public func cloudAgent(_ bcId: String) async -> CloudAgentInfo? {
-    guard let backend, let answer = try? await backend.command("getCloudAgentInfo", ["bcId": .string(bcId), "includeFiles": false]) else { return nil }
-    return CloudAgentInfo(answer)
+  /** A cloud agent's state (`getCloudAgentInfo`): what it is, nothing (final), or that it couldn't be asked. */
+  public func cloudAgent(_ bcId: String) async -> CloudAgentInfo.Read {
+    guard let backend else { return .failed }
+    guard let answer = try? await backend.command("getCloudAgentInfo", ["bcId": .string(bcId), "includeFiles": false]) else { return .failed }
+    return CloudAgentInfo(answer).map(CloudAgentInfo.Read.info) ?? .empty
   }
 
   // MARK: Threads (the window's thread view)

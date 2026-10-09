@@ -1,81 +1,94 @@
 import Foundation
 
 /**
- * Every emoji the system draws, for "More Emoji" (a reaction that is not in
- * the window's six) and for ":" in the composer: each with its Unicode name
- * ("thumbs up sign") and the short names people type (":tada:", ":+1:").
- * Read from Unicode's own properties, so nothing ships with the app and the
- * list grows with the system's Unicode; in the blocks' order, faces first,
- * as an emoji keyboard starts.
+ * The emoji the Mac's window offers, after ":" in the composer and in "More
+ * emoji" on a message: its own list (emojibase's data and shortcodes, MIT,
+ * copied from the window by `ios/scripts/make-emoji.mjs` into
+ * `Resources/emoji.json`), in its groups and order, each emoji and its skin
+ * tones, matched as the window matches them (its `lft`).
  */
-public struct Emoji: Hashable, Sendable {
-  public let character: String
-  /** Unicode's name, lowercased ("face with tears of joy"). */
+public struct Emoji: Hashable, Sendable, Identifiable {
+  /** Its first shortcode ("tada", "+1"), else its code: what ":" shows (":tada:") and the recents keep. */
+  public let id: String
+  /** Its name, capitalised ("Party popper"). */
   public let name: String
-  /** What `:` finds it by besides its name ("joy", "tada"). */
-  public let aliases: [String]
+  public let character: String
+  public let shortcodes: [String]
+  /** The words search reads: name, id, shortcodes, tags and emoticons, lowercased. */
+  let search: String
+}
+
+/** One of the window's groups ("Smileys & emotion", "People & body"…). */
+public struct EmojiCategory: Hashable, Sendable, Identifiable {
+  public let id: String
+  public let label: String
+  public let emojis: [Emoji]
 }
 
 public enum EmojiCatalog {
-  /** The blocks in the order shown: faces, people and gestures, nature, food, places, objects, symbols. */
-  static let blocks: [ClosedRange<UInt32>] = [
-    0x1F600...0x1F64F, 0x1F910...0x1F9FF, 0x1F466...0x1F4FF, 0x1F300...0x1F465, 0x1F680...0x1F6FF,
-    0x1FA70...0x1FAFF, 0x2600...0x27BF, 0x1F500...0x1F5FF, 0x2190...0x21FF, 0x2B00...0x2BFF, 0x1F1E6...0x1F1FF,
-  ]
+  /** The window's groups, in its order (the "components" group left out, as the window does). */
+  public static let categories: [EmojiCategory] = load()
 
-  /** The short names people type after ":" (Slack's and GitHub's), for the emoji whose Unicode name says something else. */
-  static let shortNames: [String: [String]] = [
-    "👍": ["+1", "thumbsup"], "👎": ["-1", "thumbsdown"], "❤️": ["heart", "love"], "😂": ["joy", "lol"], "🎉": ["tada", "party"],
-    "😮": ["open_mouth", "wow"], "🔥": ["fire", "lit"], "👀": ["eyes"], "🙏": ["pray", "thanks"], "😢": ["cry", "sad"],
-    "💯": ["100"], "🚀": ["rocket", "ship"], "👏": ["clap"], "✨": ["sparkles"], "🤔": ["thinking"], "👋": ["wave"],
-    "👌": ["ok_hand", "ok"], "✅": ["white_check_mark", "check", "done"], "❌": ["x", "no"], "😊": ["blush"], "😍": ["heart_eyes"],
-    "🙌": ["raised_hands"], "💪": ["muscle"], "🤝": ["handshake"], "😅": ["sweat_smile"], "😎": ["sunglasses", "cool"],
-    "🙂": ["slightly_smiling_face", "smile"], "😄": ["smile", "happy"], "😉": ["wink"], "🤯": ["exploding_head", "mind_blown"],
-    "⚠️": ["warning"], "📌": ["pushpin", "pin"], "📎": ["paperclip"], "💡": ["bulb", "idea"], "⏰": ["alarm_clock"], "☕": ["coffee"],
-  ]
+  /** Every emoji, in the groups' order. */
+  public static let all: [Emoji] = categories.flatMap(\.emojis)
 
-  /** The whole list, made once. */
-  public static let all: [Emoji] = {
-    var seen = Set<UInt32>()
-    var out: [Emoji] = []
-    for block in blocks {
-      for value in block {
-        guard !seen.contains(value), let scalar = Unicode.Scalar(value), let emoji = make(scalar) else { continue }
-        seen.insert(value)
-        out.append(emoji)
+  static func load() -> [EmojiCategory] {
+    guard let url = Bundle.module.url(forResource: "emoji", withExtension: "json"),
+          let data = try? Data(contentsOf: url),
+          let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+          let groups = root["categories"] as? [[String: Any]] else { return [] }
+    return groups.compactMap { group in
+      guard let id = group["id"] as? String, let label = group["label"] as? String, let rows = group["emojis"] as? [[Any]] else { return nil }
+      let emojis = rows.compactMap { row -> Emoji? in
+        guard row.count == 5, let id = row[0] as? String, let name = row[1] as? String, let character = row[2] as? String,
+              let codes = row[3] as? [String], let search = row[4] as? String else { return nil }
+        return Emoji(id: id, name: name, character: character, shortcodes: codes, search: search)
       }
+      return EmojiCategory(id: id, label: label, emojis: emojis)
     }
-    return out
-  }()
-
-  /** A scalar as an emoji: shown as one by default, or made one with the emoji variation selector (❤ → ❤️). Flags' single letters are left out. */
-  static func make(_ scalar: Unicode.Scalar) -> Emoji? {
-    let properties = scalar.properties
-    guard properties.isEmoji, let name = properties.name, !(0x1F1E6...0x1F1FF).contains(scalar.value) else { return nil }
-    let character = properties.isEmojiPresentation ? String(scalar) : String(scalar) + "\u{FE0F}"
-    return Emoji(character: character, name: name.lowercased(), aliases: shortNames[character] ?? [])
   }
 
   /**
-   * What matches `query`: a short name that starts with it first (":tad" →
-   * 🎉), then names with a word that starts with it, each in the list's
-   * order. Empty asks for the start of the list.
+   * The emoji `query` finds, as the window's `lft`: every one whose words
+   * hold it; first those whose id or a shortcode starts with it, or whose
+   * name starts with it or has a word that does; each group in the order
+   * of `recent` (ids, newest first), then the list's; at most `limit`.
+   * Nothing typed gives the list from its start.
    */
-  public static func search(_ query: String, limit: Int = 60) -> [Emoji] {
-    let words = query.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: ": ")).split(separator: " ").map(String.init)
-    guard !words.isEmpty else { return Array(all.prefix(limit)) }
-    let byAlias = all.filter { emoji in emoji.aliases.contains { alias in alias.hasPrefix(words.joined(separator: "_")) } }
-    let byName = all.filter { emoji in
-      let nameWords = emoji.name.split(whereSeparator: { $0 == " " || $0 == "-" })
-      return words.allSatisfy { word in nameWords.contains { $0.hasPrefix(word) } }
+  public static func search(_ query: String, limit: Int = 96, recent: [String] = []) -> [Emoji] {
+    let wanted = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    var first: [Emoji] = []
+    var second: [Emoji] = []
+    for emoji in all {
+      if wanted.isEmpty { first.append(emoji); continue }
+      guard emoji.search.contains(wanted) else { continue }
+      let name = emoji.name.lowercased()
+      if emoji.id.hasPrefix(wanted) || emoji.shortcodes.contains(where: { $0.hasPrefix(wanted) }) || name.hasPrefix(wanted) || name.contains(" " + wanted) {
+        first.append(emoji)
+      } else {
+        second.append(emoji)
+      }
     }
-    var out: [Emoji] = []
-    var taken = Set<String>()
-    for emoji in byAlias + byName where taken.insert(emoji.character).inserted {
-      out.append(emoji)
-      if out.count == limit { break }
+    var rank: [String: Int] = [:]
+    for (index, id) in recent.enumerated() where rank[id] == nil { rank[id] = index }
+    func ordered(_ list: [Emoji]) -> [Emoji] {
+      guard !rank.isEmpty else { return list }
+      return list.enumerated().sorted { a, b in
+        let ra = rank[a.element.id] ?? .max, rb = rank[b.element.id] ?? .max
+        return ra != rb ? ra < rb : a.offset < b.offset
+      }.map(\.element)
     }
-    return out
+    return Array((ordered(first) + ordered(second)).prefix(limit))
+  }
+
+  /** What ":" offers for `query`: twelve at most, the ones picked lately first (the window's list). */
+  public static func suggestions(_ query: String, recent: [String]) -> [Emoji] {
+    search(query, limit: 12, recent: recent)
+  }
+
+  /** The ids picked lately from ":", newest first, after `id` is picked: at most 50 (the window's `emojiRecents`). */
+  public static func remembering(_ id: String, in recent: [String]) -> [String] {
+    Array(([id] + recent.filter { $0 != id }).prefix(50))
   }
 
   /**
@@ -94,21 +107,6 @@ public enum EmojiCatalog {
     let typed = draft[draft.index(after: colon)...]
     guard (2...50).contains(typed.count), typed.allSatisfy({ ("a"..."z").contains($0) || ("0"..."9").contains($0) || $0 == "_" || $0 == "+" || $0 == "-" }) else { return nil }
     return String(typed)
-  }
-
-  /** What ":" offers for `query`: the ones picked lately that match it first, then the rest, twelve at most (the window's list). */
-  public static func suggestions(_ query: String, recent: [String], limit: Int = 12) -> [Emoji] {
-    let found = search(query, limit: 200)
-    let picked = recent.compactMap { character in found.first { $0.character == character } }
-    var out = picked
-    var taken = Set(picked.map(\.character))
-    for emoji in found where out.count < limit && taken.insert(emoji.character).inserted { out.append(emoji) }
-    return Array(out.prefix(limit))
-  }
-
-  /** The emoji picked lately, newest first, after `emoji` is picked: at most 24. */
-  public static func remembering(_ emoji: String, in recent: [String]) -> [String] {
-    Array(([emoji] + recent.filter { $0 != emoji }).prefix(24))
   }
 
   /** The draft with its ":query" at the end swapped for the emoji and a space. */

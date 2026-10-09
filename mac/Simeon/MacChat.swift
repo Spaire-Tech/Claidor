@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 import SimeonCore
 
 /**
@@ -9,8 +10,8 @@ import SimeonCore
  * toolbar, as the Electron window's header has it (the butterfly and the
  * name; a click opens the agent's page); Call, the computer and the page are
  * toolbar buttons. A message's actions are its right-click menu. A thread
- * opens in the chat's place, under "‹ Back to …" (Esc goes back), as the
- * window's thread view does.
+ * opens in the chat's place, under its breadcrumb (the agent › the thread;
+ * Esc goes back), as the window's thread view does.
  */
 struct MacChat: View {
   let agentId: String
@@ -29,6 +30,8 @@ struct MacChat: View {
   @State private var dropping = false
   @State private var hostWindow: NSWindow?
   @State private var pasteMonitor: Any?
+  @Environment(\.openSettings) private var openSettings
+  @AppStorage("simeon.theme") private var theme = "system"
 
   var body: some View {
     let agent = store.agent(agentId)
@@ -48,6 +51,8 @@ struct MacChat: View {
         .animation(.snappy(duration: 0.2), value: finding)
       }
       .safeAreaBar(edge: .bottom, spacing: 0) { ChatComposer(agentId: agentId, thread: thread).id(thread ?? "chat") }
+      // Esc leaves a thread (the window's), unless find is open, which Esc closes first; a sheet takes its own Esc.
+      .onExitCommand { if thread != nil && !finding { leaveThread() } }
       .environment(reply)
       .background(Ink.ground)
       .background { WindowReader(window: $hostWindow) }
@@ -106,10 +111,6 @@ struct MacChat: View {
         }
         .frame(width: 520, height: 640)
       }
-      // "More Emoji…" from a message's menu: any reaction.
-      .sheet(item: Binding(get: { messageMenu.target }, set: { messageMenu.target = $0 })) { target in
-        MacEmojiPicker { emoji in Task { await store.react(emoji, to: target.bubble.id, in: agentId) } }
-      }
       .onReceive(NotificationCenter.default.publisher(for: .simeonFind)) { note in
         switch note.object as? String {
         case "next": findStep(1)
@@ -130,6 +131,8 @@ struct MacChat: View {
         actions.openComputer = { openWindow(id: "computer", value: agentId) }
         actions.openExchange = { exchange = $0 }
         actions.openThread = { root in store.openThread(root, in: agentId) }
+        actions.slashActions = { slashActions() }
+        actions.runSlashAction = { id in runSlashAction(id) }
         watchPaste()
       }
       .task { await store.open(agentId) }
@@ -143,9 +146,50 @@ struct MacChat: View {
 
   private func openPage() { navigation.sheet = .agentPage(agentId, routine: nil) }
 
-  /** Back from a thread to the chat (the agent's name in the breadcrumb). */
+  /** Back from a thread to the chat (the agent's name in the breadcrumb, or Esc); what was being answered is let go. */
   private func leaveThread() {
+    reply.target = nil
     withAnimation(.snappy(duration: 0.2)) { store.closeThread(in: agentId) }
+  }
+
+  // MARK: The app's actions after "/"
+
+  /**
+   * The palette's commands "/" offers (the window's `getComposerAppActions`,
+   * in its order), those this app runs today: Open Hidden Agents (when some
+   * are), Members (a group), Chat Settings, Settings: General, Plugins, and
+   * Theme: System, Light and Dark.
+   */
+  private func slashActions() -> [ComposerLists.Action] {
+    var out: [ComposerLists.Action] = []
+    if !store.hiddenAgents.isEmpty {
+      out.append(.init(id: "open-hidden-chats", label: "Open Hidden Agents", keywords: ["hidden", "unhide", "hide", "sidebar", "bots"], detail: "Sidebar"))
+    }
+    if let agent = store.agent(agentId) {
+      if agent.isGroup && !agent.isRemoteRoom {
+        out.append(.init(id: "info:members", label: "Members", keywords: ["people", "group", "participants"], detail: "Current chat"))
+      }
+      out.append(.init(id: "info:settings", label: "Chat Settings", keywords: ["details", "notifications"], detail: "Current chat"))
+    }
+    out.append(.init(id: "settings:general", label: "Settings: General", keywords: ["account", "model", "notifications", "preferences", "appearance", "theme", "mode", "security", "yubikey", "webauthn"], detail: "Settings"))
+    out.append(.init(id: "overlay:plugins", label: "Plugins", keywords: ["plugins", "marketplace", "tools", "skills", "mcp", "connectors", "customize"]))
+    out.append(.init(id: "theme:system", label: "Theme: System", keywords: ["appearance", "os", "auto", "follow"], detail: "Settings · Appearance"))
+    out.append(.init(id: "theme:light", label: "Theme: Light", keywords: ["appearance", "day", "bright"], detail: "Settings · Appearance"))
+    out.append(.init(id: "theme:dark", label: "Theme: Dark", keywords: ["appearance", "night", "mode"], detail: "Settings · Appearance"))
+    return out
+  }
+
+  private func runSlashAction(_ id: String) {
+    switch id {
+    case "open-hidden-chats": navigation.sheet = .hiddenAgents
+    case "info:members", "info:settings": openPage()
+    case "settings:general": openSettings()
+    case "overlay:plugins": navigation.connectAppsAsked = true
+    case "theme:system", "theme:light", "theme:dark":
+      theme = String(id.dropFirst("theme:".count))
+      MacAppearance.apply(theme)
+    default: break
+    }
   }
 
   // MARK: Find in the chat
@@ -270,35 +314,80 @@ struct MacFindBar: View {
   }
 }
 
-/** "More Emoji…": every emoji, found by name ("party" finds 🎉), for a reaction the six don't hold. */
+/**
+ * "More emoji" (the window's "Choose an emoji"): "Search emoji" at the top;
+ * with nothing typed every group in its order ("Smileys & emotion", "People
+ * & body"…), each under its name, eight to a row, skin tones included; with
+ * something typed, "Results" (up to 96, as the window finds them) or "No
+ * emoji found". A pick reacts with it (again takes it back) and closes.
+ */
 struct MacEmojiPicker: View {
+  /** The reactions already yours on the message. */
+  var mine: [String] = []
   let pick: (String) -> Void
   @Environment(\.dismiss) private var dismiss
   @State private var query = ""
+  @FocusState private var searching: Bool
+
+  private static let columns = Array(repeating: GridItem(.fixed(30), spacing: 4), count: 8)
 
   var body: some View {
+    let typed = !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     VStack(spacing: 0) {
-      HStack(spacing: 8) {
+      HStack(spacing: 6) {
         Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-        TextField("Search emoji", text: $query).textFieldStyle(.plain)
+        TextField("Search emoji", text: $query)
+          .textFieldStyle(.plain)
+          .focused($searching)
+          .accessibilityLabel("Search emoji")
       }
-      .padding(12)
+      .padding(.horizontal, 10).padding(.vertical, 8)
       Divider()
       ScrollView {
-        LazyVGrid(columns: Array(repeating: GridItem(.fixed(36), spacing: 4), count: 9), spacing: 4) {
-          ForEach(EmojiCatalog.search(query, limit: 2_000), id: \.character) { emoji in
-            Button { pick(emoji.character); dismiss() } label: {
-              Text(emoji.character).font(.system(size: 24)).frame(width: 36, height: 36).contentShape(.rect)
+        LazyVStack(alignment: .leading, spacing: 8, pinnedViews: [.sectionHeaders]) {
+          if typed {
+            let found = EmojiCatalog.search(query)
+            if found.isEmpty {
+              Text("No emoji found").font(.system(size: 13)).foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity).padding(.vertical, 24)
+            } else {
+              section("Results", found)
             }
-            .buttonStyle(.plain)
-            .help(emoji.name)
+          } else {
+            ForEach(EmojiCatalog.categories) { category in section(category.label, category.emojis) }
           }
         }
-        .padding(10)
+        .padding(.horizontal, 8).padding(.bottom, 8)
       }
     }
-    .frame(width: 380, height: 420)
-    .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
+    .frame(width: 294, height: 320)
+    .accessibilityLabel("Choose an emoji")
+    .onAppear { searching = true }
+  }
+
+  private func section(_ label: String, _ emojis: [Emoji]) -> some View {
+    Section {
+      LazyVGrid(columns: Self.columns, alignment: .leading, spacing: 4) {
+        ForEach(emojis) { emoji in
+          let yours = mine.contains(emoji.character)
+          Button { pick(emoji.character); dismiss() } label: {
+            Text(emoji.character).font(.system(size: 22)).frame(width: 30, height: 30)
+              .background(yours ? Color.accentColor.opacity(0.2) : .clear, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+              .contentShape(.rect)
+          }
+          .buttonStyle(.plain)
+          .help(emoji.name)
+          .accessibilityLabel(yours ? "Remove \(emoji.name) reaction" : "React with \(emoji.name)")
+          .accessibilityAddTraits(yours ? .isSelected : [])
+        }
+      }
+    } header: {
+      Text(label).font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 8).padding(.bottom, 2)
+        .background(.bar)
+        .accessibilityAddTraits(.isHeader)
+    }
   }
 }
 
@@ -313,6 +402,34 @@ enum MacFiles {
     panel.canCreateDirectories = true
     guard panel.runModal() == .OK, let url = panel.url else { return true }
     return (try? data.write(to: url, options: .atomic)) != nil
+  }
+
+  /**
+   * "Save image…": the save panel with "image.png" ("image.jpg"… for the
+   * picture's own type), the Images types offered, as Electron's; false only
+   * when the file could not be written.
+   */
+  @MainActor
+  static func saveImage(_ data: Data) async -> Bool {
+    let panel = NSSavePanel()
+    panel.nameFieldStringValue = "image.\(imageExtension(data))"
+    panel.allowedContentTypes = ["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "avif"].compactMap { UTType(filenameExtension: $0) }
+    panel.allowsOtherFileTypes = true
+    panel.canCreateDirectories = true
+    guard panel.runModal() == .OK, let url = panel.url else { return true }
+    return (try? data.write(to: url, options: .atomic)) != nil
+  }
+
+  /** A picture's type by its first bytes, as Electron names it from its MIME type ("png" when not known). */
+  static func imageExtension(_ data: Data) -> String {
+    let head = [UInt8](data.prefix(12))
+    if head.starts(with: [0xFF, 0xD8, 0xFF]) { return "jpg" }
+    if head.starts(with: [0x47, 0x49, 0x46]) { return "gif" }
+    if head.count >= 12, head[0...3] == [0x52, 0x49, 0x46, 0x46], head[8...11] == [0x57, 0x45, 0x42, 0x50] { return "webp" }
+    if head.starts(with: [0x42, 0x4D]) { return "bmp" }
+    if head.count >= 12, head[4...7] == [0x66, 0x74, 0x79, 0x70], head[8...11] == [0x61, 0x76, 0x69, 0x66] { return "avif" }
+    if let text = String(data: data.prefix(256), encoding: .utf8), text.contains("<svg") { return "svg" }
+    return "png"
   }
 
   @MainActor
@@ -342,7 +459,8 @@ enum MacFiles {
     guard board.canReadObject(forClasses: [NSImage.self], options: nil),
           let image = board.readObjects(forClasses: [NSImage.self], options: nil)?.first as? NSImage,
           let png = image.pngData() else { return nil }
-    return [ComposerAttachment(name: "Pasted image.png", data: png, preview: image)]
+    // A picture with no name, as the window names one pasted: "image.png".
+    return [ComposerAttachment(name: "image.png", data: png, preview: image)]
   }
 }
 
@@ -370,14 +488,18 @@ struct MacChatTitle: View {
 }
 
 /**
- * A message's right-click menu (the Electron window's message menu,
- * `message-actions.tsx`): its reactions in one row (👍 👎 ❤️ 😂 🎉 😮) and
- * More Emoji…, then Reply and Start a Thread (not inside a thread), Mark as
- * Unread, and Copy.
+ * A message's right-click menu (the window's "Message actions"): the
+ * reaction row (👍 👎 ❤️ 😂 🎉 😮, then "More emoji"); "Reply" and "Start a
+ * thread" (not inside a thread); "Copy" for words (`onCopy`: not a link card
+ * or another card). The window's hover toolbar holds the same actions; on
+ * the Mac they are this menu, as in Messages.
  */
 struct MessageContextMenu: View {
+  /** The message: its id is what the reaction, the reply and the thread name. */
   let bubble: Bubble
   let agentId: String
+  /** What "Copy" copies; nil for none. */
+  var copy: (() -> Void)?
   @Environment(AppStore.self) private var store
   @Environment(ReplyDraft.self) private var reply: ReplyDraft?
   @Environment(MessageMenu.self) private var messageMenu: MessageMenu?
@@ -390,21 +512,64 @@ struct MessageContextMenu: View {
     ControlGroup {
       ForEach(Self.reactions, id: \.self) { emoji in
         Button(emoji) { Task { await store.react(emoji, to: bubble.id, in: agentId) } }
+          .accessibilityLabel(bubble.reactions.contains(emoji) ? "Remove \(emoji) reaction" : "React with \(emoji)")
       }
+      Button { messageMenu?.target = MessageTarget(bubble: bubble) } label: { Label("More emoji", systemImage: "face.smiling") }
     }
     .controlGroupStyle(.palette)
-    Button { messageMenu?.target = MessageTarget(bubble: bubble) } label: { Label("More Emoji…", systemImage: "face.smiling") }
-    Divider()
+    .accessibilityLabel("Add reaction")
     if thread == nil {
-      Button { reply?.target = bubble } label: { Label("Reply", systemImage: "arrowshape.turn.up.left") }
-      Button { actions?.openThread(bubble.id) } label: { Label("Start a Thread", systemImage: "bubble.left.and.bubble.right") }
+      Button { reply?.target = bubble } label: { Label("Reply", systemImage: bubble.fromPerson ? "arrowshape.turn.up.right" : "arrowshape.turn.up.left") }
+      Button { actions?.openThread(bubble.id) } label: { Label("Start a thread", systemImage: "bubble.left.and.bubble.right") }
     }
-    Divider()
-    if let link = bubble.loneLink {
-      Button { NSWorkspace.shared.open(link) } label: { Label("Open Link", systemImage: "safari") }
-      Button { UIPasteboard.general.string = link.absoluteString } label: { Label("Copy Link", systemImage: "link") }
+    if let copy {
+      Button(action: copy) { Label("Copy", systemImage: "doc.on.doc") }
     }
-    Button { UIPasteboard.general.string = bubble.text } label: { Label("Copy", systemImage: "doc.on.doc") }
+  }
+}
+
+/** A link's own items, first in its menu (Electron's): "Open link", "Copy link address". */
+struct LinkMenuItems: View {
+  let url: URL
+
+  var body: some View {
+    Button("Open link") { NSWorkspace.shared.open(url) }
+    Button("Copy link address") {
+      NSPasteboard.general.clearContents()
+      NSPasteboard.general.setString(url.absoluteString, forType: .string)
+    }
+  }
+}
+
+/**
+ * A picture's own items, first in its menu (Electron's): "Copy image",
+ * "Save image…" (as "image.png", "image.jpg"…, in the Images types), and
+ * "Copy image address" for a picture from the web.
+ */
+struct ImageMenuItems: View {
+  /** The picture as drawn, for Copy. */
+  let image: NSImage?
+  /** Its bytes, for Save. */
+  let bytes: () async -> Data?
+  /** Where it is on the web, when it is there. */
+  var address: String?
+  @Environment(AppStore.self) private var store
+
+  var body: some View {
+    Button("Copy image") { if let image { MacFiles.copy(image) } }
+      .disabled(image == nil)
+    Button("Save image…") {
+      Task {
+        guard let data = await bytes() else { return }
+        if !(await MacFiles.saveImage(data)) { store.problem = "Couldn't save this picture." }
+      }
+    }
+    if let address, address.hasPrefix("https://") || address.hasPrefix("http://") {
+      Button("Copy image address") {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(address, forType: .string)
+      }
+    }
   }
 }
 

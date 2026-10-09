@@ -260,6 +260,8 @@ public struct Bubble: Hashable, Sendable {
   public let showsName: Bool
   public let showsAvatar: Bool
   public let reactions: [String]
+  /** The reactions that are the person's own (`by: "user"`): a pick of one takes it back. */
+  public let myReactions: [String]
   public let isStreaming: Bool
   /** The message this one answers (`replyTo`), and its line as the window quotes it above the bubble. */
   public let replyTo: String?
@@ -270,25 +272,23 @@ public struct Bubble: Hashable, Sendable {
   public let images: [ChatImage]
   /** A message of yours held while the computer was out of reach, when it was written (`sentWhileOfflineAtMs`): "Sent while offline · Oct 9, 3:12 PM" under it. */
   public let sentOfflineAtMs: Double?
+  /**
+   * The one link the message is, drawn as a card instead of a bubble (the
+   * window's `xEn`): an agent's finished `send-message` text with no
+   * pictures, or the person's own message, whose words are an `https:`
+   * address or exactly `[words](address)` (`Chat.loneLink`).
+   */
+  public let loneLink: URL?
 
-  public init(id: String, text: String, fromPerson: Bool, author: Party?, showsName: Bool, showsAvatar: Bool, reactions: [String], isStreaming: Bool, replyTo: String? = nil, quote: String? = nil, timestampMs: Double? = nil, images: [ChatImage] = [], sentOfflineAtMs: Double? = nil) {
+  public init(id: String, text: String, fromPerson: Bool, author: Party?, showsName: Bool, showsAvatar: Bool, reactions: [String], isStreaming: Bool, replyTo: String? = nil, quote: String? = nil, timestampMs: Double? = nil, images: [ChatImage] = [], sentOfflineAtMs: Double? = nil, loneLink: URL? = nil, myReactions: [String] = []) {
     self.id = id; self.text = text; self.fromPerson = fromPerson; self.author = author
     self.showsName = showsName; self.showsAvatar = showsAvatar; self.reactions = reactions; self.isStreaming = isStreaming
     self.replyTo = replyTo; self.quote = quote; self.timestampMs = timestampMs; self.images = images; self.sentOfflineAtMs = sentOfflineAtMs
+    self.loneLink = loneLink; self.myReactions = myReactions
   }
 
   func with(showsName: Bool? = nil, showsAvatar: Bool? = nil, author: Party?? = nil, quote: String?? = nil) -> Bubble {
-    Bubble(id: id, text: text, fromPerson: fromPerson, author: author ?? self.author, showsName: showsName ?? self.showsName, showsAvatar: showsAvatar ?? self.showsAvatar, reactions: reactions, isStreaming: isStreaming, replyTo: replyTo, quote: quote ?? self.quote, timestampMs: timestampMs, images: images, sentOfflineAtMs: sentOfflineAtMs)
-  }
-
-  /**
-   * The one link a message is, drawn as a card (the window's `url-card.ts`):
-   * the trimmed text is a bare `https:` address or exactly `[words](https:…)`,
-   * and the message is finished and has no pictures.
-   */
-  public var loneLink: URL? {
-    guard !isStreaming, images.isEmpty else { return nil }
-    return Chat.loneLink(text)
+    Bubble(id: id, text: text, fromPerson: fromPerson, author: author ?? self.author, showsName: showsName ?? self.showsName, showsAvatar: showsAvatar ?? self.showsAvatar, reactions: reactions, isStreaming: isStreaming, replyTo: replyTo, quote: quote ?? self.quote, timestampMs: timestampMs, images: images, sentOfflineAtMs: sentOfflineAtMs, loneLink: loneLink, myReactions: myReactions)
   }
 
   /** Only emoji, three at most: drawn large with no bubble, as Messages does. */
@@ -342,8 +342,41 @@ public struct CloudAgentInfo: Hashable, Sendable {
     }
   }
 
-  /** Still working: the card asks again every five seconds (the window's `livePollMs`). */
+  /** Not finished, failed or expired: the card asks again every five seconds (the window's `XWe`, `A$n`). */
   public var isLive: Bool { status == .creating || status == .running || status == .unknown }
+
+  /** The pull request's state as the card draws it: as told, else "unknown" with an address and "none" without. */
+  public var pullState: String {
+    !pullRequestState.isEmpty ? pullRequestState : (pullRequestURL.isEmpty ? "none" : "unknown")
+  }
+
+  /** The card when nothing could be read and nothing is coming: "Cloud agent", "Status unavailable". */
+  public static let unavailable = CloudAgentInfo([:] as JSON)!
+
+  /** What one read of `getCloudAgentInfo` gave. */
+  public enum Read: Sendable {
+    case info(CloudAgentInfo)
+    /** The computer answered with nothing: final, not asked again. */
+    case empty
+    /** It could not be asked. */
+    case failed
+  }
+
+  /**
+   * Seconds until the card asks again, nil for never (the window's
+   * `_$n`): five while it works, never once it is finished, failed or
+   * expired or the answer was empty; after a failure, sixty when nothing
+   * was ever read, else five.
+   */
+  public static func nextPoll(after read: Read, known: CloudAgentInfo?) -> Double? {
+    switch read {
+    case .info(let info): return info.isLive ? 5 : nil
+    case .empty: return nil
+    case .failed:
+      guard let known else { return 60 }
+      return known.isLive ? 5 : nil
+    }
+  }
 
   /** "3 files changed". */
   public var changedLabel: String? { filesChanged > 0 ? "\(filesChanged) file\(filesChanged == 1 ? "" : "s") changed" : nil }
@@ -518,7 +551,7 @@ public enum Chat {
 
   /** What a line is, as a reply or a thread names it (the window's `ide`). */
   public enum ReplyPreview: Equatable {
-    case text(String), image, file(url: String, name: String?), link(String), missing
+    case text(String), image(String), file(url: String, name: String?), link(String), missing
 
     public init(_ entry: Entry?) {
       guard let entry else { self = .missing; return }
@@ -532,7 +565,7 @@ public enum Chat {
           let name = message["file_name"]?.text
           let isWeb = url.lowercased().hasPrefix("https:") || url.lowercased().hasPrefix("http:")
           if isWeb && (name ?? "").isEmpty { self = .link(url) }
-          else if Chat.isPicture(name ?? url) { self = .image }
+          else if Chat.isPicture(name ?? url) { self = .image(url) }
           else { self = .file(url: url, name: name) }
         } else {
           self = .text(Chat.cardText(message))
@@ -540,7 +573,7 @@ public enum Chat {
       case "user-attachment":
         let path = entry["file_path"]?.text ?? ""
         let name = entry["file_name"]?.text
-        self = Chat.isPicture(name ?? path) ? .image : .file(url: path, name: name)
+        self = Chat.isPicture(name ?? path) ? .image(path) : .file(url: path, name: name)
       default:
         self = .missing
       }
@@ -611,19 +644,66 @@ public enum Chat {
     (#"(?<!\w)_([^_\n]+)_(?!\w)"#, "$1"), (#"\|"#, " "),
   ].compactMap { pair in (try? NSRegularExpression(pattern: pair.0)).map { ($0, pair.1) } }
 
-  /** A text that is one link and nothing else: a bare `https:` address, or exactly `[words](https:…)`. */
-  public static func loneLink(_ text: String) -> URL? {
+  /**
+   * A message that is one link and nothing else (the window's `cGe`). When
+   * it carries the composer's document (`richText`), that decides (`bEn`):
+   * its blank paragraphs and the spaces and line breaks at its ends left
+   * out, exactly one paragraph holding exactly one piece of text, not code;
+   * the address is that text's link, else the text. Without one, the words,
+   * trimmed, exactly `[words](address)` (`vEn`) or the address alone. The
+   * address must be `http(s)://` with a host (`YAe`); only an `https:` one
+   * is a card (`Lht`).
+   */
+  public static func loneLink(_ text: String, richText: String? = nil) -> URL? {
+    if let doc = document(richText) { return documentLink(doc) }
     let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !trimmed.isEmpty, !trimmed.contains(where: \.isWhitespace) || trimmed.hasPrefix("[") else { return nil }
     var address = trimmed
-    if trimmed.hasPrefix("[") {
-      guard trimmed.hasSuffix(")"), let middle = trimmed.range(of: "]("), !trimmed[trimmed.index(after: trimmed.startIndex)..<middle.lowerBound].contains("]") else { return nil }
-      address = String(trimmed[middle.upperBound..<trimmed.index(before: trimmed.endIndex)])
-      guard !address.contains(where: \.isWhitespace) else { return nil }
+    let range = NSRange(trimmed.startIndex..., in: trimmed)
+    if let match = markdownLink.firstMatch(in: trimmed, range: range), let inside = Range(match.range(at: 1), in: trimmed) {
+      address = String(trimmed[inside])
     }
-    guard address.lowercased().hasPrefix("https://"), let url = URL(string: address), let host = url.host, !host.isEmpty else { return nil }
+    return httpsLink(address)
+  }
+
+  static func httpsLink(_ text: String) -> URL? {
+    let address = text.trimmingCharacters(in: .whitespacesAndNewlines)
+    let lower = address.lowercased()
+    guard lower.hasPrefix("https://") || lower.hasPrefix("http://"), let url = URL(string: address),
+          let scheme = url.scheme?.lowercased(), scheme == "https", let host = url.host, !host.isEmpty else { return nil }
     return url
   }
+
+  /** The composer's document (TipTap's JSON) when `richText` is one (`KAe`). */
+  static func document(_ richText: String?) -> [String: Any]? {
+    guard let richText, !richText.isEmpty, let data = richText.data(using: .utf8),
+          let doc = try? JSONSerialization.jsonObject(with: data) as? [String: Any], doc["type"] as? String == "doc" else { return nil }
+    return doc
+  }
+
+  static func documentLink(_ doc: [String: Any]) -> URL? {
+    func nodes(_ node: [String: Any]) -> [[String: Any]] { node["content"] as? [[String: Any]] ?? [] }
+    func blankText(_ node: [String: Any]) -> Bool { ((node["text"] as? String) ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    // A paragraph of nothing but spaces and line breaks (`iGe`).
+    func blank(_ node: [String: Any]) -> Bool {
+      node["type"] as? String == "paragraph" && nodes(node).allSatisfy { $0["type"] as? String == "hardBreak" || ($0["type"] as? String == "text" && blankText($0)) }
+    }
+    var blocks = nodes(doc)
+    while let first = blocks.first, blank(first) { blocks.removeFirst() }
+    while let last = blocks.last, blank(last) { blocks.removeLast() }
+    guard blocks.count == 1, blocks[0]["type"] as? String == "paragraph" else { return nil }
+    // The line breaks at the paragraph's ends go, and its blank pieces of text (`_ht`, `bEn`).
+    var pieces = nodes(blocks[0])
+    while let first = pieces.first, first["type"] as? String == "hardBreak" || (first["type"] as? String == "text" && blankText(first)) { pieces.removeFirst() }
+    while let last = pieces.last, last["type"] as? String == "hardBreak" || (last["type"] as? String == "text" && blankText(last)) { pieces.removeLast() }
+    pieces = pieces.filter { $0["type"] as? String != "text" || !blankText($0) }
+    guard pieces.count == 1, pieces[0]["type"] as? String == "text" else { return nil }
+    let marks = pieces[0]["marks"] as? [[String: Any]] ?? []
+    guard !marks.contains(where: { $0["type"] as? String == "code" }) else { return nil }
+    let href = marks.first(where: { $0["type"] as? String == "link" }).flatMap { ($0["attrs"] as? [String: Any])?["href"] as? String }
+    return httpsLink(href ?? (pieces[0]["text"] as? String) ?? "")
+  }
+
+  private static let markdownLink = try! NSRegularExpression(pattern: #"^\[[^\]\n]*\]\(\s*([^)\s]+)(?:\s+[^)]*)?\)\s*$"#)
 
   /** The rows of `entries`; a reply's quote is looked up in `quoting` (all the chat's lines), else in `entries`. */
   static func layout(_ entries: [Entry], quoting: [Entry]? = nil, isGroup: Bool, unreadAfter: Double?) -> [ChatRow] {
@@ -710,19 +790,42 @@ public enum Chat {
     }
   }
 
-  /** The line a reply quotes: a message's words with the spaces run together, "Photo" for a picture, a file's name; cut at `limit` with "…". */
+  /**
+   * The line a reply quotes over its bubble (96 characters) and the
+   * composer's reply line (72), as the window writes them (`OAe` over
+   * `ide`): the words without their Markdown, cut at `limit` less one with
+   * "…", "(empty)" when there are none; "Photo" for a picture, a file's
+   * name, a link's host; "(deleted)" when the line is gone.
+   */
   public static func quoteLine(_ entry: Entry?, limit: Int) -> String {
-    guard let entry else { return "(deleted)" }
-    var text: String
-    if let content = entry.content { text = content }
-    else if let content = entry.message?["content"]?.text, !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { text = content }
-    else if !(entry.message?["images"]?.array ?? []).isEmpty { text = "Photo" }
-    else if let path = entry["file_path"]?.text ?? entry["filePath"]?.text ?? entry.message?["url"]?.text {
-      let name = fileName(ofURL: path)
-      text = ["png", "jpg", "jpeg", "gif", "webp", "heic"].contains((name as NSString).pathExtension.lowercased()) ? "Photo" : name
-    } else { text = "Message" }
-    text = text.split(whereSeparator: \.isWhitespace).joined(separator: " ")
-    return text.count > limit ? String(text.prefix(limit)) + "…" : text
+    switch ReplyPreview(entry) {
+    case .text(let raw):
+      let text = plainPreview(raw)
+      return text.isEmpty ? "(empty)" : clippedLine(text, limit)
+    case .image: return "Photo"
+    case .file(let url, let name): return clippedLine((name?.isEmpty == false ? name! : fileBaseName(url)), limit)
+    case .link(let url): return clippedLine(URL(string: url)?.host ?? url, limit)
+    case .missing: return "(deleted)"
+    }
+  }
+
+  /** The composer's words while answering this (the window's `x9n`): "Reply…", or "Reply to attachment…", "Reply to file…", "Reply to link…". */
+  public static func replyPlaceholder(_ entry: Entry?) -> String {
+    switch ReplyPreview(entry) {
+    case .image: return "Reply to attachment…"
+    case .file: return "Reply to file…"
+    case .link: return "Reply to link…"
+    case .text, .missing: return "Reply…"
+    }
+  }
+
+  /** A line cut the window's way: spaces run together; past `limit`, its first `limit - 1` characters and "…". */
+  public static func clippedLine(_ text: String, _ limit: Int) -> String {
+    let line = text.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+    guard line.count > limit else { return line }
+    var head = String(line.prefix(max(0, limit - 1)))
+    while head.last?.isWhitespace == true { head.removeLast() }
+    return head + "…"
   }
 
   /** The window's `JIn`: one message is "Messaged" or "Message from"; only outgoing to several is a fan-out; else a thread. */
@@ -762,12 +865,16 @@ public enum Chat {
 
   static func row(for entry: Entry) -> ChatRow? {
     let reactions = entry.reactions.map(\.emoji)
+    let mine = entry.reactions.filter { $0.by == "user" }.map(\.emoji)
     switch entry.kind {
     case "message", "user-message", "human-message":
       guard let text = entry.content, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
       let fromPerson = entry.isFromPerson || entry.role == "user"
       if !fromPerson, let flights = FlightsCard.parse(text) { return .flights(id: entry.id, card: flights) }
-      return .bubble(Bubble(id: entry.id, text: text, fromPerson: fromPerson, author: fromPerson ? nil : entry.author, showsName: false, showsAvatar: false, reactions: reactions, isStreaming: entry.isStreaming, replyTo: entry["replyTo"]?.text, timestampMs: entry.timestampMs, sentOfflineAtMs: fromPerson ? entry["sentWhileOfflineAtMs"]?.double : nil))
+      // The person's own message (not another person's, not one from a channel, not between agents) can be a link card.
+      let ownMessage = entry.role == "user" && entry["fromUser"] == nil && entry["channel"] == nil && entry.teammate == nil
+      let link = ownMessage ? loneLink(text, richText: entry["richText"]?.string) : nil
+      return .bubble(Bubble(id: entry.id, text: text, fromPerson: fromPerson, author: fromPerson ? nil : entry.author, showsName: false, showsAvatar: false, reactions: reactions, isStreaming: entry.isStreaming, replyTo: entry["replyTo"]?.text, timestampMs: entry.timestampMs, sentOfflineAtMs: fromPerson ? entry["sentWhileOfflineAtMs"]?.double : nil, loneLink: link, myReactions: mine))
     case "notice":
       guard let text = entry["text"]?.text ?? entry.content, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
       return .notice(id: entry.id, text: text)
@@ -786,7 +893,9 @@ public enum Chat {
         // A message may be pictures alone: the gallery without words.
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !images.isEmpty else { return nil }
         if images.isEmpty, let flights = FlightsCard.parse(text) { return .flights(id: entry.id, card: flights) }
-        return .bubble(Bubble(id: entry.id, text: text, fromPerson: false, author: entry.author, showsName: false, showsAvatar: false, reactions: reactions, isStreaming: entry["streaming"]?.bool ?? false, replyTo: entry["replyTo"]?.text, timestampMs: entry.timestampMs, images: images))
+        let streaming = entry["streaming"]?.bool ?? false
+        let link = !streaming && images.isEmpty ? loneLink(text) : nil
+        return .bubble(Bubble(id: entry.id, text: text, fromPerson: false, author: entry.author, showsName: false, showsAvatar: false, reactions: reactions, isStreaming: streaming, replyTo: entry["replyTo"]?.text, timestampMs: entry.timestampMs, images: images, loneLink: link, myReactions: mine))
       case "attachment":
         guard let url = message["url"]?.text else { return nil }
         return .file(id: entry.id, name: fileName(ofURL: url), url: url, fromPerson: false)

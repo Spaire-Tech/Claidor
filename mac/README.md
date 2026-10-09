@@ -136,19 +136,26 @@ as a sheet, an agent's computer in its own window, Connect Apps (⇧⌘M) in
 its own window, Settings (⌘,), and the Agent menu with the Electron
 window's keys. `PARITY.md` marks each line it covers ("written").
 
-What slice 2 adds, the chat as the window has it: threads (Start a Thread,
-"N replies", the thread in the chat's place with "‹ Back to …"), find in
-the chat (⌘F, ⌘G, ⇧⌘G), the right-click menu with More Emoji…, files
-dropped or pasted into the composer, Save on a file, a picture's Open, Copy
-Image and Save Image…, an agent's pictures in a gallery, a lone link as a
-card, Mermaid diagrams with their preview and zoom, maths, the cloud-agent
-card, the host's notices, "Waiting to send…", "Will send when reconnected"
-and "Sent while offline", "Couldn't load this conversation" with Retry,
-and the composer's "/" skills, "#" pull requests, "@everyone" and ":"
-emoji. All of it is shared with the iPhone, which gets it too (threads open
-in a sheet there). `mac/scripts/build.sh --demo` shows a thread in the
-Simeon chat; `mac/scripts/build.sh --gallery` adds a chat with every card,
-the new ones at its end.
+What slice 2 adds, the chat as the shipped window has it, every rule and
+word read from its bundle (`clients/apps/web/public/app/assets/index-*.js`)
+and the Electron app's own code, in Apple's look: threads (Start a thread,
+"N replies", the thread in the chat's place under its breadcrumb, Esc
+back), find in the chat (⌘F, ⌘G, ⇧⌘G), the right-click menu (the six
+reactions and More emoji with the window's own emoji list, Reply, Start a
+thread, Copy; a link's and a picture's own items first), files dropped or
+pasted (six at most, 25 MB each), Save on an agent's file, an agent's
+pictures laid out by the window's planner, a lone link as a card read by a
+port of the Electron app's page reader, Mermaid with its preview and zoom,
+maths as its remark-math reads it, the cloud-agent card and its polling,
+"Waiting to send…", "Will send when reconnected", Cancel giving the message
+back, "Sent while offline", "Couldn't load conversation" with Retry, and
+the composer's lists: "@" (agents, groups, everyone, routines,
+connectors, scored as the window scores them), "/" (skills, then the app's
+actions), "#" (the chat's pull requests) and ":" (emoji), with the
+window's keys, sending the message's document (`richText`) as its editor
+writes it. All of it is shared with the iPhone, which gets it too (threads
+open in a sheet there). `mac/scripts/build.sh --gallery` opens the demo
+with a chat holding every card.
 
 ## What can and cannot be checked here
 

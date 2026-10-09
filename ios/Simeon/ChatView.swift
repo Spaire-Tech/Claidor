@@ -123,8 +123,11 @@ final class ChatActions {
   @ObservationIgnored var openComputer: () -> Void = {}
   @ObservationIgnored var openExchange: (ExchangeRoute) -> Void = { _ in }
   @ObservationIgnored var jump: (String) -> Void = { _ in }
-  /** Opens a thread by its first message's id (a thread's "N replies", "Start a Thread", a quote of a reply in one). */
+  /** Opens a thread by its first message's id (a thread's "N replies", "Start a thread", a quote of a reply in one). */
   @ObservationIgnored var openThread: (String) -> Void = { _ in }
+  /** The app's actions "/" offers here (the palette's commands that run something), and running one. */
+  @ObservationIgnored var slashActions: () -> [ComposerLists.Action] = { [] }
+  @ObservationIgnored var runSlashAction: (String) -> Void = { _ in }
 }
 
 /** The message the person is answering (the Mac's Reply), shared by the bubbles' menu and the composer. */
@@ -475,13 +478,21 @@ struct ChatComposer: View {
   /** The agent's skills ("/") and routines ("@"), read once the chat is open (`getAgentWorkflows`). */
   @State private var skills: [ComposerMenus.Skill] = []
   @State private var routines: [ComposerMenus.Skill] = []
-  /** What was picked from "/", "@" and "#" for this message: it rides in its document (`richText`). */
-  @State private var picked: [ComposerMenus.Skill] = []
-  @State private var pickedPulls: [ComposerMenus.PullRequest] = []
-  /** The pull requests the chat linked, read when a "#" starts (not on every key). */
+  /** What was picked from "@", "/" and "#", where it sits in the draft: it rides in the message's document (`richText`). */
+  @State private var chips: [ComposerChip] = []
+  /** The draft the chips were last placed in, to move them as it changes. */
+  @State private var placedIn = ""
+  /** The pull requests the chat named, read when a "#" starts (not on every key). */
   @State private var chatPulls: [ComposerMenus.PullRequest] = []
-  /** The emoji picked lately, first after ":" (the window's recents). */
-  @AppStorage("simeon.emoji.recent") private var recentEmoji = ""
+  /** The lit row of the open list. */
+  @State private var highlighted = 0
+  /** Where Esc put each list away (by its trigger character): it stays shut there (the window's `j5e`). */
+  @State private var dismissed: [Character: Int] = [:]
+  @Environment(ChatActions.self) private var actions: ChatActions?
+  /** The ids of the emoji picked lately after ":", newest first, at most 50 (the window's `emojiRecents`); only those picks count. */
+  @AppStorage("simeon.emoji.recents") private var recentEmoji = ""
+  /** The "@" rows picked lately ("assistants:<id>"…), newest first, at most 20 (the window's `mentionRecents`). */
+  @AppStorage("simeon.mention.recents") private var recentMentions = ""
 
   enum Mode { case send, mic, stop }
 
@@ -493,13 +504,40 @@ struct ChatComposer: View {
   /** Lines in the draft, for the composer's growth (at most the field's eight). */
   private var lineCount: Int { min(8, draft.reduce(1) { $1 == "\n" ? $0 + 1 : $0 } + draft.count / 38) }
 
-  /** What follows an "@" being typed at the end, if one is. */
-  private var mentionQuery: String? { Mentions.query(draft) }
-  private var skillQuery: String? { skills.isEmpty ? nil : ComposerMenus.query(draft, after: "/") }
-  private var pullQuery: String? { ComposerMenus.query(draft, after: "#") }
+  /**
+   * The list open over the field, when one is: "@" (agents, groups,
+   * everyone, routines, connectors), "/" (skills, then the app's actions),
+   * "#" (pull requests the chat named) or ":" (emoji); each where its
+   * trigger is being typed after the last pick, unless Esc put it away
+   * there; none while the field is not in use.
+   */
+  private var openList: ComposerOpenList? {
+    guard typing else { return nil }
+    let start = ComposerDocument.textStart(chips, in: draft)
+    if let at = ComposerLists.trigger("@", in: draft, after: start), dismissed["@"] != at.at {
+      let current = store.agent(agentId)
+      let members = ComposerLists.mentionMembers(current: current, roster: store.agents)
+      let rows = ComposerLists.mentionRows(members: members, isGroupChat: current?.isGroup == true, routines: routines, connectors: ComposerLists.mentionConnectors(store.apps))
+      return .mention(at, ComposerLists.filterMentions(rows, query: at.query, recents: recentMentions.split(separator: "\n").map(String.init)))
+    }
+    if let at = ComposerLists.trigger("/", in: draft, after: start), dismissed["/"] != at.at {
+      let offered = actions?.slashActions() ?? []
+      return .slash(at, ComposerLists.slashItems(skills: skills, actions: offered, query: at.query), hasAny: !skills.isEmpty || !offered.isEmpty)
+    }
+    if let at = ComposerLists.trigger("#", in: draft, after: start), dismissed["#"] != at.at {
+      return .pulls(at, ComposerLists.filterPulls(chatPulls, query: at.query))
+    }
+    if let query = EmojiCatalog.query(draft) {
+      let at = draft.count - query.count - 1
+      if at >= start && dismissed[":"] != at {
+        return .emoji(at: at, query: query, EmojiCatalog.suggestions(query, recent: recentEmoji.split(separator: " ").map(String.init)))
+      }
+    }
+    return nil
+  }
 
   /** Where the draft is kept: the chat's, or its thread's. */
-  private var draftKey: String { thread.map { "\(agentId)#thread-\($0)" } ?? agentId }
+  private var draftKey: String { AppStore.draftScope(agentId, thread: thread) }
 
   /**
    * "Message" on the iPhone ("Reply" while replying). On the Mac the
@@ -511,7 +549,7 @@ struct ChatComposer: View {
   private var placeholder: String {
     #if os(macOS)
     if dictation.isListening { return "Listening…" }
-    if reply?.target != nil { return "Reply…" }
+    if thread == nil, let target = reply?.target { return Chat.replyPlaceholder(replyEntry(target)) }
     if !attachments.isEmpty { return "Add a message, or hit send." }
     let named = name.trimmingCharacters(in: .whitespacesAndNewlines)
     if !named.isEmpty { return "Message \(named)" }
@@ -525,32 +563,19 @@ struct ChatComposer: View {
   var body: some View {
     let _ = Trace.mark("drawing the composer of \(agentId), \(draft.count) characters")
     VStack(spacing: 6) {
-      if let query = mentionQuery {
-        MentionPicker(query: query, chatId: agentId, routines: routines) { name in
-          draft = Mentions.inserting(name, into: draft)
-        } pickRoutine: { routine in
-          draft = Mentions.inserting(routine.name, into: draft)
-          picked.append(routine)
-        }
-        .transition(.move(edge: .bottom).combined(with: .opacity))
-      } else if let query = skillQuery, !ComposerMenus.filter(skills, query).isEmpty {
-        SkillPicker(skills: ComposerMenus.filter(skills, query)) { skill in
-          draft = ComposerMenus.replacing(after: "/", in: draft, with: "@" + skill.name)
-          picked.append(skill)
-        }
-        .transition(.move(edge: .bottom).combined(with: .opacity))
-      } else if let query = pullQuery, !pullRequests(query).isEmpty {
-        PullRequestPicker(pulls: pullRequests(query)) { pull in
-          draft = ComposerMenus.replacing(after: "#", in: draft, with: "#\(pull.number)")
-          pickedPulls.append(pull)
-        }
-        .transition(.move(edge: .bottom).combined(with: .opacity))
-      } else if let query = EmojiCatalog.query(draft) {
-        EmojiSuggestions(query: query, recent: recentEmoji.split(separator: " ").map(String.init)) { emoji in
-          draft = EmojiCatalog.inserting(emoji, into: draft)
-          recentEmoji = EmojiCatalog.remembering(emoji, in: recentEmoji.split(separator: " ").map(String.init)).joined(separator: " ")
-        }
-        .transition(.move(edge: .bottom).combined(with: .opacity))
+      if let list = openList, list.isVisible {
+        ComposerListPanel(items: list.items, highlighted: $highlighted, emptyText: list.emptyText, label: list.label,
+                          rowHeight: list.rowHeight, maxHeight: list.maxHeight) { index in pick(index, in: list) }
+          .transition(.move(edge: .bottom).combined(with: .opacity))
+      }
+      if let notice = store.composerNotice, notice.agentId == agentId {
+        // The window's line in the composer (`sand-prompt-error-notice`), for six seconds.
+        Text(notice.text)
+          .font(.system(size: 12)).foregroundStyle(Ink.secondary)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .padding(.horizontal, 16)
+          .accessibilityAddTraits(.updatesFrequently)
+          .transition(.opacity)
       }
       if !attachments.isEmpty {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -563,10 +588,12 @@ struct ChatComposer: View {
         }
       }
       if thread == nil, let target = reply?.target {
-        // The message being answered: the arrow, its line, and Cancel, on glass above the field.
+        // The message being answered (the window's reply pill): the arrow, what it is (its words cut at 72, "Photo", a file's
+        // name, a link's host), and Cancel reply, on glass above the field.
         HStack(spacing: 8) {
-          Image(systemName: "arrowshape.turn.up.left").font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.secondary)
-          Text(Self.replyLine(target)).font(.system(size: 15)).foregroundStyle(Ink.secondary).lineLimit(1)
+          Image(systemName: "arrowshape.turn.up.right").font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.secondary)
+          ReplyPreviewLine(entry: replyEntry(target), limit: 72, thumbnail: 28)
+            .font(.system(size: 15)).foregroundStyle(Ink.secondary)
           Spacer(minLength: 0)
           Button { reply?.target = nil } label: {
             Image(systemName: "xmark").font(.system(size: 11, weight: .bold)).foregroundStyle(Ink.secondary)
@@ -594,9 +621,14 @@ struct ChatComposer: View {
             .font(.system(size: 17))
             .lineLimit(1...6)
             .focused($typing)
+            // The open list's keys first (arrows, Return or Tab to pick, Esc to put it away); Esc with none leaves the field.
+            .onKeyPress(phases: .down) { press in key(press) }
             #if os(macOS)
             // Return sends, as the Mac's window does; Option-Return starts a new line.
-            .onSubmit { if mode == .send { send() } }
+            .onSubmit {
+              if let list = openList, list.count > 0 { pick(min(highlighted, list.count - 1), in: list); return }
+              if mode == .send { send() }
+            }
             #endif
             .padding(.leading, 16)
             .padding(.vertical, 9)
@@ -645,21 +677,38 @@ struct ChatComposer: View {
     .padding(.horizontal, 12)
     .padding(.top, 6)
     .padding(.bottom, 8)
-    .animation(.snappy(duration: 0.2), value: mentionQuery != nil)
-    .onChange(of: pullQuery != nil) { _, typing in
-      if typing { chatPulls = ComposerMenus.pullRequests(in: store.transcripts[agentId] ?? []) }
+    .animation(.snappy(duration: 0.2), value: openList?.isVisible == true)
+    .animation(.easeOut(duration: 0.2), value: store.composerNotice?.id)
+    // Picks move with the words around them, and go when edited; Esc's memory goes when its trigger does.
+    .onChange(of: draft) { _, now in
+      if now != placedIn {
+        chips = ComposerDocument.carry(chips, from: placedIn, to: now)
+        placedIn = now
+      }
+      for (character, at) in dismissed {
+        var memory = ComposerLists.Dismissal(character: character)
+        memory.at = at
+        memory.check(now)
+        if let list = openList, list.trigger.character == character { _ = memory.allows(list.trigger.at) }
+        if memory.at == nil { dismissed[character] = nil }
+      }
+    }
+    .onChange(of: openList?.identity) { _, _ in highlighted = 0 }
+    .onChange(of: ComposerLists.trigger("#", in: draft, after: ComposerDocument.textStart(chips, in: draft)) != nil) { _, started in
+      if started { chatPulls = ComposerLists.pullCandidates(store.transcripts[agentId] ?? []) }
     }
     .onAppear {
       let named = store.agent(agentId)?.name ?? ""
       if name != named { name = named }
     }
-    // "/" and "@" offer the agent's skills and routines, read once per chat.
+    // "/" and "@" offer the agent's skills and routines, read once per chat; "@" the connected apps too.
     .task(id: agentId) {
       let answer = await store.workflows(agentId)
       skills = ComposerMenus.skills(from: answer)
       routines = ComposerMenus.skills(from: answer, scheduled: true)
+      if store.apps.isEmpty { await store.loadApps() }
     }
-    .composerPicker(isPresented: $picking) { picked in attachments.append(contentsOf: picked) }
+    .composerPicker(isPresented: $picking) { picked in stage(picked) }
     .onChange(of: dictation.problem) { _, problem in if let problem { store.problem = problem } }
     .onChange(of: reply?.target?.id) { _, id in if id != nil { typing = true } }
     #if os(macOS)
@@ -668,12 +717,26 @@ struct ChatComposer: View {
     // Files dropped on the chat or pasted into it (mac/Simeon/MacChat.swift).
     .onReceive(NotificationCenter.default.publisher(for: .simeonAttachFiles)) { note in
       guard let request = note.object as? AttachRequest, request.agentId == agentId else { return }
-      attachments.append(contentsOf: request.files)
+      stage(request.files)
       typing = true
     }
     #endif
     // The unsent draft stays with its chat (or its thread), as on the Mac.
     .onAppear { if draft.isEmpty, let kept = store.drafts[draftKey], kept != draft { draft = kept } }
+    // A held message canceled: what was written comes back here, if this is its composer and it is empty (the window's cancel).
+    .onChange(of: store.canceledDraft?.id) { _, _ in
+      guard let canceled = store.canceledDraft, canceled.scope == draftKey else { return }
+      store.takeCanceledDraft(canceled.id)
+      guard draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, attachments.isEmpty else { return }
+      // The draft as it was written: its words and its picks, read back from its document.
+      let restored = ComposerDocument.draft(from: canceled.richText) ?? (canceled.text, [])
+      place(restored.draft, chips: restored.chips)
+      attachments = canceled.files.map { ComposerAttachment(name: $0.name, data: $0.data, preview: FileKind.images.contains(($0.name as NSString).pathExtension.lowercased()) ? UIImage(data: $0.data) : nil) }
+      if thread == nil, let replyTo = canceled.replyTo {
+        reply?.target = Bubble(id: replyTo, text: "", fromPerson: false, author: nil, showsName: false, showsAvatar: false, reactions: [], isStreaming: false)
+      }
+      typing = true
+    }
     // Saved when typing pauses, not per letter (the list redraws on a save).
     .task(id: draft) {
       try? await Task.sleep(nanoseconds: 600_000_000)
@@ -682,27 +745,108 @@ struct ChatComposer: View {
     .onDisappear { store.setDraft(draft, for: draftKey) }
   }
 
-  static func replyLine(_ bubble: Bubble) -> String {
-    let text = bubble.text.split(whereSeparator: \.isWhitespace).joined(separator: " ")
-    return text.count > 72 ? String(text.prefix(72)) + "…" : text
+  /**
+   * Files into the composer, as the window stages them: six at most, each up
+   * to 25 MB (200 MB for a video) and not empty; a line for five seconds
+   * says what was left out.
+   */
+  private func stage(_ incoming: [ComposerAttachment]) {
+    let admitted = AttachmentLimits.admit(incoming.count, staged: attachments.count)
+    var refused: [(name: String, reason: AttachmentLimits.Refusal)] = []
+    for file in incoming.prefix(admitted.accepted) {
+      if let reason = AttachmentLimits.refusal(name: file.name, size: file.data.count) { refused.append((file.name, reason)) } else { attachments.append(file) }
+    }
+    if let line = AttachmentLimits.notice(refused) ?? admitted.notice {
+      store.showComposerNotice(line, in: agentId, seconds: AttachmentLimits.noticeSeconds)
+    }
   }
 
-  /** The pull requests the chat linked that an "#…" being typed matches. */
-  private func pullRequests(_ query: String) -> [ComposerMenus.PullRequest] {
-    ComposerMenus.filter(chatPulls, query)
+  /** The line being answered, from the chat's own lines. */
+  private func replyEntry(_ target: Bubble) -> Entry? {
+    store.transcripts[agentId]?.last { $0.id == target.id }
+  }
+
+  /** The draft and its picks set together, so the picks are not moved as if typed over. */
+  private func place(_ text: String, chips placed: [ComposerChip]) {
+    placedIn = text
+    chips = placed
+    draft = text
+  }
+
+  /** The open list's keys (the window's): arrows move and wrap, Return or Tab picks, Esc puts it away there; Esc with none open leaves the field. */
+  private func key(_ press: KeyPress) -> KeyPress.Result {
+    guard let list = openList, list.isVisible else {
+      if press.key == .escape && press.modifiers.isEmpty { typing = false; return .handled }
+      return .ignored
+    }
+    let count = list.count
+    switch press.key {
+    case .downArrow where count > 0:
+      highlighted = (min(highlighted, count - 1) + 1) % count
+      return .handled
+    case .upArrow where count > 0:
+      highlighted = (min(highlighted, count - 1) - 1 + count) % count
+      return .handled
+    case .return where count > 0, .tab where count > 0:
+      pick(min(highlighted, count - 1), in: list)
+      return .handled
+    case .escape:
+      // "@" and "/" remember Esc whenever they show; "#" and ":" only with something offered.
+      dismissed[list.trigger.character] = list.trigger.at
+      return .handled
+    default:
+      return .ignored
+    }
+  }
+
+  /** A row picked: its piece in place of the trigger and what was typed after it, and a space (an action runs instead). */
+  private func pick(_ index: Int, in list: ComposerOpenList) {
+    switch list {
+    case .mention(let at, let rows):
+      guard rows.indices.contains(index) else { return }
+      let row = rows[index]
+      let node: ComposerChip.Node
+      switch row.insert {
+      case .mention(let id, let label): node = .mention(id: id, label: label)
+      case .workflow(let id, let label, let iconId, let iconURL): node = .workflow(id: id, label: label, iconId: iconId, iconURL: iconURL)
+      }
+      let picked = ComposerDocument.picking(node, from: at.at, in: draft, chips: chips)
+      place(picked.draft, chips: picked.chips)
+      recentMentions = ComposerLists.rememberingMention(row.key, in: recentMentions.split(separator: "\n").map(String.init)).joined(separator: "\n")
+    case .slash(let at, let items, _):
+      guard items.indices.contains(index) else { return }
+      switch items[index] {
+      case .skill(let skill):
+        let picked = ComposerDocument.picking(.workflow(id: skill.id, label: skill.name, iconId: skill.iconId, iconURL: skill.iconURL), from: at.at, in: draft, chips: chips)
+        place(picked.draft, chips: picked.chips)
+      case .action(let action):
+        // The "/…" typed goes, and the action runs; nothing is written.
+        place(String(Array(draft)[..<min(at.at, draft.count)]), chips: chips.filter { $0.end <= at.at })
+        actions?.runSlashAction(action.id)
+      }
+    case .pulls(let at, let pulls):
+      guard pulls.indices.contains(index) else { return }
+      let pull = pulls[index]
+      let picked = ComposerDocument.picking(.pullRequest(number: pull.number, title: pull.title, url: pull.url.isEmpty ? nil : pull.url), from: at.at, in: draft, chips: chips)
+      place(picked.draft, chips: picked.chips)
+    case .emoji(_, _, let found):
+      guard found.indices.contains(index) else { return }
+      let emoji = found[index]
+      place(EmojiCatalog.inserting(emoji.character, into: draft), chips: chips)
+      recentEmoji = EmojiCatalog.remembering(emoji.id, in: recentEmoji.split(separator: " ").map(String.init)).joined(separator: " ")
+    }
+    highlighted = 0
   }
 
   private func send() {
-    let text = draft
+    // The words as sent, trimmed; the document as the editor holds it, picks and all (`richText`).
+    let text = ComposerDocument.prompt(draft)
+    let rich = ComposerDocument.richText(draft, chips: chips)
     let files = attachments
     // In a thread every message answers its first one; else the message Reply was chosen on.
     let answering = thread ?? reply?.target?.id
-    // What was picked from "/", "@" and "#", as the host reads it (a skill's reference it expands).
-    let rich = ComposerMenus.richText(text.trimmingCharacters(in: .whitespacesAndNewlines), skills: picked, pullRequests: pickedPulls)
-    draft = ""
+    place("", chips: [])
     attachments = []
-    picked = []
-    pickedPulls = []
     if thread == nil { reply?.target = nil }
     dictation.stop()
     // The composer's pictures are shown in the chat as they are, before anything goes to the computer.
@@ -738,8 +882,8 @@ struct ChatRowView: View, Equatable {
       BubbleView(bubble: bubble, agentId: agentId, inGroup: store.groupIds.contains(agentId))
     case .flights(_, let card):
       FlightsCardView(card: card)
-    case .file(_, let name, let url, let fromPerson):
-      FileCardView(name: name, url: url, agentId: agentId, fromPerson: fromPerson)
+    case .file(let id, let name, let url, let fromPerson):
+      FileCardView(entryId: id, name: name, url: url, agentId: agentId, fromPerson: fromPerson)
     case .question(let id, let card):
       QuestionCardView(entryId: id, agentId: agentId, card: card)
     case .draft(let id, let card):
@@ -764,8 +908,8 @@ struct ChatRowView: View, Equatable {
       QueuedSendRow(nonce: nonce, agentId: agentId)
     case .thread(_, let rootId, let count, let side):
       ThreadLinkRow(rootId: rootId, count: count, side: side)
-    case .cloudAgent(_, let bcId):
-      CloudAgentCard(bcId: bcId)
+    case .cloudAgent(let id, let bcId):
+      CloudAgentCard(entryId: id, bcId: bcId, agentId: agentId)
     }
   }
 }
@@ -811,8 +955,9 @@ struct BubbleView: View {
         if inGroup && bubble.showsName, let name = bubble.author?.name {
           Text(name).font(.system(size: 12)).foregroundStyle(Ink.secondary).padding(.leading, 12)
         }
-        if let quote = bubble.quote, let target = bubble.replyTo {
-          // What this answers (`pCn`): one line over the bubble; a tap goes to it, or opens the thread it is in when it is a reply in one.
+        if let quote = bubble.quote, let target = bubble.replyTo, target != thread {
+          // What this answers (`pCn`): one line over the bubble; a tap goes to it, or opens the thread it is in when it is a reply
+          // in one. In a thread, not over a reply to its first message (every message there is one).
           let threadOfTarget = thread == nil ? store.threadRoot(of: target, in: agentId) : nil
           Button { if let threadOfTarget { actions?.openThread(threadOfTarget) } else { actions?.jump(target) } } label: {
             HStack(spacing: 4) {
@@ -827,10 +972,6 @@ struct BubbleView: View {
           .buttonStyle(.plain)
           .frame(maxWidth: ChatMetrics.bubbleMax(width), alignment: bubble.fromPerson ? .trailing : .leading)
           .accessibilityLabel(threadOfTarget == nil ? "Jump to replied message" : "Open reply thread")
-          #if os(macOS)
-          // The window's preview of what a quote answers, on hover.
-          .help(Self.answered(target, in: store.rows(for: agentId)) ?? quote)
-          #endif
         }
         content
           .modifier(Glow(id: bubble.id))
@@ -843,8 +984,9 @@ struct BubbleView: View {
             messageMenu?.target = MessageTarget(bubble: bubble)
           })
           #else
-          // On the Mac a message's actions are its right-click menu (mac/Simeon/MacChat.swift).
-          .contextMenu { MessageContextMenu(bubble: bubble, agentId: agentId) }
+          // On the Mac a message's actions are its right-click menu (mac/Simeon/MacChat.swift); a link card's and a
+          // picture's own items come first in theirs. "More emoji" opens over the message.
+          .modifier(MessageEmojiPopover(bubble: bubble, agentId: agentId))
           #endif
           .overlay(alignment: bubble.fromPerson ? .bottomTrailing : .bottomLeading) { reactions }
           .padding(.bottom, bubble.reactions.isEmpty ? 0 : 16)
@@ -863,13 +1005,21 @@ struct BubbleView: View {
     let maxWidth = ChatMetrics.bubbleMax(width - (inGroup && !bubble.fromPerson ? 30 : 0))
     let shown = shown
     if let link = bubble.loneLink {
-      // A message that is one link: its card (the window's `url-card.ts`).
+      // A message that is one link: its card (the window's `url-card.ts`), with no Copy.
       LinkCard(url: link, fromPerson: bubble.fromPerson)
+        #if os(macOS)
+        .contextMenu {
+          LinkMenuItems(url: link)
+          Divider()
+          MessageContextMenu(bubble: bubble, agentId: agentId)
+        }
+        #endif
     } else if !bubble.images.isEmpty && bubble.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
       // Pictures alone: the gallery without a bubble.
       ImageGallery(images: bubble.images, agentId: agentId, bubble: bubble)
     } else if bubble.isLoneEmoji {
       Text(bubble.text.trimmingCharacters(in: .whitespacesAndNewlines)).font(.system(size: 32))
+        .modifier(MessageMenuOnMac(bubble: bubble, agentId: agentId))
     } else if bubble.fromPerson {
       VStack(alignment: .trailing, spacing: 6) {
         Text(shown.text)
@@ -881,6 +1031,7 @@ struct BubbleView: View {
       }
         .padding(.horizontal, 15).padding(.vertical, 10)
         .background(Ink.bubbleMine, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .modifier(MessageMenuOnMac(bubble: bubble, agentId: agentId))
         .frame(maxWidth: maxWidth, alignment: .trailing)
     } else {
       VStack(alignment: .leading, spacing: 6) {
@@ -895,6 +1046,7 @@ struct BubbleView: View {
           .padding(.horizontal, 12).padding(.vertical, 8)
           .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
           .modifier(CardEdge(radius: 18))
+          .modifier(MessageMenuOnMac(bubble: bubble, agentId: agentId))
           .frame(maxWidth: maxWidth, alignment: .leading)
         // The agent's pictures, under its words.
         if !bubble.images.isEmpty { ImageGallery(images: bubble.images, agentId: agentId, bubble: bubble) }
@@ -941,17 +1093,6 @@ struct BubbleView: View {
     }
     Color.clear.frame(width: 0, height: 0)
       .onAppear { if reactionsSeen == nil { reactionsSeen = Set(bubble.reactions) } }
-  }
-
-  /** The whole message a quote answers, as its hover shows it (at most 500 characters). */
-  static func answered(_ id: String, in rows: [ChatRow]) -> String? {
-    for row in rows {
-      if case .bubble(let answered) = row, answered.id == id {
-        let text = answered.text.trimmingCharacters(in: .whitespacesAndNewlines)
-        return text.count > 500 ? String(text.prefix(500)) + "…" : text
-      }
-    }
-    return nil
   }
 
   /** One reaction at a time per emoji: the host toggles it, so a second tap before it answers would take it back. */
@@ -1259,6 +1400,51 @@ struct MessageHold: UIGestureRecognizerRepresentable {
 }
 #endif
 
+/**
+ * A message's words and their right-click menu on the Mac (its reactions,
+ * Reply, Start a thread, Copy). Copy copies the words; nothing while an
+ * agent's empty message is still being written (the window's `GWn`).
+ */
+struct MessageMenuOnMac: ViewModifier {
+  let bubble: Bubble
+  let agentId: String
+
+  func body(content: Content) -> some View {
+    #if os(macOS)
+    content.contextMenu { MessageContextMenu(bubble: bubble, agentId: agentId, copy: Self.copy(bubble)) }
+    #else
+    content
+    #endif
+  }
+
+  /** What "Copy" does for a message's words. */
+  static func copy(_ bubble: Bubble) -> () -> Void {
+    {
+      if bubble.isStreaming && bubble.text.isEmpty { return }
+      UIPasteboard.general.string = bubble.text
+    }
+  }
+}
+
+#if os(macOS)
+/** "More emoji" from a message's menu, over the message (the window swaps its menu for the picker). */
+struct MessageEmojiPopover: ViewModifier {
+  let bubble: Bubble
+  let agentId: String
+  @Environment(MessageMenu.self) private var messageMenu: MessageMenu?
+  @Environment(AppStore.self) private var store
+
+  func body(content: Content) -> some View {
+    content.popover(isPresented: Binding(
+      get: { messageMenu?.target?.id == bubble.id },
+      set: { open in if !open, messageMenu?.target?.id == bubble.id { messageMenu?.target = nil } }
+    ), arrowEdge: .top) {
+      MacEmojiPicker(mine: bubble.myReactions) { emoji in Task { await store.react(emoji, to: bubble.id, in: agentId) } }
+    }
+  }
+}
+#endif
+
 /** Your bubble pulled left by the sideways drag. */
 struct PeekShift: ViewModifier {
   let moves: Bool
@@ -1369,43 +1555,42 @@ struct FailedSendRow: View {
 }
 
 /**
- * The emoji offered after a ":" (the window's composer list): up to twelve,
- * the ones picked lately first, then those whose short name or name starts
- * with what was typed, each with its name; a tap writes it in place of the
- * ":" and what followed.
+ * What a reply answers, in one line (the window's `BAe`): the words (markdown
+ * left out, cut at `limit`, "(empty)" when there are none), a picture's
+ * thumbnail and "Photo", a file's icon and name, a link's icon and host, or
+ * "(deleted)".
  */
-struct EmojiSuggestions: View {
-  let query: String
-  var recent: [String] = []
-  let pick: (String) -> Void
+struct ReplyPreviewLine: View {
+  let entry: Entry?
+  let limit: Int
+  var thumbnail: CGFloat = 16
 
   var body: some View {
-    let found = EmojiCatalog.suggestions(query, recent: recent)
-    if !found.isEmpty {
-      SuggestionList(rows: found.count, rowHeight: 36) {
-        ForEach(found, id: \.character) { emoji in
-          Button { pick(emoji.character) } label: {
-            HStack(spacing: 10) {
-              Text(emoji.character).font(.system(size: 20)).frame(width: 24)
-              Text(":" + (emoji.aliases.first ?? emoji.name.replacingOccurrences(of: " ", with: "_")) + ":")
-                .font(.system(size: 14)).foregroundStyle(Ink.primary).lineLimit(1)
-              Spacer(minLength: 0)
-            }
-            .padding(.horizontal, 12)
-            .frame(height: 36)
-            .contentShape(.rect)
-          }
-          .buttonStyle(.plain)
+    let line = Chat.quoteLine(entry, limit: limit)
+    HStack(spacing: 6) {
+      switch Chat.ReplyPreview(entry) {
+      case .image(let url):
+        if let picture = ChatImages.image(for: [url]) {
+          Image(uiImage: picture).resizable().scaledToFill()
+            .frame(width: thumbnail, height: thumbnail)
+            .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+        } else {
+          Image(systemName: "photo")
         }
+      case .file: Image(systemName: "doc")
+      case .link: Image(systemName: "link")
+      case .text, .missing: EmptyView()
       }
+      Text(line).lineLimit(1)
     }
   }
 }
 
-/** A composer list over the field (":", "/", "#", "@"): on glass, scrolling past six rows. */
+/** A composer list over the field (":", "/", "#", "@"): on glass, scrolling past its height (the window's: 260 for ":", 300 for "#", 320 for "@"). */
 struct SuggestionList<Content: View>: View {
   let rows: Int
   var rowHeight: CGFloat = 40
+  var maxHeight: CGFloat = 320
   @ViewBuilder let content: Content
 
   var body: some View {
@@ -1414,137 +1599,8 @@ struct SuggestionList<Content: View>: View {
         .padding(.vertical, 4)
     }
     .scrollBounceBehavior(.basedOnSize)
-    .frame(height: min(CGFloat(rows) * rowHeight + 8, 6 * rowHeight + 8))
+    .frame(height: min(CGFloat(rows) * rowHeight + 8, maxHeight))
     .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-  }
-}
-
-/** The skills offered after a "/" (the window's "Reference a skill"): a pick writes "@name" and the message carries the skill. */
-struct SkillPicker: View {
-  let skills: [ComposerMenus.Skill]
-  let pick: (ComposerMenus.Skill) -> Void
-
-  var body: some View {
-    SuggestionList(rows: skills.count) {
-      ForEach(skills) { skill in
-        Button { pick(skill) } label: {
-          HStack(spacing: 10) {
-            Image(systemName: "wand.and.stars").font(.system(size: 14)).foregroundStyle(Ink.blue).frame(width: 24)
-            Text(skill.name).font(.system(size: 15)).foregroundStyle(Ink.primary).lineLimit(1)
-            Spacer(minLength: 0)
-          }
-          .padding(.horizontal, 12)
-          .frame(height: 40)
-          .contentShape(.rect)
-        }
-        .buttonStyle(.plain)
-      }
-    }
-    .accessibilityLabel("Reference a skill")
-  }
-}
-
-/** The pull requests offered after a "#": the ones the chat linked, newest first. */
-struct PullRequestPicker: View {
-  let pulls: [ComposerMenus.PullRequest]
-  let pick: (ComposerMenus.PullRequest) -> Void
-
-  var body: some View {
-    SuggestionList(rows: pulls.count) {
-      ForEach(pulls) { pull in
-        Button { pick(pull) } label: {
-          HStack(spacing: 10) {
-            Image(systemName: "arrow.triangle.pull").font(.system(size: 14)).foregroundStyle(Ink.secondary).frame(width: 24)
-            Text("#\(pull.number)").font(.system(size: 15, weight: .medium)).foregroundStyle(Ink.primary)
-            Text(URL(string: pull.url).map { $0.pathComponents.dropFirst().prefix(2).joined(separator: "/") } ?? "")
-              .font(.system(size: 13)).foregroundStyle(Ink.secondary).lineLimit(1)
-            Spacer(minLength: 0)
-          }
-          .padding(.horizontal, 12)
-          .frame(height: 40)
-          .contentShape(.rect)
-        }
-        .buttonStyle(.plain)
-      }
-    }
-    .accessibilityLabel("Pull request")
-  }
-}
-
-/**
- * What "@" offers (the Mac's composer list): in a group of two or more,
- * "everyone" first; the agents whose name starts with what was typed (a
- * group's own members); then the agent's routines. A pick writes the name.
- */
-struct MentionPicker: View {
-  let query: String
-  let chatId: String
-  var routines: [ComposerMenus.Skill] = []
-  let pick: (String) -> Void
-  var pickRoutine: (ComposerMenus.Skill) -> Void = { _ in }
-  @Environment(AppStore.self) private var store
-
-  private var names: [Mentions.AgentName] {
-    let chat = store.agent(chatId)
-    let pool = chat?.isGroup == true ? store.mentionNames.filter { chat?.memberIds.contains($0.id) == true } : store.mentionNames
-    return Array(pool.filter { query.isEmpty || $0.name.lowercased().hasPrefix(query.lowercased()) }.prefix(5))
-  }
-
-  /** "@everyone" in a group of two or more (the window's `__everyone__`). */
-  private var offersEveryone: Bool {
-    guard let chat = store.agent(chatId), chat.isGroup, chat.memberIds.count >= 2 else { return false }
-    return query.isEmpty || ComposerMenus.everyone.hasPrefix(query.lowercased()) || "all".hasPrefix(query.lowercased())
-  }
-
-  private var matchingRoutines: [ComposerMenus.Skill] { Array(ComposerMenus.filter(routines, query).prefix(4)) }
-
-  var body: some View {
-    let rows = names.count + (offersEveryone ? 1 : 0) + matchingRoutines.count
-    if rows > 0 {
-      SuggestionList(rows: rows) {
-        if offersEveryone {
-          Button { pick(ComposerMenus.everyone) } label: {
-            HStack(spacing: 10) {
-              Image(systemName: "person.3.fill").font(.system(size: 13)).foregroundStyle(Ink.blue).frame(width: 24, height: 24)
-              Text("everyone").font(.system(size: 15)).foregroundStyle(Ink.primary)
-              Text("Everyone in this group").font(.system(size: 13)).foregroundStyle(Ink.secondary)
-              Spacer(minLength: 0)
-            }
-            .padding(.horizontal, 12)
-            .frame(height: 40)
-            .contentShape(.rect)
-          }
-          .buttonStyle(.plain)
-        }
-        ForEach(matchingRoutines) { routine in
-          Button { pickRoutine(routine) } label: {
-            HStack(spacing: 10) {
-              Image(systemName: "clock.arrow.circlepath").font(.system(size: 14)).foregroundStyle(Ink.secondary).frame(width: 24, height: 24)
-              Text(routine.name).font(.system(size: 15)).foregroundStyle(Ink.primary).lineLimit(1)
-              if let when = routine.subtitle { Text(when).font(.system(size: 13)).foregroundStyle(Ink.secondary).lineLimit(1) }
-              Spacer(minLength: 0)
-            }
-            .padding(.horizontal, 12)
-            .frame(height: 40)
-            .contentShape(.rect)
-          }
-          .buttonStyle(.plain)
-        }
-        ForEach(names, id: \.id) { name in
-          Button { pick(name.name) } label: {
-            HStack(spacing: 10) {
-              ButterflyView(palette: .named(name.colour)).frame(width: 24, height: 24)
-              Text(name.name).font(.system(size: 15)).foregroundStyle(Ink.primary)
-              Spacer(minLength: 0)
-            }
-            .padding(.horizontal, 12)
-            .frame(height: 40)
-            .contentShape(.rect)
-          }
-          .buttonStyle(.plain)
-        }
-      }
-    }
   }
 }
 
