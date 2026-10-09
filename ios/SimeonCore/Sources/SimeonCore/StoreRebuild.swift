@@ -51,8 +51,8 @@ extension AppStore {
     Task { rebuild.migrationReadBack(await backend.migrationStatus()) }
   }
 
-  /** Sending waits while the computer is rebuilt (`isSendingPaused`), where the rebuild is shown (the Mac). */
-  public var isSendingPaused: Bool { followsRebuild && rebuild.isHardLocked }
+  /** Sending waits while the computer is rebuilt (`isSendingPaused`), where the rebuild is shown (the Mac), and while this account has no Simeon (`gft`). */
+  public var isSendingPaused: Bool { (followsRebuild && rebuild.isHardLocked) || access.pausesSending }
 
   // MARK: The disk
 

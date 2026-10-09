@@ -26,6 +26,11 @@ struct MacRoot: View {
             OnboardingFlow()
               .toolbar(.hidden, for: .windowToolbar)
               .transition(.opacity)
+          } else if store.showsAccessCover {
+            // The computer refused this account before its agents were ever read: the window's access cover (`mzn`).
+            MacAccessCover()
+              .toolbar(.hidden, for: .windowToolbar)
+              .transition(.opacity)
           } else if store.agents.isEmpty && (store.isLoading || session.firstRun == .checking) {
             MacSettingUp()
               .toolbar(.hidden, for: .windowToolbar)
@@ -291,6 +296,53 @@ struct MacNameSheet: View {
         failed = true
       }
       saving = false
+    }
+  }
+}
+
+/**
+ * The access cover (`mzn`, over the onboarding landing `h0t`): the blue
+ * mark, "Simeon", the tagline, why this account can't use Simeon yet, and
+ * the button that opens simeonlabs.com. The agents are asked for again
+ * every 4 s (`COn`); the cover goes once the computer answers.
+ */
+struct MacAccessCover: View {
+  @Environment(AppStore.self) private var store
+  @Environment(\.openURL) private var openURL
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+  var body: some View {
+    let words = store.access.cover
+    VStack(spacing: 18) {
+      ButterflyView(palette: .named("blue"), motion: reduceMotion ? nil : .idle)
+        .frame(width: 88, height: 88)
+        .accessibilityHidden(true)
+      VStack(spacing: 6) {
+        Text("Simeon").font(.system(size: 28, weight: .semibold)).accessibilityAddTraits(.isHeader)
+        Text(SandAccess.tagline).font(.system(size: 15)).foregroundStyle(.secondary)
+      }
+      VStack(spacing: 4) {
+        Text(words.title).font(.system(size: 15, weight: .medium))
+        Text(words.body).font(.system(size: 13)).foregroundStyle(.secondary)
+      }
+      .multilineTextAlignment(.center)
+      .frame(maxWidth: 420)
+      if let action = words.action {
+        Button(action) { openURL(SandAccess.page) }
+          .buttonStyle(.borderedProminent)
+          .buttonBorderShape(.capsule)
+          .controlSize(.large)
+      }
+    }
+    .padding(32)
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .background(Ink.ground)
+    .task {
+      while !Task.isCancelled && store.showsAccessCover {
+        try? await Task.sleep(nanoseconds: 4_000_000_000)
+        guard !Task.isCancelled, store.showsAccessCover else { return }
+        await store.retryRoster()
+      }
     }
   }
 }

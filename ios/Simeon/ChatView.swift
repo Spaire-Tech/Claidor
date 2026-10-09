@@ -609,6 +609,10 @@ struct ChatComposer: View {
           .accessibilityAddTraits(.updatesFrequently)
           .transition(.opacity)
       }
+      if let words = store.access.notice {
+        // While this account has no Simeon (`sand-access-notice`): why, and the page; Send waits meanwhile.
+        AccessNotice(words: words)
+      }
       if !attachments.isEmpty {
         ScrollView(.horizontal, showsIndicators: false) {
           HStack(spacing: 8) {
@@ -1914,3 +1918,28 @@ struct SelectableText: UIViewRepresentable {
   }
 }
 #endif
+
+/** The composer's access line (`Qvn`): its title over its words, and the button that opens simeonlabs.com. */
+struct AccessNotice: View {
+  let words: SandAccess.Words
+  @Environment(\.openURL) private var openURL
+
+  var body: some View {
+    HStack(spacing: 12) {
+      VStack(alignment: .leading, spacing: 2) {
+        Text(words.title).font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.primary)
+        Text(words.body).font(.system(size: 12)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true)
+      }
+      Spacer(minLength: 8)
+      if let action = words.action {
+        Button(action) { openURL(SandAccess.page) }
+          .buttonStyle(.borderedProminent)
+          .buttonBorderShape(.capsule)
+          .controlSize(.small)
+      }
+    }
+    .padding(.horizontal, 14).padding(.vertical, 10)
+    .background(Ink.pill, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+    .accessibilityElement(children: .contain)
+  }
+}

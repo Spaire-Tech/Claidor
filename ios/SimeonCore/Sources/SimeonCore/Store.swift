@@ -135,9 +135,15 @@ public final class AppStore {
   }
   public private(set) var isLoading = false
   public var account: Account?
+  /** Whether this account may use Simeon (`GetSandAccessStatus`): the composer's notice and its paused Send. */
+  public internal(set) var access: SandAccess = .checking
+  /** The computer refused this account before the agents were ever read (`sand-access-blocked`). */
+  public private(set) var accessBlocked = false
+  /** The agents were read once since signing in (`hasReachedBox`): the access cover never comes back after. */
+  public private(set) var hasReachedBox = false
   /** Settings' Usage & Billing (`usageSummary`): read when Settings opens, at most every 30 s. */
   public internal(set) var usage: UsageLoad = .empty
-  @ObservationIgnored var usageReadAt: Date?
+  @ObservationIgnored public internal(set) var usageReadAt: Date?
   /** Something went wrong that the person should hear about, once. */
   public var problem: String?
   /** An answer the person gave that the host has not echoed yet: the card shows it at once (the window's optimistic answer). */
@@ -290,6 +296,8 @@ public final class AppStore {
       Task { @MainActor in self?.take(state) }
     }
     connectRebuild(backend)
+    // Whether this account may use Simeon, beside the agents (`sandAccess.connect`).
+    Task { await refreshAccess() }
     await reloadRoster()
     await loadPins()
     await loadSections()
@@ -301,7 +309,7 @@ public final class AppStore {
     listening?.cancel()
     listening = nil
     backend = nil
-    agents = []; transcripts = [:]; chatRows = [:]; steps = [:]; call = nil; callLevels = []; isLive = false; account = nil; usage = .empty; usageReadAt = nil; openChat = nil
+    agents = []; transcripts = [:]; chatRows = [:]; steps = [:]; call = nil; callLevels = []; isLive = false; account = nil; usage = .empty; usageReadAt = nil; access = .checking; accessBlocked = false; hasReachedBox = false; openChat = nil
     layoutTask?.cancel(); layoutTask = nil; pendingLayout = []; refreshing = []; caughtUp = [:]
     pendingAnswers = [:]; unreadAfter = [:]; apps = []; catalog = []; pinnedIds = []; routinesByAgent = [:]; sidebarSections = nil
     streamingOnly = [:]; outbox = [:]; arrived = []; olderBefore = [:]; loadingOlder = []; paged = []; firstRunAgentId = nil; revealing = [:]
@@ -317,9 +325,13 @@ public final class AppStore {
     do {
       agents = readingOpenChat(sortRoster(try await backend.listAgents()))
       rosterFailed = false
+      accessBlocked = false
+      hasReachedBox = true
     } catch {
       rosterFailed = true
-      if reportsRosterFailure { problem = "Couldn't reach your agents: \(error.localizedDescription)" }
+      // The computer refused this account (`EnsureSandBox`'s permission_denied: no plan): the window's access cover, not a failure to report.
+      accessBlocked = (error as? SimeonAPIError)?.status == 403
+      if reportsRosterFailure && !accessBlocked { problem = "Couldn't reach your agents: \(error.localizedDescription)" }
     }
   }
 

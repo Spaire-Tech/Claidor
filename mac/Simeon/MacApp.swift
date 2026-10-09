@@ -60,6 +60,11 @@ struct SimeonMacApp: App {
     }
     .defaultSize(width: 1000, height: 700)
 
+    // About, from the app menu and the account menu (`PVn`).
+    Window("About Simeon", id: "about") { MacAbout() }
+      .windowResizability(.contentSize)
+      .windowStyle(.hiddenTitleBar)
+
     Settings {
       MacSettings()
         .environment(session)
@@ -283,6 +288,10 @@ struct SimeonCommands: Commands {
   @Environment(\.openWindow) private var openWindow
 
   var body: some Commands {
+    // About opens the window's About (`open-about`).
+    CommandGroup(replacing: .appInfo) {
+      Button("About Simeon") { openWindow(id: "about") }
+    }
     CommandGroup(after: .appSettings) {
       Button("Connect Apps…") { openWindow(id: "connect-apps") }
         .keyboardShortcut("m", modifiers: [.command, .shift])

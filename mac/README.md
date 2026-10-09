@@ -216,6 +216,29 @@ the window draws it. The rules are in SimeonCore (`CallBanner`,
 `CallRecord`, `LiveCall`); the demo's call is scripted (`DemoCall`) and
 never fails, so the failure's banner shows only on a real call.
 
+What slice 6 adds, Settings and Connect apps as the shipped window has
+them, read from its settings chunk (`index-BlqerJhg.js`), its Plugins
+overlay (`view-B5Ug8wEm.js`), the main bundle and the Electron app's
+account code. Settings (⌘,): General with the account card (picture or
+first and last letters, Copy, Sign Out asking "Sign out?"), Theme
+(Follow System), Timezone, and Auto-review with its rules in place; Usage
+& Billing, listed once the usage has been read, with the weekly or trial
+meter, on-demand, the upgrade card, Cancel Trial and Manage Plan.
+Connect apps (⇧⌘M, ⇧⌘W, or the sidebar's "Connect apps"): "Plugins" with
+Marketplace and Yours, the filter, the search, each plugin's page with
+its accounts, tools, setup values, connectors and skills, a server's
+Details, the agent's own skills and their page, the GitHub banner with
+Fix with agent, and the notices. The sidebar's foot is the window's: the
+account disc with "Weekly usage", Settings, About and "Log out", and
+"Connect apps" beside it; About is the window's too. An account the
+computer refuses before its agents were ever read gets the access cover;
+an account with no Simeon sees the composer's notice and Send waits. The
+rules are SimeonCore's (`AccountSettings`, `StoreSettings`, `Plugins`,
+`Access`), each checked against the shipped functions run in Node on
+random inputs. Not built because the shipped window doesn't draw them:
+a model picker, the privacy block, account rename and Add Another
+Account, skill publishing (the last two behind gates Simeon leaves off).
+
 ## What can and cannot be checked here
 
 - `SimeonCore` and `SimeonMacCore` build and their tests run on Linux
@@ -224,8 +247,11 @@ never fails, so the failure's banner shows only on a real call.
   search, sections, schedules and events) and slice 4's (the computer's
   words, the status store, the rebuild lock and its steps) and slice 5's
   (the banner's looks and words, the waveform, the older call record, the
-  switch, the Mac's tones, a failed call waiting to be closed) against
-  values made by running the window's own functions.
+  switch, the Mac's tones, a failed call waiting to be closed) and slice
+  6's (the account's letters, Auto-review's rules, the usage summary and
+  meters, the Plugins overlay's search, sections, added rule, Yours list,
+  filter and words, the access words) against values made by running the
+  window's own functions.
 - The app's own files, the Mac's and the shared iPhone ones, can only be
   parsed off a Mac (`swiftc -parse`), not compiled: SwiftUI and AppKit are
   not here. Every slice is built and run on the founder's Mac before it

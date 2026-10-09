@@ -97,12 +97,12 @@ that is off say so; the gates' values are in
 |---|---|---|---|
 | The sign-in screen. Since 9 October the iPhone's (logo, "SimeonLabs", Continue with Apple, Continue with Google, the legal line), as the founder asked "same for everything"; the Mac window still has the older one | phone `SimeonApp.swift` `SignInScreen` | yes | written |
 | "Finish signing in from your browser" with Cancel, while the browser is open | recovered `settings/overlay/panels.tsx` | yes | written |
-| The account in Settings: picture or initials, name, email with Copy | recovered `settings/overlay/panels.tsx` | partly (initials only) | written (initials) |
-| Edit your name from the account menu | recovered `account/session/menu.tsx` | no (the first run only) | |
+| The account in Settings: picture or initials, name, email with Copy | recovered `settings/overlay/panels.tsx` | partly (initials only) | written (`MacAccountCard`): the picture, else the first and last letters (`AccountInitials`, the window's `zon`), the name ("Simeon" with none), the e-mail with its copy button, Sign Out asking "Sign out?"; "Not signed in" and "Signing in" with Sign In and Cancel |
+| Edit your name from the account menu | recovered `account/session/menu.tsx` | no (the first run only) | not built: the shipped disc hides the name slot (patch 1660); the name sheet asks for it |
 | "What should your agents call you?" for an account with no name, Not now and Continue | patch 427-459 | partly (the first run only) | |
-| The account menu at the sidebar's foot: Settings, the week's usage (Included, On-demand, spend this cycle, Change limit, "Resets in N days"), About, Sign out | recovered `account/session/menu.tsx` | partly (Settings rows) | part: Settings, Connect Apps, Sign Out |
-| The access cover: start a trial, a plan is needed, a team admin's states, privacy; Check Access, Request Access, Start Trial, Get Ultra (to the billing page) | recovered `access/cover/` | no | |
-| "Update Privacy Mode", Open Privacy Settings, Sign out | recovered `roster/privacy-blocked.tsx` | no | |
+| The account menu at the sidebar's foot: Settings, the week's usage (Included, On-demand, spend this cycle, Change limit, "Resets in N days"), About, Sign out | recovered `account/session/menu.tsx` | partly (Settings rows) | written (`MacAccountBar`): the 32 pt disc ("Open account menu"); "Weekly usage" with its share and, inside, when it resets, "On-demand" when the server meters it, "Change limit" (app.simeonlabs.com/app); Settings; About; "Log out" asking "Sign out?". The shipped menu has no "Included" and no Connect apps; "Connect apps" is its own button beside the disc, with the three tilted tiles. The update row waits for slice 9 (Sparkle) |
+| The access cover: start a trial, a plan is needed, a team admin's states, privacy; Check Access, Request Access, Start Trial, Get Ultra (to the billing page) | recovered `access/cover/` | no | written (`MacAccessCover`, `SandAccess`): when the computer refuses the account (403) before the agents were ever read and no rebuild is under way; the blue mark, "Simeon", the tagline, the words for the account's state and reason (`GetSandAccessStatus`), the button to simeonlabs.com (what ships, not the billing page the patch's comment names); the agents asked for every 4 s. The composer's notice with Send paused while the account has no Simeon, and the sidebar's "Your computer isn’t set up" with Retry alone |
+| "Update Privacy Mode", Open Privacy Settings, Sign out | recovered `roster/privacy-blocked.tsx` | no | not built: it shows only for a storage error Simeon Labs' server never raises (`box_hosts.py`) |
 
 ### 2.2 The first run
 
@@ -301,23 +301,23 @@ The menus, zoom and full screen are in §9.
 
 | What | Where | Phone | Mac |
 |---|---|---|---|
-| General: Account, Theme (Follow System, Light, Dark), Timezone, Auto-review with its rules | recovered `settings/overlay/panels.tsx`, `auto-review.tsx` | yes | written |
+| General: Account, Theme (Follow System, Light, Dark), Timezone, Auto-review with its rules | recovered `settings/overlay/panels.tsx`, `auto-review.tsx` | yes | written (`MacSettings.swift`): the shipped General (Account, Appearance › Theme, Agent › Timezone and Auto-review with its rules in place: the composer, the table with edit and delete, twenty a list, a thousand characters, ⌘↩ and Esc), the rules checked against the settings chunk's own editor |
 | General: Execution on Local Computer (Always allow, Ask every time, Never allow) | recovered `settings/overlay/panels.tsx` | no (the Mac's only, §7) | |
 | General: Security Key | same | no (the Mac's only, §8) | |
-| Usage & Billing: the week's or the trial's meter and its reset, on-demand, Get more Simeon usage, Cancel Trial ("Cancel your trial?", Keep Trial), Manage Plan (Upgrade to *tier*, Manage Billing ↗) | recovered `panels.tsx`, patch 543-594 | partly (no on-demand, trial, Cancel Trial) | part: the phone's |
+| Usage & Billing: the week's or the trial's meter and its reset, on-demand, Get more Simeon usage, Cancel Trial ("Cancel your trial?", Keep Trial), Manage Plan (Upgrade to *tier*, Manage Billing ↗) | recovered `panels.tsx`, patch 543-594 | partly (no on-demand, trial, Cancel Trial) | written (`MacUsageSettings`, `UsageSummary`, `UsageMeters`): listed once a summary is in; "Weekly usage" or "Trial usage" with its reset or end, on-demand, the upgrade card and its line, Cancel Trial with "Cancel your trial?" (`CancelSandTrial`), Manage Plan; loading and refresh failures with Retry; read on opening unless read in the last 30 s; checked against the Electron app's summary and the window's meter run on 500 quotas |
 | Updates: hidden today | patch 8-13 | n/a | Sparkle's own |
 
 ### 2.19 Connect apps (⇧⌘M)
 
 | What | Where | Phone | Mac |
 |---|---|---|---|
-| Marketplace and Yours, search, Filter (Connectors, Skills; Public, Team) | recovered `plugins/overlay/browser.tsx` | partly (no filter, no skills) | part: the phone's, in its own window |
-| An app: Add, Authenticate, Enable, Disable, Remove; Connected, Authentication required, Starting, Disconnected, Error, Disabled by team admin | same | partly | part: the phone's |
-| Setup values (Edit Values, Save Values) and Details | same | no | |
-| Its tools, each with a switch | same | yes | written |
-| Its accounts: rename, remove, Add Another Account, Authorize | same | yes | written |
-| Skills: the agent's own, the editor (name, "Use when…", instructions), publish to the team, Copy link, Sync, Unpublish, Delete | same | no | |
-| "Fix with agent" when an app's content needs a GitHub sign-in | recovered `plugins/overlay/github-auth-banner.tsx` | no | |
+| Marketplace and Yours, search, Filter (Connectors, Skills; Public, Team) | recovered `plugins/overlay/browser.tsx` | partly (no filter, no skills) | written (`MacPlugins`, `Plugins`): "Plugins" in a window of its own (1000 × 700): Marketplace and Yours, the Filter menu, "Search plugins" (⌘F), the sections with Featured first and "Show N more", the results ranked by the overlay's fuzzy score; checked against the overlay's own functions on 160 random catalogs |
+| An app: Add, Authenticate, Enable, Disable, Remove; Connected, Authentication required, Starting, Disconnected, Error, Disabled by team admin | same | partly | written: Add (setup first when it needs values, the skills synced after), Added for anything installed, Uninstall, Remove or the team's label, the status words ("Needs auth"), Authenticate in the browser with "Reopen" and, after ten minutes, "Retry"; the notices as the overlay words them |
+| Setup values (Edit Values, Save Values) and Details | same | no | written: the setup page (secrets hidden, "(optional)", what is required, Add or Save Values) and a server's Details (Source, Transport, URL or Command, Tools) |
+| Its tools, each with a switch | same | yes | written: folded, "n of m enabled", the names as the overlay shortens them, each switch changed at once, a failure under them |
+| Its accounts: rename, remove, Add Another Account, Authorize | same | yes | part: each account with its state and sign-in, the default first; rename, remove and Add Another Account are behind `mcp_multi_account`, off in Simeon, so not built |
+| Skills: the agent's own, the editor (name, "Use when…", instructions), publish to the team, Copy link, Sync, Unpublish, Delete | same | no | part: Yours › Private with each skill's switch, its page (Name, Description, Instructions, Save, Delete skill); publishing, Copy link, Sync and Unpublish are behind `publish_user_skills`, off in Simeon, so not built |
+| "Fix with agent" when an app's content needs a GitHub sign-in | recovered `plugins/overlay/github-auth-banner.tsx` | no | written: the banner on Yours (`getPluginSyncStatus`), Fix with agent making or opening the Plugin Setup agent with its first message |
 
 ### 2.20 The org chart and shared rooms (both gates on)
 
@@ -461,7 +461,7 @@ The Swift app does each of these itself:
 | The name sheet after onboarding, Google's first name offered | `account.getNamePrompt`, `updateName` | yes | written |
 | The account's picture | `account.getAvatar`, main `account/account-avatar.ts` | partly (initials) | |
 | Usage and billing: weekly usage, summary, the billing portal | `account.getWeeklyUsage`, `getUsageSummary`, `openBillingPortal` | yes (`Settings.swift`) | written |
-| Privacy mode, cancel trial, dashboard actions | `account.getPrivacyModeEnabled`, `cancelTrial`, `invokeDashboardAction` | no | |
+| Privacy mode, cancel trial, dashboard actions | `account.getPrivacyModeEnabled`, `cancelTrial`, `invokeDashboardAction` | no | part: Cancel Trial (`CancelSandTrial`); privacy mode is always "on" and shows nowhere; dashboard actions nothing on Simeon Labs' server emits |
 | The access gate: granted, unavailable, payment required | `account.getSandAccess`, main `account/access.ts` | no | |
 | A machine id sent with server calls | main `account/machine-id.ts` | no | |
 | **Attachments**: stage, upload, read text and bytes (25 MB) | `stageAttachmentBytes`, `commitStagedAttachments`, `readAttachment*`, main `attachments/` | yes | written |
@@ -475,9 +475,9 @@ The Swift app does each of these itself:
 | Thumbs on a finished call (`/voice/calls/{id}/feedback`); the window draws none today | `voiceCall.rateCall` | no | not built: the shipped window draws no thumbs, so neither does the Mac |
 | The call as a floating banner (360 pt, top right under the menu bar, every Space, no focus taken; leaves 1.2 s after the end, a failure stays 20 s) | `desktop/source/voice-call/`, main `voice/voice-call-window.ts` | no (a full screen on the phone) | written (`MacCallBanner`): an `NSPanel` that never takes the keys, on every Space, at the top right of the screen under the pointer; it grows with the transcript (40 to 480 pt) from its top; a click works without bringing Simeon forward and makes it key, as the Electron panel is, so the transcript can be selected; it opens and closes with the call whichever windows are open. To check on a Mac: that the pointer over it keeps a failure up while another app is in front |
 | **Connectors**: the 79-connector catalog, install, accounts, custom servers by URL, tools on and off, custom instructions, team numbers, logos | `mcp.*`, main `mcp/desktop-mcp-manager.ts` | partly (no custom servers, instructions, team numbers, uninstall) | |
-| `simeon://app/v1/plugin/add?id=` opens a connector to add | main `deep-link/`, `shared/deep-link.ts` | no | |
+| `simeon://app/v1/plugin/add?id=` opens a connector to add | main `deep-link/`, `shared/deep-link.ts` | no | written: Connect apps opens on that plugin's page |
 | **Secrets**: list, reveal, add, remove, pushed to the box. The window has no page for them today; the card that asks for one goes to the box itself (`submitSecret`) | `secrets.*`, main `secrets/` | yes (the card) | written |
-| **Models**: the default model, the computer-use model, the list (`/desktop/api/models/available`) | `agent.get/setDefaultModel`, `get/setComputerUseModel`, `getAvailableModels` | no | |
+| **Models**: the default model, the computer-use model, the list (`/desktop/api/models/available`) | `agent.get/setDefaultModel`, `get/setComputerUseModel`, `getAvailableModels` | no | not shipped UI: no screen of the window reaches these bridges, so none is built |
 | Sidebar sections | `agent.get/setSidebarSections` | no | |
 | Pins | `agent.get/setPinnedAgents` | yes | written |
 | Time zone, auto-review rules | `timeZone.*`, `autoReviewInstructions.*` | yes | written |
@@ -611,7 +611,12 @@ Each slice ends with a build on the founder's Mac and their screenshots.
 6. **Settings, all of it.** Connect apps with everything in §2.19
    (Setup values, Details, filters, skills), Models, Time zone,
    Auto-review, Usage and Billing with the trial, privacy, the access
-   cover.
+   cover. Written. Models and the privacy block are not built: no
+   screen of the shipped window reaches the models, and the privacy
+   block needs an error the server never sends. Account rename, remove
+   and Add Another Account, and skill publishing, wait behind gates
+   Simeon leaves off. Execution on Local Computer is slice 7's, Security
+   Key slice 8's, the update row slice 9's.
 7. **The Mac's own.** Notifications and the Dock badge, the agent's hands
    on this Mac with its setting, approvals and Allow card, connector
    sign-ins on localhost, routed tools, channels, the org chart, shared

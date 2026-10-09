@@ -335,6 +335,17 @@ public struct UsageMeters: Equatable, Sendable {
     return "\(Int(clamped.rounded(.toNearestOrAwayFromZero)))%"
   }
 
+  /** The account menu's spend (`wze`): "$12.5", "$100", "$1.2k" from a thousand dollars up. */
+  public static func compactMoney(_ cents: Double) -> String {
+    guard cents.isFinite else { return "$0" }
+    let dollars = max(cents, 0) / 100
+    func trimmed(_ text: String) -> String {
+      guard text.contains(".") else { return text }
+      return text.replacingOccurrences(of: "\\.?0+$", with: "", options: .regularExpression)
+    }
+    return dollars >= 1_000 ? "$\(trimmed(String(format: "%.1f", dollars / 1_000)))k" : "$\(trimmed(String(format: "%.2f", dollars)))"
+  }
+
   /** Cents as dollars, "$12" or "$12.34" (`Xve`). */
   public static func money(_ cents: Double) -> String {
     let dollars = cents / 100

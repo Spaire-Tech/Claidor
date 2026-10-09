@@ -42,9 +42,24 @@ extension AppStore {
     } catch {
       return "Couldn’t cancel the trial. Try again."
     }
+    // The trial's end changes what this account may do (`onTrialCanceled`).
+    await refreshAccess()
     await refreshUsage()
     return nil
   }
+
+  /** Whether this account may use Simeon (`GetSandAccessStatus`); "unknown" when it can't be read. */
+  public func refreshAccess() async {
+    guard let backend else { access = .checking; return }
+    do {
+      access = SandAccess(json: try await backend.dashboard("GetSandAccessStatus", [:]))
+    } catch {
+      access = .unknown
+    }
+  }
+
+  /** The window's access cover (`czn`): the computer refused this account, the agents were never read, and no rebuild is under way. */
+  public var showsAccessCover: Bool { accessBlocked && !hasReachedBox && !rebuild.isHardLocked }
 
   /**
    * Stripe's portal for the Manage Plan card: the confirmation of the next

@@ -136,6 +136,18 @@ final class SettingsTests: XCTestCase {
     }
   }
 
+  /** `wze`, read off the bundle: dollars to two places with trailing zeros dropped; thousands as "k" to one place. */
+  func testAccountMenuMoney() {
+    XCTAssertEqual(UsageMeters.compactMoney(1250), "$12.5")
+    XCTAssertEqual(UsageMeters.compactMoney(10_000), "$100")
+    XCTAssertEqual(UsageMeters.compactMoney(1234), "$12.34")
+    XCTAssertEqual(UsageMeters.compactMoney(0), "$0")
+    XCTAssertEqual(UsageMeters.compactMoney(120_000), "$1.2k")
+    XCTAssertEqual(UsageMeters.compactMoney(100_000), "$1k")
+    XCTAssertEqual(UsageMeters.compactMoney(-5), "$0")
+    XCTAssertEqual(UsageMeters.compactMoney(.nan), "$0")
+  }
+
   func testUsageSectionShowsOnceASummaryIsIn() {
     let summary = UsageSummary(quota: ["creditsLimit": 100, "creditsUsed": 5])
     XCTAssertFalse(UsageLoad.empty.showsSection)

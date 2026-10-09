@@ -353,9 +353,10 @@ struct MacDiskBanner: View {
 }
 
 /**
- * The sidebar when the agents cannot be read (`tpn`, `npn`): "Can't reach
+ * The sidebar when the agents cannot be read (`tpn`, `npn`): "Can’t reach
  * your computer" with Retry and Recover computer while there is no list to
- * show, "Reconnecting to your computer…" over a list already shown.
+ * show ("Your computer isn’t set up" with Retry alone while this account has
+ * no Simeon), "Reconnecting to your computer…" over a list already shown.
  */
 struct MacSidebarConnection: View {
   @Environment(AppStore.self) private var store
@@ -363,10 +364,14 @@ struct MacSidebarConnection: View {
   var body: some View {
     let driver = store.rebuild
     VStack(alignment: .leading, spacing: 10) {
-      Label("Can't reach your computer", systemImage: "desktopcomputer")
+      // This account has no Simeon yet: no Recover while it can't (`isAccessBlocked`).
+      let blocked = store.accessBlocked
+      Label(blocked ? "Your computer isn\u{2019}t set up" : "Can\u{2019}t reach your computer", systemImage: "desktopcomputer")
         .font(.system(size: 13, weight: .semibold))
-      let canRecover = driver.canReset && !driver.isBlocked
-      Text("Your agents are safe \u{2014} they just can't be loaded right now." + (canRecover ? " If it doesn't come back on its own, recover it \u{2014} your files and logins are kept." : ""))
+      let canRecover = !blocked && driver.canReset && !driver.isBlocked
+      Text(blocked
+           ? "Simeon can\u{2019}t set up a computer for this account yet. Setup starts automatically once this account has access."
+           : "Your agents are safe \u{2014} they just can\u{2019}t be loaded right now." + (canRecover ? " If it doesn\u{2019}t come back on its own, recover it \u{2014} your files and logins are kept." : ""))
         .font(.system(size: 12)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
       if store.rosterRetrying {
         HStack(spacing: 6) {

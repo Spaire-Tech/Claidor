@@ -737,41 +737,173 @@ struct MacMoveItems: View {
   }
 }
 
-/** The account at the sidebar's foot (the Electron window's account disc): Settings, Connect Apps, Sign Out. */
+/**
+ * The sidebar's foot (`Rct`, and the patch's look): the account as a 32 pt
+ * disc, its picture or letters, which opens the account menu (`Xln`):
+ * "Weekly usage" with its share and, inside, when it resets and "Change
+ * limit"; Settings; About; "Log out", which asks "Sign out?" first. Beside
+ * it, "Connect apps" with three tilted app tiles (the patch's
+ * `connect-apps-button`).
+ */
 struct MacAccountBar: View {
   @Environment(AppStore.self) private var store
   @Environment(SessionController.self) private var session
   @Environment(\.openSettings) private var openSettings
   @Environment(\.openWindow) private var openWindow
+  @Environment(\.openURL) private var openURL
+  @State private var asksSignOut = false
+
+  /** "Change limit" (`Yln`, patched to the web app). */
+  static let changeLimit = URL(string: "https://app.simeonlabs.com/app")!
 
   var body: some View {
-    Menu {
-      Button("Settings…") { openSettings() }
-      Button("Connect Apps…") { openWindow(id: "connect-apps") }
-      Divider()
-      Button("Sign Out") { Task { await session.signOut() } }
-    } label: {
-      HStack(spacing: 8) {
-        ZStack {
-          Circle().fill(Ink.bubbleTheirs)
-          if let initials = store.account?.initials, !initials.isEmpty {
-            Text(initials).font(.system(size: 11, weight: .semibold)).foregroundStyle(Ink.primary)
-          } else {
-            Image(systemName: "person.fill").font(.system(size: 11, weight: .semibold)).foregroundStyle(Ink.primary)
+    HStack(spacing: 10) {
+      Menu {
+        if let summary = store.usage.summary, let percent = summary.usagePercent {
+          let share = UsageMeters.percent(percent)
+          Menu {
+            Section {
+              Button {} label: {
+                Text("Weekly usage  \(share)")
+                if let reset = resets(summary) { Text(reset) }
+              }
+              .disabled(true)
+            }
+            if let spend = summary.onDemand {
+              Section {
+                Button {} label: {
+                  Text("On-demand  \(UsageMeters.compactMoney(spend.usedCents))/\(UsageMeters.compactMoney(spend.limitCents ?? 0))")
+                  Text("Spend this cycle")
+                }
+                .disabled(true)
+              }
+            }
+            Section {
+              Button("Change limit") { openURL(Self.changeLimit) }
+            }
+          } label: {
+            Label("Weekly usage  \(share)", systemImage: "gauge.with.dots.needle.33percent")
           }
         }
-        .frame(width: 26, height: 26)
-        Text(store.account?.name ?? "Account").font(.system(size: 13)).lineLimit(1)
-        Spacer(minLength: 0)
+        Button { openSettings() } label: { Label("Settings", systemImage: "gearshape") }
+        Button { openWindow(id: "about") } label: { Label("About", systemImage: "info.circle") }
+        Divider()
+        Button { asksSignOut = true } label: { Label("Log out", systemImage: "rectangle.portrait.and.arrow.right") }
+      } label: {
+        MacAccountDisc(size: 32)
       }
-      .contentShape(.rect)
+      .menuStyle(.button)
+      .buttonStyle(.plain)
+      .menuIndicator(.hidden)
+      .fixedSize()
+      .accessibilityLabel("Open account menu")
+      // The week's reading, as the menu opens on it (read again only after 30 s).
+      .task { await store.loadUsage() }
+      .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in Task { await store.loadUsage() } }
+      MacConnectAppsButton()
+      Spacer(minLength: 0)
     }
-    .menuStyle(.button)
-    .buttonStyle(.plain)
-    .menuIndicator(.hidden)
     .padding(.horizontal, 14)
     .padding(.vertical, 10)
-    .accessibilityLabel("Account")
+    .alert("Sign out?", isPresented: $asksSignOut) {
+      Button("Cancel", role: .cancel) {}
+      Button("Sign out", role: .destructive) { Task { await session.signOut() } }
+    } message: {
+      Text("You’ll need to sign in again to use Simeon.")
+    }
+  }
+
+  /** "Resets in 3 days" (`Dct`): from when it was read; "Resets in 7 days" for a plan with no end given. */
+  private func resets(_ summary: UsageSummary) -> String? {
+    let read = (store.usageReadAt ?? Date()).timeIntervalSince1970 * 1000
+    return UsageMeters.countdown(summary.resetMs, now: read, verb: "Resets") ?? (summary.hasNonZeroIncludedLimit ? "Resets in 7 days" : nil)
+  }
+}
+
+/** The account's disc: its picture, else its letters on the glass, else a person. */
+struct MacAccountDisc: View {
+  let size: CGFloat
+  @Environment(AppStore.self) private var store
+
+  var body: some View {
+    ZStack {
+      Circle().fill(.regularMaterial)
+      Circle().strokeBorder(.separator, lineWidth: 0.5)
+      if let picture = store.account?.pictureURL {
+        AsyncImage(url: picture) { image in image.resizable().scaledToFill() } placeholder: { letters }
+          .clipShape(Circle())
+      } else {
+        letters
+      }
+    }
+    .frame(width: size, height: size)
+    .contentShape(Circle())
+  }
+
+  @ViewBuilder
+  private var letters: some View {
+    if let account = store.account {
+      Text(account.initials).font(.system(size: 12, weight: .medium)).foregroundStyle(.secondary)
+    } else {
+      Image(systemName: "person.fill").font(.system(size: 13)).foregroundStyle(.secondary)
+    }
+  }
+}
+
+/** "Connect apps" (the patch's sidebar button): Gmail, Calendar and Drive tilted, then the words, in the blue of the person's bubbles. */
+struct MacConnectAppsButton: View {
+  @Environment(\.openWindow) private var openWindow
+  @Environment(\.colorScheme) private var scheme
+  @State private var hovering = false
+
+  var body: some View {
+    Button { openWindow(id: "connect-apps") } label: {
+      HStack(spacing: 10) {
+        Text("Connect apps").font(.system(size: 15, weight: .medium)).lineLimit(1)
+        HStack(spacing: -4) {
+          tile("Gmail").rotationEffect(.degrees(-7))
+          tile("Google Calendar")
+          tile("Google Drive").rotationEffect(.degrees(7))
+        }
+        .accessibilityHidden(true)
+      }
+      .foregroundStyle(hovering ? Color.dynamic(light: "#1b4a7d", dark: "#a9ccf0") : Color.dynamic(light: "#255a93", dark: "#8cb8e8"))
+      .contentShape(.rect)
+    }
+    .buttonStyle(.plain)
+    .onHover { hovering = $0 }
+    .help("Connect apps")
+  }
+
+  private func tile(_ name: String) -> some View {
+    ConnectorTile(name: name, size: 26)
+      .shadow(color: .black.opacity(scheme == .dark ? 0.45 : 0.1), radius: 1, y: 1)
+  }
+}
+
+/**
+ * About (`PVn`): the icon, "Simeon", its version, the copyright, and "Copy
+ * version info" ("Copied"), which copies the version, the release track
+ * and the system.
+ */
+struct MacAbout: View {
+  @State private var copied = false
+
+  var body: some View {
+    VStack(spacing: 14) {
+      Image(nsImage: NSApplication.shared.applicationIconImage).resizable().frame(width: 64, height: 64)
+      VStack(spacing: 4) {
+        Text("Simeon").font(.system(size: 20, weight: .semibold))
+        Text("Version \(SessionController.clientVersion)").font(.system(size: 13)).foregroundStyle(.secondary)
+      }
+      Text("Copyright © 2026 SimeonLabs, Inc.").font(.system(size: 11)).foregroundStyle(.tertiary)
+      Button(copied ? "Copied" : "Copy version info") {
+        UIPasteboard.general.string = ["Version: \(SessionController.clientVersion)", "Release Track: stable", "OS: darwin"].joined(separator: "\n")
+        copied = true
+      }
+    }
+    .padding(24)
+    .frame(width: 360)
   }
 }
 
