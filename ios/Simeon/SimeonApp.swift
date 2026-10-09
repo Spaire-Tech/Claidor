@@ -72,11 +72,9 @@ struct RootView: View {
     case .starting:
       // Under the launch cover.
       Ink.ground.ignoresSafeArea()
-    case .signedOut(let message):
-      // The Mac's sign-in tagline (the founder's words, 27 September 2026).
-      PlainScreen(title: "Simeon", line: "Your personal team of agents for whatever needs doing.", note: message, action: ("Sign In", { Task { await session.signIn() } }))
-    case .signingIn:
-      PlainScreen(title: "Simeon", line: "Finish signing in on the page that opened.", busy: true)
+    case .signedOut, .signingIn:
+      // One screen for both, so the pressed button keeps its spinner while the sheet is open.
+      SignInScreen()
     case .signedIn:
       // A new account's first run, then the list (Simeon's chat open on top when he was just made).
       ZStack {
@@ -91,39 +89,127 @@ struct RootView: View {
   }
 }
 
-/** The app's own screens, one shape: the butterfly, a line or two, a button (the Expo shell's `PlainScreen`). */
-struct PlainScreen: View {
-  let title: String
-  var line: String? = nil
-  var note: String? = nil
-  var busy = false
-  var action: (String, () -> Void)? = nil
+/**
+ * Signing in, in the design of the founder's reference (9 October 2026,
+ * ChatGPT's: "above is our logo, simeon real logo, below SimeonLabs - with
+ * our logo name font (see website) - then continue with apple - and below
+ * google - with the privacy below"). simeonlabs.com's own mark and wordmark
+ * (Assets SignIn/, made from the site's files by
+ * ios/scripts/make-sign-in-assets.mjs) in the middle of the space above the
+ * buttons; Continue with Apple and Continue with Google in the app's own
+ * buttons (`SignInButton`), on the app's ground; the Terms and the Privacy
+ * Policy under them. While the sheet is open the screen stays: the pressed
+ * button shows a spinner.
+ */
+struct SignInScreen: View {
+  @Environment(SessionController.self) private var session
+
+  /** The addresses the Mac's window and the web app link (they answer 404 until the pages are written). */
+  static let terms = URL(string: "https://www.simeonlabs.com/legal/terms-of-service")!
+  static let privacy = URL(string: "https://www.simeonlabs.com/legal/privacy-policy")!
+
+  private var message: String? {
+    if case .signedOut(let message) = session.phase { return message }
+    return nil
+  }
 
   var body: some View {
     VStack(spacing: 0) {
-      Spacer()
-      ButterflyView(palette: .named("blue"), motion: .idle).frame(width: 96, height: 96).padding(.bottom, 20)
-      Text(title).font(.largeTitle.weight(.bold)).foregroundStyle(Ink.primary)
-      if let line {
-        Text(line).font(.title3).foregroundStyle(Ink.secondary).multilineTextAlignment(.center).padding(.top, 10)
+      Spacer(minLength: 24)
+      VStack(spacing: 28) {
+        Image("SignIn/Mark").resizable().scaledToFit().frame(width: 46, height: 46)
+        Image("SignIn/Wordmark").resizable().scaledToFit().frame(height: 25)
       }
-      if let note {
-        Text(note).font(.body).foregroundStyle(Ink.primary).multilineTextAlignment(.center).padding(.top, 16)
+      .foregroundStyle(Ink.primary)
+      .accessibilityElement(children: .ignore)
+      .accessibilityLabel("SimeonLabs")
+      .accessibilityAddTraits(.isHeader)
+      Spacer(minLength: 24)
+      if let message {
+        Text(message)
+          .font(.system(size: 15))
+          .foregroundStyle(Ink.secondary)
+          .multilineTextAlignment(.center)
+          .padding(.bottom, 18)
       }
-      Spacer()
-      if busy { ProgressView().padding(.bottom, 24) }
-      if let action {
-        Button(action: action.1) {
-          Text(action.0).font(.system(size: 17, weight: .semibold)).frame(maxWidth: .infinity).frame(height: 50)
-        }
-        .buttonStyle(.glassProminent)
-        .frame(maxWidth: 420)
-        .padding(.bottom, 8)
+      // No `.disabled` while a sign-in runs: it would grey the pressed button's spinner; a second press does nothing (`signIn(with:)`).
+      VStack(spacing: 12) {
+        SignInButton(provider: .apple, busy: session.signingInWith == .apple) { start(.apple) }
+        SignInButton(provider: .google, busy: session.signingInWith == .google) { start(.google) }
       }
+      .frame(maxWidth: 420)
+      Text(Self.legal)
+        .font(.system(size: 13))
+        .foregroundStyle(Ink.secondary)
+        .tint(Ink.primary)
+        .multilineTextAlignment(.center)
+        .padding(.top, 28)
+        .padding(.bottom, 14)
     }
-    .padding(.horizontal, 28)
+    // The first run's margins (its Continue and Back).
+    .padding(.horizontal, 24)
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .background(Ink.ground)
+  }
+
+  private func start(_ provider: SignIn.Provider) {
+    Task { await session.signIn(with: provider) }
+  }
+
+  /** "By continuing, you agree to our Terms & Privacy Policy.", the two names links, underlined with dots as in the reference. */
+  static var legal: AttributedString {
+    func link(_ words: String, _ url: URL) -> AttributedString {
+      var text = AttributedString(words)
+      text.link = url
+      text.font = Font.system(size: 13, weight: .semibold)
+      text.underlineStyle = Text.LineStyle(pattern: .dot)
+      return text
+    }
+    return AttributedString("By continuing, you agree to our ") + link("Terms", terms) + AttributedString(" & ") + link("Privacy Policy", privacy) + AttributedString(".")
+  }
+}
+
+/**
+ * One of the sign-in screen's two buttons, in the app's own glass buttons
+ * (the founder, 9 October 2026: "use our existing iphone design"): Apple's
+ * black on light and white on dark ("the apple button make it white/black.
+ * not blue", as Apple asks of its own), Google's in the plain glass. The logos are sized to the words as
+ * in the reference (measured on it: Apple's about 1.35 times the capitals'
+ * height, Google's "G" about 1.2 times, 8 to 9 points before the words): 16
+ * and 15 points beside 17-point type, whose capitals are 12, 8 points apart.
+ */
+struct SignInButton: View {
+  let provider: SignIn.Provider
+  let busy: Bool
+  let action: () -> Void
+
+  var body: some View {
+    if provider == .apple {
+      // The ink as the glass's tint and the ground for the words: black with white words on light, the reverse on dark.
+      Button(action: action) { label(ink: Ink.ground) }
+        .buttonStyle(.glassProminent)
+        .tint(Ink.primary)
+    } else {
+      Button(action: action) { label(ink: Ink.primary) }
+        .buttonStyle(.glass)
+    }
+  }
+
+  private func label(ink: Color) -> some View {
+    HStack(spacing: 8) {
+      if busy {
+        ProgressView().tint(ink).frame(width: 16, height: 16)
+      } else if provider == .apple {
+        Image("SignIn/Apple").resizable().scaledToFit().frame(height: 16).offset(y: -1)
+      } else {
+        Image("SignIn/Google").resizable().scaledToFit().frame(width: 15, height: 15)
+      }
+      Text(provider == .apple ? "Continue with Apple" : "Continue with Google")
+        .font(.system(size: 17, weight: .semibold))
+    }
+    .foregroundStyle(ink)
+    .frame(maxWidth: .infinity)
+    .frame(height: 50)
   }
 }
 

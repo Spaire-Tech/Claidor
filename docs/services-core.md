@@ -34,7 +34,7 @@ The app calls three routes. They sit at the **root** of the API host, not under
 
 | Route | What it does |
 |---|---|
-| `GET /loginDeepControl?challenge=…&uuid=…` | The browser page. With no web session it redirects to the API's own Google sign-in (`/v1/integrations/google/login/authorize?return_to=…`), which comes back here. With a session and no plan (billing required, no trialing or active subscription on Stripe) it redirects to the web app's `/billing?plan=standard&return_to=…`, the one page the web app is for, which opens Stripe Checkout and comes back with `checkout_session_id` (`services-billing.md`). Otherwise it shows a confirm page naming the account. |
+| `GET /loginDeepControl?challenge=…&uuid=…[&provider=apple\|google]` | The browser page. With no web session it redirects to the API's own Google sign-in (`/v1/integrations/google/login/authorize?return_to=…`), which comes back here; with `provider=apple` (the iPhone's Continue with Apple, 9 October 2026) to the API's own Apple sign-in (`/v1/integrations/apple/authorize?return_to=…`) instead, or, while Apple is not set up on the server, to a page that says so and offers Google. The Mac names no provider and gets Google. With a session and no plan (billing required, no trialing or active subscription on Stripe) it redirects to the web app's `/billing?plan=standard&return_to=…`, the one page the web app is for, which opens Stripe Checkout and comes back with `checkout_session_id` (`services-billing.md`). Otherwise it shows a confirm page naming the account. |
 | `POST /loginDeepControl` | The confirm form. Same-origin only. Records the pending sign-in; no sign-in is written before this post. |
 | `POST /auth/poll` (body `{uuid, verifier}`) | The app polls here. `404` means "not yet"; `200` returns `{accessToken, refreshToken}` once. `GET /auth/poll` with query parameters is still served for older builds. |
 | `POST /oauth/token` (`grant_type=refresh_token`) | The refresh. Returns a new pair. A spent or expired refresh token gets `200` with `shouldLogout: true`; only a malformed request gets `400`. |
@@ -110,6 +110,24 @@ their Google name in `user.meta` (`server/simeon/integrations/google/service.py`
 - `SIMEON_FRONTEND_BASE_URL` (`https://app.simeonlabs.com`, where `/login` lives)
 - `SIMEON_SECRET` (signs the envelope and keys the token hashes)
 - The durations above, only to change the defaults.
+- For Sign in with Apple (the iPhone's Continue with Apple): `SIMEON_APPLE_CLIENT_ID`
+  (a Services ID with Sign in with Apple, its return URL
+  `https://api.simeonlabs.com/v1/integrations/apple/callback` and its domain
+  `api.simeonlabs.com`), `SIMEON_APPLE_TEAM_ID`, and a Sign in with Apple key's
+  `SIMEON_APPLE_KEY_ID` and `.p8` contents as `SIMEON_APPLE_KEY_VALUE`. Until all four
+  are set, the Apple button's page says "Sign in with Apple is coming soon" and offers
+  Google (`apple_sign_in_ready` in `server/simeon/desktop/app_sign_in.py`).
+
+The pages the browser shows (the confirm page, "You're signed in", the Apple page)
+are drawn in the iPhone sign-in screen's design since 9 October 2026: simeonlabs.com's
+mark and wordmark in the middle, the buttons at the foot in the app's own (the first
+in the ink, black on light and white on dark, the next in the plain glass), light or
+dark as the device is (`_page`;
+the marks are `sign_in_brand.py`, generated with the app's by
+`node ios/scripts/make-sign-in-assets.mjs`). The confirm page is only the mark, its
+two buttons (Continue as the account, Use a different account) and the Terms and
+Privacy line under them, as under the app's (`LEGAL`): no heading and no line naming
+the device (the founder: "its noise").
 
 ### In the app
 

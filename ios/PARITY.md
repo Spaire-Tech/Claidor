@@ -802,6 +802,48 @@ Three causes, found in the code:
 `AgentVoiceTests` hold the phone to the Mac's own answers, worked out by
 running the Mac's code on the same agents.
 
+## 27. Sign-in in the reference's design (9 October 2026)
+
+The founder sent ChatGPT's sign-in screen: "above is our logo, simeon real
+logo, below SimeonLabs - with our logo name font (see website) - then
+continue with apple - and below google - with the privacy below … same for
+everything … make sure everything match." Then, of the first try: the logos
+out of proportion with the words, "sign in to simeon - simeon on your phone
+is asking etc.. its noise. remove", and "use our existing iphone design";
+then "the apple button make it white/black. not blue" and the Terms line
+"should be in the second screen to".
+
+- **The screen** (`SignInScreen` in SimeonApp.swift): simeonlabs.com's mark
+  (the app icon's four petals, from the site's `favicon.svg`) and the
+  "SimeonLabs" wordmark (the site bar's own picture) in the middle of the
+  space above the buttons, on the app's ground. The buttons are the app's
+  own glass buttons: Continue with Apple black on light and white on dark,
+  Continue with Google in the plain glass, 17-point semibold, 50 points
+  tall, the first run's margins. The logos are sized from the
+  reference, measured: Apple's 16 points and Google's "G" 15 beside
+  17-point words (1.35 and 1.2 times the capitals' height there), 8 points
+  before the words. "By continuing, you agree to our Terms & Privacy
+  Policy." under them. The marks are made from the site's files by
+  `ios/scripts/make-sign-in-assets.mjs` (Assets `SignIn/`: Mark, Wordmark,
+  Apple from the site's Download button, Google). The screen stays while
+  the sign-in sheet is open: the pressed button shows a spinner.
+- **Each button goes straight to its sign-in**: the app adds `provider` to
+  `/loginDeepControl`, and the server sends the sheet to Google's or Apple's
+  page. Apple needs Simeon's Apple keys on the server
+  (docs/services-core.md §1); until then the Apple button opens a page that
+  says Sign in with Apple is coming soon and offers Google.
+- **The page after Google or Apple** is the mark, the wordmark, two
+  buttons (Continue as the account black on light and white on dark, as
+  Continue with Apple; Use a different account in
+  glass) and the same Terms and Privacy line under them; no heading, no
+  line about the device. The tap stays: without it,
+  whoever got a signed-in person to open a sign-in link of their own making
+  would be signed in as that person.
+- **Not yet:** the Terms and Privacy links go to
+  `simeonlabs.com/legal/terms-of-service` and `/legal/privacy-policy`, the
+  addresses the Mac's window and the web app already use; both answer 404
+  until those pages are written.
+
 ## Suggested order (the founder decides)
 
 1. The chat's look: the bubble, the top bar, markdown, brand names with logos, agent names with butterflies.

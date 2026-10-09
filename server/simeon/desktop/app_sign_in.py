@@ -79,6 +79,14 @@ from .service import (
     envelope_access_token,
     is_deep_control_param,
 )
+from .sign_in_brand import (
+    GOOGLE_G_SVG,
+    MARK_PATH,
+    MARK_VIEWBOX,
+    WORDMARK_HEIGHT,
+    WORDMARK_PNG_BASE64,
+    WORDMARK_WIDTH,
+)
 
 router = APIRouter(tags=["desktop", APITag.private])
 
@@ -105,19 +113,30 @@ NO_STORE = {"Cache-Control": "no-store"}
 PRODUCT = "Simeon"
 
 
-#: The iPhone app's own scheme (`mobile/`, 8 October 2026). The phone signs
-#: in exactly as the Mac does, through these routes; it names this scheme,
-#: so the confirm page opens `simeon-ios://app/v1/open`, which closes the
-#: phone's sign-in sheet, and says it is the iPhone asking.
-IOS_REDIRECT_TARGET = "simeon-ios"
+#: The ways in of the iPhone's sign-in screen (9 October 2026): its
+#: buttons name one as `provider`, and the page sends the browser straight
+#: to that sign-in. The Mac names none and signs in with Google, as before.
+PROVIDERS = ("google", "apple")
 
 
-def _device(redirect_target: str | None) -> str:
-    """Which of the person's devices is asking, in the page's words. The
-    page says it so the person can tell a sign-in they started from one
-    they did not; anything but the phone's scheme is the Mac app."""
-    token = (redirect_target or "").strip().lower()
-    return "iPhone" if token == IOS_REDIRECT_TARGET else "Mac"
+def _provider(value: str | None) -> str:
+    return value if value in PROVIDERS else "google"
+
+
+def apple_sign_in_ready() -> bool:
+    """Sign in with Apple needs Simeon's Services ID, team, key id and key
+    on the server (`SIMEON_APPLE_CLIENT_ID`, `_TEAM_ID`, `_KEY_ID`,
+    `_KEY_VALUE`). Until they are set the Apple button's page says so and
+    offers Google, rather than sending the person to an Apple page that
+    refuses them."""
+    return all(
+        (
+            settings.APPLE_CLIENT_ID,
+            settings.APPLE_TEAM_ID,
+            settings.APPLE_KEY_ID,
+            settings.APPLE_KEY_VALUE,
+        )
+    )
 
 
 def _deep_link(redirect_target: str | None) -> str | None:
@@ -127,57 +146,104 @@ def _deep_link(redirect_target: str | None) -> str | None:
     return f"{token}{DEEP_LINK_PATH}" if REDIRECT_TARGET.match(token) else None
 
 
-def _page(title: str, body: str, *, deep_link: str | None = None) -> HTMLResponse:
-    """One page, no assets but the site's heading face, no scripts beyond
-    the one line that brings the app forward. It is served from the API
-    host, which has no front end of its own, so it carries its own
-    styling: simeonlabs.com's (the font stack, the ink colours, the
-    heading face, the black pill button), so the person who installed the
-    app from the site sees the same site here."""
+#: The line under the sign-in buttons, as under the iPhone's (the founder,
+#: 9 October 2026: "by continuing you're agreeing etc.. should be in the
+#: second screen to"). The addresses the app, the Mac's window and the web
+#: app link.
+LEGAL = (
+    '<p class="legal">By continuing, you agree to our'
+    ' <a href="https://www.simeonlabs.com/legal/terms-of-service">Terms</a> &amp;'
+    ' <a href="https://www.simeonlabs.com/legal/privacy-policy">Privacy Policy</a>.'
+    "</p>"
+)
+
+
+def _page(
+    title: str,
+    body: str,
+    *,
+    actions: str = "",
+    heading: bool = True,
+    deep_link: str | None = None,
+) -> HTMLResponse:
+    """One page, in the design of the iPhone's sign-in screen (the founder,
+    9 October 2026: "make sure everything match"): simeonlabs.com's mark and
+    "SimeonLabs" wordmark in the middle, the page's words under them when it
+    has any (`heading`), and its buttons at the foot in the app's own: the
+    first in the ink (black on light, white on dark, as the app's Continue
+    with Apple), the next in the plain glass; light or dark as the
+    device is. It is served
+    from the API host, which has no front end of its own, so it carries
+    everything it draws (`sign_in_brand`); no script but the one line that
+    brings the app forward."""
     jump = (
         ""
         if deep_link is None
         else f'<script>location.replace("{escape(deep_link, quote=True)}")</script>'
     )
+    foot = f'<footer class="actions">{actions}</footer>' if actions else ""
     return HTMLResponse(
         headers={"Cache-Control": "no-store"},
         content="<!doctype html>"
         '<html lang="en"><head><meta charset="utf-8">'
-        '<meta name="viewport" content="width=device-width,initial-scale=1">'
+        '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
+        '<meta name="color-scheme" content="light dark">'
         f"<title>{escape(title)} · {PRODUCT}</title>"
-        '<link rel="preconnect" href="https://fonts.googleapis.com">'
-        '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
-        '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400&display=swap">'
         "<style>"
-        ":root{--ink:#1d1d1f;--ink2:#6e6e73;--ink3:#86868b;--blue:#255a93;"
-        '--serif:"Newsreader",Georgia,"Times New Roman",serif;'
-        '--font:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text",'
-        '"Inter","Helvetica Neue",Arial,sans-serif}'
-        "body{margin:0;min-height:100vh;display:flex;flex-direction:column;"
-        "background:#fff;color:var(--ink);font-family:var(--font);font-size:17px;"
-        "line-height:1.47;letter-spacing:-.022em;-webkit-font-smoothing:antialiased}"
-        "header{display:flex;align-items:center;height:64px;padding:0 clamp(20px,3vw,48px)}"
-        "header a{font-family:var(--serif);font-size:26px;letter-spacing:-.02em;"
-        "color:var(--ink);text-decoration:none}"
-        "main{flex:1;display:flex;flex-direction:column;align-items:center;"
-        "justify-content:center;text-align:center;padding:clamp(32px,8vh,120px) 24px 96px}"
-        "h1{margin:0;font-family:var(--serif);font-weight:400;"
-        "font-size:clamp(34px,2.9vw,48px);line-height:1.04;letter-spacing:-.02em}"
-        "p{margin:14px 0 0;max-width:32em;color:var(--ink3)}"
-        "form{margin:28px 0 0}form+form{margin-top:16px}"
-        "strong{font-weight:500;color:var(--ink)}"
-        "button{display:inline-flex;align-items:center;justify-content:center;"
-        "height:48px;padding:0 26px;border:0;border-radius:99px;background:#000;"
-        "color:#fff;font:inherit;font-size:17px;letter-spacing:-.01em;cursor:pointer;"
-        "white-space:nowrap;transition:background .2s}"
-        "button:hover{background:#2b2b2d}"
-        "button.quiet{height:auto;padding:0;background:none;color:var(--blue);"
-        "font-size:15px}"
-        "button.quiet:hover{background:none;text-decoration:underline}"
-        "code{color:var(--ink2);font-size:.85em}"
+        # The iPhone app's colours (ios/Simeon/Theme.swift: ground, primary,
+        # secondary) and its plain glass button's fill.
+        ":root{--ground:#fcfcfc;--ink:#141414;--ink2:rgba(20,20,20,.6);"
+        "--glass:#ffffff;--glass-edge:rgba(20,20,20,.08);"
+        '--font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",'
+        '"Helvetica Neue",Arial,sans-serif}'
+        "@media (prefers-color-scheme:dark){:root{--ground:#070707;--ink:#fcfcfc;"
+        "--ink2:rgba(252,252,252,.6);--glass:#1f1f21;"
+        "--glass-edge:rgba(255,255,255,.1)}}"
+        "*{box-sizing:border-box}"
+        "body{margin:0;min-height:100vh;min-height:100dvh;display:flex;"
+        "flex-direction:column;align-items:center;background:var(--ground);"
+        "color:var(--ink);font-family:var(--font);font-size:17px;line-height:1.4;"
+        "-webkit-font-smoothing:antialiased;"
+        "padding:max(24px,env(safe-area-inset-top)) 21px"
+        " max(14px,env(safe-area-inset-bottom))}"
+        "main{flex:1;width:100%;max-width:420px;display:flex;flex-direction:column;"
+        "align-items:center;justify-content:center;text-align:center;padding:24px 0}"
+        ".mark{display:block;width:46px;height:46px;fill:var(--ink)}"
+        ".wordmark{display:block;margin-top:28px;height:25px;"
+        f"aspect-ratio:{WORDMARK_WIDTH}/{WORDMARK_HEIGHT};background:var(--ink);"
+        # The picture once, in a custom property both mask properties read.
+        f"--wordmark:url(data:image/png;base64,{WORDMARK_PNG_BASE64});"
+        "-webkit-mask:var(--wordmark) center/contain no-repeat;"
+        "mask:var(--wordmark) center/contain no-repeat}"
+        "h1{margin:44px 0 0;font-size:22px;font-weight:600;letter-spacing:-.01em;"
+        "line-height:1.25;text-wrap:balance}"
+        "p{margin:10px 0 0;font-size:15px;color:var(--ink2);text-wrap:pretty}"
+        "strong{font-weight:600;color:var(--ink);word-break:break-word}"
+        ".actions{width:100%;max-width:420px;display:flex;flex-direction:column;"
+        "gap:12px;padding-bottom:8px}"
+        "form{margin:0}"
+        ".pill{display:flex;width:100%;height:50px;align-items:center;"
+        "justify-content:center;gap:9px;padding:0 20px;border-radius:999px;"
+        "border:0;background:var(--ink);color:var(--ground);font:inherit;"
+        "font-size:17px;font-weight:600;text-decoration:none;cursor:pointer;"
+        "white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
+        "box-shadow:0 1px 2px rgba(0,0,0,.12);"
+        "-webkit-tap-highlight-color:transparent}"
+        ".pill.glass{background:var(--glass);color:var(--ink);"
+        "box-shadow:inset 0 0 0 1px var(--glass-edge),0 1px 3px rgba(0,0,0,.06)}"
+        ".pill:active{opacity:.7}"
+        ".legal{margin:16px 0 0;font-size:13px;line-height:1.35;text-align:center;"
+        "color:var(--ink2)}"
+        ".legal a{color:var(--ink);font-weight:600;text-decoration:underline dotted;"
+        "text-underline-offset:2px}"
+        ".pill svg{flex:none;width:15px;height:15px}"
         "</style></head><body>"
-        f'<header><a href="https://simeonlabs.com" aria-label="{PRODUCT}">{PRODUCT}</a></header>'
-        f"<main><h1>{escape(title)}</h1>{body}</main>{jump}</body></html>",
+        "<main>"
+        f'<svg class="mark" viewBox="{MARK_VIEWBOX}" role="img" aria-label="{PRODUCT}">'
+        f'<path d="{MARK_PATH}"/></svg>'
+        '<span class="wordmark" role="img" aria-label="SimeonLabs"></span>'
+        f"{f'<h1>{escape(title)}</h1>' if heading else ''}{body}</main>"
+        f"{foot}{jump}</body></html>",
     )
 
 
@@ -243,6 +309,7 @@ async def login_deep_control(
     mode: str = Query(default="login"),
     redirectTarget: str | None = Query(default=None),  # the app's own name
     checkout_session_id: str | None = Query(default=None),  # back from Checkout
+    provider: str | None = Query(default=None),  # the iPhone's button
     session: AsyncSession = Depends(get_db_session),
 ) -> RedirectResponse | HTMLResponse:
     if not is_deep_control_param(uuid) or not is_deep_control_param(challenge):
@@ -254,10 +321,23 @@ async def login_deep_control(
     kept = {"challenge": challenge, "uuid": uuid, "mode": mode}
     if redirectTarget:
         kept["redirectTarget"] = redirectTarget
+    if provider in PROVIDERS:
+        kept["provider"] = provider
     return_to = settings.generate_external_url(f"/loginDeepControl?{urlencode(kept)}")
 
     if not is_user(auth_subject):
-        return RedirectResponse(sign_in_url(request, return_to), 303)
+        way = _provider(provider)
+        if way == "apple" and not apple_sign_in_ready():
+            google = settings.generate_external_url(
+                f"/loginDeepControl?{urlencode({**kept, 'provider': 'google'})}"
+            )
+            return _page(
+                "Sign in with Apple is coming soon",
+                "<p>For now, continue with Google.</p>",
+                actions=f'<a class="pill glass" href="{escape(google, quote=True)}">'
+                f"{GOOGLE_G_SVG}Continue with Google</a>{LEGAL}",
+            )
+        return RedirectResponse(sign_in_url(request, return_to, way), 303)
 
     just_paid = bool(checkout_session_id) and await _copy_in_checkout(
         session, auth_subject.subject, checkout_session_id or ""
@@ -299,22 +379,25 @@ async def login_deep_control(
         )
         if value
     )
-    # The second form is for the person this page is not about: the
-    # browser keeps the website's own sign-in long after the app's, so
-    # signing out of the app and opening this link again showed the same
-    # account with no way past it (the founder, 6 October 2026). It ends
-    # the browser's session and goes to the web login, with this very
-    # link as the way back.
+    # Only the two buttons under the mark (the founder, 9 October 2026, of
+    # the heading and the line that named the device: "its noise.
+    # remove."). The tap itself stays, naming the account: without it,
+    # whoever got a signed-in person to open a sign-in link of their own
+    # making would be signed in as that person. The second form is for
+    # the person this page is not about: the browser keeps the website's
+    # own sign-in long after the app's, so signing out of the app and
+    # opening this link again showed the same account with no way past it
+    # (the founder, 6 October 2026). It ends the browser's session and goes
+    # to the web login, with this very link as the way back.
     return _page(
-        f"Sign in to {PRODUCT}?",
-        f"<p>{PRODUCT} on your {_device(redirectTarget)} is asking to sign in as"
-        f" <strong>{email}</strong>."
-        " Only continue if you just asked it to.</p>"
-        f'<form method="post" action="/loginDeepControl">{fields}'
-        f'<button type="submit">Sign in as {email}</button></form>'
+        f"Sign in to {PRODUCT}",
+        "",
+        heading=False,
+        actions=f'<form method="post" action="/loginDeepControl">{fields}'
+        f'<button class="pill" type="submit">Continue as {email}</button></form>'
         f'<form method="post" action="/loginDeepControl/switch">{fields}'
-        '<button type="submit" class="quiet">Not you? Use a different account</button>'
-        "</form>",
+        '<button class="pill glass" type="submit">Use a different account</button>'
+        f"</form>{LEGAL}",
     )
 
 

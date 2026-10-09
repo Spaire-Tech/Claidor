@@ -44,6 +44,10 @@ final class SignInTests: XCTestCase {
     let metadata = SignIn.Metadata(uuid: "u-1", verifier: "v", challenge: "c")
     XCTAssertEqual(SignIn.loginURL(api: URL(string: "https://api.simeonlabs.com/")!, metadata: metadata).absoluteString,
                    "https://api.simeonlabs.com/loginDeepControl?challenge=c&uuid=u-1&mode=login&redirectTarget=simeon-ios")
+    // The sign-in screen's buttons name their way in; the server sends the sheet straight to it.
+    XCTAssertEqual(SignIn.loginURL(api: URL(string: "https://api.simeonlabs.com")!, metadata: metadata, provider: .apple).absoluteString,
+                   "https://api.simeonlabs.com/loginDeepControl?challenge=c&uuid=u-1&mode=login&redirectTarget=simeon-ios&provider=apple")
+    XCTAssertEqual(SignIn.loginURL(api: URL(string: "https://api.simeonlabs.com")!, metadata: metadata, provider: .google).query?.hasSuffix("&provider=google"), true)
   }
 
   func testPollWaitsThenTakesThePair() async throws {
