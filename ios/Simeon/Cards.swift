@@ -129,10 +129,10 @@ struct QuestionCardView: View {
     VStack(alignment: .leading, spacing: 10) {
       HStack(alignment: .top, spacing: 8) {
         VStack(alignment: .leading, spacing: 0) {
-          Text(card.prompt).font(.system(size: 14, weight: .medium)).foregroundStyle(Ink.primary)
+          Text(card.prompt).font(.system(size: 15, weight: .medium)).foregroundStyle(Ink.primary)
             .lineSpacing(MessageType.spacing()).fixedSize(horizontal: false, vertical: true)
           if let help = card.help {
-            Text(help).font(.system(size: 14)).foregroundStyle(Ink.secondary)
+            Text(help).font(.system(size: 15)).foregroundStyle(Ink.secondary)
               .lineSpacing(MessageType.spacing()).fixedSize(horizontal: false, vertical: true)
           }
         }
@@ -151,9 +151,9 @@ struct QuestionCardView: View {
             HStack(spacing: 8) {
               Circle().stroke(Ink.primary.opacity(0.3), lineWidth: 1).frame(width: 18, height: 18)
               VStack(alignment: .leading, spacing: 0) {
-                Text(option.label).font(.system(size: 14)).foregroundStyle(Ink.primary).multilineTextAlignment(.leading)
+                Text(option.label).font(.system(size: 15)).foregroundStyle(Ink.primary).multilineTextAlignment(.leading)
                 if let description = option.description {
-                  Text(description).font(.system(size: 14)).foregroundStyle(Ink.secondary).multilineTextAlignment(.leading)
+                  Text(description).font(.system(size: 15)).foregroundStyle(Ink.secondary).multilineTextAlignment(.leading)
                 }
               }
               Spacer(minLength: 0)
@@ -167,7 +167,7 @@ struct QuestionCardView: View {
       if card.allowsOwnAnswer {
         HStack(alignment: .bottom, spacing: 8) {
           TextField("Type your own answer", text: $own, axis: .vertical)
-            .font(.system(size: 14))
+            .font(.system(size: 15))
             .lineLimit(1...5)
             .focused($typingOwn)
             .padding(.horizontal, 10).padding(.vertical, 6)
@@ -187,11 +187,11 @@ struct QuestionCardView: View {
 
   private func answered(_ answer: String) -> some View {
     VStack(alignment: .leading, spacing: 10) {
-      Text(card.prompt).font(.system(size: 14, weight: .medium)).foregroundStyle(Ink.primary)
+      Text(card.prompt).font(.system(size: 15, weight: .medium)).foregroundStyle(Ink.primary)
         .fixedSize(horizontal: false, vertical: true)
       HStack(spacing: 8) {
         Image(systemName: "checkmark").font(.system(size: 13, weight: .semibold)).foregroundStyle(Ink.blue).frame(width: 18)
-        Text(answer).font(.system(size: 14)).foregroundStyle(Ink.primary).fixedSize(horizontal: false, vertical: true)
+        Text(answer).font(.system(size: 15)).foregroundStyle(Ink.primary).fixedSize(horizontal: false, vertical: true)
         Spacer(minLength: 0)
       }
       .padding(8)
@@ -201,7 +201,7 @@ struct QuestionCardView: View {
 
   private var dismissed: some View {
     HStack(alignment: .center, spacing: 8) {
-      Text(card.prompt).font(.system(size: 14, weight: .medium)).foregroundStyle(Ink.secondary).lineLimit(2)
+      Text(card.prompt).font(.system(size: 15, weight: .medium)).foregroundStyle(Ink.secondary).lineLimit(2)
       Spacer(minLength: 0)
       StatusPill(text: card.isSkipped && !card.isDismissed ? "Skipped" : "Dismissed")
     }
@@ -315,7 +315,7 @@ struct ListenerConnectCard: View {
     HStack(spacing: 12) {
       ConnectorTile(name: name, size: 32)
       VStack(alignment: .leading, spacing: 2) {
-        Text(connected == true ? "\(name) connected" : "Connect \(name)").font(.system(size: 14, weight: .semibold)).foregroundStyle(Ink.primary)
+        Text(connected == true ? "\(name) connected" : "Connect \(name)").font(.system(size: 15, weight: .semibold)).foregroundStyle(Ink.primary)
         if connected != true {
           Text(line).font(.system(size: 13)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true)
         }
@@ -546,30 +546,30 @@ struct DraftCardView: View {
         if !isEmail, let slack = UIImage(named: "Brands/slack") {
           Image(uiImage: slack).resizable().scaledToFit().frame(width: 16, height: 16)
         }
-        Text(isEmail ? "New email" : "Slack message").font(.system(size: 14, weight: .medium)).foregroundStyle(Ink.primary)
+        Text(isEmail ? "New email" : "Slack message").font(.system(size: 15, weight: .medium)).foregroundStyle(Ink.primary)
         Spacer(minLength: 0)
         StatusPill(text: card.status, dot: card.state == "sent" ? Ink.live : card.state == "sending" ? Ink.blue : Ink.tertiary, size: 12)
       }
       if card.state == "sent" {
         Text(isEmail ? "Sent to \(card.to.joined(separator: ", ")) — “\(card.subject)”" : "Sent to \(card.target)")
-          .font(.system(size: 14)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true)
+          .font(.system(size: 15)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true)
       } else {
         VStack(spacing: 0) {
           if isEmail {
-            if !card.from.isEmpty { field("From") { Text(card.from).font(.system(size: 14)).foregroundStyle(Ink.secondary).lineLimit(1) }; line }
-            field("To", focus: { focused = 0 }) { TextField("name@company.com", text: $to).font(.system(size: 14)).keyboardType(.emailAddress).textInputAutocapitalization(.never).autocorrectionDisabled().disabled(!editable).focused($focused, equals: 0) }
+            if !card.from.isEmpty { field("From") { Text(card.from).font(.system(size: 15)).foregroundStyle(Ink.secondary).lineLimit(1) }; line }
+            field("To", focus: { focused = 0 }) { TextField("name@company.com", text: $to).font(.system(size: 15)).keyboardType(.emailAddress).textInputAutocapitalization(.never).autocorrectionDisabled().disabled(!editable).focused($focused, equals: 0) }
             line
-            field("Subject", focus: { focused = 1 }) { TextField("Subject", text: $subject).font(.system(size: 14)).disabled(!editable).focused($focused, equals: 1) }
+            field("Subject", focus: { focused = 1 }) { TextField("Subject", text: $subject).font(.system(size: 15)).disabled(!editable).focused($focused, equals: 1) }
           } else {
-            if !card.workspace.isEmpty { field("Workspace") { Text(card.workspace).font(.system(size: 14)).foregroundStyle(Ink.secondary) }; line }
-            field("To") { Text(card.target).font(.system(size: 14)).foregroundStyle(Ink.secondary) }
+            if !card.workspace.isEmpty { field("Workspace") { Text(card.workspace).font(.system(size: 15)).foregroundStyle(Ink.secondary) }; line }
+            field("To") { Text(card.target).font(.system(size: 15)).foregroundStyle(Ink.secondary) }
             line
-            field("Thread") { Text(card.thread.isEmpty ? "New message" : card.thread).font(.system(size: 14)).foregroundStyle(Ink.secondary) }
+            field("Thread") { Text(card.thread.isEmpty ? "New message" : card.thread).font(.system(size: 15)).foregroundStyle(Ink.secondary) }
           }
           line
           TextField("Message", text: $bodyText, axis: .vertical)
-            .font(.system(size: 14))
-            .lineSpacing(MessageType.spacing(size: 14, lineHeight: 22))
+            .font(.system(size: 15))
+            .lineSpacing(MessageType.spacing(size: 15, lineHeight: 23))
             .lineLimit(expanded || !editable ? 3...40 : 3...10)
             .disabled(!editable)
             .focused($focused, equals: 2)
@@ -805,12 +805,12 @@ struct RequestCardView: View {
   private func approval(requestId: String, summary: String, reason: String, command: String, status: String) -> some View {
     VStack(alignment: .leading, spacing: 10) {
       HStack(spacing: 8) {
-        Text("Approval needed").font(.system(size: 14, weight: .medium)).foregroundStyle(Ink.primary)
+        Text("Approval needed").font(.system(size: 15, weight: .medium)).foregroundStyle(Ink.primary)
         Spacer(minLength: 0)
         StatusPill(text: status == "pending" ? "Waiting for you" : status == "denied" ? "Denied" : status == "expired" ? "Expired" : "Allowed",
                    dot: status == "pending" ? Ink.blue : status == "denied" ? Ink.danger : Ink.tertiary, size: 12)
       }
-      Text(summary).font(.system(size: 14)).foregroundStyle(Ink.primary).fixedSize(horizontal: false, vertical: true)
+      Text(summary).font(.system(size: 15)).foregroundStyle(Ink.primary).fixedSize(horizontal: false, vertical: true)
       if !reason.isEmpty { Text(reason).font(.system(size: 13)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true) }
       if !command.isEmpty {
         Text(command).font(.system(size: 12, design: .monospaced)).foregroundStyle(Ink.primary)
@@ -844,14 +844,14 @@ struct RequestCardView: View {
     VStack(alignment: .leading, spacing: 10) {
       HStack(spacing: 8) {
         Image(systemName: "key.fill").font(.system(size: 13)).foregroundStyle(Ink.secondary)
-        Text(label).font(.system(size: 14, weight: .medium)).foregroundStyle(Ink.primary)
+        Text(label).font(.system(size: 15, weight: .medium)).foregroundStyle(Ink.primary)
         Spacer(minLength: 0)
         if provided { StatusPill(text: "Saved", dot: Ink.live, size: 12) }
       }
-      if !description.isEmpty { Text(description).font(.system(size: 14)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true) }
+      if !description.isEmpty { Text(description).font(.system(size: 15)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true) }
       if !provided {
         SecureField("Paste it here", text: $secret)
-          .font(.system(size: 14))
+          .font(.system(size: 15))
           .textInputAutocapitalization(.never).autocorrectionDisabled()
           .padding(.horizontal, 10).frame(height: 34)
           .background(Ink.field, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
