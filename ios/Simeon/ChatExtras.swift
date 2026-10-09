@@ -296,43 +296,48 @@ struct ThreadLinkRow: View {
 }
 
 /**
- * A thread's header (the window's thread view): "‹ Back to Theo" and the
- * thread's name (its first message, cut at 40 characters). Esc goes back
- * on the Mac.
+ * A thread's header, the window's "Thread breadcrumb": the agent's
+ * butterfly and name, which go back to the chat ("Back to Theo" to
+ * VoiceOver), a chevron, then the thread's name (its first message, cut at
+ * 40 characters), which opens the agent's details. On the Mac it sits in
+ * the toolbar, where the chat's name sits.
  */
-struct ThreadHeader: View {
+struct ThreadBreadcrumb: View {
   let agentId: String
   let rootId: String
-  /** Esc goes back; not while find is open, whose own Esc closes it first. */
-  var escapes = true
-  let close: () -> Void
+  let back: () -> Void
+  let details: () -> Void
   @Environment(AppStore.self) private var store
 
   var body: some View {
-    // Read so the name follows the thread as its lines arrive (the first message may come with `getAgentThread`).
+    // Read so the name follows the thread as its lines arrive.
     let _ = store.threadRows[agentId]?.count
+    let agent = store.agent(agentId)
     HStack(spacing: 6) {
-      Button(action: close) {
-        HStack(spacing: 3) {
-          Image(systemName: "chevron.left").font(.system(size: 11, weight: .semibold))
-          Text("Back to \(store.agent(agentId)?.name ?? "chat")")
+      Button(action: back) {
+        HStack(spacing: 6) {
+          if let agent {
+            AgentAvatar(agent: agent, members: store.members(of: agent), groupInARow: true, moves: false)
+              .frame(width: agent.isGroup ? nil : 20, height: 20)
+          }
+          Text(agent?.name ?? "").font(.system(size: 13, weight: .semibold)).foregroundStyle(.primary).lineLimit(1)
         }
-        .foregroundStyle(Ink.link)
         .contentShape(.rect)
       }
       .buttonStyle(.plain)
-      #if os(macOS)
-      .keyboardShortcut(escapes ? .cancelAction : nil)
-      #endif
-      Image(systemName: "chevron.right").font(.system(size: 9, weight: .semibold)).foregroundStyle(Ink.tertiary)
-      Text(store.threadTitle(rootId, in: agentId))
-        .foregroundStyle(Ink.primary).lineLimit(1)
-      Spacer(minLength: 0)
+      .accessibilityLabel("Back to \(agent?.name ?? "")")
+      Image(systemName: "chevron.right").font(.system(size: 9, weight: .semibold)).foregroundStyle(.tertiary)
+        .accessibilityHidden(true)
+      Button(action: details) {
+        Text(store.threadTitle(rootId, in: agentId)).font(.system(size: 13, weight: .medium)).foregroundStyle(.primary).lineLimit(1)
+          .contentShape(.rect)
+      }
+      .buttonStyle(.plain)
+      .accessibilityLabel("View conversation details")
     }
-    .font(.system(size: 13, weight: .medium))
-    .padding(.horizontal, 14).padding(.vertical, 8)
-    .glassEffect(.regular, in: .capsule)
-    .padding(.horizontal, 12).padding(.top, 6)
+    .padding(.horizontal, 6)
+    .accessibilityElement(children: .contain)
+    .accessibilityLabel("Thread breadcrumb")
   }
 }
 
@@ -351,7 +356,6 @@ struct CloudAgentCard: View {
   @Environment(\.openURL) private var openURL
   @Environment(\.chatWidth) private var width
   @State private var info: CloudAgentInfo?
-  @State private var loaded = false
 
   var body: some View {
     VStack(alignment: .leading, spacing: 8) {
@@ -377,7 +381,7 @@ struct CloudAgentCard: View {
           HStack(spacing: 6) {
             Text(changed).foregroundStyle(Ink.secondary)
             if info.linesAdded > 0 { Text("+\(info.linesAdded)").foregroundStyle(Ink.fare) }
-            if info.linesRemoved > 0 { Text("−\(info.linesRemoved)").foregroundStyle(Ink.danger) }
+            if info.linesRemoved > 0 { Text("-\(info.linesRemoved)").foregroundStyle(Ink.danger) }
           }
           .font(.system(size: 12)).monospacedDigit()
         }
@@ -393,13 +397,15 @@ struct CloudAgentCard: View {
         }
         .buttonStyle(.bordered)
         .controlSize(.small)
-      } else if loaded {
-        Label("Cloud agent · Status unavailable", systemImage: "cloud").font(.system(size: 13)).foregroundStyle(Ink.secondary)
       } else {
-        HStack(spacing: 8) {
-          ProgressView().controlSize(.small)
-          Text("Cloud agent").font(.system(size: 13)).foregroundStyle(Ink.secondary)
+        // Not read yet, or it can't be: the card's shape, empty (the window's busy card), until it can.
+        VStack(alignment: .leading, spacing: 8) {
+          ForEach([0.55, 0.9, 0.4], id: \.self) { share in
+            Capsule().fill(Ink.tertiary.opacity(0.35)).frame(height: 10).frame(maxWidth: .infinity, alignment: .leading)
+              .scaleEffect(x: share, anchor: .leading)
+          }
         }
+        .accessibilityHidden(true)
       }
     }
     .padding(12)
@@ -412,7 +418,7 @@ struct CloudAgentCard: View {
     .task(id: bcId) {
       while !Task.isCancelled {
         let next = await store.cloudAgent(bcId)
-        if let next { info = next } else if info == nil { loaded = true }
+        if let next { info = next }
         if let next, !next.isLive { break }
         try? await Task.sleep(nanoseconds: (next == nil ? 60 : 5) * 1_000_000_000)
       }

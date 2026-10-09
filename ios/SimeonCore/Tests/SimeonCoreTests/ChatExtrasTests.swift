@@ -51,35 +51,35 @@ final class EmojiTests: XCTestCase {
 }
 
 final class ChatFindTests: XCTestCase {
-  private func bubble(_ id: String, _ text: String, mine: Bool = false) -> ChatRow {
-    .bubble(Bubble(id: id, text: text, fromPerson: mine, author: nil, showsName: false, showsAvatar: false, reactions: [], isStreaming: false))
+  private func line(_ id: String, _ text: String, role: String = "assistant") -> Entry {
+    Entry(["kind": "message", "id": .string(id), "role": .string(role), "content": .string(text)])!
   }
 
-  func testCountsEveryTimeTheWordsAppearWhateverTheirCaseAndAccents() {
-    let rows: [ChatRow] = [
-      bubble("a", "Send me your Résumé, the resume"),
-      .stamp(id: "s", date: Date()),
-      bubble("b", "the resume is attached", mine: true),
-      .file(id: "f", name: "resume.pdf", url: "/x/resume.pdf", fromPerson: false),
-      .notice(id: "n", text: "Resume saved"),
-      bubble("c", "nothing here"),
+  func testCountsEveryTimeTheWordsAppearAsTheWindowsFindReads() {
+    let entries: [Entry] = [
+      line("a", "Send me your RESUME, the resume"),
+      line("b", "the résumé is attached", role: "user"),
+      Entry(["kind": "user-attachment", "id": "f", "file_name": "resume.pdf", "file_path": "/x/resume.pdf"])!,
+      Entry(["kind": "notice", "id": "n", "text": "Resume saved"])!,
+      Entry(["kind": "send-message", "id": "d", "message": ["type": "email-draft", "draft": ["subject": "Resume", "body": "Attached: resume"]]])!,
+      Entry(["kind": "message", "id": "t", "role": "assistant", "content": "resume for Iris", "toAgent": ["id": "iris", "name": "Iris"]])!,
     ]
-    let found = ChatFind.matches("RESUME", in: rows)
-    XCTAssertEqual(found, [
+    XCTAssertEqual(ChatFind.matches("resume", in: entries), [
       .init(rowId: "a", occurrence: 0), .init(rowId: "a", occurrence: 1),
-      .init(rowId: "b", occurrence: 0), .init(rowId: "n", occurrence: 0),
-    ], "a file's name is not searched, as in the window")
-    XCTAssertEqual(ChatFind.matches("  ", in: rows), [])
-    XCTAssertEqual(ChatFind.matches("zebra", in: rows), [])
-    XCTAssertEqual(ChatFind.matches("aa", in: [bubble("x", "aaaa")]).count, 2, "matches do not overlap")
+      .init(rowId: "n", occurrence: 0), .init(rowId: "d", occurrence: 0), .init(rowId: "d", occurrence: 1),
+    ], "capitals don't count, accents do; a file's name and agents talking to each other are not read")
+    XCTAssertEqual(ChatFind.matches("  ", in: entries), [])
+    XCTAssertEqual(ChatFind.matches("aa", in: [line("x", "aaaa")]).count, 2, "matches do not overlap")
   }
 
-  func testStartsAtTheNewestAndGoesRound() {
+  func testStartsAtTheNewestAndStepsAsTheWindowDoes() {
     let found = ["a", "b", "f"].map { ChatFind.Match(rowId: $0, occurrence: 0) }
     XCTAssertEqual(ChatFind.first(found)?.rowId, "f")
     XCTAssertEqual(ChatFind.next(found, from: found[1], step: 1)?.rowId, "f")
     XCTAssertEqual(ChatFind.next(found, from: found[2], step: 1)?.rowId, "a")
     XCTAssertEqual(ChatFind.next(found, from: found[0], step: -1)?.rowId, "f")
+    XCTAssertEqual(ChatFind.next(found, from: nil, step: 1)?.rowId, "a", "nothing chosen counts as the newest")
+    XCTAssertEqual(ChatFind.next(found, from: nil, step: -1)?.rowId, "b")
     XCTAssertNil(ChatFind.next([], from: nil, step: 1))
     XCTAssertEqual(ChatFind.ordinal(found, found[1]), 2)
     XCTAssertEqual(ChatFind.ordinal(found, nil), 0)
@@ -122,20 +122,37 @@ final class ChatThreadTests: XCTestCase {
     XCTAssertEqual(about.quote, "Shorter please")
   }
 
+  func testAReplyWhoseFirstMessageIsNotLoadedStaysInTheChatUnlessOlderLinesMayHoldIt() {
+    let orphan = [line("r9", "A reply to something older", replyTo: "gone", branched: true, at: 1_000)]
+    XCTAssertTrue(Chat.rows(orphan).contains { $0.id == "r9" }, "the window shows it when nothing older is left to load")
+    XCTAssertFalse(Chat.rows(orphan, mayHoldOlderHistory: true).contains { $0.id == "r9" }, "and waits for the older lines when there are some")
+    XCTAssertEqual(Chat.threadCounts(orphan), [:])
+    // Only messages, cards, files and notices can be thread replies (the window's `D2e`).
+    let event = Entry(["kind": "event", "id": "e1", "branched": true, "replyTo": "m1", "event": ["type": "name-changed", "to": "Theo"]])!
+    XCTAssertFalse(event.isBranched)
+  }
+
   func testAThreadIsItsFirstMessageThenItsReplies() {
     XCTAssertEqual(Chat.threadEntries("m1", in: chat).map(\.id), ["m1", "r1", "r2"])
     let rows = Chat.threadRows("m1", in: chat)
     XCTAssertEqual(rows.compactMap { row -> String? in if case .bubble(let b) = row { return b.id }; return nil }, ["m1", "r1", "r2"])
     XCTAssertFalse(rows.contains { if case .thread = $0 { return true }; return false })
-    XCTAssertTrue(Chat.threadEntries("m2", in: chat).map(\.id) == ["m2"])
+    XCTAssertEqual(Chat.threadEntries("m2", in: chat).map(\.id), ["m2"])
   }
 
-  func testAThreadsTitle() {
-    XCTAssertEqual(Chat.threadTitle(line("a", "Draft   the\nbrief", at: 0)), "Draft the brief")
+  func testAThreadsTitleAsTheWindowWritesIt() {
+    XCTAssertEqual(Chat.threadTitle(line("a", "Draft   the\n**brief**", at: 0)), "Draft the brief", "Markdown taken out, spaces run together")
     XCTAssertEqual(Chat.threadTitle(line("a", "Please find the three cheapest flights, then book one", at: 0)), "Please find the three cheapest flights…")
-    XCTAssertEqual(Chat.threadTitle(line("a", "https://www.example.com/a/b", at: 0)), "www.example.com")
+    XCTAssertEqual(Chat.threadTitle(line("a", "See [the brief](https://x.com/b) now", at: 0)), "See the brief now")
+    XCTAssertEqual(Chat.threadTitle(line("a", "https://www.example.com/a/b", at: 0)), "https://www.example.com/a/b", "a link written in a message is its words")
+    XCTAssertEqual(Chat.threadTitle(line("a", "   ", at: 0)), "Thread")
     XCTAssertEqual(Chat.threadTitle(Entry(["kind": "user-attachment", "id": "f", "file_name": "photo.png", "file_path": "/x/photo.png"])!), "Photo")
+    XCTAssertEqual(Chat.threadTitle(Entry(["kind": "user-attachment", "id": "f", "file_name": "photo.heic", "file_path": "/x/photo.heic"])!), "photo.heic", "the window's pictures are avif, bmp, gif, ico, jpeg, jpg, png, svg, webp")
     XCTAssertEqual(Chat.threadTitle(Entry(["kind": "user-attachment", "id": "f", "file_name": "brief.pdf", "file_path": "/x/brief.pdf"])!), "brief.pdf")
+    XCTAssertEqual(Chat.threadTitle(Entry(["kind": "send-message", "id": "s", "message": ["type": "attachment", "url": "https://example.com/report"]])!), "example.com")
+    XCTAssertEqual(Chat.threadTitle(Entry(["kind": "send-message", "id": "s", "message": ["type": "attachment", "url": "file:///home/box/out/Q3%20plan.pdf"]])!), "Q3 plan.pdf")
+    XCTAssertEqual(Chat.threadTitle(Entry(["kind": "send-message", "id": "s", "message": ["type": "widget", "widget": ["prompt": "Which plan?"]]])!), "Which plan?")
+    XCTAssertEqual(Chat.threadTitle(Entry(["kind": "send-message", "id": "s", "message": ["type": "cloud-agent", "bcId": "b"]])!), "Cloud agent")
     XCTAssertEqual(Chat.threadTitle(nil), "Thread")
   }
 
@@ -194,19 +211,11 @@ final class ChatQueueAndThreadTests: XCTestCase {
   func testAMessageWaitsWhileOfflineAndGoesWhenBackMarkedAsWrittenOffline() async throws {
     let backend = ScriptedBackend()
     let store = AppStore()
-    store.offlineGrace = 0.1
     await store.attach(backend)
     await store.open("theo")
-    // A drop that comes back within the grace is not "offline".
+    // Down the moment the stream drops, as the Mac's coordinator says it.
     backend.push(.connection(live: false))
-    try await Task.sleep(nanoseconds: 30_000_000)
-    XCTAssertFalse(store.isDown)
-    backend.push(.connection(live: true))
-    try await Task.sleep(nanoseconds: 200_000_000)
-    XCTAssertFalse(store.isDown)
-    // One that lasts is.
-    backend.push(.connection(live: false))
-    try await Task.sleep(nanoseconds: 300_000_000)
+    try await Task.sleep(nanoseconds: 50_000_000)
     XCTAssertTrue(store.isDown)
     await store.send("Book it", to: "theo")
     await store.send("Cancel me", to: "theo")
@@ -229,34 +238,32 @@ final class ChatQueueAndThreadTests: XCTestCase {
     XCTAssertFalse(store.cancelQueued("nope", in: "theo"))
   }
 
-  func testAThreadOpensWithItsRepliesAndAReplyStaysInIt() async throws {
+  func testAThreadIsMadeFromTheChatsLinesAndAReplyStaysInIt() async throws {
     let backend = ScriptedBackend()
     backend.lines = [
       ["kind": "message", "id": "m1", "role": "user", "content": "Draft the brief", "timestampMs": 1_000],
       ["kind": "message", "id": "r1", "role": "assistant", "content": "On it", "replyTo": "m1", "branched": true, "timestampMs": 2_000],
     ]
-    backend.thread = ["entries": [
-      ["kind": "message", "id": "m1", "role": "user", "content": "Draft the brief", "timestampMs": 1_000],
-      ["kind": "message", "id": "r0", "role": "assistant", "content": "An older reply", "replyTo": "m1", "branched": true, "timestampMs": 1_500],
-      ["kind": "message", "id": "r1", "role": "assistant", "content": "On it", "replyTo": "m1", "branched": true, "timestampMs": 2_000],
-    ]]
     let store = AppStore()
     await store.attach(backend)
     await store.open("theo")
     XCTAssertEqual(store.rows(for: "theo").map(\.id), ["stamp-m1", "m1", "thread-m1"])
-    await store.openThread("m1", in: "theo")
+    store.openThread("m1", in: "theo")
     let bubbles = { store.threadRows["theo"]?.compactMap { row -> String? in if case .bubble(let b) = row { return b.id }; return nil } ?? [] }
-    XCTAssertEqual(bubbles(), ["m1", "r0", "r1"])
+    XCTAssertEqual(bubbles(), ["m1", "r1"])
     XCTAssertEqual(store.threadTitle("m1", in: "theo"), "Draft the brief")
     XCTAssertEqual(store.threadRoot(of: "r1", in: "theo"), "m1")
     XCTAssertNil(store.threadRoot(of: "m1", in: "theo"))
+    XCTAssertEqual(store.findableEntries("theo").map(\.id), ["m1", "r1"], "find reads the thread while it is open")
 
     await store.send("Shorter", to: "theo", replyTo: "m1", inThread: true)
     XCTAssertEqual(backend.sent.last?.options, SendOptions(replyTo: "m1", isFork: true))
-    XCTAssertEqual(bubbles().count, 4, "the reply waits in the thread")
+    XCTAssertEqual(bubbles().count, 3, "the reply waits in the thread")
     XCTAssertFalse(store.rows(for: "theo").contains { if case .bubble(let b) = $0 { return b.text == "Shorter" }; return false }, "not in the chat")
     store.closeThread(in: "theo")
     XCTAssertNil(store.threadRows["theo"])
+    XCTAssertEqual(store.findableEntries("theo").map(\.id).first, "m1")
+    XCTAssertFalse(store.findableEntries("theo").contains { $0.id == "r1" }, "the chat's find leaves the thread's replies out")
   }
 
   func testAChatThatCouldNotLoadSaysSoAndRetries() async throws {

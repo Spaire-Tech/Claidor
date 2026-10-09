@@ -39,10 +39,6 @@ struct MacChat: View {
       .environment(messageMenu)
       .safeAreaBar(edge: .top, spacing: 0) {
         VStack(spacing: 0) {
-          if let thread {
-            ThreadHeader(agentId: agentId, rootId: thread, escapes: !finding) { leaveThread() }
-              .transition(.move(edge: .top).combined(with: .opacity))
-          }
           if finding {
             MacFindBar(query: $findQuery, matches: findMatches, current: findCurrent, step: findStep, close: closeFind)
               .transition(.move(edge: .top).combined(with: .opacity))
@@ -50,7 +46,6 @@ struct MacChat: View {
           ChatCallSlot(agentId: agentId, showsCall: $showsCall, showsTranscript: $showsTranscript)
         }
         .animation(.snappy(duration: 0.2), value: finding)
-        .animation(.snappy(duration: 0.2), value: thread)
       }
       .safeAreaBar(edge: .bottom, spacing: 0) { ChatComposer(agentId: agentId, thread: thread).id(thread ?? "chat") }
       .environment(reply)
@@ -77,9 +72,14 @@ struct MacChat: View {
       .toolbar(removing: .title)
       .toolbar {
         ToolbarItem(placement: .principal) {
-          Button { openPage() } label: { MacChatTitle(agentId: agentId) }
-            .buttonStyle(.plain)
-            .help("Show \(agent?.name ?? "the agent")'s page")
+          if let thread {
+            // In a thread, the window's breadcrumb: the agent (back to the chat) › the thread.
+            ThreadBreadcrumb(agentId: agentId, rootId: thread, back: leaveThread, details: openPage)
+          } else {
+            Button { openPage() } label: { MacChatTitle(agentId: agentId) }
+              .buttonStyle(.plain)
+              .help("Show \(agent?.name ?? "the agent")'s page")
+          }
         }
         ToolbarItemGroup(placement: .primaryAction) {
           if store.canCall && agent?.isGroup == false {
@@ -129,7 +129,7 @@ struct MacChat: View {
         actions.openPage = { openPage() }
         actions.openComputer = { openWindow(id: "computer", value: agentId) }
         actions.openExchange = { exchange = $0 }
-        actions.openThread = { root in Task { await store.openThread(root, in: agentId) } }
+        actions.openThread = { root in store.openThread(root, in: agentId) }
         watchPaste()
       }
       .task { await store.open(agentId) }
@@ -143,17 +143,17 @@ struct MacChat: View {
 
   private func openPage() { navigation.sheet = .agentPage(agentId, routine: nil) }
 
-  /** Back from a thread to the chat ("‹ Back to …", Esc). */
+  /** Back from a thread to the chat (the agent's name in the breadcrumb). */
   private func leaveThread() {
     withAnimation(.snappy(duration: 0.2)) { store.closeThread(in: agentId) }
   }
 
   // MARK: Find in the chat
 
-  /** Every time the words appear in what is on screen: the chat, or the open thread (the window searches the thread's lines there). */
+  /** Every time the words appear in the lines on screen: the chat's, or the open thread's. */
   private var findMatches: [ChatFind.Match] {
-    let rows = store.openThreads[agentId] == nil ? store.rows(for: agentId) : store.threadRows[agentId] ?? []
-    return ChatFind.matches(findQuery, in: rows)
+    let _ = store.rows(for: agentId).count + (store.threadRows[agentId]?.count ?? 0)
+    return ChatFind.matches(findQuery, in: store.findableEntries(agentId))
   }
 
   /** To the next or previous match, lit as a quote's jump lights its message. */
@@ -222,9 +222,10 @@ extension Notification.Name {
 }
 
 /**
- * Find in the chat (⌘F, the window's `find-in-chat.tsx`): the field, "2 of
- * 5" (every time the words appear, in red when none do), up and down
- * (⇧⌘G and ⌘G, Shift-Return and Return), Done (Esc).
+ * Find in the chat (⌘F, the window's find bar): the field ("Find in chat"),
+ * the count as the window writes it ("2/5", "0/0" in red), Previous match
+ * and Next match (⇧⌘G and ⌘G, Shift-Return and Return), and Close find
+ * (Esc).
  */
 struct MacFindBar: View {
   @Binding var query: String
@@ -248,17 +249,19 @@ struct MacFindBar: View {
         .onSubmit { step(NSEvent.modifierFlags.contains(.shift) ? -1 : 1) }
         .onExitCommand(perform: close)
       if !query.trimmingCharacters(in: .whitespaces).isEmpty {
-        Text(matches.isEmpty ? "No matches" : "\(ChatFind.ordinal(matches, current)) of \(matches.count)")
+        Text("\(ChatFind.ordinal(matches, current))/\(matches.count)")
           .font(.system(size: 12)).foregroundStyle(matches.isEmpty ? Ink.danger : .secondary).monospacedDigit()
       }
       ControlGroup {
-        Button { step(-1) } label: { Image(systemName: "chevron.up") }.help("Previous (⇧⌘G)")
-        Button { step(1) } label: { Image(systemName: "chevron.down") }.help("Next (⌘G)")
+        Button { step(-1) } label: { Image(systemName: "chevron.up") }.help("Previous match (⇧⌘G)").accessibilityLabel("Previous match")
+        Button { step(1) } label: { Image(systemName: "chevron.down") }.help("Next match (⌘G)").accessibilityLabel("Next match")
       }
       .controlSize(.small)
       .fixedSize()
       .disabled(matches.isEmpty)
-      Button("Done", action: close).controlSize(.small)
+      Button(action: close) { Image(systemName: "xmark") }
+        .buttonStyle(.borderless).controlSize(.small)
+        .help("Close find").accessibilityLabel("Close find")
     }
     .padding(.horizontal, 12).padding(.vertical, 6)
     .glassEffect(.regular, in: .capsule)
@@ -396,7 +399,6 @@ struct MessageContextMenu: View {
       Button { reply?.target = bubble } label: { Label("Reply", systemImage: "arrowshape.turn.up.left") }
       Button { actions?.openThread(bubble.id) } label: { Label("Start a Thread", systemImage: "bubble.left.and.bubble.right") }
     }
-    Button { Task { await store.setUnread(agentId, true) } } label: { Label("Mark as Unread", systemImage: "message.badge") }
     Divider()
     if let link = bubble.loneLink {
       Button { NSWorkspace.shared.open(link) } label: { Label("Open Link", systemImage: "safari") }

@@ -234,8 +234,13 @@ public struct Entry: Identifiable, Hashable, Sendable {
     (raw["reactions"]?.array ?? []).compactMap { r in r["emoji"]?.text.map { ($0, r["by"]?.string ?? "") } }
   }
 
-  /** A reply in a thread (`branched`): it is drawn in the thread, not in the chat. */
-  public var isBranched: Bool { raw["branched"]?.bool == true }
+  /** A reply in a thread (`branched`, on a message, a card, a file or a notice): it is drawn in the thread, not in the chat (the window's `D2e`). */
+  public var isBranched: Bool { Entry.threadKinds.contains(kind) && raw["branched"]?.bool == true }
+
+  /** The line it answers, for the kinds that can answer one (the window's `u0e`). */
+  public var threadParent: String? { Entry.threadKinds.contains(kind) ? raw["replyTo"]?.text : nil }
+
+  static let threadKinds: Set<String> = ["message", "send-message", "user-attachment", "notice"]
 
   /** The person's own message. */
   public var isFromPerson: Bool {

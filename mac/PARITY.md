@@ -155,7 +155,7 @@ The menus, zoom and full screen are in §9.
 |---|---|---|---|
 | Centred: the 52 pt butterfly (a group's stack), the name in a white glass pill; the avatar opens the agent pane; Call beside the name; the working dot | patch 2046-2094, 375-384 | yes (`ChatHeadline`, `ChatCallButton`) | written (the toolbar) |
 | A shared room's badge and Manage shared room | recovered `agent-info/shared-room/trigger.tsx` | no | |
-| A thread's header with its way back | recovered `reply-thread-controller.ts` | yes (a sheet with the thread's name and Done) | written ("‹ Back to *name*" › the thread's name; Esc goes back) |
+| A thread's header with its way back: the "Thread breadcrumb", the agent's butterfly and name (back to the chat, "Back to *name*") › the thread's name (the agent's details) | bundle `Thread breadcrumb` | yes (a sheet with the thread's name and Done) | written (in the toolbar) |
 
 ### 2.8 Messages
 
@@ -179,12 +179,12 @@ The menus, zoom and full screen are in §9.
 
 | What | Where | Phone | Mac |
 |---|---|---|---|
-| The menu: 👍 👎 ❤️ 😂 🎉 😮, More emoji (a picker with search), Reply, Start a thread, Copy | recovered `reaction-picker.tsx`, `emoji-picker-content.tsx`, `message-actions.tsx` | yes (the emoji keyboard for more) | written (right click; More Emoji… a picker with search, without the window's categories; Mark as Unread too) |
+| The menu: 👍 👎 ❤️ 😂 🎉 😮, More emoji (a picker with search), Reply, Start a thread, Copy | recovered `reaction-picker.tsx`, `emoji-picker-content.tsx`, `message-actions.tsx` | yes (the emoji keyboard for more) | written (right click; More Emoji… a picker with search, without the window's categories) |
 | Reactions under the bubble; yours toggle | | yes | written |
 | Reply: the quote over the composer, in the sent bubble, a click jumps to it ("Open reply thread" when what it answers is in a thread); a quote's preview on hover | recovered `reply-preview.tsx`, `referenced-message-preview.tsx` | yes (no hover preview) | written |
-| Threads: Start a thread (not inside one), "1 reply", "N replies" under the message ("View thread" on hover), the thread: its first message and its replies (`getAgentThread`), a reply sent in it stays in it (`isFork`); its replies kept out of the chat | recovered `thread-affordance.tsx`, `thread-loader.ts`, shared `transcript-threads.ts` | yes (`Chat.threadRows`, `ThreadSheet`) | written |
-| Find in the chat (⌘F): every time the words appear (case and accents aside), from the newest, "3 of 12" (red when none), Return and Shift-Return, ⌘G and ⇧⌘G, Esc; inside a thread, the thread's lines | recovered `find-in-chat.tsx`, `find-in-chat-controller.ts` | no (no find on the phone) | written |
-| Sending: "Waiting to send…", "Will send when reconnected" with Cancel ("This message is already sending and can't be canceled."); "Sent while offline · *date*"; "Failed to send" with Resend and Delete. Only a message held offline says when it was written (`composedAtMs`): the phone said it of every message | recovered `transcript.tsx`, `submission.ts` | yes | written |
+| Threads, as the window makes them from the chat's own lines (`N_n`, `x_n`): a reply whose thread's first message is loaded is counted under it, one whose first message isn't stays in the chat unless older lines may hold it; Start a thread (not inside one), "View thread" with "N replies" under the message, the thread (its first message and its replies), a reply sent in it stays in it (`isFork`); the thread's name as the window writes it (Markdown out, 40 characters, "Photo", a file's name, "Thread") | bundle | yes (`Chat.threadSplit`, `ThreadSheet`) | written |
+| Find in the chat (⌘F), as the window's (`f_n`, `d_n`, `h_n`): every time the words appear, capitals aside (accents count), in a message's words (not agents talking to each other), a question's prompt, an email draft's subject and body, a Slack draft's body, a notice; the newest chosen as you type; "3/12", "0/0" in red; Return and Shift-Return, ⌘G and ⇧⌘G; Previous match, Next match, Close find (Esc); inside a thread, the thread's lines | bundle `Find in chat` | no (no find on the phone) | written |
+| Sending, as the window's queue: a message waits while the connection is down ("Will send when reconnected") or behind another of the chat's still on its way ("Waiting to send…"), with Cancel ("This message is already sending and can't be canceled."); down the moment the stream drops; only one held while down says when it was written (`composedAtMs` from `queuedAtMs`; the phone had said it of every message); "Sent while offline · *date*"; "Failed to send" with Resend and Delete | bundle `mKe`, `isTransportDown` | yes | written |
 
 ### 2.10 The agent at work
 
@@ -198,7 +198,7 @@ The menus, zoom and full screen are in §9.
 
 | What | Where | Phone | Mac |
 |---|---|---|---|
-| "Message *name*", "Message group"; "Reply in thread" in a thread | bundle | partly ("Message") | written |
+| The placeholder (`T9n`, `x9n`): "Message *name*" (a named group's too), "Message group" for a group with no name, "Ask anything, or drop a file."; "Reply…" while replying; "Add a message, or hit send." with files; "Listening…" while dictating | bundle | partly ("Message", "Reply") | written |
 | +: Attach files; Teach a task (gate off) | bundle | yes (attach) | written (the file chooser) |
 | Files dropped or pasted ("Drop files to add to chat") | recovered `composer.tsx` | no (the phone's + chooser) | written |
 | Attachments staged, then sent with the message | `desktop/web/backend.ts` | yes | written |
@@ -348,8 +348,7 @@ and `VoiceCall.swift`. Every command the Mac sends today has a line.
 | Area | Commands | Phone | Mac |
 |---|---|---|---|
 | Reading a chat | `openAgentTail`, `getAgentTranscriptTail` | yes | written |
-| | `getAgentThread` | yes | written |
-| | `getAgentTranscriptWindow` (older pages, with thread counts; the app counts threads from the lines it has) | no | |
+| | `getAgentTranscriptWindow`, `getAgentThread` (the window sends neither: it counts and makes threads from the lines it has) | n/a | n/a |
 | Sending | `sendPrompt` (with `replyToId`, `isFork`, `richText`, nonce, and `composedAtMs` for a message held offline), `appendSendMessage` | yes | written |
 | | `promptAcceptanceStatus`, `appendConnectorCard` | no | |
 | Cards and reactions | `respondToWidget`, `dismissWidget`, `submitSecret`, `sendDraft`, `discardDraft`, `reactToMessage` | yes | written |

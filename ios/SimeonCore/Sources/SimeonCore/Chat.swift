@@ -414,20 +414,23 @@ public enum Chat {
   /**
    * The chat's rows. `unreadAfter` (milliseconds) puts the "New" line before
    * the first agent's line written after it, as the window's
-   * `unreadBoundaryAt` does.
+   * `unreadBoundaryAt` does. A thread's replies stay out of it, as the
+   * window's `N_n` keeps them: a reply whose thread's first message is here
+   * is counted under that message ("N replies"); one whose first message
+   * isn't loaded stays in the chat, unless older lines may still hold it
+   * (`mayHoldOlderHistory`), when it waits for them.
    */
-  public static func rows(_ entries: [Entry], isGroup: Bool = false, unreadAfter: Double? = nil) -> [ChatRow] {
-    // A thread's replies (`branched`) live in the thread, not in the chat: the chat shows "N replies" under the message they answer.
+  public static func rows(_ entries: [Entry], isGroup: Bool = false, unreadAfter: Double? = nil, mayHoldOlderHistory: Bool = false) -> [ChatRow] {
     guard entries.contains(where: \.isBranched) else { return layout(entries, isGroup: isGroup, unreadAfter: unreadAfter) }
+    let split = threadSplit(entries, mayHoldOlderHistory: mayHoldOlderHistory)
     // Quotes read every line: a message in the chat can answer a reply in a thread.
-    let rows = layout(entries.filter { !$0.isBranched }, quoting: entries, isGroup: isGroup, unreadAfter: unreadAfter)
-    let counts = threadCounts(entries)
-    guard !counts.isEmpty else { return rows }
+    let rows = layout(split.visible, quoting: entries, isGroup: isGroup, unreadAfter: unreadAfter)
+    guard !split.counts.isEmpty else { return rows }
     var out: [ChatRow] = []
-    out.reserveCapacity(rows.count + counts.count)
+    out.reserveCapacity(rows.count + split.counts.count)
     for row in rows {
       out.append(row)
-      if let count = counts[row.id], !isSendState(row) {
+      if let count = split.counts[row.id], !isSendState(row) {
         out.append(.thread(id: "thread-\(row.id)", rootId: row.id, count: count, side: row.side))
       }
     }
@@ -441,78 +444,172 @@ public enum Chat {
     }
   }
 
-  /**
-   * A thread on its own (the window's thread view, `getAgentThread`): the
-   * message it started from, then every reply in it, oldest first.
-   */
+  /** The window's `N_n`: the lines the chat shows, and each thread's count of replies, by its first message's id. */
+  public static func threadSplit(_ entries: [Entry], mayHoldOlderHistory: Bool = false) -> (visible: [Entry], counts: [String: Int]) {
+    let byId = Dictionary(entries.map { ($0.id, $0) }, uniquingKeysWith: { _, last in last })
+    var visible: [Entry] = []
+    var counts: [String: Int] = [:]
+    for entry in entries {
+      guard entry.isBranched else { visible.append(entry); continue }
+      guard let root = threadRoot(of: entry, in: byId) else {
+        if !mayHoldOlderHistory { visible.append(entry) }
+        continue
+      }
+      counts[root, default: 0] += 1
+    }
+    return (visible, counts)
+  }
+
+  /** A thread on its own (the window's thread view): the message it started from, then every reply in it, oldest first. */
   public static func threadRows(_ rootId: String, in entries: [Entry], isGroup: Bool = false) -> [ChatRow] {
     layout(threadEntries(rootId, in: entries), quoting: entries, isGroup: isGroup, unreadAfter: nil)
   }
 
-  /** The thread's lines: its first message (wherever it is), then the replies that lead back to it. */
+  /** The thread's lines: its first message, then the replies that lead back to it. */
   public static func threadEntries(_ rootId: String, in entries: [Entry]) -> [Entry] {
-    let branched = entries.filter(\.isBranched)
-    let byId = Dictionary(branched.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-    var seen = Set<String>()
-    let replies = branched.filter { threadRoot(of: $0, branched: byId) == rootId && seen.insert($0.id).inserted }
-    guard let root = entries.first(where: { $0.id == rootId }) else { return replies }
+    let byId = Dictionary(entries.map { ($0.id, $0) }, uniquingKeysWith: { _, last in last })
+    let replies = entries.filter { $0.isBranched && threadRoot(of: $0, in: byId) == rootId }
+    guard let root = byId[rootId] else { return replies }
     return [root] + replies
   }
 
-  /** How many replies each thread has, by the id of the message it started from (the host's `branchReplyCounts`). */
-  public static func threadCounts(_ entries: [Entry]) -> [String: Int] {
-    let branched = entries.filter(\.isBranched)
-    guard !branched.isEmpty else { return [:] }
-    let byId = Dictionary(branched.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-    var counts: [String: Int] = [:]
-    var seen = Set<String>()
-    for entry in branched where seen.insert(entry.id).inserted {
-      if let root = threadRoot(of: entry, branched: byId) { counts[root, default: 0] += 1 }
-    }
-    return counts
-  }
+  /** How many replies each thread has, by the id of the message it started from. */
+  public static func threadCounts(_ entries: [Entry]) -> [String: Int] { threadSplit(entries).counts }
 
   /**
-   * The message a reply's thread started from (shared/transcript-threads.ts,
-   * `resolveBranchRoot`): up its `replyTo`s through other replies to the
-   * first line that is not one. Nil for a line that answers nothing, or a
-   * loop.
+   * The message a reply's thread started from (the window's `x_n`): up its
+   * `replyTo`s through other replies to the first line that is not one.
+   * Nil when a line on the way isn't loaded, for a line that answers
+   * nothing, and for a loop.
    */
-  public static func threadRoot(of entry: Entry, branched byId: [String: Entry]) -> String? {
+  public static func threadRoot(of entry: Entry, in byId: [String: Entry]) -> String? {
     var current = entry
     var seen: Set<String> = [entry.id]
     while true {
-      guard let parent = current["replyTo"]?.text else { return nil }
-      guard let next = byId[parent] else { return parent }
+      guard let parent = current.threadParent, let next = byId[parent] else { return nil }
+      if !next.isBranched { return parent }
       guard seen.insert(parent).inserted else { return nil }
       current = next
     }
   }
 
   /**
-   * A thread's name in its header (the window's `replyPreviewLabel`): its
-   * first message's words, up to 40 characters (cut at 39, its trailing
-   * punctuation dropped, and "…"); "Photo" for a picture, a file's name, a
-   * lone link's host; else "Thread".
+   * A thread's name in its header (the window's `jvn` over `ide`): its first
+   * message's words without their Markdown, up to 40 characters (cut at 39,
+   * its trailing punctuation dropped, and "…"), "Thread" when it has none;
+   * "Photo" for a picture, a file's name, a link's host; "Thread" for a line
+   * that is gone.
    */
   public static func threadTitle(_ root: Entry?) -> String {
-    guard let root else { return "Thread" }
-    let raw = root.content ?? root.message?["content"]?.text ?? ""
-    let text = raw.split(whereSeparator: \.isWhitespace).joined(separator: " ")
-    if let link = loneLink(text) { return link.host ?? "Thread" }
-    if !text.isEmpty {
+    switch ReplyPreview(root) {
+    case .text(let raw):
+      let text = plainPreview(raw)
+      if text.isEmpty { return "Thread" }
       guard text.count > 40 else { return text }
       var head = String(text.prefix(39))
       while let last = head.last, last.isWhitespace || ":;,.!?\u{2013}\u{2014}-".contains(last) { head.removeLast() }
       return head + "…"
+    case .image: return "Photo"
+    case .file(let url, let name): return name.flatMap { $0.isEmpty ? nil : $0 } ?? fileBaseName(url)
+    case .link(let url): return URL(string: url)?.host ?? url
+    case .missing: return "Thread"
     }
-    if !(root.message?["images"]?.array ?? []).isEmpty { return "Photo" }
-    if let path = root["file_path"]?.text ?? root["filePath"]?.text ?? root.message?["url"]?.text {
-      let name = root["file_name"]?.text ?? root["fileName"]?.text ?? fileName(ofURL: path)
-      return ["png", "jpg", "jpeg", "gif", "webp", "heic"].contains((name as NSString).pathExtension.lowercased()) ? "Photo" : name
-    }
-    return "Thread"
   }
+
+  /** What a line is, as a reply or a thread names it (the window's `ide`). */
+  public enum ReplyPreview: Equatable {
+    case text(String), image, file(url: String, name: String?), link(String), missing
+
+    public init(_ entry: Entry?) {
+      guard let entry else { self = .missing; return }
+      switch entry.kind {
+      case "message":
+        self = .text(entry.content ?? "")
+      case "send-message":
+        guard let message = entry.message else { self = .missing; return }
+        if message["type"]?.string == "attachment" {
+          let url = message["url"]?.text ?? ""
+          let name = message["file_name"]?.text
+          let isWeb = url.lowercased().hasPrefix("https:") || url.lowercased().hasPrefix("http:")
+          if isWeb && (name ?? "").isEmpty { self = .link(url) }
+          else if Chat.isPicture(name ?? url) { self = .image }
+          else { self = .file(url: url, name: name) }
+        } else {
+          self = .text(Chat.cardText(message))
+        }
+      case "user-attachment":
+        let path = entry["file_path"]?.text ?? ""
+        let name = entry["file_name"]?.text
+        self = Chat.isPicture(name ?? path) ? .image : .file(url: path, name: name)
+      default:
+        self = .missing
+      }
+    }
+  }
+
+  /** The words a card stands for in a quote or a thread's name (the window's `PAe`). */
+  static func cardText(_ message: JSON) -> String {
+    let type = message["type"]?.string ?? ""
+    switch type {
+    case "text": return message["content"]?.string ?? ""
+    case "attachment": return message["url"]?.string ?? ""
+    case "widget": return message["widget"]?["prompt"]?.string ?? ""
+    case "cloud-agent":
+      let title = message["title"]?.string?.trimmingCharacters(in: .whitespaces) ?? ""
+      return title.isEmpty ? "Cloud agent" : "Cloud agent: \(title)"
+    case "secret-request": return message["secretRequest"]?["label"]?.string ?? ""
+    case "email-draft":
+      let subject = message["draft"]?["subject"]?.string ?? ""
+      return subject.isEmpty ? (message["draft"]?["body"]?.string ?? "") : subject
+    case "slack-draft": return message["draft"]?["body"]?.string ?? ""
+    case "permission-request": return message["permission"]?["title"]?.string ?? ""
+    case "auto-review-approval": return "Approval required: \(message["approval"]?["summary"]?.string ?? "")"
+    case "local-tool-permission": return "Permission required: \(message["ask"]?["target"]?.string ?? "")"
+    case "connector":
+      let name = message["connector"]?.string ?? ""
+      return message["variant"]?.string == "connected" ? "\(name) connected" : "Connect \(name)"
+    case "connectors":
+      let names = message["connectors"]?.array?.compactMap(\.text) ?? []
+      return names.isEmpty ? "Connect tools" : "Connect " + names.joined(separator: ", ")
+    case "listener-connect": return message["platform"]?.string == "slack" ? "Connect Slack" : "Connect GitHub"
+    default: return "Message"
+    }
+  }
+
+  /** The window's picture extensions (`kft`). */
+  static let pictureExtensions: Set<String> = ["avif", "bmp", "gif", "ico", "jpeg", "jpg", "png", "svg", "webp"]
+
+  static func isPicture(_ nameOrPath: String) -> Bool {
+    let last = nameOrPath.split(whereSeparator: { $0 == "/" || $0 == "\\" }).last.map(String.init) ?? nameOrPath
+    guard let dot = last.lastIndex(of: "."), dot > last.startIndex, last.index(after: dot) < last.endIndex else { return false }
+    return pictureExtensions.contains(last[last.index(after: dot)...].lowercased())
+  }
+
+  /** A file's name from its address, as the window's `JAe` takes it: the last part of the path, decoded. */
+  static func fileBaseName(_ url: String) -> String {
+    var path = url
+    if let parsed = URL(string: url), parsed.scheme != nil { path = parsed.path.removingPercentEncoding ?? parsed.path }
+    while path.hasSuffix("/") { path.removeLast() }
+    let last = path.split(separator: "/", omittingEmptySubsequences: false).last.map(String.init) ?? path
+    return last.isEmpty ? url : last
+  }
+
+  /** A message's words without their Markdown, on one line (the window's `o5e` and its `Xun` rules). */
+  public static func plainPreview(_ text: String) -> String {
+    var out = text
+    for (pattern, template) in previewRules {
+      out = pattern.stringByReplacingMatches(in: out, range: NSRange(out.startIndex..., in: out), withTemplate: template)
+    }
+    return out.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+  }
+
+  private static let previewRules: [(NSRegularExpression, String)] = [
+    (#"`+"#, ""), (#"!\[([^\]]*)\]\([^)]*\)"#, "$1"), (#"\[([^\]]+)\]\([^)]*\)"#, "$1"),
+    (#"\$\$((?:[^$\\]|\\[\s\S])+)\$\$"#, "$1"), (#"\\\(([\s\S]+?)\\\)"#, "$1"), (#"\\\[([\s\S]+?)\\\]"#, "$1"), (#"\\\$"#, "\\$"),
+    (#"(?m)^\s{0,3}#{1,6}\s+"#, ""), (#"(?m)^\s{0,3}>\s?"#, ""), (#"(?m)^\s{0,3}(?:[-*+]|\d+[.)])\s+"#, ""),
+    (#"\*\*([^*]+)\*\*"#, "$1"), (#"__([^_]+)__"#, "$1"), (#"~~([^~]+)~~"#, "$1"), (#"\*([^*\n]+)\*"#, "$1"),
+    (#"(?<!\w)_([^_\n]+)_(?!\w)"#, "$1"), (#"\|"#, " "),
+  ].compactMap { pair in (try? NSRegularExpression(pattern: pair.0)).map { ($0, pair.1) } }
 
   /** A text that is one link and nothing else: a bare `https:` address, or exactly `[words](https:…)`. */
   public static func loneLink(_ text: String) -> URL? {

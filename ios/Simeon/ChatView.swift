@@ -91,7 +91,7 @@ struct ChatView: View {
         actions.openExchange = { exchange = $0 }
         actions.openThread = { root in
           thread = ThreadRoute(rootId: root)
-          Task { await store.openThread(root, in: agentId) }
+          store.openThread(root, in: agentId)
         }
       }
       .onDisappear { store.close(agentId) }
@@ -501,14 +501,23 @@ struct ChatComposer: View {
   /** Where the draft is kept: the chat's, or its thread's. */
   private var draftKey: String { thread.map { "\(agentId)#thread-\($0)" } ?? agentId }
 
-  /** "Message" on the iPhone; on the Mac the window's "Message *name*" ("Message group" in a group). "Reply" while replying. */
+  /**
+   * "Message" on the iPhone ("Reply" while replying). On the Mac the
+   * window's (`T9n`, `x9n`): "Listening…" while dictating, "Reply…" while
+   * replying, "Add a message, or hit send." with files and no words, else
+   * "Message *name*" ("Message group" for a group with no name, "Ask
+   * anything, or drop a file." with no name at all).
+   */
   private var placeholder: String {
-    if thread != nil { return "Reply in thread" }
-    if reply?.target != nil { return "Reply" }
     #if os(macOS)
-    if store.groupIds.contains(agentId) { return "Message group" }
-    return name.isEmpty ? "Message" : "Message \(name)"
+    if dictation.isListening { return "Listening…" }
+    if reply?.target != nil { return "Reply…" }
+    if !attachments.isEmpty { return "Add a message, or hit send." }
+    let named = name.trimmingCharacters(in: .whitespacesAndNewlines)
+    if !named.isEmpty { return "Message \(named)" }
+    return store.groupIds.contains(agentId) ? "Message group" : "Ask anything, or drop a file."
     #else
+    if reply?.target != nil { return "Reply" }
     return "Message"
     #endif
   }

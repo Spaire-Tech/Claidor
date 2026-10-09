@@ -268,9 +268,8 @@ final class ChatTests: XCTestCase {
       default: return "other"
       }
     }
-    // The launch question's thread is under it, not in the chat.
-    XCTAssertEqual(kinds, ["stamp", "me", "thread:m0u:2", "them", "teammates:4 messages with:Scout+Iris", "them", "file:Launch review.docx", "me", "routine:created:Monday launch check", "them"])
-    guard case .bubble(let thumbs) = rows[7] else { return XCTFail() }
+    XCTAssertEqual(kinds, ["stamp", "me", "them", "teammates:4 messages with:Scout+Iris", "them", "file:Launch review.docx", "me", "routine:created:Monday launch check", "them"])
+    guard case .bubble(let thumbs) = rows[6] else { return XCTFail() }
     XCTAssertEqual(thumbs.reactions, ["\u{1F44D}"])
   }
 
@@ -335,7 +334,7 @@ final class ChatTests: XCTestCase {
       default: return "other"
       }
     }
-    XCTAssertEqual(kinds, ["me", "them", "question", "question-answered", "question-dismissed", "draft:email:Ready to send", "draft:slack:Ready to send", "flights:4", "flights:2", "connector:Linear:To read the launch tickets.", "listener:slack:so this routine can fire", "approval:Delete 3 files in ~/Downloads:pending", "secret:Stripe API key", "computer:waiting", "cloud-agent:bc-1", "file:Payouts September.pdf", "them", "them", "them", "them", "Iris joined the group"])
+    XCTAssertEqual(kinds, ["me", "them", "question", "question-answered", "question-dismissed", "draft:email:Ready to send", "draft:slack:Ready to send", "flights:4", "flights:2", "connector:Linear:To read the launch tickets.", "listener:slack:so this routine can fire", "approval:Delete 3 files in ~/Downloads:pending", "secret:Stripe API key", "computer:waiting", "cloud-agent:bc-1", "file:Payouts September.pdf"])
     guard case .flights(_, let flights) = rows.first(where: { if case .flights = $0 { return true }; return false })! else { return XCTFail() }
     XCTAssertEqual(flights.title, "Seattle to Los Angeles")
     XCTAssertEqual(flights.offers[3].legs.count, 2)
@@ -1172,8 +1171,6 @@ final class ScriptedBackend: AgentBackend, @unchecked Sendable {
   var sent: [(text: String, options: SendOptions)] = []
   /** The fetch of the chat fails (`transcriptPage`). */
   var failLoads = false
-  /** `getAgentThread`'s answer. */
-  var thread: JSON = [:]
   func send(_ agentId: String, text: String, attachments: [AttachmentRef], options: SendOptions, nonce: String?) async throws {
     if failSends { throw GatewayError(message: "offline", refused: false) }
     sent.append((text, options))
@@ -1186,7 +1183,7 @@ final class ScriptedBackend: AgentBackend, @unchecked Sendable {
   func routines(_ agentId: String) async throws -> [JSON] { [] }
   func events() -> AsyncStream<BackendEvent> { AsyncStream { self.continuation = $0 } }
   var call: CallEngine? { nil }
-  func command(_ method: String, _ args: JSON) async throws -> JSON { method == "getAgentThread" ? thread : [:] }
+  func command(_ method: String, _ args: JSON) async throws -> JSON { [:] }
   func server(_ path: String, method: String?, body: JSON?) async throws -> JSON { [:] }
   func screen(_ agentId: String) async throws -> ScreenState { ScreenState(socket: nil, state: "starting") }
 }

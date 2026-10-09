@@ -1,15 +1,16 @@
 import Foundation
 
 /**
- * Find in the chat (⌘F, the window's `find-in-chat-controller.ts`): every
- * time what is typed appears, oldest first, so Next goes down the chat and
- * Previous up it, round at either end. It reads what the window reads: a
- * message's words, a question's prompt, an email draft's subject and body,
- * a Slack draft's body, a notice's line. Case and accents do not count
- * ("resume" finds "Résumé").
+ * Find in the chat (⌘F), as the window's find does it (`f_n`, `d_n`,
+ * `h_n`): every time what is typed appears in the lines on screen, oldest
+ * first, matched without regard to capitals. It reads a message's words
+ * (not agents talking to each other), a card's text, a question's prompt,
+ * an email draft's subject and body, a Slack draft's body, and a notice.
+ * It starts at the newest match; Next goes down and Previous up, round at
+ * either end. The bar counts "3/12".
  */
 public enum ChatFind {
-  /** One time the words appear: in which row, and which time in it (0 for the first). */
+  /** One time the words appear: in which line (its row has the line's id), and which time in it (0 for the first). */
   public struct Match: Hashable, Sendable {
     public let rowId: String
     public let occurrence: Int
@@ -17,17 +18,17 @@ public enum ChatFind {
     public init(rowId: String, occurrence: Int) { self.rowId = rowId; self.occurrence = occurrence }
   }
 
-  public static func matches(_ query: String, in rows: [ChatRow]) -> [Match] {
+  public static func matches(_ query: String, in entries: [Entry]) -> [Match] {
     guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return [] }
-    let needle = fold(query)
+    let needle = query.lowercased()
     var out: [Match] = []
-    for row in rows {
-      guard let text = text(of: row) else { continue }
-      let haystack = fold(text)
+    for entry in entries {
+      let haystack = text(of: entry).lowercased()
+      guard haystack.count >= needle.count else { continue }
       var from = haystack.startIndex
       var occurrence = 0
-      while from < haystack.endIndex, let found = haystack.range(of: needle, range: from..<haystack.endIndex) {
-        out.append(Match(rowId: row.id, occurrence: occurrence))
+      while from < haystack.endIndex, let found = haystack.range(of: needle, options: .literal, range: from..<haystack.endIndex) {
+        out.append(Match(rowId: entry.id, occurrence: occurrence))
         occurrence += 1
         from = found.upperBound
       }
@@ -35,32 +36,38 @@ public enum ChatFind {
     return out
   }
 
-  /** The words of a row that find it, as the window's `searchableText`. */
-  static func text(of row: ChatRow) -> String? {
-    switch row {
-    case .bubble(let bubble): return bubble.text
-    case .question(_, let card): return card.prompt
-    case .draft(_, let card): return card.kind == .email ? card.subject + "\n" + card.body : card.body
-    case .notice(_, let text): return text
-    default: return nil
+  /** The words of a line that find reads (the window's `d_n`). */
+  static func text(of entry: Entry) -> String {
+    switch entry.kind {
+    case "message":
+      return entry.teammate == nil ? entry.content ?? "" : ""
+    case "send-message":
+      guard let message = entry.message else { return "" }
+      switch message["type"]?.string {
+      case "text": return message["content"]?.string ?? ""
+      case "widget": return message["widget"]?["prompt"]?.string ?? ""
+      case "email-draft": return (message["draft"]?["subject"]?.string ?? "") + "\n" + (message["draft"]?["body"]?.string ?? "")
+      case "slack-draft": return message["draft"]?["body"]?.string ?? ""
+      default: return ""
+      }
+    case "notice":
+      return entry["text"]?.string ?? ""
+    default:
+      return ""
     }
   }
 
-  static func fold(_ text: String) -> String {
-    text.folding(options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive], locale: nil)
-  }
-
-  /** Where find starts: the newest match, since a chat is read from its end. */
+  /** Where find stands when the words change: the newest match (the window's `h_n` with nothing chosen). */
   public static func first(_ matches: [Match]) -> Match? { matches.last }
 
-  /** The next match from `current` (`step` +1 down, -1 up), round from the end to the start as Safari's find goes. */
+  /** The next match from `current` (`step` +1 down, -1 up), round at either end (the window's `p_n`). */
   public static func next(_ matches: [Match], from current: Match?, step: Int) -> Match? {
     guard !matches.isEmpty else { return nil }
-    guard let current, let index = matches.firstIndex(of: current) else { return step < 0 ? matches.last : matches.first }
-    return matches[(index + step + matches.count) % matches.count]
+    let index = current.flatMap { matches.firstIndex(of: $0) } ?? matches.count - 1
+    return matches[((index + step) % matches.count + matches.count) % matches.count]
   }
 
-  /** "3 of 12" for the bar: the place of `current` among the matches, from 1; 0 when none is chosen. */
+  /** The bar's "3/12": the place of `current` among the matches, from 1; 0 when there is none. */
   public static func ordinal(_ matches: [Match], _ current: Match?) -> Int {
     guard let current, let index = matches.firstIndex(of: current) else { return 0 }
     return index + 1
