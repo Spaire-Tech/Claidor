@@ -199,6 +199,74 @@ enum MarkDrawing {
 
   @MainActor private static var mentionImages: [String: UIImage] = [:]
 
+  /**
+   * A butterfly at rest as an image, drawn once per palette, look and theme
+   * (80 pt, the largest one drawn still). A view shows it as it is; a Canvas
+   * drew every path again (the gradient, the rim, the veins, the band, the
+   * antennae, the body) each time its row was redrawn, and a row is redrawn
+   * on every change to its agent.
+   */
+  @MainActor static func image(_ palette: AgentPalette, style: MarkStyle, dark: Bool) -> UIImage {
+    let key = "\(palette.id)|\(style)|\(dark)"
+    if let made = images[key] { return made }
+    let side: CGFloat = 80
+    let image = UIGraphicsImageRenderer(size: CGSize(width: side, height: side), format: .preferred()).image { context in
+      drawResting(context.cgContext, in: CGRect(x: 0, y: 0, width: side, height: side), palette: palette, dark: dark, style: style)
+    }
+    images[key] = image
+    return image
+  }
+
+  /** A group's members as one image (a list row's cluster, or the header's row), drawn once per members, size and theme. */
+  @MainActor static func groupImage(_ members: [Agent], frame: CGFloat, inRow: Bool, dark: Bool) -> UIImage {
+    let overflow = !inRow && members.count > 4
+    let shown = inRow ? Array(members.prefix(3)) : overflow ? Array(members.prefix(3)) : members
+    let key = "g|\(inRow)|\(Int(frame))|\(dark)|" + shown.map { "\($0.palette.id):\($0.avatarDataURL?.utf8.count ?? 0)" }.joined(separator: ",") + "|\(overflow)"
+    if let made = images[key] { return made }
+    guard frame >= 1 else { return UIImage() }
+    let photos: [UIImage?] = shown.map { inRow ? nil : AgentAvatar.image($0.avatarDataURL) }
+    // In a row: members `frame` tall at steps of 12.5/20, each cut by the next; clustered: the Mac's slots in a square.
+    let step = frame * 12.5 / 20
+    let slots: [CGRect] = inRow
+      ? shown.indices.map { CGRect(x: step * CGFloat($0), y: 0, width: frame, height: frame) }
+      : Butterfly.groupLayout(count: shown.count + (overflow ? 1 : 0), frame: frame).map { CGRect(x: $0.x, y: $0.y, width: $0.size, height: $0.size) }
+    let gap: CGFloat = inRow ? frame * 2.5 / 20 : CGFloat(Butterfly.groupGap(frame: frame))
+    let size = inRow ? CGSize(width: frame + step * CGFloat(max(shown.count - 1, 0)), height: frame) : CGSize(width: frame, height: frame)
+    let image = UIGraphicsImageRenderer(size: size, format: .preferred()).image { context in
+      let cg = context.cgContext
+      for (index, member) in shown.enumerated() {
+        let rect = slots[index]
+        if index > 0 {
+          // What is drawn behind is cleared under this member's wings, and a gap around them.
+          let shape = wings(in: rect, style: .still).cgPath
+          cg.saveGState()
+          cg.setBlendMode(.clear)
+          cg.addPath(shape)
+          cg.fillPath()
+          cg.addPath(shape)
+          cg.setLineWidth(gap * 2)
+          cg.setLineJoin(.round)
+          cg.strokePath()
+          cg.restoreGState()
+        }
+        if let photo = photos[index] {
+          cg.saveGState()
+          cg.addEllipse(in: rect)
+          cg.clip()
+          photo.draw(in: rect)
+          cg.restoreGState()
+        } else {
+          drawResting(cg, in: rect, palette: member.palette, dark: dark, style: .still)
+        }
+      }
+    }
+    if images.count > 300 { images.removeAll() }
+    images[key] = image
+    return image
+  }
+
+  @MainActor private static var images: [String: UIImage] = [:]
+
   /** `draw` at rest, in Core Graphics, for a butterfly drawn into an image rather than a view: the same paths, gradient and strokes. */
   static func drawResting(_ cg: CGContext, in rect: CGRect, palette: AgentPalette, dark: Bool, style: MarkStyle) {
     cg.saveGState()
@@ -264,14 +332,12 @@ struct ButterflyView: View {
   @Environment(\.colorScheme) private var scheme
 
   var body: some View {
-    let _ = Trace.tally("ButterflyView drawn")
     if style == .live, let motion {
       LiveButterfly(palette: palette, state: motion, stillWhenIdle: stillWhenIdle)
     } else {
-      Canvas { context, size in
-        MarkDrawing.draw(&context, in: CGRect(origin: .zero, size: size), palette: palette, dark: scheme == .dark, style: style)
-      }
-      .accessibilityHidden(true)
+      Image(uiImage: MarkDrawing.image(palette, style: style, dark: scheme == .dark))
+        .resizable().interpolation(.high).scaledToFit()
+        .accessibilityHidden(true)
     }
   }
 }
@@ -286,7 +352,6 @@ struct AgentAvatar: View {
   var moves = false
 
   var body: some View {
-    let _ = Trace.tally("AgentAvatar drawn")
     if agent.isGroup {
       let shown = members.isEmpty ? [agent] : members
       if groupInARow { GroupStack(members: shown) } else { GroupCluster(members: shown) }
@@ -326,27 +391,10 @@ struct GroupCluster: View {
     GeometryReader { geometry in
       let frame = min(geometry.size.width, geometry.size.height)
       let overflow = members.count > 4
-      let shown = overflow ? Array(members.prefix(3)) : members
-      let slots = Butterfly.groupLayout(count: shown.count + (overflow ? 1 : 0), frame: frame)
-      let gap = Butterfly.groupGap(frame: frame)
-      let photos = shown.map { AgentAvatar.image($0.avatarDataURL) }
-      let dark = scheme == .dark
       ZStack(alignment: .topLeading) {
-        Canvas { context, _ in
-          for (index, member) in shown.enumerated() {
-            let slot = slots[index]
-            let rect = CGRect(x: slot.x, y: slot.y, width: slot.size, height: slot.size)
-            if index > 0 { cut(&context, around: rect, gap: gap) }
-            if let image = photos[index] {
-              var photo = context
-              photo.clip(to: Path(ellipseIn: rect))
-              photo.draw(Image(uiImage: image), in: rect)
-            } else {
-              MarkDrawing.draw(&context, in: rect, palette: member.palette, dark: dark, style: .still)
-            }
-          }
-        }
-        if overflow, let slot = slots.last {
+        Image(uiImage: MarkDrawing.groupImage(members, frame: frame, inRow: false, dark: scheme == .dark))
+          .resizable().frame(width: frame, height: frame)
+        if overflow, let slot = Butterfly.groupLayout(count: 4, frame: frame).last {
           Text("+\(members.count - 3)")
             .font(.system(size: slot.size * 0.34, weight: .semibold))
             .foregroundStyle(Ink.secondary)
@@ -357,15 +405,6 @@ struct GroupCluster: View {
       }
       .frame(width: frame, height: frame)
     }
-  }
-
-  /** Clears what is already drawn under the next member's butterfly, inflated by the gap. */
-  private func cut(_ context: inout GraphicsContext, around rect: CGRect, gap: Double) {
-    var eraser = context
-    eraser.blendMode = .destinationOut
-    let shape = MarkDrawing.wings(in: rect, style: .still)
-    eraser.fill(shape, with: .color(.black))
-    eraser.stroke(shape, with: .color(.black), style: StrokeStyle(lineWidth: gap * 2, lineJoin: .round))
   }
 }
 
@@ -380,24 +419,8 @@ struct GroupStack: View {
   @Environment(\.colorScheme) private var scheme
 
   var body: some View {
-    let shown = Array(members.prefix(3))
-    let step = memberSize * 12.5 / 20
-    let gap = memberSize * 2.5 / 20
-    let width = memberSize + step * Double(max(shown.count - 1, 0))
-    Canvas { context, _ in
-      for (index, member) in shown.enumerated() {
-        let rect = CGRect(x: step * Double(index), y: 0, width: memberSize, height: memberSize)
-        if index > 0 {
-          var eraser = context
-          eraser.blendMode = .destinationOut
-          let shape = MarkDrawing.wings(in: rect, style: .still)
-          eraser.fill(shape, with: .color(.black))
-          eraser.stroke(shape, with: .color(.black), style: StrokeStyle(lineWidth: gap * 2, lineJoin: .round))
-        }
-        MarkDrawing.draw(&context, in: rect, palette: member.palette, dark: scheme == .dark, style: .still)
-      }
-    }
-    .frame(width: width, height: memberSize)
+    let image = MarkDrawing.groupImage(members, frame: memberSize, inRow: true, dark: scheme == .dark)
+    Image(uiImage: image).resizable().frame(width: image.size.width, height: image.size.height)
   }
 }
 

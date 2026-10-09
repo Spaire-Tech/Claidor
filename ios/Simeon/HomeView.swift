@@ -47,7 +47,6 @@ struct HomeView: View {
   }
 
   var body: some View {
-    let _ = Trace.tally("HomeView drawn")
     NavigationStack(path: $path) {
       List {
         if query.isEmpty && !store.pinned.isEmpty {
@@ -58,7 +57,8 @@ struct HomeView: View {
         }
         ForEach(shown) { agent in
           Button { open(agent.id) } label: {
-            AgentRow(agent: agent, members: store.members(of: agent))
+            // Drawn again only when its own agent changes, not on every change to the roster.
+            AgentRow(agent: agent, members: store.members(of: agent)).equatable()
           }
           .contextMenu { menu(agent) } preview: { ChatPeek(agentId: agent.id).environment(store) }
           .swipeActions(edge: .leading, allowsFullSwipe: true) {
@@ -196,7 +196,7 @@ struct HomeView: View {
         open(id)
       }
     }
-    .alert(deleting.map { "Delete “\($0.name)”" } ?? "", isPresented: Binding(get: { deleting != nil }, set: { shown in Trace.tally("Delete alert set"); if !shown && deleting != nil { deleting = nil } }), presenting: deleting) { agent in
+    .alert(deleting.map { "Delete “\($0.name)”" } ?? "", isPresented: Binding(get: { deleting != nil }, set: { shown in if !shown && deleting != nil { deleting = nil } }), presenting: deleting) { agent in
       Button("Cancel", role: .cancel) {}
       Button("Delete", role: .destructive) {
         Task {
@@ -301,11 +301,10 @@ struct PinGrid<Actions: View>: View {
   private let columns = Array(repeating: GridItem(.fixed(96), spacing: 9.6), count: 3)
 
   var body: some View {
-    let _ = Trace.tally("PinGrid drawn")
     LazyVGrid(columns: columns, alignment: .center, spacing: 14.4) {
       ForEach(pins) { agent in
         Button { open(agent.id) } label: {
-          PinTile(agent: agent, members: store.members(of: agent))
+          PinTile(agent: agent, members: store.members(of: agent)).equatable()
         }
         .buttonStyle(PinPress())
         .contextMenu { menu(agent) } preview: { ChatPeek(agentId: agent.id).environment(store) }
@@ -317,7 +316,6 @@ struct PinGrid<Actions: View>: View {
           Task { await store.movePin(moved, to: index) }
           return true
         } isTargeted: { over in
-          Trace.tally("PinGrid drop target")
           // Only a change is written: written on every call, a call made while the grid was drawn drew it again, and again.
           let next = over ? agent.id : (target == agent.id ? nil : target)
           if next != target { target = next }
@@ -332,14 +330,13 @@ struct PinGrid<Actions: View>: View {
 }
 
 /** One pinned agent: its butterfly, the status dot at the corner, the name, the title in blue. */
-struct PinTile: View {
+struct PinTile: View, Equatable {
   let agent: Agent
   let members: [Agent]
 
   var body: some View {
-    let _ = Trace.tally("PinTile drawn")
     VStack(spacing: 4) {
-      AgentAvatar(agent: agent, members: members, moves: true)
+      AgentAvatar(agent: agent, members: members)
         .frame(width: 72, height: 72)
         .overlay(alignment: .bottomTrailing) {
           if let dot = RowStatus(agent: agent).cornerOnPin {
@@ -459,13 +456,14 @@ struct HiddenAgentsSheet: View {
  * right, and two lines of the last message under it in grey; the hairline
  * between rows starts where the text does.
  */
-struct AgentRow: View {
+struct AgentRow: View, Equatable {
   let agent: Agent
   let members: [Agent]
   @Environment(AppStore.self) private var store
 
+  static func == (a: AgentRow, b: AgentRow) -> Bool { a.agent == b.agent && a.members == b.members }
+
   var body: some View {
-    let _ = Trace.tally("AgentRow drawn")
     let status = RowStatus(agent: agent)
     HStack(alignment: .center, spacing: 0) {
       ZStack {
@@ -475,7 +473,7 @@ struct AgentRow: View {
         }
       }
       .frame(width: 22)
-      AgentAvatar(agent: agent, members: members, moves: true)
+      AgentAvatar(agent: agent, members: members)
         .frame(width: 46, height: 46)
         .overlay(alignment: .bottomTrailing) {
           if let dot = status.cornerOnRow { StatusDot(colour: dot, size: 9.6).offset(x: -1, y: -1) }
@@ -549,7 +547,6 @@ struct RowTime: View {
   @Environment(AppStore.self) private var store
 
   var body: some View {
-    let _ = Trace.tally("RowTime drawn")
     if let call = store.call, call.agentId == agent.id {
       CallChip(call: call)
     } else if let at = agent.lastActivityAt, at > 0 {
@@ -585,8 +582,7 @@ struct ProblemAlert: ViewModifier {
   @Environment(AppStore.self) private var store
 
   func body(content: Content) -> some View {
-    let _ = Trace.tally("ProblemAlert drawn")
-    content.alert("Something went wrong", isPresented: Binding(get: { store.problem != nil }, set: { shown in Trace.tally("ProblemAlert set"); if !shown && store.problem != nil { store.problem = nil } })) {
+    content.alert("Something went wrong", isPresented: Binding(get: { store.problem != nil }, set: { shown in if !shown && store.problem != nil { store.problem = nil } })) {
       Button("OK", role: .cancel) { store.problem = nil }
     } message: {
       Text(store.problem ?? "")

@@ -28,18 +28,23 @@ struct ChatView: View {
   // Each part below reads only what it draws, so typing a letter or the
   // call's waveform ticking redraws that part and not the conversation.
   var body: some View {
-    let _ = Trace.tally("ChatView drawn")
     ChatMessages(agentId: agentId)
       .environment(actions)
       .environment(messageMenu)
-      // Bars, not insets: the messages scroll under the header and the composer and fade there, as in Messages.
+      // Bars, not insets: the messages scroll under the call and the composer and fade there, as in Messages.
       .safeAreaBar(edge: .top, spacing: 0) {
-        ChatHeader(agentId: agentId, back: { dismiss() }, showsPage: $showsPage, showsCall: $showsCall, showsTranscript: $showsTranscript)
+        ChatCallSlot(agentId: agentId, showsCall: $showsCall, showsTranscript: $showsTranscript)
       }
       .safeAreaBar(edge: .bottom, spacing: 0) { ChatComposer(agentId: agentId) }
       .environment(reply)
       .background(Ink.ground)
-      .toolbar(.hidden, for: .navigationBar)
+      // The system's own bar, as Messages has it: its back button, and its swipe from the left edge that goes back with
+      // the screen following the finger. The chat had hidden it for a bar of its own, and hidden, it does not swipe.
+      .navigationBarTitleDisplayMode(.inline)
+      .toolbar {
+        ToolbarItem(placement: .principal) { ChatTitle(agentId: agentId) { showsPage = true } }
+        ToolbarItem(placement: .topBarTrailing) { ChatCallButton(agentId: agentId) }
+      }
       // A long press on a message: the reactions and what can be done with it, in a sheet from the bottom.
       .sheet(item: Binding(get: { messageMenu.target }, set: { messageMenu.target = $0 })) { target in
         MessageActionsSheet(bubble: target.bubble, agentId: agentId).environment(reply)
@@ -129,8 +134,7 @@ struct ChatMessages: View {
     let all = store.rows(for: agentId)
     let rows = all.count > window ? Array(all.suffix(window)) : all
     let hidden = all.count - rows.count
-    let _ = Trace.tally("ChatMessages drawn")
-    let _ = Trace.mark("drawing \(agentId), \(rows.count) of \(all.count) rows (\(Dictionary(grouping: rows, by: \.kind).map { "\($0.value.count) \($0.key)" }.sorted().joined(separator: ", "))), the longest \(rows.map(\.size).max() ?? 0) bytes")
+    let _ = Trace.mark("drawing \(agentId), \(rows.count) of \(all.count) rows")
     ScrollViewReader { reader in
       ScrollView {
         // A plain stack, not a lazy one: every row is measured as it is, once. A lazy stack guesses the height of the rows it
@@ -150,7 +154,7 @@ struct ChatMessages: View {
             Group {
               if case .unread = row {
                 ChatRowView(row: row, agentId: agentId).equatable()
-                  .onScrollVisibilityChange(threshold: 0.2) { visible in Trace.tally("ChatMessages divider seen"); if visible && !dividerSeen { dividerSeen = true } }
+                  .onScrollVisibilityChange(threshold: 0.2) { visible in if visible && !dividerSeen { dividerSeen = true } }
               } else {
                 // Equatable: a row is drawn again only when it changed, not each time the chat's own state moves.
                 ChatRowView(row: row, agentId: agentId).equatable()
@@ -172,7 +176,6 @@ struct ChatMessages: View {
       // A quote's tap goes to what it answers. Given to the rows once: handed down as a new closure on every
       // redraw of the chat, it made every bubble draw again each time the chat's own state moved.
       .onAppear {
-        Trace.tally("ChatMessages appeared")
         let lit = glow
         actions?.jump = { id in
           reveal(id) { withAnimation(.snappy) { reader.scrollTo(id, anchor: .center) } }
@@ -187,20 +190,17 @@ struct ChatMessages: View {
       .onScrollGeometryChange(for: Bool.self) { geometry in
         geometry.contentSize.height > geometry.containerSize.height && geometry.visibleRect.minY < 300
       } action: { _, nearTop in
-        Trace.tally("ChatMessages top reached")
         guard nearTop else { return }
         if store.rows(for: agentId).count > window { window += ChatMessages.firstWindow } else if store.olderBefore[agentId] != nil { Task { await store.loadOlder(agentId) } }
       }
       .onScrollGeometryChange(for: Bool.self) { geometry in
         geometry.contentSize.height - geometry.visibleRect.maxY < 120
       } action: { _, bottom in
-        Trace.tally("ChatMessages at-bottom changed")
         if atBottom != bottom { atBottom = bottom }
         if bottom && unseen != 0 { unseen = 0 }
       }
       // New rows at the bottom: drawn too (the window grows by them), and counted on the pill when you are reading further up. Older lines loaded at the top are neither.
       .onChange(of: all.last?.id) { old, _ in
-        Trace.tally("ChatMessages last row changed")
         guard let old else { return }
         let now = store.rows(for: agentId)
         guard let from = now.lastIndex(where: { $0.id == old }) else { return }
@@ -238,7 +238,6 @@ struct ChatMessages: View {
     // The chat's width, measured and kept for the rows to cap themselves at. In whole points, and kept only when it moves by
     // one or more: a width that came back a fraction different on each measure would redraw every row, again and again.
     .onGeometryChange(for: CGFloat.self) { ($0.size.width - 32).rounded(.down) } action: { measured in
-      Trace.tally("ChatMessages width measured")
       let next = max(200, measured)
       if abs(next - width) >= 1 { width = next }
     }
@@ -249,7 +248,6 @@ struct ChatMessages: View {
     // The pill for a "New" line above waits until the chat has settled at its end, so a line in view never flashes it.
     .task {
       try? await Task.sleep(nanoseconds: 700_000_000)
-      Trace.tally("ChatMessages settled")
       settled = true
     }
   }
@@ -296,7 +294,6 @@ struct TypingSlot: View {
   @Environment(AppStore.self) private var store
 
   var body: some View {
-    let _ = Trace.tally("TypingSlot drawn")
     if let agent = store.agent(agentId), agent.isBusy {
       TypingRow(agent: agent, step: agent.isGroup ? (agent.activityLabel ?? store.steps[agentId]) : nil)
         .padding(.top, 16)
@@ -306,82 +303,74 @@ struct TypingSlot: View {
 }
 
 /**
- * The top of the chat, as Messages has it: the back button in a glass
- * circle at the left, the agent's butterfly (52 pt) with its name in a
- * glass capsule under it in the middle (either opens its page), the call
- * in a glass circle at the far right. A bar, not an inset: the messages
- * scroll under it and fade there.
+ * The middle of the chat's bar, as Messages has it: the agent's butterfly
+ * (its members side by side for a group) with its name and a chevron under
+ * it; a tap opens its page. Only this redraws when the agent changes.
  */
-struct ChatHeader: View {
+struct ChatTitle: View {
   let agentId: String
-  let back: () -> Void
-  @Binding var showsPage: Bool
+  let open: () -> Void
+  @Environment(AppStore.self) private var store
+
+  var body: some View {
+    if let agent = store.agent(agentId) {
+      VStack(spacing: 1) {
+        Group {
+          if agent.isGroup {
+            GroupStack(members: store.members(of: agent), memberSize: 28)
+          } else {
+            AgentAvatar(agent: agent, moves: true).frame(width: 28, height: 28)
+          }
+        }
+        .frame(height: 28)
+        HStack(spacing: 2) {
+          Text(agent.name).font(.system(size: 12, weight: .medium)).foregroundStyle(Ink.primary).lineLimit(1)
+          Image(systemName: "chevron.right").font(.system(size: 8, weight: .bold)).foregroundStyle(Ink.tertiary)
+        }
+      }
+      .contentShape(.rect)
+      .onTapGesture(perform: open)
+      .accessibilityElement(children: .ignore)
+      .accessibilityLabel("\(agent.name), details")
+      .accessibilityAddTraits(.isButton)
+    }
+  }
+}
+
+/** The call, at the right of the bar as Messages has its FaceTime button. */
+struct ChatCallButton: View {
+  let agentId: String
+  @Environment(AppStore.self) private var store
+
+  var body: some View {
+    if let agent = store.agent(agentId), store.canCall && !agent.isGroup {
+      Button { store.startCall(agent) } label: { Image(systemName: "phone.fill") }
+        .accessibilityLabel("Call \(agent.name)")
+        .disabled(store.call != nil)
+    }
+  }
+}
+
+/** The call with this agent, under the bar while it lasts; a tap opens it full. */
+struct ChatCallSlot: View {
+  let agentId: String
   @Binding var showsCall: Bool
   @Binding var showsTranscript: Bool
   @Environment(AppStore.self) private var store
 
   var body: some View {
-    let _ = Trace.tally("ChatHeader drawn")
     VStack(spacing: 0) {
-      ZStack(alignment: .top) {
-        if let agent = store.agent(agentId) {
-          VStack(spacing: 4) {
-            Button { showsPage = true } label: {
-              AgentAvatar(agent: agent, members: store.members(of: agent), groupInARow: true, moves: true)
-                .frame(width: agent.isGroup ? nil : 52, height: 52)
-                .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("\(agent.name), details")
-            Button { showsPage = true } label: {
-              Text(agent.name).font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.primary).lineLimit(1)
-                .padding(.horizontal, 12).padding(.vertical, 4)
-                .contentShape(.capsule)
-            }
-            .buttonStyle(.plain)
-            .glassEffect(.regular.interactive(), in: .capsule)
-          }
-          .padding(.top, 4)
-          .padding(.horizontal, 70)
-        }
-        HStack {
-          Button(action: back) {
-            Image(systemName: "chevron.left").font(.system(size: 19, weight: .semibold)).foregroundStyle(Ink.primary)
-              .frame(width: 46, height: 46)
-              .contentShape(.circle)
-          }
-          .buttonStyle(.plain)
-          .glassEffect(.regular.interactive(), in: .circle)
-          .accessibilityLabel("Back")
-          Spacer()
-          // The call, at the far right as Messages has its FaceTime button.
-          if let agent = store.agent(agentId), store.canCall && !agent.isGroup {
-            Button { store.startCall(agent) } label: {
-              Image(systemName: "phone.fill").font(.system(size: 18, weight: .medium)).foregroundStyle(Ink.primary)
-                .frame(width: 46, height: 46)
-                .contentShape(.circle)
-            }
-            .buttonStyle(.plain)
-            .glassEffect(.regular.interactive(), in: .circle)
-            .accessibilityLabel("Call \(agent.name)")
-            .disabled(store.call != nil)
-          }
-        }
-        .padding(.horizontal, 12).padding(.top, 12)
-      }
       if let call = store.call, call.agentId == agentId {
         CallPill(call: call, showsTranscript: $showsTranscript) { showsCall = true }
           .padding(.horizontal, 12)
-          .padding(.top, 12)
+          .padding(.top, 6)
+          .padding(.bottom, 8)
           .transition(.move(edge: .top).combined(with: .opacity))
       }
     }
     .frame(maxWidth: .infinity)
-    // The header takes the taps on itself; its faded strip below lets them through to the messages.
-    .contentShape(.rect)
-    .padding(.bottom, 10)
     .animation(.snappy, value: store.call?.agentId)
-    .onChange(of: store.call == nil) { _, gone in Trace.tally("ChatHeader call changed"); if gone && showsCall { showsCall = false } }
+    .onChange(of: store.call == nil) { _, gone in if gone && showsCall { showsCall = false } }
   }
 }
 
@@ -419,7 +408,6 @@ struct ChatComposer: View {
 
   var body: some View {
     let _ = Trace.mark("drawing the composer of \(agentId), \(draft.count) characters")
-    let _ = Trace.tally("ChatComposer drawn")
     VStack(spacing: 6) {
       if let query = mentionQuery {
         MentionPicker(query: query, chatId: agentId) { name in
@@ -520,19 +508,18 @@ struct ChatComposer: View {
     .padding(.bottom, 8)
     .animation(.snappy(duration: 0.2), value: mentionQuery != nil)
     .onAppear {
-      Trace.tally("ChatComposer appeared")
       let named = store.agent(agentId)?.name ?? ""
       if name != named { name = named }
     }
     .composerPicker(isPresented: $picking) { picked in attachments.append(contentsOf: picked) }
-    .onChange(of: dictation.problem) { _, problem in Trace.tally("ChatComposer dictation problem"); if let problem { store.problem = problem } }
-    .onChange(of: reply?.target?.id) { _, id in Trace.tally("ChatComposer reply changed"); if id != nil { typing = true } }
+    .onChange(of: dictation.problem) { _, problem in if let problem { store.problem = problem } }
+    .onChange(of: reply?.target?.id) { _, id in if id != nil { typing = true } }
     // The unsent draft stays with its chat, as on the Mac.
-    .onAppear { Trace.tally("ChatComposer draft restored"); if draft.isEmpty, let kept = store.drafts[agentId], kept != draft { draft = kept } }
+    .onAppear { if draft.isEmpty, let kept = store.drafts[agentId], kept != draft { draft = kept } }
     // Saved when typing pauses, not per letter (the list redraws on a save).
     .task(id: draft) {
       try? await Task.sleep(nanoseconds: 600_000_000)
-      if !Task.isCancelled { Trace.tally("ChatComposer draft saved"); store.setDraft(draft, for: agentId) }
+      if !Task.isCancelled { store.setDraft(draft, for: agentId) }
     }
     .onDisappear { store.setDraft(draft, for: agentId) }
   }
@@ -567,7 +554,6 @@ struct ChatRowView: View, Equatable {
   private func openComputer() { actions?.openComputer() }
 
   var body: some View {
-    let _ = Trace.tally("row drawn: \(row.kind)")
     switch row {
     case .stamp(_, let date):
       Text(Chat.stampText(date)).font(.system(size: 12)).foregroundStyle(Ink.secondary)
@@ -634,7 +620,6 @@ struct BubbleView: View {
   private var shown: (text: String, clipped: Bool) { Chat.clipped(bubble.text, limit: expanded ? 40_000 : 3_000) }
 
   var body: some View {
-    let _ = Trace.tally("BubbleView drawn")
     HStack(alignment: .bottom, spacing: 8) {
       if bubble.fromPerson { Spacer(minLength: 0) }
       if inGroup && !bubble.fromPerson {
@@ -787,7 +772,6 @@ struct TypingRow: View {
   @Environment(AppStore.self) private var store
 
   var body: some View {
-    let _ = Trace.tally("TypingRow drawn")
     if agent.isGroup {
       let members = store.members(of: agent)
       HStack(spacing: 8) {
@@ -826,7 +810,6 @@ struct Arrival: ViewModifier {
       .scaleEffect(shown ? 1 : 0.94, anchor: .bottom)
       .offset(y: shown ? 0 : 12)
       .onAppear {
-        Trace.tally("row appeared")
         guard !shown else { return }
         store.settled(id)
         withAnimation(.timingCurve(0.23, 1, 0.32, 1, duration: 0.24)) { shown = true }
@@ -853,7 +836,6 @@ struct PeekDrag: ViewModifier {
           }
       )
       .onChange(of: pulling) { _, x in
-        Trace.tally("PeekDrag moved")
         if x == 0 { withAnimation(.spring(response: 0.43, dampingFraction: 0.78)) { peek.x = 0 } } else { peek.x = x }
       }
   }
@@ -875,7 +857,6 @@ struct PeekTime: View {
   @Environment(TimePeek.self) private var timePeek: TimePeek?
 
   var body: some View {
-    let _ = Trace.tally("PeekTime drawn")
     if let peek = timePeek, peek.x > 0 {
       Text(Date(timeIntervalSince1970: ms / 1000).formatted(date: .omitted, time: .shortened))
         .font(.system(size: 12, weight: .medium)).monospacedDigit()
@@ -895,7 +876,6 @@ struct Glow: ViewModifier {
   @Environment(JumpGlow.self) private var glow: JumpGlow?
 
   func body(content: Content) -> some View {
-    let _ = Trace.tally("Glow drawn")
     content.overlay {
       if glow?.id == id {
         RoundedRectangle(cornerRadius: 18, style: .continuous)

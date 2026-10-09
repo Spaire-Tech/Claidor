@@ -379,6 +379,39 @@ Not checked: none of it has run on an iPhone. The list's bottom search
 (`safeAreaBar`) are iOS 26's own; if Xcode refuses either, the build says
 so on the line.
 
+## 12. Lag everywhere (9 October 2026)
+
+"it's lagging way too bad … scrolling, buttons everything". Read in the
+code, the main thread (where taps and scrolling are handled) had three
+standing costs:
+
+- **Every butterfly was a `Canvas`** that drew its gradient, rim, veins,
+  border band, antennae and body again each time its view was redrawn: every
+  list row, pinned tile, the chat's header, the group avatars, the bubbles'
+  avatars, the pickers. A row is redrawn on every change to its agent, and
+  agents change many times a second while they work. They are now images,
+  drawn once per palette, look and theme (Core Graphics), and shown as
+  images.
+- **A working agent's butterfly moved at 30 to 60 frames a second** in the
+  list, the pins and the chat, each frame drawn on the main thread. Now only
+  the open chat's two move (the bar's and the typing one); the list says an
+  agent works with its green dot and its line.
+- **The counters added to find the freeze** ran in every view, a lock and
+  a string on every redraw. They are out of the views.
+
+And a list row is drawn again only when its own agent changes.
+
+**Back by swiping**: the chat hid the system's navigation bar for a bar of
+its own, and with the bar hidden the system's swipe does not start (the
+delegate work-arounds did not make it). The chat now uses the system's bar,
+as Messages does: its back button, the agent in the middle, the call at the
+right, and the system's own swipe back.
+
+Not measured on a phone. Run from Xcode, the app is a Debug build: the
+app's own Swift runs unoptimised, several times slower than the App Store
+build. To judge smoothness, set Product → Scheme → Edit Scheme → Run →
+Build Configuration to Release.
+
 ## Suggested order (the founder decides)
 
 1. The chat's look: the bubble, the top bar, markdown, brand names with logos, agent names with butterflies.

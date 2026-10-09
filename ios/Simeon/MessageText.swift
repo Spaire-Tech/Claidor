@@ -96,7 +96,6 @@ enum InlineText {
   private static var cache: [String: Text] = [:]
 
   static func make(_ markdown: String, size: CGFloat = MessageType.size, weight: Font.Weight = .regular, colour: Color? = nil, mentioning: Mentioning?) -> Text {
-    Trace.tally("InlineText made")
     let key = "\(size)|\(weight)|\(mentioning?.dark ?? false)|\(mentioning.map { $0.agents.map { "\($0.name)=\($0.colour)" }.joined(separator: ",") + "|" + ($0.personName ?? "") } ?? "-")|\(markdown)"
     if colour == nil, let made = cache[key] { return made }
     let made = build(markdown, size: size, weight: weight, colour: colour, mentioning: mentioning)
@@ -204,7 +203,6 @@ struct MarkdownView: View {
   var depth = 0
 
   var body: some View {
-    let _ = Trace.tally("MarkdownView drawn")
     VStack(alignment: .leading, spacing: 10) {
       ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
         MarkdownBlockView(block: block, mentioning: mentioning, depth: depth)

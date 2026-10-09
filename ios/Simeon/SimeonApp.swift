@@ -40,7 +40,6 @@ struct RootView: View {
   @Environment(SessionController.self) private var session
 
   var body: some View {
-    let _ = Trace.tally("RootView drawn")
     switch session.phase {
     case .starting:
       PlainScreen(title: "Simeon", busy: true)
@@ -86,25 +85,5 @@ struct PlainScreen: View {
     .padding(.horizontal, 28)
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .background(Ink.ground)
-  }
-}
-
-/**
- * The chat draws its own top (the back disc, the butterfly and name, the
- * call), so the system's bar is hidden there; hidden, the bar's own edge
- * swipe back refuses to start. Every navigation stack takes the swipe on
- * itself: it starts whenever there is a screen to go back to and no push
- * or pop is already under way (a swipe started mid-transition can leave
- * UIKit no longer taking touches). Swiping from the left edge goes back,
- * the screen following the finger, as in Messages.
- */
-extension UINavigationController: @retroactive UIGestureRecognizerDelegate {
-  override open func viewDidLoad() {
-    super.viewDidLoad()
-    interactivePopGestureRecognizer?.delegate = self
-  }
-
-  public func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-    viewControllers.count > 1 && transitionCoordinator == nil
   }
 }

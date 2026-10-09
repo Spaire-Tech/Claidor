@@ -27,18 +27,23 @@ struct LiveButterfly: View {
 
   var body: some View {
     let moving = !reduceMotion && !resting
-    let _ = Trace.tally("LiveButterfly drawn")
-    // At most 60 frames a second, and a butterfly at rest at 30: on a 120 Hz screen each one drew twice as often as the eye needs.
-    // Drawn on the main thread, as before 8 October 19:28: drawn off it (`rendersAsynchronously`) from then, chats began to freeze for good as they opened.
-    TimelineView(.animation(minimumInterval: state == .idle ? 1.0 / 30 : 1.0 / 60, paused: !moving)) { context in
-      Canvas { graphics, size in
-        let frame = moving ? engine.frame(at: context.date.timeIntervalSinceReferenceDate, state: state, sizePoints: size.width) : .rest
-        MarkDrawing.draw(&graphics, in: CGRect(origin: .zero, size: size), palette: palette, dark: scheme == .dark, style: .live, frame: frame)
+    Group {
+      if moving {
+        // At most 60 frames a second, and a butterfly at rest at 30: on a 120 Hz screen each one drew twice as often as the eye needs.
+        TimelineView(.animation(minimumInterval: state == .idle ? 1.0 / 30 : 1.0 / 60, paused: false)) { context in
+          Canvas { graphics, size in
+            let frame = engine.frame(at: context.date.timeIntervalSinceReferenceDate, state: state, sizePoints: size.width)
+            MarkDrawing.draw(&graphics, in: CGRect(origin: .zero, size: size), palette: palette, dark: scheme == .dark, style: .live, frame: frame)
+          }
+        }
+      } else {
+        // Still: the image drawn once, not a canvas drawn again on every redraw.
+        Image(uiImage: MarkDrawing.image(palette, style: .live, dark: scheme == .dark))
+          .resizable().interpolation(.high).scaledToFit()
       }
     }
     .task(id: state) {
       guard stillWhenIdle else { return }
-      Trace.tally("LiveButterfly state changed")
       if state != .idle { if resting { resting = false }; return }
       // Back at rest: let the fold and any spin finish, then hold still.
       while !Task.isCancelled && !resting {
