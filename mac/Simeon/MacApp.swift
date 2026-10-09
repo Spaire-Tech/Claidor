@@ -51,14 +51,14 @@ struct SimeonMacApp: App {
     .defaultSize(width: 1100, height: 760)
 
     // Connect apps (⇧⌘M), the Electron window's Plugins, as a window.
-    Window("Connect Apps", id: "connect-apps") {
-      ConnectAppsSheet()
+    // Connect apps, the window's Plugins overlay, as a window of its own (1000 × 700, as the overlay at its largest).
+    Window("Plugins", id: "connect-apps") {
+      MacPlugins()
         .environment(session)
         .environment(session.store)
-        .problemAlert()
-        .frame(minWidth: 560, minHeight: 520)
+        .environment(navigation)
     }
-    .defaultSize(width: 720, height: 680)
+    .defaultSize(width: 1000, height: 700)
 
     Settings {
       MacSettings()
@@ -120,6 +120,8 @@ final class MacNavigation {
   var sidebarShown = true
   /** A connector to add from a `plugin/add` link: the window opens Connect apps for it. */
   var connectAppsAsked = false
+  /** The plugin a `plugin/add` link names: Connect apps opens on its page. */
+  var pluginFocus: String?
   /** A question with Cancel and an action (deleting, removing), in the window's words. */
   var confirm: MacConfirmation?
 
@@ -198,7 +200,9 @@ final class MacNavigation {
     case .open, .info:
       // Bringing the window forward is all `open` asks; macOS has done it.
       break
-    case .pluginAdd:
+    case .pluginAdd(let id):
+      // Connect apps on that plugin's page (`focusPlugin`).
+      pluginFocus = id
       connectAppsAsked = true
     }
   }
@@ -282,6 +286,9 @@ struct SimeonCommands: Commands {
     CommandGroup(after: .appSettings) {
       Button("Connect Apps…") { openWindow(id: "connect-apps") }
         .keyboardShortcut("m", modifiers: [.command, .shift])
+      // The window's ⇧⌘W ("Skills") opens the same screen.
+      Button("Skills…") { openWindow(id: "connect-apps") }
+        .keyboardShortcut("w", modifiers: [.command, .shift])
     }
     CommandGroup(replacing: .newItem) {
       // The window's "New Agent" (⌘N): the new chat's To: line, where a group is made by naming two or more.

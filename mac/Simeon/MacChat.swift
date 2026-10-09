@@ -111,6 +111,8 @@ struct MacChat: View {
         .frame(width: 520, height: 640)
       }
       .onReceive(NotificationCenter.default.publisher(for: .simeonFind)) { note in
+        // Only the window in front finds (Connect apps takes ⌘F for its search).
+        guard hostWindow?.isKeyWindow != false else { return }
         switch note.object as? String {
         case "next": findStep(1)
         case "previous": findStep(-1)
