@@ -94,9 +94,9 @@ public enum RoutineSchedule {
 
   // MARK: Words (`dgn`)
 
-  static let weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+  public static let weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
   static let shortWeekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
-  static let months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+  public static let months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 
   /** "9:05 AM" (`Mu`). */
   public static func clock(_ hour: Int, _ minute: Int) -> String {

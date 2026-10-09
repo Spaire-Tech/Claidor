@@ -67,37 +67,112 @@ struct SimeonMacApp: App {
 }
 
 /**
- * Where the window is: the open agent, the sheet up, the agent being
- * deleted. Shared by the window and the menus, so the Agent menu acts on
- * the agent the window shows.
+ * Where the window is: the open agent, the agent's pane beside the chat,
+ * the new chat, the rows picked together, the sheet or question up. Shared
+ * by the window and the menus, so the Agent menu acts on the agent the
+ * window shows.
  */
 @MainActor
 @Observable
 final class MacNavigation {
   enum Sheet: Identifiable, Equatable {
-    case newAgent
-    case newGroup
     case hiddenAgents
     case palette
-    case agentPage(String, routine: String?)
 
     var id: String {
       switch self {
-      case .newAgent: return "new-agent"
-      case .newGroup: return "new-group"
       case .hiddenAgents: return "hidden"
       case .palette: return "palette"
-      case .agentPage(let id, let routine): return "agent:\(id):\(routine ?? "")"
       }
     }
   }
 
+  /** The pane's tabs and the window's names for them (`settings`, `routines`, `overview`). */
+  enum PaneTab: String, Hashable { case profile = "settings", routines, computer = "overview" }
+
+  /** A routine's editor in the pane: a new one not yet made, or one the computer has. */
+  enum RoutineTarget: Hashable {
+    case draft(UUID)
+    case existing(String)
+  }
+
+  /** What the pane opens on (the window's section request): a tab, and a routine's editor. */
+  struct PaneRequest: Equatable {
+    let tab: PaneTab
+    let routine: String?
+  }
+
   var selected: String?
   var sheet: Sheet?
-  var deleting: Agent?
   var sidebarShown = true
   /** A connector to add from a `plugin/add` link: the window opens Connect apps for it. */
   var connectAppsAsked = false
+  /** A question with Cancel and an action (deleting, removing), in the window's words. */
+  var confirm: MacConfirmation?
+
+  // MARK: The agent's pane (the window's info pane)
+
+  /** Open or not, kept from one launch to the next (`sand.infoPane.open`). */
+  var paneOpen: Bool = UserDefaults.standard.bool(forKey: MacNavigation.paneKey) {
+    didSet { UserDefaults.standard.set(paneOpen, forKey: Self.paneKey) }
+  }
+  /** What the pane opens on next; the pane takes it. */
+  var paneRequest: PaneRequest?
+  /** The sidebar as its rail of butterflies (the window compacts it while the pane is open). */
+  var sidebarRail = false
+  /** The pane is what put the sidebar on its rail, so closing it gives the sidebar back (`simeon.paneTookSidebar`). */
+  private var paneTookSidebar: Bool = UserDefaults.standard.bool(forKey: MacNavigation.tookKey) {
+    didSet { UserDefaults.standard.set(paneTookSidebar, forKey: Self.tookKey) }
+  }
+  private static let paneKey = "simeon.infoPane.open"
+  private static let tookKey = "simeon.paneTookSidebar"
+
+  /** The header's agent button and ⌘⇧, ("Toggle agent settings"): closes an open pane, else opens it on Profile. */
+  func toggleAgentSettings() {
+    if paneOpen { closePane() } else { openPane(.profile) }
+  }
+
+  /** ⌘⇧I and ⌘⌥B ("Toggle details"): the same, the pane always opening on Profile. */
+  func toggleDetails() { toggleAgentSettings() }
+
+  /** Opens the pane on a tab (and a routine's editor), for the open agent or another one, which opens too. */
+  func openPane(_ tab: PaneTab, agent: String? = nil, routine: String? = nil) {
+    if let agent, agent != selected { selected = agent }
+    paneRequest = PaneRequest(tab: tab, routine: routine)
+    guard !paneOpen else { return }
+    paneOpen = true
+    if sidebarShown && !sidebarRail {
+      paneTookSidebar = true
+      sidebarRail = true
+    } else {
+      paneTookSidebar = false
+    }
+  }
+
+  func closePane() {
+    guard paneOpen else { return }
+    paneOpen = false
+    if paneTookSidebar && sidebarRail { sidebarRail = false }
+    paneTookSidebar = false
+  }
+
+  // MARK: The new chat (the window's To: line)
+
+  let newChat = MacNewChatState()
+
+  /** ⌘N and the sidebar's New chat: the To: line, empty, unless it is open already (`openNewChat`). */
+  func openNewChat() {
+    guard !newChat.isOpen else { return }
+    newChat.open()
+  }
+
+  // MARK: Rows picked together
+
+  var selection = SidebarSelection()
+  /** The agent whose name is being changed in its row. */
+  var renaming: String?
+  /** The section whose name is being changed in its header. */
+  var renamingSection: String?
 
   /** A link to the app, read by the Electron app's own rules (SimeonMacCore `DeepLink`). */
   func open(_ url: URL) {
@@ -111,8 +186,49 @@ final class MacNavigation {
     }
   }
 
-  /** The sidebar's order: the pinned agents, then the list (SimeonMacCore `SidebarOrder`). */
-  func order(_ store: AppStore) -> [String] { store.pinned.map(\.id) + store.listed.map(\.id) }
+  /** Folded sections, the window's own (`collapsedSectionIds`), kept on this Mac. */
+  var foldedSections: Set<String> = Set(UserDefaults.standard.stringArray(forKey: MacNavigation.foldKey) ?? []) {
+    didSet { UserDefaults.standard.set(Array(foldedSections), forKey: Self.foldKey) }
+  }
+  private static let foldKey = "simeon.sidebar.collapsedSectionIds"
+
+  /** The sidebar's order: the pinned agents, then the list or the open sections' agents (SimeonCore `SidebarSections.order`). */
+  func order(_ store: AppStore) -> [String] {
+    SidebarSections.order(agents: store.agents.filter { !$0.isHidden }, pinnedIds: store.pinnedIds, sections: store.sidebarSections ?? [], collapsed: foldedSections)
+  }
+
+  /** Asks before deleting agents or groups (the window's `I3n`): one question, whichever way it was asked. */
+  func askToDelete(_ ids: [String], store: AppStore) {
+    let agents = store.agents.filter { ids.contains($0.id) }
+    guard !agents.isEmpty else { return }
+    confirm = MacConfirmation(title: AgentDeletion.title(agents), message: AgentDeletion.message(agents), action: "Delete", pending: AgentDeletion.pending, failure: AgentDeletion.failure) { [weak self] in
+      do {
+        try await store.deleteAgents(agents.map(\.id))
+        if let self {
+          if let open = self.selected, ids.contains(open) { self.selected = nil }
+          self.selection.keep(Set(store.agents.map(\.id)))
+        }
+        return true
+      } catch {
+        return false
+      }
+    }
+  }
+}
+
+/**
+ * A question with Cancel and one action, as the window's alert asks it: the
+ * action in red, its word while it runs ("Deleting..."), and the failure in
+ * red under the question, which stays up.
+ */
+struct MacConfirmation: Identifiable {
+  let id = UUID()
+  let title: String
+  let message: String
+  let action: String
+  var pending: String? = nil
+  var failure: String? = nil
+  let perform: @MainActor () async -> Bool
 }
 
 /** The appearance the person chose (Settings, or the palette's Theme), on every window and sheet at once. */
@@ -151,17 +267,26 @@ struct SimeonCommands: Commands {
         .keyboardShortcut("m", modifiers: [.command, .shift])
     }
     CommandGroup(replacing: .newItem) {
-      Button("New Agent") { navigation.sheet = .newAgent }
+      // The window's "New Agent" (⌘N): the new chat's To: line, where a group is made by naming two or more.
+      Button("New Agent") { navigation.openNewChat() }
         .keyboardShortcut("n")
-      Button("New Group Chat") { navigation.sheet = .newGroup }
-        .keyboardShortcut("n", modifiers: [.command, .shift])
       Divider()
       Button("Jump To…") { navigation.sheet = .palette }
         .keyboardShortcut("k")
     }
     // The Mac's Show Sidebar (⌃⌘S) and Enter Full Screen; the window follows the sidebar's state either way.
     SidebarCommands()
-    CommandGroup(after: .sidebar) { HiddenAgentsItem(navigation: navigation, store: store) }
+    CommandGroup(after: .sidebar) {
+      HiddenAgentsItem(navigation: navigation, store: store)
+      Divider()
+      // The window's "Toggle agent settings" (⌘⇧,) and "Toggle details" (⌘⇧I and ⌘⌥B on a Mac).
+      Button("Toggle Agent Settings") { navigation.toggleAgentSettings() }
+        .keyboardShortcut(",", modifiers: [.command, .shift])
+      Button("Toggle Details") { navigation.toggleDetails() }
+        .keyboardShortcut("b", modifiers: [.command, .option])
+      Button("Toggle Details") { navigation.toggleDetails() }
+        .keyboardShortcut("i", modifiers: [.command, .shift])
+    }
     CommandMenu("Agent") { AgentMenuItems(navigation: navigation, store: store) }
     // The Electron app hid its Help menu's items (4 October 2026).
     CommandGroup(replacing: .help) {}
@@ -178,7 +303,7 @@ struct HiddenAgentsItem: View {
   }
 }
 
-/** The Agent menu: the open agent's call, page, computer and row actions; moving between agents; Delete. */
+/** The Agent menu: the open agent's call, pane, computer and row actions in the row menu's words; moving between agents; Delete. */
 struct AgentMenuItems: View {
   let navigation: MacNavigation
   let store: AppStore
@@ -190,7 +315,7 @@ struct AgentMenuItems: View {
     let agent = agent
     Button(agent.map { "Call \($0.name)" } ?? "Call") { if let agent { store.startCall(agent) } }
       .disabled(agent == nil || agent?.isGroup == true || !store.canCall || store.call != nil)
-    Button(agent?.isGroup == true ? "Members" : "Edit Profile") { if let agent { navigation.sheet = .agentPage(agent.id, routine: nil) } }
+    Button("Edit Profile") { if let agent { navigation.openPane(.profile, agent: agent.id) } }
       .disabled(agent == nil)
     Button("Open Computer") { if let agent { openWindow(id: "computer", value: agent.id) } }
       .disabled(agent == nil || agent?.isGroup == true)
@@ -212,11 +337,11 @@ struct AgentMenuItems: View {
       Button(pinned ? "Unpin" : "Pin") { Task { await store.setPinned(agent.id, !pinned) } }
       Button(agent.hasUnread ? "Mark as Read" : "Mark as Unread") { Task { await store.setUnread(agent.id, !agent.hasUnread) } }
         .keyboardShortcut("u", modifiers: [.command, .shift])
-      if !agent.isGroup {
-        Button("Duplicate") { Task { await store.duplicate(agent.id) } }
+      if !agent.isGroup && !agent.isRemoteRoom {
+        Button("Duplicate") { Task { if let copy = await store.duplicate(agent.id) { navigation.selected = copy } } }
       }
-      Button("Copy Conversation ID") { UIPasteboard.general.string = agent.id }
-      Button("Hide from Sidebar") { Task { await store.setHidden(agent.id, true) } }
+      Button("Copy conversation ID") { UIPasteboard.general.string = agent.id }
+      Button("Hide from sidebar") { Task { await store.setHidden(agent.id, true) } }
     }
     Divider()
     // ⌥↑ ⌥↓ work in the message field too, as the Electron window's (`isEnabledInContentEditable`).
@@ -232,7 +357,7 @@ struct AgentMenuItems: View {
       }
     }
     Divider()
-    Button("Delete…") { navigation.deleting = agent }
+    Button("Delete…") { if let agent { navigation.askToDelete([agent.id], store: store) } }
       .disabled(agent == nil)
   }
 

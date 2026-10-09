@@ -20,10 +20,12 @@ reused, laid out for the Mac), **partly** (what is missing is named), **no**
 (new Swift code). "Mac" is this app's state: blank until its code is
 written; **written** (the code is there, not yet built on a Mac); **part:**
 what is there, when only some of it is; then **built** (it compiles) and
-**checked** (seen working on the founder's Mac). Slices 1 (the window) and
-2 (the chat) are written: nothing is built or checked yet. What slice 2
-added is shared with the iPhone, so its "Phone" column says yes too; the
-iPhone app is built again with it.
+**checked** (seen working on the founder's Mac). Slices 1 (the window),
+2 (the chat) and 3 (agents) are written: nothing is built or checked yet.
+What slice 2 added is shared with the iPhone, so its "Phone" column says
+yes too; the iPhone app is built again with it. Slice 3's screens are the
+Mac's own (`mac/Simeon/Mac*.swift`), on rules in the shared core that the
+iPhone can use later; the iPhone's screens are unchanged.
 
 Sources: "patch" is `desktop/scripts/lib/router-renderer-patch.mjs`;
 "main" is `desktop/source/electron-main/`; "coordinator" is
@@ -100,16 +102,17 @@ that is off say so; the gates' values are in
 | What | Where | Phone | Mac |
 |---|---|---|---|
 | Landing, Meet Simeon, Chief of Staff (six agents and the curves), Connect (the logos behind glass), the computer (1.45×, Simeon as the cursor), your name | patch 1027-1308, 1856-1899 | yes (`OnboardingFlow`, `Onboarding.swift`) | written |
-| The hand-off: "Waking your computer…", "Setting up your Simeon…", "Getting your team ready…", then Simeon, Chief of Staff, is created and says hello; "Simeon couldn't finish setting up" with Try again | patch 1214-1231 | yes (`HandOffStep`) | written |
+| The hand-off: "Waking your computer…", "Setting up your Simeon…", "Getting your team ready…", then Simeon, Chief of Staff, is created and says hello; "Simeon couldn't finish setting up" with Try again | patch 1214-1231 | yes (`HandOffStep`) | part: all but "Waking your computer…" (the app does not yet know the computer is asleep, slice 4) |
 | Whether to show it: `hasSeenOnboarding`, else `countAgents` | `desktop/web/backend.ts` | yes (`FirstRun`) | written |
-| The boot screen: "Setting up …'s computer" in a moving light | patch 1399 | partly (the turning butterfly) | part: the turning butterfly |
-| The Chief of Staff's title and description cannot be edited | patch 1224-1230 | yes (`AgentPage.swift` `isChief`) | written |
+| The boot screen: "Setting up Simeon's computer" in a moving light, while the agents are first read | bundle `C0t` | partly (the turning butterfly) | written (`MacSettingUp`) |
+| The name sheet once the first run is over and no name was given: "What should your agents call you?", Not now, Continue ("Saving…"), "Couldn’t save your name. Try again." | bundle `__simeonNameSheet` | no | written (`MacNameSheet`) |
+| The Chief of Staff (the oldest agent titled "Chief of Staff" or "COO"): his title and description cannot be edited; his name and avatar can | patch 1224-1230, bundle `__simeonFindCoo` | yes (`AgentPage.swift` `isChief`) | written (`Agent.chiefOfStaff`) |
 
 ### 2.3 The window's keys and states
 
 | What | Where | Phone | Mac |
 |---|---|---|---|
-| ⌘N New Agent, ⌘K jump to, ⌘, Settings, ⇧⌘M Connect apps, ⌘I or ⌘L to the composer, ⇧⌘F search agents, ⌥↑ ⌥↓ the previous or next agent, ⌘[ ⌘] back and forward, ⌘1–9 a sidebar agent, ⌘B the compact sidebar, ⌘F find in the chat, Esc close | recovered `window-chrome/global-keyboard-shortcuts.ts` | no | part: all but ⇧⌘F and ⌘[ ⌘] |
+| ⌘N New Agent (the new chat), ⌘K jump to, ⌘, Settings, ⇧⌘M Connect apps, ⌘I or ⌘L to the composer, ⇧⌘F search agents, ⌥↑ ⌥↓ the previous or next agent, ⌘[ ⌘] back and forward, ⌘1–9 a sidebar agent (open sections only), ⌘B the compact sidebar, ⌘F find in the chat, ⇧⌘, Toggle agent settings, ⇧⌘I and ⌥⌘B Toggle details, Esc close | recovered `window-chrome/global-keyboard-shortcuts.ts`, bundle `sand.toggleAgentSettings`, `sand.toggleInfo` | no | part: all but ⇧⌘F and ⌘[ ⌘] |
 | The connection's badge: Connected, Connecting, Disconnected | recovered `window-chrome/status-badge.tsx` | no | |
 | "Something went wrong" with Reload and Copy error | recovered `error-boundary/` | partly (an alert) | part: an alert |
 
@@ -119,19 +122,19 @@ The menus, zoom and full screen are in §9.
 
 | What | Where | Phone | Mac |
 |---|---|---|---|
-| Search and create as glass discs; "Connect apps" at the foot with the Gmail, Calendar and Drive tiles | patch 2123-2226, 1538-1578 | yes (in the phone's layout) | written (the sidebar's search field, New in the toolbar, Connect Apps in the account menu) |
-| The "…" menu: Join shared room…, New shared room…, Show Hidden Agents | bundle | partly (Hidden Agents) | part: Show Hidden Agents (View menu) |
+| Search and New chat as glass discs; "Connect apps" at the foot with the Gmail, Calendar and Drive tiles | patch 2123-2226, 1538-1578 | yes (in the phone's layout) | written (the sidebar's search field, New chat in the toolbar, Connect Apps in the account menu) |
+| The list's right click on its empty space (`Qhn`): Join shared room…, New shared room…, Hidden Agents (N) | bundle | partly (Hidden Agents) | part: Hidden Agents (N), and Show Hidden Agents in the View menu (shared rooms are slice 7) |
 | The Agent network button (the org chart, §2.20) | recovered `org-chart/` | no | |
 | Pins: tiles, dragged to reorder, the host's `pinnedAgentIds` (shared with the phone) | production `sidebar-model.ts` | yes (`PinGrid`) | written |
-| Sections: create, rename, move up or down, delete ("Its agents move to Unassigned"), fold, "Drag chats here", drag rows in, Move to, Move to new section; the host's `sidebarSections` | recovered `sidebar-sections-state.ts`, production `AgentRowActions.tsx` | no | |
-| Several rows at once: N selected, Move to section, New section, Delete selected, Clear | recovered `conversation/workspace/sidebar.tsx` | no | |
+| Sections: made only from Move to new section ("New section", at the top, its name open to change); Rename, Move up, Move down, Delete ("Its agents move to Unassigned. No agents are deleted.") on the header's right click; fold (kept on this Mac); "Drag chats here"; "Unassigned" last and only with agents; rows and pinned tiles dragged in, headers dragged to reorder; the host's `sidebarSections` | bundle `dZ`, `jHn`, `Cct`, `Wpn` | no | written (`SidebarSections`, `MacSidebar`) |
+| Several rows at once: ⌘-click, ⇧-click a range, a plain click lets go; the toolbar's Move (to a section), Delete and Clear selection; Esc lets go, Delete asks to delete them | bundle `u0n`, `pcn` | no | written (`SidebarSelection`) |
 | A row: the butterfly (moving while it works), name, title in blue, the last line ("Draft: …", "Voice chat · …"), time, the status (unread, needs attention, working) | recovered `sidebar-agent-status.ts` | yes (`AgentRow`, `StatusDot`) | written |
-| On hover, a preview: the status, Pinned, recent messages, "2 PDFs", "No messages yet" | recovered `sidebar-agent-preview-*.tsx` | yes (the long-press preview, `ChatPeek`) | |
-| The row's menu: Edit Profile, Show full conversation, Show async tasks, Move to…, Pin, Mark as Read or Unread, Duplicate, Copy conversation ID, Hide from sidebar, Delete | production `agent-row-actions-model.ts` | partly (no full conversation, async tasks or Move to) | part: no full conversation, async tasks, Move to |
-| Delete asks first, with a group's own words ("…The Agents in it are not deleted") | production `AgentDeleteConfirmation.tsx` | partly (an agent's words only) | written |
-| Rename in the row: Enter saves, Esc cancels | production `AgentNameEditor.tsx` | partly (in Profile) | |
-| Hidden Agents with Unhide; "All bots are hidden" with Show Hidden Agents | recovered `hidden-chats/` | yes (`HiddenAgentsSheet`) | written |
-| The compact rail (⌘B, and while the agent pane is open); the sidebar's width dragged | recovered `sidebar-collapse-state.ts`, patch 717-719 | n/a | part: ⌘B and ⌃⌘S hide the sidebar |
+| A card on hover, only on pinned tiles and in the rail (after 0.3 s): the status, the title, Pinned, the time, and one line ("Waiting for you: …", "Draft: …", the last message, "No messages yet") | bundle `sdn`, `ndn` | yes (the long-press preview, `ChatPeek`) | written (`MacHoverCard`) |
+| The row's menu, in groups: Pin or Unpin, Move to (not when pinned), Mark as Read or Unread · Edit Profile, Duplicate, Share agent…, Leave shared chat · Copy conversation ID, Show full conversation, Show async tasks · Hide from sidebar, Delete ("Delete 3 agents" on a row picked with others) | bundle `fcn` | partly (no Move to) | part: all but Share agent… and Leave shared chat (sharing, slice 7) and the two staff-only items (§2.14) |
+| Delete asks first, for one or several, agents or groups ("Delete 3 groups"; "…The Agents in them are not deleted"), "Deleting...", and a failure in the question | bundle `I3n`, `C3n` | partly (an agent's words only) | written (`AgentDeletion`, `MacConfirmSheet`) |
+| Rename in the row: a double-click; Return keeps it, Esc lets it go, leaving it keeps it; empty or unchanged is not saved | bundle `yut` | partly (in Profile) | written (`MacRenameField`) |
+| Hidden Agents (520 wide) with Unhide, "No hidden bots"; "All bots are hidden" with Show Hidden Agents | bundle `view-Cbx1-ckK.js` | yes (`HiddenAgentsSheet`) | written (`MacHiddenAgents`) |
+| The compact rail (while the agent pane is open: butterflies only, open sections only, no drag or rename); ⌘B; the sidebar's width dragged | bundle `Mpn`, patch 717-719 | n/a | part: the rail while the pane is open; ⌘B and ⌃⌘S hide the sidebar |
 | "Connecting to your computer…", "Can't reach your computer" with Retry, "Reconnecting to your computer…" | recovered `roster/status.tsx`, `reconnect-notice.tsx` | partly ("No saved agents yet." only) | |
 
 ### 2.5 Search and the ⌘K palette
@@ -139,13 +142,13 @@ The menus, zoom and full screen are in §9.
 | What | Where | Phone | Mac |
 |---|---|---|---|
 | Tabs All, Messages, Agents, Groups, Files, Links, Routines, Actions; arrows between tabs; Current and Hidden badges; a result opens at its line | production `CommandPalette.tsx`, `command-palette-*-provider.ts` | yes (`SearchResults`, `Search.swift`) | written (⌘K) |
-| Actions: Org Chart, Open Hidden Agents, Members, Channels, Chat Settings, Settings › General and Usage & Billing, Connect apps, Theme, Update Simeon's Computer, Join or New shared room | production `command-palette-root-commands.ts` | partly (New Agent, New Group Chat, Hidden Agents, Settings, Theme) | part: the phone's |
+| Actions: Org Chart, Open Hidden Agents, Members, Channels, Chat Settings, Settings › General and Usage & Billing, Connect apps, Theme, Update Simeon's Computer, Join or New shared room | production `command-palette-root-commands.ts` | partly (New Agent, New Group Chat, Hidden Agents, Settings, Theme) | part: the phone's (New Agent and New Group Chat open the new chat; a routine opens its agent's Routines tab, as the window does) |
 
 ### 2.6 New agents and groups
 
 | What | Where | Phone | Mac |
 |---|---|---|---|
-| The new chat (⌘N): a "To:" line to search or create agents ("Create “name”"); several make a group named after them; a new agent introduces itself | bundle, `desktop/demo/backend.ts` | partly (New Agent and New Group Chat sheets) | part: the phone's two sheets |
+| The new chat (⌘N): a "To:" line to search or create agents ("Create “name”"), chips (six at most), ↑↓ Tab , Backspace Return Esc ⌘1–9; the one agent's chat behind it; several make a group named after them; a new agent introduces itself, or takes a name that reads like a request as its first message; "50 is the maximum" | bundle `L4n`, `Bie`, `J4n`, `HDn` | partly (New Agent and New Group Chat sheets) | written (`NewChat`, `MacNewChat`) |
 | The 12 colours; the shape picker hidden | patch 1901-1938 | yes | written |
 | Duplicate | production `agent-row-actions-model.ts` | yes | written |
 
@@ -153,7 +156,7 @@ The menus, zoom and full screen are in §9.
 
 | What | Where | Phone | Mac |
 |---|---|---|---|
-| Centred: the 52 pt butterfly (a group's stack), the name in a white glass pill; the avatar opens the agent pane; Call beside the name; the working dot | patch 2046-2094, 375-384 | yes (`ChatHeadline`, `ChatCallButton`) | written (the toolbar) |
+| Centred: the 52 pt butterfly (a group's stack), the name in a white glass pill; the avatar opens or closes the agent pane ("View agent settings"); Call beside the name; the working dot; no computer button (the patch took it out) | patch 2046-2094, 375-384, bundle `aSn` | yes (`ChatHeadline`, `ChatCallButton`) | written (the toolbar) |
 | A shared room's badge and Manage shared room | recovered `agent-info/shared-room/trigger.tsx` | no | |
 | A thread's header with its way back: the "Thread breadcrumb", the agent's butterfly and name (back to the chat, "Back to *name*") › the thread's name (the agent's details) | bundle `Thread breadcrumb` | yes (a sheet with the thread's name and Done) | written (in the toolbar) |
 
@@ -239,23 +242,23 @@ The menus, zoom and full screen are in §9.
 
 | What | Where | Phone | Mac |
 |---|---|---|---|
-| One page: the 96 pt avatar with its pencil, name, title; Profile · Routines · Computer; 480 wide; the sidebar shrinks to its rail meanwhile | patch 672-802 | yes (`AgentPageSheet`) | part: a sheet for now (the inspector is slice 3) |
-| Profile: Name, Title, Description saved on leaving each; the notifications switch | recovered `agent-info/settings/view.tsx` | yes (`ProfileTab`) | written |
-| The avatar editor: Agent (12 colours, the voice with play, Reset), Generate, Upload (drop, paste or Browse; crop with zoom and drag) | recovered `agent-info/avatar-editor/` | partly (no crop, zoom, drag, drop or paste) | part: the phone's |
-| Members: the list, Remove with a question, Add Member | recovered `agent-info/group-members/` | yes (`GroupMembers`) | written |
+| One page: the 96 pt avatar with its pencil, name, title; Profile · Routines · Computer as icons; 480 wide (280 at least), kept open across launches; the sidebar shrinks to its rail meanwhile and comes back; ✕ "Close details", Esc | patch 672-802, bundle `E3n`, `p3n` | yes (`AgentPageSheet`) | written (`MacAgentPane`, an inspector) |
+| Profile: Name, Title, Description saved on leaving each (Return in a one-line field, Esc puts it back, an empty name goes back); no title for a group; the Notifications switch, not for a group | bundle `h3n`, `Uwe` | yes (`ProfileTab`) | written |
+| The avatar editor: Agent (12 colours, the voice with play, Reset), Generate (⌘Return), Upload (drop, paste or Browse files; the 96 pt crop with zoom 1–5 and drag; a 256 PNG) | bundle `c3n` | partly (no crop, zoom, drag, drop or paste) | written (`MacAvatarEditor`, `AvatarCrop`) |
+| Members, on a group's Computer tab: each opens its chat, Remove on hover asks first, Add Member (six at most), "Create more Agents to add them here." | bundle `z2n` | yes (`GroupMembers`) | written (`MacMembers`) |
 | Channels: each agent's Discord and Slack bot: status, Connect, Disconnect, How to connect, Refresh, the token field | recovered `agent-info/channels/` | no | |
 | A shared room: Invite people, Copy link, requests with Approve and Deny, people, your agents | recovered `agent-info/shared-room/` | no | |
-| Async tasks: helpers, shells and cloud agents still running | recovered `agent-info/async-tasks/` | no | |
-| Full conversation: You, Thinking, Agent, Message, each tool call with its details and result (a terminal's output) | recovered `conversation-outline-view.tsx`, `terminal/output/` | no | |
+| Async tasks: helpers, shells and cloud agents still running | recovered `agent-info/async-tasks/` | no | not built: in the shipped window only staff see it (`isStaffUser`), and no account is staff |
+| Full conversation: You, Thinking, Agent, Message, each tool call with its details and result (a terminal's output) | recovered `conversation-outline-view.tsx`, `terminal/output/` | no | not built: staff only, as above |
 
 ### 2.15 Routines
 
 | What | Where | Phone | Mac |
 |---|---|---|---|
-| The list, Create Routine, Paused | recovered `automations/routines/view.tsx` | yes (`RoutinesTab`) | written |
-| The editor: Active, Delete, Test run, Name, Instruction, When to run, Run history | recovered `automations/routines/` | yes (`RoutineEditor`) | written |
-| Schedules: the presets and Advanced… | recovered `routines/schedule-editor.tsx` | yes (`SchedulePicker`) | written |
-| Events: Slack (a channel; a message, mention, keyword or reaction), GitHub (repo, events, CI passed or failed, people, branch), Linear, Sentry, PagerDuty; several per routine | recovered `routines/trigger-schema.ts` | no | |
+| The list (active first, "Paused", a spinner while one runs), New Routine, "Routines are recurring tasks this agent runs on a schedule." and Create Routine; kept fresh by the computer's `agents-automation` | bundle `K2n`, `G2n`, `V2n` | yes (`RoutinesTab`) | written (`MacRoutineList`) |
+| The editor: Active, Delete (no question), Test run ("Running…"), Name, Instruction, When to run, Run history ("Just now", "Today at 9:05 AM", Succeeded or Failed); saved as it goes, a new one made once it has a name, an instruction and a trigger; "Couldn't save this routine." | bundle `_2n` | yes (`RoutineEditor`) | written (`MacRoutineEditor`) |
+| Schedules: Every hour, Every day and Weekdays at 96 times, Every week, Every month, Interval, Advanced… (months, days, times or every so often between two hours), Custom (a cron line) | bundle `P2n`, `Ugn`, `$gn` | yes (`SchedulePicker`, fewer) | written (`RoutineSchedule`, `MacScheduleFields`) |
+| Events: Slack (a channel; a message, mention, keyword or reaction), GitHub (repo, events, CI passed or failed, people, branch), Teams, Linear, Sentry, PagerDuty; eight per routine | bundle `Hgn`, `Wgn`, `tQ` | no | written (`TriggerRow`, `MacTriggerFields`) |
 
 ### 2.16 The computer
 
@@ -368,7 +371,8 @@ and `VoiceCall.swift`. Every command the Mac sends today has a line.
 | Memory (no screen in the window today) | `getAgentMemories`, `deleteAgentMemory`, `clearAgentMemories` | no | |
 | Sharing | `getSharingState`, `createRoomFromAgent`, `createRoomInvite`, `joinSharedRoom`, `respondToRoomJoinRequest`, `createSharedRoom`, `addOwnAgentToSharedRoom`, `removeOwnAgentFromSharedRoom`, `setSharedRoomTyping`, `leaveSharedRoom` | no | |
 | Settings | `getHostSettings`, `setHostSettings` | yes (pins, onboarding, time zone, auto-review) | written |
-| | The other fields: `sidebarSections`, `agentDefaultModel`, `computerUseModel`, `localToolPermission`, `webauthnProxyEnabled`, the connector stores, `featureFlagOverrides` | no | |
+| | `sidebarSections` | no | written |
+| | The other fields: `agentDefaultModel`, `computerUseModel`, `localToolPermission`, `webauthnProxyEnabled`, the connector stores, `featureFlagOverrides` | no | |
 | Secrets | `setBoxSecrets`, `getBoxSecretsStatus` | no | |
 | Files | `uploadAttachment`, `readAttachmentImage`, `readAttachmentChunk` | yes | written |
 | | `readAttachmentText` | no | |
@@ -411,7 +415,8 @@ How the Mac calls them, beyond what `Gateway.swift` does now:
 | `outline` | the agent's steps | partly (tool calls only) | |
 | `client-side-tool-v2` | tool cards, decoded from protobuf (coordinator `client-side-tool-v2-relay.ts`) | no | |
 | `subagents`, `async-tasks` | work an agent handed off | no | |
-| `automations`, `workflows`, `memory`, `sharing` | changes to those | no | |
+| `agents-automation` | an agent's routines | no | written |
+| `workflows`, `memory`, `sharing` | changes to those | no | |
 | `forever-box`, `box-disk-pressure`, `computer-action` | the computer's state, its disk, what the agent does on it | no | |
 | `tray`, `teach-recording` | trays and teaching | no | |
 
@@ -573,10 +578,11 @@ Each slice ends with a build on the founder's Mac and their screenshots.
    dropped and pasted, Save, Quick Look, link cards, Mermaid and maths,
    the sending states, search and the ⌘K palette.
 3. **Agents.** The inspector (Profile, the avatar editor with its crop,
-   the voice, Routines with events, notifications, members, full
-   conversation, async tasks), the new chat with "To:", the row menus,
-   sections and Move to, several rows at once, rename in the row, the
-   first run.
+   the voice, Routines with events, notifications, members), the new chat
+   with "To:", the row menus, sections and Move to, several rows at once,
+   rename in the row, the first run's boot screen and name sheet. Written.
+   Full conversation and async tasks are not built: the shipped window
+   shows them to staff only, and no account is staff.
 4. **The computer.** The Computer tab and its own window, the clipboard
    by itself and the ⌘ keys, presence, the helpers' strip, reset and
    update with the rebuild banner, low disk, the "Can't reach…" notice.

@@ -26,6 +26,10 @@ struct MacRoot: View {
             OnboardingFlow()
               .toolbar(.hidden, for: .windowToolbar)
               .transition(.opacity)
+          } else if store.agents.isEmpty && (store.isLoading || session.firstRun == .checking) {
+            MacSettingUp()
+              .toolbar(.hidden, for: .windowToolbar)
+              .transition(.opacity)
           } else {
             MacWindow().transition(.opacity)
           }
@@ -40,30 +44,53 @@ struct MacRoot: View {
   }
 }
 
+/** The boot screen (`C0t`): "Setting up Simeon's computer" in its moving light, while the agents are first read. */
+struct MacSettingUp: View {
+  static let words = "Setting up Simeon's computer"
+
+  var body: some View {
+    // The moving light, or plain words for those who reduce motion (ShimmerText does both).
+    ShimmerText(text: Self.words, font: .system(size: 17, weight: .medium))
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .background(Ink.ground)
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel(Self.words)
+  }
+}
+
 /**
- * The window once signed in, in Apple's parts: the agents in the sidebar
- * (glass, folding away with ⌃⌘S), the open agent's chat as the detail with
- * its name and buttons in the toolbar. New Agent, New Group Chat, the agent's
- * page, the hidden agents and Jump To are sheets over it.
+ * The window once signed in, in Apple's parts: the agents in the sidebar,
+ * the open agent's chat (or the new chat's To: line) as the detail, and the
+ * agent's pane as the inspector beside it (480 wide, 280 at least; the
+ * sidebar becomes its rail while it is open). Questions are sheets in the
+ * window's words.
  */
 struct MacWindow: View {
   @Environment(AppStore.self) private var store
   @Environment(MacNavigation.self) private var navigation
+  @Environment(SessionController.self) private var session
   @Environment(\.openWindow) private var openWindow
   @State private var columns = NavigationSplitViewVisibility.all
+  @State private var askingName = false
 
   var body: some View {
     @Bindable var navigation = navigation
+    @Bindable var newChat = navigation.newChat
     NavigationSplitView(columnVisibility: $columns) {
       MacSidebar()
-        .navigationSplitViewColumnWidth(min: 220, ideal: 280, max: 420)
+        .navigationSplitViewColumnWidth(min: navigation.sidebarRail ? 72 : 220, ideal: navigation.sidebarRail ? 72 : 280, max: navigation.sidebarRail ? 88 : 420)
     } detail: {
-      if let id = navigation.selected, store.agent(id) != nil {
-        MacChat(agentId: id).id(id)
-      } else {
-        MacNoChat()
-      }
+      detail
+        .inspector(isPresented: Binding(get: { navigation.paneOpen && store.agent(navigation.selected) != nil && !navigation.newChat.isOpen }, set: { open in if !open { navigation.closePane() } })) {
+          if let id = navigation.selected {
+            MacAgentPane(agentId: id)
+              .id(id)
+              .inspectorColumnWidth(min: 280, ideal: 480, max: 480)
+          }
+        }
     }
+    // Esc closes the pane when nothing in front of it took the key (the window's `CDn`).
+    .onExitCommand { if navigation.paneOpen { navigation.closePane() } }
     .onChange(of: navigation.sidebarShown) { _, shown in withAnimation { columns = shown ? .all : .detailOnly } }
     .onChange(of: columns) { _, now in
       let shown = now != .detailOnly
@@ -84,17 +111,19 @@ struct MacWindow: View {
         .environment(navigation)
         .problemAlert()
     }
-    .alert(navigation.deleting.map { "Delete “\($0.name)”" } ?? "", isPresented: Binding(get: { navigation.deleting != nil }, set: { shown in if !shown { navigation.deleting = nil } }), presenting: navigation.deleting) { agent in
-      Button("Cancel", role: .cancel) {}
-      Button("Delete", role: .destructive) {
-        Task {
-          if await store.delete([agent.id]), navigation.selected == agent.id { navigation.selected = nil }
-        }
-      }
-    } message: { agent in
-      Text(agent.isGroup
-        ? "This permanently deletes the group and its chat history. The Agents in it are not deleted and remain available individually. This can't be undone."
-        : "This permanently deletes the agent and its chat history. This can't be undone.")
+    .sheet(item: $navigation.confirm) { confirmation in
+      MacConfirmSheet(confirmation: confirmation)
+        .environment(navigation)
+    }
+    .sheet(isPresented: $askingName) {
+      MacNameSheet { askingName = false }
+        .environment(store)
+        .environment(session)
+    }
+    .alert(NewChat.limitTitle, isPresented: $newChat.limitReached) {
+      Button("Got it", role: .cancel) {}
+    } message: {
+      Text(NewChat.limitMessage)
     }
     .problemAlert()
     .task(id: navigation.connectAppsAsked) {
@@ -112,6 +141,42 @@ struct MacWindow: View {
     .task(id: store.agents.isEmpty) {
       if navigation.selected == nil { navigation.selected = navigation.order(store).first }
     }
+    // The name the agents call the person, asked once the first run is over and none was given (the window's name sheet).
+    .task(id: session.nameNeeded) {
+      guard session.nameNeeded else { return }
+      try? await Task.sleep(nanoseconds: 4_000_000_000)
+      if session.nameNeeded && session.firstRun == .done { askingName = true }
+    }
+    // A new agent's chat shows once it has something, or after 20 s; another agent opened lets it go.
+    .task(id: newChat.creating?.id) {
+      guard let started = newChat.creating?.id else { return }
+      try? await Task.sleep(nanoseconds: 20_000_000_000)
+      if newChat.creating?.id == started { newChat.creating = nil }
+    }
+    .onChange(of: navigation.selected) { _, now in
+      if let made = newChat.creating?.agentId, now != made { newChat.creating = nil }
+    }
+  }
+
+  @ViewBuilder
+  private var detail: some View {
+    let newChat = navigation.newChat
+    if newChat.isOpen {
+      MacNewChatView()
+    } else if let creating = newChat.creating, !revealed(creating) {
+      MacCreatingScreen()
+    } else if let id = navigation.selected, store.agent(id) != nil {
+      MacChat(agentId: id).id(id)
+    } else {
+      MacNoChat()
+    }
+  }
+
+  /** The creating screen gives way when the new agent is open and has lines, is working, or was made with nothing to show. */
+  private func revealed(_ creating: MacNewChatState.Creating) -> Bool {
+    guard let id = creating.agentId, navigation.selected == id, let agent = store.agent(id) else { return false }
+    if !creating.expectsContent { return true }
+    return !(store.transcripts[id] ?? []).isEmpty || agent.isRunning || agent.isRunningTurn
   }
 
   private struct OpenRequest: Equatable {
@@ -127,20 +192,10 @@ struct MacSheet: View {
 
   var body: some View {
     switch sheet {
-    case .newAgent:
-      NewAgentSheet { id in navigation.sheet = nil; navigation.selected = id }
-        .frame(width: 440, height: 600)
-    case .newGroup:
-      NewGroupSheet { id in navigation.sheet = nil; navigation.selected = id }
-        .frame(width: 440, height: 600)
     case .hiddenAgents:
-      HiddenAgentsSheet { id in navigation.sheet = nil; navigation.selected = id }
-        .frame(width: 440, height: 480)
+      MacHiddenAgents { id in navigation.sheet = nil; navigation.selected = id }
     case .palette:
       MacPalette()
-    case .agentPage(let id, let routine):
-      AgentPageSheet(agentId: id, routineId: routine)
-        .frame(width: 480, height: 680)
     }
   }
 }
@@ -153,7 +208,7 @@ struct MacNoChat: View {
     VStack(spacing: 16) {
       ButterflyView(palette: .named("blue"), motion: .idle).frame(width: 72, height: 72)
       Text("Choose an agent, or start a new one.").font(.system(size: 15)).foregroundStyle(.secondary)
-      Button("New Agent") { navigation.sheet = .newAgent }
+      Button("New Agent") { navigation.openNewChat() }
         .buttonStyle(.glass)
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -161,263 +216,64 @@ struct MacNoChat: View {
   }
 }
 
-// MARK: - The sidebar
-
 /**
- * The agents (the Electron window's sidebar, `sidebar.tsx`): the pinned ones
- * as tiles, then the rest, each with its butterfly, name, title, last line,
- * time and status; the search field at the top as the Mac's sidebars have
- * it; Hidden Agents at the end; the account at the foot. A right click gives
- * the row's menu in the Electron window's order.
+ * The name sheet after the first run (`__simeonNameSheet`): "What should
+ * your agents call you?", the name the server suggests in the field, Not
+ * now or Continue ("Saving…"); "Couldn’t save your name. Try again." when it
+ * fails.
  */
-struct MacSidebar: View {
-  @Environment(AppStore.self) private var store
-  @Environment(MacNavigation.self) private var navigation
-  @State private var query = ""
-
-  /** Every listed agent, or those the search finds (hidden ones too) by name, title, description or last line. */
-  private var shown: [Agent] {
-    let words = query.trimmingCharacters(in: .whitespaces)
-    guard !words.isEmpty else { return store.listed }
-    return store.agents.filter { agent in
-      agent.name.localizedCaseInsensitiveContains(words) || agent.title.localizedCaseInsensitiveContains(words)
-        || agent.description.localizedCaseInsensitiveContains(words) || agent.previewLine.localizedCaseInsensitiveContains(words)
-    }
-  }
-
-  var body: some View {
-    @Bindable var navigation = navigation
-    List(selection: $navigation.selected) {
-      if query.isEmpty && !store.pinned.isEmpty {
-        MacPinGrid(pins: store.pinned)
-          .listRowSeparator(.hidden)
-      }
-      ForEach(shown) { agent in
-        MacAgentRow(agent: agent, members: store.members(of: agent), draft: store.drafts[agent.id], call: store.call?.agentId == agent.id ? store.call : nil)
-          .equatable()
-          .tag(agent.id)
-          .contextMenu { MacAgentMenu(agent: agent) }
-      }
-      if query.isEmpty && !store.hiddenAgents.isEmpty {
-        Button { navigation.sheet = .hiddenAgents } label: {
-          HStack {
-            Text("Hidden Agents")
-            Spacer()
-            Text("\(store.hiddenAgents.count)").monospacedDigit()
-          }
-          .font(.system(size: 12))
-          .foregroundStyle(.secondary)
-          .contentShape(.rect)
-        }
-        .buttonStyle(.plain)
-      }
-    }
-    .listStyle(.sidebar)
-    .searchable(text: $query, placement: .sidebar, prompt: "Search")
-    .overlay {
-      if shown.isEmpty && (store.pinned.isEmpty || !query.isEmpty) && !store.isLoading {
-        Text(query.isEmpty ? "No saved agents yet." : "No results").font(.system(size: 13)).foregroundStyle(.secondary)
-      }
-    }
-    .animation(.spring(response: 0.38, dampingFraction: 0.86), value: shown.map(\.id))
-    .animation(.spring(response: 0.38, dampingFraction: 0.86), value: store.pinnedIds)
-    .safeAreaInset(edge: .bottom, spacing: 0) { MacAccountBar() }
-    .toolbar {
-      ToolbarItem {
-        Menu {
-          Button { navigation.sheet = .newAgent } label: { Label("New Agent", systemImage: "person.crop.circle.badge.plus") }
-          Button { navigation.sheet = .newGroup } label: { Label("New Group Chat", systemImage: "person.2") }
-        } label: {
-          Label("New", systemImage: "square.and.pencil")
-        }
-        .help("New Agent or Group Chat")
-      }
-    }
-  }
-}
-
-/**
- * One agent or group in the sidebar (`sidebar-agent-status.ts`): its
- * butterfly (moving while it works, the green dot at its corner while the
- * work has no name), the name, the title, the time; under them the last line
- * (what it is doing while it works, your unsent draft, else its last
- * message) and the dot of an unread chat, orange when it waits on you.
- */
-struct MacAgentRow: View, Equatable {
-  let agent: Agent
-  let members: [Agent]
-  let draft: String?
-  let call: CallState?
-
-  static func == (a: MacAgentRow, b: MacAgentRow) -> Bool {
-    a.agent == b.agent && a.members == b.members && a.draft == b.draft && a.call?.agentId == b.call?.agentId && a.call?.phase == b.call?.phase
-  }
-
-  var body: some View {
-    let status = RowStatus(agent: agent)
-    HStack(alignment: .center, spacing: 10) {
-      AgentAvatar(agent: agent, members: members, moves: true)
-        .frame(width: 34, height: 34)
-        .overlay(alignment: .bottomTrailing) {
-          if let dot = status.cornerOnRow { StatusDot(colour: dot, size: 8).offset(x: 2, y: 2) }
-        }
-      VStack(alignment: .leading, spacing: 2) {
-        HStack(alignment: .firstTextBaseline, spacing: 6) {
-          Text(agent.name).font(.system(size: 13, weight: .semibold)).lineLimit(1)
-          if !agent.title.isEmpty {
-            Text(agent.title).font(.system(size: 11)).foregroundStyle(Ink.title).lineLimit(1)
-          }
-          Spacer(minLength: 4)
-          if let call {
-            CallChip(call: call)
-          } else if let at = agent.lastActivityAt, at > 0 {
-            Text(Chat.listTime(Date(timeIntervalSince1970: at / 1000))).font(.system(size: 11)).foregroundStyle(.secondary).fixedSize()
-          }
-        }
-        HStack(alignment: .top, spacing: 6) {
-          Text(line).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(2)
-          Spacer(minLength: 0)
-          if let marker = status.marker {
-            Circle().fill(marker).frame(width: 8, height: 8).padding(.top, 4)
-              .accessibilityLabel(status.label ?? "")
-          }
-        }
-      }
-    }
-    .padding(.vertical, 4)
-    .contentShape(.rect)
-    .accessibilityElement(children: .combine)
-  }
-
-  /** The Electron sidebar's order: what it is doing while it works, else your unsent draft, else the last line. */
-  private var line: String {
-    if agent.isBusy, let activity = agent.activityLabel { return activity }
-    if agent.isComposing { return "Typing…" }
-    if let draft { return "Draft: " + draft.split(whereSeparator: \.isWhitespace).joined(separator: " ") }
-    return agent.previewLine
-  }
-}
-
-/**
- * The pinned agents above the rows (the Electron window's pin grid,
- * `sand-pinned-grid`: tiles 80 wide, the butterfly, the name, the title in
- * blue). A click opens the chat; a right click is the row's menu; dragging a
- * tile onto another moves it there (the host's `pinnedAgentIds`, shared with
- * the iPhone).
- */
-struct MacPinGrid: View {
-  let pins: [Agent]
-  @Environment(AppStore.self) private var store
-  @Environment(MacNavigation.self) private var navigation
-  @State private var target: String?
-
-  var body: some View {
-    LazyVGrid(columns: [GridItem(.adaptive(minimum: 74, maximum: 96), spacing: 6)], spacing: 10) {
-      ForEach(pins) { agent in
-        Button { navigation.selected = agent.id } label: {
-          VStack(spacing: 4) {
-            AgentAvatar(agent: agent, members: store.members(of: agent), moves: true)
-              .frame(width: 48, height: 48)
-              .overlay(alignment: .bottomTrailing) {
-                if let dot = RowStatus(agent: agent).cornerOnPin { StatusDot(colour: dot, size: 9).offset(x: 1, y: 1) }
-              }
-            Text(agent.name).font(.system(size: 11, weight: navigation.selected == agent.id ? .semibold : .regular)).lineLimit(1)
-            if !agent.title.isEmpty { Text(agent.title).font(.system(size: 10)).foregroundStyle(Ink.title).lineLimit(1) }
-          }
-          .padding(.vertical, 6).padding(.horizontal, 4)
-          .frame(maxWidth: .infinity)
-          .background(navigation.selected == agent.id ? AnyShapeStyle(.selection.opacity(0.25)) : AnyShapeStyle(.clear), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-          .contentShape(.rect(cornerRadius: 10))
-        }
-        .buttonStyle(.plain)
-        .contextMenu { MacAgentMenu(agent: agent) }
-        .draggable(agent.id) {
-          AgentAvatar(agent: agent, members: store.members(of: agent)).frame(width: 48, height: 48)
-        }
-        .dropDestination(for: String.self) { ids, _ in
-          guard let moved = ids.first, moved != agent.id, let index = store.pinnedIds.firstIndex(of: agent.id) else { return false }
-          Task { await store.movePin(moved, to: index) }
-          return true
-        } isTargeted: { over in
-          let next = over ? agent.id : (target == agent.id ? nil : target)
-          if next != target { target = next }
-        }
-        .opacity(target == agent.id ? 0.55 : 1)
-        .accessibilityLabel(RowStatus(agent: agent).label.map { "\(agent.name), \($0)" } ?? agent.name)
-      }
-    }
-    .padding(.vertical, 4)
-  }
-}
-
-/**
- * A row's right-click menu, in the Electron window's order
- * (`agent-row-actions-model.ts`): Edit Profile; Pin; Mark as Read or Unread;
- * Duplicate; Copy Conversation ID; Hide from Sidebar; Delete.
- */
-struct MacAgentMenu: View {
-  let agent: Agent
-  @Environment(AppStore.self) private var store
-  @Environment(MacNavigation.self) private var navigation
-
-  var body: some View {
-    let isPinned = store.pinnedIds.contains(agent.id)
-    if !agent.isGroup {
-      Button { navigation.sheet = .agentPage(agent.id, routine: nil) } label: { Label("Edit Profile", systemImage: "pencil") }
-    } else {
-      Button { navigation.sheet = .agentPage(agent.id, routine: nil) } label: { Label("Members", systemImage: "person.2") }
-    }
-    Divider()
-    Button { Task { await store.setPinned(agent.id, !isPinned) } } label: {
-      Label(isPinned ? "Unpin" : "Pin", systemImage: isPinned ? "pin.slash" : "pin")
-    }
-    Button { Task { await store.setUnread(agent.id, !agent.hasUnread) } } label: {
-      Label(agent.hasUnread ? "Mark as Read" : "Mark as Unread", systemImage: agent.hasUnread ? "checkmark.message" : "message.badge")
-    }
-    if !agent.isGroup {
-      Button { Task { await store.duplicate(agent.id) } } label: { Label("Duplicate", systemImage: "plus.square.on.square") }
-    }
-    Button { UIPasteboard.general.string = agent.id } label: { Label("Copy Conversation ID", systemImage: "doc.on.doc") }
-    Button { Task { await store.setHidden(agent.id, true) } } label: { Label("Hide from Sidebar", systemImage: "eye.slash") }
-    Divider()
-    Button(role: .destructive) { navigation.deleting = agent } label: { Label("Delete…", systemImage: "trash") }
-  }
-}
-
-/** The account at the sidebar's foot (the Electron window's account disc): Settings, Connect Apps, Sign Out. */
-struct MacAccountBar: View {
+struct MacNameSheet: View {
+  let done: () -> Void
   @Environment(AppStore.self) private var store
   @Environment(SessionController.self) private var session
-  @Environment(\.openSettings) private var openSettings
-  @Environment(\.openWindow) private var openWindow
+  @State private var name = ""
+  @State private var saving = false
+  @State private var failed = false
+  @FocusState private var focused: Bool
 
   var body: some View {
-    Menu {
-      Button("Settings…") { openSettings() }
-      Button("Connect Apps…") { openWindow(id: "connect-apps") }
-      Divider()
-      Button("Sign Out") { Task { await session.signOut() } }
-    } label: {
-      HStack(spacing: 8) {
-        ZStack {
-          Circle().fill(Ink.bubbleTheirs)
-          if let initials = store.account?.initials, !initials.isEmpty {
-            Text(initials).font(.system(size: 11, weight: .semibold)).foregroundStyle(Ink.primary)
-          } else {
-            Image(systemName: "person.fill").font(.system(size: 11, weight: .semibold)).foregroundStyle(Ink.primary)
-          }
-        }
-        .frame(width: 26, height: 26)
-        Text(store.account?.name ?? "Account").font(.system(size: 13)).lineLimit(1)
-        Spacer(minLength: 0)
+    VStack(alignment: .leading, spacing: 12) {
+      Text("What should your agents call you?").font(.system(size: 15, weight: .semibold))
+      Text(Onboarding.nameNote).font(.system(size: 13)).foregroundStyle(.secondary)
+      TextField(Onboarding.namePlaceholder, text: $name)
+        .textFieldStyle(.roundedBorder)
+        .focused($focused)
+        .accessibilityLabel(Onboarding.namePlaceholder)
+        .onChange(of: name) { _, now in if now.count > 60 { name = String(now.prefix(60)) } }
+        .onSubmit { save() }
+      if failed {
+        Text("Couldn\u{2019}t save your name. Try again.").font(.system(size: 12)).foregroundStyle(Ink.danger)
       }
-      .contentShape(.rect)
+      HStack {
+        Spacer()
+        Button("Not now") { done() }
+          .keyboardShortcut(.cancelAction)
+        Button(saving ? "Saving\u{2026}" : "Continue") { save() }
+          .keyboardShortcut(.defaultAction)
+          .disabled(saving || Onboarding.normalizedName(name).isEmpty)
+      }
     }
-    .menuStyle(.button)
-    .buttonStyle(.plain)
-    .menuIndicator(.hidden)
-    .padding(.horizontal, 14)
-    .padding(.vertical, 10)
-    .accessibilityLabel("Account")
+    .padding(20)
+    .frame(width: 380)
+    .onAppear {
+      name = session.suggestedName ?? ""
+      focused = true
+    }
+  }
+
+  private func save() {
+    let typed = Onboarding.normalizedName(name)
+    guard !typed.isEmpty, !saving else { return }
+    saving = true
+    failed = false
+    Task {
+      if await store.saveNameReporting(typed) {
+        session.nameNeeded = false
+        done()
+      } else {
+        failed = true
+      }
+      saving = false
+    }
   }
 }

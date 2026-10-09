@@ -817,6 +817,15 @@ public final class AppStore {
   /** The last message canceled, until its composer takes it back. */
   public private(set) var canceledDraft: CanceledDraft?
 
+  /**
+   * A message handed to another composer to finish (the new chat puts what
+   * was written into the new agent's composer, the window's `setDraft`):
+   * that composer takes it back as a canceled one, files and all.
+   */
+  public func handDraft(to scope: String, text: String, richText: String?, files: [(name: String, data: Data)]) {
+    canceledDraft = CanceledDraft(scope: scope, text: text, files: files, replyTo: nil, richText: richText)
+  }
+
   /** The composer took the canceled message back, or had words of its own. */
   public func takeCanceledDraft(_ id: UUID) {
     if canceledDraft?.id == id { canceledDraft = nil }

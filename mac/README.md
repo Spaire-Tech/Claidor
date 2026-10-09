@@ -6,8 +6,9 @@ in swift. literally everything … and more importantly, take apple design
 again". This folder holds that app. `PARITY.md` lists everything the Electron
 app does, one line each, with where it goes in Swift and whether it is done.
 
-Slices 1 (the window) and 2 (the chat) are written (9 October 2026). Neither
-has been built yet: the next step is a build on the founder's Mac (below).
+Slices 1 (the window), 2 (the chat) and 3 (agents) are written (9 October
+2026). None has been built yet: the next step is a build on the founder's
+Mac (below).
 
 ## Why
 
@@ -157,11 +158,34 @@ writes it. All of it is shared with the iPhone, which gets it too (threads
 open in a sheet there). `mac/scripts/build.sh --gallery` opens the demo
 with a chat holding every card.
 
+What slice 3 adds, the agents as the shipped window has them, read from
+the same bundle and checked against its own functions where they are
+rules: the agent's pane as the window's inspector (480 wide, the sidebar
+on its rail meanwhile; the header's agent, ⇧⌘, ⇧⌘I, ⌥⌘B, ✕ and Esc), with
+Profile (fields saved as they are left; the Chief of Staff's title and
+description his own), Notifications, the avatar editor (twelve colours,
+the voice, Generate, Upload by drop, paste or Browse files, the 96 pt crop
+with zoom and drag), Routines (the list; the editor with Active, Delete,
+Test run, every schedule, Advanced and Custom, the six event sources, Run
+history) and, for a group, Members; the new chat's To: line (⌘N), which
+makes agents and groups as the window does; the row's menu in the
+window's groups with Move to; sections (made from Move to new section,
+renamed, moved, deleted, folded, dragged); several rows at once (⌘-click,
+⇧-click, the toolbar's Move, Delete and Clear selection); rename in the
+row (double-click); the card on hover over pins and the rail; Hidden
+Agents; the boot screen ("Setting up Simeon's computer") and the name
+sheet after the first run. These screens are the Mac's own; their rules
+are in SimeonCore (`NewChat`, `SidebarSections`, `RoutineTriggers`,
+`AvatarCrop`, `StoreAgents`). The New Agent and New Group Chat sheets and
+the agent's page as a sheet are gone from the Mac (the iPhone keeps them).
+
 ## What can and cannot be checked here
 
 - `SimeonCore` and `SimeonMacCore` build and their tests run on Linux
-  (`cd ios/SimeonCore && swift test`): the links the app opens and the
-  sidebar's order for ⌘1 to ⌘9 and ⌥↑ ⌥↓ among them.
+  (`cd ios/SimeonCore && swift test`): the links the app opens, the
+  sidebar's order for ⌘1 to ⌘9 and ⌥↑ ⌥↓, and slice 3's rules (the To:
+  search, sections, schedules and events) against values made by running
+  the window's own functions.
 - The app's own files, the Mac's and the shared iPhone ones, can only be
   parsed off a Mac (`swiftc -parse`), not compiled: SwiftUI and AppKit are
   not here. Every slice is built and run on the founder's Mac before it

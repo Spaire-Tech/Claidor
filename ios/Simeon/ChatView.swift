@@ -120,6 +120,8 @@ struct ChatView: View {
 @Observable
 final class ChatActions {
   @ObservationIgnored var openPage: () -> Void = {}
+  /** A routine named in the chat ("Created routine"): its editor in the agent's pane on the Mac; nil opens the page. */
+  @ObservationIgnored var openRoutine: ((String) -> Void)?
   @ObservationIgnored var openComputer: () -> Void = {}
   @ObservationIgnored var openExchange: (ExchangeRoute) -> Void = { _ in }
   @ObservationIgnored var jump: (String) -> Void = { _ in }
@@ -128,6 +130,33 @@ final class ChatActions {
   /** The app's actions "/" offers here (the palette's commands that run something), and running one. */
   @ObservationIgnored var slashActions: () -> [ComposerLists.Action] = { [] }
   @ObservationIgnored var runSlashAction: (String) -> Void = { _ in }
+}
+
+/**
+ * The Mac's new chat speaking to a composer (mac/Simeon/MacNewChat.swift):
+ * its placeholder ("Message Nora, New Agent"), Send held while no one is on
+ * the To: line, the message taken to make the agents first, and what is
+ * written handed over when the To: line opens a chat. Nil everywhere else.
+ */
+@MainActor
+@Observable
+final class ComposerHook {
+  struct Message {
+    let text: String
+    let richText: String?
+    let files: [ComposerAttachment]
+  }
+
+  enum Outcome { case taken, kept, sendHere }
+
+  var placeholder: String?
+  var sendDisabled = false
+  /** The message, before it is sent here: taken (the field empties), kept (nothing happens), or sent here as usual. */
+  var submit: ((Message) -> Outcome)?
+  /** After a message was sent here (the new chat closes). */
+  var afterSend: (() -> Void)?
+  /** Set by the composer: what is written, and the field emptied. */
+  var take: (() -> Message)?
 }
 
 /** The message the person is answering (the Mac's Reply), shared by the bubbles' menu and the composer. */
@@ -489,6 +518,7 @@ struct ChatComposer: View {
   /** Where Esc put each list away (by its trigger character): it stays shut there (the window's `j5e`). */
   @State private var dismissed: [Character: Int] = [:]
   @Environment(ChatActions.self) private var actions: ChatActions?
+  @Environment(ComposerHook.self) private var hook: ComposerHook?
   /** The ids of the emoji picked lately after ":", newest first, at most 50 (the window's `emojiRecents`); only those picks count. */
   @AppStorage("simeon.emoji.recents") private var recentEmoji = ""
   /** The "@" rows picked lately ("assistants:<id>"…), newest first, at most 20 (the window's `mentionRecents`). */
@@ -550,6 +580,8 @@ struct ChatComposer: View {
     #if os(macOS)
     if dictation.isListening { return "Listening…" }
     if thread == nil, let target = reply?.target { return Chat.replyPlaceholder(replyEntry(target)) }
+    // The new chat's own (`$4n`), while its To: line is open.
+    if let resting = hook?.placeholder { return resting }
     if !attachments.isEmpty { return "Add a message, or hit send." }
     let named = name.trimmingCharacters(in: .whitespacesAndNewlines)
     if !named.isEmpty { return "Message \(named)" }
@@ -657,6 +689,7 @@ struct ChatComposer: View {
                   .frame(width: 36, height: 36).contentShape(.circle)
               }
               .accessibilityLabel("Send")
+              .disabled(hook?.sendDisabled == true)
               .transition(.scale(scale: 0.6).combined(with: .opacity))
             }
           }
@@ -724,25 +757,40 @@ struct ChatComposer: View {
     // The unsent draft stays with its chat (or its thread), as on the Mac.
     .onAppear { if draft.isEmpty, let kept = store.drafts[draftKey], kept != draft { draft = kept } }
     // A held message canceled: what was written comes back here, if this is its composer and it is empty (the window's cancel).
-    .onChange(of: store.canceledDraft?.id) { _, _ in
-      guard let canceled = store.canceledDraft, canceled.scope == draftKey else { return }
-      store.takeCanceledDraft(canceled.id)
-      guard draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, attachments.isEmpty else { return }
-      // The draft as it was written: its words and its picks, read back from its document.
-      let restored = ComposerDocument.draft(from: canceled.richText) ?? (canceled.text, [])
-      place(restored.draft, chips: restored.chips)
-      attachments = canceled.files.map { ComposerAttachment(name: $0.name, data: $0.data, preview: FileKind.images.contains(($0.name as NSString).pathExtension.lowercased()) ? UIImage(data: $0.data) : nil) }
-      if thread == nil, let replyTo = canceled.replyTo {
-        reply?.target = Bubble(id: replyTo, text: "", fromPerson: false, author: nil, showsName: false, showsAvatar: false, reactions: [], isStreaming: false)
-      }
-      typing = true
-    }
+    .onChange(of: store.canceledDraft?.id) { _, _ in restoreCanceled() }
+    // A message handed here before this composer was on screen (the new chat's draft for its new agent).
+    .onAppear { restoreCanceled() }
+    .onAppear { hook?.take = { takeMessage() } }
     // Saved when typing pauses, not per letter (the list redraws on a save).
     .task(id: draft) {
       try? await Task.sleep(nanoseconds: 600_000_000)
       if !Task.isCancelled { store.setDraft(draft, for: draftKey) }
     }
     .onDisappear { store.setDraft(draft, for: draftKey) }
+  }
+
+  /** A canceled or handed-over message comes back here, if this is its composer and it is empty (the window's cancel). */
+  private func restoreCanceled() {
+    guard let canceled = store.canceledDraft, canceled.scope == draftKey else { return }
+    store.takeCanceledDraft(canceled.id)
+    guard draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, attachments.isEmpty else { return }
+    // The draft as it was written: its words and its picks, read back from its document.
+    let restored = ComposerDocument.draft(from: canceled.richText) ?? (canceled.text, [])
+    place(restored.draft, chips: restored.chips)
+    attachments = canceled.files.map { ComposerAttachment(name: $0.name, data: $0.data, preview: FileKind.images.contains(($0.name as NSString).pathExtension.lowercased()) ? UIImage(data: $0.data) : nil) }
+    if thread == nil, let replyTo = canceled.replyTo {
+      reply?.target = Bubble(id: replyTo, text: "", fromPerson: false, author: nil, showsName: false, showsAvatar: false, reactions: [], isStreaming: false)
+    }
+    typing = true
+  }
+
+  /** What is written, handed to the new chat, and the field emptied (the window's `takeComposer`). */
+  private func takeMessage() -> ComposerHook.Message {
+    let message = ComposerHook.Message(text: ComposerDocument.prompt(draft), richText: ComposerDocument.richText(draft, chips: chips), files: attachments)
+    place("", chips: [])
+    attachments = []
+    store.setDraft("", for: draftKey)
+    return message
   }
 
   /**
@@ -843,6 +891,20 @@ struct ChatComposer: View {
     let text = ComposerDocument.prompt(draft)
     let rich = ComposerDocument.richText(draft, chips: chips)
     let files = attachments
+    // The new chat's To: line decides first: it makes the agents and sends there, holds it, or lets it go here.
+    if let hook {
+      if hook.sendDisabled { return }
+      switch hook.submit?(ComposerHook.Message(text: text, richText: rich, files: files)) ?? .sendHere {
+      case .kept: return
+      case .taken:
+        place("", chips: [])
+        attachments = []
+        store.setDraft("", for: draftKey)
+        return
+      case .sendHere: break
+      }
+    }
+    defer { hook?.afterSend?() }
     // In a thread every message answers its first one; else the message Reply was chosen on.
     let answering = thread ?? reply?.target?.id
     place("", chips: [])
@@ -899,7 +961,7 @@ struct ChatRowView: View, Equatable {
     case .voiceCall(_, let seconds, let lines):
       VoiceCallLine(seconds: seconds, lines: lines)
     case .routines(_, let action, let routines):
-      RoutinesLine(action: action, routines: routines) { _ in openPage() }
+      RoutinesLine(action: action, routines: routines) { id in if let open = actions?.openRoutine { open(id) } else { openPage() } }
     case .notice(_, let text):
       EventLine { Text(text) }
     case .failedSend(_, let nonce):

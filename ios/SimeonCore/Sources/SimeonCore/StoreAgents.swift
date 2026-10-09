@@ -211,3 +211,29 @@ extension AppStore {
     forgetAgents(agentIds)
   }
 }
+
+extension AppStore {
+  /** The agent's voice (`updateAgent` with `voiceId`, as the Mac's voice picker saves it); thrown when refused, and the agent keeps its old one. */
+  public func setAgentVoice(_ agentId: String, _ voiceId: String) async throws {
+    guard let agent = agent(agentId), let backend else { return }
+    let was = agent.voiceId
+    if let index = agents.firstIndex(where: { $0.id == agentId }) { updateAgentLocally(index) { $0.voiceId = voiceId } }
+    var profile: JSON = ["name": .string(agent.name), "description": .string(agent.description), "voiceId": .string(voiceId)]
+    if !agent.isGroup { profile = profile.setting("title", .string(agent.title)) }
+    do { _ = try await backend.command("updateAgent", ["id": .string(agentId), "profile": profile]) } catch {
+      if let index = agents.firstIndex(where: { $0.id == agentId }) { updateAgentLocally(index) { $0.voiceId = was } }
+      throw error
+    }
+  }
+}
+
+extension AppStore {
+  /** The person's name from the name sheet (`POST user/name`); false when it was not saved. */
+  public func saveNameReporting(_ typed: String) async -> Bool {
+    let name = Onboarding.normalizedName(typed)
+    guard !name.isEmpty, let backend else { return false }
+    guard (try? await backend.server("user/name", method: "POST", body: ["name": .string(name)])) != nil else { return false }
+    if let account { self.account = Account(name: name, email: account.email) }
+    return true
+  }
+}

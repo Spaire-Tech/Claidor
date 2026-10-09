@@ -454,6 +454,7 @@ struct OnboardingFlow: View {
       nameFocused = false
       // Saved as the Mac's name step saves it, without waiting; empty is allowed (asked again later).
       let typed = name
+      if !Onboarding.normalizedName(typed).isEmpty { session.nameNeeded = false }
       Task { await store.saveName(typed) }
     }
     withAnimation(.easeOut(duration: 0.2)) { step = following }

@@ -86,6 +86,12 @@ final class SessionController {
   private(set) var firstRun: FirstRunGate = .done
   /** The name the server suggests for the person (`user/profile`), for the onboarding's name step. */
   private(set) var suggestedName: String?
+  /**
+   * The person has not given a name yet (`user/profile` has no
+   * `preferredName`): the Mac asks again after the first run (the window's
+   * name sheet, `namePromptFromSimeon`).
+   */
+  var nameNeeded = false
   @ObservationIgnored private var askedForNotifications = false
   let store = AppStore()
   private let vault = KeychainVault()
@@ -159,6 +165,7 @@ final class SessionController {
     store.account = account
     personName.value = account.name
     suggestedName = profile["preferredName"]?.text ?? profile["suggestedName"]?.text
+    nameNeeded = profile["preferredName"]?.text == nil
     Self.remember(account)
   }
 

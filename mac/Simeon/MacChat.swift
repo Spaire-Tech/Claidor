@@ -15,6 +15,8 @@ import SimeonCore
  */
 struct MacChat: View {
   let agentId: String
+  /** Shown under the new chat's To: line (its one agent): the line stands in for the header and its buttons. */
+  var inNewChat = false
   @Environment(AppStore.self) private var store
   @Environment(MacNavigation.self) private var navigation
   @Environment(\.openWindow) private var openWindow
@@ -51,8 +53,10 @@ struct MacChat: View {
         .animation(.snappy(duration: 0.2), value: finding)
       }
       .safeAreaBar(edge: .bottom, spacing: 0) { ChatComposer(agentId: agentId, thread: thread).id(thread ?? "chat") }
-      // Esc leaves a thread (the window's), unless find is open, which Esc closes first; a sheet takes its own Esc.
-      .onExitCommand { if thread != nil && !finding { leaveThread() } }
+      // Esc leaves a thread (the window's), unless find is open, which Esc closes first; else it closes the agent's pane (`CDn`). A sheet takes its own Esc.
+      .onExitCommand {
+        if thread != nil && !finding { leaveThread() } else if !finding && navigation.paneOpen { navigation.closePane() }
+      }
       .environment(reply)
       .background(Ink.ground)
       .background { WindowReader(window: $hostWindow) }
@@ -76,28 +80,27 @@ struct MacChat: View {
       .navigationTitle(agent?.name ?? "")
       .toolbar(removing: .title)
       .toolbar {
-        ToolbarItem(placement: .principal) {
-          if let thread {
-            // In a thread, the window's breadcrumb: the agent (back to the chat) › the thread.
-            ThreadBreadcrumb(agentId: agentId, rootId: thread, back: leaveThread, details: openPage)
-          } else {
-            Button { openPage() } label: { MacChatTitle(agentId: agentId) }
-              .buttonStyle(.plain)
-              .help("Show \(agent?.name ?? "the agent")'s page")
+        if !inNewChat {
+          ToolbarItem(placement: .principal) {
+            if let thread {
+              // In a thread, the window's breadcrumb: the agent (back to the chat) › the thread; its details button toggles the pane.
+              ThreadBreadcrumb(agentId: agentId, rootId: thread, back: leaveThread, details: { navigation.toggleDetails() })
+            } else {
+              // The window's header button (`aSn`): the agent's pane, opened on Profile, or closed.
+              Button { navigation.toggleAgentSettings() } label: { MacChatTitle(agentId: agentId) }
+                .buttonStyle(.plain)
+                .help("View agent settings")
+                .accessibilityLabel("View agent settings")
+                .accessibilityValue(navigation.paneOpen ? "expanded" : "collapsed")
+            }
           }
-        }
-        ToolbarItemGroup(placement: .primaryAction) {
-          if store.canCall && agent?.isGroup == false {
-            Button { if let agent { store.startCall(agent) } } label: { Label("Call", systemImage: "phone") }
-              .disabled(agent == nil || store.call != nil)
-              .help("Call \(agent?.name ?? "")")
+          ToolbarItemGroup(placement: .primaryAction) {
+            if store.canCall && agent?.isGroup == false {
+              Button { if let agent { store.startCall(agent) } } label: { Label("Call", systemImage: "phone") }
+                .disabled(agent == nil || store.call != nil)
+                .help("Call \(agent?.name ?? "")")
+            }
           }
-          if agent?.isGroup == false {
-            Button { openWindow(id: "computer", value: agentId) } label: { Label("Computer", systemImage: "display") }
-              .help("Open \(agent?.name ?? "the agent")'s computer")
-          }
-          Button { openPage() } label: { Label("Info", systemImage: "info.circle") }
-            .help(agent?.isGroup == true ? "Members" : "Profile, routines and computer")
         }
       }
       .sheet(isPresented: $showsCall) {
@@ -128,6 +131,7 @@ struct MacChat: View {
       }
       .onAppear {
         actions.openPage = { openPage() }
+        actions.openRoutine = { id in navigation.openPane(.routines, agent: agentId, routine: id) }
         actions.openComputer = { openWindow(id: "computer", value: agentId) }
         actions.openExchange = { exchange = $0 }
         actions.openThread = { root in store.openThread(root, in: agentId) }
@@ -144,7 +148,7 @@ struct MacChat: View {
       }
   }
 
-  private func openPage() { navigation.sheet = .agentPage(agentId, routine: nil) }
+  private func openPage() { navigation.openPane(.profile, agent: agentId) }
 
   /** Back from a thread to the chat (the agent's name in the breadcrumb, or Esc); what was being answered is let go. */
   private func leaveThread() {
@@ -182,7 +186,9 @@ struct MacChat: View {
   private func runSlashAction(_ id: String) {
     switch id {
     case "open-hidden-chats": navigation.sheet = .hiddenAgents
-    case "info:members", "info:settings": openPage()
+    // Members opens on the Computer tab, where a group's members are (a request with no section lands there); Chat Settings on Profile.
+    case "info:members": navigation.openPane(.computer, agent: agentId)
+    case "info:settings": navigation.openPane(.profile, agent: agentId)
     case "settings:general": openSettings()
     case "overlay:plugins": navigation.connectAppsAsked = true
     case "theme:system", "theme:light", "theme:dark":
@@ -606,11 +612,12 @@ struct MacPalette: View {
           store.revealing[agentId] = entryId
           navigation.selected = agentId
         },
-        openRoutine: { hit in navigation.sheet = .agentPage(hit.agentId, routine: hit.routine.id) },
+        // The window opens the routine's agent on its Routines tab (`onOpenRoutine(agentId)`).
+        openRoutine: { hit in close(); navigation.openPane(.routines, agent: hit.agentId) },
         openSheet: { which in
           switch which {
-          case .newAgent: navigation.sheet = .newAgent
-          case .newGroup: navigation.sheet = .newGroup
+          // On the Mac a group is made on the new chat's To: line.
+          case .newAgent, .newGroup: close(); navigation.openNewChat()
           case .settings: close(); openSettings()
           }
         },

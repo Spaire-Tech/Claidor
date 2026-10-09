@@ -61,6 +61,8 @@ public struct Agent: Identifiable, Hashable, Sendable {
   public var lastEntry: JSON?
   /** Why the agent waits on the person (`awaitingUserResponse.reason`). */
   public var waitingReason: String?
+  /** When it was made (ms): the oldest one titled Chief of Staff is the Chief of Staff. */
+  public var createdAt: Double?
 
   public init(id: String, name: String, title: String = "", description: String = "", colour: String? = nil, avatarDataURL: String? = nil, isGroup: Bool = false, memberIds: [String] = [], lastMessagePreview: String? = nil, lastActivityAt: Double? = nil, hasUnread: Bool = false, unreadCount: Int = 0, isRunningTurn: Bool = false, isComposing: Bool = false, activityLabel: String? = nil, isHidden: Bool = false) {
     self.id = id; self.name = name; self.title = title; self.description = description; self.colour = colour
@@ -102,6 +104,22 @@ public struct Agent: Identifiable, Hashable, Sendable {
     lastMessageId = json["lastMessageId"]?.text
     if let entry = json["lastEntry"], entry != .null { lastEntry = entry }
     waitingReason = json["awaitingUserResponse"]?["reason"]?.text
+    createdAt = json["createdAt"]?.double
+  }
+
+  /**
+   * The Chief of Staff (`__simeonFindCoo`): the oldest agent titled "Chief
+   * of Staff" or "COO", whatever its name. His title and description are
+   * his own; his name and avatar can change.
+   */
+  public static func chiefOfStaff(in agents: [Agent]) -> Agent? {
+    var found: Agent?
+    for agent in agents {
+      let title = agent.title.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+      guard title == "chief of staff" || title == "coo" else { continue }
+      if found == nil || (agent.createdAt ?? 0) < (found?.createdAt ?? 0) { found = agent }
+    }
+    return found
   }
 
   /** The agent's palette: its stored colour, else the window's default for its id. */
