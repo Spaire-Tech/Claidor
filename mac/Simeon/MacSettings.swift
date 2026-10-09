@@ -5,11 +5,11 @@ import SimeonCore
 /**
  * Settings (⌘,), in the Mac's Settings window: the shipped window's
  * sections (`SETTINGS_SECTIONS` with Updates taken out by the patch).
- * General: Account, Appearance, Agent (Timezone, Auto-review and its
- * rules). Usage & Billing, listed once the account's usage has been read
- * (`useVisibleSettingsSections`): the meters, the upgrade card, Cancel
- * Trial, Manage Plan. Execution on Local Computer and Security Key come
- * with slices 7 and 8.
+ * General: Account, Appearance, Agent (Timezone, Execution on Local
+ * Computer, Auto-review and its rules). Usage & Billing, listed once the
+ * account's usage has been read (`useVisibleSettingsSections`): the meters,
+ * the upgrade card, Cancel Trial, Manage Plan. Security Key comes with
+ * slice 8.
  */
 struct MacSettings: View {
   @Environment(AppStore.self) private var store
@@ -42,6 +42,7 @@ struct MacGeneralSettings: View {
       MacAppearanceSection()
       Section("Agent") {
         MacTimeZoneRow(settings: $settings, saving: $saving)
+        MacLocalExecutionRow()
         MacAutoReview(settings: $settings, saving: $saving)
       }
     }
