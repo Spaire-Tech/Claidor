@@ -479,7 +479,7 @@ AwaitExternalShell, ExternalRead, CopyToBox and CopyFromBox reach it.
 |---|---|---|
 | Run a command with its output streamed; run one in the background; read a file (with a size cap); list a folder | `production-executor.ts` | |
 | Where: `SAND_LOCAL_EXEC_ROOT`, else `SAND_AGENT_PROJECT_DIR`, else the home folder; commands carry `SIMEON_AGENT=1` | same | |
-| Always refused: `~/.ssh`, `.gnupg`, `.aws`, `.azure`, `.config/gcloud`, `.kube`, `.docker/config.json`, `.netrc`, `.npmrc`, `.pypirc`, `.simeon`, `.caisra`, `.cursor`, `Library/Keychains`, `Library/Cookies`, `Application Support/Simeon`, the browsers' profiles, `/etc/shadow`, `master.passwd` | `shared/sensitive-local-paths.ts` | |
+| Always refused: `~/.ssh`, `.gnupg`, `.aws`, `.azure`, `.config/gcloud`, `.kube`, `.docker/config.json`, `.netrc`, `.npmrc`, `.pypirc`, `.simeon` and the earlier data folder, `.cursor`, `Library/Keychains`, `Library/Cookies`, `Application Support/Simeon`, the browsers' profiles, `/etc/shadow`, `master.passwd` | `shared/sensitive-local-paths.ts` | |
 | The setting: Never, Ask (the default), Always; an admin cap from the account can lower it | `localToolPermission.get/set/ceiling` | |
 | Ask: an approval covers that exact action and lasts 10 minutes (`~/.simeon/local-tool-approvals.json`); the Allow card in the chat | `recordApproval`, `clearApprovals`, `resolveLocalToolPermission` | |
 | Refused when the app is not watching it (no heartbeat for 90 s) | host `local-exec/` | |
@@ -549,7 +549,7 @@ itself.
 | The local Docker box (`SAND_BOX_RUNTIME=local-docker`) | Internal testing only (`CLAUDE.md`); the Electron app stays for it |
 | The text-only fallback (`inference-router.ts`) | Off by default |
 | PR-review preferences, `openCloudAgent`'s upstream uses, Windows code | Upstream leftovers |
-| Copying the "Grok Bot" folder and `~/.caisra` | One-time moves for earlier installs; the Swift app starts from `~/.simeon` |
+| Copying the upstream app's folder and the earlier data folder (main `startup/`) | One-time moves for earlier installs; the Swift app starts from `~/.simeon` |
 | Inference routing, box runtime switch | Always the product provider and the cloud |
 
 ---
