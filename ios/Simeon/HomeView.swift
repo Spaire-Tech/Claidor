@@ -27,7 +27,6 @@ struct HomeView: View {
   /** A screen to open at launch (`--screen=`, the screenshots). */
   let opening: String?
   @Environment(AppStore.self) private var store
-  @AppStorage("simeon.theme") private var theme = "system"
   @State private var path: [String] = []
   @State private var sheet: HomeSheet?
   @State private var openedAtLaunch = false
@@ -35,11 +34,15 @@ struct HomeView: View {
   @State private var profile: AgentRef?
   @State private var showsHidden = false
   @State private var query = ""
+  @State private var filter = ListFilter.all
+
+  /** The filter menu's choice, as Messages': every chat, or only the unread ones. */
+  enum ListFilter { case all, unread }
 
   /** The rows: every listed chat, or those the search finds (hidden ones too) by name, title, description or last line. */
   private var shown: [Agent] {
     let words = query.trimmingCharacters(in: .whitespaces)
-    guard !words.isEmpty else { return store.listed }
+    guard !words.isEmpty else { return filter == .unread ? store.listed.filter(\.hasUnread) : store.listed }
     return store.agents.filter { agent in
       agent.name.localizedCaseInsensitiveContains(words) || agent.title.localizedCaseInsensitiveContains(words)
         || agent.description.localizedCaseInsensitiveContains(words) || agent.previewLine.localizedCaseInsensitiveContains(words)
@@ -49,7 +52,7 @@ struct HomeView: View {
   var body: some View {
     NavigationStack(path: $path) {
       List {
-        if query.isEmpty && !store.pinned.isEmpty {
+        if query.isEmpty && filter == .all && !store.pinned.isEmpty {
           PinGrid(pins: store.pinned, open: open, menu: menu)
             .listRowBackground(Ink.listGround)
             .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 10, trailing: 12))
@@ -84,7 +87,7 @@ struct HomeView: View {
           .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 16))
           .listRowSeparatorTint(Ink.hairline)
         }
-        if query.isEmpty && !store.hiddenAgents.isEmpty && !store.listed.isEmpty {
+        if query.isEmpty && filter == .all && !store.hiddenAgents.isEmpty && !store.listed.isEmpty {
           Button { showsHidden = true } label: {
             HStack {
               Text("Hidden Agents")
@@ -111,7 +114,7 @@ struct HomeView: View {
       .overlay {
         if shown.isEmpty && (store.pinned.isEmpty || !query.isEmpty) && !store.isLoading {
           VStack(spacing: 14) {
-            Text(query.isEmpty ? "No saved agents yet." : "No results").font(.system(size: 15.6)).foregroundStyle(Ink.secondary)
+            Text(!query.isEmpty ? "No results" : filter == .unread ? "No unread chats" : "No saved agents yet.").font(.system(size: 15.6)).foregroundStyle(Ink.secondary)
             if query.isEmpty && !store.hiddenAgents.isEmpty {
               Button("Show Hidden Agents") { showsHidden = true }
                 .buttonStyle(GreyButtonStyle())
@@ -125,33 +128,33 @@ struct HomeView: View {
         ListBottomBar(query: $query, newAgent: { sheet = .newAgent }, newGroup: { sheet = .newGroup })
       }
       .navigationBarTitleDisplayMode(.inline)
+      .navigationTitle("Messages")
       .toolbar {
-        // The person's name at the top, with its menu, as Instagram has it.
-        ToolbarItem(placement: .principal) {
+        // The account at the top left, straight to Settings.
+        ToolbarItem(placement: .topBarLeading) {
+          Button { sheet = .settings } label: {
+            Text(store.account?.initials.isEmpty == false ? store.account!.initials : "?")
+              .font(.system(size: 15, weight: .semibold))
+          }
+          .accessibilityLabel("Settings")
+        }
+        // The filter at the top right, as Messages': every chat, the hidden ones, or only the unread.
+        ToolbarItem(placement: .topBarTrailing) {
           Menu {
-            if let account = store.account, !account.email.isEmpty {
-              Text(account.email)
+            Toggle(isOn: Binding(get: { filter == .all }, set: { if $0 { filter = .all } })) {
+              Label("Messages", systemImage: "bubble.left.and.bubble.right")
             }
-            Button { sheet = .settings } label: { Label("Settings", systemImage: "gearshape") }
-            Picker(selection: $theme) {
-              Label("System", systemImage: "circle.lefthalf.filled").tag("system")
-              Label("Light", systemImage: "sun.max").tag("light")
-              Label("Dark", systemImage: "moon").tag("dark")
-            } label: {
-              Label("Appearance", systemImage: "circle.lefthalf.filled")
-            }
-            .pickerStyle(.menu)
-            if !store.hiddenAgents.isEmpty {
-              Button { showsHidden = true } label: { Label("Hidden Agents (\(store.hiddenAgents.count))", systemImage: "eye.slash") }
+            Button { showsHidden = true } label: { Label("Hidden Agents", systemImage: "eye.slash") }
+              .disabled(store.hiddenAgents.isEmpty)
+            Section("Filter By") {
+              Toggle(isOn: Binding(get: { filter == .unread }, set: { filter = $0 ? .unread : .all })) {
+                Label("Unread", systemImage: "message.badge")
+              }
             }
           } label: {
-            HStack(spacing: 5) {
-              Text(store.account?.name ?? "Simeon").font(.system(size: 19, weight: .bold)).foregroundStyle(Ink.primary).lineLimit(1)
-              Image(systemName: "chevron.down").font(.system(size: 12, weight: .bold)).foregroundStyle(Ink.primary)
-            }
-            .contentShape(.rect)
+            Image(systemName: "line.3.horizontal.decrease")
           }
-          .accessibilityLabel("Account and settings")
+          .accessibilityLabel("Filter")
         }
       }
       .navigationDestination(for: String.self) { agentId in
@@ -345,34 +348,40 @@ struct PinGrid<Actions: View>: View {
   @Environment(AppStore.self) private var store
   @State private var target: String?
 
-  private let columns = Array(repeating: GridItem(.fixed(96), spacing: 9.6), count: 3)
-
   var body: some View {
-    LazyVGrid(columns: columns, alignment: .center, spacing: 14.4) {
-      ForEach(pins) { agent in
-        Button { open(agent.id) } label: {
-          PinTile(agent: agent, members: store.members(of: agent)).equatable()
+    // Rows of three, each centred as Messages centres its pins: one pin sits in the middle.
+    let rows = stride(from: 0, to: pins.count, by: 3).map { Array(pins[$0..<min($0 + 3, pins.count)]) }
+    VStack(spacing: 14.4) {
+      ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+        HStack(spacing: 9.6) {
+          ForEach(row) { agent in tile(agent) }
         }
-        .buttonStyle(PinPress())
-        .contextMenu { menu(agent) } preview: { ChatPeek(agentId: agent.id).environment(store) }
-        .draggable(agent.id) {
-          AgentAvatar(agent: agent, members: store.members(of: agent)).frame(width: 72, height: 72)
-        }
-        .dropDestination(for: String.self) { ids, _ in
-          guard let moved = ids.first, moved != agent.id, let index = store.pinnedIds.firstIndex(of: agent.id) else { return false }
-          Task { await store.movePin(moved, to: index) }
-          return true
-        } isTargeted: { over in
-          // Only a change is written: written on every call, a call made while the grid was drawn drew it again, and again.
-          let next = over ? agent.id : (target == agent.id ? nil : target)
-          if next != target { target = next }
-        }
-        .opacity(target == agent.id ? 0.55 : 1)
-        .transition(.scale(scale: 0.8).combined(with: .opacity))
       }
     }
     .frame(maxWidth: .infinity)
     .padding(.vertical, 7.2)
+  }
+
+  private func tile(_ agent: Agent) -> some View {
+    Button { open(agent.id) } label: {
+      PinTile(agent: agent, members: store.members(of: agent)).equatable()
+    }
+    .buttonStyle(PinPress())
+    .contextMenu { menu(agent) } preview: { ChatPeek(agentId: agent.id).environment(store) }
+    .draggable(agent.id) {
+      AgentAvatar(agent: agent, members: store.members(of: agent)).frame(width: 72, height: 72)
+    }
+    .dropDestination(for: String.self) { ids, _ in
+      guard let moved = ids.first, moved != agent.id, let index = store.pinnedIds.firstIndex(of: agent.id) else { return false }
+      Task { await store.movePin(moved, to: index) }
+      return true
+    } isTargeted: { over in
+      // Only a change is written: written on every call, a call made while the grid was drawn drew it again, and again.
+      let next = over ? agent.id : (target == agent.id ? nil : target)
+      if next != target { target = next }
+    }
+    .opacity(target == agent.id ? 0.55 : 1)
+    .transition(.scale(scale: 0.8).combined(with: .opacity))
   }
 }
 

@@ -33,7 +33,10 @@ struct ChatView: View {
       .environment(messageMenu)
       // Bars, not insets: the messages scroll under the call and the composer and fade there, as in Messages.
       .safeAreaBar(edge: .top, spacing: 0) {
-        ChatCallSlot(agentId: agentId, showsCall: $showsCall, showsTranscript: $showsTranscript)
+        VStack(spacing: 0) {
+          ChatHeadline(agentId: agentId) { showsPage = true }
+          ChatCallSlot(agentId: agentId, showsCall: $showsCall, showsTranscript: $showsTranscript)
+        }
       }
       .safeAreaBar(edge: .bottom, spacing: 0) { ChatComposer(agentId: agentId) }
       .environment(reply)
@@ -42,7 +45,6 @@ struct ChatView: View {
       // the screen following the finger. The chat had hidden it for a bar of its own, and hidden, it does not swipe.
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
-        ToolbarItem(placement: .principal) { ChatTitle(agentId: agentId) { showsPage = true } }
         if store.canCall && !store.groupIds.contains(agentId) {
           ToolbarItem(placement: .topBarTrailing) { ChatCallButton(agentId: agentId) }
         }
@@ -305,36 +307,35 @@ struct TypingSlot: View {
 }
 
 /**
- * The middle of the chat's bar, as Messages has it: the agent's butterfly
- * (its members side by side for a group) with its name and a chevron under
- * it; a tap opens its page. Only this redraws when the agent changes.
+ * The agent at the top of the chat, as Messages has it: its butterfly at
+ * 52 pt (its members side by side for a group) with its name in a glass
+ * capsule under it, up beside the bar's back and call buttons; a tap opens
+ * its page. Only this redraws when the agent changes.
  */
-struct ChatTitle: View {
+struct ChatHeadline: View {
   let agentId: String
   let open: () -> Void
   @Environment(AppStore.self) private var store
 
   var body: some View {
     if let agent = store.agent(agentId) {
-      VStack(spacing: 1) {
-        Group {
-          if agent.isGroup {
-            GroupStack(members: store.members(of: agent), memberSize: 28)
-          } else {
-            AgentAvatar(agent: agent, moves: true).frame(width: 28, height: 28)
-          }
-        }
-        .frame(height: 28)
-        HStack(spacing: 2) {
-          Text(agent.name).font(.system(size: 12, weight: .medium)).foregroundStyle(Ink.primary).lineLimit(1)
-          Image(systemName: "chevron.right").font(.system(size: 8, weight: .bold)).foregroundStyle(Ink.tertiary)
-        }
+      VStack(spacing: 4) {
+        AgentAvatar(agent: agent, members: store.members(of: agent), groupInARow: true, moves: true)
+          .frame(width: agent.isGroup ? nil : 52, height: 52)
+        Text(agent.name).font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.primary).lineLimit(1)
+          .padding(.horizontal, 12).padding(.vertical, 4)
+          .glassEffect(.regular, in: .capsule)
       }
+      .padding(.horizontal, 70)
       .contentShape(.rect)
       .onTapGesture(perform: open)
       .accessibilityElement(children: .ignore)
       .accessibilityLabel("\(agent.name), details")
       .accessibilityAddTraits(.isButton)
+      // Up into the bar's row, beside its back and call buttons.
+      .padding(.top, -34)
+      .padding(.bottom, 6)
+      .frame(maxWidth: .infinity)
     }
   }
 }

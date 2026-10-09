@@ -431,6 +431,22 @@ cannot be called, made a bar button UIKit could not lay out ("Unable to
 simultaneously satisfy constraints … width == 0"); it is there only when
 there is a call to make.
 
+## 14. Round of 9 October, evening
+
+- **The list's top**: "Messages" in the middle; the account (initials) at
+  the left opens Settings directly; the filter at the right, as Messages':
+  Messages (all), Hidden Agents, and Filter By: Unread (Messages' "Recently
+  Deleted" has no counterpart here, the host deletes for good; its place is
+  the hidden agents; no "Manage Filtering").
+- **Pins** are centred, rows of three: one pin sits in the middle.
+- **The chat's top**: the butterfly back at 52 pt with the name in a glass
+  capsule, up beside the system bar's back and call buttons.
+- **The computer**: under the screen, the clipboard at the left (Paste from
+  Phone pastes the phone's clipboard where the cursor is; Copy to Phone
+  copies what is selected on the computer) and the keyboard at the right,
+  typing into the computer key by key (return and delete too). Either takes
+  over the screen, since the computer takes keys only from one in control.
+
 ## Suggested order (the founder decides)
 
 1. The chat's look: the bubble, the top bar, markdown, brand names with logos, agent names with butterflies.
