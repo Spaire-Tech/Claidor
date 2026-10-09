@@ -33,7 +33,7 @@ import { randomUUID } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { WORK_CAME_BACK_NUDGE } from "../../../shared/voice-call/voice-call-prompt.js";
+import { EARLIER_WORK_CAME_BACK_NUDGES, WORK_CAME_BACK_NUDGE } from "../../../shared/voice-call/voice-call-prompt.js";
 import {
   callEndedNudge,
   clampRelay,
@@ -92,7 +92,7 @@ function transcriptOf(record: VoiceCallRecordInput): { speaker: "user" | "agent"
   return record.transcript
     .filter(isRecord)
     .map((line) => ({ speaker: line.speaker === "agent" ? "agent" as const : "user" as const, text: text(line.text).trim() }))
-    .filter((line) => line.text.length > 0 && line.text !== WORK_CAME_BACK_NUDGE)
+    .filter((line) => line.text.length > 0 && line.text !== WORK_CAME_BACK_NUDGE && !EARLIER_WORK_CAME_BACK_NUDGES.includes(line.text))
     .slice(0, 400);
 }
 

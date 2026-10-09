@@ -214,7 +214,7 @@ class TestThePlatformAgent:
         assert sorted(prompt["tool_ids"]) == sorted(fake.tools)
         assert conversation["tts"]["model_id"] == VOICE_TTS_MODEL
         # A steadier voice than ElevenLabs' default 0.5.
-        assert conversation["tts"]["stability"] == 0.7
+        assert conversation["tts"]["stability"] == voice.VOICE_TTS_STABILITY == 0.85
         assert conversation["turn"] == {
             "turn_timeout": 7,
             "silence_end_call_timeout": 25,

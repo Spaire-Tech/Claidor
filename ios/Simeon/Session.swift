@@ -72,6 +72,13 @@ final class SessionController {
   private(set) var phase: Phase = .starting
   /** The sign-in screen's button whose sign-in is under way (it shows the spinner). */
   private(set) var signingInWith: SignIn.Provider?
+  /**
+   * Signed in, the app still loading (the agents, whether this is a first
+   * run, the account): the sign-in screen stays and says so, rather than an
+   * empty list (the founder, 9 October 2026: "it stays in a empty screen
+   * waiting").
+   */
+  private(set) var finishing = false
   /** The first run (Onboarding.swift): being looked up, to do, or done. Only a new account does it. */
   enum FirstRunGate: Equatable { case checking, needed, done }
   private(set) var firstRun: FirstRunGate = .done
@@ -113,24 +120,56 @@ final class SessionController {
 
   private let personName = PersonNameBox()
 
-  private func enter() async {
+  /**
+   * Into the app. At launch (under the launch cover) the list shows at once;
+   * straight after a sign-in (`holding`) the sign-in screen stays, saying
+   * so, until the agents are in, the first run is decided and the account
+   * is known (a moment at most for that), so the list never shows empty and
+   * the account button never shows a "?" (the founder, 9 October 2026).
+   */
+  private func enter(holding: Bool = false) async {
     let api = makeAPI()
     self.api = api
     firstRun = .checking
-    phase = .signedIn
+    // The last account seen on this phone, so its initials are there before the profile answers.
+    if store.account == nil, let known = Self.rememberedAccount() { store.account = known; personName.value = known.name }
+    if !holding { phase = .signedIn }
     // The voice call: ElevenLabs' kit on the phone, the Mac's call protocol in SimeonCore (LiveCall).
     let backend = LiveBackend(gateway: Gateway(api: api), api: api)
     let names = personName
     let store = store
-    backend.call = LiveCall(backend: backend, transport: ElevenLabsVoice(), personName: { names.value }, voiceFor: { agentId in await store.ensureVoice(agentId) })
-    await store.attach(backend)
-    async let profile = api.profile()
-    await checkFirstRun()
-    if let profile = try? await profile {
-      store.account = Account(profile: profile)
-      names.value = store.account?.name
-      suggestedName = profile["preferredName"]?.text ?? profile["suggestedName"]?.text
+    backend.call = LiveCall(backend: backend, transport: ElevenLabsVoice(), personName: { names.value }, voiceFor: { agentId in await store.ensureVoice(agentId) }, tones: CallTonePlayer())
+    // The profile is asked for first and applied the moment it answers, beside the roster.
+    Task { [weak self] in
+      guard let profile = try? await api.profile(), let self, self.api === api else { return }
+      self.apply(profile: profile)
     }
+    await store.attach(backend)
+    await checkFirstRun()
+    guard holding, self.api === api else { return }
+    let deadline = Date().addingTimeInterval(3)
+    while store.account == nil && Date() < deadline { try? await Task.sleep(nanoseconds: 100_000_000) }
+    phase = .signedIn
+  }
+
+  private func apply(profile: JSON) {
+    guard let account = Account(profile: profile) else { return }
+    store.account = account
+    personName.value = account.name
+    suggestedName = profile["preferredName"]?.text ?? profile["suggestedName"]?.text
+    Self.remember(account)
+  }
+
+  private static let accountKey = "simeon.account"
+
+  /** The account's name and e-mail on this phone (not a secret: what Settings shows), for its initials at the next launch. */
+  private static func remember(_ account: Account?) {
+    if let account { UserDefaults.standard.set(["name": account.name, "email": account.email], forKey: accountKey) } else { UserDefaults.standard.removeObject(forKey: accountKey) }
+  }
+
+  private static func rememberedAccount() -> Account? {
+    guard let saved = UserDefaults.standard.dictionary(forKey: accountKey) as? [String: String], let name = saved["name"], let email = saved["email"] else { return nil }
+    return Account(name: name, email: email)
   }
 
   /**
@@ -140,12 +179,14 @@ final class SessionController {
    * agents turn up (its hand-off checks again before making anything).
    */
   private func checkFirstRun() async {
+    // Still signed in (the phase is still `signingIn` while a sign-in holds its screen): `api` goes on signing out.
+    let entered = api
     var answer = await store.firstRun()
-    if answer == .unknown && phase == .signedIn {
+    if answer == .unknown && entered != nil && api === entered {
       try? await Task.sleep(nanoseconds: 2_500_000_000)
       if store.agents.isEmpty { answer = await store.firstRun() } else { answer = .seen }
     }
-    guard phase == .signedIn else { return }
+    guard entered != nil, api === entered else { return }
     firstRun = answer == .seen ? .done : .needed
     if firstRun == .done { askForNotifications() }
   }
@@ -167,6 +208,7 @@ final class SessionController {
   private func ended() {
     store.detach()
     Notifications.shared.forget()
+    Self.remember(nil)
     api = nil
     askedForNotifications = false
     firstRun = .done
@@ -200,7 +242,9 @@ final class SessionController {
     switch outcome {
     case .tokens(let pair):
       vault.write(SessionTokens(pair: pair, nowMs: Date().timeIntervalSince1970 * 1000))
-      await enter()
+      finishing = true
+      await enter(holding: true)
+      finishing = false
     case .stopped:
       phase = .signedOut(message: nil)
     case .refused:
@@ -214,6 +258,7 @@ final class SessionController {
     store.detach()
     await Notifications.shared.stop()
     await api?.signOut()
+    Self.remember(nil)
     api = nil
     askedForNotifications = false
     firstRun = .done
@@ -312,8 +357,22 @@ final class SheetState: @unchecked Sendable {
     }
   }
 
+  /**
+   * The poll's pause, cut short when the sheet closes. The pause grows to
+   * 10 s while the person is on Google's or Apple's page, and one begun
+   * before the sheet closed used to run to its end: up to ten seconds on
+   * the sign-in screen after the person had confirmed (the founder, 9
+   * October 2026: "its lagging terrible"). Once closed, half a second
+   * between asks (the pair is written as the page answers the confirm).
+   */
   func wait(_ seconds: Double) async {
-    let isOpen = lock.withLock { open }
-    try? await Task.sleep(nanoseconds: UInt64((isOpen ? seconds : 1) * 1_000_000_000))
+    let deadline = Date().addingTimeInterval(seconds)
+    while Date() < deadline {
+      if !lock.withLock({ open }) {
+        try? await Task.sleep(nanoseconds: 500_000_000)
+        return
+      }
+      try? await Task.sleep(nanoseconds: 100_000_000)
+    }
   }
 }

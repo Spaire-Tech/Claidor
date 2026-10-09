@@ -844,6 +844,35 @@ then "the apple button make it white/black. not blue" and the Terms line
   addresses the Mac's window and the web app already use; both answer 404
   until those pages are written.
 
+## 28. The call: rings, hang-up, one avatar, calm, and its turn (9 October 2026)
+
+The founder: "i want sounds for when it rings, and when it hangs up like in
+the mac. the transcript page shows a different avatar. the voice changes
+tone randomly. i want them all the be calm." And of a routine updated on a
+call: "is there anything i c--- (it cuts itself …) … when he says hes going
+to do it, and i see him do it, its fine. he doesnt need to tell me he's
+done it. also, he cant cut himself like this, wait of turn."
+
+- **Ring and hang-up** (`CallTones` in the core, `CallTonePlayer` in
+  Voice.swift): the Mac banner's tones, made as audio in memory: the
+  ringback (440 and 480 Hz, 0.8 s on, 0.4 s off) twice before the voice
+  starts, then once at a time while the call is still connecting (seven at
+  most); the two falling notes when a call that was live ends. The voice
+  starts only once the ring is over.
+- **One avatar**: the call drew a blue butterfly for any agent with no
+  colour saved (`agent.colour ?? "blue"`) and never a picture. It is now
+  the agent's own (`CallAvatar`: its picture, else its butterfly in the
+  colour the app draws it in).
+- **Calm**: the speech's stability is 0.85 on the server (was 0.7), the
+  voice is told to keep one calm tone and never to exclaim, and no greeting
+  ends in "!" any more.
+- **Its turn**: work that came back waits until the voice has stopped and
+  the person is not talking, for a second; it went in the moment it
+  arrived, cutting the voice off. A finished action the voice already said
+  it was doing is not announced again (the voice stays silent unless
+  asked); an answer or a failure is said. The Mac banner no longer pushes it
+  in after 8 s while the voice talks either.
+
 ## Suggested order (the founder decides)
 
 1. The chat's look: the bubble, the top bar, markdown, brand names with logos, agent names with butterflies.

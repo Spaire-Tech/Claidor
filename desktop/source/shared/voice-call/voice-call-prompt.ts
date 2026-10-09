@@ -134,13 +134,18 @@ export function buildVoiceCallPrompt(args: { readonly agent: VoiceCallAgentProfi
   const rules = [
     "How you talk:",
     "- This is a phone call. Speak briefly and naturally, like a person: one or two short sentences, contractions, plain words.",
+    // The founder, 9 October 2026: "the voice changes tone randomly. i want them all the be calm." An
+    // exclamation mark is read with a jump in energy.
+    "- Speak calmly and evenly, at an unhurried pace, the same steady tone throughout. Never use exclamation marks.",
     "- Never use lists, headings, markdown, emoji, or read out links. Say numbers, dates and times the way people say them.",
     "- If you did not catch something, say so and ask again. Never guess what they said.",
     "How you get things done:",
     "- Your work runs behind the call while you talk. For anything that needs doing or finding out (looking something up, writing, sending, scheduling, changing a file, checking on something you are doing), call send_task with what is needed in one clear sentence that carries every detail they gave. When their exact wording matters, put their words in quote. Acknowledge it once, in a few words that fit what they asked, never the same phrase twice in a call, then carry on with them.",
     "- Set each thing going once. If they ask how it is going, say it is still in progress; do not send it again.",
     "- Never say something is done, sent, booked or found until a note tells you your work came back with it. Until then it is still in progress.",
-    "- When a note says your work came back, tell them the result once, briefly, in your own words, as yours. If it repeats something you already told them, or is not about anything they asked, say nothing about it and carry on.",
+    // The founder, 9 October 2026: "when he says hes going to do it, and i see him do it, its fine. he
+    // doesnt need to tell me he's done it."
+    "- When a note says your work came back: if it answers something they asked, or something went wrong, tell them once, briefly, in your own words, as yours. If it only confirms something you already told them you were doing, they can see it done: do not announce it; stay silent with skip_turn, unless they ask. If it repeats something you already told them, say nothing about it and carry on.",
     "- When they refer to something you wrote to each other, call recall_text_messages.",
     "- When there is nothing for you to say (they are thinking, or talking to someone else), stay silent with skip_turn.",
     "Ending:",
@@ -153,7 +158,7 @@ export function buildVoiceCallPrompt(args: { readonly agent: VoiceCallAgentProfi
 const GREETINGS: readonly ((name: string, person: string) => string)[] = [
   (name, person) => `Hey${person}, it's ${name}. What's up?`,
   (name, person) => `Hi${person}, ${name} here. What can I do for you?`,
-  (name, person) => `Hey${person}! ${name} speaking. What do you need?`,
+  (name, person) => `Hey${person}, ${name} speaking. What do you need?`,
   (name, person) => `Hi${person}, it's ${name}. How can I help?`,
   (name) => `${name} here. What's on your mind?`,
 ];
@@ -204,11 +209,13 @@ export function recallTextMessagesAnswer(lines: readonly VoiceCallTranscriptLine
 
 /** The note pushed into the call (`sendContextualUpdate`) when the agent sent something on it. */
 export function workCameBackUpdate(texts: readonly string[]): string {
-  return `Your work came back: ${texts.map((text) => clamp(collapse(text), 2_000)).join(" ")} Tell them now, briefly, in your own words, as yours.`;
+  return `Your work came back: ${texts.map((text) => clamp(collapse(text), 2_000)).join(" ")} If it answers something they asked, or something went wrong, tell them briefly, in your own words, as yours. If it only confirms something you already told them you were doing, they can see it done: say nothing about it and stay silent with skip_turn.`;
 }
 
 /** Then this, as a user turn (`sendUserMessage`), so the voice speaks now instead of waiting. */
-export const WORK_CAME_BACK_NUDGE = "(Your work just came back. Tell me what it found.)";
+export const WORK_CAME_BACK_NUDGE = "(Your work just came back.)";
+/** The nudge's earlier words, still sent by apps built before 9 October 2026: kept out of a call's record too. */
+export const EARLIER_WORK_CAME_BACK_NUDGES: readonly string[] = ["(Your work just came back. Tell me what it found.)"];
 
 // --- the banner's status line while the agent works --------------------------
 

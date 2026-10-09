@@ -23,7 +23,12 @@ public enum VoiceCallText {
 
   public static let sendTaskAccepted = "Sent. If you have not acknowledged it yet, do so in a few words, then carry on with them. What it turns up comes back to you here."
   public static let relaySoftFail = "That did not come back. Say you could not get to it, and offer to try again."
-  public static let workCameBackNudge = "(Your work just came back. Tell me what it found.)"
+  public static let workCameBackNudge = "(Your work just came back.)"
+
+  /** The nudge is nobody's words: kept out of what the call shows and records, as the Mac's banner keeps it out. */
+  static func isNudge(_ text: String) -> Bool {
+    text == workCameBackNudge || text == "(Your work just came back. Tell me what it found.)"
+  }
 
   static func collapse(_ text: String) -> String {
     text.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
@@ -90,13 +95,14 @@ public enum VoiceCallText {
     let rules = [
       "How you talk:",
       "- This is a phone call. Speak briefly and naturally, like a person: one or two short sentences, contractions, plain words.",
+      "- Speak calmly and evenly, at an unhurried pace, the same steady tone throughout. Never use exclamation marks.",
       "- Never use lists, headings, markdown, emoji, or read out links. Say numbers, dates and times the way people say them.",
       "- If you did not catch something, say so and ask again. Never guess what they said.",
       "How you get things done:",
       "- Your work runs behind the call while you talk. For anything that needs doing or finding out (looking something up, writing, sending, scheduling, changing a file, checking on something you are doing), call send_task with what is needed in one clear sentence that carries every detail they gave. When their exact wording matters, put their words in quote. Acknowledge it once, in a few words that fit what they asked, never the same phrase twice in a call, then carry on with them.",
       "- Set each thing going once. If they ask how it is going, say it is still in progress; do not send it again.",
       "- Never say something is done, sent, booked or found until a note tells you your work came back with it. Until then it is still in progress.",
-      "- When a note says your work came back, tell them the result once, briefly, in your own words, as yours. If it repeats something you already told them, or is not about anything they asked, say nothing about it and carry on.",
+      "- When a note says your work came back: if it answers something they asked, or something went wrong, tell them once, briefly, in your own words, as yours. If it only confirms something you already told them you were doing, they can see it done: do not announce it; stay silent with skip_turn, unless they ask. If it repeats something you already told them, say nothing about it and carry on.",
       "- When they refer to something you wrote to each other, call recall_text_messages.",
       "- When there is nothing for you to say (they are thinking, or talking to someone else), stay silent with skip_turn.",
       "Ending:",
@@ -114,7 +120,7 @@ public enum VoiceCallText {
     let greetings = [
       "Hey\(p), it's \(name). What's up?",
       "Hi\(p), \(name) here. What can I do for you?",
-      "Hey\(p)! \(name) speaking. What do you need?",
+      "Hey\(p), \(name) speaking. What do you need?",
       "Hi\(p), it's \(name). How can I help?",
       "\(name) here. What's on your mind?",
     ]
@@ -130,7 +136,7 @@ public enum VoiceCallText {
 
   /** The note pushed into the call when the agent sent something on it. */
   public static func workCameBack(_ texts: [String]) -> String {
-    "Your work came back: \(texts.map { clamp(collapse($0), 2_000) }.joined(separator: " ")) Tell them now, briefly, in your own words, as yours."
+    "Your work came back: \(texts.map { clamp(collapse($0), 2_000) }.joined(separator: " ")) If it answers something they asked, or something went wrong, tell them briefly, in your own words, as yours. If it only confirms something you already told them you were doing, they can see it done: say nothing about it and stay silent with skip_turn."
   }
 
   static let gerundExceptions: [String: String] = [
@@ -198,6 +204,8 @@ public protocol VoiceTransport: AnyObject, Sendable {
 public final class LiveCall: CallEngine, @unchecked Sendable {
   public static let pollSeconds = 1.2
   public static let summaryRetryWaits: [Double] = [5, 10]
+  /** The person's voice is taken as talking from this voice-activity score up. */
+  static let personTalking = 0.5
 
   private let lock = NSLock()
   private weak var backend: AgentBackend?
@@ -206,6 +214,10 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
   /** The agent's voice for the call, given now if it has none on the list (`AppStore.ensureVoice`); without it, the roster's. */
   private let voiceFor: (@Sendable (String) async -> String?)?
   private let pause: @Sendable (Double) async -> Void
+  /** The ring and the hang-up (`CallTones`); none in tests unless given. */
+  private let tones: CallTonePlaying?
+  /** How long the line must be quiet before work that came back is said (`replyLoop`). */
+  private let quiet: Double
   private var state: CallState?
   private var listeners: [@Sendable (CallState?) -> Void] = []
   private var callId = ""
@@ -219,9 +231,14 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
   private var finished = false
   private var speaking = false
   private var activity = 0.0
+  /** What the agent sent on the call, waiting for the line to be quiet. */
+  private var pendingReplies: [String] = []
+  /** The call is ready to start its voice: the ring stops after the cycle it is in. */
+  private var prepared = false
+  private var ringing: Task<Void, Never>?
 
-  public init(backend: AgentBackend, transport: VoiceTransport, personName: @escaping @Sendable () -> String?, voiceFor: (@Sendable (String) async -> String?)? = nil, pause: @escaping @Sendable (Double) async -> Void = { try? await Task.sleep(nanoseconds: UInt64($0 * 1_000_000_000)) }) {
-    self.backend = backend; self.transport = transport; self.personName = personName; self.voiceFor = voiceFor; self.pause = pause
+  public init(backend: AgentBackend, transport: VoiceTransport, personName: @escaping @Sendable () -> String?, voiceFor: (@Sendable (String) async -> String?)? = nil, tones: CallTonePlaying? = nil, quiet: Double = 1.0, pause: @escaping @Sendable (Double) async -> Void = { try? await Task.sleep(nanoseconds: UInt64($0 * 1_000_000_000)) }) {
+    self.backend = backend; self.transport = transport; self.personName = personName; self.voiceFor = voiceFor; self.tones = tones; self.quiet = quiet; self.pause = pause
   }
 
   public func observe(_ listener: @escaping @Sendable (CallState?) -> Void) {
@@ -253,9 +270,25 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
     lock.withLock {
       callId = UUID().uuidString.lowercased(); conversationId = nil; opened = false; viaChat = false
       after = 0; seenChat = []; lastTask = nil; finished = false; speaking = false; activity = 0
+      pendingReplies = []; prepared = false
     }
     set(CallState(phase: .ringing, status: VoiceCallText.calling, agentId: agentId, agentName: agentName, agentColour: colour, isMuted: false, agentSpeaking: false, levels: [], lines: [], connectedAt: nil, endedAt: nil))
+    // The ring, as the Mac's banner rings, while the call gets ready.
+    let ring = Task { [weak self] () -> Void in await self?.ring() }
+    lock.withLock { ringing = ring }
+    keep(ring)
     keep(Task { [weak self] in await self?.connect(agentId: agentId, agentName: agentName) })
+  }
+
+  /** Twice, then once more at a time while the call is still getting ready, seven at most (the Mac's `RINGS_BEFORE_CONNECT`, `MAX_RINGS`). */
+  private func ring() async {
+    guard let tones else { return }
+    await tones.ring(cycles: CallTones.ringsBeforeConnect)
+    var rings = CallTones.ringsBeforeConnect
+    while !Task.isCancelled, !isFinished, !lock.withLock({ prepared }), rings < CallTones.maxRings {
+      await tones.ring(cycles: 1)
+      rings += 1
+    }
   }
 
   private func connect(agentId: String, agentName: String) async {
@@ -283,6 +316,11 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
     let voiceId: String?
     if let voiceFor { voiceId = await voiceFor(agentId) } else { voiceId = row?.voiceId }
     guard !isFinished else { return fail(VoiceCallText.couldNotConnect) }
+    // The voice starts once the ring is over, so the two never sound together.
+    let ring: Task<Void, Never>? = lock.withLock { prepared = true; return ringing }
+    await ring?.value
+    tones?.stopRinging()
+    guard !isFinished else { return }
     await open(agentId: agentId)
     do {
       try await transport.start(token: token, prompt: prompt, firstMessage: greeting, voiceId: voiceId, language: VoiceCallText.language) { [weak self] event in
@@ -310,6 +348,7 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
     }
     keep(Task { [weak self] in await self?.pollLoop(agentId: agentId) })
     keep(Task { [weak self] in await self?.waveLoop() })
+    keep(Task { [weak self] in await self?.replyLoop() })
   }
 
   private func handle(_ event: VoiceEvent, agentId: String) {
@@ -324,10 +363,10 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
       lock.withLock { activity = level }
     case .line(let fromPerson, let text):
       let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-      guard !trimmed.isEmpty else { return }
+      guard !trimmed.isEmpty, !VoiceCallText.isNudge(trimmed) else { return }
       update { $0.lines.append(CallLine(fromPerson: fromPerson, text: trimmed)) }
     case .transcript(let lines):
-      update { $0.lines = lines.filter { !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty } }
+      update { $0.lines = lines.filter { let text = $0.text.trimmingCharacters(in: .whitespacesAndNewlines); return !text.isEmpty && !VoiceCallText.isNudge(text) } }
     case .tool(let name, let id, let parameters):
       keep(Task { [weak self] in
         guard let self else { return }
@@ -406,11 +445,36 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
         let row = (try? await backend.listAgents())?.first { $0.id == agentId }
         let label: String? = row?.isRunningTurn == true ? (row?.activityLabel ?? lock.withLock { lastTask }.map(VoiceCallText.workingLabel)) : nil
         update { $0.activity = label }
-        if !fresh.isEmpty { await transport.say(context: VoiceCallText.workCameBack(fresh), nudge: VoiceCallText.workCameBackNudge) }
+        // Said by `replyLoop` once the line is quiet, never over the voice.
+        if !fresh.isEmpty { lock.withLock { pendingReplies += fresh } }
       } catch {
         failures += 1
         if failures >= 10 { update { $0.activity = nil }; return }
       }
+    }
+  }
+
+  /**
+   * Work that came back is said only once the line is quiet: the voice has
+   * finished speaking and the person is not talking, for `quiet` seconds
+   * (the founder, 9 October 2026, of a reply that cut the voice off in the
+   * middle of a sentence: "he cant cut himself like this, wait of turn").
+   * Before this it went in the moment it arrived. Several that arrive
+   * while the voice talks are said together.
+   */
+  private func replyLoop() async {
+    var quietSince: Date?
+    while !Task.isCancelled, !isFinished {
+      await pause(0.1)
+      let (talking, level) = lock.withLock { (speaking, activity) }
+      if talking || level >= Self.personTalking { quietSince = nil; continue }
+      let since = quietSince ?? Date()
+      quietSince = since
+      guard Date().timeIntervalSince(since) >= quiet else { continue }
+      let replies: [String] = lock.withLock { let all = pendingReplies; pendingReplies = []; return all }
+      guard !replies.isEmpty else { continue }
+      quietSince = nil
+      await transport.say(context: VoiceCallText.workCameBack(replies), nudge: VoiceCallText.workCameBackNudge)
     }
   }
 
@@ -444,6 +508,7 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
   private func fail(_ message: String) {
     let wasOpen: (Bool, String, String?) = lock.withLock { (opened, callId, state?.agentId) }
     lock.withLock { finished = true }
+    tones?.stopRinging()
     update { $0.phase = .ended; $0.status = message; $0.levels = []; $0.endedAt = Date() }
     if wasOpen.0, let agentId = wasOpen.2, let backend {
       Task { _ = try? await backend.command("voiceCall", ["agentId": .string(agentId), "callId": .string(wasOpen.1), "kind": "ended", "record": ["seconds": 0, "recap": nil, "transcript": []]]) }
@@ -457,6 +522,9 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
     guard !already else { return }
     let snapshot = lock.withLock { state }
     let seconds = snapshot?.seconds() ?? 0
+    tones?.stopRinging()
+    // The Mac's tone when a call that was live ends.
+    if snapshot?.phase == .live { tones?.hangUp() }
     update { $0.phase = .ended; $0.status = VoiceCallText.ended; $0.agentSpeaking = false; $0.levels = []; $0.endedAt = Date() }
     let running: [Task<Void, Never>] = lock.withLock { let all = tasks; tasks = []; return all }
     for task in running { task.cancel() }

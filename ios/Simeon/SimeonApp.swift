@@ -108,7 +108,9 @@ struct SignInScreen: View {
   static let terms = URL(string: "https://www.simeonlabs.com/legal/terms-of-service")!
   static let privacy = URL(string: "https://www.simeonlabs.com/legal/privacy-policy")!
 
+  /** What the screen says above the buttons: a sign-in that went wrong, or, once the account is in, that the app is getting ready (the founder, 9 October 2026: the line that said so was missed, and the wait looked like a hang). */
   private var message: String? {
+    if session.finishing { return "Signing you in…" }
     if case .signedOut(let message) = session.phase { return message }
     return nil
   }
@@ -156,13 +158,12 @@ struct SignInScreen: View {
     Task { await session.signIn(with: provider) }
   }
 
-  /** "By continuing, you agree to our Terms & Privacy Policy.", the two names links, underlined with dots as in the reference. */
+  /** "By continuing, you agree to our Terms & Privacy Policy.", the two names links in the ink, semibold, not underlined (the dotted line ran through the letters on the phone; the founder: "makes no sense"). */
   static var legal: AttributedString {
     func link(_ words: String, _ url: URL) -> AttributedString {
       var text = AttributedString(words)
       text.link = url
       text.font = Font.system(size: 13, weight: .semibold)
-      text.underlineStyle = Text.LineStyle(pattern: .dot)
       return text
     }
     return AttributedString("By continuing, you agree to our ") + link("Terms", terms) + AttributedString(" & ") + link("Privacy Policy", privacy) + AttributedString(".")
