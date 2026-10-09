@@ -150,6 +150,15 @@ public final class AppStore {
     UserDefaults.standard.set(drafts, forKey: Self.draftsKey)
   }
 
+  /** Each agent's routines as the host lists them (`getAgentAutomations`, and its `agents-automation` pushes); absent until read. */
+  public internal(set) var routinesByAgent: [String: [Routine]] = [:]
+  /** The sidebar's sections as the host keeps them (`sidebarSections`); nil until the computer has answered, when nothing can be moved. */
+  public internal(set) var sidebarSections: [SidebarSection]?
+  /** Bumped by each sections write, so a read begun before it is dropped (as the pins do). */
+  @ObservationIgnored var sectionWrites = 0
+  /** Counts the sections made here, for their ids (the window's `idSeed`). */
+  @ObservationIgnored var sectionSeed = 0
+
   /** Connected apps, as the box's manager lists them (`desktopMcp listServers`), and the catalog to add more from. */
   public private(set) var apps: [ConnectedApp] = []
   public private(set) var catalog: [CatalogApp] = []
@@ -242,6 +251,7 @@ public final class AppStore {
     }
     await reloadRoster()
     await loadPins()
+    await loadSections()
     // Every agent its own voice from the start, not at its first call (the Mac does the same on opening).
     Task { await assignMissingVoices() }
   }
@@ -252,7 +262,7 @@ public final class AppStore {
     backend = nil
     agents = []; transcripts = [:]; chatRows = [:]; steps = [:]; call = nil; callLevels = []; isLive = false; account = nil; openChat = nil
     layoutTask?.cancel(); layoutTask = nil; pendingLayout = []; refreshing = []; caughtUp = [:]
-    pendingAnswers = [:]; unreadAfter = [:]; apps = []; catalog = []; pinnedIds = []
+    pendingAnswers = [:]; unreadAfter = [:]; apps = []; catalog = []; pinnedIds = []; routinesByAgent = [:]; sidebarSections = nil
     streamingOnly = [:]; outbox = [:]; arrived = []; olderBefore = [:]; loadingOlder = []; paged = []; firstRunAgentId = nil; revealing = [:]
     openThreads = [:]; threadRows = [:]; threadRoots = [:]; loadFailed = []; isDown = false
     voiceList = nil
@@ -321,6 +331,10 @@ public final class AppStore {
       Task { await loadApps() }
     case .settingsChanged(let fields):
       if fields.isEmpty || fields.contains("pinnedAgentIds") { Task { await loadPins() } }
+      if fields.isEmpty || fields.contains("sidebarSections") { Task { await loadSections() } }
+    case .automations(let agentId, let rows):
+      let list = rows.compactMap(Routine.init(json:))
+      if routinesByAgent[agentId] != list { routinesByAgent[agentId] = list }
     }
   }
 
@@ -407,11 +421,24 @@ public final class AppStore {
       problem = "Deleting failed. Check your connection and try again."
       return false
     }
+    forgetAgents(agentIds)
+    return true
+  }
+
+  /** Agents deleted: out of the roster, the pins and the chats kept. */
+  func forgetAgents(_ agentIds: [String]) {
     let gone = Set(agentIds)
     agents.removeAll { gone.contains($0.id) }
     if pinnedIds.contains(where: gone.contains) { pinnedIds.removeAll(where: gone.contains) }
-    for id in agentIds { transcripts[id] = nil; chatRows[id] = nil }
-    return true
+    for id in agentIds { transcripts[id] = nil; chatRows[id] = nil; routinesByAgent[id] = nil }
+  }
+
+  /** An agent changed here before the host says so (an optimistic edit). */
+  func updateAgentLocally(_ index: Int, _ change: (inout Agent) -> Void) {
+    guard agents.indices.contains(index) else { return }
+    var agent = agents[index]
+    change(&agent)
+    if agent != agents[index] { agents[index] = agent }
   }
 
   /** A copy of an agent (`duplicateAgent`); the copy's id, to open it. */

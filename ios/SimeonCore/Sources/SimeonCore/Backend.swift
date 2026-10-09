@@ -20,6 +20,8 @@ public enum BackendEvent: Sendable {
   case appsChanged
   /** The host's settings changed on some device (`host-settings`: the names of the fields), e.g. the pins. */
   case settingsChanged([String])
+  /** An agent's routines changed (`agents-automation`: the whole list, as `getAgentAutomations` answers). */
+  case automations(agentId: String, [JSON])
 
   /** Its kind, and the chat it concerns, for the hang watch. */
   public var name: String {
@@ -31,6 +33,7 @@ public enum BackendEvent: Sendable {
     case .connection(let live): return live ? "the connection back" : "the connection lost"
     case .appsChanged: return "an apps change"
     case .settingsChanged: return "a settings change"
+    case .automations(let agentId, _): return "the routines of \(agentId)"
     }
   }
 }
@@ -320,6 +323,9 @@ public final class LiveBackend: AgentBackend, @unchecked Sendable {
       return [.appsChanged]
     case "host-settings":
       return [.settingsChanged(payload["fields"]?.array?.compactMap(\.text) ?? [])]
+    case "agents-automation":
+      guard let agentId = payload["agentId"]?.text else { return [] }
+      return [.automations(agentId: agentId, payload["automations"]?.array ?? [])]
     case "outline":
       guard let agentId = payload["agentId"]?.text else { return [] }
       let items = payload["item"].map { [$0] } ?? payload["items"]?.array ?? []

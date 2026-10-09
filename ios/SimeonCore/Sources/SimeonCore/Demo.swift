@@ -289,19 +289,40 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
 
   private func routineCommand(_ method: String, _ args: JSON) {
     let agentId = args["id"]?.text ?? ""
+    let now = Date().timeIntervalSince1970 * 1000
+    /** A record as the host keeps one: the trigger as sent, its words, when it was made. */
+    func record(id: String, spec: JSON, createdAt: JSON?, runs: JSON?) -> JSON {
+      let trigger = spec["trigger"] ?? ["type": "cron", "schedule": "0 9 * * *"]
+      let words = TriggerRow.rows(trigger).map { row -> String in
+        if case .schedule(let line) = row { return RoutineSchedule.describe(line) }
+        let w = row.words
+        return "\(w.lead) \(w.rest)"
+      }
+      let described = words.enumerated().map { $0.offset == 0 ? $0.element : $0.element.prefix(1).lowercased() + $0.element.dropFirst() }.joined(separator: " or ")
+      let firstCron = TriggerRow.rows(trigger).lazy.compactMap { row -> String? in if case .schedule(let line) = row { return line } else { return nil } }.first
+      return ["id": .string(id), "name": spec["name"] ?? "Routine", "prompt": spec["prompt"] ?? "", "trigger": trigger,
+              "schedule": firstCron.map(JSON.string) ?? .null, "triggerDescription": .string(described), "isEnabled": spec["isEnabled"] ?? true,
+              "createdAt": createdAt ?? .number(now), "runs": runs ?? .array([])]
+    }
     lock.withLock {
       var list = demoRoutines[agentId] ?? []
       switch method {
       case "createAgentAutomation":
-        if let spec = args["spec"] { list.append(["id": .string("r-\(UUID().uuidString.prefix(6).lowercased())"), "name": spec["name"] ?? "Routine", "prompt": spec["prompt"] ?? "", "schedule": spec["trigger"]?["schedule"] ?? "", "isEnabled": spec["isEnabled"] ?? true]) }
+        // The host's limit: 50 routines an agent, then nothing is made.
+        if let spec = args["spec"], list.count < 50 { list.append(record(id: "r-\(UUID().uuidString.prefix(6).lowercased())", spec: spec, createdAt: nil, runs: nil)) }
       case "updateAgentAutomation":
         if let index = list.firstIndex(where: { $0["id"] == args["automationId"] }), let spec = args["spec"] {
-          list[index] = ["id": list[index]["id"] ?? "", "name": spec["name"] ?? "Routine", "prompt": spec["prompt"] ?? "", "schedule": spec["trigger"]?["schedule"] ?? "", "isEnabled": spec["isEnabled"] ?? true]
+          list[index] = record(id: list[index]["id"]?.text ?? "", spec: spec, createdAt: list[index]["createdAt"], runs: list[index]["runs"])
         }
       case "setAgentAutomationEnabled":
         if let index = list.firstIndex(where: { $0["id"] == args["automationId"] }) { list[index] = list[index].setting("isEnabled", args["isEnabled"] ?? true) }
       case "deleteAgentAutomation":
         list.removeAll { $0["id"] == args["automationId"] }
+      case "runAgentAutomationNow":
+        if let index = list.firstIndex(where: { $0["id"] == args["automationId"] }) {
+          let run: JSON = ["id": .string("run-\(UUID().uuidString.prefix(6).lowercased())"), "trigger": "manual", "startedAt": .number(now), "finishedAt": .number(now + 1200), "status": "ok"]
+          list[index] = list[index].setting("runs", .array([run] + (list[index]["runs"]?.array ?? []).prefix(19)))
+        }
       default: break
       }
       demoRoutines[agentId] = list
@@ -393,6 +414,9 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
     case "createAgentAutomation", "updateAgentAutomation", "setAgentAutomationEnabled", "deleteAgentAutomation":
       routineCommand(method, args)
       return .array(try await routines(args["id"]?.text ?? ""))
+    case "runAgentAutomationNow":
+      routineCommand(method, args)
+      return .null
     case "updateAgent":
       let profile = args["profile"] ?? [:]
       touch(args["id"]?.text ?? "") { agent in
