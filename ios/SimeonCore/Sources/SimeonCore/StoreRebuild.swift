@@ -7,12 +7,19 @@ import Foundation
  * Saver (`H$n` wiring, `GOn`, `z8n`, `$8n`).
  */
 extension AppStore {
+  /**
+   * The agent the window has selected (the Mac sets it from its sidebar),
+   * else the chat on screen. A chat closing just before the next opens
+   * must not read as nothing selected, which would let the rebuild go.
+   */
+  public var computerSelection: String? { windowSelection ?? openChat }
+
   /** The selected agent, when it is one agent and not a group (`boxId`). */
-  var rebuildBox: String? { openChat.flatMap { id in agent(id).map { $0.isGroup ? nil : id } ?? id } }
+  var rebuildBox: String? { computerSelection.flatMap { id in agent(id).map { $0.isGroup ? nil : id } ?? id } }
 
   var rebuildInputs: RebuildDriver.Inputs {
     let box = rebuildBox
-    return RebuildDriver.Inputs(boxId: box, isCurrentGroup: agent(openChat)?.isGroup ?? false, phase: computer.phase(box),
+    return RebuildDriver.Inputs(boxId: box, isCurrentGroup: agent(computerSelection)?.isGroup ?? false, phase: computer.phase(box),
                                 imageUpdateAvailable: computer.status(box)?.raw["imageUpdateAvailable"]?.bool,
                                 anyRunning: agents.contains { $0.isRunning }, transportConnected: isLive)
   }
@@ -44,8 +51,8 @@ extension AppStore {
     Task { rebuild.migrationReadBack(await backend.migrationStatus()) }
   }
 
-  /** Sending waits while the computer is rebuilt (`isSendingPaused`). */
-  public var isSendingPaused: Bool { rebuild.isHardLocked }
+  /** Sending waits while the computer is rebuilt (`isSendingPaused`), where the rebuild is shown (the Mac). */
+  public var isSendingPaused: Bool { followsRebuild && rebuild.isHardLocked }
 
   // MARK: The disk
 
@@ -86,7 +93,8 @@ extension AppStore {
    */
   func diskPressureChanged() {
     guard diskPressure != nil else { diskAuditDone = false; return }
-    guard !diskAuditDone, !agents.isEmpty, backend != nil else { return }
+    // Only where low disk is shown (the Mac), so two apps open do not make two Disk Savers.
+    guard followsRebuild, !diskAuditDone, !agents.isEmpty, backend != nil else { return }
     diskAuditDone = true
     if let saver = diskSaver {
       guard !saver.isRunning else { return }

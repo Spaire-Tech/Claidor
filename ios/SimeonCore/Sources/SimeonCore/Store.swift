@@ -176,6 +176,12 @@ public final class AppStore {
   public private(set) var rosterRetrying = false
   /** The phone says so in an alert; the Mac's sidebar says it in place, as the window does. */
   @ObservationIgnored public var reportsRosterFailure = true
+  /** The app shows the computer's rebuild (the Mac): sending waits through it, the list holds still, Disk Saver is set to work. */
+  @ObservationIgnored public var followsRebuild = false
+  /** The agent the window has selected, when the app says (the Mac's sidebar); see `computerSelection`. */
+  public var windowSelection: String? {
+    didSet { if windowSelection != oldValue { rebuild.selectionChanged(rebuildInputs) } }
+  }
   /** Simeon's computer being rebuilt, or the stream away (RebuildDriver.swift). */
   public let rebuild = RebuildDriver()
   /** Roster pushes skipped while the computer was rebuilt: the list is read again after. */
@@ -299,7 +305,7 @@ public final class AppStore {
     streamingOnly = [:]; outbox = [:]; arrived = []; olderBefore = [:]; loadingOlder = []; paged = []; firstRunAgentId = nil; revealing = [:]
     openThreads = [:]; threadRows = [:]; threadRoots = [:]; loadFailed = []; isDown = false
     computer = ComputerBook(); subagentsByAgent = [:]; pointers = [:]; lastComputerCatchUp = .distantPast
-    rebuild.reset(); rosterHeld = false; diskSaverCreation = nil; diskAuditDone = false; rosterFailed = false
+    rebuild.reset(); rosterHeld = false; diskSaverCreation = nil; diskAuditDone = false; rosterFailed = false; windowSelection = nil
     voiceList = nil
     sentFiles = []
   }
@@ -330,7 +336,7 @@ public final class AppStore {
   public func apply(_ event: BackendEvent) {
     Trace.mark("handling \(event.name)")
     switch event {
-    case .agents where rebuild.isHardLocked, .agentUpserted where rebuild.isHardLocked:
+    case .agents where followsRebuild && rebuild.isHardLocked, .agentUpserted where followsRebuild && rebuild.isHardLocked:
       // The agents' list holds still while the computer is rebuilt, and is read again after (`roster.setFrozen`).
       rosterHeld = true
     case .agents(let list):

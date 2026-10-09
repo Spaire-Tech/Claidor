@@ -351,25 +351,25 @@ extension LiveScreen {
       guard let body = message.body as? [String: Any] else { return }
       if let text = body["clipboard"] as? String {
         link?.clipboard = text
-        MainActor.assumeIsolated { events?.onClipboard(text) }
+        events?.onClipboard(text)
       }
       if let next = body["phase"] as? String { phase.wrappedValue = next }
-      if let line = body["log"] as? String { MainActor.assumeIsolated { events?.log("guest console[\(body["level"] as? String ?? "info")] " + line) } }
-      if let key = body["hostKey"] as? String { MainActor.assumeIsolated { events?.onHostKey(key) } }
+      if let line = body["log"] as? String { events?.log("guest console[\(body["level"] as? String ?? "info")] " + line) }
+      if let key = body["hostKey"] as? String { events?.onHostKey(key) }
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-      MainActor.assumeIsolated { events?.log("guest loaded url=about:screen") }
+      events?.log("guest loaded url=about:screen")
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
       let error = error as NSError
-      MainActor.assumeIsolated { events?.log("guest load FAILED code=\(error.code) (\(error.localizedDescription)) url=about:screen mainFrame=true") }
+      events?.log("guest load FAILED code=\(error.code) (\(error.localizedDescription)) url=about:screen mainFrame=true")
     }
 
     /** The page's process died: loaded again, or "Screen preview unavailable" after too many (`render-process-gone`). */
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
-      MainActor.assumeIsolated { events?.log("guest renderer gone reason=crashed") }
+      events?.log("guest renderer gone reason=crashed")
       if crashes.crashed() {
         phase.wrappedValue = "starting"
         load(webView, page: page)

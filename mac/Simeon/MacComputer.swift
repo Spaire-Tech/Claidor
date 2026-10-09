@@ -67,15 +67,31 @@ struct MacScreen: View {
   var body: some View {
     Group {
       if let socket {
+        // A new address is a new page: the old one would never say it connected again.
         LiveScreen(socket: socket, viewOnly: !interactive, phase: $phase, events: events, interactive: interactive)
+          .id(socket)
       } else {
         Color.clear
       }
     }
-    .task(id: vncUrl) {
+    // Asked again when the stream comes back: a rebuilt computer has a new network token.
+    .task(id: SocketKey(vncUrl: vncUrl, live: store.isLive)) {
       events.onLog = { line in ComputerStreamLog.shared.write(line) }
-      socket = await store.screenSocket(vncUrl)
+      for attempt in 0..<20 {
+        if let found = await store.screenSocket(vncUrl) {
+          if found != socket { socket = found; phase = "starting" }
+          return
+        }
+        if attempt == 0 { events.log("box reachability outcome=network method=screenSocket cause=no-connection baseUrl=") }
+        try? await Task.sleep(nanoseconds: 3_000_000_000)
+        if Task.isCancelled { return }
+      }
     }
+  }
+
+  private struct SocketKey: Equatable {
+    let vncUrl: String
+    let live: Bool
   }
 }
 
@@ -346,6 +362,8 @@ struct MacComputerWindow: View {
   @State private var phase = "starting"
   @State private var events = ScreenEvents()
   @State private var bridge = ClipboardBridge()
+  /** The clipboard's `changeCount` last read or written here. */
+  @State private var pasteboardSeen = -1
   @State private var hostWindow: NSWindow?
   @FocusState private var focused: Bool
 
@@ -409,6 +427,8 @@ struct MacComputerWindow: View {
     .background { WindowReader(window: $hostWindow) }
     .onAppear {
       focused = true
+      // A window opened again by the Mac at launch starts its computer too (`ensure` once at a time).
+      store.openComputer(agentId)
       events.onHostKey = { key in
         let now = store.computerHelpers(agentId)
         guard now.count >= 2 else { return }
@@ -419,6 +439,7 @@ struct MacComputerWindow: View {
         if let fresh = bridge.fromBox(text) {
           NSPasteboard.general.clearContents()
           NSPasteboard.general.setString(fresh, forType: .string)
+          pasteboardSeen = NSPasteboard.general.changeCount
         }
       }
       // This Mac's clipboard to the computer on a click in it, the window coming forward, or the view opening; 0.2 s apart at most.
@@ -426,11 +447,19 @@ struct MacComputerWindow: View {
       store.watchComputer(agentId)
       sendClipboard()
     }
-    .onDisappear { store.unwatchComputer(agentId) }
+    .onDisappear {
+      store.unwatchComputer(agentId)
+      // The closures hold this view's state; let them go with the window.
+      events.onHostKey = { _ in }
+      events.onClipboard = { _ in }
+      events.onPointerDown = {}
+    }
     .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { note in
       if let window = note.object as? NSWindow, window === hostWindow { sendClipboard() }
     }
     .onChange(of: phase) { _, now in if now == "connected" { sendClipboard() } }
+    // Another helper's screen is a new connection: the clipboard goes again once it is up.
+    .onChange(of: asked) { _, _ in phase = "starting" }
   }
 
   /** The hand-off's banner (`bbn`): the instruction or "{name} needs you", Skip this step and I'm done, continue; both answer, then close. */
@@ -467,8 +496,16 @@ struct MacComputerWindow: View {
     if let next = ComputerHelper.step(helpers, from: current, by: by) { asked = next }
   }
 
+  /**
+   * This Mac's clipboard to the computer. Read only when it changed since
+   * it was last read or written here: the same text sent again changes
+   * nothing on the computer, and each read can ask the person on macOS 26.
+   */
   private func sendClipboard() {
-    guard bridge.mayRead(), let text = NSPasteboard.general.string(forType: .string), !text.isEmpty else { return }
+    let pasteboard = NSPasteboard.general
+    guard pasteboard.changeCount != pasteboardSeen, bridge.mayRead() else { return }
+    pasteboardSeen = pasteboard.changeCount
+    guard let text = pasteboard.string(forType: .string), !text.isEmpty else { return }
     events.paste(text)
     bridge.sent(text)
   }
@@ -483,9 +520,12 @@ struct MacHelperStrip: View {
   let helpers: [ComputerHelper]
   let vncUrl: String?
   let pick: (String) -> Void
+  @State private var showingMore = false
 
   var body: some View {
-    let (shown, more) = ComputerHelper.strip(helpers.count)
+    let strip = ComputerHelper.strip(helpers.count)
+    let shown = strip.shown
+    let more = strip.more
     HStack(spacing: 8) {
       ForEach(helpers.prefix(shown)) { helper in
         Button { pick(helper.subagentId) } label: {
@@ -500,23 +540,34 @@ struct MacHelperStrip: View {
         .help("Switch to \(helper.title)")
       }
       if let more {
-        Menu {
-          ForEach(helpers.dropFirst(shown)) { helper in
-            Button(helper.title) { pick(helper.subagentId) }
-          }
-        } label: {
+        Button { showingMore = true } label: {
           VStack(spacing: 6) {
             Image(systemName: "desktopcomputer").font(.system(size: 22)).foregroundStyle(.white.opacity(0.6))
               .frame(maxWidth: 160).aspectRatio(ComputerScreen.width / ComputerScreen.height, contentMode: .fit)
               .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             Text("and \(more) more").font(.system(size: 12, weight: .medium)).foregroundStyle(.white.opacity(0.6))
           }
+          .frame(maxWidth: 160)
         }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
-        .fixedSize()
+        .buttonStyle(.plain)
         .accessibilityLabel("Show \(more) more screens")
         .help("\(more) more screens")
+        // "More screens" (`fbn`): the rest, by title; one picked is switched to.
+        .popover(isPresented: $showingMore, arrowEdge: .top) {
+          ScrollView {
+            VStack(alignment: .leading, spacing: 2) {
+              ForEach(helpers.dropFirst(shown)) { helper in
+                Button { showingMore = false; pick(helper.subagentId) } label: {
+                  Text(helper.title).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 10).padding(.vertical, 6).contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+              }
+            }
+            .padding(6)
+          }
+          .frame(minWidth: 240, maxHeight: 320)
+          .accessibilityLabel("More screens")
+        }
       }
     }
     .frame(height: 122)

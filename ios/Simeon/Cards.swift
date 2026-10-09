@@ -1324,11 +1324,17 @@ struct RequestCardView: View {
     .card(radius: 18, padding: 14)
   }
 
-  /** The screen the agent saw when it asked (`data:image/webp;base64,…`). */
+  /** The screen the agent saw when it asked (`data:image/webp;base64,…`), decoded once. */
   static func picture(_ dataURL: String) -> UIImage? {
-    guard let comma = dataURL.firstIndex(of: ","), let data = Data(base64Encoded: String(dataURL[dataURL.index(after: comma)...])) else { return nil }
-    return UIImage(data: data)
+    let key = NSString(string: String(dataURL.suffix(64)) + "\(dataURL.count)")
+    if let kept = snapshots.object(forKey: key) { return kept }
+    guard let comma = dataURL.firstIndex(of: ","), let data = Data(base64Encoded: String(dataURL[dataURL.index(after: comma)...])),
+          let image = UIImage(data: data) else { return nil }
+    snapshots.setObject(image, forKey: key)
+    return image
   }
+
+  private static let snapshots = NSCache<NSString, UIImage>()
 }
 
 /** The hand-off card's 36 pt pills: the blue one, and the grey beside it. */

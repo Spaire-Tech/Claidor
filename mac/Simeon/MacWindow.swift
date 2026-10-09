@@ -44,8 +44,8 @@ struct MacRoot: View {
       // The window coming forward reads the computers again (at most once a minute, not mid-rebuild).
       store.windowCameForward(rebuilding: store.rebuild.isHardLocked)
     }
-    // The sidebar says when the agents cannot be read; no alert on top of it (the window's).
-    .onAppear { store.reportsRosterFailure = false }
+    // The sidebar says when the agents cannot be read; no alert on top of it (the window's). The rebuild is shown here.
+    .onAppear { store.reportsRosterFailure = false; store.followsRebuild = true }
     .onReceive(NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)) { _ in store.isForeground = false }
   }
 }
@@ -164,6 +164,8 @@ struct MacWindow: View {
       try? await Task.sleep(nanoseconds: 20_000_000_000)
       if newChat.creating?.id == started { newChat.creating = nil }
     }
+    // The rebuild and Update follow the agent the sidebar has selected, not the chat closing and opening.
+    .onChange(of: navigation.selected, initial: true) { _, now in store.windowSelection = now }
     // Another agent opened while the new one is made, or after: the creating screen lets it go.
     .onChange(of: navigation.selected) { _, now in
       if let creating = newChat.creating, now != creating.agentId, now != creating.from { newChat.creating = nil }

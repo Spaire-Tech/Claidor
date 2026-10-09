@@ -51,14 +51,15 @@ struct MacRebuildSurfaces: ViewModifier {
 
 /** Which sheet the rebuild puts over the window: its dialog, or one of the two-minute and failure dialogs (`u8n`, `q8n`). */
 enum MacRebuildSheet: Identifiable, Equatable {
-  case progress(RebuildLock.Kind, operation: String)
+  case progress(RebuildLock.Kind)
   case unreachable
   case recoverConfirm
   case failed(RebuildLock.Kind, episode: Int)
 
   var id: String {
     switch self {
-    case .progress(let kind, let operation): return "progress:\(kind.rawValue):\(operation)"
+    // Not by its operation: a reset learns its operation once started, and the dialog must not close and open again.
+    case .progress(let kind): return "progress:\(kind.rawValue)"
     case .unreachable: return "unreachable"
     case .recoverConfirm: return "recover"
     case .failed(let kind, let episode): return "failed:\(kind.rawValue):\(episode)"
@@ -75,7 +76,7 @@ enum MacRebuildSheet: Identifiable, Equatable {
       }
       guard driver.surface.surface != .background else { return nil }
       // The dialog, with "Taking longer than expected" over it after two minutes (drawn inside it).
-      return .progress(kind, operation: lock.operationId ?? "untracked")
+      return .progress(kind)
     }
     if let failure = driver.failure { return .failed(failure.request.kind, episode: failure.episodeId) }
     return nil
@@ -92,7 +93,7 @@ struct MacRebuildSheetView: View {
     let pending = driver.pendingKind != nil
     let canRecover = !driver.isBlocked && !pending && driver.canRecover
     switch sheet {
-    case .progress(let kind, _):
+    case .progress(let kind):
       MacRebuildDialog(kind: kind)
         .sheet(isPresented: Binding(get: { driver.escalation == .takingLonger }, set: { _ in })) {
           MacLifecycleDialog(title: RebuildWords.longerTitle, message: RebuildWords.longerBody(kind)) {
@@ -424,7 +425,7 @@ struct MacUpdatePill: View {
       Button { driver.cancelQueuedUpdate() } label: { Label("Queued", systemImage: "clock") }
         .help("Update queued \u{2014} click to cancel")
         .accessibilityLabel("Update queued \u{2014} click to cancel")
-    } else if store.computer.status(store.openChat)?.raw["imageUpdateAvailable"]?.bool == true, let action = facts.paletteAction, !facts.queued {
+    } else if store.computer.status(store.computerSelection)?.raw["imageUpdateAvailable"]?.bool == true, let action = facts.paletteAction, !facts.queued {
       Button { navigation.updateConfirm = .init(busy: action == .busyOverride, workingNames: facts.workingNames) } label: { Label("Update", systemImage: "icloud.and.arrow.down") }
         .help("A new version of Simeon's computer is available")
         .accessibilityLabel("A new version of Simeon's computer is available")
@@ -450,11 +451,11 @@ extension AppStore {
   }
 
   var updateFacts: UpdateFacts {
-    let selected = agent(openChat)
+    let selected = agent(computerSelection)
     let baseline = selected != nil && selected?.isGroup == false
     let working = agents.filter(\.isRunning).map(\.name)
     let availability = RebuildWords.availability(canUpdateBaseline: baseline, canUpdateBox: baseline && working.isEmpty,
-                                                 isBoxUpToDate: computer.status(openChat)?.raw["imageUpdateAvailable"]?.bool == false,
+                                                 isBoxUpToDate: computer.status(computerSelection)?.raw["imageUpdateAvailable"]?.bool == false,
                                                  isUpdateQueued: rebuild.isUpdateQueued)
     let pending = rebuild.pendingKind == .update || rebuild.lock.isLocked
     let offered = !pending && !rebuild.isBlocked && (availability == .ready || availability == .busyOverride)
