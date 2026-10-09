@@ -147,6 +147,7 @@ public final class AppStore {
   @ObservationIgnored private var pendingLayout: Set<String> = []
   @ObservationIgnored private var layoutTask: Task<Void, Never>?
   @ObservationIgnored private var refreshing: Set<String> = []
+  @ObservationIgnored private var peeking: Set<String> = []
   /** The newest line each chat was fetched again for, so a line the fetch does not carry (a thread's reply) is not fetched for twice. */
   @ObservationIgnored private var caughtUp: [String: String] = [:]
   /** A streamed answer's newest copy, when it is the only change waiting: just the last row is redrawn, not the whole chat laid out again. */
@@ -496,6 +497,19 @@ public final class AppStore {
     await refresh(agentId, unread: unread)
     if let index = agents.firstIndex(where: { $0.id == agentId }) { agents[index].hasUnread = false; agents[index].unreadCount = 0 }
     await backend.markRead(agentId)
+  }
+
+  /**
+   * A chat's newest lines for its preview (a long press on it in the list),
+   * read without opening it on the host, so it stays unread. Kept: the chat
+   * opens with them at once and fetches the rest.
+   */
+  public func peek(_ agentId: String) async {
+    guard let backend, transcripts[agentId] == nil, !peeking.contains(agentId) else { return }
+    peeking.insert(agentId)
+    defer { peeking.remove(agentId) }
+    guard let entries = try? await backend.tail(agentId, limit: 40), transcripts[agentId] == nil else { return }
+    setTranscript(agentId, entries)
   }
 
   /** The chat left the screen. */

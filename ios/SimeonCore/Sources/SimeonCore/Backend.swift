@@ -101,6 +101,8 @@ public protocol AgentBackend: AnyObject, Sendable {
   func transcript(_ agentId: String) async throws -> [Entry]
   /** The newest lines (`before` nil), or the hundred before `before` (`getAgentTranscriptTail` with `beforeSeq`, as the Mac's chat loads more on scrolling up). */
   func transcriptPage(_ agentId: String, before: Int?) async throws -> TranscriptPage
+  /** A chat's newest lines, read without opening it on the host (`getAgentTranscriptTail`): the preview a long press in the list shows, which must not mark it read. */
+  func tail(_ agentId: String, limit: Int) async throws -> [Entry]
   /** A message, with the files already on the agent's computer (`uploadAttachment`). */
   /** A message, with the files already on the agent's computer, answering `replyTo` when set (`sendPrompt`'s `replyToId`). */
   func send(_ agentId: String, text: String, attachments: [AttachmentRef], replyTo: String?, nonce: String?) async throws
@@ -129,6 +131,11 @@ extension AgentBackend {
   /** A message with a nonce of its own (the call's requests, which nothing waits to see). */
   public func send(_ agentId: String, text: String, attachments: [AttachmentRef], replyTo: String?) async throws {
     try await send(agentId, text: text, attachments: attachments, replyTo: replyTo, nonce: nil)
+  }
+
+  /** A backend that keeps whole chats reads its end. */
+  public func tail(_ agentId: String, limit: Int) async throws -> [Entry] {
+    Array(try await transcript(agentId).suffix(limit))
   }
 
   /** A backend that keeps whole chats has no older page. */
@@ -197,6 +204,11 @@ public final class LiveBackend: AgentBackend, @unchecked Sendable {
       catch { page = try await gateway.command("getAgentTranscriptTail", ["id": .string(agentId), "limit": 500]) }
     }
     return TranscriptPage(entries: (page["entries"]?.array ?? page.array ?? []).compactMap(Entry.init), olderBefore: page["nextBeforeSeq"]?.int)
+  }
+
+  public func tail(_ agentId: String, limit: Int) async throws -> [Entry] {
+    let page = try await gateway.command("getAgentTranscriptTail", ["id": .string(agentId), "limit": .number(Double(limit))])
+    return (page["entries"]?.array ?? page.array ?? []).compactMap(Entry.init)
   }
 
   public func send(_ agentId: String, text: String, attachments: [AttachmentRef], replyTo: String?, nonce: String?) async throws {

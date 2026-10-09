@@ -90,39 +90,21 @@ struct PlainScreen: View {
 }
 
 /**
- * The chat draws its own top (the phone design's back disc, butterfly and
- * name), so the system's bar is hidden there; this keeps the edge swipe
- * that goes back, which hiding the bar would otherwise switch off. Set
- * from inside the chat while it shows (it used to replace every navigation
- * controller's own setup), and never during a push or pop already under
- * way, where UIKit can stop taking touches.
+ * The chat draws its own top (the back disc, the butterfly and name, the
+ * call), so the system's bar is hidden there; hidden, the bar's own edge
+ * swipe back refuses to start. Every navigation stack takes the swipe on
+ * itself: it starts whenever there is a screen to go back to and no push
+ * or pop is already under way (a swipe started mid-transition can leave
+ * UIKit no longer taking touches). Swiping from the left edge goes back,
+ * the screen following the finger, as in Messages.
  */
-struct BackSwipe: UIViewControllerRepresentable {
-  func makeUIViewController(context: Context) -> Keeper { Keeper() }
-  func updateUIViewController(_ keeper: Keeper, context: Context) {}
+extension UINavigationController: @retroactive UIGestureRecognizerDelegate {
+  override open func viewDidLoad() {
+    super.viewDidLoad()
+    interactivePopGestureRecognizer?.delegate = self
+  }
 
-  final class Keeper: UIViewController, UIGestureRecognizerDelegate {
-    /** The swipe's own delegate, handed back when the chat goes: left with none, a swipe on the list could start a "back" to nowhere and hang. */
-    private weak var systemDelegate: UIGestureRecognizerDelegate?
-    private weak var navigation: UINavigationController?
-
-    override func viewDidAppear(_ animated: Bool) {
-      super.viewDidAppear(animated)
-      guard let navigation = navigationController, let swipe = navigation.interactivePopGestureRecognizer else { return }
-      self.navigation = navigation
-      if swipe.delegate !== self { systemDelegate = swipe.delegate }
-      swipe.isEnabled = true
-      swipe.delegate = self
-    }
-
-    override func viewDidDisappear(_ animated: Bool) {
-      super.viewDidDisappear(animated)
-      if let swipe = navigation?.interactivePopGestureRecognizer, swipe.delegate === self { swipe.delegate = systemDelegate }
-    }
-
-    func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-      guard let navigation = navigationController else { return false }
-      return navigation.viewControllers.count > 1 && navigation.transitionCoordinator == nil
-    }
+  public func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+    viewControllers.count > 1 && transitionCoordinator == nil
   }
 }

@@ -344,6 +344,41 @@ settings, sending and Resend, older pages, and the streamed row, each with
 a test (56 tests pass). Not checked: none of the screens has run on an
 iPhone yet; the taps, the motion and the pills need his hands on a device.
 
+## 11. Messages' design (9 October 2026)
+
+The founder: "exactly like iMessage", from screenshots of Messages,
+Instagram and another app's message sheet. Built:
+
+- **The list.** Messages' rows: the butterfly, the name with the last
+  line's time and a chevron, two lines of the last message, a hairline
+  between rows from the text on, the unread dot in the left margin (orange
+  when an agent waits on you). The search field and the compose button
+  (New Agent, New Group Chat) at the bottom. At the top, Instagram's way:
+  the person's name with a menu (Settings, Appearance, Hidden Agents) in
+  place of the account button. Search filters the rows by name, title,
+  description and last line.
+- **A long press on a row or a pinned agent** shows the chat itself above
+  its menu: Pin, Mark as Read, Hide Alerts (the agent's notifications),
+  Delete; then Edit Profile, Duplicate, Hide from List, Copy Conversation
+  ID. The preview reads the chat's last lines without opening it on the
+  host (`getAgentTranscriptTail`), so it stays unread.
+- **A long press on a message** gives under the finger, then a sheet: the
+  Mac's six reactions and five more, the last button opening the emoji
+  keyboard for any other; Reply and Mark as Unread; Copy and Select Text.
+- **The chat's top**: the call in a glass circle at the far right, as
+  Messages' FaceTime button. The header and the composer are bars the
+  messages scroll under.
+- **The composer**: + in a glass circle, the field in glass at 17 pt, the
+  mic inside it while it is empty and the blue send once there is text.
+- **The call pill** is glass.
+- **Back**: a swipe from the left edge goes back, the screen following
+  the finger.
+
+Not checked: none of it has run on an iPhone. The list's bottom search
+(`DefaultToolbarItem(kind: .search, placement: .bottomBar)`) and the bars
+(`safeAreaBar`) are iOS 26's own; if Xcode refuses either, the build says
+so on the line.
+
 ## Suggested order (the founder decides)
 
 1. The chat's look: the bubble, the top bar, markdown, brand names with logos, agent names with butterflies.

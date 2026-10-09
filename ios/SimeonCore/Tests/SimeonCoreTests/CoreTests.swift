@@ -567,6 +567,20 @@ final class StoreTests: XCTestCase {
    * opens it on the host and fetches it again; a newest line the app lacks
    * fetches it again too.
    */
+  func testAPreviewReadsTheChatWithoutOpeningIt() async throws {
+    let backend = QuietBackend()
+    let store = AppStore()
+    await store.attach(backend)
+    await store.peek("theo")
+    XCTAssertEqual(backend.tailed, ["theo"])
+    XCTAssertEqual(backend.opened, [], "a preview must not open the chat on the host (it would be read)")
+    XCTAssertEqual(store.rows(for: "theo").compactMap(Self.text), ["Hi Theo"])
+    await store.peek("theo")
+    XCTAssertEqual(backend.tailed, ["theo"], "read once")
+    await store.open("theo")
+    XCTAssertEqual(backend.opened, ["theo"])
+  }
+
   func testAnAnswerThatDidNotStreamStillShows() async throws {
     let backend = QuietBackend()
     let store = AppStore()
@@ -893,6 +907,8 @@ final class MarkdownTests: XCTestCase {
 final class QuietBackend: AgentBackend, @unchecked Sendable {
   var lines: [JSON] = [["kind": "message", "id": "u1", "role": "user", "content": "Hi Theo", "timestampMs": 1_000]]
   var opened: [String] = []
+  var tailed: [String] = []
+  func tail(_ agentId: String, limit: Int) async throws -> [Entry] { tailed.append(agentId); return Array(lines.compactMap(Entry.init).suffix(limit)) }
   func listAgents() async throws -> [Agent] { [Agent(id: "theo", name: "Theo")] }
   func transcript(_ agentId: String) async throws -> [Entry] { opened.append(agentId); return lines.compactMap(Entry.init) }
   func send(_ agentId: String, text: String, attachments: [AttachmentRef], replyTo: String?, nonce: String?) async throws {}

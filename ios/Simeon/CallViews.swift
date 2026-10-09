@@ -47,9 +47,8 @@ struct CallPill: View {
         .frame(width: 80, height: 22).contentShape(.rect)
         .onTapGesture(perform: expand)
     }
-    .background(Ink.callCard, in: RoundedRectangle(cornerRadius: 38, style: .continuous))
-    .shadow(color: .black.opacity(0.28), radius: 20, y: 18)
-    .shadow(color: .black.opacity(0.12), radius: 5, y: 4)
+    // Glass, as the system's own call banner and the rest of the chat's controls.
+    .glassEffect(.regular, in: .rect(cornerRadius: 38, style: .continuous))
     .gesture(DragGesture(minimumDistance: 12).onEnded { drag in if drag.translation.height > 24 { expand() } })
   }
 }

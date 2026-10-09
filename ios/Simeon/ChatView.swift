@@ -23,6 +23,7 @@ struct ChatView: View {
   @State private var showsComputer = false
   @State private var reply = ReplyDraft()
   @State private var actions = ChatActions()
+  @State private var messageMenu = MessageMenu()
 
   // Each part below reads only what it draws, so typing a letter or the
   // call's waveform ticking redraws that part and not the conversation.
@@ -30,14 +31,19 @@ struct ChatView: View {
     let _ = Trace.tally("ChatView drawn")
     ChatMessages(agentId: agentId)
       .environment(actions)
-      .safeAreaInset(edge: .top, spacing: 0) {
+      .environment(messageMenu)
+      // Bars, not insets: the messages scroll under the header and the composer and fade there, as in Messages.
+      .safeAreaBar(edge: .top, spacing: 0) {
         ChatHeader(agentId: agentId, back: { dismiss() }, showsPage: $showsPage, showsCall: $showsCall, showsTranscript: $showsTranscript)
       }
-      .safeAreaInset(edge: .bottom, spacing: 0) { ChatComposer(agentId: agentId) }
+      .safeAreaBar(edge: .bottom, spacing: 0) { ChatComposer(agentId: agentId) }
       .environment(reply)
       .background(Ink.ground)
       .toolbar(.hidden, for: .navigationBar)
-      .background(BackSwipe().frame(width: 0, height: 0))
+      // A long press on a message: the reactions and what can be done with it, in a sheet from the bottom.
+      .sheet(item: Binding(get: { messageMenu.target }, set: { messageMenu.target = $0 })) { target in
+        MessageActionsSheet(bubble: target.bubble, agentId: agentId).environment(reply)
+      }
       .sheet(isPresented: $showsPage) { AgentPageSheet(agentId: agentId).problemAlert() }
       .sheet(isPresented: $showsComputer) { ComputerSheet(agentId: agentId).problemAlert() }
       .fullScreenCover(isPresented: $showsCall) { CallScreen(showsTranscript: $showsTranscript) }
@@ -116,7 +122,7 @@ struct ChatMessages: View {
   @State private var settled = false
   /** How many of the newest rows are drawn: a long chat opened at its end drew every message above it first, and stood still. More come in as you scroll up. */
   @State private var window = ChatMessages.firstWindow
-  private static let firstWindow = 60
+  private static let firstWindow = 40
   private static let bottomId = "chat-bottom"
 
   var body: some View {
@@ -300,10 +306,11 @@ struct TypingSlot: View {
 }
 
 /**
- * The top of the chat (`.sand-chat-header` on a phone): the back disc 46 pt
- * at 12, 12; the butterfly 52 pt centred 4 pt down; the name pill under it
- * (13 pt, 500); the call button 24 pt beside the name; the page's ground at
- * 78 % with a blur behind, fading out over its last 30 pt.
+ * The top of the chat, as Messages has it: the back button in a glass
+ * circle at the left, the agent's butterfly (52 pt) with its name in a
+ * glass capsule under it in the middle (either opens its page), the call
+ * in a glass circle at the far right. A bar, not an inset: the messages
+ * scroll under it and fade there.
  */
 struct ChatHeader: View {
   let agentId: String
@@ -333,20 +340,6 @@ struct ChatHeader: View {
             }
             .buttonStyle(.plain)
             .glassEffect(.regular.interactive(), in: .capsule)
-            .overlay(alignment: .trailing) {
-              if store.canCall && !agent.isGroup {
-                Button { store.startCall(agent) } label: {
-                  Image(systemName: "phone.fill").font(.system(size: 11, weight: .semibold)).foregroundStyle(Ink.callGlyph)
-                    .frame(width: 26, height: 26)
-                    .contentShape(.circle)
-                }
-                .buttonStyle(.plain)
-                .glassEffect(.regular.interactive(), in: .circle)
-                .accessibilityLabel("Call \(agent.name)")
-                .disabled(store.call != nil)
-                .offset(x: 26 + 8)
-              }
-            }
           }
           .padding(.top, 4)
           .padding(.horizontal, 70)
@@ -361,8 +354,20 @@ struct ChatHeader: View {
           .glassEffect(.regular.interactive(), in: .circle)
           .accessibilityLabel("Back")
           Spacer()
+          // The call, at the far right as Messages has its FaceTime button.
+          if let agent = store.agent(agentId), store.canCall && !agent.isGroup {
+            Button { store.startCall(agent) } label: {
+              Image(systemName: "phone.fill").font(.system(size: 18, weight: .medium)).foregroundStyle(Ink.primary)
+                .frame(width: 46, height: 46)
+                .contentShape(.circle)
+            }
+            .buttonStyle(.plain)
+            .glassEffect(.regular.interactive(), in: .circle)
+            .accessibilityLabel("Call \(agent.name)")
+            .disabled(store.call != nil)
+          }
         }
-        .padding(.leading, 12).padding(.top, 12)
+        .padding(.horizontal, 12).padding(.top, 12)
       }
       if let call = store.call, call.agentId == agentId {
         CallPill(call: call, showsTranscript: $showsTranscript) { showsCall = true }
@@ -374,26 +379,9 @@ struct ChatHeader: View {
     .frame(maxWidth: .infinity)
     // The header takes the taps on itself; its faded strip below lets them through to the messages.
     .contentShape(.rect)
-    .padding(.bottom, 26)
-    .background { HeaderGround().allowsHitTesting(false) }
+    .padding(.bottom, 10)
     .animation(.snappy, value: store.call?.agentId)
     .onChange(of: store.call == nil) { _, gone in Trace.tally("ChatHeader call changed"); if gone && showsCall { showsCall = false } }
-  }
-}
-
-/** The header's ground: the page's colour at 78 % over a blur of what scrolls under it, fading out over the last 30 pt. */
-struct HeaderGround: View {
-  var body: some View {
-    Rectangle()
-      .fill(.ultraThinMaterial)
-      .overlay(Ink.ground.opacity(0.78))
-      .mask {
-        VStack(spacing: 0) {
-          Color.black
-          LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom).frame(height: 30)
-        }
-      }
-      .ignoresSafeArea(edges: .top)
   }
 }
 
@@ -449,93 +437,87 @@ struct ChatComposer: View {
           .padding(.horizontal, 4)
         }
       }
-      VStack(alignment: .leading, spacing: 6) {
       if let target = reply?.target {
-        // The quote being answered (`Kvn`): the arrow, the line cut at 72, and Cancel reply.
-        HStack(spacing: 6) {
-          Image(systemName: "arrowshape.turn.up.right").font(.system(size: 12)).foregroundStyle(Ink.tertiary)
-          Text(Self.replyLine(target)).font(.system(size: 14)).foregroundStyle(Ink.secondary).lineLimit(1)
+        // The message being answered: the arrow, its line, and Cancel, on glass above the field.
+        HStack(spacing: 8) {
+          Image(systemName: "arrowshape.turn.up.left").font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.secondary)
+          Text(Self.replyLine(target)).font(.system(size: 15)).foregroundStyle(Ink.secondary).lineLimit(1)
           Spacer(minLength: 0)
           Button { reply?.target = nil } label: {
-            Image(systemName: "xmark").font(.system(size: 10, weight: .semibold)).foregroundStyle(Ink.secondary)
-              .frame(width: 28, height: 28).contentShape(.rect)
+            Image(systemName: "xmark").font(.system(size: 11, weight: .bold)).foregroundStyle(Ink.secondary)
+              .frame(width: 32, height: 32).contentShape(.circle)
           }
           .buttonStyle(.plain)
           .accessibilityLabel("Cancel reply")
         }
-        .padding(.leading, 8).padding(.trailing, 0).padding(.vertical, 0)
-        .background(Ink.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .padding(.leading, 14).padding(.trailing, 4)
+        .glassEffect(.regular, in: .rect(cornerRadius: 18, style: .continuous))
+        .padding(.leading, 48)
         .transition(.move(edge: .bottom).combined(with: .opacity))
       }
+      // Messages' composer: + in a glass circle, then the field in glass, the mic inside it at the right while it is
+      // empty and the blue send once there is something to send. Nothing opaque: the chat shows through as it scrolls under.
       HStack(alignment: .bottom, spacing: 8) {
         Button { picking = true } label: {
-          Image(systemName: "plus").font(.system(size: 15, weight: .medium)).foregroundStyle(Ink.primary.opacity(0.78))
-            .frame(width: 30, height: 30)
+          Image(systemName: "plus").font(.system(size: 19, weight: .regular)).foregroundStyle(Ink.primary)
+            .frame(width: 40, height: 40)
             .contentShape(.circle)
         }
         .buttonStyle(.plain)
         .glassEffect(.regular.interactive(), in: .circle)
         .accessibilityLabel("Attach")
-        TextField(reply?.target != nil ? "Reply…" : "Message \(name)", text: $draft, axis: .vertical)
-          .font(.system(size: MessageType.size))
-          .lineLimit(1...8)
-          .focused($typing)
-          .padding(.vertical, 5)
-          .frame(maxWidth: .infinity, alignment: .leading)
-        ZStack {
-          switch mode {
-          case .stop:
-            Button { dictation.stop() } label: {
-              Image(systemName: "stop.fill").font(.system(size: 11, weight: .bold)).foregroundStyle(.white)
-                .frame(width: 28, height: 28).background(Ink.danger, in: Circle())
-                .frame(width: 36, height: 36).contentShape(.circle)
+        HStack(alignment: .bottom, spacing: 4) {
+          TextField(reply?.target != nil ? "Reply" : "Message", text: $draft, axis: .vertical)
+            .font(.system(size: 17))
+            .lineLimit(1...6)
+            .focused($typing)
+            .padding(.leading, 16)
+            .padding(.vertical, 9)
+            .frame(maxWidth: .infinity, alignment: .leading)
+          ZStack {
+            switch mode {
+            case .stop:
+              Button { dictation.stop() } label: {
+                Image(systemName: "stop.fill").font(.system(size: 11, weight: .bold)).foregroundStyle(.white)
+                  .frame(width: 30, height: 30).background(Ink.danger, in: Circle())
+                  .frame(width: 36, height: 36).contentShape(.circle)
+              }
+              .accessibilityLabel("Stop dictation")
+              .transition(.scale(scale: 0.6).combined(with: .opacity))
+            case .mic:
+              Button { dictation.start { text in draft = text } } label: {
+                Image(systemName: "mic").font(.system(size: 18, weight: .regular)).foregroundStyle(Ink.secondary)
+                  .frame(width: 36, height: 36).contentShape(.circle)
+              }
+              .accessibilityLabel("Dictate")
+              .transition(.scale(scale: 0.6).combined(with: .opacity))
+            case .send:
+              Button(action: send) {
+                Image(systemName: "arrow.up").font(.system(size: 15, weight: .bold)).foregroundStyle(.white)
+                  .frame(width: 30, height: 30).background(Ink.bubbleMine, in: Circle())
+                  .frame(width: 36, height: 36).contentShape(.circle)
+              }
+              .accessibilityLabel("Send")
+              .transition(.scale(scale: 0.6).combined(with: .opacity))
             }
-            .accessibilityLabel("Stop dictation")
-            .transition(.scale(scale: 0.6).combined(with: .opacity))
-          case .mic:
-            Button { dictation.start { text in draft = text } } label: {
-              Image(systemName: "mic.fill").font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
-                .frame(width: 28, height: 28).background(Ink.bubbleMine, in: Circle())
-                .frame(width: 36, height: 36).contentShape(.circle)
-            }
-            .accessibilityLabel("Dictate")
-            .transition(.scale(scale: 0.6).combined(with: .opacity))
-          case .send:
-            Button(action: send) {
-              Image(systemName: "arrow.up").font(.system(size: 14, weight: .bold)).foregroundStyle(.white)
-                .frame(width: 28, height: 28).background(Ink.bubbleMine, in: Circle())
-                .frame(width: 36, height: 36).contentShape(.circle)
-            }
-            .accessibilityLabel("Send")
-            .transition(.scale(scale: 0.6).combined(with: .opacity))
           }
+          .buttonStyle(.plain)
+          .frame(width: 36, height: 36)
+          .padding(.trailing, 2).padding(.bottom, 2)
+          .animation(.easeOut(duration: 0.2), value: mode)
         }
-        .buttonStyle(.plain)
-        .frame(width: 36, height: 36)
-        .padding(.vertical, -4)
-        // The send and mic glyphs cross over in 200 ms, as the Mac's (`sand-prompt-shell` send button).
-        .animation(.easeOut(duration: 0.2), value: mode)
+        .frame(minHeight: 40)
+        // A tap anywhere on the field that is not its button goes to the text, as in Messages.
+        .background { Color.clear.contentShape(.rect(cornerRadius: 20, style: .continuous)).onTapGesture { typing = true } }
+        .glassEffect(.regular, in: .rect(cornerRadius: 20, style: .continuous))
       }
-      }
-      .padding(.leading, 8).padding(.trailing, 8).padding(.vertical, 7)
-      // Growing a line, or a quote above, eases in as the Mac's composer does (`0.3 s` spring).
+      // A new line or a quote above eases in.
       .animation(.spring(response: 0.3, dampingFraction: 0.9), value: lineCount)
       .animation(.spring(response: 0.3, dampingFraction: 0.9), value: reply?.target?.id)
-      // The shadow on the shape alone: on the whole composer it was worked out again from the text on every keystroke.
-      .background {
-        RoundedRectangle(cornerRadius: 22, style: .continuous)
-          .fill(scheme == .dark ? Ink.control : Ink.ground)
-          .shadow(color: .black.opacity(scheme == .dark ? 0 : 0.05), radius: 4, y: 2)
-          // A tap anywhere on the bubble that is not a button goes to the text, as in Messages. The text alone is
-          // one 14 pt line (about 17 pt) of a 44 pt bubble: taps above or below it, or on its padding, did nothing.
-          .onTapGesture { typing = true }
-      }
-      .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Ink.edge, lineWidth: 1).allowsHitTesting(false))
     }
-    .padding(.horizontal, 16)
+    .padding(.horizontal, 12)
     .padding(.top, 6)
     .padding(.bottom, 8)
-    .background(Ink.ground.opacity(0.001))
     .animation(.snappy(duration: 0.2), value: mentionQuery != nil)
     .onAppear {
       Trace.tally("ChatComposer appeared")
@@ -641,15 +623,15 @@ struct BubbleView: View {
   @Environment(\.chatWidth) private var width
   @Environment(ChatActions.self) private var actions: ChatActions?
   @Environment(ReplyDraft.self) private var reply: ReplyDraft?
+  @Environment(MessageMenu.self) private var messageMenu: MessageMenu?
   @State private var reacting: Set<String> = []
+  /** Held down: the bubble gives a little under the finger before its sheet comes up, as in Messages. */
+  @GestureState private var pressing = false
   /** Show more on a long message (the Mac folds one past 664 pt). */
   @State private var expanded = false
 
   /** What is drawn of the message: 3,000 characters folded, 40,000 open. A message of megabytes (a file or an image pasted as text) laid out whole held the screen still for minutes. */
   private var shown: (text: String, clipped: Bool) { Chat.clipped(bubble.text, limit: expanded ? 40_000 : 3_000) }
-
-  /** The window's reaction row (`dGe`). */
-  private static let quickReactions = ["👍", "👎", "❤️", "😂", "🎉", "😮"]
 
   var body: some View {
     let _ = Trace.tally("BubbleView drawn")
@@ -682,7 +664,17 @@ struct BubbleView: View {
         }
         content
           .modifier(Glow(id: bubble.id))
-          .contextMenu { menu }
+          .scaleEffect(pressing ? 0.96 : 1)
+          .animation(.spring(response: 0.25, dampingFraction: 0.7), value: pressing)
+          // Held: the reactions and the message's actions in a sheet from the bottom. Alongside the scroll, so a drag still scrolls.
+          .simultaneousGesture(
+            LongPressGesture(minimumDuration: 0.35)
+              .updating($pressing) { held, state, _ in state = held }
+              .onEnded { _ in
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                messageMenu?.target = MessageTarget(bubble: bubble)
+              }
+          )
           .overlay(alignment: bubble.fromPerson ? .bottomTrailing : .bottomLeading) { reactions }
           .padding(.bottom, bubble.reactions.isEmpty ? 0 : 16)
       }
@@ -739,20 +731,6 @@ struct BubbleView: View {
       .contentShape(.rect)
     }
     .buttonStyle(.plain)
-  }
-
-  @ViewBuilder
-  private var menu: some View {
-    ControlGroup {
-      ForEach(Self.quickReactions, id: \.self) { emoji in
-        Button(emoji) { react(emoji) }
-      }
-    }
-    .controlGroupStyle(.compactMenu)
-    if let reply {
-      Button { reply.target = bubble } label: { Label("Reply", systemImage: bubble.fromPerson ? "arrowshape.turn.up.right" : "arrowshape.turn.up.left") }
-    }
-    Button { UIPasteboard.general.string = bubble.text } label: { Label("Copy", systemImage: "doc.on.doc") }
   }
 
   @ViewBuilder
@@ -1025,5 +1003,202 @@ struct MentionPicker: View {
       .padding(.vertical, 4)
       .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
+  }
+}
+
+/** The message held down, whose sheet is up. */
+@MainActor
+@Observable
+final class MessageMenu {
+  var target: MessageTarget?
+}
+
+struct MessageTarget: Identifiable {
+  let bubble: Bubble
+  var id: String { bubble.id }
+}
+
+/**
+ * A held message's sheet (the founder's reference, 9 October 2026): the
+ * reactions in two rows of six, the last one opening the emoji keyboard
+ * for any other; then Reply and Mark as Unread; then Copy and Select Text.
+ */
+struct MessageActionsSheet: View {
+  let bubble: Bubble
+  let agentId: String
+  @Environment(AppStore.self) private var store
+  @Environment(ReplyDraft.self) private var reply: ReplyDraft?
+  @Environment(\.dismiss) private var dismiss
+  @State private var choosingEmoji = false
+  @State private var selecting = false
+
+  /** The Mac's six (`dGe`), then five more people reach for. */
+  static let reactions = ["👍", "👎", "❤️", "😂", "🎉", "😮", "🔥", "👀", "🙏", "😢", "💯"]
+
+  private struct Action: Identifiable {
+    let title: String
+    let symbol: String
+    let run: () -> Void
+    var id: String { title }
+  }
+
+  var body: some View {
+    ScrollView {
+      VStack(spacing: 14) {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 6), spacing: 12) {
+          ForEach(Self.reactions, id: \.self) { emoji in
+            Button { react(emoji) } label: {
+              Text(emoji).font(.system(size: 27))
+                .frame(width: 52, height: 52)
+                .background(Ink.pill, in: Circle())
+                .contentShape(.circle)
+            }
+            .buttonStyle(.plain)
+          }
+          Button { choosingEmoji = true } label: {
+            Image(systemName: "face.smiling").font(.system(size: 22)).foregroundStyle(Ink.secondary)
+              .overlay(alignment: .bottomTrailing) {
+                Image(systemName: "plus.circle.fill").font(.system(size: 11)).foregroundStyle(Ink.secondary).offset(x: 4, y: 3)
+              }
+              .frame(width: 52, height: 52)
+              .background(Ink.pill, in: Circle())
+              .contentShape(.circle)
+          }
+          .buttonStyle(.plain)
+          .accessibilityLabel("Another reaction")
+        }
+        group([
+          Action(title: "Reply", symbol: "arrowshape.turn.up.left") { reply?.target = bubble; dismiss() },
+          Action(title: "Mark as Unread", symbol: "message.badge") { Task { await store.setUnread(agentId, true) }; dismiss() },
+        ])
+        group([
+          Action(title: "Copy", symbol: "doc.on.doc") { UIPasteboard.general.string = bubble.text; dismiss() },
+          Action(title: "Select Text", symbol: "character.cursor.ibeam") { selecting = true },
+        ])
+      }
+      .padding(.horizontal, 18).padding(.top, 26).padding(.bottom, 12)
+    }
+    .scrollBounceBehavior(.basedOnSize)
+    .presentationDetents([.height(420), .large])
+    .presentationDragIndicator(.visible)
+    .background { EmojiKeyboard(isActive: $choosingEmoji) { emoji in react(emoji) }.frame(width: 0, height: 0) }
+    .sheet(isPresented: $selecting) { SelectTextSheet(text: bubble.text) }
+  }
+
+  private func group(_ actions: [Action]) -> some View {
+    VStack(spacing: 0) {
+      ForEach(Array(actions.enumerated()), id: \.element.id) { index, action in
+        if index > 0 { Rectangle().fill(Ink.hairline).frame(height: 0.5).padding(.leading, 58) }
+        Button(action: action.run) {
+          HStack(spacing: 14) {
+            Image(systemName: action.symbol).font(.system(size: 19)).frame(width: 26)
+            Text(action.title).font(.system(size: 17))
+            Spacer(minLength: 0)
+          }
+          .foregroundStyle(Ink.primary)
+          .padding(.horizontal, 18)
+          .frame(height: 54)
+          .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+      }
+    }
+    .background(Ink.pill, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+  }
+
+  private func react(_ emoji: String) {
+    Task { await store.react(emoji, to: bubble.id, in: agentId) }
+    dismiss()
+  }
+}
+
+/**
+ * The emoji keyboard, for a reaction that is not in the sheet's rows: a
+ * field no one sees, asking for the emoji keyboard; the first emoji typed
+ * is the reaction.
+ */
+struct EmojiKeyboard: UIViewRepresentable {
+  @Binding var isActive: Bool
+  let picked: (String) -> Void
+
+  func makeUIView(context: Context) -> EmojiField {
+    let field = EmojiField()
+    field.delegate = context.coordinator
+    field.tintColor = .clear
+    field.addTarget(context.coordinator, action: #selector(Coordinator.changed(_:)), for: .editingChanged)
+    return field
+  }
+
+  func updateUIView(_ field: EmojiField, context: Context) {
+    context.coordinator.parent = self
+    if isActive && !field.isFirstResponder { DispatchQueue.main.async { field.becomeFirstResponder() } }
+    if !isActive && field.isFirstResponder { DispatchQueue.main.async { field.resignFirstResponder() } }
+  }
+
+  func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+  final class Coordinator: NSObject, UITextFieldDelegate {
+    var parent: EmojiKeyboard
+    init(_ parent: EmojiKeyboard) { self.parent = parent }
+
+    @objc func changed(_ field: UITextField) {
+      guard let typed = field.text?.last else { return }
+      field.text = ""
+      let scalars = typed.unicodeScalars
+      // An emoji, not a digit or a letter typed on another keyboard (digits count as emoji in Unicode).
+      if let first = scalars.first, first.properties.isEmoji, scalars.count > 1 || first.value > 0x238C {
+        parent.picked(String(typed))
+      }
+      parent.isActive = false
+    }
+
+    func textFieldDidEndEditing(_ field: UITextField) {
+      if parent.isActive { parent.isActive = false }
+    }
+  }
+
+  /** A field that opens on the emoji keyboard. */
+  final class EmojiField: UITextField {
+    override var textInputContextIdentifier: String? { "simeon.reaction" }
+    override var textInputMode: UITextInputMode? {
+      UITextInputMode.activeInputModes.first { $0.primaryLanguage == "emoji" } ?? super.textInputMode
+    }
+  }
+}
+
+/** Select Text: the message on its own, selectable with the handles, as Messages has it. */
+struct SelectTextSheet: View {
+  let text: String
+  @Environment(\.dismiss) private var dismiss
+
+  var body: some View {
+    NavigationStack {
+      SelectableText(text: text)
+        .navigationTitle("Select Text")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+          ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } }
+        }
+    }
+  }
+}
+
+struct SelectableText: UIViewRepresentable {
+  let text: String
+
+  func makeUIView(context: Context) -> UITextView {
+    let view = UITextView()
+    view.isEditable = false
+    view.isSelectable = true
+    view.font = .preferredFont(forTextStyle: .body)
+    view.adjustsFontForContentSizeCategory = true
+    view.backgroundColor = .clear
+    view.textContainerInset = UIEdgeInsets(top: 16, left: 14, bottom: 16, right: 14)
+    view.text = text
+    return view
+  }
+
+  func updateUIView(_ view: UITextView, context: Context) {
+    if view.text != text { view.text = text }
   }
 }

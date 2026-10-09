@@ -2,123 +2,160 @@ import SwiftUI
 import UIKit
 import SimeonCore
 
-/** The sheets the list opens: the + menu's two, search, and Settings from the account button. */
+/** The sheets the list opens: New Agent and New Group Chat from the compose button, Settings from the name's menu (search is the list's own field now). */
 enum HomeSheet: String, Identifiable {
   case newAgent, newGroup, search, settings
   var id: String { rawValue }
 }
 
 /**
- * The list (the founder's step 1, then round 2 and 4): the agents and
- * groups, newest first, big rows; the account button at the top left
- * (Settings), search and new chat at the top right; the call's green time
- * on the agent you are talking to.
+ * The list, as Messages draws it (the founder, 9 October 2026: "exactly like
+ * iMessage"): rows with the butterfly, the name, the last line's time and a
+ * chevron, two lines of the last message, a hairline between rows from the
+ * text on, the blue dot of an unread chat in the margin; the search field
+ * and the compose button at the bottom. At the top, as Instagram has it,
+ * the person's name with a menu (Settings, Appearance, Hidden Agents) in
+ * place of the account button.
  *
- * What the Mac's sidebar does, the list does: pinned agents in a grid
- * above the rows (shared with the Mac through the host's `pinnedAgentIds`,
- * dragged to reorder), the row menu on a long press (Pin, Mark as Read,
- * Edit Profile, Duplicate, Copy conversation ID, Hide from sidebar,
- * Delete, in the Mac's order and sections), Delete asking first in the
- * Mac's words, and "Hidden Agents" at the end, opening the hidden ones.
- * A swipe does the row's most used two each way, as Messages does.
+ * A long press on a row or a pinned agent shows the chat itself above its
+ * menu, as Messages does (Pin, Mark as Read, Hide Alerts, Delete; then the
+ * Mac's Edit Profile, Duplicate, Hide from List). A swipe does the row's
+ * most used two each way. Pinned agents sit in a grid above the rows,
+ * shared with the Mac through the host's `pinnedAgentIds`.
  */
 struct HomeView: View {
   /** A screen to open at launch (`--screen=`, the screenshots). */
   let opening: String?
   @Environment(AppStore.self) private var store
+  @AppStorage("simeon.theme") private var theme = "system"
   @State private var path: [String] = []
   @State private var sheet: HomeSheet?
   @State private var openedAtLaunch = false
   @State private var deleting: Agent?
   @State private var profile: AgentRef?
   @State private var showsHidden = false
+  @State private var query = ""
+
+  /** The rows: every listed chat, or those the search finds (hidden ones too) by name, title, description or last line. */
+  private var shown: [Agent] {
+    let words = query.trimmingCharacters(in: .whitespaces)
+    guard !words.isEmpty else { return store.listed }
+    return store.agents.filter { agent in
+      agent.name.localizedCaseInsensitiveContains(words) || agent.title.localizedCaseInsensitiveContains(words)
+        || agent.description.localizedCaseInsensitiveContains(words) || agent.previewLine.localizedCaseInsensitiveContains(words)
+    }
+  }
 
   var body: some View {
     let _ = Trace.tally("HomeView drawn")
     NavigationStack(path: $path) {
       List {
-        if !store.pinned.isEmpty {
+        if query.isEmpty && !store.pinned.isEmpty {
           PinGrid(pins: store.pinned, open: open, menu: menu)
             .listRowBackground(Ink.listGround)
             .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 10, trailing: 12))
             .listRowSeparator(.hidden)
         }
-        ForEach(store.listed) { agent in
+        ForEach(shown) { agent in
           Button { open(agent.id) } label: {
             AgentRow(agent: agent, members: store.members(of: agent))
           }
-          .contextMenu { menu(agent) }
+          .contextMenu { menu(agent) } preview: { ChatPeek(agentId: agent.id).environment(store) }
           .swipeActions(edge: .leading, allowsFullSwipe: true) {
             Button { Task { await store.setUnread(agent.id, !agent.hasUnread) } } label: {
-              Label(agent.hasUnread ? "Read" : "Unread", systemImage: agent.hasUnread ? "bell" : "bell.badge")
+              Label(agent.hasUnread ? "Read" : "Unread", systemImage: agent.hasUnread ? "message" : "message.badge")
             }
             .tint(Ink.unread)
-            Button { Task { await store.setPinned(agent.id, true) } } label: { Label("Pin", systemImage: "pin") }
-              .tint(Ink.pinSwipe)
+            Button { Task { await store.setPinned(agent.id, !store.pinnedIds.contains(agent.id)) } } label: {
+              Label(store.pinnedIds.contains(agent.id) ? "Unpin" : "Pin", systemImage: store.pinnedIds.contains(agent.id) ? "pin.slash" : "pin")
+            }
+            .tint(Ink.pinSwipe)
           }
           .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             Button { deleting = agent } label: { Label("Delete", systemImage: "trash") }
               .tint(Ink.callEnd)
-            Button { Task { await store.setHidden(agent.id, true) } } label: { Label("Hide", systemImage: "eye.slash") }
-              .tint(Ink.hideSwipe)
+            Button { Task { await store.setNotify(agent.id, !agent.notifyOnUpdates) } } label: {
+              Label(agent.notifyOnUpdates ? "Hide Alerts" : "Show Alerts", systemImage: agent.notifyOnUpdates ? "bell.slash" : "bell")
+            }
+            .tint(Ink.hideSwipe)
           }
           .listRowBackground(Ink.listGround)
-          .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-          .listRowSeparator(.hidden)
+          // The margin on the left holds the unread dot; the hairline below starts where the text does (AgentRow).
+          .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 16))
+          .listRowSeparatorTint(Ink.hairline)
         }
-        if !store.hiddenAgents.isEmpty && !store.listed.isEmpty {
+        if query.isEmpty && !store.hiddenAgents.isEmpty && !store.listed.isEmpty {
           Button { showsHidden = true } label: {
             HStack {
               Text("Hidden Agents")
               Spacer()
               Text("\(store.hiddenAgents.count)").monospacedDigit()
+              Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Ink.tertiary)
             }
-            .font(.system(size: 15.6))
+            .font(.system(size: 15))
             .foregroundStyle(Ink.secondary)
             .contentShape(.rect)
           }
           .accessibilityHint("Shows the agents hidden from the list")
           .listRowBackground(Ink.listGround)
-          .listRowInsets(EdgeInsets(top: 10, leading: 20, bottom: 10, trailing: 20))
+          .listRowInsets(EdgeInsets(top: 12, leading: 22, bottom: 12, trailing: 16))
           .listRowSeparator(.hidden)
         }
       }
       .listStyle(.plain)
       .scrollContentBackground(.hidden)
       .background(Ink.listGround)
-      // Rows move to their new place as the Mac's do when an agent answers, is pinned or hidden.
-      .animation(.spring(response: 0.38, dampingFraction: 0.86), value: store.listed.map(\.id))
+      // Rows move to their new place when an agent answers, is pinned or hidden.
+      .animation(.spring(response: 0.38, dampingFraction: 0.86), value: shown.map(\.id))
       .animation(.spring(response: 0.38, dampingFraction: 0.86), value: store.pinnedIds)
       .overlay {
-        if store.listed.isEmpty && store.pinned.isEmpty && !store.isLoading {
+        if shown.isEmpty && (store.pinned.isEmpty || !query.isEmpty) && !store.isLoading {
           VStack(spacing: 14) {
-            Text("No saved agents yet.").font(.system(size: 15.6)).foregroundStyle(Ink.secondary)
-            if !store.hiddenAgents.isEmpty {
+            Text(query.isEmpty ? "No saved agents yet." : "No results").font(.system(size: 15.6)).foregroundStyle(Ink.secondary)
+            if query.isEmpty && !store.hiddenAgents.isEmpty {
               Button("Show Hidden Agents") { showsHidden = true }
                 .buttonStyle(GreyButtonStyle())
             }
           }
         }
       }
+      .searchable(text: $query, prompt: "Search")
+      .navigationBarTitleDisplayMode(.inline)
       .toolbar {
-        ToolbarItem(placement: .topBarLeading) {
-          Button { sheet = .settings } label: {
-            Initials(letters: store.account?.initials ?? "")
-          }
-          .accessibilityLabel("Account and settings")
-        }
-        ToolbarItem(placement: .topBarTrailing) {
-          Button { sheet = .search } label: { Image(systemName: "magnifyingglass") }
-            .accessibilityLabel("Search")
-        }
-        ToolbarSpacer(.fixed, placement: .topBarTrailing)
-        ToolbarItem(placement: .topBarTrailing) {
+        // The person's name at the top, with its menu, as Instagram has it.
+        ToolbarItem(placement: .principal) {
           Menu {
-            Button { sheet = .newAgent } label: { Label("New Agent", systemImage: "person.crop.circle.badge.plus") }
-            Button { sheet = .newGroup } label: { Label("New Group Chat", systemImage: "person.2") }
+            if let account = store.account, !account.email.isEmpty {
+              Text(account.email)
+            }
+            Button { sheet = .settings } label: { Label("Settings", systemImage: "gearshape") }
+            Picker(selection: $theme) {
+              Label("System", systemImage: "circle.lefthalf.filled").tag("system")
+              Label("Light", systemImage: "sun.max").tag("light")
+              Label("Dark", systemImage: "moon").tag("dark")
+            } label: {
+              Label("Appearance", systemImage: "circle.lefthalf.filled")
+            }
+            .pickerStyle(.menu)
             if !store.hiddenAgents.isEmpty {
               Button { showsHidden = true } label: { Label("Hidden Agents (\(store.hiddenAgents.count))", systemImage: "eye.slash") }
             }
+          } label: {
+            HStack(spacing: 5) {
+              Text(store.account?.name ?? "Simeon").font(.system(size: 19, weight: .bold)).foregroundStyle(Ink.primary).lineLimit(1)
+              Image(systemName: "chevron.down").font(.system(size: 12, weight: .bold)).foregroundStyle(Ink.primary)
+            }
+            .contentShape(.rect)
+          }
+          .accessibilityLabel("Account and settings")
+        }
+        // At the bottom, as Messages has them: the search field, and new chat at the right.
+        DefaultToolbarItem(kind: .search, placement: .bottomBar)
+        ToolbarSpacer(.fixed, placement: .bottomBar)
+        ToolbarItem(placement: .bottomBar) {
+          Menu {
+            Button { sheet = .newAgent } label: { Label("New Agent", systemImage: "person.crop.circle.badge.plus") }
+            Button { sheet = .newGroup } label: { Label("New Group Chat", systemImage: "person.2") }
           } label: {
             Image(systemName: "square.and.pencil")
           }
@@ -181,30 +218,27 @@ struct HomeView: View {
     }
   }
 
-  /** The Mac's row menu (`AgentRowActions`), its four sections in its order; a group has no Edit Profile and no Duplicate. */
+  /** A chat's menu on a long press, Messages' four first (Pin, Mark as Read, Hide Alerts, Delete), then the Mac's own (Edit Profile, Duplicate, Hide from List, Copy conversation ID). */
   @ViewBuilder
   private func menu(_ agent: Agent) -> some View {
     let isPinned = store.pinnedIds.contains(agent.id)
-    Section {
-      Button { Task { await store.setPinned(agent.id, !isPinned) } } label: {
-        Label(isPinned ? "Unpin" : "Pin", systemImage: isPinned ? "pin.slash" : "pin")
-      }
-      Button { Task { await store.setUnread(agent.id, !agent.hasUnread) } } label: {
-        Label(agent.hasUnread ? "Mark as Read" : "Mark as Unread", systemImage: agent.hasUnread ? "bell" : "bell.badge")
-      }
+    Button { Task { await store.setPinned(agent.id, !isPinned) } } label: {
+      Label(isPinned ? "Unpin" : "Pin", systemImage: isPinned ? "pin.slash" : "pin")
     }
-    if !agent.isGroup {
-      Section {
+    Button { Task { await store.setUnread(agent.id, !agent.hasUnread) } } label: {
+      Label(agent.hasUnread ? "Mark as Read" : "Mark as Unread", systemImage: agent.hasUnread ? "checkmark.message" : "message.badge")
+    }
+    Button { Task { await store.setNotify(agent.id, !agent.notifyOnUpdates) } } label: {
+      Label(agent.notifyOnUpdates ? "Hide Alerts" : "Show Alerts", systemImage: agent.notifyOnUpdates ? "bell.slash" : "bell")
+    }
+    Button(role: .destructive) { deleting = agent } label: { Label("Delete", systemImage: "trash") }
+    Section {
+      if !agent.isGroup {
         Button { profile = AgentRef(id: agent.id) } label: { Label("Edit Profile", systemImage: "pencil") }
         Button { Task { await store.duplicate(agent.id) } } label: { Label("Duplicate", systemImage: "plus.square.on.square") }
       }
-    }
-    Section {
-      Button { UIPasteboard.general.string = agent.id } label: { Label("Copy conversation ID", systemImage: "doc.on.doc") }
-    }
-    Section {
-      Button { Task { await store.setHidden(agent.id, true) } } label: { Label("Hide from sidebar", systemImage: "eye.slash") }
-      Button(role: .destructive) { deleting = agent } label: { Label("Delete", systemImage: "trash") }
+      Button { Task { await store.setHidden(agent.id, true) } } label: { Label("Hide from List", systemImage: "eye.slash") }
+      Button { UIPasteboard.general.string = agent.id } label: { Label("Copy Conversation ID", systemImage: "doc.on.doc") }
     }
   }
 
@@ -274,7 +308,7 @@ struct PinGrid<Actions: View>: View {
           PinTile(agent: agent, members: store.members(of: agent))
         }
         .buttonStyle(PinPress())
-        .contextMenu { menu(agent) }
+        .contextMenu { menu(agent) } preview: { ChatPeek(agentId: agent.id).environment(store) }
         .draggable(agent.id) {
           AgentAvatar(agent: agent, members: store.members(of: agent)).frame(width: 72, height: 72)
         }
@@ -419,10 +453,11 @@ struct HiddenAgentsSheet: View {
 }
 
 /**
- * One agent or group in the list: the Mac's row zoomed ×1.2 as the phone
- * design has it (measured: the name 16.8 pt semibold, the title 13.2 pt in
- * the chat's blue, the time 14.4 pt at 40 %, the last line 15.6 pt at 60 %,
- * the butterfly 52).
+ * One agent or group in the list, as Messages draws a conversation: the
+ * unread dot in the margin (orange when it waits on you), the butterfly,
+ * the name in 17 pt semibold with the last line's time and a chevron at the
+ * right, and two lines of the last message under it in grey; the hairline
+ * between rows starts where the text does.
  */
 struct AgentRow: View {
   let agent: Agent
@@ -431,32 +466,35 @@ struct AgentRow: View {
 
   var body: some View {
     let _ = Trace.tally("AgentRow drawn")
-    HStack(alignment: .center, spacing: 12) {
-      AgentAvatar(agent: agent, members: members, moves: true)
-        .frame(width: 52, height: 52)
-        .overlay(alignment: .bottomTrailing) {
-          if let dot = RowStatus(agent: agent).cornerOnRow { StatusDot(colour: dot, size: 9.6).offset(x: -2.4, y: -2.4) }
-        }
-      VStack(alignment: .leading, spacing: 3) {
-        HStack(alignment: .firstTextBaseline, spacing: 6) {
-          Text(agent.name).font(.system(size: 16.8, weight: .semibold)).foregroundStyle(Ink.primary).lineLimit(1)
-          if !agent.title.isEmpty {
-            Text(agent.title).font(.system(size: 13.2)).foregroundStyle(Ink.bubbleMine).lineLimit(1)
-          }
-          Spacer(minLength: 4)
-          RowTime(agent: agent)
-        }
-        HStack(spacing: 8) {
-          Text(line).font(.system(size: 15.6)).foregroundStyle(Ink.secondary).lineLimit(1)
-          Spacer(minLength: 0)
-          if let marker = RowStatus(agent: agent).marker {
-            Circle().fill(marker).frame(width: 10, height: 10)
-              .accessibilityLabel(RowStatus(agent: agent).label ?? "")
-          }
+    let status = RowStatus(agent: agent)
+    HStack(alignment: .center, spacing: 0) {
+      ZStack {
+        if let marker = status.marker {
+          Circle().fill(marker).frame(width: 10, height: 10)
+            .accessibilityLabel(status.label ?? "")
         }
       }
+      .frame(width: 22)
+      AgentAvatar(agent: agent, members: members, moves: true)
+        .frame(width: 46, height: 46)
+        .overlay(alignment: .bottomTrailing) {
+          if let dot = status.cornerOnRow { StatusDot(colour: dot, size: 9.6).offset(x: -1, y: -1) }
+        }
+        .padding(.trailing, 10)
+      VStack(alignment: .leading, spacing: 2) {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+          Text(agent.name).font(.system(size: 17, weight: .semibold)).foregroundStyle(Ink.primary).lineLimit(1)
+          Spacer(minLength: 6)
+          RowTime(agent: agent)
+          Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Ink.tertiary)
+        }
+        Text(line).font(.system(size: 15)).foregroundStyle(Ink.secondary)
+          .lineLimit(2, reservesSpace: true)
+          .multilineTextAlignment(.leading)
+      }
+      .alignmentGuide(.listRowSeparatorLeading) { $0[.leading] }
+      .padding(.vertical, 10)
     }
-    .padding(.vertical, 4)
     .contentShape(.rect)
   }
 
@@ -466,6 +504,42 @@ struct AgentRow: View {
     if agent.isComposing { return "Typing…" }
     if let draft = store.drafts[agent.id] { return "Draft: " + draft.split(whereSeparator: \.isWhitespace).joined(separator: " ") }
     return agent.previewLine
+  }
+}
+
+/**
+ * A chat as a long press shows it above its menu (Messages' preview): its
+ * newest lines, read for the preview without opening the chat (so it stays
+ * unread), at the bottom of a card the size of most of the screen.
+ */
+struct ChatPeek: View {
+  let agentId: String
+  @Environment(AppStore.self) private var store
+  private static let width: CGFloat = 360
+
+  var body: some View {
+    let rows = Array(store.rows(for: agentId).suffix(16))
+    Group {
+      if rows.isEmpty {
+        ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+      } else {
+        ScrollView {
+          VStack(alignment: .leading, spacing: 0) {
+            ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
+              ChatRowView(row: row, agentId: agentId).equatable()
+                .padding(.top, ChatMessages.gap(index > 0 ? rows[index - 1] : nil, row))
+            }
+          }
+          .padding(.horizontal, 16).padding(.vertical, 14)
+          .environment(\.chatWidth, Self.width - 32)
+        }
+        .defaultScrollAnchor(.bottom)
+        .scrollDisabled(true)
+      }
+    }
+    .frame(width: Self.width, height: 440)
+    .background(Ink.ground)
+    .task { await store.peek(agentId) }
   }
 }
 
