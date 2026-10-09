@@ -90,22 +90,21 @@ public struct CatalogApp: Identifiable, Hashable, Sendable {
 public struct Account: Sendable, Equatable {
   public let name: String
   public let email: String
+  /** The picture the sign-in gave (`avatarUrl`, Google's), which Settings' account card shows. */
+  public let pictureURL: URL?
 
-  public init(name: String, email: String) { self.name = name; self.email = email }
+  public init(name: String, email: String, pictureURL: URL? = nil) { self.name = name; self.email = email; self.pictureURL = pictureURL }
 
   public init?(profile: JSON) {
     let email = profile["email"]?.string ?? ""
     let name = profile["preferredName"]?.text ?? profile["name"]?.text ?? profile["nickname"]?.text ?? email.split(separator: "@").first.map(String.init) ?? ""
     if name.isEmpty && email.isEmpty { return nil }
-    self.init(name: name, email: email)
+    let picture = profile["avatarUrl"]?.text.flatMap(URL.init(string:)).flatMap { $0.scheme == "https" ? $0 : nil }
+    self.init(name: name, email: email, pictureURL: picture)
   }
 
-  /** "BF" for Bass Fall: the account button's letters. */
-  public var initials: String {
-    let words = name.split(whereSeparator: { $0 == " " || $0 == "." || $0 == "_" || $0 == "-" })
-    let letters = words.prefix(2).compactMap(\.first).map { String($0).uppercased() }.joined()
-    return letters.isEmpty ? String(email.prefix(1)).uppercased() : letters
-  }
+  /** "BF" for Bass Fall: the first and last words' letters, as the window's account card has them (`AccountInitials`). */
+  public var initials: String { AccountInitials.of(name.isEmpty ? email : name) }
 }
 
 /**
@@ -136,6 +135,9 @@ public final class AppStore {
   }
   public private(set) var isLoading = false
   public var account: Account?
+  /** Settings' Usage & Billing (`usageSummary`): read when Settings opens, at most every 30 s. */
+  public internal(set) var usage: UsageLoad = .empty
+  @ObservationIgnored var usageReadAt: Date?
   /** Something went wrong that the person should hear about, once. */
   public var problem: String?
   /** An answer the person gave that the host has not echoed yet: the card shows it at once (the window's optimistic answer). */
@@ -299,7 +301,7 @@ public final class AppStore {
     listening?.cancel()
     listening = nil
     backend = nil
-    agents = []; transcripts = [:]; chatRows = [:]; steps = [:]; call = nil; callLevels = []; isLive = false; account = nil; openChat = nil
+    agents = []; transcripts = [:]; chatRows = [:]; steps = [:]; call = nil; callLevels = []; isLive = false; account = nil; usage = .empty; usageReadAt = nil; openChat = nil
     layoutTask?.cancel(); layoutTask = nil; pendingLayout = []; refreshing = []; caughtUp = [:]
     pendingAnswers = [:]; unreadAfter = [:]; apps = []; catalog = []; pinnedIds = []; routinesByAgent = [:]; sidebarSections = nil
     streamingOnly = [:]; outbox = [:]; arrived = []; olderBefore = [:]; loadingOlder = []; paged = []; firstRunAgentId = nil; revealing = [:]

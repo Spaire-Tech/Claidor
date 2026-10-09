@@ -150,6 +150,14 @@ public protocol AgentBackend: AnyObject, Sendable {
   func resetComputer() async throws -> RecreateAnswer
   /** The last step of a rebuild the server reported (`getBoxMigrationStatus`). */
   func migrationStatus() async -> MigrationEvent?
+  /** One method of the account's Connect service on Simeon Labs' server (`simeon.v1.DashboardService`): Settings' Cancel Trial (`CancelSandTrial`). */
+  func dashboard(_ method: String, _ message: JSON) async throws -> JSON
+}
+
+extension AgentBackend {
+  public func dashboard(_ method: String, _ message: JSON) async throws -> JSON {
+    throw SimeonAPIError(message: "This isn’t available right now", status: 501)
+  }
 }
 
 /**
@@ -246,6 +254,11 @@ public final class LiveBackend: AgentBackend, @unchecked Sendable {
   public func migrationStatus() async -> MigrationEvent? { migrations?.status }
 
   public func command(_ method: String, _ args: JSON) async throws -> JSON { try await gateway.command(method, args) }
+
+  public func dashboard(_ method: String, _ message: JSON) async throws -> JSON {
+    guard let api else { throw SimeonAPIError(message: "Sign in to Simeon to continue", status: 401) }
+    return try await api.connect(method, message, service: "simeon.v1.DashboardService")
+  }
 
   public func server(_ path: String, method: String?, body: JSON?) async throws -> JSON {
     guard let api else { throw SimeonAPIError(message: "Sign in to Simeon first.", status: 401) }

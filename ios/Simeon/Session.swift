@@ -271,6 +271,11 @@ final class SessionController {
     }
   }
 
+  /** Settings' Cancel while signing in: the sign-in sheet closed, as its own Cancel does. */
+  func cancelSignIn() {
+    sheet?.cancel()
+  }
+
   func signOut() async {
     store.detach()
     await Notifications.shared.stop()

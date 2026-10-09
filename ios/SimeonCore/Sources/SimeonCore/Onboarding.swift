@@ -258,7 +258,7 @@ extension AppStore {
     let name = Onboarding.normalizedName(typed)
     guard !name.isEmpty, let backend else { return }
     _ = try? await backend.server("user/name", method: "POST", body: ["name": .string(name)])
-    if let account { self.account = Account(name: name, email: account.email) }
+    if let account { self.account = Account(name: name, email: account.email, pictureURL: account.pictureURL) }
   }
 
   private func countAgents(_ backend: AgentBackend) async throws -> Int {

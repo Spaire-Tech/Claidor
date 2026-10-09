@@ -140,8 +140,8 @@ public actor SimeonAPI {
   }
 
   /** One unary call on the box broker, Connect JSON (`server/simeon/sand/connect.py`). */
-  public func connect(_ method: String, _ message: JSON = [:]) async throws -> JSON {
-    var request = URLRequest.post(url("/\(Self.connectService)/\(method)"), json: message, headers: ["connect-protocol-version": "1"])
+  public func connect(_ method: String, _ message: JSON = [:], service: String = connectService) async throws -> JSON {
+    var request = URLRequest.post(url("/\(service)/\(method)"), json: message, headers: ["connect-protocol-version": "1"])
     try await authorized(&request)
     let answer = try await http.send(request)
     if answer.status == 401 { sessionEnded() }
