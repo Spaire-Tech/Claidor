@@ -873,6 +873,23 @@ done it. also, he cant cut himself like this, wait of turn."
   asked); an answer or a failure is said. The Mac banner no longer pushes it
   in after 8 s while the voice talks either.
 
+## 29. Pictures without the file card first (9 October 2026)
+
+The founder: "for 1 second, we see the pic … as an attachment, then the pic
+come." A picture was drawn as a file card until it had come back from the
+computer (`readAttachmentChunk`), and again each time its row was drawn
+anew, since nothing kept it.
+
+- A picture sent from the phone shows at once, from the composer's own
+  copy: the waiting line names it (`AppStore.outboxFileURL`), the computer's
+  path answers for the same copy once uploaded (`sentFile`), and it is never
+  fetched back.
+- Pictures are kept, decoded at their size, while the app runs
+  (`ChatImages`): a row drawn again shows its picture at once.
+- A picture still on its way (an agent's, or after a relaunch) is an empty
+  frame of its place, never a file card; the card shows only if it cannot
+  be read.
+
 ## Suggested order (the founder decides)
 
 1. The chat's look: the bubble, the top bar, markdown, brand names with logos, agent names with butterflies.

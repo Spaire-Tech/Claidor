@@ -585,7 +585,10 @@ struct ChatComposer: View {
     attachments = []
     reply?.target = nil
     dictation.stop()
-    Task { await store.send(text, to: agentId, attachments: files.map { ($0.name, $0.data) }, replyTo: answering) }
+    // The composer's pictures are shown in the chat as they are, before anything goes to the computer.
+    let id = AppStore.newMessageId()
+    for (index, file) in files.enumerated() { if let preview = file.preview { ChatImages.keep(preview, under: [AppStore.outboxFileURL(id, index)]) } }
+    Task { await store.send(text, to: agentId, attachments: files.map { ($0.name, $0.data) }, replyTo: answering, id: id) }
   }
 }
 

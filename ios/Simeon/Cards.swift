@@ -942,7 +942,38 @@ enum FileKind {
   }
 }
 
-/** A file an agent made or the person sent (`attachment`, `user-attachment`): the kind's artwork, the name, save; a tap opens it. Images show inline. */
+/**
+ * The chat's pictures, decoded at the size they are shown, by every address
+ * a file has (`AppStore.sentFile`): kept while the app runs, so a row drawn
+ * again, scrolled back or opened again shows its picture at once instead of
+ * reading it from the computer again.
+ */
+enum ChatImages {
+  private static let cache: NSCache<NSString, UIImage> = {
+    let cache = NSCache<NSString, UIImage>()
+    cache.totalCostLimit = 120 << 20
+    return cache
+  }()
+
+  static func image(for keys: [String]) -> UIImage? {
+    for key in keys { if let image = cache.object(forKey: key as NSString) { return image } }
+    return nil
+  }
+
+  static func keep(_ image: UIImage, under keys: [String]) {
+    let cost = Int(image.size.width * image.size.height * image.scale * image.scale * 4)
+    for key in keys where !key.isEmpty { cache.setObject(image, forKey: key as NSString, cost: cost) }
+  }
+}
+
+/**
+ * A file an agent made or the person sent (`attachment`, `user-attachment`):
+ * the kind's artwork, the name, save; a tap opens it. Images show inline:
+ * one the person sent from this phone at once, from the phone's own copy;
+ * any other in an empty frame of its place while it comes from the
+ * computer, never as a file card first (the founder, 9 October 2026: "for 1
+ * second, we see the pic … as an attachment, then the pic come").
+ */
 struct FileCardView: View {
   let name: String
   let url: String
@@ -954,26 +985,50 @@ struct FileCardView: View {
   @State private var preview: PreviewFile?
   @State private var loading = false
 
+  /** The picture could not be read: the file card, so it can still be opened. */
+  @State private var unreadable = false
+
   private var isImage: Bool { FileKind.images.contains((name as NSString).pathExtension.lowercased()) }
 
+  /** Every address this file is shown under (a sent file's waiting line and the computer's path). */
+  private var keys: [String] { store.sentFile(url)?.keys ?? [url] }
+
   var body: some View {
+    let shown = image ?? (isImage ? ChatImages.image(for: keys) : nil)
     Group {
-      if isImage, let image {
-        Image(uiImage: image).resizable().scaledToFit()
+      if isImage, let shown {
+        Image(uiImage: shown).resizable().scaledToFit()
           .frame(maxWidth: min(ChatMetrics.bubbleMax(width), 280), maxHeight: 360)
           .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
           .onTapGesture { open() }
+      } else if isImage && !unreadable {
+        // Its place while it comes: the picture's frame, empty.
+        RoundedRectangle(cornerRadius: 14, style: .continuous)
+          .fill(Ink.bubbleTheirs)
+          .frame(width: min(ChatMetrics.bubbleMax(width), 220), height: 165)
       } else {
         card
       }
     }
     .frame(maxWidth: .infinity, alignment: fromPerson ? .trailing : .leading)
     // Decoded at the size it is shown, off the main thread: a full-size photo decoded on it froze scrolling.
-    .task {
-      guard isImage, image == nil, let data = await store.readFile(url, agentId: agentId, limit: 12 << 20), let full = UIImage(data: data) else { return }
+    .task(id: url) {
+      guard isImage else { return }
+      let keys = keys
+      if let kept = ChatImages.image(for: keys), max(kept.size.width, kept.size.height) <= 900 {
+        image = kept
+        return
+      }
+      // The phone's own copy of a picture sent from here (`readFile` answers from it), else the computer's.
+      guard let data = await store.readFile(url, agentId: agentId, limit: 12 << 20), let full = UIImage(data: data) else {
+        if ChatImages.image(for: keys) == nil { unreadable = true }
+        return
+      }
       // Its own shape, at most 900 pt on its long side (the thumbnail is drawn at exactly the size asked).
       let scale = min(1, 900 / max(full.size.width, full.size.height, 1))
-      image = await full.byPreparingThumbnail(ofSize: CGSize(width: full.size.width * scale, height: full.size.height * scale)) ?? full
+      let thumbnail = await full.byPreparingThumbnail(ofSize: CGSize(width: full.size.width * scale, height: full.size.height * scale)) ?? full
+      ChatImages.keep(thumbnail, under: keys)
+      image = thumbnail
     }
     .sheet(item: $preview) { file in QuickLookSheet(file: file).ignoresSafeArea() }
   }

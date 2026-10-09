@@ -531,6 +531,31 @@ final class VoiceCallTests: XCTestCase {
   }
 }
 
+/** A picture sent from the phone is shown from the phone's own copy, never fetched back (9 October 2026). */
+@MainActor
+final class SentPictureTests: XCTestCase {
+  func testASentPictureIsReadFromThePhoneUnderBothItsAddresses() async throws {
+    let store = AppStore()
+    let backend = DemoBackend(seed: DemoData.seed(), pace: 0.01, call: nil)
+    await store.attach(backend)
+    await store.open("theo")
+    let id = AppStore.newMessageId()
+    let photo = Data([0x89, 0x50, 0x4E, 0x47, 1, 2, 3])
+    await store.send("", to: "theo", attachments: [("Photo 1.png", photo)], id: id)
+    // The waiting line names the phone's copy, and the computer's path answers for it once uploaded.
+    let waiting = AppStore.outboxFileURL(id, 0)
+    XCTAssertEqual(store.sentFile(waiting)?.data, photo)
+    let path = "/home/box/attachments/Photo 1.png"
+    XCTAssertEqual(store.sentFile(path)?.keys, [waiting, path])
+    let read = await store.readFile(path, agentId: "theo")
+    XCTAssertEqual(read, photo, "read from the phone, not the computer (the demo's computer has no such file)")
+    // The host's line for it names that path.
+    try await Task.sleep(nanoseconds: 200_000_000)
+    let files = store.rows(for: "theo").compactMap { row -> String? in if case .file(_, _, let url, true) = row { return url }; return nil }
+    XCTAssertTrue(files.contains(path) || files.contains(waiting), "\(files)")
+  }
+}
+
 /** The call's tones as a test hears them: when each ring started and ended, and the hang-ups. */
 final class FakeTones: CallTonePlaying, @unchecked Sendable {
   let lock = NSLock()

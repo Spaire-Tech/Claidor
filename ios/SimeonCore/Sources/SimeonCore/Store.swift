@@ -225,6 +225,7 @@ public final class AppStore {
     pendingAnswers = [:]; unreadAfter = [:]; apps = []; catalog = []; pinnedIds = []
     streamingOnly = [:]; outbox = [:]; arrived = []; olderBefore = [:]; loadingOlder = []; paged = []; firstRunAgentId = nil; revealing = [:]
     voiceList = nil
+    sentFiles = []
   }
 
   public func reloadRoster() async {
@@ -456,10 +457,13 @@ public final class AppStore {
     return next
   }
 
+  /** Where a waiting message's file is: on this phone, under the message's own id (`sentFile`). */
+  public static func outboxFileURL(_ messageId: String, _ index: Int) -> String { "outbox:\(messageId)-file\(index)" }
+
   /** A waiting message as the host would write it: its text, and a line per file. */
   static func entries(for item: Outgoing) -> [Entry] {
     var lines: [JSON] = item.files.enumerated().map { index, file in
-      ["kind": "user-attachment", "id": .string("\(item.id)-file\(index)"), "file_name": .string(file.name), "timestampMs": .number(item.at)]
+      ["kind": "user-attachment", "id": .string("\(item.id)-file\(index)"), "file_name": .string(file.name), "file_path": .string(outboxFileURL(item.id, index)), "timestampMs": .number(item.at)]
     }
     if !item.text.isEmpty {
       var message: JSON = ["kind": "message", "id": .string(item.id), "role": "user", "content": .string(item.text), "timestampMs": .number(item.at)]
@@ -663,15 +667,38 @@ public final class AppStore {
    * Mac's does, and stays until the host's copy arrives; if it cannot be
    * sent it says "Failed to send" under it, with Resend and Delete.
    */
-  public func send(_ text: String, to agentId: String, attachments files: [(name: String, data: Data)] = [], replyTo: String? = nil) async {
+  public func send(_ text: String, to agentId: String, attachments files: [(name: String, data: Data)] = [], replyTo: String? = nil, id: String? = nil) async {
     let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
     guard backend != nil, !trimmed.isEmpty || !files.isEmpty else { return }
-    let item = Outgoing(id: "ios-\(UUID().uuidString.lowercased())", text: trimmed, files: files, replyTo: replyTo, at: Date().timeIntervalSince1970 * 1000, known: Set((transcripts[agentId] ?? []).map(\.id)), state: .sending)
+    let item = Outgoing(id: id ?? Self.newMessageId(), text: trimmed, files: files, replyTo: replyTo, at: Date().timeIntervalSince1970 * 1000, known: Set((transcripts[agentId] ?? []).map(\.id)), state: .sending)
+    for (index, file) in files.enumerated() { keepSent(file.data, under: Self.outboxFileURL(item.id, index)) }
     outbox[agentId, default: []].append(item)
     arrived.insert(item.id)
     for index in files.indices { arrived.insert("\(item.id)-file\(index)") }
     layOut(agentId)
     await deliver(item.id, in: agentId)
+  }
+
+  /** A message's id before it is sent, so the composer can name its files' places (`outboxFileURL`) first. */
+  public static func newMessageId() -> String { "ios-\(UUID().uuidString.lowercased())" }
+
+  /**
+   * Files the person sent from this phone, by every address the chat shows
+   * them under: the waiting line's (`outboxFileURL`), then the path the
+   * computer keeps them at. Read from here, never fetched back: a sent
+   * picture showed as a file card for a second while it came back from the
+   * computer (the founder, 9 October 2026). The last 24.
+   */
+  @ObservationIgnored private var sentFiles: [(keys: [String], data: Data)] = []
+
+  private func keepSent(_ data: Data, under key: String) {
+    sentFiles.append(([key], data))
+    if sentFiles.count > 24 { sentFiles.removeFirst(sentFiles.count - 24) }
+  }
+
+  /** A file sent from this phone, by any address it is shown under, with all of them (the first is its waiting line's). */
+  public func sentFile(_ url: String) -> (keys: [String], data: Data)? {
+    sentFiles.last { $0.keys.contains(url) }
   }
 
   /** Resend on a message that failed. */
@@ -698,10 +725,13 @@ public final class AppStore {
     mark(id, in: agentId, .sending)
     var refs: [AttachmentRef] = []
     do {
-      for file in item.files {
+      for (index, file) in item.files.enumerated() {
         let answer = try await backend.command("uploadAttachment", ["filename": .string(file.name), "bytesBase64": .string(file.data.base64EncodedString()), "agentId": .string(agentId)])
         guard let path = answer["path"]?.text else { throw GatewayError(message: "the computer kept no copy", refused: true) }
         refs.append(AttachmentRef(path: path, name: file.name))
+        // The host's line for the file names this path: the phone's copy answers for it too.
+        let key = Self.outboxFileURL(item.id, index)
+        if let kept = sentFiles.lastIndex(where: { $0.keys.contains(key) }), !sentFiles[kept].keys.contains(path) { sentFiles[kept].keys.append(path) }
       }
       try await backend.send(agentId, text: item.text, attachments: refs, replyTo: item.replyTo, nonce: item.id)
     } catch {
@@ -800,6 +830,7 @@ public final class AppStore {
    * the box will not hand it over.
    */
   public func readFile(_ url: String, agentId: String, limit: Int = 60 << 20) async -> Data? {
+    if let sent = sentFile(url) { return sent.data }
     guard let backend else { return nil }
     let path = url.hasPrefix("file://") ? (URL(string: url)?.path ?? String(url.dropFirst(7))) : url
     var data = Data()
