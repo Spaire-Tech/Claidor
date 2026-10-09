@@ -13,10 +13,18 @@ import SimeonCore
  */
 struct AgentPageSheet: View {
   let agentId: String
+  /** A routine to open at once (a routine found in search), on the Routines tab. */
+  var routineId: String? = nil
   @Environment(AppStore.self) private var store
   @Environment(\.dismiss) private var dismiss
-  @State private var tab = 0
+  @State private var tab: Int
   @State private var editingAvatar = false
+
+  init(agentId: String, routineId: String? = nil) {
+    self.agentId = agentId
+    self.routineId = routineId
+    _tab = State(initialValue: routineId == nil ? 0 : 1)
+  }
 
   var body: some View {
     NavigationStack {
@@ -59,7 +67,7 @@ struct AgentPageSheet: View {
                 Group {
                   switch tab {
                   case 0: ProfileTab(agent: agent)
-                  case 1: RoutinesTab(agent: agent)
+                  case 1: RoutinesTab(agent: agent, opening: routineId)
                   default: ComputerTab(agent: agent)
                   }
                 }
@@ -164,10 +172,13 @@ struct ProfileTab: View {
 /** The agent's routines: each with when it runs (or Paused); a tap opens its editor; Create Routine. */
 struct RoutinesTab: View {
   let agent: Agent
+  /** A routine to open as soon as the list is in (search). */
+  var opening: String? = nil
   @Environment(AppStore.self) private var store
   @State private var routines: [Routine] = []
   @State private var loading = true
   @State private var editing: EditingRoutine?
+  @State private var opened = false
 
   struct EditingRoutine: Identifiable { let id: String; let routine: Routine; let isNew: Bool }
 
@@ -230,6 +241,10 @@ struct RoutinesTab: View {
   private func reload() async {
     routines = await store.routineList(agent.id)
     loading = false
+    if !opened, let opening, let routine = routines.first(where: { $0.id == opening }) {
+      opened = true
+      editing = EditingRoutine(id: routine.id, routine: routine, isNew: false)
+    }
   }
 }
 

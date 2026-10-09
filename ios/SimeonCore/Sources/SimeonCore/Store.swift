@@ -163,6 +163,8 @@ public final class AppStore {
   public private(set) var loadingOlder: Set<String> = []
   /** Chats with older pages loaded: a fetch of the newest lines keeps them. */
   @ObservationIgnored private var paged: Set<String> = []
+  /** A line search found, to show once its chat is open (agent → entry; Search.swift). */
+  public var revealing: [String: String] = [:]
   /** Simeon, once the first run's hand-off made him: a second try does not make another (Onboarding.swift). */
   @ObservationIgnored var firstRunAgentId: String?
 
@@ -208,7 +210,7 @@ public final class AppStore {
     agents = []; transcripts = [:]; chatRows = [:]; steps = [:]; call = nil; callLevels = []; isLive = false; account = nil; openChat = nil
     layoutTask?.cancel(); layoutTask = nil; pendingLayout = []; refreshing = []; caughtUp = [:]
     pendingAnswers = [:]; unreadAfter = [:]; apps = []; catalog = []; pinnedIds = []
-    streamingOnly = [:]; outbox = [:]; arrived = []; olderBefore = [:]; loadingOlder = []; paged = []; firstRunAgentId = nil
+    streamingOnly = [:]; outbox = [:]; arrived = []; olderBefore = [:]; loadingOlder = []; paged = []; firstRunAgentId = nil; revealing = [:]
   }
 
   public func reloadRoster() async {

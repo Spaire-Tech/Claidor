@@ -2,9 +2,9 @@ import SwiftUI
 import UIKit
 import SimeonCore
 
-/** The sheets the list opens: New Agent and New Group Chat from the compose button, Settings from the name's menu (search is the list's own field now). */
+/** The sheets the list opens: New Agent and New Group Chat from the compose button, Settings from the account button (search is the list's own field). */
 enum HomeSheet: String, Identifiable {
-  case newAgent, newGroup, search, settings
+  case newAgent, newGroup, settings
   var id: String { rawValue }
 }
 
@@ -35,6 +35,8 @@ struct HomeView: View {
   @State private var showsHidden = false
   @State private var query = ""
   @State private var filter = ListFilter.all
+  /** The search field has the focus: the list gives way to search (SearchResults) until it is left empty. */
+  @FocusState private var searchFocused: Bool
 
   /** The filter menu's choice, as Messages': every chat, or only the unread ones. */
   enum ListFilter { case all, unread }
@@ -124,8 +126,27 @@ struct HomeView: View {
       }
       // At the bottom, as Messages has them: the search field, and new chat at the right. Our own bar: the system's
       // search in the bottom toolbar was set up again on every redraw of the list ("Ignoring searchBarPlacement…").
+      // Search, with all the Mac's search has, over the list while the field is in use.
+      .overlay {
+        if searchFocused || !query.isEmpty {
+          SearchResults(
+            query: query,
+            openChat: { id in searchFocused = false; open(id) },
+            openEntry: { agentId, entryId in
+              searchFocused = false
+              store.revealing[agentId] = entryId
+              open(agentId)
+            },
+            openRoutine: { hit in searchFocused = false; profile = AgentRef(id: hit.agentId, routineId: hit.routine.id) },
+            openSheet: { next in searchFocused = false; sheet = next },
+            showHidden: { searchFocused = false; showsHidden = true }
+          )
+          .transition(.opacity)
+        }
+      }
+      .animation(.easeOut(duration: 0.2), value: searchFocused || !query.isEmpty)
       .safeAreaBar(edge: .bottom, spacing: 0) {
-        ListBottomBar(query: $query, newAgent: { sheet = .newAgent }, newGroup: { sheet = .newGroup })
+        ListBottomBar(query: $query, focus: $searchFocused, newAgent: { sheet = .newAgent }, newGroup: { sheet = .newGroup })
       }
       .navigationBarTitleDisplayMode(.inline)
       .navigationTitle("Messages")
@@ -173,18 +194,13 @@ struct HomeView: View {
           NewAgentSheet { id in open(id) }
         case .newGroup:
           NewGroupSheet { id in open(id) }
-        case .search:
-          SearchSheet(onOpen: { id in open(id) }, onSheet: { next in
-            sheet = nil
-            Task { try? await Task.sleep(nanoseconds: 450_000_000); sheet = next }
-          })
         case .settings:
           SettingsSheet()
         }
       }
       .problemAlert()
     }
-    .sheet(item: $profile) { ref in AgentPageSheet(agentId: ref.id).problemAlert() }
+    .sheet(item: $profile) { ref in AgentPageSheet(agentId: ref.id, routineId: ref.routineId).problemAlert() }
     .sheet(isPresented: $showsHidden) {
       HiddenAgentsSheet { id in
         showsHidden = false
@@ -256,7 +272,7 @@ struct HomeView: View {
     switch first {
     case "new-agent": sheet = .newAgent
     case "new-group": sheet = .newGroup
-    case "search": sheet = .search
+    case "search": searchFocused = true
     case "settings": sheet = .settings
     case "pins":
       Task {
@@ -275,12 +291,12 @@ struct HomeView: View {
   }
 }
 
-/** The list's foot, as Messages': the search field in glass with its mic, and new chat in a glass circle at the right. */
+/** The list's foot, as Messages': the search field in glass with its mic, and new chat in a glass circle at the right; while searching, a close in its place. */
 struct ListBottomBar: View {
   @Binding var query: String
+  var focus: FocusState<Bool>.Binding
   let newAgent: () -> Void
   let newGroup: () -> Void
-  @FocusState private var searching: Bool
   @State private var dictation = Dictation()
 
   var body: some View {
@@ -289,7 +305,7 @@ struct ListBottomBar: View {
         Image(systemName: "magnifyingglass").font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.secondary)
         TextField("Search", text: $query)
           .font(.system(size: 17))
-          .focused($searching)
+          .focused(focus)
           .submitLabel(.search)
           .autocorrectionDisabled()
         if !query.isEmpty {
@@ -311,19 +327,29 @@ struct ListBottomBar: View {
       }
       .padding(.leading, 14).padding(.trailing, 8)
       .frame(height: 48)
-      .background { Color.clear.contentShape(.capsule).onTapGesture { searching = true } }
+      .background { Color.clear.contentShape(.capsule).onTapGesture { focus.wrappedValue = true } }
       // Glass, not interactive glass: the field and its buttons take the touches (GlassDisc).
       .glassEffect(.regular, in: .capsule)
-      Menu {
-        Button(action: newAgent) { Label("New Agent", systemImage: "person.crop.circle.badge.plus") }
-        Button(action: newGroup) { Label("New Group Chat", systemImage: "person.2") }
-      } label: {
-        Image(systemName: "square.and.pencil").font(.system(size: 19, weight: .medium)).foregroundStyle(Ink.primary)
-          .frame(width: 48, height: 48)
-          .contentShape(.circle)
-          .glassEffect(.regular, in: .circle)
+      if focus.wrappedValue || !query.isEmpty {
+        // Searching: leave it, as Messages' close does.
+        Button { query = ""; focus.wrappedValue = false } label: {
+          Image(systemName: "xmark").font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.primary)
+            .frame(width: 48, height: 48)
+        }
+        .buttonStyle(GlassDisc())
+        .accessibilityLabel("Close search")
+      } else {
+        Menu {
+          Button(action: newAgent) { Label("New Agent", systemImage: "person.crop.circle.badge.plus") }
+          Button(action: newGroup) { Label("New Group Chat", systemImage: "person.2") }
+        } label: {
+          Image(systemName: "square.and.pencil").font(.system(size: 19, weight: .medium)).foregroundStyle(Ink.primary)
+            .frame(width: 48, height: 48)
+            .contentShape(.circle)
+            .glassEffect(.regular, in: .circle)
+        }
+        .accessibilityLabel("New")
       }
-      .accessibilityLabel("New")
     }
     .padding(.horizontal, 16)
     .padding(.top, 6)
@@ -331,9 +357,10 @@ struct ListBottomBar: View {
   }
 }
 
-/** An agent's id as a sheet's item. */
+/** An agent's id as a sheet's item, and a routine of it to open at once (from search). */
 struct AgentRef: Identifiable, Hashable {
   let id: String
+  var routineId: String? = nil
 }
 
 /**
@@ -679,4 +706,367 @@ struct ProblemAlert: ViewModifier {
 
 extension View {
   func problemAlert() -> some View { modifier(ProblemAlert()) }
+}
+
+// MARK: - Search
+
+/**
+ * Search, with everything the Mac's search has (its palette, `QFn`), drawn
+ * as Messages draws its own: tabs along the top (All, Messages, Agents,
+ * Groups, Files, Links, Routines, Actions, the Mac's order), then results
+ * in sections, the matched letters in bold.
+ *
+ * - Agents and groups by name and title, the pinned first; hidden ones too
+ *   once something is typed, tagged Hidden.
+ * - Messages in every chat and files through the host's index
+ *   (`searchAgents`, `searchMedia`; asked 0.15 s after the last keystroke,
+ *   the results before kept meanwhile); with nothing typed, the newest files.
+ * - The links in the chats the phone has opened, every routine of every
+ *   agent (`listAllAutomations`), and the app's actions.
+ *
+ * A message or a file opens its chat at that line, loading older pages
+ * until it is there; a link opens in Safari; a routine opens its editor; a
+ * chat its chat. Messages, Files, Links and Routines are left out when the
+ * host's search is off (`isGlobalSearchEnabled`).
+ */
+struct SearchResults: View {
+  let query: String
+  let openChat: (String) -> Void
+  let openEntry: (String, String) -> Void
+  let openRoutine: (RoutineHit) -> Void
+  let openSheet: (HomeSheet) -> Void
+  let showHidden: () -> Void
+  @Environment(AppStore.self) private var store
+  @Environment(\.openURL) private var openURL
+  @AppStorage("simeon.theme") private var theme = "system"
+  @State private var tab: SearchTab = .all
+  @State private var indexed = true
+  @State private var messages: [MessageHit] = []
+  @State private var files: [FileHit] = []
+  @State private var routines: [RoutineHit] = []
+  @State private var loading = false
+  @State private var failed = false
+
+  private var words: String { query.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+  var body: some View {
+    let tabs = SearchTab.allCases.filter { indexed || !$0.needsIndex }
+    VStack(spacing: 0) {
+      ScrollView(.horizontal, showsIndicators: false) {
+        HStack(spacing: 8) {
+          ForEach(tabs, id: \.self) { item in
+            Button { withAnimation(.snappy(duration: 0.2)) { tab = item } } label: {
+              Text(item.title)
+                .font(.system(size: 15, weight: tab == item ? .semibold : .regular))
+                .foregroundStyle(tab == item ? Ink.ground : Ink.primary)
+                .padding(.horizontal, 14)
+                .frame(height: 34)
+                .background(tab == item ? AnyShapeStyle(Ink.primary) : AnyShapeStyle(Color(.tertiarySystemFill)), in: Capsule())
+                .contentShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(tab == item ? .isSelected : [])
+          }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+      }
+      results
+    }
+    .background(Ink.listGround)
+    .task {
+      indexed = await store.globalSearchEnabled()
+      if indexed { routines = await store.allRoutines() }
+    }
+    .task(id: query) { await fetch() }
+  }
+
+  // MARK: What is found
+
+  private struct Found<Item> {
+    let item: Item
+    let score: Int
+    let hits: [Int]
+  }
+
+  private func ranked<Item>(_ items: [Item], label: (Item) -> String, keywords: (Item) -> [String] = { _ in [] }) -> [Found<Item>] {
+    guard !words.isEmpty else { return items.map { Found(item: $0, score: 0, hits: []) } }
+    return items.enumerated().compactMap { index, item -> (Int, Found<Item>)? in
+      guard let match = Search.match(words, label: label(item), keywords: keywords(item)) else { return nil }
+      return (index, Found(item: item, score: match.score, hits: match.hits))
+    }
+    .sorted { $0.1.score != $1.1.score ? $0.1.score > $1.1.score : $0.0 < $1.0 }
+    .map(\.1)
+  }
+
+  /** Agents or groups: the pinned first, then the rest; hidden ones only once something is typed, after the others. */
+  private func chats(groups: Bool) -> [Found<Agent>] {
+    let pins = store.pinnedIds
+    let pool = store.agents
+      .filter { $0.isGroup == groups && (!words.isEmpty || !$0.isHidden) }
+      .sorted { (pins.firstIndex(of: $0.id) ?? Int.max) < (pins.firstIndex(of: $1.id) ?? Int.max) }
+    let found = ranked(pool, label: \.name, keywords: { agent in [agent.title] + (groups ? store.members(of: agent).map(\.name) : []) })
+    return found.filter { !$0.item.isHidden } + found.filter(\.item.isHidden)
+  }
+
+  private var foundMessages: [Found<MessageHit>] { messages.map { Found(item: $0, score: 0, hits: Search.match(words, label: $0.snippet)?.hits ?? []) } }
+  private var foundFiles: [Found<FileHit>] { files.map { Found(item: $0, score: 0, hits: Search.match(words, label: $0.fileName)?.hits ?? []) } }
+  private var foundLinks: [Found<LinkHit>] { ranked(store.allLinks, label: \.title, keywords: { [$0.url] }) }
+  private var foundRoutines: [Found<RoutineHit>] {
+    ranked(routines.sorted { ($0.date ?? 0) > ($1.date ?? 0) }, label: \.routine.name, keywords: { [$0.routine.summary] })
+  }
+  private var foundActions: [Found<SearchAction>] { ranked(actions, label: \.label, keywords: \.keywords) }
+
+  /** The app's actions (the Mac's `RDn`, as the phone has them). */
+  private var actions: [SearchAction] {
+    var list = [
+      SearchAction(id: "new-agent", label: "New Agent", detail: "Agents", symbol: "person.crop.circle.badge.plus", keywords: ["create", "add", "hire"]) { openSheet(.newAgent) },
+      SearchAction(id: "new-group", label: "New Group Chat", detail: "Agents", symbol: "person.2", keywords: ["create", "group", "team"]) { openSheet(.newGroup) },
+    ]
+    if !store.hiddenAgents.isEmpty {
+      list.append(SearchAction(id: "hidden", label: "Open Hidden Agents", detail: "List", symbol: "eye.slash", keywords: ["hidden", "sidebar"], run: showHidden))
+    }
+    list.append(SearchAction(id: "settings", label: "Settings", detail: "Settings", symbol: "gearshape", keywords: ["general", "account", "usage", "billing", "plan", "limit", "time zone", "auto-review", "plugins", "connect apps", "connectors", "tools", "skills", "mcp"]) { openSheet(.settings) })
+    for (value, name, symbol) in [("system", "System", "circle.lefthalf.filled"), ("light", "Light", "sun.max"), ("dark", "Dark", "moon")] {
+      list.append(SearchAction(id: "theme-\(value)", label: "Theme: \(name)", detail: "Settings · Appearance", symbol: symbol, keywords: ["appearance", "mode", "theme"], current: theme == value) { theme = value })
+    }
+    return list
+  }
+
+  // MARK: Drawn
+
+  @ViewBuilder
+  private var results: some View {
+    let agents = tab == .all || tab == .agents ? chats(groups: false) : []
+    let groups = tab == .all || tab == .groups ? chats(groups: true) : []
+    let showMessages = indexed && (tab == .all || tab == .messages)
+    let showFiles = indexed && (tab == .all || tab == .files)
+    let messageRows = showMessages && !words.isEmpty ? foundMessages : []
+    // With nothing typed, All is the agents and the actions (the Mac's); a tab shows all it has.
+    let fileRows = showFiles && (tab == .files || !words.isEmpty) ? foundFiles : []
+    let linkRows = indexed && (tab == .links || (tab == .all && !words.isEmpty)) ? foundLinks : []
+    let routineRows = indexed && (tab == .routines || (tab == .all && !words.isEmpty)) ? foundRoutines : []
+    let actionRows = tab == .all || tab == .actions ? foundActions : []
+    let nothing = agents.isEmpty && groups.isEmpty && messageRows.isEmpty && fileRows.isEmpty && linkRows.isEmpty && routineRows.isEmpty && actionRows.isEmpty
+    let waiting = loading && ((tab == .messages && !words.isEmpty) || tab == .files) && messageRows.isEmpty && fileRows.isEmpty
+
+    if waiting {
+      ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+    } else if failed && nothing && (tab == .messages || tab == .files) {
+      ContentUnavailableView("Search unavailable", systemImage: "magnifyingglass", description: Text("Try again in a moment."))
+    } else if nothing {
+      if !words.isEmpty {
+        ContentUnavailableView.search(text: words)
+      } else {
+        ContentUnavailableView(tab.empty.text, systemImage: tab == .messages ? "magnifyingglass" : "person.2", description: tab.empty.hint.map { Text($0) })
+      }
+    } else {
+      List {
+        section(.agents, agents, limit: words.isEmpty ? 6 : 4) { found in chatRow(found) }
+        section(.groups, groups, limit: 3) { found in chatRow(found) }
+        section(.messages, messageRows, limit: 4) { found in messageRow(found) }
+        section(.files, fileRows, limit: 3) { found in fileRow(found) }
+        section(.links, linkRows, limit: 3) { found in linkRow(found) }
+        section(.routines, routineRows, limit: 3) { found in routineRow(found) }
+        section(.actions, actionRows, limit: words.isEmpty ? 3 : 4) { found in actionRow(found) }
+      }
+      .listStyle(.plain)
+      .scrollContentBackground(.hidden)
+      .scrollDismissesKeyboard(.immediately)
+    }
+  }
+
+  /** On All, a few of each with See All (to that tab), as Messages' search; on a tab, all of them. */
+  @ViewBuilder
+  private func section<Item, Row: View>(_ kind: SearchTab, _ found: [Found<Item>], limit: Int, @ViewBuilder row: @escaping (Found<Item>) -> Row) -> some View {
+    if !found.isEmpty {
+      let shown = tab == .all ? Array(found.prefix(limit)) : found
+      Section {
+        ForEach(Array(shown.enumerated()), id: \.offset) { _, item in row(item) }
+      } header: {
+        if tab == .all {
+          HStack {
+            Text(kind.title).font(.system(size: 20, weight: .bold)).foregroundStyle(Ink.primary)
+            Spacer()
+            if found.count > limit {
+              Button("See All") { withAnimation(.snappy(duration: 0.2)) { tab = kind } }
+                .font(.system(size: 15))
+                .foregroundStyle(Ink.link)
+            }
+          }
+          .textCase(nil)
+        }
+      }
+      .listRowBackground(Ink.listGround)
+    }
+  }
+
+  private func chatRow(_ found: Found<Agent>) -> some View {
+    let agent = found.item
+    let line = agent.isGroup ? store.members(of: agent).map(\.name).joined(separator: ", ") : agent.description
+    return SearchRow(title: SearchRow.bold(agent.name, found.hits), subtitle: line.isEmpty ? nil : line, tag: agent.isHidden ? "Hidden" : (agent.isGroup ? nil : (agent.title.isEmpty ? nil : agent.title))) {
+      AgentAvatar(agent: agent, members: store.members(of: agent))
+    } action: { openChat(agent.id) }
+  }
+
+  private func messageRow(_ found: Found<MessageHit>) -> some View {
+    let hit = found.item
+    let chat = store.agent(hit.agentId)
+    return SearchRow(title: SearchRow.bold(hit.snippet, found.hits), subtitle: Search.messageLine(hit, chat: chat), titleLines: 2) {
+      if let chat { AgentAvatar(agent: chat, members: store.members(of: chat)) } else { SearchTile(symbol: "bubble.left") }
+    } action: { openEntry(hit.agentId, hit.entryId) }
+  }
+
+  private func fileRow(_ found: Found<FileHit>) -> some View {
+    let hit = found.item
+    return SearchRow(title: SearchRow.bold(hit.fileName, found.hits), subtitle: Search.fileLine(hit, chat: store.agent(hit.agentId))) {
+      if let artwork = FileKind.artwork(hit.fileName) {
+        Image(artwork).resizable().scaledToFit().padding(4)
+      } else {
+        SearchTile(symbol: SearchTile.fileSymbol(hit.kind, name: hit.fileName))
+      }
+    } action: { openEntry(hit.agentId, hit.entryId) }
+  }
+
+  private func linkRow(_ found: Found<LinkHit>) -> some View {
+    let link = found.item
+    return SearchRow(title: SearchRow.bold(link.title, found.hits), subtitle: link.label == nil ? store.agent(link.agentId)?.name : link.shortAddress) {
+      SearchTile(symbol: "link")
+    } action: { if let url = URL(string: link.url) { openURL(url) } }
+  }
+
+  private func routineRow(_ found: Found<RoutineHit>) -> some View {
+    let hit = found.item
+    let agent = store.agent(hit.agentId)
+    let line = [hit.routine.isEnabled ? hit.routine.summary : "Paused", agent?.name].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
+    return SearchRow(title: SearchRow.bold(hit.routine.name, found.hits), subtitle: line, trailing: hit.date.map { Chat.listTime(Date(timeIntervalSince1970: $0 / 1000)) }) {
+      SearchTile(symbol: "clock")
+    } action: { openRoutine(hit) }
+  }
+
+  private func actionRow(_ found: Found<SearchAction>) -> some View {
+    let action = found.item
+    return SearchRow(title: SearchRow.bold(action.label, found.hits), subtitle: action.detail, checked: action.current) {
+      SearchTile(symbol: action.symbol)
+    } action: { action.run() }
+  }
+
+  // MARK: Asking the host
+
+  /** 0.15 s after the last keystroke, messages (only for words) and files (the newest for none); what was found before stays meanwhile, and an answer to older words is dropped. */
+  private func fetch() async {
+    guard indexed else { return }
+    loading = true
+    try? await Task.sleep(nanoseconds: UInt64(Search.debounce * 1_000_000_000))
+    guard !Task.isCancelled else { return }
+    let asked = words
+    async let gotMessages = askMessages(asked)
+    async let gotFiles = askFiles(asked)
+    let (newMessages, newFiles) = await (gotMessages, gotFiles)
+    guard !Task.isCancelled, asked == words else { return }
+    if let newMessages { messages = newMessages }
+    if let newFiles { files = newFiles }
+    failed = newMessages == nil || newFiles == nil
+    loading = false
+  }
+
+  private func askMessages(_ words: String) async -> [MessageHit]? {
+    if words.isEmpty { return [] }
+    return try? await store.searchMessages(words)
+  }
+
+  private func askFiles(_ words: String) async -> [FileHit]? {
+    try? await store.searchFiles(words)
+  }
+}
+
+/** One of the app's actions in search: what it says, where it lives, its symbol, words that find it, whether it is the current choice. */
+struct SearchAction: Identifiable {
+  let id: String
+  let label: String
+  let detail: String
+  let symbol: String
+  let keywords: [String]
+  var current = false
+  let run: () -> Void
+}
+
+/** A search result: its picture (40 pt), its name with the matched letters bold, a line under it, and the time or a check at the right. */
+struct SearchRow<Leading: View>: View {
+  let title: Text
+  var subtitle: String? = nil
+  var tag: String? = nil
+  var trailing: String? = nil
+  var checked = false
+  var titleLines = 1
+  @ViewBuilder let leading: Leading
+  let action: () -> Void
+
+  var body: some View {
+    Button(action: action) {
+      HStack(spacing: 12) {
+        leading.frame(width: 40, height: 40)
+        VStack(alignment: .leading, spacing: 2) {
+          HStack(alignment: .firstTextBaseline, spacing: 7) {
+            title.font(.system(size: 17)).foregroundStyle(Ink.primary).lineLimit(titleLines)
+            if let tag { TitleTag(title: tag) }
+          }
+          if let subtitle { Text(subtitle).font(.system(size: 14)).foregroundStyle(Ink.secondary).lineLimit(1) }
+        }
+        Spacer(minLength: 8)
+        if let trailing { Text(trailing).font(.system(size: 14)).foregroundStyle(Ink.tertiary).fixedSize() }
+        if checked { Image(systemName: "checkmark").font(.system(size: 15, weight: .semibold)).foregroundStyle(Ink.link) }
+      }
+      .padding(.vertical, 4)
+      .contentShape(.rect)
+    }
+    .buttonStyle(.plain)
+  }
+
+  /** The text with the letters at `hits` (the matched ones) in bold, as the Mac draws them (`xFn`). */
+  static func bold(_ text: String, _ hits: [Int]) -> Text {
+    guard !hits.isEmpty else { return Text(text) }
+    let marked = Set(hits)
+    var out = Text("")
+    var run = ""
+    var runBold = false
+    for (index, character) in text.enumerated() {
+      let isBold = marked.contains(index)
+      if isBold != runBold && !run.isEmpty {
+        out = out + (runBold ? Text(run).fontWeight(.semibold) : Text(run))
+        run = ""
+      }
+      runBold = isBold
+      run.append(character)
+    }
+    if !run.isEmpty { out = out + (runBold ? Text(run).fontWeight(.semibold) : Text(run)) }
+    return out
+  }
+}
+
+/** A result's picture when it has none of its own: its symbol on a soft tile. */
+struct SearchTile: View {
+  let symbol: String
+
+  var body: some View {
+    Image(systemName: symbol)
+      .font(.system(size: 17, weight: .medium))
+      .foregroundStyle(Ink.primary)
+      .frame(width: 40, height: 40)
+      .background(Color(.tertiarySystemFill), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+  }
+
+  /** A file's symbol by the kind the host gives it (`OCe`), else by its name. */
+  static func fileSymbol(_ kind: String, name: String) -> String {
+    switch kind {
+    case "image": return "photo"
+    case "video": return "film"
+    case "audio": return "waveform"
+    case "pdf", "document": return "doc.richtext"
+    case "markdown", "text", "json": return "doc.text"
+    case "table": return "tablecells"
+    case "archive": return "archivebox"
+    default: return FileKind.symbol(name)
+    }
+  }
 }

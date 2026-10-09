@@ -568,6 +568,33 @@ tap (a list row, a bar button, or a label with its own `contentShape`).
 - The words beside a working agent have no picture before them ("no tool
   please").
 
+## 20. Search, with everything the Mac's has (9 October 2026)
+
+"Search isnt good as it disregard all that we have in mac. files routines
+etc. agents." The phone's search only filtered the list by name. It is now
+the Mac's search (its palette, `QFn`), drawn as Messages draws its own:
+the field at the bottom of the list takes over the screen while in use,
+with tabs along the top in the Mac's order (All, Messages, Agents, Groups,
+Files, Links, Routines, Actions) and, on All, a few of each with See All.
+
+- Agents and groups by name and title (the Mac's fuzzy match: each word's
+  letters in order, near together, word starts first; the matched letters
+  bold), the pinned first, hidden ones once something is typed, tagged.
+- Messages in every chat (`searchAgents`) and files (`searchMedia`, the
+  newest with nothing typed), asked 0.15 s after the last keystroke; a
+  message or a file opens its chat at that line, older pages loaded until
+  it is there (at most 20 pages, 30 s), and the line glows.
+- Links in the chats the phone has open (the Mac lists the open chat's),
+  opening in Safari; every routine of every agent (`listAllAutomations`),
+  opening its editor; the app's actions (New Agent, New Group Chat, Open
+  Hidden Agents, Settings, Theme).
+- The index's tabs are left out when the host's search is off
+  (`isGlobalSearchEnabled`); "Search unavailable" when it fails.
+
+The search core is in `Search.swift` (tested); the old search sheet, which
+only a screenshot's launch opened, is gone (`--screen=search` focuses the
+field).
+
 ## Suggested order (the founder decides)
 
 1. The chat's look: the bubble, the top bar, markdown, brand names with logos, agent names with butterflies.

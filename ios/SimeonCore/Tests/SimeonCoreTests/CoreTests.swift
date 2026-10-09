@@ -1256,3 +1256,83 @@ final class ActivityLineTests: XCTestCase {
     XCTAssertEqual(ActivityLine.of(kind: "tool", tool: "Task", detail: String(repeating: "x", count: 90)).text.count <= 60, true)
   }
 }
+
+/** Search as the Mac's (Search.swift). */
+@MainActor
+final class SearchTests: XCTestCase {
+  func testTheMacsMatching() {
+    // Every word in order, near together; accents and case do not count.
+    XCTAssertNotNil(Search.match("lnch", label: "Monday launch check"))
+    XCTAssertNotNil(Search.match("cafe", label: "Café plans"))
+    XCTAssertEqual(Search.match("cafe", label: "Café plans")?.hits, [0, 1, 2, 3])
+    XCTAssertNil(Search.match("theo xyz", label: "Theo"), "every word must be found")
+    XCTAssertNil(Search.match("tc", label: "t" + String(repeating: "x", count: 20) + "c"), "too far apart")
+    // A word's start scores more than its middle, so "Theo" ranks over "Kathe" for "th".
+    XCTAssertGreaterThan(Search.match("th", label: "Theo")!.score, Search.match("th", label: "Kathe")!.score)
+    // The title is a keyword: found, but not drawn bold.
+    let byTitle = Search.match("bookkeeping", label: "Theo", keywords: ["Bookkeeping"])
+    XCTAssertNotNil(byTitle); XCTAssertEqual(byTitle?.hits, [])
+    XCTAssertEqual(Search.match("", label: "Theo")?.score, 0)
+  }
+
+  func testTheWords() {
+    let now = Date(timeIntervalSince1970: 1_000_000)
+    let ms = { (seconds: Double) in (1_000_000 - seconds) * 1000 }
+    XCTAssertEqual(Search.ago(ms(20), now: now), "now")
+    XCTAssertEqual(Search.ago(ms(5 * 60), now: now), "5m ago")
+    XCTAssertEqual(Search.ago(ms(3 * 3600), now: now), "3h ago")
+    XCTAssertEqual(Search.ago(ms(2 * 86_400), now: now), "2d ago")
+    XCTAssertEqual(Search.ago(ms(70 * 86_400), now: now), "2mo ago")
+    XCTAssertEqual(Search.ago(ms(400 * 86_400), now: now), "1y ago")
+    let mine = MessageHit(["agentId": "theo", "entryId": "e1", "role": "user", "snippet": "the runway", "timestampMs": .number(ms(300))])!
+    let theirs = MessageHit(["agentId": "theo", "entryId": "e2", "role": "assistant", "snippet": "the runway", "timestampMs": .number(ms(300))])!
+    let theo = Agent(id: "theo", name: "Theo"), squad = Agent(id: "squad", name: "Launch", isGroup: true)
+    XCTAssertEqual(Search.messageLine(mine, chat: theo, now: now), "You to Theo · 5m ago")
+    XCTAssertEqual(Search.messageLine(theirs, chat: theo, now: now), "Theo to you · 5m ago")
+    XCTAssertEqual(Search.messageLine(mine, chat: squad, now: now), "You in Launch · 5m ago")
+    XCTAssertEqual(Search.messageLine(theirs, chat: squad, now: now), "In Launch · 5m ago")
+    let picture = FileHit(["agentId": "theo", "entryId": "e3", "fileName": "a.png", "kind": "image", "width": 1280, "height": 800, "timestampMs": .number(ms(300))])!
+    XCTAssertEqual(Search.fileLine(picture, chat: theo, now: now), "Theo · 1280×800 · 5m ago")
+    XCTAssertEqual(SearchTab.allCases.map(\.title), ["All", "Messages", "Agents", "Groups", "Files", "Links", "Routines", "Actions"])
+  }
+
+  func testTheLinksInAChat() {
+    let entries = [
+      Entry(["kind": "message", "id": "1", "role": "assistant", "content": "See [the plan](https://example.com/plan) and [again](https://example.com/plan)", "timestampMs": 1])!,
+      Entry(["kind": "message", "id": "2", "role": "user", "content": "https://www.apple.com/", "timestampMs": 2])!,
+      Entry(["kind": "send-message", "id": "3", "message": ["type": "attachment", "url": "https://files.example.com/deck.pdf"], "timestampMs": 3])!,
+      Entry(["kind": "message", "id": "4", "role": "assistant", "content": "[inside](sand://agent/theo) and file:///x", "timestampMs": 4])!,
+    ]
+    let links = Search.links(entries, agentId: "theo")
+    XCTAssertEqual(links.map(\.url), ["https://files.example.com/deck.pdf", "https://www.apple.com/", "https://example.com/plan"], "newest first, each once, only the web's")
+    XCTAssertEqual(links[1].title, "apple.com")
+    XCTAssertEqual(links[2].title, "the plan")
+    XCTAssertEqual(links[2].shortAddress, "example.com/plan")
+  }
+
+  func testTheHostsAnswers() async throws {
+    let store = AppStore()
+    await store.attach(DemoBackend(seed: DemoData.seed(), pace: 0.01, call: nil))
+    let enabled = await store.globalSearchEnabled()
+    XCTAssertTrue(enabled)
+    let messages = try await store.searchMessages("launch")
+    XCTAssertFalse(messages.isEmpty)
+    XCTAssertTrue(messages.allSatisfy { !$0.snippet.isEmpty })
+    let routines = await store.allRoutines()
+    XCTAssertEqual(routines.map(\.routine.name), ["Monday launch check"])
+    XCTAssertEqual(routines.first?.agentId, "simeon")
+  }
+
+  func testAFoundLineFarBackIsLoaded() async throws {
+    let backend = ScriptedBackend()
+    backend.lines = (0..<1200).map { ["kind": "message", "id": .string("m\($0)"), "role": "assistant", "content": .string("Line \($0)"), "timestampMs": .number(Double($0) * 1000)] }
+    let store = AppStore()
+    await store.attach(backend)
+    await store.open("theo")
+    XCTAssertNil(store.transcripts["theo"]?.first { $0.id == "m100" }, "not among the newest 500")
+    let found = await store.loadUntil("m100", in: "theo")
+    XCTAssertTrue(found)
+    let rows = store.rows(for: "theo")
+    XCTAssertEqual(Chat.rowId(for: "m100", in: rows), "m100")
+  }
+}

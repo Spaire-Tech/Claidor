@@ -203,6 +203,15 @@ struct ChatMessages: View {
           }
         }
       }
+      // A line search found (the Mac's `revealSearchHit`): older pages until it is in, then to it, and it glows.
+      .task(id: store.revealing[agentId]) {
+        guard let entry = store.revealing[agentId] else { return }
+        _ = await store.loadUntil(entry, in: agentId)
+        store.revealing[agentId] = nil
+        guard let rowId = Chat.rowId(for: entry, in: store.rows(for: agentId)) else { return }
+        try? await Task.sleep(nanoseconds: 250_000_000)
+        actions?.jump(rowId)
+      }
       // Scrolled near the top: more rows, then older lines. Only ever more, so it cannot go back and forth.
       .onScrollGeometryChange(for: Bool.self) { geometry in
         geometry.contentSize.height > geometry.containerSize.height && geometry.visibleRect.minY < 300

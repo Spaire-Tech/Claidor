@@ -422,6 +422,14 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
       return ["agent": ["id": .string(id)]]
     case "kickstartAgent":
       return ["isIntroductionInFlight": true]
+    case "isGlobalSearchEnabled":
+      return true
+    case "searchAgents":
+      return .array(lock.withLock { demoSearch(args["query"]?.string ?? "") })
+    case "searchMedia":
+      return .array(lock.withLock { demoFiles(args["query"]?.string ?? "") })
+    case "listAllAutomations":
+      return .array(lock.withLock { demoRoutines.flatMap { agent, list in list.map { ["agentId": .string(agent), "automation": $0] as JSON } } })
     default:
       break
     }
@@ -448,6 +456,47 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
     default:
       throw GatewayError(message: "The demo has no \(path).", refused: true)
     }
+  }
+
+  /** The host's message search as the demo answers it: each word in the line, at most 5 a chat and 50 in all, newest first, the words around the first. */
+  private func demoSearch(_ query: String) -> [JSON] {
+    let words = query.lowercased().split(separator: " ").map(String.init)
+    guard !words.isEmpty else { return [] }
+    var hits: [(Double, JSON)] = []
+    for (agent, list) in transcripts {
+      var count = 0
+      for entry in list.reversed() {
+        let text = entry.content ?? (entry.message?["type"]?.string == "text" ? entry.message?["content"]?.string : nil) ?? ""
+        let lower = text.lowercased()
+        guard !text.isEmpty, entry.teammate == nil, words.allSatisfy({ lower.contains($0) }), count < 5 else { continue }
+        count += 1
+        let at = lower.range(of: words[0]).map { lower.distance(from: lower.startIndex, to: $0.lowerBound) } ?? 0
+        let start = max(0, at - 30)
+        var snippet = String(text.dropFirst(start).prefix(90)).split(whereSeparator: \.isWhitespace).joined(separator: " ")
+        if start > 0 { snippet = "…" + snippet }
+        if start + 90 < text.count { snippet += "…" }
+        hits.append((entry.timestampMs ?? 0, ["agentId": .string(agent), "entryId": .string(entry.id), "role": .string(entry.isFromPerson ? "user" : "assistant"), "timestampMs": .number(entry.timestampMs ?? 0), "snippet": .string(snippet)]))
+      }
+    }
+    return hits.sorted { $0.0 > $1.0 }.prefix(50).map(\.1)
+  }
+
+  /** The host's file search as the demo answers it: the files in the chats whose name has the words, newest first; all of them for none. */
+  private func demoFiles(_ query: String) -> [JSON] {
+    let words = query.lowercased().split(separator: " ").map(String.init)
+    var files: [(Double, JSON)] = []
+    for (agent, list) in transcripts {
+      for entry in list {
+        let path = entry["file_path"]?.text ?? (entry.message?["type"]?.string == "attachment" ? entry.message?["url"]?.text : nil)
+        guard let path else { continue }
+        let name = fileName(ofURL: path)
+        guard words.allSatisfy({ name.lowercased().contains($0) }) else { continue }
+        let ext = (name as NSString).pathExtension.lowercased()
+        let kind = ["png", "jpg", "jpeg", "gif", "webp", "heic"].contains(ext) ? "image" : ext == "pdf" ? "pdf" : ext == "md" ? "markdown" : ["csv", "xlsx"].contains(ext) ? "table" : "document"
+        files.append((entry.timestampMs ?? 0, ["agentId": .string(agent), "entryId": .string(entry.id), "fileName": .string(name), "ext": .string("." + ext), "kind": .string(kind), "timestampMs": .number(entry.timestampMs ?? 0)]))
+      }
+    }
+    return files.sorted { $0.0 > $1.0 }.prefix(50).map(\.1)
   }
 
   /** The demo's side of `voice:<call>`: a request is answered on the outbox a moment later. */
