@@ -3,121 +3,102 @@ import UIKit
 import SimeonCore
 
 /**
- * Settings, as the Mac's General page on a phone (the founder's phone
- * design): Account, Appearance, Agent (Timezone, Auto-review and its
- * rules), Usage & Billing, then Connect apps, Sign Out and the mark. The
- * Mac-only rows (Execution on Local Computer, Security Key) are left out:
- * nothing on the phone uses them.
+ * Settings, in the order the founder's reference has it (9 October 2026):
+ * the account and, under it, Usage with its share; Connect apps; the
+ * agents' settings (Auto-review and its rules, the time zone, set
+ * automatically or chosen); Appearance; Sign Out and the mark. Usage opens
+ * its own page: the period's bar, when it resets, and Change Limit.
  */
 struct SettingsSheet: View {
   @Environment(AppStore.self) private var store
   @Environment(SessionController.self) private var session
-  @Environment(\.openURL) private var openURL
   @AppStorage("simeon.theme") private var theme = "system"
   @State private var settings: JSON?
   @State private var quota: JSON?
   @State private var showsApps = false
-  @State private var copied = false
-  @State private var openingBilling = false
 
   var body: some View {
     NavigationStack {
       Form {
-        Section("Account") {
-          HStack(spacing: 14) {
-            Initials(letters: store.account?.initials ?? "", size: 50)
-              .background(Ink.bubbleTheirs, in: Circle())
-            VStack(alignment: .leading, spacing: 2) {
-              Text(store.account?.name ?? "").font(.system(size: 17)).foregroundStyle(Ink.primary)
-              HStack(spacing: 8) {
+        Section {
+          NavigationLink { AccountPage() } label: {
+            HStack(spacing: 14) {
+              Initials(letters: store.account?.initials ?? "", size: 44)
+                .background(Ink.bubbleTheirs, in: Circle())
+              VStack(alignment: .leading, spacing: 2) {
+                Text(store.account?.name ?? "").font(.system(size: 17)).foregroundStyle(Ink.primary)
                 Text(store.account?.email ?? "").font(.system(size: 15)).foregroundStyle(Ink.secondary)
                   .lineLimit(1).minimumScaleFactor(0.75)
-                Button {
-                  UIPasteboard.general.string = store.account?.email
-                  copied = true
-                } label: {
-                  Image(systemName: copied ? "checkmark" : "doc.on.doc").font(.system(size: 13)).foregroundStyle(Ink.secondary)
-                    .frame(width: 30, height: 30)
-                    .contentShape(.rect)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Copy email")
               }
             }
+            .padding(.vertical, 4)
           }
-          .padding(.vertical, 4)
-        }
-        Section("Appearance") {
-          Picker("Theme", selection: $theme) {
-            Text("Follow System").tag("system")
-            Text("Light").tag("light")
-            Text("Dark").tag("dark")
-          }
-        }
-        Section("Agent") {
-          NavigationLink {
-            TimeZonePicker(current: settings?["userTimeZoneOverride"]?.string ?? "", detected: settings?["userTimeZone"]?.text ?? TimeZone.current.identifier) { zone in
-              Task { if let next = await store.setHostSettings(["userTimeZoneOverride": .string(zone)]) { settings = next } }
-            }
-          } label: {
-            LabeledContent("Timezone", value: timeZoneLabel)
-          }
-          Toggle(isOn: autoReview) {
-            VStack(alignment: .leading, spacing: 3) {
-              Text("Auto-review")
-              Text("Simeon checks each action before it runs and asks you first when needed. Add rules to customize what it can do automatically.")
-                .font(.system(size: 13)).foregroundStyle(Ink.secondary)
-            }
-          }
-          .tint(Ink.blue)
-          NavigationLink {
-            AutoReviewRules(settings: $settings)
-          } label: {
-            VStack(alignment: .leading, spacing: 3) {
-              Text("Auto-review Rules")
-              Text(rulesSummary).font(.system(size: 13)).foregroundStyle(Ink.secondary)
-            }
-          }
-        }
-        Section("Usage & Billing") {
-          if let quota {
-            UsageRow(quota: quota)
-            Button {
-              openingBilling = true
-              Task {
-                if let url = await store.billingPortal() { openURL(url) }
-                openingBilling = false
-              }
-            } label: {
-              HStack {
-                Label("Manage Billing", systemImage: "arrow.up.right.square")
-                if openingBilling { Spacer(); ProgressView() }
-              }
-            }
-            .disabled(openingBilling)
-            if let upgrade = quota["upgradeUrl"]?.text.flatMap(URL.init(string:)) {
-              Button { openURL(upgrade) } label: { Label("Upgrade", systemImage: "sparkles") }
-            }
-          } else {
-            HStack { ProgressView(); Text("Loading usage…").foregroundStyle(Ink.secondary) }
+          NavigationLink { UsagePage(quota: quota) } label: {
+            LabeledContent("Usage", value: quota.map { "\(UsageNumbers(quota: $0).percent)%" } ?? "")
           }
         }
         Section {
           Button { showsApps = true } label: {
             HStack {
-              Text("Connect apps").foregroundStyle(Ink.primary)
+              VStack(alignment: .leading, spacing: 3) {
+                Text("Connect apps").foregroundStyle(Ink.primary)
+                Text("Tools and skills for your agents").font(.system(size: 15)).foregroundStyle(Ink.secondary)
+              }
               Spacer()
-              AppLogoTrio()
+              Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Ink.tertiary)
+            }
+            .contentShape(.rect)
+          }
+          .padding(.vertical, 2)
+        }
+        Section("Agents") {
+          Toggle(isOn: autoReview) {
+            VStack(alignment: .leading, spacing: 3) {
+              Text("Auto-review")
+              Text("Simeon checks each action before it runs and asks you first when needed.")
+                .font(.system(size: 15)).foregroundStyle(Ink.secondary)
             }
           }
-          .padding(.vertical, 6)
+          .tint(Ink.live)
+          NavigationLink {
+            AutoReviewRules(settings: $settings)
+          } label: {
+            LabeledContent("Auto-review Rules", value: rulesCount == 0 ? "None" : "\(rulesCount)")
+          }
+          Toggle(isOn: automaticZone) {
+            VStack(alignment: .leading, spacing: 3) {
+              Text("Set Time Zone Automatically")
+              Text("Your agents' computer follows this phone's time zone.")
+                .font(.system(size: 15)).foregroundStyle(Ink.secondary)
+            }
+          }
+          .tint(Ink.live)
+          if automaticZone.wrappedValue {
+            LabeledContent("Time Zone", value: zoneName)
+          } else {
+            NavigationLink {
+              TimeZonePicker(current: settings?["userTimeZoneOverride"]?.string ?? "", detected: detectedZone) { zone in
+                Task { if let next = await store.setHostSettings(["userTimeZoneOverride": .string(zone)]) { settings = next } }
+              }
+            } label: {
+              LabeledContent("Time Zone", value: zoneName)
+            }
+          }
+        }
+        Section {
+          Picker("Appearance", selection: $theme) {
+            Text("System").tag("system")
+            Text("Light").tag("light")
+            Text("Dark").tag("dark")
+          }
+          .pickerStyle(.navigationLink)
         }
         Section {
           Button("Sign Out", role: .destructive) { Task { await session.signOut() } }
         }
         Section {
           VStack(spacing: 8) {
-            ButterflyView(palette: .named("blue"), motion: .idle).frame(width: 56, height: 56)
+            ButterflyView(palette: .named("blue")).frame(width: 56, height: 56)
             Text("Simeon").font(.system(size: 20, weight: .semibold))
             Text(SessionController.clientVersion).font(.system(size: 12)).foregroundStyle(Ink.tertiary)
           }
@@ -138,18 +119,29 @@ struct SettingsSheet: View {
     }
   }
 
-  private var timeZoneLabel: String {
-    let override = settings?["userTimeZoneOverride"]?.text
-    let zone = override ?? settings?["userTimeZone"]?.text ?? TimeZone.current.identifier
-    let short = TimeZone(identifier: zone)?.abbreviation() ?? zone
-    return override == nil ? "Auto-detect (\(short))" : zone.replacingOccurrences(of: "_", with: " ")
+  private var detectedZone: String { settings?["userTimeZone"]?.text ?? TimeZone.current.identifier }
+
+  /** The zone the agents' computer keeps: the one chosen, else this phone's. */
+  private var zoneName: String {
+    (settings?["userTimeZoneOverride"]?.text ?? detectedZone).replacingOccurrences(of: "_", with: " ")
+  }
+
+  /** Automatic while no zone is chosen (`userTimeZoneOverride` empty); turned off, it keeps this phone's zone until another is chosen. */
+  private var automaticZone: Binding<Bool> {
+    Binding(
+      get: { settings?["userTimeZoneOverride"]?.text == nil },
+      set: { on in
+        let zone = on ? "" : detectedZone
+        settings = (settings ?? [:]).setting("userTimeZoneOverride", .string(zone))
+        Task { if let next = await store.setHostSettings(["userTimeZoneOverride": .string(zone)]) { settings = next } }
+      }
+    )
   }
 
   private var instructions: JSON { settings?["autoReviewInstructions"] ?? ["isEnabled": true, "allowInstructions": [], "blockInstructions": []] }
 
-  private var rulesSummary: String {
-    let count = (instructions["allowInstructions"]?.array?.count ?? 0) + (instructions["blockInstructions"]?.array?.count ?? 0)
-    return count == 0 ? "Write one short rule for each action." : "\(count) \(count == 1 ? "rule" : "rules")"
+  private var rulesCount: Int {
+    (instructions["allowInstructions"]?.array?.count ?? 0) + (instructions["blockInstructions"]?.array?.count ?? 0)
   }
 
   private var autoReview: Binding<Bool> {
@@ -164,52 +156,137 @@ struct SettingsSheet: View {
   }
 }
 
-/** The three apps on the Connect apps row (Gmail, Calendar, Drive), as the Mac's button shows them. */
-struct AppLogoTrio: View {
+/** The account: the person's name and email, the email copied with a tap. */
+struct AccountPage: View {
+  @Environment(AppStore.self) private var store
+  @State private var copied = false
+
   var body: some View {
-    HStack(spacing: -8) {
-      ForEach(Array(["Gmail", "Google Calendar", "Google Drive"].enumerated()), id: \.offset) { index, name in
-        ConnectorTile(name: name, size: 28)
-          .rotationEffect(.degrees([-6, 0, 6][index]))
-          .shadow(color: .black.opacity(0.08), radius: 1.5, y: 1)
+    Form {
+      Section {
+        VStack(spacing: 10) {
+          Initials(letters: store.account?.initials ?? "", size: 72)
+            .background(Ink.bubbleTheirs, in: Circle())
+          Text(store.account?.name ?? "").font(.system(size: 22, weight: .semibold)).foregroundStyle(Ink.primary)
+        }
+        .frame(maxWidth: .infinity)
+        .listRowBackground(Color.clear)
+      }
+      Section {
+        LabeledContent("Name", value: store.account?.name ?? "")
+        Button {
+          UIPasteboard.general.string = store.account?.email
+          copied = true
+        } label: {
+          HStack {
+            Text("Email").foregroundStyle(Ink.primary)
+            Spacer()
+            Text(store.account?.email ?? "").foregroundStyle(Ink.secondary).lineLimit(1).minimumScaleFactor(0.75)
+            Image(systemName: copied ? "checkmark" : "doc.on.doc").font(.system(size: 13)).foregroundStyle(Ink.secondary)
+          }
+        }
+        .accessibilityHint("Copies the email")
       }
     }
-    .accessibilityHidden(true)
+    .navigationTitle("Account")
+    .navigationBarTitleDisplayMode(.inline)
   }
 }
 
-/** This period's usage: the plan, a bar, and when it resets. */
-struct UsageRow: View {
-  let quota: JSON
+/** The usage figures from the server's `user/quota`: the share used, its period's name, when it resets. */
+struct UsageNumbers {
+  let share: Double
+  let percent: Int
+  let title: String
+  let resets: String?
 
-  var body: some View {
+  init(quota: JSON, now: Date = Date()) {
     let limit = quota["creditsLimit"]?.double ?? 0
     let used = quota["creditsUsed"]?.double ?? 0
-    let share = limit > 0 ? min(1, used / limit) : 0
-    VStack(alignment: .leading, spacing: 8) {
-      HStack {
-        Text(quota["planName"]?.text ?? "Plan").font(.system(size: 17, weight: .medium))
-        Spacer()
-        if let status = quota["subscriptionStatus"]?.text, status != "active" {
-          Text(status.capitalized).font(.system(size: 13)).foregroundStyle(Ink.secondary)
-        }
-      }
-      ProgressView(value: share).tint(share > 0.9 ? Ink.danger : Ink.blue)
-      HStack {
-        Text("\(Int((share * 100).rounded()))% used").font(.system(size: 13)).foregroundStyle(Ink.secondary)
-        Spacer()
-        if let end = quota["periodEnd"]?.text.flatMap(UsageRow.date) {
-          Text("Resets \(end.formatted(.dateTime.month(.abbreviated).day()))").font(.system(size: 13)).foregroundStyle(Ink.secondary)
-        }
-      }
+    share = limit > 0 ? min(1, max(0, used / limit)) : 0
+    percent = Int((share * 100).rounded())
+    let start = quota["periodStart"]?.text.flatMap(UsageNumbers.date)
+    let end = quota["periodEnd"]?.text.flatMap(UsageNumbers.date)
+    let days = start.flatMap { s in end.map { $0.timeIntervalSince(s) / 86_400 } }
+    title = days.map { $0 <= 8 ? "Weekly usage" : $0 <= 32 ? "Monthly usage" : "Usage" } ?? "Usage"
+    if let end {
+      let left = Calendar.current.dateComponents([.day], from: Calendar.current.startOfDay(for: now), to: Calendar.current.startOfDay(for: end)).day ?? 0
+      resets = left <= 0 ? "Resets today" : left == 1 ? "Resets tomorrow" : "Resets in \(left) days"
+    } else {
+      resets = nil
     }
-    .padding(.vertical, 4)
   }
 
   static func date(_ text: String) -> Date? {
     let formatter = ISO8601DateFormatter()
     formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
     return formatter.date(from: text) ?? ISO8601DateFormatter().date(from: text)
+  }
+}
+
+/** Usage, as the founder's reference has it: the period's name and when it resets, the bar, the share; then Change Limit. */
+struct UsagePage: View {
+  let quota: JSON?
+  @Environment(AppStore.self) private var store
+  @Environment(\.openURL) private var openURL
+  @State private var opening = false
+
+  var body: some View {
+    Form {
+      if let quota {
+        let usage = UsageNumbers(quota: quota)
+        Section {
+          VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline) {
+              Text(usage.title).font(.system(size: 17)).foregroundStyle(Ink.primary)
+              Spacer()
+              if let resets = usage.resets { Text(resets).font(.system(size: 15)).foregroundStyle(Ink.tertiary) }
+            }
+            GeometryReader { geometry in
+              ZStack(alignment: .leading) {
+                Capsule().fill(Ink.pill)
+                Capsule().fill(usage.share > 0.9 ? Ink.danger : Ink.blue).frame(width: geometry.size.width * usage.share)
+              }
+            }
+            .frame(height: 6)
+            Text("\(usage.percent)%").font(.system(size: 15)).foregroundStyle(Ink.secondary)
+          }
+          .padding(.vertical, 6)
+          .accessibilityElement(children: .combine)
+          Button { changeLimit(quota) } label: {
+            HStack {
+              Text("Change Limit").foregroundStyle(Ink.primary)
+              Spacer()
+              if opening { ProgressView() } else {
+                Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Ink.tertiary)
+              }
+            }
+            .contentShape(.rect)
+          }
+          .disabled(opening)
+        }
+        Section {
+          LabeledContent("Plan", value: quota["planName"]?.text ?? "")
+          if let status = quota["subscriptionStatus"]?.text, status != "active" {
+            LabeledContent("Status", value: status.capitalized)
+          }
+        }
+      } else {
+        HStack { ProgressView(); Text("Loading usage…").foregroundStyle(Ink.secondary) }
+      }
+    }
+    .navigationTitle("Usage")
+    .navigationBarTitleDisplayMode(.inline)
+  }
+
+  /** The plans page when there is one to move to, else the billing portal. */
+  private func changeLimit(_ quota: JSON) {
+    if let upgrade = quota["upgradeUrl"]?.text.flatMap(URL.init(string:)) { openURL(upgrade); return }
+    opening = true
+    Task {
+      if let url = await store.billingPortal() { openURL(url) }
+      opening = false
+    }
   }
 }
 
