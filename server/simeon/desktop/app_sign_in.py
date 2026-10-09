@@ -170,7 +170,8 @@ def _page(
     9 October 2026: "make sure everything match"): simeonlabs.com's mark and
     "SimeonLabs" wordmark in the middle, the page's words under them when it
     has any (`heading`), and its buttons at the foot in the app's own: the
-    first in our blue, the next in the plain glass; light or dark as the
+    first in the ink (black on light, white on dark, as the app's Continue
+    with Apple), the next in the plain glass; light or dark as the
     device is. It is served
     from the API host, which has no front end of its own, so it carries
     everything it draws (`sign_in_brand`); no script but the one line that
@@ -190,13 +191,13 @@ def _page(
         f"<title>{escape(title)} · {PRODUCT}</title>"
         "<style>"
         # The iPhone app's colours (ios/Simeon/Theme.swift: ground, primary,
-        # secondary, blue) and its plain glass button's fill.
+        # secondary) and its plain glass button's fill.
         ":root{--ground:#fcfcfc;--ink:#141414;--ink2:rgba(20,20,20,.6);"
-        "--blue:#255a93;--glass:#ffffff;--glass-edge:rgba(20,20,20,.08);"
+        "--glass:#ffffff;--glass-edge:rgba(20,20,20,.08);"
         '--font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",'
         '"Helvetica Neue",Arial,sans-serif}'
         "@media (prefers-color-scheme:dark){:root{--ground:#070707;--ink:#fcfcfc;"
-        "--ink2:rgba(252,252,252,.6);--blue:#2f6db0;--glass:#1f1f21;"
+        "--ink2:rgba(252,252,252,.6);--glass:#1f1f21;"
         "--glass-edge:rgba(255,255,255,.1)}}"
         "*{box-sizing:border-box}"
         "body{margin:0;min-height:100vh;min-height:100dvh;display:flex;"
@@ -223,7 +224,7 @@ def _page(
         "form{margin:0}"
         ".pill{display:flex;width:100%;height:50px;align-items:center;"
         "justify-content:center;gap:9px;padding:0 20px;border-radius:999px;"
-        "border:0;background:var(--blue);color:#fff;font:inherit;"
+        "border:0;background:var(--ink);color:var(--ground);font:inherit;"
         "font-size:17px;font-weight:600;text-decoration:none;cursor:pointer;"
         "white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
         "box-shadow:0 1px 2px rgba(0,0,0,.12);"

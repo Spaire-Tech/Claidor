@@ -440,7 +440,7 @@ class TestLoginDeepControl:
     ) -> None:
         """The founder, 9 October 2026, of the heading and the line naming
         the device: "its noise. remove." The page is the mark, the
-        wordmark, Continue as the account in our blue and Use a different
+        wordmark, Continue as the account in the ink and Use a different
         account in the glass, for every app that asks."""
         for target in (None, "simeon", "sand", "simeon-ios"):
             _, challenge, uuid = _login_metadata()

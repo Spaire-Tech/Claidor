@@ -833,7 +833,8 @@ then "the apple button make it white/black. not blue" and the Terms line
   (docs/services-core.md §1); until then the Apple button opens a page that
   says Sign in with Apple is coming soon and offers Google.
 - **The page after Google or Apple** is the mark, the wordmark, two
-  buttons (Continue as the account in our blue, Use a different account in
+  buttons (Continue as the account black on light and white on dark, as
+  Continue with Apple; Use a different account in
   glass) and the same Terms and Privacy line under them; no heading, no
   line about the device. The tap stays: without it,
   whoever got a signed-in person to open a sign-in link of their own making
