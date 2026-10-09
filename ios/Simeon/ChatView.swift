@@ -43,7 +43,9 @@ struct ChatView: View {
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .principal) { ChatTitle(agentId: agentId) { showsPage = true } }
-        ToolbarItem(placement: .topBarTrailing) { ChatCallButton(agentId: agentId) }
+        if store.canCall && !store.groupIds.contains(agentId) {
+          ToolbarItem(placement: .topBarTrailing) { ChatCallButton(agentId: agentId) }
+        }
       }
       // A long press on a message: the reactions and what can be done with it, in a sheet from the bottom.
       .sheet(item: Binding(get: { messageMenu.target }, set: { messageMenu.target = $0 })) { target in
@@ -172,7 +174,7 @@ struct ChatMessages: View {
         .environment(peek)
         .environment(glow)
       }
-      .modifier(PeekDrag(peek: peek))
+      .gesture(PeekPan(peek: peek))
       // A quote's tap goes to what it answers. Given to the rows once: handed down as a new closure on every
       // redraw of the chat, it made every bubble draw again each time the chat's own state moved.
       .onAppear {
@@ -343,11 +345,10 @@ struct ChatCallButton: View {
   @Environment(AppStore.self) private var store
 
   var body: some View {
-    if let agent = store.agent(agentId), store.canCall && !agent.isGroup {
-      Button { store.startCall(agent) } label: { Image(systemName: "phone.fill") }
-        .accessibilityLabel("Call \(agent.name)")
-        .disabled(store.call != nil)
-    }
+    let agent = store.agent(agentId)
+    Button { if let agent { store.startCall(agent) } } label: { Image(systemName: "phone.fill") }
+      .accessibilityLabel("Call \(agent?.name ?? "")")
+      .disabled(agent == nil || store.call != nil)
   }
 }
 
@@ -611,8 +612,6 @@ struct BubbleView: View {
   @Environment(ReplyDraft.self) private var reply: ReplyDraft?
   @Environment(MessageMenu.self) private var messageMenu: MessageMenu?
   @State private var reacting: Set<String> = []
-  /** Held down: the bubble gives a little under the finger before its sheet comes up, as in Messages. */
-  @GestureState private var pressing = false
   /** Show more on a long message (the Mac folds one past 664 pt). */
   @State private var expanded = false
 
@@ -649,17 +648,13 @@ struct BubbleView: View {
         }
         content
           .modifier(Glow(id: bubble.id))
-          .scaleEffect(pressing ? 0.96 : 1)
-          .animation(.spring(response: 0.25, dampingFraction: 0.7), value: pressing)
-          // Held: the reactions and the message's actions in a sheet from the bottom. Alongside the scroll, so a drag still scrolls.
-          .simultaneousGesture(
-            LongPressGesture(minimumDuration: 0.35)
-              .updating($pressing) { held, state, _ in state = held }
-              .onEnded { _ in
-                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                messageMenu?.target = MessageTarget(bubble: bubble)
-              }
-          )
+          // Held: the reactions and the message's actions in a sheet from the bottom. UIKit's own long press, as Messages
+          // has it: a finger that moves is a scroll, and the press gives way. SwiftUI's long press held the finger, and a
+          // scroll that started on a message did not move.
+          .gesture(MessageHold {
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            messageMenu?.target = MessageTarget(bubble: bubble)
+          })
           .overlay(alignment: bubble.fromPerson ? .bottomTrailing : .bottomLeading) { reactions }
           .padding(.bottom, bubble.reactions.isEmpty ? 0 : 16)
       }
@@ -819,25 +814,54 @@ struct Arrival: ViewModifier {
 
 /**
  * The sideways drag that shows each message's time (the window's `ZSn`):
- * up to 82 pt; let go, or lose the drag to the scroll, and it springs back.
- * Its state lives here, so a drag frame redraws this and not the chat.
+ * up to 82 pt; let go and it springs back. UIKit's pan, starting only for a
+ * drag to the left and running alongside the scroll, so an up-and-down drag
+ * is always the scroll's (a SwiftUI drag on the scroll view held it).
  */
-struct PeekDrag: ViewModifier {
+struct PeekPan: UIGestureRecognizerRepresentable {
   let peek: TimePeek
-  @GestureState private var pulling: CGFloat = 0
 
-  func body(content: Content) -> some View {
-    content
-      .simultaneousGesture(
-        DragGesture(minimumDistance: 12)
-          .updating($pulling) { drag, state, _ in
-            guard abs(drag.translation.width) > abs(drag.translation.height) else { return }
-            state = min(82, max(0, -drag.translation.width))
-          }
-      )
-      .onChange(of: pulling) { _, x in
-        if x == 0 { withAnimation(.spring(response: 0.43, dampingFraction: 0.78)) { peek.x = 0 } } else { peek.x = x }
-      }
+  func makeUIGestureRecognizer(context: Context) -> UIPanGestureRecognizer {
+    let pan = UIPanGestureRecognizer()
+    pan.delegate = PeekPanRule.shared
+    return pan
+  }
+
+  func handleUIGestureRecognizerAction(_ pan: UIPanGestureRecognizer, context: Context) {
+    switch pan.state {
+    case .began, .changed:
+      peek.x = min(82, max(0, -pan.translation(in: pan.view).x))
+    default:
+      withAnimation(.spring(response: 0.43, dampingFraction: 0.78)) { peek.x = 0 }
+    }
+  }
+}
+
+/** When the time pull may start: a drag mostly to the left; and it never stops the scroll. */
+final class PeekPanRule: NSObject, UIGestureRecognizerDelegate {
+  static let shared = PeekPanRule()
+
+  func gestureRecognizerShouldBegin(_ recognizer: UIGestureRecognizer) -> Bool {
+    guard let pan = recognizer as? UIPanGestureRecognizer else { return false }
+    let velocity = pan.velocity(in: pan.view)
+    return velocity.x < 0 && abs(velocity.x) > abs(velocity.y) * 1.5
+  }
+
+  func gestureRecognizer(_ recognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool { true }
+}
+
+/** A message held down: UIKit's long press, which fails as soon as the finger moves, so the scroll goes on. */
+struct MessageHold: UIGestureRecognizerRepresentable {
+  let action: () -> Void
+
+  func makeUIGestureRecognizer(context: Context) -> UILongPressGestureRecognizer {
+    let press = UILongPressGestureRecognizer()
+    press.minimumPressDuration = 0.35
+    return press
+  }
+
+  func handleUIGestureRecognizerAction(_ press: UILongPressGestureRecognizer, context: Context) {
+    if press.state == .began { action() }
   }
 }
 

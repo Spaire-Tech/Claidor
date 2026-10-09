@@ -412,6 +412,25 @@ app's own Swift runs unoptimised, several times slower than the App Store
 build. To judge smoothness, set Product → Scheme → Edit Scheme → Run →
 Build Configuration to Release.
 
+## 13. A scroll that starts on a message (9 October 2026)
+
+"when i scroll but my finger is on a chat, it doesnt move." Each message
+had SwiftUI's long press (for its sheet), and the conversation SwiftUI's
+sideways drag (for the times); on iOS 18 and later both can hold the finger
+before the scroll does. Both are now UIKit's own recognizers, as Messages
+has them: the long press fails as soon as the finger moves, and the pull
+starts only for a drag to the left and runs alongside the scroll.
+
+From his console: the system search placed in the list's bottom toolbar
+was set up again on every redraw of the list ("Ignoring
+searchBarPlacementBarButtonItem…", "_dictationButton not yet
+initialized…"), and the list is redrawn whenever an agent changes; the
+list's foot is now its own bar (the search field in glass with its mic,
+new chat at the right). And the chat's call slot, empty for an agent that
+cannot be called, made a bar button UIKit could not lay out ("Unable to
+simultaneously satisfy constraints … width == 0"); it is there only when
+there is a call to make.
+
 ## Suggested order (the founder decides)
 
 1. The chat's look: the bubble, the top bar, markdown, brand names with logos, agent names with butterflies.

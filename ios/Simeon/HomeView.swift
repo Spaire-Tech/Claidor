@@ -119,7 +119,11 @@ struct HomeView: View {
           }
         }
       }
-      .searchable(text: $query, prompt: "Search")
+      // At the bottom, as Messages has them: the search field, and new chat at the right. Our own bar: the system's
+      // search in the bottom toolbar was set up again on every redraw of the list ("Ignoring searchBarPlacement…").
+      .safeAreaBar(edge: .bottom, spacing: 0) {
+        ListBottomBar(query: $query, newAgent: { sheet = .newAgent }, newGroup: { sheet = .newGroup })
+      }
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         // The person's name at the top, with its menu, as Instagram has it.
@@ -148,18 +152,6 @@ struct HomeView: View {
             .contentShape(.rect)
           }
           .accessibilityLabel("Account and settings")
-        }
-        // At the bottom, as Messages has them: the search field, and new chat at the right.
-        DefaultToolbarItem(kind: .search, placement: .bottomBar)
-        ToolbarSpacer(.fixed, placement: .bottomBar)
-        ToolbarItem(placement: .bottomBar) {
-          Menu {
-            Button { sheet = .newAgent } label: { Label("New Agent", systemImage: "person.crop.circle.badge.plus") }
-            Button { sheet = .newGroup } label: { Label("New Group Chat", systemImage: "person.2") }
-          } label: {
-            Image(systemName: "square.and.pencil")
-          }
-          .accessibilityLabel("New")
         }
       }
       .navigationDestination(for: String.self) { agentId in
@@ -277,6 +269,61 @@ struct HomeView: View {
   private func openingCall(for agentId: String) -> String? {
     guard let opening, opening.hasSuffix(":\(agentId)") else { return nil }
     return opening.split(separator: ":").first.map(String.init)
+  }
+}
+
+/** The list's foot, as Messages': the search field in glass with its mic, and new chat in a glass circle at the right. */
+struct ListBottomBar: View {
+  @Binding var query: String
+  let newAgent: () -> Void
+  let newGroup: () -> Void
+  @FocusState private var searching: Bool
+  @State private var dictation = Dictation()
+
+  var body: some View {
+    HStack(spacing: 10) {
+      HStack(spacing: 8) {
+        Image(systemName: "magnifyingglass").font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.secondary)
+        TextField("Search", text: $query)
+          .font(.system(size: 17))
+          .focused($searching)
+          .submitLabel(.search)
+          .autocorrectionDisabled()
+        if !query.isEmpty {
+          Button { query = "" } label: {
+            Image(systemName: "xmark.circle.fill").font(.system(size: 17)).foregroundStyle(Ink.tertiary)
+              .frame(width: 30, height: 30).contentShape(.circle)
+          }
+          .buttonStyle(.plain)
+          .accessibilityLabel("Clear search")
+        } else {
+          Button { dictation.isListening ? dictation.stop() : dictation.start { text in query = text } } label: {
+            Image(systemName: dictation.isListening ? "stop.circle.fill" : "mic").font(.system(size: 18))
+              .foregroundStyle(dictation.isListening ? Ink.danger : Ink.secondary)
+              .frame(width: 30, height: 30).contentShape(.circle)
+          }
+          .buttonStyle(.plain)
+          .accessibilityLabel(dictation.isListening ? "Stop dictation" : "Dictate")
+        }
+      }
+      .padding(.leading, 14).padding(.trailing, 8)
+      .frame(height: 48)
+      .background { Color.clear.contentShape(.capsule).onTapGesture { searching = true } }
+      .glassEffect(.regular.interactive(), in: .capsule)
+      Menu {
+        Button(action: newAgent) { Label("New Agent", systemImage: "person.crop.circle.badge.plus") }
+        Button(action: newGroup) { Label("New Group Chat", systemImage: "person.2") }
+      } label: {
+        Image(systemName: "square.and.pencil").font(.system(size: 19, weight: .medium)).foregroundStyle(Ink.primary)
+          .frame(width: 48, height: 48)
+          .contentShape(.circle)
+      }
+      .glassEffect(.regular.interactive(), in: .circle)
+      .accessibilityLabel("New")
+    }
+    .padding(.horizontal, 16)
+    .padding(.top, 6)
+    .padding(.bottom, 4)
   }
 }
 
