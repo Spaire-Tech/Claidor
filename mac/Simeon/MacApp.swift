@@ -197,6 +197,15 @@ struct AgentMenuItems: View {
     Button("Message Field") { NotificationCenter.default.post(name: .simeonFocusComposer, object: nil) }
       .keyboardShortcut("l")
       .disabled(agent == nil)
+    Button("Find in Chat…") { NotificationCenter.default.post(name: .simeonFind, object: nil) }
+      .keyboardShortcut("f")
+      .disabled(agent == nil)
+    Button("Find Next") { NotificationCenter.default.post(name: .simeonFind, object: "next") }
+      .keyboardShortcut("g")
+      .disabled(agent == nil)
+    Button("Find Previous") { NotificationCenter.default.post(name: .simeonFind, object: "previous") }
+      .keyboardShortcut("g", modifiers: [.command, .shift])
+      .disabled(agent == nil)
     Divider()
     if let agent {
       let pinned = store.pinnedIds.contains(agent.id)

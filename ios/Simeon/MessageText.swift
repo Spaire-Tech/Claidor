@@ -252,8 +252,13 @@ struct MarkdownBlockView: View {
           .padding(.leading, 10)
       }
       .fixedSize(horizontal: false, vertical: true)
-    case .code(_, let text):
-      CodeBlockView(text: text)
+    case .code(let language, let text):
+      // A ```mermaid block is a diagram, as the window draws it (Rendering.swift).
+      if language?.lowercased() == "mermaid" {
+        RenderedBlock(kind: .mermaid(text))
+      } else {
+        CodeBlockView(text: text)
+      }
     case .table(let header, let alignments, let rows):
       MarkdownTable(header: header, alignments: alignments, rows: rows, mentioning: mentioning)
     case .rule:

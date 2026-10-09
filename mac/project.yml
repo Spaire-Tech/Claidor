@@ -37,10 +37,15 @@ targets:
       # phone has stays behind `#if os(iOS)` in them.
       - path: ../ios/Simeon
         group: iPhone
-        excludes: ["Computer/**", "Simeon.entitlements", "Info.plist"]
+        excludes: ["Computer/**", "Rendering/**", "Simeon.entitlements", "Info.plist"]
       # noVNC's client (MPL 2.0) and its licence, read at run time by the
       # computer's page (ios/Simeon/Computer.swift), so they ship as files.
       - path: ../ios/Simeon/Computer
+        group: iPhone
+        buildPhase: resources
+      # Mermaid and KaTeX (MIT), for the chat's diagrams and maths
+      # (ios/Simeon/Rendering.swift).
+      - path: ../ios/Simeon/Rendering
         group: iPhone
         buildPhase: resources
     dependencies:

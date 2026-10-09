@@ -30,10 +30,14 @@ targets:
     platform: iOS
     sources:
       - path: Simeon
-        excludes: ["Computer/**"]
+        excludes: ["Computer/**", "Rendering/**"]
       # noVNC's client (MPL 2.0) and its licence, read at run time by the
       # computer view (Computer.swift), so they ship as files.
       - path: Simeon/Computer
+        buildPhase: resources
+      # Mermaid and KaTeX (MIT) and their licences, for the chat's diagrams
+      # and maths (Rendering.swift; scripts/make-renderers.sh fetches them).
+      - path: Simeon/Rendering
         buildPhase: resources
     dependencies:
       - package: SimeonCore

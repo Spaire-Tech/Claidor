@@ -464,12 +464,28 @@ struct ChatComposer: View {
   /** What follows an "@" being typed at the end, if one is. */
   private var mentionQuery: String? { Mentions.query(draft) }
 
+  /** "Message" on the iPhone; on the Mac the window's "Message *name*" ("Message group" in a group). "Reply" while replying. */
+  private var placeholder: String {
+    if reply?.target != nil { return "Reply" }
+    #if os(macOS)
+    if store.groupIds.contains(agentId) { return "Message group" }
+    return name.isEmpty ? "Message" : "Message \(name)"
+    #else
+    return "Message"
+    #endif
+  }
+
   var body: some View {
     let _ = Trace.mark("drawing the composer of \(agentId), \(draft.count) characters")
     VStack(spacing: 6) {
       if let query = mentionQuery {
         MentionPicker(query: query, chatId: agentId) { name in
           draft = Mentions.inserting(name, into: draft)
+        }
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+      } else if let query = EmojiCatalog.query(draft) {
+        EmojiSuggestions(query: query) { emoji in
+          draft = EmojiCatalog.inserting(emoji, into: draft)
         }
         .transition(.move(edge: .bottom).combined(with: .opacity))
       }
@@ -511,7 +527,7 @@ struct ChatComposer: View {
         .buttonStyle(GlassDisc())
         .accessibilityLabel("Attach")
         HStack(alignment: .bottom, spacing: 4) {
-          TextField(reply?.target != nil ? "Reply" : "Message", text: $draft, axis: .vertical)
+          TextField(placeholder, text: $draft, axis: .vertical)
             .font(.system(size: 17))
             .lineLimit(1...6)
             .focused($typing)
@@ -577,6 +593,12 @@ struct ChatComposer: View {
     #if os(macOS)
     // ⌘L and ⌘I put the cursor here (the Mac's Agent menu).
     .onReceive(NotificationCenter.default.publisher(for: .simeonFocusComposer)) { _ in typing = true }
+    // Files dropped on the chat or pasted into it (mac/Simeon/MacChat.swift).
+    .onReceive(NotificationCenter.default.publisher(for: .simeonAttachFiles)) { note in
+      guard let request = note.object as? AttachRequest, request.agentId == agentId else { return }
+      attachments.append(contentsOf: request.files)
+      typing = true
+    }
     #endif
     // The unsent draft stays with its chat, as on the Mac.
     .onAppear { if draft.isEmpty, let kept = store.drafts[agentId], kept != draft { draft = kept } }
@@ -714,6 +736,10 @@ struct BubbleView: View {
           .buttonStyle(.plain)
           .frame(maxWidth: ChatMetrics.bubbleMax(width), alignment: bubble.fromPerson ? .trailing : .leading)
           .accessibilityLabel("Jump to replied message")
+          #if os(macOS)
+          // The window's preview of what a quote answers, on hover.
+          .help(Self.answered(target, in: store.rows(for: agentId)) ?? quote)
+          #endif
         }
         content
           .modifier(Glow(id: bubble.id))
@@ -811,6 +837,17 @@ struct BubbleView: View {
     }
     Color.clear.frame(width: 0, height: 0)
       .onAppear { if reactionsSeen == nil { reactionsSeen = Set(bubble.reactions) } }
+  }
+
+  /** The whole message a quote answers, as its hover shows it (at most 500 characters). */
+  static func answered(_ id: String, in rows: [ChatRow]) -> String? {
+    for row in rows {
+      if case .bubble(let answered) = row, answered.id == id {
+        let text = answered.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return text.count > 500 ? String(text.prefix(500)) + "…" : text
+      }
+    }
+    return nil
   }
 
   /** One reaction at a time per emoji: the host toggles it, so a second tap before it answers would take it back. */
@@ -1224,6 +1261,40 @@ struct FailedSendRow: View {
   private func action(_ title: String) -> some View {
     Text(title).foregroundStyle(Ink.primary)
       .padding(.horizontal, 6).frame(minHeight: 32).contentShape(.rect)
+  }
+}
+
+/**
+ * The emoji offered after a ":" (the window's composer list): up to five
+ * whose short name or name starts with what was typed, each with its name;
+ * a tap writes it in place of the ":" and what followed.
+ */
+struct EmojiSuggestions: View {
+  let query: String
+  let pick: (String) -> Void
+
+  var body: some View {
+    let found = EmojiCatalog.search(query, limit: 5)
+    if !found.isEmpty {
+      VStack(spacing: 0) {
+        ForEach(found, id: \.character) { emoji in
+          Button { pick(emoji.character) } label: {
+            HStack(spacing: 10) {
+              Text(emoji.character).font(.system(size: 20)).frame(width: 24)
+              Text(":" + (emoji.aliases.first ?? emoji.name.replacingOccurrences(of: " ", with: "_")) + ":")
+                .font(.system(size: 14)).foregroundStyle(Ink.primary).lineLimit(1)
+              Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 12)
+            .frame(height: 36)
+            .contentShape(.rect)
+          }
+          .buttonStyle(.plain)
+        }
+      }
+      .padding(.vertical, 4)
+      .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
   }
 }
 

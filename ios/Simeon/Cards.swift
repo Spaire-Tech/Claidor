@@ -1006,6 +1006,14 @@ struct FileCardView: View {
           .frame(maxWidth: min(ChatMetrics.bubbleMax(width), 280), maxHeight: 360)
           .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
           .onTapGesture { open() }
+          #if os(macOS)
+          // The window's picture menu (`avatar-images.ts`): open it, copy it, save it.
+          .contextMenu {
+            Button("Open") { open() }
+            Button("Copy Image") { MacFiles.copy(shown) }
+            Button("Save Image…") { save() }
+          }
+          #endif
       } else if isImage && !unreadable {
         // Its place while it comes: the picture's frame, empty.
         RoundedRectangle(cornerRadius: 14, style: .continuous)
@@ -1060,7 +1068,18 @@ struct FileCardView: View {
         .lineLimit(1).truncationMode(.middle)
       Spacer(minLength: 4)
       Group {
-        if loading { ProgressView().controlSize(.small) } else { Image(systemName: "icloud.and.arrow.down").font(.system(size: 14)).foregroundStyle(Ink.secondary) }
+        if loading {
+          ProgressView().controlSize(.small)
+        } else {
+          #if os(macOS)
+          // The window's save button: the file from the computer into a folder of this Mac.
+          Button { save() } label: { Image(systemName: "arrow.down.circle").font(.system(size: 15)).foregroundStyle(Ink.secondary) }
+            .buttonStyle(.plain)
+            .help("Save \(name)")
+          #else
+          Image(systemName: "icloud.and.arrow.down").font(.system(size: 14)).foregroundStyle(Ink.secondary)
+          #endif
+        }
       }
       .frame(width: 24, height: 24)
     }
@@ -1072,6 +1091,22 @@ struct FileCardView: View {
     .contentShape(Rectangle())
     .onTapGesture { open() }
   }
+
+  #if os(macOS)
+  /** Save…: the Mac's save panel, then the file streamed from the computer ("Couldn't save this file" when it can't be). */
+  private func save() {
+    guard !loading else { return }
+    loading = true
+    Task {
+      defer { loading = false }
+      guard let data = await store.readFile(url, agentId: agentId) else {
+        store.problem = "Couldn't save this file: the computer didn't hand it over."
+        return
+      }
+      if !(await MacFiles.save(data, suggestedName: name)) { store.problem = "Couldn't save this file." }
+    }
+  }
+  #endif
 
   private func open() {
     guard !loading else { return }
