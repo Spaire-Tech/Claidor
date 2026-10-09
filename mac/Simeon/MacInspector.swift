@@ -133,7 +133,7 @@ struct MacAgentPane: View {
     .help("Edit Avatar")
     .accessibilityLabel("Edit agent avatar")
     .accessibilityValue(editingAvatar ? "expanded" : "collapsed")
-    .popover(isPresented: $editingAvatar, arrowEdge: .bottom) {
+    .sheet(isPresented: $editingAvatar) {
       MacAvatarEditor(agentId: agentId) { editingAvatar = false }
         .environment(store)
     }
@@ -297,9 +297,8 @@ struct MacMembers: View {
       if !full && !candidates.isEmpty {
         Menu {
           ForEach(candidates) { candidate in
-            Button { add(candidate) } label: {
-              Label { Text(candidate.name) } icon: { AgentAvatar(agent: candidate).frame(width: 20, height: 20) }
-            }
+            // A Mac menu draws only pictures and words, so the names alone.
+            Button(candidate.name) { add(candidate) }
           }
         } label: {
           Label("Add Member", systemImage: "plus.circle.fill").font(.system(size: 13))

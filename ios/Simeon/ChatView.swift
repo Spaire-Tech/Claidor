@@ -754,13 +754,14 @@ struct ChatComposer: View {
       typing = true
     }
     #endif
-    // The unsent draft stays with its chat (or its thread), as on the Mac.
-    .onAppear { if draft.isEmpty, let kept = store.drafts[draftKey], kept != draft { draft = kept } }
+    // The unsent draft stays with its chat (or its thread), as on the Mac; it comes back, unless a message was handed here (the new chat's), which takes its place as the window's `setDraft` does.
+    .onAppear {
+      restoreCanceled()
+      if draft.isEmpty, let kept = store.drafts[draftKey], kept != draft { draft = kept }
+      hook?.take = { takeMessage() }
+    }
     // A held message canceled: what was written comes back here, if this is its composer and it is empty (the window's cancel).
     .onChange(of: store.canceledDraft?.id) { _, _ in restoreCanceled() }
-    // A message handed here before this composer was on screen (the new chat's draft for its new agent).
-    .onAppear { restoreCanceled() }
-    .onAppear { hook?.take = { takeMessage() } }
     // Saved when typing pauses, not per letter (the list redraws on a save).
     .task(id: draft) {
       try? await Task.sleep(nanoseconds: 600_000_000)

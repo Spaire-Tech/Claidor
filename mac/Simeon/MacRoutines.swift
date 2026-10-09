@@ -645,6 +645,8 @@ struct TriggerTextField: View {
         if focusWhenEmpty && value.isEmpty { focused = true }
       }
       .onChange(of: text) { _, now in if now != value { set(now) } }
+      // A change from outside (another choice cleared this field) shows here, unless it is being typed in.
+      .onChange(of: value) { _, now in if !focused && now != text { text = now } }
       .onSubmit { focused = false }
       .onChange(of: focused) { _, now in if !now { commit() } }
   }
@@ -660,13 +662,16 @@ struct TriggerTextField: View {
 struct MacScheduleFields: View {
   @Binding var line: String
   let commit: () -> Void
-  /** The Frequency shown when it is not the line's own: Custom for a line the picker can't show, or a move not yet saved. */
+  /** The Frequency shown when it is not the line's own: Custom for a line the picker can't show. */
   @State private var mode: String?
-  @State private var stagedFrom: String?
+  /** A move not saved yet (out of a custom line, or into Advanced): drawn here only, the routine's line untouched until a change inside. */
+  @State private var staged: String?
   @State private var custom = ""
   @State private var invalid = false
 
-  private var shape: RoutineSchedule.Shape? { RoutineSchedule.shape(line) }
+  /** The line as drawn: the staged one, else the routine's. */
+  private var shown: String { staged ?? line }
+  private var shape: RoutineSchedule.Shape? { RoutineSchedule.shape(shown) }
   private var current: String { mode ?? shape?.mode ?? "custom" }
 
   var body: some View {
@@ -693,21 +698,18 @@ struct MacScheduleFields: View {
       custom = line
       if shape == nil { mode = "custom" }
     }
-    // Closing the panel takes back a move that was never saved.
-    .onDisappear { if let stagedFrom { line = stagedFrom } }
   }
 
+  /** Closing the panel drops a staged move: it was only ever drawn here. */
   private func pickFrequency(_ next: String) {
-    if next == "custom" { mode = "custom"; custom = line; return }
+    if next == "custom" { mode = "custom"; custom = shown; staged = nil; return }
     if current == "custom" && shape == nil {
-      stagedFrom = stagedFrom ?? line
-      line = RoutineSchedule.line(RoutineSchedule.start(next, from: nil))
+      staged = RoutineSchedule.line(RoutineSchedule.start(next, from: nil))
       mode = nil
       return
     }
     if next == "advanced" {
-      stagedFrom = stagedFrom ?? line
-      line = RoutineSchedule.line(RoutineSchedule.advanced(from: shape))
+      staged = RoutineSchedule.line(RoutineSchedule.advanced(from: shape))
       mode = nil
       return
     }
@@ -716,7 +718,7 @@ struct MacScheduleFields: View {
 
   /** A change inside: the line set and saved. */
   private func set(_ next: RoutineSchedule.Shape) {
-    stagedFrom = nil
+    staged = nil
     mode = nil
     line = RoutineSchedule.line(next)
     commit()
@@ -731,7 +733,7 @@ struct MacScheduleFields: View {
       return
     }
     invalid = false
-    stagedFrom = nil
+    staged = nil
     line = typed
     commit()
   }

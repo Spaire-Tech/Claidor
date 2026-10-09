@@ -36,6 +36,8 @@ final class MacNewChatState {
     let name: String
     var agentId: String?
     let expectsContent: Bool
+    /** The agent open when it began: still open is not "moved away". */
+    var from: String?
     let started = Date()
   }
 
@@ -166,8 +168,8 @@ final class MacNewChatState {
       if written { await store.send(words, to: id, attachments: Self.pairs(files), richText: richText, id: AppStore.newMessageId()) }
     case .new(let name):
       let clean = NewChat.cleanName(name)
-      creating = Creating(name: clean, expectsContent: true)
       let was = navigation.selected
+      creating = Creating(name: clean, expectsContent: true, from: was)
       // A name that reads like a request, with nothing written, is the first message.
       let first = !words.isEmpty ? words : (!written && NewChat.looksLikeSentence(name) ? name : "")
       let sends = !first.isEmpty || written
@@ -190,8 +192,8 @@ final class MacNewChatState {
   /** A new agent for what was written (`Ae`): made without its introduction, what was written put in its composer. */
   private func makeQuietly(_ name: String, draft: ComposerHook.Message, store: AppStore, navigation: MacNavigation) async {
     let clean = NewChat.cleanName(name)
-    creating = Creating(name: clean, expectsContent: false)
     let was = navigation.selected
+    creating = Creating(name: clean, expectsContent: false, from: was)
     do {
       let id = try await store.makeAgent(name: clean, quiet: true)
       creating?.agentId = id
@@ -212,8 +214,8 @@ final class MacNewChatState {
   private func makeGroup(_ list: [NewChat.Recipient], text: String, files: [ComposerAttachment], draft: ComposerHook.Message?, store: AppStore, navigation: MacNavigation) async {
     let name = NewChat.groupName(list)
     let words = text.trimmingCharacters(in: .whitespacesAndNewlines)
-    creating = Creating(name: name, expectsContent: !words.isEmpty || !files.isEmpty)
     let was = navigation.selected
+    creating = Creating(name: name, expectsContent: !words.isEmpty || !files.isEmpty, from: was)
     var made: [String] = []
     do {
       var members: [String] = []

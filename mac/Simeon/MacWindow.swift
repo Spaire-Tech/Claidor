@@ -78,10 +78,10 @@ struct MacWindow: View {
     @Bindable var newChat = navigation.newChat
     NavigationSplitView(columnVisibility: $columns) {
       MacSidebar()
-        .navigationSplitViewColumnWidth(min: navigation.sidebarRail ? 72 : 220, ideal: navigation.sidebarRail ? 72 : 280, max: navigation.sidebarRail ? 88 : 420)
+        .navigationSplitViewColumnWidth(min: navigation.railShown ? 72 : 220, ideal: navigation.railShown ? 72 : 280, max: navigation.railShown ? 88 : 420)
     } detail: {
       detail
-        .inspector(isPresented: Binding(get: { navigation.paneOpen && store.agent(navigation.selected) != nil && !navigation.newChat.isOpen }, set: { open in if !open { navigation.closePane() } })) {
+        .inspector(isPresented: Binding(get: { paneVisible }, set: { open in if !open { navigation.closePane() } })) {
           if let id = navigation.selected {
             MacAgentPane(agentId: id)
               .id(id)
@@ -91,6 +91,7 @@ struct MacWindow: View {
     }
     // Esc closes the pane when nothing in front of it took the key (the window's `CDn`).
     .onExitCommand { if navigation.paneOpen { navigation.closePane() } }
+    .onChange(of: paneVisible, initial: true) { _, now in navigation.paneShown = now }
     .onChange(of: navigation.sidebarShown) { _, shown in withAnimation { columns = shown ? .all : .detailOnly } }
     .onChange(of: columns) { _, now in
       let shown = now != .detailOnly
@@ -101,6 +102,8 @@ struct MacWindow: View {
       Group {
         Button("") { navigation.sidebarShown.toggle() }.keyboardShortcut("b")
         Button("") { NotificationCenter.default.post(name: .simeonFocusComposer, object: nil) }.keyboardShortcut("i")
+        // "Toggle details" on ⇧⌘I too, as the window has it on a Mac (⌥⌘B is in the View menu).
+        Button("") { navigation.toggleDetails() }.keyboardShortcut("i", modifiers: [.command, .shift])
       }
       .opacity(0)
       .accessibilityHidden(true)
@@ -153,8 +156,9 @@ struct MacWindow: View {
       try? await Task.sleep(nanoseconds: 20_000_000_000)
       if newChat.creating?.id == started { newChat.creating = nil }
     }
+    // Another agent opened while the new one is made, or after: the creating screen lets it go.
     .onChange(of: navigation.selected) { _, now in
-      if let made = newChat.creating?.agentId, now != made { newChat.creating = nil }
+      if let creating = newChat.creating, now != creating.agentId, now != creating.from { newChat.creating = nil }
     }
   }
 
@@ -176,8 +180,11 @@ struct MacWindow: View {
   private func revealed(_ creating: MacNewChatState.Creating) -> Bool {
     guard let id = creating.agentId, navigation.selected == id, let agent = store.agent(id) else { return false }
     if !creating.expectsContent { return true }
-    return !(store.transcripts[id] ?? []).isEmpty || agent.isRunning || agent.isRunningTurn
+    return !store.rows(for: id).isEmpty || agent.isRunning || agent.isRunningTurn
   }
+
+  /** The pane is on screen: open, with an agent to show, and no new chat over the chat. */
+  private var paneVisible: Bool { navigation.paneOpen && store.agent(navigation.selected) != nil && !navigation.newChat.isOpen }
 
   private struct OpenRequest: Equatable {
     let agent: String?

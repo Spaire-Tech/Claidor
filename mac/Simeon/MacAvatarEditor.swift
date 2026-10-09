@@ -5,7 +5,9 @@ import UniformTypeIdentifiers
 import SimeonCore
 
 /**
- * The avatar editor (`c3n`), in a popover under the pane's avatar, 294 wide:
+ * The avatar editor (`c3n`), 294 wide, as a sheet over the pane (the
+ * window's panel under the avatar; a popover would close for the file
+ * chooser or a drag from Finder):
  * Agent · Generate · Upload (a group has no Agent tab and starts on Upload),
  * and Reset at the right. Agent: the twelve colours, saved as picked (staged
  * behind Set avatar while the agent has a picture), and the Voice. Generate:
@@ -45,8 +47,16 @@ struct MacAvatarEditor: View {
   var body: some View {
     if let agent = store.agent(agentId) {
       VStack(spacing: 14) {
+        HStack {
+          Spacer()
+          // A sheet on the Mac (the file chooser and a drag from Finder would close a popover), so it has its own ✕.
+          Button { close() } label: { Image(systemName: "xmark").font(.system(size: 11, weight: .semibold)) }
+            .buttonStyle(.borderless)
+            .keyboardShortcut(.cancelAction)
+            .accessibilityLabel("Close")
+        }
         HStack(spacing: 8) {
-          Picker("Avatar source", selection: $tab) {
+          Picker("Avatar source", selection: Binding(get: { tab }, set: { switchTab($0) })) {
             if !agent.isGroup { Text("Agent").tag(Tab.agent) }
             Text("Generate").tag(Tab.generate)
             Text("Upload").tag(Tab.upload)
@@ -81,14 +91,17 @@ struct MacAvatarEditor: View {
         if let pasteMonitor { NSEvent.removeMonitor(pasteMonitor) }
         pasteMonitor = nil
       }
-      // A new tab drops the picture, the staged colour, a drawing under way and the error; the description stays.
-      .onChange(of: tab) { _, _ in
-        candidate = nil; staged = nil; generating = false; problem = nil
-        generation += 1
-      }
       // Esc closes the editor, not the pane under it.
       .onExitCommand { close() }
     }
+  }
+
+  /** Another tab drops the picture, the staged colour, a drawing under way and the error; the description stays. */
+  private func switchTab(_ next: Tab) {
+    guard next != tab else { return }
+    tab = next
+    candidate = nil; staged = nil; generating = false; problem = nil
+    generation += 1
   }
 
   // MARK: Reset
@@ -244,10 +257,10 @@ struct MacAvatarEditor: View {
 
   private func take(_ url: URL) {
     let size = (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0
+    switchTab(.upload)
     if let tooBig = AvatarCrop.sizeProblem(bytes: size) { problem = tooBig; return }
     guard let data = try? Data(contentsOf: url) else { problem = AvatarEditorWords.unreadable; return }
     guard let image = Self.normalized(data) else { problem = AvatarEditorWords.unloadable; return }
-    tab = .upload
     candidate = Candidate(image: image, fileName: url.lastPathComponent, crop: AvatarCrop(width: Double(image.width), height: Double(image.height)))
     problem = nil
   }
@@ -264,7 +277,7 @@ struct MacAvatarEditor: View {
             !(event.window?.firstResponder is NSTextView), event.window?.isKeyWindow == true,
             store.agent(agentId) != nil else { return event }
       let board = NSPasteboard.general
-      tab = .upload
+      switchTab(.upload)
       if let url = (board.readObjects(forClasses: [NSURL.self], options: [.urlReadingContentsConformToTypes: [UTType.image.identifier]]) as? [URL])?.first {
         take(url)
       } else if let picture = board.readObjects(forClasses: [NSImage.self], options: nil)?.first as? NSImage, let png = picture.pngData() {
@@ -292,7 +305,7 @@ struct MacAvatarEditor: View {
             .frame(width: place.width, height: place.height)
             .offset(x: place.x, y: place.y)
         }
-        .frame(width: AvatarCrop.stage, height: AvatarCrop.stage)
+        .frame(width: AvatarCrop.stage, height: AvatarCrop.stage, alignment: .topLeading)
         .clipShape(Circle())
         .overlay(Circle().stroke(Ink.hairline, lineWidth: 0.5))
         .contentShape(.circle)

@@ -118,8 +118,12 @@ final class MacNavigation {
   }
   /** What the pane opens on next; the pane takes it. */
   var paneRequest: PaneRequest?
-  /** The sidebar as its rail of butterflies (the window compacts it while the pane is open). */
-  var sidebarRail = false
+  /** The sidebar as its rail of butterflies (the window compacts it while the pane is open); a pane left open at the last quit keeps it so. */
+  var sidebarRail = UserDefaults.standard.bool(forKey: MacNavigation.paneKey) && UserDefaults.standard.bool(forKey: MacNavigation.tookKey)
+  /** The pane is on screen (open, with an agent to show and no new chat over it), set by the window. */
+  var paneShown = false
+  /** The rail is drawn only while the pane is on screen beside it. */
+  var railShown: Bool { sidebarRail && paneShown }
   /** The pane is what put the sidebar on its rail, so closing it gives the sidebar back (`simeon.paneTookSidebar`). */
   private var paneTookSidebar: Bool = UserDefaults.standard.bool(forKey: MacNavigation.tookKey) {
     didSet { UserDefaults.standard.set(paneTookSidebar, forKey: Self.tookKey) }
@@ -282,10 +286,9 @@ struct SimeonCommands: Commands {
       // The window's "Toggle agent settings" (⌘⇧,) and "Toggle details" (⌘⇧I and ⌘⌥B on a Mac).
       Button("Toggle Agent Settings") { navigation.toggleAgentSettings() }
         .keyboardShortcut(",", modifiers: [.command, .shift])
+      // ⇧⌘I does the same, from a key of the window's own (MacWindow).
       Button("Toggle Details") { navigation.toggleDetails() }
         .keyboardShortcut("b", modifiers: [.command, .option])
-      Button("Toggle Details") { navigation.toggleDetails() }
-        .keyboardShortcut("i", modifiers: [.command, .shift])
     }
     CommandMenu("Agent") { AgentMenuItems(navigation: navigation, store: store) }
     // The Electron app hid its Help menu's items (4 October 2026).
@@ -356,6 +359,8 @@ struct AgentMenuItems: View {
           .keyboardShortcut(KeyEquivalent(Character(String(index + 1))))
       }
     }
+    // While the To: line is open, ⌘1–⌘9 pick its rows instead.
+    .disabled(navigation.newChat.isOpen)
     Divider()
     Button("Delete…") { if let agent { navigation.askToDelete([agent.id], store: store) } }
       .disabled(agent == nil)

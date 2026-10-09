@@ -20,7 +20,7 @@ struct MacSidebar: View {
   @State private var query = ""
 
   private var visible: [Agent] { store.agents.filter { !$0.isHidden } }
-  private var rail: Bool { navigation.sidebarRail }
+  private var rail: Bool { navigation.railShown }
 
   /** Every listed agent, or those the search finds (hidden ones too) by name, title, description or last line. */
   private var found: [Agent] {
@@ -36,7 +36,7 @@ struct MacSidebar: View {
     let pins = store.pinned
     let unpinned = store.listed
     List {
-      if !query.isEmpty {
+      if !query.trimmingCharacters(in: .whitespaces).isEmpty {
         ForEach(found) { agent in row(agent) }
       } else {
         if !pins.isEmpty {
@@ -54,7 +54,7 @@ struct MacSidebar: View {
               railRow(agent, pinned: false)
             } else {
               // A tile dropped on the plain list is unpinned.
-              row(agent).dropDestination(for: String.self) { items, _ in unpinDropped(items) }
+              row(agent).dropDestination(for: String.self) { items, _ in unpinDropped(items) } isTargeted: { _ in }
             }
           }
         } else if rail {
@@ -249,10 +249,10 @@ struct MacSidebar: View {
         Text(SidebarSections.emptySection)
           .font(.system(size: 12)).foregroundStyle(.tertiary)
           .frame(maxWidth: .infinity, alignment: .leading)
-          .dropDestination(for: String.self) { items, _ in dropInto(section.id, items) }
+          .dropDestination(for: String.self) { items, _ in dropInto(section.id, items) } isTargeted: { _ in }
       } else {
         ForEach(section.agents) { agent in
-          row(agent).dropDestination(for: String.self) { items, _ in dropInto(section.id, items) }
+          row(agent).dropDestination(for: String.self) { items, _ in dropInto(section.id, items) } isTargeted: { _ in }
         }
       }
     } header: {
@@ -284,7 +284,7 @@ struct MacSidebar: View {
 
   @ViewBuilder
   private func emptyState(unpinned: [Agent], pins: [Agent]) -> some View {
-    if !query.isEmpty {
+    if !query.trimmingCharacters(in: .whitespaces).isEmpty {
       if found.isEmpty { Text("No results").font(.system(size: 13)).foregroundStyle(.secondary) }
     } else if store.agents.isEmpty && navigation.newChat.creating == nil && !store.isLoading && !rail {
       Text("No saved agents yet.").font(.system(size: 13)).foregroundStyle(.secondary)
@@ -415,7 +415,7 @@ struct MacRenameField: View {
       .onAppear {
         text = initial
         focused = true
-        DispatchQueue.main.async { NSApp.keyWindow?.firstResponder?.tryToPerform(#selector(NSText.selectAll(_:)), with: nil) }
+        DispatchQueue.main.async { _ = NSApp.keyWindow?.firstResponder?.tryToPerform(#selector(NSText.selectAll(_:)), with: nil) }
       }
       .onSubmit { focused = false }
       .onExitCommand { cancelled = true; focused = false }
