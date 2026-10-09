@@ -16,7 +16,7 @@ struct CallPill: View {
   var body: some View {
     VStack(spacing: 0) {
       HStack(spacing: 8) {
-        ButterflyView(palette: .named(call.agentColour), motion: call.phase == .ended ? nil : .idle).frame(width: 44, height: 44)
+        CallAvatar(call: call, size: 44)
         Group {
           if call.phase == .live, let activity = call.activity {
             Text(activity).font(.system(size: 15)).foregroundStyle(Ink.secondary).lineLimit(1)
@@ -50,6 +50,31 @@ struct CallPill: View {
     // Glass, as the system's own call banner and the rest of the chat's controls.
     .glassEffect(.regular, in: .rect(cornerRadius: 38, style: .continuous))
     .gesture(DragGesture(minimumDistance: 12).onEnded { drag in if drag.translation.height > 24 { expand() } })
+  }
+}
+
+/**
+ * The agent on the call as everywhere else in the app (`AgentAvatar`): its
+ * picture when it has one, else its butterfly in its own colour, moving
+ * while the call is on. The call drew a blue butterfly for every agent with
+ * no colour saved, and never a picture (the founder, 9 October 2026: "the
+ * transcript page shows a different avatar").
+ */
+struct CallAvatar: View {
+  let call: CallState
+  let size: Double
+  @Environment(AppStore.self) private var store
+
+  var body: some View {
+    let agent = store.agent(call.agentId)
+    Group {
+      if let agent, agent.avatarDataURL != nil {
+        AgentAvatar(agent: agent)
+      } else {
+        ButterflyView(palette: agent?.palette ?? .named(call.agentColour), motion: call.phase == .ended ? nil : .idle)
+      }
+    }
+    .frame(width: size, height: size)
   }
 }
 
@@ -165,7 +190,7 @@ struct CallScreen: View {
           }
           .padding(.horizontal, 12).padding(.top, 12)
           VStack(spacing: 4) {
-            ButterflyView(palette: .named(call.agentColour), motion: call.phase == .ended ? nil : .idle).frame(width: 124, height: 124)
+            CallAvatar(call: call, size: 124)
             Text(call.agentName).font(.system(size: 22, weight: .semibold)).foregroundStyle(Ink.primary).padding(.top, 10)
             TimelineView(.periodic(from: .now, by: 1)) { context in
               Text(call.phase == .live || call.phase == .ended && call.connectedAt != nil ? Chat.callClock(call.seconds(now: context.date)) : call.status)

@@ -55,7 +55,7 @@ test("the voice is the agent itself: first person, its recent chat, the upstream
   assert.doesNotMatch(text, /Never mention another agent/, "teammates can be named and reached");
   assert.match(text, /Acknowledge it once, in a few words that fit what they asked, never the same phrase twice in a call/);
   assert.match(text, /Set each thing going once\./);
-  assert.match(text, /If it repeats something you already told them, or is not about anything they asked, say nothing about it/);
+  assert.match(text, /If it repeats something you already told them, say nothing about it and carry on/);
   assert.match(text, /You have no teammates yet\. When they ask for one, you can create one/);
   assert.match(text, /Them: Can you draft the agenda\?\nYou: Drafted\. It's in the doc\./);
   assert.match(text, /contractions/);
@@ -119,8 +119,9 @@ test("the call's record and durations read like the banner", () => {
 
 test("what the voice's tools answer, and what its work coming back says, are its own", () => {
   assert.equal(prompt.SEND_TASK_ACCEPTED, "Sent. If you have not acknowledged it yet, do so in a few words, then carry on with them. What it turns up comes back to you here.");
-  assert.equal(prompt.workCameBackUpdate(["Sent it to Dana.", "She's in at ten."]), "Your work came back: Sent it to Dana. She's in at ten. Tell them now, briefly, in your own words, as yours.");
-  assert.equal(prompt.WORK_CAME_BACK_NUDGE, "(Your work just came back. Tell me what it found.)");
+  // The founder, 9 October 2026: a finished action the voice already said it was doing is not announced again.
+  assert.equal(prompt.workCameBackUpdate(["Sent it to Dana.", "She's in at ten."]), "Your work came back: Sent it to Dana. She's in at ten. If it answers something they asked, or something went wrong, tell them briefly, in your own words, as yours. If it only confirms something you already told them you were doing, they can see it done: say nothing about it and stay silent with skip_turn.");
+  assert.equal(prompt.WORK_CAME_BACK_NUDGE, "(Your work just came back.)");
   assert.equal(prompt.recallTextMessagesAnswer([]), "There are no text messages between you yet.");
   assert.equal(prompt.recallTextMessagesAnswer([{ speaker: "person", text: "Hi" }, { speaker: "agent", text: "Hey" }]), "Your latest text messages, oldest first:\nThem: Hi\nYou: Hey");
 });
@@ -135,4 +136,14 @@ test("the voice calls the person by the name they gave, never by one made from t
   assert.doesNotMatch(unnamed.agent.prompt.prompt, /Call them/);
   assert.match(unnamed.agent.prompt.prompt, /^Them: Hi$/m);
   assert.equal(unnamed.agent.firstMessage, "Hey, it's Ada. What's up?");
+});
+
+test("the voice is calm: no greeting shouts, and the rules ask for one steady tone (9 October 2026)", () => {
+  // The founder: "the voice changes tone randomly. i want them all the be calm." An exclamation mark is read with a jump in energy.
+  for (let pick = 0; pick < 1; pick += 0.1) {
+    for (const person of [null, "Bass"]) assert.doesNotMatch(prompt.buildFirstMessage("Theo", pick, person), /!/);
+  }
+  const built = prompt.buildVoiceCallPrompt({ agent: { name: "Theo" }, transcript: [] });
+  assert.match(built, /Speak calmly and evenly, at an unhurried pace, the same steady tone throughout\. Never use exclamation marks\./);
+  assert.match(built, /If it only confirms something you already told them you were doing, they can see it done: do not announce it; stay silent with skip_turn, unless they ask\./);
 });

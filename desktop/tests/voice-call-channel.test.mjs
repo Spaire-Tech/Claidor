@@ -128,10 +128,10 @@ test("the call opens, relays mid-turn, carries the agent's answer back, nudges o
     assert.match(host.prompts[2], /^Your last turn sent nothing, so the call is still waiting on its result\./, "a turn that sent nothing to the call is nudged once");
 
     assert.equal(host.channel.deliver("a1", "voice:someone-else", { kind: "text", text: "x" }), false, "an address that is not this agent's call is not taken");
-    const ended = await host.channel.handle({ agentId: "a1", callId: "call-0001", kind: "ended", record: { seconds: 61, recap: "Bass, you moved the review.", personName: "Bass", transcript: [{ speaker: "user", text: "Move it" }, { speaker: "user", text: "(Your work just came back. Tell me what it found.)" }, { speaker: "agent", text: "On it." }] } });
+    const ended = await host.channel.handle({ agentId: "a1", callId: "call-0001", kind: "ended", record: { seconds: 61, recap: "Bass, you moved the review.", personName: "Bass", transcript: [{ speaker: "user", text: "Move it" }, { speaker: "user", text: "(Your work just came back.)" }, { speaker: "user", text: "(Your work just came back. Tell me what it found.)" }, { speaker: "agent", text: "On it." }] } });
     await settle();
     assert.equal(ended.closed, true);
-    // The same line is filled in with the duration and what was said, the app's nudge left out.
+    // The same line is filled in with the duration and what was said, the app's nudge left out (today's words and an older app's).
     assert.equal(ended.exchange, 2);
     assert.equal(host.written.length, 1, "one line for the whole call");
     assert.deepEqual(host.written[0].event, { type: "voice-call", callId: "call-0001", status: "ended", seconds: 61, lines: [{ speaker: "user", text: "Move it" }, { speaker: "agent", text: "On it." }] });

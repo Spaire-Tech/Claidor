@@ -69,7 +69,7 @@ export const MAX_RINGS = 7;
 /** A finished call's banner leaves by itself after this, once the hang-up tone has played (the founder, 2 October 2026: "quit the banner once the call is finished"). */
 export const ENDED_DISMISS_MS = 1_200;
 export const FAILED_DISMISS_MS = 20_000;
-/** How long a finished hand-off waits for the voice to stop talking before it is pushed in anyway. */
+/** A finished hand-off looks again after this; it is said only once the voice is listening, never over it (9 October 2026). */
 export const REPLY_WAIT_MS = 8_000;
 
 export interface CallController {
@@ -233,10 +233,12 @@ export function createCallController(deps: CallControllerDeps): CallController {
       if (event.type === "agent-status") dispatch({ type: "work", label: event.label });
       else if (event.type === "hang-up") hangUp();
       else if (event.type === "work-came-back") {
-        // Several messages before the voice is free to speak are said together.
+        // Several messages before the voice is free to speak are said together. Never over the voice
+        // itself (the founder, 9 October 2026: "he cant cut himself like this, wait of turn"): the wait
+        // only looks again, and the reply goes when the voice is listening.
         const earlier = pendingReply?.replies ?? [];
         pendingReply?.cancel();
-        const cancel = deps.setTimer(() => flushReply(), REPLY_WAIT_MS);
+        const cancel = deps.setTimer(() => { if (state.mode === "listening") flushReply(); }, REPLY_WAIT_MS);
         pendingReply = { replies: [...earlier, ...event.texts], cancel };
         if (state.mode === "listening") flushReply();
       }

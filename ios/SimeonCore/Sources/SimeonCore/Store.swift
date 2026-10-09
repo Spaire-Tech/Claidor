@@ -306,10 +306,18 @@ public final class AppStore {
 
   /** Bumped by each pin written here: a read of the host's pins that started before it would undo it, so it is dropped. */
   @ObservationIgnored private var pinWrites = 0
+  /**
+   * Pin writes on their way. A read begun while one is (the host's echo of
+   * the write before it, say) can come back without it and undo it, so none
+   * begins then: the write's own echo reads afterwards. Two quick pins lost
+   * the second this way, now and then.
+   */
+  @ObservationIgnored private var pinWritesInFlight = 0
 
   public func loadPins() async {
+    guard pinWritesInFlight == 0 else { return }
     let started = pinWrites
-    guard let settings = try? await backend?.command("getHostSettings", [:]), started == pinWrites else { return }
+    guard let settings = try? await backend?.command("getHostSettings", [:]), started == pinWrites, pinWritesInFlight == 0 else { return }
     let ids = settings["pinnedAgentIds"]?.array?.compactMap(\.text) ?? []
     if ids != pinnedIds { pinnedIds = ids }
   }
@@ -335,7 +343,10 @@ public final class AppStore {
     guard next != pinnedIds else { return }
     pinWrites += 1
     pinnedIds = next
-    if await command("setHostSettings", ["pinnedAgentIds": JSON(next)], failure: failure) == nil { await loadPins() }
+    pinWritesInFlight += 1
+    let written = await command("setHostSettings", ["pinnedAgentIds": JSON(next)], failure: failure)
+    pinWritesInFlight -= 1
+    if written == nil { await loadPins() }
   }
 
   /** Mark as Read / Mark as Unread (`setAgentUnread`), shown at once. */
@@ -1198,8 +1209,9 @@ public final class AppStore {
 
   public var canCall: Bool { backend?.call != nil }
 
+  /** The agent's own colour on the call: the one the app draws it in (its id's when it has none saved), not blue (the founder, 9 October 2026: the call showed another avatar). */
   public func startCall(_ agent: Agent) {
-    backend?.call?.start(agentId: agent.id, agentName: agent.name, colour: agent.colour ?? "blue")
+    backend?.call?.start(agentId: agent.id, agentName: agent.name, colour: agent.palette.id)
   }
 
   public func mute(_ muted: Bool) { backend?.call?.mute(muted) }

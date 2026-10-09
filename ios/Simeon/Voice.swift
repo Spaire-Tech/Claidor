@@ -79,6 +79,46 @@ final class ElevenLabsVoice: VoiceTransport, @unchecked Sendable {
   }
 }
 
+/**
+ * The call's ring and hang-up on the phone (the founder, 9 October 2026: "i
+ * want sounds for when it rings, and when it hangs up like in the mac"): the
+ * Mac banner's tones (SimeonCore `CallTones`), played from memory. They play
+ * through the speaker whatever the silent switch says, as a call's sounds
+ * do; the ring is over before the call's own audio starts.
+ */
+final class CallTonePlayer: CallTonePlaying, @unchecked Sendable {
+  private let lock = NSLock()
+  private var ringer: AVAudioPlayer?
+  private var ender: AVAudioPlayer?
+
+  func ring(cycles: Int) async {
+    let player = Self.player(CallTones.wav(CallTones.ringSamples(cycles: cycles)))
+    lock.withLock { ringer?.stop(); ringer = player }
+    player?.play()
+    try? await Task.sleep(nanoseconds: UInt64(Double(cycles) * CallTones.ringCycleSeconds * 1_000_000_000))
+  }
+
+  func stopRinging() {
+    let player: AVAudioPlayer? = lock.withLock { let current = ringer; ringer = nil; return current }
+    player?.stop()
+  }
+
+  func hangUp() {
+    let player = Self.player(CallTones.wav(CallTones.hangUpSamples()))
+    lock.withLock { ender = player }
+    player?.play()
+  }
+
+  private static func player(_ wav: Data) -> AVAudioPlayer? {
+    let session = AVAudioSession.sharedInstance()
+    try? session.setCategory(.playback, mode: .default)
+    try? session.setActive(true)
+    let player = try? AVAudioPlayer(data: wav, fileTypeHint: AVFileType.wav.rawValue)
+    player?.prepareToPlay()
+    return player
+  }
+}
+
 /** The person's name for the call's prompt, read by the call off the main thread. */
 final class PersonNameBox: @unchecked Sendable {
   private let lock = NSLock()

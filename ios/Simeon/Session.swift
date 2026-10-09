@@ -138,7 +138,7 @@ final class SessionController {
     let backend = LiveBackend(gateway: Gateway(api: api), api: api)
     let names = personName
     let store = store
-    backend.call = LiveCall(backend: backend, transport: ElevenLabsVoice(), personName: { names.value }, voiceFor: { agentId in await store.ensureVoice(agentId) })
+    backend.call = LiveCall(backend: backend, transport: ElevenLabsVoice(), personName: { names.value }, voiceFor: { agentId in await store.ensureVoice(agentId) }, tones: CallTonePlayer())
     // The profile is asked for first and applied the moment it answers, beside the roster.
     Task { [weak self] in
       guard let profile = try? await api.profile(), let self, self.api === api else { return }

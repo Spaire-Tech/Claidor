@@ -84,7 +84,7 @@ VOICE_AGENT_NAME = "Simeon voice"
 #: 2026 Jessica left the list and Michael became the default without a bump,
 #: the agent kept Jessica as its own voice, and every call that named no
 #: voice still spoke as Jessica (the founder, 9 October 2026).
-VOICE_AGENT_CONFIG_VERSION = 9
+VOICE_AGENT_CONFIG_VERSION = 10
 
 #: The model that thinks during the call. Fast over clever: the call's
 #: real work runs in the person's own agent behind the call (`send_task`), and a
@@ -105,8 +105,11 @@ VOICE_TTS_MODEL = "eleven_flash_v2"
 #: How even the voice's delivery is. ElevenLabs' default (0.5) let the pitch
 #: swing from one sentence to the next (the founder, 1 October 2026: "one
 #: second its low pitched, the other its high"); higher is steadier, and too
-#: high goes flat.
-VOICE_TTS_STABILITY = 0.7
+#: high goes flat. 0.7 still swung (the founder, 9 October 2026: "the voice
+#: changes tone randomly. i want them all the be calm"): 0.85, with the
+#: voice told to keep one calm tone and never to exclaim
+#: (`buildVoiceCallPrompt` in the app).
+VOICE_TTS_STABILITY = 0.85
 
 #: The voice a call speaks in when the app names none: the first of the
 #: founder's voices (`CURATED_VOICES`), Michael since Jessica left the list

@@ -511,7 +511,7 @@ final class VoiceCallTests: XCTestCase {
   func testACallRelaysTheTaskSaysTheAnswerAndLeavesItsRecord() async throws {
     let backend = DemoBackend(seed: DemoData.seed(), pace: 0.01, call: nil)
     let voice = FakeVoice()
-    let call = LiveCall(backend: backend, transport: voice, personName: { "Bass" }, pause: { _ in try? await Task.sleep(nanoseconds: 2_000_000) })
+    let call = LiveCall(backend: backend, transport: voice, personName: { "Bass" }, quiet: 0.02, pause: { _ in try? await Task.sleep(nanoseconds: 2_000_000) })
     let states = StateLog()
     call.observe { states.add($0) }
     call.start(agentId: "theo", agentName: "Theo", colour: "green")
@@ -528,6 +528,83 @@ final class VoiceCallTests: XCTestCase {
     try await Task.sleep(nanoseconds: 200_000_000)
     XCTAssertEqual(backend.voiceRecords.last?["recap"], "Bass asked to move the review; it's done.")
     XCTAssertNil(states.last ?? nil)
+  }
+}
+
+/** The call's tones as a test hears them: when each ring started and ended, and the hang-ups. */
+final class FakeTones: CallTonePlaying, @unchecked Sendable {
+  let lock = NSLock()
+  var rings: [Int] = []
+  var ringsOver: Date?
+  var stops = 0
+  var hangUps = 0
+  func ring(cycles: Int) async {
+    lock.withLock { rings.append(cycles) }
+    try? await Task.sleep(nanoseconds: UInt64(cycles) * 40_000_000)
+    lock.withLock { ringsOver = Date() }
+  }
+  func stopRinging() { lock.withLock { stops += 1 } }
+  func hangUp() { lock.withLock { hangUps += 1 } }
+}
+
+/** The ring and the hang-up as the Mac's banner makes them, and returned work said only on a quiet line (9 October 2026). */
+final class CallSoundAndTurnTests: XCTestCase {
+  func testTheTonesAreTheMacs() {
+    let ring = CallTones.ringSamples(cycles: 2)
+    XCTAssertEqual(ring.count, 2 * Int(1.2 * 44_100))
+    // 0.8 s of tone, 0.4 s of quiet, a cycle; soft edges; never louder than its peak.
+    XCTAssertEqual(ring[0], 0)
+    XCTAssertGreaterThan(ring[Int(0.4 * 44_100)...Int(0.41 * 44_100)].map(abs).max() ?? 0, 0.05)
+    XCTAssertEqual(ring[Int(0.9 * 44_100)..<Int(1.2 * 44_100)].map(abs).max(), 0)
+    XCTAssertLessThanOrEqual(ring.map(abs).max() ?? 0, 0.3001)
+    let hangUp = CallTones.hangUpSamples()
+    XCTAssertEqual(hangUp.count, 2 * (Int(0.13 * 44_100) + Int(0.04 * 44_100)))
+    XCTAssertEqual(CallTones.hangUpNotes, [784, 523.25])
+    let wav = CallTones.wav([0, 1, -1])
+    XCTAssertEqual(String(decoding: wav.prefix(4), as: UTF8.self), "RIFF")
+    XCTAssertEqual(wav.count, 44 + 6)
+    XCTAssertEqual(Array(wav.suffix(4)), [0xFF, 0x7F, 0x01, 0x80])
+  }
+
+  func testTheCallRingsTwiceBeforeTheVoiceAndEndsWithTheHangUp() async throws {
+    let backend = DemoBackend(seed: DemoData.seed(), pace: 0.01, call: nil)
+    let voice = FakeVoice()
+    let tones = FakeTones()
+    let call = LiveCall(backend: backend, transport: voice, personName: { "Bass" }, tones: tones, quiet: 0.02, pause: { _ in try? await Task.sleep(nanoseconds: 2_000_000) })
+    call.start(agentId: "theo", agentName: "Theo", colour: "green")
+    try await Task.sleep(nanoseconds: 300_000_000)
+    let (rings, over) = tones.lock.withLock { (tones.rings, tones.ringsOver) }
+    XCTAssertEqual(rings.first, 2, "two rings first, as the Mac")
+    XCTAssertNotNil(voice.lock.withLock { voice.started }, "the voice starts once the ring is over")
+    XCTAssertNotNil(over)
+    XCTAssertEqual(tones.lock.withLock { tones.hangUps }, 0)
+    call.hangUp()
+    try await Task.sleep(nanoseconds: 100_000_000)
+    XCTAssertEqual(tones.lock.withLock { tones.hangUps }, 1, "a live call ends with the hang-up tone")
+  }
+
+  func testWorkThatCameBackWaitsForTheVoiceToFinish() async throws {
+    // The founder: "is there anything i c--- (it cuts itself because the routine was updated successfully as it was talking)".
+    let backend = DemoBackend(seed: DemoData.seed(), pace: 0.01, call: nil)
+    let voice = FakeVoice()
+    let call = LiveCall(backend: backend, transport: voice, personName: { "Bass" }, quiet: 0.05, pause: { _ in try? await Task.sleep(nanoseconds: 2_000_000) })
+    let states = StateLog()
+    call.observe { states.add($0) }
+    call.start(agentId: "theo", agentName: "Theo", colour: "green")
+    try await Task.sleep(nanoseconds: 100_000_000)
+    voice.emit(.agentSpeaking(true))
+    voice.emit(.tool(name: "send_task", id: "t1", parameters: ["task": "Update the routine"]))
+    try await Task.sleep(nanoseconds: 400_000_000)
+    XCTAssertEqual(voice.lock.withLock { voice.said }, [], "nothing is pushed in while the voice talks")
+    voice.emit(.agentSpeaking(false))
+    try await Task.sleep(nanoseconds: 300_000_000)
+    XCTAssertEqual(voice.lock.withLock { voice.said.count }, 1, "said once the line is quiet")
+    XCTAssertTrue(voice.lock.withLock { voice.said.first ?? "" }.contains("they can see it done"))
+    // The nudge that makes the voice speak is not shown as the person's words.
+    voice.emit(.transcript([CallLine(fromPerson: false, text: "On it."), CallLine(fromPerson: true, text: VoiceCallText.workCameBackNudge)]))
+    try await Task.sleep(nanoseconds: 50_000_000)
+    XCTAssertEqual(states.last??.lines.map(\.text), ["On it."])
+    call.hangUp()
   }
 }
 

@@ -557,7 +557,10 @@ the background while the call goes on, and says how it is going when asked.
   (`VOICES_FINGERPRINT`: the default and `CURATED_VOICES` in order), so a change to the list
   rewrites it too (the id is remembered per process). On 6 October Michael replaced Jessica as
   the default without a new version: the agent kept Jessica as its own voice, and every call
-  that named no voice spoke as Jessica. Version 9 rewrote it. Its configuration: authentication required, the four overrides
+  that named no voice spoke as Jessica. Version 9 rewrote it; version 10 (9 October 2026) raised
+  the speech's stability from 0.7 to 0.85 (`VOICE_TTS_STABILITY`; the founder: "the voice changes
+  tone randomly. i want them all the be calm"), and the voice is told to keep one calm tone and
+  never to exclaim. Its configuration: authentication required, the four overrides
   above and no others, `gemini-2.5-flash` as the voice's model with `thinking_budget: 0` (2.5 Flash thinks
   before every reply by default, and the replies waited on it), `eleven_flash_v2` for
   speech (an English agent is refused on any other), a voice the workspace has (the first of the
@@ -691,8 +694,15 @@ the background while the call goes on, and says how it is going when asked.
   - The agent answers with `SendMessage` with `channel` set to the call's address. That
     message goes to the call, not to the chat. Main reads the call's outbox every 1.2 s and
     pushes new messages into the call (`sendContextualUpdate`, then a one-line
-    `sendUserMessage` nudge, once the voice has stopped speaking), and the voice says them as
-    its own. The banner's status line shows the agent's activity meanwhile ("Using Gmail…").
+    `sendUserMessage` nudge, "(Your work just came back.)"), and the voice says them as its own.
+    Never over the voice (9 October 2026, the founder: "he cant cut himself like this, wait of
+    turn"): the Mac holds them until the voice is listening, with no forced push after 8 s any
+    more; the iPhone holds them until the voice has stopped and the person is not talking, for a
+    second. A message that only confirms something the voice already said it was doing is not
+    announced ("they can see it done"): the voice stays silent with `skip_turn` unless asked.
+    The banner's status line shows the agent's activity meanwhile ("Using Gmail…"). The host
+    keeps both the nudge's words and an older app's ("…Tell me what it found.") out of the
+    call's record.
   - A request that does not reach the agent answers the voice "That did not come back. Say
     you could not get to it, and offer to try again."
   - A host without the channel (a cloud computer still on a host bundle from before 1
