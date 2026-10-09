@@ -64,8 +64,11 @@ What stays where it is:
   wherever a view fits both. Where they differ, `#if os(macOS)` in the
   shared file, or a Mac file of its own when most of it differs. A view is
   never copied: a copy drifts.
-- Tests: Mac logic that can live in `SimeonCore` does, so it is tested on
-  Linux with `swift test` like the rest.
+- Mac-only logic with no screen (the agent's hands on this Mac and its
+  refused paths, the deep-link rules, when to notify, the Dock badge's
+  count) goes in a second library of the same package, `SimeonMacCore`,
+  so it is tested on Linux with `swift test` like the rest. The iPhone
+  does not link it.
 
 ## Living beside the Electron app, then replacing it
 
@@ -75,10 +78,13 @@ What stays where it is:
   (`REDIRECT_TARGET` in `server/simeon/desktop/app_sign_in.py`), so this
   needs no server change.
 - **At the switch,** it takes the Electron app's identity: bundle id
-  `com.simeonlabs.simeon`, scheme `simeon`, the same Developer ID team. The
-  Electron app's last update then installs the Swift app in place: Squirrel
-  accepts any build signed with the same identity. After that, updates
-  come through Sparkle.
+  `com.simeonlabs.simeon`, scheme `simeon`, the same Developer ID team, and
+  the website's Download button (`/desktop/download/mac`) serves its DMG.
+  The Electron app cannot update itself into it: every packaged Electron
+  build switches its updater off (`SAND_DISABLE_UPDATES=1`,
+  `desktop/scripts/lib/build-asar.mjs`). So people move by downloading
+  the new app once. From then on the Swift app updates itself through
+  Sparkle.
 - Pins, sidebar sections, onboarding, secrets, the default model and the
   agents themselves live in the cloud computer, so they carry over. The
   person signs in once more: the Electron app's tokens are under Electron's
