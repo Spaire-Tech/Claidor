@@ -533,6 +533,7 @@ struct AppRow: View {
       Task { await connector.connect(app.title, store: store) }
     }) { consent in
       ConnectConsentSheet(consent: consent) { confirmed = true }
+        .macSheetSize(width: 440, height: 560)
     }
   }
 }
@@ -666,6 +667,7 @@ struct ConnectedAppDetail: View {
       Task { await connector.signIn(account, store: store) }
     }) { consent in
       ConnectConsentSheet(consent: consent) { confirmed = true }
+        .macSheetSize(width: 440, height: 560)
     }
   }
 }

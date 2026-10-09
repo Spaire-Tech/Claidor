@@ -253,10 +253,11 @@ struct LiveScreen: NSViewRepresentable {
 
   func makeCoordinator() -> Coordinator { Coordinator(phase: $phase, link: link) }
 
-  func makeNSView(context: Context) -> WKWebView {
+  func makeNSView(context: Context) -> ScreenWebView {
     let configuration = WKWebViewConfiguration()
     configuration.userContentController.add(context.coordinator, name: "simeon")
-    let view = WKWebView(frame: .zero, configuration: configuration)
+    let view = ScreenWebView(frame: .zero, configuration: configuration)
+    view.passive = viewOnly
     view.setValue(false, forKey: "drawsBackground")
     view.underPageBackgroundColor = .black
     view.loadHTMLString(Self.page(socket: socket, viewOnly: viewOnly, focusOnClick: true), baseURL: URL(string: "https://app.simeonlabs.com/"))
@@ -265,15 +266,22 @@ struct LiveScreen: NSViewRepresentable {
     return view
   }
 
-  func updateNSView(_ view: WKWebView, context: Context) {
+  func updateNSView(_ view: ScreenWebView, context: Context) {
+    view.passive = viewOnly
     guard context.coordinator.viewOnly != viewOnly else { return }
     context.coordinator.viewOnly = viewOnly
     view.evaluateJavaScript("window.simeonViewOnly(\(viewOnly ? "true" : "false"))")
   }
 
-  static func dismantleNSView(_ view: WKWebView, coordinator: Coordinator) {
+  static func dismantleNSView(_ view: ScreenWebView, coordinator: Coordinator) {
     view.evaluateJavaScript("window.simeonClose && window.simeonClose()")
     view.configuration.userContentController.removeScriptMessageHandler(forName: "simeon")
+  }
+
+  /** A screen only watched takes no click: the click goes to what holds it (the agent's page opens the computer's window). */
+  final class ScreenWebView: WKWebView {
+    var passive = false
+    override func hitTest(_ point: NSPoint) -> NSView? { passive ? nil : super.hitTest(point) }
   }
 }
 #endif

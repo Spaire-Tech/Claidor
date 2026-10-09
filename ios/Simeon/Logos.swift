@@ -30,6 +30,10 @@ final class RemoteLogos: NSObject, WKNavigationDelegate {
   private var failed: Set<String> = []
   private var inFlight: [String: Task<UIImage?, Never>] = [:]
   private var web: WKWebView?
+  #if os(macOS)
+  /** The Mac's window for the hidden web view: its own, unseen, so no window the person closes takes it away. */
+  private var holder: NSWindow?
+  #endif
   private var pageReady = false
   private var loaded: CheckedContinuation<Void, Never>?
   private var drawing = false
@@ -185,8 +189,13 @@ final class RemoteLogos: NSObject, WKNavigationDelegate {
     window?.insertSubview(made, at: 0)
     #else
     made.setValue(false, forKey: "drawsBackground")
-    let window = NSApp.keyWindow ?? NSApp.windows.first
-    window?.contentView?.addSubview(made, positioned: .below, relativeTo: nil)
+    let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: Self.side, height: Self.side), styleMask: [.borderless], backing: .buffered, defer: false)
+    window.isReleasedWhenClosed = false
+    window.alphaValue = 0
+    window.ignoresMouseEvents = true
+    window.contentView = made
+    window.orderBack(nil)
+    holder = window
     #endif
     web = made
     return made

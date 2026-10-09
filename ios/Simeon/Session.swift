@@ -202,7 +202,8 @@ final class SessionController {
 
   /** Ask for notifications once signed in, and register this phone with Apple and Simeon Labs. */
   private func askForNotifications() {
-    guard let api, !askedForNotifications else { return }
+    // The Mac shows its own notifications later (mac/PARITY.md §9); until then it asks for nothing.
+    guard let api, !askedForNotifications, !AppPlatform.isMac else { return }
     askedForNotifications = true
     Task { await Notifications.shared.start(api: api) }
   }

@@ -69,8 +69,13 @@ extension NSImage {
    * appearance: SwiftUI shows a picture as it was first drawn (the iPhone's
    * is in ios/Simeon/Cards.swift).
    */
+  @MainActor
   func resolved(_ scheme: ColorScheme) -> NSImage {
-    rasterized(at: size, in: NSAppearance(named: scheme == .dark ? .darkAqua : .aqua)) ?? self
+    let key = "\(ObjectIdentifier(self).hashValue)|\(scheme == .dark)"
+    if let made = ResolvedImages.made[key] { return made }
+    let made = rasterized(at: size, in: NSAppearance(named: scheme == .dark ? .darkAqua : .aqua)) ?? self
+    ResolvedImages.made[key] = made
+    return made
   }
 
   /** Drawn into pixels at twice `target`, in `appearance` when one is given. */
@@ -93,6 +98,12 @@ extension NSImage {
     image.addRepresentation(rep)
     return image
   }
+}
+
+/** The asset pictures drawn for light or dark, once each (`NSImage(named:)` hands back the same picture for a name). */
+@MainActor
+enum ResolvedImages {
+  static var made: [String: NSImage] = [:]
 }
 
 /** UIKit's picture renderer, as the shared views use it: a scale, and transparent. */

@@ -1,7 +1,7 @@
 import SwiftUI
+import QuickLook
 #if os(iOS)
 import UIKit
-import QuickLook
 #endif
 import SimeonCore
 
@@ -336,6 +336,7 @@ struct ConnectorCard: View {
       Task { await connector.connect(name, store: store) }
     }) { consent in
       ConnectConsentSheet(consent: consent) { confirmed = true }
+        .macSheetSize(width: 440, height: 560)
     }
   }
 }
@@ -543,7 +544,7 @@ struct FlightsCardView: View {
     .frame(width: Self.cardWidth(width), alignment: .leading)
     .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
     .modifier(CardEdge(radius: 22))
-    .sheet(item: $open) { flight in FlightDetails(offer: flight.offer, test: card.isTest) }
+    .sheet(item: $open) { flight in FlightDetails(offer: flight.offer, test: card.isTest).macSheetSize(width: 440, height: 600) }
   }
 
   /** Nearly the chat's width, as Muse's card runs: a bubble's limit would leave the times no room. */
@@ -1345,7 +1346,15 @@ struct TeammatesLine: View {
           .buttonStyle(.plain)
       }
     }
-    .sheet(item: $shown) { route in NavigationStack { ExchangePage(route: route, fallback: entries) } }
+    .sheet(item: $shown) { route in
+      NavigationStack {
+        ExchangePage(route: route, fallback: entries)
+          #if os(macOS)
+          .toolbar { ToolbarItem(placement: .cancellationAction) { CloseButton() } }
+          #endif
+      }
+      .macSheetSize(width: 520, height: 640)
+    }
   }
 
   private var chip: some View {
@@ -1466,7 +1475,9 @@ struct ExchangeHeadline: View {
     .accessibilityLabel("\(me.name) and \(peer.name)")
     .allowsHitTesting(false)
     // Up into the bar's row, beside its back button, as the chat's.
+    #if os(iOS)
     .padding(.top, -34)
+    #endif
     .padding(.bottom, 6)
     .frame(maxWidth: .infinity)
   }
@@ -1503,7 +1514,7 @@ struct VoiceCallLine: View {
       .contentShape(.rect)
     }
     .buttonStyle(.plain)
-    .sheet(isPresented: $open) { CallRecordSheet(seconds: seconds, lines: lines) }
+    .sheet(isPresented: $open) { CallRecordSheet(seconds: seconds, lines: lines).macSheetSize(width: 420, height: 560) }
   }
 }
 

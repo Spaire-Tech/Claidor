@@ -136,14 +136,14 @@ extension Notification.Name {
  * The menus: the Electron app's (`application-menu.ts`: Simeon, File, Edit,
  * View, Agent, Window; no Help menu) with every key its window answers
  * (`global-keyboard-shortcuts.ts`), and the row menu's actions in the Agent
- * menu.
+ * menu. What changes with the open agent is drawn by views (`AgentMenuItems`,
+ * `HiddenAgentsItem`), which follow the window as it changes; a menu's own
+ * body is drawn once.
  */
 struct SimeonCommands: Commands {
   let navigation: MacNavigation
   let store: AppStore
   @Environment(\.openWindow) private var openWindow
-
-  private var agent: Agent? { store.agent(navigation.selected) }
 
   var body: some Commands {
     CommandGroup(after: .appSettings) {
@@ -159,52 +159,72 @@ struct SimeonCommands: Commands {
       Button("Jump To…") { navigation.sheet = .palette }
         .keyboardShortcut("k")
     }
-    CommandGroup(replacing: .sidebar) {
-      Button(navigation.sidebarShown ? "Hide Sidebar" : "Show Sidebar") { navigation.sidebarShown.toggle() }
-        .keyboardShortcut("s", modifiers: [.command, .control])
-      Button("Show Hidden Agents") { navigation.sheet = .hiddenAgents }
-        .disabled(store.hiddenAgents.isEmpty)
-    }
-    CommandMenu("Agent") {
-      Button(agent.map { "Call \($0.name)" } ?? "Call") { if let agent { store.startCall(agent) } }
-        .disabled(agent == nil || agent?.isGroup == true || !store.canCall || store.call != nil)
-      Button("Edit Profile") { if let agent { navigation.sheet = .agentPage(agent.id, routine: nil) } }
-        .disabled(agent == nil)
-      Button("Open Computer") { if let agent { openWindow(id: "computer", value: agent.id) } }
-        .disabled(agent == nil || agent?.isGroup == true)
-      Button("Message Field") { NotificationCenter.default.post(name: .simeonFocusComposer, object: nil) }
-        .keyboardShortcut("l")
-        .disabled(agent == nil)
-      Divider()
-      if let agent {
-        let pinned = store.pinnedIds.contains(agent.id)
-        Button(pinned ? "Unpin" : "Pin") { Task { await store.setPinned(agent.id, !pinned) } }
-        Button(agent.hasUnread ? "Mark as Read" : "Mark as Unread") { Task { await store.setUnread(agent.id, !agent.hasUnread) } }
-          .keyboardShortcut("u", modifiers: [.command, .shift])
-        if !agent.isGroup {
-          Button("Duplicate") { Task { await store.duplicate(agent.id) } }
-        }
-        Button("Copy Conversation ID") { UIPasteboard.general.string = agent.id }
-        Button("Hide from Sidebar") { Task { await store.setHidden(agent.id, true) } }
-      }
-      Divider()
-      Button("Previous Agent") { step(-1) }
-        .keyboardShortcut(.upArrow, modifiers: .option)
-      Button("Next Agent") { step(1) }
-        .keyboardShortcut(.downArrow, modifiers: .option)
-      Menu("Go To") {
-        let order = Array(navigation.order(store).prefix(9))
-        ForEach(Array(order.enumerated()), id: \.element) { index, id in
-          Button(store.agent(id)?.name ?? id) { navigation.selected = id }
-            .keyboardShortcut(KeyEquivalent(Character(String(index + 1))))
-        }
-      }
-      Divider()
-      Button("Delete…") { navigation.deleting = agent }
-        .disabled(agent == nil)
-    }
+    // The Mac's Show Sidebar (⌃⌘S) and Enter Full Screen; the window follows the sidebar's state either way.
+    SidebarCommands()
+    CommandGroup(after: .sidebar) { HiddenAgentsItem(navigation: navigation, store: store) }
+    CommandMenu("Agent") { AgentMenuItems(navigation: navigation, store: store) }
     // The Electron app hid its Help menu's items (4 October 2026).
     CommandGroup(replacing: .help) {}
+  }
+}
+
+struct HiddenAgentsItem: View {
+  let navigation: MacNavigation
+  let store: AppStore
+
+  var body: some View {
+    Button("Show Hidden Agents") { navigation.sheet = .hiddenAgents }
+      .disabled(store.hiddenAgents.isEmpty)
+  }
+}
+
+/** The Agent menu: the open agent's call, page, computer and row actions; moving between agents; Delete. */
+struct AgentMenuItems: View {
+  let navigation: MacNavigation
+  let store: AppStore
+  @Environment(\.openWindow) private var openWindow
+
+  private var agent: Agent? { store.agent(navigation.selected) }
+
+  var body: some View {
+    let agent = agent
+    Button(agent.map { "Call \($0.name)" } ?? "Call") { if let agent { store.startCall(agent) } }
+      .disabled(agent == nil || agent?.isGroup == true || !store.canCall || store.call != nil)
+    Button(agent?.isGroup == true ? "Members" : "Edit Profile") { if let agent { navigation.sheet = .agentPage(agent.id, routine: nil) } }
+      .disabled(agent == nil)
+    Button("Open Computer") { if let agent { openWindow(id: "computer", value: agent.id) } }
+      .disabled(agent == nil || agent?.isGroup == true)
+    Button("Message Field") { NotificationCenter.default.post(name: .simeonFocusComposer, object: nil) }
+      .keyboardShortcut("l")
+      .disabled(agent == nil)
+    Divider()
+    if let agent {
+      let pinned = store.pinnedIds.contains(agent.id)
+      Button(pinned ? "Unpin" : "Pin") { Task { await store.setPinned(agent.id, !pinned) } }
+      Button(agent.hasUnread ? "Mark as Read" : "Mark as Unread") { Task { await store.setUnread(agent.id, !agent.hasUnread) } }
+        .keyboardShortcut("u", modifiers: [.command, .shift])
+      if !agent.isGroup {
+        Button("Duplicate") { Task { await store.duplicate(agent.id) } }
+      }
+      Button("Copy Conversation ID") { UIPasteboard.general.string = agent.id }
+      Button("Hide from Sidebar") { Task { await store.setHidden(agent.id, true) } }
+    }
+    Divider()
+    // ⌥↑ ⌥↓ work in the message field too, as the Electron window's (`isEnabledInContentEditable`).
+    Button("Previous Agent") { step(-1) }
+      .keyboardShortcut(.upArrow, modifiers: .option)
+    Button("Next Agent") { step(1) }
+      .keyboardShortcut(.downArrow, modifiers: .option)
+    Menu("Go To") {
+      let order = Array(navigation.order(store).prefix(9))
+      ForEach(Array(order.enumerated()), id: \.element) { index, id in
+        Button(store.agent(id)?.name ?? id) { navigation.selected = id }
+          .keyboardShortcut(KeyEquivalent(Character(String(index + 1))))
+      }
+    }
+    Divider()
+    Button("Delete…") { navigation.deleting = agent }
+      .disabled(agent == nil)
   }
 
   private func step(_ by: Int) {

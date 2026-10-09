@@ -83,7 +83,7 @@ struct AgentPageSheet: View {
       }
       .background(Ink.ground)
       .toolbar { ToolbarItem(placement: .leadingBar) { CloseButton() } }
-      .sheet(isPresented: $editingAvatar) { AvatarEditor(agentId: agentId).problemAlert() }
+      .sheet(isPresented: $editingAvatar) { AvatarEditor(agentId: agentId).problemAlert().macSheetSize(width: 460, height: 620) }
     }
   }
 }
@@ -219,7 +219,7 @@ struct RoutinesTab: View {
     }
     .task { await reload() }
     .sheet(item: $editing, onDismiss: { Task { await reload() } }) { item in
-      RoutineEditor(agentId: agent.id, routine: item.routine, isNew: item.isNew).problemAlert()
+      RoutineEditor(agentId: agent.id, routine: item.routine, isNew: item.isNew).problemAlert().macSheetSize(width: 480, height: 620)
     }
   }
 
@@ -493,7 +493,7 @@ struct GroupMembers: View {
         Rectangle().fill(Ink.hairline).frame(height: 1)
       }
     }
-    .sheet(isPresented: $editing) { MembersEditor(group: group).problemAlert() }
+    .sheet(isPresented: $editing) { MembersEditor(group: group).problemAlert().macSheetSize(width: 420, height: 520) }
   }
 }
 

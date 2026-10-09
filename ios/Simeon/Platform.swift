@@ -85,6 +85,16 @@ extension View {
     #endif
   }
 
+  /** A sheet's size on the Mac, where a sheet takes its content's own size (a form or a list has next to none); the iPhone's sheets size themselves. */
+  @ViewBuilder
+  func macSheetSize(width: CGFloat, height: CGFloat) -> some View {
+    #if os(macOS)
+    frame(minWidth: width, idealWidth: width, minHeight: height, idealHeight: height)
+    #else
+    self
+    #endif
+  }
+
   /** A field typed as it is: no capital put in for you on the iPhone (the Mac puts none in). */
   @ViewBuilder
   func typedAsIs() -> some View {

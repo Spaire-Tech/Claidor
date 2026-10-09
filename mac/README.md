@@ -120,7 +120,10 @@ and says so. If the build fails, its errors are copied to the clipboard
 
 By hand: `cd mac && xcodegen generate && open SimeonMac.xcodeproj`, then
 Run. Signing: without a team in `project.yml` the app is signed to run on
-this Mac only, which is enough to try it.
+this Mac only, which is enough to try it. Such a build keeps the sign-in in
+the login keychain, and after a rebuild the Mac may ask once whether
+Simeon may read it again: Always Allow. A build signed with the team stops
+asking.
 
 What slice 1 has: the sign-in (the iPhone's screen), a new account's first
 run, the window with the agents in the sidebar (pins, rows, their status,
