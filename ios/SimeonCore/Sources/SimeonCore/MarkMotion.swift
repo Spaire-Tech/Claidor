@@ -228,6 +228,12 @@ public final class MarkEngine {
     }
   }
 
+  /** One turn around its own axis now, the turn a working mark makes every few seconds: the app's launch shows it. */
+  public func turnNow(direction: Double = 1) { startSpin(direction: direction) }
+
+  /** Whether a turn is under way. */
+  public var isTurning: Bool { spin != nil }
+
   /** One turn around its own axis (`pn`). */
   private func startSpin(direction: Double) {
     guard spin == nil else { return }

@@ -709,6 +709,21 @@ final class MarkdownTests: XCTestCase {
   }
   // MARK: The butterfly's motion (the window's mark engine, measured 8 October 2026)
 
+  func testTheLaunchTurnTurnsOnceAndSettles() {
+    let engine = MarkEngine(random: { 0.5 })
+    var now = 1_000.0
+    _ = engine.frame(at: now, state: .idle, sizePoints: 64)
+    engine.turnNow()
+    XCTAssertTrue(engine.isTurning)
+    var turned = false
+    for _ in 0..<240 {
+      now += 1.0 / 60
+      if engine.frame(at: now, state: .idle, sizePoints: 64).outline != nil { turned = true }
+    }
+    XCTAssertTrue(turned, "the outline turns while it spins")
+    XCTAssertFalse(engine.isTurning, "one turn, then still")
+  }
+
   func testMarkRingAndTurnMatchTheWindow() {
     // The window's numbers for the butterfly (`Jo.cloud.ring`, `turnAt`), read by running its own code.
     func near(_ p: Butterfly.Point, _ x: Double, _ y: Double, file: StaticString = #filePath, line: UInt = #line) {

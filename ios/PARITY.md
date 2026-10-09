@@ -447,6 +447,18 @@ there is a call to make.
   typing into the computer key by key (return and delete too). Either takes
   over the screen, since the computer takes keys only from one in control.
 
+## 15. The launch (9 October 2026)
+
+"All apps open with the logo appearing with an animation … In small, simeon
+turning around." The app opens on its own ground (the system's launch
+screen is that colour, `Ground`, so there is no flash), with Simeon's
+butterfly at 64 pt in the middle turning around its own axis, the turn the
+Mac's mark makes while it works (`MarkEngine.turnNow`, a test), again each
+time it comes to rest, until the app is ready: signed in with its agents,
+or at the sign-in. At least one turn, never more than three seconds, then
+it fades. It shows on every start, and again on coming back after a
+quarter of an hour away.
+
 ## Suggested order (the founder decides)
 
 1. The chat's look: the bubble, the top bar, markdown, brand names with logos, agent names with butterflies.
