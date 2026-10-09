@@ -45,6 +45,16 @@ struct ChatView: View {
       // the screen following the finger. The chat had hidden it for a bar of its own, and hidden, it does not swipe.
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
+        // The butterfly is drawn up in the bar's row (ChatHeadline), but there the bar takes the touch, not the drawing: a
+        // tap on the butterfly did nothing and only its name opened the page (the founder, 9 October 2026). The bar's
+        // middle, where the butterfly is, takes it now; the drawing is unchanged.
+        ToolbarItem(placement: .principal) {
+          Color.clear
+            .frame(width: 180, height: 44)
+            .contentShape(.rect)
+            .onTapGesture { showsPage = true }
+            .accessibilityHidden(true)
+        }
         if store.canCall && !store.groupIds.contains(agentId) {
           ToolbarItem(placement: .topBarTrailing) { ChatCallButton(agentId: agentId) }
         }
@@ -464,10 +474,8 @@ struct ChatComposer: View {
         Button { picking = true } label: {
           Image(systemName: "plus").font(.system(size: 19, weight: .regular)).foregroundStyle(Ink.primary)
             .frame(width: 40, height: 40)
-            .contentShape(.circle)
         }
-        .buttonStyle(.plain)
-        .glassEffect(.regular.interactive(), in: .circle)
+        .buttonStyle(GlassDisc())
         .accessibilityLabel("Attach")
         HStack(alignment: .bottom, spacing: 4) {
           TextField(reply?.target != nil ? "Reply" : "Message", text: $draft, axis: .vertical)
@@ -657,6 +665,7 @@ struct BubbleView: View {
             .font(.system(size: 13))
             .foregroundStyle(Ink.tertiary)
             .padding(.horizontal, 8).padding(.top, 4)
+            .contentShape(.rect)
           }
           .buttonStyle(.plain)
           .frame(maxWidth: ChatMetrics.bubbleMax(width), alignment: bubble.fromPerson ? .trailing : .leading)
@@ -1183,7 +1192,7 @@ struct NewMessagesPill: View {
       .accessibilityLabel("Dismiss new messages")
     }
     .padding(.trailing, 4)
-    .glassEffect(.regular.interactive(), in: .capsule)
+    .glassEffect(.regular, in: .capsule)
   }
 }
 

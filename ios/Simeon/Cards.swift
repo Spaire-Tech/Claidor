@@ -72,11 +72,32 @@ struct CloseDisc: View {
     Button(action: action) {
       Image(systemName: "xmark").font(.system(size: 15, weight: .semibold)).foregroundStyle(Ink.primary)
         .frame(width: 40, height: 40)
-        .contentShape(.circle)
     }
-    .buttonStyle(.plain)
-    .glassEffect(.regular.interactive(), in: .circle)
+    .buttonStyle(GlassDisc())
     .accessibilityLabel("Close")
+  }
+}
+
+/**
+ * A round glass button (the phone design's discs: close, +, the call's
+ * controls, the computer's keyboard). The style draws the glass and takes
+ * the tap on the whole circle; pressed, it dips. The glass is not made
+ * "interactive": interactive glass handles the touch itself for its own
+ * bloom, around a button that handles it too, and a first tap could go
+ * nowhere (the founder, 9 October 2026: "i have to double click most of
+ * them").
+ */
+struct GlassDisc: ButtonStyle {
+  var tint: Color? = nil
+  @Environment(\.isEnabled) private var enabled
+
+  func makeBody(configuration: Configuration) -> some View {
+    configuration.label
+      .contentShape(.circle)
+      .glassEffect(tint.map { Glass.regular.tint($0) } ?? .regular, in: .circle)
+      .scaleEffect(configuration.isPressed ? 0.92 : 1)
+      .opacity(!enabled ? 0.4 : configuration.isPressed ? 0.75 : 1)
+      .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
   }
 }
 

@@ -312,7 +312,8 @@ struct ListBottomBar: View {
       .padding(.leading, 14).padding(.trailing, 8)
       .frame(height: 48)
       .background { Color.clear.contentShape(.capsule).onTapGesture { searching = true } }
-      .glassEffect(.regular.interactive(), in: .capsule)
+      // Glass, not interactive glass: the field and its buttons take the touches (GlassDisc).
+      .glassEffect(.regular, in: .capsule)
       Menu {
         Button(action: newAgent) { Label("New Agent", systemImage: "person.crop.circle.badge.plus") }
         Button(action: newGroup) { Label("New Group Chat", systemImage: "person.2") }
@@ -320,8 +321,8 @@ struct ListBottomBar: View {
         Image(systemName: "square.and.pencil").font(.system(size: 19, weight: .medium)).foregroundStyle(Ink.primary)
           .frame(width: 48, height: 48)
           .contentShape(.circle)
+          .glassEffect(.regular, in: .circle)
       }
-      .glassEffect(.regular.interactive(), in: .circle)
       .accessibilityLabel("New")
     }
     .padding(.horizontal, 16)
@@ -496,7 +497,8 @@ struct HiddenAgentsSheet: View {
       .navigationTitle("Hidden Agents")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
-        ToolbarItem(placement: .topBarTrailing) { CloseDisc { dismiss() } }
+        // The bar's own button: it draws its glass itself, and a glass disc inside it was glass on glass, each taking the touch.
+        ToolbarItem(placement: .topBarTrailing) { CloseButton() }
       }
       .onChange(of: store.hiddenAgents.isEmpty) { _, empty in if empty { dismiss() } }
     }

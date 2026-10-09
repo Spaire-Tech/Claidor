@@ -522,6 +522,32 @@ command' chat animation." What the Mac draws, and the phone now too:
 - A reaction added while its message is on screen pops in (0.3 s, from 45 %
   past 108 %).
 
+## 18. Taps that miss, again (9 October 2026)
+
+"Clicking the avatar dont do anything you have to touch the name … check
+all buttons." What the code showed, button by button:
+
+- The chat's butterfly is drawn 34 pt up into the bar's row, above the strip
+  it belongs to; a touch there reached the bar, which does nothing with it.
+  Only the strip below (mostly the name) opened the page. The bar's middle
+  now takes the tap too (a clear item in the bar's title place); the drawing
+  is unchanged.
+- The round glass buttons made by hand (close, the composer's +, the call's
+  mute, transcript and back, the computer's keyboard) wore interactive glass
+  around a button: the glass handles the touch itself for its bloom, and the
+  button handled it too. One style, `GlassDisc`, now draws them: the same
+  glass, the whole circle takes the tap, pressed it dips. The glass behind
+  the search field, the new chat and clipboard menus and the new-messages
+  pill is plain glass now.
+- The Hidden Agents sheet put that disc inside the bar, which draws its own
+  glass button around it: glass in glass. It has the bar's own close now.
+- The call screen's back took the tap on its chevron only, not its disc; a
+  reply's quote on its words only; End call and a voice's play button on
+  their drawing. Each takes it on its whole shape now.
+
+Every other button was checked for the same: its whole shape takes the
+tap (a list row, a bar button, or a label with its own `contentShape`).
+
 ## Suggested order (the founder decides)
 
 1. The chat's look: the bubble, the top bar, markdown, brand names with logos, agent names with butterflies.

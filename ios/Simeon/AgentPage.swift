@@ -617,6 +617,7 @@ struct AvatarEditor: View {
               .foregroundStyle(Ink.primary)
               .frame(width: 30, height: 30)
               .background(Color(.sRGB, red: 120 / 255, green: 120 / 255, blue: 128 / 255, opacity: 0.12), in: Circle())
+              .contentShape(.circle)
           }
           .buttonStyle(.plain)
           .disabled(chosen?.sample == nil)

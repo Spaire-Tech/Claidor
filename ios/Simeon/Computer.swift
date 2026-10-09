@@ -75,16 +75,15 @@ struct ComputerSheet: View {
           } label: {
             Image(systemName: "doc.on.clipboard").font(.system(size: 18, weight: .medium)).foregroundStyle(Ink.primary)
               .frame(width: 48, height: 48).contentShape(.circle)
+              .glassEffect(.regular, in: .circle)
           }
-          .glassEffect(.regular.interactive(), in: .circle)
           .accessibilityLabel("Clipboard")
           Spacer()
           Button { control = true; typing.toggle() } label: {
             Image(systemName: typing ? "keyboard.chevron.compact.down" : "keyboard").font(.system(size: 18, weight: .medium)).foregroundStyle(Ink.primary)
-              .frame(width: 48, height: 48).contentShape(.circle)
+              .frame(width: 48, height: 48)
           }
-          .buttonStyle(.plain)
-          .glassEffect(.regular.interactive(), in: .circle)
+          .buttonStyle(GlassDisc())
           .accessibilityLabel(typing ? "Hide keyboard" : "Keyboard")
         }
         .padding(.horizontal, 16)
