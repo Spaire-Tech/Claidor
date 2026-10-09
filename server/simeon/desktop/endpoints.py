@@ -190,12 +190,17 @@ def _with_params(url: str, params: dict[str, str]) -> str:
 # --- sign-in ---------------------------------------------------------------
 
 
-def sign_in_url(request: Request, return_to: str) -> str:
+def sign_in_url(request: Request, return_to: str, provider: str = "google") -> str:
     """Where a browser with no session goes to sign in: the API's own
-    Google sign-in, which comes back to `return_to` with the session
-    cookie set. There is no web app in front of the Mac app (6 October
-    2026), so nothing here sends anyone to one."""
-    path = request.app.url_path_for("integrations.google.login.authorize")
+    Google sign-in, or its Apple one when the iPhone's Continue with Apple
+    asked for it (9 October 2026), either coming back to `return_to` with
+    the session cookie set. There is no web app in front of the Mac app (6
+    October 2026), so nothing here sends anyone to one."""
+    path = request.app.url_path_for(
+        "integrations.apple.authorize"
+        if provider == "apple"
+        else "integrations.google.login.authorize"
+    )
     return settings.generate_external_url(
         f"{path}?return_to={quote(return_to, safe='')}"
     )

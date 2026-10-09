@@ -54,6 +54,8 @@ SCREENS=(
   "12-cards:chat:cards:6"
   # The list with two agents pinned (`--screen=pins` pins Theo and the Launch squad in the demo).
   "13-pins:pins:4"
+  # The sign-in screen (`--sign-in`, whatever the Keychain holds).
+  "14-sign-in:sign-in:4"
 )
 
 for theme in light dark; do
@@ -64,7 +66,9 @@ for theme in light dark; do
     wait="${rest##*:}"
     screen="${rest%:*}"
     xcrun simctl terminate "$DEVICE" "$BUNDLE" 2>/dev/null || true
-    if [ "$screen" = "chat:cards" ]; then
+    if [ "$screen" = "sign-in" ]; then
+      xcrun simctl launch "$DEVICE" "$BUNDLE" --sign-in "--theme=$theme" >/dev/null
+    elif [ "$screen" = "chat:cards" ]; then
       xcrun simctl launch "$DEVICE" "$BUNDLE" --gallery "--screen=$screen" "--theme=$theme" >/dev/null
     elif [ -n "$screen" ]; then
       xcrun simctl launch "$DEVICE" "$BUNDLE" --demo "--screen=$screen" "--theme=$theme" >/dev/null

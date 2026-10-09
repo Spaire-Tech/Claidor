@@ -72,11 +72,9 @@ struct RootView: View {
     case .starting:
       // Under the launch cover.
       Ink.ground.ignoresSafeArea()
-    case .signedOut(let message):
-      // The Mac's sign-in tagline (the founder's words, 27 September 2026).
-      PlainScreen(title: "Simeon", line: "Your personal team of agents for whatever needs doing.", note: message, action: ("Sign In", { Task { await session.signIn() } }))
-    case .signingIn:
-      PlainScreen(title: "Simeon", line: "Finish signing in on the page that opened.", busy: true)
+    case .signedOut, .signingIn:
+      // One screen for both, so the pressed button keeps its spinner while the sheet is open.
+      SignInScreen()
     case .signedIn:
       // A new account's first run, then the list (Simeon's chat open on top when he was just made).
       ZStack {
@@ -91,39 +89,120 @@ struct RootView: View {
   }
 }
 
-/** The app's own screens, one shape: the butterfly, a line or two, a button (the Expo shell's `PlainScreen`). */
-struct PlainScreen: View {
-  let title: String
-  var line: String? = nil
-  var note: String? = nil
-  var busy = false
-  var action: (String, () -> Void)? = nil
+/**
+ * Signing in, in the design of the founder's reference (9 October 2026,
+ * ChatGPT's: "above is our logo, simeon real logo, below SimeonLabs - with
+ * our logo name font (see website) - then continue with apple - and below
+ * google - with the privacy below"). simeonlabs.com's own mark and wordmark
+ * (Assets SignIn/, made from the site's files by
+ * ios/scripts/make-sign-in-assets.mjs) in the middle of the space above the
+ * buttons; Continue with Apple filled in the ink, Continue with Google
+ * outlined; the Terms and the Privacy Policy under them. While the sheet is
+ * open the screen stays: the pressed button shows a spinner and both wait.
+ */
+struct SignInScreen: View {
+  @Environment(SessionController.self) private var session
+
+  /** The addresses the Mac's window and the web app link (they answer 404 until the pages are written). */
+  static let terms = URL(string: "https://www.simeonlabs.com/legal/terms-of-service")!
+  static let privacy = URL(string: "https://www.simeonlabs.com/legal/privacy-policy")!
+
+  private var message: String? {
+    if case .signedOut(let message) = session.phase { return message }
+    return nil
+  }
 
   var body: some View {
     VStack(spacing: 0) {
-      Spacer()
-      ButterflyView(palette: .named("blue"), motion: .idle).frame(width: 96, height: 96).padding(.bottom, 20)
-      Text(title).font(.largeTitle.weight(.bold)).foregroundStyle(Ink.primary)
-      if let line {
-        Text(line).font(.title3).foregroundStyle(Ink.secondary).multilineTextAlignment(.center).padding(.top, 10)
+      Spacer(minLength: 24)
+      VStack(spacing: 28) {
+        Image("SignIn/Mark").resizable().scaledToFit().frame(width: 46, height: 46)
+        Image("SignIn/Wordmark").resizable().scaledToFit().frame(height: 25)
       }
-      if let note {
-        Text(note).font(.body).foregroundStyle(Ink.primary).multilineTextAlignment(.center).padding(.top, 16)
+      .foregroundStyle(Ink.primary)
+      .accessibilityElement(children: .ignore)
+      .accessibilityLabel("SimeonLabs")
+      .accessibilityAddTraits(.isHeader)
+      Spacer(minLength: 24)
+      if let message {
+        Text(message)
+          .font(.system(size: 15))
+          .foregroundStyle(Ink.secondary)
+          .multilineTextAlignment(.center)
+          .padding(.bottom, 18)
       }
-      Spacer()
-      if busy { ProgressView().padding(.bottom, 24) }
-      if let action {
-        Button(action: action.1) {
-          Text(action.0).font(.system(size: 17, weight: .semibold)).frame(maxWidth: .infinity).frame(height: 50)
-        }
-        .buttonStyle(.glassProminent)
-        .frame(maxWidth: 420)
-        .padding(.bottom, 8)
+      // No `.disabled` while a sign-in runs: it would grey the pressed button's spinner; a second press does nothing (`signIn(with:)`).
+      VStack(spacing: 12) {
+        SignInButton(provider: .apple, filled: true, busy: session.signingInWith == .apple) { start(.apple) }
+        SignInButton(provider: .google, filled: false, busy: session.signingInWith == .google) { start(.google) }
       }
+      Text(Self.legal)
+        .font(.system(size: 13))
+        .foregroundStyle(Ink.secondary)
+        .tint(Ink.primary)
+        .multilineTextAlignment(.center)
+        .padding(.top, 28)
+        .padding(.bottom, 14)
     }
-    .padding(.horizontal, 28)
+    .padding(.horizontal, 21)
+    .frame(maxWidth: 460)
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .background(Ink.ground)
+  }
+
+  private func start(_ provider: SignIn.Provider) {
+    Task { await session.signIn(with: provider) }
+  }
+
+  /** "By continuing, you agree to our Terms & Privacy Policy.", the two names links, underlined with dots as in the reference. */
+  static var legal: AttributedString {
+    func link(_ words: String, _ url: URL) -> AttributedString {
+      var text = AttributedString(words)
+      text.link = url
+      text.font = Font.system(size: 13, weight: .semibold)
+      text.underlineStyle = Text.LineStyle(pattern: .dot)
+      return text
+    }
+    return AttributedString("By continuing, you agree to our ") + link("Terms", terms) + AttributedString(" & ") + link("Privacy Policy", privacy) + AttributedString(".")
+  }
+}
+
+/** One of the sign-in screen's two pills: the way's mark, then "Continue with …"; filled in the ink, or outlined. */
+struct SignInButton: View {
+  let provider: SignIn.Provider
+  let filled: Bool
+  let busy: Bool
+  let action: () -> Void
+
+  var body: some View {
+    Button(action: action) {
+      HStack(spacing: 9) {
+        if busy {
+          ProgressView().tint(filled ? Ink.ground : Ink.primary)
+        } else {
+          mark
+        }
+        Text(provider == .apple ? "Continue with Apple" : "Continue with Google")
+          .font(.system(size: 17, weight: .medium))
+      }
+      .foregroundStyle(filled ? Ink.ground : Ink.primary)
+      .frame(maxWidth: .infinity)
+      .frame(height: 50)
+      .background { Capsule().fill(filled ? Ink.primary : Color.clear) }
+      .overlay { if !filled { Capsule().strokeBorder(Ink.edge, lineWidth: 1) } }
+      .contentShape(.capsule)
+    }
+    .buttonStyle(.plain)
+  }
+
+  @ViewBuilder
+  private var mark: some View {
+    switch provider {
+    case .apple:
+      Image(systemName: "apple.logo").font(.system(size: 19, weight: .medium)).offset(y: -1)
+    case .google:
+      Image("SignIn/Google").resizable().scaledToFit().frame(width: 18, height: 18)
+    }
   }
 }
 

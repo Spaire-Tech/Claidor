@@ -802,6 +802,37 @@ Three causes, found in the code:
 `AgentVoiceTests` hold the phone to the Mac's own answers, worked out by
 running the Mac's code on the same agents.
 
+## 27. Sign-in in the reference's design (9 October 2026)
+
+The founder sent ChatGPT's sign-in screen: "above is our logo, simeon real
+logo, below SimeonLabs - with our logo name font (see website) - then
+continue with apple - and below google - with the privacy below … same for
+everything … make sure everything match."
+
+- **The screen** (`SignInScreen` in SimeonApp.swift): simeonlabs.com's mark
+  (the app icon's four petals, from the site's `favicon.svg`) and the
+  "SimeonLabs" wordmark (the site bar's own picture) in the middle of the
+  space above the buttons; Continue with Apple filled in the ink (white on
+  dark, black on light), Continue with Google outlined with Google's "G";
+  "By continuing, you agree to our Terms & Privacy Policy." under them. The
+  marks are made from the site's files by `ios/scripts/make-sign-in-assets.mjs`
+  (Assets `SignIn/`). The same screen stays while the sign-in sheet is open:
+  the pressed button shows a spinner. An error shows above the buttons.
+- **Each button goes straight to its sign-in**: the app adds `provider` to
+  `/loginDeepControl`, and the server sends the sheet to Google's or Apple's
+  page. Apple needs Simeon's Apple keys on the server
+  (docs/services-core.md §1); until then the Apple button opens a page that
+  says Sign in with Apple is coming soon and offers Google.
+- **Everything after it matches**: the pages the sheet shows (Sign in to
+  Simeon?, You're signed in) are drawn the same way: mark, wordmark, the
+  words, the pills at the foot, light or dark.
+- **Not yet:** the Terms and Privacy links go to
+  `simeonlabs.com/legal/terms-of-service` and `/legal/privacy-policy`, the
+  addresses the Mac's window and the web app already use; both answer 404
+  until those pages are written. The dark ground is the app's own (#070707),
+  not the reference's grey, so the launch, the sign-in and the app are one
+  colour.
+
 ## Suggested order (the founder decides)
 
 1. The chat's look: the bubble, the top bar, markdown, brand names with logos, agent names with butterflies.

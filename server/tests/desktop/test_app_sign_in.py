@@ -9,9 +9,11 @@ not get to change.
 import base64
 import hashlib
 import json
+import re
 import secrets
 import uuid as uuid_module
 from datetime import timedelta
+from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 import httpx
@@ -19,6 +21,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from simeon.config import settings
+from simeon.desktop import sign_in_brand
 from simeon.desktop.repository import DesktopAuthCodeRepository
 from simeon.desktop.service import (
     ACCESS_TOKEN_PREFIX,
@@ -102,6 +105,68 @@ class TestLoginDeepControl:
         )
         assert f"challenge={challenge}" in return_to
         assert f"uuid={uuid}" in return_to
+
+    async def test_the_iphone_s_apple_button_goes_to_apple_s_sign_in(
+        self, client: httpx.AsyncClient, mocker: MockerFixture
+    ) -> None:
+        # The founder, 9 October 2026: Continue with Apple, then Google, on
+        # the iPhone's sign-in screen; each goes straight to its own sign-in.
+        for name in ("CLIENT_ID", "TEAM_ID", "KEY_ID", "KEY_VALUE"):
+            mocker.patch.object(settings, f"APPLE_{name}", "set")
+        _, challenge, uuid = _login_metadata()
+        response = await client.get(
+            "/loginDeepControl",
+            params={
+                "challenge": challenge,
+                "uuid": uuid,
+                "mode": "login",
+                "redirectTarget": "simeon-ios",
+                "provider": "apple",
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+        location = urlparse(response.headers["location"])
+        assert location.path.endswith("/integrations/apple/authorize")
+        return_to = parse_qs(location.query)["return_to"][0]
+        assert f"uuid={uuid}" in return_to
+        assert "provider=apple" in return_to
+
+    async def test_apple_not_set_up_yet_says_so_and_offers_google(
+        self, client: httpx.AsyncClient, mocker: MockerFixture
+    ) -> None:
+        mocker.patch.object(settings, "APPLE_CLIENT_ID", "")
+        _, challenge, uuid = _login_metadata()
+        params = {
+            "challenge": challenge,
+            "uuid": uuid,
+            "mode": "login",
+            "redirectTarget": "simeon-ios",
+        }
+        page = await client.get(
+            "/loginDeepControl",
+            params={**params, "provider": "apple"},
+            follow_redirects=False,
+        )
+        assert page.status_code == 200
+        assert "Sign in with Apple is coming soon" in page.text
+        assert "Continue with Google" in page.text
+        assert "provider=google" in page.text
+        assert "<script>" not in page.text
+        # In the screen's design: the site's mark and wordmark, the pills.
+        assert 'aria-label="SimeonLabs"' in page.text
+        assert 'class="pill outline"' in page.text
+        # The Google button, and a link with no way named (the Mac's), go to Google.
+        for provider in ("google", None):
+            response = await client.get(
+                "/loginDeepControl",
+                params={**params, **({"provider": provider} if provider else {})},
+                follow_redirects=False,
+            )
+            assert response.status_code == 303
+            assert urlparse(response.headers["location"]).path.endswith(
+                "/integrations/google/login/authorize"
+            )
 
     @pytest.mark.auth
     async def test_a_signed_in_person_is_asked_before_anything_is_written(
@@ -841,3 +906,17 @@ class TestPollByPost:
         assert response.status_code == 404
         response = await client.post("/auth/poll", json=["a", "list"])
         assert response.status_code == 404
+
+
+def test_the_pages_carry_the_site_s_own_mark() -> None:
+    # The sign-in sheet's pages match the iPhone's sign-in screen, both drawn
+    # from simeonlabs.com's files (ios/scripts/make-sign-in-assets.mjs).
+    site = Path(__file__).resolve().parents[3] / "sites/simeonlabs.com/public"
+    favicon = (site / "favicon.svg").read_text()
+    assert f'viewBox="{sign_in_brand.MARK_VIEWBOX}"' in favicon
+    assert re.findall(r'<path d="([^"]+)"', favicon) == [sign_in_brand.MARK_PATH], (
+        "run: node ios/scripts/make-sign-in-assets.mjs"
+    )
+    png = base64.b64decode(sign_in_brand.WORDMARK_PNG_BASE64)
+    assert png.startswith(b"\x89PNG")
+    assert sign_in_brand.WORDMARK_WIDTH == 600

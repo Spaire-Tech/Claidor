@@ -24,7 +24,9 @@ public enum SimeonConfig {
  *    The challenge is base64url(sha256(verifier)), the hash over the
  *    verifier's ASCII text. The uuid is a v4 uuid.
  * 2. The system's sign-in sheet opens
- *    `{api}/loginDeepControl?challenge=…&uuid=…&mode=login&redirectTarget=simeon-ios`.
+ *    `{api}/loginDeepControl?challenge=…&uuid=…&mode=login&redirectTarget=simeon-ios&provider=…`,
+ *    `provider` being the button the person pressed (Apple or Google), so
+ *    the server sends the sheet straight to that sign-in.
  * 3. Meanwhile the app posts `{uuid, verifier}` to `/auth/poll`: 404 is
  *    "not yet", 200 carries `{accessToken, refreshToken}`. The Mac's
  *    backoff: 1 s growing by 1.2 to 10 s, three errors in a row give up,
@@ -34,6 +36,11 @@ public enum SignIn {
   public static let loginPath = "/loginDeepControl"
   public static let pollPath = "/auth/poll"
   public static let maxPollAttempts = 150
+
+  /** The sign-in screen's two ways in (the founder, 9 October 2026), in its order. */
+  public enum Provider: String, Sendable, CaseIterable {
+    case apple, google
+  }
 
   public struct Metadata: Sendable, Equatable {
     public let uuid: String
@@ -55,9 +62,10 @@ public enum SignIn {
     return metadata(randomBytes: (0..<32).map { _ in UInt8.random(in: 0...255, using: &generator) })
   }
 
-  /** The page the sheet opens, in the Mac's parameter order. Every value is base64url or a uuid, so nothing needs escaping. */
-  public static func loginURL(api: URL, metadata: Metadata, redirectTarget: String = SimeonConfig.urlScheme) -> URL {
-    URL(string: "\(api.absoluteString.trimmingTrailingSlashes)\(loginPath)?challenge=\(metadata.challenge)&uuid=\(metadata.uuid)&mode=login&redirectTarget=\(redirectTarget)")!
+  /** The page the sheet opens, in the Mac's parameter order, then the way in. Every value is base64url, a uuid or a fixed word, so nothing needs escaping. */
+  public static func loginURL(api: URL, metadata: Metadata, provider: Provider? = nil, redirectTarget: String = SimeonConfig.urlScheme) -> URL {
+    let way = provider.map { "&provider=\($0.rawValue)" } ?? ""
+    return URL(string: "\(api.absoluteString.trimmingTrailingSlashes)\(loginPath)?challenge=\(metadata.challenge)&uuid=\(metadata.uuid)&mode=login&redirectTarget=\(redirectTarget)\(way)")!
   }
 
   /** The wait before the next poll, as the Mac's `pollAuthenticationStatus` has it. */

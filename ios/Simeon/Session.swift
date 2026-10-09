@@ -35,6 +35,8 @@ struct Launch {
   let gallery: Bool
   /** The demo as a new account: no agents, the first run (`--onboarding`). */
   let onboarding: Bool
+  /** The sign-in screen whatever the Keychain holds (`--sign-in`), for the screenshots. */
+  let signInScreen: Bool
   let screen: String?
   let theme: String?
   let api: URL
@@ -48,7 +50,7 @@ struct Launch {
     let api = value("api").flatMap(URL.init(string:)) ?? SimeonConfig.defaultAPI
     let gallery = arguments.contains("--gallery")
     let onboarding = arguments.contains("--onboarding")
-    return Launch(demo: gallery || onboarding || arguments.contains("--demo") || environment["SIMEON_DEMO"] == "1", gallery: gallery, onboarding: onboarding, screen: value("screen"), theme: value("theme"), api: api)
+    return Launch(demo: gallery || onboarding || arguments.contains("--demo") || environment["SIMEON_DEMO"] == "1", gallery: gallery, onboarding: onboarding, signInScreen: arguments.contains("--sign-in"), screen: value("screen"), theme: value("theme"), api: api)
   }()
 }
 
@@ -68,6 +70,8 @@ final class SessionController {
   }
 
   private(set) var phase: Phase = .starting
+  /** The sign-in screen's button whose sign-in is under way (it shows the spinner). */
+  private(set) var signingInWith: SignIn.Provider?
   /** The first run (Onboarding.swift): being looked up, to do, or done. Only a new account does it. */
   enum FirstRunGate: Equatable { case checking, needed, done }
   private(set) var firstRun: FirstRunGate = .done
@@ -88,6 +92,7 @@ final class SessionController {
   }
 
   func start() async {
+    if launch.signInScreen { phase = .signedOut(message: nil); return }
     if launch.demo {
       store.account = Account(name: "Bass Fall", email: "bass@simeonlabs.com")
       await store.attach(DemoBackend(seed: launch.onboarding ? .empty : DemoData.seed(gallery: launch.gallery), pace: 0.6))
@@ -168,11 +173,15 @@ final class SessionController {
     phase = .signedOut(message: "Your Simeon sign-in ended. Sign in again.")
   }
 
-  func signIn() async {
+  /** The sign-in screen's Continue with Apple or Google: the sheet goes straight to that sign-in (`provider` on `/loginDeepControl`). */
+  func signIn(with provider: SignIn.Provider) async {
+    guard phase != .signingIn else { return }
     phase = .signingIn
+    signingInWith = provider
+    defer { signingInWith = nil }
     let metadata = SignIn.freshMetadata()
     let state = SheetState()
-    let session = ASWebAuthenticationSession(url: SignIn.loginURL(api: launch.api, metadata: metadata), callback: .customScheme(SimeonConfig.urlScheme)) { url, _ in
+    let session = ASWebAuthenticationSession(url: SignIn.loginURL(api: launch.api, metadata: metadata, provider: provider), callback: .customScheme(SimeonConfig.urlScheme)) { url, _ in
       // Confirmed (the page opened simeon-ios://…) or closed: poll a little longer either way, as the Mac's pair is written as the page is answered.
       state.close(confirmed: url != nil)
     }
