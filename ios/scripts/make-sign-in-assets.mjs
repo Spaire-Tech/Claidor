@@ -14,7 +14,9 @@
  *   its letters' own edges, a template too.
  * - Google: Google's "G", in its four colours, as a vector PDF (the mark
  *   Google's sign-in buttons carry).
- * The Apple mark is the system's own symbol (`apple.logo`).
+ * - Apple: the Apple logo of the site's Download button (index.html,
+ *   `svg.apl`), cut to its own edges, so the app sizes it by its true height
+ *   (a template, in the button's ink).
  *
  * And server/simeon/desktop/sign_in_brand.py: the same mark, wordmark (600
  * pixels wide) and "G" for the pages the sign-in sheet shows after the
@@ -75,6 +77,13 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const favicon = await readFile(path.join(site, "favicon.svg"), "utf8");
   await write("Mark", "simeon-mark.pdf", await pdf(markSVG(favicon), 120, 120), { template: true, vector: true });
   await write("Google", "google-g.pdf", await pdf(GOOGLE_G, 48, 48), { template: false, vector: true });
+  const index = await readFile(path.join(site, "index.html"), "utf8");
+  const appleD = /<svg class="apl"[^>]*><path[^>]* d="([^"]+)"/.exec(index)?.[1];
+  if (appleD == null) throw new Error("index.html has no svg.apl");
+  await page.setContent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="240" height="240"><path id="p" d="${appleD}"/></svg>`);
+  const box = await page.evaluate(() => { const b = document.getElementById("p").getBBox(); return { x: b.x, y: b.y, w: b.width, h: b.height }; });
+  const appleSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${box.x} ${box.y} ${box.w} ${box.h}"><path fill="#000" d="${appleD}"/></svg>`;
+  await write("Apple", "apple-logo.pdf", await pdf(appleSVG, Math.round(box.w * 10) / 2, Math.round(box.h * 10) / 2), { template: true, vector: true });
 
   // The wordmark cut to its letters: the site masks with the picture's alpha, so its edges are where alpha is.
   const wordmark = await readFile(path.join(site, "img/wordmark-labs.png"));

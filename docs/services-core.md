@@ -120,9 +120,12 @@ their Google name in `user.meta` (`server/simeon/integrations/google/service.py`
 
 The pages the browser shows (the confirm page, "You're signed in", the Apple page)
 are drawn in the iPhone sign-in screen's design since 9 October 2026: simeonlabs.com's
-mark and wordmark in the middle, the buttons as the screen's pills at the foot,
-light or dark as the device is (`_page`; the marks are `sign_in_brand.py`, generated
-with the app's by `node ios/scripts/make-sign-in-assets.mjs`).
+mark and wordmark in the middle, the buttons at the foot in the app's own (the first
+in our blue, the next in the plain glass), light or dark as the device is (`_page`;
+the marks are `sign_in_brand.py`, generated with the app's by
+`node ios/scripts/make-sign-in-assets.mjs`). The confirm page is only the mark and
+its two buttons, Continue as the account and Use a different account: no heading
+and no line naming the device (the founder: "its noise").
 
 ### In the app
 

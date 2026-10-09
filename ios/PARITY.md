@@ -807,31 +807,39 @@ running the Mac's code on the same agents.
 The founder sent ChatGPT's sign-in screen: "above is our logo, simeon real
 logo, below SimeonLabs - with our logo name font (see website) - then
 continue with apple - and below google - with the privacy below … same for
-everything … make sure everything match."
+everything … make sure everything match." Then, of the first try: the logos
+out of proportion with the words, "sign in to simeon - simeon on your phone
+is asking etc.. its noise. remove", and "use our existing iphone design".
 
 - **The screen** (`SignInScreen` in SimeonApp.swift): simeonlabs.com's mark
   (the app icon's four petals, from the site's `favicon.svg`) and the
   "SimeonLabs" wordmark (the site bar's own picture) in the middle of the
-  space above the buttons; Continue with Apple filled in the ink (white on
-  dark, black on light), Continue with Google outlined with Google's "G";
-  "By continuing, you agree to our Terms & Privacy Policy." under them. The
-  marks are made from the site's files by `ios/scripts/make-sign-in-assets.mjs`
-  (Assets `SignIn/`). The same screen stays while the sign-in sheet is open:
-  the pressed button shows a spinner. An error shows above the buttons.
+  space above the buttons, on the app's ground. The buttons are the app's
+  own: Continue with Apple in our blue glass (as Continue in the first run
+  and Connect), Continue with Google in the plain glass, 17-point semibold,
+  50 points tall, the first run's margins. The logos are sized from the
+  reference, measured: Apple's 16 points and Google's "G" 15 beside
+  17-point words (1.35 and 1.2 times the capitals' height there), 8 points
+  before the words. "By continuing, you agree to our Terms & Privacy
+  Policy." under them. The marks are made from the site's files by
+  `ios/scripts/make-sign-in-assets.mjs` (Assets `SignIn/`: Mark, Wordmark,
+  Apple from the site's Download button, Google). The screen stays while
+  the sign-in sheet is open: the pressed button shows a spinner.
 - **Each button goes straight to its sign-in**: the app adds `provider` to
   `/loginDeepControl`, and the server sends the sheet to Google's or Apple's
   page. Apple needs Simeon's Apple keys on the server
   (docs/services-core.md §1); until then the Apple button opens a page that
   says Sign in with Apple is coming soon and offers Google.
-- **Everything after it matches**: the pages the sheet shows (Sign in to
-  Simeon?, You're signed in) are drawn the same way: mark, wordmark, the
-  words, the pills at the foot, light or dark.
+- **The page after Google or Apple** is the mark, the wordmark and two
+  buttons: Continue as the account (our blue) and Use a different account
+  (glass); no heading, no line about the device. The tap stays: without it,
+  whoever got a signed-in person to open a sign-in link of their own making
+  would be signed in as that person.
 - **Not yet:** the Terms and Privacy links go to
   `simeonlabs.com/legal/terms-of-service` and `/legal/privacy-policy`, the
   addresses the Mac's window and the web app already use; both answer 404
-  until those pages are written. The dark ground is the app's own (#070707),
-  not the reference's grey, so the launch, the sign-in and the app are one
-  colour.
+  until those pages are written. Apple's guidelines ask for a black or white
+  Sign in with Apple button; App Review may ask for that instead of our blue.
 
 ## Suggested order (the founder decides)
 

@@ -113,13 +113,6 @@ NO_STORE = {"Cache-Control": "no-store"}
 PRODUCT = "Simeon"
 
 
-#: The iPhone app's own scheme (`mobile/`, 8 October 2026). The phone signs
-#: in exactly as the Mac does, through these routes; it names this scheme,
-#: so the confirm page opens `simeon-ios://app/v1/open`, which closes the
-#: phone's sign-in sheet, and says it is the iPhone asking.
-IOS_REDIRECT_TARGET = "simeon-ios"
-
-
 #: The ways in of the iPhone's sign-in screen (9 October 2026): its
 #: buttons name one as `provider`, and the page sends the browser straight
 #: to that sign-in. The Mac names none and signs in with Google, as before.
@@ -146,14 +139,6 @@ def apple_sign_in_ready() -> bool:
     )
 
 
-def _device(redirect_target: str | None) -> str:
-    """Which of the person's devices is asking, in the page's words. The
-    page says it so the person can tell a sign-in they started from one
-    they did not; anything but the phone's scheme is the Mac app."""
-    token = (redirect_target or "").strip().lower()
-    return "iPhone" if token == IOS_REDIRECT_TARGET else "Mac"
-
-
 def _deep_link(redirect_target: str | None) -> str | None:
     if redirect_target is None:
         return None
@@ -166,13 +151,15 @@ def _page(
     body: str,
     *,
     actions: str = "",
+    heading: bool = True,
     deep_link: str | None = None,
 ) -> HTMLResponse:
     """One page, in the design of the iPhone's sign-in screen (the founder,
     9 October 2026: "make sure everything match"): simeonlabs.com's mark and
-    "SimeonLabs" wordmark in the middle with the page's words under them,
-    and its buttons at the foot as the screen's pills, the first filled in
-    the ink, the next outlined; light or dark as the device is. It is served
+    "SimeonLabs" wordmark in the middle, the page's words under them when it
+    has any (`heading`), and its buttons at the foot in the app's own: the
+    first in our blue, the next in the plain glass; light or dark as the
+    device is. It is served
     from the API host, which has no front end of its own, so it carries
     everything it draws (`sign_in_brand`); no script but the one line that
     brings the app forward."""
@@ -191,13 +178,14 @@ def _page(
         f"<title>{escape(title)} · {PRODUCT}</title>"
         "<style>"
         # The iPhone app's colours (ios/Simeon/Theme.swift: ground, primary,
-        # secondary, edge).
+        # secondary, blue) and its plain glass button's fill.
         ":root{--ground:#fcfcfc;--ink:#141414;--ink2:rgba(20,20,20,.6);"
-        "--edge:rgba(20,20,20,.15);"
+        "--blue:#255a93;--glass:#ffffff;--glass-edge:rgba(20,20,20,.08);"
         '--font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",'
         '"Helvetica Neue",Arial,sans-serif}'
         "@media (prefers-color-scheme:dark){:root{--ground:#070707;--ink:#fcfcfc;"
-        "--ink2:rgba(252,252,252,.6);--edge:#2e2e2e}}"
+        "--ink2:rgba(252,252,252,.6);--blue:#2f6db0;--glass:#1f1f21;"
+        "--glass-edge:rgba(255,255,255,.1)}}"
         "*{box-sizing:border-box}"
         "body{margin:0;min-height:100vh;min-height:100dvh;display:flex;"
         "flex-direction:column;align-items:center;background:var(--ground);"
@@ -223,20 +211,22 @@ def _page(
         "form{margin:0}"
         ".pill{display:flex;width:100%;height:50px;align-items:center;"
         "justify-content:center;gap:9px;padding:0 20px;border-radius:999px;"
-        "border:0;background:var(--ink);color:var(--ground);font:inherit;"
-        "font-size:17px;font-weight:500;text-decoration:none;cursor:pointer;"
+        "border:0;background:var(--blue);color:#fff;font:inherit;"
+        "font-size:17px;font-weight:600;text-decoration:none;cursor:pointer;"
         "white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
+        "box-shadow:0 1px 2px rgba(0,0,0,.12);"
         "-webkit-tap-highlight-color:transparent}"
-        ".pill.outline{background:transparent;color:var(--ink);"
-        "box-shadow:inset 0 0 0 1px var(--edge)}"
+        ".pill.glass{background:var(--glass);color:var(--ink);"
+        "box-shadow:inset 0 0 0 1px var(--glass-edge),0 1px 3px rgba(0,0,0,.06)}"
         ".pill:active{opacity:.7}"
-        ".pill svg{flex:none;width:18px;height:18px}"
+        ".pill svg{flex:none;width:15px;height:15px}"
         "</style></head><body>"
         "<main>"
         f'<svg class="mark" viewBox="{MARK_VIEWBOX}" role="img" aria-label="{PRODUCT}">'
         f'<path d="{MARK_PATH}"/></svg>'
         '<span class="wordmark" role="img" aria-label="SimeonLabs"></span>'
-        f"<h1>{escape(title)}</h1>{body}</main>{foot}{jump}</body></html>",
+        f"{f'<h1>{escape(title)}</h1>' if heading else ''}{body}</main>"
+        f"{foot}{jump}</body></html>",
     )
 
 
@@ -327,7 +317,7 @@ async def login_deep_control(
             return _page(
                 "Sign in with Apple is coming soon",
                 "<p>For now, continue with Google.</p>",
-                actions=f'<a class="pill outline" href="{escape(google, quote=True)}">'
+                actions=f'<a class="pill glass" href="{escape(google, quote=True)}">'
                 f"{GOOGLE_G_SVG}Continue with Google</a>",
             )
         return RedirectResponse(sign_in_url(request, return_to, way), 303)
@@ -372,21 +362,24 @@ async def login_deep_control(
         )
         if value
     )
-    # The second form is for the person this page is not about: the
-    # browser keeps the website's own sign-in long after the app's, so
-    # signing out of the app and opening this link again showed the same
-    # account with no way past it (the founder, 6 October 2026). It ends
-    # the browser's session and goes to the web login, with this very
-    # link as the way back.
+    # Only the two buttons under the mark (the founder, 9 October 2026, of
+    # the heading and the line that named the device: "its noise.
+    # remove."). The tap itself stays, naming the account: without it,
+    # whoever got a signed-in person to open a sign-in link of their own
+    # making would be signed in as that person. The second form is for
+    # the person this page is not about: the browser keeps the website's
+    # own sign-in long after the app's, so signing out of the app and
+    # opening this link again showed the same account with no way past it
+    # (the founder, 6 October 2026). It ends the browser's session and goes
+    # to the web login, with this very link as the way back.
     return _page(
-        f"Sign in to {PRODUCT}?",
-        f"<p>{PRODUCT} on your {_device(redirectTarget)} is asking to sign in as"
-        f" <strong>{email}</strong>."
-        " Only continue if you just asked it to.</p>",
+        f"Sign in to {PRODUCT}",
+        "",
+        heading=False,
         actions=f'<form method="post" action="/loginDeepControl">{fields}'
         f'<button class="pill" type="submit">Continue as {email}</button></form>'
         f'<form method="post" action="/loginDeepControl/switch">{fields}'
-        '<button class="pill outline" type="submit">Use a different account</button>'
+        '<button class="pill glass" type="submit">Use a different account</button>'
         "</form>",
     )
 

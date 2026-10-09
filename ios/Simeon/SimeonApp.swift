@@ -96,9 +96,10 @@ struct RootView: View {
  * google - with the privacy below"). simeonlabs.com's own mark and wordmark
  * (Assets SignIn/, made from the site's files by
  * ios/scripts/make-sign-in-assets.mjs) in the middle of the space above the
- * buttons; Continue with Apple filled in the ink, Continue with Google
- * outlined; the Terms and the Privacy Policy under them. While the sheet is
- * open the screen stays: the pressed button shows a spinner and both wait.
+ * buttons; Continue with Apple and Continue with Google in the app's own
+ * buttons (`SignInButton`), on the app's ground; the Terms and the Privacy
+ * Policy under them. While the sheet is open the screen stays: the pressed
+ * button shows a spinner.
  */
 struct SignInScreen: View {
   @Environment(SessionController.self) private var session
@@ -133,9 +134,10 @@ struct SignInScreen: View {
       }
       // No `.disabled` while a sign-in runs: it would grey the pressed button's spinner; a second press does nothing (`signIn(with:)`).
       VStack(spacing: 12) {
-        SignInButton(provider: .apple, filled: true, busy: session.signingInWith == .apple) { start(.apple) }
-        SignInButton(provider: .google, filled: false, busy: session.signingInWith == .google) { start(.google) }
+        SignInButton(provider: .apple, busy: session.signingInWith == .apple) { start(.apple) }
+        SignInButton(provider: .google, busy: session.signingInWith == .google) { start(.google) }
       }
+      .frame(maxWidth: 420)
       Text(Self.legal)
         .font(.system(size: 13))
         .foregroundStyle(Ink.secondary)
@@ -144,8 +146,8 @@ struct SignInScreen: View {
         .padding(.top, 28)
         .padding(.bottom, 14)
     }
-    .padding(.horizontal, 21)
-    .frame(maxWidth: 460)
+    // The first run's margins (its Continue and Back).
+    .padding(.horizontal, 24)
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .background(Ink.ground)
   }
@@ -167,42 +169,46 @@ struct SignInScreen: View {
   }
 }
 
-/** One of the sign-in screen's two pills: the way's mark, then "Continue with …"; filled in the ink, or outlined. */
+/**
+ * One of the sign-in screen's two buttons, in the app's own buttons (the
+ * founder, 9 October 2026: "use our existing iphone design"): Apple's in our
+ * blue glass, as Continue in the first run and Connect before an app's
+ * sign-in; Google's in the plain glass. The logos are sized to the words as
+ * in the reference (measured on it: Apple's about 1.35 times the capitals'
+ * height, Google's "G" about 1.2 times, 8 to 9 points before the words): 16
+ * and 15 points beside 17-point type, whose capitals are 12, 8 points apart.
+ */
 struct SignInButton: View {
   let provider: SignIn.Provider
-  let filled: Bool
   let busy: Bool
   let action: () -> Void
 
   var body: some View {
-    Button(action: action) {
-      HStack(spacing: 9) {
-        if busy {
-          ProgressView().tint(filled ? Ink.ground : Ink.primary)
-        } else {
-          mark
-        }
-        Text(provider == .apple ? "Continue with Apple" : "Continue with Google")
-          .font(.system(size: 17, weight: .medium))
-      }
-      .foregroundStyle(filled ? Ink.ground : Ink.primary)
-      .frame(maxWidth: .infinity)
-      .frame(height: 50)
-      .background { Capsule().fill(filled ? Ink.primary : Color.clear) }
-      .overlay { if !filled { Capsule().strokeBorder(Ink.edge, lineWidth: 1) } }
-      .contentShape(.capsule)
+    if provider == .apple {
+      Button(action: action) { label(ink: .white) }
+        .buttonStyle(.glassProminent)
+        .tint(Ink.blue)
+    } else {
+      Button(action: action) { label(ink: Ink.primary) }
+        .buttonStyle(.glass)
     }
-    .buttonStyle(.plain)
   }
 
-  @ViewBuilder
-  private var mark: some View {
-    switch provider {
-    case .apple:
-      Image(systemName: "apple.logo").font(.system(size: 19, weight: .medium)).offset(y: -1)
-    case .google:
-      Image("SignIn/Google").resizable().scaledToFit().frame(width: 18, height: 18)
+  private func label(ink: Color) -> some View {
+    HStack(spacing: 8) {
+      if busy {
+        ProgressView().tint(ink).frame(width: 16, height: 16)
+      } else if provider == .apple {
+        Image("SignIn/Apple").resizable().scaledToFit().frame(height: 16).offset(y: -1)
+      } else {
+        Image("SignIn/Google").resizable().scaledToFit().frame(width: 15, height: 15)
+      }
+      Text(provider == .apple ? "Continue with Apple" : "Continue with Google")
+        .font(.system(size: 17, weight: .semibold))
     }
+    .foregroundStyle(ink)
+    .frame(maxWidth: .infinity)
+    .frame(height: 50)
   }
 }
 
