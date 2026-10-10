@@ -213,7 +213,7 @@ Written 10 October 2026, **not built yet** (as step 1). Compare with B01
 | The call button in the head | 11 |
 | A file's name (opens its preview) | 2c (done) |
 | The exchanges' chips | 2d (done) |
-| The routines' chips (open the routine) | 7c |
+| The routines' chips (open the routine) | 7c (done) |
 | "1 reply" under a message | 2d (done) |
 | Attach file | 2e (done) |
 | The microphone | 2e (done) |
@@ -1112,7 +1112,7 @@ details in the pane.
 | Button | Comes with |
 |---|---|
 | The avatar's button and its pencil (Edit Avatar) | 7b (done) |
-| The Routines tab's page (the tab switches; its page is empty) | 7c |
+| The Routines tab's page (the tab switches; its page is empty) | 7c (done) |
 | The Computer tab | 13 |
 | "/" and search's Members | 7d |
 
@@ -1130,6 +1130,23 @@ as the avatar draws them elsewhere.
 I01 (Profile), I06 (a group), I07 (dark), B09 (760 × 600: the pane not
 drawn); open and close it from the head, ⌘⇧, and Escape and watch the
 sidebar fold and open; drag its edge, and below 244 let go.
+
+#### After the compile review (pushed with 7c)
+
+- A field still holding the keys when the pane closes or another agent
+  opens is saved as letting go would (once).
+- The description measures its height at its laid-out width (it opened at
+  the wrong height before), and its line darkens when it takes the keys,
+  not at the first letter.
+- Closing a pane that grew the window: the pane slides shut first, then the
+  window shrinks back (it vanished at once before).
+- Escape with an agents' exchange open closes the exchange, not the pane.
+- Dragging the edge counts from where the drag started (a click on it no
+  longer moves it), and the resize arrows go if the pane closes under the
+  pointer.
+- Opening the pane while the new chat is open still folds the sidebar: the
+  window does the same (`agent-pane-compacts-sidebar` runs on the store's
+  open, whatever hides the pane).
 
 ### 7b: the avatar editor
 
@@ -1187,3 +1204,83 @@ play and stop glyphs, minus and plus are SF Symbols.
 
 I04 light and dark; Generate and Upload with a picture in the crop; a
 group's editor; an agent with a picture and a colour picked.
+
+### 7c: Routines
+
+Read from the window's list and editor (`K2n`, `_2n`, `P2n`, `Ugn`, `$gn`,
+the event fields, the store's Test run wait) and measured with a routines
+fixture (light and dark: the list, the empty state, the editor new and
+stored, every frequency, every event, the menus, Running…, the save error).
+Pushed:
+
+- **The list**: New Routine at the right (only when there are routines),
+  then the routines, active ones first: 48 high, round 10, the clock in
+  green, the spinner in blue while its run goes, the pause sign when paused;
+  the name over the host's words for when it runs, or "Paused". With none:
+  the clock's tile, "Routines are recurring tasks this agent runs on a
+  schedule." and Create Routine. Nothing while the first read is on its way
+  or failed. Rows update as the host sends its lists.
+- **The editor** takes the whole pane: Back to Routines, "Routine", Close;
+  then Active (the Mac's switch), Delete, Test run; the bar's hairline shows
+  as the body scrolls. Name ("Name this routine", taking the keys for a new
+  routine), Instruction (80 to 160 high, then it scrolls), When to run, Run
+  history. A field is saved when it lets go of the keys; empty or unchanged
+  puts the stored words back. A new routine is made only once it has a
+  name, an instruction and a trigger that is right; edits made while it is
+  made go after it as one update when they change anything. "Couldn't save
+  this routine." when a save fails, until the next one is tried. A stored
+  name, instruction or trigger changed elsewhere shows unless it was edited
+  here. Delete asks nothing and goes back to the list (a routine still being
+  made is deleted when it comes back). Test run: not for a routine not yet
+  made; "Running…" from the click until its run has ended and 3 seconds
+  more, or while its newest run goes; Run history comes into view.
+- **When to run**: the rows (the clock, or Slack's, GitHub's, Teams',
+  Linear's, Sentry's and PagerDuty's marks; the sentence, its first word
+  darker; × under the pointer), Add trigger / Add another (none at eight).
+  The Add menu: On a schedule › Every hour, Every day › a time, Weekdays › a
+  time, Every week, Every month, Interval, Advanced… (each saved at once; the
+  last four open their popover), then Slack message, Git event, Teams
+  message, Linear issue, Sentry alert, PagerDuty incident (each opens its
+  popover; saved once right). × on the only row empties the card and opens
+  the Add menu; nothing is saved (a routine needs a trigger).
+- **A row's popover**, under it, over the rows below: Frequency and its
+  controls (at :minute; at a time; on a day at a time; on the nth at a time;
+  every so many minutes, hours or days), Advanced's grid (Months, Days, Time
+  at times or every so many between two hours), Custom's line; Slack's,
+  Git's, Teams', Linear's, Sentry's and PagerDuty's fields with the window's
+  words and placeholders. A pick saves at once; a field saves when it lets
+  go of the keys (Return). A click outside it or Escape closes it: rows that
+  are right are saved, others go back (an event never completed goes).
+- **Run history**: when each run began ("Just now", "4 min ago",
+  "Yesterday at 5:08 PM", again every 30 seconds) and its sign (✓, ×, the
+  spinner), its detail under the pointer; "No runs yet".
+- **A routine's chip in the chat** opens the pane on Routines with that
+  routine's editor (the list when the routine is gone); three or more open
+  a menu of them.
+
+#### Not in 7c
+
+- Coming back from the editor puts the keys on the routine's row in the
+  window; here nothing takes the keys (the Mac's buttons take them only
+  with keyboard navigation on).
+- The run times are in the Mac's time zone; the window uses the one set in
+  Settings when there is one (Settings is step 8).
+- The Add menu's and the selects' keyboard behaviour is the Mac's menus'.
+
+#### Where the native parts look different
+
+The menus are the Mac's: the Add menu's submenus open where the screen has
+room (the window's always open to the left); a select's menu opens with the
+chosen item over the pill, as the Mac's pop-up buttons do (the window's
+list opens under it, scrolled to the chosen one); the ticks of Months, the
+days and the Git events are the Mac's checkboxes in the menu, which stays
+open while ticking. The switch is the Mac's. Chevrons, ×, + and the run
+signs are SF Symbols; the clock and the spinner are drawn.
+
+#### What to compare
+
+The rl-* captures (list, empty, open, weekly, advanced, advanced every,
+the Frequency and Time menus, the Git menu, Teams, the save error, an
+invalid custom line), light and dark; make a routine from New Routine
+(nothing is made until all three are there); Test run and watch
+"Running…"; × on the only trigger.

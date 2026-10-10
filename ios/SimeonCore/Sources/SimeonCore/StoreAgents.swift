@@ -55,10 +55,12 @@ extension AppStore {
     takeRoutines(agentId, answer)
   }
 
-  /** Test run (`runAgentAutomationNow`), then the list again for its new run; nothing is said either way. */
-  public func testRoutine(_ agentId: String, _ routineId: String) async {
-    _ = try? await backend?.command("runAgentAutomationNow", ["id": .string(agentId), "automationId": .string(routineId)])
+  /** Test run (`runAgentAutomationNow`), then the list again for its new run; nothing is said either way. False when the run was refused (and the list is not read). */
+  @discardableResult
+  public func testRoutine(_ agentId: String, _ routineId: String) async -> Bool {
+    guard let backend, (try? await backend.command("runAgentAutomationNow", ["id": .string(agentId), "automationId": .string(routineId)])) != nil else { return false }
     await loadRoutines(agentId)
+    return true
   }
 
   func takeRoutines(_ agentId: String, _ answer: JSON) {

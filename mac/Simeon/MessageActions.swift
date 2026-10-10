@@ -53,7 +53,11 @@ final class ChatControl {
   var reading = 0
 
   /** The agent whose messages with this one are open over the chat (`tunnelPeer`, read only). */
-  var exchangePeer: Party?
+  var exchangePeer: Party? {
+    didSet { ChatControl.exchangeShowing = exchangePeer != nil }
+  }
+  /** An exchange is over the chat: its Escape is its own, not the pane's. */
+  static var exchangeShowing = false
   /** The exchange's message under the pointer, for the right-click menu: its id and words. */
   var exchangeHovered: (id: String, text: String)?
 

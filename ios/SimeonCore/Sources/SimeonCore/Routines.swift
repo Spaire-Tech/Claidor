@@ -108,6 +108,16 @@ public enum RoutineDraft {
             "trigger": trigger ?? stored.trigger ?? .null, "isEnabled": .bool(stored.isEnabled)]
   }
 
+  /** As `updateSpec`, with the Active switch's value while its change is on its way (the window sends the pending one). */
+  public static func updateSpec(_ stored: Routine, name: String, prompt: String, trigger: JSON?, isEnabled: Bool) -> JSON {
+    updateSpec(stored, name: name, prompt: prompt, trigger: trigger).setting("isEnabled", .bool(isEnabled))
+  }
+
+  /** Whether an update would change nothing the routine has (`Ate`): its name, instruction and trigger as stored. */
+  public static func unchanged(_ stored: Routine, spec: JSON) -> Bool {
+    spec["name"]?.string == stored.name && spec["prompt"]?.string == stored.prompt && spec["trigger"] == (stored.trigger ?? .null)
+  }
+
   /** The record a create made: the newest one whose id was not there before, one of the same name first (`v$n`). */
   public static func created(_ after: [Routine], before: Set<String>, name: String) -> Routine? {
     let fresh = after.filter { !before.contains($0.id) }
@@ -119,6 +129,52 @@ public enum RoutineDraft {
 
   public static let saveError = "Couldn't save this routine."
   public static let empty = "Routines are recurring tasks this agent runs on a schedule."
+}
+
+/**
+ The Test run's wait (`b$n`'s flights): from the click until the manual run
+ it started has ended, then 3 seconds more (`automation-manual-run-rearm`),
+ so Test run reads "Running…" and cannot be pressed again meanwhile.
+ */
+public struct RoutineRunFlight: Equatable, Sendable {
+  public enum Phase: Equatable, Sendable {
+    /** Waiting for a manual run other than the one there before the click. */
+    case awaiting(previous: String?)
+    case running(String)
+    /** The 3 seconds after the run ended; then the wait is over. */
+    case cooldown
+  }
+
+  /** Seconds the wait holds after the run ended (`k$n`). */
+  public static let cooldownSeconds = 3.0
+
+  public private(set) var phase: Phase
+
+  /** Clicked: the routine's newest manual run before it, if any. */
+  public init(before routine: Routine?) {
+    phase = .awaiting(previous: routine?.runs.first { $0.trigger == "manual" }?.id)
+  }
+
+  /** A list came (`y`): false when the routine is not in it, and the wait ends at once. */
+  public mutating func take(_ routine: Routine?) -> Bool {
+    guard let routine else { return false }
+    let manual = routine.runs.first { $0.trigger == "manual" }
+    switch phase {
+    case .awaiting(let previous):
+      guard let manual, manual.id != previous else { return true }
+      phase = manual.status == "running" ? .running(manual.id) : .cooldown
+    case .running(let id):
+      if let run = routine.runs.first(where: { $0.id == id }), run.status != "running" { phase = .cooldown }
+    case .cooldown:
+      break
+    }
+    return true
+  }
+
+  /** The run was asked for and the list read again: no new run in it yet means the wait is cooling down (`runNow`'s `h`). */
+  public mutating func afterRead() {
+    if case .awaiting = phase { phase = .cooldown }
+  }
 }
 
 /**

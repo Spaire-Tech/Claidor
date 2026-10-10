@@ -470,7 +470,7 @@ private struct TranscriptRow: View {
     case .teammates(_, let exchange, _):
       ExchangeEvent(exchange: exchange, look: look)
     case .routines(_, let action, let routines):
-      RoutinesLine(action: action, routines: routines, look: look)
+      RoutinesLine(action: action, routines: routines, agentId: agentId, look: look)
     case .voiceCall(_, let seconds, _):
       CallLineRow(seconds: seconds, look: look)
     case .notice(_, let text):
@@ -987,18 +987,25 @@ private struct ExchangeEvent: View {
 
 /**
  * Routines changed (`XPn`): "Created routine" and its name after a clock,
- * two joined by "and", three or more as a count.
+ * two joined by "and", three or more as a count. A routine's chip opens
+ * the agent's pane on Routines with its editor (`KPn`); the count opens a
+ * menu of them (`YPn`).
  */
 private struct RoutinesLine: View {
   let action: String
   let routines: [RoutineRef]
+  let agentId: String
   let look: Look
+  @Environment(AppStore.self) private var store
+  @Environment(WindowState.self) private var window
+  @Environment(PaneState.self) private var pane
+  @Environment(SidebarLayout.self) private var layout
 
   var body: some View {
     let verb = Chat.routineVerb(action)
     if routines.count >= 3 {
       SystemEvent(label: verb, look: look) {
-        EventChip(title: "\(routines.count) routines", help: "\(routines.count) routines, show list", look: look, spacing: 2) { clock }
+        EventChip(title: "\(routines.count) routines", help: "\(routines.count) routines, show list", look: look, spacing: 2, action: showList) { clock }
       }
     } else {
       SystemEvent(label: "\(verb) \(routines.count == 1 ? "routine" : "routines")", look: look) {
@@ -1006,9 +1013,28 @@ private struct RoutinesLine: View {
           if index > 0 {
             Text("and").foregroundStyle(look.inkSecondary).fixedSize()
           }
-          EventChip(title: routine.name, help: "Open routine \(routine.name)", look: look, spacing: 2) { clock }
+          EventChip(title: routine.name, help: "Open routine \(routine.name)", look: look, spacing: 2, action: { open(routine.id) }) { clock }
         }
       }
+    }
+  }
+
+  private func open(_ id: String) {
+    pane.openRoutine(id, for: agentId, window: window, store: store, layout: layout)
+  }
+
+  /** The routines, each with its clock, in a menu where the pointer is. */
+  private func showList() {
+    let menu = NSMenu()
+    menu.autoenablesItems = false
+    let clock = TriggerGlyph.image("schedule", side: 16, dark: look.dark)
+    for routine in routines {
+      let item = BlockMenuItem(routine.name) { open(routine.id) }
+      item.image = clock
+      menu.addItem(item)
+    }
+    if let event = NSApp.currentEvent, let view = event.window?.contentView ?? NSApp.keyWindow?.contentView {
+      NSMenu.popUpContextMenu(menu, with: event, for: view)
     }
   }
 

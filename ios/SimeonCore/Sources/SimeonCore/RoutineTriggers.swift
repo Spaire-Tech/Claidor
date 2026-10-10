@@ -679,6 +679,11 @@ public enum TriggerRow: Hashable, Sendable {
     ("Issue", [("issue-assigned", "Assigned")]),
   ]
 
+  /** A Git event ticked or unticked in the menu, the list kept in the window's order (`Kgn`); the last one can be unticked. */
+  public static func toggled(_ events: [String], _ kind: String) -> [String] {
+    events.contains(kind) ? events.filter { $0 != kind } : gitOrder.filter { events.contains($0) || $0 == kind }
+  }
+
   /** Every Git event in the order the window keeps them (`D0n`). */
   public static let gitOrder = ["pr-opened", "pr-pushed", "pr-merged", "review-requested", "review-approved", "review-changes-requested", "review-commented", "pr-comment", "inline-review-comment", "review-thread-resolved", "review-thread-unresolved", "issue-assigned", "ci-passed", "ci-failed"]
 
@@ -770,6 +775,16 @@ public enum RoutineWords {
   public static func monthsLabel(_ months: [Int]?) -> String {
     guard let months, !months.isEmpty else { return "Any month" }
     return Array(Set(months)).sorted().map { (1...12).contains($0) ? String(RoutineSchedule.months[$0 - 1].prefix(3)) : String($0) }.joined(separator: ", ")
+  }
+
+  /** A month or a day ticked or unticked, the list kept in order (`Tmt`). */
+  public static func toggled(_ list: [Int], _ value: Int) -> [Int] {
+    list.contains(value) ? list.filter { $0 != value } : (list + [value]).sorted()
+  }
+
+  /** The next hour an Advanced "Add time" adds: the first free one after the first time, going round (`Fgn`). */
+  public static func nextHour(after first: Int, taken: [Int]) -> Int? {
+    (1...24).map { (first + $0) % 24 }.first { !taken.contains($0) }
   }
 
   /** "Mon, Tue" (`Egn`). */

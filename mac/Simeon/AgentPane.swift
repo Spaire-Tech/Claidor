@@ -43,7 +43,9 @@ final class PaneState {
     didSet { UserDefaults.standard.set(tookSidebar, forKey: Self.tookKey) }
   }
 
-  var section: Section = .profile
+  var section: Section = .profile {
+    didSet { if section != .routines { routineEditor = nil } }
+  }
   /** The page is drawn: false 240 ms after closing, so the next opening starts on Profile. */
   var contentAlive = UserDefaults.standard.bool(forKey: PaneState.openKey)
   /** Drawn at all now (open, room for it, the new chat closed): set by the window. */
@@ -51,6 +53,8 @@ final class PaneState {
   /** While the edge is dragged: the width shown, and whether letting go closes it. */
   var dragWidth: CGFloat?
   var dragCloses = false
+  /** The width when the drag started: a plain click on the edge changes nothing. */
+  @ObservationIgnored private var dragStart: CGFloat?
 
   /** The avatar editor, while it is open (7b), and where the avatar's button is in the window (a click on it is not "outside"). */
   var avatarEditor: AvatarEditorModel?
@@ -63,6 +67,30 @@ final class PaneState {
   func closeAvatarEditor() {
     avatarEditor?.closeNow()
     avatarEditor = nil
+  }
+
+  /** The routine editor, while it is open (7c): it takes the whole page. Leaving Routines closes it. */
+  var routineEditor: RoutineEditorModel?
+  /** A routine's chip asked for its editor: opened when the agent's list has it (`W2n`). */
+  var routineRequest: String?
+  /** Test run's waits, for every routine. */
+  @ObservationIgnored let runBlocks = RoutineRunBlocks()
+
+  /** New Routine (nil) or a routine's row: its editor, afresh. */
+  func openRoutine(_ routine: Routine?, agentId: String) {
+    routineEditor = RoutineEditorModel(agentId: agentId, routine: routine)
+  }
+
+  /** Back to Routines, Delete, or the routine gone. */
+  func backToRoutines() {
+    routineEditor = nil
+  }
+
+  /** A routine's chip in the chat (`openAutomationDetail`): Routines, with that routine's editor once the list has it. */
+  func openRoutine(_ routineId: String, for agentId: String, window: WindowState, store: AppStore, layout: SidebarLayout) {
+    routineEditor = nil
+    routineRequest = routineId
+    open(.routines, for: agentId, window: window, store: store, layout: layout)
   }
 
   /** A page asked for another agent (Edit Profile), applied when that agent opens. */
@@ -101,11 +129,13 @@ final class PaneState {
     }
   }
 
-  /** Close (×, Escape, the header's button): the window shrinks back if it grew for it; the sidebar opens again if the pane folded it. */
+  /**
+   Close (×, Escape, the header's button): the sidebar opens again if the pane folded it; the window shrinks back if it grew for it.
+   The pane slides shut first and the window follows when it has (the window shrinking first would cut the pane off at once).
+   */
   func close(layout: SidebarLayout) {
     closeAvatarEditor()
     guard isOpen else { return }
-    shrinkWindowIfGrown()
     withAnimation(Self.motion) {
       isOpen = false
       if tookSidebar && layout.isCollapsed { layout.isCollapsed = false }
@@ -115,6 +145,7 @@ final class PaneState {
     lingering = Task { [weak self] in
       try? await Task.sleep(nanoseconds: UInt64(PaneState.linger * 1_000_000_000))
       guard let self, !Task.isCancelled, !self.isOpen else { return }
+      self.shrinkWindowIfGrown()
       self.contentAlive = false
       self.section = .profile
     }
@@ -144,18 +175,22 @@ final class PaneState {
   /** Another agent opened: its page starts on Profile (it is drawn afresh), or on the page asked for it. */
   func agentChanged(to agentId: String?) {
     closeAvatarEditor()
+    routineEditor = nil
     if let request, request.agentId == agentId {
       section = request.section
     } else {
       section = .profile
+      routineRequest = nil
     }
     request = nil
   }
 
   // MARK: The edge
 
-  /** The edge dragged: the width the pointer gives (the pane's right edge less its x), held at 280 below 244 (`w3n`). */
-  func drag(pointerWidth: CGFloat, windowWidth: CGFloat, sidebarWidth: CGFloat) {
+  /** The edge dragged by `moved` points (left is wider): held at 280 below 244 (`w3n`). */
+  func drag(moved: CGFloat, windowWidth: CGFloat, sidebarWidth: CGFloat) {
+    if dragStart == nil { dragStart = width }
+    let pointerWidth = (dragStart ?? width) - moved
     if pointerWidth < Self.closeBelow {
       dragCloses = true
       dragWidth = Self.narrowest
@@ -168,7 +203,7 @@ final class PaneState {
 
   /** Let go: below 244 it closes and keeps the width it had; else the new width is kept. */
   func endDrag(layout: SidebarLayout) {
-    defer { dragWidth = nil; dragCloses = false }
+    defer { dragWidth = nil; dragCloses = false; dragStart = nil }
     if dragCloses {
       close(layout: layout)
     } else if let dragWidth {
@@ -285,13 +320,19 @@ private struct PaneEdge: View {
     .frame(maxHeight: .infinity)
     .contentShape(Rectangle())
     .onHover { inside in
+      guard inside != hovering else { return }
       hovering = inside
       if inside { NSCursor.resizeLeftRight.push() } else { NSCursor.pop() }
     }
+    .onDisappear {
+      // Closed by a key with the pointer resting on it: the arrows go.
+      if hovering { NSCursor.pop() }
+      hovering = false
+    }
     .gesture(
-      // In the window's coordinates the pane's right edge is the window's: the pointer's distance from it is the width.
+      // The pane's right edge is the window's: moving the edge left by n widens it by n.
       DragGesture(minimumDistance: 0, coordinateSpace: .global)
-        .onChanged { value in pane.drag(pointerWidth: windowWidth - value.location.x, windowWidth: windowWidth, sidebarWidth: sidebarWidth) }
+        .onChanged { value in pane.drag(moved: value.translation.width, windowWidth: windowWidth, sidebarWidth: sidebarWidth) }
         .onEnded { _ in pane.endDrag(layout: layout) }
     )
     .accessibilityLabel("Resize details")
@@ -313,6 +354,15 @@ private struct PanePage: View {
 
   var body: some View {
     let look = Look(scheme)
+    if let agentId, let agent = store.agent(agentId), pane.section == .routines, let editor = pane.routineEditor, editor.agentId == agentId {
+      // A routine's editor (7c) takes the whole page, its own bars included.
+      RoutineEditorPage(agent: agent, model: editor, width: width)
+    } else {
+      page(look: look)
+    }
+  }
+
+  private func page(look: Look) -> some View {
     VStack(spacing: 0) {
       PaneTopBar(look: look) { pane.close(layout: layout) }
       if let agentId, let agent = store.agent(agentId) {
@@ -397,8 +447,10 @@ private struct AgentPage: View {
         switch pane.section {
         case .profile:
           ProfileBody(agent: agent, look: look)
-        case .routines, .computer, .channels:
-          // Routines (7c), the computer (step 13) and channels (step 12) come with their parts.
+        case .routines:
+          RoutinesBody(agent: agent, look: look)
+        case .computer, .channels:
+          // The computer (step 13) and channels (step 12) come with their parts.
           Color.clear.frame(height: 0)
         }
       }
@@ -416,25 +468,32 @@ private struct AgentPage: View {
   }
 }
 
-/** Closes what it is behind when a click lands outside it (and outside `excluded`, in the window's coordinates). */
+/**
+ Closes what it is behind when a click lands outside it (and outside `excluded`, in the window's coordinates).
+ With `swallows`, that click does nothing else (the window's full-window layer behind a popover); the window's own buttons still take it.
+ */
 struct OutsideClickCatcher: NSViewRepresentable {
   let excluded: () -> CGRect
+  var swallows = false
   let onOutside: () -> Void
 
   func makeNSView(context: Context) -> CatchView {
     let view = CatchView()
     view.excluded = excluded
+    view.swallows = swallows
     view.onOutside = onOutside
     return view
   }
 
   func updateNSView(_ view: CatchView, context: Context) {
     view.excluded = excluded
+    view.swallows = swallows
     view.onOutside = onOutside
   }
 
   final class CatchView: NSView {
     var excluded: () -> CGRect = { .zero }
+    var swallows = false
     var onOutside: () -> Void = {}
     nonisolated(unsafe) private var monitor: Any?
 
@@ -444,13 +503,17 @@ struct OutsideClickCatcher: NSViewRepresentable {
       monitor = nil
       guard window != nil else { return }
       monitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
-        MainActor.assumeIsolated {
-          guard let self, event.window === self.window else { return }
+        let swallow = MainActor.assumeIsolated { () -> Bool in
+          guard let self, event.window === self.window else { return false }
           let point = event.locationInWindow
           let mine = self.convert(self.bounds, to: nil)
-          if !mine.contains(point) && !self.excluded().contains(point) { self.onOutside() }
+          guard !mine.contains(point), !self.excluded().contains(point) else { return false }
+          self.onOutside()
+          // The close, minimise and zoom buttons are never covered.
+          if let bar = self.window?.standardWindowButton(.closeButton)?.superview, bar.convert(bar.bounds, to: nil).contains(point) { return false }
+          return self.swallows
         }
-        return event
+        return swallow ? nil : event
       }
     }
 
@@ -640,8 +703,8 @@ private struct PaneTabs: View {
         .shadow(color: .black.opacity(0.06), radius: 1, x: 0, y: 1)
         .shadow(color: .black.opacity(0.06), radius: 4, x: 0, y: 2)
         .frame(width: item, height: 30)
+        // On Channels (no tab of its own) it sits under Profile with no tab chosen.
         .offset(x: 3 + item * CGFloat(chosen ?? 0))
-        .opacity(chosen == nil && pane.section != .channels ? 0 : 1)
         .animation(.timingCurve(0.32, 0.72, 0, 1, duration: 0.34), value: chosen)
       // The lines between tabs 1 and 2, and 2 and 3.
       ForEach(1..<3, id: \.self) { index in
@@ -789,6 +852,10 @@ private struct PaneLineField: View {
   let commit: (String) -> Void
   @State private var draft = ""
   @FocusState private var focused: Bool
+  /** `focused` kept past the field's going, which drops the keys without saying so. */
+  @State private var editing = false
+  /** What was last sent, until the stored words change: going and letting go of the keys both end in `done`, which sends once. */
+  @State private var sent: String?
 
   var body: some View {
     VStack(alignment: .leading, spacing: 0) {
@@ -824,8 +891,16 @@ private struct PaneLineField: View {
       .accessibilityLabel("Agent \(label.lowercased())")
     }
     .onAppear { draft = stored }
-    .onChange(of: stored) { _, value in if !focused { draft = value } }
-    .onChange(of: focused) { _, now in if !now { done() } }
+    .onChange(of: stored) { _, value in
+      sent = nil
+      if !focused { draft = value }
+    }
+    .onChange(of: focused) { _, now in
+      editing = now
+      if !now { done() }
+    }
+    // Closed or another agent opened while it held the keys: saved as letting go would.
+    .onDisappear { if editing && !readOnly { editing = false; done() } }
   }
 
   /** Let go of the keys: trimmed; unchanged, nothing; an empty name goes back. */
@@ -834,6 +909,8 @@ private struct PaneLineField: View {
     guard value != stored else { draft = stored; return }
     if required && value.isEmpty { draft = stored; return }
     draft = value
+    guard value != sent else { return }
+    sent = value
     commit(value)
   }
 }
@@ -851,6 +928,8 @@ private struct PaneDescriptionField: View {
   @State private var draft = ""
   @State private var focused = false
   @State private var textHeight: CGFloat = 20
+  /** What was last sent, until the stored words change (see `PaneLineField.sent`). */
+  @State private var sent: String?
 
   var body: some View {
     VStack(alignment: .leading, spacing: 0) {
@@ -875,35 +954,59 @@ private struct PaneDescriptionField: View {
       .accessibilityLabel("Agent description")
     }
     .onAppear { draft = stored }
-    .onChange(of: stored) { _, value in if !focused { draft = value } }
-    .onChange(of: focused) { _, now in
-      guard !now, !readOnly else { return }
-      let value = draft.trimmingCharacters(in: .whitespacesAndNewlines)
-      guard value != stored else { draft = stored; return }
-      draft = value
-      commit(value)
+    .onChange(of: stored) { _, value in
+      sent = nil
+      if !focused { draft = value }
     }
+    .onChange(of: focused) { _, now in if !now { done() } }
+    // Closed or another agent opened while it held the keys: saved as letting go would.
+    .onDisappear { if focused { done() } }
+  }
+
+  private func done() {
+    guard !readOnly else { return }
+    let value = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard value != stored else { draft = stored; return }
+    draft = value
+    guard value != sent else { return }
+    sent = value
+    commit(value)
   }
 }
 
-/** The description's words: the Mac's own text view, 15/20, no box, its height told to the field. */
-private struct PaneTextArea: NSViewRepresentable {
+/** The description's words (and a routine's instruction, 14/20): the Mac's own text view, 15/20, no box, its height told to the field. */
+struct PaneTextArea: NSViewRepresentable {
   @Binding var text: String
   @Binding var focused: Bool
   @Binding var height: CGFloat
   let ink: NSColor
   let editable: Bool
+  var fontSize: CGFloat = 15
+  var lineHeight: CGFloat = 20
   let onCancel: () -> Void
 
   func makeCoordinator() -> Coordinator { Coordinator(self) }
 
   func makeNSView(context: Context) -> NSScrollView {
-    let scroll = NSTextView.scrollableTextView()
+    let scroll = NSScrollView()
     scroll.drawsBackground = false
     scroll.hasVerticalScroller = true
     scroll.autohidesScrollers = true
     scroll.scrollerStyle = .overlay
-    guard let view = scroll.documentView as? NSTextView else { return scroll }
+    scroll.borderType = .noBorder
+    let view = FocusTextView(frame: NSRect(x: 0, y: 0, width: 300, height: 20))
+    view.minSize = .zero
+    view.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+    view.isVerticallyResizable = true
+    view.isHorizontallyResizable = false
+    view.autoresizingMask = [.width]
+    view.textContainer?.widthTracksTextView = true
+    view.textContainer?.containerSize = NSSize(width: 300, height: CGFloat.greatestFiniteMagnitude)
+    scroll.documentView = view
+    view.onFocus = { [weak coordinator = context.coordinator] now in coordinator?.parent.focused = now }
+    // Its height is measured again whenever its width changes (the pane dragged, the first layout).
+    view.postsFrameChangedNotifications = true
+    NotificationCenter.default.addObserver(context.coordinator, selector: #selector(Coordinator.frameChanged(_:)), name: NSView.frameDidChangeNotification, object: view)
     view.delegate = context.coordinator
     view.drawsBackground = false
     view.isRichText = false
@@ -912,12 +1015,12 @@ private struct PaneTextArea: NSViewRepresentable {
     view.isContinuousSpellCheckingEnabled = false
     view.textContainerInset = .zero
     view.textContainer?.lineFragmentPadding = 0
-    view.font = NSFont.systemFont(ofSize: 15)
+    view.font = NSFont.systemFont(ofSize: fontSize)
     let lines = NSMutableParagraphStyle()
-    lines.minimumLineHeight = 20
-    lines.maximumLineHeight = 20
+    lines.minimumLineHeight = lineHeight
+    lines.maximumLineHeight = lineHeight
     view.defaultParagraphStyle = lines
-    view.typingAttributes = [.font: NSFont.systemFont(ofSize: 15), .foregroundColor: ink, .paragraphStyle: lines]
+    view.typingAttributes = [.font: NSFont.systemFont(ofSize: fontSize), .foregroundColor: ink, .paragraphStyle: lines]
     view.string = text
     view.textColor = ink
     view.isEditable = editable
@@ -937,14 +1040,46 @@ private struct PaneTextArea: NSViewRepresentable {
     view.isEditable = editable
   }
 
+  /** The text view that says when it takes the keys and lets them go (`textDidBeginEditing` waits for the first letter). */
+  final class FocusTextView: NSTextView {
+    var onFocus: (Bool) -> Void = { _ in }
+    private var lastWidth: CGFloat = 0
+
+    override func becomeFirstResponder() -> Bool {
+      let took = super.becomeFirstResponder()
+      if took { onFocus(true) }
+      return took
+    }
+
+    override func resignFirstResponder() -> Bool {
+      let gave = super.resignFirstResponder()
+      if gave { onFocus(false) }
+      return gave
+    }
+
+    /** Whether its width changed since it was last asked (its height changing is not a reason to measure). */
+    func widthChanged() -> Bool {
+      guard abs(frame.width - lastWidth) > 0.5 else { return false }
+      lastWidth = frame.width
+      return true
+    }
+  }
+
   final class Coordinator: NSObject, NSTextViewDelegate {
     var parent: PaneTextArea
     init(_ parent: PaneTextArea) { self.parent = parent }
 
+    deinit { NotificationCenter.default.removeObserver(self) }
+
+    @objc func frameChanged(_ notification: Notification) {
+      guard let view = notification.object as? FocusTextView, view.widthChanged() else { return }
+      measure(view)
+    }
+
     func measure(_ view: NSTextView) {
       guard let layout = view.layoutManager, let container = view.textContainer else { return }
       layout.ensureLayout(for: container)
-      let used = max(20, ceil(layout.usedRect(for: container).height))
+      let used = max(parent.lineHeight, ceil(layout.usedRect(for: container).height))
       if abs(parent.height - used) > 0.5 {
         DispatchQueue.main.async { self.parent.height = used }
       }
@@ -955,10 +1090,6 @@ private struct PaneTextArea: NSViewRepresentable {
       parent.text = view.string
       measure(view)
     }
-
-    func textDidBeginEditing(_ notification: Notification) { parent.focused = true }
-
-    func textDidEndEditing(_ notification: Notification) { parent.focused = false }
 
     func textView(_ textView: NSTextView, doCommandBy selector: Selector) -> Bool {
       guard !textView.hasMarkedText() else { return false }
@@ -971,11 +1102,6 @@ private struct PaneTextArea: NSViewRepresentable {
       return false
     }
 
-    func textViewDidChangeSelection(_ notification: Notification) {
-      // A click that only selects (read only) still counts as having the keys, as the window's focused field does.
-      guard let view = notification.object as? NSTextView, !view.isEditable else { return }
-      parent.focused = view.window?.firstResponder === view
-    }
   }
 }
 

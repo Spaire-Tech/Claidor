@@ -318,13 +318,20 @@ private struct KeyWatcher: NSViewRepresentable {
           sidebar.cycle = nil
           return true
         }
+        // A routine's trigger popover (7c): Escape closes it, from its fields too; the pane stays (`Y`).
+        if let pane, pane.isVisible, let editor = pane.routineEditor, editor.popover != nil {
+          if let text = window?.firstResponder as? NSTextView, text.hasMarkedText() { return false }
+          window?.makeFirstResponder(nil)
+          editor.closePopover(store: store)
+          return true
+        }
         // The new chat open and no field holding the keys: Escape closes it (`zDn`). A field's own Escape comes first (the To: line's, the message field's).
         if let newChat, newChat.isOpen, !(window?.firstResponder is NSText) {
           newChat.close()
           return true
         }
-        // The pane shown, nothing over it and no field holding the keys: Escape closes it (`CDn`). A field's own Escape comes first.
-        if let pane, let layout, pane.isVisible, viewers?.shown == nil, !(window?.firstResponder is NSText) {
+        // The pane shown, nothing over it (a viewer, an exchange) and no field holding the keys: Escape closes it (`CDn`). A field's own Escape comes first.
+        if let pane, let layout, pane.isVisible, viewers?.shown == nil, !ChatControl.exchangeShowing, !(window?.firstResponder is NSText) {
           pane.close(layout: layout)
           return true
         }
