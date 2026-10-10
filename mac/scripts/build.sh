@@ -50,11 +50,15 @@ say "Building (the first time takes a few minutes)"
 mkdir -p build
 if ! xcodebuild -project SimeonMac.xcodeproj -scheme Simeon -configuration Debug \
     -destination 'platform=macOS' -derivedDataPath build build > build/build.log 2>&1; then
-  grep -E "error:" build/build.log | sed -E "s#^$(cd .. && pwd)/##" | sort -u > build/errors.txt || true
+  # Each error with the lines the compiler printed under it (the code and its notes), paths from the repository.
+  grep -E -A6 "^/.*: error:" build/build.log | sed -E "s#$(cd .. && pwd)/##g" > build/errors.txt || true
   [ -s build/errors.txt ] || tail -40 build/build.log > build/errors.txt
   pbcopy < build/errors.txt
-  echo "The build failed. $(wc -l < build/errors.txt | tr -d ' ') lines of errors are copied to your clipboard:"
-  echo "paste them in the chat. (They are also in mac/build/errors.txt.)"
+  echo "The build failed. The errors (also copied to your clipboard, and in mac/build/errors.txt):"
+  echo
+  cat build/errors.txt
+  echo
+  echo "Paste them in the chat."
   exit 1
 fi
 echo "Built: mac/build/Build/Products/Debug/Simeon.app"
