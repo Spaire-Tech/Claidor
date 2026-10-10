@@ -115,6 +115,10 @@ public struct MarkFrame: Sendable, Equatable {
   public var spinAngle = 0.0
   /** Making a picture: the whirl keeps throwing light trails. */
   public var whirling = false
+  /** How far the wings have folded into the glyph's orb, 0 to 1. */
+  public var fold = 0.0
+  /** The radius the light trails circle at (`je`): the wings' widest, drawn in to 52 as the whirl folds. */
+  public var beltRadius = MarkShape.beltRadius
 
   public static let rest = MarkFrame()
 }
@@ -156,6 +160,15 @@ public final class MarkEngine {
   private var glyphStartMs = -1e9
   /** The whirl's own turn while it makes a picture (`Ft`). */
   private var whirlAngle = 0.0
+  /** A hop asked for (`ai`), started at the next frame; then when it started (`vr`). */
+  private var hopAsked = false
+  private var hopStartMs: Double?
+
+  /**
+   * Reduce motion (`prefers-reduced-motion`, the window's `Q`): no pose,
+   * turns, hops or whirl; a fold into a glyph happens at once.
+   */
+  public var reduceMotion = false
 
   public init(random: @escaping () -> Double = { Double.random(in: 0..<1) }) {
     self.random = random
@@ -165,7 +178,7 @@ public final class MarkEngine {
 
   /** Nothing left moving: a resting mark may stop its clock. */
   public var isSettled: Bool {
-    seenState == .idle && spin == nil && fold.x < 0.004 && abs(fold.v) < 0.01
+    seenState == .idle && spin == nil && !hopAsked && hopStartMs == nil && fold.x < 0.004 && abs(fold.v) < 0.01
   }
 
   /** The frame at `now` (seconds) for a mark `sizePoints` across showing `state`. */
@@ -193,7 +206,7 @@ public final class MarkEngine {
 
     pose(ms, state)
     // Making a picture, the orb spins without end: up to 7 rad/s by half a second, easing to 3 by 1.3 s (`Ft`).
-    if state == .loading {
+    if state == .loading && !reduceMotion {
       let z = (ms - stateStartMs) / 1000
       let speed = z < 0.5 ? 7 * easeInOutCubic(z / 0.5) : z < 1.3 ? 7 + (3 - 7) * easeInOutCubic((z - 0.5) / 0.8) : 3 + 0.3 * sin(z * 0.5)
       whirlAngle += speed * dt
@@ -206,8 +219,14 @@ public final class MarkEngine {
       turn.step(5, 0.9, h); tilt.step(3.5, 1, h); roll.step(4, 1, h); squash.step(10, 0.8, h)
       fold.step(14, 1, h); crossfade.step(11, 1, h)
     }
+    if reduceMotion {
+      fold.x = fold.t; fold.v = 0
+      crossfade.x = 1; crossfade.v = 0
+    }
     var frame = render(ms, sizePoints)
     if spin == nil && state == .loading { frame.spinAngle = whirlAngle; frame.whirling = true }
+    // Making a picture, the trails' belt draws in towards the orb (`je`).
+    if state == .loading { frame.beltRadius += (52 - frame.beltRadius) * min(max(fold.x, 0), 1) }
     return frame
   }
 
@@ -219,6 +238,10 @@ public final class MarkEngine {
       nextSpinMs = ms + (state == .searching ? between(800, 1600) : state == .working ? between(1200, 2400) : between(6000, 10000))
     }
     let t = (ms - (startMs ?? ms)) / 1000
+    if reduceMotion {
+      turn.t = 0; tilt.t = 0; roll.t = 0; squash.t = 1
+      return
+    }
     switch state {
     case .idle:
       turn.t = sin(t * 0.5) * 1.5 + sin(t * 0.17) * 0.6
@@ -249,9 +272,35 @@ public final class MarkEngine {
   /** Whether a turn is under way. */
   public var isTurning: Bool { spin != nil }
 
+  /** A hop on the spot, smaller each time (`ai`, the poke "bounce"): 48, 28, 14 and 6 units up, 1.33 s in all. */
+  public func bounce() {
+    guard hopStartMs == nil, !reduceMotion else { return }
+    hopAsked = true
+  }
+
+  /** The hops (`wie`): each one's height and length in seconds. */
+  static let hops: [(height: Double, seconds: Double)] = [(48, 0.5), (28, 0.382), (14, 0.27), (6, 0.177)]
+
+  /** How far up the hop is now (`Mr`, negative is up). */
+  private func hop(_ ms: Double) -> Double {
+    if hopAsked { hopAsked = false; hopStartMs = ms }
+    guard let start = hopStartMs else { return 0 }
+    let t = (ms - start) / 1000
+    var from = 0.0
+    for hop in MarkEngine.hops {
+      if t < from + hop.seconds {
+        let b = (t - from) / hop.seconds
+        return -4 * hop.height * b * (1 - b)
+      }
+      from += hop.seconds
+    }
+    hopStartMs = nil
+    return 0
+  }
+
   /** One turn around its own axis (`pn`). */
   private func startSpin(direction: Double) {
-    guard spin == nil else { return }
+    guard spin == nil, !reduceMotion else { return }
     var s = MarkSpring(0)
     s.t = 2 * .pi * direction
     spin = s
@@ -314,7 +363,8 @@ public final class MarkEngine {
     let orbScale = orb / Butterfly.centre * pop
     let wings = 1 - folded
     frame.dx = tilt.x * wings + wanderX * folded
-    frame.dy = roll.x * wings - middle.lift * dotsAmount + wanderY * folded
+    frame.dy = (roll.x + hop(ms)) * wings - middle.lift * dotsAmount + wanderY * folded
+    frame.fold = folded
     frame.rotation = turn.x * wings * MarkShape.tiltScale
     frame.scaleX = wings + orbScale * folded
     frame.scaleY = squash.x * wings + orbScale * folded
@@ -387,6 +437,8 @@ public enum MarkShape {
   public static let tiltScale = 0.17
   /** Rays the engine measures a shape along (`Kne`). */
   static let rays = 96
+  /** How far out the light trails circle (`beltRadius`): the wings' widest half. */
+  public static let beltRadius: Double = ring.map { abs($0.x - Butterfly.centre) }.max() ?? Butterfly.centre
 
   /** The full circle the wings fold into (`PNe`). */
   public static let circle: [Butterfly.Point] = (0..<rays).map { i in

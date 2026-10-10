@@ -191,15 +191,22 @@ struct GroupMark: View {
   }
 }
 
-/** An agent's avatar in the list: its butterfly, or its members' for a group. */
+/**
+ * An agent's avatar: its butterfly, or its members' for a group. Where the
+ * window lets it move (`isStatic: false`: a sidebar row, the working line)
+ * it is the agent's live mark; everywhere else it stands still.
+ */
 struct AgentMark: View {
   let agent: Agent
   let agents: [Agent]
   var size: CGFloat = 36
+  var live = false
 
   var body: some View {
     if agent.isGroup {
       GroupMark(members: agent.memberIds.compactMap { id in agents.first { $0.id == id }?.palette }, size: size)
+    } else if live {
+      LiveMark(agent: agent, size: size)
     } else {
       ButterflyMark(palette: agent.palette, size: size)
     }

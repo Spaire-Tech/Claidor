@@ -349,7 +349,7 @@ private struct AgentRow: View {
   }
 
   private func avatar(_ look: Look) -> some View {
-    AgentMark(agent: agent, agents: agents, size: 36)
+    AgentMark(agent: agent, agents: agents, size: 36, live: true)
       .overlay(alignment: .topLeading) {
         if let dot = cornerDot(look) {
           Circle().fill(dot).frame(width: 8, height: 8).offset(x: 26, y: 26)

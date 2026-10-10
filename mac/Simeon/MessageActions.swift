@@ -40,6 +40,10 @@ final class ChatControl {
   /** The message field's frame (44 on one line), so the last message clears it. */
   var composerHeight: CGFloat = 44
 
+  /** A sideways swipe (step 2f): how far the person's messages have moved, 0 to 82, and whether one is under way or springing back (`data-peeking`). */
+  var peek: CGFloat = 0
+  var peeking = false
+
   /** The files waiting to go with the next message (step 2e), six at most. */
   var staged: [StagedFile] = []
   /** The line over the words when files were left out (five seconds), and its count so the latest stays. */

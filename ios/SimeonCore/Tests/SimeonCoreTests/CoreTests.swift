@@ -940,6 +940,38 @@ final class MarkdownTests: XCTestCase {
     XCTAssertFalse(engine.isSettled)
   }
 
+  func testAClickedButterflyHopsAndSettles() {
+    let engine = MarkEngine(random: { 0.5 })
+    var frame = MarkFrame.rest
+    for step in 0...120 { frame = engine.frame(at: Double(step) / 60, state: .idle, sizePoints: 9) }
+    let resting = frame.dy
+    engine.bounce()
+    XCTAssertFalse(engine.isSettled)
+    var highest = 0.0
+    for step in 121...(121 + 90) {
+      frame = engine.frame(at: Double(step) / 60, state: .idle, sizePoints: 9)
+      highest = min(highest, frame.dy - resting)
+    }
+    // The first hop is 48 units high, at a quarter second.
+    XCTAssertEqual(highest, -48, accuracy: 2.5)
+    XCTAssertTrue(engine.isSettled, "four hops in 1.33 s, then still")
+  }
+
+  func testReduceMotionFoldsAtOnceAndNeverTurns() {
+    let engine = MarkEngine(random: { 0.5 })
+    engine.reduceMotion = true
+    var frame = engine.frame(at: 0, state: .thinking, sizePoints: 9)
+    frame = engine.frame(at: 1.0 / 60, state: .thinking, sizePoints: 9)
+    XCTAssertEqual(frame.fold, 1, accuracy: 0.0001, "folded at once")
+    XCTAssertEqual(frame.outline, MarkShape.circle)
+    engine.turnNow()
+    engine.bounce()
+    XCTAssertFalse(engine.isTurning)
+    for step in 2...300 { frame = engine.frame(at: Double(step) / 60, state: .working, sizePoints: 9) }
+    XCTAssertFalse(engine.isTurning, "no turns every few seconds")
+    XCTAssertEqual(frame.rotation, 0, accuracy: 0.01)
+  }
+
   func testMarkFoldsIntoThreeDotsWhileThinking() {
     let engine = MarkEngine(random: { 0.5 })
     var frame = MarkFrame.rest
@@ -1337,6 +1369,33 @@ final class LightTrailsTests: XCTestCase {
     XCTAssertTrue(trails.hasLife, "a new set once the last has drawn in")
   }
 
+  func testAClickedButterflyBurstsIntoSparksThatFade() {
+    let trails = LightTrails(random: { 0.5 })
+    trails.burst(count: 22, speed: 1.1, swirl: 0.3, palette: .named("blue"))
+    XCTAssertTrue(trails.hasLife)
+    trails.update(nowMs: 1000, spinAngle: 0, sizeScale: 2.6, sustain: false, palette: .named("blue"))
+    XCTAssertEqual(trails.sparks.count, 22)
+    // They start at the wings' edge and fly out from the middle.
+    let first = trails.sparks.map { hypot($0.x - Butterfly.centre, $0.y - Butterfly.centre) }
+    for step in 1...12 { trails.update(nowMs: 1000 + Double(step) * 1000 / 60, spinAngle: 0, sizeScale: 2.6, sustain: false, palette: .named("blue")) }
+    let later = trails.sparks.map { hypot($0.x - Butterfly.centre, $0.y - Butterfly.centre) }
+    XCTAssertEqual(later.count, 22)
+    XCTAssertGreaterThan(later.reduce(0, +), first.reduce(0, +))
+    for spark in trails.sparks { XCTAssertTrue((50...76).contains(spark.colour.lightness)) }
+    for step in 13...60 { trails.update(nowMs: 1000 + Double(step) * 1000 / 60, spinAngle: 0, sizeScale: 2.6, sustain: false, palette: .named("blue")) }
+    XCTAssertTrue(trails.sparks.isEmpty, "gone in under a second")
+    XCTAssertFalse(trails.hasLife)
+  }
+
+  func testTheWhirlsBeltDrawsIn() {
+    let engine = MarkEngine(random: { 0.5 })
+    var frame = MarkFrame.rest
+    for step in 0...180 { frame = engine.frame(at: Double(step) / 60, state: .loading, sizePoints: 9) }
+    XCTAssertEqual(frame.fold, 1, accuracy: 0.01)
+    XCTAssertEqual(frame.beltRadius, 52, accuracy: 0.5)
+    XCTAssertEqual(MarkFrame.rest.beltRadius, MarkShape.beltRadius)
+  }
+
   func testATrailRunsBetweenTwoStopsOfThePalette() {
     let ocean = AgentPalette.named("blue")
     let inks = [ocean.top, ocean.mid, ocean.bottom].map(TrailColour.init)
@@ -1368,6 +1427,28 @@ final class ActivityLineTests: XCTestCase {
     XCTAssertEqual(ActivityLine.of(kind: "tool", tool: "CheckSubagent", detail: nil).text, "Waiting on another agent")
     XCTAssertEqual(ActivityLine.of(kind: "tool", tool: "Mystery", detail: nil).text, "Working")
     XCTAssertEqual(ActivityLine.of(kind: nil, tool: nil, detail: nil).text, "Working")
+    var theo = Agent(id: "t", name: "Theo")
+    theo.isRunning = true
+    XCTAssertEqual(theo.activityLine()?.text, "Theo is working", "running before it says what (`gJn`)")
+  }
+
+  func testTheWorkingLineHoldsEachActivityForAMoment() {
+    let search = ActivityLine.of(kind: "tool", tool: "WebSearch", detail: nil)
+    let read = ActivityLine.of(kind: "tool", tool: "Read", detail: nil)
+    let shell = ActivityLine.of(kind: "tool", tool: "Shell", detail: nil)
+    var hold = ActivityHold(search, at: 10)
+    hold.want(read, at: 10.3)
+    XCTAssertEqual(hold.shown, search, "Searching keeps its 0.8 s")
+    XCTAssertEqual(hold.due ?? 0, 10.8, accuracy: 0.0001)
+    hold.want(read, at: 10.8)
+    XCTAssertEqual(hold.shown, read)
+    XCTAssertNil(hold.due)
+    hold.want(shell, at: 12)
+    XCTAssertEqual(hold.shown, shell, "after its 0.8 s a new one takes over at once")
+    XCTAssertNil(hold.elapsed(at: 71))
+    XCTAssertEqual(hold.elapsed(at: 72.5), "1m")
+    XCTAssertEqual(hold.nextMinute(after: 72.5) ?? 0, 132, accuracy: 0.0001)
+    XCTAssertEqual(hold.elapsed(at: 12 + 3_900), "1h 5m")
     // The label comes in again only when the verb or the picture changes.
     XCTAssertEqual(ActivityLine.of(kind: "tool", tool: "Shell", detail: nil).key, ActivityLine.of(kind: "tool", tool: "BoxShell", detail: nil).key)
   }

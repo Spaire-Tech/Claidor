@@ -230,7 +230,7 @@ Written 10 October 2026, **not built yet** (as step 1). Compare with B01
   hover: 2d. So is the thread's "1 reply" joined under its message (the
   window squares the message's lower corners over it).
 - The butterflies stand still, and new messages appear without the
-  window's motion: 2f.
+  window's motion: 2f (done).
 - The access notice over the field ("Your trial has ended"…) and the
   computer's notices over it: step 13.
 
@@ -479,7 +479,7 @@ exchange, `b_n` and `u_n` for find):
   menus do; the window's open under the chip or the button.
 
 A message's time at its right comes with a sideways swipe in the window
-(its "peeking"), which is 2f.
+(its "peeking"), which is 2f (done).
 
 ### 2e: the message field's lists, attaching, dictation
 
@@ -589,3 +589,88 @@ from its code. Pushed so far:
   agent's card does not add its pull request yet.
 - A routine's and a skill's own icon (`iconId`, `iconUrl`) is not drawn: a
   routine shows a clock, a skill sparkles.
+
+### 2f: the butterflies' motion, the working line, scrolling
+
+Written 10 October 2026, **not built yet** (as step 1), read from the
+window's code (its mark engine `$_t`, the hidden marks it mirrors, the
+activity slot, the transcript's bottom pin and its sideways swipe) and
+checked in the reference window. Pushed:
+
+- **Which butterflies move**: as in the window, only an agent's sidebar
+  row and the chat's working line (`isStatic: false`); the chat's head,
+  a group author's butterfly, the menus, chips and lists stay still. The
+  window keeps one hidden 8-point mark per agent that those places mirror,
+  so an agent's row and its working line move as one; the Mac shares one
+  engine per agent the same way (`MarkStage`), and like the window gives
+  every live mark the small mark's zoom on its glyph and the thickest
+  trails.
+- **The motion** is SimeonCore's `MarkEngine` (the window's engine, its
+  numbers tested): resting, the butterfly is still; thinking, it folds
+  into the orb and three rippling dots; searching, it sways and turns
+  every few seconds; working, it leans in and turns now and then;
+  messaging or waiting on someone, five dots circle it; sending to another
+  agent, a dot flies out to the top right with a ring; making a picture,
+  the orb whirls. Turns throw light trails in the agent's colours
+  (`LightTrails`). Drawn as the window draws it: the outline drawn smooth
+  through its 96 points while it turns or folds, the gradient over the
+  shape's own box, the rim, veins, band, antennae and body fading as it
+  folds, the dots and rings in the palette's flat colour, the trails' far
+  side behind and near side in front.
+- **Resting**: 1.4 s after the agent stops, once nothing is still
+  folding, turning or trailing, the butterfly snaps to its rest pose and
+  stops drawing, as the window pauses it; it starts again from rest.
+- **Clicking the working butterfly** gives it, in turn, a turn, a hop (48,
+  28, 14 and 6 units, 1.33 s) and a burst of 22 sparks (dots, dashes and
+  pale stars flung out from the wings, falling and fading in under a
+  second), as the window's pokes. SimeonCore gained the hop, the burst and
+  the whirl's trails drawing in to the orb (tested).
+- **The working line** keeps its 40 points under the messages whether or
+  not the agent works, so nothing moves when it starts. It comes in over
+  0.18 s from 92 % at its left, its butterfly popping in from 60 % a
+  little after (0.34 s, 0.22 s late, overshooting); new words rise 4
+  points as they come; it goes out over 0.14 s. Each activity's words
+  stay at least 0.8 s before the next takes their place, the same words
+  swap in place, and after a minute on one activity its time joins it
+  ("Searching the web · 3m") (SimeonCore's `ActivityHold`, tested). Before
+  the agent says what it is doing the line says "Iris is working", as the
+  window does (it said "Working").
+- **A new message** that arrives while the chat is at its newest comes in
+  over 0.24 s from 12 lower and 94 % about its bottom corner on its own
+  side, faded in by 55 % (`sand-1im2lgs`); a chat opened shows its
+  messages as they are.
+- **Scrolling as the window scrolls**: within 4 points of the newest the
+  chat is pinned there, and anything new, longer words or a taller field
+  glide it down to stay at the newest; scrolling up lets go, scrolling
+  back to the newest pins it again (the window's bottom pin, `lht`). 2a
+  followed within 48 points and jumped.
+- **A message's time on a sideways swipe**: a mostly sideways two-finger
+  swipe over the chat (1.5 points or more, and not over something that
+  scrolls sideways itself, such as a code block or a table) moves the
+  person's messages left by as much, 82 at most, and every message's time
+  ("3:04 PM", 12 at 500, tabular, in the tertiary grey) fades and slides
+  in at its right; 90 ms after the swipe it springs back over 0.435 s
+  with the window's curve, which overshoots by 3.6 %. Hover bars stay away
+  until it is back.
+- **Reduce motion** (System Settings, Accessibility), as the window's
+  `prefers-reduced-motion`: no turns, trails, hops or bursts; folds happen
+  at once; the entrances are a 0.12 s fade; a swipe springs back at once.
+
+#### Not in 2f yet
+
+- A pinned agent's tile (60, live in the window) comes with the pins in
+  step 3.
+- A group chat's working line with its members' typing ("Iris and Theo
+  are typing…", the members' marks taking turns every 2 s) is the
+  window's group line (`bJn`); the Mac shows the group's line as in 2a.
+- An agent with a picture of its own instead of a butterfly does not move
+  in the window; the Mac does not draw such pictures yet.
+- The window's grain filter on the wings is left out, as in 2a.
+
+#### Where the native parts look different
+
+The butterflies are drawn by SwiftUI's Canvas each frame the display
+draws, from the same engine; the window draws them in SVG. The new
+message's and the working line's curves are the window's own
+(`cubic-bezier`), and the swipe's release is its `linear()` curve point
+for point.

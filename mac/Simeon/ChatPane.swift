@@ -201,10 +201,15 @@ private struct CallButton: View {
 /**
  * The messages (`sand-virtual-transcript`): 16 in from each side, 116 down
  * from the top (under the head) and 112 up from the bottom (over the
- * message field), opening at the newest. While the agent works, its line
- * (`sand-activity-slot`, 40 with its padding) takes 40 of the 112. New
- * words keep the newest in view while you are at it; scrolled up to read,
- * the chat stays where you are.
+ * message field), opening at the newest. The agent's working line has its
+ * 40 of the 112 whether or not it works, so nothing moves when it starts.
+ *
+ * Scrolling as the window scrolls (its bottom pin, `lht`): at the newest
+ * (within 4 points) the chat is pinned there, and anything new, longer
+ * words or a taller field glide it down to stay at the newest; scrolling
+ * up lets go, and scrolling back down to the newest pins it again. A
+ * message that arrives while pinned comes in (`data-enter="new"`). A
+ * sideways swipe shows every message's time (`PeekCatcher`).
  */
 private struct Transcript: View {
   let agentId: String
@@ -215,7 +220,18 @@ private struct Transcript: View {
   @Environment(AppStore.self) private var store
   @Environment(ChatControl.self) private var control
   @State private var position = ScrollPosition(edge: .bottom)
-  @State private var atNewest = true
+  @State private var pinned = true
+  @State private var userScrolling = false
+  /** Rows that arrived while pinned, coming in; and which chat the last rows were. */
+  @State private var entering: Set<String> = []
+  @State private var rowsOf = ""
+
+  /** How the window measures the bottom: the gap under what shows, the content's height, the view's. */
+  struct Bottom: Equatable {
+    let gap: CGFloat
+    let height: CGFloat
+    let container: CGFloat
+  }
 
   var body: some View {
     let rows = threadRoot == nil ? store.rows(for: agentId) : store.threadRows[agentId] ?? []
@@ -228,6 +244,8 @@ private struct Transcript: View {
       if case .thread(_, let root, let count, _) = row, bubbleIds.contains(root) { return (root, count) }
       return nil
     }, uniquingKeysWith: { first, _ in first })
+    // Each entry's time, for a sideways swipe (`Lpt`'s `timestampMs`).
+    let times = Dictionary((store.transcripts[agentId] ?? []).compactMap { entry in entry.timestampMs.map { (entry.id, $0) } }, uniquingKeysWith: { first, _ in first })
     GeometryReader { box in
       let width = max(0, box.size.width - 32)
       ScrollView {
@@ -237,21 +255,20 @@ private struct Transcript: View {
               EmptyView()
             } else {
               // Under the last message while the agent works, the working line meets its bubble (`isIndicatorSeamingBubble`).
-              TranscriptRow(row: row, agentId: agentId, isGroup: agent?.isGroup ?? false, run: runs[row.id] ?? RunFlags(), seamsBelow: activity != nil && row.id == rows.last?.id, threadCount: threads[row.id], threadRoot: threadRoot, visibleIds: bubbleIds, width: width, look: look)
+              TranscriptRow(row: row, agentId: agentId, isGroup: agent?.isGroup ?? false, run: runs[row.id] ?? RunFlags(), seamsBelow: activity != nil && row.id == rows.last?.id, threadCount: threads[row.id], threadRoot: threadRoot, visibleIds: bubbleIds, width: width, entering: entering.contains(row.id), time: Transcript.time(of: row, in: times), look: look)
                 .environment(\.findMarks, find?.marks(for: row.id))
             }
           }
-          if let agent, let activity {
-            ActivityRow(agent: agent, line: activity, look: look)
-          }
+          ActivitySlot(agent: agent, line: activity, look: look)
         }
         .scrollTargetLayout()
         .padding(.horizontal, 16)
         .padding(.top, threadRoot == nil ? 116 : 44)
-        // Over the message field: its frame and 68 (the working line takes 40 of that while the agent works).
-        .padding(.bottom, control.composerHeight + (activity == nil ? 68 : 28))
+        // Over the message field: its frame and 28 (the working line's 40 is in the slot).
+        .padding(.bottom, control.composerHeight + 28)
       }
       .scrollPosition($position)
+      .background { PeekCatcher(control: control) }
       .onChange(of: control.jump) { _, jump in
         guard let jump else { return }
         withAnimation(.easeInOut(duration: 0.3)) { position.scrollTo(id: jump.id, anchor: .center) }
@@ -267,25 +284,69 @@ private struct Transcript: View {
           control.jump(to: id)
         } else {
           control.jumpAfterThread = nil
+          pinned = true
           position.scrollTo(edge: .bottom)
         }
       }
-      // A taller field (a reply, more lines) keeps the newest message clear of it.
-      .onChange(of: control.composerHeight) { _, _ in
-        if atNewest { position.scrollTo(edge: .bottom) }
-      }
       .defaultScrollAnchor(.bottom, for: .initialOffset)
-      .onScrollGeometryChange(for: Bool.self) { geometry in
-        geometry.contentOffset.y + geometry.containerSize.height >= geometry.contentSize.height - 48
-      } action: { _, near in
-        atNewest = near
+      .onScrollPhaseChange { _, phase in
+        userScrolling = phase == .tracking || phase == .interacting || phase == .decelerating
       }
-      .onChange(of: rows) { _, _ in
-        if atNewest { position.scrollTo(edge: .bottom) }
+      .onScrollGeometryChange(for: Bottom.self) { geometry in
+        Bottom(gap: geometry.contentSize.height - geometry.visibleRect.maxY, height: geometry.contentSize.height, container: geometry.containerSize.height)
+      } action: { old, new in
+        follow(old, new)
       }
-      .onChange(of: activity == nil) { _, _ in
-        if atNewest { position.scrollTo(edge: .bottom) }
+      .onChange(of: rows.map(\.id)) { old, new in
+        arrived(old, new)
       }
+    }
+  }
+
+  /** The window's pin (`lht`, 4 points) and its smooth follow while pinned. */
+  private func follow(_ old: Bottom, _ new: Bottom) {
+    if new.gap <= 4 {
+      pinned = true
+    } else if userScrolling && new.gap > old.gap + 0.5 {
+      pinned = false
+    }
+    guard pinned, abs(new.height - old.height) > 0.5 else { return }
+    if new.height > old.height && old.height > old.container {
+      withAnimation(.smooth(duration: 0.3)) { position.scrollTo(edge: .bottom) }
+    } else {
+      position.scrollTo(edge: .bottom)
+    }
+  }
+
+  /** Rows appended while pinned come in (`KMt`); a chat opened or a thread switched is a new baseline. */
+  private func arrived(_ old: [String], _ new: [String]) {
+    let key = "\(agentId)|\(threadRoot ?? "")"
+    defer { rowsOf = key }
+    guard rowsOf == key, pinned, !old.isEmpty else { return }
+    let before = Set(old)
+    let added = new.filter { !before.contains($0) }
+    guard !added.isEmpty else { return }
+    entering.formUnion(added)
+    Task {
+      try? await Task.sleep(for: .milliseconds(320))
+      entering.subtract(added)
+    }
+  }
+
+  /** An entry's row comes in; the window's grouped rows (an exchange, routines) and its times and "New" line do not. */
+  static func enters(_ row: ChatRow) -> Bool {
+    switch row {
+    case .stamp, .unread, .teammates, .routines: return false
+    default: return true
+    }
+  }
+
+  /** A row's time for a swipe: its entry's, or the message's own. */
+  static func time(of row: ChatRow, in times: [String: Double]) -> Double? {
+    switch row {
+    case .stamp, .unread, .thread, .failedSend, .queuedSend: return nil
+    case .bubble(let bubble): return bubble.timestampMs ?? times[bubble.id]
+    default: return times[row.id]
     }
   }
 }
@@ -311,6 +372,10 @@ private struct TranscriptRow: View {
   /** The messages on screen, so a quote of one jumps to it. */
   let visibleIds: Set<String>
   let width: CGFloat
+  /** Arrived while the chat was at its newest: it comes in. */
+  let entering: Bool
+  /** Its time, shown at its right on a sideways swipe. */
+  let time: Double?
   let look: Look
   @Environment(ChatControl.self) private var control
   @Environment(\.findMarks) private var findMarks
@@ -318,9 +383,15 @@ private struct TranscriptRow: View {
   private var startsGroup: Bool { run.startsGroup }
 
   var body: some View {
+    let mine = row.side == .person
     content
       .padding(.vertical, 2)
+      .modifier(PeekShift(mine: mine))
+      .modifier(RowEntrance(active: entering && Transcript.enters(row), anchor: mine ? .bottomTrailing : .bottomLeading))
       .frame(maxWidth: .infinity, alignment: alignment)
+      .overlay(alignment: .trailing) {
+        if let time { PeekTime(timestampMs: time, look: look) }
+      }
       // A message jumped to from a quote lights up in the warning yellow at 22%, holds, then fades (`sand-12cjh1l`, 2.5 s, ease-out).
       .background(look.warn.opacity(control.lit == row.id ? 0.22 : 0))
   }
@@ -603,7 +674,8 @@ private struct BubbleRow: View {
    */
   @ViewBuilder
   private var bar: some View {
-    if hovered || barHovered || control.menuFor == bubble.id {
+    // Not during a sideways swipe (`:not([data-peeking] *)`).
+    if !control.peeking && (hovered || barHovered || control.menuFor == bubble.id) {
       HoverBar(bubble: bubble, agentId: agentId, inThread: threadRoot != nil, look: look)
         .fixedSize()
         // The 6 between is part of the bar, so the pointer can cross to it.
@@ -1090,35 +1162,6 @@ private struct FileIcon: View {
     case "pdf": return "FileIcons/pdf"
     default: return nil
     }
-  }
-}
-
-// MARK: At work
-
-/**
- * The agent at work (`sand-activity-slot`, 36 high, padded 8 on the left):
- * its butterfly (28, facing the other way) and what it is doing, 14,
- * medium, under the window's sweep of light ("Typing…", "Searching the
- * web"…). The wings' motion is step 2f.
- */
-private struct ActivityRow: View {
-  let agent: Agent
-  let line: ActivityLine
-  let look: Look
-  @Environment(AppStore.self) private var store
-
-  var body: some View {
-    HStack(spacing: 8) {
-      AgentMark(agent: agent, agents: store.agents, size: 28)
-        .scaleEffect(x: -1, y: 1)
-      ShimmerText(words: Text(line.text).font(.system(size: 14, weight: .medium)), look: look)
-        .lineLimit(1)
-    }
-    .padding(.leading, 8)
-    .frame(height: 36)
-    .padding(.vertical, 2)
-    .accessibilityElement(children: .ignore)
-    .accessibilityLabel(line.verb == "typing" ? "\(agent.name) is typing" : "\(agent.name): \(line.text)")
   }
 }
 

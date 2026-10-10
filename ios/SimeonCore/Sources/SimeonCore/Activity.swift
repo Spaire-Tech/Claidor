@@ -91,10 +91,71 @@ public struct ActivityLine: Sendable, Equatable {
 }
 
 extension Agent {
-  /** The words beside its working butterfly in the chat: "Typing…" while it writes, else what it is doing (`dse`); nil when it is not at work. */
+  /**
+   * The words beside its working butterfly in the chat: "Typing…" while it
+   * writes, else what it is doing (`dse`), or "Iris is working" before it
+   * says what (`gJn`); nil when it is not at work.
+   */
   public func activityLine(named: (String) -> String? = { _ in nil }) -> ActivityLine? {
     if isComposing { return ActivityLine("typing", "Typing…", "thinking-medium") }
     guard (isRunning || isRunningTurn) && !awaitingUserResponse else { return nil }
+    guard activityKind != nil else {
+      let who = name.trimmingCharacters(in: .whitespacesAndNewlines)
+      return ActivityLine(verb: "working", text: who.isEmpty ? "Working…" : "\(who) is working", icon: .glyph("working"))
+    }
     return ActivityLine.of(kind: activityKind, tool: activityTool, detail: activityDetail, target: activityTarget, targetName: activityTarget.flatMap(named))
+  }
+}
+
+/**
+ * What the working line shows while the agent works (the window's `EJn`):
+ * a new activity takes the place of the one shown only once that one has
+ * had 0.8 s (`Apt`), so quick steps do not flicker; the same words swap in
+ * place; and once one activity has shown for a minute, its time joins it
+ * (" · 3m", `eJn`).
+ */
+public struct ActivityHold: Sendable, Equatable {
+  public private(set) var shown: ActivityLine?
+  /** Seconds. */
+  public private(set) var shownAt: Double
+  /** A newer line waiting for the shown one's 0.8 s. */
+  public private(set) var queued: ActivityLine?
+
+  public static let hold = 0.8
+
+  public init(_ line: ActivityLine?, at now: Double) {
+    shown = line; shownAt = now
+  }
+
+  private static func same(_ a: ActivityLine?, _ b: ActivityLine?) -> Bool {
+    guard let a, let b else { return a == nil && b == nil }
+    return a.key == b.key && a.text == b.text
+  }
+
+  /** The line the agent's activity gives now (`XMn`). */
+  public mutating func want(_ line: ActivityLine?, at now: Double) {
+    if ActivityHold.same(shown, line) {
+      shown = line; queued = nil
+    } else if shown == nil || now - shownAt >= ActivityHold.hold {
+      shown = line; shownAt = now; queued = nil
+    } else {
+      queued = line
+    }
+  }
+
+  /** When the waiting line may take over (`QMn`). */
+  public var due: Double? { queued == nil ? nil : shownAt + ActivityHold.hold }
+
+  /** The time on the shown line, once it has shown a minute. */
+  public func elapsed(at now: Double) -> String? {
+    guard shown != nil else { return nil }
+    return ActivityLine.elapsed(now - shownAt)
+  }
+
+  /** The next whole minute on the shown line, when its time changes (`tJn`). */
+  public func nextMinute(after now: Double) -> Double? {
+    guard shown != nil else { return nil }
+    let minutes = max(1, ((now - shownAt) / 60).rounded(.down) + 1)
+    return shownAt + minutes * 60
   }
 }
