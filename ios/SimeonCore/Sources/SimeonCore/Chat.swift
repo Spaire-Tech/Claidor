@@ -144,8 +144,8 @@ public struct RoutineRef: Hashable, Sendable {
 
 /** The cards that wait on the person: an auto-review approval, a secret, or the computer handed over. */
 public enum RequestCard: Hashable, Sendable {
-  /** `auto-review-approval`: Allow once, Always allow, Deny (`resolveAutoReviewApproval`). */
-  case approval(requestId: String, summary: String, reason: String, command: String, status: String)
+  /** `auto-review-approval`: Allow once, Always allow, Deny (`resolveAutoReviewApproval`); what it is about (`surface`) and the rule Always allow would add (`proposedRule`). */
+  case approval(requestId: String, summary: String, reason: String, command: String?, status: String, surface: String?, proposedRule: String?)
   /** `secret-request`: a password field and Save securely (`submitSecret`). */
   case secret(label: String, description: String, provided: Bool)
   /** A message with `boxRequestId`: "Your turn on the computer" (`handBackForeverBox`). */
@@ -923,16 +923,20 @@ public enum Chat {
         return .listenerConnect(id: entry.id, platform: platform, reason: message["reason"]?.text)
       case "auto-review-approval":
         guard let approval = message["approval"] else { return nil }
-        return .request(id: entry.id, card: .approval(requestId: approval["requestId"]?.string ?? "", summary: approval["summary"]?.string ?? "", reason: approval["reason"]?.string ?? "", command: approval["command"]?.string ?? "", status: approval["status"]?.string ?? "pending"))
+        return .request(id: entry.id, card: .approval(requestId: approval["requestId"]?.string ?? "", summary: approval["summary"]?.string ?? "", reason: approval["reason"]?.string ?? "", command: approval["command"]?.string, status: approval["status"]?.string ?? "pending", surface: approval["surface"]?.string, proposedRule: approval["proposedRule"]?.string))
       case "secret-request":
         guard let secret = message["secretRequest"] else { return nil }
         return .request(id: entry.id, card: .secret(label: secret["label"]?.string ?? "A secret", description: secret["description"]?.string ?? "", provided: entry["secretProvided"]?.bool ?? false))
       case "cloud-agent":
         guard let bcId = message["bcId"]?.text, !bcId.isEmpty else { return nil }
         return .cloudAgent(id: entry.id, bcId: bcId)
-      case "local-tool-permission", "permission-request":
-        // The Mac's own computer asks these; the phone has no part in them.
-        return nil
+      case "local-tool-permission":
+        // Waiting, it is the Mac's dock above the composer, not a line; expired, it is gone; answered, one line says how (`_Ln`).
+        guard let ask = LocalAsk(entry: entry), ask.status != "pending", ask.status != "expired" else { return nil }
+        return .notice(id: entry.id, text: LocalToolAsk.outcome(status: ask.status))
+      case "permission-request":
+        // The older card, retired in the window (`yGe`, variant "retired").
+        return .notice(id: entry.id, text: "This message type is no longer supported in Simeon.")
       default:
         if let text = message["content"]?.text {
           return .bubble(Bubble(id: entry.id, text: text, fromPerson: false, author: entry.author, showsName: false, showsAvatar: false, reactions: reactions, isStreaming: false, replyTo: entry["replyTo"]?.text, timestampMs: entry.timestampMs))

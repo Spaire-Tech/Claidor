@@ -30,6 +30,8 @@ struct SimeonMacApp: App {
         .task { HangWatch.start() }
         // The call's banner, a panel of its own above every window (`MacCallBanner`).
         .task { MacCallBanner.shared.follow(session.store) }
+        // Notifications, the Dock's number, the window in front, the local-computer setting (`MacServices`).
+        .task { MacServices.shared.follow(session) }
         // A link to the app (back from the browser's sign-in, a connector to add) comes to this window, not a new one.
         .onOpenURL { url in navigation.open(url) }
         .handlesExternalEvents(preferring: ["*"], allowing: ["*"])

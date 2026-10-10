@@ -1169,6 +1169,77 @@ struct QuickLookSheet: UIViewControllerRepresentable {
 
 // MARK: - Requests: approvals, secrets, the computer
 
+/**
+ * "Show the command" or "Show the details" (`RAn`): folded at first, open it
+ * is the text cut at 340 characters with a copy button for all of it. Open
+ * or not is kept apart while the card waits and once answered, so an
+ * answered card folds again.
+ */
+struct ApprovalDisclosure: View {
+  let subject: AutoReviewCard.Subject
+  let text: String
+  let pending: Bool
+  @State private var openWaiting = false
+  @State private var openAnswered = false
+
+  var body: some View {
+    let open = pending ? openWaiting : openAnswered
+    VStack(alignment: .leading, spacing: 6) {
+      Button {
+        if pending { openWaiting.toggle() } else { openAnswered.toggle() }
+      } label: {
+        HStack(spacing: 4) {
+          Image(systemName: open ? "chevron.down" : "chevron.right").font(.system(size: 10, weight: .semibold)).frame(width: 14, height: 14)
+          Text("\(open ? "Hide" : "Show") the \(subject.rawValue)").font(.system(size: 13))
+        }
+        .foregroundStyle(Ink.secondary)
+        .contentShape(.rect)
+      }
+      .buttonStyle(.plain)
+      if open {
+        ApprovalCode(shown: AutoReviewCard.clip(text), full: text)
+      }
+    }
+  }
+}
+
+/** The folded text open: monospaced, scrolling sideways, Copy taking the whole of it ("Copy code", then "Copied"). */
+struct ApprovalCode: View {
+  let shown: String
+  let full: String
+  @State private var copied = false
+
+  var body: some View {
+    ScrollView(.horizontal, showsIndicators: false) {
+      Text(shown).font(.system(size: 13, design: .monospaced)).foregroundStyle(Ink.secondary).lineSpacing(4)
+        .fixedSize(horizontal: true, vertical: true)
+        .padding(.horizontal, 12).padding(.vertical, 8)
+        .textSelection(.enabled)
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .background(Ink.field, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+    .overlay(alignment: .topTrailing) {
+      Button {
+        UIPasteboard.general.string = full
+        copied = true
+        Task { @MainActor in
+          try? await Task.sleep(nanoseconds: 2_000_000_000)
+          copied = false
+        }
+      } label: {
+        Image(systemName: copied ? "checkmark" : "doc.on.doc").font(.system(size: 11, weight: .medium)).foregroundStyle(Ink.secondary)
+          .frame(width: 24, height: 24).contentShape(.rect)
+      }
+      .buttonStyle(.plain)
+      .padding(4)
+      .accessibilityLabel(copied ? "Copied" : "Copy code")
+      #if os(macOS)
+      .help(copied ? "Copied" : "Copy code")
+      #endif
+    }
+  }
+}
+
 struct RequestCardView: View {
   let entryId: String
   let agentId: String
@@ -1183,8 +1254,8 @@ struct RequestCardView: View {
   var body: some View {
     Group {
       switch card {
-      case .approval(let requestId, let summary, let reason, let command, let status):
-        approval(requestId: requestId, summary: summary, reason: reason, command: command, status: status)
+      case .approval(let requestId, let summary, let reason, let command, let status, let surface, let proposedRule):
+        approval(requestId: requestId, summary: summary, reason: reason, command: command, status: status, surface: surface, proposedRule: proposedRule)
       case .secret(let label, let description, let provided):
         secretCard(label: label, description: description, provided: provided)
       case .computer(let requestId, let instruction, let resolution):
@@ -1194,27 +1265,44 @@ struct RequestCardView: View {
     .frame(maxWidth: ChatMetrics.bubbleMax(width), alignment: .leading)
   }
 
-  private func approval(requestId: String, summary: String, reason: String, command: String, status: String) -> some View {
-    VStack(alignment: .leading, spacing: 10) {
-      HStack(spacing: 8) {
-        Text("Approval needed").font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.primary)
-        Spacer(minLength: 0)
-        StatusPill(text: status == "pending" ? "Waiting for you" : status == "denied" ? "Denied" : status == "expired" ? "Expired" : "Allowed",
-                   dot: status == "pending" ? Ink.blue : status == "denied" ? Ink.danger : Ink.tertiary, size: 12)
+  /**
+   * The auto-review card as the window draws it (the chunk's `me`): the
+   * title by what the agent wants to do, the badge (waiting, or how it was
+   * answered), where it runs, the summary when it says more than the
+   * command, the reason while it waits, the note under Always allowed, the
+   * command or details folded with Copy, and Allow once, Always allow, Deny.
+   * An answer shows at once; a failed one comes back without a word.
+   */
+  private func approval(requestId: String, summary: String, reason: String, command: String?, status: String, surface: String?, proposedRule: String?) -> some View {
+    let shown = status == "pending" ? (store.answeredApprovals[entryId] ?? status) : status
+    let pending = shown == "pending"
+    let heading = AutoReviewCard.title(surface: surface)
+    return VStack(alignment: .leading, spacing: 12) {
+      VStack(alignment: .leading, spacing: 4) {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+          Text(heading.title).font(.system(size: 15, weight: .medium)).foregroundStyle(Ink.primary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+          approvalBadge(shown)
+        }
+        if let location = AutoReviewCard.location(surface: surface) {
+          Text(location).font(.system(size: 12, weight: .medium)).foregroundStyle(Ink.secondary)
+        }
+        if let line = AutoReviewCard.summaryLine(summary: summary, command: command) {
+          Text(line).font(.system(size: 14)).foregroundStyle(Ink.primary).lineSpacing(2).fixedSize(horizontal: false, vertical: true)
+        }
+        if pending, !reason.isEmpty {
+          Text(reason).font(.system(size: 13)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true)
+        }
+        if let note = AutoReviewCard.settledNote(status: shown, rule: AutoReviewCard.rule(proposed: proposedRule)) {
+          Text(note).font(.system(size: 13)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true)
+        }
+        ApprovalDisclosure(subject: heading.subject, text: command ?? summary, pending: pending)
       }
-      Text(summary).font(.system(size: 17)).foregroundStyle(Ink.primary).fixedSize(horizontal: false, vertical: true)
-      if !reason.isEmpty { Text(reason).font(.system(size: 13)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true) }
-      if !command.isEmpty {
-        Text(command).font(.system(size: 12, design: .monospaced)).foregroundStyle(Ink.primary)
-          .padding(8).frame(maxWidth: .infinity, alignment: .leading)
-          .background(Ink.field, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-      }
-      if status == "pending" {
+      if pending {
         HStack(spacing: 8) {
-          Button("Allow once") { resolve(requestId, "approved") }.buttonStyle(BlueButtonStyle())
-          Button("Always allow") { resolve(requestId, "always") }.buttonStyle(GreyButtonStyle())
-          Button("Deny") { resolve(requestId, "denied") }.buttonStyle(GreyButtonStyle())
-          if busy { ProgressView().controlSize(.small) }
+          Button("Allow once") { resolve(requestId, "approved", rule: proposedRule) }.buttonStyle(BlueButtonStyle())
+          Button("Always allow") { resolve(requestId, "always", rule: proposedRule) }.buttonStyle(GreyButtonStyle())
+          Button("Deny") { resolve(requestId, "denied", rule: proposedRule) }.buttonStyle(GreyButtonStyle())
         }
         .disabled(busy)
       }
@@ -1222,8 +1310,22 @@ struct RequestCardView: View {
     .card()
   }
 
-  private func resolve(_ requestId: String, _ resolution: String) {
-    run { await store.resolveApproval(requestId, resolution: resolution, entryId: entryId, in: agentId) }
+  /** Waiting: the turning wheel and "Approval needed", in blue; answered: a dot and how. */
+  @ViewBuilder private func approvalBadge(_ status: String) -> some View {
+    if let badge = AutoReviewCard.badge(status: status) {
+      StatusPill(text: badge.label, dot: badge.kind == .success ? Ink.live : badge.kind == .danger ? Ink.danger : Ink.tertiary, size: 13)
+    } else {
+      HStack(spacing: 4) {
+        ProgressView().controlSize(.mini).tint(Ink.blue)
+        Text("Approval needed").font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.blue).lineLimit(1)
+      }
+      .padding(.leading, 4).padding(.trailing, 8).padding(.vertical, 2)
+      .background(Ink.blue.opacity(0.12), in: Capsule())
+    }
+  }
+
+  private func resolve(_ requestId: String, _ resolution: String, rule: String?) {
+    run { await store.resolveApproval(requestId, resolution: resolution, proposedRule: rule, entryId: entryId, in: agentId) }
   }
 
   private func run(_ work: @escaping () async -> Void) {

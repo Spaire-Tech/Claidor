@@ -11,6 +11,7 @@ import SimeonMacCore
 struct MacRoot: View {
   @Environment(SessionController.self) private var session
   @Environment(AppStore.self) private var store
+  @State private var window: NSWindow?
 
   var body: some View {
     Group {
@@ -45,6 +46,9 @@ struct MacRoot: View {
     }
     // The Electron window's smallest (`window-chrome.ts`).
     .frame(minWidth: 680, minHeight: 520)
+    // The main window, for whether it is the one in front (notifications, `setWindowFocused`).
+    .background(WindowReader(window: $window))
+    .onChange(of: window, initial: true) { _, window in MacServices.shared.mainWindow = window }
     .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
       store.isForeground = true
       // The window coming forward reads the computers again (at most once a minute, not mid-rebuild).

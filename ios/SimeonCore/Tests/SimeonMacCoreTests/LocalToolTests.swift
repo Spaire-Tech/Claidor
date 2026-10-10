@@ -68,3 +68,27 @@ final class LocalToolPermissionTests: XCTestCase {
     XCTAssertEqual(settings.choice, .ask)
   }
 }
+
+/** "Allow once" in the file the Electron app keeps (`local-tool-approvals.ts`). */
+final class LocalToolApprovalsTests: XCTestCase {
+  func testRecordRetireAndClear() throws {
+    let folder = FileManager.default.temporaryDirectory.appendingPathComponent("simeon-approvals-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: folder) }
+    let approvals = LocalToolApprovals(folder: folder)
+    XCTAssertTrue(approvals.all().isEmpty)
+    approvals.record(LocalToolApproval(id: "q1", action: "run-command", target: "ls -la"))
+    approvals.record(LocalToolApproval(id: "q2", action: "read-file", target: "/tmp/a", resourcePath: "/private/tmp/a"))
+    XCTAssertEqual(approvals.all()["q2"]?.resourcePath, "/private/tmp/a")
+    let written = try JSON.parse(Data(contentsOf: approvals.approvalsURL))
+    XCTAssertEqual(written["approvals"]?.array?.count, 2)
+    approvals.retire("q1")
+    XCTAssertEqual(Set(approvals.live().keys), ["q2"])
+    XCTAssertEqual(Set(approvals.all().keys), ["q1", "q2"])
+    approvals.clear()
+    XCTAssertTrue(approvals.all().isEmpty)
+    XCTAssertFalse(FileManager.default.fileExists(atPath: approvals.approvalsURL.path))
+    // A row the Electron app would not read is not read here either.
+    XCTAssertNil(LocalToolApproval(json: ["id": "x", "action": "delete-everything", "target": "/"]))
+    XCTAssertNil(LocalToolApproval(json: ["id": "", "action": "run-command", "target": "ls"]))
+  }
+}

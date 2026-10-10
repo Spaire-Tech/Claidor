@@ -399,7 +399,8 @@ struct TypingSlot: View {
 
   var body: some View {
     let agent = store.agent(agentId)
-    let working = agent.map { $0.isBusy || ($0.isRunning && !$0.awaitingUserResponse) } ?? false
+    // Not while an ask to use the Mac waits in the dock (the window's `!Le`).
+    let working = (agent.map { $0.isBusy || ($0.isRunning && !$0.awaitingUserResponse) } ?? false) && store.localAsks[agentId] == nil
     ZStack(alignment: .leading) {
       if working, let agent {
         TypingRow(agent: agent, step: agent.isGroup ? (agent.activityLabel ?? store.steps[agentId]) : nil)
@@ -613,6 +614,12 @@ struct ChatComposer: View {
         // While this account has no Simeon (`sand-access-notice`): why, and the page; Send waits meanwhile.
         AccessNotice(words: words)
       }
+      #if os(macOS)
+      if let ask = store.localAsks[agentId] {
+        // The agent asks to use this Mac: the card waits here, above the composer (`sand-local-tool-permission-dock`).
+        MacLocalAskCard(ask: ask, agentId: agentId).id(ask.entryId)
+      }
+      #endif
       if !attachments.isEmpty {
         ScrollView(.horizontal, showsIndicators: false) {
           HStack(spacing: 8) {

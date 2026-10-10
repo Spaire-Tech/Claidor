@@ -21,6 +21,25 @@ public struct Party: Hashable, Sendable {
 }
 
 /**
+ * The host's stamp on a roster row (`roster-emit.ts`): an id for the host's
+ * run and a number that only grows, so a late, older copy of an agent's row
+ * can be told from a newer one. It is not what the row says: two copies
+ * that differ only in it are the same row, and redraw nothing.
+ */
+public struct RosterStamp: Hashable, Sendable {
+  public var epoch: String
+  public var seq: Double
+
+  public init(epoch: String = "", seq: Double = 0) {
+    self.epoch = epoch
+    self.seq = seq
+  }
+
+  public static func == (_: RosterStamp, _: RosterStamp) -> Bool { true }
+  public func hash(into hasher: inout Hasher) {}
+}
+
+/**
  * One row of the roster, as the host projects it (`roster-projection.ts`;
  * the window's own reading of it is desktop/window/src/bridge/types.ts).
  */
@@ -65,6 +84,8 @@ public struct Agent: Identifiable, Hashable, Sendable {
   public var createdAt: Double?
   /** What it is for, when the app made it for something (`purpose`: "disk-saver"). */
   public var purpose: String?
+  /** Which copy of the row this is (`snapshotEpoch`, `snapshotSeq`), for the Mac's Dock badge. */
+  public var stamp = RosterStamp()
 
   public init(id: String, name: String, title: String = "", description: String = "", colour: String? = nil, avatarDataURL: String? = nil, isGroup: Bool = false, memberIds: [String] = [], lastMessagePreview: String? = nil, lastActivityAt: Double? = nil, hasUnread: Bool = false, unreadCount: Int = 0, isRunningTurn: Bool = false, isComposing: Bool = false, activityLabel: String? = nil, isHidden: Bool = false) {
     self.id = id; self.name = name; self.title = title; self.description = description; self.colour = colour
@@ -88,7 +109,8 @@ public struct Agent: Identifiable, Hashable, Sendable {
       lastMessagePreview: json["lastMessagePreview"]?.text,
       lastActivityAt: json["lastActivityAt"]?.double ?? json["updatedAt"]?.double,
       hasUnread: json["hasUnread"]?.bool ?? false,
-      unreadCount: json["unreadCount"]?.int ?? 0,
+      // Whole messages, as the Dock counts them (`Math.floor`).
+      unreadCount: json["unreadCount"]?.double.flatMap { $0.isFinite && abs($0) < 1e15 ? Int($0.rounded(.down)) : nil } ?? 0,
       isRunningTurn: json["isRunningTurn"]?.bool ?? json["isRunning"]?.bool ?? false,
       isComposing: json["isComposingMessage"]?.bool ?? false,
       activityLabel: json["currentActivity"]?["label"]?.text,
@@ -108,6 +130,7 @@ public struct Agent: Identifiable, Hashable, Sendable {
     waitingReason = json["awaitingUserResponse"]?["reason"]?.text
     createdAt = json["createdAt"]?.double
     purpose = json["purpose"]?.text
+    stamp = RosterStamp(epoch: json["snapshotEpoch"]?.string ?? "", seq: json["snapshotSeq"]?.double ?? 0)
   }
 
   /**

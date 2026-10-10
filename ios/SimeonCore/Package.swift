@@ -22,6 +22,6 @@ let package = Package(
     .target(name: "SimeonMacCore", dependencies: ["SimeonCore"], swiftSettings: [.swiftLanguageMode(.v5)]),
     // Fixtures/: what the shipped window's own code answered, to check the ports against (the tests say which).
     .testTarget(name: "SimeonCoreTests", dependencies: ["SimeonCore"], resources: [.copy("Fixtures")], swiftSettings: [.swiftLanguageMode(.v5)]),
-    .testTarget(name: "SimeonMacCoreTests", dependencies: ["SimeonMacCore"], swiftSettings: [.swiftLanguageMode(.v5)]),
+    .testTarget(name: "SimeonMacCoreTests", dependencies: ["SimeonMacCore"], resources: [.copy("Fixtures")], swiftSettings: [.swiftLanguageMode(.v5)]),
   ]
 )

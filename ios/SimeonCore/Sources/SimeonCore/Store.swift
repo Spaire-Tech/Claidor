@@ -146,6 +146,10 @@ public final class AppStore {
   @ObservationIgnored public internal(set) var usageReadAt: Date?
   /** Something went wrong that the person should hear about, once. */
   public var problem: String?
+  /** Each chat's first ask to use this Mac still waiting (`entries.find(NNe)`): the Mac's dock above the composer. */
+  public private(set) var localAsks: [String: LocalAsk] = [:]
+  /** Auto-review approvals answered here, by entry, until the box's own copy says so (the window's `QWn`). */
+  public private(set) var answeredApprovals: [String: String] = [:]
   /** An answer the person gave that the host has not echoed yet: the card shows it at once (the window's optimistic answer). */
   public private(set) var pendingAnswers: [String: String] = [:]
   /** Where the "New" line goes in each chat: after this time (ms), set when a chat with unread messages opens. */
@@ -182,6 +186,16 @@ public final class AppStore {
   public private(set) var rosterFailed = false
   /** Retry is reading them again ("Retrying…"). */
   public private(set) var rosterRetrying = false
+  /** What the box says of the agents, as it says it, before the list's own handling: the Mac's notifications and Dock badge (`agents-control-feed.ts`). */
+  public enum RosterNews {
+    /** The agents read at a connect (`listAgents`). */
+    case seed([Agent])
+    case roster([Agent])
+    case update(Agent)
+  }
+  @ObservationIgnored public var rosterNews: ((RosterNews) -> Void)?
+  /** A message the box took (`sendPrompt` answered): the Mac lets go of its "Allow once" answers then (`clearLocalToolApprovals`). */
+  @ObservationIgnored public var promptSent: ((String) -> Void)?
   /** The phone says so in an alert; the Mac's sidebar says it in place, as the window does. */
   @ObservationIgnored public var reportsRosterFailure = true
   /** The app shows the computer's rebuild (the Mac): sending waits through it, the list holds still, Disk Saver is set to work. */
@@ -311,7 +325,7 @@ public final class AppStore {
     backend = nil
     agents = []; transcripts = [:]; chatRows = [:]; steps = [:]; call = nil; callLevels = []; isLive = false; account = nil; usage = .empty; usageReadAt = nil; access = .checking; accessBlocked = false; hasReachedBox = false; openChat = nil
     layoutTask?.cancel(); layoutTask = nil; pendingLayout = []; refreshing = []; caughtUp = [:]
-    pendingAnswers = [:]; unreadAfter = [:]; apps = []; catalog = []; pinnedIds = []; routinesByAgent = [:]; sidebarSections = nil
+    pendingAnswers = [:]; answeredApprovals = [:]; localAsks = [:]; unreadAfter = [:]; apps = []; catalog = []; pinnedIds = []; routinesByAgent = [:]; sidebarSections = nil
     streamingOnly = [:]; outbox = [:]; arrived = []; olderBefore = [:]; loadingOlder = []; paged = []; firstRunAgentId = nil; revealing = [:]
     openThreads = [:]; threadRows = [:]; threadRoots = [:]; loadFailed = []; isDown = false
     computer = ComputerBook(); subagentsByAgent = [:]; pointers = [:]; lastComputerCatchUp = .distantPast
@@ -323,7 +337,9 @@ public final class AppStore {
   public func reloadRoster() async {
     guard let backend else { return }
     do {
-      agents = readingOpenChat(sortRoster(try await backend.listAgents()))
+      let list = try await backend.listAgents()
+      rosterNews?(.seed(list))
+      agents = readingOpenChat(sortRoster(list))
       rosterFailed = false
       accessBlocked = false
       hasReachedBox = true
@@ -349,6 +365,11 @@ public final class AppStore {
 
   public func apply(_ event: BackendEvent) {
     Trace.mark("handling \(event.name)")
+    switch event {
+    case .agents(let list): rosterNews?(.roster(list))
+    case .agentUpserted(let agent): rosterNews?(.update(agent))
+    default: break
+    }
     switch event {
     case .agents where followsRebuild && rebuild.isHardLocked, .agentUpserted where followsRebuild && rebuild.isHardLocked:
       // The agents' list holds still while the computer is rebuilt, and is read again after (`roster.setFrozen`).
@@ -508,7 +529,7 @@ public final class AppStore {
     let gone = Set(agentIds)
     agents.removeAll { gone.contains($0.id) }
     if pinnedIds.contains(where: gone.contains) { pinnedIds.removeAll(where: gone.contains) }
-    for id in agentIds { transcripts[id] = nil; chatRows[id] = nil; routinesByAgent[id] = nil }
+    for id in agentIds { transcripts[id] = nil; chatRows[id] = nil; routinesByAgent[id] = nil; localAsks[id] = nil }
   }
 
   /** An agent changed here before the host says so (an optimistic edit). */
@@ -561,6 +582,8 @@ public final class AppStore {
   private func setTranscript(_ agentId: String, _ entries: [Entry], soon: Bool = false) {
     transcripts[agentId] = entries
     streamingOnly[agentId] = nil
+    let ask = LocalAsk.waiting(in: entries)
+    if localAsks[agentId] != ask { localAsks[agentId] = ask }
     for entry in entries where pendingAnswers[entry.id] != nil && (entry["respondedValue"]?.text != nil || entry["widgetDismissed"]?.bool == true) { pendingAnswers[entry.id] = nil }
     settleOutbox(agentId, entries)
     if soon { scheduleLayout(agentId) } else { layOut(agentId) }
@@ -1065,6 +1088,7 @@ public final class AppStore {
       return
     }
     mark(id, in: agentId, .sent)
+    promptSent?(agentId)
     Task { await sendNextQueued(agentId) }
     settleOutbox(agentId, transcripts[agentId] ?? [])
     layOut(agentId)
@@ -1126,9 +1150,32 @@ public final class AppStore {
     await command("reactToMessage", ["entryId": .string(entryId), "emoji": .string(emoji), "agentId": .string(agentId)], failure: "Couldn't react")
   }
 
-  /** Allow once (`approved`), Always allow (`always`) or Deny (`denied`) on an auto-review approval. */
-  public func resolveApproval(_ requestId: String, resolution: String, entryId: String, in agentId: String) async {
-    await command("resolveAutoReviewApproval", ["requestId": .string(requestId), "resolution": .string(resolution), "entryId": .string(entryId), "agentId": .string(agentId)], failure: "Couldn't answer the approval")
+  /**
+   * Allow once (`approved`), Always allow (`always`) or Deny (`denied`) on an
+   * auto-review approval, as the window's card answers (`pe`): Always allow
+   * first adds the proposed rule to Auto-review, and counts as Allow once
+   * when there is none or it cannot be saved (`de`). The answer shows at
+   * once, "Expired" when the box says the request is stale; any other
+   * failure quietly takes it back, as the card says nothing.
+   */
+  public func resolveApproval(_ requestId: String, resolution: String, proposedRule: String? = nil, entryId: String, in agentId: String) async {
+    guard let backend else { return }
+    let sent = resolution == "always" ? await alwaysAllow(rule: AutoReviewCard.rule(proposed: proposedRule)) : resolution
+    do {
+      _ = try await backend.command("resolveAutoReviewApproval", ["requestId": .string(requestId), "resolution": .string(sent), "entryId": .string(entryId), "agentId": .string(agentId)])
+      answeredApprovals[entryId] = sent
+    } catch {
+      answeredApprovals[entryId] = error.localizedDescription.contains("auto-review/stale") ? "expired" : nil
+    }
+  }
+
+  /** The rule saved to Auto-review's allowed list: `always`, or `approved` when there is none or it could not be saved. */
+  private func alwaysAllow(rule: String?) async -> String {
+    guard let rule, let backend else { return "approved" }
+    guard let settings = try? await backend.command("getHostSettings", [:]) else { return "approved" }
+    let next = AutoReviewInstructions(json: settings["autoReviewInstructions"]).addingAllowRule(rule)
+    guard (try? await backend.command("setHostSettings", ["autoReviewInstructions": next.json])) != nil else { return "approved" }
+    return "always"
   }
 
   public func submitSecret(_ value: String, entryId: String, in agentId: String) async {

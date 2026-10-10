@@ -324,7 +324,7 @@ final class ChatTests: XCTestCase {
       case .listenerConnect(_, let platform, let reason): return "listener:\(platform):\(reason ?? "")"
       case .request(_, let card):
         switch card {
-        case .approval(_, let summary, _, _, let status): return "approval:\(summary):\(status)"
+        case .approval(_, let summary, _, _, let status, _, _): return "approval:\(summary):\(status)"
         case .secret(let label, _, _): return "secret:\(label)"
         case .computer(_, _, let resolution): return "computer:\(resolution ?? "waiting")"
         }

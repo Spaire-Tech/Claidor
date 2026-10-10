@@ -227,6 +227,7 @@
         "desktop/source/host/host-paths.ts",
         "desktop/source/electron-main/startup/startup-data-root-migration.ts",
         "desktop/source/shared/sensitive-local-paths.ts",
+        "ios/SimeonCore/Sources/SimeonMacCore/SensitivePaths.swift",
         "desktop/tests/electron-shell-batch4.test.mjs",
         "desktop/tests/keys-auth-security.test.mjs"
       ],
