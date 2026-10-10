@@ -8,8 +8,9 @@ import SimeonMacCore
  * What the Electron app's main process does around the window, done here by
  * the app itself: the Mac's notifications and the Dock's number
  * (`notifications/`), telling the box whether the window is in front
- * (`setWindowFocused`), the local-computer setting kept per account, and
- * what connecting to the box sets there (`coordinator-resync.ts`).
+ * (`setWindowFocused`), the local-computer setting kept per account, the
+ * agent's hands on this Mac (`MacLocalHands`), and what connecting to the
+ * box sets there (`coordinator-resync.ts`).
  */
 @MainActor
 final class MacServices {
@@ -25,6 +26,7 @@ final class MacServices {
   /** This run's notifications, taken back when another account signs in. */
   private var posted: [String] = []
   private var account: String?
+  private var backendId: ObjectIdentifier?
   private var wasLive = false
   private var askedPermission = false
   /** One `setWindowFocused` at a time, each reading the window when it goes (`createWindowFocusSync`). */
@@ -48,11 +50,19 @@ final class MacServices {
     guard let session else { return }
     let store = session.store
     let state = withObservationTracking {
-      (account: store.account?.email.lowercased(), live: store.isLive, ready: session.firstRun == .done && store.backend != nil)
+      (account: store.account?.email.lowercased(), backend: store.backend.map { ObjectIdentifier($0 as AnyObject) }, live: store.isLive, ready: session.firstRun == .done && store.backend != nil)
     } onChange: { [weak self] in
       Task { @MainActor in self?.track() }
     }
-    if state.account != account { accountChanged(to: state.account, store: store) }
+    // The account is known before its computer is (the last one seen, at launch): both are waited for. Attaching the
+    // computer clears the account until the profile answers; an account gone while a computer is attached is the same one
+    // still, so the setting is not forgotten and the hands start at once. Only no computer at all is signed out.
+    let next = state.account ?? (state.backend != nil ? account : nil)
+    if next != account || state.backend != backendId {
+      let accountChanged = next != account
+      backendId = state.backend
+      changed(to: next, accountChanged: accountChanged, store: store)
+    }
     if state.live && !wasLive, let backend = store.backend { connected(backend) }
     wasLive = state.live
     if state.ready && state.account != nil && !askedPermission {
@@ -67,10 +77,10 @@ final class MacServices {
    * this run's are taken back, the Dock shows none (`resetAccountState`);
    * the local-computer setting is this account's.
    */
-  private func accountChanged(to next: String?, store: AppStore) {
+  private func changed(to next: String?, accountChanged: Bool, store: AppStore) {
     let previous = account
     account = next
-    if previous != nil {
+    if accountChanged && previous != nil {
       feed.reset()
       setBadge(badge.reset())
       UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: posted)
@@ -78,8 +88,11 @@ final class MacServices {
     }
     if let next, let backend = store.backend {
       Task { await MacLocalPermission.shared.signedIn(next, backend: backend) }
-    } else if next == nil {
+      // The agent's hands on this Mac, for this account's computer (not the demo's).
+      if let live = backend as? LiveBackend { Task { await MacLocalHands.shared.start(live.gateway) } }
+    } else if next == nil && store.backend == nil {
       MacLocalPermission.shared.signedOut()
+      Task { await MacLocalHands.shared.stop() }
     }
   }
 
@@ -155,11 +168,15 @@ final class MacServices {
     windowWatch.forEach(NotificationCenter.default.removeObserver)
     windowWatch = []
     if let window {
-      for name in [NSWindow.didBecomeKeyNotification, NSWindow.didResignKeyNotification, NSWindow.willCloseNotification] {
+      for name in [NSWindow.didBecomeKeyNotification, NSWindow.didResignKeyNotification] {
         windowWatch.append(NotificationCenter.default.addObserver(forName: name, object: window, queue: .main) { [weak self] _ in
           MainActor.assumeIsolated { self?.sendFocus() }
         })
       }
+      // Closed, it is gone now (the window object can outlive it): a notification clicked then makes the window again.
+      windowWatch.append(NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: window, queue: .main) { [weak self] _ in
+        MainActor.assumeIsolated { self?.mainWindow = nil }
+      })
     }
     sendFocus()
   }
