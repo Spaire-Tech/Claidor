@@ -1115,7 +1115,7 @@ struct FlightsCardView: View {
               .padding(.trailing, 10)
           }
           let key = FlightPane.key(row: rowId, index: index)
-          FlightRow(offer: offer, grey: grey, pressed: pane.flight?.key == key, look: look) {
+          FlightRow(offer: offer, grey: grey, pressed: pane.isOpen && pane.flight?.key == key, look: look) {
             pane.toggleFlight(key: key, offer: offer, agentId: agentId, layout: layout)
           }
         }
@@ -1213,6 +1213,8 @@ struct AirlineMark: View {
     .overlay { Circle().strokeBorder(ring, lineWidth: ringWidth) }
     .frame(width: side, height: side)
     .task(id: logo) {
+      // Another flight in the same place: its own logo or its initials, never the last one's.
+      picture = nil
       // An https logo, or one written into the card (`data:`); else, or when it fails, the initials.
       guard logo.hasPrefix("https://") || logo.hasPrefix("data:image/"), let url = URL(string: logo), let (data, _) = try? await URLSession.shared.data(from: url) else { return }
       picture = NSImage(data: data)

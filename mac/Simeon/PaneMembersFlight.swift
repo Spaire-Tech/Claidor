@@ -252,7 +252,8 @@ enum MemberRemoval {
       if let parent = alert.window.sheetParent {
         parent.endSheet(alert.window, returnCode: .alertFirstButtonReturn)
       } else {
-        NSApp.stopModal(withCode: .alertFirstButtonReturn)
+        // Run without a window (no sheet): ended from a task, not an event, so stopping it would wait for the next event.
+        NSApp.abortModal()
       }
     }
   }

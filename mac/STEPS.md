@@ -1350,6 +1350,12 @@ and search and "/" use that one rule (they disagreed before).
   here the list changes at once and goes back if refused (the core's way).
 - The rows' keyboard order and focus ring are the Mac's.
 
+- A member with a picture of its own shows its butterfly in the list and
+  in Add Member's menu, as the sidebar does (pictures everywhere come with
+  step 14's pass, as noted in 7b).
+- To check on a Mac: the remove alert growing to show its failure line
+  once it is already open.
+
 #### Where the native parts look different
 
 The remove question is the Mac's alert (the window's own dialog sits in the
