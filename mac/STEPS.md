@@ -122,8 +122,7 @@ first build on the founder's Mac is the first real check.
   writes (Simeon's, on the rail in B05). Here they stand still.
 - **The theme setting** (step 8): the app follows the Mac's light or dark
   setting until Settings is copied.
-- **A new account's first run** (step 6): a new account comes to an empty
-  window.
+- **A new account's first run** (step 6, done).
 - **"Can't reach your computer"** (step 13).
 
 ### Where the native parts look different
@@ -943,8 +942,9 @@ groups is new there (`createChatAgent`, `createChatGroup`). Pushed:
 #### Not in step 5 yet
 
 - The window's prefetch of an agent's chat as its row is lit.
-- The window's "picking" pane (a new agent from a template, `e5n`): it
-  belongs to the first run (step 6).
+- The window's "picking" pane (a new agent from a template, `e5n`): nothing
+  in the merged window opens it (its `openPicker` has no caller), so it is
+  not copied.
 - The window shows its own creation screen while an agent is made; here it
   is the Mac's spinner alone.
 
@@ -957,3 +957,87 @@ alert is Apple's. Keys and layout are the window's.
 
 E01 to E07, light and dark; then the sidebar's row and the message
 field's words with two people on the line.
+
+## Step 6: the first run
+
+Written 10 October 2026, **not built yet** (as step 1), read from the
+window's onboarding flow (`eDn` and its steps, with the renderer patch's
+MEET, COO, CONNECT, COMPUTER and NAME parts) and measured in the reference
+window at 1280 × 800, light and dark (A04–A08b, A30). SimeonCore already had
+the flow's rules and the hand-off (`Onboarding`, `firstRun()`, `handOff()`,
+`saveName()`); new there: Meet's and the computer's beats, the name step's
+suggestion (`namePrompt()`), the computer's probe, and the butterfly's
+"happy" and "proud" moods, tested. Pushed:
+
+- **When it shows**: after "Setting up Simeon's computer", the window's
+  start-up gate: the computer answers, has never been onboarded and has no
+  agents. Otherwise the window opens. To see it on an account that already
+  has agents, launch with `--first-run` (or `SIMEON_FIRST_RUN=1`); its
+  hand-off then makes no second Simeon.
+- **The frame of every step**: the whole window, the ground colour, things
+  placed about its centre. A title (28, `-0.02em`), the step's scene, and
+  Next over Back (288 × 36 pills, 12 apart; Next near black, near white on
+  dark; Back grey; both darker under the pointer). A step fades in over
+  0.2 s as the last fades out over 0.1 s. The top 52 points move the
+  window.
+- **Meet Simeon** (A04): Simeon fades in large (×2.3) on the window's slow
+  spring, turns once round his upright axis (1.4 s), then settles at his
+  seat 40 above the centre while "Meet Simeon" (168 above) and Next (56
+  below) rise in. Back on the next step plays it again.
+- **Simeon is your personal Chief of Staff** (A05): the title 296 above,
+  "He hires an agent for every job you hand off." under it (15, the system's
+  grey), Simeon proud at his seat, and six agents (Inbox, Research, Travel;
+  Finance, Sales, Content) 300 out each side, faint until the blue curve
+  from his side reaches them, one after another.
+- **Your agents connect to the apps you already use** (A06): the site's
+  connector scene: twelve app logos sliding behind a frosted tile one place
+  every 1.6 s, the one behind the glass swelling, the far ones blurred, the
+  row fading at both ends; Simeon on the tile.
+- **They have their own computer and work just like you** (A07): the
+  window's drawing of a computer (the wallpaper, two windows of white
+  tiles) at 1.45 times on the centre; Simeon is the cursor, with the arrow,
+  thinking under the screen, then every 0.9 s moving or pressing: a tile,
+  another, the first window's close (it goes), the second window's button.
+- **How should Simeon & Co call you?** (A08, A08b): three agents bounce in
+  over a white field (300 × 38, the words centred, a blue ring when it has
+  the keys), "They’ll use it in chat and on calls. You can change it later."
+  under it. The field takes the keys after 0.45 s and offers the name the
+  person chose, else Google's first name, until they type; never one made
+  from the e-mail. Return is Next. Empty is allowed: nothing is saved.
+- **The hand-off** (A30): Next on the name step saves the name and shows one
+  line on the centre in the window's moving light: "Getting your team
+  ready…" once the computer answers (asked every 2.5 s from the first
+  step), else "Setting up your Simeon…" with the computer's percentage, or
+  "Waking your computer…". Simeon is made (the Chief of Staff) and starts
+  his introduction; at least 1.5 s later the window opens on his chat
+  (A09). A failure says "Simeon couldn’t finish setting up", why in red,
+  and Try again (no second Simeon).
+- **A window narrower than 600 points** follows the window's phone rules:
+  agents and seats come in to the width, the computer is sized to it, titles
+  are held by their last line and sized to the width, lines may wrap, and a
+  short window scales the whole flow about its centre.
+- People who reduce motion get each scene finished, as the window does.
+
+#### Not in step 6 yet
+
+- The name sheet the window shows once after the first run when no name was
+  given ("What should your agents call you?", Not now asks again next
+  launch): with the account (step 10).
+- The window's `text-wrap: balance` on a narrow window's titles: SwiftUI
+  breaks lines its own way.
+- The butterflies' eyes follow the pointer in the window (`isGazing`); the
+  butterfly has no eyes to move, so nothing shows that in either.
+
+#### Where the native parts look different
+
+The name field is the Mac's own text field (its caret is the Mac's); the
+frosted tile under Simeon on the apps step is Apple's glass, with the
+site's white rim and shadow on it, so its blur is Apple's; Try again and
+the rest are drawn as the window draws them. Meet's turn uses SwiftUI's
+perspective, set to the window's 900 points for an 80-point Simeon.
+
+#### What to compare
+
+A04 to A08b, light and dark, each a few seconds after its Next (the scenes
+move); the moments between them (Meet's turn, the curves drawing, the
+cursor's presses); then A30 and the window opening on Simeon's chat (A09).

@@ -45,6 +45,8 @@ final class MacSession {
     case waitingForBrowser
     /** "Setting up Simeon's computer". */
     case settingUp
+    /** The first run (step 6): a new account, before its window. */
+    case firstRun
     case signedIn
   }
 
@@ -132,6 +134,25 @@ final class MacSession {
     }
     await store.attach(LiveBackend(gateway: Gateway(api: api), api: api))
     guard self.api === api else { return }
+    // The window's start-up gate (`hUn`): a new account, its computer answering with no agents and never onboarded, gets the first run.
+    let gate = await store.firstRun()
+    guard self.api === api else { return }
+    phase = gate == .needed || Self.forcesFirstRun ? .firstRun : .signedIn
+  }
+
+  /**
+   * The first run on any account (`--first-run`, or `SIMEON_FIRST_RUN=1`),
+   * as the window's own "force onboarding" does: to compare it with the
+   * reference. An account that has agents goes through it and its hand-off
+   * makes no second Simeon.
+   */
+  static let forcesFirstRun: Bool = {
+    ProcessInfo.processInfo.arguments.contains("--first-run") || ProcessInfo.processInfo.environment["SIMEON_FIRST_RUN"] == "1"
+  }()
+
+  /** The first run's hand-off is done: the window. */
+  func finishFirstRun() {
+    guard phase == .firstRun else { return }
     phase = .signedIn
   }
 

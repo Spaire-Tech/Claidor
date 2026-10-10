@@ -17,7 +17,7 @@ struct SignInScreen: View {
     ZStack {
       look.ground
       switch session.phase {
-      case .starting, .settingUp, .signedIn:
+      case .starting, .settingUp, .firstRun, .signedIn:
         SettingUp(look: look)
       case .signedOut, .waitingForBrowser:
         Landing(look: look)

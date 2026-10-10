@@ -65,15 +65,19 @@ final class WindowState {
   }
 }
 
-/** The app's one window: the sign-in until the person is signed in and their computer reached, then the sidebar and the chat. */
+/** The app's one window: the sign-in until the person is signed in and their computer reached, a new account's first run, then the sidebar and the chat. */
 struct AppRoot: View {
   @Environment(MacSession.self) private var session
 
   var body: some View {
     Group {
-      if session.phase == .signedIn {
+      switch session.phase {
+      case .signedIn:
         MainWindow()
-      } else {
+      case .firstRun:
+        // The first run (step 6), in the whole window.
+        FirstRunScreen()
+      default:
         SignInScreen()
       }
     }

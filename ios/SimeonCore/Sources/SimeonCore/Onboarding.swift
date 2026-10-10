@@ -48,6 +48,48 @@ public enum Onboarding {
     return "Setting up your Simeon…"
   }
 
+  /**
+   * The name step's field before the person types (`getNamePrompt`): the
+   * name they chose, else Google's first name; never one made from the
+   * e-mail (`namePromptFromSimeon`).
+   */
+  public static func suggestedName(profile: JSON) -> String? {
+    for key in ["preferredName", "suggestedName"] {
+      if let name = profile[key]?.string?.trimmingCharacters(in: .whitespacesAndNewlines), !name.isEmpty { return name }
+    }
+    return nil
+  }
+
+  /**
+   * Meet's beats on its scene clock (35 ms a tick, `Kjn`, stopping at 60):
+   * 0 unseen, 1 from the first tick (Simeon fades in large), 2 from the 16th
+   * (he turns), 3 from the 56th (he settles, the title and Next rise in).
+   * People who reduce motion start at the last.
+   */
+  public static func meetBeat(elapsed: Double, reduceMotion: Bool = false) -> Int {
+    if reduceMotion { return 3 }
+    let tick = min(60, Int((max(0, elapsed) / 0.035).rounded(.down)))
+    return tick >= 56 ? 3 : tick >= 16 ? 2 : tick >= 1 ? 1 : 0
+  }
+
+  /** When each of Meet's beats begins, in seconds. */
+  public static let meetBeatTimes = [0.035, 0.56, 1.96]
+
+  /**
+   * The computer's beat (`demoBeat`): the scene clock ticks every 0.9 s up
+   * to 8 (`Yjn`), the beat one less, so −1 (thinking under the screen) for
+   * the first 0.9 s, then each of the eight frames. Reduce motion: the last.
+   */
+  public static func computerBeat(elapsed: Double, reduceMotion: Bool = false) -> Int {
+    if reduceMotion { return computerFrames.count - 1 }
+    return min(computerFrames.count, Int((max(0, elapsed) / 0.9).rounded(.down))) - 1
+  }
+
+  /** The demo's first window shows from the first beat until its close button is pressed; the second from the fourth beat on (`Gqn`, `Wqn`). */
+  public static func computerWindows(beat: Int) -> (first: Bool, second: Bool) {
+    (beat >= 0 && beat < 6, beat >= 3)
+  }
+
   /** The name as it is saved: spaces run together, trimmed, at most 60 characters (`__simeonNameStep`). */
   public static func normalizedName(_ typed: String) -> String {
     String(typed.split(whereSeparator: \.isWhitespace).joined(separator: " ").prefix(60))
@@ -253,12 +295,24 @@ extension AppStore {
     return id
   }
 
+  /** The name step's suggestion (`GET user/profile`), nil when there is none or the server did not answer. */
+  public func namePrompt() async -> String? {
+    guard let backend, let profile = try? await backend.server("user/profile", method: nil, body: nil) else { return nil }
+    return Onboarding.suggestedName(profile: profile)
+  }
+
   /** The name the agents call the person (`POST user/name`), as the Mac's name step saves it; an empty one is not sent. */
   public func saveName(_ typed: String) async {
     let name = Onboarding.normalizedName(typed)
     guard !name.isEmpty, let backend else { return }
     _ = try? await backend.server("user/name", method: "POST", body: ["name": .string(name)])
     if let account { self.account = Account(name: name, email: account.email, pictureURL: account.pictureURL) }
+  }
+
+  /** Whether the person's computer answers now: the first run asks from its start, every 2.5 s until it does (`onboarding-box-probe`), so the hand-off can say "Getting your team ready…". */
+  public func computerAnswers() async -> Bool {
+    guard let backend else { return false }
+    return (try? await countAgents(backend)) != nil
   }
 
   private func countAgents(_ backend: AgentBackend) async throws -> Int {

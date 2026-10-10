@@ -9,6 +9,8 @@ import Foundation
  */
 public enum MarkState: String, Sendable, CaseIterable {
   case idle, thinking, searching, working, orbit, sending, loading
+  /** The first run's moods (`$_t`'s "happy" and "proud"): Simeon meeting the person, and as their Chief of Staff. */
+  case happy, proud
 
   /** The glyph the butterfly folds into (`A_t`); the other states keep the wings. */
   public var glyph: MarkGlyph? {
@@ -17,7 +19,7 @@ public enum MarkState: String, Sendable, CaseIterable {
     case .orbit: .orbit
     case .sending: .send
     case .loading: .whirl
-    case .idle, .searching, .working: nil
+    case .idle, .searching, .working, .happy, .proud: nil
     }
   }
 
@@ -261,6 +263,11 @@ public final class MarkEngine {
       let e = sin(t * .pi * 2 * 1.6)
       turn.t = 4 + e * 2.5; tilt.t = 3; roll.t = 1.5 + max(0, e) * 3; squash.t = 1 - max(0, e) * 0.02
       if ms >= nextSpinMs { startSpin(direction: 1); nextSpinMs = ms + between(6000, 9000) }
+    case .happy:
+      let e = sin(t * 2.4)
+      turn.t = sin(t * 1.2) * 3; tilt.t = sin(t * 1.1) * 2.5; roll.t = -abs(e) * 3; squash.t = 1 + e * 0.02
+    case .proud:
+      turn.t = sin(t * 0.4) * 2.5; tilt.t = sin(t * 0.35) * 2; roll.t = -4 + sin(t * 0.6); squash.t = 1.03
     case .orbit, .sending, .loading:
       turn.t = 0; tilt.t = 0; roll.t = 0; squash.t = 1
     }

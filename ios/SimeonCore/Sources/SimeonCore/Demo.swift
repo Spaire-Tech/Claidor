@@ -484,6 +484,8 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
       return ["portalUrl": "https://simeonlabs.com/billing"]
     case "user/name":
       return ["preferredName": body?["name"] ?? .null]
+    case "user/profile":
+      return ["email": "bass@example.com", "preferredName": .null, "suggestedName": "Bass"]
     case "proxy/v1/voice/voices":
       return .array([("ljX1ZrXuDIIRVcmiVSyR", "Michael"), ("1t1EeRixsJrKbiF1zwM6", "Jerry"), ("XcXEQzuLXRU9RcfWzEJt", "Veda"), ("s3TPKV1kjDlVtZbl4Ksh", "Adam"), ("UgBBYS2sOqTuMpoF3BR0", "Mark"), ("6OzrBCQf8cjERkYgzSg8", "Jamal")].map { ["id": .string($0.0), "name": .string($0.1)] })
     default:
