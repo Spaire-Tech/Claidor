@@ -326,7 +326,7 @@ window's Gallery chat, one card at a time:
 - **Flights**: the route and trip, one row per offer (the airline's mark,
   the times, airline, time in the air and stops, the price), in Apple's
   greys as the window sets them. Opening an offer shows it in the agent
-  pane, which is step 7's last part (7d); until then the row does nothing.
+  pane (7d, done).
 
 - **"Your turn on the computer"**: the computer tile, "Waiting for you"
   with a pulsing blue dot, the agent's instruction, Take over, I'm done and
@@ -566,7 +566,7 @@ from its code. Pushed so far:
 | "/" Org Chart, Channels | 12 |
 | "/" Open Hidden Agents | 3 |
 | "/" Chat Settings | 7 (done) |
-| "/" Members | 7d |
+| "/" Members | 7d (done) |
 | "/" Settings: General, Settings: Usage & Billing | 8 |
 | "/" Plugins | 9 |
 | "/" Update Simeon's Computer (offered once the computer's update is known to the field) | 13 |
@@ -854,7 +854,7 @@ tested against what the window lists for the same words. Pushed:
 |---|---|
 | Org Chart | 12 |
 | Chat Settings | 7 (done) |
-| Members | 7d |
+| Members | 7d (done) |
 | Channels | 12 |
 | Settings: General, Settings: Usage & Billing | 8 |
 | Plugins | 9 |
@@ -1113,8 +1113,8 @@ details in the pane.
 |---|---|
 | The avatar's button and its pencil (Edit Avatar) | 7b (done) |
 | The Routines tab's page (the tab switches; its page is empty) | 7c (done) |
-| The Computer tab | 13 |
-| "/" and search's Members | 7d |
+| The Computer tab (a group's: 7d, done; an agent's computer) | 13 |
+| "/" and search's Members | 7d (done) |
 
 #### Where the native parts look different
 
@@ -1296,3 +1296,69 @@ the Frequency and Time menus, the Git menu, Teams, the save error, an
 invalid custom line), light and dark; make a routine from New Routine
 (nothing is made until all three are there); Test run and watch
 "Running…"; × on the only trigger.
+
+### 7d: a group's members, a flight's details
+
+Read from the window's members list (`z2n`, `F2n`) and the patch's flight
+pane (`__simeonOpenFlight`, `__simeonUseFlight`, `__simeonFlightDetails`)
+and measured with fixtures (groups of 0 to 6, a working member change, a
+round trip with a logo), light and dark. Pushed:
+
+- **A group's Computer tab** is its members: "Members", a 40-point row for
+  each (its butterfly at 28, its name, cut at its end), Remove at the right
+  under the pointer (red; pale and not pressable with one member left or
+  while a change goes), Add Member while the group has fewer than six and
+  someone can be added, and under the list "Groups can have up to 6
+  members." or "Create more Agents to add them here." A row opens that
+  agent's chat; the pane stays, on its Profile. The tabs' Computer now
+  switches; an agent's computer on it is step 13, and a shared room's tab is
+  empty.
+- **Add Member**: a menu of the agents that are not groups and not in it,
+  most recent first, each with its butterfly; a pick adds it at the end (a
+  refusal says nothing).
+- **Remove**: the Mac's alert, "Remove {name} from this conversation?",
+  Remove and Cancel. Remove reads the members as they are then; while the
+  change goes it reads "Removing..." and neither button can be pressed; a
+  refusal keeps the alert open with "Removing failed. Check your connection
+  and try again."
+- **Members** in search and in "/" opens the pane on Computer, for a group
+  whose members can change.
+- **A flight**: a row of a flights card opens its details in the pane, in
+  place of the agent's page (only the ×): the airline's mark (72, white in
+  both themes), "FROM → TO", date · time · stops; Price, each leg (Departs,
+  Arrives, Flight, Cabin, Time in the air, a layover after a leg that is not
+  the last), Fare; the server's words as they come. The open row shows
+  pressed; pressing it again closes the pane. It opens without growing the
+  window and on no page; another row swaps the flight and keeps the scroll.
+  It belongs to the chat it came from: another agent's pane shows that
+  agent, and going back shows the flight. Closing the pane in any way
+  forgets it (it stays on screen while the pane slides shut, where the
+  window slides out the Profile).
+
+#### A decision taken
+
+The window hides Members for a room the person shares (`isSharedRoom`),
+which this host never sends; it sends `sharedRoomId`, and refuses member
+changes for such a room. Here a group shows its members unless it has a
+`sharedRoomId` (or `isSharedRoom`) or is someone else's room (`remoteRoom`),
+and search and "/" use that one rule (they disagreed before).
+
+#### Not in 7d
+
+- An agent's computer on its Computer tab (step 13).
+- The window adds a member only when the host sends the new list back;
+  here the list changes at once and goes back if refused (the core's way).
+- The rows' keyboard order and focus ring are the Mac's.
+
+#### Where the native parts look different
+
+The remove question is the Mac's alert (the window's own dialog sits in the
+window's middle over a dimmed backdrop; its failure line is red). Add
+Member's list is the Mac's menu. The plus is an SF Symbol.
+
+#### What to compare
+
+The members-* and flight-* captures, light and dark: a group of three, of
+one, of six; Add Member's menu; the remove alert, its "Removing..." and its
+failure; ⌘K and "/" Members for a group and an agent; a flight from a card,
+the same row again, another agent and back.

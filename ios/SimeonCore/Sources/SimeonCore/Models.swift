@@ -66,6 +66,11 @@ public struct Agent: Identifiable, Hashable, Sendable {
   public var voiceId: String?
   /** Someone else's room shared with the person (`remoteRoom`): no voice of its own, as on the Mac. */
   public var isRemoteRoom = false
+  /** A room the person shares (`isSharedRoom`, or the host's `sharedRoomId`): the host refuses member changes for it. */
+  public var isSharedRoom = false
+
+  /** A group whose members the person can change: its Computer tab lists them, and "Members" opens it (`cct`). */
+  public var showsMembers: Bool { isGroup && !isSharedRoom && !isRemoteRoom }
   /** Running a turn or one of its helpers (`isRunning`), waiting on the person (`awaitingUserResponse`), and what it is doing (`currentActivity`): its butterfly's state. */
   public var isRunning = false
   public var awaitingUserResponse = false
@@ -123,6 +128,8 @@ public struct Agent: Identifiable, Hashable, Sendable {
     notifyOnUpdates = json["notifyOnUpdatesEnabled"]?.bool ?? true
     voiceId = json["voiceId"]?.text
     if let room = json["remoteRoom"], room != .null { isRemoteRoom = true }
+    // The window reads `isSharedRoom`, which this host never sends; it sends `sharedRoomId` and refuses member changes for it.
+    if json["isSharedRoom"]?.bool == true || json["sharedRoomId"]?.text != nil { isSharedRoom = true }
     isRunning = json["isRunning"]?.bool ?? isRunningTurn
     if let awaiting = json["awaitingUserResponse"], awaiting != .null { awaitingUserResponse = true }
     activityKind = json["currentActivity"]?["kind"]?.text

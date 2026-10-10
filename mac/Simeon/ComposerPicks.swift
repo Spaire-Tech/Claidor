@@ -117,7 +117,7 @@ extension ComposerPicks {
 
   /** The app's actions "/" offers in this chat. */
   func actions(agentId: String, store: AppStore) -> [ComposerLists.Action] {
-    ComposerLists.appActions(isGroup: store.agent(agentId)?.isGroup ?? false, hasHiddenAgents: store.agents.contains { $0.isHidden })
+    ComposerLists.appActions(isGroup: store.agent(agentId)?.showsMembers ?? false, hasHiddenAgents: store.agents.contains { $0.isHidden })
   }
 
   /** What an open list with nothing to offer says: "@" and "/" say so, "#" and ":" close. */

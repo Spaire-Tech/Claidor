@@ -260,15 +260,17 @@ final class SearchState {
   @ObservationIgnored weak var layout: SidebarLayout?
 
   /**
-   * An action. The themes, Open Hidden Agents and Chat Settings (the pane on
-   * Profile) work now; the rest open screens copied in later steps
-   * (mac/STEPS.md): Org Chart (12), Members (7d), Channels (12), Settings
+   * An action. The themes, Open Hidden Agents, Chat Settings (the pane on
+   * Profile) and Members (on Computer) work now; the rest open screens copied
+   * in later steps (mac/STEPS.md): Org Chart (12), Channels (12), Settings
    * (8), Plugins (9).
    */
   private func run(_ id: String, sidebar: SidebarState) {
     switch id {
     case "info:settings":
       if let pane, let layout { pane.open(.profile, layout: layout) }
+    case "info:members":
+      if let pane, let layout { pane.open(.computer, layout: layout) }
     case "theme:system": MacTheme.set("system")
     case "theme:light": MacTheme.set("light")
     case "theme:dark": MacTheme.set("dark")

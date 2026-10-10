@@ -508,10 +508,10 @@ private struct TranscriptRow: View {
       ApprovalCardView(entryId: id, agentId: agentId, requestId: requestId, summary: summary, reason: reason, command: command, status: status, surface: surface, proposedRule: proposedRule, look: look)
         .frame(maxWidth: limit(520), alignment: .leading)
         .padding(.top, startsGroup ? 12 : 0)
-    case .flights(_, let card):
+    case .flights(let id, let card):
       // An agent's message, drawn in its bubble (`__simeonFlights`).
       let shape = UnevenRoundedRectangle(topLeadingRadius: run.continuesPrevious ? 6 : 18, bottomLeadingRadius: run.continuesNext ? 6 : 18, bottomTrailingRadius: 18, topTrailingRadius: 18)
-      FlightsCardView(card: card, look: look)
+      FlightsCardView(card: card, rowId: id, agentId: agentId, look: look)
         .padding(.vertical, 8)
         .padding(.horizontal, 12)
         .background(look.theirs, in: shape)

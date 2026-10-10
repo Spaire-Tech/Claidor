@@ -1073,11 +1073,16 @@ struct CallRecordView: View {
  * initials), the times (15) over the airline, time in the air and stops
  * (13, grey), the price (15) and a chevron; half-point hairlines between
  * rows from the times' edge. Apple's own greys, as the window sets them.
- * Opening an offer shows it in the agent pane (step 7).
+ * Opening an offer shows it in the agent pane (7d); again closes it.
  */
 struct FlightsCardView: View {
   let card: FlightsCard
+  /** The card's row in the chat and its agent: an offer's key, and whose pane it shows in. */
+  let rowId: String
+  let agentId: String
   let look: Look
+  @Environment(PaneState.self) private var pane
+  @Environment(SidebarLayout.self) private var layout
 
   private var grey: Color { look.dark ? Color(hex: 0x98989d) : Color(hex: 0x86868b) }
 
@@ -1109,7 +1114,10 @@ struct FlightsCardView: View {
               .padding(.leading, 58)
               .padding(.trailing, 10)
           }
-          FlightRow(offer: offer, grey: grey, look: look)
+          let key = FlightPane.key(row: rowId, index: index)
+          FlightRow(offer: offer, grey: grey, pressed: pane.flight?.key == key, look: look) {
+            pane.toggleFlight(key: key, offer: offer, agentId: agentId, layout: layout)
+          }
         }
       }
       .padding(.horizontal, -10)
@@ -1125,13 +1133,16 @@ struct FlightsCardView: View {
 private struct FlightRow: View {
   let offer: FlightOffer
   let grey: Color
+  /** Its details are open in the pane (`aria-pressed`): the hover's fill stays. */
+  let pressed: Bool
   let look: Look
+  let open: () -> Void
   @State private var hovering = false
 
   var body: some View {
     let ink = look.dark ? Color(hex: 0xf5f5f7) : Color(hex: 0x1d1d1f)
     let stops = offer.stops.components(separatedBy: " · ")
-    Button {} label: {
+    Button(action: open) {
       HStack(spacing: 12) {
         AirlineMark(name: offer.airline, logo: offer.logo)
         VStack(alignment: .leading, spacing: 1) {
@@ -1165,11 +1176,12 @@ private struct FlightRow: View {
           .frame(width: 12, height: 12)
       }
       .padding(10)
-      .background(hovering ? Color(red: 120 / 255, green: 120 / 255, blue: 128 / 255).opacity(look.dark ? 0.24 : 0.1) : Color.clear, in: RoundedRectangle(cornerRadius: 12))
+      .background(hovering || pressed ? Color(red: 120 / 255, green: 120 / 255, blue: 128 / 255).opacity(look.dark ? 0.24 : 0.1) : Color.clear, in: RoundedRectangle(cornerRadius: 12))
       .contentShape(RoundedRectangle(cornerRadius: 12))
     }
     .buttonStyle(.plain)
     .onHover { hovering = $0 }
+    .accessibilityAddTraits(pressed ? [.isSelected] : [])
   }
 }
 
@@ -1178,23 +1190,31 @@ struct AirlineMark: View {
   let name: String
   let logo: String
   var side: CGFloat = 36
+  /** The pane's mark (`--hero`, 72): its logo at 42, its initials at 20, a hairline ring. */
+  var logoSide: CGFloat? = nil
+  var initialsSize: CGFloat? = nil
+  var ring: Color = Color.black.opacity(0.12)
+  var ringWidth: CGFloat = 0.5
   @State private var picture: NSImage?
 
   var body: some View {
+    let logoSide = logoSide ?? side * 22 / 36
     ZStack {
       Circle().fill(Color.white)
       if let picture {
-        Image(nsImage: picture).resizable().interpolation(.high).aspectRatio(contentMode: .fit).frame(width: side * 22 / 36, height: side * 22 / 36)
+        Image(nsImage: picture).resizable().interpolation(.high).aspectRatio(contentMode: .fit).frame(width: logoSide, height: logoSide)
       } else {
         Text(FlightsCard.initials(name))
-          .font(.system(size: side / 3, weight: .medium))
+          .font(.system(size: initialsSize ?? side / 3, weight: .medium))
           .foregroundStyle(Color(hex: 0x6e6e73))
       }
     }
-    .overlay { Circle().strokeBorder(Color.black.opacity(0.12), lineWidth: 0.5) }
+    .clipShape(Circle())
+    .overlay { Circle().strokeBorder(ring, lineWidth: ringWidth) }
     .frame(width: side, height: side)
     .task(id: logo) {
-      guard logo.hasPrefix("https://"), let url = URL(string: logo), let (data, _) = try? await URLSession.shared.data(from: url) else { return }
+      // An https logo, or one written into the card (`data:`); else, or when it fails, the initials.
+      guard logo.hasPrefix("https://") || logo.hasPrefix("data:image/"), let url = URL(string: logo), let (data, _) = try? await URLSession.shared.data(from: url) else { return }
       picture = NSImage(data: data)
     }
   }

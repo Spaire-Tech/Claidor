@@ -93,6 +93,31 @@ final class PaneState {
     open(.routines, for: agentId, window: window, store: store, layout: layout)
   }
 
+  /** A flight's details (7d), in place of its agent's page; it goes when the pane is closed. */
+  struct OpenFlight: Equatable {
+    let key: String
+    let offer: FlightOffer
+    /** The agent whose chat holds the card: other agents' pages show as usual (`__simeonUseFlight`). */
+    let agentId: String
+  }
+  var flight: OpenFlight?
+
+  /**
+   A flight row in a chat (`__simeonOpenFlight`): the open one again closes the pane; else the pane shows it,
+   opening as the store's own open does (the sidebar folds) but never growing the window, and on no page.
+   */
+  func toggleFlight(key: String, offer: FlightOffer, agentId: String, layout: SidebarLayout) {
+    if isOpen, flight?.key == key {
+      close(layout: layout)
+      return
+    }
+    lingering?.cancel()
+    flight = OpenFlight(key: key, offer: offer, agentId: agentId)
+    contentAlive = true
+    guard !isOpen else { return }
+    show(layout: layout)
+  }
+
   /** A page asked for another agent (Edit Profile), applied when that agent opens. */
   private var request: (agentId: String, section: Section)?
   /** The window grew for it: by how much, and its width after (`$lt`). */
@@ -113,11 +138,18 @@ final class PaneState {
   /** Opens on `section` (the openers' `I` and `A`): the window grows if the pane would not fit beside the rail; an open sidebar folds. */
   func open(_ section: Section = .profile, layout: SidebarLayout) {
     lingering?.cancel()
+    // A closed pane forgot its flight; an open one keeps showing it while the page under it changes (the window's way).
+    if !isOpen { flight = nil }
     self.section = section
     contentAlive = true
     // Kept open but without room (a narrow window): the window grows for it all the same.
     if !isVisible { growWindowIfNeeded() }
     guard !isOpen else { return }
+    show(layout: layout)
+  }
+
+  /** Open (`setInfoPaneOpen(true)`): an open sidebar folds to its rail, and closing will open it again. */
+  private func show(layout: SidebarLayout) {
     withAnimation(Self.motion) {
       if !layout.isCollapsed {
         tookSidebar = true
@@ -148,6 +180,8 @@ final class PaneState {
       self.shrinkWindowIfGrown()
       self.contentAlive = false
       self.section = .profile
+      // Kept while it slid shut (the window drops it first and slides out the Profile; not copied).
+      self.flight = nil
     }
   }
 
@@ -354,7 +388,18 @@ private struct PanePage: View {
 
   var body: some View {
     let look = Look(scheme)
-    if let agentId, let agent = store.agent(agentId), pane.section == .routines, let editor = pane.routineEditor, editor.agentId == agentId {
+    if let agentId, let flight = pane.flight, flight.agentId == agentId {
+      // A flight's details (7d): the top bar's × and the flight, scrolling; kept across flights.
+      VStack(spacing: 0) {
+        PaneTopBar(look: look) { pane.close(layout: layout) }
+        ScrollView {
+          FlightPage(offer: flight.offer, look: look)
+            .padding(EdgeInsets(top: 6, leading: 20, bottom: 40, trailing: 20))
+            .frame(width: width, alignment: .top)
+        }
+        .scrollIndicators(.automatic)
+      }
+    } else if let agentId, let agent = store.agent(agentId), pane.section == .routines, let editor = pane.routineEditor, editor.agentId == agentId {
       // A routine's editor (7c) takes the whole page, its own bars included.
       RoutineEditorPage(agent: agent, model: editor, width: width)
     } else {
@@ -449,8 +494,11 @@ private struct AgentPage: View {
           ProfileBody(agent: agent, look: look)
         case .routines:
           RoutinesBody(agent: agent, look: look)
+        case .computer where agent.showsMembers:
+          // A group's Computer tab is its members (7d); it has no computer of its own.
+          GroupMembersBody(group: agent, look: look)
         case .computer, .channels:
-          // The computer (step 13) and channels (step 12) come with their parts.
+          // An agent's computer (step 13) and channels (step 12) come with their parts; a shared room's tab is empty.
           Color.clear.frame(height: 0)
         }
       }
@@ -669,8 +717,7 @@ private struct PaneTabs: View {
       HStack(spacing: 0) {
         ForEach(Array(tabs.enumerated()), id: \.offset) { index, tab in
           Button {
-            // The computer's page comes with step 13.
-            if tab.section != .computer { pane.section = tab.section }
+            pane.section = tab.section
           } label: {
             TabGlyph(kind: tab.glyph)
               .stroke(chosen == index ? look.paneInk : look.paneTabIdle, style: StrokeStyle(lineWidth: 1.6 * 19 / 24, lineCap: .round, lineJoin: .round))

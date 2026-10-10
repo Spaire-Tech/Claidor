@@ -159,7 +159,7 @@ public enum Jump {
       list.append(Command(id: "open-hidden-chats", label: "Open Hidden Agents", icon: "eye-slash", keywords: ["hidden", "unhide", "hide", "sidebar", "bots"], detail: "Sidebar"))
     }
     if let current {
-      if current.isGroup && !current.isRemoteRoom {
+      if current.showsMembers {
         list.append(Command(id: "info:members", label: "Members", icon: "people", keywords: ["people", "group", "participants"], detail: "Current chat"))
       }
       if hasChannels {

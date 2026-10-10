@@ -317,13 +317,14 @@ struct Composer: View {
   }
 
   /**
-   * An action from "/": the themes and Chat Settings (the agent's pane on
-   * Profile) now; the views, panes and Settings the rest open come with their
+   * An action from "/": the themes, Chat Settings (the agent's pane on
+   * Profile) and Members (on Computer) now; the views, panes and Settings the rest open come with their
    * steps (mac/STEPS.md, 2e).
    */
   private func run(_ action: ComposerLists.Action) {
     switch action.id {
     case "info:settings": pane.open(.profile, layout: layout)
+    case "info:members": pane.open(.computer, layout: layout)
     case "theme:system": MacTheme.set("system")
     case "theme:light": MacTheme.set("light")
     case "theme:dark": MacTheme.set("dark")
