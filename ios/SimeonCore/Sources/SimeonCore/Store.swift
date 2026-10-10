@@ -127,6 +127,8 @@ public final class AppStore {
   }
   /** Each open chat laid out (Chat.rows), kept with its entries so a redraw does not lay it out again. */
   public private(set) var chatRows: [String: [ChatRow]] = [:]
+  /** Each chat's runs (`Chat.runFlags`), the messages still sending among them, by row id: where the Mac sets a row 12 lower and where it rounds a bubble's corner to 6. */
+  public private(set) var runFlags: [String: [String: RunFlags]] = [:]
   /** The step an agent is on right now ("Checking Linear"), by agent. */
   public private(set) var steps: [String: String] = [:]
   public private(set) var call: CallState?
@@ -328,7 +330,7 @@ public final class AppStore {
     listening?.cancel()
     listening = nil
     backend = nil
-    agents = []; transcripts = [:]; chatRows = [:]; steps = [:]; call = nil; callLevels = []; isLive = false; account = nil; usage = .empty; usageReadAt = nil; access = .checking; accessBlocked = false; hasReachedBox = false; openChat = nil
+    agents = []; transcripts = [:]; chatRows = [:]; runFlags = [:]; steps = [:]; call = nil; callLevels = []; isLive = false; account = nil; usage = .empty; usageReadAt = nil; access = .checking; accessBlocked = false; hasReachedBox = false; openChat = nil
     layoutTask?.cancel(); layoutTask = nil; pendingLayout = []; refreshing = []; caughtUp = [:]
     pendingAnswers = [:]; answeredApprovals = [:]; localAsks = [:]; trayList = TrayList(); fileLines = [:]; unreadAfter = [:]; apps = []; catalog = []; pinnedIds = []; routinesByAgent = [:]; sidebarSections = nil
     streamingOnly = [:]; outbox = [:]; arrived = []; olderBefore = [:]; loadingOlder = []; paged = []; firstRunAgentId = nil; revealing = [:]
@@ -558,7 +560,7 @@ public final class AppStore {
     let gone = Set(agentIds)
     agents.removeAll { gone.contains($0.id) }
     if pinnedIds.contains(where: gone.contains) { pinnedIds.removeAll(where: gone.contains) }
-    for id in agentIds { transcripts[id] = nil; chatRows[id] = nil; routinesByAgent[id] = nil; localAsks[id] = nil }
+    for id in agentIds { transcripts[id] = nil; chatRows[id] = nil; runFlags[id] = nil; routinesByAgent[id] = nil; localAsks[id] = nil }
   }
 
   /** An agent changed here before the host says so (an optimistic edit). */
@@ -636,6 +638,9 @@ public final class AppStore {
     let older = olderBefore[agentId] != nil
     var rows = Trace.timed("laying out \(agentId), \(entries.count) lines") { Chat.rows(entries, isGroup: isGroup, unreadAfter: after, mayHoldOlderHistory: older) }
     rows = Self.withSendStates(rows, waiting)
+    let split = Chat.threadSplit(entries, mayHoldOlderHistory: older)
+    let flags = Chat.runFlags(split.visible, unreadAfter: after, threads: Set(split.counts.keys))
+    if runFlags[agentId] != flags { runFlags[agentId] = flags }
     if chatRows[agentId] != rows { chatRows[agentId] = rows }
     threadRoots[agentId] = Self.threadRoots(entries)
     if let root = openThreads[agentId] {

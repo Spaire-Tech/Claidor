@@ -50,11 +50,12 @@ struct AppRoot: View {
 
 /**
  * The sidebar and the chat side by side (`sand-shell`), the sidebar's edge
- * draggable. The chat itself is step 2 (mac/STEPS.md); until then its side
- * is the chat's ground.
+ * draggable. The chat is the open agent's (`ChatPane`), drawn afresh for
+ * each agent so it opens at its newest message with its own draft.
  */
 struct MainWindow: View {
   @Environment(SidebarLayout.self) private var layout
+  @Environment(WindowState.self) private var window
   @Environment(\.colorScheme) private var scheme
 
   var body: some View {
@@ -65,11 +66,19 @@ struct MainWindow: View {
       let sidebarWidth = rail ? SidebarLayout.railWidth : layout.expandedWidth
       HStack(spacing: 0) {
         Sidebar(rail: rail, width: sidebarWidth)
-        ZStack(alignment: .top) {
-          look.ground
-          // The top of the chat moves the window, as the Electron window's title strip does.
-          WindowDragArea().frame(height: 52)
+        Group {
+          if let agentId = window.selected {
+            ChatPane(agentId: agentId)
+              .id(agentId)
+          } else {
+            ZStack(alignment: .top) {
+              look.ground
+              // The top of the chat moves the window, as the Electron window's title strip does.
+              WindowDragArea().frame(height: 52)
+            }
+          }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
       }
       .overlay(alignment: .topLeading) {
         SidebarResizeEdge(windowWidth: windowWidth)

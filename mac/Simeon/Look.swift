@@ -63,6 +63,25 @@ struct Look {
   /** The Sign in button: near black on both themes, its words the light ground's colour. */
   let signInButton = Color(hex: 0x121212)
   let signInLabel = Color(hex: 0xfcfcfc)
+
+  // MARK: The chat (B01, B03)
+
+  /** The person's bubbles and the send button: the window's blue (`#1f5087` on dark). */
+  var yours: Color { dark ? Color(hex: 0x1f5087) : Color(hex: 0x255a93) }
+  let yoursText = Color(hex: 0xfcfcfc)
+  /** An agent's bubbles, files and cards: light grey with a hairline and a soft shadow (dark: `#262626`, no shadow). */
+  var theirs: Color { dark ? Color(hex: 0x262626) : Color(hex: 0xe9e9eb) }
+  var theirsText: Color { dark ? Color(hex: 0xfcfcfc) : Color(hex: 0x1d1d1f) }
+  var theirsHairline: Color { dark ? .clear : Color(red: 20 / 255, green: 30 / 255, blue: 60 / 255).opacity(0.07) }
+  var theirsShadow: Color { dark ? .clear : Color(red: 20 / 255, green: 30 / 255, blue: 60 / 255).opacity(0.04) }
+  /** The chat's head over the messages: the ground at 78%, blurred. */
+  var headerVeil: Color { ground.opacity(0.78) }
+  /** A reaction under a bubble, ringed with the ground. */
+  var reaction: Color { dark ? Color(hex: 0x151515) : Color(hex: 0xf3f3f3) }
+  /** The message field's frame (`sand-prompt-shell`). */
+  var composer: Color { dark ? Color(hex: 0x212121) : Color(hex: 0xfcfcfc) }
+  var composerEdge: Color { dark ? Color(hex: 0x2e2e2e) : ink.opacity(0.3) }
+  var placeholder: Color { ink.opacity(0.3) }
 }
 
 extension Color {

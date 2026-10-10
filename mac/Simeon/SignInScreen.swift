@@ -141,11 +141,23 @@ struct SettingUp: View {
   let look: Look
 
   var body: some View {
-    let words = Text("Setting up Simeon's computer")
-      .font(.system(size: 17, weight: .medium))
-      .tracking(-0.136)
+    ShimmerText(words: Text("Setting up Simeon's computer").font(.system(size: 17, weight: .medium)).tracking(-0.136), look: look)
+      .accessibilityLabel("Setting up Simeon's computer")
+  }
+}
+
+/**
+ * Words with the window's light sweeping across them (`sand-shimmer-text`):
+ * the words at 40%, the sweep at full strength, every 2 seconds. "Setting
+ * up Simeon's computer", and an agent's "Typing…" in its chat.
+ */
+struct ShimmerText: View {
+  let words: Text
+  let look: Look
+
+  var body: some View {
     words
-      .foregroundStyle(look.ink.opacity(0.4))
+      .foregroundStyle(look.inkTertiary)
       .overlay {
         TimelineView(.animation) { timeline in
           let phase = timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 2) / 2
@@ -164,6 +176,5 @@ struct SettingUp: View {
           .mask { words }
         }
       }
-      .accessibilityLabel("Setting up Simeon's computer")
   }
 }

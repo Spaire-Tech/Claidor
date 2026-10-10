@@ -85,9 +85,26 @@ enum ButterflyArt {
   /** The wings as placed in `rect`: what a group member cuts its gap around. */
   static func wings(in rect: CGRect) -> Path { wings.applying(transform(in: rect)) }
 
+  /**
+   * From the mark's own square to `rect`, showing only `crop` of it, fitted
+   * and centred (an SVG `viewBox` drawn `center/contain`, with no ×259/229).
+   */
+  static func transform(showing crop: CGRect, in rect: CGRect) -> CGAffineTransform {
+    let scale = min(rect.width / crop.width, rect.height / crop.height)
+    let offsetX = rect.minX + (rect.width - crop.width * scale) / 2
+    let offsetY = rect.minY + (rect.height - crop.height * scale) / 2
+    return CGAffineTransform(translationX: offsetX, y: offsetY)
+      .scaledBy(x: scale, y: scale)
+      .translatedBy(x: -crop.minX, y: -crop.minY)
+  }
+
   static func draw(_ context: inout GraphicsContext, in rect: CGRect, palette: AgentPalette, dark: Bool, style: Style) {
+    draw(&context, transform: transform(in: rect), palette: palette, dark: dark, style: style)
+  }
+
+  static func draw(_ context: inout GraphicsContext, transform: CGAffineTransform, palette: AgentPalette, dark: Bool, style: Style) {
     var ctx = context
-    ctx.concatenate(transform(in: rect))
+    ctx.concatenate(transform)
     let box = wings.boundingRect
     let ink = Gradient(stops: [
       .init(color: Color(palette.top), location: 0),
