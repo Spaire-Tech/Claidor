@@ -87,6 +87,8 @@ struct MainWindow: View {
       }
       .animation(SidebarLayout.motion, value: rail)
     }
+    // A file, a picture or a diagram opened full screen, over the sidebar and the chat.
+    .overlay { ViewerLayer() }
     .background(KeyWatcher())
   }
 }

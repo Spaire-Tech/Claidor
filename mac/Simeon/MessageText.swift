@@ -76,10 +76,12 @@ struct MessageLine {
   let look: Look
   let agents: [Mentions.AgentName]
   let personName: String?
+  /** App and agent names drawn with their pictures: a message's words, not a file's. */
+  var marksNames = true
 
   /** The same line at another size or in another colour (a heading, a table, a quote). */
   func with(size: CGFloat? = nil, lineHeight: CGFloat? = nil, colour: Color? = nil) -> MessageLine {
-    MessageLine(size: size ?? self.size, lineHeight: lineHeight ?? self.lineHeight, colour: colour ?? self.colour, look: look, agents: agents, personName: personName)
+    MessageLine(size: size ?? self.size, lineHeight: lineHeight ?? self.lineHeight, colour: colour ?? self.colour, look: look, agents: agents, personName: personName, marksNames: marksNames)
   }
 
   func text(_ markdown: String) -> Text {
@@ -112,6 +114,7 @@ struct MessageLine {
   /** Words with their app and agent names. */
   private func plain(_ words: String, style: Style) -> [Text] {
     let ink = style.struck ? look.inkTertiary : colour
+    guard marksNames else { return [style.apply(Text(verbatim: words).foregroundColor(ink))] }
     let ns = words as NSString
     var pieces: [Text] = []
     var cursor = 0
@@ -233,16 +236,28 @@ struct MessageBlocks: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: spacing) {
-      ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
-        BlockView(block: block, line: line)
+      ForEach(Array(blocks.enumerated()), id: \.offset) { index, block in
+        BlockView(block: block, line: line, first: index == 0)
       }
     }
   }
 }
 
+extension EnvironmentValues {
+  /**
+   * Blocks drawn as a Markdown file's page (`sand-file-markdown--document`,
+   * step 2c) rather than a message: headings 1.55, 1.3 and 1.13 of the
+   * words on 1.3 at 600 with 20, 16, 12 and 8 above (none for the first);
+   * lists 24 in; tables 0.93 on 1.6 padded 6 12; quotes 16 in.
+   */
+  @Entry var proseDocument = false
+}
+
 private struct BlockView: View {
   let block: MarkdownBlock
   let line: MessageLine
+  var first = false
+  @Environment(\.proseDocument) private var document
 
   var body: some View {
     switch block {
@@ -253,15 +268,29 @@ private struct BlockView: View {
         paragraph(text, line: line)
       }
     case .heading(let level, let text):
-      let size: CGFloat = level == 1 ? 22 : level == 2 ? 17 : 14
-      let height: CGFloat = level == 1 ? 28 : level == 2 ? 24 : 20
-      let tracking: CGFloat = level == 1 ? -0.264 : level == 2 ? -0.136 : -0.042
-      line.with(size: size, lineHeight: height).text(text)
-        .font(.system(size: size, weight: .semibold))
-        .tracking(tracking)
-        .fixedSize(horizontal: false, vertical: true)
-        .cssLineHeight(height, size: size, weight: .semibold)
-        .padding(.top, level >= 3 ? 8 : 0)
+      if document {
+        let scale: CGFloat = level == 1 ? 1.55 : level == 2 ? 1.3 : level == 3 ? 1.13 : 1
+        let size = (line.size * scale * 100).rounded() / 100
+        let height = size * 1.3
+        let tracking: CGFloat = level == 1 ? -0.012 * size : level == 2 ? -0.008 * size : 0
+        let above: CGFloat = level == 1 ? 20 : level == 2 ? 16 : level == 3 ? 12 : 8
+        line.with(size: size, lineHeight: height, colour: line.look.ink).text(text)
+          .font(.system(size: size, weight: .semibold))
+          .tracking(tracking)
+          .fixedSize(horizontal: false, vertical: true)
+          .cssLineHeight(height, size: size, weight: .semibold)
+          .padding(.top, first ? 0 : above)
+      } else {
+        let size: CGFloat = level == 1 ? 22 : level == 2 ? 17 : 14
+        let height: CGFloat = level == 1 ? 28 : level == 2 ? 24 : 20
+        let tracking: CGFloat = level == 1 ? -0.264 : level == 2 ? -0.136 : -0.042
+        line.with(size: size, lineHeight: height).text(text)
+          .font(.system(size: size, weight: .semibold))
+          .tracking(tracking)
+          .fixedSize(horizontal: false, vertical: true)
+          .cssLineHeight(height, size: size, weight: .semibold)
+          .padding(.top, level >= 3 ? 8 : 0)
+      }
     case .list(let ordered, let start, let items):
       ListBlock(ordered: ordered, start: start, items: items, depth: 0, line: line)
     case .quote(let blocks):
@@ -270,9 +299,10 @@ private struct BlockView: View {
         Rectangle()
           .fill(line.look.ink.opacity(0.3))
           .frame(width: 2)
-        AnyView(MessageBlocks(blocks: blocks, line: line.with(colour: line.look.inkSecondary)))
-          .padding(.leading, 10)
+        AnyView(MessageBlocks(blocks: blocks, line: line.with(colour: line.look.inkSecondary), spacing: document ? 12 : 10))
+          .padding(.leading, document ? 16 : 10)
       }
+      .padding(.vertical, document ? 2 : 0)
       .fixedSize(horizontal: false, vertical: true)
     case .code(let language, let text):
       if language?.lowercased() == "mermaid" {
@@ -283,8 +313,13 @@ private struct BlockView: View {
     case .table(let header, let alignments, let rows):
       TableBlock(header: header, alignments: alignments, rows: rows, line: line)
     case .rule:
-      // The window's rule is drawn with no width: only its line of space shows.
-      Color.clear.frame(height: 1)
+      if document {
+        // A file's rule: a line at 10%, 6 above and below.
+        Rectangle().fill(line.look.ink.opacity(0.1)).frame(height: 1).padding(.vertical, 6)
+      } else {
+        // The window's rule is drawn with no width: only its line of space shows.
+        Color.clear.frame(height: 1)
+      }
     case .math(let tex):
       DrawingView(drawing: .maths(tex), look: line.look)
     }
@@ -342,7 +377,9 @@ private struct ListBlock: View {
     .padding(.leading, tasks ? 4 : 0)
   }
 
-  private var indent: CGFloat { depth == 0 ? 20 : 16 }
+  @Environment(\.proseDocument) private var document
+
+  private var indent: CGFloat { document ? 24 : depth == 0 ? 20 : 16 }
 
   private func marker(_ index: Int) -> String {
     if ordered { return "\(start + index)." }
@@ -411,10 +448,16 @@ private struct TableBlock: View {
   let rows: [[String]]
   let line: MessageLine
 
+  @Environment(\.proseDocument) private var document
+
+  /** A file's page draws its tables at 0.93 of its words on 1.6, padded 6 12. */
+  private var size: CGFloat { document ? (line.size * 0.93 * 100).rounded() / 100 : 13 }
+  private var height: CGFloat { document ? size * 1.6 : 18 }
+
   var body: some View {
     let look = line.look
-    let head = line.with(size: 13, lineHeight: 18, colour: look.ink)
-    let cells = line.with(size: 13, lineHeight: 18, colour: look.inkSecondary)
+    let head = line.with(size: size, lineHeight: height, colour: look.ink)
+    let cells = line.with(size: size, lineHeight: height, colour: look.inkSecondary)
     ScrollView(.horizontal) {
       Grid(alignment: .leading, horizontalSpacing: 0, verticalSpacing: 0) {
         GridRow {
@@ -443,10 +486,11 @@ private struct TableBlock: View {
   private func cell(_ text: String, column: Int, line: MessageLine) -> some View {
     let alignment = column < alignments.count ? alignments[column] : .leading
     return line.text(text)
-      .font(.system(size: 13))
+      .font(.system(size: size))
       .multilineTextAlignment(alignment == .trailing ? .trailing : alignment == .center ? .center : .leading)
-      .cssLineHeight(18, size: 13)
-      .padding(8)
+      .cssLineHeight(height, size: size)
+      .padding(.vertical, document ? 6 : 8)
+      .padding(.horizontal, document ? 12 : 8)
       .gridColumnAlignment(alignment == .trailing ? .trailing : alignment == .center ? .center : .leading)
   }
 }

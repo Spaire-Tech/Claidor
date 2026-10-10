@@ -818,14 +818,15 @@ struct SecretCardView: View {
  * An agent's pictures under its words (`sand-message-attachments__strip`,
  * 8 below them): one row, 6 apart, each 12 round and 192 high at its own
  * width, the row at most 86% of the chat, 560, or the chat less 82 (smaller
- * together when wider). Grey until drawn. Opening one full screen comes with
- * the file preview.
+ * together when wider). Grey until drawn. A picture opens full screen
+ * ("Open image full screen"), the message's others beside it.
  */
 struct PictureStrip: View {
   let images: [ChatImage]
   let agentId: String
   let limit: CGFloat
   let look: Look
+  @Environment(Viewers.self) private var viewers
 
   var body: some View {
     let ratios = images.map { image -> CGFloat in
@@ -837,9 +838,17 @@ struct PictureStrip: View {
     let height = natural + gaps > limit && natural > 0 ? max(48, (limit - gaps) / ratios.reduce(0, +)) : 192
     HStack(spacing: 6) {
       ForEach(Array(images.enumerated()), id: \.offset) { index, image in
-        ChatPicture(image: image, agentId: agentId, look: look)
-          .frame(width: (height * ratios[index]).rounded(), height: height.rounded())
-          .clipShape(RoundedRectangle(cornerRadius: 12))
+        Button {
+          let items = images.map { MediaItem(url: $0.url, agentId: agentId, caption: $0.alt.isEmpty ? nil : $0.alt, name: nil) }
+          viewers.shown = .media(items, start: index)
+        } label: {
+          ChatPicture(image: image, agentId: agentId, look: look)
+            .frame(width: (height * ratios[index]).rounded(), height: height.rounded())
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .contentShape(RoundedRectangle(cornerRadius: 12))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(FilePreview.kind(image.url) == .video ? "Open video full screen" : "Open image full screen")
       }
     }
   }

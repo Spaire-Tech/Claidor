@@ -13,6 +13,7 @@ struct SimeonMacApp: App {
   @State private var session = MacSession()
   @State private var window = WindowState()
   @State private var layout = SidebarLayout()
+  @State private var viewers = Viewers()
 
   init() {
     Faces.register()
@@ -25,6 +26,7 @@ struct SimeonMacApp: App {
         .environment(session.store)
         .environment(window)
         .environment(layout)
+        .environment(viewers)
         .task { await session.start() }
         // The browser's confirm page opens `simeon-mac://…`, which brings the app forward; the poll finishes the sign-in.
         .onOpenURL { _ in }

@@ -1,0 +1,557 @@
+{
+ "kinds": [
+  {
+   "name": "Q3 report.pdf",
+   "kind": "pdf",
+   "language": null
+  },
+  {
+   "name": "photo.PNG",
+   "kind": "image",
+   "language": null
+  },
+  {
+   "name": "clip.mov",
+   "kind": "video",
+   "language": null
+  },
+  {
+   "name": "voice.m4a",
+   "kind": "audio",
+   "language": null
+  },
+  {
+   "name": "data.csv",
+   "kind": "table",
+   "language": null
+  },
+  {
+   "name": "data.tsv",
+   "kind": "table",
+   "language": null
+  },
+  {
+   "name": "book.xlsx",
+   "kind": "table",
+   "language": null
+  },
+  {
+   "name": "old.xls",
+   "kind": "table",
+   "language": null
+  },
+  {
+   "name": "settings.json",
+   "kind": "json",
+   "language": "json"
+  },
+  {
+   "name": "notes.md",
+   "kind": "markdown",
+   "language": null
+  },
+  {
+   "name": "page.mdx",
+   "kind": "markdown",
+   "language": null
+  },
+  {
+   "name": "contract.docx",
+   "kind": "docx",
+   "language": null
+  },
+  {
+   "name": "old.doc",
+   "kind": "unknown",
+   "language": null
+  },
+  {
+   "name": "refunds.ts",
+   "kind": "text",
+   "language": "typescript"
+  },
+  {
+   "name": "main.swift",
+   "kind": "text",
+   "language": "swift"
+  },
+  {
+   "name": "script.sh",
+   "kind": "text",
+   "language": "bash"
+  },
+  {
+   "name": "Dockerfile",
+   "kind": "unknown",
+   "language": null
+  },
+  {
+   "name": ".env",
+   "kind": "unknown",
+   "language": null
+  },
+  {
+   "name": "archive.zip",
+   "kind": "unknown",
+   "language": null
+  },
+  {
+   "name": "noext",
+   "kind": "unknown",
+   "language": null
+  },
+  {
+   "name": "trailing.",
+   "kind": "unknown",
+   "language": null
+  },
+  {
+   "name": "dir/a.b/c",
+   "kind": "unknown",
+   "language": null
+  },
+  {
+   "name": "C:\\x\\y.JSON",
+   "kind": "json",
+   "language": "json"
+  },
+  {
+   "name": "pic.heic",
+   "kind": "unknown",
+   "language": null
+  },
+  {
+   "name": "pic.svg",
+   "kind": "image",
+   "language": "xml"
+  },
+  {
+   "name": "a.log",
+   "kind": "text",
+   "language": null
+  },
+  {
+   "name": "styles.scss",
+   "kind": "text",
+   "language": "scss"
+  },
+  {
+   "name": "q.sql",
+   "kind": "text",
+   "language": "sql"
+  }
+ ],
+ "csv": [
+  {
+   "label": "simple",
+   "text": "a,b,c\n1,2,3\n",
+   "name": "data.csv",
+   "delimiter": ",",
+   "rows": [
+    [
+     "a",
+     "b",
+     "c"
+    ],
+    [
+     "1",
+     "2",
+     "3"
+    ]
+   ],
+   "all": [
+    [
+     "a",
+     "b",
+     "c"
+    ],
+    [
+     "1",
+     "2",
+     "3"
+    ]
+   ],
+   "total": 2
+  },
+  {
+   "label": "crlf",
+   "text": "a,b\r\n1,2\r\n3,4",
+   "name": "data.csv",
+   "delimiter": ",",
+   "rows": [
+    [
+     "a",
+     "b"
+    ],
+    [
+     "1",
+     "2"
+    ],
+    [
+     "3",
+     "4"
+    ]
+   ],
+   "all": [
+    [
+     "a",
+     "b"
+    ],
+    [
+     "1",
+     "2"
+    ],
+    [
+     "3",
+     "4"
+    ]
+   ],
+   "total": 3
+  },
+  {
+   "label": "quoted",
+   "text": "name,note\n\"Smith, J\",\"said \"\"hi\"\"\"\n\"multi\nline\",x\n",
+   "name": "data.csv",
+   "delimiter": ",",
+   "rows": [
+    [
+     "name",
+     "note"
+    ],
+    [
+     "Smith, J",
+     "said \"hi\""
+    ],
+    [
+     "multi\nline",
+     "x"
+    ]
+   ],
+   "all": [
+    [
+     "name",
+     "note"
+    ],
+    [
+     "Smith, J",
+     "said \"hi\""
+    ],
+    [
+     "multi\nline",
+     "x"
+    ]
+   ],
+   "total": 3
+  },
+  {
+   "label": "blank lines",
+   "text": "a,b\n\n1,2\n\n",
+   "name": "data.csv",
+   "delimiter": ",",
+   "rows": [
+    [
+     "a",
+     "b"
+    ],
+    [
+     ""
+    ],
+    [
+     "1",
+     "2"
+    ]
+   ],
+   "all": [
+    [
+     "a",
+     "b"
+    ],
+    [
+     ""
+    ],
+    [
+     "1",
+     "2"
+    ],
+    [
+     ""
+    ]
+   ],
+   "total": 4
+  },
+  {
+   "label": "semicolons",
+   "text": "a;b;c\n1;2;3\n",
+   "name": "data.csv",
+   "delimiter": ";",
+   "rows": [
+    [
+     "a",
+     "b",
+     "c"
+    ],
+    [
+     "1",
+     "2",
+     "3"
+    ]
+   ],
+   "all": [
+    [
+     "a",
+     "b",
+     "c"
+    ],
+    [
+     "1",
+     "2",
+     "3"
+    ]
+   ],
+   "total": 2
+  },
+  {
+   "label": "tabs in tsv",
+   "text": "a\tb\n1\t2\n",
+   "name": "data.tsv",
+   "delimiter": "\t",
+   "rows": [
+    [
+     "a",
+     "b"
+    ],
+    [
+     "1",
+     "2"
+    ]
+   ],
+   "all": [
+    [
+     "a",
+     "b"
+    ],
+    [
+     "1",
+     "2"
+    ]
+   ],
+   "total": 2
+  },
+  {
+   "label": "pipes",
+   "text": "x|y\n1|2",
+   "name": "data.csv",
+   "delimiter": "|",
+   "rows": [
+    [
+     "x",
+     "y"
+    ],
+    [
+     "1",
+     "2"
+    ]
+   ],
+   "all": [
+    [
+     "x",
+     "y"
+    ],
+    [
+     "1",
+     "2"
+    ]
+   ],
+   "total": 2
+  },
+  {
+   "label": "lone cr",
+   "text": "a,b\r1,2\r",
+   "name": "data.csv",
+   "delimiter": ",",
+   "rows": [
+    [
+     "a",
+     "b"
+    ],
+    [
+     "1",
+     "2"
+    ]
+   ],
+   "all": [
+    [
+     "a",
+     "b"
+    ],
+    [
+     "1",
+     "2"
+    ]
+   ],
+   "total": 2
+  },
+  {
+   "label": "trailing comma",
+   "text": "a,b,\n1,2,\n",
+   "name": "data.csv",
+   "delimiter": ",",
+   "rows": [
+    [
+     "a",
+     "b",
+     ""
+    ],
+    [
+     "1",
+     "2",
+     ""
+    ]
+   ],
+   "all": [
+    [
+     "a",
+     "b",
+     ""
+    ],
+    [
+     "1",
+     "2",
+     ""
+    ]
+   ],
+   "total": 2
+  },
+  {
+   "label": "empty",
+   "text": "",
+   "name": "data.csv",
+   "delimiter": ",",
+   "rows": [],
+   "all": [],
+   "total": 0
+  },
+  {
+   "label": "unicode",
+   "text": "名前,値\n東京,1\n🙂,2\n",
+   "name": "data.csv",
+   "delimiter": ",",
+   "rows": [
+    [
+     "名前",
+     "値"
+    ],
+    [
+     "東京",
+     "1"
+    ],
+    [
+     "🙂",
+     "2"
+    ]
+   ],
+   "all": [
+    [
+     "名前",
+     "値"
+    ],
+    [
+     "東京",
+     "1"
+    ],
+    [
+     "🙂",
+     "2"
+    ]
+   ],
+   "total": 3
+  }
+ ],
+ "summaries": [
+  {
+   "value": "[]",
+   "summary": "[0 items]"
+  },
+  {
+   "value": "[1]",
+   "summary": "[1 item]"
+  },
+  {
+   "value": "[1,2,3]",
+   "summary": "[3 items]"
+  },
+  {
+   "value": "{}",
+   "summary": "{0 keys}"
+  },
+  {
+   "value": "{\"a\":1}",
+   "summary": "{1 key}"
+  },
+  {
+   "value": "{\"a\":1,\"b\":2}",
+   "summary": "{2 keys}"
+  }
+ ],
+ "captions": [
+  {
+   "source": "file:///home/box/pics/photo.png",
+   "index": 0,
+   "total": 2,
+   "out": "photo.png · 1 / 2"
+  },
+  {
+   "source": "file:///home/box/pics/photo.png",
+   "index": 0,
+   "total": 1,
+   "out": "photo.png"
+  },
+  {
+   "caption": "The shoot",
+   "source": "file:///home/box/pics/photo.png",
+   "index": 1,
+   "total": 3,
+   "out": "The shoot · 2 / 3"
+  },
+  {
+   "entryName": "chart.png",
+   "source": "/home/box/pics/x.png",
+   "index": 2,
+   "total": 3,
+   "out": "chart.png · 3 / 3"
+  },
+  {
+   "source": "https://example.com/a/b/c.jpg",
+   "index": 0,
+   "total": 1,
+   "out": "c.jpg"
+  }
+ ],
+ "splits": [
+  {
+   "name": "Launch review.docx",
+   "base": "Launch review",
+   "ext": ".docx"
+  },
+  {
+   "name": ".env",
+   "base": ".env",
+   "ext": ""
+  },
+  {
+   "name": "noext",
+   "base": "noext",
+   "ext": ""
+  },
+  {
+   "name": "a.b.c",
+   "base": "a.b",
+   "ext": ".c"
+  },
+  {
+   "name": "trailing.",
+   "base": "trailing.",
+   "ext": ""
+  }
+ ]
+}

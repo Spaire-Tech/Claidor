@@ -756,8 +756,9 @@ private struct LaterCard: View {
  * A file (`sand-file-card`): 220 to 340 wide, grey and 12 round like an
  * agent's message, padded 8; its kind's icon (36, 6 round), its name (13,
  * medium; the name cut short before the extension, never the extension)
- * over its size (12, at 60%), and Save at the right. Opening it in the
- * preview is step 2c.
+ * over its size (12, at 60%), and Save at the right. The name opens the
+ * preview (step 2c) when the window would: never for a kind it cannot show,
+ * and a text, Markdown or JSON file only once the computer read it as text.
  */
 private struct FileCard: View {
   let name: String
@@ -766,25 +767,31 @@ private struct FileCard: View {
   let width: CGFloat
   let look: Look
   @Environment(AppStore.self) private var store
+  @Environment(Viewers.self) private var viewers
   @State private var meta = ""
+  @State private var readsAsText: Bool?
 
   var body: some View {
     let parts = FileCard.split(name)
     let limit = max(0, min(width * 0.76, 460, width - 82))
+    let opens = FilePreview.opens(FilePreview.kind(name), readsAsText: readsAsText)
     HStack(spacing: 8) {
       FileIcon(name: name, look: look)
       VStack(alignment: .leading, spacing: 0) {
-        Button {} label: {
-          HStack(alignment: .firstTextBaseline, spacing: 0) {
-            Text(parts.base).lineLimit(1).truncationMode(.tail)
-            Text(parts.ext).lineLimit(1).fixedSize()
-          }
-          .font(.system(size: 13, weight: .medium))
-          .foregroundStyle(look.theirsText)
-          .frame(height: 18)
+        let title = HStack(alignment: .firstTextBaseline, spacing: 0) {
+          Text(parts.base).lineLimit(1).truncationMode(.tail)
+          Text(parts.ext).lineLimit(1).fixedSize()
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Open \(name)")
+        .font(.system(size: 13, weight: .medium))
+        .foregroundStyle(look.theirsText)
+        .frame(height: 18)
+        if opens {
+          Button { viewers.open(file: FileItem(name: name, url: url, agentId: agentId)) } label: { title }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open \(name)")
+        } else {
+          title
+        }
         if !meta.isEmpty {
           Text(meta)
             .font(.system(size: 12))
@@ -812,7 +819,11 @@ private struct FileCard: View {
     .overlay { RoundedRectangle(cornerRadius: 12).inset(by: -0.25).stroke(look.theirsHairline, lineWidth: 0.5) }
     .shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1)
     .padding(.vertical, 4)
-    .task(id: url) { meta = await store.fileLine(url) }
+    .task(id: url) {
+      let facts = await store.fileFacts(url)
+      meta = facts.line
+      readsAsText = facts.readsAsText
+    }
   }
 
   /** "Launch review" and ".docx". */
@@ -830,15 +841,9 @@ private struct FileCard: View {
     return min(max(natural, min(220, limit)), min(340, limit))
   }
 
-  /** Save: the file read from the computer, then the Mac's save panel. */
+  /** Save (`downloadAttachment`): the Mac's save panel in Downloads, then the file read from the computer into it. */
   private func save() {
-    Task {
-      guard let data = await store.readFile(url, agentId: agentId) else { return }
-      let panel = NSSavePanel()
-      panel.nameFieldStringValue = name
-      guard panel.runModal() == .OK, let target = panel.url else { return }
-      try? data.write(to: target)
-    }
+    saveFile(name: name, url: url, agentId: agentId, store: store)
   }
 }
 

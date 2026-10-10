@@ -515,6 +515,17 @@
       ],
       "match": "plistNamesPreviousMaker|PREVIOUS_IDENTITY\\.test|belongs to the old path|verifyOfficialMacReference",
       "reason": "The own-shell package check refuses any plist that still names the upstream's maker or app, and its test feeds it those names (Track D, piece 1)."
+    },
+    {
+      "kind": "contract",
+      "names": [
+        "polar"
+      ],
+      "paths": [
+        "mac/Simeon/Rendering/highlight.min.js"
+      ],
+      "match": "plotXY polar|poistrim polar|make-polar|\"Phi_approx\",\"polar\"",
+      "reason": "highlight.js's own word lists for Maxima, Scheme and Stan name their maths function polar; the Mac app ships the library as the window ships it."
     }
   ]
 }

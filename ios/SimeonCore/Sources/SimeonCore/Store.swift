@@ -332,7 +332,7 @@ public final class AppStore {
     backend = nil
     agents = []; transcripts = [:]; chatRows = [:]; runFlags = [:]; steps = [:]; call = nil; callLevels = []; isLive = false; account = nil; usage = .empty; usageReadAt = nil; access = .checking; accessBlocked = false; hasReachedBox = false; openChat = nil
     layoutTask?.cancel(); layoutTask = nil; pendingLayout = []; refreshing = []; caughtUp = [:]
-    pendingAnswers = [:]; answeredApprovals = [:]; localAsks = [:]; trayList = TrayList(); fileLines = [:]; unreadAfter = [:]; apps = []; catalog = []; pinnedIds = []; routinesByAgent = [:]; sidebarSections = nil
+    pendingAnswers = [:]; answeredApprovals = [:]; localAsks = [:]; trayList = TrayList(); fileLines = [:]; fileReadsAsText = [:]; unreadAfter = [:]; apps = []; catalog = []; pinnedIds = []; routinesByAgent = [:]; sidebarSections = nil
     streamingOnly = [:]; outbox = [:]; arrived = []; olderBefore = [:]; loadingOlder = []; paged = []; firstRunAgentId = nil; revealing = [:]
     openThreads = [:]; threadRows = [:]; threadRoots = [:]; loadFailed = []; isDown = false
     computer = ComputerBook(); subagentsByAgent = [:]; pointers = [:]; lastComputerCatchUp = .distantPast
@@ -1256,14 +1256,48 @@ public final class AppStore {
    * failed read, which is tried next time.
    */
   public func fileLine(_ url: String) async -> String {
-    if let known = fileLines[url] { return known }
-    if let sent = sentFile(url) { return FileLine.size(sent.data.count) }
-    guard let backend else { return "" }
+    await fileFacts(url).line
+  }
+
+  /** A file card's line, and whether the computer read the file as text (nil until it answers): text, Markdown and JSON open only then (`skn`). */
+  public struct FileFacts: Equatable, Sendable {
+    public let line: String
+    public let readsAsText: Bool?
+  }
+
+  public func fileFacts(_ url: String) async -> FileFacts {
+    if let known = fileLines[url] { return FileFacts(line: known, readsAsText: fileReadsAsText[url]) }
+    if let sent = sentFile(url) { return FileFacts(line: FileLine.size(sent.data.count), readsAsText: String(data: sent.data, encoding: .utf8) != nil) }
+    guard let backend else { return FileFacts(line: "", readsAsText: nil) }
     let path = url.hasPrefix("file://") ? (URL(string: url)?.path ?? String(url.dropFirst(7))) : url
-    guard let answer = try? await backend.command("readAttachmentText", ["path": .string(path)]) else { return "" }
+    guard let answer = try? await backend.command("readAttachmentText", ["path": .string(path)]) else { return FileFacts(line: "", readsAsText: nil) }
     let line = FileLine.line(answer)
+    let text = answer["kind"]?.string == "text"
     fileLines[url] = line
-    return line
+    fileReadsAsText[url] = text
+    return FileFacts(line: line, readsAsText: text)
+  }
+
+  @ObservationIgnored private var fileReadsAsText: [String: Bool] = [:]
+
+  /** What the preview has of a file (`readAttachmentBytes`): its bytes, too large to show (over 25 MB), or nothing. */
+  public enum PreviewRead: Equatable, Sendable {
+    case ready(Data)
+    case tooLarge(Int)
+    case missing
+  }
+
+  /** A file read for the preview: its size asked first, so a file over the cap is never fetched. */
+  public func readForPreview(_ url: String, agentId: String) async -> PreviewRead {
+    if let sent = sentFile(url) { return sent.data.count > FilePreview.byteCap ? .tooLarge(sent.data.count) : .ready(sent.data) }
+    guard let backend else { return .missing }
+    let path = url.hasPrefix("file://") ? (URL(string: url)?.path ?? String(url.dropFirst(7))) : url
+    if let probe = try? await backend.command("readAttachmentChunk", ["path": .string(path), "agentId": .string(agentId), "offset": .number(0), "length": .number(0)]),
+       let total = probe["totalSize"]?.int, total > FilePreview.byteCap {
+      return .tooLarge(total)
+    }
+    guard let data = await readFile(url, agentId: agentId, limit: FilePreview.byteCap) else { return .missing }
+    return .ready(data)
   }
 
   // MARK: Connected apps (the Mac's Plugins, through `desktopMcp`)

@@ -212,7 +212,7 @@ Written 10 October 2026, **not built yet** (as step 1). Compare with B01
 |---|---|
 | The butterfly and name in the head (View agent settings) | 7 |
 | The call button in the head | 11 |
-| A file's name (opens its preview) | 2c |
+| A file's name (opens its preview) | 2c (done) |
 | The exchanges and routines chips | 2d |
 | "1 reply" under a message | 2d |
 | Attach file | 2e |
@@ -281,7 +281,7 @@ F05 and the Gallery chat's first messages.
 
 | Button | Its part or step |
 |---|---|
-| A diagram (opens full screen) | 2c |
+| A diagram (opens full screen) | 2c (done) |
 
 #### Not in 2b yet
 
@@ -289,10 +289,10 @@ F05 and the Gallery chat's first messages.
   guides at its indents; here the words are one colour.
 - Pictures inside a message (`![…](…)`): 2c.
 
-### 2c: the cards (in progress)
+### 2c: the cards
 
-Being written 10 October 2026, **not built yet**, measured from the
-window's Gallery chat, one card at a time. Pushed so far:
+Written 10 October 2026, **not built yet** (as step 1), measured from the
+window's Gallery chat, one card at a time:
 
 - **Questions**: the question and its help, the X that dismisses it, the
   choices lettered A, B… in one box, "Type your own answer" with Submit;
@@ -336,5 +336,60 @@ window's Gallery chat, one card at a time. Pushed so far:
   pull request, the files and lines it changed, View PR and Open; asked
   again every five seconds while it works.
 
-Still to come in 2c: opening a file or a picture in the preview, and a
-diagram full screen.
+#### Opening a file, a picture or a diagram
+
+Measured from the window's three viewers with sample files (a two-page
+PDF, a CSV, Markdown, JSON and TypeScript) served to the reference window.
+Each covers the whole window, sidebar included; Escape closes it.
+
+- **A file's preview**: the window dimmed (90%, 95% on dark), the panel up
+  to 1100 wide, 12 round with a deep shadow. Its head: the name, a grey
+  line under it ("2 pages", "3 rows", or "Showing the start of this file"
+  past 1.5 million characters), Download (the save panel in Downloads) and
+  Close. A click outside the panel closes it. The name on a file card opens
+  it only when the window's would: never for a kind it cannot show, and a
+  text, Markdown or JSON file only once the computer has read it as text
+  (SimeonCore's `FilePreview`, tested against the window's own functions).
+  Pictures and videos open in the media viewer instead.
+- **PDF**: the pages one under another, 16 apart, as wide as the panel
+  less 32, each with its number at its foot; Zoom out, "1 / 2" and Zoom in
+  in the head (a quarter a step, half to four times), + and − too. In
+  Apple's PDF view, so the words can be chosen and copied.
+- **Markdown**: a page at most 624 wide, 15 on 24, headings 1.55, 1.3 and
+  1.13 of that, lists 24 in, tables 0.93, quotes 16 in. App and agent
+  names stay plain words.
+- **Code and text**: line numbers that stay while the lines scroll
+  sideways, the lines never wrapping, 12.5 on 20, coloured by the window's
+  own highlight.js (its copy, run in JavaScriptCore) in the window's
+  palette.
+- **JSON**: the tree, open two levels, names in the file's order (as
+  JavaScript orders them), "{5 keys}" and "[2 items]", at most 200 entries
+  then "… 12 more"; a file that is not JSON shows as text.
+- **CSV and TSV**: the grid with its head row and row numbers, cells cut at
+  360; a cell clicked opens its words at the foot ("Revenue · row 2").
+- **Too large** (over 25 MB), **unavailable**, **"Preview not available"**
+  for a kind it cannot show: the window's words, with Download.
+- **A picture or a video full screen**: black at 92%; the picture as large
+  as fits; the caption ("photo.png · 1 / 2"); with more than one, Previous
+  and Next at the sides, the arrows going round, and the strip of squares
+  under it. A click on the picture closes it; a double click zooms to 2.5
+  where clicked and back; the wheel or a pinch zooms up to 4 where the
+  pointer is; zoomed, a drag moves it. A video plays in Apple's player.
+- **A diagram full screen**: black at 92%, the diagram on its card at its
+  own size (smaller to fit), Close at the top right and Zoom out, Zoom in,
+  Fit to screen at the foot; the wheel zooms where the pointer is, + − 0 F
+  as in the window, a double click zooms in or back to the fit, a drag
+  moves it, a click outside closes. Checked in Chromium: the page fits,
+  zooms, pans and closes as the window's does.
+
+#### Not in 2c yet
+
+- Word documents, Excel workbooks and sounds show in Apple's Quick Look in
+  the panel; the window draws them with its own readers (a Word page, a
+  sheet grid with tabs, its own player).
+- The row numbers of a CSV scroll away sideways with the grid; in the
+  window they stay.
+- More pictures than fit in a row: the window shows three and "+N" on the
+  last; here the row gets smaller to fit them all.
+- A picture's caption is its own words when it has them, else its name;
+  the window may pass other captions.

@@ -40,7 +40,9 @@ optional pattern the line must match, and the reason.
 - **contract**: a name another program expects, which we do not build and
   cannot change. The upstream app's download name and bundle names, the
   strings the window patch looks for in order to replace them, generated
-  protocol code, and the Connect service names on the wire.
+  protocol code, and the Connect service names on the wire. Also a word that
+  only looks like one: the Mac app's copy of highlight.js lists `polar`, a
+  maths function in Maxima, Scheme and Stan.
 - **fallback**: an earlier name still read so that existing installs and
   deployments keep working: `CLAIDOR_` settings, tokens and cookies issued
   before the rename, the `~/.caisra` data folder the app moves once, the

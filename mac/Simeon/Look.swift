@@ -100,6 +100,24 @@ struct Look {
 
   /** A code block's lines: the text at 92% (`#d6d6dd` on dark). */
   var codeText: Color { dark ? Color(hex: 0xd6d6dd) : ink.opacity(0.92) }
+
+  // MARK: The previews (step 2c)
+
+  /** The window's chrome (`--simeon-bg-chrome`): the file preview's head. */
+  var chrome: Color { dark ? Color(hex: 0x111111) : Color(hex: 0xf7f7f7) }
+  /** Behind the file preview: the text colour at 90% (95% on dark). */
+  var fileScrim: Color { Color(red: 20 / 255, green: 20 / 255, blue: 20 / 255).opacity(dark ? 0.95 : 0.898) }
+  /** A spreadsheet's head row and row numbers: the text mixed 6% into the ground. */
+  var tableHead: Color { dark ? Color(hex: 0x161616) : Color(hex: 0xeeeeee) }
+  /** A chosen cell (`--simeon-bg-selected`). */
+  var selectedCell: Color { Color(red: 127 / 255, green: 127 / 255, blue: 127 / 255).opacity(0.18) }
+  /** A diagram's card in its full-screen view. */
+  var diagramCanvas: Color { dark ? Color(hex: 0x181818) : Color(hex: 0xfcfcfc) }
+  /** A JSON file's keys, strings, numbers and true, false and null. */
+  var jsonKey: Color { dark ? Color(hex: 0xffaf38) : Color(hex: 0xc27400) }
+  var jsonString: Color { dark ? Color(hex: 0x38d591) : Color(hex: 0x009957) }
+  var jsonNumber: Color { dark ? Color(hex: 0xff8838) : Color(hex: 0xc24e00) }
+  var jsonKeyword: Color { dark ? Color(hex: 0xa97efe) : Color(hex: 0x6e44c1) }
 }
 
 extension Color {

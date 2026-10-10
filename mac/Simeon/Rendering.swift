@@ -140,12 +140,14 @@ enum DrawingPage {
 /**
  * A drawing in a message: its page as tall as what it drew. A diagram waits
  * for its message to finish, showing its source until then, and so does
- * one Mermaid cannot read. Opening a diagram full screen is step 2c.
+ * one Mermaid cannot read. A drawn diagram opens full screen when clicked
+ * ("Open diagram full screen", the zoom-in pointer over it).
  */
 struct DrawingView: View {
   let drawing: Drawing
   let look: Look
   @Environment(\.messageStreaming) private var streaming
+  @Environment(Viewers.self) private var viewers
   @State private var height: CGFloat = 20
   @State private var failed = false
 
@@ -156,6 +158,18 @@ struct DrawingView: View {
       DrawingWeb(html: DrawingPage.html(drawing, dark: look.dark, ink: look.dark ? "#fcfcfc" : "#1d1d1f"), height: $height, failed: $failed)
         .frame(height: height)
         .frame(maxWidth: .infinity)
+        .overlay {
+          if case .diagram(let source) = drawing {
+            // Over the page, so the click is the app's and the wheel still reaches the chat.
+            Color.clear
+              .contentShape(RoundedRectangle(cornerRadius: 6))
+              .onTapGesture { viewers.shown = .diagram(source) }
+              .pointerStyle(.zoomIn)
+              .accessibilityElement()
+              .accessibilityAddTraits(.isButton)
+              .accessibilityLabel("Open diagram full screen")
+          }
+        }
     }
   }
 }
