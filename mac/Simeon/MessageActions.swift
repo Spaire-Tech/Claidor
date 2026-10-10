@@ -215,10 +215,18 @@ enum MessageMenu {
     let handler = Handler(bubble: bubble, agentId: agentId, store: store, control: control)
     if kind != .more {
       let row = NSMenuItem()
-      let picker = NSHostingView(rootView: ReactionRow(look: Look(NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? .dark : .light)) { [weak menu] emoji in
+      let look = Look(NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? .dark : .light)
+      let picker = NSHostingView(rootView: ReactionRow(look: look) { [weak menu] emoji in
         menu?.cancelTracking()
         if let emoji {
           Task { await store.react(emoji, to: bubble.id, in: agentId) }
+        } else {
+          // More emoji: the full picker where the menu was, once the menu has gone.
+          DispatchQueue.main.async {
+            EmojiPopover.show(look: look, mine: Set(bubble.myReactions), holding: bubble.id, control: control) { emoji in
+              Task { await store.react(emoji, to: bubble.id, in: agentId) }
+            }
+          }
         }
       })
       picker.frame = NSRect(x: 0, y: 0, width: 246, height: 44)
@@ -315,7 +323,7 @@ enum MessageMenu {
  * The quick reactions in a menu (`sand-reaction-picker`): six 32-point
  * squares (the emoji 20, 6 round, grey under the pointer), 2 apart, then
  * More emoji (28, the glyph at 60%), padded 6. More emoji opens the full
- * picker, which comes with the message field's emoji list (step 2e).
+ * picker (`EmojiPicker`).
  */
 private struct ReactionRow: View {
   let look: Look

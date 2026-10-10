@@ -433,7 +433,7 @@ exchange, `b_n` and `u_n` for find):
 
 | Button | Its part or step |
 |---|---|
-| More emoji | 2e (the full emoji list) |
+| More emoji | 2e (done) |
 | The thread's title in its breadcrumb (View conversation details) | 7 |
 
 - **Agents' exchanges**: an exchange line's chip opens the two agents'
@@ -481,7 +481,7 @@ exchange, `b_n` and `u_n` for find):
 A message's time at its right comes with a sideways swipe in the window
 (its "peeking"), which is 2f.
 
-### 2e: the message field's lists, attaching, dictation (in progress)
+### 2e: the message field's lists, attaching, dictation
 
 Written 10 October 2026, **not built yet** (as step 1), measured from the
 reference window (the Simeon chat and the Launch squad group; the
@@ -548,6 +548,12 @@ from its code. Pushed so far:
   is dropped, five minutes stops it, Escape cancels it. A refusal, no
   microphone, no network or any other failure says the window's line in
   red over the words until the microphone is tried again.
+- **More emoji** (from a message's Add reaction or right click): the
+  full picker where the menu was, in a Mac popover: "Search emoji" (it
+  takes the keys), then every category titled over its emoji, 8 to a row
+  in 32-point cells, the person's own reactions grey; typed words show
+  "Results" or "No emoji found", Return picks the first. A pick reacts (or
+  takes the person's own back) and closes it.
 - **The lines over the words**, in the window's order: a send refused
   ("This message is already sending and can't be canceled.", red, six
   seconds), dictation's (red), then the files' line (at 40%). A message canceled while it
@@ -567,8 +573,9 @@ from its code. Pushed so far:
 
 #### Not in 2e yet
 
-- Still to come in 2e: More emoji (the full picker from a message's
-  reactions).
+- The emoji picker is a Mac popover, so it has the popover's arrow and
+  opens at the pointer; the window's is a menu placed where the reactions
+  menu was.
 - The sound bars follow the microphone's loudness over the last moments;
   the window's are its frequencies (a spectrum).
 - The Mac records AAC (`audio/mp4`); the Electron app records Opus
