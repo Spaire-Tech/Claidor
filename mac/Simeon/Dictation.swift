@@ -97,7 +97,8 @@ final class Dictation {
         let elapsed = Date().timeIntervalSince(started)
         if Int(elapsed) != self.seconds { self.seconds = Int(elapsed) }
         if elapsed >= Dictation.longest {
-          await self.stop(store: store)
+          // Stopping cancels this ticker: the transcription runs on its own.
+          Task { await self.stop(store: store) }
           return
         }
       }
@@ -184,13 +185,15 @@ final class Dictation {
  * 13, at 60%). It stops dictation; Escape in the field cancels it.
  */
 struct RecordingChip: View {
-  let seconds: Int
-  let levels: [Double]
+  /** Read here, so only the chip redraws as the time and the bars move. */
+  let dictation: Dictation
   let look: Look
   let stop: () -> Void
   @State private var hovered = false
 
   var body: some View {
+    let seconds = dictation.seconds
+    let levels = dictation.levels
     Button(action: stop) {
       HStack(spacing: 6) {
         RoundedRectangle(cornerRadius: 2)

@@ -1,4 +1,5 @@
 import AppKit
+import ImageIO
 import SwiftUI
 import UniformTypeIdentifiers
 import SimeonCore
@@ -38,15 +39,18 @@ extension ChatControl {
    */
   func stage(_ files: [IncomingFile]) {
     guard !files.isEmpty else { return }
-    let admitted = AttachmentLimits.admit(files.count, staged: staged.count)
+    // Files still being read count too, so two drops close together keep to six.
+    let admitted = AttachmentLimits.admit(files.count, staged: staged.count + reading)
     guard admitted.accepted > 0 else {
       if let line = admitted.notice { notice(line) }
       return
     }
     let taken = Array(files.prefix(admitted.accepted))
+    reading += taken.count
     Task { [weak self] in
       let read = await Task.detached(priority: .userInitiated) { taken.map(ChatControl.read) }.value
       guard let self else { return }
+      reading -= taken.count
       var refused: [(name: String, reason: AttachmentLimits.Refusal)] = []
       for item in read {
         switch item {
@@ -99,8 +103,9 @@ extension ChatControl {
     panel.allowsMultipleSelection = true
     panel.canChooseDirectories = false
     panel.canChooseFiles = true
-    let take: (NSApplication.ModalResponse) -> Void = { [weak self, weak panel] response in
-      guard response == .OK, let self, let panel else { return }
+    // The panel is held until its sheet ends, so its files are there to read.
+    let take: (NSApplication.ModalResponse) -> Void = { [weak self] response in
+      guard response == .OK, let self else { return }
       self.stage(panel.urls.map(IncomingFile.url))
     }
     if let window = NSApp.keyWindow {
@@ -153,12 +158,14 @@ private struct PictureTile: View {
   let file: StagedFile
   let look: Look
   let remove: () -> Void
+  /** The picture made small once (104 pixels, the tile at 2×), not on every redraw. */
+  @State private var image: NSImage?
 
   var body: some View {
     let shape = RoundedRectangle(cornerRadius: 12)
     ZStack {
       tileGround(look)
-      if let image = NSImage(data: file.data) {
+      if let image {
         Image(nsImage: image)
           .resizable()
           .interpolation(.high)
@@ -173,8 +180,23 @@ private struct PictureTile: View {
     .overlay(alignment: .topTrailing) {
       RemoveButton(name: file.name, look: look, action: remove).padding(2)
     }
+    .task(id: file.id) { image = PictureTile.thumbnail(file.data) }
     .accessibilityElement(children: .contain)
     .accessibilityLabel(file.name)
+  }
+}
+
+extension PictureTile {
+  /** A picture's thumbnail through ImageIO, its longest side 104 pixels. */
+  static func thumbnail(_ data: Data) -> NSImage? {
+    guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
+    let options: [CFString: Any] = [
+      kCGImageSourceCreateThumbnailFromImageAlways: true,
+      kCGImageSourceThumbnailMaxPixelSize: 104,
+      kCGImageSourceCreateThumbnailWithTransform: true,
+    ]
+    guard let cg = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return NSImage(data: data) }
+    return NSImage(cgImage: cg, size: NSSize(width: cg.width / 2, height: cg.height / 2))
   }
 }
 

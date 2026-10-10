@@ -90,7 +90,7 @@ struct Composer: View {
         switch dictation.phase {
         case .asking, .recording:
           // The recording chip in Send's place (`sand-prompt-voice-chip`).
-          RecordingChip(seconds: dictation.seconds, levels: dictation.levels, look: look) {
+          RecordingChip(dictation: dictation, look: look) {
             Task { await dictation.stop(store: store) }
           }
         case .transcribing:
@@ -132,6 +132,8 @@ struct Composer: View {
       text = store.drafts[agentId] ?? ""
       if let kept = Composer.keptChips[agentId], kept.draft == text { chips = kept.chips }
       relayout(edited: true)
+      // A message canceled or handed over comes in after the draft, so the draft does not cover it.
+      takeBackCanceled()
     }
     .task(id: agentId) { await picks.load(agentId, store: store) }
     .onChange(of: height, initial: true) { _, value in control.composerHeight = value }
@@ -145,7 +147,7 @@ struct Composer: View {
       Composer.keptChips[agentId] = next.isEmpty ? nil : (text, next)
     }
     // A message canceled before it went comes back here when this field is empty (the window's cancel).
-    .onChange(of: store.canceledDraft?.id, initial: true) { _, _ in takeBackCanceled() }
+    .onChange(of: store.canceledDraft?.id) { _, _ in takeBackCanceled() }
     .onAppear { dictation.onWords = { [handle] words in handle.insertDictation(words) } }
     .onDisappear { dictation.cancel() }
   }
@@ -234,7 +236,8 @@ struct Composer: View {
       let empty = rows.isEmpty ? picks.emptyLine(agentId: agentId, store: store) : nil
       if !rows.isEmpty || empty != nil {
         let listWidth: CGFloat = request.kind == .emoji ? 320 : 360
-        let fieldLeft: CGFloat = stacked || control.reply != nil ? 13 : 45
+        // Where the words start: 13 in the stacked form (more lines, a reply, files, a line over the words), 45 on one line.
+        let fieldLeft: CGFloat = stacked || control.reply != nil || !control.staged.isEmpty || !noticeLines.isEmpty ? 13 : 45
         let x = max(0, min(request.anchor.minX, width + 16 - fieldLeft - listWidth))
         PickList(kind: request.kind, rows: rows, empty: empty, selected: picks.selected, look: look,
                  hover: { picks.selected = $0 }, choose: { choose($0) })
@@ -755,6 +758,8 @@ final class FieldTextView: NSTextView {
     if let urls = board.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL], !urls.isEmpty {
       return urls.map(IncomingFile.url)
     }
+    // Office and iWork put a picture of copied words beside them: the words win. A screenshot has no words.
+    if let words = board.string(forType: .string), !words.isEmpty { return nil }
     if let png = board.data(forType: .png) { return [.data(name: "image.png", data: png)] }
     if let tiff = board.data(forType: .tiff), let png = NSBitmapImageRep(data: tiff)?.representation(using: .png, properties: [:]) {
       return [.data(name: "image.png", data: png)]

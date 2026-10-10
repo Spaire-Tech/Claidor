@@ -42,6 +42,8 @@ struct ChatPane: View {
     }
     // Files dropped anywhere on the chat wait to go with the next message (`dragBindings` on `main.sand-chat`).
     .dropDestination(for: URL.self) { urls, _ in
+      // Not under an exchange: its field is hidden and read only.
+      guard control.exchangePeer == nil else { return false }
       let files = urls.filter(\.isFileURL)
       control.stage(files.map(IncomingFile.url))
       return !files.isEmpty

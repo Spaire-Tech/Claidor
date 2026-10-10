@@ -67,7 +67,7 @@ struct EmojiPicker: View {
     }
     .frame(width: 294, height: 320)
     .background(look.elevated)
-    .onAppear { searching = true }
+    .defaultFocus($searching, true)
     .accessibilityElement(children: .contain)
     .accessibilityLabel("Choose an emoji")
   }
@@ -146,6 +146,12 @@ enum EmojiPopover {
     init(control: ChatControl, id: String) {
       self.control = control
       self.id = id
+    }
+
+    /** Shown: the hover bar is held (the reactions menu let it go as it closed), and the search takes the keys. */
+    func popoverDidShow(_ notification: Notification) {
+      control.menuFor = id
+      (notification.object as? NSPopover)?.contentViewController?.view.window?.makeKey()
     }
 
     func popoverDidClose(_ notification: Notification) {

@@ -45,6 +45,8 @@ final class ChatControl {
   /** The line over the words when files were left out (five seconds), and its count so the latest stays. */
   var attachNotice: String?
   var noticeCount = 0
+  /** Files being read off the disk for `staged`. */
+  var reading = 0
 
   /** The agent whose messages with this one are open over the chat (`tunnelPeer`, read only). */
   var exchangePeer: Party?
