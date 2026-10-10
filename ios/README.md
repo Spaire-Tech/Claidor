@@ -117,9 +117,11 @@ was doing (`[simeon] the screen stood still 1840 ms, while laying out ava,
 stuck, read from its own stack (`[simeon] the main thread is in:` and one
 line per call), again at ten seconds, and what of the app's own kept
 happening meanwhile (`[simeon]   48210 × ChatMessages drawn`): a loop is the
-count that climbs. Copy those lines into the chat to find a lag. Run (⌘R) builds Debug,
-which is slower than TestFlight's optimised build; for a fair feel of speed,
-set the scheme's Run to Release (Product → Scheme → Edit Scheme).
+count that climbs. Copy those lines into the chat to find a lag. Run (⌘R) builds Release, optimised as
+TestFlight's build is, so what you feel from Xcode is what people get (Debug's
+unoptimised Swift was several times slower). Push notifications still go
+through Apple's sandbox for such a build: the app reads that from its signing
+profile, not from the configuration.
 
 1. In Xcode, open Signing & Capabilities for the Simeon target. Choose the
    Apple developer team Simeon publishes from, or set `DEVELOPMENT_TEAM`

@@ -87,7 +87,9 @@ schemes:
     build:
       targets:
         Simeon: all
+    # Run (⌘R) builds Release, optimised as TestFlight's and the App Store's are: Debug's unoptimised Swift made every
+    # tap, layout and chat open several times slower than what people get, and the app felt heavy from Xcode.
     run:
-      config: Debug
+      config: Release
     archive:
       config: Release

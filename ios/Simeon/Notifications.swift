@@ -23,12 +23,19 @@ final class Notifications {
   @ObservationIgnored private var api: SimeonAPI?
   @ObservationIgnored private var token: String?
 
-  #if DEBUG
-  /** A build run from Xcode is served by Apple's sandbox. */
-  static let sandbox = true
-  #else
-  static let sandbox = false
-  #endif
+  /**
+   * A build run from Xcode is served by Apple's sandbox: its signing profile
+   * (`embedded.mobileprovision`, which App Store and TestFlight builds do not
+   * carry) says `aps-environment` development. Read at run time, not from the
+   * build configuration, since Run builds Release too (project.yml).
+   */
+  static let sandbox: Bool = {
+    guard let url = Bundle.main.url(forResource: "embedded", withExtension: "mobileprovision"),
+          let data = try? Data(contentsOf: url) else { return false }
+    let text = String(decoding: data, as: UTF8.self)
+    guard let key = text.range(of: "<key>aps-environment</key>") else { return false }
+    return text[key.upperBound...].prefix(80).contains("development")
+  }()
 
   /** After sign-in: asks once, then registers this phone with Apple and, through it, with Simeon. */
   func start(api: SimeonAPI) async {
