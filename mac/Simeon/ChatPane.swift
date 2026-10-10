@@ -12,6 +12,7 @@ struct ChatPane: View {
   let agentId: String
   @Environment(AppStore.self) private var store
   @Environment(Viewers.self) private var viewers
+  @Environment(WindowState.self) private var window
   @Environment(\.colorScheme) private var scheme
   @State private var control = ChatControl()
   /** Files dragged over the chat (`isDragOver`). */
@@ -74,6 +75,14 @@ struct ChatPane: View {
       control.openFind()
       return true
     })
+    // A message or file found by search (step 4): its older lines read until it is there, then it is brought to the middle and lit.
+    .task(id: window.pendingReveal) {
+      guard let reveal = window.pendingReveal, reveal.agentId == agentId else { return }
+      _ = await store.loadUntil(reveal.entryId, in: agentId)
+      guard window.pendingReveal == reveal else { return }
+      window.pendingReveal = nil
+      control.jump(to: Chat.rowId(for: reveal.entryId, in: store.rows(for: agentId)) ?? reveal.entryId)
+    }
     .onChange(of: threadRoot) { _, _ in
       // The bar belongs to the lines on screen (`transcriptPlaneKey`): on a thread, or back, it starts again, still open.
       guard control.findOpen else { return }

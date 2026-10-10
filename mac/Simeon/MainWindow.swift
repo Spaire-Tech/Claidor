@@ -12,6 +12,21 @@ final class WindowState {
 
   private static let selectedKey = "simeon.window.selectedAgent"
 
+  /** A message or file found by search, its chat to open at that line, lit (`revealSearchHit`); the count makes each one new. */
+  struct Reveal: Equatable {
+    let agentId: String
+    let entryId: String
+    let count: Int
+  }
+
+  var pendingReveal: Reveal?
+
+  /** Search's message or file: its chat opens (if it is not the open one) and goes to the line. */
+  func reveal(_ entryId: String, in agentId: String, store: AppStore) {
+    if selected != agentId { open(agentId, store: store) }
+    pendingReveal = Reveal(agentId: agentId, entryId: entryId, count: (pendingReveal?.count ?? 0) + 1)
+  }
+
   /** A row clicked: its agent opens (its chat read, its unread cleared). */
   func open(_ agentId: String, store: AppStore) {
     selected = agentId
@@ -92,13 +107,17 @@ struct MainWindow: View {
     }
     // A file, a picture or a diagram opened full screen, over the sidebar and the chat.
     .overlay { ViewerLayer() }
+    // Search (⌘K), over everything.
+    .overlay { SearchLayer() }
     .background(KeyWatcher())
   }
 }
 
 /**
  * The window's own keys that are not in a menu (the Electron window's
- * `global-keyboard-shortcuts`): ⌘B folds and opens the sidebar. With rows
+ * `global-keyboard-shortcuts`): ⌘B folds and opens the sidebar; ⌘K opens and
+ * closes search, ⌘⇧F opens it, and while it is open its keys are its own
+ * (SearchPanel.swift). With rows
  * picked, Escape lets them go and Delete (or Backspace) deletes them, after
  * the confirmation, unless a field has the keys. Control-Tab and
  * Control-Shift-Tab walk the sidebar's rows; letting go of Control opens the
@@ -110,6 +129,7 @@ private struct KeyWatcher: NSViewRepresentable {
   @Environment(SidebarState.self) private var sidebar
   @Environment(WindowState.self) private var windowState
   @Environment(AppStore.self) private var store
+  @Environment(SearchState.self) private var search
 
   func makeNSView(context: Context) -> NSView {
     let view = WatchView()
@@ -126,6 +146,7 @@ private struct KeyWatcher: NSViewRepresentable {
     view.sidebar = sidebar
     view.windowState = windowState
     view.store = store
+    view.search = search
   }
 
   final class WatchView: NSView {
@@ -133,6 +154,7 @@ private struct KeyWatcher: NSViewRepresentable {
     var sidebar: SidebarState?
     var windowState: WindowState?
     var store: AppStore?
+    var search: SearchState?
     nonisolated(unsafe) private var monitors: [Any] = []
     nonisolated(unsafe) private var resigned: NSObjectProtocol?
 
@@ -169,6 +191,19 @@ private struct KeyWatcher: NSViewRepresentable {
         return true
       }
       guard let sidebar, let windowState, let store else { return false }
+      if let search {
+        let key = event.charactersIgnoringModifiers?.lowercased()
+        // ⌘K (`sand.commandPalette`, `mod+k`) and ⌘⇧F (`sand.focusSearch`, `mod+shift+f`).
+        if mods == .command, key == "k" {
+          search.toggle(store: store, window: windowState)
+          return true
+        }
+        if mods == [.command, .shift], key == "f" {
+          if !search.isOpen { search.open(store: store, window: windowState) }
+          return true
+        }
+        if search.isOpen { return search.key(event, store: store, window: windowState, sidebar: sidebar) }
+      }
       switch event.keyCode {
       case 48 where mods.subtracting(.shift) == .control:
         // Control-Tab, Control-Shift-Tab.
@@ -196,6 +231,7 @@ private struct KeyWatcher: NSViewRepresentable {
 
     /** Control let go: Control-Tab's row opens. */
     private func flags(_ event: NSEvent) {
+      if let search, search.isOpen { search.flags(event) }
       guard !event.modifierFlags.contains(.control), let sidebar, let cycle = sidebar.cycle, let windowState, let store else { return }
       sidebar.cycle = nil
       sidebar.selection.plain(cycle.next)

@@ -206,12 +206,15 @@ private func discInk(_ scheme: ColorScheme) -> Color {
   scheme == .dark ? Color.white.opacity(0.86) : Color.black.opacity(0.78)
 }
 
-/** Search (⌘K): the search panel comes with step 4 (mac/STEPS.md). */
+/** Search (⌘K): opens search (step 4). */
 private struct SearchDisc: View {
+  @Environment(AppStore.self) private var store
+  @Environment(WindowState.self) private var window
+  @Environment(SearchState.self) private var search
   @Environment(\.colorScheme) private var scheme
 
   var body: some View {
-    Disc(size: 40, help: "Search", action: {}) {
+    Disc(size: 40, help: "Search", action: { search.open(store: store, window: window) }) {
       Image(systemName: "magnifyingglass")
         .font(.system(size: 16, weight: .regular))
         .foregroundStyle(discInk(scheme))

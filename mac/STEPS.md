@@ -103,7 +103,7 @@ first build on the founder's Mac is the first real check.
 
 | Button | Its step |
 |---|---|
-| Search, and ⌘K | 4 |
+| Search, and ⌘K | 4 (done) |
 | New chat, and ⌘N | 5 |
 | The account's initials | 10 |
 | Connect apps | 9 |
@@ -756,7 +756,7 @@ Pushed:
 | Button | Its step |
 |---|---|
 | Edit Profile, in a row's menu | 7 |
-| Search, New chat, the initials, Connect apps | 4, 5, 10, 9 (as step 1) |
+| New chat, the initials, Connect apps | 5, 10, 9 (as step 1; Search is step 4, done) |
 
 #### Not in step 3 yet
 
@@ -765,7 +765,7 @@ Pushed:
   come with the shared rooms (step 12).
 - **Show full conversation** and **Show async tasks**: the window's staff
   items, for Simeon Labs' own accounts only; left out.
-- Search's "Open Hidden Agents" (C13) comes with search (step 4).
+- Search's "Open Hidden Agents" (C13) comes with search (step 4, done).
 - The window's tiles and rows glide to their new places when pins and
   sections change (its layout animation); here they take their places at
   once. A folding section fades.
@@ -786,3 +786,97 @@ under it as in the window.
 
 C02 to C16 in the gallery, each in light and dark, and the rail with pins
 and sections against the window folded to its rail.
+
+## Step 4: search (⌘K)
+
+Written 10 October 2026, **not built yet** (as step 1), read from the
+window's command palette (`QFn` and its hook) and measured in the
+reference window, light and dark, with the computer's search off (as the
+gallery shows it) and on (with sample messages, files and a routine fed
+in). The matching and the order of the results are SimeonCore's `Jump`,
+tested against what the window lists for the same words. Pushed:
+
+- **Opening it** (D01): ⌘K opens and closes it, ⌘⇧F opens it, and so does
+  the sidebar's Search. It opens empty, on All, the field taking the keys.
+  The window dims (the text colour at 50 %, 70 % on dark) and the panel
+  stands in its middle: 560 wide, 16 round, the raised ground, a hairline
+  and a deep shadow (none on dark). Escape or a click outside closes it.
+- **The field**: the glass (40 %) and "Search" (14 on 22), a hairline
+  under them.
+- **The tabs** (D02–D04): All, Agents, Groups, Actions; with the
+  computer's search on (`isGlobalSearchEnabled`, on by default) also
+  Messages, Files, Links and Routines, in the window's order. The chosen
+  tab is grey, the rest at 60 %. Tab and ⇧Tab change the tab, and ← and →
+  while nothing is typed.
+- **The rows**, 49 high, 2 apart: an agent's butterfly with its name, its
+  title in blue and its description; a group's members; an action's icon
+  on grey and its line ("Views", "Current chat", "Settings ·
+  Appearance"); a message's agent with "Theo to you · 6m ago"; a file's
+  kind in its colour with "Scout · 1280×800 · 1d ago"; a link's site icon
+  and page title over its address; a routine's clock on violet with "Every
+  Monday at 9:00 AM · Theo". On All each says what it is at its right
+  (Agent, Group, Action, Message, File, Link, Routine); a routine's tab
+  shows its last run's date. Holding ⌘ shows ⌘1 to ⌘9 on the first nine.
+- **With nothing typed**, All lists the agents (pins first) and then the
+  actions; the other tabs their own.
+- **Typing** (D05) matches as the window does (each word's letters in
+  order, near each other, word starts scoring most; accents and case do not
+  count) and lists the best first, the letters found in semibold. The
+  computer's own message and file matches that the words do not show
+  follow, then any hidden agent that matches with a "Hidden" tag. Words
+  that find nothing say "No results" (D06). Messages and files are asked
+  of the computer 150 ms after the last key; while its answer is on the way
+  the earlier rows stay, and with none yet five grey rows shimmer.
+- **The actions**, in the window's order: Org Chart (with the agent network
+  on), Open Hidden Agents (with any hidden), for the open chat Members (a
+  group), Channels (when it can have some) and Chat Settings, Settings:
+  General, Settings: Usage & Billing, Plugins, and Theme: System, Light and
+  Dark, the one in use ticked.
+- **Keys**: ↑ and ↓ move the light (the list follows), the pointer moves
+  it too; Return opens the lit row; ⌘1 to ⌘9 open the first nine.
+- **What a row does**: an agent opens; a message or a file opens its chat,
+  reads back until that line is there, and brings it to the middle lit in
+  yellow; a link opens in the browser; a routine opens its agent; a theme
+  is set at once; Open Hidden Agents opens the Hidden Agents dialog.
+- **Empty tabs** say the window's words: "No agents yet", "Search messages"
+  ("Type to find messages across your chats."), "No group chats yet", "No
+  files yet", "No links in this chat yet", "No routines yet", "No
+  actions"; "Search unavailable" when the computer's search fails.
+- **Dark** (D07): the panel `#181818`, the lit row grey at 32 %.
+
+#### Buttons that do nothing yet
+
+| Action | Its step |
+|---|---|
+| Org Chart | 12 |
+| Members, Channels, Chat Settings | 7 |
+| Settings: General, Settings: Usage & Billing | 8 |
+| Plugins | 9 |
+
+Each closes search, as the window's do, and opens nothing yet. A routine
+opens its agent; in the window it also opens the agent's Routines (7).
+
+#### Not in step 4 yet
+
+- **Join shared room** and **New shared room** (with sharing on) and the
+  window's update actions ("Update Simeon's Computer", the app's own
+  update): with the shared rooms (12) and the computer (13). The app's own
+  update has no Mac counterpart yet.
+- The window's developer actions (Feature Flags…, the trace capture) and
+  their submenus with a Back arrow: developer builds only; left out.
+- The list's fading top and bottom edges while it scrolls.
+- Settings: Usage & Billing follows the account's usage page switch in
+  the window; here it is always listed (the reference shows it).
+- A message found in a thread, or inside a folded exchange between
+  agents, opens its chat without going to the line.
+
+#### Where the native parts look different
+
+The field is Apple's; the panel is drawn in the window's colours rather
+than Apple's glass, as the window draws it. The icons are SF Symbols in the
+window's places. The window's ⌃ in the shortcuts (on the Linux reference)
+is ⌘ on a Mac, as there.
+
+#### What to compare
+
+D01 to D07, light and dark, and a search with the computer's search on.
