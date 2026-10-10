@@ -5,6 +5,9 @@ name: iPhone app (native)
 # dark. The screenshots are the run's artifact, and two small contact
 # sheets are printed at the end of the log (ios/scripts/sheet.py).
 #
+# With `app: mac` it builds the native Mac app (mac/) instead: a compile
+# check of each step of mac/STEPS.md before it reaches the founder's Mac.
+#
 # By hand only, like the Mac app's build (desktop_mac.yml): GitHub bills
 # macOS runners at ten times the minute rate, and this run takes about ten
 # to fifteen minutes. The same build runs on any Mac for nothing
@@ -12,6 +15,11 @@ name: iPhone app (native)
 on:
   workflow_dispatch:
     inputs:
+      app:
+        description: Which app to build
+        type: choice
+        options: [iphone, mac]
+        default: iphone
       screenshots:
         description: Photograph the screens in the Simulator
         type: boolean
@@ -23,6 +31,7 @@ concurrency:
 
 jobs:
   build:
+    if: ${{ inputs.app != 'mac' }}
     runs-on: macos-15
     timeout-minutes: 45
     defaults:
@@ -75,3 +84,35 @@ jobs:
         run: |
           python3 -m pip install --quiet --break-system-packages pillow || python3 -m pip install --quiet pillow
           python3 scripts/sheet.py screens
+
+  mac:
+    if: ${{ inputs.app == 'mac' }}
+    runs-on: macos-15
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: mac
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pick the newest Xcode 26 or later
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_2[6-9]*.app 2>/dev/null | sort -V | tail -1)
+          if [ -z "$XCODE" ]; then ls -d /Applications/Xcode*.app; echo "No Xcode 26 on this runner"; exit 1; fi
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+
+      - name: Make the Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen generate
+
+      - name: Build the Mac app
+        run: |
+          set -o pipefail
+          xcodebuild -project SimeonMac.xcodeproj -scheme Simeon -configuration Debug \
+            -destination 'generic/platform=macOS' -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO build > build.log 2>&1 || true
+          grep -E "error:|warning: .*mac/Simeon/" build.log | sed -E "s#^.*/mac/##" | sort -u || true
+          grep -E "BUILD (SUCCEEDED|FAILED)" build.log || tail -40 build.log
+          test -d build/Build/Products/Debug/Simeon.app
