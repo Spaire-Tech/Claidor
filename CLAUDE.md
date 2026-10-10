@@ -15,7 +15,7 @@ product people see is **Simeon** (spelled Simeon, never Simon).
 | `clients/` | The web app at `app.simeonlabs.com` (sign-in pages, account dashboard). Patterns: `clients/CLAUDE.md`. |
 | `mobile/` | The iPhone app (Expo): the web window (`desktop/web/`) in a native shell with sign-in, notifications and opening an agent from one. `mobile/README.md`. |
 | `ios/` | The native iPhone app (SwiftUI), the phone design in Apple's own parts; it replaces `mobile/` once it has run on an iPhone. `ios/README.md`. |
-| `mac/` | The native Mac app (SwiftUI), which replaces `desktop/` once every line of `mac/PARITY.md` has run on a Mac. It shares `ios/SimeonCore` and the iPhone's views. `mac/README.md`. |
+| `mac/` | The native Mac app (SwiftUI): a copy of the Electron Mac app, step by step, with Apple's controls and the Electron window's layout. It replaces `desktop/` once every step of `mac/STEPS.md` has been matched on a Mac. It shares `ios/SimeonCore` (no screens). `mac/README.md`. |
 | `sites/simeonlabs.com/` | The public website and its live demo. |
 | `docs/` | Start at `docs/README.md`. |
 | `render.yaml` | The Render services (API, worker, runner, Postgres, Redis). |
@@ -77,7 +77,7 @@ cd mobile && npm install && npx tsc --noEmit && npm test && npx expo run:ios
 cd ios/SimeonCore && swift test
 cd ios && xcodegen generate && open Simeon.xcodeproj
 
-# Native Mac app (mac/README.md; it builds the iPhone's views too, so build both after changing them)
+# Native Mac app (mac/README.md, mac/STEPS.md)
 mac/scripts/build.sh
 cd mac && xcodegen generate && open SimeonMac.xcodeproj
 

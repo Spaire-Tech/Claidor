@@ -1,13 +1,14 @@
-# Simeon on the Mac, native (SwiftUI). XcodeGen makes SimeonMac.xcodeproj
-# from this file (`xcodegen generate`, mac/README.md); the project itself is
-# not kept in git. The app is this folder's Simeon/ and the iPhone app's
-# views (../ios/Simeon), built into it, on the shared core
-# (../ios/SimeonCore).
+# Simeon on the Mac, native (SwiftUI): a copy of the Electron Mac app
+# (desktop/), screen by screen, with Apple's own controls and the Electron
+# window's layout (mac/STEPS.md). XcodeGen makes SimeonMac.xcodeproj from
+# this file (`xcodegen generate`, mac/README.md); the project itself is not
+# kept in git. The app is this folder's Simeon/, on the shared core
+# (../ios/SimeonCore), which has no screens.
 name: SimeonMac
 options:
   bundleIdPrefix: com.simeonlabs
   deploymentTarget:
-    # Apple's design of this year (Liquid Glass), as the iPhone app's iOS 26.
+    # Apple's design of this year (Liquid Glass).
     macOS: "26.0"
   createIntermediateGroups: true
 settings:
@@ -23,37 +24,22 @@ settings:
 packages:
   SimeonCore:
     path: ../ios/SimeonCore
-  # The call's voice: ElevenLabs' own Swift kit, as on the iPhone (it builds for the Mac too).
-  ElevenLabs:
-    url: https://github.com/elevenlabs/elevenlabs-swift-sdk
-    from: 3.4.0
 targets:
   Simeon:
     type: application
     platform: macOS
     sources:
       - path: Simeon
-      # The iPhone app's views, the same files (ios/Simeon): what only the
-      # phone has stays behind `#if os(iOS)` in them.
-      - path: ../ios/Simeon
-        group: iPhone
-        excludes: ["Computer/**", "Rendering/**", "Simeon.entitlements", "Info.plist"]
-      # noVNC's client (MPL 2.0) and its licence, read at run time by the
-      # computer's page (ios/Simeon/Computer.swift), so they ship as files.
-      - path: ../ios/Simeon/Computer
-        group: iPhone
-        buildPhase: resources
-      # Mermaid and KaTeX (MIT), for the chat's diagrams and maths
-      # (ios/Simeon/Rendering.swift).
-      - path: ../ios/Simeon/Rendering
-        group: iPhone
+        excludes: ["Fonts/**"]
+      # The sign-in wordmark's face (Suravaram, SIL Open Font License), as
+      # the Electron window sets "Simeon" on its sign-in screen.
+      - path: Simeon/Fonts
         buildPhase: resources
     dependencies:
       - package: SimeonCore
         product: SimeonCore
       - package: SimeonCore
         product: SimeonMacCore
-      - package: ElevenLabs
     info:
       path: Simeon/Info.plist
       properties:
@@ -67,17 +53,14 @@ targets:
             CFBundleURLSchemes: [simeon-mac]
         LSApplicationCategoryType: public.app-category.productivity
         NSHumanReadableCopyright: Copyright © 2026 SimeonLabs, Inc.
-        # The composer's mic (dictation) and voice calls with an agent.
-        NSMicrophoneUsageDescription: Simeon listens when you dictate a message or call an agent.
-        NSSpeechRecognitionUsageDescription: Simeon turns what you say into the message you are writing.
         # Loopback and the local network over http, for a build pointed at
-        # the stand-in server on this Mac (`SIMEON_API`, ios/README.md).
+        # the stand-in server on this Mac (`SIMEON_API`).
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
     entitlements:
       path: Simeon/Simeon.entitlements
       properties:
-        # The hardened runtime asks for the microphone by name.
+        # The hardened runtime asks for the microphone by name (dictation and calls, later steps).
         com.apple.security.device.audio-input: true
     settings:
       base:
@@ -85,7 +68,6 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.simeonlabs.simeon.mac
         PRODUCT_NAME: Simeon
         ASSETCATALOG_COMPILER_APPICON_NAME: MacIcon
-        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         ENABLE_HARDENED_RUNTIME: YES
         ENABLE_PREVIEWS: YES
 schemes:

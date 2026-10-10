@@ -2,7 +2,6 @@
 # One command on a Mac: make the project, build the Mac app, and open it.
 #
 #   mac/scripts/build.sh            # build and open
-#   mac/scripts/build.sh --demo     # open it on the demo's agents (no sign-in)
 #
 # If the build fails, the errors are copied to the clipboard (and kept in
 # mac/build/errors.txt), ready to paste to whoever is fixing them.

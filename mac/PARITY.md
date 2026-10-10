@@ -1,5 +1,12 @@
 # The Mac in Swift: everything the Electron app does
 
+> **10 October 2026:** the Swift build this list tracked, which took the
+> iPhone app's screens, was removed at the founder's request. The app is
+> now copied from the Electron window step by step (`STEPS.md`). This list
+> stays as the inventory of what the Electron app does; its "Phone" and
+> "Mac" columns describe the removed build and no longer say what the Mac
+> app has.
+
 The founder, 9 October 2026: "bring the whole electron mac in swift.
 literally everything … make sure literally everything we have on the
 electron to be on swift. and more importantly, take apple design again."
