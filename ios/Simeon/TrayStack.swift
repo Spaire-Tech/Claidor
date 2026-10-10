@@ -93,15 +93,17 @@ private struct TrayCard: View {
             copied = true
             Task { try? await Task.sleep(nanoseconds: 1_200_000_000); copied = false }
           } label: {
-            Image(systemName: copied ? "checkmark" : "doc.on.doc").font(.system(size: 12, weight: .medium)).frame(width: 24, height: 24).contentShape(Circle())
+            Image(systemName: copied ? "checkmark" : "doc.on.doc").font(.system(size: 12, weight: .medium)).frame(width: 24, height: 24)
+              .tapRoom(EdgeInsets(top: 10, leading: 8, bottom: 10, trailing: 1))
           }
           .buttonStyle(.plain)
           .foregroundStyle(Ink.secondary)
           .accessibilityLabel("Copy request ID")
           .help("Copy request ID")
         }
-        Button { Task { await store.dismissTray(tray.id) } } label: {
-          Image(systemName: "xmark").font(.system(size: 12, weight: .medium)).frame(width: 24, height: 24).contentShape(Circle())
+        Button { Task { await store.dismissTray(tray.id, atOnce: true) } } label: {
+          Image(systemName: "xmark").font(.system(size: 12, weight: .medium)).frame(width: 24, height: 24)
+            .tapRoom(EdgeInsets(top: 10, leading: 1, bottom: 10, trailing: 10))
         }
         .buttonStyle(.plain)
         .foregroundStyle(Ink.secondary)

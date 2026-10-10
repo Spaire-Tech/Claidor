@@ -205,9 +205,11 @@ struct ChatMessages: View {
   @State private var dividerSeen = false
   @State private var dividerDismissed = false
   @State private var settled = false
-  /** How many of the newest rows are drawn: a long chat opened at its end drew every message above it first, and stood still. More come in as you scroll up. */
+  /** How many of the newest rows are drawn: a long chat opened at its end drew every message above it first, and stood still. More come in as you scroll up. 24 fill a screen and more; 40 made each chat open slower than it needed to. */
   @State private var window = ChatMessages.firstWindow
-  private static let firstWindow = 40
+  /** The top of the drawn rows (the spinner over them) is on screen. */
+  @State private var topInSight = false
+  private static let firstWindow = 24
   private static let bottomId = "chat-bottom"
 
   /** The rows on screen: the chat's, or the open thread's. */
@@ -232,6 +234,16 @@ struct ChatMessages: View {
               .padding(.vertical, 14)
               // Every row already drawn and still more lines before them: fetch those once (a chat too short to scroll).
               .onAppear { if hidden == 0, thread == nil, store.olderBefore[agentId] != nil { Task { await store.loadOlder(agentId) } } }
+              // In sight (the drawn rows are short and do not fill the screen): the rows held back, then the older lines, as a
+              // scroll up would, until the screen is full or there are none. In sight, not on appearing: in a plain stack every
+              // row appears at once, seen or not.
+              .onScrollVisibilityChange(threshold: 0.5) { visible in if topInSight != visible { topInSight = visible } }
+              .onDisappear { topInSight = false }
+              .task(id: [hidden, topInSight ? 1 : 0]) {
+                guard topInSight else { return }
+                if hidden > 0 { window += ChatMessages.firstWindow }
+                else if thread == nil, store.olderBefore[agentId] != nil { await store.loadOlder(agentId) }
+              }
           }
           ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
             Group {
@@ -429,7 +441,8 @@ struct ChatHeadline: View {
   var body: some View {
     if let agent = store.agent(agentId) {
       VStack(spacing: 4) {
-        AgentAvatar(agent: agent, members: store.members(of: agent), groupInARow: true, moves: true)
+        // Still: the agent at work moves in its row at the end of the chat (TypingRow); a second one moving up here drew every frame twice.
+        AgentAvatar(agent: agent, members: store.members(of: agent), groupInARow: true, moves: false)
           .frame(width: agent.isGroup ? nil : 52, height: 52)
         Text(agent.name).font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.primary).lineLimit(1)
           .padding(.horizontal, 12).padding(.vertical, 4)
@@ -1069,7 +1082,7 @@ struct BubbleView: View {
             .font(.system(size: 13))
             .foregroundStyle(Ink.tertiary)
             .padding(.horizontal, 8).padding(.top, 4)
-            .contentShape(.rect)
+            .tapRoom(EdgeInsets(top: 10, leading: 0, bottom: 0, trailing: 0))
           }
           .buttonStyle(.plain)
           .frame(maxWidth: ChatMetrics.bubbleMax(width), alignment: bubble.fromPerson ? .trailing : .leading)
@@ -1194,7 +1207,7 @@ struct BubbleView: View {
           .background(Ink.reaction, in: Capsule())
           .overlay(Capsule().stroke(Ink.ground, lineWidth: 2))
           .opacity(reacting.contains(item.emoji) ? 0.5 : 1)
-          .contentShape(Capsule())
+          .tapRoom(EdgeInsets(top: 4, leading: 0, bottom: 14, trailing: 0))
           .onTapGesture { react(item.emoji) }
           .modifier(ReactionPop(pops: reactionsSeen.map { !$0.contains(item.emoji) } ?? false))
         }
@@ -1335,15 +1348,36 @@ struct ShimmerText: View {
     if reduceMotion {
       Text(text).font(font).foregroundStyle(Ink.secondary)
     } else {
-      TimelineView(.animation(minimumInterval: 1.0 / 30)) { context in
-        let t = context.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 2.2) / 2.2
-        let eased = t * t * (3 - 2 * t)
-        let x = -(2 - 4 * eased)
-        Text(text).font(font).foregroundStyle(LinearGradient(
-          stops: [.init(color: Ink.tertiary, location: 0), .init(color: Ink.tertiary, location: 0.25), .init(color: Ink.primary, location: 0.6), .init(color: Ink.tertiary, location: 0.75), .init(color: Ink.tertiary, location: 1)],
-          startPoint: UnitPoint(x: x, y: 0.5), endPoint: UnitPoint(x: x + 2, y: 0.5)))
-      }
+      // The words in the light colour, and over them the same words in full colour, seen through a band that slides
+      // across. SwiftUI moves the band itself; a timeline built the words afresh 30 times a second on the main thread.
+      // Each new text gets a band of its own, so the sweep fits its width.
+      Text(text).font(font).foregroundStyle(Ink.tertiary)
+        .overlay { ShimmerBand(text: text, font: font).id(text) }
     }
+  }
+}
+
+/** The full-colour words seen through the sliding band (ShimmerText), its sweep started once. */
+private struct ShimmerBand: View {
+  let text: String
+  let font: Font
+  @State private var swept = false
+
+  var body: some View {
+    Text(text).font(font).foregroundStyle(Ink.primary)
+      .mask {
+        GeometryReader { box in
+          LinearGradient(
+            stops: [.init(color: .clear, location: 0), .init(color: .clear, location: 0.25), .init(color: .black, location: 0.6), .init(color: .clear, location: 0.75), .init(color: .clear, location: 1)],
+            startPoint: .leading, endPoint: .trailing)
+            .frame(width: box.size.width * 2)
+            .offset(x: (swept ? 2 : -2) * box.size.width)
+        }
+      }
+      .accessibilityHidden(true)
+      .onAppear {
+        withAnimation(.easeInOut(duration: 2.2).repeatForever(autoreverses: false)) { swept = true }
+      }
   }
 }
 

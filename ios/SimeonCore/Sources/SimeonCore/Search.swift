@@ -301,7 +301,11 @@ extension AppStore {
 
   /** The links in the chats the phone has, newest first. */
   public var allLinks: [LinkHit] {
-    transcripts.flatMap { Search.links($0.value, agentId: $0.key) }.sorted { ($0.timestampMs ?? 0) > ($1.timestampMs ?? 0) }
+    // Read again only when a chat changed: search asks on every letter typed, and this runs two patterns over every line.
+    if let read = linksRead, read.version == transcriptsVersion { return read.links }
+    let links = transcripts.flatMap { Search.links($0.value, agentId: $0.key) }.sorted { ($0.timestampMs ?? 0) > ($1.timestampMs ?? 0) }
+    linksRead = (transcriptsVersion, links)
+    return links
   }
 
   /**

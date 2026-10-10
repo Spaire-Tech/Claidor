@@ -185,7 +185,10 @@ extension AppStore {
     case .computer(let payload):
       if let status = BoxStatus(json: payload) { computer.ingest(status) }
     case .diskPressure(let payload):
-      computer.ingestDiskPressure(payload)
+      // The same level again (the computer says it often) changes nothing: set anyway, it redrew whatever reads the computers.
+      var next = computer
+      next.ingestDiskPressure(payload)
+      if next != computer { computer = next }
     case .computerAction(let payload):
       guard let agentId = payload["agentId"]?.text, let pointer = AgentPointer(json: payload) else { return }
       pointers[agentId] = pointer

@@ -375,7 +375,7 @@ struct CodeBlockView: View {
     .overlay(alignment: .topTrailing) {
       Button(action: copy) {
         Image(systemName: copied ? "checkmark" : "doc.on.doc").font(.system(size: 11, weight: .medium)).foregroundStyle(Ink.secondary)
-          .frame(width: 24, height: 24).contentShape(.rect)
+          .frame(width: 24, height: 24).tapRoom(10)
       }
       .buttonStyle(.plain)
       .padding(4)

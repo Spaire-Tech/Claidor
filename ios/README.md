@@ -111,9 +111,12 @@ macOS minutes cost ten times Linux ones, so it never runs by itself.
 
 While the app runs from Xcode, its console shows a line whenever the
 screen stands still for more than a quarter of a second, with what the app
-was doing (`[simeon] the screen stood still 1840 ms, while laying out ava,
-512 lines`), and any step that took longer than a frame (`[simeon] slow:
-…`). A freeze that lasts two seconds also writes where the main thread is
+had last begun and how long before the freeze (`[simeon] the screen stood
+still 1840 ms, while laying out ava, 512 lines (begun 3 ms before the screen
+stopped)`: a step begun seconds before is not what froze), then where the
+main thread was a quarter of a second in, one line per call (the system's
+names; the app's own code shows as `Simeon 0x…`), and any step that took
+longer than a frame (`[simeon] slow: …`). A freeze that lasts two seconds also writes where the main thread is
 stuck, read from its own stack (`[simeon] the main thread is in:` and one
 line per call), again at ten seconds, and what of the app's own kept
 happening meanwhile (`[simeon]   48210 × ChatMessages drawn`): a loop is the

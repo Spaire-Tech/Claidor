@@ -5,8 +5,10 @@ import SimeonCore
 /**
  * Finds what makes the app hang. A thread of its own asks the main thread
  * to answer every tenth of a second; when it takes more than a quarter of a
- * second, the console gets one line: how long the screen stood still, and
- * the last step the app had started ("laying out ava, 512 lines"). A freeze
+ * second, the console gets how long the screen stood still, the last step
+ * the app had started ("laying out ava, 512 lines") and how long before the
+ * freeze it began, and where the main thread was a quarter of a second in
+ * (the system's names; the app's own code shows as "Simeon 0x…"). A freeze
  * that lasts also writes where the main thread is stuck, read from its own
  * stack (at 2 s and again at 10 s: the same lines twice is a wait that never
  * ends, different ones a loop). Run from Xcode, the lines are in its
@@ -33,7 +35,10 @@ enum HangWatch {
         let asked = DispatchTime.now().uptimeNanoseconds
         DispatchQueue.main.async { answered.signal() }
         if answered.wait(timeout: .now() + 0.25) == .timedOut {
-          let during = Trace.now
+          let (during, markedAt) = Trace.current
+          // Where the main thread is a quarter of a second in: the step's name alone told only what began last, which can
+          // be long over (the founder's log, 10 October 2026: "while handling the computer's disk", three times).
+          let early = mainTrace()
           let before = Trace.tallied
           // Still stuck: say so while it lasts (at 2 s, 5 s, 10 s, then every 10 s), so a freeze that never ends is written too.
           var marks: [Double] = [2, 5, 10]
@@ -53,7 +58,10 @@ enum HangWatch {
             }
           }
           let ms = (DispatchTime.now().uptimeNanoseconds - asked) / 1_000_000
-          Trace.log("[simeon] the screen stood still \(ms) ms, while \(during)")
+          let began = (Int64(bitPattern: asked) - Int64(bitPattern: markedAt)) / 1_000_000
+          let when = began >= 0 ? "begun \(began) ms before the screen stopped" : "begun while it was stopped"
+          Trace.log("[simeon] the screen stood still \(ms) ms, while \(during) (\(when))")
+          Trace.log("[simeon] a quarter of a second in, the main thread was in:\n" + early.prefix(24).map { "[simeon]   \($0)" }.joined(separator: "\n"))
         }
         Thread.sleep(forTimeInterval: 0.1)
       }

@@ -1236,7 +1236,7 @@ struct ApprovalCode: View {
         }
       } label: {
         Image(systemName: copied ? "checkmark" : "doc.on.doc").font(.system(size: 11, weight: .medium)).foregroundStyle(Ink.secondary)
-          .frame(width: 24, height: 24).contentShape(.rect)
+          .frame(width: 24, height: 24).tapRoom(10)
       }
       .buttonStyle(.plain)
       .padding(4)
@@ -1554,7 +1554,7 @@ struct TeammatesLine: View {
       Text(exchange.peers.count == 1 ? exchange.peers[0].name : "\(exchange.peers.count) agents")
     }
     .padding(.vertical, 4).padding(.leading, 4).padding(.trailing, 6)
-    .contentShape(Capsule())
+    .tapRoom(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
   }
 
   private func open(_ peer: Party) {
@@ -1831,7 +1831,7 @@ struct RoutinesLine: View {
       if trailing { Image(systemName: "chevron.down").font(.system(size: 9, weight: .semibold)) }
     }
     .padding(.vertical, 4).padding(.leading, 4).padding(.trailing, 6)
-    .contentShape(Capsule())
+    .tapRoom(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
   }
 }
 

@@ -49,7 +49,8 @@ struct NewAgentSheet: View {
   var body: some View {
     NavigationStack {
       VStack(spacing: 0) {
-        ButterflyView(palette: palette, motion: .idle)
+        // It settles and holds still: swaying, it drew a 150-point canvas every frame while the name was typed.
+        ButterflyView(palette: palette, motion: .idle, stillWhenIdle: true)
           .frame(width: 150, height: 150)
           .frame(maxWidth: .infinity, minHeight: 170, maxHeight: .infinity)
         TextField("Name your agent", text: $name)

@@ -375,7 +375,7 @@ struct AgentAvatar: View {
   var members: [Agent] = []
   /** In the chat's header the members stand side by side; in a list row they cluster. */
   var groupInARow = false
-  /** A list row's and the header's butterfly move while the agent works (the Mac's sidebar). */
+  /** The butterfly moves while the agent works (the Mac's sidebar). No screen asks for it now: the agent at work moves in the chat's working row, and only there. */
   var moves = false
 
   var body: some View {

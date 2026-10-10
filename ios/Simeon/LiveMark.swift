@@ -31,8 +31,9 @@ struct LiveButterfly: View {
     let moving = !reduceMotion && !resting
     Group {
       if moving {
-        // At most 60 frames a second, and a butterfly at rest at 30: on a 120 Hz screen each one drew twice as often as the eye needs.
-        MarkCanvas(palette: palette, engine: engine, trails: trails, state: state, fps: state == .idle ? 30 : 60)
+        // 30 frames a second, at work too: each frame runs the engine and draws every path on the main thread, and two
+        // butterflies at 60 kept it busy enough that taps waited (the founder, 10 October 2026: "all our buttons feel heavy").
+        MarkCanvas(palette: palette, engine: engine, trails: trails, state: state, fps: 30)
       } else {
         // Still: the image drawn once, not a canvas drawn again on every redraw.
         Image(uiImage: MarkDrawing.image(palette, style: .live, dark: scheme == .dark))

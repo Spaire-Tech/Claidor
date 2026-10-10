@@ -286,7 +286,7 @@ struct ThreadLinkRow: View {
         .font(.system(size: 12, weight: .medium))
         .foregroundStyle(Ink.link)
         .padding(.horizontal, 10).padding(.vertical, 4)
-        .contentShape(.rect)
+        .tapRoom(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
       }
       .buttonStyle(.plain)
       .onHover { hovering = $0 }

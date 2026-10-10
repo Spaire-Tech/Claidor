@@ -120,7 +120,13 @@ public final class AppStore {
   /** The agents' names and colours for the chat's text, changed only when one of them does, so a roster update (an agent's status) does not redraw every message. */
   public private(set) var mentionNames: [Mentions.AgentName] = []
   /** Each chat's entries; the screens draw `chatRows`, so a change here alone redraws nothing. */
-  @ObservationIgnored public private(set) var transcripts: [String: [Entry]] = [:]
+  @ObservationIgnored public private(set) var transcripts: [String: [Entry]] = [:] {
+    didSet { transcriptsVersion &+= 1 }
+  }
+  /** Bumped by every change to `transcripts`: what is worked out from all of them (search's links) is kept until it moves. */
+  @ObservationIgnored private(set) var transcriptsVersion = 0
+  /** Search's links from every chat, with the version they were read at (`allLinks`). */
+  @ObservationIgnored var linksRead: (version: Int, links: [LinkHit])?
   /** The chat on screen, if one is: it is the one fetched again after a reconnect or a missed line. */
   public private(set) var openChat: String? {
     didSet { if openChat != oldValue { rebuild.selectionChanged(rebuildInputs) } }
@@ -458,8 +464,10 @@ public final class AppStore {
     trayList.finishRead(seq, answer: answer)
   }
 
-  /** The tray's X (`dismissTray`): it goes when the computer says so. No failure is shown, as in the window. */
-  public func dismissTray(_ id: String) async {
+  /** The tray's X (`dismissTray`): it goes when the computer says so (the Mac, as the window), or at once (`atOnce`, the iPhone). No failure is shown, as in the window. */
+  public func dismissTray(_ id: String, atOnce: Bool = false) async {
+    // The iPhone's: gone at the tap. Waiting for the computer's word, the × looked as if it had missed, and was tapped again.
+    if atOnce { trayList.remove(id) }
     _ = try? await backend?.command("dismissTray", ["id": .string(id)])
   }
 
@@ -584,7 +592,15 @@ public final class AppStore {
     if names != mentionNames { mentionNames = names }
     let groups = Set(agents.filter(\.isGroup).map(\.id))
     if groups != groupIds { groupIds = groups }
+    if hasAgents == agents.isEmpty { hasAgents = !agents.isEmpty }
+    let anyHidden = agents.contains(where: \.isHidden)
+    if hasHidden != anyHidden { hasHidden = anyHidden }
   }
+
+  /** Whether any agent is listed, changed only when that flips: a screen that waits for the roster reads this, not the roster each agent's step changes. */
+  public private(set) var hasAgents = false
+  /** Whether any agent is hidden, changed only when that flips (the list's filter menu). */
+  public private(set) var hasHidden = false
 
   /** Which chats are groups, changed only when one is made or deleted: a chat's rows read it instead of the whole roster. */
   public private(set) var groupIds: Set<String> = []
@@ -1097,8 +1113,12 @@ public final class AppStore {
 
   private func mark(_ id: String, in agentId: String, _ state: Outgoing.State) {
     guard let index = outbox[agentId]?.firstIndex(where: { $0.id == id }) else { return }
+    let was = outbox[agentId]?[index].state
     outbox[agentId]?[index].state = state
-    layOut(agentId)
+    // Laid out again only for a change the chat shows ("Failed to send", "Waiting to send…"): sending and sent look the
+    // same, and each send laid the whole chat out four times on the main thread.
+    let shown: (Outgoing.State?) -> Bool = { $0 == .failed || $0 == .queued }
+    if shown(was) || shown(state) { layOut(agentId) }
   }
 
   private func deliver(_ id: String, in agentId: String) async {
@@ -1124,8 +1144,10 @@ public final class AppStore {
     mark(id, in: agentId, .sent)
     promptSent?(agentId)
     Task { await sendNextQueued(agentId) }
+    // The host's copy may already be here: the waiting one goes, and only then is the chat laid out again.
+    let waiting = outbox[agentId]?.count ?? 0
     settleOutbox(agentId, transcripts[agentId] ?? [])
-    layOut(agentId)
+    if (outbox[agentId]?.count ?? 0) != waiting { layOut(agentId) }
     // The host has it. If its copy did not stream (a dropped stream), fetch the chat; then the waiting one goes either way.
     Task { [weak self] in
       try? await Task.sleep(nanoseconds: 4_000_000_000)

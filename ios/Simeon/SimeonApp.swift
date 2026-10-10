@@ -239,7 +239,7 @@ struct LaunchCover: View {
   private var ready: Bool {
     switch session.phase {
     case .starting: return false
-    case .signedIn: return !store.agents.isEmpty || session.firstRun == .needed
+    case .signedIn: return store.hasAgents || session.firstRun == .needed
     default: return true
     }
   }
@@ -316,6 +316,8 @@ struct OnboardingFlow: View {
   @State private var demoBeat = -1
   @State private var name = ""
   @State private var nameTouched = false
+  /** Simeon has left (the name, the hand-off) and his exit has played: drawn still from then on. */
+  @State private var heroGone = false
   @FocusState private var nameFocused: Bool
 
   var body: some View {
@@ -334,9 +336,15 @@ struct OnboardingFlow: View {
     // The keyboard rises over the scene, as the Mac's window keeps its size while a field has the focus; the name is sent with Return.
     .ignoresSafeArea(.keyboard)
     .task(id: step) { await runClock() }
-    .onChange(of: store.agents.isEmpty) { _, empty in
+    // Gone, he stops moving once his exit (0.3 s) has played: moving unseen behind the name's field drew every frame.
+    .task(id: step == .name || step == .handOff) {
+      guard step == .name || step == .handOff else { heroGone = false; return }
+      try? await Task.sleep(nanoseconds: 400_000_000)
+      if !Task.isCancelled { heroGone = true }
+    }
+    .onChange(of: store.hasAgents) { _, has in
       // Agents turned up (a computer that was still waking): the account was not new after all.
-      if !empty && step != .handOff { session.finishOnboarding(opening: nil) }
+      if has && step != .handOff { session.finishOnboarding(opening: nil) }
     }
   }
 
@@ -409,7 +417,7 @@ struct OnboardingFlow: View {
   private func hero(_ layout: OnboardingLayout) -> some View {
     let place = heroPlace(layout)
     let largest: CGFloat = 80 * 2.3
-    return ButterflyView(palette: .named("blue"), motion: place.state)
+    return ButterflyView(palette: .named("blue"), motion: heroGone ? nil : place.state)
       .frame(width: largest, height: largest)
       .rotation3DEffect(.degrees(step == .meet ? turn : 0), axis: (x: 0, y: 1, z: 0), perspective: 0.35)
       .opacity(step == .meet && !heroShown ? 0 : 1)

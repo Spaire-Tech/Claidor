@@ -65,6 +65,22 @@ extension ToolbarItemPlacement {
 }
 
 extension View {
+  /**
+   * More room for a finger than the drawing takes: the touch area reaches
+   * `edges` points past it on each side, and the layout does not change.
+   * Apple's least is 44 points; a 22-point reaction or a 24-point × was
+   * missed as often as hit, and tapped again.
+   */
+  func tapRoom(_ edges: EdgeInsets) -> some View {
+    padding(edges)
+      .contentShape(.rect)
+      .padding(EdgeInsets(top: -edges.top, leading: -edges.leading, bottom: -edges.bottom, trailing: -edges.trailing))
+  }
+
+  func tapRoom(_ points: CGFloat) -> some View {
+    tapRoom(EdgeInsets(top: points, leading: points, bottom: points, trailing: points))
+  }
+
   /** The iPhone's small title in the bar; the Mac's windows and sheets have their own. */
   @ViewBuilder
   func inlineBarTitle() -> some View {
