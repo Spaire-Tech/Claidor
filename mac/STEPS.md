@@ -480,3 +480,71 @@ exchange, `b_n` and `u_n` for find):
 
 A message's time at its right comes with a sideways swipe in the window
 (its "peeking"), which is 2f.
+
+### 2e: the message field's lists, attaching, dictation (in progress)
+
+Written 10 October 2026, **not built yet** (as step 1), measured from the
+reference window (the Simeon chat and the Launch squad group; the
+reference now stages attached files as main does, `stageBytes`) and read
+from its code. Pushed so far:
+
+- **The lists over the field**, as the window opens them (`cAe`): "@", "/"
+  or "#" at the start, after a space or after "(", in the words after the
+  last pick; ":" and two letters for emoji (not in "10:30" or "https://").
+  Each sits 4 over the trigger's line and from its left (kept inside the
+  chat at the right), over the messages: 360 wide on the chat's ground,
+  a hairline, 12 round, rows of 28 (the picture 16, the name 13, what it is
+  at 40%, its kind at the right), up to 320 high, then it scrolls; emoji
+  320 wide, 14 round, ":shortcode:" and the name at 11, up to 260. ↑ and ↓
+  choose (round at either end), Return or Tab picks, Escape puts the list
+  away until its trigger goes or another opens; the pointer chooses too.
+  "@" and "/" with nothing found say "No matches for …" over "Press Esc to
+  close"; "#" and ":" close.
+- **"@"** (`Mention`): everyone (a group of two or more), the members (a
+  group's own; else every other agent and the groups this one is in),
+  the agent's routines, the apps connected, filtered and ordered as the
+  window does, the ones picked lately first among equals.
+- **"/"** (`Reference a skill`): the agent's skills, then the app's
+  actions in the palette's order (Org Chart, Open Hidden Agents while one
+  is hidden, a group's Members, Channels, Chat Settings, Settings: General,
+  Settings: Usage & Billing, Plugins, Theme: System, Light and Dark),
+  eight at most, three kept for actions; SimeonCore's
+  `ComposerLists.appActions` gives the window's own lists for "", "theme",
+  "set", "chan" and "mem" (tested). An action runs and leaves nothing in
+  the words; the themes work now (the whole app, kept for the next launch).
+- **"#"**: the pull requests the chat named, newest first.
+- **":"**: emoji by shortcode, the ones used lately first; a pick puts the
+  emoji and a space in place of ":…".
+- **A pick in the words** (an agent, a routine, an app, a skill, a pull
+  request) sits as one piece, as the window's editor node: its picture
+  (16) and name (12, 500) on a grey wash, 4 round; Delete takes it whole.
+  What is sent is the words with "@Name" for each pick, and the editor's
+  document with the picks (`richText`) as the window sends it. A chat's
+  picks stay with its words while another chat is open. What is pasted
+  comes in as plain words.
+
+#### Buttons that do nothing yet
+
+| Button | Its part or step |
+|---|---|
+| "/" Org Chart, Channels | 12 |
+| "/" Open Hidden Agents | 3 |
+| "/" Members, Chat Settings | 7 |
+| "/" Settings: General, Settings: Usage & Billing | 8 |
+| "/" Plugins | 9 |
+| "/" Update Simeon's Computer (offered once the computer's update is known to the field) | 13 |
+
+#### Not in 2e yet
+
+- Still to come in 2e: attaching files (the + button, dropping and
+  pasting files, the pictures and file chips over the words, "Add a
+  message, or hit send."), dictation (the recording chip with its timer and
+  sound bars, "Transcribing…", the server's `audio/transcriptions`), and
+  More emoji (the full picker from a message's reactions).
+- "/" offers Channels and Org Chart as the reference does; the window
+  offers them only when the account has channels and the org chart is on,
+  which the Mac does not know yet (steps 12).
+- "#" reads pull requests from the messages' words and documents; a cloud
+  agent's card does not add its pull request yet.
+- A routine's and a skill's own icon (`iconId`, `iconUrl`) is not drawn: a
+  routine shows a clock, a skill sparkles.

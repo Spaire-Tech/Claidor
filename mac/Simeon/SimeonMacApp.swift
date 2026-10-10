@@ -28,6 +28,8 @@ struct SimeonMacApp: App {
         .environment(layout)
         .environment(viewers)
         .task { await session.start() }
+        // The theme chosen with "/" (and, in step 8, Settings), as it was left.
+        .onAppear { MacTheme.apply() }
         // The browser's confirm page opens `simeon-mac://…`, which brings the app forward; the poll finishes the sign-in.
         .onOpenURL { _ in }
         .handlesExternalEvents(preferring: ["*"], allowing: ["*"])

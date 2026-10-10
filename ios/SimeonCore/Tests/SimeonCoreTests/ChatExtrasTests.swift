@@ -434,6 +434,23 @@ final class ComposerMenuTests: XCTestCase {
     XCTAssertEqual(ComposerLists.slashEmptyText("", hasAny: false), "Nothing to reference yet")
   }
 
+  /** What the reference window's "/" listed (10 October 2026, the Simeon chat and the Launch squad group). */
+  func testTheAppsActionsAsTheWindowListsThem() {
+    func labels(_ query: String, group: Bool = false) -> [String] {
+      ComposerLists.slashItems(skills: [], actions: ComposerLists.appActions(isGroup: group, hasHiddenAgents: false), query: query).map(\.label)
+    }
+    XCTAssertEqual(labels(""), ["Org Chart", "Channels", "Chat Settings", "Settings: General", "Settings: Usage & Billing", "Plugins", "Theme: System", "Theme: Light"])
+    XCTAssertEqual(labels("", group: true), ["Org Chart", "Members", "Channels", "Chat Settings", "Settings: General", "Settings: Usage & Billing", "Plugins", "Theme: System"])
+    XCTAssertEqual(labels("theme"), ["Theme: Dark", "Theme: Light", "Theme: System", "Settings: General"])
+    XCTAssertEqual(labels("set"), ["Settings: General", "Settings: Usage & Billing", "Chat Settings", "Theme: System", "Theme: Light", "Theme: Dark"])
+    XCTAssertEqual(labels("chan"), ["Channels", "Chat Settings"])
+    XCTAssertEqual(labels("mem"), ["Theme: System"])
+    XCTAssertEqual(labels("mem", group: true), ["Members", "Theme: System"])
+    XCTAssertEqual(labels("hid"), [])
+    XCTAssertEqual(ComposerLists.appActions(isGroup: false, hasHiddenAgents: true).map(\.label).prefix(2), ["Org Chart", "Open Hidden Agents"])
+    XCTAssertEqual(ComposerLists.appActions(isGroup: false, hasHiddenAgents: false, computerUpdate: true).last?.label, "Update Simeon's Computer")
+  }
+
   func testWhatHashOffers() throws {
     let rich = try XCTUnwrap(ComposerDocument.richText("#12 again", chips: [ComposerChip(start: 0, node: .pullRequest(number: 12, title: "Fix login", url: "https://github.com/acme/app/pull/12"))]))
     let entries: [Entry] = [

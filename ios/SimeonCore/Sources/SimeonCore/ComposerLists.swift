@@ -329,6 +329,30 @@ public enum ComposerLists {
     }
   }
 
+  /**
+   * The app's actions "/" offers (the palette's `composerActions`, `RDn`),
+   * in its order: Org Chart; Open Hidden Agents while an agent is hidden;
+   * a group's Members; Channels; Chat Settings; the Settings sections;
+   * Plugins; the three themes; Update Simeon's Computer while an update
+   * waits. Each runs at once; none goes into the message.
+   */
+  public static func appActions(isGroup: Bool, hasHiddenAgents: Bool, hasChannels: Bool = true, showsOrgChart: Bool = true, showsUsage: Bool = true, computerUpdate: Bool = false) -> [Action] {
+    var actions: [Action] = []
+    if showsOrgChart { actions.append(Action(id: "org-chart", label: "Org Chart", keywords: ["open", "organization", "network", "graph"], detail: "Views")) }
+    if hasHiddenAgents { actions.append(Action(id: "open-hidden-chats", label: "Open Hidden Agents", keywords: ["hidden", "unhide", "hide", "sidebar", "bots"], detail: "Sidebar")) }
+    if isGroup { actions.append(Action(id: "info:members", label: "Members", keywords: ["people", "group", "participants"], detail: "Current chat")) }
+    if hasChannels { actions.append(Action(id: "info:channels", label: "Channels", keywords: ["messaging", "platforms", "connect"], detail: "Current chat")) }
+    actions.append(Action(id: "info:settings", label: "Chat Settings", keywords: ["details", "notifications"], detail: "Current chat"))
+    actions.append(Action(id: "settings:general", label: "Settings: General", keywords: ["account", "model", "notifications", "preferences", "appearance", "theme", "mode", "security", "yubikey", "webauthn"], detail: "Settings"))
+    if showsUsage { actions.append(Action(id: "settings:usage", label: "Settings: Usage & Billing", keywords: ["usage", "billing", "spend", "limit", "on-demand", "plan", "quota"], detail: "Settings")) }
+    actions.append(Action(id: "overlay:plugins", label: "Plugins", keywords: ["plugins", "marketplace", "tools", "skills", "mcp", "connectors", "customize"]))
+    actions.append(Action(id: "theme:system", label: "Theme: System", keywords: ["appearance", "os", "auto", "follow"], detail: "Settings · Appearance"))
+    actions.append(Action(id: "theme:light", label: "Theme: Light", keywords: ["appearance", "day", "bright"], detail: "Settings · Appearance"))
+    actions.append(Action(id: "theme:dark", label: "Theme: Dark", keywords: ["appearance", "night", "mode"], detail: "Settings · Appearance"))
+    if computerUpdate { actions.append(Action(id: "computer-update", label: "Update Simeon's Computer", keywords: ["box", "image", "machine", "recreate", "latest", "shared"], detail: "Updates")) }
+    return actions
+  }
+
   public enum SlashItem: Identifiable, Equatable, Sendable {
     case skill(ComposerMenus.Skill)
     case action(Action)
