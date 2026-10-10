@@ -324,6 +324,7 @@ struct MentionIcon: View {
 final class ChipAttachment: NSTextAttachment {
   let node: ComposerChip.Node
 
+  @MainActor
   init(node: ComposerChip.Node, image: NSImage?) {
     self.node = node
     super.init(data: nil, ofType: nil)

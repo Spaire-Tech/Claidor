@@ -99,8 +99,9 @@ struct Composer: View {
     }
     .frame(maxWidth: .infinity)
     .frame(height: height)
+    // The hairline under the frame's content, so an open list over the words is not crossed by it.
+    .background { RoundedRectangle(cornerRadius: expanded ? 18 : 22).strokeBorder(look.composerEdge, lineWidth: 1) }
     .background(look.composer, in: RoundedRectangle(cornerRadius: expanded ? 18 : 22))
-    .overlay { RoundedRectangle(cornerRadius: expanded ? 18 : 22).strokeBorder(look.composerEdge, lineWidth: 1) }
     .shadow(color: look.dark ? .clear : .black.opacity(0.05), radius: 3.5, x: 0, y: 2)
     .shadow(color: look.dark ? .clear : .black.opacity(0.03), radius: 1, x: 0, y: 1)
     .onGeometryChange(for: CGFloat.self) { proxy in proxy.size.width } action: { value in
@@ -121,6 +122,8 @@ struct Composer: View {
     .onChange(of: height, initial: true) { _, value in control.composerHeight = value }
     .onChange(of: text) { _, next in
       store.setDraft(next, for: agentId)
+      // The picks go with the words as they are now (both are set together as the field changes).
+      Composer.keptChips[agentId] = chips.isEmpty ? nil : (next, chips)
       relayout(edited: true)
     }
     .onChange(of: chips) { _, next in
@@ -213,6 +216,8 @@ struct Composer: View {
   private func listKey(_ key: ListKey) -> Bool {
     guard picks.request != nil else { return false }
     let rows = picks.rows(agentId: agentId, store: store)
+    // "#" and ":" with nothing found show nothing: their keys are the field's.
+    guard !rows.isEmpty || picks.emptyLine(agentId: agentId, store: store) != nil else { return false }
     switch key {
     case .close:
       picks.dismiss()
@@ -439,7 +444,7 @@ struct MessageField: NSViewRepresentable {
   /** A pick as one character of the text: its chip's picture. */
   @MainActor
   static func chipString(_ node: ComposerChip.Node, look: Look, store: AppStore, attributes: [NSAttributedString.Key: Any]) -> NSAttributedString {
-    let piece = NSMutableAttributedString(attachment: ChipAttachment(node: node, image: ChipLabel.image(node, look: look, store: store)))
+    let piece = NSMutableAttributedString(attributedString: NSAttributedString(attachment: ChipAttachment(node: node, image: ChipLabel.image(node, look: look, store: store))))
     var kept = attributes
     kept[.baselineOffset] = nil
     piece.addAttributes(kept, range: NSRange(location: 0, length: piece.length))
@@ -549,15 +554,25 @@ struct MessageField: NSViewRepresentable {
     let themeChanged = coordinator.dark != look.dark
     if themeChanged || shown.draft != text || shown.chips != chips {
       // Words set from outside (a draft brought back, a message sent), or the theme's colours for the picks.
+      let fromOutside = shown.draft != text || shown.chips != chips
       let selection = view.selectedRange()
+      coordinator.rebuilding = true
       view.typingAttributes = attributes
       view.textStorage?.setAttributedString(MessageField.attributed(text, chips: chips, ink: ink, look: look, store: store))
       let length = (view.string as NSString).length
-      view.setSelectedRange(NSRange(location: min(selection.location, length), length: 0))
+      // A draft brought back into an empty field puts the caret at its end.
+      view.setSelectedRange(NSRange(location: shown.draft.isEmpty ? length : min(selection.location, length), length: 0))
+      coordinator.rebuilding = false
+      // Undo would replay typing on words that are gone.
+      if fromOutside { coordinator.undo.removeAllActions() }
       coordinator.shown = (text, chips)
       coordinator.dark = look.dark
       coordinator.measure(view)
-      coordinator.report(view)
+      // Not while SwiftUI lays the window out.
+      DispatchQueue.main.async { [weak view, weak coordinator] in
+        guard let view, let coordinator else { return }
+        coordinator.report(view)
+      }
     } else if (view.typingAttributes[.foregroundColor] as? NSColor) != ink {
       view.typingAttributes = attributes
     }
@@ -574,8 +589,14 @@ struct MessageField: NSViewRepresentable {
     /** The draft and picks the field shows, so words set from outside are told from typing. */
     var shown: (draft: String, chips: [ComposerChip]) = ("", [])
     var dark = false
+    /** The words are being set from outside: the selection's change is not the person's. */
+    var rebuilding = false
+    /** The field's own undo, cleared when its words are set from outside. */
+    let undo = UndoManager()
 
     init(_ parent: MessageField) { self.parent = parent }
+
+    func undoManager(for view: NSTextView) -> UndoManager? { undo }
 
     func textDidChange(_ notification: Notification) {
       guard let view = notification.object as? NSTextView, let storage = view.textStorage else { return }
@@ -588,7 +609,7 @@ struct MessageField: NSViewRepresentable {
     }
 
     func textViewDidChangeSelection(_ notification: Notification) {
-      guard let view = notification.object as? NSTextView else { return }
+      guard !rebuilding, let view = notification.object as? NSTextView else { return }
       report(view)
     }
 
@@ -684,6 +705,9 @@ final class FieldTextView: NSTextView {
   var onResize: (() -> Void)?
   var wantsFocus = false
   var onFiles: (([IncomingFile]) -> Void)?
+
+  /** Plain words only, pasted or dropped (files are taken before this, in `paste` and the drag). */
+  override var readablePasteboardTypes: [NSPasteboard.PasteboardType] { [.string] }
 
   override func paste(_ sender: Any?) {
     if let files = FieldTextView.files(on: NSPasteboard.general), !files.isEmpty {
