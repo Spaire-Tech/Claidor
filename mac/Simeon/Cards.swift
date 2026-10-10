@@ -31,19 +31,24 @@ struct StatusPill: View {
   let text: String
   let look: Look
   var dot: Color?
+  var ink: Color?
+  var wash: Color?
+  /** The approval and cloud agent pills: 13 on 18, 22 high. */
+  var large = false
 
   var body: some View {
     HStack(spacing: 6) {
       Circle().fill(dot ?? look.inkTertiary).frame(width: 6, height: 6)
       Text(text)
-        .font(.system(size: 12, weight: .medium))
-        .foregroundStyle(look.inkSecondary)
+        .font(.system(size: large ? 13 : 12, weight: .medium))
+        .tracking(large ? -0.08 : 0)
+        .foregroundStyle(ink ?? look.inkSecondary)
         .lineLimit(1)
     }
     .padding(.vertical, 2)
     .padding(.horizontal, 8)
-    .frame(height: 20)
-    .background(look.wash, in: Capsule())
+    .frame(height: large ? 22 : 20)
+    .background(wash ?? look.wash, in: Capsule())
     .fixedSize()
   }
 }
@@ -1178,6 +1183,243 @@ struct AirlineMark: View {
     .task(id: logo) {
       guard logo.hasPrefix("https://"), let url = URL(string: logo), let (data, _) = try? await URLSession.shared.data(from: url) else { return }
       picture = NSImage(data: data)
+    }
+  }
+}
+
+// MARK: The computer handed over
+
+/**
+ * The agent hands the person its computer (`simeon-handoff`, at most 380
+ * wide, 20 round, padded 16, its parts 14 apart): a white tile (44, 12
+ * round) with a screen, "Your turn on the computer" (15, 600) over "Waiting
+ * for you" beside a pulsing blue dot; the agent's instruction (15 on 21);
+ * then Take over in the blue beside a grey I'm done, and Skip as a quiet
+ * line under them. Once settled: "Computer" and what happened (Done,
+ * Answered, Skipped), the instruction in grey, and Open computer. Opening
+ * the computer is step 13.
+ */
+struct ComputerHandoffCard: View {
+  let agentId: String
+  let instruction: String
+  let resolution: String?
+  let look: Look
+  @Environment(AppStore.self) private var store
+  @State private var pulse = false
+
+  private var ink: Color { look.dark ? Color(hex: 0xf5f5f7) : Color(hex: 0x1d1d1f) }
+  private var grey: Color { look.dark ? Color(hex: 0x98989d) : Color(hex: 0x6e6e73) }
+  private var fill: Color { look.dark ? Color(hex: 0x3a3a3c) : Color.white }
+  private var blue: Color { look.dark ? Color(hex: 0x2f6db0) : Color(hex: 0x255a93) }
+
+  var body: some View {
+    let waiting = resolution == nil
+    let outcome = ["handed_back": "Done", "replied": "Answered", "dismissed": "Skipped"][resolution ?? ""] ?? "Done"
+    let words = instruction.trimmingCharacters(in: .whitespacesAndNewlines)
+    VStack(alignment: .leading, spacing: 14) {
+      HStack(spacing: 12) {
+        Image(systemName: "display")
+          .font(.system(size: 18, weight: .regular))
+          .foregroundStyle(ink)
+          .frame(width: 44, height: 44)
+          .background(fill, in: RoundedRectangle(cornerRadius: 12))
+        VStack(alignment: .leading, spacing: 1) {
+          Text(waiting ? "Your turn on the computer" : "Computer")
+            .font(.system(size: 15, weight: .semibold))
+            .foregroundStyle(ink)
+          HStack(spacing: 6) {
+            Circle()
+              .fill(waiting ? blue : grey)
+              .frame(width: 7, height: 7)
+              .background {
+                if waiting {
+                  Circle().stroke(blue.opacity(pulse ? 0 : 0.35), lineWidth: pulse ? 10 : 0)
+                }
+              }
+            Text(waiting ? "Waiting for you" : outcome)
+              .font(.system(size: 13))
+              .foregroundStyle(grey)
+          }
+        }
+      }
+      if !words.isEmpty {
+        Text(words)
+          .font(.system(size: 15))
+          .foregroundStyle(waiting ? ink : grey)
+          .cssLineHeight(21, size: 15)
+          .fixedSize(horizontal: false, vertical: true)
+      }
+      if waiting {
+        VStack(spacing: 8) {
+          HStack(spacing: 8) {
+            pill("Take over", ground: blue, ink: .white) {}
+            pill("I’m done", ground: fill, ink: ink) {
+              Task { await store.handBackComputer(agentId) }
+            }
+          }
+          Button {
+            Task { await store.handBackComputer(agentId, skip: true) }
+          } label: {
+            Text("Skip")
+              .font(.system(size: 13))
+              .foregroundStyle(grey)
+              .padding(.horizontal, 8)
+              .frame(height: 24)
+          }
+          .buttonStyle(.plain)
+          .help("Cancel this request without doing the step; the agent continues without it")
+        }
+      } else {
+        pill("Open computer", ground: fill, ink: ink) {}
+          .fixedSize()
+      }
+    }
+    .tracking(-0.15)
+    .padding(16)
+    .frame(maxWidth: 380, alignment: .leading)
+    .background(look.dark ? Color(hex: 0x2c2c2e) : look.theirs, in: RoundedRectangle(cornerRadius: 20))
+    .accessibilityElement(children: .contain)
+    .accessibilityLabel(waiting ? "Your turn on the computer" : "Computer")
+    .onAppear {
+      guard waiting else { return }
+      withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) { pulse = true }
+    }
+  }
+
+  private func pill(_ title: String, ground: Color, ink: Color, action: @escaping () -> Void) -> some View {
+    Button(action: action) {
+      Text(title)
+        .font(.system(size: 15, weight: .medium))
+        .foregroundStyle(ink)
+        .padding(.horizontal, 16)
+        .frame(maxWidth: .infinity)
+        .frame(height: 36)
+        .background(ground, in: Capsule())
+        .contentShape(Capsule())
+    }
+    .buttonStyle(.plain)
+  }
+}
+
+// MARK: Cloud agents
+
+/**
+ * A cloud agent the agent started (`sand-cloud-agent-card`): its name (14
+ * on 22, 500, opening the pull request) with its state in a pill (Done in
+ * green, Error in red, the rest grey); what it was asked; its branch and
+ * "PR #412"; how many files changed with the lines added in green and taken
+ * out in red; View PR in the blue and Open plain. Asked again every five
+ * seconds while it works (SimeonCore's `CloudAgentInfo.nextPoll`).
+ */
+struct CloudAgentCardView: View {
+  let bcId: String
+  let look: Look
+  @Environment(AppStore.self) private var store
+  @State private var info: CloudAgentInfo?
+
+  var body: some View {
+    let shown = info ?? CloudAgentInfo.unavailable
+    let pull = URL(string: shown.pullRequestURL)
+    CardShell(look: look, spacing: 12) {
+      VStack(alignment: .leading, spacing: 4) {
+        HStack(spacing: 8) {
+          Button { if let pull { NSWorkspace.shared.open(pull) } } label: {
+            Text(shown.name.isEmpty ? "Cloud agent" : shown.name)
+              .font(.system(size: 14, weight: .medium))
+              .tracking(-0.15)
+              .foregroundStyle(look.ink)
+              .lineLimit(1)
+              .truncationMode(.tail)
+          }
+          .buttonStyle(.plain)
+          .disabled(pull == nil)
+          .help("Open the pull request")
+          .frame(maxWidth: .infinity, alignment: .leading)
+          statusPill(shown)
+        }
+        .frame(minHeight: 22)
+        if !shown.prompt.isEmpty {
+          Text(shown.prompt)
+            .font(.system(size: 14))
+            .tracking(-0.15)
+            .foregroundStyle(look.ink)
+            .lineLimit(1)
+            .truncationMode(.tail)
+        }
+        if !shown.branch.isEmpty || shown.pullRequestNumber != nil {
+          HStack(spacing: 4) {
+            Image(systemName: "arrow.triangle.branch")
+              .font(.system(size: 10))
+              .foregroundStyle(look.inkSecondary)
+              .frame(width: 12, height: 12)
+            if !shown.branch.isEmpty {
+              Text(shown.branch)
+                .font(.system(size: 14))
+                .tracking(-0.15)
+                .foregroundStyle(look.inkSecondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+            }
+            if let number = shown.pullRequestNumber {
+              Button { if let pull { NSWorkspace.shared.open(pull) } } label: {
+                Text("PR #\(number)")
+                  .font(.system(size: 14))
+                  .tracking(-0.15)
+                  .foregroundStyle(look.inkTertiary)
+              }
+              .buttonStyle(.plain)
+              .help("Open the pull request")
+            }
+          }
+        }
+        if let changed = shown.changedLabel {
+          HStack(spacing: 8) {
+            HStack(spacing: 4) {
+              Image(systemName: "doc")
+                .font(.system(size: 10))
+                .frame(width: 12, height: 12)
+              Text(changed)
+            }
+            .foregroundStyle(look.inkSecondary)
+            HStack(spacing: 4) {
+              Text("+\(shown.linesAdded)").foregroundStyle(look.added)
+              Text("-\(shown.linesRemoved)").foregroundStyle(look.dark ? Color(hex: 0xff5667) : Color(hex: 0xc21d2e))
+            }
+          }
+          .font(.system(size: 14))
+          .tracking(-0.15)
+        }
+      }
+      HStack(spacing: 8) {
+        if let pull {
+          CardButton(title: "View PR", prominent: true, look: look) { NSWorkspace.shared.open(pull) }
+            .help("Open the pull request")
+        }
+        CardButton(title: "Open", look: look) {
+          if let page = CloudAgentInfo.webURL(bcId) { NSWorkspace.shared.open(page) }
+        }
+        .help("Open this cloud agent")
+      }
+    }
+    .task(id: bcId) {
+      while !Task.isCancelled {
+        let read = await store.cloudAgent(bcId)
+        if case .info(let fresh) = read { info = fresh }
+        guard let wait = CloudAgentInfo.nextPoll(after: read, known: info) else { return }
+        try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000))
+      }
+    }
+  }
+
+  @ViewBuilder
+  private func statusPill(_ shown: CloudAgentInfo) -> some View {
+    switch shown.status {
+    case .finished:
+      StatusPill(text: shown.statusLabel, look: look, dot: look.working, ink: look.added, wash: look.addedWash, large: true)
+    case .error:
+      StatusPill(text: shown.statusLabel, look: look, dot: Color(hex: 0xff263c), ink: look.dark ? Color(hex: 0xff5667) : Color(hex: 0xc21d2e), wash: Color(hex: 0xff263c).opacity(look.dark ? 0.16 : 0.09), large: true)
+    default:
+      StatusPill(text: shown.statusLabel, look: look, large: true)
     }
   }
 }

@@ -328,5 +328,13 @@ window's Gallery chat, one card at a time. Pushed so far:
   greys as the window sets them. Opening an offer shows it in the agent
   pane, which is step 7; until then the row does nothing.
 
-Still to come in 2c: a cloud agent, "Your turn on the computer", opening a
-file or a picture in the preview, and a diagram full screen.
+- **"Your turn on the computer"**: the computer tile, "Waiting for you"
+  with a pulsing blue dot, the agent's instruction, Take over, I'm done and
+  Skip; once settled, what happened and Open computer. Take over and Open
+  computer open the computer, step 13.
+- **A cloud agent**: its name, state, what it was asked, its branch and
+  pull request, the files and lines it changed, View PR and Open; asked
+  again every five seconds while it works.
+
+Still to come in 2c: opening a file or a picture in the preview, and a
+diagram full screen.

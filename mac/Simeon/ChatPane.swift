@@ -273,6 +273,14 @@ private struct TranscriptRow: View {
         .overlay { shape.inset(by: -0.25).stroke(look.theirsHairline, lineWidth: 0.5) }
         .shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1)
         .padding(.top, startsGroup ? 12 : 0)
+    case .cloudAgent(_, let bcId):
+      CloudAgentCardView(bcId: bcId, look: look)
+        .frame(maxWidth: limit(640), alignment: .leading)
+        .padding(.top, startsGroup ? 12 : 0)
+    case .request(_, .computer(_, let instruction, let resolution)):
+      ComputerHandoffCard(agentId: agentId, instruction: instruction, resolution: resolution, look: look)
+        .frame(maxWidth: limit(380), alignment: .leading)
+        .padding(.top, startsGroup ? 12 : 0)
     case .request(let id, .secret(let label, let description, let provided)):
       SecretCardView(entryId: id, agentId: agentId, label: label, description: description, provided: provided, look: look)
         .frame(maxWidth: limit(640), alignment: .leading)
