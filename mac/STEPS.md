@@ -106,7 +106,7 @@ first build on the founder's Mac is the first real check.
 | Search, and ⌘K | 4 (done) |
 | New chat, and ⌘N | 5 (done) |
 | The account's initials | 10 |
-| Connect apps | 9 |
+| Connect apps | 9 (done) |
 | Simeon › About Simeon | 10 |
 | Agent › Call … | 11 |
 | A row's right-click | 3 (done) |
@@ -568,7 +568,7 @@ from its code. Pushed so far:
 | "/" Chat Settings | 7 (done) |
 | "/" Members | 7d (done) |
 | "/" Settings: General, Settings: Usage & Billing | 8 (done) |
-| "/" Plugins | 9 |
+| "/" Plugins | 9 (done) |
 | "/" Update Simeon's Computer (offered once the computer's update is known to the field) | 13 |
 
 #### Not in 2e yet
@@ -756,7 +756,7 @@ Pushed:
 | Button | Its step |
 |---|---|
 | Edit Profile, in a row's menu | 7 (done) |
-| The initials, Connect apps | 10, 9 (as step 1; Search and New chat are steps 4 and 5, done) |
+| The initials, Connect apps | 10, 9 (done) (as step 1; Search and New chat are steps 4 and 5, done) |
 
 #### Not in step 3 yet
 
@@ -857,7 +857,7 @@ tested against what the window lists for the same words. Pushed:
 | Members | 7d (done) |
 | Channels | 12 |
 | Settings: General, Settings: Usage & Billing | 8 (done) |
-| Plugins | 9 |
+| Plugins | 9 (done) |
 
 Each closes search, as the window's do, and opens nothing yet. A routine
 opens its agent; in the window it also opens the agent's pane on its
@@ -1478,3 +1478,124 @@ moving the Mac to another zone with Settings open shows the new zone at the
 next opening. Still to check on a Mac: the Cancel Trial alert's layout
 while its button says "Canceling…".
 
+## Step 9: Connect apps (Plugins)
+
+Read from the window's Plugins overlay (the chunk `view-B5Ug8wEm.js`, the
+patch's light look) and measured in the reference window at four sizes,
+light and dark, with fixtures for the states the demo does not show (a
+slow and a failing add, every sign-in answer, five statuses, a second
+account, a server no entry claims, team installs, setup values, 24 tools,
+skills, the GitHub banner, an empty or failing catalog). Pushed:
+
+- **Where it is**: in Settings' place over the window (one of them at a
+  time: ⌘, over Plugins brings Settings, Plugins over Settings replaces it),
+  the same panel and dim; × 28 round at the corner. No motion anywhere:
+  pages, tabs and Added change at once.
+- **Ways in**: Connect apps at the sidebar's foot, ⌘K and "/" "Plugins",
+  ⌘⇧M and ⌘⇧W (both on Marketplace, as the window's), and a plugin's link
+  (`simeon-mac://app/v1/plugin/add?id=…`), which opens that plugin's page.
+  Ways out: Escape (the search's words first, then the search itself, then
+  Plugins; on a page too), ×, a click on the dim, an agent, message, file
+  or routine picked in ⌘K. Closing forgets the view (Marketplace, no
+  search, no filter, no page).
+- **The bar**: Marketplace and Yours (chosen on the press), the Filter
+  button and its menu (Type: All types, Connectors, Skills; Ownership: All,
+  Team, Public; it stays open while choosing), "Search plugins" (240 wide,
+  each key filters at once; ⌘F puts the keys there). The search is shared
+  by both tabs; each tab has its own filter.
+- **Marketplace**: the sections A to Z (Featured first when there is one),
+  "Results" while searching; two columns of rows (64 high: the logo, the
+  name, its line, Add, the spinner while adding, or Added with its tick);
+  4 rows a section with "Show N more"; the empty lines ("Loading the
+  marketplace…", "No plugins match …", "The marketplace isn't available
+  right now…").
+- **A plugin's page**: Back, its name in the bar; the logo (56), the name,
+  View Source ↗, the description; Add (the blue), Uninstall, or the team's
+  label with Remove; Accounts (each one's status word and Authenticate,
+  Reopen while its sign-in waits in the browser, Retry after ten minutes),
+  Tools (folded, "n of m enabled", each switch), Setup Values with Edit
+  Values, Connectors and Skills (folded). A server no entry claims has its
+  own page with Details (Source, Transport, URL or Command, Tools).
+- **The setup page** (Add on a plugin that asks for values, or Edit
+  Values): each value (secrets hidden, "(optional)"), what is missing, then
+  "Add <Name>" or Save Values; Return sends.
+- **Yours**: the GitHub banner with Fix with agent (it opens or makes the
+  Plugin Setup agent and opens its chat), Installed (6 rows, "Show all N
+  plugins"; each with its status word or sign-in), Private (the open
+  agent's skills, each with its switch); a skill's page with Name,
+  Description, Instructions, Save and Delete skill.
+- **The notice** at the panel's foot, green or red, 3.5 s (6 s for a
+  failure), with Dismiss.
+
+The calls are the Mac app's first Plugins window's (checked again against
+the window and the box: `desktopMcp` `getCatalog`, `listServers`,
+`listEffectivePlugins`, `installEntry`, `updatePluginInstall`,
+`uninstallPlugin`, `removeServer`, `authenticateServer`, `listServerTools`,
+`toggleMcpToolDisabled`, `resolvePluginLogo`; the agent's skills and the
+plugin sync). Read when Plugins opens, the servers again every 15 seconds
+while it is open and when the window comes forward. The new words and
+small rules are SimeonCore's `PluginsOverlay.swift`, with tests.
+
+#### Not in step 9
+
+- Team popularity ("Used by N teammates"): the box has no such call, and
+  Simeon has no teams. Multi-account editing and skill publishing are
+  behind gates the window keeps off.
+- The chat's references that open Plugins (an app to install, a server, a
+  skill) and a connector card's "Browse more": the cards that carry them
+  are not drawn that way yet. The openers exist (`PluginsState.open`).
+- Keyboard: nothing in Plugins takes the keys when it opens, and Tab moves
+  as the Mac's controls do, which can reach the window behind (as in
+  Settings, step 8).
+
+#### Decisions to confirm
+
+1. Escape on a page closes all of Plugins, as the window does, instead of
+   going back a page.
+2. ⌘⇧W ("Skills") opens Marketplace, as the window does, not Yours.
+3. A failed read looks like an empty one ("isn't available right now",
+   "Nothing installed yet"), with no Retry, as the window has it.
+4. Errors are shown as the computer words them (sometimes a code such as
+   "desktop-source/malformed-reply").
+5. Uninstall, Remove and Delete skill ask nothing first.
+
+Not copied (the window's fault): ⌘F on a page reaching the chat's Find
+behind; here it does nothing on a page.
+
+#### Where the native parts look different
+
+The Filter menu is the Mac's menu (its choices are the Mac's ticks, and it
+stays open while choosing); the switches are the Mac's (mini); the fields
+are the Mac's text fields; icons are SF Symbols (line.3.horizontal.decrease,
+magnifyingglass, chevron.left, checkmark, person.2, list.bullet.rectangle).
+
+#### What to compare
+
+K01–K09 and the plugins-* captures, light and dark: Marketplace at the top
+and scrolled, the Filter menu, a search, a plugin's page added (Linear) and
+new (HubSpot), Yours with its rows, a page from Yours (Gmail), dark; Add,
+the spinner, Added; a sign-in; Escape, ×, a click on the dim, ⌘K and ⌘,
+over Plugins.
+
+#### After the compile review
+
+A second reader with the compiler's rules found nothing that would not
+build, and these faults, fixed before the push:
+
+- Each opening reads the catalog afresh: a plugin's link no longer closes
+  its page for want of the last opening's catalog; signing out forgets the
+  account's plugins.
+- The servers read every 15 seconds redraw nothing unless they changed.
+- ⌘F picks the search's words once the field has the keys.
+- The Filter menu's choices are the Mac's radio buttons (one each, still
+  open while choosing).
+- The list kept under a page takes no keys.
+- The pane's keys (⌘⇧, ⌘⇧I) and Control-Tab wait while Settings or Plugins
+  is open. ⌘N and ⌘B still act behind, as step 8 notes.
+- Escape in a page's field (setup values, a skill) lets go of the field
+  first; the next Escape closes Plugins. The window was measured only with
+  the search; this keeps what was typed from going with one key.
+
+To check on a Mac: an app's sign-in finishing in the browser (the Electron
+app catches a loopback redirect on the Mac; here the computer's manager
+runs the sign-in, so its redirect should be the hosted one).

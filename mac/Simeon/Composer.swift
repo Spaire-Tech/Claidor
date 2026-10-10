@@ -34,6 +34,7 @@ struct Composer: View {
   @Environment(NewChatState.self) private var newChat
   @Environment(PaneState.self) private var pane
   @Environment(SettingsState.self) private var settings
+  @Environment(PluginsState.self) private var plugins
   @Environment(SidebarLayout.self) private var layout
   @State private var text = ""
   /** The picks in the words ("@Nora" as one piece). */
@@ -328,6 +329,7 @@ struct Composer: View {
     case "info:members": pane.open(.computer, layout: layout)
     case "settings:general": settings.open(.general)
     case "settings:usage": settings.open(.usage)
+    case "overlay:plugins": plugins.open()
     case "theme:system": MacTheme.set("system")
     case "theme:light": MacTheme.set("light")
     case "theme:dark": MacTheme.set("dark")

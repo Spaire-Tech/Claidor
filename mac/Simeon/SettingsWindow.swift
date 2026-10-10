@@ -27,8 +27,12 @@ final class SettingsState {
 
   /** Settings is over the window: the window's own keys under it wait. */
   static var showing = false
+  /** Plugins, which takes the same place over the window: opening Settings closes it (set by the app). */
+  @ObservationIgnored weak var plugins: PluginsState?
 
   func open(_ page: Page = .general) {
+    // One overlay at a time (the window's overlay slot): Plugins gives way.
+    plugins?.close()
     if isOpen && page == asked { return }
     asked = page
     self.page = page
@@ -45,6 +49,11 @@ final class SettingsState {
     NSApp.keyWindow?.makeFirstResponder(nil)
     isOpen = false
   }
+}
+
+/** Settings or Plugins over the window (the window's one overlay slot): the window's keys and gestures under them wait. */
+enum WindowOverlay {
+  @MainActor static var showing: Bool { SettingsState.showing || PluginsState.showing }
 }
 
 /** The dim and the panel, over the window (under search). */

@@ -1237,14 +1237,14 @@ final class BlockMenuItem: NSMenuItem {
   @objc private func fire() { run() }
 }
 
-/** A tick in a menu that stays open while it is ticked (the Mac's checkbox, in the item's own view). */
+/** A tick in a menu that stays open while it is ticked (the Mac's checkbox, in the item's own view); or one of a few choices (`radio`: the Mac's radio button, which stays on when pressed again). */
 final class CheckMenuRow: NSView {
   private let box: NSButton
   var onToggle: (Bool) -> Void
 
-  init(title: String, on: Bool, width: CGFloat, toggle: @escaping (Bool) -> Void) {
+  init(title: String, on: Bool, width: CGFloat, radio: Bool = false, toggle: @escaping (Bool) -> Void) {
     onToggle = toggle
-    box = NSButton(checkboxWithTitle: title, target: nil, action: nil)
+    box = radio ? NSButton(radioButtonWithTitle: title, target: nil, action: nil) : NSButton(checkboxWithTitle: title, target: nil, action: nil)
     super.init(frame: NSRect(x: 0, y: 0, width: width, height: 24))
     box.state = on ? .on : .off
     box.font = NSFont.menuFont(ofSize: 0)

@@ -80,7 +80,7 @@ final class SearchState {
   func close() {
     isOpen = false
     // The keys go back to the message field, as the window's dialog gives the focus back; not under Settings (its Escape would go to the field).
-    if !SettingsState.showing { WindowState.composerFocus += 1 }
+    if !WindowOverlay.showing { WindowState.composerFocus += 1 }
     modifierHeld = false
     messages = HostAnswer(blankAsked: false)
     files = HostAnswer(blankAsked: true)
@@ -241,22 +241,26 @@ final class SearchState {
     case .agent(let agent, _):
       sidebar.selection.plain(agent.id)
       window.choose(agent.id, store: store)
-      // Over Settings, an agent picked opens its chat and closes Settings.
+      // Over Settings or Plugins, an agent picked opens its chat and closes them.
       settings?.close()
+      plugins?.close()
     case .command(let command):
       run(command.id, sidebar: sidebar)
     case .message(let hit):
       window.reveal(hit.entryId, in: hit.agentId, store: store)
-      // A message, a file or a routine opens a chat as an agent does: Settings closes for it (not measured; the agent row is).
+      // A message, a file or a routine opens a chat as an agent does: Settings and Plugins close for it (not measured; the agent row is).
       settings?.close()
+      plugins?.close()
     case .file(let hit):
       window.reveal(hit.entryId, in: hit.agentId, store: store)
       settings?.close()
+      plugins?.close()
     case .link(let url):
       if let address = URL(string: url) { NSWorkspace.shared.open(address) }
     case .routine(let hit):
       window.choose(hit.agentId, store: store)
       settings?.close()
+      plugins?.close()
     }
     close()
   }
@@ -265,12 +269,13 @@ final class SearchState {
   @ObservationIgnored weak var pane: PaneState?
   @ObservationIgnored weak var layout: SidebarLayout?
   @ObservationIgnored weak var settings: SettingsState?
+  @ObservationIgnored weak var plugins: PluginsState?
 
   /**
    * An action. The themes, Open Hidden Agents, Chat Settings (the pane on
-   * Profile), Members (on Computer) and Settings work now; the rest open
-   * screens copied in later steps (mac/STEPS.md): Org Chart (12), Channels
-   * (12), Plugins (9).
+   * Profile), Members (on Computer), Settings and Plugins work now; the rest
+   * open screens copied in later steps (mac/STEPS.md): Org Chart (12),
+   * Channels (12).
    */
   private func run(_ id: String, sidebar: SidebarState) {
     switch id {
@@ -280,6 +285,7 @@ final class SearchState {
       if let pane, let layout { pane.open(.computer, layout: layout) }
     case "settings:general": settings?.open(.general)
     case "settings:usage": settings?.open(.usage)
+    case "overlay:plugins": plugins?.open()
     case "theme:system": MacTheme.set("system")
     case "theme:light": MacTheme.set("light")
     case "theme:dark": MacTheme.set("dark")

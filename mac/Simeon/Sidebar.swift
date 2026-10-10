@@ -259,16 +259,17 @@ private struct AccountDisc: View {
 /**
  * Connect apps (`sand-agents-sidebar__plugins`): 15, medium, the window's
  * blue, then Gmail, Calendar and Drive on three white tiles, the first
- * turned 7° left, the last 7° right. The Plugins window comes with step 9
- * (mac/STEPS.md).
+ * turned 7° left, the last 7° right. It opens Plugins on Marketplace
+ * (step 9).
  */
 private struct ConnectApps: View {
   @State private var hovering = false
+  @Environment(PluginsState.self) private var plugins
   @Environment(\.colorScheme) private var scheme
 
   var body: some View {
     let look = Look(scheme)
-    Button {} label: {
+    Button { plugins.open() } label: {
       HStack(spacing: 10) {
         Text("Connect apps")
           .font(.system(size: 15, weight: .medium))

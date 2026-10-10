@@ -99,6 +99,7 @@ struct MainWindow: View {
   @Environment(NewChatState.self) private var newChat
   @Environment(PaneState.self) private var pane
   @Environment(SettingsState.self) private var settings
+  @Environment(PluginsState.self) private var plugins
   @Environment(\.colorScheme) private var scheme
 
   var body: some View {
@@ -148,6 +149,8 @@ struct MainWindow: View {
     .overlay { ViewerLayer() }
     // Settings (⌘,, step 8), over the window; search over it.
     .overlay { SettingsLayer() }
+    // Plugins (Connect apps, step 9), in Settings' place.
+    .overlay { PluginsLayer() }
     // Search (⌘K), over everything.
     .overlay { SearchLayer() }
     // The usage is read once signed in: Settings lists Usage & Billing, and ⌘K and "/" offer it, only once it is in.
@@ -158,8 +161,18 @@ struct MainWindow: View {
       pane.routineEditor?.closePopover(store: store)
       if pane.avatarEditor != nil { pane.closeAvatarEditor() }
     }
-    // Signed out (or the computer lost): Settings goes with the window.
-    .onDisappear { settings.close() }
+    // Plugins opening does the same.
+    .onChange(of: plugins.isOpen) { _, open in
+      guard open else { return }
+      pane.routineEditor?.closePopover(store: store)
+      if pane.avatarEditor != nil { pane.closeAvatarEditor() }
+    }
+    // Signed out (or the computer lost): Settings and Plugins go with the window.
+    .onDisappear {
+      settings.close()
+      plugins.close()
+      plugins.model.forget()
+    }
     // Another agent opened from the sidebar or search closes the new chat (its own single agent is its preview).
     .onChange(of: window.selected) { _, selected in
       // The pane stays open on another agent, drawn afresh on Profile (or the page asked for it).
@@ -200,6 +213,7 @@ private struct KeyWatcher: NSViewRepresentable {
   @Environment(PaneState.self) private var pane
   @Environment(Viewers.self) private var viewers
   @Environment(SettingsState.self) private var settings
+  @Environment(PluginsState.self) private var plugins
 
   func makeNSView(context: Context) -> NSView {
     let view = WatchView()
@@ -221,6 +235,7 @@ private struct KeyWatcher: NSViewRepresentable {
     view.pane = pane
     view.viewers = viewers
     view.settings = settings
+    view.plugins = plugins
   }
 
   final class WatchView: NSView {
@@ -233,6 +248,7 @@ private struct KeyWatcher: NSViewRepresentable {
     var pane: PaneState?
     var viewers: Viewers?
     var settings: SettingsState?
+    var plugins: PluginsState?
     nonisolated(unsafe) private var monitors: [Any] = []
     nonisolated(unsafe) private var resigned: NSObjectProtocol?
 
@@ -277,6 +293,29 @@ private struct KeyWatcher: NSViewRepresentable {
         settings?.open(.general)
         return true
       }
+      // ⌘⇧M ("Customize", `sand.openTools`) and ⌘⇧W ("Skills", `sand.openWorkflows`): Plugins on Marketplace, from a field too.
+      if mods == [.command, .shift], let key = event.charactersIgnoringModifiers?.lowercased(), key == "m" || key == "w" {
+        plugins?.open()
+        return true
+      }
+      // Plugins open, search not over it: ⌘F the search (on a page, nothing: the chat behind never gets it); Escape clears
+      // the search's words, then lets go of it, then closes Plugins (on a page too, as the window does).
+      if let plugins, plugins.isOpen, search?.isOpen != true {
+        if mods == .command, event.charactersIgnoringModifiers?.lowercased() == "f" {
+          plugins.focusSearch()
+          return true
+        }
+        if event.keyCode == 53, mods.isEmpty {
+          if let text = window?.firstResponder as? NSTextView, text.hasMarkedText() { return false }
+          if window?.firstResponder is NSText {
+            // On a page (setup values, a skill's words) the field lets go first, so what is typed is not lost with Plugins.
+            if plugins.model.path.isEmpty, !plugins.model.query.isEmpty { plugins.model.query = "" } else { window?.makeFirstResponder(nil) }
+            return true
+          }
+          plugins.close()
+          return true
+        }
+      }
       // Settings open, search not over it: Escape closes it, unless one of its fields has the keys (a rule's own Escape).
       if let settings, settings.isOpen, event.keyCode == 53, mods.isEmpty, search?.isOpen != true {
         if window?.firstResponder is NSText { return false }
@@ -284,7 +323,7 @@ private struct KeyWatcher: NSViewRepresentable {
         return true
       }
       // The avatar editor open (7b): Escape closes it whatever has the keys (the window's capture-phase listener); ⌘V outside a field pastes a picture into it.
-      if let editor = pane?.avatarEditor, !SettingsState.showing {
+      if let editor = pane?.avatarEditor, !WindowOverlay.showing {
         if event.keyCode == 53, mods.isEmpty {
           // Letters still being composed (Japanese, Chinese) take Escape first.
           if let text = window?.firstResponder as? NSTextView, text.hasMarkedText() { return false }
@@ -296,8 +335,8 @@ private struct KeyWatcher: NSViewRepresentable {
           return true
         }
       }
-      // The agent's pane: ⌘⇧, (`sand.toggleAgentSettings`) and ⌘⇧I or ⌥⌘B (`sand.toggleInfo`).
-      if let pane, let layout, search?.isOpen != true {
+      // The agent's pane: ⌘⇧, (`sand.toggleAgentSettings`) and ⌘⇧I or ⌥⌘B (`sand.toggleInfo`); not behind Settings or Plugins.
+      if let pane, let layout, search?.isOpen != true, !WindowOverlay.showing {
         let key = event.charactersIgnoringModifiers?.lowercased()
         if mods == [.command, .shift], key == "," || key == "<" {
           pane.toggleSettings(layout: layout)
@@ -338,8 +377,8 @@ private struct KeyWatcher: NSViewRepresentable {
         return newChat.command(.shortcut(digit), store: store, window: windowState, sidebar: sidebar)
       }
       switch event.keyCode {
-      case 48 where mods.subtracting(.shift) == .control:
-        // Control-Tab, Control-Shift-Tab.
+      case 48 where mods.subtracting(.shift) == .control && !WindowOverlay.showing:
+        // Control-Tab, Control-Shift-Tab (not behind Settings or Plugins).
         sidebar.step(mods.contains(.shift) ? -1 : 1, order: sidebar.order(store), current: windowState.selected)
         return true
       case 53 where mods.isEmpty:
@@ -371,7 +410,7 @@ private struct KeyWatcher: NSViewRepresentable {
         return true
       case 51 where mods.isEmpty, 117 where mods.isEmpty:
         // Delete and forward delete, unless a field has the keys or Settings is over the window.
-        guard !sidebar.selection.isEmpty, !(window?.firstResponder is NSText), !SettingsState.showing else { return false }
+        guard !sidebar.selection.isEmpty, !(window?.firstResponder is NSText), !WindowOverlay.showing else { return false }
         SidebarActions.confirmDelete(Array(sidebar.selection.ids), store: store, sidebar: sidebar)
         return true
       default:

@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import SimeonCore
+import SimeonMacCore
 
 /**
  * Simeon on the Mac, native: a copy of the Electron Mac app (desktop/),
@@ -19,6 +20,7 @@ struct SimeonMacApp: App {
   @State private var newChat = NewChatState()
   @State private var pane = PaneState()
   @State private var settings = SettingsState()
+  @State private var plugins = PluginsState()
 
   init() {
     Faces.register()
@@ -37,17 +39,27 @@ struct SimeonMacApp: App {
         .environment(newChat)
         .environment(pane)
         .environment(settings)
+        .environment(plugins)
         .task { await session.start() }
         // Search's Chat Settings opens the agent's pane.
         .onAppear {
           search.pane = pane
           search.layout = layout
           search.settings = settings
+          search.plugins = plugins
+          // Settings and Plugins share the window's one overlay: each opening closes the other.
+          settings.plugins = plugins
+          plugins.settings = settings
         }
         // The theme chosen in Settings, ⌘K or "/", as it was left.
         .onAppear { MacTheme.apply() }
         // The browser's confirm page opens `simeon-mac://…`, which brings the app forward; the poll finishes the sign-in.
-        .onOpenURL { _ in }
+        // A plugin's link (`…/v1/plugin/add?id=`) opens Plugins on that plugin's page (`qRn`).
+        .onOpenURL { url in
+          guard session.phase == .signedIn, let link = DeepLink.parse(url.absoluteString, schemes: [SimeonConfig.macURLScheme]),
+                case .pluginAdd(let id) = link.route else { return }
+          plugins.open(.plugin(id))
+        }
         .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
     }
     .handlesExternalEvents(matching: ["*"])
