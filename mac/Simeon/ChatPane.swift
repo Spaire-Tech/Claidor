@@ -10,6 +10,8 @@ import SimeonCore
  */
 struct ChatPane: View {
   let agentId: String
+  /** Shown under the new chat's To: line (step 5): no head of its own. */
+  var underToLine = false
   @Environment(AppStore.self) private var store
   @Environment(Viewers.self) private var viewers
   @Environment(WindowState.self) private var window
@@ -28,7 +30,7 @@ struct ChatPane: View {
     ZStack(alignment: .top) {
       look.ground
       Transcript(agentId: agentId, threadRoot: threadRoot, find: findOnScreen(matches), look: look)
-      if let agent {
+      if let agent, !underToLine {
         if let threadRoot {
           ThreadHeader(agent: agent, title: store.threadTitle(threadRoot, in: agentId), look: look) {
             store.closeThread(in: agentId)
@@ -39,7 +41,7 @@ struct ChatPane: View {
       }
     }
     .overlay(alignment: .bottom) {
-      Composer(agentId: agentId, name: agent?.name ?? "", threadRoot: threadRoot, look: look)
+      Composer(agentId: agentId, name: agent?.name ?? "", threadRoot: threadRoot, look: look, takesKeys: !underToLine)
     }
     // Files dropped anywhere on the chat wait to go with the next message (`dragBindings` on `main.sand-chat`).
     .dropDestination(for: URL.self) { urls, _ in
@@ -93,6 +95,10 @@ struct ChatPane: View {
         return
       }
       control.jump(to: Chat.rowId(for: reveal.entryId, in: store.rows(for: agentId)) ?? reveal.entryId)
+    }
+    // Files typed into the new chat for this agent wait in its field (step 5).
+    .onAppear {
+      if let files = window.handoffFiles.removeValue(forKey: agentId) { control.staged = files }
     }
     // Search closed: the message field takes the keys back.
     .onReceive(NotificationCenter.default.publisher(for: WindowState.composerFocusNote)) { _ in

@@ -104,7 +104,7 @@ first build on the founder's Mac is the first real check.
 | Button | Its step |
 |---|---|
 | Search, and ⌘K | 4 (done) |
-| New chat, and ⌘N | 5 |
+| New chat, and ⌘N | 5 (done) |
 | The account's initials | 10 |
 | Connect apps | 9 |
 | Simeon › About Simeon | 10 |
@@ -756,7 +756,7 @@ Pushed:
 | Button | Its step |
 |---|---|
 | Edit Profile, in a row's menu | 7 |
-| New chat, the initials, Connect apps | 5, 10, 9 (as step 1; Search is step 4, done) |
+| The initials, Connect apps | 10, 9 (as step 1; Search and New chat are steps 4 and 5, done) |
 
 #### Not in step 3 yet
 
@@ -884,3 +884,73 @@ is ⌘ on a Mac, as there.
 #### What to compare
 
 D01 to D07, light and dark, and a search with the computer's search on.
+
+## Step 5: new chat (⌘N)
+
+Written 10 October 2026, **not built yet** (as step 1), read from the
+window's new chat (its To: line `L4n` and what choosing does, `HDn`) and
+measured in the reference window, light and dark (E01–E07). The rules of
+the line (its rows, what Return and Tab do, the names) were already in
+SimeonCore's `NewChat`, tested; the new chat's own making of agents and
+groups is new there (`createChatAgent`, `createChatGroup`). Pushed:
+
+- **Opening it**: ⌘N or the sidebar's New chat. The chat's place shows
+  the To: line along its top (44 high, a hairline under it: "To:" at 40 %,
+  then the field, "Search or create Agents") with its menu open under it,
+  an empty stage, and the message field ("Message Agent"). The sidebar
+  gets a grey "Create new" row at the top of its list, and no row is the
+  open agent's (E01).
+- **The menu** (E01, E02): 26 in from the line, 8 over its foot, 560 wide
+  at most, 14 round, raised, a soft shadow. Create new Agent (a plus in a
+  grey circle) then every agent and group, 36-high rows, the lit one grey.
+  Typing filters and ranks them as the window does, with Create “…” first
+  unless the words name someone exactly, the first agent lit (E02, E05).
+  Under a hairline: Tab add, ⏎ open. Holding ⌘ shows ⌘1–⌘9 on the rows.
+  Empty: "Type a name to create a Agent" or "No matching Agents".
+- **The line's keys**: ↑ ↓ move the light; Tab or a comma adds the lit row
+  as a chip (E03); Backspace on empty words takes the last chip off;
+  Return opens; Escape clears the words, then shuts the menu, then closes
+  the new chat; ⌘1–⌘9 choose a row. A click on a row does what ⌘ and its
+  number do. Letters still being composed keep their keys.
+- **Chips** (E03, E04): 24 high, round, grey, the agent's butterfly (16)
+  or a plus for a new name, the name (12), Remove. With anyone on the line
+  the field says "Add or create another Agent" and a Close sits at the
+  right. The message field says "Message Theo, Iris"; the sidebar's row
+  says "Theo, Iris". Six at most.
+- **One agent on the line** (E03): its chat opens under the line, and the
+  sidebar shows it as the open agent; sending from its field sends to it
+  and closes the new chat.
+- **Return on the line** opens what is chosen: an agent; a new agent made
+  from the name (introducing itself, or, when the name reads like a
+  request, taking it as its first message; E05–E07); several, a group
+  named for them ("Theo, Iris"), any new names made first. Anything already
+  typed below waits in the chosen chat's field, files with it; a new agent
+  opened that way does not introduce itself. Create new Agent makes "New
+  Agent".
+- **Return in the message field** with someone on the line sends it: to
+  the agent, to a new agent as its first message, or to a new group of
+  them.
+- While an agent or group is being made, the chat's place shows the Mac's
+  spinner until its chat opens. At 50 agents the computer refuses, and the
+  window's alert says so ("50 is the maximum"). A group that fails takes
+  the agents just made for it away again.
+- Escape anywhere in the new chat closes it; opening another agent (the
+  sidebar, search) closes it too.
+
+#### Not in step 5 yet
+
+- The window's prefetch of an agent's chat as its row is lit.
+- The window's "picking" pane (a new agent from a template, `e5n`): it
+  belongs to the first run (step 6).
+- The window shows its own creation screen while an agent is made; here it
+  is the Mac's spinner alone.
+
+#### Where the native parts look different
+
+The To: field is the Mac's own text field; the spinner is Apple's; the
+alert is Apple's. Keys and layout are the window's.
+
+#### What to compare
+
+E01 to E07, light and dark; then the sidebar's row and the message
+field's words with two people on the line.

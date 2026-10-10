@@ -20,6 +20,8 @@ final class WindowState {
   }
 
   var pendingReveal: Reveal?
+  /** Files typed into the new chat, waiting for the chat they went to (step 5). */
+  var handoffFiles: [String: [StagedFile]] = [:]
   /** Bumped when search closes, for the open chat's message field to take the keys back. */
   static var composerFocus = 0 {
     didSet { NotificationCenter.default.post(name: WindowState.composerFocusNote, object: nil) }
@@ -79,6 +81,7 @@ struct AppRoot: View {
 struct MainWindow: View {
   @Environment(SidebarLayout.self) private var layout
   @Environment(WindowState.self) private var window
+  @Environment(NewChatState.self) private var newChat
   @Environment(\.colorScheme) private var scheme
 
   var body: some View {
@@ -90,7 +93,12 @@ struct MainWindow: View {
       HStack(spacing: 0) {
         Sidebar(rail: rail, width: sidebarWidth)
         Group {
-          if let agentId = window.selected {
+          if newChat.isOpen {
+            // New chat (⌘N, step 5) in the chat's place.
+            NewChatPane()
+          } else if newChat.creating != nil {
+            CreatingScreen()
+          } else if let agentId = window.selected {
             ChatPane(agentId: agentId)
               .id(agentId)
           } else {
@@ -114,6 +122,11 @@ struct MainWindow: View {
     .overlay { ViewerLayer() }
     // Search (⌘K), over everything.
     .overlay { SearchLayer() }
+    // Another agent opened from the sidebar or search closes the new chat (its own single agent is its preview).
+    .onChange(of: window.selected) { _, selected in
+      guard newChat.isOpen, newChat.recipients.count == 1 ? newChat.recipients[0].agentId != selected : true else { return }
+      newChat.close()
+    }
     .background(KeyWatcher())
   }
 }
@@ -135,6 +148,7 @@ private struct KeyWatcher: NSViewRepresentable {
   @Environment(WindowState.self) private var windowState
   @Environment(AppStore.self) private var store
   @Environment(SearchState.self) private var search
+  @Environment(NewChatState.self) private var newChat
 
   func makeNSView(context: Context) -> NSView {
     let view = WatchView()
@@ -152,6 +166,7 @@ private struct KeyWatcher: NSViewRepresentable {
     view.windowState = windowState
     view.store = store
     view.search = search
+    view.newChat = newChat
   }
 
   final class WatchView: NSView {
@@ -160,6 +175,7 @@ private struct KeyWatcher: NSViewRepresentable {
     var windowState: WindowState?
     var store: AppStore?
     var search: SearchState?
+    var newChat: NewChatState?
     nonisolated(unsafe) private var monitors: [Any] = []
     nonisolated(unsafe) private var resigned: NSObjectProtocol?
 
@@ -207,11 +223,23 @@ private struct KeyWatcher: NSViewRepresentable {
           if !search.isOpen { search.open(store: store, window: windowState) }
           return true
         }
+        // ⌘N (`sand.newAgent`, `mod+n`): the new chat, search closing for it.
+        if mods == .command, key == "n", let newChat {
+          if search.isOpen { search.close() }
+          newChat.open()
+          return true
+        }
         if search.isOpen {
           // Letters still being composed (Japanese, Chinese) are the field's: Return, the arrows and Escape act on them.
           if let text = window?.firstResponder as? NSTextView, text.hasMarkedText() { return false }
           return search.key(event, store: store, window: windowState, sidebar: sidebar)
         }
+      }
+      // Escape with the new chat open and its field not holding the keys closes it (`zDn`); the field's own Escape is its (`ToField`).
+      if event.keyCode == 53, mods.isEmpty, let newChat, newChat.isOpen,
+         !((window?.firstResponder as? NSTextView)?.delegate is ToField.Field) {
+        newChat.close()
+        return true
       }
       switch event.keyCode {
       case 48 where mods.subtracting(.shift) == .control:
@@ -241,6 +269,11 @@ private struct KeyWatcher: NSViewRepresentable {
     /** Control let go: Control-Tab's row opens. */
     private func flags(_ event: NSEvent) {
       if let search, search.isOpen { search.flags(event) }
+      // ⌘ held over the To: line's menu shows its rows' shortcuts.
+      if let newChat, newChat.isOpen {
+        let held = event.modifierFlags.contains(.command)
+        if newChat.shortcutsShown != held { newChat.shortcutsShown = held }
+      }
       guard !event.modifierFlags.contains(.control), let sidebar, let cycle = sidebar.cycle, let windowState, let store else { return }
       sidebar.cycle = nil
       sidebar.selection.plain(cycle.next)

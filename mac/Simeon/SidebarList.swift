@@ -17,6 +17,7 @@ struct AgentList: View {
   @Environment(AppStore.self) private var store
   @Environment(WindowState.self) private var window
   @Environment(SidebarState.self) private var sidebar
+  @Environment(NewChatState.self) private var newChat
   @Environment(\.colorScheme) private var scheme
   /** Each section's and tile's place in its drop zone, for where a drag is let go. */
   @State private var places = DropPlaces()
@@ -38,12 +39,21 @@ struct AgentList: View {
       ScrollView {
         VStack(spacing: 0) {
           if rail {
+            if newChat.hidesOpenRow(window) {
+              NewChatDraftRow(rail: true)
+                .padding(.bottom, 4)
+            }
             railBody(look: look, pins: pins, listed: listed, sections: sections, shown: shown)
           } else {
             if !pins.isEmpty || isDraggingAgent {
               PinGrid(pins: pins, places: places, target: $pinTarget)
                 .padding(.top, 8)
                 .padding(.bottom, 12)
+            }
+            // The new chat's row while it is being written (step 5).
+            if newChat.hidesOpenRow(window) {
+              NewChatDraftRow(rail: false)
+                .padding(.bottom, 4)
             }
             rows(look: look, listed: listed, sections: sections, shown: shown, hiddenCount: hiddenCount)
           }
@@ -299,6 +309,7 @@ private struct PinTile: View {
   @Environment(AppStore.self) private var store
   @Environment(WindowState.self) private var window
   @Environment(SidebarState.self) private var sidebar
+  @Environment(NewChatState.self) private var newChat
   @Environment(\.colorScheme) private var scheme
   @State private var hovering = false
 
@@ -339,7 +350,7 @@ private struct PinTile: View {
       .padding(EdgeInsets(top: 6, leading: 4, bottom: 4, trailing: 4))
       .frame(minWidth: 80)
       .background {
-        RowGround(open: window.selected == agent.id, picked: sidebar.selection.contains(agent.id), hovering: hovering || lit, look: look)
+        RowGround(open: window.selected == agent.id && !newChat.hidesOpenRow(window), picked: sidebar.selection.contains(agent.id), hovering: hovering || lit, look: look)
       }
       .overlay { CycleRing(on: sidebar.cycle?.next == agent.id, look: look) }
       .contentShape(Rectangle())
@@ -545,6 +556,7 @@ struct AgentRow: View {
   @Environment(AppStore.self) private var store
   @Environment(WindowState.self) private var window
   @Environment(SidebarState.self) private var sidebar
+  @Environment(NewChatState.self) private var newChat
   @Environment(\.colorScheme) private var scheme
   @State private var hovering = false
 
@@ -589,7 +601,7 @@ struct AgentRow: View {
     .frame(width: rail ? 54 : nil, height: 54, alignment: .leading)
     .frame(maxWidth: rail ? nil : .infinity, alignment: .leading)
     .background {
-      RowGround(open: window.selected == agent.id, picked: sidebar.selection.contains(agent.id), hovering: hovering, look: look)
+      RowGround(open: window.selected == agent.id && !newChat.hidesOpenRow(window), picked: sidebar.selection.contains(agent.id), hovering: hovering, look: look)
     }
     .overlay { CycleRing(on: sidebar.cycle?.next == agent.id, look: look) }
     .contentShape(Rectangle())

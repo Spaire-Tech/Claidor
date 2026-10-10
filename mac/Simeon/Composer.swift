@@ -25,8 +25,13 @@ struct Composer: View {
   /** The open thread: what is sent goes into it. */
   let threadRoot: String?
   let look: Look
+  /** Whether the field takes the keys when it appears (not under the new chat's To: line, step 5). */
+  var takesKeys = true
+  /** The new chat's field (step 5): what is sent goes to the people on the To: line instead; false keeps the words. */
+  var onSubmit: ((String, [StagedFile]) -> Bool)? = nil
   @Environment(AppStore.self) private var store
   @Environment(ChatControl.self) private var control
+  @Environment(NewChatState.self) private var newChat
   @State private var text = ""
   /** The picks in the words ("@Nora" as one piece). */
   @State private var chips: [ComposerChip] = []
@@ -211,7 +216,7 @@ struct Composer: View {
       guard control.reply != nil else { return false }
       control.reply = nil
       return true
-    }, onTrigger: { picks.update($0) }, onListKey: { listKey($0) }, onFiles: { control.stage($0) })
+    }, onTrigger: { picks.update($0) }, onListKey: { listKey($0) }, onFiles: { control.stage($0) }, focusOnAppear: takesKeys)
     .overlay(alignment: .topLeading) {
       if text.isEmpty {
         Text(placeholder)
@@ -328,10 +333,28 @@ struct Composer: View {
     }
   }
 
+  /** The new chat's words and picks moved to the chat they were meant for (the window's `setDraft` on that chat). */
+  static func handOver(from: String, to: String, store: AppStore) {
+    store.setDraft(store.drafts[from] ?? "", for: to)
+    keptChips[to] = keptChips[from]
+    keptChips[from] = nil
+    store.setDraft("", for: from)
+  }
+
   private func send() {
     let words = ComposerDocument.prompt(text)
     let files = control.staged.map { (name: $0.name, data: $0.data) }
     guard !words.isEmpty || !files.isEmpty else { return }
+    if let onSubmit {
+      // The new chat's field: the line's people get it, or nothing goes and the words stay.
+      guard onSubmit(words, control.staged) else { return }
+      text = ""
+      chips = []
+      control.staged = []
+      picks.update(nil)
+      store.setDraft("", for: agentId)
+      return
+    }
     // The editor's document goes with the words when they hold a pick (`richText`).
     let richText = chips.isEmpty ? nil : ComposerDocument.richText(text, chips: chips)
     let answering = control.reply?.id ?? threadRoot
@@ -343,6 +366,8 @@ struct Composer: View {
     store.setDraft("", for: agentId)
     let inThread = threadRoot != nil
     Task { await store.send(words, to: agentId, attachments: files, replyTo: answering, inThread: inThread, richText: richText) }
+    // Sent from the chat shown under the To: line: the new chat closes on it.
+    if newChat.isOpen, newChat.recipients.count == 1, newChat.recipients.first?.agentId == agentId { newChat.close() }
   }
 }
 
@@ -446,6 +471,8 @@ struct MessageField: NSViewRepresentable {
   var onListKey: (ListKey) -> Bool = { _ in false }
   /** Files pasted or dropped on the words (the window stages them, `onStageFiles`). */
   var onFiles: ([IncomingFile]) -> Void = { _ in }
+  /** Whether the field takes the keys when it appears (not under the new chat's To: line, which has them). */
+  var focusOnAppear = true
   @Environment(AppStore.self) private var store
 
   static let font = NSFont.systemFont(ofSize: 14)
@@ -563,7 +590,7 @@ struct MessageField: NSViewRepresentable {
       guard let coordinator, let view else { return }
       coordinator.measure(view)
     }
-    view.wantsFocus = true
+    view.wantsFocus = focusOnAppear
     view.onFiles = { [weak coordinator = context.coordinator] files in coordinator?.parent.onFiles(files) }
     scroll.documentView = view
     let coordinator = context.coordinator

@@ -16,6 +16,7 @@ struct SimeonMacApp: App {
   @State private var viewers = Viewers()
   @State private var sidebar = SidebarState()
   @State private var search = SearchState()
+  @State private var newChat = NewChatState()
 
   init() {
     Faces.register()
@@ -31,6 +32,7 @@ struct SimeonMacApp: App {
         .environment(viewers)
         .environment(sidebar)
         .environment(search)
+        .environment(newChat)
         .task { await session.start() }
         // The theme chosen with "/" (and, in step 8, Settings), as it was left.
         .onAppear { MacTheme.apply() }

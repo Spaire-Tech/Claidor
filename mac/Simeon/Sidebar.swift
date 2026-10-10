@@ -222,12 +222,17 @@ private struct SearchDisc: View {
   }
 }
 
-/** New chat (⌘N): the To: line comes with step 5 (mac/STEPS.md). */
+/** New chat (⌘N): the To: line (step 5). */
 private struct NewChatDisc: View {
+  @Environment(NewChatState.self) private var newChat
+  @Environment(SearchState.self) private var search
   @Environment(\.colorScheme) private var scheme
 
   var body: some View {
-    Disc(size: 40, help: "New chat", action: {}) {
+    Disc(size: 40, help: "New chat", action: {
+      if search.isOpen { search.close() }
+      newChat.open()
+    }) {
       Image(systemName: "square.and.pencil")
         .font(.system(size: 16, weight: .regular))
         .foregroundStyle(discInk(scheme))
