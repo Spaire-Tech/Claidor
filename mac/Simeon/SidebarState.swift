@@ -82,7 +82,7 @@ final class SidebarState {
       NSApp.keyWindow?.makeFirstResponder(nil)
     } else {
       selection.plain(id)
-      window.open(id, store: store)
+      window.choose(id, store: store)
     }
   }
 

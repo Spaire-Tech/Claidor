@@ -140,7 +140,10 @@ struct Composer: View {
       // A message canceled or handed over comes in after the draft, so the draft does not cover it.
       takeBackCanceled()
     }
-    .task(id: agentId) { await picks.load(agentId, store: store) }
+    .task(id: agentId) {
+      // The new chat's own field has no agent's skills to read.
+      if agentId != NewChatState.draftKey { await picks.load(agentId, store: store) }
+    }
     .onChange(of: height, initial: true) { _, value in control.composerHeight = value }
     .onChange(of: text) { _, next in
       store.setDraft(next, for: agentId)
@@ -213,7 +216,14 @@ struct Composer: View {
         dictation.cancel()
         return true
       }
-      guard control.reply != nil else { return false }
+      guard control.reply != nil else {
+        // Nothing of its own to let go: Escape closes the new chat this field is in (`zDn`).
+        if newChat.isOpen {
+          newChat.close()
+          return true
+        }
+        return false
+      }
       control.reply = nil
       return true
     }, onTrigger: { picks.update($0) }, onListKey: { listKey($0) }, onFiles: { control.stage($0) }, focusOnAppear: takesKeys)
@@ -335,7 +345,9 @@ struct Composer: View {
 
   /** The new chat's words and picks moved to the chat they were meant for (the window's `setDraft` on that chat). */
   static func handOver(from: String, to: String, store: AppStore) {
-    store.setDraft(store.drafts[from] ?? "", for: to)
+    // Only words go over a chat's own draft; files alone leave it as it is.
+    guard let words = store.drafts[from], !words.isEmpty else { return }
+    store.setDraft(words, for: to)
     keptChips[to] = keptChips[from]
     keptChips[from] = nil
     store.setDraft("", for: from)

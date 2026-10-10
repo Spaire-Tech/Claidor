@@ -240,7 +240,7 @@ final class SearchState {
     switch row {
     case .agent(let agent, _):
       sidebar.selection.plain(agent.id)
-      window.open(agent.id, store: store)
+      window.choose(agent.id, store: store)
     case .command(let command):
       run(command.id, sidebar: sidebar)
     case .message(let hit):
@@ -250,7 +250,7 @@ final class SearchState {
     case .link(let url):
       if let address = URL(string: url) { NSWorkspace.shared.open(address) }
     case .routine(let hit):
-      if window.selected != hit.agentId { window.open(hit.agentId, store: store) }
+      window.choose(hit.agentId, store: store)
     }
     close()
   }

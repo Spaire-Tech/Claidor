@@ -252,7 +252,7 @@ struct HiddenAgentsSheet: View {
             ForEach(hidden) { agent in
               HiddenRow(agent: agent, agents: store.agents, look: look) {
                 dismiss()
-                window.open(agent.id, store: store)
+                window.choose(agent.id, store: store)
               } unhide: {
                 SidebarActions.unhide(agent.id, store: store)
               }

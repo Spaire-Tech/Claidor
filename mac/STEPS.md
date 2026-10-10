@@ -934,8 +934,11 @@ groups is new there (`createChatAgent`, `createChatGroup`). Pushed:
   spinner until its chat opens. At 50 agents the computer refuses, and the
   window's alert says so ("50 is the maximum"). A group that fails takes
   the agents just made for it away again.
-- Escape anywhere in the new chat closes it; opening another agent (the
-  sidebar, search) closes it too.
+- Escape in the new chat closes it once nothing smaller is open (a list in
+  the field, a reply, find, letters being composed); opening an agent (the
+  sidebar, search, Control-Tab), even the one already open, closes it too.
+- If making the agent or group for a message fails, the new chat comes
+  back with the people on its line and the message in its field.
 
 #### Not in step 5 yet
 

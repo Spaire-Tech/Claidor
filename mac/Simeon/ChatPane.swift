@@ -97,11 +97,17 @@ struct ChatPane: View {
       control.jump(to: Chat.rowId(for: reveal.entryId, in: store.rows(for: agentId)) ?? reveal.entryId)
     }
     // Files typed into the new chat for this agent wait in its field (step 5).
-    .onAppear {
-      if let files = window.handoffFiles.removeValue(forKey: agentId) { control.staged = files }
+    .onChange(of: window.handoffFiles[agentId] != nil, initial: true) { _, waiting in
+      guard waiting, !underToLine, let files = window.handoffFiles.removeValue(forKey: agentId) else { return }
+      control.staged = files
     }
-    // Search closed: the message field takes the keys back.
+    // Shown under the To: line, its waiting files go on to the chat that takes its place.
+    .onDisappear {
+      if underToLine, !control.staged.isEmpty { window.handoffFiles[agentId] = control.staged }
+    }
+    // Search closed: the message field takes the keys back (under the To: line, the line takes them).
     .onReceive(NotificationCenter.default.publisher(for: WindowState.composerFocusNote)) { _ in
+      guard !underToLine else { return }
       control.focusCount += 1
     }
     .onChange(of: threadRoot) { _, _ in

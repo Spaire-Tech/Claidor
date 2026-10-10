@@ -31,7 +31,17 @@ final class WindowState {
   /** Search's message or file: its chat opens (if it is not the open one) and goes to the line. */
   func reveal(_ entryId: String, in agentId: String, store: AppStore) {
     if selected != agentId { open(agentId, store: store) }
+    opened += 1
     pendingReveal = Reveal(agentId: agentId, entryId: entryId, count: (pendingReveal?.count ?? 0) + 1)
+  }
+
+  /** Bumped each time the person opens an agent themselves (a row, search, Control-Tab, a hit): it closes the new chat even onto the agent already open. */
+  var opened = 0
+
+  /** The person opens an agent: as `open`, and the new chat makes way. */
+  func choose(_ agentId: String, store: AppStore) {
+    open(agentId, store: store)
+    opened += 1
   }
 
   /** A row clicked: its agent opens (its chat read, its unread cleared). */
@@ -123,8 +133,12 @@ struct MainWindow: View {
     // Search (⌘K), over everything.
     .overlay { SearchLayer() }
     // Another agent opened from the sidebar or search closes the new chat (its own single agent is its preview).
-    .onChange(of: window.selected) { _, selected in
-      guard newChat.isOpen, newChat.recipients.count == 1 ? newChat.recipients[0].agentId != selected : true else { return }
+    .onChange(of: window.selected) { _, _ in
+      guard newChat.isOpen, newChat.previewId(window) == nil else { return }
+      newChat.close()
+    }
+    .onChange(of: window.opened) { _, _ in
+      guard newChat.isOpen, newChat.previewId(window) == nil else { return }
       newChat.close()
     }
     .background(KeyWatcher())
@@ -199,7 +213,10 @@ private struct KeyWatcher: NSViewRepresentable {
       }
       monitors = [keys, flags].compactMap { $0 }
       resigned = NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification, object: window, queue: .main) { [weak self] _ in
-        MainActor.assumeIsolated { self?.sidebar?.cycle = nil }
+        MainActor.assumeIsolated {
+          self?.sidebar?.cycle = nil
+          self?.newChat?.shortcutsShown = false
+        }
       }
     }
 
@@ -235,11 +252,10 @@ private struct KeyWatcher: NSViewRepresentable {
           return search.key(event, store: store, window: windowState, sidebar: sidebar)
         }
       }
-      // Escape with the new chat open and its field not holding the keys closes it (`zDn`); the field's own Escape is its (`ToField`).
-      if event.keyCode == 53, mods.isEmpty, let newChat, newChat.isOpen,
-         !((window?.firstResponder as? NSTextView)?.delegate is ToField.Field) {
-        newChat.close()
-        return true
+      // ⌘1–⌘9 with the To: line's field holding the keys choose its rows.
+      if let newChat, newChat.isOpen, mods == .command, ((window?.firstResponder as? NSTextView)?.delegate as AnyObject?) is ToField.Field,
+         let digit = event.charactersIgnoringModifiers.flatMap({ Int($0) }), (1...9).contains(digit) {
+        return newChat.command(.shortcut(digit), store: store, window: windowState, sidebar: sidebar)
       }
       switch event.keyCode {
       case 48 where mods.subtracting(.shift) == .control:
@@ -250,6 +266,11 @@ private struct KeyWatcher: NSViewRepresentable {
         // Escape: Control-Tab's walk first, then the picked rows, unless a field has the keys (its own Escape).
         if sidebar.cycle != nil {
           sidebar.cycle = nil
+          return true
+        }
+        // The new chat open and no field holding the keys: Escape closes it (`zDn`). A field's own Escape comes first (the To: line's, the message field's).
+        if let newChat, newChat.isOpen, !(window?.firstResponder is NSText) {
+          newChat.close()
           return true
         }
         guard !sidebar.selection.isEmpty, sidebar.renamingAgent == nil, sidebar.renamingSection == nil,
@@ -277,7 +298,7 @@ private struct KeyWatcher: NSViewRepresentable {
       guard !event.modifierFlags.contains(.control), let sidebar, let cycle = sidebar.cycle, let windowState, let store else { return }
       sidebar.cycle = nil
       sidebar.selection.plain(cycle.next)
-      windowState.open(cycle.next, store: store)
+      windowState.choose(cycle.next, store: store)
     }
 
     private func stop() {

@@ -172,7 +172,8 @@ final class NewChatState {
    * reads like a request); several make a group named for them.
    */
   func commit(_ commit: NewChat.Commit, store: AppStore, window: WindowState, sidebar: SidebarState) {
-    let carry = draftHasContent(store)
+    // With an agent's chat under the line, what was typed is in its own field already.
+    let carry = previewId(window) == nil && draftHasContent(store)
     switch commit {
     case .noop:
       return
@@ -203,15 +204,25 @@ final class NewChatState {
     let people = recipients
     close()
     if people.count == 1 {
-      launch(people[0], text: words, files: files, store: store, window: window)
+      launch(people[0], text: words, files: files, store: store, window: window, restore: people)
     } else {
-      group(people, text: words, files: files, carry: false, store: store, window: window)
+      group(people, text: words, files: files, carry: false, store: store, window: window, restore: people)
     }
     return true
   }
 
+  /** A send that could not make its agent or group: the new chat comes back as it was, the message in its field. */
+  private func restore(_ people: [NewChat.Recipient], text: String, files: [StagedFile], store: AppStore) {
+    recipients = people
+    query = ""
+    if !text.isEmpty { store.setDraft(text, for: Self.draftKey) }
+    if !files.isEmpty { draftControl.staged = files }
+    isOpen = true
+    focus += 1
+  }
+
   /** One recipient (`ke`): an agent opens and gets the message; a new one is made, opens, and gets it (or the name, when it reads like a request). */
-  private func launch(_ recipient: NewChat.Recipient, text: String, files: [StagedFile], store: AppStore, window: WindowState) {
+  private func launch(_ recipient: NewChat.Recipient, text: String, files: [StagedFile], store: AppStore, window: WindowState, restore people: [NewChat.Recipient]? = nil) {
     let attachments = files.map { (name: $0.name, data: $0.data) }
     switch recipient {
     case .agent(let id, _):
@@ -232,6 +243,7 @@ final class NewChatState {
         } catch {
           creating = nil
           failed(error)
+          if let people { restore(people, text: text, files: files, store: store) }
         }
       }
     }
@@ -258,7 +270,7 @@ final class NewChatState {
   }
 
   /** Several (`Ne`): the new names made first, then the group of them all, named for them; what was typed waits in its field, or goes as its first message. Made agents go again if the group fails. */
-  private func group(_ people: [NewChat.Recipient], text: String, files: [StagedFile], carry: Bool, store: AppStore, window: WindowState) {
+  private func group(_ people: [NewChat.Recipient], text: String, files: [StagedFile], carry: Bool, store: AppStore, window: WindowState, restore restoring: [NewChat.Recipient]? = nil) {
     let name = NewChat.groupName(people)
     creating = name
     Task {
@@ -286,6 +298,7 @@ final class NewChatState {
         creating = nil
         failed(error)
         if !made.isEmpty { await store.delete(made) }
+        if let restoring { restore(restoring, text: text, files: files, store: store) }
       }
     }
   }
@@ -344,6 +357,8 @@ struct NewChatPane: View {
       }
       ToLine(look: look)
     }
+    // Search closed over the new chat: the To: line takes the keys back.
+    .onReceive(NotificationCenter.default.publisher(for: WindowState.composerFocusNote)) { _ in newChat.focus += 1 }
   }
 }
 
@@ -521,7 +536,7 @@ private struct RecipientMenu: View {
           }
           .padding(6)
         }
-        .frame(maxHeight: min(maxHeight - 37, CGFloat(rows.count) * 38 + 10))
+        .frame(height: max(0, min(maxHeight - 37, CGFloat(rows.count) * 38 + 10)))
         .scrollIndicators(.automatic)
       }
       Rectangle().fill(look.ink.opacity(0.15)).frame(height: 0.5)
@@ -655,6 +670,7 @@ struct ToField: NSViewRepresentable {
   func makeNSView(context: Context) -> Field {
     let field = Field()
     field.isBordered = false
+    field.isBezeled = false
     field.drawsBackground = false
     field.focusRingType = .none
     field.font = .systemFont(ofSize: 14)
@@ -672,13 +688,18 @@ struct ToField: NSViewRepresentable {
     update(field, context: context)
   }
 
+  /** As wide as it is offered, one line high: it does not grow with what is typed. */
+  func sizeThatFits(_ proposal: ProposedViewSize, nsView: Field, context: Context) -> CGSize? {
+    CGSize(width: proposal.width ?? 120, height: 20)
+  }
+
   private func update(_ field: Field, context: Context) {
     let coordinator = context.coordinator
     coordinator.changed = changed
     coordinator.command = command
     coordinator.focused = focused
     field.focused = focused
-    if field.stringValue != text, field.currentEditor()?.hasMarkedText() != true { field.stringValue = text }
+    if field.stringValue != text, (field.currentEditor() as? NSTextView)?.hasMarkedText() != true { field.stringValue = text }
     field.textColor = NSColor(look.ink)
     field.placeholderAttributedString = NSAttributedString(string: placeholder, attributes: [
       .font: NSFont.systemFont(ofSize: 14), .foregroundColor: NSColor(look.inkTertiary),
@@ -725,7 +746,7 @@ struct ToField: NSViewRepresentable {
       guard let field else { return }
       var value = field.stringValue
       // A comma adds the lit row, as Tab does, and is not typed.
-      if value.hasSuffix(","), field.currentEditor()?.hasMarkedText() != true {
+      if value.hasSuffix(","), (field.currentEditor() as? NSTextView)?.hasMarkedText() != true {
         value.removeLast()
         field.stringValue = value
         changed?(value)
