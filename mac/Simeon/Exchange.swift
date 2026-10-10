@@ -23,11 +23,14 @@ struct ExchangeView: View {
   let look: Look
   @Environment(AppStore.self) private var store
   @Environment(ChatControl.self) private var control
+  @Environment(Viewers.self) private var viewers
   @State private var showsTopFade = false
   @State private var showsBottomFade = false
 
   var body: some View {
     let agent = store.agent(agentId)
+    // The chat's rows change with every new line; the lines themselves are not watched.
+    let _ = store.rows(for: agentId)
     let rows = Chat.exchangeRows(store.transcripts[agentId] ?? [], agent: Party(id: agentId, name: agent?.name ?? ""), peerId: peer.id)
     ZStack(alignment: .top) {
       look.ground
@@ -81,7 +84,8 @@ struct ExchangeView: View {
     }
     .background(ViewerKeys { event in
       // Escape closes the exchange; while find has the keys, Escape is find's.
-      guard event.keyCode == 53, !(control.findOpen && NSApp.keyWindow?.firstResponder is NSText) else { return false }
+      // Escape closes the exchange, not a picture or diagram opened over it.
+      guard event.keyCode == 53, viewers.shown == nil, !(control.findOpen && NSApp.keyWindow?.firstResponder is NSText) else { return false }
       control.closeExchange()
       return true
     })

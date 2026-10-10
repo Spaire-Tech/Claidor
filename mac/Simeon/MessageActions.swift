@@ -386,6 +386,8 @@ struct RightClickMenu: NSViewRepresentable {
   let inThread: Bool
   let store: AppStore
   let control: ChatControl
+  /** A file, picture or diagram full screen: right clicks are its own then. */
+  let viewers: Viewers
 
   func makeNSView(context: Context) -> CatchView {
     let view = CatchView()
@@ -398,6 +400,7 @@ struct RightClickMenu: NSViewRepresentable {
   }
 
   private func open(_ event: NSEvent) -> Bool {
+    guard viewers.shown == nil else { return false }
     // Over an exchange, only its own messages, and only Copy.
     if control.exchangePeer != nil {
       guard let hovered = control.exchangeHovered else { return false }

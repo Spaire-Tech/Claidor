@@ -21,7 +21,7 @@ struct ChatPane: View {
     // A thread opens in the chat's place (`threadRootId`), under its breadcrumb (step 2d).
     let threadRoot = store.openThreads[agentId]
     // Find reads the lines on screen: the thread's while one is open (`ChatFind`).
-    let matches = control.findOpen ? ChatFind.matches(control.findQuery, in: store.findableEntries(agentId)) : []
+    let matches = control.findOpen ? findMatches(threadRoot) : []
     ZStack(alignment: .top) {
       look.ground
       Transcript(agentId: agentId, threadRoot: threadRoot, find: findOnScreen(matches), look: look)
@@ -52,10 +52,11 @@ struct ChatPane: View {
           .padding(.trailing, 16)
       }
     }
-    .background(RightClickMenu(agentId: agentId, inThread: threadRoot != nil, store: store, control: control))
+    .background(RightClickMenu(agentId: agentId, inThread: threadRoot != nil, store: store, control: control, viewers: viewers))
     .background(ViewerKeys { event in
       // ⌘F (`sand.findInChat`, `mod+f`), not while a file or picture is full screen.
-      let mods = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+      // Caps Lock aside.
+      let mods = event.modifierFlags.intersection([.command, .shift, .option, .control])
       guard mods == .command, event.charactersIgnoringModifiers?.lowercased() == "f", viewers.shown == nil else { return false }
       control.openFind()
       return true
@@ -68,6 +69,12 @@ struct ChatPane: View {
       control.findFocus += 1
     }
     .environment(control)
+  }
+
+  /** Find's matches, recounted as lines come (the rows are watched; the lines under them are not). */
+  private func findMatches(_ threadRoot: String?) -> [ChatFind.Match] {
+    _ = threadRoot == nil ? store.rows(for: agentId) : store.threadRows[agentId] ?? []
+    return ChatFind.matches(control.findQuery, in: store.findableEntries(agentId))
   }
 
   /** What find lights: its words once typed, and the match it stands on. */

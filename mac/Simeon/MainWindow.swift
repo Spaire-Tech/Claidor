@@ -121,7 +121,8 @@ private struct KeyWatcher: NSViewRepresentable {
       monitor = nil
       guard window != nil else { return }
       monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-        let mods = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        // Caps Lock aside.
+        let mods = event.modifierFlags.intersection([.command, .shift, .option, .control])
         guard mods == .command, event.charactersIgnoringModifiers?.lowercased() == "b" else { return event }
         let took = MainActor.assumeIsolated { () -> Bool in
           guard let self, event.window === self.window, let layout = self.layout else { return false }

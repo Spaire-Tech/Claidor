@@ -566,8 +566,7 @@ private struct TableBlock: View {
     guard var marks = line.find else { return Array(repeating: nil, count: count) }
     var out: [FindMarks?] = []
     out.reserveCapacity(count)
-    let texts = header + rows.flatMap { row in (0..<header.count).map { $0 < row.count ? row[$0] : "" } }
-    for text in texts {
+    for text in FindText.cells(header: header, rows: rows) {
       out.append(marks)
       marks = marks.skipping(MessageLine.shown(text))
     }

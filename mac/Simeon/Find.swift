@@ -48,7 +48,7 @@ struct FindMarks: Equatable {
 
 extension EnvironmentValues {
   /** Find's marks for the row being drawn: set while find has words, on every row. */
-  @Entry var findMarks: FindMarks?
+  @Entry var findMarks: FindMarks? = nil
 }
 
 /** The marks laid over one run of words: the ranges found in it and which of them is current. */
@@ -122,10 +122,19 @@ enum FindText {
     case .code(let language, let text):
       return language?.lowercased() == "mermaid" ? "" : text
     case .table(let header, _, let rows):
-      return (header + rows.flatMap { row in (0..<header.count).map { $0 < row.count ? row[$0] : "" } }).map(MessageLine.shown).joined()
+      return cells(header: header, rows: rows).map(MessageLine.shown).joined()
     case .rule, .math:
       return ""
     }
+  }
+
+  /** A table's cells as the window lays them out: the heading row, then each row as wide as the heading. */
+  static func cells(header: [String], rows: [[String]]) -> [String] {
+    var out = header
+    for row in rows {
+      for column in 0..<header.count { out.append(column < row.count ? row[column] : "") }
+    }
+    return out
   }
 }
 
@@ -252,6 +261,11 @@ private struct FindField: NSViewRepresentable {
   let close: () -> Void
 
   func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+  /** As wide as the bar gives it, whatever is typed (a text field would grow with its words). */
+  func sizeThatFits(_ proposal: ProposedViewSize, nsView: NSTextField, context: Context) -> CGSize? {
+    CGSize(width: proposal.width ?? 136, height: 18)
+  }
 
   func makeNSView(context: Context) -> NSTextField {
     let field = NSTextField()
