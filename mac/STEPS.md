@@ -323,5 +323,10 @@ window's Gallery chat, one card at a time. Pushed so far:
   hairline).
 - **A long message of yours** folded at 160 points with Show more.
 
-Still to come in 2c: flights, a cloud agent, "Your turn on the computer",
-opening a file or a picture in the preview, and a diagram full screen.
+- **Flights**: the route and trip, one row per offer (the airline's mark,
+  the times, airline, time in the air and stops, the price), in Apple's
+  greys as the window sets them. Opening an offer shows it in the agent
+  pane, which is step 7; until then the row does nothing.
+
+Still to come in 2c: a cloud agent, "Your turn on the computer", opening a
+file or a picture in the preview, and a diagram full screen.

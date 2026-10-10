@@ -1044,3 +1044,140 @@ struct CallRecordView: View {
     .frame(maxWidth: 340, alignment: .leading)
   }
 }
+
+// MARK: Flights
+
+/**
+ * Flight results (`simeon-flights`, in the agent's bubble, at most 420
+ * wide): the route (15 on 20, 500) and the trip under it (13, grey); then
+ * one row per offer, padded 10 and 12 round, reaching 10 past the words on
+ * both sides: the airline's mark in a white circle (36, its logo or its
+ * initials), the times (15) over the airline, time in the air and stops
+ * (13, grey), the price (15) and a chevron; half-point hairlines between
+ * rows from the times' edge. Apple's own greys, as the window sets them.
+ * Opening an offer shows it in the agent pane (step 7).
+ */
+struct FlightsCardView: View {
+  let card: FlightsCard
+  let look: Look
+
+  private var grey: Color { look.dark ? Color(hex: 0x98989d) : Color(hex: 0x86868b) }
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 0) {
+      if !card.title.isEmpty || !card.subtitle.isEmpty {
+        VStack(alignment: .leading, spacing: 1) {
+          if !card.title.isEmpty {
+            Text(card.title)
+              .font(.system(size: 15, weight: .medium))
+              .tracking(-0.15)
+              .foregroundStyle(look.dark ? Color(hex: 0xf5f5f7) : Color(hex: 0x1d1d1f))
+          }
+          if !card.subtitle.isEmpty {
+            Text(card.subtitle)
+              .font(.system(size: 13))
+              .foregroundStyle(grey)
+          }
+        }
+        .padding(.top, 2)
+        .padding(.bottom, 8)
+      }
+      VStack(spacing: 0) {
+        ForEach(Array(card.offers.enumerated()), id: \.offset) { index, offer in
+          if index > 0 {
+            Rectangle()
+              .fill(look.dark ? Color(red: 84 / 255, green: 84 / 255, blue: 88 / 255).opacity(0.5) : Color(red: 60 / 255, green: 60 / 255, blue: 67 / 255).opacity(0.14))
+              .frame(height: 0.5)
+              .padding(.leading, 58)
+              .padding(.trailing, 10)
+          }
+          FlightRow(offer: offer, grey: grey, look: look)
+        }
+      }
+      .padding(.horizontal, -10)
+    }
+    .monospacedDigit()
+    .fixedSize(horizontal: true, vertical: false)
+    .frame(maxWidth: 420, alignment: .leading)
+    .accessibilityElement(children: .contain)
+    .accessibilityLabel(card.title.isEmpty ? "Flights" : card.title)
+  }
+}
+
+private struct FlightRow: View {
+  let offer: FlightOffer
+  let grey: Color
+  let look: Look
+  @State private var hovering = false
+
+  var body: some View {
+    let ink = look.dark ? Color(hex: 0xf5f5f7) : Color(hex: 0x1d1d1f)
+    let stops = offer.stops.components(separatedBy: " · ")
+    Button {} label: {
+      HStack(spacing: 12) {
+        AirlineMark(name: offer.airline, logo: offer.logo)
+        VStack(alignment: .leading, spacing: 1) {
+          Text([offer.depart, offer.arrive].filter { !$0.isEmpty }.joined(separator: " – "))
+            .font(.system(size: 15))
+            .tracking(-0.15)
+            .foregroundStyle(ink)
+            .lineLimit(1)
+          Text([offer.airline, offer.duration, stops.first ?? ""].filter { !$0.isEmpty }.joined(separator: " · "))
+            .font(.system(size: 13))
+            .foregroundStyle(grey)
+            .lineLimit(1)
+            .truncationMode(.tail)
+          if stops.count > 1 {
+            Text(stops.dropFirst().joined(separator: " · "))
+              .font(.system(size: 13))
+              .foregroundStyle(grey)
+              .lineLimit(1)
+              .truncationMode(.tail)
+          }
+        }
+        Spacer(minLength: 0)
+        Text(offer.price)
+          .font(.system(size: 15))
+          .tracking(-0.15)
+          .foregroundStyle(ink)
+          .lineLimit(1)
+        Image(systemName: "chevron.right")
+          .font(.system(size: 10, weight: .semibold))
+          .foregroundStyle(look.dark ? Color(hex: 0x48484a) : Color(hex: 0xc7c7cc))
+          .frame(width: 12, height: 12)
+      }
+      .padding(10)
+      .background(hovering ? Color(red: 120 / 255, green: 120 / 255, blue: 128 / 255).opacity(look.dark ? 0.24 : 0.1) : Color.clear, in: RoundedRectangle(cornerRadius: 12))
+      .contentShape(RoundedRectangle(cornerRadius: 12))
+    }
+    .buttonStyle(.plain)
+    .onHover { hovering = $0 }
+  }
+}
+
+/** An airline's mark (`simeon-flight-mark--row`): its logo (22) or its initials (12, 500, grey) in a white circle with a faint ring. */
+struct AirlineMark: View {
+  let name: String
+  let logo: String
+  var side: CGFloat = 36
+  @State private var picture: NSImage?
+
+  var body: some View {
+    ZStack {
+      Circle().fill(Color.white)
+      if let picture {
+        Image(nsImage: picture).resizable().interpolation(.high).aspectRatio(contentMode: .fit).frame(width: side * 22 / 36, height: side * 22 / 36)
+      } else {
+        Text(FlightsCard.initials(name))
+          .font(.system(size: side / 3, weight: .medium))
+          .foregroundStyle(Color(hex: 0x6e6e73))
+      }
+    }
+    .overlay { Circle().strokeBorder(Color.black.opacity(0.12), lineWidth: 0.5) }
+    .frame(width: side, height: side)
+    .task(id: logo) {
+      guard logo.hasPrefix("https://"), let url = URL(string: logo), let (data, _) = try? await URLSession.shared.data(from: url) else { return }
+      picture = NSImage(data: data)
+    }
+  }
+}

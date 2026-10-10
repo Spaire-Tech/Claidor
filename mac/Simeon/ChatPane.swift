@@ -263,6 +263,16 @@ private struct TranscriptRow: View {
       ApprovalCardView(entryId: id, agentId: agentId, requestId: requestId, summary: summary, reason: reason, command: command, status: status, surface: surface, proposedRule: proposedRule, look: look)
         .frame(maxWidth: limit(520), alignment: .leading)
         .padding(.top, startsGroup ? 12 : 0)
+    case .flights(_, let card):
+      // An agent's message, drawn in its bubble (`__simeonFlights`).
+      let shape = UnevenRoundedRectangle(topLeadingRadius: run.continuesPrevious ? 6 : 18, bottomLeadingRadius: run.continuesNext ? 6 : 18, bottomTrailingRadius: 18, topTrailingRadius: 18)
+      FlightsCardView(card: card, look: look)
+        .padding(.vertical, 8)
+        .padding(.horizontal, 12)
+        .background(look.theirs, in: shape)
+        .overlay { shape.inset(by: -0.25).stroke(look.theirsHairline, lineWidth: 0.5) }
+        .shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1)
+        .padding(.top, startsGroup ? 12 : 0)
     case .request(let id, .secret(let label, let description, let provided)):
       SecretCardView(entryId: id, agentId: agentId, label: label, description: description, provided: provided, look: look)
         .frame(maxWidth: limit(640), alignment: .leading)
