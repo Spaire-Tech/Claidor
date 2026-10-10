@@ -6,9 +6,9 @@ in swift. literally everything … and more importantly, take apple design
 again". This folder holds that app. `PARITY.md` lists everything the Electron
 app does, one line each, with where it goes in Swift and whether it is done.
 
-Slices 1 (the window), 2 (the chat), 3 (agents) and 4 (the computer) are
-written (9 October 2026). None has been built yet: the next step is a
-build on the founder's Mac (below).
+Slices 1 to 7 (the window, the chat, agents, the computer, calls,
+Settings, and the Mac's own) are written (9 and 10 October 2026). None has
+been built yet: the next step is a build on the founder's Mac (below).
 
 ## Why
 
@@ -63,8 +63,11 @@ What stays where it is:
   windows, the menus and keys), `MacWindow.swift` (the window: sidebar,
   pins, rows, their menus, the account), `MacChat.swift` (the chat, its
   toolbar, a message's right-click menu, Jump To), `MacSettings.swift`,
-  `MacComputer.swift` (an agent's computer in its own window), and
-  `UIKitOnMac.swift` (below).
+  `MacComputer.swift` (an agent's computer in its own window),
+  `MacServices.swift` (notifications, the Dock, the window in front),
+  `MacLocalHands.swift` and `MacLocalPermission.swift` (the agent's hands
+  on this Mac and their setting), `MacOrgChart.swift`, `MacChannels.swift`,
+  and `UIKitOnMac.swift` (below).
 - Shared with the iPhone: `ios/SimeonCore` as a package, and every view
   file of `ios/Simeon/` built into the Mac app as it is. What only the
   phone has (its list screen, its chat screen, its gestures, its keyboard,
@@ -239,6 +242,31 @@ random inputs. Not built because the shipped window doesn't draw them:
 a model picker, the privacy block, account rename and Add Another
 Account, skill publishing (the last two behind gates Simeon leaves off).
 
+What slice 7 adds, what the Electron app does on the Mac itself, read
+from its main process, its local-exec daemon and the shipped window:
+notifications ("*name* needs you", a finished turn) and the Dock's number
+by the Electron app's rules, the computer told when the window is in
+front; the agent's hands on this Mac, inside the app (commands in a zsh
+kept alive with their output streamed, the background with its terminal
+files, files read, listed and copied both ways, the refused places,
+`~/.simeon/local-exec-daemon.log`), Settings › Execution on Local
+Computer with the team's ceiling, the card that asks to use this Mac
+above the composer (Esc denies once), and the approval card redrawn as
+shipped; the org chart in the chat's place from ⌘K and "/"; each agent's
+Channels in its pane, and the tag on a message from or to a channel; the
+computer's notices over the composer; a file card's size; the Deep Links
+page; and "Move Simeon to the Applications folder?" in release builds
+only (both apps are "Simeon.app" until the switch). The rules are
+SimeonMacCore's (`AgentNotifications`, `DockBadge`, `LocalExecRules`,
+`LocalExecFiles`, `LocalExecWire`, `SensitivePaths`, `LocalToolApprovals`,
+`LocalToolPermission`, `AgentNetwork`, `Channels`) and SimeonCore's
+(`Approvals`, `Trays`), checked against the shipped code run in Node
+where they are rules. Not built, each for a reason in `PARITY.md`: shared
+rooms (broken in the shipped app), connector sign-ins finished on this
+Mac (the hosted callback instead), connector tools routed to the Mac
+(dormant), zoom, the window widening for the pane. The hands stop when
+the app quits or signs out, where the Electron daemon kept serving.
+
 ## What can and cannot be checked here
 
 - `SimeonCore` and `SimeonMacCore` build and their tests run on Linux
@@ -250,10 +278,16 @@ Account, skill publishing (the last two behind gates Simeon leaves off).
   switch, the Mac's tones, a failed call waiting to be closed) and slice
   6's (the account's letters, Auto-review's rules, the usage summary and
   meters, the Plugins overlay's search, sections, added rule, Yours list,
-  filter and words, the access words) against values made by running the
-  window's own functions.
+  filter and words, the access words) and slice 7's (when to notify and
+  what, the Dock's number, the approval cards, the hands' refusals, reads,
+  wire and shell scripts, the org chart's layout, light and words, the
+  channels, the notices) against values made by running the window's or
+  the Electron app's own functions.
 - The app's own files, the Mac's and the shared iPhone ones, can only be
   parsed off a Mac (`swiftc -parse`), not compiled: SwiftUI and AppKit are
   not here. Every slice is built and run on the founder's Mac before it
   counts, and the iPhone app is built again with it, since its files
   changed too.
+- zsh is not here either: the hands' shell scripts were run with bash in
+  its place. A command, its folder carried to the next one, a command
+  sent to the background and a cancel are to be tried on the Mac.

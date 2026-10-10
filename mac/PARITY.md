@@ -21,8 +21,8 @@ reused, laid out for the Mac), **partly** (what is missing is named), **no**
 written; **written** (the code is there, not yet built on a Mac); **part:**
 what is there, when only some of it is; then **built** (it compiles) and
 **checked** (seen working on the founder's Mac). Slices 1 (the window),
-2 (the chat), 3 (agents) and 4 (the computer) are written: nothing is
-built or checked yet.
+2 (the chat), 3 (agents), 4 (the computer), 5 (calls), 6 (Settings) and 7
+(the Mac's own) are written: nothing is built or checked yet.
 What slice 2 added is shared with the iPhone, so its "Phone" column says
 yes too; the iPhone app is built again with it. Slice 3's screens are the
 Mac's own (`mac/Simeon/Mac*.swift`), on rules in the shared core that the
@@ -149,7 +149,7 @@ The menus, zoom and full screen are in §9.
 | What | Where | Phone | Mac |
 |---|---|---|---|
 | Tabs All, Messages, Agents, Groups, Files, Links, Routines, Actions; arrows between tabs; Current and Hidden badges; a result opens at its line | production `CommandPalette.tsx`, `command-palette-*-provider.ts` | yes (`SearchResults`, `Search.swift`) | written (⌘K) |
-| Actions: Org Chart, Open Hidden Agents, Members, Channels, Chat Settings, Settings › General and Usage & Billing, Connect apps, Theme, Update Simeon's Computer, Join or New shared room | production `command-palette-root-commands.ts` | partly (New Agent, New Group Chat, Hidden Agents, Settings, Theme) | part: the phone's (New Agent and New Group Chat open the new chat; a routine opens its agent's Routines tab, as the window does), and Update Simeon's Computer last, in the palette and after "/", while the selected agent's computer has not said it is up to date (`UOn`) |
+| Actions: Org Chart, Open Hidden Agents, Members, Channels, Chat Settings, Settings › General and Usage & Billing, Connect apps, Theme, Update Simeon's Computer, Join or New shared room | production `command-palette-root-commands.ts` | partly (New Agent, New Group Chat, Hidden Agents, Settings, Theme) | part: the phone's (New Agent and New Group Chat open the new chat; a routine opens its agent's Routines tab, as the window does), and Update Simeon's Computer last, in the palette and after "/", while the selected agent's computer has not said it is up to date (`UOn`); Org Chart first while `isAgentNetworkEnabled` says so and there is an agent, and Channels after Members while the open agent has a platform or a connection (`mmt`). The shared rooms' Join and New are not built (§2.20) |
 
 ### 2.6 New agents and groups
 
@@ -214,7 +214,7 @@ The menus, zoom and full screen are in §9.
 | Attachments staged, then sent with the message | `desktop/web/backend.ts` | yes | written |
 | Dictation: "Listening…", "Transcribing…" | recovered `voice.tsx` | yes (Apple's dictation) | written (Apple's dictation) |
 | "@" as the window's (`Q5n`, `j5n`, `cAe`, checked against the helper's run of the bundle's own functions): after a space, "(" or the start, names with one space at a time, 50 at most; in a group its members and "everyone" (two or more), in a one-to-one chat the other agents and the groups this one is in; routines; connectors ("Gmail (work@x.com)", "connected", "needs auth"…); each row its icon, name, line and tag ("Agent", "Group", "Routine", "Plugin"); the window's fuzzy score, the ones picked lately first among equals (20 kept); no limit; "No matches for “…”" and "Press Esc to close"; arrows wrap, Return or Tab picks, Esc puts it away there; a pick is one piece (a mention or a chip) in the message's document | bundle | yes | written |
-| "/" (`u5n`): the skills whose name holds what was typed (with what each does), then the app's actions fuzzily (eight at most, three kept for actions); "No matches for "…"", "Nothing to reference yet"; an action deletes the "/…" and runs. "#" (`D_n`, `Iyn`): the pull requests the chat named, newest first (a reference in a message's document, a cloud agent's, GitHub and review.simeonlabs.com addresses), by number or title, eight. ":" (`lft`): the window's own emoji list (emojibase, 3,944 with skin tones), twelve, "\:id\:" and the name, the ones picked lately first (50 kept). The message's document (`richText`) as the editor writes it, sent with every message: one paragraph, line breaks as `hardBreak`, mentions, `workflowReference`, `prReference` | bundle | yes | part: of the app's actions, Open Hidden Agents, Members, Chat Settings, Settings: General, Plugins and the three Themes (Org Chart, shared rooms, Usage, Channels, updates and the computer's update wait for their slices); a cloud agent's pull request counts once its card has been read; link marks are not written into the document |
+| "/" (`u5n`): the skills whose name holds what was typed (with what each does), then the app's actions fuzzily (eight at most, three kept for actions); "No matches for "…"", "Nothing to reference yet"; an action deletes the "/…" and runs. "#" (`D_n`, `Iyn`): the pull requests the chat named, newest first (a reference in a message's document, a cloud agent's, GitHub and review.simeonlabs.com addresses), by number or title, eight. ":" (`lft`): the window's own emoji list (emojibase, 3,944 with skin tones), twelve, "\:id\:" and the name, the ones picked lately first (50 kept). The message's document (`richText`) as the editor writes it, sent with every message: one paragraph, line breaks as `hardBreak`, mentions, `workflowReference`, `prReference` | bundle | yes | part: of the app's actions, Open Hidden Agents, Members, Chat Settings, Settings: General, Plugins and the three Themes Org Chart and Channels (slice 7) and Update Simeon's Computer (slice 4); not the shared rooms (§2.20) nor Usage; a cloud agent's pull request counts once its card has been read; link marks are not written into the document |
 | A draft kept per chat ("Draft:" in the list) | recovered `draft-state.ts` | yes | written |
 | The blue Send, Enter sends, Send and the mic swap | patch 1838 | yes | written (Return sends) |
 
@@ -226,10 +226,10 @@ The menus, zoom and full screen are in §9.
 | Connectors: logo, Team badge, reason, "N tools · Used by N teammates", Authorize, Add, Manage, Retry, "Waiting for X authorization…" with Reopen, "Authorization didn't finish.", ✓ Added, account pills, Add another account, suggestion chips, Browse more | recovered `views/connector.tsx`, `connectors.tsx` | partly (no Team badge, counts, Manage, Retry, Reopen, account pills, another account, chips) | part: the phone's |
 | Connect Slack or GitHub for a routine | recovered `views/listener-connect.tsx` | yes | written |
 | Email and Slack drafts: editable, Show more, Send, Discard, the states | patch 607-643 | yes | written |
-| Approval: Allow once, Always allow, Deny; Allowed once, Always allowed, Denied, Expired (the gate is off, so they are rare) | recovered `views/auto-review-approval.tsx` | yes | written |
+| Approval: Allow once, Always allow, Deny; Allowed once, Always allowed, Denied, Expired (the gate is off, so they are rare) | recovered `views/auto-review-approval.tsx` | yes | written; redrawn to the shipped card in slice 7 (its title by where it ran, "Approval needed" with the spinner, the place, the line, the reason while pending, the command folded with Copy code; Always allow adds the rule to Auto-review's list, else answers "approved"; a stale answer reads Expired), checked against the auto-review chunk's own functions (`Fixtures/approvals.json`) |
 | A secret: the field, Save securely, "Stored securely, never shown to your agent." | recovered `views/secret-request.tsx` | yes | written |
 | Your turn on the computer: Take over, I'm done, Skip; Done, Answered, Skipped, Open computer | patch 828-880 | yes | written |
-| "Allow Simeon and all agents to run commands on your local computer?": Always allow, Allow once, Never, Deny once; the team's policy | recovered `permissions/local-tool/` | no (the Mac's only, §7) | |
+| "Allow Simeon and all agents to run commands on your local computer?": Always allow, Allow once, Never, Deny once; the team's policy | recovered `permissions/local-tool/` | no (the Mac's only, §7) | written (`MacLocalAskCard`): above the composer, not in the chat (`sand-local-tool-permission-dock`), the first ask still pending in the open chat; the orange triangle, the title, what it asks, X ("Deny once (Esc)") and Esc; Always allow (off, with the reason, above the team's ceiling), Allow once, Never; Always allow and Never change the setting first, as the window does; the typing line hidden meanwhile. Once answered, one line in the chat ("Simeon can run commands on your computer this time.", "… can run commands …", "… cannot run commands …", "Simeon was not allowed to run commands on your computer."); an expired or pending one draws none there. The old `permission-request` card says "This message type is no longer supported in Simeon." |
 | A cloud agent (bundle `_$n`, `view-CizPQWLy.js`): three bars while first read; "Cloud agent", "Status unavailable" when nothing could be; the name (a link to the pull request, "Open the pull request"), Creating, Running, Done, Error, Expired; what it was asked; the branch with the pull request's mark by its state and "PR #N"; what it changed; View PR, Open; asked again every 5 s while it works, every 60 s after a failure with nothing read, never once it is done or the answer is empty | bundle | yes (`CloudAgentCard`) | written |
 | Flights, and a flight's details | patch 882-1025 | yes (Muse's layout) | written |
 | Agents talking: Messaged, Message from, N messages with, N agents ▾, the read-only exchange | ios `PARITY.md` §3.6 | yes | written |
@@ -253,7 +253,7 @@ The menus, zoom and full screen are in §9.
 | Profile: Name, Title, Description saved on leaving each (Return in a one-line field, Esc puts it back, an empty name goes back); no title for a group; the Notifications switch, not for a group | bundle `h3n`, `Uwe` | yes (`ProfileTab`) | written |
 | The avatar editor: Agent (12 colours, the voice with play, Reset), Generate (⌘Return), Upload (drop, paste or Browse files; the 96 pt crop with zoom 1–5 and drag; a 256 PNG) | bundle `c3n` | partly (no crop, zoom, drag, drop or paste) | written (`MacAvatarEditor`, `AvatarCrop`) |
 | Members, on a group's Computer tab: each opens its chat, Remove on hover asks first, Add Member (six at most), "Create more Agents to add them here." | bundle `z2n` | yes (`GroupMembers`) | written (`MacMembers`) |
-| Channels: each agent's Discord and Slack bot: status, Connect, Disconnect, How to connect, Refresh, the token field | recovered `agent-info/channels/` | no | |
+| Channels: each agent's Discord and Slack bot: status, Connect, Disconnect, How to connect, Refresh, the token field | recovered `agent-info/channels/` | no | written (`MacChannelsTab`, `ChannelsView`): in the pane with no tab of its own, reached from Channels in ⌘K and "/"; the line, each platform with its tile, name, line, chip (Connected, Connecting, Needs attention, Soon) and its "…" menu (How to connect, Refresh, Disconnect), Connect or Reconnect, the token field ("Paste your …", "Stored securely, never shown to your agent.", Store securely); read every 4 s while open and when the app comes forward, 15 s at most. "How to connect" says what the window's own table says: "Connecting Discord is not available yet", though the row offers Connect (the shipped contradiction, kept). The tag on a message from or to a channel ("From Ada on Discord", "Sent to Slack") is drawn under its words, the iPhone's too; not under an agent's file sent to a channel |
 | A shared room: Invite people, Copy link, requests with Approve and Deny, people, your agents | recovered `agent-info/shared-room/` | no | |
 | Async tasks: helpers, shells and cloud agents still running | recovered `agent-info/async-tasks/` | no | not built: in the shipped window only staff see it (`isStaffUser`), and no account is staff |
 | Full conversation: You, Thinking, Agent, Message, each tool call with its details and result (a terminal's output) | recovered `conversation-outline-view.tsx`, `terminal/output/` | no | not built: staff only, as above |
@@ -302,7 +302,7 @@ The menus, zoom and full screen are in §9.
 | What | Where | Phone | Mac |
 |---|---|---|---|
 | General: Account, Theme (Follow System, Light, Dark), Timezone, Auto-review with its rules | recovered `settings/overlay/panels.tsx`, `auto-review.tsx` | yes | written (`MacSettings.swift`): the shipped General (Account, Appearance › Theme, Agent › Timezone and Auto-review with its rules in place: the composer, the table with edit and delete, twenty a list, a thousand characters, ⌘↩ and Esc), the rules checked against the settings chunk's own editor |
-| General: Execution on Local Computer (Always allow, Ask every time, Never allow) | recovered `settings/overlay/panels.tsx` | no (the Mac's only, §7) | |
+| General: Execution on Local Computer (Always allow, Ask every time, Never allow) | recovered `settings/overlay/panels.tsx` | no (the Mac's only, §7) | written (`MacLocalExecutionRow`, `LocalToolPermission`): under Agent, between Timezone and Auto-review, with the window's line and, with a team ceiling, "Your team's admin allows at most …"; a choice above the ceiling can't be picked; the choice kept on this Mac per account and written to the computer (`setHostSettings`, three tries), the computer's Always or Never taken when this Mac says Ask; the ceiling read from the server (`GetTeamAdminSettingsOrEmptyIfNotInTeam`) |
 | General: Security Key | same | no (the Mac's only, §8) | |
 | Usage & Billing: the week's or the trial's meter and its reset, on-demand, Get more Simeon usage, Cancel Trial ("Cancel your trial?", Keep Trial), Manage Plan (Upgrade to *tier*, Manage Billing ↗) | recovered `panels.tsx`, patch 543-594 | partly (no on-demand, trial, Cancel Trial) | written (`MacUsageSettings`, `UsageSummary`, `UsageMeters`): listed once a summary is in; "Weekly usage" or "Trial usage" with its reset or end, on-demand, the upgrade card and its line, Cancel Trial with "Cancel your trial?" (`CancelSandTrial`), Manage Plan; loading and refresh failures with Retry; read on opening unless read in the last 30 s; checked against the Electron app's summary and the window's meter run on 500 quotas |
 | Updates: hidden today | patch 8-13 | n/a | Sparkle's own |
@@ -323,8 +323,8 @@ The menus, zoom and full screen are in §9.
 
 | What | Where | Phone | Mac |
 |---|---|---|---|
-| Agent network: every agent and its state (Waiting for you, Working…, Idle); About, Last activity, Open chat | recovered `org-chart/workspace/` | no | |
-| Shared rooms: New, Join from a link, invites, requests, notices in the chat | recovered `agent-info/shared-room/`, `docs/services-agents.md` | no | |
+| Agent network: every agent and its state (Waiting for you, Working…, Idle); About, Last activity, Open chat | recovered `org-chart/workspace/` | no | written (`MacOrgChart`, `AgentNetwork`): "Org chart" in the chat's place with its count line ("4 agents · 1 group · 2 message links"), from ⌘K and "/" while `isAgentNetworkEnabled` (read when the computer is reached and when the app comes forward) and there is an agent; the force layout, zoom (wheel and pinch), drag to pan, a double-click to reset, the links lit while two agents talk ("Talking now", "Active recently"); a click on an agent shows its card (state, title, About, Last activity, Open chat), on a group its members and Open room, on a link the last 30 lines between the two, read-only. Laid out, lit and worded by the shipped chunk's own functions run in Node (`Fixtures/network.json`). An idle agent's node has no caption; "Idle" is on its card only |
+| Shared rooms: New, Join from a link, invites, requests, notices in the chat | recovered `agent-info/shared-room/`, `docs/services-agents.md` | no | not built, and broken in the shipped app: its Join box refuses the `https://app.simeonlabs.com/share/…` links the server makes, the guest's side is never drawn (no remote room), the host has nowhere to approve a request, the sharing state is not read at launch, and the box lacks two of the methods. The founder decides what to build |
 
 Broadcast to agents has a button but no path in the window today; it comes
 over only once it does something.
@@ -333,9 +333,9 @@ over only once it does something.
 
 | What | Where | Phone | Mac |
 |---|---|---|---|
-| Toasts: dismiss, Clear all, Copy request ID | recovered `window-chrome/notification-host.tsx` | partly (an alert) | part: an alert |
-| The Deep Links page (`simeon://app/v1/info?topic=deep-links`) | recovered `deep-links/overlay/` | no | |
-| About: the icon, the version, "Copyright © 2026 SimeonLabs, Inc." | recovered `about/overlay/`, patch 69 | partly (the version in Settings) | |
+| Toasts: dismiss, Clear all, Copy request ID | recovered `window-chrome/notification-host.tsx` | partly (an alert) | written (`TrayStack`, `TrayList`; the iPhone's too): these are the computer's notices (`getTrays`, `tray`), the open agent's over its composer ("Agent failed to respond", "Message not delivered", "Routines paused while you were away"), with "×N", the detail, the link buttons, Copy request ID and Dismiss; Clear all over two or more, clearing every agent's as the window does. Read when the computer is reached and after a reconnect, the events since applied over the answer. The upgrade action's button is not drawn: only the upstream server's errors carry one. Other failures still show as an alert |
+| The Deep Links page (`simeon://app/v1/info?topic=deep-links`) | recovered `deep-links/overlay/` | no | written (`MacDeepLinkInfo`): "Deep Links", "Simeon deep links are working", Route and Source, Done; signed in or not. Its words are the shipped window's, "sand://app/v1/info?topic=deep-links" and "Custom protocol (sand://)" included |
+| About: the icon, the version, "Copyright © 2026 SimeonLabs, Inc." | recovered `about/overlay/`, patch 69 | partly (the version in Settings) | written (`MacAbout`, slice 6) |
 | The update pill, "Update required", "Restart to update" (still while updates are off) | recovered `update/` | n/a | Sparkle's own |
 | The look: the 12 palettes, the butterfly and its motion, glass, blue switches, the Messages grey, blue buttons | patch 1679-2710 | yes (`Palette.swift`, `Butterfly.swift`, `MarkMotion.swift`, `Avatars.swift`, `Theme.swift`) | written |
 
@@ -370,31 +370,34 @@ and `VoiceCall.swift`. Every command the Mac sends today has a line.
 | | `promptAcceptanceStatus`, `appendConnectorCard` | no | |
 | Cards and reactions | `respondToWidget`, `dismissWidget`, `submitSecret`, `sendDraft`, `discardDraft`, `reactToMessage` | yes | written |
 | Approvals | `resolveAutoReviewApproval` | yes | written |
-| | `resolveLocalToolPermission` (the Allow card for the agent's hands on this Mac) | no | |
+| | `resolveLocalToolPermission` (the Allow card for the agent's hands on this Mac) | no | written |
 | Agents and groups | `listAgents`, `countAgents`, `createAgent`, `kickstartAgent`, `createGroup`, `setGroupMembers`, `updateAgent`, `deleteAgents`, `duplicateAgent`, `setAgentUnread`, `setAgentNotifyOnUpdates`, `setAgentHiddenFromSidebar`, `setAgentAvatarBytes` | yes | written |
-| | `setWindowFocused` (the box knows the person is looking), `getAgentAvatar`, `getSubagents`, `getAsyncTasks`, `getConversationOutline`, `broadcastToAgents`, `isAgentNetworkEnabled`, `setAgentNotificationsEnabled` | no | |
+| | `setWindowFocused` (the box knows the person is looking), `isAgentNetworkEnabled` | no | written |
+| | `getAgentAvatar` (the roster carries the pictures: the Mac does not ask for slim avatars), `getAsyncTasks` (its one visible use, the header's computer button, the patch removed), `getConversationOutline` (staff only), `broadcastToAgents` (nothing reads its result), `setAgentNotificationsEnabled` (nothing calls it) | no | not needed: no screen of the shipped window depends on them |
 | Search | `searchAgents`, `searchMedia`, `isGlobalSearchEnabled` | yes | written |
 | Routines | `getAgentAutomations`, `listAllAutomations`, `createAgentAutomation`, `updateAgentAutomation`, `setAgentAutomationEnabled`, `deleteAgentAutomation`, `runAgentAutomationNow` | yes | written |
 | Workflows (no screen of their own in the window; `getAgentWorkflows` feeds "/" and "@", written) | `getAgentWorkflows`, `createAgentWorkflow`, `updateAgentWorkflow`, `setAgentWorkflowEnabled`, `deleteAgentWorkflow`, `runAgentWorkflowNow`, `importAgentWorkflowText`, `importAgentWorkflowUrl` | no | |
 | Skills | `skillsCatalog`, `portAgentLocalSkills`, `syncPluginSkills`, `getPluginSyncStatus`, `getSkillPublishTargets`, `publishSkill`, `resyncPublishedSkill`, `unpublishSkill` | no | |
 | Connectors | `desktopMcp`: `listServers`, `getCatalog`, `installEntry`, `vendorServerIdForPlugin`, `authenticateServer`, `removeServer`, `listServerTools`, `toggleMcpToolDisabled`, `renameAccount`, `removeAccount` | yes | written |
 | | `desktopMcp`: `listEffectivePlugins`, `resolvePluginLogo`, `updatePluginInstall`, `uninstallPlugin`, `setServerCustomInstructions`; `searchPlugins`, `getPlugin`, `installPlugin`; `refreshMcp`, `listBoxMcpServers`, `completeMcpOAuth` | no | |
-| Tools run from the Mac | `listRoutedMcpTools`, `executeRoutedMcpTool`, `executeRoutedAgentTool` | no | |
+| Tools run from the Mac | `listRoutedMcpTools`, `executeRoutedMcpTool`, `executeRoutedAgentTool` | no | not built: dormant (§5) |
 | Messaging channels | `getListenerIntegrations`, `getListenerConnectUrl` | yes | written |
-| | `getAgentChannels`, `connectChannel`, `disconnectChannel`, `refreshChannel` | no | |
+| | `getAgentChannels`, `connectChannel`, `disconnectChannel`, `refreshChannel` | no | written |
 | Memory (no screen in the window today) | `getAgentMemories`, `deleteAgentMemory`, `clearAgentMemories` | no | |
-| Sharing | `getSharingState`, `createRoomFromAgent`, `createRoomInvite`, `joinSharedRoom`, `respondToRoomJoinRequest`, `createSharedRoom`, `addOwnAgentToSharedRoom`, `removeOwnAgentFromSharedRoom`, `setSharedRoomTyping`, `leaveSharedRoom` | no | |
+| Sharing | `getSharingState`, `createRoomFromAgent`, `createRoomInvite`, `joinSharedRoom`, `respondToRoomJoinRequest`, `createSharedRoom`, `addOwnAgentToSharedRoom`, `removeOwnAgentFromSharedRoom`, `setSharedRoomTyping`, `leaveSharedRoom` | no | not built (§2.20) |
 | Settings | `getHostSettings`, `setHostSettings` | yes (pins, onboarding, time zone, auto-review) | written |
 | | `sidebarSections` | no | written |
-| | The other fields: `agentDefaultModel`, `computerUseModel`, `localToolPermission`, `webauthnProxyEnabled`, the connector stores, `featureFlagOverrides` | no | |
+| | `localToolPermission` | no | written |
+| | The other fields: `agentDefaultModel`, `computerUseModel`, `webauthnProxyEnabled` (slice 8), the connector stores, `featureFlagOverrides` | no | |
 | Secrets | `setBoxSecrets`, `getBoxSecretsStatus` | no | |
 | Files | `uploadAttachment`, `readAttachmentImage`, `readAttachmentChunk` | yes | written |
-| | `readAttachmentText` | no | |
+| | `readAttachmentText` (the file card's size line, and "Couldn't read file") | no | written |
 | Calls | `voiceCall` | yes | written |
 | The computer | `ensureForeverBox`, `handBackForeverBox`, `getForeverBoxStatus`, `getSubagents`, `requestDiskSaverAudit` | yes (the first two) | written |
 | | `getCloudAgentInfo` | yes | written |
 | | `updateForeverBox` (the Mac's dev fallback only), `getHostStatus` (the Electron app's own idle check), `isEgressTunnelAvailable` | no | |
-| Teaching (gate off) and trays (no screen in the window today) | `startTeachRecording`, `stopTeachRecording`, `getTeachRecordingStatus`, `getTrays`, `dismissTray`, `clearTrays` | no | |
+| Trays: the computer's notices over the composer (§2.21) | `getTrays`, `dismissTray`, `clearTrays` | no | written |
+| Teaching (gate off) | `startTeachRecording`, `stopTeachRecording`, `getTeachRecordingStatus` | no | |
 
 A command whose screen is missing or switched off in the window comes over
 with that screen, not before.
@@ -433,7 +436,8 @@ How the Mac calls them, beyond what `Gateway.swift` does now:
 | `agents-automation` | an agent's routines | no | written |
 | `workflows`, `memory`, `sharing` | changes to those | no | |
 | `forever-box`, `box-disk-pressure`, `computer-action` | the computer's state, its disk, what the agent does on it | no | written |
-| `tray`, `teach-recording` | trays and teaching | no | |
+| `tray` | the computer's notices | no | written |
+| `teach-recording` | teaching (gate off) | no | |
 
 ## 5. What the coordinator did
 
@@ -444,11 +448,11 @@ The Swift app does each of these itself:
 |---|---|---|---|
 | Talk to the box: commands and events | `gateway/` | yes (`Gateway.swift`, `Backend.swift`) | written |
 | Turn the box's screen address into the proxy's | `gateway/box-vnc-proxy.ts` | yes (`screenSocket`) | written |
-| Put the account on permission cards, so the Allow card shows | `permission-scope-stamp.ts` | no | |
-| Finish a connector's sign-in on this Mac (`http://localhost:8787/callback`, then `completeMcpOAuth`) | `oauth/`, main `mcp/mcp-oauth-loopback-provider.ts` | phone uses the server's hosted callback | |
-| Start, check and restart the local-exec daemon | `local-exec/` | n/a | |
+| Put the account on permission cards, so the Allow card shows | `permission-scope-stamp.ts` | no | not needed: the shipped window never reads the stamp (`permissionScope` is in no chunk); the card shows for any pending ask in the open chat |
+| Finish a connector's sign-in on this Mac (`http://localhost:8787/callback`, then `completeMcpOAuth`) | `oauth/`, main `mcp/mcp-oauth-loopback-provider.ts` | phone uses the server's hosted callback | not built: the Electron app signs in to 23 vendors' connectors and to custom URLs here (PKCE, a listener on port 8787, the code exchange, the stores pushed with `refreshMcp`); the Mac uses the hosted callback as the phone does, which works when the browser is signed in to app.simeonlabs.com. The founder decides whether to port it |
+| Start, check and restart the local-exec daemon | `local-exec/` | n/a | written: no daemon; the hands run inside the app (§7) |
 | Security keys for the agent's browser | `webauthn/` | no | |
-| Connector tools the box routes to the Mac | `routed-mcp-bridge.ts` | no | |
+| Connector tools the box routes to the Mac | `routed-mcp-bridge.ts` | no | not built: dormant in Simeon. Only the text-only fallback builds the bridge (`SAND_SIMEON_FULL_AGENT=off`, which nothing sets); turns run on the computer, which calls connectors itself, and no connector server runs on the Mac |
 | The text-only fallback when the full agent is off (`SAND_SIMEON_FULL_AGENT=off`) | `inference-router.ts` | n/a: off by default, not ported | |
 
 ## 6. What the Mac itself does (Electron main)
@@ -483,7 +487,7 @@ The Swift app does each of these itself:
 | Time zone, auto-review rules | `timeZone.*`, `autoReviewInstructions.*` | yes | written |
 | Theme: system, light, dark | `theme.*`, main `prefs/theme-controller.ts` | yes | written |
 | Onboarding seen, skip | `onboarding.*` | yes | written |
-| **The agent's hands on this Mac** (§7) | `localToolPermission.*` | n/a | |
+| **The agent's hands on this Mac** (§7) | `localToolPermission.*` | n/a | written |
 | **The computer**: reset it, update it keeping its data, the move's progress (backing up, creating, moving, cleaning up, done, failed) | `foreverBox.forceRecreate`, `update`, `getBoxMigrationStatus`, main `box/box-recovery.ts` | no | written (§2.16) |
 | The computer panel: clipboard both ways (every 500 ms while visible), ⌘A/C/V/X/Z sent as Ctrl, the person's presence, arrow keys | `desktop/source/electron-preload/preload-vnc.ts` | partly (`Computer.swift`: its own clipboard and keys, no presence) | written (§2.16; presence not built, nothing reads it) |
 | "The computer's screen isn't connecting." with the last reason after 20 s of spinner, "The computer's status could not be read." under "Can't reach…" at once, each with "Details:" and the log's place; the log at `~/Library/Application Support/Simeon/computer-stream.log`, emptied at each launch | `computer-stream-notice.ts`, `shared/computer-stream.ts`, main `vnc/computer-stream-log.ts` | no | written (`ComputerStreamLog`, `ComputerStreamReason`): the app's own noVNC writes the lines the box's page would (`[SimeonScreen] state=…`), so the same reasons come out; the network token is left out of the lines |
@@ -502,17 +506,26 @@ AwaitExternalShell, ExternalRead, CopyToBox and CopyFromBox reach it.
 
 | What | Electron | Mac |
 |---|---|---|
-| Run a command with its output streamed; run one in the background; read a file (with a size cap); list a folder | `production-executor.ts` | |
-| Where: `SAND_LOCAL_EXEC_ROOT`, else `SAND_AGENT_PROJECT_DIR`, else the home folder; commands carry `SIMEON_AGENT=1` | same | |
-| Always refused: `~/.ssh`, `.gnupg`, `.aws`, `.azure`, `.config/gcloud`, `.kube`, `.docker/config.json`, `.netrc`, `.npmrc`, `.pypirc`, `.simeon` and the earlier data folder, `.cursor`, `Library/Keychains`, `Library/Cookies`, `Application Support/Simeon`, the browsers' profiles, `/etc/shadow`, `master.passwd` | `shared/sensitive-local-paths.ts` | |
-| The setting: Never, Ask (the default), Always; an admin cap from the account can lower it | `localToolPermission.get/set/ceiling` | |
-| Ask: an approval covers that exact action and lasts 10 minutes (`~/.simeon/local-tool-approvals.json`); the Allow card in the chat | `recordApproval`, `clearApprovals`, `resolveLocalToolPermission` | |
-| Refused when the app is not watching it (no heartbeat for 90 s) | host `local-exec/` | |
-| Its credential from the server (`POST /sand-box/local-exec-daemon-credential`), its requests from the box (`/local-exec/requests`, `/local-exec/responses`) | main `box/box-host-connector.ts` | |
+| Run a command with its output streamed; run one in the background; read a file (with a size cap); list a folder | `production-executor.ts` | written (`MacLocalHands`): commands in one zsh kept alive (its folder, variables and functions carried from one command to the next), the output streamed with the 3 s heartbeats the box's 10 s watchdog needs, a cancel stopping it, a command moved to the background after its block time with its terminal file (head rewritten every 5 s, the foot on exit); files read as text, as pictures (shrunk to fit), as PDFs or refused as binary, folders listed; files copied both ways (CopyToBox, CopyFromBox) within the frame's cap |
+| Where: `SAND_LOCAL_EXEC_ROOT`, else `SAND_AGENT_PROJECT_DIR`, else the home folder; commands carry `SIMEON_AGENT=1` | same | written (each read as `SIMEON_…` first) |
+| Always refused: `~/.ssh`, `.gnupg`, `.aws`, `.azure`, `.config/gcloud`, `.kube`, `.docker/config.json`, `.netrc`, `.npmrc`, `.pypirc`, `.simeon` and the earlier data folder, `.cursor`, `Library/Keychains`, `Library/Cookies`, `Application Support/Simeon`, the browsers' profiles, `/etc/shadow`, `master.passwd` | `shared/sensitive-local-paths.ts` | written (`SensitivePaths`), ported exactly, its gaps too: the check is case-sensitive, a `file://` address, a link to a refused place, `/private/etc/shadow`, a `;` or a `${HOME}` in a command get past it. The founder decides whether to close them |
+| The setting: Never, Ask (the default), Always; an admin cap from the account can lower it | `localToolPermission.get/set/ceiling` | written (§2.18) |
+| Ask: an approval covers that exact action (`~/.simeon/local-tool-approvals.json`); the Allow card in the chat | `recordApproval`, `clearApprovals`, `resolveLocalToolPermission` | written (`LocalToolApprovals`, `LocalToolRules`): an approval lasts until it is used up or a new message is sent; it never runs out by time. The 10 minutes are the box's: an unanswered card settles as Expired after them |
+| Refused when the app is not watching it | host `local-exec/` | n/a: there is no such refusal. The 90 s supervision only ranks the providers when two are connected |
+| Its credential from the server (`POST /sand-box/local-exec-daemon-credential`), its requests from the box (`/local-exec/requests`, `/local-exec/responses`) | main `box/box-host-connector.ts` | written: the requests and answers over the app's own connection to the computer, so no separate credential; reconnecting with the Electron daemon's backoff, a stalled stream dropped after 35 s; each step in `~/.simeon/local-exec-daemon.log` |
 
-In Swift this is `Process` and `FileManager` inside the app, with the rules
-above in a Mac-only library of the shared package (`SimeonMacCore`) so they
-are tested on Linux with the rest.
+In Swift this runs inside the app (`mac/Simeon/MacLocalHands.swift`), with
+the rules in a Mac-only library of the shared package (`SimeonMacCore`:
+`LocalExecRules`, `LocalExecFiles`, `LocalExecWire`, `SensitivePaths`,
+`LocalToolApprovals`, `LocalToolPermission`) so they are tested on Linux
+with the rest. Two differences from Electron: the hands stop when the app
+quits or signs out, where the Electron daemon kept serving; and two bugs
+of the shipped daemon are not carried over (its dump script ends its
+here-documents with a marker it never opened, and the first shell's state
+is never read because its marker is printed first), so a command's folder
+and variables carry over as intended. zsh was not run here; that is to
+check on a Mac. When this app and the Electron one both run, both offer
+their hands to the computer.
 
 ## 8. Security keys for the agent's browser
 
@@ -539,15 +552,15 @@ itself.
 | What | Electron | Phone | Mac |
 |---|---|---|---|
 | Menus: Simeon (About, Services, Hide, Quit), File (Close), Edit, View (Reload, Full Screen), Agent (Call *name*), Window. No Help menu (hidden on 4 October) | main `application-menu.ts` | n/a | part: no zoom |
-| Zoom ⌘= ⌘- ⌘0 (0.5–3.0), Full Screen ⌃⌘F | main `host-window-chords.ts` | n/a | |
-| The `simeon` scheme: `app/v1/open` (back from sign-in), `app/v1/info?topic=deep-links`, `app/v1/plugin/add?id=`; the same under `https://app.simeonlabs.com/sand/link/v1/…`; the rules (2048 characters, no `#`, only known keys) | `shared/deep-link.ts`, main `deep-link/` | partly (sign-in only) | part: `simeon-mac://app/v1/open` |
-| Notifications: "*name* needs you" (the reason, or "Waiting for your input."), with sound; a finished turn (the last message, or "Open Simeon to see what it did."), silent. Not while the window is focused, for a hidden agent, with the agent's notifications off, or twice in 5 s; at most 140 characters. A click opens the agent | main `notifications/os-notification-manager.ts`, `shared/os-notification.ts` | partly (Apple push from the server) | |
-| The Dock badge: agents with unread messages, not hidden | main `notifications/dock-badge-manager.ts` | partly (from the push) | |
+| Zoom ⌘= ⌘- ⌘0 (0.5–3.0), Full Screen ⌃⌘F | main `host-window-chords.ts` | n/a | part: Full Screen. Zoom is not built: SwiftUI has no page zoom, and scaling the drawn window blurs its text; the window draws nothing for it either. The founder decides whether the Mac should have bigger text instead |
+| The `simeon` scheme: `app/v1/open` (back from sign-in), `app/v1/info?topic=deep-links`, `app/v1/plugin/add?id=`; the same under `https://app.simeonlabs.com/sand/link/v1/…`; the rules (2048 characters, no `#`, only known keys) | `shared/deep-link.ts`, main `deep-link/` | partly (sign-in only) | written under `simeon-mac` while the apps live side by side: open, the Deep Links page, a plugin to add; the https form needs the domain's app link, at the switch |
+| Notifications: "*name* needs you" (the reason, or "Waiting for your input."), with sound; a finished turn (the last message, or "Open Simeon to see what it did."), silent. Not while the window is focused, for a hidden agent, with the agent's notifications off, or twice in 5 s; at most 140 characters. A click opens the agent | main `notifications/os-notification-manager.ts`, `shared/os-notification.ts` | partly (Apple push from the server) | written (`AgentNotifications`, `NotificationDecider`, `MacServices`): the same rules, checked against the Electron code run in Node (`Fixtures/notify.json`); the computer told when the window is in front (`setWindowFocused`) |
+| The Dock badge: agents with unread messages, not hidden | main `notifications/dock-badge-manager.ts` | partly (from the push) | written (`DockBadge`) |
 | One copy of the app at a time; a second launch hands over its link | main `main.ts` | n/a | written (the Mac does it) |
 | The window's place and size (default 1040 × 760, at least 512 × 520), on the screen it was on | main `window-state-*.ts`, `window-chrome.ts` | n/a | written (SwiftUI keeps it) |
-| The window widens when a side pane opens, within the screen | `windowControls.resizeWidth` | n/a | |
+| The window widens when a side pane opens, within the screen | `windowControls.resizeWidth` | n/a | not built: the inspector takes its width from the chat, as Mac apps' inspectors do |
 | The sidebar greys when the window loses focus | main `window-chrome.ts` | n/a | written (the Mac does it) |
-| "Move Simeon to the Applications folder?" | main `startup/move-to-applications-folder.ts` | n/a | |
+| "Move Simeon to the Applications folder?" | main `startup/move-to-applications-folder.ts` | n/a | written (`MacMoveToApplications`), asked only by a release build (slice 9 sets it): while both apps are "Simeon.app", a move would replace the Electron one |
 | Tokens in the Keychain; secrets and the box address stored encrypted | main `secrets/secret-store.ts` | yes (`KeychainVault`) | written |
 | The data folder `~/.simeon` | main `startup/startup-data-root-migration.ts` | n/a | |
 | Logs a person can send: `computer-stream.log`, `voice-call.log`, `~/.simeon/vendor-mcp-signin.log` | main | partly (`HangWatch.swift`) | part: `computer-stream.log` (`ComputerStreamLog`) and `voice-call.log` (`VoiceCallLog`: the same lines as the Electron service, "call started for agent …", "connect: token issued …", "connected: conversation …", "call ended: 43s", appended with their time in `~/Library/Application Support/Simeon`) |
@@ -620,7 +633,15 @@ Each slice ends with a build on the founder's Mac and their screenshots.
 7. **The Mac's own.** Notifications and the Dock badge, the agent's hands
    on this Mac with its setting, approvals and Allow card, connector
    sign-ins on localhost, routed tools, channels, the org chart, shared
-   rooms, and what else in §3 gains a screen.
+   rooms, and what else in §3 gains a screen. Written: notifications, the
+   Dock badge and the window's focus; the hands, Execution on Local
+   Computer, the Allow card and the approval card; channels with their
+   message tags; the org chart; the computer's notices over the composer;
+   the file card's size line; the Deep Links page; Move to Applications
+   (release builds only). Not built, each for a reason in its line:
+   shared rooms (broken as shipped), connector sign-ins on localhost (the
+   hosted callback instead), routed tools (dormant), zoom, the window
+   widening for the pane.
 8. **Security keys** and the egress tunnel.
 9. **Release.** Signing, notarization, the DMG, Sparkle, the host bundle
    built without Electron, then the switch to `com.simeonlabs.simeon`.
