@@ -21,7 +21,6 @@ final class MarkSource {
   private var seen: MarkState = .idle
   /** When it last went idle; at first it is resting already. */
   private var idleSince = -Double.infinity
-  private var asleep = true
   private var last: (time: Double, drawn: LiveFrame)?
 
   /** The source's width as the window lays it out (8 points, ×1.131). */
@@ -35,11 +34,10 @@ final class MarkSource {
   /** This frame: stepped once for every view drawing it at `now` (seconds). */
   func frame(at now: Double, state: MarkState, palette: AgentPalette, reduceMotion: Bool) -> LiveFrame {
     if let last, abs(last.time - now) < 0.001 { return last.drawn }
-    if asleep {
-      // Waking from rest starts from the rest pose, as the window resets its springs when it pauses.
+    if last.map({ now - $0.time > 0.5 }) ?? true {
+      // Its clock had stopped (at rest): it starts again from the rest pose, as the window resets its springs when it pauses.
       engine = MarkEngine()
       trails = LightTrails()
-      asleep = false
     }
     self.reduceMotion = reduceMotion
     engine.reduceMotion = reduceMotion
@@ -57,14 +55,12 @@ final class MarkSource {
 
   /** Paused and nothing left moving: the views stop their clocks and draw the rest pose. */
   func isResting(at now: Double) -> Bool {
-    let resting = seen == .idle && now - idleSince >= (reduceMotion ? 0.001 : MarkSource.settle) && engine.isSettled && !trails.hasLife
-    if resting { asleep = true; last = nil }
-    return resting
+    seen == .idle && now - idleSince >= (reduceMotion ? 0.001 : MarkSource.settle) && engine.isSettled && !trails.hasLife
   }
 
   /** A click on the working butterfly (`tryPokeMark`): a turn, a hop or a burst of sparks, in turn. */
   func poke(_ kind: Poke, palette: AgentPalette) {
-    guard seen != .idle || !asleep else { return }
+    guard !isResting(at: Date().timeIntervalSinceReferenceDate) else { return }
     switch kind {
     case .spin: engine.turnNow(direction: Bool.random() ? 1 : -1)
     case .bounce: engine.bounce()
@@ -118,7 +114,7 @@ struct LiveMark: View {
     let source = MarkStage.source(agent.id)
     TimelineView(.animation(minimumInterval: nil, paused: !awake)) { context in
       Canvas { canvas, box in
-        let drawn = awake ? source.frame(at: context.date.timeIntervalSinceReferenceDate, state: state, palette: palette, reduceMotion: reduce) : .rest
+        let drawn = awake ? MainActor.assumeIsolated { source.frame(at: context.date.timeIntervalSinceReferenceDate, state: state, palette: palette, reduceMotion: reduce) } : .rest
         LiveArt.draw(&canvas, drawn, in: CGRect(origin: .zero, size: box), palette: palette, dark: dark)
       }
     }

@@ -219,6 +219,7 @@ private struct Transcript: View {
   let look: Look
   @Environment(AppStore.self) private var store
   @Environment(ChatControl.self) private var control
+  @Environment(Viewers.self) private var viewers
   @State private var position = ScrollPosition(edge: .bottom)
   @State private var pinned = true
   @State private var userScrolling = false
@@ -269,7 +270,7 @@ private struct Transcript: View {
         .padding(.bottom, control.composerHeight + 28)
       }
       .scrollPosition($position)
-      .background { PeekCatcher(control: control) }
+      .background { PeekCatcher(control: control, viewers: viewers) }
       .onChange(of: control.jump) { _, jump in
         guard let jump else { return }
         withAnimation(.easeInOut(duration: 0.3)) { position.scrollTo(id: jump.id, anchor: .center) }
@@ -303,12 +304,15 @@ private struct Transcript: View {
 
   /** The window's pin (`lht`, 4 points) and its smooth follow while pinned. */
   private func follow(_ old: Bottom, _ new: Bottom) {
+    let same = abs(new.height - old.height) < 0.5 && abs(new.container - old.container) < 0.5
     if new.gap <= 4 {
       pinned = true
-    } else if userScrolling && new.gap > old.gap + 0.5 {
+    } else if new.gap > old.gap + 0.5 && (userScrolling || same) {
+      // Scrolled away: by the trackpad, or a wheel's smooth scroll whatever phase it reports.
       pinned = false
     }
-    guard pinned, abs(new.height - old.height) > 0.5 else { return }
+    // Longer content, or a smaller window, keeps the newest in view while pinned.
+    guard pinned, !same else { return }
     if new.height > old.height && old.height > old.container {
       withAnimation(.smooth(duration: 0.3)) { position.scrollTo(edge: .bottom) }
     } else {

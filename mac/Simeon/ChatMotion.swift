@@ -50,7 +50,8 @@ struct ActivitySlot: View {
     .onChange(of: line, initial: true) { _, line in update(line) }
     .task(id: hold.due) {
       // A newer activity waits for the shown one's 0.8 s.
-      guard let due = hold.due else { return }
+      // Not while it goes out: the line keeps its last words.
+      guard let due = hold.due, !exiting else { return }
       try? await Task.sleep(for: .seconds(max(0, due - Date().timeIntervalSinceReferenceDate)))
       guard !Task.isCancelled else { return }
       hold.want(working(latest), at: Date().timeIntervalSinceReferenceDate)
@@ -265,19 +266,24 @@ struct PeekRelease: CustomAnimation {
  */
 struct PeekCatcher: NSViewRepresentable {
   let control: ChatControl
+  /** A file, picture or diagram full screen: its swipes are its own. */
+  let viewers: Viewers
 
   func makeNSView(context: Context) -> CatchView {
     let view = CatchView()
     view.control = control
+    view.viewers = viewers
     return view
   }
 
   func updateNSView(_ view: CatchView, context: Context) {
     view.control = control
+    view.viewers = viewers
   }
 
   final class CatchView: NSView {
     weak var control: ChatControl?
+    weak var viewers: Viewers?
     nonisolated(unsafe) private var monitor: Any?
     private var tracking = false
     /** Where the swipe has got to (the window's `r`). */
@@ -306,6 +312,8 @@ struct PeekCatcher: NSViewRepresentable {
     private func wheel(_ event: NSEvent) -> Bool {
       let local = convert(event.locationInWindow, from: nil)
       guard let control, event.window === window, bounds.contains(local) else { return false }
+      // Not under an exchange or a viewer over the chat.
+      guard viewers?.shown == nil, control.exchangePeer == nil else { return false }
       // The message field over the chat's foot is not the transcript's (16 under it).
       let fromBottom = isFlipped ? bounds.height - local.y : local.y
       guard tracking || fromBottom > control.composerHeight + 16 else { return false }
