@@ -1,0 +1,1696 @@
+{
+  "edges": {
+    "input": [
+      {
+        "awaitingUserResponse": null,
+        "isRunning": false,
+        "isComposingMessage": false,
+        "isGroup": false,
+        "memberIds": [],
+        "conversationPartnerIds": [
+          "a1"
+        ],
+        "description": "",
+        "hasUnread": false,
+        "lastEntry": null,
+        "id": "b2",
+        "name": "Bea",
+        "createdAt": 2000
+      },
+      {
+        "awaitingUserResponse": null,
+        "isRunning": false,
+        "isComposingMessage": false,
+        "isGroup": false,
+        "memberIds": [],
+        "conversationPartnerIds": [
+          "b2",
+          "c3",
+          "a1",
+          "gone"
+        ],
+        "description": "",
+        "hasUnread": false,
+        "lastEntry": null,
+        "id": "a1",
+        "name": "Ada",
+        "createdAt": 1000
+      },
+      {
+        "awaitingUserResponse": null,
+        "isRunning": false,
+        "isComposingMessage": false,
+        "isGroup": false,
+        "memberIds": [],
+        "conversationPartnerIds": [
+          "a1"
+        ],
+        "description": "",
+        "hasUnread": false,
+        "lastEntry": null,
+        "id": "c3",
+        "name": "Cy",
+        "createdAt": 3000
+      },
+      {
+        "awaitingUserResponse": null,
+        "isRunning": false,
+        "isComposingMessage": false,
+        "isGroup": false,
+        "memberIds": [],
+        "conversationPartnerIds": [],
+        "description": "",
+        "hasUnread": false,
+        "lastEntry": null,
+        "id": "d4",
+        "name": "Dot",
+        "createdAt": 3000
+      },
+      {
+        "awaitingUserResponse": null,
+        "isRunning": false,
+        "isComposingMessage": false,
+        "isGroup": true,
+        "memberIds": [
+          "a1",
+          "b2",
+          "zz",
+          "g1",
+          "a1"
+        ],
+        "conversationPartnerIds": [
+          "d4"
+        ],
+        "description": "",
+        "hasUnread": false,
+        "lastEntry": null,
+        "id": "g1",
+        "name": "Team",
+        "createdAt": 500
+      }
+    ],
+    "output": [
+      {
+        "key": "msg::a1::b2",
+        "sourceId": "a1",
+        "targetId": "b2",
+        "kind": "message"
+      },
+      {
+        "key": "msg::a1::c3",
+        "sourceId": "a1",
+        "targetId": "c3",
+        "kind": "message"
+      },
+      {
+        "key": "member::g1::a1",
+        "sourceId": "g1",
+        "targetId": "a1",
+        "kind": "membership"
+      },
+      {
+        "key": "member::g1::b2",
+        "sourceId": "g1",
+        "targetId": "b2",
+        "kind": "membership"
+      }
+    ]
+  },
+  "headerSubtitle": [
+    {
+      "agents": [
+        "b2",
+        "a1",
+        "c3",
+        "d4",
+        "g1"
+      ],
+      "edges": "se(roster)",
+      "text": "4 agents · 1 group · 2 message links"
+    },
+    {
+      "case": "one agent, no groups, one link",
+      "text": "1 agent · 0 groups · 1 message link"
+    },
+    {
+      "case": "empty",
+      "text": "0 agents · 0 groups · 0 message links"
+    }
+  ],
+  "nodeOrder": {
+    "input": [
+      {
+        "id": "b2",
+        "createdAt": 2000
+      },
+      {
+        "id": "a1",
+        "createdAt": 1000
+      },
+      {
+        "id": "c3",
+        "createdAt": 3000
+      },
+      {
+        "id": "d4",
+        "createdAt": 3000
+      },
+      {
+        "id": "g1",
+        "createdAt": 500
+      }
+    ],
+    "output": [
+      "g1",
+      "a1",
+      "b2",
+      "c3",
+      "d4"
+    ]
+  },
+  "activity": [
+    {
+      "name": "talking: both running, none awaiting",
+      "source": {
+        "awaitingUserResponse": null,
+        "isRunning": true,
+        "isComposingMessage": false,
+        "isGroup": false,
+        "memberIds": [],
+        "conversationPartnerIds": [],
+        "description": "",
+        "hasUnread": false,
+        "lastEntry": null,
+        "id": "s",
+        "updatedAt": 1759999000001
+      },
+      "target": {
+        "awaitingUserResponse": null,
+        "isRunning": true,
+        "isComposingMessage": false,
+        "isGroup": false,
+        "memberIds": [],
+        "conversationPartnerIds": [],
+        "description": "",
+        "hasUnread": false,
+        "lastEntry": null,
+        "id": "t",
+        "updatedAt": 1759999000001
+      },
+      "now": 1760000000000,
+      "activity": "talking"
+    },
+    {
+      "name": "one awaiting the person: not talking; recent by time",
+      "source": {
+        "awaitingUserResponse": {
+          "reason": "x"
+        },
+        "isRunning": true,
+        "isComposingMessage": false,
+        "isGroup": false,
+        "memberIds": [],
+        "conversationPartnerIds": [],
+        "description": "",
+        "hasUnread": false,
+        "lastEntry": null,
+        "id": "s",
+        "updatedAt": 1759999999000
+      },
+      "target": {
+        "awaitingUserResponse": null,
+        "isRunning": true,
+        "isComposingMessage": false,
+        "isGroup": false,
+        "memberIds": [],
+        "conversationPartnerIds": [],
+        "description": "",
+        "hasUnread": false,
+        "lastEntry": null,
+        "id": "t",
+        "updatedAt": 1759999995000
+      },
+      "now": 1760000000000,
+      "activity": "recent"
+    },
+    {
+      "name": "composing only is not running: not talking",
+      "source": {
+        "awaitingUserResponse": null,
+        "isRunning": false,
+        "isComposingMessage": true,
+        "isGroup": false,
+        "memberIds": [],
+        "conversationPartnerIds": [],
+        "description": "",
+        "hasUnread": false,
+        "lastEntry": null,
+        "id": "s",
+        "updatedAt": 1759999000001
+      },
+      "target": {
+        "awaitingUserResponse": null,
+        "isRunning": true,
+        "isComposingMessage": false,
+        "isGroup": false,
+        "memberIds": [],
+        "conversationPartnerIds": [],
+        "description": "",
+        "hasUnread": false,
+        "lastEntry": null,
+        "id": "t",
+        "updatedAt": 1760000000000
+      },
+      "now": 1760000000000,
+      "activity": "idle"
+    },
+    {
+      "name": "recent at exactly 2 minutes (older of the two)",
+      "source": {
+        "awaitingUserResponse": null,
+        "isRunning": false,
+        "isComposingMessage": false,
+        "isGroup": false,
+        "memberIds": [],
+        "conversationPartnerIds": [],
+        "description": "",
+        "hasUnread": false,
+        "lastEntry": null,
+        "id": "s",
+        "updatedAt": 1759999880000
+      },
+      "target": {
+        "awaitingUserResponse": null,
+        "isRunning": false,
+        "isComposingMessage": false,
+        "isGroup": false,
+        "memberIds": [],
+        "conversationPartnerIds": [],
+        "description": "",
+        "hasUnread": false,
+        "lastEntry": null,
+        "id": "t",
+        "updatedAt": 1760000000000
+      },
+      "now": 1760000000000,
+      "activity": "recent"
+    },
+    {
+      "name": "idle at 2 minutes + 1 ms",
+      "source": {
+        "awaitingUserResponse": null,
+        "isRunning": false,
+        "isComposingMessage": false,
+        "isGroup": false,
+        "memberIds": [],
+        "conversationPartnerIds": [],
+        "description": "",
+        "hasUnread": false,
+        "lastEntry": null,
+        "id": "s",
+        "updatedAt": 1759999879999
+      },
+      "target": {
+        "awaitingUserResponse": null,
+        "isRunning": false,
+        "isComposingMessage": false,
+        "isGroup": false,
+        "memberIds": [],
+        "conversationPartnerIds": [],
+        "description": "",
+        "hasUnread": false,
+        "lastEntry": null,
+        "id": "t",
+        "updatedAt": 1760000000000
+      },
+      "now": 1760000000000,
+      "activity": "idle"
+    },
+    {
+      "name": "missing agent",
+      "activity": "idle"
+    }
+  ],
+  "activityWindowMs": 120000,
+  "recencyTickMs": 15000,
+  "states": [
+    {
+      "name": "idle agent",
+      "input": {
+        "awaitingUserResponse": null,
+        "isRunning": false,
+        "isComposingMessage": false,
+        "isGroup": false,
+        "memberIds": [],
+        "conversationPartnerIds": [],
+        "description": "",
+        "hasUnread": false,
+        "lastEntry": null,
+        "id": "i"
+      },
+      "state": "idle",
+      "inspectorStatus": {
+        "text": "Idle",
+        "color": "tertiary"
+      },
+      "nodeCaption": {
+        "text": "",
+        "isLive": false
+      }
+    },
+    {
+      "name": "working (isRunning)",
+      "input": {
+        "awaitingUserResponse": null,
+        "isRunning": true,
+        "isComposingMessage": false,
+        "isGroup": false,
+        "memberIds": [],
+        "conversationPartnerIds": [],
+        "description": "",
+        "hasUnread": false,
+        "lastEntry": null,
+        "id": "w"
+      },
+      "state": "working",
+      "inspectorStatus": {
+        "text": "Working…",
+        "color": "green"
+      },
+      "nodeCaption": {
+        "text": "Working…",
+        "isLive": true
+      }
+    },
+    {
+      "name": "typing (isComposingMessage)",
+      "input": {
+        "awaitingUserResponse": null,
+        "isRunning": false,
+        "isComposingMessage": true,
+        "isGroup": false,
+        "memberIds": [],
+        "conversationPartnerIds": [],
+        "description": "",
+        "hasUnread": false,
+        "lastEntry": null,
+        "id": "y"
+      },
+      "state": "typing",
+      "inspectorStatus": {
+        "text": "Typing…",
+        "color": "green"
+      },
+      "nodeCaption": {
+        "text": "Typing…",
+        "isLive": true
+      }
+    },
+    {
+      "name": "typing and running",
+      "input": {
+        "awaitingUserResponse": null,
+        "isRunning": true,
+        "isComposingMessage": true,
+        "isGroup": false,
+        "memberIds": [],
+        "conversationPartnerIds": [],
+        "description": "",
+        "hasUnread": false,
+        "lastEntry": null,
+        "id": "yr"
+      },
+      "state": "typing",
+      "inspectorStatus": {
+        "text": "Typing…",
+        "color": "green"
+      },
+      "nodeCaption": {
+        "text": "Typing…",
+        "isLive": true
+      }
+    },
+    {
+      "name": "waiting beats running",
+      "input": {
+        "awaitingUserResponse": {
+          "reason": "Approve?"
+        },
+        "isRunning": true,
+        "isComposingMessage": false,
+        "isGroup": false,
+        "memberIds": [],
+        "conversationPartnerIds": [],
+        "description": "",
+        "hasUnread": false,
+        "lastEntry": null,
+        "id": "wa"
+      },
+      "state": "waiting",
+      "inspectorStatus": {
+        "text": "Waiting for you",
+        "color": "tertiary"
+      },
+      "nodeCaption": {
+        "text": "Waiting for you",
+        "isLive": false
+      }
+    },
+    {
+      "name": "idle group of 3",
+      "input": {
+        "awaitingUserResponse": null,
+        "isRunning": false,
+        "isComposingMessage": false,
+        "isGroup": true,
+        "memberIds": [
+          "a",
+          "b",
+          "c"
+        ],
+        "conversationPartnerIds": [],
+        "description": "",
+        "hasUnread": false,
+        "lastEntry": null,
+        "id": "g"
+      },
+      "state": "idle",
+      "inspectorStatus": {
+        "text": "Idle",
+        "color": "tertiary"
+      },
+      "nodeCaption": {
+        "text": "3 members",
+        "isLive": false
+      }
+    },
+    {
+      "name": "idle group of 1",
+      "input": {
+        "awaitingUserResponse": null,
+        "isRunning": false,
+        "isComposingMessage": false,
+        "isGroup": true,
+        "memberIds": [
+          "a"
+        ],
+        "conversationPartnerIds": [],
+        "description": "",
+        "hasUnread": false,
+        "lastEntry": null,
+        "id": "g1"
+      },
+      "state": "idle",
+      "inspectorStatus": {
+        "text": "Idle",
+        "color": "tertiary"
+      },
+      "nodeCaption": {
+        "text": "1 member",
+        "isLive": false
+      }
+    },
+    {
+      "name": "idle group of 0",
+      "input": {
+        "awaitingUserResponse": null,
+        "isRunning": false,
+        "isComposingMessage": false,
+        "isGroup": true,
+        "memberIds": [],
+        "conversationPartnerIds": [],
+        "description": "",
+        "hasUnread": false,
+        "lastEntry": null,
+        "id": "g0"
+      },
+      "state": "idle",
+      "inspectorStatus": {
+        "text": "Idle",
+        "color": "tertiary"
+      },
+      "nodeCaption": {
+        "text": "0 members",
+        "isLive": false
+      }
+    },
+    {
+      "name": "working group",
+      "input": {
+        "awaitingUserResponse": null,
+        "isRunning": true,
+        "isComposingMessage": false,
+        "isGroup": true,
+        "memberIds": [
+          "a",
+          "b"
+        ],
+        "conversationPartnerIds": [],
+        "description": "",
+        "hasUnread": false,
+        "lastEntry": null,
+        "id": "gw"
+      },
+      "state": "working",
+      "inspectorStatus": {
+        "text": "Working…",
+        "color": "green"
+      },
+      "nodeCaption": {
+        "text": "Working…",
+        "isLive": true
+      }
+    }
+  ],
+  "layout": [
+    {
+      "name": "empty",
+      "nodeIds": [],
+      "edges": [],
+      "width": 800,
+      "height": 600,
+      "points": {}
+    },
+    {
+      "name": "one node: centre",
+      "nodeIds": [
+        "a"
+      ],
+      "edges": [],
+      "width": 800,
+      "height": 600,
+      "points": {
+        "a": {
+          "x": 400,
+          "y": 300
+        }
+      }
+    },
+    {
+      "name": "two linked",
+      "nodeIds": [
+        "a",
+        "b"
+      ],
+      "edges": [
+        {
+          "sourceId": "a",
+          "targetId": "b"
+        }
+      ],
+      "width": 800,
+      "height": 600,
+      "points": {
+        "a": {
+          "x": 481.6973383856267,
+          "y": 295.6969050591912
+        },
+        "b": {
+          "x": 318.3026616143733,
+          "y": 304.3030949408088
+        }
+      }
+    },
+    {
+      "name": "two unlinked",
+      "nodeIds": [
+        "a",
+        "b"
+      ],
+      "edges": [],
+      "width": 800,
+      "height": 600,
+      "points": {
+        "a": {
+          "x": 499.5051820523657,
+          "y": 294.6415089265308
+        },
+        "b": {
+          "x": 300.4948179476343,
+          "y": 305.3584910734692
+        }
+      }
+    },
+    {
+      "name": "triangle + loner, wide",
+      "nodeIds": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "edges": [
+        {
+          "sourceId": "a",
+          "targetId": "b"
+        },
+        {
+          "sourceId": "b",
+          "targetId": "c"
+        },
+        {
+          "sourceId": "a",
+          "targetId": "c"
+        }
+      ],
+      "width": 1200,
+      "height": 700,
+      "points": {
+        "a": {
+          "x": 569.9261630334397,
+          "y": 357.82345740054575
+        },
+        "b": {
+          "x": 413.447927572868,
+          "y": 428.57402522201255
+        },
+        "c": {
+          "x": 424.60858982065986,
+          "y": 271.42597477798745
+        },
+        "d": {
+          "x": 786.552072427132,
+          "y": 367.65500447013426
+        }
+      }
+    },
+    {
+      "name": "roster1 (se edges, Ce order)",
+      "nodeIds": [
+        "g1",
+        "a1",
+        "b2",
+        "c3",
+        "d4"
+      ],
+      "edges": [
+        {
+          "key": "msg::a1::b2",
+          "sourceId": "a1",
+          "targetId": "b2",
+          "kind": "message"
+        },
+        {
+          "key": "msg::a1::c3",
+          "sourceId": "a1",
+          "targetId": "c3",
+          "kind": "message"
+        },
+        {
+          "key": "member::g1::a1",
+          "sourceId": "g1",
+          "targetId": "a1",
+          "kind": "membership"
+        },
+        {
+          "key": "member::g1::b2",
+          "sourceId": "g1",
+          "targetId": "b2",
+          "kind": "membership"
+        }
+      ],
+      "width": 1000,
+      "height": 640,
+      "points": {
+        "g1": {
+          "x": 692.9673852617886,
+          "y": 275.6542512859612
+        },
+        "a1": {
+          "x": 545.3316746420448,
+          "y": 376.53792257618716
+        },
+        "b2": {
+          "x": 535.5152415413309,
+          "y": 214.24591752542207
+        },
+        "c3": {
+          "x": 704.0604115407123,
+          "y": 425.7540824745779
+        },
+        "d4": {
+          "x": 295.9395884592877,
+          "y": 326.3826567592092
+        }
+      }
+    },
+    {
+      "name": "group of 5 + two message links",
+      "nodeIds": [
+        "g",
+        "m1",
+        "m2",
+        "m3",
+        "m4",
+        "m5",
+        "x",
+        "y"
+      ],
+      "edges": [
+        {
+          "sourceId": "g",
+          "targetId": "m1"
+        },
+        {
+          "sourceId": "g",
+          "targetId": "m2"
+        },
+        {
+          "sourceId": "g",
+          "targetId": "m3"
+        },
+        {
+          "sourceId": "g",
+          "targetId": "m4"
+        },
+        {
+          "sourceId": "g",
+          "targetId": "m5"
+        },
+        {
+          "sourceId": "m1",
+          "targetId": "x"
+        },
+        {
+          "sourceId": "x",
+          "targetId": "y"
+        }
+      ],
+      "width": 1000,
+      "height": 640,
+      "points": {
+        "g": {
+          "x": 586.7251313571335,
+          "y": 327.02284993968317
+        },
+        "m1": {
+          "x": 404.97890411173114,
+          "y": 315.60535314713667
+        },
+        "m2": {
+          "x": 640.1070693055358,
+          "y": 167.95252618728938
+        },
+        "m3": {
+          "x": 729.0515387369251,
+          "y": 414.60977098589854
+        },
+        "m4": {
+          "x": 471.08079141871957,
+          "y": 202.30792655731977
+        },
+        "m5": {
+          "x": 751.6608017249861,
+          "y": 279.01714515335414
+        },
+        "x": {
+          "x": 248.3391982750139,
+          "y": 378.46347288963455
+        },
+        "y": {
+          "x": 385.9589839315329,
+          "y": 472.0474738127106
+        }
+      }
+    },
+    {
+      "name": "chain of 12, tall",
+      "nodeIds": [
+        "n00",
+        "n01",
+        "n02",
+        "n03",
+        "n04",
+        "n05",
+        "n06",
+        "n07",
+        "n08",
+        "n09",
+        "n10",
+        "n11"
+      ],
+      "edges": [
+        {
+          "sourceId": "n00",
+          "targetId": "n01"
+        },
+        {
+          "sourceId": "n01",
+          "targetId": "n02"
+        },
+        {
+          "sourceId": "n02",
+          "targetId": "n03"
+        },
+        {
+          "sourceId": "n03",
+          "targetId": "n04"
+        },
+        {
+          "sourceId": "n04",
+          "targetId": "n05"
+        },
+        {
+          "sourceId": "n05",
+          "targetId": "n06"
+        },
+        {
+          "sourceId": "n06",
+          "targetId": "n07"
+        },
+        {
+          "sourceId": "n07",
+          "targetId": "n08"
+        },
+        {
+          "sourceId": "n08",
+          "targetId": "n09"
+        },
+        {
+          "sourceId": "n09",
+          "targetId": "n10"
+        },
+        {
+          "sourceId": "n10",
+          "targetId": "n11"
+        }
+      ],
+      "width": 600,
+      "height": 900,
+      "points": {
+        "n00": {
+          "x": 105.2302248173072,
+          "y": 388.91812344154016
+        },
+        "n01": {
+          "x": 180.46102971555956,
+          "y": 536.5365179095174
+        },
+        "n02": {
+          "x": 374.0506124910378,
+          "y": 585.0867333921524
+        },
+        "n03": {
+          "x": 426.6331392107986,
+          "y": 790.8174310255154
+        },
+        "n04": {
+          "x": 276.07306190987305,
+          "y": 799.2396899448943
+        },
+        "n05": {
+          "x": 434.8874348160056,
+          "y": 679.122012123689
+        },
+        "n06": {
+          "x": 266.87620846083075,
+          "y": 617.6082204015675
+        },
+        "n07": {
+          "x": 389.0651241496579,
+          "y": 456.8216111219013
+        },
+        "n08": {
+          "x": 295.58583444387625,
+          "y": 317.8315712444063
+        },
+        "n09": {
+          "x": 226.72681918955294,
+          "y": 164.31778802599445
+        },
+        "n10": {
+          "x": 376.25313447957257,
+          "y": 100.76031005510572
+        },
+        "n11": {
+          "x": 494.7697751826928,
+          "y": 213.09244024692933
+        }
+      }
+    },
+    {
+      "name": "six unlinked in a tiny box (fit scale < 1)",
+      "nodeIds": [
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f"
+      ],
+      "edges": [],
+      "width": 200,
+      "height": 180,
+      "points": {
+        "a": {
+          "x": 105.89261058984042,
+          "y": 91.45925079466838
+        },
+        "b": {
+          "x": 80.47599167942232,
+          "y": 113.32754514502892
+        },
+        "c": {
+          "x": 94.62186836945835,
+          "y": 64
+        },
+        "d": {
+          "x": 120.72904879924408,
+          "y": 116
+        },
+        "e": {
+          "x": 66.40478212726751,
+          "y": 84.53365209365263
+        },
+        "f": {
+          "x": 133.5952178727325,
+          "y": 78.95978429588438
+        }
+      }
+    },
+    {
+      "name": "duplicate and self edges are ignored by the springs",
+      "nodeIds": [
+        "a",
+        "b",
+        "c"
+      ],
+      "edges": [
+        {
+          "sourceId": "a",
+          "targetId": "b"
+        },
+        {
+          "sourceId": "a",
+          "targetId": "b"
+        },
+        {
+          "sourceId": "c",
+          "targetId": "c"
+        },
+        {
+          "sourceId": "a",
+          "targetId": "missing"
+        }
+      ],
+      "width": 800,
+      "height": 600,
+      "points": {
+        "a": {
+          "x": 482.999981983731,
+          "y": 363.9537204495252
+        },
+        "b": {
+          "x": 317.000018016269,
+          "y": 385.4266977669922
+        },
+        "c": {
+          "x": 353.0068447704042,
+          "y": 214.57330223300775
+        }
+      }
+    },
+    {
+      "name": "iterations 1 (option)",
+      "nodeIds": [
+        "a",
+        "b",
+        "c"
+      ],
+      "edges": [
+        {
+          "sourceId": "a",
+          "targetId": "b"
+        }
+      ],
+      "width": 800,
+      "height": 600,
+      "iterations": 1,
+      "points": {
+        "a": {
+          "x": 449.1004410085364,
+          "y": 326.4661393957023
+        },
+        "b": {
+          "x": 350.8995589914636,
+          "y": 370.5983613364383
+        },
+        "c": {
+          "x": 409.9210487805511,
+          "y": 229.40163866356167
+        }
+      }
+    }
+  ],
+  "layoutConstants": {
+    "_s": 64,
+    "ue": 300,
+    "fe": 0.001,
+    "Ss": 0.6,
+    "qs": 56,
+    "he": 2,
+    "ye": 160,
+    "ge": -900,
+    "Is": 480,
+    "As": 0.06,
+    "Cs": 2.5,
+    "goldenAngle": 2.399963229728653
+  },
+  "edgeBox": [
+    {
+      "from": {
+        "x": 100,
+        "y": 100
+      },
+      "to": {
+        "x": 400,
+        "y": 500
+      },
+      "box": {
+        "width": 500,
+        "angleRad": 0.9272952180016122,
+        "transform": "translate(100px, 100px) rotate(0.9272952180016122rad) translateY(-50%)"
+      }
+    },
+    {
+      "from": {
+        "x": 400,
+        "y": 300
+      },
+      "to": {
+        "x": 100,
+        "y": 300
+      },
+      "box": {
+        "width": 300,
+        "angleRad": 3.141592653589793,
+        "transform": "translate(400px, 300px) rotate(3.141592653589793rad) translateY(-50%)"
+      }
+    }
+  ],
+  "view": {
+    "constants": {
+      "minScale": 1,
+      "maxScale": 3,
+      "dragThresholdPx": 4,
+      "panMargin": 0.5,
+      "identity": {
+        "scale": 1,
+        "x": 0,
+        "y": 0
+      },
+      "wheelK": 0.002,
+      "pinchK": 0.01
+    },
+    "clamp": [
+      {
+        "view": {
+          "scale": 0.5,
+          "x": 10,
+          "y": 10
+        },
+        "size": {
+          "width": 800,
+          "height": 600
+        },
+        "margin": 0,
+        "out": {
+          "scale": 1,
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "view": {
+          "scale": 1,
+          "x": 500,
+          "y": -500
+        },
+        "size": {
+          "width": 800,
+          "height": 600
+        },
+        "margin": 0.5,
+        "out": {
+          "scale": 1,
+          "x": 400,
+          "y": -300
+        }
+      },
+      {
+        "view": {
+          "scale": 2,
+          "x": -1000,
+          "y": 50
+        },
+        "size": {
+          "width": 800,
+          "height": 600
+        },
+        "margin": 0,
+        "out": {
+          "scale": 2,
+          "x": -800,
+          "y": 0
+        }
+      },
+      {
+        "view": {
+          "scale": 2,
+          "x": -1300,
+          "y": 400
+        },
+        "size": {
+          "width": 800,
+          "height": 600
+        },
+        "margin": 0.5,
+        "out": {
+          "scale": 2,
+          "x": -1200,
+          "y": 300
+        }
+      },
+      {
+        "view": {
+          "scale": 9,
+          "x": 0,
+          "y": 0
+        },
+        "size": {
+          "width": 800,
+          "height": 600
+        },
+        "margin": 0,
+        "out": {
+          "scale": 3,
+          "x": 0,
+          "y": 0
+        }
+      }
+    ],
+    "pan": [
+      {
+        "view": {
+          "scale": 1,
+          "x": 0,
+          "y": 0
+        },
+        "delta": {
+          "x": 30,
+          "y": -20
+        },
+        "size": {
+          "width": 800,
+          "height": 600
+        },
+        "margin": 0.5,
+        "out": {
+          "scale": 1,
+          "x": 30,
+          "y": -20
+        }
+      },
+      {
+        "view": {
+          "scale": 1,
+          "x": 0,
+          "y": 0
+        },
+        "delta": {
+          "x": 900,
+          "y": 900
+        },
+        "size": {
+          "width": 800,
+          "height": 600
+        },
+        "margin": 0.5,
+        "out": {
+          "scale": 1,
+          "x": 400,
+          "y": 300
+        }
+      }
+    ],
+    "zoom": [
+      {
+        "view": {
+          "scale": 1,
+          "x": 0,
+          "y": 0
+        },
+        "factor": 1.5,
+        "point": {
+          "x": 400,
+          "y": 300
+        },
+        "size": {
+          "width": 800,
+          "height": 600
+        },
+        "out": {
+          "scale": 1.5,
+          "x": -200,
+          "y": -150
+        }
+      },
+      {
+        "view": {
+          "scale": 1,
+          "x": 0,
+          "y": 0
+        },
+        "factor": 2,
+        "point": {
+          "x": 0,
+          "y": 0
+        },
+        "size": {
+          "width": 800,
+          "height": 600
+        },
+        "out": {
+          "scale": 2,
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "view": {
+          "scale": 2,
+          "x": -400,
+          "y": -300
+        },
+        "factor": 0.25,
+        "point": {
+          "x": 100,
+          "y": 100
+        },
+        "size": {
+          "width": 800,
+          "height": 600
+        },
+        "out": {
+          "scale": 1,
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "view": {
+          "scale": 2.8,
+          "x": -100,
+          "y": -100
+        },
+        "factor": 2,
+        "point": {
+          "x": 800,
+          "y": 600
+        },
+        "size": {
+          "width": 800,
+          "height": 600
+        },
+        "out": {
+          "scale": 3,
+          "x": -164.28571428571422,
+          "y": -150
+        }
+      }
+    ],
+    "wheelFactor": [
+      {
+        "deltaY": 100,
+        "deltaMode": 0,
+        "isPinch": false,
+        "factor": 0.8187307530779818
+      },
+      {
+        "deltaY": -100,
+        "deltaMode": 0,
+        "isPinch": false,
+        "factor": 1.2214027581601699
+      },
+      {
+        "deltaY": 3,
+        "deltaMode": 1,
+        "isPinch": false,
+        "factor": 0.9084640160687062
+      },
+      {
+        "deltaY": 1,
+        "deltaMode": 2,
+        "isPinch": false,
+        "factor": 0.8187307530779818
+      },
+      {
+        "deltaY": 10,
+        "deltaMode": 0,
+        "isPinch": true,
+        "factor": 0.9048374180359595
+      },
+      {
+        "deltaY": -4.5,
+        "deltaMode": 0,
+        "isPinch": true,
+        "factor": 1.046027859908717
+      }
+    ],
+    "dragMoved": [
+      {
+        "from": {
+          "x": 0,
+          "y": 0
+        },
+        "to": {
+          "x": 3,
+          "y": 0
+        },
+        "moved": false
+      },
+      {
+        "from": {
+          "x": 0,
+          "y": 0
+        },
+        "to": {
+          "x": 4,
+          "y": 0
+        },
+        "moved": false
+      },
+      {
+        "from": {
+          "x": 0,
+          "y": 0
+        },
+        "to": {
+          "x": 3,
+          "y": 3
+        },
+        "moved": true
+      }
+    ]
+  },
+  "time": {
+    "tz": "America/Los_Angeles",
+    "locale": "en-US",
+    "now": "Fri Oct 09 2026 15:00:00 GMT-0700 (Pacific Daylight Time)",
+    "cases": [
+      {
+        "name": "same day morning",
+        "ms": 1791561900000,
+        "local": "Fri Oct 09 2026 09:05:00 GMT-0700 (Pacific Daylight Time)",
+        "text": "9:05 AM"
+      },
+      {
+        "name": "same day just now",
+        "ms": 1791583199000,
+        "local": "Fri Oct 09 2026 14:59:59 GMT-0700 (Pacific Daylight Time)",
+        "text": "2:59 PM"
+      },
+      {
+        "name": "later today (future)",
+        "ms": 1791615540000,
+        "local": "Fri Oct 09 2026 23:59:00 GMT-0700 (Pacific Daylight Time)",
+        "text": "11:59 PM"
+      },
+      {
+        "name": "tomorrow (future)",
+        "ms": 1791644400000,
+        "local": "Sat Oct 10 2026 08:00:00 GMT-0700 (Pacific Daylight Time)",
+        "text": "8:00 AM"
+      },
+      {
+        "name": "yesterday late",
+        "ms": 1791529140000,
+        "local": "Thu Oct 08 2026 23:59:00 GMT-0700 (Pacific Daylight Time)",
+        "text": "Yesterday"
+      },
+      {
+        "name": "two days ago",
+        "ms": 1791399600000,
+        "local": "Wed Oct 07 2026 12:00:00 GMT-0700 (Pacific Daylight Time)",
+        "text": "Wednesday"
+      },
+      {
+        "name": "six days ago",
+        "ms": 1791054000000,
+        "local": "Sat Oct 03 2026 12:00:00 GMT-0700 (Pacific Daylight Time)",
+        "text": "Saturday"
+      },
+      {
+        "name": "seven days ago",
+        "ms": 1790967600000,
+        "local": "Fri Oct 02 2026 12:00:00 GMT-0700 (Pacific Daylight Time)",
+        "text": "10/2"
+      },
+      {
+        "name": "this year",
+        "ms": 1767384000000,
+        "local": "Fri Jan 02 2026 12:00:00 GMT-0800 (Pacific Standard Time)",
+        "text": "1/2"
+      },
+      {
+        "name": "last year",
+        "ms": 1767211200000,
+        "local": "Wed Dec 31 2025 12:00:00 GMT-0800 (Pacific Standard Time)",
+        "text": "12/31/25"
+      },
+      {
+        "name": "zero",
+        "ms": 0,
+        "local": null,
+        "text": ""
+      },
+      {
+        "name": "NaN",
+        "ms": "NaN",
+        "local": null,
+        "text": ""
+      }
+    ]
+  },
+  "lastActivity": [
+    {
+      "lastEntry": null,
+      "text": ""
+    },
+    {
+      "lastEntry": {
+        "kind": "text",
+        "text": "**Done** with the [report](https://x.y)\n\n- item one\n- `code`"
+      },
+      "text": "Done with the report item one code"
+    },
+    {
+      "lastEntry": {
+        "kind": "attachment",
+        "count": 1,
+        "kinds": [
+          {
+            "kind": "image",
+            "count": 1
+          }
+        ]
+      },
+      "text": "Sent 1 image"
+    },
+    {
+      "lastEntry": {
+        "kind": "attachment",
+        "count": 3,
+        "kinds": [
+          {
+            "kind": "image",
+            "count": 2
+          },
+          {
+            "kind": "pdf",
+            "count": 1
+          }
+        ]
+      },
+      "text": "Sent 3 files · 2 images, 1 PDF"
+    },
+    {
+      "lastEntry": {
+        "kind": "attachment",
+        "count": 2,
+        "kinds": []
+      },
+      "text": "Sent 2 files"
+    },
+    {
+      "lastEntry": {
+        "kind": "attachment",
+        "count": 2,
+        "kinds": [
+          {
+            "kind": "weird",
+            "count": 2
+          }
+        ]
+      },
+      "text": "Sent 2 files"
+    },
+    {
+      "lastEntry": {
+        "kind": "link",
+        "url": "https://simeonlabs.com"
+      },
+      "text": "Sent a link · https://simeonlabs.com"
+    }
+  ],
+  "exchange": {
+    "sourceAgent": {
+      "id": "a1",
+      "name": "Ada"
+    },
+    "targetId": "b2",
+    "transcript": [
+      {
+        "kind": "message",
+        "id": "u1",
+        "role": "user",
+        "content": "from the person",
+        "timestampMs": 1
+      },
+      {
+        "kind": "message",
+        "id": "o1",
+        "role": "assistant",
+        "content": "hi Bea",
+        "timestampMs": 2,
+        "toAgent": {
+          "id": "b2",
+          "name": "Bea",
+          "kind": "agent"
+        }
+      },
+      {
+        "kind": "message",
+        "id": "i1",
+        "role": "user",
+        "content": "hi Ada",
+        "timestampMs": 3,
+        "fromAgent": {
+          "id": "b2",
+          "name": "Bea"
+        },
+        "images": [
+          {
+            "url": "x"
+          }
+        ]
+      },
+      {
+        "kind": "message",
+        "id": "o2",
+        "role": "assistant",
+        "content": "to Cy",
+        "timestampMs": 4,
+        "toAgent": {
+          "id": "c3",
+          "name": "Cy",
+          "kind": "agent"
+        }
+      },
+      {
+        "kind": "tool-call",
+        "id": "t1",
+        "toAgent": {
+          "id": "b2"
+        }
+      },
+      {
+        "kind": "message",
+        "id": "i2",
+        "role": "user",
+        "content": "no time",
+        "fromAgent": {
+          "id": "b2",
+          "name": "Bea (renamed)"
+        }
+      }
+    ],
+    "rows": [
+      {
+        "kind": "send-message",
+        "id": "o1",
+        "message": {
+          "type": "text",
+          "content": "hi Bea"
+        },
+        "author": {
+          "id": "a1",
+          "name": "Ada"
+        },
+        "timestampMs": 2
+      },
+      {
+        "kind": "send-message",
+        "id": "i1",
+        "message": {
+          "type": "text",
+          "content": "hi Ada",
+          "images": [
+            {
+              "url": "x"
+            }
+          ]
+        },
+        "author": {
+          "id": "b2",
+          "name": "Bea"
+        },
+        "timestampMs": 3
+      },
+      {
+        "kind": "send-message",
+        "id": "i2",
+        "message": {
+          "type": "text",
+          "content": "no time"
+        },
+        "author": {
+          "id": "b2",
+          "name": "Bea (renamed)"
+        }
+      }
+    ]
+  },
+  "exchangeLast30Ids": [
+    "m5",
+    "m6",
+    "m7",
+    "m8",
+    "m9",
+    "m10",
+    "m11",
+    "m12",
+    "m13",
+    "m14",
+    "m15",
+    "m16",
+    "m17",
+    "m18",
+    "m19",
+    "m20",
+    "m21",
+    "m22",
+    "m23",
+    "m24",
+    "m25",
+    "m26",
+    "m27",
+    "m28",
+    "m29",
+    "m30",
+    "m31",
+    "m32",
+    "m33",
+    "m34"
+  ]
+}

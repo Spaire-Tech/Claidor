@@ -84,6 +84,10 @@ public struct Agent: Identifiable, Hashable, Sendable {
   public var createdAt: Double?
   /** What it is for, when the app made it for something (`purpose`: "disk-saver"). */
   public var purpose: String?
+  /** The agents it has messaged one to one, or that messaged it (`conversationPartnerIds`): the org chart's links. */
+  public var conversationPartnerIds: [String] = []
+  /** Its last change (`updatedAt`: made, or its newest activity), for the org chart's "recent" links. */
+  public var updatedAt: Double?
   /** Which copy of the row this is (`snapshotEpoch`, `snapshotSeq`), for the Mac's Dock badge. */
   public var stamp = RosterStamp()
 
@@ -130,6 +134,8 @@ public struct Agent: Identifiable, Hashable, Sendable {
     waitingReason = json["awaitingUserResponse"]?["reason"]?.text
     createdAt = json["createdAt"]?.double
     purpose = json["purpose"]?.text
+    conversationPartnerIds = json["conversationPartnerIds"]?.array?.compactMap(\.string) ?? []
+    updatedAt = json["updatedAt"]?.double
     stamp = RosterStamp(epoch: json["snapshotEpoch"]?.string ?? "", seq: json["snapshotSeq"]?.double ?? 0)
   }
 
