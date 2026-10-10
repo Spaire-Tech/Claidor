@@ -79,8 +79,8 @@ final class SearchState {
 
   func close() {
     isOpen = false
-    // The keys go back to the message field, as the window's dialog gives the focus back.
-    WindowState.composerFocus += 1
+    // The keys go back to the message field, as the window's dialog gives the focus back; not under Settings (its Escape would go to the field).
+    if !SettingsState.showing { WindowState.composerFocus += 1 }
     modifierHeld = false
     messages = HostAnswer(blankAsked: false)
     files = HostAnswer(blankAsked: true)
@@ -247,12 +247,16 @@ final class SearchState {
       run(command.id, sidebar: sidebar)
     case .message(let hit):
       window.reveal(hit.entryId, in: hit.agentId, store: store)
+      // A message, a file or a routine opens a chat as an agent does: Settings closes for it (not measured; the agent row is).
+      settings?.close()
     case .file(let hit):
       window.reveal(hit.entryId, in: hit.agentId, store: store)
+      settings?.close()
     case .link(let url):
       if let address = URL(string: url) { NSWorkspace.shared.open(address) }
     case .routine(let hit):
       window.choose(hit.agentId, store: store)
+      settings?.close()
     }
     close()
   }

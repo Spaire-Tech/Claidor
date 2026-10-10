@@ -1454,3 +1454,27 @@ Auto-review off and on with rules, a rule being edited, Usage & Billing on a
 plan, on a trial, over the limit, with on-demand; Manage Plan's buttons;
 ⌘, ⌘K, "/", Escape and a click on the dim.
 
+#### After the compile review
+
+A second reader with the compiler's rules found no compile errors and these
+behaviour faults, fixed:
+
+- Search closed over Settings gave the keys back to the message field, so
+  the next Escape went to the field and Settings stayed. Now the keys stay
+  with Settings.
+- The avatar editor's ⌘V (and Escape) acted behind Settings. They wait now.
+- A routine's trigger popover or the avatar editor stayed open behind
+  Settings. Opening Settings shuts them, as a click outside them would.
+- Signing out with Settings open left it open for the next sign-in. It
+  closes with the window now.
+- The Timezone menu made a new date formatter for each of its ~600 rows.
+  One formatter now serves the whole menu (`TimeZoneChoices.timesNow`).
+- A message, a file or a routine picked in ⌘K over Settings opened its chat
+  under Settings. Settings now closes for them, as it does for an agent
+  (only the agent row was measured in the Electron app).
+
+Not changed: the zone shown as "Auto-detect" is read when Settings opens;
+moving the Mac to another zone with Settings open shows the new zone at the
+next opening. Still to check on a Mac: the Cancel Trial alert's layout
+while its button says "Canceling…".
+

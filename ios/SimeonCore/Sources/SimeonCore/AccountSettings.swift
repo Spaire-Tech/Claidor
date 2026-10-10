@@ -423,12 +423,19 @@ public enum TimeZoneChoices {
 
   /** The time now in a zone, as a menu row shows it beside the zone ("8:16 PM"). */
   public static func timeNow(in zone: String, now: Date = Date(), locale: Locale = Locale(identifier: "en_US")) -> String {
-    guard let timeZone = TimeZone(identifier: zone) else { return "" }
+    timesNow(in: [zone], now: now, locale: locale)[0]
+  }
+
+  /** The time now in each zone, in order ("" for a zone not known), with one formatter for the whole menu (some 600 rows). */
+  public static func timesNow(in zones: [String], now: Date = Date(), locale: Locale = Locale(identifier: "en_US")) -> [String] {
     let formatter = DateFormatter()
     formatter.locale = locale
-    formatter.timeZone = timeZone
     formatter.dateFormat = "h:mm a"
-    return formatter.string(from: now)
+    return zones.map { zone in
+      guard let timeZone = TimeZone(identifier: zone) else { return "" }
+      formatter.timeZone = timeZone
+      return formatter.string(from: now)
+    }
   }
 
   /** The override as the host keeps it: an empty one is none. */

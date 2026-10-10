@@ -325,10 +325,10 @@ private struct TimezoneRow: View {
     let menu = NSMenu(title: "Timezone")
     menu.autoenablesItems = false
     menu.minimumWidth = 424
-    let now = Date()
     let grey = NSColor(look.inkTertiary)
+    let times = TimeZoneChoices.timesNow(in: values.map { $0 == TimeZoneChoices.automatic ? model.detectedZone : $0 })
     var selected: NSMenuItem?
-    for value in values {
+    for (value, time) in zip(values, times) {
       let isAuto = value == TimeZoneChoices.automatic
       let title = isAuto ? TimeZoneChoices.automaticLabel(detected: model.detectedZone) : TimeZoneChoices.label(value)
       let item = BlockMenuItem(title) {
@@ -336,7 +336,6 @@ private struct TimezoneRow: View {
         model.setZone(isAuto ? nil : value, store: store)
       }
       let words = NSMutableAttributedString(string: title, attributes: [.font: NSFont.menuFont(ofSize: 13)])
-      let time = TimeZoneChoices.timeNow(in: isAuto ? model.detectedZone : value, now: now)
       if !time.isEmpty {
         words.append(NSAttributedString(string: "   " + time, attributes: [.font: NSFont.menuFont(ofSize: 13), .foregroundColor: grey]))
       }

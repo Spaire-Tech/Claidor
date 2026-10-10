@@ -74,5 +74,8 @@ final class SettingsGeneralTests: XCTestCase {
     XCTAssertNil(TimeZoneChoices.override(hostSettings: ["userTimeZoneOverride": ""]))
     XCTAssertEqual(TimeZoneChoices.override(hostSettings: ["userTimeZoneOverride": "Asia/Tokyo"]), "Asia/Tokyo")
     XCTAssertEqual(TimeZoneChoices.timeNow(in: "UTC", now: Date(timeIntervalSince1970: 72_960)), "8:16 PM")
+    // The menu's rows with one formatter: each zone's own time, "" for one not known.
+    XCTAssertEqual(TimeZoneChoices.timesNow(in: ["UTC", "Not/AZone", "Asia/Tokyo"], now: Date(timeIntervalSince1970: 72_960)),
+                   ["8:16 PM", "", "5:16 AM"])
   }
 }

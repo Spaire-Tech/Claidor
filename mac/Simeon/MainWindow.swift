@@ -98,6 +98,7 @@ struct MainWindow: View {
   @Environment(WindowState.self) private var window
   @Environment(NewChatState.self) private var newChat
   @Environment(PaneState.self) private var pane
+  @Environment(SettingsState.self) private var settings
   @Environment(\.colorScheme) private var scheme
 
   var body: some View {
@@ -151,6 +152,14 @@ struct MainWindow: View {
     .overlay { SearchLayer() }
     // The usage is read once signed in: Settings lists Usage & Billing, and ⌘K and "/" offer it, only once it is in.
     .task { await store.loadUsage() }
+    // Settings opening shuts what floats over the pane (a routine's trigger popover, the avatar editor), as a click outside them would.
+    .onChange(of: settings.isOpen) { _, open in
+      guard open else { return }
+      pane.routineEditor?.closePopover(store: store)
+      if pane.avatarEditor != nil { pane.closeAvatarEditor() }
+    }
+    // Signed out (or the computer lost): Settings goes with the window.
+    .onDisappear { settings.close() }
     // Another agent opened from the sidebar or search closes the new chat (its own single agent is its preview).
     .onChange(of: window.selected) { _, selected in
       // The pane stays open on another agent, drawn afresh on Profile (or the page asked for it).
@@ -275,7 +284,7 @@ private struct KeyWatcher: NSViewRepresentable {
         return true
       }
       // The avatar editor open (7b): Escape closes it whatever has the keys (the window's capture-phase listener); ⌘V outside a field pastes a picture into it.
-      if let editor = pane?.avatarEditor {
+      if let editor = pane?.avatarEditor, !SettingsState.showing {
         if event.keyCode == 53, mods.isEmpty {
           // Letters still being composed (Japanese, Chinese) take Escape first.
           if let text = window?.firstResponder as? NSTextView, text.hasMarkedText() { return false }
