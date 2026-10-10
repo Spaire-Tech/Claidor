@@ -288,3 +288,24 @@ F05 and the Gallery chat's first messages.
 - The window colours a code block's words by language and draws thin
   guides at its indents; here the words are one colour.
 - Pictures inside a message (`![…](…)`): 2c.
+
+### 2c: the cards (in progress)
+
+Being written 10 October 2026, **not built yet**, measured from the
+window's Gallery chat, one card at a time. Pushed so far:
+
+- **Questions**: the question and its help, the X that dismisses it, the
+  choices lettered A, B… in one box, "Type your own answer" with Submit;
+  answered, the question and the answer with a tick; dismissed, the
+  question at 60% and a "Dismissed" pill.
+- **Email and Slack drafts**: the title and its state ("Ready to send"),
+  the fields on the ground with their hairlines, To, Subject and the words
+  editable before sending; Send email or Send message, and Discard.
+- **Apps to connect**: one card per app, its logo, name, the agent's reason
+  or what the app does, how many tools once added; "Added" in green, or
+  Add, which starts the app's sign-in in the browser.
+- **"Connect Slack" / "Connect GitHub"** for routines that wake on them:
+  checking, then Connect or "Connected".
+- **Auto-review approvals**: the title by what the agent wants, "Approval
+  needed" or the outcome, where it runs, what it does, why it was paused,
+  "Show the command" unfolding it, and Allow once, Always allow, Deny.

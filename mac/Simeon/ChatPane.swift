@@ -243,10 +243,35 @@ private struct TranscriptRow: View {
       }
       .buttonStyle(.plain)
       .padding(.horizontal, 12)
+    case .question(let id, let card):
+      QuestionCardView(entryId: id, agentId: agentId, card: card, look: look)
+        .frame(maxWidth: limit(640), alignment: .leading)
+        .padding(.top, startsGroup ? 12 : 0)
+    case .draft(let id, let card):
+      DraftCardView(entryId: id, agentId: agentId, card: card, look: look)
+        .frame(maxWidth: limit(640), alignment: .leading)
+        .padding(.top, startsGroup ? 12 : 0)
+    case .connectors(_, let names, _, let reason):
+      ConnectorCards(names: names, reason: reason, look: look)
+        .frame(maxWidth: limit(640), alignment: .leading)
+        .padding(.top, startsGroup ? 12 : 0)
+    case .listenerConnect(_, let platform, let reason):
+      ListenerConnectCardView(platform: platform, reason: reason, look: look)
+        .frame(maxWidth: limit(420, share: 0.76), alignment: .leading)
+        .padding(.top, startsGroup ? 12 : 0)
+    case .request(let id, .approval(let requestId, let summary, let reason, let command, let status, let surface, let proposedRule)):
+      ApprovalCardView(entryId: id, agentId: agentId, requestId: requestId, summary: summary, reason: reason, command: command, status: status, surface: surface, proposedRule: proposedRule, look: look)
+        .frame(maxWidth: limit(520), alignment: .leading)
+        .padding(.top, startsGroup ? 12 : 0)
     default:
       LaterCard(kind: row.kind, look: look)
         .padding(.top, startsGroup ? 12 : 0)
     }
+  }
+
+  /** A card's widest (`max-width: min(88%, 640px, 100% - 82px)` and its kin). */
+  private func limit(_ cap: CGFloat, share: CGFloat = 0.88) -> CGFloat {
+    max(0, min(width * share, cap, width - 82))
   }
 
   private var alignment: Alignment {
