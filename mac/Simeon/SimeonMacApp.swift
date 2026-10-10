@@ -21,6 +21,7 @@ struct SimeonMacApp: App {
   @State private var pane = PaneState()
   @State private var settings = SettingsState()
   @State private var plugins = PluginsState()
+  @State private var account = AccountState()
 
   init() {
     Faces.register()
@@ -40,6 +41,7 @@ struct SimeonMacApp: App {
         .environment(pane)
         .environment(settings)
         .environment(plugins)
+        .environment(account)
         .task { await session.start() }
         // Search's Chat Settings opens the agent's pane.
         .onAppear {
@@ -67,7 +69,7 @@ struct SimeonMacApp: App {
     .defaultSize(width: WindowChrome.firstSize.width, height: WindowChrome.firstSize.height)
     .windowStyle(.hiddenTitleBar)
     .windowResizability(.contentMinSize)
-    .commands { SimeonCommands(session: session, window: window, store: session.store) }
+    .commands { SimeonCommands(session: session, window: window, store: session.store, account: account) }
   }
 }
 
@@ -82,11 +84,12 @@ struct SimeonCommands: Commands {
   let session: MacSession
   let window: WindowState
   let store: AppStore
+  let account: AccountState
 
   var body: some Commands {
-    // About Simeon opens the window's About (the account step, mac/STEPS.md).
+    // About Simeon opens the window's own About, over the window (`open-about`), not Apple's panel; no key, as the window's.
     CommandGroup(replacing: .appInfo) {
-      Button("About Simeon") {}
+      Button("About Simeon") { account.openAbout() }
     }
     // File holds Close Window only.
     CommandGroup(replacing: .newItem) {}

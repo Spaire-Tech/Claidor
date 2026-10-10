@@ -81,6 +81,8 @@ struct AppRoot: View {
         SignInScreen()
       }
     }
+    // About (step 10), over everything, the sign-in too.
+    .overlay { AboutLayer() }
     .frame(minWidth: WindowChrome.minimum.width, minHeight: WindowChrome.minimum.height)
     .background(WindowAccessor())
     .ignoresSafeArea()
@@ -100,6 +102,7 @@ struct MainWindow: View {
   @Environment(PaneState.self) private var pane
   @Environment(SettingsState.self) private var settings
   @Environment(PluginsState.self) private var plugins
+  @Environment(AccountState.self) private var account
   @Environment(\.colorScheme) private var scheme
 
   var body: some View {
@@ -161,8 +164,13 @@ struct MainWindow: View {
       pane.routineEditor?.closePopover(store: store)
       if pane.avatarEditor != nil { pane.closeAvatarEditor() }
     }
-    // Plugins opening does the same.
+    // Plugins opening does the same, and About.
     .onChange(of: plugins.isOpen) { _, open in
+      guard open else { return }
+      pane.routineEditor?.closePopover(store: store)
+      if pane.avatarEditor != nil { pane.closeAvatarEditor() }
+    }
+    .onChange(of: account.aboutOpen) { _, open in
       guard open else { return }
       pane.routineEditor?.closePopover(store: store)
       if pane.avatarEditor != nil { pane.closeAvatarEditor() }
@@ -281,6 +289,8 @@ private struct KeyWatcher: NSViewRepresentable {
 
     /** One key pressed; true when it was the window's. */
     private func key(_ event: NSEvent) -> Bool {
+      // About over the window (step 10): its Escape is its own (`AboutKeys`), and the window's keys wait.
+      if AccountState.aboutShowing { return false }
       // Caps Lock aside.
       let mods = event.modifierFlags.intersection([.command, .shift, .option, .control])
       if mods == .command, event.charactersIgnoringModifiers?.lowercased() == "b" {

@@ -105,9 +105,9 @@ first build on the founder's Mac is the first real check.
 |---|---|
 | Search, and ⌘K | 4 (done) |
 | New chat, and ⌘N | 5 (done) |
-| The account's initials | 10 |
+| The account's initials | 10 (done) |
 | Connect apps | 9 (done) |
-| Simeon › About Simeon | 10 |
+| Simeon › About Simeon | 10 (done) |
 | Agent › Call … | 11 |
 | A row's right-click | 3 (done) |
 
@@ -756,7 +756,7 @@ Pushed:
 | Button | Its step |
 |---|---|
 | Edit Profile, in a row's menu | 7 (done) |
-| The initials, Connect apps | 10, 9 (done) (as step 1; Search and New chat are steps 4 and 5, done) |
+| The initials, Connect apps | 10 (done), 9 (done) (as step 1; Search and New chat are steps 4 and 5, done) |
 
 #### Not in step 3 yet
 
@@ -1599,3 +1599,91 @@ build, and these faults, fixed before the push:
 To check on a Mac: an app's sign-in finishing in the browser (the Electron
 app catches a loopback redirect on the Mac; here the computer's manager
 runs the sign-in, so its redirect should be the hosted one).
+
+## Step 10: the account
+
+Read from the window's account menu (`Xln`), its Weekly usage submenu
+(`Qln`), About (`AVn`) and the sign-out question (`qon`), and measured in
+the reference window light and dark, with sixteen usage readings (none, a
+failure, a slow one, 0 to 150%, no reset date, on-demand with and without a
+limit, large sums), a picture, and a host that signs out (L01–L04). Pushed:
+
+- **The initials** at the sidebar's foot (and on the rail): the account's
+  picture when it has one, else its letters; a touch larger under the
+  pointer. No tooltip, as the window's. A click opens the menu.
+- **The menu** (Apple's, as the sidebar's other menus since step 3): its
+  foot 4 above the initials, its left edge on theirs, at least 228 wide.
+  Weekly usage with its share ("38%") and ›, Settings, About, a line, Log
+  out. Weekly usage is there once the usage is in hand; it is read at
+  sign-in (as for Settings) and again when the menu opens if the last
+  reading is 30 seconds old, and a reading that lands while the menu is
+  open puts the row in, as the window's does. A failed reading takes the
+  row away. The menu says "Weekly usage" and "Resets" on a trial too, as
+  the window's does (Settings says "Trial usage" and "Ends").
+- **Weekly usage ›**: "Weekly usage" with "Resets in 4 days" (whole days
+  rounded up: "Resets today", "in 1 day", "in 7 days" when there is no date
+  but there is an allowance) and the share; "On-demand", "Spend this
+  cycle", "$12.4/$50" when on-demand spend is metered with a limit; then
+  Change limit, which opens `https://app.simeonlabs.com/app` in the
+  browser. The figures take no clicks and no keys.
+- **Settings** opens Settings on General (step 8).
+- **About**, from the menu and from Simeon › About Simeon (the window's own
+  dialog, not Apple's About panel, as the Electron app does it): the
+  window darkened, a 360-wide card with the app's icon, "Simeon", "Version
+  0.1.0", "Copyright © 2026 SimeonLabs, Inc." and Copy version info, which
+  puts the window's three lines on the clipboard ("Version: …", "Release
+  Track: stable", "OS: darwin") and says "Copied" for 1.2 s. ×, Escape or a
+  click on the dark close it; over Settings, Escape closes About only. It
+  shows over the sign-in screen too. No motion, as the window's.
+- **Log out** asks the same question as Settings' Sign Out ("Sign out?",
+  "You’ll need to sign in again to use Simeon.", Cancel and Sign out;
+  Return signs out, Escape cancels), then forgets the sign-in and shows
+  the sign-in screen.
+
+The new words and the menu's reading are SimeonCore's `AccountMenu.swift`,
+with tests against the window's numbers. The menu's money now rounds a half
+up as the window does ("$1.3k" for $1,250; it said "$1.2k").
+
+#### Not in step 10
+
+- The window's update row and the blue update mark on the initials: Simeon
+  has no update feed, so the Electron app never shows them.
+- "Enter your name" beside the initials when the account has no name: in
+  the window it lies over Connect apps; the native app asks for the name in
+  the first run (step 6).
+- Keyboard: the initials open the menu from the keyboard only as the Mac's
+  buttons do (Space with keyboard navigation on); About takes no keys when
+  it opens (the window puts them on ×).
+
+#### Decisions to confirm
+
+1. The menu is Apple's menu, as the sidebar's (step 3): it looks and moves
+   as the Mac's menus do (its own row height, highlight colour, corners,
+   the arrows wrapping round), not the window's 30-point rows and fade.
+2. The sign-out question is the Mac's alert, as in Settings (step 8).
+3. Copy version info writes the window's lines word for word, "OS: darwin"
+   and "Release Track: stable" included, so whoever reads them reads the
+   same thing from both apps. Say if it should read "macOS 26.0" instead.
+4. Change limit opens the web app's home, as the window's (the patch sends
+   it there); there is no page for the limit itself yet.
+
+Not copied (the window's faults): ⌘, opening Settings with the menu still
+open (Apple's menu holds the keys while it is open); the initials' focus
+ring invisible on dark; About's × without a focus ring.
+
+#### Where the native parts look different
+
+The menu and its submenu are Apple's: the share beside Weekly usage is the
+Mac's menu badge; the two figures are drawn in the window's type (13 and 12,
+the lighter grey for the second line) inside Apple's menu. Icons are SF
+Symbols (gauge.with.needle, gearshape, info.circle,
+rectangle.portrait.and.arrow.right). The question is the Mac's alert (the
+app's icon, the accent colour on Sign out). About is drawn as the window's.
+
+#### What to compare
+
+L01 (the menu), L02 (Weekly usage ›), L03 (About), L04 (the question),
+light and dark; the account-* captures (the menu's place in a 760 × 600
+window and on the rail, a long sum, no on-demand, no reset date). On a Mac:
+where the badge sits beside the submenu's arrow, and the figures' left edge
+against Change limit's.

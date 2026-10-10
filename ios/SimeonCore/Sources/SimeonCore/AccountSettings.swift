@@ -350,7 +350,7 @@ public struct UsageMeters: Equatable, Sendable {
     return "\(Int(clamped.rounded(.toNearestOrAwayFromZero)))%"
   }
 
-  /** The account menu's spend (`wze`): "$12.5", "$100", "$1.2k" from a thousand dollars up. */
+  /** The account menu's spend (`wze`): "$12.5", "$100", "$1.2k" from a thousand dollars up; a half goes up, as the window's ("$1.3k" for $1,250). */
   public static func compactMoney(_ cents: Double) -> String {
     guard cents.isFinite else { return "$0" }
     let dollars = max(cents, 0) / 100
@@ -358,7 +358,35 @@ public struct UsageMeters: Equatable, Sendable {
       guard text.contains(".") else { return text }
       return text.replacingOccurrences(of: "\\.?0+$", with: "", options: .regularExpression)
     }
-    return dollars >= 1_000 ? "$\(trimmed(String(format: "%.1f", dollars / 1_000)))k" : "$\(trimmed(String(format: "%.2f", dollars)))"
+    return dollars >= 1_000 ? "$\(trimmed(toFixed(dollars / 1_000, 1)))k" : "$\(trimmed(toFixed(dollars, 2)))"
+  }
+
+  /**
+   * JavaScript's `toFixed` for a number not below zero: the double's exact
+   * value rounded to `digits` places, a tie going up (1.25 → "1.3", where
+   * `%.1f` gives "1.2"). The exact value is written out 30 places further
+   * than kept, which no double in this range needs more of.
+   */
+  static func toFixed(_ value: Double, _ digits: Int) -> String {
+    let long = String(format: "%.\(digits + 30)f", max(value, 0))
+    guard let dot = long.firstIndex(of: ".") else { return long }
+    var kept = Array(long[..<dot]) + Array(long[long.index(after: dot)...].prefix(digits))
+    let next = long[long.index(after: dot)...].dropFirst(digits).first ?? "0"
+    if let first = next.wholeNumberValue, first >= 5 {
+      var index = kept.count - 1
+      while index >= 0 {
+        if kept[index] == "9" {
+          kept[index] = "0"
+          index -= 1
+        } else {
+          kept[index] = Character(String((kept[index].wholeNumberValue ?? 0) + 1))
+          break
+        }
+      }
+      if index < 0 { kept.insert("1", at: 0) }
+    }
+    let whole = String(kept.prefix(kept.count - digits))
+    return digits > 0 ? whole + "." + String(kept.suffix(digits)) : whole
   }
 
   /** Cents as dollars, "$12" or "$12.34" (`Xve`). */

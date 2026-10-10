@@ -51,9 +51,9 @@ final class SettingsState {
   }
 }
 
-/** Settings or Plugins over the window (the window's one overlay slot): the window's keys and gestures under them wait. */
+/** Settings or Plugins over the window (the window's one overlay slot), or About over everything: the window's keys and gestures under them wait. */
 enum WindowOverlay {
-  @MainActor static var showing: Bool { SettingsState.showing || PluginsState.showing }
+  @MainActor static var showing: Bool { SettingsState.showing || PluginsState.showing || AccountState.aboutShowing }
 }
 
 /** The dim and the panel, over the window (under search). */
@@ -211,8 +211,8 @@ private struct SettingsNavEntry: View {
   }
 }
 
-/** Close (32, round): × at 40%, darker on a faint fill under the pointer. */
-private struct SettingsClose: View {
+/** Close (32, round): × at 40%, darker on a faint fill under the pointer (About's too). */
+struct SettingsClose: View {
   let look: Look
   let action: () -> Void
   @State private var hovering = false

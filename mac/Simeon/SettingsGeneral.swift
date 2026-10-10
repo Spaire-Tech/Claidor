@@ -226,7 +226,7 @@ private struct AccountCard: View {
       }
       .frame(maxWidth: .infinity, alignment: .leading)
       .accessibilityElement(children: .combine)
-      SettingsButton(title: "Sign Out", look: look) { askToSignOut() }
+      SettingsButton(title: "Sign Out", look: look) { AccountActions.askToSignOut(session: session, settings: settings) }
     }
     .padding(.vertical, 14)
     .padding(.horizontal, 16)
@@ -237,20 +237,6 @@ private struct AccountCard: View {
     Text(account?.initials ?? "?")
       .font(.system(size: 17, weight: .medium))
       .foregroundStyle(look.inkSecondary)
-  }
-
-  /** Sign Out's question (`qon`, the account menu's too): "Sign out?", Cancel and Sign out. */
-  private func askToSignOut() {
-    let alert = NSAlert()
-    alert.messageText = "Sign out?"
-    alert.informativeText = "You’ll need to sign in again to use Simeon."
-    alert.addButton(withTitle: "Sign out")
-    alert.addButton(withTitle: "Cancel").keyEquivalent = "\u{1b}"
-    SidebarActions.present(alert) { response in
-      guard response == .alertFirstButtonReturn else { return }
-      settings.close()
-      Task { await session.signOut() }
-    }
   }
 }
 

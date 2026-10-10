@@ -181,7 +181,7 @@ final class MacSession {
     phase = .signedOut(message: "Your Simeon sign-in expired. Sign in again.")
   }
 
-  /** Log out (the account menu's, a later step): the pair forgotten, the sign-in screen. */
+  /** Log out (the account menu's and Settings' Sign Out, after their question): the pair forgotten, the sign-in screen. */
   func signOut() async {
     store.detach()
     await api?.signOut()

@@ -185,6 +185,8 @@ private struct RailFoot: View {
 private struct Disc<Content: View>: View {
   let size: CGFloat
   let help: String
+  /** The label as a tooltip too (the initials have none in the window). */
+  var tooltip = true
   let action: () -> Void
   @ViewBuilder let label: () -> Content
 
@@ -196,7 +198,7 @@ private struct Disc<Content: View>: View {
     }
     .buttonStyle(.plain)
     .glassEffect(.regular, in: .circle)
-    .help(help)
+    .help(tooltip ? help : "")
     .accessibilityLabel(help)
   }
 }
@@ -240,19 +242,48 @@ private struct NewChatDisc: View {
   }
 }
 
-/** The account's initials (`Open account menu`): the menu comes with step 10 (mac/STEPS.md). */
+/**
+ * The account's initials, or its picture (`Open account menu`): the account
+ * menu above them (step 10). A touch larger under the pointer (1.04, 0.18 s).
+ */
 private struct AccountDisc: View {
   @Environment(AppStore.self) private var store
+  @Environment(MacSession.self) private var session
+  @Environment(SettingsState.self) private var settings
+  @Environment(AccountState.self) private var account
   @Environment(\.colorScheme) private var scheme
+  @State private var spot = WindowSpot()
+  @State private var hovering = false
 
   var body: some View {
     let look = Look(scheme)
-    Disc(size: 32, help: "Open account menu", action: {}) {
-      Text(store.account?.initials ?? "")
-        .font(.system(size: 12, weight: .medium))
-        .tracking(0.24)
-        .foregroundStyle(look.initials)
+    Disc(size: 32, help: AccountMenu.opener, tooltip: false, action: {
+      AccountActions.openMenu(above: spot.frame, store: store, session: session, settings: settings, account: account)
+    }) {
+      ZStack {
+        initials(look)
+        if let url = store.account?.pictureURL {
+          AsyncImage(url: url) { image in
+            image.resizable().aspectRatio(contentMode: .fill)
+          } placeholder: {
+            Color.clear
+          }
+          .frame(width: 32, height: 32)
+          .clipShape(Circle())
+        }
+      }
     }
+    .background(WindowSpotReader(spot: spot))
+    .scaleEffect(hovering ? 1.04 : 1)
+    .animation(.easeInOut(duration: 0.18), value: hovering)
+    .onHover { hovering = $0 }
+  }
+
+  private func initials(_ look: Look) -> some View {
+    Text(store.account?.initials ?? "")
+      .font(.system(size: 12, weight: .medium))
+      .tracking(0.24)
+      .foregroundStyle(look.initials)
   }
 }
 
