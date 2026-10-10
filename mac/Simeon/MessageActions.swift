@@ -29,6 +29,10 @@ final class ChatControl {
   }
 
   var jump: Jump?
+  /** The row lit by the last jump, until its light fades. */
+  var lit: String?
+  /** A message to jump to once the thread being opened is on screen (a quote of a reply in a thread). */
+  var jumpAfterThread: String?
   /** A row brought to the middle without lighting it (find's `scrollToEntryWithoutHighlight`). */
   var reveal: Jump?
   /** Bumped to give the composer the keys. */
@@ -62,8 +66,16 @@ final class ChatControl {
     focusCount += 1
   }
 
+  /** Bring a row to the middle and light it in the yellow, which holds a second and fades (`sand-12cjh1l`, 2.5 s). */
   func jump(to id: String) {
-    jump = Jump(id: id, count: (jump?.count ?? 0) + 1)
+    let count = (jump?.count ?? 0) + 1
+    jump = Jump(id: id, count: count)
+    lit = id
+    Task { [weak self] in
+      try? await Task.sleep(for: .seconds(1))
+      guard let self, self.jump?.count == count else { return }
+      withAnimation(.easeOut(duration: 1.5)) { self.lit = nil }
+    }
   }
 
   /** ⌘F: the bar, or its field again with its words chosen. */
@@ -197,8 +209,8 @@ enum MessageMenu {
     let handler = Handler(bubble: bubble, agentId: agentId, store: store, control: control)
     if kind != .more {
       let row = NSMenuItem()
-      let picker = NSHostingView(rootView: ReactionRow(look: Look(NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? .dark : .light)) { emoji in
-        menu.cancelTracking()
+      let picker = NSHostingView(rootView: ReactionRow(look: Look(NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? .dark : .light)) { [weak menu] emoji in
+        menu?.cancelTracking()
         if let emoji {
           Task { await store.react(emoji, to: bubble.id, in: agentId) }
         }
@@ -215,7 +227,7 @@ enum MessageMenu {
       if !inThread {
         menu.addItem(handler.item("Start a thread", symbol: "bubble.left.and.bubble.right", action: #selector(Handler.thread)))
       }
-      menu.addItem(handler.item("Copy", symbol: "doc.on.doc", action: #selector(Handler.copy)))
+      menu.addItem(handler.item("Copy", symbol: "doc.on.doc", action: #selector(Handler.copyText)))
     }
     // The handler lives as long as the menu.
     objc_setAssociatedObject(menu, &Handler.key, handler, .OBJC_ASSOCIATION_RETAIN)
@@ -227,7 +239,7 @@ enum MessageMenu {
     let menu = NSMenu()
     menu.autoenablesItems = false
     let handler = CopyHandler(text: text)
-    let item = NSMenuItem(title: "Copy", action: #selector(CopyHandler.copy), keyEquivalent: "")
+    let item = NSMenuItem(title: "Copy", action: #selector(CopyHandler.copyText), keyEquivalent: "")
     item.target = handler
     item.image = NSImage(systemSymbolName: "doc.on.doc", accessibilityDescription: nil)
     menu.addItem(item)
@@ -250,7 +262,7 @@ enum MessageMenu {
 
     init(text: String) { self.text = text }
 
-    @MainActor @objc func copy() {
+    @MainActor @objc func copyText() {
       NSPasteboard.general.clearContents()
       NSPasteboard.general.setString(text, forType: .string)
     }
@@ -286,7 +298,7 @@ enum MessageMenu {
       control.focusCount += 1
     }
 
-    @MainActor @objc func copy() {
+    @MainActor @objc func copyText() {
       NSPasteboard.general.clearContents()
       NSPasteboard.general.setString(bubble.text, forType: .string)
     }
@@ -377,12 +389,12 @@ struct RightClickMenu: NSViewRepresentable {
 
   func makeNSView(context: Context) -> CatchView {
     let view = CatchView()
-    view.open = open
+    view.open = { open($0) }
     return view
   }
 
   func updateNSView(_ view: CatchView, context: Context) {
-    view.open = open
+    view.open = { open($0) }
   }
 
   private func open(_ event: NSEvent) -> Bool {
@@ -408,7 +420,8 @@ struct RightClickMenu: NSViewRepresentable {
       guard window != nil else { return }
       monitor = NSEvent.addLocalMonitorForEvents(matching: .rightMouseDown) { [weak self] event in
         let took = MainActor.assumeIsolated { () -> Bool in
-          guard let self, event.window === self.window, let open = self.open else { return false }
+          guard let self, event.window === self.window, let open = self.open,
+                self.bounds.contains(self.convert(event.locationInWindow, from: nil)) else { return false }
           return open(event)
         }
         return took ? nil : event

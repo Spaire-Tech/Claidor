@@ -191,11 +191,14 @@ private struct ExchangeMessage: View {
         }
         bubble
           .overlay(alignment: .trailing) { bar }
-          .onHover(perform: hover)
+          .onHover { hover($0) }
           .frame(maxWidth: limit, alignment: .leading)
       }
     }
     .padding(.vertical, 2)
+    .onDisappear {
+      if control.exchangeHovered?.id == id { control.exchangeHovered = nil }
+    }
     .accessibilityElement(children: .contain)
   }
 

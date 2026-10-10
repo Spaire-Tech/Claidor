@@ -240,7 +240,20 @@ private struct Transcript: View {
         guard let reveal else { return }
         withAnimation(.easeInOut(duration: 0.3)) { position.scrollTo(id: reveal.id, anchor: .center) }
       }
-      .onChange(of: threadRoot) { _, _ in position.scrollTo(edge: .bottom) }
+      .onChange(of: threadRoot) { _, _ in
+        // A quote that opened the thread jumps to its message there; otherwise the thread opens at its newest.
+        if let id = control.jumpAfterThread, rows.contains(where: { $0.id == id }) {
+          control.jumpAfterThread = nil
+          control.jump(to: id)
+        } else {
+          control.jumpAfterThread = nil
+          position.scrollTo(edge: .bottom)
+        }
+      }
+      // A taller field (a reply, more lines) keeps the newest message clear of it.
+      .onChange(of: control.composerHeight) { _, _ in
+        if atNewest { position.scrollTo(edge: .bottom) }
+      }
       .defaultScrollAnchor(.bottom, for: .initialOffset)
       .onScrollGeometryChange(for: Bool.self) { geometry in
         geometry.contentOffset.y + geometry.containerSize.height >= geometry.contentSize.height - 48
@@ -281,7 +294,6 @@ private struct TranscriptRow: View {
   let look: Look
   @Environment(ChatControl.self) private var control
   @Environment(\.findMarks) private var findMarks
-  @State private var lit = false
 
   private var startsGroup: Bool { run.startsGroup }
 
@@ -290,15 +302,7 @@ private struct TranscriptRow: View {
       .padding(.vertical, 2)
       .frame(maxWidth: .infinity, alignment: alignment)
       // A message jumped to from a quote lights up in the warning yellow at 22%, holds, then fades (`sand-12cjh1l`, 2.5 s, ease-out).
-      .background(look.warn.opacity(0.22).opacity(lit ? 1 : 0))
-      .onChange(of: control.jump) { _, jump in
-        guard jump?.id == row.id else { return }
-        lit = true
-        Task {
-          try? await Task.sleep(for: .seconds(1))
-          withAnimation(.easeOut(duration: 1.5)) { lit = false }
-        }
-      }
+      .background(look.warn.opacity(control.lit == row.id ? 0.22 : 0))
   }
 
   @ViewBuilder
@@ -525,8 +529,8 @@ private struct BubbleRow: View {
           if shown {
             control.jump(to: target)
           } else if let root = store.threadRoot(of: target, in: agentId) {
+            control.jumpAfterThread = target
             store.openThread(root, in: agentId)
-            Task { @MainActor in control.jump(to: target) }
           }
         }
       }
@@ -536,7 +540,7 @@ private struct BubbleRow: View {
           LinkCardView(url: link, look: look)
             .frame(maxWidth: max(0, min(column * 0.76, 420, column - 82)))
             .overlay(alignment: bubble.fromPerson ? .leading : .trailing) { bar }
-            .onHover(perform: hover)
+            .onHover { hover($0) }
         } else if !words.isEmpty || bubble.images.isEmpty {
           VStack(alignment: .leading, spacing: 0) {
             shaped
@@ -547,7 +551,7 @@ private struct BubbleRow: View {
             }
           }
           .overlay(alignment: bubble.fromPerson ? .leading : .trailing) { bar }
-          .onHover(perform: hover)
+          .onHover { hover($0) }
         }
         if !bubble.reactions.isEmpty {
           ReactionPills(bubble: bubble, agentId: agentId, look: look)
@@ -570,6 +574,7 @@ private struct BubbleRow: View {
       }
     }
     .frame(maxWidth: limit, alignment: bubble.fromPerson ? .trailing : .leading)
+    .onDisappear { gone() }
   }
 
   /**
@@ -596,6 +601,11 @@ private struct BubbleRow: View {
     } else if control.hovered?.id == bubble.id {
       control.hovered = nil
     }
+  }
+
+  /** SwiftUI does not end a hover when the row goes (scrolled out, a thread opened): let go of it then. */
+  private func gone() {
+    if control.hovered?.id == bubble.id { control.hovered = nil }
   }
 
   private func openThread() {

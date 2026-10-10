@@ -41,7 +41,7 @@ struct Composer: View {
     let expanded = stacked || reply != nil
     let shown = min(fieldHeight, Composer.tallest)
     // On one line the frame is 44; stacked, 9 over the words, the reply's 36, and 47 under them for the buttons.
-    let height = expanded ? 9 + (reply == nil ? 0 : 36) + shown + 47 : 44
+    let height: CGFloat = expanded ? 9 + (reply == nil ? 0 : 36) + shown + 47 : 44
     let trailing: CGFloat = empty ? 45 : 81
     ZStack(alignment: .top) {
       VStack(alignment: .leading, spacing: 6) {
