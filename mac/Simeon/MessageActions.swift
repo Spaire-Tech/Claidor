@@ -29,10 +29,31 @@ final class ChatControl {
   }
 
   var jump: Jump?
+  /** A row brought to the middle without lighting it (find's `scrollToEntryWithoutHighlight`). */
+  var reveal: Jump?
   /** Bumped to give the composer the keys. */
   var focusCount = 0
   /** The message field's frame (44 on one line), so the last message clears it. */
   var composerHeight: CGFloat = 44
+
+  /** The agent whose messages with this one are open over the chat (`tunnelPeer`, read only). */
+  var exchangePeer: Party?
+  /** The exchange's message under the pointer, for the right-click menu: its id and words. */
+  var exchangeHovered: (id: String, text: String)?
+
+  // Find in the chat (⌘F, the window's `b_n`).
+  var findOpen = false
+  var findQuery = ""
+  /** Bumped to give find's field the keys with its words chosen (`focusNonce`). */
+  var findFocus = 0
+  /** The match stepped to, for the words it was found with, and its place then (`forQuery`, `match`, `index`). */
+  struct FindChoice: Equatable {
+    let query: String
+    let match: ChatFind.Match
+    let index: Int
+  }
+
+  var findChoice: FindChoice?
 
   /** Reply: the message quoted over the field, which takes the keys. */
   func startReply(_ bubble: Bubble, entries: [Entry]) {
@@ -43,6 +64,50 @@ final class ChatControl {
 
   func jump(to id: String) {
     jump = Jump(id: id, count: (jump?.count ?? 0) + 1)
+  }
+
+  /** ⌘F: the bar, or its field again with its words chosen. */
+  func openFind() {
+    findOpen = true
+    findFocus += 1
+  }
+
+  /** Close find (its X or Escape): its words go with it. */
+  func closeFind() {
+    findOpen = false
+    findQuery = ""
+    findChoice = nil
+  }
+
+  /**
+   * Where find stands among `matches` (`h_n`): the match stepped to while
+   * it is still there, else the place it had (or the last place left), and
+   * with nothing stepped to for these words, the newest.
+   */
+  func findIndex(_ matches: [ChatFind.Match]) -> Int? {
+    guard !matches.isEmpty else { return nil }
+    guard let choice = findChoice, choice.query == findQuery else { return matches.count - 1 }
+    return matches.firstIndex(of: choice.match) ?? min(choice.index, matches.count - 1)
+  }
+
+  /** Next (`delta` 1) or Previous (-1), round at either end (`p_n`), the row brought to the middle unlit. */
+  func stepFind(_ delta: Int, in matches: [ChatFind.Match]) {
+    guard let current = findIndex(matches) else { return }
+    let index = ((current + delta) % matches.count + matches.count) % matches.count
+    findChoice = FindChoice(query: findQuery, match: matches[index], index: index)
+    reveal = Jump(id: matches[index].rowId, count: (reveal?.count ?? 0) + 1)
+  }
+
+  /** An exchange opens over the chat; the message field, now under it, lets go of the keys. */
+  func openExchange(_ peer: Party) {
+    exchangePeer = peer
+    exchangeHovered = nil
+    NSApp.keyWindow?.makeFirstResponder(nil)
+  }
+
+  func closeExchange() {
+    exchangePeer = nil
+    exchangeHovered = nil
   }
 }
 
@@ -87,7 +152,7 @@ struct HoverBar: View {
 }
 
 /** A hover bar button (`sand-message-hover-actions__button`): 24, 8 round, the glyph 14 at 60%, grey under the pointer. */
-private struct BarButton: View {
+struct BarButton: View {
   let symbol: String
   let label: String
   let look: Look
@@ -154,12 +219,41 @@ enum MessageMenu {
     }
     // The handler lives as long as the menu.
     objc_setAssociatedObject(menu, &Handler.key, handler, .OBJC_ASSOCIATION_RETAIN)
-    control.menuFor = bubble.id
+    pop(menu, for: bubble.id, control: control, at: event)
+  }
+
+  /** A message between two agents (the exchange is read only, `isReadOnly`): More and the right click hold Copy alone. */
+  static func showCopy(_ text: String, id: String, control: ChatControl, at event: NSEvent? = nil) {
+    let menu = NSMenu()
+    menu.autoenablesItems = false
+    let handler = CopyHandler(text: text)
+    let item = NSMenuItem(title: "Copy", action: #selector(CopyHandler.copy), keyEquivalent: "")
+    item.target = handler
+    item.image = NSImage(systemSymbolName: "doc.on.doc", accessibilityDescription: nil)
+    menu.addItem(item)
+    objc_setAssociatedObject(menu, &Handler.key, handler, .OBJC_ASSOCIATION_RETAIN)
+    pop(menu, for: id, control: control, at: event)
+  }
+
+  /** The menu at the pointer, the message's hover bar kept while it is open. */
+  private static func pop(_ menu: NSMenu, for id: String, control: ChatControl, at event: NSEvent?) {
+    control.menuFor = id
     let shown = event ?? NSApp.currentEvent
     if let shown, let view = shown.window?.contentView ?? NSApp.keyWindow?.contentView {
       NSMenu.popUpContextMenu(menu, with: shown, for: view)
     }
     control.menuFor = nil
+  }
+
+  final class CopyHandler: NSObject {
+    let text: String
+
+    init(text: String) { self.text = text }
+
+    @MainActor @objc func copy() {
+      NSPasteboard.general.clearContents()
+      NSPasteboard.general.setString(text, forType: .string)
+    }
   }
 
   final class Handler: NSObject {
@@ -292,6 +386,12 @@ struct RightClickMenu: NSViewRepresentable {
   }
 
   private func open(_ event: NSEvent) -> Bool {
+    // Over an exchange, only its own messages, and only Copy.
+    if control.exchangePeer != nil {
+      guard let hovered = control.exchangeHovered else { return false }
+      MessageMenu.showCopy(hovered.text, id: hovered.id, control: control, at: event)
+      return true
+    }
     guard let bubble = control.hovered else { return false }
     MessageMenu.show(for: bubble, agentId: agentId, kind: .context, inThread: inThread, store: store, control: control, at: event)
     return true
@@ -359,7 +459,8 @@ struct ReplyPill: View {
     }
     .padding(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 4))
     .frame(height: 30)
-    .background(look.wash.opacity(look.dark ? 1 : 1.43), in: RoundedRectangle(cornerRadius: 10))
+    // `rgba(119,119,119,.09)` on light, `.14` on dark.
+    .background(look.dark ? look.wash : look.rowHover, in: RoundedRectangle(cornerRadius: 10))
     .accessibilityElement(children: .contain)
     .accessibilityLabel("Replying to \(reply.line)")
   }

@@ -78,73 +78,133 @@ struct MessageLine {
   let personName: String?
   /** App and agent names drawn with their pictures: a message's words, not a file's. */
   var marksNames = true
+  /** Find's marks on these words (step 2d), counted from the start of what this line draws. */
+  var find: FindMarks?
 
   /** The same line at another size or in another colour (a heading, a table, a quote). */
   func with(size: CGFloat? = nil, lineHeight: CGFloat? = nil, colour: Color? = nil) -> MessageLine {
-    MessageLine(size: size ?? self.size, lineHeight: lineHeight ?? self.lineHeight, colour: colour ?? self.colour, look: look, agents: agents, personName: personName, marksNames: marksNames)
+    MessageLine(size: size ?? self.size, lineHeight: lineHeight ?? self.lineHeight, colour: colour ?? self.colour, look: look, agents: agents, personName: personName, marksNames: marksNames, find: find)
+  }
+
+  /** The same line with these marks (a table's cell). */
+  func finding(_ marks: FindMarks?) -> MessageLine {
+    var copy = self
+    copy.find = marks
+    return copy
+  }
+
+  /** The same line for the words drawn after `words`: find's current match counted past them. */
+  func skipping(_ words: String) -> MessageLine {
+    guard let find else { return self }
+    var copy = self
+    copy.find = find.skipping(words)
+    return copy
+  }
+
+  nonisolated private static var parsing: AttributedString.MarkdownParsingOptions {
+    AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace, failurePolicy: .returnPartiallyParsedIfPossible)
+  }
+
+  /** The words a line of Markdown shows, its marks taken away (what find reads on screen). */
+  nonisolated static func shown(_ markdown: String) -> String {
+    let parsed = (try? AttributedString(markdown: markdown, options: parsing)) ?? AttributedString(markdown)
+    return String(parsed.characters)
   }
 
   func text(_ markdown: String) -> Text {
-    let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace, failurePolicy: .returnPartiallyParsedIfPossible)
-    let parsed = (try? AttributedString(markdown: markdown, options: options)) ?? AttributedString(markdown)
+    let parsed = (try? AttributedString(markdown: markdown, options: MessageLine.parsing)) ?? AttributedString(markdown)
+    let marks = FindLine(find, text: String(parsed.characters))
     var pieces: [Text] = []
+    // Where each run starts in the words shown (UTF-16), so find's marks land on it.
+    var offset = 0
     for run in parsed.runs {
       let words = String(parsed[run.range].characters)
+      defer { offset += (words as NSString).length }
       let intent = run.inlinePresentationIntent ?? []
       let style = Style(bold: intent.contains(.stronglyEmphasized), italic: intent.contains(.emphasized), code: intent.contains(.code), struck: intent.contains(.strikethrough))
       if let link = run.link {
-        pieces.append(linked(words, link, style: style))
+        pieces.append(linked(words, link, style: style, at: offset, marks: marks))
         continue
       }
       if style.code {
-        pieces.append(code(words))
+        pieces.append(code(words, at: offset, marks: marks))
         continue
       }
+      var partOffset = offset
       for part in MessageLine.autolinks(words) {
         if let url = part.url {
-          pieces.append(linked(part.text, url, style: style))
+          pieces.append(linked(part.text, url, style: style, at: partOffset, marks: marks))
         } else {
-          pieces += plain(part.text, style: style)
+          pieces += plain(part.text, style: style, at: partOffset, marks: marks)
         }
+        partOffset += (part.text as NSString).length
       }
     }
     return MessageLine.joined(pieces)
   }
 
   /** Words with their app and agent names. */
-  private func plain(_ words: String, style: Style) -> [Text] {
+  private func plain(_ words: String, style: Style, at offset: Int, marks: FindLine?) -> [Text] {
     let ink = style.struck ? look.inkTertiary : colour
-    guard marksNames else { return [style.apply(Text(verbatim: words).foregroundColor(ink))] }
+    guard marksNames else { return [painted(words, ink: ink, style: style, at: offset, marks: marks)] }
     let ns = words as NSString
     var pieces: [Text] = []
     var cursor = 0
     for match in Mentions.find(in: words, agents: agents, personName: personName) {
       if match.location > cursor {
-        pieces.append(style.apply(Text(verbatim: ns.substring(with: NSRange(location: cursor, length: match.location - cursor))).foregroundColor(ink)))
+        pieces.append(painted(ns.substring(with: NSRange(location: cursor, length: match.location - cursor)), ink: ink, style: style, at: offset + cursor, marks: marks))
       }
       let name = ns.substring(with: NSRange(location: match.location, length: match.length))
-      pieces.append(mention(name, kind: match.kind, style: style))
+      pieces.append(mention(name, kind: match.kind, style: style, at: offset + match.location, marks: marks))
       cursor = match.location + match.length
     }
     if cursor < ns.length {
-      pieces.append(style.apply(Text(verbatim: ns.substring(from: cursor)).foregroundColor(ink)))
+      pieces.append(painted(ns.substring(from: cursor), ink: ink, style: style, at: offset + cursor, marks: marks))
     }
     return pieces
   }
 
+  /** Words in their colour and style, find's marks under the times it found. */
+  private func painted(_ words: String, ink: Color, style: Style, at offset: Int, marks: FindLine?) -> Text {
+    guard let marks else { return style.apply(Text(verbatim: words).foregroundColor(ink)) }
+    return MessageLine.joined(marks.cut(words, at: offset).map { part in
+      guard let mark = part.mark else { return style.apply(Text(verbatim: part.text).foregroundColor(ink)) }
+      var piece = AttributedString(part.text)
+      piece.backgroundColor = FindLine.paint(mark, look: look)
+      return style.apply(Text(piece).foregroundColor(mark == .current ? look.onWarn : ink))
+    })
+  }
+
   /** A link: the link blue (the bubble's tint), no underline. */
-  private func linked(_ words: String, _ url: URL, style: Style) -> Text {
+  private func linked(_ words: String, _ url: URL, style: Style, at offset: Int, marks: FindLine?) -> Text {
     var container = AttributeContainer()
     container.link = url
-    return style.apply(Text(AttributedString(words, attributes: container)))
+    guard let marks else { return style.apply(Text(AttributedString(words, attributes: container))) }
+    var whole = AttributedString()
+    for part in marks.cut(words, at: offset) {
+      var piece = AttributedString(part.text, attributes: container)
+      if let mark = part.mark { piece.backgroundColor = FindLine.paint(mark, look: look) }
+      whole += piece
+    }
+    return style.apply(Text(whole))
   }
 
   /** Inline code: 0.93 em monospaced, red on a grey wash (`code`, padded 0 4 and 4 round in the window). */
-  private func code(_ words: String) -> Text {
-    var piece = AttributedString("\u{2009}" + words + "\u{2009}")
-    piece.font = .system(size: (size * 0.93 * 100).rounded() / 100, design: .monospaced)
-    piece.foregroundColor = look.codeInk
-    piece.backgroundColor = look.codeWash
+  private func code(_ words: String, at offset: Int, marks: FindLine?) -> Text {
+    var container = AttributeContainer()
+    container.font = .system(size: (size * 0.93 * 100).rounded() / 100, design: .monospaced)
+    container.foregroundColor = look.codeInk
+    container.backgroundColor = look.codeWash
+    var piece = AttributedString("\u{2009}", attributes: container)
+    for part in marks?.cut(words, at: offset) ?? [(text: words, mark: nil)] {
+      var cut = AttributedString(part.text, attributes: container)
+      if let mark = part.mark {
+        cut.backgroundColor = FindLine.paint(mark, look: look)
+        if mark == .current { cut.foregroundColor = look.onWarn }
+      }
+      piece += cut
+    }
+    piece += AttributedString("\u{2009}", attributes: container)
     return Text(piece)
   }
 
@@ -182,7 +242,7 @@ struct MessageLine {
   }
 
   /** An app's or an agent's name with its picture, the two kept on one line. */
-  private func mention(_ name: String, kind: Mentions.Kind, style: Style) -> Text {
+  private func mention(_ name: String, kind: Mentions.Kind, style: Style, at offset: Int, marks: FindLine?) -> Text {
     // `white-space: nowrap`: the name's spaces do not break, nor the gap after the picture.
     let kept = name.replacingOccurrences(of: " ", with: "\u{00A0}")
     let weight: Font.Weight = style.bold ? .semibold : .medium
@@ -190,7 +250,7 @@ struct MessageLine {
     switch kind {
     case .brand(let brand):
       let tint = Color(RGB(hex: look.dark ? brand.dark : brand.light))
-      let words = style.apply(Text(verbatim: kept).foregroundColor(tint).fontWeight(weight))
+      let words = painted(kept, ink: tint, style: style, at: offset, marks: marks).fontWeight(weight)
       guard let logo = InlineImages.logo(brand.key, side: (1.05 * size).rounded()) else { return words }
       let picture = Text(Image(nsImage: logo).renderingMode(brand.mono ? .template : .original)).foregroundColor(tint).baselineOffset(drop)
       return MessageLine.joined([picture, Text(verbatim: "\u{202F}"), words])
@@ -198,7 +258,7 @@ struct MessageLine {
       let palette = AgentPalette.named(paletteId)
       let hex = Brands.agentNameColours[palette.id].map { look.dark ? $0.dark : $0.light }
       let tint = hex.map { Color(RGB(hex: $0)) } ?? Color(palette.nameColour(dark: look.dark))
-      let words = style.apply(Text(verbatim: kept).foregroundColor(tint).fontWeight(weight))
+      let words = painted(kept, ink: tint, style: style, at: offset, marks: marks).fontWeight(weight)
       let mark = InlineImages.mark(palette, dark: look.dark, size: CGSize(width: (1.44 * size).rounded(), height: (1.05 * size).rounded()))
       let picture = Text(mark).baselineOffset(drop)
       return MessageLine.joined([picture, Text(verbatim: "\u{202F}"), words])
@@ -235,11 +295,24 @@ struct MessageBlocks: View {
   var spacing: CGFloat = 10
 
   var body: some View {
+    let lines = MessageBlocks.lines(for: blocks, from: line)
     VStack(alignment: .leading, spacing: spacing) {
       ForEach(Array(blocks.enumerated()), id: \.offset) { index, block in
-        BlockView(block: block, line: line, first: index == 0)
+        BlockView(block: block, line: lines[index], first: index == 0)
       }
     }
+  }
+
+  /** Each block's line, find's current match counted past the blocks before it. */
+  static func lines(for blocks: [MarkdownBlock], from line: MessageLine) -> [MessageLine] {
+    guard line.find?.current != nil else { return Array(repeating: line, count: blocks.count) }
+    var out: [MessageLine] = []
+    var next = line
+    for block in blocks {
+      out.append(next)
+      next = next.skipping(FindText.of(block))
+    }
+    return out
   }
 }
 
@@ -352,9 +425,11 @@ private struct ListBlock: View {
 
   var body: some View {
     let tasks = items.contains { $0.checked != nil }
-    let itemLine = tasks ? line.with(size: 13, lineHeight: 18) : line
+    // Each item's words as one block, so find counts past the items before it.
+    let itemLines = MessageBlocks.lines(for: items.map { MarkdownBlock.quote($0.blocks) }, from: tasks ? line.with(size: 13, lineHeight: 18) : line)
     VStack(alignment: .leading, spacing: 0) {
       ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+        let itemLine = itemLines[index]
         HStack(alignment: .firstTextBaseline, spacing: 0) {
           if let checked = item.checked {
             CheckBox(checked: checked, look: line.look)
@@ -398,15 +473,16 @@ private struct ItemBlocks: View {
   let depth: Int
 
   var body: some View {
+    let lines = MessageBlocks.lines(for: blocks, from: line)
     VStack(alignment: .leading, spacing: 4) {
-      ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
+      ForEach(Array(blocks.enumerated()), id: \.offset) { index, block in
         switch block {
         case .list(let ordered, let start, let items):
-          AnyView(ListBlock(ordered: ordered, start: start, items: items, depth: depth + 1, line: line))
+          AnyView(ListBlock(ordered: ordered, start: start, items: items, depth: depth + 1, line: lines[index]))
         case .paragraph(let text):
-          paragraph(text, line: line)
+          paragraph(text, line: lines[index])
         default:
-          AnyView(BlockView(block: block, line: line))
+          AnyView(BlockView(block: block, line: lines[index]))
         }
       }
     }
@@ -458,11 +534,12 @@ private struct TableBlock: View {
     let look = line.look
     let head = line.with(size: size, lineHeight: height, colour: look.ink)
     let cells = line.with(size: size, lineHeight: height, colour: look.inkSecondary)
+    let marks = cellMarks()
     ScrollView(.horizontal) {
       Grid(alignment: .leading, horizontalSpacing: 0, verticalSpacing: 0) {
         GridRow {
           ForEach(0..<header.count, id: \.self) { column in
-            cell(header[column], column: column, line: head)
+            cell(header[column], column: column, line: head.finding(marks[column]))
               .fontWeight(.medium)
           }
         }
@@ -470,7 +547,7 @@ private struct TableBlock: View {
         ForEach(0..<rows.count, id: \.self) { index in
           GridRow {
             ForEach(0..<header.count, id: \.self) { column in
-              cell(column < rows[index].count ? rows[index][column] : "", column: column, line: cells)
+              cell(column < rows[index].count ? rows[index][column] : "", column: column, line: cells.finding(marks[(index + 1) * header.count + column]))
             }
           }
           if index < rows.count - 1 {
@@ -481,6 +558,20 @@ private struct TableBlock: View {
       .fixedSize()
     }
     .scrollIndicators(.never)
+  }
+
+  /** Find's marks for each cell, the heading row first, then row by row, as the words run on screen. */
+  private func cellMarks() -> [FindMarks?] {
+    let count = (rows.count + 1) * header.count
+    guard var marks = line.find else { return Array(repeating: nil, count: count) }
+    var out: [FindMarks?] = []
+    out.reserveCapacity(count)
+    let texts = header + rows.flatMap { row in (0..<header.count).map { $0 < row.count ? row[$0] : "" } }
+    for text in texts {
+      out.append(marks)
+      marks = marks.skipping(MessageLine.shown(text))
+    }
+    return out
   }
 
   private func cell(_ text: String, column: Int, line: MessageLine) -> some View {

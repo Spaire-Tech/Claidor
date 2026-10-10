@@ -113,8 +113,14 @@ struct Look {
   var selectedCell: Color { Color(red: 127 / 255, green: 127 / 255, blue: 127 / 255).opacity(0.18) }
   /** The window's warning yellow (`--simeon-warn`): find's matches and a message jumped to. */
   let warn = Color(hex: 0xf1b467)
+  /** The words of find's current match on the yellow (`#1f1f1f`). */
+  let onWarn = Color(hex: 0x1f1f1f)
+  /** A raised surface (`--sand-bg-elevated`): find's bar. */
+  var elevated: Color { dark ? Color(hex: 0x181818) : Color(hex: 0xfcfcfc) }
+  /** Red words (`--sand-text-danger`): find's count when nothing matches. */
+  var danger: Color { dark ? Color(hex: 0xff5667) : Color(hex: 0xc21d2e) }
   /** A diagram's card in its full-screen view. */
-  var diagramCanvas: Color { dark ? Color(hex: 0x181818) : Color(hex: 0xfcfcfc) }
+  var diagramCanvas: Color { elevated }
   /** A JSON file's keys, strings, numbers and true, false and null. */
   var jsonKey: Color { dark ? Color(hex: 0xffaf38) : Color(hex: 0xc27400) }
   var jsonString: Color { dark ? Color(hex: 0x38d591) : Color(hex: 0x009957) }

@@ -11,6 +11,7 @@ import SimeonCore
 struct ChatPane: View {
   let agentId: String
   @Environment(AppStore.self) private var store
+  @Environment(Viewers.self) private var viewers
   @Environment(\.colorScheme) private var scheme
   @State private var control = ChatControl()
 
@@ -19,9 +20,11 @@ struct ChatPane: View {
     let agent = store.agent(agentId)
     // A thread opens in the chat's place (`threadRootId`), under its breadcrumb (step 2d).
     let threadRoot = store.openThreads[agentId]
+    // Find reads the lines on screen: the thread's while one is open (`ChatFind`).
+    let matches = control.findOpen ? ChatFind.matches(control.findQuery, in: store.findableEntries(agentId)) : []
     ZStack(alignment: .top) {
       look.ground
-      Transcript(agentId: agentId, threadRoot: threadRoot, look: look)
+      Transcript(agentId: agentId, threadRoot: threadRoot, find: findOnScreen(matches), look: look)
       if let agent {
         if let threadRoot {
           ThreadHeader(agent: agent, title: store.threadTitle(threadRoot, in: agentId), look: look) {
@@ -35,8 +38,42 @@ struct ChatPane: View {
     .overlay(alignment: .bottom) {
       Composer(agentId: agentId, name: agent?.name ?? "", threadRoot: threadRoot, look: look)
     }
+    // Two agents' messages, over the chat and its field (`threadOverlay`).
+    .overlay {
+      if let peer = control.exchangePeer {
+        ExchangeView(agentId: agentId, peer: peer, look: look)
+      }
+    }
+    // Find's bar, 8 under the head and 16 from the right, over everything (`z-index: 4`).
+    .overlay(alignment: .topTrailing) {
+      if control.findOpen {
+        FindBar(matches: matches, look: look)
+          .padding(.top, (threadRoot == nil ? 116 : 44) + 8)
+          .padding(.trailing, 16)
+      }
+    }
     .background(RightClickMenu(agentId: agentId, inThread: threadRoot != nil, store: store, control: control))
+    .background(ViewerKeys { event in
+      // ⌘F (`sand.findInChat`, `mod+f`), not while a file or picture is full screen.
+      let mods = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+      guard mods == .command, event.charactersIgnoringModifiers?.lowercased() == "f", viewers.shown == nil else { return false }
+      control.openFind()
+      return true
+    })
+    .onChange(of: threadRoot) { _, _ in
+      // The bar belongs to the lines on screen (`transcriptPlaneKey`): on a thread, or back, it starts again, still open.
+      guard control.findOpen else { return }
+      control.findQuery = ""
+      control.findChoice = nil
+      control.findFocus += 1
+    }
     .environment(control)
+  }
+
+  /** What find lights: its words once typed, and the match it stands on. */
+  private func findOnScreen(_ matches: [ChatFind.Match]) -> FindOnScreen? {
+    guard control.findOpen, !control.findQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+    return FindOnScreen(needle: control.findQuery.lowercased(), current: control.findIndex(matches).map { matches[$0] })
   }
 }
 
@@ -152,6 +189,8 @@ private struct CallButton: View {
 private struct Transcript: View {
   let agentId: String
   let threadRoot: String?
+  /** Find's words and current match, while it has words. */
+  let find: FindOnScreen?
   let look: Look
   @Environment(AppStore.self) private var store
   @Environment(ChatControl.self) private var control
@@ -179,6 +218,7 @@ private struct Transcript: View {
             } else {
               // Under the last message while the agent works, the working line meets its bubble (`isIndicatorSeamingBubble`).
               TranscriptRow(row: row, agentId: agentId, isGroup: agent?.isGroup ?? false, run: runs[row.id] ?? RunFlags(), seamsBelow: activity != nil && row.id == rows.last?.id, threadCount: threads[row.id], threadRoot: threadRoot, visibleIds: bubbleIds, width: width, look: look)
+                .environment(\.findMarks, find?.marks(for: row.id))
             }
           }
           if let agent, let activity {
@@ -195,6 +235,10 @@ private struct Transcript: View {
       .onChange(of: control.jump) { _, jump in
         guard let jump else { return }
         withAnimation(.easeInOut(duration: 0.3)) { position.scrollTo(id: jump.id, anchor: .center) }
+      }
+      .onChange(of: control.reveal) { _, reveal in
+        guard let reveal else { return }
+        withAnimation(.easeInOut(duration: 0.3)) { position.scrollTo(id: reveal.id, anchor: .center) }
       }
       .onChange(of: threadRoot) { _, _ in position.scrollTo(edge: .bottom) }
       .defaultScrollAnchor(.bottom, for: .initialOffset)
@@ -236,6 +280,7 @@ private struct TranscriptRow: View {
   let width: CGFloat
   let look: Look
   @Environment(ChatControl.self) private var control
+  @Environment(\.findMarks) private var findMarks
   @State private var lit = false
 
   private var startsGroup: Bool { run.startsGroup }
@@ -275,7 +320,7 @@ private struct TranscriptRow: View {
     case .voiceCall(_, let seconds, _):
       CallLineRow(seconds: seconds, look: look)
     case .notice(_, let text):
-      Text(text)
+      FindLine.marked(text, marks: findMarks, look: look)
         .font(.system(size: 12))
         .foregroundStyle(look.inkSecondary)
         .multilineTextAlignment(.center)
@@ -354,7 +399,7 @@ private struct TranscriptRow: View {
 }
 
 /** A time over the messages after a quarter of an hour (`sand-transcript-time-separator`): 12, at 60%, 14 above and 8 below. */
-private struct Stamp: View {
+struct Stamp: View {
   let date: Date
   let look: Look
 
@@ -419,6 +464,7 @@ private struct BubbleRow: View {
   @Environment(AppStore.self) private var store
   @Environment(WindowState.self) private var window
   @Environment(ChatControl.self) private var control
+  @Environment(\.findMarks) private var findMarks
   @State private var hovered = false
   @State private var barHovered = false
   @State private var bubbleWidth: CGFloat = 0
@@ -440,6 +486,9 @@ private struct BubbleRow: View {
                 .foregroundStyle(look.inkSecondary)
                 .lineLimit(1)
                 .frame(height: 16)
+                // `sand-group-author`: padded 0 6, 6 round, 6 in from the column.
+                .padding(.horizontal, 6)
+                .contentShape(RoundedRectangle(cornerRadius: 6))
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Open \(author.name)'s chat")
@@ -571,7 +620,7 @@ private struct BubbleRow: View {
         .textSelection(.enabled)
     } else if bubble.fromPerson {
       VStack(alignment: .leading, spacing: 0) {
-        FoldingText(text: bubble.text, lineHeight: look.dark ? 20 : 21, centred: isShort(trimmed), look: look)
+        FoldingText(text: bubble.text, lineHeight: look.dark ? 20 : 21, centred: isShort(trimmed), marks: findMarks, look: look)
         if let tag = bubble.channel {
           ChannelTagView(tag: tag, ink: look.yoursText)
         }
@@ -588,7 +637,7 @@ private struct BubbleRow: View {
         if let call = CallRecordView.parse(bubble.text) {
           CallRecordView(duration: call.duration, recap: call.recap, look: look)
         } else {
-          MessageBlocks(blocks: Markdown.cachedBlocks(bubble.text), line: MessageLine(size: 14, lineHeight: 20, colour: look.theirsText, look: look, agents: store.mentionNames, personName: store.account?.name))
+          MessageBlocks(blocks: Markdown.cachedBlocks(bubble.text), line: MessageLine(size: 14, lineHeight: 20, colour: look.theirsText, look: look, agents: store.mentionNames, personName: store.account?.name, find: findMarks))
         }
         if let tag = bubble.channel {
           ChannelTagView(tag: tag, ink: look.theirsText)
@@ -711,16 +760,17 @@ private struct SystemEvent<Chips: View>: View {
   }
 }
 
-/** A chip in an event (`sand-kit-system-event__chip`): a picture and words, padded 4 6 4 4, round. What it opens is step 2d. */
+/** A chip in an event (`sand-kit-system-event__chip`): a picture and words, padded 4 6 4 4, round. A routine's chip opens it in step 7. */
 private struct EventChip<Leading: View>: View {
   let title: String
   let help: String
   let look: Look
   var spacing: CGFloat = 4
+  var action: () -> Void = {}
   @ViewBuilder let leading: () -> Leading
 
   var body: some View {
-    Button {} label: {
+    Button(action: action) {
       HStack(spacing: spacing) {
         leading()
         Text(title)
@@ -737,17 +787,29 @@ private struct EventChip<Leading: View>: View {
   }
 }
 
-/** Agents talking to each other, folded (`JIn`): "Messaged", "Message from" or "4 messages with", then the agent, or "2 agents" over their butterflies. */
+/**
+ * Agents talking to each other, folded (`JIn`): "Messaged", "Message from"
+ * or "4 messages with", then the agent, or "2 agents" over their
+ * butterflies. One agent's chip opens their messages over the chat; with
+ * several, a menu of them (`Agents in this exchange`) does.
+ */
 private struct ExchangeEvent: View {
   let exchange: Exchange
   let look: Look
   @Environment(AppStore.self) private var store
+  @Environment(ChatControl.self) private var control
 
   var body: some View {
     let peers = exchange.peers
     let title = peers.count == 1 ? peers[0].name : "\(peers.count) agents"
     SystemEvent(label: exchange.label, look: look) {
-      EventChip(title: title, help: peers.count == 1 ? "Open \(title)'s messages" : "\(title), show list", look: look) {
+      EventChip(title: title, help: peers.count == 1 ? "Open \(title)'s messages" : "\(title), show list", look: look, action: {
+        if peers.count == 1 {
+          control.openExchange(peers[0])
+        } else if !peers.isEmpty {
+          ExchangeMenu.show(peers: peers, store: store, control: control, dark: look.dark)
+        }
+      }) {
         HStack(spacing: -6) {
           ForEach(Array(peers.prefix(3).enumerated()), id: \.offset) { _, peer in
             if let agent = store.agent(peer.id) {
@@ -1039,6 +1101,8 @@ private struct FoldingText: View {
   let text: String
   let lineHeight: CGFloat
   let centred: Bool
+  /** Find's marks on the words, while find has words. */
+  let marks: FindMarks?
   let look: Look
   @State private var full: CGFloat = 0
   @State private var open = false
@@ -1046,7 +1110,7 @@ private struct FoldingText: View {
   var body: some View {
     let folds = full > 161
     VStack(alignment: .leading, spacing: 4) {
-      Text(text)
+      FindLine.marked(text, marks: marks, look: look)
         .font(.system(size: 14))
         .tracking(-0.042)
         .foregroundStyle(look.yoursText)

@@ -213,7 +213,8 @@ Written 10 October 2026, **not built yet** (as step 1). Compare with B01
 | The butterfly and name in the head (View agent settings) | 7 |
 | The call button in the head | 11 |
 | A file's name (opens its preview) | 2c (done) |
-| The exchanges and routines chips | 2d |
+| The exchanges' chips | 2d (done) |
+| The routines' chips (open the routine) | 7 |
 | "1 reply" under a message | 2d (done) |
 | Attach file | 2e |
 | The microphone | 2e |
@@ -394,11 +395,12 @@ Each covers the whole window, sidebar included; Escape closes it.
 - A picture's caption is its own words when it has them, else its name;
   the window may pass other captions.
 
-### 2d: a message's actions (in progress)
+### 2d: a message's actions
 
 Written 10 October 2026, **not built yet** (as step 1), measured from the
 reference window (the Simeon and Gallery chats; two threads were added to
-the Gallery to measure them). Pushed so far:
+the Gallery to measure them) and read from its code (`JMn` for an
+exchange, `b_n` and `u_n` for find):
 
 - **The hover bar** beside a message while the pointer is on it, 6 from
   the bubble and level with its middle: Add reaction, Reply and More (24,
@@ -434,6 +436,47 @@ the Gallery to measure them). Pushed so far:
 | More emoji | 2e (the full emoji list) |
 | The thread's title in its breadcrumb (View conversation details) | 7 |
 
-Still to come in 2d: the exchanges' list and an exchange's own view, and
-find in chat. A message's time at its right comes with a sideways swipe in
-the window (its "peeking"), which is 2f.
+- **Agents' exchanges**: an exchange line's chip opens the two agents'
+  messages over the chat when it names one agent; naming several, it opens
+  a Mac menu of them ("Agents in this exchange", each with its butterfly,
+  by name), and choosing one opens its messages. The exchange covers the
+  chat and its field: its head holds the two agents (butterfly and name in
+  a pill, ⇄ between them) in the middle; the messages run as in a group
+  (the name over the first of a run, the butterfly beside the last), fading
+  under the head and over the foot once there is more to scroll; at the
+  foot, a lock, "This chat is view-only" and Close Chat. It is read only:
+  under the pointer a message shows More alone, which holds Copy (a right
+  click too), and a name does not open its chat. Escape closes it.
+- **Find in chat** (⌘F): the bar 8 under the chat's head and 16 from the
+  right (the glass, "Find in chat", the count once words are typed, a line,
+  Previous match, Next match, Close find). It finds what the window finds
+  (a message's words, a card's question, an email's subject and body, a
+  Slack draft, a notice; not agents' messages to each other), without
+  regard to capitals, in the thread while one is open. It starts at the
+  newest match, "2/5"; Enter and Next go down, Shift-Enter and Previous go
+  up, round at either end, bringing the match's row to the middle; the
+  count is red at "0/0" and the arrows are off. Every match is lit in the
+  window's yellow at 30%, the current one in the yellow itself with dark
+  words, in a message's words (either side, Markdown, lists, quotes and
+  tables, app and agent names, links and code in a line) and in a notice.
+  ⌘F again takes the field with its words chosen; Escape or Close find
+  closes it and its words go. On a thread, or back, it starts again.
+- A group's author name sat 6 too far left (2a): it is padded 6 inside its
+  button, as measured (the name at 12 from the column).
+
+#### Not in 2d yet
+
+- Find lights words only in messages and notices: the window also lights
+  them in a card's text, a file's name, an event's words and an author's
+  name, and counts those before a message's words when it picks the current
+  one, so in a group chat its current match can sit on the author's name.
+  Words inside a code block are counted but not lit.
+- The exchange shows what the agent's own chat holds of the two agents'
+  messages (SimeonCore's `Chat.exchangeRows`, as the iPhone does); the
+  window loads the exchange on its own and can show "Couldn't load" with
+  Retry, which is not copied.
+- The exchanges' menu and the message menus open at the pointer, as Mac
+  menus do; the window's open under the chip or the button.
+
+A message's time at its right comes with a sideways swipe in the window
+(its "peeking"), which is 2f.
