@@ -200,10 +200,15 @@ extension Chat {
     return loneLink(entry.content ?? "", richText: entry["richText"]?.string) != nil
   }
 
-  /** `jht`: the person's message that is one emoji (`^\p{RGI_Emoji}$`), with no pictures. */
+  /** `jht`: the person's message that is one emoji, with no pictures. */
   static func isLoneEmoji(_ entry: Entry) -> Bool {
     guard entry.kind == "message", entry.role == "user", !isTeammateLine(entry), (entry["images"]?.array ?? []).isEmpty else { return false }
-    let trimmed = (entry.content ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+    return isOneEmoji(entry.content ?? "")
+  }
+
+  /** `CEn`: words that are one emoji (`^\p{RGI_Emoji}$`, trimmed), drawn large with no bubble. */
+  public static func isOneEmoji(_ text: String) -> Bool {
+    let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
     guard trimmed.count == 1, let character = trimmed.first else { return false }
     let scalars = character.unicodeScalars
     if scalars.contains(where: { $0.properties.isEmojiPresentation }) { return true }

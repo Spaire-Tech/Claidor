@@ -68,11 +68,20 @@ private struct ChatHeader: View {
       .allowsHitTesting(false)
   }
 
-  /** `sand-chat-header__identity`: padded 0 8 2, its butterfly and pill 4 apart. */
+  /**
+   * `sand-chat-header__identity`: padded 0 8 2, its butterfly and pill 4
+   * apart, both opening the agent's settings; the call button sits 8 past
+   * the pill's right end, level with it.
+   */
   private var identity: some View {
-    Button {} label: {
-      VStack(spacing: 4) {
+    VStack(spacing: 4) {
+      Button {} label: {
         AgentMark(agent: agent, agents: store.agents, size: 52)
+          .contentShape(Rectangle())
+      }
+      .buttonStyle(.plain)
+      .accessibilityLabel("View agent settings")
+      Button {} label: {
         Text(agent.name)
           .font(.system(size: 13, weight: .medium))
           .foregroundStyle(look.ink)
@@ -81,21 +90,19 @@ private struct ChatHeader: View {
           .padding(.horizontal, 12)
           .frame(height: 26)
           .glassEffect(.regular, in: .capsule)
-          .help(agent.name)
+          .contentShape(Capsule())
       }
-      .padding(EdgeInsets(top: 0, leading: 8, bottom: 2, trailing: 8))
-      .contentShape(RoundedRectangle(cornerRadius: 16))
-    }
-    .buttonStyle(.plain)
-    .accessibilityLabel("View agent settings")
-    .overlay(alignment: .bottomTrailing) {
-      if !agent.isGroup {
-        // At the pill's right end plus 8, which is the identity's own right edge; level with the pill.
-        CallButton(name: agent.name, look: look)
-          .alignmentGuide(.trailing) { $0[.leading] }
-          .offset(y: -4)
+      .buttonStyle(.plain)
+      .help(agent.name)
+      .accessibilityLabel("View agent settings")
+      .overlay(alignment: .trailing) {
+        if !agent.isGroup {
+          CallButton(name: agent.name, look: look)
+            .alignmentGuide(.trailing) { $0[.leading] - 8 }
+        }
       }
     }
+    .padding(EdgeInsets(top: 0, leading: 8, bottom: 2, trailing: 8))
   }
 }
 
@@ -125,12 +132,16 @@ private struct CallButton: View {
  * The messages (`sand-virtual-transcript`): 16 in from each side, 116 down
  * from the top (under the head) and 112 up from the bottom (over the
  * message field), opening at the newest. While the agent works, its line
- * (`sand-activity-slot`, 40 with its padding) takes 40 of the 112.
+ * (`sand-activity-slot`, 40 with its padding) takes 40 of the 112. New
+ * words keep the newest in view while you are at it; scrolled up to read,
+ * the chat stays where you are.
  */
 private struct Transcript: View {
   let agentId: String
   let look: Look
   @Environment(AppStore.self) private var store
+  @State private var position = ScrollPosition(edge: .bottom)
+  @State private var atNewest = true
 
   var body: some View {
     let rows = store.rows(for: agentId)
@@ -153,7 +164,19 @@ private struct Transcript: View {
         .padding(.top, 116)
         .padding(.bottom, activity == nil ? 112 : 72)
       }
-      .defaultScrollAnchor(.bottom)
+      .scrollPosition($position)
+      .defaultScrollAnchor(.bottom, for: .initialOffset)
+      .onScrollGeometryChange(for: Bool.self) { geometry in
+        geometry.contentOffset.y + geometry.containerSize.height >= geometry.contentSize.height - 48
+      } action: { _, near in
+        atNewest = near
+      }
+      .onChange(of: rows) { _, _ in
+        if atNewest { position.scrollTo(edge: .bottom) }
+      }
+      .onChange(of: activity == nil) { _, _ in
+        if atNewest { position.scrollTo(edge: .bottom) }
+      }
     }
   }
 }
@@ -355,35 +378,50 @@ private struct BubbleRow: View {
 
   @ViewBuilder
   private var shaped: some View {
-    if bubble.fromPerson {
+    let trimmed = bubble.text.trimmingCharacters(in: .whitespacesAndNewlines)
+    // An emoji on its own (`standaloneEmoji`): 32 on 38, no bubble.
+    if Chat.isOneEmoji(trimmed) && bubble.channel == nil {
+      Text(trimmed)
+        .font(.system(size: 32))
+        .cssLineHeight(38, size: 32)
+        .textSelection(.enabled)
+    } else if bubble.fromPerson {
       let lineHeight: CGFloat = look.dark ? 20 : 21
       Text(bubble.text)
         .font(.system(size: 14))
         .tracking(-0.042)
         .foregroundStyle(look.yoursText)
+        .multilineTextAlignment(isShort(trimmed) ? .center : .leading)
         .textSelection(.enabled)
         .fixedSize(horizontal: false, vertical: true)
         .cssLineHeight(lineHeight, size: 14)
         .padding(.vertical, look.dark ? 8 : 10)
         .padding(.horizontal, look.dark ? 12 : 15)
+        .frame(minWidth: isShort(trimmed) ? 36 : nil)
         .background(look.yours, in: UnevenRoundedRectangle(topLeadingRadius: 18, bottomLeadingRadius: 18, bottomTrailingRadius: run.continuesNext ? 6 : 18, topTrailingRadius: run.continuesPrevious ? 6 : 18))
     } else {
       // A run's bubbles meet at 6-point corners (`assistantContinuedPrev`, `…Next`); so does the last one with the working line under it, and in a group the one beside its author's butterfly.
       let joinsBelow = run.continuesNext || (seamsBelow && bubble.reactions.isEmpty) || (isGroup && bubble.showsAvatar)
       let shape = UnevenRoundedRectangle(topLeadingRadius: run.continuesPrevious ? 6 : 18, bottomLeadingRadius: joinsBelow ? 6 : 18, bottomTrailingRadius: 18, topTrailingRadius: 18)
-      MessageBlocks(blocks: Markdown.cachedBlocks(bubble.text), line: MessageLine(size: 14, colour: look.theirsText, look: look, agents: store.mentionNames, personName: store.account?.name))
+      MessageBlocks(blocks: Markdown.cachedBlocks(bubble.text), line: MessageLine(size: 14, lineHeight: 20, colour: look.theirsText, look: look, agents: store.mentionNames, personName: store.account?.name))
         .font(.system(size: 14))
         .tracking(-0.042)
         .foregroundStyle(look.theirsText)
         .tint(look.link)
         .textSelection(.enabled)
-        .cssLineHeight(20, size: 14)
+        .environment(\.messageStreaming, bubble.isStreaming)
         .padding(.vertical, 8)
         .padding(.horizontal, 12)
+        .frame(minWidth: isShort(trimmed) ? 36 : nil)
         .background(look.theirs, in: shape)
         .overlay { shape.inset(by: -0.25).stroke(look.theirsHairline, lineWidth: 0.5) }
         .shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1)
     }
+  }
+
+  /** One or two characters (`Tpt`, counted as the window counts them): the bubble at least 36 wide, its words centred (`singleGlyphCircle`). */
+  private func isShort(_ trimmed: String) -> Bool {
+    bubble.channel == nil && !trimmed.isEmpty && trimmed.utf16.count <= 2
   }
 }
 
@@ -704,7 +742,8 @@ private struct FileCard: View {
   static func width(name: String, meta: String, limit: CGFloat) -> CGFloat {
     let nameWidth = (name as NSString).size(withAttributes: [.font: NSFont.systemFont(ofSize: 13, weight: .medium)]).width
     let metaWidth = (meta as NSString).size(withAttributes: [.font: NSFont.systemFont(ofSize: 12)]).width
-    let natural = ceil(max(nameWidth, metaWidth)) + 16 + 36 + 8 + 8 + 24
+    // Padding 16, the icon 36, two gaps of 8, Save 24.
+    let natural: CGFloat = max(nameWidth, metaWidth).rounded(.up) + 92
     return min(max(natural, min(220, limit)), min(340, limit))
   }
 

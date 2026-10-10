@@ -82,6 +82,14 @@ struct Look {
   var composer: Color { dark ? Color(hex: 0x212121) : Color(hex: 0xfcfcfc) }
   var composerEdge: Color { dark ? Color(hex: 0x2e2e2e) : ink.opacity(0.3) }
   var placeholder: Color { ink.opacity(0.3) }
+
+  // MARK: Message text (step 2b)
+
+  /** Inline code: red (`#ff5667` on dark) on a grey wash. */
+  var codeInk: Color { dark ? Color(hex: 0xff5667) : Color(hex: 0xc21d2e) }
+  var codeWash: Color { Color(red: 119 / 255, green: 119 / 255, blue: 119 / 255).opacity(dark ? 0.173 : 0.09) }
+  /** A code block's lines: the text at 92% (`#d6d6dd` on dark). */
+  var codeText: Color { dark ? Color(hex: 0xd6d6dd) : ink.opacity(0.92) }
 }
 
 extension Color {

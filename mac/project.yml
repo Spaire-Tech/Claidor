@@ -30,10 +30,15 @@ targets:
     platform: macOS
     sources:
       - path: Simeon
-        excludes: ["Fonts/**"]
+        excludes: ["Fonts/**", "Rendering/**"]
       # The sign-in wordmark's face (Suravaram, SIL Open Font License), as
       # the Electron window sets "Simeon" on its sign-in screen.
       - path: Simeon/Fonts
+        buildPhase: resources
+      # KaTeX and Mermaid (MIT) and their licences: the chat's maths and
+      # diagrams, drawn by the same libraries the Electron window uses
+      # (Rendering.swift).
+      - path: Simeon/Rendering
         buildPhase: resources
     dependencies:
       - package: SimeonCore

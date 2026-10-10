@@ -240,7 +240,8 @@ struct MessageField: NSViewRepresentable {
       let box = (string as NSString).boundingRect(
         with: NSSize(width: width, height: CGFloat.greatestFiniteMagnitude),
         options: [.usesLineFragmentOrigin, .usesFontLeading],
-        attributes: MessageField.attributes(parent.ink))
+        attributes: MessageField.attributes(parent.ink),
+        context: nil)
       let next = max(20, ceil(box.height))
       guard abs(parent.height - next) > 0.5 else { return }
       // Not while SwiftUI lays the window out.

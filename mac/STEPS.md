@@ -170,7 +170,9 @@ Written 10 October 2026, **not built yet** (as step 1). Compare with B01
   the call button 8 to the pill's right (none for a group), on the chat's
   ground at 78% over a blur that fades out over its last 30 points. The
   messages scroll under it. Its empty part moves the window.
-- **The messages**, 16 in from each side, opening at the newest: the
+- **The messages**, 16 in from each side, opening at the newest, and
+  following new words while you are at the newest (scrolled up to read, the
+  chat stays where you are): the
   person's on the right in the window's blue (14 on 21, 18 round), an
   agent's on the left in grey with a hairline and a soft shadow, at most
   88% of the chat, 640, or the chat less 82. A message from someone other
@@ -180,8 +182,8 @@ Written 10 October 2026, **not built yet** (as step 1). Compare with B01
   against the window's own functions run on the same lines).
 - **The text**: bold, italics, code, strikethrough and links inside a
   line; app names in their colour after their logo; agents' names in
-  theirs after their butterfly, as the window writes them. Headings,
-  lists, quotes, code blocks, tables and maths are drawn plainly until 2b.
+  theirs after their butterfly, as the window writes them. The blocks are
+  2b's, below.
 - **A group chat**: an agent's messages 30 in, its name over the first of
   a run (it opens that agent's chat), its butterfly beside the last.
 - **Times** over the messages after a quarter of an hour; **"New"** between
@@ -226,8 +228,6 @@ Written 10 October 2026, **not built yet** (as step 1). Compare with B01
 - The hover bar, right-click menu and the time at a message's right on
   hover: 2d. So is the thread's "1 reply" joined under its message (the
   window squares the message's lower corners over it).
-- An emoji on its own, drawn large without a bubble, and a one- or
-  two-letter message drawn as a circle: 2b.
 - The butterflies stand still, and new messages appear without the
   window's motion: 2f.
 - The access notice over the field ("Your trial has ended"…) and the
@@ -238,3 +238,53 @@ Written 10 October 2026, **not built yet** (as step 1). Compare with B01
 The name pill, the call button and Attach are Apple's glass. The text field
 is Apple's own text view, so selection, spelling and the Edit menu are the
 Mac's. The icons are SF Symbols in the window's shapes.
+
+A compile review of 2a (a second reader, with the Swift compiler Xcode 26
+uses and stand-ins for Apple's frameworks) found one line that would not
+compile, one deprecated call, and four layout points; all are fixed in
+2b's push.
+
+### 2b: the message text
+
+Written 10 October 2026, **not built yet**. Measured from the window's
+own Gallery chat (its rich message, and a second one added to the
+reference with every element the first has not got). Compare with F01 to
+F05 and the Gallery chat's first messages.
+
+- **Paragraphs** 14 on 20, 10 apart. **Headings** at 600: `#` 22 on 28,
+  `##` 17 on 24, `###` and smaller 14 on 20 with 8 more above.
+- **Lists**: 20 in (16 for a list inside a list), items 4 apart, numbers
+  and bullets at 40% (a disc, then a circle, then a square). A list with
+  check boxes is 13 on 18, 4 in, its boxes 16 and 4 round: checked in the
+  window's blue with a white tick, open with a 30% edge.
+- **Inline code** in red on a grey wash, 0.93 em monospaced; **links** in
+  the link blue with no underline; a bare address (`https://…`, `www.…`)
+  made a link, as GitHub's Markdown does; **strikethrough** at 40%.
+- **Quotes**: a 2-point bar at 30%, the words 10 in at 60%.
+- **Code blocks**: the ground, a 10% edge, 10 round, 12 on 18
+  monospaced, 10 in and 6 from top and bottom, scrolling sideways when
+  wide; Copy at the top right under the pointer.
+- **Tables**: 13 on 18, cells padded 8, the heading row at 500, the rest
+  at 60%, a hairline under every row but the last, columns aligned as
+  written; scrolling sideways when wide.
+- **Maths** (`$$` lines, a ```` ```math ```` block, or `$$…$$` within a
+  line) and **diagrams** (```` ```mermaid ````) drawn by the same KaTeX and
+  Mermaid the window uses, in a see-through web view as tall as what they
+  drew. A diagram waits for its message to finish, as in the window, and
+  shows its source until then (or if Mermaid cannot read it).
+- **An emoji on its own**: 32 on 38, no bubble. **One or two
+  characters**: the bubble at least 36 wide, the words centred.
+- The window's rule (`---`) is drawn with no width; only its line of space
+  shows, here too.
+
+#### Buttons that do nothing yet
+
+| Button | Its part or step |
+|---|---|
+| A diagram (opens full screen) | 2c |
+
+#### Not in 2b yet
+
+- The window colours a code block's words by language and draws thin
+  guides at its indents; here the words are one colour.
+- Pictures inside a message (`![…](…)`): 2c.
