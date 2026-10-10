@@ -214,7 +214,7 @@ Written 10 October 2026, **not built yet** (as step 1). Compare with B01
 | The call button in the head | 11 |
 | A file's name (opens its preview) | 2c (done) |
 | The exchanges and routines chips | 2d |
-| "1 reply" under a message | 2d |
+| "1 reply" under a message | 2d (done) |
 | Attach file | 2e |
 | The microphone | 2e |
 
@@ -393,3 +393,47 @@ Each covers the whole window, sidebar included; Escape closes it.
   last; here the row gets smaller to fit them all.
 - A picture's caption is its own words when it has them, else its name;
   the window may pass other captions.
+
+### 2d: a message's actions (in progress)
+
+Written 10 October 2026, **not built yet** (as step 1), measured from the
+reference window (the Simeon and Gallery chats; two threads were added to
+the Gallery to measure them). Pushed so far:
+
+- **The hover bar** beside a message while the pointer is on it, 6 from
+  the bubble and level with its middle: Add reaction, Reply and More (24,
+  8 round), Add reaction nearest the bubble.
+- **Add reaction**: a Mac menu with the window's six quick reactions in a
+  row (👍 👎 ❤️ 😂 🎉 😮) and More emoji. **More**: Start a thread, Copy.
+  **A right click** on a message: the reactions, then Reply, Start a
+  thread, Copy. Start a thread is not offered inside a thread.
+- **Reply**: the message's line over the words (its reply glyph, the line,
+  Cancel reply), "Reply…" in the field, which takes the keys; Escape lets
+  it go; what is sent answers that message.
+- **The message field's two forms**, as the window decides them: on one
+  line between the buttons (44 high, 22 round); stacked once the words wrap
+  or hold a new line, or a reply is being written (18 round, the words
+  across the whole width up to six lines, the buttons on a row under
+  them), going back to one line only for short words that fit. With words,
+  a grey microphone sits beside the blue Send. (2a had ten lines and the
+  microphone or the arrow; the window has six lines and both.)
+- **A quote over a reply** jumps to the message it answers and lights its
+  row in the window's yellow, which fades after a second; a reply in a
+  thread opens the thread instead ("Open reply thread").
+- **Threads**: "2 replies" joined under its message as a chin (the bubble's
+  lower corners square), or a small pill under the reactions when the
+  message has some; "View thread" under the pointer. A thread opens in the
+  chat's place under a breadcrumb (the chat's butterfly and name going
+  back, a chevron, the thread's first message), its replies under its
+  first message; what is written there goes into the thread.
+
+#### Buttons that do nothing yet
+
+| Button | Its part or step |
+|---|---|
+| More emoji | 2e (the full emoji list) |
+| The thread's title in its breadcrumb (View conversation details) | 7 |
+
+Still to come in 2d: the exchanges' list and an exchange's own view, and
+find in chat. A message's time at its right comes with a sideways swipe in
+the window (its "peeking"), which is 2f.

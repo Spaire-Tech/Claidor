@@ -12,18 +12,31 @@ struct ChatPane: View {
   let agentId: String
   @Environment(AppStore.self) private var store
   @Environment(\.colorScheme) private var scheme
+  @State private var control = ChatControl()
 
   var body: some View {
     let look = Look(scheme)
     let agent = store.agent(agentId)
+    // A thread opens in the chat's place (`threadRootId`), under its breadcrumb (step 2d).
+    let threadRoot = store.openThreads[agentId]
     ZStack(alignment: .top) {
       look.ground
-      Transcript(agentId: agentId, look: look)
-      if let agent { ChatHeader(agent: agent, look: look) }
+      Transcript(agentId: agentId, threadRoot: threadRoot, look: look)
+      if let agent {
+        if let threadRoot {
+          ThreadHeader(agent: agent, title: store.threadTitle(threadRoot, in: agentId), look: look) {
+            store.closeThread(in: agentId)
+          }
+        } else {
+          ChatHeader(agent: agent, look: look)
+        }
+      }
     }
     .overlay(alignment: .bottom) {
-      Composer(agentId: agentId, name: agent?.name ?? "", look: look)
+      Composer(agentId: agentId, name: agent?.name ?? "", threadRoot: threadRoot, look: look)
     }
+    .background(RightClickMenu(agentId: agentId, inThread: threadRoot != nil, store: store, control: control))
+    .environment(control)
   }
 }
 
@@ -138,33 +151,52 @@ private struct CallButton: View {
  */
 private struct Transcript: View {
   let agentId: String
+  let threadRoot: String?
   let look: Look
   @Environment(AppStore.self) private var store
+  @Environment(ChatControl.self) private var control
   @State private var position = ScrollPosition(edge: .bottom)
   @State private var atNewest = true
 
   var body: some View {
-    let rows = store.rows(for: agentId)
-    let runs = store.runFlags[agentId] ?? [:]
+    let rows = threadRoot == nil ? store.rows(for: agentId) : store.threadRows[agentId] ?? []
+    let runs = threadRoot == nil ? store.runFlags[agentId] ?? [:] : [:]
     let agent = store.agent(agentId)
     let activity = agent?.activityLine(named: { id in store.agent(id)?.name })
+    // A message's "N replies" joins it (`sand-thread-root-group`); one under a card stays its own row.
+    let bubbleIds = Set(rows.compactMap { row -> String? in if case .bubble(let bubble) = row { return bubble.id }; return nil })
+    let threads = Dictionary(rows.compactMap { row -> (String, Int)? in
+      if case .thread(_, let root, let count, _) = row, bubbleIds.contains(root) { return (root, count) }
+      return nil
+    }, uniquingKeysWith: { first, _ in first })
     GeometryReader { box in
       let width = max(0, box.size.width - 32)
       ScrollView {
         LazyVStack(alignment: .leading, spacing: 0) {
           ForEach(rows) { row in
-            // Under the last message while the agent works, the working line meets its bubble (`isIndicatorSeamingBubble`).
-            TranscriptRow(row: row, agentId: agentId, isGroup: agent?.isGroup ?? false, run: runs[row.id] ?? RunFlags(), seamsBelow: activity != nil && row.id == rows.last?.id, width: width, look: look)
+            if case .thread(_, let root, _, _) = row, threads[root] != nil {
+              EmptyView()
+            } else {
+              // Under the last message while the agent works, the working line meets its bubble (`isIndicatorSeamingBubble`).
+              TranscriptRow(row: row, agentId: agentId, isGroup: agent?.isGroup ?? false, run: runs[row.id] ?? RunFlags(), seamsBelow: activity != nil && row.id == rows.last?.id, threadCount: threads[row.id], threadRoot: threadRoot, visibleIds: bubbleIds, width: width, look: look)
+            }
           }
           if let agent, let activity {
             ActivityRow(agent: agent, line: activity, look: look)
           }
         }
+        .scrollTargetLayout()
         .padding(.horizontal, 16)
-        .padding(.top, 116)
-        .padding(.bottom, activity == nil ? 112 : 72)
+        .padding(.top, threadRoot == nil ? 116 : 44)
+        // Over the message field: its frame and 68 (the working line takes 40 of that while the agent works).
+        .padding(.bottom, control.composerHeight + (activity == nil ? 68 : 28))
       }
       .scrollPosition($position)
+      .onChange(of: control.jump) { _, jump in
+        guard let jump else { return }
+        withAnimation(.easeInOut(duration: 0.3)) { position.scrollTo(id: jump.id, anchor: .center) }
+      }
+      .onChange(of: threadRoot) { _, _ in position.scrollTo(edge: .bottom) }
       .defaultScrollAnchor(.bottom, for: .initialOffset)
       .onScrollGeometryChange(for: Bool.self) { geometry in
         geometry.contentOffset.y + geometry.containerSize.height >= geometry.contentSize.height - 48
@@ -195,8 +227,16 @@ private struct TranscriptRow: View {
   let isGroup: Bool
   let run: RunFlags
   let seamsBelow: Bool
+  /** The replies in this message's thread, shown joined under it. */
+  let threadCount: Int?
+  /** The thread on screen, when a thread is open. */
+  let threadRoot: String?
+  /** The messages on screen, so a quote of one jumps to it. */
+  let visibleIds: Set<String>
   let width: CGFloat
   let look: Look
+  @Environment(ChatControl.self) private var control
+  @State private var lit = false
 
   private var startsGroup: Bool { run.startsGroup }
 
@@ -204,6 +244,16 @@ private struct TranscriptRow: View {
     content
       .padding(.vertical, 2)
       .frame(maxWidth: .infinity, alignment: alignment)
+      // A message jumped to from a quote lights up in the warning yellow at 22%, holds, then fades (`sand-12cjh1l`, 2.5 s, ease-out).
+      .background(look.warn.opacity(0.22).opacity(lit ? 1 : 0))
+      .onChange(of: control.jump) { _, jump in
+        guard jump?.id == row.id else { return }
+        lit = true
+        Task {
+          try? await Task.sleep(for: .seconds(1))
+          withAnimation(.easeOut(duration: 1.5)) { lit = false }
+        }
+      }
   }
 
   @ViewBuilder
@@ -214,7 +264,7 @@ private struct TranscriptRow: View {
     case .unread:
       UnreadDivider(look: look)
     case .bubble(let bubble):
-      BubbleRow(bubble: bubble, agentId: agentId, isGroup: isGroup, run: run, seamsBelow: seamsBelow, width: width, look: look)
+      BubbleRow(bubble: bubble, agentId: agentId, isGroup: isGroup, run: run, seamsBelow: seamsBelow, threadCount: threadCount, threadRoot: threadRoot, visibleIds: visibleIds, width: width, look: look)
     case .file(_, let name, let url, _):
       FileCard(name: name, url: url, agentId: agentId, width: width, look: look)
         .padding(.top, startsGroup ? 12 : 0)
@@ -234,15 +284,9 @@ private struct TranscriptRow: View {
       FailedSend(nonce: nonce, agentId: agentId, look: look)
     case .queuedSend(_, let nonce):
       QueuedSend(nonce: nonce, agentId: agentId, look: look)
-    case .thread(_, _, let count, _):
-      // Opening a thread is step 2d.
-      Button {} label: {
-        Text(count == 1 ? "1 reply" : "\(count) replies")
-          .font(.system(size: 12, weight: .medium))
-          .foregroundStyle(look.link)
-      }
-      .buttonStyle(.plain)
-      .padding(.horizontal, 12)
+    case .thread(_, let root, let count, _):
+      // Under a card: the chip on its own.
+      ThreadOpener(rootId: root, count: count, agentId: agentId, look: look)
     case .question(let id, let card):
       QuestionCardView(entryId: id, agentId: agentId, card: card, look: look)
         .frame(maxWidth: limit(640), alignment: .leading)
@@ -367,10 +411,20 @@ private struct BubbleRow: View {
   let isGroup: Bool
   let run: RunFlags
   let seamsBelow: Bool
+  let threadCount: Int?
+  let threadRoot: String?
+  let visibleIds: Set<String>
   let width: CGFloat
   let look: Look
   @Environment(AppStore.self) private var store
   @Environment(WindowState.self) private var window
+  @Environment(ChatControl.self) private var control
+  @State private var hovered = false
+  @State private var barHovered = false
+  @State private var bubbleWidth: CGFloat = 0
+
+  /** The thread's chip joins the bubble unless the message has reactions (`JEn`). */
+  private var chinJoined: Bool { threadCount != nil && bubble.reactions.isEmpty }
 
   private var startsGroup: Bool { run.startsGroup }
 
@@ -415,21 +469,44 @@ private struct BubbleRow: View {
     let limit = max(0, min(column * 0.88, 640, column - 82))
     let words = bubble.text.trimmingCharacters(in: .whitespacesAndNewlines)
     return VStack(alignment: bubble.fromPerson ? .trailing : .leading, spacing: 0) {
-      if let quote = bubble.quote {
-        ReplyQuote(text: quote, look: look)
+      // In a thread, a reply to its first message carries no quote (`x`).
+      if let quote = bubble.quote, let target = bubble.replyTo, target != threadRoot {
+        let shown = visibleIds.contains(target)
+        ReplyQuote(text: quote, look: look, label: shown ? "Jump to replied message" : "Open reply thread") {
+          if shown {
+            control.jump(to: target)
+          } else if let root = store.threadRoot(of: target, in: agentId) {
+            store.openThread(root, in: agentId)
+            Task { @MainActor in control.jump(to: target) }
+          }
+        }
       }
       VStack(alignment: .trailing, spacing: -6) {
         if let link = bubble.loneLink {
           // A message that is one link is drawn as its card (`xEn`).
           LinkCardView(url: link, look: look)
             .frame(maxWidth: max(0, min(column * 0.76, 420, column - 82)))
+            .overlay(alignment: bubble.fromPerson ? .leading : .trailing) { bar }
+            .onHover(perform: hover)
         } else if !words.isEmpty || bubble.images.isEmpty {
-          shaped
+          VStack(alignment: .leading, spacing: 0) {
+            shaped
+              .onGeometryChange(for: CGFloat.self) { proxy in proxy.size.width } action: { value in bubbleWidth = value }
+            if chinJoined, let threadCount {
+              ThreadChin(rootId: bubble.id, count: threadCount, attached: true, look: look) { openThread() }
+                .frame(width: max(bubbleWidth, 0))
+            }
+          }
+          .overlay(alignment: bubble.fromPerson ? .leading : .trailing) { bar }
+          .onHover(perform: hover)
         }
         if !bubble.reactions.isEmpty {
           ReactionPills(bubble: bubble, agentId: agentId, look: look)
             .padding(.trailing, 10)
         }
+      }
+      if !chinJoined, let threadCount {
+        ThreadChin(rootId: bubble.id, count: threadCount, attached: false, look: look) { openThread() }
       }
       if !bubble.images.isEmpty {
         PictureStrip(images: bubble.images, agentId: agentId, limit: max(0, min(column * 0.86, 560, column - 82)), look: look)
@@ -444,6 +521,36 @@ private struct BubbleRow: View {
       }
     }
     .frame(maxWidth: limit, alignment: bubble.fromPerson ? .trailing : .leading)
+  }
+
+  /**
+   * The hover bar, 6 beside the bubble and level with its middle, while the
+   * pointer is on the message or the bar, or the message's menu is open.
+   */
+  @ViewBuilder
+  private var bar: some View {
+    if hovered || barHovered || control.menuFor == bubble.id {
+      HoverBar(bubble: bubble, agentId: agentId, inThread: threadRoot != nil, look: look)
+        .fixedSize()
+        // The 6 between is part of the bar, so the pointer can cross to it.
+        .padding(bubble.fromPerson ? .trailing : .leading, 6)
+        .contentShape(Rectangle())
+        .onHover { barHovered = $0 }
+        .alignmentGuide(bubble.fromPerson ? .leading : .trailing) { bubble.fromPerson ? $0[.trailing] : $0[.leading] }
+    }
+  }
+
+  private func hover(_ inside: Bool) {
+    hovered = inside
+    if inside {
+      control.hovered = bubble
+    } else if control.hovered?.id == bubble.id {
+      control.hovered = nil
+    }
+  }
+
+  private func openThread() {
+    store.openThread(bubble.id, in: agentId)
   }
 
   /** "Oct 9, 3:12 PM". */
@@ -472,11 +579,11 @@ private struct BubbleRow: View {
         .padding(.vertical, look.dark ? 8 : 10)
         .padding(.horizontal, look.dark ? 12 : 15)
         .frame(minWidth: isShort(trimmed) ? 36 : nil)
-        .background(look.yours, in: UnevenRoundedRectangle(topLeadingRadius: 18, bottomLeadingRadius: 18, bottomTrailingRadius: run.continuesNext ? 6 : 18, topTrailingRadius: run.continuesPrevious ? 6 : 18))
+        .background(look.yours, in: UnevenRoundedRectangle(topLeadingRadius: 18, bottomLeadingRadius: chinJoined ? 0 : 18, bottomTrailingRadius: chinJoined ? 0 : run.continuesNext ? 6 : 18, topTrailingRadius: run.continuesPrevious ? 6 : 18))
     } else {
       // A run's bubbles meet at 6-point corners (`assistantContinuedPrev`, `…Next`); so does the last one with the working line under it, and in a group the one beside its author's butterfly.
       let joinsBelow = run.continuesNext || (seamsBelow && bubble.reactions.isEmpty) || (isGroup && bubble.showsAvatar)
-      let shape = UnevenRoundedRectangle(topLeadingRadius: run.continuesPrevious ? 6 : 18, bottomLeadingRadius: joinsBelow ? 6 : 18, bottomTrailingRadius: 18, topTrailingRadius: 18)
+      let shape = UnevenRoundedRectangle(topLeadingRadius: run.continuesPrevious ? 6 : 18, bottomLeadingRadius: chinJoined ? 0 : joinsBelow ? 6 : 18, bottomTrailingRadius: chinJoined ? 0 : 18, topTrailingRadius: 18)
       VStack(alignment: .leading, spacing: 0) {
         if let call = CallRecordView.parse(bubble.text) {
           CallRecordView(duration: call.duration, recap: call.recap, look: look)
@@ -505,6 +612,21 @@ private struct BubbleRow: View {
   /** One or two characters (`Tpt`, counted as the window counts them): the bubble at least 36 wide, its words centred (`singleGlyphCircle`). */
   private func isShort(_ trimmed: String) -> Bool {
     bubble.channel == nil && !trimmed.isEmpty && trimmed.utf16.count <= 2
+  }
+}
+
+/** "N replies" under a card (the window's `card` attachment): the chip on its own, opening the thread. */
+private struct ThreadOpener: View {
+  let rootId: String
+  let count: Int
+  let agentId: String
+  let look: Look
+  @Environment(AppStore.self) private var store
+
+  var body: some View {
+    ThreadChin(rootId: rootId, count: count, attached: false, look: look) {
+      store.openThread(rootId, in: agentId)
+    }
   }
 }
 

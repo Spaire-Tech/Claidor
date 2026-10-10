@@ -946,9 +946,12 @@ struct LinkCardView: View {
 struct ReplyQuote: View {
   let text: String
   let look: Look
+  /** "Jump to replied message", or "Open reply thread" when the line is a reply in a thread. */
+  var label = "Jump to replied message"
+  var action: () -> Void = {}
 
   var body: some View {
-    Button {} label: {
+    Button(action: action) {
       HStack(spacing: 4) {
         Image(systemName: "arrowshape.turn.up.left")
           .font(.system(size: 10))
@@ -963,7 +966,8 @@ struct ReplyQuote: View {
       .contentShape(Rectangle())
     }
     .buttonStyle(.plain)
-    .accessibilityLabel("Jump to replied message")
+    .help(label)
+    .accessibilityLabel(label)
   }
 }
 

@@ -111,6 +111,8 @@ struct Look {
   var tableHead: Color { dark ? Color(hex: 0x161616) : Color(hex: 0xeeeeee) }
   /** A chosen cell (`--simeon-bg-selected`). */
   var selectedCell: Color { Color(red: 127 / 255, green: 127 / 255, blue: 127 / 255).opacity(0.18) }
+  /** The window's warning yellow (`--simeon-warn`): find's matches and a message jumped to. */
+  let warn = Color(hex: 0xf1b467)
   /** A diagram's card in its full-screen view. */
   var diagramCanvas: Color { dark ? Color(hex: 0x181818) : Color(hex: 0xfcfcfc) }
   /** A JSON file's keys, strings, numbers and true, false and null. */
