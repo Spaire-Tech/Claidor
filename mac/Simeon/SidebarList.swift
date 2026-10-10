@@ -259,8 +259,8 @@ private struct PinGridLayout: Layout {
       let size = view.sizeThatFits(.unspecified)
       return CGSize(width: max(Self.column, size.width), height: size.height)
     }
-    let columns = width.isFinite ? ((width + Self.columnGap) / (Self.column + Self.columnGap)).rounded(.down) : 1
-    let fit = max(1, Int(min(columns, 1000)))
+    let fitting = width.isFinite ? ((width + Self.columnGap) / (Self.column + Self.columnGap)).rounded(.down) : 1
+    let fit = max(1, Int(min(fitting, 1000)))
     let count = max(1, min(fit, sizes.count))
     var columns = Array(repeating: CGFloat(0), count: count)
     var rows: [CGFloat] = []
