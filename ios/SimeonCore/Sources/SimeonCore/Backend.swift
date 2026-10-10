@@ -155,6 +155,15 @@ public protocol AgentBackend: AnyObject, Sendable {
   func migrationStatus() async -> MigrationEvent?
   /** One method of the account's Connect service on Simeon Labs' server (`simeon.v1.DashboardService`): Settings' Cancel Trial (`CancelSandTrial`). */
   func dashboard(_ method: String, _ message: JSON) async throws -> JSON
+  /** What was said in a recording (dictation, `transcribeAudio`). */
+  func transcribe(audio: Data, mimeType: String) async throws -> String
+}
+
+extension AgentBackend {
+  /** No dictation where nothing transcribes (the window's "Voice transcription source is unavailable."). */
+  public func transcribe(audio: Data, mimeType: String) async throws -> String {
+    throw SimeonAPIError(message: "Voice transcription source is unavailable.", status: 0)
+  }
 }
 
 extension AgentBackend {
@@ -266,6 +275,11 @@ public final class LiveBackend: AgentBackend, @unchecked Sendable {
   public func server(_ path: String, method: String?, body: JSON?) async throws -> JSON {
     guard let api else { throw SimeonAPIError(message: "Sign in to Simeon first.", status: 401) }
     return try await api.data(path, method: method, json: body)
+  }
+
+  public func transcribe(audio: Data, mimeType: String) async throws -> String {
+    guard let api else { throw SimeonAPIError(message: "Sign in to Simeon first.", status: 401) }
+    return try await api.transcribe(audio: audio, mimeType: mimeType)
   }
 
   public func screen(_ agentId: String) async throws -> ScreenState {

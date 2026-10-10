@@ -217,7 +217,7 @@ Written 10 October 2026, **not built yet** (as step 1). Compare with B01
 | The routines' chips (open the routine) | 7 |
 | "1 reply" under a message | 2d (done) |
 | Attach file | 2e (done) |
-| The microphone | 2e |
+| The microphone | 2e (done) |
 
 #### Not in 2a yet
 
@@ -535,9 +535,22 @@ from its code. Pushed so far:
   over the words, sideways when they don't fit, and the field says "Add a
   message, or hit send." The message can go with files alone; they are put
   on the agent's computer first, as the window does.
+- **Dictation**: the microphone (blue while the field is empty, grey
+  beside Send with words) asks for the Mac's microphone the first time
+  (in the Electron app's words, "Simeon uses the microphone to take your
+  dictation and for voice calls with your agents."), then records; the
+  recording chip takes Send's place (Stop, the time "0:07", five sound
+  bars) and the field says "Listening…". Stop sends the recording to
+  Simeon's transcription (`audio/transcriptions`, as the Electron app
+  sends it, no language so it is found from the speech) and the field says
+  "Transcribing…" under a spinner; what was said goes in at the caret,
+  with a space before it when the word before runs on. Under half a second
+  is dropped, five minutes stops it, Escape cancels it. A refusal, no
+  microphone, no network or any other failure says the window's line in
+  red over the words until the microphone is tried again.
 - **The lines over the words**, in the window's order: a send refused
   ("This message is already sending and can't be canceled.", red, six
-  seconds), then the files' line (at 40%). A message canceled while it
+  seconds), dictation's (red), then the files' line (at 40%). A message canceled while it
   waited comes back into its field, words, picks, files and the message it
   answered, when the field is empty (2a dropped it).
 
@@ -554,9 +567,12 @@ from its code. Pushed so far:
 
 #### Not in 2e yet
 
-- Still to come in 2e: dictation (the recording chip with its timer and
-  sound bars, "Transcribing…", the server's `audio/transcriptions`), and
-  More emoji (the full picker from a message's reactions).
+- Still to come in 2e: More emoji (the full picker from a message's
+  reactions).
+- The sound bars follow the microphone's loudness over the last moments;
+  the window's are its frequencies (a spectrum).
+- The Mac records AAC (`audio/mp4`); the Electron app records Opus
+  (`audio/webm`). The server takes both.
 - Dragged over the words themselves, files are taken but the chat's blue
   wash does not show (the words take the drag first).
 - "/" offers Channels and Org Chart as the reference does; the window

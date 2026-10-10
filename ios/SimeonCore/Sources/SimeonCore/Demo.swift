@@ -468,6 +468,9 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
 
   public func screen(_ agentId: String) async throws -> ScreenState { ScreenState(socket: nil, state: "demo") }
 
+  /** The demo hears the same words every time. */
+  public func transcribe(audio: Data, mimeType: String) async throws -> String { "Move the review to Friday." }
+
   public func server(_ path: String, method: String?, body: JSON?) async throws -> JSON {
     switch path {
     case "user/quota":

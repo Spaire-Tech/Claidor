@@ -139,6 +139,44 @@ public actor SimeonAPI {
     guard answer.ok else { throw SimeonAPIError(message: "Simeon Labs' server answered push-devices with \(answer.status).", status: answer.status) }
   }
 
+  /**
+   * Dictation (`audio_transcriptions` in server/simeon/desktop/capabilities.py,
+   * as the Mac's `simeon-transcribe.ts` sends it): the recording as OpenAI's
+   * multipart `file` ("audio.mp4" for `audio/mp4`), no language (OpenAI
+   * finds it), at `/desktop/api/proxy/v1/audio/transcriptions`; what was
+   * said comes back as `{text, seconds}`.
+   */
+  public func transcribe(audio: Data, mimeType: String) async throws -> String {
+    let mime = mimeType.split(separator: ";").first.map { String($0).trimmingCharacters(in: .whitespaces) } ?? "audio/webm"
+    let boundary = "simeon-\(UUID().uuidString.lowercased())"
+    var request = URLRequest(url: url(Self.desktopPrefix + "proxy/v1/audio/transcriptions"))
+    request.httpMethod = "POST"
+    request.httpBody = Self.multipartFile(audio, filename: Self.audioFilename(mime), mimeType: mime, boundary: boundary)
+    try await authorized(&request)
+    request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "content-type")
+    let answer = try await http.send(request)
+    if answer.status == 401 { sessionEnded() }
+    guard answer.ok else {
+      throw SimeonAPIError(message: answer.json?["error"]?["message"]?.text ?? "Simeon Labs' server answered dictation with \(answer.status).", status: answer.status)
+    }
+    return answer.json?["text"]?.text ?? ""
+  }
+
+  /** "audio.webm", "audio.mp4": the type's second part (`audioFilename`). */
+  static func audioFilename(_ mimeType: String) -> String {
+    let subtype = mimeType.split(separator: "/").dropFirst().first.map(String.init) ?? "webm"
+    return "audio.\(subtype.split(separator: "+").first.map(String.init) ?? "webm")"
+  }
+
+  /** One file as `multipart/form-data`, the field named `file`. */
+  static func multipartFile(_ data: Data, filename: String, mimeType: String, boundary: String) -> Data {
+    var body = Data()
+    body.append(Data("--\(boundary)\r\nContent-Disposition: form-data; name=\"file\"; filename=\"\(filename)\"\r\nContent-Type: \(mimeType)\r\n\r\n".utf8))
+    body.append(data)
+    body.append(Data("\r\n--\(boundary)--\r\n".utf8))
+    return body
+  }
+
   /** One unary call on the box broker, Connect JSON (`server/simeon/sand/connect.py`). */
   public func connect(_ method: String, _ message: JSON = [:], service: String = connectService) async throws -> JSON {
     var request = URLRequest.post(url("/\(service)/\(method)"), json: message, headers: ["connect-protocol-version": "1"])

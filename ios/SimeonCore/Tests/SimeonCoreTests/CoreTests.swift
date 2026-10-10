@@ -125,6 +125,26 @@ final class TokenTests: XCTestCase {
     XCTAssertEqual(Account(profile: profile)?.initials, "BF")
   }
 
+  func testDictationSendsTheRecordingAsTheMacDoes() async throws {
+    let vault = MemoryVault(SessionTokens(accessToken: "t", refreshToken: "r", expiresAtMs: 9e15))
+    let http = ScriptedHTTP([
+      { request in
+        XCTAssertEqual(request.url?.path, "/desktop/api/proxy/v1/audio/transcriptions")
+        XCTAssertEqual(request.httpMethod, "POST")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "authorization"), "Bearer t")
+        XCTAssertTrue(request.value(forHTTPHeaderField: "content-type")?.hasPrefix("multipart/form-data; boundary=") == true)
+        let body = String(decoding: request.httpBody ?? Data(), as: UTF8.self)
+        XCTAssertTrue(body.contains("Content-Disposition: form-data; name=\"file\"; filename=\"audio.mp4\"\r\nContent-Type: audio/mp4\r\n\r\nRIFF"))
+        XCTAssertFalse(body.contains("language"), "no language: OpenAI finds it")
+        return HTTPAnswer(status: 200, body: json(#"{"text":"Move the review to Friday.","seconds":2.4}"#))
+      },
+    ])
+    let api = SimeonAPI(base: URL(string: "https://api.example.com")!, clientVersion: "1", vault: vault, http: http)
+    let said = try await api.transcribe(audio: Data("RIFF".utf8), mimeType: "audio/mp4;codecs=mp4a.40.2")
+    XCTAssertEqual(said, "Move the review to Friday.")
+    XCTAssertEqual(SimeonAPI.audioFilename("audio/webm"), "audio.webm")
+  }
+
   func testASpentPairEndsTheSession() async {
     let vault = MemoryVault(SessionTokens(accessToken: "old", refreshToken: "spent", expiresAtMs: 0))
     let http = ScriptedHTTP([{ _ in HTTPAnswer(status: 200, body: json(#"{"shouldLogout":true}"#)) }])

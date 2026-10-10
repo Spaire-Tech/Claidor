@@ -36,6 +36,8 @@ struct Composer: View {
   /** The lists over the field (step 2e). */
   @State private var picks = ComposerPicks()
   @State private var handle = FieldHandle()
+  /** Voice input (step 2e). */
+  @State private var dictation = Dictation()
 
   /** Each chat's picks while its words wait (the window keeps them in the draft's document). */
   private static var keptChips: [String: (draft: String, chips: [ComposerChip])] = [:]
@@ -75,7 +77,7 @@ struct Composer: View {
         if !files.isEmpty {
           AttachmentStrip(files: files, look: look) { control.unstage($0) }
         }
-        field(placeholder: reply?.placeholder ?? (files.isEmpty ? "Message \(name)" : "Add a message, or hit send."))
+        field(placeholder: placeholder(reply: reply, hasFiles: !files.isEmpty))
           .frame(height: shown)
       }
       .padding(.top, expanded ? 9 : 11)
@@ -85,11 +87,24 @@ struct Composer: View {
       HStack(spacing: 8) {
         AttachButton(look: look, full: files.count >= AttachmentLimits.maxStaged) { control.chooseFiles() }
         Spacer(minLength: 0)
-        if payload {
-          MicButton(prominent: false, look: look)
-          SendButton(look: look, action: send)
-        } else {
-          MicButton(prominent: true, look: look)
+        switch dictation.phase {
+        case .asking, .recording:
+          // The recording chip in Send's place (`sand-prompt-voice-chip`).
+          RecordingChip(seconds: dictation.seconds, levels: dictation.levels, look: look) {
+            Task { await dictation.stop(store: store) }
+          }
+        case .transcribing:
+          ProgressView()
+            .controlSize(.small)
+            .frame(width: 28, height: 28)
+            .accessibilityLabel("Transcribing voice input…")
+        case .idle:
+          if payload {
+            MicButton(prominent: false, look: look) { dictation.start(store: store) }
+            SendButton(look: look, action: send)
+          } else {
+            MicButton(prominent: true, look: look) { dictation.start(store: store) }
+          }
         }
       }
       .frame(height: 30)
@@ -131,6 +146,17 @@ struct Composer: View {
     }
     // A message canceled before it went comes back here when this field is empty (the window's cancel).
     .onChange(of: store.canceledDraft?.id, initial: true) { _, _ in takeBackCanceled() }
+    .onAppear { dictation.onWords = { [handle] words in handle.insertDictation(words) } }
+    .onDisappear { dictation.cancel() }
+  }
+
+  /** The field's words while empty (`ve`): listening, transcribing, a reply's, files', or the chat's. */
+  private func placeholder(reply: ChatControl.Reply?, hasFiles: Bool) -> String {
+    switch dictation.phase {
+    case .asking, .recording: return "Listening…"
+    case .transcribing: return "Transcribing…"
+    case .idle: return reply?.placeholder ?? (hasFiles ? "Add a message, or hit send." : "Message \(name)")
+    }
   }
 
   /** A line over the words (`sand-prompt-error-notice`, `…-attachment-notice`): 11 on 14, padded 0 2. */
@@ -144,6 +170,7 @@ struct Composer: View {
   private var noticeLines: [NoticeLine] {
     var out: [NoticeLine] = []
     if let notice = store.composerNotice, notice.agentId == agentId { out.append(NoticeLine(text: notice.text, isError: true)) }
+    if let error = dictation.error { out.append(NoticeLine(text: error, isError: true)) }
     if let line = control.attachNotice { out.append(NoticeLine(text: line, isError: false)) }
     return out
   }
@@ -174,6 +201,11 @@ struct Composer: View {
 
   private func field(placeholder: String) -> some View {
     MessageField(text: $text, chips: $chips, height: $fieldHeight, ink: NSColor(look.ink), look: look, focusKey: "\(agentId)#\(threadRoot ?? "")#\(control.focusCount)", handle: handle, onSend: send, onEscape: {
+      // Escape while listening drops the recording (the chip's own Escape); else it lets go of a reply.
+      if dictation.phase != .idle {
+        dictation.cancel()
+        return true
+      }
       guard control.reply != nil else { return false }
       control.reply = nil
       return true
@@ -360,14 +392,15 @@ private struct SendButton: View {
 /**
  * Start voice input (`sand-prompt-mic`): while the field is empty, 28 in the
  * window's blue with a white microphone; with words, a grey one (at 60%)
- * beside Send. Dictation itself is step 2e.
+ * beside Send.
  */
 private struct MicButton: View {
   let prominent: Bool
   let look: Look
+  let action: () -> Void
 
   var body: some View {
-    Button {} label: {
+    Button(action: action) {
       Image(systemName: "mic")
         .font(.system(size: 13, weight: .medium))
         .foregroundStyle(prominent ? Color.white : look.inkSecondary)

@@ -1674,6 +1674,12 @@ public final class AppStore {
   @discardableResult
   public func setHostSettings(_ update: JSON) async -> JSON? { await command("setHostSettings", update, failure: "Couldn't save the setting") }
 
+  /** What was said in a recording (the field's dictation): its words, trimmed; empty when nothing was heard. */
+  public func transcribe(_ audio: Data, mimeType: String) async throws -> String {
+    guard let backend else { throw SimeonAPIError(message: "Voice transcription source is unavailable.", status: 0) }
+    return try await backend.transcribe(audio: audio, mimeType: mimeType).trimmingCharacters(in: .whitespacesAndNewlines)
+  }
+
   /** This period's usage (`/desktop/api/user/quota`). */
   public func quota() async -> JSON? { try? await backend?.server("user/quota", method: nil, body: nil) }
 

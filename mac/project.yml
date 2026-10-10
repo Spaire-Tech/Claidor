@@ -57,6 +57,8 @@ targets:
           - CFBundleURLName: com.simeonlabs.simeon.mac
             CFBundleURLSchemes: [simeon-mac]
         LSApplicationCategoryType: public.app-category.productivity
+        # Dictation (step 2e) and calls ask for the microphone in the Electron app's words (`own-shell.mjs`).
+        NSMicrophoneUsageDescription: Simeon uses the microphone to take your dictation and for voice calls with your agents.
         NSHumanReadableCopyright: Copyright © 2026 SimeonLabs, Inc.
         # Loopback and the local network over http, for a build pointed at
         # the stand-in server on this Mac (`SIMEON_API`).
