@@ -32,6 +32,8 @@ public enum BackendEvent: Sendable {
   case subagents(parentId: String, [JSON])
   /** A step of the server's replacement of the computer (`box-migration`, from the server's stream). */
   case migration(MigrationEvent)
+  /** The computer's notices changed (`tray`: a snapshot, one pushed or dismissed, all cleared). */
+  case tray(JSON)
 
   /** Its kind, and the chat it concerns, for the hang watch. */
   public var name: String {
@@ -49,6 +51,7 @@ public enum BackendEvent: Sendable {
     case .computerAction: return "a step on the computer"
     case .subagents(let parentId, _): return "the subagents of \(parentId)"
     case .migration(let event): return "the computer's rebuild (\(event.phase.rawValue))"
+    case .tray: return "a notice"
     }
   }
 }
@@ -416,6 +419,8 @@ public final class LiveBackend: AgentBackend, @unchecked Sendable {
     case "subagents":
       guard let parentId = payload["parentAgentId"]?.text else { return [] }
       return [.subagents(parentId: parentId, payload["subagents"]?.array ?? [])]
+    case "tray":
+      return payload.object == nil ? [] : [.tray(payload)]
     case "outline":
       guard let agentId = payload["agentId"]?.text else { return [] }
       let items = payload["item"].map { [$0] } ?? payload["items"]?.array ?? []

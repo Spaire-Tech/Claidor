@@ -247,7 +247,9 @@ final class GatewayTests: XCTestCase {
     guard case .step(let agentId, _, let summary, let running)? = step.first else { return XCTFail() }
     XCTAssertEqual([agentId, summary], ["simeon", "Checking Linear"])
     XCTAssertTrue(running)
-    XCTAssertTrue(LiveBackend.map(GatewayEvent(channel: "tray", payload: [:])).isEmpty)
+    XCTAssertTrue(LiveBackend.map(GatewayEvent(channel: "teach-recording", payload: [:])).isEmpty)
+    guard case .tray(let tray)? = LiveBackend.map(GatewayEvent(channel: "tray", payload: ["type": "cleared"])).first else { return XCTFail() }
+    XCTAssertEqual(tray["type"]?.string, "cleared")
   }
 }
 

@@ -150,6 +150,8 @@ public final class AppStore {
   public private(set) var localAsks: [String: LocalAsk] = [:]
   /** Auto-review approvals answered here, by entry, until the box's own copy says so (the window's `QWn`). */
   public private(set) var answeredApprovals: [String: String] = [:]
+  /** The computer's notices ("Agent failed to respond"…), an open agent's drawn over its composer (`hVn`). */
+  public private(set) var trayList = TrayList()
   /** An answer the person gave that the host has not echoed yet: the card shows it at once (the window's optimistic answer). */
   public private(set) var pendingAnswers: [String: String] = [:]
   /** Where the "New" line goes in each chat: after this time (ms), set when a chat with unread messages opens. */
@@ -312,6 +314,7 @@ public final class AppStore {
     connectRebuild(backend)
     // Whether this account may use Simeon, beside the agents (`sandAccess.connect`).
     Task { await refreshAccess() }
+    Task { await loadTrays() }
     await reloadRoster()
     await loadPins()
     await loadSections()
@@ -325,7 +328,7 @@ public final class AppStore {
     backend = nil
     agents = []; transcripts = [:]; chatRows = [:]; steps = [:]; call = nil; callLevels = []; isLive = false; account = nil; usage = .empty; usageReadAt = nil; access = .checking; accessBlocked = false; hasReachedBox = false; openChat = nil
     layoutTask?.cancel(); layoutTask = nil; pendingLayout = []; refreshing = []; caughtUp = [:]
-    pendingAnswers = [:]; answeredApprovals = [:]; localAsks = [:]; unreadAfter = [:]; apps = []; catalog = []; pinnedIds = []; routinesByAgent = [:]; sidebarSections = nil
+    pendingAnswers = [:]; answeredApprovals = [:]; localAsks = [:]; trayList = TrayList(); unreadAfter = [:]; apps = []; catalog = []; pinnedIds = []; routinesByAgent = [:]; sidebarSections = nil
     streamingOnly = [:]; outbox = [:]; arrived = []; olderBefore = [:]; loadingOlder = []; paged = []; firstRunAgentId = nil; revealing = [:]
     openThreads = [:]; threadRows = [:]; threadRoots = [:]; loadFailed = []; isDown = false
     computer = ComputerBook(); subagentsByAgent = [:]; pointers = [:]; lastComputerCatchUp = .distantPast
@@ -416,6 +419,7 @@ public final class AppStore {
       if isDown == live { setDown(!live) }
       if recovered, let backend {
         computerReconnected()
+        Task { await loadTrays() }
         Task { rebuild.migrationReadBack(await backend.migrationStatus()) }
         Task {
           await reloadRoster()
@@ -434,7 +438,30 @@ public final class AppStore {
       applyComputer(event)
     case .migration(let step):
       rebuild.migrationEvent(step)
+    case .tray(let payload):
+      trayList.take(payload)
     }
+  }
+
+  // MARK: The computer's notices (trays)
+
+  /** `getTrays`, with what comes meanwhile applied over its answer. */
+  public func loadTrays() async {
+    guard let backend else { return }
+    let seq = trayList.beginRead()
+    let answer = try? await backend.command("getTrays", [:])
+    guard backend === self.backend else { return }
+    trayList.finishRead(seq, answer: answer)
+  }
+
+  /** The tray's X (`dismissTray`): it goes when the computer says so. No failure is shown, as in the window. */
+  public func dismissTray(_ id: String) async {
+    _ = try? await backend?.command("dismissTray", ["id": .string(id)])
+  }
+
+  /** "Clear all" (`clearTrays`): every notice on the computer, not only this agent's, as the window does. */
+  public func clearTrays() async {
+    _ = try? await backend?.command("clearTrays", [:])
   }
 
   public func agent(_ id: String?) -> Agent? { agents.first { $0.id == id } }

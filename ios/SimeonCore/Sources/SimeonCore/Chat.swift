@@ -279,16 +279,18 @@ public struct Bubble: Hashable, Sendable {
    * address or exactly `[words](address)` (`Chat.loneLink`).
    */
   public let loneLink: URL?
+  /** It came from a messaging channel, or the agent sent it to one: the tag under its words. */
+  public let channel: ChannelTag?
 
-  public init(id: String, text: String, fromPerson: Bool, author: Party?, showsName: Bool, showsAvatar: Bool, reactions: [String], isStreaming: Bool, replyTo: String? = nil, quote: String? = nil, timestampMs: Double? = nil, images: [ChatImage] = [], sentOfflineAtMs: Double? = nil, loneLink: URL? = nil, myReactions: [String] = []) {
+  public init(id: String, text: String, fromPerson: Bool, author: Party?, showsName: Bool, showsAvatar: Bool, reactions: [String], isStreaming: Bool, replyTo: String? = nil, quote: String? = nil, timestampMs: Double? = nil, images: [ChatImage] = [], sentOfflineAtMs: Double? = nil, loneLink: URL? = nil, myReactions: [String] = [], channel: ChannelTag? = nil) {
     self.id = id; self.text = text; self.fromPerson = fromPerson; self.author = author
     self.showsName = showsName; self.showsAvatar = showsAvatar; self.reactions = reactions; self.isStreaming = isStreaming
     self.replyTo = replyTo; self.quote = quote; self.timestampMs = timestampMs; self.images = images; self.sentOfflineAtMs = sentOfflineAtMs
-    self.loneLink = loneLink; self.myReactions = myReactions
+    self.loneLink = loneLink; self.myReactions = myReactions; self.channel = channel
   }
 
   func with(showsName: Bool? = nil, showsAvatar: Bool? = nil, author: Party?? = nil, quote: String?? = nil) -> Bubble {
-    Bubble(id: id, text: text, fromPerson: fromPerson, author: author ?? self.author, showsName: showsName ?? self.showsName, showsAvatar: showsAvatar ?? self.showsAvatar, reactions: reactions, isStreaming: isStreaming, replyTo: replyTo, quote: quote ?? self.quote, timestampMs: timestampMs, images: images, sentOfflineAtMs: sentOfflineAtMs, loneLink: loneLink, myReactions: myReactions)
+    Bubble(id: id, text: text, fromPerson: fromPerson, author: author ?? self.author, showsName: showsName ?? self.showsName, showsAvatar: showsAvatar ?? self.showsAvatar, reactions: reactions, isStreaming: isStreaming, replyTo: replyTo, quote: quote ?? self.quote, timestampMs: timestampMs, images: images, sentOfflineAtMs: sentOfflineAtMs, loneLink: loneLink, myReactions: myReactions, channel: channel)
   }
 
   /** Only emoji, three at most: drawn large with no bubble, as Messages does. */
@@ -297,6 +299,38 @@ public struct Bubble: Hashable, Sendable {
     let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !trimmed.isEmpty, trimmed.count <= 3 else { return false }
     return trimmed.allSatisfy { ch in ch.unicodeScalars.contains { $0.properties.isEmojiPresentation } || (ch.unicodeScalars.count > 1 && ch.unicodeScalars.first!.properties.isEmoji) }
+  }
+}
+
+/**
+ * A message that came in from a messaging channel or that the agent sent to
+ * one (the window's `eTe`): the arrow and the platform's name in a small
+ * pill, its whole sentence as the tooltip. The channel is
+ * "<platform>:<chat>" (`E0n`); the name is the window's own for Discord and
+ * Slack, else the platform as written.
+ */
+public struct ChannelTag: Hashable, Sendable {
+  public let platform: String
+  public let inbound: Bool
+  public let sender: String?
+
+  public init?(channel: String?, inbound: Bool, sender: String? = nil) {
+    guard let channel else { return nil }
+    let trimmed = channel.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard let colon = trimmed.firstIndex(of: ":"), colon > trimmed.startIndex else { return nil }
+    let platform = trimmed[..<colon].trimmingCharacters(in: .whitespacesAndNewlines)
+    let chat = trimmed[trimmed.index(after: colon)...].trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !platform.isEmpty, !chat.isEmpty else { return nil }
+    self.platform = ["discord": "Discord", "slack": "Slack"][platform] ?? platform
+    self.inbound = inbound
+    self.sender = sender
+  }
+
+  /** "From Ada on Discord", "From Discord", "Sent to Slack". */
+  public var title: String {
+    guard inbound else { return "Sent to \(platform)" }
+    if let sender, !sender.isEmpty { return "From \(sender) on \(platform)" }
+    return "From \(platform)"
   }
 }
 
@@ -874,7 +908,9 @@ public enum Chat {
       // The person's own message (not another person's, not one from a channel, not between agents) can be a link card.
       let ownMessage = entry.role == "user" && entry["fromUser"] == nil && entry["channel"] == nil && entry.teammate == nil
       let link = ownMessage ? loneLink(text, richText: entry["richText"]?.string) : nil
-      return .bubble(Bubble(id: entry.id, text: text, fromPerson: fromPerson, author: fromPerson ? nil : entry.author, showsName: false, showsAvatar: false, reactions: reactions, isStreaming: entry.isStreaming, replyTo: entry["replyTo"]?.text, timestampMs: entry.timestampMs, sentOfflineAtMs: fromPerson ? entry["sentWhileOfflineAtMs"]?.double : nil, loneLink: link, myReactions: mine))
+      // A message that came in from a channel (the host writes it as the person's, with `channel` and `channelSender`).
+      let channel = fromPerson ? ChannelTag(channel: entry["channel"]?.string, inbound: true, sender: entry["channelSender"]?.string) : nil
+      return .bubble(Bubble(id: entry.id, text: text, fromPerson: fromPerson, author: fromPerson ? nil : entry.author, showsName: false, showsAvatar: false, reactions: reactions, isStreaming: entry.isStreaming, replyTo: entry["replyTo"]?.text, timestampMs: entry.timestampMs, sentOfflineAtMs: fromPerson ? entry["sentWhileOfflineAtMs"]?.double : nil, loneLink: link, myReactions: mine, channel: channel))
     case "notice":
       guard let text = entry["text"]?.text ?? entry.content, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
       return .notice(id: entry.id, text: text)
@@ -895,7 +931,7 @@ public enum Chat {
         if images.isEmpty, let flights = FlightsCard.parse(text) { return .flights(id: entry.id, card: flights) }
         let streaming = entry["streaming"]?.bool ?? false
         let link = !streaming && images.isEmpty ? loneLink(text) : nil
-        return .bubble(Bubble(id: entry.id, text: text, fromPerson: false, author: entry.author, showsName: false, showsAvatar: false, reactions: reactions, isStreaming: streaming, replyTo: entry["replyTo"]?.text, timestampMs: entry.timestampMs, images: images, loneLink: link, myReactions: mine))
+        return .bubble(Bubble(id: entry.id, text: text, fromPerson: false, author: entry.author, showsName: false, showsAvatar: false, reactions: reactions, isStreaming: streaming, replyTo: entry["replyTo"]?.text, timestampMs: entry.timestampMs, images: images, loneLink: link, myReactions: mine, channel: ChannelTag(channel: message["channel"]?.string, inbound: false)))
       case "attachment":
         guard let url = message["url"]?.text else { return nil }
         return .file(id: entry.id, name: fileName(ofURL: url), url: url, fromPerson: false)
