@@ -20,6 +20,11 @@ final class WindowState {
   }
 
   var pendingReveal: Reveal?
+  /** Bumped when search closes, for the open chat's message field to take the keys back. */
+  static var composerFocus = 0 {
+    didSet { NotificationCenter.default.post(name: WindowState.composerFocusNote, object: nil) }
+  }
+  static let composerFocusNote = Notification.Name("simeon.window.composerFocus")
 
   /** Search's message or file: its chat opens (if it is not the open one) and goes to the line. */
   func reveal(_ entryId: String, in agentId: String, store: AppStore) {
@@ -202,7 +207,11 @@ private struct KeyWatcher: NSViewRepresentable {
           if !search.isOpen { search.open(store: store, window: windowState) }
           return true
         }
-        if search.isOpen { return search.key(event, store: store, window: windowState, sidebar: sidebar) }
+        if search.isOpen {
+          // Letters still being composed (Japanese, Chinese) are the field's: Return, the arrows and Escape act on them.
+          if let text = window?.firstResponder as? NSTextView, text.hasMarkedText() { return false }
+          return search.key(event, store: store, window: windowState, sidebar: sidebar)
+        }
       }
       switch event.keyCode {
       case 48 where mods.subtracting(.shift) == .control:

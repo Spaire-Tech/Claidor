@@ -833,7 +833,11 @@ tested against what the window lists for the same words. Pushed:
   General, Settings: Usage & Billing, Plugins, and Theme: System, Light and
   Dark, the one in use ticked.
 - **Keys**: ↑ and ↓ move the light (the list follows), the pointer moves
-  it too; Return opens the lit row; ⌘1 to ⌘9 open the first nine.
+  it too; Return opens the lit row; ⌘1 to ⌘9 open the first nine. Letters
+  still being composed (Japanese, Chinese) keep Return, the arrows and
+  Escape. Under search the chat's own keys (⌘F, Escape), its right-click
+  menu and its sideways swipe wait. Closed, the message field takes the
+  keys back.
 - **What a row does**: an agent opens; a message or a file opens its chat,
   reads back until that line is there, and brings it to the middle lit in
   yellow; a link opens in the browser; a routine opens its agent; a theme
@@ -867,8 +871,8 @@ opens its agent; in the window it also opens the agent's Routines (7).
 - The list's fading top and bottom edges while it scrolls.
 - Settings: Usage & Billing follows the account's usage page switch in
   the window; here it is always listed (the reference shows it).
-- A message found in a thread, or inside a folded exchange between
-  agents, opens its chat without going to the line.
+- A message inside a folded exchange between agents opens its chat at the
+  exchange's row; the window opens the exchange itself.
 
 #### Where the native parts look different
 

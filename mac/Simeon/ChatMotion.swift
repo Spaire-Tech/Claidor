@@ -313,7 +313,7 @@ struct PeekCatcher: NSViewRepresentable {
       let local = convert(event.locationInWindow, from: nil)
       guard let control, event.window === window, bounds.contains(local) else { return false }
       // Not under an exchange or a viewer over the chat.
-      guard viewers?.shown == nil, control.exchangePeer == nil else { return false }
+      guard viewers?.shown == nil, control.exchangePeer == nil, !SearchState.showing else { return false }
       // The message field over the chat's foot is not the transcript's (16 under it).
       let fromBottom = isFlipped ? bounds.height - local.y : local.y
       guard tracking || fromBottom > control.composerHeight + 16 else { return false }

@@ -81,7 +81,22 @@ struct ChatPane: View {
       _ = await store.loadUntil(reveal.entryId, in: agentId)
       guard window.pendingReveal == reveal else { return }
       window.pendingReveal = nil
+      // A thread open over the chat closes, unless the line is in it.
+      if store.openThreads[agentId] != nil {
+        if let inThread = Chat.rowId(for: reveal.entryId, in: store.threadRows[agentId] ?? []) {
+          control.jump(to: inThread)
+          return
+        }
+        // The jump waits for the chat to be back on screen (as a quote that opens a thread waits for it).
+        control.jumpAfterThread = Chat.rowId(for: reveal.entryId, in: store.rows(for: agentId)) ?? reveal.entryId
+        store.closeThread(in: agentId)
+        return
+      }
       control.jump(to: Chat.rowId(for: reveal.entryId, in: store.rows(for: agentId)) ?? reveal.entryId)
+    }
+    // Search closed: the message field takes the keys back.
+    .onReceive(NotificationCenter.default.publisher(for: WindowState.composerFocusNote)) { _ in
+      control.focusCount += 1
     }
     .onChange(of: threadRoot) { _, _ in
       // The bar belongs to the lines on screen (`transcriptPlaneKey`): on a thread, or back, it starts again, still open.
@@ -282,10 +297,13 @@ private struct Transcript: View {
       .background { PeekCatcher(control: control, viewers: viewers) }
       .onChange(of: control.jump) { _, jump in
         guard let jump else { return }
+        // Going to a row lets go of the newest, so rows laid out on the way do not pull the chat back down.
+        pinned = false
         withAnimation(.easeInOut(duration: 0.3)) { position.scrollTo(id: jump.id, anchor: .center) }
       }
       .onChange(of: control.reveal) { _, reveal in
         guard let reveal else { return }
+        pinned = false
         withAnimation(.easeInOut(duration: 0.3)) { position.scrollTo(id: reveal.id, anchor: .center) }
       }
       .onChange(of: threadRoot) { _, _ in
@@ -350,7 +368,9 @@ private struct Transcript: View {
         return []
       }
       if pinned && !seen.isEmpty {
-        for id in ids where !seen.contains(id) { since[id] = now }
+        // Only rows added after the last one seen come in; older lines read in front of them (search going back to a line) do not.
+        let lastKnown = ids.lastIndex(where: seen.contains) ?? -1
+        for id in ids[(lastKnown + 1)...] where !seen.contains(id) { since[id] = now }
       }
       seen.formUnion(ids)
       since = since.filter { now.timeIntervalSince($0.value) < 0.32 }

@@ -13,7 +13,11 @@ import SimeonCore
 @MainActor
 @Observable
 final class SearchState {
-  var isOpen = false
+  var isOpen = false {
+    didSet { SearchState.showing = isOpen }
+  }
+  /** Search is over the window: the chat's, the exchange's and the viewers' own keys, the right-click menu and sideways swipes wait under it. */
+  static var showing = false
   var query = ""
   var tab: SearchTab = .all
   var highlight = 0
@@ -75,6 +79,8 @@ final class SearchState {
 
   func close() {
     isOpen = false
+    // The keys go back to the message field, as the window's dialog gives the focus back.
+    WindowState.composerFocus += 1
     modifierHeld = false
     messages = HostAnswer(blankAsked: false)
     files = HostAnswer(blankAsked: true)
@@ -183,6 +189,8 @@ final class SearchState {
     let listing = listing(store: store, window: window)
     let count = listing.rows.count
     let lit = count == 0 ? 0 : min(max(highlight, 0), count - 1)
+    // ⌘F is the chat's find, not under search.
+    if mods == .command, event.charactersIgnoringModifiers?.lowercased() == "f" { return true }
     switch event.keyCode {
     case 53:
       close()
@@ -525,11 +533,13 @@ private struct ResultRow: View {
   private var title: some View {
     let words: String
     if case .link(let url) = row { words = LinkTitle.known[url] ?? Jump.address(url) } else { words = row.title }
-    let runs = Jump.marks(words, query: query)
-    return runs.reduce(Text("")) { text, run in
-      text + Text(run.text).fontWeight(run.isMatch ? .semibold : .regular)
+    var styled = AttributedString()
+    for run in Jump.marks(words, query: query) {
+      var part = AttributedString(run.text)
+      part.font = .system(size: 13, weight: run.isMatch ? .semibold : .regular)
+      styled += part
     }
-    .font(.system(size: 13))
+    return Text(styled)
     .tracking(-0.08)
     .foregroundStyle(look.ink)
     .lineLimit(1)

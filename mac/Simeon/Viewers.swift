@@ -99,7 +99,8 @@ struct ViewerKeys: NSViewRepresentable {
       guard window != nil else { return }
       monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
         let took = MainActor.assumeIsolated { () -> Bool in
-          guard let self, event.window === self.window, let handle = self.handle else { return false }
+          // Under search (⌘K), its keys are its own.
+          guard let self, event.window === self.window, let handle = self.handle, !SearchState.showing else { return false }
           return handle(event)
         }
         return took ? nil : event
