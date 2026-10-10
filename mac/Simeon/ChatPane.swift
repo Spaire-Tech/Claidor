@@ -139,13 +139,15 @@ struct ChatPane: View {
  * The chat's head (`header`, 116 high, padded 4 12 28 8): the ground at 78%
  * over a blur, fading out over its last 30 points; the agent's butterfly
  * (52) over its name in a pill (13, medium), the call button 8 to the
- * pill's right. The butterfly and the name open the agent's settings
- * (step 7), the call button calls it (step 11). The rest moves the window.
+ * pill's right. The butterfly and the name open and close the agent's
+ * pane (step 7), the call button calls it (step 11). The rest moves the window.
  */
 private struct ChatHeader: View {
   let agent: Agent
   let look: Look
   @Environment(AppStore.self) private var store
+  @Environment(PaneState.self) private var pane
+  @Environment(SidebarLayout.self) private var layout
 
   var body: some View {
     ZStack(alignment: .top) {
@@ -181,13 +183,13 @@ private struct ChatHeader: View {
    */
   private var identity: some View {
     VStack(spacing: 4) {
-      Button {} label: {
+      Button { pane.toggleSettings(layout: layout) } label: {
         AgentMark(agent: agent, agents: store.agents, size: 52)
           .contentShape(Rectangle())
       }
       .buttonStyle(.plain)
       .accessibilityLabel("View agent settings")
-      Button {} label: {
+      Button { pane.toggleSettings(layout: layout) } label: {
         Text(agent.name)
           .font(.system(size: 13, weight: .medium))
           .foregroundStyle(look.ink)

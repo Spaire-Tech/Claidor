@@ -573,6 +573,8 @@ struct ThreadHeader: View {
   let look: Look
   let back: () -> Void
   @Environment(AppStore.self) private var store
+  @Environment(PaneState.self) private var pane
+  @Environment(SidebarLayout.self) private var layout
 
   var body: some View {
     ZStack(alignment: .leading) {
@@ -589,7 +591,7 @@ struct ThreadHeader: View {
           .font(.system(size: 8, weight: .semibold))
           .foregroundStyle(look.inkTertiary)
           .frame(width: 12, height: 12)
-        Crumb(look: look, label: "View conversation details", action: {}) {
+        Crumb(look: look, label: "View conversation details", action: { pane.toggleDetails(layout: layout) }) {
           Text(title).lineLimit(1).truncationMode(.tail)
         }
       }

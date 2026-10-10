@@ -209,11 +209,11 @@ Written 10 October 2026, **not built yet** (as step 1). Compare with B01
 
 | Button | Its part or step |
 |---|---|
-| The butterfly and name in the head (View agent settings) | 7 |
+| The butterfly and name in the head (View agent settings) | 7 (done) |
 | The call button in the head | 11 |
 | A file's name (opens its preview) | 2c (done) |
 | The exchanges' chips | 2d (done) |
-| The routines' chips (open the routine) | 7 |
+| The routines' chips (open the routine) | 7c |
 | "1 reply" under a message | 2d (done) |
 | Attach file | 2e (done) |
 | The microphone | 2e (done) |
@@ -326,7 +326,7 @@ window's Gallery chat, one card at a time:
 - **Flights**: the route and trip, one row per offer (the airline's mark,
   the times, airline, time in the air and stops, the price), in Apple's
   greys as the window sets them. Opening an offer shows it in the agent
-  pane, which is step 7; until then the row does nothing.
+  pane, which is step 7's last part (7d); until then the row does nothing.
 
 - **"Your turn on the computer"**: the computer tile, "Waiting for you"
   with a pulsing blue dot, the agent's instruction, Take over, I'm done and
@@ -433,7 +433,7 @@ exchange, `b_n` and `u_n` for find):
 | Button | Its part or step |
 |---|---|
 | More emoji | 2e (done) |
-| The thread's title in its breadcrumb (View conversation details) | 7 |
+| The thread's title in its breadcrumb (View conversation details) | 7 (done) |
 
 - **Agents' exchanges**: an exchange line's chip opens the two agents'
   messages over the chat when it names one agent; naming several, it opens
@@ -565,7 +565,8 @@ from its code. Pushed so far:
 |---|---|
 | "/" Org Chart, Channels | 12 |
 | "/" Open Hidden Agents | 3 |
-| "/" Members, Chat Settings | 7 |
+| "/" Chat Settings | 7 (done) |
+| "/" Members | 7d |
 | "/" Settings: General, Settings: Usage & Billing | 8 |
 | "/" Plugins | 9 |
 | "/" Update Simeon's Computer (offered once the computer's update is known to the field) | 13 |
@@ -754,7 +755,7 @@ Pushed:
 
 | Button | Its step |
 |---|---|
-| Edit Profile, in a row's menu | 7 |
+| Edit Profile, in a row's menu | 7 (done) |
 | The initials, Connect apps | 10, 9 (as step 1; Search and New chat are steps 4 and 5, done) |
 
 #### Not in step 3 yet
@@ -852,12 +853,15 @@ tested against what the window lists for the same words. Pushed:
 | Action | Its step |
 |---|---|
 | Org Chart | 12 |
-| Members, Channels, Chat Settings | 7 |
+| Chat Settings | 7 (done) |
+| Members | 7d |
+| Channels | 12 |
 | Settings: General, Settings: Usage & Billing | 8 |
 | Plugins | 9 |
 
 Each closes search, as the window's do, and opens nothing yet. A routine
-opens its agent; in the window it also opens the agent's Routines (7).
+opens its agent; in the window it also opens the agent's pane on its
+Computer page (step 13).
 
 #### Not in step 4 yet
 
@@ -1048,3 +1052,81 @@ perspective, set to the window's 900 points for an 80-point Simeon.
 A04 to A08b, light and dark, each a few seconds after its Next (the scenes
 move); the moments between them (Meet's turn, the curves drawing, the
 cursor's presses); then A30 and the window opening on Simeon's chat (A09).
+
+## Step 7: the agent pane
+
+Written 10 October 2026, **not built yet** (as step 1), read from the
+window's details pane (`E3n`, `IDn`, `p3n`, `h3n`, and the renderer patch's
+AGENT_PANE parts) and measured in the reference window at 1040 × 760 and
+760 × 600, light and dark (I01–I07, B09). It comes in four parts, each
+pushed when written: **7a** the pane, its tabs and Profile; **7b** the
+avatar editor; **7c** Routines; **7d** a group's members and a flight's
+details in the pane.
+
+### 7a: the pane, its tabs, Profile
+
+- **Opening it**: the chat head's butterfly or name (again closes it, on any
+  page), ⌘⇧,; Edit Profile in a row's menu (that agent opening if it is not
+  the open one); Chat Settings from search or "/"; a thread's title in its
+  breadcrumb, ⌘⇧I and ⌥⌘B (these close it whenever it is open). It opens on
+  Profile. Closing: its ×, Escape (once nothing smaller takes Escape: a
+  field, a reply, a list, the new chat, a viewer, search), the head's button,
+  or dragging its edge narrower than 244 points and letting go.
+- **Where it sits**: on the window's right, 480 wide (280 to 480, its left
+  edge drags; the width and whether it is open are kept from one launch to
+  the next). It widens from the right over 0.24 s, its page sliding in with
+  it and fading in. Opening it folds an open sidebar to its rail (I01);
+  closing it opens the sidebar again, unless the sidebar was opened
+  meanwhile. It shows only while the chat keeps its 424 points beside the
+  sidebar; in a narrower window it stays open but is not drawn (B09), and
+  shows again when the window is wide enough. Opening it in a window too
+  narrow for it beside the rail grows the window by what is missing, and
+  closing it shrinks the window back if its width was not changed meanwhile.
+  ⌘B opening the sidebar beside it grows the window too. The new chat hides
+  it while it is open; making an agent from the new chat closes it.
+- **Another agent opened**: the pane stays open, drawn afresh on Profile.
+- **The pane** (I01): its ground `#fbfbfd` (`#1c1c1e` on dark), a half-point
+  line on its left (darker under the pointer), a 44-point top bar with ×
+  (28 × 28, round 6) that moves the window elsewhere. The page, padded 6 20
+  40: the avatar's button (a 96-point disc, the butterfly at 64, a group's
+  members in its middle, the 32-point pencil disc at its lower right), the
+  name (22, medium), the title when it has one (15, grey); the three tabs
+  (a 36-point pill track, Profile, Routines and Computer as icons, the
+  chosen one's white pill sliding under it, a short line between the other
+  two), then the page.
+- **Profile** (I01, I06, I07): Name ("Bob" when empty), Title ("Describe
+  what your agent does"; not for a group) and Description ("What this agent
+  is for"), grey labels over the words, a hairline under each that turns to
+  the text's colour while it has the keys. A field is saved when it lets go
+  of the keys: Return does that for Name and Title; in the description
+  Return is a new line, and it grows from 44 to 160 points then scrolls.
+  Escape puts the stored words back. An empty name is not saved. The Chief
+  of Staff's title and description are read only. For an agent,
+  Notifications: the bell's tile, "Notifications", "Get notified when this
+  agent finishes or needs input", and the switch (the window's blue when
+  on), which says whether the agent tells the person when it finishes or
+  needs them.
+
+#### Buttons that do nothing yet
+
+| Button | Comes with |
+|---|---|
+| The avatar's button and its pencil (Edit Avatar) | 7b |
+| The Routines tab's page (the tab switches; its page is empty) | 7c |
+| The Computer tab | 13 |
+| "/" and search's Members | 7d |
+
+#### Where the native parts look different
+
+The switch is the Mac's (small); the fields are the Mac's own text field
+and text view. The Chief of Staff's read-only title and description are
+selectable words rather than fields the keys can enter. The ×'s icon is an
+SF Symbol. The window's own group avatar in the pane is cut off (its member
+pictures forced to 96 points); here the members sit in the disc's middle,
+as the avatar draws them elsewhere.
+
+#### What to compare
+
+I01 (Profile), I06 (a group), I07 (dark), B09 (760 × 600: the pane not
+drawn); open and close it from the head, ⌘⇧, and Escape and watch the
+sidebar fold and open; drag its edge, and below 244 let go.

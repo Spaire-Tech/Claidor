@@ -20,6 +20,8 @@ struct RowMenu: View {
   @Environment(AppStore.self) private var store
   @Environment(WindowState.self) private var window
   @Environment(SidebarState.self) private var sidebar
+  @Environment(PaneState.self) private var pane
+  @Environment(SidebarLayout.self) private var layout
 
   var body: some View {
     let targets = sidebar.selection.targets(for: agent.id)
@@ -58,8 +60,10 @@ struct RowMenu: View {
       }
     }
     Section {
-      // The agent's pane comes with step 7 (mac/STEPS.md).
-      Button("Edit Profile", systemImage: "pencil") {}
+      // The agent's pane on its Profile (`openProfile`), that agent opening if it is not the open one.
+      Button("Edit Profile", systemImage: "pencil") {
+        pane.open(.profile, for: agent.id, window: window, store: store, layout: layout)
+      }
       if !agent.isGroup && !agent.isRemoteRoom {
         Button("Duplicate", systemImage: "plus.square.on.square") {
           SidebarActions.duplicate(agent.id, store: store, window: window)

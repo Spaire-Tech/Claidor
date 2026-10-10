@@ -96,14 +96,22 @@ struct MainWindow: View {
   @Environment(SidebarLayout.self) private var layout
   @Environment(WindowState.self) private var window
   @Environment(NewChatState.self) private var newChat
+  @Environment(PaneState.self) private var pane
   @Environment(\.colorScheme) private var scheme
 
   var body: some View {
     let look = Look(scheme)
     GeometryReader { box in
       let windowWidth = box.size.width
-      let rail = layout.showsRail(windowWidth: windowWidth)
+      // The agent's pane (step 7): drawn while open, the new chat closed, and the chat keeping its 424 beside the sidebar as it stands (`uan`).
+      let paneWidth = pane.dragWidth ?? pane.width
+      let standing = layout.isCollapsed ? SidebarLayout.railWidth : layout.expandedWidth
+      let paneShown = pane.isOpen && !newChat.isOpen && PaneState.fits(windowWidth: windowWidth, sidebarWidth: standing, paneWidth: paneWidth)
+      let shownWidth = paneShown ? paneWidth : 0
+      let rail = layout.showsRail(windowWidth: windowWidth - shownWidth)
       let sidebarWidth = rail ? SidebarLayout.railWidth : layout.expandedWidth
+      // Its page keeps its width as it slides, never wider than the window leaves it (`sand-1uxagwj`).
+      let pageWidth = max(0, min(paneWidth, windowWidth - sidebarWidth - SidebarLayout.chatMinimum))
       HStack(spacing: 0) {
         Sidebar(rail: rail, width: sidebarWidth)
         Group {
@@ -124,7 +132,9 @@ struct MainWindow: View {
           }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        AgentPaneColumn(agentId: window.selected, shownWidth: shownWidth, pageWidth: pageWidth, windowWidth: windowWidth, sidebarWidth: sidebarWidth)
       }
+      .onChange(of: paneShown, initial: true) { _, shown in pane.isVisible = shown }
       .overlay(alignment: .topLeading) {
         SidebarResizeEdge(windowWidth: windowWidth)
           .frame(height: box.size.height)
@@ -137,9 +147,15 @@ struct MainWindow: View {
     // Search (⌘K), over everything.
     .overlay { SearchLayer() }
     // Another agent opened from the sidebar or search closes the new chat (its own single agent is its preview).
-    .onChange(of: window.selected) { _, _ in
+    .onChange(of: window.selected) { _, selected in
+      // The pane stays open on another agent, drawn afresh on Profile (or the page asked for it).
+      pane.agentChanged(to: selected)
       guard newChat.isOpen, newChat.previewId(window) == nil else { return }
       newChat.close()
+    }
+    // Making an agent from the new chat closes the pane (`HDn`).
+    .onChange(of: newChat.creating != nil) { _, making in
+      if making { pane.close(layout: layout) }
     }
     .onChange(of: window.opened) { _, _ in
       guard newChat.isOpen, newChat.previewId(window) == nil else { return }
@@ -167,6 +183,8 @@ private struct KeyWatcher: NSViewRepresentable {
   @Environment(AppStore.self) private var store
   @Environment(SearchState.self) private var search
   @Environment(NewChatState.self) private var newChat
+  @Environment(PaneState.self) private var pane
+  @Environment(Viewers.self) private var viewers
 
   func makeNSView(context: Context) -> NSView {
     let view = WatchView()
@@ -185,6 +203,8 @@ private struct KeyWatcher: NSViewRepresentable {
     view.store = store
     view.search = search
     view.newChat = newChat
+    view.pane = pane
+    view.viewers = viewers
   }
 
   final class WatchView: NSView {
@@ -194,6 +214,8 @@ private struct KeyWatcher: NSViewRepresentable {
     var store: AppStore?
     var search: SearchState?
     var newChat: NewChatState?
+    var pane: PaneState?
+    var viewers: Viewers?
     nonisolated(unsafe) private var monitors: [Any] = []
     nonisolated(unsafe) private var resigned: NSObjectProtocol?
 
@@ -229,8 +251,21 @@ private struct KeyWatcher: NSViewRepresentable {
       // Caps Lock aside.
       let mods = event.modifierFlags.intersection([.command, .shift, .option, .control])
       if mods == .command, event.charactersIgnoringModifiers?.lowercased() == "b" {
+        if let layout { pane?.makeRoomForSidebar(layout) }
         layout?.toggle()
         return true
+      }
+      // The agent's pane: ⌘⇧, (`sand.toggleAgentSettings`) and ⌘⇧I or ⌥⌘B (`sand.toggleInfo`).
+      if let pane, let layout, search?.isOpen != true {
+        let key = event.charactersIgnoringModifiers?.lowercased()
+        if mods == [.command, .shift], key == "," || key == "<" {
+          pane.toggleSettings(layout: layout)
+          return true
+        }
+        if (mods == [.command, .shift] && key == "i") || (mods == [.command, .option] && event.keyCode == 11) {
+          pane.toggleDetails(layout: layout)
+          return true
+        }
       }
       guard let sidebar, let windowState, let store else { return false }
       if let search {
@@ -275,6 +310,11 @@ private struct KeyWatcher: NSViewRepresentable {
         // The new chat open and no field holding the keys: Escape closes it (`zDn`). A field's own Escape comes first (the To: line's, the message field's).
         if let newChat, newChat.isOpen, !(window?.firstResponder is NSText) {
           newChat.close()
+          return true
+        }
+        // The pane shown, nothing over it and no field holding the keys: Escape closes it (`CDn`). A field's own Escape comes first.
+        if let pane, let layout, pane.isVisible, viewers?.shown == nil, !(window?.firstResponder is NSText) {
+          pane.close(layout: layout)
           return true
         }
         guard !sidebar.selection.isEmpty, sidebar.renamingAgent == nil, sidebar.renamingSection == nil,

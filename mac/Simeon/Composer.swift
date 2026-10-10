@@ -32,6 +32,8 @@ struct Composer: View {
   @Environment(AppStore.self) private var store
   @Environment(ChatControl.self) private var control
   @Environment(NewChatState.self) private var newChat
+  @Environment(PaneState.self) private var pane
+  @Environment(SidebarLayout.self) private var layout
   @State private var text = ""
   /** The picks in the words ("@Nora" as one piece). */
   @State private var chips: [ComposerChip] = []
@@ -222,6 +224,11 @@ struct Composer: View {
           newChat.close()
           return true
         }
+        // Then the agent's pane, when it shows (`CDn`).
+        if pane.isVisible {
+          pane.close(layout: layout)
+          return true
+        }
         return false
       }
       control.reply = nil
@@ -310,11 +317,13 @@ struct Composer: View {
   }
 
   /**
-   * An action from "/": the themes now; the views, panes and Settings
-   * they open come with their steps (mac/STEPS.md, 2e).
+   * An action from "/": the themes and Chat Settings (the agent's pane on
+   * Profile) now; the views, panes and Settings the rest open come with their
+   * steps (mac/STEPS.md, 2e).
    */
   private func run(_ action: ComposerLists.Action) {
     switch action.id {
+    case "info:settings": pane.open(.profile, layout: layout)
     case "theme:system": MacTheme.set("system")
     case "theme:light": MacTheme.set("light")
     case "theme:dark": MacTheme.set("dark")

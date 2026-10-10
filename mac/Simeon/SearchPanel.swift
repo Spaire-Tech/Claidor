@@ -255,13 +255,20 @@ final class SearchState {
     close()
   }
 
+  /** The agent's pane and the sidebar's layout, for Chat Settings (set by the app). */
+  @ObservationIgnored weak var pane: PaneState?
+  @ObservationIgnored weak var layout: SidebarLayout?
+
   /**
-   * An action. The themes and Open Hidden Agents work now; the rest open
-   * screens copied in later steps (mac/STEPS.md): Org Chart (12), Members,
-   * Channels and Chat Settings (7), Settings (8), Plugins (9).
+   * An action. The themes, Open Hidden Agents and Chat Settings (the pane on
+   * Profile) work now; the rest open screens copied in later steps
+   * (mac/STEPS.md): Org Chart (12), Members (7d), Channels (12), Settings
+   * (8), Plugins (9).
    */
   private func run(_ id: String, sidebar: SidebarState) {
     switch id {
+    case "info:settings":
+      if let pane, let layout { pane.open(.profile, layout: layout) }
     case "theme:system": MacTheme.set("system")
     case "theme:light": MacTheme.set("light")
     case "theme:dark": MacTheme.set("dark")
