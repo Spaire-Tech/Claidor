@@ -19,13 +19,16 @@ final class WindowState {
     Task { await store.open(agentId) }
   }
 
-  /** The agent left open, or the first in the list when that one is gone. */
+  /**
+   * The agent left open while it is there (hidden from the sidebar or in a
+   * folded section too), else the first in the list.
+   */
   func chooseFirst(_ order: [String], store: AppStore) {
-    guard let first = order.first else { return }
-    if let selected, order.contains(selected) {
+    if let selected, store.agents.contains(where: { $0.id == selected }) {
       if store.openChat != selected { open(selected, store: store) }
       return
     }
+    guard let first = order.first else { return }
     open(first, store: store)
   }
 }
@@ -95,46 +98,119 @@ struct MainWindow: View {
 
 /**
  * The window's own keys that are not in a menu (the Electron window's
- * `global-keyboard-shortcuts`): ⌘B folds and opens the sidebar. The other
+ * `global-keyboard-shortcuts`): ⌘B folds and opens the sidebar. With rows
+ * picked, Escape lets them go and Delete (or Backspace) deletes them, after
+ * the confirmation, unless a field has the keys. Control-Tab and
+ * Control-Shift-Tab walk the sidebar's rows; letting go of Control opens the
+ * row walked to, Escape or leaving the window calls it off. The other
  * keys come with the screens they open.
  */
 private struct KeyWatcher: NSViewRepresentable {
   @Environment(SidebarLayout.self) private var layout
+  @Environment(SidebarState.self) private var sidebar
+  @Environment(WindowState.self) private var windowState
+  @Environment(AppStore.self) private var store
 
   func makeNSView(context: Context) -> NSView {
     let view = WatchView()
-    view.layout = layout
+    update(view)
     return view
   }
 
   func updateNSView(_ view: NSView, context: Context) {
-    (view as? WatchView)?.layout = layout
+    if let view = view as? WatchView { update(view) }
+  }
+
+  private func update(_ view: WatchView) {
+    view.layout = layout
+    view.sidebar = sidebar
+    view.windowState = windowState
+    view.store = store
   }
 
   final class WatchView: NSView {
     var layout: SidebarLayout?
-    nonisolated(unsafe) private var monitor: Any?
+    var sidebar: SidebarState?
+    var windowState: WindowState?
+    var store: AppStore?
+    nonisolated(unsafe) private var monitors: [Any] = []
+    nonisolated(unsafe) private var resigned: NSObjectProtocol?
 
     override func viewDidMoveToWindow() {
       super.viewDidMoveToWindow()
-      if let monitor { NSEvent.removeMonitor(monitor) }
-      monitor = nil
-      guard window != nil else { return }
-      monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-        // Caps Lock aside.
-        let mods = event.modifierFlags.intersection([.command, .shift, .option, .control])
-        guard mods == .command, event.charactersIgnoringModifiers?.lowercased() == "b" else { return event }
+      stop()
+      guard let window else { return }
+      let keys = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
         let took = MainActor.assumeIsolated { () -> Bool in
-          guard let self, event.window === self.window, let layout = self.layout else { return false }
-          layout.toggle()
-          return true
+          guard let self, event.window === self.window else { return false }
+          return self.key(event)
         }
         return took ? nil : event
       }
+      let flags = NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
+        MainActor.assumeIsolated {
+          guard let self, event.window === self.window else { return }
+          self.flags(event)
+        }
+        return event
+      }
+      monitors = [keys, flags].compactMap { $0 }
+      resigned = NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification, object: window, queue: .main) { [weak self] _ in
+        MainActor.assumeIsolated { self?.sidebar?.cycle = nil }
+      }
+    }
+
+    /** One key pressed; true when it was the window's. */
+    private func key(_ event: NSEvent) -> Bool {
+      // Caps Lock aside.
+      let mods = event.modifierFlags.intersection([.command, .shift, .option, .control])
+      if mods == .command, event.charactersIgnoringModifiers?.lowercased() == "b" {
+        layout?.toggle()
+        return true
+      }
+      guard let sidebar, let windowState, let store else { return false }
+      switch event.keyCode {
+      case 48 where mods.subtracting(.shift) == .control:
+        // Control-Tab, Control-Shift-Tab.
+        sidebar.step(mods.contains(.shift) ? -1 : 1, order: sidebar.order(store), current: windowState.selected)
+        return true
+      case 53 where mods.isEmpty:
+        // Escape: Control-Tab's walk first, then the picked rows (a field being renamed keeps its own Escape).
+        if sidebar.cycle != nil {
+          sidebar.cycle = nil
+          return true
+        }
+        guard !sidebar.selection.isEmpty, sidebar.renamingAgent == nil, sidebar.renamingSection == nil else { return false }
+        sidebar.selection.clear()
+        return true
+      case 51 where mods.isEmpty, 117 where mods.isEmpty:
+        // Delete and forward delete, unless a field has the keys.
+        guard !sidebar.selection.isEmpty, !(window?.firstResponder is NSText) else { return false }
+        SidebarActions.confirmDelete(Array(sidebar.selection.ids), store: store, sidebar: sidebar)
+        return true
+      default:
+        return false
+      }
+    }
+
+    /** Control let go: Control-Tab's row opens. */
+    private func flags(_ event: NSEvent) {
+      guard !event.modifierFlags.contains(.control), let sidebar, let cycle = sidebar.cycle, let windowState, let store else { return }
+      sidebar.cycle = nil
+      sidebar.selection.plain(cycle.next)
+      windowState.open(cycle.next, store: store)
+    }
+
+    private func stop() {
+      for monitor in monitors { NSEvent.removeMonitor(monitor) }
+      monitors = []
+      if let resigned { NotificationCenter.default.removeObserver(resigned) }
+      resigned = nil
     }
 
     deinit {
-      if let monitor { NSEvent.removeMonitor(monitor) }
+      for monitor in monitors { NSEvent.removeMonitor(monitor) }
+      if let resigned { NotificationCenter.default.removeObserver(resigned) }
     }
   }
 }

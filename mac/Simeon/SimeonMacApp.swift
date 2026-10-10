@@ -14,6 +14,7 @@ struct SimeonMacApp: App {
   @State private var window = WindowState()
   @State private var layout = SidebarLayout()
   @State private var viewers = Viewers()
+  @State private var sidebar = SidebarState()
 
   init() {
     Faces.register()
@@ -27,6 +28,7 @@ struct SimeonMacApp: App {
         .environment(window)
         .environment(layout)
         .environment(viewers)
+        .environment(sidebar)
         .task { await session.start() }
         // The theme chosen with "/" (and, in step 8, Settings), as it was left.
         .onAppear { MacTheme.apply() }

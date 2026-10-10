@@ -72,23 +72,41 @@ final class SidebarLayout {
 /**
  * The agents' sidebar (`aside.sand-agents-sidebar`, reference B01, B07),
  * measured at 1040 × 760: a 60-point head with search and new chat at its
- * right, the rows (54 high, 4 apart, 12 from the sides), and its foot with
- * the account's initials and Connect apps. Over the Mac's sidebar material,
+ * right (44 high with the picked rows' buttons while rows are picked, C11),
+ * the list (SidebarList.swift: pins, sections, rows), and its foot with the
+ * account's initials and Connect apps. Over the Mac's sidebar material,
  * painted at 93%, with a hairline at its right edge.
  */
 struct Sidebar: View {
   let rail: Bool
   let width: CGFloat
+  @Environment(AppStore.self) private var store
+  @Environment(WindowState.self) private var window
+  @Environment(SidebarState.self) private var sidebar
   @Environment(\.colorScheme) private var scheme
 
   var body: some View {
     let look = Look(scheme)
+    @Bindable var sidebar = sidebar
     HStack(spacing: 0) {
       VStack(spacing: 0) {
         if rail {
           Color.clear
             .frame(height: 60)
             .background(WindowDragArea())
+          if !sidebar.selection.isEmpty {
+            SelectionBar(rail: true)
+              .padding(.bottom, 8)
+          }
+        } else if !sidebar.selection.isEmpty {
+          // Rows picked (C11): the head is 44 high, the picked rows' buttons at its right.
+          HStack(spacing: 0) {
+            Spacer(minLength: 0)
+            SelectionBar(rail: false)
+          }
+          .padding(.horizontal, 16)
+          .frame(height: 44)
+          .background(WindowDragArea())
         } else {
           SidebarHead()
         }
@@ -110,6 +128,12 @@ struct Sidebar: View {
         SidebarMaterial()
         look.sidebarPaint
       }
+    }
+    .sheet(isPresented: $sidebar.showsHidden) {
+      HiddenAgentsSheet()
+        .environment(store)
+        .environment(window)
+        .environment(sidebar)
     }
   }
 }
@@ -278,152 +302,6 @@ private struct LogoTile: View {
       }
       .shadow(color: look.tileShadow, radius: 1, x: 0, y: 1)
       .rotationEffect(.degrees(turn))
-  }
-}
-
-// MARK: The rows
-
-/** The agents in the window's order (pins first, then the list; SimeonCore's `SidebarSections.order`). */
-private struct AgentList: View {
-  let rail: Bool
-  @Environment(AppStore.self) private var store
-  @Environment(WindowState.self) private var window
-
-  var body: some View {
-    let visible = store.agents.filter { !$0.isHidden }
-    let order = SidebarSections.order(agents: visible, pinnedIds: store.pinnedIds, sections: store.sidebarSections ?? [], collapsed: [])
-    let byId = Dictionary(visible.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-    ScrollView {
-      LazyVStack(spacing: 4) {
-        ForEach(order, id: \.self) { id in
-          if let agent = byId[id] {
-            AgentRow(agent: agent, agents: store.agents, rail: rail, selected: window.selected == id) {
-              window.open(id, store: store)
-            }
-          }
-        }
-      }
-      .padding(EdgeInsets(top: 4, leading: 12, bottom: 24, trailing: 12))
-    }
-    .scrollIndicators(.automatic)
-    .onAppear { window.chooseFirst(order, store: store) }
-    .onChange(of: order) { _, next in window.chooseFirst(next, store: store) }
-  }
-}
-
-/**
- * One row (`sand-agent-item`): the butterfly (36) and, beside it 8 away,
- * the name (14, medium), the title in the window's blue (11), the time at
- * the right (12, 40%), and under them the last line (13, 60%). The open
- * agent's row is a white card (14 round; 10 and white at 12% on dark), a
- * row under the pointer grey. Unread is a blue dot at the right, in the
- * time's place; at work, a green dot on the butterfly's corner. On the rail
- * the row is the butterfly alone, unread on its corner.
- */
-private struct AgentRow: View {
-  let agent: Agent
-  let agents: [Agent]
-  let rail: Bool
-  let selected: Bool
-  let onOpen: () -> Void
-  @State private var hovering = false
-  @Environment(\.colorScheme) private var scheme
-
-  var body: some View {
-    let look = Look(scheme)
-    Button(action: onOpen) {
-      HStack(spacing: 8) {
-        avatar(look)
-        if !rail { details(look) }
-      }
-      .padding(rail ? 9 : 8)
-      .frame(width: rail ? 54 : nil, height: 54, alignment: .leading)
-      .frame(maxWidth: rail ? nil : .infinity, alignment: .leading)
-      .background { rowGround(look) }
-      .contentShape(Rectangle())
-    }
-    .buttonStyle(.plain)
-    .frame(maxWidth: .infinity)
-    .onHover { hovering = $0 }
-    .accessibilityLabel(agent.hasUnread ? "\(agent.name), Unread activity" : agent.name)
-  }
-
-  private func avatar(_ look: Look) -> some View {
-    AgentMark(agent: agent, agents: agents, size: 36, live: true)
-      .overlay(alignment: .topLeading) {
-        if let dot = cornerDot(look) {
-          Circle().fill(dot).frame(width: 8, height: 8).offset(x: 26, y: 26)
-        }
-      }
-  }
-
-  /** The butterfly's corner: at work (green); on the rail, unread first (blue). */
-  private func cornerDot(_ look: Look) -> Color? {
-    if rail && agent.hasUnread { return look.unread }
-    if agent.isRunning { return look.working }
-    return nil
-  }
-
-  private func details(_ look: Look) -> some View {
-    VStack(alignment: .leading, spacing: 0) {
-      HStack(spacing: 6) {
-        Text(agent.name)
-          .font(.system(size: 14, weight: .medium))
-          .foregroundStyle(look.ink)
-          .lineLimit(1)
-          .truncationMode(.tail)
-          .layoutPriority(1)
-        if !agent.isGroup && !agent.title.isEmpty {
-          Text(agent.title)
-            .font(.system(size: 11))
-            .tracking(0.055)
-            .foregroundStyle(look.blue)
-            .lineLimit(1)
-            .truncationMode(.tail)
-            .padding(.vertical, 3)
-            .padding(.horizontal, 1)
-        }
-        Spacer(minLength: 0)
-        if !agent.hasUnread, let time = agent.lastActivityAt {
-          Text(Chat.listTime(Date(timeIntervalSince1970: time / 1000)))
-            .font(.system(size: 12))
-            .foregroundStyle(look.inkTertiary)
-            .lineLimit(1)
-            .fixedSize()
-        }
-      }
-      .frame(height: !agent.isGroup && !agent.title.isEmpty ? 22 : 20)
-      let line = agent.previewLine
-      if !line.isEmpty {
-        Text(line)
-          .font(.system(size: 13))
-          .foregroundStyle(look.inkSecondary)
-          .lineLimit(1)
-          .truncationMode(.tail)
-          .frame(height: 18)
-          .help(line)
-      }
-    }
-    .padding(.trailing, agent.hasUnread ? 16 : 0)
-    .frame(maxWidth: .infinity, alignment: .leading)
-    .overlay(alignment: .trailing) {
-      if agent.hasUnread {
-        Circle().fill(look.unread).frame(width: 8, height: 8)
-      }
-    }
-  }
-
-  @ViewBuilder
-  private func rowGround(_ look: Look) -> some View {
-    let shape = RoundedRectangle(cornerRadius: look.rowRadius)
-    if selected {
-      shape
-        .fill(look.rowSelected)
-        .overlay { shape.inset(by: -0.25).stroke(look.rowSelectedHairline, lineWidth: 0.5) }
-        .shadow(color: look.rowSelectedShadow, radius: 1, x: 0, y: 1)
-    } else if hovering {
-      shape.fill(look.rowHover)
-    }
   }
 }
 

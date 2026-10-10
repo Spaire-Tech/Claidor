@@ -109,14 +109,14 @@ first build on the founder's Mac is the first real check.
 | Connect apps | 9 |
 | Simeon › About Simeon | 10 |
 | Agent › Call … | 11 |
-| A row's right-click | 3 |
+| A row's right-click | 3 (done) |
 
 ### Not in this step yet
 
 - **The chat** (step 2, below).
-- **Pins and sections** (step 3): pinned agents are at the top of the list
-  as plain rows, not yet as the large tiles of C03; a section's heading is
-  not drawn yet.
+- **Pins and sections** (step 3, done): pinned agents are at the top of
+  the list as plain rows, not yet as the large tiles of C03; a section's
+  heading is not drawn yet.
 - **The butterflies' motion** (step 2): in the Electron window an agent's
   butterfly moves while it works and turns into the typing dots while it
   writes (Simeon's, on the rail in B05). Here they stand still.
@@ -659,7 +659,7 @@ checked in the reference window. Pushed:
 #### Not in 2f yet
 
 - A pinned agent's tile (60, live in the window) comes with the pins in
-  step 3.
+  step 3 (done).
 - A group chat's working line with its members' typing ("Iris and Theo
   are typing…", the members' marks taking turns every 2 s) is the
   window's group line (`bJn`); the Mac shows the group's line as in 2a.
@@ -674,3 +674,115 @@ draws, from the same engine; the window draws them in SVG. The new
 message's and the working line's curves are the window's own
 (`cubic-bezier`), and the swipe's release is its `linear()` curve point
 for point.
+
+## Step 3: the sidebar's menus
+
+Written 10 October 2026, **not built yet** (as step 1), read from the
+window's sidebar code (`sidebar.tsx`, its row, section, pin grid and
+selection parts) and measured in the reference window, light and dark.
+Pushed:
+
+- **A row's right-click** (C02): Apple's menu with the window's items, in
+  its order and groups: Pin (Unpin on a pin); Move to, a submenu of the
+  sections with the agent's own ticked, then New section, or Move to new
+  section while there are no sections (a pin has neither); Mark as Unread
+  (Mark as Read when unread); Edit Profile and Duplicate (none for a group
+  or a shared chat, C05); Copy conversation ID; Hide from sidebar and
+  Delete in red. Duplicate opens the copy. Copy conversation ID copies the
+  agent's id. A pin's menu (C04) is the same with Unpin.
+- **Pins** (C03): pinned agents sit over the list as tiles: the live
+  butterfly 60 over the name (11) and the title in blue, 80 wide (wider
+  for a long title, up to 92 of name), as many columns as fit, 8 apart,
+  rows 12 apart, the grid in the middle, padded 6, 8 above and 12 below.
+  The open agent's tile is the white card; unread or at work is a 10-point
+  dot at the butterfly's corner. On the rail the pins are rows, a hairline
+  (54 wide, 15 %) under them.
+- **Sections** (C06–C09): Move to new section makes "New section" at the
+  top, its name ready to type over (C07: Return or clicking away keeps
+  it, Escape leaves it). Each section has its header (30 high, its name 12
+  at 60 %, its count while folded, a chevron under the pointer); a click
+  folds or opens it over 0.2 s, and folded sections stay folded from one
+  launch to the next. "Unassigned" (the agents in no section) comes last
+  and has no menu. A section's right-click (C08): Rename, Move up, Move
+  down (greyed at the ends), Delete, which asks first ("Its agents move to
+  Unassigned. No agents are deleted."). An empty section says "Drag chats
+  here". Sections are 10 apart. On the rail the open sections' rows follow
+  one another with a hairline between sections.
+- **Picking several** (C11): ⌘-click picks a row or lets it go, ⇧-click
+  picks every row from the last one clicked (in the sidebar's order:
+  pins, then open sections); a plain click lets them go and opens the
+  agent. Picked rows take the window's blue wash. While rows are picked
+  the head is 44 high with Move to section (a menu), Delete and Clear
+  selection at its right (Delete and Clear under the head on the rail).
+  A picked row's right-click moves or deletes them all ("Move 2 agents to
+  new section", "Delete 2 agents"). Escape lets them go; Delete or
+  Backspace deletes them, after the question, unless a field has the
+  keys.
+- **Renaming** (C10): a double-click on a row puts its name in a field,
+  chosen; Return or clicking away keeps it, Escape puts it back.
+- **Hiding** (C12, C14): Hide from sidebar takes the agent out of the list
+  (it keeps working). Hidden Agents, with their count, then stands at the
+  list's foot; it opens the Hidden Agents dialog: each hidden agent with
+  Unhide, a click on one opening it. With every agent hidden the list says
+  "All bots are hidden" with Show Hidden Agents. An agent open when hidden
+  stays open.
+- **Deleting** (C15): the window's question, in its words ("Delete
+  “Scout”", "This permanently deletes the agent and its chat history.
+  This can't be undone.", "Delete 2 agents" and the groups' own words), as
+  a Mac alert over the window with Delete in red and Cancel. If the
+  computer refuses: "Deleting failed. Check your connection and try
+  again." Deleting the open agent opens the first in the list.
+- **Unread** (C16): Mark as Unread puts the blue dot on the row at once and
+  tells the computer; Mark as Read takes it off.
+- **Control-Tab** walks the rows (Control-Shift-Tab back), a blue ring
+  inside the row it is on, the list scrolling to it; letting go of Control
+  opens that row; Escape, or the window going to the back, calls it off.
+- **A draft**: a row whose chat has words typed and not sent (and is not
+  the open one) shows "Draft: …" under its name, unless the agent is
+  waiting for the person ("Waiting for you: …").
+- **Dragging**: a row dragged onto the pins is pinned (where it is let
+  go, over a tile); while a row is dragged and nothing is pinned, a dashed
+  "Drag here to pin" zone (104 high) stands where the pins go. A tile
+  dragged onto another takes its place; dragged onto the list it is
+  unpinned (into the section it is let go on). A row dragged onto a
+  section moves into it (picked rows go together). A section's header
+  dragged onto another section goes above it (dragged up) or below it
+  (dragged down), a hairline showing where. What a drop would land in
+  greys.
+- **No agents**: "No saved agents yet." once the computer has answered.
+
+#### Buttons that do nothing yet
+
+| Button | Its step |
+|---|---|
+| Edit Profile, in a row's menu | 7 |
+| Search, New chat, the initials, Connect apps | 4, 5, 10, 9 (as step 1) |
+
+#### Not in step 3 yet
+
+- **Share agent…** and **Leave shared chat**: the window offers them only
+  with sharing turned on and for a chat shared from another account; they
+  come with the shared rooms (step 12).
+- **Show full conversation** and **Show async tasks**: the window's staff
+  items, for Simeon Labs' own accounts only; left out.
+- Search's "Open Hidden Agents" (C13) comes with search (step 4).
+- The window's tiles and rows glide to their new places when pins and
+  sections change (its layout animation); here they take their places at
+  once. A folding section fades.
+- The window shows "Deleting..." on its Delete button until the computer
+  answers; a Mac alert closes on the click, so the row goes when the
+  computer has deleted it.
+- Dragging on the rail.
+
+#### Where the native parts look different
+
+The menus are Apple's (SF Symbols for the window's icons), so their rows
+are the Mac's height and grey, not the window's 30-point rows. The delete
+and section questions are Apple's alerts. Dragging is the Mac's own: the
+row's picture follows the pointer, rather than the row itself moving
+under it as in the window.
+
+#### What to compare
+
+C02 to C16 in the gallery, each in light and dark, and the rail with pins
+and sections against the window folded to its rail.
