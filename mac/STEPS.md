@@ -216,7 +216,7 @@ Written 10 October 2026, **not built yet** (as step 1). Compare with B01
 | The exchanges' chips | 2d (done) |
 | The routines' chips (open the routine) | 7 |
 | "1 reply" under a message | 2d (done) |
-| Attach file | 2e |
+| Attach file | 2e (done) |
 | The microphone | 2e |
 
 #### Not in 2a yet
@@ -523,6 +523,24 @@ from its code. Pushed so far:
   picks stay with its words while another chat is open. What is pasted
   comes in as plain words.
 
+- **Attaching files**: the + opens the Mac's open panel over the window
+  for several files; files dropped anywhere on the chat (the window's blue
+  wash and "Drop files to add to chat") or on the words, and files or a
+  picture pasted (as "image.png"), are taken too. Six at most ("Only 6
+  attachments allowed — 2 weren't added."), none empty, none over 25 MB
+  (200 MB for a video), each said over the words for five seconds ("2
+  files couldn't be attached."); the + is off once six wait. A picture
+  waits as a 52-point square of it, any other file as a chip like the
+  chat's file card (its icon, name and size), each with Remove; they sit
+  over the words, sideways when they don't fit, and the field says "Add a
+  message, or hit send." The message can go with files alone; they are put
+  on the agent's computer first, as the window does.
+- **The lines over the words**, in the window's order: a send refused
+  ("This message is already sending and can't be canceled.", red, six
+  seconds), then the files' line (at 40%). A message canceled while it
+  waited comes back into its field, words, picks, files and the message it
+  answered, when the field is empty (2a dropped it).
+
 #### Buttons that do nothing yet
 
 | Button | Its part or step |
@@ -536,11 +554,11 @@ from its code. Pushed so far:
 
 #### Not in 2e yet
 
-- Still to come in 2e: attaching files (the + button, dropping and
-  pasting files, the pictures and file chips over the words, "Add a
-  message, or hit send."), dictation (the recording chip with its timer and
+- Still to come in 2e: dictation (the recording chip with its timer and
   sound bars, "Transcribing…", the server's `audio/transcriptions`), and
   More emoji (the full picker from a message's reactions).
+- Dragged over the words themselves, files are taken but the chat's blue
+  wash does not show (the words take the drag first).
 - "/" offers Channels and Org Chart as the reference does; the window
   offers them only when the account has channels and the org chart is on,
   which the Mac does not know yet (steps 12).

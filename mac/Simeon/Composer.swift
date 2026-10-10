@@ -46,17 +46,36 @@ struct Composer: View {
   var body: some View {
     let empty = text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     let reply = control.reply
-    let expanded = stacked || reply != nil
+    let files = control.staged
+    // Something to send (`hasPayload`): words, or files.
+    let payload = !empty || !files.isEmpty
+    let lines = noticeLines
+    let expanded = stacked || reply != nil || !files.isEmpty || !lines.isEmpty
     let shown = min(fieldHeight, Composer.tallest)
-    // On one line the frame is 44; stacked, 9 over the words, the reply's 36, and 47 under them for the buttons.
-    let height: CGFloat = expanded ? 9 + (reply == nil ? 0 : 36) + shown + 47 : 44
-    let trailing: CGFloat = empty ? 45 : 81
+    // On one line the frame is 44; stacked, 9 over its blocks (a line 20, the reply 36, the files 60, each with its 6) and 47 under the words for the buttons.
+    let blocks: CGFloat = CGFloat(lines.count) * 20 + (reply == nil ? 0 : 36) + (files.isEmpty ? 0 : 60)
+    let height: CGFloat = expanded ? 9 + blocks + shown + 47 : 44
+    let trailing: CGFloat = payload ? 81 : 45
     ZStack(alignment: .top) {
       VStack(alignment: .leading, spacing: 6) {
+        // The order the window stacks them in: a send's error, dictation's, the files', the reply, the files.
+        ForEach(lines) { line in
+          Text(line.text)
+            .font(.system(size: 11))
+            .foregroundStyle(line.isError ? look.danger : look.inkTertiary)
+            .lineLimit(1)
+            .truncationMode(.tail)
+            .frame(height: 14)
+            .padding(.horizontal, 2)
+            .accessibilityAddTraits(.updatesFrequently)
+        }
         if let reply {
           ReplyPill(reply: reply, look: look) { control.reply = nil }
         }
-        field(placeholder: reply?.placeholder ?? "Message \(name)")
+        if !files.isEmpty {
+          AttachmentStrip(files: files, look: look) { control.unstage($0) }
+        }
+        field(placeholder: reply?.placeholder ?? (files.isEmpty ? "Message \(name)" : "Add a message, or hit send."))
           .frame(height: shown)
       }
       .padding(.top, expanded ? 9 : 11)
@@ -64,15 +83,13 @@ struct Composer: View {
       .padding(.trailing, expanded ? 13 : trailing)
       .frame(maxHeight: .infinity, alignment: .top)
       HStack(spacing: 8) {
-        AttachButton(look: look)
+        AttachButton(look: look, full: files.count >= AttachmentLimits.maxStaged) { control.chooseFiles() }
         Spacer(minLength: 0)
-        if !empty {
+        if payload {
           MicButton(prominent: false, look: look)
-        }
-        if empty {
-          MicButton(prominent: true, look: look)
-        } else {
           SendButton(look: look, action: send)
+        } else {
+          MicButton(prominent: true, look: look)
         }
       }
       .frame(height: 30)
@@ -109,6 +126,47 @@ struct Composer: View {
     .onChange(of: chips) { _, next in
       Composer.keptChips[agentId] = next.isEmpty ? nil : (text, next)
     }
+    // A message canceled before it went comes back here when this field is empty (the window's cancel).
+    .onChange(of: store.canceledDraft?.id, initial: true) { _, _ in takeBackCanceled() }
+  }
+
+  /** A line over the words (`sand-prompt-error-notice`, `…-attachment-notice`): 11 on 14, padded 0 2. */
+  struct NoticeLine: Identifiable {
+    let text: String
+    let isError: Bool
+    var id: String { (isError ? "error:" : "files:") + text }
+  }
+
+  /** The lines over the words: the store's for this chat (a send refused, six seconds) in red, then the files' (five seconds) at 40%. */
+  private var noticeLines: [NoticeLine] {
+    var out: [NoticeLine] = []
+    if let notice = store.composerNotice, notice.agentId == agentId { out.append(NoticeLine(text: notice.text, isError: true)) }
+    if let line = control.attachNotice { out.append(NoticeLine(text: line, isError: false)) }
+    return out
+  }
+
+  /**
+   * A canceled message back in its composer (`canceledDraft`): its words
+   * and picks, its files, and the message it answered, when the field is
+   * empty; else it stays gone, as the window keeps what was typed.
+   */
+  private func takeBackCanceled() {
+    guard let draft = store.canceledDraft, draft.scope == AppStore.draftScope(agentId, thread: threadRoot) else { return }
+    store.takeCanceledDraft(draft.id)
+    guard text.isEmpty, control.staged.isEmpty else { return }
+    if let restored = ComposerDocument.draft(from: draft.richText) {
+      text = restored.draft
+      chips = restored.chips
+    } else {
+      text = draft.text
+      chips = []
+    }
+    control.staged = draft.files.map { StagedFile(name: $0.name, data: $0.data) }
+    if let replyTo = draft.replyTo {
+      let entry = (store.transcripts[agentId] ?? []).first { $0.id == replyTo }
+      control.reply = ChatControl.Reply(id: replyTo, line: Chat.quoteLine(entry, limit: 72), placeholder: Chat.replyPlaceholder(entry))
+    }
+    control.focusCount += 1
   }
 
   private func field(placeholder: String) -> some View {
@@ -116,7 +174,7 @@ struct Composer: View {
       guard control.reply != nil else { return false }
       control.reply = nil
       return true
-    }, onTrigger: { picks.update($0) }, onListKey: { listKey($0) })
+    }, onTrigger: { picks.update($0) }, onListKey: { listKey($0) }, onFiles: { control.stage($0) })
     .overlay(alignment: .topLeading) {
       if text.isEmpty {
         Text(placeholder)
@@ -232,26 +290,33 @@ struct Composer: View {
 
   private func send() {
     let words = ComposerDocument.prompt(text)
-    guard !words.isEmpty else { return }
+    let files = control.staged.map { (name: $0.name, data: $0.data) }
+    guard !words.isEmpty || !files.isEmpty else { return }
     // The editor's document goes with the words when they hold a pick (`richText`).
     let richText = chips.isEmpty ? nil : ComposerDocument.richText(text, chips: chips)
     let answering = control.reply?.id ?? threadRoot
     text = ""
     chips = []
+    control.staged = []
     control.reply = nil
     picks.update(nil)
     store.setDraft("", for: agentId)
     let inThread = threadRoot != nil
-    Task { await store.send(words, to: agentId, replyTo: answering, inThread: inThread, richText: richText) }
+    Task { await store.send(words, to: agentId, attachments: files, replyTo: answering, inThread: inThread, richText: richText) }
   }
 }
 
-/** Attach file (`sand-prompt-attach`): a 30-point glass disc with a plus. Choosing files is step 2e. */
+/**
+ * Attach file (`sand-prompt-attach`): a 30-point glass disc with a plus,
+ * the Mac's open panel for several files; off once six wait.
+ */
 private struct AttachButton: View {
   let look: Look
+  let full: Bool
+  let action: () -> Void
 
   var body: some View {
-    Button {} label: {
+    Button(action: action) {
       Image(systemName: "plus")
         .font(.system(size: 15, weight: .regular))
         .foregroundStyle(look.dark ? Color.white.opacity(0.86) : Color.black.opacity(0.78))
@@ -260,6 +325,8 @@ private struct AttachButton: View {
     }
     .buttonStyle(.plain)
     .glassEffect(.regular, in: .circle)
+    .disabled(full)
+    .opacity(full ? 0.4 : 1)
     .help("Attach file")
     .accessibilityLabel("Attach file")
   }
@@ -336,6 +403,8 @@ struct MessageField: NSViewRepresentable {
   var onTrigger: (PickRequest?) -> Void = { _ in }
   /** A key while a list is open: true when the list used it. */
   var onListKey: (ListKey) -> Bool = { _ in false }
+  /** Files pasted or dropped on the words (the window stages them, `onStageFiles`). */
+  var onFiles: ([IncomingFile]) -> Void = { _ in }
   @Environment(AppStore.self) private var store
 
   static let font = NSFont.systemFont(ofSize: 14)
@@ -454,6 +523,7 @@ struct MessageField: NSViewRepresentable {
       coordinator.measure(view)
     }
     view.wantsFocus = true
+    view.onFiles = { [weak coordinator = context.coordinator] files in coordinator?.parent.onFiles(files) }
     scroll.documentView = view
     let coordinator = context.coordinator
     coordinator.focusedKey = focusKey
@@ -605,13 +675,58 @@ struct MessageField: NSViewRepresentable {
   }
 }
 
-/** The field's text view: says when its width changes, takes the keys once it is in a window, and pastes plain words. */
+/**
+ * The field's text view: says when its width changes, takes the keys once
+ * it is in a window, and pastes plain words; files and pictures pasted or
+ * dropped on it go to the files waiting to go.
+ */
 final class FieldTextView: NSTextView {
   var onResize: (() -> Void)?
   var wantsFocus = false
+  var onFiles: (([IncomingFile]) -> Void)?
 
   override func paste(_ sender: Any?) {
+    if let files = FieldTextView.files(on: NSPasteboard.general), !files.isEmpty {
+      onFiles?(files)
+      return
+    }
     pasteAsPlainText(sender)
+  }
+
+  /** Files a pasteboard holds: paths, else a picture's bytes (as "image.png"). */
+  static func files(on board: NSPasteboard) -> [IncomingFile]? {
+    if let urls = board.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL], !urls.isEmpty {
+      return urls.map(IncomingFile.url)
+    }
+    if let png = board.data(forType: .png) { return [.data(name: "image.png", data: png)] }
+    if let tiff = board.data(forType: .tiff), let png = NSBitmapImageRep(data: tiff)?.representation(using: .png, properties: [:]) {
+      return [.data(name: "image.png", data: png)]
+    }
+    return nil
+  }
+
+  override var acceptableDragTypes: [NSPasteboard.PasteboardType] {
+    super.acceptableDragTypes.contains(.fileURL) ? super.acceptableDragTypes : super.acceptableDragTypes + [.fileURL]
+  }
+
+  private static func holdsFiles(_ sender: any NSDraggingInfo) -> Bool {
+    sender.draggingPasteboard.canReadObject(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true])
+  }
+
+  override func draggingEntered(_ sender: any NSDraggingInfo) -> NSDragOperation {
+    FieldTextView.holdsFiles(sender) ? .copy : super.draggingEntered(sender)
+  }
+
+  override func draggingUpdated(_ sender: any NSDraggingInfo) -> NSDragOperation {
+    FieldTextView.holdsFiles(sender) ? .copy : super.draggingUpdated(sender)
+  }
+
+  override func performDragOperation(_ sender: any NSDraggingInfo) -> Bool {
+    if let urls = sender.draggingPasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL], !urls.isEmpty {
+      onFiles?(urls.map(IncomingFile.url))
+      return true
+    }
+    return super.performDragOperation(sender)
   }
 
   override func setFrameSize(_ newSize: NSSize) {

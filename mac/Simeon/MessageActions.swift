@@ -40,6 +40,12 @@ final class ChatControl {
   /** The message field's frame (44 on one line), so the last message clears it. */
   var composerHeight: CGFloat = 44
 
+  /** The files waiting to go with the next message (step 2e), six at most. */
+  var staged: [StagedFile] = []
+  /** The line over the words when files were left out (five seconds), and its count so the latest stays. */
+  var attachNotice: String?
+  var noticeCount = 0
+
   /** The agent whose messages with this one are open over the chat (`tunnelPeer`, read only). */
   var exchangePeer: Party?
   /** The exchange's message under the pointer, for the right-click menu: its id and words. */

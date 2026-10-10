@@ -14,6 +14,8 @@ struct ChatPane: View {
   @Environment(Viewers.self) private var viewers
   @Environment(\.colorScheme) private var scheme
   @State private var control = ChatControl()
+  /** Files dragged over the chat (`isDragOver`). */
+  @State private var dropping = false
 
   var body: some View {
     let look = Look(scheme)
@@ -37,6 +39,15 @@ struct ChatPane: View {
     }
     .overlay(alignment: .bottom) {
       Composer(agentId: agentId, name: agent?.name ?? "", threadRoot: threadRoot, look: look)
+    }
+    // Files dropped anywhere on the chat wait to go with the next message (`dragBindings` on `main.sand-chat`).
+    .dropDestination(for: URL.self) { urls, _ in
+      let files = urls.filter(\.isFileURL)
+      control.stage(files.map(IncomingFile.url))
+      return !files.isEmpty
+    } isTargeted: { dropping = $0 }
+    .overlay {
+      if dropping { DropOverlay(look: look) }
     }
     // Two agents' messages, over the chat and its field (`threadOverlay`).
     .overlay {
