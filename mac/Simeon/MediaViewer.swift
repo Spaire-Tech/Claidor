@@ -83,6 +83,12 @@ struct MediaViewer: View {
     .accessibilityLabel(items.count > 1 ? "Media \(index + 1) of \(items.count)" : "Media preview")
     .accessibilityAddTraits(.isModal)
     .task(id: index) { await load(item) }
+    .onDisappear {
+      // The videos' copies read from the computer go with the viewer.
+      for file in films.values where file.isFileURL {
+        try? FileManager.default.removeItem(at: file.deletingLastPathComponent())
+      }
+    }
   }
 
   // MARK: The picture
@@ -205,12 +211,14 @@ struct MediaViewer: View {
     return frame.contains(point)
   }
 
-  /** The wheel's or a pinch's zoom, where the pointer is in the window. */
-  private func zoom(to target: CGFloat, at windowPoint: CGPoint?) {
-    guard !item.isVideo, pictures[item.url] != nil else { return }
+  /** The wheel's or a pinch's zoom, where the pointer is in the window; false when there is no picture to zoom. */
+  @discardableResult
+  private func zoom(to target: CGFloat, at windowPoint: CGPoint?) -> Bool {
+    guard !item.isVideo, pictures[item.url] != nil else { return false }
     // The cell sits 32 in from the window's edges.
     let point = windowPoint.map { CGPoint(x: $0.x - 32, y: $0.y - 32) } ?? CGPoint(x: cell.width / 2, y: cell.height / 2)
     zoom(to: target, at: point, in: cell)
+    return true
   }
 
   /** Zooms keeping the point under the pointer where it is (`Z`), 1 to 4, the picture kept over the cell. */
@@ -241,31 +249,36 @@ struct MediaViewer: View {
 
   // MARK: The strip
 
-  /** The strip (`sand-media-viewer__filmstrip`): 48-point squares, 8 round, 8 apart, padded 8, on white at 8%; the one shown ringed. */
+  /** The strip (`sand-media-viewer__filmstrip`): 48-point squares, 8 round, 8 apart, padded 8, on white at 8%; the one shown ringed; scrolling sideways when wider than the window. */
   private var filmstrip: some View {
-    ScrollView(.horizontal) {
-      HStack(spacing: 8) {
-        ForEach(Array(items.enumerated()), id: \.offset) { position, entry in
-          Button { go(by: position - index) } label: {
-            Thumb(item: entry, picture: pictures[entry.url])
-              .frame(width: 48, height: 48)
-              .background(Color.white.opacity(0.08))
-              .clipShape(RoundedRectangle(cornerRadius: 8))
-              .overlay {
-                if position == index {
-                  RoundedRectangle(cornerRadius: 8).strokeBorder(Color.white.opacity(0.95), lineWidth: 2)
-                }
-              }
-          }
-          .buttonStyle(.plain)
-          .accessibilityLabel("View media \(position + 1) of \(items.count)")
-          .task { if !entry.isVideo, pictures[entry.url] == nil { await load(entry) } }
-        }
-      }
-      .padding(8)
+    ViewThatFits(in: .horizontal) {
+      strip
+      ScrollView(.horizontal) { strip }
+        .scrollIndicators(.never)
     }
-    .scrollIndicators(.never)
-    .fixedSize(horizontal: true, vertical: true)
+    .fixedSize(horizontal: false, vertical: true)
+  }
+
+  private var strip: some View {
+    HStack(spacing: 8) {
+      ForEach(Array(items.enumerated()), id: \.offset) { position, entry in
+        Button { go(by: position - index) } label: {
+          Thumb(item: entry, picture: pictures[entry.url])
+            .frame(width: 48, height: 48)
+            .background(Color.white.opacity(0.08))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .overlay {
+              if position == index {
+                RoundedRectangle(cornerRadius: 8).strokeBorder(Color.white.opacity(0.95), lineWidth: 2)
+              }
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("View media \(position + 1) of \(items.count)")
+        .task { if !entry.isVideo, pictures[entry.url] == nil { await load(entry) } }
+      }
+    }
+    .padding(8)
   }
 
   // MARK: Reading
@@ -363,7 +376,7 @@ private struct FilmPlayer: NSViewRepresentable {
  * window does; a pinch by its own amount.
  */
 private struct PointerZoom: NSViewRepresentable {
-  let zoom: (CGFloat, CGPoint?) -> Void
+  let zoom: (CGFloat, CGPoint?) -> Bool
 
   func makeNSView(context: Context) -> ZoomView {
     let view = ZoomView()
@@ -376,7 +389,7 @@ private struct PointerZoom: NSViewRepresentable {
   }
 
   final class ZoomView: NSView {
-    var zoom: ((CGFloat, CGPoint?) -> Void)?
+    var zoom: ((CGFloat, CGPoint?) -> Bool)?
     nonisolated(unsafe) private var monitor: Any?
 
     override func viewDidMoveToWindow() {
@@ -391,13 +404,11 @@ private struct PointerZoom: NSViewRepresentable {
           let local = self.convert(event.locationInWindow, from: nil)
           let point = CGPoint(x: local.x, y: self.isFlipped ? local.y : self.bounds.height - local.y)
           if event.type == .magnify {
-            zoom(1 + event.magnification, point)
-          } else {
-            let travel = event.hasPreciseScrollingDeltas ? event.scrollingDeltaY : event.scrollingDeltaY * 40
-            guard travel != 0 else { return false }
-            zoom(exp(travel * 0.0015), point)
+            return zoom(1 + event.magnification, point)
           }
-          return true
+          let travel = event.hasPreciseScrollingDeltas ? event.scrollingDeltaY : event.scrollingDeltaY * 40
+          guard travel != 0 else { return false }
+          return zoom(exp(travel * 0.0015), point)
         }
         return took ? nil : event
       }

@@ -254,7 +254,7 @@ struct FileViewer: View {
     switch kind {
     case .pdf:
       if let document {
-        PDFBody(document: document, control: pdf, look: look)
+        PDFBody(document: document, control: pdf, zoom: pdf.zoom, look: look)
       } else {
         ViewerState(look: look, symbol: "doc.richtext", title: "Couldn't render this PDF", action: downloadButton)
       }
@@ -318,7 +318,8 @@ struct FileViewer: View {
     let units = words.utf16
     guard units.count > FilePreview.textCap else { return words }
     let end = units.index(units.startIndex, offsetBy: FilePreview.textCap)
-    return String(words[..<(end.samePosition(in: words) ?? words.endIndex)])
+    // A cut inside a character (between "\r" and "\n", inside an emoji) falls back to its start.
+    return String(words[..<end])
   }
 
   private func load() async {

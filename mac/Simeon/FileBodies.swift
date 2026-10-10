@@ -72,6 +72,8 @@ private struct ToolButton: View {
 struct PDFBody: NSViewRepresentable {
   let document: PDFDocument
   let control: PDFControl
+  /** The zoom, read here so a change redraws the pages. */
+  let zoom: Double
   let look: Look
 
   func makeCoordinator() -> Coordinator { Coordinator(control: control) }
@@ -97,8 +99,8 @@ struct PDFBody: NSViewRepresentable {
 
   func updateNSView(_ view: FittedPDFView, context: Context) {
     view.backgroundColor = NSColor(look.ground)
-    if context.coordinator.zoom != control.zoom {
-      context.coordinator.zoom = control.zoom
+    if context.coordinator.zoom != zoom {
+      context.coordinator.zoom = zoom
       context.coordinator.fit(view)
     }
   }
@@ -108,7 +110,7 @@ struct PDFBody: NSViewRepresentable {
   }
 
   @MainActor
-  final class Coordinator: NSObject, PDFPageOverlayViewProvider {
+  final class Coordinator: NSObject, @preconcurrency PDFPageOverlayViewProvider {
     let control: PDFControl
     var zoom = 1.0
     weak var view: PDFView?
@@ -232,7 +234,7 @@ struct CodeBody: NSViewRepresentable {
     view.textContainerInset = NSSize(width: 0, height: 16)
     view.textContainer?.lineFragmentPadding = 0
     view.textContainer?.widthTracksTextView = false
-    view.textContainer?.containerSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+    view.textContainer?.size = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
     view.isHorizontallyResizable = true
     view.isVerticallyResizable = true
     view.autoresizingMask = []
@@ -640,7 +642,9 @@ struct QuickLookBody: NSViewRepresentable {
   func makeCoordinator() -> Coordinator { Coordinator() }
 
   func makeNSView(context: Context) -> QLPreviewView {
-    let view: QLPreviewView = QLPreviewView(frame: .zero, style: .normal)
+    // Typed as optional so it builds whether the SDK imports this initializer as failable or not.
+    let made: QLPreviewView? = QLPreviewView(frame: .zero, style: .normal)
+    let view = made ?? QLPreviewView()
     view.shouldCloseWithWindow = false
     let file = QuickLookBody.file(data, name: name)
     context.coordinator.folder = file?.deletingLastPathComponent()
