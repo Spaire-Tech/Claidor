@@ -53,6 +53,8 @@ final class RoutineEditorModel {
   var addMenuRequests = 0
   /** Bumped by Test run: Run history comes into view. */
   var historyRequests = 0
+  /** How far an open popover hangs below the When to run card. */
+  var popoverOverhang: CGFloat = 0
 
   init(agentId: String, routine: Routine?) {
     self.agentId = agentId
@@ -132,6 +134,9 @@ final class RoutineEditorModel {
       let pending = queued
       queued = nil
       routineId = made.id
+      seenName = made.name
+      seenPrompt = made.prompt
+      seenTrigger = made.trigger ?? .null
       if let pending {
         let next: JSON = ["name": .string(pending.name ?? made.name), "prompt": .string(pending.prompt ?? made.prompt),
                           "trigger": pending.trigger ?? made.trigger ?? .null, "isEnabled": .bool(activeDraft)]
@@ -814,6 +819,7 @@ private struct RoutineEditorBody: View {
   @State private var nameEditing = false
   @State private var promptFocused = false
   @State private var promptHeight: CGFloat = 20
+  @State private var historyHeight: CGFloat = 0
 
   var body: some View {
     VStack(alignment: .leading, spacing: 12) {
@@ -840,20 +846,21 @@ private struct RoutineEditorBody: View {
           .accessibilityLabel("Name")
       }
       RoutineSection(title: "Instruction", look: look) {
-        PaneTextArea(text: $model.prompt, focused: $promptFocused, height: $promptHeight, ink: NSColor(look.ink), editable: true, fontSize: 14, lineHeight: 20) {
+        // Padded 8 and 10 inside the text view itself, so the whole box takes the keys.
+        PaneTextArea(text: $model.prompt, focused: $promptFocused, height: $promptHeight, ink: NSColor(look.ink), editable: true, fontSize: 14, lineHeight: 20, inset: CGSize(width: 10, height: 8)) {
           pane.close(layout: layout)
         }
-        .frame(height: min(160 - 16, max(80 - 16, promptHeight)))
+        .frame(height: min(160, max(80, promptHeight + 16)))
         .overlay(alignment: .topLeading) {
           if model.prompt.isEmpty {
             Text("What should this routine do each time it runs?")
               .font(.system(size: 14))
               .foregroundStyle(look.inkTertiary)
+              .padding(.vertical, 8)
+              .padding(.horizontal, 10)
               .allowsHitTesting(false)
           }
         }
-        .padding(.vertical, 8)
-        .padding(.horizontal, 10)
         .background(RoutineFieldBox(look: look))
         .accessibilityLabel("Instruction")
       }
@@ -865,7 +872,14 @@ private struct RoutineEditorBody: View {
         RunHistory(runs: model.stored(store)?.runs ?? [], look: look)
       }
       .id(Self.historyId)
+      .background(GeometryReader { proxy in
+        Color.clear
+          .onAppear { historyHeight = proxy.size.height }
+          .onChange(of: proxy.size.height) { _, height in historyHeight = height }
+      })
     }
+    // A trigger's popover covers Run history; the page grows only by what it hangs past the end, so it can be scrolled to.
+    .padding(.bottom, max(0, model.popoverOverhang - historyHeight - 12))
     .frame(width: width, alignment: .topLeading)
     .onChange(of: nameFocused) { _, now in
       nameEditing = now

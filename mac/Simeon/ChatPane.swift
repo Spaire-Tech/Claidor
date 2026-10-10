@@ -104,6 +104,8 @@ struct ChatPane: View {
     // Shown under the To: line, its waiting files go on to the chat that takes its place.
     .onDisappear {
       if underToLine, !control.staged.isEmpty { window.handoffFiles[agentId] = control.staged }
+      // Another agent opened over an exchange: its Escape flag goes with it.
+      if control.exchangePeer != nil { control.closeExchange() }
     }
     // Search closed: the message field takes the keys back (under the To: line, the line takes them).
     .onReceive(NotificationCenter.default.publisher(for: WindowState.composerFocusNote)) { _ in

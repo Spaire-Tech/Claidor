@@ -1277,6 +1277,18 @@ days and the Git events are the Mac's checkboxes in the menu, which stays
 open while ticking. The switch is the Mac's. Chevrons, ×, + and the run
 signs are SF Symbols; the clock and the spinner are drawn.
 
+#### After the compile review
+
+No compile errors were found in 7b or 7c. Fixed: the menus, the Add menu
+and the avatar's "outside" read where their buttons are when clicked (they
+used where they were before the page scrolled); the whole Instruction box
+takes the keys, not only its lines; an open popover covers Run history
+instead of pushing it down, the page growing only by what passes its end;
+after a create, a change made elsewhere is followed at once; Escape while
+letters are being composed stays with the field over the avatar editor;
+the crop's open hand and an exchange's Escape no longer outlive their
+views.
+
 #### What to compare
 
 The rl-* captures (list, empty, open, weekly, advanced, advanced every,

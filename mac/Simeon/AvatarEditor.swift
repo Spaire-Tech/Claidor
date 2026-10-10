@@ -759,6 +759,8 @@ private struct CropView: View {
   let close: () -> Void
   @Environment(AppStore.self) private var store
   @State private var dragStart: AvatarCrop?
+  /** The open hand is showing: it goes if the crop goes under the pointer. */
+  @State private var handShown = false
 
   var body: some View {
     if let candidate = model.candidate {
@@ -814,7 +816,15 @@ private struct CropView: View {
         }
         .onEnded { _ in dragStart = nil }
     )
-    .onHover { inside in if inside { NSCursor.openHand.push() } else { NSCursor.pop() } }
+    .onHover { inside in
+      guard inside != handShown else { return }
+      handShown = inside
+      if inside { NSCursor.openHand.push() } else { NSCursor.pop() }
+    }
+    .onDisappear {
+      if handShown { NSCursor.pop() }
+      handShown = false
+    }
     .accessibilityLabel("Drag to reposition")
   }
 

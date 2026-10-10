@@ -15,14 +15,14 @@ struct TriggerCard: View {
   let look: Look
   let width: CGFloat
   @Environment(AppStore.self) private var store
-  @State private var addFrame: CGRect = .zero
+  @State private var addSpot = WindowSpot()
   @State private var cardHeight: CGFloat = 0
   @State private var popoverHeight: CGFloat = 0
 
   var body: some View {
     let inner = max(0, width - 12)
     let popoverTop = model.popover.map { 6 + CGFloat($0 + 1) * 32 } ?? 0
-    // The popover hangs below the card; the page grows by what it hangs over, so it can be scrolled to (the window's absolute popover does).
+    // The popover hangs below the card, over Run history (the editor's body grows by what passes its end).
     let overhang = model.popover == nil ? 0 : max(0, popoverTop + popoverHeight - cardHeight)
     VStack(alignment: .leading, spacing: 2) {
       ForEach(Array(model.rows.enumerated()), id: \.offset) { index, row in
@@ -34,7 +34,7 @@ struct TriggerCard: View {
       }
       if model.rows.count < TriggerRow.limit {
         AddTriggerButton(label: RoutineWords.addLabel(rows: model.rows.count), look: look) { showAddMenu() }
-          .background(WindowFrameReader { addFrame = $0 })
+          .background(WindowSpotReader(spot: addSpot))
           .padding(EdgeInsets(top: 4, leading: 2, bottom: 4, trailing: 2))
       }
     }
@@ -63,7 +63,7 @@ struct TriggerCard: View {
           .offset(x: 6, y: popoverTop)
       }
     }
-    .padding(.bottom, overhang)
+    .onChange(of: overhang, initial: true) { _, value in model.popoverOverhang = value }
     .onChange(of: model.addMenuRequests) { _, _ in
       // The only row removed: the Add menu opens by itself once the card has drawn its button where it now is.
       DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { showAddMenu() }
@@ -74,7 +74,7 @@ struct TriggerCard: View {
 
   private func showAddMenu() {
     guard model.popover == nil else { return }
-    RoutineMenus.add(model: model, store: store, dark: look.dark, under: addFrame)
+    RoutineMenus.add(model: model, store: store, dark: look.dark, under: addSpot.frame)
   }
 }
 
@@ -751,11 +751,11 @@ private struct PillButton: View {
   let border: Double
   let look: Look
   let open: (CGRect) -> Void
-  @State private var frame: CGRect = .zero
+  @State private var spot = WindowSpot()
   @State private var hovering = false
 
   var body: some View {
-    Button { open(frame) } label: {
+    Button { open(spot.frame) } label: {
       HStack(spacing: 4) {
         Text(text)
           .font(.system(size: 13))
@@ -775,7 +775,7 @@ private struct PillButton: View {
     .buttonStyle(.plain)
     .fixedSize()
     .onHover { hovering = $0 }
-    .background(WindowFrameReader { frame = $0 })
+    .background(WindowSpotReader(spot: spot))
     .accessibilityLabel(label)
     .accessibilityValue(text)
   }

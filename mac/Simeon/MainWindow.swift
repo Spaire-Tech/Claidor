@@ -258,6 +258,8 @@ private struct KeyWatcher: NSViewRepresentable {
       // The avatar editor open (7b): Escape closes it whatever has the keys (the window's capture-phase listener); ⌘V outside a field pastes a picture into it.
       if let editor = pane?.avatarEditor {
         if event.keyCode == 53, mods.isEmpty {
+          // Letters still being composed (Japanese, Chinese) take Escape first.
+          if let text = window?.firstResponder as? NSTextView, text.hasMarkedText() { return false }
           pane?.closeAvatarEditor()
           return true
         }

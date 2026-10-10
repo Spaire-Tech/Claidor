@@ -58,7 +58,7 @@ final class PaneState {
 
   /** The avatar editor, while it is open (7b), and where the avatar's button is in the window (a click on it is not "outside"). */
   var avatarEditor: AvatarEditorModel?
-  var avatarTriggerFrame: CGRect = .zero
+  @ObservationIgnored let avatarTriggerSpot = WindowSpot()
 
   func toggleAvatarEditor(for agent: Agent) {
     if avatarEditor?.agentId == agent.id { closeAvatarEditor() } else { avatarEditor = AvatarEditorModel(agentId: agent.id, isGroup: agent.isGroup) }
@@ -461,7 +461,7 @@ private struct AgentPage: View {
     .overlay(alignment: .top) {
       if let editor = pane.avatarEditor, editor.agentId == agent.id {
         AvatarEditorPopover(agent: agent, model: editor, width: min(294, contentWidth), look: look) { pane.closeAvatarEditor() }
-          .background(OutsideClickCatcher(excluded: { pane.avatarTriggerFrame }) { pane.closeAvatarEditor() })
+          .background(OutsideClickCatcher(excluded: { pane.avatarTriggerSpot.frame }) { pane.closeAvatarEditor() })
           .offset(y: 6 + 96 + 6)
       }
     }
@@ -523,81 +523,32 @@ struct OutsideClickCatcher: NSViewRepresentable {
   }
 }
 
-/** Tells where it is in its window (bottom-left coordinates) as it is laid out. */
-struct WindowFrameReader: NSViewRepresentable {
-  let report: (CGRect) -> Void
+/**
+ Where a view is in its window (bottom-left coordinates), read when asked: scrolling moves a view
+ without laying it out again, so a frame told at layout goes stale (the menus' and the editor's anchors).
+ */
+@MainActor
+final class WindowSpot {
+  weak var view: NSView?
 
-  func makeNSView(context: Context) -> ReaderView {
-    let view = ReaderView()
-    view.report = report
-    return view
-  }
-
-  func updateNSView(_ view: ReaderView, context: Context) {
-    view.report = report
-    view.tell()
-  }
-
-  final class ReaderView: NSView {
-    var report: (CGRect) -> Void = { _ in }
-    private var last: CGRect = .zero
-
-    func tell() {
-      guard window != nil else { return }
-      let frame = convert(bounds, to: nil)
-      guard frame != last else { return }
-      last = frame
-      DispatchQueue.main.async { [report] in report(frame) }
-    }
-
-    override func layout() {
-      super.layout()
-      tell()
-    }
-
-    override func viewDidMoveToWindow() {
-      super.viewDidMoveToWindow()
-      tell()
-    }
+  var frame: CGRect {
+    guard let view, view.window != nil else { return .zero }
+    return view.convert(view.bounds, to: nil)
   }
 }
 
-/**
- * The head (`.simeon-pane__head`, padded 6 above): the avatar's button (96),
- * the name 14 under it (22/28, medium, `-0.022em`) and, when it has one, the
- * title 1 under that (15/20, the pane's grey).
- */
-private struct PaneHead: View {
-  let agent: Agent
-  let look: Look
-  let contentWidth: CGFloat
-  @Environment(AppStore.self) private var store
+/** Puts a view's place in its window into `spot`. */
+struct WindowSpotReader: NSViewRepresentable {
+  let spot: WindowSpot
 
-  var body: some View {
-    VStack(spacing: 0) {
-      AvatarTrigger(agent: agent, look: look)
-      Text(agent.name)
-        .font(.system(size: 22, weight: .medium))
-        .tracking(-0.484)
-        .lineSpacing(LineBox.extra(size: 22, weight: .medium, lineHeight: 28))
-        .foregroundStyle(look.paneInk)
-        .lineLimit(1)
-        .truncationMode(.tail)
-        .frame(maxWidth: contentWidth)
-        .frame(height: 28)
-        .padding(.top, 14)
-      if !agent.isGroup, !agent.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-        Text(agent.title)
-          .font(.system(size: 15))
-          .tracking(-0.16)
-          .foregroundStyle(look.paneInk2)
-          .lineLimit(1)
-          .frame(height: 20)
-          .padding(.top, 1)
-      }
-    }
-    .padding(.top, 6)
-    .frame(maxWidth: .infinity)
+  func makeNSView(context: Context) -> NSView {
+    let view = NSView()
+    spot.view = view
+    return view
+  }
+
+  func updateNSView(_ view: NSView, context: Context) {
+    spot.view = view
   }
 }
 
@@ -650,7 +601,7 @@ private struct AvatarTrigger: View {
     }
     .buttonStyle(.plain)
     .onHover { hovering = $0 }
-    .background(WindowFrameReader { pane.avatarTriggerFrame = $0 })
+    .background(WindowSpotReader(spot: pane.avatarTriggerSpot))
     .help("Edit Avatar")
     .accessibilityLabel("Edit agent avatar")
   }
@@ -983,6 +934,8 @@ struct PaneTextArea: NSViewRepresentable {
   let editable: Bool
   var fontSize: CGFloat = 15
   var lineHeight: CGFloat = 20
+  /** Room inside the box around the words (the instruction's 10 and 8), so a click there still takes the keys. */
+  var inset: CGSize = .zero
   let onCancel: () -> Void
 
   func makeCoordinator() -> Coordinator { Coordinator(self) }
@@ -1007,13 +960,16 @@ struct PaneTextArea: NSViewRepresentable {
     // Its height is measured again whenever its width changes (the pane dragged, the first layout).
     view.postsFrameChangedNotifications = true
     NotificationCenter.default.addObserver(context.coordinator, selector: #selector(Coordinator.frameChanged(_:)), name: NSView.frameDidChangeNotification, object: view)
+    // The words' view fills the box however few lines it has, so a click anywhere in the box takes the keys.
+    scroll.contentView.postsFrameChangedNotifications = true
+    NotificationCenter.default.addObserver(context.coordinator, selector: #selector(Coordinator.boxChanged(_:)), name: NSView.frameDidChangeNotification, object: scroll.contentView)
     view.delegate = context.coordinator
     view.drawsBackground = false
     view.isRichText = false
     view.allowsUndo = true
     view.isAutomaticQuoteSubstitutionEnabled = false
     view.isContinuousSpellCheckingEnabled = false
-    view.textContainerInset = .zero
+    view.textContainerInset = inset
     view.textContainer?.lineFragmentPadding = 0
     view.font = NSFont.systemFont(ofSize: fontSize)
     let lines = NSMutableParagraphStyle()
@@ -1074,6 +1030,12 @@ struct PaneTextArea: NSViewRepresentable {
     @objc func frameChanged(_ notification: Notification) {
       guard let view = notification.object as? FocusTextView, view.widthChanged() else { return }
       measure(view)
+    }
+
+    @objc func boxChanged(_ notification: Notification) {
+      guard let clip = notification.object as? NSClipView, let view = clip.documentView as? NSTextView else { return }
+      let height = clip.bounds.height
+      if abs(view.minSize.height - height) > 0.5 { view.minSize = NSSize(width: 0, height: height) }
     }
 
     func measure(_ view: NSTextView) {
