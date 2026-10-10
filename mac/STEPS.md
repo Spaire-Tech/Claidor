@@ -1687,3 +1687,30 @@ light and dark; the account-* captures (the menu's place in a 760 × 600
 window and on the rail, a long sum, no on-demand, no reset date). On a Mac:
 where the badge sits beside the submenu's arrow, and the figures' left edge
 against Change limit's.
+
+#### After the compile review
+
+A second reader with the compiler's rules found nothing that would not
+build, and these faults, fixed:
+
+- Return with About open pressed the button behind it (Sign in on the
+  sign-in screen, Try again in the first run). About now keeps Return.
+- A reading landing while the menu was open rebuilt the usage submenu even
+  when nothing had changed, which could close it under the pointer. The
+  same reading now leaves it alone.
+- With the usage still being read at sign-in, the menu never showed the row
+  when that read landed. It now waits for it.
+- Scrolling or pinching over Settings, Plugins or About zoomed a picture
+  open behind them. The picture waits now.
+- The account's picture was fetched again each time the sidebar folded to
+  its rail and back, showing the letters first. It is kept once read.
+- Simeon › About Simeon with the window closed opened nothing; it opens the
+  window with About over it.
+- The initials' tooltip is left off outright, rather than set empty.
+
+Not changed: the clipboard is emptied before Copy version info writes (the
+Mac needs that to write). A Weekly usage row that arrives while Apple's menu
+is open makes the menu grow downward, over the initials (an open Mac menu
+keeps its top where it is); the window's grows upward. Since the usage is
+read at sign-in, this is rare. About puts no key on × when it opens, and
+Tab does not stay inside it.

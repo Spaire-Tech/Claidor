@@ -85,11 +85,16 @@ struct SimeonCommands: Commands {
   let window: WindowState
   let store: AppStore
   let account: AccountState
+  @Environment(\.openWindow) private var openWindow
 
   var body: some Commands {
     // About Simeon opens the window's own About, over the window (`open-about`), not Apple's panel; no key, as the window's.
     CommandGroup(replacing: .appInfo) {
-      Button("About Simeon") { account.openAbout() }
+      Button("About Simeon") {
+        account.openAbout()
+        // The window closed: it opens, About over it.
+        if !NSApp.windows.contains(where: { $0.isVisible && $0.canBecomeMain }) { openWindow(id: "main") }
+      }
     }
     // File holds Close Window only.
     CommandGroup(replacing: .newItem) {}

@@ -1,4 +1,5 @@
 import AppKit
+import Observation
 import SwiftUI
 import SimeonCore
 
@@ -64,11 +65,16 @@ enum AccountActions {
     menu.minimumWidth = 228
     let weekly = NSMenuItem(title: AccountMenu.weeklyUsage, action: nil, keyEquivalent: "")
     weekly.image = symbol("gauge.with.needle")
+    var shown: AccountMenu.Reading?
     func show(_ reading: AccountMenu.Reading?) {
       guard let reading else {
+        shown = nil
         if weekly.menu != nil { menu.removeItem(weekly) }
         return
       }
+      // The same reading again leaves the submenu alone (it may be open under the pointer).
+      if reading == shown, weekly.menu != nil { return }
+      shown = reading
       weekly.badge = NSMenuItemBadge(string: reading.percent)
       weekly.submenu = usageMenu(reading)
       if weekly.menu == nil { menu.insertItem(weekly, at: 0) }
@@ -86,9 +92,14 @@ enum AccountActions {
     logOut.image = symbol("rectangle.portrait.and.arrow.right")
     menu.addItem(logOut)
 
-    // The menu runs its own loop until it closes; the reading lands in it meanwhile.
+    // The menu runs its own loop until it closes; the reading lands in it meanwhile (also one already on its way, as at sign-in).
     Task { @MainActor in
       await store.loadUsage()
+      while store.usage.isLoading {
+        await withCheckedContinuation { (landed: CheckedContinuation<Void, Never>) in
+          withObservationTracking { _ = store.usage } onChange: { landed.resume() }
+        }
+      }
       show(AccountMenu.reading(store.usage, readAt: store.usageReadAt))
     }
     guard let window = NSApp.keyWindow ?? NSApp.mainWindow, let view = window.contentView else { return }
@@ -120,6 +131,8 @@ enum AccountActions {
   private static func figure(title: String, subtitle: String?, value: String) -> NSMenuItem {
     let item = NSMenuItem(title: "\(title), \(value)", action: nil, keyEquivalent: "")
     let host = NSHostingView(rootView: UsageFigureRow(title: title, subtitle: subtitle, value: value))
+    // Its own size, not SwiftUI's: 46 high (30 without the line), as wide as the menu.
+    host.sizingOptions = []
     host.frame = NSRect(x: 0, y: 0, width: 228, height: subtitle == nil ? 30 : 46)
     host.autoresizingMask = [.width]
     item.view = host
@@ -299,7 +312,7 @@ private struct CopyVersionButton: View {
   }
 }
 
-/** Escape closes About, whatever is under it (Settings, Plugins stay). */
+/** Escape closes About, whatever is under it (Settings, Plugins stay); Return goes to nothing behind it (Sign in, Try again). */
 private struct AboutKeys: NSViewRepresentable {
   let close: () -> Void
 
@@ -325,9 +338,16 @@ private struct AboutKeys: NSViewRepresentable {
         let took = MainActor.assumeIsolated { () -> Bool in
           guard let self, event.window === self.window else { return false }
           let mods = event.modifierFlags.intersection([.command, .shift, .option, .control])
-          guard event.keyCode == 53, mods.isEmpty else { return false }
-          self.close?()
-          return true
+          guard mods.isEmpty else { return false }
+          switch event.keyCode {
+          case 53:
+            self.close?()
+            return true
+          case 36, 76:
+            return true
+          default:
+            return false
+          }
         }
         return took ? nil : event
       }

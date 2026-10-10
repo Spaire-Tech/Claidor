@@ -191,15 +191,19 @@ private struct Disc<Content: View>: View {
   @ViewBuilder let label: () -> Content
 
   var body: some View {
-    Button(action: action) {
+    let button = Button(action: action) {
       label()
         .frame(width: size, height: size)
         .contentShape(Circle())
     }
     .buttonStyle(.plain)
     .glassEffect(.regular, in: .circle)
-    .help(tooltip ? help : "")
     .accessibilityLabel(help)
+    if tooltip {
+      button.help(help)
+    } else {
+      button
+    }
   }
 }
 
@@ -263,13 +267,9 @@ private struct AccountDisc: View {
       ZStack {
         initials(look)
         if let url = store.account?.pictureURL {
-          AsyncImage(url: url) { image in
-            image.resizable().aspectRatio(contentMode: .fill)
-          } placeholder: {
-            Color.clear
-          }
-          .frame(width: 32, height: 32)
-          .clipShape(Circle())
+          AccountPicture(url: url)
+            .frame(width: 32, height: 32)
+            .clipShape(Circle())
         }
       }
     }
@@ -284,6 +284,31 @@ private struct AccountDisc: View {
       .font(.system(size: 12, weight: .medium))
       .tracking(0.24)
       .foregroundStyle(look.initials)
+  }
+}
+
+/** The account's picture, read once and kept: folding the sidebar to its rail and back does not show the letters again first. */
+private struct AccountPicture: View {
+  let url: URL
+  @State private var image: NSImage?
+  @MainActor private static var kept: [URL: NSImage] = [:]
+
+  var body: some View {
+    Group {
+      if let picture = image ?? Self.kept[url] {
+        Image(nsImage: picture)
+          .resizable()
+          .aspectRatio(contentMode: .fill)
+      } else {
+        Color.clear
+      }
+    }
+    .task(id: url) {
+      if Self.kept[url] != nil { return }
+      guard let (data, _) = try? await URLSession.shared.data(from: url), let picture = NSImage(data: data) else { return }
+      Self.kept[url] = picture
+      image = picture
+    }
   }
 }
 

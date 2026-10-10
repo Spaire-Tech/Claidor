@@ -399,7 +399,8 @@ private struct PointerZoom: NSViewRepresentable {
       guard window != nil else { return }
       monitor = NSEvent.addLocalMonitorForEvents(matching: [.scrollWheel, .magnify]) { [weak self] event in
         let took = MainActor.assumeIsolated { () -> Bool in
-          guard let self, event.window === self.window, let zoom = self.zoom else { return false }
+          // Under Settings, Plugins or About the wheel is theirs.
+          guard let self, event.window === self.window, let zoom = self.zoom, !WindowOverlay.showing else { return false }
           // Top-left points in this view, which fills the window.
           let local = self.convert(event.locationInWindow, from: nil)
           let point = CGPoint(x: local.x, y: self.isFlipped ? local.y : self.bounds.height - local.y)
