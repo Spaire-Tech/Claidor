@@ -395,15 +395,45 @@ private struct BubbleRow: View {
 
   private func message(column: CGFloat) -> some View {
     let limit = max(0, min(column * 0.88, 640, column - 82))
-    return VStack(alignment: .trailing, spacing: -6) {
-      shaped
-      if !bubble.reactions.isEmpty {
-        ReactionPills(bubble: bubble, agentId: agentId, look: look)
-          .padding(.trailing, 10)
+    let words = bubble.text.trimmingCharacters(in: .whitespacesAndNewlines)
+    return VStack(alignment: bubble.fromPerson ? .trailing : .leading, spacing: 0) {
+      if let quote = bubble.quote {
+        ReplyQuote(text: quote, look: look)
+      }
+      VStack(alignment: .trailing, spacing: -6) {
+        if let link = bubble.loneLink {
+          // A message that is one link is drawn as its card (`xEn`).
+          LinkCardView(url: link, look: look)
+            .frame(maxWidth: max(0, min(column * 0.76, 420, column - 82)))
+        } else if !words.isEmpty || bubble.images.isEmpty {
+          shaped
+        }
+        if !bubble.reactions.isEmpty {
+          ReactionPills(bubble: bubble, agentId: agentId, look: look)
+            .padding(.trailing, 10)
+        }
+      }
+      if !bubble.images.isEmpty {
+        PictureStrip(images: bubble.images, agentId: agentId, limit: max(0, min(column * 0.86, 560, column - 82)), look: look)
+          .padding(.top, words.isEmpty ? 0 : 8)
+      }
+      if let held = bubble.sentOfflineAtMs {
+        Text("Sent while offline · \(BubbleRow.offlineTime.string(from: Date(timeIntervalSince1970: held / 1000)))")
+          .font(.system(size: 11))
+          .foregroundStyle(look.inkTertiary)
+          .padding(.top, 4)
+          .padding(.trailing, 4)
       }
     }
     .frame(maxWidth: limit, alignment: bubble.fromPerson ? .trailing : .leading)
   }
+
+  /** "Oct 9, 3:12 PM". */
+  static let offlineTime: DateFormatter = {
+    let format = DateFormatter()
+    format.setLocalizedDateFormatFromTemplate("MMMd jmm")
+    return format
+  }()
 
   @ViewBuilder
   private var shaped: some View {
@@ -415,15 +445,12 @@ private struct BubbleRow: View {
         .cssLineHeight(38, size: 32)
         .textSelection(.enabled)
     } else if bubble.fromPerson {
-      let lineHeight: CGFloat = look.dark ? 20 : 21
-      Text(bubble.text)
-        .font(.system(size: 14))
-        .tracking(-0.042)
-        .foregroundStyle(look.yoursText)
-        .multilineTextAlignment(isShort(trimmed) ? .center : .leading)
-        .textSelection(.enabled)
-        .fixedSize(horizontal: false, vertical: true)
-        .cssLineHeight(lineHeight, size: 14)
+      VStack(alignment: .leading, spacing: 0) {
+        FoldingText(text: bubble.text, lineHeight: look.dark ? 20 : 21, centred: isShort(trimmed), look: look)
+        if let tag = bubble.channel {
+          ChannelTagView(tag: tag, ink: look.yoursText)
+        }
+      }
         .padding(.vertical, look.dark ? 8 : 10)
         .padding(.horizontal, look.dark ? 12 : 15)
         .frame(minWidth: isShort(trimmed) ? 36 : nil)
@@ -432,7 +459,16 @@ private struct BubbleRow: View {
       // A run's bubbles meet at 6-point corners (`assistantContinuedPrev`, `…Next`); so does the last one with the working line under it, and in a group the one beside its author's butterfly.
       let joinsBelow = run.continuesNext || (seamsBelow && bubble.reactions.isEmpty) || (isGroup && bubble.showsAvatar)
       let shape = UnevenRoundedRectangle(topLeadingRadius: run.continuesPrevious ? 6 : 18, bottomLeadingRadius: joinsBelow ? 6 : 18, bottomTrailingRadius: 18, topTrailingRadius: 18)
-      MessageBlocks(blocks: Markdown.cachedBlocks(bubble.text), line: MessageLine(size: 14, lineHeight: 20, colour: look.theirsText, look: look, agents: store.mentionNames, personName: store.account?.name))
+      VStack(alignment: .leading, spacing: 0) {
+        if let call = CallRecordView.parse(bubble.text) {
+          CallRecordView(duration: call.duration, recap: call.recap, look: look)
+        } else {
+          MessageBlocks(blocks: Markdown.cachedBlocks(bubble.text), line: MessageLine(size: 14, lineHeight: 20, colour: look.theirsText, look: look, agents: store.mentionNames, personName: store.account?.name))
+        }
+        if let tag = bubble.channel {
+          ChannelTagView(tag: tag, ink: look.theirsText)
+        }
+      }
         .font(.system(size: 14))
         .tracking(-0.042)
         .foregroundStyle(look.theirsText)
@@ -846,5 +882,52 @@ private struct ActivityRow: View {
     .padding(.vertical, 2)
     .accessibilityElement(children: .ignore)
     .accessibilityLabel(line.verb == "typing" ? "\(agent.name) is typing" : "\(agent.name): \(line.text)")
+  }
+}
+
+/**
+ * The person's words in their bubble, folded at 160 points when longer,
+ * with Show more under them (13) and Show less once open, as the window
+ * folds a long message.
+ */
+private struct FoldingText: View {
+  let text: String
+  let lineHeight: CGFloat
+  let centred: Bool
+  let look: Look
+  @State private var full: CGFloat = 0
+  @State private var open = false
+
+  var body: some View {
+    let folds = full > 161
+    VStack(alignment: .leading, spacing: 4) {
+      Text(text)
+        .font(.system(size: 14))
+        .tracking(-0.042)
+        .foregroundStyle(look.yoursText)
+        .multilineTextAlignment(centred ? .center : .leading)
+        .textSelection(.enabled)
+        .fixedSize(horizontal: false, vertical: true)
+        .cssLineHeight(lineHeight, size: 14)
+        .onGeometryChange(for: CGFloat.self) { proxy in proxy.size.height } action: { value in full = value }
+        .frame(height: folds && !open ? 160 : nil, alignment: .top)
+        .clipped()
+      if folds {
+        Button { open.toggle() } label: {
+          HStack(spacing: 4) {
+            Text(open ? "Show less" : "Show more")
+              .font(.system(size: 13))
+            Image(systemName: open ? "chevron.up" : "chevron.down")
+              .font(.system(size: 10, weight: .semibold))
+              .frame(width: 16, height: 16)
+          }
+          .foregroundStyle(look.yoursText)
+          .padding(.vertical, 4)
+          .padding(.horizontal, 6)
+          .contentShape(RoundedRectangle(cornerRadius: 6))
+        }
+        .buttonStyle(.plain)
+      }
+    }
   }
 }

@@ -806,3 +806,241 @@ struct SecretCardView: View {
     }
   }
 }
+
+// MARK: Pictures
+
+/**
+ * An agent's pictures under its words (`sand-message-attachments__strip`,
+ * 8 below them): one row, 6 apart, each 12 round and 192 high at its own
+ * width, the row at most 86% of the chat, 560, or the chat less 82 (smaller
+ * together when wider). Grey until drawn. Opening one full screen comes with
+ * the file preview.
+ */
+struct PictureStrip: View {
+  let images: [ChatImage]
+  let agentId: String
+  let limit: CGFloat
+  let look: Look
+
+  var body: some View {
+    let ratios = images.map { image -> CGFloat in
+      guard let w = image.width, let h = image.height, w > 0, h > 0 else { return 1 }
+      return CGFloat(w / h)
+    }
+    let gaps = CGFloat(max(0, images.count - 1)) * 6
+    let natural = ratios.reduce(0, +) * 192
+    let height = natural + gaps > limit && natural > 0 ? max(48, (limit - gaps) / ratios.reduce(0, +)) : 192
+    HStack(spacing: 6) {
+      ForEach(Array(images.enumerated()), id: \.offset) { index, image in
+        ChatPicture(image: image, agentId: agentId, look: look)
+          .frame(width: (height * ratios[index]).rounded(), height: height.rounded())
+          .clipShape(RoundedRectangle(cornerRadius: 12))
+      }
+    }
+  }
+}
+
+/** One picture: read from the agent's computer (or the web), grey until it is. */
+struct ChatPicture: View {
+  let image: ChatImage
+  let agentId: String
+  let look: Look
+  @Environment(AppStore.self) private var store
+  @State private var picture: NSImage?
+
+  var body: some View {
+    ZStack {
+      look.codeWash
+      if let picture {
+        Image(nsImage: picture).resizable().interpolation(.high).aspectRatio(contentMode: .fill)
+      }
+    }
+    .accessibilityLabel(image.alt.isEmpty ? "Picture" : image.alt)
+    .task(id: image.url) {
+      if image.url.hasPrefix("https://"), let url = URL(string: image.url) {
+        if let (data, _) = try? await URLSession.shared.data(from: url) { picture = NSImage(data: data) }
+      } else if let data = await store.readFile(image.url, agentId: agentId) {
+        picture = NSImage(data: data)
+      }
+    }
+  }
+}
+
+// MARK: Links
+
+/**
+ * A message that is one link, drawn as a card (`sand-link-card-wrap`, at
+ * most 76% of the chat, 420, or the chat less 82): the ground, a 10% edge,
+ * 18 round; the page's icon (or a globe) in a 60-point square, its title
+ * or address (13 on 18, 600) and the address under it (12, 60%). It opens
+ * in the browser.
+ */
+struct LinkCardView: View {
+  let url: URL
+  let look: Look
+  @State private var meta: LinkMetadata?
+
+  var body: some View {
+    Button {
+      NSWorkspace.shared.open(url)
+    } label: {
+      HStack(spacing: 0) {
+        Group {
+          if let data = meta?.favicon, let icon = NSImage(data: data) {
+            Image(nsImage: icon).resizable().interpolation(.high).frame(width: 20, height: 20).clipShape(RoundedRectangle(cornerRadius: 4))
+          } else {
+            Image(systemName: "globe").font(.system(size: 14)).foregroundStyle(look.inkSecondary)
+          }
+        }
+        .frame(width: 60, height: 60)
+        VStack(alignment: .leading, spacing: 2) {
+          Text(title)
+            .font(.system(size: 13, weight: .semibold))
+            .tracking(-0.08)
+            .foregroundStyle(look.ink)
+            .lineLimit(1)
+            .truncationMode(.tail)
+          Text(url.absoluteString)
+            .font(.system(size: 12))
+            .foregroundStyle(look.inkSecondary)
+            .lineLimit(1)
+            .truncationMode(.tail)
+        }
+        .padding(EdgeInsets(top: 12, leading: 0, bottom: 12, trailing: 12))
+        .frame(maxWidth: .infinity, alignment: .leading)
+      }
+      .frame(maxWidth: .infinity)
+      .background(look.ground, in: RoundedRectangle(cornerRadius: 18))
+      .overlay { RoundedRectangle(cornerRadius: 18).strokeBorder(look.ink.opacity(0.1), lineWidth: 1) }
+      .contentShape(RoundedRectangle(cornerRadius: 18))
+    }
+    .buttonStyle(.plain)
+    .shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1)
+    .help(url.absoluteString)
+    .task(id: url) { meta = await LinkMetadataReader.shared.metadata(for: url.absoluteString) }
+  }
+
+  private var title: String {
+    if let page = meta?.title.trimmingCharacters(in: .whitespacesAndNewlines), !page.isEmpty { return page }
+    return url.host() ?? url.absoluteString
+  }
+}
+
+// MARK: Around a message
+
+/** The line a reply answers, over its message (`sand-reply-quote`): an arrow and the line, 13, at 40%. Jumping to it is step 2d. */
+struct ReplyQuote: View {
+  let text: String
+  let look: Look
+
+  var body: some View {
+    Button {} label: {
+      HStack(spacing: 4) {
+        Image(systemName: "arrowshape.turn.up.left")
+          .font(.system(size: 10))
+          .frame(width: 14, height: 14)
+        Text(text)
+          .font(.system(size: 13))
+          .lineLimit(1)
+          .truncationMode(.tail)
+      }
+      .foregroundStyle(look.inkTertiary)
+      .padding(EdgeInsets(top: 4, leading: 8, bottom: 0, trailing: 8))
+      .contentShape(Rectangle())
+    }
+    .buttonStyle(.plain)
+    .accessibilityLabel("Jump to replied message")
+  }
+}
+
+/** Where a message came from or went (`sand-channel-tag`): an arrow and the platform (11, 500) in a faint pill of the bubble's own ink, 6 under its words. */
+struct ChannelTagView: View {
+  let tag: ChannelTag
+  let ink: Color
+
+  var body: some View {
+    HStack(spacing: 4) {
+      Image(systemName: tag.inbound ? "arrow.down.left" : "arrow.up.right")
+        .font(.system(size: 8, weight: .semibold))
+      Text(tag.platform)
+        .font(.system(size: 11, weight: .medium))
+        .tracking(0.07)
+    }
+    .foregroundStyle(ink.opacity(0.65))
+    .padding(EdgeInsets(top: 2, leading: 6, bottom: 2, trailing: 7))
+    .background(ink.opacity(0.078), in: Capsule())
+    .padding(.top, 6)
+    .help(tag.title)
+    .accessibilityLabel(tag.title)
+  }
+}
+
+/**
+ * A call's record in the chat (`simeon-call-record`, 340 wide at most): a
+ * phone in a faint circle (30), "Voice call" (600) and its length (13, 60%),
+ * a chevron that opens the recap under a hairline, 40 in.
+ */
+struct CallRecordView: View {
+  let duration: String
+  let recap: String?
+  let look: Look
+  @State private var open = false
+
+  /** "Voice call · 2:48", then the recap (`__simeonCallRecordParse`). */
+  static func parse(_ text: String) -> (duration: String, recap: String?)? {
+    let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard trimmed.hasPrefix("Voice call · "), let pattern = CallRecordView.pattern else { return nil }
+    let ns = trimmed as NSString
+    guard let match = pattern.firstMatch(in: trimmed, range: NSRange(location: 0, length: ns.length)) else { return nil }
+    let duration = ns.substring(with: match.range(at: 1))
+    let recapRange = match.range(at: 2)
+    let recap = recapRange.location == NSNotFound ? nil : ns.substring(with: recapRange).trimmingCharacters(in: .whitespacesAndNewlines)
+    return (duration, recap?.isEmpty == true ? nil : recap)
+  }
+
+  private static let pattern = try? NSRegularExpression(pattern: #"^Voice call · (\d{1,2}:\d{2}(?::\d{2})?)(?:\n\n([\s\S]+))?$"#)
+
+  var body: some View {
+    let has = recap != nil
+    VStack(alignment: .leading, spacing: 0) {
+      Button { if has { withAnimation(.easeInOut(duration: 0.22)) { open.toggle() } } } label: {
+        HStack(spacing: 10) {
+          Image(systemName: "phone.fill")
+            .font(.system(size: 12))
+            .foregroundStyle(look.ink)
+            .frame(width: 30, height: 30)
+            .background(look.dark ? Color.white.opacity(0.10) : Color.black.opacity(0.06), in: Circle())
+          VStack(alignment: .leading, spacing: 1) {
+            Text("Voice call").fontWeight(.semibold)
+            Text(duration)
+              .font(.system(size: 13))
+              .monospacedDigit()
+              .foregroundStyle(look.inkSecondary)
+          }
+          .frame(maxWidth: .infinity, alignment: .leading)
+          if has {
+            Image(systemName: "chevron.right")
+              .font(.system(size: 10, weight: .semibold))
+              .foregroundStyle(look.inkSecondary)
+              .rotationEffect(.degrees(open ? 90 : 0))
+              .frame(width: 14, height: 14)
+          }
+        }
+        .contentShape(Rectangle())
+      }
+      .buttonStyle(.plain)
+      .disabled(!has)
+      if open, let recap {
+        VStack(alignment: .leading, spacing: 0) {
+          Rectangle().fill(look.dark ? Color.white.opacity(0.10) : Color.black.opacity(0.08)).frame(height: 1)
+          Text(recap)
+            .padding(.top, 8)
+            .padding(.leading, 40)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.top, 8)
+      }
+    }
+    .frame(maxWidth: 340, alignment: .leading)
+  }
+}

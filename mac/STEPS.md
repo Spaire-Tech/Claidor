@@ -311,3 +311,17 @@ window's Gallery chat, one card at a time. Pushed so far:
   "Show the command" unfolding it, and Allow once, Always allow, Deny.
 - **Secrets**: the name and why, "Paste your …" and Save securely, the lock
   line; once saved, "Saved securely and kept private." and a "Saved" pill.
+- **Pictures** under an agent's words: one row, 192 high, 12 round, 6
+  apart, read from the agent's computer.
+- **A message that is one link** drawn as its card (the page's icon or a
+  globe, its title or address, the address), opening in the browser.
+- **The line a reply answers** over it; **the channel tag** ("Discord",
+  with "From Ada on Discord" as its tooltip) under a message from or to a
+  channel; **"Sent while offline · Oct 9, 3:12 PM"** under one held while
+  the computer was away.
+- **A call's record** ("Voice call", its length, the recap opening under a
+  hairline).
+- **A long message of yours** folded at 160 points with Show more.
+
+Still to come in 2c: flights, a cloud agent, "Your turn on the computer",
+opening a file or a picture in the preview, and a diagram full screen.
