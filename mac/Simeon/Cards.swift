@@ -721,3 +721,88 @@ struct ListenerConnectCardView: View {
     }
   }
 }
+
+// MARK: Secrets
+
+/**
+ * A secret the agent asks for (`sand-secret-request`): its name (14 on 22,
+ * 500) and why (60%); a field ("Paste your <name>", on the ground with a
+ * 15% edge, 32 high) and Save securely in the blue; under them a lock and
+ * "Stored securely, never shown to your agent." (13, 40%). Once saved:
+ * "Saved securely and kept private." and a "Saved" pill.
+ */
+struct SecretCardView: View {
+  let entryId: String
+  let agentId: String
+  let label: String
+  let description: String
+  let provided: Bool
+  let look: Look
+  @Environment(AppStore.self) private var store
+  @State private var value = ""
+  @State private var saving = false
+  @State private var saved = false
+
+  var body: some View {
+    CardShell(look: look) {
+      HStack(alignment: .top, spacing: 8) {
+        VStack(alignment: .leading, spacing: 0) {
+          Text(label)
+            .font(.system(size: 14, weight: .medium))
+            .tracking(-0.15)
+            .foregroundStyle(look.ink)
+            .cssLineHeight(22, size: 14, weight: .medium)
+          let line = provided || saved ? "Saved securely and kept private." : description
+          if !line.isEmpty {
+            Text(line)
+              .font(.system(size: 14))
+              .tracking(-0.15)
+              .foregroundStyle(look.inkSecondary)
+              .cssLineHeight(22, size: 14)
+          }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        if provided || saved {
+          StatusPill(text: "Saved", look: look, dot: look.working)
+        }
+      }
+      if !(provided || saved) {
+        HStack(alignment: .top, spacing: 8) {
+          SecureField("", text: $value, prompt: Text("Paste your \(label)").foregroundStyle(look.placeholder))
+            .textFieldStyle(.plain)
+            .font(.system(size: 14))
+            .padding(.vertical, 6)
+            .padding(.horizontal, 10)
+            .frame(height: 32)
+            .background(look.ground, in: RoundedRectangle(cornerRadius: 8))
+            .overlay { RoundedRectangle(cornerRadius: 8).strokeBorder(look.ink.opacity(0.15), lineWidth: 1) }
+            .onSubmit(save)
+          CardButton(title: "Save securely", prominent: true, look: look, action: save)
+            .disabled(saving || value.isEmpty)
+        }
+        HStack(alignment: .top, spacing: 4) {
+          Image(systemName: "lock.fill")
+            .font(.system(size: 9))
+            .frame(width: 12, height: 12)
+            .padding(.top, 3)
+          Text("Stored securely, never shown to your agent.")
+            .font(.system(size: 13))
+            .tracking(-0.08)
+        }
+        .foregroundStyle(look.inkTertiary)
+      }
+    }
+  }
+
+  private func save() {
+    let secret = value
+    guard !secret.isEmpty, !saving else { return }
+    saving = true
+    Task {
+      await store.submitSecret(secret, entryId: entryId, in: agentId)
+      value = ""
+      saving = false
+      saved = true
+    }
+  }
+}

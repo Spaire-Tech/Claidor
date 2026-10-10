@@ -309,3 +309,5 @@ window's Gallery chat, one card at a time. Pushed so far:
 - **Auto-review approvals**: the title by what the agent wants, "Approval
   needed" or the outcome, where it runs, what it does, why it was paused,
   "Show the command" unfolding it, and Allow once, Always allow, Deny.
+- **Secrets**: the name and why, "Paste your …" and Save securely, the lock
+  line; once saved, "Saved securely and kept private." and a "Saved" pill.

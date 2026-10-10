@@ -263,6 +263,10 @@ private struct TranscriptRow: View {
       ApprovalCardView(entryId: id, agentId: agentId, requestId: requestId, summary: summary, reason: reason, command: command, status: status, surface: surface, proposedRule: proposedRule, look: look)
         .frame(maxWidth: limit(520), alignment: .leading)
         .padding(.top, startsGroup ? 12 : 0)
+    case .request(let id, .secret(let label, let description, let provided)):
+      SecretCardView(entryId: id, agentId: agentId, label: label, description: description, provided: provided, look: look)
+        .frame(maxWidth: limit(640), alignment: .leading)
+        .padding(.top, startsGroup ? 12 : 0)
     default:
       LaterCard(kind: row.kind, look: look)
         .padding(.top, startsGroup ? 12 : 0)
