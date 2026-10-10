@@ -40,9 +40,7 @@ final class SidebarState {
   static let foldMotion = Animation.timingCurve(0.22, 1, 0.36, 1, duration: 0.2)
 
   func fold(_ id: String) {
-    withAnimation(Self.foldMotion) {
-      if folded.contains(id) { folded.remove(id) } else { folded.insert(id) }
-    }
+    withAnimation(Self.foldMotion) { folded.formSymmetricDifference([id]) }
   }
 
   /** The sidebar's order (⇧-click, Control-Tab): the pins, then the list or the open sections' agents (`Ict`). */
@@ -88,7 +86,12 @@ final class SidebarState {
     }
   }
 
-  /** A drag begins; it is over when no mouse button is held (a drag let go anywhere, or called off). */
+  /**
+   * A drag begins; it is over once no mouse button is held (a drag let go
+   * anywhere, or called off). The button is up before a drop reaches its
+   * zone, so the drag is forgotten half a second later, a drop clearing it
+   * first.
+   */
   func begin(_ drag: Dragged) {
     dragging = drag
     Task { [weak self] in
@@ -96,6 +99,7 @@ final class SidebarState {
       while NSEvent.pressedMouseButtons != 0 {
         try? await Task.sleep(for: .milliseconds(100))
       }
+      try? await Task.sleep(for: .milliseconds(500))
       if self?.dragging == drag { self?.dragging = nil }
     }
   }
@@ -110,7 +114,7 @@ extension NSItemProvider {
   /** A sidebar drag's item: the dragged id, in the sidebar's own kind. */
   static func sidebarItem(_ id: String) -> NSItemProvider {
     let provider = NSItemProvider()
-    provider.registerDataRepresentation(forTypeIdentifier: UTType.sidebarItem.identifier, visibility: .ownProcess) { done in
+    provider.registerDataRepresentation(forTypeIdentifier: UTType.sidebarItem.identifier, visibility: .all) { done in
       done(Data(id.utf8), nil)
       return nil
     }

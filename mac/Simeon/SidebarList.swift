@@ -249,7 +249,8 @@ private struct PinGridLayout: Layout {
       let size = view.sizeThatFits(.unspecified)
       return CGSize(width: max(Self.column, size.width), height: size.height)
     }
-    let fit = max(1, Int(((width + Self.columnGap) / (Self.column + Self.columnGap)).rounded(.down)))
+    let columns = width.isFinite ? ((width + Self.columnGap) / (Self.column + Self.columnGap)).rounded(.down) : 1
+    let fit = max(1, Int(min(columns, 1000)))
     let count = max(1, min(fit, sizes.count))
     var columns = Array(repeating: CGFloat(0), count: count)
     var rows: [CGFloat] = []
@@ -264,7 +265,7 @@ private struct PinGridLayout: Layout {
   }
 
   func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-    let width = proposal.width ?? (Self.column * 2 + Self.columnGap)
+    let width = proposal.width.flatMap { $0.isFinite ? $0 : nil } ?? (Self.column * 2 + Self.columnGap)
     let grid = grid(width: width, subviews: subviews)
     let height = grid.rows.reduce(0, +) + Self.rowGap * CGFloat(max(0, grid.rows.count - 1))
     return CGSize(width: width, height: height)
@@ -756,7 +757,8 @@ struct NameField: View {
       .onExitCommand { finish(keep: false) }
       .onChange(of: focused) { _, now in if !now { finish(keep: true) } }
       .task {
-        // Focused once it is in the window, its words chosen (the field's own behaviour on taking the keys).
+        // Focused once it is in the window (a moment after it appears), its words chosen as a field chooses them on taking the keys.
+        try? await Task.sleep(for: .milliseconds(30))
         focused = true
       }
   }

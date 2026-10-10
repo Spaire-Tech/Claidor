@@ -175,12 +175,13 @@ private struct KeyWatcher: NSViewRepresentable {
         sidebar.step(mods.contains(.shift) ? -1 : 1, order: sidebar.order(store), current: windowState.selected)
         return true
       case 53 where mods.isEmpty:
-        // Escape: Control-Tab's walk first, then the picked rows (a field being renamed keeps its own Escape).
+        // Escape: Control-Tab's walk first, then the picked rows, unless a field has the keys (its own Escape).
         if sidebar.cycle != nil {
           sidebar.cycle = nil
           return true
         }
-        guard !sidebar.selection.isEmpty, sidebar.renamingAgent == nil, sidebar.renamingSection == nil else { return false }
+        guard !sidebar.selection.isEmpty, sidebar.renamingAgent == nil, sidebar.renamingSection == nil,
+              !(window?.firstResponder is NSText) else { return false }
         sidebar.selection.clear()
         return true
       case 51 where mods.isEmpty, 117 where mods.isEmpty:

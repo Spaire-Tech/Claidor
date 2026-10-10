@@ -149,10 +149,10 @@ struct SelectionBar: View {
         .help("Move \(movable.count) selected agents to section")
         .accessibilityLabel("Move \(movable.count) selected agents to section")
       }
-      BarButton(symbol: "trash", label: "Delete \(count) selected agents") {
+      PickedButton(symbol: "trash", label: "Delete \(count) selected agents") {
         SidebarActions.confirmDelete(picked, store: store, sidebar: sidebar)
       }
-      BarButton(symbol: "xmark", label: "Clear selection") {
+      PickedButton(symbol: "xmark", label: "Clear selection") {
         sidebar.selection.clear()
       }
     }
@@ -160,7 +160,7 @@ struct SelectionBar: View {
 }
 
 /** One of the picked rows' buttons: 24 square, 6 round, grey under the pointer. */
-private struct BarButton: View {
+private struct PickedButton: View {
   let symbol: String
   let label: String
   let action: () -> Void
