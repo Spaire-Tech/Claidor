@@ -152,7 +152,7 @@ struct MacSidebar: View {
   /** A row of the list: a click opens it, ⌘ and ⇧ pick, a double-click renames; dragged into a section or onto the pins. */
   private func row(_ agent: Agent) -> some View {
     let picked = navigation.selection.contains(agent.id)
-    let open = navigation.selected == agent.id && !navigation.newChat.isOpen
+    let open = navigation.selected == agent.id && !navigation.newChat.isOpen && !navigation.orgChartOpen
     return Group {
       if navigation.renaming == agent.id {
         MacRenameField(initial: agent.name, label: "Rename agent") { name in
@@ -179,7 +179,7 @@ struct MacSidebar: View {
   /** A butterfly in the rail: picked and opened as a row is, its card on hover. */
   private func railRow(_ agent: Agent, pinned: Bool) -> some View {
     let picked = navigation.selection.contains(agent.id)
-    let open = navigation.selected == agent.id && !navigation.newChat.isOpen
+    let open = navigation.selected == agent.id && !navigation.newChat.isOpen && !navigation.orgChartOpen
     return AgentAvatar(agent: agent, members: store.members(of: agent), moves: true)
       .frame(width: 34, height: 34)
       .overlay(alignment: .bottomTrailing) {
@@ -524,7 +524,7 @@ struct MacPinGrid: View {
   var body: some View {
     LazyVGrid(columns: [GridItem(.adaptive(minimum: 74, maximum: 96), spacing: 6)], spacing: 10) {
       ForEach(pins) { agent in
-        let open = navigation.selected == agent.id && !navigation.newChat.isOpen
+        let open = navigation.selected == agent.id && !navigation.newChat.isOpen && !navigation.orgChartOpen
         let picked = navigation.selection.contains(agent.id)
         VStack(spacing: 4) {
           AgentAvatar(agent: agent, members: store.members(of: agent), moves: true)

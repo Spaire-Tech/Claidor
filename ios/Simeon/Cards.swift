@@ -994,6 +994,8 @@ struct FileCardView: View {
 
   /** The picture could not be read: the file card, so it can still be opened. */
   @State private var unreadable = false
+  /** The line under its name: the size, or "Couldn't read file" (`readAttachmentText`). */
+  @State private var line = ""
 
   private var isImage: Bool { FileKind.images.contains((name as NSString).pathExtension.lowercased()) }
 
@@ -1066,8 +1068,12 @@ struct FileCardView: View {
         }
       }
       .frame(width: 36, height: 36)
-      Text("\(base)\(ext.isEmpty ? "" : ".\(ext)")").font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.primary)
-        .lineLimit(1).truncationMode(.middle)
+      VStack(alignment: .leading, spacing: 1) {
+        Text("\(base)\(ext.isEmpty ? "" : ".\(ext)")").font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.primary)
+          .lineLimit(1).truncationMode(.middle)
+        // Hidden while empty (patch 1670).
+        if !line.isEmpty { Text(line).font(.system(size: 12)).foregroundStyle(Ink.secondary).lineLimit(1) }
+      }
       Spacer(minLength: 4)
       Group {
         if loading {
@@ -1098,6 +1104,8 @@ struct FileCardView: View {
     #if os(macOS)
     .contextMenu { MessageContextMenu(bubble: asMessage, agentId: agentId) }
     #endif
+    // Read for every file card, as the window reads it (`skn`).
+    .task(id: url) { line = await store.fileLine(url) }
   }
 
   /** This line as the message menu takes it. */

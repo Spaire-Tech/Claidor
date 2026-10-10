@@ -87,3 +87,26 @@ final class TraysTests: XCTestCase {
     XCTAssertEqual(tags, ["From Ada on Discord", "Sent to Slack", "none"])
   }
 }
+
+/** The file card's line (`Eft`, `xvn`). */
+final class FileLineTests: XCTestCase {
+  func testSizes() {
+    XCTAssertEqual(FileLine.size(0), "0 B")
+    XCTAssertEqual(FileLine.size(1023), "1023 B")
+    XCTAssertEqual(FileLine.size(1024), "1.0 KB")
+    // A tie goes up, as `toFixed` rounds: 1.25 → 1.3.
+    XCTAssertEqual(FileLine.size(1280), "1.3 KB")
+    XCTAssertEqual(FileLine.size(10239), "10.0 KB")
+    XCTAssertEqual(FileLine.size(10240), "10 KB")
+    XCTAssertEqual(FileLine.size(1_048_575), "1024 KB")
+    XCTAssertEqual(FileLine.size(1_048_576), "1.0 MB")
+    XCTAssertEqual(FileLine.size(1_572_864), "1.5 MB")
+    XCTAssertEqual(FileLine.size(26_214_400), "25.0 MB")
+  }
+
+  func testAnswers() {
+    XCTAssertEqual(FileLine.line(.null), "Couldn't read file")
+    XCTAssertEqual(FileLine.line(["kind": "binary", "bytes": 2048]), "2.0 KB")
+    XCTAssertEqual(FileLine.line(["kind": "text", "text": "hi", "truncated": false, "bytes": 2]), "2 B")
+  }
+}

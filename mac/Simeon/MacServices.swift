@@ -32,14 +32,15 @@ final class MacServices {
   /** One `setWindowFocused` at a time, each reading the window when it goes (`createWindowFocusSync`). */
   private var focusChain: Task<Void, Never>?
   private var windowWatch: [NSObjectProtocol] = []
-  private let delegate = MacNotificationDelegate()
+  /** Set when the app starts (`SimeonMacApp.init`), before launch ends, so a click that launched Simeon is heard. */
+  let notificationDelegate = MacNotificationDelegate()
 
   private init() {}
 
   func follow(_ session: SessionController) {
     guard self.session !== session else { return }
     self.session = session
-    UNUserNotificationCenter.current().delegate = delegate
+    UNUserNotificationCenter.current().delegate = notificationDelegate
     session.store.rosterNews = { [weak self] news in self?.take(news) }
     // Each message the box takes lets go of the "Allow once" answers (`clearLocalToolApprovals` after `sendPrompt`).
     session.store.promptSent = { _ in MacLocalPermission.approvals.clear() }

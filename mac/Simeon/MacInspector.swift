@@ -93,6 +93,8 @@ struct MacAgentPane: View {
           switch tab {
           case .profile: MacProfileFields(agent: agent)
           case .routines: MacRoutineList(agentId: agent.id) { routine = $0 }
+          // Channels has no tab of its own (the patch took it off); "Channels" in ⌘K and "/" opens it here.
+          case .channels: MacChannelsTab(agentId: agent.id)
           case .computer:
             if agent.isGroup {
               if !agent.isRemoteRoom { MacMembers(group: agent) }

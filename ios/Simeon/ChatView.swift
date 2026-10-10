@@ -596,6 +596,8 @@ struct ChatComposer: View {
   var body: some View {
     let _ = Trace.mark("drawing the composer of \(agentId), \(draft.count) characters")
     VStack(spacing: 6) {
+      // The computer's notices about this agent ("Agent failed to respond"…), first over the composer (`sand-tray-stack`).
+      TrayStack(agentId: agentId)
       if let list = openList, list.isVisible {
         ComposerListPanel(items: list.items, highlighted: $highlighted, emptyText: list.emptyText, label: list.label,
                           rowHeight: list.rowHeight, maxHeight: list.maxHeight) { index in pick(index, in: list) }
@@ -991,6 +993,30 @@ struct ChatRowView: View, Equatable {
 }
 
 /**
+ * A message from a messaging channel or sent to one (`eTe`,
+ * `sand-channel-tag`): an arrow (down in, up out) and the platform's name in
+ * a small pill of the bubble's own ink, the sentence ("From Ada on
+ * Discord", "Sent to Slack") as its tooltip.
+ */
+struct ChannelTagView: View {
+  let tag: ChannelTag
+  let ink: Color
+
+  var body: some View {
+    HStack(spacing: 4) {
+      Image(systemName: tag.inbound ? "arrow.down" : "arrow.up").font(.system(size: 9, weight: .semibold))
+      Text(tag.platform).font(.system(size: 11, weight: .medium))
+    }
+    .foregroundStyle(ink.opacity(0.65))
+    .padding(.leading, 6).padding(.trailing, 7).padding(.vertical, 2)
+    .background(ink.opacity(0.12), in: Capsule())
+    .help(tag.title)
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel(tag.title)
+  }
+}
+
+/**
  * A bubble (`.sand-message`): yours on the right in the chat's blue, 10 × 15
  * with 14 pt text on 21 pt lines; an agent's on the left in the Messages
  * grey, 8 × 12, its Markdown, brands and teammates dressed as on the Mac;
@@ -1098,11 +1124,14 @@ struct BubbleView: View {
         .modifier(MessageMenuOnMac(bubble: bubble, agentId: agentId))
     } else if bubble.fromPerson {
       VStack(alignment: .trailing, spacing: 6) {
-        Text(shown.text)
-          .font(.system(size: MessageType.size))
-          .lineSpacing(MessageType.spacing(lineHeight: MessageType.mineLineHeight))
-          .foregroundStyle(Ink.mineText)
-          .fixedSize(horizontal: false, vertical: true)
+        VStack(alignment: .leading, spacing: 6) {
+          Text(shown.text)
+            .font(.system(size: MessageType.size))
+            .lineSpacing(MessageType.spacing(lineHeight: MessageType.mineLineHeight))
+            .foregroundStyle(Ink.mineText)
+            .fixedSize(horizontal: false, vertical: true)
+          if let channel = bubble.channel { ChannelTagView(tag: channel, ink: Ink.mineText) }
+        }
         if shown.clipped || expanded { more(light: true) }
       }
         .padding(.horizontal, 15).padding(.vertical, 10)
@@ -1123,6 +1152,7 @@ struct BubbleView: View {
               .environment(\.messageStreaming, bubble.isStreaming)
             if shown.clipped || expanded { more(light: false) }
           }
+          if let channel = bubble.channel { ChannelTagView(tag: channel, ink: Ink.theirsText) }
         }
           .padding(.horizontal, 12).padding(.vertical, 8)
           .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 18, style: .continuous))

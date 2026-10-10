@@ -139,3 +139,32 @@ public struct TrayList: Equatable, Sendable {
   public mutating func remove(_ id: String) { trays.removeAll { $0.id == id } }
   public mutating func removeAll() { trays = [] }
 }
+
+/**
+ * A file card's line under its name (`xvn`, from `readAttachmentText`):
+ * its size as the window writes it (`Eft`), "Couldn't read file" when the
+ * computer has none, nothing while it is read.
+ */
+public enum FileLine {
+  public static let missing = "Couldn't read file"
+
+  /** "512 B", "1.3 KB" under 10 KB, "42 KB", "3.4 MB". */
+  public static func size(_ bytes: Int) -> String {
+    if bytes < 1024 { return "\(bytes) B" }
+    if bytes < 1024 * 1024 { return "\(fixed(Double(bytes) / 1024, digits: bytes < 10 * 1024 ? 1 : 0)) KB" }
+    return "\(fixed(Double(bytes) / (1024 * 1024), digits: 1)) MB"
+  }
+
+  /** `toFixed`: a tie goes up, as JavaScript rounds. */
+  static func fixed(_ value: Double, digits: Int) -> String {
+    let scale = digits == 0 ? 1.0 : 10.0
+    let rounded = (value * scale).rounded(.toNearestOrAwayFromZero) / scale
+    return String(format: "%.\(digits)f", rounded)
+  }
+
+  /** The line for the box's answer: null is no file; text or binary carry the size. */
+  public static func line(_ answer: JSON) -> String {
+    guard answer.object != nil, let bytes = answer["bytes"]?.int else { return missing }
+    return size(bytes)
+  }
+}

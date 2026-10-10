@@ -59,6 +59,11 @@ struct MacChat: View {
       .environment(reply)
       .background(Ink.ground)
       .background { WindowReader(window: $hostWindow) }
+      // Whether to offer "Channels" (`hasChannels`): this agent's channels read once, and again when the window comes forward.
+      .task(id: agentId) { if !inNewChat { await MacChannels.shared.load(agentId, store: store) } }
+      .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+        if !inNewChat { Task { await MacChannels.shared.load(agentId, store: store) } }
+      }
       // Files dropped anywhere on the chat go into the composer (the window's "Drop files to add to chat").
       .dropDestination(for: URL.self) { urls, _ in
         let files = MacFiles.attachments(urls)
@@ -162,18 +167,25 @@ struct MacChat: View {
 
   /**
    * The palette's commands "/" offers (the window's `getComposerAppActions`,
-   * in its order), those this app runs today: Open Hidden Agents (when some
-   * are), Members (a group), Chat Settings, Settings: General, Plugins, and
-   * Theme: System, Light and Dark.
+   * in its order), those this app runs today: Org Chart (its gate on, an
+   * agent at least), Open Hidden Agents (when some are), Members (a group),
+   * Channels (a platform open or connected), Chat Settings, Settings:
+   * General, Plugins, and Theme: System, Light and Dark.
    */
   private func slashActions() -> [ComposerLists.Action] {
     var out: [ComposerLists.Action] = []
+    if navigation.orgChartAvailable(store) {
+      out.append(.init(id: "view:org-chart", label: "Org Chart", keywords: ["open", "organization", "network", "graph"], detail: "Views"))
+    }
     if !store.hiddenAgents.isEmpty {
       out.append(.init(id: "open-hidden-chats", label: "Open Hidden Agents", keywords: ["hidden", "unhide", "hide", "sidebar", "bots"], detail: "Sidebar"))
     }
     if let agent = store.agent(agentId) {
       if agent.isGroup && !agent.isRemoteRoom {
         out.append(.init(id: "info:members", label: "Members", keywords: ["people", "group", "participants"], detail: "Current chat"))
+      }
+      if MacChannels.shared.view(agentId).hasChannels {
+        out.append(.init(id: "info:channels", label: "Channels", keywords: ["messaging", "platforms", "connect"], detail: "Current chat"))
       }
       out.append(.init(id: "info:settings", label: "Chat Settings", keywords: ["details", "notifications"], detail: "Current chat"))
     }
@@ -190,6 +202,8 @@ struct MacChat: View {
 
   private func runSlashAction(_ id: String) {
     switch id {
+    case "view:org-chart": navigation.openOrgChart(store)
+    case "info:channels": navigation.openPane(.channels, agent: agentId)
     case "open-hidden-chats": navigation.sheet = .hiddenAgents
     // Members opens on the Computer tab, where a group's members are (a request with no section lands there); Chat Settings on Profile.
     case "info:members": navigation.openPane(.computer, agent: agentId)
@@ -633,7 +647,9 @@ struct MacPalette: View {
         showHidden: { navigation.sheet = .hiddenAgents },
         updateComputer: store.updateFacts.paletteAction.map { action in
           { close(); navigation.updateConfirm = .init(busy: action == .busyOverride, workingNames: store.updateFacts.workingNames) }
-        }
+        },
+        openOrgChart: navigation.orgChartAvailable(store) ? { close(); navigation.openOrgChart(store) } : nil,
+        openChannels: navigation.selected.flatMap { id in MacChannels.shared.view(id).hasChannels ? { close(); navigation.openPane(.channels, agent: id) } : nil }
       )
     }
     .frame(width: 640, height: 540)

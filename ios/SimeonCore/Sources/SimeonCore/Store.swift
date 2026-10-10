@@ -152,6 +152,8 @@ public final class AppStore {
   public private(set) var answeredApprovals: [String: String] = [:]
   /** The computer's notices ("Agent failed to respond"…), an open agent's drawn over its composer (`hVn`). */
   public private(set) var trayList = TrayList()
+  /** Each file card's line once read (`readAttachmentText`, kept for the session as the window keeps it). */
+  @ObservationIgnored private var fileLines: [String: String] = [:]
   /** An answer the person gave that the host has not echoed yet: the card shows it at once (the window's optimistic answer). */
   public private(set) var pendingAnswers: [String: String] = [:]
   /** Where the "New" line goes in each chat: after this time (ms), set when a chat with unread messages opens. */
@@ -328,7 +330,7 @@ public final class AppStore {
     backend = nil
     agents = []; transcripts = [:]; chatRows = [:]; steps = [:]; call = nil; callLevels = []; isLive = false; account = nil; usage = .empty; usageReadAt = nil; access = .checking; accessBlocked = false; hasReachedBox = false; openChat = nil
     layoutTask?.cancel(); layoutTask = nil; pendingLayout = []; refreshing = []; caughtUp = [:]
-    pendingAnswers = [:]; answeredApprovals = [:]; localAsks = [:]; trayList = TrayList(); unreadAfter = [:]; apps = []; catalog = []; pinnedIds = []; routinesByAgent = [:]; sidebarSections = nil
+    pendingAnswers = [:]; answeredApprovals = [:]; localAsks = [:]; trayList = TrayList(); fileLines = [:]; unreadAfter = [:]; apps = []; catalog = []; pinnedIds = []; routinesByAgent = [:]; sidebarSections = nil
     streamingOnly = [:]; outbox = [:]; arrived = []; olderBefore = [:]; loadingOlder = []; paged = []; firstRunAgentId = nil; revealing = [:]
     openThreads = [:]; threadRows = [:]; threadRoots = [:]; loadFailed = []; isDown = false
     computer = ComputerBook(); subagentsByAgent = [:]; pointers = [:]; lastComputerCatchUp = .distantPast
@@ -1241,6 +1243,22 @@ public final class AppStore {
       if let comma = url.firstIndex(of: ","), let bytes = Data(base64Encoded: String(url[url.index(after: comma)...])) { return bytes }
     }
     return data.isEmpty ? nil : data
+  }
+
+  /**
+   * A file card's line under its name (`skn`, `xvn`): the size, or
+   * "Couldn't read file"; "" until the computer answers, and again after a
+   * failed read, which is tried next time.
+   */
+  public func fileLine(_ url: String) async -> String {
+    if let known = fileLines[url] { return known }
+    if let sent = sentFile(url) { return FileLine.size(sent.data.count) }
+    guard let backend else { return "" }
+    let path = url.hasPrefix("file://") ? (URL(string: url)?.path ?? String(url.dropFirst(7))) : url
+    guard let answer = try? await backend.command("readAttachmentText", ["path": .string(path)]) else { return "" }
+    let line = FileLine.line(answer)
+    fileLines[url] = line
+    return line
   }
 
   // MARK: Connected apps (the Mac's Plugins, through `desktopMcp`)

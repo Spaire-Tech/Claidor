@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import UserNotifications
 import SimeonCore
 import SimeonMacCore
 
@@ -17,6 +18,11 @@ struct SimeonMacApp: App {
   @State private var navigation = MacNavigation()
   @AppStorage("simeon.theme") private var theme = "system"
 
+  init() {
+    // Before launch ends, so a notification clicked while Simeon was closed opens its agent.
+    UNUserNotificationCenter.current().delegate = MacServices.shared.notificationDelegate
+  }
+
   var body: some Scene {
     WindowGroup("Simeon", id: "main") {
       MacRoot()
@@ -32,6 +38,8 @@ struct SimeonMacApp: App {
         .task { MacCallBanner.shared.follow(session.store) }
         // Notifications, the Dock's number, the window in front, the local-computer setting (`MacServices`).
         .task { MacServices.shared.follow(session) }
+        // "Move Simeon to the Applications folder?" (a release build only, `MacMoveToApplications`).
+        .task { MacMoveToApplications.askAtLaunch() }
         // A link to the app (back from the browser's sign-in, a connector to add) comes to this window, not a new one.
         .onOpenURL { url in navigation.open(url) }
         .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
@@ -97,7 +105,7 @@ final class MacNavigation {
   }
 
   /** The pane's tabs and the window's names for them (`settings`, `routines`, `overview`). */
-  enum PaneTab: String, Hashable { case profile = "settings", routines, computer = "overview" }
+  enum PaneTab: String, Hashable { case profile = "settings", routines, computer = "overview", channels }
 
   /** A routine's editor in the pane: a new one not yet made, or one the computer has. */
   enum RoutineTarget: Hashable {
@@ -111,8 +119,28 @@ final class MacNavigation {
     let routine: String?
   }
 
-  var selected: String?
+  /** The open agent; opening one closes the org chart (`dismiss()` on `selectAgent`). */
+  var selected: String? {
+    didSet { if orgChartOpen { orgChartOpen = false } }
+  }
   var sheet: Sheet?
+  /** The org chart in the chat's place (`view:org-chart`): the sidebar stays, with no row picked. */
+  var orgChartOpen = false
+  /** `isAgentNetworkEnabled`, read when the computer is reached and when the window comes forward; off until it answers. */
+  var networkGate = false {
+    didSet { if !networkGate && orgChartOpen { orgChartOpen = false } }
+  }
+
+  /** The org chart may be opened: its gate on and at least one agent (`available`). */
+  func orgChartAvailable(_ store: AppStore) -> Bool { networkGate && !store.agents.isEmpty }
+
+  func openOrgChart(_ store: AppStore) {
+    guard orgChartAvailable(store) else { return }
+    if newChat.isOpen { newChat.close() }
+    orgChartOpen = true
+  }
+
+  func closeOrgChart() { orgChartOpen = false }
   /** "Update Simeon's Computer?" up, from the palette or the sidebar's pill. */
   var updateConfirm: UpdateConfirm?
   /** "Recover Simeon's Computer?" asked from "Couldn't Reach Simeon's Computer". */
@@ -127,6 +155,16 @@ final class MacNavigation {
   var sidebarShown = true
   /** A connector to add from a `plugin/add` link: the window opens Connect apps for it. */
   var connectAppsAsked = false
+  /** The Deep Links page, from a `…/v1/info?topic=deep-links` link (`uLn`), signed in or not. */
+  var deepLinkInfo: DeepLinkInfo?
+
+  struct DeepLinkInfo: Identifiable {
+    let id = UUID()
+    let source: DeepLink.Source
+  }
+
+  /** The last link taken and when: the same one again within 2 s is dropped (main's `deep-link-controller.ts`). */
+  private var lastLink: (url: String, at: Date)?
   /** The plugin a `plugin/add` link names: Connect apps opens on its page. */
   var pluginFocus: String?
   /** A question with Cancel and an action (deleting, removing), in the window's words. */
@@ -163,6 +201,8 @@ final class MacNavigation {
 
   /** Opens the pane on a tab (and a routine's editor), for the open agent or another one, which opens too. */
   func openPane(_ tab: PaneTab, agent: String? = nil, routine: String? = nil) {
+    // A section of the pane asked for closes the org chart (`IDn`).
+    orgChartOpen = false
     if let agent, agent != selected { selected = agent }
     paneRequest = PaneRequest(tab: tab, routine: routine)
     guard !paneOpen else { return }
@@ -203,10 +243,15 @@ final class MacNavigation {
   /** A link to the app, read by the Electron app's own rules (SimeonMacCore `DeepLink`). */
   func open(_ url: URL) {
     guard let link = DeepLink.parse(url.absoluteString, schemes: [SimeonConfig.macURLScheme]) else { return }
+    let now = Date()
+    if let last = lastLink, last.url == url.absoluteString, now.timeIntervalSince(last.at) < 2 { return }
+    lastLink = (url.absoluteString, now)
     switch link.route {
-    case .open, .info:
+    case .open:
       // Bringing the window forward is all `open` asks; macOS has done it.
       break
+    case .info:
+      deepLinkInfo = DeepLinkInfo(source: link.source)
     case .pluginAdd(let id):
       // Connect apps on that plugin's page (`focusPlugin`).
       pluginFocus = id

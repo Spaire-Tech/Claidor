@@ -11,9 +11,11 @@ import SimeonMacCore
 struct MacRoot: View {
   @Environment(SessionController.self) private var session
   @Environment(AppStore.self) private var store
+  @Environment(MacNavigation.self) private var navigation
   @State private var window: NSWindow?
 
   var body: some View {
+    @Bindable var navigation = navigation
     Group {
       switch session.phase {
       case .starting:
@@ -46,6 +48,8 @@ struct MacRoot: View {
     }
     // The Electron window's smallest (`window-chrome.ts`).
     .frame(minWidth: 680, minHeight: 520)
+    // The Deep Links page, over whatever the window shows (mounted at the window's root, signed in or not).
+    .sheet(item: $navigation.deepLinkInfo) { info in MacDeepLinkInfo(source: info.source) }
     // The main window, for whether it is the one in front (notifications, `setWindowFocused`).
     .background(WindowReader(window: $window))
     .onChange(of: window, initial: true) { _, window in MacServices.shared.mainWindow = window }
@@ -176,6 +180,9 @@ struct MacWindow: View {
       try? await Task.sleep(nanoseconds: 20_000_000_000)
       if newChat.creating?.id == started { newChat.creating = nil }
     }
+    // The org chart's gate (`isAgentNetworkEnabled`), read when the computer is reached and when the window comes forward.
+    .task(id: store.isLive) { await readNetworkGate() }
+    .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in Task { await readNetworkGate() } }
     // The rebuild and Update follow the agent the sidebar has selected, not the chat closing and opening.
     .onChange(of: navigation.selected, initial: true) { _, now in store.windowSelection = now }
     // Another agent opened while the new one is made, or after: the creating screen lets it go.
@@ -189,6 +196,9 @@ struct MacWindow: View {
     let newChat = navigation.newChat
     if newChat.isOpen {
       MacNewChatView()
+    } else if navigation.orgChartOpen {
+      // Before the creating screen: the chart asked for while an agent is being made shows at once.
+      MacOrgChart()
     } else if let creating = newChat.creating, !revealed(creating) {
       MacCreatingScreen()
     } else if let id = navigation.selected, store.agent(id) != nil {
@@ -196,6 +206,11 @@ struct MacWindow: View {
     } else {
       MacNoChat()
     }
+  }
+
+  private func readNetworkGate() async {
+    guard store.isLive, let backend = store.backend else { return }
+    if let answer = try? await backend.command("isAgentNetworkEnabled", [:]) { navigation.networkGate = answer.bool ?? false }
   }
 
   /** The creating screen gives way when the new agent is open and has lines, is working, or was made with nothing to show. */

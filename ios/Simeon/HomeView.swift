@@ -746,6 +746,10 @@ struct SearchResults: View {
   let showHidden: () -> Void
   /** "Update Simeon's Computer", where it is offered (the Mac's palette, `HOn`): last of the actions. */
   var updateComputer: (() -> Void)? = nil
+  /** The Mac's org chart ("Org Chart", first), when it may be opened. */
+  var openOrgChart: (() -> Void)? = nil
+  /** The Mac's Channels view of the open agent ("Channels"), when a platform is open or connected. */
+  var openChannels: (() -> Void)? = nil
   @Environment(AppStore.self) private var store
   @Environment(\.openURL) private var openURL
   @AppStorage("simeon.theme") private var theme = "system"
@@ -829,12 +833,19 @@ struct SearchResults: View {
 
   /** The app's actions (the Mac's `RDn`, as the phone has them). */
   private var actions: [SearchAction] {
-    var list = [
+    var list: [SearchAction] = []
+    if let openOrgChart {
+      list.append(SearchAction(id: "view:org-chart", label: "Org Chart", detail: "Views", symbol: "point.3.connected.trianglepath.dotted", keywords: ["open", "organization", "network", "graph"], run: openOrgChart))
+    }
+    list += [
       SearchAction(id: "new-agent", label: "New Agent", detail: "Agents", symbol: "person.crop.circle.badge.plus", keywords: ["create", "add", "hire"]) { openSheet(.newAgent) },
       SearchAction(id: "new-group", label: "New Group Chat", detail: "Agents", symbol: "person.2", keywords: ["create", "group", "team"]) { openSheet(.newGroup) },
     ]
     if !store.hiddenAgents.isEmpty {
       list.append(SearchAction(id: "hidden", label: "Open Hidden Agents", detail: "List", symbol: "eye.slash", keywords: ["hidden", "sidebar"], run: showHidden))
+    }
+    if let openChannels {
+      list.append(SearchAction(id: "info:channels", label: "Channels", detail: "Current chat", symbol: "bubble.left.and.bubble.right", keywords: ["messaging", "platforms", "connect"], run: openChannels))
     }
     list.append(SearchAction(id: "settings", label: "Settings", detail: "Settings", symbol: "gearshape", keywords: ["general", "account", "usage", "billing", "plan", "limit", "time zone", "auto-review", "plugins", "connect apps", "connectors", "tools", "skills", "mcp"]) { openSheet(.settings) })
     for (value, name, symbol) in [("system", "System", "circle.lefthalf.filled"), ("light", "Light", "sun.max"), ("dark", "Dark", "moon")] {
