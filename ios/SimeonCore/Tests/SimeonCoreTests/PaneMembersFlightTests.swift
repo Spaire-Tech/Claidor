@@ -53,3 +53,26 @@ final class PaneMembersFlightTests: XCTestCase {
     XCTAssertEqual(FlightPane.key(row: "e1", index: 2), "e1:2")
   }
 }
+
+/** Settings › General's rules (step 8), against the window's. */
+final class SettingsGeneralTests: XCTestCase {
+  func testAutoReviewIsKeptAsTheHostKeepsIt() {
+    let long = String(repeating: "a", count: 1_200)
+    let json: JSON = ["isEnabled": false, "allowInstructions": ["  reply to emails ", "", "reply to emails", .string(long)], "blockInstructions": .array((1...25).map { .string("rule \($0)") })]
+    let rules = AutoReviewInstructions.normalized(json: json)
+    XCTAssertFalse(rules.isEnabled)
+    XCTAssertEqual(rules.allow.count, 2)
+    XCTAssertEqual(rules.allow[0], "reply to emails")
+    XCTAssertEqual(rules.allow[1].count, 1_000)
+    XCTAssertEqual(rules.ask.count, 20)
+    XCTAssertTrue(AutoReviewInstructions.normalized(json: nil).isEnabled)
+  }
+
+  func testTheTimeZoneWords() {
+    XCTAssertEqual(TimeZoneChoices.triggerLabel(override: nil, detected: "America/New_York"), "Auto-detect (America/New York)")
+    XCTAssertEqual(TimeZoneChoices.triggerLabel(override: "Asia/Tokyo", detected: "UTC"), "Asia/Tokyo")
+    XCTAssertNil(TimeZoneChoices.override(hostSettings: ["userTimeZoneOverride": ""]))
+    XCTAssertEqual(TimeZoneChoices.override(hostSettings: ["userTimeZoneOverride": "Asia/Tokyo"]), "Asia/Tokyo")
+    XCTAssertEqual(TimeZoneChoices.timeNow(in: "UTC", now: Date(timeIntervalSince1970: 72_960)), "8:16 PM")
+  }
+}

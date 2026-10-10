@@ -93,6 +93,7 @@ struct AppRoot: View {
  * each agent so it opens at its newest message with its own draft.
  */
 struct MainWindow: View {
+  @Environment(AppStore.self) private var store
   @Environment(SidebarLayout.self) private var layout
   @Environment(WindowState.self) private var window
   @Environment(NewChatState.self) private var newChat
@@ -144,8 +145,12 @@ struct MainWindow: View {
     }
     // A file, a picture or a diagram opened full screen, over the sidebar and the chat.
     .overlay { ViewerLayer() }
+    // Settings (⌘,, step 8), over the window; search over it.
+    .overlay { SettingsLayer() }
     // Search (⌘K), over everything.
     .overlay { SearchLayer() }
+    // The usage is read once signed in: Settings lists Usage & Billing, and ⌘K and "/" offer it, only once it is in.
+    .task { await store.loadUsage() }
     // Another agent opened from the sidebar or search closes the new chat (its own single agent is its preview).
     .onChange(of: window.selected) { _, selected in
       // The pane stays open on another agent, drawn afresh on Profile (or the page asked for it).
@@ -185,6 +190,7 @@ private struct KeyWatcher: NSViewRepresentable {
   @Environment(NewChatState.self) private var newChat
   @Environment(PaneState.self) private var pane
   @Environment(Viewers.self) private var viewers
+  @Environment(SettingsState.self) private var settings
 
   func makeNSView(context: Context) -> NSView {
     let view = WatchView()
@@ -205,6 +211,7 @@ private struct KeyWatcher: NSViewRepresentable {
     view.newChat = newChat
     view.pane = pane
     view.viewers = viewers
+    view.settings = settings
   }
 
   final class WatchView: NSView {
@@ -216,6 +223,7 @@ private struct KeyWatcher: NSViewRepresentable {
     var newChat: NewChatState?
     var pane: PaneState?
     var viewers: Viewers?
+    var settings: SettingsState?
     nonisolated(unsafe) private var monitors: [Any] = []
     nonisolated(unsafe) private var resigned: NSObjectProtocol?
 
@@ -253,6 +261,17 @@ private struct KeyWatcher: NSViewRepresentable {
       if mods == .command, event.charactersIgnoringModifiers?.lowercased() == "b" {
         if let layout { pane?.makeRoomForSidebar(layout) }
         layout?.toggle()
+        return true
+      }
+      // ⌘, (`sand.openSettings`): Settings on General, from a field too; again while it is open, nothing.
+      if mods == .command, event.charactersIgnoringModifiers == "," {
+        settings?.open(.general)
+        return true
+      }
+      // Settings open, search not over it: Escape closes it, unless one of its fields has the keys (a rule's own Escape).
+      if let settings, settings.isOpen, event.keyCode == 53, mods.isEmpty, search?.isOpen != true {
+        if window?.firstResponder is NSText { return false }
+        settings.close()
         return true
       }
       // The avatar editor open (7b): Escape closes it whatever has the keys (the window's capture-phase listener); ⌘V outside a field pastes a picture into it.
@@ -342,8 +361,8 @@ private struct KeyWatcher: NSViewRepresentable {
         sidebar.selection.clear()
         return true
       case 51 where mods.isEmpty, 117 where mods.isEmpty:
-        // Delete and forward delete, unless a field has the keys.
-        guard !sidebar.selection.isEmpty, !(window?.firstResponder is NSText) else { return false }
+        // Delete and forward delete, unless a field has the keys or Settings is over the window.
+        guard !sidebar.selection.isEmpty, !(window?.firstResponder is NSText), !SettingsState.showing else { return false }
         SidebarActions.confirmDelete(Array(sidebar.selection.ids), store: store, sidebar: sidebar)
         return true
       default:

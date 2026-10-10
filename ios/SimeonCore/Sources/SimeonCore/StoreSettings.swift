@@ -58,6 +58,48 @@ extension AppStore {
     }
   }
 
+  // MARK: General (the box's host settings; a refused write keeps the old value and says nothing)
+
+  /** The box's host settings, quietly: nil when they can't be read. */
+  public func readHostSettings() async -> JSON? {
+    try? await backend?.command("getHostSettings", [:])
+  }
+
+  /** A host setting written, quietly: false when refused. */
+  public func writeHostSettings(_ update: JSON) async -> Bool {
+    guard let backend else { return false }
+    return (try? await backend.command("setHostSettings", update)) != nil
+  }
+
+  /** Timezone (`setTimeZoneOverride`): the zone the agents and routines use, or nil for the one this Mac is in. */
+  public func setTimeZone(_ zone: String?, detected: String = TimeZone.current.identifier) async -> Bool {
+    await writeHostSettings(["userTimeZone": .string(detected), "userTimeZoneOverride": .string(zone ?? "")])
+  }
+
+  /** Auto-review (`setAutoReviewInstructions`): its switch and its two lists of rules, as the host keeps them. */
+  public func setAutoReview(_ instructions: AutoReviewInstructions) async -> Bool {
+    await writeHostSettings(["autoReviewInstructions": AutoReviewInstructions.normalized(json: instructions.json).json])
+  }
+
+  /** The team admin's settings (`GetTeamAdminSettingsOrEmptyIfNotInTeam`); nil when they can't be read. */
+  public func teamAdminSettings() async -> JSON? {
+    try? await backend?.dashboard("GetTeamAdminSettingsOrEmptyIfNotInTeam", [:])
+  }
+
+  /**
+   * A host setting the box must take (`localToolPermission`): written, then
+   * read back, up to three times (250 and 500 ms apart) until the box says it.
+   */
+  public func pushHostSetting(_ key: String, _ value: JSON) async -> Bool {
+    let waits: [UInt64] = [0, 250, 500]
+    for wait in waits {
+      if wait > 0 { try? await Task.sleep(nanoseconds: wait * 1_000_000) }
+      guard await writeHostSettings([key: value]) else { continue }
+      if await readHostSettings()?[key] == value { return true }
+    }
+    return false
+  }
+
   /** The window's access cover (`czn`): the computer refused this account, the agents were never read, and no rebuild is under way. */
   public var showsAccessCover: Bool { accessBlocked && !hasReachedBox && !rebuild.isHardLocked }
 

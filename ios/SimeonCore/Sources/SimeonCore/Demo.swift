@@ -554,7 +554,7 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
     }
   }
 
-  private var hostSettings: JSON = ["pinnedAgentIds": [], "autoReviewEnabled": true, "autoReviewInstructions": "", "userTimeZone": .string(TimeZone.current.identifier), "userTimeZoneOverride": nil]
+  private var hostSettings: JSON = ["pinnedAgentIds": [], "autoReviewInstructions": ["isEnabled": true, "allowInstructions": [], "blockInstructions": []], "userTimeZone": .string(TimeZone.current.identifier), "userTimeZoneOverride": nil]
   private var connected: Set<String> = ["gmail", "notion"]
   private var pendingEmits: [(String, Entry)] = []
 

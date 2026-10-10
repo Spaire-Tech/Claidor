@@ -1022,6 +1022,10 @@ struct PaneTextArea: NSViewRepresentable {
   var lineHeight: CGFloat = 20
   /** Room inside the box around the words (the instruction's 10 and 8), so a click there still takes the keys. */
   var inset: CGSize = .zero
+  /** Takes the keys as it appears, the caret at the end (a rule being edited). */
+  var focusOnAppear = false
+  /** ⌘Return (a rule added or saved); Return alone is a new line. */
+  var onCommandReturn: (() -> Void)? = nil
   let onCancel: () -> Void
 
   func makeCoordinator() -> Coordinator { Coordinator(self) }
@@ -1068,6 +1072,13 @@ struct PaneTextArea: NSViewRepresentable {
     view.isEditable = editable
     view.isSelectable = true
     context.coordinator.measure(view)
+    if focusOnAppear {
+      DispatchQueue.main.async { [weak view] in
+        guard let view, let window = view.window else { return }
+        window.makeFirstResponder(view)
+        view.setSelectedRange(NSRange(location: (view.string as NSString).length, length: 0))
+      }
+    }
     return scroll
   }
 
@@ -1145,6 +1156,12 @@ struct PaneTextArea: NSViewRepresentable {
         // Escape: the stored words back, and the keys let go (the pane stays open).
         parent.onCancel()
         textView.window?.makeFirstResponder(nil)
+        return true
+      }
+      // ⌘Return comes as `noop:` or `insertNewline:`, whichever the key bindings give; read from the key itself.
+      if let submit = parent.onCommandReturn, let event = NSApp.currentEvent, event.type == .keyDown,
+         event.modifierFlags.contains(.command), event.keyCode == 36 || event.keyCode == 76 {
+        submit()
         return true
       }
       return false

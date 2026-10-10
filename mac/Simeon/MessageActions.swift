@@ -424,7 +424,7 @@ struct RightClickMenu: NSViewRepresentable {
   }
 
   private func open(_ event: NSEvent) -> Bool {
-    guard viewers.shown == nil, !SearchState.showing else { return false }
+    guard viewers.shown == nil, !SearchState.showing, !SettingsState.showing else { return false }
     // Over an exchange, only its own messages, and only Copy.
     if control.exchangePeer != nil {
       guard let hovered = control.exchangeHovered else { return false }

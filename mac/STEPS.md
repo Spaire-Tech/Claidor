@@ -120,8 +120,8 @@ first build on the founder's Mac is the first real check.
 - **The butterflies' motion** (step 2): in the Electron window an agent's
   butterfly moves while it works and turns into the typing dots while it
   writes (Simeon's, on the rail in B05). Here they stand still.
-- **The theme setting** (step 8): the app follows the Mac's light or dark
-  setting until Settings is copied.
+- **The theme setting** (step 8, done): Settings › General › Theme, ⌘K and
+  "/" set it.
 - **A new account's first run** (step 6, done).
 - **"Can't reach your computer"** (step 13).
 
@@ -567,7 +567,7 @@ from its code. Pushed so far:
 | "/" Open Hidden Agents | 3 |
 | "/" Chat Settings | 7 (done) |
 | "/" Members | 7d (done) |
-| "/" Settings: General, Settings: Usage & Billing | 8 |
+| "/" Settings: General, Settings: Usage & Billing | 8 (done) |
 | "/" Plugins | 9 |
 | "/" Update Simeon's Computer (offered once the computer's update is known to the field) | 13 |
 
@@ -856,7 +856,7 @@ tested against what the window lists for the same words. Pushed:
 | Chat Settings | 7 (done) |
 | Members | 7d (done) |
 | Channels | 12 |
-| Settings: General, Settings: Usage & Billing | 8 |
+| Settings: General, Settings: Usage & Billing | 8 (done) |
 | Plugins | 9 |
 
 Each closes search, as the window's do, and opens nothing yet. A routine
@@ -872,8 +872,9 @@ Computer page (step 13).
 - The window's developer actions (Feature Flags…, the trace capture) and
   their submenus with a Back arrow: developer builds only; left out.
 - The list's fading top and bottom edges while it scrolls.
-- Settings: Usage & Billing follows the account's usage page switch in
-  the window; here it is always listed (the reference shows it).
+- Settings: Usage & Billing is listed once the account's usage is in hand
+  and not an enterprise team's, as in the window (step 8; before it, it was
+  always listed here, which was wrong against the window).
 - A message inside a folded exchange between agents opens its chat at the
   exchange's row; the window opens the exchange itself.
 
@@ -1368,3 +1369,88 @@ The members-* and flight-* captures, light and dark: a group of three, of
 one, of six; Add Member's menu; the remove alert, its "Removing..." and its
 failure; ⌘K and "/" Members for a group and an agent; a flight from a card,
 the same row again, another agent and back.
+
+## Step 8: Settings
+
+Read from the window's Settings (the settings chunk's modal, General and
+Usage & Billing, and the patch's Manage Plan card) and measured in the
+reference window at five sizes, light and dark, with usage fixtures from
+loading to over the limit (J01–J07). Pushed:
+
+- **Where it is**: over the whole window, dimmed at 50% under it, no
+  animation; a panel of at most 1000 × 702 (the window less 40 and 94),
+  round 14 (#F5F5F7 with a soft deep shadow; the raised ground on dark). Its
+  pages on the left (198 wide): General, and Usage & Billing once the
+  account's usage is in hand (not for an enterprise team). The page's name
+  (17, medium) at its top, × at the corner. Each opening starts on the page
+  asked for, at its top.
+- **Opening and closing**: ⌘, (General; again while it is open, nothing),
+  Settings: General and Settings: Usage & Billing in ⌘K and "/". Escape,
+  ×, or a click on the dim close it; Escape in a rule's field is the
+  field's. Search opens over it; an agent picked there opens its chat and
+  closes Settings. The app menu has no Settings item, as the window's.
+- **General**:
+  - Account: the person's letters (or picture), name and e-mail with Copy
+    (a check for 1.2 s), Sign Out, which asks ("Sign out?") and goes back
+    to sign-in.
+  - Appearance › Theme: Follow System, Light, Dark, at once.
+  - Agent › Timezone: Auto-detect (this Mac's zone) or a zone, each with the
+    time there now; the agents' and routines' zone.
+  - Agent › Execution on Local Computer: Always allow, Ask every time
+    (default), Never allow; choices above a team's ceiling greyed, with its
+    line. Given to the computer until it says it back.
+  - Agent › Auto-review: the switch; on, its rules: a rule written and
+    added (⌘Return too) to Allow automatically or Ask first, 20 a list
+    ("max 20 rules"), the table (Action, Behavior, Edit, Delete), a rule
+    edited in its row (Cancel, Save Rule), and "These rules apply only to
+    you…".
+  - Security Key › Use hardware security keys (on by default).
+  - A change shows once the computer has taken it, its control waiting
+    meanwhile; a refusal leaves it as it was and says nothing.
+- **Usage & Billing**: Weekly usage (Trial usage) with its bar, value and
+  "Resets in N days" (again every 30 seconds); On-demand usage; the upgrade
+  line and its button (the browser) when they apply; Cancel Trial with its
+  question ("Canceling…", the failure kept in it); "Couldn’t refresh usage
+  — showing the last known values." with Retry; Manage Plan ("Current plan:
+  Pro", its line, Upgrade to Max, Manage Billing ↗, each opening Stripe in
+  the browser, "Opening…", the failure under the card). The usage is read at
+  sign-in and when the page shows, at most every 30 seconds.
+
+#### Not in step 8
+
+- The security key itself: the Electron app signs with the key on the Mac
+  for the computer; that comes with the Mac's own parts (step 14). Until
+  then the switch keeps the choice on this Mac and does not tell the
+  computer, so it cannot turn keys off for the Electron app on the same
+  computer.
+- The account card's "Signing in" and "Not signed in" states: Settings is
+  only reachable signed in here.
+- Keyboard: nothing in Settings takes the keys when it opens, and Tab
+  moves as the Mac's controls do (the window's first Tab lands behind it).
+- The Timezone menu lists the Mac's own zones (modern names such as
+  Asia/Kolkata, GMT), not Chromium's 419.
+- The theme is the Mac app's own (it is not shared with the Electron app's
+  settings file).
+
+#### A decision to confirm
+
+⌘N and ⌘B act on the window behind Settings in the Electron app (the new
+chat opens behind it; the sidebar folds). Here they do the same, since it
+costs nothing; say if they should wait while Settings is open.
+
+#### Where the native parts look different
+
+The selects are the Mac's pop-up menus (the chosen item over the button);
+the switches are the Mac's (mini); the sign-out and Cancel Trial questions
+are the Mac's alerts (a failure's words go into the alert's text, not a red
+line); the rule fields are the Mac's text views. Icons are SF Symbols
+(gearshape, chart.bar, doc.on.doc, square.and.pencil, trash).
+
+#### What to compare
+
+J01–J07 and the settings-* captures, light and dark: General at the top and
+scrolled, each select open, the time zone menu, the ceiling's line,
+Auto-review off and on with rules, a rule being edited, Usage & Billing on a
+plan, on a trial, over the limit, with on-demand; Manage Plan's buttons;
+⌘, ⌘K, "/", Escape and a click on the dim.
+

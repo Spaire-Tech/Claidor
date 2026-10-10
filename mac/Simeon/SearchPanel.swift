@@ -160,7 +160,7 @@ final class SearchState {
     let byId = Dictionary(store.agents.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
     let theme = UserDefaults.standard.string(forKey: MacTheme.key) ?? "system"
     let commands = Jump.commands(orgChart: orgChart && !store.agents.isEmpty, hiddenCount: hidden.count, current: store.agent(window.selected),
-                                 hasChannels: hasChannels, theme: theme)
+                                 hasChannels: hasChannels, usage: store.usage.showsSection, theme: theme)
     let tabs = Jump.tabs(globalSearch: globalSearch)
     let tab = tabs.contains(self.tab) ? self.tab : .all
     let words = query.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -241,6 +241,8 @@ final class SearchState {
     case .agent(let agent, _):
       sidebar.selection.plain(agent.id)
       window.choose(agent.id, store: store)
+      // Over Settings, an agent picked opens its chat and closes Settings.
+      settings?.close()
     case .command(let command):
       run(command.id, sidebar: sidebar)
     case .message(let hit):
@@ -255,15 +257,16 @@ final class SearchState {
     close()
   }
 
-  /** The agent's pane and the sidebar's layout, for Chat Settings (set by the app). */
+  /** The agent's pane and the sidebar's layout, for Chat Settings, and Settings (set by the app). */
   @ObservationIgnored weak var pane: PaneState?
   @ObservationIgnored weak var layout: SidebarLayout?
+  @ObservationIgnored weak var settings: SettingsState?
 
   /**
    * An action. The themes, Open Hidden Agents, Chat Settings (the pane on
-   * Profile) and Members (on Computer) work now; the rest open screens copied
-   * in later steps (mac/STEPS.md): Org Chart (12), Channels (12), Settings
-   * (8), Plugins (9).
+   * Profile), Members (on Computer) and Settings work now; the rest open
+   * screens copied in later steps (mac/STEPS.md): Org Chart (12), Channels
+   * (12), Plugins (9).
    */
   private func run(_ id: String, sidebar: SidebarState) {
     switch id {
@@ -271,6 +274,8 @@ final class SearchState {
       if let pane, let layout { pane.open(.profile, layout: layout) }
     case "info:members":
       if let pane, let layout { pane.open(.computer, layout: layout) }
+    case "settings:general": settings?.open(.general)
+    case "settings:usage": settings?.open(.usage)
     case "theme:system": MacTheme.set("system")
     case "theme:light": MacTheme.set("light")
     case "theme:dark": MacTheme.set("dark")

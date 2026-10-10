@@ -117,7 +117,7 @@ extension ComposerPicks {
 
   /** The app's actions "/" offers in this chat. */
   func actions(agentId: String, store: AppStore) -> [ComposerLists.Action] {
-    ComposerLists.appActions(isGroup: store.agent(agentId)?.showsMembers ?? false, hasHiddenAgents: store.agents.contains { $0.isHidden })
+    ComposerLists.appActions(isGroup: store.agent(agentId)?.showsMembers ?? false, hasHiddenAgents: store.agents.contains { $0.isHidden }, showsUsage: store.usage.showsSection)
   }
 
   /** What an open list with nothing to offer says: "@" and "/" say so, "#" and ":" close. */
@@ -428,7 +428,7 @@ final class FieldHandle {
 // MARK: The theme
 
 /**
- * Theme: System, Light or Dark ("/" and, in step 8, Settings › General):
+ * Theme: System, Light or Dark (Settings › General, ⌘K and "/"):
  * the whole app in that appearance, kept for the next launch.
  */
 @MainActor

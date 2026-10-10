@@ -96,6 +96,21 @@ public struct AutoReviewInstructions: Equatable, Sendable {
 
   public var json: JSON { ["isEnabled": .bool(isEnabled), "allowInstructions": JSON(allow), "blockInstructions": JSON(ask)] }
 
+  /** As the host keeps them (`qMt`): each rule trimmed and cut at a thousand characters, empty and repeated ones dropped, twenty a list. */
+  public static func normalized(json: JSON?) -> AutoReviewInstructions {
+    func list(_ key: String) -> [String] {
+      var out: [String] = []
+      for raw in json?[key]?.array?.compactMap(\.string) ?? [] {
+        let rule = clip(raw.trimmingCharacters(in: .whitespacesAndNewlines))
+        if rule.isEmpty || out.contains(rule) { continue }
+        out.append(rule)
+        if out.count >= maxRules { break }
+      }
+      return out
+    }
+    return AutoReviewInstructions(isEnabled: json?["isEnabled"]?.bool ?? true, allow: list("allowInstructions"), ask: list("blockInstructions"))
+  }
+
   public static func label(_ behavior: Behavior) -> String { behavior == .allow ? "Allow automatically" : "Ask first" }
 
   public func list(_ behavior: Behavior) -> [String] { behavior == .allow ? allow : ask }
@@ -399,5 +414,26 @@ public enum TimeZoneChoices {
     var values = [automatic]
     if let override, !known.contains(override) { values.append(override) }
     return values + known
+  }
+
+  /** The trigger's words: the zone chosen, or "Auto-detect (Zone)". */
+  public static func triggerLabel(override: String?, detected: String?) -> String {
+    override.map(label) ?? automaticLabel(detected: detected)
+  }
+
+  /** The time now in a zone, as a menu row shows it beside the zone ("8:16 PM"). */
+  public static func timeNow(in zone: String, now: Date = Date(), locale: Locale = Locale(identifier: "en_US")) -> String {
+    guard let timeZone = TimeZone(identifier: zone) else { return "" }
+    let formatter = DateFormatter()
+    formatter.locale = locale
+    formatter.timeZone = timeZone
+    formatter.dateFormat = "h:mm a"
+    return formatter.string(from: now)
+  }
+
+  /** The override as the host keeps it: an empty one is none. */
+  public static func override(hostSettings: JSON?) -> String? {
+    guard let zone = hostSettings?["userTimeZoneOverride"]?.string?.trimmingCharacters(in: .whitespaces), !zone.isEmpty else { return nil }
+    return zone
   }
 }

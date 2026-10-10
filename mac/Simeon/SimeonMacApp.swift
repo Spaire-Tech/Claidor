@@ -18,6 +18,7 @@ struct SimeonMacApp: App {
   @State private var search = SearchState()
   @State private var newChat = NewChatState()
   @State private var pane = PaneState()
+  @State private var settings = SettingsState()
 
   init() {
     Faces.register()
@@ -35,13 +36,15 @@ struct SimeonMacApp: App {
         .environment(search)
         .environment(newChat)
         .environment(pane)
+        .environment(settings)
         .task { await session.start() }
         // Search's Chat Settings opens the agent's pane.
         .onAppear {
           search.pane = pane
           search.layout = layout
+          search.settings = settings
         }
-        // The theme chosen with "/" (and, in step 8, Settings), as it was left.
+        // The theme chosen in Settings, ⌘K or "/", as it was left.
         .onAppear { MacTheme.apply() }
         // The browser's confirm page opens `simeon-mac://…`, which brings the app forward; the poll finishes the sign-in.
         .onOpenURL { _ in }
