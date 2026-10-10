@@ -255,6 +255,17 @@ private struct KeyWatcher: NSViewRepresentable {
         layout?.toggle()
         return true
       }
+      // The avatar editor open (7b): Escape closes it whatever has the keys (the window's capture-phase listener); ⌘V outside a field pastes a picture into it.
+      if let editor = pane?.avatarEditor {
+        if event.keyCode == 53, mods.isEmpty {
+          pane?.closeAvatarEditor()
+          return true
+        }
+        if mods == .command, event.charactersIgnoringModifiers?.lowercased() == "v", !(window?.firstResponder is NSText) {
+          editor.paste()
+          return true
+        }
+      }
       // The agent's pane: ⌘⇧, (`sand.toggleAgentSettings`) and ⌘⇧I or ⌥⌘B (`sand.toggleInfo`).
       if let pane, let layout, search?.isOpen != true {
         let key = event.charactersIgnoringModifiers?.lowercased()

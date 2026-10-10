@@ -52,6 +52,19 @@ final class PaneState {
   var dragWidth: CGFloat?
   var dragCloses = false
 
+  /** The avatar editor, while it is open (7b), and where the avatar's button is in the window (a click on it is not "outside"). */
+  var avatarEditor: AvatarEditorModel?
+  var avatarTriggerFrame: CGRect = .zero
+
+  func toggleAvatarEditor(for agent: Agent) {
+    if avatarEditor?.agentId == agent.id { closeAvatarEditor() } else { avatarEditor = AvatarEditorModel(agentId: agent.id, isGroup: agent.isGroup) }
+  }
+
+  func closeAvatarEditor() {
+    avatarEditor?.closeNow()
+    avatarEditor = nil
+  }
+
   /** A page asked for another agent (Edit Profile), applied when that agent opens. */
   private var request: (agentId: String, section: Section)?
   /** The window grew for it: by how much, and its width after (`$lt`). */
@@ -90,6 +103,7 @@ final class PaneState {
 
   /** Close (×, Escape, the header's button): the window shrinks back if it grew for it; the sidebar opens again if the pane folded it. */
   func close(layout: SidebarLayout) {
+    closeAvatarEditor()
     guard isOpen else { return }
     shrinkWindowIfGrown()
     withAnimation(Self.motion) {
@@ -129,6 +143,7 @@ final class PaneState {
 
   /** Another agent opened: its page starts on Profile (it is drawn afresh), or on the page asked for it. */
   func agentChanged(to agentId: String?) {
+    closeAvatarEditor()
     if let request, request.agentId == agentId {
       section = request.section
     } else {
@@ -390,6 +405,97 @@ private struct AgentPage: View {
       .frame(width: contentWidth, alignment: .top)
     }
     .frame(width: contentWidth)
+    // The avatar editor (7b): 6 under the avatar (6 + 96 down the page), centred on it, over everything under it.
+    .overlay(alignment: .top) {
+      if let editor = pane.avatarEditor, editor.agentId == agent.id {
+        AvatarEditorPopover(agent: agent, model: editor, width: min(294, contentWidth), look: look) { pane.closeAvatarEditor() }
+          .background(OutsideClickCatcher(excluded: { pane.avatarTriggerFrame }) { pane.closeAvatarEditor() })
+          .offset(y: 6 + 96 + 6)
+      }
+    }
+  }
+}
+
+/** Closes what it is behind when a click lands outside it (and outside `excluded`, in the window's coordinates). */
+struct OutsideClickCatcher: NSViewRepresentable {
+  let excluded: () -> CGRect
+  let onOutside: () -> Void
+
+  func makeNSView(context: Context) -> CatchView {
+    let view = CatchView()
+    view.excluded = excluded
+    view.onOutside = onOutside
+    return view
+  }
+
+  func updateNSView(_ view: CatchView, context: Context) {
+    view.excluded = excluded
+    view.onOutside = onOutside
+  }
+
+  final class CatchView: NSView {
+    var excluded: () -> CGRect = { .zero }
+    var onOutside: () -> Void = {}
+    nonisolated(unsafe) private var monitor: Any?
+
+    override func viewDidMoveToWindow() {
+      super.viewDidMoveToWindow()
+      if let monitor { NSEvent.removeMonitor(monitor) }
+      monitor = nil
+      guard window != nil else { return }
+      monitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
+        MainActor.assumeIsolated {
+          guard let self, event.window === self.window else { return }
+          let point = event.locationInWindow
+          let mine = self.convert(self.bounds, to: nil)
+          if !mine.contains(point) && !self.excluded().contains(point) { self.onOutside() }
+        }
+        return event
+      }
+    }
+
+    deinit {
+      if let monitor { NSEvent.removeMonitor(monitor) }
+    }
+  }
+}
+
+/** Tells where it is in its window (bottom-left coordinates) as it is laid out. */
+struct WindowFrameReader: NSViewRepresentable {
+  let report: (CGRect) -> Void
+
+  func makeNSView(context: Context) -> ReaderView {
+    let view = ReaderView()
+    view.report = report
+    return view
+  }
+
+  func updateNSView(_ view: ReaderView, context: Context) {
+    view.report = report
+    view.tell()
+  }
+
+  final class ReaderView: NSView {
+    var report: (CGRect) -> Void = { _ in }
+    private var last: CGRect = .zero
+
+    func tell() {
+      guard window != nil else { return }
+      let frame = convert(bounds, to: nil)
+      guard frame != last else { return }
+      last = frame
+      DispatchQueue.main.async { [report] in report(frame) }
+    }
+
+    override func layout() {
+      super.layout()
+      tell()
+    }
+
+    override func viewDidMoveToWindow() {
+      super.viewDidMoveToWindow()
+      tell()
+    }
   }
 }
 
@@ -437,20 +543,32 @@ private struct PaneHead: View {
  * a hairline inside) holding the agent's butterfly at 64 (a group's members
  * as its avatar draws them), and at its lower right the 32-point pencil disc
  * ringed 3 points in the pane's colour, a shade darker under the pointer.
- * It opens the avatar editor (7b).
+ * It opens and closes the avatar editor (7b).
  */
 private struct AvatarTrigger: View {
   let agent: Agent
   let look: Look
   @Environment(AppStore.self) private var store
+  @Environment(PaneState.self) private var pane
   @State private var hovering = false
 
   var body: some View {
-    Button {} label: {
+    let staged = pane.avatarEditor?.agentId == agent.id ? pane.avatarEditor?.staged : nil
+    Button { pane.toggleAvatarEditor(for: agent) } label: {
       ZStack {
         Circle().fill(look.paneAvatarDisc)
-        // The butterfly at 64, or a group's members in its 64-point frame, centred in the disc.
-        AgentMark(agent: agent, agents: store.agents, size: 64)
+        if let staged {
+          // A colour picked for an agent with a picture, shown until Set avatar.
+          ButterflyMark(palette: AgentPalette.named(staged), size: 64)
+        } else if let picture = AvatarPictures.image(agent.avatarDataURL) {
+          Image(nsImage: picture)
+            .resizable()
+            .aspectRatio(contentMode: .fill)
+            .frame(width: 96, height: 96)
+        } else {
+          // The butterfly at 64, or a group's members in its 64-point frame, centred in the disc.
+          AgentMark(agent: agent, agents: store.agents, size: 64)
+        }
         Circle().strokeBorder(look.paneHairline, lineWidth: 1)
       }
       .frame(width: 96, height: 96)
@@ -469,6 +587,7 @@ private struct AvatarTrigger: View {
     }
     .buttonStyle(.plain)
     .onHover { hovering = $0 }
+    .background(WindowFrameReader { pane.avatarTriggerFrame = $0 })
     .help("Edit Avatar")
     .accessibilityLabel("Edit agent avatar")
   }

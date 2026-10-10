@@ -1111,7 +1111,7 @@ details in the pane.
 
 | Button | Comes with |
 |---|---|
-| The avatar's button and its pencil (Edit Avatar) | 7b |
+| The avatar's button and its pencil (Edit Avatar) | 7b (done) |
 | The Routines tab's page (the tab switches; its page is empty) | 7c |
 | The Computer tab | 13 |
 | "/" and search's Members | 7d |
@@ -1130,3 +1130,60 @@ as the avatar draws them elsewhere.
 I01 (Profile), I06 (a group), I07 (dark), B09 (760 × 600: the pane not
 drawn); open and close it from the head, ⌘⇧, and Escape and watch the
 sidebar fold and open; drag its edge, and below 244 let go.
+
+### 7b: the avatar editor
+
+Read from the window's editor (`c3n`, `e3n`, `l3n`, and the patch's voice
+picker) and measured (I04). Pushed:
+
+- **Opening it**: the avatar's button or its pencil opens it, again closes
+  it; a click anywhere outside it, or Escape, closes it. It sits 6 under the
+  avatar, centred on it, 294 wide, over the page (round 16, the raised
+  ground, a hairline edge, a soft shadow, no arrow).
+- **Its head**: Agent, Generate, Upload (a group has no Agent and opens on
+  Upload), the chosen one on the grey; Reset at the right: "Reset to the
+  Agent" when the agent has a picture (it takes the picture away), else, on
+  Agent, "Reset character to default" when the agent has a stored colour.
+- **Agent**: the twelve colours, six a row, the agent's ringed; a click saves
+  it at once and the editor stays open. For an agent with a picture a colour
+  is only shown on the avatar, with Cancel and Set avatar under it (Set
+  avatar saves the colour and takes the picture away). Then Voice: the
+  Mac's pop-up of the voices by name and a round play button for the
+  voice's sample; a pick is saved at once ("Couldn’t save the voice." if
+  refused). Hidden when calls are off.
+- **Generate**: "Describe your avatar…" (⌘Return also generates), Generate;
+  while it draws, the words on one line, a pulsing grey disc and
+  "Generating…". The picture then goes to the crop. Closing the editor
+  meanwhile still saves the picture, cropped in its middle; another tab
+  meanwhile throws it away.
+- **Upload**: the dashed drop zone ("Drag, drop, or paste an image", "or",
+  Browse files), blue while a file is over it; the Mac's open panel ("Choose
+  an avatar image": png, jpg, jpeg, webp, gif, bmp); ⌘V outside a field
+  pastes a picture (and goes to Upload). Over 25 MB, unreadable or not a
+  picture: the window's words in red.
+- **The crop**: the picture in a 96-point circle that drags it, its name and
+  size, "Drag to reposition", −, the Mac's slider (1 to 5), +; Restart and
+  Set avatar ("Saving…"), which saves a 256-pixel PNG of the circle's
+  square and closes the editor. The pane's avatar shows the picture.
+
+#### Not in 7b
+
+- An agent's picture shows on the pane's avatar only; the sidebar's rows,
+  the chat's head and the rest still draw its butterfly. The window draws
+  the picture everywhere: that comes when those screens are checked against
+  an agent with a picture (step 14's pass).
+- "Voices aren’t available right now." when the voices fail to load: the
+  core cannot tell a failure from calls being off, so the picker is hidden
+  in both cases. A sample plays from the network (the window downloads it
+  first).
+
+#### Where the native parts look different
+
+The voice list is the Mac's pop-up button, the zoom the Mac's slider, the
+open panel the Mac's; the generate field is the Mac's text editor. The
+play and stop glyphs, minus and plus are SF Symbols.
+
+#### What to compare
+
+I04 light and dark; Generate and Upload with a picture in the crop; a
+group's editor; an agent with a picture and a colour picked.
