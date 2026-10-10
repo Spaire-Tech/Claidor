@@ -601,6 +601,45 @@ struct WindowSpotReader: NSViewRepresentable {
 }
 
 /**
+ * The head (`.simeon-pane__head`, padded 6 above): the avatar's button (96),
+ * the name 14 under it (22/28, medium, `-0.022em`) and, when it has one, the
+ * title 1 under that (15/20, the pane's grey).
+ */
+private struct PaneHead: View {
+  let agent: Agent
+  let look: Look
+  let contentWidth: CGFloat
+  @Environment(AppStore.self) private var store
+
+  var body: some View {
+    VStack(spacing: 0) {
+      AvatarTrigger(agent: agent, look: look)
+      Text(agent.name)
+        .font(.system(size: 22, weight: .medium))
+        .tracking(-0.484)
+        .lineSpacing(LineBox.extra(size: 22, weight: .medium, lineHeight: 28))
+        .foregroundStyle(look.paneInk)
+        .lineLimit(1)
+        .truncationMode(.tail)
+        .frame(maxWidth: contentWidth)
+        .frame(height: 28)
+        .padding(.top, 14)
+      if !agent.isGroup, !agent.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        Text(agent.title)
+          .font(.system(size: 15))
+          .tracking(-0.16)
+          .foregroundStyle(look.paneInk2)
+          .lineLimit(1)
+          .frame(height: 20)
+          .padding(.top, 1)
+      }
+    }
+    .padding(.top, 6)
+    .frame(maxWidth: .infinity)
+  }
+}
+
+/**
  * The avatar's button (`f3n`): a 96-point disc (white, `#2c2c2e` on dark,
  * a hairline inside) holding the agent's butterfly at 64 (a group's members
  * as its avatar draws them), and at its lower right the 32-point pencil disc
