@@ -134,10 +134,17 @@ final class MacSession {
     }
     await store.attach(LiveBackend(gateway: Gateway(api: api), api: api))
     guard self.api === api else { return }
-    // The window's start-up gate (`hUn`): a new account, its computer answering with no agents and never onboarded, gets the first run.
-    let gate = await store.firstRun()
+    // The window's start-up gate (`hUn`): an account never onboarded and with no agents gets the first run. A computer that does not
+    // answer yet (a new account's, still being made) is asked once more after 2.5 s; then the first run shows, and its hand-off
+    // steps aside if agents turn up (it checks again before making anything).
+    var gate = await store.firstRun()
+    if gate == .unknown {
+      try? await Task.sleep(nanoseconds: 2_500_000_000)
+      guard self.api === api else { return }
+      gate = store.agents.isEmpty ? await store.firstRun() : .seen
+    }
     guard self.api === api else { return }
-    phase = gate == .needed || Self.forcesFirstRun ? .firstRun : .signedIn
+    phase = gate != .seen || Self.forcesFirstRun ? .firstRun : .signedIn
   }
 
   /**

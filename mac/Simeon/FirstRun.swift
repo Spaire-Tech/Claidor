@@ -91,6 +91,11 @@ struct FirstRunScreen: View {
     // A scene starts from its first beat each time its step is entered.
     if next == .meet { meetBeat = reduceMotion ? 3 : 0 }
     if next == .computer { demoBeat = reduceMotion ? Onboarding.computerFrames.count - 1 : -1 }
+    // The name step's field starts empty each time (the window keeps it in the step), and the suggestion fills it again.
+    if next == .name {
+      name = ""
+      nameTouched = false
+    }
     withAnimation(.easeOut(duration: 0.2)) {
       step = next
       enteredAt = Date()
@@ -144,7 +149,7 @@ struct FirstRunScreen: View {
     if step != .handOff { go(.handOff) }
     Task {
       do {
-        let id = try await store.handOff(ready: { computerReady = true })
+        let id = try await store.handOff(client: "mac", ready: { computerReady = true })
         if let id { window.choose(id, store: store) }
         session.finishFirstRun()
       } catch {
@@ -162,7 +167,8 @@ struct FirstRunScreen: View {
  * window's phone rules apply (`PHONE_ONBOARDING_CSS`): titles held by their
  * last line and sized to the width, lines that may wrap, the computer
  * sized to the width, and the whole flow scaled down when the window is
- * too short for its tallest step.
+ * too short for its tallest step. A wider window is never scaled: as in
+ * the window, a short one cuts off the tallest steps' top and foot.
  */
 struct FlowMetrics {
   let size: CGSize
@@ -884,9 +890,11 @@ private struct CastMember: View {
   let pointer: Bool
   let meetStart: Date
   @State private var source = StageSource(size: 80)
+  /** It keeps moving while it fades out (the exit's 0.3 s), then stops drawing. */
+  @State private var drawing = true
 
   var body: some View {
-    StageMark(source: source, palette: palette, state: placement.state, lightSurface: placement.lightSurface, running: placement.opacity > 0)
+    StageMark(source: source, palette: palette, state: placement.state, lightSurface: placement.lightSurface, running: drawing)
       .frame(width: 80, height: 80)
       .overlay(alignment: .topLeading) {
         CursorArrow()
@@ -904,6 +912,14 @@ private struct CastMember: View {
       .offset(x: placement.x, y: placement.y)
       .animation(placement.motion.animation, value: placement)
       .accessibilityHidden(true)
+      .task(id: placement.opacity > 0) {
+        if placement.opacity > 0 {
+          drawing = true
+        } else {
+          try? await Task.sleep(nanoseconds: 350_000_000)
+          if !Task.isCancelled { drawing = false }
+        }
+      }
   }
 }
 

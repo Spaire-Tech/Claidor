@@ -255,12 +255,13 @@ extension AppStore {
   /**
    * The hand-off (the window's create-and-finish, `Pe`): at least 1.5 s on
    * screen; the computer first (asked every 2.5 s, a minute at most); then,
-   * unless the account is onboarded already, Simeon is made and starts his
+   * unless the account is onboarded already, Simeon is made (his request
+   * named for the device, `client`: "ios", "mac") and starts his
    * introduction, and the first run is marked done. His id, to open his
    * chat; nil when the account already had agents (nothing is made). A
    * second try after a failure does not make a second Simeon.
    */
-  public func handOff(ready: @MainActor () -> Void, wait: (Double) async -> Void = { seconds in _ = try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000)) }, now: () -> Date = Date.init) async throws -> String? {
+  public func handOff(client: String = "ios", ready: @MainActor () -> Void, wait: (Double) async -> Void = { seconds in _ = try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000)) }, now: () -> Date = Date.init) async throws -> String? {
     guard let backend else { throw GatewayError(message: Onboarding.unreachable, refused: false) }
     let started = now()
     func dwell() async {
@@ -283,7 +284,7 @@ extension AppStore {
         await reloadRoster()
         return nil
       }
-      let made = try await backend.command("createAgent", Onboarding.chiefOfStaff(nonce: "ios-onboarding-\(UUID().uuidString.lowercased())"))
+      let made = try await backend.command("createAgent", Onboarding.chiefOfStaff(nonce: "\(client)-onboarding-\(UUID().uuidString.lowercased())"))
       guard let id = made["agent"]?["id"]?.text ?? made["id"]?.text else { throw GatewayError(message: "createAgent: no agent in the answer", refused: true) }
       firstRunAgentId = id
     }

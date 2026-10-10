@@ -970,8 +970,10 @@ suggestion (`namePrompt()`), the computer's probe, and the butterfly's
 "happy" and "proud" moods, tested. Pushed:
 
 - **When it shows**: after "Setting up Simeon's computer", the window's
-  start-up gate: the computer answers, has never been onboarded and has no
-  agents. Otherwise the window opens. To see it on an account that already
+  start-up gate: never onboarded and no agents. A computer that does not
+  answer yet (a new account's) is asked once more after 2.5 s, then the
+  first run shows anyway; its hand-off waits for the computer and makes
+  nothing if agents turn up. Otherwise the window opens. To see it on an account that already
   has agents, launch with `--first-run` (or `SIMEON_FIRST_RUN=1`); its
   hand-off then makes no second Simeon.
 - **The frame of every step**: the whole window, the ground colour, things
@@ -1015,7 +1017,11 @@ suggestion (`namePrompt()`), the computer's probe, and the butterfly's
 - **A window narrower than 600 points** follows the window's phone rules:
   agents and seats come in to the width, the computer is sized to it, titles
   are held by their last line and sized to the width, lines may wrap, and a
-  short window scales the whole flow about its centre.
+  short window scales the whole flow about its centre. A wider window is
+  never scaled, as in the window: below about 712 points high the
+  computer step's title and Back are cut off.
+- Going back to the name step empties the field (the suggestion fills it
+  again), as the window does.
 - People who reduce motion get each scene finished, as the window does.
 
 #### Not in step 6 yet
@@ -1030,7 +1036,8 @@ suggestion (`namePrompt()`), the computer's probe, and the butterfly's
 
 #### Where the native parts look different
 
-The name field is the Mac's own text field (its caret is the Mac's); the
+The name field is the Mac's own text field (its caret is the Mac's, and
+the Mac may draw its placeholder's grey and letter spacing its own way); the
 frosted tile under Simeon on the apps step is Apple's glass, with the
 site's white rim and shadow on it, so its blur is Apple's; Try again and
 the rest are drawn as the window draws them. Meet's turn uses SwiftUI's
