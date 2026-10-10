@@ -222,9 +222,8 @@ private struct Transcript: View {
   @State private var position = ScrollPosition(edge: .bottom)
   @State private var pinned = true
   @State private var userScrolling = false
-  /** Rows that arrived while pinned, coming in; and which chat the last rows were. */
-  @State private var entering: Set<String> = []
-  @State private var rowsOf = ""
+  /** Rows that arrived while pinned, coming in. */
+  @State private var arrivals = Arrivals()
 
   /** How the window measures the bottom: the gap under what shows, the content's height, the view's. */
   struct Bottom: Equatable {
@@ -244,6 +243,8 @@ private struct Transcript: View {
       if case .thread(_, let root, let count, _) = row, bubbleIds.contains(root) { return (root, count) }
       return nil
     }, uniquingKeysWith: { first, _ in first })
+    // Rows new since the last look, while pinned, come in (`KMt`); read as the rows are drawn, so a new row comes in from its first frame.
+    let entering = arrivals.entering(rows.map(\.id), of: "\(agentId)|\(threadRoot ?? "")", pinned: pinned)
     // Each entry's time, for a sideways swipe (`Lpt`'s `timestampMs`).
     let times = Dictionary((store.transcripts[agentId] ?? []).compactMap { entry in entry.timestampMs.map { (entry.id, $0) } }, uniquingKeysWith: { first, _ in first })
     GeometryReader { box in
@@ -297,9 +298,6 @@ private struct Transcript: View {
       } action: { old, new in
         follow(old, new)
       }
-      .onChange(of: rows.map(\.id)) { old, new in
-        arrived(old, new)
-      }
     }
   }
 
@@ -318,18 +316,32 @@ private struct Transcript: View {
     }
   }
 
-  /** Rows appended while pinned come in (`KMt`); a chat opened or a thread switched is a new baseline. */
-  private func arrived(_ old: [String], _ new: [String]) {
-    let key = "\(agentId)|\(threadRoot ?? "")"
-    defer { rowsOf = key }
-    guard rowsOf == key, pinned, !old.isEmpty else { return }
-    let before = Set(old)
-    let added = new.filter { !before.contains($0) }
-    guard !added.isEmpty else { return }
-    entering.formUnion(added)
-    Task {
-      try? await Task.sleep(for: .milliseconds(320))
-      entering.subtract(added)
+  /**
+   * The rows a chat has shown (`KMt`): those appended while it is pinned at
+   * the newest come in for 0.32 s; a chat opened or a thread switched is a
+   * new baseline, as is a chat's first rows. Kept outside SwiftUI's state,
+   * so reading it as the rows are drawn changes nothing else.
+   */
+  @MainActor
+  final class Arrivals {
+    private var key = ""
+    private var seen: Set<String> = []
+    private var since: [String: Date] = [:]
+
+    func entering(_ ids: [String], of key: String, pinned: Bool) -> Set<String> {
+      let now = Date()
+      if key != self.key {
+        self.key = key
+        seen = Set(ids)
+        since = [:]
+        return []
+      }
+      if pinned && !seen.isEmpty {
+        for id in ids where !seen.contains(id) { since[id] = now }
+      }
+      seen.formUnion(ids)
+      since = since.filter { now.timeIntervalSince($0.value) < 0.32 }
+      return Set(since.keys)
     }
   }
 

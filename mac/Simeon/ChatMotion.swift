@@ -33,8 +33,9 @@ struct ActivitySlot: View {
       if let shown {
         let typing = line?.verb == "typing" || (line == nil && hold.shown == nil)
         let words = typing ? "Typing…" : hold.shown?.text ?? "Working…"
+        // The agent as it is now (its butterfly's state), the one shown while it goes out.
         ActivityRow(
-          agent: shown,
+          agent: agent ?? shown,
           words: words,
           wordsKey: typing ? "typing" : hold.shown?.key ?? "working",
           elapsed: typing ? nil : hold.elapsed(at: now),
@@ -303,7 +304,11 @@ struct PeekCatcher: NSViewRepresentable {
     }
 
     private func wheel(_ event: NSEvent) -> Bool {
-      guard let control, event.window === window, bounds.contains(convert(event.locationInWindow, from: nil)) else { return false }
+      let local = convert(event.locationInWindow, from: nil)
+      guard let control, event.window === window, bounds.contains(local) else { return false }
+      // The message field over the chat's foot is not the transcript's (16 under it).
+      let fromBottom = isFlipped ? bounds.height - local.y : local.y
+      guard tracking || fromBottom > control.composerHeight + 16 else { return false }
       // The browser's wheel deltas: points, positive to the right and down.
       let scale: CGFloat = event.hasPreciseScrollingDeltas ? 1 : 40
       let dx = -event.scrollingDeltaX * scale, dy = -event.scrollingDeltaY * scale
