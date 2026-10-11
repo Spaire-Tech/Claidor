@@ -31,6 +31,8 @@ final class Purchases {
 
   private(set) var plans: ApplePlans?
   private(set) var products: [String: Product] = [:]
+  /** The App Store has answered which products it sells (some may be missing: one not created, or not yet approved). */
+  private(set) var productsLoaded = false
   private(set) var loading = false
   /** The product being bought, while Apple's sheet and the server work. */
   private(set) var buying: String?
@@ -80,9 +82,20 @@ final class Purchases {
     self.plans = plans
     guard let found = try? await Product.products(for: plans.productIds) else { return }
     products = Dictionary(found.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+    productsLoaded = true
     if let subscription = found.first?.subscription {
       freeWeek = await subscription.isEligibleForIntroOffer
     }
+  }
+
+  /**
+   * The plans the App Store sells: all of them until it has answered, then
+   * only those it returned. Max yearly, for one, is not sold through Apple
+   * while its price is above Apple's standard price points
+   * (docs/services-billing.md, section 9).
+   */
+  func sold(_ plans: [ApplePlan]) -> [ApplePlan] {
+    productsLoaded ? plans.filter { products[$0.productId] != nil } : plans
   }
 
   /** Apple's purchase sheet for one plan; the plan starts once Simeon Labs' server has the signed purchase. */

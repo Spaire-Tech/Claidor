@@ -47,7 +47,7 @@ struct PlansSheet: View {
 
           if let plans = purchases.plans {
             VStack(spacing: 10) {
-              ForEach(plans.plans(yearly: yearly)) { plan in
+              ForEach(purchases.sold(plans.plans(yearly: yearly))) { plan in
                 PlanRow(plan: plan, product: purchases.products[plan.productId], selected: plan.tier == tier) { tier = plan.tier }
               }
             }
@@ -94,7 +94,9 @@ struct PlansSheet: View {
       .task {
         if let preselect { tier = preselect }
         await purchases.load()
+        keepTierSold()
       }
+      .onChange(of: yearly) { _, _ in keepTierSold() }
       .alert("Couldn’t complete the purchase", isPresented: Binding(get: { problem != nil }, set: { if !$0 { problem = nil } })) {
         Button("OK", role: .cancel) {}
       } message: {
@@ -135,6 +137,14 @@ struct PlansSheet: View {
           .fixedSize(horizontal: false, vertical: true)
       }
     }
+  }
+
+  /** A plan the App Store doesn't sell in this interval (Max yearly) is not left chosen: Pro, else the first it sells. */
+  private func keepTierSold() {
+    guard let plans = purchases.plans else { return }
+    let sold = purchases.sold(plans.plans(yearly: yearly))
+    guard !sold.contains(where: { $0.tier == tier }) else { return }
+    tier = sold.first(where: { $0.tier == "pro" })?.tier ?? sold.first?.tier ?? tier
   }
 
   private func buy(_ productId: String) async {
