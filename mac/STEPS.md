@@ -1788,7 +1788,7 @@ Tests: `CallFlowTests.swift`.
 - The banner's keyboard focus ring (the Electron one draws #0A84FF inside
   a button): the Mac's own.
 
-#### Decisions to confirm
+#### Decisions (confirmed 11 October 2026: as recommended)
 
 1. No pill in the chat during a call, as the Electron Mac app (the green
    "Calling…" of M01–M03 is the web and phone window's).
@@ -1911,7 +1911,7 @@ The new words and the channel calls are SimeonMacCore's (`AgentNetwork`,
   the platform is "not available yet", even though Connect works. Copied
   as it is (decision 5).
 
-#### Decisions to confirm
+#### Decisions (confirmed 11 October 2026: as recommended)
 
 1. A click on a node or a line opens its card. In the Electron app it
    cannot (the canvas takes the click for panning; the cards open only
@@ -1920,8 +1920,7 @@ The new words and the channel calls are SimeonMacCore's (`AgentNetwork`,
 2. Escape closes the card, then the chart. The Electron app does nothing
    on Escape there.
 3. Two fingers on the trackpad zoom, as in the Electron app (its sentence
-   says "Scroll to zoom"); pinching zooms too. Say if two fingers should
-   pan instead, as in Maps.
+   says "Scroll to zoom"); pinching zooms too.
 4. Channels is offered for a group too, as in the Electron app.
 5. "How to connect" keeps the window's words ("not available yet").
 6. Connect puts the keys in the token's field (the Electron app leaves
