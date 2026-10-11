@@ -20,6 +20,20 @@ public enum BackendEvent: Sendable {
   case appsChanged
   /** The host's settings changed on some device (`host-settings`: the names of the fields), e.g. the pins. */
   case settingsChanged([String])
+  /** An agent's routines changed (`agents-automation`: the whole list, as `getAgentAutomations` answers). */
+  case automations(agentId: String, [JSON])
+  /** An agent's computer changed (`forever-box`: its whole status). */
+  case computer(JSON)
+  /** The computer's disk (`box-disk-pressure`: `{level}`, or null when it has room again). */
+  case diskPressure(JSON?)
+  /** The agent moved or clicked on its computer (`computer-action`). */
+  case computerAction(JSON)
+  /** An agent's subagents changed (`subagents`: the whole list). */
+  case subagents(parentId: String, [JSON])
+  /** A step of the server's replacement of the computer (`box-migration`, from the server's stream). */
+  case migration(MigrationEvent)
+  /** The computer's notices changed (`tray`: a snapshot, one pushed or dismissed, all cleared). */
+  case tray(JSON)
 
   /** Its kind, and the chat it concerns, for the hang watch. */
   public var name: String {
@@ -31,6 +45,13 @@ public enum BackendEvent: Sendable {
     case .connection(let live): return live ? "the connection back" : "the connection lost"
     case .appsChanged: return "an apps change"
     case .settingsChanged: return "a settings change"
+    case .automations(let agentId, _): return "the routines of \(agentId)"
+    case .computer(let payload): return "the computer of \(payload["agentId"]?.text ?? "an agent")"
+    case .diskPressure: return "the computer's disk"
+    case .computerAction: return "a step on the computer"
+    case .subagents(let parentId, _): return "the subagents of \(parentId)"
+    case .migration(let event): return "the computer's rebuild (\(event.phase.rawValue))"
+    case .tray: return "a notice"
     }
   }
 }
@@ -103,9 +124,8 @@ public protocol AgentBackend: AnyObject, Sendable {
   func transcriptPage(_ agentId: String, before: Int?) async throws -> TranscriptPage
   /** A chat's newest lines, read without opening it on the host (`getAgentTranscriptTail`): the preview a long press in the list shows, which must not mark it read. */
   func tail(_ agentId: String, limit: Int) async throws -> [Entry]
-  /** A message, with the files already on the agent's computer (`uploadAttachment`). */
-  /** A message, with the files already on the agent's computer, answering `replyTo` when set (`sendPrompt`'s `replyToId`). */
-  func send(_ agentId: String, text: String, attachments: [AttachmentRef], replyTo: String?, nonce: String?) async throws
+  /** A message, with the files already on the agent's computer (`uploadAttachment`), and what goes with it (`SendOptions`). */
+  func send(_ agentId: String, text: String, attachments: [AttachmentRef], options: SendOptions, nonce: String?) async throws
   func markRead(_ agentId: String) async
   /** A new agent in a palette; its id. */
   func createAgent(name: String, colour: String) async throws -> String
@@ -125,13 +145,63 @@ public protocol AgentBackend: AnyObject, Sendable {
   func server(_ path: String, method: String?, body: JSON?) async throws -> JSON
   /** The agent's own screen on the cloud computer (`ensureForeverBox`): starting, or its stream. */
   func screen(_ agentId: String) async throws -> ScreenState
+  /** A screen's address as the host gives it (its loopback page), as the WebSocket through Simeon Labs' proxy (`proxifyBoxVncUrl`). */
+  func screenSocket(_ vncUrl: String) async -> URL?
+  /** Update the computer, keeping its files (`RecreateSandBox {preserveData: true, force}`). */
+  func updateComputer(force: Bool) async throws -> RecreateAnswer
+  /** A fresh computer in place of this one (`ForceRecreateSandBox`): the sidebar's "Recover computer" and the dialog's. */
+  func resetComputer() async throws -> RecreateAnswer
+  /** The last step of a rebuild the server reported (`getBoxMigrationStatus`). */
+  func migrationStatus() async -> MigrationEvent?
+  /** One method of the account's Connect service on Simeon Labs' server (`simeon.v1.DashboardService`): Settings' Cancel Trial (`CancelSandTrial`). */
+  func dashboard(_ method: String, _ message: JSON) async throws -> JSON
+  /** What was said in a recording (dictation, `transcribeAudio`). */
+  func transcribe(audio: Data, mimeType: String) async throws -> String
+}
+
+extension AgentBackend {
+  /** No dictation where nothing transcribes (the window's "Voice transcription source is unavailable."). */
+  public func transcribe(audio: Data, mimeType: String) async throws -> String {
+    throw SimeonAPIError(message: "Voice transcription source is unavailable.", status: 0)
+  }
+}
+
+extension AgentBackend {
+  public func dashboard(_ method: String, _ message: JSON) async throws -> JSON {
+    throw SimeonAPIError(message: "This isn’t available right now", status: 501)
+  }
+}
+
+/**
+ * What goes with a message besides its words and files, as `sendPrompt`
+ * takes it (host-gateway-api.ts).
+ */
+public struct SendOptions: Sendable, Equatable {
+  /** The message this one answers (`replyToId`). */
+  public var replyTo: String?
+  /** A reply in a thread (`isFork`, with `replyTo` the thread's first message): the host keeps it out of the main chat (`branched`). */
+  public var isFork: Bool
+  /** The composer's document (TipTap's JSON, `richText`): a skill picked with "/" rides in it, and the host expands it. */
+  public var richText: String?
+  /** When it was written, for a message held while the computer was out of reach (`composedAtMs`): the host tells the agent, and the chat says "Sent while offline". Nil for every other message. */
+  public var composedAtMs: Double?
+
+  public init(replyTo: String? = nil, isFork: Bool = false, richText: String? = nil, composedAtMs: Double? = nil) {
+    self.replyTo = replyTo; self.isFork = isFork; self.richText = richText; self.composedAtMs = composedAtMs
+  }
 }
 
 extension AgentBackend {
   /** A message with a nonce of its own (the call's requests, which nothing waits to see). */
   public func send(_ agentId: String, text: String, attachments: [AttachmentRef], replyTo: String?) async throws {
-    try await send(agentId, text: text, attachments: attachments, replyTo: replyTo, nonce: nil)
+    try await send(agentId, text: text, attachments: attachments, options: SendOptions(replyTo: replyTo), nonce: nil)
   }
+
+  /** A backend with no computer has no screens. */
+  public func screenSocket(_ vncUrl: String) async -> URL? { nil }
+  public func updateComputer(force: Bool) async throws -> RecreateAnswer { .rejected("There is no computer to update.") }
+  public func resetComputer() async throws -> RecreateAnswer { .rejected("Couldn't reset the computer. It is unchanged.") }
+  public func migrationStatus() async -> MigrationEvent? { nil }
 
   /** A backend that keeps whole chats reads its end. */
   public func tail(_ agentId: String, limit: Int) async throws -> [Entry] {
@@ -160,14 +230,56 @@ public final class LiveBackend: AgentBackend, @unchecked Sendable {
 
   /** The voice call (`LiveCall`), set by the app once it has its voice kit. */
   public var call: CallEngine?
+  /** The server's record of the computer being replaced, followed while the app runs. */
+  public let migrations: MigrationRelay?
 
-  public init(gateway: Gateway, api: SimeonAPI? = nil) { self.gateway = gateway; self.api = api }
+  public init(gateway: Gateway, api: SimeonAPI? = nil) {
+    self.gateway = gateway; self.api = api
+    #if canImport(Darwin)
+    migrations = api.map { api in MigrationRelay(open: { offset in api.connectStream("WatchSandBoxMigration", ["fromOffsetKey": .string(offset), "includeFinished": true]) }) }
+    #else
+    migrations = nil
+    #endif
+  }
+
+  public func updateComputer(force: Bool) async throws -> RecreateAnswer {
+    guard let api else { throw SimeonAPIError(message: "Sign in to Simeon first.", status: 401) }
+    return await accepted(.read(try await api.connect("RecreateSandBox", ["preserveData": true, "force": .bool(force)]), preserveData: true))
+  }
+
+  public func resetComputer() async throws -> RecreateAnswer {
+    guard let api else { throw SimeonAPIError(message: "Sign in to Simeon first.", status: 401) }
+    return await accepted(.read(try await api.connect("ForceRecreateSandBox", [:]), preserveData: false))
+  }
+
+  /** A recreate that started: its steps are watched for, and the box is asked for again (the new one has new tokens). */
+  private func accepted(_ answer: RecreateAnswer) async -> RecreateAnswer {
+    switch answer {
+    case .started(let operationId): migrations?.recreateAccepted(operationId)
+    case .untrackable: migrations?.recreateAccepted(nil)
+    case .rejected: return answer
+    }
+    await gateway.invalidate()
+    return answer
+  }
+
+  public func migrationStatus() async -> MigrationEvent? { migrations?.status }
 
   public func command(_ method: String, _ args: JSON) async throws -> JSON { try await gateway.command(method, args) }
+
+  public func dashboard(_ method: String, _ message: JSON) async throws -> JSON {
+    guard let api else { throw SimeonAPIError(message: "Sign in to Simeon to continue", status: 401) }
+    return try await api.connect(method, message, service: "simeon.v1.DashboardService")
+  }
 
   public func server(_ path: String, method: String?, body: JSON?) async throws -> JSON {
     guard let api else { throw SimeonAPIError(message: "Sign in to Simeon first.", status: 401) }
     return try await api.data(path, method: method, json: body)
+  }
+
+  public func transcribe(audio: Data, mimeType: String) async throws -> String {
+    guard let api else { throw SimeonAPIError(message: "Sign in to Simeon first.", status: 401) }
+    return try await api.transcribe(audio: audio, mimeType: mimeType)
   }
 
   public func screen(_ agentId: String) async throws -> ScreenState {
@@ -179,6 +291,10 @@ public final class LiveBackend: AgentBackend, @unchecked Sendable {
     return ScreenState(socket: connection.screenSocket(for: vnc), state: state, percent: percent)
   }
 
+  public func screenSocket(_ vncUrl: String) async -> URL? {
+    guard let connection = try? await gateway.currentConnection() else { return nil }
+    return connection.screenSocket(for: vncUrl)
+  }
 
   public func listAgents() async throws -> [Agent] {
     let answer = try await gateway.command("listAgents")
@@ -211,15 +327,30 @@ public final class LiveBackend: AgentBackend, @unchecked Sendable {
     return (page["entries"]?.array ?? page.array ?? []).compactMap(Entry.init)
   }
 
-  public func send(_ agentId: String, text: String, attachments: [AttachmentRef], replyTo: String?, nonce: String?) async throws {
-    // The host's argument names (host-gateway-api.ts, sendPrompt). The nonce lets a resent message land once, and the host keeps it on the line it writes (`clientNonce`), so the app knows its own message when it comes back.
+  public func send(_ agentId: String, text: String, attachments: [AttachmentRef], options: SendOptions, nonce: String?) async throws {
+    _ = try await gateway.command("sendPrompt", Self.sendArguments(agentId, text: text, attachments: attachments, options: options, nonce: nonce))
+  }
+
+  /**
+   * `sendPrompt`'s arguments, in the host's names (host-gateway-api.ts). The
+   * nonce lets a resent message land once, and the host keeps it on the line
+   * it writes (`clientNonce`), so the app knows its own message when it comes
+   * back. `composedAtMs` only for a message held offline: the host writes
+   * "Composed offline at …" into the agent's prompt for it, so sent with every
+   * message it told the agent each one was written offline.
+   */
+  static func sendArguments(_ agentId: String, text: String, attachments: [AttachmentRef], options: SendOptions, nonce: String?) -> JSON {
     var args: JSON = [
       "agentId": .string(agentId), "prompt": .string(text), "attachmentPaths": JSON(attachments.map(\.path)), "attachmentNames": JSON(attachments.map(\.name)),
       "clientNonce": .string(nonce ?? "ios-\(UUID().uuidString.lowercased())"), "directAddressedAcceptance": true,
-      "composedAtMs": .number(Date().timeIntervalSince1970 * 1000),
     ]
-    if let replyTo { args = args.setting("replyToId", .string(replyTo)) }
-    _ = try await gateway.command("sendPrompt", args)
+    if let replyTo = options.replyTo {
+      args = args.setting("replyToId", .string(replyTo))
+      if options.isFork { args = args.setting("isFork", true) }
+    }
+    if let rich = options.richText, !rich.isEmpty { args = args.setting("richText", .string(rich)) }
+    if let at = options.composedAtMs { args = args.setting("composedAtMs", .number(at)) }
+    return args
   }
 
   public func markRead(_ agentId: String) async {
@@ -265,7 +396,10 @@ public final class LiveBackend: AgentBackend, @unchecked Sendable {
       }
       continuation.finish()
     }
-    continuation.onTermination = { _ in task.cancel() }
+    let stopListening = migrations?.listen { continuation.yield(.migration($0)) }
+    migrations?.start()
+    let relay = migrations
+    continuation.onTermination = { _ in task.cancel(); stopListening?(); relay?.stop() }
     return stream
     #else
     return AsyncStream { $0.finish() }
@@ -287,6 +421,20 @@ public final class LiveBackend: AgentBackend, @unchecked Sendable {
       return [.appsChanged]
     case "host-settings":
       return [.settingsChanged(payload["fields"]?.array?.compactMap(\.text) ?? [])]
+    case "agents-automation":
+      guard let agentId = payload["agentId"]?.text else { return [] }
+      return [.automations(agentId: agentId, payload["automations"]?.array ?? [])]
+    case "forever-box":
+      return payload.object == nil ? [] : [.computer(payload)]
+    case "box-disk-pressure":
+      return [.diskPressure(payload.present)]
+    case "computer-action":
+      return payload["agentId"] == nil ? [] : [.computerAction(payload)]
+    case "subagents":
+      guard let parentId = payload["parentAgentId"]?.text else { return [] }
+      return [.subagents(parentId: parentId, payload["subagents"]?.array ?? [])]
+    case "tray":
+      return payload.object == nil ? [] : [.tray(payload)]
     case "outline":
       guard let agentId = payload["agentId"]?.text else { return [] }
       let items = payload["item"].map { [$0] } ?? payload["items"]?.array ?? []

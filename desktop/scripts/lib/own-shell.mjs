@@ -77,7 +77,7 @@ export function ownShellPlistExtension({ environment = packagedEnvironment, year
   // exceptions for the local gateway. MallocNanoZone=0 is Electron's own
   // LSEnvironment entry, kept since our dict replaces the whole key.
   return {
-    NSHumanReadableCopyright: `Copyright © ${year} SimeonLabs, Inc. All rights reserved.`,
+    NSHumanReadableCopyright: `Copyright © ${year} Spaire, Inc. All rights reserved.`,
     NSMicrophoneUsageDescription: "Simeon uses the microphone to take your dictation and for voice calls with your agents.",
     NSAudioCaptureUsageDescription: "Simeon captures audio for voice calls with your agents.",
     NSCameraUsageDescription: "Simeon uses the camera for video calls with your agents.",

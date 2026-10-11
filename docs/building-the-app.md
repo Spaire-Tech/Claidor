@@ -177,6 +177,12 @@ build people install.
 
 ## A signed release for other Macs
 
+**Retired (11 October 2026).** The Electron app is no longer released: the
+Mac app people get is the Swift app (`mac/README.md`), and `npm run
+release:macos` with `scripts/release-macos.mjs` was removed. What follows
+is kept as the record of how it was done; the Swift app's release follows
+the same steps (Developer ID, notarization, the DMG and `latest.json`).
+
 `npm run package:own-shell` signs ad hoc, which is enough for the Mac it
 was built on. A build for other people is signed with Simeon Labs' Apple
 developer certificate and checked by Apple (notarized), so it opens without

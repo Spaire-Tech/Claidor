@@ -19,6 +19,8 @@ public struct CallState: Sendable, Equatable {
   public var endedAt: Date?
   /** What the agent is doing for the call ("Sending the agenda to Dana…"), the banner's status line. */
   public var activity: String? = nil
+  /** The call could not start: `status` says why ("Couldn't connect", "Calls aren't switched on yet"…). */
+  public var failed = false
 
   /** Seconds since the call connected (or until it ended). */
   public func seconds(now: Date = Date()) -> Int {
@@ -34,6 +36,96 @@ public protocol CallEngine: AnyObject, Sendable {
   func hangUp()
   /** Every change, from now on; nil when the call is gone. */
   func observe(_ listener: @escaping @Sendable (CallState?) -> Void)
+  /** A finished or failed call put away now (the banner's Close, or its time up). */
+  func dismiss()
+}
+
+extension CallEngine {
+  public func dismiss() {}
+}
+
+/**
+ * What the Mac's call banner shows for each moment of a call
+ * (desktop/source/shared/voice-call/call-state.ts `bannerView`, the banner's
+ * stylesheet): its look, its status line, the waveform or not, and its
+ * buttons.
+ */
+public enum CallBanner {
+  /** The banner's `data-state`. */
+  public enum Look: String, Sendable { case ringing, speaking, listening, working, ended, failed }
+
+  /** 360 pt wide, 12 pt under the menu bar and 16 pt from the screen's right edge (`voice-call-window.ts`). */
+  public static let width = 360.0
+  public static let insetTop = 12.0
+  public static let insetRight = 16.0
+  /** A finished call goes after this; a failed one after this unless the pointer is on it (`call-controller.ts`). */
+  public static let endedStays = 1.2
+  public static let failedStays = 20.0
+  /** The waveform: 46 bars, at most 16 pt above their 2 pt floor while the agent speaks, 12 while it listens. */
+  public static let bars = 46
+  static let speakingHeight = 16.0
+  static let listeningHeight = 12.0
+  public static let emptyTranscript = "What you both say shows up here."
+
+  public static func look(_ call: CallState) -> Look {
+    if call.failed { return .failed }
+    switch call.phase {
+    case .ringing: return .ringing
+    case .ended: return .ended
+    case .live: return call.activity != nil ? .working : call.agentSpeaking ? .speaking : .listening
+    }
+  }
+
+  /** The line under the name: "Calling…", the time, what the agent is doing, "Call ended · 2:48", or why it failed. */
+  public static func status(_ call: CallState, now: Date = Date()) -> String {
+    switch look(call) {
+    case .ringing: return VoiceCallText.calling
+    case .working: return call.activity ?? ""
+    case .speaking, .listening: return Chat.callClock(call.seconds(now: now))
+    case .ended: return call.connectedAt == nil ? VoiceCallText.ended : "\(VoiceCallText.ended) · \(Chat.callClock(call.seconds(now: now)))"
+    case .failed: return call.status.isEmpty ? VoiceCallText.couldNotConnect : call.status
+    }
+  }
+
+  /** The waveform shows while the call is live and the agent is not working on something. */
+  public static func hasWave(_ call: CallState) -> Bool { [.speaking, .listening].contains(look(call)) }
+
+  /** Each bar's height in points, from the call's levels: highest in the middle, falling off to the edges (`setLevels`). */
+  public static func barHeights(_ levels: [Double], speaking: Bool, bars: Int = bars) -> [Double] {
+    let amplitude = speaking ? speakingHeight : listeningHeight
+    return (0..<bars).map { index in
+      let window = sin(Double.pi * (Double(index) + 0.5) / Double(bars))
+      let level = levels.isEmpty ? 0 : max(0, min(1, levels[index * levels.count / bars]))
+      return 2 + level * amplitude * window
+    }
+  }
+}
+
+/**
+ * A call written into the chat by a host from before 2 October 2026: one
+ * agent message, "Voice call · 2:48" and its recap under a blank line
+ * (`callRecordText`); the window draws it as a row that opens on its recap
+ * (`__simeonCallRecordParse`).
+ */
+public struct CallRecord: Equatable, Sendable {
+  public let duration: String
+  public let recap: String?
+
+  public static func parse(_ text: String) -> CallRecord? {
+    let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+    // Every agent message is asked: most are not, and need no pattern.
+    guard trimmed.hasPrefix("Voice call · "), let regex = try? NSRegularExpression(pattern: #"^Voice call · (\d{1,2}:\d{2}(?::\d{2})?)(?:\n\n([\s\S]+))?$"#),
+          let match = regex.firstMatch(in: trimmed, range: NSRange(trimmed.startIndex..., in: trimmed)),
+          let duration = Range(match.range(at: 1), in: trimmed) else { return nil }
+    let recap = Range(match.range(at: 2), in: trimmed).map { String(trimmed[$0]).trimmingCharacters(in: .whitespacesAndNewlines) }
+    return CallRecord(duration: String(trimmed[duration]), recap: recap?.isEmpty == false ? recap : nil)
+  }
+}
+
+/** `SIMEON_VOICE_CALLS`: calls are on unless it says `0`, `off`, `false` or `no` (`voiceCallsEnabled`). */
+public func voiceCallsEnabled(_ environment: [String: String] = ProcessInfo.processInfo.environment) -> Bool {
+  let value = environment["SIMEON_VOICE_CALLS"]?.trimmingCharacters(in: .whitespaces).lowercased()
+  return !["0", "off", "false", "no"].contains(value ?? "")
 }
 
 /**

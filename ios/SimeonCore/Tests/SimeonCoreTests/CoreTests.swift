@@ -125,6 +125,76 @@ final class TokenTests: XCTestCase {
     XCTAssertEqual(Account(profile: profile)?.initials, "BF")
   }
 
+  func testDictationSendsTheRecordingAsTheMacDoes() async throws {
+    let vault = MemoryVault(SessionTokens(accessToken: "t", refreshToken: "r", expiresAtMs: 9e15))
+    let http = ScriptedHTTP([
+      { request in
+        XCTAssertEqual(request.url?.path, "/desktop/api/proxy/v1/audio/transcriptions")
+        XCTAssertEqual(request.httpMethod, "POST")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "authorization"), "Bearer t")
+        XCTAssertTrue(request.value(forHTTPHeaderField: "content-type")?.hasPrefix("multipart/form-data; boundary=") == true)
+        let body = String(decoding: request.httpBody ?? Data(), as: UTF8.self)
+        XCTAssertTrue(body.contains("Content-Disposition: form-data; name=\"file\"; filename=\"audio.mp4\"\r\nContent-Type: audio/mp4\r\n\r\nRIFF"))
+        XCTAssertFalse(body.contains("language"), "no language: OpenAI finds it")
+        return HTTPAnswer(status: 200, body: json(#"{"text":"Move the review to Friday.","seconds":2.4}"#))
+      },
+    ])
+    let api = SimeonAPI(base: URL(string: "https://api.example.com")!, clientVersion: "1", vault: vault, http: http)
+    let said = try await api.transcribe(audio: Data("RIFF".utf8), mimeType: "audio/mp4;codecs=mp4a.40.2")
+    XCTAssertEqual(said, "Move the review to Friday.")
+    XCTAssertEqual(SimeonAPI.audioFilename("audio/webm"), "audio.webm")
+  }
+
+  /** A picture turned down: OpenAI's sentence and code reach the app (they were dropped for "answered … with 400"), and the editor says it plainly. */
+  @MainActor
+  func testARefusedPictureSaysWhy() async throws {
+    let vault = MemoryVault(SessionTokens(accessToken: "t", refreshToken: "r", expiresAtMs: 9e15))
+    let http = ScriptedHTTP([
+      { _ in HTTPAnswer(status: 400, body: json(#"{"error":{"message":"Your request was rejected by the safety system.","type":"image_generation_user_error","code":"moderation_blocked"}}"#)) },
+      { _ in HTTPAnswer(status: 502, body: json(#"{"error":{"type":"api_error","message":"The image service could not be reached."}}"#)) },
+    ])
+    let api = SimeonAPI(base: URL(string: "https://api.example.com")!, clientVersion: "1", vault: vault, http: http)
+    do {
+      _ = try await api.data("proxy/v1/images/generations", json: ["prompt": "Lilo from Lilo and Stitch"])
+      XCTFail("refused")
+    } catch let error as SimeonAPIError {
+      XCTAssertEqual(error.status, 400)
+      XCTAssertEqual(error.code, "moderation_blocked")
+      XCTAssertEqual(error.message, "Your request was rejected by the safety system.")
+      XCTAssertTrue(AppStore.drawingRefusal(error).hasPrefix("The picture maker won't draw that."))
+    }
+    do {
+      _ = try await api.data("proxy/v1/images/generations", json: ["prompt": "a kid playing soccer"])
+      XCTFail("unreachable")
+    } catch {
+      XCTAssertEqual(AppStore.drawingRefusal(error), "Couldn't draw the picture: The image service could not be reached.")
+    }
+  }
+
+  func testDeletingTheAccountForgetsThePairAndARefusalSaysWhy() async throws {
+    let vault = MemoryVault(SessionTokens(accessToken: "t", refreshToken: "r", expiresAtMs: 9e15))
+    let http = ScriptedHTTP([
+      { _ in HTTPAnswer(status: 503, body: json(#"{"error":{"type":"account_deletion_blocked","message":"Your agents' computer couldn't be deleted right now. Try again in a few minutes."}}"#)) },
+      { _ in HTTPAnswer(status: 200, body: json(#"{"deleted":true,"subscription":"none","computers":1,"appsDisconnected":0,"transcriptsDeleted":0,"incomplete":[]}"#)) },
+    ])
+    let api = SimeonAPI(base: URL(string: "https://api.example.com")!, clientVersion: "1", vault: vault, http: http)
+    do {
+      try await api.deleteAccount()
+      XCTFail("refused")
+    } catch {
+      XCTAssertEqual(error.localizedDescription, "Your agents' computer couldn't be deleted right now. Try again in a few minutes.")
+    }
+    // Refused: still signed in, so trying again works.
+    XCTAssertNotNil(vault.read())
+    try await api.deleteAccount()
+    XCTAssertNil(vault.read())
+    let sent = http.sent
+    XCTAssertEqual(sent.count, 2)
+    XCTAssertEqual(sent[1].httpMethod, "DELETE")
+    XCTAssertEqual(sent[1].url?.path, "/desktop/api/account")
+    XCTAssertEqual(sent[1].value(forHTTPHeaderField: "authorization"), "Bearer t")
+  }
+
   func testASpentPairEndsTheSession() async {
     let vault = MemoryVault(SessionTokens(accessToken: "old", refreshToken: "spent", expiresAtMs: 0))
     let http = ScriptedHTTP([{ _ in HTTPAnswer(status: 200, body: json(#"{"shouldLogout":true}"#)) }])
@@ -247,7 +317,9 @@ final class GatewayTests: XCTestCase {
     guard case .step(let agentId, _, let summary, let running)? = step.first else { return XCTFail() }
     XCTAssertEqual([agentId, summary], ["simeon", "Checking Linear"])
     XCTAssertTrue(running)
-    XCTAssertTrue(LiveBackend.map(GatewayEvent(channel: "tray", payload: [:])).isEmpty)
+    XCTAssertTrue(LiveBackend.map(GatewayEvent(channel: "teach-recording", payload: [:])).isEmpty)
+    guard case .tray(let tray)? = LiveBackend.map(GatewayEvent(channel: "tray", payload: ["type": "cleared"])).first else { return XCTFail() }
+    XCTAssertEqual(tray["type"]?.string, "cleared")
   }
 }
 
@@ -264,6 +336,7 @@ final class ChatTests: XCTestCase {
       case .file(_, let name, _, _): return "file:\(name)"
       case .teammates(_, let exchange, _): return "teammates:\(exchange.label):\(exchange.peers.map(\.name).joined(separator: "+"))"
       case .routines(_, let action, let list): return "routine:\(action):\(list.map(\.name).joined(separator: "+"))"
+      case .thread(_, let root, let count, _): return "thread:\(root):\(count)"
       default: return "other"
       }
     }
@@ -275,7 +348,7 @@ final class ChatTests: XCTestCase {
   func testAnEarlierCallIsOneVoiceChatLine() {
     let rows = Chat.rows(DemoData.seed(now: now).transcripts["theo"]!)
     let calls = rows.compactMap { row -> (Int, Int)? in
-      if case .voiceCall(_, let seconds, let lines) = row { return (seconds, lines.count) }
+      if case .voiceCall(_, let seconds, let lines, _) = row { return (seconds, lines.count) }
       return nil
     }
     XCTAssertEqual(calls.map(\.0), [71])
@@ -323,16 +396,17 @@ final class ChatTests: XCTestCase {
       case .listenerConnect(_, let platform, let reason): return "listener:\(platform):\(reason ?? "")"
       case .request(_, let card):
         switch card {
-        case .approval(_, let summary, _, _, let status): return "approval:\(summary):\(status)"
+        case .approval(_, let summary, _, _, let status, _, _): return "approval:\(summary):\(status)"
         case .secret(let label, _, _): return "secret:\(label)"
         case .computer(_, _, let resolution): return "computer:\(resolution ?? "waiting")"
         }
       case .notice(_, let text): return text == Chat.notShown ? "notice" : text
+      case .cloudAgent(_, let bcId): return "cloud-agent:\(bcId)"
       case .file(_, let name, _, _): return "file:\(name)"
       default: return "other"
       }
     }
-    XCTAssertEqual(kinds, ["me", "them", "question", "question-answered", "question-dismissed", "draft:email:Ready to send", "draft:slack:Ready to send", "flights:4", "flights:2", "connector:Linear:To read the launch tickets.", "listener:slack:so this routine can fire", "approval:Delete 3 files in ~/Downloads:pending", "secret:Stripe API key", "computer:waiting", "notice", "file:Payouts September.pdf"])
+    XCTAssertEqual(kinds, ["me", "them", "question", "question-answered", "question-dismissed", "draft:email:Ready to send", "draft:slack:Ready to send", "flights:4", "flights:2", "connector:Linear:To read the launch tickets.", "listener:slack:so this routine can fire", "approval:Delete 3 files in ~/Downloads:pending", "secret:Stripe API key", "computer:waiting", "cloud-agent:bc-1", "file:Payouts September.pdf"])
     guard case .flights(_, let flights) = rows.first(where: { if case .flights = $0 { return true }; return false })! else { return XCTFail() }
     XCTAssertEqual(flights.title, "Seattle to Los Angeles")
     XCTAssertEqual(flights.offers[3].legs.count, 2)
@@ -528,6 +602,34 @@ final class VoiceCallTests: XCTestCase {
     try await Task.sleep(nanoseconds: 200_000_000)
     XCTAssertEqual(backend.voiceRecords.last?["recap"], "Bass asked to move the review; it's done.")
     XCTAssertNil(states.last ?? nil)
+  }
+}
+
+/** A picture sent from the phone is shown from the phone's own copy, never fetched back (9 October 2026). */
+@MainActor
+final class SentPictureTests: XCTestCase {
+  func testASentPictureIsReadFromThePhoneUnderBothItsAddresses() async throws {
+    let store = AppStore()
+    let backend = DemoBackend(seed: DemoData.seed(), pace: 0.01, call: nil)
+    await store.attach(backend)
+    await store.open("theo")
+    let id = AppStore.newMessageId()
+    let photo = Data([0x89, 0x50, 0x4E, 0x47, 1, 2, 3])
+    await store.send("", to: "theo", attachments: [("Photo 1.png", photo)], id: id)
+    // The waiting line names the phone's copy, and the computer's path answers for it once uploaded.
+    let waiting = AppStore.outboxFileURL(id, 0)
+    XCTAssertEqual(store.sentFile(waiting)?.data, photo)
+    let path = "/home/box/attachments/Photo 1.png"
+    XCTAssertEqual(store.sentFile(path)?.keys, [waiting, path])
+    let read = await store.readFile(path, agentId: "theo")
+    XCTAssertEqual(read, photo, "read from the phone, not the computer (the demo's computer has no such file)")
+    // The host's line for it names that path, and it is drawn as the picture it is (the window's `IZ`), on the person's side.
+    try await Task.sleep(nanoseconds: 200_000_000)
+    let pictures = store.rows(for: "theo").flatMap { row -> [String] in
+      if case .bubble(let bubble) = row, bubble.fromPerson { return bubble.images.map(\.url) }
+      return []
+    }
+    XCTAssertTrue(pictures.contains(path) || pictures.contains(waiting), "\(pictures)")
   }
 }
 
@@ -871,6 +973,16 @@ final class MarkdownTests: XCTestCase {
     XCTAssertEqual(parsed?.markState, .searching)
   }
 
+  /** A picture counts for the working lines with its data or only its version (`QCe`); an empty one does not. */
+  func testAnAgentsPicture() {
+    XCTAssertFalse(Agent(json: ["id": "a", "name": "A"])!.hasPicture)
+    XCTAssertFalse(Agent(json: ["id": "a", "name": "A", "avatarDataUrl": "", "avatarVersion": ""])!.hasPicture)
+    let pictured = Agent(json: ["id": "a", "name": "A", "avatarDataUrl": "data:image/png;base64,AAAA", "avatarVersion": "v2"])!
+    XCTAssertTrue(pictured.hasPicture)
+    XCTAssertEqual(pictured.avatarVersion, "v2")
+    XCTAssertTrue(Agent(json: ["id": "a", "name": "A", "avatarVersion": "v1"])!.hasPicture)
+  }
+
   func testMarkPoseFollowsTheState() {
     let engine = MarkEngine(random: { 0.5 })
     var frame = MarkFrame.rest
@@ -889,6 +1001,38 @@ final class MarkdownTests: XCTestCase {
     XCTAssertTrue(spun)
     XCTAssertEqual(frame.dx, 3, accuracy: 0.3)
     XCTAssertFalse(engine.isSettled)
+  }
+
+  func testAClickedButterflyHopsAndSettles() {
+    let engine = MarkEngine(random: { 0.5 })
+    var frame = MarkFrame.rest
+    for step in 0...120 { frame = engine.frame(at: Double(step) / 60, state: .idle, sizePoints: 9) }
+    let resting = frame.dy
+    engine.bounce()
+    XCTAssertFalse(engine.isSettled)
+    var highest = 0.0
+    for step in 121...(121 + 90) {
+      frame = engine.frame(at: Double(step) / 60, state: .idle, sizePoints: 9)
+      highest = min(highest, frame.dy - resting)
+    }
+    // The first hop is 48 units high, at a quarter second.
+    XCTAssertEqual(highest, -48, accuracy: 2.5)
+    XCTAssertTrue(engine.isSettled, "four hops in 1.33 s, then still")
+  }
+
+  func testReduceMotionFoldsAtOnceAndNeverTurns() {
+    let engine = MarkEngine(random: { 0.5 })
+    engine.reduceMotion = true
+    var frame = engine.frame(at: 0, state: .thinking, sizePoints: 9)
+    frame = engine.frame(at: 1.0 / 60, state: .thinking, sizePoints: 9)
+    XCTAssertEqual(frame.fold, 1, accuracy: 0.0001, "folded at once")
+    XCTAssertEqual(frame.outline, MarkShape.circle)
+    engine.turnNow()
+    engine.bounce()
+    XCTAssertFalse(engine.isTurning)
+    for step in 2...300 { frame = engine.frame(at: Double(step) / 60, state: .working, sizePoints: 9) }
+    XCTAssertFalse(engine.isTurning, "no turns every few seconds")
+    XCTAssertEqual(frame.rotation, 0, accuracy: 0.01)
   }
 
   func testMarkFoldsIntoThreeDotsWhileThinking() {
@@ -923,7 +1067,7 @@ final class MarkdownTests: XCTestCase {
     XCTAssertEqual(bubbles[1].quote, "Thursday is on track: 12 of 15 tickets are done.")
     XCTAssertEqual(bubbles[1].timestampMs, now)
     XCTAssertEqual(bubbles[2].quote, "(deleted)")
-    XCTAssertEqual(Chat.quoteLine(entries[0], limit: 10), "Thursday i…")
+    XCTAssertEqual(Chat.quoteLine(entries[0], limit: 10), "Thursday…", "cut at nine, its trailing space dropped, then the ellipsis")
   }
   /** The row menu's commands, as the Mac's sidebar sends them: pins shared through the host's settings, read, hide, duplicate, delete. */
   @MainActor
@@ -1001,12 +1145,12 @@ final class MarkdownTests: XCTestCase {
   }
 
   func testTheComposerOffersNamesAfterAnAt() {
-    XCTAssertEqual(Mentions.query("Ask @"), "")
-    XCTAssertEqual(Mentions.query("Ask @Th"), "Th")
-    XCTAssertEqual(Mentions.query("@Iris"), "Iris")
-    XCTAssertNil(Mentions.query("mail me at bass@simeonlabs"), "an address is not a mention")
-    XCTAssertNil(Mentions.query("Ask @Theo now"))
-    XCTAssertEqual(Mentions.inserting("Theo", into: "Ask @Th"), "Ask @Theo ")
+    XCTAssertEqual(ComposerLists.trigger("@", in: "Ask @")?.query, "")
+    XCTAssertEqual(ComposerLists.trigger("@", in: "Ask @Th")?.query, "Th")
+    XCTAssertEqual(ComposerLists.trigger("@", in: "@Iris")?.query, "Iris")
+    XCTAssertNil(ComposerLists.trigger("@", in: "mail me at bass@simeonlabs"), "an address is not a mention")
+    XCTAssertEqual(ComposerLists.trigger("@", in: "Ask @Theo now")?.query, "Theo now", "the window's list reads on across one space at a time")
+    XCTAssertEqual(ComposerDocument.picking(.mention(id: "t", label: "Theo"), from: 4, in: "Ask @Th", chips: []).draft, "Ask @Theo ")
   }
 
   func testTheListLineIsTheMacs() {
@@ -1030,7 +1174,7 @@ final class QuietBackend: AgentBackend, @unchecked Sendable {
   func tail(_ agentId: String, limit: Int) async throws -> [Entry] { tailed.append(agentId); return Array(lines.compactMap(Entry.init).suffix(limit)) }
   func listAgents() async throws -> [Agent] { [Agent(id: "theo", name: "Theo")] }
   func transcript(_ agentId: String) async throws -> [Entry] { opened.append(agentId); return lines.compactMap(Entry.init) }
-  func send(_ agentId: String, text: String, attachments: [AttachmentRef], replyTo: String?, nonce: String?) async throws {}
+  func send(_ agentId: String, text: String, attachments: [AttachmentRef], options: SendOptions, nonce: String?) async throws {}
   var read: [String] = []
   func markRead(_ agentId: String) async { read.append(agentId) }
   func createAgent(name: String, colour: String) async throws -> String { "x" }
@@ -1134,13 +1278,19 @@ final class ScriptedBackend: AgentBackend, @unchecked Sendable {
   func listAgents() async throws -> [Agent] { [Agent(id: "theo", name: "Theo")] }
   func transcript(_ agentId: String) async throws -> [Entry] { try await transcriptPage(agentId, before: nil).entries }
   func transcriptPage(_ agentId: String, before: Int?) async throws -> TranscriptPage {
+    if failLoads { throw GatewayError(message: "offline", refused: false) }
     let end = before ?? lines.count
     let size = before == nil ? 500 : 100
     let start = max(0, end - size)
     return TranscriptPage(entries: lines[start..<end].compactMap(Entry.init), olderBefore: start > 0 ? start : nil)
   }
-  func send(_ agentId: String, text: String, attachments: [AttachmentRef], replyTo: String?, nonce: String?) async throws {
+  /** What was sent, with what went with it. */
+  var sent: [(text: String, options: SendOptions)] = []
+  /** The fetch of the chat fails (`transcriptPage`). */
+  var failLoads = false
+  func send(_ agentId: String, text: String, attachments: [AttachmentRef], options: SendOptions, nonce: String?) async throws {
     if failSends { throw GatewayError(message: "offline", refused: false) }
+    sent.append((text, options))
   }
   func markRead(_ agentId: String) async {}
   func createAgent(name: String, colour: String) async throws -> String { "x" }
@@ -1218,6 +1368,8 @@ final class OnboardingTests: XCTestCase {
     XCTAssertEqual(OnboardingStep.name.next, .handOff)
     XCTAssertEqual(Onboarding.handOffLine(ready: false), "Setting up your Simeon…")
     XCTAssertEqual(Onboarding.handOffLine(ready: true), "Getting your team ready…")
+    XCTAssertEqual(Onboarding.handOffLine(ready: false, percent: 42, sleeping: true), "Setting up your Simeon… 42%")
+    XCTAssertEqual(Onboarding.handOffLine(ready: false, sleeping: true), "Waking your computer…")
   }
 
   func testTheScenesFitAPhone() {
@@ -1280,6 +1432,33 @@ final class LightTrailsTests: XCTestCase {
     XCTAssertTrue(trails.hasLife, "a new set once the last has drawn in")
   }
 
+  func testAClickedButterflyBurstsIntoSparksThatFade() {
+    let trails = LightTrails(random: { 0.5 })
+    trails.burst(count: 22, speed: 1.1, swirl: 0.3, palette: .named("blue"))
+    XCTAssertTrue(trails.hasLife)
+    trails.update(nowMs: 1000, spinAngle: 0, sizeScale: 2.6, sustain: false, palette: .named("blue"))
+    XCTAssertEqual(trails.sparks.count, 22)
+    // They start at the wings' edge and fly out from the middle.
+    let first = trails.sparks.map { hypot($0.x - Butterfly.centre, $0.y - Butterfly.centre) }
+    for step in 1...12 { trails.update(nowMs: 1000 + Double(step) * 1000 / 60, spinAngle: 0, sizeScale: 2.6, sustain: false, palette: .named("blue")) }
+    let later = trails.sparks.map { hypot($0.x - Butterfly.centre, $0.y - Butterfly.centre) }
+    XCTAssertEqual(later.count, 22)
+    XCTAssertGreaterThan(later.reduce(0, +), first.reduce(0, +))
+    for spark in trails.sparks { XCTAssertTrue((50...76).contains(spark.colour.lightness)) }
+    for step in 13...60 { trails.update(nowMs: 1000 + Double(step) * 1000 / 60, spinAngle: 0, sizeScale: 2.6, sustain: false, palette: .named("blue")) }
+    XCTAssertTrue(trails.sparks.isEmpty, "gone in under a second")
+    XCTAssertFalse(trails.hasLife)
+  }
+
+  func testTheWhirlsBeltDrawsIn() {
+    let engine = MarkEngine(random: { 0.5 })
+    var frame = MarkFrame.rest
+    for step in 0...180 { frame = engine.frame(at: Double(step) / 60, state: .loading, sizePoints: 9) }
+    XCTAssertEqual(frame.fold, 1, accuracy: 0.01)
+    XCTAssertEqual(frame.beltRadius, 52, accuracy: 0.5)
+    XCTAssertEqual(MarkFrame.rest.beltRadius, MarkShape.beltRadius)
+  }
+
   func testATrailRunsBetweenTwoStopsOfThePalette() {
     let ocean = AgentPalette.named("blue")
     let inks = [ocean.top, ocean.mid, ocean.bottom].map(TrailColour.init)
@@ -1311,6 +1490,28 @@ final class ActivityLineTests: XCTestCase {
     XCTAssertEqual(ActivityLine.of(kind: "tool", tool: "CheckSubagent", detail: nil).text, "Waiting on another agent")
     XCTAssertEqual(ActivityLine.of(kind: "tool", tool: "Mystery", detail: nil).text, "Working")
     XCTAssertEqual(ActivityLine.of(kind: nil, tool: nil, detail: nil).text, "Working")
+    var theo = Agent(id: "t", name: "Theo")
+    theo.isRunning = true
+    XCTAssertEqual(theo.activityLine()?.text, "Theo is working", "running before it says what (`gJn`)")
+  }
+
+  func testTheWorkingLineHoldsEachActivityForAMoment() {
+    let search = ActivityLine.of(kind: "tool", tool: "WebSearch", detail: nil)
+    let read = ActivityLine.of(kind: "tool", tool: "Read", detail: nil)
+    let shell = ActivityLine.of(kind: "tool", tool: "Shell", detail: nil)
+    var hold = ActivityHold(search, at: 10)
+    hold.want(read, at: 10.3)
+    XCTAssertEqual(hold.shown, search, "Searching keeps its 0.8 s")
+    XCTAssertEqual(hold.due ?? 0, 10.8, accuracy: 0.0001)
+    hold.want(read, at: 10.8)
+    XCTAssertEqual(hold.shown, read)
+    XCTAssertNil(hold.due)
+    hold.want(shell, at: 12)
+    XCTAssertEqual(hold.shown, shell, "after its 0.8 s a new one takes over at once")
+    XCTAssertNil(hold.elapsed(at: 71))
+    XCTAssertEqual(hold.elapsed(at: 72.5), "1m")
+    XCTAssertEqual(hold.nextMinute(after: 72.5) ?? 0, 132, accuracy: 0.0001)
+    XCTAssertEqual(hold.elapsed(at: 12 + 3_900), "1h 5m")
     // The label comes in again only when the verb or the picture changes.
     XCTAssertEqual(ActivityLine.of(kind: "tool", tool: "Shell", detail: nil).key, ActivityLine.of(kind: "tool", tool: "BoxShell", detail: nil).key)
   }

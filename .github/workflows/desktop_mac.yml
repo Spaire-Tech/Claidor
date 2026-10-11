@@ -1,5 +1,10 @@
 name: Desktop app (macOS)
 
+# The Electron app is retired (11 October 2026, desktop/README.md): nobody
+# installs this build. It is kept because the agents' engine is still built
+# through it (`npm run publish:host-bundle` takes the engine out of the
+# packaged app).
+#
 # Builds Simeon for Apple Silicon Macs and keeps the app as a downloadable
 # artifact of the run. The app is ad-hoc signed until an Apple developer
 # certificate is added, so the first launch needs a right-click, Open

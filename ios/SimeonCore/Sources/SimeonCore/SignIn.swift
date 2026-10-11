@@ -11,6 +11,12 @@ public enum SimeonConfig {
    * differ, or a confirm page meant for one would wake the other.
    */
   public static let urlScheme = "simeon-ios"
+  /**
+   * The native Mac app's scheme: `simeon`, the Electron app's, since it
+   * replaced that app (the founder, 11 October 2026, `mac/README.md`). It was
+   * `simeon-mac` while the two lived side by side.
+   */
+  public static let macURLScheme = "simeon"
   /** What the server stores on the session row, so a phone's session reads as one (`client_version_of`). */
   public static let clientVersionHeader = "x-simeon-client-version"
 }

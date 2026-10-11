@@ -86,7 +86,7 @@ class Invoice(BaseModel):
     # True when Simeon Labs itself is the seller (platform self-billing:
     # Simeon Labs billing a creator for their plan). The "on behalf of"
     # footer is about invoicing for a creator; for a first-party invoice
-    # "issued by Simeon Labs, Inc. on behalf of Simeon Labs, Inc." is wrong.
+    # "issued by Spaire, Inc. on behalf of Spaire, Inc." is wrong.
     first_party: bool = False
 
     @property
@@ -316,15 +316,15 @@ class InvoiceGenerator(FPDF):
         self.line(self.l_margin, self.get_y(), self.w - self.r_margin, self.get_y())
         self.ln(4)
 
+        # The issuing company ("Spaire, Inc."), without the full stop that ends the sentence.
+        issuer = settings.INVOICES_NAME.rstrip(".")
         # Legal text (centered). First-party invoices (Simeon Labs billing a
         # creator for their own plan) carry no "on behalf of" line.
         if self.data.first_party:
-            legal_text = "This invoice is issued by Simeon Labs, Inc."
+            legal_text = f"This invoice is issued by {issuer}."
         else:
             on_behalf = self.data.on_behalf_of_label or self.data.seller_name
-            legal_text = (
-                f"This invoice is issued by Simeon Labs, Inc. on behalf of {on_behalf}."
-            )
+            legal_text = f"This invoice is issued by {issuer} on behalf of {on_behalf}."
         self.multi_cell(
             w=0,
             h=self.cell_height(self.footer_font_size),
@@ -334,7 +334,7 @@ class InvoiceGenerator(FPDF):
             new_y=YPos.NEXT,
         )
         self.ln(1)
-        copyright_text = f"© {date.today().year} Simeon Labs, Inc. All rights reserved."
+        copyright_text = f"© {date.today().year} {issuer}. All rights reserved."
         self.cell(
             w=0,
             h=self.cell_height(self.footer_font_size),

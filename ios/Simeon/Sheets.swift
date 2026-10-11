@@ -49,7 +49,8 @@ struct NewAgentSheet: View {
   var body: some View {
     NavigationStack {
       VStack(spacing: 0) {
-        ButterflyView(palette: palette, motion: .idle)
+        // It settles and holds still: swaying, it drew a 150-point canvas every frame while the name was typed.
+        ButterflyView(palette: palette, motion: .idle, stillWhenIdle: true)
           .frame(width: 150, height: 150)
           .frame(maxWidth: .infinity, minHeight: 170, maxHeight: .infinity)
         TextField("Name your agent", text: $name)
@@ -89,8 +90,8 @@ struct NewAgentSheet: View {
       }
       .background(Ink.ground)
       .navigationTitle("New Agent")
-      .navigationBarTitleDisplayMode(.inline)
-      .toolbar { ToolbarItem(placement: .topBarLeading) { CloseButton() } }
+      .inlineBarTitle()
+      .toolbar { ToolbarItem(placement: .leadingBar) { CloseButton() } }
     }
   }
 
@@ -102,7 +103,7 @@ struct NewAgentSheet: View {
     Task {
       let id = await store.createAgent(name: name, colour: palette.id)
       busy = false
-      if let id { created(id) } else { failed = true }
+      if let id { Haptics.success(); created(id) } else { Haptics.warning(); failed = true }
     }
   }
 }
@@ -185,10 +186,10 @@ struct NewGroupSheet: View {
       }
       .background(Ink.ground)
       .navigationTitle("New Group Chat")
-      .navigationBarTitleDisplayMode(.inline)
+      .inlineBarTitle()
       .toolbar {
-        ToolbarItem(placement: .topBarLeading) { CloseButton() }
-        ToolbarItem(placement: .topBarTrailing) {
+        ToolbarItem(placement: .leadingBar) { CloseButton() }
+        ToolbarItem(placement: .trailingBar) {
           Button(busy ? "Creating…" : "Next", action: create)
             .buttonStyle(PhonePrimaryStyle(small: true))
             .disabled(picked.count < 2 || busy)
@@ -208,7 +209,7 @@ struct NewGroupSheet: View {
     Task {
       let id = await store.createGroup(memberIds: picked)
       busy = false
-      if let id { created(id) } else { failed = true }
+      if let id { Haptics.success(); created(id) } else { Haptics.warning(); failed = true }
     }
   }
 }

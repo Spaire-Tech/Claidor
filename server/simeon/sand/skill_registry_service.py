@@ -194,6 +194,17 @@ def _tarball_store() -> S3Service:
     return S3Service(bucket=settings.S3_FILES_BUCKET_NAME)
 
 
+def delete_tarball(key: str) -> bool:
+    """A skill's archive gone from file storage (its owner deleted their
+    account); False when storage did not answer."""
+    try:
+        _tarball_store().delete_file(key)
+    except Exception as error:
+        log.warning("sand.skills.archive_delete_failed", key=key, error=str(error))
+        return False
+    return True
+
+
 @dataclass(frozen=True)
 class Team:
     id: int

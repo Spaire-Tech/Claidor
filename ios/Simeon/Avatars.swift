@@ -1,5 +1,7 @@
 import SwiftUI
+#if os(iOS)
 import UIKit
+#endif
 import SimeonCore
 
 /**
@@ -354,11 +356,13 @@ struct ButterflyView: View {
   var style: MarkStyle = .live
   var motion: MarkState?
   var stillWhenIdle = false
+  /** Taps on a moving butterfly (`LiveButterfly.pokes`). */
+  var pokes = 0
   @Environment(\.colorScheme) private var scheme
 
   var body: some View {
     if style == .live, let motion {
-      LiveButterfly(palette: palette, state: motion, stillWhenIdle: stillWhenIdle)
+      LiveButterfly(palette: palette, state: motion, stillWhenIdle: stillWhenIdle, pokes: pokes)
     } else {
       Image(uiImage: MarkDrawing.image(palette, style: style, dark: scheme == .dark))
         .resizable().interpolation(.high).scaledToFit()
@@ -373,15 +377,16 @@ struct AgentAvatar: View {
   var members: [Agent] = []
   /** In the chat's header the members stand side by side; in a list row they cluster. */
   var groupInARow = false
-  /** A list row's and the header's butterfly move while the agent works (the Mac's sidebar). */
+  /** The butterfly moves while the agent works (the Mac's sidebar). No screen asks for it now: the agent at work moves in the chat's working row, and only there. */
   var moves = false
 
   var body: some View {
-    if agent.isGroup {
+    // A picture of its own first, a group's too (the Mac shows a group's picture everywhere); else the butterflies.
+    if let image = Self.image(agent.avatarDataURL) {
+      Image(uiImage: image).resizable().scaledToFill().clipShape(Circle())
+    } else if agent.isGroup {
       let shown = members.isEmpty ? [agent] : members
       if groupInARow { GroupStack(members: shown) } else { GroupCluster(members: shown) }
-    } else if let image = Self.image(agent.avatarDataURL) {
-      Image(uiImage: image).resizable().scaledToFill().clipShape(Circle())
     } else {
       ButterflyView(palette: agent.palette, motion: moves ? agent.markState : nil, stillWhenIdle: true)
     }

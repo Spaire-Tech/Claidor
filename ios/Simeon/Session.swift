@@ -2,12 +2,14 @@ import AuthenticationServices
 import Foundation
 import Security
 import SwiftUI
+#if os(iOS)
 import UIKit
+#endif
 import SimeonCore
 
 /** The pair in the Keychain, this device only, readable after the first unlock (so a notification's tap finds it). */
 final class KeychainVault: TokenVault, @unchecked Sendable {
-  private let service = "com.simeonlabs.simeon.ios"
+  private let service = AppPlatform.keychainService
   private let account = "session"
 
   func read() -> SessionTokens? {
@@ -84,21 +86,38 @@ final class SessionController {
   private(set) var firstRun: FirstRunGate = .done
   /** The name the server suggests for the person (`user/profile`), for the onboarding's name step. */
   private(set) var suggestedName: String?
+  /**
+   * The person has not given a name yet (`user/profile` has no
+   * `preferredName`): the Mac asks again after the first run (the window's
+   * name sheet, `namePromptFromSimeon`).
+   */
+  var nameNeeded = false
   @ObservationIgnored private var askedForNotifications = false
   let store = AppStore()
   private let vault = KeychainVault()
   @ObservationIgnored private var api: SimeonAPI?
   @ObservationIgnored private var sheet: ASWebAuthenticationSession?
+  /** The sign-in's poll, closed by Settings' Cancel (the sheet's own cancel calls nothing back). */
+  @ObservationIgnored private var sheetState: SheetState?
   private let presenter = SheetPresenter()
   let launch = Launch.current
+
+  /** The version as an update names it ("0.1.0"): the app's own (`MARKETING_VERSION`), without the platform or the build. */
+  static var displayVersion: String {
+    Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.0"
+  }
 
   static var clientVersion: String {
     let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"
     let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "0"
-    return "ios-\(version)+\(build)"
+    return "\(AppPlatform.clientPrefix)-\(version)+\(build)"
   }
 
   func start() async {
+    // The phone shows the computer's rebuild (ComputerStates.swift): sending waits through it and the list holds still, as on
+    // the Mac. Low disk is shown, but the automatic Disk Saver is left to the Mac, so two apps open do not each make one.
+    store.followsRebuild = true
+    store.startsDiskSaver = false
     if launch.signInScreen { phase = .signedOut(message: nil); return }
     if launch.demo {
       store.account = Account(name: "Bass Fall", email: "bass@simeonlabs.com")
@@ -138,7 +157,15 @@ final class SessionController {
     let backend = LiveBackend(gateway: Gateway(api: api), api: api)
     let names = personName
     let store = store
-    backend.call = LiveCall(backend: backend, transport: ElevenLabsVoice(), personName: { names.value }, voiceFor: { agentId in await store.ensureVoice(agentId) }, tones: CallTonePlayer())
+    #if os(macOS)
+    // The Mac's: none while `SIMEON_VOICE_CALLS` switches calls off; a failed call stays on the banner until it is closed (or its 20 s); each step in `voice-call.log`.
+    if voiceCallsEnabled() {
+      backend.call = LiveCall(backend: backend, transport: ElevenLabsVoice(), personName: { names.value }, voiceFor: { agentId in await store.ensureVoice(agentId) }, tones: CallTonePlayer(), failedStays: nil, log: { VoiceCallLog.shared.write($0) })
+    }
+    #else
+    // Each step of a call in the console (Xcode's, when the app runs from it), as the Mac's `voice-call.log` has them.
+    backend.call = LiveCall(backend: backend, transport: ElevenLabsVoice(), personName: { names.value }, voiceFor: { agentId in await store.ensureVoice(agentId) }, tones: CallTonePlayer(), log: { line in Trace.log("[simeon] voice-call \(line)") })
+    #endif
     // The profile is asked for first and applied the moment it answers, beside the roster.
     Task { [weak self] in
       guard let profile = try? await api.profile(), let self, self.api === api else { return }
@@ -157,6 +184,7 @@ final class SessionController {
     store.account = account
     personName.value = account.name
     suggestedName = profile["preferredName"]?.text ?? profile["suggestedName"]?.text
+    nameNeeded = profile["preferredName"]?.text == nil
     Self.remember(account)
   }
 
@@ -200,7 +228,8 @@ final class SessionController {
 
   /** Ask for notifications once signed in, and register this phone with Apple and Simeon Labs. */
   private func askForNotifications() {
-    guard let api, !askedForNotifications else { return }
+    // The Mac shows its own notifications later (mac/PARITY.md §9); until then it asks for nothing.
+    guard let api, !askedForNotifications, !AppPlatform.isMac else { return }
     askedForNotifications = true
     Task { await Notifications.shared.start(api: api) }
   }
@@ -223,7 +252,9 @@ final class SessionController {
     defer { signingInWith = nil }
     let metadata = SignIn.freshMetadata()
     let state = SheetState()
-    let session = ASWebAuthenticationSession(url: SignIn.loginURL(api: launch.api, metadata: metadata, provider: provider), callback: .customScheme(SimeonConfig.urlScheme)) { url, _ in
+    sheetState = state
+    defer { sheetState = nil }
+    let session = ASWebAuthenticationSession(url: SignIn.loginURL(api: launch.api, metadata: metadata, provider: provider, redirectTarget: AppPlatform.urlScheme), callback: .customScheme(AppPlatform.urlScheme)) { url, _ in
       // Confirmed (the page opened simeon-ios://…) or closed: poll a little longer either way, as the Mac's pair is written as the page is answered.
       state.close(confirmed: url != nil)
     }
@@ -252,6 +283,36 @@ final class SessionController {
     case .gaveUp:
       phase = .signedOut(message: "Sign-in did not finish. Try again.")
     }
+  }
+
+  /** Settings' Cancel while signing in: the sign-in sheet closed, as its own Cancel does. */
+  func cancelSignIn() {
+    sheetState?.close(confirmed: false)
+    sheet?.cancel()
+  }
+
+  /** The first run decided again (after the access cover: the computer could not be asked before). */
+  func recheckFirstRun() async {
+    guard firstRun != .done else { return }
+    await checkFirstRun()
+  }
+
+  /** Settings › Delete Account: nil once the account is gone (and the app signed out), else why not. */
+  func deleteAccount() async -> String? {
+    guard let api else { return "Sign in to Simeon first." }
+    do {
+      try await api.deleteAccount()
+    } catch {
+      return error.localizedDescription
+    }
+    store.detach()
+    await Notifications.shared.stop()
+    Self.remember(nil)
+    self.api = nil
+    askedForNotifications = false
+    firstRun = .done
+    phase = .signedOut(message: AccountMenu.deleted)
+    return nil
   }
 
   func signOut() async {
@@ -287,7 +348,7 @@ final class AppConnector {
     connecting = name
     defer { connecting = nil; session = nil }
     guard let url = await store.connectApp(named: name) else { return }
-    await signIn(url, store: store) { store.isConnected(name) }
+    await signIn(url, name: name, store: store) { store.isConnected(name) }
   }
 
   /** One account of an app already added: its sign-in again (an account that needs it, from the app's page). */
@@ -296,14 +357,34 @@ final class AppConnector {
     connecting = account.name
     defer { connecting = nil; session = nil }
     guard let url = await store.signInURL(account) else { return }
-    await signIn(url, store: store) { store.accounts(of: account.serverId).contains { $0.accountKey == account.accountKey && $0.status == "connected" } }
+    await signIn(url, name: account.name, store: store) { store.accounts(of: account.serverId).contains { $0.accountKey == account.accountKey && $0.status == "connected" } }
   }
 
-  /** The vendor's page in the system's sign-in sheet, closed by itself once the box says the app is connected. */
-  private func signIn(_ url: URL, store: AppStore, done: @escaping () -> Bool) async {
+  /**
+   * The vendor's page in the system's sign-in sheet, closed by itself once
+   * the box says the app is connected. A vendor that only sends sign-ins
+   * back to `localhost:8787` (Canva, Square, Vercel, Dropbox) lands on this
+   * iPhone's own loopback while the sheet is open (`LoopbackSignIn`).
+   */
+  private func signIn(_ url: URL, name: String, store: AppStore, done: @escaping () -> Bool) async {
+    var catcher: LoopbackCatcher?
+    if let signInState = LoopbackSignIn.state(returningHere: url) {
+      guard let listening = await LoopbackCatcher.start(state: signInState, finish: "\(AppPlatform.urlScheme)://connected") else {
+        store.problem = LoopbackSignIn.busyMessage(name)
+        return
+      }
+      catcher = listening
+      Task { @MainActor in
+        if let answer = await listening.answer() {
+          listening.stop()
+          await store.finishLoopbackSignIn(answer, name: name)
+        }
+      }
+    }
+    defer { catcher?.stop() }
     let state = SheetState()
     // Closed on the vendor's confirm page: look a little longer. Cancelled: two looks, then the buttons are free again (Cancel used to hold every Add for 20 s).
-    let session = ASWebAuthenticationSession(url: url, callback: .customScheme(SimeonConfig.urlScheme)) { _, error in
+    let session = ASWebAuthenticationSession(url: url, callback: .customScheme(AppPlatform.urlScheme)) { _, error in
       state.close(confirmed: (error as? ASWebAuthenticationSessionError)?.code != .canceledLogin)
     }
     session.presentationContextProvider = presenter
@@ -326,10 +407,15 @@ final class AppConnector {
 /** Where the sign-in sheet shows: the app's window. */
 final class SheetPresenter: NSObject, ASWebAuthenticationPresentationContextProviding {
   func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+    #if os(iOS)
     let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
     if let window = scenes.flatMap(\.windows).first(where: \.isKeyWindow) ?? scenes.flatMap(\.windows).first { return window }
     // A sign-in is only ever started from the app's own window, so there is a scene to make one in.
     return UIWindow(windowScene: scenes[0])
+    #else
+    // The Mac: the window the sign-in was started from.
+    return NSApp.keyWindow ?? NSApp.mainWindow ?? NSApp.windows.first ?? ASPresentationAnchor()
+    #endif
   }
 }
 

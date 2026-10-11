@@ -1,0 +1,7 @@
+# Made by `xcodegen generate` from project.yml.
+SimeonMac.xcodeproj/
+Simeon/Info.plist
+# Builds.
+build/
+*.xcuserstate
+xcuserdata/

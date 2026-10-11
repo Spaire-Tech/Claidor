@@ -20,6 +20,8 @@ public final class MemoryVault: TokenVault, @unchecked Sendable {
 public struct SimeonAPIError: Error, LocalizedError, Sendable {
   public let message: String
   public let status: Int
+  /** The refusal's own code when the answer names one (`error.code`, e.g. OpenAI's `moderation_blocked`). */
+  public var code: String? = nil
   public var errorDescription: String? { message }
 }
 
@@ -114,7 +116,12 @@ public actor SimeonAPI {
     try await authorized(&request)
     let answer = try await http.send(request)
     if answer.status == 401 { sessionEnded() }
-    guard answer.ok else { throw SimeonAPIError(message: "Simeon Labs' server answered \(path) with \(answer.status).", status: answer.status) }
+    guard answer.ok else {
+      // The refusal's own sentence and code when it has them: the server's proxy and the providers it passes on answer
+      // `{"error": {"message", "code"}}` (server/simeon/desktop/proxy_common.py), meant to be shown as they are.
+      let said = answer.json?["error"]
+      throw SimeonAPIError(message: said?["message"]?.text ?? "Simeon Labs' server answered \(path) with \(answer.status).", status: answer.status, code: said?["code"]?.text)
+    }
     guard let parsed = answer.json else { throw SimeonAPIError(message: "Simeon Labs' server answered \(path) with something that is not JSON.", status: answer.status) }
     if let code = parsed["code"], code.int != 0 {
       throw SimeonAPIError(message: parsed["message"]?.text ?? "Simeon Labs' server refused \(path).", status: answer.status)
@@ -139,9 +146,47 @@ public actor SimeonAPI {
     guard answer.ok else { throw SimeonAPIError(message: "Simeon Labs' server answered push-devices with \(answer.status).", status: answer.status) }
   }
 
+  /**
+   * Dictation (`audio_transcriptions` in server/simeon/desktop/capabilities.py,
+   * as the Mac's `simeon-transcribe.ts` sends it): the recording as OpenAI's
+   * multipart `file` ("audio.mp4" for `audio/mp4`), no language (OpenAI
+   * finds it), at `/desktop/api/proxy/v1/audio/transcriptions`; what was
+   * said comes back as `{text, seconds}`.
+   */
+  public func transcribe(audio: Data, mimeType: String) async throws -> String {
+    let mime = mimeType.split(separator: ";").first.map { String($0).trimmingCharacters(in: .whitespaces) } ?? "audio/webm"
+    let boundary = "simeon-\(UUID().uuidString.lowercased())"
+    var request = URLRequest(url: url(Self.desktopPrefix + "proxy/v1/audio/transcriptions"))
+    request.httpMethod = "POST"
+    request.httpBody = Self.multipartFile(audio, filename: Self.audioFilename(mime), mimeType: mime, boundary: boundary)
+    try await authorized(&request)
+    request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "content-type")
+    let answer = try await http.send(request)
+    if answer.status == 401 { sessionEnded() }
+    guard answer.ok else {
+      throw SimeonAPIError(message: answer.json?["error"]?["message"]?.text ?? "Simeon Labs' server answered dictation with \(answer.status).", status: answer.status)
+    }
+    return answer.json?["text"]?.text ?? ""
+  }
+
+  /** "audio.webm", "audio.mp4": the type's second part (`audioFilename`). */
+  static func audioFilename(_ mimeType: String) -> String {
+    let subtype = mimeType.split(separator: "/").dropFirst().first.map(String.init) ?? "webm"
+    return "audio.\(subtype.split(separator: "+").first.map(String.init) ?? "webm")"
+  }
+
+  /** One file as `multipart/form-data`, the field named `file`. */
+  static func multipartFile(_ data: Data, filename: String, mimeType: String, boundary: String) -> Data {
+    var body = Data()
+    body.append(Data("--\(boundary)\r\nContent-Disposition: form-data; name=\"file\"; filename=\"\(filename)\"\r\nContent-Type: \(mimeType)\r\n\r\n".utf8))
+    body.append(data)
+    body.append(Data("\r\n--\(boundary)--\r\n".utf8))
+    return body
+  }
+
   /** One unary call on the box broker, Connect JSON (`server/simeon/sand/connect.py`). */
-  public func connect(_ method: String, _ message: JSON = [:]) async throws -> JSON {
-    var request = URLRequest.post(url("/\(Self.connectService)/\(method)"), json: message, headers: ["connect-protocol-version": "1"])
+  public func connect(_ method: String, _ message: JSON = [:], service: String = connectService) async throws -> JSON {
+    var request = URLRequest.post(url("/\(service)/\(method)"), json: message, headers: ["connect-protocol-version": "1"])
     try await authorized(&request)
     let answer = try await http.send(request)
     if answer.status == 401 { sessionEnded() }
@@ -153,6 +198,18 @@ public actor SimeonAPI {
 
   /** The account: `user_payload()` in server/simeon/desktop/service.py. */
   public func profile() async throws -> JSON { try await data("user/profile") }
+
+  /**
+   * Deletes the account and what Simeon keeps for it
+   * (`server/simeon/desktop/account_deletion.py`): the subscription ends, the
+   * cloud computer and its files go, the apps are disconnected, every device
+   * is signed out. Then the pair is forgotten. Throws the server's own
+   * sentence when a step could not be done (try again later).
+   */
+  public func deleteAccount() async throws {
+    _ = try await data("account", method: "DELETE")
+    vault.write(nil)
+  }
 
   /** Signs this phone's session out on the server and forgets the pair. */
   public func signOut() async {

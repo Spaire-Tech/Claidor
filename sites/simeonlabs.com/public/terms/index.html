@@ -4,26 +4,27 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Terms of Service | SimeonLabs</title>
-<meta name="description" content="The agreement between you and Simeon Labs for using Simeon, its agents and their cloud computers.">
+<meta name="description" content="The agreement between you and Spaire for using Simeon, its agents and their cloud computers.">
 <link rel="canonical" href="https://simeonlabs.com/terms">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://simeonlabs.com/terms">
 <meta property="og:title" content="Terms of Service | SimeonLabs">
-<meta property="og:description" content="The agreement between you and Simeon Labs for using Simeon, its agents and their cloud computers.">
+<meta property="og:description" content="The agreement between you and Spaire for using Simeon, its agents and their cloud computers.">
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
 <style>
-/* The legal pages: the home page's bar, column and footer (source/page.html), its serif for the
-   titles, and a reading column beside a table of contents, as Apple's legal pages have it. Light
-   only, every colour from the home page's own. Made by legal.py from legal/<page>.html. */
+/* The legal pages: the home page's bar and footer (source/page.html) around a plain reading
+   column, as plain as the founder's reference legal pages (11 October 2026: "too noisy, do it
+   simple"): the two pages' links on the left, the title, the date, the policy's contents in a
+   box that folds, then the text. Light only, every colour from the home page's own. Made by
+   legal.py. */
 :root{
-  --page:#fff; --soft:#f5f5f7; --panel:#fafafb; --ink:#1d1d1f; --ink2:#6e6e73; --ink3:#86868b; --line:#e5e5ea; --blue:#255a93;
+  --page:#fff; --soft:#f5f5f7; --ink:#1d1d1f; --ink2:#6e6e73; --line:#e5e5ea;
   --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Inter","Helvetica Neue",Arial,sans-serif;
-  --serif:"Newsreader",Georgia,"Times New Roman",serif;
   --gutter:max(20px,4.6vw);
   --col:min(1260px,calc(100vw - 2 * var(--gutter)));
   color-scheme:light;
@@ -31,13 +32,12 @@
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;scroll-padding-top:96px}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
-body{margin:0;background:var(--page);color:var(--ink);font-family:var(--font);font-size:17px;line-height:1.47;letter-spacing:-.022em;-webkit-font-smoothing:antialiased;overflow-x:clip}
+body{margin:0;background:var(--page);color:var(--ink);font-family:var(--font);font-size:17px;line-height:1.6;letter-spacing:-.016em;-webkit-font-smoothing:antialiased;overflow-x:clip}
 h1,h2,h3,p,ul,ol{margin:0}
-a{color:var(--blue);text-decoration:none}
-a:hover{text-decoration:underline}
+a{color:inherit}
 .wrap{width:var(--col);margin-inline:auto}
 .btn{display:inline-flex;align-items:center;justify-content:center;border-radius:99px;background:#000;color:#fff;font-weight:400;letter-spacing:-.01em;white-space:nowrap;text-decoration:none}
-.btn:hover{background:#2b2b2d;text-decoration:none}
+.btn:hover{background:#2b2b2d}
 
 /* The bar, as on the home page; the name goes home. */
 .bar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.82);-webkit-backdrop-filter:saturate(1.8) blur(20px);backdrop-filter:saturate(1.8) blur(20px);padding-top:env(safe-area-inset-top,0px)}
@@ -45,64 +45,57 @@ a:hover{text-decoration:underline}
 .bar .wordmark{--wm:clamp(118px,10.8vw,217px);display:block;width:var(--wm);margin-left:calc(var(--wm) * -85 / 1585);background:var(--ink);-webkit-mask:url(/img/wordmark-labs.png) center/contain no-repeat;mask:url(/img/wordmark-labs.png) center/contain no-repeat;aspect-ratio:1585/460}
 .bar .btn{height:clamp(28px,1.9vw,38px);padding:0 clamp(12px,.8vw,16px);font-size:clamp(14px,1vw,20px)}
 
-/* The title: the home page's serif at its section size. */
-.top{padding:clamp(48px,6vw,120px) 0 clamp(28px,3vw,56px)}
-.eyebrow{font-size:clamp(14px,.95vw,18px);color:var(--ink2);letter-spacing:-.01em}
-.top h1{margin-top:10px;font-family:var(--serif);font-weight:400;font-size:clamp(42px,3.6vw,72px);line-height:1.02;letter-spacing:-.02em}
-.dates{margin-top:18px;font-size:clamp(14px,.95vw,17px);color:var(--ink2)}
-.lede{margin-top:clamp(18px,1.6vw,28px);max-width:36em;font-size:clamp(18px,1.25vw,23px);line-height:1.5;letter-spacing:-.01em;color:#3a3a3c}
+/* The page: the two pages' links on the left, the text in a column at the middle. */
+.legal{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,720px) minmax(0,1fr);column-gap:48px;padding:clamp(56px,6vw,120px) 0 clamp(80px,8vw,160px)}
+.pages{position:sticky;top:clamp(84px,6vw,120px);align-self:start;display:flex;flex-direction:column;gap:8px;font-size:17px}
+.pages a{color:var(--ink2);text-decoration:none}
+.pages a:hover,.pages a[aria-current]{color:var(--ink)}
+article{grid-column:2;min-width:0}
+h1{font-size:clamp(34px,2.6vw,42px);font-weight:500;line-height:1.15;letter-spacing:-.03em}
+.updated{margin-top:12px;color:var(--ink2)}
 
-/* The short version: the home page's pale panel. */
-.short{padding:clamp(26px,2.6vw,48px) clamp(26px,3vw,56px);border-radius:28px;background:var(--panel)}
-.short h2{font-family:var(--serif);font-weight:400;font-size:clamp(26px,1.9vw,36px);line-height:1.1;letter-spacing:-.015em}
-.short ul{margin-top:clamp(16px,1.4vw,24px);padding:0;list-style:none;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(14px,1.2vw,22px) clamp(24px,3vw,56px)}
-.short li{position:relative;padding-left:22px;font-size:clamp(16px,1.02vw,19px);line-height:1.5;color:#3a3a3c}
-.short li::before{content:"";position:absolute;left:0;top:.62em;width:8px;height:8px;border-radius:50%;background:var(--blue)}
-.short p{margin-top:clamp(16px,1.4vw,24px);font-size:15px;color:var(--ink2)}
+/* The contents, in a box that folds. */
+.toc{margin-top:48px;padding:14px 16px 16px;border-radius:8px;background:var(--soft)}
+.toc summary{display:flex;justify-content:space-between;align-items:center;list-style:none;cursor:pointer;font-size:15px;color:var(--ink2)}
+.toc summary::-webkit-details-marker{display:none}
+.toc summary::after{content:"";width:7px;height:7px;margin-right:4px;border:solid var(--ink2);border-width:0 1.5px 1.5px 0;transform:translateY(-2px) rotate(45deg)}
+.toc[open] summary::after{transform:translateY(2px) rotate(-135deg)}
+.toc ol{margin-top:8px;padding:0;list-style:none;font-size:15px;line-height:1.8}
+.toc a{text-decoration:none}
+.toc a:hover{text-decoration:underline}
 
-/* The document beside its contents. */
-.cols{display:grid;grid-template-columns:minmax(0,15rem) minmax(0,1fr);gap:clamp(32px,5vw,96px);padding:clamp(48px,5vw,96px) 0 clamp(80px,8vw,160px)}
-.toc{position:sticky;top:clamp(80px,6vw,110px);align-self:start;max-height:calc(100vh - 130px);overflow:auto;font-size:14px;line-height:1.35}
-.toc p{font-weight:600;color:var(--ink);margin-bottom:12px}
-.toc ol{padding:0;list-style:none;display:grid;gap:2px;counter-reset:t}
-.toc a{display:block;padding:5px 0 5px 12px;border-left:2px solid var(--line);color:var(--ink2);counter-increment:t}
-.toc a::before{content:counter(t) ". "}
-.toc a:hover{color:var(--ink);text-decoration:none}
-.toc a.on{color:var(--ink);border-left-color:var(--ink)}
-.doc{max-width:44em;counter-reset:s}
-.doc section+section{margin-top:clamp(44px,3.6vw,64px)}
-.doc h2{font-family:var(--serif);font-weight:400;font-size:clamp(28px,2vw,38px);line-height:1.1;letter-spacing:-.015em;counter-increment:s}
-.doc h2::before{content:counter(s) ". ";color:var(--ink3)}
-.doc h3{margin-top:28px;font-size:19px;font-weight:600;letter-spacing:-.015em}
-.doc p,.doc ul,.doc ol,.doc .table{margin-top:14px;color:#3a3a3c}
-.doc h2+p{margin-top:18px}
-.doc ul,.doc ol{padding-left:1.3em}
-.doc li+li{margin-top:8px}
-.doc li::marker{color:var(--ink3)}
-.doc strong{color:var(--ink);font-weight:600}
-.doc .caps{font-size:15px;line-height:1.55;letter-spacing:-.005em}
-.doc .table{overflow-x:auto;border-radius:18px;background:var(--panel)}
-.doc table{width:100%;border-collapse:collapse;font-size:15px;line-height:1.45}
-.doc th,.doc td{text-align:left;vertical-align:top;padding:14px 18px}
-.doc th{font-weight:600;color:var(--ink);white-space:nowrap}
-.doc tr+tr td{border-top:1px solid var(--line)}
-.doc thead th{border-bottom:1px solid var(--line)}
-.other{margin-top:clamp(44px,3.6vw,64px);padding-top:28px;border-top:1px solid var(--line);font-size:17px}
-.other a::after{content:" ›"}
+/* The text. */
+.doc{margin-top:48px}
+.doc a{text-decoration:underline;text-decoration-color:rgba(29,29,31,.35);text-underline-offset:3px}
+.doc a:hover{text-decoration-color:var(--ink)}
+.doc section{margin-top:56px}
+.doc h2{font-size:24px;font-weight:600;line-height:1.3;letter-spacing:-.02em}
+.doc h3{margin-top:32px;font-size:17px;font-weight:600}
+.doc p,.doc ul,.doc ol,.doc .table{margin-top:20px}
+.doc h2+p,.doc h2+ul{margin-top:16px}
+.doc h3+p,.doc h3+ul,.doc h3+.table{margin-top:8px}
+.doc ul,.doc ol{padding-left:1.25em}
+.doc li+li{margin-top:10px}
+.doc strong{font-weight:600}
+.doc .caps{font-size:15px;line-height:1.6}
+.doc .table{overflow-x:auto}
+.doc table{width:100%;border-collapse:collapse;font-size:15px;line-height:1.5}
+.doc th,.doc td{text-align:left;vertical-align:top;padding:12px 20px 12px 0;border-bottom:1px solid var(--line)}
+.doc th{font-weight:600;white-space:nowrap}
 
 footer{background:var(--soft);padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px));font-size:12px;color:var(--ink2)}
 footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 footer nav{display:flex;gap:18px}
-footer a{color:var(--ink2)}
+footer a{color:var(--ink2);text-decoration:none}
+footer a:hover{text-decoration:underline}
 footer a[aria-current]{color:var(--ink)}
 
 @media (max-width:900px){
-  .cols{grid-template-columns:1fr;gap:0;padding-top:32px}
-  .toc{position:static;max-height:none;margin-bottom:40px;padding:22px 24px;border-radius:22px;background:var(--panel)}
-  .toc a{border-left:0;padding-left:0}
-  .short ul{grid-template-columns:1fr}
+  .legal{grid-template-columns:minmax(0,1fr);padding-top:32px}
+  .pages{position:static;flex-direction:row;gap:20px;margin-bottom:40px;font-size:15px}
+  article{grid-column:1}
 }
-@media print{.bar,.toc,footer{display:none}.cols{display:block;padding:0}.short{background:none;padding:0}}
+@media print{.bar,.pages,.toc,footer{display:none}.legal{display:block;padding:0}}
 </style>
 </head>
 <body>
@@ -114,55 +107,38 @@ footer a[aria-current]{color:var(--ink)}
   </div>
 </header>
 
-<main>
-  <div class="wrap">
-    <div class="top">
-      <p class="eyebrow">Legal</p>
-      <h1>Terms of Service</h1>
-      <p class="dates">Effective 11 October 2026 · Last updated 11 October 2026</p>
-      <p class="lede">These terms are the agreement between you and Simeon Labs, Inc. for using Simeon: the apps for Mac and iPhone, the agents you create and their computers in the cloud, and this website. By using Simeon, you agree to them.</p>
-    </div>
-    <aside class="short" aria-label="The short version">
-  <h2>The short version</h2>
-  <ul>
-    <li>You need to be 18 or older, and you may use Simeon only for lawful purposes.</li>
-    <li>Your agents work on your instructions, in the apps you connect. You are responsible for what you ask them to do and for checking their work.</li>
-    <li>Agents can act in your connected apps, sometimes without asking you first. Set them up with care, and read what they ask before you allow it.</li>
-    <li>You own what you put into Simeon and what your agents make. We never use it to train AI models.</li>
-    <li>Paid plans renew until you cancel. Credits reset every Monday and do not carry over.</li>
-    <li>AI makes mistakes, and Simeon is provided as it is. Our liability is limited, and disputes go to individual arbitration unless you opt out.</li>
-  </ul>
-  <p>This summary is here to help you read what follows. The terms below are what apply.</p>
-</aside>
-
-    <div class="cols">
-      <nav class="toc" aria-label="On this page"><p>On this page</p><ol><li><a href="#agreement">These terms</a></li><li><a href="#eligibility">Who can use Simeon</a></li><li><a href="#account">Your account</a></li><li><a href="#services">What Simeon does</a></li><li><a href="#agents">Your agents act for you</a></li><li><a href="#connected">Connected apps</a></li><li><a href="#computers">Your agents’ computers</a></li><li><a href="#content">Your content</a></li><li><a href="#accuracy">AI makes mistakes</a></li><li><a href="#others">Messages and calls to other people</a></li><li><a href="#use">Acceptable use</a></li><li><a href="#plans">Plans, credits and payment</a></li><li><a href="#ours">Our rights in Simeon</a></li><li><a href="#beta">Early features</a></li><li><a href="#ending">Suspension and closing your account</a></li><li><a href="#disclaimers">Disclaimers</a></li><li><a href="#liability">Limitation of liability</a></li><li><a href="#indemnity">Indemnity</a></li><li><a href="#disputes">Disputes and arbitration</a></li><li><a href="#apple">Apps from Apple’s App Store</a></li><li><a href="#changes">Changes to these Terms</a></li><li><a href="#general">General</a></li><li><a href="#contact">Contact</a></li></ol></nav>
-      <article class="doc">
+<main class="wrap legal">
+  <nav class="pages" aria-label="Legal"><a href="/terms" aria-current="page">Terms of Service</a><a href="/privacy">Privacy Policy</a></nav>
+  <article>
+    <h1>Terms of Service</h1>
+    <p class="updated">Last updated October 11, 2026</p>
+    <div class="doc">
+      <p>These terms are the agreement between you and Spaire, Inc. for using Simeon: the apps for Mac and iPhone, the agents you create and their computers in the cloud, and this website. By using Simeon, you agree to them.</p>
 <section id="agreement">
-  <h2>These terms</h2>
-  <p>Simeon is made by Simeon Labs, Inc. (“<strong>Simeon Labs</strong>”, “<strong>we</strong>”, “<strong>us</strong>”). These Terms of Service (the “<strong>Terms</strong>”) apply to Simeon’s apps for Mac and iPhone, the agents you create in them, the cloud computers they work on, our website at simeonlabs.com and the web app at app.simeonlabs.com (together, the “<strong>Services</strong>”).</p>
+  <h2>1. These terms</h2>
+  <p>Simeon is made by Spaire, Inc. (“<strong>Spaire</strong>”, “<strong>we</strong>”, “<strong>us</strong>”). These Terms of Service (the “<strong>Terms</strong>”) apply to Simeon’s apps for Mac and iPhone, the agents you create in them, the cloud computers they work on, our website at simeonlabs.com and the web app at app.simeonlabs.com (together, the “<strong>Services</strong>”).</p>
   <p>Our <a href="/privacy">Privacy Policy</a> explains how we handle personal information and is part of these Terms. Some features come with extra terms that we show you when you use them; if they conflict with these Terms, the extra terms apply to that feature.</p>
   <p>If you use Simeon for a company or another organisation, you agree to these Terms on its behalf and confirm that you are allowed to. In that case “you” means both you and the organisation.</p>
 </section>
 
 <section id="eligibility">
-  <h2>Who can use Simeon</h2>
+  <h2>2. Who can use Simeon</h2>
   <p>You must be at least 18 years old, and old enough to form a binding contract where you live. You may not use the Services if the law forbids you from receiving them, including if you are on a sanctions list or in a country under a comprehensive embargo of the United States.</p>
 </section>
 
 <section id="account">
-  <h2>Your account</h2>
+  <h2>3. Your account</h2>
   <p>Give us accurate information when you sign up and keep it current. You are responsible for your account and for everything done with it, including by your agents and by anyone you let use your devices. Keep your sign-in secure, and tell us at once at <a href="mailto:support@simeonlabs.com">support@simeonlabs.com</a> if you think someone has used your account without permission.</p>
 </section>
 
 <section id="services">
-  <h2>What Simeon does</h2>
+  <h2>4. What Simeon does</h2>
   <p>Simeon lets you create a team of AI agents. You give each agent a job and talk to it in plain words, by message or by voice. Each agent works on a computer of its own in the cloud, with a browser and files, and can use the apps you connect, such as your email, calendar or documents. Agents can work together, run on a schedule you set (“<strong>routines</strong>”), remember what you tell them, and reach you through channels such as Discord or Slack if you set them up.</p>
   <p>Agents are software. They are not people, and they are not our employees. We keep improving the Services, so features may be added, changed or removed. When we remove something that matters to how you use Simeon, we will try to tell you in advance.</p>
 </section>
 
 <section id="agents">
-  <h2>Your agents act for you</h2>
+  <h2>5. Your agents act for you</h2>
   <h3>You authorise them</h3>
   <p>When you ask an agent to do something, or set a routine that does it later, you authorise Simeon to do it for you: to read, write, send, schedule, book, buy or change things in the apps and accounts you have connected, and on the web. Anything an agent does on your instructions is done for you, as if you had done it yourself. That includes accepting another service’s terms when a task needs it.</p>
   <h3>Approvals</h3>
@@ -171,25 +147,25 @@ footer a[aria-current]{color:var(--ink)}
   <h3>No guarantee that an action happens</h3>
   <p>Websites and apps change, go down and refuse requests. We do not promise that an action will be completed, completed on time, or completed only once, or that it can be undone. Check the result of anything that matters.</p>
   <h3>Payments and purchases</h3>
-  <p>If an agent pays for something or buys something for you, the purchase is between you and the seller. Simeon Labs is not a party to it, does not process the payment, and is not responsible for the seller, the goods or the service. Take any problem with a purchase to the seller.</p>
+  <p>If an agent pays for something or buys something for you, the purchase is between you and the seller. Spaire is not a party to it, does not process the payment, and is not responsible for the seller, the goods or the service. Take any problem with a purchase to the seller.</p>
   <h3>We may stop an action</h3>
   <p>We may refuse, pause or stop any action, even one you allowed, if we believe it breaks these Terms or the law, could harm you or someone else, or could put the Services at risk. To keep the Services safe and working, we may also look at what agents are doing, for example when we investigate a problem or a report of misuse, as described in our <a href="/privacy">Privacy Policy</a>.</p>
 </section>
 
 <section id="connected">
-  <h2>Connected apps</h2>
+  <h2>6. Connected apps</h2>
   <p>You can connect Simeon to apps and services from other companies. You do this on that company’s own sign-in page, and you can disconnect at any time in Simeon’s settings or in that service. When you connect one, you allow Simeon to use it within the permissions you granted, for the tasks you give your agents.</p>
   <p>Connected services belong to their providers, and their own terms and privacy policies apply to how you use them. We do not control them and are not responsible for them, for their availability, or for what they do with your information. Make sure you are allowed to connect an account to Simeon, in particular a work account that belongs to your employer.</p>
 </section>
 
 <section id="computers">
-  <h2>Your agents’ computers</h2>
+  <h2>7. Your agents’ computers</h2>
   <p>Each agent works on a virtual computer that we run for you in the cloud. What is on it, such as files, downloads and the websites your agent has signed in to, is kept for you and is part of your content. You can watch an agent’s screen and take over at any time.</p>
   <p>Cloud computers have limits on processing, storage and running time, which may depend on your plan. We may pause a computer that is idle, and we may need to restart, move or rebuild a computer to keep the Services working; we try to keep your files when we do. Keep your own copy of anything you cannot afford to lose. Do not use these computers for anything the <a href="#use">acceptable use</a> rules forbid, including mining cryptocurrency, attacking other systems, or running services for other people.</p>
 </section>
 
 <section id="content">
-  <h2>Your content</h2>
+  <h2>8. Your content</h2>
   <h3>You own it</h3>
   <p>Your content is what you put into the Services (your messages, voice, files, instructions and the information your agents gather from your connected apps) and what your agents produce for you (their messages, documents, code and other work). As between you and us, you own your content.</p>
   <h3>What you let us do with it</h3>
@@ -203,18 +179,18 @@ footer a[aria-current]{color:var(--ink)}
 </section>
 
 <section id="accuracy">
-  <h2>AI makes mistakes</h2>
+  <h2>9. AI makes mistakes</h2>
   <p>Agents use artificial intelligence, which can produce answers that are wrong, incomplete or out of date, misread a page, mishear a voice, or describe something it did not actually do. Check what an agent tells you or makes before you rely on it, especially for anything with consequences for you or for others.</p>
   <p>Nothing Simeon produces is legal, financial, tax, medical or other professional advice. Do not use the Services for decisions that need a qualified professional, or where a mistake could cause injury, death or serious harm.</p>
 </section>
 
 <section id="others">
-  <h2>Messages and calls to other people</h2>
+  <h2>10. Messages and calls to other people</h2>
   <p>If you ask an agent to email, message or call other people, you are the sender, and the laws on marketing messages, phone calls, consent and recording that apply to you also apply to what your agent sends or says. Get the consent you need, do not use agents for unsolicited bulk messages, and do not let an agent tell anyone it is a person when the law requires you to say it is an AI.</p>
 </section>
 
 <section id="use">
-  <h2>Acceptable use</h2>
+  <h2>11. Acceptable use</h2>
   <p>You may not use the Services, or let your agents be used, to:</p>
   <ul>
     <li>break the law, or help anyone else break it;</li>
@@ -234,7 +210,7 @@ footer a[aria-current]{color:var(--ink)}
 </section>
 
 <section id="plans">
-  <h2>Plans, credits and payment</h2>
+  <h2>12. Plans, credits and payment</h2>
   <h3>Free trial</h3>
   <p>Every plan starts with a free trial of 7 days, with a one-time allowance of credits. The trial needs a payment card, and we offer one trial per card and per person. <strong>Unless you cancel before the trial ends, it becomes a paid Standard subscription on day 8 and your card is charged the Standard price then and every month after</strong>, until you cancel.</p>
   <h3>Subscriptions</h3>
@@ -252,67 +228,67 @@ footer a[aria-current]{color:var(--ink)}
 </section>
 
 <section id="ours">
-  <h2>Our rights in Simeon</h2>
-  <p>Simeon Labs and its licensors own the Services, including the apps, the software, the designs, and the names and logos of Simeon and Simeon Labs. While you follow these Terms, we give you a personal, non-exclusive, non-transferable, revocable licence to use the Services and to install our apps on devices you own or control. Some parts of the apps are open-source software, which their own licences cover.</p>
+  <h2>13. Our rights in Simeon</h2>
+  <p>Spaire and its licensors own the Services, including the apps, the software, the designs, and the names and logos of Simeon and Spaire. While you follow these Terms, we give you a personal, non-exclusive, non-transferable, revocable licence to use the Services and to install our apps on devices you own or control. Some parts of the apps are open-source software, which their own licences cover.</p>
 </section>
 
 <section id="beta">
-  <h2>Early features</h2>
+  <h2>14. Early features</h2>
   <p>We may offer features marked as beta, preview or early access. They may be less reliable, may change or end without notice, and are provided as they are.</p>
 </section>
 
 <section id="ending">
-  <h2>Suspension and closing your account</h2>
+  <h2>15. Suspension and closing your account</h2>
   <p>You can stop using Simeon and delete your account at any time. We may suspend or close your account, or stop any agent, if you break these Terms, if your account puts others or the Services at risk, if the law requires it, or if your account has been inactive for a long time; where reasonable, we will tell you first and give you a chance to fix the problem. We may also stop offering the Services altogether, and if we do, we will give you reasonable notice and refund any amount you prepaid for time you will not get.</p>
   <p>When your account is closed, your right to use the Services ends, and we delete your content as described in our <a href="/privacy">Privacy Policy</a>. Sections that by their nature should continue (such as those on content, payment owed, disclaimers, liability, indemnity and disputes) continue after your account is closed.</p>
 </section>
 
 <section id="disclaimers">
-  <h2>Disclaimers</h2>
-  <p class="caps">THE SERVICES, AND EVERYTHING AGENTS PRODUCE OR DO, ARE PROVIDED “AS IS” AND “AS AVAILABLE”. TO THE FULLEST EXTENT THE LAW ALLOWS, SIMEON LABS DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT. WE DO NOT PROMISE THAT THE SERVICES WILL BE UNINTERRUPTED, SECURE OR ERROR-FREE, THAT AGENTS WILL BE ACCURATE OR COMPLETE ANY ACTION, OR THAT CONTENT WILL NOT BE LOST.</p>
+  <h2>16. Disclaimers</h2>
+  <p class="caps">THE SERVICES, AND EVERYTHING AGENTS PRODUCE OR DO, ARE PROVIDED “AS IS” AND “AS AVAILABLE”. TO THE FULLEST EXTENT THE LAW ALLOWS, SPAIRE DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT. WE DO NOT PROMISE THAT THE SERVICES WILL BE UNINTERRUPTED, SECURE OR ERROR-FREE, THAT AGENTS WILL BE ACCURATE OR COMPLETE ANY ACTION, OR THAT CONTENT WILL NOT BE LOST.</p>
   <p>Some places do not allow some of these exclusions, so they may not all apply to you.</p>
 </section>
 
 <section id="liability">
-  <h2>Limitation of liability</h2>
-  <p class="caps">TO THE FULLEST EXTENT THE LAW ALLOWS: (A) SIMEON LABS WILL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, EXEMPLARY OR PUNITIVE DAMAGES, OR FOR ANY LOSS OF PROFITS, REVENUE, DATA, GOODWILL OR BUSINESS, ARISING FROM OR RELATED TO THE SERVICES OR THESE TERMS, EVEN IF WE WERE TOLD THEY WERE POSSIBLE; AND (B) SIMEON LABS’ TOTAL LIABILITY FOR ALL CLAIMS ARISING FROM OR RELATED TO THE SERVICES OR THESE TERMS WILL NOT EXCEED THE GREATER OF ONE HUNDRED US DOLLARS (US$100) AND THE AMOUNT YOU PAID US FOR THE SERVICES IN THE TWELVE MONTHS BEFORE THE EVENT THAT GAVE RISE TO THE CLAIM.</p>
+  <h2>17. Limitation of liability</h2>
+  <p class="caps">TO THE FULLEST EXTENT THE LAW ALLOWS: (A) SPAIRE WILL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, EXEMPLARY OR PUNITIVE DAMAGES, OR FOR ANY LOSS OF PROFITS, REVENUE, DATA, GOODWILL OR BUSINESS, ARISING FROM OR RELATED TO THE SERVICES OR THESE TERMS, EVEN IF WE WERE TOLD THEY WERE POSSIBLE; AND (B) SPAIRE’S TOTAL LIABILITY FOR ALL CLAIMS ARISING FROM OR RELATED TO THE SERVICES OR THESE TERMS WILL NOT EXCEED THE GREATER OF ONE HUNDRED US DOLLARS (US$100) AND THE AMOUNT YOU PAID US FOR THE SERVICES IN THE TWELVE MONTHS BEFORE THE EVENT THAT GAVE RISE TO THE CLAIM.</p>
   <p>These limits apply to any theory of liability, but not to liability that the law does not allow us to limit, such as for fraud, or for death or personal injury caused by our negligence.</p>
 </section>
 
 <section id="indemnity">
-  <h2>Indemnity</h2>
-  <p>If someone brings a claim against Simeon Labs because of your content, the instructions you gave your agents or what they did on them, your use of connected services, or your breach of these Terms or the law, you will defend us and pay the resulting losses and reasonable costs, including legal fees. We will tell you about the claim, and you may not settle it in a way that makes us admit fault or pay without our consent. This section does not apply to you if you use Simeon as a consumer in a place whose law forbids it.</p>
+  <h2>18. Indemnity</h2>
+  <p>If someone brings a claim against Spaire because of your content, the instructions you gave your agents or what they did on them, your use of connected services, or your breach of these Terms or the law, you will defend us and pay the resulting losses and reasonable costs, including legal fees. We will tell you about the claim, and you may not settle it in a way that makes us admit fault or pay without our consent. This section does not apply to you if you use Simeon as a consumer in a place whose law forbids it.</p>
 </section>
 
 <section id="disputes">
-  <h2>Disputes and arbitration</h2>
+  <h2>19. Disputes and arbitration</h2>
   <p><strong>Please read this section carefully. It affects your rights, including your right to go to court.</strong></p>
   <h3>Talk to us first</h3>
   <p>Before starting a formal dispute, write to <a href="mailto:support@simeonlabs.com">support@simeonlabs.com</a> with your name, how to reach you, what the dispute is about and what you are asking for. We will try in good faith to resolve it with you within 60 days.</p>
   <h3>Arbitration</h3>
-  <p>If we cannot resolve it, you and Simeon Labs agree that any dispute arising from or related to these Terms or the Services will be decided by binding arbitration on an individual basis, administered by the American Arbitration Association under its Consumer Arbitration Rules (or its Commercial Arbitration Rules if you use Simeon for a business), instead of in court. The Federal Arbitration Act governs this agreement to arbitrate. The arbitration may take place by video or in the county where you live. Either of us may instead bring an individual claim in small claims court, and either of us may go to court to stop the infringement or misuse of intellectual property.</p>
+  <p>If we cannot resolve it, you and Spaire agree that any dispute arising from or related to these Terms or the Services will be decided by binding arbitration on an individual basis, administered by the American Arbitration Association under its Consumer Arbitration Rules (or its Commercial Arbitration Rules if you use Simeon for a business), instead of in court. The Federal Arbitration Act governs this agreement to arbitrate. The arbitration may take place by video or in the county where you live. Either of us may instead bring an individual claim in small claims court, and either of us may go to court to stop the infringement or misuse of intellectual property.</p>
   <h3>No class actions</h3>
-  <p>You and Simeon Labs may bring claims against each other only individually, not as a plaintiff or class member in a class, collective or representative proceeding, and the arbitrator may not combine claims of more than one person.</p>
+  <p>You and Spaire may bring claims against each other only individually, not as a plaintiff or class member in a class, collective or representative proceeding, and the arbitrator may not combine claims of more than one person.</p>
   <h3>Opting out</h3>
   <p>You can opt out of arbitration by emailing <a href="mailto:support@simeonlabs.com">support@simeonlabs.com</a> within 30 days after you first accept these Terms, with your name, the email of your account, and a clear statement that you opt out. If you opt out, or if this arbitration agreement is found not to apply to a dispute, that dispute will be decided in the courts described below.</p>
   <h3>Governing law and courts</h3>
-  <p>These Terms are governed by the laws of the State of Delaware, United States, without regard to its conflict-of-law rules. Disputes that are not arbitrated will be decided only in the state or federal courts located in Delaware, and you and Simeon Labs agree to their jurisdiction.</p>
+  <p>These Terms are governed by the laws of the State of Delaware, United States, without regard to its conflict-of-law rules. Disputes that are not arbitrated will be decided only in the state or federal courts located in Delaware, and you and Spaire agree to their jurisdiction.</p>
   <h3>If you live in the European Union, the United Kingdom or elsewhere</h3>
   <p>If you use Simeon as a consumer and the law where you live gives you rights that these Terms cannot take away, including the right to bring proceedings in your local courts, nothing in these Terms limits those rights.</p>
 </section>
 
 <section id="apple">
-  <h2>Apps from Apple’s App Store</h2>
-  <p>If you downloaded one of our apps from Apple’s App Store, these terms also apply. These Terms are between you and Simeon Labs, not Apple, and Simeon Labs, not Apple, is responsible for the app and its content. Apple has no obligation to provide maintenance or support for the app. If the app fails to meet a warranty that applies to it, you may notify Apple, and Apple will refund the purchase price, if any; beyond that, Apple has no warranty obligation for the app. Simeon Labs, not Apple, is responsible for handling any claims about the app, including product liability claims, claims that it fails to meet a legal or regulatory requirement, consumer protection and privacy claims, and claims that the app or your use of it infringes someone’s intellectual property. You confirm that you are not in a country under a United States embargo or designated as supporting terrorism, and not on a United States list of prohibited or restricted parties. You must follow the terms of any third-party service you use with the app. Apple and its subsidiaries are third-party beneficiaries of these Terms and may enforce them against you.</p>
+  <h2>20. Apps from Apple’s App Store</h2>
+  <p>If you downloaded one of our apps from Apple’s App Store, these terms also apply. These Terms are between you and Spaire, not Apple, and Spaire, not Apple, is responsible for the app and its content. Apple has no obligation to provide maintenance or support for the app. If the app fails to meet a warranty that applies to it, you may notify Apple, and Apple will refund the purchase price, if any; beyond that, Apple has no warranty obligation for the app. Spaire, not Apple, is responsible for handling any claims about the app, including product liability claims, claims that it fails to meet a legal or regulatory requirement, consumer protection and privacy claims, and claims that the app or your use of it infringes someone’s intellectual property. You confirm that you are not in a country under a United States embargo or designated as supporting terrorism, and not on a United States list of prohibited or restricted parties. You must follow the terms of any third-party service you use with the app. Apple and its subsidiaries are third-party beneficiaries of these Terms and may enforce them against you.</p>
 </section>
 
 <section id="changes">
-  <h2>Changes to these Terms</h2>
+  <h2>21. Changes to these Terms</h2>
   <p>We may update these Terms. If a change is material, we will tell you at least 30 days before it takes effect, by email or in the app, unless the change is required by law or made for safety, in which case it may apply sooner. The new Terms apply from the date shown at the top. If you do not agree to them, stop using the Services and delete your account before they take effect; continuing to use the Services means you accept them.</p>
 </section>
 
 <section id="general">
-  <h2>General</h2>
+  <h2>22. General</h2>
   <ul>
     <li><strong>Whole agreement.</strong> These Terms, with the Privacy Policy and any feature terms, are the whole agreement between you and us about the Services.</li>
     <li><strong>Assignment.</strong> You may not transfer these Terms without our written consent. We may transfer them, for example as part of a merger or sale of our business.</li>
@@ -320,36 +296,21 @@ footer a[aria-current]{color:var(--ink)}
     <li><strong>Events beyond our control.</strong> We are not responsible for failures caused by events we cannot reasonably control, such as outages of providers we rely on, natural disasters, war or government action.</li>
     <li><strong>Export.</strong> You will follow the export and sanctions laws of the United States and other countries that apply to your use of the Services.</li>
     <li><strong>Notices.</strong> We may send you notices by email to the address on your account or in the app. You can send us notices at the address below.</li>
-    <li><strong>Our relationship.</strong> These Terms create no partnership, employment, agency or fiduciary relationship between you and Simeon Labs, except that Simeon acts for you as described in <a href="#agents">Your agents act for you</a>.</li>
+    <li><strong>Our relationship.</strong> These Terms create no partnership, employment, agency or fiduciary relationship between you and Spaire, except that Simeon acts for you as described in <a href="#agents">Your agents act for you</a>.</li>
   </ul>
 </section>
 
 <section id="contact">
-  <h2>Contact</h2>
+  <h2>23. Contact</h2>
   <p>Questions about these Terms or your account: <a href="mailto:support@simeonlabs.com">support@simeonlabs.com</a>. Security problems: <a href="mailto:security@simeonlabs.com">security@simeonlabs.com</a>.</p>
   <p>If you believe something on Simeon infringes your copyright, email <a href="mailto:support@simeonlabs.com">support@simeonlabs.com</a> with a description of the work, where the material is, your contact details, and a statement that you believe in good faith that the use is not authorised.</p>
-  <p>Simeon Labs, Inc.</p>
+  <p>Spaire, Inc.</p>
 </section>
-        <p class="other"><a href="/privacy">Read the Privacy Policy</a></p>
-      </article>
     </div>
-  </div>
+  </article>
 </main>
 
-<footer><div class="wrap"><span>Copyright © 2026 Simeon Labs, Inc. All rights reserved.</span><nav><a href="/privacy">Privacy</a><a href="/terms" aria-current="page">Terms</a><a href="mailto:support@simeonlabs.com">Contact</a></nav></div></footer>
+<footer><div class="wrap"><span>Copyright © 2026 Spaire, Inc. All rights reserved.</span><nav><a href="/privacy">Privacy</a><a href="/terms" aria-current="page">Terms</a><a href="mailto:support@simeonlabs.com">Contact</a></nav></div></footer>
 
-<script>
-// The contents follow the reading: the section on screen is marked.
-(() => {
-  const links = new Map([...document.querySelectorAll('.toc a')].map((a) => [a.getAttribute('href').slice(1), a]));
-  const seen = new Set();
-  const io = new IntersectionObserver((entries) => {
-    for (const e of entries) e.isIntersecting ? seen.add(e.target.id) : seen.delete(e.target.id);
-    const first = [...links.keys()].find((id) => seen.has(id));
-    for (const [id, a] of links) a.classList.toggle('on', id === first);
-  }, { rootMargin: '-90px 0px -55% 0px' });
-  for (const id of links.keys()) { const el = document.getElementById(id); if (el) io.observe(el); }
-})();
-</script>
 </body>
 </html>

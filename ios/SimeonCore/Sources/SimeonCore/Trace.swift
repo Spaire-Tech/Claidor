@@ -7,13 +7,19 @@ import Foundation
  * console (Xcode's, when the app runs from it).
  */
 public enum Trace {
-  private static let step = LockedBox<String>("starting")
+  private static let step = LockedBox<(what: String, at: UInt64)>(("starting", 0))
   /** Where the lines go: the console by default. */
   nonisolated(unsafe) public static var log: (String) -> Void = { print($0) }
 
-  public static var now: String { step.withLock { $0 } }
+  public static var now: String { step.withLock { $0.what } }
 
-  public static func mark(_ what: String) { step.withLock { $0 = what } }
+  /** The last step and when it began (`DispatchTime`'s nanoseconds), read together: a step begun long before a freeze is not what froze. */
+  public static var current: (what: String, at: UInt64) { step.withLock { $0 } }
+
+  public static func mark(_ what: String) {
+    let at = DispatchTime.now().uptimeNanoseconds
+    step.withLock { $0 = (what, at) }
+  }
 
   private static let tallies = LockedBox<[String: Int]>([:])
 

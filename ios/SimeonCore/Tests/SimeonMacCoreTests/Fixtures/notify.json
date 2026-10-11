@@ -1,0 +1,2372 @@
+{
+ "generatedFrom": "desktop/source",
+ "constants": {
+  "SAND_OS_NOTIFICATION_THROTTLE_MS": 5000,
+  "MAX_NOTIFICATION_BODY_LENGTH": 140
+ },
+ "cases": {
+  "buildNotificationContent": [
+   {
+    "name": "needs-input with reason",
+    "input": {
+     "kind": "agent-needs-input",
+     "agentName": "Iris",
+     "reason": "Approval needed: send the invoice to Acme",
+     "lastMessagePreview": null
+    },
+    "output": {
+     "title": "Iris needs you",
+     "body": "Approval needed: send the invoice to Acme",
+     "bodyInfo": {
+      "text": "Approval needed: send the invoice to Acme",
+      "length": 41,
+      "codePoints": 41,
+      "endsWithEllipsis": false
+     }
+    }
+   },
+   {
+    "name": "needs-input, reason null",
+    "input": {
+     "kind": "agent-needs-input",
+     "agentName": "Iris",
+     "reason": null,
+     "lastMessagePreview": null
+    },
+    "output": {
+     "title": "Iris needs you",
+     "body": "Waiting for your input.",
+     "bodyInfo": {
+      "text": "Waiting for your input.",
+      "length": 23,
+      "codePoints": 23,
+      "endsWithEllipsis": false
+     }
+    }
+   },
+   {
+    "name": "needs-input, reason whitespace only",
+    "input": {
+     "kind": "agent-needs-input",
+     "agentName": "Iris",
+     "reason": "  \n\t ",
+     "lastMessagePreview": null
+    },
+    "output": {
+     "title": "Iris needs you",
+     "body": "Waiting for your input.",
+     "bodyInfo": {
+      "text": "Waiting for your input.",
+      "length": 23,
+      "codePoints": 23,
+      "endsWithEllipsis": false
+     }
+    }
+   },
+   {
+    "name": "needs-input, reason with newlines/tabs collapsed",
+    "input": {
+     "kind": "agent-needs-input",
+     "agentName": "Iris",
+     "reason": "  line one\n\n\tline   two  ",
+     "lastMessagePreview": null
+    },
+    "output": {
+     "title": "Iris needs you",
+     "body": "line one line two",
+     "bodyInfo": {
+      "text": "line one line two",
+      "length": 17,
+      "codePoints": 17,
+      "endsWithEllipsis": false
+     }
+    }
+   },
+   {
+    "name": "needs-input, blank name -> 'Your agent'",
+    "input": {
+     "kind": "agent-needs-input",
+     "agentName": "   ",
+     "reason": "x",
+     "lastMessagePreview": null
+    },
+    "output": {
+     "title": "Your agent needs you",
+     "body": "x",
+     "bodyInfo": {
+      "text": "x",
+      "length": 1,
+      "codePoints": 1,
+      "endsWithEllipsis": false
+     }
+    }
+   },
+   {
+    "name": "needs-input, name is trimmed",
+    "input": {
+     "kind": "agent-needs-input",
+     "agentName": "  Iris  ",
+     "reason": "x",
+     "lastMessagePreview": null
+    },
+    "output": {
+     "title": "Iris needs you",
+     "body": "x",
+     "bodyInfo": {
+      "text": "x",
+      "length": 1,
+      "codePoints": 1,
+      "endsWithEllipsis": false
+     }
+    }
+   },
+   {
+    "name": "done with preview",
+    "input": {
+     "kind": "agent-done",
+     "agentName": "Iris",
+     "reason": null,
+     "lastMessagePreview": "Done: booked the flight for Tuesday."
+    },
+    "output": {
+     "title": "Iris",
+     "body": "Done: booked the flight for Tuesday.",
+     "bodyInfo": {
+      "text": "Done: booked the flight for Tuesday.",
+      "length": 36,
+      "codePoints": 36,
+      "endsWithEllipsis": false
+     }
+    }
+   },
+   {
+    "name": "done, preview null",
+    "input": {
+     "kind": "agent-done",
+     "agentName": "Iris",
+     "reason": null,
+     "lastMessagePreview": null
+    },
+    "output": {
+     "title": "Iris",
+     "body": "Open Simeon to see what it did.",
+     "bodyInfo": {
+      "text": "Open Simeon to see what it did.",
+      "length": 31,
+      "codePoints": 31,
+      "endsWithEllipsis": false
+     }
+    }
+   },
+   {
+    "name": "done, preview empty string",
+    "input": {
+     "kind": "agent-done",
+     "agentName": "Iris",
+     "reason": null,
+     "lastMessagePreview": ""
+    },
+    "output": {
+     "title": "Iris",
+     "body": "Open Simeon to see what it did.",
+     "bodyInfo": {
+      "text": "Open Simeon to see what it did.",
+      "length": 31,
+      "codePoints": 31,
+      "endsWithEllipsis": false
+     }
+    }
+   },
+   {
+    "name": "done, blank name",
+    "input": {
+     "kind": "agent-done",
+     "agentName": "",
+     "reason": null,
+     "lastMessagePreview": "hi"
+    },
+    "output": {
+     "title": "Your agent",
+     "body": "hi",
+     "bodyInfo": {
+      "text": "hi",
+      "length": 2,
+      "codePoints": 2,
+      "endsWithEllipsis": false
+     }
+    }
+   },
+   {
+    "name": "body exactly 140",
+    "input": {
+     "kind": "agent-done",
+     "agentName": "Iris",
+     "reason": null,
+     "lastMessagePreview": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    },
+    "output": {
+     "title": "Iris",
+     "body": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "bodyInfo": {
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "length": 140,
+      "codePoints": 140,
+      "endsWithEllipsis": false
+     }
+    }
+   },
+   {
+    "name": "body 141 -> 139 + ellipsis",
+    "input": {
+     "kind": "agent-done",
+     "agentName": "Iris",
+     "reason": null,
+     "lastMessagePreview": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    },
+    "output": {
+     "title": "Iris",
+     "body": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…",
+     "bodyInfo": {
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…",
+      "length": 140,
+      "codePoints": 140,
+      "endsWithEllipsis": true
+     }
+    }
+   },
+   {
+    "name": "body 280 (host max preview)",
+    "input": {
+     "kind": "agent-done",
+     "agentName": "Iris",
+     "reason": null,
+     "lastMessagePreview": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    },
+    "output": {
+     "title": "Iris",
+     "body": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…",
+     "bodyInfo": {
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…",
+      "length": 140,
+      "codePoints": 140,
+      "endsWithEllipsis": true
+     }
+    }
+   },
+   {
+    "name": "cut lands after a space: trimEnd before ellipsis",
+    "input": {
+     "kind": "agent-done",
+     "agentName": "Iris",
+     "reason": null,
+     "lastMessagePreview": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx  yyyyyyyyyyyyyyyyyyyy"
+    },
+    "output": {
+     "title": "Iris",
+     "body": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…",
+     "bodyInfo": {
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…",
+      "length": 139,
+      "codePoints": 139,
+      "endsWithEllipsis": true
+     }
+    }
+   },
+   {
+    "name": "whitespace collapse happens before the length check",
+    "input": {
+     "kind": "agent-done",
+     "agentName": "Iris",
+     "reason": null,
+     "lastMessagePreview": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n\n\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    },
+    "output": {
+     "title": "Iris",
+     "body": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "bodyInfo": {
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "length": 140,
+      "codePoints": 140,
+      "endsWithEllipsis": false
+     }
+    }
+   },
+   {
+    "name": "emoji (surrogate pair) straddling the cut: JS slices UTF-16 units",
+    "input": {
+     "kind": "agent-done",
+     "agentName": "Iris",
+     "reason": null,
+     "lastMessagePreview": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀xxxxxxxxxx"
+    },
+    "output": {
+     "title": "Iris",
+     "body": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…",
+     "bodyInfo": {
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…",
+      "length": 140,
+      "codePoints": 140,
+      "endsWithEllipsis": true
+     },
+     "note": "JavaScript keeps the emoji's lone first half (U+D83D) before the ellipsis; JSON cannot carry it to Swift, so it is taken out here"
+    }
+   },
+   {
+    "name": "accented letters count as one unit each when precomposed",
+    "input": {
+     "kind": "agent-done",
+     "agentName": "Iris",
+     "reason": null,
+     "lastMessagePreview": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé"
+    },
+    "output": {
+     "title": "Iris",
+     "body": "ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé…",
+     "bodyInfo": {
+      "text": "ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé…",
+      "length": 140,
+      "codePoints": 140,
+      "endsWithEllipsis": true
+     }
+    }
+   }
+  ],
+  "shouldNotify": [
+   {
+    "name": "hidden=false notify=true focused=false last=null",
+    "input": {
+     "isHidden": false,
+     "notifyEnabled": true,
+     "isWindowFocused": false,
+     "lastNotifiedAtMs": null,
+     "nowMs": 5000,
+     "throttleWindowMs": 5000
+    },
+    "output": true
+   },
+   {
+    "name": "hidden=false notify=true focused=false last=0",
+    "input": {
+     "isHidden": false,
+     "notifyEnabled": true,
+     "isWindowFocused": false,
+     "lastNotifiedAtMs": 0,
+     "nowMs": 5000,
+     "throttleWindowMs": 5000
+    },
+    "output": true
+   },
+   {
+    "name": "hidden=false notify=true focused=false last=1000",
+    "input": {
+     "isHidden": false,
+     "notifyEnabled": true,
+     "isWindowFocused": false,
+     "lastNotifiedAtMs": 1000,
+     "nowMs": 5000,
+     "throttleWindowMs": 5000
+    },
+    "output": false
+   },
+   {
+    "name": "hidden=false notify=true focused=true last=null",
+    "input": {
+     "isHidden": false,
+     "notifyEnabled": true,
+     "isWindowFocused": true,
+     "lastNotifiedAtMs": null,
+     "nowMs": 5000,
+     "throttleWindowMs": 5000
+    },
+    "output": false
+   },
+   {
+    "name": "hidden=false notify=true focused=true last=0",
+    "input": {
+     "isHidden": false,
+     "notifyEnabled": true,
+     "isWindowFocused": true,
+     "lastNotifiedAtMs": 0,
+     "nowMs": 5000,
+     "throttleWindowMs": 5000
+    },
+    "output": false
+   },
+   {
+    "name": "hidden=false notify=true focused=true last=1000",
+    "input": {
+     "isHidden": false,
+     "notifyEnabled": true,
+     "isWindowFocused": true,
+     "lastNotifiedAtMs": 1000,
+     "nowMs": 5000,
+     "throttleWindowMs": 5000
+    },
+    "output": false
+   },
+   {
+    "name": "hidden=false notify=false focused=false last=null",
+    "input": {
+     "isHidden": false,
+     "notifyEnabled": false,
+     "isWindowFocused": false,
+     "lastNotifiedAtMs": null,
+     "nowMs": 5000,
+     "throttleWindowMs": 5000
+    },
+    "output": false
+   },
+   {
+    "name": "hidden=false notify=false focused=false last=0",
+    "input": {
+     "isHidden": false,
+     "notifyEnabled": false,
+     "isWindowFocused": false,
+     "lastNotifiedAtMs": 0,
+     "nowMs": 5000,
+     "throttleWindowMs": 5000
+    },
+    "output": false
+   },
+   {
+    "name": "hidden=false notify=false focused=false last=1000",
+    "input": {
+     "isHidden": false,
+     "notifyEnabled": false,
+     "isWindowFocused": false,
+     "lastNotifiedAtMs": 1000,
+     "nowMs": 5000,
+     "throttleWindowMs": 5000
+    },
+    "output": false
+   },
+   {
+    "name": "hidden=false notify=false focused=true last=null",
+    "input": {
+     "isHidden": false,
+     "notifyEnabled": false,
+     "isWindowFocused": true,
+     "lastNotifiedAtMs": null,
+     "nowMs": 5000,
+     "throttleWindowMs": 5000
+    },
+    "output": false
+   },
+   {
+    "name": "hidden=false notify=false focused=true last=0",
+    "input": {
+     "isHidden": false,
+     "notifyEnabled": false,
+     "isWindowFocused": true,
+     "lastNotifiedAtMs": 0,
+     "nowMs": 5000,
+     "throttleWindowMs": 5000
+    },
+    "output": false
+   },
+   {
+    "name": "hidden=false notify=false focused=true last=1000",
+    "input": {
+     "isHidden": false,
+     "notifyEnabled": false,
+     "isWindowFocused": true,
+     "lastNotifiedAtMs": 1000,
+     "nowMs": 5000,
+     "throttleWindowMs": 5000
+    },
+    "output": false
+   },
+   {
+    "name": "hidden=true notify=true focused=false last=null",
+    "input": {
+     "isHidden": true,
+     "notifyEnabled": true,
+     "isWindowFocused": false,
+     "lastNotifiedAtMs": null,
+     "nowMs": 5000,
+     "throttleWindowMs": 5000
+    },
+    "output": false
+   },
+   {
+    "name": "hidden=true notify=true focused=false last=0",
+    "input": {
+     "isHidden": true,
+     "notifyEnabled": true,
+     "isWindowFocused": false,
+     "lastNotifiedAtMs": 0,
+     "nowMs": 5000,
+     "throttleWindowMs": 5000
+    },
+    "output": false
+   },
+   {
+    "name": "hidden=true notify=true focused=false last=1000",
+    "input": {
+     "isHidden": true,
+     "notifyEnabled": true,
+     "isWindowFocused": false,
+     "lastNotifiedAtMs": 1000,
+     "nowMs": 5000,
+     "throttleWindowMs": 5000
+    },
+    "output": false
+   },
+   {
+    "name": "hidden=true notify=true focused=true last=null",
+    "input": {
+     "isHidden": true,
+     "notifyEnabled": true,
+     "isWindowFocused": true,
+     "lastNotifiedAtMs": null,
+     "nowMs": 5000,
+     "throttleWindowMs": 5000
+    },
+    "output": false
+   },
+   {
+    "name": "hidden=true notify=true focused=true last=0",
+    "input": {
+     "isHidden": true,
+     "notifyEnabled": true,
+     "isWindowFocused": true,
+     "lastNotifiedAtMs": 0,
+     "nowMs": 5000,
+     "throttleWindowMs": 5000
+    },
+    "output": false
+   },
+   {
+    "name": "hidden=true notify=true focused=true last=1000",
+    "input": {
+     "isHidden": true,
+     "notifyEnabled": true,
+     "isWindowFocused": true,
+     "lastNotifiedAtMs": 1000,
+     "nowMs": 5000,
+     "throttleWindowMs": 5000
+    },
+    "output": false
+   },
+   {
+    "name": "hidden=true notify=false focused=false last=null",
+    "input": {
+     "isHidden": true,
+     "notifyEnabled": false,
+     "isWindowFocused": false,
+     "lastNotifiedAtMs": null,
+     "nowMs": 5000,
+     "throttleWindowMs": 5000
+    },
+    "output": false
+   },
+   {
+    "name": "hidden=true notify=false focused=false last=0",
+    "input": {
+     "isHidden": true,
+     "notifyEnabled": false,
+     "isWindowFocused": false,
+     "lastNotifiedAtMs": 0,
+     "nowMs": 5000,
+     "throttleWindowMs": 5000
+    },
+    "output": false
+   },
+   {
+    "name": "hidden=true notify=false focused=false last=1000",
+    "input": {
+     "isHidden": true,
+     "notifyEnabled": false,
+     "isWindowFocused": false,
+     "lastNotifiedAtMs": 1000,
+     "nowMs": 5000,
+     "throttleWindowMs": 5000
+    },
+    "output": false
+   },
+   {
+    "name": "hidden=true notify=false focused=true last=null",
+    "input": {
+     "isHidden": true,
+     "notifyEnabled": false,
+     "isWindowFocused": true,
+     "lastNotifiedAtMs": null,
+     "nowMs": 5000,
+     "throttleWindowMs": 5000
+    },
+    "output": false
+   },
+   {
+    "name": "hidden=true notify=false focused=true last=0",
+    "input": {
+     "isHidden": true,
+     "notifyEnabled": false,
+     "isWindowFocused": true,
+     "lastNotifiedAtMs": 0,
+     "nowMs": 5000,
+     "throttleWindowMs": 5000
+    },
+    "output": false
+   },
+   {
+    "name": "hidden=true notify=false focused=true last=1000",
+    "input": {
+     "isHidden": true,
+     "notifyEnabled": false,
+     "isWindowFocused": true,
+     "lastNotifiedAtMs": 1000,
+     "nowMs": 5000,
+     "throttleWindowMs": 5000
+    },
+    "output": false
+   },
+   {
+    "name": "4999 ms after -> throttled",
+    "input": {
+     "isHidden": false,
+     "notifyEnabled": true,
+     "isWindowFocused": false,
+     "lastNotifiedAtMs": 1,
+     "nowMs": 5000,
+     "throttleWindowMs": 5000
+    },
+    "output": false
+   }
+  ],
+  "toNotificationSnapshot": [
+   {
+    "name": "full row",
+    "input": {
+     "id": "a1",
+     "name": "Iris",
+     "isRunning": false,
+     "awaitingUserResponse": {
+      "tabId": "auto-review",
+      "reason": "Approval needed: x",
+      "since": 1
+     },
+     "notifyOnUpdatesEnabled": true,
+     "isHiddenFromSidebar": false,
+     "lastMessageId": "m0",
+     "lastMessagePreview": "old"
+    },
+    "output": {
+     "id": "a1",
+     "name": "Iris",
+     "isRunning": false,
+     "awaitingReason": "Approval needed: x",
+     "notifyEnabled": true,
+     "isHiddenFromSidebar": false,
+     "lastMessageId": "m0",
+     "lastMessagePreview": "old"
+    }
+   },
+   {
+    "name": "awaiting present but reason missing -> awaitingReason null",
+    "input": {
+     "id": "a1",
+     "name": "Iris",
+     "isRunning": false,
+     "awaitingUserResponse": {
+      "tabId": "t"
+     },
+     "notifyOnUpdatesEnabled": true,
+     "isHiddenFromSidebar": false,
+     "lastMessageId": "m0",
+     "lastMessagePreview": "old"
+    },
+    "output": {
+     "id": "a1",
+     "name": "Iris",
+     "isRunning": false,
+     "awaitingReason": null,
+     "notifyEnabled": true,
+     "isHiddenFromSidebar": false,
+     "lastMessageId": "m0",
+     "lastMessagePreview": "old"
+    }
+   },
+   {
+    "name": "lastMessageId absent -> key omitted",
+    "input": {
+     "id": "a1",
+     "name": "Iris",
+     "isRunning": false,
+     "awaitingUserResponse": null,
+     "notifyOnUpdatesEnabled": true,
+     "isHiddenFromSidebar": false,
+     "lastMessagePreview": "old"
+    },
+    "output": {
+     "id": "a1",
+     "name": "Iris",
+     "isRunning": false,
+     "awaitingReason": null,
+     "notifyEnabled": true,
+     "isHiddenFromSidebar": false,
+     "lastMessagePreview": "old"
+    }
+   }
+  ],
+  "diffAgentNotificationTransitions": [
+   {
+    "name": "running -> idle = agent-done",
+    "input": {
+     "before": [
+      {
+       "id": "a1",
+       "name": "Iris",
+       "isRunning": true,
+       "awaitingUserResponse": null,
+       "notifyOnUpdatesEnabled": true,
+       "isHiddenFromSidebar": false,
+       "lastMessageId": "m0",
+       "lastMessagePreview": "old"
+      }
+     ],
+     "after": [
+      {
+       "id": "a1",
+       "name": "Iris",
+       "isRunning": false,
+       "awaitingUserResponse": null,
+       "notifyOnUpdatesEnabled": true,
+       "isHiddenFromSidebar": false,
+       "lastMessageId": "m1",
+       "lastMessagePreview": "new"
+      }
+     ]
+    },
+    "output": [
+     {
+      "agentId": "a1",
+      "agentName": "Iris",
+      "kind": "agent-done",
+      "reason": null,
+      "notifyEnabled": true,
+      "isHiddenFromSidebar": false,
+      "lastMessageId": "m1",
+      "lastMessagePreview": "new"
+     }
+    ]
+   },
+   {
+    "name": "idle -> awaiting = agent-needs-input",
+    "input": {
+     "before": [
+      {
+       "id": "a1",
+       "name": "Iris",
+       "isRunning": false,
+       "awaitingUserResponse": null,
+       "notifyOnUpdatesEnabled": true,
+       "isHiddenFromSidebar": false,
+       "lastMessageId": "m0",
+       "lastMessagePreview": "old"
+      }
+     ],
+     "after": [
+      {
+       "id": "a1",
+       "name": "Iris",
+       "isRunning": false,
+       "awaitingUserResponse": {
+        "reason": "Approval needed: x"
+       },
+       "notifyOnUpdatesEnabled": true,
+       "isHiddenFromSidebar": false,
+       "lastMessageId": "m0",
+       "lastMessagePreview": "old"
+      }
+     ]
+    },
+    "output": [
+     {
+      "agentId": "a1",
+      "agentName": "Iris",
+      "kind": "agent-needs-input",
+      "reason": "Approval needed: x",
+      "notifyEnabled": true,
+      "isHiddenFromSidebar": false,
+      "lastMessageId": "m0",
+      "lastMessagePreview": "old"
+     }
+    ]
+   },
+   {
+    "name": "running -> idle AND awaiting = needs-input only",
+    "input": {
+     "before": [
+      {
+       "id": "a1",
+       "name": "Iris",
+       "isRunning": true,
+       "awaitingUserResponse": null,
+       "notifyOnUpdatesEnabled": true,
+       "isHiddenFromSidebar": false,
+       "lastMessageId": "m0",
+       "lastMessagePreview": "old"
+      }
+     ],
+     "after": [
+      {
+       "id": "a1",
+       "name": "Iris",
+       "isRunning": false,
+       "awaitingUserResponse": {
+        "reason": "R"
+       },
+       "notifyOnUpdatesEnabled": true,
+       "isHiddenFromSidebar": false,
+       "lastMessageId": "m1",
+       "lastMessagePreview": "old"
+      }
+     ]
+    },
+    "output": [
+     {
+      "agentId": "a1",
+      "agentName": "Iris",
+      "kind": "agent-needs-input",
+      "reason": "R",
+      "notifyEnabled": true,
+      "isHiddenFromSidebar": false,
+      "lastMessageId": "m1",
+      "lastMessagePreview": "old"
+     }
+    ]
+   },
+   {
+    "name": "awaiting reason changes while awaiting = nothing",
+    "input": {
+     "before": [
+      {
+       "id": "a1",
+       "name": "Iris",
+       "isRunning": false,
+       "awaitingUserResponse": {
+        "reason": "A"
+       },
+       "notifyOnUpdatesEnabled": true,
+       "isHiddenFromSidebar": false,
+       "lastMessageId": "m0",
+       "lastMessagePreview": "old"
+      }
+     ],
+     "after": [
+      {
+       "id": "a1",
+       "name": "Iris",
+       "isRunning": false,
+       "awaitingUserResponse": {
+        "reason": "B"
+       },
+       "notifyOnUpdatesEnabled": true,
+       "isHiddenFromSidebar": false,
+       "lastMessageId": "m0",
+       "lastMessagePreview": "old"
+      }
+     ]
+    },
+    "output": []
+   },
+   {
+    "name": "running -> idle while still awaiting = nothing",
+    "input": {
+     "before": [
+      {
+       "id": "a1",
+       "name": "Iris",
+       "isRunning": true,
+       "awaitingUserResponse": {
+        "reason": "A"
+       },
+       "notifyOnUpdatesEnabled": true,
+       "isHiddenFromSidebar": false,
+       "lastMessageId": "m0",
+       "lastMessagePreview": "old"
+      }
+     ],
+     "after": [
+      {
+       "id": "a1",
+       "name": "Iris",
+       "isRunning": false,
+       "awaitingUserResponse": {
+        "reason": "A"
+       },
+       "notifyOnUpdatesEnabled": true,
+       "isHiddenFromSidebar": false,
+       "lastMessageId": "m1",
+       "lastMessagePreview": "old"
+      }
+     ]
+    },
+    "output": []
+   },
+   {
+    "name": "agent not in previous = nothing",
+    "input": {
+     "before": [],
+     "after": [
+      {
+       "id": "a1",
+       "name": "Iris",
+       "isRunning": false,
+       "awaitingUserResponse": {
+        "reason": "A"
+       },
+       "notifyOnUpdatesEnabled": true,
+       "isHiddenFromSidebar": false,
+       "lastMessageId": "m0",
+       "lastMessagePreview": "old"
+      }
+     ]
+    },
+    "output": []
+   },
+   {
+    "name": "awaiting reason empty string counts as awaiting (not null)",
+    "input": {
+     "before": [
+      {
+       "id": "a1",
+       "name": "Iris",
+       "isRunning": false,
+       "awaitingUserResponse": null,
+       "notifyOnUpdatesEnabled": true,
+       "isHiddenFromSidebar": false,
+       "lastMessageId": "m0",
+       "lastMessagePreview": "old"
+      }
+     ],
+     "after": [
+      {
+       "id": "a1",
+       "name": "Iris",
+       "isRunning": false,
+       "awaitingUserResponse": {
+        "reason": ""
+       },
+       "notifyOnUpdatesEnabled": true,
+       "isHiddenFromSidebar": false,
+       "lastMessageId": "m0",
+       "lastMessagePreview": "old"
+      }
+     ]
+    },
+    "output": [
+     {
+      "agentId": "a1",
+      "agentName": "Iris",
+      "kind": "agent-needs-input",
+      "reason": "",
+      "notifyEnabled": true,
+      "isHiddenFromSidebar": false,
+      "lastMessageId": "m0",
+      "lastMessagePreview": "old"
+     }
+    ]
+   }
+  ],
+  "SandOsNotificationDecider": [
+   {
+    "name": "baseline, then a turn ends with a new message -> one 'done'",
+    "input": null,
+    "output": [
+     {
+      "step": {
+       "op": "seed",
+       "agents": [
+        {
+         "id": "a1",
+         "name": "Iris",
+         "isRunning": false,
+         "awaitingUserResponse": null,
+         "notifyOnUpdatesEnabled": true,
+         "isHiddenFromSidebar": false,
+         "lastMessageId": "m0",
+         "lastMessagePreview": "old"
+        }
+       ]
+      },
+      "shown": null
+     },
+     {
+      "step": {
+       "op": "upsert",
+       "agent": {
+        "id": "a1",
+        "name": "Iris",
+        "isRunning": true,
+        "awaitingUserResponse": null,
+        "notifyOnUpdatesEnabled": true,
+        "isHiddenFromSidebar": false,
+        "lastMessageId": "m0",
+        "lastMessagePreview": "old"
+       },
+       "now": 1000
+      },
+      "shown": []
+     },
+     {
+      "step": {
+       "op": "upsert",
+       "agent": {
+        "id": "a1",
+        "name": "Iris",
+        "isRunning": false,
+        "awaitingUserResponse": null,
+        "notifyOnUpdatesEnabled": true,
+        "isHiddenFromSidebar": false,
+        "lastMessageId": "m1",
+        "lastMessagePreview": "Booked it."
+       },
+       "now": 2000
+      },
+      "shown": [
+       {
+        "agentId": "a1",
+        "kind": "agent-done",
+        "reason": null,
+        "lastMessageId": "m1",
+        "title": "Iris",
+        "body": "Booked it."
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "a turn ends with no new message -> nothing",
+    "input": null,
+    "output": [
+     {
+      "step": {
+       "op": "seed",
+       "agents": [
+        {
+         "id": "a1",
+         "name": "Iris",
+         "isRunning": false,
+         "awaitingUserResponse": null,
+         "notifyOnUpdatesEnabled": true,
+         "isHiddenFromSidebar": false,
+         "lastMessageId": "m0",
+         "lastMessagePreview": "old"
+        }
+       ]
+      },
+      "shown": null
+     },
+     {
+      "step": {
+       "op": "upsert",
+       "agent": {
+        "id": "a1",
+        "name": "Iris",
+        "isRunning": true,
+        "awaitingUserResponse": null,
+        "notifyOnUpdatesEnabled": true,
+        "isHiddenFromSidebar": false,
+        "lastMessageId": "m0",
+        "lastMessagePreview": "old"
+       },
+       "now": 1000
+      },
+      "shown": []
+     },
+     {
+      "step": {
+       "op": "upsert",
+       "agent": {
+        "id": "a1",
+        "name": "Iris",
+        "isRunning": false,
+        "awaitingUserResponse": null,
+        "notifyOnUpdatesEnabled": true,
+        "isHiddenFromSidebar": false,
+        "lastMessageId": "m0",
+        "lastMessagePreview": "old"
+       },
+       "now": 2000
+      },
+      "shown": []
+     }
+    ]
+   },
+   {
+    "name": "a turn ends and the agent never sent a message (lastMessageId null) -> nothing",
+    "input": null,
+    "output": [
+     {
+      "step": {
+       "op": "seed",
+       "agents": [
+        {
+         "id": "a1",
+         "name": "Iris",
+         "isRunning": false,
+         "awaitingUserResponse": null,
+         "notifyOnUpdatesEnabled": true,
+         "isHiddenFromSidebar": false,
+         "lastMessageId": null,
+         "lastMessagePreview": "old"
+        }
+       ]
+      },
+      "shown": null
+     },
+     {
+      "step": {
+       "op": "upsert",
+       "agent": {
+        "id": "a1",
+        "name": "Iris",
+        "isRunning": true,
+        "awaitingUserResponse": null,
+        "notifyOnUpdatesEnabled": true,
+        "isHiddenFromSidebar": false,
+        "lastMessageId": null,
+        "lastMessagePreview": "old"
+       },
+       "now": 1000
+      },
+      "shown": []
+     },
+     {
+      "step": {
+       "op": "upsert",
+       "agent": {
+        "id": "a1",
+        "name": "Iris",
+        "isRunning": false,
+        "awaitingUserResponse": null,
+        "notifyOnUpdatesEnabled": true,
+        "isHiddenFromSidebar": false,
+        "lastMessageId": null,
+        "lastMessagePreview": "old"
+       },
+       "now": 2000
+      },
+      "shown": []
+     }
+    ]
+   },
+   {
+    "name": "an agent first seen after the baseline: the sighting itself is silent, its next change notifies (accounted id = its lastMessageId when first seen)",
+    "input": null,
+    "output": [
+     {
+      "step": {
+       "op": "seed",
+       "agents": []
+      },
+      "shown": null
+     },
+     {
+      "step": {
+       "op": "upsert",
+       "agent": {
+        "id": "new",
+        "name": "Iris",
+        "isRunning": true,
+        "awaitingUserResponse": null,
+        "notifyOnUpdatesEnabled": true,
+        "isHiddenFromSidebar": false,
+        "lastMessageId": "m0",
+        "lastMessagePreview": "old"
+       },
+       "now": 1000
+      },
+      "shown": []
+     },
+     {
+      "step": {
+       "op": "upsert",
+       "agent": {
+        "id": "new",
+        "name": "Iris",
+        "isRunning": false,
+        "awaitingUserResponse": null,
+        "notifyOnUpdatesEnabled": true,
+        "isHiddenFromSidebar": false,
+        "lastMessageId": "m1",
+        "lastMessagePreview": "old"
+       },
+       "now": 2000
+      },
+      "shown": [
+       {
+        "agentId": "new",
+        "kind": "agent-done",
+        "reason": null,
+        "lastMessageId": "m1",
+        "title": "Iris",
+        "body": "old"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "two 'done' within 5 s -> second throttled (its message is used up anyway); one 5000 ms after the last shown passes",
+    "input": null,
+    "output": [
+     {
+      "step": {
+       "op": "seed",
+       "agents": [
+        {
+         "id": "a1",
+         "name": "Iris",
+         "isRunning": false,
+         "awaitingUserResponse": null,
+         "notifyOnUpdatesEnabled": true,
+         "isHiddenFromSidebar": false,
+         "lastMessageId": "m0",
+         "lastMessagePreview": "old"
+        }
+       ]
+      },
+      "shown": null
+     },
+     {
+      "step": {
+       "op": "upsert",
+       "agent": {
+        "id": "a1",
+        "name": "Iris",
+        "isRunning": true,
+        "awaitingUserResponse": null,
+        "notifyOnUpdatesEnabled": true,
+        "isHiddenFromSidebar": false,
+        "lastMessageId": "m0",
+        "lastMessagePreview": "old"
+       },
+       "now": 0
+      },
+      "shown": []
+     },
+     {
+      "step": {
+       "op": "upsert",
+       "agent": {
+        "id": "a1",
+        "name": "Iris",
+        "isRunning": false,
+        "awaitingUserResponse": null,
+        "notifyOnUpdatesEnabled": true,
+        "isHiddenFromSidebar": false,
+        "lastMessageId": "m1",
+        "lastMessagePreview": "old"
+       },
+       "now": 1000
+      },
+      "shown": [
+       {
+        "agentId": "a1",
+        "kind": "agent-done",
+        "reason": null,
+        "lastMessageId": "m1",
+        "title": "Iris",
+        "body": "old"
+       }
+      ]
+     },
+     {
+      "step": {
+       "op": "upsert",
+       "agent": {
+        "id": "a1",
+        "name": "Iris",
+        "isRunning": true,
+        "awaitingUserResponse": null,
+        "notifyOnUpdatesEnabled": true,
+        "isHiddenFromSidebar": false,
+        "lastMessageId": "m1",
+        "lastMessagePreview": "old"
+       },
+       "now": 2000
+      },
+      "shown": []
+     },
+     {
+      "step": {
+       "op": "upsert",
+       "agent": {
+        "id": "a1",
+        "name": "Iris",
+        "isRunning": false,
+        "awaitingUserResponse": null,
+        "notifyOnUpdatesEnabled": true,
+        "isHiddenFromSidebar": false,
+        "lastMessageId": "m2",
+        "lastMessagePreview": "old"
+       },
+       "now": 5999
+      },
+      "shown": []
+     },
+     {
+      "step": {
+       "op": "upsert",
+       "agent": {
+        "id": "a1",
+        "name": "Iris",
+        "isRunning": true,
+        "awaitingUserResponse": null,
+        "notifyOnUpdatesEnabled": true,
+        "isHiddenFromSidebar": false,
+        "lastMessageId": "m2",
+        "lastMessagePreview": "old"
+       },
+       "now": 6000
+      },
+      "shown": []
+     },
+     {
+      "step": {
+       "op": "upsert",
+       "agent": {
+        "id": "a1",
+        "name": "Iris",
+        "isRunning": false,
+        "awaitingUserResponse": null,
+        "notifyOnUpdatesEnabled": true,
+        "isHiddenFromSidebar": false,
+        "lastMessageId": "m3",
+        "lastMessagePreview": "old"
+       },
+       "now": 6000
+      },
+      "shown": [
+       {
+        "agentId": "a1",
+        "kind": "agent-done",
+        "reason": null,
+        "lastMessageId": "m3",
+        "title": "Iris",
+        "body": "old"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "throttle is per agent AND per kind: done then needs-input 1 ms apart both show",
+    "input": null,
+    "output": [
+     {
+      "step": {
+       "op": "seed",
+       "agents": [
+        {
+         "id": "a1",
+         "name": "Iris",
+         "isRunning": false,
+         "awaitingUserResponse": null,
+         "notifyOnUpdatesEnabled": true,
+         "isHiddenFromSidebar": false,
+         "lastMessageId": "m0",
+         "lastMessagePreview": "old"
+        }
+       ]
+      },
+      "shown": null
+     },
+     {
+      "step": {
+       "op": "upsert",
+       "agent": {
+        "id": "a1",
+        "name": "Iris",
+        "isRunning": true,
+        "awaitingUserResponse": null,
+        "notifyOnUpdatesEnabled": true,
+        "isHiddenFromSidebar": false,
+        "lastMessageId": "m0",
+        "lastMessagePreview": "old"
+       },
+       "now": 0
+      },
+      "shown": []
+     },
+     {
+      "step": {
+       "op": "upsert",
+       "agent": {
+        "id": "a1",
+        "name": "Iris",
+        "isRunning": false,
+        "awaitingUserResponse": null,
+        "notifyOnUpdatesEnabled": true,
+        "isHiddenFromSidebar": false,
+        "lastMessageId": "m1",
+        "lastMessagePreview": "old"
+       },
+       "now": 1000
+      },
+      "shown": [
+       {
+        "agentId": "a1",
+        "kind": "agent-done",
+        "reason": null,
+        "lastMessageId": "m1",
+        "title": "Iris",
+        "body": "old"
+       }
+      ]
+     },
+     {
+      "step": {
+       "op": "upsert",
+       "agent": {
+        "id": "a1",
+        "name": "Iris",
+        "isRunning": false,
+        "awaitingUserResponse": {
+         "reason": "Approval needed: pay"
+        },
+        "notifyOnUpdatesEnabled": true,
+        "isHiddenFromSidebar": false,
+        "lastMessageId": "m1",
+        "lastMessagePreview": "old"
+       },
+       "now": 1001
+      },
+      "shown": [
+       {
+        "agentId": "a1",
+        "kind": "agent-needs-input",
+        "reason": "Approval needed: pay",
+        "lastMessageId": "m1",
+        "title": "Iris needs you",
+        "body": "Approval needed: pay"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "window focused: suppressed, and that message is used up (no notification later)",
+    "input": null,
+    "output": [
+     {
+      "step": {
+       "op": "seed",
+       "agents": [
+        {
+         "id": "a1",
+         "name": "Iris",
+         "isRunning": false,
+         "awaitingUserResponse": null,
+         "notifyOnUpdatesEnabled": true,
+         "isHiddenFromSidebar": false,
+         "lastMessageId": "m0",
+         "lastMessagePreview": "old"
+        }
+       ]
+      },
+      "shown": null
+     },
+     {
+      "step": {
+       "op": "upsert",
+       "agent": {
+        "id": "a1",
+        "name": "Iris",
+        "isRunning": true,
+        "awaitingUserResponse": null,
+        "notifyOnUpdatesEnabled": true,
+        "isHiddenFromSidebar": false,
+        "lastMessageId": "m0",
+        "lastMessagePreview": "old"
+       },
+       "now": 0
+      },
+      "shown": []
+     },
+     {
+      "step": {
+       "op": "upsert",
+       "agent": {
+        "id": "a1",
+        "name": "Iris",
+        "isRunning": false,
+        "awaitingUserResponse": null,
+        "notifyOnUpdatesEnabled": true,
+        "isHiddenFromSidebar": false,
+        "lastMessageId": "m1",
+        "lastMessagePreview": "old"
+       },
+       "now": 1000,
+       "focused": true
+      },
+      "shown": []
+     },
+     {
+      "step": {
+       "op": "upsert",
+       "agent": {
+        "id": "a1",
+        "name": "Iris",
+        "isRunning": true,
+        "awaitingUserResponse": null,
+        "notifyOnUpdatesEnabled": true,
+        "isHiddenFromSidebar": false,
+        "lastMessageId": "m1",
+        "lastMessagePreview": "old"
+       },
+       "now": 20000
+      },
+      "shown": []
+     },
+     {
+      "step": {
+       "op": "upsert",
+       "agent": {
+        "id": "a1",
+        "name": "Iris",
+        "isRunning": false,
+        "awaitingUserResponse": null,
+        "notifyOnUpdatesEnabled": true,
+        "isHiddenFromSidebar": false,
+        "lastMessageId": "m1",
+        "lastMessagePreview": "old"
+       },
+       "now": 30000,
+       "focused": false
+      },
+      "shown": []
+     }
+    ]
+   },
+   {
+    "name": "hidden agent and notifications-off agent never show",
+    "input": null,
+    "output": [
+     {
+      "step": {
+       "op": "seed",
+       "agents": [
+        {
+         "id": "h",
+         "name": "Iris",
+         "isRunning": false,
+         "awaitingUserResponse": null,
+         "notifyOnUpdatesEnabled": true,
+         "isHiddenFromSidebar": true,
+         "lastMessageId": "m0",
+         "lastMessagePreview": "old"
+        },
+        {
+         "id": "q",
+         "name": "Iris",
+         "isRunning": false,
+         "awaitingUserResponse": null,
+         "notifyOnUpdatesEnabled": false,
+         "isHiddenFromSidebar": false,
+         "lastMessageId": "m0",
+         "lastMessagePreview": "old"
+        }
+       ]
+      },
+      "shown": null
+     },
+     {
+      "step": {
+       "op": "upsert",
+       "agent": {
+        "id": "h",
+        "name": "Iris",
+        "isRunning": false,
+        "awaitingUserResponse": {
+         "reason": "R"
+        },
+        "notifyOnUpdatesEnabled": true,
+        "isHiddenFromSidebar": true,
+        "lastMessageId": "m0",
+        "lastMessagePreview": "old"
+       },
+       "now": 1000
+      },
+      "shown": []
+     },
+     {
+      "step": {
+       "op": "upsert",
+       "agent": {
+        "id": "q",
+        "name": "Iris",
+        "isRunning": false,
+        "awaitingUserResponse": {
+         "reason": "R"
+        },
+        "notifyOnUpdatesEnabled": false,
+        "isHiddenFromSidebar": false,
+        "lastMessageId": "m0",
+        "lastMessagePreview": "old"
+       },
+       "now": 1000
+      },
+      "shown": []
+     }
+    ]
+   },
+   {
+    "name": "needs-input fires on entering awaiting; a reason change is silent; re-entering within 5 s is throttled, after 5 s fires again",
+    "input": null,
+    "output": [
+     {
+      "step": {
+       "op": "seed",
+       "agents": [
+        {
+         "id": "a1",
+         "name": "Iris",
+         "isRunning": false,
+         "awaitingUserResponse": null,
+         "notifyOnUpdatesEnabled": true,
+         "isHiddenFromSidebar": false,
+         "lastMessageId": "m0",
+         "lastMessagePreview": "old"
+        }
+       ]
+      },
+      "shown": null
+     },
+     {
+      "step": {
+       "op": "upsert",
+       "agent": {
+        "id": "a1",
+        "name": "Iris",
+        "isRunning": false,
+        "awaitingUserResponse": {
+         "reason": "Approval needed: A"
+        },
+        "notifyOnUpdatesEnabled": true,
+        "isHiddenFromSidebar": false,
+        "lastMessageId": "m0",
+        "lastMessagePreview": "old"
+       },
+       "now": 0
+      },
+      "shown": [
+       {
+        "agentId": "a1",
+        "kind": "agent-needs-input",
+        "reason": "Approval needed: A",
+        "lastMessageId": "m0",
+        "title": "Iris needs you",
+        "body": "Approval needed: A"
+       }
+      ]
+     },
+     {
+      "step": {
+       "op": "upsert",
+       "agent": {
+        "id": "a1",
+        "name": "Iris",
+        "isRunning": false,
+        "awaitingUserResponse": {
+         "reason": "Approval needed: B"
+        },
+        "notifyOnUpdatesEnabled": true,
+        "isHiddenFromSidebar": false,
+        "lastMessageId": "m0",
+        "lastMessagePreview": "old"
+       },
+       "now": 100
+      },
+      "shown": []
+     },
+     {
+      "step": {
+       "op": "upsert",
+       "agent": {
+        "id": "a1",
+        "name": "Iris",
+        "isRunning": false,
+        "awaitingUserResponse": null,
+        "notifyOnUpdatesEnabled": true,
+        "isHiddenFromSidebar": false,
+        "lastMessageId": "m0",
+        "lastMessagePreview": "old"
+       },
+       "now": 200
+      },
+      "shown": []
+     },
+     {
+      "step": {
+       "op": "upsert",
+       "agent": {
+        "id": "a1",
+        "name": "Iris",
+        "isRunning": false,
+        "awaitingUserResponse": {
+         "reason": "Approval needed: C"
+        },
+        "notifyOnUpdatesEnabled": true,
+        "isHiddenFromSidebar": false,
+        "lastMessageId": "m0",
+        "lastMessagePreview": "old"
+       },
+       "now": 3000
+      },
+      "shown": []
+     },
+     {
+      "step": {
+       "op": "upsert",
+       "agent": {
+        "id": "a1",
+        "name": "Iris",
+        "isRunning": false,
+        "awaitingUserResponse": null,
+        "notifyOnUpdatesEnabled": true,
+        "isHiddenFromSidebar": false,
+        "lastMessageId": "m0",
+        "lastMessagePreview": "old"
+       },
+       "now": 4000
+      },
+      "shown": []
+     },
+     {
+      "step": {
+       "op": "upsert",
+       "agent": {
+        "id": "a1",
+        "name": "Iris",
+        "isRunning": false,
+        "awaitingUserResponse": {
+         "reason": "Approval needed: D"
+        },
+        "notifyOnUpdatesEnabled": true,
+        "isHiddenFromSidebar": false,
+        "lastMessageId": "m0",
+        "lastMessagePreview": "old"
+       },
+       "now": 9000
+      },
+      "shown": [
+       {
+        "agentId": "a1",
+        "kind": "agent-needs-input",
+        "reason": "Approval needed: D",
+        "lastMessageId": "m0",
+        "title": "Iris needs you",
+        "body": "Approval needed: D"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "full roster events diff the same way; an agent missing from a roster is dropped from 'previous'",
+    "input": null,
+    "output": [
+     {
+      "step": {
+       "op": "roster",
+       "agents": [
+        {
+         "id": "a",
+         "name": "Iris",
+         "isRunning": false,
+         "awaitingUserResponse": null,
+         "notifyOnUpdatesEnabled": true,
+         "isHiddenFromSidebar": false,
+         "lastMessageId": "m0",
+         "lastMessagePreview": "old"
+        },
+        {
+         "id": "b",
+         "name": "Iris",
+         "isRunning": true,
+         "awaitingUserResponse": null,
+         "notifyOnUpdatesEnabled": true,
+         "isHiddenFromSidebar": false,
+         "lastMessageId": "m0",
+         "lastMessagePreview": "old"
+        }
+       ],
+       "now": 0
+      },
+      "shown": []
+     },
+     {
+      "step": {
+       "op": "roster",
+       "agents": [
+        {
+         "id": "a",
+         "name": "Iris",
+         "isRunning": true,
+         "awaitingUserResponse": null,
+         "notifyOnUpdatesEnabled": true,
+         "isHiddenFromSidebar": false,
+         "lastMessageId": "m0",
+         "lastMessagePreview": "old"
+        },
+        {
+         "id": "b",
+         "name": "Iris",
+         "isRunning": false,
+         "awaitingUserResponse": null,
+         "notifyOnUpdatesEnabled": true,
+         "isHiddenFromSidebar": false,
+         "lastMessageId": "b1",
+         "lastMessagePreview": "B done"
+        }
+       ],
+       "now": 1000
+      },
+      "shown": [
+       {
+        "agentId": "b",
+        "kind": "agent-done",
+        "reason": null,
+        "lastMessageId": "b1",
+        "title": "Iris",
+        "body": "B done"
+       }
+      ]
+     },
+     {
+      "step": {
+       "op": "roster",
+       "agents": [
+        {
+         "id": "b",
+         "name": "Iris",
+         "isRunning": false,
+         "awaitingUserResponse": null,
+         "notifyOnUpdatesEnabled": true,
+         "isHiddenFromSidebar": false,
+         "lastMessageId": "b1",
+         "lastMessagePreview": "old"
+        }
+       ],
+       "now": 2000
+      },
+      "shown": []
+     },
+     {
+      "step": {
+       "op": "roster",
+       "agents": [
+        {
+         "id": "a",
+         "name": "Iris",
+         "isRunning": false,
+         "awaitingUserResponse": null,
+         "notifyOnUpdatesEnabled": true,
+         "isHiddenFromSidebar": false,
+         "lastMessageId": "a9",
+         "lastMessagePreview": "old"
+        },
+        {
+         "id": "b",
+         "name": "Iris",
+         "isRunning": false,
+         "awaitingUserResponse": null,
+         "notifyOnUpdatesEnabled": true,
+         "isHiddenFromSidebar": false,
+         "lastMessageId": "b1",
+         "lastMessagePreview": "old"
+        }
+       ],
+       "now": 3000
+      },
+      "shown": []
+     }
+    ]
+   },
+   {
+    "name": "seedBaseline never overwrites an agent already known (reconnect): news from the gap is shown on the next delta",
+    "input": null,
+    "output": [
+     {
+      "step": {
+       "op": "seed",
+       "agents": [
+        {
+         "id": "a1",
+         "name": "Iris",
+         "isRunning": false,
+         "awaitingUserResponse": null,
+         "notifyOnUpdatesEnabled": true,
+         "isHiddenFromSidebar": false,
+         "lastMessageId": "m0",
+         "lastMessagePreview": "old"
+        }
+       ]
+      },
+      "shown": null
+     },
+     {
+      "step": {
+       "op": "upsert",
+       "agent": {
+        "id": "a1",
+        "name": "Iris",
+        "isRunning": true,
+        "awaitingUserResponse": null,
+        "notifyOnUpdatesEnabled": true,
+        "isHiddenFromSidebar": false,
+        "lastMessageId": "m0",
+        "lastMessagePreview": "old"
+       },
+       "now": 0
+      },
+      "shown": []
+     },
+     {
+      "step": {
+       "op": "seed",
+       "agents": [
+        {
+         "id": "a1",
+         "name": "Iris",
+         "isRunning": false,
+         "awaitingUserResponse": null,
+         "notifyOnUpdatesEnabled": true,
+         "isHiddenFromSidebar": false,
+         "lastMessageId": "m5",
+         "lastMessagePreview": "old"
+        }
+       ]
+      },
+      "shown": null
+     },
+     {
+      "step": {
+       "op": "upsert",
+       "agent": {
+        "id": "a1",
+        "name": "Iris",
+        "isRunning": false,
+        "awaitingUserResponse": null,
+        "notifyOnUpdatesEnabled": true,
+        "isHiddenFromSidebar": false,
+        "lastMessageId": "m5",
+        "lastMessagePreview": "finished while offline"
+       },
+       "now": 60000
+      },
+      "shown": [
+       {
+        "agentId": "a1",
+        "kind": "agent-done",
+        "reason": null,
+        "lastMessageId": "m5",
+        "title": "Iris",
+        "body": "finished while offline"
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  "SandOsNotificationManager": [
+   {
+    "name": "fake-port walkthrough",
+    "input": null,
+    "output": [
+     {
+      "op": "upsert before any seed (buffered)",
+      "shown": 0
+     },
+     {
+      "op": "seed (buffered upsert replays against the baseline: running=true recorded)",
+      "shown": 0
+     },
+     {
+      "op": "turn ends",
+      "shown": 1,
+      "last": {
+       "title": "Iris",
+       "body": "All set.",
+       "silent": true,
+       "urgency": "normal"
+      }
+     },
+     {
+      "op": "needs you",
+      "shown": 2,
+      "last": {
+       "title": "Iris needs you",
+       "body": "Approval needed: wire $40",
+       "silent": false,
+       "urgency": "critical"
+      }
+     },
+     {
+      "op": "click the needs-you notification",
+      "windowCalls": [
+       "restore",
+       "show",
+       "focus"
+      ],
+      "openAgent": [
+       "a1"
+      ]
+     },
+     {
+      "op": "reset (account change) closes every live notification",
+      "closed": [
+       true,
+       true
+      ]
+     }
+    ]
+   }
+  ],
+  "computeDockBadgeTotal": [
+   {
+    "name": "none unread",
+    "input": [
+     {
+      "id": "a",
+      "hasUnread": false,
+      "unreadCount": 0,
+      "isHiddenFromSidebar": false,
+      "snapshotEpoch": "E1",
+      "snapshotSeq": 1
+     },
+     {
+      "id": "b",
+      "hasUnread": false,
+      "unreadCount": 0,
+      "isHiddenFromSidebar": false,
+      "snapshotEpoch": "E1",
+      "snapshotSeq": 1
+     }
+    ],
+    "output": 0
+   },
+   {
+    "name": "one unread with 3",
+    "input": [
+     {
+      "id": "a",
+      "hasUnread": true,
+      "unreadCount": 3,
+      "isHiddenFromSidebar": false,
+      "snapshotEpoch": "E1",
+      "snapshotSeq": 1
+     }
+    ],
+    "output": 3
+   },
+   {
+    "name": "unread but count 0 -> counts 1",
+    "input": [
+     {
+      "id": "a",
+      "hasUnread": true,
+      "unreadCount": 0,
+      "isHiddenFromSidebar": false,
+      "snapshotEpoch": "E1",
+      "snapshotSeq": 1
+     }
+    ],
+    "output": 1
+   },
+   {
+    "name": "unread, count null -> 1",
+    "input": [
+     {
+      "id": "a",
+      "hasUnread": true,
+      "unreadCount": null,
+      "isHiddenFromSidebar": false,
+      "snapshotEpoch": "E1",
+      "snapshotSeq": 1
+     }
+    ],
+    "output": 1
+   },
+   {
+    "name": "unread, count 2.7 -> floor 2",
+    "input": [
+     {
+      "id": "a",
+      "hasUnread": true,
+      "unreadCount": 2.7,
+      "isHiddenFromSidebar": false,
+      "snapshotEpoch": "E1",
+      "snapshotSeq": 1
+     }
+    ],
+    "output": 2
+   },
+   {
+    "name": "hidden unread excluded",
+    "input": [
+     {
+      "id": "a",
+      "hasUnread": true,
+      "unreadCount": 5,
+      "isHiddenFromSidebar": true,
+      "snapshotEpoch": "E1",
+      "snapshotSeq": 1
+     },
+     {
+      "id": "b",
+      "hasUnread": true,
+      "unreadCount": 2,
+      "isHiddenFromSidebar": false,
+      "snapshotEpoch": "E1",
+      "snapshotSeq": 1
+     }
+    ],
+    "output": 2
+   },
+   {
+    "name": "count without hasUnread ignored",
+    "input": [
+     {
+      "id": "a",
+      "hasUnread": false,
+      "unreadCount": 9,
+      "isHiddenFromSidebar": false,
+      "snapshotEpoch": "E1",
+      "snapshotSeq": 1
+     }
+    ],
+    "output": 0
+   },
+   {
+    "name": "sum > 99 is not capped",
+    "input": [
+     {
+      "id": "x0",
+      "hasUnread": true,
+      "unreadCount": 10,
+      "isHiddenFromSidebar": false,
+      "snapshotEpoch": "E1",
+      "snapshotSeq": 1
+     },
+     {
+      "id": "x1",
+      "hasUnread": true,
+      "unreadCount": 10,
+      "isHiddenFromSidebar": false,
+      "snapshotEpoch": "E1",
+      "snapshotSeq": 1
+     },
+     {
+      "id": "x2",
+      "hasUnread": true,
+      "unreadCount": 10,
+      "isHiddenFromSidebar": false,
+      "snapshotEpoch": "E1",
+      "snapshotSeq": 1
+     },
+     {
+      "id": "x3",
+      "hasUnread": true,
+      "unreadCount": 10,
+      "isHiddenFromSidebar": false,
+      "snapshotEpoch": "E1",
+      "snapshotSeq": 1
+     },
+     {
+      "id": "x4",
+      "hasUnread": true,
+      "unreadCount": 10,
+      "isHiddenFromSidebar": false,
+      "snapshotEpoch": "E1",
+      "snapshotSeq": 1
+     },
+     {
+      "id": "x5",
+      "hasUnread": true,
+      "unreadCount": 10,
+      "isHiddenFromSidebar": false,
+      "snapshotEpoch": "E1",
+      "snapshotSeq": 1
+     },
+     {
+      "id": "x6",
+      "hasUnread": true,
+      "unreadCount": 10,
+      "isHiddenFromSidebar": false,
+      "snapshotEpoch": "E1",
+      "snapshotSeq": 1
+     },
+     {
+      "id": "x7",
+      "hasUnread": true,
+      "unreadCount": 10,
+      "isHiddenFromSidebar": false,
+      "snapshotEpoch": "E1",
+      "snapshotSeq": 1
+     },
+     {
+      "id": "x8",
+      "hasUnread": true,
+      "unreadCount": 10,
+      "isHiddenFromSidebar": false,
+      "snapshotEpoch": "E1",
+      "snapshotSeq": 1
+     },
+     {
+      "id": "x9",
+      "hasUnread": true,
+      "unreadCount": 10,
+      "isHiddenFromSidebar": false,
+      "snapshotEpoch": "E1",
+      "snapshotSeq": 1
+     },
+     {
+      "id": "x10",
+      "hasUnread": true,
+      "unreadCount": 10,
+      "isHiddenFromSidebar": false,
+      "snapshotEpoch": "E1",
+      "snapshotSeq": 1
+     },
+     {
+      "id": "x11",
+      "hasUnread": true,
+      "unreadCount": 10,
+      "isHiddenFromSidebar": false,
+      "snapshotEpoch": "E1",
+      "snapshotSeq": 1
+     }
+    ],
+    "output": 120
+   }
+  ],
+  "SandDockBadgeManager": [
+   {
+    "name": "sequence",
+    "input": null,
+    "output": [
+     {
+      "op": "seed roster: a unread 2, b read",
+      "setBadgeCountCalls": [
+       2
+      ]
+     },
+     {
+      "op": "same total again -> no call",
+      "setBadgeCountCalls": []
+     },
+     {
+      "op": "upsert b unread 1 (seq 7)",
+      "setBadgeCountCalls": [
+       3
+      ]
+     },
+     {
+      "op": "stale upsert of b (seq 6, same epoch) ignored",
+      "setBadgeCountCalls": []
+     },
+     {
+      "op": "upsert new agent c (seq 9) unread 4",
+      "setBadgeCountCalls": [
+       7
+      ]
+     },
+     {
+      "op": "roster at seq 8 without c: b's roster row (seq 8 > tracked 7) wins; c (seq 9, newer than the roster) is kept",
+      "setBadgeCountCalls": [
+       6
+      ]
+     },
+     {
+      "op": "empty roster while tracking agents -> ignored",
+      "setBadgeCountCalls": []
+     },
+     {
+      "op": "new host epoch E2 roster drops everything not in it",
+      "setBadgeCountCalls": [
+       1
+      ]
+     },
+     {
+      "op": "reset (account change) -> 0",
+      "setBadgeCountCalls": [
+       0
+      ]
+     }
+    ]
+   }
+  ],
+  "windowFocusSync": [
+   {
+    "name": "attach/focus/blur",
+    "input": null,
+    "output": [
+     {
+      "op": "attach (sends once at once)",
+      "sent": [
+       {
+        "isFocused": false
+       }
+      ]
+     },
+     {
+      "op": "focus",
+      "sent": [
+       {
+        "isFocused": true
+       }
+      ]
+     },
+     {
+      "op": "blur",
+      "sent": [
+       {
+        "isFocused": false
+       }
+      ]
+     },
+     {
+      "op": "events listened",
+      "events": [
+       "focus",
+       "blur",
+       "closed"
+      ]
+     }
+    ]
+   }
+  ],
+  "host lastMessagePreviewText": [
+   {
+    "name": "markdown chars stripped, whitespace collapsed, max 280",
+    "input": "**Done**  with `x`\n# heading",
+    "output": "Done with x  heading"
+   },
+   {
+    "name": "300 chars -> 280",
+    "input": "300 x",
+    "output": 280
+   },
+   {
+    "name": "link attachment",
+    "input": {
+     "type": "attachment",
+     "url": "https://example.com/a"
+    },
+    "output": "Sent a link · https://example.com/a"
+   }
+  ],
+  "host buildSandAutoReviewAwaitingReason": [
+   {
+    "name": "needs-you reason text",
+    "input": "send the invoice to Acme",
+    "output": "Approval needed: send the invoice to Acme"
+   }
+  ]
+ }
+}

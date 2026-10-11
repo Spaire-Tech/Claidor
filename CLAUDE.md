@@ -4,17 +4,24 @@ Simeon is a team of always-on agents on the person's Mac, each agent with a
 cloud computer of its own. The company is Simeon Labs (`simeonlabs.com`); the
 product people see is **Simeon** (spelled Simeon, never Simon).
 
+The legal company is **Spaire, Inc.** until the founder renames it (11 October
+2026). Every place that names the legal company says Spaire, Inc.: the
+copyright and About lines in each app, `NOTICE`, the Privacy Policy and Terms,
+the website's footer and the invoices (`INVOICES_NAME`). The brand
+(SimeonLabs, `simeonlabs.com`) stays. At the rename, search for "Spaire, Inc"
+(`scripts/kept_names.json` lists every file).
+
 ## Where things are
 
 | Folder | What it is |
 |---|---|
-| `desktop/` | The Mac app. `docs/architecture.md`, `docs/building-the-app.md`. |
+| `desktop/` | **Retired** Electron Mac app (11 October 2026). Kept only to build the agents' engine (`source/host`, `source/box-exec-daemon`, published through `npm run package` and `npm run publish:host-bundle` on a Mac) and the web app (`web/`). `desktop/README.md`. |
 | `server/` | The API at `api.simeonlabs.com` (FastAPI, PostgreSQL, Redis, Dramatiq). The Python package is `simeon`. Patterns: `server/CLAUDE.md`. |
 | `runner/` | The cloud runner (Node): queued work while the Mac is closed. |
 | `box/` | The cloud computer image (Dockerfile, supervisor, desktop scripts). `box/README.md`. |
 | `clients/` | The web app at `app.simeonlabs.com` (sign-in pages, account dashboard). Patterns: `clients/CLAUDE.md`. |
-| `mobile/` | The iPhone app (Expo): the web window (`desktop/web/`) in a native shell with sign-in, notifications and opening an agent from one. `mobile/README.md`. |
-| `ios/` | The native iPhone app (SwiftUI), the phone design in Apple's own parts; it replaces `mobile/` once it has run on an iPhone. `ios/README.md`. |
+| `ios/` | **The iPhone app** (SwiftUI), the phone design in Apple's own parts. `ios/README.md`. |
+| `mac/` | **The Mac app** (SwiftUI): a copy of the Electron Mac app with Apple's controls, which replaced it on 11 October 2026 (bundle id `com.simeonlabs.simeon`, scheme `simeon`). It shares `ios/SimeonCore` (no screens). `mac/README.md`, `mac/STEPS.md`. |
 | `sites/simeonlabs.com/` | The public website and its live demo. |
 | `docs/` | Start at `docs/README.md`. |
 | `render.yaml` | The Render services (API, worker, runner, Postgres, Redis). |
@@ -31,8 +38,9 @@ skills, connectors, avatars, approvals). Running the box servers:
 - **Measure, don't guess.** Before saying something is missing, broken or
   fine, search the code (`desktop/source`, `server/simeon`) or run it, and say
   what you searched. Read the log line before reasoning about a failure.
-- **Nothing is done until it has run in the packaged app on a Mac.** Tests
-  and a green build are not that. Say plainly what was and was not verified.
+- **Nothing is done until it has run in the app on a Mac or an iPhone.**
+  Tests and a green build are not that. Say plainly what was and was not
+  verified.
 - **Earlier names.** The product was built from other projects. Their names
   stay in the code only where `scripts/kept_names.json` keeps them, with a
   reason (`docs/kept-names.md`: wire contracts with code we do not build,
@@ -43,9 +51,10 @@ skills, connectors, avatars, approvals). Running the box servers:
   read as `SIMEON_<NAME>` with `CLAIDOR_<NAME>` still read; tokens, cookies,
   the data folder (`~/.simeon`, moved once from the earlier folder) and the Docker
   labels all read their earlier name. Keep that pattern for any new rename.
-- **The app's window** is the pinned upstream renderer (`desktop/NOTICE.md`).
-  Change it only through `desktop/scripts/lib/router-renderer-patch.mjs`, whose
-  record carries every touched file's hash.
+- **The web app's window** (and the retired Electron app's) is the pinned
+  upstream renderer (`desktop/NOTICE.md`). Change it only through
+  `desktop/scripts/lib/router-renderer-patch.mjs`, whose record carries every
+  touched file's hash.
 - **Server code:** never call `session.commit()` in request code (the session
   commits at the end of the request; see `server/CLAUDE.md`).
 - **Git:** no model names in commits or pull requests. PR bodies follow
@@ -54,9 +63,9 @@ skills, connectors, avatars, approvals). Running the box servers:
 ## Commands
 
 ```sh
-# Mac app (macOS arm64)
-cd desktop && npm ci && npm run bootstrap && npm run check && npm run package && npm run verify
-cd desktop && npm test                    # desktop tests (also run on Linux)
+# The agents' engine, built through the retired Electron app (macOS arm64)
+cd desktop && npm ci && npm run bootstrap && npm run check && npm run package && npm run publish:host-bundle
+cd desktop && npm test                    # engine and web app tests (also run on Linux)
 
 # Server
 cd server && docker compose up -d && uv sync && uv run task api
@@ -69,12 +78,13 @@ cd clients && pnpm typecheck && pnpm test && pnpm lint
 # Runner
 cd runner && npm test
 
-# iPhone app (builds, TestFlight: mobile/README.md)
-cd mobile && npm install && npx tsc --noEmit && npm test && npx expo run:ios
-
-# Native iPhone app (ios/README.md; the core's tests run on Linux too)
+# iPhone app (ios/README.md; the core's tests run on Linux too)
 cd ios/SimeonCore && swift test
 cd ios && xcodegen generate && open Simeon.xcodeproj
+
+# Mac app (mac/README.md, mac/STEPS.md)
+mac/scripts/build.sh
+cd mac && xcodegen generate && open SimeonMac.xcodeproj
 
 # Earlier names
 python3 scripts/check_names.py
@@ -87,6 +97,6 @@ python3 scripts/check_names.py
 - The server tests have failures that also fail on `main` (billing and
   subscription tests of the inherited shop code); compare against `main`
   before calling a failure new. The desktop suite passes on `main` and gates
-  `npm run package`; a red suite means no app is built.
+  `npm run package`; a red suite means no engine is built.
 - The shop code (checkout, subscriptions, payouts) is inherited and kept;
   Simeon does not sell through it today.

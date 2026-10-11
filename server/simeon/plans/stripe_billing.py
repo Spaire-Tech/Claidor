@@ -88,6 +88,12 @@ class StripeBilling:
     ) -> stripe_lib.Subscription:
         return await stripe_lib.Subscription.modify_async(subscription_id, **params)
 
+    async def cancel_subscription(
+        self, subscription_id: str
+    ) -> stripe_lib.Subscription:
+        """Ends the subscription now, with no proration (an account deleted from the app)."""
+        return await stripe_lib.Subscription.cancel_async(subscription_id)
+
     async def retrieve_payment_method(
         self, payment_method_id: str
     ) -> stripe_lib.PaymentMethod:

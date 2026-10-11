@@ -1,0 +1,602 @@
+{
+  "autoReview": {
+    "titles": {
+      "host_shell": {
+        "title": "The agent wants to run a command",
+        "subject": "command",
+        "location": "Runs on your local computer"
+      },
+      "box_shell": {
+        "title": "The agent wants to run a command",
+        "subject": "command",
+        "location": "Runs on Simeon's computer"
+      },
+      "mcp": {
+        "title": "The agent wants to use a connected service",
+        "subject": "details",
+        "location": null
+      },
+      "computer": {
+        "title": "Auto-review Paused This Action",
+        "subject": "details",
+        "location": "Runs on Simeon's computer"
+      },
+      "automation_write": {
+        "title": "Auto-review Paused This Action",
+        "subject": "details",
+        "location": null
+      },
+      "cloud_agent": {
+        "title": "Auto-review Paused This Action",
+        "subject": "details",
+        "location": null
+      },
+      "subagent": {
+        "title": "The agent wants to run a task",
+        "subject": "details",
+        "location": null
+      },
+      "browser": {
+        "title": "Auto-review Paused This Action",
+        "subject": "details",
+        "location": null
+      },
+      "undefined": {
+        "title": "Auto-review Paused This Action",
+        "subject": "details",
+        "location": null
+      }
+    },
+    "badges": {
+      "pending": null,
+      "approved": {
+        "kind": "success",
+        "label": "Allowed once"
+      },
+      "always": {
+        "kind": "success",
+        "label": "Always allowed"
+      },
+      "denied": {
+        "kind": "danger",
+        "label": "Denied"
+      },
+      "expired": {
+        "kind": "muted",
+        "label": "Expired"
+      },
+      "weird": {
+        "kind": "muted",
+        "label": "Status unavailable"
+      }
+    },
+    "truncate": [
+      {
+        "len": 340,
+        "out": true
+      },
+      {
+        "len": 341,
+        "tail": "aaaaa...[1 chars omitted]..."
+      },
+      {
+        "len": 1000,
+        "tail": "bb...[660 chars omitted]..."
+      }
+    ],
+    "redact": [
+      {
+        "in": "curl -H \"Authorization: Bearer abc.def\" https://user:pw@example.com/x?token=1#frag",
+        "out": "curl -H \"Authorization: … abc.def\" https://example.com/x"
+      },
+      {
+        "in": "export API_KEY=sk-abcdef123456 and ghp_ABCDEF123",
+        "out": "export API_KEY=… and …"
+      },
+      {
+        "in": "--password \"hunter 2\" --token=xyz",
+        "out": "--password … --token=…"
+      },
+      {
+        "in": "AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI",
+        "out": "…"
+      }
+    ],
+    "proposedRule": [
+      {
+        "in": null,
+        "out": null
+      },
+      {
+        "in": "   ",
+        "out": null
+      },
+      {
+        "in": "  Allow   running\n npm test  ",
+        "out": "Allow running npm test"
+      },
+      {
+        "in": "Allow curl to https://u:p@api.example.com/v1?key=1 with token=abc",
+        "out": "Allow curl to https://api.example.com/v1 with token=…"
+      }
+    ],
+    "settledNote": [
+      "A rule always allowing this was added to your Auto-review settings",
+      "A rule always allowing this was added to your Auto-review settings: “Allow npm test”",
+      null
+    ],
+    "summaryHidden": [
+      {
+        "summary": "Run a command on your local computer",
+        "hiddenWhenCommandPresent": true
+      },
+      {
+        "summary": "Run a command on Simeon's computer",
+        "hiddenWhenCommandPresent": true
+      },
+      {
+        "summary": "Run a command on the agent's VM",
+        "hiddenWhenCommandPresent": true
+      },
+      {
+        "summary": "Run “ls”",
+        "hiddenWhenCommandPresent": true
+      },
+      {
+        "summary": "Run \"ls\"",
+        "hiddenWhenCommandPresent": true
+      },
+      {
+        "summary": "Use Gmail tool send_email with {\"to\":\"a@b.c\"}",
+        "hiddenWhenCommandPresent": true
+      },
+      {
+        "summary": "List the files in Downloads on your local computer",
+        "hiddenWhenCommandPresent": false
+      }
+    ],
+    "cards": {
+      "hostShellPending": {
+        "ariaLabel": "Auto-review approval",
+        "title": "The agent wants to run a command",
+        "location": "Runs on your local computer",
+        "summaryLine": "List the files in Downloads on your local computer",
+        "description": "Reads your home folder.",
+        "disclosure": {
+          "button": "Show the command",
+          "buttonOpen": "Hide the command",
+          "text": "ls -la ~/Downloads",
+          "copyText": "ls -la ~/Downloads"
+        },
+        "actions": [
+          "Allow once (primary)",
+          "Always allow",
+          "Deny"
+        ],
+        "badge": {
+          "kind": "pending",
+          "label": "Approval needed"
+        },
+        "settledNote": null
+      },
+      "hostShellGenericSummary": {
+        "ariaLabel": "Auto-review approval",
+        "title": "The agent wants to run a command",
+        "location": "Runs on your local computer",
+        "summaryLine": null,
+        "description": "This action requires your approval.",
+        "disclosure": {
+          "button": "Show the command",
+          "buttonOpen": "Hide the command",
+          "text": "rm -rf build",
+          "copyText": "rm -rf build"
+        },
+        "actions": [
+          "Allow once (primary)",
+          "Always allow",
+          "Deny"
+        ],
+        "badge": {
+          "kind": "pending",
+          "label": "Approval needed"
+        },
+        "settledNote": null
+      },
+      "mcpPending": {
+        "ariaLabel": "Auto-review approval",
+        "title": "The agent wants to use a connected service",
+        "location": null,
+        "summaryLine": null,
+        "description": "Sends mail on your behalf.",
+        "disclosure": {
+          "button": "Show the details",
+          "buttonOpen": "Hide the details",
+          "text": "Send an email with Gmail",
+          "copyText": "Send an email with Gmail"
+        },
+        "actions": [
+          "Allow once (primary)",
+          "Always allow",
+          "Deny"
+        ],
+        "badge": {
+          "kind": "pending",
+          "label": "Approval needed"
+        },
+        "settledNote": null
+      },
+      "subagentPending": {
+        "ariaLabel": "Auto-review approval",
+        "title": "The agent wants to run a task",
+        "location": null,
+        "summaryLine": null,
+        "description": "r",
+        "disclosure": {
+          "button": "Show the details",
+          "buttonOpen": "Hide the details",
+          "text": "Run a task on Simeon's computer: “x”",
+          "copyText": "Run a task on Simeon's computer: “x”"
+        },
+        "actions": [
+          "Allow once (primary)",
+          "Always allow",
+          "Deny"
+        ],
+        "badge": {
+          "kind": "pending",
+          "label": "Approval needed"
+        },
+        "settledNote": null
+      },
+      "computerPending": {
+        "ariaLabel": "Auto-review approval",
+        "title": "Auto-review Paused This Action",
+        "location": "Runs on Simeon's computer",
+        "summaryLine": null,
+        "description": "r",
+        "disclosure": {
+          "button": "Show the details",
+          "buttonOpen": "Hide the details",
+          "text": "Click “Buy” on shop.example in the box browser",
+          "copyText": "Click “Buy” on shop.example in the box browser"
+        },
+        "actions": [
+          "Allow once (primary)",
+          "Always allow",
+          "Deny"
+        ],
+        "badge": {
+          "kind": "pending",
+          "label": "Approval needed"
+        },
+        "settledNote": null
+      },
+      "alwaysWithRule": {
+        "ariaLabel": "Auto-review approval",
+        "title": "The agent wants to run a command",
+        "location": "Runs on Simeon's computer",
+        "summaryLine": "Run npm test",
+        "description": null,
+        "disclosure": {
+          "button": "Show the command",
+          "buttonOpen": "Hide the command",
+          "text": "npm test",
+          "copyText": "npm test"
+        },
+        "actions": null,
+        "badge": {
+          "kind": "success",
+          "label": "Always allowed"
+        },
+        "settledNote": "A rule always allowing this was added to your Auto-review settings: “Allow running npm test”"
+      },
+      "optimisticApproved": {
+        "ariaLabel": "Auto-review approval",
+        "title": "The agent wants to run a command",
+        "location": "Runs on Simeon's computer",
+        "summaryLine": "s",
+        "description": null,
+        "disclosure": {
+          "button": "Show the command",
+          "buttonOpen": "Hide the command",
+          "text": "npm test",
+          "copyText": "npm test"
+        },
+        "actions": null,
+        "badge": {
+          "kind": "success",
+          "label": "Allowed once"
+        },
+        "settledNote": null
+      },
+      "expired": {
+        "ariaLabel": "Auto-review approval",
+        "title": "The agent wants to use a connected service",
+        "location": null,
+        "summaryLine": null,
+        "description": null,
+        "disclosure": {
+          "button": "Show the details",
+          "buttonOpen": "Hide the details",
+          "text": "s",
+          "copyText": "s"
+        },
+        "actions": null,
+        "badge": {
+          "kind": "muted",
+          "label": "Expired"
+        },
+        "settledNote": null
+      },
+      "longCommand": "xxxxxxxxxx...[60 chars omitted]..."
+    },
+    "alwaysAllow": {
+      "noRule": {
+        "resolution": "approved",
+        "written": null
+      },
+      "withRule": {
+        "resolution": "always",
+        "written": {
+          "isEnabled": true,
+          "allowInstructions": [
+            "a",
+            "Allow running npm test"
+          ],
+          "blockInstructions": []
+        }
+      },
+      "duplicateRule": {
+        "resolution": "always",
+        "written": {
+          "isEnabled": true,
+          "allowInstructions": [
+            "a"
+          ],
+          "blockInstructions": []
+        }
+      },
+      "fullList": [
+        "r1",
+        "r2",
+        "r3",
+        "r4",
+        "r5",
+        "r6",
+        "r7",
+        "r8",
+        "r9",
+        "r10",
+        "r11",
+        "r12",
+        "r13",
+        "r14",
+        "r15",
+        "r16",
+        "r17",
+        "r18",
+        "r19",
+        "new"
+      ],
+      "notLoaded": {
+        "resolution": "approved",
+        "written": null
+      },
+      "writeFails": {
+        "resolution": "approved",
+        "written": null
+      }
+    }
+  },
+  "localTool": {
+    "strings": {
+      "title": "Allow Simeon and all agents to run commands on your local computer?",
+      "description": "This applies to Simeon and every agent. It can always be changed in Settings.",
+      "dismissLabel": "Deny once",
+      "dismissTooltip": "Deny once (Esc)",
+      "failure": "Your answer didn't go through. Check your connection and try again.",
+      "idle": {
+        "kind": "idle"
+      },
+      "failed": {
+        "kind": "failed"
+      }
+    },
+    "outcome": {
+      "allowed": "Simeon can run commands on your computer this time.",
+      "always": "Simeon can run commands on your computer.",
+      "never": "Simeon cannot run commands on your computer.",
+      "denied": "Simeon was not allowed to run commands on your computer.",
+      "expired": "Simeon was not allowed to run commands on your computer.",
+      "pending": "Simeon can run commands on your computer this time."
+    },
+    "policy": {
+      "loading": {
+        "alwaysAllowDisabled": true,
+        "tooltip": "Always allow is disabled while team policy loads"
+      },
+      "readyNull": {
+        "alwaysAllowDisabled": false,
+        "tooltip": null
+      },
+      "readyAlways": {
+        "alwaysAllowDisabled": false,
+        "tooltip": null
+      },
+      "readyAsk": {
+        "alwaysAllowDisabled": true,
+        "tooltip": "Always allow is disabled by team policy"
+      },
+      "readyNever": {
+        "alwaysAllowDisabled": true,
+        "tooltip": "Always allow is disabled by team policy"
+      }
+    },
+    "answers": {
+      "allowOnce": [
+        [
+          "recordLocalToolApproval",
+          {
+            "approvalId": "req-1",
+            "action": "run-command",
+            "target": "ls -la"
+          }
+        ],
+        [
+          "resolveLocalToolPermission",
+          {
+            "entryId": "entry-1",
+            "requestId": "req-1",
+            "resolution": "allow-once",
+            "agentId": "agent-1"
+          }
+        ]
+      ],
+      "deny": [
+        [
+          "resolveLocalToolPermission",
+          {
+            "entryId": "entry-1",
+            "requestId": "req-1",
+            "resolution": "deny",
+            "agentId": "agent-1"
+          }
+        ]
+      ],
+      "always": [
+        [
+          "setLocalToolPermission",
+          {
+            "permission": "always"
+          }
+        ],
+        [
+          "resolveLocalToolPermission",
+          {
+            "entryId": "entry-1",
+            "requestId": "req-1",
+            "resolution": "always",
+            "agentId": "agent-1"
+          }
+        ]
+      ],
+      "alwaysCapped": [
+        [
+          "setLocalToolPermission",
+          {
+            "permission": "always"
+          }
+        ],
+        [
+          "recordLocalToolApproval",
+          {
+            "approvalId": "req-1",
+            "action": "run-command",
+            "target": "ls -la"
+          }
+        ],
+        [
+          "resolveLocalToolPermission",
+          {
+            "entryId": "entry-1",
+            "requestId": "req-1",
+            "resolution": "allow-once",
+            "agentId": "agent-1"
+          }
+        ]
+      ],
+      "alwaysSetFails": [
+        [
+          "setLocalToolPermission",
+          {
+            "permission": "always"
+          }
+        ],
+        [
+          "recordLocalToolApproval",
+          {
+            "approvalId": "req-1",
+            "action": "run-command",
+            "target": "ls -la"
+          }
+        ],
+        [
+          "resolveLocalToolPermission",
+          {
+            "entryId": "entry-1",
+            "requestId": "req-1",
+            "resolution": "allow-once",
+            "agentId": "agent-1"
+          }
+        ]
+      ],
+      "never": [
+        [
+          "setLocalToolPermission",
+          {
+            "permission": "never"
+          }
+        ],
+        [
+          "resolveLocalToolPermission",
+          {
+            "entryId": "entry-1",
+            "requestId": "req-1",
+            "resolution": "never",
+            "agentId": "agent-1"
+          }
+        ]
+      ],
+      "neverRefused": [
+        [
+          "setLocalToolPermission",
+          {
+            "permission": "never"
+          }
+        ],
+        [
+          "resolveLocalToolPermission",
+          {
+            "entryId": "entry-1",
+            "requestId": "req-1",
+            "resolution": "deny",
+            "agentId": "agent-1"
+          }
+        ]
+      ]
+    },
+    "where": {
+      "pending": "dock above the composer",
+      "allowed": "transcript outcome line",
+      "denied": "transcript outcome line",
+      "always": "transcript outcome line",
+      "never": "transcript outcome line",
+      "expired": "hidden"
+    }
+  },
+  "settings": {
+    "order": [
+      "always",
+      "ask",
+      "never"
+    ],
+    "default": "ask",
+    "labels": [
+      "Always allow",
+      "Ask every time",
+      "Never allow"
+    ],
+    "disabledUnderCeiling": {
+      "always": [],
+      "ask": [
+        "always"
+      ],
+      "never": [
+        "always",
+        "ask"
+      ],
+      "none": []
+    }
+  },
+  "rules": {}
+}

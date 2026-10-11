@@ -153,6 +153,45 @@ the login and poll URLs come from the first two.
 **Not yet verified:** a full sign-in round trip from the packaged app against
 `api.simeonlabs.com`, and the refresh grace in use on a Mac.
 
+### Deleting an account
+
+Apple asks every app that makes accounts to let people delete theirs from
+inside it. Settings › Delete Account on the iPhone (under Sign Out) and in the
+Swift Mac app (Settings › General › Account) asks first, then calls
+`DELETE /desktop/api/account` (`server/simeon/desktop/account_deletion.py`).
+The Electron app and the web app have no button yet. In order:
+
+1. The subscription ends now at Stripe (`stripe_billing.cancel_subscription`).
+2. Each cloud computer the person ever had is removed with both of its volumes
+   (`/workspace` and the data folder).
+3. The apps signed in through the apps provider are disconnected there, and
+   each call's transcript is deleted at the voice provider.
+4. The person's rows go (`account_repository.py`: memory, call records,
+   routines, listeners, sharing, cloud agents, their own skills and the skill
+   archives in file storage, the computers' rows, every session, so every
+   device is signed out).
+5. The user is anonymised (`soft_delete_user`).
+
+Kept, as the Privacy Policy says: usage and subscription rows (billing
+records) and the trial redemption.
+
+Steps 1 and 2 must succeed. When Stripe or a computer's server cannot be
+reached, nothing else is done, the server answers `503` with the sentence the
+app shows ("… Try again in a few minutes."), and the person is still signed
+in. Both steps are safe to repeat.
+
+When it misbehaves:
+
+- `desktop.account.delete_blocked step=subscription|computer`: the step that
+  stopped it, with the error.
+- `desktop.account.delete_incomplete incomplete=[…]`: an app sign-in, a call
+  transcript or a skill archive the provider would not delete. The account is
+  gone; finish those by hand at the provider.
+- `desktop.account.deleted`: done, with what was removed.
+
+**Not yet verified:** a deletion from the packaged iPhone or Mac app against
+`api.simeonlabs.com`.
+
 ---
 
 ## 2. The model proxy, model roles, prices and spend guards

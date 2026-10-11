@@ -1,0 +1,152 @@
+import AppKit
+import CoreText
+import SwiftUI
+
+/**
+ * The Electron window's colours, light and dark, as its stylesheet computes
+ * them (measured from the merged window, mac/STEPS.md). Every screen takes
+ * its colours from here, so a colour is set once.
+ */
+struct Look {
+  let dark: Bool
+
+  init(_ scheme: ColorScheme) { dark = scheme == .dark }
+
+  // MARK: Text (`--sand-text-primary` and its 0.6 and 0.4 shades)
+
+  var ink: Color { dark ? Color(hex: 0xfcfcfc) : Color(hex: 0x141414) }
+  var inkSecondary: Color { ink.opacity(0.6) }
+  var inkTertiary: Color { ink.opacity(0.4) }
+
+  /** The window's blue for titles and Connect apps (`--simeon-foreground`, `#8cb8e8` on dark). */
+  var blue: Color { dark ? Color(hex: 0x8cb8e8) : Color(hex: 0x255a93) }
+  /** Connect apps under the pointer. */
+  var blueHover: Color { dark ? Color(hex: 0xa9ccf0) : Color(hex: 0x1b4a7d) }
+  /** A link's blue (Reopen link). */
+  var link: Color { dark ? Color(hex: 0x459ffe) : Color(hex: 0x0c64c1) }
+
+  // MARK: Grounds
+
+  /** The chat's ground and the sign-in screens' (`--sand-bg-base`). */
+  var ground: Color { dark ? Color(hex: 0x070707) : Color(hex: 0xfcfcfc) }
+  /**
+   * The sidebar's paint over the Mac's sidebar material, at 93%: the
+   * Electron window's `--simeon-bg-chrome` (`#f7f7f7`, `#111111` on dark)
+   * taken halfway to the chat's ground (the founder, 11 October 2026: "as
+   * it was before but less accented").
+   */
+  var sidebarPaint: Color { (dark ? Color(hex: 0x0c0c0c) : Color(hex: 0xfafafa)).opacity(0.93) }
+  /** The sidebar's right edge: the text colour at 6% (the window's 10%, made fainter), half a point. */
+  var sidebarEdge: Color { ink.opacity(0.06) }
+
+  // MARK: The sidebar's rows
+
+  /** The open agent's row: white with a hairline and a soft shadow (dark: white at 12%). */
+  var rowSelected: Color { dark ? Color.white.opacity(0.12) : Color.white }
+  var rowSelectedHairline: Color { dark ? Color.white.opacity(0.08) : Color(red: 20 / 255, green: 30 / 255, blue: 60 / 255).opacity(0.07) }
+  var rowSelectedShadow: Color { dark ? Color.black.opacity(0.30) : Color(red: 20 / 255, green: 30 / 255, blue: 60 / 255).opacity(0.04) }
+  /** An agent's title tag in a row (the iPhone's: `#252527` on dark, the system's quiet fill on light). */
+  var tag: Color { dark ? Color(hex: 0x252527) : Color(hex: 0x767680, opacity: 0.12) }
+  /** A row under the pointer (`--simeon-bg-hover`). */
+  var rowHover: Color { Color(red: 119 / 255, green: 119 / 255, blue: 119 / 255).opacity(dark ? 0.173 : 0.09) }
+  /** The row's corner radius: 14 light, 10 dark, as the window draws them. */
+  var rowRadius: CGFloat { dark ? 10 : 14 }
+
+  /** Unread (`--simeon-accent`) and working (`--simeon-green`). */
+  let unread = Color(hex: 0x1084fe)
+  let working = Color(hex: 0x00c972)
+
+  // MARK: Connect apps' logo tiles
+
+  var tile: Color { dark ? Color(hex: 0x2c2c2e) : Color.white }
+  var tileHairline: Color { dark ? Color.white.opacity(0.10) : Color.black.opacity(0.08) }
+  var tileShadow: Color { dark ? Color.black.opacity(0.45) : Color.black.opacity(0.10) }
+
+  /** The account's initials. */
+  var initials: Color { dark ? Color.white.opacity(0.86) : Color.black.opacity(0.72) }
+
+  // MARK: Sign-in
+
+  /** The Sign in button: near black on both themes, its words the light ground's colour. */
+  let signInButton = Color(hex: 0x121212)
+  let signInLabel = Color(hex: 0xfcfcfc)
+
+  // MARK: The chat (B01, B03)
+
+  /** The person's bubbles and the send button: the window's blue (`#1f5087` on dark). */
+  var yours: Color { dark ? Color(hex: 0x1f5087) : Color(hex: 0x255a93) }
+  let yoursText = Color(hex: 0xfcfcfc)
+  /** An agent's bubbles, files and cards: light grey with a hairline and a soft shadow (dark: `#262626`, no shadow). */
+  var theirs: Color { dark ? Color(hex: 0x262626) : Color(hex: 0xe9e9eb) }
+  var theirsText: Color { dark ? Color(hex: 0xfcfcfc) : Color(hex: 0x1d1d1f) }
+  var theirsHairline: Color { dark ? .clear : Color(red: 20 / 255, green: 30 / 255, blue: 60 / 255).opacity(0.07) }
+  var theirsShadow: Color { dark ? .clear : Color(red: 20 / 255, green: 30 / 255, blue: 60 / 255).opacity(0.04) }
+  /** The chat's head over the messages: the ground at 78%, blurred. */
+  var headerVeil: Color { ground.opacity(0.78) }
+  /** A reaction under a bubble, ringed with the ground. */
+  var reaction: Color { dark ? Color(hex: 0x151515) : Color(hex: 0xf3f3f3) }
+  var placeholder: Color { ink.opacity(0.3) }
+
+  // MARK: Message text (step 2b)
+
+  /** Inline code: red (`#ff5667` on dark) on a grey wash. */
+  var codeInk: Color { dark ? Color(hex: 0xff5667) : Color(hex: 0xc21d2e) }
+  var codeWash: Color { Color(red: 119 / 255, green: 119 / 255, blue: 119 / 255).opacity(dark ? 0.173 : 0.09) }
+  // MARK: Cards (step 2c)
+
+  /** A plain button's and a status pill's grey (`rgba(119,119,119,.063)`). */
+  var wash: Color { Color(red: 119 / 255, green: 119 / 255, blue: 119 / 255).opacity(dark ? 0.14 : 0.063) }
+  /** "Added" on an app's card: green on a green wash. */
+  var added: Color { dark ? Color(hex: 0x38d591) : Color(hex: 0x009957) }
+  var addedWash: Color { Color(hex: 0x00c972).opacity(dark ? 0.173 : 0.09) }
+  /** An app's logo tile (`sand-tool-icon--logo`). */
+  var logoTile: Color { Color(red: 119 / 255, green: 119 / 255, blue: 119 / 255).opacity(dark ? 0.32 : 0.17) }
+
+  /** A code block's lines: the text at 92% (`#d6d6dd` on dark). */
+  var codeText: Color { dark ? Color(hex: 0xd6d6dd) : ink.opacity(0.92) }
+
+  // MARK: The previews (step 2c)
+
+  /** The window's chrome (`--simeon-bg-chrome`): the file preview's head. */
+  var chrome: Color { dark ? Color(hex: 0x111111) : Color(hex: 0xf7f7f7) }
+  /** Behind the file preview: the text colour at 90% (95% on dark). */
+  var fileScrim: Color { Color(red: 20 / 255, green: 20 / 255, blue: 20 / 255).opacity(dark ? 0.95 : 0.898) }
+  /** A spreadsheet's head row and row numbers: the text mixed 6% into the ground. */
+  var tableHead: Color { dark ? Color(hex: 0x161616) : Color(hex: 0xeeeeee) }
+  /** A chosen cell (`--simeon-bg-selected`). */
+  var selectedCell: Color { Color(red: 127 / 255, green: 127 / 255, blue: 127 / 255).opacity(0.18) }
+  /** The window's warning yellow (`--simeon-warn`): find's matches and a message jumped to. */
+  let warn = Color(hex: 0xf1b467)
+  /** The words of find's current match on the yellow (`#1f1f1f`). */
+  let onWarn = Color(hex: 0x1f1f1f)
+  /** A raised surface (`--sand-bg-elevated`): find's bar. */
+  var elevated: Color { dark ? Color(hex: 0x181818) : Color(hex: 0xfcfcfc) }
+  /** Red words (`--sand-text-danger`): find's count when nothing matches. */
+  var danger: Color { dark ? Color(hex: 0xff5667) : Color(hex: 0xc21d2e) }
+  /** A diagram's card in its full-screen view. */
+  var diagramCanvas: Color { elevated }
+  /** A JSON file's keys, strings, numbers and true, false and null. */
+  var jsonKey: Color { dark ? Color(hex: 0xffaf38) : Color(hex: 0xc27400) }
+  var jsonString: Color { dark ? Color(hex: 0x38d591) : Color(hex: 0x009957) }
+  var jsonNumber: Color { dark ? Color(hex: 0xff8838) : Color(hex: 0xc24e00) }
+  var jsonKeyword: Color { dark ? Color(hex: 0xa97efe) : Color(hex: 0x6e44c1) }
+}
+
+extension Color {
+  /** An sRGB colour from its hex value, 0xRRGGBB. */
+  init(hex: UInt32, opacity: Double = 1) {
+    self.init(.sRGB, red: Double((hex >> 16) & 0xff) / 255, green: Double((hex >> 8) & 0xff) / 255, blue: Double(hex & 0xff) / 255, opacity: opacity)
+  }
+}
+
+/** The faces the window sets: Apple's system font (the window's `-apple-system`), and Suravaram for the sign-in wordmark. */
+enum Faces {
+  /** "Simeon" on the sign-in screen (`Simeon Suravaram`, 68 px), from the app's own copy of the font. */
+  static let wordmark = "Suravaram"
+
+  /** Makes the wordmark's face known to the app, once, at launch. */
+  static func register() {
+    guard let url = Bundle.main.url(forResource: "Suravaram-Regular", withExtension: "ttf") else { return }
+    CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
+  }
+}

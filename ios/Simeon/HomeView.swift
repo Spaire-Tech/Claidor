@@ -1,13 +1,16 @@
 import SwiftUI
+#if os(iOS)
 import UIKit
+#endif
 import SimeonCore
 
-/** The sheets the list opens: New Agent and New Group Chat from the compose button, Settings from the account button (search is the list's own field). */
+/** The sheets the list opens: New Agent and New Group Chat from the compose button, Settings from the account button, Usage & Billing and Plugins from search (search is the list's own field). */
 enum HomeSheet: String, Identifiable {
-  case newAgent, newGroup, settings
+  case newAgent, newGroup, settings, usage, plugins
   var id: String { rawValue }
 }
 
+#if os(iOS)
 /**
  * The list, as Messages draws it (the founder, 9 October 2026: "exactly like
  * iMessage"): rows with the butterfly, the name, the last line's time and a
@@ -21,7 +24,8 @@ enum HomeSheet: String, Identifiable {
  * menu, as Messages does (Pin, Mark as Read, Hide Alerts, Delete; then the
  * Mac's Edit Profile, Duplicate, Hide from List). A swipe does the row's
  * most used two each way. Pinned agents sit in a grid above the rows,
- * shared with the Mac through the host's `pinnedAgentIds`.
+ * shared with the Mac through the host's `pinnedAgentIds`; under them the
+ * Mac's sections, when the person has made any (ListSections.swift).
  */
 struct HomeView: View {
   /** A screen to open at launch (`--screen=`, the screenshots). */
@@ -35,127 +39,104 @@ struct HomeView: View {
   @State private var showsHidden = false
   @State private var query = ""
   @State private var filter = ListFilter.all
-  /** The search field has the focus: the list gives way to search (SearchResults) until it is left empty. */
+  /** The Mac's sections: which are folded, and the section being named or deleted. */
+  @State private var listSections = ListSections()
+  /** Select Chats: the chats picked to move or delete together (the Mac's picked rows). */
+  @State private var selecting = false
+  @State private var picked = Set<String>()
+  @State private var deletingPicked: [Agent] = []
+  /** The Mac's org chart, full screen (OrgChart.swift), and whether this account has it (`isAgentNetworkEnabled`). */
+  @State private var showsOrgChart = false
+  @State private var orgChartOn = false
+
+  /** Org Chart where it may be opened: the network on and an agent to show (the Mac's ⌘K and "/"). */
+  private var openOrgChart: (() -> Void)? {
+    guard orgChartOn && store.hasAgents else { return nil }
+    return { letGoOfSearch(); showsOrgChart = true }
+  }
+  /** The search field has the focus. */
   @FocusState private var searchFocused: Bool
+  /**
+   * Search is open (SearchResults over the list): from the field's first focus until it is closed (×, the swipe down,
+   * a result opened with nothing typed). Not the focus itself: scrolling the results puts the keyboard away, and with
+   * nothing typed that closed search under the finger.
+   */
+  @State private var searching = false
+  private var inSearch: Bool { searching || !query.isEmpty }
+
+  /** Search closed: the words cleared, the keyboard away. */
+  private func closeSearch() {
+    query = ""
+    searchFocused = false
+    searching = false
+  }
+
+  /** A result opened: the keyboard away; search stays for coming back to only with words in it. */
+  private func letGoOfSearch() {
+    searchFocused = false
+    if query.isEmpty { searching = false }
+  }
 
   /** The filter menu's choice, as Messages': every chat, or only the unread ones. */
   enum ListFilter { case all, unread }
 
-  /** The rows: every listed chat, or those the search finds (hidden ones too) by name, title, description or last line. */
-  private var shown: [Agent] {
-    let words = query.trimmingCharacters(in: .whitespaces)
-    guard !words.isEmpty else { return filter == .unread ? store.listed.filter(\.hasUnread) : store.listed }
-    return store.agents.filter { agent in
-      agent.name.localizedCaseInsensitiveContains(words) || agent.title.localizedCaseInsensitiveContains(words)
-        || agent.description.localizedCaseInsensitiveContains(words) || agent.previewLine.localizedCaseInsensitiveContains(words)
-    }
-  }
-
+  // Nothing here reads the roster: an agent's every step changes it, and this body holds the whole screen (the bar, the
+  // sheets, the chat pushed over the list). The rows read it (AgentList), and only while they are on screen.
   var body: some View {
     NavigationStack(path: $path) {
-      List {
-        if query.isEmpty && filter == .all && !store.pinned.isEmpty {
-          PinGrid(pins: store.pinned, open: open, menu: menu)
-            .listRowBackground(Ink.listGround)
-            .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 10, trailing: 12))
-            .listRowSeparator(.hidden)
-        }
-        ForEach(shown) { agent in
-          Button { open(agent.id) } label: {
-            // Drawn again only when its own agent changes, not on every change to the roster.
-            AgentRow(agent: agent, members: store.members(of: agent)).equatable()
-          }
-          .contextMenu { menu(agent) } preview: { ChatPeek(agentId: agent.id).environment(store) }
-          .swipeActions(edge: .leading, allowsFullSwipe: true) {
-            Button { Task { await store.setUnread(agent.id, !agent.hasUnread) } } label: {
-              Label(agent.hasUnread ? "Read" : "Unread", systemImage: agent.hasUnread ? "message" : "message.badge")
-            }
-            .tint(Ink.unread)
-            Button { Task { await store.setPinned(agent.id, !store.pinnedIds.contains(agent.id)) } } label: {
-              Label(store.pinnedIds.contains(agent.id) ? "Unpin" : "Pin", systemImage: store.pinnedIds.contains(agent.id) ? "pin.slash" : "pin")
-            }
-            .tint(Ink.pinSwipe)
-          }
-          .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-            Button { deleting = agent } label: { Label("Delete", systemImage: "trash") }
-              .tint(Ink.callEnd)
-            Button { Task { await store.setNotify(agent.id, !agent.notifyOnUpdates) } } label: {
-              Label(agent.notifyOnUpdates ? "Hide Alerts" : "Show Alerts", systemImage: agent.notifyOnUpdates ? "bell.slash" : "bell")
-            }
-            .tint(Ink.hideSwipe)
-          }
-          .listRowBackground(Ink.listGround)
-          // The margin on the left holds the unread dot; the hairline below starts where the text does (AgentRow).
-          .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 16))
-          .listRowSeparatorTint(Ink.hairline)
-        }
-        if query.isEmpty && filter == .all && !store.hiddenAgents.isEmpty && !store.listed.isEmpty {
-          Button { showsHidden = true } label: {
-            HStack {
-              Text("Hidden Agents")
-              Spacer()
-              Text("\(store.hiddenAgents.count)").monospacedDigit()
-              Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Ink.tertiary)
-            }
-            .font(.system(size: 15))
-            .foregroundStyle(Ink.secondary)
-            .contentShape(.rect)
-          }
-          .accessibilityHint("Shows the agents hidden from the list")
-          .listRowBackground(Ink.listGround)
-          .listRowInsets(EdgeInsets(top: 12, leading: 22, bottom: 12, trailing: 16))
-          .listRowSeparator(.hidden)
-        }
-      }
-      .listStyle(.plain)
-      .scrollContentBackground(.hidden)
-      .background(Ink.listGround)
-      // Rows move to their new place when an agent answers, is pinned or hidden.
-      .animation(.spring(response: 0.38, dampingFraction: 0.86), value: shown.map(\.id))
-      .animation(.spring(response: 0.38, dampingFraction: 0.86), value: store.pinnedIds)
-      .overlay {
-        if shown.isEmpty && (store.pinned.isEmpty || !query.isEmpty) && !store.isLoading {
-          VStack(spacing: 14) {
-            Text(!query.isEmpty ? "No results" : filter == .unread ? "No unread chats" : "No saved agents yet.").font(.system(size: 15.6)).foregroundStyle(Ink.secondary)
-            if query.isEmpty && !store.hiddenAgents.isEmpty {
-              Button("Show Hidden Agents") { showsHidden = true }
-                .buttonStyle(GreyButtonStyle())
-            }
-          }
-        }
-      }
+      // Search covers the list and finds on its own (SearchResults): the list holds its rows meanwhile. It was given the
+      // words too and filtered and laid out every row again on each letter, under the results, animated (the founder,
+      // 11 October 2026: "whenever i click search for the first time, it bugs. lags").
+      AgentList(query: "", filter: filter, covered: !path.isEmpty || inSearch, open: open, menu: menu, deleting: $deleting, showsHidden: $showsHidden, sections: listSections, selecting: selecting, picked: $picked,
+                recover: { ComputerAsks.shared.ask = .recover(fromSidebar: true) })
       // At the bottom, as Messages has them: the search field, and new chat at the right. Our own bar: the system's
       // search in the bottom toolbar was set up again on every redraw of the list ("Ignoring searchBarPlacement…").
       // Search, with all the Mac's search has, over the list while the field is in use.
       .overlay {
-        if searchFocused || !query.isEmpty {
-          SearchResults(
-            query: query,
-            openChat: { id in searchFocused = false; open(id) },
-            openEntry: { agentId, entryId in
-              searchFocused = false
-              store.revealing[agentId] = entryId
-              open(agentId)
-            },
-            openRoutine: { hit in searchFocused = false; profile = AgentRef(id: hit.agentId, routineId: hit.routine.id) },
-            openSheet: { next in searchFocused = false; sheet = next },
-            showHidden: { searchFocused = false; showsHidden = true }
-          )
-          .transition(.opacity)
+        ZStack {
+          if inSearch {
+            SearchResults(
+              query: query,
+              openChat: { id in letGoOfSearch(); open(id) },
+              openEntry: { agentId, entryId in
+                letGoOfSearch()
+                store.revealing[agentId] = entryId
+                open(agentId)
+              },
+              openRoutine: { hit in letGoOfSearch(); profile = AgentRef(id: hit.agentId, routineId: hit.routine.id) },
+              openSheet: { next in letGoOfSearch(); sheet = next },
+              showHidden: { letGoOfSearch(); showsHidden = true },
+              updateComputer: { letGoOfSearch(); ComputerAsks.shared.ask = .update },
+              openOrgChart: openOrgChart,
+              close: closeSearch
+            )
+            .transition(.opacity)
+          }
+        }
+        // The fade of the results only; on the whole screen it animated the list's layout under them too.
+        .animation(.easeOut(duration: 0.2), value: inSearch)
+      }
+      .onChange(of: searchFocused) { _, focused in if focused { searching = true } }
+      .safeAreaBar(edge: .bottom, spacing: 0) {
+        if selecting {
+          SelectionBar(picked: picked, sections: listSections, delete: {
+            deletingPicked = picked.compactMap { store.agent($0) }
+          }, done: endSelecting)
+        } else {
+          ListBottomBar(query: $query, focus: $searchFocused, searching: inSearch, close: closeSearch, newAgent: { sheet = .newAgent }, newGroup: { sheet = .newGroup })
         }
       }
-      .animation(.easeOut(duration: 0.2), value: searchFocused || !query.isEmpty)
-      .safeAreaBar(edge: .bottom, spacing: 0) {
-        ListBottomBar(query: $query, focus: $searchFocused, newAgent: { sheet = .newAgent }, newGroup: { sheet = .newGroup })
-      }
-      .navigationBarTitleDisplayMode(.inline)
+      .inlineBarTitle()
       .navigationTitle("Messages")
       .toolbar {
         // The account at the top left, straight to Settings.
-        ToolbarItem(placement: .topBarLeading) {
+        ToolbarItem(placement: .leadingBar) {
           Button { sheet = .settings } label: {
-            // The initials once the account is known (remembered from the last launch, then the profile); a person, never a "?", before that.
-            if let initials = store.account?.initials, !initials.isEmpty {
+            // The account's picture when it has one (the Mac's account button); else the initials once the account is known
+            // (remembered from the last launch, then the profile); a person, never a "?", before that.
+            if store.account?.pictureURL != nil {
+              AccountFace(size: 32)
+            } else if let initials = store.account?.initials, !initials.isEmpty {
               Text(initials).font(.system(size: 15, weight: .semibold))
             } else {
               Image(systemName: "person.fill").font(.system(size: 14, weight: .semibold))
@@ -164,24 +145,20 @@ struct HomeView: View {
           .accessibilityLabel("Settings")
         }
         // The filter at the top right, as Messages': every chat, the hidden ones, or only the unread.
-        ToolbarItem(placement: .topBarTrailing) {
-          Menu {
-            Toggle(isOn: Binding(get: { filter == .all }, set: { if $0 { filter = .all } })) {
-              Label("Messages", systemImage: "bubble.left.and.bubble.right")
-            }
-            Button { showsHidden = true } label: { Label("Hidden Agents", systemImage: "eye.slash") }
-              .disabled(store.hiddenAgents.isEmpty)
-            Section("Filter By") {
-              Toggle(isOn: Binding(get: { filter == .unread }, set: { filter = $0 ? .unread : .all })) {
-                Label("Unread", systemImage: "message.badge")
-              }
-            }
-          } label: {
-            Image(systemName: "line.3.horizontal.decrease")
+        ToolbarItem(placement: .trailingBar) {
+          if selecting {
+            Button("Done", action: endSelecting).fontWeight(.semibold)
+          } else {
+            ListFilterMenu(filter: $filter, showsHidden: $showsHidden, openOrgChart: openOrgChart, select: {
+              closeSearch()
+              withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) { selecting = true }
+            })
           }
-          .accessibilityLabel("Filter")
         }
       }
+      // Behind every screen of the stack, while one slides in and before its first frame: the app's ground, never the
+      // system's black (the founder, 11 October 2026: "the darkest background coming up sometimes").
+      .containerBackground(Ink.listGround, for: .navigation)
       .navigationDestination(for: String.self) { agentId in
         ChatView(agentId: agentId, opening: openingCall(for: agentId))
       }
@@ -193,23 +170,30 @@ struct HomeView: View {
     .tint(Ink.primary)
     .sheet(item: $sheet) { which in
       Group {
+        // Each sheet on the app's own ground, never the system's sheet grey at its edges (the founder, 11 October 2026).
         switch which {
         case .newAgent:
-          NewAgentSheet { id in open(id) }
+          NewAgentSheet { id in open(id) }.presentationBackground(Ink.ground)
         case .newGroup:
-          NewGroupSheet { id in open(id) }
+          NewGroupSheet { id in open(id) }.presentationBackground(Ink.ground)
         case .settings:
-          SettingsSheet()
+          SettingsSheet().presentationBackground(Ink.groupedGround)
+        case .usage:
+          NavigationStack { UsagePage().toolbar { ToolbarItem(placement: .leadingBar) { CloseButton() } } }
+            .presentationBackground(Ink.groupedGround)
+        case .plugins:
+          ConnectAppsSheet().presentationBackground(Ink.ground)
         }
       }
       .problemAlert()
     }
-    .sheet(item: $profile) { ref in AgentPageSheet(agentId: ref.id, routineId: ref.routineId).problemAlert() }
+    .sheet(item: $profile) { ref in AgentPageSheet(agentId: ref.id, routineId: ref.routineId).problemAlert().presentationBackground(Ink.ground) }
     .sheet(isPresented: $showsHidden) {
       HiddenAgentsSheet { id in
         showsHidden = false
         open(id)
       }
+      .presentationBackground(Ink.groupedGround)
     }
     .alert(deleting.map { "Delete “\($0.name)”" } ?? "", isPresented: Binding(get: { deleting != nil }, set: { shown in if !shown && deleting != nil { deleting = nil } }), presenting: deleting) { agent in
       Button("Cancel", role: .cancel) {}
@@ -223,23 +207,48 @@ struct HomeView: View {
         ? "This permanently deletes the group and its chat history. The Agents in it are not deleted and remain available individually. This can't be undone."
         : "This permanently deletes the agent and its chat history. This can't be undone.")
     }
+    .modifier(SectionDialogs(sections: listSections))
+    // Delete for the picked chats, in the Mac's words ("Delete 2 agents").
+    .alert(deletingPicked.isEmpty ? "" : AgentDeletion.title(deletingPicked), isPresented: Binding(get: { !deletingPicked.isEmpty }, set: { if !$0 { deletingPicked = [] } })) {
+      Button("Cancel", role: .cancel) { deletingPicked = [] }
+      Button("Delete", role: .destructive) {
+        let ids = deletingPicked.map(\.id)
+        deletingPicked = []
+        Task {
+          if await store.delete(ids) {
+            Haptics.success()
+            endSelecting()
+          } else {
+            store.problem = AgentDeletion.failure
+          }
+        }
+      }
+    } message: {
+      Text(deletingPicked.isEmpty ? "" : AgentDeletion.message(deletingPicked))
+    }
     .problemAlert()
-    .task(id: store.agents.isEmpty) { openAtLaunch() }
+    .modifier(CallHaptics())
+    // Simeon's computer: its pills, its dialogs, the agent it follows (ComputerStates.swift).
+    .modifier(ComputerStates())
+    .orgChart(isPresented: $showsOrgChart, isOn: $orgChartOn, openChat: open)
+    .task(id: store.hasAgents) { openAtLaunch() }
     // A tapped notification opens that agent's chat (once the roster has it).
-    .task(id: OpenRequest(agent: Notifications.shared.openAgent, ready: !store.agents.isEmpty)) {
+    .task(id: OpenRequest(agent: Notifications.shared.openAgent, ready: store.hasAgents)) {
       guard let agentId = Notifications.shared.openAgent, store.agent(agentId) != nil else { return }
       Notifications.shared.openAgent = nil
       open(agentId)
     }
   }
 
-  /** A chat's menu on a long press, Messages' four first (Pin, Mark as Read, Hide Alerts, Delete), then the Mac's own (Edit Profile, Duplicate, Hide from List, Copy conversation ID). */
+  /** A chat's menu on a long press, Messages' four first (Pin, Mark as Read, Hide Alerts, Delete) with the Mac's Move to after Pin, then the Mac's own (Edit Profile, Duplicate, Hide from List, Copy conversation ID). */
   @ViewBuilder
   private func menu(_ agent: Agent) -> some View {
     let isPinned = store.pinnedIds.contains(agent.id)
     Button { Task { await store.setPinned(agent.id, !isPinned) } } label: {
       Label(isPinned ? "Unpin" : "Pin", systemImage: isPinned ? "pin.slash" : "pin")
     }
+    // Pinned chats stay with the pins, as on the Mac: only the rest go into sections.
+    if !isPinned { MoveToSectionMenu(agentId: agent.id, sections: listSections) }
     Button { Task { await store.setUnread(agent.id, !agent.hasUnread) } } label: {
       Label(agent.hasUnread ? "Mark as Read" : "Mark as Unread", systemImage: agent.hasUnread ? "checkmark.message" : "message.badge")
     }
@@ -248,13 +257,20 @@ struct HomeView: View {
     }
     Button(role: .destructive) { deleting = agent } label: { Label("Delete", systemImage: "trash") }
     Section {
-      if !agent.isGroup {
-        Button { profile = AgentRef(id: agent.id) } label: { Label("Edit Profile", systemImage: "pencil") }
+      // A group has its own page too (its name, description, routines and picture), as on the Mac; no Duplicate for a
+      // group or a chat shared from another account (C05).
+      Button { profile = AgentRef(id: agent.id) } label: { Label("Edit Profile", systemImage: "pencil") }
+      if !agent.isGroup && !agent.isRemoteRoom {
         Button { Task { await store.duplicate(agent.id) } } label: { Label("Duplicate", systemImage: "plus.square.on.square") }
       }
       Button { Task { await store.setHidden(agent.id, true) } } label: { Label("Hide from List", systemImage: "eye.slash") }
       Button { UIPasteboard.general.string = agent.id } label: { Label("Copy Conversation ID", systemImage: "doc.on.doc") }
     }
+  }
+
+  private func endSelecting() {
+    withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) { selecting = false }
+    picked = []
   }
 
   private struct OpenRequest: Equatable {
@@ -295,10 +311,273 @@ struct HomeView: View {
   }
 }
 
+/**
+ * The list's rows: the pins, the chats (or what the search finds), Hidden
+ * Agents. The roster is read here only while the rows are on screen and
+ * still: under a chat pushed over the list, or while the list scrolls, they
+ * are held as they were. An agent at work changes the roster at each step,
+ * and the list was drawn again under the open chat each time, holding the
+ * screen still for a third of a second (the founder's log, 10 October 2026);
+ * a row could also move under the finger while the list scrolled.
+ */
+private struct AgentList<Actions: View>: View {
+  let query: String
+  let filter: HomeView.ListFilter
+  let covered: Bool
+  let open: (String) -> Void
+  @ViewBuilder let menu: (Agent) -> Actions
+  @Binding var deleting: Agent?
+  @Binding var showsHidden: Bool
+  let sections: ListSections
+  /** Select Chats: a circle on each row, a tap picks it. */
+  let selecting: Bool
+  @Binding var picked: Set<String>
+  /** Recover computer's question, from the card shown when the agents can't be read. */
+  var recover: (() -> Void)? = nil
+  @Environment(AppStore.self) private var store
+  @State private var held = Held()
+  @State private var scrolling = false
+
+  /** The rows last read, kept by reference: keeping them is not a change the list is drawn again for. */
+  final class Held { var rows: Rows? }
+
+  /** Everything the rows show, read from the store at once. */
+  struct Rows {
+    var shown: [Agent] = []
+    var pinned: [Agent] = []
+    var pinnedIds: Set<String> = []
+    var members: [String: [Agent]] = [:]
+    var drafts: [String: String] = [:]
+    var hiddenCount = 0
+    var anyListed = false
+    var isLoading = false
+    /** The Mac's sections, drawn over their chats; empty when the person has none, or while filtering or searching. */
+    var blocks: [SidebarSections.Shown] = []
+    /** The agents could not be read: the Mac's card with nothing to show, its line over a list already shown. */
+    var rosterFailed = false
+  }
+
+  var body: some View {
+    let rows = current()
+    let searching = !query.trimmingCharacters(in: .whitespaces).isEmpty
+    List {
+      if rows.rosterFailed && !(rows.shown.isEmpty && rows.pinned.isEmpty) {
+        RosterLine()
+          .listRowBackground(Ink.listGround)
+          .listRowInsets(EdgeInsets(top: 2, leading: 22, bottom: 6, trailing: 22))
+          .listRowSeparator(.hidden)
+      }
+      if !searching && filter == .all && !rows.pinned.isEmpty {
+        PinGrid(pins: rows.pinned, members: rows.members, open: open, menu: menu)
+          .listRowBackground(Ink.listGround)
+          .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 10, trailing: 12))
+          .listRowSeparator(.hidden)
+      }
+      if rows.blocks.isEmpty {
+        ForEach(rows.shown) { agent in row(agent, rows) }
+      } else {
+        // The Mac's sections: each header, then (open) its chats, or a line saying how to fill it.
+        ForEach(rows.blocks) { block in
+          SectionHeaderRow(section: block) { sections.fold(block.id) }
+            .contextMenu { if !block.isUnassigned { SectionHeaderMenu(section: block, sections: sections) } }
+            .listRowBackground(Ink.listGround)
+            .listRowInsets(EdgeInsets(top: block.id == rows.blocks.first?.id ? 4 : 14, leading: 22, bottom: 2, trailing: 22))
+            .listRowSeparator(.hidden)
+          if !block.isCollapsed {
+            if block.agents.isEmpty {
+              Text("Long-press a chat and choose Move to")
+                .font(.system(size: 14.4))
+                .foregroundStyle(Ink.tertiary)
+                .listRowBackground(Ink.listGround)
+                .listRowInsets(EdgeInsets(top: 6, leading: 22, bottom: 8, trailing: 22))
+                .listRowSeparator(.hidden)
+            } else {
+              ForEach(block.agents) { agent in row(agent, rows) }
+            }
+          }
+        }
+      }
+      if !searching && filter == .all && rows.hiddenCount > 0 && rows.anyListed {
+        Button { showsHidden = true } label: {
+          HStack {
+            Text("Hidden Agents")
+            Spacer()
+            Text("\(rows.hiddenCount)").monospacedDigit()
+            Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Ink.tertiary)
+          }
+          .font(.system(size: 15))
+          .foregroundStyle(Ink.secondary)
+          .contentShape(.rect)
+        }
+        .accessibilityHint("Shows the agents hidden from the list")
+        .listRowBackground(Ink.listGround)
+        .listRowInsets(EdgeInsets(top: 12, leading: 22, bottom: 12, trailing: 16))
+        .listRowSeparator(.hidden)
+      }
+    }
+    .listStyle(.plain)
+    .scrollContentBackground(.hidden)
+    .background(Ink.listGround)
+    .onScrollPhaseChange { _, phase in
+      let moving = phase != .idle
+      if moving != scrolling { scrolling = moving }
+    }
+    // Rows move to their new place when an agent answers, is pinned or hidden.
+    .animation(.spring(response: 0.38, dampingFraction: 0.86), value: rows.shown.map(\.id))
+    .animation(.spring(response: 0.38, dampingFraction: 0.86), value: rows.pinned.map(\.id))
+    .animation(.spring(response: 0.38, dampingFraction: 0.86), value: rows.blocks.map { "\($0.id) \($0.isCollapsed) \($0.agents.map(\.id))" })
+    .overlay {
+      if rows.rosterFailed && rows.shown.isEmpty && rows.pinned.isEmpty && !searching {
+        // Can't reach the computer: said so, with Retry and Recover, not "No saved agents yet".
+        RosterCard(recover: recover)
+      } else if rows.shown.isEmpty && (rows.pinned.isEmpty || searching) && !rows.isLoading {
+        VStack(spacing: 14) {
+          Text(searching ? "No results" : filter == .unread ? "No unread chats" : "No saved agents yet.").font(.system(size: 15.6)).foregroundStyle(Ink.secondary)
+          if !searching && rows.hiddenCount > 0 {
+            Button("Show Hidden Agents") { showsHidden = true }
+              .buttonStyle(GreyButtonStyle())
+          }
+        }
+      }
+    }
+  }
+
+  /** One chat's row: its long press with the chat above the menu, its swipes, no hairline. */
+  @ViewBuilder
+  private func row(_ agent: Agent, _ rows: Rows) -> some View {
+    let isPinned = rows.pinnedIds.contains(agent.id)
+    let isPicked = picked.contains(agent.id)
+    Button {
+      if selecting {
+        if isPicked { picked.remove(agent.id) } else { picked.insert(agent.id) }
+        Haptics.select()
+      } else {
+        open(agent.id)
+      }
+    } label: {
+      HStack(spacing: 0) {
+        if selecting {
+          Image(systemName: isPicked ? "checkmark.circle.fill" : "circle")
+            .font(.system(size: 22))
+            .foregroundStyle(isPicked ? Ink.unread : Ink.tertiary)
+            .frame(width: 40)
+            .padding(.leading, 8)
+            .transition(.move(edge: .leading).combined(with: .opacity))
+            .accessibilityHidden(true)
+        }
+        // Drawn again only when its own agent (or its draft) changes, not on every change to the roster.
+        AgentRow(agent: agent, members: rows.members[agent.id] ?? [], draft: rows.drafts[agent.id]).equatable()
+      }
+    }
+    .accessibilityAddTraits(selecting && isPicked ? .isSelected : [])
+    .contextMenu { menu(agent) } preview: { ChatPeek(agentId: agent.id).environment(store) }
+    .swipeActions(edge: .leading, allowsFullSwipe: true) {
+      if !selecting {
+        Button { Task { await store.setUnread(agent.id, !agent.hasUnread) } } label: {
+          Label(agent.hasUnread ? "Read" : "Unread", systemImage: agent.hasUnread ? "message" : "message.badge")
+        }
+        .tint(Ink.unread)
+        Button { Task { await store.setPinned(agent.id, !isPinned) } } label: {
+          Label(isPinned ? "Unpin" : "Pin", systemImage: isPinned ? "pin.slash" : "pin")
+        }
+        .tint(Ink.pinSwipe)
+      }
+    }
+    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+      if !selecting {
+        Button { deleting = agent } label: { Label("Delete", systemImage: "trash") }
+          .tint(Ink.callEnd)
+        Button { Task { await store.setNotify(agent.id, !agent.notifyOnUpdates) } } label: {
+          Label(agent.notifyOnUpdates ? "Hide Alerts" : "Show Alerts", systemImage: agent.notifyOnUpdates ? "bell.slash" : "bell")
+        }
+        .tint(Ink.hideSwipe)
+      }
+    }
+    .listRowBackground(Ink.listGround)
+    // The margin on the left holds the unread dot; no hairline between the rows (the founder's reference, 11 October 2026).
+    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 24))
+    .listRowSeparator(.hidden)
+  }
+
+  /** The rows as they were while the list is covered or scrolling, else read now (and kept). */
+  private func current() -> Rows {
+    if covered || scrolling, let kept = held.rows { return kept }
+    let rows = read()
+    held.rows = rows
+    return rows
+  }
+
+  /** Every listed chat, or those the search finds (hidden ones too) by name, title, description or last line. */
+  private func read() -> Rows {
+    var rows = Rows()
+    let words = query.trimmingCharacters(in: .whitespaces)
+    if words.isEmpty {
+      let listed = store.listed
+      rows.shown = filter == .unread ? listed.filter(\.hasUnread) : listed
+      rows.anyListed = !listed.isEmpty
+      if filter == .all {
+        rows.pinned = store.pinned
+        if let own = store.sidebarSections, !own.isEmpty {
+          rows.blocks = SidebarSections.shown(agents: listed, pinnedIds: store.pinnedIds, sections: own, collapsed: sections.folded)
+        }
+      }
+    } else {
+      rows.shown = store.agents.filter { agent in
+        agent.name.localizedCaseInsensitiveContains(words) || agent.title.localizedCaseInsensitiveContains(words)
+          || agent.description.localizedCaseInsensitiveContains(words) || agent.previewLine.localizedCaseInsensitiveContains(words)
+      }
+    }
+    rows.pinnedIds = Set(store.pinnedIds)
+    rows.hiddenCount = store.hiddenAgents.count
+    rows.isLoading = store.isLoading
+    rows.rosterFailed = store.rosterFailed
+    for agent in rows.shown + rows.pinned where agent.isGroup { rows.members[agent.id] = store.members(of: agent) }
+    let drafts = store.drafts
+    for agent in rows.shown { if let draft = drafts[agent.id] { rows.drafts[agent.id] = draft } }
+    return rows
+  }
+}
+
+/** The filter at the top right, as Messages': every chat, the hidden ones, or only the unread. */
+private struct ListFilterMenu: View {
+  @Binding var filter: HomeView.ListFilter
+  @Binding var showsHidden: Bool
+  /** The org chart, while this account has it. */
+  var openOrgChart: (() -> Void)? = nil
+  /** Select Chats, as Messages' Select Messages: pick several to move or delete together. */
+  let select: () -> Void
+  @Environment(AppStore.self) private var store
+
+  var body: some View {
+    Menu {
+      Toggle(isOn: Binding(get: { filter == .all }, set: { if $0 { filter = .all } })) {
+        Label("Messages", systemImage: "bubble.left.and.bubble.right")
+      }
+      Button(action: select) { Label("Select Chats", systemImage: "checkmark.circle") }
+      Button { showsHidden = true } label: { Label("Hidden Agents", systemImage: "eye.slash") }
+        .disabled(!store.hasHidden)
+      if let openOrgChart {
+        Button(action: openOrgChart) { Label("Org Chart", systemImage: "point.3.connected.trianglepath.dotted") }
+      }
+      Section("Filter By") {
+        Toggle(isOn: Binding(get: { filter == .unread }, set: { filter = $0 ? .unread : .all })) {
+          Label("Unread", systemImage: "message.badge")
+        }
+      }
+    } label: {
+      Image(systemName: "line.3.horizontal.decrease")
+    }
+    .accessibilityLabel("Filter")
+  }
+}
+
 /** The list's foot, as Messages': the search field in glass with its mic, and new chat in a glass circle at the right; while searching, a close in its place. */
 struct ListBottomBar: View {
   @Binding var query: String
   var focus: FocusState<Bool>.Binding
+  /** Search is open: × in the place of new chat. */
+  let searching: Bool
+  let close: () -> Void
   let newAgent: () -> Void
   let newGroup: () -> Void
   @State private var dictation = Dictation()
@@ -315,7 +594,7 @@ struct ListBottomBar: View {
         if !query.isEmpty {
           Button { query = "" } label: {
             Image(systemName: "xmark.circle.fill").font(.system(size: 17)).foregroundStyle(Ink.tertiary)
-              .frame(width: 30, height: 30).contentShape(.circle)
+              .frame(width: 30, height: 30).tapRoom(7)
           }
           .buttonStyle(.plain)
           .accessibilityLabel("Clear search")
@@ -323,7 +602,7 @@ struct ListBottomBar: View {
           Button { dictation.isListening ? dictation.stop() : dictation.start { text in query = text } } label: {
             Image(systemName: dictation.isListening ? "stop.circle.fill" : "mic").font(.system(size: 18))
               .foregroundStyle(dictation.isListening ? Ink.danger : Ink.secondary)
-              .frame(width: 30, height: 30).contentShape(.circle)
+              .frame(width: 30, height: 30).tapRoom(7)
           }
           .buttonStyle(.plain)
           .accessibilityLabel(dictation.isListening ? "Stop dictation" : "Dictate")
@@ -334,9 +613,9 @@ struct ListBottomBar: View {
       .background { Color.clear.contentShape(.capsule).onTapGesture { focus.wrappedValue = true } }
       // Glass, not interactive glass: the field and its buttons take the touches (GlassDisc).
       .glassEffect(.regular, in: .capsule)
-      if focus.wrappedValue || !query.isEmpty {
+      if searching {
         // Searching: leave it, as Messages' close does.
-        Button { query = ""; focus.wrappedValue = false } label: {
+        Button(action: close) {
           Image(systemName: "xmark").font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.primary)
             .frame(width: 48, height: 48)
         }
@@ -360,6 +639,7 @@ struct ListBottomBar: View {
     .padding(.bottom, 4)
   }
 }
+#endif
 
 /** An agent's id as a sheet's item, and a routine of it to open at once (from search). */
 struct AgentRef: Identifiable, Hashable {
@@ -375,6 +655,8 @@ struct AgentRef: Identifiable, Hashable {
  */
 struct PinGrid<Actions: View>: View {
   let pins: [Agent]
+  /** Each pinned group's members, read with the pins (the grid does not read the roster itself). */
+  let members: [String: [Agent]]
   let open: (String) -> Void
   @ViewBuilder let menu: (Agent) -> Actions
   @Environment(AppStore.self) private var store
@@ -396,12 +678,12 @@ struct PinGrid<Actions: View>: View {
 
   private func tile(_ agent: Agent) -> some View {
     Button { open(agent.id) } label: {
-      PinTile(agent: agent, members: store.members(of: agent)).equatable()
+      PinTile(agent: agent, members: members[agent.id] ?? []).equatable()
     }
     .buttonStyle(PinPress())
     .contextMenu { menu(agent) } preview: { ChatPeek(agentId: agent.id).environment(store) }
     .draggable(agent.id) {
-      AgentAvatar(agent: agent, members: store.members(of: agent)).frame(width: 72, height: 72)
+      AgentAvatar(agent: agent, members: members[agent.id] ?? []).frame(width: 72, height: 72)
     }
     .dropDestination(for: String.self) { ids, _ in
       guard let moved = ids.first, moved != agent.id, let index = store.pinnedIds.firstIndex(of: agent.id) else { return false }
@@ -524,12 +806,14 @@ struct HiddenAgentsSheet: View {
             .font(.system(size: 15)).foregroundStyle(Ink.secondary).textCase(nil)
             .padding(.bottom, 6)
         }
+        .listRowBackground(Ink.groupedRow)
       }
+      .groupedGround()
       .navigationTitle("Hidden Agents")
-      .navigationBarTitleDisplayMode(.inline)
+      .inlineBarTitle()
       .toolbar {
         // The bar's own button: it draws its glass itself, and a glass disc inside it was glass on glass, each taking the touch.
-        ToolbarItem(placement: .topBarTrailing) { CloseButton() }
+        ToolbarItem(placement: .trailingBar) { CloseButton() }
       }
       .onChange(of: store.hiddenAgents.isEmpty) { _, empty in if empty { dismiss() } }
     }
@@ -539,18 +823,21 @@ struct HiddenAgentsSheet: View {
 }
 
 /**
- * One agent or group in the list, as Messages draws a conversation: the
- * unread dot in the margin (orange when it waits on you), the butterfly,
- * the name in 17 pt semibold with the last line's time and a chevron at the
- * right, and two lines of the last message under it in grey; the hairline
- * between rows starts where the text does.
+ * One agent or group in the list, in the founder's reference (11 October
+ * 2026: "no lines, no arrow"), measured on it: the unread dot in the
+ * 18-point margin (orange when it waits on you), the butterfly at 56 (the
+ * reference's 48 looked too small in the row) and 13 after it, the name in 17 semibold with its title's tag 13 after it
+ * (14 medium) and the last line's time at the right (14), 24 from the
+ * edge, and one line of the last message under it (15) in grey; 80 a row,
+ * no hairline between rows and no chevron.
  */
 struct AgentRow: View, Equatable {
   let agent: Agent
   let members: [Agent]
-  @Environment(AppStore.self) private var store
+  /** What the person has typed and not sent in this chat. Given, not read from the store: a draft saved in one chat drew every row again. */
+  var draft: String? = nil
 
-  static func == (a: AgentRow, b: AgentRow) -> Bool { a.agent == b.agent && a.members == b.members }
+  static func == (a: AgentRow, b: AgentRow) -> Bool { a.agent == b.agent && a.members == b.members && a.draft == b.draft }
 
   var body: some View {
     let status = RowStatus(agent: agent)
@@ -561,18 +848,20 @@ struct AgentRow: View, Equatable {
             .accessibilityLabel(status.label ?? "")
         }
       }
-      .frame(width: 22)
+      .frame(width: 18)
+      // 56 in the 80-point row (the founder, 11 October 2026: at 48 the butterflies were too small for the taller rows).
       AgentAvatar(agent: agent, members: members)
-        .frame(width: 52, height: 52)
+        .frame(width: 56, height: 56)
         .overlay(alignment: .bottomTrailing) {
           if let dot = status.cornerOnRow { StatusDot(colour: dot, size: 10.8).offset(x: -1, y: -1) }
         }
-        .padding(.trailing, 12)
-      VStack(alignment: .leading, spacing: 3) {
+        .padding(.trailing, 13)
+      // 5.5 between the name's line and the preview's: their capitals 25.3 apart, as on the reference.
+      VStack(alignment: .leading, spacing: 5.5) {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
           // The name, and the agent's title in a grey tag beside it when it fits whole (the founder's reference, 9 October 2026).
           ViewThatFits(in: .horizontal) {
-            HStack(alignment: .firstTextBaseline, spacing: 7) {
+            HStack(alignment: .firstTextBaseline, spacing: 13) {
               name
               if !agent.title.isEmpty { TitleTag(title: agent.title) }
             }
@@ -580,16 +869,15 @@ struct AgentRow: View, Equatable {
           }
           .layoutPriority(1)
           Spacer(minLength: 6)
-          // The time keeps its whole width; the name gives way first.
+          // The time keeps its whole width; the name gives way first. No arrow after it (the founder's reference).
           RowTime(agent: agent).fixedSize()
-          Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Ink.tertiary)
         }
         Text(line).font(.system(size: 15)).foregroundStyle(Ink.secondary)
-          .lineLimit(2, reservesSpace: true)
+          .lineLimit(1)
           .multilineTextAlignment(.leading)
       }
-      .alignmentGuide(.listRowSeparatorLeading) { $0[.leading] }
-      .padding(.vertical, 10)
+      // 18 over and under the two lines (20.3 and 17.9 high): 79.7 a row, the reference's.
+      .padding(.vertical, 18)
     }
     .contentShape(.rect)
   }
@@ -602,24 +890,25 @@ struct AgentRow: View, Equatable {
   private var line: String {
     if agent.isBusy, let activity = agent.activityLabel { return activity }
     if agent.isComposing { return "Typing…" }
-    if let draft = store.drafts[agent.id] { return "Draft: " + draft.split(whereSeparator: \.isWhitespace).joined(separator: " ") }
+    if let draft { return "Draft: " + draft.split(whereSeparator: \.isWhitespace).joined(separator: " ") }
     return agent.previewLine
   }
 }
 
-/** An agent's title as a list row shows it: a small grey tag, the system's own fill, as Apple tags a word beside a name. */
+/** An agent's title as a list row shows it: a small grey tag beside the name (`Ink.tag`, the founder's reference: `#252527` on dark), its words in our blue (`Ink.title`). */
 struct TitleTag: View {
   let title: String
 
   var body: some View {
     Text(title)
-      .font(.system(size: 13, weight: .medium))
-      .foregroundStyle(Ink.secondary)
+      .font(.system(size: 14, weight: .medium))
+      // The words in our blue, the box as it is (the founder, 11 October 2026).
+      .foregroundStyle(Ink.title)
       .lineLimit(1)
       .fixedSize()
-      .padding(.horizontal, 7)
-      .padding(.vertical, 2.5)
-      .background(Color(.tertiarySystemFill), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+      .padding(.horizontal, 6)
+      .padding(.vertical, 1)
+      .background(Ink.tag, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
   }
 }
 
@@ -668,7 +957,7 @@ struct RowTime: View {
     if let call = store.call, call.agentId == agent.id {
       CallChip(call: call)
     } else if let at = agent.lastActivityAt, at > 0 {
-      Text(Chat.listTime(Date(timeIntervalSince1970: at / 1000))).font(.system(size: 14.4)).foregroundStyle(Ink.tertiary)
+      Text(Chat.listTime(Date(timeIntervalSince1970: at / 1000))).font(.system(size: 14)).foregroundStyle(Ink.tertiary)
     }
   }
 }
@@ -715,6 +1004,41 @@ extension View {
 // MARK: - Search
 
 /**
+ * A swipe down on the results closes search (the founder, 11 October 2026:
+ * "can a swipe down close the search bar?"; again that evening: it did
+ * not). Read from the results' own scrolling: pulled down past their top by
+ * more than 60 points and let go, search closes; the results fade as they
+ * are pulled. A drag gesture beside the list was what did it before, and
+ * iOS cancels such a gesture as soon as the list starts scrolling, so
+ * letting go never reached it.
+ */
+private struct PullDownToClose: ViewModifier {
+  let close: (() -> Void)?
+  /** How far past the top the results are pulled now, in points (0 at rest and while scrolling within them). */
+  @State private var pulled: CGFloat = 0
+  static let distance: CGFloat = 60
+
+  func body(content: Content) -> some View {
+    content
+      // Pulled even when the results are shorter than the screen.
+      .scrollBounceBehavior(.always, axes: .vertical)
+      .onScrollGeometryChange(for: CGFloat.self) { geometry in
+        max(0, -(geometry.contentOffset.y + geometry.contentInsets.top)).rounded()
+      } action: { _, now in
+        pulled = now
+      }
+      .onScrollPhaseChange { old, new, context in
+        // Let go: the finger was dragging, and no longer is.
+        guard let close, old == .interacting, new != .interacting else { return }
+        let geometry = context.geometry
+        let past = max(pulled, -(geometry.contentOffset.y + geometry.contentInsets.top))
+        if past > Self.distance { close() }
+      }
+      .opacity(1 - Double(min(pulled, 200)) / 400)
+  }
+}
+
+/**
  * Search, with everything the Mac's search has (its palette, `QFn`), drawn
  * as Messages draws its own: tabs along the top (All, Messages, Agents,
  * Groups, Files, Links, Routines, Actions, the Mac's order), then results
@@ -740,6 +1064,14 @@ struct SearchResults: View {
   let openRoutine: (RoutineHit) -> Void
   let openSheet: (HomeSheet) -> Void
   let showHidden: () -> Void
+  /** "Update Simeon's Computer", where it is offered (the Mac's palette, `HOn`): last of the actions. */
+  var updateComputer: (() -> Void)? = nil
+  /** The Mac's org chart ("Org Chart", first), when it may be opened. */
+  var openOrgChart: (() -> Void)? = nil
+  /** The Mac's Channels view of the open agent ("Channels"), when a platform is open or connected. */
+  var openChannels: (() -> Void)? = nil
+  /** A swipe down from the top of the results closes search (the field let go and emptied). */
+  var close: (() -> Void)? = nil
   @Environment(AppStore.self) private var store
   @Environment(\.openURL) private var openURL
   @AppStorage("simeon.theme") private var theme = "system"
@@ -823,16 +1155,31 @@ struct SearchResults: View {
 
   /** The app's actions (the Mac's `RDn`, as the phone has them). */
   private var actions: [SearchAction] {
-    var list = [
+    var list: [SearchAction] = []
+    if let openOrgChart {
+      list.append(SearchAction(id: "view:org-chart", label: "Org Chart", detail: "Views", symbol: "point.3.connected.trianglepath.dotted", keywords: ["open", "organization", "network", "graph"], run: openOrgChart))
+    }
+    list += [
       SearchAction(id: "new-agent", label: "New Agent", detail: "Agents", symbol: "person.crop.circle.badge.plus", keywords: ["create", "add", "hire"]) { openSheet(.newAgent) },
       SearchAction(id: "new-group", label: "New Group Chat", detail: "Agents", symbol: "person.2", keywords: ["create", "group", "team"]) { openSheet(.newGroup) },
     ]
     if !store.hiddenAgents.isEmpty {
       list.append(SearchAction(id: "hidden", label: "Open Hidden Agents", detail: "List", symbol: "eye.slash", keywords: ["hidden", "sidebar"], run: showHidden))
     }
-    list.append(SearchAction(id: "settings", label: "Settings", detail: "Settings", symbol: "gearshape", keywords: ["general", "account", "usage", "billing", "plan", "limit", "time zone", "auto-review", "plugins", "connect apps", "connectors", "tools", "skills", "mcp"]) { openSheet(.settings) })
+    if let openChannels {
+      list.append(SearchAction(id: "info:channels", label: "Channels", detail: "Current chat", symbol: "bubble.left.and.bubble.right", keywords: ["messaging", "platforms", "connect"], run: openChannels))
+    }
+    list.append(SearchAction(id: "settings", label: "Settings", detail: "Settings", symbol: "gearshape", keywords: ["general", "account", "time zone", "auto-review", "notifications", "haptics", "preferences"]) { openSheet(.settings) })
+    // The Mac's palette has these two on their own (`Jump.commands`).
+    if store.usage.summary == nil || store.usage.showsSection {
+      list.append(SearchAction(id: "settings:usage", label: "Settings: Usage & Billing", detail: "Settings", symbol: "chart.bar", keywords: ["usage", "billing", "spend", "limit", "on-demand", "plan", "quota"]) { openSheet(.usage) })
+    }
+    list.append(SearchAction(id: "overlay:plugins", label: "Plugins", detail: "Connect apps", symbol: "puzzlepiece.extension", keywords: ["plugins", "marketplace", "tools", "skills", "mcp", "connectors", "connect apps", "customize"]) { openSheet(.plugins) })
     for (value, name, symbol) in [("system", "System", "circle.lefthalf.filled"), ("light", "Light", "sun.max"), ("dark", "Dark", "moon")] {
       list.append(SearchAction(id: "theme-\(value)", label: "Theme: \(name)", detail: "Settings · Appearance", symbol: symbol, keywords: ["appearance", "mode", "theme"], current: theme == value) { theme = value })
+    }
+    if let updateComputer, store.computerUpdateOffer != nil {
+      list.append(SearchAction(id: "update:computer", label: "Update Simeon's Computer", detail: "Updates", symbol: "desktopcomputer", keywords: ["box", "image", "machine", "recreate", "latest", "shared"], run: updateComputer))
     }
     return list
   }
@@ -854,16 +1201,26 @@ struct SearchResults: View {
     let nothing = agents.isEmpty && groups.isEmpty && messageRows.isEmpty && fileRows.isEmpty && linkRows.isEmpty && routineRows.isEmpty && actionRows.isEmpty
     let waiting = loading && ((tab == .messages && !words.isEmpty) || tab == .files) && messageRows.isEmpty && fileRows.isEmpty
 
-    if waiting {
-      ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
-    } else if failed && nothing && (tab == .messages || tab == .files) {
-      ContentUnavailableView("Search unavailable", systemImage: "magnifyingglass", description: Text("Try again in a moment."))
-    } else if nothing {
-      if !words.isEmpty {
-        ContentUnavailableView.search(text: words)
-      } else {
-        ContentUnavailableView(tab.empty.text, systemImage: tab == .messages ? "magnifyingglass" : "person.2", description: tab.empty.hint.map { Text($0) })
+    if waiting || (failed && nothing && (tab == .messages || tab == .files)) || nothing {
+      // In a scroll view of their own, so they pull down to close as the results do.
+      ScrollView {
+        Group {
+          if waiting {
+            ProgressView()
+          } else if failed && nothing && (tab == .messages || tab == .files) {
+            ContentUnavailableView("Search unavailable", systemImage: "magnifyingglass", description: Text("Try again in a moment."))
+          } else if !words.isEmpty {
+            ContentUnavailableView.search(text: words)
+          } else {
+            ContentUnavailableView(tab.empty.text, systemImage: tab == .messages ? "magnifyingglass" : "person.2", description: tab.empty.hint.map { Text($0) })
+          }
+        }
+        .containerRelativeFrame([.horizontal, .vertical])
       }
+      .modifier(PullDownToClose(close: close))
+      #if os(iOS)
+      .scrollDismissesKeyboard(.immediately)
+      #endif
     } else {
       List {
         section(.agents, agents, limit: words.isEmpty ? 6 : 4) { found in chatRow(found) }
@@ -876,7 +1233,10 @@ struct SearchResults: View {
       }
       .listStyle(.plain)
       .scrollContentBackground(.hidden)
+      .modifier(PullDownToClose(close: close))
+      #if os(iOS)
       .scrollDismissesKeyboard(.immediately)
+      #endif
     }
   }
 

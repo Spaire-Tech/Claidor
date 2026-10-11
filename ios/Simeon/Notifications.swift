@@ -1,5 +1,7 @@
 import SwiftUI
+#if os(iOS)
 import UIKit
+#endif
 import UserNotifications
 import SimeonCore
 
@@ -21,20 +23,50 @@ final class Notifications {
   @ObservationIgnored private var api: SimeonAPI?
   @ObservationIgnored private var token: String?
 
-  #if DEBUG
-  /** A build run from Xcode is served by Apple's sandbox. */
-  static let sandbox = true
-  #else
-  static let sandbox = false
-  #endif
+  /**
+   * A build run from Xcode is served by Apple's sandbox: its signing profile
+   * (`embedded.mobileprovision`, which App Store and TestFlight builds do not
+   * carry) says `aps-environment` development. Read at run time, not from the
+   * build configuration, since Run builds Release too (project.yml).
+   */
+  static let sandbox: Bool = {
+    guard let url = Bundle.main.url(forResource: "embedded", withExtension: "mobileprovision"),
+          let data = try? Data(contentsOf: url) else { return false }
+    let text = String(decoding: data, as: UTF8.self)
+    guard let key = text.range(of: "<key>aps-environment</key>") else { return false }
+    return text[key.upperBound...].prefix(80).contains("development")
+  }()
 
-  /** After sign-in: asks once, then registers this phone with Apple and, through it, with Simeon. */
+  /** Settings › Notifications (`@AppStorage` key): on until turned off (the founder, 11 October 2026). */
+  static let key = "simeon.notifications"
+
+  static var isOn: Bool { UserDefaults.standard.object(forKey: key) as? Bool ?? true }
+
+  /** Refused in the phone's own Settings: the switch shows off, and turning it on opens them. */
+  static func refused() async -> Bool {
+    await UNUserNotificationCenter.current().notificationSettings().authorizationStatus == .denied
+  }
+
+  /** Settings › Notifications turned: on registers this phone again (asking first if never asked); off takes it off the person's pushes. */
+  func turn(_ on: Bool) async {
+    if on {
+      if let api { await start(api: api) }
+    } else {
+      if let api, let token { try? await api.registerPushDevice(apnsToken: token, sandbox: Self.sandbox, remove: true) }
+      try? await UNUserNotificationCenter.current().setBadgeCount(0)
+    }
+  }
+
+  /** After sign-in: asks once, then registers this phone with Apple and, through it, with Simeon; not while Settings has them off. */
   func start(api: SimeonAPI) async {
     self.api = api
+    guard Self.isOn else { return }
     let center = UNUserNotificationCenter.current()
     let granted = (try? await center.requestAuthorization(options: [.alert, .badge, .sound])) ?? false
     guard granted else { return }
+    #if os(iOS)
     UIApplication.shared.registerForRemoteNotifications()
+    #endif
     if let token { await send(token) }
   }
 
@@ -46,7 +78,7 @@ final class Notifications {
   }
 
   private func send(_ hex: String) async {
-    guard let api else { return }
+    guard let api, Self.isOn else { return }
     try? await api.registerPushDevice(apnsToken: hex, sandbox: Self.sandbox)
   }
 
@@ -63,6 +95,7 @@ final class Notifications {
   }
 }
 
+#if os(iOS)
 /** The app's delegate, for what only UIKit hears: Apple's token, and a notification shown or tapped. */
 final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
   func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
@@ -87,3 +120,4 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     await MainActor.run { Notifications.shared.openAgent = agentId }
   }
 }
+#endif

@@ -384,6 +384,15 @@ class Settings(BaseSettings):
     # and the app says apps are not switched on yet.
     COMPOSIO_API_KEY: str = ""
     COMPOSIO_BASE_URL: str = "https://backend.composio.dev"
+    # Simeon Labs' own sign-in for an app, by toolkit: the auth config made
+    # in Composio's dashboard from the OAuth app (or API key form) Simeon
+    # Labs registered with that company, as JSON, for example
+    # {"gusto": "ac_…", "xero": "ac_…"}. A sign-in uses a config only when
+    # it is named here; every other app keeps Composio's own sign-in. Gusto,
+    # Xero, Shopify, Brex, Pipedrive, Docusign, Klaviyo and Ashby have no
+    # sign-in of Composio's and connect only once named here
+    # (docs/services-agents.md, 7c).
+    COMPOSIO_AUTH_CONFIGS: dict[str, str] = {}
 
     # Connections (simeon/connectors/, docs/maties/connectors.md). The
     # middleman that holds the sign-in plumbing for the forty services a
@@ -683,7 +692,8 @@ class Settings(BaseSettings):
     # Invoices
     S3_CUSTOMER_INVOICES_BUCKET_NAME: str = "simeon-customer-invoices"
     S3_PAYOUT_INVOICES_BUCKET_NAME: str = "simeon-payout-invoices"
-    INVOICES_NAME: str = "Simeon Labs, Inc."
+    # The company that issues invoices: Spaire, Inc. until it is renamed (11 October 2026).
+    INVOICES_NAME: str = "Spaire, Inc."
     INVOICES_ADDRESS: Address = Address(
         line1="1111B S Governors Ave",
         line2="# 47283",

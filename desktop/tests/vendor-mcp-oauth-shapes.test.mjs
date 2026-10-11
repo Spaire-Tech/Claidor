@@ -236,3 +236,80 @@ test("apps our server serves (Figma, Asana, Gmail…) sign in, list and disconne
     await installs.dispose();
   }
 });
+
+test("the token is asked for the resource the server names itself, on its own origin only (Miro, 11 October 2026)", async () => {
+  // Miro serves at https://mcp.miro.com/mcp, publishes `resource:
+  // "https://mcp.miro.com/"`, and answered every authorization that named
+  // the /mcp address with `server_error`. The published name is sent at
+  // authorization and again at the token exchange; a name on another
+  // origin is not ours to ask for, and the address is sent instead.
+  const { module, dispose } = await load("source/shared/node/vendor-mcp/oauth.ts", "vendor-oauth-resource");
+  try {
+    assert.equal(module.vendorMcpResourceFor("https://mcp.miro.com/mcp", "https://mcp.miro.com/"), "https://mcp.miro.com/");
+    assert.equal(module.vendorMcpResourceFor("https://mcp.stripe.com", "https://mcp.stripe.com"), "https://mcp.stripe.com");
+    assert.equal(module.vendorMcpResourceFor("https://mcp.miro.com/mcp", "https://evil.example/"), "https://mcp.miro.com/mcp");
+    assert.equal(module.vendorMcpResourceFor("https://mcp.miro.com/mcp", "not an address"), "https://mcp.miro.com/mcp");
+    assert.equal(module.vendorMcpResourceFor("https://mcp.miro.com/mcp", undefined), "https://mcp.miro.com/mcp");
+
+    const calls = [];
+    const miro = async (input, init) => {
+      const url = typeof input === "string" ? input : input.url;
+      const raw = init?.body == null ? null : String(init.body);
+      calls.push({ url, form: raw != null && !raw.startsWith("{") ? Object.fromEntries(new URLSearchParams(raw)) : undefined });
+      if (url === "https://mcp.miro.example/.well-known/oauth-protected-resource/mcp") return json({ error: "Authentication required" }, 401);
+      if (url === "https://mcp.miro.example/.well-known/oauth-protected-resource") return json({ resource: "https://mcp.miro.example/", authorization_servers: ["https://mcp.miro.example/"], scopes_supported: ["boards:read"] });
+      if (url === "https://mcp.miro.example/.well-known/oauth-authorization-server") return json({ authorization_endpoint: "https://mcp.miro.example/authorize", token_endpoint: "https://mcp.miro.example/token", registration_endpoint: "https://mcp.miro.example/register", token_endpoint_auth_methods_supported: ["client_secret_post"] });
+      if (url === "https://mcp.miro.example/register") return json({ client_id: "cid", client_secret: "sec" }, 201);
+      if (url === "https://mcp.miro.example/token") return json({ access_token: "tok", expires_in: 3600 });
+      return json({}, 404);
+    };
+    const started = await module.startVendorMcpOAuth({ pluginId: "miro", mcpUrl: "https://mcp.miro.example/mcp", redirectUri: "https://api.simeonlabs.com/desktop/mcp-oauth/callback", fetch: miro, remember: false });
+    assert.equal(new URL(started.authorizationUrl).searchParams.get("resource"), "https://mcp.miro.example/");
+    assert.equal(started.pending.resource, "https://mcp.miro.example/");
+    const grant = await module.exchangeVendorMcpCode({ pending: started.pending, code: "c", fetch: miro, now: 0 });
+    assert.equal(calls.filter((call) => call.url.endsWith("/token")).at(-1).form.resource, "https://mcp.miro.example/");
+    assert.equal(grant.resource, "https://mcp.miro.example/", "and the refresh asks for it again");
+
+    // A sign-in started before the change carries no resource: the address, as then.
+    const { resource: _dropped, ...older } = started.pending;
+    await module.exchangeVendorMcpCode({ pending: older, code: "c", fetch: miro, now: 0 });
+    assert.equal(calls.filter((call) => call.url.endsWith("/token")).at(-1).form.resource, "https://mcp.miro.example/mcp");
+  } finally {
+    await dispose();
+  }
+});
+
+test("a vendor that makes a loopback client public is signed in without a secret, and a server with no resource document is its own authorization server (Vercel, Atlassian, 11 October 2026)", async () => {
+  const { module, dispose } = await load("source/shared/node/vendor-mcp/oauth.ts", "vendor-oauth-public-origin");
+  try {
+    // Vercel: the metadata names only confidential methods, the registration answers `none` and no secret.
+    const vercel = async (input) => {
+      const url = typeof input === "string" ? input : input.url;
+      if (url === "https://mcp.vercel.example/.well-known/oauth-protected-resource") return json({ resource: "https://mcp.vercel.example/", authorization_servers: ["https://vercel.example"] });
+      if (url === "https://vercel.example/.well-known/oauth-authorization-server") return json({ authorization_endpoint: "https://vercel.example/oauth/authorize", token_endpoint: "https://vercel.example/oauth/token", registration_endpoint: "https://vercel.example/oauth/register", token_endpoint_auth_methods_supported: ["client_secret_basic", "client_secret_post"] });
+      if (url === "https://vercel.example/oauth/register") return json({ client_id: "cl_public", token_endpoint_auth_method: "none" }, 201);
+      return json({}, 404);
+    };
+    const started = await module.startVendorMcpOAuth({ pluginId: "vercel", mcpUrl: "https://mcp.vercel.example", redirectUri: "http://localhost:8787/callback", fetch: vercel, remember: false });
+    assert.equal(started.pending.clientId, "cl_public");
+    assert.equal(started.pending.clientSecret, undefined);
+    // A confidential registration that forgets its secret is still refused.
+    const forgetful = async (input) => { const url = typeof input === "string" ? input : input.url; return url.endsWith("/oauth/register") ? json({ client_id: "cl_conf" }, 201) : vercel(input); };
+    await assert.rejects(() => module.startVendorMcpOAuth({ pluginId: "vercel", mcpUrl: "https://mcp.vercel.example", fetch: forgetful, remember: false }), /without the client secret/);
+
+    // Atlassian from a network it answers 404 on its resource document: the origin's metadata.
+    const atlassian = async (input) => {
+      const url = typeof input === "string" ? input : input.url;
+      if (url.includes("oauth-protected-resource")) return new Response("Not Found", { status: 404 });
+      if (url === "https://mcp.atlassian.example/.well-known/oauth-authorization-server") return json({ issuer: "https://mcp.atlassian.example", authorization_endpoint: "https://mcp.atlassian.example/v1/authorize", token_endpoint: "https://mcp.atlassian.example/v1/token", registration_endpoint: "https://mcp.atlassian.example/v1/register" });
+      if (url === "https://mcp.atlassian.example/v1/register") return json({ client_id: "atl" }, 201);
+      return json({}, 404);
+    };
+    assert.deepEqual(await module.discoverProtectedResource("https://mcp.atlassian.example/v1/mcp", atlassian), { issuer: "https://mcp.atlassian.example", scopes: [] });
+    const jira = await module.startVendorMcpOAuth({ pluginId: "jira", mcpUrl: "https://mcp.atlassian.example/v1/mcp", fetch: atlassian, remember: false });
+    assert.equal(new URL(jira.authorizationUrl).origin + new URL(jira.authorizationUrl).pathname, "https://mcp.atlassian.example/v1/authorize");
+    assert.equal(new URL(jira.authorizationUrl).searchParams.get("resource"), "https://mcp.atlassian.example/v1/mcp");
+  } finally {
+    await dispose();
+  }
+});

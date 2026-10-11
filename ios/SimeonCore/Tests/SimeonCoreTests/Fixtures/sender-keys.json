@@ -1,0 +1,312 @@
+{
+ "note": "Made by running the shipped window's own Tpe/JZ (index-UbX-y3il.js) on these entries: who each line is from, for its runs.",
+ "entries": [
+  {
+   "id": "u1",
+   "kind": "message",
+   "role": "user",
+   "content": "hi",
+   "timestampMs": 1000000
+  },
+  {
+   "id": "a1",
+   "kind": "send-message",
+   "message": {
+    "type": "text",
+    "content": "hello"
+   },
+   "timestampMs": 1060000
+  },
+  {
+   "id": "a2",
+   "kind": "send-message",
+   "message": {
+    "type": "widget"
+   },
+   "timestampMs": 1120000
+  },
+  {
+   "id": "t1",
+   "kind": "tool-call",
+   "name": "x",
+   "timestampMs": 1180000
+  },
+  {
+   "id": "a3",
+   "kind": "send-message",
+   "message": {
+    "type": "attachment",
+    "url": "file:///a.pdf"
+   },
+   "timestampMs": 1240000
+  },
+  {
+   "id": "a4",
+   "kind": "send-message",
+   "message": {
+    "type": "attachment",
+    "url": "file:///b.csv"
+   },
+   "timestampMs": 1240000
+  },
+  {
+   "id": "f1",
+   "kind": "user-attachment",
+   "file_name": "c.docx",
+   "timestampMs": 1300000
+  },
+  {
+   "id": "a5",
+   "kind": "send-message",
+   "message": {
+    "type": "text",
+    "content": "pics"
+   },
+   "timestampMs": 1360000
+  },
+  {
+   "id": "e1",
+   "kind": "event",
+   "event": {
+    "type": "automation-changed"
+   },
+   "timestampMs": 1420000
+  },
+  {
+   "id": "e2",
+   "kind": "event",
+   "event": {
+    "type": "name-changed"
+   },
+   "timestampMs": 1480000
+  },
+  {
+   "id": "a6",
+   "kind": "send-message",
+   "message": {
+    "type": "text",
+    "content": "after event"
+   },
+   "timestampMs": 1540000
+  },
+  {
+   "id": "n1",
+   "kind": "notice",
+   "text": "restarted",
+   "timestampMs": 1600000
+  },
+  {
+   "id": "u2",
+   "kind": "message",
+   "role": "user",
+   "content": "deploy?",
+   "channel": "discord:x",
+   "timestampMs": 1660000
+  },
+  {
+   "id": "x1",
+   "kind": "message",
+   "role": "assistant",
+   "content": "to Scout",
+   "toAgent": {
+    "id": "scout",
+    "name": "Scout",
+    "kind": "agent"
+   },
+   "timestampMs": 1720000
+  },
+  {
+   "id": "x2",
+   "kind": "message",
+   "role": "user",
+   "content": "from Scout",
+   "fromAgent": {
+    "id": "scout",
+    "name": "Scout"
+   },
+   "timestampMs": 1780000
+  },
+  {
+   "id": "x3",
+   "kind": "message",
+   "role": "assistant",
+   "content": "to Iris",
+   "toAgent": {
+    "id": "iris",
+    "name": "Iris",
+    "kind": "agent"
+   },
+   "timestampMs": 1840000
+  },
+  {
+   "id": "v1",
+   "kind": "message",
+   "role": "assistant",
+   "content": "call line",
+   "toAgent": {
+    "id": "voice-call:1:20",
+    "name": "Bass",
+    "kind": "person"
+   },
+   "timestampMs": 1900000
+  },
+  {
+   "id": "g1",
+   "kind": "send-message",
+   "author": {
+    "id": "iris",
+    "name": "Iris"
+   },
+   "message": {
+    "type": "text",
+    "content": "group"
+   },
+   "timestampMs": 1960000
+  },
+  {
+   "id": "g2",
+   "kind": "send-message",
+   "author": {
+    "id": "iris",
+    "name": "Iris"
+   },
+   "message": {
+    "type": "text",
+    "content": "group 2"
+   },
+   "timestampMs": 1960000
+  },
+  {
+   "id": "g3",
+   "kind": "send-message",
+   "author": {
+    "id": "scout",
+    "name": "Scout"
+   },
+   "message": {
+    "type": "text",
+    "content": "group 3"
+   },
+   "timestampMs": 2020000
+  },
+  {
+   "id": "h1",
+   "kind": "message",
+   "role": "user",
+   "content": "shared",
+   "fromUser": {
+    "authId": "auth|1",
+    "name": "Ada"
+   },
+   "timestampMs": 2080000
+  },
+  {
+   "id": "u3",
+   "kind": "message",
+   "role": "user",
+   "content": "me",
+   "timestampMs": 2140000
+  },
+  {
+   "id": "a7",
+   "kind": "message",
+   "role": "assistant",
+   "content": "streamed",
+   "timestampMs": 2200000
+  }
+ ],
+ "keys": [
+  [
+   "u1",
+   "user"
+  ],
+  [
+   "a1",
+   "assistant"
+  ],
+  [
+   "a2",
+   "assistant"
+  ],
+  [
+   "t1",
+   "other"
+  ],
+  [
+   "a3",
+   "assistant"
+  ],
+  [
+   "a4",
+   "assistant"
+  ],
+  [
+   "f1",
+   "user"
+  ],
+  [
+   "a5",
+   "assistant"
+  ],
+  [
+   "e1",
+   "other"
+  ],
+  [
+   "e2",
+   "other"
+  ],
+  [
+   "a6",
+   "assistant"
+  ],
+  [
+   "n1",
+   "other"
+  ],
+  [
+   "u2",
+   "user"
+  ],
+  [
+   "x1",
+   "agent:scout"
+  ],
+  [
+   "x2",
+   "agent:scout"
+  ],
+  [
+   "x3",
+   "agent:iris"
+  ],
+  [
+   "v1",
+   "other"
+  ],
+  [
+   "g1",
+   "member:iris"
+  ],
+  [
+   "g2",
+   "member:iris"
+  ],
+  [
+   "g3",
+   "member:scout"
+  ],
+  [
+   "h1",
+   "human:auth|1"
+  ],
+  [
+   "u3",
+   "user"
+  ],
+  [
+   "a7",
+   "assistant"
+  ]
+ ]
+}

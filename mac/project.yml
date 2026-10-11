@@ -1,0 +1,116 @@
+# Simeon on the Mac, native (SwiftUI): a copy of the Electron Mac app
+# (desktop/), screen by screen, with Apple's own controls and the Electron
+# window's layout (mac/STEPS.md). XcodeGen makes SimeonMac.xcodeproj from
+# this file (`xcodegen generate`, mac/README.md); the project itself is not
+# kept in git. The app is this folder's Simeon/, on the shared core
+# (../ios/SimeonCore), which has no screens.
+name: SimeonMac
+options:
+  bundleIdPrefix: com.simeonlabs
+  deploymentTarget:
+    # Apple's design of this year (Liquid Glass).
+    macOS: "26.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Automatic
+    # The Apple developer team Simeon publishes from: set it here, or in
+    # Xcode under Signing & Capabilities, once. Without one the app is
+    # signed to run on this Mac only, which is enough to try it.
+    DEVELOPMENT_TEAM: ""
+packages:
+  SimeonCore:
+    path: ../ios/SimeonCore
+  # The call's voice (step 11): ElevenLabs' own kit (WebRTC through LiveKit),
+  # the same conversation the Electron app's banner runs with their web kit,
+  # and the iPhone's (ios/project.yml).
+  ElevenLabs:
+    url: https://github.com/elevenlabs/elevenlabs-swift-sdk
+    from: 3.4.0
+targets:
+  Simeon:
+    type: application
+    platform: macOS
+    sources:
+      - path: Simeon
+        excludes: ["Fonts/**", "Rendering/**"]
+      # The sign-in wordmark's face (Suravaram, SIL Open Font License), as
+      # the Electron window sets "Simeon" on its sign-in screen.
+      - path: Simeon/Fonts
+        buildPhase: resources
+      # KaTeX and Mermaid (MIT) and their licences: the chat's maths and
+      # diagrams, drawn by the same libraries the Electron window uses
+      # (Rendering.swift).
+      - path: Simeon/Rendering
+        buildPhase: resources
+      # The call's voice, ring and log, shared with the iPhone (its Mac parts
+      # are the `#if os(macOS)` ones): ElevenLabsVoice, CallTonePlayer,
+      # VoiceCallLog, PersonNameBox.
+      - path: ../ios/Simeon/Voice.swift
+      # An agent's screen (step 13), shared with the iPhone: noVNC in a web
+      # view (`LiveScreen`, its `#else` part), with ScreenEvents and
+      # ScreenLink.
+      - path: ../ios/Simeon/Computer.swift
+      # noVNC's client (MPL 2.0) and its licence, read at run time by the
+      # screen's page, so they ship as files.
+      - path: ../ios/Simeon/Computer
+        buildPhase: resources
+    dependencies:
+      - package: SimeonCore
+        product: SimeonCore
+      - package: SimeonCore
+        product: SimeonMacCore
+      - package: ElevenLabs
+    info:
+      path: Simeon/Info.plist
+      properties:
+        CFBundleDisplayName: Simeon
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        # The Mac app's scheme, the Electron app's until it was retired (11
+        # October 2026); the server's confirm page opens `simeon://app/v1/open`.
+        CFBundleURLTypes:
+          - CFBundleURLName: com.simeonlabs.simeon
+            CFBundleURLSchemes: [simeon]
+        # It is the Mac app people install (mac/README.md, "The switch"): a
+        # release build run from outside Applications offers to move there.
+        SimeonAskToMoveToApplications: true
+        LSApplicationCategoryType: public.app-category.productivity
+        # Dictation (step 2e) and calls ask for the microphone in the Electron app's words (`own-shell.mjs`).
+        NSMicrophoneUsageDescription: Simeon uses the microphone to take your dictation and for voice calls with your agents.
+        NSHumanReadableCopyright: Copyright © 2026 Spaire, Inc.
+        # A row, a pin or a section dragged in the sidebar (step 3): the
+        # app's own kind, so a drop on the message field never types it.
+        UTExportedTypeDeclarations:
+          - UTTypeIdentifier: com.simeonlabs.simeon.sidebar-item
+            UTTypeDescription: Simeon sidebar item
+            UTTypeConformsTo: [public.data]
+        # Loopback and the local network over http, for a build pointed at
+        # the stand-in server on this Mac (`SIMEON_API`).
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+    entitlements:
+      path: Simeon/Simeon.entitlements
+      properties:
+        # The hardened runtime asks for the microphone by name (dictation and calls, later steps).
+        com.apple.security.device.audio-input: true
+    settings:
+      base:
+        # The Electron app's id, taken at the switch (11 October 2026, mac/README.md).
+        PRODUCT_BUNDLE_IDENTIFIER: com.simeonlabs.simeon
+        PRODUCT_NAME: Simeon
+        ASSETCATALOG_COMPILER_APPICON_NAME: MacIcon
+        ENABLE_HARDENED_RUNTIME: YES
+        ENABLE_PREVIEWS: YES
+schemes:
+  Simeon:
+    build:
+      targets:
+        Simeon: all
+    run:
+      config: Debug
+    archive:
+      config: Release

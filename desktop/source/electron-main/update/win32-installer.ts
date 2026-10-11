@@ -1,7 +1,8 @@
 import { execFile, spawn } from "node:child_process";
 import { promisify } from "node:util";
 
-export const WINDOWS_INSTALLER_SIGNER_ALLOWLIST = ["Simeon Labs, Inc.", "Simeon Labs"] as const;
+// The company signs as Spaire, Inc. until it is renamed (11 October 2026); the later name stays allowed for then.
+export const WINDOWS_INSTALLER_SIGNER_ALLOWLIST = ["Spaire, Inc.", "Simeon Labs, Inc.", "Simeon Labs"] as const;
 export const POWERSHELL_TIMEOUT_MS = 30_000;
 export class SandInstallerSignatureError extends Error {}
 const execFileAsync = promisify(execFile);

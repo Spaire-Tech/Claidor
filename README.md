@@ -7,7 +7,9 @@ This repository holds the whole product:
 
 | Folder | What it is |
 |---|---|
-| `desktop/` | The Mac app: the window, the Electron main process, and the agent loop that runs on each person's cloud computer. |
+| `mac/` | The Mac app, in SwiftUI. |
+| `ios/` | The iPhone app, in SwiftUI; `ios/SimeonCore` is shared with the Mac app. |
+| `desktop/` | The retired Electron Mac app (11 October 2026), kept only to build the agent loop that runs on each person's cloud computer, and the web app's window. |
 | `server/` | The API at `api.simeonlabs.com`: sign-in, the model proxy, memory, the cloud computers, routines, sharing, connectors, billing. FastAPI and PostgreSQL. |
 | `runner/` | The cloud runner: does a person's queued work when their Mac is closed. |
 | `clients/` | The web app at `app.simeonlabs.com` (sign-in pages and the account dashboard) and its shared packages. |
@@ -16,13 +18,18 @@ This repository holds the whole product:
 
 Start with [`docs/README.md`](docs/README.md).
 
-## Build the Mac app
+## Build the apps
 
-macOS on Apple Silicon only. See [`docs/building-the-app.md`](docs/building-the-app.md).
+On a Mac with Xcode: the Mac app with `mac/scripts/build.sh`
+([`mac/README.md`](mac/README.md)), the iPhone app from `ios/`
+([`ios/README.md`](ios/README.md)).
+
+The agent loop for the cloud computers is still built through the retired
+Electron app, on a Mac ([`desktop/README.md`](desktop/README.md)):
 
 ```sh
 cd desktop
-npm ci && npm run bootstrap && npm run check && npm run package && npm run verify
+npm ci && npm run bootstrap && npm run check && npm run package && npm run publish:host-bundle
 ```
 
 ## Run the server and web app locally

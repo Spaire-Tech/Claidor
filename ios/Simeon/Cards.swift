@@ -1,9 +1,17 @@
 import SwiftUI
-import UIKit
 import QuickLook
+#if os(iOS)
+import UIKit
+#endif
 import SimeonCore
 
-/** How wide the chat is, so a bubble or card can cap itself at the window's `min(88%, 640px, 100% - 82px)`. */
+/**
+ * How wide the chat is, so a bubble or card can cap itself: on the iPhone
+ * 36 pt short of the chat's width (334 pt of a 402 pt screen), as wide as
+ * the founder's reference app's bubbles (asked for 11 October 2026; it
+ * was 288 pt, the window's rule); on the Mac the window's
+ * `min(88%, 640px, 100% - 82px)`.
+ */
 struct ChatWidthKey: EnvironmentKey { static let defaultValue: CGFloat = 361 }
 
 extension EnvironmentValues {
@@ -14,7 +22,13 @@ extension EnvironmentValues {
 }
 
 enum ChatMetrics {
-  static func bubbleMax(_ width: CGFloat) -> CGFloat { min(width * 0.88, 640, width - 82) }
+  static func bubbleMax(_ width: CGFloat) -> CGFloat {
+    #if os(iOS)
+    min(width - 36, 640)
+    #else
+    min(width * 0.88, 640, width - 82)
+    #endif
+  }
 }
 
 /** The chat's blue button (`button[data-variant="primary"]`): 32 pt, 8 pt corners, white 14 pt. */
@@ -266,12 +280,14 @@ struct ConnectorTile: View {
   }
 }
 
+#if os(iOS)
 extension UIImage {
-  /** The asset's own picture for light or dark: SwiftUI draws a UIImage as it was first resolved, not as the appearance changes. */
+  /** The asset's own picture for light or dark: SwiftUI draws a UIImage as it was first resolved, not as the appearance changes. (The Mac's: mac/Simeon/UIKitOnMac.swift.) */
   func resolved(_ scheme: ColorScheme) -> UIImage {
     imageAsset?.image(with: UITraitCollection(userInterfaceStyle: scheme == .dark ? .dark : .light)) ?? self
   }
 }
+#endif
 
 /** The connect cards (`connector`, `connectors`): one card per app, its tile, its name, why, and Add (or ✓ Added). */
 struct ConnectorsCardView: View {
@@ -290,6 +306,7 @@ struct ConnectorsCardView: View {
   }
 }
 
+/** One app's card: its tile, its name, why, how many tools it brings once added ("12 tools", as the Mac's), and Add or ✓ Added. */
 struct ConnectorCard: View {
   let name: String
   let reason: String?
@@ -305,12 +322,17 @@ struct ConnectorCard: View {
     let app = store.catalogApp(named: name)
     let isConnected = markedConnected || store.isConnected(name)
     let waiting = connector.connecting == name
+    // How many tools it brings once added, as the Mac's card says it (mac/Simeon/Cards.swift `ConnectorCard`).
+    let tools = store.apps.first { $0.name.lowercased() == name.lowercased() && $0.status == "connected" }?.toolCount ?? 0
     HStack(spacing: 12) {
       ConnectorTile(name: app?.title ?? name)
       VStack(alignment: .leading, spacing: 0) {
         Text(app?.title ?? name).font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.primary).lineLimit(1)
         Text(waiting ? "Waiting for \(name) authorization…" : (reason ?? app?.summary ?? ""))
           .font(.system(size: 13)).foregroundStyle(Ink.secondary).lineLimit(1)
+        if store.isConnected(name) && tools > 0 {
+          Text(tools == 1 ? "1 tool" : "\(tools) tools").font(.system(size: 12)).foregroundStyle(Ink.tertiary).lineLimit(1)
+        }
       }
       Spacer(minLength: 0)
       if isConnected {
@@ -332,6 +354,7 @@ struct ConnectorCard: View {
       Task { await connector.connect(name, store: store) }
     }) { consent in
       ConnectConsentSheet(consent: consent) { confirmed = true }
+        .macSheetSize(width: 440, height: 560)
     }
   }
 }
@@ -539,7 +562,7 @@ struct FlightsCardView: View {
     .frame(width: Self.cardWidth(width), alignment: .leading)
     .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
     .modifier(CardEdge(radius: 22))
-    .sheet(item: $open) { flight in FlightDetails(offer: flight.offer, test: card.isTest) }
+    .sheet(item: $open) { flight in FlightDetails(offer: flight.offer, test: card.isTest).macSheetSize(width: 440, height: 600) }
   }
 
   /** Nearly the chat's width, as Muse's card runs: a bubble's limit would leave the times no room. */
@@ -834,7 +857,7 @@ struct DraftCardView: View {
         VStack(spacing: 0) {
           if isEmail {
             if !card.from.isEmpty { field("From") { Text(card.from).font(.system(size: 17)).foregroundStyle(Ink.secondary).lineLimit(1) }; line }
-            field("To", focus: { focused = 0 }) { TextField("name@company.com", text: $to).font(.system(size: 17)).keyboardType(.emailAddress).textInputAutocapitalization(.never).autocorrectionDisabled().disabled(!editable).focused($focused, equals: 0) }
+            field("To", focus: { focused = 0 }) { TextField("name@company.com", text: $to).font(.system(size: 17)).emailField().autocorrectionDisabled().disabled(!editable).focused($focused, equals: 0) }
             line
             field("Subject", focus: { focused = 1 }) { TextField("Subject", text: $subject).font(.system(size: 17)).disabled(!editable).focused($focused, equals: 1) }
           } else {
@@ -942,8 +965,41 @@ enum FileKind {
   }
 }
 
-/** A file an agent made or the person sent (`attachment`, `user-attachment`): the kind's artwork, the name, save; a tap opens it. Images show inline. */
+/**
+ * The chat's pictures, decoded at the size they are shown, by every address
+ * a file has (`AppStore.sentFile`): kept while the app runs, so a row drawn
+ * again, scrolled back or opened again shows its picture at once instead of
+ * reading it from the computer again.
+ */
+enum ChatImages {
+  private static let cache: NSCache<NSString, UIImage> = {
+    let cache = NSCache<NSString, UIImage>()
+    cache.totalCostLimit = 120 << 20
+    return cache
+  }()
+
+  static func image(for keys: [String]) -> UIImage? {
+    for key in keys { if let image = cache.object(forKey: key as NSString) { return image } }
+    return nil
+  }
+
+  static func keep(_ image: UIImage, under keys: [String]) {
+    let cost = Int(image.size.width * image.size.height * image.scale * image.scale * 4)
+    for key in keys where !key.isEmpty { cache.setObject(image, forKey: key as NSString, cost: cost) }
+  }
+}
+
+/**
+ * A file an agent made or the person sent (`attachment`, `user-attachment`):
+ * the kind's artwork, the name, save; a tap opens it. Images show inline:
+ * one the person sent from this phone at once, from the phone's own copy;
+ * any other in an empty frame of its place while it comes from the
+ * computer, never as a file card first (the founder, 9 October 2026: "for 1
+ * second, we see the pic … as an attachment, then the pic come").
+ */
 struct FileCardView: View {
+  /** The line it is in: a card has the message's actions. */
+  var entryId: String = ""
   let name: String
   let url: String
   let agentId: String
@@ -954,28 +1010,67 @@ struct FileCardView: View {
   @State private var preview: PreviewFile?
   @State private var loading = false
 
+  /** The picture could not be read: the file card, so it can still be opened. */
+  @State private var unreadable = false
+  /** The line under its name: the size, or "Couldn't read file" (`readAttachmentText`). */
+  @State private var line = ""
+
   private var isImage: Bool { FileKind.images.contains((name as NSString).pathExtension.lowercased()) }
 
+  /** Every address this file is shown under (a sent file's waiting line and the computer's path). */
+  private var keys: [String] { store.sentFile(url)?.keys ?? [url] }
+
   var body: some View {
+    let shown = image ?? (isImage ? ChatImages.image(for: keys) : nil)
     Group {
-      if isImage, let image {
-        Image(uiImage: image).resizable().scaledToFit()
+      if isImage, let shown {
+        Image(uiImage: shown).resizable().scaledToFit()
           .frame(maxWidth: min(ChatMetrics.bubbleMax(width), 280), maxHeight: 360)
           .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
           .onTapGesture { open() }
+          #if os(macOS)
+          // Electron's picture menu (`avatar-images.ts`), then the message's; its Copy copies the picture.
+          .contextMenu {
+            ImageMenuItems(image: shown, bytes: { await store.readFile(url, agentId: agentId) })
+            Divider()
+            MessageContextMenu(bubble: asMessage, agentId: agentId, copy: { MacFiles.copy(shown) })
+          }
+          #endif
+      } else if isImage && !unreadable {
+        // Its place while it comes: the picture's frame, empty.
+        RoundedRectangle(cornerRadius: 14, style: .continuous)
+          .fill(Ink.bubbleTheirs)
+          .frame(width: min(ChatMetrics.bubbleMax(width), 220), height: 165)
       } else {
         card
       }
     }
     .frame(maxWidth: .infinity, alignment: fromPerson ? .trailing : .leading)
     // Decoded at the size it is shown, off the main thread: a full-size photo decoded on it froze scrolling.
-    .task {
-      guard isImage, image == nil, let data = await store.readFile(url, agentId: agentId, limit: 12 << 20), let full = UIImage(data: data) else { return }
+    .task(id: url) {
+      guard isImage else { return }
+      let keys = keys
+      if let kept = ChatImages.image(for: keys), max(kept.size.width, kept.size.height) <= 900 {
+        image = kept
+        return
+      }
+      // The phone's own copy of a picture sent from here (`readFile` answers from it), else the computer's.
+      guard let data = await store.readFile(url, agentId: agentId, limit: 12 << 20), let full = UIImage(data: data) else {
+        if ChatImages.image(for: keys) == nil { unreadable = true }
+        return
+      }
       // Its own shape, at most 900 pt on its long side (the thumbnail is drawn at exactly the size asked).
       let scale = min(1, 900 / max(full.size.width, full.size.height, 1))
-      image = await full.byPreparingThumbnail(ofSize: CGSize(width: full.size.width * scale, height: full.size.height * scale)) ?? full
+      let thumbnail = await full.byPreparingThumbnail(ofSize: CGSize(width: full.size.width * scale, height: full.size.height * scale)) ?? full
+      ChatImages.keep(thumbnail, under: keys)
+      image = thumbnail
     }
+    #if os(iOS)
     .sheet(item: $preview) { file in QuickLookSheet(file: file).ignoresSafeArea() }
+    #else
+    // The Mac's Quick Look panel, as Finder opens it.
+    .quickLookPreview(Binding(get: { preview?.url }, set: { preview = $0.map(PreviewFile.init(url:)) }))
+    #endif
   }
 
   private var card: some View {
@@ -991,11 +1086,29 @@ struct FileCardView: View {
         }
       }
       .frame(width: 36, height: 36)
-      Text("\(base)\(ext.isEmpty ? "" : ".\(ext)")").font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.primary)
-        .lineLimit(1).truncationMode(.middle)
+      VStack(alignment: .leading, spacing: 1) {
+        Text("\(base)\(ext.isEmpty ? "" : ".\(ext)")").font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.primary)
+          .lineLimit(1).truncationMode(.middle)
+        // Hidden while empty (patch 1670).
+        if !line.isEmpty { Text(line).font(.system(size: 12)).foregroundStyle(Ink.secondary).lineLimit(1) }
+      }
       Spacer(minLength: 4)
       Group {
-        if loading { ProgressView().controlSize(.small) } else { Image(systemName: "icloud.and.arrow.down").font(.system(size: 14)).foregroundStyle(Ink.secondary) }
+        if loading {
+          ProgressView().controlSize(.small)
+        } else {
+          #if os(macOS)
+          // The window's save button, on an agent's file only (yours has none): the file from the computer into a folder of
+          // this Mac. An icon with no tooltip, "Save <name>" to VoiceOver.
+          if !fromPerson {
+            Button { save() } label: { Image(systemName: "arrow.down.circle").font(.system(size: 15)).foregroundStyle(Ink.secondary) }
+              .buttonStyle(.plain)
+              .accessibilityLabel("Save \(name)")
+          }
+          #else
+          Image(systemName: "icloud.and.arrow.down").font(.system(size: 14)).foregroundStyle(Ink.secondary)
+          #endif
+        }
       }
       .frame(width: 24, height: 24)
     }
@@ -1006,7 +1119,33 @@ struct FileCardView: View {
     .fixedSize(horizontal: true, vertical: false)
     .contentShape(Rectangle())
     .onTapGesture { open() }
+    #if os(macOS)
+    .contextMenu { MessageContextMenu(bubble: asMessage, agentId: agentId) }
+    #endif
+    // Read for every file card, as the window reads it (`skn`).
+    .task(id: url) { line = await store.fileLine(url) }
   }
+
+  /** This line as the message menu takes it. */
+  private var asMessage: Bubble {
+    Bubble(id: entryId, text: "", fromPerson: fromPerson, author: nil, showsName: false, showsAvatar: false, reactions: [], isStreaming: false)
+  }
+
+  #if os(macOS)
+  /** Save…: the Mac's save panel, then the file streamed from the computer ("Couldn't save this file" when it can't be). */
+  private func save() {
+    guard !loading else { return }
+    loading = true
+    Task {
+      defer { loading = false }
+      guard let data = await store.readFile(url, agentId: agentId) else {
+        store.problem = "Couldn't save this file: the computer didn't hand it over."
+        return
+      }
+      if !(await MacFiles.save(data, suggestedName: name)) { store.problem = "Couldn't save this file." }
+    }
+  }
+  #endif
 
   private func open() {
     guard !loading else { return }
@@ -1030,6 +1169,7 @@ struct FileCardView: View {
 
 struct PreviewFile: Identifiable { let url: URL; var id: URL { url } }
 
+#if os(iOS)
 /** The system's preview (Quick Look): images, PDFs, text, and Word, Excel and PowerPoint files, with Share to save. */
 struct QuickLookSheet: UIViewControllerRepresentable {
   let file: PreviewFile
@@ -1051,8 +1191,80 @@ struct QuickLookSheet: UIViewControllerRepresentable {
     func previewController(_ controller: QLPreviewController, previewItemAt index: Int) -> QLPreviewItem { url as NSURL }
   }
 }
+#endif
 
 // MARK: - Requests: approvals, secrets, the computer
+
+/**
+ * "Show the command" or "Show the details" (`RAn`): folded at first, open it
+ * is the text cut at 340 characters with a copy button for all of it. Open
+ * or not is kept apart while the card waits and once answered, so an
+ * answered card folds again.
+ */
+struct ApprovalDisclosure: View {
+  let subject: AutoReviewCard.Subject
+  let text: String
+  let pending: Bool
+  @State private var openWaiting = false
+  @State private var openAnswered = false
+
+  var body: some View {
+    let open = pending ? openWaiting : openAnswered
+    VStack(alignment: .leading, spacing: 6) {
+      Button {
+        if pending { openWaiting.toggle() } else { openAnswered.toggle() }
+      } label: {
+        HStack(spacing: 4) {
+          Image(systemName: open ? "chevron.down" : "chevron.right").font(.system(size: 10, weight: .semibold)).frame(width: 14, height: 14)
+          Text("\(open ? "Hide" : "Show") the \(subject.rawValue)").font(.system(size: 13))
+        }
+        .foregroundStyle(Ink.secondary)
+        .contentShape(.rect)
+      }
+      .buttonStyle(.plain)
+      if open {
+        ApprovalCode(shown: AutoReviewCard.clip(text), full: text)
+      }
+    }
+  }
+}
+
+/** The folded text open: monospaced, scrolling sideways, Copy taking the whole of it ("Copy code", then "Copied"). */
+struct ApprovalCode: View {
+  let shown: String
+  let full: String
+  @State private var copied = false
+
+  var body: some View {
+    ScrollView(.horizontal, showsIndicators: false) {
+      Text(shown).font(.system(size: 13, design: .monospaced)).foregroundStyle(Ink.secondary).lineSpacing(4)
+        .fixedSize(horizontal: true, vertical: true)
+        .padding(.horizontal, 12).padding(.vertical, 8)
+        .textSelection(.enabled)
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .background(Ink.field, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+    .overlay(alignment: .topTrailing) {
+      Button {
+        UIPasteboard.general.string = full
+        copied = true
+        Task { @MainActor in
+          try? await Task.sleep(nanoseconds: 2_000_000_000)
+          copied = false
+        }
+      } label: {
+        Image(systemName: copied ? "checkmark" : "doc.on.doc").font(.system(size: 11, weight: .medium)).foregroundStyle(Ink.secondary)
+          .frame(width: 24, height: 24).tapRoom(10)
+      }
+      .buttonStyle(.plain)
+      .padding(4)
+      .accessibilityLabel(copied ? "Copied" : "Copy code")
+      #if os(macOS)
+      .help(copied ? "Copied" : "Copy code")
+      #endif
+    }
+  }
+}
 
 struct RequestCardView: View {
   let entryId: String
@@ -1068,38 +1280,55 @@ struct RequestCardView: View {
   var body: some View {
     Group {
       switch card {
-      case .approval(let requestId, let summary, let reason, let command, let status):
-        approval(requestId: requestId, summary: summary, reason: reason, command: command, status: status)
+      case .approval(let requestId, let summary, let reason, let command, let status, let surface, let proposedRule):
+        approval(requestId: requestId, summary: summary, reason: reason, command: command, status: status, surface: surface, proposedRule: proposedRule)
       case .secret(let label, let description, let provided):
         secretCard(label: label, description: description, provided: provided)
-      case .computer(_, let instruction, let resolution):
-        computer(instruction: instruction, resolution: resolution)
+      case .computer(let requestId, let instruction, let resolution):
+        computer(requestId: requestId, instruction: instruction, resolution: resolution)
       }
     }
     .frame(maxWidth: ChatMetrics.bubbleMax(width), alignment: .leading)
   }
 
-  private func approval(requestId: String, summary: String, reason: String, command: String, status: String) -> some View {
-    VStack(alignment: .leading, spacing: 10) {
-      HStack(spacing: 8) {
-        Text("Approval needed").font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.primary)
-        Spacer(minLength: 0)
-        StatusPill(text: status == "pending" ? "Waiting for you" : status == "denied" ? "Denied" : status == "expired" ? "Expired" : "Allowed",
-                   dot: status == "pending" ? Ink.blue : status == "denied" ? Ink.danger : Ink.tertiary, size: 12)
+  /**
+   * The auto-review card as the window draws it (the chunk's `me`): the
+   * title by what the agent wants to do, the badge (waiting, or how it was
+   * answered), where it runs, the summary when it says more than the
+   * command, the reason while it waits, the note under Always allowed, the
+   * command or details folded with Copy, and Allow once, Always allow, Deny.
+   * An answer shows at once; a failed one comes back without a word.
+   */
+  private func approval(requestId: String, summary: String, reason: String, command: String?, status: String, surface: String?, proposedRule: String?) -> some View {
+    let shown = status == "pending" ? (store.answeredApprovals[entryId] ?? status) : status
+    let pending = shown == "pending"
+    let heading = AutoReviewCard.title(surface: surface)
+    return VStack(alignment: .leading, spacing: 12) {
+      VStack(alignment: .leading, spacing: 4) {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+          Text(heading.title).font(.system(size: 15, weight: .medium)).foregroundStyle(Ink.primary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+          approvalBadge(shown)
+        }
+        if let location = AutoReviewCard.location(surface: surface) {
+          Text(location).font(.system(size: 12, weight: .medium)).foregroundStyle(Ink.secondary)
+        }
+        if let line = AutoReviewCard.summaryLine(summary: summary, command: command) {
+          Text(line).font(.system(size: 14)).foregroundStyle(Ink.primary).lineSpacing(2).fixedSize(horizontal: false, vertical: true)
+        }
+        if pending, !reason.isEmpty {
+          Text(reason).font(.system(size: 13)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true)
+        }
+        if let note = AutoReviewCard.settledNote(status: shown, rule: AutoReviewCard.rule(proposed: proposedRule)) {
+          Text(note).font(.system(size: 13)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true)
+        }
+        ApprovalDisclosure(subject: heading.subject, text: command ?? summary, pending: pending)
       }
-      Text(summary).font(.system(size: 17)).foregroundStyle(Ink.primary).fixedSize(horizontal: false, vertical: true)
-      if !reason.isEmpty { Text(reason).font(.system(size: 13)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true) }
-      if !command.isEmpty {
-        Text(command).font(.system(size: 12, design: .monospaced)).foregroundStyle(Ink.primary)
-          .padding(8).frame(maxWidth: .infinity, alignment: .leading)
-          .background(Ink.field, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-      }
-      if status == "pending" {
+      if pending {
         HStack(spacing: 8) {
-          Button("Allow once") { resolve(requestId, "approved") }.buttonStyle(BlueButtonStyle())
-          Button("Always allow") { resolve(requestId, "always") }.buttonStyle(GreyButtonStyle())
-          Button("Deny") { resolve(requestId, "denied") }.buttonStyle(GreyButtonStyle())
-          if busy { ProgressView().controlSize(.small) }
+          Button("Allow once") { resolve(requestId, "approved", rule: proposedRule) }.buttonStyle(BlueButtonStyle())
+          Button("Always allow") { resolve(requestId, "always", rule: proposedRule) }.buttonStyle(GreyButtonStyle())
+          Button("Deny") { resolve(requestId, "denied", rule: proposedRule) }.buttonStyle(GreyButtonStyle())
         }
         .disabled(busy)
       }
@@ -1107,8 +1336,22 @@ struct RequestCardView: View {
     .card()
   }
 
-  private func resolve(_ requestId: String, _ resolution: String) {
-    run { await store.resolveApproval(requestId, resolution: resolution, entryId: entryId, in: agentId) }
+  /** Waiting: the turning wheel and "Approval needed", in blue; answered: a dot and how. */
+  @ViewBuilder private func approvalBadge(_ status: String) -> some View {
+    if let badge = AutoReviewCard.badge(status: status) {
+      StatusPill(text: badge.label, dot: badge.kind == .success ? Ink.live : badge.kind == .danger ? Ink.danger : Ink.tertiary, size: 13)
+    } else {
+      HStack(spacing: 4) {
+        ProgressView().controlSize(.mini).tint(Ink.blue)
+        Text("Approval needed").font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.blue).lineLimit(1)
+      }
+      .padding(.leading, 4).padding(.trailing, 8).padding(.vertical, 2)
+      .background(Ink.blue.opacity(0.12), in: Capsule())
+    }
+  }
+
+  private func resolve(_ requestId: String, _ resolution: String, rule: String?) {
+    run { await store.resolveApproval(requestId, resolution: resolution, proposedRule: rule, entryId: entryId, in: agentId) }
   }
 
   private func run(_ work: @escaping () async -> Void) {
@@ -1129,7 +1372,7 @@ struct RequestCardView: View {
       if !provided {
         SecureField("Paste it here", text: $secret)
           .font(.system(size: 17))
-          .textInputAutocapitalization(.never).autocorrectionDisabled()
+          .typedAsIs().autocorrectionDisabled()
           .padding(.horizontal, 10).frame(height: 34)
           .background(Ink.field, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
           .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Ink.edge, lineWidth: 1))
@@ -1145,10 +1388,20 @@ struct RequestCardView: View {
     .card()
   }
 
-  /** "Your turn on the computer" (patch HANDOFF_CARD_SOURCE): a white computer tile, the status, the instruction, Take over / I'm done / Skip. */
-  private func computer(instruction: String, resolution: String?) -> some View {
-    let waiting = resolution == nil
-    let done = ["handed_back": "Done", "replied": "Answered", "dismissed": "Skipped"][resolution ?? ""] ?? "Done"
+  /**
+   * "Your turn on the computer" (patch HANDOFF_CARD_SOURCE): a white
+   * computer tile, the status, the instruction, the screen as it was when
+   * the agent asked, Take over / I'm done / Skip. It waits while the
+   * computer says this request is pending (`Obn`); before its status is
+   * read, while the line has no answer yet.
+   */
+  private func computer(requestId: String, instruction: String, resolution: String?) -> some View {
+    let pending = store.computer.status(agentId)?.handoff
+    let known = store.computer.readState(agentId) == .known
+    let waiting = known ? pending?.requestId == requestId : resolution == nil
+    let shownInstruction = waiting ? (pending?.instruction ?? instruction) : instruction
+    let done = ["handed_back": "Done", "replied": "Answered", "dismissed": "Skipped"][resolution ?? "handed_back"] ?? "Done"
+    let snapshot = waiting ? pending?.snapshotDataUrl.flatMap(Self.picture) : nil
     return VStack(alignment: .leading, spacing: 12) {
       HStack(spacing: 12) {
         Image(systemName: "display").font(.system(size: 19)).foregroundStyle(Ink.primary)
@@ -1163,8 +1416,18 @@ struct RequestCardView: View {
         }
         Spacer(minLength: 0)
       }
-      if !instruction.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-        Text(instruction).font(.system(size: 15)).foregroundStyle(Ink.primary).fixedSize(horizontal: false, vertical: true)
+      if !shownInstruction.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        Text(shownInstruction.trimmingCharacters(in: .whitespacesAndNewlines)).font(.system(size: 15)).foregroundStyle(waiting ? Ink.primary : Ink.secondary).fixedSize(horizontal: false, vertical: true)
+      }
+      if let snapshot {
+        Button(action: openComputer) {
+          Image(uiImage: snapshot).resizable().aspectRatio(ComputerScreen.width / ComputerScreen.height, contentMode: .fill)
+            .frame(maxWidth: .infinity)
+            .aspectRatio(ComputerScreen.width / ComputerScreen.height, contentMode: .fit)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Take over the computer")
       }
       if waiting {
         VStack(spacing: 6) {
@@ -1180,6 +1443,7 @@ struct RequestCardView: View {
           }
           .buttonStyle(.plain)
           .disabled(busy)
+          .help("Cancel this request without doing the step; the agent continues without it")
         }
       } else {
         Button("Open computer", action: openComputer).buttonStyle(PillButtonStyle(primary: false))
@@ -1187,6 +1451,18 @@ struct RequestCardView: View {
     }
     .card(radius: 18, padding: 14)
   }
+
+  /** The screen the agent saw when it asked (`data:image/webp;base64,…`), decoded once. */
+  static func picture(_ dataURL: String) -> UIImage? {
+    let key = NSString(string: String(dataURL.suffix(64)) + "\(dataURL.count)")
+    if let kept = snapshots.object(forKey: key) { return kept }
+    guard let comma = dataURL.firstIndex(of: ","), let data = Data(base64Encoded: String(dataURL[dataURL.index(after: comma)...])),
+          let image = UIImage(data: data) else { return nil }
+    snapshots.setObject(image, forKey: key)
+    return image
+  }
+
+  private static let snapshots = NSCache<NSString, UIImage>()
 }
 
 /** The hand-off card's 36 pt pills: the blue one, and the grey beside it. */
@@ -1279,7 +1555,15 @@ struct TeammatesLine: View {
           .buttonStyle(.plain)
       }
     }
-    .sheet(item: $shown) { route in NavigationStack { ExchangePage(route: route, fallback: entries) } }
+    .sheet(item: $shown) { route in
+      NavigationStack {
+        ExchangePage(route: route, fallback: entries)
+          #if os(macOS)
+          .toolbar { ToolbarItem(placement: .cancellationAction) { CloseButton() } }
+          #endif
+      }
+      .macSheetSize(width: 520, height: 640)
+    }
   }
 
   private var chip: some View {
@@ -1288,7 +1572,7 @@ struct TeammatesLine: View {
       Text(exchange.peers.count == 1 ? exchange.peers[0].name : "\(exchange.peers.count) agents")
     }
     .padding(.vertical, 4).padding(.leading, 4).padding(.trailing, 6)
-    .contentShape(Capsule())
+    .tapRoom(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
   }
 
   private func open(_ peer: Party) {
@@ -1375,7 +1659,7 @@ struct ExchangePage: View {
         .frame(maxWidth: .infinity)
     }
     .background(Ink.ground)
-    .navigationBarTitleDisplayMode(.inline)
+    .inlineBarTitle()
   }
 }
 
@@ -1400,7 +1684,9 @@ struct ExchangeHeadline: View {
     .accessibilityLabel("\(me.name) and \(peer.name)")
     .allowsHitTesting(false)
     // Up into the bar's row, beside its back button, as the chat's.
+    #if os(iOS)
     .padding(.top, -34)
+    #endif
     .padding(.bottom, 6)
     .frame(maxWidth: .infinity)
   }
@@ -1426,18 +1712,75 @@ struct PartyAvatar: View {
 struct VoiceCallLine: View {
   let seconds: Int
   let lines: [CallLine]
+  /** The call is still on: "Voice chat · now", and nothing to open yet. */
+  var live = false
   @State private var open = false
 
   var body: some View {
-    Button { if !lines.isEmpty { open = true } } label: {
+    Button { if !live && !lines.isEmpty { open = true } } label: {
       EventLine {
         Image(systemName: "waveform").font(.system(size: 11, weight: .semibold)).padding(.trailing, 3)
-        Text("Voice chat · \(Chat.callLength(seconds))")
+        Text(Chat.voiceChatLabel(seconds: seconds, live: live))
       }
       .contentShape(.rect)
     }
     .buttonStyle(.plain)
-    .sheet(isPresented: $open) { CallRecordSheet(seconds: seconds, lines: lines) }
+    .sheet(isPresented: $open) { CallRecordSheet(seconds: seconds, lines: lines).macSheetSize(width: 420, height: 560) }
+  }
+}
+
+/**
+ * A call an older host wrote into the chat as the agent's message ("Voice
+ * call · 2:48", then its recap; `__simeonCallRecord`): in the agent's
+ * bubble, the phone in a 30 pt circle, "Voice call" and its length, a
+ * chevron; a click opens the recap under a hairline, set in 40 pt. 340 pt
+ * wide at most.
+ */
+struct CallRecordRow: View {
+  let record: CallRecord
+  @State private var open = false
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+  private static let disc = Color.dynamic(light: "#0000000f", dark: "#ffffff1a")
+  private static let rule = Color.dynamic(light: "#00000014", dark: "#ffffff1a")
+
+  var body: some View {
+    let recap = record.recap
+    VStack(alignment: .leading, spacing: 0) {
+      Button { if recap != nil { withAnimation(reduceMotion ? nil : .easeOut(duration: 0.22)) { open.toggle() } } } label: {
+        HStack(spacing: 10) {
+          Image(systemName: "phone.fill").font(.system(size: 14)).foregroundStyle(Ink.primary)
+            .frame(width: 30, height: 30)
+            .background(Self.disc, in: Circle())
+          VStack(alignment: .leading, spacing: 1) {
+            Text("Voice call").font(.system(size: MessageType.size, weight: .semibold)).foregroundStyle(Ink.theirsText)
+            Text(record.duration).font(.system(size: 13)).monospacedDigit().foregroundStyle(Ink.secondary)
+          }
+          .frame(maxWidth: .infinity, alignment: .leading)
+          if recap != nil {
+            Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(Ink.secondary)
+              .rotationEffect(.degrees(open ? 90 : 0))
+          }
+        }
+        .contentShape(.rect)
+      }
+      .buttonStyle(.plain)
+      .accessibilityValue(recap == nil ? "" : open ? "expanded" : "collapsed")
+      if open, let recap {
+        Text(recap)
+          .font(.system(size: MessageType.size))
+          .lineSpacing(MessageType.spacing())
+          .foregroundStyle(Ink.theirsText)
+          .textSelection(.enabled)
+          .fixedSize(horizontal: false, vertical: true)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .padding(.leading, 40).padding(.top, 8)
+          .overlay(alignment: .top) { Self.rule.frame(height: 1) }
+          .padding(.top, 8)
+          .transition(.opacity)
+      }
+    }
+    .frame(maxWidth: 340, alignment: .leading)
   }
 }
 
@@ -1508,7 +1851,7 @@ struct RoutinesLine: View {
       if trailing { Image(systemName: "chevron.down").font(.system(size: 9, weight: .semibold)) }
     }
     .padding(.vertical, 4).padding(.leading, 4).padding(.trailing, 6)
-    .contentShape(Capsule())
+    .tapRoom(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
   }
 }
 

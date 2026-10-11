@@ -405,6 +405,112 @@ class TestSigningIn:
         assert sent["toolkit"] == "gmail"
         assert sent["callback_url"].endswith("/desktop/apps/connected")
 
+    async def test_an_app_that_needs_our_own_oauth_app_is_coming_soon(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        """11 October 2026: Xero, Shopify, Gusto and five more lend no
+        sign-in of their own. A refused link reads "coming soon" (503, which
+        the box shows as such), never the provider's error; another app's
+        refusal is still its error (502)."""
+        headers = await _signed_in(client, session, user)
+        refusal = httpx.Response(
+            400,
+            json={"error": {"message": "No Composio managed auth for this toolkit."}},
+        )
+        with respx.mock(assert_all_called=True) as mock:
+            mock.get(f"{API}/api/v3.1/connected_accounts").mock(
+                return_value=_accounts()
+            )
+            mock.post(f"{API}/api/v3.1/tool_router/session").mock(
+                return_value=httpx.Response(201, json={"session_id": "trs_1"})
+            )
+            mock.post(f"{API}/api/v3.1/tool_router/session/trs_1/link").mock(
+                return_value=refusal
+            )
+            with capture_logs() as logs:
+                xero = await client.post(
+                    "/desktop/api/apps/xero/connect", headers=headers
+                )
+                gmail = await client.post(
+                    "/desktop/api/apps/gmail/connect", headers=headers
+                )
+        assert xero.status_code == 503, xero.text
+        assert xero.json()["error"]["message"] == "This app is coming soon in Simeon."
+        assert any(
+            line["event"] == "desktop.apps.sign_in_needs_own_app"
+            and line["toolkit"] == "xero"
+            for line in logs
+        )
+        assert gmail.status_code == 502, gmail.text
+        assert "composio" not in gmail.text.lower()
+
+    async def test_simeon_labs_own_sign_in_is_named_to_the_session(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        """A config the session is not given is never used, so each one in
+        COMPOSIO_AUTH_CONFIGS goes with the session; a malformed entry is
+        left out. Xero, named there, gets its link."""
+        mocker.patch.object(
+            settings,
+            "COMPOSIO_AUTH_CONFIGS",
+            {"xero": "ac_xero1", "gusto": "not-an-id", "Bad Slug": "ac_x"},
+        )
+        headers = await _signed_in(client, session, user)
+        with respx.mock(assert_all_called=True) as mock:
+            mock.get(f"{API}/api/v3.1/connected_accounts").mock(
+                return_value=_accounts()
+            )
+            created = mock.post(f"{API}/api/v3.1/tool_router/session").mock(
+                return_value=httpx.Response(201, json={"session_id": "trs_1"})
+            )
+            mock.post(f"{API}/api/v3.1/tool_router/session/trs_1/link").mock(
+                return_value=httpx.Response(
+                    201, json={"redirect_url": "https://login.xero.com/x"}
+                )
+            )
+            response = await client.post(
+                "/desktop/api/apps/xero/connect", headers=headers
+            )
+        assert response.status_code == 200, response.text
+        assert response.json()["url"] == "https://login.xero.com/x"
+        assert json.loads(created.calls[0].request.content) == {
+            "user_id": composio_user_id(user),
+            "auth_configs": {"xero": "ac_xero1"},
+        }
+
+    async def test_a_named_sign_in_that_is_refused_says_why(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        """Once Simeon Labs' own sign-in is named, a refusal is a real error
+        to read (502 with the sentence), not "coming soon"."""
+        mocker.patch.object(settings, "COMPOSIO_AUTH_CONFIGS", {"xero": "ac_xero1"})
+        headers = await _signed_in(client, session, user)
+        with respx.mock(assert_all_called=True) as mock:
+            mock.get(f"{API}/api/v3.1/connected_accounts").mock(
+                return_value=_accounts()
+            )
+            mock.post(f"{API}/api/v3.1/tool_router/session").mock(
+                return_value=httpx.Response(201, json={"session_id": "trs_1"})
+            )
+            mock.post(f"{API}/api/v3.1/tool_router/session/trs_1/link").mock(
+                return_value=httpx.Response(
+                    400, json={"error": {"message": "Auth config is disabled."}}
+                )
+            )
+            response = await client.post(
+                "/desktop/api/apps/xero/connect", headers=headers
+            )
+        assert response.status_code == 502, response.text
+        assert "Auth config is disabled" in response.text
+
     async def test_the_box_may_start_and_end_a_sign_in_for_the_web(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User
     ) -> None:

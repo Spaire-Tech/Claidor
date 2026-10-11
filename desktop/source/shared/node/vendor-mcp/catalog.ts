@@ -34,6 +34,17 @@ export interface VendorMcpConnector {
    */
   readonly clientId?: string;
   /**
+   * The vendor sends a sign-in back only to this computer's own address
+   * (`http://localhost:8787/callback`), never to Simeon Labs' hosted one,
+   * so the computer asks for the loopback even when the sign-in is started
+   * from the iPhone, the Mac app in Swift or the web; the two apps listen
+   * there while their sign-in sheet is open (`SimeonCore/LoopbackSignIn.swift`).
+   * Measured 11 October 2026: Canva's authorize page answers "Invalid
+   * redirect URI", Square's and Vercel's registration refuse the hosted
+   * address, and Dropbox registers no client for it; each took the loopback.
+   */
+  readonly loopbackOnly?: true;
+  /**
    * An app served by Simeon Labs' own apps service (`server/simeon/desktop/apps.py`)
    * instead of a vendor's MCP: the tools and the sign-in link come from our
    * server, the app's slug is this. Added 28 September 2026 ("for the rest of
@@ -65,7 +76,7 @@ export const VENDOR_MCP_CONNECTORS: readonly VendorMcpConnector[] = [
   app({ id: "google-calendar", name: "Google Calendar", category: G.MailCalendar, description: "Search events and schedule meetings." }, "googlecalendar"),
   { id: "notion", name: "Notion", category: G.FilesDocs, url: "https://mcp.notion.com/mcp", description: "Search, read, and write pages and databases." },
   app({ id: "google-drive", name: "Google Drive", category: G.FilesDocs, description: "Search, read, create, and share files." }, "googledrive"),
-  { id: "dropbox", name: "Dropbox", category: G.FilesDocs, url: "https://mcp.dropbox.com/mcp", description: "Search, read, and organise files." },
+  { id: "dropbox", name: "Dropbox", category: G.FilesDocs, url: "https://mcp.dropbox.com/mcp", loopbackOnly: true, description: "Search, read, and organise files." },
   { id: "airtable", name: "Airtable", category: G.Productivity, url: "https://mcp.airtable.com/mcp", description: "Query and update bases, tables, and records." },
   app({ id: "asana", name: "Asana", category: G.Productivity, description: "Search and update tasks and projects." }, "asana"),
   { id: "clickup", name: "ClickUp", category: G.Productivity, url: "https://mcp.clickup.com/mcp", description: "Tasks, docs, and spaces." },
@@ -74,13 +85,13 @@ export const VENDOR_MCP_CONNECTORS: readonly VendorMcpConnector[] = [
   app({ id: "zoom", name: "Zoom", category: G.Meetings, description: "Search meetings, pull transcripts, and work with Zoom Docs." }, "zoom"),
   app({ id: "google-meet", name: "Google Meet", category: G.Meetings, description: "Meetings and recordings in Google." }, "googlemeet"),
   app({ id: "figma", name: "Figma", category: G.Creativity, description: "Read files, frames, and design context." }, "figma"),
-  { id: "canva", name: "Canva", category: G.Creativity, url: "https://mcp.canva.com/mcp", description: "Create and edit designs." },
+  { id: "canva", name: "Canva", category: G.Creativity, url: "https://mcp.canva.com/mcp", loopbackOnly: true, description: "Create and edit designs." },
   { id: "miro", name: "Miro", category: G.Creativity, url: "https://mcp.miro.com/mcp", description: "Read and build boards." },
   { id: "webflow", name: "Webflow", category: G.Creativity, url: "https://mcp.webflow.com/mcp", description: "Sites, CMS, and collections." },
   { id: "wix", name: "Wix", category: G.Creativity, url: "https://mcp.wix.com/mcp", description: "Sites and the Wix collection." },
   { id: "stripe", name: "Stripe", category: G.Finance, url: "https://mcp.stripe.com", description: "Customers, payments, subscriptions, and invoices." },
   { id: "paypal", name: "PayPal", category: G.Finance, url: "https://mcp.paypal.com/mcp", description: "Invoices, orders, and transactions." },
-  { id: "square", name: "Square", category: G.Finance, url: "https://mcp.squareup.com/mcp", description: "Payments, catalog, and the shop." },
+  { id: "square", name: "Square", category: G.Finance, url: "https://mcp.squareup.com/mcp", loopbackOnly: true, description: "Payments, catalog, and the shop." },
   { id: "ramp", name: "Ramp", category: G.Finance, url: "https://mcp.ramp.com/mcp", description: "Expenses, cards, bills, and reimbursements." },
   app({ id: "quickbooks", name: "QuickBooks", category: G.Finance, description: "Books, invoices, and expenses." }, "quickbooks"),
   app({ id: "hubspot", name: "HubSpot", category: G.Sales, description: "Search and update contacts, companies, deals, and tickets." }, "hubspot"),
@@ -90,7 +101,7 @@ export const VENDOR_MCP_CONNECTORS: readonly VendorMcpConnector[] = [
   { id: "linear", name: "Linear", category: G.Developer, url: "https://mcp.linear.app/mcp", description: "Issues, projects, and cycles." },
   { id: "jira", name: "Jira", category: G.Developer, url: "https://mcp.atlassian.com/v1/mcp", description: "Jira and Confluence, through Atlassian." },
   app({ id: "github", name: "GitHub", category: G.Developer, description: "Manage repos, issues, pull requests, and Actions." }, "github"),
-  { id: "vercel", name: "Vercel", category: G.Developer, url: "https://mcp.vercel.com", description: "Projects, deployments, and logs." },
+  { id: "vercel", name: "Vercel", category: G.Developer, url: "https://mcp.vercel.com", loopbackOnly: true, description: "Projects, deployments, and logs." },
   { id: "supabase", name: "Supabase", category: G.Developer, url: "https://mcp.supabase.com/mcp", description: "Projects, tables, and SQL." },
   { id: "sentry", name: "Sentry", category: G.Developer, url: "https://mcp.sentry.dev/mcp", description: "Errors, releases, and performance." },
   { id: "cloudflare", name: "Cloudflare", category: G.Developer, url: "https://bindings.mcp.cloudflare.com/mcp", description: "Workers, KV, and bindings." },

@@ -7,11 +7,14 @@ Settings and the call) with Apple's own parts. Its bars, sheets, menus,
 buttons and the composer get iOS 26's Liquid Glass, and back is the native
 swipe.
 
-It replaces the Expo shell in `mobile/`, which shows the web window in a
-web view. It is the same app on the App Store (bundle id
-`com.simeonlabs.simeon.ios`, URL scheme `simeon-ios`), so a build of this
-one replaces that one on TestFlight. `mobile/` stays until this one has
-run on a real iPhone.
+Its views are built into the native Mac app too (`mac/README.md`): what
+only the phone has stays behind `#if os(iOS)`, so a change here is built
+for both apps (`ios/scripts/mac.sh` and `mac/scripts/build.sh`).
+
+It replaced the Expo shell that was in `mobile/` (it showed the web window
+in a web view; retired and removed on 11 October 2026). It is the same app
+on the App Store (bundle id `com.simeonlabs.simeon.ios`, URL scheme
+`simeon-ios`), so a build of this one replaces that one on TestFlight.
 
 ## How it works
 
@@ -107,15 +110,20 @@ macOS minutes cost ten times Linux ones, so it never runs by itself.
 
 While the app runs from Xcode, its console shows a line whenever the
 screen stands still for more than a quarter of a second, with what the app
-was doing (`[simeon] the screen stood still 1840 ms, while laying out ava,
-512 lines`), and any step that took longer than a frame (`[simeon] slow:
-…`). A freeze that lasts two seconds also writes where the main thread is
+had last begun and how long before the freeze (`[simeon] the screen stood
+still 1840 ms, while laying out ava, 512 lines (begun 3 ms before the screen
+stopped)`: a step begun seconds before is not what froze), then where the
+main thread was a quarter of a second in, one line per call (the system's
+names; the app's own code shows as `Simeon 0x…`), and any step that took
+longer than a frame (`[simeon] slow: …`). A freeze that lasts two seconds also writes where the main thread is
 stuck, read from its own stack (`[simeon] the main thread is in:` and one
 line per call), again at ten seconds, and what of the app's own kept
 happening meanwhile (`[simeon]   48210 × ChatMessages drawn`): a loop is the
-count that climbs. Copy those lines into the chat to find a lag. Run (⌘R) builds Debug,
-which is slower than TestFlight's optimised build; for a fair feel of speed,
-set the scheme's Run to Release (Product → Scheme → Edit Scheme).
+count that climbs. Copy those lines into the chat to find a lag. Run (⌘R) builds Release, optimised as
+TestFlight's build is, so what you feel from Xcode is what people get (Debug's
+unoptimised Swift was several times slower). Push notifications still go
+through Apple's sandbox for such a build: the app reads that from its signing
+profile, not from the configuration.
 
 1. In Xcode, open Signing & Capabilities for the Simeon target. Choose the
    Apple developer team Simeon publishes from, or set `DEVELOPMENT_TEAM`

@@ -65,7 +65,7 @@ test("the bundle's package.json and plist are Simeon's own", () => {
   assert.deepEqual(ownShellPackageJson({ name: "Simeon", version: "0.1.0", dev: true }).sandLab, true);
   assert.equal(ownShellPackageJson({ name: "Simeon", version: "0.1.0", dev: true }).productName, "Simeon Dev");
   const plist = ownShellPlistExtension({ environment: { SAND_BACKEND_URL: "https://api.simeonlabs.com" }, year: 2026 });
-  assert.equal(plist.NSHumanReadableCopyright, "Copyright © 2026 SimeonLabs, Inc. All rights reserved.");
+  assert.equal(plist.NSHumanReadableCopyright, "Copyright © 2026 Spaire, Inc. All rights reserved.");
   assert.match(plist.NSMicrophoneUsageDescription, /^Simeon uses the microphone/);
   assert.match(plist.NSCameraUsageDescription, /^Simeon uses the camera/);
   assert.deepEqual(plist.LSEnvironment, { MallocNanoZone: "0", SAND_BACKEND_URL: "https://api.simeonlabs.com" }, "Electron's own entry stays beside ours");

@@ -1,5 +1,7 @@
 import SwiftUI
+#if os(iOS)
 import UIKit
+#endif
 import WebKit
 import SimeonCore
 
@@ -28,6 +30,10 @@ final class RemoteLogos: NSObject, WKNavigationDelegate {
   private var failed: Set<String> = []
   private var inFlight: [String: Task<UIImage?, Never>] = [:]
   private var web: WKWebView?
+  #if os(macOS)
+  /** The Mac's window for the hidden web view: its own, unseen, so no window the person closes takes it away. */
+  private var holder: NSWindow?
+  #endif
   private var pageReady = false
   private var loaded: CheckedContinuation<Void, Never>?
   private var drawing = false
@@ -173,13 +179,24 @@ final class RemoteLogos: NSObject, WKNavigationDelegate {
   private func webView() -> WKWebView {
     if let web { return web }
     let made = WKWebView(frame: CGRect(x: 0, y: 0, width: Self.side, height: Self.side))
+    made.navigationDelegate = self
+    #if os(iOS)
     made.isOpaque = false
     made.backgroundColor = .clear
     made.scrollView.backgroundColor = .clear
     made.isUserInteractionEnabled = false
-    made.navigationDelegate = self
     let window = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.flatMap(\.windows).first { $0.isKeyWindow }
     window?.insertSubview(made, at: 0)
+    #else
+    made.setValue(false, forKey: "drawsBackground")
+    let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: Self.side, height: Self.side), styleMask: [.borderless], backing: .buffered, defer: false)
+    window.isReleasedWhenClosed = false
+    window.alphaValue = 0
+    window.ignoresMouseEvents = true
+    window.contentView = made
+    window.orderBack(nil)
+    holder = window
+    #endif
     web = made
     return made
   }
@@ -197,9 +214,18 @@ final class RemoteLogos: NSObject, WKNavigationDelegate {
     loaded = nil
   }
 
+  /** The picture's pixels: UIKit's `cgImage`, which AppKit gives when asked. */
+  private static func pixels(_ image: UIImage) -> CGImage? {
+    #if os(iOS)
+    return image.cgImage
+    #else
+    return image.cgImage(forProposedRect: nil, context: nil, hints: nil)
+    #endif
+  }
+
   /** The picture cut to what is drawn on it (alpha above 12 of 255); nil when nothing is. */
   static func trimmed(_ image: UIImage) -> UIImage? {
-    guard let cg = image.cgImage else { return image }
+    guard let cg = Self.pixels(image) else { return image }
     let width = cg.width, height = cg.height
     guard width > 0, height > 0, width * height <= 4_000_000 else { return image }
     var pixels = [UInt8](repeating: 0, count: width * height * 4)
@@ -236,7 +262,7 @@ final class RemoteLogos: NSObject, WKNavigationDelegate {
    * white; the colours that already read are left as they are.
    */
   static func forDarkDisc(_ image: UIImage) -> UIImage {
-    guard let cg = image.cgImage else { return image }
+    guard let cg = Self.pixels(image) else { return image }
     let width = cg.width, height = cg.height
     guard width > 0, height > 0, width * height <= 4_000_000 else { return image }
     let linear = { (v: Double) -> Double in let c = v / 255; return c <= 0.03928 ? c / 12.92 : pow((c + 0.055) / 1.055, 2.4) }

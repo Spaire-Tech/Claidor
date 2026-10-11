@@ -60,13 +60,8 @@ the phone design. None of the screens has been compiled yet (see
 | The chat's motion (§10) | New lines come in with the Mac's rise (240 ms, 12 pt, from 94 %). Older lines load as you near the top. "N new messages" pills show for a "New" line out of sight above, and for what arrives below while you read further up. A quote's jump lights the message. |
 | The composer (§10) | Send and the mic cross over in 200 ms. It grows a line at a time with the Mac's spring. "Reply…" shows while replying. "@" offers the agents' names. |
 
-Still missing on the phone:
-- The welcome steps of a new account. A new account on the phone opens
-  on an empty list.
-- Threads ("Start a thread" and the thread view).
-- In the composer: "/" for skills, "#" for pull requests, ":" for emoji,
-  and "More emoji" in a message's menu.
-- Sections in the list ("Move to") and selecting several rows at once.
+Still missing on the phone: see §30 (11 October 2026), which replaces the
+list that stood here.
 
 ---
 
@@ -872,6 +867,117 @@ done it. also, he cant cut himself like this, wait of turn."
   it was doing is not announced again (the voice stays silent unless
   asked); an answer or a failure is said. The Mac banner no longer pushes it
   in after 8 s while the voice talks either.
+
+## 29. Pictures without the file card first (9 October 2026)
+
+The founder: "for 1 second, we see the pic … as an attachment, then the pic
+come." A picture was drawn as a file card until it had come back from the
+computer (`readAttachmentChunk`), and again each time its row was drawn
+anew, since nothing kept it.
+
+- A picture sent from the phone shows at once, from the composer's own
+  copy: the waiting line names it (`AppStore.outboxFileURL`), the computer's
+  path answers for the same copy once uploaded (`sentFile`), and it is never
+  fetched back.
+- Pictures are kept, decoded at their size, while the app runs
+  (`ChatImages`): a row drawn again shows its picture at once.
+- A picture still on its way (an agent's, or after a relaunch) is an empty
+  frame of its place, never a file card; the card shows only if it cannot
+  be read.
+
+## 30. The Mac's features on the phone (11 October 2026)
+
+The founder: "i noticed section is not present in the mobile app. please
+bring it. and find what else isnt there and we bring it." An audit went
+through mac/STEPS.md and the Mac's views against ios/Simeon; what it found
+is on the phone now:
+
+- **The list:** the Mac's sections (fold, Rename, Move Up, Move Down,
+  Delete, a chat's Move to); Select Chats, moving or deleting several at
+  once; "Can't reach your computer" with Retry and Recover computer, and
+  "Reconnecting to your computer…" over a list already shown.
+- **The chat:** Find in Chat (the magnifier in the bar); "/" with the
+  Mac's palette commands (Org Chart, Open Hidden Agents, Members, Channels,
+  Chat Settings, Settings, Usage & Billing, Plugins, the themes, Update
+  Simeon's Computer); a routine's chip opens that routine; Paste Picture;
+  a tap pokes the working butterfly; the connector card's tool count.
+- **Search:** Org Chart, Usage & Billing, Plugins and Update Simeon's
+  Computer as their own actions.
+- **The agent's page:** a group's own page (name, description, routines,
+  picture); routine triggers other than a clock (Slack, Git, Teams, Linear,
+  Sentry, PagerDuty), up to eight, and the Advanced grid; the avatar crop
+  and Reset character to default; Channels; the Computer tab's pointer,
+  can't-reach with Retry and helpers.
+- **The computer:** Update, Reset and Recover with their questions,
+  progress and failures; the connection pills; the access cover; the low
+  disk banner.
+- **Org chart and Channels** (AgentNetwork and Channels moved into
+  SimeonCore).
+- **Settings:** Usage & Billing as the Mac's (on-demand usage, upgrade,
+  Cancel Trial, Manage Plan, Retry); Auto-review rules edited in place,
+  twenty a list; Sign Out asked first; the account's picture; About with
+  Copy Version Info; Notifications and Haptics switches; Privacy Policy
+  and Terms of Service.
+- **Connect apps:** skills (Private, each with its switch, and a skill's
+  page), setup values and Edit Values, Uninstall and the team's Remove, a
+  plugin's page (View Source, Connectors, Skills, Details), the Type and
+  Ownership filter, the GitHub banner's Fix with agent.
+
+Left as the phone has them, on purpose:
+- File previews: Apple's Quick Look, not the Mac's own viewers.
+- New chat: the phone's New Agent and New Group Chat sheets, not the Mac's
+  To: line.
+- Pinning: swipe and the long press, not dragging onto the pins.
+- Links into the app (`simeon-ios://…/plugin/add`, the Deep Links page).
+- What only a Mac has: its window and keys, hover, the menu bar, the Dock,
+  the agent's hands on the Mac.
+
+## 31. Wider bubbles, bigger chat text (11 October 2026)
+
+The founder asked for the chat's text to reach as wide as the reference
+app's, and for it to be slightly bigger. Measured on the founder's screenshot of the
+reference app (a 402 pt screen): its bubbles reach 334 pt, 15 pt from the
+left edge; its text is the chat's 17 pt.
+
+- A bubble (and a card) caps itself 36 pt short of the chat's width, 334 pt
+  of a 402 pt screen (`ChatMetrics.bubbleMax`); it was the window's
+  `min(88%, 640, width - 82)`, 288 pt. An agent's bubble in a group, beside
+  its butterfly, stays 30 pt narrower. The Mac keeps the window's rule.
+- The chat's text is 18 pt on 24 pt lines, the person's on 25 (it was 17 on
+  23 and 24); headings, lists and the cards' text that read
+  `MessageType.size` grew with it. Settings and the composer stay at 17.
+
+## 32. Delete Account (11 October 2026)
+
+Not in the Mac's window: Apple asks every app that makes accounts to let
+people delete theirs from inside it. Settings has Delete Account under Sign
+Out, with what goes in its footer; it asks first ("Delete your account?"),
+waits with a spinner while the server deletes
+(`DELETE /desktop/api/account`, docs/services-core.md, "Deleting an
+account"), then goes back to the sign-in screen saying "Your account was
+deleted." A refusal (the server could not end the subscription or remove
+the computer) shows the server's sentence and leaves the person signed in.
+The Swift Mac app has the same button as a row under its account card. The
+words are `AccountMenu`'s, shared by both.
+
+## 33. The chat's top in the reference's proportions (11 October 2026)
+
+"The app center avatar in our chats dont use apple design, and its not
+proportionate to the rest (too small) … can we design the proportion like
+muse." Measured on the founder's screenshot of the reference app against
+its 44 pt side buttons: the picture is 68 pt, its top level with the
+buttons' top; the name is 15 pt in a 34 pt capsule, laid 4 pt over the
+picture's foot.
+
+- The butterfly is 68 pt (it was 52), its top at the top of the bar's 44 pt
+  row, beside the back and call buttons (it was drawn 34 pt up, lower than
+  the buttons' top).
+- The name is 15 pt medium (it was 13) in Apple's glass capsule, 34 pt tall
+  with 12 pt each side (it was 24 pt tall, too small for the system's own
+  capsules), over the butterfly's foot instead of 4 pt under it.
+- Not yet seen on a phone: the bar's row is taken as 44 pt; if the
+  butterfly's top sits off the buttons' top there, `ChatHeadline.barRow`
+  moves it.
 
 ## Suggested order (the founder decides)
 

@@ -1,13 +1,26 @@
 import SwiftUI
+#if os(iOS)
 import UIKit
+#endif
 import SimeonCore
 
-/** A message's type: 17 pt on a 23 pt line, the size Messages sets (the founder asked twice for bigger; the Mac's is 14 on 20, `.sand-message-prose`). */
+/**
+ * A message's type: on the iPhone 17 pt on a 23 pt line, the size Messages
+ * sets (the founder asked twice for bigger); on the Mac the Mac window's,
+ * 14 on 20 (`.sand-message-prose`).
+ */
 enum MessageType {
-  static let size: CGFloat = 17
-  static let lineHeight: CGFloat = 23
-  /** The person's bubble sets its text a point looser (24 pt). */
-  static let mineLineHeight: CGFloat = 24
+  #if os(macOS)
+  static let size: CGFloat = 14
+  static let lineHeight: CGFloat = 20
+  static let mineLineHeight: CGFloat = 21
+  #else
+  /** 18 pt since 11 October 2026 (the founder: "increase the font size slightly"); it was 17 on 23 and 24. */
+  static let size: CGFloat = 18
+  static let lineHeight: CGFloat = 24
+  /** The person's bubble sets its text a point looser (25 pt). */
+  static let mineLineHeight: CGFloat = 25
+  #endif
 
   static func spacing(size: CGFloat = size, lineHeight: CGFloat = lineHeight) -> CGFloat {
     max(0, lineHeight - UIFont.systemFont(ofSize: size).lineHeight)
@@ -219,9 +232,14 @@ struct MarkdownBlockView: View {
   var body: some View {
     switch block {
     case .paragraph(let text):
-      InlineText.make(text, mentioning: mentioning)
-        .lineSpacing(MessageType.spacing())
-        .fixedSize(horizontal: false, vertical: true)
+      if Markdown.inlineMath(text) != nil {
+        // `$$…$$` within its lines: the paragraph drawn with its maths (Rendering.swift).
+        RenderedBlock(kind: .mathText(text))
+      } else {
+        InlineText.make(text, mentioning: mentioning)
+          .lineSpacing(MessageType.spacing())
+          .fixedSize(horizontal: false, vertical: true)
+      }
     case .heading(let level, let text):
       // Over the Mac's, with the message's 17: h1 25 / 31, h2 20 / 27, h3 and below the message's own 17 / 23 with 8 above; all 600.
       let size: CGFloat = level == 1 ? 25 : level == 2 ? 20 : MessageType.size
@@ -240,12 +258,19 @@ struct MarkdownBlockView: View {
           .padding(.leading, 10)
       }
       .fixedSize(horizontal: false, vertical: true)
-    case .code(_, let text):
-      CodeBlockView(text: text)
+    case .code(let language, let text):
+      // A ```mermaid block is a diagram, as the window draws it (Rendering.swift).
+      if language?.lowercased() == "mermaid" {
+        MermaidBlock(source: text)
+      } else {
+        CodeBlockView(text: text)
+      }
     case .table(let header, let alignments, let rows):
       MarkdownTable(header: header, alignments: alignments, rows: rows, mentioning: mentioning)
     case .rule:
       Color.clear.frame(height: 1)
+    case .math(let tex):
+      RenderedBlock(kind: .math(tex, display: true))
     }
   }
 }
@@ -314,10 +339,15 @@ struct MarkdownList: View {
   }
 }
 
-/** A fenced block: monospaced on the field's white, a hairline edge, sideways scrolling, Copy in its menu. */
+/**
+ * A fenced block: monospaced on the field's white, a hairline edge,
+ * sideways scrolling, and the window's "Copy code" button at its corner
+ * ("Copied" with a tick for two seconds).
+ */
 struct CodeBlockView: View {
   let text: String
   @State private var expanded = false
+  @State private var copied = false
 
   var body: some View {
     // A code block does not wrap, so it is laid out whole: 200 lines of at most 1,000 characters each (2,000 lines open).
@@ -343,8 +373,32 @@ struct CodeBlockView: View {
     .frame(maxWidth: .infinity, alignment: .leading)
     .background(Ink.field, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Ink.hairline, lineWidth: 1))
+    .overlay(alignment: .topTrailing) {
+      Button(action: copy) {
+        Image(systemName: copied ? "checkmark" : "doc.on.doc").font(.system(size: 11, weight: .medium)).foregroundStyle(Ink.secondary)
+          .frame(width: 24, height: 24).tapRoom(10)
+      }
+      .buttonStyle(.plain)
+      .padding(4)
+      .accessibilityLabel(copied ? "Copied" : "Copy code")
+      #if os(macOS)
+      .help(copied ? "Copied" : "Copy code")
+      #endif
+    }
+    #if os(iOS)
     .contextMenu {
-      Button { UIPasteboard.general.string = text } label: { Label("Copy", systemImage: "doc.on.doc") }
+      Button(action: copy) { Label("Copy", systemImage: "doc.on.doc") }
+    }
+    #endif
+  }
+
+  private func copy() {
+    UIPasteboard.general.string = text
+    Haptics.tap()
+    copied = true
+    Task { @MainActor in
+      try? await Task.sleep(nanoseconds: 2_000_000_000)
+      copied = false
     }
   }
 }

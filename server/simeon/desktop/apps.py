@@ -79,6 +79,29 @@ _MAX_PAGES = 5
 COMPOSIO_CALLBACK = "https://backend.composio.dev/api/v3/toolkits/auth/callback"
 NOT_CONFIGURED = "Apps are not switched on for this server yet."
 
+#: Apps whose provider lends no sign-in of its own (measured 11 October
+#: 2026: no managed OAuth for these, and Ashby takes only an API key). Their
+#: link works once Simeon Labs registers its own app with each company and
+#: names the auth config in `COMPOSIO_AUTH_CONFIGS` (docs/services-agents.md,
+#: 7c); until then a refused link is "coming soon" on the card, not the
+#: provider's error.
+OWN_APP_NEEDED = frozenset(
+    {"gusto", "xero", "shopify", "brex", "pipedrive", "docusign", "klaviyo", "ashby"}
+)
+
+
+def own_auth_configs() -> dict[str, str]:
+    """Simeon Labs' own sign-in per app (`COMPOSIO_AUTH_CONFIGS`), the
+    well-formed entries only: a toolkit slug and an `ac_` id."""
+    return {
+        toolkit: config
+        for toolkit, config in settings.COMPOSIO_AUTH_CONFIGS.items()
+        if valid_toolkit(toolkit)
+        and isinstance(config, str)
+        and config.startswith("ac_")
+    }
+
+
 _tools_cache: dict[str, tuple[float, list[dict[str, Any]]]] = {}
 _sessions: dict[str, str] = {}
 # Which accounts a person has connected, per app, for the agent's tool calls.
@@ -173,6 +196,15 @@ async def connected_account_ids(user: User, toolkit: str) -> list[str]:
     else:
         _accounts_cache.pop(key, None)
     return accounts
+
+
+def forget_user(user: User) -> None:
+    """Drop what this process remembers of a person (their sign-in session
+    upstream and which apps they had connected): their account was deleted."""
+    key = composio_user_id(user)
+    _sessions.pop(key, None)
+    for cached in [one for one in _accounts_cache if one[0] == key]:
+        _accounts_cache.pop(cached, None)
 
 
 async def active_account_ids(user: User, toolkit: str) -> list[str]:
@@ -295,15 +327,19 @@ async def toolkit_tools(toolkit: str) -> list[dict[str, Any]]:
 
 
 async def _session_id(user: User) -> str:
-    """One tool-router session per person, for sign-in links: it picks the
-    toolkit's managed auth config on its own."""
+    """One tool-router session per person, for sign-in links. It uses the
+    provider's own sign-in for each app unless Simeon Labs' own is named in
+    `COMPOSIO_AUTH_CONFIGS`: a config the session is not given is never
+    used (the provider's documentation, checked 11 October 2026)."""
     key = composio_user_id(user)
     known = _sessions.get(key)
     if known is not None:
         return known
-    status, payload = await _call(
-        "POST", "api/v3.1/tool_router/session", body={"user_id": key}
-    )
+    body: dict[str, Any] = {"user_id": key}
+    configs = own_auth_configs()
+    if configs:
+        body["auth_configs"] = configs
+    status, payload = await _call("POST", "api/v3.1/tool_router/session", body=body)
     if status >= 400 or not isinstance(payload, dict) or not payload.get("session_id"):
         raise AppsUpstreamError(_upstream_message(payload), status)
     _sessions[key] = str(payload["session_id"])
@@ -511,7 +547,22 @@ async def apps_connect(
         if await active_account_ids(desktop_session.user, toolkit):
             return JSONResponse({"toolkit": toolkit, "connected": True})
         url = await sign_in_link(desktop_session.user, toolkit)
-    except (AppsUpstreamError, httpx.HTTPError) as error:
+    except AppsUpstreamError as error:
+        if (
+            toolkit in OWN_APP_NEEDED
+            and toolkit not in own_auth_configs()
+            and 400 <= error.status < 500
+        ):
+            # 503 reads as "coming soon" in the box (`vendor-mcp/backend-exec.ts`).
+            log.warning(
+                "desktop.apps.sign_in_needs_own_app",
+                toolkit=toolkit,
+                status=error.status,
+                upstream=str(error),
+            )
+            return _error("This app is coming soon in Simeon.", 503)
+        return _error(str(error) or "The app could not be reached.", 502)
+    except httpx.HTTPError as error:
         return _error(str(error) or "The app could not be reached.", 502)
     log.info(
         "desktop.apps.sign_in_started",

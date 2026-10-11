@@ -14,16 +14,19 @@ struct LiveButterfly: View {
   let palette: AgentPalette
   var state: MarkState = .idle
   var stillWhenIdle = false
+  /** Taps on it so far (the chat's working butterfly): each one a turn, a hop or a burst of sparks, in turn. */
+  var pokes = 0
   @State private var engine = MarkEngine()
   @State private var trails = LightTrails()
   @State private var resting: Bool
   @Environment(\.colorScheme) private var scheme
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-  init(palette: AgentPalette, state: MarkState = .idle, stillWhenIdle: Bool = false) {
+  init(palette: AgentPalette, state: MarkState = .idle, stillWhenIdle: Bool = false, pokes: Int = 0) {
     self.palette = palette
     self.state = state
     self.stillWhenIdle = stillWhenIdle
+    self.pokes = pokes
     _resting = State(initialValue: stillWhenIdle && state == .idle)
   }
 
@@ -31,8 +34,9 @@ struct LiveButterfly: View {
     let moving = !reduceMotion && !resting
     Group {
       if moving {
-        // At most 60 frames a second, and a butterfly at rest at 30: on a 120 Hz screen each one drew twice as often as the eye needs.
-        MarkCanvas(palette: palette, engine: engine, trails: trails, state: state, fps: state == .idle ? 30 : 60)
+        // 30 frames a second, at work too: each frame runs the engine and draws every path on the main thread, and two
+        // butterflies at 60 kept it busy enough that taps waited (the founder, 10 October 2026: "all our buttons feel heavy").
+        MarkCanvas(palette: palette, engine: engine, trails: trails, state: state, fps: 30)
       } else {
         // Still: the image drawn once, not a canvas drawn again on every redraw.
         Image(uiImage: MarkDrawing.image(palette, style: .live, dark: scheme == .dark))
@@ -46,6 +50,15 @@ struct LiveButterfly: View {
       while !Task.isCancelled && !resting {
         try? await Task.sleep(for: .milliseconds(400))
         if engine.isSettled && !trails.hasLife { resting = true }
+      }
+    }
+    // The Mac's pokes (`MarkSource.poke`, the window's `tryPokeMark`): a turn, a hop, a burst, in turn; not while it rests.
+    .onChange(of: pokes) { _, count in
+      guard count > 0, moving else { return }
+      switch (count - 1) % 3 {
+      case 0: engine.turnNow(direction: Bool.random() ? 1 : -1)
+      case 1: engine.bounce()
+      default: trails.burst(count: 22, speed: 1.1, swirl: 0.3, palette: palette)
       }
     }
     .accessibilityHidden(true)

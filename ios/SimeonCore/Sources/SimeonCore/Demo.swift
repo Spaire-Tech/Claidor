@@ -203,14 +203,17 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
 
   public func transcript(_ agentId: String) async throws -> [Entry] { lock.withLock { transcripts[agentId] ?? [] } }
 
-  public func send(_ agentId: String, text: String, attachments: [AttachmentRef], replyTo: String?, nonce: String?) async throws {
+  public func send(_ agentId: String, text: String, attachments: [AttachmentRef], options: SendOptions, nonce: String?) async throws {
     let now = Date().timeIntervalSince1970 * 1000
+    let replyTo = options.replyTo
     for file in attachments {
       append(agentId, ["kind": "user-attachment", "id": .string("ua-\(UUID().uuidString.prefix(8))"), "file_path": .string(file.path), "file_name": .string(file.name), "timestampMs": .number(now)])
     }
     if !text.isEmpty {
       var entry = DemoData.you("u-\(UUID().uuidString.prefix(8))", 0, text, now: now)
       if let replyTo { entry = entry.setting("replyTo", .string(replyTo)) }
+      if replyTo != nil && options.isFork { entry = entry.setting("branched", true) }
+      if let at = options.composedAtMs { entry = entry.setting("sentWhileOfflineAtMs", .number(at)) }
       if let nonce { entry = entry.setting("clientNonce", .string(nonce)) }
       append(agentId, entry)
     }
@@ -286,19 +289,40 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
 
   private func routineCommand(_ method: String, _ args: JSON) {
     let agentId = args["id"]?.text ?? ""
+    let now = Date().timeIntervalSince1970 * 1000
+    /** A record as the host keeps one: the trigger as sent, its words, when it was made. */
+    func record(id: String, spec: JSON, createdAt: JSON?, runs: JSON?) -> JSON {
+      let trigger = spec["trigger"] ?? ["type": "cron", "schedule": "0 9 * * *"]
+      let words = TriggerRow.rows(trigger).map { row -> String in
+        if case .schedule(let line) = row { return RoutineSchedule.describe(line) }
+        let w = row.words
+        return "\(w.lead) \(w.rest)"
+      }
+      let described = words.enumerated().map { $0.offset == 0 ? $0.element : $0.element.prefix(1).lowercased() + $0.element.dropFirst() }.joined(separator: " or ")
+      let firstCron = TriggerRow.rows(trigger).lazy.compactMap { row -> String? in if case .schedule(let line) = row { return line } else { return nil } }.first
+      return ["id": .string(id), "name": spec["name"] ?? "Routine", "prompt": spec["prompt"] ?? "", "trigger": trigger,
+              "schedule": firstCron.map(JSON.string) ?? .null, "triggerDescription": .string(described), "isEnabled": spec["isEnabled"] ?? true,
+              "createdAt": createdAt ?? .number(now), "runs": runs ?? .array([])]
+    }
     lock.withLock {
       var list = demoRoutines[agentId] ?? []
       switch method {
       case "createAgentAutomation":
-        if let spec = args["spec"] { list.append(["id": .string("r-\(UUID().uuidString.prefix(6).lowercased())"), "name": spec["name"] ?? "Routine", "prompt": spec["prompt"] ?? "", "schedule": spec["trigger"]?["schedule"] ?? "", "isEnabled": spec["isEnabled"] ?? true]) }
+        // The host's limit: 50 routines an agent, then nothing is made.
+        if let spec = args["spec"], list.count < 50 { list.append(record(id: "r-\(UUID().uuidString.prefix(6).lowercased())", spec: spec, createdAt: nil, runs: nil)) }
       case "updateAgentAutomation":
         if let index = list.firstIndex(where: { $0["id"] == args["automationId"] }), let spec = args["spec"] {
-          list[index] = ["id": list[index]["id"] ?? "", "name": spec["name"] ?? "Routine", "prompt": spec["prompt"] ?? "", "schedule": spec["trigger"]?["schedule"] ?? "", "isEnabled": spec["isEnabled"] ?? true]
+          list[index] = record(id: list[index]["id"]?.text ?? "", spec: spec, createdAt: list[index]["createdAt"], runs: list[index]["runs"])
         }
       case "setAgentAutomationEnabled":
         if let index = list.firstIndex(where: { $0["id"] == args["automationId"] }) { list[index] = list[index].setting("isEnabled", args["isEnabled"] ?? true) }
       case "deleteAgentAutomation":
         list.removeAll { $0["id"] == args["automationId"] }
+      case "runAgentAutomationNow":
+        if let index = list.firstIndex(where: { $0["id"] == args["automationId"] }) {
+          let run: JSON = ["id": .string("run-\(UUID().uuidString.prefix(6).lowercased())"), "trigger": "manual", "startedAt": .number(now), "finishedAt": .number(now + 1200), "status": "ok"]
+          list[index] = list[index].setting("runs", .array([run] + (list[index]["runs"]?.array ?? []).prefix(19)))
+        }
       default: break
       }
       demoRoutines[agentId] = list
@@ -337,14 +361,14 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
     case "submitSecret":
       stamp(agentId, entryId) { $0.setting("secretProvided", true) }
     case "handBackForeverBox":
+      // The host writes "completed" for both buttons (box-handoff-service.ts `decideBoxHandBack`), so the card says "Done" either way.
       lock.withLock {
-        for (agent, list) in transcripts {
-          for (index, entry) in list.enumerated() where entry["boxRequestId"] != nil && entry["boxResolution"] == nil {
-            if let updated = Entry(entry.raw.setting("boxResolution", args["trigger"]?.object != nil ? "dismissed" : "handed_back")) { transcripts[agent]?[index] = updated; pendingEmits.append((agent, updated)) }
-          }
+        for (index, entry) in (transcripts[agentId] ?? []).enumerated() where entry["boxRequestId"] != nil && entry["boxResolution"] == nil {
+          if let updated = Entry(entry.raw.setting("boxResolution", "completed")) { transcripts[agentId]?[index] = updated; pendingEmits.append((agentId, updated)) }
         }
       }
       flush()
+      emit(.computer(boxStatus(agentId)))
     case "desktopMcp":
       return demoApps(args["action"]?.text ?? "", args["args"]?.array ?? [])
     case "getListenerIntegrations":
@@ -390,6 +414,9 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
     case "createAgentAutomation", "updateAgentAutomation", "setAgentAutomationEnabled", "deleteAgentAutomation":
       routineCommand(method, args)
       return .array(try await routines(args["id"]?.text ?? ""))
+    case "runAgentAutomationNow":
+      routineCommand(method, args)
+      return .null
     case "updateAgent":
       let profile = args["profile"] ?? [:]
       touch(args["id"]?.text ?? "") { agent in
@@ -412,7 +439,7 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
     case "uploadAttachment":
       return ["path": .string("/home/box/attachments/\(args["filename"]?.text ?? "file")")]
     case "ensureForeverBox", "getForeverBoxStatus":
-      return ["status": "starting", "vncUrl": nil]
+      return boxStatus(agentId)
     case "countAgents":
       return .number(Double(lock.withLock { agents.count }))
     case "createAgent":
@@ -441,6 +468,9 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
 
   public func screen(_ agentId: String) async throws -> ScreenState { ScreenState(socket: nil, state: "demo") }
 
+  /** The demo hears the same words every time. */
+  public func transcribe(audio: Data, mimeType: String) async throws -> String { "Move the review to Friday." }
+
   public func server(_ path: String, method: String?, body: JSON?) async throws -> JSON {
     switch path {
     case "user/quota":
@@ -454,6 +484,8 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
       return ["portalUrl": "https://simeonlabs.com/billing"]
     case "user/name":
       return ["preferredName": body?["name"] ?? .null]
+    case "user/profile":
+      return ["email": "bass@example.com", "preferredName": .null, "suggestedName": "Bass"]
     case "proxy/v1/voice/voices":
       return .array([("ljX1ZrXuDIIRVcmiVSyR", "Michael"), ("1t1EeRixsJrKbiF1zwM6", "Jerry"), ("XcXEQzuLXRU9RcfWzEJt", "Veda"), ("s3TPKV1kjDlVtZbl4Ksh", "Adam"), ("UgBBYS2sOqTuMpoF3BR0", "Mark"), ("6OzrBCQf8cjERkYgzSg8", "Jamal")].map { ["id": .string($0.0), "name": .string($0.1)] })
     default:
@@ -522,13 +554,61 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
     }
   }
 
-  private var hostSettings: JSON = ["pinnedAgentIds": [], "autoReviewEnabled": true, "autoReviewInstructions": "", "userTimeZone": .string(TimeZone.current.identifier), "userTimeZoneOverride": nil]
+  private var hostSettings: JSON = ["pinnedAgentIds": [], "autoReviewInstructions": ["isEnabled": true, "allowInstructions": [], "blockInstructions": []], "userTimeZone": .string(TimeZone.current.identifier), "userTimeZoneOverride": nil]
   private var connected: Set<String> = ["gmail", "notion"]
   private var pendingEmits: [(String, Entry)] = []
 
   private func flush() {
     let emits: [(String, Entry)] = lock.withLock { let all = pendingEmits; pendingEmits = []; return all }
     for (agent, entry) in emits { emit(.transcript(.upsert(agentId: agent, entry: entry))) }
+  }
+
+  /** The demo's last rebuild step, as the server's stream would have it. */
+  private var demoMigration: MigrationEvent?
+
+  public func updateComputer(force: Bool) async throws -> RecreateAnswer { rebuildComputer(wiping: false) }
+  public func resetComputer() async throws -> RecreateAnswer { rebuildComputer(wiping: true) }
+  public func migrationStatus() async -> MigrationEvent? { lock.withLock { demoMigration } }
+
+  /**
+   * A rebuild played out as the server and the box would: the steps
+   * recorded, the stream dropping while the computer is replaced, and back.
+   */
+  private func rebuildComputer(wiping: Bool) -> RecreateAnswer {
+    let operation = "demo-\(UUID().uuidString.prefix(8).lowercased())"
+    let pace = self.pace
+    Task { [weak self] in
+      func step(_ phase: MigrationPhase) {
+        guard let self else { return }
+        let event = MigrationEvent(operationId: operation, phase: phase, detail: "")
+        self.lock.withLock { self.demoMigration = event }
+        self.emit(.migration(event))
+      }
+      func wait(_ seconds: Double) async { try? await Task.sleep(nanoseconds: UInt64(seconds * pace * 1_000_000_000)) }
+      step(.creating)
+      await wait(0.8)
+      self?.emit(.connection(live: false))
+      if wiping { step(.wiping) }
+      await wait(2.5)
+      step(.done)
+      await wait(1.2)
+      self?.emit(.connection(live: true))
+    }
+    return .started(operationId: operation)
+  }
+
+  /**
+   * The demo's computer, as the host would report it: no screen (the demo
+   * has none), and the hand-off its chat is waiting on, if any (`handoff`,
+   * `sand-host.ts` `decorateForeverBoxStatus`).
+   */
+  private func boxStatus(_ agentId: String) -> JSON {
+    let waiting: Entry? = lock.withLock { transcripts[agentId]?.last { $0["boxRequestId"] != nil && $0["boxResolution"] == nil } }
+    var status: JSON = ["agentId": .string(agentId), "state": "absent", "vncUrl": nil]
+    if let waiting, let requestId = waiting["boxRequestId"] {
+      status = status.setting("handoff", ["requestId": requestId, "instruction": waiting["message"]?["content"] ?? ""])
+    }
+    return status
   }
 
   /** Changes one entry the way the host does, and says so. */

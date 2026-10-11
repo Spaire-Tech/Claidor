@@ -1,7 +1,10 @@
 import SwiftUI
+#if os(iOS)
 import UIKit
+#endif
 import SimeonCore
 
+#if os(iOS)
 /**
  * Simeon on the iPhone, native: the phone screens the founder designed on
  * 8 October 2026 (the list, a chat, the + menu and its sheets, the agent's
@@ -13,39 +16,72 @@ struct SimeonApp: App {
   /** Apple's push token and taps on notifications reach the app through UIKit's delegate (Notifications.swift). */
   @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
   @State private var session = SessionController()
-  @AppStorage("simeon.theme") private var theme = "system"
 
   var body: some Scene {
     WindowGroup {
       RootView()
         // The launch: the small butterfly turning around until the app is ready, over everything.
         .overlay { LaunchCover() }
+        // Light, Dark or the phone's: read here, inside the environment, not by the app itself, so a choice does not run the
+        // app's own body again.
+        .modifier(AppearanceOnWindows())
         .environment(session)
         .environment(session.store)
         // One size of type everywhere, the chat's (the founder, 9 October 2026: "i want all to be the size of chat"). The chat
         // is drawn in fixed sizes; rows left to the system (Settings' rows, pickers, menus) grew with the phone's Text Size and
         // stood bigger than it. The phone's setting no longer changes the app; it never changed the chat.
         .dynamicTypeSize(.large)
-        // The appearance is set on the windows, and only there. With SwiftUI's preferredColorScheme at the root as well, each
-        // sheet was given the style of the moment it opened as its own, so Settings, open while the choice was made, kept the
-        // old one until closed (the founder, 9 October 2026, twice). A window's style reaches every sheet it holds at once.
-        .onChange(of: session.launch.theme ?? theme, initial: true) { _, name in Self.applyToWindows(name) }
         .task { await session.start() }
         // After the first screen is up, never before it.
         .task { HangWatch.start() }
     }
   }
 
-  /** Every window of the app in the chosen style, and the sheets they hold with them; the type at its one size there too (menus, sheets). */
+  /**
+   * Every window of the app in the chosen style, and the sheets they hold with them; the type at its one size there too
+   * (menus, sheets). The windows and their root views on the app's ground: the system's black showed behind the list as a
+   * sheet pushed it back, and between screens as they changed (the founder, 11 October 2026).
+   */
   @MainActor
-  static func applyToWindows(_ name: String) {
+  static func applyToWindows(_ name: String, fading: Bool = false) {
     let style: UIUserInterfaceStyle = name == "light" ? .light : name == "dark" ? .dark : .unspecified
+    // Named for the hang watch: a freeze from here on says it began with the switch.
+    Trace.mark("switching the appearance to \(name)")
     for case let scene as UIWindowScene in UIApplication.shared.connectedScenes {
       // Set, never read: reading an override that was never set aborts the app ("Can't return value for trait … that has no override").
-      scene.traitOverrides.preferredContentSizeCategory = .large
-      for window in scene.windows where window.overrideUserInterfaceStyle != style { window.overrideUserInterfaceStyle = style }
+      // Once per scene: set again on every change of appearance, it made every word in the app be laid out again with the
+      // colours, and the switch lagged badly (the founder, 11 October 2026).
+      if sizedScenes.insert(ObjectIdentifier(scene)).inserted { scene.traitOverrides.preferredContentSizeCategory = .large }
+      for window in scene.windows where isOurs(window) {
+        if window.overrideUserInterfaceStyle != style {
+          // The old look laid over the new and faded out, as the system's own switch does: the whole app drawn again in the
+          // new colours shows at once, not in pieces as it comes. It lets every touch through.
+          let cover = fading && !window.isHidden ? window.snapshotView(afterScreenUpdates: false) : nil
+          if let cover {
+            cover.isUserInteractionEnabled = false
+            window.addSubview(cover)
+          }
+          window.overrideUserInterfaceStyle = style
+          if let cover {
+            UIView.animate(withDuration: 0.3, delay: 0.05, options: [.curveEaseOut, .allowUserInteraction]) { cover.alpha = 0 } completion: { _ in
+              cover.removeFromSuperview()
+            }
+          }
+        }
+        if window.backgroundColor != Ink.groundUIColor { window.backgroundColor = Ink.groundUIColor }
+        if let root = window.rootViewController?.view, root.backgroundColor != Ink.groundUIColor { root.backgroundColor = Ink.groundUIColor }
+      }
     }
   }
+
+  /** The app's own windows: not the keyboard's, which the system keeps in the app's scene and lays out again for any change. */
+  private static func isOurs(_ window: UIWindow) -> Bool {
+    let kind = NSStringFromClass(type(of: window))
+    return !kind.contains("Keyboard") && !kind.contains("TextEffects")
+  }
+
+  /** The scenes whose type size is already set. */
+  @MainActor private static var sizedScenes = Set<ObjectIdentifier>()
 
   static func scheme(_ name: String) -> ColorScheme? {
     switch name {
@@ -56,15 +92,47 @@ struct SimeonApp: App {
   }
 }
 
+/**
+ * The appearance on the windows, and only there. With SwiftUI's
+ * preferredColorScheme at the root as well, each sheet was given the style
+ * of the moment it opened as its own, so Settings, open while the choice was
+ * made, kept the old one until closed (the founder, 9 October 2026, twice).
+ * A window's style reaches every sheet it holds at once. At launch at once;
+ * a choice made later once the menu it was made in has closed (its fade is
+ * a quarter of a second): applied while the menu was still going, the
+ * whole app's redraw ran into it (the founder, 11 October 2026: "to go to
+ * light mode i literally have to quit the app, cause it froze").
+ */
+private struct AppearanceOnWindows: ViewModifier {
+  @Environment(SessionController.self) private var session
+  @AppStorage("simeon.theme") private var theme = "system"
+
+  func body(content: Content) -> some View {
+    content.onChange(of: session.launch.theme ?? theme, initial: true) { old, name in
+      if old == name { SimeonApp.applyToWindows(name); return }
+      Task { @MainActor in
+        try? await Task.sleep(nanoseconds: 350_000_000)
+        // Changed again meanwhile: the later choice applies itself.
+        guard (session.launch.theme ?? theme) == name else { return }
+        SimeonApp.applyToWindows(name, fading: true)
+      }
+    }
+  }
+}
+
 struct RootView: View {
   @Environment(SessionController.self) private var session
   @Environment(\.scenePhase) private var scenePhase
 
   var body: some View {
     phaseView
+      .background(ground)
       // A chat left open behind a locked phone is not being read (AppStore.isForeground).
       .onChange(of: scenePhase) { _, phase in session.store.isForeground = phase == .active }
   }
+
+  /** Under every screen, so a fade between two (the first run and the list) never shows the system's black. */
+  private var ground: some View { Ink.ground.ignoresSafeArea() }
 
   @ViewBuilder
   private var phaseView: some View {
@@ -85,9 +153,12 @@ struct RootView: View {
         }
       }
       .animation(.easeInOut(duration: 0.35), value: session.firstRun == .needed)
+      // Refused before the computer was ever reached (`mzn`): the access cover over the first run and the list (ComputerStates.swift).
+      .overlay { AccessCoverLayer() }
     }
   }
 }
+#endif
 
 /**
  * Signing in, in the design of the founder's reference (9 October 2026,
@@ -119,7 +190,8 @@ struct SignInScreen: View {
     VStack(spacing: 0) {
       Spacer(minLength: 24)
       VStack(spacing: 28) {
-        Image("SignIn/Mark").resizable().scaledToFit().frame(width: 46, height: 46)
+        // The logo lighting up, then in its true colour (`LogoShimmer`), each time the screen comes.
+        LogoShimmer().frame(width: 46, height: 46)
         Image("SignIn/Wordmark").resizable().scaledToFit().frame(height: 25)
       }
       .foregroundStyle(Ink.primary)
@@ -217,11 +289,13 @@ struct SignInButton: View {
 /**
  * The launch, as apps open (the founder's references, 9 October 2026): on
  * the app's own ground (the system's launch screen is the same colour, so
- * there is no flash), Simeon's butterfly small in the middle, turning
- * around, until the app is ready (signed in with its agents, or at the
- * sign-in); at least one turn, never more than three seconds; then it fades.
- * It shows on every start, and again on coming back after a quarter of an
- * hour away.
+ * there is no flash), the SimeonLabs logo lighting up in the middle
+ * (`LogoShimmer`, the founder, 11 October 2026: in place of Simeon's
+ * butterfly), until the app is ready (signed in with its agents): the logo
+ * plays to its true colour first, and the cover never stays more than four
+ * seconds; then it fades. Signed out, it goes at once: the sign-in screen
+ * plays the logo itself. It shows on every start, and again on coming back
+ * after a quarter of an hour away.
  */
 struct LaunchCover: View {
   @Environment(SessionController.self) private var session
@@ -231,11 +305,19 @@ struct LaunchCover: View {
   @State private var since = Date()
   @State private var leftAt: Date?
 
+  /** At the sign-in, whose own logo plays. */
+  private var signedOut: Bool {
+    switch session.phase {
+    case .signedOut, .signingIn: return true
+    default: return false
+    }
+  }
+
   /** Only read while it shows, so the roster's changes do not redraw it afterwards. */
   private var ready: Bool {
     switch session.phase {
     case .starting: return false
-    case .signedIn: return !store.agents.isEmpty || session.firstRun == .needed
+    case .signedIn: return store.hasAgents || session.firstRun == .needed
     default: return true
     }
   }
@@ -246,7 +328,7 @@ struct LaunchCover: View {
       if showing {
         Ink.ground
           .ignoresSafeArea()
-          .overlay { LaunchMark().frame(width: 64, height: 64) }
+          .overlay { LogoShimmer().frame(width: 64, height: 64) }
           .transition(.opacity)
       }
     }
@@ -254,7 +336,7 @@ struct LaunchCover: View {
     .task(id: waiting) {
       guard showing else { return }
       let shown = Date().timeIntervalSince(since)
-      let wait = ready ? max(0, 0.9 - shown) : max(0, 3 - shown)
+      let wait = signedOut ? 0 : ready ? max(0, LogoShimmer.duration - shown) : max(0, 4 - shown)
       try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000))
       guard !Task.isCancelled else { return }
       withAnimation(.easeOut(duration: 0.35)) { showing = false }
@@ -271,21 +353,47 @@ struct LaunchCover: View {
   }
 }
 
-/** Simeon's butterfly turning around its own axis, the turn the Mac's makes while it works, with its light trails, again each time it comes to rest. */
-struct LaunchMark: View {
-  @State private var engine = MarkEngine()
-  @State private var trails = LightTrails()
+/**
+ * The SimeonLabs logo lighting up (`LogoLightUp` in the core: the
+ * founder's video of 11 October 2026, measured frame by frame): it fades in
+ * to 40% of the ink, a band of the full ink crosses it on the diagonal
+ * twice, then it comes to its true colour by 2.85 s and stays. Black on
+ * light, white on dark. With Reduce Motion, the logo at once. The Mac's
+ * sign-in draws the same (mac/Simeon/SignInScreen.swift).
+ */
+struct LogoShimmer: View {
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @State private var start = Date()
+  @State private var done = false
+
+  static let duration = LogoLightUp.duration
 
   var body: some View {
-    MarkCanvas(palette: .named("blue"), engine: engine, trails: trails, state: .idle)
-    .task {
-      engine.turnNow()
-      while !Task.isCancelled {
-        try? await Task.sleep(nanoseconds: 250_000_000)
-        if !engine.isTurning { engine.turnNow() }
+    Group {
+      if done || reduceMotion {
+        mark.foregroundStyle(Ink.primary)
+      } else {
+        TimelineView(.animation) { context in
+          mark.foregroundStyle(Self.gradient(at: context.date.timeIntervalSince(start)))
+        }
       }
     }
+    .task {
+      start = Date()
+      try? await Task.sleep(nanoseconds: UInt64(Self.duration * 1_000_000_000))
+      done = true
+    }
     .accessibilityHidden(true)
+  }
+
+  private var mark: some View {
+    Image("SignIn/Mark").resizable().renderingMode(.template).scaledToFit()
+  }
+
+  /** The ink along the diagonal at `t`, from the top left corner to the bottom right. */
+  static func gradient(at t: TimeInterval) -> LinearGradient {
+    let stops = LogoLightUp.places.map { Gradient.Stop(color: Ink.primary.opacity(LogoLightUp.ink(at: $0, time: t)), location: $0) }
+    return LinearGradient(stops: stops, startPoint: .topLeading, endPoint: .bottomTrailing)
   }
 }
 
@@ -312,6 +420,8 @@ struct OnboardingFlow: View {
   @State private var demoBeat = -1
   @State private var name = ""
   @State private var nameTouched = false
+  /** Simeon has left (the name, the hand-off) and his exit has played: drawn still from then on. */
+  @State private var heroGone = false
   @FocusState private var nameFocused: Bool
 
   var body: some View {
@@ -330,9 +440,15 @@ struct OnboardingFlow: View {
     // The keyboard rises over the scene, as the Mac's window keeps its size while a field has the focus; the name is sent with Return.
     .ignoresSafeArea(.keyboard)
     .task(id: step) { await runClock() }
-    .onChange(of: store.agents.isEmpty) { _, empty in
+    // Gone, he stops moving once his exit (0.3 s) has played: moving unseen behind the name's field drew every frame.
+    .task(id: step == .name || step == .handOff) {
+      guard step == .name || step == .handOff else { heroGone = false; return }
+      try? await Task.sleep(nanoseconds: 400_000_000)
+      if !Task.isCancelled { heroGone = true }
+    }
+    .onChange(of: store.hasAgents) { _, has in
       // Agents turned up (a computer that was still waking): the account was not new after all.
-      if !empty && step != .handOff { session.finishOnboarding(opening: nil) }
+      if has && step != .handOff { session.finishOnboarding(opening: nil) }
     }
   }
 
@@ -405,7 +521,7 @@ struct OnboardingFlow: View {
   private func hero(_ layout: OnboardingLayout) -> some View {
     let place = heroPlace(layout)
     let largest: CGFloat = 80 * 2.3
-    return ButterflyView(palette: .named("blue"), motion: place.state)
+    return ButterflyView(palette: .named("blue"), motion: heroGone ? nil : place.state)
       .frame(width: largest, height: largest)
       .rotation3DEffect(.degrees(step == .meet ? turn : 0), axis: (x: 0, y: 1, z: 0), perspective: 0.35)
       .opacity(step == .meet && !heroShown ? 0 : 1)
@@ -450,6 +566,7 @@ struct OnboardingFlow: View {
       nameFocused = false
       // Saved as the Mac's name step saves it, without waiting; empty is allowed (asked again later).
       let typed = name
+      if !Onboarding.normalizedName(typed).isEmpty { session.nameNeeded = false }
       Task { await store.saveName(typed) }
     }
     withAnimation(.easeOut(duration: 0.2)) { step = following }
@@ -793,8 +910,10 @@ struct NameStep: View {
       TextField(Onboarding.namePlaceholder, text: $name)
         .font(.system(size: 17))
         .multilineTextAlignment(.center)
+        #if os(iOS)
         .textContentType(.givenName)
         .textInputAutocapitalization(.words)
+        #endif
         .autocorrectionDisabled()
         .submitLabel(.continue)
         .onSubmit(submit)
@@ -844,7 +963,10 @@ struct HandOffStep: View {
           .buttonStyle(.glass)
           .padding(.top, 8)
       } else {
-        ShimmerText(text: Onboarding.handOffLine(ready: ready), font: .system(size: 17, weight: .medium))
+        // The newest status of any agent's computer says how far its image is, or that it sleeps (`zjn`).
+        let latest = store.latestComputerStatus
+        ShimmerText(text: Onboarding.handOffLine(ready: ready, percent: latest?.isPulling == true ? Int((latest?.pullPercent ?? 0).rounded()) : nil,
+                                                 sleeping: latest?.state == "hibernated"), font: .system(size: 17, weight: .medium))
       }
     }
     .padding(.horizontal, 32)

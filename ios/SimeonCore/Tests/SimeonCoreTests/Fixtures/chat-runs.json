@@ -1,0 +1,757 @@
+{
+ "note": "Made by running the shipped window's own npt and REn (index-UbX-y3il.js) on these lines, as its transcript calls them: the display list, and each item's group start and run corners. a12 has a thread.",
+ "unreadAfter": 1791561150000,
+ "threads": [
+  "a12"
+ ],
+ "entries": [
+  {
+   "id": "u1",
+   "kind": "message",
+   "role": "user",
+   "content": "Morning",
+   "timestampMs": 1791558000000
+  },
+  {
+   "id": "u2",
+   "kind": "message",
+   "role": "user",
+   "content": "Where are we on Thursday?",
+   "timestampMs": 1791558030000
+  },
+  {
+   "id": "a1",
+   "kind": "send-message",
+   "message": {
+    "type": "text",
+    "content": "On track."
+   },
+   "timestampMs": 1791558060000
+  },
+  {
+   "id": "a2",
+   "kind": "send-message",
+   "message": {
+    "type": "text",
+    "content": "Two tickets left."
+   },
+   "timestampMs": 1791558072000
+  },
+  {
+   "id": "tc1",
+   "kind": "tool-call",
+   "name": "Shell",
+   "status": "done",
+   "timestampMs": 1791558078000
+  },
+  {
+   "id": "a3",
+   "kind": "send-message",
+   "message": {
+    "type": "text",
+    "content": "Closed one."
+   },
+   "timestampMs": 1791558090000
+  },
+  {
+   "id": "a4",
+   "kind": "send-message",
+   "message": {
+    "type": "text",
+    "content": "And the other."
+   },
+   "timestampMs": 1791558096000,
+   "reactions": [
+    {
+     "emoji": "👍",
+     "by": "user"
+    }
+   ]
+  },
+  {
+   "id": "a5",
+   "kind": "send-message",
+   "message": {
+    "type": "text",
+    "content": "Later: all done."
+   },
+   "timestampMs": 1791560400000
+  },
+  {
+   "id": "x1",
+   "kind": "message",
+   "role": "assistant",
+   "content": "to Scout",
+   "toAgent": {
+    "id": "scout",
+    "name": "Scout",
+    "kind": "agent"
+   },
+   "timestampMs": 1791560460000
+  },
+  {
+   "id": "x2",
+   "kind": "message",
+   "role": "user",
+   "content": "from Scout",
+   "fromAgent": {
+    "id": "scout",
+    "name": "Scout"
+   },
+   "timestampMs": 1791560520000
+  },
+  {
+   "id": "a6",
+   "kind": "send-message",
+   "message": {
+    "type": "text",
+    "content": "Scout says yes."
+   },
+   "timestampMs": 1791560580000
+  },
+  {
+   "id": "u3",
+   "kind": "message",
+   "role": "user",
+   "content": "Great",
+   "timestampMs": 1791560640000,
+   "clientNonce": "n1"
+  },
+  {
+   "id": "u3b",
+   "kind": "message",
+   "role": "user",
+   "content": "Great",
+   "timestampMs": 1791560640000,
+   "clientNonce": "n1"
+  },
+  {
+   "id": "e1",
+   "kind": "event",
+   "event": {
+    "type": "automation-changed",
+    "action": "created",
+    "automationId": "r1",
+    "automationName": "Daily"
+   },
+   "timestampMs": 1791560700000
+  },
+  {
+   "id": "e2",
+   "kind": "event",
+   "event": {
+    "type": "automation-changed",
+    "action": "created",
+    "automationId": "r2",
+    "automationName": "Weekly"
+   },
+   "timestampMs": 1791560700000
+  },
+  {
+   "id": "a7",
+   "kind": "send-message",
+   "message": {
+    "type": "text",
+    "content": "Made two routines."
+   },
+   "timestampMs": 1791560760000
+  },
+  {
+   "id": "img1",
+   "kind": "send-message",
+   "message": {
+    "type": "attachment",
+    "url": "file:///tmp/a.png",
+    "file_name": "a.png"
+   },
+   "timestampMs": 1791560820000
+  },
+  {
+   "id": "img2",
+   "kind": "send-message",
+   "message": {
+    "type": "attachment",
+    "url": "file:///tmp/b.png",
+    "file_name": "b.png"
+   },
+   "timestampMs": 1791560820000
+  },
+  {
+   "id": "a8",
+   "kind": "send-message",
+   "message": {
+    "type": "text",
+    "content": "https://example.com/report"
+   },
+   "timestampMs": 1791560880000
+  },
+  {
+   "id": "a9",
+   "kind": "send-message",
+   "message": {
+    "type": "text",
+    "content": "That is the report."
+   },
+   "timestampMs": 1791560910000
+  },
+  {
+   "id": "u4",
+   "kind": "message",
+   "role": "user",
+   "content": "👍",
+   "timestampMs": 1791560940000
+  },
+  {
+   "id": "u5",
+   "kind": "message",
+   "role": "user",
+   "content": "ok",
+   "timestampMs": 1791560970000
+  },
+  {
+   "id": "v1",
+   "kind": "message",
+   "role": "assistant",
+   "content": "call line",
+   "toAgent": {
+    "id": "voice-call:c1:20",
+    "name": "Bass",
+    "kind": "person"
+   },
+   "timestampMs": 1791561000000
+  },
+  {
+   "id": "u6",
+   "kind": "message",
+   "role": "user",
+   "content": "after the call",
+   "timestampMs": 1791561030000
+  },
+  {
+   "id": "s1",
+   "kind": "send-message",
+   "message": {
+    "type": "text",
+    "content": ""
+   },
+   "streaming": true,
+   "timestampMs": 1791561060000
+  },
+  {
+   "id": "lp1",
+   "kind": "send-message",
+   "message": {
+    "type": "local-tool-permission",
+    "ask": {
+     "status": "pending"
+    }
+   },
+   "timestampMs": 1791561120000
+  },
+  {
+   "id": "a10",
+   "kind": "send-message",
+   "message": {
+    "type": "text",
+    "content": "Allowed, thanks."
+   },
+   "timestampMs": 1791561180000
+  },
+  {
+   "id": "a11",
+   "kind": "send-message",
+   "message": {
+    "type": "text",
+    "content": "![chart](file:///tmp/c.png)"
+   },
+   "timestampMs": 1791561210000
+  },
+  {
+   "id": "a12",
+   "kind": "send-message",
+   "message": {
+    "type": "text",
+    "content": "Here is the thread."
+   },
+   "timestampMs": 1791561240000
+  },
+  {
+   "id": "a13",
+   "kind": "send-message",
+   "message": {
+    "type": "text",
+    "content": "After the thread."
+   },
+   "timestampMs": 1791561270000
+  },
+  {
+   "id": "u7",
+   "kind": "message",
+   "role": "user",
+   "content": "no time"
+  },
+  {
+   "id": "u8",
+   "kind": "message",
+   "role": "user",
+   "content": "much later",
+   "timestampMs": 1791570000000
+  },
+  {
+   "id": "f1",
+   "kind": "user-attachment",
+   "file_name": "c.docx",
+   "file_path": "/tmp/c.docx",
+   "timestampMs": 1791570060000
+  },
+  {
+   "id": "f2",
+   "kind": "user-attachment",
+   "file_name": "d.docx",
+   "file_path": "/tmp/d.docx",
+   "timestampMs": 1791570060000
+  },
+  {
+   "id": "u9",
+   "kind": "message",
+   "role": "user",
+   "content": "two files",
+   "timestampMs": 1791570120000
+  },
+  {
+   "id": "g1",
+   "kind": "send-message",
+   "author": {
+    "id": "iris",
+    "name": "Iris"
+   },
+   "message": {
+    "type": "text",
+    "content": "group one"
+   },
+   "timestampMs": 1791570180000
+  },
+  {
+   "id": "g2",
+   "kind": "send-message",
+   "author": {
+    "id": "iris",
+    "name": "Iris"
+   },
+   "message": {
+    "type": "text",
+    "content": "group two"
+   },
+   "timestampMs": 1791570192000
+  },
+  {
+   "id": "g3",
+   "kind": "send-message",
+   "author": {
+    "id": "scout",
+    "name": "Scout"
+   },
+   "message": {
+    "type": "text",
+    "content": "group three"
+   },
+   "timestampMs": 1791570204000
+  },
+  {
+   "id": "h1",
+   "kind": "message",
+   "role": "user",
+   "content": "shared",
+   "fromUser": {
+    "authId": "auth|1",
+    "name": "Ada"
+   },
+   "timestampMs": 1791570240000
+  },
+  {
+   "id": "h2",
+   "kind": "message",
+   "role": "user",
+   "content": "shared again",
+   "fromUser": {
+    "authId": "auth|1",
+    "name": "Ada"
+   },
+   "timestampMs": 1791570252000
+  },
+  {
+   "id": "u10",
+   "kind": "message",
+   "role": "user",
+   "content": "me again",
+   "timestampMs": 1791570300000
+  },
+  {
+   "id": "n1",
+   "kind": "notice",
+   "text": "Restarted",
+   "timestampMs": 1791570360000
+  },
+  {
+   "id": "u11",
+   "kind": "message",
+   "role": "user",
+   "content": "after notice",
+   "timestampMs": 1791570420000
+  }
+ ],
+ "items": [
+  {
+   "kind": "timestamp",
+   "ids": []
+  },
+  {
+   "kind": "entry",
+   "ids": [
+    "u1"
+   ],
+   "startsGroup": false,
+   "continuesPrevious": false,
+   "continuesNext": true,
+   "aboveThreadChip": false
+  },
+  {
+   "kind": "entry",
+   "ids": [
+    "u2"
+   ],
+   "startsGroup": false,
+   "continuesPrevious": true,
+   "continuesNext": false,
+   "aboveThreadChip": false
+  },
+  {
+   "kind": "entry",
+   "ids": [
+    "a1"
+   ],
+   "startsGroup": true,
+   "continuesPrevious": false,
+   "continuesNext": true,
+   "aboveThreadChip": false
+  },
+  {
+   "kind": "entry",
+   "ids": [
+    "a2"
+   ],
+   "startsGroup": false,
+   "continuesPrevious": true,
+   "continuesNext": false,
+   "aboveThreadChip": false
+  },
+  {
+   "kind": "entry",
+   "ids": [
+    "a3"
+   ],
+   "startsGroup": true,
+   "continuesPrevious": false,
+   "continuesNext": true,
+   "aboveThreadChip": false
+  },
+  {
+   "kind": "entry",
+   "ids": [
+    "a4"
+   ],
+   "startsGroup": false,
+   "continuesPrevious": true,
+   "continuesNext": false,
+   "aboveThreadChip": false
+  },
+  {
+   "kind": "timestamp",
+   "ids": []
+  },
+  {
+   "kind": "entry",
+   "ids": [
+    "a5"
+   ],
+   "startsGroup": false,
+   "continuesPrevious": false,
+   "continuesNext": false,
+   "aboveThreadChip": false
+  },
+  {
+   "kind": "agent-comm-group",
+   "ids": [
+    "x1",
+    "x2"
+   ]
+  },
+  {
+   "kind": "entry",
+   "ids": [
+    "a6"
+   ],
+   "startsGroup": true,
+   "continuesPrevious": false,
+   "continuesNext": false,
+   "aboveThreadChip": false
+  },
+  {
+   "kind": "entry",
+   "ids": [
+    "u3"
+   ],
+   "startsGroup": true,
+   "continuesPrevious": false,
+   "continuesNext": false,
+   "aboveThreadChip": false
+  },
+  {
+   "kind": "routine-event-group",
+   "ids": [
+    "e1",
+    "e2"
+   ]
+  },
+  {
+   "kind": "entry",
+   "ids": [
+    "a7"
+   ],
+   "startsGroup": true,
+   "continuesPrevious": false,
+   "continuesNext": false,
+   "aboveThreadChip": false
+  },
+  {
+   "kind": "attachment-group",
+   "ids": [
+    "img1",
+    "img2"
+   ],
+   "startsGroup": false,
+   "continuesPrevious": false,
+   "continuesNext": false,
+   "aboveThreadChip": false
+  },
+  {
+   "kind": "entry",
+   "ids": [
+    "a8"
+   ],
+   "startsGroup": false,
+   "continuesPrevious": false,
+   "continuesNext": false,
+   "aboveThreadChip": false
+  },
+  {
+   "kind": "entry",
+   "ids": [
+    "a9"
+   ],
+   "startsGroup": false,
+   "continuesPrevious": false,
+   "continuesNext": false,
+   "aboveThreadChip": false
+  },
+  {
+   "kind": "entry",
+   "ids": [
+    "u4"
+   ],
+   "startsGroup": true,
+   "continuesPrevious": false,
+   "continuesNext": false,
+   "aboveThreadChip": false
+  },
+  {
+   "kind": "entry",
+   "ids": [
+    "u5"
+   ],
+   "startsGroup": false,
+   "continuesPrevious": false,
+   "continuesNext": true,
+   "aboveThreadChip": false
+  },
+  {
+   "kind": "entry",
+   "ids": [
+    "u6"
+   ],
+   "startsGroup": false,
+   "continuesPrevious": true,
+   "continuesNext": false,
+   "aboveThreadChip": false
+  },
+  {
+   "kind": "unread-divider",
+   "ids": []
+  },
+  {
+   "kind": "entry",
+   "ids": [
+    "a10"
+   ],
+   "startsGroup": false,
+   "continuesPrevious": false,
+   "continuesNext": true,
+   "aboveThreadChip": false
+  },
+  {
+   "kind": "entry",
+   "ids": [
+    "a11"
+   ],
+   "startsGroup": false,
+   "continuesPrevious": true,
+   "continuesNext": true,
+   "aboveThreadChip": false
+  },
+  {
+   "kind": "entry",
+   "ids": [
+    "a12"
+   ],
+   "startsGroup": false,
+   "continuesPrevious": true,
+   "continuesNext": true,
+   "aboveThreadChip": true
+  },
+  {
+   "kind": "entry",
+   "ids": [
+    "a13"
+   ],
+   "startsGroup": false,
+   "continuesPrevious": false,
+   "continuesNext": false,
+   "aboveThreadChip": false
+  },
+  {
+   "kind": "timestamp",
+   "ids": []
+  },
+  {
+   "kind": "entry",
+   "ids": [
+    "u7"
+   ],
+   "startsGroup": false,
+   "continuesPrevious": false,
+   "continuesNext": true,
+   "aboveThreadChip": false
+  },
+  {
+   "kind": "entry",
+   "ids": [
+    "u8"
+   ],
+   "startsGroup": false,
+   "continuesPrevious": true,
+   "continuesNext": false,
+   "aboveThreadChip": false
+  },
+  {
+   "kind": "attachment-group",
+   "ids": [
+    "f1",
+    "f2"
+   ],
+   "startsGroup": false,
+   "continuesPrevious": false,
+   "continuesNext": false,
+   "aboveThreadChip": false
+  },
+  {
+   "kind": "entry",
+   "ids": [
+    "u9"
+   ],
+   "startsGroup": false,
+   "continuesPrevious": false,
+   "continuesNext": false,
+   "aboveThreadChip": false
+  },
+  {
+   "kind": "entry",
+   "ids": [
+    "g1"
+   ],
+   "startsGroup": true,
+   "continuesPrevious": false,
+   "continuesNext": true,
+   "aboveThreadChip": false
+  },
+  {
+   "kind": "entry",
+   "ids": [
+    "g2"
+   ],
+   "startsGroup": false,
+   "continuesPrevious": true,
+   "continuesNext": false,
+   "aboveThreadChip": false
+  },
+  {
+   "kind": "entry",
+   "ids": [
+    "g3"
+   ],
+   "startsGroup": true,
+   "continuesPrevious": false,
+   "continuesNext": false,
+   "aboveThreadChip": false
+  },
+  {
+   "kind": "entry",
+   "ids": [
+    "h1"
+   ],
+   "startsGroup": true,
+   "continuesPrevious": false,
+   "continuesNext": true,
+   "aboveThreadChip": false
+  },
+  {
+   "kind": "entry",
+   "ids": [
+    "h2"
+   ],
+   "startsGroup": false,
+   "continuesPrevious": true,
+   "continuesNext": false,
+   "aboveThreadChip": false
+  },
+  {
+   "kind": "entry",
+   "ids": [
+    "u10"
+   ],
+   "startsGroup": true,
+   "continuesPrevious": false,
+   "continuesNext": false,
+   "aboveThreadChip": false
+  },
+  {
+   "kind": "entry",
+   "ids": [
+    "n1"
+   ],
+   "startsGroup": false,
+   "continuesPrevious": false,
+   "continuesNext": false,
+   "aboveThreadChip": false
+  },
+  {
+   "kind": "entry",
+   "ids": [
+    "u11"
+   ],
+   "startsGroup": true,
+   "continuesPrevious": false,
+   "continuesNext": false,
+   "aboveThreadChip": false
+  }
+ ]
+}

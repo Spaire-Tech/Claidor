@@ -5,12 +5,16 @@ import SimeonCore
 /**
  * Finds what makes the app hang. A thread of its own asks the main thread
  * to answer every tenth of a second; when it takes more than a quarter of a
- * second, the console gets one line: how long the screen stood still, and
- * the last step the app had started ("laying out ava, 512 lines"). A freeze
+ * second, the console gets how long the screen stood still, the last step
+ * the app had started ("laying out ava, 512 lines") and how long before the
+ * freeze it began, and where the main thread was a quarter of a second in
+ * (the system's names; the app's own code shows as "Simeon 0x…"). A freeze
  * that lasts also writes where the main thread is stuck, read from its own
  * stack (at 2 s and again at 10 s: the same lines twice is a wait that never
  * ends, different ones a loop). Run from Xcode, the lines are in its
- * console, ready to copy.
+ * console, ready to copy. They are kept in a file too (`reportURL`): a
+ * freeze that ends in quitting the app, or one away from Xcode, is in
+ * Settings › About › Copy Freeze Report the next time the app opens.
  */
 enum HangWatch {
   @MainActor private static var started = false
@@ -19,6 +23,36 @@ enum HangWatch {
   nonisolated(unsafe) private static var mainStack: ClosedRange<UInt> = 0...0
   /** Room for the main thread's return addresses, made before it is held: nothing may be allocated while it is (it may hold the allocator's lock). */
   nonisolated(unsafe) private static var frames = UnsafeMutablePointer<UInt>.allocate(capacity: 64)
+
+  /** The freezes written down (the last 48 KB or so), for Settings › About. */
+  static let reportURL = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent("simeon-freezes.txt")
+
+  /** What the file holds, or nil when nothing has frozen. */
+  static func savedReport() -> String? {
+    guard let data = try? Data(contentsOf: reportURL), !data.isEmpty else { return nil }
+    return String(decoding: data, as: UTF8.self)
+  }
+
+  /** A line to the console and to the file, written at once: the app may be quit before it would be flushed. */
+  private static func report(_ line: String) {
+    Trace.log(line)
+    let data = Data((line + "\n").utf8)
+    if let handle = try? FileHandle(forWritingTo: reportURL) {
+      defer { try? handle.close() }
+      _ = try? handle.seekToEnd()
+      try? handle.write(contentsOf: data)
+    } else {
+      try? data.write(to: reportURL)
+    }
+  }
+
+  /** A new freeze: the file cut to its last 48 KB, then when it was and on which build. */
+  private static func beginReport() {
+    if let data = try? Data(contentsOf: reportURL), data.count > 96_000 { try? data.suffix(48_000).write(to: reportURL) }
+    let build = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
+    let number = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
+    report("[simeon] ── \(ISO8601DateFormatter().string(from: Date())), Simeon \(build) (\(number)), iOS \(ProcessInfo.processInfo.operatingSystemVersionString) ──")
+  }
 
   @MainActor static func start() {
     guard !started else { return }
@@ -33,8 +67,12 @@ enum HangWatch {
         let asked = DispatchTime.now().uptimeNanoseconds
         DispatchQueue.main.async { answered.signal() }
         if answered.wait(timeout: .now() + 0.25) == .timedOut {
-          let during = Trace.now
+          let (during, markedAt) = Trace.current
+          // Where the main thread is a quarter of a second in: the step's name alone told only what began last, which can
+          // be long over (the founder's log, 10 October 2026: "while handling the computer's disk", three times).
+          let early = mainTrace()
           let before = Trace.tallied
+          beginReport()
           // Still stuck: say so while it lasts (at 2 s, 5 s, 10 s, then every 10 s), so a freeze that never ends is written too.
           var marks: [Double] = [2, 5, 10]
           while answered.wait(timeout: .now() + 0.5) == .timedOut {
@@ -42,18 +80,21 @@ enum HangWatch {
             if let next = marks.first, seconds >= next {
               marks.removeFirst()
               if marks.isEmpty { marks = [next + 10] }
-              Trace.log("[simeon] the screen has stood still \(Int(seconds)) s so far, while \(during) (now: \(Trace.now))")
+              report("[simeon] the screen has stood still \(Int(seconds)) s so far, while \(during) (now: \(Trace.now))")
               if next == 2 || next == 10 {
-                Trace.log("[simeon] the main thread is in:\n" + mainTrace().map { "[simeon]   \($0)" }.joined(separator: "\n"))
+                report("[simeon] the main thread is in:\n" + mainTrace().map { "[simeon]   \($0)" }.joined(separator: "\n"))
                 // What kept happening since the screen stopped: a loop is the counts that climb.
                 let now = Trace.tallied
                 let climbed = now.compactMap { name, count in count - (before[name] ?? 0) > 0 ? (name, count - (before[name] ?? 0)) : nil }.sorted { $0.1 > $1.1 }
-                Trace.log("[simeon] since the screen stopped, \(Int(seconds)) s:\n" + (climbed.isEmpty ? ["[simeon]   nothing of ours ran"] : climbed.prefix(40).map { "[simeon]   \($0.1) × \($0.0)" }).joined(separator: "\n"))
+                report("[simeon] since the screen stopped, \(Int(seconds)) s:\n" + (climbed.isEmpty ? ["[simeon]   nothing of ours ran"] : climbed.prefix(40).map { "[simeon]   \($0.1) × \($0.0)" }).joined(separator: "\n"))
               }
             }
           }
           let ms = (DispatchTime.now().uptimeNanoseconds - asked) / 1_000_000
-          Trace.log("[simeon] the screen stood still \(ms) ms, while \(during)")
+          let began = (Int64(bitPattern: asked) - Int64(bitPattern: markedAt)) / 1_000_000
+          let when = began >= 0 ? "begun \(began) ms before the screen stopped" : "begun while it was stopped"
+          report("[simeon] the screen stood still \(ms) ms, while \(during) (\(when))")
+          report("[simeon] a quarter of a second in, the main thread was in:\n" + early.prefix(24).map { "[simeon]   \($0)" }.joined(separator: "\n"))
         }
         Thread.sleep(forTimeInterval: 0.1)
       }

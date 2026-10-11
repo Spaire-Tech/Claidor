@@ -1,0 +1,632 @@
+[
+ {
+  "state": "checking",
+  "reason": "unspecified",
+  "notice": null,
+  "cover": {
+   "title": "Simeon isn’t available on this account yet",
+   "body": "Check what this account needs on the web.",
+   "action": "Check Access"
+  },
+  "pauses": false
+ },
+ {
+  "state": "checking",
+  "reason": "none",
+  "notice": null,
+  "cover": {
+   "title": "Simeon isn’t available on this account yet",
+   "body": "Check what this account needs on the web.",
+   "action": "Check Access"
+  },
+  "pauses": false
+ },
+ {
+  "state": "checking",
+  "reason": "teamPrivacyMode",
+  "notice": null,
+  "cover": {
+   "title": "Simeon isn’t available on this account yet",
+   "body": "Check what this account needs on the web.",
+   "action": "Check Access"
+  },
+  "pauses": false
+ },
+ {
+  "state": "checking",
+  "reason": "teamSetupRequired",
+  "notice": null,
+  "cover": {
+   "title": "Simeon isn’t available on this account yet",
+   "body": "Check what this account needs on the web.",
+   "action": "Check Access"
+  },
+  "pauses": false
+ },
+ {
+  "state": "checking",
+  "reason": "teamAccessRequired",
+  "notice": null,
+  "cover": {
+   "title": "Simeon isn’t available on this account yet",
+   "body": "Check what this account needs on the web.",
+   "action": "Check Access"
+  },
+  "pauses": false
+ },
+ {
+  "state": "checking",
+  "reason": "notOffered",
+  "notice": null,
+  "cover": {
+   "title": "Simeon isn’t available on this account yet",
+   "body": "Check what this account needs on the web.",
+   "action": "Check Access"
+  },
+  "pauses": false
+ },
+ {
+  "state": "checking",
+  "reason": "freeTrialAvailable",
+  "notice": null,
+  "cover": {
+   "title": "Simeon isn’t available on this account yet",
+   "body": "Check what this account needs on the web.",
+   "action": "Check Access"
+  },
+  "pauses": false
+ },
+ {
+  "state": "checking",
+  "reason": "paywallIndividual",
+  "notice": null,
+  "cover": {
+   "title": "Simeon isn’t available on this account yet",
+   "body": "Check what this account needs on the web.",
+   "action": "Check Access"
+  },
+  "pauses": false
+ },
+ {
+  "state": "checking",
+  "reason": "paywallTeamMember",
+  "notice": null,
+  "cover": {
+   "title": "Simeon isn’t available on this account yet",
+   "body": "Check what this account needs on the web.",
+   "action": "Check Access"
+  },
+  "pauses": false
+ },
+ {
+  "state": "checking",
+  "reason": "paywallTeamAdmin",
+  "notice": null,
+  "cover": {
+   "title": "Simeon isn’t available on this account yet",
+   "body": "Check what this account needs on the web.",
+   "action": "Check Access"
+  },
+  "pauses": false
+ },
+ {
+  "state": "unknown",
+  "reason": "unspecified",
+  "notice": null,
+  "cover": {
+   "title": "Simeon isn’t available on this account yet",
+   "body": "Check what this account needs on the web.",
+   "action": "Check Access"
+  },
+  "pauses": false
+ },
+ {
+  "state": "unknown",
+  "reason": "none",
+  "notice": null,
+  "cover": {
+   "title": "Simeon isn’t available on this account yet",
+   "body": "Check what this account needs on the web.",
+   "action": "Check Access"
+  },
+  "pauses": false
+ },
+ {
+  "state": "unknown",
+  "reason": "teamPrivacyMode",
+  "notice": null,
+  "cover": {
+   "title": "Simeon isn’t available on this account yet",
+   "body": "Check what this account needs on the web.",
+   "action": "Check Access"
+  },
+  "pauses": false
+ },
+ {
+  "state": "unknown",
+  "reason": "teamSetupRequired",
+  "notice": null,
+  "cover": {
+   "title": "Simeon isn’t available on this account yet",
+   "body": "Check what this account needs on the web.",
+   "action": "Check Access"
+  },
+  "pauses": false
+ },
+ {
+  "state": "unknown",
+  "reason": "teamAccessRequired",
+  "notice": null,
+  "cover": {
+   "title": "Simeon isn’t available on this account yet",
+   "body": "Check what this account needs on the web.",
+   "action": "Check Access"
+  },
+  "pauses": false
+ },
+ {
+  "state": "unknown",
+  "reason": "notOffered",
+  "notice": null,
+  "cover": {
+   "title": "Simeon isn’t available on this account yet",
+   "body": "Check what this account needs on the web.",
+   "action": "Check Access"
+  },
+  "pauses": false
+ },
+ {
+  "state": "unknown",
+  "reason": "freeTrialAvailable",
+  "notice": null,
+  "cover": {
+   "title": "Simeon isn’t available on this account yet",
+   "body": "Check what this account needs on the web.",
+   "action": "Check Access"
+  },
+  "pauses": false
+ },
+ {
+  "state": "unknown",
+  "reason": "paywallIndividual",
+  "notice": null,
+  "cover": {
+   "title": "Simeon isn’t available on this account yet",
+   "body": "Check what this account needs on the web.",
+   "action": "Check Access"
+  },
+  "pauses": false
+ },
+ {
+  "state": "unknown",
+  "reason": "paywallTeamMember",
+  "notice": null,
+  "cover": {
+   "title": "Simeon isn’t available on this account yet",
+   "body": "Check what this account needs on the web.",
+   "action": "Check Access"
+  },
+  "pauses": false
+ },
+ {
+  "state": "unknown",
+  "reason": "paywallTeamAdmin",
+  "notice": null,
+  "cover": {
+   "title": "Simeon isn’t available on this account yet",
+   "body": "Check what this account needs on the web.",
+   "action": "Check Access"
+  },
+  "pauses": false
+ },
+ {
+  "state": "granted",
+  "reason": "unspecified",
+  "notice": null,
+  "cover": {
+   "title": "Simeon isn’t available on this account yet",
+   "body": "Check what this account needs on the web.",
+   "action": "Check Access"
+  },
+  "pauses": false
+ },
+ {
+  "state": "granted",
+  "reason": "none",
+  "notice": null,
+  "cover": {
+   "title": "Simeon isn’t available on this account yet",
+   "body": "Check what this account needs on the web.",
+   "action": "Check Access"
+  },
+  "pauses": false
+ },
+ {
+  "state": "granted",
+  "reason": "teamPrivacyMode",
+  "notice": null,
+  "cover": {
+   "title": "Simeon isn’t available on this account yet",
+   "body": "Check what this account needs on the web.",
+   "action": "Check Access"
+  },
+  "pauses": false
+ },
+ {
+  "state": "granted",
+  "reason": "teamSetupRequired",
+  "notice": null,
+  "cover": {
+   "title": "Simeon isn’t available on this account yet",
+   "body": "Check what this account needs on the web.",
+   "action": "Check Access"
+  },
+  "pauses": false
+ },
+ {
+  "state": "granted",
+  "reason": "teamAccessRequired",
+  "notice": null,
+  "cover": {
+   "title": "Simeon isn’t available on this account yet",
+   "body": "Check what this account needs on the web.",
+   "action": "Check Access"
+  },
+  "pauses": false
+ },
+ {
+  "state": "granted",
+  "reason": "notOffered",
+  "notice": null,
+  "cover": {
+   "title": "Simeon isn’t available on this account yet",
+   "body": "Check what this account needs on the web.",
+   "action": "Check Access"
+  },
+  "pauses": false
+ },
+ {
+  "state": "granted",
+  "reason": "freeTrialAvailable",
+  "notice": null,
+  "cover": {
+   "title": "Simeon isn’t available on this account yet",
+   "body": "Check what this account needs on the web.",
+   "action": "Check Access"
+  },
+  "pauses": false
+ },
+ {
+  "state": "granted",
+  "reason": "paywallIndividual",
+  "notice": null,
+  "cover": {
+   "title": "Simeon isn’t available on this account yet",
+   "body": "Check what this account needs on the web.",
+   "action": "Check Access"
+  },
+  "pauses": false
+ },
+ {
+  "state": "granted",
+  "reason": "paywallTeamMember",
+  "notice": null,
+  "cover": {
+   "title": "Simeon isn’t available on this account yet",
+   "body": "Check what this account needs on the web.",
+   "action": "Check Access"
+  },
+  "pauses": false
+ },
+ {
+  "state": "granted",
+  "reason": "paywallTeamAdmin",
+  "notice": null,
+  "cover": {
+   "title": "Simeon isn’t available on this account yet",
+   "body": "Check what this account needs on the web.",
+   "action": "Check Access"
+  },
+  "pauses": false
+ },
+ {
+  "state": "unavailable",
+  "reason": "unspecified",
+  "notice": {
+   "title": "Simeon is not available for this account",
+   "body": "Sending is off until this account is given access. Check what it needs on the web.",
+   "action": "Check Access"
+  },
+  "cover": {
+   "title": "Simeon is not available for this account",
+   "body": "Sending is off until this account is given access. Check what it needs on the web.",
+   "action": "Check Access"
+  },
+  "pauses": true
+ },
+ {
+  "state": "unavailable",
+  "reason": "none",
+  "notice": {
+   "title": "Simeon is not available for this account",
+   "body": "Sending is off until this account is given access. Check what it needs on the web.",
+   "action": "Check Access"
+  },
+  "cover": {
+   "title": "Simeon is not available for this account",
+   "body": "Sending is off until this account is given access. Check what it needs on the web.",
+   "action": "Check Access"
+  },
+  "pauses": true
+ },
+ {
+  "state": "unavailable",
+  "reason": "teamPrivacyMode",
+  "notice": {
+   "title": "Your team's privacy mode blocks Simeon",
+   "body": "Simeon can't run under Privacy Mode (Legacy). Ask a team admin to move the team off it.",
+   "action": "See Details"
+  },
+  "cover": {
+   "title": "Your team's privacy mode blocks Simeon",
+   "body": "Simeon can't run under Privacy Mode (Legacy). Ask a team admin to move the team off it.",
+   "action": "See Details"
+  },
+  "pauses": true
+ },
+ {
+  "state": "unavailable",
+  "reason": "teamSetupRequired",
+  "notice": {
+   "title": "Your team hasn't set up Simeon yet",
+   "body": "A team admin has to finish Simeon setup before members can send messages.",
+   "action": "See Details"
+  },
+  "cover": {
+   "title": "Your team hasn't set up Simeon yet",
+   "body": "A team admin has to finish Simeon setup before members can send messages.",
+   "action": "See Details"
+  },
+  "pauses": true
+ },
+ {
+  "state": "unavailable",
+  "reason": "teamAccessRequired",
+  "notice": {
+   "title": "Your team hasn't given this account Simeon",
+   "body": "Your team's settings withhold Simeon. A team admin can grant it.",
+   "action": "Request Access"
+  },
+  "cover": {
+   "title": "Your team hasn't given this account Simeon",
+   "body": "Your team's settings withhold Simeon. A team admin can grant it.",
+   "action": "Request Access"
+  },
+  "pauses": true
+ },
+ {
+  "state": "unavailable",
+  "reason": "notOffered",
+  "notice": {
+   "title": "Simeon is not available for this account",
+   "body": "There's nothing to set up or purchase here.",
+   "action": null
+  },
+  "cover": {
+   "title": "Simeon is not available for this account",
+   "body": "There's nothing to set up or purchase here.",
+   "action": null
+  },
+  "pauses": true
+ },
+ {
+  "state": "unavailable",
+  "reason": "freeTrialAvailable",
+  "notice": {
+   "title": "Start a Simeon trial to send messages",
+   "body": "This account can try Simeon now.",
+   "action": "Start Trial"
+  },
+  "cover": {
+   "title": "Start a Simeon trial to send messages",
+   "body": "This account can try Simeon now.",
+   "action": "Start Trial"
+  },
+  "pauses": true
+ },
+ {
+  "state": "unavailable",
+  "reason": "paywallIndividual",
+  "notice": {
+   "title": "Simeon needs an Ultra plan",
+   "body": "Upgrade to Ultra to send messages with Simeon.",
+   "action": "Get Ultra"
+  },
+  "cover": {
+   "title": "Simeon needs an Ultra plan",
+   "body": "Upgrade to Ultra to send messages with Simeon.",
+   "action": "Get Ultra"
+  },
+  "pauses": true
+ },
+ {
+  "state": "unavailable",
+  "reason": "paywallTeamMember",
+  "notice": {
+   "title": "Simeon needs a Premium seat",
+   "body": "Ask a team admin to move this account to a Premium seat.",
+   "action": "Request Access"
+  },
+  "cover": {
+   "title": "Simeon needs a Premium seat",
+   "body": "Ask a team admin to move this account to a Premium seat.",
+   "action": "Request Access"
+  },
+  "pauses": true
+ },
+ {
+  "state": "unavailable",
+  "reason": "paywallTeamAdmin",
+  "notice": {
+   "title": "Simeon needs a Premium seat",
+   "body": "Move this account to a Premium seat to send messages.",
+   "action": "Manage Seats"
+  },
+  "cover": {
+   "title": "Simeon needs a Premium seat",
+   "body": "Move this account to a Premium seat to send messages.",
+   "action": "Manage Seats"
+  },
+  "pauses": true
+ },
+ {
+  "state": "paymentRequired",
+  "reason": "unspecified",
+  "notice": {
+   "title": "Simeon is not included in this plan",
+   "body": "Sending is off until this account has Simeon. Check the options on the web.",
+   "action": "Check Access"
+  },
+  "cover": {
+   "title": "Simeon is not included in this plan",
+   "body": "Sending is off until this account has Simeon. Check the options on the web.",
+   "action": "Check Access"
+  },
+  "pauses": true
+ },
+ {
+  "state": "paymentRequired",
+  "reason": "none",
+  "notice": {
+   "title": "Simeon is not included in this plan",
+   "body": "Sending is off until this account has Simeon. Check the options on the web.",
+   "action": "Check Access"
+  },
+  "cover": {
+   "title": "Simeon is not included in this plan",
+   "body": "Sending is off until this account has Simeon. Check the options on the web.",
+   "action": "Check Access"
+  },
+  "pauses": true
+ },
+ {
+  "state": "paymentRequired",
+  "reason": "teamPrivacyMode",
+  "notice": {
+   "title": "Your team's privacy mode blocks Simeon",
+   "body": "Simeon can't run under Privacy Mode (Legacy). Ask a team admin to move the team off it.",
+   "action": "See Details"
+  },
+  "cover": {
+   "title": "Your team's privacy mode blocks Simeon",
+   "body": "Simeon can't run under Privacy Mode (Legacy). Ask a team admin to move the team off it.",
+   "action": "See Details"
+  },
+  "pauses": true
+ },
+ {
+  "state": "paymentRequired",
+  "reason": "teamSetupRequired",
+  "notice": {
+   "title": "Your team hasn't set up Simeon yet",
+   "body": "A team admin has to finish Simeon setup before members can send messages.",
+   "action": "See Details"
+  },
+  "cover": {
+   "title": "Your team hasn't set up Simeon yet",
+   "body": "A team admin has to finish Simeon setup before members can send messages.",
+   "action": "See Details"
+  },
+  "pauses": true
+ },
+ {
+  "state": "paymentRequired",
+  "reason": "teamAccessRequired",
+  "notice": {
+   "title": "Your team hasn't given this account Simeon",
+   "body": "Your team's settings withhold Simeon. A team admin can grant it.",
+   "action": "Request Access"
+  },
+  "cover": {
+   "title": "Your team hasn't given this account Simeon",
+   "body": "Your team's settings withhold Simeon. A team admin can grant it.",
+   "action": "Request Access"
+  },
+  "pauses": true
+ },
+ {
+  "state": "paymentRequired",
+  "reason": "notOffered",
+  "notice": {
+   "title": "Simeon is not available for this account",
+   "body": "There's nothing to set up or purchase here.",
+   "action": null
+  },
+  "cover": {
+   "title": "Simeon is not available for this account",
+   "body": "There's nothing to set up or purchase here.",
+   "action": null
+  },
+  "pauses": true
+ },
+ {
+  "state": "paymentRequired",
+  "reason": "freeTrialAvailable",
+  "notice": {
+   "title": "Start a Simeon trial to send messages",
+   "body": "This account can try Simeon now.",
+   "action": "Start Trial"
+  },
+  "cover": {
+   "title": "Start a Simeon trial to send messages",
+   "body": "This account can try Simeon now.",
+   "action": "Start Trial"
+  },
+  "pauses": true
+ },
+ {
+  "state": "paymentRequired",
+  "reason": "paywallIndividual",
+  "notice": {
+   "title": "Simeon needs an Ultra plan",
+   "body": "Upgrade to Ultra to send messages with Simeon.",
+   "action": "Get Ultra"
+  },
+  "cover": {
+   "title": "Simeon needs an Ultra plan",
+   "body": "Upgrade to Ultra to send messages with Simeon.",
+   "action": "Get Ultra"
+  },
+  "pauses": true
+ },
+ {
+  "state": "paymentRequired",
+  "reason": "paywallTeamMember",
+  "notice": {
+   "title": "Simeon needs a Premium seat",
+   "body": "Ask a team admin to move this account to a Premium seat.",
+   "action": "Request Access"
+  },
+  "cover": {
+   "title": "Simeon needs a Premium seat",
+   "body": "Ask a team admin to move this account to a Premium seat.",
+   "action": "Request Access"
+  },
+  "pauses": true
+ },
+ {
+  "state": "paymentRequired",
+  "reason": "paywallTeamAdmin",
+  "notice": {
+   "title": "Simeon needs a Premium seat",
+   "body": "Move this account to a Premium seat to send messages.",
+   "action": "Manage Seats"
+  },
+  "cover": {
+   "title": "Simeon needs a Premium seat",
+   "body": "Move this account to a Premium seat to send messages.",
+   "action": "Manage Seats"
+  },
+  "pauses": true
+ }
+]

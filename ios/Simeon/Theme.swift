@@ -1,5 +1,7 @@
 import SwiftUI
+#if os(iOS)
 import UIKit
+#endif
 import SimeonCore
 
 extension Color {
@@ -20,7 +22,12 @@ extension UIColor {
   /** Both read once: the colour is resolved on every draw, and parsing its text each time showed up while scrolling. */
   static func dynamic(light: String, dark: String) -> UIColor {
     let lit = UIColor(hex: light), dim = UIColor(hex: dark)
+    #if os(iOS)
     return UIColor { traits in traits.userInterfaceStyle == .dark ? dim : lit }
+    #else
+    // The Mac: resolved by the appearance it is drawn in (the window's, or the one the app is set to).
+    return NSColor(name: nil) { appearance in appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? dim : lit }
+    #endif
   }
 }
 
@@ -31,10 +38,39 @@ extension UIColor {
  * glass) bring their own.
  */
 enum Ink {
-  /** The chat's ground (`--sand-bg-base`). */
-  static let ground = Color.dynamic(light: "#fcfcfc", dark: "#070707")
-  /** The list's ground (`--sand-bg-subtle`, the Mac's sidebar). */
-  static let listGround = Color.dynamic(light: "#f7f7f7", dark: "#111111")
+  /**
+   * The chat's ground (`--sand-bg-base`), the launch's and the sign-in's.
+   * On dark `#141414`, the founder's reference (11 October 2026: "the same
+   * dark as the pic", for every screen and the starter page; the window's
+   * was `#070707`). On light pure white, as the founder's reference app
+   * (11 October 2026: "not grey ish"; it was `#fcfcfc`). The system's
+   * launch screen is the same (Assets, Ground).
+   */
+  static let ground = Color(uiColor: groundUIColor)
+  /** The same for UIKit: the windows and their root views paint it, so the system's black never shows behind a screen. */
+  static let groundUIColor = UIColor.dynamic(light: "#ffffff", dark: "#141414")
+  /** The list's ground (`--sand-bg-subtle`, the Mac's sidebar): the one ground, white on light (it was `#f7f7f7`), `#141414` on dark (it was `#111111`). */
+  static let listGround = Color.dynamic(light: "#ffffff", dark: "#141414")
+  /**
+   * A grouped page's ground (Settings and its pages, the routine editor,
+   * Hidden Agents): the one ground on both, white on light (it was the
+   * system's grey, `#f2f2f7`), not the sheet's lighter grey on dark
+   * (`#1c1c1e`).
+   */
+  static let groupedGround = Color.dynamic(light: "#ffffff", dark: "#141414")
+  /**
+   * Its rows, and a control's fill on the ground (a search field, a back
+   * button): a step off the ground on both, as dark had it, so a white
+   * page still shows its rows: `#f4f4f4` on light (it was white on the
+   * grey), `#1c1c1c` on dark (the reference's).
+   */
+  static let groupedRow = Color.dynamic(light: "#f4f4f4", dark: "#1c1c1c")
+  /** An agent's title tag in the list (the reference's `#252527` on dark; the system's quiet fill on light). */
+  static let tag = Color.dynamic(light: "#7676801f", dark: "#252527")
+  /** A quiet pill button on the ground: Add, Added (the reference's `#2b2b2d` on dark). */
+  static let pillButton = Color.dynamic(light: "#7676801f", dark: "#2b2b2d")
+  /** Authenticate: the system's blue as the reference draws it (`#016cec`). */
+  static let authenticate = Color.dynamic(light: "#0a6cdf", dark: "#016cec")
   static let primary = Color.dynamic(light: "#141414", dark: "#fcfcfc")
   static let secondary = Color.dynamic(light: "#14141499", dark: "#fcfcfc99")
   static let tertiary = Color.dynamic(light: "#14141466", dark: "#fcfcfc66")
@@ -73,6 +109,11 @@ enum Ink {
   static let tile = Color.dynamic(light: "#ffffff", dark: "#232325")
   static let tileEdge = Color.dynamic(light: "#14141414", dark: "#ffffff1f")
   static let tileInitial = Color.dynamic(light: "#595959", dark: "#b4b4b8")
+  /** Connect apps in Settings, the Mac sidebar's colours (mac/Simeon/Look.swift): the window's blue, and its tiles' white, hairline and shadow. */
+  static let appsBlue = Color.dynamic(light: "#255a93", dark: "#8cb8e8")
+  static let appsTile = Color.dynamic(light: "#ffffff", dark: "#2c2c2e")
+  static let appsTileEdge = Color.dynamic(light: "#00000014", dark: "#ffffff1a")
+  static let appsTileShadow = Color.dynamic(light: "#0000001a", dark: "#00000073")
   /** A flight's total, green as Muse's (the system's green; the darker one on white, where the bright one is hard to read). */
   static let fare = Color.dynamic(light: "#248a3d", dark: "#30d158")
   /** An agent's title in the list ("Chief of Staff"). */
@@ -102,22 +143,26 @@ struct CardEdge: ViewModifier {
   @Environment(\.colorScheme) private var scheme
 
   func body(content: Content) -> some View {
-    if scheme == .dark {
-      content
-    } else {
-      // The shadow is cast by a plain shape behind the card, not by the card itself: cast by the card it was worked out from the text too, on every frame of a scroll.
-      content
-        .background {
-          RoundedRectangle(cornerRadius: radius, style: .continuous)
-            .fill(Ink.bubbleTheirs)
-            .shadow(color: Color(.sRGB, red: 20 / 255, green: 30 / 255, blue: 60 / 255, opacity: 0.04), radius: 1, y: 1)
-        }
-        .overlay(RoundedRectangle(cornerRadius: radius, style: .continuous).stroke(Color(.sRGB, red: 20 / 255, green: 30 / 255, blue: 60 / 255, opacity: 0.07), lineWidth: 0.5))
-    }
+    let light = scheme != .dark
+    // The same views in both looks, only their colours changing: an `if` on the look made every card a new view at each
+    // switch of Light and Dark, built again from nothing with all it holds.
+    // The shadow is cast by a plain shape behind the card, not by the card itself: cast by the card it was worked out from the text too, on every frame of a scroll.
+    content
+      .background {
+        RoundedRectangle(cornerRadius: radius, style: .continuous)
+          .fill(light ? Ink.bubbleTheirs : Color.clear)
+          .shadow(color: Color(.sRGB, red: 20 / 255, green: 30 / 255, blue: 60 / 255, opacity: light ? 0.04 : 0), radius: 1, y: 1)
+      }
+      .overlay(RoundedRectangle(cornerRadius: radius, style: .continuous).stroke(Color(.sRGB, red: 20 / 255, green: 30 / 255, blue: 60 / 255, opacity: light ? 0.07 : 0), lineWidth: 0.5))
   }
 }
 
 extension View {
+  /** A grouped list on the app's own ground (`Ink.groupedGround`); its rows take `Ink.groupedRow`. */
+  func groupedGround() -> some View {
+    scrollContentBackground(.hidden).background(Ink.groupedGround)
+  }
+
   /** The Messages grey card with its faint edge: every card in the chat. */
   func card(radius: CGFloat = 16, padding: CGFloat = 12) -> some View {
     self.padding(padding)

@@ -60,6 +60,29 @@ public struct TrailRibbon: Sendable {
 }
 
 /**
+ * A spark of the burst as drawn this frame, in the mark's units: a star
+ * (`size` is its outer radius, turned `rotation` degrees), a dot (`size` is
+ * its radius) or a dash (`length` by 1.5 × `size`, round-ended, lying along
+ * its flight at `rotation` degrees).
+ */
+public struct TrailSpark: Sendable {
+  public enum Kind: Sendable { case star, round, dash }
+  public let kind: Kind
+  public let x: Double, y: Double
+  public let size: Double
+  public let rotation: Double
+  public let length: Double
+  public let colour: TrailColour
+  public let opacity: Double
+
+  /** The star's ten points on a unit circle, alternately 1 and 0.42 out (`GJt`). */
+  public static let starPoints: [Butterfly.Point] = (0..<10).map { i in
+    let a = -Double.pi / 2 + Double(i) * .pi / 5, r = i % 2 == 0 ? 1.0 : 0.42
+    return Butterfly.Point(cos(a) * r, sin(a) * r)
+  }
+}
+
+/**
  * The spin's light trails (the window's `E_t`, in the agent's colours as the
  * patch's `spin-trails-*` replacements give them): when the butterfly
  * turns fast, three to five tapered ribbons of light are flung onto a
@@ -94,13 +117,16 @@ public final class LightTrails {
   private var velocity = 0.0
   private var lastMs = -1.0
   /** The belt's radius in the mark's units over the butterfly's half width (`radius()/114.27`). */
-  private let beltScale: Double
+  private var beltScale = MarkShape.beltRadius / Butterfly.centre
+  private var sparkState: [Spark] = []
   public private(set) var drawn: [TrailRibbon] = []
+  /** The burst's sparks as drawn this frame, behind the butterfly. */
+  public private(set) var sparks: [TrailSpark] = []
+  /** Reduce motion: no trails are thrown and no sparks burst (the window's `s`). */
+  public var reduceMotion = false
 
   public init(random: @escaping () -> Double = { Double.random(in: 0..<1) }) {
     self.random = random
-    let c = Butterfly.centre
-    beltScale = (MarkShape.ring.map { abs($0.x - c) }.max() ?? c) / c
   }
 
   private func between(_ low: Double, _ high: Double) -> Double { low + random() * (high - low) }
@@ -109,7 +135,7 @@ public final class LightTrails {
   public static func sizeScale(points: Double) -> Double { min(max(pow(340 / max(points, 1), 0.7), 1), 2.6) }
 
   /** Something still drawn or about to be: the mark's clock keeps running for it. */
-  public var hasLife: Bool { !ribbons.isEmpty || !pending.isEmpty }
+  public var hasLife: Bool { !ribbons.isEmpty || !pending.isEmpty || !sparkState.isEmpty }
 
   /**
    * One frame: the butterfly's turn so far (`spinAngle`, radians), how
@@ -117,17 +143,94 @@ public final class LightTrails {
    * `(340 / width)^0.7`, 1 to 2.6), whether the whirl keeps throwing them,
    * and the agent's palette.
    */
-  public func update(nowMs: Double, spinAngle: Double, sizeScale: Double, sustain: Bool, palette: AgentPalette) {
+  public func update(nowMs: Double, spinAngle: Double, sizeScale: Double, sustain: Bool, palette: AgentPalette, radius: Double = MarkShape.beltRadius) {
     let wall = lastMs < 0 ? 1.0 / 60 : max((nowMs - lastMs) / 1000, 0)
     let dt = min(wall, 0.1)
     lastMs = nowMs
+    beltScale = radius / Butterfly.centre
     measure(spinAngle, dt)
     fire(nowMs, spinAngle, sustain, palette)
     move(dt, wall, sizeScale)
+    moveSparks(dt, wall)
   }
 
   public func clear() {
-    ribbons = []; pending = []; firing = false; rearmed = false; drawn = []
+    ribbons = []; pending = []; firing = false; rearmed = false; drawn = []; sparkState = []; sparks = []
+  }
+
+  // MARK: The burst (`f`, the poke "burst")
+
+  struct Spark {
+    var x: Double, y: Double, vx: Double, vy: Double
+    var life = 0.0
+    let max: Double, r: Double
+    var rot: Double
+    let vr: Double
+    let colour: TrailColour
+    let kind: TrailSpark.Kind
+  }
+
+  /**
+   * Sparks flung out from the wings' edge (`burst(22, 1.1, 0.3)` when the
+   * working butterfly is clicked): `count` of them around the ring, each
+   * flying out at 170 to 360 units a second (times `speed`), turned a little
+   * by `swirl`, falling and slowing, gone in under a second. Most are dots
+   * and dashes in the palette's colours, about one in six a pale star.
+   */
+  public func burst(count: Int = 20, speed: Double = 1, swirl: Double = 0, palette: AgentPalette) {
+    guard !reduceMotion, ribbons.count + sparkState.count <= 120 else { return }
+    let inks = [palette.top, palette.mid, palette.bottom].map(TrailColour.init)
+    let c = Butterfly.centre
+    for index in 0..<count {
+      let angle = Double(index) / Double(count) * 2 * .pi + between(-0.35, 0.35)
+      let out = between(96, 116) * beltScale
+      let fling = between(170, 360) * speed
+      let across = swirl * fling * 0.2
+      let star = random() < 0.18
+      let vy = sin(angle) * fling + cos(angle) * across - between(20, 75)
+      let life = between(0.45, 0.85)
+      let r = star ? between(4, 7) : between(3.5, 8)
+      let rot = between(0, 360), vr = between(-260, 260)
+      let colour = star ? spark(inks.map { TrailColour(hue: $0.hue, saturation: $0.saturation, lightness: 76) }, 6) : spark(inks, 10)
+      let round = !star && random() < 0.3
+      sparkState.append(Spark(
+        x: c + cos(angle) * out, y: c + sin(angle) * out, vx: cos(angle) * fling - sin(angle) * across, vy: vy,
+        max: life, r: r, rot: rot, vr: vr, colour: colour, kind: star ? .star : round ? .round : .dash))
+    }
+  }
+
+  /** One of the palette's inks, its hue moved up to `spread` degrees and its lightness up to 6 points, kept 50 to 76 (`__simeonSpark`). */
+  private func spark(_ inks: [TrailColour], _ spread: Double) -> TrailColour {
+    let ink = inks[min(Int(random() * Double(inks.count)), inks.count - 1)]
+    let hue = (((ink.hue + between(-spread, spread)).truncatingRemainder(dividingBy: 360) + 360).truncatingRemainder(dividingBy: 360)).rounded(.down)
+    let light = min(max(ink.lightness + between(-6, 6), 50), 76).rounded(.down)
+    return TrailColour(hue: hue, saturation: ink.saturation.rounded(.down), lightness: light)
+  }
+
+  /** Each spark along its flight (`z` for a particle): drag 6 % a frame, falling at 40 units a second squared, in over its first tenth and fading out. */
+  private func moveSparks(_ dt: Double, _ wall: Double) {
+    var kept: [Spark] = []
+    var out: [TrailSpark] = []
+    for var spark in sparkState {
+      spark.life += spark.life > 0 ? wall : dt
+      if spark.life >= spark.max { continue }
+      spark.x += spark.vx * dt
+      spark.y += spark.vy * dt
+      let drag = pow(0.94, dt * 60)
+      spark.vx *= drag
+      spark.vy = spark.vy * drag + 40 * dt
+      let age = min(max(spark.life / spark.max, 0), 1)
+      let opacity = age < 0.1 ? age / 0.1 : pow(1 - (age - 0.1) / 0.9, 1.7)
+      let size = Swift.max(spark.r * (1 - age * 0.4), 0.5)
+      if spark.kind == .star { spark.rot += spark.vr * dt }
+      let speed = hypot(spark.vx, spark.vy)
+      out.append(TrailSpark(
+        kind: spark.kind, x: spark.x, y: spark.y, size: size, rotation: spark.kind == .star ? spark.rot : atan2(spark.vy, spark.vx) * 180 / .pi,
+        length: Swift.max(size * 2, Swift.min(speed * 0.05, 30)), colour: spark.colour, opacity: opacity))
+      kept.append(spark)
+    }
+    sparkState = kept
+    sparks = out
   }
 
   /** The turn's speed (`B`): a fresh turn sets up the orbit's belt. */
@@ -150,6 +253,7 @@ public final class LightTrails {
 
   /** Over 5 rad/s the ribbons are thrown, 55 to 105 ms apart (`R`); the whirl throws again once the last set has drawn in. */
   private func fire(_ nowMs: Double, _ angle: Double, _ sustain: Bool, _ palette: AgentPalette) {
+    guard !reduceMotion else { return }
     let speed = abs(velocity)
     let orbiting = ribbons.contains { $0.ret < 1 }
     if sustain && firing && pending.isEmpty && speed >= 0.9 && !orbiting { firing = false; rearmed = true }
@@ -164,7 +268,7 @@ public final class LightTrails {
   }
 
   private func throwRibbon(_ lam: Double, direction: Double, index: Int, palette: AgentPalette) {
-    guard ribbons.count <= 110 else { return }
+    guard ribbons.count + sparkState.count <= 110 else { return }
     if belts.isEmpty { belts(1) }
     let belt = belts[index % belts.count]
     let ink = [palette.top, palette.mid, palette.bottom].map(TrailColour.init)

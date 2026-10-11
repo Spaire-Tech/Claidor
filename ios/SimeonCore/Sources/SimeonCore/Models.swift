@@ -21,6 +21,25 @@ public struct Party: Hashable, Sendable {
 }
 
 /**
+ * The host's stamp on a roster row (`roster-emit.ts`): an id for the host's
+ * run and a number that only grows, so a late, older copy of an agent's row
+ * can be told from a newer one. It is not what the row says: two copies
+ * that differ only in it are the same row, and redraw nothing.
+ */
+public struct RosterStamp: Hashable, Sendable {
+  public var epoch: String
+  public var seq: Double
+
+  public init(epoch: String = "", seq: Double = 0) {
+    self.epoch = epoch
+    self.seq = seq
+  }
+
+  public static func == (_: RosterStamp, _: RosterStamp) -> Bool { true }
+  public func hash(into hasher: inout Hasher) {}
+}
+
+/**
  * One row of the roster, as the host projects it (`roster-projection.ts`;
  * the window's own reading of it is desktop/window/src/bridge/types.ts).
  */
@@ -31,6 +50,8 @@ public struct Agent: Identifiable, Hashable, Sendable {
   public var description: String
   public var colour: String?
   public var avatarDataURL: String?
+  /** Which copy of its picture the host has (`avatarVersion`): set with the picture, and alone in a roster kept from before. */
+  public var avatarVersion: String?
   public var isGroup: Bool
   public var memberIds: [String]
   public var lastMessagePreview: String?
@@ -47,6 +68,14 @@ public struct Agent: Identifiable, Hashable, Sendable {
   public var voiceId: String?
   /** Someone else's room shared with the person (`remoteRoom`): no voice of its own, as on the Mac. */
   public var isRemoteRoom = false
+  /** A room the person shares (`isSharedRoom`, or the host's `sharedRoomId`): the host refuses member changes for it. */
+  public var isSharedRoom = false
+
+  /** It has a picture of its own, for the working lines (`QCe`: the picture, or only its version). */
+  public var hasPicture: Bool { avatarDataURL?.isEmpty == false || avatarVersion?.isEmpty == false }
+
+  /** A group whose members the person can change: its Computer tab lists them, and "Members" opens it (`cct`). */
+  public var showsMembers: Bool { isGroup && !isSharedRoom && !isRemoteRoom }
   /** Running a turn or one of its helpers (`isRunning`), waiting on the person (`awaitingUserResponse`), and what it is doing (`currentActivity`): its butterfly's state. */
   public var isRunning = false
   public var awaitingUserResponse = false
@@ -61,6 +90,16 @@ public struct Agent: Identifiable, Hashable, Sendable {
   public var lastEntry: JSON?
   /** Why the agent waits on the person (`awaitingUserResponse.reason`). */
   public var waitingReason: String?
+  /** When it was made (ms): the oldest one titled Chief of Staff is the Chief of Staff. */
+  public var createdAt: Double?
+  /** What it is for, when the app made it for something (`purpose`: "disk-saver"). */
+  public var purpose: String?
+  /** The agents it has messaged one to one, or that messaged it (`conversationPartnerIds`): the org chart's links. */
+  public var conversationPartnerIds: [String] = []
+  /** Its last change (`updatedAt`: made, or its newest activity), for the org chart's "recent" links. */
+  public var updatedAt: Double?
+  /** Which copy of the row this is (`snapshotEpoch`, `snapshotSeq`), for the Mac's Dock badge. */
+  public var stamp = RosterStamp()
 
   public init(id: String, name: String, title: String = "", description: String = "", colour: String? = nil, avatarDataURL: String? = nil, isGroup: Bool = false, memberIds: [String] = [], lastMessagePreview: String? = nil, lastActivityAt: Double? = nil, hasUnread: Bool = false, unreadCount: Int = 0, isRunningTurn: Bool = false, isComposing: Bool = false, activityLabel: String? = nil, isHidden: Bool = false) {
     self.id = id; self.name = name; self.title = title; self.description = description; self.colour = colour
@@ -84,7 +123,8 @@ public struct Agent: Identifiable, Hashable, Sendable {
       lastMessagePreview: json["lastMessagePreview"]?.text,
       lastActivityAt: json["lastActivityAt"]?.double ?? json["updatedAt"]?.double,
       hasUnread: json["hasUnread"]?.bool ?? false,
-      unreadCount: json["unreadCount"]?.int ?? 0,
+      // Whole messages, as the Dock counts them (`Math.floor`).
+      unreadCount: json["unreadCount"]?.double.flatMap { $0.isFinite && abs($0) < 1e15 ? Int($0.rounded(.down)) : nil } ?? 0,
       isRunningTurn: json["isRunningTurn"]?.bool ?? json["isRunning"]?.bool ?? false,
       isComposing: json["isComposingMessage"]?.bool ?? false,
       activityLabel: json["currentActivity"]?["label"]?.text,
@@ -92,7 +132,10 @@ public struct Agent: Identifiable, Hashable, Sendable {
     )
     notifyOnUpdates = json["notifyOnUpdatesEnabled"]?.bool ?? true
     voiceId = json["voiceId"]?.text
+    avatarVersion = json["avatarVersion"]?.text
     if let room = json["remoteRoom"], room != .null { isRemoteRoom = true }
+    // The window reads `isSharedRoom`, which this host never sends; it sends `sharedRoomId` and refuses member changes for it.
+    if json["isSharedRoom"]?.bool == true || json["sharedRoomId"]?.text != nil { isSharedRoom = true }
     isRunning = json["isRunning"]?.bool ?? isRunningTurn
     if let awaiting = json["awaitingUserResponse"], awaiting != .null { awaitingUserResponse = true }
     activityKind = json["currentActivity"]?["kind"]?.text
@@ -102,6 +145,26 @@ public struct Agent: Identifiable, Hashable, Sendable {
     lastMessageId = json["lastMessageId"]?.text
     if let entry = json["lastEntry"], entry != .null { lastEntry = entry }
     waitingReason = json["awaitingUserResponse"]?["reason"]?.text
+    createdAt = json["createdAt"]?.double
+    purpose = json["purpose"]?.text
+    conversationPartnerIds = json["conversationPartnerIds"]?.array?.compactMap(\.string) ?? []
+    updatedAt = json["updatedAt"]?.double
+    stamp = RosterStamp(epoch: json["snapshotEpoch"]?.string ?? "", seq: json["snapshotSeq"]?.double ?? 0)
+  }
+
+  /**
+   * The Chief of Staff (`__simeonFindCoo`): the oldest agent titled "Chief
+   * of Staff" or "COO", whatever its name. His title and description are
+   * his own; his name and avatar can change.
+   */
+  public static func chiefOfStaff(in agents: [Agent]) -> Agent? {
+    var found: Agent?
+    for agent in agents {
+      let title = agent.title.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+      guard title == "chief of staff" || title == "coo" else { continue }
+      if found == nil || (agent.createdAt ?? 0) < (found?.createdAt ?? 0) { found = agent }
+    }
+    return found
   }
 
   /** The agent's palette: its stored colour, else the window's default for its id. */
@@ -233,6 +296,14 @@ public struct Entry: Identifiable, Hashable, Sendable {
   public var reactions: [(emoji: String, by: String)] {
     (raw["reactions"]?.array ?? []).compactMap { r in r["emoji"]?.text.map { ($0, r["by"]?.string ?? "") } }
   }
+
+  /** A reply in a thread (`branched`, on a message, a card, a file or a notice): it is drawn in the thread, not in the chat (the window's `D2e`). */
+  public var isBranched: Bool { Entry.threadKinds.contains(kind) && raw["branched"]?.bool == true }
+
+  /** The line it answers, for the kinds that can answer one (the window's `u0e`). */
+  public var threadParent: String? { Entry.threadKinds.contains(kind) ? raw["replyTo"]?.text : nil }
+
+  static let threadKinds: Set<String> = ["message", "send-message", "user-attachment", "notice"]
 
   /** The person's own message. */
   public var isFromPerson: Bool {

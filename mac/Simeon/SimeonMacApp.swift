@@ -1,0 +1,144 @@
+import AppKit
+import SwiftUI
+import UserNotifications
+import SimeonCore
+import SimeonMacCore
+
+/**
+ * Simeon on the Mac, native: a copy of the Electron Mac app (desktop/),
+ * screen by screen, with Apple's own controls and the Electron window's
+ * layout. What each step copies, and what is still to come, is in
+ * mac/STEPS.md.
+ */
+@main
+struct SimeonMacApp: App {
+  @State private var session = MacSession()
+  @State private var window = WindowState()
+  @State private var layout = SidebarLayout()
+  @State private var viewers = Viewers()
+  @State private var sidebar = SidebarState()
+  @State private var search = SearchState()
+  @State private var newChat = NewChatState()
+  @State private var pane = PaneState()
+  @State private var settings = SettingsState()
+  @State private var plugins = PluginsState()
+  @State private var account = AccountState()
+
+  init() {
+    Faces.register()
+    // Before launch ends, so a notification clicked while Simeon was not running is heard (step 14).
+    UNUserNotificationCenter.current().delegate = MacServices.shared.notificationDelegate
+  }
+
+  var body: some Scene {
+    WindowGroup("Simeon", id: "main") {
+      AppRoot()
+        .environment(session)
+        .environment(session.store)
+        .environment(window)
+        .environment(layout)
+        .environment(viewers)
+        .environment(sidebar)
+        .environment(search)
+        .environment(newChat)
+        .environment(pane)
+        .environment(settings)
+        .environment(plugins)
+        .environment(account)
+        .task { await session.start() }
+        // The call's banner (step 11) opens with a call and closes when it is put away, whatever windows are open.
+        .onAppear { CallBannerWindow.shared.follow(session.store) }
+        // Search's Chat Settings opens the agent's pane.
+        .onAppear {
+          search.pane = pane
+          search.window = window
+          search.layout = layout
+          search.settings = settings
+          search.plugins = plugins
+          // Settings and Plugins share the window's one overlay: each opening closes the other.
+          settings.plugins = plugins
+          plugins.settings = settings
+        }
+        // The theme chosen in Settings, ⌘K or "/", as it was left.
+        .onAppear { MacTheme.apply() }
+        // What the Electron app's main process does (step 14): notifications, the Dock, the window in front, the menus;
+        // and "Move Simeon to the Applications folder?" from anywhere else (release builds).
+        .onAppear {
+          MacServices.shared.follow(session, window: window, plugins: plugins)
+          MacMoveToApplications.askAtLaunch()
+        }
+        // The browser's confirm page opens `simeon://…/open`, which brings the app forward; the poll finishes the sign-in.
+        // `…/v1/info?topic=deep-links` shows Deep Links; a plugin's link (`…/v1/plugin/add?id=`) opens Plugins on its page (`qRn`),
+        // after the sign-in when it came before.
+        .onOpenURL { url in MacServices.shared.handle(url) }
+        .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
+    }
+    .handlesExternalEvents(matching: ["*"])
+    // The Electron window's size the first time (`window-state-store.ts`); after that macOS keeps its size and place.
+    .defaultSize(width: WindowChrome.firstSize.width, height: WindowChrome.firstSize.height)
+    .windowStyle(.hiddenTitleBar)
+    .windowResizability(.contentMinSize)
+    .commands { SimeonCommands(session: session, window: window, store: session.store, account: account) }
+  }
+}
+
+/**
+ * The Electron app's menus (`application-menu.ts`): Simeon (About Simeon,
+ * Services, Hide Simeon, Hide Others, Show All, Quit Simeon), File (Close
+ * Window), Edit (the system's), View (Reload ⌘R, Enter Full Screen), Agent
+ * (Call <name>, or a disabled Call Agent with no agent open), Window (the
+ * system's). No Help menu's items.
+ */
+struct SimeonCommands: Commands {
+  let session: MacSession
+  let window: WindowState
+  let store: AppStore
+  let account: AccountState
+  @Environment(\.openWindow) private var openWindow
+
+  var body: some Commands {
+    // About Simeon opens the window's own About, over the window (`open-about`), not Apple's panel; no key, as the window's.
+    CommandGroup(replacing: .appInfo) {
+      Button("About Simeon") {
+        account.openAbout()
+        // The window closed: it opens, About over it.
+        if !NSApp.windows.contains(where: { $0.isVisible && $0.canBecomeMain }) { openWindow(id: "main") }
+      }
+    }
+    // File holds Close Window only (`role: "close"`).
+    CommandGroup(replacing: .newItem) {}
+    CommandGroup(replacing: .saveItem) {
+      Button("Close Window") { NSApp.keyWindow?.performClose(nil) }
+        .keyboardShortcut("w")
+    }
+    CommandGroup(replacing: .printItem) {}
+    CommandGroup(before: .toolbar) {
+      Button("Reload") { session.reload() }
+        .keyboardShortcut("r")
+      Divider()
+    }
+    // The Agent menu: the call (step 11), none at all while `SIMEON_VOICE_CALLS` switches calls off.
+    if voiceCallsEnabled() {
+      CommandMenu("Agent") { CallItem(window: window, store: store) }
+    }
+    CommandGroup(replacing: .help) {}
+  }
+}
+
+/**
+ * Agent › Call <name>: the open agent (a person, not a group), else a
+ * disabled "Call Agent"; no key. While a call is up it brings its banner
+ * forward, as the chat's phone does.
+ */
+private struct CallItem: View {
+  let window: WindowState
+  let store: AppStore
+
+  var body: some View {
+    let callee = store.agents.first { $0.id == window.selected && !$0.isGroup }
+    Button(callee.map { "Call \($0.name)" } ?? "Call Agent") {
+      if let callee { CallActions.call(callee, store: store) }
+    }
+    .disabled(callee == nil)
+  }
+}
