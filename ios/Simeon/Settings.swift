@@ -478,14 +478,14 @@ struct ConnectAppsSheet: View {
           filterMenu
         }
         .padding(.horizontal, 18)
-        .padding(.top, 14)
+        .padding(.top, 10)
         ScrollView {
           LazyVStack(alignment: .leading, spacing: 0) {
             if store.catalog.isEmpty {
-              HStack(spacing: 10) { ProgressView(); Text("Loading apps…").foregroundStyle(Ink.secondary) }
+              HStack(spacing: 10) { ProgressView(); Text("Loading apps…").font(.system(size: 13)).foregroundStyle(Ink.secondary) }
                 .padding(.top, 28)
             } else if sections.isEmpty {
-              Text("No apps match \u{201C}\(query)\u{201D}.").font(.system(size: 15)).foregroundStyle(Ink.secondary)
+              Text("No apps match \u{201C}\(query)\u{201D}.").font(.system(size: 13)).foregroundStyle(Ink.secondary)
                 .padding(.top, 28)
             }
             ForEach(sections) { section in
@@ -500,6 +500,7 @@ struct ConnectAppsSheet: View {
             }
           }
           .padding(.horizontal, 18)
+          .padding(.top, 12)
           .padding(.bottom, 28)
         }
         .scrollDismissesKeyboard(.immediately)
@@ -523,9 +524,9 @@ struct ConnectAppsSheet: View {
       }
     } label: {
       Image(systemName: "line.3.horizontal.decrease")
-        .font(.system(size: 17, weight: .medium))
+        .font(.system(size: 16, weight: .medium))
         .foregroundStyle(category == nil ? Ink.primary : Ink.blue)
-        .frame(width: 44, height: 44)
+        .frame(width: 42, height: 42)
         .background(Ink.groupedRow, in: Circle())
     }
     .accessibilityLabel("Filter")
@@ -564,7 +565,11 @@ enum AppSections {
   }
 }
 
-/** A page's head (the reference's): the round Back on the left, the title beside it, and what the page puts at the right. */
+/**
+ * A page's head, measured on the founder's reference (11 October 2026): the
+ * round Back (42) on the left, the title beside it (16.4 medium), and what
+ * the page puts at the right, kept whole (the title gives way first).
+ */
 struct PluginsHead<Trailing: View>: View {
   let title: String
   let back: () -> Void
@@ -574,25 +579,27 @@ struct PluginsHead<Trailing: View>: View {
     HStack(spacing: 14) {
       Button(action: back) {
         Image(systemName: "chevron.left")
-          .font(.system(size: 18, weight: .semibold))
+          .font(.system(size: 16, weight: .semibold))
           .foregroundStyle(Ink.primary)
-          .frame(width: 44, height: 44)
+          .frame(width: 42, height: 42)
           .background(Ink.groupedRow, in: Circle())
           .contentShape(.circle)
       }
       .buttonStyle(.plain)
       .accessibilityLabel("Back")
-      Text(title).font(.system(size: 20, weight: .medium)).foregroundStyle(Ink.primary).lineLimit(1)
+      Text(title).font(.system(size: 16.4, weight: .medium)).foregroundStyle(Ink.primary).lineLimit(1)
         .accessibilityAddTraits(.isHeader)
       Spacer(minLength: 8)
       trailing()
+        .fixedSize()
+        .layoutPriority(1)
     }
     .padding(.horizontal, 18)
     .padding(.top, 18)
   }
 }
 
-/** "4 installed" with the first three apps' logos overlapping, in the control's fill: it opens Your plugins. */
+/** "4 installed" with the first three apps' logos overlapping, in the control's fill (42 high, 16.4 medium), never cut: it opens Your plugins. */
 struct InstalledPill: View {
   let apps: [ConnectedApp]
 
@@ -608,11 +615,13 @@ struct InstalledPill: View {
           }
         }
       }
-      Text("\(apps.count) installed").font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.primary)
+      Text("\(apps.count) installed").font(.system(size: 16.4, weight: .medium)).foregroundStyle(Ink.primary)
+        .lineLimit(1)
+        .fixedSize()
     }
     .padding(.leading, apps.isEmpty ? 16 : 10)
     .padding(.trailing, 16)
-    .frame(height: 44)
+    .frame(height: 42)
     .background(Ink.groupedRow, in: Capsule())
     .contentShape(.capsule)
     .accessibilityElement(children: .ignore)
@@ -621,15 +630,15 @@ struct InstalledPill: View {
   }
 }
 
-/** The search, in the control's fill, round: "Search plugins". */
+/** The search, in the control's fill, round (40 high, 15): "Search plugins". */
 struct PluginsSearchField: View {
   @Binding var text: String
 
   var body: some View {
     HStack(spacing: 10) {
-      Image(systemName: "magnifyingglass").font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.secondary)
+      Image(systemName: "magnifyingglass").font(.system(size: 16, weight: .medium)).foregroundStyle(Ink.secondary)
       TextField("Search plugins", text: $text)
-        .font(.system(size: 17))
+        .font(.system(size: 15))
         .textInputAutocapitalization(.never)
         .autocorrectionDisabled()
         .submitLabel(.search)
@@ -642,24 +651,24 @@ struct PluginsSearchField: View {
       }
     }
     .padding(.horizontal, 16)
-    .frame(height: 44)
+    .frame(height: 40)
     .background(Ink.groupedRow, in: Capsule())
   }
 }
 
-/** A section's head: its name in the faint grey, and View all at the right when some are hidden. */
+/** A section's head: its name in the faint grey (13), and View all (13) at the right when some are hidden; 21 over it, 4 under. */
 struct PluginsSectionHead<Trailing: View>: View {
   let title: String
   @ViewBuilder var trailing: () -> Trailing
 
   var body: some View {
     HStack {
-      Text(title).font(.system(size: 15)).foregroundStyle(Ink.tertiary).accessibilityAddTraits(.isHeader)
+      Text(title).font(.system(size: 13)).foregroundStyle(Ink.tertiary).accessibilityAddTraits(.isHeader)
       Spacer()
-      trailing().font(.system(size: 15)).foregroundStyle(Ink.secondary)
+      trailing().font(.system(size: 13)).foregroundStyle(Ink.secondary)
     }
-    .padding(.top, 26)
-    .padding(.bottom, 6)
+    .padding(.top, 21)
+    .padding(.bottom, 4)
   }
 }
 
@@ -677,7 +686,7 @@ struct CategoryPage: View {
           ForEach(apps) { app in AppRow(app: app) }
         }
         .padding(.horizontal, 18)
-        .padding(.top, 14)
+        .padding(.top, 10)
         .padding(.bottom, 28)
       }
     }
@@ -704,18 +713,19 @@ struct YourPluginsPage: View {
       PluginsHead(title: "Your plugins", back: { dismiss() }) { EmptyView() }
       PluginsSearchField(text: $query)
         .padding(.horizontal, 18)
-        .padding(.top, 14)
+        .padding(.top, 10)
       ScrollView {
         LazyVStack(alignment: .leading, spacing: 0) {
           PluginsSectionHead(title: "Installed") { EmptyView() }
           if apps.isEmpty {
             Text(store.appsOnce.isEmpty ? "No apps yet. Add one from the Marketplace." : "No apps match \u{201C}\(query)\u{201D}.")
-              .font(.system(size: 15)).foregroundStyle(Ink.secondary)
+              .font(.system(size: 13)).foregroundStyle(Ink.secondary)
               .padding(.top, 8)
           }
           ForEach(apps) { app in InstalledRow(app: app) }
         }
         .padding(.horizontal, 18)
+        .padding(.top, 12)
         .padding(.bottom, 28)
       }
       .scrollDismissesKeyboard(.immediately)
@@ -737,17 +747,17 @@ struct InstalledRow: View {
 
   var body: some View {
     let connected = app.status == "connected"
-    HStack(spacing: 14) {
+    HStack(spacing: 12) {
       NavigationLink { ConnectedAppDetail(app: app) } label: {
-        HStack(spacing: 14) {
-          ConnectorTile(name: app.name, size: 36)
+        HStack(spacing: 16) {
+          ConnectorTile(name: app.name, size: 37)
           VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 8) {
-              Text(app.name).font(.system(size: 17)).foregroundStyle(Ink.primary).lineLimit(1)
-              if app.status == "error" { Text("Error").font(.system(size: 15)).foregroundStyle(Ink.danger) }
+              Text(app.name).font(.system(size: 16.4)).foregroundStyle(Ink.primary).lineLimit(1)
+              if app.status == "error" { Text("Error").font(.system(size: 13)).foregroundStyle(Ink.danger).fixedSize() }
             }
             Text(app.toolCount > 0 ? (app.toolCount == 1 ? "1 tool" : "\(app.toolCount) tools") : (connected ? "Connected" : "Not signed in"))
-              .font(.system(size: 15)).foregroundStyle(Ink.secondary).lineLimit(1)
+              .font(.system(size: 13)).foregroundStyle(Ink.secondary).lineLimit(1)
           }
           Spacer(minLength: 0)
         }
@@ -766,7 +776,7 @@ struct InstalledRow: View {
         .disabled(connector.connecting != nil)
       }
     }
-    .padding(.vertical, 12)
+    .padding(.vertical, 17)
     // The sign-in page opens once the sheet has gone.
     .sheet(item: $asking, onDismiss: {
       guard confirmed else { return }
@@ -778,7 +788,7 @@ struct InstalledRow: View {
   }
 }
 
-/** A row's pill (the reference's Add, Added, Authenticate): 15 medium, 34 high, round. */
+/** A row's pill (the reference's Add, Added, Authenticate): 13 medium, 26 high, 12 either side, round, never cut. */
 struct PluginPill: View {
   let title: String
   let fill: Color
@@ -786,16 +796,17 @@ struct PluginPill: View {
 
   var body: some View {
     Text(title)
-      .font(.system(size: 15, weight: .medium))
+      .font(.system(size: 13, weight: .medium))
       .foregroundStyle(ink)
-      .padding(.horizontal, 16)
-      .frame(height: 34)
+      .lineLimit(1)
+      .padding(.horizontal, 12)
+      .frame(height: 26)
       .background(fill, in: Capsule())
       .fixedSize()
   }
 }
 
-/** One app in the catalog (the reference's): its logo, name and what it does in two lines, and Add, or Added once it is in. */
+/** One app in the catalog (the reference's, measured): its logo (37), name (16.4) and what it does in two lines (13), and Add, or Added once it is in. */
 struct AppRow: View {
   let app: CatalogApp
   @Environment(AppStore.self) private var store
@@ -805,15 +816,15 @@ struct AppRow: View {
   private var connector: AppConnector { AppConnector.shared }
 
   var body: some View {
-    HStack(spacing: 14) {
-      ConnectorTile(name: app.title, size: 36)
+    HStack(spacing: 16) {
+      ConnectorTile(name: app.title, size: 37)
       VStack(alignment: .leading, spacing: 2) {
-        Text(app.title).font(.system(size: 17)).foregroundStyle(Ink.primary).lineLimit(1)
-        if !app.summary.isEmpty { Text(app.summary).font(.system(size: 15)).foregroundStyle(Ink.secondary).lineLimit(2) }
+        Text(app.title).font(.system(size: 16.4)).foregroundStyle(Ink.primary).lineLimit(1)
+        if !app.summary.isEmpty { Text(app.summary).font(.system(size: 13)).foregroundStyle(Ink.secondary).lineLimit(2) }
       }
       Spacer(minLength: 8)
       if app.comingSoon {
-        Text("Soon").font(.system(size: 15)).foregroundStyle(Ink.tertiary)
+        Text("Soon").font(.system(size: 13)).foregroundStyle(Ink.tertiary)
       } else if store.isConnected(app.title) {
         PluginPill(title: "Added", fill: Ink.pillButton, ink: Ink.secondary)
       } else if connector.connecting == app.title {
@@ -827,7 +838,7 @@ struct AppRow: View {
         .accessibilityLabel("Add \(app.title)")
       }
     }
-    .padding(.vertical, 12)
+    .padding(.vertical, 17)
     // The sign-in page opens once the sheet has gone.
     .sheet(item: $asking, onDismiss: {
       guard confirmed else { return }

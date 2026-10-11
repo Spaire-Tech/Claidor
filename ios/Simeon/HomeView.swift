@@ -277,7 +277,7 @@ private struct AgentList<Actions: View>: View {
         }
         .listRowBackground(Ink.listGround)
         // The margin on the left holds the unread dot; no hairline between the rows (the founder's reference, 11 October 2026).
-        .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 18))
+        .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 24))
         .listRowSeparator(.hidden)
       }
       if !searching && filter == .all && rows.hiddenCount > 0 && rows.anyListed {
@@ -629,11 +629,12 @@ struct HiddenAgentsSheet: View {
 
 /**
  * One agent or group in the list, in the founder's reference (11 October
- * 2026: "no lines, no arrow"): the unread dot in the 18-point margin
- * (orange when it waits on you), the butterfly at 44, the name in 17 pt
- * medium with its title's grey tag and the last line's time at the right,
- * and one line of the last message under it in grey; no hairline between
- * rows and no chevron.
+ * 2026: "no lines, no arrow"), measured on it: the unread dot in the
+ * 20-point margin (orange when it waits on you), the butterfly at 48 and
+ * 15 after it, the name in 17 semibold with its title's tag 13 after it
+ * (14 medium) and the last line's time at the right (14), 24 from the
+ * edge, and one line of the last message under it (15) in grey; 80 a row,
+ * no hairline between rows and no chevron.
  */
 struct AgentRow: View, Equatable {
   let agent: Agent
@@ -652,18 +653,18 @@ struct AgentRow: View, Equatable {
             .accessibilityLabel(status.label ?? "")
         }
       }
-      .frame(width: 18)
+      .frame(width: 20)
       AgentAvatar(agent: agent, members: members)
-        .frame(width: 44, height: 44)
+        .frame(width: 48, height: 48)
         .overlay(alignment: .bottomTrailing) {
           if let dot = status.cornerOnRow { StatusDot(colour: dot, size: 10.8).offset(x: -1, y: -1) }
         }
-        .padding(.trailing, 12)
-      VStack(alignment: .leading, spacing: 3) {
+        .padding(.trailing, 15)
+      VStack(alignment: .leading, spacing: 5) {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
           // The name, and the agent's title in a grey tag beside it when it fits whole (the founder's reference, 9 October 2026).
           ViewThatFits(in: .horizontal) {
-            HStack(alignment: .firstTextBaseline, spacing: 7) {
+            HStack(alignment: .firstTextBaseline, spacing: 13) {
               name
               if !agent.title.isEmpty { TitleTag(title: agent.title) }
             }
@@ -678,13 +679,13 @@ struct AgentRow: View, Equatable {
           .lineLimit(1)
           .multilineTextAlignment(.leading)
       }
-      .padding(.vertical, 13)
+      .padding(.vertical, 16)
     }
     .contentShape(.rect)
   }
 
   private var name: some View {
-    Text(agent.name).font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.primary).lineLimit(1)
+    Text(agent.name).font(.system(size: 17, weight: .semibold)).foregroundStyle(Ink.primary).lineLimit(1)
   }
 
   /** The Mac sidebar's order: what it is doing while it works, else your unsent draft, else "Waiting for you: …" or the last line. */
@@ -702,13 +703,13 @@ struct TitleTag: View {
 
   var body: some View {
     Text(title)
-      .font(.system(size: 13, weight: .medium))
+      .font(.system(size: 14, weight: .medium))
       .foregroundStyle(Ink.secondary)
       .lineLimit(1)
       .fixedSize()
-      .padding(.horizontal, 7)
-      .padding(.vertical, 2.5)
-      .background(Ink.tag, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+      .padding(.horizontal, 6)
+      .padding(.vertical, 1)
+      .background(Ink.tag, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
   }
 }
 
@@ -757,7 +758,7 @@ struct RowTime: View {
     if let call = store.call, call.agentId == agent.id {
       CallChip(call: call)
     } else if let at = agent.lastActivityAt, at > 0 {
-      Text(Chat.listTime(Date(timeIntervalSince1970: at / 1000))).font(.system(size: 14.4)).foregroundStyle(Ink.tertiary)
+      Text(Chat.listTime(Date(timeIntervalSince1970: at / 1000))).font(.system(size: 14)).foregroundStyle(Ink.tertiary)
     }
   }
 }
