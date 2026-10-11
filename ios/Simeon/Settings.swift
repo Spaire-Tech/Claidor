@@ -9,17 +9,17 @@ import SimeonCore
  * 2026): the account and, under it, Usage with its share; Connect apps, as
  * the Mac's sidebar has it; the agents' settings (Auto-review and its rules,
  * the time zone, set automatically or chosen); Notifications, Appearance and
- * Haptics (both switches on until turned off); Privacy Policy and Terms of
- * Service; Sign Out and the mark. Usage opens its own page: the period's
- * bar, when it resets, and Change Limit.
+ * Haptics (both switches on until turned off); Privacy Policy, Terms of
+ * Service and About; Sign Out (asked first) and the mark. Usage opens the
+ * Mac's Usage & Billing (UsagePage).
  */
 struct SettingsSheet: View {
   @Environment(AppStore.self) private var store
   @Environment(SessionController.self) private var session
   @AppStorage("simeon.theme") private var theme = "system"
   @State private var settings: JSON?
-  @State private var quota: JSON?
   @State private var showsApps = false
+  @State private var askingSignOut = false
 
   var body: some View {
     NavigationStack {
@@ -27,8 +27,7 @@ struct SettingsSheet: View {
         Section {
           NavigationLink { AccountPage() } label: {
             HStack(spacing: 14) {
-              Initials(letters: store.account?.initials ?? "", size: 44)
-                .background(Ink.bubbleTheirs, in: Circle())
+              AccountFace(size: 44)
               VStack(alignment: .leading, spacing: 2) {
                 Text(store.account?.name ?? "").font(.system(size: 17)).foregroundStyle(Ink.primary)
                 Text(store.account?.email ?? "").font(.system(size: 13)).foregroundStyle(Ink.secondary)
@@ -37,8 +36,11 @@ struct SettingsSheet: View {
             }
             .padding(.vertical, 4)
           }
-          NavigationLink { UsagePage(quota: quota) } label: {
-            LabeledContent("Usage", value: quota.map { "\(UsageNumbers(quota: $0).percent)%" } ?? "")
+          // Usage & Billing, as the Mac lists it: not for an enterprise team.
+          if store.usage.summary == nil || store.usage.showsSection {
+            NavigationLink { UsagePage() } label: {
+              LabeledContent("Usage", value: store.usage.summary.flatMap { UsageMeters($0).weekly?.barPercent }.map { "\(Int($0.rounded()))%" } ?? "")
+            }
           }
         }
         .listRowBackground(Ink.groupedRow)
@@ -67,10 +69,12 @@ struct SettingsSheet: View {
           // The pages the web app's sign-in links to; they are written on simeonlabs.com, not in the app.
           LegalLink(title: "Privacy Policy", url: Legal.privacy)
           LegalLink(title: "Terms of Service", url: Legal.terms)
+          NavigationLink { AboutPage() } label: { Text("About Simeon").foregroundStyle(Ink.primary) }
         }
         .listRowBackground(Ink.groupedRow)
         Section {
-          Button("Sign Out", role: .destructive) { Task { await session.signOut() } }
+          // Asked first, as on the Mac (`AccountMenu.signOut…`).
+          Button("Sign Out", role: .destructive) { askingSignOut = true }
         }
         .listRowBackground(Ink.groupedRow)
         Section {
@@ -93,11 +97,17 @@ struct SettingsSheet: View {
       .inlineBarTitle()
       .toolbar { ToolbarItem(placement: .leadingBar) { CloseButton() } }
       .sheet(isPresented: $showsApps) { ConnectAppsSheet().problemAlert() }
+      .alert(AccountMenu.signOutTitle, isPresented: $askingSignOut) {
+        Button(AccountMenu.signOutCancel, role: .cancel) {}
+        Button(AccountMenu.signOutConfirm, role: .destructive) { Task { await session.signOut() } }
+      } message: {
+        Text(AccountMenu.signOutLine)
+      }
       .task {
         async let host = store.hostSettings()
-        async let usage = store.quota()
+        async let usage: Void = store.loadUsage()
         settings = await host
-        quota = await usage
+        await usage
       }
       // Read again on coming back from the phone's Settings, where notifications may have just been allowed.
       .task(id: scenePhase) { notificationsRefused = await Notifications.refused() }
@@ -295,8 +305,7 @@ struct AccountPage: View {
     Form {
       Section {
         VStack(spacing: 10) {
-          Initials(letters: store.account?.initials ?? "", size: 72)
-            .background(Ink.bubbleTheirs, in: Circle())
+          AccountFace(size: 72)
           Text(store.account?.name ?? "").font(.system(size: 20, weight: .semibold)).foregroundStyle(Ink.primary)
         }
         .frame(maxWidth: .infinity)
@@ -325,104 +334,253 @@ struct AccountPage: View {
   }
 }
 
-/** The usage figures from the server's `user/quota`: the share used, its period's name, when it resets. */
-struct UsageNumbers {
-  let share: Double
-  let percent: Int
-  let title: String
-  let resets: String?
-
-  init(quota: JSON, now: Date = Date()) {
-    let limit = quota["creditsLimit"]?.double ?? 0
-    let used = quota["creditsUsed"]?.double ?? 0
-    share = limit > 0 ? min(1, max(0, used / limit)) : 0
-    percent = Int((share * 100).rounded())
-    let start = quota["periodStart"]?.text.flatMap(UsageNumbers.date)
-    let end = quota["periodEnd"]?.text.flatMap(UsageNumbers.date)
-    let days = start.flatMap { s in end.map { $0.timeIntervalSince(s) / 86_400 } }
-    title = days.map { $0 <= 8 ? "Weekly usage" : $0 <= 32 ? "Monthly usage" : "Usage" } ?? "Usage"
-    if let end {
-      let left = Calendar.current.dateComponents([.day], from: Calendar.current.startOfDay(for: now), to: Calendar.current.startOfDay(for: end)).day ?? 0
-      resets = left <= 0 ? "Resets today" : left == 1 ? "Resets tomorrow" : "Resets in \(left) days"
-    } else {
-      resets = nil
-    }
-  }
-
-  static func date(_ text: String) -> Date? {
-    let formatter = ISO8601DateFormatter()
-    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-    return formatter.date(from: text) ?? ISO8601DateFormatter().date(from: text)
-  }
-}
-
-/** Usage, as the founder's reference has it: the period's name and when it resets, the bar, the share; then Change Limit. */
+/**
+ * Usage & Billing, the Mac's (mac/Simeon/SettingsUsage.swift) on the phone:
+ * the week's usage (or the trial's) with its bar and when it resets, the
+ * on-demand spend, the upgrade line with its button, Cancel Trial when it
+ * applies, the refresh failure with Retry; then Manage Plan: the plan and
+ * its line, Upgrade to the plan above, and Manage Billing ↗ (Stripe's page).
+ * Read when the page shows unless it was read in the last 30 seconds.
+ */
 struct UsagePage: View {
-  let quota: JSON?
   @Environment(AppStore.self) private var store
   @Environment(\.openURL) private var openURL
-  @State private var opening = false
+  @State private var opening: String?
+  @State private var failure: String?
+  @State private var askingCancel = false
+  @State private var cancelling = false
+  @State private var cancelFailure: String?
 
   var body: some View {
     Form {
-      if let quota {
-        let usage = UsageNumbers(quota: quota)
-        Section {
-          VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .firstTextBaseline) {
-              Text(usage.title).font(.system(size: 17)).foregroundStyle(Ink.primary)
-              Spacer()
-              if let resets = usage.resets { Text(resets).font(.system(size: 13)).foregroundStyle(Ink.tertiary) }
+      if let summary = store.usage.summary {
+        let meters = UsageMeters(summary)
+        Section("Usage") {
+          if let weekly = meters.weekly {
+            UsageMeterRow(title: meters.includedUsageTitle, meter: weekly)
+          } else {
+            VStack(alignment: .leading, spacing: 6) {
+              Text(meters.includedUsageTitle).font(.system(size: 17)).foregroundStyle(Ink.primary)
+              Text(UsageMeters.noIncludedUsage).font(.system(size: 13)).foregroundStyle(Ink.tertiary)
             }
-            GeometryReader { geometry in
-              ZStack(alignment: .leading) {
-                Capsule().fill(Ink.pill)
-                Capsule().fill(usage.share > 0.9 ? Ink.danger : Ink.blue).frame(width: geometry.size.width * usage.share)
-              }
-            }
-            .frame(height: 6)
-            Text("\(usage.percent)%").font(.system(size: 13)).foregroundStyle(Ink.secondary)
+            .padding(.vertical, 4)
           }
-          .padding(.vertical, 6)
-          .accessibilityElement(children: .combine)
-          Button { changeLimit(quota) } label: {
+          if let onDemand = meters.onDemand {
+            UsageMeterRow(title: UsageMeters.onDemandTitle, meter: onDemand)
+          }
+          // The founder's reference's Change Limit (9 October 2026): the plans page when there is one to move to, else Stripe's.
+          Button {
+            if let upgrade = meters.upgrade { openURL(upgrade.url) } else { open("billing", flow: nil, tier: nil) }
+          } label: {
             HStack {
               Text("Change Limit").foregroundStyle(Ink.primary)
               Spacer()
-              if opening { ProgressView() } else {
+              if opening == "billing" { ProgressView() } else {
                 Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Ink.tertiary)
               }
             }
             .contentShape(.rect)
           }
-          .disabled(opening)
+          .disabled(opening != nil)
+          if let upgrade = meters.upgrade, let line = meters.upgradeSupportingText {
+            VStack(alignment: .leading, spacing: 10) {
+              Text(line).font(.system(size: 13)).foregroundStyle(Ink.secondary)
+              Button(upgrade.label) { openURL(upgrade.url) }
+                .buttonStyle(PillButtonStyle(primary: true))
+            }
+            .padding(.vertical, 4)
+          }
+          if meters.canCancelTrial {
+            Button(cancelling ? "Canceling…" : "Cancel Trial", role: .destructive) { askingCancel = true }
+              .disabled(cancelling)
+            if let cancelFailure {
+              Text(cancelFailure).font(.system(size: 13)).foregroundStyle(Ink.danger)
+            }
+          }
+          if store.usage.isFailed {
+            HStack(spacing: 12) {
+              Text("Couldn’t refresh usage — showing the last known values.")
+                .font(.system(size: 13))
+                .foregroundStyle(Ink.danger)
+                .frame(maxWidth: .infinity, alignment: .leading)
+              Button("Retry") { Task { await store.refreshUsage() } }
+                .buttonStyle(.borderless)
+                .foregroundStyle(Ink.link)
+                .disabled(store.usage.isLoading)
+            }
+          }
         }
         .listRowBackground(Ink.groupedRow)
-        Section {
-          LabeledContent("Plan", value: quota["planName"]?.text ?? "")
-          if let status = quota["subscriptionStatus"]?.text, status != "active" {
-            LabeledContent("Status", value: status.capitalized)
+        if let plan = summary.managePlan {
+          Section("Manage Plan") {
+            VStack(alignment: .leading, spacing: 4) {
+              Text("Current plan: \(plan.planName)").font(.system(size: 17)).foregroundStyle(Ink.primary)
+              let line = plan.line()
+              if !line.isEmpty { Text(line).font(.system(size: 13)).foregroundStyle(Ink.secondary) }
+            }
+            .padding(.vertical, 2)
+            if let next = plan.nextTier {
+              Button { open("upgrade", flow: "update_confirm", tier: next.tier) } label: {
+                Text(opening == "upgrade" ? "Opening…" : "Upgrade to \(next.label)").foregroundStyle(Ink.link)
+              }
+              .disabled(opening != nil)
+            }
+            Button { open("billing", flow: nil, tier: nil) } label: {
+              HStack {
+                Text(opening == "billing" ? "Opening…" : "Manage Billing").foregroundStyle(Ink.primary)
+                Spacer()
+                Image(systemName: "arrow.up.right").font(.system(size: 14, weight: .medium)).foregroundStyle(Ink.tertiary)
+              }
+              .contentShape(.rect)
+            }
+            .disabled(opening != nil)
+            if let failure {
+              Text(failure).font(.system(size: 13)).foregroundStyle(Ink.danger)
+            }
           }
+          .listRowBackground(Ink.groupedRow)
+        }
+      } else if store.usage.isFailed {
+        HStack(spacing: 12) {
+          Text("Couldn’t load usage.").foregroundStyle(Ink.secondary).frame(maxWidth: .infinity, alignment: .leading)
+          Button("Retry") { Task { await store.refreshUsage() } }.buttonStyle(.borderless).foregroundStyle(Ink.link)
         }
         .listRowBackground(Ink.groupedRow)
       } else {
         HStack { ProgressView(); Text("Loading usage…").foregroundStyle(Ink.secondary) }
-        .listRowBackground(Ink.groupedRow)
+          .listRowBackground(Ink.groupedRow)
       }
     }
     .groupedGround()
-    .navigationTitle("Usage")
+    .navigationTitle("Usage & Billing")
     .inlineBarTitle()
+    .task { await store.loadUsage() }
+    // The Mac's question, word for word.
+    .alert("Cancel your trial?", isPresented: $askingCancel) {
+      Button("Keep Trial", role: .cancel) {}
+      Button("Cancel Trial", role: .destructive) {
+        cancelling = true
+        cancelFailure = nil
+        Task {
+          cancelFailure = await store.cancelTrial()
+          cancelling = false
+          if cancelFailure == nil { Haptics.success() } else { Haptics.warning() }
+        }
+      }
+    } message: {
+      Text("This ends your Simeon trial now and removes your remaining trial credits. Your card won’t be charged either way — the trial never turns into a paid plan on its own.")
+    }
   }
 
-  /** The plans page when there is one to move to, else the billing portal. */
-  private func changeLimit(_ quota: JSON) {
-    if let upgrade = quota["upgradeUrl"]?.text.flatMap(URL.init(string:)) { openURL(upgrade); return }
-    opening = true
+  /** Stripe's page for the plan above (`update_confirm`) or its front page; "Opening…" while it is asked for, the failure under the rows. */
+  private func open(_ which: String, flow: String?, tier: String?) {
+    guard opening == nil else { return }
+    opening = which
+    failure = nil
     Task {
-      if let url = await store.billingPortal() { openURL(url) }
-      opening = false
+      let answer = await store.billingPortal(flow: flow, tier: tier)
+      if let url = answer.url { openURL(url) } else { failure = answer.message ?? "Couldn’t open billing. Try again." }
+      opening = nil
     }
+  }
+}
+
+/** A meter: its title and when it resets, the bar in the blue (red past 90%), its value. */
+private struct UsageMeterRow: View {
+  let title: String
+  let meter: UsageMeters.Meter
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 10) {
+      HStack(alignment: .firstTextBaseline) {
+        Text(title).font(.system(size: 17)).foregroundStyle(Ink.primary)
+        Spacer()
+        if let reset = meter.resetLabel { Text(reset).font(.system(size: 13)).foregroundStyle(Ink.tertiary) }
+      }
+      if let percent = meter.barPercent {
+        GeometryReader { geometry in
+          ZStack(alignment: .leading) {
+            Capsule().fill(Ink.pill)
+            Capsule().fill(percent > 90 ? Ink.danger : Ink.blue).frame(width: geometry.size.width * CGFloat(min(100, max(0, percent)) / 100))
+          }
+        }
+        .frame(height: 6)
+      }
+      Text(meter.valueLabel).font(.system(size: 13)).foregroundStyle(Ink.secondary)
+    }
+    .padding(.vertical, 6)
+    .accessibilityElement(children: .combine)
+  }
+}
+
+/** The account's picture when it has one, else its initials: the Mac's account button (mac/Simeon/Sidebar.swift `AccountPicture`). */
+struct AccountFace: View {
+  let size: CGFloat
+  @Environment(AppStore.self) private var store
+
+  var body: some View {
+    ZStack {
+      Initials(letters: store.account?.initials ?? "", size: Double(size))
+        .background(Ink.bubbleTheirs, in: Circle())
+      if let url = store.account?.pictureURL {
+        AsyncImage(url: url) { phase in
+          if let image = phase.image { image.resizable().scaledToFill() } else { Color.clear }
+        }
+        .frame(width: size, height: size)
+        .clipShape(Circle())
+      }
+    }
+    .frame(width: size, height: size)
+    .accessibilityHidden(true)
+  }
+}
+
+/** About Simeon, the Mac's card as a page: the mark, "Simeon", the version, the copyright, and Copy version info ("Copied" for 1.2 s). */
+struct AboutPage: View {
+  @State private var copied = false
+
+  private var version: String { SessionController.displayVersion }
+
+  var body: some View {
+    Form {
+      Section {
+        VStack(spacing: 12) {
+          Image("SignIn/Mark").resizable().renderingMode(.template).scaledToFit().frame(width: 64, height: 64)
+            .foregroundStyle(Ink.primary)
+            .accessibilityHidden(true)
+          VStack(spacing: 2) {
+            Text(AboutSimeon.name).font(.system(size: 22, weight: .semibold)).foregroundStyle(Ink.primary)
+            Text(AboutSimeon.versionLine(version)).font(.system(size: 13)).foregroundStyle(Ink.secondary).monospacedDigit()
+          }
+          Text(AboutSimeon.copyright).font(.system(size: 12)).foregroundStyle(Ink.tertiary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
+        .listRowBackground(Color.clear)
+      }
+      Section {
+        Button {
+          UIPasteboard.general.string = AboutSimeon.versionInfo(version: version, os: "ios")
+          Haptics.tap()
+          copied = true
+          Task {
+            try? await Task.sleep(nanoseconds: UInt64(AboutSimeon.copiedSeconds * 1_000_000_000))
+            copied = false
+          }
+        } label: {
+          HStack {
+            Text(copied ? AboutSimeon.copied : "Copy Version Info").foregroundStyle(Ink.primary)
+            Spacer()
+            Image(systemName: copied ? "checkmark" : "doc.on.doc").font(.system(size: 14)).foregroundStyle(Ink.secondary)
+          }
+          .contentShape(.rect)
+        }
+      }
+      .listRowBackground(Ink.groupedRow)
+    }
+    .groupedGround()
+    .navigationTitle("About")
+    .inlineBarTitle()
   }
 }
 
@@ -477,71 +635,158 @@ struct TimeZonePicker: View {
 }
 
 /**
- * Auto-review's rules (the Mac's table and its add box): "When Simeon wants
- * to:" one short line, "It should:" Allow automatically or Ask first, Add
- * Rule. Stored in the box as `autoReviewInstructions`.
+ * Auto-review's rules, the Mac's table on the phone (mac/Simeon/SettingsGeneral.swift):
+ * the allowed ones, then the ask-first ones; a tap edits a rule (its words and
+ * its list, Save Rule), a swipe deletes it. Below, "When Simeon wants to:" one
+ * short line, "It should:" Allow automatically or Ask first, Add Rule. Twenty
+ * rules a list and a thousand characters a rule, a rule already listed not
+ * twice (`AutoReviewInstructions`). Stored in the box as `autoReviewInstructions`.
  */
 struct AutoReviewRules: View {
   @Binding var settings: JSON?
   @Environment(AppStore.self) private var store
   @State private var wants = ""
-  @State private var should = "allow"
+  @State private var should = AutoReviewInstructions.Behavior.allow
+  @State private var editing: EditingRule?
 
-  private var instructions: JSON { settings?["autoReviewInstructions"] ?? ["isEnabled": true, "allowInstructions": [], "blockInstructions": []] }
-  private var allow: [String] { instructions["allowInstructions"]?.array?.compactMap(\.text) ?? [] }
-  private var ask: [String] { instructions["blockInstructions"]?.array?.compactMap(\.text) ?? [] }
+  struct EditingRule: Identifiable {
+    let rule: AutoReviewInstructions.Rule
+    var id: String { "\(rule.behavior.rawValue)/\(rule.listIndex)/\(rule.text)" }
+  }
+
+  private var rules: AutoReviewInstructions { AutoReviewInstructions.normalized(json: settings?["autoReviewInstructions"]) }
 
   var body: some View {
+    let rules = self.rules
+    let draft = wants.trimmingCharacters(in: .whitespacesAndNewlines)
     Form {
       Section {
         Text("Write one short, natural-language rule for each action. \"Ask first\" takes priority if rules conflict.")
           .font(.system(size: 13)).foregroundStyle(Ink.secondary)
       }
       .listRowBackground(Ink.groupedRow)
-      if !allow.isEmpty {
-        Section("Allow automatically") {
-          ForEach(allow, id: \.self) { Text($0) }
-            .onDelete { offsets in save(allow: allow.enumerated().filter { !offsets.contains($0.offset) }.map(\.element), ask: ask) }
+      ForEach(AutoReviewInstructions.Behavior.allCases, id: \.self) { behavior in
+        let listed = rules.rules.filter { $0.behavior == behavior }
+        if !listed.isEmpty {
+          Section(AutoReviewInstructions.label(behavior)) {
+            ForEach(listed, id: \.self) { rule in
+              Button { editing = EditingRule(rule: rule) } label: {
+                HStack {
+                  Text(rule.text).foregroundStyle(Ink.primary).lineLimit(3)
+                  Spacer(minLength: 8)
+                  Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Ink.tertiary)
+                }
+                .contentShape(.rect)
+              }
+              .accessibilityHint("Edits the rule")
+            }
+            .onDelete { offsets in
+              var next = rules
+              for rule in offsets.map({ listed[$0] }).sorted(by: { $0.listIndex > $1.listIndex }) { next = next.removing(rule) }
+              save(next)
+            }
+          }
+          .listRowBackground(Ink.groupedRow)
         }
-        .listRowBackground(Ink.groupedRow)
-      }
-      if !ask.isEmpty {
-        Section("Ask first") {
-          ForEach(ask, id: \.self) { Text($0) }
-            .onDelete { offsets in save(allow: allow, ask: ask.enumerated().filter { !offsets.contains($0.offset) }.map(\.element)) }
-        }
-        .listRowBackground(Ink.groupedRow)
       }
       Section {
         VStack(alignment: .leading, spacing: 8) {
           Text("When Simeon wants to:").font(.system(size: 13)).foregroundStyle(Ink.secondary)
-          TextField("e.g. reply to emails for me", text: $wants, axis: .vertical).lineLimit(1...4)
+          TextField("e.g. reply to emails for me", text: $wants, axis: .vertical)
+            .lineLimit(1...4)
+            .onChange(of: wants) { _, text in if text.count > AutoReviewInstructions.maxCharacters { wants = AutoReviewInstructions.clip(text) } }
         }
         Picker("It should:", selection: $should) {
-          Text("Allow automatically").tag("allow")
-          Text("Ask first").tag("ask")
+          ForEach(AutoReviewInstructions.Behavior.allCases, id: \.self) { Text(AutoReviewInstructions.label($0)).tag($0) }
         }
         Button("Add Rule") {
-          let rule = wants.trimmingCharacters(in: .whitespacesAndNewlines)
-          guard !rule.isEmpty else { return }
+          guard let next = rules.saving(draft, as: should, editing: nil) else { return }
           wants = ""
-          if should == "allow" { save(allow: allow + [rule], ask: ask) } else { save(allow: allow, ask: ask + [rule]) }
+          save(next)
         }
-        .disabled(wants.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        .disabled(draft.isEmpty || rules.saving(draft, as: should, editing: nil) == nil)
       } footer: {
-        Text("These rules apply only to you. Built-in safety checks always apply.")
+        if AutoReviewInstructions.isFull(rules.list(should)) {
+          Text("\(AutoReviewInstructions.label(should)) is full (\(AutoReviewInstructions.limitNote)).")
+        } else {
+          Text("These rules apply only to you. Built-in safety checks always apply.")
+        }
       }
       .listRowBackground(Ink.groupedRow)
     }
     .groupedGround()
     .navigationTitle("Auto-review Rules")
     .inlineBarTitle()
+    .sheet(item: $editing) { item in
+      RuleEditor(rule: item.rule, rules: rules) { next in save(next) }
+        .presentationDetents([.medium])
+        .presentationBackground(Ink.groupedGround)
+    }
   }
 
-  private func save(allow: [String], ask: [String]) {
-    let next = instructions.setting("allowInstructions", JSON(allow)).setting("blockInstructions", JSON(ask))
-    settings = (settings ?? [:]).setting("autoReviewInstructions", next)
-    Task { await store.setHostSettings(["autoReviewInstructions": next]) }
+  private func save(_ next: AutoReviewInstructions) {
+    var next = next
+    next.isEnabled = rules.isEnabled
+    settings = (settings ?? [:]).setting("autoReviewInstructions", next.json)
+    Haptics.tap()
+    Task { await store.setHostSettings(["autoReviewInstructions": next.json]) }
+  }
+}
+
+/** One rule being edited, as the Mac's row turns into its composer: its words, its list, Cancel and Save Rule (greyed while it may not be saved). */
+private struct RuleEditor: View {
+  let rule: AutoReviewInstructions.Rule
+  let rules: AutoReviewInstructions
+  let save: (AutoReviewInstructions) -> Void
+  @State private var text: String
+  @State private var behavior: AutoReviewInstructions.Behavior
+  @Environment(\.dismiss) private var dismiss
+
+  init(rule: AutoReviewInstructions.Rule, rules: AutoReviewInstructions, save: @escaping (AutoReviewInstructions) -> Void) {
+    self.rule = rule
+    self.rules = rules
+    self.save = save
+    _text = State(initialValue: rule.text)
+    _behavior = State(initialValue: rule.behavior)
+  }
+
+  private var saved: AutoReviewInstructions? {
+    let words = text.trimmingCharacters(in: .whitespacesAndNewlines)
+    return words.isEmpty ? nil : rules.saving(words, as: behavior, editing: rule)
+  }
+
+  var body: some View {
+    NavigationStack {
+      Form {
+        Section {
+          TextField("Action", text: $text, axis: .vertical)
+            .lineLimit(1...6)
+            .onChange(of: text) { _, words in if words.count > AutoReviewInstructions.maxCharacters { text = AutoReviewInstructions.clip(words) } }
+          Picker("It should:", selection: $behavior) {
+            ForEach(AutoReviewInstructions.Behavior.allCases, id: \.self) { Text(AutoReviewInstructions.label($0)).tag($0) }
+          }
+        } footer: {
+          // Moving it to a full list: the Mac's limit note.
+          if behavior != rule.behavior && AutoReviewInstructions.isFull(rules.list(behavior)) {
+            Text(AutoReviewInstructions.limitNote)
+          }
+        }
+        .listRowBackground(Ink.groupedRow)
+      }
+      .groupedGround()
+      .navigationTitle("Edit Rule")
+      .inlineBarTitle()
+      .toolbar {
+        ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+        ToolbarItem(placement: .confirmationAction) {
+          Button("Save Rule") {
+            if let saved { save(saved) }
+            dismiss()
+          }
+          .disabled(saved == nil)
+        }
+      }
+    }
   }
 }
 

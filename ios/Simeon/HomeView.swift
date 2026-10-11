@@ -83,8 +83,11 @@ struct HomeView: View {
         // The account at the top left, straight to Settings.
         ToolbarItem(placement: .leadingBar) {
           Button { sheet = .settings } label: {
-            // The initials once the account is known (remembered from the last launch, then the profile); a person, never a "?", before that.
-            if let initials = store.account?.initials, !initials.isEmpty {
+            // The account's picture when it has one (the Mac's account button); else the initials once the account is known
+            // (remembered from the last launch, then the profile); a person, never a "?", before that.
+            if store.account?.pictureURL != nil {
+              AccountFace(size: 32)
+            } else if let initials = store.account?.initials, !initials.isEmpty {
               Text(initials).font(.system(size: 15, weight: .semibold))
             } else {
               Image(systemName: "person.fill").font(.system(size: 14, weight: .semibold))
