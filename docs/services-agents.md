@@ -378,9 +378,17 @@ and Ashby connect through Simeon. The provider behind them is never named in the
   Otherwise it stays "coming soon", and a sign-in answered 404 or 503 says "<App> is coming
   soon in Simeon." The vendor connectors in 7a do not depend on this check.
 
-* **Settings on Render.** `SIMEON_COMPOSIO_API_KEY` (optional `SIMEON_COMPOSIO_BASE_URL`). To
-  show Simeon's own name on a provider's consent screen, register Simeon's own OAuth app with
-  that provider, with redirect URI `https://api.simeonlabs.com/desktop/apps/oauth/callback`.
+* **Settings on Render.** `SIMEON_COMPOSIO_API_KEY` (optional `SIMEON_COMPOSIO_BASE_URL`), and
+  `SIMEON_COMPOSIO_AUTH_CONFIGS`, Simeon Labs' own sign-in per app as JSON
+  (`{"xero": "ac_…", "gusto": "ac_…"}`).
+* **Simeon Labs' own sign-in for an app** (needed for the eight in Known limits; also what puts
+  Simeon's name on Google's consent screen). 1. Register an OAuth app with the company (its
+  developer portal), redirect URI `https://api.simeonlabs.com/desktop/apps/oauth/callback`. 2. In
+  the provider's dashboard, Auth Configs, create one for that app with "your own credentials"
+  (the client id and secret), and set its redirect URI to the same address. 3. Add its `ac_` id
+  to `SIMEON_COMPOSIO_AUTH_CONFIGS` and redeploy. A sign-in uses a config only when the session
+  is given it (the provider's documentation, checked 11 October 2026; before that day the
+  server gave none, so a config made in the dashboard alone was never used).
 * **Log lines.** Server: `desktop.apps.sign_in_started`, `desktop.apps.upstream_refused`,
   `desktop.apps.upstream_unreachable` (a timeout or dropped connection: `path`, `error`,
   `elapsed_ms`; the app then reads "could not be reached" and Render shows a 200) and
@@ -438,10 +446,13 @@ and Ashby connect through Simeon. The provider behind them is never named in the
 * **Known limits.** Google's consent screen shows the provider's name until Simeon Labs uses its
   own Google OAuth app. Gusto, Xero, Shopify, Brex, Pipedrive, Docusign and Klaviyo have no
   sign-in the provider manages, and Ashby takes only an API key (checked 11 October 2026): their
-  link works once Simeon Labs registers its own app with each and sets it up at the provider.
-  Until then a refused link answers 503 and the card says "<App> is coming soon in Simeon."
-  (`OWN_APP_NEEDED` in `apps.py`; log line `desktop.apps.sign_in_needs_own_app` with the
-  provider's sentence).
+  link works once Simeon Labs registers its own app with each and names it in
+  `SIMEON_COMPOSIO_AUTH_CONFIGS`. Until then a refused link answers 503 and the card says
+  "<App> is coming soon in Simeon." (`OWN_APP_NEEDED` in `apps.py`; log line
+  `desktop.apps.sign_in_needs_own_app` with the provider's sentence); once named, a refusal is
+  the provider's sentence (502). Gusto (production pre-approval, security review, QA), Brex
+  (credentials issued by its developer support), Docusign (go-live review) and Shopify (app
+  review to reach other stores) review an app before it reaches other people's accounts.
 * **Not yet verified.** No sign-in or tool call against the live provider, and nothing on a Mac.
 
 ## 8. Agent features that touch the server
