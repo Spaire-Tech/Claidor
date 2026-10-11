@@ -2278,7 +2278,8 @@ The Mac's own parts:
    install: until then both are "Simeon.app" and a move would put this one
    in the Electron app's place.
 10. A plugin's link that comes before the sign-in opens Plugins after it.
-11. Updates: none yet. Sparkle, or the release script only?
+11. Updates: none yet. Sparkle, or the release script only? Still open
+    (no recommendation was made); it matters only at the switch.
 12. No Help menu; Apple's own Edit items (Find, Spelling, Substitutions)
     are kept.
 
