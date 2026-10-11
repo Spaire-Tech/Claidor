@@ -633,8 +633,8 @@ struct HiddenAgentsSheet: View {
 /**
  * One agent or group in the list, in the founder's reference (11 October
  * 2026: "no lines, no arrow"), measured on it: the unread dot in the
- * 20-point margin (orange when it waits on you), the butterfly at 48 and
- * 15 after it, the name in 17 semibold with its title's tag 13 after it
+ * 18-point margin (orange when it waits on you), the butterfly at 56 (the
+ * reference's 48 looked too small in the row) and 13 after it, the name in 17 semibold with its title's tag 13 after it
  * (14 medium) and the last line's time at the right (14), 24 from the
  * edge, and one line of the last message under it (15) in grey; 80 a row,
  * no hairline between rows and no chevron.
@@ -656,13 +656,14 @@ struct AgentRow: View, Equatable {
             .accessibilityLabel(status.label ?? "")
         }
       }
-      .frame(width: 20)
+      .frame(width: 18)
+      // 56 in the 80-point row (the founder, 11 October 2026: at 48 the butterflies were too small for the taller rows).
       AgentAvatar(agent: agent, members: members)
-        .frame(width: 48, height: 48)
+        .frame(width: 56, height: 56)
         .overlay(alignment: .bottomTrailing) {
           if let dot = status.cornerOnRow { StatusDot(colour: dot, size: 10.8).offset(x: -1, y: -1) }
         }
-        .padding(.trailing, 15)
+        .padding(.trailing, 13)
       // 5.5 between the name's line and the preview's: their capitals 25.3 apart, as on the reference.
       VStack(alignment: .leading, spacing: 5.5) {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
