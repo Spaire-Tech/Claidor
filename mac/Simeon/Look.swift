@@ -32,10 +32,15 @@ struct Look {
 
   // MARK: The sidebar's rows
 
-  /** The open agent's row: white with a hairline and a soft shadow (dark: white at 12%). */
-  var rowSelected: Color { dark ? Color.white.opacity(0.12) : Color.white }
-  var rowSelectedHairline: Color { dark ? Color.white.opacity(0.08) : Color(red: 20 / 255, green: 30 / 255, blue: 60 / 255).opacity(0.07) }
-  var rowSelectedShadow: Color { dark ? Color.black.opacity(0.30) : Color(red: 20 / 255, green: 30 / 255, blue: 60 / 255).opacity(0.04) }
+  /**
+   * The open agent's row: white at 12% on dark. On light the grey wash a
+   * little deeper than the pointer's, with no hairline or shadow: the
+   * sidebar is on the chat's own near-white ground now, where the Electron
+   * window's white card would not show.
+   */
+  var rowSelected: Color { dark ? Color.white.opacity(0.12) : Color(red: 119 / 255, green: 119 / 255, blue: 119 / 255).opacity(0.15) }
+  var rowSelectedHairline: Color { dark ? Color.white.opacity(0.08) : .clear }
+  var rowSelectedShadow: Color { dark ? Color.black.opacity(0.30) : .clear }
   /** A row under the pointer (`--simeon-bg-hover`). */
   var rowHover: Color { Color(red: 119 / 255, green: 119 / 255, blue: 119 / 255).opacity(dark ? 0.173 : 0.09) }
   /** The row's corner radius: 14 light, 10 dark, as the window draws them. */

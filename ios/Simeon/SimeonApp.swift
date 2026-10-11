@@ -123,7 +123,8 @@ struct SignInScreen: View {
     VStack(spacing: 0) {
       Spacer(minLength: 24)
       VStack(spacing: 28) {
-        Image("SignIn/Mark").resizable().scaledToFit().frame(width: 46, height: 46)
+        // The logo lighting up, then in its true colour (`LogoShimmer`), each time the screen comes.
+        LogoShimmer().frame(width: 46, height: 46)
         Image("SignIn/Wordmark").resizable().scaledToFit().frame(height: 25)
       }
       .foregroundStyle(Ink.primary)
@@ -221,11 +222,13 @@ struct SignInButton: View {
 /**
  * The launch, as apps open (the founder's references, 9 October 2026): on
  * the app's own ground (the system's launch screen is the same colour, so
- * there is no flash), Simeon's butterfly small in the middle, turning
- * around, until the app is ready (signed in with its agents, or at the
- * sign-in); at least one turn, never more than three seconds; then it fades.
- * It shows on every start, and again on coming back after a quarter of an
- * hour away.
+ * there is no flash), the SimeonLabs logo lighting up in the middle
+ * (`LogoShimmer`, the founder, 11 October 2026: in place of Simeon's
+ * butterfly), until the app is ready (signed in with its agents): the logo
+ * plays to its true colour first, and the cover never stays more than four
+ * seconds; then it fades. Signed out, it goes at once: the sign-in screen
+ * plays the logo itself. It shows on every start, and again on coming back
+ * after a quarter of an hour away.
  */
 struct LaunchCover: View {
   @Environment(SessionController.self) private var session
@@ -234,6 +237,14 @@ struct LaunchCover: View {
   @State private var showing = true
   @State private var since = Date()
   @State private var leftAt: Date?
+
+  /** At the sign-in, whose own logo plays. */
+  private var signedOut: Bool {
+    switch session.phase {
+    case .signedOut, .signingIn: return true
+    default: return false
+    }
+  }
 
   /** Only read while it shows, so the roster's changes do not redraw it afterwards. */
   private var ready: Bool {
@@ -250,7 +261,7 @@ struct LaunchCover: View {
       if showing {
         Ink.ground
           .ignoresSafeArea()
-          .overlay { LaunchMark().frame(width: 64, height: 64) }
+          .overlay { LogoShimmer().frame(width: 64, height: 64) }
           .transition(.opacity)
       }
     }
@@ -258,7 +269,7 @@ struct LaunchCover: View {
     .task(id: waiting) {
       guard showing else { return }
       let shown = Date().timeIntervalSince(since)
-      let wait = ready ? max(0, 0.9 - shown) : max(0, 3 - shown)
+      let wait = signedOut ? 0 : ready ? max(0, LogoShimmer.duration - shown) : max(0, 4 - shown)
       try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000))
       guard !Task.isCancelled else { return }
       withAnimation(.easeOut(duration: 0.35)) { showing = false }
@@ -275,21 +286,80 @@ struct LaunchCover: View {
   }
 }
 
-/** Simeon's butterfly turning around its own axis, the turn the Mac's makes while it works, with its light trails, again each time it comes to rest. */
-struct LaunchMark: View {
-  @State private var engine = MarkEngine()
-  @State private var trails = LightTrails()
+/**
+ * The SimeonLabs logo lighting up (the founder's video, 11 October 2026,
+ * "SimeonLabs-logo-shimmer", measured frame by frame): nothing for 0.2 s;
+ * the four petals fade in to the ink at 40% by 1.0 s; a band of the full
+ * ink crosses them on the diagonal, top left to bottom right, twice (from
+ * 1.2 s and from 1.9 s, the second a little slower), as "Setting up
+ * Simeon's computer" shimmers on the Mac; then the whole logo comes to its
+ * true colour, the ink, by 2.85 s and stays. Black on light, white on dark.
+ * With Reduce Motion, the logo at once.
+ */
+struct LogoShimmer: View {
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @State private var start = Date()
+  @State private var done = false
+
+  /** Its length: from here on it is the logo. */
+  static let duration: TimeInterval = 2.9
 
   var body: some View {
-    MarkCanvas(palette: .named("blue"), engine: engine, trails: trails, state: .idle)
-    .task {
-      engine.turnNow()
-      while !Task.isCancelled {
-        try? await Task.sleep(nanoseconds: 250_000_000)
-        if !engine.isTurning { engine.turnNow() }
+    Group {
+      if done || reduceMotion {
+        mark.foregroundStyle(Ink.primary)
+      } else {
+        TimelineView(.animation) { context in
+          mark.foregroundStyle(Self.gradient(at: context.date.timeIntervalSince(start)))
+        }
       }
     }
+    .task {
+      start = Date()
+      try? await Task.sleep(nanoseconds: UInt64(Self.duration * 1_000_000_000))
+      done = true
+    }
     .accessibilityHidden(true)
+  }
+
+  private var mark: some View {
+    Image("SignIn/Mark").resizable().renderingMode(.template).scaledToFit()
+  }
+
+  /** The ink along the diagonal at `t`, eleven stops from the top left corner to the bottom right. */
+  static func gradient(at t: TimeInterval) -> LinearGradient {
+    let stops = (0...10).map { step in
+      let place = Double(step) / 10
+      return Gradient.Stop(color: Ink.primary.opacity(ink(at: place, time: t)), location: place)
+    }
+    return LinearGradient(stops: stops, startPoint: .topLeading, endPoint: .bottomTrailing)
+  }
+
+  /** How much of the ink shows at `place` along the diagonal (0 the top left, 1 the bottom right) at `time`. */
+  static func ink(at place: Double, time t: TimeInterval) -> Double {
+    let base: Double
+    switch t {
+    case ..<0.2: base = 0
+    case ..<1.0: base = 0.4 * ease((t - 0.2) / 0.8)
+    case ..<2.38: base = 0.4
+    case ..<2.85: base = 0.4 + 0.6 * ease((t - 2.38) / 0.47)
+    default: base = 1
+    }
+    guard base > 0 else { return 0 }
+    let band = max(sweep(place, time: t, from: 1.22, across: 0.31), sweep(place, time: t, from: 1.876, across: 0.44))
+    return base + (1 - base) * band
+  }
+
+  /** One pass of the band: its brightest line moves from the top left (at `from`) to the bottom right in `across` seconds; sharp in front, a longer fall behind. */
+  static func sweep(_ place: Double, time t: TimeInterval, from: TimeInterval, across: TimeInterval) -> Double {
+    let x = place - (t - from) / across
+    let width = x > 0 ? 0.23 : 0.48
+    return 0.92 * exp(-(x * x) / (width * width))
+  }
+
+  private static func ease(_ x: Double) -> Double {
+    let v = min(max(x, 0), 1)
+    return v * v * (3 - 2 * v)
   }
 }
 

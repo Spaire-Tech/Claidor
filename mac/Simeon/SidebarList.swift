@@ -704,8 +704,8 @@ struct AgentRow: View {
 }
 
 /**
- * A row's or tile's ground: the open agent's white card (a hairline and a
- * soft shadow; white at 12% on dark), a picked row's blue wash (`#376ca3`
+ * A row's or tile's ground: the open agent's grey wash (`rowSelected`;
+ * white at 12% on dark), a picked row's blue wash (`#376ca3`
  * at 33.5%, `#6188b2` at 45.7% on dark), grey under the pointer.
  */
 struct RowGround: View {

@@ -2497,3 +2497,16 @@ and dark; the composer's list placement with a reply and files over the
 field; the consent with a long app name and on a short window (its words
 then scroll); a Google app's sign-in end to end in the sheet; Escape
 under the consent not closing Plugins behind it.
+
+### The sidebar again (11 October 2026)
+
+The founder, on their Mac: the glass panel "has like a background, for
+some reason that changes its color"; "i want it to blend in with the rest
+of the screen … dont do too much". The desktop through the panel took the
+colour of whatever stood behind the window. The sidebar is now on the
+chat's own ground, with no panel, no material and no edge between them;
+the resize edge is where the hairline was. On light, the open agent's row
+is the grey wash a little deeper than the pointer's (`rowSelected`, 15%),
+since the Electron window's white card does not show on a near-white
+ground; dark is unchanged. The search, new chat and initials stay in
+their glass circles.
