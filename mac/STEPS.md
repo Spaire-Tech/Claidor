@@ -2254,7 +2254,7 @@ cannot be read, a group's own picture). Pushed in three parts:
   narrow window (the window keeps it to one line with its words as the
   tooltip).
 
-#### Decisions to confirm
+#### Decisions (confirmed 11 October 2026: as recommended)
 
 The Mac's own parts:
 
