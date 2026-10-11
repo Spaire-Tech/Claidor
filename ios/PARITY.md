@@ -60,13 +60,8 @@ the phone design. None of the screens has been compiled yet (see
 | The chat's motion (§10) | New lines come in with the Mac's rise (240 ms, 12 pt, from 94 %). Older lines load as you near the top. "N new messages" pills show for a "New" line out of sight above, and for what arrives below while you read further up. A quote's jump lights the message. |
 | The composer (§10) | Send and the mic cross over in 200 ms. It grows a line at a time with the Mac's spring. "Reply…" shows while replying. "@" offers the agents' names. |
 
-Still missing on the phone:
-- The welcome steps of a new account. A new account on the phone opens
-  on an empty list.
-- Threads ("Start a thread" and the thread view).
-- In the composer: "/" for skills, "#" for pull requests, ":" for emoji,
-  and "More emoji" in a message's menu.
-- Sections in the list ("Move to") and selecting several rows at once.
+Still missing on the phone: see §30 (11 October 2026), which replaces the
+list that stood here.
 
 ---
 
@@ -889,6 +884,53 @@ anew, since nothing kept it.
 - A picture still on its way (an agent's, or after a relaunch) is an empty
   frame of its place, never a file card; the card shows only if it cannot
   be read.
+
+## 30. The Mac's features on the phone (11 October 2026)
+
+The founder: "i noticed section is not present in the mobile app. please
+bring it. and find what else isnt there and we bring it." An audit went
+through mac/STEPS.md and the Mac's views against ios/Simeon; what it found
+is on the phone now:
+
+- **The list:** the Mac's sections (fold, Rename, Move Up, Move Down,
+  Delete, a chat's Move to); Select Chats, moving or deleting several at
+  once; "Can't reach your computer" with Retry and Recover computer, and
+  "Reconnecting to your computer…" over a list already shown.
+- **The chat:** Find in Chat (the magnifier in the bar); "/" with the
+  Mac's palette commands (Org Chart, Open Hidden Agents, Members, Channels,
+  Chat Settings, Settings, Usage & Billing, Plugins, the themes, Update
+  Simeon's Computer); a routine's chip opens that routine; Paste Picture;
+  a tap pokes the working butterfly; the connector card's tool count.
+- **Search:** Org Chart, Usage & Billing, Plugins and Update Simeon's
+  Computer as their own actions.
+- **The agent's page:** a group's own page (name, description, routines,
+  picture); routine triggers other than a clock (Slack, Git, Teams, Linear,
+  Sentry, PagerDuty), up to eight, and the Advanced grid; the avatar crop
+  and Reset character to default; Channels; the Computer tab's pointer,
+  can't-reach with Retry and helpers.
+- **The computer:** Update, Reset and Recover with their questions,
+  progress and failures; the connection pills; the access cover; the low
+  disk banner.
+- **Org chart and Channels** (AgentNetwork and Channels moved into
+  SimeonCore).
+- **Settings:** Usage & Billing as the Mac's (on-demand usage, upgrade,
+  Cancel Trial, Manage Plan, Retry); Auto-review rules edited in place,
+  twenty a list; Sign Out asked first; the account's picture; About with
+  Copy Version Info; Notifications and Haptics switches; Privacy Policy
+  and Terms of Service.
+- **Connect apps:** skills (Private, each with its switch, and a skill's
+  page), setup values and Edit Values, Uninstall and the team's Remove, a
+  plugin's page (View Source, Connectors, Skills, Details), the Type and
+  Ownership filter, the GitHub banner's Fix with agent.
+
+Left as the phone has them, on purpose:
+- File previews: Apple's Quick Look, not the Mac's own viewers.
+- New chat: the phone's New Agent and New Group Chat sheets, not the Mac's
+  To: line.
+- Pinning: swipe and the long press, not dragging onto the pins.
+- Links into the app (`simeon-ios://…/plugin/add`, the Deep Links page).
+- What only a Mac has: its window and keys, hover, the menu bar, the Dock,
+  the agent's hands on the Mac.
 
 ## Suggested order (the founder decides)
 
