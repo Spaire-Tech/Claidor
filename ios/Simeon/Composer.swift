@@ -46,7 +46,7 @@ struct AttachmentChip: View {
   }
 }
 
-/** The + : a photo from the library, or any file, into the composer. */
+/** The + : a photo from the library, any file, or a copied picture, into the composer. */
 struct ComposerPicker: ViewModifier {
   @Binding var isPresented: Bool
   let picked: ([ComposerAttachment]) -> Void
@@ -60,6 +60,9 @@ struct ComposerPicker: ViewModifier {
       .confirmationDialog("Attach", isPresented: $isPresented) {
         Button("Photo Library") { photos = true }
         Button("Files") { files = true }
+        // A copied picture, as the Mac's ⌘V puts one in its composer (mac/Simeon/Composer.swift); offered only while the
+        // clipboard holds one (asking does not read it, so the phone does not ask about pasting until this is chosen).
+        if UIPasteboard.general.hasImages { Button("Paste Picture") { pastePictures() } }
       }
       #else
       // On the Mac + opens the file chooser at once, as the Mac's window does (its sidebar reaches Photos too).
@@ -96,6 +99,16 @@ struct ComposerPicker: ViewModifier {
         }
         picked(out)
       }
+  }
+
+  /** The clipboard's pictures, as PNG files named as the Mac names a pasted one. */
+  private func pastePictures() {
+    let images = UIPasteboard.general.images ?? []
+    let out = images.enumerated().compactMap { index, image -> ComposerAttachment? in
+      guard let data = image.pngData() else { return nil }
+      return ComposerAttachment(name: images.count == 1 ? "Pasted image.png" : "Pasted image \(index + 1).png", data: data, preview: image)
+    }
+    if !out.isEmpty { picked(out) }
   }
 }
 

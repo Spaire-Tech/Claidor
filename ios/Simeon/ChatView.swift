@@ -33,6 +33,19 @@ struct ChatView: View {
   @State private var messageMenu = MessageMenu()
   /** The thread open over the chat (its first message's id). */
   @State private var thread: ThreadRoute?
+  /** Find in chat's bar over the chat, in the headline's place. */
+  @State private var finding = false
+  /** A routine to open the agent's page on (a routine named in the chat). */
+  @State private var pageRoutine: String?
+  /** What a "/" app action opened over the chat. */
+  @State private var slashSheet: SlashSheet?
+  @AppStorage("simeon.theme") private var theme = "system"
+
+  /** The screens "/" can open over the chat (the Mac's palette commands). */
+  enum SlashSheet: String, Identifiable {
+    case settings, usage, plugins, hidden
+    var id: String { rawValue }
+  }
 
   // Each part below reads only what it draws, so typing a letter or the
   // call's waveform ticking redraws that part and not the conversation.
@@ -43,7 +56,12 @@ struct ChatView: View {
       // Bars, not insets: the messages scroll under the call and the composer and fade there, as in Messages.
       .safeAreaBar(edge: .top, spacing: 0) {
         VStack(spacing: 0) {
-          ChatHeadline(agentId: agentId) { showsPage = true }
+          if finding {
+            ChatFindBar(agentId: agentId) { withAnimation(.snappy) { finding = false } }
+              .transition(.move(edge: .top).combined(with: .opacity))
+          } else {
+            ChatHeadline(agentId: agentId) { showsPage = true }
+          }
           ChatCallSlot(agentId: agentId, showsCall: $showsCall, showsTranscript: $showsTranscript)
         }
       }
@@ -71,6 +89,13 @@ struct ChatView: View {
           .accessibilityHidden(true)
         }
         .sharedBackgroundVisibility(.hidden)
+        // Find in chat (the Mac's ⌘F).
+        if !finding {
+          ToolbarItem(placement: .trailingBar) {
+            Button { withAnimation(.snappy) { finding = true } } label: { Image(systemName: "magnifyingglass") }
+              .accessibilityLabel("Find in Chat")
+          }
+        }
         if store.canCall && !store.groupIds.contains(agentId) {
           ToolbarItem(placement: .trailingBar) { ChatCallButton(agentId: agentId) }
         }
@@ -83,13 +108,38 @@ struct ChatView: View {
       .sheet(item: $thread, onDismiss: { store.closeThread(in: agentId) }) { route in
         ThreadSheet(agentId: agentId, rootId: route.rootId).problemAlert()
       }
-      .sheet(isPresented: $showsPage) { AgentPageSheet(agentId: agentId).problemAlert() }
+      .sheet(isPresented: $showsPage, onDismiss: { pageRoutine = nil }) { AgentPageSheet(agentId: agentId, routineId: pageRoutine).problemAlert() }
+      .sheet(item: $slashSheet) { which in
+        Group {
+          switch which {
+          case .settings: SettingsSheet().presentationBackground(Ink.groupedGround)
+          case .usage: NavigationStack { UsagePage() }.presentationBackground(Ink.groupedGround)
+          case .plugins: ConnectAppsSheet().presentationBackground(Ink.ground)
+          case .hidden:
+            HiddenAgentsSheet { id in
+              slashSheet = nil
+              // The list opens it, as a tapped notification does.
+              Notifications.shared.openAgent = id
+            }
+            .presentationBackground(Ink.groupedGround)
+          }
+        }
+        .problemAlert()
+      }
       .sheet(isPresented: $showsComputer) { ComputerSheet(agentId: agentId).problemAlert() }
       .fullScreenCover(isPresented: $showsCall) { CallScreen(showsTranscript: $showsTranscript) }
       .navigationDestination(item: $exchange) { route in ExchangePage(route: route) }
       .onAppear {
         actions.openPage = { showsPage = true }
+        // A routine named in the chat: the agent's page on that routine's editor, as the Mac's pane opens it.
+        actions.openRoutine = { id in pageRoutine = id; showsPage = true }
         actions.openComputer = { showsComputer = true }
+        // "/": the Mac's palette commands that make sense here (ComposerLists.appActions).
+        actions.slashActions = {
+          ComposerLists.appActions(isGroup: store.groupIds.contains(agentId), hasHiddenAgents: store.hasHidden, hasChannels: false,
+                                   showsOrgChart: false, showsUsage: store.usage.summary == nil || store.usage.showsSection)
+        }
+        actions.runSlashAction = { id in runSlash(id) }
         actions.openExchange = { exchange = $0 }
         actions.openThread = { root in
           thread = ThreadRoute(rootId: root)
@@ -113,6 +163,21 @@ struct ChatView: View {
         default: break
         }
       }
+  }
+
+  /** One of "/"'s app actions, run at once (the Mac's `runComposerAction`). */
+  private func runSlash(_ id: String) {
+    switch id {
+    case "open-hidden-chats": slashSheet = .hidden
+    case "info:members", "info:settings": showsPage = true
+    case "settings:general": slashSheet = .settings
+    case "settings:usage": slashSheet = .usage
+    case "overlay:plugins": slashSheet = .plugins
+    case "theme:system": theme = "system"
+    case "theme:light": theme = "light"
+    case "theme:dark": theme = "dark"
+    default: break
+    }
   }
 }
 #endif
