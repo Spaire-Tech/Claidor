@@ -331,6 +331,9 @@ async def main():
     from versioning import version_assets
     home = open(f"{OUT}/index.html", encoding="utf-8").read()
     open(f"{OUT}/index.html", "w", encoding="utf-8").write(version_assets(home, OUT))
+    # The Privacy Policy and the Terms (legal.py, legal/), at /privacy and /terms.
+    import legal
+    legal.build(OUT)
     print("site written to", os.path.abspath(OUT))
 
 asyncio.run(main())
