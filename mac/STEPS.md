@@ -1655,7 +1655,7 @@ up as the window does ("$1.3k" for $1,250; it said "$1.2k").
   buttons do (Space with keyboard navigation on); About takes no keys when
   it opens (the window puts them on ×).
 
-#### Decisions to confirm
+#### Decisions (confirmed 11 October 2026: keep all)
 
 1. The menu is Apple's menu, as the sidebar's (step 3): it looks and moves
    as the Mac's menus do (its own row height, highlight colour, corners,
