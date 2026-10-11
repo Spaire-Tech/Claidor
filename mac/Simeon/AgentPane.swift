@@ -497,8 +497,11 @@ private struct AgentPage: View {
         case .computer where agent.showsMembers:
           // A group's Computer tab is its members (7d); it has no computer of its own.
           GroupMembersBody(group: agent, look: look)
-        case .computer, .channels:
-          // An agent's computer (step 13) and channels (step 12) come with their parts; a shared room's tab is empty.
+        case .channels:
+          // Discord and Slack (step 12, O01): reached from "Channels" in ⌘K and "/", no tab of its own.
+          ChannelsBody(agent: agent, look: look)
+        case .computer:
+          // An agent's computer comes with step 13; a shared room's tab is empty.
           Color.clear.frame(height: 0)
         }
       }

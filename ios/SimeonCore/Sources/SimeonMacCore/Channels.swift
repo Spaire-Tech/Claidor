@@ -101,3 +101,45 @@ public struct ChannelsView: Equatable, Sendable {
     return ("Connect \(manifest.displayName)", "Connecting \(manifest.displayName) is not available yet.", blurb)
   }
 }
+
+/**
+ * The channel calls the window makes (`I$n`): the view read, a token
+ * stored, a connection refreshed or dropped; each answers the whole view,
+ * and gives up after 15 seconds (a failure keeps the last answer on screen).
+ */
+extension AppStore {
+  /** How long a channel call may take (`I$n`). */
+  public static let channelDeadline: Double = 15
+
+  public func channels(_ agentId: String) async -> ChannelsView? {
+    await channelCall("getAgentChannels", ["id": .string(agentId)])
+  }
+
+  /** Store securely: the token for `platform` (Slack takes its app and bot tokens together, the computer sorts them). */
+  public func connectChannel(_ agentId: String, platform: String, token: String) async -> ChannelsView? {
+    await channelCall("connectChannel", ["id": .string(agentId), "platform": .string(platform), "token": .string(token)])
+  }
+
+  public func refreshChannel(_ agentId: String, platform: String) async -> ChannelsView? {
+    await channelCall("refreshChannel", ["id": .string(agentId), "platform": .string(platform)])
+  }
+
+  public func disconnectChannel(_ agentId: String, platform: String) async -> ChannelsView? {
+    await channelCall("disconnectChannel", ["id": .string(agentId), "platform": .string(platform)])
+  }
+
+  private func channelCall(_ method: String, _ args: JSON) async -> ChannelsView? {
+    guard let backend else { return nil }
+    let answer = try? await withThrowingTaskGroup(of: JSON.self) { group in
+      group.addTask { try await backend.command(method, args) }
+      group.addTask {
+        try await Task.sleep(nanoseconds: UInt64(Self.channelDeadline * 1_000_000_000))
+        throw CancellationError()
+      }
+      defer { group.cancelAll() }
+      guard let first = try await group.next() else { throw CancellationError() }
+      return first
+    }
+    return ChannelsView(json: answer)
+  }
+}

@@ -51,6 +51,19 @@ final class NetworkTests: XCTestCase {
     }
   }
 
+  func testTheChartsOtherWords() {
+    XCTAssertEqual(AgentNetwork.edgeLabel(.message, source: "Scout", target: "Simeon"), "Conversation between Scout and Simeon")
+    XCTAssertEqual(AgentNetwork.edgeLabel(.membership, source: "Launch squad", target: "Simeon"), "Simeon is a member of Launch squad")
+    XCTAssertEqual(AgentNetwork.pair("Launch squad", "Simeon"), "Launch squad ⇄ Simeon")
+    XCTAssertEqual(AgentNetwork.exchangeCaption(.talking).text, "Talking now")
+    XCTAssertTrue(AgentNetwork.exchangeCaption(.talking).live)
+    XCTAssertEqual(AgentNetwork.exchangeCaption(.recent).text, "Active recently")
+    XCTAssertEqual(AgentNetwork.exchangeCaption(.idle).text, "Agent-to-agent conversation")
+    XCTAssertFalse(AgentNetwork.exchangeCaption(.idle).live)
+    XCTAssertNil(AgentNetwork.moreMembers(12))
+    XCTAssertEqual(AgentNetwork.moreMembers(15), "+3")
+  }
+
   /** The force layout, point for point, within a hundredth (the maths library may differ in its last digit, 300 times over). */
   func testTheLayout() {
     let cases = Self.fixture["layout"]?.array ?? []
@@ -139,4 +152,57 @@ final class ChannelsTests: XCTestCase {
     XCTAssertFalse(ChannelsView(manifests: [ChannelsView.Manifest(platform: "slack", displayName: "Slack", blurb: "", credentialLabel: "", availability: "coming-soon")], connections: []).hasChannels)
     XCTAssertNil(ChannelsView(json: ["manifests": []]))
   }
+}
+
+/** The channel calls, as the window makes them: each answers the whole view. */
+@MainActor
+final class ChannelCallTests: XCTestCase {
+  func testTheCallsAndTheirAnswers() async throws {
+    let backend = ChannelBackend()
+    let store = AppStore()
+    await store.attach(backend)
+    let first = await store.channels("simeon")
+    let read = try XCTUnwrap(first)
+    XCTAssertTrue(read.hasChannels)
+    _ = await store.connectChannel("simeon", platform: "discord", token: "abc")
+    _ = await store.refreshChannel("simeon", platform: "discord")
+    let last = await store.disconnectChannel("simeon", platform: "discord")
+    let after = try XCTUnwrap(last)
+    XCTAssertEqual(after.manifests.count, 2)
+    let calls = backend.lock.withLock { backend.calls }.filter { $0.0.hasSuffix("Channel") || $0.0 == "getAgentChannels" }
+    XCTAssertEqual(calls.map(\.0), ["getAgentChannels", "connectChannel", "refreshChannel", "disconnectChannel"])
+    XCTAssertEqual(calls[1].1["token"]?.string, "abc")
+    XCTAssertEqual(calls[1].1["platform"]?.string, "discord")
+    XCTAssertEqual(calls[3].1["id"]?.string, "simeon")
+  }
+}
+
+final class ChannelBackend: AgentBackend, @unchecked Sendable {
+  let lock = NSLock()
+  var calls: [(String, JSON)] = []
+  static let view: JSON = [
+    "manifests": [
+      ["platform": "discord", "displayName": "Discord", "blurb": "Message in Discord servers and DMs through a bot the user owns.", "credentialLabel": "bot token", "availability": "available"],
+      ["platform": "slack", "displayName": "Slack", "blurb": "Message in Slack channels and DMs through a Socket Mode app the user owns.", "credentialLabel": "app token and bot token", "availability": "available"],
+    ],
+    "connections": [],
+  ]
+  func tail(_ agentId: String, limit: Int) async throws -> [Entry] { [] }
+  func listAgents() async throws -> [Agent] { [Agent(id: "simeon", name: "Simeon")] }
+  func transcript(_ agentId: String) async throws -> [Entry] { [] }
+  func send(_ agentId: String, text: String, attachments: [AttachmentRef], options: SendOptions, nonce: String?) async throws {}
+  func markRead(_ agentId: String) async {}
+  func createAgent(name: String, colour: String) async throws -> String { "x" }
+  func createGroup(name: String, memberIds: [String]) async throws -> String { "g" }
+  func answer(_ agentId: String, entryId: String, value: String) async throws {}
+  func updateAgent(_ agentId: String, name: String, title: String, description: String) async throws {}
+  func routines(_ agentId: String) async throws -> [JSON] { [] }
+  func events() -> AsyncStream<BackendEvent> { AsyncStream { _ in } }
+  var call: CallEngine? { nil }
+  func command(_ method: String, _ args: JSON) async throws -> JSON {
+    lock.withLock { calls.append((method, args)) }
+    return method.hasSuffix("Channel") || method == "getAgentChannels" ? Self.view : [:]
+  }
+  func server(_ path: String, method: String?, body: JSON?) async throws -> JSON { [:] }
+  func screen(_ agentId: String) async throws -> ScreenState { ScreenState(socket: nil, state: "starting") }
 }

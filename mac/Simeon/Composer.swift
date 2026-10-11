@@ -33,6 +33,7 @@ struct Composer: View {
   @Environment(ChatControl.self) private var control
   @Environment(NewChatState.self) private var newChat
   @Environment(PaneState.self) private var pane
+  @Environment(WindowState.self) private var window
   @Environment(SettingsState.self) private var settings
   @Environment(PluginsState.self) private var plugins
   @Environment(SidebarLayout.self) private var layout
@@ -319,12 +320,14 @@ struct Composer: View {
   }
 
   /**
-   * An action from "/": the themes, Chat Settings (the agent's pane on
-   * Profile), Members (on Computer) and Settings now; the views, panes and Settings the rest open come with their
-   * steps (mac/STEPS.md, 2e).
+   * An action from "/": the themes, the org chart (in the chat's place),
+   * Chat Settings (the agent's pane on Profile), Members (on Computer),
+   * Channels (its page in the pane), Settings and Plugins.
    */
   private func run(_ action: ComposerLists.Action) {
     switch action.id {
+    case "org-chart", "view:org-chart": window.orgChart = true
+    case "info:channels": pane.open(.channels, layout: layout)
     case "info:settings": pane.open(.profile, layout: layout)
     case "info:members": pane.open(.computer, layout: layout)
     case "settings:general": settings.open(.general)

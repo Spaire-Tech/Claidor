@@ -978,8 +978,10 @@ struct ChannelTagView: View {
 
   var body: some View {
     HStack(spacing: 4) {
-      Image(systemName: tag.inbound ? "arrow.down.left" : "arrow.up.right")
+      // Straight down from a platform, straight up to it, in a 10-point box, as the window's.
+      Image(systemName: tag.inbound ? "arrow.down" : "arrow.up")
         .font(.system(size: 8, weight: .semibold))
+        .frame(width: 10, height: 10)
       Text(tag.platform)
         .font(.system(size: 11, weight: .medium))
         .tracking(0.07)

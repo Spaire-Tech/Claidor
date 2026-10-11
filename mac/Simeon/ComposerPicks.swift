@@ -38,6 +38,9 @@ final class ComposerPicks {
   /** The agent's skills ("/") and routines ("@"), read once its chat opens (`getAgentWorkflows`). */
   var skills: [ComposerMenus.Skill] = []
   var routines: [ComposerMenus.Skill] = []
+  /** "/" offers Org Chart while the agent network is on, and Channels while this chat can have some (read when the chat opens, as ⌘K reads them). */
+  var orgChartOn = false
+  var channelsOn = false
   var mentionRecents: [String] = UserDefaults.standard.stringArray(forKey: "simeon.mentionRecents") ?? []
   var emojiRecents: [String] = UserDefaults.standard.stringArray(forKey: "simeon.emojiRecents") ?? []
 
@@ -75,6 +78,8 @@ final class ComposerPicks {
     let answer = await store.workflows(agentId)
     skills = ComposerMenus.skills(from: answer)
     routines = ComposerMenus.skills(from: answer, scheduled: true)
+    orgChartOn = await store.agentNetworkEnabled() && !store.agents.isEmpty
+    channelsOn = await store.channelsAvailable(agentId)
   }
 }
 
@@ -117,7 +122,8 @@ extension ComposerPicks {
 
   /** The app's actions "/" offers in this chat. */
   func actions(agentId: String, store: AppStore) -> [ComposerLists.Action] {
-    ComposerLists.appActions(isGroup: store.agent(agentId)?.showsMembers ?? false, hasHiddenAgents: store.agents.contains { $0.isHidden }, showsUsage: store.usage.showsSection)
+    ComposerLists.appActions(isGroup: store.agent(agentId)?.showsMembers ?? false, hasHiddenAgents: store.agents.contains { $0.isHidden }, hasChannels: channelsOn,
+                             showsOrgChart: orgChartOn && !store.agents.isEmpty, showsUsage: store.usage.showsSection)
   }
 
   /** What an open list with nothing to offer says: "@" and "/" say so, "#" and ":" close. */

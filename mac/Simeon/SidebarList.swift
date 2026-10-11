@@ -350,7 +350,7 @@ private struct PinTile: View {
       .padding(EdgeInsets(top: 6, leading: 4, bottom: 4, trailing: 4))
       .frame(minWidth: 80)
       .background {
-        RowGround(open: window.selected == agent.id && !newChat.hidesOpenRow(window), picked: sidebar.selection.contains(agent.id), hovering: hovering || lit, look: look)
+        RowGround(open: window.selected == agent.id && !window.orgChart && !newChat.hidesOpenRow(window), picked: sidebar.selection.contains(agent.id), hovering: hovering || lit, look: look)
       }
       .overlay { CycleRing(on: sidebar.cycle?.next == agent.id, look: look) }
       .contentShape(Rectangle())
@@ -601,7 +601,7 @@ struct AgentRow: View {
     .frame(width: rail ? 54 : nil, height: 54, alignment: .leading)
     .frame(maxWidth: rail ? nil : .infinity, alignment: .leading)
     .background {
-      RowGround(open: window.selected == agent.id && !newChat.hidesOpenRow(window), picked: sidebar.selection.contains(agent.id), hovering: hovering, look: look)
+      RowGround(open: window.selected == agent.id && !window.orgChart && !newChat.hidesOpenRow(window), picked: sidebar.selection.contains(agent.id), hovering: hovering, look: look)
     }
     .overlay { CycleRing(on: sidebar.cycle?.next == agent.id, look: look) }
     .contentShape(Rectangle())

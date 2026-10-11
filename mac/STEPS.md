@@ -563,7 +563,7 @@ from its code. Pushed so far:
 
 | Button | Its part or step |
 |---|---|
-| "/" Org Chart, Channels | 12 |
+| "/" Org Chart, Channels | 12 (done) |
 | "/" Open Hidden Agents | 3 |
 | "/" Chat Settings | 7 (done) |
 | "/" Members | 7d (done) |
@@ -852,10 +852,10 @@ tested against what the window lists for the same words. Pushed:
 
 | Action | Its step |
 |---|---|
-| Org Chart | 12 |
+| Org Chart | 12 (done) |
 | Chat Settings | 7 (done) |
 | Members | 7d (done) |
-| Channels | 12 |
+| Channels | 12 (done) |
 | Settings: General, Settings: Usage & Billing | 8 (done) |
 | Plugins | 9 (done) |
 
@@ -1851,3 +1851,100 @@ To know on a Mac: ⌘W reaches the banner only while Simeon is the app in
 front (a click on the banner does not bring Simeon forward), as with the
 Electron banner. With rows picked in the sidebar, Escape may first let
 them go, then close a call's lines, as with an exchange.
+
+## Step 12: the org chart and channels
+
+Read from the window's org chart (its own chunk, `view-D0otXpJy.js`) and
+the agent pane's Channels page, and measured in the reference window,
+light and dark, at four sizes and with the pane open, with fixtures for
+agents working, typing, waiting, unread, talking to each other, hidden;
+a slow and a failing conversation; Discord and Slack connected, failing,
+coming soon (N01–N08, O01). Pushed:
+
+- **The org chart** from ⌘K and "/" ("Org Chart", while the computer's
+  agent network is on and there is at least one agent), in the chat's
+  place, its head too; the pane stays if it is open. No sidebar row is
+  lit while it shows; any row (the open agent's too), ⌘N, a card's Open
+  chat or a page of the pane closes it, and so do × and Escape. Each
+  opening starts afresh.
+- **Its head**: "Org chart" over "5 agents · 1 group · 3 message links";
+  at its foot the sentence on solid and dashed links.
+- **The canvas**: each agent's butterfly (36; a group's butterflies) with
+  the sidebar's dot, its name, and "Working…" or "Typing…" in green,
+  "Waiting for you", or a group's "3 members" under it; a solid line
+  between agents that have messaged each other, a dashed one from a group
+  to each member; a line goes darker for two agents active in the last two
+  minutes, and green with a spark running along it while both work. The
+  places are the window's own, worked out the same way (the shared code
+  checks them against the window's numbers). Scroll to zoom (up to three
+  times, about the pointer), pinch too; drag to pan; double-click to put
+  it back.
+- **The cards** (312 wide, at the right): an agent's or a group's (its
+  butterfly at 72, its state, About, its members up to twelve and "+N",
+  its last activity and when, Open chat or Open room); a group and a
+  member ("Launch squad ⇄ Simeon", "Simeon is a member of Launch squad",
+  the members, Open room); two agents' conversation (their last 30
+  messages to each other, read from the first one's chat; "Loading
+  conversation…", "Couldn't load this conversation." with Retry, "No
+  messages between these two yet."; "Read-only — a conversation between
+  two agents"). A click on the canvas, × or Escape closes the card.
+- **Channels** from ⌘K and "/" (while the chat can have some: a platform
+  open or a connection made, groups too), its page in the agent's pane
+  under the three tabs: "Connect this agent to a messaging platform…",
+  then Discord and Slack, each with its logo, its line ("Connected as …",
+  or what went wrong), its chip (Connected, Needs attention, Connecting,
+  Soon) or Connect; Reconnect and Disconnect when it went wrong; "…" under
+  the pointer (How to connect, Refresh, Disconnect). Connect opens the
+  token's field under the row ("Paste your bot token", "Stored securely,
+  never shown to your agent.", Cancel, Store securely; Return stores). The
+  page reads the computer again every 4 seconds while the pane is open and
+  when the window comes forward, 15 seconds at most a read.
+- **A message from or to a platform** keeps its tag in the bubble, now
+  with the window's straight arrows (↓ Slack, ↑ Slack).
+
+The new words and the channel calls are SimeonMacCore's (`AgentNetwork`,
+`Channels.swift`), with tests.
+
+#### Not in step 12
+
+- The window's "How to connect" reads its own old table and always says
+  the platform is "not available yet", even though Connect works. Copied
+  as it is (decision 5).
+
+#### Decisions to confirm
+
+1. A click on a node or a line opens its card. In the Electron app it
+   cannot (the canvas takes the click for panning; the cards open only
+   from the keyboard), so this is a fix, not a copy; a double-click on a
+   node no longer resets the zoom.
+2. Escape closes the card, then the chart. The Electron app does nothing
+   on Escape there.
+3. Two fingers on the trackpad zoom, as in the Electron app (its sentence
+   says "Scroll to zoom"); pinching zooms too. Say if two fingers should
+   pan instead, as in Maps.
+4. Channels is offered for a group too, as in the Electron app.
+5. "How to connect" keeps the window's words ("not available yet").
+6. Connect puts the keys in the token's field (the Electron app leaves
+   them on Connect).
+7. The card covers the right of the canvas and can hide a node under it,
+   as in the Electron app.
+8. Hidden agents are on the chart and counted, as in the Electron app.
+
+Not copied (the window's faults): cards that cannot be opened with the
+pointer; a double-click on a node resetting the zoom.
+
+#### Where the native parts look different
+
+The lines are 1 point (the window asks for 1.5 and Chromium draws 1); the
+dashes are 3.5 on, 1.5 off, as Chromium draws them. "…" is the Mac's menu;
+the token's field is the Mac's secure field; the icons are SF Symbols
+(xmark, ellipsis, questionmark.circle, arrow.clockwise, powerplug,
+checkmark.shield, arrow.down, arrow.up).
+
+#### What to compare
+
+N01–N08 and O01, light and dark: the chart with its links, an agent's
+card, a group's, Simeon's, a membership line's, a conversation's (and an
+empty one), dark; the Channels page. On a Mac: scrolling and pinching to
+zoom, dragging, double-click, the spark while two agents work together,
+connecting Discord or Slack with a real token.

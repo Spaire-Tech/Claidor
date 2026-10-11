@@ -64,7 +64,8 @@ final class SearchState {
       if let current { channelsOn = await store.channelsAvailable(current) }
       guard isOpen else { return }
       globalSearch = searchOn
-      orgChart = networkOn
+      // The Org Chart row needs the network on and at least one agent (`GLn`).
+      orgChart = networkOn && !store.agents.isEmpty
       hasChannels = channelsOn
       if searchOn {
         ask(query, store: store)
@@ -267,18 +268,23 @@ final class SearchState {
 
   /** The agent's pane and the sidebar's layout, for Chat Settings, and Settings (set by the app). */
   @ObservationIgnored weak var pane: PaneState?
+  /** The window, for the org chart (step 12). */
+  @ObservationIgnored weak var window: WindowState?
   @ObservationIgnored weak var layout: SidebarLayout?
   @ObservationIgnored weak var settings: SettingsState?
   @ObservationIgnored weak var plugins: PluginsState?
 
   /**
-   * An action. The themes, Open Hidden Agents, Chat Settings (the pane on
-   * Profile), Members (on Computer), Settings and Plugins work now; the rest
-   * open screens copied in later steps (mac/STEPS.md): Org Chart (12),
-   * Channels (12).
+   * An action: the themes, Open Hidden Agents, the org chart (in the chat's
+   * place), Chat Settings (the pane on Profile), Members (on Computer),
+   * Channels (its page in the pane), Settings and Plugins.
    */
   private func run(_ id: String, sidebar: SidebarState) {
     switch id {
+    case "view:org-chart", "org-chart":
+      window?.orgChart = true
+    case "info:channels":
+      if let pane, let layout { pane.open(.channels, layout: layout) }
     case "info:settings":
       if let pane, let layout { pane.open(.profile, layout: layout) }
     case "info:members":

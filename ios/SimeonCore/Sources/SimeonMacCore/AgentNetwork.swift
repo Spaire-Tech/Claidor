@@ -224,6 +224,40 @@ public enum AgentNetwork {
     return out
   }
 
+  // MARK: Words (step 12's spec, §§2–3)
+
+  public static let title = "Org chart"
+  public static let footer = "Solid links are real agent-to-agent message history; dashed links are group membership. A link lights up while both agents are mid-turn. Scroll to zoom, drag to pan, double-click to reset."
+  public static let noAgents = "No agents yet. Create a few teammates and the network draws itself."
+  public static let readOnly = "Read-only — a conversation between two agents"
+  public static let noMessages = "No messages between these two yet."
+  public static let loading = "Loading conversation…"
+  public static let couldNotLoad = "Couldn't load this conversation."
+  /** A talking link's description for VoiceOver. */
+  public static let talkingNow = "Agents are talking now"
+  /** A group's card shows this many members, then "+N". */
+  public static let memberCap = 12
+
+  /** A link's tooltip and label: "Conversation between Scout and Simeon", "Simeon is a member of Launch squad". */
+  public static func edgeLabel(_ kind: EdgeKind, source: String, target: String) -> String {
+    kind == .message ? "Conversation between \(source) and \(target)" : "\(target) is a member of \(source)"
+  }
+
+  /** "Scout ⇄ Simeon" (`Rs`). */
+  public static func pair(_ first: String, _ second: String) -> String { "\(first) ⇄ \(second)" }
+
+  /** The line under a message link's pair: green while they talk. */
+  public static func exchangeCaption(_ activity: Activity) -> (text: String, live: Bool) {
+    switch activity {
+    case .talking: ("Talking now", true)
+    case .recent: ("Active recently", false)
+    case .idle: ("Agent-to-agent conversation", false)
+    }
+  }
+
+  /** "+3" past the twelve members a card shows; nil up to twelve. */
+  public static func moreMembers(_ count: Int) -> String? { count > memberCap ? "+\(count - memberCap)" : nil }
+
   // MARK: Zoom and pan
 
   public struct View: Equatable, Sendable {

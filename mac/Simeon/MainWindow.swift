@@ -38,6 +38,14 @@ final class WindowState {
   /** Bumped each time the person opens an agent themselves (a row, search, Control-Tab, a hit): it closes the new chat even onto the agent already open. */
   var opened = 0
 
+  /**
+   * The org chart in the chat's place (step 12, `view:org-chart`), from ⌘K
+   * and "/": no sidebar row lit while it shows; any agent opened (a row,
+   * the current one too, a card's Open chat), ⌘N or a page of the pane
+   * closes it. Each opening starts afresh.
+   */
+  var orgChart = false
+
   /** The person opens an agent: as `open`, and the new chat makes way. */
   func choose(_ agentId: String, store: AppStore) {
     open(agentId, store: store)
@@ -46,6 +54,7 @@ final class WindowState {
 
   /** A row clicked: its agent opens (its chat read, its unread cleared). */
   func open(_ agentId: String, store: AppStore) {
+    orgChart = false
     selected = agentId
     store.windowSelection = agentId
     Task { await store.open(agentId) }
@@ -124,6 +133,9 @@ struct MainWindow: View {
           if newChat.isOpen {
             // New chat (⌘N, step 5) in the chat's place.
             NewChatPane()
+          } else if window.orgChart {
+            // The org chart (step 12), the chat and its head under it; the pane stays beside it.
+            OrgChartView()
           } else if newChat.creating != nil {
             CreatingScreen()
           } else if let agentId = window.selected {
@@ -187,6 +199,16 @@ struct MainWindow: View {
       pane.agentChanged(to: selected)
       guard newChat.isOpen, newChat.previewId(window) == nil else { return }
       newChat.close()
+    }
+    // The new chat (⌘N) and a page of the pane (Channels, Chat Settings, `openSection`) close the org chart.
+    .onChange(of: newChat.isOpen) { _, open in
+      if open { window.orgChart = false }
+    }
+    .onChange(of: pane.isOpen) { _, open in
+      if open { window.orgChart = false }
+    }
+    .onChange(of: pane.section) { _, _ in
+      if pane.isOpen { window.orgChart = false }
     }
     // Making an agent from the new chat closes the pane (`HDn`).
     .onChange(of: newChat.creating != nil) { _, making in
@@ -409,8 +431,9 @@ private struct KeyWatcher: NSViewRepresentable {
           newChat.close()
           return true
         }
-        // The pane shown, nothing over it (a viewer, an exchange) and no field holding the keys: Escape closes it (`CDn`). A field's own Escape comes first.
-        if let pane, let layout, pane.isVisible, viewers?.shown == nil, !ChatControl.exchangeShowing, !(window?.firstResponder is NSText) {
+        // The pane shown, nothing over it (a viewer, an exchange, the org chart, whose Escape is its own) and no field holding the keys:
+        // Escape closes it (`CDn`). A field's own Escape comes first.
+        if let pane, let layout, pane.isVisible, viewers?.shown == nil, !ChatControl.exchangeShowing, !windowState.orgChart, !(window?.firstResponder is NSText) {
           pane.close(layout: layout)
           return true
         }

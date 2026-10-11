@@ -48,6 +48,7 @@ struct SimeonMacApp: App {
         // Search's Chat Settings opens the agent's pane.
         .onAppear {
           search.pane = pane
+          search.window = window
           search.layout = layout
           search.settings = settings
           search.plugins = plugins
