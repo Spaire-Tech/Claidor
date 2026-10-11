@@ -346,15 +346,24 @@ so a renamed product is a setting, not an app release.
 | Product id | Price (US) | Level in the group |
 |---|---|---|
 | `com.simeonlabs.simeon.max.monthly` | $200.00 a month | 1 |
-| `com.simeonlabs.simeon.max.yearly` | $1,920.00 a year | 1 |
+| `com.simeonlabs.simeon.max.yearly` | not sold through Apple yet (below) | 1 |
 | `com.simeonlabs.simeon.pro.monthly` | $60.00 a month | 2 |
-| `com.simeonlabs.simeon.pro.yearly` | $576.00 a year (or the nearest price point App Store Connect offers) | 2 |
+| `com.simeonlabs.simeon.pro.yearly` | $579.00 a year (Apple has no $576) | 2 |
 | `com.simeonlabs.simeon.standard.monthly` | $20.00 a month | 3 |
-| `com.simeonlabs.simeon.standard.yearly` | $192.00 a year | 3 |
+| `com.simeonlabs.simeon.standard.yearly` | $191.99 a year (Apple has no $192) | 3 |
 
 Each has an introductory offer: free, one week, for new subscribers. The
 levels make a move between plans an upgrade (at once, prorated by Apple)
 or a downgrade (at the next renewal), as Apple's own sheet does them.
+
+Apple sets the price points, so two yearly prices differ from the web's
+by a few dollars (12 October 2026). Max yearly ($1,920) is above Apple's
+standard price points, which stop at $1,000; prices above it need the
+Account Holder to request Apple's higher price points. Until that is
+granted the product is not created, and the plans sheet shows only what
+the App Store returns (`Purchases.sold`), so Max is monthly on the iPhone.
+The server never reads a price: the tier comes from the product id, so a
+changed price needs no server change.
 
 ### How a purchase reaches the server
 
