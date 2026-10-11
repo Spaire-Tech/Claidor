@@ -63,11 +63,28 @@ def page(slug: str, template: str) -> str:
     return html
 
 
+# Where the apps already point (ios/Simeon/Settings.swift, the sign-in page, the Mac's window):
+# a page that sends the reader on, so those links work without a new app.
+FORWARDS = {"legal/privacy-policy": "/privacy", "legal/terms-of-service": "/terms"}
+
+
+def forward(target: str) -> str:
+    return (
+        '<!doctype html>\n<html lang="en"><head><meta charset="utf-8">'
+        f'<meta http-equiv="refresh" content="0; url={target}"><link rel="canonical" href="https://simeonlabs.com{target}">'
+        f'<meta name="robots" content="noindex"><title>Moved</title></head>'
+        f'<body><p>This page is now at <a href="{target}">simeonlabs.com{target}</a>.</p></body></html>\n'
+    )
+
+
 def build(out: str = OUT) -> None:
     template = open(f"{HERE}/legal/template.html", encoding="utf-8").read()
     for slug in PAGES:
         os.makedirs(f"{out}/{slug}", exist_ok=True)
         open(f"{out}/{slug}/index.html", "w", encoding="utf-8").write(page(slug, template))
+    for path, target in FORWARDS.items():
+        os.makedirs(f"{out}/{path}", exist_ok=True)
+        open(f"{out}/{path}/index.html", "w", encoding="utf-8").write(forward(target))
     print("legal pages written to", os.path.abspath(out))
 
 
