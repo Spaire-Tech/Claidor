@@ -42,6 +42,8 @@ final class MacServices {
   @ObservationIgnored private var appWatch: [NSObjectProtocol] = []
   /** A plugin's link that came before the sign-in finished: opened once it has (decision 10; Electron queues it for the page). */
   @ObservationIgnored private var pendingPlugin: String?
+  /** A notification's agent clicked before the agents were read (one that launched Simeon): opened with the first list. */
+  @ObservationIgnored private var pendingAgent: String?
   /** The last link taken, and when: the same one again within 2 s is dropped (`deep-link-controller.ts`). */
   @ObservationIgnored private var lastLink: (link: String, at: Date)?
   /** Set when the app starts (`SimeonMacApp.init`), before launch ends, so a click that launched Simeon is heard. */
@@ -110,11 +112,12 @@ final class MacServices {
         UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: posted)
         posted = []
       }
-      if let next, let backend = store.backend {
-        // This account's "Execution on Local Computer" and its team's ceiling; the hands for its computer (not the demo's).
+      if let backend = store.backend {
+        // "Execution on Local Computer" (kept for this account once its profile names it) and the team's ceiling; the hands
+        // for this computer (not the demo's). Neither waits on the profile, which is read once: the computer is this account's.
         Task { await MacLocalPermission.shared.signedIn(next, store: store) }
         if let live = backend as? LiveBackend { Task { await MacLocalHands.shared.start(live.gateway) } }
-      } else if next == nil && state.backend == nil {
+      } else if next == nil {
         MacLocalPermission.shared.signedOut()
         Task { await MacLocalHands.shared.stop() }
       }
@@ -160,9 +163,11 @@ final class MacServices {
     case .seed(let list):
       post(feed.seed(list, isWindowFocused: focused, nowMs: now))
       setBadge(badge.roster(list))
+      openPendingAgent()
     case .roster(let list):
       post(feed.roster(list, isWindowFocused: focused, nowMs: now))
       setBadge(badge.roster(list))
+      openPendingAgent()
     case .update(let agent):
       post(feed.update(agent, isWindowFocused: focused, nowMs: now))
       setBadge(badge.update(agent))
@@ -204,7 +209,21 @@ final class MacServices {
     } else if let url = URL(string: "\(SimeonConfig.macURLScheme)://app/v1/open") {
       NSWorkspace.shared.open(url)
     }
-    guard let agentId, let session, let window, session.store.agents.contains(where: { $0.id == agentId }) else { return }
+    guard let agentId else { return }
+    // Before the agents are read (a click that launched Simeon), it waits for them.
+    guard let session, let window, !session.store.agents.isEmpty else {
+      pendingAgent = agentId
+      return
+    }
+    guard session.store.agents.contains(where: { $0.id == agentId }) else { return }
+    window.choose(agentId, store: session.store)
+  }
+
+  /** The agents are read: a notification's agent clicked before then is opened, if it is there (decision 2: else nothing). */
+  private func openPendingAgent() {
+    guard let agentId = pendingAgent, let session, let window else { return }
+    pendingAgent = nil
+    guard session.store.agents.contains(where: { $0.id == agentId }) else { return }
     window.choose(agentId, store: session.store)
   }
 

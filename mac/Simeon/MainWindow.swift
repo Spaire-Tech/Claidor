@@ -554,11 +554,14 @@ private struct KeyWatcher: NSViewRepresentable {
         }
         // The pane shown, nothing over it (a viewer, an exchange, the org chart, whose Escape is its own) and no field holding the keys:
         // Escape closes it (`CDn`). A field's own Escape comes first.
-        if let pane, let layout, pane.isVisible, viewers?.shown == nil, !ChatControl.exchangeShowing, !windowState.orgChart, !(window?.firstResponder is NSText) {
+        // The agent's Allow card over the message field takes this Escape first, as the window's does (step 14).
+        let askShown = LocalAskDock.shown > 0 && viewers?.shown == nil && !ChatControl.exchangeShowing
+        if let pane, let layout, pane.isVisible, viewers?.shown == nil, !ChatControl.exchangeShowing, !windowState.orgChart, !askShown,
+           !(window?.firstResponder is NSText) {
           pane.close(layout: layout)
           return true
         }
-        guard !sidebar.selection.isEmpty, sidebar.renamingAgent == nil, sidebar.renamingSection == nil,
+        guard !sidebar.selection.isEmpty, sidebar.renamingAgent == nil, sidebar.renamingSection == nil, !askShown,
               !(window?.firstResponder is NSText) else { return false }
         sidebar.selection.clear()
         return true

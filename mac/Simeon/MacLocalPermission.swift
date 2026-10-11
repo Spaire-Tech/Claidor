@@ -48,8 +48,9 @@ final class MacLocalPermission {
    * none when it does not answer). The computer is told when that changes
    * what it should do.
    */
-  func signedIn(_ account: String, store: AppStore) async {
-    settings.scope(to: account)
+  func signedIn(_ account: String?, store: AppStore) async {
+    // Kept for this account once it is known (before, the choice kept from the last launch stands).
+    if let account { settings.scope(to: account) }
     let previous = settings.effective
     ceilingReads += 1
     let read = ceilingReads
@@ -106,10 +107,16 @@ struct LocalAskDock: View {
   let agentId: String
   let look: Look
   @Environment(AppStore.self) private var store
+  @Environment(Viewers.self) private var viewers
+  @Environment(PaneState.self) private var pane
+  @Environment(WindowState.self) private var window
   @State private var submitting = false
   @State private var failed = false
   @State private var closeHover = false
   @FocusState private var closeFocused: Bool
+
+  /** Cards on screen (one chat at a time; counted so a card leaving as the next comes does not clear it). The window's own Escape waits while one shows (MainWindow). */
+  static var shown = 0
 
   private var alwaysBlocked: String? {
     let permission = MacLocalPermission.shared
@@ -189,14 +196,19 @@ struct LocalAskDock: View {
     .accessibilityElement(children: .contain)
     .accessibilityLabel("Local tool permission")
     .background(ViewerKeys { event in
-      // Esc denies once: not repeated, no modifier, and not while a field has the keys (decision 2: the window denies even
-      // from the message field); the window's keys under search, Settings or the computer are theirs already.
+      // Esc denies once: not repeated, no modifier, and not while a field has the keys (decision 14: the window denies even
+      // from the message field). Not while anything stands over the chat (the window's overlays: a picture or file, an
+      // exchange, the org chart, Deep Links, the pane's popovers); search, Settings and the computer hold the keys already.
       let mods = event.modifierFlags.intersection([.command, .control, .option, .shift])
       guard event.keyCode == 53, !event.isARepeat, mods.isEmpty, enabled,
-            event.window?.attachedSheet == nil, !(event.window?.firstResponder is NSText) else { return false }
+            event.window?.attachedSheet == nil, !(event.window?.firstResponder is NSText),
+            viewers.shown == nil, !ChatControl.exchangeShowing, !window.orgChart, MacServices.shared.deepLinkInfo == nil,
+            pane.avatarEditor == nil, pane.routineEditor?.popover == nil else { return false }
       answer(.deny)
       return true
     })
+    .onAppear { LocalAskDock.shown += 1 }
+    .onDisappear { LocalAskDock.shown -= 1 }
   }
 
   /**

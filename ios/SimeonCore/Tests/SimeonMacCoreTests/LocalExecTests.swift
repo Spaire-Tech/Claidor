@@ -39,6 +39,12 @@ final class LocalExecTests: XCTestCase {
     for (action, target, entry) in paths {
       XCTAssertEqual(SensitivePaths.entry(forPath: target, home: home), entry, "\(action) \(target)")
     }
+    // The Mac's read checks the path it will read (step 14's review): `file://` and `~` worked out, the hole above is shut.
+    for written in ["file:///Users/bass/.ssh/id_rsa", "~/.ssh/id_rsa", ".ssh/id_rsa"] {
+      let read = LocalRead.resolve(written, root: home, home: home)
+      XCTAssertEqual(read, "/Users/bass/.ssh/id_rsa", written)
+      XCTAssertNotNil(SensitivePaths.refusal(action: "read-file", target: read, home: home), written)
+    }
     let commands: [(String, String?)] = [
       ("cat ~/.ssh/id_rsa", ".ssh"),
       ("cat /Users/bass/.ssh/id_rsa", ".ssh"),

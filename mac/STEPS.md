@@ -2341,3 +2341,32 @@ this Mac: the card, each answer, the command's result, and
 `~/.simeon/local-exec-daemon.log`; quitting while a long command runs;
 an agent and a group given a picture in the pane: every place above, at
 work and idle, light and dark.
+
+#### After the compile review
+
+A second reader with the compiler's rules found nothing in parts one and
+two that would not build, and these faults, fixed:
+
+- The Allow card's Escape could deny an ask the person could not see:
+  with a picture or file open over the chat, an exchange or call open, or
+  the Deep Links dialog showing. It gives way to all of those now, and to
+  the org chart and the pane's own popovers; when it does take Escape, the
+  window's own (closing the pane, letting go of picked rows) waits, as in
+  the Electron app.
+- Settings › General kept the setting under the e-mail as written, the
+  sign-in under it in lower case: for an address with capitals, opening
+  Settings set the choice back to "Ask every time", and the hands then
+  refused what the computer, still at "Always allow", never asked about.
+  Both use lower case now.
+- Quitting left a command that was running in the foreground alive (it
+  runs in a session of its own). Quitting now waits, a second at most, for
+  running commands to be stopped.
+- The hands and the team's policy waited for the account's profile, which
+  is read once: if that read failed at launch, the hands never started and
+  Always allow stayed greyed. Both start with the computer now.
+- A notification that launched Simeon only brought the window forward. Its
+  agent is opened once the agents are read.
+- A read of `file:///Users/…/.ssh/…` passed the check for places that hold
+  keys and was read (the check looked at the path as written, the read at
+  the path worked out; the Electron daemon has the same hole). The read now
+  checks the path it reads, with a test.

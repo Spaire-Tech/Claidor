@@ -123,9 +123,11 @@ actor LocalHandsProvider {
       try? await Task.sleep(nanoseconds: UInt64(LocalExec.backoffSeconds(attempt: attempt) * 1_000_000_000))
       attempt += 1
     }
-    // Stopped: the commands still holding a stream are stopped as a cancel stops them.
+    // Stopped: the commands still holding a stream are stopped as a cancel stops them, and waited for (they run in a
+    // session of their own, so a quit that does not wait leaves them running; the app waits a second at most).
     cancelled.formUnion(inFlight.keys)
     background.stopAll()
+    for task in Array(inFlight.values) { await task.value }
   }
 
   struct Stalled: Error {}
@@ -324,11 +326,15 @@ actor LocalHandsProvider {
 
   /** A read (`readArgs`): too large, then the read executor's answers. */
   private func read(_ args: JSON) async throws -> JSON {
-    let contained = try contain(args["path"]?.string ?? "")
+    // One path for the checks and the read: `file://` and `~` worked out first, so the places that hold keys and the root
+    // are checked on what is read. (The Electron daemon checks the path as written, so `file:///Users/…/.ssh/…` got through.)
+    let target = LocalRead.resolve(args["path"]?.string ?? "", root: root, home: home)
+    if let sensitive = SensitivePaths.refusal(action: "read-file", target: target, home: home) { throw LocalHandsError(sensitive) }
+    let contained = try contain(target)
     if let size = Self.regularFileSize(contained), size > LocalExec.maxFileBytes {
       return LocalExecWire.readFailure("error", path: contained, detail: ("error", LocalExec.fileTooLarge(size)))
     }
-    return LocalReader.read(path: LocalRead.resolve(args["path"]?.string ?? "", root: root, home: home), offset: args["offset"]?.int, limit: args["limit"]?.int)
+    return LocalReader.read(path: contained, offset: args["offset"]?.int, limit: args["limit"]?.int)
   }
 
   /** A folder's listing (`lsArgs`): the shipped one answers for a missing path or a file, and fails on a real folder. */

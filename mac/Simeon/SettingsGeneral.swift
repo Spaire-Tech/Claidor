@@ -74,7 +74,8 @@ final class GeneralSettingsModel {
 
   /** General shown (`getTimeZone`, `getLocalToolPermission`, its ceiling, `getAutoReviewInstructions`). */
   func load(store: AppStore) async {
-    if let email = store.account?.email, !email.isEmpty { localTools.scope(to: email) }
+    // The same key as at sign-in (MacServices: lower case), or another account's would be taken and the choice wiped.
+    if let email = store.account?.email, !email.isEmpty { localTools.scope(to: email.lowercased()) }
     permission = localTools.effective
     if let settings = await store.readHostSettings() {
       zoneOverride = TimeZoneChoices.override(hostSettings: settings)
