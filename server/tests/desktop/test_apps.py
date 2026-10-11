@@ -405,6 +405,45 @@ class TestSigningIn:
         assert sent["toolkit"] == "gmail"
         assert sent["callback_url"].endswith("/desktop/apps/connected")
 
+    async def test_an_app_that_needs_our_own_oauth_app_is_coming_soon(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        """11 October 2026: Xero, Shopify, Gusto and five more lend no
+        sign-in of their own. A refused link reads "coming soon" (503, which
+        the box shows as such), never the provider's error; another app's
+        refusal is still its error (502)."""
+        headers = await _signed_in(client, session, user)
+        refusal = httpx.Response(
+            400,
+            json={"error": {"message": "No Composio managed auth for this toolkit."}},
+        )
+        with respx.mock(assert_all_called=True) as mock:
+            mock.get(f"{API}/api/v3.1/connected_accounts").mock(
+                return_value=_accounts()
+            )
+            mock.post(f"{API}/api/v3.1/tool_router/session").mock(
+                return_value=httpx.Response(201, json={"session_id": "trs_1"})
+            )
+            mock.post(f"{API}/api/v3.1/tool_router/session/trs_1/link").mock(
+                return_value=refusal
+            )
+            with capture_logs() as logs:
+                xero = await client.post(
+                    "/desktop/api/apps/xero/connect", headers=headers
+                )
+                gmail = await client.post(
+                    "/desktop/api/apps/gmail/connect", headers=headers
+                )
+        assert xero.status_code == 503, xero.text
+        assert xero.json()["error"]["message"] == "This app is coming soon in Simeon."
+        assert any(
+            line["event"] == "desktop.apps.sign_in_needs_own_app"
+            and line["toolkit"] == "xero"
+            for line in logs
+        )
+        assert gmail.status_code == 502, gmail.text
+        assert "composio" not in gmail.text.lower()
+
     async def test_the_box_may_start_and_end_a_sign_in_for_the_web(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User
     ) -> None:

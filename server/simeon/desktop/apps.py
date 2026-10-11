@@ -79,6 +79,15 @@ _MAX_PAGES = 5
 COMPOSIO_CALLBACK = "https://backend.composio.dev/api/v3/toolkits/auth/callback"
 NOT_CONFIGURED = "Apps are not switched on for this server yet."
 
+#: Apps whose provider lends no sign-in of its own (measured 11 October
+#: 2026: no managed OAuth for these, and Ashby takes only an API key). Their
+#: link works once Simeon Labs registers its own app with the provider and
+#: the provider's auth config is set up (docs/services-agents.md, 7c); until
+#: then a refused link is "coming soon" on the card, not the provider's error.
+OWN_APP_NEEDED = frozenset(
+    {"gusto", "xero", "shopify", "brex", "pipedrive", "docusign", "klaviyo", "ashby"}
+)
+
 _tools_cache: dict[str, tuple[float, list[dict[str, Any]]]] = {}
 _sessions: dict[str, str] = {}
 # Which accounts a person has connected, per app, for the agent's tool calls.
@@ -511,7 +520,18 @@ async def apps_connect(
         if await active_account_ids(desktop_session.user, toolkit):
             return JSONResponse({"toolkit": toolkit, "connected": True})
         url = await sign_in_link(desktop_session.user, toolkit)
-    except (AppsUpstreamError, httpx.HTTPError) as error:
+    except AppsUpstreamError as error:
+        if toolkit in OWN_APP_NEEDED and 400 <= error.status < 500:
+            # 503 reads as "coming soon" in the box (`vendor-mcp/backend-exec.ts`).
+            log.warning(
+                "desktop.apps.sign_in_needs_own_app",
+                toolkit=toolkit,
+                status=error.status,
+                upstream=str(error),
+            )
+            return _error("This app is coming soon in Simeon.", 503)
+        return _error(str(error) or "The app could not be reached.", 502)
+    except httpx.HTTPError as error:
         return _error(str(error) or "The app could not be reached.", 502)
     log.info(
         "desktop.apps.sign_in_started",

@@ -25,6 +25,7 @@ import {
   McpTextContent,
   McpToolResultContentItem,
 } from "../../../packages/proto/generated/agent/v1/mcp_exec_pb.js";
+import { MCP_OAUTH_LOOPBACK_CALLBACK_URL } from "../mcp/mcp-oauth-loopback.js";
 import { vendorMcpConnectorById, vendorMcpPluginIdForServerId, vendorMcpServerId } from "./catalog.js";
 import {
   appendVendorMcpSigninLog,
@@ -345,8 +346,10 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
         return { id, isAvailable: true, requiresAuth: true, hasValidToken: false, authUrl: install.url, error: "" };
       }
       try {
-        const started = await startVendorMcpOAuth({ pluginId: install.id, mcpUrl: install.url, redirectUri: args.oauthRedirectUri, fetch: fetchImpl, ...(connector?.clientId == null ? {} : { clientId: connector.clientId }) });
-        appendVendorMcpSigninLog(options.rootDir(), `${install.id} sign-in started: client=${started.pending.clientId} registered=${connector?.clientId == null ? "dynamically" : "by us"} secret=${started.pending.clientSecret == null ? "no" : "yes"} authorize=${started.authorizationUrl.split("?")[0]}`, now);
+        // A vendor that sends sign-ins back only to the loopback gets it even from the box: the app that opened the sheet listens there (`loopbackOnly`).
+        const redirectUri = connector?.loopbackOnly === true ? MCP_OAUTH_LOOPBACK_CALLBACK_URL : args.oauthRedirectUri;
+        const started = await startVendorMcpOAuth({ pluginId: install.id, mcpUrl: install.url, redirectUri, fetch: fetchImpl, ...(connector?.clientId == null ? {} : { clientId: connector.clientId }) });
+        appendVendorMcpSigninLog(options.rootDir(), `${install.id} sign-in started: client=${started.pending.clientId} registered=${connector?.clientId == null ? "dynamically" : "by us"} secret=${started.pending.clientSecret == null ? "no" : "yes"} return=${redirectUri} authorize=${started.authorizationUrl.split("?")[0]}`, now);
         return { id, isAvailable: true, requiresAuth: true, hasValidToken: false, authUrl: started.authorizationUrl, error: "" };
       } catch (error) {
         appendVendorMcpSigninLog(options.rootDir(), `${install.id} sign-in failed to start: ${errorLabel(error)}`, now);

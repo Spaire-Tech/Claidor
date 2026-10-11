@@ -16,6 +16,8 @@ export interface VendorMcpOAuthPending {
   readonly redirectUri: string;
   /** The `state` in the authorization URL; the loopback callback carries it back. */
   readonly state: string;
+  /** RFC 8707 resource asked for at authorization, sent again at the token exchange (`vendorMcpResourceFor`). */
+  readonly resource?: string;
 }
 
 // Pending sign-ins by state, for this process. The manager that starts a
@@ -101,6 +103,26 @@ export interface VendorMcpProtectedResource {
   readonly issuer: string;
   /** The scopes the resource says it needs (RFC 9728 `scopes_supported`); asked for at authorization. */
   readonly scopes: readonly string[];
+  /** The resource's own name for itself (RFC 9728 `resource`), when it gives one on our server's origin. */
+  readonly resource?: string;
+}
+
+/**
+ * The RFC 8707 resource to ask a token for: the name the server publishes
+ * for itself when it is on the server's own origin, else the server's
+ * address. Until 11 October 2026 it was always the address, and Miro,
+ * which names itself `https://mcp.miro.com/` while serving at `/mcp`,
+ * answered every authorization with `server_error`; Airtable, Vercel and
+ * Stripe publish a different spelling too and took either.
+ */
+export function vendorMcpResourceFor(mcpUrl: string, published: string | undefined): string {
+  if (published != null && published.length > 0) {
+    try {
+      const url = new URL(published);
+      if (url.origin === new URL(mcpUrl).origin && url.hash === "" && url.search === "") return published;
+    } catch { /* not an address: ours instead */ }
+  }
+  return vendorMcpResource(mcpUrl);
 }
 
 export async function discoverProtectedResource(mcpUrl: string, fetchImpl: typeof fetch = fetch): Promise<VendorMcpProtectedResource> {
@@ -109,10 +131,17 @@ export async function discoverProtectedResource(mcpUrl: string, fetchImpl: typeo
     const servers = payload?.authorization_servers;
     if (Array.isArray(servers) && typeof servers[0] === "string" && servers[0].length > 0) {
       const scopes = Array.isArray(payload?.scopes_supported) ? payload.scopes_supported.filter((scope): scope is string => typeof scope === "string" && scope.length > 0) : [];
-      return { issuer: servers[0], scopes };
+      const resource = typeof payload?.resource === "string" ? payload.resource : undefined;
+      return { issuer: servers[0], scopes, ...(resource == null ? {} : { resource }) };
     }
   }
-  throw new Error(`Could not discover sign-in for ${mcpUrl}.`);
+  // No resource document: the server's own origin is its authorization
+  // server, as the MCP specification had it before RFC 9728 (2025-03-26).
+  // Atlassian answers 404 to its resource document from some networks and
+  // serves the authorization server's metadata at its origin on all of
+  // them (measured 11 October 2026); a vendor without either still fails,
+  // at the metadata, with "did not advertise OAuth".
+  return { issuer: new URL(mcpUrl).origin, scopes: [] };
 }
 
 export async function discoverAuthorizationServer(mcpUrl: string, fetchImpl: typeof fetch = fetch): Promise<string> {
@@ -184,7 +213,7 @@ export async function startVendorMcpOAuth(args: {
     throw new Error(`The vendor did not advertise OAuth for ${args.mcpUrl}.`);
   }
   if (args.clientId != null && args.clientId.length > 0) {
-    return finishStart({ ...args, redirectUri, authorizationEndpoint, tokenEndpoint, clientId: args.clientId, scopes: resource.scopes });
+    return finishStart({ ...args, redirectUri, authorizationEndpoint, tokenEndpoint, clientId: args.clientId, scopes: resource.scopes, resource: vendorMcpResourceFor(args.mcpUrl, resource.resource) });
   }
   if (typeof registrationEndpoint !== "string") {
     throw new Error(`${args.pluginId} needs an app we register first. It is coming soon.`);
@@ -214,10 +243,14 @@ export async function startVendorMcpOAuth(args: {
     const detail = isRecord(client) ? String(client.error_description ?? client.error ?? registered.status) : `${registered.status}${typeof client === "string" && client.trim().length > 0 ? ` ${client.trim().slice(0, 120)}` : ""}`;
     throw new Error(`Could not register Simeon with the vendor for ${args.pluginId} (${detail}).`);
   }
-  if (authMethod === "client_secret_post" && clientSecret == null) {
+  // The vendor may register a different shape than asked: Vercel makes a
+  // loopback client public (`none`, PKCE only) whatever its metadata says
+  // (measured 11 October 2026); only a confidential one needs the secret.
+  const registeredMethod = isRecord(client) && typeof client.token_endpoint_auth_method === "string" ? client.token_endpoint_auth_method : authMethod;
+  if (registeredMethod !== "none" && authMethod === "client_secret_post" && clientSecret == null) {
     throw new Error(`${args.pluginId} registered Simeon without the client secret its token endpoint requires.`);
   }
-  return finishStart({ ...args, redirectUri, authorizationEndpoint, tokenEndpoint, clientId, ...(clientSecret == null ? {} : { clientSecret }), scopes: resource.scopes });
+  return finishStart({ ...args, redirectUri, authorizationEndpoint, tokenEndpoint, clientId, ...(clientSecret == null ? {} : { clientSecret }), scopes: resource.scopes, resource: vendorMcpResourceFor(args.mcpUrl, resource.resource) });
 }
 
 function finishStart(args: {
@@ -229,6 +262,7 @@ function finishStart(args: {
   readonly clientId: string;
   readonly clientSecret?: string;
   readonly scopes: readonly string[];
+  readonly resource: string;
   readonly remember?: boolean;
 }): VendorMcpOAuthStart {
   const { verifier, challenge } = pkce();
@@ -240,7 +274,7 @@ function finishStart(args: {
   authorize.searchParams.set("code_challenge", challenge);
   authorize.searchParams.set("code_challenge_method", "S256");
   authorize.searchParams.set("state", state);
-  authorize.searchParams.set("resource", vendorMcpResource(args.mcpUrl));
+  authorize.searchParams.set("resource", args.resource);
   if (args.scopes.length > 0) authorize.searchParams.set("scope", args.scopes.join(" "));
   const pending: VendorMcpOAuthPending = {
     pluginId: args.pluginId,
@@ -251,6 +285,7 @@ function finishStart(args: {
     verifier,
     redirectUri: args.redirectUri,
     state,
+    resource: args.resource,
   };
   if (args.remember !== false) rememberVendorMcpPendingAuth(pending);
   return { authorizationUrl: authorize.toString(), pending };
@@ -303,6 +338,8 @@ export async function exchangeVendorMcpCode(args: {
   readonly fetch?: typeof fetch;
   readonly now?: number;
 }): Promise<VendorMcpTokenGrant> {
+  // A sign-in started before 11 October 2026 carries no resource: the address, as it was asked for then.
+  const resource = args.pending.resource ?? vendorMcpResource(args.pending.mcpUrl);
   const payload = await postTokenForm(args.pending.tokenEndpoint, {
     grant_type: "authorization_code",
     code: args.code,
@@ -310,9 +347,9 @@ export async function exchangeVendorMcpCode(args: {
     client_id: args.pending.clientId,
     ...(args.pending.clientSecret == null ? {} : { client_secret: args.pending.clientSecret }),
     code_verifier: args.pending.verifier,
-    resource: vendorMcpResource(args.pending.mcpUrl),
+    resource,
   }, args.fetch ?? fetch);
-  return grantFromPayload(payload, args.pending.tokenEndpoint, args.pending.clientId, args.pending.clientSecret, undefined, args.now ?? Date.now(), vendorMcpResource(args.pending.mcpUrl));
+  return grantFromPayload(payload, args.pending.tokenEndpoint, args.pending.clientId, args.pending.clientSecret, undefined, args.now ?? Date.now(), resource);
 }
 
 export async function refreshVendorMcpGrant(args: {

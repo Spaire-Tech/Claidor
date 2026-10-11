@@ -281,9 +281,24 @@ the vendor's own sign-in, and the agent can then use their tools.
   `client_secret_post` when a vendor offers no public client, and keeps a pending sign-in for
   15 minutes); `installs.ts` is the store; `display.ts` turns an install into a server row
   (ids are decimals from 900,000 up).
-- The browser sign-in runs only on the Mac, through the loopback
-  (`http://localhost:8787/callback`). The computer never opens a sign-in and never spends a
-  refresh token.
+- Since 11 October 2026 `oauth.ts` also asks the token for the resource the server names
+  itself (RFC 9728 `resource`, when it is on the server's own origin; Miro names itself
+  `https://mcp.miro.com/` and refused the `/mcp` address with `server_error`), takes a public
+  client when the vendor registers one whatever its metadata said (Vercel, for the loopback),
+  and falls back to the server's own origin as its authorization server when the resource
+  document is missing (Atlassian answers 404 to it from some networks).
+- Where the vendor sends the person back. The Electron Mac signs in on the Mac, through its
+  loopback (`http://localhost:8787/callback`). The iPhone, the Mac app in Swift and the web
+  start the sign-in in the computer, which asks for Simeon Labs' hosted page
+  (`https://api.simeonlabs.com/desktop/mcp-oauth/callback`, then `/app/connected.html`, which
+  hands the code to the computer). Canva, Square, Vercel and Dropbox refuse that address
+  (`loopbackOnly` in `catalog.ts`), so the computer asks them for the loopback, and the iPhone
+  and the Mac app in Swift listen there while their sign-in sheet is open
+  (`ios/SimeonCore/Sources/SimeonCore/LoopbackSignIn.swift`): the code goes to the computer
+  (`completeMcpOAuth`) and the sheet closes. The computer never opens a browser and never spends
+  a refresh token it did not get.
+- Measured 11 October 2026 with the real code against each vendor: all 23 vendor connectors
+  start a sign-in and land on the vendor's own sign-in or consent page.
 - The store (`vendor-mcp-installs.json`) travels both ways: the Mac
   sends its copy on every MCP refresh and pulls the box's copy before the connect card looks
   for a row (`box-pull.ts`). Newer entries win; removals leave tombstones.
@@ -297,13 +312,20 @@ the vendor's own sign-in, and the agent can then use their tools.
 - The agent reads and calls a connected connector's tools with GetMcpTools and CallMcpTool
   (`productionTurnMcpProjection` in `host/host-runner-composition.ts`).
 
-* **Log lines.** Mac: `~/.simeon/vendor-mcp-signin.log`, one line per sign-in start
-  (`registered=dynamically` or `registered=by us`), refusal, token-exchange failure and
+* **Log lines.** `vendor-mcp-signin.log` (Mac: `~/.simeon/`; box: its data folder), one line
+  per sign-in start (`registered=dynamically` or `registered=by us`, and `return=` the address
+  the vendor sends the person back to), refusal, token-exchange failure and
   `credential stored`. The connect card itself only says "retry". Box: `[simeon] tool=` lines.
 * **Known limits.** Dropbox gives every self-registered client one shared id and calls it "Self
   host app" on its consent page. To show Simeon's name, create an app in Dropbox's App Console,
   add the loopback redirect, and put its app key in the `dropbox` row of `catalog.ts` as
-  `clientId`; the sign-in then skips registration. No key is set yet.
+  `clientId`; the sign-in then skips registration. No key is set yet. Canva, Square, Vercel and
+  Dropbox cannot connect from the web window: a browser tab cannot listen on the loopback, and
+  the vendor's page ends on "can't connect to localhost". On a Mac with the Electron app open
+  and signing in, the Mac app in Swift finds the loopback taken and says to quit the other app.
+* **Not yet verified.** The loopback sign-in on an iPhone and in the Mac app in Swift: the
+  listener was checked against stand-ins for Apple's Network framework on Linux, not run on a
+  device.
 
 ### 7b. Custom MCP servers and account plugins
 
@@ -414,7 +436,12 @@ and Ashby connect through Simeon. The provider behind them is never named in the
   most for the agent's tool calls (`connected_account_ids`); "not connected" is never kept, and
   disconnecting forgets it.
 * **Known limits.** Google's consent screen shows the provider's name until Simeon Labs uses its
-  own Google OAuth app.
+  own Google OAuth app. Gusto, Xero, Shopify, Brex, Pipedrive, Docusign and Klaviyo have no
+  sign-in the provider manages, and Ashby takes only an API key (checked 11 October 2026): their
+  link works once Simeon Labs registers its own app with each and sets it up at the provider.
+  Until then a refused link answers 503 and the card says "<App> is coming soon in Simeon."
+  (`OWN_APP_NEEDED` in `apps.py`; log line `desktop.apps.sign_in_needs_own_app` with the
+  provider's sentence).
 * **Not yet verified.** No sign-in or tool call against the live provider, and nothing on a Mac.
 
 ## 8. Agent features that touch the server

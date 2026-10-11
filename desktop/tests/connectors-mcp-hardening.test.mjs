@@ -65,8 +65,10 @@ test("the OAuth flow has deadlines and an RFC 8707 resource, and a reply stream 
   const oauth = await src("shared/node/vendor-mcp/oauth.ts");
   assert.match(oauth, /VENDOR_MCP_OAUTH_FETCH_TIMEOUT_MS = 10_000/);
   assert.equal((oauth.match(/signal: deadline\(\)/g) ?? []).length, 3, "discovery, registration and the token endpoint");
-  assert.match(oauth, /authorize\.searchParams\.set\("resource", vendorMcpResource\(args\.mcpUrl\)\)/);
-  assert.match(oauth, /resource: vendorMcpResource\(args\.pending\.mcpUrl\)/);
+  // The resource the server names itself since 11 October 2026 (Miro), the address otherwise (`vendorMcpResourceFor`).
+  assert.match(oauth, /resource: vendorMcpResourceFor\(args\.mcpUrl, resource\.resource\)/);
+  assert.match(oauth, /authorize\.searchParams\.set\("resource", args\.resource\)/);
+  assert.match(oauth, /const resource = args\.pending\.resource \?\? vendorMcpResource\(args\.pending\.mcpUrl\)/);
   assert.match(oauth, /\.\.\.\(args\.grant\.resource == null \? \{\} : \{ resource: args\.grant\.resource \}\)/);
   const { module, dispose } = await load("source/shared/node/vendor-mcp/oauth.ts", "vendor-oauth");
   try {

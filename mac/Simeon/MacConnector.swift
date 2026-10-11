@@ -34,6 +34,8 @@ final class MacConnector {
   /** The app whose sign-in sheet is open (its name), or none. */
   private(set) var connecting: String?
   @ObservationIgnored private var session: ASWebAuthenticationSession?
+  /** The loopback listener of the open sign-in, for the vendors that only send it back there. */
+  @ObservationIgnored private var catcher: LoopbackCatcher?
   @ObservationIgnored private var current = UUID()
   private let presenter = MacSignInPresenter()
 
@@ -63,7 +65,7 @@ final class MacConnector {
         self.connecting = nil
         return
       }
-      await self.signIn(url, name: name) {
+      await self.signIn(url, name: name, store: store) {
         await store.loadApps()
         return store.isConnected(name)
       }
@@ -73,17 +75,39 @@ final class MacConnector {
   /**
    * The sign-in page in Apple's sheet on the window, closed by itself once
    * `done` says so; in the browser when the sheet won't open. A second
-   * sign-in takes the first one's place.
+   * sign-in takes the first one's place. A vendor that only sends sign-ins
+   * back to `localhost:8787` (Canva, Square, Vercel, Dropbox) lands on this
+   * Mac's own loopback while the sheet is open (`LoopbackSignIn`); with the
+   * Electron app open and listening there, it says so instead.
    */
-  func signIn(_ url: URL, name: String, done: @escaping @MainActor () async -> Bool) async {
+  func signIn(_ url: URL, name: String, store: AppStore?, done: @escaping @MainActor () async -> Bool) async {
     session?.cancel()
+    // The replaced sign-in's listener lets go of the address now, not when its wait next wakes.
+    catcher?.stop()
+    catcher = nil
     let token = UUID()
     current = token
     connecting = name
     defer {
       if current == token {
+        catcher?.stop()
+        catcher = nil
         connecting = nil
         session = nil
+      }
+    }
+    if let store, let signInState = LoopbackSignIn.state(returningHere: url) {
+      guard let listening = await LoopbackCatcher.start(state: signInState, finish: "\(SimeonConfig.macURLScheme)://connected") else {
+        store.problem = LoopbackSignIn.busyMessage(name)
+        return
+      }
+      guard current == token else { listening.stop(); return }
+      catcher = listening
+      Task { @MainActor in
+        if let answer = await listening.answer() {
+          listening.stop()
+          await store.finishLoopbackSignIn(answer, name: name)
+        }
       }
     }
     let state = SignInSheetState()
@@ -97,6 +121,13 @@ final class MacConnector {
     self.session = session
     guard session.start() else {
       NSWorkspace.shared.open(url)
+      // A loopback sign-in in the browser still comes back to this Mac: keep listening while it is done.
+      guard catcher != nil else { return }
+      for _ in 0..<150 {
+        try? await Task.sleep(nanoseconds: 2_000_000_000)
+        guard current == token else { return }
+        if await done() { return }
+      }
       return
     }
     for _ in 0..<150 {

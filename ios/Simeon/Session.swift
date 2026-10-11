@@ -330,7 +330,7 @@ final class AppConnector {
     connecting = name
     defer { connecting = nil; session = nil }
     guard let url = await store.connectApp(named: name) else { return }
-    await signIn(url, store: store) { store.isConnected(name) }
+    await signIn(url, name: name, store: store) { store.isConnected(name) }
   }
 
   /** One account of an app already added: its sign-in again (an account that needs it, from the app's page). */
@@ -339,11 +339,31 @@ final class AppConnector {
     connecting = account.name
     defer { connecting = nil; session = nil }
     guard let url = await store.signInURL(account) else { return }
-    await signIn(url, store: store) { store.accounts(of: account.serverId).contains { $0.accountKey == account.accountKey && $0.status == "connected" } }
+    await signIn(url, name: account.name, store: store) { store.accounts(of: account.serverId).contains { $0.accountKey == account.accountKey && $0.status == "connected" } }
   }
 
-  /** The vendor's page in the system's sign-in sheet, closed by itself once the box says the app is connected. */
-  private func signIn(_ url: URL, store: AppStore, done: @escaping () -> Bool) async {
+  /**
+   * The vendor's page in the system's sign-in sheet, closed by itself once
+   * the box says the app is connected. A vendor that only sends sign-ins
+   * back to `localhost:8787` (Canva, Square, Vercel, Dropbox) lands on this
+   * iPhone's own loopback while the sheet is open (`LoopbackSignIn`).
+   */
+  private func signIn(_ url: URL, name: String, store: AppStore, done: @escaping () -> Bool) async {
+    var catcher: LoopbackCatcher?
+    if let signInState = LoopbackSignIn.state(returningHere: url) {
+      guard let listening = await LoopbackCatcher.start(state: signInState, finish: "\(AppPlatform.urlScheme)://connected") else {
+        store.problem = LoopbackSignIn.busyMessage(name)
+        return
+      }
+      catcher = listening
+      Task { @MainActor in
+        if let answer = await listening.answer() {
+          listening.stop()
+          await store.finishLoopbackSignIn(answer, name: name)
+        }
+      }
+    }
+    defer { catcher?.stop() }
     let state = SheetState()
     // Closed on the vendor's confirm page: look a little longer. Cancelled: two looks, then the buttons are free again (Cancel used to hold every Add for 20 s).
     let session = ASWebAuthenticationSession(url: url, callback: .customScheme(AppPlatform.urlScheme)) { _, error in

@@ -416,7 +416,7 @@ final class PluginsModel {
     if wait > 0 { try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000)) }
     lastOpen = Date()
     Task { [weak self] in
-      await MacConnector.shared.signIn(url, name: name) {
+      await MacConnector.shared.signIn(url, name: name, store: self?.store) {
         guard let self else { return true }
         await self.refreshServers()
         return Plugins.accounts(self.servers, of: serverId).first { $0.accountKey == accountKey }?.status == "connected"

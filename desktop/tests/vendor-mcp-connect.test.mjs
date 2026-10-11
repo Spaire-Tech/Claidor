@@ -325,3 +325,40 @@ test("both managers, the loopback, the gateway and the resync are wired to the v
   assert.match(ipc, /deps\.adoptVendorMcpStore\?\.\(answer\.vendorMcpStore\)/);
   assert.equal((adapter.match(/onVendorCredentialChanged: \(\) => \{ void context\.mcpHost\.refreshMcp\(undefined\); \}/g) ?? []).length, 2);
 });
+
+test("a vendor that only takes the loopback is asked for it even when the box starts the sign-in for the iPhone (Canva, 11 October 2026)", async () => {
+  // Canva's authorize page answers "Invalid redirect URI" to Simeon Labs'
+  // hosted callback; Square and Vercel refuse it at registration; Dropbox
+  // registers no client for it. The box asks them for the loopback, where
+  // the iPhone and the Mac app in Swift listen while their sheet is open
+  // (ios/SimeonCore/Sources/SimeonCore/LoopbackSignIn.swift). Every other
+  // vendor keeps the hosted address the box is given.
+  const { module, dispose } = await load("source/shared/node/vendor-mcp/backend-exec.ts", "vendor-backend-loopback");
+  const root = await mkdtemp(path.join(os.tmpdir(), "simeon-vendor-loopback-"));
+  try {
+    const { createVendorMcpBackendExec } = module;
+    const catalog = await load("source/shared/node/vendor-mcp/catalog.ts", "vendor-catalog-loopback");
+    try {
+      const loopback = catalog.module.VENDOR_MCP_CONNECTORS.filter((connector) => connector.loopbackOnly === true).map((connector) => connector.id).sort();
+      assert.deepEqual(loopback, ["canva", "dropbox", "square", "vercel"]);
+    } finally {
+      await catalog.dispose();
+    }
+    const { writeFileSync } = await import("node:fs");
+    writeFileSync(path.join(root, "vendor-mcp-installs.json"), JSON.stringify([
+      { id: "canva", url: "https://mcp.canva.com/mcp", connected: false },
+      { id: "notion", url: FIGMA, connected: false },
+    ]));
+    const { fetchImpl } = vendorFixture();
+    const exec = createVendorMcpBackendExec({ rootDir: () => root, fetch: fetchImpl, now: () => 1_000, canStartAuth: true });
+    const hosted = "https://api.simeonlabs.com/desktop/mcp-oauth/callback";
+    const canva = await exec.checkAuthStatus({ serverId: exec.serverIdForPlugin("canva"), accountKey: "default", oauthRedirectUri: hosted });
+    assert.equal(new URL(canva.authUrl).searchParams.get("redirect_uri"), "http://localhost:8787/callback");
+    const notion = await exec.checkAuthStatus({ serverId: exec.serverIdForPlugin("notion"), accountKey: "default", oauthRedirectUri: hosted });
+    assert.equal(new URL(notion.authUrl).searchParams.get("redirect_uri"), hosted);
+    assert.match(await readFile(path.join(root, "vendor-mcp-signin.log"), "utf8"), /canva sign-in started: .* return=http:\/\/localhost:8787\/callback /);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+    await dispose();
+  }
+});
