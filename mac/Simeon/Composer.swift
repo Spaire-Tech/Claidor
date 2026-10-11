@@ -141,7 +141,7 @@ struct Composer: View {
     }
     // Over the field and as wide, 8 apart: whether this account may use Simeon (`Qvn`, step 13; sending waits under
     // it), then the agent's first waiting ask to use this Mac (`BLn`, step 14; an agent's chat only).
-    .overlay(alignment: .top) {
+    .above(gap: 8) {
       let notice = store.access.notice
       let ask = agentId == NewChatState.draftKey ? nil : store.localAsks[agentId]
       if notice != nil || ask != nil {
@@ -149,8 +149,8 @@ struct Composer: View {
           if let notice { AccessNotice(words: notice, look: look) }
           if let ask { LocalAskDock(ask: ask, agentId: agentId, look: look).id(ask.entryId) }
         }
+        .fixedSize(horizontal: false, vertical: true)
         .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { noticeHeight = $0 }
-        .alignmentGuide(.top) { $0[.bottom] + 8 }
       }
     }
     .padding(.horizontal, 16)
@@ -292,10 +292,15 @@ struct Composer: View {
         // Where the words start: 13 in the stacked form (more lines, a reply, files, a line over the words), 45 on one line.
         let fieldLeft: CGFloat = stacked || control.reply != nil || !control.staged.isEmpty || !noticeLines.isEmpty ? 13 : 45
         let x = max(0, min(request.anchor.minX, width + 16 - fieldLeft - listWidth))
-        PickList(kind: request.kind, rows: rows, empty: empty, selected: picks.selected, look: look,
-                 hover: { picks.selected = $0 }, choose: { choose($0) })
-          .alignmentGuide(.leading) { _ in -x }
-          .alignmentGuide(.top) { box in box[.bottom] - (request.anchor.minY - 4) }
+        // Hung by its bottom-left corner from a zero-size point 4 over the trigger's line (no custom alignment guide).
+        Color.clear
+          .frame(width: 0, height: 0)
+          .overlay(alignment: .bottomLeading) {
+            PickList(kind: request.kind, rows: rows, empty: empty, selected: picks.selected, look: look,
+                     hover: { picks.selected = $0 }, choose: { choose($0) })
+              .fixedSize()
+          }
+          .offset(x: x, y: request.anchor.minY - 4)
       }
     }
   }

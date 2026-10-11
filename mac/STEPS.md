@@ -2411,6 +2411,15 @@ them; whether it shows the hand over a link was not checked here).
 What the founder saw on their Mac, against the Electron app, and what
 changed:
 
+- **The hover bar (reaction, reply, more) showed inside the bubble**, at
+  its right edge (the founder's second screenshot). It was set beside the
+  bubble with a custom alignment guide in an overlay, which the Mac did
+  not honour. It now hangs from a zero-size point on the bubble's edge
+  (`outside(trailing:)`, HandCursor.swift), 6 beside it, level with its
+  middle. The three other places placed the same way now use the same
+  kind of point: the exchange's More, the access notice and Allow card 8
+  over the message field (`above(gap:)`), and the "@", "/", "#" and ":"
+  lists 4 over their line.
 - **The reactions menu opened over the message.** It opened at the
   pointer. It now opens 4 under the hover bar's button, as the window's
   (`placement: bottom-start`, `bottom-end` on the person's side), so it

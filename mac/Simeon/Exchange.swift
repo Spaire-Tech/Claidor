@@ -196,7 +196,7 @@ private struct ExchangeMessage: View {
             .padding(EdgeInsets(top: 12, leading: 12, bottom: 4, trailing: 0))
         }
         bubble
-          .overlay(alignment: .trailing) { bar }
+          .outside(trailing: true) { bar }
           .onHover { hover($0) }
           .frame(maxWidth: limit, alignment: .leading)
       }
@@ -234,7 +234,6 @@ private struct ExchangeMessage: View {
       .padding(.leading, 6)
       .contentShape(Rectangle())
       .onHover { barHovered = $0 }
-      .alignmentGuide(.trailing) { $0[.leading] }
       .accessibilityLabel("Message actions for \(sender.name) message")
     }
   }

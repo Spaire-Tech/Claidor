@@ -732,7 +732,7 @@ private struct BubbleRow: View {
           // A message that is one link is drawn as its card (`xEn`).
           LinkCardView(url: link, look: look)
             .frame(maxWidth: max(0, min(column * 0.76, 420, column - 82)))
-            .overlay(alignment: bubble.fromPerson ? .leading : .trailing) { bar }
+            .outside(trailing: !bubble.fromPerson) { bar }
             .onHover { hover($0) }
         } else if !words.isEmpty || bubble.images.isEmpty {
           VStack(alignment: .leading, spacing: 0) {
@@ -743,7 +743,7 @@ private struct BubbleRow: View {
                 .frame(width: max(bubbleWidth, 0))
             }
           }
-          .overlay(alignment: bubble.fromPerson ? .leading : .trailing) { bar }
+          .outside(trailing: !bubble.fromPerson) { bar }
           .onHover { hover($0) }
         }
         if !bubble.reactions.isEmpty {
@@ -784,7 +784,6 @@ private struct BubbleRow: View {
         .padding(bubble.fromPerson ? .trailing : .leading, 6)
         .contentShape(Rectangle())
         .onHover { barHovered = $0 }
-        .alignmentGuide(bubble.fromPerson ? .leading : .trailing) { bubble.fromPerson ? $0[.trailing] : $0[.leading] }
     }
   }
 

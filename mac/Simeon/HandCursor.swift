@@ -34,6 +34,36 @@ struct HandButtonStyle: PrimitiveButtonStyle {
   }
 }
 
+extension View {
+  /**
+   * `content` just outside this view's trailing edge (its leading edge on
+   * it), or outside its leading edge, level with its middle: hung from a
+   * zero-size anchor on that edge, so it needs no custom alignment guide
+   * (those were not honoured in an overlay on the founder's Mac, and the
+   * hover bar showed inside the bubble).
+   */
+  func outside<Content: View>(trailing: Bool, @ViewBuilder _ content: () -> Content) -> some View {
+    overlay(alignment: trailing ? .trailing : .leading) {
+      Color.clear
+        .frame(width: 0, height: 0)
+        .overlay(alignment: trailing ? .leading : .trailing) { content() }
+    }
+  }
+
+  /** `content` just above this view, as wide, its bottom `gap` over this view's top: hung from a zero-height anchor on the top edge. */
+  func above<Content: View>(gap: CGFloat, @ViewBuilder _ content: () -> Content) -> some View {
+    overlay(alignment: .top) {
+      Color.clear
+        .frame(height: 0)
+        .overlay(alignment: .bottom) {
+          content()
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.bottom, gap)
+        }
+    }
+  }
+}
+
 extension PrimitiveButtonStyle where Self == HandButtonStyle {
   /** The plain button with the pointing hand. */
   static var hand: HandButtonStyle { HandButtonStyle() }
