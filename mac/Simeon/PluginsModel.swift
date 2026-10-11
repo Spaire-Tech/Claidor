@@ -267,7 +267,8 @@ final class PluginsModel {
       if let vendor = try? await mcp("vendorServerIdForPlugin", [.string(entryId)]), let serverId = vendor.text,
          let started = try? await mcp("authenticateServer", [.string(serverId), .string(PluginServer.defaultAccount)]),
          let url = started["authorizationUrl"]?.text.flatMap(URL.init(string:)) {
-        await openInBrowser(url)
+        let name = catalog.first { $0.id == entryId }?.displayName ?? serverId
+        await openSignIn(url, serverId: serverId, accountKey: PluginServer.defaultAccount, name: name)
       }
       return true
     } catch {
@@ -394,7 +395,7 @@ final class PluginsModel {
     if let flow = flows[key], !flow.timedOut {
       flows[key]?.openedAt = Date()
       expire(key, opened: flows[key]?.openedAt ?? Date())
-      await openInBrowser(flow.url)
+      await openSignIn(flow.url, serverId: server.id, accountKey: accountKey, name: server.name)
       return
     }
     show(nil)
@@ -405,7 +406,7 @@ final class PluginsModel {
         let opened = Date()
         flows[key] = Flow(url: url, openedAt: opened, timedOut: false)
         expire(key, opened: opened)
-        await openInBrowser(url)
+        await openSignIn(url, serverId: server.id, accountKey: accountKey, name: server.name)
       }
       show(Plugins.signInNotice(status: status, message: answer["message"]?.string))
       await refreshServers()
@@ -420,12 +421,50 @@ final class PluginsModel {
     }
   }
 
-  /** The sign-in page in the person's browser, at least 0.9 s after the last one. */
-  private func openInBrowser(_ url: URL) async {
+  /**
+   * The sign-in page, at least 0.9 s after the last one: since the Apple
+   * design pass in the app's own sign-in sheet on the window
+   * (`MacConnector`; the Electron app opened the browser), closed by itself
+   * once the box says the account is connected. Not waited for: the page
+   * and its buttons are free while it is open.
+   */
+  private func openSignIn(_ url: URL, serverId: String, accountKey: String, name: String) async {
     let wait = Plugins.signInSpacing - Date().timeIntervalSince(lastOpen)
     if wait > 0 { try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000)) }
     lastOpen = Date()
-    NSWorkspace.shared.open(url)
+    Task { [weak self] in
+      await MacConnector.shared.signIn(url, name: name) {
+        guard let self else { return true }
+        await self.refreshServers()
+        return Plugins.accounts(self.servers, of: serverId).first { $0.accountKey == accountKey }?.status == "connected"
+      }
+    }
+  }
+
+  /**
+   * Add, the consent first when the plugin brings an app to sign in to
+   * (the Apple design pass: the iPhone's step before every connect); a
+   * skills-only plugin is added at once.
+   */
+  func requestAdd(_ entry: PluginEntry, agentId: String?) {
+    guard !entry.connectorList.isEmpty else {
+      Task { await add(entry, agentId: agentId) }
+      return
+    }
+    MacConnector.shared.ask(entry.displayName, store: store) { [weak self] in
+      await self?.add(entry, agentId: agentId)
+    }
+  }
+
+  /** The sign-in button: the consent first for a new sign-in (Authenticate, Retry); Reopen opens the waiting page again at once. */
+  func requestSignIn(_ server: PluginServer, accountKey: String) {
+    if let flow = flows[signInKey(server, accountKey: accountKey)], !flow.timedOut {
+      Task { await signIn(server, accountKey: accountKey) }
+      return
+    }
+    MacConnector.shared.ask(server.name, store: store) { [weak self] in
+      await self?.signIn(server, accountKey: accountKey)
+    }
   }
 
   // MARK: Tools and skills

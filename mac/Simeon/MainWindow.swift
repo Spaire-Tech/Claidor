@@ -147,6 +147,8 @@ struct AppRoot: View {
     .overlay { AboutLayer() }
     // Deep Links (step 14), from a `…/v1/info?topic=deep-links` link, signed out too.
     .overlay { DeepLinksLayer() }
+    // Connecting an app (the Apple design pass): the iPhone's consent, over everything.
+    .overlay { ConnectConsentLayer() }
     // Links in messages open only on the web, in mail, Obsidian or the phone (`shell.openExternal`'s allowlist, decision 7);
     // any other kind does nothing, as in the Electron app.
     .environment(\.openURL, OpenURLAction { url in
@@ -448,6 +450,8 @@ private struct KeyWatcher: NSViewRepresentable {
       if AccountState.aboutShowing { return false }
       // A computer dialog over the window (step 13): its keys are its own (`ComputerDialogLayer`).
       if ComputerDialog.showing { return false }
+      // An app's consent over the window (the Apple design pass): its Return and Escape are its own.
+      if MacConnector.showing { return false }
       // Caps Lock aside.
       let mods = event.modifierFlags.intersection([.command, .shift, .option, .control])
       // The computer over the window (step 13): every key is its screen's (Escape, ⌘K, ⌘N and ⌘, too, as once the window's

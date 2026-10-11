@@ -383,8 +383,9 @@ struct DraftCardView: View {
  * Apps the agent needs (`sand-connector-card`), one card each, 8 apart:
  * the app's logo on a grey tile (40, 11 round), its name (13 on 18, 500),
  * the agent's reason or else what the app does (60%), how many tools it
- * brings once added (12, 40%); at the right "Added" in green, or Add, which
- * starts the app's sign-in in the browser.
+ * brings once added (12, 40%); at the right "Added" in green, or Add: since
+ * the Apple design pass the iPhone's consent, then the app's sign-in inside
+ * the app (`MacConnector`; the Electron app opened the browser).
  */
 struct ConnectorCards: View {
   let names: [String]
@@ -405,11 +406,12 @@ private struct ConnectorCard: View {
   let reason: String?
   let look: Look
   @Environment(AppStore.self) private var store
-  @State private var adding = false
 
   var body: some View {
     let catalog = store.catalogApp(named: name)
     let connected = store.isConnected(name)
+    // Its sign-in open in the window, or its page being asked for.
+    let adding = MacConnector.shared.connecting == name
     let tools = store.apps.first { $0.name.lowercased() == name.lowercased() && $0.status == "connected" }?.toolCount ?? 0
     let line = reason ?? catalog?.summary ?? ""
     CardShell(look: look) {
@@ -449,13 +451,8 @@ private struct ConnectorCard: View {
             .padding(.horizontal, 12)
             .background(look.addedWash, in: Capsule())
         } else {
-          Button {
-            adding = true
-            Task {
-              if let url = await store.connectApp(named: name) { NSWorkspace.shared.open(url) }
-              adding = false
-            }
-          } label: {
+          // The consent first, then the app's sign-in in the window (the Apple design pass, `MacConnector`).
+          Button { MacConnector.shared.connect(name, store: store) } label: {
             Group {
               if adding { ProgressView().controlSize(.small) } else { Text("Add") }
             }
@@ -468,7 +465,7 @@ private struct ConnectorCard: View {
             .contentShape(Capsule())
           }
           .buttonStyle(.hand)
-          .disabled(adding)
+          .disabled(MacConnector.shared.connecting != nil)
           .accessibilityLabel("Add \(name)")
         }
       }

@@ -106,8 +106,9 @@ struct ViewerKeys: NSViewRepresentable {
         let took = MainActor.assumeIsolated { () -> Bool in
           guard let self, event.window === self.window, let handle = self.handle else { return false }
           if self.aboveLocks { return handle(event) }
-          // Under search (⌘K) or Settings, their keys are their own; under the computer or one of its dialogs, theirs (step 13).
-          guard !SearchState.showing, !WindowOverlay.showing, !WindowState.computerShowing, !ComputerDialog.showing else { return false }
+          // Under search (⌘K) or Settings, their keys are their own; under the computer or one of its dialogs, theirs (step 13);
+          // under an app's consent, its own (the Apple design pass).
+          guard !SearchState.showing, !WindowOverlay.showing, !WindowState.computerShowing, !ComputerDialog.showing, !MacConnector.showing else { return false }
           return handle(event)
         }
         return took ? nil : event

@@ -502,7 +502,7 @@ private struct MarketplaceSection: View {
               AddingSpinner(name: entry.displayName, look: look)
             } else {
               PluginPill(title: "Add", kind: .secondary, disabled: model.isBusy, look: look) {
-                Task { await model.add(entry, agentId: window.selected) }
+                model.requestAdd(entry, agentId: window.selected)
               }
               .accessibilityLabel("Add \(entry.displayName)")
             }
@@ -615,7 +615,7 @@ private struct ServerState: View {
       if server.status != "needsAuth" || showsWordWithButton { StatusWord(status: server.status, detail: server.statusDetail, look: look) }
       if server.status == "needsAuth" {
         PluginPill(title: Plugins.signInButton(model.signInState(server, accountKey: accountKey)), kind: .secondary, disabled: model.isBusy, look: look) {
-          Task { await model.signIn(server, accountKey: accountKey) }
+          model.requestSignIn(server, accountKey: accountKey)
         }
       }
     }
@@ -1126,7 +1126,7 @@ private struct PluginPage: View {
           MetaLine(market: entry.marketplace?.displayName, homepage: entry.homepage, look: look)
         } action: {
           PageActionView(action: Plugins.pageAction(installed: installed.isInstalled, mode: mode), adding: model.adding == entry.id, name: entry.displayName, look: look,
-                         add: { Task { await model.add(entry, agentId: window.selected) } },
+                         add: { model.requestAdd(entry, agentId: window.selected) },
                          remove: {
                            Task {
                              if installed.plugin != nil { await model.uninstall(pluginId: entry.id, agentId: window.selected) }

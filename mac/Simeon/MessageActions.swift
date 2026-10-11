@@ -512,10 +512,10 @@ struct RightClickMenu: NSViewRepresentable {
 // MARK: Reply
 
 /**
- * The message being answered, over the words (`sand-prompt-reply-pill`):
- * 30 high, 10 round, on the grey wash, padded 4 4 4 8; the reply glyph (12,
- * at 40%), the message's line (14 on 22, at 60%, one line), and Cancel reply
- * (20, round, the X 12 at 40%).
+ * The message being answered, over the field (`sand-prompt-reply-pill`):
+ * the reply glyph (12, at 40%), the message's line (14 on 22, at 60%, one
+ * line), and Cancel reply (the X at 40%). Since the Apple design pass on
+ * glass as the iPhone's: 36 high, 18 round, padded 4 4 4 14, Cancel 28.
  */
 struct ReplyPill: View {
   let reply: ChatControl.Reply
@@ -536,19 +536,18 @@ struct ReplyPill: View {
         .frame(maxWidth: .infinity, alignment: .leading)
       Button(action: cancel) {
         Image(systemName: "xmark")
-          .font(.system(size: 9, weight: .semibold))
+          .font(.system(size: 10, weight: .bold))
           .foregroundStyle(look.inkTertiary)
-          .frame(width: 20, height: 20)
+          .frame(width: 28, height: 28)
           .contentShape(Circle())
       }
       .buttonStyle(.hand)
       .help("Cancel reply")
       .accessibilityLabel("Cancel reply")
     }
-    .padding(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 4))
-    .frame(height: 30)
-    // `rgba(119,119,119,.09)` on light, `.14` on dark.
-    .background(look.dark ? look.wash : look.rowHover, in: RoundedRectangle(cornerRadius: 10))
+    .padding(EdgeInsets(top: 4, leading: 14, bottom: 4, trailing: 4))
+    .frame(height: 36)
+    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     .accessibilityElement(children: .contain)
     .accessibilityLabel("Replying to \(reply.line)")
   }

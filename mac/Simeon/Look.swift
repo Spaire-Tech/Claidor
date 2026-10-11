@@ -29,10 +29,6 @@ struct Look {
 
   /** The chat's ground and the sign-in screens' (`--sand-bg-base`). */
   var ground: Color { dark ? Color(hex: 0x070707) : Color(hex: 0xfcfcfc) }
-  /** The sidebar's paint over the Mac's sidebar material: `--simeon-bg-chrome` at 93%. */
-  var sidebarPaint: Color { (dark ? Color(hex: 0x111111) : Color(hex: 0xf7f7f7)).opacity(0.93) }
-  /** The sidebar's right edge: the text colour at 10%, half a point. */
-  var sidebarEdge: Color { ink.opacity(0.10) }
 
   // MARK: The sidebar's rows
 
@@ -78,9 +74,6 @@ struct Look {
   var headerVeil: Color { ground.opacity(0.78) }
   /** A reaction under a bubble, ringed with the ground. */
   var reaction: Color { dark ? Color(hex: 0x151515) : Color(hex: 0xf3f3f3) }
-  /** The message field's frame (`sand-prompt-shell`). */
-  var composer: Color { dark ? Color(hex: 0x212121) : Color(hex: 0xfcfcfc) }
-  var composerEdge: Color { dark ? Color(hex: 0x2e2e2e) : ink.opacity(0.3) }
   var placeholder: Color { ink.opacity(0.3) }
 
   // MARK: Message text (step 2b)

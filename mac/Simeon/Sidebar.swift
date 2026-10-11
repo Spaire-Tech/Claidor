@@ -21,6 +21,9 @@ final class SidebarLayout {
   static let foldBelow: CGFloat = 210
   /** The fold and unfold: 0.2 s on the window's curve. */
   static let motion = Animation.timingCurve(0.22, 1, 0.36, 1, duration: 0.2)
+  /** The Liquid Glass panel (the Apple design pass): 8 in from the window's edges and the chat, 18 round, as macOS 26's own sidebars float. */
+  static let panelInset: CGFloat = 8
+  static let panelRadius: CGFloat = 18
 
   var expandedWidth: CGFloat = {
     let saved = UserDefaults.standard.double(forKey: SidebarLayout.widthKey)
@@ -74,8 +77,13 @@ final class SidebarLayout {
  * measured at 1040 × 760: a 60-point head with search and new chat at its
  * right (44 high with the picked rows' buttons while rows are picked, C11),
  * the list (SidebarList.swift: pins, sections, rows), and its foot with the
- * account's initials and Connect apps. Over the Mac's sidebar material,
- * painted at 93%, with a hairline at its right edge.
+ * account's initials and Connect apps. Since the Apple design pass (11
+ * October 2026, the founder: "apple liquid glass transparence in the side
+ * bar"): a floating Liquid Glass panel 8 in from the window's edges, 18
+ * round, the window's ground around it as macOS 26's own sidebars float.
+ * Inside it the Mac's sidebar material alone, so the desktop shows through
+ * (the Electron window painted the material over at 93%, with a hairline
+ * at its edge), the glass over it for its rim and light.
  */
 struct Sidebar: View {
   let rail: Bool
@@ -87,6 +95,7 @@ struct Sidebar: View {
 
   var body: some View {
     let look = Look(scheme)
+    let panel = RoundedRectangle(cornerRadius: SidebarLayout.panelRadius, style: .continuous)
     @Bindable var sidebar = sidebar
     HStack(spacing: 0) {
       VStack(spacing: 0) {
@@ -136,18 +145,16 @@ struct Sidebar: View {
           SidebarFoot()
         }
       }
-      .frame(width: width - 0.5)
-      Rectangle()
-        .fill(look.sidebarEdge)
-        .frame(width: 0.5)
+      .frame(width: max(0, width - 2 * SidebarLayout.panelInset))
+      .frame(maxHeight: .infinity)
+      // The rows scroll inside the panel's round corners; the glass behind them, the desktop behind the glass.
+      .clipShape(panel)
+      .glassEffect(.regular, in: panel)
+      .background { SidebarMaterial(radius: SidebarLayout.panelRadius) }
+      .padding(SidebarLayout.panelInset)
     }
     .frame(width: width)
-    .background {
-      ZStack {
-        SidebarMaterial()
-        look.sidebarPaint
-      }
-    }
+    .background(look.ground)
     // Read again every 4 seconds while they can't be (`TOn`; decision 7: the window's own retries come in bursts).
     .task(id: store.rosterFailed) {
       while store.rosterFailed && !Task.isCancelled {

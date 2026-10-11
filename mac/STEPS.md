@@ -2438,3 +2438,62 @@ changed:
   and then sent, until the app quits (its outbox,
   `sentWhileOfflineAtMsByEntryId`), not from the mark the computer keeps.
   The Swift app now does the same.
+
+## The Apple design pass (11 October 2026)
+
+The founder, once the copy was done: "apple liquid glass transparance in
+the side bar. design the composer like the iphone. bring the design of the
+connectors extra step before going to the website but as a iframe." These
+three depart from the Electron window on purpose; everything else stays
+its copy.
+
+- **The sidebar** (`Sidebar.swift`) is a floating Liquid Glass panel, 8 in
+  from the window's edges and the chat, 18 round, as macOS 26's own
+  sidebars float. Inside it the Mac's sidebar material alone, so the
+  desktop shows through; the Electron window painted it over at 93% and
+  drew a hairline at its edge, both gone (`sidebarPaint`, `sidebarEdge`).
+  Around the panel, the window's ground. The material is rounded by its
+  own mask (`SidebarMaterial(radius:)`), since SwiftUI's clip does not
+  round an AppKit view behind the window. The rail is the same panel, 72
+  wide; the traffic lights sit inside its top corner.
+- **The composer** (`Composer.swift`) is the iPhone's (`ChatComposer`):
+  Attach as a 40-point glass disc at the left, then the field in glass, 20
+  round, 40 high on one line, growing a line at a time to six. At its
+  right, the grey microphone while there is nothing to send and the blue
+  send (30, the arrow bold) once there is; the recording chip while
+  listening. The window's two forms (one line, and stacked with the
+  buttons under the words) are gone, and so is the grey microphone beside
+  Send. The lines, the files and the message being answered stand over the
+  field, lined up with it; the reply on its own glass (`ReplyPill`). No
+  opaque ground behind it: the messages fade into the ground under the
+  field (the iPhone's soft edge). A click on the glass beside the words
+  gives them the keys. The lists still open 4 over their line.
+- **Connecting an app** (`MacConnector.swift`): first the iPhone's consent
+  (`ConnectConsentSheet`, the text from `ConnectConsent` in the core), in
+  the window over the dimmed chat: the app's logo and name, what it does,
+  the three points, the small print, Connect in the blue and Cancel;
+  Return connects, Escape and a click outside cancel. Connect opens the
+  app's sign-in page inside the app, in Apple's sign-in sheet on the
+  window (ASWebAuthenticationSession), which closes itself once the app is
+  connected (asked every 2 seconds, up to 5 minutes, as the iPhone's
+  `AppConnector`). It covers the chat's connector cards (Add), and in
+  Plugins Add for a plugin that brings an app, and Authenticate and Retry
+  (Reopen opens the waiting page again with no consent); a vendor's page
+  after Add opens in the sheet too. Slack and GitHub's listener card still
+  opens the browser.
+
+  Why not a plain web view (the founder's "iframe"): Google, Microsoft and
+  others refuse their sign-in inside an embedded web view ("This browser
+  or app may not be secure", `disallowed_useragent`), and most of the
+  apps people connect first are Google's. Apple's sheet is the in-app page
+  they accept, and it keeps the person's existing sign-ins. Where Chrome
+  is the Mac's browser, macOS may hand the page to Chrome instead of the
+  sheet; that is the system's choice. If the sheet cannot open at all,
+  the page opens in the browser as before.
+
+To check on a Mac: the glass over the desktop with the window in front
+and behind (the material greys when the window is not in front), in light
+and dark; the composer's list placement with a reply and files over the
+field; the consent with a long app name and on a short window (its words
+then scroll); a Google app's sign-in end to end in the sheet; Escape
+under the consent not closing Plugins behind it.

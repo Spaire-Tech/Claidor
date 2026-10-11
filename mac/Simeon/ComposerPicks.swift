@@ -435,6 +435,12 @@ final class FieldHandle {
     view.insertText(NSAttributedString(string: words, attributes: attributes), replacementRange: range)
     view.typingAttributes = attributes
   }
+
+  /** The keys to the words (a click on the field's glass beside them, as in Messages). */
+  func focus() {
+    guard let view else { return }
+    view.window?.makeFirstResponder(view)
+  }
 }
 
 // MARK: The theme

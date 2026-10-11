@@ -47,7 +47,8 @@ code.
   - `SignInScreen.swift`: sign-in, "Continue in your browser", "Setting up
     Simeon's computer".
   - `MainWindow.swift`: the window's two sides and its own keys.
-  - `Sidebar.swift`: the agents' sidebar, its rows, its rail and width.
+  - `Sidebar.swift`: the agents' sidebar (a floating Liquid Glass panel), its
+    rows, its rail and width.
   - `Butterflies.swift`: every agent's butterfly or own picture, and a
     group's.
   - `MacServices.swift`: what the Electron app's main process does around
@@ -59,6 +60,9 @@ code.
     open and signed in (`~/.simeon/local-exec-daemon.log`).
   - `MacLocalPermission.swift`: "Execution on Local Computer" per account,
     and the Allow card over the message field.
+  - `MacConnector.swift`: connecting an app, the iPhone's consent in the
+    window, then the app's sign-in in Apple's sheet on it (the Apple design
+    pass, `STEPS.md`).
   - `WindowChrome.swift`: the window's frame and the sidebar's material.
   - `Look.swift`: the Electron window's colours, light and dark.
   - `Fonts/`: Suravaram, the sign-in wordmark's face (SIL Open Font

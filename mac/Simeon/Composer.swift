@@ -3,21 +3,21 @@ import SwiftUI
 import SimeonCore
 
 /**
- * The message field (`sand-chat-input-dock`, padded 0 16 16), in the
- * window's two forms (`l9n`, `Zan`). On one line: a frame 44 high and 22
- * round, the words 44 in from each side (14 on 20), Attach at the left and
- * the send controls at the right, 8 in. Stacked, once the words wrap or
- * hold a new line, or a reply is being written: 18 round, the words 12 in
- * across the whole width (up to six lines, 120, then they scroll), with
- * Attach and the send controls on a row under them; it goes back to one
- * line only for short words (under 48 characters) that fit. While empty
- * the send control is the microphone in the window's blue (dictation, step
- * 2e); with words, a grey microphone beside the blue arrow. The frame has
- * a hairline (the text at 30%; `#2e2e2e` on dark) and a soft shadow, and
- * the ground runs from its middle to the window's bottom. Return sends,
- * Shift-Return starts a new line, Escape lets go of a reply, and what is
- * typed is kept per chat (the window's draft). A reply shows its line
- * over the words (`sand-prompt-reply-pill`) and "Reply…" while empty.
+ * The message field (`sand-chat-input-dock`, padded 0 16 16), since the
+ * Apple design pass (11 October 2026, the founder: "design the composer
+ * like the iphone") in the iPhone's form (`ChatComposer`): Attach as a
+ * 40-point glass disc at the left, then the field in Liquid Glass, 20
+ * round, 40 high on one line and growing a line at a time (14 on 20, the
+ * words 16 in and 10 over and under; six lines, 120, then they scroll).
+ * At the field's right, 2 in: the grey microphone while there is nothing
+ * to send (dictation, step 2e), the blue send once there is; the recording
+ * chip while listening. Over the field, 6 apart and lined up with it: a
+ * send's error, dictation's and the files' lines, the files, then the
+ * message being answered on its own glass. Nothing opaque behind it: the
+ * messages fade into the window's ground under it as they scroll (the
+ * iPhone's soft edge). Return sends, Shift-Return starts a new line,
+ * Escape lets go of a reply, and what is typed is kept per chat (the
+ * window's draft), "Reply…" while empty under a reply.
  */
 struct Composer: View {
   let agentId: String
@@ -41,8 +41,9 @@ struct Composer: View {
   /** The picks in the words ("@Nora" as one piece). */
   @State private var chips: [ComposerChip] = []
   @State private var fieldHeight: CGFloat = 20
-  @State private var stacked = false
+  /** The composer's width and height, measured: the lists keep inside the chat, and the messages end over it. */
   @State private var width: CGFloat = 0
+  @State private var height: CGFloat = 40
   /** The lists over the field (step 2e). */
   @State private var picks = ComposerPicks()
   @State private var handle = FieldHandle()
@@ -60,6 +61,10 @@ struct Composer: View {
 
   /** Six lines of 20 (`nze`), then the words scroll. */
   static let tallest: CGFloat = 120
+  /** Attach's disc and the gap after it: the field starts this far in. */
+  static let fieldInset: CGFloat = 48
+  /** The words' place in the field: 16 in, 10 down. */
+  static let wordsInset = CGSize(width: 16, height: 10)
 
   var body: some View {
     let empty = text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -68,76 +73,39 @@ struct Composer: View {
     // Something to send (`hasPayload`): words, or files.
     let payload = !empty || !files.isEmpty
     let lines = noticeLines
-    let expanded = stacked || reply != nil || !files.isEmpty || !lines.isEmpty
-    let shown = min(fieldHeight, Composer.tallest)
-    // On one line the frame is 44; stacked, 9 over its blocks (a line 20, the reply 36, the files 60, each with its 6) and 47 under the words for the buttons.
-    let blocks: CGFloat = CGFloat(lines.count) * 20 + (reply == nil ? 0 : 36) + (files.isEmpty ? 0 : 60)
-    let height: CGFloat = expanded ? 9 + blocks + shown + 47 : 44
-    let trailing: CGFloat = payload ? 81 : 45
-    ZStack(alignment: .top) {
-      VStack(alignment: .leading, spacing: 6) {
-        // The order the window stacks them in: a send's error, dictation's, the files', the reply, the files.
-        ForEach(lines) { line in
-          Text(line.text)
-            .font(.system(size: 11))
-            .foregroundStyle(line.isError ? look.danger : look.inkTertiary)
-            .lineLimit(1)
-            .truncationMode(.tail)
-            .frame(height: 14)
-            .padding(.horizontal, 2)
-            .accessibilityAddTraits(.updatesFrequently)
-        }
-        if let reply {
-          ReplyPill(reply: reply, look: look) { control.reply = nil }
-        }
-        if !files.isEmpty {
-          AttachmentStrip(files: files, look: look) { control.unstage($0) }
-        }
-        field(placeholder: placeholder(reply: reply, hasFiles: !files.isEmpty))
-          .frame(height: shown)
+    VStack(alignment: .leading, spacing: 6) {
+      // Over the field and lined up with it, in the iPhone's order: the lines, the files, the message being answered.
+      ForEach(lines) { line in
+        Text(line.text)
+          .font(.system(size: 11))
+          .foregroundStyle(line.isError ? look.danger : look.inkTertiary)
+          .lineLimit(1)
+          .truncationMode(.tail)
+          .frame(height: 14)
+          .padding(.leading, Composer.fieldInset + Composer.wordsInset.width)
+          .accessibilityAddTraits(.updatesFrequently)
       }
-      .padding(.top, expanded ? 9 : 11)
-      .padding(.leading, expanded ? 13 : 45)
-      .padding(.trailing, expanded ? 13 : trailing)
-      .frame(maxHeight: .infinity, alignment: .top)
-      HStack(spacing: 8) {
+      if !files.isEmpty {
+        AttachmentStrip(files: files, look: look) { control.unstage($0) }
+          .padding(.leading, Composer.fieldInset)
+      }
+      if let reply {
+        ReplyPill(reply: reply, look: look) { control.reply = nil }
+          .padding(.leading, Composer.fieldInset)
+      }
+      HStack(alignment: .bottom, spacing: 8) {
         AttachButton(look: look, full: files.count >= AttachmentLimits.maxStaged) { control.chooseFiles() }
-        Spacer(minLength: 0)
-        switch dictation.phase {
-        case .asking, .recording:
-          // The recording chip in Send's place (`sand-prompt-voice-chip`).
-          RecordingChip(dictation: dictation, look: look) {
-            Task { await dictation.stop(store: store) }
-          }
-        case .transcribing:
-          ProgressView()
-            .controlSize(.small)
-            .frame(width: 28, height: 28)
-            .accessibilityLabel("Transcribing voice input…")
-        case .idle:
-          if payload {
-            MicButton(prominent: false, look: look) { dictation.start(store: store) }
-            SendButton(look: look, paused: store.isSendingPaused, action: send)
-          } else {
-            MicButton(prominent: true, look: look) { dictation.start(store: store) }
-          }
-        }
+        fieldBox(payload: payload, placeholder: placeholder(reply: reply, hasFiles: !files.isEmpty))
       }
-      .frame(height: 30)
-      .padding(.horizontal, 9)
-      .padding(.bottom, 8)
-      .frame(maxHeight: .infinity, alignment: .bottom)
+      // The open list hangs from the words, over the messages (outside the field's glass).
+      .overlay(alignment: .topLeading) { list }
     }
-    .frame(maxWidth: .infinity)
-    .frame(height: height)
-    // The hairline under the frame's content, so an open list over the words is not crossed by it.
-    .background { RoundedRectangle(cornerRadius: expanded ? 18 : 22).strokeBorder(look.composerEdge, lineWidth: 1) }
-    .background(look.composer, in: RoundedRectangle(cornerRadius: expanded ? 18 : 22))
-    .shadow(color: look.dark ? .clear : .black.opacity(0.05), radius: 3.5, x: 0, y: 2)
-    .shadow(color: look.dark ? .clear : .black.opacity(0.03), radius: 1, x: 0, y: 1)
-    .onGeometryChange(for: CGFloat.self) { proxy in proxy.size.width } action: { value in
-      width = value
-      relayout(edited: false)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .animation(.spring(response: 0.3, dampingFraction: 0.9), value: reply?.id)
+    .animation(.spring(response: 0.3, dampingFraction: 0.9), value: files.count)
+    .onGeometryChange(for: CGSize.self) { proxy in proxy.size } action: { size in
+      width = size.width
+      height = size.height
     }
     // Over the field and as wide, 8 apart: whether this account may use Simeon (`Qvn`, step 13; sending waits under
     // it), then the agent's first waiting ask to use this Mac (`BLn`, step 14; an agent's chat only).
@@ -155,13 +123,10 @@ struct Composer: View {
     }
     .padding(.horizontal, 16)
     .padding(.bottom, 16)
-    .background(alignment: .bottom) {
-      look.ground.frame(height: height / 2 + 16)
-    }
+    .background(alignment: .bottom) { softEdge }
     .onAppear {
       text = store.drafts[agentId] ?? ""
       if let kept = Composer.keptChips[agentId], kept.draft == text { chips = kept.chips }
-      relayout(edited: true)
       // A message canceled or handed over comes in after the draft, so the draft does not cover it.
       takeBackCanceled()
     }
@@ -175,7 +140,6 @@ struct Composer: View {
       store.setDraft(next, for: agentId)
       // The picks go with the words as they are now (both are set together as the field changes).
       Composer.keptChips[agentId] = chips.isEmpty ? nil : (next, chips)
-      relayout(edited: true)
     }
     .onChange(of: chips) { _, next in
       Composer.keptChips[agentId] = next.isEmpty ? nil : (text, next)
@@ -184,6 +148,18 @@ struct Composer: View {
     .onChange(of: store.canceledDraft?.id) { _, _ in takeBackCanceled() }
     .onAppear { dictation.onWords = { [handle] words in handle.insertDictation(words) } }
     .onDisappear { dictation.cancel() }
+  }
+
+  /** The iPhone's soft edge: the messages fade into the ground under the field, its glass over them. */
+  private var softEdge: some View {
+    let stops: [Gradient.Stop] = [
+      Gradient.Stop(color: look.ground.opacity(0), location: 0),
+      Gradient.Stop(color: look.ground.opacity(0.85), location: 0.6),
+      Gradient.Stop(color: look.ground, location: 1),
+    ]
+    return LinearGradient(stops: stops, startPoint: .top, endPoint: .bottom)
+      .frame(height: min(height, 160) + 28)
+      .allowsHitTesting(false)
   }
 
   /** The field's words while empty (`ve`): listening, transcribing, a reply's, files', or the chat's. */
@@ -235,6 +211,65 @@ struct Composer: View {
     control.focusCount += 1
   }
 
+  /**
+   * The field in glass, 20 round (the iPhone's): the words, and at the
+   * right the recording chip, the spinner while transcribing, the grey
+   * microphone, or the blue send. A click on the glass beside the words
+   * gives them the keys, as in Messages.
+   */
+  private func fieldBox(payload: Bool, placeholder: String) -> some View {
+    let shown = min(fieldHeight, Composer.tallest)
+    let shape = RoundedRectangle(cornerRadius: 20, style: .continuous)
+    return HStack(alignment: .bottom, spacing: 4) {
+      field(placeholder: placeholder)
+        .frame(height: shown)
+        .padding(.leading, Composer.wordsInset.width)
+        .padding(.vertical, Composer.wordsInset.height)
+        .frame(maxWidth: .infinity, alignment: .leading)
+      fieldButton(payload: payload)
+        .padding(.trailing, 2)
+        .padding(.bottom, 2)
+    }
+    .frame(minHeight: 40)
+    .background {
+      Color.clear
+        .contentShape(shape)
+        .onTapGesture { handle.focus() }
+        .pointerStyle(.horizontalText)
+    }
+    .glassEffect(.regular, in: shape)
+  }
+
+  /** The control at the field's right (`sand-prompt-send`, `…-mic`, `…-voice-chip`). */
+  @ViewBuilder
+  private func fieldButton(payload: Bool) -> some View {
+    Group {
+      switch dictation.phase {
+      case .asking, .recording:
+        // The recording chip in Send's place (`sand-prompt-voice-chip`).
+        RecordingChip(dictation: dictation, look: look) {
+          Task { await dictation.stop(store: store) }
+        }
+        .padding(.trailing, 2)
+        .frame(height: 36)
+      case .transcribing:
+        ProgressView()
+          .controlSize(.small)
+          .frame(width: 36, height: 36)
+          .accessibilityLabel("Transcribing voice input…")
+      case .idle:
+        if payload {
+          SendButton(look: look, paused: store.isSendingPaused, action: send)
+            .transition(.scale(scale: 0.6).combined(with: .opacity))
+        } else {
+          MicButton(look: look) { dictation.start(store: store) }
+            .transition(.scale(scale: 0.6).combined(with: .opacity))
+        }
+      }
+    }
+    .animation(.easeOut(duration: 0.2), value: payload)
+  }
+
   private func field(placeholder: String) -> some View {
     MessageField(text: $text, chips: $chips, height: $fieldHeight, ink: NSColor(look.ink), look: look, focusKey: "\(agentId)#\(threadRoot ?? "")#\(control.focusCount)", handle: handle, onSend: send, onEscape: {
       // Escape while listening drops the recording (the chip's own Escape); else it lets go of a reply.
@@ -280,7 +315,8 @@ struct Composer: View {
 
   /**
    * The open list, 4 over the trigger's line and from its left (kept
-   * inside the chat at the right), over the messages.
+   * inside the chat at the right), over the messages. Hung from the field's
+   * row: the words start 64 in (Attach, its gap, the field's 16) and 10 down.
    */
   @ViewBuilder
   private var list: some View {
@@ -289,9 +325,8 @@ struct Composer: View {
       let empty = rows.isEmpty ? picks.emptyLine(agentId: agentId, store: store) : nil
       if !rows.isEmpty || empty != nil {
         let listWidth: CGFloat = request.kind == .emoji ? 320 : 360
-        // Where the words start: 13 in the stacked form (more lines, a reply, files, a line over the words), 45 on one line.
-        let fieldLeft: CGFloat = stacked || control.reply != nil || !control.staged.isEmpty || !noticeLines.isEmpty ? 13 : 45
-        let x = max(0, min(request.anchor.minX, width + 16 - fieldLeft - listWidth))
+        let wordsLeft = Composer.fieldInset + Composer.wordsInset.width
+        let x = max(0, min(request.anchor.minX, width + 16 - wordsLeft - listWidth))
         // Hung by its bottom-left corner from a zero-size point 4 over the trigger's line (no custom alignment guide).
         Color.clear
           .frame(width: 0, height: 0)
@@ -300,7 +335,7 @@ struct Composer: View {
                      hover: { picks.selected = $0 }, choose: { choose($0) })
               .fixedSize()
           }
-          .offset(x: x, y: request.anchor.minY - 4)
+          .offset(x: wordsLeft + x, y: Composer.wordsInset.height + request.anchor.minY - 4)
       }
     }
   }
@@ -374,27 +409,6 @@ struct Composer: View {
     }
   }
 
-  /**
-   * One line or stacked, as the window decides (`Zan`): stacked for a new
-   * line or words that wrap at the one-line width; back to one line, after
-   * an edit, only for under 48 characters that fit on it.
-   */
-  private func relayout(edited: Bool) {
-    guard width > 0 else { return }
-    let empty = text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    let compactWidth = width - 45 - (empty ? 45 : 81)
-    let newline = text.contains("\n") || text.contains("\r")
-    let wraps = MessageField.height(of: text, width: compactWidth) >= 39
-    if newline || wraps {
-      if !stacked { stacked = true }
-      return
-    }
-    guard stacked, edited else { return }
-    if text.isEmpty || (text.count < 48 && MessageField.lineWidth(of: text) <= compactWidth) {
-      stacked = false
-    }
-  }
-
   /** The new chat's words and picks moved to the chat they were meant for (the window's `setDraft` on that chat). */
   static func handOver(from: String, to: String, store: AppStore) {
     // Only words go over a chat's own draft; files alone leave it as it is.
@@ -439,8 +453,9 @@ struct Composer: View {
 }
 
 /**
- * Attach file (`sand-prompt-attach`): a 30-point glass disc with a plus,
- * the Mac's open panel for several files; off once six wait.
+ * Attach file (`sand-prompt-attach`): the iPhone's 40-point glass disc with
+ * a plus beside the field, the Mac's open panel for several files; off
+ * once six wait.
  */
 private struct AttachButton: View {
   let look: Look
@@ -450,13 +465,13 @@ private struct AttachButton: View {
   var body: some View {
     Button(action: action) {
       Image(systemName: "plus")
-        .font(.system(size: 15, weight: .regular))
+        .font(.system(size: 18, weight: .regular))
         .foregroundStyle(look.dark ? Color.white.opacity(0.86) : Color.black.opacity(0.78))
-        .frame(width: 30, height: 30)
+        .frame(width: 40, height: 40)
         .contentShape(Circle())
     }
     .buttonStyle(.hand)
-    .glassEffect(.regular, in: .circle)
+    .glassEffect(.regular.interactive(), in: .circle)
     .disabled(full)
     .opacity(full ? 0.4 : 1)
     .help("Attach file")
@@ -464,7 +479,7 @@ private struct AttachButton: View {
   }
 }
 
-/** Send (`sand-prompt-send`): 28, the window's blue, the white arrow; faded and off while sending waits (step 13). */
+/** Send (`sand-prompt-send`): the iPhone's 30-point circle in the window's blue, the white arrow bold, in a 36 target; faded and off while sending waits (step 13). */
 private struct SendButton: View {
   let look: Look
   var paused = false
@@ -473,10 +488,11 @@ private struct SendButton: View {
   var body: some View {
     Button(action: action) {
       Image(systemName: "arrow.up")
-        .font(.system(size: 13, weight: .semibold))
+        .font(.system(size: 14, weight: .bold))
         .foregroundStyle(Color.white)
-        .frame(width: 28, height: 28)
+        .frame(width: 30, height: 30)
         .background(look.yours, in: Circle())
+        .frame(width: 36, height: 36)
         .contentShape(Circle())
     }
     .buttonStyle(.hand)
@@ -487,23 +503,17 @@ private struct SendButton: View {
   }
 }
 
-/**
- * Start voice input (`sand-prompt-mic`): while the field is empty, 28 in the
- * window's blue with a white microphone; with words, a grey one (at 60%)
- * beside Send.
- */
+/** Start voice input (`sand-prompt-mic`): the iPhone's grey microphone inside the field while there is nothing to send, in a 36 target. */
 private struct MicButton: View {
-  let prominent: Bool
   let look: Look
   let action: () -> Void
 
   var body: some View {
     Button(action: action) {
       Image(systemName: "mic")
-        .font(.system(size: 13, weight: .medium))
-        .foregroundStyle(prominent ? Color.white : look.inkSecondary)
-        .frame(width: 28, height: 28)
-        .background(prominent ? look.yours : Color.clear, in: Circle())
+        .font(.system(size: 16, weight: .regular))
+        .foregroundStyle(look.inkSecondary)
+        .frame(width: 36, height: 36)
         .contentShape(Circle())
     }
     .buttonStyle(.hand)
@@ -546,24 +556,6 @@ struct MessageField: NSViewRepresentable {
   @Environment(AppStore.self) private var store
 
   static let font = NSFont.systemFont(ofSize: 14)
-
-  /** The words' height at a width: 20 a line. */
-  static func height(of text: String, width: CGFloat) -> CGFloat {
-    guard width > 1 else { return 20 }
-    var string = text
-    if string.isEmpty || string.hasSuffix("\n") { string += " " }
-    let box = (string as NSString).boundingRect(
-      with: NSSize(width: width, height: CGFloat.greatestFiniteMagnitude),
-      options: [.usesLineFragmentOrigin, .usesFontLeading],
-      attributes: attributes(.textColor),
-      context: nil)
-    return max(20, ceil(box.height))
-  }
-
-  /** The words' width on one line. */
-  static func lineWidth(of text: String) -> CGFloat {
-    ceil((text as NSString).size(withAttributes: [.font: font]).width)
-  }
 
   static func attributes(_ ink: NSColor) -> [NSAttributedString.Key: Any] {
     let style = NSMutableParagraphStyle()

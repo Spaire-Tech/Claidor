@@ -151,16 +151,34 @@ struct WindowAccessor: NSViewRepresentable {
 /**
  * The Mac's sidebar material, which the Electron window lets show through
  * behind its agents' list (`vibrancy: "sidebar"`, greyed when the window is
- * not in front: `followWindow`).
+ * not in front: `followWindow`). Rounded by its own mask when `radius` is
+ * set (the sidebar's glass panel): SwiftUI's clip does not round an AppKit
+ * view behind the window.
  */
 struct SidebarMaterial: NSViewRepresentable {
+  var radius: CGFloat = 0
+
   func makeNSView(context: Context) -> NSVisualEffectView {
     let view = NSVisualEffectView()
     view.material = .sidebar
     view.blendingMode = .behindWindow
     view.state = .followsWindowActiveState
+    if radius > 0 { view.maskImage = Self.mask(radius: radius) }
     return view
   }
 
   func updateNSView(_ view: NSVisualEffectView, context: Context) {}
+
+  /** A rounded rectangle that stretches between its corners (the way AppKit rounds a material). */
+  static func mask(radius: CGFloat) -> NSImage {
+    let edge = radius * 2 + 1
+    let image = NSImage(size: NSSize(width: edge, height: edge), flipped: false) { rect in
+      NSColor.black.set()
+      NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius).fill()
+      return true
+    }
+    image.capInsets = NSEdgeInsets(top: radius, left: radius, bottom: radius, right: radius)
+    image.resizingMode = .stretch
+    return image
+  }
 }

@@ -203,7 +203,7 @@ struct LocalAskDock: View {
       guard event.keyCode == 53, !event.isARepeat, mods.isEmpty, enabled,
             event.window?.attachedSheet == nil, !(event.window?.firstResponder is NSText),
             viewers.shown == nil, !ChatControl.exchangeShowing, !window.orgChart, MacServices.shared.deepLinkInfo == nil,
-            pane.avatarEditor == nil, pane.routineEditor?.popover == nil else { return false }
+            !MacConnector.showing, pane.avatarEditor == nil, pane.routineEditor?.popover == nil else { return false }
       answer(.deny)
       return true
     })
