@@ -24,6 +24,12 @@ packages:
   ElevenLabs:
     url: https://github.com/elevenlabs/elevenlabs-swift-sdk
     from: 3.4.0
+  # LiveKit, the kit under ElevenLabs': named so the app can tell it to let go
+  # of the microphone when a call is over (Simeon/CallAudio.swift). The same
+  # package ElevenLabs' kit already brings, so one copy is built.
+  LiveKit:
+    url: https://github.com/livekit/client-sdk-swift
+    from: 2.10.0
 targets:
   Simeon:
     type: application
@@ -42,6 +48,7 @@ targets:
     dependencies:
       - package: SimeonCore
       - package: ElevenLabs
+      - package: LiveKit
     info:
       path: Simeon/Info.plist
       properties:

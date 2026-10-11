@@ -25,6 +25,10 @@ final class ElevenLabsVoice: VoiceTransport, @unchecked Sendable {
   func start(token: String, prompt: String, firstMessage: String, voiceId: String?, language: String, events: @escaping @Sendable (VoiceEvent) -> Void) async throws {
     await beginCall()
     guard await AVAudioApplication.requestRecordPermission() else { throw MicrophoneRefused() }
+    #if os(iOS)
+    // The session able to record before the kit takes the microphone, whatever the ring or dictation left (CallAudio).
+    CallAudio.prepare()
+    #endif
     let config = ConversationConfig(
       agentOverrides: AgentOverrides(prompt: prompt, firstMessage: firstMessage, language: Language(rawValue: language) ?? .english),
       ttsOverrides: voiceId.map { TTSOverrides(voiceId: $0) },
@@ -39,12 +43,26 @@ final class ElevenLabsVoice: VoiceTransport, @unchecked Sendable {
       agentStateConfiguration: .default,
       onAgentStateChange: { state in events(.agentSpeaking(state == .speaking)) }
     )
-    let started = try await ElevenLabs.startConversation(
-      conversationToken: token,
-      config: config,
-      onAgentReady: { events(.connected(conversationId: nil)) },
-      onDisconnect: { _ in events(.ended) }
-    )
+    let started: Conversation
+    do {
+      started = try await ElevenLabs.startConversation(
+        conversationToken: token,
+        config: config,
+        onAgentReady: { events(.connected(conversationId: nil)) },
+        onDisconnect: { _ in
+          events(.ended)
+          // The agent hung up, or the line dropped: the microphone let go as on a hang-up here.
+          #if os(iOS)
+          Task { await CallAudio.release() }
+          #endif
+        }
+      )
+    } catch {
+      #if os(iOS)
+      Task { await CallAudio.release() }
+      #endif
+      throw error
+    }
     await hold(started, events: events)
   }
 
@@ -87,6 +105,9 @@ final class ElevenLabsVoice: VoiceTransport, @unchecked Sendable {
     await conversation?.endConversation()
     conversation = nil
     watching = []
+    #if os(iOS)
+    await CallAudio.release()
+    #endif
   }
 }
 
@@ -131,9 +152,8 @@ final class CallTonePlayer: CallTonePlaying, @unchecked Sendable {
 
   private static func player(_ wav: Data) -> AVAudioPlayer? {
     #if os(iOS)
-    let session = AVAudioSession.sharedInstance()
-    try? session.setCategory(.playback, mode: .default)
-    try? session.setActive(true)
+    // The call's own session, never play only: the call's kit may be holding the microphone, and a session that cannot record stops it (CallAudio).
+    CallAudio.prepare()
     #endif
     let player = try? AVAudioPlayer(data: wav, fileTypeHint: AVFileType.wav.rawValue)
     player?.prepareToPlay()

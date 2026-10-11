@@ -159,7 +159,8 @@ final class SessionController {
       backend.call = LiveCall(backend: backend, transport: ElevenLabsVoice(), personName: { names.value }, voiceFor: { agentId in await store.ensureVoice(agentId) }, tones: CallTonePlayer(), failedStays: nil, log: { VoiceCallLog.shared.write($0) })
     }
     #else
-    backend.call = LiveCall(backend: backend, transport: ElevenLabsVoice(), personName: { names.value }, voiceFor: { agentId in await store.ensureVoice(agentId) }, tones: CallTonePlayer())
+    // Each step of a call in the console (Xcode's, when the app runs from it), as the Mac's `voice-call.log` has them.
+    backend.call = LiveCall(backend: backend, transport: ElevenLabsVoice(), personName: { names.value }, voiceFor: { agentId in await store.ensureVoice(agentId) }, tones: CallTonePlayer(), log: { line in Trace.log("[simeon] voice-call \(line)") })
     #endif
     // The profile is asked for first and applied the moment it answers, beside the roster.
     Task { [weak self] in
