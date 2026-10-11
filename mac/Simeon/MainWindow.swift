@@ -183,8 +183,15 @@ struct MainWindow: View {
     return id
   }
 
+  // The window in four parts, so the compiler checks each on its own (one chain of all of them was too long for it).
   var body: some View {
     let look = Look(scheme)
+    followingNewChat(followingComputer(closingFloaters(layered(columns(look: look), look: look))))
+      .background(KeyWatcher())
+  }
+
+  /** The sidebar, the chat (or what stands in its place) and the agent's pane, side by side. */
+  private func columns(look: Look) -> some View {
     GeometryReader { box in
       let windowWidth = box.size.width
       // The agent's pane (step 7): drawn while open, the new chat closed, and the chat keeping its 424 beside the sidebar as it stands (`uan`).
@@ -198,27 +205,8 @@ struct MainWindow: View {
       let pageWidth = max(0, min(paneWidth, windowWidth - sidebarWidth - SidebarLayout.chatMinimum))
       HStack(spacing: 0) {
         Sidebar(rail: rail, width: sidebarWidth)
-        Group {
-          if newChat.isOpen {
-            // New chat (⌘N, step 5) in the chat's place.
-            NewChatPane()
-          } else if window.orgChart {
-            // The org chart (step 12), the chat and its head under it; the pane stays beside it.
-            OrgChartView()
-          } else if newChat.creating != nil {
-            CreatingScreen()
-          } else if let agentId = window.selected {
-            ChatPane(agentId: agentId)
-              .id(agentId)
-          } else {
-            ZStack(alignment: .top) {
-              look.ground
-              // The top of the chat moves the window, as the Electron window's title strip does.
-              WindowDragArea().frame(height: 52)
-            }
-          }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        chatSide(look: look)
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
         AgentPaneColumn(agentId: window.selected, shownWidth: shownWidth, pageWidth: pageWidth, windowWidth: windowWidth, sidebarWidth: sidebarWidth)
       }
       .onChange(of: paneShown, initial: true) { _, shown in pane.isVisible = shown }
@@ -229,102 +217,141 @@ struct MainWindow: View {
       }
       .animation(SidebarLayout.motion, value: rail)
     }
-    // A file, a picture or a diagram opened full screen, over the sidebar and the chat.
-    .overlay { ViewerLayer() }
-    // An agent's computer (step 13), over the whole window.
-    .overlay { ComputerLayer() }
-    // Settings (⌘,, step 8), over the window; search over it.
-    .overlay { SettingsLayer() }
-    // Plugins (Connect apps, step 9), in Settings' place.
-    .overlay { PluginsLayer() }
-    // Search (⌘K), over everything.
-    .overlay { SearchLayer() }
-    // The agents being read with none to show yet (Reload, ⌘R): "Setting up Simeon's computer" over the window (`Yzn`).
-    .overlay {
-      if store.isLoading && store.agents.isEmpty && !store.rosterFailed {
-        ZStack {
-          look.ground
-          SettingUp(look: look)
-        }
-        .ignoresSafeArea()
+  }
+
+  /** The chat's place: the new chat, the org chart, an agent being made, the open agent's chat, or nothing chosen. */
+  @ViewBuilder
+  private func chatSide(look: Look) -> some View {
+    if newChat.isOpen {
+      // New chat (⌘N, step 5) in the chat's place.
+      NewChatPane()
+    } else if window.orgChart {
+      // The org chart (step 12), the chat and its head under it; the pane stays beside it.
+      OrgChartView()
+    } else if newChat.creating != nil {
+      CreatingScreen()
+    } else if let agentId = window.selected {
+      ChatPane(agentId: agentId)
+        .id(agentId)
+    } else {
+      ZStack(alignment: .top) {
+        look.ground
+        // The top of the chat moves the window, as the Electron window's title strip does.
+        WindowDragArea().frame(height: 52)
       }
     }
-    // The computer's dialogs (step 13), one at a time, over everything; its pills at the top over them.
-    .overlay { ComputerDialogLayer() }
-    .overlay { ComputerPills() }
-    // The usage is read once signed in: Settings lists Usage & Billing, and ⌘K and "/" offer it, only once it is in.
-    .task { await store.loadUsage() }
-    // Settings opening shuts what floats over the pane (a routine's trigger popover, the avatar editor), as a click outside them would.
-    .onChange(of: settings.isOpen) { _, open in
-      guard open else { return }
-      // It takes the computer's place (the window's one overlay slot).
-      window.computer = nil
-      pane.routineEditor?.closePopover(store: store)
-      if pane.avatarEditor != nil { pane.closeAvatarEditor() }
+  }
+
+  /** What stands over the window, in order: a viewer, the computer, Settings, Plugins, search, "Setting up", the computer's dialogs and pills. */
+  private func layered(_ content: some View, look: Look) -> some View {
+    content
+      // A file, a picture or a diagram opened full screen, over the sidebar and the chat.
+      .overlay { ViewerLayer() }
+      // An agent's computer (step 13), over the whole window.
+      .overlay { ComputerLayer() }
+      // Settings (⌘,, step 8), over the window; search over it.
+      .overlay { SettingsLayer() }
+      // Plugins (Connect apps, step 9), in Settings' place.
+      .overlay { PluginsLayer() }
+      // Search (⌘K), over everything.
+      .overlay { SearchLayer() }
+      .overlay { settingUp(look: look) }
+      // The computer's dialogs (step 13), one at a time, over everything; its pills at the top over them.
+      .overlay { ComputerDialogLayer() }
+      .overlay { ComputerPills() }
+  }
+
+  /** The agents being read with none to show yet (Reload, ⌘R): "Setting up Simeon's computer" over the window (`Yzn`). */
+  @ViewBuilder
+  private func settingUp(look: Look) -> some View {
+    if store.isLoading && store.agents.isEmpty && !store.rosterFailed {
+      ZStack {
+        look.ground
+        SettingUp(look: look)
+      }
+      .ignoresSafeArea()
     }
-    // Plugins opening does the same, and About.
-    .onChange(of: plugins.isOpen) { _, open in
-      guard open else { return }
-      window.computer = nil
-      pane.routineEditor?.closePopover(store: store)
-      if pane.avatarEditor != nil { pane.closeAvatarEditor() }
-    }
-    .onChange(of: account.aboutOpen) { _, open in
-      guard open else { return }
-      pane.routineEditor?.closePopover(store: store)
-      if pane.avatarEditor != nil { pane.closeAvatarEditor() }
-    }
-    // Signed out (or the computer lost): Settings and Plugins go with the window.
-    .onDisappear {
-      settings.close()
-      plugins.close()
-      plugins.model.forget()
-      // The next sign-in opens on a chat, not the chart nor a computer.
-      window.orgChart = false
-      window.computer = nil
-      window.computerAsk = nil
-      if let watching { store.unwatchComputer(watching) }
-      watching = nil
-    }
-    // The open agent's computer is read and followed while it is open (`XOn` → `NTn(current)`), not a group's.
-    .onChange(of: watchedComputer, initial: true) { _, now in
-      guard now != watching else { return }
-      if let watching { store.unwatchComputer(watching) }
-      watching = now
-      if let now { store.watchComputer(now) }
-    }
-    // The window coming forward: a computer started here is started again, and what is watched read again (at most once a minute).
-    .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
-      store.windowCameForward(rebuilding: store.rebuild.isHardLocked)
-      // Whether this account may use Simeon, read again each time (not while the computer is rebuilt).
-      if !store.rebuild.isHardLocked { Task { await store.refreshAccess() } }
-    }
-    // Another agent opened from the sidebar or search closes the new chat (its own single agent is its preview).
-    .onChange(of: window.selected) { _, selected in
-      // The pane stays open on another agent, drawn afresh on Profile (or the page asked for it).
-      pane.agentChanged(to: selected)
-      guard newChat.isOpen, newChat.previewId(window) == nil else { return }
-      newChat.close()
-    }
-    // The new chat (⌘N) and a page of the pane (Channels, Chat Settings, `openSection`) close the org chart.
-    .onChange(of: newChat.isOpen) { _, open in
-      if open { window.orgChart = false }
-    }
-    .onChange(of: pane.isOpen) { _, open in
-      if open { window.orgChart = false }
-    }
-    .onChange(of: pane.section) { _, _ in
-      if pane.isOpen { window.orgChart = false }
-    }
-    // Making an agent from the new chat closes the pane (`HDn`).
-    .onChange(of: newChat.creating != nil) { _, making in
-      if making { pane.close(layout: layout) }
-    }
-    .onChange(of: window.opened) { _, _ in
-      guard newChat.isOpen, newChat.previewId(window) == nil else { return }
-      newChat.close()
-    }
-    .background(KeyWatcher())
+  }
+
+  /** The usage read once signed in; Settings, Plugins and About shutting what floats over the pane; signing out. */
+  private func closingFloaters(_ content: some View) -> some View {
+    content
+      // The usage is read once signed in: Settings lists Usage & Billing, and ⌘K and "/" offer it, only once it is in.
+      .task { await store.loadUsage() }
+      // Settings opening shuts what floats over the pane (a routine's trigger popover, the avatar editor), as a click
+      // outside them would, and takes the computer's place (the window's one overlay slot). Plugins the same; About only the floats.
+      .onChange(of: settings.isOpen) { _, open in if open { overlayOpened(closingComputer: true) } }
+      .onChange(of: plugins.isOpen) { _, open in if open { overlayOpened(closingComputer: true) } }
+      .onChange(of: account.aboutOpen) { _, open in if open { overlayOpened(closingComputer: false) } }
+      // Signed out (or the computer lost): Settings and Plugins go with the window.
+      .onDisappear { leftWindow() }
+  }
+
+  /** The open agent's computer followed, and the window coming forward. */
+  private func followingComputer(_ content: some View) -> some View {
+    content
+      // The open agent's computer is read and followed while it is open (`XOn` → `NTn(current)`), not a group's.
+      .onChange(of: watchedComputer, initial: true) { _, now in watch(now) }
+      .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in cameForward() }
+  }
+
+  /** What closes the new chat, the org chart and the pane as the person moves around. */
+  private func followingNewChat(_ content: some View) -> some View {
+    content
+      // Another agent opened from the sidebar or search closes the new chat (its own single agent is its preview).
+      .onChange(of: window.selected) { _, selected in agentChosen(selected) }
+      // The new chat (⌘N) and a page of the pane (Channels, Chat Settings, `openSection`) close the org chart.
+      .onChange(of: newChat.isOpen) { _, open in if open { window.orgChart = false } }
+      .onChange(of: pane.isOpen) { _, open in if open { window.orgChart = false } }
+      .onChange(of: pane.section) { _, _ in if pane.isOpen { window.orgChart = false } }
+      // Making an agent from the new chat closes the pane (`HDn`).
+      .onChange(of: newChat.creating != nil) { _, making in if making { pane.close(layout: layout) } }
+      .onChange(of: window.opened) { _, _ in closeNewChatUnlessPreviewing() }
+  }
+
+  private func overlayOpened(closingComputer: Bool) {
+    if closingComputer { window.computer = nil }
+    pane.routineEditor?.closePopover(store: store)
+    if pane.avatarEditor != nil { pane.closeAvatarEditor() }
+  }
+
+  private func leftWindow() {
+    settings.close()
+    plugins.close()
+    plugins.model.forget()
+    // The next sign-in opens on a chat, not the chart nor a computer.
+    window.orgChart = false
+    window.computer = nil
+    window.computerAsk = nil
+    if let watching { store.unwatchComputer(watching) }
+    watching = nil
+  }
+
+  private func watch(_ now: String?) {
+    guard now != watching else { return }
+    if let watching { store.unwatchComputer(watching) }
+    watching = now
+    if let now { store.watchComputer(now) }
+  }
+
+  /** The window coming forward: a computer started here is started again, what is watched read again (at most once a minute), and whether this account may use Simeon (not while the computer is rebuilt). */
+  private func cameForward() {
+    let rebuilding = store.rebuild.isHardLocked
+    store.windowCameForward(rebuilding: rebuilding)
+    guard !rebuilding else { return }
+    let store = store
+    Task { await store.refreshAccess() }
+  }
+
+  private func agentChosen(_ selected: String?) {
+    // The pane stays open on another agent, drawn afresh on Profile (or the page asked for it).
+    pane.agentChanged(to: selected)
+    closeNewChatUnlessPreviewing()
+  }
+
+  private func closeNewChatUnlessPreviewing() {
+    guard newChat.isOpen, newChat.previewId(window) == nil else { return }
+    newChat.close()
   }
 }
 
