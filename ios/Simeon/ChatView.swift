@@ -45,6 +45,8 @@ struct ChatView: View {
         VStack(spacing: 0) {
           ChatHeadline(agentId: agentId) { showsPage = true }
           ChatCallSlot(agentId: agentId, showsCall: $showsCall, showsTranscript: $showsTranscript)
+          // Low disk on Simeon's computer, under the head (the Mac's `DiskBanner`; ComputerStates.swift).
+          ComputerDiskBanner()
         }
       }
       .safeAreaBar(edge: .bottom, spacing: 0) { ChatComposer(agentId: agentId) }

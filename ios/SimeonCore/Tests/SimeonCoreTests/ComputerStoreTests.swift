@@ -376,3 +376,73 @@ final class ComputerWireTests: XCTestCase {
     XCTAssertTrue(HandoffCardState.of(requestId: "r1", instruction: "x", resolution: "completed", status: asking).waiting)
   }
 }
+
+/**
+ * The app that follows the rebuild (the Mac, the iPhone) pauses sending
+ * through it; low disk sets Disk Saver to work by itself only in the app
+ * that starts it (`startsDiskSaver`, the Mac), so the iPhone leaves it to
+ * the Mac.
+ */
+@MainActor
+final class FollowingTheRebuildTests: XCTestCase {
+  func testOnlyTheAppThatStartsDiskSaverMakesOne() async throws {
+    for starts in [true, false] {
+      let backend = CommandLogBackend()
+      let store = AppStore()
+      store.followsRebuild = true
+      store.startsDiskSaver = starts
+      await store.attach(backend)
+      store.apply(.diskPressure(["level": "soft"]))
+      XCTAssertEqual(store.diskPressure, "soft")
+      try await Task.sleep(nanoseconds: 100_000_000)
+      XCTAssertEqual(backend.methods.contains("createAgent"), starts, "starts: \(starts)")
+      if !starts {
+        // "Go to Disk Saver" still makes one when asked.
+        let made = await store.launchDiskSaver()
+        XCTAssertEqual(made, "saver")
+        XCTAssertTrue(backend.methods.contains("createAgent"))
+      }
+      store.detach()
+    }
+  }
+
+  func testSendingWaitsThroughARebuildWhereItIsFollowed() async {
+    for follows in [true, false] {
+      let store = AppStore()
+      store.followsRebuild = follows
+      store.startsDiskSaver = false
+      await store.attach(CommandLogBackend())
+      store.windowSelection = "theo"
+      XCTAssertFalse(store.isSendingPaused, "nothing under way")
+      // The server replacing the computer: the lock is held for the selected agent (`box-migration`).
+      store.rebuild.migrationEvent(MigrationEvent(operationId: "op", phase: .creating))
+      XCTAssertTrue(store.rebuild.isHardLocked)
+      XCTAssertEqual(store.isSendingPaused, follows, "follows: \(follows)")
+      store.detach()
+    }
+  }
+}
+
+/** A host with one agent, Theo, that writes down each gateway command it is sent; `createAgent` answers with the id "saver". */
+final class CommandLogBackend: AgentBackend, @unchecked Sendable {
+  private let lock = NSLock()
+  private var sent: [String] = []
+  var methods: [String] { lock.withLock { sent } }
+  func listAgents() async throws -> [Agent] { [Agent(id: "theo", name: "Theo")] }
+  func transcript(_ agentId: String) async throws -> [Entry] { [] }
+  func send(_ agentId: String, text: String, attachments: [AttachmentRef], options: SendOptions, nonce: String?) async throws {}
+  func markRead(_ agentId: String) async {}
+  func createAgent(name: String, colour: String) async throws -> String { "x" }
+  func createGroup(name: String, memberIds: [String]) async throws -> String { "g" }
+  func answer(_ agentId: String, entryId: String, value: String) async throws {}
+  func updateAgent(_ agentId: String, name: String, title: String, description: String) async throws {}
+  func routines(_ agentId: String) async throws -> [JSON] { [] }
+  func events() -> AsyncStream<BackendEvent> { AsyncStream { _ in } }
+  var call: CallEngine? { nil }
+  func command(_ method: String, _ args: JSON) async throws -> JSON {
+    lock.withLock { sent.append(method) }
+    return method == "createAgent" ? ["agent": ["id": "saver"]] : [:]
+  }
+  func server(_ path: String, method: String?, body: JSON?) async throws -> JSON { [:] }
+  func screen(_ agentId: String) async throws -> ScreenState { ScreenState(socket: nil, state: "starting") }
+}

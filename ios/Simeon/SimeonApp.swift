@@ -109,6 +109,8 @@ struct RootView: View {
         }
       }
       .animation(.easeInOut(duration: 0.35), value: session.firstRun == .needed)
+      // Refused before the computer was ever reached (`mzn`): the access cover over the first run and the list (ComputerStates.swift).
+      .overlay { AccessCoverLayer() }
     }
   }
 }

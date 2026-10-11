@@ -114,6 +114,10 @@ final class SessionController {
   }
 
   func start() async {
+    // The phone shows the computer's rebuild (ComputerStates.swift): sending waits through it and the list holds still, as on
+    // the Mac. Low disk is shown, but the automatic Disk Saver is left to the Mac, so two apps open do not each make one.
+    store.followsRebuild = true
+    store.startsDiskSaver = false
     if launch.signInScreen { phase = .signedOut(message: nil); return }
     if launch.demo {
       store.account = Account(name: "Bass Fall", email: "bass@simeonlabs.com")
