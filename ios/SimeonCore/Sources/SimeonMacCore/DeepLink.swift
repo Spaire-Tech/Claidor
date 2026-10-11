@@ -48,8 +48,8 @@ public struct DeepLink: Equatable, Sendable {
 
   /**
    * The link, or nil. `schemes` are the ones this app answers to: `simeon`
-   * once it is the Mac app people install, `simeon-mac` while it lives
-   * beside the Electron one (`SimeonConfig.macURLScheme`).
+   * for the Mac app (`SimeonConfig.macURLScheme`; `simeon-mac` while it lived
+   * beside the Electron one).
    */
   public static func parse(_ raw: String, schemes: [String]) -> DeepLink? {
     guard !raw.isEmpty, raw.utf8.count <= maxLength, isPrintableASCII(raw), !raw.contains("#"), !raw.contains("\\"),

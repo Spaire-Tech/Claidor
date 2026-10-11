@@ -11,11 +11,10 @@ Its views are built into the native Mac app too (`mac/README.md`): what
 only the phone has stays behind `#if os(iOS)`, so a change here is built
 for both apps (`ios/scripts/mac.sh` and `mac/scripts/build.sh`).
 
-It replaces the Expo shell in `mobile/`, which shows the web window in a
-web view. It is the same app on the App Store (bundle id
-`com.simeonlabs.simeon.ios`, URL scheme `simeon-ios`), so a build of this
-one replaces that one on TestFlight. `mobile/` stays until this one has
-run on a real iPhone.
+It replaced the Expo shell that was in `mobile/` (it showed the web window
+in a web view; retired and removed on 11 October 2026). It is the same app
+on the App Store (bundle id `com.simeonlabs.simeon.ios`, URL scheme
+`simeon-ios`), so a build of this one replaces that one on TestFlight.
 
 ## How it works
 

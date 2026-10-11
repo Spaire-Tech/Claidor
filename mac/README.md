@@ -1,6 +1,11 @@
 # Simeon on the Mac, native
 
-The Mac app in SwiftUI, Apple's own toolkit, replacing the Electron app in
+**The Mac app.** On 11 October 2026 the founder made it the one people get
+("swift is the real deal now … retire the rest"): it took the Electron
+app's identity (below, "The switch") and the Electron app in `desktop/` was
+retired.
+
+The Mac app in SwiftUI, Apple's own toolkit, which replaced the Electron app in
 `desktop/`. It is a copy of the Electron Mac app as merged on `main`: the
 same behaviour, the same layout and layout rules, with Apple's own
 controls. It is copied one step at a time, each step built on the founder's
@@ -76,28 +81,34 @@ code.
   its code on 9 October 2026. Its "Mac" column describes the earlier build,
   which is gone.
 
-## Living beside the Electron app, then replacing it
+## The switch (11 October 2026)
 
-- **While it grows,** the Swift app is `com.simeonlabs.simeon.mac` with the
-  URL scheme `simeon-mac`, so both apps install side by side and sign in
+- **While it grew,** the Swift app was `com.simeonlabs.simeon.mac` with the
+  URL scheme `simeon-mac`, so both apps installed side by side and signed in
   separately. The server's sign-in takes any app scheme as `redirectTarget`
   (`REDIRECT_TARGET` in `server/simeon/desktop/app_sign_in.py`).
-- **At the switch,** it takes the Electron app's identity: bundle id
-  `com.simeonlabs.simeon`, scheme `simeon`, the same Developer ID team, and
-  the website's Download button (`/desktop/download/mac`) serves its DMG.
-  People move by downloading the new app once: every packaged Electron
-  build has its updater switched off (`SAND_DISABLE_UPDATES=1`).
+- **At the switch** (done 11 October 2026) it took the Electron app's
+  identity: bundle id `com.simeonlabs.simeon` and scheme `simeon`
+  (`project.yml`, `SimeonConfig.macURLScheme`). Still to do: sign it with
+  the same Developer ID team, and have the website's Download button
+  (`/desktop/download/mac`) serve its DMG. People move by downloading the
+  new app once: every packaged Electron build has its updater switched off
+  (`SAND_DISABLE_UPDATES=1`). On a Mac that still has the Electron app,
+  delete it, so `simeon://` links open this one.
+- **The Keychain item** keeps its name (`com.simeonlabs.simeon.mac`): the
+  name is only a label, and keeping it keeps the earlier Swift build's
+  sign-in where macOS allows it (otherwise the person signs in once more).
 - **Updates** come with Sparkle, set up at the switch (STEPS step 14,
   decision 11): its feed written beside `latest.json` in the release
   bucket, each release signed with a key kept on the founder's Mac.
 - **Move to Applications** asks only in a release build whose Info.plist
-  has `SimeonAskToMoveToApplications` set to true: set it at the switch,
-  not before, or the move would put this app in the Electron app's place.
+  has `SimeonAskToMoveToApplications` set to true; it is set since the
+  switch, so the move puts this app in the Electron app's place.
 - Pins, sidebar sections, onboarding, secrets and the agents live in the
   cloud computer, so they carry over. The person signs in once more.
 
-The switch happens when every step of `STEPS.md` has been matched on the
-founder's Mac, not before.
+The switch was planned for when every step of `STEPS.md` had been matched
+on the founder's Mac; the founder made it on 11 October 2026.
 
 ## Build and run it (a Mac)
 

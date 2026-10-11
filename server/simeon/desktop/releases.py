@@ -1,8 +1,9 @@
 """The Mac app's releases: the download link on simeonlabs.com and the
 answer an installed app gets when it asks for a newer version.
 
-A release is made on a Mac (`desktop/scripts/release-macos.mjs`) and its
-folder uploaded to the public bucket under
+A release is made on a Mac (the Electron app's `release-macos.mjs`, removed
+when that app was retired on 11 October 2026; the Swift Mac app's release
+writes the same layout, `mac/README.md`) and its folder uploaded to the public bucket under
 `releases/darwin-arm64/<version>/`, with its `release.json` copied once
 more to `releases/darwin-arm64/latest.json`. That index is the one thing
 the server reads (fetched over HTTPS, cached a few minutes); the file URLs

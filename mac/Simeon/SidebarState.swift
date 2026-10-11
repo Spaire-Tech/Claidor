@@ -107,7 +107,7 @@ final class SidebarState {
 
 /** The kind a sidebar drag carries: the app's own, so a drop on the message field never types it. */
 extension UTType {
-  static let sidebarItem = UTType(exportedAs: "com.simeonlabs.simeon.mac.sidebar-item", conformingTo: .data)
+  static let sidebarItem = UTType(exportedAs: "com.simeonlabs.simeon.sidebar-item", conformingTo: .data)
 }
 
 extension NSItemProvider {

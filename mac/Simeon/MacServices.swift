@@ -274,7 +274,7 @@ final class MacServices {
   // MARK: Links into the app
 
   /**
-   * A link to the app (`simeon-mac://app/v1/…`): the window is brought
+   * A link to the app (`simeon://app/v1/…`): the window is brought
    * forward (made again if closed, by the scene); the same link again
    * within 2 s is dropped; `open` does nothing more, `info` shows the Deep
    * Links dialog (signed out too), and a plugin's link opens Plugins on its
@@ -448,10 +448,9 @@ private struct DeepLinksDialog: View {
  * Now carries on; a failure says so and carries on.
  *
  * Electron asks only in a packaged build. Here that is a release build
- * whose Info.plist says `SimeonAskToMoveToApplications`, which only the
- * release script will set: while this app is built beside the Electron
- * one, both are "Simeon.app", and a move would put this one in the
- * Electron app's place.
+ * whose Info.plist says `SimeonAskToMoveToApplications`, set since this app
+ * replaced the Electron one (11 October 2026): a move puts it in the
+ * Electron app's place, which is now what is wanted.
  */
 @MainActor
 enum MacMoveToApplications {

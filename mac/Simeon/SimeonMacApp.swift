@@ -67,7 +67,7 @@ struct SimeonMacApp: App {
           MacServices.shared.follow(session, window: window, plugins: plugins)
           MacMoveToApplications.askAtLaunch()
         }
-        // The browser's confirm page opens `simeon-mac://…/open`, which brings the app forward; the poll finishes the sign-in.
+        // The browser's confirm page opens `simeon://…/open`, which brings the app forward; the poll finishes the sign-in.
         // `…/v1/info?topic=deep-links` shows Deep Links; a plugin's link (`…/v1/plugin/add?id=`) opens Plugins on its page (`qRn`),
         // after the sign-in when it came before.
         .onOpenURL { url in MacServices.shared.handle(url) }

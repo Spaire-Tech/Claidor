@@ -577,9 +577,9 @@ itself.
 | What | Electron | Swift | Mac |
 |---|---|---|---|
 | The project | `desktop/package.json`, `npm run package` | `mac/project.yml` (XcodeGen) | written |
-| Bundle id, name, scheme, icon | `com.simeonlabs.simeon`, `simeon`, `desktop/brand/Simeon.icns` | `com.simeonlabs.simeon.mac` and `simeon-mac` while it grows, then the Electron app's (`README.md`) | written (beside the Electron app) |
+| Bundle id, name, scheme, icon | `com.simeonlabs.simeon`, `simeon`, `desktop/brand/Simeon.icns` | `com.simeonlabs.simeon` and `simeon`, the Electron app's, since the switch (11 October 2026, `README.md`); `.mac` and `simeon-mac` while it grew | written |
 | Microphone and the server addresses in the app | `NSMicrophoneUsageDescription`, `LSEnvironment` (`SIMEON_API_BASE_URL`, `SIMEON_WEBSITE_URL`) | Info.plist | part: the microphone |
-| Developer ID signing, hardened runtime, notarization, a DMG with an Applications link | `npm run release:macos` (`desktop/scripts/lib/release-macos.mjs`) | an Xcode archive, `notarytool`, a DMG script in `mac/scripts/` | |
+| Developer ID signing, hardened runtime, notarization, a DMG with an Applications link | `npm run release:macos` (removed when the Electron app was retired, 11 October 2026) | an Xcode archive, `notarytool`, a DMG script in `mac/scripts/` | |
 | The download link `api.simeonlabs.com/desktop/download/mac` reads `releases/darwin-arm64/latest.json` | `server/simeon/desktop/releases.py` | the same index, written by the Mac's release script | |
 | Updates | Squirrel, switched off in every packaged build | Sparkle (MIT), with an appcast the server builds from the same index | |
 | The host bundle: `npm run publish:host-bundle` takes `host-main.cjs` and the box's exec daemon out of the packaged Electron app | `desktop/scripts/publish-host-bundle.mjs` | builds them from `desktop/source` directly, so publishing no longer needs a packaged Electron app | |
@@ -607,7 +607,7 @@ Each slice ends with a build on the founder's Mac and their screenshots.
    Mac's size); the sidebar with pins, rows and their status, folding to
    a rail; the chat with its text, the cards the iPhone already draws, and
    the composer; the toolbar; Settings with Account and Theme; the menus
-   and the window's keys (§2.3, §9); `simeon-mac://app/v1/open`.
+   and the window's keys (§2.3, §9); `simeon://app/v1/open`.
 2. **The chat, all of it.** Every card in §2.12, reactions and More
    emoji, Reply, threads, find in the chat, the right-click menu, files
    dropped and pasted, Save, Quick Look, link cards, Mermaid and maths,

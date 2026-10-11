@@ -78,8 +78,8 @@ targets:
           NSAllowsLocalNetworking: true
     settings:
       base:
-        # The same app as the Expo shell's (mobile/app.config.ts), so the
-        # native build replaces it on TestFlight and the App Store.
+        # The same app as the retired Expo shell's (removed 11 October 2026),
+        # so the native build replaces it on TestFlight and the App Store.
         PRODUCT_BUNDLE_IDENTIFIER: com.simeonlabs.simeon.ios
         TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon

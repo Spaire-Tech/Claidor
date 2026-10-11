@@ -1,4 +1,22 @@
-# Simeon, the Mac app
+# Simeon, the retired Electron Mac app
+
+**Retired on 11 October 2026.** The founder: "swift is the real deal now …
+retire the rest". The Mac app people get is the Swift app in `../mac/`, the
+iPhone app the Swift app in `../ios/`. Nothing here is released any more
+(the release command is gone) and the app gets no new work.
+
+This folder stays for two things only, until each has a home of its own:
+
+- **The agents' engine.** Every agent runs on its cloud computer in the host
+  program (`source/host`) beside the box's exec daemon
+  (`source/box-exec-daemon`). Both are still built through this app's
+  packaging: on a Mac, `npm run package`, then `npm run publish:host-bundle`
+  takes them out of the packaged app for the cloud computers
+  (`../docs/services-core.md`, "The host bundle channel"). The next step is
+  a build of the engine on its own, then this folder can go.
+- **The web app** at `app.simeonlabs.com/app` (`web/`), kept for now.
+
+What follows describes the app as it was built.
 
 Simeon is a team of always-on agents, each with a computer of its own. This
 directory is the Mac app, built with Electron:

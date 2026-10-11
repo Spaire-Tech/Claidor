@@ -1494,7 +1494,7 @@ skills, the GitHub banner, an empty or failing catalog). Pushed:
   pages, tabs and Added change at once.
 - **Ways in**: Connect apps at the sidebar's foot, ⌘K and "/" "Plugins",
   ⌘⇧M and ⌘⇧W (both on Marketplace, as the window's), and a plugin's link
-  (`simeon-mac://app/v1/plugin/add?id=…`), which opens that plugin's page.
+  (`simeon://app/v1/plugin/add?id=…`), which opens that plugin's page.
   Ways out: Escape (the search's words first, then the search itself, then
   Plugins; on a page too), ×, a click on the dim, an agent, message, file
   or routine picked in ⌘K. Closing forgets the view (Marketplace, no
@@ -2184,7 +2184,7 @@ cannot be read, a group's own picture). Pushed in three parts:
 - **What connecting sets**: the computer's own notifications off (the Mac
   says them), this Mac's time zone, the local setting squared with the
   computer's, the security key's switch.
-- **Links into the app** (`simeon-mac://app/v1/…`): the window forward;
+- **Links into the app** (`simeon://app/v1/…`): the window forward;
   the same link twice within 2 seconds once; `info?topic=deep-links`
   shows the Deep Links dialog (signed out too; Done, × and Escape close
   it); a plugin's link opens Plugins on it, after the sign-in when it came
@@ -2347,7 +2347,7 @@ sharp than Chromium's (to check on a Mac).
 
 The gallery's last section. On a Mac: a notification while the window is
 behind, its click with the window closed; the Dock's number; ⌘= ⌘- ⌘0; a
-`simeon-mac://app/v1/info?topic=deep-links` link from Safari; a plugin's
+`simeon://app/v1/info?topic=deep-links` link from Safari; a plugin's
 link signed out, then signed in; a picture's right-click and Save image…;
 a download into a folder that refuses it; an agent asked to run `ls ~` on
 this Mac: the card, each answer, the command's result, and
