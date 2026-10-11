@@ -123,7 +123,7 @@ first build on the founder's Mac is the first real check.
 - **The theme setting** (step 8, done): Settings › General › Theme, ⌘K and
   "/" set it.
 - **A new account's first run** (step 6, done).
-- **"Can't reach your computer"** (step 13).
+- **"Can't reach your computer"** (step 13, done).
 
 ### Where the native parts look different
 
@@ -231,7 +231,7 @@ Written 10 October 2026, **not built yet** (as step 1). Compare with B01
 - The butterflies stand still, and new messages appear without the
   window's motion: 2f (done).
 - The access notice over the field ("Your trial has ended"…) and the
-  computer's notices over it: step 13.
+  computer's notices over it: step 13 (done).
 
 #### Where the native parts look different
 
@@ -331,7 +331,7 @@ window's Gallery chat, one card at a time:
 - **"Your turn on the computer"**: the computer tile, "Waiting for you"
   with a pulsing blue dot, the agent's instruction, Take over, I'm done and
   Skip; once settled, what happened and Open computer. Take over and Open
-  computer open the computer, step 13.
+  computer open the computer, step 13 (done).
 - **A cloud agent**: its name, state, what it was asked, its branch and
   pull request, the files and lines it changed, View PR and Open; asked
   again every five seconds while it works.
@@ -569,7 +569,7 @@ from its code. Pushed so far:
 | "/" Members | 7d (done) |
 | "/" Settings: General, Settings: Usage & Billing | 8 (done) |
 | "/" Plugins | 9 (done) |
-| "/" Update Simeon's Computer (offered once the computer's update is known to the field) | 13 |
+| "/" Update Simeon's Computer (offered until the computer is known to be up to date, as the window does) | 13 (done) |
 
 #### Not in 2e yet
 
@@ -861,13 +861,13 @@ tested against what the window lists for the same words. Pushed:
 
 Each closes search, as the window's do, and opens nothing yet. A routine
 opens its agent; in the window it also opens the agent's pane on its
-Computer page (step 13).
+Computer page (step 13, done).
 
 #### Not in step 4 yet
 
 - **Join shared room** and **New shared room** (with sharing on) and the
   window's update actions ("Update Simeon's Computer", the app's own
-  update): with the shared rooms (12) and the computer (13). The app's own
+  update): with the shared rooms (12) and the computer (13, done). The app's own
   update has no Mac counterpart yet.
 - The window's developer actions (Feature Flags…, the trace capture) and
   their submenus with a Back arrow: developer builds only; left out.
@@ -1114,7 +1114,7 @@ details in the pane.
 |---|---|
 | The avatar's button and its pencil (Edit Avatar) | 7b (done) |
 | The Routines tab's page (the tab switches; its page is empty) | 7c (done) |
-| The Computer tab (a group's: 7d, done; an agent's computer) | 13 |
+| The Computer tab (a group's: 7d, done; an agent's computer) | 13 (done) |
 | "/" and search's Members | 7d (done) |
 
 #### Where the native parts look different
@@ -1312,7 +1312,7 @@ round trip with a logo), light and dark. Pushed:
   someone can be added, and under the list "Groups can have up to 6
   members." or "Create more Agents to add them here." A row opens that
   agent's chat; the pane stays, on its Profile. The tabs' Computer now
-  switches; an agent's computer on it is step 13, and a shared room's tab is
+  switches; an agent's computer on it is step 13 (done), and a shared room's tab is
   empty.
 - **Add Member**: a menu of the agents that are not groups and not in it,
   most recent first, each with its butterfly; a pick adds it at the end (a
@@ -1346,7 +1346,7 @@ and search and "/" use that one rule (they disagreed before).
 
 #### Not in 7d
 
-- An agent's computer on its Computer tab (step 13).
+- An agent's computer on its Computer tab (step 13, done).
 - The window adds a member only when the host sends the new list back;
   here the list changes at once and goes back if refused (the core's way).
 - The rows' keyboard order and focus ring are the Mac's.
@@ -1985,3 +1985,146 @@ is used twice. Fixed too:
 Left as it is: if the computer's agent network is turned off while the
 chart is open, the chart stays until it is closed (not yet compared with
 the Electron app).
+
+## Step 13: the computer, and the window's computer states
+
+Read from the window's computer (the main bundle's preview, full view,
+strip and hand-off card) and its rebuild, connection, disk and access
+surfaces, and measured in the reference window, light and dark, at five
+sizes and with the pane open, with the computer's answers patched for each
+state (no status yet, unreadable, pulling, off, sleeping, on this Mac,
+starting, a screen; helpers 1, 2, 5, 6; the stream away, a rebuild of each
+kind, its failures, low disk, every access answer). Pushed in two parts:
+
+- **The Computer tab** (I03): the frame (the pane's width less 40, 16:10,
+  14 round) with the agent's screen watched only, its pointer, and "Open"
+  under the pointer or with the keys; "Booting up the computer" and the
+  window's moving bar while it is read or started, "Setting up the
+  computer" with its percent while it is pulled, "Can't reach Simeon's
+  screen" with Retry and the reason in red, the spinner while the screen
+  connects (and after 20 seconds why), "Screen preview unavailable" after
+  too many crashes, the display glyph when it is off; "Simeon's screen"
+  under it. While the agent waits: "Needs your attention", its words,
+  Skip this step and I'm done, continue. A click anywhere on the frame
+  opens the computer.
+- **The computer over the whole window**: the 44-point bar (the traffic
+  lights at its left, a strip that moves the window, Exit fullscreen at its
+  right), the hand-off's banner (its buttons answer and close it), the
+  screen as the largest 16:10 that fits, the helper's name and the other
+  helpers' screens (↑← ↓→ between them, "and N more" with a menu). It is
+  the person's to use while open: the keys go to it, ⌘C ⌘V ⌘X ⌘A ⌘Z reach
+  it as Ctrl, and the clipboard goes both ways. Opening it starts the
+  computer; closing it hands nothing back and the message field takes the
+  keys. Choosing an agent, Settings and Plugins close it.
+- **The hand-off card** in the chat: Take over, its snapshot and Open
+  computer open the computer; I'm done and Skip answer as before.
+- **Search's routine** opens the open agent's pane on Computer (another
+  agent's: that agent with its pane on Profile), as the window does.
+- **The stream away**: "Reconnecting" at the window's top after 2.5
+  seconds, "Checking connection" for a second once it is back, "Simeon's
+  computer restarting" while it comes up; after two minutes "Couldn't Reach
+  Simeon's Computer" with Recover Simeon's Computer (and its question) and
+  Retry.
+- **Rebuilding the computer**: Update Simeon's Computer in ⌘K, "/" and the
+  sidebar's foot (while it may be updated); its question ("Update Simeon's
+  Computer?", "An agent is working" with Update anyway and Update when done,
+  "Update while agents are working?"); an update goes to the pill at the
+  top (its ring and step; a click brings the dialog), a reset or recovery
+  to the dialog in front (its steps, the bar and percent, Continue in
+  Background); "Taking longer than expected" after two minutes; "Update
+  failed", "Reset failed", "Recover failed" with their Retry. Sending waits
+  while it runs.
+- **Low disk** under the chat's head ("Computer is low on disk space", or
+  critically), with Go to Disk Saver; Disk Saver is set to work once each
+  time the disk runs low.
+- **The access notice** 8 over the message field, in the window's words
+  for each answer, with its button to simeonlabs.com; Send is off under it.
+  The access is read again each time the window comes forward.
+- **The sidebar** when the agents can't be read: "Can’t reach your
+  computer" with Retry and Recover computer ("Your computer isn’t set up"
+  for an account without Simeon), "Reconnecting to your computer…" over a
+  list already shown; read again every 4 seconds.
+- **The whole window**: the access cover for an account refused before
+  its computer was ever reached; "Setting up Simeon's computer" while the
+  agents are read with none to show (Reload).
+
+The shared code gained the update offer, the agents at work, the rebuild's
+steps, the ⌘K row, the card's waiting rule and the helpers' rule, with
+tests. The Mac app now builds the iPhone's screen view (noVNC in a web
+view) and ships noVNC.
+
+#### Not in step 13
+
+- "Simeon is Paused" (the computer blocked) and "Update Privacy Mode": the
+  native connection does not tell those refusals apart yet.
+- Low disk on the new chat's screen (the window shows it there too).
+- "Check for Updates" (the app's own update): no Mac counterpart yet.
+- The window's reports about the screen (`reportOpenComputer`,
+  `reportVncSession`): nothing the person sees.
+
+#### Decisions to confirm
+
+The computer:
+
+1. While the computer is open its keys are the computer's (Escape, ⌘K,
+   ⌘N, ⌘, too) and Tab stays inside it; Exit shows a ring with the keys.
+   (The window lets Tab walk into the hidden window, and ⌘N or ⌘F reach
+   hidden fields, until its screen takes the keys.)
+2. The 20-second "isn't connecting" notice is a plate at the frame's foot,
+   as the window means it (its own falls apart into a column of letters).
+3. The hand-off card waits while the computer carries its request or while
+   it has no answer. (The window says "Done" for a waiting request whenever
+   the computer's status can't be read.)
+4. Closing the computer lets go of its screen. (The window keeps it
+   connected, hidden, while the pane is open, even for the next agent.)
+5. Every helper's screen shows the agent's own screen, as in the window.
+6. A routine found by search opens the pane on Computer, not the routine,
+   as in the window.
+7. "and N more" has the thumbnails' frame (the window's is 42 high), and
+   its menu is the Mac's.
+8. "Exit fullscreen" keeps the window's word, though it only closes the
+   computer.
+9. The red under "Can't reach" on the dark full view is the dark red (the
+   window's light red barely shows there).
+
+The window's states:
+
+10. The sidebar's Update is a 24-point disc at the foot's right (a cloud,
+    a clock while queued), its words as its tooltip. (The window draws it
+    over the initials and partly off the window.)
+11. One computer dialog at a time, and it holds the keys. (The window lets
+    them open under each other and get stuck.)
+12. Return under the access notice keeps the words. (The window empties
+    the field and sends nothing.)
+13. Nothing says why Send is off during a rebuild, as in the window.
+14. The pills centre on the whole window, as in the window.
+15. On the rail, "Can't reach" is the glyph alone (its words as tooltip),
+    as in the window.
+16. The agents are read again every 4 seconds while they can't be (the
+    window's code says 4 seconds; it retries in bursts), and "Reconnecting
+    to your computer…" shows over any list already shown (the window only
+    for one kept from an earlier launch, which the Mac app does not keep).
+17. The sidebar's Recover computer asks "Recover Simeon's Computer?"
+    first. (The window resets at once, which recreates the computer.)
+18. "Taking longer than expected" opens over the rebuild's dialog with its
+    own scrim, and never for an update in the background, as in the window.
+19. Update Simeon's Computer is offered until the computer is known to be
+    up to date, as in the window.
+
+#### Where the native parts look different
+
+The screen is drawn by noVNC in the Mac's web view (the window loads the
+computer's own page in Chromium); "and N more"'s menu is the Mac's; the
+icons are SF Symbols (display, arrow.up.left.and.arrow.down.right,
+arrow.down.right.and.arrow.up.left, checkmark.circle, circle,
+icloud.and.arrow.down, clock, location.fill for the agent's pointer).
+
+#### What to compare
+
+I03 light and dark (the window's picture shows "Can't reach", its demo
+answer being refused); the full view at 1040 × 760 with and without the
+hand-off banner; the reconnect pill, the update pill, the rebuild dialog,
+"Couldn't Reach", a failure; low disk; the access notice; the sidebar's
+card. On a Mac: a real screen in the tab and the full view, typing and ⌘C
+⌘V into it, the clipboard both ways, Take over from a real hand-off, a
+real update of the computer.
