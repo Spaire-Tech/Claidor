@@ -1906,8 +1906,9 @@ coming soon (N01–N08, O01). Pushed:
 - **A message from or to a platform** keeps its tag in the bubble, now
   with the window's straight arrows (↓ Slack, ↑ Slack).
 
-The new words and the channel calls are SimeonMacCore's (`AgentNetwork`,
-`Channels.swift`), with tests.
+The new words and the channel calls are the shared core's (`AgentNetwork`,
+`Channels.swift`, in SimeonCore since 11 October 2026 so the iPhone has the
+org chart and Channels too), with tests.
 
 #### Not in step 12
 
