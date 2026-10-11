@@ -40,10 +40,14 @@ struct ChatView: View {
   /** What a "/" app action opened over the chat. */
   @State private var slashSheet: SlashSheet?
   @AppStorage("simeon.theme") private var theme = "system"
+  /** Whether "/" offers Org Chart and Channels here: read as the Mac reads them when the chat opens. */
+  @State private var orgChartOn = false
+  @State private var channelsOn = false
+  @State private var showsOrgChart = false
 
   /** The screens "/" can open over the chat (the Mac's palette commands). */
   enum SlashSheet: String, Identifiable {
-    case settings, usage, plugins, hidden
+    case settings, usage, plugins, hidden, channels
     var id: String { rawValue }
   }
 
@@ -117,6 +121,11 @@ struct ChatView: View {
             NavigationStack { UsagePage().toolbar { ToolbarItem(placement: .leadingBar) { CloseButton() } } }
               .presentationBackground(Ink.groupedGround)
           case .plugins: ConnectAppsSheet().presentationBackground(Ink.ground)
+          case .channels:
+            NavigationStack {
+              ChannelsPage(agentId: agentId).toolbar { ToolbarItem(placement: .leadingBar) { CloseButton() } }
+            }
+            .presentationBackground(Ink.groupedGround)
           case .hidden:
             HiddenAgentsSheet { id in
               slashSheet = nil
@@ -130,6 +139,15 @@ struct ChatView: View {
       }
       .sheet(isPresented: $showsComputer) { ComputerSheet(agentId: agentId).problemAlert() }
       .fullScreenCover(isPresented: $showsCall) { CallScreen(showsTranscript: $showsTranscript) }
+      .fullScreenCover(isPresented: $showsOrgChart) {
+        OrgChartScreen { id in
+          showsOrgChart = false
+          // The list opens it, as a tapped notification does.
+          Notifications.shared.openAgent = id
+        }
+        .problemAlert()
+        .presentationBackground(Ink.ground)
+      }
       .navigationDestination(item: $exchange) { route in ExchangePage(route: route) }
       .onAppear {
         actions.openPage = { showsPage = true }
@@ -138,8 +156,8 @@ struct ChatView: View {
         actions.openComputer = { showsComputer = true }
         // "/": the Mac's palette commands that make sense here (ComposerLists.appActions).
         actions.slashActions = {
-          ComposerLists.appActions(isGroup: store.groupIds.contains(agentId), hasHiddenAgents: store.hasHidden, hasChannels: false,
-                                   showsOrgChart: false, showsUsage: store.usage.summary == nil || store.usage.showsSection)
+          ComposerLists.appActions(isGroup: store.groupIds.contains(agentId), hasHiddenAgents: store.hasHidden, hasChannels: channelsOn,
+                                   showsOrgChart: orgChartOn, showsUsage: store.usage.summary == nil || store.usage.showsSection)
         }
         actions.runSlashAction = { id in runSlash(id) }
         actions.openExchange = { exchange = $0 }
@@ -153,6 +171,11 @@ struct ChatView: View {
       // Back in front with the chat on screen: what came meanwhile is read now.
       .onChange(of: scenePhase) { _, phase in
         if phase == .active { Task { await store.refresh(agentId); store.markChatRead(agentId) } }
+      }
+      // "/"'s Org Chart and Channels, as the Mac's composer reads them on opening (`readGates`); apart, so the chat's own opening never waits on them.
+      .task {
+        orgChartOn = await store.agentNetworkEnabled() && !store.agents.isEmpty
+        channelsOn = await store.channelsAvailable(agentId)
       }
       .task {
         await store.open(agentId)
@@ -170,7 +193,9 @@ struct ChatView: View {
   /** One of "/"'s app actions, run at once (the Mac's `runComposerAction`). */
   private func runSlash(_ id: String) {
     switch id {
+    case "org-chart": showsOrgChart = true
     case "open-hidden-chats": slashSheet = .hidden
+    case "info:channels": slashSheet = .channels
     case "info:members", "info:settings": showsPage = true
     case "settings:general": slashSheet = .settings
     case "settings:usage": slashSheet = .usage

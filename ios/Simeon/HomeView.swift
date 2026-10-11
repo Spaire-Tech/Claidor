@@ -45,6 +45,15 @@ struct HomeView: View {
   @State private var selecting = false
   @State private var picked = Set<String>()
   @State private var deletingPicked: [Agent] = []
+  /** The Mac's org chart, full screen (OrgChart.swift), and whether this account has it (`isAgentNetworkEnabled`). */
+  @State private var showsOrgChart = false
+  @State private var orgChartOn = false
+
+  /** Org Chart where it may be opened: the network on and an agent to show (the Mac's ⌘K and "/"). */
+  private var openOrgChart: (() -> Void)? {
+    guard orgChartOn && store.hasAgents else { return nil }
+    return { searchFocused = false; showsOrgChart = true }
+  }
   /** The search field has the focus: the list gives way to search (SearchResults) until it is left empty. */
   @FocusState private var searchFocused: Bool
 
@@ -72,6 +81,7 @@ struct HomeView: View {
             openRoutine: { hit in searchFocused = false; profile = AgentRef(id: hit.agentId, routineId: hit.routine.id) },
             openSheet: { next in searchFocused = false; sheet = next },
             showHidden: { searchFocused = false; showsHidden = true },
+            openOrgChart: openOrgChart,
             close: { query = ""; searchFocused = false }
           )
           .transition(.opacity)
@@ -110,11 +120,11 @@ struct HomeView: View {
           if selecting {
             Button("Done", action: endSelecting).fontWeight(.semibold)
           } else {
-            ListFilterMenu(filter: $filter, showsHidden: $showsHidden) {
+            ListFilterMenu(filter: $filter, showsHidden: $showsHidden, openOrgChart: openOrgChart, select: {
               searchFocused = false
               query = ""
               withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) { selecting = true }
-            }
+            })
           }
         }
       }
@@ -190,6 +200,7 @@ struct HomeView: View {
     }
     .problemAlert()
     .modifier(CallHaptics())
+    .orgChart(isPresented: $showsOrgChart, isOn: $orgChartOn, openChat: open)
     .task(id: store.hasAgents) { openAtLaunch() }
     // A tapped notification opens that agent's chat (once the roster has it).
     .task(id: OpenRequest(agent: Notifications.shared.openAgent, ready: store.hasAgents)) {
@@ -499,6 +510,8 @@ private struct AgentList<Actions: View>: View {
 private struct ListFilterMenu: View {
   @Binding var filter: HomeView.ListFilter
   @Binding var showsHidden: Bool
+  /** The org chart, while this account has it. */
+  var openOrgChart: (() -> Void)? = nil
   /** Select Chats, as Messages' Select Messages: pick several to move or delete together. */
   let select: () -> Void
   @Environment(AppStore.self) private var store
@@ -511,6 +524,9 @@ private struct ListFilterMenu: View {
       Button(action: select) { Label("Select Chats", systemImage: "checkmark.circle") }
       Button { showsHidden = true } label: { Label("Hidden Agents", systemImage: "eye.slash") }
         .disabled(!store.hasHidden)
+      if let openOrgChart {
+        Button(action: openOrgChart) { Label("Org Chart", systemImage: "point.3.connected.trianglepath.dotted") }
+      }
       Section("Filter By") {
         Toggle(isOn: Binding(get: { filter == .unread }, set: { filter = $0 ? .unread : .all })) {
           Label("Unread", systemImage: "message.badge")
