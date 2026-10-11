@@ -116,7 +116,8 @@ struct ChatPane: View {
     }
     // Search closed: the message field takes the keys back (under the To: line, the line takes them).
     .onReceive(NotificationCenter.default.publisher(for: WindowState.composerFocusNote)) { _ in
-      guard !underToLine else { return }
+      // Not under an exchange or a call's lines: the field is hidden there.
+      guard !underToLine, !control.coversChat else { return }
       control.focusCount += 1
     }
     .onChange(of: threadRoot) { _, _ in

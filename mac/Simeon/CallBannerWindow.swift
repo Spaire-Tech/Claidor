@@ -27,12 +27,21 @@ final class CallBannerWindow {
   private var panel: BannerPanel?
   private var height = firstHeight
   private weak var followed: AppStore?
+  /** Whether the pointer is on the banner, seen even while another app is in front (a tracking area that is always on). */
+  let pointer = BannerPointer()
 
   /** The banner opens with a call and closes when the call is put away, whatever windows are open. Once, at launch. */
   func follow(_ store: AppStore) {
     guard followed !== store else { return }
     followed = store
     track(store)
+    // Quitting with a call on ends it (its voice let go, its record on its way), rather than leaving its line "now".
+    NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification, object: nil, queue: .main) { [weak store] _ in
+      MainActor.assumeIsolated {
+        guard let store, let call = store.call, call.phase != .ended else { return }
+        store.hangUp()
+      }
+    }
   }
 
   private func track(_ store: AppStore) {
@@ -65,7 +74,9 @@ final class CallBannerWindow {
       guard let store, let call = store.call else { return }
       if call.phase == .ended { store.dismissCall() } else { store.hangUp() }
     }
-    let host = BannerHostingView(rootView: AnyView(CallBannerCard(resize: { [weak self] in self?.resize(to: $0) }).environment(store)))
+    pointer.inside = false
+    let host = BannerHostingView(rootView: AnyView(CallBannerCard(pointer: pointer, resize: { [weak self] in self?.resize(to: $0) }).environment(store)))
+    host.pointer = pointer
     // The window's size is the card's to set (`resize`), not the hosting view's.
     host.sizingOptions = []
     panel.contentView = host
@@ -113,9 +124,34 @@ final class CallBannerWindow {
     return NSScreen.screens.first { NSMouseInRect(point, $0.frame, false) } ?? NSScreen.main
   }
 
-  /** The first click acts, without bringing Simeon forward (`acceptFirstMouse`). */
+  /** The first click acts, without bringing Simeon forward (`acceptFirstMouse`); the pointer is followed whatever app is in front. */
   private final class BannerHostingView: NSHostingView<AnyView> {
+    weak var pointer: BannerPointer?
+    private var area: NSTrackingArea?
+
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
+    override func updateTrackingAreas() {
+      super.updateTrackingAreas()
+      if let area { removeTrackingArea(area) }
+      // The card, not the clear room around it for its shadow.
+      let card = NSRect(x: CallBannerWindow.margin.left, y: isFlipped ? CallBannerWindow.margin.top : CallBannerWindow.margin.bottom,
+                        width: max(0, bounds.width - CallBannerWindow.margin.left - CallBannerWindow.margin.right),
+                        height: max(0, bounds.height - CallBannerWindow.margin.top - CallBannerWindow.margin.bottom))
+      let next = NSTrackingArea(rect: card, options: [.mouseEnteredAndExited, .activeAlways], owner: self, userInfo: nil)
+      addTrackingArea(next)
+      area = next
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+      super.mouseEntered(with: event)
+      pointer?.inside = true
+    }
+
+    override func mouseExited(with event: NSEvent) {
+      super.mouseExited(with: event)
+      pointer?.inside = false
+    }
   }
 
   /** A borderless panel takes the keys only when it says so; Close Window asks the call. */
@@ -124,6 +160,13 @@ final class CallBannerWindow {
     override var canBecomeKey: Bool { true }
     override func performClose(_ sender: Any?) { closing?() }
   }
+}
+
+/** Whether the pointer is on the banner's card. */
+@MainActor
+@Observable
+final class BannerPointer {
+  var inside = false
 }
 
 /** The banner's colours (`banner.css`), light and dark. */
@@ -155,6 +198,7 @@ private struct BannerLook {
  * window's sheen, as the founder asked ("remove the transparant").
  */
 struct CallBannerCard: View {
+  let pointer: BannerPointer
   let resize: (Double) -> Void
   @Environment(AppStore.self) private var store
   @Environment(\.colorScheme) private var scheme
@@ -191,7 +235,7 @@ struct CallBannerCard: View {
           .padding(.bottom, 8)
       }
       if showsTranscript && state != .ringing {
-        transcript(call, look: look)
+        BannerTranscript(lines: call.lines, look: look)
       }
       bar(call, state: state, look: look)
     }
@@ -213,6 +257,7 @@ struct CallBannerCard: View {
       hovering = inside
       timeFailure(call)
     }
+    .onChange(of: pointer.inside) { _, _ in timeFailure(call) }
     .onChange(of: state, initial: true) { _, _ in timeFailure(call) }
     // Closed at each call's start.
     .onChange(of: call.agentId) { _, _ in showsTranscript = false }
@@ -258,46 +303,6 @@ struct CallBannerCard: View {
     .padding(EdgeInsets(top: 18, leading: 18, bottom: 14, trailing: 18))
   }
 
-  /** What both said (`.live`): the person's on the right in the chat's blue, the agent's on the left in the grey; 260 at most, then it scrolls, kept at the newest. */
-  private func transcript(_ call: CallState, look: BannerLook) -> some View {
-    VStack(spacing: 0) {
-      look.separator.frame(height: 1)
-      ScrollView {
-        VStack(spacing: 8) {
-          if call.lines.isEmpty {
-            Text(CallBanner.emptyTranscript)
-              .font(.system(size: 13))
-              .foregroundStyle(look.sub)
-              .frame(maxWidth: .infinity)
-              .padding(.vertical, 4)
-          }
-          ForEach(Array(call.lines.enumerated()), id: \.offset) { _, line in
-            Text(line.text)
-              .font(.system(size: 13.5))
-              .lineSpacing(18.9 - 16.1)
-              .foregroundStyle(line.fromPerson ? Color.white : look.ink)
-              .textSelection(.enabled)
-              .padding(.vertical, 8)
-              .padding(.horizontal, 13)
-              .background {
-                if line.fromPerson { look.personBubble } else { look.tint }
-              }
-              .clipShape(RoundedRectangle(cornerRadius: 17, style: .circular))
-              .frame(maxWidth: (CallBanner.width - 36) * 0.84, alignment: line.fromPerson ? .trailing : .leading)
-              .frame(maxWidth: .infinity, alignment: line.fromPerson ? .trailing : .leading)
-          }
-        }
-        .padding(EdgeInsets(top: 14, leading: 18, bottom: 16, trailing: 18))
-      }
-      .defaultScrollAnchor(.bottom, for: .initialOffset)
-      .defaultScrollAnchor(.bottom, for: .sizeChanges)
-      .frame(maxHeight: 259)
-      .fixedSize(horizontal: false, vertical: true)
-    }
-    .accessibilityElement(children: .contain)
-    .accessibilityLabel("Transcript")
-  }
-
   /** Nothing while it rings or once it ended; Close when it failed; else Mute (Unmute), Transcript, End, 48 high, 1 apart. */
   @ViewBuilder
   private func bar(_ call: CallState, state: CallBanner.Look, look: BannerLook) -> some View {
@@ -332,7 +337,7 @@ struct CallBannerCard: View {
   private func timeFailure(_ call: CallState) {
     dismissing?.cancel()
     dismissing = nil
-    guard CallBanner.look(call) == .failed, !hovering else { return }
+    guard CallBanner.look(call) == .failed, !hovering, !pointer.inside else { return }
     let endedAt = call.endedAt
     dismissing = Task {
       try? await Task.sleep(nanoseconds: UInt64(CallBanner.failedStays * 1_000_000_000))
@@ -340,6 +345,67 @@ struct CallBannerCard: View {
       guard !Task.isCancelled, let now = store.call, now.failed, now.endedAt == endedAt else { return }
       store.dismissCall()
     }
+  }
+}
+
+/**
+ * What both said (`.live`): the person's on the right in the chat's blue,
+ * the agent's on the left in the grey; 260 at most, then it scrolls. It
+ * opens at the newest, and a new line brings it there only when it was
+ * within 24 of the foot (someone reading further up stays where they are).
+ */
+private struct BannerTranscript: View {
+  let lines: [CallLine]
+  let look: BannerLook
+  @State private var position = ScrollPosition(edge: .bottom)
+  @State private var nearFoot = true
+
+  var body: some View {
+    VStack(spacing: 0) {
+      look.separator.frame(height: 1)
+      ScrollView {
+        VStack(spacing: 8) {
+          if lines.isEmpty {
+            Text(CallBanner.emptyTranscript)
+              .font(.system(size: 13))
+              .foregroundStyle(look.sub)
+              .frame(maxWidth: .infinity)
+              .padding(.vertical, 4)
+          }
+          ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
+            Text(line.text)
+              .font(.system(size: 13.5))
+              .lineSpacing(18.9 - 16.1)
+              .foregroundStyle(line.fromPerson ? Color.white : look.ink)
+              .textSelection(.enabled)
+              .padding(.vertical, 8)
+              .padding(.horizontal, 13)
+              .background {
+                if line.fromPerson { look.personBubble } else { look.tint }
+              }
+              .clipShape(RoundedRectangle(cornerRadius: 17, style: .circular))
+              .frame(maxWidth: (CallBanner.width - 36) * 0.84, alignment: line.fromPerson ? .trailing : .leading)
+              .frame(maxWidth: .infinity, alignment: line.fromPerson ? .trailing : .leading)
+          }
+        }
+        .padding(EdgeInsets(top: 14, leading: 18, bottom: 16, trailing: 18))
+      }
+      .scrollPosition($position)
+      .defaultScrollAnchor(.bottom, for: .initialOffset)
+      .onScrollGeometryChange(for: Bool.self) { geometry in
+        geometry.contentOffset.y + geometry.containerSize.height >= geometry.contentSize.height - 24
+      } action: { _, near in
+        nearFoot = near
+      }
+      .onChange(of: lines.count) { _, _ in
+        guard nearFoot else { return }
+        position.scrollTo(edge: .bottom)
+      }
+      .frame(maxHeight: 259)
+      .fixedSize(horizontal: false, vertical: true)
+    }
+    .accessibilityElement(children: .contain)
+    .accessibilityLabel("Transcript")
   }
 }
 
@@ -361,7 +427,7 @@ private struct BannerAvatar: View {
       } else if reduceMotion {
         ButterflyMark(palette: agent?.palette ?? AgentPalette.named(call.agentColour), size: 46)
       } else {
-        TimelineView(.animation) { context in
+        TimelineView(.animation(minimumInterval: 1.0 / 60)) { context in
           let breath = 1 + 0.015 * sin(2 * context.date.timeIntervalSinceReferenceDate)
           ButterflyMark(palette: agent?.palette ?? AgentPalette.named(call.agentColour), size: 46)
             .scaleEffect(x: 2 - breath, y: breath)
@@ -387,7 +453,7 @@ private struct BannerWave: View {
 
   var body: some View {
     let levels = store.callLevels
-    TimelineView(.animation) { context in
+    TimelineView(.animation(minimumInterval: 1.0 / 60)) { context in
       Canvas { graphics, size in
         let heights = memory.step(levels, speaking: speaking, at: context.date)
         let count = heights.count

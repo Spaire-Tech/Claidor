@@ -115,7 +115,7 @@ struct CallChatView: View {
               let first = index == 0 || call.lines[index - 1].fromPerson != line.fromPerson
               let last = index == call.lines.count - 1 || call.lines[index + 1].fromPerson != line.fromPerson
               if line.fromPerson {
-                PersonLine(text: line.text, width: width, look: look)
+                PersonLine(id: "\(call.id)-\(index)", text: line.text, width: width, look: look)
               } else {
                 AgentLine(id: "\(call.id)-\(index)", text: line.text, agent: agent, first: first, last: last, width: width, look: look)
               }
@@ -149,9 +149,11 @@ struct CallChatView: View {
 
 /** The person's words: their own blue bubble on the right (14 on 21, padded 10 15, round 18), as in the chat. */
 private struct PersonLine: View {
+  let id: String
   let text: String
   let width: CGFloat
   let look: Look
+  @Environment(ChatControl.self) private var control
 
   var body: some View {
     let limit = max(0, min(width * 0.88, 640, width - 82))
@@ -163,6 +165,14 @@ private struct PersonLine: View {
       .padding(.vertical, 10)
       .padding(.horizontal, 15)
       .background(look.yours, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+      // Right-click: Copy, as on the agent's lines.
+      .onHover { inside in
+        if inside {
+          control.exchangeHovered = (id, text)
+        } else if control.exchangeHovered?.id == id {
+          control.exchangeHovered = nil
+        }
+      }
       .frame(maxWidth: limit, alignment: .trailing)
       .frame(maxWidth: .infinity, alignment: .trailing)
       .padding(.vertical, 2)

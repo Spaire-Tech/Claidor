@@ -307,7 +307,9 @@ public final class AppStore {
 
   /** Starts on a backend: the roster, then the live events. */
   public func attach(_ backend: AgentBackend) async {
-    detach()
+    // The same computer again (Reload) keeps a call that is on, as the Electron app's reload does; another one ends it.
+    let same = self.backend === backend
+    detach(endingCall: !same)
     self.backend = backend
     isLoading = true
     defer { isLoading = false }
@@ -318,8 +320,12 @@ public final class AppStore {
         self.apply(event)
       }
     }
-    backend.call?.observe { [weak self] state in
-      Task { @MainActor in self?.take(state) }
+    // Only while this is the computer in use: a call heard after a sign-out never comes back on screen.
+    backend.call?.observe { [weak self, weak backend] state in
+      Task { @MainActor in
+        guard let self, let backend, self.backend === backend else { return }
+        self.take(state)
+      }
     }
     connectRebuild(backend)
     // Whether this account may use Simeon, beside the agents (`sandAccess.connect`).
@@ -332,7 +338,11 @@ public final class AppStore {
     Task { await assignMissingVoices() }
   }
 
-  public func detach() {
+  /** Signed out, or the sign-in ended: a call that is on ends with it (its voice let go, its record sent). */
+  public func detach() { detach(endingCall: true) }
+
+  private func detach(endingCall: Bool) {
+    if endingCall { backend?.call?.hangUp() }
     listening?.cancel()
     listening = nil
     backend = nil

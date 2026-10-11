@@ -15,12 +15,15 @@ import SimeonCore
 final class ElevenLabsVoice: VoiceTransport, @unchecked Sendable {
   @MainActor private var conversation: Conversation?
   @MainActor private var watching: Set<AnyCancellable> = []
+  /** Hung up before the kit handed the conversation over: the conversation is ended the moment it arrives. */
+  @MainActor private var endedEarly = false
 
   struct MicrophoneRefused: LocalizedError {
     var errorDescription: String? { "Simeon can't use the microphone." }
   }
 
   func start(token: String, prompt: String, firstMessage: String, voiceId: String?, language: String, events: @escaping @Sendable (VoiceEvent) -> Void) async throws {
+    await beginCall()
     guard await AVAudioApplication.requestRecordPermission() else { throw MicrophoneRefused() }
     let config = ConversationConfig(
       agentOverrides: AgentOverrides(prompt: prompt, firstMessage: firstMessage, language: Language(rawValue: language) ?? .english),
@@ -45,7 +48,14 @@ final class ElevenLabsVoice: VoiceTransport, @unchecked Sendable {
     await hold(started, events: events)
   }
 
+  @MainActor private func beginCall() { endedEarly = false }
+
   @MainActor private func hold(_ started: Conversation, events: @escaping @Sendable (VoiceEvent) -> Void) {
+    // Hung up while it connected: let it go at once, so no voice speaks after the call ended.
+    if endedEarly {
+      Task { await started.endConversation() }
+      return
+    }
     conversation = started
     watching = []
     started.$messages
@@ -73,6 +83,7 @@ final class ElevenLabsVoice: VoiceTransport, @unchecked Sendable {
   }
 
   @MainActor private func mainEnd() async {
+    endedEarly = true
     await conversation?.endConversation()
     conversation = nil
     watching = []

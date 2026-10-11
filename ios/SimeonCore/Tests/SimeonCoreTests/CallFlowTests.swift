@@ -108,6 +108,70 @@ final class CallFlowTests: XCTestCase {
   }
 }
 
+/** Signing out ends a call that is on, and nothing of it comes back on screen. */
+@MainActor
+final class CallSignOutTests: XCTestCase {
+  func testSigningOutEndsTheCall() async throws {
+    let demo = DemoCall(speed: 20)
+    let backend = DemoBackend(seed: DemoData.seed(), pace: 0.01, call: demo)
+    let store = AppStore()
+    await store.attach(backend)
+    let states = CallStates()
+    demo.observe { states.add($0) }
+    store.startCall(Agent(id: "theo", name: "Theo"))
+    try await Task.sleep(nanoseconds: 300_000_000)
+    XCTAssertEqual(store.call?.phase, .live)
+    store.detach()
+    XCTAssertEqual(states.last?.phase, .ended, "the call ends with the sign-out")
+    try await Task.sleep(nanoseconds: 200_000_000)
+    XCTAssertNil(store.call, "and does not come back on screen")
+    withExtendedLifetime(backend) {}
+  }
+
+  func testReloadKeepsTheCall() async throws {
+    let demo = DemoCall(speed: 20)
+    let backend = DemoBackend(seed: DemoData.seed(), pace: 0.01, call: demo)
+    let store = AppStore()
+    await store.attach(backend)
+    store.startCall(Agent(id: "theo", name: "Theo"))
+    try await Task.sleep(nanoseconds: 300_000_000)
+    await store.attach(backend)
+    try await Task.sleep(nanoseconds: 50_000_000)
+    XCTAssertEqual(store.call?.phase, .live)
+  }
+}
+
+/** A voice that says it connected only after a while, and counts its ends. */
+final class LateVoice: VoiceTransport, @unchecked Sendable {
+  let lock = NSLock()
+  var ends = 0
+  func start(token: String, prompt: String, firstMessage: String, voiceId: String?, language: String, events: @escaping @Sendable (VoiceEvent) -> Void) async throws {
+    try? await Task.sleep(nanoseconds: 150_000_000)
+    events(.connected(conversationId: "c1"))
+  }
+  func setMuted(_ muted: Bool) async {}
+  func say(context: String, nudge: String) async {}
+  func toolResult(id: String, result: String) async {}
+  func end() async { lock.withLock { ends += 1 } }
+}
+
+final class CallLateVoiceTests: XCTestCase {
+  func testAVoiceThatConnectsAfterTheHangUpIsLetGo() async throws {
+    let backend = DemoBackend(seed: DemoData.seed(), pace: 0.01, call: nil)
+    let voice = LateVoice()
+    let call = LiveCall(backend: backend, transport: voice, personName: { nil }, pause: { _ in try? await Task.sleep(nanoseconds: 2_000_000) })
+    let states = CallStates()
+    call.observe { states.add($0) }
+    call.start(agentId: "theo", agentName: "Theo", colour: "green")
+    // While the voice connects.
+    try await Task.sleep(nanoseconds: 80_000_000)
+    call.hangUp()
+    try await Task.sleep(nanoseconds: 250_000_000)
+    XCTAssertFalse(states.all.contains { $0?.phase == .live }, "never live after the hang-up")
+    XCTAssertGreaterThanOrEqual(voice.lock.withLock { voice.ends }, 2, "the late voice is ended too")
+  }
+}
+
 final class CallStates: @unchecked Sendable {
   private let lock = NSLock()
   private var states: [CallState?] = []

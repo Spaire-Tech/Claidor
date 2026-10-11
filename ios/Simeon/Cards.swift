@@ -1694,13 +1694,15 @@ struct PartyAvatar: View {
 struct VoiceCallLine: View {
   let seconds: Int
   let lines: [CallLine]
+  /** The call is still on: "Voice chat · now", and nothing to open yet. */
+  var live = false
   @State private var open = false
 
   var body: some View {
-    Button { if !lines.isEmpty { open = true } } label: {
+    Button { if !live && !lines.isEmpty { open = true } } label: {
       EventLine {
         Image(systemName: "waveform").font(.system(size: 11, weight: .semibold)).padding(.trailing, 3)
-        Text("Voice chat · \(Chat.callLength(seconds))")
+        Text(Chat.voiceChatLabel(seconds: seconds, live: live))
       }
       .contentShape(.rect)
     }

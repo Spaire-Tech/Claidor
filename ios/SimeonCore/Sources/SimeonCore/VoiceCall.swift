@@ -279,6 +279,8 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
   private var pendingReplies: [String] = []
   /** The call is ready to start its voice: the ring stops after the cycle it is in. */
   private var prepared = false
+  /** The server's token is here: past the seventh ring, only its absence fails the call (`call-controller.ts`). */
+  private var tokenHere = false
   private var ringing: Task<Void, Never>?
 
   public init(backend: AgentBackend, transport: VoiceTransport, personName: @escaping @Sendable () -> String?, voiceFor: (@Sendable (String) async -> String?)? = nil, tones: CallTonePlaying? = nil, quiet: Double = 1.0, failedStays: Double? = 2.4, log: @escaping @Sendable (String) -> Void = { _ in }, pause: @escaping @Sendable (Double) async -> Void = { try? await Task.sleep(nanoseconds: UInt64($0 * 1_000_000_000)) }) {
@@ -321,7 +323,7 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
     lock.withLock {
       callId = UUID().uuidString.lowercased(); conversationId = nil; opened = false; viaChat = false
       after = 0; seenChat = []; lastTask = nil; finished = false; speaking = false; activity = 0
-      pendingReplies = []; prepared = false
+      pendingReplies = []; prepared = false; tokenHere = false
     }
     set(CallState(phase: .ringing, status: VoiceCallText.calling, agentId: agentId, agentName: agentName, agentColour: colour, isMuted: false, agentSpeaking: false, levels: [], lines: [], connectedAt: nil, endedAt: nil))
     // The ring, as the Mac's banner rings, while the call gets ready.
@@ -345,8 +347,8 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
       await tones.ring(cycles: 1)
       rings += 1
     }
-    if !Task.isCancelled, !isFinished, !lock.withLock({ prepared }), rings >= CallTones.maxRings {
-      log("connect: still not ready after \(rings) rings")
+    if !Task.isCancelled, !isFinished, !lock.withLock({ tokenHere }), rings >= CallTones.maxRings {
+      log("connect: no token after \(rings) rings")
       fail(VoiceCallText.couldNotConnect)
     }
   }
@@ -370,7 +372,7 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
     // Hung up (or given up on) while the server answered: nothing more to do (`voice-call-service.ts`).
     guard !isFinished else { return }
     guard let token = ticket["token"]?.text else { return fail(VoiceCallText.couldNotConnect) }
-    lock.withLock { conversationId = ticket["conversation_id"]?.text }
+    lock.withLock { conversationId = ticket["conversation_id"]?.text; tokenHere = true }
     let person = personName()
     let teammates = roster.filter { $0.id != agentId && !$0.isGroup && !$0.isRemoteRoom && !$0.isHidden && !$0.name.isEmpty }.map { (name: $0.name, title: $0.title) }
     let name = row?.name ?? agentName
@@ -407,18 +409,29 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
     let id = lock.withLock { callId }
     do {
       _ = try await backend.command("voiceCall", ["agentId": .string(agentId), "callId": .string(id), "kind": "open"])
-      lock.withLock { opened = true }
+      // Ended (hung up, or the seventh ring) while it opened: closed at once, so the chat's line does not stay "now".
+      let over: Bool = lock.withLock { opened = true; return finished }
+      if over {
+        _ = try? await backend.command("voiceCall", ["agentId": .string(agentId), "callId": .string(id), "kind": "ended", "record": ["seconds": 0, "recap": nil, "transcript": []]])
+        return
+      }
     } catch {
       let page = try? await backend.command("getAgentTranscriptTail", ["id": .string(agentId), "limit": 30])
       let ids = (page?["entries"]?.array ?? []).compactMap { $0["kind"]?.string == "send-message" ? $0["id"]?.text : nil }
       lock.withLock { seenChat = Set(ids); viaChat = true; opened = true }
     }
+    guard !isFinished else { return }
     keep(Task { [weak self] in await self?.pollLoop(agentId: agentId) })
     keep(Task { [weak self] in await self?.waveLoop() })
     keep(Task { [weak self] in await self?.replyLoop() })
   }
 
   private func handle(_ event: VoiceEvent, agentId: String) {
+    // The call is over (hung up while the voice was still connecting): what the kit says now is dropped, and a voice that connects late is let go.
+    if isFinished {
+      if case .connected = event { Task { [transport] in await transport.end() } }
+      return
+    }
     switch event {
     case .connected(let id):
       if let id { lock.withLock { conversationId = id } }
@@ -547,8 +560,9 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
     var quietSince: Date?
     while !Task.isCancelled, !isFinished {
       await pause(0.1)
-      let (talking, level) = lock.withLock { (speaking, activity) }
-      if talking || level >= Self.personTalking { quietSince = nil; continue }
+      let (talking, level, live) = lock.withLock { (speaking, activity, state?.phase == .live) }
+      // Before the voice is on (the channel opens while it rings), what came back waits.
+      if !live || talking || level >= Self.personTalking { quietSince = nil; continue }
       let since = quietSince ?? Date()
       quietSince = since
       guard Date().timeIntervalSince(since) >= quiet else { continue }
@@ -586,10 +600,14 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
   }
 
   private func fail(_ message: String) {
-    let already: Bool = lock.withLock { let was = finished; finished = true; return was }
+    // Read with the end in one step: `open` closes the channel itself when it finds the call over.
+    let (already, wasOpen): (Bool, (Bool, String, String?)) = lock.withLock {
+      let was = finished
+      finished = true
+      return (was, (opened, callId, state?.agentId))
+    }
     // Hung up, or failed already: what comes late (a token, the seventh ring) changes nothing.
     guard !already else { return }
-    let wasOpen: (Bool, String, String?) = lock.withLock { (opened, callId, state?.agentId) }
     tones?.stopRinging()
     log("call failed: \(message)")
     update { $0.phase = .ended; $0.status = message; $0.failed = true; $0.activity = nil; $0.levels = []; $0.endedAt = Date() }
@@ -601,7 +619,12 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
 
   /** The end: the server's summary and transcript (asked again after 5 and 10 s), then the record to the agent. */
   private func finish(agentId: String) {
-    let already: Bool = lock.withLock { let was = finished; finished = true; return was }
+    // Read with the end in one step: `open` closes the channel itself when it finds the call over.
+    let (already, conversation, id, wasOpen, chat): (Bool, String?, String, Bool, Bool) = lock.withLock {
+      let was = finished
+      finished = true
+      return (was, conversationId, callId, opened, viaChat)
+    }
     guard !already else { return }
     let snapshot = lock.withLock { state }
     let seconds = snapshot?.seconds() ?? 0
@@ -613,7 +636,6 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
     let running: [Task<Void, Never>] = lock.withLock { let all = tasks; tasks = []; return all }
     for task in running { task.cancel() }
     leaveSoon(after: 1.2)
-    let (conversation, id, wasOpen, chat) = lock.withLock { (conversationId, callId, opened, viaChat) }
     let heard = snapshot?.lines ?? []
     let person = personName()
     Task { [weak self, backend, pause] in

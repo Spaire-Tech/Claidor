@@ -1817,3 +1817,37 @@ On a Mac, with a real call: the ring, the voice, the clock, Mute, the
 transcript, End and its tone, the "Voice chat" line before and after, and
 the call's lines opened from it. Check that the microphone question
 appears the first time.
+
+#### After the compile review
+
+A second reader with the compiler's rules found nothing that would not
+build, and these faults, fixed (the call's own ones in SimeonCore, so the
+iPhone gets them too; tests in `CallFlowTests.swift`):
+
+- Signing out (or the sign-in ending) during a call left it talking, its
+  banner back on screen and End doing nothing. Signing out now ends the
+  call; Reload (⌘R) keeps it, as the Electron app's reload does.
+- End pressed while the voice was still connecting could leave the voice
+  speaking. A voice that connects after the hang-up is let go at once.
+- A call ended while its line was being written in the chat left "Voice
+  chat · now" there for good. The line is closed then too.
+- The seven rings counted the whole preparation (the chat read, the line
+  in the chat), so a slow computer got "Couldn't connect". Only a token
+  that has not come fails the call now, as in the Electron app.
+- Work that came back before the voice was on was said to nobody. It waits
+  for the voice.
+- The banner's pointer is followed while another app is in front (a
+  failed banner stays while the pointer is on it).
+- The transcript followed new lines even for someone reading further up;
+  now only when it was at its foot.
+- The banner's animations run at 60 frames a second at most.
+- Quitting during a call ends it (its record on its way).
+- Under a call's lines, search closing gave the keys to the hidden message
+  field, and the person's lines had no Copy. Both fixed.
+- On the iPhone, a call's line read "Voice chat · 00:00" while the call
+  was on; it reads "now".
+
+To know on a Mac: ⌘W reaches the banner only while Simeon is the app in
+front (a click on the banner does not bring Simeon forward), as with the
+Electron banner. With rows picked in the sidebar, Escape may first let
+them go, then close a call's lines, as with an exchange.
