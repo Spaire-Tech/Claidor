@@ -44,7 +44,9 @@ enum Ink {
    * dark as the pic", for every screen and the starter page; the window's
    * was `#070707`). The system's launch screen is the same (Assets, Ground).
    */
-  static let ground = Color.dynamic(light: "#fcfcfc", dark: "#141414")
+  static let ground = Color(uiColor: groundUIColor)
+  /** The same for UIKit: the windows and their root views paint it, so the system's black never shows behind a screen. */
+  static let groundUIColor = UIColor.dynamic(light: "#fcfcfc", dark: "#141414")
   /** The list's ground (`--sand-bg-subtle`, the Mac's sidebar); on dark the one ground, `#141414` (it was `#111111`). */
   static let listGround = Color.dynamic(light: "#f7f7f7", dark: "#141414")
   /**

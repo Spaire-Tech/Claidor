@@ -39,14 +39,22 @@ struct SimeonApp: App {
     }
   }
 
-  /** Every window of the app in the chosen style, and the sheets they hold with them; the type at its one size there too (menus, sheets). */
+  /**
+   * Every window of the app in the chosen style, and the sheets they hold with them; the type at its one size there too
+   * (menus, sheets). The windows and their root views on the app's ground: the system's black showed behind the list as a
+   * sheet pushed it back, and between screens as they changed (the founder, 11 October 2026).
+   */
   @MainActor
   static func applyToWindows(_ name: String) {
     let style: UIUserInterfaceStyle = name == "light" ? .light : name == "dark" ? .dark : .unspecified
     for case let scene as UIWindowScene in UIApplication.shared.connectedScenes {
       // Set, never read: reading an override that was never set aborts the app ("Can't return value for trait … that has no override").
       scene.traitOverrides.preferredContentSizeCategory = .large
-      for window in scene.windows where window.overrideUserInterfaceStyle != style { window.overrideUserInterfaceStyle = style }
+      for window in scene.windows {
+        if window.overrideUserInterfaceStyle != style { window.overrideUserInterfaceStyle = style }
+        window.backgroundColor = Ink.groundUIColor
+        window.rootViewController?.view.backgroundColor = Ink.groundUIColor
+      }
     }
   }
 
@@ -65,9 +73,13 @@ struct RootView: View {
 
   var body: some View {
     phaseView
+      .background(ground)
       // A chat left open behind a locked phone is not being read (AppStore.isForeground).
       .onChange(of: scenePhase) { _, phase in session.store.isForeground = phase == .active }
   }
+
+  /** Under every screen, so a fade between two (the first run and the list) never shows the system's black. */
+  private var ground: some View { Ink.ground.ignoresSafeArea() }
 
   @ViewBuilder
   private var phaseView: some View {

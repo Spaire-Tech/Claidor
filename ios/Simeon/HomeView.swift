@@ -91,6 +91,9 @@ struct HomeView: View {
         // The filter at the top right, as Messages': every chat, the hidden ones, or only the unread.
         ToolbarItem(placement: .trailingBar) { ListFilterMenu(filter: $filter, showsHidden: $showsHidden) }
       }
+      // Behind every screen of the stack, while one slides in and before its first frame: the app's ground, never the
+      // system's black (the founder, 11 October 2026: "the darkest background coming up sometimes").
+      .containerBackground(Ink.listGround, for: .navigation)
       .navigationDestination(for: String.self) { agentId in
         ChatView(agentId: agentId, opening: openingCall(for: agentId))
       }
@@ -697,14 +700,15 @@ struct AgentRow: View, Equatable {
   }
 }
 
-/** An agent's title as a list row shows it: a small grey tag beside the name (`Ink.tag`, the founder's reference: `#252527` on dark). */
+/** An agent's title as a list row shows it: a small grey tag beside the name (`Ink.tag`, the founder's reference: `#252527` on dark), its words in our blue (`Ink.title`). */
 struct TitleTag: View {
   let title: String
 
   var body: some View {
     Text(title)
       .font(.system(size: 14, weight: .medium))
-      .foregroundStyle(Ink.secondary)
+      // The words in our blue, the box as it is (the founder, 11 October 2026).
+      .foregroundStyle(Ink.title)
       .lineLimit(1)
       .fixedSize()
       .padding(.horizontal, 6)

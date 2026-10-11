@@ -50,6 +50,8 @@ struct ChatView: View {
       .safeAreaBar(edge: .bottom, spacing: 0) { ChatComposer(agentId: agentId) }
       .environment(reply)
       .background(Ink.ground)
+      // The stack's own ground behind the chat while it slides in and before its first frame, not the system's black.
+      .containerBackground(Ink.ground, for: .navigation)
       // The system's own bar, as Messages has it: its back button, and its swipe from the left edge that goes back with
       // the screen following the finger. The chat had hidden it for a bar of its own, and hidden, it does not swipe.
       .inlineBarTitle()
