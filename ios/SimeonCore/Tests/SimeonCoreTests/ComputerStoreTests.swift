@@ -309,4 +309,45 @@ final class ComputerWireTests: XCTestCase {
     }
     XCTAssertTrue(found, "the demo has a hand-off waiting")
   }
+
+  /** Each helper is drawn with the agent's own screen (`CTn`), so there are none while the agent has no screen. */
+  @MainActor
+  func testHelpersOnlyWithTheAgentsScreen() {
+    let store = AppStore()
+    store.subagentsByAgent["a"] = [["subagentId": "s", "subagentType": "computerUse", "status": "running", "title": "Browse"]]
+    XCTAssertEqual(store.computerHelpers("a"), [], "no status yet")
+    store.computer.ingest(BoxStatus(json: ["agentId": "a", "state": "hibernated", "vncUrl": .null])!)
+    XCTAssertEqual(store.computerHelpers("a"), [], "no screen")
+    store.computer.ingest(BoxStatus(json: ["agentId": "a", "state": "running", "vncUrl": "http://127.0.0.1:6080/vnc.html"])!)
+    XCTAssertEqual(store.computerHelpers("a").map(\.title), ["Browse"])
+  }
+
+  /** The card waits while the status carries its request or while it is unresolved (step 13, decision 3); settled, what happened. */
+  func testHandoffCard() {
+    let asking = BoxStatus(json: ["agentId": "a", "state": "running", "handoff": ["requestId": "r1", "instruction": "Sign in to Gmail", "snapshotDataUrl": "data:image/webp;base64,AAAA"]])
+    let other = BoxStatus(json: ["agentId": "a", "state": "running", "handoff": ["requestId": "r2", "instruction": "Another"]])
+    let plain = BoxStatus(json: ["agentId": "a", "state": "running"])
+
+    let matched = HandoffCardState.of(requestId: "r1", instruction: "from the message", resolution: nil, status: asking)
+    XCTAssertTrue(matched.waiting)
+    XCTAssertEqual(matched.instruction, "Sign in to Gmail")
+    XCTAssertEqual(matched.snapshotDataUrl, "data:image/webp;base64,AAAA")
+
+    // Unresolved with an unreadable status: the window says Done here; this waits.
+    let unread = HandoffCardState.of(requestId: "r1", instruction: "from the message", resolution: nil, status: nil)
+    XCTAssertTrue(unread.waiting)
+    XCTAssertEqual(unread.instruction, "from the message")
+    XCTAssertNil(unread.snapshotDataUrl)
+
+    // Another request on the computer: this one keeps its own words and no picture.
+    XCTAssertNil(HandoffCardState.of(requestId: "r1", instruction: "x", resolution: nil, status: other).snapshotDataUrl)
+
+    for (resolution, outcome) in [("handed_back", "Done"), ("replied", "Answered"), ("dismissed", "Skipped"), ("completed", "Done")] {
+      let settled = HandoffCardState.of(requestId: "r1", instruction: "x", resolution: resolution, status: plain)
+      XCTAssertFalse(settled.waiting, resolution)
+      XCTAssertEqual(settled.outcome, outcome, resolution)
+    }
+    // Resolved in the chat but still on the computer: waiting, as the window has it.
+    XCTAssertTrue(HandoffCardState.of(requestId: "r1", instruction: "x", resolution: "completed", status: asking).waiting)
+  }
 }

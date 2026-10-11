@@ -259,7 +259,18 @@ final class SearchState {
     case .link(let url):
       if let address = URL(string: url) { NSWorkspace.shared.open(address) }
     case .routine(let hit):
-      window.choose(hit.agentId, store: store)
+      // As the window does (`handleCommandPaletteOpenRoutine`): the open agent's routine opens its pane on Computer, another's
+      // opens that agent with its pane on Profile; the routine itself is not opened.
+      if let pane, let layout {
+        if window.selected == hit.agentId {
+          pane.open(.computer, layout: layout)
+          window.opened += 1
+        } else {
+          pane.open(.profile, for: hit.agentId, window: window, store: store, layout: layout)
+        }
+      } else {
+        window.choose(hit.agentId, store: store)
+      }
       settings?.close()
       plugins?.close()
     }

@@ -136,6 +136,30 @@ public struct ComputerHelper: Identifiable, Equatable, Sendable {
   }
 }
 
+/**
+ * The hand-off card in the chat (`Obn`, the patch's `__simeonHandoffCard`):
+ * waiting while the computer's status carries this very request (its
+ * instruction and snapshot then), and also while the entry has no
+ * resolution (the window alone says "Done" for an unanswered request
+ * whenever the status is unreadable: step 13's decision 3); settled, what
+ * happened (`handed_back` Done, `replied` Answered, `dismissed` Skipped,
+ * anything else Done).
+ */
+public struct HandoffCardState: Equatable, Sendable {
+  public let waiting: Bool
+  public let instruction: String
+  /** The screen when the agent asked (`data:image/webp;base64,…`), only while waiting on this request. */
+  public let snapshotDataUrl: String?
+  public let outcome: String
+
+  public static func of(requestId: String, instruction: String, resolution: String?, status: BoxStatus?) -> HandoffCardState {
+    let pending = status?.handoff.flatMap { $0.requestId == requestId ? $0 : nil }
+    let outcome = ["handed_back": "Done", "replied": "Answered", "dismissed": "Skipped"][resolution ?? ""] ?? "Done"
+    return HandoffCardState(waiting: pending != nil || resolution == nil, instruction: pending?.instruction ?? instruction,
+                            snapshotDataUrl: pending?.snapshotDataUrl, outcome: outcome)
+  }
+}
+
 /** The agent's pointer on the pane's preview (`Abn`, from `computer-action`). */
 public struct AgentPointer: Equatable, Sendable {
   public let x: Double

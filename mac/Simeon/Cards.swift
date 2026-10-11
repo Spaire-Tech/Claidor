@@ -1233,16 +1233,22 @@ struct AirlineMark: View {
  * for you" beside a pulsing blue dot; the agent's instruction (15 on 21);
  * then Take over in the blue beside a grey I'm done, and Skip as a quiet
  * line under them. Once settled: "Computer" and what happened (Done,
- * Answered, Skipped), the instruction in grey, and Open computer. Opening
- * the computer is step 13.
+ * Answered, Skipped), the instruction in grey, and Open computer. While it
+ * waits, the screen's snapshot (when the computer sent one) sits over the
+ * buttons; it, Take over and Open computer open the computer over the
+ * window (step 13). It waits while the computer carries this request or
+ * while the request has no answer yet (decision 3, `HandoffCardState`).
  */
 struct ComputerHandoffCard: View {
   let agentId: String
+  let requestId: String
   let instruction: String
   let resolution: String?
   let look: Look
   @Environment(AppStore.self) private var store
+  @Environment(WindowState.self) private var window
   @State private var pulse = false
+  @State private var snapshotHover = false
 
   private var ink: Color { look.dark ? Color(hex: 0xf5f5f7) : Color(hex: 0x1d1d1f) }
   private var grey: Color { look.dark ? Color(hex: 0x98989d) : Color(hex: 0x6e6e73) }
@@ -1250,9 +1256,10 @@ struct ComputerHandoffCard: View {
   private var blue: Color { look.dark ? Color(hex: 0x2f6db0) : Color(hex: 0x255a93) }
 
   var body: some View {
-    let waiting = resolution == nil
-    let outcome = ["handed_back": "Done", "replied": "Answered", "dismissed": "Skipped"][resolution ?? ""] ?? "Done"
-    let words = instruction.trimmingCharacters(in: .whitespacesAndNewlines)
+    let state = HandoffCardState.of(requestId: requestId, instruction: instruction, resolution: resolution, status: store.computer.status(agentId))
+    let waiting = state.waiting
+    let outcome = state.outcome
+    let words = state.instruction.trimmingCharacters(in: .whitespacesAndNewlines)
     VStack(alignment: .leading, spacing: 14) {
       HStack(spacing: 12) {
         Image(systemName: "display")
@@ -1286,10 +1293,29 @@ struct ComputerHandoffCard: View {
           .cssLineHeight(21, size: 15)
           .fixedSize(horizontal: false, vertical: true)
       }
+      if waiting, let snapshot = state.snapshotDataUrl.flatMap(Self.picture) {
+        // The screen when the agent asked (16:10, 12 round, a hairline); a click takes over.
+        Button { takeOver() } label: {
+          Image(nsImage: snapshot)
+            .resizable()
+            .aspectRatio(contentMode: .fill)
+            .scaleEffect(snapshotHover ? 1.02 : 1)
+            .animation(.easeOut(duration: 0.3), value: snapshotHover)
+            .frame(maxWidth: .infinity)
+            .aspectRatio(16 / 10, contentMode: .fit)
+            .background(fill)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(look.dark ? Color.white.opacity(0.08) : Color.black.opacity(0.06), lineWidth: 1))
+            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .onHover { snapshotHover = $0 }
+        .accessibilityLabel("Take over the computer")
+      }
       if waiting {
         VStack(spacing: 8) {
           HStack(spacing: 8) {
-            pill("Take over", ground: blue, ink: .white) {}
+            pill("Take over", ground: blue, ink: .white) { takeOver() }
             pill("I’m done", ground: fill, ink: ink) {
               Task { await store.handBackComputer(agentId) }
             }
@@ -1307,7 +1333,7 @@ struct ComputerHandoffCard: View {
           .help("Cancel this request without doing the step; the agent continues without it")
         }
       } else {
-        pill("Open computer", ground: fill, ink: ink) {}
+        pill("Open computer", ground: fill, ink: ink) { takeOver() }
           .fixedSize()
       }
     }
@@ -1321,6 +1347,18 @@ struct ComputerHandoffCard: View {
       guard waiting else { return }
       withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) { pulse = true }
     }
+  }
+
+  /** Take over, the snapshot and Open computer: the computer over the window (trigger `handoff`), which starts it. */
+  private func takeOver() {
+    window.openComputer(agentId, helper: nil, store: store)
+  }
+
+  /** A `data:image/…;base64,…` picture. */
+  private static func picture(_ dataURL: String) -> NSImage? {
+    guard let comma = dataURL.firstIndex(of: ","), dataURL.hasPrefix("data:"),
+          let data = Data(base64Encoded: String(dataURL[dataURL.index(after: comma)...]), options: .ignoreUnknownCharacters) else { return nil }
+    return NSImage(data: data)
   }
 
   private func pill(_ title: String, ground: Color, ink: Color, action: @escaping () -> Void) -> some View {

@@ -500,8 +500,11 @@ private struct AgentPage: View {
         case .channels:
           // Discord and Slack (step 12, O01): reached from "Channels" in ⌘K and "/", no tab of its own.
           ChannelsBody(agent: agent, look: look)
+        case .computer where !agent.isGroup:
+          // The agent's computer (step 13, I03).
+          ComputerPreview(agent: agent, look: look)
         case .computer:
-          // An agent's computer comes with step 13; a shared room's tab is empty.
+          // A shared room has no computer: its tab is empty.
           Color.clear.frame(height: 0)
         }
       }

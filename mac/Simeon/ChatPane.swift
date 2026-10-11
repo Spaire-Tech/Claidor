@@ -554,8 +554,8 @@ private struct TranscriptRow: View {
       CloudAgentCardView(bcId: bcId, look: look)
         .frame(maxWidth: limit(640), alignment: .leading)
         .padding(.top, startsGroup ? 12 : 0)
-    case .request(_, .computer(_, let instruction, let resolution)):
-      ComputerHandoffCard(agentId: agentId, instruction: instruction, resolution: resolution, look: look)
+    case .request(_, .computer(let requestId, let instruction, let resolution)):
+      ComputerHandoffCard(agentId: agentId, requestId: requestId, instruction: instruction, resolution: resolution, look: look)
         .frame(maxWidth: limit(380), alignment: .leading)
         .padding(.top, startsGroup ? 12 : 0)
     case .request(let id, .secret(let label, let description, let provided)):

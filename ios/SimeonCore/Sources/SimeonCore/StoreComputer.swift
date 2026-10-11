@@ -138,9 +138,14 @@ extension AppStore {
     subagentsByAgent[agentId] = answer.array ?? answer["subagents"]?.array ?? []
   }
 
-  /** The helpers' screens on this agent's computer, in the host's order (`MTn`). */
+  /**
+   * The helpers' screens on this agent's computer, in the host's order
+   * (`MTn`): only while the agent's own computer has a screen, since each
+   * helper is drawn with that screen (`CTn` gives them the agent's `N2e`).
+   */
   public func computerHelpers(_ agentId: String) -> [ComputerHelper] {
-    ComputerHelper.screens(subagentsByAgent[agentId] ?? [])
+    guard computer.status(agentId)?.screenURL != nil else { return [] }
+    return ComputerHelper.screens(subagentsByAgent[agentId] ?? [])
   }
 
   /** The most recent status of any agent's computer (`getMostRecentStatus`): the first run's "Waking your computer…". */

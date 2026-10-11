@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import WebKit
 import SimeonCore
 
 /** What the window shows: the open agent, kept from one launch to the next (the Electron window reopens on the agent left open). */
@@ -48,6 +49,46 @@ final class WindowState {
    */
   var orgChart = false
 
+  /** The full computer view (step 13, `bbn`): whose computer, and the helper's screen asked for. */
+  struct ComputerOpen: Equatable {
+    let agentId: String
+    var helper: String?
+  }
+
+  /**
+   * An agent's computer over the whole window, from its pane's preview or
+   * the chat's hand-off card. Choosing an agent (search), Settings and
+   * Plugins close it, as do its own Exit and its banner's buttons.
+   */
+  var computer: ComputerOpen? {
+    didSet { WindowState.computerShowing = computer != nil }
+  }
+  /** The computer is over the window: the window's own keys go to its screen. */
+  static var computerShowing = false
+
+  /** Opening it starts the computer (`ensureForeverBox`); nothing behind keeps the keys. */
+  func openComputer(_ agentId: String, helper: String?, store: AppStore) {
+    store.openComputer(agentId)
+    computer = ComputerOpen(agentId: agentId, helper: helper)
+    NSApp.keyWindow?.makeFirstResponder(nil)
+  }
+
+  /** Exit and the banner's buttons: the view goes and the message field takes the keys (`W`). */
+  func closeComputer() {
+    guard computer != nil else { return }
+    computer = nil
+    WindowState.composerFocus += 1
+  }
+
+  /** ↑← and ↓→ between two or more helpers' screens, round (`bbn`). */
+  func stepComputerHelper(_ delta: Int, store: AppStore) {
+    guard let open = computer else { return }
+    let helpers = store.computerHelpers(open.agentId)
+    if let next = ComputerHelper.step(helpers, from: ComputerHelper.focused(helpers, asked: open.helper), by: delta) {
+      computer?.helper = next
+    }
+  }
+
   /** The person opens an agent: as `open`, and the new chat makes way. */
   func choose(_ agentId: String, store: AppStore) {
     open(agentId, store: store)
@@ -57,6 +98,8 @@ final class WindowState {
   /** A row clicked: its agent opens (its chat read, its unread cleared). */
   func open(_ agentId: String, store: AppStore) {
     orgChart = false
+    // Choosing an agent closes the computer (`Fzn`).
+    computer = nil
     selected = agentId
     store.windowSelection = agentId
     Task { await store.open(agentId) }
@@ -116,6 +159,15 @@ struct MainWindow: View {
   @Environment(AccountState.self) private var account
   @Environment(\.colorScheme) private var scheme
 
+  /** The computer this window follows (the store counts who watches). */
+  @State private var watching: String?
+
+  /** The open agent, when it has a computer (not a group or a shared room). */
+  private var watchedComputer: String? {
+    guard let id = window.selected, let agent = store.agent(id), !agent.isGroup else { return nil }
+    return id
+  }
+
   var body: some View {
     let look = Look(scheme)
     GeometryReader { box in
@@ -164,6 +216,8 @@ struct MainWindow: View {
     }
     // A file, a picture or a diagram opened full screen, over the sidebar and the chat.
     .overlay { ViewerLayer() }
+    // An agent's computer (step 13), over the whole window.
+    .overlay { ComputerLayer() }
     // Settings (⌘,, step 8), over the window; search over it.
     .overlay { SettingsLayer() }
     // Plugins (Connect apps, step 9), in Settings' place.
@@ -175,12 +229,15 @@ struct MainWindow: View {
     // Settings opening shuts what floats over the pane (a routine's trigger popover, the avatar editor), as a click outside them would.
     .onChange(of: settings.isOpen) { _, open in
       guard open else { return }
+      // It takes the computer's place (the window's one overlay slot).
+      window.computer = nil
       pane.routineEditor?.closePopover(store: store)
       if pane.avatarEditor != nil { pane.closeAvatarEditor() }
     }
     // Plugins opening does the same, and About.
     .onChange(of: plugins.isOpen) { _, open in
       guard open else { return }
+      window.computer = nil
       pane.routineEditor?.closePopover(store: store)
       if pane.avatarEditor != nil { pane.closeAvatarEditor() }
     }
@@ -194,8 +251,22 @@ struct MainWindow: View {
       settings.close()
       plugins.close()
       plugins.model.forget()
-      // The next sign-in opens on a chat, not the chart.
+      // The next sign-in opens on a chat, not the chart nor a computer.
       window.orgChart = false
+      window.computer = nil
+      if let watching { store.unwatchComputer(watching) }
+      watching = nil
+    }
+    // The open agent's computer is read and followed while it is open (`XOn` → `NTn(current)`), not a group's.
+    .onChange(of: watchedComputer, initial: true) { _, now in
+      guard now != watching else { return }
+      if let watching { store.unwatchComputer(watching) }
+      watching = now
+      if let now { store.watchComputer(now) }
+    }
+    // The window coming forward: a computer started here is started again, and what is watched read again (at most once a minute).
+    .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+      store.windowCameForward(rebuilding: store.rebuild.isHardLocked)
     }
     // Another agent opened from the sidebar or search closes the new chat (its own single agent is its preview).
     .onChange(of: window.selected) { _, selected in
@@ -319,6 +390,17 @@ private struct KeyWatcher: NSViewRepresentable {
       if AccountState.aboutShowing { return false }
       // Caps Lock aside.
       let mods = event.modifierFlags.intersection([.command, .shift, .option, .control])
+      // The computer over the window (step 13): every key is its screen's (Escape, ⌘K, ⌘N and ⌘, too, as once the window's
+      // screen has the keys); Tab stays inside the view, and the arrows switch helpers' screens while the screen has no keys.
+      if WindowState.computerShowing, let windowState {
+        if screenHasKeys { return false }
+        if event.keyCode == 48 { return true }
+        if mods.isEmpty, let store, [123, 124, 125, 126].contains(event.keyCode) {
+          windowState.stepComputerHelper(event.keyCode == 123 || event.keyCode == 126 ? -1 : 1, store: store)
+          return true
+        }
+        return false
+      }
       if mods == .command, event.charactersIgnoringModifiers?.lowercased() == "b" {
         if let layout { pane?.makeRoomForSidebar(layout) }
         layout?.toggle()
@@ -455,6 +537,16 @@ private struct KeyWatcher: NSViewRepresentable {
       default:
         return false
       }
+    }
+
+    /** The computer's screen (a web view) holds the keys. */
+    private var screenHasKeys: Bool {
+      var view = window?.firstResponder as? NSView
+      while let current = view {
+        if current is WKWebView { return true }
+        view = current.superview
+      }
+      return false
     }
 
     /** Control let go: Control-Tab's row opens. */

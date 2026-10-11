@@ -50,6 +50,14 @@ targets:
       # are the `#if os(macOS)` ones): ElevenLabsVoice, CallTonePlayer,
       # VoiceCallLog, PersonNameBox.
       - path: ../ios/Simeon/Voice.swift
+      # An agent's screen (step 13), shared with the iPhone: noVNC in a web
+      # view (`LiveScreen`, its `#else` part), with ScreenEvents and
+      # ScreenLink.
+      - path: ../ios/Simeon/Computer.swift
+      # noVNC's client (MPL 2.0) and its licence, read at run time by the
+      # screen's page, so they ship as files.
+      - path: ../ios/Simeon/Computer
+        buildPhase: resources
     dependencies:
       - package: SimeonCore
         product: SimeonCore
