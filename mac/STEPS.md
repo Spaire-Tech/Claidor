@@ -2060,6 +2060,7 @@ view) and ships noVNC.
   native connection does not tell those refusals apart yet.
 - Low disk on the new chat's screen (the window shows it there too).
 - "Check for Updates" (the app's own update): no Mac counterpart yet.
+  Sparkle at the switch (step 14, decision 11).
 - The window's reports about the screen (`reportOpenComputer`,
   `reportVncSession`): nothing the person sees.
 
@@ -2278,8 +2279,16 @@ The Mac's own parts:
    install: until then both are "Simeon.app" and a move would put this one
    in the Electron app's place.
 10. A plugin's link that comes before the sign-in opens Plugins after it.
-11. Updates: none yet. Sparkle, or the release script only? Still open
-    (no recommendation was made); it matters only at the switch.
+11. Updates: Sparkle (confirmed 11 October 2026), set up at the switch,
+    not before: nothing to update until this app is the one people have.
+    The release script writes Sparkle's feed beside `latest.json` in the
+    release bucket (or the server builds it from `latest.json`, as
+    `server/simeon/desktop/releases.py` answers the Electron updater
+    today), each release signed with a key made once on the founder's Mac
+    and never lost; the app gains Simeon › Check for Updates…. Not the
+    release script alone (people would stay on old versions while their
+    computers change), not an updater of our own, not the App Store (its
+    sandbox would not let the agent run commands on the Mac).
 12. No Help menu; Apple's own Edit items (Find, Spelling, Substitutions)
     are kept.
 

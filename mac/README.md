@@ -84,6 +84,9 @@ code.
   the website's Download button (`/desktop/download/mac`) serves its DMG.
   People move by downloading the new app once: every packaged Electron
   build has its updater switched off (`SAND_DISABLE_UPDATES=1`).
+- **Updates** come with Sparkle, set up at the switch (STEPS step 14,
+  decision 11): its feed written beside `latest.json` in the release
+  bucket, each release signed with a key kept on the founder's Mac.
 - **Move to Applications** asks only in a release build whose Info.plist
   has `SimeonAskToMoveToApplications` set to true: set it at the switch,
   not before, or the move would put this app in the Electron app's place.
