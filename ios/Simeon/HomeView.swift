@@ -663,7 +663,8 @@ struct AgentRow: View, Equatable {
           if let dot = status.cornerOnRow { StatusDot(colour: dot, size: 10.8).offset(x: -1, y: -1) }
         }
         .padding(.trailing, 15)
-      VStack(alignment: .leading, spacing: 5) {
+      // 5.5 between the name's line and the preview's: their capitals 25.3 apart, as on the reference.
+      VStack(alignment: .leading, spacing: 5.5) {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
           // The name, and the agent's title in a grey tag beside it when it fits whole (the founder's reference, 9 October 2026).
           ViewThatFits(in: .horizontal) {
@@ -682,7 +683,8 @@ struct AgentRow: View, Equatable {
           .lineLimit(1)
           .multilineTextAlignment(.leading)
       }
-      .padding(.vertical, 16)
+      // 18 over and under the two lines (20.3 and 17.9 high): 79.7 a row, the reference's.
+      .padding(.vertical, 18)
     }
     .contentShape(.rect)
   }
