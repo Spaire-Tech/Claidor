@@ -249,6 +249,14 @@ public final class AppStore {
   @ObservationIgnored private var streamingOnly: [String: Entry] = [:]
   /** Messages on their way, by chat (see `send`). */
   @ObservationIgnored private var outbox: [String: [Outgoing]] = [:]
+  /**
+   * The messages this app held while the computer was out of reach, then
+   * sent, by the line that became of them: when each was written. Only
+   * these say "Sent while offline", and only until the app quits, as the
+   * Electron window's outbox does (`sentWhileOfflineAtMsByEntryId`); the
+   * mark the host keeps on a line is not shown.
+   */
+  @ObservationIgnored private var sentOffline: [String: Double] = [:]
   /** Lines that arrived while their chat was on screen, and messages just sent: they come in with the Mac's motion, once. */
   @ObservationIgnored public private(set) var arrived: Set<String> = []
   /** Chats whose lines are on their way from the host: an empty chat shows it is loading, not frozen. */
@@ -349,7 +357,7 @@ public final class AppStore {
     agents = []; transcripts = [:]; chatRows = [:]; runFlags = [:]; steps = [:]; call = nil; callLevels = []; isLive = false; account = nil; usage = .empty; usageReadAt = nil; access = .checking; accessBlocked = false; hasReachedBox = false; openChat = nil
     layoutTask?.cancel(); layoutTask = nil; pendingLayout = []; refreshing = []; caughtUp = [:]
     pendingAnswers = [:]; answeredApprovals = [:]; localAsks = [:]; trayList = TrayList(); fileLines = [:]; fileReadsAsText = [:]; unreadAfter = [:]; apps = []; catalog = []; pinnedIds = []; routinesByAgent = [:]; sidebarSections = nil
-    streamingOnly = [:]; outbox = [:]; arrived = []; olderBefore = [:]; loadingOlder = []; paged = []; firstRunAgentId = nil; revealing = [:]
+    streamingOnly = [:]; outbox = [:]; sentOffline = [:]; arrived = []; olderBefore = [:]; loadingOlder = []; paged = []; firstRunAgentId = nil; revealing = [:]
     openThreads = [:]; threadRows = [:]; threadRoots = [:]; loadFailed = []; isDown = false
     computer = ComputerBook(); subagentsByAgent = [:]; pointers = [:]; lastComputerCatchUp = .distantPast
     rebuild.reset(); rosterHeld = false; diskSaverCreation = nil; diskAuditDone = false; rosterFailed = false; windowSelection = nil
@@ -657,6 +665,7 @@ public final class AppStore {
     var entries = transcripts[agentId] ?? []
     let waiting = outbox[agentId] ?? []
     entries += waiting.flatMap(Self.entries(for:))
+    entries = Self.offlineMarked(entries, sentOffline.merging(Self.sentOffline(waiting)) { kept, _ in kept })
     Trace.mark("laying out \(agentId), \(entries.count) lines")
     let isGroup = agent(agentId)?.isGroup ?? false
     let after = unreadAfter[agentId]
@@ -682,6 +691,21 @@ public final class AppStore {
     var out: [String: String] = [:]
     for entry in entries where entry.isBranched { out[entry.id] = Chat.threadRoot(of: entry, in: byId) }
     return out
+  }
+
+  /** The waiting messages held while offline and now on their way or with the host: their own lines say so already. */
+  nonisolated static func sentOffline(_ waiting: [Outgoing]) -> [String: Double] {
+    Dictionary(waiting.filter { $0.composedOffline && ($0.state == .sending || $0.state == .sent) }.map { ($0.id, $0.at) }, uniquingKeysWith: { first, _ in first })
+  }
+
+  /** "Sent while offline" on the lines this app held and sent (`marks`), and on no other: the host's own mark is taken off. */
+  nonisolated static func offlineMarked(_ entries: [Entry], _ marks: [String: Double]) -> [Entry] {
+    entries.map { entry in
+      let wanted = marks[entry.id]
+      let has = entry["sentWhileOfflineAtMs"]?.double
+      guard wanted != has else { return entry }
+      return Entry(entry.raw.setting("sentWhileOfflineAtMs", wanted.map { .number($0) })) ?? entry
+    }
   }
 
   /** "Failed to send" or "Waiting to send…" under each waiting message that has a row here (the chat or its thread). */
@@ -741,6 +765,8 @@ public final class AppStore {
       }
       guard let copy else { return false }
       claimed.insert(copy.id)
+      // Held while offline: the host's line keeps saying so, here, until the app quits.
+      if item.composedOffline { sentOffline[copy.id] = item.at }
       arrived.remove(copy.id)
       return true
     }

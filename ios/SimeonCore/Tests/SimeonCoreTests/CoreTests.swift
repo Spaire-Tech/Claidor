@@ -573,10 +573,13 @@ final class SentPictureTests: XCTestCase {
     XCTAssertEqual(store.sentFile(path)?.keys, [waiting, path])
     let read = await store.readFile(path, agentId: "theo")
     XCTAssertEqual(read, photo, "read from the phone, not the computer (the demo's computer has no such file)")
-    // The host's line for it names that path.
+    // The host's line for it names that path, and it is drawn as the picture it is (the window's `IZ`), on the person's side.
     try await Task.sleep(nanoseconds: 200_000_000)
-    let files = store.rows(for: "theo").compactMap { row -> String? in if case .file(_, _, let url, true) = row { return url }; return nil }
-    XCTAssertTrue(files.contains(path) || files.contains(waiting), "\(files)")
+    let pictures = store.rows(for: "theo").flatMap { row -> [String] in
+      if case .bubble(let bubble) = row, bubble.fromPerson { return bubble.images.map(\.url) }
+      return []
+    }
+    XCTAssertTrue(pictures.contains(path) || pictures.contains(waiting), "\(pictures)")
   }
 }
 

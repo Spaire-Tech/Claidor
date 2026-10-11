@@ -119,7 +119,8 @@ private struct EmojiCell: View {
  */
 @MainActor
 enum EmojiPopover {
-  static func show(look: Look, mine: Set<String>, holding id: String, control: ChatControl, pick: @escaping (String) -> Void) {
+  /** `under`: the hover bar's button (in the window), as the window grows the picker out of its menu there; else at the pointer. */
+  static func show(look: Look, mine: Set<String>, holding id: String, control: ChatControl, under button: CGRect? = nil, pick: @escaping (String) -> Void) {
     guard let window = NSApp.keyWindow, let content = window.contentView else { return }
     let popover = NSPopover()
     popover.behavior = .transient
@@ -133,9 +134,15 @@ enum EmojiPopover {
     popover.contentSize = NSSize(width: 294, height: 320)
     // The delegate lives as long as the popover.
     objc_setAssociatedObject(popover, &MessageMenu.Handler.key, closer, .OBJC_ASSOCIATION_RETAIN)
-    let point = content.convert(window.mouseLocationOutsideOfEventStream, from: nil)
+    let anchor: NSRect
+    if let button, button != .zero {
+      anchor = content.convert(button, from: nil)
+    } else {
+      let point = content.convert(window.mouseLocationOutsideOfEventStream, from: nil)
+      anchor = NSRect(x: point.x, y: point.y, width: 1, height: 1)
+    }
     control.menuFor = id
-    popover.show(relativeTo: NSRect(x: point.x, y: point.y, width: 1, height: 1), of: content, preferredEdge: .minY)
+    popover.show(relativeTo: anchor, of: content, preferredEdge: .minY)
   }
 
   @MainActor

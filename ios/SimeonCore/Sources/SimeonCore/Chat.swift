@@ -746,17 +746,28 @@ public enum Chat {
     var lastShown: Date?
     var index = 0
     var dividerPlaced = unreadAfter == nil
+    // A file the person sent carries no time of its own: it takes its message's, by the nonce they were sent with (`UIn`).
+    let sentAt = nonceTimes(entries)
+    // The rows of the untimed lines just before, and whose they are: a stamp goes above them, not between them and their message (`$In`).
+    var untimed: (start: Int, role: String)?
 
     func stamp(before entry: Entry) {
       if !dividerPlaced, let after = unreadAfter, !entry.isFromPerson, let at = entry.timestampMs, at > after {
         rows.append(.unread(id: "unread-divider"))
         dividerPlaced = true
       }
-      guard let date = entry.date else { return }
+      let role = side(entry)
+      guard let at = entry.timestampMs ?? entry["clientNonce"]?.text.flatMap({ sentAt[$0] }) else {
+        if untimed?.role != role { untimed = (rows.count, role) }
+        return
+      }
+      let date = Date(timeIntervalSince1970: at / 1000)
       if lastShown == nil || abs(date.timeIntervalSince(lastShown!)) >= stampGap || !Calendar.current.isDate(date, inSameDayAs: lastShown!) {
-        rows.append(.stamp(id: "stamp-\(entry.id)", date: date))
+        let place = untimed.flatMap { $0.role == role ? $0.start : nil } ?? rows.count
+        rows.insert(.stamp(id: "stamp-\(entry.id)", date: date), at: place)
       }
       lastShown = date
+      untimed = nil
     }
 
     while index < entries.count {
@@ -795,6 +806,22 @@ public enum Chat {
         index = next
         continue
       }
+      // Pictures and videos sent one after another in one send are drawn together, as pictures (`aMn`, `j2e`); other files stay cards.
+      if let first = mediaAttachment(entry) {
+        var pictures = [first]
+        var next = index + 1
+        let key = attachmentBatch(entry)
+        while next < entries.count, let more = mediaAttachment(entries[next]), attachmentBatch(entries[next]) == key {
+          pictures.append(more); next += 1
+        }
+        stamp(before: entry)
+        let fromPerson = entry.kind == "user-attachment"
+        rows.append(.bubble(Bubble(id: entry.id, text: "", fromPerson: fromPerson, author: fromPerson ? nil : entry.author, showsName: false, showsAvatar: false,
+                                   reactions: entry.reactions.map(\.emoji), isStreaming: false, replyTo: entry["replyTo"]?.text, timestampMs: entry.timestampMs,
+                                   images: pictures, myReactions: entry.reactions.filter { $0.by == "user" }.map(\.emoji))))
+        index = next
+        continue
+      }
       if let row = row(for: entry) {
         stamp(before: entry)
         rows.append(row)
@@ -804,6 +831,41 @@ public enum Chat {
     rows = quoted(rows, quoting ?? entries)
     rows = unique(rows)
     return isGroup ? markRuns(rows) : rows
+  }
+
+  /** The time of each message the person sent, by the nonce it was sent with: its files take it (`UIn`). */
+  static func nonceTimes(_ entries: [Entry]) -> [String: Double] {
+    var out: [String: Double] = [:]
+    for entry in entries where entry.kind == "message" {
+      if let nonce = entry["clientNonce"]?.text, let at = entry.timestampMs { out[nonce] = at }
+    }
+    return out
+  }
+
+  /**
+   * A file that is a picture or a video, as a picture: the person's (by its
+   * path, or its name while it waits to go) with the size the computer read,
+   * or an agent's (`IZ`). Nil for anything else, which stays a file card.
+   */
+  static func mediaAttachment(_ entry: Entry) -> ChatImage? {
+    if entry.kind == "user-attachment" {
+      guard let path = entry["file_path"]?.text ?? entry["filePath"]?.text else { return nil }
+      let name = entry["file_name"]?.text ?? entry["fileName"]?.text ?? ""
+      guard isPictureOrVideo(path) || isPictureOrVideo(name) else { return nil }
+      let positive: (Double?) -> Double? = { value in value.flatMap { $0 > 0 ? $0 : nil } }
+      return ChatImage(url: path, alt: "", width: positive(entry["width"]?.double), height: positive(entry["height"]?.double))
+    }
+    if entry.kind == "send-message", let message = entry.message, message["type"]?.string == "attachment",
+       let url = message["url"]?.text, isPictureOrVideo(url) {
+      return ChatImage(url: url, alt: message["alt"]?.string ?? "")
+    }
+    return nil
+  }
+
+  /** Which send a file came in (`batchId`, or the old untold one), and an agent's pictures by their author: they are drawn together. */
+  static func attachmentBatch(_ entry: Entry) -> String {
+    if entry.kind == "user-attachment" { return entry["batchId"]?.text.map { "ua:\($0)" } ?? "ua:legacy" }
+    return "ai:\(entry.author?.id ?? "")"
   }
 
   /** Each row once: the screen keys rows by id, and two with one id in a lazy list can stall its layout. A repeated line is the same line twice. */

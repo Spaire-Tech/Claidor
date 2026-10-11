@@ -181,14 +181,14 @@ struct HoverBar: View {
 
   var body: some View {
     let buttons = [
-      AnyView(BarButton(symbol: "face.smiling", label: "Add reaction", look: look) {
-        MessageMenu.show(for: bubble, agentId: agentId, kind: .reactions, inThread: inThread, store: store, control: control)
+      AnyView(BarButton(symbol: "face.smiling", label: "Add reaction", look: look) { spot in
+        MessageMenu.show(for: bubble, agentId: agentId, kind: .reactions, inThread: inThread, store: store, control: control, under: spot)
       }),
       AnyView(BarButton(symbol: bubble.fromPerson ? "arrowshape.turn.up.right" : "arrowshape.turn.up.left", label: bubble.fromPerson ? "Reply to your message" : "Reply to Agent message", look: look) {
-        control.startReply(bubble, entries: store.transcripts[agentId] ?? [])
+        _ in control.startReply(bubble, entries: store.transcripts[agentId] ?? [])
       }),
-      AnyView(BarButton(symbol: "ellipsis", label: "More message actions", look: look) {
-        MessageMenu.show(for: bubble, agentId: agentId, kind: .more, inThread: inThread, store: store, control: control)
+      AnyView(BarButton(symbol: "ellipsis", label: "More message actions", look: look) { spot in
+        MessageMenu.show(for: bubble, agentId: agentId, kind: .more, inThread: inThread, store: store, control: control, under: spot)
       }),
     ]
     HStack(spacing: 2) {
@@ -206,11 +206,13 @@ struct BarButton: View {
   let symbol: String
   let label: String
   let look: Look
-  let action: () -> Void
+  /** Pressed, with the button's place in the window: its menu opens under it. */
+  let action: (CGRect) -> Void
   @State private var hovered = false
+  @State private var spot = WindowSpot()
 
   var body: some View {
-    Button(action: action) {
+    Button { action(spot.frame) } label: {
       Image(systemName: symbol)
         .font(.system(size: 12, weight: .regular))
         .foregroundStyle(look.inkSecondary)
@@ -219,6 +221,7 @@ struct BarButton: View {
         .contentShape(RoundedRectangle(cornerRadius: 8))
     }
     .buttonStyle(.hand)
+    .background(WindowSpotReader(spot: spot))
     .onHover { hovered = $0 }
     .help(label)
     .accessibilityLabel(label)
@@ -241,7 +244,13 @@ enum MessageMenu {
   /** The quick reactions (`sand-reaction-picker`), in the window's order. */
   static let quick = ["👍", "👎", "❤️", "😂", "🎉", "😮"]
 
-  static func show(for bubble: Bubble, agentId: String, kind: Kind, inThread: Bool, store: AppStore, control: ChatControl, at event: NSEvent? = nil) {
+  /**
+   * `under`: the hover bar's button, whose menu opens 4 below it, its left
+   * edge on the button's (an agent's message) or its right edge (the
+   * person's, whose bar is on the left: `bottom-end`), never over the
+   * message. Without it (the right click), at the pointer.
+   */
+  static func show(for bubble: Bubble, agentId: String, kind: Kind, inThread: Bool, store: AppStore, control: ChatControl, at event: NSEvent? = nil, under button: CGRect? = nil) {
     let menu = NSMenu()
     menu.autoenablesItems = false
     let handler = Handler(bubble: bubble, agentId: agentId, store: store, control: control)
@@ -255,7 +264,7 @@ enum MessageMenu {
         } else {
           // More emoji: the full picker where the menu was, once the menu has gone.
           DispatchQueue.main.async {
-            EmojiPopover.show(look: look, mine: Set(bubble.myReactions), holding: bubble.id, control: control) { emoji in
+            EmojiPopover.show(look: look, mine: Set(bubble.myReactions), holding: bubble.id, control: control, under: button) { emoji in
               Task { await store.react(emoji, to: bubble.id, in: agentId) }
             }
           }
@@ -277,11 +286,24 @@ enum MessageMenu {
     }
     // The handler lives as long as the menu.
     objc_setAssociatedObject(menu, &Handler.key, handler, .OBJC_ASSOCIATION_RETAIN)
-    pop(menu, for: bubble.id, control: control, at: event)
+    if let button, button != .zero {
+      popUnder(menu, button: button, endAligned: bubble.fromPerson, for: bubble.id, control: control)
+    } else {
+      pop(menu, for: bubble.id, control: control, at: event)
+    }
+  }
+
+  /** The menu under a hover bar's button (`placement: bottom-start` / `bottom-end`), the bar kept while it is open. */
+  private static func popUnder(_ menu: NSMenu, button: CGRect, endAligned: Bool, for id: String, control: ChatControl) {
+    guard let window = NSApp.keyWindow ?? MacServices.shared.mainWindow, let view = window.contentView else { return }
+    control.menuFor = id
+    let left = endAligned ? button.maxX - menu.size.width : button.minX
+    menu.popUp(positioning: nil, at: view.convert(NSPoint(x: left, y: button.minY - 4), from: nil), in: view)
+    control.menuFor = nil
   }
 
   /** A message between two agents (the exchange is read only, `isReadOnly`): More and the right click hold Copy alone. */
-  static func showCopy(_ text: String, id: String, control: ChatControl, at event: NSEvent? = nil) {
+  static func showCopy(_ text: String, id: String, control: ChatControl, at event: NSEvent? = nil, under button: CGRect? = nil) {
     let menu = NSMenu()
     menu.autoenablesItems = false
     let handler = CopyHandler(text: text)
@@ -290,7 +312,11 @@ enum MessageMenu {
     item.image = NSImage(systemSymbolName: "doc.on.doc", accessibilityDescription: nil)
     menu.addItem(item)
     objc_setAssociatedObject(menu, &Handler.key, handler, .OBJC_ASSOCIATION_RETAIN)
-    pop(menu, for: id, control: control, at: event)
+    if let button, button != .zero {
+      popUnder(menu, button: button, endAligned: false, for: id, control: control)
+    } else {
+      pop(menu, for: id, control: control, at: event)
+    }
   }
 
   /** The menu at the pointer, the message's hover bar kept while it is open. */

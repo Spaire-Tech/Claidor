@@ -816,42 +816,70 @@ struct SecretCardView: View {
 // MARK: Pictures
 
 /**
- * An agent's pictures under its words (`sand-message-attachments__strip`,
- * 8 below them): one row, 6 apart, each 12 round and 192 high at its own
- * width, the row at most 86% of the chat, 560, or the chat less 82 (smaller
- * together when wider). Grey until drawn. A picture opens full screen
- * ("Open image full screen"), the message's others beside it.
+ * Pictures in a message (`sand-message-attachments__strip`, 8 under its
+ * words): one row, 6 apart, each 12 round and 192 high at its own width,
+ * the row at most 86% of the chat, 560, or the chat less 82 (smaller
+ * together when wider). One picture alone, as a file sent (`Dj`, `y7n`):
+ * its own width up to 320 (or the row's limit), at most 200 high; 320 by
+ * 200 when its size is not known. Grey until drawn. A picture opens full
+ * screen ("Open image full screen"), the others beside it.
  */
 struct PictureStrip: View {
   let images: [ChatImage]
   let agentId: String
   let limit: CGFloat
+  /** Pictures with no words (a file sent, or an agent's pictures alone): one is drawn at its own size. */
+  var alone = false
   let look: Look
   @Environment(Viewers.self) private var viewers
 
   var body: some View {
-    let ratios = images.map { image -> CGFloat in
-      guard let w = image.width, let h = image.height, w > 0, h > 0 else { return 1 }
-      return CGFloat(w / h)
-    }
-    let gaps = CGFloat(max(0, images.count - 1)) * 6
-    let natural = ratios.reduce(0, +) * 192
-    let height = natural + gaps > limit && natural > 0 ? max(48, (limit - gaps) / ratios.reduce(0, +)) : 192
-    HStack(spacing: 6) {
-      ForEach(Array(images.enumerated()), id: \.offset) { index, image in
-        Button {
-          let items = images.map { MediaItem(url: $0.url, agentId: agentId, caption: $0.alt.isEmpty ? nil : $0.alt, name: nil) }
-          viewers.shown = .media(items, start: index)
-        } label: {
-          ChatPicture(image: image, agentId: agentId, look: look)
-            .frame(width: (height * ratios[index]).rounded(), height: height.rounded())
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .contentShape(RoundedRectangle(cornerRadius: 12))
+    if alone && images.count == 1 {
+      let size = PictureStrip.single(images[0], limit: limit)
+      tile(0, width: size.width, height: size.height)
+    } else {
+      let ratios = images.map { image -> CGFloat in
+        guard let w = image.width, let h = image.height, w > 0, h > 0 else { return 1 }
+        return CGFloat(w / h)
+      }
+      let gaps = CGFloat(max(0, images.count - 1)) * 6
+      let natural = ratios.reduce(0, +) * 192
+      let height = natural + gaps > limit && natural > 0 ? max(48, (limit - gaps) / ratios.reduce(0, +)) : 192
+      HStack(spacing: 6) {
+        ForEach(Array(images.enumerated()), id: \.offset) { index, _ in
+          tile(index, width: (height * ratios[index]).rounded(), height: height.rounded())
         }
-        .buttonStyle(.hand)
-        .accessibilityLabel(FilePreview.kind(image.url) == .video ? "Open video full screen" : "Open image full screen")
       }
     }
+  }
+
+  private func tile(_ index: Int, width: CGFloat, height: CGFloat) -> some View {
+    let image = images[index]
+    return Button {
+      let items = images.map { MediaItem(url: $0.url, agentId: agentId, caption: $0.alt.isEmpty ? nil : $0.alt, name: nil) }
+      viewers.shown = .media(items, start: index)
+    } label: {
+      ChatPicture(image: image, agentId: agentId, look: look)
+        .frame(width: width, height: height)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .contentShape(RoundedRectangle(cornerRadius: 12))
+    }
+    .buttonStyle(.hand)
+    .accessibilityLabel(FilePreview.kind(image.url) == .video ? "Open video full screen" : "Open image full screen")
+  }
+
+  /** One picture's size (`y7n`): its width up to 320, at most 200 high, its shape kept; 320 by 200 when not known. */
+  static func single(_ image: ChatImage, limit: CGFloat) -> CGSize {
+    let widest = max(0, min(320, limit))
+    guard let w = image.width, let h = image.height, w > 0, h > 0 else { return CGSize(width: widest, height: min(200, widest)) }
+    let ratio = CGFloat(w / h)
+    var width = min(CGFloat(w), widest)
+    var height = width / ratio
+    if height > 200 {
+      height = 200
+      width = height * ratio
+    }
+    return CGSize(width: width.rounded(), height: height.rounded())
   }
 }
 

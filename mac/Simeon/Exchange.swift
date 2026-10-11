@@ -228,8 +228,8 @@ private struct ExchangeMessage: View {
   @ViewBuilder
   private var bar: some View {
     if hovered || barHovered || control.menuFor == id {
-      BarButton(symbol: "ellipsis", label: "More message actions", look: look) {
-        MessageMenu.showCopy(text, id: id, control: control)
+      BarButton(symbol: "ellipsis", label: "More message actions", look: look) { spot in
+        MessageMenu.showCopy(text, id: id, control: control, under: spot)
       }
       .padding(.leading, 6)
       .contentShape(Rectangle())

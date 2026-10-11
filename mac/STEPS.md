@@ -2405,3 +2405,27 @@ table's cells). New clickable views use `.buttonStyle(.hand)` or
 
 To check on a Mac: links inside a message's words (SwiftUI's text draws
 them; whether it shows the hand over a link was not checked here).
+
+## After the founder's first build (11 October 2026)
+
+What the founder saw on their Mac, against the Electron app, and what
+changed:
+
+- **The reactions menu opened over the message.** It opened at the
+  pointer. It now opens 4 under the hover bar's button, as the window's
+  (`placement: bottom-start`, `bottom-end` on the person's side), so it
+  grows away from the bubble; More, the exchange's More and More emoji
+  open there too. The right click still opens at the pointer.
+- **A picture sent showed as a file card** ("Photo 1.png 508 KB"). A
+  picture or video the person sends, or an agent attaches, is now drawn as
+  the picture: one alone at its own width up to 320 and at most 200 high
+  (`y7n`), several sent together in one row (`aMn`, `j2e`); other files
+  stay cards. It also sat above the time line: the computer writes a sent
+  file with no time, so it now takes its message's (by the nonce they were
+  sent with, `UIn`), and the time line goes above an untimed file rather
+  than between it and its words (`$In`).
+- **"Sent while offline" showed under old messages.** The window shows it
+  only on a message this app held while the computer could not be reached
+  and then sent, until the app quits (its outbox,
+  `sentWhileOfflineAtMsByEntryId`), not from the mark the computer keeps.
+  The Swift app now does the same.

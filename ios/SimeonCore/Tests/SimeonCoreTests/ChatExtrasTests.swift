@@ -178,6 +178,51 @@ final class ChatThreadTests: XCTestCase {
     XCTAssertEqual(offline.sentOfflineAtMs, 1_500)
   }
 
+  /**
+   * A picture the person sent is a picture, not a file card; several in one
+   * send are one gallery; a PDF beside them stays a card. It takes its
+   * message's time by their nonce, so the stamp goes above it, not between
+   * it and its words; one with no time at all still has the stamp above it.
+   */
+  func testSentPicturesAndTheirStamp() {
+    let day = 1_760_000_000_000.0
+    let at: (Double) -> JSON = { .number(day + $0) }
+    let entries: [Entry] = [
+      Entry(["kind": "message", "id": "a0", "role": "assistant", "content": "Earlier", "timestampMs": at(0)])!,
+      Entry(["kind": "user-attachment", "id": "p1", "file_path": "/home/box/attachments/Photo 1.png", "file_name": "Photo 1.png", "batchId": "b1", "clientNonce": "n1", "width": 1170, "height": 2532])!,
+      Entry(["kind": "user-attachment", "id": "p2", "file_path": "/home/box/attachments/clip.mov", "batchId": "b1", "clientNonce": "n1"])!,
+      Entry(["kind": "user-attachment", "id": "f1", "file_path": "/home/box/attachments/brief.pdf", "batchId": "b1", "clientNonce": "n1"])!,
+      Entry(["kind": "message", "id": "u1", "role": "user", "content": "What do you read?", "clientNonce": "n1", "timestampMs": at(3_600_000)])!,
+      Entry(["kind": "user-attachment", "id": "p3", "file_path": "/home/box/attachments/old.jpg"])!,
+      Entry(["kind": "message", "id": "u2", "role": "user", "content": "Later", "timestampMs": at(7_200_000)])!,
+    ]
+    let rows = Chat.rows(entries)
+    let shape = rows.map { row -> String in
+      switch row {
+      case .stamp: return "stamp"
+      case .bubble(let bubble) where !bubble.images.isEmpty: return "pictures:" + bubble.images.map(\.url).map { ($0 as NSString).lastPathComponent }.joined(separator: ",") + (bubble.fromPerson ? ":mine" : "")
+      case .bubble(let bubble): return bubble.id
+      case .file(_, let name, _, _): return "file:\(name)"
+      default: return "other"
+      }
+    }
+    XCTAssertEqual(shape, ["stamp", "a0", "stamp", "pictures:Photo 1.png,clip.mov:mine", "file:brief.pdf", "u1", "stamp", "pictures:old.jpg:mine", "u2"])
+    guard case .bubble(let first)? = rows.first(where: { $0.id == "p1" }) else { return XCTFail("the pictures are one row") }
+    XCTAssertEqual(first.images[0].aspect, 1170.0 / 2532.0, accuracy: 0.001)
+  }
+
+  /** "Sent while offline" only on what this app held and sent (the Electron window's outbox), never from the host's own mark. */
+  func testSentWhileOfflineIsThisAppsOwn() {
+    let entries: [Entry] = [
+      Entry(["kind": "message", "id": "u1", "role": "user", "content": "From the phone, offline", "sentWhileOfflineAtMs": 1_500, "timestampMs": 3_000])!,
+      Entry(["kind": "message", "id": "u2", "role": "user", "content": "Held here", "timestampMs": 4_000])!,
+    ]
+    let rows = Chat.rows(AppStore.offlineMarked(entries, ["u2": 3_900]))
+    let marks = rows.compactMap { row -> (String, Double?)? in if case .bubble(let bubble) = row { return (bubble.id, bubble.sentOfflineAtMs) }; return nil }
+    XCTAssertEqual(marks.first { $0.0 == "u1" }?.1, nil, "the host's mark is not shown")
+    XCTAssertEqual(marks.first { $0.0 == "u2" }?.1, 3_900)
+  }
+
   func testALoneLink() {
     XCTAssertEqual(Chat.loneLink("  https://github.com/a/b/pull/3 ")?.host, "github.com")
     XCTAssertEqual(Chat.loneLink("[The brief](https://docs.example.com/x)")?.absoluteString, "https://docs.example.com/x")

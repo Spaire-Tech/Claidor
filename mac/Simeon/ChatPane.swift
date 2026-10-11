@@ -755,7 +755,7 @@ private struct BubbleRow: View {
         ThreadChin(rootId: bubble.id, count: threadCount, attached: false, look: look) { openThread() }
       }
       if !bubble.images.isEmpty {
-        PictureStrip(images: bubble.images, agentId: agentId, limit: max(0, min(column * 0.86, 560, column - 82)), look: look)
+        PictureStrip(images: bubble.images, agentId: agentId, limit: max(0, min(column * 0.86, 560, column - 82)), alone: words.isEmpty, look: look)
           .padding(.top, words.isEmpty ? 0 : 8)
       }
       if let held = bubble.sentOfflineAtMs {
