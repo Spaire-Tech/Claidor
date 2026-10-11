@@ -54,9 +54,15 @@ final class ChatControl {
 
   /** The agent whose messages with this one are open over the chat (`tunnelPeer`, read only). */
   var exchangePeer: Party? {
-    didSet { ChatControl.exchangeShowing = exchangePeer != nil }
+    didSet { ChatControl.exchangeShowing = coversChat }
   }
-  /** An exchange is over the chat: its Escape is its own, not the pane's. */
+  /** A call's lines over the chat (its "Voice chat" line, step 11), read only, as an exchange. */
+  var callOpen: CallOpen? {
+    didSet { ChatControl.exchangeShowing = coversChat }
+  }
+  /** An exchange or a call is over the chat and its field. */
+  var coversChat: Bool { exchangePeer != nil || callOpen != nil }
+  /** An exchange (or a call) is over the chat: its Escape is its own, not the pane's. */
   static var exchangeShowing = false
   /** The exchange's message under the pointer, for the right-click menu: its id and words. */
   var exchangeHovered: (id: String, text: String)?
@@ -135,6 +141,18 @@ final class ChatControl {
 
   func closeExchange() {
     exchangePeer = nil
+    exchangeHovered = nil
+  }
+
+  /** A call's lines open over the chat; the message field, now under them, lets go of the keys. */
+  func openCall(_ call: CallOpen) {
+    callOpen = call
+    exchangeHovered = nil
+    NSApp.keyWindow?.makeFirstResponder(nil)
+  }
+
+  func closeCall() {
+    callOpen = nil
     exchangeHovered = nil
   }
 }
@@ -425,8 +443,8 @@ struct RightClickMenu: NSViewRepresentable {
 
   private func open(_ event: NSEvent) -> Bool {
     guard viewers.shown == nil, !SearchState.showing, !WindowOverlay.showing else { return false }
-    // Over an exchange, only its own messages, and only Copy.
-    if control.exchangePeer != nil {
+    // Over an exchange (or a call's lines), only its own messages, and only Copy.
+    if control.coversChat {
       guard let hovered = control.exchangeHovered else { return false }
       MessageMenu.showCopy(hovered.text, id: hovered.id, control: control, at: event)
       return true

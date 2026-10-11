@@ -24,6 +24,12 @@ settings:
 packages:
   SimeonCore:
     path: ../ios/SimeonCore
+  # The call's voice (step 11): ElevenLabs' own kit (WebRTC through LiveKit),
+  # the same conversation the Electron app's banner runs with their web kit,
+  # and the iPhone's (ios/project.yml).
+  ElevenLabs:
+    url: https://github.com/elevenlabs/elevenlabs-swift-sdk
+    from: 3.4.0
 targets:
   Simeon:
     type: application
@@ -40,11 +46,16 @@ targets:
       # (Rendering.swift).
       - path: Simeon/Rendering
         buildPhase: resources
+      # The call's voice, ring and log, shared with the iPhone (its Mac parts
+      # are the `#if os(macOS)` ones): ElevenLabsVoice, CallTonePlayer,
+      # VoiceCallLog, PersonNameBox.
+      - path: ../ios/Simeon/Voice.swift
     dependencies:
       - package: SimeonCore
         product: SimeonCore
       - package: SimeonCore
         product: SimeonMacCore
+      - package: ElevenLabs
     info:
       path: Simeon/Info.plist
       properties:

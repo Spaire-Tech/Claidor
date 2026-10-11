@@ -335,7 +335,7 @@ extension Chat {
     for row in rows {
       if row.id == entryId { return row.id }
       if case .teammates(let id, _, let entries) = row, entries.contains(where: { $0.id == entryId }) { return id }
-      if case .voiceCall(let id, _, _) = row, id == entryId { return id }
+      if case .voiceCall(let id, _, _, _) = row, id == entryId { return id }
     }
     return nil
   }

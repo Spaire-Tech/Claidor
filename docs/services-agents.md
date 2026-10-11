@@ -697,8 +697,8 @@ the background while the call goes on, and says how it is going when asked.
     `sendUserMessage` nudge, "(Your work just came back.)"), and the voice says them as its own.
     Never over the voice (9 October 2026, the founder: "he cant cut himself like this, wait of
     turn"): the Mac holds them until the voice is listening, with no forced push after 8 s any
-    more; the iPhone holds them until the voice has stopped and the person is not talking, for a
-    second. A message that only confirms something the voice already said it was doing is not
+    more; the iPhone and the native Mac app (SimeonCore's `LiveCall`) hold them until the voice
+    has stopped and the person is not talking, for a second. A message that only confirms something the voice already said it was doing is not
     announced ("they can see it done"): the voice stays silent with `skip_turn` unless asked.
     The banner's status line shows the agent's activity meanwhile ("Using Gmail…"). The host
     keeps both the nudge's words and an older app's ("…Tell me what it found.") out of the
@@ -770,8 +770,9 @@ the API):
 5. Ask "how's it going?" while it works: it answers from the agent's activity.
 6. Say "thanks, that's all": the voice says goodbye and hangs up. The banner reads "Call ended
    · m:ss"; a few seconds later the chat shows "Voice call · m:ss" and a summary.
-7. Chat opens the agent's chat; Call Again rings again. Press the phone button during a call:
-   the banner comes forward, no second call starts.
+7. Press the phone button during a call: the banner comes forward, no second call starts.
+   (The ended banner has no Chat or Call Again: the protocol carries them, nothing draws them;
+   measured 11 October 2026.)
 8. Edit agent avatar › Agent: under the colours, the Voice list. Play a sample, choose one,
    call again: the agent speaks in it. Relaunch the app: the choice is kept.
 9. Light and dark: switch the system appearance; the banner follows.

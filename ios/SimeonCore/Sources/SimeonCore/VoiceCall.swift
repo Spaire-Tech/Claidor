@@ -156,6 +156,46 @@ public enum VoiceCallText {
     return word.prefix(1).uppercased() + word.dropFirst()
   }
 
+  /**
+   * The agent's current activity (`currentActivity` on its roster row) as a
+   * short line (`describeAgentActivity`): "Using Gmail…", "Searching the
+   * web…", "Reading notes.md…"; nil when it names nothing more than thinking.
+   */
+  public static func describeActivity(kind: String?, tool: String?, detail rawDetail: String?) -> String? {
+    guard kind == "tool", let tool else { return nil }
+    let trimmed = collapse(rawDetail ?? "")
+    let detail: String? = trimmed.isEmpty ? nil : clamp(trimmed, 40)
+    switch tool {
+    case "Shell": return detail.map { "Editing \($0)…" } ?? "Running a command…"
+    case "ExternalShell": return detail.map { "Editing \($0)…" } ?? "Running a command on your Mac…"
+    case "Read": return detail.map { "Reading \($0)…" } ?? "Reading a file…"
+    case "ExternalRead": return detail.map { "Reading \($0)…" } ?? "Reading a file on your Mac…"
+    case "AwaitShell", "ExternalAwaitShell": return "Waiting on a command…"
+    case "WebSearch": return "Searching the web…"
+    case "WebFetch": return detail.map { "Reading \($0)…" } ?? "Reading a web page…"
+    case "GenerateImage": return "Making an image…"
+    case "CallMcpTool": return detail.map { "Using \(appName($0))…" } ?? "Using an app…"
+    case "GetMcpTools": return detail.map { "Opening \(appName($0))…" } ?? "Opening an app…"
+    case "McpAuth": return detail.map { "Signing in to \(appName($0))…" } ?? "Signing in to an app…"
+    case "Computer": return "Using its computer…"
+    case "Screenshot": return "Looking at the screen…"
+    case "Task": return "Working with a helper…"
+    default: return "Working on it…"
+    }
+  }
+
+  /** An app's name from its tool's identifier: "composio_google_calendar" reads "Google Calendar", "gh" "GH". */
+  static func appName(_ identifier: String) -> String {
+    let cleaned = identifier
+      .replacingOccurrences(of: #"^(composio[-_:]?|mcp[-_:]?)"#, with: "", options: [.regularExpression, .caseInsensitive])
+      .replacingOccurrences(of: #"[-_]+"#, with: " ", options: .regularExpression)
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+    if cleaned.isEmpty { return "an app" }
+    return cleaned.split(separator: " ", omittingEmptySubsequences: false)
+      .map { word in word.count <= 2 ? word.uppercased() : word.prefix(1).uppercased() + word.dropFirst() }
+      .joined(separator: " ")
+  }
+
   /** "Send the agenda to Dana" reads "Sending the agenda to Dana…"; anything else "Working on it…". */
   public static func workingLabel(_ task: String) -> String {
     var text = collapse(task)
@@ -291,7 +331,12 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
     keep(Task { [weak self] in await self?.connect(agentId: agentId, agentName: agentName) })
   }
 
-  /** Twice, then once more at a time while the call is still getting ready, seven at most (the Mac's `RINGS_BEFORE_CONNECT`, `MAX_RINGS`). */
+  /**
+   * Twice, then once more at a time while the call is still getting ready,
+   * seven at most (the Mac's `RINGS_BEFORE_CONNECT`, `MAX_RINGS`); still not
+   * ready after the seventh, the call fails "Couldn't connect", as the Mac's
+   * banner does (`call-controller.ts`).
+   */
   private func ring() async {
     guard let tones else { return }
     await tones.ring(cycles: CallTones.ringsBeforeConnect)
@@ -299,6 +344,10 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
     while !Task.isCancelled, !isFinished, !lock.withLock({ prepared }), rings < CallTones.maxRings {
       await tones.ring(cycles: 1)
       rings += 1
+    }
+    if !Task.isCancelled, !isFinished, !lock.withLock({ prepared }), rings >= CallTones.maxRings {
+      log("connect: still not ready after \(rings) rings")
+      fail(VoiceCallText.couldNotConnect)
     }
   }
 
@@ -318,23 +367,26 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
       log("connect: the server refused the call: \(error.localizedDescription)")
       return fail(VoiceCallText.couldNotConnect)
     }
-    guard let token = ticket["token"]?.text, !isFinished else { return fail(VoiceCallText.couldNotConnect) }
+    // Hung up (or given up on) while the server answered: nothing more to do (`voice-call-service.ts`).
+    guard !isFinished else { return }
+    guard let token = ticket["token"]?.text else { return fail(VoiceCallText.couldNotConnect) }
     lock.withLock { conversationId = ticket["conversation_id"]?.text }
     let person = personName()
-    let teammates = roster.filter { $0.id != agentId && !$0.isGroup && !$0.isHidden && !$0.name.isEmpty }.map { (name: $0.name, title: $0.title) }
+    let teammates = roster.filter { $0.id != agentId && !$0.isGroup && !$0.isRemoteRoom && !$0.isHidden && !$0.name.isEmpty }.map { (name: $0.name, title: $0.title) }
     let name = row?.name ?? agentName
     let prompt = VoiceCallText.prompt(name: name, title: row?.title ?? "", description: row?.description ?? "", transcript: VoiceCallText.lines(entries), personName: person, teammates: teammates)
     let greeting = VoiceCallText.firstMessage(name: name, pick: Double.random(in: 0..<1), personName: person)
     // The voice its picker shows, never one taken off the list (9 October 2026); nil is the agent's own, Michael.
     let voiceId: String?
     if let voiceFor { voiceId = await voiceFor(agentId) } else { voiceId = row?.voiceId }
-    guard !isFinished else { return fail(VoiceCallText.couldNotConnect) }
+    guard !isFinished else { return }
+    // The call's address opens while it still rings, and the agent's chat gets its line ("Voice chat · now"), as on the Mac.
+    await open(agentId: agentId)
     // The voice starts once the ring is over, so the two never sound together.
     let ring: Task<Void, Never>? = lock.withLock { prepared = true; return ringing }
     await ring?.value
     tones?.stopRinging()
     guard !isFinished else { return }
-    await open(agentId: agentId)
     log("connect: token issued for agent \(agentId) (voice \(voiceId ?? "the agent's own"), \(entries.count) chat entries read)")
     do {
       try await transport.start(token: token, prompt: prompt, firstMessage: greeting, voiceId: voiceId, language: VoiceCallText.language) { [weak self] event in
@@ -395,9 +447,19 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
         await self.transport.toolResult(id: id, result: answer)
       })
     case .ended:
-      finish(agentId: agentId)
+      // Dropped before it connected (not hung up): "Couldn't connect", as the Mac's banner (`call-state.ts`).
+      if lock.withLock({ state?.connectedAt == nil && !finished }) {
+        fail(VoiceCallText.couldNotConnect)
+      } else {
+        finish(agentId: agentId)
+      }
     case .failed(let message):
-      fail(message.isEmpty ? VoiceCallText.couldNotConnect : message)
+      // The kit's error once the call is live: written down, the call goes on (`call-state.ts`).
+      if lock.withLock({ state?.connectedAt != nil }) {
+        log("banner: sdk error: \(message)")
+      } else {
+        fail(message.isEmpty ? VoiceCallText.couldNotConnect : message)
+      }
     }
   }
 
@@ -459,7 +521,10 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
         }
         failures = 0
         let row = (try? await backend.listAgents())?.first { $0.id == agentId }
-        let label: String? = row?.isRunningTurn == true ? (row?.activityLabel ?? lock.withLock { lastTask }.map(VoiceCallText.workingLabel)) : nil
+        // What it is doing ("Using Gmail…"), else what it was asked ("Sending the agenda to Dana…"), while it or a helper runs.
+        let label: String? = row?.isRunning == true
+          ? (VoiceCallText.describeActivity(kind: row?.activityKind, tool: row?.activityTool, detail: row?.activityDetail) ?? lock.withLock { lastTask }.map(VoiceCallText.workingLabel))
+          : nil
         update { $0.activity = label }
         // Said by `replyLoop` once the line is quiet, never over the voice.
         if !fresh.isEmpty { lock.withLock { pendingReplies += fresh } }
@@ -501,7 +566,7 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
       let (talk, level, muted) = lock.withLock { (speaking, activity, state?.isMuted ?? false) }
       update { call in
         guard call.phase == .live else { return }
-        let loud = talk ? 1 : muted ? 0 : max(0.15, min(1, level))
+        let loud = talk ? 1 : muted ? 0 : max(0, min(1, level))
         call.levels = (0..<24).map { _ in loud * (0.25 + Double.random(in: 0...0.75)) }
       }
     }
@@ -512,18 +577,19 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
     keep(Task { [weak self] in await self?.transport.setMuted(muted) })
   }
 
+  /** End (or the red button while it rings): ended at once, with its tone and its length as of the click, and the voice let go after (`call-controller.ts`). */
   public func hangUp() {
     let agentId: String? = lock.withLock { state?.agentId }
     guard let agentId else { return }
-    keep(Task { [weak self] in
-      await self?.transport.end()
-      self?.finish(agentId: agentId)
-    })
+    finish(agentId: agentId)
+    Task { [transport] in await transport.end() }
   }
 
   private func fail(_ message: String) {
+    let already: Bool = lock.withLock { let was = finished; finished = true; return was }
+    // Hung up, or failed already: what comes late (a token, the seventh ring) changes nothing.
+    guard !already else { return }
     let wasOpen: (Bool, String, String?) = lock.withLock { (opened, callId, state?.agentId) }
-    lock.withLock { finished = true }
     tones?.stopRinging()
     log("call failed: \(message)")
     update { $0.phase = .ended; $0.status = message; $0.failed = true; $0.activity = nil; $0.levels = []; $0.endedAt = Date() }
@@ -563,10 +629,14 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
         summary = ending?["summary"]?.text.map { JSON.string($0) } ?? .null
         if let lines = ending?["transcript"]?.array, !lines.isEmpty { transcript = lines }
       }
-      guard wasOpen, !chat else { return }
-      let record: JSON = ["seconds": .number(Double(seconds)), "personName": person.map { JSON.string($0) } ?? .null, "recap": summary, "transcript": .array(transcript)]
-      let answer = try? await backend.command("voiceCall", ["agentId": .string(agentId), "callId": .string(id), "kind": "ended", "record": record])
-      if (answer?["exchange"]?.int ?? 0) == 0 && snapshot?.connectedAt != nil {
+      var written = 0
+      if wasOpen, !chat {
+        let record: JSON = ["seconds": .number(Double(seconds)), "personName": person.map { JSON.string($0) } ?? .null, "recap": summary, "transcript": .array(transcript)]
+        let answer = try? await backend.command("voiceCall", ["agentId": .string(agentId), "callId": .string(id), "kind": "ended", "record": record])
+        written = answer?["exchange"]?.int ?? 0
+      }
+      // A host that wrote no line of its own (one from before 2 October 2026, or the call went through the chat): the call's line and recap (`voice-call-service.ts`).
+      if written == 0 && snapshot?.connectedAt != nil {
         let head = "Voice call · \(Chat.callClock(seconds))"
         let text = summary.text.map { "\(head)\n\n\($0)" } ?? head
         _ = try? await backend.command("appendSendMessage", ["agentId": .string(agentId), "message": ["type": "text", "content": .string(text)]])

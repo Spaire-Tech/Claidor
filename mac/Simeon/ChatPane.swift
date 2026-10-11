@@ -45,8 +45,8 @@ struct ChatPane: View {
     }
     // Files dropped anywhere on the chat wait to go with the next message (`dragBindings` on `main.sand-chat`).
     .dropDestination(for: URL.self) { urls, _ in
-      // Not under an exchange: its field is hidden and read only.
-      guard control.exchangePeer == nil else { return false }
+      // Not under an exchange or a call's lines: its field is hidden and read only.
+      guard !control.coversChat else { return false }
       let files = urls.filter(\.isFileURL)
       control.stage(files.map(IncomingFile.url))
       return !files.isEmpty
@@ -58,6 +58,12 @@ struct ChatPane: View {
     .overlay {
       if let peer = control.exchangePeer {
         ExchangeView(agentId: agentId, peer: peer, look: look)
+      }
+    }
+    // A call's lines, opened from its "Voice chat" line (step 11), the same way.
+    .overlay {
+      if let call = control.callOpen, let agent {
+        CallChatView(agent: agent, call: call, look: look)
       }
     }
     // Find's bar, 8 under the head and 16 from the right, over everything (`z-index: 4`).
@@ -106,6 +112,7 @@ struct ChatPane: View {
       if underToLine, !control.staged.isEmpty { window.handoffFiles[agentId] = control.staged }
       // Another agent opened over an exchange: its Escape flag goes with it.
       if control.exchangePeer != nil { control.closeExchange() }
+      if control.callOpen != nil { control.closeCall() }
     }
     // Search closed: the message field takes the keys back (under the To: line, the line takes them).
     .onReceive(NotificationCenter.default.publisher(for: WindowState.composerFocusNote)) { _ in
@@ -144,7 +151,7 @@ struct ChatPane: View {
  * pill's right. The butterfly and the name open and close the agent's
  * pane (step 7), the call button calls it (step 11). The rest moves the window.
  */
-private struct ChatHeader: View {
+struct ChatHeader: View {
   let agent: Agent
   let look: Look
   @Environment(AppStore.self) private var store
@@ -205,9 +212,10 @@ private struct ChatHeader: View {
       .buttonStyle(.plain)
       .help(agent.name)
       .accessibilityLabel("View agent settings")
-      .overlay(alignment: .trailing) {
-        if !agent.isGroup {
-          CallButton(name: agent.name, look: look)
+      // The phone, 8 past the pill and level with its top (`left: 100%`, `top: 56`); not for a group, and not while calls are off.
+      .overlay(alignment: .topTrailing) {
+        if !agent.isGroup, store.canCall {
+          CallButton(agent: agent, look: look)
             .alignmentGuide(.trailing) { $0[.leading] - 8 }
         }
       }
@@ -216,23 +224,38 @@ private struct ChatHeader: View {
   }
 }
 
-/** `simeon-call-button`: a 24-point glass disc with the phone in the window's blue. Calls are step 11. */
+/**
+ * `simeon-call-button`: a 24-point disc with the phone (13) in the window's
+ * blue, darker under the pointer; Apple's glass in light, the flat dark
+ * control on dark (#212121, its #2E2E2E edge, #2A2A2A under the pointer).
+ * It calls the agent, and while a call is up it brings its banner forward
+ * (step 11).
+ */
 private struct CallButton: View {
-  let name: String
+  let agent: Agent
   let look: Look
+  @Environment(AppStore.self) private var store
+  @State private var hovering = false
 
   var body: some View {
-    Button {} label: {
+    let button = Button { CallActions.call(agent, store: store) } label: {
       Image(systemName: "phone.fill")
         .font(.system(size: 11, weight: .regular))
-        .foregroundStyle(look.blue)
+        .foregroundStyle(hovering ? look.blueHover : look.blue)
         .frame(width: 24, height: 24)
         .contentShape(Circle())
     }
     .buttonStyle(.plain)
-    .glassEffect(.regular, in: .circle)
-    .help("Call \(name)")
-    .accessibilityLabel("Call \(name)")
+    .onHover { hovering = $0 }
+    .help("Call \(agent.name)")
+    .accessibilityLabel("Call \(agent.name)")
+    if look.dark {
+      button
+        .background(Circle().fill(Color(hex: hovering ? 0x2A2A2A : 0x212121)))
+        .overlay(Circle().strokeBorder(Color(hex: 0x2E2E2E), lineWidth: 1))
+    } else {
+      button.glassEffect(.regular, in: .circle)
+    }
   }
 }
 
@@ -473,8 +496,8 @@ private struct TranscriptRow: View {
       ExchangeEvent(exchange: exchange, look: look)
     case .routines(_, let action, let routines):
       RoutinesLine(action: action, routines: routines, agentId: agentId, look: look)
-    case .voiceCall(_, let seconds, _):
-      CallLineRow(seconds: seconds, look: look)
+    case .voiceCall(let id, let seconds, let lines, let live):
+      CallLineRow(id: id, seconds: seconds, lines: lines, live: live, agentId: agentId, look: look)
     case .notice(_, let text):
       FindLine.marked(text, marks: findMarks, look: look)
         .font(.system(size: 12))
@@ -1044,24 +1067,6 @@ private struct RoutinesLine: View {
     Image(systemName: "clock")
       .font(.system(size: 11))
       .frame(width: 16, height: 16)
-  }
-}
-
-/** A call with the agent, as one line ("Voice chat · 01:49"); the call's card and its transcript are step 11. */
-private struct CallLineRow: View {
-  let seconds: Int
-  let look: Look
-
-  var body: some View {
-    HStack(spacing: 4) {
-      Image(systemName: "waveform")
-        .font(.system(size: 11))
-      Text(String(format: "Voice chat · %02d:%02d", seconds / 60, seconds % 60))
-    }
-    .font(.system(size: 12))
-    .foregroundStyle(look.inkSecondary)
-    .frame(minHeight: 24)
-    .padding(.top, 8)
   }
 }
 

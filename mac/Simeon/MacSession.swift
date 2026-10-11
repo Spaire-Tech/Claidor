@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import Observation
 import Security
 import SimeonCore
 
@@ -56,6 +57,8 @@ final class MacSession {
   @ObservationIgnored private var api: SimeonAPI?
   @ObservationIgnored private var signing: Task<Void, Never>?
   @ObservationIgnored private var loginURL: URL?
+  /** The person's name for a call's prompt ("Hey Bass"), read by the call off the main thread. */
+  @ObservationIgnored private let personName = PersonNameBox()
 
   /** Simeon Labs' server, or a stand-in named by `SIMEON_API` (or `--api=`). */
   let server: URL = {
@@ -73,7 +76,16 @@ final class MacSession {
 
   func start() async {
     guard phase == .starting else { return }
+    followName()
     if vault.read() != nil { await enter() } else { phase = .signedOut(message: nil) }
+  }
+
+  /** The person's name, kept for a call's prompt as it changes (the profile, the first run's "What should I call you?"). */
+  private func followName() {
+    let name = withObservationTracking { store.account?.name } onChange: { [weak self] in
+      Task { @MainActor in self?.followName() }
+    }
+    personName.value = name
   }
 
   // MARK: Signing in
@@ -132,7 +144,16 @@ final class MacSession {
       guard let profile = try? await api.profile(), let self, self.api === api, let account = Account(profile: profile) else { return }
       self.store.account = account
     }
-    await store.attach(LiveBackend(gateway: Gateway(api: api), api: api))
+    let backend = LiveBackend(gateway: Gateway(api: api), api: api)
+    // Calls (step 11): none while `SIMEON_VOICE_CALLS` switches them off; a failed call waits on the banner (its 20 s or Close);
+    // each step goes to voice-call.log, as the Electron app's.
+    if voiceCallsEnabled() {
+      let names = personName
+      let store = self.store
+      backend.call = LiveCall(backend: backend, transport: ElevenLabsVoice(), personName: { names.value }, voiceFor: { agentId in await store.ensureVoice(agentId) },
+                              tones: CallTonePlayer(), failedStays: nil, log: { VoiceCallLog.shared.write($0) })
+    }
+    await store.attach(backend)
     guard self.api === api else { return }
     // The window's start-up gate (`hUn`): an account never onboarded and with no agents gets the first run. A computer that does not
     // answer yet (a new account's, still being made) is asked once more after 2.5 s; then the first run shows, and its hand-off

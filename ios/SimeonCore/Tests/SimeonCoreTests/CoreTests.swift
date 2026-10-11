@@ -298,7 +298,7 @@ final class ChatTests: XCTestCase {
   func testAnEarlierCallIsOneVoiceChatLine() {
     let rows = Chat.rows(DemoData.seed(now: now).transcripts["theo"]!)
     let calls = rows.compactMap { row -> (Int, Int)? in
-      if case .voiceCall(_, let seconds, let lines) = row { return (seconds, lines.count) }
+      if case .voiceCall(_, let seconds, let lines, _) = row { return (seconds, lines.count) }
       return nil
     }
     XCTAssertEqual(calls.map(\.0), [71])

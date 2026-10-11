@@ -108,7 +108,7 @@ first build on the founder's Mac is the first real check.
 | The account's initials | 10 (done) |
 | Connect apps | 9 (done) |
 | Simeon › About Simeon | 10 (done) |
-| Agent › Call … | 11 |
+| Agent › Call … | 11 (done) |
 | A row's right-click | 3 (done) |
 
 ### Not in this step yet
@@ -210,7 +210,7 @@ Written 10 October 2026, **not built yet** (as step 1). Compare with B01
 | Button | Its part or step |
 |---|---|
 | The butterfly and name in the head (View agent settings) | 7 (done) |
-| The call button in the head | 11 |
+| The call button in the head | 11 (done) |
 | A file's name (opens its preview) | 2c (done) |
 | The exchanges' chips | 2d (done) |
 | The routines' chips (open the routine) | 7c (done) |
@@ -1714,3 +1714,106 @@ is open makes the menu grow downward, over the initials (an open Mac menu
 keeps its top where it is); the window's grows upward. Since the usage is
 read at sign-in, this is rare. About puts no key on × when it opens, and
 Tab does not stay inside it.
+
+## Step 11: calls
+
+Read from the window's call parts (the patch's phone button and "Voice
+chat" line), the banner's own code (`voice-call/`) and the Electron app's
+call service, and measured in the reference window and in the banner's
+real page, light and dark, with a harness that ran the banner's real
+controller, ringer and painter through fourteen calls (quick, slow and no
+answer, refused, no microphone, hung up while ringing, ended by the agent,
+the line dropped, muted, the transcript, work that came back). Pushed:
+
+- **The phone** beside the agent's name at the top of the chat (24 round,
+  8 past the name, level with its top; Apple's glass in light, the flat
+  dark control on dark; darker blue under the pointer; "Call Theo"). It
+  calls the agent. While a call is up, or its banner is still showing, it
+  brings the banner forward instead, whichever agent it is. Not for a
+  group, and not at all when calls are switched off (`SIMEON_VOICE_CALLS`).
+- **Agent › Call <name>** does the same; "Call Agent" greyed with no agent
+  open. The whole Agent menu is gone when calls are switched off.
+- **No green pill in the chat**: the "Calling…" pill of M01–M03 belongs to
+  the web and phone window; the Electron Mac app shows the call only in
+  its banner (decision 1).
+- **The banner** (M10–M19), a small window of its own: 360 wide, 12 under
+  the menu bar and 16 from the right edge of the screen the pointer is on,
+  over other windows and on every Space (not over another app's full
+  screen), never bringing Simeon forward; it grows and shrinks with the
+  call, its top where it is. The agent (its butterfly, breathing, or its
+  picture), its name, and under it "Calling…" with the red hang-up, the
+  call's clock, what the agent is doing ("Using Gmail…", "Sending the
+  agenda to Dana…"), "Call ended · 2:48", or why it failed. The waveform
+  (46 bars) while the call is on. Mute (Unmute, in orange), Transcript
+  (what both said, the person's words in the chat's blue on the right,
+  "What you both say shows up here." before anyone speaks; it scrolls past
+  260), End. A finished call goes after 1.2 s; a failed one ("Couldn't
+  connect", "Calls aren't switched on yet", "Out of credit for calls",
+  "Simeon can't use the microphone") stays 20 s with Close, longer while
+  the pointer is on it. File › Close Window on the banner ends the call.
+- **The ring and the hang-up**: two rings before the voice, then one at a
+  time while the call gets ready, seven at most, then "Couldn't connect";
+  the two falling notes when a call that was on ends.
+- **The voice**: ElevenLabs' Swift kit, the iPhone's (`ios/Simeon/Voice.swift`,
+  now compiled into the Mac app too), with the token Simeon Labs' server
+  hands out; the agent's prompt, greeting and voice, its two tools, what
+  its work brings back said once the line is quiet, the record at the end
+  (summary, transcript), each step in `~/Library/Application Support/Simeon/voice-call.log`.
+- **The call's line in the chat**: "Voice chat · now" while it is on, then
+  "Voice chat · 02:48" (1:02:05 past the hour). An ended call with words
+  opens them over the chat, as the Electron app does: the agent's own head,
+  the person's words on the right, the agent's on the left, "This chat is
+  view-only" and Close Chat; Escape closes it.
+
+The call's flow is SimeonCore's `LiveCall`, shared with the iPhone. The
+Electron app was compared with it step by step; these differences were
+fixed there, so they change the iPhone's calls too: ending at the click
+(not after the voice lets go), seven rings then "Couldn't connect", a
+hang-up while it rings staying "Call ended", the kit's error during a call
+no longer ending it, a line dropped before it connects saying "Couldn't
+connect", the working line naming what the agent does ("Using Gmail…"),
+the chat's line written while it still rings, shared rooms left out of the
+teammates the voice knows, the call's line added through the chat when
+the agent's computer has no call channel, the waveform flat in silence.
+Tests: `CallFlowTests.swift`.
+
+#### Not in step 11
+
+- Thumbs, Call Again and Chat on an ended banner: wired in the Electron app
+  but nothing in its window shows them.
+- The waveform from the voice's own sound: the Electron banner draws the
+  voice's frequencies each frame; here the bars follow the call's loudness
+  (the agent speaking, the person's voice), rising and falling the same
+  way.
+- The banner's keyboard focus ring (the Electron one draws #0A84FF inside
+  a button): the Mac's own.
+
+#### Decisions to confirm
+
+1. No pill in the chat during a call, as the Electron Mac app (the green
+   "Calling…" of M01–M03 is the web and phone window's).
+2. No phone for a group (the Electron app offers it, and the call then goes
+   nowhere: the computer writes no line and runs nothing from it).
+3. The dark banner keeps the light sheen at its top left, as the Electron
+   one draws it (its stylesheet meant a fainter one on dark).
+4. The banner's hairlines are 1 point, as drawn (its stylesheet says half).
+5. Not over another app's full screen, as the Electron banner.
+6. Work that came back is said once the voice has stopped and the person
+   has been quiet a second (the rule you asked for on the iPhone, 9
+   October); the Electron app says it the moment the voice listens.
+
+#### Where the native parts look different
+
+The banner is drawn as the Electron one; its shadow is SwiftUI's (no
+spread), and its corners are round, not continuous, as in CSS. The icons
+are SF Symbols (phone.fill, phone.down.fill, mic.fill, mic.slash.fill);
+Transcript's three lines and the call line's five strokes are drawn.
+
+#### What to compare
+
+M10–M19, light and dark: the banner ringing, speaking, listening, working,
+muted, the transcript empty and with lines, ended, failed, out of credit.
+On a Mac, with a real call: the ring, the voice, the clock, Mute, the
+transcript, End and its tone, the "Voice chat" line before and after, and
+the call's lines opened from it. Check that the microphone question
+appears the first time.

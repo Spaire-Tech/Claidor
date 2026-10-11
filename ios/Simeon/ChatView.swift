@@ -987,7 +987,7 @@ struct ChatRowView: View, Equatable {
       RequestCardView(entryId: id, agentId: agentId, card: card, openComputer: openComputer)
     case .teammates(_, let exchange, let entries):
       TeammatesLine(exchange: exchange, entries: entries, agentId: agentId)
-    case .voiceCall(_, let seconds, let lines):
+    case .voiceCall(_, let seconds, let lines, _):
       VoiceCallLine(seconds: seconds, lines: lines)
     case .routines(_, let action, let routines):
       RoutinesLine(action: action, routines: routines) { id in if let open = actions?.openRoutine { open(id) } else { openPage() } }

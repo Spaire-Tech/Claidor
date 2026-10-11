@@ -55,6 +55,10 @@ code.
     License).
 - `ios/SimeonCore`: the shared core, a Swift package. Its Mac-only library,
   `SimeonMacCore`, holds Mac rules with no screen.
+- `ios/Simeon/Voice.swift`: the call's voice (ElevenLabs' Swift kit, the
+  package `elevenlabs-swift-sdk`), its ring and hang-up, and the Mac's
+  `voice-call.log`, compiled into both apps (step 11). The call's banner
+  is `CallBannerWindow.swift`; its line in the chat `CallChat.swift`.
 - `mac/PARITY.md`: the inventory of what the Electron app does, read from
   its code on 9 October 2026. Its "Mac" column describes the earlier build,
   which is gone.

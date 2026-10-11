@@ -179,7 +179,8 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
   case listenerConnect(id: String, platform: String, reason: String?)
   case request(id: String, card: RequestCard)
   case teammates(id: String, exchange: Exchange, entries: [Entry])
-  case voiceCall(id: String, seconds: Int, lines: [CallLine])
+  /** A call with the agent (`voice-call` event): its length and what both said; `live` while the call is still on ("Voice chat · now"). */
+  case voiceCall(id: String, seconds: Int, lines: [CallLine], live: Bool)
   case routines(id: String, action: String, routines: [RoutineRef])
   /** A card this version cannot draw: said so, as the Mac does. */
   case notice(id: String, text: String)
@@ -195,7 +196,7 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
   public var id: String {
     switch self {
     case .stamp(let id, _), .unread(let id), .flights(let id, _), .file(let id, _, _, _), .question(let id, _), .draft(let id, _),
-         .connectors(let id, _, _, _), .listenerConnect(let id, _, _), .request(let id, _), .teammates(let id, _, _), .voiceCall(let id, _, _), .routines(let id, _, _),
+         .connectors(let id, _, _, _), .listenerConnect(let id, _, _), .request(let id, _), .teammates(let id, _, _), .voiceCall(let id, _, _, _), .routines(let id, _, _),
          .notice(let id, _), .failedSend(let id, _), .queuedSend(let id, _), .thread(let id, _, _, _), .cloudAgent(let id, _): return id
     case .bubble(let bubble): return bubble.id
     }
@@ -775,7 +776,7 @@ public enum Chat {
         }
         stamp(before: entry)
         if let call {
-          rows.append(.voiceCall(id: entry.id, seconds: call.seconds, lines: run.map { CallLine(fromPerson: $0.fromAgent != nil, text: $0.content ?? "") }))
+          rows.append(.voiceCall(id: entry.id, seconds: call.seconds, lines: run.map { CallLine(fromPerson: $0.fromAgent != nil, text: $0.content ?? "") }, live: false))
         } else {
           rows.append(.teammates(id: entry.id, exchange: exchange(run), entries: run))
         }
@@ -987,7 +988,7 @@ public enum Chat {
           guard let text = line["text"]?.text else { return nil }
           return CallLine(fromPerson: line["speaker"]?.string == "user", text: text)
         }
-        return .voiceCall(id: entry.id, seconds: event["seconds"]?.int ?? 0, lines: lines)
+        return .voiceCall(id: entry.id, seconds: event["seconds"]?.int ?? 0, lines: lines, live: event["status"]?.string == "live")
       case "name-changed":
         return event["to"]?.text.map { .notice(id: entry.id, text: "Renamed to \($0)") }
       case "channel-connected":
@@ -1061,6 +1062,11 @@ public enum Chat {
       formatters[key] = made
       return made
     }
+  }
+
+  /** A call's line in the chat (`__simeonVoiceEvent`): "Voice chat · now" while it is on, then "Voice chat · 02:48" ("1:02:05" past the hour). */
+  public static func voiceChatLabel(seconds: Int, live: Bool) -> String {
+    live ? "Voice chat · now" : "Voice chat · \(callLength(max(0, seconds)))"
   }
 
   /** A call's length the Mac's way: "01:11", or "1:02:05" past the hour. */

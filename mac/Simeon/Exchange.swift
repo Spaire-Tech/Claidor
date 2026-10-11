@@ -248,7 +248,7 @@ private struct ExchangeMessage: View {
 }
 
 /** The exchange's foot (`sand-exchange-readonly-notice`): it cannot be written in, and Close Chat. */
-private struct ReadOnlyNotice: View {
+struct ReadOnlyNotice: View {
   let look: Look
   let close: () -> Void
 

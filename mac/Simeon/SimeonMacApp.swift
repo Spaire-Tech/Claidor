@@ -43,6 +43,8 @@ struct SimeonMacApp: App {
         .environment(plugins)
         .environment(account)
         .task { await session.start() }
+        // The call's banner (step 11) opens with a call and closes when it is put away, whatever windows are open.
+        .onAppear { CallBannerWindow.shared.follow(session.store) }
         // Search's Chat Settings opens the agent's pane.
         .onAppear {
           search.pane = pane
@@ -103,19 +105,28 @@ struct SimeonCommands: Commands {
         .keyboardShortcut("r")
       Divider()
     }
-    CommandMenu("Agent") { CallItem(window: window, store: store) }
+    // The Agent menu: the call (step 11), none at all while `SIMEON_VOICE_CALLS` switches calls off.
+    if voiceCallsEnabled() {
+      CommandMenu("Agent") { CallItem(window: window, store: store) }
+    }
     CommandGroup(replacing: .help) {}
   }
 }
 
-/** Agent › Call <name>: the open agent (a person, not a group), else a disabled "Call Agent". The call itself is the calls step (mac/STEPS.md). */
+/**
+ * Agent › Call <name>: the open agent (a person, not a group), else a
+ * disabled "Call Agent"; no key. While a call is up it brings its banner
+ * forward, as the chat's phone does.
+ */
 private struct CallItem: View {
   let window: WindowState
   let store: AppStore
 
   var body: some View {
     let callee = store.agents.first { $0.id == window.selected && !$0.isGroup }
-    Button(callee.map { "Call \($0.name)" } ?? "Call Agent") {}
-      .disabled(callee == nil)
+    Button(callee.map { "Call \($0.name)" } ?? "Call Agent") {
+      if let callee { CallActions.call(callee, store: store) }
+    }
+    .disabled(callee == nil)
   }
 }
