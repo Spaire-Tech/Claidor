@@ -16,12 +16,13 @@ same artboards.
 | `screenshots/06-approve.png` | Nothing goes out without your OK | The approval card: Allow once, Always allow, Deny |
 
 The look follows the founder's reference (11 October 2026: "i like claudes
-style"): a serif headline in warm white over a dark, grainy ground, the
-app's screen below it, and one part of it lifted out at a larger size. The
-grounds are the agents' own butterflies, blown up and out of focus in each
-agent's colours; the computer's is the founder's photograph (the cloud
-computer's wallpaper). The phone screens use the app's light-mode colours
-and sizes (`ios/Simeon/Theme.swift`, the list row and chat bubble metrics).
+style"): a serif headline in dark navy over a light ground, the app's
+screen below it, and one part of it lifted out at a larger size. Every
+screenshot has the same ground, the pale blue glass picture the founder
+chose that evening (`assets/background.jpg`, enlarged from the 736 by 736
+original to the screenshots' height). The phone screens use the app's
+light-mode colours and sizes (`ios/Simeon/Theme.swift`, the list row and
+chat bubble metrics).
 
 ## Making them again
 
@@ -43,7 +44,8 @@ canvas comes here by copying the artboard's file into `source/`.
 - `assets/logo-*`: the connector logos the app and the website already
   carry (`ios/Simeon/Assets.xcassets/Connectors`, `sites/simeonlabs.com/public/logos`).
   They are the apps' trademarks, shown to say Simeon connects to them.
-- `assets/wallpaper.jpg`: the founder's photograph.
+- `assets/background.jpg`: the ground of every screenshot, from the founder.
+- `assets/wallpaper.jpg`: the founder's photograph, the agent's desktop on screen 3.
 - `fonts/`: Newsreader (the website's serif) and Inter, both under the SIL
   Open Font License. Inter stands in for SF Pro, which can't be rendered
   here, on the canvas too, so the canvas and the PNGs match.
