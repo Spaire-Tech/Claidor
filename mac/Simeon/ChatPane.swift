@@ -189,7 +189,7 @@ struct ChatHeader: View {
   /**
    * `sand-chat-header__identity`: padded 0 8 2, its butterfly and pill 4
    * apart, both opening the agent's settings; the call button sits 8 past
-   * the pill's right end, level with it.
+   * the pill's right end, level with its top.
    */
   private var identity: some View {
     VStack(spacing: 4) {
@@ -199,25 +199,33 @@ struct ChatHeader: View {
       }
       .buttonStyle(.plain)
       .accessibilityLabel("View agent settings")
-      Button { pane.toggleSettings(layout: layout) } label: {
-        Text(agent.name)
-          .font(.system(size: 13, weight: .medium))
-          .foregroundStyle(look.ink)
-          .lineLimit(1)
-          .truncationMode(.tail)
-          .padding(.horizontal, 12)
-          .frame(height: 26)
-          .glassEffect(.regular, in: .capsule)
-          .contentShape(Capsule())
-      }
-      .buttonStyle(.plain)
-      .help(agent.name)
-      .accessibilityLabel("View agent settings")
-      // The phone, 8 past the pill and level with its top (`left: 100%`, `top: 56`); not for a group, and not while calls are off.
-      .overlay(alignment: .topTrailing) {
-        if !agent.isGroup, store.canCall {
+      // The phone, 8 past the pill and level with its top (`left: 100%`, `top: 56`), the pill still in the middle under the
+      // butterfly: an empty place as wide as the phone on the pill's other side. A plain row, not an overlay pushed outside the
+      // pill (on the founder's Mac, 11 October 2026, the phone sat over the butterfly). Not for a group, not while calls are off.
+      let calls = !agent.isGroup && store.canCall
+      HStack(alignment: .top, spacing: 8) {
+        if calls {
+          Color.clear
+            .frame(width: 24, height: 24)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+        }
+        Button { pane.toggleSettings(layout: layout) } label: {
+          Text(agent.name)
+            .font(.system(size: 13, weight: .medium))
+            .foregroundStyle(look.ink)
+            .lineLimit(1)
+            .truncationMode(.tail)
+            .padding(.horizontal, 12)
+            .frame(height: 26)
+            .glassEffect(.regular, in: .capsule)
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .help(agent.name)
+        .accessibilityLabel("View agent settings")
+        if calls {
           CallButton(agent: agent, look: look)
-            .alignmentGuide(.trailing) { $0[.leading] - 8 }
         }
       }
     }
