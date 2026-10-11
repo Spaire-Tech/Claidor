@@ -53,6 +53,7 @@ struct SettingsSheet: View {
           // On until turned off: off, this phone is taken off the person's pushes (`/desktop/push-devices`); back on, it
           // registers again. Refused in the phone's own Settings, the switch shows off and opens them.
           Toggle("Notifications", isOn: notificationsSwitch)
+            .tint(Ink.blue)
           // A menu in the row, not a page of its own: the page slid back while the whole app redrew in the new colours,
           // and the two together stalled (the founder, 11 October 2026: "lags severely always").
           Picker("Appearance", selection: $theme) {
@@ -63,6 +64,7 @@ struct SettingsSheet: View {
           .pickerStyle(.menu)
           .tint(Ink.secondary)
           Toggle("Haptics", isOn: $haptics)
+            .tint(Ink.blue)
         }
         .listRowBackground(Ink.groupedRow)
         Section {
