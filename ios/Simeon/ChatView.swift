@@ -113,7 +113,9 @@ struct ChatView: View {
         Group {
           switch which {
           case .settings: SettingsSheet().presentationBackground(Ink.groupedGround)
-          case .usage: NavigationStack { UsagePage() }.presentationBackground(Ink.groupedGround)
+          case .usage:
+            NavigationStack { UsagePage().toolbar { ToolbarItem(placement: .leadingBar) { CloseButton() } } }
+              .presentationBackground(Ink.groupedGround)
           case .plugins: ConnectAppsSheet().presentationBackground(Ink.ground)
           case .hidden:
             HiddenAgentsSheet { id in
