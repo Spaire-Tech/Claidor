@@ -274,16 +274,20 @@ struct RoutineEditor: View {
             }))
             .tint(Ink.blue)
           }
+          .listRowBackground(Ink.groupedRow)
         }
         Section("Name") {
           TextField("Monday launch check", text: $routine.name)
         }
+        .listRowBackground(Ink.groupedRow)
         Section("Instruction") {
           TextField("What should this routine do each time it runs?", text: $routine.prompt, axis: .vertical).lineLimit(3...12)
         }
+        .listRowBackground(Ink.groupedRow)
         Section("When to run") {
           SchedulePicker(cron: $routine.schedule)
         }
+        .listRowBackground(Ink.groupedRow)
         if !isNew {
           Section {
             Button {
@@ -297,6 +301,7 @@ struct RoutineEditor: View {
             } label: { Label("Delete routine", systemImage: "trash") }
             .disabled(busy)
           }
+          .listRowBackground(Ink.groupedRow)
           if !routine.runs.isEmpty {
             Section("Runs") {
               ForEach(Array(routine.runs.prefix(20).enumerated()), id: \.offset) { _, run in
@@ -308,9 +313,11 @@ struct RoutineEditor: View {
                 .font(.system(size: 14))
               }
             }
+            .listRowBackground(Ink.groupedRow)
           }
         }
       }
+      .groupedGround()
       .navigationTitle(isNew ? "New Routine" : routine.name)
       .inlineBarTitle()
       .toolbar {

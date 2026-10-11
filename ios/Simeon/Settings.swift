@@ -39,6 +39,7 @@ struct SettingsSheet: View {
             LabeledContent("Usage", value: quota.map { "\(UsageNumbers(quota: $0).percent)%" } ?? "")
           }
         }
+        .listRowBackground(Ink.groupedRow)
         Section {
           Button { showsApps = true } label: {
             HStack {
@@ -53,6 +54,7 @@ struct SettingsSheet: View {
           }
           .padding(.vertical, 2)
         }
+        .listRowBackground(Ink.groupedRow)
         AgentSettingsSection(settings: $settings)
         Section {
           Picker("Appearance", selection: $theme) {
@@ -64,9 +66,11 @@ struct SettingsSheet: View {
           .pickerStyle(.navigationLink)
           #endif
         }
+        .listRowBackground(Ink.groupedRow)
         Section {
           Button("Sign Out", role: .destructive) { Task { await session.signOut() } }
         }
+        .listRowBackground(Ink.groupedRow)
         Section {
           VStack(spacing: 8) {
             ButterflyView(palette: .named("blue")).frame(width: 56, height: 56)
@@ -77,6 +81,7 @@ struct SettingsSheet: View {
           .listRowBackground(Color.clear)
         }
       }
+      .groupedGround()
       .navigationTitle("Settings")
       .inlineBarTitle()
       .toolbar { ToolbarItem(placement: .leadingBar) { CloseButton() } }
@@ -139,6 +144,7 @@ struct AgentSettingsSection: View {
         }
       }
     }
+    .listRowBackground(Ink.groupedRow)
   }
 
   private var detectedZone: String { settings?["userTimeZone"]?.text ?? TimeZone.current.identifier }
@@ -209,7 +215,9 @@ struct AccountPage: View {
         }
         .accessibilityHint("Copies the email")
       }
+      .listRowBackground(Ink.groupedRow)
     }
+    .groupedGround()
     .navigationTitle("Account")
     .inlineBarTitle()
   }
@@ -287,16 +295,20 @@ struct UsagePage: View {
           }
           .disabled(opening)
         }
+        .listRowBackground(Ink.groupedRow)
         Section {
           LabeledContent("Plan", value: quota["planName"]?.text ?? "")
           if let status = quota["subscriptionStatus"]?.text, status != "active" {
             LabeledContent("Status", value: status.capitalized)
           }
         }
+        .listRowBackground(Ink.groupedRow)
       } else {
         HStack { ProgressView(); Text("Loading usage…").foregroundStyle(Ink.secondary) }
+        .listRowBackground(Ink.groupedRow)
       }
     }
+    .groupedGround()
     .navigationTitle("Usage")
     .inlineBarTitle()
   }
@@ -329,6 +341,7 @@ struct TimeZonePicker: View {
           if current.isEmpty { Image(systemName: "checkmark").foregroundStyle(Ink.blue) }
         }
       }
+      .listRowBackground(Ink.groupedRow)
       ForEach(zones, id: \.self) { zone in
         Button { choose(zone); dismiss() } label: {
           HStack {
@@ -341,7 +354,9 @@ struct TimeZonePicker: View {
           }
         }
       }
+      .listRowBackground(Ink.groupedRow)
     }
+    .groupedGround()
     .searchable(text: $query, prompt: "Search")
     .navigationTitle("Timezone")
     .inlineBarTitle()
@@ -380,17 +395,20 @@ struct AutoReviewRules: View {
         Text("Write one short, natural-language rule for each action. \"Ask first\" takes priority if rules conflict.")
           .font(.system(size: 13)).foregroundStyle(Ink.secondary)
       }
+      .listRowBackground(Ink.groupedRow)
       if !allow.isEmpty {
         Section("Allow automatically") {
           ForEach(allow, id: \.self) { Text($0) }
             .onDelete { offsets in save(allow: allow.enumerated().filter { !offsets.contains($0.offset) }.map(\.element), ask: ask) }
         }
+        .listRowBackground(Ink.groupedRow)
       }
       if !ask.isEmpty {
         Section("Ask first") {
           ForEach(ask, id: \.self) { Text($0) }
             .onDelete { offsets in save(allow: allow, ask: ask.enumerated().filter { !offsets.contains($0.offset) }.map(\.element)) }
         }
+        .listRowBackground(Ink.groupedRow)
       }
       Section {
         VStack(alignment: .leading, spacing: 8) {
@@ -411,7 +429,9 @@ struct AutoReviewRules: View {
       } footer: {
         Text("These rules apply only to you. Built-in safety checks always apply.")
       }
+      .listRowBackground(Ink.groupedRow)
     }
+    .groupedGround()
     .navigationTitle("Auto-review Rules")
     .inlineBarTitle()
   }
@@ -446,16 +466,19 @@ struct ConnectAppsSheet: View {
         if tab == "marketplace" {
           if store.catalog.isEmpty {
             HStack { ProgressView(); Text("Loading apps…").foregroundStyle(Ink.secondary) }
+            .listRowBackground(Ink.groupedRow)
           }
           ForEach(categories, id: \.self) { category in
             Section(category.isEmpty ? "Apps" : category) {
               ForEach(catalog(in: category)) { app in AppRow(app: app) }
             }
+            .listRowBackground(Ink.groupedRow)
           }
         } else {
           let mine = store.appsOnce.filter { query.isEmpty || $0.name.localizedCaseInsensitiveContains(query) }
           if mine.isEmpty {
             Text("No apps yet. Add one from the Marketplace.").foregroundStyle(Ink.secondary)
+              .listRowBackground(Ink.groupedRow)
           }
           ForEach(mine) { app in
             NavigationLink { ConnectedAppDetail(app: app) } label: {
@@ -469,8 +492,10 @@ struct ConnectAppsSheet: View {
               }
             }
           }
+          .listRowBackground(Ink.groupedRow)
         }
       }
+      .groupedGround()
       #if os(iOS)
       .listStyle(.insetGrouped)
       #endif
@@ -574,6 +599,7 @@ struct ConnectedAppDetail: View {
         }
         .padding(.vertical, 6)
       }
+      .listRowBackground(Ink.groupedRow)
       Section("Accounts") {
         ForEach(accounts.isEmpty ? [app] : accounts) { account in
           HStack {
@@ -604,6 +630,7 @@ struct ConnectedAppDetail: View {
           }
         }
       }
+      .listRowBackground(Ink.groupedRow)
       Section("Tools") {
         if loadingTools && tools.isEmpty {
           HStack { ProgressView(); Text("Loading tools…").foregroundStyle(Ink.secondary) }
@@ -633,6 +660,7 @@ struct ConnectedAppDetail: View {
           .disabled(switching.contains(tool.name))
         }
       }
+      .listRowBackground(Ink.groupedRow)
       Section {
         Button(role: .destructive) {
           removing = true
@@ -645,7 +673,9 @@ struct ConnectedAppDetail: View {
         }
         .disabled(removing)
       }
+      .listRowBackground(Ink.groupedRow)
     }
+    .groupedGround()
     .navigationTitle(app.name)
     .inlineBarTitle()
     .task(id: connected) {

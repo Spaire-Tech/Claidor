@@ -611,7 +611,9 @@ struct HiddenAgentsSheet: View {
             .font(.system(size: 15)).foregroundStyle(Ink.secondary).textCase(nil)
             .padding(.bottom, 6)
         }
+        .listRowBackground(Ink.groupedRow)
       }
+      .groupedGround()
       .navigationTitle("Hidden Agents")
       .inlineBarTitle()
       .toolbar {

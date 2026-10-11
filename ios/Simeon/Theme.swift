@@ -40,8 +40,22 @@ extension UIColor {
 enum Ink {
   /** The chat's ground (`--sand-bg-base`). */
   static let ground = Color.dynamic(light: "#fcfcfc", dark: "#070707")
-  /** The list's ground (`--sand-bg-subtle`, the Mac's sidebar). */
-  static let listGround = Color.dynamic(light: "#f7f7f7", dark: "#111111")
+  /**
+   * The list's ground (`--sand-bg-subtle`, the Mac's sidebar). On dark the
+   * launch's near black, as the chat's (the founder, 11 October 2026: "we
+   * bring that dark to the background"; it was `#111111`). The glass
+   * buttons and the title tags over it are see-through, so they come out a
+   * step darker with it.
+   */
+  static let listGround = Color.dynamic(light: "#f7f7f7", dark: "#070707")
+  /**
+   * A grouped page's ground (Settings and its pages, the routine editor,
+   * Hidden Agents): the system's grey on light; on dark the same near black,
+   * not the sheet's lighter grey (`#1c1c1e`).
+   */
+  static let groupedGround = Color.dynamic(light: "#f2f2f7", dark: "#070707")
+  /** Its rows: white on light; on dark `#1c1c1e`, a step darker than the sheet's `#2c2c2e`, so they sit on the near black. */
+  static let groupedRow = Color.dynamic(light: "#ffffff", dark: "#1c1c1e")
   static let primary = Color.dynamic(light: "#141414", dark: "#fcfcfc")
   static let secondary = Color.dynamic(light: "#14141499", dark: "#fcfcfc99")
   static let tertiary = Color.dynamic(light: "#14141466", dark: "#fcfcfc66")
@@ -125,6 +139,11 @@ struct CardEdge: ViewModifier {
 }
 
 extension View {
+  /** A grouped list on the app's own ground (`Ink.groupedGround`); its rows take `Ink.groupedRow`. */
+  func groupedGround() -> some View {
+    scrollContentBackground(.hidden).background(Ink.groupedGround)
+  }
+
   /** The Messages grey card with its faint edge: every card in the chat. */
   func card(radius: CGFloat = 16, padding: CGFloat = 12) -> some View {
     self.padding(padding)
