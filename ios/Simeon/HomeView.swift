@@ -106,23 +106,25 @@ struct HomeView: View {
     .tint(Ink.primary)
     .sheet(item: $sheet) { which in
       Group {
+        // Each sheet on the app's own ground, never the system's sheet grey at its edges (the founder, 11 October 2026).
         switch which {
         case .newAgent:
-          NewAgentSheet { id in open(id) }
+          NewAgentSheet { id in open(id) }.presentationBackground(Ink.ground)
         case .newGroup:
-          NewGroupSheet { id in open(id) }
+          NewGroupSheet { id in open(id) }.presentationBackground(Ink.ground)
         case .settings:
-          SettingsSheet()
+          SettingsSheet().presentationBackground(Ink.groupedGround)
         }
       }
       .problemAlert()
     }
-    .sheet(item: $profile) { ref in AgentPageSheet(agentId: ref.id, routineId: ref.routineId).problemAlert() }
+    .sheet(item: $profile) { ref in AgentPageSheet(agentId: ref.id, routineId: ref.routineId).problemAlert().presentationBackground(Ink.ground) }
     .sheet(isPresented: $showsHidden) {
       HiddenAgentsSheet { id in
         showsHidden = false
         open(id)
       }
+      .presentationBackground(Ink.groupedGround)
     }
     .alert(deleting.map { "Delete “\($0.name)”" } ?? "", isPresented: Binding(get: { deleting != nil }, set: { shown in if !shown && deleting != nil { deleting = nil } }), presenting: deleting) { agent in
       Button("Cancel", role: .cancel) {}

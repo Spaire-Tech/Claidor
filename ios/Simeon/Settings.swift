@@ -57,14 +57,15 @@ struct SettingsSheet: View {
         .listRowBackground(Ink.groupedRow)
         AgentSettingsSection(settings: $settings)
         Section {
+          // A menu in the row, not a page of its own: the page slid back while the whole app redrew in the new colours,
+          // and the two together stalled (the founder, 11 October 2026: "lags severely always").
           Picker("Appearance", selection: $theme) {
             Text("System").tag("system")
             Text("Light").tag("light")
             Text("Dark").tag("dark")
           }
-          #if os(iOS)
-          .pickerStyle(.navigationLink)
-          #endif
+          .pickerStyle(.menu)
+          .tint(Ink.secondary)
         }
         .listRowBackground(Ink.groupedRow)
         Section {

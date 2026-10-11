@@ -32,7 +32,11 @@ struct SimeonApp: App {
         // The appearance is set on the windows, and only there. With SwiftUI's preferredColorScheme at the root as well, each
         // sheet was given the style of the moment it opened as its own, so Settings, open while the choice was made, kept the
         // old one until closed (the founder, 9 October 2026, twice). A window's style reaches every sheet it holds at once.
-        .onChange(of: session.launch.theme ?? theme, initial: true) { _, name in Self.applyToWindows(name) }
+        // At once at launch (the first call, the same value on both sides); a choice made later a moment after it, so the
+        // menu it was made in closes first and the redraw does not stall it.
+        .onChange(of: session.launch.theme ?? theme, initial: true) { old, name in
+          if old == name { Self.applyToWindows(name) } else { Task { @MainActor in Self.applyToWindows(name) } }
+        }
         .task { await session.start() }
         // After the first screen is up, never before it.
         .task { HangWatch.start() }
@@ -49,14 +53,19 @@ struct SimeonApp: App {
     let style: UIUserInterfaceStyle = name == "light" ? .light : name == "dark" ? .dark : .unspecified
     for case let scene as UIWindowScene in UIApplication.shared.connectedScenes {
       // Set, never read: reading an override that was never set aborts the app ("Can't return value for trait … that has no override").
-      scene.traitOverrides.preferredContentSizeCategory = .large
+      // Once per scene: set again on every change of appearance, it made every word in the app be laid out again with the
+      // colours, and the switch lagged badly (the founder, 11 October 2026).
+      if sizedScenes.insert(ObjectIdentifier(scene)).inserted { scene.traitOverrides.preferredContentSizeCategory = .large }
       for window in scene.windows {
         if window.overrideUserInterfaceStyle != style { window.overrideUserInterfaceStyle = style }
-        window.backgroundColor = Ink.groundUIColor
-        window.rootViewController?.view.backgroundColor = Ink.groundUIColor
+        if window.backgroundColor != Ink.groundUIColor { window.backgroundColor = Ink.groundUIColor }
+        if let root = window.rootViewController?.view, root.backgroundColor != Ink.groundUIColor { root.backgroundColor = Ink.groundUIColor }
       }
     }
   }
+
+  /** The scenes whose type size is already set. */
+  @MainActor private static var sizedScenes = Set<ObjectIdentifier>()
 
   static func scheme(_ name: String) -> ColorScheme? {
     switch name {
