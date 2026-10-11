@@ -41,6 +41,10 @@ struct HomeView: View {
   @State private var filter = ListFilter.all
   /** The Mac's sections: which are folded, and the section being named or deleted. */
   @State private var listSections = ListSections()
+  /** Select Chats: the chats picked to move or delete together (the Mac's picked rows). */
+  @State private var selecting = false
+  @State private var picked = Set<String>()
+  @State private var deletingPicked: [Agent] = []
   /** The search field has the focus: the list gives way to search (SearchResults) until it is left empty. */
   @FocusState private var searchFocused: Bool
 
@@ -51,7 +55,7 @@ struct HomeView: View {
   // sheets, the chat pushed over the list). The rows read it (AgentList), and only while they are on screen.
   var body: some View {
     NavigationStack(path: $path) {
-      AgentList(query: query, filter: filter, covered: !path.isEmpty, open: open, menu: menu, deleting: $deleting, showsHidden: $showsHidden, sections: listSections)
+      AgentList(query: query, filter: filter, covered: !path.isEmpty, open: open, menu: menu, deleting: $deleting, showsHidden: $showsHidden, sections: listSections, selecting: selecting, picked: $picked)
       // At the bottom, as Messages has them: the search field, and new chat at the right. Our own bar: the system's
       // search in the bottom toolbar was set up again on every redraw of the list ("Ignoring searchBarPlacement…").
       // Search, with all the Mac's search has, over the list while the field is in use.
@@ -75,7 +79,13 @@ struct HomeView: View {
       }
       .animation(.easeOut(duration: 0.2), value: searchFocused || !query.isEmpty)
       .safeAreaBar(edge: .bottom, spacing: 0) {
-        ListBottomBar(query: $query, focus: $searchFocused, newAgent: { sheet = .newAgent }, newGroup: { sheet = .newGroup })
+        if selecting {
+          SelectionBar(picked: picked, sections: listSections, delete: {
+            deletingPicked = picked.compactMap { store.agent($0) }
+          }, done: endSelecting)
+        } else {
+          ListBottomBar(query: $query, focus: $searchFocused, newAgent: { sheet = .newAgent }, newGroup: { sheet = .newGroup })
+        }
       }
       .inlineBarTitle()
       .navigationTitle("Messages")
@@ -96,7 +106,17 @@ struct HomeView: View {
           .accessibilityLabel("Settings")
         }
         // The filter at the top right, as Messages': every chat, the hidden ones, or only the unread.
-        ToolbarItem(placement: .trailingBar) { ListFilterMenu(filter: $filter, showsHidden: $showsHidden) }
+        ToolbarItem(placement: .trailingBar) {
+          if selecting {
+            Button("Done", action: endSelecting).fontWeight(.semibold)
+          } else {
+            ListFilterMenu(filter: $filter, showsHidden: $showsHidden) {
+              searchFocused = false
+              query = ""
+              withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) { selecting = true }
+            }
+          }
+        }
       }
       // Behind every screen of the stack, while one slides in and before its first frame: the app's ground, never the
       // system's black (the founder, 11 October 2026: "the darkest background coming up sometimes").
@@ -145,6 +165,24 @@ struct HomeView: View {
         : "This permanently deletes the agent and its chat history. This can't be undone.")
     }
     .modifier(SectionDialogs(sections: listSections))
+    // Delete for the picked chats, in the Mac's words ("Delete 2 agents").
+    .alert(deletingPicked.isEmpty ? "" : AgentDeletion.title(deletingPicked), isPresented: Binding(get: { !deletingPicked.isEmpty }, set: { if !$0 { deletingPicked = [] } })) {
+      Button("Cancel", role: .cancel) { deletingPicked = [] }
+      Button("Delete", role: .destructive) {
+        let ids = deletingPicked.map(\.id)
+        deletingPicked = []
+        Task {
+          if await store.delete(ids) {
+            Haptics.success()
+            endSelecting()
+          } else {
+            store.problem = AgentDeletion.failure
+          }
+        }
+      }
+    } message: {
+      Text(deletingPicked.isEmpty ? "" : AgentDeletion.message(deletingPicked))
+    }
     .problemAlert()
     .modifier(CallHaptics())
     .task(id: store.hasAgents) { openAtLaunch() }
@@ -180,6 +218,11 @@ struct HomeView: View {
       Button { Task { await store.setHidden(agent.id, true) } } label: { Label("Hide from List", systemImage: "eye.slash") }
       Button { UIPasteboard.general.string = agent.id } label: { Label("Copy Conversation ID", systemImage: "doc.on.doc") }
     }
+  }
+
+  private func endSelecting() {
+    withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) { selecting = false }
+    picked = []
   }
 
   private struct OpenRequest: Equatable {
@@ -238,6 +281,11 @@ private struct AgentList<Actions: View>: View {
   @Binding var deleting: Agent?
   @Binding var showsHidden: Bool
   let sections: ListSections
+  /** Select Chats: a circle on each row, a tap picks it. */
+  let selecting: Bool
+  @Binding var picked: Set<String>
+  /** Recover computer's question, from the card shown when the agents can't be read. */
+  var recover: (() -> Void)? = nil
   @Environment(AppStore.self) private var store
   @State private var held = Held()
   @State private var scrolling = false
@@ -257,12 +305,20 @@ private struct AgentList<Actions: View>: View {
     var isLoading = false
     /** The Mac's sections, drawn over their chats; empty when the person has none, or while filtering or searching. */
     var blocks: [SidebarSections.Shown] = []
+    /** The agents could not be read: the Mac's card with nothing to show, its line over a list already shown. */
+    var rosterFailed = false
   }
 
   var body: some View {
     let rows = current()
     let searching = !query.trimmingCharacters(in: .whitespaces).isEmpty
     List {
+      if rows.rosterFailed && !(rows.shown.isEmpty && rows.pinned.isEmpty) {
+        RosterLine()
+          .listRowBackground(Ink.listGround)
+          .listRowInsets(EdgeInsets(top: 2, leading: 22, bottom: 6, trailing: 22))
+          .listRowSeparator(.hidden)
+      }
       if !searching && filter == .all && !rows.pinned.isEmpty {
         PinGrid(pins: rows.pinned, members: rows.members, open: open, menu: menu)
           .listRowBackground(Ink.listGround)
@@ -323,7 +379,10 @@ private struct AgentList<Actions: View>: View {
     .animation(.spring(response: 0.38, dampingFraction: 0.86), value: rows.pinned.map(\.id))
     .animation(.spring(response: 0.38, dampingFraction: 0.86), value: rows.blocks.map { "\($0.id) \($0.isCollapsed) \($0.agents.map(\.id))" })
     .overlay {
-      if rows.shown.isEmpty && (rows.pinned.isEmpty || searching) && !rows.isLoading {
+      if rows.rosterFailed && rows.shown.isEmpty && rows.pinned.isEmpty && !searching {
+        // Can't reach the computer: said so, with Retry and Recover, not "No saved agents yet".
+        RosterCard(recover: recover)
+      } else if rows.shown.isEmpty && (rows.pinned.isEmpty || searching) && !rows.isLoading {
         VStack(spacing: 14) {
           Text(searching ? "No results" : filter == .unread ? "No unread chats" : "No saved agents yet.").font(.system(size: 15.6)).foregroundStyle(Ink.secondary)
           if !searching && rows.hiddenCount > 0 {
@@ -339,28 +398,52 @@ private struct AgentList<Actions: View>: View {
   @ViewBuilder
   private func row(_ agent: Agent, _ rows: Rows) -> some View {
     let isPinned = rows.pinnedIds.contains(agent.id)
-    Button { open(agent.id) } label: {
-      // Drawn again only when its own agent (or its draft) changes, not on every change to the roster.
-      AgentRow(agent: agent, members: rows.members[agent.id] ?? [], draft: rows.drafts[agent.id]).equatable()
+    let isPicked = picked.contains(agent.id)
+    Button {
+      if selecting {
+        if isPicked { picked.remove(agent.id) } else { picked.insert(agent.id) }
+        Haptics.select()
+      } else {
+        open(agent.id)
+      }
+    } label: {
+      HStack(spacing: 0) {
+        if selecting {
+          Image(systemName: isPicked ? "checkmark.circle.fill" : "circle")
+            .font(.system(size: 22))
+            .foregroundStyle(isPicked ? Ink.unread : Ink.tertiary)
+            .frame(width: 40)
+            .padding(.leading, 8)
+            .transition(.move(edge: .leading).combined(with: .opacity))
+            .accessibilityHidden(true)
+        }
+        // Drawn again only when its own agent (or its draft) changes, not on every change to the roster.
+        AgentRow(agent: agent, members: rows.members[agent.id] ?? [], draft: rows.drafts[agent.id]).equatable()
+      }
     }
+    .accessibilityAddTraits(selecting && isPicked ? .isSelected : [])
     .contextMenu { menu(agent) } preview: { ChatPeek(agentId: agent.id).environment(store) }
     .swipeActions(edge: .leading, allowsFullSwipe: true) {
-      Button { Task { await store.setUnread(agent.id, !agent.hasUnread) } } label: {
-        Label(agent.hasUnread ? "Read" : "Unread", systemImage: agent.hasUnread ? "message" : "message.badge")
+      if !selecting {
+        Button { Task { await store.setUnread(agent.id, !agent.hasUnread) } } label: {
+          Label(agent.hasUnread ? "Read" : "Unread", systemImage: agent.hasUnread ? "message" : "message.badge")
+        }
+        .tint(Ink.unread)
+        Button { Task { await store.setPinned(agent.id, !isPinned) } } label: {
+          Label(isPinned ? "Unpin" : "Pin", systemImage: isPinned ? "pin.slash" : "pin")
+        }
+        .tint(Ink.pinSwipe)
       }
-      .tint(Ink.unread)
-      Button { Task { await store.setPinned(agent.id, !isPinned) } } label: {
-        Label(isPinned ? "Unpin" : "Pin", systemImage: isPinned ? "pin.slash" : "pin")
-      }
-      .tint(Ink.pinSwipe)
     }
     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-      Button { deleting = agent } label: { Label("Delete", systemImage: "trash") }
-        .tint(Ink.callEnd)
-      Button { Task { await store.setNotify(agent.id, !agent.notifyOnUpdates) } } label: {
-        Label(agent.notifyOnUpdates ? "Hide Alerts" : "Show Alerts", systemImage: agent.notifyOnUpdates ? "bell.slash" : "bell")
+      if !selecting {
+        Button { deleting = agent } label: { Label("Delete", systemImage: "trash") }
+          .tint(Ink.callEnd)
+        Button { Task { await store.setNotify(agent.id, !agent.notifyOnUpdates) } } label: {
+          Label(agent.notifyOnUpdates ? "Hide Alerts" : "Show Alerts", systemImage: agent.notifyOnUpdates ? "bell.slash" : "bell")
+        }
+        .tint(Ink.hideSwipe)
       }
-      .tint(Ink.hideSwipe)
     }
     .listRowBackground(Ink.listGround)
     // The margin on the left holds the unread dot; no hairline between the rows (the founder's reference, 11 October 2026).
@@ -399,6 +482,7 @@ private struct AgentList<Actions: View>: View {
     rows.pinnedIds = Set(store.pinnedIds)
     rows.hiddenCount = store.hiddenAgents.count
     rows.isLoading = store.isLoading
+    rows.rosterFailed = store.rosterFailed
     for agent in rows.shown + rows.pinned where agent.isGroup { rows.members[agent.id] = store.members(of: agent) }
     let drafts = store.drafts
     for agent in rows.shown { if let draft = drafts[agent.id] { rows.drafts[agent.id] = draft } }
@@ -410,6 +494,8 @@ private struct AgentList<Actions: View>: View {
 private struct ListFilterMenu: View {
   @Binding var filter: HomeView.ListFilter
   @Binding var showsHidden: Bool
+  /** Select Chats, as Messages' Select Messages: pick several to move or delete together. */
+  let select: () -> Void
   @Environment(AppStore.self) private var store
 
   var body: some View {
@@ -417,6 +503,7 @@ private struct ListFilterMenu: View {
       Toggle(isOn: Binding(get: { filter == .all }, set: { if $0 { filter = .all } })) {
         Label("Messages", systemImage: "bubble.left.and.bubble.right")
       }
+      Button(action: select) { Label("Select Chats", systemImage: "checkmark.circle") }
       Button { showsHidden = true } label: { Label("Hidden Agents", systemImage: "eye.slash") }
         .disabled(!store.hasHidden)
       Section("Filter By") {

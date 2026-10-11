@@ -192,3 +192,64 @@ struct SectionDialogs: ViewModifier {
       }
   }
 }
+
+/**
+ * Several chats at once, the Mac's picked rows (`SelectionBar`, C11) as the
+ * phone has them: Select Chats in the list's menu puts a circle on each
+ * row, a tap picks it; at the bottom Move (the sections and New Section)
+ * and Delete act on all of them ("Delete 2 agents"), and Done at the top
+ * ends it. Pinned chats stay with the pins and are not picked.
+ */
+struct SelectionBar: View {
+  let picked: Set<String>
+  let sections: ListSections
+  let delete: () -> Void
+  let done: () -> Void
+  @Environment(AppStore.self) private var store
+
+  var body: some View {
+    let ids = Array(picked)
+    HStack(spacing: 10) {
+      if let list = store.sidebarSections {
+        Menu {
+          if list.isEmpty {
+            Button { sections.newSection(with: ids, store: store); done() } label: {
+              Label(ids.count > 1 ? "Move \(ids.count) Agents to New Section" : "Move to New Section", systemImage: "folder.badge.plus")
+            }
+          } else {
+            ForEach(list, id: \.id) { section in
+              Button { sections.move(ids, to: section.id, store: store); done() } label: { Label(section.name, systemImage: "folder") }
+            }
+            Divider()
+            Button { sections.newSection(with: ids, store: store); done() } label: { Label("New Section", systemImage: "folder.badge.plus") }
+          }
+        } label: {
+          Image(systemName: "folder").font(.system(size: 19, weight: .medium)).foregroundStyle(Ink.primary)
+            .frame(width: 48, height: 48)
+            .contentShape(.circle)
+            .glassEffect(.regular, in: .circle)
+        }
+        .disabled(ids.isEmpty)
+        .accessibilityLabel(SidebarSections.moveLabel(count: ids.count))
+      }
+      Text(ids.isEmpty ? "Select Chats" : "\(ids.count) Selected")
+        .font(.system(size: 17, weight: .semibold))
+        .foregroundStyle(Ink.primary)
+        .frame(maxWidth: .infinity)
+        .frame(height: 48)
+        .glassEffect(.regular, in: .capsule)
+      Button(action: delete) {
+        Image(systemName: "trash").font(.system(size: 19, weight: .medium)).foregroundStyle(ids.isEmpty ? Ink.tertiary : Ink.danger)
+          .frame(width: 48, height: 48)
+          .contentShape(.circle)
+          .glassEffect(.regular, in: .circle)
+      }
+      .buttonStyle(.plain)
+      .disabled(ids.isEmpty)
+      .accessibilityLabel(AgentDeletion.menuLabel(count: ids.count))
+    }
+    .padding(.horizontal, 16)
+    .padding(.top, 6)
+    .padding(.bottom, 4)
+  }
+}
