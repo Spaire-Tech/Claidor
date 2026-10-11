@@ -318,6 +318,47 @@
       "reason": "The Render blueprint keeps the service names, the CLAIDOR_ variable keys and the repository address that exist on Render until they are changed there (a renamed service in the blueprint would be a new, empty service)."
     },
     {
+      "kind": "record",
+      "names": [
+        "spaire"
+      ],
+      "paths": [
+        "CLAUDE.md",
+        "NOTICE",
+        "desktop/frontend/src/production/evidence.ts",
+        "desktop/scripts/lib/macos-plist-identity.mjs",
+        "desktop/scripts/lib/own-shell.mjs",
+        "desktop/scripts/lib/router-renderer-patch.mjs",
+        "desktop/source/electron-main/update/win32-installer.ts",
+        "desktop/tests/macos-plist-identity.test.mjs",
+        "desktop/tests/own-shell-package.test.mjs",
+        "ios/SimeonCore/Sources/SimeonCore/AccountMenu.swift",
+        "mac/PARITY.md",
+        "mac/STEPS.md",
+        "mac/project.yml",
+        "server/simeon/config.py",
+        "server/simeon/invoice/generator.py",
+        "sites/simeonlabs.com/source/page.html",
+        "sites/simeonlabs.com/public/index.html"
+      ],
+      "match": "Spaire, Inc",
+      "reason": "The company that makes Simeon is Spaire, Inc. until it is renamed (the founder, 11 October 2026): the copyright and About lines, the NOTICE, the Windows signer and the invoices' issuer name it."
+    },
+    {
+      "kind": "record",
+      "names": [
+        "spaire"
+      ],
+      "paths": [
+        "sites/simeonlabs.com/source/legal/privacy.html",
+        "sites/simeonlabs.com/source/legal/terms.html",
+        "sites/simeonlabs.com/source/legal/template.html",
+        "sites/simeonlabs.com/public/privacy/index.html",
+        "sites/simeonlabs.com/public/terms/index.html"
+      ],
+      "reason": "The Privacy Policy and the Terms name the company that makes Simeon, Spaire, Inc. (“Spaire”), as the party to the terms and the one responsible for the data (the founder, 11 October 2026)."
+    },
+    {
       "kind": "contract",
       "names": [
         "grok",

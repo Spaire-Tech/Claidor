@@ -692,7 +692,8 @@ class Settings(BaseSettings):
     # Invoices
     S3_CUSTOMER_INVOICES_BUCKET_NAME: str = "simeon-customer-invoices"
     S3_PAYOUT_INVOICES_BUCKET_NAME: str = "simeon-payout-invoices"
-    INVOICES_NAME: str = "Simeon Labs, Inc."
+    # The company that issues invoices: Spaire, Inc. until it is renamed (11 October 2026).
+    INVOICES_NAME: str = "Spaire, Inc."
     INVOICES_ADDRESS: Address = Address(
         line1="1111B S Governors Ave",
         line2="# 47283",

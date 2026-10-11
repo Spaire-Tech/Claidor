@@ -246,9 +246,10 @@ class ClientInvoiceService:
                 {"name": create_schema.discount_label, "value": "Applied"}
             )
 
+        issuer = settings.INVOICES_NAME.rstrip(".")
         footer = (
-            f"This invoice is issued by Simeon Labs, Inc. on behalf of {on_behalf_of_label}. "
-            f"© {date.today().year} Simeon Labs, Inc. All rights reserved."
+            f"This invoice is issued by {issuer} on behalf of {on_behalf_of_label}. "
+            f"© {date.today().year} {issuer}. All rights reserved."
         )
 
         new_id = uuid.uuid4()

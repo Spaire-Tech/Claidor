@@ -1631,7 +1631,7 @@ limit, large sums), a picture, and a host that signs out (L01–L04). Pushed:
 - **About**, from the menu and from Simeon › About Simeon (the window's own
   dialog, not Apple's About panel, as the Electron app does it): the
   window darkened, a 360-wide card with the app's icon, "Simeon", "Version
-  0.1.0", "Copyright © 2026 SimeonLabs, Inc." and Copy version info, which
+  0.1.0", "Copyright © 2026 Spaire, Inc." and Copy version info, which
   puts the window's three lines on the clipboard ("Version: …", "Release
   Track: stable", "OS: darwin") and says "Copied" for 1.2 s. ×, Escape or a
   click on the dark close it; over Settings, Escape closes About only. It

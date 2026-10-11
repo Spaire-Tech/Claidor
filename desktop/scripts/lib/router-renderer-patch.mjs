@@ -65,8 +65,9 @@ export const BRAND_PHRASE_REPLACEMENTS = Object.freeze([
   ["Cursor backend ", "Simeon Labs backend "],
   ["Cursor session ", "Simeon session "],
   ["session's Cursor tokens", "session's sign-in tokens"],
-  // The About panel's line (4 October 2026: "about uses SpaceX ai, please make it SimeonLabs, Inc.").
-  ["Copyright © 2026 SpaceXAI", "Copyright © 2026 SimeonLabs, Inc."],
+  // The About panel's line (4 October 2026: "about uses SpaceX ai, please make it SimeonLabs, Inc.";
+  // 11 October 2026: the company is Spaire, Inc. until it is renamed).
+  ["Copyright © 2026 SpaceXAI", "Copyright © 2026 Spaire, Inc."],
   // The marketplace link in the plugins chunk (Track A of the detachment plan).
   ["https://cursor.com/marketplace", "https://simeonlabs.com"],
   // The access cover's button (6 October 2026): the window shows the cover

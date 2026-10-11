@@ -80,7 +80,7 @@ public enum AccountMenu {
  */
 public enum AboutSimeon {
   public static let name = "Simeon"
-  public static let copyright = "Copyright © 2026 SimeonLabs, Inc."
+  public static let copyright = "Copyright © 2026 Spaire, Inc."
   public static let copy = "Copy version info"
   public static let copied = "Copied"
   /** How long "Copied" stays (`Grn`). */

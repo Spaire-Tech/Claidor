@@ -36,7 +36,10 @@ optional pattern the line must match, and the reason.
 
 - **record**: text that has to name an earlier name: the Mac app's
   `desktop/NOTICE.md`, which states where the app comes from, and the
-  documents here that explain a kept identifier.
+  documents here that explain a kept identifier. Also the company: Simeon is
+  made by Spaire, Inc. until it is renamed (the founder, 11 October 2026), so
+  the copyright and About lines, the NOTICE, the invoices' issuer and the
+  Privacy Policy and Terms name it.
 - **contract**: a name another program expects, which we do not build and
   cannot change. The upstream app's download name and bundle names, the
   strings the window patch looks for in order to replace them, generated

@@ -4,6 +4,13 @@ Simeon is a team of always-on agents on the person's Mac, each agent with a
 cloud computer of its own. The company is Simeon Labs (`simeonlabs.com`); the
 product people see is **Simeon** (spelled Simeon, never Simon).
 
+The legal company is **Spaire, Inc.** until the founder renames it (11 October
+2026). Every place that names the legal company says Spaire, Inc.: the
+copyright and About lines in each app, `NOTICE`, the Privacy Policy and Terms,
+the website's footer and the invoices (`INVOICES_NAME`). The brand
+(SimeonLabs, `simeonlabs.com`) stays. At the rename, search for "Spaire, Inc"
+(`scripts/kept_names.json` lists every file).
+
 ## Where things are
 
 | Folder | What it is |

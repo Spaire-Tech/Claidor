@@ -78,7 +78,7 @@ targets:
         LSApplicationCategoryType: public.app-category.productivity
         # Dictation (step 2e) and calls ask for the microphone in the Electron app's words (`own-shell.mjs`).
         NSMicrophoneUsageDescription: Simeon uses the microphone to take your dictation and for voice calls with your agents.
-        NSHumanReadableCopyright: Copyright © 2026 SimeonLabs, Inc.
+        NSHumanReadableCopyright: Copyright © 2026 Spaire, Inc.
         # A row, a pin or a section dragged in the sidebar (step 3): the
         # app's own kind, so a drop on the message field never types it.
         UTExportedTypeDeclarations:
