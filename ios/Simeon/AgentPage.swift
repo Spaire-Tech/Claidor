@@ -153,6 +153,8 @@ struct ProfileTab: View {
         }
         .padding(.top, 22)
       }
+      // Discord and Slack (the Mac's Channels page), only while this chat's computer offers one.
+      ChannelsLink(agentId: agent.id)
     }
   }
 

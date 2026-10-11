@@ -381,11 +381,12 @@ struct AgentAvatar: View {
   var moves = false
 
   var body: some View {
-    if agent.isGroup {
+    // A picture of its own first, a group's too (the Mac shows a group's picture everywhere); else the butterflies.
+    if let image = Self.image(agent.avatarDataURL) {
+      Image(uiImage: image).resizable().scaledToFill().clipShape(Circle())
+    } else if agent.isGroup {
       let shown = members.isEmpty ? [agent] : members
       if groupInARow { GroupStack(members: shown) } else { GroupCluster(members: shown) }
-    } else if let image = Self.image(agent.avatarDataURL) {
-      Image(uiImage: image).resizable().scaledToFill().clipShape(Circle())
     } else {
       ButterflyView(palette: agent.palette, motion: moves ? agent.markState : nil, stillWhenIdle: true)
     }

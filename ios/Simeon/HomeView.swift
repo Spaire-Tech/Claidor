@@ -227,8 +227,10 @@ struct HomeView: View {
     }
     Button(role: .destructive) { deleting = agent } label: { Label("Delete", systemImage: "trash") }
     Section {
-      if !agent.isGroup {
-        Button { profile = AgentRef(id: agent.id) } label: { Label("Edit Profile", systemImage: "pencil") }
+      // A group has its own page too (its name, description, routines and picture), as on the Mac; no Duplicate for a
+      // group or a chat shared from another account (C05).
+      Button { profile = AgentRef(id: agent.id) } label: { Label("Edit Profile", systemImage: "pencil") }
+      if !agent.isGroup && !agent.isRemoteRoom {
         Button { Task { await store.duplicate(agent.id) } } label: { Label("Duplicate", systemImage: "plus.square.on.square") }
       }
       Button { Task { await store.setHidden(agent.id, true) } } label: { Label("Hide from List", systemImage: "eye.slash") }
