@@ -64,7 +64,8 @@ struct HomeView: View {
             },
             openRoutine: { hit in searchFocused = false; profile = AgentRef(id: hit.agentId, routineId: hit.routine.id) },
             openSheet: { next in searchFocused = false; sheet = next },
-            showHidden: { searchFocused = false; showsHidden = true }
+            showHidden: { searchFocused = false; showsHidden = true },
+            close: { query = ""; searchFocused = false }
           )
           .transition(.opacity)
         }
@@ -843,6 +844,8 @@ struct SearchResults: View {
   var openOrgChart: (() -> Void)? = nil
   /** The Mac's Channels view of the open agent ("Channels"), when a platform is open or connected. */
   var openChannels: (() -> Void)? = nil
+  /** A swipe down from the top of the results closes search (the field let go and emptied). */
+  var close: (() -> Void)? = nil
   @Environment(AppStore.self) private var store
   @Environment(\.openURL) private var openURL
   @AppStorage("simeon.theme") private var theme = "system"
@@ -853,6 +856,12 @@ struct SearchResults: View {
   @State private var routines: [RoutineHit] = []
   @State private var loading = false
   @State private var failed = false
+  /** The results are scrolled to their top (or do not scroll): a swipe down there closes search. */
+  @State private var atTop = true
+  /** How far the swipe down has pulled the results, which follow the finger as a swipe back does. */
+  @State private var pull: CGFloat = 0
+  /** Whether the swipe began at the top: one that scrolled the results back up first does not close them. */
+  @State private var pullStartedAtTop: Bool?
 
   private var words: String { query.trimmingCharacters(in: .whitespacesAndNewlines) }
 
@@ -881,6 +890,26 @@ struct SearchResults: View {
       results
     }
     .background(Ink.listGround)
+    // A swipe down from the top closes search, the results following the finger and fading (the founder, 11 October 2026:
+    // "can a swipe down close the search bar? the same way a swipe left take us back?"). Past 90 points, or flicked,
+    // it closes; short of that they spring back. Sideways drags (the tabs) are left alone.
+    .offset(y: pull)
+    .opacity(1 - Double(min(pull, 320)) / 640)
+    .simultaneousGesture(
+      DragGesture(minimumDistance: 12)
+        .onChanged { value in
+          if pullStartedAtTop == nil { pullStartedAtTop = atTop }
+          guard close != nil, pullStartedAtTop == true, value.translation.height > 0,
+                abs(value.translation.width) < value.translation.height else { return }
+          pull = value.translation.height
+        }
+        .onEnded { value in
+          let closes = pullStartedAtTop == true && (pull > 90 || (pull > 24 && value.predictedEndTranslation.height > 260))
+          pullStartedAtTop = nil
+          if closes { close?() }
+          withAnimation(.spring(response: 0.3, dampingFraction: 0.9)) { pull = 0 }
+        }
+    )
     .task {
       indexed = await store.globalSearchEnabled()
       if indexed { routines = await store.allRoutines() }
@@ -989,6 +1018,9 @@ struct SearchResults: View {
       }
       .listStyle(.plain)
       .scrollContentBackground(.hidden)
+      .onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y + $0.contentInsets.top <= 1 } action: { _, top in atTop = top }
+      // In its place a line or the spinner, which do not scroll: the top again.
+      .onDisappear { atTop = true }
       #if os(iOS)
       .scrollDismissesKeyboard(.immediately)
       #endif
