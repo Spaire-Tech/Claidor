@@ -932,6 +932,21 @@ Left as the phone has them, on purpose:
 - What only a Mac has: its window and keys, hover, the menu bar, the Dock,
   the agent's hands on the Mac.
 
+## 31. Wider bubbles, bigger chat text (11 October 2026)
+
+The founder asked for the chat's text to reach as wide as the reference
+app's, and for it to be slightly bigger. Measured on the founder's screenshot of the
+reference app (a 402 pt screen): its bubbles reach 334 pt, 15 pt from the
+left edge; its text is the chat's 17 pt.
+
+- A bubble (and a card) caps itself 36 pt short of the chat's width, 334 pt
+  of a 402 pt screen (`ChatMetrics.bubbleMax`); it was the window's
+  `min(88%, 640, width - 82)`, 288 pt. An agent's bubble in a group, beside
+  its butterfly, stays 30 pt narrower. The Mac keeps the window's rule.
+- The chat's text is 18 pt on 24 pt lines, the person's on 25 (it was 17 on
+  23 and 24); headings, lists and the cards' text that read
+  `MessageType.size` grew with it. Settings and the composer stay at 17.
+
 ## Suggested order (the founder decides)
 
 1. The chat's look: the bubble, the top bar, markdown, brand names with logos, agent names with butterflies.

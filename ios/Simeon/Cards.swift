@@ -5,7 +5,13 @@ import UIKit
 #endif
 import SimeonCore
 
-/** How wide the chat is, so a bubble or card can cap itself at the window's `min(88%, 640px, 100% - 82px)`. */
+/**
+ * How wide the chat is, so a bubble or card can cap itself: on the iPhone
+ * 36 pt short of the chat's width (334 pt of a 402 pt screen), as wide as
+ * the founder's reference app's bubbles (asked for 11 October 2026; it
+ * was 288 pt, the window's rule); on the Mac the window's
+ * `min(88%, 640px, 100% - 82px)`.
+ */
 struct ChatWidthKey: EnvironmentKey { static let defaultValue: CGFloat = 361 }
 
 extension EnvironmentValues {
@@ -16,7 +22,13 @@ extension EnvironmentValues {
 }
 
 enum ChatMetrics {
-  static func bubbleMax(_ width: CGFloat) -> CGFloat { min(width * 0.88, 640, width - 82) }
+  static func bubbleMax(_ width: CGFloat) -> CGFloat {
+    #if os(iOS)
+    min(width - 36, 640)
+    #else
+    min(width * 0.88, 640, width - 82)
+    #endif
+  }
 }
 
 /** The chat's blue button (`button[data-variant="primary"]`): 32 pt, 8 pt corners, white 14 pt. */

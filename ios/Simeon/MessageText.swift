@@ -15,10 +15,11 @@ enum MessageType {
   static let lineHeight: CGFloat = 20
   static let mineLineHeight: CGFloat = 21
   #else
-  static let size: CGFloat = 17
-  static let lineHeight: CGFloat = 23
-  /** The person's bubble sets its text a point looser (24 pt). */
-  static let mineLineHeight: CGFloat = 24
+  /** 18 pt since 11 October 2026 (the founder: "increase the font size slightly"); it was 17 on 23 and 24. */
+  static let size: CGFloat = 18
+  static let lineHeight: CGFloat = 24
+  /** The person's bubble sets its text a point looser (25 pt). */
+  static let mineLineHeight: CGFloat = 25
   #endif
 
   static func spacing(size: CGFloat = size, lineHeight: CGFloat = lineHeight) -> CGFloat {
