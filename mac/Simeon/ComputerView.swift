@@ -176,7 +176,7 @@ private struct ComputerTopBar: View {
           .background(hovering ? look.rowHover : .clear, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
           .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.hand)
       .focused($focused)
       .focusEffectDisabled()
       // A ring that shows on the dark bar in both themes (the window's is invisible on light).
@@ -261,7 +261,7 @@ private struct HandoffBannerButton: View {
         }
         .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .onHover { inside in withAnimation(.easeOut(duration: 0.12)) { hovering = inside } }
   }
 
@@ -301,7 +301,7 @@ private struct HelperStrip: View {
           .frame(width: 160)
           .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.hand)
         .accessibilityLabel("Switch to \(helper.title)")
         .help("Switch to \(helper.title)")
       }
@@ -323,7 +323,7 @@ private struct HelperStrip: View {
           .frame(width: 160)
           .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.hand)
         .background(WindowSpotReader(spot: moreSpot))
         .accessibilityLabel("Show \(more) more screens")
         .help("\(more) more screens")

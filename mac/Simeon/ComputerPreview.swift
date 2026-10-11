@@ -170,7 +170,7 @@ struct ComputerPreview: View {
             }
           }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.hand)
         .focused($focused)
         // Its ring would be cut by the frame (the window's is): the pill shows the focus instead.
         .focusEffectDisabled()
@@ -336,7 +336,7 @@ private struct AttentionButton: View {
         .background(fill, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
         .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
   }
 }
 
@@ -407,7 +407,7 @@ private struct PaneRetry: View {
         .background(look.paneFill2, in: Capsule())
         .contentShape(Capsule())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
   }
 }
 
@@ -428,7 +428,7 @@ private struct CoverRetry: View {
         .overlay(Capsule().strokeBorder(Color(hex: 0xfcfcfc).opacity(0.102), lineWidth: 0.5))
         .contentShape(Capsule())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .onHover { inside in withAnimation(.easeOut(duration: 0.12)) { hovering = inside } }
   }
 }

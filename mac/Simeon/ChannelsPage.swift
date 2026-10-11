@@ -179,7 +179,7 @@ private struct ChannelRow: View {
           .frame(width: 16, height: 16)
           .contentShape(Rectangle())
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.hand)
       .background(WindowSpotReader(spot: menuSpot))
       .opacity(showsMore ? 1 : 0)
       .accessibilityLabel("Connection actions")
@@ -266,7 +266,7 @@ private struct ChannelRow: View {
         .background(Capsule().fill(look.paneFill))
         .contentShape(Capsule())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .disabled(disabled)
     .opacity(disabled ? 0.56 : 1)
   }

@@ -239,7 +239,7 @@ private struct FindButton: View {
         .background(hovered && enabled ? look.rowHover : .clear, in: RoundedRectangle(cornerRadius: 6))
         .contentShape(RoundedRectangle(cornerRadius: 6))
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .disabled(!enabled)
     .onHover { hovered = $0 }
     .help(label)

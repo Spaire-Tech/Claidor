@@ -106,7 +106,7 @@ private struct EmojiCell: View {
         .background(hovered || mine ? look.rowHover : .clear, in: RoundedRectangle(cornerRadius: 6))
         .contentShape(RoundedRectangle(cornerRadius: 6))
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .onHover { hovered = $0 }
     .help(emoji.name)
     .accessibilityLabel("React with \(emoji.name)")

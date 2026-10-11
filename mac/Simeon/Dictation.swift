@@ -219,7 +219,7 @@ struct RecordingChip: View {
       .background(Color(red: 119 / 255, green: 119 / 255, blue: 119 / 255).opacity(hovered ? (look.dark ? 0.32 : 0.17) : (look.dark ? 0.173 : 0.09)), in: Capsule())
       .contentShape(Capsule())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .focusable(false)
     .onHover { hovered = $0 }
     .help("Stop dictation")

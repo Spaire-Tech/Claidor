@@ -380,7 +380,7 @@ private struct DeepLinksDialog: View {
             .background(closeHover ? look.rowHover : .clear, in: Circle())
             .contentShape(Circle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.hand)
         .onHover { closeHover = $0 }
         .accessibilityLabel("Close")
       }
@@ -402,7 +402,7 @@ private struct DeepLinksDialog: View {
             .background(look.primaryFill, in: Capsule())
             .contentShape(Capsule())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.hand)
       }
       .padding(10)
     }

@@ -430,7 +430,7 @@ private struct ToLine: View {
               .background(closeHover ? look.rowHover : .clear, in: Circle())
               .contentShape(Circle())
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.hand)
           .onHover { closeHover = $0 }
           .help("Close new chat")
           .accessibilityLabel("Close new chat")
@@ -487,7 +487,7 @@ private struct Chip: View {
           .background(hovering ? look.rowHover : .clear, in: Circle())
           .contentShape(Circle())
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.hand)
       .onHover { hovering = $0 }
       .help("Remove \(recipient.name)")
       .accessibilityLabel("Remove \(recipient.name)")
@@ -606,7 +606,7 @@ private struct MenuRow: View {
       .background(lit ? look.logoTile : .clear, in: RoundedRectangle(cornerRadius: 8))
       .contentShape(RoundedRectangle(cornerRadius: 8))
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .focusable(false)
     .onContinuousHover { phase in
       if case .active = phase { hover() }
@@ -818,7 +818,7 @@ struct NewChatDraftRow: View {
       .background(look.logoTile, in: RoundedRectangle(cornerRadius: look.rowRadius))
       .contentShape(Rectangle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .frame(maxWidth: .infinity)
     .accessibilityLabel("New chat draft: \(label)")
   }

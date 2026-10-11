@@ -301,7 +301,7 @@ private struct CopyVersionButton: View {
         .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(look.ink.opacity(disabled ? 0.045 : 0.15), lineWidth: 0.5))
         .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .disabled(disabled)
     .onHover { hovering = $0 }
   }

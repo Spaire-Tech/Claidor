@@ -190,7 +190,7 @@ struct PickList: View {
             VStack(spacing: isEmoji ? 1 : 2) {
               ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
                 Button { choose(row) } label: { line(row, chosen: index == selected) }
-                  .buttonStyle(.plain)
+                  .buttonStyle(.hand)
                   .focusable(false)
                   .onHover { inside in if inside { hover(index) } }
                   .id(row.id)

@@ -275,7 +275,7 @@ struct ReadOnlyNotice: View {
           .background(look.rowHover, in: Capsule())
           .contentShape(Capsule())
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.hand)
     }
     .padding(.vertical, 6)
     .padding(.horizontal, 14)

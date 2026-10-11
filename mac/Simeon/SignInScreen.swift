@@ -92,6 +92,7 @@ private struct SignInButton: View {
       .frame(height: 28)
     }
     .buttonStyle(.borderedProminent)
+    .handCursor()
     .buttonBorderShape(.capsule)
     .controlSize(.large)
     .tint(look.signInButton)
@@ -117,6 +118,7 @@ private struct Waiting: View {
       HStack(spacing: 8) {
         Button("Reopen link") { session.reopenLink() }
           .buttonStyle(.borderless)
+          .handCursor()
           .font(.system(size: 14))
           .foregroundStyle(look.link)
         Text("·")
@@ -124,6 +126,7 @@ private struct Waiting: View {
           .foregroundStyle(look.inkTertiary)
         Button("Cancel") { session.cancelSignIn() }
           .buttonStyle(.borderless)
+          .handCursor()
           .font(.system(size: 14))
           .foregroundStyle(look.ink)
           .keyboardShortcut(.cancelAction)

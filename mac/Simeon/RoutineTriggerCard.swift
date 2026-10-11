@@ -104,7 +104,7 @@ private struct TriggerRowView: View {
         .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(hovering ? look.rowHover : .clear))
         .contentShape(Rectangle())
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.hand)
       Button(action: remove) {
         Image(systemName: "xmark")
           .font(.system(size: 9, weight: .semibold))
@@ -113,7 +113,7 @@ private struct TriggerRowView: View {
           .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(removeHovering ? look.rowHover : .clear))
           .contentShape(Rectangle())
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.hand)
       .onHover { removeHovering = $0 }
       .padding(.trailing, 6)
       .opacity(hovering ? 1 : 0)
@@ -146,7 +146,7 @@ private struct AddTriggerButton: View {
       .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(hovering ? look.rowHover : .clear))
       .contentShape(Rectangle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .onHover { hovering = $0 }
   }
 }
@@ -772,7 +772,7 @@ private struct PillButton: View {
       .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(look.ink.opacity(border), lineWidth: 0.5))
       .contentShape(Rectangle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .fixedSize()
     .onHover { hovering = $0 }
     .background(WindowSpotReader(spot: spot))
@@ -882,7 +882,7 @@ private struct SmallIconButton: View {
         .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(hovering ? look.rowHover : .clear))
         .contentShape(Rectangle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .onHover { hovering = $0 }
     .accessibilityLabel(label)
   }
@@ -910,7 +910,7 @@ private struct SmallTextButton: View {
       .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(hovering ? look.rowHover : .clear))
       .contentShape(Rectangle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .onHover { hovering = $0 }
   }
 }

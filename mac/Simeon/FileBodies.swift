@@ -56,7 +56,7 @@ private struct ToolButton: View {
         .background(hovered ? look.rowHover : .clear, in: RoundedRectangle(cornerRadius: 4))
         .contentShape(RoundedRectangle(cornerRadius: 4))
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .onHover { hovered = $0 }
     .help(label)
     .accessibilityLabel(label)
@@ -391,7 +391,7 @@ private struct JSONNode: View {
                 .frame(width: 16, height: 20)
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.hand)
             .accessibilityLabel("\(open ? "Collapse" : "Expand") \(name ?? "root")")
           } else {
             Color.clear.frame(width: 16, height: 20)
@@ -595,7 +595,7 @@ private struct CellDetail: View {
             .frame(width: 20, height: 20)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.hand)
         .help("Close cell detail")
         .accessibilityLabel("Close cell detail")
       }

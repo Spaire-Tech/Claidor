@@ -307,7 +307,7 @@ private struct DialogButton: View {
         }
         .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .disabled(disabled)
     .opacity(disabled ? 0.5 : 1)
     .onHover { inside in withAnimation(.easeOut(duration: 0.12)) { hovering = inside } }
@@ -457,7 +457,7 @@ struct ComputerPills: View {
             ProgressPill(title: RebuildWords.title(kind), subtitle: steps.steps.indices.contains(steps.activeIndex) ? steps.steps[steps.activeIndex].label : nil,
                          progress: steps.progress, look: look)
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.hand)
           .pointerStyle(.link)
           .accessibilityLabel(RebuildWords.bannerLabel)
         }
@@ -564,7 +564,7 @@ struct DiskBanner: View {
             .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
             .fixedSize()
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.hand)
         .disabled(launching)
         .onHover { inside in withAnimation(.easeOut(duration: 0.12)) { hovering = inside } }
       }
@@ -616,7 +616,7 @@ struct AccessNotice: View {
             .contentShape(Capsule())
             .fixedSize()
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.hand)
         .onHover { inside in withAnimation(.easeOut(duration: 0.12)) { hovering = inside } }
       }
     }
@@ -712,7 +712,7 @@ private struct SidebarPillButton: View {
         .contentShape(Capsule())
         .fixedSize()
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .onHover { inside in withAnimation(.easeOut(duration: 0.12)) { hovering = inside } }
   }
 }
@@ -745,7 +745,7 @@ struct RosterLine: View {
           .frame(height: 22)
           .contentShape(Capsule())
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.hand)
       .disabled(store.rosterRetrying)
     }
     .padding(.horizontal, 12)
@@ -782,7 +782,7 @@ struct ComputerUpdatePill: View {
           .background(hovering ? look.rowHover : .clear, in: Circle())
           .contentShape(Circle())
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.hand)
       .onHover { inside in withAnimation(.easeOut(duration: 0.12)) { hovering = inside } }
       .help(label)
       .accessibilityLabel(label)
@@ -847,7 +847,7 @@ struct AccessCover: View {
               .background(look.signInButton, in: Capsule())
               .contentShape(Capsule())
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.hand)
           .padding(.top, 24)
         }
       }

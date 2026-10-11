@@ -403,7 +403,7 @@ private struct HeadButton: View {
         .background(hovered ? look.rowHover : .clear, in: RoundedRectangle(cornerRadius: 6))
         .contentShape(RoundedRectangle(cornerRadius: 6))
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .onHover { hovered = $0 }
     .help(label)
     .accessibilityLabel(label)

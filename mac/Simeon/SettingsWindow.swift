@@ -196,7 +196,7 @@ private struct SettingsNavEntry: View {
       .background(background)
       .contentShape(Rectangle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .onHover { hovering = $0 }
     .accessibilityAddTraits(current ? [.isSelected] : [])
   }
@@ -233,7 +233,7 @@ struct SettingsClose: View {
         .background(Circle().fill(hovering ? look.ink.opacity(0.11) : .clear))
         .contentShape(Circle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .onHover { hovering = $0 }
     .accessibilityLabel("Close")
   }
@@ -371,7 +371,7 @@ struct SettingsSelect<Value: Hashable>: View {
       .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(look.ink.opacity(0.05), lineWidth: 1))
       .contentShape(Rectangle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .disabled(pending)
     .onHover { hovering = $0 }
     .background(WindowSpotReader(spot: spot))
@@ -403,7 +403,7 @@ struct SettingsButton: View {
         .overlay(Capsule().strokeBorder(kind == .secondary ? look.ink.opacity(0.05) : .clear, lineWidth: 0.5))
         .contentShape(Capsule())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .disabled(disabled)
     .onHover { hovering = $0 }
   }

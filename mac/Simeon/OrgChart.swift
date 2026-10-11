@@ -83,7 +83,7 @@ private struct ChartClose: View {
         .background(RoundedRectangle(cornerRadius: 4, style: .continuous).fill(hovering ? look.rowHover : .clear))
         .contentShape(Rectangle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .onHover { inside in withAnimation(.easeOut(duration: 0.1)) { hovering = inside } }
     .help("Close org chart")
     .accessibilityLabel("Close org chart")
@@ -398,7 +398,7 @@ private struct NetworkNode: View {
       .frame(width: 120)
       .contentShape(Rectangle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .onHover { hovering = $0 }
     .accessibilityLabel("\(agent.name) details")
     .accessibilityValue(caption.text)
@@ -495,6 +495,7 @@ private struct NetworkLine: View {
     .animation(.timingCurve(0.22, 1, 0.36, 1, duration: 0.48), value: hovering)
     .contentShape(line.strokedPath(StrokeStyle(lineWidth: 16, lineCap: .round)))
     .onTapGesture(perform: tap)
+    .handCursor()
     .accessibilityElement()
     .accessibilityLabel(label)
     .accessibilityAddTraits(.isButton)
@@ -531,7 +532,7 @@ private struct NetworkCard<Content: View>: View {
           .frame(width: 16, height: 16)
           .contentShape(Rectangle())
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.hand)
       .padding(8)
       .accessibilityLabel("Close details")
     }
@@ -576,7 +577,7 @@ private struct ChartButton: View {
         .background(RoundedRectangle(cornerRadius: 4, style: .continuous).fill(hovering ? look.fillHover : look.rowHover))
         .contentShape(Rectangle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .onHover { hovering = $0 }
   }
 }

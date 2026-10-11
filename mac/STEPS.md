@@ -2388,3 +2388,20 @@ Part three (pictures), read the same way:
 - A group mentioned in the message field drew its row of members over its
   name in the chip (the chip kept a 16-point square). The chip, and the
   exchange's head, now grow to fit the row.
+
+## After step 14: the pointing hand
+
+The founder, 11 October 2026: the cursor turns into the pointing hand over
+everything that can be clicked, as in the Electron window (its `cursor:
+pointer`). `mac/Simeon/HandCursor.swift`: every borderless button uses
+`.buttonStyle(.hand)`, the plain style with the hand added; switches, the
+voice picker, the sign-in buttons, Plugins' tabs and Back, the org chart's
+lines, and the butterflies a click pokes get `.handCursor()`. A disabled
+control keeps the arrow. Left as they are: a dialog's backdrop, text
+fields, menus and their items (the Mac's own), and places with a cursor of
+their own (resize edges, the avatar's crop, zoom, the org chart's pan, a
+table's cells). New clickable views use `.buttonStyle(.hand)` or
+`.handCursor()`, never `.buttonStyle(.plain)`.
+
+To check on a Mac: links inside a message's words (SwiftUI's text draws
+them; whether it shows the hand over a link was not checked here).

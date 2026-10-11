@@ -64,7 +64,7 @@ struct MediaViewer: View {
           .frame(width: 24, height: 24)
           .contentShape(Rectangle())
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.hand)
       .help("Close media preview")
       .accessibilityLabel("Close media preview")
       .padding(.top, 10)
@@ -273,7 +273,7 @@ struct MediaViewer: View {
               }
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.hand)
         .accessibilityLabel("View media \(position + 1) of \(items.count)")
         .task { if !entry.isVideo, pictures[entry.url] == nil { await load(entry) } }
       }
@@ -325,7 +325,7 @@ private struct NavButton: View {
         .background(Color.white.opacity(0.14), in: Circle())
         .contentShape(Circle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .help(label)
     .accessibilityLabel(label)
   }

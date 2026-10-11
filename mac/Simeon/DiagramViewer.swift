@@ -138,7 +138,7 @@ private struct RoundIcon: View {
         .background(ground, in: Circle())
         .contentShape(Circle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .help(label)
     .accessibilityLabel(label)
   }

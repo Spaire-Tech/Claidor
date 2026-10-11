@@ -450,7 +450,7 @@ private struct AttachButton: View {
         .frame(width: 30, height: 30)
         .contentShape(Circle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .glassEffect(.regular, in: .circle)
     .disabled(full)
     .opacity(full ? 0.4 : 1)
@@ -474,7 +474,7 @@ private struct SendButton: View {
         .background(look.yours, in: Circle())
         .contentShape(Circle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .disabled(paused)
     .opacity(paused ? 0.4 : 1)
     .help("Send message")
@@ -501,7 +501,7 @@ private struct MicButton: View {
         .background(prominent ? look.yours : Color.clear, in: Circle())
         .contentShape(Circle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .help("Start voice input")
     .accessibilityLabel("Start voice input")
   }

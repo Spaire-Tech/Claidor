@@ -151,7 +151,7 @@ struct LocalAskDock: View {
               .background(closeHover ? look.wash : .clear, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
               .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.hand)
           .focused($closeFocused)
           .focusEffectDisabled()
           // A ring with the keys (decision 9: the window's has none).
@@ -275,7 +275,7 @@ private struct AskButton: View {
         .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         .fixedSize()
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .disabled(!enabled)
     .opacity(enabled ? 1 : 0.56)
     .onHover { inside in withAnimation(.timingCurve(0.16, 1, 0.3, 1, duration: 0.14)) { hovering = inside } }

@@ -338,7 +338,7 @@ private struct EditorTabButton: View {
         .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(chosen || hovering ? look.rowHover : .clear))
         .contentShape(Rectangle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .onHover { hovering = $0 }
     .accessibilityAddTraits(chosen ? [.isSelected] : [])
   }
@@ -361,7 +361,7 @@ private struct EditorResetButton: View {
         .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(hovering ? look.rowHover.opacity(0.86) : .clear))
         .contentShape(Rectangle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .opacity(enabled ? 1 : 0.56)
     .onHover { inside in withAnimation(.timingCurve(0.16, 1, 0.3, 1, duration: 0.14)) { hovering = inside } }
   }
@@ -388,7 +388,7 @@ private struct EditorButton: View {
         .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(fill))
         .contentShape(Rectangle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .opacity(enabled ? 1 : 0.56)
     .onHover { hovering = $0 }
   }
@@ -487,7 +487,7 @@ private struct ColourCell: View {
       .frame(width: 32, height: 32)
       .contentShape(Circle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .onHover { hovering = $0 }
     .help(palette.label)
     .accessibilityLabel("\(palette.label) character color")
@@ -531,6 +531,7 @@ private struct VoicePicker: View {
             }
             .labelsHidden()
             .pickerStyle(.menu)
+            .handCursor()
             .frame(maxWidth: .infinity)
             playButton
           }
@@ -556,7 +557,7 @@ private struct VoicePicker: View {
         .background(Circle().fill(Color(red: 120 / 255, green: 120 / 255, blue: 128 / 255).opacity(look.dark ? 0.24 : 0.12)))
         .contentShape(Circle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .disabled(sample == nil)
     .opacity(sample == nil ? 0.4 : 1)
     .accessibilityLabel(voice.map { playing ? "Stop \($0.name)" : "Play \($0.name)" } ?? "Play")
@@ -859,7 +860,7 @@ private struct ZoomStepButton: View {
         .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(hovering ? look.rowHover : .clear))
         .contentShape(Rectangle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .onHover { hovering = $0 }
   }
 }

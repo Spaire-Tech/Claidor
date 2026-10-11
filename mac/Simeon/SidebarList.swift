@@ -129,7 +129,7 @@ struct AgentList: View {
           .font(.system(size: 12))
           .foregroundStyle(look.inkSecondary)
         Button("Show Hidden Agents") { sidebar.showsHidden = true }
-          .buttonStyle(.plain)
+          .buttonStyle(.hand)
           .font(.system(size: 12, weight: .medium))
           .foregroundStyle(look.link)
       }
@@ -358,7 +358,7 @@ private struct PinTile: View {
       .overlay { CycleRing(on: sidebar.cycle?.next == agent.id, look: look) }
       .contentShape(Rectangle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .onHover { hovering = $0 }
     .contextMenu { RowMenu(agent: agent) }
     .onDrag {
@@ -474,7 +474,7 @@ private struct SectionHeader: View {
           .truncationMode(.tail)
       }
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .onHover { hovering = $0 }
     .accessibilityLabel(section.name)
     .accessibilityValue(section.isCollapsed ? "Folded" : "Open")
@@ -533,7 +533,7 @@ private struct HiddenFoot: View {
           .foregroundStyle(look.inkSecondary)
       }
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .onHover { hovering = $0 }
     .accessibilityLabel("Hidden Agents, \(count)")
   }
@@ -575,7 +575,7 @@ struct AgentRow: View {
         } label: {
           content(look, renaming: false)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.hand)
         .simultaneousGesture(
           TapGesture(count: 2).onEnded {
             guard !rail, NSEvent.modifierFlags.intersection([.command, .shift]).isEmpty else { return }

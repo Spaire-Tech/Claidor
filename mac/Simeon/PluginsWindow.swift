@@ -195,7 +195,7 @@ private struct PluginsClose: View {
         .background(Circle().fill(hovering ? look.rowHover : .clear))
         .contentShape(Circle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .onHover { hovering = $0 }
     .accessibilityLabel("Close")
   }
@@ -242,7 +242,7 @@ private struct DetailBar: View {
 /** Back's press: 98%. */
 private struct PressScale: ButtonStyle {
   func makeBody(configuration: Configuration) -> some View {
-    configuration.label.scaleEffect(configuration.isPressed ? 0.98 : 1)
+    configuration.label.scaleEffect(configuration.isPressed ? 0.98 : 1).handCursor()
   }
 }
 
@@ -303,6 +303,7 @@ private struct PluginsTab: View {
       .contentShape(Rectangle())
       // Chosen on the press, as the window's tabs are.
       .gesture(DragGesture(minimumDistance: 0).onChanged { _ in if !selected { choose() } })
+      .handCursor()
       .onHover { hovering = $0 }
       .accessibilityElement()
       .accessibilityLabel(title)
@@ -329,7 +330,7 @@ private struct FilterButton: View {
         .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(active ? look.fillHover : hovering ? look.rowHover : .clear))
         .contentShape(Rectangle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .onHover { hovering = $0 }
     .background(WindowSpotReader(spot: spot))
     .help("Filter plugins")
@@ -668,7 +669,7 @@ private struct ShowMore: View {
         .frame(height: 22)
         .contentShape(Rectangle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .onHover { hovering = $0 }
   }
 }
@@ -730,7 +731,7 @@ private struct PluginRow<Icon: View, Trailing: View>: View {
         }
         .contentShape(Rectangle())
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.hand)
       .accessibilityLabel("Open \(title)")
       trailing
     }
@@ -844,7 +845,7 @@ private struct PluginPill: View {
         .background(Capsule().fill(fill))
         .contentShape(Capsule())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .disabled(disabled || kind == .label)
     .opacity(disabled || kind == .label ? 0.56 : 1)
     .onHover { hovering = $0 }
@@ -936,6 +937,7 @@ private struct PluginSwitch: View {
       .labelsHidden()
       .controlSize(.mini)
       .tint(look.paneSwitchOn)
+      .handCursor()
       .disabled(disabled)
       .accessibilityLabel(label)
   }
@@ -1000,7 +1002,7 @@ private struct NoticeBar: View {
             .frame(width: 18, height: 18)
             .contentShape(RoundedRectangle(cornerRadius: 5))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.hand)
         .opacity(0.7)
         .accessibilityLabel("Dismiss")
       }
@@ -1254,7 +1256,7 @@ private struct MetaLine: View {
             .foregroundStyle(hovering ? look.ink : look.inkSecondary)
             .contentShape(Rectangle())
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.hand)
           .onHover { hovering = $0 }
         }
       }
@@ -1452,7 +1454,7 @@ private struct FoldShell<Rows: View, Footer: View>: View {
         .background(hovering ? look.rowHover : .clear)
         .contentShape(Rectangle())
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.hand)
       .onHover { hovering = $0 }
       .accessibilityValue(open ? "expanded" : "collapsed")
       if open { rows }
@@ -1610,7 +1612,7 @@ private struct SkillPage: View {
               .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(deleteHover ? look.danger.opacity(0.06) : look.rowHover))
               .contentShape(Rectangle())
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.hand)
           .onHover { deleteHover = $0 }
         }
       }

@@ -491,7 +491,7 @@ private struct NewRoutineButton: View {
       .opacity(hovering ? 0.65 : 1)
       .contentShape(Rectangle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .onHover { hovering = $0 }
   }
 }
@@ -523,7 +523,7 @@ private struct RoutineRow: View {
       .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(hovering ? look.fillHover : .clear))
       .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .padding(.horizontal, -8)
     .onHover { inside in withAnimation(.easeInOut(duration: 0.12)) { hovering = inside } }
     .accessibilityLabel("\(routine.name), \(routine.rowDetail)")
@@ -640,7 +640,7 @@ private struct RoutinesEmpty: View {
           .background(Capsule().fill(look.paneInk))
           .contentShape(Capsule())
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.hand)
     }
     .padding(EdgeInsets(top: 12, leading: 8, bottom: 0, trailing: 8))
     .frame(maxWidth: .infinity)
@@ -749,6 +749,7 @@ private struct RoutineControlBar: View {
           .labelsHidden()
           .controlSize(.small)
           .tint(look.paneSwitchOn)
+          .handCursor()
           .disabled(model.toggling)
           .accessibilityLabel("Active")
         Text("Active")
@@ -788,7 +789,7 @@ private struct RoutineButton: View {
         .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(fill))
         .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .disabled(disabled)
     .onHover { hovering = $0 }
   }

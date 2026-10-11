@@ -226,7 +226,7 @@ private struct Disc<Content: View>: View {
         .frame(width: size, height: size)
         .contentShape(Circle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .glassEffect(.regular, in: .circle)
     .accessibilityLabel(help)
     if tooltip {
@@ -372,7 +372,7 @@ private struct ConnectApps: View {
       .frame(height: 32)
       .contentShape(Rectangle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .onHover { hovering = $0 }
   }
 }

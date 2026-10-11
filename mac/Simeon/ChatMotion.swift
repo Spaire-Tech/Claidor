@@ -142,6 +142,7 @@ private struct ActivityRow: View {
           .opacity(markIn ? 1 : 0)
           .contentShape(Rectangle())
           .onTapGesture { poke() }
+          .pointerStyle(agent.isGroup ? nil : .link)
       }
       ActivityWords(words: words, elapsed: elapsed, look: look)
         .id(wordsKey)

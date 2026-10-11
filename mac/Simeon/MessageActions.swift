@@ -218,7 +218,7 @@ struct BarButton: View {
         .background(hovered ? look.rowHover : .clear, in: RoundedRectangle(cornerRadius: 8))
         .contentShape(RoundedRectangle(cornerRadius: 8))
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .onHover { hovered = $0 }
     .help(label)
     .accessibilityLabel(label)
@@ -387,7 +387,7 @@ private struct ReactionRow: View {
           .background(hovered ? look.rowHover : .clear, in: RoundedRectangle(cornerRadius: 6))
           .contentShape(RoundedRectangle(cornerRadius: 6))
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.hand)
       .onHover { hovered = $0 }
       .help(emoji)
       .accessibilityLabel("React with \(emoji)")
@@ -414,7 +414,7 @@ private struct ReactionRow: View {
           .background(hovered ? look.rowHover : .clear, in: RoundedRectangle(cornerRadius: 6))
           .contentShape(RoundedRectangle(cornerRadius: 6))
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.hand)
       .onHover { hovered = $0 }
       .help("More emoji")
       .accessibilityLabel("More emoji")
@@ -515,7 +515,7 @@ struct ReplyPill: View {
           .frame(width: 20, height: 20)
           .contentShape(Circle())
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.hand)
       .help("Cancel reply")
       .accessibilityLabel("Cancel reply")
     }
@@ -563,7 +563,7 @@ struct ThreadChin: View {
       }
       .contentShape(shape)
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .onHover { hovered = $0 }
     .padding(.top, attached ? 0 : 4)
     .accessibilityLabel("View thread, \(replies)")
@@ -646,7 +646,7 @@ struct ThreadHeader: View {
           .background(hovered ? look.rowHover : .clear, in: RoundedRectangle(cornerRadius: 6))
           .contentShape(RoundedRectangle(cornerRadius: 6))
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.hand)
       .onHover { hovered = $0 }
       .help(label)
       .accessibilityLabel(label)

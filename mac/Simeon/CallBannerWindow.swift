@@ -296,7 +296,7 @@ struct CallBannerCard: View {
             .background(BannerLook.red, in: Circle())
             .contentShape(Circle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.hand)
         .accessibilityLabel("End call")
       }
     }
@@ -524,7 +524,7 @@ private struct BannerButton: View {
       .background(hovering || on ? tint : .clear)
       .contentShape(Rectangle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .frame(height: 48)
     .onHover { hovering = $0 }
   }

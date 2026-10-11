@@ -484,7 +484,7 @@ private struct TabButton: View {
         .background(chosen || hovering ? look.rowHover : .clear, in: RoundedRectangle(cornerRadius: 8))
         .contentShape(RoundedRectangle(cornerRadius: 8))
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .focusable(false)
     .onHover { hovering = $0 }
     .accessibilityAddTraits(chosen ? .isSelected : [])
@@ -565,7 +565,7 @@ private struct ResultRow: View {
       .background(lit ? look.logoTile : .clear, in: RoundedRectangle(cornerRadius: 10))
       .contentShape(RoundedRectangle(cornerRadius: 10))
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .focusable(false)
     .onContinuousHover { phase in
       if case .active = phase { hover() }

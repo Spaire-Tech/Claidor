@@ -633,7 +633,7 @@ struct CodeBlock: View {
             .frame(width: 24, height: 24)
             .contentShape(RoundedRectangle(cornerRadius: 6))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.hand)
         .help("Copy code")
         .accessibilityLabel("Copy code")
         .padding(4)

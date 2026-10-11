@@ -147,7 +147,7 @@ struct SelectionBar: View {
           BarIcon(symbol: "folder")
         }
         .menuStyle(.button)
-        .buttonStyle(.plain)
+        .buttonStyle(.hand)
         .menuIndicator(.hidden)
         .fixedSize()
         .help("Move \(movable.count) selected agents to section")
@@ -171,7 +171,7 @@ private struct PickedButton: View {
 
   var body: some View {
     Button(action: action) { BarIcon(symbol: symbol) }
-      .buttonStyle(.plain)
+      .buttonStyle(.hand)
       .help(label)
       .accessibilityLabel(label)
   }
@@ -234,7 +234,7 @@ struct HiddenAgentsSheet: View {
             .frame(width: 32, height: 32)
             .contentShape(Circle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.hand)
         .keyboardShortcut(.cancelAction)
         .help("Close")
         .accessibilityLabel("Close")
@@ -296,7 +296,7 @@ private struct HiddenRow: View {
         .padding(EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 0))
         .contentShape(Rectangle())
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.hand)
       Button(action: unhide) {
         Text("Unhide")
           .font(.system(size: 13))
@@ -306,7 +306,7 @@ private struct HiddenRow: View {
           .background(unhideHover ? look.rowHover : .clear, in: RoundedRectangle(cornerRadius: 6))
           .contentShape(RoundedRectangle(cornerRadius: 6))
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.hand)
       .onHover { unhideHover = $0 }
       .padding(.trailing, 8)
     }

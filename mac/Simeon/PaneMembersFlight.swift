@@ -104,7 +104,7 @@ private struct MemberRow: View {
         .frame(height: 28)
         .contentShape(Rectangle())
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.hand)
       .accessibilityLabel("Open \(member.name)'s chat")
       // Always laid out, so the name's room never changes; seen and pressable only under the pointer.
       Button(action: remove) {
@@ -116,7 +116,7 @@ private struct MemberRow: View {
           .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(removeFill))
           .contentShape(Rectangle())
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.hand)
       .disabled(!canRemove)
       .onHover { removeHovering = $0 }
       .opacity(hovering ? 1 : 0)
@@ -162,7 +162,7 @@ private struct AddMemberRow: View {
       .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(hovering ? look.rowHover : .clear))
       .contentShape(Rectangle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .disabled(disabled)
     .onHover { inside in withAnimation(.easeInOut(duration: 0.12)) { hovering = inside } }
     .background(WindowSpotReader(spot: spot))

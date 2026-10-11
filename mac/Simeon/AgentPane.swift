@@ -466,7 +466,7 @@ struct PaneIconButton: View {
         .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(hovering ? look.rowHover : .clear))
         .contentShape(Rectangle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .onHover { inside in withAnimation(.easeOut(duration: 0.12)) { hovering = inside } }
     .help(help)
     .accessibilityLabel(label)
@@ -692,7 +692,7 @@ private struct AvatarTrigger: View {
       }
       .contentShape(Circle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .onHover { hovering = $0 }
     .background(WindowSpotReader(spot: pane.avatarTriggerSpot))
     .help("Edit Avatar")
@@ -771,7 +771,7 @@ private struct PaneTabs: View {
               .frame(width: item, height: 30)
               .contentShape(Capsule())
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.hand)
           .help(tab.name)
           .accessibilityLabel(tab.name)
           .accessibilityAddTraits(chosen == index ? [.isSelected] : [])
@@ -1219,6 +1219,7 @@ private struct NotificationsCard: View {
       .labelsHidden()
       .controlSize(.small)
       .tint(look.paneSwitchOn)
+      .handCursor()
       .disabled(saving)
       .accessibilityLabel("Notifications")
     }

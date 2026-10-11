@@ -336,7 +336,7 @@ private struct FlowButton: View {
         .background(Capsule().fill(primary ? (hovering ? look.flowNextHover : look.flowNext) : (hovering ? look.flowBackHover : look.flowBack)))
         .contentShape(Capsule())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .onHover { inside in
       withAnimation(.easeOut(duration: 0.12)) { hovering = inside }
     }
@@ -757,7 +757,7 @@ private struct HandOffScene: View {
           .foregroundStyle(look.danger)
           .multilineTextAlignment(.center)
         Button("Try again", action: retry)
-          .buttonStyle(.plain)
+          .buttonStyle(.hand)
           .font(.system(size: 16))
           .foregroundStyle(look.link)
           .keyboardShortcut(.defaultAction)
@@ -906,6 +906,7 @@ private struct CastMember: View {
       .modifier(MeetTurn(turn: placement.turn, start: meetStart))
       .contentShape(Rectangle())
       .onTapGesture { if placement.gazing { source.spin() } }
+      .pointerStyle(placement.gazing ? .link : nil)
       .allowsHitTesting(placement.gazing && placement.opacity > 0)
       .scaleEffect(placement.scale)
       .opacity(placement.opacity)

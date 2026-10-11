@@ -266,7 +266,7 @@ private struct CopyEmailButton: View {
         .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(hovering ? look.rowHover : .clear))
         .contentShape(Rectangle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .onHover { hovering = $0 }
     .accessibilityLabel("Copy email address")
   }
@@ -366,6 +366,7 @@ private struct AutoReviewRow: View {
         .labelsHidden()
         .controlSize(.mini)
         .tint(look.paneSwitchOn)
+        .handCursor()
         .disabled(model.rulesPending)
         .accessibilityLabel("Auto-review")
     }
@@ -619,7 +620,7 @@ private struct RuleIconButton: View {
         .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(hovering && !disabled ? look.rowHover : .clear))
         .contentShape(Rectangle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .disabled(disabled)
     .onHover { hovering = $0 }
     .accessibilityLabel(label)
@@ -656,6 +657,7 @@ private struct SecurityKeyRow: View {
         .labelsHidden()
         .controlSize(.mini)
         .tint(look.paneSwitchOn)
+        .handCursor()
         .disabled(pending)
         .accessibilityLabel("Use hardware security keys")
     }

@@ -205,7 +205,7 @@ struct ChatHeader: View {
         AgentMark(agent: agent, agents: store.agents, size: 52, groupRow: true)
           .contentShape(Rectangle())
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.hand)
       .accessibilityLabel("View agent settings")
       // The phone, 8 past the pill and level with its top (`left: 100%`, `top: 56`), the pill still in the middle under the
       // butterfly: an empty place as wide as the phone on the pill's other side. A plain row, not an overlay pushed outside the
@@ -229,7 +229,7 @@ struct ChatHeader: View {
             .glassEffect(.regular, in: .capsule)
             .contentShape(Capsule())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.hand)
         .help(agent.name)
         .accessibilityLabel("View agent settings")
         if calls {
@@ -262,7 +262,7 @@ private struct CallButton: View {
         .frame(width: 24, height: 24)
         .contentShape(Circle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .onHover { hovering = $0 }
     .help("Call \(agent.name)")
     .accessibilityLabel("Call \(agent.name)")
@@ -687,7 +687,7 @@ private struct BubbleRow: View {
                 .padding(.horizontal, 6)
                 .contentShape(RoundedRectangle(cornerRadius: 6))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.hand)
             .accessibilityLabel("Open \(author.name)'s chat")
             .padding(EdgeInsets(top: 12, leading: 6, bottom: 4, trailing: 0))
           }
@@ -932,7 +932,7 @@ private struct ReactionPills: View {
           .background(Capsule().stroke(look.ground, lineWidth: 4))
           .contentShape(Capsule())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.hand)
         .accessibilityLabel(bubble.myReactions.contains(pill.emoji) ? "Remove your \(pill.emoji) reaction" : "Toggle your \(pill.emoji) reaction")
       }
     }
@@ -985,7 +985,7 @@ private struct EventChip<Leading: View>: View {
       .padding(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 6))
       .contentShape(Capsule())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .help(help)
     .accessibilityLabel(help)
   }
@@ -1094,10 +1094,10 @@ private struct FailedSend: View {
       Text("Failed to send")
         .foregroundStyle(Color(nsColor: .systemRed))
       Button("Resend") { Task { await store.resend(nonce, in: agentId) } }
-        .buttonStyle(.plain)
+        .buttonStyle(.hand)
         .foregroundStyle(look.link)
       Button("Delete") { store.discardFailed(nonce, in: agentId) }
-        .buttonStyle(.plain)
+        .buttonStyle(.hand)
         .foregroundStyle(look.inkSecondary)
     }
     .font(.system(size: 12))
@@ -1117,7 +1117,7 @@ private struct QueuedSend: View {
       Text(store.isLive ? "Waiting to send…" : "Will send when reconnected")
         .foregroundStyle(look.inkSecondary)
       Button("Cancel") { _ = store.cancelQueued(nonce, in: agentId) }
-        .buttonStyle(.plain)
+        .buttonStyle(.hand)
         .foregroundStyle(look.link)
     }
     .font(.system(size: 12))
@@ -1177,7 +1177,7 @@ private struct FileCard: View {
         .frame(height: 18)
         if opens {
           Button { viewers.open(file: FileItem(name: name, url: url, agentId: agentId)) } label: { title }
-            .buttonStyle(.plain)
+            .buttonStyle(.hand)
             .accessibilityLabel("Open \(name)")
         } else {
           title
@@ -1199,7 +1199,7 @@ private struct FileCard: View {
           .frame(width: 24, height: 24)
           .contentShape(RoundedRectangle(cornerRadius: 6))
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.hand)
       .help("Save \(name)")
       .accessibilityLabel("Save \(name)")
     }
@@ -1312,7 +1312,7 @@ private struct FoldingText: View {
           .padding(.horizontal, 6)
           .contentShape(RoundedRectangle(cornerRadius: 6))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.hand)
       }
     }
   }

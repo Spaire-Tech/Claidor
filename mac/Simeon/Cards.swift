@@ -75,7 +75,7 @@ struct CardButton: View {
         }
         .contentShape(RoundedRectangle(cornerRadius: 8))
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .fixedSize()
   }
 }
@@ -160,7 +160,7 @@ struct QuestionCardView: View {
             .frame(width: 20, height: 20)
             .contentShape(RoundedRectangle(cornerRadius: 6))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.hand)
         .help("Dismiss without answering")
         .accessibilityLabel("Dismiss question")
       }
@@ -238,7 +238,7 @@ private struct OptionRow: View {
       .background(hovering ? look.rowHover : Color.clear)
       .contentShape(Rectangle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .onHover { hovering = $0 }
   }
 }
@@ -467,7 +467,7 @@ private struct ConnectorCard: View {
             .overlay { Capsule().strokeBorder(look.ink.opacity(0.15), lineWidth: 1) }
             .contentShape(Capsule())
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.hand)
           .disabled(adding)
           .accessibilityLabel("Add \(name)")
         }
@@ -574,7 +574,7 @@ struct ApprovalCardView: View {
             .foregroundStyle(look.inkSecondary)
             .contentShape(Rectangle())
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.hand)
           if unfolded {
             CodeBlock(language: nil, text: AutoReviewCard.clip(folded), look: look)
           }
@@ -709,7 +709,7 @@ struct ListenerConnectCardView: View {
               .frame(height: 24)
               .background(look.ink, in: RoundedRectangle(cornerRadius: 6))
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.hand)
           .disabled(opening)
         } else {
           ProgressView().controlSize(.small)
@@ -848,7 +848,7 @@ struct PictureStrip: View {
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .contentShape(RoundedRectangle(cornerRadius: 12))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.hand)
         .accessibilityLabel(FilePreview.kind(image.url) == .video ? "Open video full screen" : "Open image full screen")
       }
     }
@@ -970,7 +970,7 @@ struct LinkCardView: View {
       .overlay { RoundedRectangle(cornerRadius: 18).strokeBorder(look.ink.opacity(0.1), lineWidth: 1) }
       .contentShape(RoundedRectangle(cornerRadius: 18))
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1)
     .help(url.absoluteString)
     .task(id: url) { meta = await LinkMetadataReader.shared.metadata(for: url.absoluteString) }
@@ -1007,7 +1007,7 @@ struct ReplyQuote: View {
       .padding(EdgeInsets(top: 4, leading: 8, bottom: 0, trailing: 8))
       .contentShape(Rectangle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .help(label)
     .accessibilityLabel(label)
   }
@@ -1090,7 +1090,7 @@ struct CallRecordView: View {
         }
         .contentShape(Rectangle())
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.hand)
       .disabled(!has)
       if open, let recap {
         VStack(alignment: .leading, spacing: 0) {
@@ -1223,7 +1223,7 @@ private struct FlightRow: View {
       .background(hovering || pressed ? Color(red: 120 / 255, green: 120 / 255, blue: 128 / 255).opacity(look.dark ? 0.24 : 0.1) : Color.clear, in: RoundedRectangle(cornerRadius: 12))
       .contentShape(RoundedRectangle(cornerRadius: 12))
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .onHover { hovering = $0 }
     .accessibilityAddTraits(pressed ? [.isSelected] : [])
   }
@@ -1350,7 +1350,7 @@ struct ComputerHandoffCard: View {
             .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(look.dark ? Color.white.opacity(0.08) : Color.black.opacity(0.06), lineWidth: 1))
             .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.hand)
         .onHover { snapshotHover = $0 }
         .accessibilityLabel("Take over the computer")
       }
@@ -1371,7 +1371,7 @@ struct ComputerHandoffCard: View {
               .padding(.horizontal, 8)
               .frame(height: 24)
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.hand)
           .help("Cancel this request without doing the step; the agent continues without it")
         }
       } else {
@@ -1414,7 +1414,7 @@ struct ComputerHandoffCard: View {
         .background(ground, in: Capsule())
         .contentShape(Capsule())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
   }
 }
 
@@ -1448,7 +1448,7 @@ struct CloudAgentCardView: View {
               .lineLimit(1)
               .truncationMode(.tail)
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.hand)
           .disabled(pull == nil)
           .help("Open the pull request")
           .frame(maxWidth: .infinity, alignment: .leading)
@@ -1484,7 +1484,7 @@ struct CloudAgentCardView: View {
                   .tracking(-0.15)
                   .foregroundStyle(look.inkTertiary)
               }
-              .buttonStyle(.plain)
+              .buttonStyle(.hand)
               .help("Open the pull request")
             }
           }

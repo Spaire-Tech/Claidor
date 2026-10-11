@@ -252,7 +252,7 @@ private struct PlanPill: View {
         .background(Capsule().fill(strong ? Color(hex: 0x3c82f6) : Color(red: 120 / 255, green: 120 / 255, blue: 128 / 255).opacity(look.dark ? 0.24 : 0.12)))
         .contentShape(Capsule())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .disabled(disabled)
     .opacity(disabled ? 0.6 : 1)
   }

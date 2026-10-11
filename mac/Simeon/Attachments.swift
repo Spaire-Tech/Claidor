@@ -262,7 +262,7 @@ private struct RemoveButton: View {
         .background(look.dark ? Color(hex: 0xfafafa) : Color(hex: 0x070707), in: Circle())
         .contentShape(Circle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.hand)
     .focusable(false)
     .help("Remove \(name)")
     .accessibilityLabel("Remove \(name)")

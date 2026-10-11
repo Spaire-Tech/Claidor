@@ -39,7 +39,7 @@ struct CallLineRow: View {
         } label: {
           chip(label, lit: hovering)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.hand)
         .onHover { inside in withAnimation(.easeOut(duration: 0.12)) { hovering = inside } }
         .accessibilityLabel("Open \(label)")
       } else {
