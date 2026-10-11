@@ -276,9 +276,9 @@ private struct AgentList<Actions: View>: View {
           .tint(Ink.hideSwipe)
         }
         .listRowBackground(Ink.listGround)
-        // The margin on the left holds the unread dot; the hairline below starts where the text does (AgentRow).
-        .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 16))
-        .listRowSeparatorTint(Ink.hairline)
+        // The margin on the left holds the unread dot; no hairline between the rows (the founder's reference, 11 October 2026).
+        .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 18))
+        .listRowSeparator(.hidden)
       }
       if !searching && filter == .all && rows.hiddenCount > 0 && rows.anyListed {
         Button { showsHidden = true } label: {
@@ -628,11 +628,12 @@ struct HiddenAgentsSheet: View {
 }
 
 /**
- * One agent or group in the list, as Messages draws a conversation: the
- * unread dot in the margin (orange when it waits on you), the butterfly,
- * the name in 17 pt semibold with the last line's time and a chevron at the
- * right, and two lines of the last message under it in grey; the hairline
- * between rows starts where the text does.
+ * One agent or group in the list, in the founder's reference (11 October
+ * 2026: "no lines, no arrow"): the unread dot in the 18-point margin
+ * (orange when it waits on you), the butterfly at 44, the name in 17 pt
+ * medium with its title's grey tag and the last line's time at the right,
+ * and one line of the last message under it in grey; no hairline between
+ * rows and no chevron.
  */
 struct AgentRow: View, Equatable {
   let agent: Agent
@@ -651,9 +652,9 @@ struct AgentRow: View, Equatable {
             .accessibilityLabel(status.label ?? "")
         }
       }
-      .frame(width: 22)
+      .frame(width: 18)
       AgentAvatar(agent: agent, members: members)
-        .frame(width: 52, height: 52)
+        .frame(width: 44, height: 44)
         .overlay(alignment: .bottomTrailing) {
           if let dot = status.cornerOnRow { StatusDot(colour: dot, size: 10.8).offset(x: -1, y: -1) }
         }
@@ -670,22 +671,20 @@ struct AgentRow: View, Equatable {
           }
           .layoutPriority(1)
           Spacer(minLength: 6)
-          // The time keeps its whole width; the name gives way first.
+          // The time keeps its whole width; the name gives way first. No arrow after it (the founder's reference).
           RowTime(agent: agent).fixedSize()
-          Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Ink.tertiary)
         }
         Text(line).font(.system(size: 15)).foregroundStyle(Ink.secondary)
-          .lineLimit(2, reservesSpace: true)
+          .lineLimit(1)
           .multilineTextAlignment(.leading)
       }
-      .alignmentGuide(.listRowSeparatorLeading) { $0[.leading] }
-      .padding(.vertical, 10)
+      .padding(.vertical, 13)
     }
     .contentShape(.rect)
   }
 
   private var name: some View {
-    Text(agent.name).font(.system(size: 17, weight: .semibold)).foregroundStyle(Ink.primary).lineLimit(1)
+    Text(agent.name).font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.primary).lineLimit(1)
   }
 
   /** The Mac sidebar's order: what it is doing while it works, else your unsent draft, else "Waiting for you: …" or the last line. */
@@ -697,7 +696,7 @@ struct AgentRow: View, Equatable {
   }
 }
 
-/** An agent's title as a list row shows it: a small grey tag, the system's own fill, as Apple tags a word beside a name. */
+/** An agent's title as a list row shows it: a small grey tag beside the name (`Ink.tag`, the founder's reference: `#252527` on dark). */
 struct TitleTag: View {
   let title: String
 
@@ -709,7 +708,7 @@ struct TitleTag: View {
       .fixedSize()
       .padding(.horizontal, 7)
       .padding(.vertical, 2.5)
-      .background(Color(.tertiarySystemFill), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+      .background(Ink.tag, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
   }
 }
 

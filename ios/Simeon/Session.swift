@@ -102,6 +102,11 @@ final class SessionController {
   private let presenter = SheetPresenter()
   let launch = Launch.current
 
+  /** The version as an update names it ("0.1.0"): the app's own (`MARKETING_VERSION`), without the platform or the build. */
+  static var displayVersion: String {
+    Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.0"
+  }
+
   static var clientVersion: String {
     let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"
     let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "0"

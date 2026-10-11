@@ -72,12 +72,17 @@ struct SettingsSheet: View {
         }
         .listRowBackground(Ink.groupedRow)
         Section {
-          VStack(spacing: 8) {
-            ButterflyView(palette: .named("blue")).frame(width: 56, height: 56)
-            Text("Simeon").font(.system(size: 17, weight: .semibold))
-            Text(SessionController.clientVersion).font(.system(size: 12)).foregroundStyle(Ink.tertiary)
+          // The SimeonLabs mark and wordmark (the sign-in's) and the version as an update names it (the founder, 11 October 2026: "0.1.0").
+          VStack(spacing: 10) {
+            Image("SignIn/Mark").resizable().renderingMode(.template).scaledToFit().frame(width: 36, height: 36)
+            Image("SignIn/Wordmark").resizable().renderingMode(.template).scaledToFit().frame(height: 17)
+            Text(SessionController.displayVersion).font(.system(size: 13)).foregroundStyle(Ink.tertiary).monospacedDigit()
           }
+          .foregroundStyle(Ink.primary)
           .frame(maxWidth: .infinity)
+          .padding(.vertical, 6)
+          .accessibilityElement(children: .ignore)
+          .accessibilityLabel("SimeonLabs, version \(SessionController.displayVersion)")
           .listRowBackground(Color.clear)
         }
       }
@@ -444,84 +449,353 @@ struct AutoReviewRules: View {
 }
 
 /**
- * Connect apps (the Mac's Plugins): the catalog by category with Add, the
- * person's own apps under Yours, search across both. Add installs the app in
+ * Connect apps, in the founder's reference (11 October 2026: "no more
+ * marketplace - yours"): one page, Marketplace, on the app's ground. At its
+ * top Back, the title, and how many apps are installed with the first
+ * three's logos, which opens Your plugins; under them the search and a
+ * filter by category. Then the catalog by category, Featured first and the
+ * rest A to Z, four of each with View all (the Mac's Plugins:
+ * `Plugins.marketplaceLimit`), each app with its logo, name, what it does
+ * and Add. Add asks first (ConnectConsentSheet), then installs the app in
  * the box and opens its sign-in in the system's sheet.
  */
 struct ConnectAppsSheet: View {
   @Environment(AppStore.self) private var store
-  @State private var tab = "marketplace"
+  @Environment(\.dismiss) private var dismiss
   @State private var query = ""
+  /** The category the filter keeps, or all of them. */
+  @State private var category: String?
 
   var body: some View {
     NavigationStack {
-      List {
-        Picker("Show", selection: $tab) {
-          Text("Marketplace").tag("marketplace")
-          Text("Yours").tag("yours")
+      VStack(spacing: 0) {
+        PluginsHead(title: "Marketplace", back: { dismiss() }) {
+          NavigationLink { YourPluginsPage() } label: { InstalledPill(apps: store.appsOnce) }
+            .buttonStyle(.plain)
         }
-        .pickerStyle(.segmented)
-        .listRowBackground(Color.clear)
-        .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
-        if tab == "marketplace" {
-          if store.catalog.isEmpty {
-            HStack { ProgressView(); Text("Loading apps…").foregroundStyle(Ink.secondary) }
-            .listRowBackground(Ink.groupedRow)
-          }
-          ForEach(categories, id: \.self) { category in
-            Section(category.isEmpty ? "Apps" : category) {
-              ForEach(catalog(in: category)) { app in AppRow(app: app) }
+        HStack(spacing: 10) {
+          PluginsSearchField(text: $query)
+          filterMenu
+        }
+        .padding(.horizontal, 18)
+        .padding(.top, 14)
+        ScrollView {
+          LazyVStack(alignment: .leading, spacing: 0) {
+            if store.catalog.isEmpty {
+              HStack(spacing: 10) { ProgressView(); Text("Loading apps…").foregroundStyle(Ink.secondary) }
+                .padding(.top, 28)
+            } else if sections.isEmpty {
+              Text("No apps match \u{201C}\(query)\u{201D}.").font(.system(size: 15)).foregroundStyle(Ink.secondary)
+                .padding(.top, 28)
             }
-            .listRowBackground(Ink.groupedRow)
-          }
-        } else {
-          let mine = store.appsOnce.filter { query.isEmpty || $0.name.localizedCaseInsensitiveContains(query) }
-          if mine.isEmpty {
-            Text("No apps yet. Add one from the Marketplace.").foregroundStyle(Ink.secondary)
-              .listRowBackground(Ink.groupedRow)
-          }
-          ForEach(mine) { app in
-            NavigationLink { ConnectedAppDetail(app: app) } label: {
-              HStack(spacing: 12) {
-                ConnectorTile(name: app.name, size: 40)
-                VStack(alignment: .leading, spacing: 2) {
-                  Text(app.name).font(.system(size: 17))
-                  Text(app.status == "connected" ? "\(app.toolCount) tools" : "Needs sign-in")
-                    .font(.system(size: 13)).foregroundStyle(app.status == "connected" ? Ink.secondary : Ink.danger)
+            ForEach(sections) { section in
+              let shown = Plugins.collapse(section.apps, expanded: !query.isEmpty || category != nil, limit: Plugins.marketplaceLimit)
+              PluginsSectionHead(title: section.title) {
+                if shown.hidden > 0 {
+                  NavigationLink { CategoryPage(title: section.title, apps: section.apps) } label: { Text("View all") }
+                    .buttonStyle(.plain)
                 }
               }
+              ForEach(shown.visible) { app in AppRow(app: app) }
             }
           }
-          .listRowBackground(Ink.groupedRow)
+          .padding(.horizontal, 18)
+          .padding(.bottom, 28)
+        }
+        .scrollDismissesKeyboard(.immediately)
+        .refreshable { await store.loadApps() }
+      }
+      .background(Ink.ground.ignoresSafeArea())
+      .toolbar(.hidden, for: .navigationBar)
+      .task { await store.loadApps() }
+    }
+    .presentationBackground(Ink.ground)
+  }
+
+  /** The filter (the reference's button beside the search): every category, or one. */
+  private var filterMenu: some View {
+    Menu {
+      Picker("Category", selection: $category) {
+        Text("All apps").tag(String?.none)
+        ForEach(AppSections.make(store.catalog, query: "").map(\.title), id: \.self) { title in
+          Text(title).tag(String?.some(title))
         }
       }
-      .groupedGround()
-      #if os(iOS)
-      .listStyle(.insetGrouped)
-      #endif
-      .searchable(text: $query, prompt: "Search apps")
-      .navigationTitle("Connect apps")
-      .inlineBarTitle()
-      .toolbar { ToolbarItem(placement: .leadingBar) { CloseButton() } }
-      .task { await store.loadApps() }
-      .refreshable { await store.loadApps() }
+    } label: {
+      Image(systemName: "line.3.horizontal.decrease")
+        .font(.system(size: 17, weight: .medium))
+        .foregroundStyle(category == nil ? Ink.primary : Ink.blue)
+        .frame(width: 44, height: 44)
+        .background(Ink.groupedRow, in: Circle())
     }
+    .accessibilityLabel("Filter")
   }
 
-  private func matches(_ app: CatalogApp) -> Bool {
-    query.isEmpty || app.title.localizedCaseInsensitiveContains(query) || app.summary.localizedCaseInsensitiveContains(query)
+  private var sections: [AppSections.Section] {
+    let all = AppSections.make(store.catalog, query: query)
+    guard let category else { return all }
+    return all.filter { $0.title == category }
   }
-
-  private var categories: [String] {
-    var seen: [String] = []
-    for app in store.catalog where matches(app) && !seen.contains(app.category) { seen.append(app.category) }
-    return seen
-  }
-
-  private func catalog(in category: String) -> [CatalogApp] { store.catalog.filter { $0.category == category && matches($0) } }
 }
 
-/** One app in the catalog: its tile, name and what it does, and Add (or Added). */
+/** The catalog's sections: by category, Featured first and the rest A to Z (the Mac's Marketplace), with what the search matches. */
+enum AppSections {
+  struct Section: Identifiable {
+    let title: String
+    let apps: [CatalogApp]
+    var id: String { title }
+  }
+
+  static func make(_ catalog: [CatalogApp], query: String) -> [Section] {
+    let words = query.trimmingCharacters(in: .whitespaces)
+    var order: [String] = []
+    var apps: [String: [CatalogApp]] = [:]
+    for app in catalog where words.isEmpty || app.title.localizedCaseInsensitiveContains(words) || app.summary.localizedCaseInsensitiveContains(words) {
+      let title = app.category.isEmpty ? "Apps" : app.category
+      if apps[title] == nil { order.append(title) }
+      apps[title, default: []].append(app)
+    }
+    let sorted = order.sorted { a, b in
+      if a == Plugins.featured { return b != Plugins.featured }
+      if b == Plugins.featured { return false }
+      return a.localizedStandardCompare(b) == .orderedAscending
+    }
+    return sorted.map { Section(title: $0, apps: apps[$0] ?? []) }
+  }
+}
+
+/** A page's head (the reference's): the round Back on the left, the title beside it, and what the page puts at the right. */
+struct PluginsHead<Trailing: View>: View {
+  let title: String
+  let back: () -> Void
+  @ViewBuilder var trailing: () -> Trailing
+
+  var body: some View {
+    HStack(spacing: 14) {
+      Button(action: back) {
+        Image(systemName: "chevron.left")
+          .font(.system(size: 18, weight: .semibold))
+          .foregroundStyle(Ink.primary)
+          .frame(width: 44, height: 44)
+          .background(Ink.groupedRow, in: Circle())
+          .contentShape(.circle)
+      }
+      .buttonStyle(.plain)
+      .accessibilityLabel("Back")
+      Text(title).font(.system(size: 20, weight: .medium)).foregroundStyle(Ink.primary).lineLimit(1)
+        .accessibilityAddTraits(.isHeader)
+      Spacer(minLength: 8)
+      trailing()
+    }
+    .padding(.horizontal, 18)
+    .padding(.top, 18)
+  }
+}
+
+/** "4 installed" with the first three apps' logos overlapping, in the control's fill: it opens Your plugins. */
+struct InstalledPill: View {
+  let apps: [ConnectedApp]
+
+  var body: some View {
+    HStack(spacing: 10) {
+      if !apps.isEmpty {
+        HStack(spacing: -9) {
+          ForEach(Array(apps.prefix(3).enumerated()), id: \.offset) { index, app in
+            ConnectorTile(name: app.name, size: 26)
+              .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+              .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).stroke(Ink.groupedRow, lineWidth: 2))
+              .zIndex(Double(3 - index))
+          }
+        }
+      }
+      Text("\(apps.count) installed").font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.primary)
+    }
+    .padding(.leading, apps.isEmpty ? 16 : 10)
+    .padding(.trailing, 16)
+    .frame(height: 44)
+    .background(Ink.groupedRow, in: Capsule())
+    .contentShape(.capsule)
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel("\(apps.count) installed")
+    .accessibilityHint("Shows your plugins")
+  }
+}
+
+/** The search, in the control's fill, round: "Search plugins". */
+struct PluginsSearchField: View {
+  @Binding var text: String
+
+  var body: some View {
+    HStack(spacing: 10) {
+      Image(systemName: "magnifyingglass").font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.secondary)
+      TextField("Search plugins", text: $text)
+        .font(.system(size: 17))
+        .textInputAutocapitalization(.never)
+        .autocorrectionDisabled()
+        .submitLabel(.search)
+      if !text.isEmpty {
+        Button { text = "" } label: {
+          Image(systemName: "xmark.circle.fill").font(.system(size: 16)).foregroundStyle(Ink.tertiary)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Clear search")
+      }
+    }
+    .padding(.horizontal, 16)
+    .frame(height: 44)
+    .background(Ink.groupedRow, in: Capsule())
+  }
+}
+
+/** A section's head: its name in the faint grey, and View all at the right when some are hidden. */
+struct PluginsSectionHead<Trailing: View>: View {
+  let title: String
+  @ViewBuilder var trailing: () -> Trailing
+
+  var body: some View {
+    HStack {
+      Text(title).font(.system(size: 15)).foregroundStyle(Ink.tertiary).accessibilityAddTraits(.isHeader)
+      Spacer()
+      trailing().font(.system(size: 15)).foregroundStyle(Ink.secondary)
+    }
+    .padding(.top, 26)
+    .padding(.bottom, 6)
+  }
+}
+
+/** View all: every app of one category, as the Marketplace lists them. */
+struct CategoryPage: View {
+  let title: String
+  let apps: [CatalogApp]
+  @Environment(\.dismiss) private var dismiss
+
+  var body: some View {
+    VStack(spacing: 0) {
+      PluginsHead(title: title, back: { dismiss() }) { EmptyView() }
+      ScrollView {
+        LazyVStack(alignment: .leading, spacing: 0) {
+          ForEach(apps) { app in AppRow(app: app) }
+        }
+        .padding(.horizontal, 18)
+        .padding(.top, 14)
+        .padding(.bottom, 28)
+      }
+    }
+    .background(Ink.ground.ignoresSafeArea())
+    .toolbar(.hidden, for: .navigationBar)
+  }
+}
+
+/**
+ * Your plugins (the reference's): the installed apps, each with its logo,
+ * its name ("Error" beside it in red when the box says so) and its tools;
+ * at the right Added once it is signed in, else Authenticate, which asks
+ * first as every connect does, then opens its sign-in. A row opens the
+ * app's page (its accounts and tools).
+ */
+struct YourPluginsPage: View {
+  @Environment(AppStore.self) private var store
+  @Environment(\.dismiss) private var dismiss
+  @State private var query = ""
+
+  var body: some View {
+    let apps = store.appsOnce.filter { query.isEmpty || $0.name.localizedCaseInsensitiveContains(query) }
+    VStack(spacing: 0) {
+      PluginsHead(title: "Your plugins", back: { dismiss() }) { EmptyView() }
+      PluginsSearchField(text: $query)
+        .padding(.horizontal, 18)
+        .padding(.top, 14)
+      ScrollView {
+        LazyVStack(alignment: .leading, spacing: 0) {
+          PluginsSectionHead(title: "Installed") { EmptyView() }
+          if apps.isEmpty {
+            Text(store.appsOnce.isEmpty ? "No apps yet. Add one from the Marketplace." : "No apps match \u{201C}\(query)\u{201D}.")
+              .font(.system(size: 15)).foregroundStyle(Ink.secondary)
+              .padding(.top, 8)
+          }
+          ForEach(apps) { app in InstalledRow(app: app) }
+        }
+        .padding(.horizontal, 18)
+        .padding(.bottom, 28)
+      }
+      .scrollDismissesKeyboard(.immediately)
+      .refreshable { await store.loadApps() }
+    }
+    .background(Ink.ground.ignoresSafeArea())
+    .toolbar(.hidden, for: .navigationBar)
+  }
+}
+
+/** One installed app on Your plugins. */
+struct InstalledRow: View {
+  let app: ConnectedApp
+  @Environment(AppStore.self) private var store
+  /** What the person reads before the sign-in page opens (ConnectConsentSheet). */
+  @State private var asking: ConnectConsent?
+  @State private var confirmed = false
+  private var connector: AppConnector { AppConnector.shared }
+
+  var body: some View {
+    let connected = app.status == "connected"
+    HStack(spacing: 14) {
+      NavigationLink { ConnectedAppDetail(app: app) } label: {
+        HStack(spacing: 14) {
+          ConnectorTile(name: app.name, size: 36)
+          VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 8) {
+              Text(app.name).font(.system(size: 17)).foregroundStyle(Ink.primary).lineLimit(1)
+              if app.status == "error" { Text("Error").font(.system(size: 15)).foregroundStyle(Ink.danger) }
+            }
+            Text(app.toolCount > 0 ? (app.toolCount == 1 ? "1 tool" : "\(app.toolCount) tools") : (connected ? "Connected" : "Not signed in"))
+              .font(.system(size: 15)).foregroundStyle(Ink.secondary).lineLimit(1)
+          }
+          Spacer(minLength: 0)
+        }
+        .contentShape(.rect)
+      }
+      .buttonStyle(.plain)
+      if connected {
+        PluginPill(title: "Added", fill: Ink.pillButton, ink: Ink.secondary)
+      } else if connector.connecting == app.name {
+        ProgressView().controlSize(.small).frame(width: 44)
+      } else {
+        Button { asking = ConnectConsent(app: store.catalogApp(named: app.name), name: app.name) } label: {
+          PluginPill(title: "Authenticate", fill: Ink.authenticate, ink: .white)
+        }
+        .buttonStyle(.plain)
+        .disabled(connector.connecting != nil)
+      }
+    }
+    .padding(.vertical, 12)
+    // The sign-in page opens once the sheet has gone.
+    .sheet(item: $asking, onDismiss: {
+      guard confirmed else { return }
+      confirmed = false
+      Task { await connector.signIn(app, store: store) }
+    }) { consent in
+      ConnectConsentSheet(consent: consent) { confirmed = true }
+    }
+  }
+}
+
+/** A row's pill (the reference's Add, Added, Authenticate): 15 medium, 34 high, round. */
+struct PluginPill: View {
+  let title: String
+  let fill: Color
+  let ink: Color
+
+  var body: some View {
+    Text(title)
+      .font(.system(size: 15, weight: .medium))
+      .foregroundStyle(ink)
+      .padding(.horizontal, 16)
+      .frame(height: 34)
+      .background(fill, in: Capsule())
+      .fixedSize()
+  }
+}
+
+/** One app in the catalog (the reference's): its logo, name and what it does in two lines, and Add, or Added once it is in. */
 struct AppRow: View {
   let app: CatalogApp
   @Environment(AppStore.self) private var store
@@ -531,26 +805,29 @@ struct AppRow: View {
   private var connector: AppConnector { AppConnector.shared }
 
   var body: some View {
-    HStack(spacing: 12) {
-      ConnectorTile(name: app.title, size: 40)
+    HStack(spacing: 14) {
+      ConnectorTile(name: app.title, size: 36)
       VStack(alignment: .leading, spacing: 2) {
-        Text(app.title).font(.system(size: 17)).foregroundStyle(Ink.primary)
-        if !app.summary.isEmpty { Text(app.summary).font(.system(size: 13)).foregroundStyle(Ink.secondary).lineLimit(2) }
+        Text(app.title).font(.system(size: 17)).foregroundStyle(Ink.primary).lineLimit(1)
+        if !app.summary.isEmpty { Text(app.summary).font(.system(size: 15)).foregroundStyle(Ink.secondary).lineLimit(2) }
       }
       Spacer(minLength: 8)
       if app.comingSoon {
-        Text("Soon").font(.system(size: 13)).foregroundStyle(Ink.tertiary)
+        Text("Soon").font(.system(size: 15)).foregroundStyle(Ink.tertiary)
       } else if store.isConnected(app.title) {
-        Label("Added", systemImage: "checkmark").font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.secondary)
+        PluginPill(title: "Added", fill: Ink.pillButton, ink: Ink.secondary)
       } else if connector.connecting == app.title {
-        ProgressView().controlSize(.small)
+        ProgressView().controlSize(.small).frame(width: 44)
       } else {
-        Button("Add") { asking = ConnectConsent(app: app, name: app.title) }
-          .buttonStyle(GreyButtonStyle(capsule: true))
-          .disabled(connector.connecting != nil)
+        Button { asking = ConnectConsent(app: app, name: app.title) } label: {
+          PluginPill(title: "Add", fill: Ink.pillButton, ink: Ink.primary)
+        }
+        .buttonStyle(.plain)
+        .disabled(connector.connecting != nil)
+        .accessibilityLabel("Add \(app.title)")
       }
     }
-    .padding(.vertical, 4)
+    .padding(.vertical, 12)
     // The sign-in page opens once the sheet has gone.
     .sheet(item: $asking, onDismiss: {
       guard confirmed else { return }
