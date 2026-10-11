@@ -148,7 +148,8 @@ struct AvatarEditor: View {
           .frame(maxWidth: .infinity, alignment: .leading)
           .padding(.horizontal, 4)
           .frame(height: 30)
-          .background(Ink.control, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+          // The control's fill on the ground (white on the now white ground would not show).
+          .background(Ink.groupedRow, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
           Button { play(voice) } label: {
             Image(systemName: playing != nil && playing == voice?.id ? "pause.fill" : "play.fill")
               .font(.system(size: 12))

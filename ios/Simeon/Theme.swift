@@ -42,21 +42,29 @@ enum Ink {
    * The chat's ground (`--sand-bg-base`), the launch's and the sign-in's.
    * On dark `#141414`, the founder's reference (11 October 2026: "the same
    * dark as the pic", for every screen and the starter page; the window's
-   * was `#070707`). The system's launch screen is the same (Assets, Ground).
+   * was `#070707`). On light pure white, as the founder's reference app
+   * (11 October 2026: "not grey ish"; it was `#fcfcfc`). The system's
+   * launch screen is the same (Assets, Ground).
    */
   static let ground = Color(uiColor: groundUIColor)
   /** The same for UIKit: the windows and their root views paint it, so the system's black never shows behind a screen. */
-  static let groundUIColor = UIColor.dynamic(light: "#fcfcfc", dark: "#141414")
-  /** The list's ground (`--sand-bg-subtle`, the Mac's sidebar); on dark the one ground, `#141414` (it was `#111111`). */
-  static let listGround = Color.dynamic(light: "#f7f7f7", dark: "#141414")
+  static let groundUIColor = UIColor.dynamic(light: "#ffffff", dark: "#141414")
+  /** The list's ground (`--sand-bg-subtle`, the Mac's sidebar): the one ground, white on light (it was `#f7f7f7`), `#141414` on dark (it was `#111111`). */
+  static let listGround = Color.dynamic(light: "#ffffff", dark: "#141414")
   /**
    * A grouped page's ground (Settings and its pages, the routine editor,
-   * Hidden Agents): the system's grey on light; on dark the one ground, not
-   * the sheet's lighter grey (`#1c1c1e`).
+   * Hidden Agents): the one ground on both, white on light (it was the
+   * system's grey, `#f2f2f7`), not the sheet's lighter grey on dark
+   * (`#1c1c1e`).
    */
-  static let groupedGround = Color.dynamic(light: "#f2f2f7", dark: "#141414")
-  /** Its rows, and a control's fill on the ground (a search field, a back button): white on light, `#1c1c1c` on dark (the reference's). */
-  static let groupedRow = Color.dynamic(light: "#ffffff", dark: "#1c1c1c")
+  static let groupedGround = Color.dynamic(light: "#ffffff", dark: "#141414")
+  /**
+   * Its rows, and a control's fill on the ground (a search field, a back
+   * button): a step off the ground on both, as dark had it, so a white
+   * page still shows its rows: `#f4f4f4` on light (it was white on the
+   * grey), `#1c1c1c` on dark (the reference's).
+   */
+  static let groupedRow = Color.dynamic(light: "#f4f4f4", dark: "#1c1c1c")
   /** An agent's title tag in the list (the reference's `#252527` on dark; the system's quiet fill on light). */
   static let tag = Color.dynamic(light: "#7676801f", dark: "#252527")
   /** A quiet pill button on the ground: Add, Added (the reference's `#2b2b2d` on dark). */
