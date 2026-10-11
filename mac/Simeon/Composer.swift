@@ -48,8 +48,12 @@ struct Composer: View {
   @State private var handle = FieldHandle()
   /** Voice input (step 2e). */
   @State private var dictation = Dictation()
-  /** The access notice's height over the field (step 13). */
+  /** The height of what stands over the field: the access notice (step 13) and the Allow card (step 14). */
   @State private var noticeHeight: CGFloat = 0
+
+  private var overField: Bool {
+    store.access.notice != nil || (agentId != NewChatState.draftKey && store.localAsks[agentId] != nil)
+  }
 
   /** Each chat's picks while its words wait (the window keeps them in the draft's document). */
   private static var keptChips: [String: (draft: String, chips: [ComposerChip])] = [:]
@@ -135,12 +139,18 @@ struct Composer: View {
       width = value
       relayout(edited: false)
     }
-    // Whether this account may use Simeon (`Qvn`, step 13): 8 over the field and as wide; sending waits under it.
+    // Over the field and as wide, 8 apart: whether this account may use Simeon (`Qvn`, step 13; sending waits under
+    // it), then the agent's first waiting ask to use this Mac (`BLn`, step 14; an agent's chat only).
     .overlay(alignment: .top) {
-      if let notice = store.access.notice {
-        AccessNotice(words: notice, look: look)
-          .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { noticeHeight = $0 }
-          .alignmentGuide(.top) { $0[.bottom] + 8 }
+      let notice = store.access.notice
+      let ask = agentId == NewChatState.draftKey ? nil : store.localAsks[agentId]
+      if notice != nil || ask != nil {
+        VStack(spacing: 8) {
+          if let notice { AccessNotice(words: notice, look: look) }
+          if let ask { LocalAskDock(ask: ask, agentId: agentId, look: look).id(ask.entryId) }
+        }
+        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { noticeHeight = $0 }
+        .alignmentGuide(.top) { $0[.bottom] + 8 }
       }
     }
     .padding(.horizontal, 16)
@@ -159,8 +169,8 @@ struct Composer: View {
       // The new chat's own field has no agent's skills to read.
       if agentId != NewChatState.draftKey { await picks.load(agentId, store: store) }
     }
-    // The messages end over the field and the access notice over it.
-    .onChange(of: height + (store.access.notice == nil ? 0 : noticeHeight + 8), initial: true) { _, value in control.composerHeight = value }
+    // The messages end over the field and what stands over it.
+    .onChange(of: height + (overField ? noticeHeight + 8 : 0), initial: true) { _, value in control.composerHeight = value }
     .onChange(of: text) { _, next in
       store.setDraft(next, for: agentId)
       // The picks go with the words as they are now (both are set together as the field changes).

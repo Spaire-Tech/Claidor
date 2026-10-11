@@ -316,7 +316,8 @@ private struct Transcript: View {
     let rows = threadRoot == nil ? store.rows(for: agentId) : store.threadRows[agentId] ?? []
     let runs = threadRoot == nil ? store.runFlags[agentId] ?? [:] : [:]
     let agent = store.agent(agentId)
-    let activity = agent?.activityLine(named: { id in store.agent(id)?.name })
+    // No working line while the agent waits on an ask to use this Mac (`Le`): the Allow card says it.
+    let activity = store.localAsks[agentId] == nil ? agent?.activityLine(named: { id in store.agent(id)?.name }) : nil
     // A message's "N replies" joins it (`sand-thread-root-group`); one under a card stays its own row.
     let bubbleIds = Set(rows.compactMap { row -> String? in if case .bubble(let bubble) = row { return bubble.id }; return nil })
     let threads = Dictionary(rows.compactMap { row -> (String, Int)? in

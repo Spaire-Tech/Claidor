@@ -85,6 +85,7 @@ final class GeneralSettingsModel {
       localTools.ceiling = ceiling
       self.ceiling = ceiling
       permission = localTools.effective
+      MacLocalPermission.shared.took(ceiling: ceiling)
     }
   }
 
@@ -626,24 +627,46 @@ private struct RuleIconButton: View {
 
 // MARK: - Security Key
 
+/** The security key switch as this Mac keeps it, on by default; the computer is told it on each connect too (MacServices). */
+enum SecurityKeySetting {
+  static let key = "simeon.webauthnProxyEnabled"
+
+  static var enabled: Bool { UserDefaults.standard.object(forKey: key) as? Bool ?? true }
+}
+
 /**
- * Use hardware security keys (`va`), on by default. The Mac's own key
- * handling (the Electron app's signer) comes with step 14; until then the
- * choice is kept on this Mac and not given to the computer.
+ * Use hardware security keys (`va`), on by default: kept here, then the
+ * computer told (`webauthnProxyEnabled`) until it says it has it, the
+ * switch greyed meanwhile. Only the switch is copied: the Mac does not
+ * answer a key's request yet (step 14, decision 7), so the computer says
+ * this Mac cannot be reached when a website asks for a key.
  */
 private struct SecurityKeyRow: View {
   let look: Look
-  @AppStorage("simeon.webauthnProxyEnabled") private var enabled = true
+  @Environment(AppStore.self) private var store
+  @AppStorage(SecurityKeySetting.key) private var enabled = true
+  @State private var pending = false
 
   var body: some View {
     SettingsRow(label: "Use hardware security keys",
                 hints: ["Allow Simeon to use a security key (such as a YubiKey) connected to your computer. You’ll be asked to approve each use."], look: look) {
-      Toggle("", isOn: $enabled)
+      Toggle("", isOn: Binding(get: { enabled }, set: { set($0) }))
         .toggleStyle(.switch)
         .labelsHidden()
         .controlSize(.mini)
         .tint(look.paneSwitchOn)
+        .disabled(pending)
         .accessibilityLabel("Use hardware security keys")
+    }
+  }
+
+  private func set(_ next: Bool) {
+    guard !pending else { return }
+    enabled = next
+    pending = true
+    Task {
+      _ = await store.pushHostSetting("webauthnProxyEnabled", .bool(next))
+      pending = false
     }
   }
 }

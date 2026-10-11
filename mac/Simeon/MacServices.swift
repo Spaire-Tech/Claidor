@@ -33,6 +33,7 @@ final class MacServices {
   /** This run's notifications, taken back when the account goes. */
   @ObservationIgnored private var posted: [String] = []
   @ObservationIgnored private var account: String?
+  @ObservationIgnored private var backendId: ObjectIdentifier?
   @ObservationIgnored private var wasLive = false
   @ObservationIgnored private var askedPermission = false
   /** One `setWindowFocused` at a time, each reading the window when it goes (`createWindowFocusSync`). */
@@ -55,6 +56,8 @@ final class MacServices {
     self.session = session
     UNUserNotificationCenter.current().delegate = notificationDelegate
     session.store.rosterNews = { [weak self] news in self?.take(news) }
+    // Each message the computer takes lets go of the "Allow once" answers (`clearLocalToolApprovals` after `sendPrompt`).
+    session.store.promptSent = { _ in MacLocalPermission.approvals.clear() }
     // The window's tabs are not the Electron app's: no Show Tab Bar in View.
     NSWindow.allowsAutomaticWindowTabbing = false
     if appWatch.isEmpty {
@@ -71,6 +74,15 @@ final class MacServices {
         }
       })
       DispatchQueue.main.async { MacServices.shared.removeHelpMenu() }
+      // Quitting stops the hands (decision 3: they live in the app, where the Electron daemon kept serving).
+      appWatch.append(NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification, object: nil, queue: .main) { _ in
+        let done = DispatchSemaphore(value: 0)
+        Task.detached {
+          await MacLocalHands.shared.stopAndWait()
+          done.signal()
+        }
+        _ = done.wait(timeout: .now() + 1)
+      })
     }
     track()
   }
@@ -79,19 +91,32 @@ final class MacServices {
     guard let session else { return }
     let store = session.store
     let state = withObservationTracking {
-      (account: store.account?.email.lowercased(), live: store.isLive, signedIn: session.phase == .signedIn)
+      (account: store.account?.email.lowercased(), backend: store.backend.map { ObjectIdentifier($0 as AnyObject) },
+       live: store.isLive, signedIn: session.phase == .signedIn)
     } onChange: { [weak self] in
       Task { @MainActor in self?.track() }
     }
-    if state.account != account {
+    // The account is known after its computer (the profile answers later), and Reload clears it while the computer stays:
+    // an account gone while a computer is attached is the same one still. Only no computer at all is signed out.
+    let next = state.account ?? (state.backend != nil ? account : nil)
+    if next != account || state.backend != backendId {
       let previous = account
-      account = state.account
+      account = next
+      backendId = state.backend
       // Another account, or none (`resetAccountState`): forget what was told, take this run's back, the Dock shows nothing.
-      if previous != nil {
+      if previous != nil && next != previous {
         feed.reset()
         setBadge(badge.reset())
         UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: posted)
         posted = []
+      }
+      if let next, let backend = store.backend {
+        // This account's "Execution on Local Computer" and its team's ceiling; the hands for its computer (not the demo's).
+        Task { await MacLocalPermission.shared.signedIn(next, store: store) }
+        if let live = backend as? LiveBackend { Task { await MacLocalHands.shared.start(live.gateway) } }
+      } else if next == nil && state.backend == nil {
+        MacLocalPermission.shared.signedOut()
+        Task { await MacLocalHands.shared.stop() }
       }
     }
     if state.live && !wasLive, let backend = store.backend { connected(backend) }
@@ -116,6 +141,9 @@ final class MacServices {
       _ = try? await backend.command("setHostSettings", ["notifications": ["isEnabled": false]])
       // The zone this Mac is in; the person's own pick stays the computer's (Settings).
       _ = try? await backend.command("setHostSettings", ["userTimeZone": .string(TimeZone.current.identifier)])
+      // "Execution on Local Computer" squared with the computer's, and the security key's switch (Settings › General).
+      await MacLocalPermission.shared.connected(backend)
+      _ = try? await backend.command("setHostSettings", ["webauthnProxyEnabled": .bool(SecurityKeySetting.enabled)])
       sendFocus()
     }
   }
