@@ -172,6 +172,8 @@ final class SessionController {
       self.apply(profile: profile)
     }
     await store.attach(backend)
+    // In-app purchase: renewals and approvals StoreKit delivers, and what this Apple ID already holds, to the server.
+    Purchases.shared.start(store: store)
     await checkFirstRun()
     guard holding, self.api === api else { return }
     let deadline = Date().addingTimeInterval(3)
@@ -236,6 +238,7 @@ final class SessionController {
 
   private func ended() {
     store.detach()
+    Purchases.shared.stop()
     Notifications.shared.forget()
     Self.remember(nil)
     api = nil
@@ -300,23 +303,27 @@ final class SessionController {
   /** Settings › Delete Account: nil once the account is gone (and the app signed out), else why not. */
   func deleteAccount() async -> String? {
     guard let api else { return "Sign in to Simeon first." }
+    let appleRunsOn: Bool
     do {
-      try await api.deleteAccount()
+      appleRunsOn = try await api.deleteAccount()
     } catch {
       return error.localizedDescription
     }
     store.detach()
+    Purchases.shared.stop()
     await Notifications.shared.stop()
     Self.remember(nil)
     self.api = nil
     askedForNotifications = false
     firstRun = .done
-    phase = .signedOut(message: AccountMenu.deleted)
+    // A plan bought through Apple keeps charging until the person cancels it there.
+    phase = .signedOut(message: appleRunsOn ? AccountMenu.deletedApple : AccountMenu.deleted)
     return nil
   }
 
   func signOut() async {
     store.detach()
+    Purchases.shared.stop()
     await Notifications.shared.stop()
     await api?.signOut()
     Self.remember(nil)

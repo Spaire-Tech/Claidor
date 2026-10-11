@@ -29,7 +29,11 @@ from .desktop import (
     DesktopUsage,
     DesktopVoiceCall,
 )
-from .desktop_billing import DesktopSubscription, DesktopTrialRedemption
+from .desktop_billing import (
+    DesktopAppStoreSubscription,
+    DesktopSubscription,
+    DesktopTrialRedemption,
+)
 from .desktop_share import (
     DesktopShareEvent,
     DesktopShareJoinRequest,
@@ -157,6 +161,7 @@ __all__ = [
     "CustomerSeat",
     "CustomerSession",
     "CustomerSessionCode",
+    "DesktopAppStoreSubscription",
     "DesktopAuthCode",
     "DesktopMemoryFile",
     "DesktopSession",

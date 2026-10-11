@@ -11,9 +11,16 @@ request ever waits on Stripe.
 cannot refuse a card by its fingerprint before the subscription exists, so
 the fingerprint is recorded when a trial starts, and a second trial on the
 same card is ended at once (`simeon.plans.service`).
+
+`DesktopAppStoreSubscription` is a plan bought in the iPhone app with
+Apple's in-app purchase (12 October 2026): Apple owns it, and the server
+keeps a copy written from Apple's signed transactions, sent by the app after
+a purchase and by Apple's server notifications (`simeon.plans.app_store`).
+It has the same fields the allowance reads as `DesktopSubscription`, so
+credits, the trial and access work alike whoever bills the plan.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
@@ -91,11 +98,119 @@ class DesktopSubscription(RecordModel):
     def user(cls) -> Mapped["User"]:
         return relationship("User", lazy="raise")
 
+    #: Who bills the plan; `app_store` rows are `DesktopAppStoreSubscription`.
+    provider = "stripe"
+
     @property
     def billable(self) -> bool:
         """Whether the plan's allowance applies: trialing, paid, or paid
         and being retried."""
         return self.status in ("trialing", "active", "past_due")
+
+    def billable_at(self, now: datetime) -> bool:
+        """Stripe's status is kept current by its webhooks, so the moment
+        does not matter here; Apple's rows need it."""
+        return self.billable
+
+    @property
+    def trialing(self) -> bool:
+        return self.status == "trialing"
+
+
+#: How long past a period's end an Apple plan still counts while its
+#: renewal is on its way: Apple renews about a day before the end, and the
+#: notification or the app's next sync can lag.
+APP_STORE_RENEWAL_SLACK = timedelta(hours=12)
+
+
+class DesktopAppStoreSubscription(RecordModel):
+    """One auto-renewable subscription bought through Apple, by its
+    original transaction id (the same through renewals and plan changes in
+    the subscription group). A person can have more than one over time (a
+    second Apple ID); the live one counts (`simeon.plans.effective`)."""
+
+    __tablename__ = "desktop_app_store_subscriptions"
+
+    user_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="cascade"), nullable=False, index=True
+    )
+    original_transaction_id: Mapped[str] = mapped_column(
+        String(64), nullable=False, unique=True
+    )
+    #: The latest transaction (a renewal or a plan change).
+    transaction_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    product_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    #: `Production` or `Sandbox` (TestFlight, App Review and Xcode builds).
+    environment: Mapped[str] = mapped_column(String(16), nullable=False)
+    #: The allowance's words: `trialing`, `active`, `past_due` (Apple is
+    #: retrying the charge), `canceled` (expired, refunded or revoked).
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    tier: Mapped[str | None] = mapped_column(String(32), nullable=True, default=None)
+    #: `month` or `year`.
+    billing_interval: Mapped[str | None] = mapped_column(
+        String(16), nullable=True, default=None
+    )
+    current_period_start: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True, default=None
+    )
+    #: When the paid (or free) period ends: the transaction's expiry.
+    current_period_end: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True, default=None
+    )
+    #: The end of Apple's billing grace period, while it retries the charge.
+    grace_period_end: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True, default=None
+    )
+    trial_start: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True, default=None
+    )
+    trial_end: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True, default=None
+    )
+    #: Auto-renew turned off: the plan ends at `current_period_end`.
+    cancel_at_period_end: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False
+    )
+    canceled_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True, default=None
+    )
+    #: When Apple signed what was last applied; anything signed earlier
+    #: (a notification that arrives late) is not applied over it.
+    signed_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=False
+    )
+    synced_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=False
+    )
+    #: The decoded transaction and renewal info as Apple signed them.
+    raw: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+
+    provider = "app_store"
+
+    @declared_attr
+    def user(cls) -> Mapped["User"]:
+        return relationship("User", lazy="raise")
+
+    def billable_at(self, now: datetime) -> bool:
+        """Trialing, paid, or in Apple's grace period, and not past the
+        period's end by more than the renewal slack: a renewal that never
+        came (a missed notification, an app never opened) ends the plan by
+        itself."""
+        if self.status not in ("trialing", "active", "past_due"):
+            return False
+        ends = max(
+            (
+                moment
+                for moment in (self.current_period_end, self.grace_period_end)
+                if moment
+            ),
+            default=None,
+        )
+        return ends is None or now < ends + APP_STORE_RENEWAL_SLACK
+
+    @property
+    def billable(self) -> bool:
+        return self.billable_at(datetime.now(UTC))
 
     @property
     def trialing(self) -> bool:

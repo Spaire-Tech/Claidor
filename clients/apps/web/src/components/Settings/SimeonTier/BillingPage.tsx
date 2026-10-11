@@ -75,7 +75,8 @@ interface BillingPageProps {
  * set" (the Download button, for a person who has a plan). The Mac app's
  * upgrade button, the window's access cover, the site's "Try it free"
  * buttons and the Mac sign-in gate all land here
- * (docs/services-billing.md, section 3).
+ * (docs/services-billing.md, section 3). A plan bought in the iPhone app
+ * is shown as billed through Apple, with nothing to change here (section 9).
  */
 const BillingPage = ({
   email,
@@ -102,6 +103,9 @@ const BillingPage = ({
 
   const sub = subscription.data
   const subscribed = hasPlan(sub)
+  // Bought in the iPhone app: Apple changes and cancels it, so this page
+  // only says so (the checkout and the portal would refuse).
+  const billedByApple = subscribed && sub?.provider === 'app_store'
   const waiting =
     subscription.isLoading || (checkoutSessionId !== null && sync.isPending)
 
@@ -129,12 +133,13 @@ const BillingPage = ({
         )}
       </header>
 
-      {waiting ? null : subscribed && !adjusting ? (
+      {waiting ? null : subscribed && (!adjusting || billedByApple) ? (
         <AllSet
           sub={sub}
           returnTo={returnTo}
           fromApp={fromApp}
           justPaid={upgraded || checkoutSessionId !== null}
+          billedByApple={billedByApple}
           onAdjust={() => setAdjusting(true)}
         />
       ) : (
@@ -157,12 +162,14 @@ const AllSet = ({
   returnTo,
   fromApp,
   justPaid,
+  billedByApple,
   onAdjust,
 }: {
   sub: CurrentSubscription | undefined
   returnTo: string | null
   fromApp: boolean
   justPaid: boolean
+  billedByApple: boolean
   onAdjust: () => void
 }) => {
   const trialing = sub?.status === 'trialing'
@@ -212,9 +219,16 @@ const AllSet = ({
               {trialing ? ', on trial' : ''} ·{' '}
             </>
           )}
-          <button type="button" onClick={onAdjust}>
-            Adjust your plan
-          </button>
+          {billedByApple ? (
+            <>
+              Billed through Apple. Change or cancel it on your iPhone in
+              Settings › your name › Subscriptions.
+            </>
+          ) : (
+            <button type="button" onClick={onAdjust}>
+              Adjust your plan
+            </button>
+          )}
         </span>
       </footer>
     </>

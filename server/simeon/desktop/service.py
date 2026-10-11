@@ -814,7 +814,8 @@ class DesktopService:
         they keep their names and meaning. The keys after `periodEnd` are
         what the app's usage summary can show once it reads them: the
         trial's end and whether it can still be cancelled, the on-demand
-        spend (none yet), and where the person goes to change plan.
+        spend (none yet), where the person goes to change plan, and who
+        bills it.
         An app that does not know a key ignores it."""
         allowance = await self.allowance(session, user, now=now)
         limit = allowance.credits_limit
@@ -845,6 +846,12 @@ class DesktopService:
             "trialCancelable": allowance.trial_cancelable,
             "onDemand": None,
             "upgradeUrl": None if allowance.free else billing_url(from_app=True),
+            # Who bills the plan (12 October 2026): `apple` for one bought in
+            # the iPhone app (changed and cancelled with Apple), `stripe` for
+            # the web's, None without a plan.
+            "billedBy": {"app_store": "apple", "stripe": "stripe"}.get(
+                allowance.provider or ""
+            ),
         }
 
     async def profile_summary(

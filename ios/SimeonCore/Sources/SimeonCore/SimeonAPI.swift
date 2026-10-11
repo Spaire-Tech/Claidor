@@ -120,7 +120,9 @@ public actor SimeonAPI {
       // The refusal's own sentence and code when it has them: the server's proxy and the providers it passes on answer
       // `{"error": {"message", "code"}}` (server/simeon/desktop/proxy_common.py), meant to be shown as they are.
       let said = answer.json?["error"]
-      throw SimeonAPIError(message: said?["message"]?.text ?? "Simeon Labs' server answered \(path) with \(answer.status).", status: answer.status, code: said?["code"]?.text)
+      // Else the app's own envelope, refused with its status (`{"code", "message"}`, `_fail` in server/simeon/desktop/endpoints.py).
+      let message = said?["message"]?.text ?? answer.json?["message"]?.text
+      throw SimeonAPIError(message: message ?? "Simeon Labs' server answered \(path) with \(answer.status).", status: answer.status, code: said?["code"]?.text)
     }
     guard let parsed = answer.json else { throw SimeonAPIError(message: "Simeon Labs' server answered \(path) with something that is not JSON.", status: answer.status) }
     if let code = parsed["code"], code.int != 0 {
@@ -204,11 +206,15 @@ public actor SimeonAPI {
    * (`server/simeon/desktop/account_deletion.py`): the subscription ends, the
    * cloud computer and its files go, the apps are disconnected, every device
    * is signed out. Then the pair is forgotten. Throws the server's own
-   * sentence when a step could not be done (try again later).
+   * sentence when a step could not be done (try again later). True when a
+   * plan bought in the iPhone app runs on: only the person can cancel it,
+   * with Apple.
    */
-  public func deleteAccount() async throws {
-    _ = try await data("account", method: "DELETE")
+  @discardableResult
+  public func deleteAccount() async throws -> Bool {
+    let answer = try await data("account", method: "DELETE")
     vault.write(nil)
+    return answer["appleSubscription"]?.bool == true
   }
 
   /** Signs this phone's session out on the server and forgets the pair. */

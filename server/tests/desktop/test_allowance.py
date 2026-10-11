@@ -281,7 +281,8 @@ class TestQuotaAndRefusal:
         )
         quota = await desktop.quota(session, user)
         assert quota["creditsUsed"] == 100_000
-        assert quota["creditsRemaining"] == 650_000
+        # Standard's week (3,750,000 since 8 October 2026) less this week's 100,000.
+        assert quota["creditsRemaining"] == 3_650_000
         assert not await desktop.exhausted(session, user)
 
     async def test_no_plan_is_exhausted_before_the_first_call(

@@ -42,6 +42,13 @@ class CurrentSubscription(Schema):
     trial_end: datetime | None
     cancel_at_period_end: bool
     stripe_customer_id: str | None
+    provider: Literal["stripe", "app_store"] | None = Field(
+        default=None,
+        description=(
+            "Who bills the plan: `stripe` (the web), `app_store` (bought in "
+            "the iPhone app: changed and cancelled there), or none."
+        ),
+    )
     entitlements: Entitlements
 
 

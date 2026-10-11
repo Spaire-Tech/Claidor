@@ -11,6 +11,10 @@ how that fits together, what each piece needs on Render and on Stripe, and
 which log line to read when it misbehaves. Section 2 of `services-core.md`
 covers what a credit is and how the proxy meters one.
 
+The iPhone app sells the same three plans through Apple's in-app purchase
+(12 October 2026): Apple takes the payment and the server keeps a copy of
+what Apple signed. Section 9 says how.
+
 Nothing here gates anyone until `SIMEON_DESKTOP_BILLING_REQUIRED` is
 `true`. Without it, every person has the free monthly allowance
 (`SIMEON_DESKTOP_MONTHLY_CREDITS`) and the sign-in asks for no card. The
@@ -161,7 +165,10 @@ was; the public name and statement descriptor are what a person sees.
 ## 4. How the app's allowance follows the plan
 
 `server/simeon/desktop/allowance.py` resolves one person's `Allowance`
-from the `desktop_subscriptions` row: one indexed lookup, no Stripe call.
+from the `desktop_subscriptions` row and the person's Apple rows
+(`desktop_app_store_subscriptions`, section 9): two indexed lookups, no
+Stripe or Apple call. `simeon.plans.effective.plan_of` picks the one that
+counts: a live plan (the bigger if two are live), else the Stripe row.
 
 | State | Window | Limit | `subscriptionStatus` |
 |---|---|---|---|
@@ -182,7 +189,9 @@ keys are what every shipped app reads and keep their meaning (`creditsLimit`,
 added on 5 October 2026 feed the app's usage summary
 (`desktop/source/electron-main/account/account-profile.ts`,
 `usageSummaryFromSimeonQuota`): `tier`, `trialEndsAt`, `trialCancelable`,
-`onDemand` (null until the server meters it), `upgradeUrl`.
+`onDemand` (null until the server meters it), `upgradeUrl`; and since 12
+October 2026 `billedBy` (`stripe`, `apple`, or null without a plan), which
+the iPhone and Mac apps read to send an Apple plan's changes to Apple.
 
 **The Manage plan card** (Settings → Usage & Billing, 6 October 2026). The
 window's own page had one, filled from the upstream's dashboard calls;
@@ -290,3 +299,170 @@ and the Customer Portal configuration by hand (section 2). The migration
   the webhook copy, the one-trial-per-card rule, the checkout and portal
   calls (Stripe replaced by a fake), the sign-in gate, the Connect cancel
   and the usage report. No live charge has been made.
+- **In-app purchase on an iPhone** (section 9): nothing has run on a
+  device or in Apple's sandbox yet, and the StoreKit code has not been
+  compiled (it was written without Xcode). The server tests sign
+  transactions with a test certificate chain, not Apple's.
+- **A second free week through Apple.** Apple decides who gets its free
+  week (once per Apple ID), not the server. A person who had the web's
+  trial, or Apple's on another Apple ID, gets Apple's free week again and
+  the trial's credits with it. StoreKit's server-signed offer eligibility
+  (`Product.PurchaseOption.introductoryOfferEligibility`, signed with an
+  In-App Purchase key) would let the server say no; it is not built.
+
+## 9. Bought in the iPhone app (12 October 2026)
+
+Apple requires that a subscription unlocking features in an iPhone app be
+sold through its in-app purchase (App Review Guideline 3.1.1). So the
+iPhone app sells the web's plans through the App Store: Apple's purchase
+sheet, Face ID, the person's Apple account, Apple's receipts, and Apple's
+own screen to change or cancel (Settings › your name › Subscriptions). The
+person never leaves the app.
+
+**The money.** Apple keeps 30% of the first year of each subscription and
+15% after it, or 15% from the start under the App Store Small Business
+Program (under $1 million a year of proceeds; apply in the developer
+account). The
+prices are the web's; Apple's cut comes out of them. People who pay on the
+Apple side get the same credits as on the web and no top-up, since the web
+has none either (section 8).
+
+**The web as well, in the United States.** Since the court ruling of 30
+April 2025, an app on the US storefront may link to its own website to buy,
+with no fee to Apple for now. The plans sheet shows "Subscribe on the web"
+only when the App Store's storefront is the United States
+(`Storefront.current.countryCode == "USA"`, `ApplePlans.webLinkAllowed`);
+everywhere else it shows Apple's purchase alone, and a plan bought on the
+web keeps working but its Stripe links are not shown in the app.
+
+### The plans as products
+
+One subscription group, "Simeon", with six auto-renewable subscriptions.
+Their ids are `<SIMEON_APPLE_PRODUCT_PREFIX>.<tier>.<monthly|yearly>`
+(`server/simeon/plans/app_store.py`, `product_id`); the server tells the
+app which to ask StoreKit for (`GET /desktop/api/billing/apple/products`),
+so a renamed product is a setting, not an app release.
+
+| Product id | Price (US) | Level in the group |
+|---|---|---|
+| `com.simeonlabs.simeon.max.monthly` | $200.00 a month | 1 |
+| `com.simeonlabs.simeon.max.yearly` | $1,920.00 a year | 1 |
+| `com.simeonlabs.simeon.pro.monthly` | $60.00 a month | 2 |
+| `com.simeonlabs.simeon.pro.yearly` | $576.00 a year (or the nearest price point App Store Connect offers) | 2 |
+| `com.simeonlabs.simeon.standard.monthly` | $20.00 a month | 3 |
+| `com.simeonlabs.simeon.standard.yearly` | $192.00 a year | 3 |
+
+Each has an introductory offer: free, one week, for new subscribers. The
+levels make a move between plans an upgrade (at once, prorated by Apple)
+or a downgrade (at the next renewal), as Apple's own sheet does them.
+
+### How a purchase reaches the server
+
+1. **Choosing.** Settings › Usage & Billing (Change Limit, Upgrade) and
+   the access cover open the plans sheet (`ios/Simeon/PlansSheet.swift`):
+   monthly or yearly, the three plans with the App Store's price in the
+   person's currency, "Start Free Week" while Apple still offers it to
+   this Apple ID, the price, period and renewal line Apple asks for,
+   Restore Purchases, and the Terms and Privacy Policy.
+2. **Buying.** `Purchases.buy` (`ios/Simeon/Purchases.swift`) runs
+   StoreKit 2's purchase with the Simeon account's id as its
+   `appAccountToken`. StoreKit hands back the transaction Apple signed.
+3. **Starting the plan.** The app posts every signed transaction, with its
+   signed renewal info, to `POST /desktop/api/billing/apple/transactions`
+   (bearer auth). The server checks Apple's signature with Apple's library
+   (`app-store-server-library`) against Apple's root certificate
+   (`server/simeon/plans/apple_roots/AppleRootCA-G3.cer`), for the bundle
+   id `com.simeonlabs.simeon.ios`, in production and then the sandbox; it
+   refuses a purchase tagged with another account or already held by one
+   (409), copies the subscription into `desktop_app_store_subscriptions`
+   (one row per original transaction id), and answers the plan and the
+   quota. The app then finishes the transaction. One it could not deliver
+   comes back from StoreKit at the next launch and is sent again.
+4. **Afterwards.** Apple's App Store Server Notifications (version 2) post
+   every renewal, plan change, failed charge, grace period, cancellation,
+   expiry and refund to `POST /desktop/apple/notifications`. The server
+   checks the signature, finds the row by its original transaction id (or
+   the person by the purchase's `appAccountToken`), and copies the new
+   state in. A notification signed before what is already applied is
+   skipped. The app also sends what the Apple ID holds at each launch and
+   on Restore Purchases, and listens to StoreKit's updates, so a missed
+   notification is caught up.
+5. **How a row counts.** Before its expiry: `trialing` in the free week,
+   `active` after. Past it while Apple retries the charge in its billing
+   grace period: `past_due`, which still counts. Refunded or revoked:
+   `canceled` at once. Each row counts until its expiry (or the grace
+   period's end) plus 12 hours, so a renewal Apple has not told the server
+   about yet does not cut anyone off. Apple's free week counts as the
+   person's one trial: a plan bought on the web afterwards starts paid.
+6. **What the other surfaces do with an Apple plan.** The web billing
+   page's checkout and portal, the Mac's Manage Billing and Cancel Trial,
+   and Connect `CancelSandTrial` answer 409 with "Your plan is billed
+   through Apple. Change or cancel it on your iPhone in Settings › your
+   name › Subscriptions." (`BilledByApple`). The iPhone app opens Apple's
+   own subscription sheet instead. Deleting the account does not cancel an
+   Apple plan (only the person can); Delete Account says so before and
+   after (`appleSubscription` in its answer).
+
+### Settings on Render
+
+| Setting | Where | Value |
+|---|---|---|
+| `SIMEON_APPLE_APP_ID` | API | The app's Apple ID, the number in App Store Connect › the app › App Information (General). Apple's library needs it to check production purchases; without it only sandbox purchases are accepted and a production one answers 503 ("Purchases in the app aren't set up …"), logged as `plans.app_store.unverified` with `production_configured=false`. |
+| `SIMEON_APPLE_BUNDLE_ID` | API | Only if the iPhone app's bundle id changes; default `com.simeonlabs.simeon.ios`. |
+| `SIMEON_APPLE_PRODUCT_PREFIX` | API | Only if the products are named differently; default `com.simeonlabs.simeon`. |
+| `SIMEON_APPLE_ONLINE_CHECKS` | API | `true` by default: Apple's library also checks the certificates' revocation online. `false` only if Apple's OCSP host is unreachable from Render. |
+
+The migration `desktop_app_store_1012` adds `desktop_app_store_subscriptions`.
+
+### In App Store Connect (once, by the founder)
+
+1. **Agreements, Tax and Banking**: accept the Paid Apps agreement, add
+   the bank account and the tax forms, as Spaire, Inc. Nothing can be sold
+   until it is active.
+2. **App Store Small Business Program**: apply in the developer account
+   (developer.apple.com › Programs › App Store Small Business Program).
+3. **The subscription group and products**: in the app › Monetization ›
+   Subscriptions, create the group "Simeon" and the six products of the
+   table, each with its price, a display name ("Simeon Pro") and a
+   description ("12,500,000 credits a week"), the free week as its
+   introductory offer, and a review screenshot of the plans sheet.
+4. **Server notifications**: in the app › App Information › App Store
+   Server Notifications, Version 2, set both the production and the
+   sandbox URL to `https://api.simeonlabs.com/desktop/apple/notifications`.
+   A test notification from Apple logs
+   `plans.app_store.notification type=TEST`.
+5. **The app's Apple ID** on Render as `SIMEON_APPLE_APP_ID`.
+6. **The listing**: the App Store description ends with links to the Terms
+   (`https://simeonlabs.com/terms`, as the licence agreement) and the
+   Privacy Policy (`https://simeonlabs.com/privacy`); App Review rejects
+   subscriptions without them.
+7. **Testing**: a sandbox Apple account (Users and Access › Sandbox), then
+   a TestFlight build: buy, see the plan start, Restore Purchases, cancel
+   in Settings › Subscriptions. The sandbox renews a monthly plan every
+   five minutes, so a year of renewals takes an hour.
+
+### When it misbehaves
+
+- **`plans.app_store.synced`**: a purchase or notification was applied,
+  with the person, the status, the tier and the environment (`Sandbox`
+  or `Production`).
+- **`plans.app_store.unverified`**: a signature did not check out, with
+  each environment's failure (`INVALID_ENVIRONMENT`, `INVALID_APP_IDENTIFIER`,
+  `VERIFICATION_FAILURE`, `INVALID_CHAIN`, …). `INVALID_APP_IDENTIFIER`
+  means the bundle id or the app's Apple ID setting is wrong.
+- **`plans.app_store.not_yours`**: the app sent a purchase that belongs to
+  another Simeon account (the person is told to sign in with that one or
+  use another Apple ID).
+- **`plans.app_store.nobody`**: a notification for a subscription no
+  account matches (bought before the account's id was attached, or with
+  another app's bundle). **`plans.app_store.not_ours`**: a product id that
+  is not one of the six.
+- **`plans.app_store.stale`**: a late notification older than what is
+  applied, skipped.
+- **`plans.app_store.notification`**: every notification, with its type
+  and subtype and whether it changed a row.
+- A person with a plan bought on the iPhone who sees "No active plan":
+  check `desktop_app_store_subscriptions` for their user id. No row means
+  the app never reached the server and no notification matched (Restore
+  Purchases sends it again); a row with `tier` null means a product id the
+  server does not know.

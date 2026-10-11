@@ -25,6 +25,7 @@ from simeon.desktop.allowance import billing_required
 from simeon.desktop.service import desktop
 from simeon.models import User
 from simeon.plans.repository import DesktopTrialRedemptionRepository
+from simeon.plans.service import BilledByApple
 from simeon.plans.service import plans as plans_service
 from simeon.postgres import AsyncSession
 
@@ -133,7 +134,13 @@ async def cancel_sand_trial(call: ConnectCall) -> dict[str, Any]:
         raise ConnectError("failed_precondition", "There is no trial to cancel.")
     if not allowance.trial_cancelable:
         return {}
-    if not await plans_service.cancel_trial(call.db, user):
+    try:
+        cancelled = await plans_service.cancel_trial(call.db, user)
+    except BilledByApple as apple:
+        # Apple's free week: only Apple can end it (the iPhone app opens
+        # Apple's own subscription page instead of asking here).
+        raise ConnectError("failed_precondition", apple.message) from apple
+    if not cancelled:
         raise ConnectError("failed_precondition", "There is no trial to cancel.")
     return {}
 

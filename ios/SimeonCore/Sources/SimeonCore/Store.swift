@@ -92,15 +92,17 @@ public struct Account: Sendable, Equatable {
   public let email: String
   /** The picture the sign-in gave (`avatarUrl`, Google's), which Settings' account card shows. */
   public let pictureURL: URL?
+  /** The account's id on Simeon Labs' server (a UUID): an App Store purchase is tagged with it (`appAccountToken`). */
+  public let id: String?
 
-  public init(name: String, email: String, pictureURL: URL? = nil) { self.name = name; self.email = email; self.pictureURL = pictureURL }
+  public init(name: String, email: String, pictureURL: URL? = nil, id: String? = nil) { self.name = name; self.email = email; self.pictureURL = pictureURL; self.id = id }
 
   public init?(profile: JSON) {
     let email = profile["email"]?.string ?? ""
     let name = profile["preferredName"]?.text ?? profile["name"]?.text ?? profile["nickname"]?.text ?? email.split(separator: "@").first.map(String.init) ?? ""
     if name.isEmpty && email.isEmpty { return nil }
     let picture = profile["avatarUrl"]?.text.flatMap(URL.init(string:)).flatMap { $0.scheme == "https" ? $0 : nil }
-    self.init(name: name, email: email, pictureURL: picture)
+    self.init(name: name, email: email, pictureURL: picture, id: profile["id"]?.text)
   }
 
   /** "BF" for Bass Fall: the first and last words' letters, as the window's account card has them (`AccountInitials`). */

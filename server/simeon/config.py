@@ -606,6 +606,18 @@ class Settings(BaseSettings):
     STRIPE_CREDITS_METER_EVENT: str = "simeon_credits"
     STRIPE_BOX_SECONDS_METER_EVENT: str = "simeon_box_seconds"
 
+    # Plans bought in the iPhone app with Apple's in-app purchase
+    # (`simeon.plans.app_store`, docs/services-billing.md). The iPhone app's
+    # bundle id; the app's Apple ID from App Store Connect (App Information,
+    # a number), which Apple requires to check a production purchase; the
+    # prefix of the subscriptions' product ids
+    # (`<prefix>.<standard|pro|max>.<monthly|yearly>`); and whether a
+    # signature's certificates are checked for revocation with Apple online.
+    APPLE_BUNDLE_ID: str = "com.simeonlabs.simeon.ios"
+    APPLE_APP_ID: int | None = None
+    APPLE_PRODUCT_PREFIX: str = "com.simeonlabs.simeon"
+    APPLE_ONLINE_CHECKS: bool = True
+
     # Mux video
     # Signing key used to mint short-lived JWTs for signed playback URLs
     # (https://docs.mux.com/guides/secure-video-playback). When set, new

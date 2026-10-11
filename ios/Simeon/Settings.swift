@@ -1,3 +1,4 @@
+import StoreKit
 import SwiftUI
 #if os(iOS)
 import UIKit
@@ -135,7 +136,8 @@ struct SettingsSheet: View {
           }
         }
       } message: {
-        Text(AccountMenu.deleteLine)
+        // A plan bought through Apple is not cancelled by deleting the account: Apple keeps charging until it is cancelled there.
+        Text(store.usage.summary?.billedByApple == true ? "\(AccountMenu.deleteLine)\n\n\(AccountMenu.deleteAppleLine)" : AccountMenu.deleteLine)
       }
       .alert(AccountMenu.deleteRefused, isPresented: Binding(get: { deleteProblem != nil }, set: { if !$0 { deleteProblem = nil } })) {
         Button("OK", role: .cancel) {}
@@ -380,20 +382,33 @@ struct AccountPage: View {
  * applies, the refresh failure with Retry; then Manage Plan: the plan and
  * its line, Upgrade to the plan above, and Manage Billing ↗ (Stripe's page).
  * Read when the page shows unless it was read in the last 30 seconds.
+ *
+ * In-app purchase (12 October 2026): with no plan, or a plan bought through
+ * Apple, choosing or upgrading opens the App Store's plans (PlansSheet), and
+ * Manage Subscription and Cancel Trial open Apple's own subscription sheet.
+ * A plan bought on the web keeps its Stripe links where Apple allows them
+ * (the United States); elsewhere they are not shown.
  */
 struct UsagePage: View {
   @Environment(AppStore.self) private var store
   @Environment(\.openURL) private var openURL
+  @State private var purchases = Purchases.shared
   @State private var opening: String?
   @State private var failure: String?
   @State private var askingCancel = false
   @State private var cancelling = false
   @State private var cancelFailure: String?
+  @State private var showsPlans = false
+  @State private var plansTier: String?
+  @State private var managingApple = false
 
   var body: some View {
     Form {
       if let summary = store.usage.summary {
         let meters = UsageMeters(summary)
+        // Who changes the plan here: Apple's sheets, or Stripe's pages where Apple allows a link to them.
+        let apple = summary.billedByApple || summary.managePlan == nil
+        let web = !apple && purchases.webLinkAllowed
         Section("Usage") {
           if let weekly = meters.weekly {
             UsageMeterRow(title: meters.includedUsageTitle, meter: weekly)
@@ -408,30 +423,37 @@ struct UsagePage: View {
             UsageMeterRow(title: UsageMeters.onDemandTitle, meter: onDemand)
           }
           // The founder's reference's Change Limit (9 October 2026): the plans page when there is one to move to, else Stripe's.
-          Button {
-            if let upgrade = meters.upgrade { openURL(upgrade.url) } else { open("billing", flow: nil, tier: nil) }
-          } label: {
-            HStack {
-              Text("Change Limit").foregroundStyle(Ink.primary)
-              Spacer()
-              if opening == "billing" { ProgressView() } else {
-                Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Ink.tertiary)
+          if apple || web {
+            Button {
+              if apple { choosePlan(summary.managePlan?.nextTier?.tier) } else if let upgrade = meters.upgrade { openURL(upgrade.url) } else { open("billing", flow: nil, tier: nil) }
+            } label: {
+              HStack {
+                Text("Change Limit").foregroundStyle(Ink.primary)
+                Spacer()
+                if opening == "billing" { ProgressView() } else {
+                  Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Ink.tertiary)
+                }
               }
+              .contentShape(.rect)
             }
-            .contentShape(.rect)
+            .disabled(opening != nil)
           }
-          .disabled(opening != nil)
-          if let upgrade = meters.upgrade, let line = meters.upgradeSupportingText {
+          if let upgrade = meters.upgrade, let line = meters.upgradeSupportingText, apple || web {
             VStack(alignment: .leading, spacing: 10) {
               Text(line).font(.system(size: 13)).foregroundStyle(Ink.secondary)
-              Button(upgrade.label) { openURL(upgrade.url) }
-                .buttonStyle(PillButtonStyle(primary: true))
+              Button(upgrade.label) {
+                if apple { choosePlan(summary.managePlan?.nextTier?.tier) } else { openURL(upgrade.url) }
+              }
+              .buttonStyle(PillButtonStyle(primary: true))
             }
             .padding(.vertical, 4)
           }
           if meters.canCancelTrial {
-            Button(cancelling ? "Canceling…" : "Cancel Trial", role: .destructive) { askingCancel = true }
-              .disabled(cancelling)
+            Button(cancelling ? "Canceling…" : "Cancel Trial", role: .destructive) {
+              // Apple's free week is cancelled in Apple's own sheet.
+              if summary.billedByApple { managingApple = true } else { askingCancel = true }
+            }
+            .disabled(cancelling)
             if let cancelFailure {
               Text(cancelFailure).font(.system(size: 13)).foregroundStyle(Ink.danger)
             }
@@ -458,21 +480,37 @@ struct UsagePage: View {
               if !line.isEmpty { Text(line).font(.system(size: 13)).foregroundStyle(Ink.secondary) }
             }
             .padding(.vertical, 2)
-            if let next = plan.nextTier {
-              Button { open("upgrade", flow: "update_confirm", tier: next.tier) } label: {
-                Text(opening == "upgrade" ? "Opening…" : "Upgrade to \(next.label)").foregroundStyle(Ink.link)
+            if summary.billedByApple {
+              if let next = plan.nextTier {
+                Button { choosePlan(next.tier) } label: {
+                  Text("Upgrade to \(next.label)").foregroundStyle(Ink.link)
+                }
+              }
+              Button { managingApple = true } label: {
+                HStack {
+                  Text("Manage Subscription").foregroundStyle(Ink.primary)
+                  Spacer()
+                  Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Ink.tertiary)
+                }
+                .contentShape(.rect)
+              }
+            } else if web {
+              if let next = plan.nextTier {
+                Button { open("upgrade", flow: "update_confirm", tier: next.tier) } label: {
+                  Text(opening == "upgrade" ? "Opening…" : "Upgrade to \(next.label)").foregroundStyle(Ink.link)
+                }
+                .disabled(opening != nil)
+              }
+              Button { open("billing", flow: nil, tier: nil) } label: {
+                HStack {
+                  Text(opening == "billing" ? "Opening…" : "Manage Billing").foregroundStyle(Ink.primary)
+                  Spacer()
+                  Image(systemName: "arrow.up.right").font(.system(size: 14, weight: .medium)).foregroundStyle(Ink.tertiary)
+                }
+                .contentShape(.rect)
               }
               .disabled(opening != nil)
             }
-            Button { open("billing", flow: nil, tier: nil) } label: {
-              HStack {
-                Text(opening == "billing" ? "Opening…" : "Manage Billing").foregroundStyle(Ink.primary)
-                Spacer()
-                Image(systemName: "arrow.up.right").font(.system(size: 14, weight: .medium)).foregroundStyle(Ink.tertiary)
-              }
-              .contentShape(.rect)
-            }
-            .disabled(opening != nil)
             if let failure {
               Text(failure).font(.system(size: 13)).foregroundStyle(Ink.danger)
             }
@@ -509,6 +547,20 @@ struct UsagePage: View {
     } message: {
       Text("This ends your Simeon trial now and removes your remaining trial credits. Your card won’t be charged either way — the trial never turns into a paid plan on its own.")
     }
+    .sheet(isPresented: $showsPlans, onDismiss: { Task { await store.refreshUsage() } }) {
+      PlansSheet(preselect: plansTier).presentationBackground(Ink.groupedGround)
+    }
+    // Apple's own subscription sheet: change, cancel, or end the free week.
+    .manageSubscriptionsSheet(isPresented: $managingApple)
+    .onChange(of: managingApple) { _, showing in
+      if !showing { Task { await store.refreshUsage() } }
+    }
+  }
+
+  /** The App Store's plans, on `tier` when one is asked for (an upgrade). */
+  private func choosePlan(_ tier: String?) {
+    plansTier = tier
+    showsPlans = true
   }
 
   /** Stripe's page for the plan above (`update_confirm`) or its front page; "Opening…" while it is asked for, the failure under the rows. */

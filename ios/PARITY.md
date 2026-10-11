@@ -979,6 +979,33 @@ picture's foot.
   butterfly's top sits off the buttons' top there, `ChatHeadline.barRow`
   moves it.
 
+## 34. Plans bought in the app (12 October 2026)
+
+Not in the Mac's window either: on the iPhone a plan is bought with Apple's
+in-app purchase (App Review Guideline 3.1.1), not on the web's checkout.
+
+- **Choose your plan** (`Simeon/PlansSheet.swift`): opened by the access
+  cover's button, and by Change Limit and Upgrade in Usage & Billing for a
+  person with no plan or an Apple one. Monthly or yearly, the three plans
+  with the App Store's price, "Start Free Week" while Apple offers it,
+  the price and renewal line, Restore Purchases, the Terms and the Privacy
+  Policy, and "Subscribe on the web" on the US storefront only.
+- **Buying** (`Simeon/Purchases.swift`): StoreKit 2, the account's id as
+  the purchase's `appAccountToken`, every signed transaction sent to the
+  server (`POST /desktop/api/billing/apple/transactions`), finished once
+  the server has it; renewals and Ask to Buy arrive through
+  `Transaction.updates` while signed in.
+- **An Apple plan in Usage & Billing**: Upgrade opens the plans sheet on
+  the plan above; Manage Subscription and Cancel Trial open Apple's own
+  subscription sheet. A plan bought on the web keeps its Stripe links in
+  the United States and shows none elsewhere.
+- **Delete Account** says that an Apple plan keeps charging until it is
+  cancelled with Apple, before and after (the Mac's too).
+- The words and the plan list are `SimeonCore` (`ApplePlans.swift`,
+  `PlansCopy`), tested on Linux. StoreKit itself has not been compiled or
+  run: the next build on the Mac and a sandbox purchase in TestFlight are
+  its check (docs/services-billing.md, section 9, for App Store Connect).
+
 ## Suggested order (the founder decides)
 
 1. The chat's look: the bubble, the top bar, markdown, brand names with logos, agent names with butterflies.

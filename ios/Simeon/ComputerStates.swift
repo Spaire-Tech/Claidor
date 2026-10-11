@@ -649,13 +649,16 @@ struct AccessCoverLayer: View {
  * sign-in's Apple button: black on light, white on dark) to Simeon Labs'
  * page. Read again when it shows and each time the app comes forward:
  * access fixed on the web lifts it, and the first run, which could not be
- * decided while the computer refused, is decided then.
+ * decided while the computer refused, is decided then. An account that
+ * needs a plan gets the App Store's plans in the app (12 October 2026,
+ * PlansSheet); a plan bought there lifts the cover at once.
  */
 struct AccessCover: View {
   @Environment(AppStore.self) private var store
   @Environment(SessionController.self) private var session
   @Environment(\.openURL) private var openURL
   @Environment(\.scenePhase) private var scenePhase
+  @State private var showsPlans = false
 
   var body: some View {
     let words = store.access.cover
@@ -688,7 +691,9 @@ struct AccessCover: View {
       .padding(.top, 32)
       Spacer(minLength: 24)
       if let action = words.action {
-        Button { openURL(SandAccess.page) } label: {
+        Button {
+          if store.access.state == .paymentRequired { showsPlans = true } else { openURL(SandAccess.page) }
+        } label: {
           Text(action)
             .font(.system(size: 17, weight: .semibold))
             .foregroundStyle(Ink.ground)
@@ -709,6 +714,9 @@ struct AccessCover: View {
     .task { await readAgain() }
     .onChange(of: scenePhase) { _, phase in
       if phase == .active { Task { await readAgain() } }
+    }
+    .sheet(isPresented: $showsPlans, onDismiss: { Task { await readAgain() } }) {
+      PlansSheet().presentationBackground(Ink.groupedGround)
     }
   }
 

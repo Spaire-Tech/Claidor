@@ -5,6 +5,8 @@ readme = "README.md"
 requires-python = ">=3.14.0"
 dependencies = [
   "anthropic>=0.40.0",
+  # Apple's own library: verifies the App Store's signed transactions and notifications (simeon.plans.app_store).
+  "app-store-server-library>=3.1.2",
   "fastapi>=0.120.2",
   "uvicorn[standard]>=0.31.1",
   "asyncpg>=0.29.0",

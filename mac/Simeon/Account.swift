@@ -62,7 +62,8 @@ enum AccountActions {
     let alert = NSAlert()
     alert.alertStyle = .critical
     alert.messageText = AccountMenu.deleteTitle
-    alert.informativeText = AccountMenu.deleteLine
+    // A plan bought in the iPhone app is Apple's: deleting the account does not cancel it.
+    alert.informativeText = session.billedByApple ? "\(AccountMenu.deleteLine)\n\n\(AccountMenu.deleteAppleLine)" : AccountMenu.deleteLine
     let delete = alert.addButton(withTitle: AccountMenu.deleteAccount)
     delete.hasDestructiveAction = true
     alert.addButton(withTitle: AccountMenu.signOutCancel).keyEquivalent = "\u{1b}"

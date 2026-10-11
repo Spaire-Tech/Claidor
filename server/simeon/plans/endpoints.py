@@ -13,7 +13,6 @@ from simeon.auth.dependencies import WebUserRead, WebUserWrite
 from simeon.desktop.allowance import billing_exempt, billing_required
 from simeon.entitlements.schemas import Entitlements
 from simeon.entitlements.tiers import PAID_TIERS, TIER_NAMES, TierKey, get_definition
-from simeon.models import DesktopSubscription
 from simeon.openapi import APITag
 from simeon.postgres import (
     AsyncReadSession,
@@ -24,6 +23,7 @@ from simeon.postgres import (
 from simeon.routing import APIRouter
 
 from . import catalog
+from .effective import PlanRow
 from .schemas import (
     CheckoutCreate,
     CheckoutCreated,
@@ -63,7 +63,7 @@ def plan_list() -> PlanList:
 
 
 def current_subscription(
-    row: DesktopSubscription | None,
+    row: PlanRow | None,
     stripe_customer_id: str | None,
     *,
     free: bool = False,
@@ -89,7 +89,8 @@ def current_subscription(
         if row is not None
         else False,
         stripe_customer_id=stripe_customer_id
-        or (row.stripe_customer_id if row is not None else None),
+        or getattr(row, "stripe_customer_id", None),
+        provider=row.provider if row is not None else None,  # type: ignore[arg-type]
         entitlements=Entitlements.from_dataclass(get_definition(tier)),
     )
 
@@ -110,7 +111,7 @@ async def get_subscription(
     session: AsyncReadSession = Depends(get_db_read_session),
 ) -> CurrentSubscription:
     user = auth_subject.subject
-    row = await plans_service.subscription_of(session, user)  # type: ignore[arg-type]
+    row = await plans_service.plan_of(session, user)  # type: ignore[arg-type]
     return current_subscription(
         row,
         user.stripe_customer_id,
