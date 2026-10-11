@@ -76,20 +76,25 @@ struct ViewerLayer: View {
  * it used the key.
  */
 struct ViewerKeys: NSViewRepresentable {
+  /** The computer's dialogs: their keys are theirs whatever else is open. */
+  var aboveLocks = false
   let handle: (NSEvent) -> Bool
 
   func makeNSView(context: Context) -> KeyView {
     let view = KeyView()
     view.handle = handle
+    view.aboveLocks = aboveLocks
     return view
   }
 
   func updateNSView(_ view: KeyView, context: Context) {
     view.handle = handle
+    view.aboveLocks = aboveLocks
   }
 
   final class KeyView: NSView {
     var handle: ((NSEvent) -> Bool)?
+    var aboveLocks = false
     nonisolated(unsafe) private var monitor: Any?
 
     override func viewDidMoveToWindow() {
@@ -99,8 +104,10 @@ struct ViewerKeys: NSViewRepresentable {
       guard window != nil else { return }
       monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
         let took = MainActor.assumeIsolated { () -> Bool in
-          // Under search (⌘K) or Settings, their keys are their own.
-          guard let self, event.window === self.window, let handle = self.handle, !SearchState.showing, !WindowOverlay.showing else { return false }
+          guard let self, event.window === self.window, let handle = self.handle else { return false }
+          if self.aboveLocks { return handle(event) }
+          // Under search (⌘K) or Settings, their keys are their own; under the computer or one of its dialogs, theirs (step 13).
+          guard !SearchState.showing, !WindowOverlay.showing, !WindowState.computerShowing, !ComputerDialog.showing else { return false }
           return handle(event)
         }
         return took ? nil : event

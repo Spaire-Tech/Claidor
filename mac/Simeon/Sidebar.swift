@@ -110,6 +110,25 @@ struct Sidebar: View {
         } else {
           SidebarHead()
         }
+        // The agents can't be read (step 13): the card while there are none to show, the line over a list already shown.
+        if store.rosterFailed {
+          if rail {
+            if store.agents.isEmpty {
+              // The window's rail shows the glyph alone; its words are its tooltip.
+              Image(systemName: "display")
+                .font(.system(size: 12))
+                .foregroundStyle(look.inkSecondary)
+                .frame(height: 36)
+                .help(store.accessBlocked ? "Your computer isn\u{2019}t set up" : "Can\u{2019}t reach your computer")
+            }
+          } else if store.agents.isEmpty {
+            RosterCard(look: look)
+              .padding(.horizontal, 12)
+              .padding(.top, 4)
+          } else {
+            RosterLine(look: look)
+          }
+        }
         AgentList(rail: rail)
         if rail {
           RailFoot()
@@ -127,6 +146,14 @@ struct Sidebar: View {
       ZStack {
         SidebarMaterial()
         look.sidebarPaint
+      }
+    }
+    // Read again every 4 seconds while they can't be (`TOn`; decision 7: the window's own retries come in bursts).
+    .task(id: store.rosterFailed) {
+      while store.rosterFailed && !Task.isCancelled {
+        try? await Task.sleep(nanoseconds: 4_000_000_000)
+        guard store.rosterFailed, !store.rosterRetrying, !Task.isCancelled else { continue }
+        await store.reloadRoster()
       }
     }
     .sheet(isPresented: $sidebar.showsHidden) {
@@ -154,13 +181,16 @@ private struct SidebarHead: View {
   }
 }
 
-/** The account's initials (32) and Connect apps beside them (`sand-agents-sidebar__footer`). */
+/** The account's initials (32) and Connect apps beside them (`sand-agents-sidebar__footer`); the computer's Update at the right (step 13). */
 private struct SidebarFoot: View {
+  @Environment(\.colorScheme) private var scheme
+
   var body: some View {
     HStack(spacing: 8) {
       AccountDisc()
       ConnectApps()
       Spacer(minLength: 0)
+      ComputerUpdatePill(look: Look(scheme))
     }
     .padding(.top, 2)
     .padding(.horizontal, 12)

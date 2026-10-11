@@ -76,6 +76,10 @@ final class MacSession {
 
   func start() async {
     guard phase == .starting else { return }
+    // The Mac shows the computer's rebuild (step 13): sending waits through it, the list holds still, Disk Saver is set to work;
+    // a list that can't be read is said in the sidebar, not in an alert.
+    store.followsRebuild = true
+    store.reportsRosterFailure = false
     followName()
     if vault.read() != nil { await enter() } else { phase = .signedOut(message: nil) }
   }

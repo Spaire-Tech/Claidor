@@ -48,6 +48,8 @@ struct Composer: View {
   @State private var handle = FieldHandle()
   /** Voice input (step 2e). */
   @State private var dictation = Dictation()
+  /** The access notice's height over the field (step 13). */
+  @State private var noticeHeight: CGFloat = 0
 
   /** Each chat's picks while its words wait (the window keeps them in the draft's document). */
   private static var keptChips: [String: (draft: String, chips: [ComposerChip])] = [:]
@@ -111,7 +113,7 @@ struct Composer: View {
         case .idle:
           if payload {
             MicButton(prominent: false, look: look) { dictation.start(store: store) }
-            SendButton(look: look, action: send)
+            SendButton(look: look, paused: store.isSendingPaused, action: send)
           } else {
             MicButton(prominent: true, look: look) { dictation.start(store: store) }
           }
@@ -133,6 +135,14 @@ struct Composer: View {
       width = value
       relayout(edited: false)
     }
+    // Whether this account may use Simeon (`Qvn`, step 13): 8 over the field and as wide; sending waits under it.
+    .overlay(alignment: .top) {
+      if let notice = store.access.notice {
+        AccessNotice(words: notice, look: look)
+          .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { noticeHeight = $0 }
+          .alignmentGuide(.top) { $0[.bottom] + 8 }
+      }
+    }
     .padding(.horizontal, 16)
     .padding(.bottom, 16)
     .background(alignment: .bottom) {
@@ -149,7 +159,8 @@ struct Composer: View {
       // The new chat's own field has no agent's skills to read.
       if agentId != NewChatState.draftKey { await picks.load(agentId, store: store) }
     }
-    .onChange(of: height, initial: true) { _, value in control.composerHeight = value }
+    // The messages end over the field and the access notice over it.
+    .onChange(of: height + (store.access.notice == nil ? 0 : noticeHeight + 8), initial: true) { _, value in control.composerHeight = value }
     .onChange(of: text) { _, next in
       store.setDraft(next, for: agentId)
       // The picks go with the words as they are now (both are set together as the field changes).
@@ -334,6 +345,7 @@ struct Composer: View {
   private func run(_ action: ComposerLists.Action) {
     switch action.id {
     case "org-chart", "view:org-chart": window.orgChart = true
+    case "computer-update": window.computerAsk = .update
     case "info:channels": pane.open(.channels, layout: layout)
     case "info:settings": pane.open(.profile, layout: layout)
     case "info:members": pane.open(.computer, layout: layout)
@@ -379,6 +391,9 @@ struct Composer: View {
   }
 
   private func send() {
+    // While the computer is rebuilt or this account has no Simeon, Send is off and Return keeps the words (decision 3; the window
+    // empties the field under the access notice and sends nothing).
+    guard !store.isSendingPaused else { return }
     let words = ComposerDocument.prompt(text)
     let files = control.staged.map { (name: $0.name, data: $0.data) }
     guard !words.isEmpty || !files.isEmpty else { return }
@@ -434,9 +449,10 @@ private struct AttachButton: View {
   }
 }
 
-/** Send (`sand-prompt-send`): 28, the window's blue, the white arrow. */
+/** Send (`sand-prompt-send`): 28, the window's blue, the white arrow; faded and off while sending waits (step 13). */
 private struct SendButton: View {
   let look: Look
+  var paused = false
   let action: () -> Void
 
   var body: some View {
@@ -449,6 +465,8 @@ private struct SendButton: View {
         .contentShape(Circle())
     }
     .buttonStyle(.plain)
+    .disabled(paused)
+    .opacity(paused ? 0.4 : 1)
     .help("Send message")
     .accessibilityLabel("Send message")
   }

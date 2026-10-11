@@ -39,6 +39,13 @@ struct ChatPane: View {
           ChatHeader(agent: agent, look: look)
         }
       }
+      // Low disk (step 13), 8 under the head, in the page's flow.
+      if !underToLine {
+        DiskBanner(look: look)
+          .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in control.bannerHeight = height > 0 ? height + 8 : 0 }
+          .padding(.horizontal, 16)
+          .padding(.top, (threadRoot == nil ? 116 : 44) + 8)
+      }
     }
     .overlay(alignment: .bottom) {
       Composer(agentId: agentId, name: agent?.name ?? "", threadRoot: threadRoot, look: look, takesKeys: !underToLine)
@@ -337,7 +344,7 @@ private struct Transcript: View {
         }
         .scrollTargetLayout()
         .padding(.horizontal, 16)
-        .padding(.top, threadRoot == nil ? 116 : 44)
+        .padding(.top, (threadRoot == nil ? 116 : 44) + (store.diskPressure == nil ? 0 : control.bannerHeight))
         // Over the message field: its frame and 28 (the working line's 40 is in the slot).
         .padding(.bottom, control.composerHeight + 28)
       }

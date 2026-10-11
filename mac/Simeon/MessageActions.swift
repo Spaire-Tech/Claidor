@@ -39,6 +39,8 @@ final class ChatControl {
   var focusCount = 0
   /** The message field's frame (44 on one line), so the last message clears it. */
   var composerHeight: CGFloat = 44
+  /** Low disk's banner under the head, with its 8 (step 13): the messages start under it. */
+  var bannerHeight: CGFloat = 0
 
   /** A sideways swipe (step 2f): how far the person's messages have moved, 0 to 82, and whether one is under way or springing back (`data-peeking`). */
   var peek: CGFloat = 0

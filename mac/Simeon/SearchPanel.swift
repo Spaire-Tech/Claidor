@@ -161,7 +161,7 @@ final class SearchState {
     let byId = Dictionary(store.agents.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
     let theme = UserDefaults.standard.string(forKey: MacTheme.key) ?? "system"
     let commands = Jump.commands(orgChart: orgChart && !store.agents.isEmpty, hiddenCount: hidden.count, current: store.agent(window.selected),
-                                 hasChannels: hasChannels, usage: store.usage.showsSection, theme: theme)
+                                 hasChannels: hasChannels, usage: store.usage.showsSection, theme: theme, computerUpdate: store.computerUpdateOffer != nil)
     let tabs = Jump.tabs(globalSearch: globalSearch)
     let tab = tabs.contains(self.tab) ? self.tab : .all
     let words = query.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -294,6 +294,9 @@ final class SearchState {
     switch id {
     case "view:org-chart", "org-chart":
       window?.orgChart = true
+    case "update:computer":
+      // Its question (step 13): "Update Simeon's Computer?", or "An agent is working".
+      window?.computerAsk = .update
     case "info:channels":
       if let pane, let layout { pane.open(.channels, layout: layout) }
     case "info:settings":

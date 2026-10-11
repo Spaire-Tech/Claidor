@@ -160,7 +160,9 @@ struct ShimmerText: View {
       .foregroundStyle(look.inkTertiary)
       .overlay {
         TimelineView(.animation) { timeline in
-          let phase = timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 2) / 2
+          // 2.2 s a sweep, eased in and out (`sand-shimmer-text`, measured).
+          let t = timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 2.2) / 2.2
+          let phase = t < 0.5 ? 4 * t * t * t : 1 - pow(-2 * t + 2, 3) / 2
           GeometryReader { box in
             // The window's gradient (base to 25%, light at 60%, base from 75%), twice the words' width, moved from right to left (`background-position` 200% to -200%).
             LinearGradient(stops: [

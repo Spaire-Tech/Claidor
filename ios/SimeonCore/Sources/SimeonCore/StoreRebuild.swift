@@ -51,6 +51,38 @@ extension AppStore {
     Task { rebuild.migrationReadBack(await backend.migrationStatus()) }
   }
 
+  // MARK: Updating
+
+  /** The agents at work now, by name (the busy confirmation's list). */
+  public var workingAgentNames: [String] { agents.filter(\.isRunning).map(\.name) }
+
+  /**
+   * "Update Simeon's Computer" in ⌘K, "/" and the sidebar (`UOn`): ready, or
+   * with agents at work; nil when it is not offered (no agent open, the
+   * computer known to be up to date, an update queued, a rebuild asked
+   * for or under way, the stream away, or refused for the session). An
+   * unknown answer offers it, as the window does.
+   */
+  public var computerUpdateOffer: RebuildWords.Availability? {
+    let selected = agent(computerSelection)
+    let baseline = selected != nil && selected?.isGroup == false
+    let availability = RebuildWords.availability(canUpdateBaseline: baseline, canUpdateBox: baseline && workingAgentNames.isEmpty,
+                                                 isBoxUpToDate: computer.status(computerSelection)?.raw["imageUpdateAvailable"]?.bool == false,
+                                                 isUpdateQueued: rebuild.isUpdateQueued)
+    guard rebuild.pendingKind == nil, !rebuild.lock.isLocked, !rebuild.isBlocked, availability == .ready || availability == .busyOverride else { return nil }
+    return availability
+  }
+
+  /** A newer computer is out for the open agent (`imageUpdateAvailable`): the sidebar's Update. */
+  public var computerUpdateAvailable: Bool { computer.status(computerSelection)?.raw["imageUpdateAvailable"]?.bool == true }
+
+  /** The steps of the rebuild under way, for its dialog and its pill (`J1t`). */
+  public func rebuildSteps(_ kind: RebuildLock.Kind) -> RebuildSteps {
+    let lock = rebuild.lock
+    return RebuildSteps.project(kind: kind, stage: lock.stage, status: rebuild.migration.phase(for: lock.operationId),
+                                phases: rebuild.migration.phases(for: lock.operationId), pullPercent: computer.status(rebuild.inputs.boxId)?.pullPercent)
+  }
+
   /** Sending waits while the computer is rebuilt (`isSendingPaused`), where the rebuild is shown (the Mac), and while this account has no Simeon (`gft`). */
   public var isSendingPaused: Bool { (followsRebuild && rebuild.isHardLocked) || access.pausesSending }
 

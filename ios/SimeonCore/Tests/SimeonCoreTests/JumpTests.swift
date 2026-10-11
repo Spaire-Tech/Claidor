@@ -56,6 +56,14 @@ final class JumpTests: XCTestCase {
     XCTAssertEqual(stale.map(\.id), ["message:theo:t1"])
   }
 
+  func testUpdateSimeonsComputerComesLast() {
+    let offered = Jump.commands(orgChart: false, hiddenCount: 0, current: simeon, hasChannels: false, theme: "system", computerUpdate: true)
+    XCTAssertEqual(offered.last?.id, "update:computer")
+    XCTAssertEqual(offered.last?.label, "Update Simeon's Computer")
+    XCTAssertEqual(offered.last?.detail, "Updates")
+    XCTAssertFalse(Jump.commands(orgChart: false, hiddenCount: 0, current: simeon, hasChannels: false, theme: "system").contains { $0.id == "update:computer" })
+  }
+
   func testCommandsInTheWindowsOrder() {
     let ids = Jump.commands(orgChart: true, hiddenCount: 1, current: squad, hasChannels: true, theme: "dark").map(\.id)
     XCTAssertEqual(ids, ["view:org-chart", "open-hidden-chats", "info:members", "info:channels", "info:settings", "settings:general", "settings:usage", "overlay:plugins", "theme:system", "theme:light", "theme:dark"])

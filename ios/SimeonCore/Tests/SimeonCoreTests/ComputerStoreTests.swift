@@ -322,6 +322,31 @@ final class ComputerWireTests: XCTestCase {
     XCTAssertEqual(store.computerHelpers("a").map(\.title), ["Browse"])
   }
 
+  /** "Update Simeon's Computer" is offered for an open agent until its computer is known up to date, and not while queued (`UOn`). */
+  @MainActor
+  func testUpdateOfferFollowsTheWindow() async {
+    let store = AppStore()
+    await store.attach(DemoBackend(seed: DemoData.seed(), pace: 0.01, call: nil))
+    XCTAssertNil(store.computerUpdateOffer, "no agent open")
+    guard let agent = store.agents.first(where: { !$0.isGroup }) else { return XCTFail("the demo has agents") }
+    store.windowSelection = agent.id
+    XCTAssertNotNil(store.computerUpdateOffer, "unknown: offered, as the window does")
+    XCTAssertFalse(store.computerUpdateAvailable)
+    store.computer.ingest(BoxStatus(json: ["agentId": .string(agent.id), "state": "running", "imageUpdateAvailable": false])!)
+    XCTAssertNil(store.computerUpdateOffer, "known up to date")
+    store.computer.ingest(BoxStatus(json: ["agentId": .string(agent.id), "state": "running", "imageUpdateAvailable": true])!)
+    XCTAssertNotNil(store.computerUpdateOffer)
+    XCTAssertTrue(store.computerUpdateAvailable)
+    if let group = store.agents.first(where: \.isGroup) {
+      store.windowSelection = group.id
+      XCTAssertNil(store.computerUpdateOffer, "not for a group")
+      store.windowSelection = agent.id
+    }
+    store.rebuild.queueUpdateWhenIdle()
+    XCTAssertNil(store.computerUpdateOffer, "queued or under way")
+    store.detach()
+  }
+
   /** The card waits while the status carries its request or while it is unresolved (step 13, decision 3); settled, what happened. */
   func testHandoffCard() {
     let asking = BoxStatus(json: ["agentId": "a", "state": "running", "handoff": ["requestId": "r1", "instruction": "Sign in to Gmail", "snapshotDataUrl": "data:image/webp;base64,AAAA"]])

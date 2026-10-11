@@ -148,9 +148,9 @@ public enum Jump {
    * (with any hidden); for an open chat, Members (a group of the person's),
    * Channels (when the chat can have some) and Chat Settings; Settings:
    * General and Usage & Billing; Plugins; the three themes, the one in use
-   * ticked.
+   * ticked; Update Simeon's Computer while it is offered (`HOn`), last.
    */
-  public static func commands(orgChart: Bool, hiddenCount: Int, current: Agent?, hasChannels: Bool, usage: Bool = true, theme: String) -> [Command] {
+  public static func commands(orgChart: Bool, hiddenCount: Int, current: Agent?, hasChannels: Bool, usage: Bool = true, theme: String, computerUpdate: Bool = false) -> [Command] {
     var list: [Command] = []
     if orgChart {
       list.append(Command(id: "view:org-chart", label: "Org Chart", icon: "organization-filled", keywords: ["open", "organization", "network", "graph"], detail: "Views"))
@@ -181,6 +181,10 @@ public enum Jump {
     ]
     for (id, label, icon, keywords) in themes {
       list.append(Command(id: "theme:\(id)", label: label, icon: icon, keywords: keywords, detail: "Settings · Appearance", isActive: id == theme))
+    }
+    if computerUpdate {
+      list.append(Command(id: "update:computer", label: "Update Simeon's Computer", icon: "device-desktop",
+                          keywords: ["box", "image", "machine", "recreate", "latest", "shared"], detail: "Updates"))
     }
     return list
   }

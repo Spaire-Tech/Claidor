@@ -66,6 +66,9 @@ final class WindowState {
   /** The computer is over the window: the window's own keys go to its screen. */
   static var computerShowing = false
 
+  /** A computer question asked (⌘K or "/" Update, the sidebar's or "Couldn't Reach"'s Recover): its dialog shows when no other does. */
+  var computerAsk: ComputerAsk?
+
   /** Opening it starts the computer (`ensureForeverBox`); nothing behind keeps the keys. */
   func openComputer(_ agentId: String, helper: String?, store: AppStore) {
     store.openComputer(agentId)
@@ -122,10 +125,15 @@ final class WindowState {
 /** The app's one window: the sign-in until the person is signed in and their computer reached, a new account's first run, then the sidebar and the chat. */
 struct AppRoot: View {
   @Environment(MacSession.self) private var session
+  @Environment(AppStore.self) private var store
 
   var body: some View {
+    // Refused before the computer was ever reached, and no Simeon on this account (`mzn`): the access cover.
+    let covered = store.accessBlocked && !store.hasReachedBox && store.access.state != .granted
     Group {
       switch session.phase {
+      case .signedIn where covered, .firstRun where covered:
+        AccessCover(access: store.access)
       case .signedIn:
         MainWindow()
       case .firstRun:
@@ -224,6 +232,19 @@ struct MainWindow: View {
     .overlay { PluginsLayer() }
     // Search (⌘K), over everything.
     .overlay { SearchLayer() }
+    // The computer's dialogs (step 13), one at a time, over everything; its pills at the top over them.
+    .overlay { ComputerDialogLayer() }
+    .overlay { ComputerPills() }
+    // The agents being read with none to show yet (Reload, ⌘R): "Setting up Simeon's computer" over the window (`Yzn`).
+    .overlay {
+      if store.isLoading && store.agents.isEmpty && !store.rosterFailed {
+        ZStack {
+          look.ground
+          SettingUp(look: look)
+        }
+        .ignoresSafeArea()
+      }
+    }
     // The usage is read once signed in: Settings lists Usage & Billing, and ⌘K and "/" offer it, only once it is in.
     .task { await store.loadUsage() }
     // Settings opening shuts what floats over the pane (a routine's trigger popover, the avatar editor), as a click outside them would.
@@ -254,6 +275,7 @@ struct MainWindow: View {
       // The next sign-in opens on a chat, not the chart nor a computer.
       window.orgChart = false
       window.computer = nil
+      window.computerAsk = nil
       if let watching { store.unwatchComputer(watching) }
       watching = nil
     }
@@ -267,6 +289,8 @@ struct MainWindow: View {
     // The window coming forward: a computer started here is started again, and what is watched read again (at most once a minute).
     .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
       store.windowCameForward(rebuilding: store.rebuild.isHardLocked)
+      // Whether this account may use Simeon, read again each time (not while the computer is rebuilt).
+      if !store.rebuild.isHardLocked { Task { await store.refreshAccess() } }
     }
     // Another agent opened from the sidebar or search closes the new chat (its own single agent is its preview).
     .onChange(of: window.selected) { _, selected in
@@ -388,6 +412,8 @@ private struct KeyWatcher: NSViewRepresentable {
     private func key(_ event: NSEvent) -> Bool {
       // About over the window (step 10): its Escape is its own (`AboutKeys`), and the window's keys wait.
       if AccountState.aboutShowing { return false }
+      // A computer dialog over the window (step 13): its keys are its own (`ComputerDialogLayer`).
+      if ComputerDialog.showing { return false }
       // Caps Lock aside.
       let mods = event.modifierFlags.intersection([.command, .shift, .option, .control])
       // The computer over the window (step 13): every key is its screen's (Escape, ⌘K, ⌘N and ⌘, too, as once the window's
