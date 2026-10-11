@@ -52,10 +52,30 @@ struct HomeView: View {
   /** Org Chart where it may be opened: the network on and an agent to show (the Mac's ⌘K and "/"). */
   private var openOrgChart: (() -> Void)? {
     guard orgChartOn && store.hasAgents else { return nil }
-    return { searchFocused = false; showsOrgChart = true }
+    return { letGoOfSearch(); showsOrgChart = true }
   }
-  /** The search field has the focus: the list gives way to search (SearchResults) until it is left empty. */
+  /** The search field has the focus. */
   @FocusState private var searchFocused: Bool
+  /**
+   * Search is open (SearchResults over the list): from the field's first focus until it is closed (×, the swipe down,
+   * a result opened with nothing typed). Not the focus itself: scrolling the results puts the keyboard away, and with
+   * nothing typed that closed search under the finger.
+   */
+  @State private var searching = false
+  private var inSearch: Bool { searching || !query.isEmpty }
+
+  /** Search closed: the words cleared, the keyboard away. */
+  private func closeSearch() {
+    query = ""
+    searchFocused = false
+    searching = false
+  }
+
+  /** A result opened: the keyboard away; search stays for coming back to only with words in it. */
+  private func letGoOfSearch() {
+    searchFocused = false
+    if query.isEmpty { searching = false }
+  }
 
   /** The filter menu's choice, as Messages': every chat, or only the unread ones. */
   enum ListFilter { case all, unread }
@@ -64,39 +84,46 @@ struct HomeView: View {
   // sheets, the chat pushed over the list). The rows read it (AgentList), and only while they are on screen.
   var body: some View {
     NavigationStack(path: $path) {
-      AgentList(query: query, filter: filter, covered: !path.isEmpty, open: open, menu: menu, deleting: $deleting, showsHidden: $showsHidden, sections: listSections, selecting: selecting, picked: $picked,
+      // Search covers the list and finds on its own (SearchResults): the list holds its rows meanwhile. It was given the
+      // words too and filtered and laid out every row again on each letter, under the results, animated (the founder,
+      // 11 October 2026: "whenever i click search for the first time, it bugs. lags").
+      AgentList(query: "", filter: filter, covered: !path.isEmpty || inSearch, open: open, menu: menu, deleting: $deleting, showsHidden: $showsHidden, sections: listSections, selecting: selecting, picked: $picked,
                 recover: { ComputerAsks.shared.ask = .recover(fromSidebar: true) })
       // At the bottom, as Messages has them: the search field, and new chat at the right. Our own bar: the system's
       // search in the bottom toolbar was set up again on every redraw of the list ("Ignoring searchBarPlacement…").
       // Search, with all the Mac's search has, over the list while the field is in use.
       .overlay {
-        if searchFocused || !query.isEmpty {
-          SearchResults(
-            query: query,
-            openChat: { id in searchFocused = false; open(id) },
-            openEntry: { agentId, entryId in
-              searchFocused = false
-              store.revealing[agentId] = entryId
-              open(agentId)
-            },
-            openRoutine: { hit in searchFocused = false; profile = AgentRef(id: hit.agentId, routineId: hit.routine.id) },
-            openSheet: { next in searchFocused = false; sheet = next },
-            showHidden: { searchFocused = false; showsHidden = true },
-            updateComputer: { searchFocused = false; ComputerAsks.shared.ask = .update },
-            openOrgChart: openOrgChart,
-            close: { query = ""; searchFocused = false }
-          )
-          .transition(.opacity)
+        ZStack {
+          if inSearch {
+            SearchResults(
+              query: query,
+              openChat: { id in letGoOfSearch(); open(id) },
+              openEntry: { agentId, entryId in
+                letGoOfSearch()
+                store.revealing[agentId] = entryId
+                open(agentId)
+              },
+              openRoutine: { hit in letGoOfSearch(); profile = AgentRef(id: hit.agentId, routineId: hit.routine.id) },
+              openSheet: { next in letGoOfSearch(); sheet = next },
+              showHidden: { letGoOfSearch(); showsHidden = true },
+              updateComputer: { letGoOfSearch(); ComputerAsks.shared.ask = .update },
+              openOrgChart: openOrgChart,
+              close: closeSearch
+            )
+            .transition(.opacity)
+          }
         }
+        // The fade of the results only; on the whole screen it animated the list's layout under them too.
+        .animation(.easeOut(duration: 0.2), value: inSearch)
       }
-      .animation(.easeOut(duration: 0.2), value: searchFocused || !query.isEmpty)
+      .onChange(of: searchFocused) { _, focused in if focused { searching = true } }
       .safeAreaBar(edge: .bottom, spacing: 0) {
         if selecting {
           SelectionBar(picked: picked, sections: listSections, delete: {
             deletingPicked = picked.compactMap { store.agent($0) }
           }, done: endSelecting)
         } else {
-          ListBottomBar(query: $query, focus: $searchFocused, newAgent: { sheet = .newAgent }, newGroup: { sheet = .newGroup })
+          ListBottomBar(query: $query, focus: $searchFocused, searching: inSearch, close: closeSearch, newAgent: { sheet = .newAgent }, newGroup: { sheet = .newGroup })
         }
       }
       .inlineBarTitle()
@@ -123,8 +150,7 @@ struct HomeView: View {
             Button("Done", action: endSelecting).fontWeight(.semibold)
           } else {
             ListFilterMenu(filter: $filter, showsHidden: $showsHidden, openOrgChart: openOrgChart, select: {
-              searchFocused = false
-              query = ""
+              closeSearch()
               withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) { selecting = true }
             })
           }
@@ -549,6 +575,9 @@ private struct ListFilterMenu: View {
 struct ListBottomBar: View {
   @Binding var query: String
   var focus: FocusState<Bool>.Binding
+  /** Search is open: × in the place of new chat. */
+  let searching: Bool
+  let close: () -> Void
   let newAgent: () -> Void
   let newGroup: () -> Void
   @State private var dictation = Dictation()
@@ -584,9 +613,9 @@ struct ListBottomBar: View {
       .background { Color.clear.contentShape(.capsule).onTapGesture { focus.wrappedValue = true } }
       // Glass, not interactive glass: the field and its buttons take the touches (GlassDisc).
       .glassEffect(.regular, in: .capsule)
-      if focus.wrappedValue || !query.isEmpty {
+      if searching {
         // Searching: leave it, as Messages' close does.
-        Button { query = ""; focus.wrappedValue = false } label: {
+        Button(action: close) {
           Image(systemName: "xmark").font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.primary)
             .frame(width: 48, height: 48)
         }
@@ -975,6 +1004,41 @@ extension View {
 // MARK: - Search
 
 /**
+ * A swipe down on the results closes search (the founder, 11 October 2026:
+ * "can a swipe down close the search bar?"; again that evening: it did
+ * not). Read from the results' own scrolling: pulled down past their top by
+ * more than 60 points and let go, search closes; the results fade as they
+ * are pulled. A drag gesture beside the list was what did it before, and
+ * iOS cancels such a gesture as soon as the list starts scrolling, so
+ * letting go never reached it.
+ */
+private struct PullDownToClose: ViewModifier {
+  let close: (() -> Void)?
+  /** How far past the top the results are pulled now, in points (0 at rest and while scrolling within them). */
+  @State private var pulled: CGFloat = 0
+  static let distance: CGFloat = 60
+
+  func body(content: Content) -> some View {
+    content
+      // Pulled even when the results are shorter than the screen.
+      .scrollBounceBehavior(.always, axes: .vertical)
+      .onScrollGeometryChange(for: CGFloat.self) { geometry in
+        max(0, -(geometry.contentOffset.y + geometry.contentInsets.top)).rounded()
+      } action: { _, now in
+        pulled = now
+      }
+      .onScrollPhaseChange { old, new, context in
+        // Let go: the finger was dragging, and no longer is.
+        guard let close, old == .interacting, new != .interacting else { return }
+        let geometry = context.geometry
+        let past = max(pulled, -(geometry.contentOffset.y + geometry.contentInsets.top))
+        if past > Self.distance { close() }
+      }
+      .opacity(1 - Double(min(pulled, 200)) / 400)
+  }
+}
+
+/**
  * Search, with everything the Mac's search has (its palette, `QFn`), drawn
  * as Messages draws its own: tabs along the top (All, Messages, Agents,
  * Groups, Files, Links, Routines, Actions, the Mac's order), then results
@@ -1018,12 +1082,6 @@ struct SearchResults: View {
   @State private var routines: [RoutineHit] = []
   @State private var loading = false
   @State private var failed = false
-  /** The results are scrolled to their top (or do not scroll): a swipe down there closes search. */
-  @State private var atTop = true
-  /** How far the swipe down has pulled the results, which follow the finger as a swipe back does. */
-  @State private var pull: CGFloat = 0
-  /** Whether the swipe began at the top: one that scrolled the results back up first does not close them. */
-  @State private var pullStartedAtTop: Bool?
 
   private var words: String { query.trimmingCharacters(in: .whitespacesAndNewlines) }
 
@@ -1052,26 +1110,6 @@ struct SearchResults: View {
       results
     }
     .background(Ink.listGround)
-    // A swipe down from the top closes search, the results following the finger and fading (the founder, 11 October 2026:
-    // "can a swipe down close the search bar? the same way a swipe left take us back?"). Past 90 points, or flicked,
-    // it closes; short of that they spring back. Sideways drags (the tabs) are left alone.
-    .offset(y: pull)
-    .opacity(1 - Double(min(pull, 320)) / 640)
-    .simultaneousGesture(
-      DragGesture(minimumDistance: 12)
-        .onChanged { value in
-          if pullStartedAtTop == nil { pullStartedAtTop = atTop }
-          guard close != nil, pullStartedAtTop == true, value.translation.height > 0,
-                abs(value.translation.width) < value.translation.height else { return }
-          pull = value.translation.height
-        }
-        .onEnded { value in
-          let closes = pullStartedAtTop == true && (pull > 90 || (pull > 24 && value.predictedEndTranslation.height > 260))
-          pullStartedAtTop = nil
-          if closes { close?() }
-          withAnimation(.spring(response: 0.3, dampingFraction: 0.9)) { pull = 0 }
-        }
-    )
     .task {
       indexed = await store.globalSearchEnabled()
       if indexed { routines = await store.allRoutines() }
@@ -1163,16 +1201,26 @@ struct SearchResults: View {
     let nothing = agents.isEmpty && groups.isEmpty && messageRows.isEmpty && fileRows.isEmpty && linkRows.isEmpty && routineRows.isEmpty && actionRows.isEmpty
     let waiting = loading && ((tab == .messages && !words.isEmpty) || tab == .files) && messageRows.isEmpty && fileRows.isEmpty
 
-    if waiting {
-      ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
-    } else if failed && nothing && (tab == .messages || tab == .files) {
-      ContentUnavailableView("Search unavailable", systemImage: "magnifyingglass", description: Text("Try again in a moment."))
-    } else if nothing {
-      if !words.isEmpty {
-        ContentUnavailableView.search(text: words)
-      } else {
-        ContentUnavailableView(tab.empty.text, systemImage: tab == .messages ? "magnifyingglass" : "person.2", description: tab.empty.hint.map { Text($0) })
+    if waiting || (failed && nothing && (tab == .messages || tab == .files)) || nothing {
+      // In a scroll view of their own, so they pull down to close as the results do.
+      ScrollView {
+        Group {
+          if waiting {
+            ProgressView()
+          } else if failed && nothing && (tab == .messages || tab == .files) {
+            ContentUnavailableView("Search unavailable", systemImage: "magnifyingglass", description: Text("Try again in a moment."))
+          } else if !words.isEmpty {
+            ContentUnavailableView.search(text: words)
+          } else {
+            ContentUnavailableView(tab.empty.text, systemImage: tab == .messages ? "magnifyingglass" : "person.2", description: tab.empty.hint.map { Text($0) })
+          }
+        }
+        .containerRelativeFrame([.horizontal, .vertical])
       }
+      .modifier(PullDownToClose(close: close))
+      #if os(iOS)
+      .scrollDismissesKeyboard(.immediately)
+      #endif
     } else {
       List {
         section(.agents, agents, limit: words.isEmpty ? 6 : 4) { found in chatRow(found) }
@@ -1185,9 +1233,7 @@ struct SearchResults: View {
       }
       .listStyle(.plain)
       .scrollContentBackground(.hidden)
-      .onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y + $0.contentInsets.top <= 1 } action: { _, top in atTop = top }
-      // In its place a line or the spinner, which do not scroll: the top again.
-      .onDisappear { atTop = true }
+      .modifier(PullDownToClose(close: close))
       #if os(iOS)
       .scrollDismissesKeyboard(.immediately)
       #endif
