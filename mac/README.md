@@ -48,7 +48,17 @@ code.
     Simeon's computer".
   - `MainWindow.swift`: the window's two sides and its own keys.
   - `Sidebar.swift`: the agents' sidebar, its rows, its rail and width.
-  - `Butterflies.swift`: every agent's butterfly and a group's.
+  - `Butterflies.swift`: every agent's butterfly or own picture, and a
+    group's.
+  - `MacServices.swift`: what the Electron app's main process does around
+    the window (step 14): notifications, the Dock's number, telling the
+    computer the window is in front, links into the app, the menus' last
+    touches, Move to Applications.
+  - `MacLocalHands.swift`: the agent's hands on this Mac, serving the
+    computer's requests to run commands and read files while Simeon is
+    open and signed in (`~/.simeon/local-exec-daemon.log`).
+  - `MacLocalPermission.swift`: "Execution on Local Computer" per account,
+    and the Allow card over the message field.
   - `WindowChrome.swift`: the window's frame and the sidebar's material.
   - `Look.swift`: the Electron window's colours, light and dark.
   - `Fonts/`: Suravaram, the sign-in wordmark's face (SIL Open Font
@@ -74,6 +84,9 @@ code.
   the website's Download button (`/desktop/download/mac`) serves its DMG.
   People move by downloading the new app once: every packaged Electron
   build has its updater switched off (`SAND_DISABLE_UPDATES=1`).
+- **Move to Applications** asks only in a release build whose Info.plist
+  has `SimeonAskToMoveToApplications` set to true: set it at the switch,
+  not before, or the move would put this app in the Electron app's place.
 - Pins, sidebar sections, onboarding, secrets and the agents live in the
   cloud computer, so they carry over. The person signs in once more.
 

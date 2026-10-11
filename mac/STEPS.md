@@ -1189,7 +1189,7 @@ picker) and measured (I04). Pushed:
 - An agent's picture shows on the pane's avatar only; the sidebar's rows,
   the chat's head and the rest still draw its butterfly. The window draws
   the picture everywhere: that comes when those screens are checked against
-  an agent with a picture (step 14's pass).
+  an agent with a picture (step 14's pass). **Done in step 14.**
 - "Voices aren’t available right now." when the voices fail to load: the
   core cannot tell a failure from calls being off, so the picker is hidden
   in both cases. A sample plays from the network (the window downloads it
@@ -1353,7 +1353,7 @@ and search and "/" use that one rule (they disagreed before).
 
 - A member with a picture of its own shows its butterfly in the list and
   in Add Member's menu, as the sidebar does (pictures everywhere come with
-  step 14's pass, as noted in 7b).
+  step 14's pass, as noted in 7b). **Done in step 14.**
 - To check on a Mac: the remove alert growing to show its failure line
   once it is already open.
 
@@ -1422,7 +1422,8 @@ loading to over the limit (J01–J07). Pushed:
   for the computer; that comes with the Mac's own parts (step 14). Until
   then the switch keeps the choice on this Mac and does not tell the
   computer, so it cannot turn keys off for the Electron app on the same
-  computer.
+  computer. **Step 14 tells the computer the switch**; answering a key's
+  request from this Mac is still not in (step 14, decision 19).
 - The account card's "Signing in" and "Not signed in" states: Settings is
   only reachable signed in here.
 - Keyboard: nothing in Settings takes the keys when it opens, and Tab
@@ -2152,3 +2153,190 @@ build (the iPhone's screen view included), and these faults, fixed:
   question asked before it.
 - Low disk shows on the new chat's screen too, under the To: line, as the
   window has it.
+
+## Step 14: the Mac's own parts, the agent's hands on this Mac
+
+Read from the Electron app's main process (menus, window, notifications,
+the Dock, Move to Applications, zoom, links, panels, the local-exec daemon
+and its gate) and measured in the reference window, light and dark: the
+Deep Links dialog, a message link, the right-click menus the page takes,
+the Allow card at five sizes with every button's states, its tooltips and
+keys, each answer's calls in order, the ceiling's states, the outcome
+lines; and every place the window draws an agent, with pictures given
+to two agents and a group (17 places, light and dark, a picture that
+cannot be read, a group's own picture). Pushed in three parts:
+
+- **Notifications**: "Iris needs you" with the Mac's sound, a finished
+  turn without one, by the same rules as the Electron app (what the
+  window in front already shows is not said again). Asked for once signed
+  in. A click brings Simeon forward, makes the window again if it was
+  closed, and opens that agent; Settings stays as it is. Another account,
+  or signing out, takes this run's notifications back.
+- **The Dock's number**: unread messages, hidden agents aside; none at 0.
+- **The window in front**: the computer is told whether the window is in
+  front, and the open chat counts as read only while it is, so the Dock,
+  the sidebar's dots and the notifications agree.
+- **What connecting sets**: the computer's own notifications off (the Mac
+  says them), this Mac's time zone, the local setting squared with the
+  computer's, the security key's switch.
+- **Links into the app** (`simeon-mac://app/v1/…`): the window forward;
+  the same link twice within 2 seconds once; `info?topic=deep-links`
+  shows the Deep Links dialog (signed out too; Done, × and Escape close
+  it); a plugin's link opens Plugins on it, after the sign-in when it came
+  before.
+- **Links in messages** open only for http, https, mailto, obsidian and
+  tel; any other kind does nothing.
+- **Right-click on a chat picture**: Copy image, Save image… and, for a
+  picture from the web, Copy image address.
+- **Downloads**: the save panel as a sheet on the window, the name by the
+  Electron app's rule, the file checked first; "Couldn't save this file"
+  when it fails, and nothing half-written left behind. The avatar
+  editor's Browse is a sheet too.
+- **Zoom**: ⌘= (or ⌘+), ⌘- and ⌘0, 50 to 300 percent in steps of 10, the
+  whole window laid out at its size divided by the zoom, as Chromium's.
+- **Menus**: File has Close Window ⌘W only (no Save or Print); no Help
+  menu; no window tabs.
+- **Move to Applications** at launch, in the Electron app's words, only in
+  a release build marked for it (see decision 9).
+- **The agent's hands on this Mac**: while Simeon is open and signed in,
+  the computer's requests to run a command in the person's zsh or to read,
+  list, upload or download a file are served here, each checked first
+  against the places that hold keys, then against the setting (Never,
+  Always allow, or what was allowed once). Written to
+  `~/.simeon/local-exec-daemon.log` as the Electron daemon writes. Stopped
+  at sign-out and at quit.
+- **The Allow card** over the message field of the agent's chat (under
+  the access notice when both show), as wide, 8 above it, the messages
+  ending over it: "Allow Simeon and all agents to run commands on your
+  local computer?", its line, Always allow, Allow once, Never, and the ×
+  (Deny once, also Escape). An answer greys the buttons until the
+  computer settles the ask; one that fails says so in red and can be
+  tried again; the message field takes the keys back after. Always allow
+  waits for the team's policy and is off below it, its reason as the
+  tooltip. The agent's working line hides while the card waits.
+- **Execution on Local Computer** is kept per account (another account
+  starts from "Ask every time"; signing out forgets it), its team's
+  ceiling read at sign-in, and a message sent lets go of the Allow once
+  answers.
+- **Use hardware security keys** (Settings › General) is told to the
+  computer, the switch greyed until it has it.
+- **Agents' own pictures** wherever the window draws an agent: the
+  sidebar, pins and rail, the chat's head, author runs, the exchange
+  chip, its list and head, ⌘K, "@", the new chat, members and Add Member,
+  Hidden Agents, the org chart, call lines and the call banner. Round,
+  filling the circle, a half-point edge at 10 % of the ink, never moving.
+  A group with its own picture shows it too, with a grey "Group chat"
+  badge at its corner in the sidebar; a member with a picture is its
+  round picture in a group's avatar. None in notifications, the first
+  run or the brand's butterfly, as in the window.
+- **Group avatars of 20 points or less**, and a group's chat head, are
+  its members in a row (the head 52 each), as the window draws them; past
+  four, three and "+N". The exchange chip cuts a gap round each mark.
+- **The corner dot** (working, unread) cuts its room out of the avatar
+  under it, 2 points round it, as the window does.
+- **A pictured agent at work** shows the window's grey three dots in the
+  working line, in place of the butterfly.
+
+#### Not in step 14
+
+- Answering a website's request for a security key from this Mac (the
+  Electron app runs the upstream signer and a "Security key request"
+  window): decision 7. With the switch on, the computer says this Mac
+  cannot be reached.
+- The window's error screen (P01): decision 5.
+- The app updating itself: decision 11.
+- A link's own right-click menu (Open link, Copy link address): links are
+  runs in the message's text, and the Mac's text gives no menu per run
+  yet. The picture menu is in.
+- A group's working line with a pictured member's small dots: the group
+  line itself is not built yet (step 2f).
+- The answered card's line is the chat's centred line, wrapping on a
+  narrow window (the window keeps it to one line with its words as the
+  tooltip).
+
+#### Decisions to confirm
+
+The Mac's own parts:
+
+1. A notification clicked with the window closed opens the window on
+   that agent. (The Electron app shows nothing.)
+2. A notification for an agent that is gone only brings the window
+   forward. (The Electron app opens an empty chat.)
+3. The open chat counts as read only while the window is in front, as in
+   the Electron app.
+4. Zoom is copied and not remembered across launches (the Electron app
+   most likely does not remember it either).
+5. No error screen: the Mac's views do not fail the way a web page does.
+   Its words are kept for later.
+6. The picture menu is copied; the message field keeps Apple's own text
+   menu (spelling, look up, services).
+7. Message links open only for the five kinds the Electron app allows.
+8. The Deep Links dialog shows this app's real scheme (the window prints
+   its older one).
+9. Move to Applications asks at every launch with no "don't ask again",
+   as the Electron app, but only once this app is the Simeon people
+   install: until then both are "Simeon.app" and a move would put this one
+   in the Electron app's place.
+10. A plugin's link that comes before the sign-in opens Plugins after it.
+11. Updates: none yet. Sparkle, or the release script only?
+12. No Help menu; Apple's own Edit items (Find, Spelling, Substitutions)
+    are kept.
+
+The hands:
+
+13. The card shows one fixed sentence, as the Electron app; it does not
+    say which command or file.
+14. Escape while typing in the message field keeps its own meaning. (The
+    Electron app denies the ask from the field.)
+15. The hands run only while Simeon runs. (The Electron daemon keeps
+    serving for up to 12 hours after quit.) With Simeon closed, the
+    computer says this Mac isn't connected.
+16. The setting is kept in this app's own settings, not the Electron
+    app's `settings.json`; the "Allow once" file is shared. With both apps
+    on one Mac they can disagree until the switch.
+17. A request that touches keys is refused after the person was asked,
+    as in the Electron app (only the computer could skip the card).
+18. Always allow is black on white (white on black in dark), as drawn.
+19. The security key: only the switch is copied for now.
+20. No words of Simeon's own for macOS's folder prompts (Documents,
+    Desktop, Downloads), as the Electron app.
+21. The × shows a ring with the keys (the window's has none).
+
+Pictures:
+
+22. The pane's avatar shows the whole picture in its 96-point disc. (The
+    window clips it to a 64-point circle inside the disc, a slip of its
+    own patch.)
+23. A picture that cannot be read shows the butterfly. (The window shows
+    an empty circle with the browser's broken-picture glyph.)
+24. A group's chat head, and every group avatar of 20 points or less, is
+    its members in a row, as in the window (the Mac drew the pyramid).
+25. The picture's edge is half a point (the window draws one pixel on a
+    screen that is not Retina).
+26. A pictured agent at work shows the grey three dots, as in the window.
+27. The corner dot's cut, for pictures and butterflies alike, as in the
+    window.
+28. The exchange chip's gap round each mark, as in the window.
+29. Notifications carry no picture, as in the window.
+
+#### Where the native parts look different
+
+Notifications, the save panels, the move question and its failure are
+macOS's own; the tooltips wait as macOS's do (the window's show at once);
+the Allow card's triangle is the SF Symbol `exclamationmark.triangle`.
+The "Group chat" badge's glyph is the SF Symbol `person.2.fill`; the "+N"
+disc's dark colours are the Mac's (the window's were not measured).
+Zoom scales the window's own drawing: text at 200–300 percent may be less
+sharp than Chromium's (to check on a Mac).
+
+#### What to compare
+
+The gallery's last section. On a Mac: a notification while the window is
+behind, its click with the window closed; the Dock's number; ⌘= ⌘- ⌘0; a
+`simeon-mac://app/v1/info?topic=deep-links` link from Safari; a plugin's
+link signed out, then signed in; a picture's right-click and Save image…;
+a download into a folder that refuses it; an agent asked to run `ls ~` on
+this Mac: the card, each answer, the command's result, and
+`~/.simeon/local-exec-daemon.log`; quitting while a long command runs;
+an agent and a group given a picture in the pane: every place above, at
+work and idle, light and dark.
