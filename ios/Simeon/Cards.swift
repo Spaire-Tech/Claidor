@@ -294,6 +294,7 @@ struct ConnectorsCardView: View {
   }
 }
 
+/** One app's card: its tile, its name, why, how many tools it brings once added ("12 tools", as the Mac's), and Add or ✓ Added. */
 struct ConnectorCard: View {
   let name: String
   let reason: String?
@@ -309,12 +310,17 @@ struct ConnectorCard: View {
     let app = store.catalogApp(named: name)
     let isConnected = markedConnected || store.isConnected(name)
     let waiting = connector.connecting == name
+    // How many tools it brings once added, as the Mac's card says it (mac/Simeon/Cards.swift `ConnectorCard`).
+    let tools = store.apps.first { $0.name.lowercased() == name.lowercased() && $0.status == "connected" }?.toolCount ?? 0
     HStack(spacing: 12) {
       ConnectorTile(name: app?.title ?? name)
       VStack(alignment: .leading, spacing: 0) {
         Text(app?.title ?? name).font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.primary).lineLimit(1)
         Text(waiting ? "Waiting for \(name) authorization…" : (reason ?? app?.summary ?? ""))
           .font(.system(size: 13)).foregroundStyle(Ink.secondary).lineLimit(1)
+        if store.isConnected(name) && tools > 0 {
+          Text(tools == 1 ? "1 tool" : "\(tools) tools").font(.system(size: 12)).foregroundStyle(Ink.tertiary).lineLimit(1)
+        }
       }
       Spacer(minLength: 0)
       if isConnected {

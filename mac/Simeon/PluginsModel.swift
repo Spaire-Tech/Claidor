@@ -12,7 +12,9 @@ import SimeonCore
  * with agent, and the notice that says how each went. The rules and words
  * are SimeonCore's (`Plugins`), checked against the overlay's own
  * functions. The calls are the Mac app's first Plugins window's (9 October
- * 2026), checked again against the window and the box (mac/STEPS.md, step 9).
+ * 2026), checked again against the window and the box (mac/STEPS.md, step 9);
+ * since 11 October 2026 they are SimeonCore's (`PluginCalls`), which the
+ * iPhone's Connect apps makes too.
  */
 @MainActor
 @Observable
@@ -119,79 +121,70 @@ final class PluginsModel {
 
   // MARK: Reading
 
-  private func call(_ method: String, _ args: JSON) async throws -> JSON {
+  /** The box's calls (SimeonCore's `PluginCalls`), or the overlay's words when no one is signed in. */
+  private func calls() throws -> PluginCalls {
     guard let backend = store?.backend else { throw GatewayError(message: "Sign in to Simeon first.", refused: true) }
-    return try await backend.command(method, args)
-  }
-
-  private func mcp(_ action: String, _ args: [JSON] = []) async throws -> JSON {
-    try await call("desktopMcp", ["action": .string(action), "args": .array(args)])
+    return PluginCalls(backend)
   }
 
   /** Opening (`getMcpState`, `getEffectivePlugins`, the sync status, a sync, the agent's skills); the catalog once it is in. */
   func load(agentId: String?) async {
     // This opening's catalog: a page asked for by a link waits for it, not for the last opening's.
     catalogLoaded = false
-    async let catalogAnswer = try? mcp("getCatalog")
-    async let pluginsAnswer = try? mcp("listEffectivePlugins")
+    let reader = try? calls()
+    async let catalogAnswer = try? reader?.catalog()
+    async let pluginsAnswer = try? reader?.effectivePlugins()
     await refreshServers()
-    if let answer = await catalogAnswer {
-      catalog = (answer.array ?? answer["plugins"]?.array ?? []).compactMap(PluginEntry.init(json:))
-    }
+    if let entries = await catalogAnswer { catalog = entries }
     catalogLoaded = true
-    if let answer = await pluginsAnswer { plugins = (answer.array ?? []).compactMap(EffectivePlugin.init(json:)) }
+    if let list = await pluginsAnswer { plugins = list }
     await loadSkills(agentId)
     await readSyncStatus()
     // The one sync its opening starts; the banner is read again after it.
     Task {
-      _ = try? await self.call("syncPluginSkills", [:])
+      _ = try? await reader?.syncSkills()
       await self.readSyncStatus()
     }
   }
 
   /** The banner's plugins (`getPluginSyncStatus`). */
   func readSyncStatus() async {
-    if let status = try? await call("getPluginSyncStatus", [:]) {
-      authBlocked = (status["authBlocked"]?.array ?? []).map { $0["pluginName"]?.string ?? "" }
-    }
+    if let names = try? await calls().authBlocked() { authBlocked = names }
   }
 
   func refreshServers() async {
-    guard let answer = try? await mcp("listServers") else { return }
-    apply(servers: answer)
+    guard let next = try? await calls().servers() else { return }
+    apply(servers: next)
   }
 
-  private func apply(servers answer: JSON?) {
-    guard let rows = answer?["servers"]?.array ?? answer?.array else { return }
+  /** The servers an answer held (none: they stay as they were). */
+  private func apply(servers next: [PluginServer]?) {
+    guard let next else { return }
     // Only a change redraws the list and the page (the servers are read every 15 s).
-    let next = rows.compactMap(PluginServer.init(json:))
     if next != servers { servers = next }
     // A sign-in whose account now says connected is over.
     for key in flows.keys where servers.contains(where: { Plugins.signInKey($0.serverIdentifier) == key && $0.status == "connected" }) { flows[key] = nil }
   }
 
   private func refreshPlugins() async {
-    if let answer = try? await mcp("listEffectivePlugins") { plugins = (answer.array ?? []).compactMap(EffectivePlugin.init(json:)) }
+    if let list = try? await calls().effectivePlugins() { plugins = list }
   }
 
   func loadSkills(_ agentId: String?) async {
     guard let agentId else { skills = []; return }
-    if let answer = try? await call("getAgentWorkflows", ["id": .string(agentId)]) {
-      skills = (answer.array ?? []).compactMap(AgentSkill.init(json:))
-    }
+    if let list = try? await calls().skills(agentId) { skills = list }
   }
 
   func loadTools(_ serverId: String) async {
-    guard let answer = try? await mcp("listServerTools", [.string(serverId)]) else { return }
-    tools[serverId] = (answer.array ?? []).compactMap(PluginTool.init(json:))
+    guard let list = try? await calls().tools(serverId) else { return }
+    tools[serverId] = list
   }
 
   /** A catalog entry's logo (`getMcpPluginLogo`): the box answers with a data URL (SVG or PNG); read once per address. */
   func loadLogo(_ address: String) async {
     guard logos[address] == nil, !logoReads.contains(address) else { return }
     logoReads.insert(address)
-    guard let answer = try? await mcp("resolvePluginLogo", [.string(address)]),
-          let source = answer.string ?? answer["src"]?.string,
+    guard let source = try? await calls().logo(address),
           let image = Self.decode(source) else { return }
     logos[address] = image
   }
@@ -258,14 +251,12 @@ final class PluginsModel {
   private func install(_ entryId: String, values: [String: String], team: Bool) async -> Bool {
     busy += 1
     defer { busy -= 1 }
-    var args: [String: JSON] = ["entryId": .string(entryId), "values": .object(values.mapValues(JSON.string))]
-    if team { args["hasTeamConfiguredVariables"] = .bool(true) }
     do {
-      let state = try await mcp("installEntry", [.object(args)])
-      apply(servers: state)
+      let box = try calls()
+      apply(servers: try await box.install(entryId, values: values, team: team))
       await refreshPlugins()
-      if let vendor = try? await mcp("vendorServerIdForPlugin", [.string(entryId)]), let serverId = vendor.text,
-         let started = try? await mcp("authenticateServer", [.string(serverId), .string(PluginServer.defaultAccount)]),
+      if let serverId = await box.vendorServerId(entryId),
+         let started = try? await box.signIn(serverId, accountKey: PluginServer.defaultAccount),
          let url = started["authorizationUrl"]?.text.flatMap(URL.init(string:)) {
         let name = catalog.first { $0.id == entryId }?.displayName ?? serverId
         await openSignIn(url, serverId: serverId, accountKey: PluginServer.defaultAccount, name: name)
@@ -283,22 +274,18 @@ final class PluginsModel {
     busy += 1
     defer { busy -= 1 }
     do {
-      let answer = try await call("syncPluginSkills", [:])
+      let added = try await calls().syncSkills(of: entry.id)
       await readSyncStatus()
       await loadSkills(agentId)
-      return ((answer.array ?? []).filter { $0["pluginId"]?.string == entry.id }.count, nil)
+      return (added, nil)
     } catch {
       return (0, error.localizedDescription)
     }
   }
 
   private func dropPrivateCopies(_ entry: PluginEntry, agentId: String?) async {
-    guard let agentId else { return }
-    let sources = Set((entry.skills ?? []).compactMap(\.sourceUrl))
-    guard !sources.isEmpty else { return }
-    for skill in skills where skill.sourceRef.map(sources.contains) == true {
-      _ = try? await call("deleteAgentWorkflow", ["id": .string(agentId), "workflowId": .string(skill.id)])
-    }
+    guard let box = try? calls() else { return }
+    await box.dropPrivateCopies(of: entry, from: skills, agentId: agentId)
   }
 
   /** Edit Values (`Ze`): the setup page, its values never shown. */
@@ -317,7 +304,7 @@ final class PluginsModel {
     show(nil)
     await reporting {
       if setup.editing {
-        _ = try await mcp("updatePluginInstall", [["pluginId": .string(setup.entryId), "values": .object(values.mapValues(JSON.string))]])
+        try await calls().updateInstall(setup.entryId, values: values)
         show(Plugins.setupSavedNotice(name))
       } else {
         guard await install(setup.entryId, values: values, team: false) else { return }
@@ -339,19 +326,17 @@ final class PluginsModel {
     guard let server = onePerServer.first(where: { $0.id == serverId }) else { return }
     show(nil)
     await reporting {
-      let answer = try await mcp("removeServer", [.string(serverId)])
-      apply(servers: answer["state"])
-      let removed = answer["removed"]?.bool == true
-      let reason = answer["reason"]?.string
-      show(Plugins.removedNotice(server.name, removed: removed, reason: reason))
+      let removal = try await calls().removeServer(serverId)
+      apply(servers: removal.servers)
+      show(Plugins.removedNotice(server.name, removed: removal.removed, reason: removal.reason))
       let entry = Plugins.entry(for: server, in: catalog)
-      if let entry, removed || reason == "team-server" {
+      if let entry, removal.resyncsSkills {
         await dropPrivateCopies(entry, agentId: agentId)
-        _ = try? await call("syncPluginSkills", [:])
+        _ = try? await calls().syncSkills()
         await loadSkills(agentId)
       }
       // A server no entry claims has no page left.
-      if removed && entry == nil && path.last == .installed(serverId) { path.removeLast() }
+      if removal.removed && entry == nil && path.last == .installed(serverId) { path.removeLast() }
     }
   }
 
@@ -361,15 +346,13 @@ final class PluginsModel {
     let name = entry?.displayName ?? effective[pluginId]?.displayName ?? "the plugin"
     show(nil)
     await reporting {
-      let answer = try await mcp("uninstallPlugin", [.string(pluginId)])
-      apply(servers: answer["state"])
+      let removal = try await calls().uninstallPlugin(pluginId)
+      apply(servers: removal.servers)
       await refreshPlugins()
-      let removed = answer["removed"]?.bool == true
-      let reason = answer["reason"]?.string
-      show(Plugins.removedNotice(name, removed: removed, reason: reason))
-      if let entry, removed || reason == "team-server" {
+      show(Plugins.removedNotice(name, removed: removal.removed, reason: removal.reason))
+      if let entry, removal.resyncsSkills {
         await dropPrivateCopies(entry, agentId: agentId)
-        _ = try? await call("syncPluginSkills", [:])
+        _ = try? await calls().syncSkills()
         await loadSkills(agentId)
       }
     }
@@ -400,7 +383,7 @@ final class PluginsModel {
     }
     show(nil)
     await reporting {
-      let answer = try await mcp("authenticateServer", [.string(server.id), .string(accountKey)])
+      let answer = try await calls().signIn(server.id, accountKey: accountKey)
       let status = answer["status"]?.string ?? ""
       if status == "started", let url = answer["authorizationUrl"]?.text.flatMap(URL.init(string:)) {
         let opened = Date()
@@ -476,8 +459,7 @@ final class PluginsModel {
       tools[serverId] = list
     }
     do {
-      let answer = try await mcp("toggleMcpToolDisabled", [["serverId": .string(serverId), "toolName": .string(tool.name)]])
-      tools[serverId] = (answer.array ?? []).compactMap(PluginTool.init(json:))
+      tools[serverId] = try await calls().toggleTool(tool.name, of: serverId)
       toolFailures[serverId] = nil
       await refreshServers()
     } catch {
@@ -489,20 +471,15 @@ final class PluginsModel {
   /** A private skill's switch; a failure is let go, as the overlay does. */
   func setEnabled(_ skill: AgentSkill, agentId: String?) async {
     guard let agentId else { return }
-    if let answer = try? await call("setAgentWorkflowEnabled", ["id": .string(agentId), "workflowId": .string(skill.id), "isEnabled": .bool(!skill.isEnabledForAgent)]) {
-      skills = (answer.array ?? []).compactMap(AgentSkill.init(json:))
-    }
+    if let list = try? await calls().setSkillEnabled(skill, !skill.isEnabledForAgent, agentId: agentId) { skills = list }
   }
 
   func save(_ skill: AgentSkill, name: String, description: String, body: String, agentId: String) async -> Bool {
     show(nil)
     let named = name.trimmingCharacters(in: .whitespacesAndNewlines)
-    var spec: [String: JSON] = ["name": .string(named), "description": .string(description.trimmingCharacters(in: .whitespacesAndNewlines)), "body": .string(body)]
-    if let trigger = skill.trigger { spec["trigger"] = trigger }
-    if let sourceRef = skill.sourceRef { spec["sourceRef"] = .string(sourceRef) }
     do {
-      let answer = try await call("updateAgentWorkflow", ["id": .string(agentId), "workflowId": .string(skill.id), "spec": .object(spec)])
-      if let list = answer.array { skills = list.compactMap(AgentSkill.init(json:)) }
+      // The name and description trimmed, the trigger and source kept (`Plugins.skillSpec`).
+      if let list = try await calls().updateSkill(skill, name: name, description: description, body: body, agentId: agentId) { skills = list }
       show(Plugins.savedNotice(named))
       return true
     } catch {
@@ -514,8 +491,7 @@ final class PluginsModel {
   func delete(_ skill: AgentSkill, agentId: String) async {
     show(nil)
     do {
-      let answer = try await call("deleteAgentWorkflow", ["id": .string(agentId), "workflowId": .string(skill.id)])
-      if let list = answer.array { skills = list.compactMap(AgentSkill.init(json:)) }
+      if let list = try await calls().deleteSkill(skill.id, agentId: agentId) { skills = list }
       show(Plugins.deletedNotice(skill.name))
       if path.last == .skill(skill.id) { path.removeLast() }
     } catch {
@@ -528,25 +504,14 @@ final class PluginsModel {
   /** The Plugin Setup agent: the one there is, else a new one told what to do; the agent's id once it can be opened. */
   func fixWithAgent() async -> String? {
     guard !launchingFix, let store else { return nil }
-    if let existing = store.agents.first(where: { $0.purpose == Plugins.setupAgentPurpose }) { return existing.id }
+    if let existing = Plugins.setupAgent(in: store.agents) { return existing.id }
     if store.isLoading { return nil }
     launchingFix = true
     defer { launchingFix = false }
-    do {
-      let answer = try await call("createAgent", [
-        "name": .string(Plugins.setupAgentName), "description": .string(Plugins.setupAgentDescription),
-        "purpose": .string(Plugins.setupAgentPurpose), "isIntroductionSuppressed": true,
-      ])
-      guard let id = answer["agent"]?["id"]?.text ?? answer["id"]?.text else { throw GatewayError(message: "createAgent: no agent in the answer", refused: true) }
-      await store.reloadRoster()
-      // The agent exists now: it opens even if its first message could not be sent, which the notice says.
-      do { try await store.backend?.send(id, text: Plugins.setupAgentRequest, attachments: [], replyTo: nil) } catch {
-        show(Plugins.agentFailedNotice(error.localizedDescription))
-      }
-      return id
-    } catch {
-      show(Plugins.agentFailedNotice(error.localizedDescription))
-      return nil
-    }
+    // Made, the roster read again, and told what to do (SimeonCore's): once the agent exists it opens, even if its first
+    // message could not be sent, which the notice says.
+    let made = await store.makePluginSetupAgent()
+    if let failure = made.failure { show(Plugins.agentFailedNotice(failure)) }
+    return made.id
   }
 }

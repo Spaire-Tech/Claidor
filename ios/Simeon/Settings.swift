@@ -557,11 +557,16 @@ struct AutoReviewRules: View {
  * the box and opens its sign-in in the system's sheet.
  */
 struct ConnectAppsSheet: View {
+  // Since the Mac's Plugins came over (11 October 2026): the filter has the Mac's Type and Ownership too; a row opens the
+  // plugin's page (PluginPage); Add opens the setup page for a plugin that asks for values, and adds a skills-only one at
+  // once; the Mac's notice says how each went (ConnectAppsModel.swift, ConnectAppsPages.swift).
   @Environment(AppStore.self) private var store
   @Environment(\.dismiss) private var dismiss
   @State private var query = ""
   /** The category the filter keeps, or all of them. */
   @State private var category: String?
+  /** What the Mac's Plugins window knows and does, for this opening (ConnectAppsModel). */
+  @State private var model = ConnectAppsModel()
 
   var body: some View {
     NavigationStack {
@@ -582,7 +587,7 @@ struct ConnectAppsSheet: View {
               HStack(spacing: 10) { ProgressView(); Text("Loading apps…").font(.system(size: 13)).foregroundStyle(Ink.secondary) }
                 .padding(.top, 28)
             } else if sections.isEmpty {
-              Text("No apps match \u{201C}\(query)\u{201D}.").font(.system(size: 13)).foregroundStyle(Ink.secondary)
+              Text(query.isEmpty ? Plugins.noFilterMatch : "No apps match \u{201C}\(query)\u{201D}.").font(.system(size: 13)).foregroundStyle(Ink.secondary)
                 .padding(.top, 28)
             }
             ForEach(sections) { section in
@@ -601,38 +606,57 @@ struct ConnectAppsSheet: View {
           .padding(.bottom, 28)
         }
         .scrollDismissesKeyboard(.immediately)
-        .refreshable { await store.loadApps() }
+        .refreshable {
+          await store.loadApps()
+          await model.load()
+        }
       }
       .background(Ink.ground.ignoresSafeArea())
       .toolbar(.hidden, for: .navigationBar)
       .task { await store.loadApps() }
+      .task {
+        model.store = store
+        await model.load()
+      }
     }
+    .overlay(alignment: .bottom) { PluginNoticeBar().animation(.easeOut(duration: 0.2), value: model.notice) }
+    // The setup page: Add's for a plugin that asks for values, or Edit Values'. A vendor's sign-in waits for it to go.
+    .sheet(item: $model.setup, onDismiss: { model.signInAfterSetup() }) { setup in
+      PluginSetupSheet(setup: setup)
+        .environment(model)
+        .presentationBackground(Ink.groupedGround)
+    }
+    // An app signed in or removed anywhere: the box's servers read again, for who added what.
+    .onChange(of: store.apps) { _, _ in Task { await model.refreshServers() } }
+    .environment(model)
     .presentationBackground(Ink.ground)
   }
 
-  /** The filter (the reference's button beside the search): every category, or one. */
+  /** The filter (the reference's button beside the search): the Mac's Type and Ownership, then every category, or one. */
   private var filterMenu: some View {
-    Menu {
-      Picker("Category", selection: $category) {
-        Text("All apps").tag(String?.none)
-        ForEach(AppSections.make(store.catalog, query: "").map(\.title), id: \.self) { title in
-          Text(title).tag(String?.some(title))
+    PluginsFilterDisc(active: category != nil || !model.marketplaceFilter.isAll) {
+      PluginFilterPickers(filter: $model.marketplaceFilter)
+      Section("Category") {
+        Picker("Category", selection: $category) {
+          Text("All apps").tag(String?.none)
+          ForEach(AppSections.make(store.catalog, query: "").map(\.title), id: \.self) { title in
+            Text(title).tag(String?.some(title))
+          }
         }
       }
-    } label: {
-      Image(systemName: "line.3.horizontal.decrease")
-        .font(.system(size: 16, weight: .medium))
-        .foregroundStyle(category == nil ? Ink.primary : Ink.blue)
-        .frame(width: 42, height: 42)
-        .background(Ink.groupedRow, in: Circle())
     }
-    .accessibilityLabel("Filter")
   }
 
   private var sections: [AppSections.Section] {
     let all = AppSections.make(store.catalog, query: query)
-    guard let category else { return all }
-    return all.filter { $0.title == category }
+    let filter = model.marketplaceFilter
+    // The Mac's filter (`nt`) on each app's catalog entry; an app the box's catalog does not list is kept by All alone.
+    let kept = filter.isAll ? all : all.compactMap { section -> AppSections.Section? in
+      let apps = section.apps.filter { app in model.entry(app.id).map { Plugins.keeps($0, filter) } ?? false }
+      return apps.isEmpty ? nil : AppSections.Section(title: section.title, apps: apps)
+    }
+    guard let category else { return kept }
+    return kept.filter { $0.title == category }
   }
 }
 
@@ -797,46 +821,96 @@ struct CategoryPage: View {
  * its name ("Error" beside it in red when the box says so) and its tools;
  * at the right Added once it is signed in, else Authenticate, which asks
  * first as every connect does, then opens its sign-in. A row opens the
- * app's page (its accounts and tools).
+ * app's page (PluginPage). Since the Mac's Plugins came over (11 October
+ * 2026), as the Mac's Yours: the GitHub banner over them, the filter beside
+ * the search (the Mac's Type and Ownership), the plugins added with no app
+ * of their own (skills only), and Private, an agent's own skills.
  */
 struct YourPluginsPage: View {
   @Environment(AppStore.self) private var store
+  @Environment(ConnectAppsModel.self) private var model
   @Environment(\.dismiss) private var dismiss
   @State private var query = ""
 
   var body: some View {
-    let apps = store.appsOnce.filter { query.isEmpty || $0.name.localizedCaseInsensitiveContains(query) }
+    @Bindable var model = model
+    let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
+    let filter = model.yoursFilter
+    let kept = keptServers(filter)
+    let apps = store.appsOnce.filter { (query.isEmpty || $0.name.localizedCaseInsensitiveContains(query)) && (kept?.contains($0.serverId) ?? true) }
+    let skillsOnly = skillsOnlyPlugins(query: q, filter: filter)
+    let skills = Plugins.privateSkills(model.skills).filter { (q.isEmpty || $0.name.lowercased().contains(q.lowercased())) && Plugins.keeps($0, filter) }
+    // The Mac's: with a filter set, a section with nothing in it is left out.
+    let showsInstalled = filter.isAll || !apps.isEmpty || !skillsOnly.isEmpty
+    let showsPrivate = filter.isAll || model.agentId == nil || !skills.isEmpty
     VStack(spacing: 0) {
       PluginsHead(title: "Your plugins", back: { dismiss() }) { EmptyView() }
-      PluginsSearchField(text: $query)
-        .padding(.horizontal, 18)
-        .padding(.top, 10)
+      HStack(spacing: 10) {
+        PluginsSearchField(text: $query)
+        PluginsFilterDisc(active: !filter.isAll) { PluginFilterPickers(filter: $model.yoursFilter) }
+      }
+      .padding(.horizontal, 18)
+      .padding(.top, 10)
       ScrollView {
         LazyVStack(alignment: .leading, spacing: 0) {
-          PluginsSectionHead(title: "Installed") { EmptyView() }
-          if apps.isEmpty {
-            Text(store.appsOnce.isEmpty ? "No apps yet. Add one from the Marketplace." : "No apps match \u{201C}\(query)\u{201D}.")
-              .font(.system(size: 13)).foregroundStyle(Ink.secondary)
-              .padding(.top, 8)
+          if !model.authBlocked.isEmpty { GitHubBanner().padding(.top, 8) }
+          if !showsInstalled && !showsPrivate {
+            Text(Plugins.noFilterMatch).font(.system(size: 13)).foregroundStyle(Ink.secondary).padding(.top, 21)
           }
-          ForEach(apps) { app in InstalledRow(app: app) }
+          if showsInstalled {
+            PluginsSectionHead(title: "Installed") { EmptyView() }
+            if apps.isEmpty && skillsOnly.isEmpty {
+              Text(query.isEmpty || store.appsOnce.isEmpty ? "No apps yet. Add one from the Marketplace." : "No apps match \u{201C}\(query)\u{201D}.")
+                .font(.system(size: 13)).foregroundStyle(Ink.secondary)
+                .padding(.top, 8)
+            }
+            ForEach(apps) { app in InstalledRow(app: app) }
+            ForEach(skillsOnly, id: \.entry.id) { plugin in SkillsPluginRow(entry: plugin.entry, mode: plugin.mode) }
+          }
+          if showsPrivate { PrivateSkillsSection(skills: skills, query: q) }
         }
         .padding(.horizontal, 18)
         .padding(.top, 12)
         .padding(.bottom, 28)
       }
       .scrollDismissesKeyboard(.immediately)
-      .refreshable { await store.loadApps() }
+      .refreshable {
+        await store.loadApps()
+        await model.load()
+      }
     }
     .background(Ink.ground.ignoresSafeArea())
     .toolbar(.hidden, for: .navigationBar)
   }
+
+  /** The servers the filter keeps (the Mac's `nt` on Yours' rows), or nil when it keeps every one. */
+  private func keptServers(_ filter: PluginFilter) -> Set<String>? {
+    guard !filter.isAll else { return nil }
+    var kept = Set<String>()
+    for item in model.yoursItems where Plugins.keeps(item, filter) {
+      switch item {
+      case .plugin(_, _, let connectors): kept.formUnion(connectors.map(\.id))
+      case .connector(let server, _): kept.insert(server.id)
+      }
+    }
+    return kept
+  }
+
+  /** The plugins added with no server (`rt`'s plugins without connectors), as the search and the filter keep them (`ui`, `nt`). */
+  private func skillsOnlyPlugins(query: String, filter: PluginFilter) -> [(entry: PluginEntry, mode: PluginInstallMode)] {
+    model.yoursItems.compactMap { item in
+      guard case .plugin(let entry, let mode, let connectors) = item, connectors.isEmpty,
+            Plugins.keeps(item, query: query), Plugins.keeps(item, filter) else { return nil }
+      return (entry, mode)
+    }
+  }
 }
 
-/** One installed app on Your plugins. */
+/** One installed app on Your plugins; the team's mark beside its name when the team added it (the Mac's `TeamBadge`). */
 struct InstalledRow: View {
   let app: ConnectedApp
   @Environment(AppStore.self) private var store
+  @Environment(ConnectAppsModel.self) private var model
   /** What the person reads before the sign-in page opens (ConnectConsentSheet). */
   @State private var asking: ConnectConsent?
   @State private var confirmed = false
@@ -845,12 +919,13 @@ struct InstalledRow: View {
   var body: some View {
     let connected = app.status == "connected"
     HStack(spacing: 12) {
-      NavigationLink { ConnectedAppDetail(app: app) } label: {
+      NavigationLink { PluginPage(app: app) } label: {
         HStack(spacing: 16) {
           ConnectorTile(name: app.name, size: 37)
           VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 8) {
               Text(app.name).font(.system(size: 16.4)).foregroundStyle(Ink.primary).lineLimit(1)
+              if let team = teamLabel { TeamBadge(tip: team) }
               if app.status == "error" { Text("Error").font(.system(size: 13)).foregroundStyle(Ink.danger).fixedSize() }
             }
             Text(app.toolCount > 0 ? (app.toolCount == 1 ? "1 tool" : "\(app.toolCount) tools") : (connected ? "Connected" : "Not signed in"))
@@ -883,6 +958,17 @@ struct InstalledRow: View {
       ConnectConsentSheet(consent: consent) { confirmed = true }
     }
   }
+
+  /** The team's words for its row of Yours (`Xn`): "Added by your team" or "Managed by your team"; nothing for the person's own. */
+  private var teamLabel: String? {
+    let item = model.yoursItems.first { item in
+      switch item {
+      case .plugin(_, _, let connectors): return connectors.contains { $0.id == app.serverId }
+      case .connector(let server, _): return server.id == app.serverId
+      }
+    }
+    return item.flatMap { Plugins.modeLabel($0.installMode) }
+  }
 }
 
 /** A row's pill (the reference's Add, Added, Authenticate): 13 medium, 26 high, 12 either side, round, never cut. */
@@ -903,186 +989,51 @@ struct PluginPill: View {
   }
 }
 
-/** One app in the catalog (the reference's, measured): its logo (37), name (16.4) and what it does in two lines (13), and Add, or Added once it is in. */
+/**
+ * One app in the catalog (the reference's, measured): its logo (37), name
+ * (16.4, with the Mac's Team mark for a team's marketplace) and what it does
+ * in two lines (13), and Add, or Added once it is in. The row opens the
+ * plugin's page (PluginPage), as the Mac's Marketplace rows do; Add is the
+ * Mac's (PluginAddButton): the consent, then the setup page or the sign-in.
+ */
 struct AppRow: View {
   let app: CatalogApp
   @Environment(AppStore.self) private var store
-  /** What the person reads before the sign-in page opens (ConnectConsentSheet). */
-  @State private var asking: ConnectConsent?
-  @State private var confirmed = false
+  @Environment(ConnectAppsModel.self) private var model
   private var connector: AppConnector { AppConnector.shared }
 
   var body: some View {
+    // A plugin of skills alone has no app to sign in to: it is in once it is added (the Mac's `et`).
+    let skillsAdded = model.entry(app.id).map { $0.connectorList.isEmpty && model.installed($0).isInstalled } ?? false
     HStack(spacing: 16) {
-      ConnectorTile(name: app.title, size: 37)
-      VStack(alignment: .leading, spacing: 2) {
-        Text(app.title).font(.system(size: 16.4)).foregroundStyle(Ink.primary).lineLimit(1)
-        if !app.summary.isEmpty { Text(app.summary).font(.system(size: 13)).foregroundStyle(Ink.secondary).lineLimit(2) }
+      NavigationLink { PluginPage(entryId: app.id) } label: {
+        HStack(spacing: 16) {
+          ConnectorTile(name: app.title, size: 37)
+          VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 6) {
+              Text(app.title).font(.system(size: 16.4)).foregroundStyle(Ink.primary).lineLimit(1)
+              if let team = model.entry(app.id).flatMap({ Plugins.teamMark($0) }) { TeamBadge(tip: team) }
+            }
+            if !app.summary.isEmpty { Text(app.summary).font(.system(size: 13)).foregroundStyle(Ink.secondary).lineLimit(2) }
+          }
+          Spacer(minLength: 8)
+        }
+        .contentShape(.rect)
       }
-      Spacer(minLength: 8)
+      .buttonStyle(.plain)
       if app.comingSoon {
         Text("Soon").font(.system(size: 13)).foregroundStyle(Ink.tertiary)
-      } else if store.isConnected(app.title) {
+      } else if store.isConnected(app.title) || skillsAdded {
         PluginPill(title: "Added", fill: Ink.pillButton, ink: Ink.secondary)
-      } else if connector.connecting == app.title {
+      } else if connector.connecting == app.title || model.adding == app.id {
         ProgressView().controlSize(.small).frame(width: 44)
       } else {
-        Button { asking = ConnectConsent(app: app, name: app.title) } label: {
+        PluginAddButton(name: app.title, catalogApp: app, entryId: app.id) {
           PluginPill(title: "Add", fill: Ink.pillButton, ink: Ink.primary)
         }
-        .buttonStyle(.plain)
-        .disabled(connector.connecting != nil)
         .accessibilityLabel("Add \(app.title)")
       }
     }
     .padding(.vertical, 17)
-    // The sign-in page opens once the sheet has gone.
-    .sheet(item: $asking, onDismiss: {
-      guard confirmed else { return }
-      confirmed = false
-      Task { await connector.connect(app.title, store: store) }
-    }) { consent in
-      ConnectConsentSheet(consent: consent) { confirmed = true }
-        .macSheetSize(width: 440, height: 560)
-    }
-  }
-}
-
-/**
- * One connected app (the Mac's connector page): its accounts, each with
- * its state, sign-in, rename and remove; its tools, each with a switch
- * that turns it off for every agent; and removing the app.
- */
-struct ConnectedAppDetail: View {
-  let app: ConnectedApp
-  @Environment(AppStore.self) private var store
-  @Environment(\.dismiss) private var dismiss
-  @State private var tools: [AppTool] = []
-  @State private var loadingTools = true
-  @State private var renaming: ConnectedApp?
-  @State private var newName = ""
-  @State private var switching: Set<String> = []
-  @State private var removing = false
-  /** An account's sign-in, asked first as every connect is (ConnectConsentSheet). */
-  @State private var asking: ConnectConsent?
-  @State private var signingIn: ConnectedApp?
-  @State private var confirmed = false
-  private var connector: AppConnector { AppConnector.shared }
-
-  var body: some View {
-    let accounts = store.accounts(of: app.serverId)
-    let connected = accounts.contains { $0.status == "connected" }
-    Form {
-      Section {
-        HStack(spacing: 14) {
-          ConnectorTile(name: app.name, size: 56)
-          VStack(alignment: .leading, spacing: 3) {
-            Text(app.name).font(.system(size: 20, weight: .semibold))
-            Text(connected ? "Connected · \(tools.isEmpty ? app.toolCount : tools.filter { !$0.isDisabled }.count) tools" : "Not signed in")
-              .font(.system(size: 13)).foregroundStyle(connected ? Ink.secondary : Ink.danger)
-          }
-        }
-        .padding(.vertical, 6)
-      }
-      .listRowBackground(Ink.groupedRow)
-      Section("Accounts") {
-        ForEach(accounts.isEmpty ? [app] : accounts) { account in
-          HStack {
-            VStack(alignment: .leading, spacing: 2) {
-              Text(account.accountName).font(.system(size: 17))
-              Text(account.status == "connected" ? "Connected" : "Needs sign-in")
-                .font(.system(size: 13)).foregroundStyle(account.status == "connected" ? Ink.secondary : Ink.danger)
-            }
-            Spacer()
-            if account.status != "connected" {
-              if connector.connecting == account.name {
-                ProgressView().controlSize(.small)
-              } else {
-                Button("Sign in") {
-                  signingIn = account
-                  asking = ConnectConsent(app: store.catalogApp(named: account.name), name: account.name)
-                }
-                  .buttonStyle(GreyButtonStyle(capsule: true))
-                  .disabled(connector.connecting != nil)
-              }
-            }
-          }
-          .swipeActions {
-            if accounts.count > 1 {
-              Button("Remove", role: .destructive) { Task { await store.removeAccount(account) } }
-            }
-            Button("Rename") { newName = account.accountKey == "default" ? "" : account.accountKey; renaming = account }
-          }
-        }
-      }
-      .listRowBackground(Ink.groupedRow)
-      Section("Tools") {
-        if loadingTools && tools.isEmpty {
-          HStack { ProgressView(); Text("Loading tools…").foregroundStyle(Ink.secondary) }
-        } else if tools.isEmpty {
-          Text(connected ? "No tools listed." : "Sign in to see its tools.").foregroundStyle(Ink.secondary)
-        }
-        ForEach(tools) { tool in
-          // The switch moves at once and holds until the box answers, so a second tap cannot undo the first.
-          Toggle(isOn: Binding(get: { !tool.isDisabled }, set: { on in
-            guard !switching.contains(tool.name), let index = tools.firstIndex(where: { $0.name == tool.name }) else { return }
-            tools[index].isDisabled = !on
-            switching.insert(tool.name)
-            Task {
-              if let next = await store.toggleTool(app.serverId, tool.name) { tools = next }
-              else if let now = tools.firstIndex(where: { $0.name == tool.name }) { tools[now].isDisabled = on }
-              switching.remove(tool.name)
-            }
-          })) {
-            VStack(alignment: .leading, spacing: 2) {
-              Text(tool.title ?? tool.name).font(.system(size: 17))
-              if let summary = tool.summary, !summary.isEmpty {
-                Text(summary).font(.system(size: 13)).foregroundStyle(Ink.secondary).lineLimit(2)
-              }
-            }
-          }
-          .tint(Ink.blue)
-          .disabled(switching.contains(tool.name))
-        }
-      }
-      .listRowBackground(Ink.groupedRow)
-      Section {
-        Button(role: .destructive) {
-          removing = true
-          Task { await store.removeApp(app); dismiss() }
-        } label: {
-          HStack {
-            Text("Remove \(app.name)")
-            if removing { Spacer(); ProgressView() }
-          }
-        }
-        .disabled(removing)
-      }
-      .listRowBackground(Ink.groupedRow)
-    }
-    .groupedGround()
-    .navigationTitle(app.name)
-    .inlineBarTitle()
-    .task(id: connected) {
-      loadingTools = true
-      tools = await store.tools(of: app.serverId)
-      loadingTools = false
-    }
-    .alert("Rename account", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
-      TextField("Account name", text: $newName)
-      Button("Rename") { if let account = renaming { Task { await store.renameAccount(account, to: newName) } }; renaming = nil }
-      Button("Cancel", role: .cancel) { renaming = nil }
-    }
-    // The sign-in page opens once the sheet has gone.
-    .sheet(item: $asking, onDismiss: {
-      let account = signingIn
-      signingIn = nil
-      guard confirmed, let account else { confirmed = false; return }
-      confirmed = false
-      Task { await connector.signIn(account, store: store) }
-    }) { consent in
-      ConnectConsentSheet(consent: consent) { confirmed = true }
-        .macSheetSize(width: 440, height: 560)
-    }
   }
 }
