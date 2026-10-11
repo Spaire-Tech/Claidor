@@ -210,8 +210,15 @@ public final class AppStore {
   @ObservationIgnored public var promptSent: ((String) -> Void)?
   /** The phone says so in an alert; the Mac's sidebar says it in place, as the window does. */
   @ObservationIgnored public var reportsRosterFailure = true
-  /** The app shows the computer's rebuild (the Mac): sending waits through it, the list holds still, Disk Saver is set to work. */
+  /** The app shows the computer's rebuild (the Mac, the iPhone): sending waits through it, the list holds still, Disk Saver is set to work where `startsDiskSaver`. */
   @ObservationIgnored public var followsRebuild = false
+  /**
+   * The disk running low sets Disk Saver to work by itself (`$8n`), where
+   * the app follows the rebuild. The Mac does; the iPhone shows low disk
+   * and leaves this to the Mac, so two apps open at once do not each make a
+   * Disk Saver.
+   */
+  @ObservationIgnored public var startsDiskSaver = true
   /** The agent the window has selected, when the app says (the Mac's sidebar); see `computerSelection`. */
   public var windowSelection: String? {
     didSet { if windowSelection != oldValue { rebuild.selectionChanged(rebuildInputs) } }

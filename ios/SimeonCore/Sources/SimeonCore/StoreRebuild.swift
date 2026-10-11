@@ -83,7 +83,7 @@ extension AppStore {
                                 phases: rebuild.migration.phases(for: lock.operationId), pullPercent: computer.status(rebuild.inputs.boxId)?.pullPercent)
   }
 
-  /** Sending waits while the computer is rebuilt (`isSendingPaused`), where the rebuild is shown (the Mac), and while this account has no Simeon (`gft`). */
+  /** Sending waits while the computer is rebuilt (`isSendingPaused`), where the rebuild is shown (`followsRebuild`), and while this account has no Simeon (`gft`). */
   public var isSendingPaused: Bool { (followsRebuild && rebuild.isHardLocked) || access.pausesSending }
 
   // MARK: The disk
@@ -125,8 +125,8 @@ extension AppStore {
    */
   func diskPressureChanged() {
     guard diskPressure != nil else { diskAuditDone = false; return }
-    // Only where low disk is shown (the Mac), so two apps open do not make two Disk Savers.
-    guard followsRebuild, !diskAuditDone, !agents.isEmpty, backend != nil else { return }
+    // Only in the app that starts it (the Mac; `startsDiskSaver`), so two apps open do not make two Disk Savers.
+    guard followsRebuild, startsDiskSaver, !diskAuditDone, !agents.isEmpty, backend != nil else { return }
     diskAuditDone = true
     if let saver = diskSaver {
       guard !saver.isRunning else { return }

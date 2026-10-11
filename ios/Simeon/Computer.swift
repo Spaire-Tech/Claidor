@@ -20,7 +20,10 @@ import SimeonCore
  * from the phone or copies to it; either takes over. The sheet is always
  * dark, as a screen's surround is. The computer's own screen stays 1280 by
  * 800: the agents click by that size (`host/box/box-monitor-layout.ts`).
- * Closing it closes the stream.
+ * Closing it closes the stream. While helpers work on the computer, the one
+ * shown is named under the screen and the others are listed under it
+ * (`HelperStrip`, ComputerPreview.swift); a helper's screen is a new
+ * connection, as on the Mac.
  */
 struct ComputerSheet: View {
   let agentId: String
@@ -34,10 +37,17 @@ struct ComputerSheet: View {
   @State private var link = ScreenLink()
   @State private var typing = false
   @State private var note: String?
+  /** The helper's screen asked for (`ComputerHelper.focused`: else the first). */
+  @State private var helper: String?
+  /** The computer's status and helpers are read while the sheet shows (`watchComputer`). */
+  @State private var watching = false
 
   var body: some View {
     let name = store.agent(agentId)?.name ?? "The agent"
     let live = screen?.socket != nil && phase == "connected"
+    let helpers = store.computerHelpers(agentId)
+    let focused = ComputerHelper.focused(helpers, asked: helper)
+    let shownHelper = helpers.first { $0.subagentId == focused }
     VStack(spacing: 0) {
       // The top: what is happening, and Done (the hand back, as "I'm done" was).
       ZStack {
@@ -68,6 +78,8 @@ struct ComputerSheet: View {
         Color.black
         if let socket = screen?.socket {
           LiveScreen(socket: socket, viewOnly: !control, phase: $phase, link: link)
+            // A helper's screen is a new connection (`{stageKey}:{url}`).
+            .id("\(focused ?? "setup"):\(socket.absoluteString)")
         }
         if let problem {
           VStack(spacing: 10) {
@@ -85,6 +97,18 @@ struct ComputerSheet: View {
       .aspectRatio(1280.0 / 800.0, contentMode: .fit)
       .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
       .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(.white.opacity(0.08), lineWidth: 0.5))
+      if let shownHelper {
+        Text(shownHelper.title)
+          .font(.system(size: 13)).foregroundStyle(.white.opacity(0.6))
+          .lineLimit(1).truncationMode(.tail)
+          .padding(.horizontal, 16)
+          .padding(.top, 8)
+      }
+      if helpers.count > 1 {
+        HelperStrip(helpers: helpers.filter { $0.subagentId != focused }) { pick in helper = pick }
+          .padding(.horizontal, 16)
+          .padding(.top, 12)
+      }
       Spacer(minLength: 12)
       controls(live: live)
         .padding(.bottom, 10)
@@ -94,6 +118,18 @@ struct ComputerSheet: View {
     .presentationDetents([.large])
     .presentationBackground(.black)
     .task(id: attempt) { await load() }
+    .onAppear {
+      guard !watching else { return }
+      watching = true
+      store.watchComputer(agentId)
+    }
+    .onDisappear {
+      guard watching else { return }
+      watching = false
+      store.unwatchComputer(agentId)
+    }
+    // Another helper's screen: its picture is on its way again.
+    .onChange(of: focused) { _, _ in phase = "starting" }
   }
 
   /** Skip step while the agent waits on the person; the clipboard, the keyboard and the hand. */
