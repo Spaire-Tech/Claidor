@@ -87,9 +87,9 @@ struct ComputerDialogLayer: View {
       if shown { NSApp.keyWindow?.makeFirstResponder(nil) }
     }
     .onDisappear { ComputerDialog.showing = false }
-    // A question asked from somewhere that no longer offers it lets go (the agents' list went, an update began).
+    // A rebuild beginning lets go of any question asked before it (it would come back out of place once the rebuild ends).
     .onChange(of: store.rebuild.lock.kind) { _, kind in
-      if kind != nil, kind != .reconnecting, window.computerAsk == .update { window.computerAsk = nil }
+      if kind != nil, kind != .reconnecting { window.computerAsk = nil }
     }
   }
 }
@@ -180,10 +180,16 @@ private struct ComputerDialogCard: View {
     window.computerAsk = nil
   }
 
-  /** Every key is the dialog's: Return the focused button, Escape as the window has it, the rest nothing (`Qpt`). */
+  /**
+   * Every key is the dialog's: Return the focused button, Escape as the
+   * window has it, the rest nothing (`Qpt`). ⌘ keys go on to the menus (⌘Q,
+   * ⌘H, ⌘M, ⌘W, as the Electron app's menu has them over its page), and
+   * About over it keeps its own.
+   */
   private func key(_ event: NSEvent) -> Bool {
     let driver = store.rebuild
     let mods = event.modifierFlags.intersection([.command, .shift, .option, .control])
+    if mods.contains(.command) || AccountState.aboutShowing { return false }
     let escape = event.keyCode == 53 && mods.isEmpty
     let enter = (event.keyCode == 36 || event.keyCode == 76 || event.keyCode == 49) && mods.isEmpty
     switch dialog {
@@ -794,6 +800,7 @@ struct ComputerUpdatePill: View {
  */
 struct AccessCover: View {
   let access: SandAccess
+  @Environment(AppStore.self) private var store
   @Environment(\.colorScheme) private var scheme
 
   var body: some View {
@@ -847,5 +854,16 @@ struct AccessCover: View {
       .offset(y: 40)
     }
     .ignoresSafeArea()
+    // Access fixed on the web shows here when the window comes forward: read again, and the agents with it (the window's own reads
+    // are not running under the cover).
+    .task { await readAgain() }
+    .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+      Task { await readAgain() }
+    }
+  }
+
+  private func readAgain() async {
+    await store.refreshAccess()
+    await store.reloadRoster()
   }
 }

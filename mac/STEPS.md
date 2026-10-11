@@ -2128,3 +2128,27 @@ hand-off banner; the reconnect pill, the update pill, the rebuild dialog,
 card. On a Mac: a real screen in the tab and the full view, typing and ⌘C
 ⌘V into it, the clipboard both ways, Take over from a real hand-off, a
 real update of the computer.
+
+#### After the compile review
+
+A second reader with the compiler's rules found nothing that would not
+build (the iPhone's screen view included), and these faults, fixed:
+
+- Under the computer and its dialogs, a sideways swipe, a right-click and
+  the wheel still reached the hidden chat, org chart or picture behind.
+  They wait now, as under Settings.
+- A computer dialog held every key, ⌘Q, ⌘H, ⌘M and ⌘W too, so "Couldn't
+  Reach" (which stays while the Mac is offline) could not be quit from the
+  keyboard. ⌘ keys go on to the menus; About over a dialog keeps its own.
+- The access cover never looked again: once access was fixed on the web it
+  stayed until Reload. It reads access and the agents again when it shows
+  and each time the window comes forward.
+- The stream's log wrote with calls that end the app on a full disk; it
+  uses the ones that fail quietly.
+- "Setting up Simeon's computer" (Reload) covered a dialog that still held
+  the keys. It is under the dialogs and pills now.
+- A Recover asked from the sidebar during a background update came back,
+  out of place, when the update ended. A rebuild beginning lets go of any
+  question asked before it.
+- Low disk shows on the new chat's screen too, under the To: line, as the
+  window has it.

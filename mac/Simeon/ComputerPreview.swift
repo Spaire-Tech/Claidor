@@ -33,8 +33,9 @@ final class ComputerStreamLog {
 
   func write(_ text: String) {
     let line = "\(Self.stamp.string(from: Date())) \(text)\n"
-    handle?.seekToEndOfFile()
-    handle?.write(Data(line.utf8))
+    // The throwing calls: a full disk is an error here, not an exception.
+    _ = try? handle?.seekToEnd()
+    try? handle?.write(contentsOf: Data(line.utf8))
     switch ComputerStreamReason.change(for: text) {
     case .keep: break
     case .clear: reason = nil

@@ -51,9 +51,16 @@ final class SettingsState {
   }
 }
 
-/** Settings or Plugins over the window (the window's one overlay slot), or About over everything: the window's keys and gestures under them wait. */
+/**
+ * Settings or Plugins over the window (the window's one overlay slot), About
+ * over everything, or the computer and its dialogs (step 13): the window's
+ * keys and gestures under them wait (a sideways swipe, a right-click, the
+ * wheel over a chart or a picture).
+ */
 enum WindowOverlay {
-  @MainActor static var showing: Bool { SettingsState.showing || PluginsState.showing || AccountState.aboutShowing }
+  @MainActor static var showing: Bool {
+    SettingsState.showing || PluginsState.showing || AccountState.aboutShowing || WindowState.computerShowing || ComputerDialog.showing
+  }
 }
 
 /** The dim and the panel, over the window (under search). */

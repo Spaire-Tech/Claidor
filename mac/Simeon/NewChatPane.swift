@@ -355,6 +355,10 @@ struct NewChatPane: View {
             .environment(newChat.draftControl)
           }
       }
+      // Low disk (step 13), under the To: line as the window puts it (52 down).
+      DiskBanner(look: look)
+        .padding(.horizontal, 16)
+        .padding(.top, 52)
       ToLine(look: look)
     }
     // Search closed over the new chat: the To: line takes the keys back.

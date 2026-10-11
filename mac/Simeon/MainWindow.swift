@@ -232,9 +232,6 @@ struct MainWindow: View {
     .overlay { PluginsLayer() }
     // Search (⌘K), over everything.
     .overlay { SearchLayer() }
-    // The computer's dialogs (step 13), one at a time, over everything; its pills at the top over them.
-    .overlay { ComputerDialogLayer() }
-    .overlay { ComputerPills() }
     // The agents being read with none to show yet (Reload, ⌘R): "Setting up Simeon's computer" over the window (`Yzn`).
     .overlay {
       if store.isLoading && store.agents.isEmpty && !store.rosterFailed {
@@ -245,6 +242,9 @@ struct MainWindow: View {
         .ignoresSafeArea()
       }
     }
+    // The computer's dialogs (step 13), one at a time, over everything; its pills at the top over them.
+    .overlay { ComputerDialogLayer() }
+    .overlay { ComputerPills() }
     // The usage is read once signed in: Settings lists Usage & Billing, and ⌘K and "/" offer it, only once it is in.
     .task { await store.loadUsage() }
     // Settings opening shuts what floats over the pane (a routine's trigger popover, the avatar editor), as a click outside them would.
