@@ -45,6 +45,8 @@ struct Look {
   var rowSelected: Color { dark ? Color.white.opacity(0.12) : Color.white }
   var rowSelectedHairline: Color { dark ? Color.white.opacity(0.08) : Color(red: 20 / 255, green: 30 / 255, blue: 60 / 255).opacity(0.07) }
   var rowSelectedShadow: Color { dark ? Color.black.opacity(0.30) : Color(red: 20 / 255, green: 30 / 255, blue: 60 / 255).opacity(0.04) }
+  /** An agent's title tag in a row (the iPhone's: `#252527` on dark, the system's quiet fill on light). */
+  var tag: Color { dark ? Color(hex: 0x252527) : Color(hex: 0x767680, opacity: 0.12) }
   /** A row under the pointer (`--simeon-bg-hover`). */
   var rowHover: Color { Color(red: 119 / 255, green: 119 / 255, blue: 119 / 255).opacity(dark ? 0.173 : 0.09) }
   /** The row's corner radius: 14 light, 10 dark, as the window draws them. */

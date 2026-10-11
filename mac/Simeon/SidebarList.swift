@@ -542,9 +542,15 @@ private struct HiddenFoot: View {
 // MARK: A row
 
 /**
- * One row (`sand-agent-item`): the live butterfly (36) and, 8 away, the
- * name (14, medium), the title in blue (11), the time at the right (12,
- * 40%), and under them the last line (13, 60%): "Waiting for you: …" when
+ * One row (`sand-agent-item`): the live butterfly and, beside it, the name
+ * (14, medium), the title, the time at the right (12, 40%), and under them
+ * the last line (13, 60%). Since 11 October 2026 the iPhone's list on the
+ * Mac (the founder: "apply the spaces / box change to the mac"), scaled by
+ * the type, 14 to the phone's 17: rows 62 high and 4 apart (66 a row, the
+ * phone's 80), the butterfly 46 (the phone's 56) and 10 before the text,
+ * the title in a grey box with its words in our blue (11.5 medium, 10
+ * after the name; the phone's 14 and 13). The window's row was 54 with a
+ * 36 butterfly and the title as blue words (11). "Waiting for you: …" when
  * the agent waits on the person, else "Draft: …" when something is typed
  * and not sent in another agent's chat. The open agent's row is the white
  * card; a picked row the blue wash (C11); under the pointer, grey; Control-
@@ -595,13 +601,16 @@ struct AgentRow: View {
     .accessibilityLabel(agent.hasUnread ? "\(agent.name), Unread activity" : agent.name)
   }
 
+  /** The butterfly: 36 on the rail (the window's), 46 in a row (the iPhone's 56, scaled). */
+  private var side: CGFloat { rail ? 36 : 46 }
+
   private func content(_ look: Look, renaming: Bool) -> some View {
-    HStack(spacing: 8) {
+    HStack(spacing: 10) {
       avatar(look)
       if !rail { details(look, renaming: renaming) }
     }
     .padding(rail ? 9 : 8)
-    .frame(width: rail ? 54 : nil, height: 54, alignment: .leading)
+    .frame(width: rail ? 54 : nil, height: rail ? 54 : 62, alignment: .leading)
     .frame(maxWidth: rail ? nil : .infinity, alignment: .leading)
     .background {
       RowGround(open: window.selected == agent.id && !window.orgChart && !newChat.hidesOpenRow(window), picked: sidebar.selection.contains(agent.id), hovering: hovering, look: look)
@@ -612,11 +621,11 @@ struct AgentRow: View {
 
   private func avatar(_ look: Look) -> some View {
     let dot = cornerDot(look)
-    return AgentMark(agent: agent, agents: store.agents, size: 36, live: true)
+    return AgentMark(agent: agent, agents: store.agents, size: side, live: true)
       .cornerHole(dot: 8, on: dot != nil)
       .overlay(alignment: .topLeading) {
         if let dot {
-          Circle().fill(dot).frame(width: 8, height: 8).offset(x: 26, y: 26)
+          Circle().fill(dot).frame(width: 8, height: 8).offset(x: side - 10, y: side - 10)
         }
       }
       .overlay(alignment: .bottomTrailing) {
@@ -646,7 +655,7 @@ struct AgentRow: View {
   private func details(_ look: Look, renaming: Bool) -> some View {
     let titled = !agent.isGroup && !agent.title.isEmpty
     return VStack(alignment: .leading, spacing: 0) {
-      HStack(spacing: 6) {
+      HStack(spacing: 10) {
         if renaming {
           NameField(initial: agent.name, size: 14, line: 20) { name in
             Task { await store.renameAgent(agent.id, to: name) }
@@ -663,14 +672,15 @@ struct AgentRow: View {
             .layoutPriority(1)
         }
         if titled {
+          // The iPhone's tag: a grey box, the words in our blue.
           Text(agent.title)
-            .font(.system(size: 11))
-            .tracking(0.055)
+            .font(.system(size: 11.5, weight: .medium))
             .foregroundStyle(look.blue)
             .lineLimit(1)
             .truncationMode(.tail)
-            .padding(.vertical, 3)
-            .padding(.horizontal, 1)
+            .padding(.vertical, 1)
+            .padding(.horizontal, 5)
+            .background(look.tag, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
         }
         Spacer(minLength: 0)
         if !renaming && !agent.hasUnread, let time = agent.lastActivityAt {

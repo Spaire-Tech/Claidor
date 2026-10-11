@@ -2525,3 +2525,13 @@ colour by 2.85 s. The Mac's sign-in shows it in the butterfly's place
 beside "Simeon" (`LogoShimmer`, SignInScreen.swift; the logo is the
 iPhone's `SignIn/Mark`, the site's favicon); the iPhone's launch and
 sign-in show it too. With Reduce Motion, the logo at once.
+
+### The rows as on the iPhone (11 October 2026)
+
+The founder: "apply the spaces / box change (chief of staff) etc to the
+mac". The sidebar's rows take the iPhone list's spacing and title tag,
+scaled by the type (the Mac's name is 14 to the phone's 17): rows 62 high
+and 4 apart, 66 a row (the phone's 80); the butterfly 46 (the phone's 56),
+10 before the text; the title in a grey box (`Look.tag`, `#252527` on
+dark) with its words in our blue, 11.5 medium, 10 after the name (the
+phone's 14 and 13). The rail keeps the window's 54 and 36.
