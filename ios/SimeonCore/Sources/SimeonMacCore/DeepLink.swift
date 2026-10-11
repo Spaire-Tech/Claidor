@@ -59,8 +59,9 @@ public struct DeepLink: Equatable, Sendable {
     let source: Source
     if scheme != nil { source = .scheme } else if lower.hasPrefix("https:") { source = .https } else { return nil }
     guard let parts = URLComponents(string: raw), parts.user == nil, parts.password == nil, parts.port == nil else { return nil }
-    // Empty pieces (`?id=1&`) are no keys, as the browser's URLSearchParams reads them.
-    let query = (parts.queryItems ?? []).filter { !($0.name.isEmpty && ($0.value ?? "").isEmpty) }
+    // Empty pieces (`?id=1&`, `&&`) are no keys, as the browser's URLSearchParams reads them; a bare `=` is a key with no
+    // name, which no route knows (JavaScript reads `?id=42&=` as two keys and refuses it).
+    let query = (parts.queryItems ?? []).filter { !($0.name.isEmpty && $0.value == nil) }
     let path: String
     switch source {
     case .scheme:

@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 import SimeonCore
 
 /**
@@ -854,13 +855,20 @@ struct PictureStrip: View {
   }
 }
 
-/** One picture: read from the agent's computer (or the web), grey until it is. */
+/**
+ * One picture: read from the agent's computer (or the web), grey until it
+ * is. Its right-click menu is the Electron app's (step 14): Copy image,
+ * Save image… ("image.<kind>"), and Copy image address for a picture from
+ * the web (not a computer file's data address, megabytes of text).
+ */
 struct ChatPicture: View {
   let image: ChatImage
   let agentId: String
   let look: Look
   @Environment(AppStore.self) private var store
+  @Environment(ChatControl.self) private var control: ChatControl?
   @State private var picture: NSImage?
+  @State private var bytes: Data?
 
   var body: some View {
     ZStack {
@@ -870,13 +878,47 @@ struct ChatPicture: View {
       }
     }
     .accessibilityLabel(image.alt.isEmpty ? "Picture" : image.alt)
+    .onHover { inside in control?.pictureHovered = inside }
+    .onDisappear { control?.pictureHovered = false }
+    .contextMenu {
+      if let picture {
+        Button("Copy image") {
+          NSPasteboard.general.clearContents()
+          NSPasteboard.general.writeObjects([picture])
+        }
+        Button("Save image\u{2026}") { save() }
+      }
+      if image.url.hasPrefix("https://") || image.url.hasPrefix("http://") {
+        Button("Copy image address") {
+          NSPasteboard.general.clearContents()
+          NSPasteboard.general.setString(image.url, forType: .string)
+        }
+      }
+    }
     .task(id: image.url) {
       if image.url.hasPrefix("https://"), let url = URL(string: image.url) {
-        if let (data, _) = try? await URLSession.shared.data(from: url) { picture = NSImage(data: data) }
+        if let (data, _) = try? await URLSession.shared.data(from: url) { bytes = data; picture = NSImage(data: data) }
       } else if let data = await store.readFile(image.url, agentId: agentId) {
+        bytes = data
         picture = NSImage(data: data)
       }
     }
+  }
+
+  /** Save image…: the Mac's save panel, "image.<kind>" from the picture's own kind (png when unknown), pictures only. */
+  private func save() {
+    guard let bytes else { return }
+    let kinds = ["png", "jpg", "gif", "webp", "svg", "bmp", "avif"]
+    let own = (image.url as NSString).pathExtension.lowercased()
+    let kind = own == "jpeg" ? "jpg" : kinds.contains(own) ? own : "png"
+    let panel = NSSavePanel()
+    panel.nameFieldStringValue = "image.\(kind)"
+    panel.allowedContentTypes = (kinds + ["jpeg"]).compactMap { UTType(filenameExtension: $0) }
+    let write: (NSApplication.ModalResponse) -> Void = { response in
+      guard response == .OK, let target = panel.url else { return }
+      try? bytes.write(to: target)
+    }
+    if let window = MacServices.shared.mainWindow { panel.beginSheetModal(for: window, completionHandler: write) } else { write(panel.runModal()) }
   }
 }
 

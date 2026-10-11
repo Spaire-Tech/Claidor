@@ -740,8 +740,17 @@ private struct UploadTab: View {
     panel.allowsMultipleSelection = false
     panel.canChooseDirectories = false
     panel.allowedContentTypes = AvatarEditorWords.pickerTypes.compactMap { UTType(filenameExtension: $0) }
-    guard panel.runModal() == .OK, let url = panel.url else { return }
-    model.take(file: url, fromDrop: false)
+    // A sheet on the window, as the Electron app's (`showOpenDialog(mainWindow)`, step 14).
+    let model = model
+    guard let window = MacServices.shared.mainWindow ?? NSApp.keyWindow else {
+      guard panel.runModal() == .OK, let url = panel.url else { return }
+      model.take(file: url, fromDrop: false)
+      return
+    }
+    panel.beginSheetModal(for: window) { response in
+      guard response == .OK, let url = panel.url else { return }
+      MainActor.assumeIsolated { model.take(file: url, fromDrop: false) }
+    }
   }
 }
 

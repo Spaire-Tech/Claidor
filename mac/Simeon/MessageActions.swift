@@ -39,6 +39,8 @@ final class ChatControl {
   var focusCount = 0
   /** The message field's frame (44 on one line), so the last message clears it. */
   var composerHeight: CGFloat = 44
+  /** A chat picture under the pointer (step 14): its right-click menu is its own, not the message's (as the window's main menu). */
+  var pictureHovered = false
   /** Low disk's banner under the head, with its 8 (step 13): the messages start under it. */
   var bannerHeight: CGFloat = 0
 
@@ -444,7 +446,7 @@ struct RightClickMenu: NSViewRepresentable {
   }
 
   private func open(_ event: NSEvent) -> Bool {
-    guard viewers.shown == nil, !SearchState.showing, !WindowOverlay.showing else { return false }
+    guard viewers.shown == nil, !SearchState.showing, !WindowOverlay.showing, !control.pictureHovered else { return false }
     // Over an exchange (or a call's lines), only its own messages, and only Copy.
     if control.coversChat {
       guard let hovered = control.exchangeHovered else { return false }

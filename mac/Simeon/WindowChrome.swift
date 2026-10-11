@@ -61,6 +61,46 @@ enum WindowChrome {
   }
 }
 
+/**
+ * The whole window's zoom (`host-window-chords.ts`, decision 4): ⌘= or ⌘+
+ * in, ⌘- out, ⌘0 back, 0.1 a step between 50% and 300%, caught before
+ * anything in the window (a field too; not with ⌥). Like Chromium's page
+ * zoom the window is laid out at its size over the factor and drawn at
+ * the factor (the content view's bounds), so at 150% a 1040-wide window
+ * folds the sidebar to its rail. The traffic lights stay as they are. Not
+ * kept across launches.
+ */
+@MainActor
+enum WindowZoom {
+  private(set) static var factor = 1.0
+
+  /** A zoom key, or nil. */
+  static func step(for event: NSEvent) -> Double? {
+    let mods = event.modifierFlags.intersection([.command, .shift, .option, .control])
+    guard mods.contains(.command), !mods.contains(.option), !mods.contains(.control) else { return nil }
+    switch event.charactersIgnoringModifiers {
+    case "=", "+": return 0.1
+    case "-": return -0.1
+    case "0": return mods == .command ? 0 : nil
+    default: return nil
+    }
+  }
+
+  static func apply(_ step: Double, to window: NSWindow) {
+    let next = step == 0 ? 1.0 : ((factor + step) * 100).rounded() / 100
+    factor = min(3.0, max(0.5, next))
+    fit(window)
+  }
+
+  /** The content laid out at its size over the factor, drawn at the factor. */
+  static func fit(_ window: NSWindow) {
+    guard let content = window.contentView else { return }
+    let size = content.frame.size
+    let bounds = NSSize(width: size.width / factor, height: size.height / factor)
+    if content.bounds.size != bounds { content.setBoundsSize(bounds) }
+  }
+}
+
 /** Reaches the window a view is in, once, to set its frame up. */
 struct WindowAccessor: NSViewRepresentable {
   func makeNSView(context: Context) -> NSView { WindowWatchingView() }
@@ -68,6 +108,8 @@ struct WindowAccessor: NSViewRepresentable {
 
   final class WindowWatchingView: NSView {
     private weak var configured: NSWindow?
+    nonisolated(unsafe) private var zoomKeys: Any?
+    nonisolated(unsafe) private var resized: NSObjectProtocol?
 
     override func viewDidMoveToWindow() {
       super.viewDidMoveToWindow()
@@ -78,6 +120,30 @@ struct WindowAccessor: NSViewRepresentable {
       Task { @MainActor [weak window] in
         if let window { WindowChrome.placeTrafficLights(window) }
       }
+      // The app's services follow this window (step 14): notifications, the Dock, what the computer counts as read.
+      MacServices.shared.mainWindow = window
+      // ⌘= ⌘- ⌘0 (step 14), before anything in the window takes them.
+      if let zoomKeys { NSEvent.removeMonitor(zoomKeys) }
+      zoomKeys = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+        let took = MainActor.assumeIsolated { () -> Bool in
+          guard let self, let window = self.window, event.window === window, let step = WindowZoom.step(for: event) else { return false }
+          WindowZoom.apply(step, to: window)
+          return true
+        }
+        return took ? nil : event
+      }
+      if let resized { NotificationCenter.default.removeObserver(resized) }
+      resized = NotificationCenter.default.addObserver(forName: NSWindow.didResizeNotification, object: window, queue: .main) { [weak window] _ in
+        MainActor.assumeIsolated {
+          if let window, WindowZoom.factor != 1 { WindowZoom.fit(window) }
+        }
+      }
+      if WindowZoom.factor != 1 { WindowZoom.fit(window) }
+    }
+
+    deinit {
+      if let zoomKeys { NSEvent.removeMonitor(zoomKeys) }
+      if let resized { NotificationCenter.default.removeObserver(resized) }
     }
   }
 }

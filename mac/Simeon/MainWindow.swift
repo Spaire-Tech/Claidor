@@ -145,6 +145,13 @@ struct AppRoot: View {
     }
     // About (step 10), over everything, the sign-in too.
     .overlay { AboutLayer() }
+    // Deep Links (step 14), from a `…/v1/info?topic=deep-links` link, signed out too.
+    .overlay { DeepLinksLayer() }
+    // Links in messages open only on the web, in mail, Obsidian or the phone (`shell.openExternal`'s allowlist, decision 7);
+    // any other kind does nothing, as in the Electron app.
+    .environment(\.openURL, OpenURLAction { url in
+      ["http", "https", "mailto", "obsidian", "tel"].contains(url.scheme?.lowercased() ?? "") ? .systemAction(url) : .discarded
+    })
     .frame(minWidth: WindowChrome.minimum.width, minHeight: WindowChrome.minimum.height)
     .background(WindowAccessor())
     .ignoresSafeArea()

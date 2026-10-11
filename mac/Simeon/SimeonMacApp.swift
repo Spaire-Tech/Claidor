@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import UserNotifications
 import SimeonCore
 import SimeonMacCore
 
@@ -25,6 +26,8 @@ struct SimeonMacApp: App {
 
   init() {
     Faces.register()
+    // Before launch ends, so a notification clicked while Simeon was not running is heard (step 14).
+    UNUserNotificationCenter.current().delegate = MacServices.shared.notificationDelegate
   }
 
   var body: some Scene {
@@ -58,13 +61,16 @@ struct SimeonMacApp: App {
         }
         // The theme chosen in Settings, ⌘K or "/", as it was left.
         .onAppear { MacTheme.apply() }
-        // The browser's confirm page opens `simeon-mac://…`, which brings the app forward; the poll finishes the sign-in.
-        // A plugin's link (`…/v1/plugin/add?id=`) opens Plugins on that plugin's page (`qRn`).
-        .onOpenURL { url in
-          guard session.phase == .signedIn, let link = DeepLink.parse(url.absoluteString, schemes: [SimeonConfig.macURLScheme]),
-                case .pluginAdd(let id) = link.route else { return }
-          plugins.open(.plugin(id))
+        // What the Electron app's main process does (step 14): notifications, the Dock, the window in front, the menus;
+        // and "Move Simeon to the Applications folder?" from anywhere else (release builds).
+        .onAppear {
+          MacServices.shared.follow(session, window: window, plugins: plugins)
+          MacMoveToApplications.askAtLaunch()
         }
+        // The browser's confirm page opens `simeon-mac://…/open`, which brings the app forward; the poll finishes the sign-in.
+        // `…/v1/info?topic=deep-links` shows Deep Links; a plugin's link (`…/v1/plugin/add?id=`) opens Plugins on its page (`qRn`),
+        // after the sign-in when it came before.
+        .onOpenURL { url in MacServices.shared.handle(url) }
         .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
     }
     .handlesExternalEvents(matching: ["*"])
@@ -99,8 +105,13 @@ struct SimeonCommands: Commands {
         if !NSApp.windows.contains(where: { $0.isVisible && $0.canBecomeMain }) { openWindow(id: "main") }
       }
     }
-    // File holds Close Window only.
+    // File holds Close Window only (`role: "close"`).
     CommandGroup(replacing: .newItem) {}
+    CommandGroup(replacing: .saveItem) {
+      Button("Close Window") { NSApp.keyWindow?.performClose(nil) }
+        .keyboardShortcut("w")
+    }
+    CommandGroup(replacing: .printItem) {}
     CommandGroup(before: .toolbar) {
       Button("Reload") { session.reload() }
         .keyboardShortcut("r")

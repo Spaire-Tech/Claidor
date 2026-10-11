@@ -29,7 +29,7 @@ final class DeepLinkTests: XCTestCase {
       "simeon://user@app/v1/open", "simeon://app:80/v1/open", "simeon://app/v1/open?%zz",
       "simeon://app/v1/plugin/add", "simeon://app/v1/plugin/add?id=", "simeon://app/v1/plugin/add?id=abc",
       "simeon://app/v1/plugin/add?id=12345678901234567890", "simeon://app/v1/plugin/add?id=1&id=2",
-      "simeon://app/v1/plugin/add?id=1&x=2", "simeon://app/v1/info", "simeon://app/v1/info?topic=other",
+      "simeon://app/v1/plugin/add?id=1&x=2", "simeon://app/v1/plugin/add?id=42&=", "simeon://app/v1/info", "simeon://app/v1/info?topic=other",
       "simeon://app/v1/info?topic=deep-links&topic=deep-links", "https://evil.example/sand/link/v1/open",
       "https://app.simeonlabs.com/v1/open", "simeon://app/v1/op en", "simeon://app/v1/opén",
       "simeon://app/v1/" + String(repeating: "a", count: 2_100),

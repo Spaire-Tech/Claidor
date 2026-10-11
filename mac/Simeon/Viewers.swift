@@ -121,19 +121,55 @@ struct ViewerKeys: NSViewRepresentable {
 }
 
 /**
- * Download (`downloadAttachment`): the Mac's save panel in Downloads with
- * the file's name, then the file read from the computer into it.
+ * Download (`downloadAttachment`, step 14): the file read from the computer
+ * first ("Couldn't save this file" when it can't be), then the Mac's save
+ * panel as a sheet on the window, in Downloads, named as the Electron app
+ * names it (`resolveSuggestedDownloadName`); a failed write leaves nothing
+ * behind and says so.
  */
 @MainActor
 func saveFile(name: String, url: String, agentId: String, store: AppStore) {
-  let panel = NSSavePanel()
-  panel.nameFieldStringValue = name
-  panel.directoryURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
-  guard panel.runModal() == .OK, let target = panel.url else { return }
   Task {
-    guard let data = await store.readFile(url, agentId: agentId) else { return }
-    try? data.write(to: target)
+    guard let data = await store.readFile(url, agentId: agentId) else { return couldNotSave() }
+    let panel = NSSavePanel()
+    panel.nameFieldStringValue = downloadName(suggested: name, file: url)
+    panel.directoryURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
+    let write: (NSApplication.ModalResponse) -> Void = { response in
+      guard response == .OK, let target = panel.url else { return }
+      do {
+        try data.write(to: target)
+      } catch {
+        try? FileManager.default.removeItem(at: target)
+        MainActor.assumeIsolated { couldNotSave() }
+      }
+    }
+    if let window = MacServices.shared.mainWindow ?? NSApp.keyWindow {
+      panel.beginSheetModal(for: window, completionHandler: write)
+    } else {
+      write(panel.runModal())
+    }
   }
+}
+
+/** The name offered (`resolveSuggestedDownloadName`): the card's when its kind matches the file's (or the file is `.bin` and the name has no kind), else the file's own, else "download". */
+func downloadName(suggested: String, file: String) -> String {
+  let own = (URL(string: file)?.lastPathComponent).flatMap { $0.removingPercentEncoding ?? $0 } ?? (file as NSString).lastPathComponent
+  let ownKind = (own as NSString).pathExtension.lowercased()
+  let suggestedKind = (suggested as NSString).pathExtension.lowercased()
+  let trimmed = suggested.trimmingCharacters(in: .whitespacesAndNewlines)
+  if !trimmed.isEmpty, suggestedKind == ownKind || (ownKind == "bin" && suggestedKind.isEmpty) { return trimmed }
+  if !own.isEmpty, own != "/" { return own }
+  return "download"
+}
+
+/** "Couldn't save this file" (the Electron app's error box; its title is not drawn on a Mac). */
+@MainActor
+private func couldNotSave() {
+  let alert = NSAlert()
+  alert.alertStyle = .critical
+  alert.messageText = "Couldn't save this file"
+  alert.addButton(withTitle: "OK")
+  if let window = MacServices.shared.mainWindow { alert.beginSheetModal(for: window) } else { alert.runModal() }
 }
 
 // MARK: The file preview
