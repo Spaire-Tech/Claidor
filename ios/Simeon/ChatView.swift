@@ -159,7 +159,8 @@ struct ChatView: View {
         // "/": the Mac's palette commands that make sense here (ComposerLists.appActions).
         actions.slashActions = {
           ComposerLists.appActions(isGroup: store.groupIds.contains(agentId), hasHiddenAgents: store.hasHidden, hasChannels: channelsOn,
-                                   showsOrgChart: orgChartOn, showsUsage: store.usage.summary == nil || store.usage.showsSection)
+                                   showsOrgChart: orgChartOn, showsUsage: store.usage.summary == nil || store.usage.showsSection,
+                                   computerUpdate: store.computerUpdateOffer != nil)
         }
         actions.runSlashAction = { id in runSlash(id) }
         actions.openExchange = { exchange = $0 }
@@ -205,6 +206,7 @@ struct ChatView: View {
     case "theme:system": theme = "system"
     case "theme:light": theme = "light"
     case "theme:dark": theme = "dark"
+    case "computer-update": ComputerAsks.shared.ask = .update
     default: break
     }
   }
