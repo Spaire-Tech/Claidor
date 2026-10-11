@@ -960,6 +960,25 @@ the computer) shows the server's sentence and leaves the person signed in.
 The Swift Mac app has the same button as a row under its account card. The
 words are `AccountMenu`'s, shared by both.
 
+## 33. The chat's top in the reference's proportions (11 October 2026)
+
+"The app center avatar in our chats dont use apple design, and its not
+proportionate to the rest (too small) … can we design the proportion like
+muse." Measured on the founder's screenshot of the reference app against
+its 44 pt side buttons: the picture is 68 pt, its top level with the
+buttons' top; the name is 15 pt in a 34 pt capsule, laid 4 pt over the
+picture's foot.
+
+- The butterfly is 68 pt (it was 52), its top at the top of the bar's 44 pt
+  row, beside the back and call buttons (it was drawn 34 pt up, lower than
+  the buttons' top).
+- The name is 15 pt medium (it was 13) in Apple's glass capsule, 34 pt tall
+  with 12 pt each side (it was 24 pt tall, too small for the system's own
+  capsules), over the butterfly's foot instead of 4 pt under it.
+- Not yet seen on a phone: the bar's row is taken as 44 pt; if the
+  butterfly's top sits off the buttons' top there, `ChatHeadline.barRow`
+  moves it.
+
 ## Suggested order (the founder decides)
 
 1. The chat's look: the bubble, the top bar, markdown, brand names with logos, agent names with butterflies.

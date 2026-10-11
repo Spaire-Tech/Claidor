@@ -526,24 +526,35 @@ struct TypingSlot: View {
 }
 
 /**
- * The agent at the top of the chat, as Messages has it: its butterfly at
- * 52 pt (its members side by side for a group) with its name in a glass
- * capsule under it, up beside the bar's back and call buttons; a tap opens
- * its page. Only this redraws when the agent changes.
+ * The agent at the top of the chat, in the proportions of the founder's
+ * reference (Muse, 11 October 2026: "not proportionate to the rest (too
+ * small)"), measured against its 44 pt side buttons: the butterfly at 68 pt
+ * (its members side by side for a group), its top level with the bar's back
+ * and call buttons, and its name at 15 pt in a 34 pt glass capsule laid 4 pt
+ * over the butterfly's foot. A tap opens its page. Only this redraws when
+ * the agent changes.
  */
 struct ChatHeadline: View {
   let agentId: String
   let open: () -> Void
   @Environment(AppStore.self) private var store
+  /** The butterfly: 68 pt, the reference's picture against its 44 pt buttons. */
+  static let size: CGFloat = 68
+  /** How far the name's capsule lies over the butterfly's foot. */
+  static let overlap: CGFloat = 4
+  /** The system bar's row, which the butterfly reaches up into. */
+  static let barRow: CGFloat = 44
 
   var body: some View {
     if let agent = store.agent(agentId) {
-      VStack(spacing: 4) {
+      VStack(spacing: -Self.overlap) {
         // Still: the agent at work moves in its row at the end of the chat (TypingRow); a second one moving up here drew every frame twice.
         AgentAvatar(agent: agent, members: store.members(of: agent), groupInARow: true, moves: false)
-          .frame(width: agent.isGroup ? nil : 52, height: 52)
-        Text(agent.name).font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.primary).lineLimit(1)
-          .padding(.horizontal, 12).padding(.vertical, 4)
+          .frame(width: agent.isGroup ? nil : Self.size, height: Self.size)
+        // Over the butterfly's foot, as the reference's name sits on its picture.
+        Text(agent.name).font(.system(size: 15, weight: .medium)).foregroundStyle(Ink.primary).lineLimit(1)
+          .padding(.horizontal, 12)
+          .frame(minHeight: 34)
           .glassEffect(.regular, in: .capsule)
       }
       .padding(.horizontal, 70)
@@ -552,8 +563,8 @@ struct ChatHeadline: View {
       .accessibilityElement(children: .ignore)
       .accessibilityLabel("\(agent.name), details")
       .accessibilityAddTraits(.isButton)
-      // Up into the bar's row, beside its back and call buttons.
-      .padding(.top, -34)
+      // Up into the bar's row: its top level with the back and call buttons' (the bar's 44 pt row).
+      .padding(.top, -Self.barRow)
       .padding(.bottom, 6)
       .frame(maxWidth: .infinity)
     }
