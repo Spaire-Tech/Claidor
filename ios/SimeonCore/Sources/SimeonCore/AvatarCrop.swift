@@ -109,4 +109,21 @@ public enum AvatarEditorWords {
   public static let pastedName = "Pasted image"
   public static let voicesUnavailable = "Voices aren\u{2019}t available right now."
   public static let voiceNotSaved = "Couldn\u{2019}t save the voice."
+  public static let generationEmpty = "Image generation returned no picture."
+
+  /**
+   * The Reset beside the editor's tabs (`c3n`): "Reset to the Agent" while
+   * the agent has a picture (it takes the picture away), "Reset character to
+   * default" on Agent for an agent with a colour of its own (the colour goes
+   * back), else none.
+   */
+  public static func reset(hasPicture: Bool, onAgentTab: Bool, colour: String?) -> String? {
+    hasPicture ? "Reset to the Agent" : (onAgentTab && colour != nil ? "Reset character to default" : nil)
+  }
+
+  /** The colour ringed on Agent: for an agent with a picture only one picked and not yet set; else its own, or its id's when it has none or one no longer offered. */
+  public static func chosenColour(_ agent: Agent, staged: String?) -> String? {
+    if agent.avatarDataURL?.isEmpty == false { return staged }
+    return agent.colour.flatMap { id in AgentPalette.all.contains { $0.id == id } ? id : nil } ?? AgentPalette.defaultColour(forAgentId: agent.id)
+  }
 }
