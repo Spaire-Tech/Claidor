@@ -14,19 +14,33 @@ import SimeonMacCore
 @Observable
 final class ChannelsModel {
   private(set) var view: ChannelsView?
-  private(set) var busy: Set<String> = []
+  /** Calls under way per platform: its row's buttons and menu wait while any is. */
+  private(set) var busy: [String: Int] = [:]
+  /** Each read and call numbered as it starts: an answer older than the one shown is dropped (the 4 s reads, the window coming forward and a call's own answer overlap). */
+  @ObservationIgnored private var issued = 0
+  @ObservationIgnored private var shown = 0
 
   func load(_ agentId: String, store: AppStore) async {
-    if let next = await store.channels(agentId) { view = next }
+    issued += 1
+    let number = issued
+    apply(await store.channels(agentId), number)
   }
 
-  func isBusy(_ platform: String) -> Bool { busy.contains(platform) }
+  private func apply(_ next: ChannelsView?, _ number: Int) {
+    guard let next, number > shown else { return }
+    shown = number
+    view = next
+  }
 
-  /** A call for one platform; its row's buttons wait meanwhile. */
+  func isBusy(_ platform: String) -> Bool { (busy[platform] ?? 0) > 0 }
+
+  /** A call for one platform, then a read; its row waits meanwhile. */
   func run(_ platform: String, agentId: String, store: AppStore, _ call: @escaping @MainActor () async -> ChannelsView?) async {
-    busy.insert(platform)
-    if let next = await call() { view = next }
-    busy.remove(platform)
+    busy[platform, default: 0] += 1
+    issued += 1
+    let number = issued
+    apply(await call(), number)
+    busy[platform, default: 1] -= 1
     await load(agentId, store: store)
   }
 }
@@ -96,6 +110,9 @@ private struct ChannelRow: View {
   @State private var token = ""
   @State private var hovering = false
   @State private var guide = false
+  /** "…"'s menu is open: "…" stays, the chip stays hidden. */
+  @State private var menuOpen = false
+  @State private var menuSpot = WindowSpot()
   @FocusState private var fieldFocused: Bool
 
   var body: some View {
@@ -146,37 +163,56 @@ private struct ChannelRow: View {
       .accessibilityHidden(true)
   }
 
-  /** The chip, and "…" in its place under the pointer (or while its menu is open). */
+  /** The chip, and "…" in its place under the pointer or while its menu is open (.15 s). */
   @ViewBuilder
   private func status(_ state: ChannelsView.RowState) -> some View {
-    let connected = state == .connected || state == .connecting
+    let showsMore = hovering || menuOpen
     ZStack(alignment: .trailing) {
       if let chip = ChannelsView.chip(state) {
         chipView(chip, state: state)
-          .opacity(hovering ? 0 : 1)
+          .opacity(showsMore ? 0 : 1)
       }
-      Menu {
-        Button { guide = true } label: { Label("How to connect", systemImage: "questionmark.circle") }
-        if connected {
-          Button {
-            Task { await model.run(manifest.platform, agentId: agentId, store: store) { await store.refreshChannel(agentId, platform: manifest.platform) } }
-          } label: { Label("Refresh", systemImage: "arrow.clockwise") }
-          Button {
-            Task { await model.run(manifest.platform, agentId: agentId, store: store) { await store.disconnectChannel(agentId, platform: manifest.platform) } }
-          } label: { Label("Disconnect", systemImage: "powerplug") }
-        }
-      } label: {
+      Button { openMenu(state) } label: {
         Image(systemName: "ellipsis")
           .font(.system(size: 12))
           .foregroundStyle(look.inkSecondary)
           .frame(width: 16, height: 16)
+          .contentShape(Rectangle())
       }
-      .menuStyle(.borderlessButton)
-      .menuIndicator(.hidden)
-      .fixedSize()
-      .opacity(hovering ? 1 : 0)
+      .buttonStyle(.plain)
+      .background(WindowSpotReader(spot: menuSpot))
+      .opacity(showsMore ? 1 : 0)
       .accessibilityLabel("Connection actions")
     }
+  }
+
+  /** "Connection actions", the Mac's menu under "…": How to connect; Refresh and Disconnect (its icon red) while connected or connecting, waiting while a call runs. */
+  private func openMenu(_ state: ChannelsView.RowState) {
+    let menu = NSMenu(title: "Connection actions")
+    menu.autoenablesItems = false
+    let busy = model.isBusy(manifest.platform)
+    let how = BlockMenuItem("How to connect") { guide = true }
+    how.image = NSImage(systemSymbolName: "questionmark.circle", accessibilityDescription: nil)
+    menu.addItem(how)
+    if state == .connected || state == .connecting {
+      let refresh = BlockMenuItem("Refresh") {
+        Task { await model.run(manifest.platform, agentId: agentId, store: store) { await store.refreshChannel(agentId, platform: manifest.platform) } }
+      }
+      refresh.image = NSImage(systemSymbolName: "arrow.clockwise", accessibilityDescription: nil)
+      refresh.isEnabled = !busy
+      menu.addItem(refresh)
+      let disconnect = BlockMenuItem("Disconnect") {
+        Task { await model.run(manifest.platform, agentId: agentId, store: store) { await store.disconnectChannel(agentId, platform: manifest.platform) } }
+      }
+      disconnect.image = NSImage(systemSymbolName: "powerplug", accessibilityDescription: nil)?
+        .withSymbolConfiguration(NSImage.SymbolConfiguration(paletteColors: [look.dark ? NSColor(red: 1, green: 0x56 / 255, blue: 0x67 / 255, alpha: 1) : NSColor(red: 0xc2 / 255, green: 0x1d / 255, blue: 0x2e / 255, alpha: 1)]))
+      disconnect.isEnabled = !busy
+      menu.addItem(disconnect)
+    }
+    menu.minimumWidth = 220
+    menuOpen = true
+    RoutineMenus.popUp(menu, under: menuSpot.frame)
+    menuOpen = false
   }
 
   /** The chip (`O0n`): 26 high, round, a 6-point dot of its colour; "Soon" has none. */
@@ -235,14 +271,10 @@ private struct ChannelRow: View {
     .opacity(disabled ? 0.56 : 1)
   }
 
-  /** Connect toggles the field; the field takes the keys (the window leaves them on Connect; decision 6). */
+  /** Connect toggles the field (it takes the keys as it appears: the window leaves them on Connect; decision 6). */
   private func toggleForm() {
     formOpen.toggle()
-    if formOpen {
-      Task { @MainActor in fieldFocused = true }
-    } else {
-      token = ""
-    }
+    if !formOpen { token = "" }
   }
 
   /** The token's field (secret), "Stored securely, never shown to your agent.", Cancel and Store securely. */
@@ -257,6 +289,7 @@ private struct ChannelRow: View {
         .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(look.ground))
         .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(look.ink.opacity(fieldFocused ? 0.20 : 0.10), lineWidth: 1))
         .focused($fieldFocused)
+        .onAppear { fieldFocused = true }
         .onSubmit { storeToken() }
       HStack(alignment: .center, spacing: 8) {
         Label {

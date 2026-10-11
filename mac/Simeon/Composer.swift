@@ -236,7 +236,14 @@ struct Composer: View {
       }
       control.reply = nil
       return true
-    }, onTrigger: { picks.update($0) }, onListKey: { listKey($0) }, onFiles: { control.stage($0) }, focusOnAppear: takesKeys)
+    }, onTrigger: { next in
+      let wasSlash = picks.request?.kind == .slash
+      picks.update(next)
+      // "/" opening reads its gates again (the computer may have been waking when the chat opened).
+      if next?.kind == .slash, !wasSlash, agentId != NewChatState.draftKey {
+        Task { await picks.readGates(agentId, store: store) }
+      }
+    }, onListKey: { listKey($0) }, onFiles: { control.stage($0) }, focusOnAppear: takesKeys)
     .overlay(alignment: .topLeading) {
       if text.isEmpty {
         Text(placeholder)

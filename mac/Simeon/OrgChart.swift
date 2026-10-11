@@ -15,6 +15,7 @@ import SimeonMacCore
 struct OrgChartView: View {
   @Environment(AppStore.self) private var store
   @Environment(WindowState.self) private var window
+  @Environment(Viewers.self) private var viewers
   @Environment(\.colorScheme) private var scheme
   @State private var pick: NetworkPick?
 
@@ -37,7 +38,7 @@ struct OrgChartView: View {
     // Escape: the card first, then the chart (the window does nothing; decision 2 in mac/STEPS.md).
     .background(ViewerKeys { event in
       let mods = event.modifierFlags.intersection([.command, .shift, .option, .control])
-      guard event.keyCode == 53, mods.isEmpty, !(NSApp.keyWindow?.firstResponder is NSText) else { return false }
+      guard event.keyCode == 53, mods.isEmpty, viewers.shown == nil, !(NSApp.keyWindow?.firstResponder is NSText) else { return false }
       if pick != nil { pick = nil } else { window.orgChart = false }
       return true
     })
@@ -102,11 +103,17 @@ private struct NetworkStage: View {
   @Binding var pick: NetworkPick?
   let look: Look
   @Environment(AppStore.self) private var store
+  @Environment(Viewers.self) private var viewers
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @State private var view = AgentNetwork.View.identity
   @State private var dragStart: AgentNetwork.View?
   @State private var pinchStart: AgentNetwork.View?
-  @State private var pointer: CGPoint?
+  /** Where the pointer is, kept out of the drawing (a move redraws nothing unless the line under it changes). */
+  @State private var pointer = PointerBox()
+  /** The line under the pointer (its key): darker, as the window's hover. */
+  @State private var hoveredLine: String?
+  /** A node's double click opens its card once, not open-then-shut. */
+  @State private var lastPick: (pick: NetworkPick, at: Date)?
   @State private var size: CGSize = .zero
   @State private var memo = LayoutMemo()
 
@@ -121,10 +128,13 @@ private struct NetworkStage: View {
             .onChange(of: geometry.size) { _, now in size = now }
         }
         .contentShape(Rectangle())
-        .gesture(pan)
+        // Beside the nodes' and lines' own clicks: a drag that starts on a node pans too.
+        .simultaneousGesture(pan)
         .simultaneousGesture(pinch)
         .onContinuousHover { phase in
-          if case .active(let location) = phase { pointer = location } else { pointer = nil }
+          if case .active(let location) = phase { pointer.point = location } else { pointer.point = nil }
+          let next = lineUnderPointer()
+          if next != hoveredLine { hoveredLine = next }
         }
         .pointerStyle(cursor)
         .clipped()
@@ -166,21 +176,22 @@ private struct NetworkStage: View {
         // The ground: a click closes the card, a double-click puts the zoom back.
         Color.clear
           .contentShape(Rectangle())
-          .onTapGesture(count: 2) { reset() }
           .onTapGesture { pick = nil }
+          .simultaneousGesture(TapGesture(count: 2).onEnded { reset() })
         ForEach(edges, id: \.key) { edge in
           if let a = points[edge.sourceId], let b = points[edge.targetId] {
             NetworkLine(edge: edge, from: CGPoint(x: a.x, y: a.y), to: CGPoint(x: b.x, y: b.y), activity: AgentNetwork.activity(edge, byId: byId, nowMs: nowMs),
-                        selected: pick == .edge(edge), label: AgentNetwork.edgeLabel(edge.kind, source: byId[edge.sourceId]?.name ?? "", target: byId[edge.targetId]?.name ?? ""),
+                        selected: pick == .edge(edge), hovering: hoveredLine == edge.key,
+                        label: AgentNetwork.edgeLabel(edge.kind, source: byId[edge.sourceId]?.name ?? "", target: byId[edge.targetId]?.name ?? ""),
                         reduceMotion: reduceMotion, look: look) {
-              pick = pick == .edge(edge) ? nil : .edge(edge)
+              toggle(.edge(edge))
             }
           }
         }
         ForEach(agents) { agent in
           if let point = points[agent.id] {
             NetworkNode(agent: agent, selected: pick == .agent(agent.id), look: look) {
-              pick = pick == .agent(agent.id) ? nil : .agent(agent.id)
+              toggle(.agent(agent.id))
             }
             .position(x: point.x, y: point.y)
           }
@@ -192,6 +203,30 @@ private struct NetworkStage: View {
       // A new agent or another size: the nodes glide to their places (.48 s).
       .animation(reduceMotion ? nil : .timingCurve(0.22, 1, 0.36, 1, duration: 0.48), value: memo.key)
     }
+  }
+
+  /** The same node or line again closes its card; a second click of a double click changes nothing. */
+  private func toggle(_ next: NetworkPick) {
+    if let last = lastPick, last.pick == next, Date().timeIntervalSince(last.at) < NSEvent.doubleClickInterval { return }
+    lastPick = (next, Date())
+    pick = pick == next ? nil : next
+  }
+
+  /** The line within 8 points of the pointer (the drawing's points, the zoom and pan undone), as the window's 16-point band. */
+  private func lineUnderPointer() -> String? {
+    guard let point = pointer.point, view.scale > 0 else { return nil }
+    let x = (point.x - view.x) / view.scale, y = (point.y - view.y) / view.scale
+    let points = memo.cachedPoints
+    var best: (key: String, distance: Double)?
+    for edge in edges {
+      guard let a = points[edge.sourceId], let b = points[edge.targetId] else { continue }
+      let dx = b.x - a.x, dy = b.y - a.y
+      let length = dx * dx + dy * dy
+      let t = length == 0 ? 0 : max(0, min(1, ((x - a.x) * dx + (y - a.y) * dy) / length))
+      let distance = hypot(x - (a.x + t * dx), y - (a.y + t * dy))
+      if distance <= 8, distance < (best?.distance ?? .infinity) { best = (edge.key, distance) }
+    }
+    return best?.key
   }
 
   /** A drag past 4 points pans, half the canvas past its edges at most (`we`, margin 0.5). */
@@ -218,7 +253,7 @@ private struct NetworkStage: View {
 
   /** The wheel over the canvas zooms about the pointer (`Se`, `ve`); over the card it scrolls the card. */
   private func wheel(_ event: NSEvent) -> Bool {
-    guard let pointer, size.width > 0, !agents.isEmpty else { return false }
+    guard let pointer = pointer.point, size.width > 0, !agents.isEmpty, viewers.shown == nil else { return false }
     if pick != nil, pointer.x > size.width - 324 { return false }
     let factor = AgentNetwork.wheelFactor(deltaY: -event.scrollingDeltaY, deltaMode: event.hasPreciseScrollingDeltas ? 0 : 1, isPinch: false)
     guard factor != 1 else { return false }
@@ -251,10 +286,18 @@ private struct NetworkStage: View {
 }
 
 /** The layout, worked out again only when the agents, the lines or the canvas's size change (it is the same answer each time). */
+/** The pointer over the canvas, read by the wheel and the lines' hover only. */
+@MainActor
+private final class PointerBox {
+  var point: CGPoint?
+}
+
 @MainActor
 private final class LayoutMemo {
   private(set) var key = ""
   private var cached: [String: AgentNetwork.Point] = [:]
+  /** The points last worked out, for the pointer's line. */
+  var cachedPoints: [String: AgentNetwork.Point] { cached }
 
   func points(agents: [Agent], edges: [AgentNetwork.Edge], size: CGSize) -> [String: AgentNetwork.Point] {
     let ids = AgentNetwork.order(agents)
@@ -405,11 +448,11 @@ private struct NetworkLine: View {
   let to: CGPoint
   let activity: AgentNetwork.Activity
   let selected: Bool
+  let hovering: Bool
   let label: String
   let reduceMotion: Bool
   let look: Look
   let tap: () -> Void
-  @State private var hovering = false
 
   private var colour: Color {
     if selected { return look.link }
@@ -452,8 +495,6 @@ private struct NetworkLine: View {
     .animation(.timingCurve(0.22, 1, 0.36, 1, duration: 0.48), value: hovering)
     .contentShape(line.strokedPath(StrokeStyle(lineWidth: 16, lineCap: .round)))
     .onTapGesture(perform: tap)
-    .onHover { hovering = $0 }
-    .help(label)
     .accessibilityElement()
     .accessibilityLabel(label)
     .accessibilityAddTraits(.isButton)
@@ -519,7 +560,7 @@ private func sectionHeading(_ text: String, look: Look) -> some View {
 }
 
 /** Open chat / Open room (secondary, small): 20 high, round 4, the grey. */
-private struct CardButton: View {
+private struct ChartButton: View {
   let title: String
   let look: Look
   let action: () -> Void
@@ -586,7 +627,7 @@ private struct AgentCard: View {
       let members = store.members(of: agent)
       VStack(alignment: .leading, spacing: 6) {
         sectionHeading(AgentNetwork.members(agent.memberIds.count), look: look)
-        MemberMarks(members: members, look: look)
+        ChartMemberMarks(members: members, look: look)
       }
     }
     if let entry = agent.lastEntry, let line = Preview.line(entry), !line.isEmpty {
@@ -604,14 +645,14 @@ private struct AgentCard: View {
         }
       }
     }
-    CardButton(title: agent.isGroup ? "Open room" : "Open chat", look: look) {
+    ChartButton(title: agent.isGroup ? "Open room" : "Open chat", look: look) {
       openChat(agent.id, window: window, sidebar: sidebar, store: store)
     }
   }
 }
 
 /** A group's members at 28, 6 apart, wrapping: the first twelve, then "+N" (12, the third ink). */
-private struct MemberMarks: View {
+private struct ChartMemberMarks: View {
   let members: [Agent]
   let look: Look
   @Environment(AppStore.self) private var store
@@ -678,9 +719,9 @@ private struct MembershipCard: View {
     PairHead(first: group, second: member, caption: AgentNetwork.edgeLabel(.membership, source: group.name, target: member.name), live: false, look: look)
     VStack(alignment: .leading, spacing: 6) {
       sectionHeading(AgentNetwork.members(group.memberIds.count), look: look)
-      MemberMarks(members: store.members(of: group), look: look)
+      ChartMemberMarks(members: store.members(of: group), look: look)
     }
-    CardButton(title: "Open room", look: look) {
+    ChartButton(title: "Open room", look: look) {
       openChat(group.id, window: window, sidebar: sidebar, store: store)
     }
   }
@@ -715,7 +756,7 @@ private struct ExchangeCard: View {
             Text(AgentNetwork.loading).font(.system(size: 11)).foregroundStyle(look.inkTertiary)
           } else if failed {
             Text(AgentNetwork.couldNotLoad).font(.system(size: 11)).foregroundStyle(look.inkTertiary)
-            CardButton(title: "Retry", look: look) { attempt += 1 }
+            ChartButton(title: "Retry", look: look) { attempt += 1 }
           } else {
             Text(AgentNetwork.noMessages).font(.system(size: 11)).foregroundStyle(look.inkTertiary)
           }

@@ -1948,3 +1948,41 @@ card, a group's, Simeon's, a membership line's, a conversation's (and an
 empty one), dark; the Channels page. On a Mac: scrolling and pinching to
 zoom, dragging, double-click, the spark while two agents work together,
 connecting Discord or Slack with a real token.
+
+#### After the compile review
+
+A second reader with the compiler's rules found two things that would not
+have built: the chart's button and its members' butterflies had the names
+of types already in the app (`CardButton`, `MemberMarks`). They are
+`ChartButton` and `ChartMemberMarks` now, and no other name in `mac/Simeon`
+is used twice. Fixed too:
+
+- Every line looked hovered at once (each line's hover band was the size
+  of the canvas). The line under the pointer is worked out from where the
+  pointer is, within 8 points, as the window's 16-point band; a move
+  redraws nothing unless that line changes. The lines' tooltips went with
+  it (the card says the same).
+- A search hit in the open agent left the chart in front. It gives way to
+  the chat now.
+- Signing out with the chart open brought it back at the next sign-in.
+- Escape went to the sidebar's picked rows before the chart, and closed
+  the chart's card under an open picture. The chart's Escape comes first
+  now (its card, then the chart), and not while a picture or diagram is
+  open over it; the wheel does not zoom the chart under one either.
+- A drag that started on a node did not pan.
+- A click on the canvas waited for a possible double-click before the
+  card closed; it closes at once. A double-click on a node opened its card
+  and shut it again; it opens it once.
+- "/" read whether to offer Org Chart and Channels only when the chat
+  opened (a computer still waking said no). It reads them each time "/"
+  opens, as ⌘K does.
+- Channels: Connect did not put the keys in the token's field; "…" went
+  away while its menu was open; Refresh and Disconnect could be pressed
+  again while the first press was running, and a slow read could land
+  after a newer one and put the old state back. All fixed (a platform is
+  busy until its last press is done; an older read never replaces a newer
+  one).
+
+Left as it is: if the computer's agent network is turned off while the
+chart is open, the chart stays until it is closed (not yet compared with
+the Electron app).

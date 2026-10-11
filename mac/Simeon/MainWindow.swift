@@ -30,6 +30,8 @@ final class WindowState {
 
   /** Search's message or file: its chat opens (if it is not the open one) and goes to the line. */
   func reveal(_ entryId: String, in agentId: String, store: AppStore) {
+    // The open agent's line too: the chart gives way to its chat.
+    orgChart = false
     if selected != agentId { open(agentId, store: store) }
     opened += 1
     pendingReveal = Reveal(agentId: agentId, entryId: entryId, count: (pendingReveal?.count ?? 0) + 1)
@@ -192,6 +194,8 @@ struct MainWindow: View {
       settings.close()
       plugins.close()
       plugins.model.forget()
+      // The next sign-in opens on a chat, not the chart.
+      window.orgChart = false
     }
     // Another agent opened from the sidebar or search closes the new chat (its own single agent is its preview).
     .onChange(of: window.selected) { _, selected in
@@ -426,6 +430,8 @@ private struct KeyWatcher: NSViewRepresentable {
           editor.closePopover(store: store)
           return true
         }
+        // The org chart's Escape is its own (its card, then the chart), before the picked rows'.
+        if windowState.orgChart { return false }
         // The new chat open and no field holding the keys: Escape closes it (`zDn`). A field's own Escape comes first (the To: line's, the message field's).
         if let newChat, newChat.isOpen, !(window?.firstResponder is NSText) {
           newChat.close()

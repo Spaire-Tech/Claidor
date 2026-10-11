@@ -78,6 +78,11 @@ final class ComposerPicks {
     let answer = await store.workflows(agentId)
     skills = ComposerMenus.skills(from: answer)
     routines = ComposerMenus.skills(from: answer, scheduled: true)
+    await readGates(agentId, store: store)
+  }
+
+  /** Whether "/" offers Org Chart and Channels: read when the chat opens and again each time "/" opens (as ⌘K reads them on opening). */
+  func readGates(_ agentId: String, store: AppStore) async {
     orgChartOn = await store.agentNetworkEnabled() && !store.agents.isEmpty
     channelsOn = await store.channelsAvailable(agentId)
   }
