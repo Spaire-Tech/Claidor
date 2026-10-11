@@ -24,5 +24,17 @@
         }
       ]
     }
+  ],
+  "redirects": [
+    {
+      "source": "/legal/privacy-policy",
+      "destination": "/privacy",
+      "permanent": true
+    },
+    {
+      "source": "/legal/terms-of-service",
+      "destination": "/terms",
+      "permanent": true
+    }
   ]
 }

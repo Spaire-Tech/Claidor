@@ -945,6 +945,8 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 footer{background:var(--soft);padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px));font-size:12px;color:var(--ink2)}
 footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 footer nav{display:flex;gap:18px}
+footer a{color:inherit;text-decoration:none}
+footer a:hover{color:var(--ink)}
 </style>
 </head>
 <body>
@@ -1130,7 +1132,7 @@ footer nav{display:flex;gap:18px}
 
 </main>
 
-<footer><div class="wrap"><span>Copyright © 2026 Simeon Labs, Inc. All rights reserved.</span><nav><span>Privacy</span><span>Terms</span><span>Contact</span></nav></div></footer>
+<footer><div class="wrap"><span>Copyright © 2026 Simeon Labs, Inc. All rights reserved.</span><nav><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="mailto:support@simeonlabs.com">Contact</a></nav></div></footer>
 
 <script>
 (() => {
