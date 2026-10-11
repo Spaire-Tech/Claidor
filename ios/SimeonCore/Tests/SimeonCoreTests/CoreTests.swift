@@ -145,6 +145,32 @@ final class TokenTests: XCTestCase {
     XCTAssertEqual(SimeonAPI.audioFilename("audio/webm"), "audio.webm")
   }
 
+  /** A picture turned down: OpenAI's sentence and code reach the app (they were dropped for "answered … with 400"), and the editor says it plainly. */
+  @MainActor
+  func testARefusedPictureSaysWhy() async throws {
+    let vault = MemoryVault(SessionTokens(accessToken: "t", refreshToken: "r", expiresAtMs: 9e15))
+    let http = ScriptedHTTP([
+      { _ in HTTPAnswer(status: 400, body: json(#"{"error":{"message":"Your request was rejected by the safety system.","type":"image_generation_user_error","code":"moderation_blocked"}}"#)) },
+      { _ in HTTPAnswer(status: 502, body: json(#"{"error":{"type":"api_error","message":"The image service could not be reached."}}"#)) },
+    ])
+    let api = SimeonAPI(base: URL(string: "https://api.example.com")!, clientVersion: "1", vault: vault, http: http)
+    do {
+      _ = try await api.data("proxy/v1/images/generations", json: ["prompt": "Lilo from Lilo and Stitch"])
+      XCTFail("refused")
+    } catch let error as SimeonAPIError {
+      XCTAssertEqual(error.status, 400)
+      XCTAssertEqual(error.code, "moderation_blocked")
+      XCTAssertEqual(error.message, "Your request was rejected by the safety system.")
+      XCTAssertTrue(AppStore.drawingRefusal(error).hasPrefix("The picture maker won't draw that."))
+    }
+    do {
+      _ = try await api.data("proxy/v1/images/generations", json: ["prompt": "a kid playing soccer"])
+      XCTFail("unreachable")
+    } catch {
+      XCTAssertEqual(AppStore.drawingRefusal(error), "Couldn't draw the picture: The image service could not be reached.")
+    }
+  }
+
   func testASpentPairEndsTheSession() async {
     let vault = MemoryVault(SessionTokens(accessToken: "old", refreshToken: "spent", expiresAtMs: 0))
     let http = ScriptedHTTP([{ _ in HTTPAnswer(status: 200, body: json(#"{"shouldLogout":true}"#)) }])

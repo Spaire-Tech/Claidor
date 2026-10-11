@@ -1678,9 +1678,23 @@ public final class AppStore {
       }
       return bytes
     } catch {
-      problem = "Couldn't draw the picture: \(error.localizedDescription)"
+      problem = Self.drawingRefusal(error)
       return nil
     }
+  }
+
+  /**
+   * What the avatar editor says when no picture came. The picture maker
+   * (OpenAI's) turns down some descriptions, among them characters from
+   * films and shows (the founder, 11 October 2026: a kid playing soccer was
+   * drawn, Lilo from Lilo & Stitch was not); that is said in plain words.
+   */
+  static func drawingRefusal(_ error: Error) -> String {
+    if let refused = error as? SimeonAPIError,
+       refused.code == "moderation_blocked" || refused.message.localizedCaseInsensitiveContains("safety system") {
+      return "The picture maker won't draw that. It turns down characters from films, shows and games, real people, and some other subjects. Describe a picture of your own instead."
+    }
+    return "Couldn't draw the picture: \(error.localizedDescription)"
   }
 
   public func setNotify(_ agentId: String, _ on: Bool) async {

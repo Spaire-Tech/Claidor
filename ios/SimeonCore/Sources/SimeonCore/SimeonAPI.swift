@@ -20,6 +20,8 @@ public final class MemoryVault: TokenVault, @unchecked Sendable {
 public struct SimeonAPIError: Error, LocalizedError, Sendable {
   public let message: String
   public let status: Int
+  /** The refusal's own code when the answer names one (`error.code`, e.g. OpenAI's `moderation_blocked`). */
+  public var code: String? = nil
   public var errorDescription: String? { message }
 }
 
@@ -114,7 +116,12 @@ public actor SimeonAPI {
     try await authorized(&request)
     let answer = try await http.send(request)
     if answer.status == 401 { sessionEnded() }
-    guard answer.ok else { throw SimeonAPIError(message: "Simeon Labs' server answered \(path) with \(answer.status).", status: answer.status) }
+    guard answer.ok else {
+      // The refusal's own sentence and code when it has them: the server's proxy and the providers it passes on answer
+      // `{"error": {"message", "code"}}` (server/simeon/desktop/proxy_common.py), meant to be shown as they are.
+      let said = answer.json?["error"]
+      throw SimeonAPIError(message: said?["message"]?.text ?? "Simeon Labs' server answered \(path) with \(answer.status).", status: answer.status, code: said?["code"]?.text)
+    }
     guard let parsed = answer.json else { throw SimeonAPIError(message: "Simeon Labs' server answered \(path) with something that is not JSON.", status: answer.status) }
     if let code = parsed["code"], code.int != 0 {
       throw SimeonAPIError(message: parsed["message"]?.text ?? "Simeon Labs' server refused \(path).", status: answer.status)
