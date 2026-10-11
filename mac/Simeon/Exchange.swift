@@ -132,7 +132,9 @@ private struct ExchangeHeader: View {
           ButterflyMark(palette: AgentPalette.named(nil), size: 20)
         }
       }
-      .frame(width: 20, height: 20)
+      // At least 20 wide: a group would be its members in a row (step 14).
+      .frame(minWidth: 20)
+      .frame(height: 20)
       Text(name)
         .font(.system(size: 13, weight: .medium))
         .foregroundStyle(look.ink)

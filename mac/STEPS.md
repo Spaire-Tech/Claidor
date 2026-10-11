@@ -2370,3 +2370,12 @@ two that would not build, and these faults, fixed:
   keys and was read (the check looked at the path as written, the read at
   the path worked out; the Electron daemon has the same hole). The read now
   checks the path it reads, with a test.
+
+Part three (pictures), read the same way:
+
+- One thing would not have built: the group avatar's members asked for
+  their pictures (kept on the main thread) from code that was not. They
+  are on the main thread now.
+- A group mentioned in the message field drew its row of members over its
+  name in the chip (the chip kept a 16-point square). The chip, and the
+  exchange's head, now grow to fit the row.

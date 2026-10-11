@@ -1015,7 +1015,7 @@ private struct ExchangeEvent: View {
         }
       }) {
         // The first three in a row, each cutting a 2-point gap round itself out of the one before (`fnt`, decision 28).
-        MarkRow(members: peers.prefix(3).map { peer in store.agent(peer.id).map(MarkMember.of) ?? .butterfly(AgentPalette.named(nil)) },
+        MarkRow(members: peers.prefix(3).map { peer in store.agent(peer.id).map { MarkMember.of($0) } ?? .butterfly(AgentPalette.named(nil)) },
                 unit: 16, counted: false)
       }
     }

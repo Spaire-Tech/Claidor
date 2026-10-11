@@ -357,7 +357,8 @@ struct ChipLabel: View {
 
   var body: some View {
     HStack(spacing: 4) {
-      icon.frame(width: 16, height: 16)
+      // At least 16 wide: a group is its members in a row (step 14), wider than the square.
+      icon.frame(minWidth: 16).frame(height: 16)
       Text(name)
         .font(.system(size: 12, weight: .medium))
         .foregroundStyle(look.ink)

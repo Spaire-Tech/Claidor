@@ -223,6 +223,7 @@ struct MarkRow: View {
 }
 
 /** One place in a group's avatar: a member's own picture, its butterfly, or "+N" for the rest (`MOt`). */
+@MainActor
 enum MarkMember {
   case picture(NSImage)
   case butterfly(AgentPalette)
@@ -235,7 +236,7 @@ enum MarkMember {
 
   /** A group's members as its avatar shows them, in the group's order. */
   static func members(of group: Agent, in agents: [Agent]) -> [MarkMember] {
-    group.memberIds.compactMap { id in agents.first { $0.id == id } }.map(of)
+    group.memberIds.compactMap { id in agents.first { $0.id == id } }.map { of($0) }
   }
 }
 
