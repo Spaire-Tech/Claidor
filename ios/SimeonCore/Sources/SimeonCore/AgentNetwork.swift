@@ -1,12 +1,12 @@
 import Foundation
-import SimeonCore
 
 /**
  * The org chart ("Agent network", the window's `org-chart/workspace/view.tsx`,
  * gate `sand_agent_network`, on in Simeon): every agent, solid links between
  * agents that have messaged each other, dashed links from a group to its
  * members, a link lit while both ends are mid-turn, laid out by a fixed
- * force simulation.
+ * force simulation. Shared by the Mac (mac/Simeon/OrgChart.swift) and the
+ * iPhone (ios/Simeon/OrgChart.swift).
  */
 public enum AgentNetwork {
   public enum EdgeKind: String, Sendable { case message, membership }
@@ -228,6 +228,8 @@ public enum AgentNetwork {
 
   public static let title = "Org chart"
   public static let footer = "Solid links are real agent-to-agent message history; dashed links are group membership. A link lights up while both agents are mid-turn. Scroll to zoom, drag to pan, double-click to reset."
+  /** The iPhone's foot: the window's first two sentences, then what a finger does there (a pinch, a drag, a double tap). */
+  public static let touchFooter = "Solid links are real agent-to-agent message history; dashed links are group membership. A link lights up while both agents are mid-turn. Pinch to zoom, drag to pan, double-tap to reset."
   public static let noAgents = "No agents yet. Create a few teammates and the network draws itself."
   public static let readOnly = "Read-only — a conversation between two agents"
   public static let noMessages = "No messages between these two yet."

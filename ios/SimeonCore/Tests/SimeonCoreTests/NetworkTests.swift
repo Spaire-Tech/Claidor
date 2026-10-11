@@ -1,7 +1,6 @@
 import Foundation
 import XCTest
-import SimeonCore
-@testable import SimeonMacCore
+@testable import SimeonCore
 
 /**
  * The org chart against the shipped chunk's own functions:
@@ -62,6 +61,8 @@ final class NetworkTests: XCTestCase {
     XCTAssertFalse(AgentNetwork.exchangeCaption(.idle).live)
     XCTAssertNil(AgentNetwork.moreMembers(12))
     XCTAssertEqual(AgentNetwork.moreMembers(15), "+3")
+    // The iPhone's foot keeps the window's words but its last sentence, which names a finger's gestures.
+    XCTAssertEqual(AgentNetwork.touchFooter, AgentNetwork.footer.replacingOccurrences(of: "Scroll to zoom, drag to pan, double-click to reset.", with: "Pinch to zoom, drag to pan, double-tap to reset."))
   }
 
   /** The force layout, point for point, within a hundredth (the maths library may differ in its last digit, 300 times over). */

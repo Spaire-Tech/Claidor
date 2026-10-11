@@ -1,10 +1,11 @@
 import Foundation
-import SimeonCore
 
 /**
  * An agent's messaging channels (Discord, Slack: a bot the person owns,
  * run from the box), as the host's `getAgentChannels` answers and the
  * window's Channels view draws them (`_0n`, `B0n`, `A0n`, `P0n`, `O0n`).
+ * Shared by the Mac (mac/Simeon/ChannelsPage.swift) and the iPhone
+ * (ios/Simeon/ChannelsPage.swift).
  */
 public struct ChannelsView: Equatable, Sendable {
   public struct Manifest: Equatable, Sendable {
