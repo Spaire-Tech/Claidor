@@ -489,6 +489,12 @@ class ElevenLabsClient:
         )
         return answer if isinstance(answer, dict) else {}
 
+    async def delete_conversation(self, conversation_id: str) -> None:
+        """The call's transcript and recording gone at ElevenLabs (an account deleted)."""
+        await self._request(
+            "DELETE", f"/v1/convai/conversations/{quote(conversation_id)}"
+        )
+
     async def rate_conversation(self, conversation_id: str, like: bool | None) -> None:
         await self._request(
             "POST",

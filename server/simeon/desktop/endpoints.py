@@ -59,6 +59,7 @@ from simeon.plans.service import plans as plans_service
 from simeon.postgres import AsyncSession, get_db_session
 from simeon.routing import APIRouter
 
+from .account_deletion import router as account_deletion_router
 from .apps import router as apps_router
 from .auth import (
     ProxyCaller,
@@ -1464,6 +1465,10 @@ router.include_router(releases_router)
 # Pushes to the person's iPhone (`push.py`): the phone registers at
 # `/desktop/push-devices`, the box's host posts `/desktop/push`.
 router.include_router(push_router)
+
+# Deleting the account from the app (`account_deletion.py`): the computer, the
+# app sign-ins, the transcripts, the rows, every session; the user anonymised.
+router.include_router(account_deletion_router)
 
 
 # Apps through Composio: the app's six calls, forwarded with Simeon's

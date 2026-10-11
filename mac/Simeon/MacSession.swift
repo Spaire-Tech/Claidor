@@ -206,6 +206,25 @@ final class MacSession {
     phase = .signedOut(message: "Your Simeon sign-in expired. Sign in again.")
   }
 
+  /**
+   * Settings' Delete Account, after its question: the server deletes the
+   * account (`server/simeon/desktop/account_deletion.py`) and the window goes
+   * back to the sign-in screen saying so. Nil once done, else the server's
+   * sentence (nothing was deleted; try again later).
+   */
+  func deleteAccount() async -> String? {
+    guard let api else { return "Sign in to Simeon first." }
+    do {
+      try await api.deleteAccount()
+    } catch {
+      return error.localizedDescription
+    }
+    store.detach()
+    self.api = nil
+    phase = .signedOut(message: AccountMenu.deleted)
+    return nil
+  }
+
   /** Log out (the account menu's and Settings' Sign Out, after their question): the pair forgotten, the sign-in screen. */
   func signOut() async {
     store.detach()

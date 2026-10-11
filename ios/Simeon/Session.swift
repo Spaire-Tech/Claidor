@@ -297,6 +297,24 @@ final class SessionController {
     await checkFirstRun()
   }
 
+  /** Settings › Delete Account: nil once the account is gone (and the app signed out), else why not. */
+  func deleteAccount() async -> String? {
+    guard let api else { return "Sign in to Simeon first." }
+    do {
+      try await api.deleteAccount()
+    } catch {
+      return error.localizedDescription
+    }
+    store.detach()
+    await Notifications.shared.stop()
+    Self.remember(nil)
+    self.api = nil
+    askedForNotifications = false
+    firstRun = .done
+    phase = .signedOut(message: AccountMenu.deleted)
+    return nil
+  }
+
   func signOut() async {
     store.detach()
     await Notifications.shared.stop()

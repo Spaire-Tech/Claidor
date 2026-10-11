@@ -26,6 +26,19 @@ public enum AccountMenu {
   public static let signOutConfirm = "Sign out"
   public static let signOutCancel = "Cancel"
 
+  /**
+   * Settings' Delete Account, on the phone and the Mac alike: the question
+   * before it, the line under the button, the sign-in screen's line after
+   * it and the title over a refusal (the server's own sentence under it).
+   * What goes is `server/simeon/desktop/account_deletion.py`'s list.
+   */
+  public static let deleteAccount = "Delete Account"
+  public static let deleteTitle = "Delete your account?"
+  public static let deleteLine = "Your agents, their computers and files, your chats, memory and routines will be deleted, your apps disconnected and your subscription ended. This can’t be undone."
+  public static let deleteFooter = "Deletes your agents and their computers, your chats, memory and routines, disconnects your apps and ends your subscription."
+  public static let deleted = "Your account was deleted."
+  public static let deleteRefused = "Couldn’t delete your account"
+
   /** What the menu shows of the usage: the share, when it resets, the on-demand spend against its limit. */
   public struct Reading: Equatable, Sendable {
     /** "38%" (`qct`). */

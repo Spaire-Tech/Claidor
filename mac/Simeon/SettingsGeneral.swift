@@ -5,7 +5,7 @@ import SimeonMacCore
 
 /**
  * Settings › General (`Sa`), its sections 28 apart: Account (the person,
- * Copy email, Sign Out), Appearance (Theme), Agent (Timezone, Execution on
+ * Copy email, Sign Out; Delete Account, ours), Appearance (Theme), Agent (Timezone, Execution on
  * Local Computer, Auto-review and its rules), Security Key. A change is
  * shown once the computer has taken it, its control waiting meanwhile; a
  * refusal leaves the old value and says nothing.
@@ -19,6 +19,7 @@ struct SettingsGeneralPage: View {
     VStack(alignment: .leading, spacing: 28) {
       SettingsSection(title: "Account", look: look) {
         AccountCard(look: look)
+        DeleteAccountRow(look: look)
       }
       SettingsSection(title: "Appearance", look: look) {
         ThemeRow(look: look)
@@ -239,6 +240,29 @@ private struct AccountCard: View {
     Text(account?.initials ?? "?")
       .font(.system(size: 17, weight: .medium))
       .foregroundStyle(look.inkSecondary)
+  }
+}
+
+/**
+ * Delete Account, the account card's second row (not in the Electron
+ * window; Apple asks every app that makes accounts for it): what goes under
+ * its label, the button, which asks first, waiting while the server deletes.
+ */
+private struct DeleteAccountRow: View {
+  let look: Look
+  @Environment(MacSession.self) private var session
+  @Environment(SettingsState.self) private var settings
+  @State private var deleting = false
+
+  var body: some View {
+    SettingsRow(label: AccountMenu.deleteAccount, hints: [AccountMenu.deleteFooter], divided: true, look: look) {
+      HStack(spacing: 8) {
+        if deleting { ProgressView().controlSize(.small) }
+        SettingsButton(title: AccountMenu.deleteAccount, disabled: deleting, look: look) {
+          AccountActions.askToDeleteAccount(session: session, settings: settings) { deleting = $0 }
+        }
+      }
+    }
   }
 }
 

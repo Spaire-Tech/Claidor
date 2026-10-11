@@ -199,6 +199,18 @@ public actor SimeonAPI {
   /** The account: `user_payload()` in server/simeon/desktop/service.py. */
   public func profile() async throws -> JSON { try await data("user/profile") }
 
+  /**
+   * Deletes the account and what Simeon keeps for it
+   * (`server/simeon/desktop/account_deletion.py`): the subscription ends, the
+   * cloud computer and its files go, the apps are disconnected, every device
+   * is signed out. Then the pair is forgotten. Throws the server's own
+   * sentence when a step could not be done (try again later).
+   */
+  public func deleteAccount() async throws {
+    _ = try await data("account", method: "DELETE")
+    vault.write(nil)
+  }
+
   /** Signs this phone's session out on the server and forgets the pair. */
   public func signOut() async {
     let token = vault.read()?.accessToken

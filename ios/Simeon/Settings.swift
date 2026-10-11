@@ -20,6 +20,9 @@ struct SettingsSheet: View {
   @State private var settings: JSON?
   @State private var showsApps = false
   @State private var askingSignOut = false
+  @State private var askingDelete = false
+  @State private var deleting = false
+  @State private var deleteProblem: String?
 
   var body: some View {
     NavigationStack {
@@ -80,6 +83,23 @@ struct SettingsSheet: View {
         }
         .listRowBackground(Ink.groupedRow)
         Section {
+          // Apple asks every app that makes accounts to delete them from inside the app
+          // (server/simeon/desktop/account_deletion.py does the deleting; simeonlabs.com/privacy says what goes).
+          Button(role: .destructive) { askingDelete = true } label: {
+            HStack {
+              Text(AccountMenu.deleteAccount)
+              if deleting {
+                Spacer()
+                ProgressView()
+              }
+            }
+          }
+          .disabled(deleting)
+        } footer: {
+          Text(AccountMenu.deleteFooter)
+        }
+        .listRowBackground(Ink.groupedRow)
+        Section {
           // The SimeonLabs mark and wordmark (the sign-in's) and the version as an update names it (the founder, 11 October 2026: "0.1.0").
           VStack(spacing: 10) {
             Image("SignIn/Mark").resizable().renderingMode(.template).scaledToFit().frame(width: 36, height: 36)
@@ -104,6 +124,23 @@ struct SettingsSheet: View {
         Button(AccountMenu.signOutConfirm, role: .destructive) { Task { await session.signOut() } }
       } message: {
         Text(AccountMenu.signOutLine)
+      }
+      .alert(AccountMenu.deleteTitle, isPresented: $askingDelete) {
+        Button(AccountMenu.signOutCancel, role: .cancel) {}
+        Button(AccountMenu.deleteAccount, role: .destructive) {
+          Task {
+            deleting = true
+            deleteProblem = await session.deleteAccount()
+            deleting = false
+          }
+        }
+      } message: {
+        Text(AccountMenu.deleteLine)
+      }
+      .alert(AccountMenu.deleteRefused, isPresented: Binding(get: { deleteProblem != nil }, set: { if !$0 { deleteProblem = nil } })) {
+        Button("OK", role: .cancel) {}
+      } message: {
+        Text(deleteProblem ?? "")
       }
       .task {
         async let host = store.hostSettings()

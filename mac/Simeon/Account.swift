@@ -53,6 +53,39 @@ enum AccountActions {
   }
 
   /**
+   * Settings' Delete Account (not in the Electron window: Apple asks every
+   * app that makes accounts to delete them from inside it). The question
+   * says what goes, Cancel on Escape; Delete Account closes Settings once
+   * the server has done it, or says why it could not over the window.
+   */
+  static func askToDeleteAccount(session: MacSession, settings: SettingsState, deleting: @escaping @MainActor (Bool) -> Void) {
+    let alert = NSAlert()
+    alert.alertStyle = .critical
+    alert.messageText = AccountMenu.deleteTitle
+    alert.informativeText = AccountMenu.deleteLine
+    let delete = alert.addButton(withTitle: AccountMenu.deleteAccount)
+    delete.hasDestructiveAction = true
+    alert.addButton(withTitle: AccountMenu.signOutCancel).keyEquivalent = "\u{1b}"
+    SidebarActions.present(alert) { response in
+      guard response == .alertFirstButtonReturn else { return }
+      deleting(true)
+      Task { @MainActor in
+        let problem = await session.deleteAccount()
+        deleting(false)
+        guard let problem else {
+          settings.close()
+          return
+        }
+        let refused = NSAlert()
+        refused.messageText = AccountMenu.deleteRefused
+        refused.informativeText = problem
+        refused.addButton(withTitle: "OK")
+        SidebarActions.present(refused) { _ in }
+      }
+    }
+  }
+
+  /**
    * The account menu, Apple's, its foot 4 above the initials and its left
    * edge on theirs (`top-start`, offset 4), at least 228 wide. Weekly usage
    * shows once the usage is in hand; opening reads it again when the last

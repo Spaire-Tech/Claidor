@@ -171,6 +171,30 @@ final class TokenTests: XCTestCase {
     }
   }
 
+  func testDeletingTheAccountForgetsThePairAndARefusalSaysWhy() async throws {
+    let vault = MemoryVault(SessionTokens(accessToken: "t", refreshToken: "r", expiresAtMs: 9e15))
+    let http = ScriptedHTTP([
+      { _ in HTTPAnswer(status: 503, body: json(#"{"error":{"type":"account_deletion_blocked","message":"Your agents' computer couldn't be deleted right now. Try again in a few minutes."}}"#)) },
+      { _ in HTTPAnswer(status: 200, body: json(#"{"deleted":true,"subscription":"none","computers":1,"appsDisconnected":0,"transcriptsDeleted":0,"incomplete":[]}"#)) },
+    ])
+    let api = SimeonAPI(base: URL(string: "https://api.example.com")!, clientVersion: "1", vault: vault, http: http)
+    do {
+      try await api.deleteAccount()
+      XCTFail("refused")
+    } catch {
+      XCTAssertEqual(error.localizedDescription, "Your agents' computer couldn't be deleted right now. Try again in a few minutes.")
+    }
+    // Refused: still signed in, so trying again works.
+    XCTAssertNotNil(vault.read())
+    try await api.deleteAccount()
+    XCTAssertNil(vault.read())
+    let sent = http.sent
+    XCTAssertEqual(sent.count, 2)
+    XCTAssertEqual(sent[1].httpMethod, "DELETE")
+    XCTAssertEqual(sent[1].url?.path, "/desktop/api/account")
+    XCTAssertEqual(sent[1].value(forHTTPHeaderField: "authorization"), "Bearer t")
+  }
+
   func testASpentPairEndsTheSession() async {
     let vault = MemoryVault(SessionTokens(accessToken: "old", refreshToken: "spent", expiresAtMs: 0))
     let http = ScriptedHTTP([{ _ in HTTPAnswer(status: 200, body: json(#"{"shouldLogout":true}"#)) }])

@@ -198,6 +198,15 @@ async def connected_account_ids(user: User, toolkit: str) -> list[str]:
     return accounts
 
 
+def forget_user(user: User) -> None:
+    """Drop what this process remembers of a person (their sign-in session
+    upstream and which apps they had connected): their account was deleted."""
+    key = composio_user_id(user)
+    _sessions.pop(key, None)
+    for cached in [one for one in _accounts_cache if one[0] == key]:
+        _accounts_cache.pop(cached, None)
+
+
 async def active_account_ids(user: User, toolkit: str) -> list[str]:
     status, payload = await _call(
         "GET",

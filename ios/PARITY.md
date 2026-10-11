@@ -947,6 +947,19 @@ left edge; its text is the chat's 17 pt.
   23 and 24); headings, lists and the cards' text that read
   `MessageType.size` grew with it. Settings and the composer stay at 17.
 
+## 32. Delete Account (11 October 2026)
+
+Not in the Mac's window: Apple asks every app that makes accounts to let
+people delete theirs from inside it. Settings has Delete Account under Sign
+Out, with what goes in its footer; it asks first ("Delete your account?"),
+waits with a spinner while the server deletes
+(`DELETE /desktop/api/account`, docs/services-core.md, "Deleting an
+account"), then goes back to the sign-in screen saying "Your account was
+deleted." A refusal (the server could not end the subscription or remove
+the computer) shows the server's sentence and leaves the person signed in.
+The Swift Mac app has the same button as a row under its account card. The
+words are `AccountMenu`'s, shared by both.
+
 ## Suggested order (the founder decides)
 
 1. The chat's look: the bubble, the top bar, markdown, brand names with logos, agent names with butterflies.
