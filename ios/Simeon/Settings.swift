@@ -540,6 +540,9 @@ struct AccountFace: View {
 /** About Simeon, the Mac's card as a page: the mark, "Simeon", the version, the copyright, and Copy version info ("Copied" for 1.2 s). */
 struct AboutPage: View {
   @State private var copied = false
+  /** What the hang watch wrote down when the app last stood still (HangWatch), read as the page opens. */
+  @State private var freezes: String?
+  @State private var copiedFreezes = false
 
   private var version: String { SessionController.displayVersion }
 
@@ -579,10 +582,39 @@ struct AboutPage: View {
         }
       }
       .listRowBackground(Ink.groupedRow)
+      // A freeze is written down as it happens, even one that ends in quitting the app: copied here, it says where it was.
+      if let freezes {
+        Section {
+          Button {
+            UIPasteboard.general.string = freezes
+            Haptics.tap()
+            copiedFreezes = true
+            Task {
+              try? await Task.sleep(nanoseconds: UInt64(AboutSimeon.copiedSeconds * 1_000_000_000))
+              copiedFreezes = false
+            }
+          } label: {
+            HStack {
+              Text(copiedFreezes ? AboutSimeon.copied : "Copy Freeze Report").foregroundStyle(Ink.primary)
+              Spacer()
+              Image(systemName: copiedFreezes ? "checkmark" : "doc.on.doc").font(.system(size: 14)).foregroundStyle(Ink.secondary)
+            }
+            .contentShape(.rect)
+          }
+          Button("Clear Freeze Report", role: .destructive) {
+            try? FileManager.default.removeItem(at: HangWatch.reportURL)
+            self.freezes = nil
+          }
+        } footer: {
+          Text("What the app was doing each time it stood still. Paste it to the team.")
+        }
+        .listRowBackground(Ink.groupedRow)
+      }
     }
     .groupedGround()
     .navigationTitle("About")
     .inlineBarTitle()
+    .task { freezes = HangWatch.savedReport() }
   }
 }
 

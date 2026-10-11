@@ -16,27 +16,21 @@ struct SimeonApp: App {
   /** Apple's push token and taps on notifications reach the app through UIKit's delegate (Notifications.swift). */
   @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
   @State private var session = SessionController()
-  @AppStorage("simeon.theme") private var theme = "system"
 
   var body: some Scene {
     WindowGroup {
       RootView()
         // The launch: the small butterfly turning around until the app is ready, over everything.
         .overlay { LaunchCover() }
+        // Light, Dark or the phone's: read here, inside the environment, not by the app itself, so a choice does not run the
+        // app's own body again.
+        .modifier(AppearanceOnWindows())
         .environment(session)
         .environment(session.store)
         // One size of type everywhere, the chat's (the founder, 9 October 2026: "i want all to be the size of chat"). The chat
         // is drawn in fixed sizes; rows left to the system (Settings' rows, pickers, menus) grew with the phone's Text Size and
         // stood bigger than it. The phone's setting no longer changes the app; it never changed the chat.
         .dynamicTypeSize(.large)
-        // The appearance is set on the windows, and only there. With SwiftUI's preferredColorScheme at the root as well, each
-        // sheet was given the style of the moment it opened as its own, so Settings, open while the choice was made, kept the
-        // old one until closed (the founder, 9 October 2026, twice). A window's style reaches every sheet it holds at once.
-        // At once at launch (the first call, the same value on both sides); a choice made later a moment after it, so the
-        // menu it was made in closes first and the redraw does not stall it.
-        .onChange(of: session.launch.theme ?? theme, initial: true) { old, name in
-          if old == name { Self.applyToWindows(name) } else { Task { @MainActor in Self.applyToWindows(name) } }
-        }
         .task { await session.start() }
         // After the first screen is up, never before it.
         .task { HangWatch.start() }
@@ -49,19 +43,41 @@ struct SimeonApp: App {
    * sheet pushed it back, and between screens as they changed (the founder, 11 October 2026).
    */
   @MainActor
-  static func applyToWindows(_ name: String) {
+  static func applyToWindows(_ name: String, fading: Bool = false) {
     let style: UIUserInterfaceStyle = name == "light" ? .light : name == "dark" ? .dark : .unspecified
+    // Named for the hang watch: a freeze from here on says it began with the switch.
+    Trace.mark("switching the appearance to \(name)")
     for case let scene as UIWindowScene in UIApplication.shared.connectedScenes {
       // Set, never read: reading an override that was never set aborts the app ("Can't return value for trait … that has no override").
       // Once per scene: set again on every change of appearance, it made every word in the app be laid out again with the
       // colours, and the switch lagged badly (the founder, 11 October 2026).
       if sizedScenes.insert(ObjectIdentifier(scene)).inserted { scene.traitOverrides.preferredContentSizeCategory = .large }
-      for window in scene.windows {
-        if window.overrideUserInterfaceStyle != style { window.overrideUserInterfaceStyle = style }
+      for window in scene.windows where isOurs(window) {
+        if window.overrideUserInterfaceStyle != style {
+          // The old look laid over the new and faded out, as the system's own switch does: the whole app drawn again in the
+          // new colours shows at once, not in pieces as it comes. It lets every touch through.
+          let cover = fading && !window.isHidden ? window.snapshotView(afterScreenUpdates: false) : nil
+          if let cover {
+            cover.isUserInteractionEnabled = false
+            window.addSubview(cover)
+          }
+          window.overrideUserInterfaceStyle = style
+          if let cover {
+            UIView.animate(withDuration: 0.3, delay: 0.05, options: [.curveEaseOut, .allowUserInteraction]) { cover.alpha = 0 } completion: { _ in
+              cover.removeFromSuperview()
+            }
+          }
+        }
         if window.backgroundColor != Ink.groundUIColor { window.backgroundColor = Ink.groundUIColor }
         if let root = window.rootViewController?.view, root.backgroundColor != Ink.groundUIColor { root.backgroundColor = Ink.groundUIColor }
       }
     }
+  }
+
+  /** The app's own windows: not the keyboard's, which the system keeps in the app's scene and lays out again for any change. */
+  private static func isOurs(_ window: UIWindow) -> Bool {
+    let kind = NSStringFromClass(type(of: window))
+    return !kind.contains("Keyboard") && !kind.contains("TextEffects")
   }
 
   /** The scenes whose type size is already set. */
@@ -72,6 +88,34 @@ struct SimeonApp: App {
     case "light": return .light
     case "dark": return .dark
     default: return nil
+    }
+  }
+}
+
+/**
+ * The appearance on the windows, and only there. With SwiftUI's
+ * preferredColorScheme at the root as well, each sheet was given the style
+ * of the moment it opened as its own, so Settings, open while the choice was
+ * made, kept the old one until closed (the founder, 9 October 2026, twice).
+ * A window's style reaches every sheet it holds at once. At launch at once;
+ * a choice made later once the menu it was made in has closed (its fade is
+ * a quarter of a second): applied while the menu was still going, the
+ * whole app's redraw ran into it (the founder, 11 October 2026: "to go to
+ * light mode i literally have to quit the app, cause it froze").
+ */
+private struct AppearanceOnWindows: ViewModifier {
+  @Environment(SessionController.self) private var session
+  @AppStorage("simeon.theme") private var theme = "system"
+
+  func body(content: Content) -> some View {
+    content.onChange(of: session.launch.theme ?? theme, initial: true) { old, name in
+      if old == name { SimeonApp.applyToWindows(name); return }
+      Task { @MainActor in
+        try? await Task.sleep(nanoseconds: 350_000_000)
+        // Changed again meanwhile: the later choice applies itself.
+        guard (session.launch.theme ?? theme) == name else { return }
+        SimeonApp.applyToWindows(name, fading: true)
+      }
     }
   }
 }

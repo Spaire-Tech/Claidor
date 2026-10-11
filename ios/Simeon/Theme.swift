@@ -143,18 +143,17 @@ struct CardEdge: ViewModifier {
   @Environment(\.colorScheme) private var scheme
 
   func body(content: Content) -> some View {
-    if scheme == .dark {
-      content
-    } else {
-      // The shadow is cast by a plain shape behind the card, not by the card itself: cast by the card it was worked out from the text too, on every frame of a scroll.
-      content
-        .background {
-          RoundedRectangle(cornerRadius: radius, style: .continuous)
-            .fill(Ink.bubbleTheirs)
-            .shadow(color: Color(.sRGB, red: 20 / 255, green: 30 / 255, blue: 60 / 255, opacity: 0.04), radius: 1, y: 1)
-        }
-        .overlay(RoundedRectangle(cornerRadius: radius, style: .continuous).stroke(Color(.sRGB, red: 20 / 255, green: 30 / 255, blue: 60 / 255, opacity: 0.07), lineWidth: 0.5))
-    }
+    let light = scheme != .dark
+    // The same views in both looks, only their colours changing: an `if` on the look made every card a new view at each
+    // switch of Light and Dark, built again from nothing with all it holds.
+    // The shadow is cast by a plain shape behind the card, not by the card itself: cast by the card it was worked out from the text too, on every frame of a scroll.
+    content
+      .background {
+        RoundedRectangle(cornerRadius: radius, style: .continuous)
+          .fill(light ? Ink.bubbleTheirs : Color.clear)
+          .shadow(color: Color(.sRGB, red: 20 / 255, green: 30 / 255, blue: 60 / 255, opacity: light ? 0.04 : 0), radius: 1, y: 1)
+      }
+      .overlay(RoundedRectangle(cornerRadius: radius, style: .continuous).stroke(Color(.sRGB, red: 20 / 255, green: 30 / 255, blue: 60 / 255, opacity: light ? 0.07 : 0), lineWidth: 0.5))
   }
 }
 
