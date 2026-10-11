@@ -54,7 +54,8 @@ the words are in `source/legal/privacy.html` and `source/legal/terms.html`, the 
 `source/legal/template.html`, and `source/legal.py` writes `public/privacy/index.html` and
 `public/terms/index.html` with the contents listed beside the text. `build.py` runs it; to change
 only the words, run `python3 source/legal.py` and commit what it writes. The apps link to
-`/legal/privacy-policy` and `/legal/terms-of-service`; `vercel.json` sends those here. The
+`/legal/privacy-policy` and `/legal/terms-of-service`; `legal.py` writes a page at each that
+sends the reader here. The
 words were written from what the code does (sign-in, providers, storage, cookies); when that
 changes, change them, and the dates at the top of each file.
 
