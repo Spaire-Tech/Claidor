@@ -64,7 +64,8 @@ struct HomeView: View {
   // sheets, the chat pushed over the list). The rows read it (AgentList), and only while they are on screen.
   var body: some View {
     NavigationStack(path: $path) {
-      AgentList(query: query, filter: filter, covered: !path.isEmpty, open: open, menu: menu, deleting: $deleting, showsHidden: $showsHidden, sections: listSections, selecting: selecting, picked: $picked)
+      AgentList(query: query, filter: filter, covered: !path.isEmpty, open: open, menu: menu, deleting: $deleting, showsHidden: $showsHidden, sections: listSections, selecting: selecting, picked: $picked,
+                recover: { ComputerAsks.shared.ask = .recover(fromSidebar: true) })
       // At the bottom, as Messages has them: the search field, and new chat at the right. Our own bar: the system's
       // search in the bottom toolbar was set up again on every redraw of the list ("Ignoring searchBarPlacement…").
       // Search, with all the Mac's search has, over the list while the field is in use.
@@ -81,6 +82,7 @@ struct HomeView: View {
             openRoutine: { hit in searchFocused = false; profile = AgentRef(id: hit.agentId, routineId: hit.routine.id) },
             openSheet: { next in searchFocused = false; sheet = next },
             showHidden: { searchFocused = false; showsHidden = true },
+            updateComputer: { searchFocused = false; ComputerAsks.shared.ask = .update },
             openOrgChart: openOrgChart,
             close: { query = ""; searchFocused = false }
           )
@@ -200,6 +202,8 @@ struct HomeView: View {
     }
     .problemAlert()
     .modifier(CallHaptics())
+    // Simeon's computer: its pills, its dialogs, the agent it follows (ComputerStates.swift).
+    .modifier(ComputerStates())
     .orgChart(isPresented: $showsOrgChart, isOn: $orgChartOn, openChat: open)
     .task(id: store.hasAgents) { openAtLaunch() }
     // A tapped notification opens that agent's chat (once the roster has it).
@@ -1136,7 +1140,7 @@ struct SearchResults: View {
     for (value, name, symbol) in [("system", "System", "circle.lefthalf.filled"), ("light", "Light", "sun.max"), ("dark", "Dark", "moon")] {
       list.append(SearchAction(id: "theme-\(value)", label: "Theme: \(name)", detail: "Settings · Appearance", symbol: symbol, keywords: ["appearance", "mode", "theme"], current: theme == value) { theme = value })
     }
-    if let updateComputer {
+    if let updateComputer, store.computerUpdateOffer != nil {
       list.append(SearchAction(id: "update:computer", label: "Update Simeon's Computer", detail: "Updates", symbol: "desktopcomputer", keywords: ["box", "image", "machine", "recreate", "latest", "shared"], run: updateComputer))
     }
     return list

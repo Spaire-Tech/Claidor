@@ -65,7 +65,7 @@ struct AgentPageSheet: View {
                 case 1: RoutinesTab(agent: agent, opening: routineId)
                 default:
                   if !agent.isGroup {
-                    ComputerTab(agent: agent)
+                    ComputerTabPreview(agent: agent)
                   } else if agent.showsMembers {
                     GroupMembers(group: agent)
                   }
@@ -363,60 +363,6 @@ private struct RoutineSign: View {
       }
     }
     .frame(width: 22, height: 22)
-  }
-}
-
-/** The agent's screen, small and live; a tap opens it full (`ComputerSheet`). */
-struct ComputerTab: View {
-  let agent: Agent
-  @Environment(AppStore.self) private var store
-  @State private var screen: ScreenState?
-  @State private var phase = "starting"
-  @State private var open = false
-  #if os(macOS)
-  /** On the Mac the computer opens in a window of its own (mac/Simeon/MacComputer.swift). */
-  @Environment(\.openWindow) private var openWindow
-  #endif
-
-  var body: some View {
-    VStack(spacing: 10) {
-      Button {
-        #if os(macOS)
-        openWindow(id: "computer", value: agent.id)
-        #else
-        open = true
-        #endif
-      } label: {
-        ZStack {
-          RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color(RGB(hex: "#1f3b73")))
-          if let socket = screen?.socket {
-            LiveScreen(socket: socket, viewOnly: true, phase: $phase)
-              .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-              .allowsHitTesting(false)
-          }
-          if screen?.socket == nil || phase != "connected" {
-            VStack(spacing: 8) {
-              ProgressView().tint(.white)
-              Text(screen?.state == "demo" ? "The demo has no computer" : "Starting the computer…").font(.system(size: 13)).foregroundStyle(.white.opacity(0.75))
-            }
-          }
-        }
-        .aspectRatio(1280.0 / 800.0, contentMode: .fit)
-      }
-      .buttonStyle(.plain)
-      Text("\(agent.name)'s screen").font(.system(size: 13)).foregroundStyle(Ink.secondary)
-    }
-    .task {
-      for _ in 0..<40 {
-        guard let next = try? await store.screen(agent.id) else { return }
-        screen = next
-        if next.socket != nil || next.state == "demo" { return }
-        try? await Task.sleep(nanoseconds: 3_000_000_000)
-      }
-    }
-    #if os(iOS)
-    .sheet(isPresented: $open) { ComputerSheet(agentId: agent.id) }
-    #endif
   }
 }
 
