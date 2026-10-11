@@ -6,7 +6,9 @@ import SimeonCore
  * and A02) and its "Setting up Simeon's computer" (A03), measured at
  * 1040 × 760: the butterfly (64) and "Simeon" in Suravaram (68) side by
  * side 18 apart, the line under them 48 lower (22, at most 336 wide), the
- * button 39 below that; the whole block centred and moved 40 down.
+ * button 39 below that; the whole block centred and moved 40 down. In the
+ * butterfly's place, the SimeonLabs logo lighting up, as on the iPhone (the
+ * founder, 11 October 2026: `LogoShimmer`).
  */
 struct SignInScreen: View {
   @Environment(MacSession.self) private var session
@@ -28,7 +30,7 @@ struct SignInScreen: View {
   }
 }
 
-/** The butterfly and "Simeon", the line under them, and Sign in or its wait. */
+/** The logo and "Simeon", the line under them, and Sign in or its wait. */
 private struct Landing: View {
   let look: Look
   @Environment(MacSession.self) private var session
@@ -36,7 +38,8 @@ private struct Landing: View {
   var body: some View {
     VStack(spacing: 0) {
       HStack(spacing: 18) {
-        ButterflyMark(palette: AgentPalette.named("blue"), size: 64)
+        LogoShimmer(look: look)
+          .frame(width: 64, height: 64)
         Text("Simeon")
           .font(.custom(Faces.wordmark, size: 68))
           .foregroundStyle(look.ink)
@@ -181,5 +184,48 @@ struct ShimmerText: View {
           .mask { words }
         }
       }
+  }
+}
+
+/**
+ * The SimeonLabs logo lighting up (`LogoLightUp` in the core: the
+ * founder's video of 11 October 2026, measured frame by frame), the
+ * iPhone's launch and sign-in drawn the same: it fades in to 40% of the
+ * ink, a band of the full ink crosses it on the diagonal twice, then it
+ * comes to its true colour by 2.85 s and stays. With Reduce Motion, the
+ * logo at once.
+ */
+struct LogoShimmer: View {
+  let look: Look
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @State private var start = Date()
+  @State private var done = false
+
+  var body: some View {
+    Group {
+      if done || reduceMotion {
+        mark.foregroundStyle(look.ink)
+      } else {
+        TimelineView(.animation) { context in
+          mark.foregroundStyle(gradient(at: context.date.timeIntervalSince(start)))
+        }
+      }
+    }
+    .task {
+      start = Date()
+      try? await Task.sleep(nanoseconds: UInt64(LogoLightUp.duration * 1_000_000_000))
+      done = true
+    }
+    .accessibilityHidden(true)
+  }
+
+  private var mark: some View {
+    Image("SignIn/Mark").resizable().renderingMode(.template).interpolation(.high).scaledToFit()
+  }
+
+  /** The ink along the diagonal at `t`, from the top left corner to the bottom right. */
+  private func gradient(at t: TimeInterval) -> LinearGradient {
+    let stops = LogoLightUp.places.map { Gradient.Stop(color: look.ink.opacity(LogoLightUp.ink(at: $0, time: t)), location: $0) }
+    return LinearGradient(stops: stops, startPoint: .topLeading, endPoint: .bottomTrailing)
   }
 }

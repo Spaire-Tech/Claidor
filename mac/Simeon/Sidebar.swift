@@ -74,12 +74,11 @@ final class SidebarLayout {
  * measured at 1040 × 760: a 60-point head with search and new chat at its
  * right (44 high with the picked rows' buttons while rows are picked, C11),
  * the list (SidebarList.swift: pins, sections, rows), and its foot with the
- * account's initials and Connect apps. On the window's own ground, as the
- * chat beside it, with no edge between them (the founder, 11 October 2026,
- * after the glass panel: "i want it to blend in with the rest of the
- * screen"; the panel let the desktop through and changed colour with what
- * was behind the window). The Electron window painted the Mac's sidebar
- * material at 93%, with a hairline at its right.
+ * account's initials and Connect apps. Over the Mac's sidebar material,
+ * painted at 93%, with a hairline at its right edge, as the Electron
+ * window; the paint a shade nearer the chat's ground and the hairline
+ * fainter (the founder, 11 October 2026, after a glass panel and then the
+ * chat's own white: "as it was before but less accented").
  */
 struct Sidebar: View {
   let rail: Bool
@@ -140,10 +139,18 @@ struct Sidebar: View {
           SidebarFoot()
         }
       }
-      .frame(width: width)
+      .frame(width: width - 0.5)
+      Rectangle()
+        .fill(look.sidebarEdge)
+        .frame(width: 0.5)
     }
     .frame(width: width)
-    .background(look.ground)
+    .background {
+      ZStack {
+        SidebarMaterial()
+        look.sidebarPaint
+      }
+    }
     // Read again every 4 seconds while they can't be (`TOn`; decision 7: the window's own retries come in bursts).
     .task(id: store.rosterFailed) {
       while store.rosterFailed && !Task.isCancelled {
@@ -396,7 +403,7 @@ private struct LogoTile: View {
   }
 }
 
-/** The sidebar's right edge, 12 wide where the hairline was: drag to widen, narrow or fold it (`Resize sidebar`). */
+/** The sidebar's right edge, 12 wide over the hairline: drag to widen, narrow or fold it (`Resize sidebar`). */
 struct SidebarResizeEdge: View {
   let windowWidth: CGFloat
   @Environment(SidebarLayout.self) private var layout

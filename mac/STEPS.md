@@ -2501,12 +2501,24 @@ under the consent not closing Plugins behind it.
 ### The sidebar again (11 October 2026)
 
 The founder, on their Mac: the glass panel "has like a background, for
-some reason that changes its color"; "i want it to blend in with the rest
-of the screen … dont do too much". The desktop through the panel took the
-colour of whatever stood behind the window. The sidebar is now on the
-chat's own ground, with no panel, no material and no edge between them;
-the resize edge is where the hairline was. On light, the open agent's row
-is the grey wash a little deeper than the pointer's (`rowSelected`, 15%),
-since the Electron window's white card does not show on a near-white
-ground; dark is unchanged. The search, new chat and initials stay in
-their glass circles.
+some reason that changes its color" (the desktop through the panel took
+the colour of whatever stood behind the window). Put on the chat's own
+ground it was "too white": "just leave it as it was before but less
+accented". The sidebar is the Electron window's again (the Mac's sidebar
+material painted over at 93%, a half-point hairline at its right, the
+open agent's white card), with the paint a shade nearer the chat's
+ground (`#fafafa` for the window's `#f7f7f7`; `#0c0c0c` for `#111111` on
+dark) and the hairline at 6% of the text colour for 10%. The glass panel
+and its rounded material are gone.
+
+### The logo lighting up (11 October 2026)
+
+The founder's video of the SimeonLabs logo ("lighting up like 'setting
+up simeon's computer' but in diagonal, then going to true colors"),
+measured frame by frame into `LogoLightUp` (the core, with its tests):
+nothing for 0.2 s, a fade to 40% of the ink by 1.0 s, a band of the full
+ink crossing on the diagonal twice (from 1.2 s and 1.9 s), then the true
+colour by 2.85 s. The Mac's sign-in shows it in the butterfly's place
+beside "Simeon" (`LogoShimmer`, SignInScreen.swift; the logo is the
+iPhone's `SignIn/Mark`, the site's favicon); the iPhone's launch and
+sign-in show it too. With Reduce Motion, the logo at once.

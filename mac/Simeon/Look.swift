@@ -29,18 +29,22 @@ struct Look {
 
   /** The chat's ground and the sign-in screens' (`--sand-bg-base`). */
   var ground: Color { dark ? Color(hex: 0x070707) : Color(hex: 0xfcfcfc) }
+  /**
+   * The sidebar's paint over the Mac's sidebar material, at 93%: the
+   * Electron window's `--simeon-bg-chrome` (`#f7f7f7`, `#111111` on dark)
+   * taken halfway to the chat's ground (the founder, 11 October 2026: "as
+   * it was before but less accented").
+   */
+  var sidebarPaint: Color { (dark ? Color(hex: 0x0c0c0c) : Color(hex: 0xfafafa)).opacity(0.93) }
+  /** The sidebar's right edge: the text colour at 6% (the window's 10%, made fainter), half a point. */
+  var sidebarEdge: Color { ink.opacity(0.06) }
 
   // MARK: The sidebar's rows
 
-  /**
-   * The open agent's row: white at 12% on dark. On light the grey wash a
-   * little deeper than the pointer's, with no hairline or shadow: the
-   * sidebar is on the chat's own near-white ground now, where the Electron
-   * window's white card would not show.
-   */
-  var rowSelected: Color { dark ? Color.white.opacity(0.12) : Color(red: 119 / 255, green: 119 / 255, blue: 119 / 255).opacity(0.15) }
-  var rowSelectedHairline: Color { dark ? Color.white.opacity(0.08) : .clear }
-  var rowSelectedShadow: Color { dark ? Color.black.opacity(0.30) : .clear }
+  /** The open agent's row: white with a hairline and a soft shadow (dark: white at 12%). */
+  var rowSelected: Color { dark ? Color.white.opacity(0.12) : Color.white }
+  var rowSelectedHairline: Color { dark ? Color.white.opacity(0.08) : Color(red: 20 / 255, green: 30 / 255, blue: 60 / 255).opacity(0.07) }
+  var rowSelectedShadow: Color { dark ? Color.black.opacity(0.30) : Color(red: 20 / 255, green: 30 / 255, blue: 60 / 255).opacity(0.04) }
   /** A row under the pointer (`--simeon-bg-hover`). */
   var rowHover: Color { Color(red: 119 / 255, green: 119 / 255, blue: 119 / 255).opacity(dark ? 0.173 : 0.09) }
   /** The row's corner radius: 14 light, 10 dark, as the window draws them. */

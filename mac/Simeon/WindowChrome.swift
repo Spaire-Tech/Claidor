@@ -147,3 +147,20 @@ struct WindowAccessor: NSViewRepresentable {
     }
   }
 }
+
+/**
+ * The Mac's sidebar material, which the Electron window lets show through
+ * behind its agents' list (`vibrancy: "sidebar"`, greyed when the window is
+ * not in front: `followWindow`), painted almost over (`Look.sidebarPaint`).
+ */
+struct SidebarMaterial: NSViewRepresentable {
+  func makeNSView(context: Context) -> NSVisualEffectView {
+    let view = NSVisualEffectView()
+    view.material = .sidebar
+    view.blendingMode = .behindWindow
+    view.state = .followsWindowActiveState
+    return view
+  }
+
+  func updateNSView(_ view: NSVisualEffectView, context: Context) {}
+}
