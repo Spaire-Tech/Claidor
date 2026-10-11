@@ -155,6 +155,13 @@ profile, not from the configuration.
   refuses it, so sign with the paid team Simeon publishes from.
 - **The computer**: each agent's own screen, live, through noVNC's client
   (bundled in `Simeon/Computer/`, MPL 2.0) on the box's WebSocket.
+- **Plans** are bought in the app with Apple's in-app purchase (StoreKit 2,
+  `Simeon/Purchases.swift`, `Simeon/PlansSheet.swift`); the server checks
+  Apple's signature and starts the plan. The products, the server
+  notifications URL and `SIMEON_APPLE_APP_ID` are set up once in App Store
+  Connect and on Render: `docs/services-billing.md`, section 9. To try it,
+  sign in on the phone with a sandbox Apple account (Settings › App Store ›
+  Sandbox Account) and buy from a TestFlight or Xcode build.
 
 ## What has and has not been checked
 
@@ -171,6 +178,9 @@ profile, not from the configuration.
   the clipboard.
 - Nothing has run on an iPhone yet: calls, notifications (they also need
   the APNs key above), dictation and the photo picker need a real device.
+- In-app purchase has not been compiled or run: StoreKit is not on Linux.
+  Its shared parts (`ApplePlans`, `PlansCopy`, the quota's `billedBy`) and
+  the server's signature checks have tests.
 
 ## Still to do
 

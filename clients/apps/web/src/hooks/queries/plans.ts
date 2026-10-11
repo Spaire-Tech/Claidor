@@ -51,6 +51,11 @@ export interface CurrentSubscription {
   trial_end: string | null
   cancel_at_period_end: boolean
   stripe_customer_id: string | null
+  /**
+   * Who bills the plan: `stripe` (this page), `app_store` (bought in the
+   * iPhone app, changed and cancelled on the iPhone), or null without one.
+   */
+  provider?: 'stripe' | 'app_store' | null
   entitlements: {
     tier: TierKey
     weekly_credits: number

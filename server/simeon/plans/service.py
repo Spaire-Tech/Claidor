@@ -27,6 +27,8 @@ from simeon.postgres import AsyncSession
 from simeon.user.repository import UserRepository
 
 from . import catalog
+from .app_store import MANAGE_ON_IPHONE
+from .effective import PlanRow, billed_by_apple, plan_of
 from .repository import (
     DesktopSubscriptionRepository,
     DesktopTrialRedemptionRepository,
@@ -56,6 +58,14 @@ class AlreadySubscribed(PlansError):
             "You already have a plan. Change or cancel it from the billing page.",
             409,
         )
+
+
+class BilledByApple(PlansError):
+    """The plan was bought in the iPhone app: Apple changes and cancels it,
+    not Stripe's checkout or portal."""
+
+    def __init__(self) -> None:
+        super().__init__(MANAGE_ON_IPHONE, 409)
 
 
 class NoSubscription(PlansError):
@@ -155,6 +165,10 @@ class PlansService:
             user.id
         )
 
+    async def plan_of(self, session: AsyncSession, user: User) -> PlanRow | None:
+        """The plan that counts, Stripe's or Apple's (`simeon.plans.effective`)."""
+        return await plan_of(session, user.id)
+
     # --- starting a plan ----------------------------------------------------
 
     async def customer_id_for(self, session: AsyncSession, user: User) -> str:
@@ -192,6 +206,8 @@ class PlansService:
         had one. Returns the URL to send the browser to."""
         if not settings.STRIPE_SECRET_KEY:
             raise BillingNotConfigured()
+        if billed_by_apple(await self.plan_of(session, user)):
+            raise BilledByApple()
         existing = await self.subscription_of(session, user)
         if existing is not None and existing.billable:
             raise AlreadySubscribed()
@@ -266,6 +282,8 @@ class PlansService:
         already chose on the billing page)."""
         if not settings.STRIPE_SECRET_KEY:
             raise BillingNotConfigured()
+        if billed_by_apple(await self.plan_of(session, user)):
+            raise BilledByApple()
         subscription = await self.subscription_of(session, user)
         customer_id = user.stripe_customer_id or (
             subscription.stripe_customer_id if subscription else None
@@ -509,7 +527,10 @@ class PlansService:
 
     async def cancel_trial(self, session: AsyncSession, user: User) -> bool:
         """The app's Cancel trial button: the subscription ends when the
-        trial does, with no charge. False when there is no trial."""
+        trial does, with no charge. False when there is no trial. Apple's
+        free week is cancelled with Apple (`BilledByApple`)."""
+        if billed_by_apple(await self.plan_of(session, user)):
+            raise BilledByApple()
         row = await self.subscription_of(session, user)
         if row is None or not row.trialing:
             return False
@@ -610,6 +631,7 @@ plans = PlansService()
 __all__ = [
     "AlreadySubscribed",
     "BadReturnUrl",
+    "BilledByApple",
     "BillingNotConfigured",
     "CheckoutNotYours",
     "NoSubscription",

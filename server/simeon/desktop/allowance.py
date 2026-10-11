@@ -4,7 +4,9 @@ The app meters model calls in credits (`simeon.desktop.pricing`). How many
 a person has depends on their plan (`simeon.entitlements.tiers`), which
 Stripe Billing owns and the server keeps a copy of, one row per person,
 written by webhook (`DesktopSubscription`, `simeon.plans`,
-`docs/services-billing.md`).
+`docs/services-billing.md`), or which Apple bills when it was bought in the
+iPhone app (`DesktopAppStoreSubscription`, `simeon.plans.app_store`); the
+live one counts (`simeon.plans.effective`).
 
 Three windows, one shape:
 
@@ -41,8 +43,8 @@ from simeon.entitlements.tiers import (
     tier_from_value,
 )
 from simeon.kit.utils import utc_now
-from simeon.models import DesktopSubscription, User
-from simeon.plans.repository import DesktopSubscriptionRepository
+from simeon.models import User
+from simeon.plans.effective import PlanRow, plan_of
 from simeon.postgres import AsyncSession
 
 #: `subscriptionStatus` values the app sees. `free` and `none` are ours;
@@ -121,6 +123,8 @@ class Allowance:
     #: Whether the person can still cancel the trial (it is not already
     #: scheduled to end without a charge).
     trial_cancelable: bool = False
+    #: Who bills the plan: `stripe`, `app_store`, or None for free and none.
+    provider: str | None = None
 
     @property
     def paid(self) -> bool:
@@ -173,11 +177,12 @@ def _none(now: datetime) -> Allowance:
 
 
 def allowance_of(
-    subscription: DesktopSubscription | None, *, now: datetime | None = None
+    subscription: PlanRow | None, *, now: datetime | None = None
 ) -> Allowance:
-    """The allowance one synced subscription row gives, with billing on."""
+    """The allowance one synced subscription row gives, with billing on:
+    Stripe's or Apple's, read the same way."""
     moment = now or utc_now()
-    if subscription is None or not subscription.billable:
+    if subscription is None or not subscription.billable_at(moment):
         return _none(moment)
     tier = tier_from_value(subscription.tier) if subscription.tier else None
     if tier is None or tier not in PAID_TIERS:
@@ -198,6 +203,7 @@ def allowance_of(
             period_end=subscription.trial_end,
             trial_end=subscription.trial_end,
             trial_cancelable=not subscription.cancel_at_period_end,
+            provider=subscription.provider,
         )
 
     start, end = week_bounds(moment)
@@ -208,20 +214,19 @@ def allowance_of(
         credits_limit=definition.weekly_credits,
         period_start=start,
         period_end=end,
+        provider=subscription.provider,
     )
 
 
 async def resolve_allowance(
     session: AsyncSession, user: User, *, now: datetime | None = None
 ) -> Allowance:
-    """The person's allowance now: one lookup of the synced subscription
-    row, by the user's id."""
+    """The person's allowance now: the synced plan rows, by the user's
+    id (Stripe's and Apple's, `plan_of`)."""
     moment = now or utc_now()
     if not billing_required() or billing_exempt(user):
         return _free(moment)
-    subscription = await DesktopSubscriptionRepository.from_session(
-        session
-    ).get_by_user(user.id)
+    subscription = await plan_of(session, user.id, now=moment)
     return allowance_of(subscription, now=moment)
 
 

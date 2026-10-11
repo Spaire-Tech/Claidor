@@ -332,6 +332,7 @@
         "desktop/source/electron-main/update/win32-installer.ts",
         "desktop/tests/macos-plist-identity.test.mjs",
         "desktop/tests/own-shell-package.test.mjs",
+        "docs/services-billing.md",
         "ios/SimeonCore/Sources/SimeonCore/AccountMenu.swift",
         "mac/PARITY.md",
         "mac/STEPS.md",
@@ -342,7 +343,7 @@
         "sites/simeonlabs.com/public/index.html"
       ],
       "match": "Spaire, Inc",
-      "reason": "The company that makes Simeon is Spaire, Inc. until it is renamed (the founder, 11 October 2026): the copyright and About lines, the NOTICE, the Windows signer and the invoices' issuer name it."
+      "reason": "The company that makes Simeon is Spaire, Inc. until it is renamed (the founder, 11 October 2026): the copyright and About lines, the NOTICE, the Windows signer, the invoices' issuer and the App Store's seller name it."
     },
     {
       "kind": "record",

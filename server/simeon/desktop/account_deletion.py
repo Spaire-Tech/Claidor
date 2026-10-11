@@ -20,7 +20,9 @@ in this order:
 
 Steps 1 and 2 must succeed: if Stripe or a computer's server cannot be
 reached, nothing else is done and the app says to try again (both steps
-are safe to repeat). Step 3 is done as far as the providers allow; what
+are safe to repeat). A plan bought in the iPhone app is Apple's: only the
+person can cancel it, in their iPhone's Settings, so the answer says it is
+still running (`appleSubscription`) and the app tells them where. Step 3 is done as far as the providers allow; what
 fails is logged (`desktop.account.delete_incomplete`) to finish by hand.
 Kept, as the policy says: usage and subscription rows (billing records)
 and the trial redemption (one free week per card and per person).
@@ -38,6 +40,7 @@ from fastapi.responses import JSONResponse
 from simeon.config import settings
 from simeon.kit.utils import utc_now
 from simeon.models import DesktopSession, User
+from simeon.plans.effective import billed_by_apple, plan_of
 from simeon.plans.service import plans as plans_service
 from simeon.plans.stripe_billing import stripe_billing
 from simeon.postgres import AsyncSession, get_db_session
@@ -71,6 +74,8 @@ class DeletionReport:
     computers: int = 0
     apps_disconnected: int = 0
     transcripts_deleted: int = 0
+    #: A plan Apple bills is still live: the person cancels it with Apple.
+    apple_subscription: bool = False
     rows: dict[str, int] = field(default_factory=dict)
     incomplete: list[str] = field(default_factory=list)
 
@@ -81,6 +86,7 @@ class DeletionReport:
             "computers": self.computers,
             "appsDisconnected": self.apps_disconnected,
             "transcriptsDeleted": self.transcripts_deleted,
+            "appleSubscription": self.apple_subscription,
             "incomplete": self.incomplete,
         }
 
@@ -203,6 +209,7 @@ async def delete_account(session: AsyncSession, user: User) -> DeletionReport:
     repository = AccountDeletionRepository(session)
     report = DeletionReport()
     report.subscription = await _end_subscription(session, user)
+    report.apple_subscription = billed_by_apple(await plan_of(session, user.id))
     report.computers = await _remove_computers(repository, user)
     await _disconnect_apps(user, report)
     await _delete_transcripts(repository, user, report)

@@ -206,6 +206,9 @@ final class MacSession {
     phase = .signedOut(message: "Your Simeon sign-in expired. Sign in again.")
   }
 
+  /** The plan was bought in the iPhone app, so Apple bills it (the usage summary's `billedBy`): the delete question says so. */
+  var billedByApple: Bool { store.usage.summary?.billedByApple == true }
+
   /**
    * Settings' Delete Account, after its question: the server deletes the
    * account (`server/simeon/desktop/account_deletion.py`) and the window goes
@@ -214,14 +217,16 @@ final class MacSession {
    */
   func deleteAccount() async -> String? {
     guard let api else { return "Sign in to Simeon first." }
+    let appleRunsOn: Bool
     do {
-      try await api.deleteAccount()
+      appleRunsOn = try await api.deleteAccount()
     } catch {
       return error.localizedDescription
     }
     store.detach()
     self.api = nil
-    phase = .signedOut(message: AccountMenu.deleted)
+    // A plan bought in the iPhone app keeps charging until the person cancels it with Apple.
+    phase = .signedOut(message: appleRunsOn ? AccountMenu.deletedApple : AccountMenu.deleted)
     return nil
   }
 

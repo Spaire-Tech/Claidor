@@ -10,6 +10,7 @@ from sqlalchemy import func, or_, select, update
 
 from simeon.kit.repository import RepositoryBase
 from simeon.models import (
+    DesktopAppStoreSubscription,
     DesktopSubscription,
     DesktopTrialRedemption,
     DesktopUsage,
@@ -64,6 +65,31 @@ class DesktopSubscriptionRepository(RepositoryBase[DesktopSubscription]):
             if customer:
                 out[user_id] = customer
         return out
+
+
+class AppStoreSubscriptionRepository(RepositoryBase[DesktopAppStoreSubscription]):
+    """Plans bought through Apple (`simeon.plans.app_store`)."""
+
+    model = DesktopAppStoreSubscription
+
+    async def get_by_original_transaction_id(
+        self, original_transaction_id: str
+    ) -> DesktopAppStoreSubscription | None:
+        statement = self.get_base_statement().where(
+            DesktopAppStoreSubscription.original_transaction_id
+            == original_transaction_id
+        )
+        return await self.get_one_or_none(statement)
+
+    async def list_by_user(
+        self, user_id: UUID
+    ) -> Sequence[DesktopAppStoreSubscription]:
+        statement = (
+            self.get_base_statement()
+            .where(DesktopAppStoreSubscription.user_id == user_id)
+            .order_by(DesktopAppStoreSubscription.synced_at.desc())
+        )
+        return await self.get_all(statement)
 
 
 class DesktopTrialRedemptionRepository(RepositoryBase[DesktopTrialRedemption]):

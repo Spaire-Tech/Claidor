@@ -214,6 +214,8 @@ public struct UsageSummary: Equatable, Sendable {
   public let onDemand: OnDemand?
   public let upgrade: UpgradeButton?
   public let managePlan: ManagePlan?
+  /** The plan was bought in the iPhone app: Apple changes and cancels it (`billedBy` in the quota, 12 October 2026). */
+  public let billedByApple: Bool
 
   private static let nextTiers: [String: ManagePlan.NextTier?] = ["standard": .init(tier: "pro", label: "Pro"), "pro": .init(tier: "max", label: "Max"), "max": nil]
 
@@ -246,6 +248,7 @@ public struct UsageSummary: Equatable, Sendable {
     onDemand = spend.map { OnDemand(usedCents: $0.used, limitCents: $0.limit, resetMs: percent == nil ? nil : periodEnd) }
     upgrade = Self.upgrade(quota)
     managePlan = Self.plan(quota)
+    billedByApple = quota["billedBy"]?.string == "apple"
   }
 
   private static func upgrade(_ quota: JSON) -> UpgradeButton? {

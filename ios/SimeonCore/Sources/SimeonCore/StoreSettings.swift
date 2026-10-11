@@ -48,6 +48,44 @@ extension AppStore {
     return nil
   }
 
+  // MARK: In-app purchase (the iPhone's; server/simeon/plans/app_store.py)
+
+  /** The plans as the App Store sells them (`billing/apple/products`): nil when they can't be read. */
+  public func applePlans() async -> ApplePlans? {
+    guard let backend, let json = try? await backend.server("billing/apple/products", method: nil, body: nil) else { return nil }
+    let plans = ApplePlans(json: json)
+    return plans.plans.isEmpty ? nil : plans
+  }
+
+  /** What Simeon Labs' server said about purchases sent to it. */
+  public struct ApplePurchaseAnswer: Equatable, Sendable {
+    /** Nil once applied, else what to say. */
+    public let message: String?
+    /** Whether StoreKit may forget the transactions: applied, or refused for good (signed for another account). A failure to reach the server keeps them for the next launch. */
+    public let finish: Bool
+  }
+
+  /**
+   * StoreKit's signed transactions (and their renewal info) after a
+   * purchase, a restore, or at launch, to Simeon Labs' server, which checks
+   * Apple's signatures and starts the plan; the access and the usage are
+   * read again once it has.
+   */
+  public func sendApplePurchases(_ signed: [String], renewals: [String]) async -> ApplePurchaseAnswer {
+    guard let backend else { return ApplePurchaseAnswer(message: "Sign in to Simeon to continue", finish: false) }
+    let body: JSON = ["signedTransactions": .array(signed.map { .string($0) }), "signedRenewalInfo": .array(renewals.map { .string($0) })]
+    do {
+      _ = try await backend.server("billing/apple/transactions", method: "POST", body: body)
+    } catch let error as SimeonAPIError where (400..<500).contains(error.status) && !error.message.isEmpty {
+      return ApplePurchaseAnswer(message: error.message, finish: true)
+    } catch {
+      return ApplePurchaseAnswer(message: "Couldn’t reach Simeon to confirm the purchase. It’s confirmed the next time the app opens.", finish: false)
+    }
+    await refreshAccess()
+    await refreshUsage()
+    return ApplePurchaseAnswer(message: nil, finish: true)
+  }
+
   /** Whether this account may use Simeon (`GetSandAccessStatus`); "unknown" when it can't be read. */
   public func refreshAccess() async {
     guard let backend else { access = .checking; return }

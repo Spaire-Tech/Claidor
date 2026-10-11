@@ -37,6 +37,9 @@ public enum AccountMenu {
   public static let deleteLine = "Your agents, their computers and files, your chats, memory and routines will be deleted, your apps disconnected and your subscription ended. This can’t be undone."
   public static let deleteFooter = "Deletes your agents and their computers, your chats, memory and routines, disconnects your apps and ends your subscription."
   public static let deleted = "Your account was deleted."
+  /** Before and after deleting an account whose plan Apple bills: Apple keeps charging until the person cancels there. */
+  public static let deleteAppleLine = "Your subscription through Apple isn’t cancelled by this. Cancel it in Settings › your name › Subscriptions."
+  public static let deletedApple = "Your account was deleted. Your subscription through Apple keeps running until you cancel it in Settings › your name › Subscriptions."
   public static let deleteRefused = "Couldn’t delete your account"
 
   /** What the menu shows of the usage: the share, when it resets, the on-demand spend against its limit. */
