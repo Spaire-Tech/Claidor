@@ -130,18 +130,24 @@ private struct ActivityRow: View {
 
   var body: some View {
     let shown = entered && !exiting
-    HStack(spacing: 8) {
-      AgentMark(agent: agent, agents: store.agents, size: 28, live: true)
-        .scaleEffect(x: -1, y: 1)
-        .scaleEffect(markIn || reduceMotion ? 1 : 0.6)
-        .opacity(markIn ? 1 : 0)
-        .contentShape(Rectangle())
-        .onTapGesture { poke() }
+    // An agent with a picture of its own works as the grey three dots, not its picture (`SJn`, decision 26): no pop, no pokes.
+    let pictured = agent.hasPicture
+    HStack(spacing: pictured ? 10 : 8) {
+      if pictured {
+        WorkingBadge(look: look)
+      } else {
+        AgentMark(agent: agent, agents: store.agents, size: 28, live: true)
+          .scaleEffect(x: -1, y: 1)
+          .scaleEffect(markIn || reduceMotion ? 1 : 0.6)
+          .opacity(markIn ? 1 : 0)
+          .contentShape(Rectangle())
+          .onTapGesture { poke() }
+      }
       ActivityWords(words: words, elapsed: elapsed, look: look)
         .id(wordsKey)
         .offset(y: -1)
     }
-    .padding(.leading, 8)
+    .padding(.leading, pictured ? 0 : 8)
     .frame(height: 36)
     .scaleEffect(shown || reduceMotion ? 1 : 0.92, anchor: .leading)
     .opacity(shown ? 1 : 0)
@@ -160,6 +166,48 @@ private struct ActivityRow: View {
     let kinds = MarkSource.Poke.allCases
     MarkStage.source(agent.id).poke(kinds[pokes % kinds.count], palette: agent.palette)
     pokes += 1
+  }
+}
+
+/**
+ * The working badge (`ANe`, large): a 43 by 28 pill, #777 at 12 % inside a
+ * half-point edge at 5 % of the ink, three dots of 5.25 in #777, 3.5
+ * apart, each brightening from .35 to full at 30 % of a 1.4-second beat and
+ * back, the second and third ahead by 1.2 and 1 seconds. With Reduce
+ * motion they stand at .35, .65 and full.
+ */
+struct WorkingBadge: View {
+  let look: Look
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+  private static let leads: [Double] = [0, 1.2, 1.0]
+  private static let still: [Double] = [0.35, 0.65, 1]
+
+  var body: some View {
+    TimelineView(.animation(paused: reduceMotion)) { timeline in
+      let now = timeline.date.timeIntervalSinceReferenceDate
+      HStack(spacing: 3.5) {
+        ForEach(0..<3, id: \.self) { index in
+          Circle()
+            .fill(Color(hex: 0x777777))
+            .frame(width: 5.25, height: 5.25)
+            .opacity(reduceMotion ? WorkingBadge.still[index] : WorkingBadge.pulse((now + WorkingBadge.leads[index]) / 1.4))
+        }
+      }
+      .frame(width: 43, height: 28)
+      .background(Capsule().fill(Color(hex: 0x777777).opacity(0.12)))
+      .overlay(Capsule().strokeBorder(look.ink.opacity(0.05), lineWidth: 0.5))
+    }
+    .accessibilityHidden(true)
+  }
+
+  /** One dot's brightness at this part of its beat: .35 up to 1 at 30 %, back to .35, eased in and out (`sand-kit-working-badge`). */
+  static func pulse(_ beat: Double) -> Double {
+    let at = beat - beat.rounded(.down)
+    let rising = at < 0.3
+    let part = rising ? at / 0.3 : (at - 0.3) / 0.7
+    let eased = part < 0.5 ? 2 * part * part : 1 - pow(-2 * part + 2, 2) / 2
+    return rising ? 0.35 + 0.65 * eased : 1 - 0.65 * eased
   }
 }
 

@@ -880,4 +880,17 @@ enum AvatarPictures {
     cache[dataURL] = image
     return image
   }
+
+  /** Each agent's picture as last read, by a short key (its version, length and end), so a row does not hash the whole picture each time it is drawn. */
+  private static var byAgent: [String: (key: String, image: NSImage?)] = [:]
+
+  /** An agent's own picture; nil without one, or when it cannot be read (the butterfly then: step 14, decision 23). */
+  static func image(for agent: Agent) -> NSImage? {
+    guard let dataURL = agent.avatarDataURL, !dataURL.isEmpty else { return nil }
+    let key = "\(agent.avatarVersion ?? "")|\(dataURL.utf8.count)|\(dataURL.suffix(48))"
+    if let kept = byAgent[agent.id], kept.key == key { return kept.image }
+    let read = image(dataURL)
+    byAgent[agent.id] = (key, read)
+    return read
+  }
 }

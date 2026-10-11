@@ -320,9 +320,12 @@ private struct PinTile: View {
     } label: {
       VStack(spacing: 6) {
         AgentMark(agent: agent, agents: store.agents, size: 60, live: true)
+          .cornerHole(dot: 10, on: cornerDot(look) != nil)
           .overlay(alignment: .bottomTrailing) {
             if let dot = cornerDot(look) {
               Circle().fill(dot).frame(width: 10, height: 10).padding(2)
+            } else if agent.isGroup && AvatarPictures.image(for: agent) != nil {
+              GroupChatBadge(look: look).offset(x: 1, y: 1)
             }
           }
         VStack(spacing: 4) {
@@ -608,10 +611,17 @@ struct AgentRow: View {
   }
 
   private func avatar(_ look: Look) -> some View {
-    AgentMark(agent: agent, agents: store.agents, size: 36, live: true)
+    let dot = cornerDot(look)
+    return AgentMark(agent: agent, agents: store.agents, size: 36, live: true)
+      .cornerHole(dot: 8, on: dot != nil)
       .overlay(alignment: .topLeading) {
-        if let dot = cornerDot(look) {
+        if let dot {
           Circle().fill(dot).frame(width: 8, height: 8).offset(x: 26, y: 26)
+        }
+      }
+      .overlay(alignment: .bottomTrailing) {
+        if dot == nil && agent.isGroup && AvatarPictures.image(for: agent) != nil {
+          GroupChatBadge(look: look).offset(x: 3, y: 3)
         }
       }
   }
@@ -969,6 +979,48 @@ private struct PinDrop: DropDelegate {
       return .tile(pins[index])
     default:
       return nil
+    }
+  }
+}
+
+/**
+ * A group with its own picture, in the sidebar (`lln`): a 16-point grey
+ * disc with the people glyph at the picture's lower right, ringed in the
+ * sidebar's ground; not while the corner has a dot.
+ */
+private struct GroupChatBadge: View {
+  let look: Look
+
+  var body: some View {
+    Image(systemName: "person.2.fill")
+      .font(.system(size: 7, weight: .semibold))
+      .foregroundStyle(Color(hex: 0xfcfcfc))
+      .frame(width: 16, height: 16)
+      .background(Circle().fill(Color(hex: 0x777777)))
+      .overlay(Circle().strokeBorder(look.chrome, lineWidth: 1.5))
+      .accessibilityLabel("Group chat")
+  }
+}
+
+extension View {
+  /**
+   * The corner dot's room (`FOt`, decision 27): a circle 4 wider than the
+   * dot, the dot 2 in from the corner, cut out of the avatar under it, for
+   * pictures and butterflies alike. Always masked, the hole only shown with
+   * the dot, so the live mark is not made again when work starts; the mask
+   * reaches past the avatar, so its motion is not clipped.
+   */
+  func cornerHole(dot: CGFloat, on: Bool) -> some View {
+    mask {
+      ZStack {
+        Rectangle().padding(-48)
+        Circle()
+          .frame(width: dot + 4, height: dot + 4)
+          .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+          .blendMode(.destinationOut)
+          .opacity(on ? 1 : 0)
+      }
+      .compositingGroup()
     }
   }
 }

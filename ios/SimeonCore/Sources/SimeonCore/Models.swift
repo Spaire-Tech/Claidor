@@ -50,6 +50,8 @@ public struct Agent: Identifiable, Hashable, Sendable {
   public var description: String
   public var colour: String?
   public var avatarDataURL: String?
+  /** Which copy of its picture the host has (`avatarVersion`): set with the picture, and alone in a roster kept from before. */
+  public var avatarVersion: String?
   public var isGroup: Bool
   public var memberIds: [String]
   public var lastMessagePreview: String?
@@ -68,6 +70,9 @@ public struct Agent: Identifiable, Hashable, Sendable {
   public var isRemoteRoom = false
   /** A room the person shares (`isSharedRoom`, or the host's `sharedRoomId`): the host refuses member changes for it. */
   public var isSharedRoom = false
+
+  /** It has a picture of its own, for the working lines (`QCe`: the picture, or only its version). */
+  public var hasPicture: Bool { avatarDataURL?.isEmpty == false || avatarVersion?.isEmpty == false }
 
   /** A group whose members the person can change: its Computer tab lists them, and "Members" opens it (`cct`). */
   public var showsMembers: Bool { isGroup && !isSharedRoom && !isRemoteRoom }
@@ -127,6 +132,7 @@ public struct Agent: Identifiable, Hashable, Sendable {
     )
     notifyOnUpdates = json["notifyOnUpdatesEnabled"]?.bool ?? true
     voiceId = json["voiceId"]?.text
+    avatarVersion = json["avatarVersion"]?.text
     if let room = json["remoteRoom"], room != .null { isRemoteRoom = true }
     // The window reads `isSharedRoom`, which this host never sends; it sends `sharedRoomId` and refuses member changes for it.
     if json["isSharedRoom"]?.bool == true || json["sharedRoomId"]?.text != nil { isSharedRoom = true }

@@ -201,7 +201,8 @@ struct ChatHeader: View {
   private var identity: some View {
     VStack(spacing: 4) {
       Button { pane.toggleSettings(layout: layout) } label: {
-        AgentMark(agent: agent, agents: store.agents, size: 52)
+        // A group without its own picture is its members in a row, 52 each (the window draws its 20-point row zoomed: decision 24).
+        AgentMark(agent: agent, agents: store.agents, size: 52, groupRow: true)
           .contentShape(Rectangle())
       }
       .buttonStyle(.plain)
@@ -1013,15 +1014,9 @@ private struct ExchangeEvent: View {
           ExchangeMenu.show(peers: peers, store: store, control: control, dark: look.dark)
         }
       }) {
-        HStack(spacing: -6) {
-          ForEach(Array(peers.prefix(3).enumerated()), id: \.offset) { _, peer in
-            if let agent = store.agent(peer.id) {
-              AgentMark(agent: agent, agents: store.agents, size: 16)
-            } else {
-              ButterflyMark(palette: AgentPalette.named(nil), size: 16)
-            }
-          }
-        }
+        // The first three in a row, each cutting a 2-point gap round itself out of the one before (`fnt`, decision 28).
+        MarkRow(members: peers.prefix(3).map { peer in store.agent(peer.id).map(MarkMember.of) ?? .butterfly(AgentPalette.named(nil)) },
+                unit: 16, counted: false)
       }
     }
   }

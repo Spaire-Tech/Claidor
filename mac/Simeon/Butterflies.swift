@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import SimeonCore
 
@@ -157,33 +158,29 @@ struct ButterflyMark: View {
 }
 
 /**
- * A group's avatar (`sand-group-avatar`): its first members' butterflies in
- * the square, three as a pyramid at 5/9 of it, each later one cutting a
- * small gap into the ones behind (SimeonCore's `groupLayout`, `groupGap`).
+ * A group's avatar (`sand-group-avatar`): its first members in the square,
+ * three as a pyramid at 5/9 of it, each later one cutting its outline and a
+ * small gap into the ones behind (SimeonCore's `groupLayout`, `groupGap`);
+ * a member with a picture is its round picture, and cuts a circle. Past
+ * four members, three and "+N" (`OOt`).
  */
 struct GroupMark: View {
-  let members: [AgentPalette]
+  let members: [MarkMember]
   var size: CGFloat = 36
   @Environment(\.colorScheme) private var scheme
 
   var body: some View {
     Canvas { context, canvas in
       let frame = Double(min(canvas.width, canvas.height))
-      let shown = Array(members.prefix(4))
+      let shown = members.count > 4 ? Array(members.prefix(3)) + [.more(members.count - 3)] : members
       let slots = Butterfly.groupLayout(count: shown.count, frame: frame)
       let gap = Butterfly.groupGap(frame: frame)
-      for (index, palette) in shown.enumerated() where index < slots.count {
+      for (index, member) in shown.enumerated() where index < slots.count {
         let slot = slots[index]
         let rect = CGRect(x: slot.x, y: slot.y, width: slot.size, height: slot.size)
-        if index > 0 {
-          // The later member's outline, widened by the gap, cleared out of those already drawn.
-          let cut = ButterflyArt.wings(in: rect)
-          var eraser = context
-          eraser.blendMode = .clear
-          eraser.fill(cut, with: .color(.black))
-          eraser.stroke(cut, with: .color(.black), style: StrokeStyle(lineWidth: 2 * gap, lineJoin: .round))
-        }
-        ButterflyArt.draw(&context, in: rect, palette: palette, dark: scheme == .dark, style: .still)
+        // The later member's outline, widened by the gap, cleared out of those already drawn.
+        if index > 0 { MarkDrawing.cut(&context, member, in: rect, gap: gap) }
+        MarkDrawing.draw(&context, member, in: rect, dark: scheme == .dark, moreFont: rect.width * 0.34)
       }
     }
     .frame(width: size, height: size)
@@ -192,19 +189,148 @@ struct GroupMark: View {
 }
 
 /**
- * An agent's avatar: its butterfly, or its members' for a group. Where the
- * window lets it move (`isStatic: false`: a sidebar row, the working line)
- * it is the agent's live mark; everywhere else it stands still.
+ * A group's avatar of 20 points or less with two members or more, the chat
+ * head's group (drawn at 20 and zoomed by the window, so 52 here), and the
+ * exchange chip's agents (`fnt`): the members in a row at `unit` each, each
+ * overlapping the next by 6/16 of it, each later one cutting its outline
+ * and a 2/16 gap out of the one before. Counted, past four it is three and
+ * "+N"; elided (the chip), the first three.
+ */
+struct MarkRow: View {
+  let members: [MarkMember]
+  var unit: CGFloat = 16
+  var counted = true
+  @Environment(\.colorScheme) private var scheme
+
+  static func shown(_ members: [MarkMember], counted: Bool) -> [MarkMember] {
+    guard counted else { return Array(members.prefix(3)) }
+    return members.count <= 4 ? members : Array(members.prefix(3)) + [.more(members.count - 3)]
+  }
+
+  var body: some View {
+    let shown = MarkRow.shown(members, counted: counted)
+    let step = unit * 10 / 16
+    Canvas { context, _ in
+      for (index, member) in shown.enumerated() {
+        let rect = CGRect(x: CGFloat(index) * step, y: 0, width: unit, height: unit)
+        if index > 0 { MarkDrawing.cut(&context, member, in: rect, gap: unit * 2 / 16) }
+        MarkDrawing.draw(&context, member, in: rect, dark: scheme == .dark, moreFont: unit * 14 / 36)
+      }
+    }
+    .frame(width: shown.isEmpty ? 0 : unit + CGFloat(shown.count - 1) * step, height: unit)
+    .accessibilityHidden(true)
+  }
+}
+
+/** One place in a group's avatar: a member's own picture, its butterfly, or "+N" for the rest (`MOt`). */
+enum MarkMember {
+  case picture(NSImage)
+  case butterfly(AgentPalette)
+  case more(Int)
+
+  static func of(_ agent: Agent) -> MarkMember {
+    if let picture = AvatarPictures.image(for: agent) { return .picture(picture) }
+    return .butterfly(agent.palette)
+  }
+
+  /** A group's members as its avatar shows them, in the group's order. */
+  static func members(of group: Agent, in agents: [Agent]) -> [MarkMember] {
+    group.memberIds.compactMap { id in agents.first { $0.id == id } }.map(of)
+  }
+}
+
+/** How a member is drawn in a group's avatar, and what it cuts from those behind it. */
+enum MarkDrawing {
+  /** A picture's edge (`--sand-border-weak`): 10 % of the ink, so it darkens the rim in light and lightens it in dark. */
+  static func edge(dark: Bool) -> Color { (dark ? Color(hex: 0xfcfcfc) : Color(hex: 0x141414)).opacity(0.1) }
+
+  static func draw(_ context: inout GraphicsContext, _ member: MarkMember, in rect: CGRect, dark: Bool, moreFont: CGFloat) {
+    switch member {
+    case .butterfly(let palette):
+      ButterflyArt.draw(&context, in: rect, palette: palette, dark: dark, style: .still)
+    case .picture(let image):
+      // `object-fit: cover` in the circle, then the half-point edge inside it.
+      var clipped = context
+      clipped.clip(to: Path(ellipseIn: rect))
+      clipped.draw(Image(nsImage: image), in: cover(image.size, in: rect))
+      context.stroke(Path(ellipseIn: rect.insetBy(dx: 0.25, dy: 0.25)), with: .color(edge(dark: dark)), lineWidth: 0.5)
+    case .more(let count):
+      // The faint disc (`--sand-fill-neutral-subtle`) with the count in the neutral text, no edge.
+      context.fill(Path(ellipseIn: rect), with: .color(Color(hex: 0x777777).opacity(dark ? 0.173 : 0.09)))
+      let words = Text("+\(count)").font(.system(size: moreFont, weight: .medium)).foregroundColor(dark ? Color(hex: 0xc2c2c2) : Color(hex: 0x3d3d3d))
+      context.draw(words, at: CGPoint(x: rect.midX, y: rect.midY))
+    }
+  }
+
+  /** A later member's outline widened by the gap, cleared from those already drawn: the wings for a butterfly, a circle otherwise. */
+  static func cut(_ context: inout GraphicsContext, _ member: MarkMember, in rect: CGRect, gap: CGFloat) {
+    var eraser = context
+    eraser.blendMode = .clear
+    if case .butterfly = member {
+      let wings = ButterflyArt.wings(in: rect)
+      eraser.fill(wings, with: .color(.black))
+      eraser.stroke(wings, with: .color(.black), style: StrokeStyle(lineWidth: 2 * gap, lineJoin: .round))
+    } else {
+      eraser.fill(Path(ellipseIn: rect.insetBy(dx: -gap, dy: -gap)), with: .color(.black))
+    }
+  }
+
+  /** The rectangle a picture of this size fills `rect` with, cropped to its middle. */
+  static func cover(_ size: CGSize, in rect: CGRect) -> CGRect {
+    guard size.width > 0, size.height > 0 else { return rect }
+    let scale = max(rect.width / size.width, rect.height / size.height)
+    let width = size.width * scale, height = size.height * scale
+    return CGRect(x: rect.midX - width / 2, y: rect.midY - height / 2, width: width, height: height)
+  }
+}
+
+/**
+ * An agent's own picture (`au` with its picture): round, filling the
+ * circle, a half-point edge at 10 % of the ink over it, nothing behind it.
+ * It never moves, never pokes, and shows the same in every place.
+ */
+struct AgentPicture: View {
+  let image: NSImage
+  var size: CGFloat = 36
+  @Environment(\.colorScheme) private var scheme
+
+  var body: some View {
+    Image(nsImage: image)
+      .resizable()
+      .scaledToFill()
+      .frame(width: size, height: size)
+      .clipShape(Circle())
+      .overlay(Circle().strokeBorder(MarkDrawing.edge(dark: scheme == .dark), lineWidth: 0.5))
+      .accessibilityHidden(true)
+  }
+}
+
+/**
+ * An agent's avatar: its own picture when it has one (a group's too:
+ * `gct` looks at the picture first), else a group's members (a row at 20
+ * or less, or where asked: the chat's head), else its butterfly. Where the
+ * window lets it move (`live`: a sidebar row, the working line) the
+ * butterfly is the agent's live mark; a picture never moves, and one that
+ * cannot be read gives way to the butterfly (step 14, decision 23).
  */
 struct AgentMark: View {
   let agent: Agent
   let agents: [Agent]
   var size: CGFloat = 36
   var live = false
+  /** A group as its row of members at `size` each, whatever the size (the chat's head). */
+  var groupRow = false
 
   var body: some View {
-    if agent.isGroup {
-      GroupMark(members: agent.memberIds.compactMap { id in agents.first { $0.id == id }?.palette }, size: size)
+    if let picture = AvatarPictures.image(for: agent) {
+      AgentPicture(image: picture, size: size)
+    } else if agent.isGroup {
+      let members = MarkMember.members(of: agent, in: agents)
+      if members.count > 1 && (groupRow || size <= 20) {
+        MarkRow(members: members, unit: size)
+      } else {
+        GroupMark(members: members, size: size)
+      }
     } else if live {
       LiveMark(agent: agent, size: size)
     } else {

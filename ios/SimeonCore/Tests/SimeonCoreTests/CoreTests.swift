@@ -920,6 +920,16 @@ final class MarkdownTests: XCTestCase {
     XCTAssertEqual(parsed?.markState, .searching)
   }
 
+  /** A picture counts for the working lines with its data or only its version (`QCe`); an empty one does not. */
+  func testAnAgentsPicture() {
+    XCTAssertFalse(Agent(json: ["id": "a", "name": "A"])!.hasPicture)
+    XCTAssertFalse(Agent(json: ["id": "a", "name": "A", "avatarDataUrl": "", "avatarVersion": ""])!.hasPicture)
+    let pictured = Agent(json: ["id": "a", "name": "A", "avatarDataUrl": "data:image/png;base64,AAAA", "avatarVersion": "v2"])!
+    XCTAssertTrue(pictured.hasPicture)
+    XCTAssertEqual(pictured.avatarVersion, "v2")
+    XCTAssertTrue(Agent(json: ["id": "a", "name": "A", "avatarVersion": "v1"])!.hasPicture)
+  }
+
   func testMarkPoseFollowsTheState() {
     let engine = MarkEngine(random: { 0.5 })
     var frame = MarkFrame.rest
