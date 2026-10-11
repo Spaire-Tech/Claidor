@@ -1796,7 +1796,10 @@ Tests: `CallFlowTests.swift`.
 2. No phone for a group (the Electron app offers it, and the call then goes
    nowhere: the computer writes no line and runs nothing from it).
 3. The dark banner keeps the light sheen at its top left, as the Electron
-   one draws it (its stylesheet meant a fainter one on dark).
+   one draws it (its stylesheet meant a fainter one on dark). Later
+   removed, light and dark: the founder, 11 October 2026, "call background
+   got a light /white accent … please remove". The banner is its solid
+   colour alone.
 4. The banner's hairlines are 1 point, as drawn (its stylesheet says half).
 5. Not over another app's full screen, as the Electron banner.
 6. Work that came back is said once the voice has stopped and the person

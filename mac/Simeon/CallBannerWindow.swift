@@ -194,8 +194,9 @@ private struct BannerLook {
  * it rings), the waveform while the call is on and the agent not working
  * on something, what both said when Transcript is on, then Mute (Unmute),
  * Transcript and End; Close alone when the call failed; nothing once it
- * ended. 360 wide, round 24, solid white (#2A2A2D on dark) with the
- * window's sheen, as the founder asked ("remove the transparant").
+ * ended. 360 wide, round 24, solid white (#2A2A2D on dark), as the founder
+ * asked ("remove the transparant"); without the window's white sheen at the
+ * top left, which the founder asked away too.
  */
 struct CallBannerCard: View {
   let pointer: BannerPointer
@@ -240,13 +241,8 @@ struct CallBannerCard: View {
       bar(call, state: state, look: look)
     }
     .frame(width: CallBanner.width)
+    // Solid: the window's white sheen at the top left is gone (the founder, 11 October 2026: "got a light /white accent … please remove").
     .background(look.fill)
-    // The sheen, top left (160°, white at 28% to nothing at 38%; drawn so on dark too, as the window draws it).
-    .overlay {
-      LinearGradient(stops: [.init(color: .white.opacity(0.28), location: 0), .init(color: .white.opacity(0), location: 0.38)],
-                     startPoint: UnitPoint(x: 0.4, y: 0), endPoint: UnitPoint(x: 0.6, y: 1))
-        .allowsHitTesting(false)
-    }
     .clipShape(RoundedRectangle(cornerRadius: 24, style: .circular))
     .overlay(RoundedRectangle(cornerRadius: 24, style: .circular).strokeBorder(.white.opacity(look.dark ? 0.14 : 0.55), lineWidth: 0.5))
     .overlay(RoundedRectangle(cornerRadius: 24, style: .circular).inset(by: -0.5).stroke(.black.opacity(look.dark ? 0.45 : 0.08), lineWidth: 0.5))
