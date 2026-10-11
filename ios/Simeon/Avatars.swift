@@ -356,11 +356,13 @@ struct ButterflyView: View {
   var style: MarkStyle = .live
   var motion: MarkState?
   var stillWhenIdle = false
+  /** Taps on a moving butterfly (`LiveButterfly.pokes`). */
+  var pokes = 0
   @Environment(\.colorScheme) private var scheme
 
   var body: some View {
     if style == .live, let motion {
-      LiveButterfly(palette: palette, state: motion, stillWhenIdle: stillWhenIdle)
+      LiveButterfly(palette: palette, state: motion, stillWhenIdle: stillWhenIdle, pokes: pokes)
     } else {
       Image(uiImage: MarkDrawing.image(palette, style: style, dark: scheme == .dark))
         .resizable().interpolation(.high).scaledToFit()

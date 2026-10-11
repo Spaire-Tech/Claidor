@@ -1325,6 +1325,9 @@ struct TypingRow: View {
   let agent: Agent
   let step: String?
   @Environment(AppStore.self) private var store
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  /** A tap on the butterfly gives it a turn, a hop or a burst of sparks, in turn, as a click does on the Mac. */
+  @State private var pokes = 0
 
   var body: some View {
     if agent.isGroup {
@@ -1332,9 +1335,15 @@ struct TypingRow: View {
     } else {
       let line = agent.activityLine(named: { store.agent($0)?.name })
       HStack(spacing: 8) {
-        ButterflyView(palette: agent.palette, motion: agent.markState == .idle ? .working : agent.markState)
+        ButterflyView(palette: agent.palette, motion: agent.markState == .idle ? .working : agent.markState, pokes: pokes)
           .frame(width: 28, height: 28)
           .modifier(MarkPop())
+          .contentShape(.rect)
+          .onTapGesture {
+            guard !reduceMotion else { return }
+            pokes += 1
+            Haptics.tap()
+          }
         if let line { ActivityLabel(line: line) }
       }
       .padding(.leading, 8)

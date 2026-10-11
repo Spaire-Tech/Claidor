@@ -4,9 +4,9 @@ import UIKit
 #endif
 import SimeonCore
 
-/** The sheets the list opens: New Agent and New Group Chat from the compose button, Settings from the account button (search is the list's own field). */
+/** The sheets the list opens: New Agent and New Group Chat from the compose button, Settings from the account button, Usage & Billing and Plugins from search (search is the list's own field). */
 enum HomeSheet: String, Identifiable {
-  case newAgent, newGroup, settings
+  case newAgent, newGroup, settings, usage, plugins
   var id: String { rawValue }
 }
 
@@ -140,6 +140,11 @@ struct HomeView: View {
           NewGroupSheet { id in open(id) }.presentationBackground(Ink.ground)
         case .settings:
           SettingsSheet().presentationBackground(Ink.groupedGround)
+        case .usage:
+          NavigationStack { UsagePage().toolbar { ToolbarItem(placement: .leadingBar) { CloseButton() } } }
+            .presentationBackground(Ink.groupedGround)
+        case .plugins:
+          ConnectAppsSheet().presentationBackground(Ink.ground)
         }
       }
       .problemAlert()
@@ -1104,7 +1109,12 @@ struct SearchResults: View {
     if let openChannels {
       list.append(SearchAction(id: "info:channels", label: "Channels", detail: "Current chat", symbol: "bubble.left.and.bubble.right", keywords: ["messaging", "platforms", "connect"], run: openChannels))
     }
-    list.append(SearchAction(id: "settings", label: "Settings", detail: "Settings", symbol: "gearshape", keywords: ["general", "account", "usage", "billing", "plan", "limit", "time zone", "auto-review", "plugins", "connect apps", "connectors", "tools", "skills", "mcp"]) { openSheet(.settings) })
+    list.append(SearchAction(id: "settings", label: "Settings", detail: "Settings", symbol: "gearshape", keywords: ["general", "account", "time zone", "auto-review", "notifications", "haptics", "preferences"]) { openSheet(.settings) })
+    // The Mac's palette has these two on their own (`Jump.commands`).
+    if store.usage.summary == nil || store.usage.showsSection {
+      list.append(SearchAction(id: "settings:usage", label: "Settings: Usage & Billing", detail: "Settings", symbol: "chart.bar", keywords: ["usage", "billing", "spend", "limit", "on-demand", "plan", "quota"]) { openSheet(.usage) })
+    }
+    list.append(SearchAction(id: "overlay:plugins", label: "Plugins", detail: "Connect apps", symbol: "puzzlepiece.extension", keywords: ["plugins", "marketplace", "tools", "skills", "mcp", "connectors", "connect apps", "customize"]) { openSheet(.plugins) })
     for (value, name, symbol) in [("system", "System", "circle.lefthalf.filled"), ("light", "Light", "sun.max"), ("dark", "Dark", "moon")] {
       list.append(SearchAction(id: "theme-\(value)", label: "Theme: \(name)", detail: "Settings · Appearance", symbol: symbol, keywords: ["appearance", "mode", "theme"], current: theme == value) { theme = value })
     }
