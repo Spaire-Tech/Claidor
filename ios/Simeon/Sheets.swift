@@ -103,7 +103,7 @@ struct NewAgentSheet: View {
     Task {
       let id = await store.createAgent(name: name, colour: palette.id)
       busy = false
-      if let id { created(id) } else { failed = true }
+      if let id { Haptics.success(); created(id) } else { Haptics.warning(); failed = true }
     }
   }
 }
@@ -209,7 +209,7 @@ struct NewGroupSheet: View {
     Task {
       let id = await store.createGroup(memberIds: picked)
       busy = false
-      if let id { created(id) } else { failed = true }
+      if let id { Haptics.success(); created(id) } else { Haptics.warning(); failed = true }
     }
   }
 }

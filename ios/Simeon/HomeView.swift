@@ -139,6 +139,7 @@ struct HomeView: View {
         : "This permanently deletes the agent and its chat history. This can't be undone.")
     }
     .problemAlert()
+    .modifier(CallHaptics())
     .task(id: store.hasAgents) { openAtLaunch() }
     // A tapped notification opens that agent's chat (once the roster has it).
     .task(id: OpenRequest(agent: Notifications.shared.openAgent, ready: store.hasAgents)) {

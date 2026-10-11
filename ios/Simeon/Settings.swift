@@ -5,11 +5,13 @@ import UIKit
 import SimeonCore
 
 /**
- * Settings, in the order the founder's reference has it (9 October 2026):
- * the account and, under it, Usage with its share; Connect apps; the
- * agents' settings (Auto-review and its rules, the time zone, set
- * automatically or chosen); Appearance; Sign Out and the mark. Usage opens
- * its own page: the period's bar, when it resets, and Change Limit.
+ * Settings, in the order the founder's reference has it (9 and 11 October
+ * 2026): the account and, under it, Usage with its share; Connect apps, as
+ * the Mac's sidebar has it; the agents' settings (Auto-review and its rules,
+ * the time zone, set automatically or chosen); Notifications, Appearance and
+ * Haptics (both switches on until turned off); Privacy Policy and Terms of
+ * Service; Sign Out and the mark. Usage opens its own page: the period's
+ * bar, when it resets, and Change Limit.
  */
 struct SettingsSheet: View {
   @Environment(AppStore.self) private var store
@@ -41,22 +43,14 @@ struct SettingsSheet: View {
         }
         .listRowBackground(Ink.groupedRow)
         Section {
-          Button { showsApps = true } label: {
-            HStack {
-              VStack(alignment: .leading, spacing: 3) {
-                Text("Connect apps").foregroundStyle(Ink.primary)
-                Text("Tools and skills for your agents").font(.system(size: 13)).foregroundStyle(Ink.secondary)
-              }
-              Spacer()
-              Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Ink.tertiary)
-            }
-            .contentShape(.rect)
-          }
-          .padding(.vertical, 2)
+          Button { showsApps = true } label: { ConnectAppsRow() }
         }
         .listRowBackground(Ink.groupedRow)
         AgentSettingsSection(settings: $settings)
         Section {
+          // On until turned off: off, this phone is taken off the person's pushes (`/desktop/push-devices`); back on, it
+          // registers again. Refused in the phone's own Settings, the switch shows off and opens them.
+          Toggle("Notifications", isOn: notificationsSwitch)
           // A menu in the row, not a page of its own: the page slid back while the whole app redrew in the new colours,
           // and the two together stalled (the founder, 11 October 2026: "lags severely always").
           Picker("Appearance", selection: $theme) {
@@ -66,6 +60,13 @@ struct SettingsSheet: View {
           }
           .pickerStyle(.menu)
           .tint(Ink.secondary)
+          Toggle("Haptics", isOn: $haptics)
+        }
+        .listRowBackground(Ink.groupedRow)
+        Section {
+          // The pages the web app's sign-in links to; they are written on simeonlabs.com, not in the app.
+          LegalLink(title: "Privacy Policy", url: Legal.privacy)
+          LegalLink(title: "Terms of Service", url: Legal.terms)
         }
         .listRowBackground(Ink.groupedRow)
         Section {
@@ -98,6 +99,101 @@ struct SettingsSheet: View {
         settings = await host
         quota = await usage
       }
+      // Read again on coming back from the phone's Settings, where notifications may have just been allowed.
+      .task(id: scenePhase) { notificationsRefused = await Notifications.refused() }
+    }
+  }
+
+  @Environment(\.scenePhase) private var scenePhase
+  @AppStorage(Notifications.key) private var notificationsOn = true
+  @AppStorage(Haptics.key) private var haptics = true
+  @State private var notificationsRefused = false
+
+  private var notificationsSwitch: Binding<Bool> {
+    Binding(
+      get: { notificationsOn && !notificationsRefused },
+      set: { on in
+        if on && notificationsRefused {
+          #if os(iOS)
+          if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
+          #endif
+          return
+        }
+        notificationsOn = on
+        Task { await Notifications.shared.turn(on) }
+      }
+    )
+  }
+}
+
+/** Where the legal pages are: the web app's sign-in links to the same two. */
+enum Legal {
+  static let privacy = URL(string: "https://www.simeonlabs.com/legal/privacy-policy")!
+  static let terms = URL(string: "https://www.simeonlabs.com/legal/terms-of-service")!
+}
+
+/** A page on the web from Settings: its name, and the arrow out at the right, as the reference has them. */
+struct LegalLink: View {
+  let title: String
+  let url: URL
+  @Environment(\.openURL) private var openURL
+
+  var body: some View {
+    Button { openURL(url) } label: {
+      HStack {
+        Text(title).foregroundStyle(Ink.primary)
+        Spacer()
+        Image(systemName: "arrow.up.right").font(.system(size: 14, weight: .medium)).foregroundStyle(Ink.tertiary)
+      }
+      .contentShape(.rect)
+    }
+  }
+}
+
+/**
+ * Connect apps as the Mac's sidebar has it (mac/Simeon/Sidebar.swift
+ * `ConnectApps`): the words in the window's blue, medium, then Gmail,
+ * Calendar and Drive on three white tiles, the first turned 7° left, the
+ * last 7° right; at the phone's size (17 for the Mac's 15, the tiles in
+ * step).
+ */
+struct ConnectAppsRow: View {
+  var body: some View {
+    HStack(spacing: 12) {
+      Text("Connect apps")
+        .font(.system(size: 17, weight: .medium))
+        .foregroundStyle(Ink.appsBlue)
+        .fixedSize()
+      HStack(spacing: -4.5) {
+        AppTile(image: "Connectors/gmail", turn: -7)
+        AppTile(image: "Connectors/google-calendar", turn: 0)
+        AppTile(image: "Connectors/google-drive", turn: 7)
+      }
+      Spacer(minLength: 0)
+      Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Ink.tertiary)
+    }
+    .padding(.vertical, 4)
+    .contentShape(.rect)
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel("Connect apps")
+    .accessibilityAddTraits(.isButton)
+  }
+
+  private struct AppTile: View {
+    let image: String
+    let turn: Double
+
+    var body: some View {
+      Image(image)
+        .resizable()
+        .interpolation(.high)
+        .aspectRatio(contentMode: .fit)
+        .frame(width: 19)
+        .frame(width: 30, height: 30)
+        .background(Ink.appsTile, in: RoundedRectangle(cornerRadius: 8))
+        .overlay { RoundedRectangle(cornerRadius: 8).inset(by: -0.5).stroke(Ink.appsTileEdge, lineWidth: 1) }
+        .shadow(color: Ink.appsTileShadow, radius: 1, x: 0, y: 1)
+        .rotationEffect(.degrees(turn))
     }
   }
 }

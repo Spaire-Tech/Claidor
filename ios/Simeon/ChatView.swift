@@ -946,6 +946,9 @@ struct ChatComposer: View {
     let id = AppStore.newMessageId()
     for (index, file) in files.enumerated() { if let preview = file.preview { ChatImages.keep(preview, under: [AppStore.outboxFileURL(id, index)]) } }
     let inThread = thread != nil
+    #if os(iOS)
+    Haptics.tap()
+    #endif
     Task { await store.send(text, to: agentId, attachments: files.map { ($0.name, $0.data) }, replyTo: answering, inThread: inThread, richText: rich, id: id) }
   }
 }
@@ -1097,7 +1100,7 @@ struct BubbleView: View {
           // scroll that started on a message did not move.
           #if os(iOS)
           .gesture(MessageHold {
-            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            Haptics.press()
             messageMenu?.target = MessageTarget(bubble: bubble)
           })
           #else
@@ -1224,6 +1227,9 @@ struct BubbleView: View {
   /** One reaction at a time per emoji: the host toggles it, so a second tap before it answers would take it back. */
   private func react(_ emoji: String) {
     guard reacting.insert(emoji).inserted else { return }
+    #if os(iOS)
+    Haptics.select()
+    #endif
     Task {
       await store.react(emoji, to: bubble.id, in: agentId)
       try? await Task.sleep(nanoseconds: 1_200_000_000)
@@ -1569,6 +1575,7 @@ struct MessageMenuOnMac: ViewModifier {
     {
       if bubble.isStreaming && bubble.text.isEmpty { return }
       UIPasteboard.general.string = bubble.text
+      Haptics.tap()
     }
   }
 }
@@ -1820,7 +1827,7 @@ struct MessageActionsSheet: View {
           Action(title: "Mark as Unread", symbol: "message.badge") { Task { await store.setUnread(agentId, true) }; dismiss() },
         ])
         group([
-          Action(title: "Copy", symbol: "doc.on.doc") { UIPasteboard.general.string = bubble.text; dismiss() },
+          Action(title: "Copy", symbol: "doc.on.doc") { UIPasteboard.general.string = bubble.text; Haptics.tap(); dismiss() },
           Action(title: "Select Text", symbol: "character.cursor.ibeam") { selecting = true },
         ])
       }
@@ -1861,6 +1868,7 @@ struct MessageActionsSheet: View {
   }
 
   private func react(_ emoji: String) {
+    Haptics.select()
     Task { await store.react(emoji, to: bubble.id, in: agentId) }
     dismiss()
   }

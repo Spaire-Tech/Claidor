@@ -393,6 +393,7 @@ struct CodeBlockView: View {
 
   private func copy() {
     UIPasteboard.general.string = text
+    Haptics.tap()
     copied = true
     Task { @MainActor in
       try? await Task.sleep(nanoseconds: 2_000_000_000)

@@ -37,9 +37,30 @@ final class Notifications {
     return text[key.upperBound...].prefix(80).contains("development")
   }()
 
-  /** After sign-in: asks once, then registers this phone with Apple and, through it, with Simeon. */
+  /** Settings › Notifications (`@AppStorage` key): on until turned off (the founder, 11 October 2026). */
+  static let key = "simeon.notifications"
+
+  static var isOn: Bool { UserDefaults.standard.object(forKey: key) as? Bool ?? true }
+
+  /** Refused in the phone's own Settings: the switch shows off, and turning it on opens them. */
+  static func refused() async -> Bool {
+    await UNUserNotificationCenter.current().notificationSettings().authorizationStatus == .denied
+  }
+
+  /** Settings › Notifications turned: on registers this phone again (asking first if never asked); off takes it off the person's pushes. */
+  func turn(_ on: Bool) async {
+    if on {
+      if let api { await start(api: api) }
+    } else {
+      if let api, let token { try? await api.registerPushDevice(apnsToken: token, sandbox: Self.sandbox, remove: true) }
+      try? await UNUserNotificationCenter.current().setBadgeCount(0)
+    }
+  }
+
+  /** After sign-in: asks once, then registers this phone with Apple and, through it, with Simeon; not while Settings has them off. */
   func start(api: SimeonAPI) async {
     self.api = api
+    guard Self.isOn else { return }
     let center = UNUserNotificationCenter.current()
     let granted = (try? await center.requestAuthorization(options: [.alert, .badge, .sound])) ?? false
     guard granted else { return }
@@ -57,7 +78,7 @@ final class Notifications {
   }
 
   private func send(_ hex: String) async {
-    guard let api else { return }
+    guard let api, Self.isOn else { return }
     try? await api.registerPushDevice(apnsToken: hex, sandbox: Self.sandbox)
   }
 

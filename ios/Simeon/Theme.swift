@@ -101,6 +101,11 @@ enum Ink {
   static let tile = Color.dynamic(light: "#ffffff", dark: "#232325")
   static let tileEdge = Color.dynamic(light: "#14141414", dark: "#ffffff1f")
   static let tileInitial = Color.dynamic(light: "#595959", dark: "#b4b4b8")
+  /** Connect apps in Settings, the Mac sidebar's colours (mac/Simeon/Look.swift): the window's blue, and its tiles' white, hairline and shadow. */
+  static let appsBlue = Color.dynamic(light: "#255a93", dark: "#8cb8e8")
+  static let appsTile = Color.dynamic(light: "#ffffff", dark: "#2c2c2e")
+  static let appsTileEdge = Color.dynamic(light: "#00000014", dark: "#ffffff1a")
+  static let appsTileShadow = Color.dynamic(light: "#0000001a", dark: "#00000073")
   /** A flight's total, green as Muse's (the system's green; the darker one on white, where the bright one is hard to read). */
   static let fare = Color.dynamic(light: "#248a3d", dark: "#30d158")
   /** An agent's title in the list ("Chief of Staff"). */
