@@ -168,9 +168,10 @@ profile, not from the configuration.
 
 ## What has and has not been checked
 
-- `SimeonCore`'s tests (53) pass on Linux: the chat's rows for every card,
-  the call protocol against a fake voice, sign-in and tokens, the
-  butterfly's outline and motion checked against the window's own numbers,
+- `SimeonCore`'s tests (333 on 12 October 2026) pass on Linux: the chat's rows for every card,
+  the call protocol against a fake voice, sign-in and tokens, the agents'
+  faces (the catalogue's bytes and versions, the choice by gender, least
+  used, the same on every device, Shuffle and Reset; `AgentFaceTests`),
   the list's menu commands and shared pins, sending with Resend, older
   pages, and a streamed answer redrawing only its row.
 - The server's push tests pass, with Apple's endpoint mocked.

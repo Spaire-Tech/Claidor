@@ -98,7 +98,7 @@ struct ComposerListRow: View {
     case .emoji(let character):
       Text(character).font(.system(size: 20))
     case .agent(let id):
-      ButterflyView(palette: .named(store.mentionNames.first { $0.id == id }?.colour ?? AgentPalette.defaultColour(forAgentId: id)))
+      AgentIdAvatar(id: id).frame(width: 22, height: 22)
     case .everyone:
       Text("@").font(.system(size: 13, weight: .semibold)).foregroundStyle(Ink.blue)
         .frame(width: 22, height: 22).background(Ink.field, in: Circle())

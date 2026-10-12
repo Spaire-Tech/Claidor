@@ -613,7 +613,7 @@ struct ThreadChin: View {
 
 /**
  * A thread's head (`sand-chat-header__breadcrumbs`, 44 high on the ground,
- * padded 0 12 0 8): the chat's butterfly (20) and name (13, 500) going back
+ * padded 0 12 0 8): the chat's picture (20) and name (13, 500) going back
  * to the chat, a chevron (12, at 40%), and the thread's first message cut
  * to one line. Each crumb is padded 6, 6 round, grey under the pointer. The
  * rest of the head moves the window.

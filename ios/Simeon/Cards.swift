@@ -1509,7 +1509,7 @@ struct EventLine<Content: View>: View {
   }
 }
 
-/** A small stack of agents' butterflies, 16 pt, each over the last (the event chip's avatar stack). */
+/** A small stack of agents' pictures, 16 pt, each over the last (the event chip's avatar stack). */
 struct PeerStack: View {
   let peers: [Party]
   var size: CGFloat = 16
@@ -1518,7 +1518,7 @@ struct PeerStack: View {
   var body: some View {
     HStack(spacing: -size * 0.375) {
       ForEach(Array(peers.prefix(3).enumerated()), id: \.offset) { _, peer in
-        ButterflyView(palette: .named(store.mentionNames.first { $0.id == peer.id }?.colour ?? AgentPalette.defaultColour(forAgentId: peer.id)), style: .still)
+        AgentIdAvatar(id: peer.id)
           .frame(width: size, height: size)
       }
     }
@@ -1593,7 +1593,7 @@ struct ExchangeRoute: Hashable, Identifiable {
  * founder's screenshot, 9 October 2026), with the two of them at the top
  * centre as our chat has its agent ("leave us on center top"): the time over
  * each stretch, the sender's name over their run of grey bubbles, their
- * butterfly beside its last, the page held to its newest line, and
+ * picture beside its last, the page held to its newest line, and
  * "Read-only" at the foot. Its lines are everything the two said to each
  * other in this agent's chat (`Chat.exchangeRows`, tested), newest at the
  * bottom.
@@ -1663,7 +1663,7 @@ struct ExchangePage: View {
   }
 }
 
-/** The two agents at the top centre, the way a chat shows its agent: their butterflies, one over the other, and their names. */
+/** The two agents at the top centre, the way a chat shows its agent: their pictures, one over the other, and their names. */
 struct ExchangeHeadline: View {
   let me: Party
   let peer: Party
@@ -1692,19 +1692,14 @@ struct ExchangeHeadline: View {
   }
 }
 
-/** An agent named on a line: its avatar when the app knows it, else its butterfly in its colour. */
+/** An agent named on a line: its picture when the app knows it, else a face its id picks. */
 struct PartyAvatar: View {
   let party: Party
   var size: CGFloat = 28
   @Environment(AppStore.self) private var store
 
   var body: some View {
-    if let agent = store.agent(party.id) {
-      AgentAvatar(agent: agent, members: store.members(of: agent)).frame(width: size, height: size)
-    } else {
-      ButterflyView(palette: .named(store.mentionNames.first { $0.id == party.id }?.colour ?? AgentPalette.defaultColour(forAgentId: party.id)), style: .still)
-        .frame(width: size, height: size)
-    }
+    AgentIdAvatar(id: party.id).frame(width: size, height: size)
   }
 }
 

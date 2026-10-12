@@ -16,7 +16,9 @@ import Foundation
  * - The Chief of Staff gets Simeon's own voice, which no other agent is given.
  * - Any other agent gets the voice fewest agents have, among the voices of
  *   its name's gender when the name has one (Maya, Nina: a woman's; Leo, Jon:
- *   a man's), among all of them otherwise (Jordan, Sage).
+ *   a man's); a name with none (Jordan, Sage) takes its face's gender
+ *   (AgentFaces, 12 October 2026), and only an agent with neither picks among
+ *   all of them.
  * - Between voices equally free, the agent's id decides (the Mac's FNV-1a
  *   hash over the id's UTF-16), so two agents hired together differ, and the
  *   phone and the Mac give the same agent the same voice.
@@ -91,11 +93,11 @@ public enum AgentVoices {
     voice.gender ?? curatedGenders[voice.id]
   }
 
-  /** The voice an agent without one gets among `voices`; nil when there is none to give (the Mac's `pickAgentVoice`). */
-  public static func pick(agentId: String, name: String, isChiefOfStaff: Bool, voices: [AppStore.VoiceChoice], taken: [String]) -> String? {
+  /** The voice an agent without one gets among `voices`; nil when there is none to give (the Mac's `pickAgentVoice`). `gender` is the one wanted, when not the name's (its face's). */
+  public static func pick(agentId: String, name: String, isChiefOfStaff: Bool, voices: [AppStore.VoiceChoice], taken: [String], gender preferred: String? = nil) -> String? {
     if isChiefOfStaff && voices.contains(where: { $0.id == simeonVoiceId }) { return simeonVoiceId }
     let others = voices.filter { $0.id != simeonVoiceId }
-    let wanted = nameGender(name)
+    let wanted = preferred ?? nameGender(name)
     let matching = wanted == nil ? [] : others.filter { gender(of: $0) == wanted }
     let pool = matching.isEmpty ? others : matching
     guard !pool.isEmpty else { return nil }
@@ -127,7 +129,8 @@ public enum AgentVoices {
     var given: [(agentId: String, voiceId: String)] = []
     for agent in people where all[agent.id] == nil {
       let taken = people.compactMap { all[$0.id] }
-      guard let voice = pick(agentId: agent.id, name: agent.name, isChiefOfStaff: isChiefOfStaff(title: agent.title), voices: voices, taken: taken) else { continue }
+      let wanted = nameGender(agent.name) ?? AgentFaces.own(agent)?.gender
+      guard let voice = pick(agentId: agent.id, name: agent.name, isChiefOfStaff: isChiefOfStaff(title: agent.title), voices: voices, taken: taken, gender: wanted) else { continue }
       all[agent.id] = voice
       given.append((agent.id, voice))
     }

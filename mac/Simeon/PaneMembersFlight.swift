@@ -4,7 +4,7 @@ import SimeonCore
 
 /**
  * A group's members, the whole of its Computer tab (`z2n`): "Members", then
- * a row for each (its butterfly at 28 and its name; Remove at the right
+ * a row for each (its picture at 28 and its name; Remove at the right
  * under the pointer), Add Member while there is room and someone to add, and
  * a line under the list at six members or when no one is left. A row opens
  * that agent's chat (the pane stays, on its Profile).
@@ -55,7 +55,7 @@ struct GroupMembersBody: View {
     .accessibilityLabel("Members")
   }
 
-  /** Add Member's menu (at least 200 wide): each agent's butterfly at 28 and its name; a pick adds it at the end, and a refusal says nothing. */
+  /** Add Member's menu (at least 200 wide): each agent's picture at 28 and its name; a pick adds it at the end, and a refusal says nothing. */
   private func addMenu(_ candidates: [Agent], under frame: CGRect) {
     let menu = NSMenu(title: "Add Member")
     menu.autoenablesItems = false
@@ -170,7 +170,7 @@ private struct AddMemberRow: View {
   }
 }
 
-/** An agent's butterfly as a menu item's picture, 28 points. */
+/** An agent's picture as a menu item's picture, 28 points. */
 @MainActor
 enum MemberMarks {
   static func image(_ agent: Agent, agents: [Agent], dark: Bool) -> NSImage? {

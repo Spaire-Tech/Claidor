@@ -297,9 +297,9 @@ private struct PinGridLayout: Layout {
 
 /**
  * A pinned agent's tile (`sand-agent-item` as a tile, C03): its live
- * butterfly 60 over its name (11 on 16) and its title in blue, padded 6 4
+ * picture 60 over its name (11 on 16) and its title in blue, padded 6 4
  * 4, 6 between, at least 80 wide, the name at most 92. Unread (blue) or at
- * work (green) is a 10-point dot at the butterfly's corner, 2 in. The open
+ * work (green) is a 10-point dot at the picture's corner, 2 in. The open
  * agent's tile is the white card; picked, the blue wash; under the pointer,
  * grey.
  */
@@ -319,7 +319,7 @@ private struct PinTile: View {
       sidebar.click(agent.id, store: store, window: window)
     } label: {
       VStack(spacing: 6) {
-        AgentMark(agent: agent, agents: store.agents, size: 60, live: true)
+        AgentMark(agent: agent, agents: store.agents, size: 60)
           .cornerHole(dot: 10, on: cornerDot(look) != nil)
           .overlay(alignment: .bottomTrailing) {
             if let dot = cornerDot(look) {
@@ -369,7 +369,7 @@ private struct PinTile: View {
     .accessibilityLabel(agent.hasUnread ? "\(agent.name), Unread activity" : agent.name)
   }
 
-  /** The butterfly's corner: unread (blue), else at work (green). */
+  /** The picture's corner: unread (blue), else at work (green). */
   private func cornerDot(_ look: Look) -> Color? {
     if agent.hasUnread { return look.unread }
     if agent.isRunning { return look.working }
@@ -542,21 +542,21 @@ private struct HiddenFoot: View {
 // MARK: A row
 
 /**
- * One row (`sand-agent-item`): the live butterfly and, beside it, the name
+ * One row (`sand-agent-item`): the picture and, beside it, the name
  * (14, medium), the title, the time at the right (12, 40%), and under them
  * the last line (13, 60%). Since 11 October 2026 the iPhone's list on the
  * Mac (the founder: "apply the spaces / box change to the mac"), scaled by
  * the type, 14 to the phone's 17: rows 62 high and 4 apart (66 a row, the
- * phone's 80), the butterfly 46 (the phone's 56) and 10 before the text,
+ * phone's 80), the picture 46 (the phone's 56) and 10 before the text,
  * the title in a grey box with its words in our blue (11.5 medium, 10
  * after the name; the phone's 14 and 13). The window's row was 54 with a
- * 36 butterfly and the title as blue words (11). "Waiting for you: …" when
+ * 36 picture and the title as blue words (11). "Waiting for you: …" when
  * the agent waits on the person, else "Draft: …" when something is typed
  * and not sent in another agent's chat. The open agent's row is the white
  * card; a picked row the blue wash (C11); under the pointer, grey; Control-
  * Tab's row a 2-point blue ring inside. Unread is a blue dot in the
- * time's place; at work, a green dot on the butterfly's corner. A double
- * click renames it in place (C10). On the rail the row is the butterfly
+ * time's place; at work, a green dot on the picture's corner. A double
+ * click renames it in place (C10). On the rail the row is the picture
  * alone, unread on its corner.
  */
 struct AgentRow: View {
@@ -601,7 +601,7 @@ struct AgentRow: View {
     .accessibilityLabel(agent.hasUnread ? "\(agent.name), Unread activity" : agent.name)
   }
 
-  /** The butterfly: 36 on the rail (the window's), 46 in a row (the iPhone's 56, scaled). */
+  /** The picture: 36 on the rail (the window's), 46 in a row (the iPhone's 56, scaled). */
   private var side: CGFloat { rail ? 36 : 46 }
 
   private func content(_ look: Look, renaming: Bool) -> some View {
@@ -621,7 +621,7 @@ struct AgentRow: View {
 
   private func avatar(_ look: Look) -> some View {
     let dot = cornerDot(look)
-    return AgentMark(agent: agent, agents: store.agents, size: side, live: true)
+    return AgentMark(agent: agent, agents: store.agents, size: side)
       .cornerHole(dot: 8, on: dot != nil)
       .overlay(alignment: .topLeading) {
         if let dot {
@@ -635,7 +635,7 @@ struct AgentRow: View {
       }
   }
 
-  /** The butterfly's corner: at work (green); on the rail, unread first (blue). */
+  /** The picture's corner: at work (green); on the rail, unread first (blue). */
   private func cornerDot(_ look: Look) -> Color? {
     if rail && agent.hasUnread { return look.unread }
     if agent.isRunning { return look.working }
@@ -1016,7 +1016,7 @@ extension View {
   /**
    * The corner dot's room (`FOt`, decision 27): a circle 4 wider than the
    * dot, the dot 2 in from the corner, cut out of the avatar under it, for
-   * pictures and butterflies alike. Always masked, the hole only shown with
+   * pictures and pictures alike. Always masked, the hole only shown with
    * the dot, so the live mark is not made again when work starts; the mask
    * reaches past the avatar, so its motion is not clipped.
    */

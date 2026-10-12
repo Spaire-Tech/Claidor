@@ -227,7 +227,7 @@ final class PluginsBox: AgentBackend, @unchecked Sendable {
     lock.withLock { messages.append((agentId, text)) }
   }
   func markRead(_ agentId: String) async {}
-  func createAgent(name: String, colour: String) async throws -> String { "x" }
+  func createAgent(name: String, face: String?) async throws -> String { "x" }
   func createGroup(name: String, memberIds: [String]) async throws -> String { "g" }
   func answer(_ agentId: String, entryId: String, value: String) async throws {}
   func updateAgent(_ agentId: String, name: String, title: String, description: String) async throws {}

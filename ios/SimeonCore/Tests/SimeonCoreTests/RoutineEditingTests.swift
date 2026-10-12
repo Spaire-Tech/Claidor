@@ -172,16 +172,20 @@ final class RoutineEditingTests: XCTestCase {
   }
 
   func testAvatarEditorWords() {
-    XCTAssertEqual(AvatarEditorWords.reset(hasPicture: true, onAgentTab: false, colour: nil), "Reset to the Agent")
-    XCTAssertEqual(AvatarEditorWords.reset(hasPicture: false, onAgentTab: true, colour: "rose"), "Reset character to default")
-    XCTAssertNil(AvatarEditorWords.reset(hasPicture: false, onAgentTab: true, colour: nil))
-    XCTAssertNil(AvatarEditorWords.reset(hasPicture: false, onAgentTab: false, colour: "rose"))
-    let plain = Agent(id: "a1", name: "A")
-    XCTAssertEqual(AvatarEditorWords.chosenColour(plain, staged: nil), AgentPalette.defaultColour(forAgentId: "a1"))
-    let coloured = Agent(id: "a1", name: "A", colour: AgentPalette.all[2].id)
-    XCTAssertEqual(AvatarEditorWords.chosenColour(coloured, staged: "x"), AgentPalette.all[2].id)
-    let pictured = Agent(id: "a1", name: "A", colour: AgentPalette.all[2].id, avatarDataURL: "data:image/png;base64,AA")
-    XCTAssertNil(AvatarEditorWords.chosenColour(pictured, staged: nil), "with a picture none is ringed until one is picked")
-    XCTAssertEqual(AvatarEditorWords.chosenColour(pictured, staged: AgentPalette.all[3].id), AgentPalette.all[3].id)
+    XCTAssertEqual([AvatarEditorWords.faces, AvatarEditorWords.generate, AvatarEditorWords.upload], ["Faces", "Generate", "Upload"])
+    let face = AgentFaces.pool[3]
+    var agent = Agent(id: "a1", name: "Maya")
+    agent.avatarShape = face.id
+    agent.avatarVersion = face.version
+    XCTAssertNil(AvatarEditorWords.reset(agent), "wearing the face it was given: nothing to reset")
+    agent.avatarVersion = AgentFaces.pool[4].version
+    XCTAssertEqual(AvatarEditorWords.reset(agent), "Reset face")
+    agent.avatarVersion = "0123456789abcdef"
+    agent.avatarDataURL = "data:image/png;base64,AA"
+    XCTAssertEqual(AvatarEditorWords.reset(agent), "Reset face")
+    XCTAssertNil(AvatarEditorWords.reset(Agent(id: "g", name: "Team", isGroup: true)))
+    XCTAssertEqual(AvatarEditorWords.gender(agent), face.gender)
+    XCTAssertEqual(AvatarEditorWords.gender(Agent(id: "l", name: "Leo")), "male")
   }
+
 }

@@ -4,7 +4,7 @@ import SimeonCore
 
 /**
  * The open agent's chat (`main.sand-chat`, B01–B03): its messages the
- * window's whole height, under a blurred head (the butterfly, the name in a
+ * window's whole height, under a blurred head (the picture, the name in a
  * pill, the call button) and over the message field. Measured from the
  * merged window; what step 2a leaves for later is listed in mac/STEPS.md.
  */
@@ -154,9 +154,9 @@ struct ChatPane: View {
 
 /**
  * The chat's head (`header`, 116 high, padded 4 12 28 8): the ground at 78%
- * over a blur, fading out over its last 30 points; the agent's butterfly
+ * over a blur, fading out over its last 30 points; the agent's picture
  * (52) over its name in a pill (13, medium), the call button 8 to the
- * pill's right. The butterfly and the name open and close the agent's
+ * pill's right. The picture and the name open and close the agent's
  * pane (step 7), the call button calls it (step 11). The rest moves the window.
  */
 struct ChatHeader: View {
@@ -194,7 +194,7 @@ struct ChatHeader: View {
   }
 
   /**
-   * `sand-chat-header__identity`: padded 0 8 2, its butterfly and pill 4
+   * `sand-chat-header__identity`: padded 0 8 2, its picture and pill 4
    * apart, both opening the agent's settings; the call button sits 8 past
    * the pill's right end, level with its top.
    */
@@ -208,8 +208,8 @@ struct ChatHeader: View {
       .buttonStyle(.hand)
       .accessibilityLabel("View agent settings")
       // The phone, 8 past the pill and level with its top (`left: 100%`, `top: 56`), the pill still in the middle under the
-      // butterfly: an empty place as wide as the phone on the pill's other side. A plain row, not an overlay pushed outside the
-      // pill (on the founder's Mac, 11 October 2026, the phone sat over the butterfly). Not for a group, not while calls are off.
+      // picture: an empty place as wide as the phone on the pill's other side. A plain row, not an overlay pushed outside the
+      // pill (on the founder's Mac, 11 October 2026, the phone sat over the picture). Not for a group, not while calls are off.
       let calls = !agent.isGroup && store.canCall
       HStack(alignment: .top, spacing: 8) {
         if calls {
@@ -643,7 +643,7 @@ private struct UnreadDivider: View {
  * the left in grey with a hairline and a soft shadow (padded 8 12, its
  * blocks 10 apart). At most 88% of the column, 640, or the column less 82.
  * In a group the agents' messages sit 30 in, the author's name over the
- * first of a run (12, at 60%; it opens their chat) and their butterfly (22)
+ * first of a run (12, at 60%; it opens their chat) and their picture (22)
  * beside the last, whose lower left corner is 6 round. Reactions hang under
  * the message's right end.
  */
@@ -701,7 +701,7 @@ private struct BubbleRow: View {
     }
   }
 
-  /** The author's butterfly beside the last message of their run (`sand-author-run__gutter`). */
+  /** The author's picture beside the last message of their run (`sand-author-run__gutter`). */
   @ViewBuilder
   private var gutter: some View {
     if bubble.showsAvatar, let author = bubble.author, let member = store.agent(author.id) {
@@ -833,7 +833,7 @@ private struct BubbleRow: View {
         .frame(minWidth: isShort(trimmed) ? 36 : nil)
         .background(look.yours, in: UnevenRoundedRectangle(topLeadingRadius: 18, bottomLeadingRadius: chinJoined ? 0 : 18, bottomTrailingRadius: chinJoined ? 0 : run.continuesNext ? 6 : 18, topTrailingRadius: run.continuesPrevious ? 6 : 18))
     } else {
-      // A run's bubbles meet at 6-point corners (`assistantContinuedPrev`, `…Next`); so does the last one with the working line under it, and in a group the one beside its author's butterfly.
+      // A run's bubbles meet at 6-point corners (`assistantContinuedPrev`, `…Next`); so does the last one with the working line under it, and in a group the one beside its author's picture.
       let joinsBelow = run.continuesNext || (seamsBelow && bubble.reactions.isEmpty) || (isGroup && bubble.showsAvatar)
       let shape = UnevenRoundedRectangle(topLeadingRadius: run.continuesPrevious ? 6 : 18, bottomLeadingRadius: chinJoined ? 0 : joinsBelow ? 6 : 18, bottomTrailingRadius: chinJoined ? 0 : 18, topTrailingRadius: 18)
       VStack(alignment: .leading, spacing: 0) {
@@ -993,7 +993,7 @@ private struct EventChip<Leading: View>: View {
 /**
  * Agents talking to each other, folded (`JIn`): "Messaged", "Message from"
  * or "4 messages with", then the agent, or "2 agents" over their
- * butterflies. One agent's chip opens their messages over the chat; with
+ * pictures. One agent's chip opens their messages over the chat; with
  * several, a menu of them (`Agents in this exchange`) does.
  */
 private struct ExchangeEvent: View {
@@ -1014,7 +1014,7 @@ private struct ExchangeEvent: View {
         }
       }) {
         // The first three in a row, each cutting a 2-point gap round itself out of the one before (`fnt`, decision 28).
-        MarkRow(members: peers.prefix(3).map { peer in store.agent(peer.id).map { MarkMember.of($0) } ?? .butterfly(AgentPalette.named(nil)) },
+        MarkRow(members: peers.prefix(3).map { peer in store.agent(peer.id).map { MarkMember.of($0) } ?? MarkMember.of(id: peer.id) },
                 unit: 16, counted: false)
       }
     }

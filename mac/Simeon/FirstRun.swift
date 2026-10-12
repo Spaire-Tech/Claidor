@@ -409,19 +409,17 @@ private struct CooCurve: Shape {
   }
 }
 
-/** One of the six: its butterfly (56) and its job under it (12, the system's grey), 8 apart. */
+/** One of the six: its face (56) and its job under it (12, the system's grey), 8 apart. */
 private struct CooAgent: View {
   let seat: Onboarding.Seat
   let look: Look
   let linked: Bool
   let delay: Double
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
-  @State private var source = StageSource(size: 56)
 
   var body: some View {
     VStack(spacing: 8) {
-      StageMark(source: source, palette: AgentPalette.named(seat.colour), state: .idle)
-        .frame(width: 56, height: 56)
+      AgentPicture(image: AgentFaces.face(id: seat.face).flatMap { AvatarPictures.image($0) }, size: 56)
       Text(seat.label)
         .font(.system(size: 12))
         .tracking(-0.12)
@@ -792,30 +790,23 @@ private struct Cast: View {
   var body: some View {
     let width = Double(flow.size.width)
     ZStack {
-      CastMember(palette: AgentPalette.named("blue"), placement: Placement.hero(step: step, meetBeat: meetBeat, demoBeat: demoBeat, width: width), pointer: step == .computer, meetStart: meetStart)
-      ForEach(Placement.nameAgents) { agent in
-        CastMember(palette: AgentPalette.named(agent.colour), placement: Placement.nameAgent(agent.id, step: step, width: width), pointer: false, meetStart: meetStart)
+      CastMember(face: AgentFaces.simeon, placement: Placement.hero(step: step, meetBeat: meetBeat, demoBeat: demoBeat, width: width), pointer: step == .computer, meetStart: meetStart)
+      ForEach(Onboarding.nameSeats(width: width), id: \.id) { seat in
+        CastMember(face: AgentFaces.face(id: seat.face), placement: Placement.nameAgent(seat.id, step: step, width: width), pointer: false, meetStart: meetStart)
       }
     }
     .frame(width: flow.size.width, height: flow.size.height)
   }
 }
 
-/** Where one of the cast is, how big and how seen, its mood, and how it gets there (the window's placement). */
+/** Where one of the cast is, how big and how seen, and how it gets there (the window's placement). Faces stay still: no mood, no turn (12 October 2026). */
 struct Placement: Equatable {
   var x: Double
   var y: Double
   var scale: Double
   var opacity: Double
-  var state: MarkState
   var motion: Motion
-  /** It follows the pointer and turns when clicked (`isGazing`). */
-  var gazing = false
-  var turn: Turn = .none
-  /** Drawn for a light surface whatever the theme (`surfaceTheme: "light"`: the computer's screen). */
-  var lightSurface = false
-
-  enum Turn: Equatable { case none, fadeIn, spin }
+  var fadesIn = false
 
   /**
    * The window's transitions (`rqn`): its three springs (stiffness 175 and
@@ -837,65 +828,52 @@ struct Placement: Equatable {
   }
 
   /** Off stage (`zoe`): small, unseen, 20 above the centre. */
-  static func offStage(_ state: MarkState) -> Placement {
-    Placement(x: 0, y: -20, scale: 0.3, opacity: 0, state: state, motion: .none)
+  static var offStage: Placement {
+    Placement(x: 0, y: -20, scale: 0.3, opacity: 0, motion: .none)
   }
 
   /** Simeon (`QBn`). */
   static func hero(step: OnboardingStep, meetBeat: Int, demoBeat: Int, width: Double) -> Placement {
     switch step {
     case .meet:
-      // Unseen large, then fading in larger on the slow spring and turning once; then his seat, the spot he holds on the next step.
-      if meetBeat < 1 { return Placement(x: 0, y: Onboarding.heroY, scale: 1.6, opacity: 1, state: .happy, motion: .none, turn: .fadeIn) }
-      if meetBeat < 3 { return Placement(x: 0, y: Onboarding.heroY, scale: 2.3, opacity: 1, state: .happy, motion: .slow, turn: meetBeat == 2 ? .spin : .fadeIn) }
-      return Placement(x: 0, y: Onboarding.heroY, scale: 1, opacity: 1, state: .idle, motion: .standard, gazing: true)
+      // Unseen large, then fading in larger on the slow spring; then his seat, the spot he holds on the next step.
+      if meetBeat < 1 { return Placement(x: 0, y: Onboarding.heroY, scale: 1.6, opacity: 1, motion: .none, fadesIn: true) }
+      if meetBeat < 3 { return Placement(x: 0, y: Onboarding.heroY, scale: 2.3, opacity: 1, motion: .slow, fadesIn: true) }
+      return Placement(x: 0, y: Onboarding.heroY, scale: 1, opacity: 1, motion: .standard)
     case .chiefOfStaff:
-      return Placement(x: 0, y: Onboarding.heroY, scale: 1, opacity: 1, state: .proud, motion: .standard, gazing: true)
+      return Placement(x: 0, y: Onboarding.heroY, scale: 1, opacity: 1, motion: .standard)
     case .connect:
-      return Placement(x: 0, y: Onboarding.connectY, scale: 1.3, opacity: 1, state: .idle, motion: .standard, gazing: true)
+      return Placement(x: 0, y: Onboarding.connectY, scale: 1.3, opacity: 1, motion: .standard)
     case .computer:
       let place = Onboarding.cursorPlace(beat: demoBeat, width: width)
-      return Placement(x: place.x, y: place.y, scale: place.scale, opacity: 1, state: demoBeat < 0 ? .thinking : .working, motion: .slow, lightSurface: true)
+      return Placement(x: place.x, y: place.y, scale: place.scale, opacity: 1, motion: .slow)
     case .name:
-      return Placement(x: 0, y: 0, scale: 0.55, opacity: 0, state: .happy, motion: .exit)
+      return Placement(x: 0, y: 0, scale: 0.55, opacity: 0, motion: .exit)
     case .handOff:
-      return offStage(.idle)
+      return offStage
     }
   }
 
-  struct NameAgent: Identifiable {
-    let id: String
-    let colour: String
-  }
-
-  /** The name step's three, in the window's order, with their colours (`ZBn`). */
-  static let nameAgents = [NameAgent(id: "invoice-chaser", colour: "red"), NameAgent(id: "weekly-standup", colour: "cyan"), NameAgent(id: "sales-forecast", colour: "blue")]
-
-  /** One of the three (`eqn`): bouncing in over the field on the name step, off stage everywhere else. */
+  /** One of the name step's three (`eqn`): bouncing in over the field on the name step, off stage everywhere else. */
   static func nameAgent(_ id: String, step: OnboardingStep, width: Double) -> Placement {
-    guard step == .name, let seat = Onboarding.nameSeats(width: width).first(where: { $0.id == id }) else { return offStage(.idle) }
-    return Placement(x: seat.x, y: seat.y, scale: seat.scale, opacity: 1, state: .happy, motion: .bounce, gazing: true)
+    guard step == .name, let seat = Onboarding.nameSeats(width: width).first(where: { $0.id == id }) else { return offStage }
+    return Placement(x: seat.x, y: seat.y, scale: seat.scale, opacity: 1, motion: .bounce)
   }
 }
 
 /**
- * One of the cast (`mqn`): an 80-point butterfly, placed, scaled and faded
- * on its placement's motion; on the computer step Simeon carries the
- * window's arrow (30 × 28, 22 left of and 20 above his box). Gazing, a
- * click turns it once.
+ * One of the cast (`mqn`): an 80-point face, placed, scaled and faded on its
+ * placement's motion; on the computer step Simeon carries the window's
+ * arrow (30 × 28, 22 left of and 20 above his box).
  */
 private struct CastMember: View {
-  let palette: AgentPalette
+  let face: AgentFace?
   let placement: Placement
   let pointer: Bool
   let meetStart: Date
-  @State private var source = StageSource(size: 80)
-  /** It keeps moving while it fades out (the exit's 0.3 s), then stops drawing. */
-  @State private var drawing = true
 
   var body: some View {
-    StageMark(source: source, palette: palette, state: placement.state, lightSurface: placement.lightSurface, running: drawing)
-      .frame(width: 80, height: 80)
+    AgentPicture(image: face.flatMap { AvatarPictures.image($0) }, size: 80)
       .overlay(alignment: .topLeading) {
         CursorArrow()
           .frame(width: 30, height: 28)
@@ -903,49 +881,26 @@ private struct CastMember: View {
           .opacity(pointer ? 1 : 0)
           .animation(.linear(duration: 0.2), value: pointer)
       }
-      .modifier(MeetTurn(turn: placement.turn, start: meetStart))
-      .contentShape(Rectangle())
-      .onTapGesture { if placement.gazing { source.spin() } }
-      .pointerStyle(placement.gazing ? .link : nil)
-      .allowsHitTesting(placement.gazing && placement.opacity > 0)
+      .modifier(MeetFade(fades: placement.fadesIn, start: meetStart))
+      .allowsHitTesting(false)
       .scaleEffect(placement.scale)
       .opacity(placement.opacity)
       .offset(x: placement.x, y: placement.y)
       .animation(placement.motion.animation, value: placement)
       .accessibilityHidden(true)
-      .task(id: placement.opacity > 0) {
-        if placement.opacity > 0 {
-          drawing = true
-        } else {
-          try? await Task.sleep(nanoseconds: 350_000_000)
-          if !Task.isCancelled { drawing = false }
-        }
-      }
   }
 }
 
-/**
- * Meet's turn (`simeon-turn`): the box fades in over 1.2 s
- * (`cubic-bezier(.4,0,.2,1)`), and on the second beat turns once round its
- * upright axis over 1.4 s (`cubic-bezier(.65,0,.35,1)`, a 900-point
- * perspective).
- */
-private struct MeetTurn: ViewModifier {
-  let turn: Placement.Turn
+/** Meet's entrance (`simeon-turn`, without the turn since faces): the face fades in over 1.2 s (`cubic-bezier(.4,0,.2,1)`). */
+private struct MeetFade: ViewModifier {
+  let fades: Bool
   let start: Date
 
   private static let fade = CubicCurve(0.4, 0, 0.2, 1)
-  private static let spin = CubicCurve(0.65, 0, 0.35, 1)
 
   func body(content: Content) -> some View {
-    TimelineView(.animation(minimumInterval: nil, paused: turn == .none)) { context in
-      let t = context.date.timeIntervalSince(start)
-      let opacity = turn == .none ? 1 : Self.fade(t / 1.2)
-      let angle = turn == .spin ? 360 * Self.spin((t - Onboarding.meetBeatTimes[1]) / 1.4) : 0
-      // SwiftUI's perspective is relative to the view's size (80): the window's 900-point perspective.
-      content
-        .opacity(opacity)
-        .rotation3DEffect(.degrees(angle), axis: (x: 0, y: 1, z: 0), perspective: 80.0 / 900.0)
+    TimelineView(.animation(minimumInterval: nil, paused: !fades)) { context in
+      content.opacity(fades ? Self.fade(context.date.timeIntervalSince(start) / 1.2) : 1)
     }
   }
 }
@@ -977,64 +932,6 @@ private struct CursorArrow: View {
     p.closeSubpath()
     return p
   }()
-}
-
-// MARK: - The stage's butterflies
-
-/**
- * A butterfly of the first run's stage, moving as the window's mark (`sd`)
- * moves at its own size: its own engine and light trails, not an agent's
- * shared source. It stops drawing while unseen.
- */
-struct StageMark: View {
-  let source: StageSource
-  let palette: AgentPalette
-  let state: MarkState
-  var lightSurface = false
-  var running = true
-  @Environment(\.colorScheme) private var scheme
-  @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-  var body: some View {
-    let dark = !lightSurface && scheme == .dark
-    let reduce = reduceMotion
-    TimelineView(.animation(minimumInterval: nil, paused: !running)) { context in
-      Canvas { canvas, box in
-        let drawn = running ? source.frame(at: context.date.timeIntervalSinceReferenceDate, state: state, palette: palette, reduceMotion: reduce) : .rest
-        LiveArt.draw(&canvas, drawn, in: CGRect(origin: .zero, size: box), palette: palette, dark: dark)
-      }
-    }
-    .accessibilityHidden(true)
-  }
-}
-
-/** A stage butterfly's engine and trails, stepped once a frame (the mark's `$_t` at `size` points). */
-final class StageSource {
-  private var engine = MarkEngine()
-  private var trails = LightTrails()
-  private let size: Double
-  private var last: (time: Double, drawn: LiveFrame)?
-
-  init(size: Double) { self.size = size }
-
-  func frame(at now: Double, state: MarkState, palette: AgentPalette, reduceMotion: Bool) -> LiveFrame {
-    if let last, abs(last.time - now) < 0.001 { return last.drawn }
-    if let last, now - last.time > 0.5 {
-      // It was unseen: it starts again from rest.
-      engine = MarkEngine()
-      trails = LightTrails()
-    }
-    engine.reduceMotion = reduceMotion
-    trails.reduceMotion = reduceMotion
-    let frame = engine.frame(at: now, state: state, sizePoints: size)
-    trails.update(nowMs: now * 1000, spinAngle: frame.spinAngle, sizeScale: LightTrails.sizeScale(points: size), sustain: frame.whirling, palette: palette, radius: frame.beltRadius)
-    let drawn = LiveFrame(frame: frame, ribbons: trails.drawn, sparks: trails.sparks)
-    last = (now, drawn)
-    return drawn
-  }
-
-  /** A click (`spin()`): one turn round its own axis. */
-  func spin() { engine.turnNow(direction: Bool.random() ? 1 : -1) }
 }
 
 // MARK: - Curves and colours

@@ -4,7 +4,7 @@ import SimeonCore
 /**
  * The Electron window's sign-in (`sand-onboarding__landing`, reference A01
  * and A02) and its "Setting up Simeon's computer" (A03), measured at
- * 1040 × 760: the butterfly (64) and "Simeon" in Suravaram (68) side by
+ * 1040 × 760: the logo (64) and "Simeon" in Suravaram (68) side by
  * side 18 apart, the line under them 48 lower (22, at most 336 wide), the
  * button 39 below that; the whole block centred and moved 40 down. In the
  * butterfly's place, the SimeonLabs logo lighting up, as on the iPhone (the

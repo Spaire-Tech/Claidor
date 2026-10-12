@@ -351,8 +351,8 @@ private struct WheelZoom: NSViewRepresentable {
 
 /**
  * A node (`be`): 120 wide, its point at the middle of the whole node; the
- * butterfly (36) with its dot, the name (11, the second ink, 104 at most)
- * and the line under it (green while it works); a ring round the butterfly
+ * picture (36) with its dot, the name (11, the second ink, 104 at most)
+ * and the line under it (green while it works); a ring round the picture
  * and the name in the full ink while its card shows. A touch larger on a
  * faint wash under the pointer.
  */
@@ -406,7 +406,7 @@ private struct NetworkNode: View {
   }
 }
 
-/** An agent's butterfly (or a group's) with the sidebar's dot at its lower right: unread blue, working green, both as blue round green. */
+/** An agent's picture (or a group's) with the sidebar's dot at its lower right: unread blue, working green, both as blue round green. */
 private struct NodeMark: View {
   let agent: Agent
   let size: CGFloat
@@ -418,7 +418,7 @@ private struct NodeMark: View {
     let state = AgentNetwork.state(agent)
     let busy = state == .working || state == .typing
     let dot = size >= 72 ? 13.0 : 8.0
-    AgentMark(agent: agent, agents: store.agents, size: size, live: busy)
+    AgentMark(agent: agent, agents: store.agents, size: size)
       .frame(width: size, height: size)
       .overlay(alignment: .topLeading) {
         if agent.hasUnread || busy {
@@ -590,7 +590,7 @@ private func openChat(_ agentId: String, window: WindowState, sidebar: SidebarSt
   WindowState.composerFocus += 1
 }
 
-/** An agent or a group (`te`): its butterfly (72) and state, About, its members, its last activity, Open chat or Open room. */
+/** An agent or a group (`te`): its picture (72) and state, About, its members, its last activity, Open chat or Open room. */
 private struct AgentCard: View {
   let agent: Agent
   let look: Look
@@ -675,7 +675,7 @@ private struct ChartMemberMarks: View {
   }
 }
 
-/** Two butterflies overlapping (36, the second 10 over the first), "A ⇄ B" and a line under it (`Rs`). */
+/** Two pictures overlapping (36, the second 10 over the first), "A ⇄ B" and a line under it (`Rs`). */
 private struct PairHead: View {
   let first: Agent
   let second: Agent

@@ -33,7 +33,7 @@ struct ActivitySlot: View {
       if let shown {
         let typing = line?.verb == "typing" || (line == nil && hold.shown == nil)
         let words = typing ? "Typing…" : hold.shown?.text ?? "Working…"
-        // The agent as it is now (its butterfly's state), the one shown while it goes out.
+        // The agent as it is now (its state), the one shown while it goes out.
         ActivityRow(
           agent: agent ?? shown,
           words: words,
@@ -100,14 +100,13 @@ struct ActivitySlot: View {
 }
 
 /**
- * The agent at work (`sand-activity-mark`, 36 high, padded 8 on the left):
- * its butterfly (28, facing the other way, moving) and what it is doing,
- * 14 on 22 at 500 under the window's sweep of light, the time after a
- * minute at 12 in the tertiary grey. It comes in over 0.18 s, scaled from
- * 0.92 at its left (`sand-11nrck8`); the butterfly pops in from 0.6 a
- * little after (0.34 s, 0.22 s late, overshooting); new words rise 4
- * points as they come (`sand-gcq4cg`). Clicking the butterfly gives it a
- * turn, a hop or a burst of sparks, in turn.
+ * The agent at work (`sand-activity-mark`, 36 high): the grey three dots,
+ * still, as the window shows an agent with a picture (`SJn`, decision 26;
+ * since faces, 12 October 2026, every agent has one), and what it is
+ * doing, 14 on 22 at 500 under the window's sweep of light, the time after
+ * a minute at 12 in the tertiary grey. It comes in over 0.18 s, scaled from
+ * 0.92 at its left (`sand-11nrck8`); new words rise 4 points as they come
+ * (`sand-gcq4cg`).
  */
 private struct ActivityRow: View {
   let agent: Agent
@@ -120,53 +119,29 @@ private struct ActivityRow: View {
   @Environment(AppStore.self) private var store
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @State private var entered = false
-  @State private var markIn = false
-  @State private var pokes = 0
 
-  /** The window's curves: in (`cubic-bezier(.22,1,.36,1)`), and the butterfly's overshooting pop; with Reduce motion, a 0.12 s fade (`sand-18re5ia`). */
+  /** The window's curves: in (`cubic-bezier(.22,1,.36,1)`); with Reduce motion, a 0.12 s fade (`sand-18re5ia`). */
   static let into = Animation.timingCurve(0.22, 1, 0.36, 1, duration: 0.18)
-  static let pop = Animation.timingCurve(0.34, 1.56, 0.64, 1, duration: 0.34).delay(0.22)
   static let fade = Animation.easeOut(duration: 0.12)
 
   var body: some View {
     let shown = entered && !exiting
-    // An agent with a picture of its own works as the grey three dots, not its picture (`SJn`, decision 26): no pop, no pokes.
-    let pictured = agent.hasPicture
-    HStack(spacing: pictured ? 10 : 8) {
-      if pictured {
-        WorkingBadge(look: look)
-      } else {
-        AgentMark(agent: agent, agents: store.agents, size: 28, live: true)
-          .scaleEffect(x: -1, y: 1)
-          .scaleEffect(markIn || reduceMotion ? 1 : 0.6)
-          .opacity(markIn ? 1 : 0)
-          .contentShape(Rectangle())
-          .onTapGesture { poke() }
-          .pointerStyle(agent.isGroup ? nil : .link)
-      }
+    // Every agent works as the grey three dots, still (`SJn`, decision 26): an agent with a picture never showed it here.
+    HStack(spacing: 10) {
+      WorkingBadge(look: look)
       ActivityWords(words: words, elapsed: elapsed, look: look)
         .id(wordsKey)
         .offset(y: -1)
     }
-    .padding(.leading, pictured ? 0 : 8)
     .frame(height: 36)
     .scaleEffect(shown || reduceMotion ? 1 : 0.92, anchor: .leading)
     .opacity(shown ? 1 : 0)
     .animation(reduceMotion ? ActivityRow.fade : .timingCurve(0.22, 1, 0.36, 1, duration: 0.14), value: exiting)
     .onAppear {
       withAnimation(reduceMotion ? ActivityRow.fade : ActivityRow.into) { entered = true }
-      withAnimation(reduceMotion ? ActivityRow.fade : ActivityRow.pop) { markIn = true }
     }
     .accessibilityElement(children: .ignore)
     .accessibilityLabel(spoken)
-  }
-
-  /** The window's pokes in turn (`eqe`): a turn, a hop, a burst. */
-  private func poke() {
-    guard !agent.isGroup, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else { return }
-    let kinds = MarkSource.Poke.allCases
-    MarkStage.source(agent.id).poke(kinds[pokes % kinds.count], palette: agent.palette)
-    pokes += 1
   }
 }
 

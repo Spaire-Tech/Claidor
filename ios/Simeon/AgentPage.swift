@@ -92,7 +92,7 @@ struct AgentPageSheet: View {
 
 /**
  * The page's avatar in its 96-point disc (the Mac's `AvatarTrigger`): the
- * agent's or the group's own picture filling it, else the butterfly at 66,
+ * agent's or the group's own picture filling it, else the picture at 66,
  * or a group's members.
  */
 private struct PageAvatar: View {
@@ -101,11 +101,11 @@ private struct PageAvatar: View {
 
   var body: some View {
     Group {
-      if let picture = AgentAvatar.image(agent.avatarDataURL) {
+      if let picture = AgentPictures.image(of: agent) {
         Image(uiImage: picture).resizable().scaledToFill().frame(width: 96, height: 96).clipShape(Circle())
       } else {
         AgentAvatar(agent: agent, members: store.members(of: agent))
-          .frame(width: agent.isGroup ? 90 : 66, height: agent.isGroup ? 60 : 66)
+          .frame(width: 90, height: 60)
           .frame(width: 96, height: 96)
       }
     }

@@ -285,7 +285,7 @@ final class GatewayTests: XCTestCase {
     let api = SimeonAPI(base: URL(string: "https://x")!, clientVersion: "1", vault: vault, http: http)
     let backend = LiveBackend(gateway: Gateway(api: api, http: http))
     try await backend.send("theo", text: "Hi", attachments: [], replyTo: nil)
-    let id = try await backend.createAgent(name: "Nora", colour: "green")
+    let id = try await backend.createAgent(name: "Nora", face: "clay-03")
     let group = try await backend.createGroup(name: "Simeon, Iris", memberIds: ["simeon", "iris"])
     XCTAssertEqual(id, "agent-9")
     XCTAssertEqual(group, "group-1")
@@ -295,8 +295,9 @@ final class GatewayTests: XCTestCase {
     XCTAssertEqual(send["attachmentPaths"], [])
     XCTAssertTrue(send["clientNonce"]?.string?.hasPrefix("ios-") ?? false)
     let create = try JSON.parse(http.sent[2].httpBody!)
-    XCTAssertEqual(create["avatarColor"], "green")
-    XCTAssertEqual(create["avatarShape"], "cloud")
+    // The face the sheet showed is kept on it; the host picks its colour.
+    XCTAssertNil(create["avatarColor"])
+    XCTAssertEqual(create["avatarShape"], "clay-03")
     XCTAssertEqual(create["isKickstartRequested"], true)
     XCTAssertEqual(try JSON.parse(http.sent[3].httpBody!)["memberAgentIds"], ["simeon", "iris"])
   }
@@ -496,51 +497,12 @@ final class ChatTests: XCTestCase {
 }
 
 final class ButterflyAndPaletteTests: XCTestCase {
-  func testReachMatchesTheWindow() {
-    // node: butterflyReach(t) from desktop/scripts/lib/router-renderer-patch.mjs.
-    let expected: [(Double, Double)] = [(0, 67.43497719968192), (Double.pi / 2, 37.24023842188095), (1, 90.50606529034812), (2.5, 94.19762103730409), (-1.2, 70.00994208197413)]
-    for (t, reach) in expected { XCTAssertEqual(Butterfly.reach(t), reach, accuracy: 1e-9) }
-    XCTAssertEqual(Butterfly.outline.count, 200)
-    XCTAssertEqual(Butterfly.outline[0].x, 181.71, accuracy: 0.01)
-    XCTAssertEqual(Butterfly.veins.count, 14)
-  }
-
-  func testTheWingsAreTheWindowsOwn() {
-    // node: the window's own Ztt/Yse/p_t (index-UbX-y3il.js) on the same reach: first point and box after normalising.
-    XCTAssertEqual(Butterfly.wings.count, 200)
-    XCTAssertEqual(Butterfly.wings[0].from, Butterfly.Point(184.34, 117.37))
-    XCTAssertEqual(Butterfly.wings[0].c1, Butterfly.Point(182.92, 118.1))
-    let box = Butterfly.wingsBox
-    XCTAssertEqual(box.minX, 0.048, accuracy: 0.06)
-    XCTAssertEqual(box.maxX, 228.493, accuracy: 0.06)
-    XCTAssertEqual(box.minY, 31.982, accuracy: 0.06)
-    XCTAssertEqual(box.maxY, 196.559, accuracy: 0.06)
-  }
-
-  func testDefaultColourIsTheWindowsHash() {
-    // node: unt(cnt(id)) from the window, into the patched palette order.
-    XCTAssertEqual(AgentPalette.defaultColour(forAgentId: "simeon"), "cyan")
-    XCTAssertEqual(AgentPalette.defaultColour(forAgentId: "theo"), "gray")
-    XCTAssertEqual(AgentPalette.defaultColour(forAgentId: "agent-1"), "cyan")
-    XCTAssertEqual(AgentPalette.defaultColour(forAgentId: "3f2a9c1e-0000-4abc-9def-1234567890ab"), "gray")
-    XCTAssertEqual(Agent(id: "theo", name: "Theo").palette.id, "gray")
-  }
-
   func testGroupLayoutIsTheWindows() {
-    let three = Butterfly.groupLayout(count: 3, frame: 36)
+    let three = GroupLayout.slots(count: 3, frame: 36)
     XCTAssertEqual(three.map(\.size), [20, 20, 20])
     XCTAssertEqual(three[0].x, 8, accuracy: 1e-9)
     XCTAssertEqual(three[2].y, 16, accuracy: 1e-9)
-    XCTAssertEqual(Butterfly.groupLayout(count: 2, frame: 36)[1].x, 12, accuracy: 1e-9)
-  }
-
-  func testPalettes() {
-    XCTAssertEqual(AgentPalette.all.count, 12)
-    XCTAssertEqual(AgentPalette.named("nope").id, "blue")
-    XCTAssertEqual(AgentPalette.named("green").mid.hex, "#a8c58a")
-    // color-mix(in oklab, white, black) is a mid grey near #636363.
-    let grey = RGB(1, 1, 1).mixed(with: RGB(0, 0, 0))
-    XCTAssertEqual(grey.r, 0.388, accuracy: 0.01)
+    XCTAssertEqual(GroupLayout.slots(count: 2, frame: 36)[1].x, 12, accuracy: 1e-9)
   }
 
   func testJSONRoundTrips() throws {
@@ -732,7 +694,7 @@ final class StoreTests: XCTestCase {
     XCTAssertEqual(last.text, "Thanks Theo")
     XCTAssertEqual(store.agents.first?.name, "Theo")
 
-    let id = await store.createAgent(name: "Nora", colour: "green")
+    let id = await store.createAgent(name: "Nora", face: AgentFaces.preview(name: "Nora", agents: store.agents))
     XCTAssertNotNil(id)
     await store.open(id!)
     try await Task.sleep(nanoseconds: 300_000_000)
@@ -886,15 +848,15 @@ final class MarkdownTests: XCTestCase {
   }
 
   func testMentions() {
-    let agents = [Mentions.AgentName(name: "Theo", id: "theo", colour: "gray"), Mentions.AgentName(name: "Bass", id: "bass", colour: "cyan")]
+    let agents = [Mentions.AgentName(name: "Theo", id: "theo"), Mentions.AgentName(name: "Bass", id: "bass")]
     let text = "Theo sent it to Google Calendar and Stripe, not @Stripe or Theodore. Bass"
     let found = Mentions.find(in: text, agents: agents, personName: "Bass")
     let names = found.map { (text as NSString).substring(with: NSRange(location: $0.location, length: $0.length)) }
     XCTAssertEqual(names, ["Theo", "Google Calendar", "Stripe"])
     guard case .brand(let calendar) = found[1].kind else { return XCTFail() }
     XCTAssertEqual(calendar.key, "google-calendar")
-    guard case .agent(let id, let colour) = found[0].kind else { return XCTFail() }
-    XCTAssertEqual(id, "theo"); XCTAssertEqual(colour, "gray")
+    guard case .agent(let id) = found[0].kind else { return XCTFail() }
+    XCTAssertEqual(id, "theo")
   }
 
   func testAvasChatIsQuickInTheCore() {
@@ -904,7 +866,7 @@ final class MarkdownTests: XCTestCase {
       "I don\u{2019}t have Simeon customer feedback yet. The connected Gmail account is for Prime Seattle, and I found no Simeon-related messages or feedback labels there, so I won\u{2019}t treat that mail as product evidence.",
       "My avatar is now a violet customer-voice icon, distinct from the others. I\u{2019}m still waiting on the location of Simeon\u{2019}s feedback before I can give Leo or you evidence-backed themes.",
     ]
-    let agents = [Mentions.AgentName(name: "Simeon", id: "simeon", colour: "blue"), Mentions.AgentName(name: "Ava", id: "ava", colour: "violet"), Mentions.AgentName(name: "Leo", id: "leo", colour: "red")]
+    let agents = [Mentions.AgentName(name: "Simeon", id: "simeon"), Mentions.AgentName(name: "Ava", id: "ava"), Mentions.AgentName(name: "Leo", id: "leo")]
     let start = Date()
     let found = lines.map { line in
       XCTAssertEqual(Markdown.blocks(line).count, 1)
@@ -912,65 +874,6 @@ final class MarkdownTests: XCTestCase {
     }
     XCTAssertEqual(found, [["Ava"], ["Simeon", "Gmail"], ["Simeon", "Leo"]])
     XCTAssertLessThan(Date().timeIntervalSince(start), 0.1)
-  }
-  // MARK: The butterfly's motion (the window's mark engine, measured 8 October 2026)
-
-  func testTheLaunchTurnTurnsOnceAndSettles() {
-    let engine = MarkEngine(random: { 0.5 })
-    var now = 1_000.0
-    _ = engine.frame(at: now, state: .idle, sizePoints: 64)
-    engine.turnNow()
-    XCTAssertTrue(engine.isTurning)
-    var turned = false
-    for _ in 0..<240 {
-      now += 1.0 / 60
-      if engine.frame(at: now, state: .idle, sizePoints: 64).outline != nil { turned = true }
-    }
-    XCTAssertTrue(turned, "the outline turns while it spins")
-    XCTAssertFalse(engine.isTurning, "one turn, then still")
-  }
-
-  func testMarkRingAndTurnMatchTheWindow() {
-    // The window's numbers for the butterfly (`Jo.cloud.ring`, `turnAt`), read by running its own code.
-    func near(_ p: Butterfly.Point, _ x: Double, _ y: Double, file: StaticString = #filePath, line: UInt = #line) {
-      XCTAssertEqual(p.x, x, accuracy: 0.05, file: file, line: line); XCTAssertEqual(p.y, y, accuracy: 0.05, file: file, line: line)
-    }
-    XCTAssertEqual(MarkShape.ring.count, 96)
-    near(MarkShape.ring[0], 189.8823, 114.2705)
-    near(MarkShape.ring[24], 114.2705, 156.0613)
-    near(MarkShape.ring[50], 22.2798, 102.1597)
-    near(MarkShape.ring[77], 134.7351, 53.9837)
-    let quarter = MarkShape.turned(.pi / 2)
-    near(quarter[0], 156.1828, 114.2705)
-    near(quarter[24], 114.2705, 172.0632)
-    near(quarter[60], 52.5051, 52.5051)
-    near(MarkShape.turned(1)[0], 162.5328, 114.2705)
-    near(MarkShape.turned(.pi)[60], 32.1354, 32.1354)
-  }
-
-  func testMarkStateFromTheRoster() {
-    var agent = Agent(id: "a", name: "Theo")
-    XCTAssertEqual(agent.markState, .idle)
-    agent.isRunning = true
-    XCTAssertEqual(agent.markState, .working)
-    agent.activityKind = "thinking"
-    XCTAssertEqual(agent.markState, .thinking)
-    agent.activityKind = "tool"; agent.activityTool = "WebSearch"
-    XCTAssertEqual(agent.markState, .searching)
-    agent.activityTool = "SendToAgent"
-    XCTAssertEqual(agent.markState, .sending)
-    agent.activityTool = "Task"
-    XCTAssertEqual(agent.markState, .orbit)
-    agent.activityTool = "GenerateImage"
-    XCTAssertEqual(agent.markState, .loading)
-    agent.activityTool = "browser_click"
-    XCTAssertEqual(agent.markState, .searching)
-    agent.isComposing = true
-    XCTAssertEqual(agent.markState, .thinking)
-    agent.awaitingUserResponse = true
-    XCTAssertEqual(agent.markState, .idle)
-    let parsed = Agent(json: ["id": "b", "name": "B", "isRunning": true, "currentActivity": ["kind": "tool", "tool": "WebFetch"], "awaitingUserResponse": .null])
-    XCTAssertEqual(parsed?.markState, .searching)
   }
 
   /** A picture counts for the working lines with its data or only its version (`QCe`); an empty one does not. */
@@ -983,76 +886,6 @@ final class MarkdownTests: XCTestCase {
     XCTAssertTrue(Agent(json: ["id": "a", "name": "A", "avatarVersion": "v1"])!.hasPicture)
   }
 
-  func testMarkPoseFollowsTheState() {
-    let engine = MarkEngine(random: { 0.5 })
-    var frame = MarkFrame.rest
-    for step in 0...240 { frame = engine.frame(at: Double(step) / 60, state: .idle, sizePoints: 52) }
-    // Idle sways by about a unit and turns a fraction of a degree (turn x 0.17).
-    XCTAssertLessThan(abs(frame.dx), 1.2)
-    XCTAssertLessThan(abs(frame.rotation), 0.5)
-    XCTAssertNil(frame.outline)
-    XCTAssertTrue(engine.isSettled)
-    // Working leans in (tilt 3, roll 1.5 to 4.5) and spins within its first 2.4 s.
-    var spun = false
-    for step in 241...600 {
-      frame = engine.frame(at: Double(step) / 60, state: .working, sizePoints: 52)
-      if frame.outline != nil { spun = true }
-    }
-    XCTAssertTrue(spun)
-    XCTAssertEqual(frame.dx, 3, accuracy: 0.3)
-    XCTAssertFalse(engine.isSettled)
-  }
-
-  func testAClickedButterflyHopsAndSettles() {
-    let engine = MarkEngine(random: { 0.5 })
-    var frame = MarkFrame.rest
-    for step in 0...120 { frame = engine.frame(at: Double(step) / 60, state: .idle, sizePoints: 9) }
-    let resting = frame.dy
-    engine.bounce()
-    XCTAssertFalse(engine.isSettled)
-    var highest = 0.0
-    for step in 121...(121 + 90) {
-      frame = engine.frame(at: Double(step) / 60, state: .idle, sizePoints: 9)
-      highest = min(highest, frame.dy - resting)
-    }
-    // The first hop is 48 units high, at a quarter second.
-    XCTAssertEqual(highest, -48, accuracy: 2.5)
-    XCTAssertTrue(engine.isSettled, "four hops in 1.33 s, then still")
-  }
-
-  func testReduceMotionFoldsAtOnceAndNeverTurns() {
-    let engine = MarkEngine(random: { 0.5 })
-    engine.reduceMotion = true
-    var frame = engine.frame(at: 0, state: .thinking, sizePoints: 9)
-    frame = engine.frame(at: 1.0 / 60, state: .thinking, sizePoints: 9)
-    XCTAssertEqual(frame.fold, 1, accuracy: 0.0001, "folded at once")
-    XCTAssertEqual(frame.outline, MarkShape.circle)
-    engine.turnNow()
-    engine.bounce()
-    XCTAssertFalse(engine.isTurning)
-    for step in 2...300 { frame = engine.frame(at: Double(step) / 60, state: .working, sizePoints: 9) }
-    XCTAssertFalse(engine.isTurning, "no turns every few seconds")
-    XCTAssertEqual(frame.rotation, 0, accuracy: 0.01)
-  }
-
-  func testMarkFoldsIntoThreeDotsWhileThinking() {
-    let engine = MarkEngine(random: { 0.5 })
-    var frame = MarkFrame.rest
-    for step in 0...180 { frame = engine.frame(at: Double(step) / 60, state: .thinking, sizePoints: 30) }
-    XCTAssertEqual(frame.outline, MarkShape.circle)
-    XCTAssertEqual(frame.artOpacity, 0)
-    XCTAssertEqual(frame.dots.count, 2)
-    // The orb is the middle dot: about 22 units across a 114 radius.
-    XCTAssertEqual(frame.scaleX, 22 / Butterfly.centre, accuracy: 0.06)
-    // A 30 pt mark zooms in on its dots (1.5 / 1.131).
-    XCTAssertEqual(frame.zoom, 1.5 / Butterfly.markScale, accuracy: 0.01)
-    // Back to resting: the wings come back.
-    for step in 181...420 { frame = engine.frame(at: Double(step) / 60, state: .idle, sizePoints: 30) }
-    XCTAssertNil(frame.outline)
-    XCTAssertEqual(frame.artOpacity, 1, accuracy: 0.001)
-    XCTAssertTrue(frame.dots.isEmpty)
-    XCTAssertTrue(engine.isSettled)
-  }
   func testAReplyQuotesWhatItAnswers() {
     let now = 1_760_000_000_000.0
     let entries: [Entry] = [
@@ -1177,7 +1010,7 @@ final class QuietBackend: AgentBackend, @unchecked Sendable {
   func send(_ agentId: String, text: String, attachments: [AttachmentRef], options: SendOptions, nonce: String?) async throws {}
   var read: [String] = []
   func markRead(_ agentId: String) async { read.append(agentId) }
-  func createAgent(name: String, colour: String) async throws -> String { "x" }
+  func createAgent(name: String, face: String?) async throws -> String { "x" }
   func createGroup(name: String, memberIds: [String]) async throws -> String { "g" }
   func answer(_ agentId: String, entryId: String, value: String) async throws {}
   func updateAgent(_ agentId: String, name: String, title: String, description: String) async throws {}
@@ -1293,7 +1126,7 @@ final class ScriptedBackend: AgentBackend, @unchecked Sendable {
     sent.append((text, options))
   }
   func markRead(_ agentId: String) async {}
-  func createAgent(name: String, colour: String) async throws -> String { "x" }
+  func createAgent(name: String, face: String?) async throws -> String { "x" }
   func createGroup(name: String, memberIds: [String]) async throws -> String { "g" }
   func answer(_ agentId: String, entryId: String, value: String) async throws {}
   func updateAgent(_ agentId: String, name: String, title: String, description: String) async throws {}
@@ -1397,81 +1230,7 @@ final class OnboardingTests: XCTestCase {
   }
 }
 
-/** The spin's light trails (LightTrails.swift, the window's `E_t`). */
-final class LightTrailsTests: XCTestCase {
-  func run(_ state: MarkState, seconds: Double, turn: Bool, trails: LightTrails, engine: MarkEngine, from start: Double = 1000) -> (most: Int, end: Double) {
-    var now = start, most = 0
-    _ = engine.frame(at: now, state: state, sizePoints: 28)
-    if turn { engine.turnNow() }
-    for _ in 0..<Int(seconds * 60) {
-      now += 1.0 / 60
-      let frame = engine.frame(at: now, state: state, sizePoints: 28)
-      trails.update(nowMs: now * 1000, spinAngle: frame.spinAngle, sizeScale: LightTrails.sizeScale(points: 28), sustain: frame.whirling, palette: .named("blue"))
-      most = max(most, trails.drawn.count)
-    }
-    return (most, now)
-  }
-
-  func testATurnThrowsTrailsThatDrawInAfterIt() {
-    var seed: UInt64 = 7
-    let random = { () -> Double in seed = seed &* 6364136223846793005 &+ 1442695040888963407; return Double(seed >> 11) / Double(1 << 53) }
-    let engine = MarkEngine(random: random), trails = LightTrails(random: random)
-    let turn = run(.idle, seconds: 2, turn: true, trails: trails, engine: engine)
-    XCTAssertGreaterThanOrEqual(turn.most, 3, "three to five ribbons")
-    XCTAssertLessThanOrEqual(turn.most, 5)
-    let after = run(.idle, seconds: 3, turn: false, trails: trails, engine: engine, from: turn.end)
-    XCTAssertFalse(trails.hasLife, "they draw in and go once the turn is over")
-    XCTAssertEqual(after.most <= 5, true)
-  }
-
-  func testTheWhirlKeepsThrowingThem() {
-    let engine = MarkEngine(random: { 0.5 }), trails = LightTrails(random: { 0.5 })
-    let early = run(.loading, seconds: 3, turn: false, trails: trails, engine: engine)
-    XCTAssertGreaterThan(early.most, 0)
-    _ = run(.loading, seconds: 9, turn: false, trails: trails, engine: engine, from: early.end)
-    XCTAssertTrue(trails.hasLife, "a new set once the last has drawn in")
-  }
-
-  func testAClickedButterflyBurstsIntoSparksThatFade() {
-    let trails = LightTrails(random: { 0.5 })
-    trails.burst(count: 22, speed: 1.1, swirl: 0.3, palette: .named("blue"))
-    XCTAssertTrue(trails.hasLife)
-    trails.update(nowMs: 1000, spinAngle: 0, sizeScale: 2.6, sustain: false, palette: .named("blue"))
-    XCTAssertEqual(trails.sparks.count, 22)
-    // They start at the wings' edge and fly out from the middle.
-    let first = trails.sparks.map { hypot($0.x - Butterfly.centre, $0.y - Butterfly.centre) }
-    for step in 1...12 { trails.update(nowMs: 1000 + Double(step) * 1000 / 60, spinAngle: 0, sizeScale: 2.6, sustain: false, palette: .named("blue")) }
-    let later = trails.sparks.map { hypot($0.x - Butterfly.centre, $0.y - Butterfly.centre) }
-    XCTAssertEqual(later.count, 22)
-    XCTAssertGreaterThan(later.reduce(0, +), first.reduce(0, +))
-    for spark in trails.sparks { XCTAssertTrue((50...76).contains(spark.colour.lightness)) }
-    for step in 13...60 { trails.update(nowMs: 1000 + Double(step) * 1000 / 60, spinAngle: 0, sizeScale: 2.6, sustain: false, palette: .named("blue")) }
-    XCTAssertTrue(trails.sparks.isEmpty, "gone in under a second")
-    XCTAssertFalse(trails.hasLife)
-  }
-
-  func testTheWhirlsBeltDrawsIn() {
-    let engine = MarkEngine(random: { 0.5 })
-    var frame = MarkFrame.rest
-    for step in 0...180 { frame = engine.frame(at: Double(step) / 60, state: .loading, sizePoints: 9) }
-    XCTAssertEqual(frame.fold, 1, accuracy: 0.01)
-    XCTAssertEqual(frame.beltRadius, 52, accuracy: 0.5)
-    XCTAssertEqual(MarkFrame.rest.beltRadius, MarkShape.beltRadius)
-  }
-
-  func testATrailRunsBetweenTwoStopsOfThePalette() {
-    let ocean = AgentPalette.named("blue")
-    let inks = [ocean.top, ocean.mid, ocean.bottom].map(TrailColour.init)
-    for ink in inks {
-      XCTAssertLessThanOrEqual(ink.saturation, 88)
-      XCTAssertGreaterThanOrEqual(ink.lightness, 52); XCTAssertLessThanOrEqual(ink.lightness, 74)
-    }
-    let back = TrailColour(hue: 210, saturation: 60, lightness: 50).rgb
-    XCTAssertEqual(back.r, 0.2, accuracy: 0.01); XCTAssertEqual(back.g, 0.5, accuracy: 0.01); XCTAssertEqual(back.b, 0.8, accuracy: 0.01)
-  }
-}
-
-/** The words beside a working butterfly (Activity.swift, the window's `dse`). */
+/** The words beside an agent at work (Activity.swift, the window's `dse`). */
 final class ActivityLineTests: XCTestCase {
   func testTheMacsWords() {
     XCTAssertEqual(ActivityLine.of(kind: "thinking", tool: nil, detail: nil).text, "Thinking")

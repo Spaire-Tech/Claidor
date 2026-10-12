@@ -13,7 +13,7 @@ enum HomeSheet: String, Identifiable {
 #if os(iOS)
 /**
  * The list, as Messages draws it (the founder, 9 October 2026: "exactly like
- * iMessage"): rows with the butterfly, the name, the last line's time and a
+ * iMessage"): rows with the picture, the name, the last line's time and a
  * chevron, two lines of the last message, a hairline between rows from the
  * text on, the blue dot of an unread chat in the margin; the search field
  * and the compose button at the bottom. At the top, as Instagram has it,
@@ -649,7 +649,7 @@ struct AgentRef: Identifiable, Hashable {
 
 /**
  * The pinned agents above the rows: the Mac's pin grid (`sand-pinned-grid`,
- * tiles 80 wide, 60 butterflies, 11 pt names, 12 between rows and 8
+ * tiles 80 wide, 60 pictures, 11 pt names, 12 between rows and 8
  * between columns) zoomed ×1.2 as the phone's rows are. A tile's long
  * press is the row's menu; dragging a tile onto another moves it there.
  */
@@ -699,7 +699,7 @@ struct PinGrid<Actions: View>: View {
   }
 }
 
-/** One pinned agent: its butterfly, the status dot at the corner, the name, the title in blue. */
+/** One pinned agent: its picture, the status dot at the corner, the name, the title in blue. */
 struct PinTile: View, Equatable {
   let agent: Agent
   let members: [Agent]
@@ -742,7 +742,7 @@ struct PinPress: ButtonStyle {
 /**
  * The Mac's row status (`projectSidebarAgentStatus`): an agent waiting on
  * the person needs attention (orange), else unread (blue); a working agent
- * whose work has no name yet shows the green dot at its butterfly's corner.
+ * whose work has no name yet shows the green dot at its picture's corner.
  */
 struct RowStatus {
   let agent: Agent
@@ -751,14 +751,14 @@ struct RowStatus {
   var isWorking: Bool { !needsAttention && agent.isRunning }
   /** The dot at the end of the row's second line. */
   var marker: Color? { needsAttention ? Ink.attention : agent.hasUnread ? Ink.unread : nil }
-  /** The dot at a row's butterfly: working, with nothing named yet. */
+  /** The dot at a row's picture: working, with nothing named yet. */
   var cornerOnRow: Color? { isWorking && agent.activityLabel == nil ? Ink.live : nil }
   /** A pinned tile shows its marker at the corner, else the working dot. */
   var cornerOnPin: Color? { marker ?? cornerOnRow }
   var label: String? { needsAttention ? "Needs attention" : agent.hasUnread ? "Unread activity" : isWorking ? "Working" : nil }
 }
 
-/** The status dot, with a ring of the list's ground so it sits apart from the butterfly (the Mac cuts a hole for it). */
+/** The status dot, with a ring of the list's ground so it sits apart from the picture (the Mac cuts a hole for it). */
 struct StatusDot: View {
   let colour: Color
   var size: CGFloat = 10
@@ -825,7 +825,7 @@ struct HiddenAgentsSheet: View {
 /**
  * One agent or group in the list, in the founder's reference (11 October
  * 2026: "no lines, no arrow"), measured on it: the unread dot in the
- * 18-point margin (orange when it waits on you), the butterfly at 56 (the
+ * 18-point margin (orange when it waits on you), the picture at 56 (the
  * reference's 48 looked too small in the row) and 13 after it, the name in 17 semibold with its title's tag 13 after it
  * (14 medium) and the last line's time at the right (14), 24 from the
  * edge, and one line of the last message under it (15) in grey; 80 a row,
@@ -849,7 +849,7 @@ struct AgentRow: View, Equatable {
         }
       }
       .frame(width: 18)
-      // 56 in the 80-point row (the founder, 11 October 2026: at 48 the butterflies were too small for the taller rows).
+      // 56 in the 80-point row (the founder, 11 October 2026: at 48 the pictures were too small for the taller rows).
       AgentAvatar(agent: agent, members: members)
         .frame(width: 56, height: 56)
         .overlay(alignment: .bottomTrailing) {

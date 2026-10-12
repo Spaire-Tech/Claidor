@@ -43,19 +43,12 @@ final class FirstRunTests: XCTestCase {
     XCTAssertEqual(Onboarding.normalizedName("  Bass   Fall "), "Bass Fall")
   }
 
-  func testHappyAndProudKeepTheWingsAndMove() {
-    XCTAssertNil(MarkState.happy.glyph)
-    XCTAssertNil(MarkState.proud.glyph)
-    let engine = MarkEngine(random: { 0.5 })
-    var last = engine.frame(at: 1000, state: .happy, sizePoints: 80)
-    var moved = false
-    for step in 1...60 {
-      let frame = engine.frame(at: 1000 + Double(step) / 60, state: .happy, sizePoints: 80)
-      if frame != last { moved = true }
-      last = frame
-    }
-    XCTAssertTrue(moved)
-    XCTAssertEqual(last.fold, 0, accuracy: 1e-9)
+  func testTheSeatsWearFacesFromTheCatalogue() {
+    let seats = Onboarding.crew + Onboarding.nameSeats(width: 1000)
+    for seat in seats { XCTAssertNotNil(AgentFaces.face(id: seat.face), seat.id) }
+    XCTAssertEqual(Set(seats.map(\.face)).count, seats.count)
+    XCTAssertFalse(seats.contains { $0.face == AgentFaces.simeonId })
+    XCTAssertEqual(Onboarding.chiefOfStaff(nonce: "n")["avatarShape"], .string(AgentFaces.simeonId))
   }
 
   func testTheHandOffLine() {

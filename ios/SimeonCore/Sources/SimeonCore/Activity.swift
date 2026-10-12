@@ -2,7 +2,7 @@ import Foundation
 
 /**
  * What an agent is doing right now, in words, as the Mac's chat writes it
- * beside the working butterfly (the window's `dse`, from the roster's
+ * beside the working picture (the window's `dse`, from the roster's
  * `currentActivity`): "Thinking", "Searching the web", "Running commands",
  * "Messaging Iris", "Connecting to Linear"… with a small picture of it.
  */
@@ -70,11 +70,11 @@ public struct ActivityLine: Sendable, Equatable {
       return ActivityLine("messaging", text, "person-chat-bubble")
     case "CreateAgent", "ReactToMessage": return ActivityLine("messaging", "Messaging", "person-chat-bubble")
     default:
-      if tool == "CallMcpTool" || MarkState.connecting.contains(tool) {
+      if tool == "CallMcpTool" || ActivityLine.connecting.contains(tool) {
         guard let named else { return ActivityLine("connecting", "Connecting to a third party app", "plug") }
         return ActivityLine(verb: "connecting", text: "Connecting to \(named.prefix(1).uppercased() + named.dropFirst())", icon: .connector(named))
       }
-      if MarkState.subagentWaits.contains(tool) { return ActivityLine("waiting", "Waiting on another agent", "hourglass") }
+      if ActivityLine.subagentWaits.contains(tool) { return ActivityLine("waiting", "Waiting on another agent", "hourglass") }
       if tool.hasPrefix("browser_") { return ActivityLine("browsing", "Browsing the web", "globe") }
       return ActivityLine("working", "Working", "wrench")
     }
@@ -92,7 +92,7 @@ public struct ActivityLine: Sendable, Equatable {
 
 extension Agent {
   /**
-   * The words beside its working butterfly in the chat: "Typing…" while it
+   * The words beside its working picture in the chat: "Typing…" while it
    * writes, else what it is doing (`dse`), or "Iris is working" before it
    * says what (`gJn`); nil when it is not at work.
    */
@@ -158,4 +158,11 @@ public struct ActivityHold: Sendable, Equatable {
     let minutes = max(1, ((now - shownAt) / 60).rounded(.down) + 1)
     return shownAt + minutes * 60
   }
+}
+
+extension ActivityLine {
+  /** Tools the window shows as connecting to an app (`Jon`). */
+  static let connecting: Set<String> = ["GetMcpTools", "McpAuth", "SearchPlugins", "GetPlugin", "InstallPlugin", "UninstallPlugin", "GetMcpServerStatus", "AddMcpServer", "UninstallMcpServer", "AuthenticateMcpServer", "RestartMcpServers", "SetMcpInstructions", "SearchMcpServers", "InstallMcpServer", "EnableTeamServer"]
+  /** Tools the window shows as "Waiting on another agent" (`Qon`). */
+  static let subagentWaits: Set<String> = ["CheckSubagent", "MessageSubagent", "StopSubagent"]
 }

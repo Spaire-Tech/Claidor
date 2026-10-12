@@ -25,16 +25,13 @@ extension View {
 
 /**
  * The pictures inside a message's words: an app's logo before its name
- * (`simeon-app__logo`, 1.05 em square), made once, and an agent's butterfly
- * before its name (`simeon-agent__mark`, 1.44 × 1.05 em, the mark's
- * `3 30 223 163` crop), drawn in place.
+ * (`simeon-app__logo`, 1.05 em square), made once, and an agent's face in
+ * its glass pill (`MentionPills`): a 1.1 em circle with .22 em of the pill
+ * before it and .24 em after, and the pill's end after the name.
  */
 @MainActor
 enum InlineImages {
   private static var logos: [String: NSImage] = [:]
-
-  /** The window's crop of the butterfly beside an agent's name (`AGENT_MENTION_VIEWBOX`). */
-  static let markCrop = CGRect(x: 3, y: 30, width: 223, height: 163)
 
   /** The app's logo from the app's own copy (`Brands/<key>`), at most `side` points each way. */
   static func logo(_ key: String, side: CGFloat) -> NSImage? {
@@ -49,11 +46,72 @@ enum InlineImages {
     return copy
   }
 
-  /** The agent's butterfly beside its name, drawn by SwiftUI where the words are laid out. */
-  static func mark(_ palette: AgentPalette, dark: Bool, size: CGSize) -> Image {
-    Image(size: size) { context in
-      ButterflyArt.draw(&context, transform: ButterflyArt.transform(showing: markCrop, in: CGRect(origin: .zero, size: size)), palette: palette, dark: dark, style: .live)
+  /** The agent's face before its name, inside the pill's start, drawn by SwiftUI where the words are laid out. */
+  static func face(_ picture: AgentPictureSource?, em: CGFloat, dark: Bool) -> Image {
+    let side = (1.1 * em).rounded(), lead = (0.22 * em).rounded(), trail = (0.24 * em).rounded()
+    let image = AvatarPictures.image(picture)
+    return Image(size: CGSize(width: lead + side + trail, height: side)) { context in
+      let circle = CGRect(x: lead, y: 0, width: side, height: side)
+      if let image {
+        var clipped = context
+        clipped.clip(to: Path(ellipseIn: circle))
+        clipped.draw(Image(nsImage: image), in: MarkDrawing.cover(image.size, in: circle))
+      } else {
+        context.fill(Path(ellipseIn: circle), with: .color(Color(hex: 0x777777).opacity(dark ? 0.173 : 0.09)))
+      }
     }
+  }
+
+  /** The pill's end after the name: room, nothing drawn. */
+  static func pillEnd(em: CGFloat) -> Image {
+    Image(size: CGSize(width: (0.36 * em).rounded(), height: (1.1 * em).rounded())) { _ in }
+  }
+}
+
+/** A run of an agent's mention: its face, its name and the pill's end (`MessageLine.mention`). */
+struct MentionPill: TextAttribute {}
+
+/**
+ * Each mention of an agent in a glass pill (the founder, 12 October 2026:
+ * "the pill, but water glass, and the name in our blue"): drawn behind the
+ * mention's runs, a clear frosted fill, a bright rim, a soft shadow. Apple's
+ * own Liquid Glass is a view's effect and cannot wrap a word inside a
+ * paragraph, so the glass is drawn; the same on macOS 15 and 26.
+ */
+struct MentionPills: TextRenderer {
+  var dark: Bool
+
+  func draw(layout: Text.Layout, in ctx: inout GraphicsContext) {
+    var pills: [CGRect] = []
+    for line in layout {
+      var current: CGRect?
+      for run in line {
+        if run[MentionPill.self] != nil {
+          let rect = run.typographicBounds.rect
+          current = current.map { $0.union(rect) } ?? rect
+        } else if let done = current {
+          pills.append(done)
+          current = nil
+        }
+      }
+      if let done = current { pills.append(done) }
+    }
+    for rect in pills { glass(rect, in: &ctx) }
+    for line in layout { ctx.draw(line) }
+  }
+
+  private func glass(_ rect: CGRect, in ctx: inout GraphicsContext) {
+    let box = rect.insetBy(dx: 0, dy: -rect.height * 0.04)
+    let shape = Path(roundedRect: box, cornerRadius: box.height / 2, style: .continuous)
+    let top = CGPoint(x: box.midX, y: box.minY), bottom = CGPoint(x: box.midX, y: box.maxY)
+    ctx.drawLayer { layer in
+      layer.addFilter(.shadow(color: .black.opacity(dark ? 0.45 : 0.08), radius: dark ? 1.5 : 1.2, x: 0, y: 1))
+      let fill = dark ? [Color.white.opacity(0.14), Color.white.opacity(0.05)] : [Color.white.opacity(0.85), Color.white.opacity(0.5)]
+      layer.fill(shape, with: .linearGradient(Gradient(colors: fill), startPoint: top, endPoint: bottom))
+    }
+    let rim = dark ? [Color.white.opacity(0.24), Color.white.opacity(0.06)] : [Color.white, Color.white.opacity(0.55)]
+    ctx.stroke(shape, with: .linearGradient(Gradient(colors: rim), startPoint: top, endPoint: bottom), lineWidth: 0.75)
+    if !dark { ctx.stroke(shape, with: .color(.black.opacity(0.07)), lineWidth: 0.5) }
   }
 }
 
@@ -64,8 +122,9 @@ enum InlineImages {
  * `__simeonAgentMentions`): bold at 600, italics, strikethrough at 40%, code
  * in red on grey (`refunds`), links in the link blue with no underline, a
  * bare address made a link; then, in each run of plain words (never in a
- * link or code), app names in their colour after their logo and agents'
- * names in theirs after their butterfly, both at 500, or bold inside bold.
+ * link or code), app names in their colour after their logo at 500, and
+ * agents' names in the app's blue at 600 after their face, in a glass pill
+ * (the founder, 12 October 2026).
  * The person's own name is never an agent's.
  */
 @MainActor
@@ -254,14 +313,14 @@ struct MessageLine {
       guard let logo = InlineImages.logo(brand.key, side: (1.05 * size).rounded()) else { return words }
       let picture = Text(Image(nsImage: logo).renderingMode(brand.mono ? .template : .original)).foregroundColor(tint).baselineOffset(drop)
       return MessageLine.joined([picture, Text(verbatim: "\u{202F}"), words])
-    case .agent(_, let paletteId):
-      let palette = AgentPalette.named(paletteId)
-      let hex = Brands.agentNameColours[palette.id].map { look.dark ? $0.dark : $0.light }
-      let tint = hex.map { Color(RGB(hex: $0)) } ?? Color(palette.nameColour(dark: look.dark))
-      let words = painted(kept, ink: tint, style: style, at: offset, marks: marks).fontWeight(weight)
-      let mark = InlineImages.mark(palette, dark: look.dark, size: CGSize(width: (1.44 * size).rounded(), height: (1.05 * size).rounded()))
-      let picture = Text(mark).baselineOffset(drop)
-      return MessageLine.joined([picture, Text(verbatim: "\u{202F}"), words])
+    case .agent(let id):
+      // The face, the name and the pill's end, each marked for `MentionPills` to draw the glass behind; word joiners keep them on one line.
+      let picture = agents.first { $0.id == id }?.picture
+      let face = Text(InlineImages.face(picture, em: size, dark: look.dark)).baselineOffset(-0.2 * size).customAttribute(MentionPill())
+      let words = painted(kept, ink: look.blue, style: style, at: offset, marks: marks).fontWeight(.semibold).customAttribute(MentionPill())
+      let end = Text(InlineImages.pillEnd(em: size)).baselineOffset(-0.2 * size).customAttribute(MentionPill())
+      let joiner = Text(verbatim: "\u{2060}").customAttribute(MentionPill())
+      return MessageLine.joined([face, joiner, words, joiner, end])
     }
   }
 
@@ -301,6 +360,7 @@ struct MessageBlocks: View {
         BlockView(block: block, line: lines[index], first: index == 0)
       }
     }
+    .textRenderer(MentionPills(dark: line.look.dark))
   }
 
   /** Each block's line, find's current match counted past the blocks before it. */

@@ -221,9 +221,10 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
 
   public func markRead(_ agentId: String) async { touch(agentId) { $0.hasUnread = false; $0.unreadCount = 0 } }
 
-  public func createAgent(name: String, colour: String) async throws -> String {
+  public func createAgent(name: String, face: String?) async throws -> String {
     let id = "agent-\(UUID().uuidString.prefix(6).lowercased())"
-    let agent = Agent(id: id, name: name, colour: colour, lastActivityAt: Date().timeIntervalSince1970 * 1000)
+    var agent = Agent(id: id, name: name, lastActivityAt: Date().timeIntervalSince1970 * 1000)
+    agent.avatarShape = face
     lock.withLock { agents.append(agent); transcripts[id] = [] }
     emit(.agentUpserted(agent))
     playOnboarding(id)
@@ -425,6 +426,16 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
         agent.description = profile["description"]?.string ?? agent.description
         if let colour = profile["avatarColor"]?.text { agent.colour = colour }
         if let voice = profile["voiceId"]?.text { agent.voiceId = voice.isEmpty ? nil : voice }
+        if let shape = profile["avatarShape"]?.string { agent.avatarShape = shape.isEmpty ? nil : shape }
+      }
+    case "setAgentAvatarBytes":
+      // As the host keeps a picture (agent-avatar.ts): its bytes as they came, its version the first 16 hex of their SHA-256.
+      let bytes = args["pngBase64"]?.text.flatMap { Data(base64Encoded: $0) }
+      touch(args["id"]?.text ?? "") { agent in
+        guard let bytes else { agent.avatarVersion = nil; agent.avatarDataURL = nil; return }
+        let webp = bytes.count >= 12 && bytes[bytes.startIndex + 8 ..< bytes.startIndex + 12].elementsEqual(Array("WEBP".utf8))
+        agent.avatarVersion = sha256(Array(bytes)).prefix(8).map { String(format: "%02x", $0) }.joined()
+        agent.avatarDataURL = "data:image/\(webp ? "webp" : "png");base64,\(bytes.base64EncodedString())"
       }
     case "setGroupMembers":
       touch(args["id"]?.text ?? "") { $0.memberIds = args["memberAgentIds"]?.array?.compactMap(\.text) ?? $0.memberIds }

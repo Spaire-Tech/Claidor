@@ -117,9 +117,9 @@ public struct Account: Sendable, Equatable {
 @Observable
 public final class AppStore {
   public private(set) var agents: [Agent] = [] {
-    didSet { noteNames(); rebuild.selectionChanged(rebuildInputs) }
+    didSet { noteNames(); rebuild.selectionChanged(rebuildInputs); queueFaces() }
   }
-  /** The agents' names and colours for the chat's text, changed only when one of them does, so a roster update (an agent's status) does not redraw every message. */
+  /** The agents' names and pictures for the chat's text, changed only when one of them does, so a roster update (an agent's status) does not redraw every message. */
   public private(set) var mentionNames: [Mentions.AgentName] = []
   /** Each chat's entries; the screens draw `chatRows`, so a change here alone redraws nothing. */
   @ObservationIgnored public private(set) var transcripts: [String: [Entry]] = [:] {
@@ -279,6 +279,12 @@ public final class AppStore {
   @ObservationIgnored private var voiceList: (at: Date, list: [VoiceChoice])?
   /** The pass giving agents their voices, while one runs (`assignMissingVoices`). */
   @ObservationIgnored private var assigning: Task<[String: String], Never>?
+  /** The pass giving agents their faces, while one runs (StoreFaces.swift). */
+  @ObservationIgnored var givingFaces: Task<Void, Never>?
+  /** Faces given here that the host's rows do not show yet: worn on its rows meanwhile, so a face shows at once. */
+  @ObservationIgnored var pendingFaces: [String: AgentFace] = [:]
+  /** Agents given a face in this sign-in: one the host refused is not sent again on every roster change. */
+  @ObservationIgnored var facesSent: Set<String> = []
   /** A line search found, to show once its chat is open (agent → entry; Search.swift). */
   public var revealing: [String: String] = [:]
   /** The thread open in each chat (agent → the id of its first message), laid out in `threadRows`. */
@@ -351,8 +357,11 @@ public final class AppStore {
     await reloadRoster()
     await loadPins()
     await loadSections()
-    // Every agent its own voice from the start, not at its first call (the Mac does the same on opening).
-    Task { await assignMissingVoices() }
+    // Every agent its own face and voice from the start, not at its first call (the Mac does the same on opening); the face first, for a voice to follow it.
+    Task {
+      await assignMissingFaces()
+      await assignMissingVoices()
+    }
   }
 
   /** Signed out, or the sign-in ended: a call that is on ends with it (its voice let go, its record sent). */
@@ -371,6 +380,7 @@ public final class AppStore {
     computer = ComputerBook(); subagentsByAgent = [:]; pointers = [:]; lastComputerCatchUp = .distantPast
     rebuild.reset(); rosterHeld = false; diskSaverCreation = nil; diskAuditDone = false; rosterFailed = false; windowSelection = nil
     voiceList = nil
+    givingFaces?.cancel(); givingFaces = nil; pendingFaces = [:]; facesSent = []
     sentFiles = []
   }
 
@@ -379,7 +389,7 @@ public final class AppStore {
     do {
       let list = try await backend.listAgents()
       rosterNews?(.seed(list))
-      agents = readingOpenChat(sortRoster(list))
+      agents = wearingFaces(readingOpenChat(sortRoster(list)))
       rosterFailed = false
       accessBlocked = false
       hasReachedBox = true
@@ -415,7 +425,7 @@ public final class AppStore {
       // The agents' list holds still while the computer is rebuilt, and is read again after (`roster.setFrozen`).
       rosterHeld = true
     case .agents(let list):
-      let sorted = readingOpenChat(sortRoster(list))
+      let sorted = wearingFaces(readingOpenChat(sortRoster(list)))
       if sorted != agents { agents = sorted }
       catchUpOpenChat()
     case .agentUpserted(let agent):
@@ -423,7 +433,7 @@ public final class AppStore {
       if agents.contains(agent) { return }
       var next = agents.filter { $0.id != agent.id }
       next.append(agent)
-      agents = readingOpenChat(sortRoster(next))
+      agents = wearingFaces(readingOpenChat(sortRoster(next)))
       if agent.id == openChat { catchUpOpenChat() }
     case .transcript(let change):
       guard let current = transcripts[change.agentId] else { return }
@@ -598,6 +608,12 @@ public final class AppStore {
     for id in agentIds { transcripts[id] = nil; chatRows[id] = nil; runFlags[id] = nil; routinesByAgent[id] = nil; localAsks[id] = nil }
   }
 
+  /** The faces just given worn on the rows at once (StoreFaces.swift). */
+  func wearPendingFaces() {
+    let worn = wearingFaces(agents)
+    if worn != agents { agents = worn }
+  }
+
   /** An agent changed here before the host says so (an optimistic edit). */
   func updateAgentLocally(_ index: Int, _ change: (inout Agent) -> Void) {
     guard agents.indices.contains(index) else { return }
@@ -615,7 +631,7 @@ public final class AppStore {
   }
 
   private func noteNames() {
-    let names = agents.filter { !$0.isGroup }.map { Mentions.AgentName(name: $0.name.trimmingCharacters(in: .whitespaces), id: $0.id, colour: $0.palette.id) }
+    let names = agents.filter { !$0.isGroup }.map { Mentions.AgentName(name: $0.name.trimmingCharacters(in: .whitespaces), id: $0.id, picture: $0.picture) }
     if names != mentionNames { mentionNames = names }
     let groups = Set(agents.filter(\.isGroup).map(\.id))
     if groups != groupIds { groupIds = groups }
@@ -1539,11 +1555,11 @@ public final class AppStore {
     }
   }
 
-  /** New Agent: the agent's id, to open its chat. */
-  public func createAgent(name: String, colour: String) async -> String? {
+  /** New Agent: the agent's id, to open its chat. `face` is the one the sheet showed (`AgentFaces.preview`), put on once the roster lists it (StoreFaces.swift). */
+  public func createAgent(name: String, face: AgentFace? = nil) async -> String? {
     guard let backend else { return nil }
     do {
-      let id = try await backend.createAgent(name: name, colour: colour)
+      let id = try await backend.createAgent(name: name, face: face?.id)
       await reloadRoster()
       return id
     } catch {
@@ -1711,7 +1727,7 @@ public final class AppStore {
     await command("setAgentNotifyOnUpdates", ["id": .string(agentId), "isEnabled": .bool(on)], failure: "Couldn't change notifications")
   }
 
-  /** A picture for the agent (PNG), or nil to go back to its butterfly (`setAgentAvatarBytes`). */
+  /** A picture for the agent (PNG), or nil for none (`setAgentAvatarBytes`; its face is then given back, StoreFaces.swift). */
   public func setAvatar(_ agentId: String, png: Data?) async {
     await command("setAgentAvatarBytes", ["id": .string(agentId), "pngBase64": png.map { .string($0.base64EncodedString()) } ?? .null], failure: "Couldn't change the picture")
     await reloadRoster()
@@ -1781,7 +1797,7 @@ public final class AppStore {
 
   /** The agent's own colour on the call: the one the app draws it in (its id's when it has none saved), not blue (the founder, 9 October 2026: the call showed another avatar). */
   public func startCall(_ agent: Agent) {
-    backend?.call?.start(agentId: agent.id, agentName: agent.name, colour: agent.palette.id)
+    backend?.call?.start(agentId: agent.id, agentName: agent.name, colour: agent.colour ?? "")
   }
 
   public func mute(_ muted: Bool) { backend?.call?.mute(muted) }

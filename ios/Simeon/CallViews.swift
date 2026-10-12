@@ -3,7 +3,7 @@ import SimeonCore
 
 /**
  * The call in a chat (`.simeon-call-pill`): a 76 pt pill on the call card's
- * white, the butterfly (44), the waveform or the status ("Calling…", what the
+ * white, the picture (44), the waveform or the status ("Calling…", what the
  * agent is doing), then Mute and Transcript (44) and the red End (50). A tap
  * or a pull down opens the full screen; the transcript shows under the pill
  * when it is on.
@@ -55,10 +55,8 @@ struct CallPill: View {
 
 /**
  * The agent on the call as everywhere else in the app (`AgentAvatar`): its
- * picture when it has one, else its butterfly in its own colour, moving
- * while the call is on. The call drew a blue butterfly for every agent with
- * no colour saved, and never a picture (the founder, 9 October 2026: "the
- * transcript page shows a different avatar").
+ * picture, still (the founder, 9 October 2026: "the transcript page shows a
+ * different avatar"; 12 October 2026: faces, no butterflies).
  */
 struct CallAvatar: View {
   let call: CallState
@@ -66,15 +64,8 @@ struct CallAvatar: View {
   @Environment(AppStore.self) private var store
 
   var body: some View {
-    let agent = store.agent(call.agentId)
-    Group {
-      if let agent, agent.avatarDataURL != nil {
-        AgentAvatar(agent: agent)
-      } else {
-        ButterflyView(palette: agent?.palette ?? .named(call.agentColour), motion: call.phase == .ended ? nil : .idle)
-      }
-    }
-    .frame(width: size, height: size)
+    AgentIdAvatar(id: call.agentId)
+      .frame(width: size, height: size)
   }
 }
 
@@ -168,7 +159,7 @@ struct CallTranscript: View {
   }
 }
 
-/** The full call (`.simeon-call-full`): fold it down at the top left, the butterfly at 124, the name and the time, what was said, the buttons. */
+/** The full call (`.simeon-call-full`): fold it down at the top left, the picture at 124, the name and the time, what was said, the buttons. */
 struct CallScreen: View {
   @Binding var showsTranscript: Bool
   @Environment(AppStore.self) private var store

@@ -103,7 +103,8 @@ public enum Onboarding {
   public struct Seat: Sendable, Equatable {
     public let id: String
     public let label: String
-    public let colour: String
+    /** The face drawn on the seat (AgentFaces): the seats are the team the Chief of Staff will hire, shown, not made. */
+    public let face: String
     public let x: Double
     public let y: Double
     public let scale: Double
@@ -111,19 +112,19 @@ public enum Onboarding {
 
   /** The Chief of Staff's six agents (`COO_CREW`), at their Mac distance; `crew(width:)` brings them in on a phone. */
   public static let crew: [Seat] = [
-    Seat(id: "inbox", label: "Inbox", colour: "violet", x: -300, y: -140, scale: 0.7),
-    Seat(id: "research", label: "Research", colour: "red", x: -300, y: -40, scale: 0.7),
-    Seat(id: "travel", label: "Travel", colour: "green", x: -300, y: 60, scale: 0.7),
-    Seat(id: "finance", label: "Finance", colour: "magenta", x: 300, y: -140, scale: 0.7),
-    Seat(id: "sales", label: "Sales", colour: "orange", x: 300, y: -40, scale: 0.7),
-    Seat(id: "content", label: "Content", colour: "mint", x: 300, y: 60, scale: 0.7),
+    Seat(id: "inbox", label: "Inbox", face: "clay-06", x: -300, y: -140, scale: 0.7),
+    Seat(id: "research", label: "Research", face: "clay-20", x: -300, y: -40, scale: 0.7),
+    Seat(id: "travel", label: "Travel", face: "clay-12", x: -300, y: 60, scale: 0.7),
+    Seat(id: "finance", label: "Finance", face: "clay-28", x: 300, y: -140, scale: 0.7),
+    Seat(id: "sales", label: "Sales", face: "clay-22", x: 300, y: -40, scale: 0.7),
+    Seat(id: "content", label: "Content", face: "clay-23", x: 300, y: 60, scale: 0.7),
   ]
 
   /** On a screen narrower than 600 pt the agents' centres sit 50 pt from its edge, never nearer Simeon than 104 (`__simeonCooAt`). */
   public static func crew(width: Double) -> [Seat] {
     guard width < 600 else { return crew }
     let side = max(104, min(300, width / 2 - 50))
-    return crew.map { Seat(id: $0.id, label: $0.label, colour: $0.colour, x: $0.x < 0 ? -side : side, y: $0.y, scale: $0.scale) }
+    return crew.map { Seat(id: $0.id, label: $0.label, face: $0.face, x: $0.x < 0 ? -side : side, y: $0.y, scale: $0.scale) }
   }
 
   /** The blue curve from Simeon's side to an agent's inner edge (`cooLine`), in Simeon's frame: an S of two level tangents. */
@@ -198,13 +199,13 @@ public enum Onboarding {
   /** The name step's three agents over the field (`NAME_SEATS`); on a phone the side ones keep 44 pt from the edge. */
   public static func nameSeats(width: Double) -> [Seat] {
     let seats = [
-      Seat(id: "weekly-standup", label: "", colour: "cyan", x: -168, y: -64, scale: 0.62),
-      Seat(id: "invoice-chaser", label: "", colour: "red", x: 0, y: -96, scale: 0.72),
-      Seat(id: "sales-forecast", label: "", colour: "blue", x: 168, y: -64, scale: 0.62),
+      Seat(id: "weekly-standup", label: "", face: "clay-24", x: -168, y: -64, scale: 0.62),
+      Seat(id: "invoice-chaser", label: "", face: "clay-07", x: 0, y: -96, scale: 0.72),
+      Seat(id: "sales-forecast", label: "", face: "clay-19", x: 168, y: -64, scale: 0.62),
     ]
     guard width < 600 else { return seats }
     return seats.map { seat in
-      seat.x == 0 ? seat : Seat(id: seat.id, label: seat.label, colour: seat.colour, x: (seat.x < 0 ? -1 : 1) * min(abs(seat.x), width / 2 - 44), y: seat.y, scale: seat.scale)
+      seat.x == 0 ? seat : Seat(id: seat.id, label: seat.label, face: seat.face, x: (seat.x < 0 ? -1 : 1) * min(abs(seat.x), width / 2 - 44), y: seat.y, scale: seat.scale)
     }
   }
 
@@ -212,7 +213,7 @@ public enum Onboarding {
   public static func chiefOfStaff(nonce: String) -> JSON {
     [
       "name": "Simeon", "title": "Chief of Staff", "description": "Your Chief of Staff: manages your other Agents and pulls you in for decisions.",
-      "templateId": "chief-of-staff", "avatarShape": "cloud", "avatarColor": "blue", "avatarPngBase64": nil,
+      "templateId": "chief-of-staff", "avatarShape": .string(AgentFaces.simeonId), "avatarColor": "blue", "avatarPngBase64": nil,
       "origin": "user", "isKickstartRequested": true, "clientNonce": .string(nonce),
     ]
   }

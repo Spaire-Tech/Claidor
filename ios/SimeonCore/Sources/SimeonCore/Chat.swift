@@ -257,7 +257,7 @@ public struct Bubble: Hashable, Sendable {
   public let fromPerson: Bool
   /** In a group, the member who spoke. */
   public let author: Party?
-  /** In a group: the author's name above the first of their bubbles in a row, the butterfly beside the last. */
+  /** In a group: the author's name above the first of their bubbles in a row, the picture beside the last. */
   public let showsName: Bool
   public let showsAvatar: Bool
   public let reactions: [String]
@@ -1065,7 +1065,7 @@ public enum Chat {
     }
   }
 
-  /** In a group: a member's name over the first bubble of their run, their butterfly beside the last. */
+  /** In a group: a member's name over the first bubble of their run, their picture beside the last. */
   static func markRuns(_ rows: [ChatRow]) -> [ChatRow] {
     var out = rows
     for (i, row) in rows.enumerated() {

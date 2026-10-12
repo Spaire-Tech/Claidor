@@ -471,7 +471,33 @@ cropped and saved by the same upload path. The roster reads the picture into eve
 (`readAgentAvatarForSummary` in `host/extensions/session/session-summaries.ts`), and an avatar
 change made by the agent itself redraws the roster (`onAvatarChanged`).
 
-**Colours** (7 October 2026). An agent without a picture is drawn as the butterfly in one of
+**Faces** (12 October 2026). The iPhone and Mac apps draw no butterflies: every agent shows
+a picture, and an agent without one is given a face from a catalogue of 31 clay characters
+(15 women, 15 men, and Simeon's own), shipped in both apps
+(`ios/SimeonCore/Sources/SimeonCore/Resources/Faces`, 512 px WebP, about 500 KB in all, made
+by `ios/scripts/make-faces.py`). A face is a picture like an uploaded one: the app sends its
+bytes with `setAgentAvatarBytes`, so it lands in `avatar.png`, syncs and shows everywhere; the
+host's `avatarVersion` (the first 16 hex of the bytes' SHA-256) tells the apps which face an
+agent wears, and they draw it from their own copy. The face given is kept on the agent in its
+`avatarShape` profile field (`clay-07`; the host stores it and passes it on untouched), so an
+upload keeps it and the editor's Reset puts it back. The choice (`AgentFaces` in SimeonCore):
+the Chief of Staff gets Simeon's face, which no one else is given; any other agent the face its
+gender has fewest of, the gender being its name's (`AgentVoices.nameGender`, as for its
+voice), else its voice's, else one its id picks; ties by the voices' FNV-1a hash of the id, so
+the iPhone and the Mac pick the same. A name with no gender keeps the face's, and its voice is
+then given of that gender; in the editor, a face of the other gender than the voice's brings a
+voice of its gender with it. Faces are given by the apps (`StoreFaces.swift`, on every roster
+change, to every agent with no picture, new or from before), not by the engine: no new host
+bundle is needed. Until an app has run once after an agent is hired, that agent has no
+picture, and the web app (out of this change) draws its butterfly. Mentions in messages are
+the face in a glass pill with the name in the app's blue; names are no longer coloured.
+* **Log lines.** In the apps' trace: `face for <agent>: clay-07`, or `face clay-07 shown on
+  <agent>, not saved: <error>` (the host refused; the face shows until the next sign-in, which
+  tries again).
+* **Follow-ups.** The web app's window and the website's demo still draw butterflies (the
+  pinned renderer, `desktop/scripts/lib/router-renderer-patch.mjs`).
+
+**Colours** (7 October 2026; since faces only the web app shows them). An agent without a picture is drawn as the butterfly in one of
 12 colours (`AGENT_MARK_PALETTES`, `shared/voice-call/agent-mark.ts`). One with no colour
 stored is drawn in a colour hashed from its id, among the first ten: the window's own
 fallback, the upstream app's (`sle`, kept by `AGENT_COLOR_RESOLVER` in the renderer patch). It
@@ -775,7 +801,8 @@ the background while the call goes on, and says how it is going when asked.
 - **The voice.** Each agent's `voiceId` is in its profile (`host/agents/agent-profile.ts`;
   a profile without one reads as empty: the call then sends no voice and speaks in the
   platform agent's, which the server picked from the workspace's voices). The
-  picker under "Character color" (Edit agent avatar › Agent) lists `voice/voices`, plays a
+  picker on Edit agent avatar › Faces (under the faces; it was under "Character color" on Agent
+  before faces) lists `voice/voices`, plays a
   sample (downloaded once to `voice-previews/` in the app's folder and played through
   `sand-media:`), and saves through the host's `updateAgent`. The Mac also keeps each choice
   in `voice-calls.json`, used while the box's host is older than `voiceId`.
@@ -811,7 +838,7 @@ the API):
 7. Press the phone button during a call: the banner comes forward, no second call starts.
    (The ended banner has no Chat or Call Again: the protocol carries them, nothing draws them;
    measured 11 October 2026.)
-8. Edit agent avatar › Agent: under the colours, the Voice list. Play a sample, choose one,
+8. Edit agent avatar › Faces: under the faces, the Voice list. Play a sample, choose one,
    call again: the agent speaks in it. Relaunch the app: the choice is kept.
 9. Light and dark: switch the system appearance; the banner follows.
 10. With the server's key removed, a call says "Calls aren't switched on yet" with Close.

@@ -363,8 +363,8 @@ public enum Markdown {
 public enum Mentions {
   public enum Kind: Hashable, Sendable {
     case brand(BrandMention)
-    /** An agent: its id and palette. */
-    case agent(id: String, colour: String)
+    /** An agent: its id (the apps draw its picture beside the name). */
+    case agent(id: String)
   }
 
   public struct Match: Hashable, Sendable {
@@ -374,11 +374,12 @@ public enum Mentions {
     public let kind: Kind
   }
 
+  /** An agent a message can name, and its picture for the little circle before its name (the founder, 12 October 2026: a glass pill, the name in the app's blue). */
   public struct AgentName: Sendable, Hashable {
     public let name: String
     public let id: String
-    public let colour: String
-    public init(name: String, id: String, colour: String) { self.name = name; self.id = id; self.colour = colour }
+    public let picture: AgentPictureSource?
+    public init(name: String, id: String, picture: AgentPictureSource? = nil) { self.name = name; self.id = id; self.picture = picture }
   }
 
   static let brandPattern: NSRegularExpression = pattern(Brands.mentions.map(\.name))
@@ -420,7 +421,7 @@ public enum Mentions {
       for result in agentPattern.matches(in: text, range: whole) {
         let overlaps = matches.contains { NSIntersectionRange(NSRange(location: $0.location, length: $0.length), result.range).length > 0 }
         if overlaps { continue }
-        if let agent = byName[ns.substring(with: result.range)] { matches.append(Match(location: result.range.location, length: result.range.length, kind: .agent(id: agent.id, colour: agent.colour))) }
+        if let agent = byName[ns.substring(with: result.range)] { matches.append(Match(location: result.range.location, length: result.range.length, kind: .agent(id: agent.id))) }
       }
     }
     return matches.sorted { $0.location < $1.location }

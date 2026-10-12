@@ -199,7 +199,7 @@ private struct BarIcon: View {
 /**
  * Hidden Agents (`chats-dialog`, C14): 520 by 440, its title (14 on 20,
  * 500) and the line under it (14 on 20, 60%) padded 12 10 12 16, Close at
- * the right; then each hidden agent in a 36-high row (its butterfly 24,
+ * the right; then each hidden agent in a 36-high row (its picture 24,
  * its name 13 on 18, Unhide at the right in 13 at 60%), grey under the
  * pointer, 2 apart. A row opens its agent; Unhide puts it back in the
  * sidebar. With none: "No hidden bots".

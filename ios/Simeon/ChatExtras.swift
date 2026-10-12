@@ -298,7 +298,7 @@ struct ThreadLinkRow: View {
 
 /**
  * A thread's header, the window's "Thread breadcrumb": the agent's
- * butterfly and name, which go back to the chat ("Back to Theo" to
+ * picture and name, which go back to the chat ("Back to Theo" to
  * VoiceOver), a chevron, then the thread's name (its first message, cut at
  * 40 characters), which opens the agent's details. On the Mac it sits in
  * the toolbar, where the chat's name sits.
@@ -318,7 +318,7 @@ struct ThreadBreadcrumb: View {
       Button(action: back) {
         HStack(spacing: 6) {
           if let agent {
-            AgentAvatar(agent: agent, members: store.members(of: agent), groupInARow: true, moves: false)
+            AgentAvatar(agent: agent, members: store.members(of: agent), groupInARow: true)
               .frame(width: agent.isGroup ? nil : 20, height: 20)
           }
           Text(agent?.name ?? "").font(.system(size: 13, weight: .semibold)).foregroundStyle(.primary).lineLimit(1)

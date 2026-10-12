@@ -34,7 +34,7 @@ struct Mentioning: Equatable {
   var dark: Bool
 
   init(agents: [Agent], personName: String?, dark: Bool) {
-    self.init(names: agents.filter { !$0.isGroup }.map { Mentions.AgentName(name: $0.name.trimmingCharacters(in: .whitespaces), id: $0.id, colour: $0.palette.id) }, personName: personName, dark: dark)
+    self.init(names: agents.filter { !$0.isGroup }.map { Mentions.AgentName(name: $0.name.trimmingCharacters(in: .whitespaces), id: $0.id, picture: $0.picture) }, personName: personName, dark: dark)
   }
 
   init(names: [Mentions.AgentName], personName: String?, dark: Bool) {
@@ -46,9 +46,10 @@ struct Mentioning: Equatable {
 
 /**
  * The marks drawn into a line of text: a brand's logo (1.05 em square, .04 em
- * before it and .26 em after, `.simeon-app__logo`) and an agent's butterfly
- * (1.44 × 1.05 em, .02 em before and .22 em after, `.simeon-agent__mark`),
- * both sitting .18 em below the baseline. One image per mark, size and theme.
+ * before it and .26 em after, `.simeon-app__logo`), sitting .18 em below the
+ * baseline, and an agent's face in its glass pill (`MentionPills`): a 1.1 em
+ * circle with .22 em of the pill before it and .24 em after, and the pill's
+ * end after the name. One image per mark, size and theme.
  */
 @MainActor
 enum MentionArt {
@@ -66,13 +67,28 @@ enum MentionArt {
     return image
   }
 
-  static func agent(_ palette: AgentPalette, em: CGFloat, dark: Bool) -> UIImage {
-    let key = "a|\(palette.id)|\(Int(em * 100))|\(dark)"
+  /** An agent's face for its mention: its picture in a 1.1 em circle, inside the pill's start. */
+  static func agent(_ picture: AgentPictureSource?, em: CGFloat) -> UIImage {
+    let key = "a|\(picture?.key ?? "-")|\(Int(em * 100))"
     if let made = cache[key] { return made }
-    let mark = MarkDrawing.mentionImage(palette, height: em * 1.05, dark: dark)
-    let image = padded(width: em * (0.02 + 1.44 + 0.22), height: em * 1.05) { _ in
-      mark.draw(in: fit(mark.size, in: CGRect(x: em * 0.02, y: 0, width: em * 1.44, height: em * 1.05)))
+    let side = em * 1.1
+    let photo = AgentPictures.image(picture)
+    let image = padded(width: em * (0.22 + 1.1 + 0.24), height: side) { context in
+      let circle = CGRect(x: em * 0.22, y: 0, width: side, height: side)
+      context.cgContext.addEllipse(in: circle)
+      context.cgContext.clip()
+      if let photo { photo.draw(in: circle) } else { UIColor.secondarySystemFill.setFill(); context.fill(circle) }
     }
+    if cache.count > 400 { cache.removeAll() }
+    cache[key] = image
+    return image
+  }
+
+  /** The pill's end after the name: room, nothing drawn. */
+  static func pillEnd(em: CGFloat) -> UIImage {
+    let key = "e|\(Int(em * 100))"
+    if let made = cache[key] { return made }
+    let image = padded(width: em * 0.36, height: em * 1.1) { _ in }
     cache[key] = image
     return image
   }
@@ -100,16 +116,16 @@ enum MentionArt {
 /**
  * A run of a message's text: Markdown's inline marks drawn the window's way
  * (bold at 600, italics, red code on a grey tint, struck text greyed, links
- * blue) and every name the Mac dresses: a brand with its logo and colour, an
- * agent with its butterfly and colour, both at 500 (the bold's own weight
- * inside bold), never inside code or a link.
+ * blue) and every name the Mac dresses: a brand with its logo and colour at
+ * 500, an agent with its face in a glass pill, its name in the app's blue at
+ * 600 (the founder, 12 October 2026), never inside code or a link.
  */
 @MainActor
 enum InlineText {
   private static var cache: [String: Text] = [:]
 
   static func make(_ markdown: String, size: CGFloat = MessageType.size, weight: Font.Weight = .regular, colour: Color? = nil, mentioning: Mentioning?) -> Text {
-    let key = "\(size)|\(weight)|\(mentioning?.dark ?? false)|\(mentioning.map { $0.agents.map { "\($0.name)=\($0.colour)" }.joined(separator: ",") + "|" + ($0.personName ?? "") } ?? "-")|\(markdown)"
+    let key = "\(size)|\(weight)|\(mentioning?.dark ?? false)|\(mentioning.map { $0.agents.map { "\($0.name)=\($0.picture?.key ?? "")" }.joined(separator: ",") + "|" + ($0.personName ?? "") } ?? "-")|\(markdown)"
     if colour == nil, let made = cache[key] { return made }
     let made = build(markdown, size: size, weight: weight, colour: colour, mentioning: mentioning)
     if colour == nil {
@@ -148,14 +164,14 @@ enum InlineText {
       }
     }
 
-    func font(_ style: Style, mention: Bool = false) -> Font {
+    func font(_ style: Style, mention: Bool = false, agent: Bool = false) -> Font {
       if style.code { return .system(size: size * 0.93, design: .monospaced) }
-      let w: Font.Weight = style.bold ? .semibold : mention ? .medium : weight
+      let w: Font.Weight = style.bold || agent ? .semibold : mention ? .medium : weight
       let base = Font.system(size: size, weight: w)
       return style.italic ? base.italic() : base
     }
 
-    func piece(_ from: Int, _ to: Int, mention: Color? = nil) -> AttributedString {
+    func piece(_ from: Int, _ to: Int, mention: Color? = nil, agent: Bool = false) -> AttributedString {
       var out = AttributedString()
       var i = from
       while i < to {
@@ -163,7 +179,7 @@ enum InlineText {
         while j < to, styleKey(styles[j]) == styleKey(styles[i]), links[j] == links[i] { j += 1 }
         var run = AttributedString(String(characters[i..<j]))
         let style = styles[i]
-        run.font = font(style, mention: mention != nil)
+        run.font = font(style, mention: mention != nil, agent: agent)
         if let mention { run.foregroundColor = mention }
         else if style.code { run.foregroundColor = Ink.codeInk; run.backgroundColor = Ink.codeTint }
         else if style.link { run.foregroundColor = Ink.link }
@@ -190,13 +206,12 @@ enum InlineText {
           text = Text("\(text)\(Text(Image(uiImage: logo)).baselineOffset(-0.18 * em))")
         }
         text = Text("\(text)\(Text(piece(mark.start, mark.end, mention: tint)))")
-      case .agent(_, let colourId):
-        let palette = AgentPalette.named(colourId)
-        let dark = mentioning?.dark ?? false
-        let name = Brands.agentNameColours[palette.id]
-        let tint = name.map { Color.dynamic(light: $0.light, dark: $0.dark) } ?? Color(palette.nameColour(dark: dark))
-        text = Text("\(text)\(Text(Image(uiImage: MentionArt.agent(palette, em: em, dark: dark))).baselineOffset(-0.18 * em))")
-        text = Text("\(text)\(Text(piece(mark.start, mark.end, mention: tint)))")
+      case .agent(let id):
+        // The face, the name and the pill's end, each marked for `MentionPills` to draw the glass behind.
+        let picture = mentioning?.agents.first { $0.id == id }?.picture
+        text = Text("\(text)\(Text(Image(uiImage: MentionArt.agent(picture, em: em))).baselineOffset(-0.2 * em).customAttribute(MentionPill()))")
+        text = Text("\(text)\(Text(piece(mark.start, mark.end, mention: Ink.title, agent: true)).customAttribute(MentionPill()))")
+        text = Text("\(text)\(Text(Image(uiImage: MentionArt.pillEnd(em: em))).baselineOffset(-0.2 * em).customAttribute(MentionPill()))")
       }
       cursor = mark.end
     }
@@ -215,12 +230,62 @@ struct MarkdownView: View {
   let mentioning: Mentioning?
   var depth = 0
 
+  @Environment(\.colorScheme) private var scheme
+
   var body: some View {
     VStack(alignment: .leading, spacing: 10) {
       ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
         MarkdownBlockView(block: block, mentioning: mentioning, depth: depth)
       }
     }
+    .textRenderer(MentionPills(dark: scheme == .dark))
+  }
+}
+
+/** A run of an agent's mention: its face, its name and the pill's end (`InlineText`). */
+struct MentionPill: TextAttribute {}
+
+/**
+ * Each mention of an agent in a glass pill (the founder, 12 October 2026:
+ * "the pill, but water glass, and the name in our blue"): drawn behind the
+ * mention's runs, a clear frosted fill, a bright rim, a soft shadow. Apple's
+ * own Liquid Glass is a view's effect and cannot wrap a word inside a
+ * paragraph, so the glass is drawn; the same on every system.
+ */
+struct MentionPills: TextRenderer {
+  var dark: Bool
+
+  func draw(layout: Text.Layout, in ctx: inout GraphicsContext) {
+    var pills: [CGRect] = []
+    for line in layout {
+      var current: CGRect?
+      for run in line {
+        if run[MentionPill.self] != nil {
+          let rect = run.typographicBounds.rect
+          current = current.map { $0.union(rect) } ?? rect
+        } else if let done = current {
+          pills.append(done)
+          current = nil
+        }
+      }
+      if let done = current { pills.append(done) }
+    }
+    for rect in pills { glass(rect, in: &ctx) }
+    for line in layout { ctx.draw(line) }
+  }
+
+  private func glass(_ rect: CGRect, in ctx: inout GraphicsContext) {
+    let box = rect.insetBy(dx: 0, dy: -rect.height * 0.04)
+    let shape = Path(roundedRect: box, cornerRadius: box.height / 2, style: .continuous)
+    let top = CGPoint(x: box.midX, y: box.minY), bottom = CGPoint(x: box.midX, y: box.maxY)
+    ctx.drawLayer { layer in
+      layer.addFilter(.shadow(color: .black.opacity(dark ? 0.45 : 0.08), radius: dark ? 1.5 : 1.2, x: 0, y: 1))
+      let fill = dark ? [Color.white.opacity(0.14), Color.white.opacity(0.05)] : [Color.white.opacity(0.85), Color.white.opacity(0.5)]
+      layer.fill(shape, with: .linearGradient(Gradient(colors: fill), startPoint: top, endPoint: bottom))
+    }
+    let rim = dark ? [Color.white.opacity(0.24), Color.white.opacity(0.06)] : [Color.white, Color.white.opacity(0.55)]
+    ctx.stroke(shape, with: .linearGradient(Gradient(colors: rim), startPoint: top, endPoint: bottom), lineWidth: 0.75)
+    if !dark { ctx.stroke(shape, with: .color(.black.opacity(0.07)), lineWidth: 0.5) }
   }
 }
 

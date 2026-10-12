@@ -5,17 +5,19 @@ import UIKit
 import SimeonCore
 
 /**
- * The pencil (the Mac's avatar editor, mac/Simeon/AvatarEditor.swift `c3n`):
- * three tabs, as the Mac has them. Agent: the twelve colours as
- * butterflies (saved at once; for an agent with a picture only shown until
- * Set avatar, beside Cancel) and, when calls are on, the Voice dropdown with
- * a play button for the chosen voice's sample (`__simeonVoicePicker`, names
- * only). Generate: "Describe your avatar…", Generate, then the crop.
- * Upload: a photo, then the crop. The crop drags and pinches as Apple's own
- * photo crop, with the Mac's zoom (−, a slider from 1 to 5, +), Restart and
- * Set avatar. Under it, the Mac's Reset: "Reset to the Agent" takes a
- * picture away, "Reset character to default" puts the colour back. A group
- * starts on Upload and has no Agent tab.
+ * The pencil (the Mac's avatar editor, mac/Simeon/AvatarEditor.swift):
+ * three tabs, as the Mac has them. Faces (the founder, 12 October 2026: the
+ * clay characters, no butterflies, no colours): Woman and Man, Shuffle (the
+ * next face of that gender no other agent wears), the gender's faces with
+ * the one worn ringed, each put on at a tap; a face of the other gender
+ * than the agent's voice brings a voice of its gender with it. Then, when
+ * calls are on, the Voice dropdown with a play button for the chosen
+ * voice's sample (`__simeonVoicePicker`, names only). Generate: "Describe
+ * your avatar…", Generate, then the crop. Upload: a photo, then the crop.
+ * The crop drags and pinches as Apple's own photo crop, with the Mac's zoom
+ * (−, a slider from 1 to 5, +), Restart and Set avatar. Under it, Reset
+ * face: back to the face the agent was given. A group starts on Upload and
+ * has no Faces tab.
  */
 struct AvatarEditor: View {
   let agentId: String
@@ -38,7 +40,6 @@ struct AvatarEditor: View {
   var body: some View {
     NavigationStack {
       if let agent = store.agent(agentId) {
-        let hasPicture = agent.avatarDataURL?.isEmpty == false
         ScrollView {
           VStack(spacing: 20) {
             if model.candidate == nil {
@@ -49,7 +50,7 @@ struct AvatarEditor: View {
             }
             .pickerStyle(.segmented)
             switch model.tab {
-            case .agent: character(agent, hasPicture: hasPicture)
+            case .faces: faces(agent)
             case .generate: generate()
             case .upload: upload()
             }
@@ -60,10 +61,10 @@ struct AvatarEditor: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .fixedSize(horizontal: false, vertical: true)
             }
-            if model.candidate == nil, let reset = AvatarEditorWords.reset(hasPicture: hasPicture, onAgentTab: model.tab == .agent, colour: agent.colour) {
+            if model.candidate == nil, let reset = AvatarEditorWords.reset(agent) {
               Button(reset) { model.reset(store: store) }
                 .buttonStyle(PillButtonStyle(primary: false))
-                .disabled(hasPicture ? model.saving : model.committing)
+                .disabled(model.saving)
             }
           }
           .padding(20)
@@ -100,40 +101,52 @@ struct AvatarEditor: View {
     }
   }
 
-  /** The avatar as it will be: a colour picked and not yet set, else the picture, the butterfly or the group's members. */
-  @ViewBuilder
+  /** The avatar as it is: the agent's picture, or a group's members. */
   private func preview(_ agent: Agent) -> some View {
-    if let staged = model.staged {
-      ButterflyView(palette: AgentPalette.named(staged), style: .still)
-    } else if let picture = AgentAvatar.image(agent.avatarDataURL) {
-      Image(uiImage: picture).resizable().scaledToFill().clipShape(Circle())
-    } else {
-      AgentAvatar(agent: agent, members: store.members(of: agent))
-    }
+    AgentAvatar(agent: agent, members: store.members(of: agent))
   }
 
-  // MARK: Agent
+  // MARK: Faces
 
-  /** The Agent tab: the colours (the chosen one ringed), then the voice; with a picture, Cancel and Set avatar for a colour picked. */
+  /** The Faces tab: Woman and Man with Shuffle, the gender's faces (the one worn ringed), then the voice. */
   @ViewBuilder
-  private func character(_ agent: Agent, hasPicture: Bool) -> some View {
-    let chosen = AvatarEditorWords.chosenColour(agent, staged: model.staged)
-    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: 14) {
-      ForEach(AgentPalette.all, id: \.id) { palette in
-        Button { model.pick(palette.id, store: store) } label: {
-          ButterflyView(palette: palette, style: .still)
-            .frame(width: 40, height: 40)
-            .padding(4)
-            .overlay(Circle().stroke(chosen == palette.id ? Ink.blue : .clear, lineWidth: 2))
+  private func faces(_ agent: Agent) -> some View {
+    let gender = model.gender ?? AvatarEditorWords.gender(agent)
+    let worn = AgentFaces.worn(agent)
+    let isChief = Agent.chiefOfStaff(in: store.agents)?.id == agent.id
+    // The Chief of Staff can always go back to Simeon's own face; no one else is offered it.
+    let simeon: [AgentFace] = isChief && gender == AgentFaces.simeon?.gender ? AgentFaces.simeon.map { [$0] } ?? [] : []
+    let shown = simeon + AgentFaces.pool.filter { $0.gender == gender }
+    HStack(spacing: 10) {
+      Picker("Faces", selection: Binding(get: { gender }, set: { model.gender = $0 })) {
+        Text(AvatarEditorWords.woman).tag("female")
+        Text(AvatarEditorWords.man).tag("male")
+      }
+      .pickerStyle(.segmented)
+      Button { model.shuffle(gender: gender, store: store) } label: {
+        Label(AvatarEditorWords.shuffle, systemImage: "shuffle").font(.system(size: 14, weight: .medium))
+      }
+      .buttonStyle(PillButtonStyle(primary: false))
+      .fixedSize()
+      .disabled(model.saving)
+    }
+    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: 12) {
+      ForEach(shown) { face in
+        Button { model.wear(face, store: store) } label: {
+          PictureCircle(image: AgentPictures.image(face))
+            .frame(width: 52, height: 52)
+            .padding(3)
+            .overlay(Circle().stroke(worn == face ? Ink.blue : .clear, lineWidth: 2))
             .contentShape(.circle)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(palette.label) character color")
-        .accessibilityAddTraits(chosen == palette.id ? .isSelected : [])
+        .disabled(model.saving)
+        .accessibilityLabel(face.gender == "female" ? "A woman's face" : "A man's face")
+        .accessibilityAddTraits(worn == face ? .isSelected : [])
       }
     }
     .accessibilityElement(children: .contain)
-    .accessibilityLabel("Character color")
+    .accessibilityLabel("Faces")
     if !voices.isEmpty {
       let current = AgentVoices.kept(agent.voiceId, listed: voices) ?? AppStore.defaultVoiceId
       let voice = voices.first { $0.id == current } ?? voices.first
@@ -163,16 +176,6 @@ struct AvatarEditor: View {
           .opacity(voice?.sample == nil ? 0.4 : 1)
           .accessibilityLabel(playing == voice?.id ? "Stop \(voice?.name ?? "")" : "Play \(voice?.name ?? "")")
         }
-      }
-    }
-    if hasPicture {
-      HStack(spacing: 10) {
-        Button("Cancel") { dismiss() }
-          .buttonStyle(PillButtonStyle(primary: false))
-          .disabled(model.saving)
-        Button(model.saving ? "Saving\u{2026}" : "Set avatar") { model.setStaged(store: store) { dismiss() } }
-          .buttonStyle(PillButtonStyle(primary: true))
-          .disabled(model.staged == nil || model.saving)
       }
     }
   }
@@ -264,16 +267,16 @@ private struct PulsingDisc: View {
 
 /**
  * What the avatar editor holds (the Mac's `AvatarEditorModel`): the tab,
- * the description, a picture being cropped, a colour picked for an agent
- * with a picture, what is on its way and the error. Closed while a picture
- * is drawn, the picture is saved when it arrives, cut in its middle; a tab
- * changed meanwhile throws it away.
+ * the gender Faces shows, the description, a picture being cropped, what is
+ * on its way and the error. Closed while a picture is drawn, the picture is
+ * saved when it arrives, cut in its middle; a tab changed meanwhile throws
+ * it away.
  */
 @MainActor
 @Observable
 final class AvatarEditing {
   enum Tab: String, CaseIterable, Identifiable {
-    case agent = "Agent", generate = "Generate", upload = "Upload"
+    case faces = "Faces", generate = "Generate", upload = "Upload"
     var id: String { rawValue }
   }
 
@@ -290,10 +293,9 @@ final class AvatarEditing {
   var candidate: Candidate?
   var generating = false
   var saving = false
-  var committing = false
   var error: String?
-  /** A colour picked for an agent with a picture: shown on the avatar until Set avatar or Cancel. */
-  var staged: String?
+  /** The gender Faces shows, once the person picks one; until then the agent's face's. */
+  var gender: String?
   /** Bumped by every tab change and Restart: a picture drawn before it is thrown away. */
   private var generation = 0
   /** Closed while drawing: the picture is saved when it arrives. */
@@ -302,94 +304,58 @@ final class AvatarEditing {
   init(agentId: String, isGroup: Bool) {
     self.agentId = agentId
     self.isGroup = isGroup
-    tab = isGroup ? .upload : .agent
+    tab = isGroup ? .upload : .faces
   }
 
-  /** A tab (`X`): the picture, the staged colour, the drawing and the error go; the description stays. */
+  /** A tab (`X`): the picture, the drawing and the error go; the description stays. */
   func choose(_ next: Tab) {
     guard next != tab else { return }
     tab = next
     generation += 1
     candidate = nil
-    staged = nil
     generating = false
     error = nil
   }
 
   func closeNow() {
     closed = true
-    staged = nil
   }
 
-  // MARK: Colours
+  // MARK: Faces
 
-  /** A colour: saved at once (`commitCharacter`); for an agent with a picture, only shown until Set avatar. */
-  func pick(_ colour: String, store: AppStore) {
+  /** A face put on at once (`AppStore.wearFace`: the picture, the face kept, a voice of its gender when it changes). */
+  func wear(_ face: AgentFace, store: AppStore) {
+    let agentId = agentId
+    run { try await store.wearFace(agentId, face) }
+  }
+
+  /** Shuffle: the next face of `gender` no other agent wears. */
+  func shuffle(gender: String, store: AppStore) {
+    let agentId = agentId
+    run { _ = try await store.shuffleFace(agentId, gender: gender) }
+  }
+
+  /** Reset face: back to the face the agent was given. */
+  func reset(store: AppStore) {
+    gender = nil
+    let agentId = agentId
+    run { _ = try await store.resetFace(agentId) }
+  }
+
+  private func run(_ change: @escaping @MainActor () async throws -> Void) {
+    guard !saving else { return }
     Haptics.select()
-    if store.agent(agentId)?.avatarDataURL?.isEmpty == false {
-      staged = colour
-      return
-    }
-    guard !committing else { return }
-    committing = true
-    error = nil
-    Task {
-      do { try await store.setCharacter(agentId, colour: colour) } catch {
-        self.error = Self.words(error)
-        Haptics.warning()
-      }
-      committing = false
-    }
-  }
-
-  /** Set avatar for a staged colour: the colour saved, then the picture taken away, then the editor closes. */
-  func setStaged(store: AppStore, close: @escaping () -> Void) {
-    guard let staged, !saving else { return }
     saving = true
     error = nil
     Task {
       do {
-        try await store.setCharacter(agentId, colour: staged)
-        try await store.setAvatarImage(agentId, png: nil)
-        saving = false
+        try await change()
         Haptics.success()
-        close()
       } catch {
         self.error = Self.words(error)
-        saving = false
         Haptics.warning()
       }
-    }
-  }
-
-  /** Reset: the picture taken away ("Reset to the Agent"), else the stored colour ("Reset character to default"). */
-  func reset(store: AppStore) {
-    error = nil
-    staged = nil
-    if store.agent(agentId)?.avatarDataURL?.isEmpty == false {
-      saving = true
-      Task {
-        do {
-          try await store.setAvatarImage(agentId, png: nil)
-          Haptics.success()
-        } catch {
-          self.error = Self.words(error)
-          Haptics.warning()
-        }
-        saving = false
-      }
-    } else {
-      committing = true
-      Task {
-        do {
-          try await store.setCharacter(agentId, colour: "")
-          Haptics.success()
-        } catch {
-          self.error = Self.words(error)
-          Haptics.warning()
-        }
-        committing = false
-      }
+      saving = false
     }
   }
 

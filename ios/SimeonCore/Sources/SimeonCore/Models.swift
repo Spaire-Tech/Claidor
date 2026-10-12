@@ -52,6 +52,8 @@ public struct Agent: Identifiable, Hashable, Sendable {
   public var avatarDataURL: String?
   /** Which copy of its picture the host has (`avatarVersion`): set with the picture, and alone in a roster kept from before. */
   public var avatarVersion: String?
+  /** The face it was given (`avatarShape`, "clay-07"; AgentFaces), kept when another picture replaces it. Earlier apps wrote a butterfly's shape here ("cloud"). */
+  public var avatarShape: String?
   public var isGroup: Bool
   public var memberIds: [String]
   public var lastMessagePreview: String?
@@ -76,7 +78,7 @@ public struct Agent: Identifiable, Hashable, Sendable {
 
   /** A group whose members the person can change: its Computer tab lists them, and "Members" opens it (`cct`). */
   public var showsMembers: Bool { isGroup && !isSharedRoom && !isRemoteRoom }
-  /** Running a turn or one of its helpers (`isRunning`), waiting on the person (`awaitingUserResponse`), and what it is doing (`currentActivity`): its butterfly's state. */
+  /** Running a turn or one of its helpers (`isRunning`), waiting on the person (`awaitingUserResponse`), and what it is doing (`currentActivity`): the working row's words. */
   public var isRunning = false
   public var awaitingUserResponse = false
   public var activityKind: String?
@@ -133,6 +135,7 @@ public struct Agent: Identifiable, Hashable, Sendable {
     notifyOnUpdates = json["notifyOnUpdatesEnabled"]?.bool ?? true
     voiceId = json["voiceId"]?.text
     avatarVersion = json["avatarVersion"]?.text
+    avatarShape = json["avatarShape"]?.text
     if let room = json["remoteRoom"], room != .null { isRemoteRoom = true }
     // The window reads `isSharedRoom`, which this host never sends; it sends `sharedRoomId` and refuses member changes for it.
     if json["isSharedRoom"]?.bool == true || json["sharedRoomId"]?.text != nil { isSharedRoom = true }
@@ -167,8 +170,6 @@ public struct Agent: Identifiable, Hashable, Sendable {
     return found
   }
 
-  /** The agent's palette: its stored colour, else the window's default for its id. */
-  public var palette: AgentPalette { AgentPalette.named(colour ?? AgentPalette.defaultColour(forAgentId: id)) }
   /** The agent is working: the window's typing dots. */
   public var isBusy: Bool { isRunningTurn || isComposing }
 }

@@ -89,20 +89,4 @@ public enum Brands {
     BrandMention(name: "Xero", key: "xero", light: "#0f91bb", dark: "#13b5ea", mono: true),
     BrandMention(name: "Zoom", key: "zoom", light: "#0b5cff", dark: "#548dff", mono: false),
   ]
-
-  /** An agent's name colour in a message, by palette (the palette's top stop, made readable on the bubble). */
-  public static let agentNameColours: [String: (light: String, dark: String)] = [
-    "yellow": (light: "#7d7dd3", dark: "#8b8bea"),
-    "cyan": (light: "#2f6f72", dark: "#6d9a9c"),
-    "violet": (light: "#5d90a8", dark: "#7cc0e0"),
-    "red": (light: "#bf7359", dark: "#ff9a76"),
-    "green": (light: "#6f8f4f", dark: "#7d9a61"),
-    "brown": (light: "#877c6c", dark: "#f6e2c4"),
-    "magenta": (light: "#be688f", dark: "#e07aa8"),
-    "blue": (light: "#1f3b73", dark: "#8493b2"),
-    "gray": (light: "#a07d81", dark: "#f6c1c7"),
-    "black": (light: "#77859c", dark: "#8c9db8"),
-    "orange": (light: "#997d64", dark: "#ffd1a6"),
-    "mint": (light: "#69847c", dark: "#bff0e2"),
-  ]
 }

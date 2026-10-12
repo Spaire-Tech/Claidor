@@ -405,30 +405,15 @@ private struct BannerTranscript: View {
   }
 }
 
-/** The agent at 46: its picture, else its butterfly in its colours, breathing (±1.5%, about every 3 s) as the window's does. */
+/** The agent at 46: its picture, still. */
 private struct BannerAvatar: View {
   let call: CallState
   @Environment(AppStore.self) private var store
-  @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   var body: some View {
-    let agent = store.agent(call.agentId)
+    // The agent's picture, still (the founder, 12 October 2026: faces, no butterflies, no motion).
     Group {
-      if let picture = AvatarPictures.image(agent?.avatarDataURL) {
-        Image(nsImage: picture)
-          .resizable()
-          .aspectRatio(contentMode: .fill)
-          .frame(width: 46, height: 46)
-          .clipShape(Circle())
-      } else if reduceMotion {
-        ButterflyMark(palette: agent?.palette ?? AgentPalette.named(call.agentColour), size: 46)
-      } else {
-        TimelineView(.animation(minimumInterval: 1.0 / 60)) { context in
-          let breath = 1 + 0.015 * sin(2 * context.date.timeIntervalSinceReferenceDate)
-          ButterflyMark(palette: agent?.palette ?? AgentPalette.named(call.agentColour), size: 46)
-            .scaleEffect(x: 2 - breath, y: breath)
-        }
-      }
+      AgentIdMark(id: call.agentId, agents: store.agents, size: 46)
     }
     .frame(width: 46, height: 46)
     .accessibilityHidden(true)

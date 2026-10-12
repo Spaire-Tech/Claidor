@@ -20,7 +20,7 @@ struct SimeonApp: App {
   var body: some Scene {
     WindowGroup {
       RootView()
-        // The launch: the small butterfly turning around until the app is ready, over everything.
+        // The launch: the SimeonLabs logo lighting up until the app is ready, over everything.
         .overlay { LaunchCover() }
         // Light, Dark or the phone's: read here, inside the environment, not by the app itself, so a choice does not run the
         // app's own body again.
@@ -291,7 +291,7 @@ struct SignInButton: View {
  * the app's own ground (the system's launch screen is the same colour, so
  * there is no flash), the SimeonLabs logo lighting up in the middle
  * (`LogoShimmer`, the founder, 11 October 2026: in place of Simeon's
- * butterfly), until the app is ready (signed in with its agents): the logo
+ * picture), until the app is ready (signed in with its agents): the logo
  * plays to its true colour first, and the cover never stays more than four
  * seconds; then it fades. Signed out, it goes at once: the sign-in screen
  * plays the logo itself. It shows on every start, and again on coming back
@@ -415,13 +415,11 @@ struct OnboardingFlow: View {
   /** Meet's four beats on the Mac's 35 ms clock: Simeon unseen and large; fading in, growing; turning; settled with the words. */
   @State private var meetBeat = 0
   @State private var heroShown = false
-  @State private var turn = 0.0
   /** The computer's beats, 0.9 s apart (-1: Simeon waits, thinking). */
   @State private var demoBeat = -1
   @State private var name = ""
   @State private var nameTouched = false
   /** Simeon has left (the name, the hand-off) and his exit has played: drawn still from then on. */
-  @State private var heroGone = false
   @FocusState private var nameFocused: Bool
 
   var body: some View {
@@ -440,12 +438,6 @@ struct OnboardingFlow: View {
     // The keyboard rises over the scene, as the Mac's window keeps its size while a field has the focus; the name is sent with Return.
     .ignoresSafeArea(.keyboard)
     .task(id: step) { await runClock() }
-    // Gone, he stops moving once his exit (0.3 s) has played: moving unseen behind the name's field drew every frame.
-    .task(id: step == .name || step == .handOff) {
-      guard step == .name || step == .handOff else { heroGone = false; return }
-      try? await Task.sleep(nanoseconds: 400_000_000)
-      if !Task.isCancelled { heroGone = true }
-    }
     .onChange(of: store.hasAgents) { _, has in
       // Agents turned up (a computer that was still waking): the account was not new after all.
       if has && step != .handOff { session.finishOnboarding(opening: nil) }
@@ -484,7 +476,6 @@ struct OnboardingFlow: View {
   private struct Place: Equatable {
     enum Motion { case none, standard, slow, bounce, exit }
     var x: Double, y: Double, scale: Double, opacity: Double
-    var state: MarkState
     var motion: Motion
 
     var animation: Animation? {
@@ -502,28 +493,27 @@ struct OnboardingFlow: View {
   private func heroPlace(_ layout: OnboardingLayout) -> Place {
     switch step {
     case .meet:
-      if meetBeat < 1 { return Place(x: 0, y: Onboarding.heroY, scale: 1.6, opacity: 1, state: .idle, motion: .none) }
-      if meetBeat < 3 { return Place(x: 0, y: Onboarding.heroY, scale: 2.3, opacity: 1, state: .idle, motion: .slow) }
-      return Place(x: 0, y: Onboarding.heroY, scale: 1, opacity: 1, state: .idle, motion: .standard)
+      if meetBeat < 1 { return Place(x: 0, y: Onboarding.heroY, scale: 1.6, opacity: 1, motion: .none) }
+      if meetBeat < 3 { return Place(x: 0, y: Onboarding.heroY, scale: 2.3, opacity: 1, motion: .slow) }
+      return Place(x: 0, y: Onboarding.heroY, scale: 1, opacity: 1, motion: .standard)
     case .chiefOfStaff:
-      return Place(x: 0, y: Onboarding.heroY, scale: 1, opacity: 1, state: .idle, motion: .standard)
+      return Place(x: 0, y: Onboarding.heroY, scale: 1, opacity: 1, motion: .standard)
     case .connect:
-      return Place(x: 0, y: Onboarding.connectY, scale: 1.3, opacity: 1, state: .idle, motion: .standard)
+      return Place(x: 0, y: Onboarding.connectY, scale: 1.3, opacity: 1, motion: .standard)
     case .computer:
       let cursor = Onboarding.cursorPlace(beat: demoBeat, width: Double(layout.width))
-      return Place(x: cursor.x, y: cursor.y, scale: cursor.scale, opacity: 1, state: demoBeat < 0 ? .thinking : .working, motion: .slow)
+      return Place(x: cursor.x, y: cursor.y, scale: cursor.scale, opacity: 1, motion: .slow)
     case .name, .handOff:
-      return Place(x: 0, y: 0, scale: 0.55, opacity: 0, state: .idle, motion: .exit)
+      return Place(x: 0, y: 0, scale: 0.55, opacity: 0, motion: .exit)
     }
   }
 
-  /** Simeon, drawn at his largest (2.3 times the Mac's 80 pt) and scaled down, so he stays sharp at every size. */
+  /** Simeon's own face, drawn at its largest (2.3 times the Mac's 80 pt) and scaled down, so it stays sharp at every size; still (no turn, no motion of its own). */
   private func hero(_ layout: OnboardingLayout) -> some View {
     let place = heroPlace(layout)
     let largest: CGFloat = 80 * 2.3
-    return ButterflyView(palette: .named("blue"), motion: heroGone ? nil : place.state)
+    return PictureCircle(image: AgentFaces.simeon.flatMap { AgentPictures.image($0) })
       .frame(width: largest, height: largest)
-      .rotation3DEffect(.degrees(step == .meet ? turn : 0), axis: (x: 0, y: 1, z: 0), perspective: 0.35)
       .opacity(step == .meet && !heroShown ? 0 : 1)
       .scaleEffect(CGFloat(place.scale / 2.3) * layout.fit)
       .opacity(place.opacity)
@@ -586,7 +576,6 @@ struct OnboardingFlow: View {
     }
     switch step {
     case .meet:
-      turn = 0
       if reduceMotion { heroShown = true; meetBeat = 3; return }
       meetBeat = 0; heroShown = false
       withAnimation(.timingCurve(0.4, 0, 0.2, 1, duration: 1.2)) { heroShown = true }
@@ -594,7 +583,6 @@ struct OnboardingFlow: View {
       meetBeat = 1
       guard await wait(525) else { return }
       meetBeat = 2
-      withAnimation(.timingCurve(0.65, 0, 0.35, 1, duration: 1.4)) { turn = 360 }
       guard await wait(1_400) else { return }
       meetBeat = 3
     case .computer:
@@ -697,7 +685,7 @@ struct ChiefOfStaffStep: View {
           .stroke(Self.line, style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
           .animation(.timingCurve(0.4, 0, 0.2, 1, duration: 0.9).delay(Onboarding.lineDelay(index)), value: drawn)
         VStack(spacing: 8) {
-          ButterflyView(palette: .named(seat.colour), motion: .idle).frame(width: 56, height: 56)
+          PictureCircle(image: AgentFaces.face(id: seat.face).flatMap { AgentPictures.image($0) }).frame(width: 56, height: 56)
           Text(seat.label).font(.system(size: 12)).foregroundStyle(Ink.secondary).fixedSize()
         }
         .opacity(drawn ? 1 : 0.28)
@@ -899,7 +887,7 @@ struct NameStep: View {
     ZStack(alignment: .top) {
       OnboardingTitle(text: OnboardingStep.name.title, layout: layout, bottom: -150)
       ForEach(Onboarding.nameSeats(width: Double(layout.width)), id: \.id) { seat in
-        ButterflyView(palette: .named(seat.colour), motion: .idle)
+        PictureCircle(image: AgentFaces.face(id: seat.face).flatMap { AgentPictures.image($0) })
           .frame(width: CGFloat(80 * seat.scale), height: CGFloat(80 * seat.scale))
           .scaleEffect(arrived ? layout.fit : 0.4)
           .opacity(arrived ? 1 : 0)

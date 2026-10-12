@@ -29,28 +29,27 @@ struct PhonePrimaryStyle: ButtonStyle {
 }
 
 /**
- * New Agent (round 3, `__simeonNewAgentSheet`): the butterfly at 150 in
- * the colour picked (Ocean to start), "Name your agent" in a 52 pt field,
- * the twelve palettes as butterflies (34 in 48 pt circles, the picked one
- * ringed in the chat's blue), Create. The agent is asked to introduce
- * itself, and its chat opens.
+ * New Agent (round 3, `__simeonNewAgentSheet`): the face it will wear at
+ * 150, changing with the name as it is typed (a woman's name gets a woman's
+ * face; AgentFaces.preview), "Name your agent" in a 52 pt field, Create. The
+ * agent keeps that face, is asked to introduce itself, and its chat opens.
+ * No colours to pick (the founder, 12 October 2026).
  */
 struct NewAgentSheet: View {
   let created: (String) -> Void
   @Environment(AppStore.self) private var store
   @State private var name = ""
-  @State private var palette = AgentPalette.named("blue")
   @State private var busy = false
   @State private var failed = false
   @FocusState private var naming: Bool
 
   private var trimmed: String { name.split(whereSeparator: \.isWhitespace).joined(separator: " ") }
+  private var face: AgentFace? { AgentFaces.preview(name: trimmed, agents: store.agents) }
 
   var body: some View {
     NavigationStack {
       VStack(spacing: 0) {
-        // It settles and holds still: swaying, it drew a 150-point canvas every frame while the name was typed.
-        ButterflyView(palette: palette, motion: .idle, stillWhenIdle: true)
+        PictureCircle(image: face.flatMap { AgentPictures.image($0) })
           .frame(width: 150, height: 150)
           .frame(maxWidth: .infinity, minHeight: 170, maxHeight: .infinity)
         TextField("Name your agent", text: $name)
@@ -65,21 +64,7 @@ struct NewAgentSheet: View {
           .background(Ink.ground, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
           .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Ink.edge, lineWidth: 1))
           .padding(.horizontal, 16)
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 6), spacing: 10) {
-          ForEach(AgentPalette.all) { choice in
-            Button { palette = choice } label: {
-              ButterflyView(palette: choice)
-                .frame(width: 34, height: 34)
-                .frame(width: 48, height: 48)
-                .overlay(Circle().strokeBorder(choice.id == palette.id ? Ink.bubbleMine : .clear, lineWidth: 2))
-                .contentShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(choice.label)
-            .accessibilityAddTraits(choice.id == palette.id ? .isSelected : [])
-          }
-        }
-        .padding(.horizontal, 12).padding(.top, 22).padding(.bottom, 18)
+          .padding(.bottom, 22)
         if failed {
           Text("Couldn’t create the agent. Try again.").font(.system(size: 14)).foregroundStyle(Ink.danger).multilineTextAlignment(.center).padding(.horizontal, 16).padding(.bottom, 8)
         }
@@ -100,8 +85,9 @@ struct NewAgentSheet: View {
     guard !name.isEmpty, !busy else { return }
     busy = true
     failed = false
+    let face = face
     Task {
-      let id = await store.createAgent(name: name, colour: palette.id)
+      let id = await store.createAgent(name: name, face: face)
       busy = false
       if let id { Haptics.success(); created(id) } else { Haptics.warning(); failed = true }
     }
@@ -111,7 +97,7 @@ struct NewAgentSheet: View {
 /**
  * New Group Chat (round 3, `__simeonNewGroupSheet`): Next at the top
  * right once two are picked; "To:" with the picked agents as grey chips and
- * "Search agents"; the agents in 64 pt rows (the butterfly at 40, the name,
+ * "Search agents"; the agents in 64 pt rows (the picture at 40, the name,
  * a 26 pt check that fills blue). The group is named for its members.
  */
 struct NewGroupSheet: View {

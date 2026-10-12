@@ -55,8 +55,8 @@ code.
     Simeon's computer".
   - `MainWindow.swift`: the window's two sides and its own keys.
   - `Sidebar.swift`: the agents' sidebar, its rows, its rail and width.
-  - `Butterflies.swift`: every agent's butterfly or own picture, and a
-    group's.
+  - `Pictures.swift`: every agent's picture (a face from SimeonCore's
+    catalogue, or its own), and a group's members together.
   - `MacServices.swift`: what the Electron app's main process does around
     the window (step 14): notifications, the Dock's number, telling the
     computer the window is in front, links into the app, the menus' last

@@ -111,19 +111,28 @@ public enum AvatarEditorWords {
   public static let voiceNotSaved = "Couldn\u{2019}t save the voice."
   public static let generationEmpty = "Image generation returned no picture."
 
+  /** The editor's tabs since faces (12 October 2026): the catalogue's faces, a picture drawn from words, one of the person's own. */
+  public static let faces = "Faces"
+  public static let generate = "Generate"
+  public static let upload = "Upload"
+  /** The Faces tab's gender switch and Shuffle. */
+  public static let woman = "Woman"
+  public static let man = "Man"
+  public static let shuffle = "Shuffle"
+
   /**
-   * The Reset beside the editor's tabs (`c3n`): "Reset to the Agent" while
-   * the agent has a picture (it takes the picture away), "Reset character to
-   * default" on Agent for an agent with a colour of its own (the colour goes
-   * back), else none.
+   * The Reset beside the editor's tabs: back to the face the agent was
+   * given (AgentFaces), shown only while it wears something else (another
+   * face, or a picture of its own). A group has no face, and no Reset.
    */
-  public static func reset(hasPicture: Bool, onAgentTab: Bool, colour: String?) -> String? {
-    hasPicture ? "Reset to the Agent" : (onAgentTab && colour != nil ? "Reset character to default" : nil)
+  public static func reset(_ agent: Agent) -> String? {
+    guard !agent.isGroup else { return nil }
+    if let worn = AgentFaces.worn(agent), worn == AgentFaces.given(agent) { return nil }
+    return "Reset face"
   }
 
-  /** The colour ringed on Agent: for an agent with a picture only one picked and not yet set; else its own, or its id's when it has none or one no longer offered. */
-  public static func chosenColour(_ agent: Agent, staged: String?) -> String? {
-    if agent.avatarDataURL?.isEmpty == false { return staged }
-    return agent.colour.flatMap { id in AgentPalette.all.contains { $0.id == id } ? id : nil } ?? AgentPalette.defaultColour(forAgentId: agent.id)
+  /** The gender the Faces tab opens on: the face the agent wears or was given, else the one it would be given. */
+  public static func gender(_ agent: Agent) -> String {
+    AgentFaces.own(agent)?.gender ?? AgentFaces.gender(for: agent)
   }
 }

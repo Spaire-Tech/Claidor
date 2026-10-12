@@ -185,7 +185,7 @@ final class PaneState {
     }
   }
 
-  /** The header's butterfly and name, ⌘⇧, (`toggleAgentSettingsAction`): shown → close, whatever page; else Profile. */
+  /** The header's picture and name, ⌘⇧, (`toggleAgentSettingsAction`): shown → close, whatever page; else Profile. */
   func toggleSettings(layout: SidebarLayout) {
     if isVisible { close(layout: layout) } else { open(.profile, layout: layout) }
   }
@@ -647,7 +647,7 @@ private struct PaneHead: View {
 
 /**
  * The avatar's button (`f3n`): a 96-point disc (white, `#2c2c2e` on dark,
- * a hairline inside) holding the agent's butterfly at 64 (a group's members
+ * a hairline inside) holding the agent's picture at 64 (a group's members
  * as its avatar draws them), and at its lower right the 32-point pencil disc
  * ringed 3 points in the pane's colour, a shade darker under the pointer.
  * It opens and closes the avatar editor (7b).
@@ -660,20 +660,17 @@ private struct AvatarTrigger: View {
   @State private var hovering = false
 
   var body: some View {
-    let staged = pane.avatarEditor?.agentId == agent.id ? pane.avatarEditor?.staged : nil
     Button { pane.toggleAvatarEditor(for: agent) } label: {
       ZStack {
         Circle().fill(look.paneAvatarDisc)
-        if let staged {
-          // A colour picked for an agent with a picture, shown until Set avatar.
-          ButterflyMark(palette: AgentPalette.named(staged), size: 64)
-        } else if let picture = AvatarPictures.image(agent.avatarDataURL) {
+        if let picture = AvatarPictures.image(for: agent) {
           Image(nsImage: picture)
             .resizable()
+            .interpolation(.high)
             .aspectRatio(contentMode: .fill)
             .frame(width: 96, height: 96)
         } else {
-          // The butterfly at 64, or a group's members in its 64-point frame, centred in the disc.
+          // A group's members in its 64-point frame, centred in the disc.
           AgentMark(agent: agent, agents: store.agents, size: 64)
         }
         Circle().strokeBorder(look.paneHairline, lineWidth: 1)

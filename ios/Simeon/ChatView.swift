@@ -8,9 +8,9 @@ import SimeonCore
 /**
  * One chat, as the phone design draws the Mac's chat full screen (measured
  * from the web window at 393 pt, 8 October 2026): the back disc at the top
- * left, the agent's butterfly (52 pt) with its name pill under it and the
+ * left, the agent's picture (52 pt) with its name pill under it and the
  * call button beside the name, all over the page's own ground; the
- * conversation; the composer. The butterfly or the name opens the agent's
+ * conversation; the composer. The picture or the name opens the agent's
  * page; on a call, the pill sits under the header and opens the full call.
  */
 struct ChatView: View {
@@ -80,11 +80,11 @@ struct ChatView: View {
       // the screen following the finger. The chat had hidden it for a bar of its own, and hidden, it does not swipe.
       .inlineBarTitle()
       .toolbar {
-        // The butterfly is drawn up in the bar's row (ChatHeadline), but there the bar takes the touch, not the drawing: a
-        // tap on the butterfly did nothing and only its name opened the page (the founder, 9 October 2026). The bar's
-        // middle, where the butterfly is, takes it now; the drawing is unchanged.
+        // The picture is drawn up in the bar's row (ChatHeadline), but there the bar takes the touch, not the drawing: a
+        // tap on the picture did nothing and only its name opened the page (the founder, 9 October 2026). The bar's
+        // middle, where the picture is, takes it now; the drawing is unchanged.
         // A button, not a tap gesture on a clear view: the bar's middle took no tap that way either, and the top of the
-        // butterfly still did nothing (the founder, 9 October 2026, again). The bar's glass behind it is off: nothing shows.
+        // picture still did nothing (the founder, 9 October 2026, again). The bar's glass behind it is off: nothing shows.
         ToolbarItem(placement: .principal) {
           Button { showsPage = true } label: {
             Color.clear
@@ -528,30 +528,30 @@ struct TypingSlot: View {
 /**
  * The agent at the top of the chat, in the proportions of the founder's
  * reference (Muse, 11 October 2026: "not proportionate to the rest (too
- * small)"), measured against its 44 pt side buttons: the butterfly at 68 pt
+ * small)"), measured against its 44 pt side buttons: the picture at 68 pt
  * (its members side by side for a group), its top level with the bar's back
  * and call buttons, and its name at 15 pt in a 34 pt glass capsule laid 4 pt
- * over the butterfly's foot. A tap opens its page. Only this redraws when
+ * over the picture's foot. A tap opens its page. Only this redraws when
  * the agent changes.
  */
 struct ChatHeadline: View {
   let agentId: String
   let open: () -> Void
   @Environment(AppStore.self) private var store
-  /** The butterfly: 68 pt, the reference's picture against its 44 pt buttons. */
+  /** The picture: 68 pt, the reference's picture against its 44 pt buttons. */
   static let size: CGFloat = 68
-  /** How far the name's capsule lies over the butterfly's foot. */
+  /** How far the name's capsule lies over the picture's foot. */
   static let overlap: CGFloat = 4
-  /** The system bar's row, which the butterfly reaches up into. */
+  /** The system bar's row, which the picture reaches up into. */
   static let barRow: CGFloat = 44
 
   var body: some View {
     if let agent = store.agent(agentId) {
       VStack(spacing: -Self.overlap) {
         // Still: the agent at work moves in its row at the end of the chat (TypingRow); a second one moving up here drew every frame twice.
-        AgentAvatar(agent: agent, members: store.members(of: agent), groupInARow: true, moves: false)
+        AgentAvatar(agent: agent, members: store.members(of: agent), groupInARow: true)
           .frame(width: agent.isGroup ? nil : Self.size, height: Self.size)
-        // Over the butterfly's foot, as the reference's name sits on its picture.
+        // Over the picture's foot, as the reference's name sits on its picture.
         Text(agent.name).font(.system(size: 15, weight: .medium)).foregroundStyle(Ink.primary).lineLimit(1)
           .padding(.horizontal, 12)
           .frame(minHeight: 34)
@@ -1146,7 +1146,7 @@ struct ChannelTagView: View {
  * with 14 pt text on 21 pt lines; an agent's on the left in the Messages
  * grey, 8 × 12, its Markdown, brands and teammates dressed as on the Mac;
  * both 18 pt round and at most the window's width. In a group, the member's
- * name over the first of their bubbles and their butterfly beside the last.
+ * name over the first of their bubbles and their picture beside the last.
  * A lone emoji is drawn large with no bubble.
  */
 struct BubbleView: View {
@@ -1174,7 +1174,7 @@ struct BubbleView: View {
       if bubble.fromPerson { Spacer(minLength: 0) }
       if inGroup && !bubble.fromPerson {
         Group {
-          if bubble.showsAvatar, let author = bubble.author { ButterflyView(palette: .named(store.mentionNames.first { $0.id == author.id }?.colour ?? AgentPalette.defaultColour(forAgentId: author.id))) } else { Color.clear }
+          if bubble.showsAvatar, let author = bubble.author { AgentIdAvatar(id: author.id) } else { Color.clear }
         }
         .frame(width: 22, height: 22)
       }
@@ -1353,23 +1353,18 @@ struct BubbleView: View {
 
 /**
  * The agent at work, as the Mac's chat shows it (`sand-activity-mark`):
- * in a one-to-one chat its butterfly, 28 pt, moving as it works (folded
- * into three dots while it thinks, five dots circling while it waits on
- * someone, a dot flying off while it messages another agent, whirling
- * while it makes a picture, a turn with its light trails every few seconds
- * while it runs commands), and beside it what it is doing, under the
- * Mac's moving light: "Running commands", "Searching the web", "Messaging
- * Iris" (the Mac shows the words when the pointer is over the row; a phone
- * has no pointer, so they always show). In a group (`sand-activity-line`),
- * one member's butterfly at 22 pt beside who is at work.
+ * in a one-to-one chat its picture, 28 pt and still, with three dots beside
+ * it (the founder, 12 October 2026: faces, no animation), and what it is
+ * doing, under the Mac's moving light: "Running commands", "Searching the
+ * web", "Messaging Iris" (the Mac shows the words when the pointer is over
+ * the row; a phone has no pointer, so they always show). In a group
+ * (`sand-activity-line`), one member's picture at 22 pt beside who is at
+ * work.
  */
 struct TypingRow: View {
   let agent: Agent
   let step: String?
   @Environment(AppStore.self) private var store
-  @Environment(\.accessibilityReduceMotion) private var reduceMotion
-  /** A tap on the butterfly gives it a turn, a hop or a burst of sparks, in turn, as a click does on the Mac. */
-  @State private var pokes = 0
 
   var body: some View {
     if agent.isGroup {
@@ -1377,39 +1372,14 @@ struct TypingRow: View {
     } else {
       let line = agent.activityLine(named: { store.agent($0)?.name })
       HStack(spacing: 8) {
-        ButterflyView(palette: agent.palette, motion: agent.markState == .idle ? .working : agent.markState, pokes: pokes)
-          .frame(width: 28, height: 28)
-          .modifier(MarkPop())
-          .contentShape(.rect)
-          .onTapGesture {
-            guard !reduceMotion else { return }
-            pokes += 1
-            Haptics.tap()
-          }
-        if let line { ActivityLabel(line: line) }
+        AgentAvatar(agent: agent).frame(width: 28, height: 28)
+        if let line { ActivityLabel(line: line) } else { WorkingDots() }
       }
       .padding(.leading, 8)
       .frame(height: 36)
       .accessibilityElement(children: .ignore)
-      .accessibilityLabel(line.map { "\(agent.name): \($0.text)" } ?? (agent.markState == .thinking ? "\(agent.name) is typing" : "\(agent.name) is working"))
+      .accessibilityLabel(line.map { "\(agent.name): \($0.text)" } ?? (agent.isComposing ? "\(agent.name) is typing" : "\(agent.name) is working"))
     }
-  }
-}
-
-/** The butterfly's own entrance into the row (0.34 s from 60 %, a little past and back, 0.22 s after the row). */
-struct MarkPop: ViewModifier {
-  @State private var shown = false
-  @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-  func body(content: Content) -> some View {
-    content
-      .scaleEffect(shown ? 1 : 0.6)
-      .opacity(shown ? 1 : 0)
-      .onAppear {
-        guard !shown else { return }
-        if reduceMotion { shown = true; return }
-        withAnimation(.timingCurve(0.34, 1.56, 0.64, 1, duration: 0.34).delay(0.22)) { shown = true }
-      }
   }
 }
 
@@ -1506,7 +1476,7 @@ private struct ShimmerBand: View {
 }
 
 /**
- * A group at work (`sand-activity-line`): one member's butterfly, 22 pt,
+ * A group at work (`sand-activity-line`): one member's picture, 22 pt,
  * and who is at it ("Theo is typing…", "Theo and Iris are working…",
  * "Theo, Iris and 2 others are working…"), or the group's current step;
  * a new line rolls up into place (0.3 s) and holds at least 1.2 s.
@@ -1524,7 +1494,7 @@ struct GroupActivityLine: View {
     let current = shown ?? text
     HStack(spacing: 8) {
       if let member = members.first(where: { $0.isBusy || $0.isRunning }) ?? members.first {
-        ButterflyView(palette: member.palette, motion: member.markState == .idle ? .working : member.markState).frame(width: 22, height: 22)
+        AgentAvatar(agent: member).frame(width: 22, height: 22)
       }
       ZStack(alignment: .leading) {
         ShimmerText(text: current, font: .system(size: 14))

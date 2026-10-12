@@ -132,21 +132,10 @@ extension AppStore {
     await saveProfileField(agentId, name: name, description: agent.description)
   }
 
-  /** The character's colour (`updateAgent` with `avatarColor`); "" puts the shape and colour back to the agent's own. */
-  public func setCharacter(_ agentId: String, colour: String) async throws {
-    guard let agent = agent(agentId), let backend else { return }
-    var profile: JSON = ["name": .string(agent.name), "description": .string(agent.description), "avatarColor": .string(colour)]
-    if colour.isEmpty { profile = profile.setting("avatarShape", .string("")) }
-    if let index = agents.firstIndex(where: { $0.id == agentId }) { updateAgentLocally(index) { $0.colour = colour.isEmpty ? nil : colour } }
-    do { _ = try await backend.command("updateAgent", ["id": .string(agentId), "profile": profile]) } catch {
-      await reloadRoster()
-      throw error
-    }
-  }
-
-  /** A picture for the agent, or none to go back to its character (`setAgentAvatarBytes`); the host's refusal is thrown. */
+  /** A picture of the agent's own, uploaded or drawn (`setAgentAvatarBytes`; the face it was given stays kept for Reset); the host's refusal is thrown. */
   public func setAvatarImage(_ agentId: String, png: Data?) async throws {
     guard let backend else { return }
+    pendingFaces[agentId] = nil
     _ = try await backend.command("setAgentAvatarBytes", ["id": .string(agentId), "pngBase64": png.map { .string($0.base64EncodedString()) } ?? .null])
     await reloadRoster()
   }

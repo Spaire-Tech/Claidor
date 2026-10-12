@@ -454,7 +454,7 @@ private struct ToLine: View {
   }
 }
 
-/** Someone on the line (`sand-new-chat-chip`): 24 high, round, grey; their butterfly (16) or a plus, their name (12 on 16, 200 at most), and Remove. */
+/** Someone on the line (`sand-new-chat-chip`): 24 high, round, grey; their picture (16) or a plus, their name (12 on 16, 200 at most), and Remove. */
 private struct Chip: View {
   let recipient: NewChat.Recipient
   let look: Look
@@ -504,7 +504,7 @@ private struct Chip: View {
  * line's foot, 560 wide at most, 14 round, the raised ground (`#2f2f2f` on
  * dark) with a hairline and a soft shadow. Its rows (36 high, 2 apart,
  * padded 6 8, 8 round, lit grey): a plus in a grey circle for Create, an
- * agent's butterfly (22), the name (13 on 18). With ⌘ held, the first
+ * agent's picture (22), the name (13 on 18). With ⌘ held, the first
  * nine show ⌘1–⌘9. Under a hairline: Tab add, ⏎ open.
  */
 private struct RecipientMenu: View {

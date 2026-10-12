@@ -301,7 +301,7 @@ private struct PickLine<Icon: View>: View {
   }
 }
 
-/** An "@" row's picture: the agent's butterfly, a group's or everyone's people, a routine's clock, an app's logo on its tile. */
+/** An "@" row's picture: the agent's picture, a group's or everyone's people, a routine's clock, an app's logo on its tile. */
 struct MentionIcon: View {
   let icon: ComposerLists.MentionRow.Icon
   let look: Look
@@ -310,11 +310,7 @@ struct MentionIcon: View {
   var body: some View {
     switch icon {
     case .agent(let id):
-      if let agent = store.agent(id) {
-        AgentMark(agent: agent, agents: store.agents, size: 16)
-      } else {
-        ButterflyMark(palette: AgentPalette.named(nil), size: 16)
-      }
+      AgentIdMark(id: id, agents: store.agents, size: 16)
     case .everyone, .group:
       Image(systemName: "person.2").font(.system(size: 10)).foregroundStyle(look.ink)
     case .routine:

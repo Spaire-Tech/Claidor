@@ -632,7 +632,7 @@ private struct Keycap: View {
   }
 }
 
-/** A row's picture: an agent's butterfly or group, an action's icon on grey, a file's kind in its colour, a link's site icon, a routine's clock on violet. */
+/** A row's picture: an agent's picture or group, an action's icon on grey, a file's kind in its colour, a link's site icon, a routine's clock on violet. */
 private struct Leading: View {
   let row: Jump.Row
   let agents: [String: Agent]

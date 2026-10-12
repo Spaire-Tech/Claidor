@@ -794,7 +794,7 @@ struct ComputerUpdatePill: View {
 
 /**
  * The whole window when this account was refused before its computer was
- * ever reached (`mzn`): the sign-in's butterfly and "Simeon", the tagline,
+ * ever reached (`mzn`): the sign-in's logo and "Simeon", the tagline,
  * then what this account needs (14/20 over 13/18 at 60%) and its button
  * (40 high, the sign-in's black in both themes) to Simeon Labs' page.
  */
@@ -810,7 +810,11 @@ struct AccessCover: View {
       look.ground
       VStack(spacing: 0) {
         HStack(spacing: 18) {
-          ButterflyMark(palette: AgentPalette.named("blue"), size: 64)
+          // The SimeonLabs mark, as the sign-in's (it was a blue butterfly until faces, 12 October 2026).
+          Image("SignIn/Mark").resizable().renderingMode(.template).interpolation(.high).scaledToFit()
+            .foregroundStyle(look.ink)
+            .frame(width: 64, height: 64)
+            .accessibilityHidden(true)
           Text("Simeon")
             .font(.custom(Faces.wordmark, size: 68))
             .foregroundStyle(look.ink)

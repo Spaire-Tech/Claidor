@@ -6,11 +6,11 @@ import SimeonCore
  * Two agents' messages to each other, over the chat (`sand-thread-overlay`,
  * "Agent exchange", the window's `JMn`), read only: the chat's ground over
  * everything, the message field too. Its head (44, the ground) holds the
- * two agents in the middle, each a butterfly (20) and its name in a pill
+ * two agents in the middle, each a picture (20) and its name in a pill
  * (13, 500, padded 3 12), 4 apart, with ⇄ (12, at 30%) between them, 8
  * apart. The messages run 44 down to 64 up, 16 in, 24 before the first and
  * 52 after the last, opening at the newest; each agent's run as in a group
- * (the name over the first, 12 at 60%; the butterfly, 22, beside the last),
+ * (the name over the first, 12 at 60%; the picture, 22, beside the last),
  * fading under the head (32) and over the foot (40) once there is more to
  * see. At the foot, 12 up and 40 high: a lock and "This chat is view-only"
  * (12 on 16, at 40%, 6 apart), then Close Chat (12 on 16, padded 4 8, a
@@ -126,11 +126,7 @@ private struct ExchangeHeader: View {
   private func participant(id: String, name: String) -> some View {
     HStack(spacing: 4) {
       Group {
-        if let agent = store.agent(id) {
-          AgentMark(agent: agent, agents: store.agents, size: 20)
-        } else {
-          ButterflyMark(palette: AgentPalette.named(nil), size: 20)
-        }
+        AgentIdMark(id: id, agents: store.agents, size: 20)
       }
       // At least 20 wide: a group would be its members in a row (step 14).
       .frame(minWidth: 20)
@@ -150,11 +146,11 @@ private struct ExchangeHeader: View {
 
 /**
  * One message in an exchange (`sand-thread-overlay__row`, an author run):
- * the butterfly's place (22) 8 from the bubble, the name over the first of
+ * the picture's place (22) 8 from the bubble, the name over the first of
  * a run (12 on 16, at 60%, 12 above, 4 below, 12 in), the bubble as an
  * agent's in the chat, at most 88% of the column, 640, or the column less
  * 82; its upper left corner 6 round when it runs on from the one before,
- * its lower left always (it runs on, or sits by the butterfly). Under the
+ * its lower left always (it runs on, or sits by the picture). Under the
  * pointer, More (24) 6 beside it, with Copy.
  */
 private struct ExchangeMessage: View {
@@ -176,11 +172,7 @@ private struct ExchangeMessage: View {
     HStack(alignment: .bottom, spacing: 8) {
       Group {
         if last {
-          if let agent = store.agent(sender.id) {
-            AgentMark(agent: agent, agents: store.agents, size: 22)
-          } else {
-            ButterflyMark(palette: AgentPalette.named(nil), size: 22)
-          }
+          AgentIdMark(id: sender.id, agents: store.agents, size: 22)
         } else {
           Color.clear
         }
@@ -287,7 +279,7 @@ struct ReadOnlyNotice: View {
 
 /**
  * The agents of an exchange with several (`ui-menu`, "Agents in this
- * exchange"): each one's butterfly (18) and name, by name; choosing one
+ * exchange"): each one's picture (18) and name, by name; choosing one
  * opens its messages with this agent. A Mac menu, as the window's is a
  * menu.
  */
@@ -312,7 +304,7 @@ enum ExchangeMenu {
     }
   }
 
-  /** An agent's butterfly as a menu's picture, 18 points. */
+  /** An agent's picture as a menu's picture, 18 points. */
   private static func mark(for peer: Party, store: AppStore, dark: Bool) -> NSImage? {
     let renderer = ImageRenderer(content: PeerMark(agent: store.agent(peer.id), agents: store.agents).environment(\.colorScheme, dark ? .dark : .light))
     renderer.scale = NSScreen.main?.backingScaleFactor ?? 2
@@ -328,7 +320,7 @@ enum ExchangeMenu {
         if let agent {
           AgentMark(agent: agent, agents: agents, size: 18)
         } else {
-          ButterflyMark(palette: AgentPalette.named(nil), size: 18)
+          AgentPicture(image: nil, size: 18)
         }
       }
       .frame(width: 18, height: 18)

@@ -86,7 +86,7 @@ private struct VoiceGlyph: Shape {
  * A call's lines over the chat (the window's exchange panel opened on a
  * call, read only): the agent's own head, the call's time, the person's
  * words on the right in their blue and the agent's on the left in the
- * grey, its name over the first of a run and its butterfly (22) by the
+ * grey, its name over the first of a run and its picture (22) by the
  * last; at the foot, "This chat is view-only" and Close Chat. Escape
  * closes it.
  */
@@ -180,7 +180,7 @@ private struct PersonLine: View {
   }
 }
 
-/** The agent's words: its grey bubble (14, padded 8 12; round 18, 6 at the lower left), its name over the first of a run, its butterfly (22) by the last. */
+/** The agent's words: its grey bubble (14, padded 8 12; round 18, 6 at the lower left), its name over the first of a run, its picture (22) by the last. */
 private struct AgentLine: View {
   let id: String
   let text: String

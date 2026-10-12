@@ -127,8 +127,8 @@ public protocol AgentBackend: AnyObject, Sendable {
   /** A message, with the files already on the agent's computer (`uploadAttachment`), and what goes with it (`SendOptions`). */
   func send(_ agentId: String, text: String, attachments: [AttachmentRef], options: SendOptions, nonce: String?) async throws
   func markRead(_ agentId: String) async
-  /** A new agent in a palette; its id. */
-  func createAgent(name: String, colour: String) async throws -> String
+  /** A new agent, with the face it was shown with (AgentFaces); its id. */
+  func createAgent(name: String, face: String?) async throws -> String
   /** A new group of agents; its id. */
   func createGroup(name: String, memberIds: [String]) async throws -> String
   /** The answer to a question card. */
@@ -357,12 +357,15 @@ public final class LiveBackend: AgentBackend, @unchecked Sendable {
     _ = try? await gateway.command("setAgentUnread", ["id": .string(agentId), "isUnread": false, "atMs": .number(Date().timeIntervalSince1970 * 1000)])
   }
 
-  public func createAgent(name: String, colour: String) async throws -> String {
-    // The window's New Agent (router-renderer-patch.mjs, phone-create-sheets): a butterfly in the palette picked, introduced at once.
-    let answer = try await gateway.command("createAgent", [
-      "name": .string(name), "description": "", "avatarShape": "cloud", "avatarColor": .string(colour),
+  public func createAgent(name: String, face: String?) async throws -> String {
+    // The window's New Agent (router-renderer-patch.mjs, phone-create-sheets), introduced at once. The face the sheet showed is
+    // kept on it (`avatarShape`) and put on once it is listed (AgentFaces); its colour is the host's (no app shows it now).
+    var args: JSON = [
+      "name": .string(name), "description": "",
       "isKickstartRequested": true, "origin": "user", "clientNonce": .string("ios-\(UUID().uuidString.lowercased())"),
-    ])
+    ]
+    if let face { args = args.setting("avatarShape", .string(face)) }
+    let answer = try await gateway.command("createAgent", args)
     guard let id = answer["agent"]?["id"]?.text else { throw GatewayError(message: "createAgent: no agent in the answer", refused: true) }
     return id
   }
