@@ -39,8 +39,6 @@ final class Purchases {
   /** The product being bought, while Apple's sheet and the server work. */
   private(set) var buying: String?
   private(set) var restoring = false
-  /** Whether Apple still offers this Apple ID the free week (once per Apple ID, across the group). */
-  private(set) var freeWeek = false
   /** The App Store's country, ISO 3166 alpha-3 ("USA"). */
   private(set) var storefrontCountry: String?
 
@@ -85,9 +83,6 @@ final class Purchases {
     guard let found = try? await Product.products(for: plans.productIds) else { return }
     products = Dictionary(found.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
     productsLoaded = true
-    if let subscription = found.first?.subscription {
-      freeWeek = await subscription.isEligibleForIntroOffer
-    }
   }
 
   /**

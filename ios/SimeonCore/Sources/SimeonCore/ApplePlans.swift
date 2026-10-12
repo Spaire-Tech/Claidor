@@ -3,10 +3,10 @@ import Foundation
 /**
  * The plans as the App Store sells them in the iPhone app (12 October 2026;
  * `server/simeon/plans/app_store.py`, docs/services-billing.md §9): the web's
- * three, monthly or yearly, as subscriptions in one group, the free week as
- * their introductory offer. The server names the product ids (so they stay
- * in one place) and the credits each plan gives; StoreKit gives the prices,
- * in the person's own currency.
+ * three, monthly or yearly, as subscriptions in one group (the sheet offers
+ * the monthly ones). The server names the product ids (so they stay in one
+ * place) and the credits each plan gives; StoreKit gives the prices, in the
+ * person's own currency.
  */
 public struct ApplePlan: Equatable, Sendable, Identifiable {
   public let productId: String
@@ -61,39 +61,30 @@ public struct ApplePlans: Equatable, Sendable {
   public static func webLinkAllowed(storefrontCountry: String?) -> Bool { storefrontCountry?.uppercased() == "USA" }
 }
 
-/** What the plans sheet says (Apple asks for the price, the period, auto-renewal, how to cancel, and the terms and privacy links). */
+/**
+ * What the plans sheet says (the founder, 12 October 2026: as simple as a
+ * reference app's sheet): a title and one line, each plan's name and monthly price,
+ * the chosen price over Subscribe, Restore Purchases, the one sentence Apple
+ * asks for (price, period, auto-renewal, how to cancel) and the Terms and
+ * Privacy links. Monthly only on the iPhone; no free week (the free month
+ * starts at the first sign-in, `FreeMonth`).
+ */
 public enum PlansCopy {
-  public static let title = "Choose your plan"
-  public static let subtitle = "Every agent and every feature, a cloud computer for each agent, and routines that run while you're away."
-  public static let monthly = "Monthly"
-  public static let yearly = "Yearly"
+  public static let title = "Choose a plan"
+  public static let subtitle = "Higher plans include more usage."
   public static let subscribe = "Subscribe"
-  public static let startFreeWeek = "Start Free Week"
   public static let restore = "Restore Purchases"
   public static let webLink = "Subscribe on the web instead"
   public static let unavailable = "Plans can't be loaded right now. Check your connection and try again."
   public static let pending = "Your purchase is waiting for approval. Simeon starts as soon as it's approved."
   public static let nothingToRestore = "There's no Simeon subscription on this Apple ID to restore."
+  /** Apple's rule for an auto-renewing subscription, in one sentence. */
+  public static let renewal = "Auto-renews monthly. Your Apple ID is charged each month until you cancel in Settings › Apple Account › Subscriptions."
   public static let termsURL = URL(string: "https://simeonlabs.com/terms")!
   public static let privacyURL = URL(string: "https://simeonlabs.com/privacy")!
   /** Where an Apple plan is changed or cancelled (also the server's words, `MANAGE_ON_IPHONE`). */
   public static let manageInSettings = "Your plan is billed through Apple. Change or cancel it in Settings › your name › Subscriptions."
 
-  /** "3,750,000 credits a week". */
-  public static func credits(_ weekly: Int, locale: Locale = .current) -> String {
-    let formatter = NumberFormatter()
-    formatter.numberStyle = .decimal
-    formatter.locale = locale
-    return "\(formatter.string(from: NSNumber(value: weekly)) ?? String(weekly)) credits a week"
-  }
-
-  /** "$20.00 a month" from StoreKit's own price text. */
-  public static func price(_ display: String, yearly: Bool) -> String { "\(display) a \(yearly ? "year" : "month")" }
-
-  /** The line under the button: the free week first when Apple still offers it to this Apple ID. */
-  public static func terms(price display: String, yearly: Bool, freeWeek: Bool) -> String {
-    let period = yearly ? "year" : "month"
-    let start = freeWeek ? "Free for 7 days, then \(display) a \(period)." : "\(display) a \(period)."
-    return "\(start) Renews automatically until you cancel, at least 24 hours before the period ends, in Settings › your name › Subscriptions. Payment is charged to your Apple ID."
-  }
+  /** "$20.00 per month" from StoreKit's own price text. */
+  public static func price(_ display: String, yearly: Bool = false) -> String { "\(display) per \(yearly ? "year" : "month")" }
 }

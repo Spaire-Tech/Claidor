@@ -734,8 +734,8 @@ struct ChatComposer: View {
           .accessibilityAddTraits(.updatesFrequently)
           .transition(.opacity)
       }
-      if let words = store.access.notice {
-        // While this account has no Simeon (`sand-access-notice`): why, and the page; Send waits meanwhile.
+      if let words = PhoneUpgrade.banner(access: store.access, usage: store.usage.summary, outOfCredits: store.trayList.shown(for: agentId).contains(where: PhoneUpgrade.isOutOfCredits)) {
+        // No plan, or the credits spent (12 October 2026): why, and the plans; Send waits meanwhile when there is no plan.
         AccessNotice(words: words)
       }
       #if os(macOS)
@@ -2086,10 +2086,17 @@ struct SelectableText: UIViewRepresentable {
 }
 #endif
 
-/** The composer's access line (`Qvn`): its title over its words, and the button that opens simeonlabs.com. */
+/**
+ * The composer's line when this account can't send (`Qvn`, 12 October
+ * 2026: the founder's "usage banner saying they're out of usage and that
+ * they should upgrade"): its title over its words, and the button that
+ * opens the plans (simeonlabs.com for an account no plan can help).
+ */
 struct AccessNotice: View {
   let words: SandAccess.Words
   @Environment(\.openURL) private var openURL
+  @Environment(AppStore.self) private var store
+  @State private var showsPlans = false
 
   var body: some View {
     HStack(spacing: 12) {
@@ -2099,14 +2106,21 @@ struct AccessNotice: View {
       }
       Spacer(minLength: 8)
       if let action = words.action {
-        Button(action) { openURL(SandAccess.page) }
-          .buttonStyle(.borderedProminent)
-          .buttonBorderShape(.capsule)
-          .controlSize(.small)
+        Button(action) {
+          if store.access.state == .unavailable { openURL(SandAccess.page) } else { showsPlans = true }
+        }
+        .buttonStyle(.borderedProminent)
+        .buttonBorderShape(.capsule)
+        .controlSize(.small)
       }
     }
     .padding(.horizontal, 14).padding(.vertical, 10)
     .background(Ink.pill, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     .accessibilityElement(children: .contain)
+    // The summary read again when the chat shows the line (the credits, the free month's end), and after the plans close.
+    .task { await store.loadUsage() }
+    .sheet(isPresented: $showsPlans, onDismiss: { Task { await store.refreshAccess(); await store.refreshUsage() } }) {
+      PlansSheet().presentationBackground(Ink.groupedGround)
+    }
   }
 }

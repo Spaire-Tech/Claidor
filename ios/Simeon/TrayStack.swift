@@ -18,7 +18,8 @@ struct TrayStack: View {
   @Environment(AppStore.self) private var store
 
   var body: some View {
-    let trays = store.trayList.shown(for: agentId)
+    // Spent credits (the server's 402, code 40200) show as the composer's banner with Upgrade instead (PhoneUpgrade).
+    let trays = store.trayList.shown(for: agentId).filter { !PhoneUpgrade.isOutOfCredits($0) }
     if !trays.isEmpty {
       VStack(alignment: .leading, spacing: 6) {
         if trays.count > 1 {

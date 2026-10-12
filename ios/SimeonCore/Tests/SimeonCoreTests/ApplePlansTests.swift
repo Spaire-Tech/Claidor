@@ -36,13 +36,12 @@ final class ApplePlansTests: XCTestCase {
     }
   }
 
-  func testTheTermsSayPricePeriodRenewalAndHowToCancel() {
-    let line = PlansCopy.terms(price: "$20.00", yearly: false, freeWeek: true)
-    XCTAssertTrue(line.hasPrefix("Free for 7 days, then $20.00 a month."))
-    XCTAssertTrue(line.contains("Renews automatically"))
-    XCTAssertTrue(line.contains("Settings › your name › Subscriptions"))
-    XCTAssertTrue(PlansCopy.terms(price: "$192.00", yearly: true, freeWeek: false).hasPrefix("$192.00 a year."))
-    XCTAssertEqual(PlansCopy.credits(3_750_000, locale: Locale(identifier: "en_US")), "3,750,000 credits a week")
+  func testTheSheetSaysPricePeriodRenewalAndHowToCancel() {
+    XCTAssertEqual(PlansCopy.price("$20.00"), "$20.00 per month")
+    XCTAssertEqual(PlansCopy.price("$192.00", yearly: true), "$192.00 per year")
+    XCTAssertTrue(PlansCopy.renewal.contains("Auto-renews monthly"))
+    XCTAssertTrue(PlansCopy.renewal.contains("until you cancel in Settings"))
+    XCTAssertFalse(PlansCopy.renewal.contains("Free"), "no free week: the free month starts at sign-in")
   }
 
   func testTheQuotaSaysWhoBillsThePlan() {

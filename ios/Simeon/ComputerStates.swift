@@ -644,14 +644,13 @@ struct AccessCoverLayer: View {
 
 /**
  * The whole screen when this account was refused before its computer was
- * ever reached (`mzn`, the Mac's `AccessCover`): the sign-in's logo and
- * wordmark, the tagline, what this account needs and its button (the
- * sign-in's Apple button: black on light, white on dark) to Simeon Labs'
- * page. Read again when it shows and each time the app comes forward:
- * access fixed on the web lifts it, and the first run, which could not be
- * decided while the computer refused, is decided then. An account that
- * needs a plan gets the App Store's plans in the app (12 October 2026,
- * PlansSheet); a plan bought there lifts the cover at once.
+ * ever reached (`mzn`, the Mac's `AccessCover`), in the iPhone's words (12
+ * October 2026, PhoneUpgrade): the free month is over, or a plan is
+ * needed; See plans opens the App Store's plans (PlansSheet), and a plan
+ * bought there lifts the cover at once. An account no plan can help gets
+ * Simeon Labs' page. Read again when it shows and each time the app comes
+ * forward: the first run, which could not be decided while the computer
+ * refused, is decided then.
  */
 struct AccessCover: View {
   @Environment(AppStore.self) private var store
@@ -661,34 +660,25 @@ struct AccessCover: View {
   @State private var showsPlans = false
 
   var body: some View {
-    let words = store.access.cover
+    let words = PhoneUpgrade.cover(access: store.access, usage: store.usage.summary)
     VStack(spacing: 0) {
       Spacer(minLength: 24)
-      VStack(spacing: 28) {
-        LogoShimmer().frame(width: 46, height: 46)
-        Image("SignIn/Wordmark").resizable().scaledToFit().frame(height: 25)
-      }
-      .foregroundStyle(Ink.primary)
-      .accessibilityElement(children: .ignore)
-      .accessibilityLabel("SimeonLabs")
-      .accessibilityAddTraits(.isHeader)
-      Text(SandAccess.tagline)
-        .font(.system(size: 20))
+      LogoShimmer().frame(width: 46, height: 46)
+        .foregroundStyle(Ink.primary)
+        .accessibilityHidden(true)
+      Text(words.title)
+        .font(.system(size: 26))
         .foregroundStyle(Ink.primary)
         .multilineTextAlignment(.center)
         .fixedSize(horizontal: false, vertical: true)
-        .padding(.top, 40)
-      VStack(spacing: 4) {
-        Text(words.title)
-          .font(.system(size: 15, weight: .semibold))
-          .foregroundStyle(Ink.primary)
-        Text(words.body)
-          .font(.system(size: 14))
-          .foregroundStyle(Ink.secondary)
-      }
-      .multilineTextAlignment(.center)
-      .fixedSize(horizontal: false, vertical: true)
-      .padding(.top, 32)
+        .padding(.top, 28)
+        .accessibilityAddTraits(.isHeader)
+      Text(words.body)
+        .font(.system(size: 16))
+        .foregroundStyle(Ink.secondary)
+        .multilineTextAlignment(.center)
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(.top, 10)
       Spacer(minLength: 24)
       if let action = words.action {
         Button {
@@ -698,7 +688,7 @@ struct AccessCover: View {
             .font(.system(size: 17, weight: .semibold))
             .foregroundStyle(Ink.ground)
             .frame(maxWidth: .infinity)
-            .frame(height: 50)
+            .frame(height: 52)
         }
         .buttonStyle(.glassProminent)
         .tint(Ink.primary)
@@ -722,6 +712,7 @@ struct AccessCover: View {
 
   private func readAgain() async {
     await store.refreshAccess()
+    await store.refreshUsage()
     await store.reloadRoster()
     if store.hasReachedBox { await session.recheckFirstRun() }
   }
