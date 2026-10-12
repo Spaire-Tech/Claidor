@@ -90,6 +90,29 @@ class AppleService:
         signup_attribution: UserSignupAttribution | None = None,
     ) -> tuple[User, bool]:
         profile = await self._decode_profile(token["id_token"])
+        return await self.sign_in(
+            session,
+            profile=profile,
+            access_token=token["access_token"],
+            expires_at=token["expires_at"],
+            refresh_token=token.get("refresh_token"),
+            signup_attribution=signup_attribution,
+        )
+
+    async def sign_in(
+        self,
+        session: AsyncSession,
+        *,
+        profile: AppleUserProfile,
+        access_token: str,
+        expires_at: int | None,
+        refresh_token: str | None = None,
+        signup_attribution: UserSignupAttribution | None = None,
+    ) -> tuple[User, bool]:
+        """The account for a person Apple vouched for, by the web's sign-in
+        or the iPhone's own sheet (`native.py`): theirs if this Apple ID
+        signed in before, else the one with their verified e-mail, else a
+        new one. The Apple tokens are kept for revoking them on deletion."""
         user_repository = UserRepository.from_session(session)
         user = await user_repository.get_by_oauth_account(
             OAuthPlatform.apple, profile["id"]
@@ -98,8 +121,11 @@ class AppleService:
         if user is not None:
             oauth_account = user.get_oauth_account(OAuthPlatform.apple)
             assert oauth_account is not None
-            oauth_account.access_token = token["access_token"]
-            oauth_account.expires_at = token["expires_at"]
+            if access_token:
+                oauth_account.access_token = access_token
+                oauth_account.expires_at = expires_at
+            if refresh_token:
+                oauth_account.refresh_token = refresh_token
             oauth_account.account_username = profile["email"]
             session.add(oauth_account)
             return (user, False)
@@ -109,8 +135,9 @@ class AppleService:
             account_id=profile["id"],
             account_email=profile["email"],
             account_username=profile["email"],
-            access_token=token["access_token"],
-            expires_at=token["expires_at"],
+            access_token=access_token,
+            expires_at=expires_at,
+            refresh_token=refresh_token,
         )
 
         user = await user_repository.get_by_email(profile["email"])

@@ -1006,6 +1006,20 @@ in-app purchase (App Review Guideline 3.1.1), not on the web's checkout.
   run: the next build on the Mac and a sandbox purchase in TestFlight are
   its check (docs/services-billing.md, section 9, for App Store Connect).
 
+## 35. Continue with Apple in Apple's own sheet (12 October 2026)
+
+Continue with Apple shows Apple's sheet (Face ID, the person's Apple ID)
+instead of Apple's web page in a browser sheet: `Simeon/AppleSignInSheet.swift`
+asks for the name and e-mail with a nonce made for that sign-in, and
+`SimeonCore/AppleSignIn.swift` sends what Apple gave to `POST /auth/apple`,
+which answers the pair with no browser and no poll. Closing the sheet goes
+back to the sign-in screen; a refusal shows the server's sentence. The app
+carries the Sign in with Apple entitlement (`Simeon.entitlements`). Google
+stays the web sign-in. The iPhone's sign-in never goes by the web billing
+page any more (Apple's in-app purchase rule): a person without a plan
+signs in, then sees the app's own plans. Delete Account revokes the Apple
+sign-in at Apple. Not yet run on an iPhone.
+
 ## Suggested order (the founder decides)
 
 1. The chat's look: the bubble, the top bar, markdown, brand names with logos, agent names with butterflies.

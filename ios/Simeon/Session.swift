@@ -247,8 +247,17 @@ final class SessionController {
     phase = .signedOut(message: "Your Simeon sign-in ended. Sign in again.")
   }
 
-  /** The sign-in screen's Continue with Apple or Google: the sheet goes straight to that sign-in (`provider` on `/loginDeepControl`). */
+  /**
+   * The sign-in screen's Continue with Apple or Google. Apple: Apple's own
+   * sheet (Face ID), then the pair straight from the server
+   * (`signInWithApple`, 12 October 2026). Google: the web sign-in in the
+   * system's sheet (`provider` on `/loginDeepControl`), and the poll.
+   */
   func signIn(with provider: SignIn.Provider) async {
+    if provider == .apple {
+      await signInWithApple()
+      return
+    }
     guard phase != .signingIn else { return }
     phase = .signingIn
     signingInWith = provider
@@ -285,6 +294,49 @@ final class SessionController {
       phase = .signedOut(message: "This account can't sign in to Simeon here.")
     case .gaveUp:
       phase = .signedOut(message: "Sign-in did not finish. Try again.")
+    }
+  }
+
+  /**
+   * Continue with Apple: Apple's sheet with a nonce made for this sign-in,
+   * then what it gave to `POST /auth/apple` (`AppleSignIn`), which answers
+   * the pair. Closing the sheet goes back to the sign-in screen quietly;
+   * a refusal says the server's sentence.
+   */
+  private func signInWithApple() async {
+    guard phase != .signingIn else { return }
+    phase = .signingIn
+    signingInWith = .apple
+    defer { signingInWith = nil }
+    let nonce = AppleSignIn.freshNonce()
+    let credential: ASAuthorizationAppleIDCredential
+    do {
+      credential = try await AppleSignInSheet().run(hashedNonce: nonce.hashed)
+    } catch let error as ASAuthorizationError where error.code == .canceled {
+      phase = .signedOut(message: nil)
+      return
+    } catch {
+      phase = .signedOut(message: AppleSignIn.failed)
+      return
+    }
+    guard let identity = credential.identityToken.flatMap({ String(data: $0, encoding: .utf8) }) else {
+      phase = .signedOut(message: AppleSignIn.failed)
+      return
+    }
+    let code = credential.authorizationCode.flatMap { String(data: $0, encoding: .utf8) }
+    let outcome = await AppleSignIn.signIn(
+      api: launch.api, identityToken: identity, authorizationCode: code, nonce: nonce,
+      givenName: credential.fullName?.givenName, familyName: credential.fullName?.familyName,
+      clientVersion: Self.clientVersion, http: URLSessionClient()
+    )
+    switch outcome {
+    case .tokens(let pair):
+      vault.write(SessionTokens(pair: pair, nowMs: Date().timeIntervalSince1970 * 1000))
+      finishing = true
+      await enter(holding: true)
+      finishing = false
+    case .refused(let message), .failed(let message):
+      phase = .signedOut(message: message)
     }
   }
 

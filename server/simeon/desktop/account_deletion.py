@@ -11,7 +11,9 @@ in this order:
    (`/workspace` and the data folder: the agents' chats, memory, files,
    the apps' credentials the computer held, the browser's sign-ins).
 3. The apps signed in through our apps provider are disconnected there,
-   and each voice call's transcript is deleted at the voice provider.
+   each voice call's transcript is deleted at the voice provider, and a
+   Sign in with Apple is revoked at Apple (Apple asks this of every app
+   that offers it, 12 October 2026).
 4. The rows: memory, call records, routines, listeners, sharing, cloud
    agents, the person's own skills (and their archives in file storage),
    the computers' rows, and every session, so every device is signed out.
@@ -38,6 +40,7 @@ from fastapi import Depends
 from fastapi.responses import JSONResponse
 
 from simeon.config import settings
+from simeon.integrations.apple import native as apple_native
 from simeon.kit.utils import utc_now
 from simeon.models import DesktopSession, User
 from simeon.plans.effective import billed_by_apple, plan_of
@@ -205,6 +208,17 @@ async def _delete_transcripts(
                 report.incomplete.append(f"call transcript {conversation}")
 
 
+async def _revoke_apple(
+    repository: AccountDeletionRepository, user: User, report: DeletionReport
+) -> None:
+    for account in await repository.apple_sign_ins(user.id):
+        try:
+            if not await apple_native.revoke(account):
+                report.incomplete.append("Sign in with Apple")
+        except Exception as error:
+            report.incomplete.append(f"Sign in with Apple ({error})")
+
+
 async def delete_account(session: AsyncSession, user: User) -> DeletionReport:
     repository = AccountDeletionRepository(session)
     report = DeletionReport()
@@ -213,6 +227,7 @@ async def delete_account(session: AsyncSession, user: User) -> DeletionReport:
     report.computers = await _remove_computers(repository, user)
     await _disconnect_apps(user, report)
     await _delete_transcripts(repository, user, report)
+    await _revoke_apple(repository, user, report)
     for key in await repository.personal_skill_archives(user.id):
         if not delete_tarball(key):
             report.incomplete.append(f"skill archive {key}")

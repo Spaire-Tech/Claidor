@@ -405,6 +405,22 @@ class DesktopService:
             session, user, user_agent=user_agent, client_kind="web"
         )
 
+    async def issue_app_session(
+        self,
+        session: AsyncSession,
+        user: User,
+        *,
+        user_agent: str = "",
+        client_version: str | None = None,
+    ) -> tuple[DesktopSession, str, str]:
+        """The pair for an app that proved who the person is without the
+        browser's confirmation: the iPhone's own Sign in with Apple sheet
+        (`POST /auth/apple`, 12 October 2026). The same pair `/auth/poll`
+        hands out."""
+        return await self._issue_session(
+            session, user, user_agent=user_agent, client_version=client_version
+        )
+
     async def _issue_session(
         self,
         session: AsyncSession,

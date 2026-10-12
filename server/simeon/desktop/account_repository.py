@@ -24,6 +24,7 @@ from simeon.models import (
     DesktopShareRoomMember,
     DesktopVoiceCall,
     MatyJob,
+    OAuthAccount,
     SandAutomation,
     SandBox,
     SandCloudAgent,
@@ -34,6 +35,7 @@ from simeon.models import (
     SandPluginUserSetting,
     UserSession,
 )
+from simeon.models.user import OAuthPlatform
 from simeon.postgres import AsyncSession
 
 
@@ -58,6 +60,17 @@ class AccountDeletionRepository:
             )
         )
         return [one for one in result.scalars().all() if one]
+
+    async def apple_sign_ins(self, user_id: UUID) -> Sequence[OAuthAccount]:
+        """The person's Sign in with Apple accounts, whose tokens Apple asks
+        an app to revoke when the account is deleted."""
+        result = await self.session.execute(
+            select(OAuthAccount).where(
+                OAuthAccount.user_id == user_id,
+                OAuthAccount.platform == OAuthPlatform.apple,
+            )
+        )
+        return result.scalars().all()
 
     async def personal_skill_archives(self, user_id: UUID) -> list[str]:
         """Where the person's own skills' archives are in file storage."""

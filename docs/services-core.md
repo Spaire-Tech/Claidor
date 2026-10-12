@@ -34,9 +34,10 @@ The app calls three routes. They sit at the **root** of the API host, not under
 
 | Route | What it does |
 |---|---|
-| `GET /loginDeepControl?challenge=…&uuid=…[&provider=apple\|google]` | The browser page. With no web session it redirects to the API's own Google sign-in (`/v1/integrations/google/login/authorize?return_to=…`), which comes back here; with `provider=apple` (the iPhone's Continue with Apple, 9 October 2026) to the API's own Apple sign-in (`/v1/integrations/apple/authorize?return_to=…`) instead, or, while Apple is not set up on the server, to a page that says so and offers Google. The Mac names no provider and gets Google. With a session and no plan (billing required, no trialing or active subscription on Stripe) it redirects to the web app's `/billing?plan=standard&return_to=…`, the one page the web app is for, which opens Stripe Checkout and comes back with `checkout_session_id` (`services-billing.md`). Otherwise it shows a confirm page naming the account. |
+| `GET /loginDeepControl?challenge=…&uuid=…[&provider=apple\|google]` | The browser page. With no web session it redirects to the API's own Google sign-in (`/v1/integrations/google/login/authorize?return_to=…`), which comes back here; with `provider=apple` (the iPhone's Continue with Apple, 9 October 2026) to the API's own Apple sign-in (`/v1/integrations/apple/authorize?return_to=…`) instead, or, while Apple is not set up on the server, to a page that says so and offers Google. The Mac names no provider and gets Google. With a session and no plan (billing required, no trialing or active subscription on Stripe) it redirects to the web app's `/billing?plan=standard&return_to=…`, the one page the web app is for, which opens Stripe Checkout and comes back with `checkout_session_id` (`services-billing.md`); never for the iPhone (`redirectTarget=simeon-ios`), whose plans are Apple's in-app purchase and which Apple does not let send people to buy on the web (12 October 2026). Otherwise it shows a confirm page naming the account. |
 | `POST /loginDeepControl` | The confirm form. Same-origin only. Records the pending sign-in; no sign-in is written before this post. |
 | `POST /auth/poll` (body `{uuid, verifier}`) | The app polls here. `404` means "not yet"; `200` returns `{accessToken, refreshToken}` once. `GET /auth/poll` with query parameters is still served for older builds. |
+| `POST /auth/apple` (body `{identityToken, nonce, authorizationCode?, givenName?, familyName?}`) | The iPhone's own Sign in with Apple sheet (12 October 2026): no browser. The identity token must be Apple's (its keys), for `SIMEON_APPLE_BUNDLE_ID`, and carry `sha256(nonce)` in hex; the code is traded with Apple for the person's Apple tokens, kept to revoke them when the account is deleted. The account is the web's Sign in with Apple's for the same Apple ID (else the one with that verified e-mail, else a new one). `200` returns `{accessToken, refreshToken}`; `400` (`apple_unverified`) when the token does not check out; `403` with a `message` when the Apple account can't be used. Log lines: `desktop.sign_in.apple_native`, `integrations.apple.native.unverified`, `…nonce`, `…code_refused`. |
 | `POST /oauth/token` (`grant_type=refresh_token`) | The refresh. Returns a new pair. A spent or expired refresh token gets `200` with `shouldLogout: true`; only a malformed request gets `400`. |
 
 The challenge is `base64url(sha256(verifier))`. The server recomputes it from
@@ -116,7 +117,10 @@ their Google name in `user.meta` (`server/simeon/integrations/google/service.py`
   `api.simeonlabs.com`), `SIMEON_APPLE_TEAM_ID`, and a Sign in with Apple key's
   `SIMEON_APPLE_KEY_ID` and `.p8` contents as `SIMEON_APPLE_KEY_VALUE`. Until all four
   are set, the Apple button's page says "Sign in with Apple is coming soon" and offers
-  Google (`apple_sign_in_ready` in `server/simeon/desktop/app_sign_in.py`).
+  Google (`apple_sign_in_ready` in `server/simeon/desktop/app_sign_in.py`). The
+  iPhone's own sheet (`POST /auth/apple`) checks tokens with Apple's keys alone; the
+  same key also trades its code and revokes on Delete Account (for
+  `SIMEON_APPLE_BUNDLE_ID`, the key's primary App ID).
 
 The pages the browser shows (the confirm page, "You're signed in", the Apple page)
 are drawn in the iPhone sign-in screen's design since 9 October 2026: simeonlabs.com's
