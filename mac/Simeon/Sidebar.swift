@@ -3,15 +3,16 @@ import SwiftUI
 import SimeonCore
 
 /**
- * The sidebar's width as the Electron window keeps it (`ui-layout`): 280 at
- * first, dragged between 240 and 400, its rail 88 wide. It folds to its rail
- * when the person folds it (⌘B, or dragging it under 210), and by itself
- * whenever the chat beside it would be narrower than 424 (`can`).
+ * The sidebar's width as the Electron window keeps it (`ui-layout`): 320 at
+ * first (the founder, 12 October 2026, as the website's demo; the Electron
+ * window's was 280), dragged between 240 and 400, its rail 88 wide. It folds
+ * to its rail when the person folds it (⌘B, or dragging it under 210), and
+ * by itself whenever the chat beside it would be narrower than 424 (`can`).
  */
 @MainActor
 @Observable
 final class SidebarLayout {
-  static let firstWidth: CGFloat = 280
+  static let firstWidth: CGFloat = 320
   static let narrowest: CGFloat = 240
   static let widest: CGFloat = 400
   static let railWidth: CGFloat = 88
@@ -23,6 +24,8 @@ final class SidebarLayout {
   static let motion = Animation.timingCurve(0.22, 1, 0.36, 1, duration: 0.2)
 
   var expandedWidth: CGFloat = {
+    // A width dragged before the first width became 320 is not kept: every Mac opens at 320 once.
+    UserDefaults.standard.removeObject(forKey: SidebarLayout.widthBefore320Key)
     let saved = UserDefaults.standard.double(forKey: SidebarLayout.widthKey)
     return saved > 0 ? min(max(CGFloat(saved), SidebarLayout.narrowest), SidebarLayout.widest) : SidebarLayout.firstWidth
   }() {
@@ -33,7 +36,9 @@ final class SidebarLayout {
     didSet { UserDefaults.standard.set(isCollapsed, forKey: Self.collapsedKey) }
   }
 
-  private static let widthKey = "simeon.sidebar.width"
+  private static let widthKey = "simeon.sidebar.width.320"
+  /** Where the width was kept while the first width was 280. */
+  private static let widthBefore320Key = "simeon.sidebar.width"
   private static let collapsedKey = "simeon.sidebar.collapsed"
 
   /** Shown as its rail: folded, or the window too narrow for it open (`DCe`). */
