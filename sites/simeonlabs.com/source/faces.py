@@ -76,6 +76,11 @@ CAST = [("simeon", "Simeon", True), ("theo", "Theo", False), ("iris", "Iris", Fa
         ("agent-nora", "Nora", False), ("mila", "Mila", False), ("yodo", "Yodo", False), ("felix", "Felix", False)]
 GIVEN = plan(CAST)
 
+# The faces the apps' first run seats (Onboarding.swift: the Chief of Staff's web of six, and the cast that
+# floats round the connect step), by seat id; the demo's onboarding shows the same (demo-faces.js).
+ONBOARDING = f"{REPO}/ios/SimeonCore/Sources/SimeonCore/Onboarding.swift"
+SEATS = dict(re.findall(r'Seat\(id: "([a-z-]+)", label: "[^"]*", face: "(clay-[a-z0-9]+)"', open(ONBOARDING).read()))
+
 def face(agent_id):
     """The catalogue face this cast member wears, e.g. "clay-07"."""
     return GIVEN[agent_id]["id"]

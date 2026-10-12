@@ -7,6 +7,7 @@
 (() => {
   const FACES = /*FACES*/[];
   const GIVEN = /*GIVEN*/{};
+  const SEATS = /*SEATS*/{};
   const WOMEN = new Set(/*WOMEN*/"".split(" ")), MEN = new Set(/*MEN*/"".split(" "));
   const SIMEON = "clay-simeon";
   const TITLES = { mrs: "female", ms: "female", miss: "female", madam: "female", lady: "female", mr: "male", sir: "male", lord: "male",
@@ -60,9 +61,29 @@
       mention.style.setProperty("--simeon-face", 'url("' + url + '")');
     }
   };
+  // The onboarding's cast wears the faces the apps' first run seats (Onboarding.swift): Simeon's own in the
+  // middle, the six of his web by their labels, the three round the connect step by their seats; the window still
+  // draws a butterfly for each (sand-simeon-mark), which demo-glass.css hides under the face. Faces stay still.
+  const seat = (mark) => {
+    const cast = mark.closest('[class*="sand-onboarding__cast-"]');
+    if (cast) {
+      const id = (cast.className.match(/sand-onboarding__cast-([a-z-]+)/) || [])[1];
+      return id === "hero" ? SIMEON : SEATS[id];
+    }
+    if (mark.closest(".sand-onboarding__coo")) return SEATS[(mark.parentElement?.parentElement?.textContent || "").trim().toLowerCase()];
+    return null;
+  };
+  const cast = (root) => {
+    for (const mark of root.querySelectorAll ? root.querySelectorAll(".sand-simeon-mark:not([data-face])") : []) {
+      const face = byId[seat(mark)];
+      if (!face) continue;
+      mark.setAttribute("data-face", "");
+      mark.style.setProperty("--simeon-face", 'url("./faces/' + face.file + '")');
+    }
+  };
   const watch = () => {
-    dress(document);
-    new MutationObserver((changes) => { for (const c of changes) for (const n of c.addedNodes) if (n.nodeType === 1) dress(n.parentElement || n); })
+    dress(document); cast(document);
+    new MutationObserver((changes) => { for (const c of changes) for (const n of c.addedNodes) if (n.nodeType === 1) { dress(n.parentElement || n); cast(n.parentElement || n); } })
       .observe(document.body, { childList: true, subtree: true });
   };
   if (document.body) watch(); else document.addEventListener("DOMContentLoaded", watch);

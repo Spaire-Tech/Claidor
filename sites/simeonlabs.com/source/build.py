@@ -311,6 +311,7 @@ async def main():
     demo = ("simeon", "theo", "iris", "scout", "agent-nora")
     fill = {"/*FACES*/[]": json.dumps([{k: f[k] for k in ("id", "gender", "file", "version")} for f in faces.FACES]),
             "/*GIVEN*/{}": json.dumps({a: faces.face(a) for a in demo}),
+            "/*SEATS*/{}": json.dumps(faces.SEATS),
             '/*WOMEN*/""': json.dumps(" ".join(faces.WOMEN)), '/*MEN*/""': json.dumps(" ".join(faces.MEN))}
     script = open(f"{HERE}/demo-faces.js").read()
     for key, value in fill.items():
@@ -322,6 +323,8 @@ async def main():
     # The round Liquid Glass buttons (demo-glass.css and .js), in the demo only.
     idx = idx.replace('<script src="./demo-gate.js"></script>', '<script src="./demo-gate.js"></script>\n    <script src="./demo-glass.js"></script>\n    <link rel="stylesheet" href="./demo-glass.css">', 1)
     for name in ("demo-glass.css", "demo-glass.js"): shutil.copy(f"{HERE}/{name}", f"{OUT}/app/{name}")
+    # The SimeonLabs logo the onboarding shows where the butterfly was (demo-glass.css).
+    shutil.copy(f"{HERE}/simeon-mark.svg", f"{OUT}/app/simeon-mark.svg")
     assert "scroll-guard.js" in idx
     # The sidebar is solid in the page, not glass over a desktop.
     before = 'body::before{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(160deg,#e4e4e7,#d4d4d8)}'
