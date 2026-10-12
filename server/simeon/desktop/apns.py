@@ -89,17 +89,36 @@ def provider_token(now: float | None = None) -> str:
     return token
 
 
-def payload(*, title: str, body: str, agent_id: str, kind: str) -> dict[str, Any]:
-    """What the phone receives: the alert, the sound, and what the app reads to open the agent."""
-    return {
+def payload(
+    *,
+    title: str,
+    body: str,
+    agent_id: str,
+    kind: str,
+    agent_name: str | None = None,
+) -> dict[str, Any]:
+    """What the phone receives: the alert, the sound, and what the app reads to open the agent.
+
+    `mutable-content` lets the app's notification extension
+    (`ios/SimeonNotifications`, 12 October 2026) show the push as a message
+    from the agent, with its picture and the app's icon in the corner;
+    `thread-id` keeps each chat's notifications together. Without the
+    extension (an older build), the alert shows as it is.
+    """
+    message: dict[str, Any] = {
         "aps": {
             "alert": {"title": title, "body": body},
             "sound": "default",
             "badge": 1,
+            "mutable-content": 1,
+            "thread-id": agent_id,
         },
         "agentId": agent_id,
         "kind": kind,
     }
+    if agent_name:
+        message["agentName"] = agent_name
+    return message
 
 
 @dataclass(frozen=True)

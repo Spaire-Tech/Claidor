@@ -71,3 +71,22 @@ test("a batch of mixed attachments counts each kind, in the renderer's vocabular
     await dispose();
   }
 });
+
+test("a card's preview is what it says, never its type's name (a question card's push read \"widget\")", async () => {
+  const { module, dispose } = await loadProjection();
+  try {
+    const last = (message) => module.getLastMessageFromTranscript([{ id: "m1", kind: "send-message", message }]).preview;
+    assert.equal(last({ type: "widget", widget: { prompt: "Which flight do you want?", options: [] } }), "Which flight do you want?");
+    assert.equal(last({ type: "widget", widget: {} }), "Has a question for you");
+    assert.equal(last({ type: "secret-request", secretRequest: { label: "Stripe API key" } }), "Stripe API key");
+    assert.equal(last({ type: "email-draft", draft: { subject: "Intro to Dana", body: "Hi" } }), "Intro to Dana");
+    assert.equal(last({ type: "auto-review-approval", approval: { summary: "Send the email" } }), "Approval required: Send the email");
+    assert.equal(last({ type: "connectors", connectors: ["Gmail", "Slack"] }), "Connect Gmail, Slack");
+    assert.equal(last({ type: "cloud-agent", title: "Research" }), "Research");
+    for (const type of ["widget", "secret-request", "permission-request", "local-tool-permission", "connector", "listener-connect", "slack-draft", "something-new"]) {
+      assert.notEqual(last({ type }), type, `${type} is not shown as its name`);
+    }
+  } finally {
+    await dispose();
+  }
+});

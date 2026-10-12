@@ -18,7 +18,7 @@ public enum OnboardingStep: Int, CaseIterable, Sendable {
 
   public var title: String {
     switch self {
-    case .name: return "What should Simeon call you?"
+    case .name: return "What should we call you?"
     case .faceID: return "Unlock Simeon with Face ID"
     case .notifications: return "Let Simeon tell you when work is done"
     }
@@ -38,7 +38,11 @@ public enum OnboardingStep: Int, CaseIterable, Sendable {
     }
   }
 
-  /** The steps a device shows: Face ID only where the phone has it, notifications only while the system has not asked yet. */
+  /** The notifications step's switch, in a card as the founder's reference has its own (12 October 2026). */
+  public static let notificationsSwitch = "Notifications"
+  public static let notificationsSwitchLine = "You can turn them off anytime in Settings."
+
+  /** The steps a device shows: Face ID only where the phone has it, notifications where the device shows them (the iPhone). */
   public static func steps(faceID: Bool, notifications: Bool) -> [OnboardingStep] {
     var steps: [OnboardingStep] = [.name]
     if faceID { steps.append(.faceID) }
@@ -49,7 +53,6 @@ public enum OnboardingStep: Int, CaseIterable, Sendable {
 
 public enum Onboarding {
   public static let nameLabel = "Name"
-  public static let nameNote = "Your agents use it in chat and on calls."
   public static let failed = "Simeon couldn’t finish setting up"
   public static let unreachable = "Can't reach your computer right now. Check your connection and try again."
   /** While the hand-off is still going once the first run is over (the list, before Simeon is there). */

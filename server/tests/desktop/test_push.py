@@ -288,6 +288,32 @@ class TestPush:
         assert kwargs["title"] == "Ada needs you"
         assert len(kwargs["body"]) == push_module.BODY_MAX_CHARS
         assert kwargs["body"].endswith("…")
+        assert kwargs["agent_name"] is None, (
+            "an engine from before 12 October 2026 sends no name"
+        )
+
+    async def test_a_card_never_reads_as_its_type_name(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        # 12 October 2026: a question card's push read "widget".
+        enqueue_job = mocker.patch("simeon.desktop.push.enqueue_job")
+        await _device(save_fixture, user)
+        access, _ = await _signed_in(client, session, user)
+        box = await _box_access(client, access)
+        response = await client.post(
+            PUSH,
+            json={**_push_body(body="widget"), "agent_name": "Chief of Staff"},
+            headers=_bearer(box),
+        )
+        assert response.status_code == 202, response.text
+        (_,), kwargs = enqueue_job.call_args
+        assert kwargs["body"] == "Has a question for you"
+        assert kwargs["agent_name"] == "Chief of Staff"
 
     async def test_the_mac_may_post_one_too(
         self,
@@ -669,6 +695,7 @@ class TestSendToApple:
             kind="agent-needs-input",
             title="Ada needs you",
             body="Which card should I use?",
+            agent_name="Ada",
         )
 
         publish.assert_not_called()
@@ -689,14 +716,18 @@ class TestSendToApple:
             first.headers["authorization"].split(" ", 1)[1]
         )
         assert header == {"alg": "ES256", "kid": "KEY123", "typ": "JWT"}
+        # The app's extension makes it a message from Ada, with her picture (`mutable-content`); her chat's pushes together.
         assert json.loads(first.content) == {
             "aps": {
                 "alert": {"title": "Ada needs you", "body": "Which card should I use?"},
                 "sound": "default",
                 "badge": 1,
+                "mutable-content": 1,
+                "thread-id": "agent-1",
             },
             "agentId": "agent-1",
             "kind": "agent-needs-input",
+            "agentName": "Ada",
         }
         assert [
             device.expo_push_token for device in await _live_devices(session, user)

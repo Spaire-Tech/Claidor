@@ -232,6 +232,8 @@ struct HomeView: View {
     .modifier(ComputerStates())
     .orgChart(isPresented: $showsOrgChart, isOn: $orgChartOn, openChat: open)
     .task(id: store.hasAgents) { openAtLaunch() }
+    // Each agent's picture where the notification extension finds it, as it changes (NotificationPictures).
+    .task(id: NotificationPictures.keys(store.agents)) { NotificationPictures.save(store.agents) }
     // A tapped notification opens that agent's chat (once the roster has it).
     .task(id: OpenRequest(agent: Notifications.shared.openAgent, ready: store.hasAgents)) {
       guard let agentId = Notifications.shared.openAgent, store.agent(agentId) != nil else { return }

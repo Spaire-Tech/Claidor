@@ -407,8 +407,8 @@ struct LogoShimmer: View {
 /**
  * The first run (the founder, 12 October 2026: "simple onboarding … asked
  * the necessary. no bloated screen", ChatGPT's): the person's name, Face
- * ID where the phone has it, then the notifications prompt, one screen
- * each. Simeon is made meanwhile, out of sight (`beginHandOff`); his chat
+ * ID where the phone has it, then notifications with their switch, one
+ * screen each. Simeon is made meanwhile, out of sight (`beginHandOff`); his chat
  * opens once the first run is over. Only a new account sees it
  * (SessionController.firstRun).
  */
@@ -420,7 +420,12 @@ struct OnboardingFlow: View {
   @State private var name = ""
   @State private var nameTouched = false
   @State private var enablingFaceID = false
+  @State private var notificationsOn = true
+  @State private var notificationsRefused = false
+  @State private var askingNotifications = false
   @FocusState private var nameFocused: Bool
+  @Environment(\.openURL) private var openURL
+  @Environment(\.scenePhase) private var scenePhase
 
   var body: some View {
     ZStack {
@@ -436,8 +441,10 @@ struct OnboardingFlow: View {
     .background(Ink.ground.ignoresSafeArea())
     .task {
       session.beginHandOff()
-      let notifications = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus == .notDetermined && Notifications.isOn
-      steps = OnboardingStep.steps(faceID: AppLock.available, notifications: notifications)
+      steps = OnboardingStep.steps(faceID: AppLock.available, notifications: true)
+      // The switch starts on, unless the phone's own Settings refused Simeon (turning it on then opens them).
+      notificationsRefused = await Notifications.refused()
+      notificationsOn = Notifications.isOn && !notificationsRefused
     }
   }
 
@@ -466,7 +473,7 @@ struct OnboardingFlow: View {
     .padding(.top, 72)
   }
 
-  /** "What should Simeon call you?": one field, the name from Apple or Google already in it; Continue under it. */
+  /** "What should we call you?": one field, the name from Apple or Google already in it; Continue under it. */
   private var nameScreen: some View {
     let typed = Onboarding.normalizedName(name)
     return VStack(spacing: 0) {
@@ -498,14 +505,8 @@ struct OnboardingFlow: View {
       .contentShape(.rect)
       .onTapGesture { nameFocused = true }
       .padding(.top, 40)
-      Text(Onboarding.nameNote)
-        .font(.system(size: 14))
-        .foregroundStyle(Ink.secondary)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.top, 12)
-        .padding(.horizontal, 4)
       continueButton(enabled: !typed.isEmpty, action: leaveName)
-        .padding(.top, 28)
+        .padding(.top, 24)
       Spacer()
     }
     .frame(maxWidth: 460)
@@ -555,7 +556,13 @@ struct OnboardingFlow: View {
     .padding(.horizontal, 24)
   }
 
-  /** "Let Simeon tell you when work is done": Apple's prompt comes over it at once; answered, the first run is over. */
+  /**
+   * "Let Simeon tell you when work is done", with a switch in a card (the
+   * founder, 12 October 2026: "the notification thing. toggle", as the
+   * reference's Data Sharing card has it), on to start with. Continue with
+   * it on brings Apple's prompt (when the phone has not asked yet) and
+   * registers this phone; off, Settings' Notifications is off too.
+   */
   private var notificationsScreen: some View {
     VStack(spacing: 0) {
       header(.notifications) {
@@ -566,15 +573,55 @@ struct OnboardingFlow: View {
           .background(Color.white, in: Circle())
           .accessibilityHidden(true)
       }
+      Toggle(isOn: notificationsSwitch) {
+        VStack(alignment: .leading, spacing: 6) {
+          Text(Onboarding.notificationsSwitch).font(.system(size: 17)).foregroundStyle(Ink.primary)
+          Text(Onboarding.notificationsSwitchLine).font(.system(size: 15)).foregroundStyle(Ink.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+      }
+      .tint(Ink.blue)
+      .padding(.horizontal, 20)
+      .padding(.vertical, 18)
+      .background(Ink.groupedRow, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+      .padding(.top, 40)
       Spacer()
+      continueButton(enabled: !askingNotifications) {
+        askingNotifications = true
+        Task {
+          UserDefaults.standard.set(notificationsOn, forKey: Notifications.key)
+          if notificationsOn { await session.askForNotificationsNow() }
+          askingNotifications = false
+          advance()
+        }
+      }
+      .padding(.bottom, 8)
     }
     .frame(maxWidth: 460)
     .padding(.horizontal, 24)
-    .task {
-      try? await Task.sleep(nanoseconds: 350_000_000)
-      await session.askForNotificationsNow()
-      advance()
+    // Back from the phone's Settings, where Simeon may have just been allowed: the switch on.
+    .onChange(of: scenePhase) { _, phase in
+      guard phase == .active else { return }
+      Task {
+        let refused = await Notifications.refused()
+        if notificationsRefused && !refused { notificationsOn = true }
+        notificationsRefused = refused
+      }
     }
+  }
+
+  /** On while the phone's Settings allow it; turned on after they refused, it opens them (as Settings' switch does). */
+  private var notificationsSwitch: Binding<Bool> {
+    Binding(
+      get: { notificationsOn },
+      set: { on in
+        if on && notificationsRefused {
+          if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+          return
+        }
+        notificationsOn = on
+      }
+    )
   }
 
   private func continueButton(enabled: Bool, action: @escaping () -> Void) -> some View {

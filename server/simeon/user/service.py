@@ -4,6 +4,7 @@ from uuid import UUID
 import stripe as stripe_lib
 import structlog
 from sqlalchemy import delete, func, update
+from sqlalchemy.orm.attributes import set_committed_value
 
 from simeon.exceptions import PolarError
 from simeon.integrations.stripe.service import stripe as stripe_service
@@ -317,9 +318,17 @@ class UserService:
         session: AsyncSession,
         user: User,
     ) -> None:
-        """Delete all OAuth accounts for a user."""
+        """Delete all OAuth accounts for a user.
+
+        The user's loaded `oauth_accounts` are emptied too (12 October 2026):
+        the bulk delete marks those rows deleted in the session, and saving
+        the user afterwards would take them back through its relationship
+        ("Instance ... has been deleted"), a 500 that rolled the whole
+        deletion back for every account that signed in with Apple or Google.
+        """
         stmt = delete(OAuthAccount).where(OAuthAccount.user_id == user.id)
         await session.execute(stmt)
+        set_committed_value(user, "oauth_accounts", [])
 
         log.info(
             "user.oauth_accounts_deleted",

@@ -167,6 +167,8 @@ final class SessionController {
     self.api = api
     // Signed in from here: the lock may close when the app comes back (AppLock.swift), never on this sign-in itself.
     AppLock.shared.markSignedIn()
+    // A push for the chat on screen is not shown (Notifications.presentation).
+    Notifications.shared.store = store
     firstRun = .checking
     // The last account seen on this phone, so its initials are there before the profile answers.
     if store.account == nil, let known = Self.rememberedAccount() { store.account = known; personName.value = known.name }
@@ -315,6 +317,7 @@ final class SessionController {
     Purchases.shared.stop()
     Notifications.shared.forget()
     FreeMonthAsk.forget()
+    NotificationPictures.forget()
     Self.remember(nil)
     api = nil
     askedForNotifications = false
@@ -503,6 +506,7 @@ final class SessionController {
     Purchases.shared.stop()
     await Notifications.shared.stop()
     FreeMonthAsk.forget()
+    NotificationPictures.forget()
     Self.remember(nil)
     self.api = nil
     askedForNotifications = false
@@ -518,6 +522,7 @@ final class SessionController {
     await Notifications.shared.stop()
     await api?.signOut()
     FreeMonthAsk.forget()
+    NotificationPictures.forget()
     Self.remember(nil)
     api = nil
     askedForNotifications = false

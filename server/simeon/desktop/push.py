@@ -20,7 +20,7 @@ Three routes, all under `/desktop`:
   in on it now.
 - `DELETE /desktop/push-devices` `{expo_push_token}`: the phone signs
   out. Soft deleted, like `NotificationRecipientService.delete`.
-- `POST /desktop/push` `{agent_id, kind, title, body}`: the box's host,
+- `POST /desktop/push` `{agent_id, agent_name, kind, title, body}`: the box's host,
   with the box's own credential (`get_desktop_or_box_session`). It calls
   blindly: a person with no phone gets `{"sent": 0}`. Otherwise the push
   is queued (`desktop.push.send`, `push_tasks.py`) and the answer is 202.
@@ -78,6 +78,30 @@ def clip(text: str, limit: int) -> str:
     return flat if len(flat) <= limit else f"{flat[: limit - 1].rstrip()}…"
 
 
+#: A card's type name as an engine from before 12 October 2026 sent it for
+#: the card's words (a question card's push read "widget"): a sentence
+#: instead. Engines since send what the card says
+#: (`session-projection.ts`, `cardPreviewText`).
+CARD_SENTENCES = {
+    "widget": "Has a question for you",
+    "secret-request": "Needs a secret from you",
+    "permission-request": "Needs your permission",
+    "local-tool-permission": "Needs your permission",
+    "auto-review-approval": "Needs your approval",
+    "connector": "Connect an app",
+    "connectors": "Connect tools",
+    "listener-connect": "Connect an app",
+    "email-draft": "Drafted an email",
+    "slack-draft": "Drafted a Slack message",
+    "cloud-agent": "Cloud agent",
+}
+
+
+def readable(body: str) -> str:
+    """The push's words, never a card's type name."""
+    return CARD_SENTENCES.get(body.strip(), body)
+
+
 class PushDeviceBody(BaseModel):
     """One phone: the Expo app's push token, or the native app's APNs token."""
 
@@ -125,6 +149,9 @@ class PushBody(BaseModel):
     kind: PushKind
     title: str = Field(max_length=20_000)
     body: str = Field(max_length=20_000)
+    #: The agent's own name (engines since 12 October 2026): the iPhone shows
+    #: the push as a message from the agent, with its picture.
+    agent_name: str | None = Field(default=None, max_length=200)
 
 
 # --- the devices --------------------------------------------------------------
@@ -257,7 +284,8 @@ async def push(
         agent_id=body.agent_id,
         kind=body.kind,
         title=clip(body.title, TITLE_MAX_CHARS) or "Simeon",
-        body=clip(body.body, BODY_MAX_CHARS),
+        body=clip(readable(body.body), BODY_MAX_CHARS),
+        agent_name=clip(body.agent_name or "", TITLE_MAX_CHARS) or None,
     )
     log.info(
         "desktop.push.queued",

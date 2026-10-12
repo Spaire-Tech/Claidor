@@ -20,8 +20,29 @@ final class Notifications {
 
   /** The agent a tapped notification asked for; the list opens its chat and clears this. */
   var openAgent: String?
+  /** The signed-in app's store: which chat is on screen (`openChat`). */
+  @ObservationIgnored weak var store: AppStore?
   @ObservationIgnored private var api: SimeonAPI?
   @ObservationIgnored private var token: String?
+
+  /**
+   * A notification while the app is in front (the founder, 12 October 2026:
+   * a push for the chat being read "makes no sense"): nothing for the chat on
+   * screen, whose message is already there; a banner for another chat.
+   */
+  func presentation(for agentId: String?) -> UNNotificationPresentationOptions {
+    if let agentId, let store, store.isForeground, agentId == store.openChat { return [] }
+    return [.banner, .list, .sound]
+  }
+
+  /** A chat opened: its notifications leave the Notification Centre (they have been read). */
+  func clearDelivered(for agentId: String) async {
+    let center = UNUserNotificationCenter.current()
+    let ids = await center.deliveredNotifications()
+      .filter { $0.request.content.userInfo["agentId"] as? String == agentId }
+      .map(\.request.identifier)
+    if !ids.isEmpty { center.removeDeliveredNotifications(withIdentifiers: ids) }
+  }
 
   /**
    * A build run from Xcode is served by Apple's sandbox: its signing profile
@@ -96,6 +117,53 @@ final class Notifications {
 }
 
 #if os(iOS)
+/**
+ * Each agent's picture for its pushes (12 October 2026): the notification
+ * extension (ios/SimeonNotifications) shows a push as a message from its
+ * agent, with the picture the app draws for it, read from the App Group
+ * (PictureShelf). Written when an agent's picture changes, 180 points
+ * square; gone at sign-out.
+ */
+@MainActor
+enum NotificationPictures {
+  /** What was written this launch, by agent: the picture's key. */
+  private static var saved: [String: String] = [:]
+
+  /** The pictures' keys, for the list to notice when one changes. */
+  static func keys(_ agents: [Agent]) -> String {
+    agents.map { "\($0.id)=\(key(of: $0) ?? "")" }.joined(separator: ",")
+  }
+
+  private static func key(of agent: Agent) -> String? {
+    agent.isGroup ? agent.avatarVersion ?? agent.avatarDataURL.map { "g\($0.utf8.count)" } : agent.picture?.key
+  }
+
+  static func save(_ agents: [Agent]) {
+    for agent in agents {
+      guard let key = key(of: agent), saved[agent.id] != key, let image = AgentPictures.image(of: agent) else { continue }
+      saved[agent.id] = key
+      let side: CGFloat = 180
+      let format = UIGraphicsImageRendererFormat()
+      format.scale = 1
+      let square = UIGraphicsImageRenderer(size: CGSize(width: side, height: side), format: format).image { _ in
+        // The whole picture, filling the square (iOS rounds it).
+        let scale = max(side / max(image.size.width, 1), side / max(image.size.height, 1))
+        let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+        image.draw(in: CGRect(x: (side - size.width) / 2, y: (side - size.height) / 2, width: size.width, height: size.height))
+      }
+      guard let data = square.pngData() else { continue }
+      let id = agent.id
+      Task.detached(priority: .utility) { PictureShelf.write(data, for: id) }
+    }
+  }
+
+  /** Signed out: the next account's agents are not shown with these. */
+  static func forget() {
+    saved = [:]
+    Task.detached(priority: .utility) { PictureShelf.clear() }
+  }
+}
+
 /** The app's delegate, for what only UIKit hears: Apple's token, and a notification shown or tapped. */
 final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
   func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
@@ -109,9 +177,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
 
   func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {}
 
-  /** In the app: still shown, as a banner. */
+  /** In the app: a banner, except for the chat on screen (`Notifications.presentation`). */
   func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
-    [.banner, .list, .sound]
+    let agentId = notification.request.content.userInfo["agentId"] as? String
+    return await MainActor.run { Notifications.shared.presentation(for: agentId) }
   }
 
   /** A tap: open that agent's chat. */

@@ -36,7 +36,12 @@ PUSH_TTL_SECONDS = 60 * 60 * 24
 
 @actor(actor_name="desktop.push.send", priority=TaskPriority.HIGH, max_retries=0)
 async def desktop_push_send(
-    user_id: str, agent_id: str, kind: str, title: str, body: str
+    user_id: str,
+    agent_id: str,
+    kind: str,
+    title: str,
+    body: str,
+    agent_name: str | None = None,
 ) -> None:
     async with AsyncSessionMaker() as session:
         repository = NotificationRecipientRepository.from_session(session)
@@ -53,6 +58,7 @@ async def desktop_push_send(
                 kind=kind,
                 title=title,
                 body=body,
+                agent_name=agent_name,
             )
         devices = [
             device for device in everyone if is_expo_push_token(device.expo_push_token)
@@ -136,6 +142,7 @@ async def _send_to_apple(
     kind: str,
     title: str,
     body: str,
+    agent_name: str | None = None,
 ) -> None:
     """The native app's phones, one request each over APNs; a phone Apple calls gone is removed."""
     if not apns.configured():
@@ -143,7 +150,9 @@ async def _send_to_apple(
             "desktop.push.apns_not_configured", user_id=user_id, devices=len(devices)
         )
         return
-    message = apns.payload(title=title, body=body, agent_id=agent_id, kind=kind)
+    message = apns.payload(
+        title=title, body=body, agent_id=agent_id, kind=kind, agent_name=agent_name
+    )
     sent = 0
     async with apns.client() as client:
         for device in devices:

@@ -35,7 +35,8 @@ public enum AccountMenu {
   public static let deleteAccount = "Delete Account"
   public static let deleteTitle = "Delete your account?"
   public static let deleteLine = "Your agents, their computers and files, your chats, memory and routines will be deleted, your apps disconnected and your subscription ended. This can’t be undone."
-  public static let deleteFooter = "Deletes your agents and their computers, your chats, memory and routines, disconnects your apps and ends your subscription."
+  /** Under Delete Account, as short as the founder's reference has it (12 October 2026); the question that follows says what goes. */
+  public static let deleteFooter = "Permanently deletes your Simeon account. This can’t be undone."
   public static let deleted = "Your account was deleted."
   /** Before and after deleting an account whose plan Apple bills: Apple keeps charging until the person cancels there. */
   public static let deleteAppleLine = "Your subscription through Apple isn’t cancelled by this. Cancel it in Settings › your name › Subscriptions."

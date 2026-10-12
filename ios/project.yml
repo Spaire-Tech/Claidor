@@ -14,8 +14,10 @@ settings:
     # Raised for each upload to App Store Connect (build 1 was refused at
     # processing, 12 October 2026: no camera description, ITMS-90683;
     # build 3: the agents' faces; build 4: the free month, Google in the
-    # app, the short first run, Face ID, the simpler plans).
-    CURRENT_PROJECT_VERSION: "4"
+    # app, the short first run, Face ID, the simpler plans; build 5: pushes
+    # as messages from the agents, the notifications switch, the account
+    # page with Delete Account).
+    CURRENT_PROJECT_VERSION: "5"
     CODE_SIGN_STYLE: Automatic
     # The Apple developer team Simeon publishes from: set it here, or in
     # Xcode under Signing & Capabilities, once (ios/README.md).
@@ -49,10 +51,15 @@ targets:
       # and maths (Rendering.swift; scripts/make-renderers.sh fetches them).
       - path: Simeon/Rendering
         buildPhase: resources
+      # The agents' pictures, shared with the notification extension.
+      - path: SimeonNotifications/PictureShelf.swift
     dependencies:
       - package: SimeonCore
       - package: ElevenLabs
       - package: LiveKit
+      # Each push shown as a message from its agent, with the agent's picture.
+      - target: SimeonNotifications
+        embed: true
     info:
       path: Simeon/Info.plist
       properties:
@@ -82,6 +89,9 @@ targets:
         NSFaceIDUsageDescription: Simeon uses Face ID to unlock the app, so only you can see your agents.
         # A call keeps going with the screen locked.
         UIBackgroundModes: [audio]
+        # Pushes shown as messages from the agents (SimeonNotifications):
+        # Apple's communication notifications take this intent.
+        NSUserActivityTypes: [INSendMessageIntent]
         # Loopback and the local network over http, for a build pointed at
         # the stand-in server on a Mac (`SIMEON_API`, ios/README.md).
         NSAppTransportSecurity:
@@ -97,8 +107,36 @@ targets:
         ENABLE_PREVIEWS: YES
         # Push notifications (Notifications.swift). Xcode's automatic
         # signing switches the App ID's Push capability on from this, and an
-        # archive for TestFlight signs it as `production` itself.
+        # archive for TestFlight signs it as `production` itself. Also the
+        # Communication Notifications capability and the App Group the
+        # notification extension reads the agents' pictures from.
         CODE_SIGN_ENTITLEMENTS: Simeon/Simeon.entitlements
+  # The notification extension (12 October 2026): every push as a message
+  # from the agent who sent it, its picture beside it and the app's icon in
+  # the corner (NotificationService.swift). Pictures come from the App Group
+  # the app writes them to (PictureShelf.swift).
+  SimeonNotifications:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: SimeonNotifications
+        excludes: ["*.entitlements"]
+    info:
+      path: SimeonNotifications/Info.plist
+      properties:
+        CFBundleDisplayName: Simeon Notifications
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.usernotifications.service
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).NotificationService
+          NSExtensionAttributes:
+            IntentsSupported: [INSendMessageIntent]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.simeonlabs.simeon.ios.notifications
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_ENTITLEMENTS: SimeonNotifications/SimeonNotifications.entitlements
 schemes:
   Simeon:
     build:

@@ -181,6 +181,8 @@ struct ChatView: View {
         channelsOn = await store.channelsAvailable(agentId)
       }
       .task {
+        // Its notifications are read with it.
+        Task { await Notifications.shared.clearDelivered(for: agentId) }
         await store.open(agentId)
         guard !openedAsAsked, let agent = store.agent(agentId) else { return }
         openedAsAsked = true

@@ -161,7 +161,7 @@ the login and poll URLs come from the first two.
 ### Deleting an account
 
 Apple asks every app that makes accounts to let people delete theirs from
-inside it. Settings › Delete Account on the iPhone (under Sign Out) and in the
+inside it. Settings › your account › Delete Account on the iPhone and in the
 Swift Mac app (Settings › General › Account) asks first, then calls
 `DELETE /desktop/api/account` (`server/simeon/desktop/account_deletion.py`).
 The Electron app and the web app have no button yet. In order:
@@ -193,6 +193,12 @@ When it misbehaves:
   transcript or a skill archive the provider would not delete. The account is
   gone; finish those by hand at the provider.
 - `desktop.account.deleted`: done, with what was removed.
+- Until 12 October 2026 every account with an Apple or Google sign-in got a
+  `500` at step 5 (`soft_delete_user` saved the user after removing its
+  sign-in rows, and the session refused the removed rows; the log said
+  `Instance '<OAuthAccount …>' has been deleted`). The rows were rolled back
+  after steps 1 to 3 had happened, so such an account lost its computer and
+  apps but stayed. Deleting it again now finishes it.
 
 **Not yet verified:** a deletion from the packaged iPhone or Mac app against
 `api.simeonlabs.com`.

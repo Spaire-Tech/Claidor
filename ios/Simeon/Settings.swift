@@ -22,9 +22,6 @@ struct SettingsSheet: View {
   @State private var settings: JSON?
   @State private var showsApps = false
   @State private var askingSignOut = false
-  @State private var askingDelete = false
-  @State private var deleting = false
-  @State private var deleteProblem: String?
 
   var body: some View {
     NavigationStack {
@@ -85,25 +82,8 @@ struct SettingsSheet: View {
         }
         .listRowBackground(Ink.groupedRow)
         Section {
-          // Asked first, as on the Mac (`AccountMenu.signOut…`).
+          // Asked first, as on the Mac (`AccountMenu.signOut…`). Delete Account is on the Account page (AccountPage).
           Button("Sign Out", role: .destructive) { askingSignOut = true }
-        }
-        .listRowBackground(Ink.groupedRow)
-        Section {
-          // Apple asks every app that makes accounts to delete them from inside the app
-          // (server/simeon/desktop/account_deletion.py does the deleting; simeonlabs.com/privacy says what goes).
-          Button(role: .destructive) { askingDelete = true } label: {
-            HStack {
-              Text(AccountMenu.deleteAccount)
-              if deleting {
-                Spacer()
-                ProgressView()
-              }
-            }
-          }
-          .disabled(deleting)
-        } footer: {
-          Text(AccountMenu.deleteFooter)
         }
         .listRowBackground(Ink.groupedRow)
         Section {
@@ -131,24 +111,6 @@ struct SettingsSheet: View {
         Button(AccountMenu.signOutConfirm, role: .destructive) { Task { await session.signOut() } }
       } message: {
         Text(AccountMenu.signOutLine)
-      }
-      .alert(AccountMenu.deleteTitle, isPresented: $askingDelete) {
-        Button(AccountMenu.signOutCancel, role: .cancel) {}
-        Button(AccountMenu.deleteAccount, role: .destructive) {
-          Task {
-            deleting = true
-            deleteProblem = await session.deleteAccount()
-            deleting = false
-          }
-        }
-      } message: {
-        // A plan bought through Apple is not cancelled by deleting the account: Apple keeps charging until it is cancelled there.
-        Text(store.usage.summary?.billedByApple == true ? "\(AccountMenu.deleteLine)\n\n\(AccountMenu.deleteAppleLine)" : AccountMenu.deleteLine)
-      }
-      .alert(AccountMenu.deleteRefused, isPresented: Binding(get: { deleteProblem != nil }, set: { if !$0 { deleteProblem = nil } })) {
-        Button("OK", role: .cancel) {}
-      } message: {
-        Text(deleteProblem ?? "")
       }
       .task {
         async let host = store.hostSettings()
@@ -359,10 +321,20 @@ struct AgentSettingsSection: View {
   }
 }
 
-/** The account: the person's name and email, the email copied with a tap. */
+/**
+ * The account: the person's name and email, the email copied with a tap;
+ * then Delete Account with one line under it, as the founder's reference
+ * has it (12 October 2026). Apple asks every app that makes accounts to
+ * delete them from inside the app (server/simeon/desktop/account_deletion.py
+ * does the deleting; the question before it says what goes).
+ */
 struct AccountPage: View {
   @Environment(SimeonCore.AppStore.self) private var store
+  @Environment(SessionController.self) private var session
   @State private var copied = false
+  @State private var askingDelete = false
+  @State private var deleting = false
+  @State private var deleteProblem: String?
 
   var body: some View {
     Form {
@@ -390,10 +362,45 @@ struct AccountPage: View {
         .accessibilityHint("Copies the email")
       }
       .listRowBackground(Ink.groupedRow)
+      Section {
+        Button(role: .destructive) { askingDelete = true } label: {
+          HStack(spacing: 10) {
+            Image(systemName: "trash")
+            Text(AccountMenu.deleteAccount)
+            if deleting {
+              Spacer()
+              ProgressView()
+            }
+          }
+          .foregroundStyle(Ink.danger)
+        }
+        .disabled(deleting)
+      } footer: {
+        Text(AccountMenu.deleteFooter)
+      }
+      .listRowBackground(Ink.groupedRow)
     }
     .groupedGround()
     .navigationTitle("Account")
     .inlineBarTitle()
+    .alert(AccountMenu.deleteTitle, isPresented: $askingDelete) {
+      Button(AccountMenu.signOutCancel, role: .cancel) {}
+      Button(AccountMenu.deleteAccount, role: .destructive) {
+        Task {
+          deleting = true
+          deleteProblem = await session.deleteAccount()
+          deleting = false
+        }
+      }
+    } message: {
+      // A plan bought through Apple is not cancelled by deleting the account: Apple keeps charging until it is cancelled there.
+      Text(store.usage.summary?.billedByApple == true ? "\(AccountMenu.deleteLine)\n\n\(AccountMenu.deleteAppleLine)" : AccountMenu.deleteLine)
+    }
+    .alert(AccountMenu.deleteRefused, isPresented: Binding(get: { deleteProblem != nil }, set: { if !$0 { deleteProblem = nil } })) {
+      Button("OK", role: .cancel) {}
+    } message: {
+      Text(deleteProblem ?? "")
+    }
   }
 }
 

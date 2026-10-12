@@ -157,6 +157,19 @@ profile, not from the configuration.
   sends nothing to this app. The app's Push capability comes from
   `Simeon/Simeon.entitlements`; signing with a personal (free) team
   refuses it, so sign with the paid team Simeon publishes from.
+  Since 12 October 2026 (build 5) each push shows as a message from the
+  agent who sent it, its picture beside it and the app's icon small in the
+  corner: the `SimeonNotifications` extension (Apple's communication
+  notifications, `SimeonNotifications/NotificationService.swift`) reads the
+  picture the app saved for that agent in the App Group
+  `group.com.simeonlabs.simeon` (`PictureShelf.swift`, written by
+  `NotificationPictures` in `Notifications.swift`). The app's entitlements
+  carry the Communication Notifications capability and the App Group, the
+  extension's the App Group (`com.simeonlabs.simeon.ios.notifications`).
+  Xcode's automatic signing registers both the first time it archives; if
+  it says the profile lacks an entitlement, press Try Again under Signing
+  & Capabilities. A push for the chat on screen is not shown, and opening
+  a chat clears its notifications.
 - **The computer**: each agent's own screen, live, through noVNC's client
   (bundled in `Simeon/Computer/`, MPL 2.0) on the box's WebSocket.
 - **Sign-in and the first run** (12 October 2026): Apple's own sheet and
@@ -164,8 +177,9 @@ profile, not from the configuration.
   pair by the server, no web page between; then the free month is asked for
   with the phone's DeviceCheck token (`FreeMonthAsk.swift`,
   docs/services-billing.md section 10); then three screens, one question
-  each: the name, Face ID (the lock, `AppLock.swift`), the notifications
-  prompt. Simeon is made out of sight meanwhile; his chat opens at the end.
+  each: the name ("What should we call you?"), Face ID (the lock,
+  `AppLock.swift`), notifications with their switch (on, Continue brings
+  Apple's prompt; off, Settings' Notifications is off). Simeon is made out of sight meanwhile; his chat opens at the end.
   Google needs `SIMEON_GOOGLE_IOS_CLIENT_ID` on the server (an OAuth client
   of type iOS); until then the app uses the web sign-in.
 - **Plans** are bought in the app with Apple's in-app purchase (StoreKit 2,
@@ -181,7 +195,7 @@ profile, not from the configuration.
 
 ## What has and has not been checked
 
-- `SimeonCore`'s tests (342 on 12 October 2026) pass on Linux: the chat's rows for every card,
+- `SimeonCore`'s tests (344 on 12 October 2026) pass on Linux: the chat's rows for every card,
   the call protocol against a fake voice, sign-in and tokens, the agents'
   faces (the catalogue's bytes and versions, the choice by gender, least
   used, the same on every device, Shuffle and Reset; `AgentFaceTests`),

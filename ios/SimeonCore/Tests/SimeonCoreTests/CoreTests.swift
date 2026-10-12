@@ -1156,6 +1156,16 @@ final class OnboardingTests: XCTestCase {
     XCTAssertEqual(settings["hasSeenOnboarding"]?.bool, true, "and the host is told, as the Mac tells it")
   }
 
+  func testTheAccountReadBeforeTheAgentsIsKept() async {
+    // The profile answers while the iPhone asks about the free month, before the agents are attached (12 October 2026: "?" in Settings).
+    let store = AppStore()
+    store.account = Account(name: "Bass Fall", email: "bass@simeonlabs.com")
+    await store.attach(DemoBackend(seed: .empty, pace: 0.01, call: nil))
+    XCTAssertEqual(store.account?.name, "Bass Fall")
+    store.detach()
+    XCTAssertNil(store.account, "signed out: gone")
+  }
+
   func testTheHandOffMakesSimeonOnce() async throws {
     let backend = DemoBackend(seed: .empty, pace: 0.01, call: nil)
     let store = AppStore()
@@ -1193,7 +1203,7 @@ final class OnboardingTests: XCTestCase {
 
   func testTheStepsInOrder() {
     XCTAssertEqual(OnboardingStep.allCases.map(\.title), [
-      "What should Simeon call you?", "Unlock Simeon with Face ID", "Let Simeon tell you when work is done",
+      "What should we call you?", "Unlock Simeon with Face ID", "Let Simeon tell you when work is done",
     ])
     XCTAssertEqual(Onboarding.handOffLine(ready: false), "Setting up your Simeon…")
     XCTAssertEqual(Onboarding.handOffLine(ready: true), "Getting your team ready…")

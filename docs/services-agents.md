@@ -1003,9 +1003,13 @@ notifications are unchanged.
   supervisor starts the host (`SAND_HOST_IN_BOX=1`, `box/bin/simeon-supervisor.mjs`): in the
   person's cloud computer, and in the local Docker computer for internal testing, which pushes
   to the tester's own phone.
-- For each notification it posts `POST /desktop/push` `{agent_id, kind, title, body}` with the
-  box's own credential (`get_desktop_or_box_session`). `kind` is `agent-done` or
-  `agent-needs-input`; title and body are `buildNotificationContent`'s. Fire and forget with a
+- For each notification it posts `POST /desktop/push` `{agent_id, agent_name, kind, title,
+  body}` with the box's own credential (`get_desktop_or_box_session`). `kind` is `agent-done`
+  or `agent-needs-input`; title and body are `buildNotificationContent`'s. A card's body is what
+  the card says (a question card's question, `cardPreviewText` in
+  `host/extensions/session/session-projection.ts`); until 12 October 2026 it was the card's type
+  name ("widget"), and the server still turns a bare type name into a sentence
+  (`push.py`, `CARD_SENTENCES`) for engines not yet updated. Fire and forget with a
   10-second deadline: a turn never waits on it. The same agent's same news at most once in 30
   seconds.
 - The server (`server/simeon/desktop/push.py`) answers `{"sent": 0}` when the person has no
@@ -1018,6 +1022,11 @@ notifications are unchanged.
   `agent-needs-input` and Expo's default (immediate on iOS) for `agent-done`, kept by Expo for
   a day while the phone is off. Nothing is retried. A phone whose ticket says
   `DeviceNotRegistered` is removed.
+- The native iPhone app's pushes go straight to Apple (`apns.py`) with `mutable-content` and
+  `thread-id` (the agent), `agentId`, `kind` and `agentName`: its notification extension
+  (`ios/SimeonNotifications`, 12 October 2026) shows each one as a message from the agent, with
+  the agent's picture and the app's icon in the corner. The app shows no banner for the chat
+  on screen, and opening a chat clears its notifications (`ios/Simeon/Notifications.swift`).
 - The phone registers itself after sign-in: `POST /desktop/push-devices`
   `{"expo_push_token": "ExponentPushToken[…]", "platform": "ios"}` (`ExpoPushToken[…]` is taken
   too; anything else is 422), with the desktop token the app's sign-in gives (`/auth/poll`,

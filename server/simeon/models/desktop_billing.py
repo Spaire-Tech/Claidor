@@ -241,10 +241,11 @@ class DesktopTrialRedemption(RecordModel):
 class DesktopFreeTrial(RecordModel):
     """The free month: 30 days and the trial's credits, started from the
     iPhone app with no card (12 October 2026). One row per person, ever.
-    The row outlives a deleted account with only a hash of the e-mail, so
-    deleting the account and signing up again with the same address does
-    not start a second one; Apple's DeviceCheck stops a second one on the
-    same iPhone (`simeon.plans.free_month`)."""
+    The row outlives a deleted account (whose user row stays, anonymised:
+    `soft_delete_user`) and carries a hash of the e-mail, not the e-mail,
+    so deleting the account and signing up again with the same address
+    does not start a second one; Apple's DeviceCheck stops a second one on
+    the same iPhone (`simeon.plans.free_month`)."""
 
     __tablename__ = "desktop_free_trials"
 

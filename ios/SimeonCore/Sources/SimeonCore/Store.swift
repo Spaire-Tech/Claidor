@@ -332,7 +332,11 @@ public final class AppStore {
   public func attach(_ backend: AgentBackend) async {
     // The same computer again (Reload) keeps a call that is on, as the Electron app's reload does; another one ends it.
     let same = self.backend === backend
+    // The account is this sign-in's, often read before the agents are attached (the profile is asked first, and the iPhone
+    // asks about the free month before attaching): kept, or Settings shows "?" until the next launch (12 October 2026).
+    let signedIn = account
     detach(endingCall: !same)
+    account = signedIn
     self.backend = backend
     isLoading = true
     defer { isLoading = false }

@@ -40,12 +40,17 @@ export function isSandPhonePushEnabled(env: NodeJS.ProcessEnv = process.env): bo
   return env.SAND_HOST_IN_BOX === "1";
 }
 
-/** The body of `POST /desktop/push`, as the server reads it. */
-export interface MobilePush { readonly agent_id: string; readonly kind: NotificationTransition["kind"]; readonly title: string; readonly body: string; }
+/**
+ * The body of `POST /desktop/push`, as the server reads it. `agent_name` is
+ * the agent's own name (12 October 2026): the iPhone shows a notification as
+ * a message from the agent, with its picture, and the title alone says
+ * "X needs you".
+ */
+export interface MobilePush { readonly agent_id: string; readonly agent_name: string; readonly kind: NotificationTransition["kind"]; readonly title: string; readonly body: string; }
 
 export function mobilePushFor(transition: NotificationTransition): MobilePush {
   const { title, body } = buildNotificationContent(transition);
-  return { agent_id: transition.agentId, kind: transition.kind, title, body };
+  return { agent_id: transition.agentId, agent_name: transition.agentName.trim(), kind: transition.kind, title, body };
 }
 
 function describe(error: unknown): string {

@@ -87,8 +87,8 @@ test("each transition is one POST to /desktop/push with the Mac's words, the age
 
       assert.equal(calls.length, 2);
       assert.deepEqual(calls.map((call) => call.body), [
-        { agent_id: "a1", kind: "agent-done", title: "Ada", body: "Booked the 9:40 to Lisbon." },
-        { agent_id: "b2", kind: "agent-needs-input", title: "Bo needs you", body: "Which card should I use?" }
+        { agent_id: "a1", agent_name: "Ada", kind: "agent-done", title: "Ada", body: "Booked the 9:40 to Lisbon." },
+        { agent_id: "b2", agent_name: "Bo", kind: "agent-needs-input", title: "Bo needs you", body: "Which card should I use?" }
       ]);
       for (const call of calls) {
         assert.equal(call.url, "https://api.simeonlabs.test/desktop/push");
@@ -151,7 +151,7 @@ test("an upsert before the baseline waits for it", async () => {
   notifier.seedBaseline([agent({ isRunning: true })]);
   notifier.handleAgentUpsertedEvent({ agent: agent({ lastMessageId: "m1", lastMessagePreview: "Done." }) });
   await settle();
-  assert.deepEqual(sent, [{ agent_id: "a1", kind: "agent-done", title: "Ada", body: "Done." }]);
+  assert.deepEqual(sent, [{ agent_id: "a1", agent_name: "Ada", kind: "agent-done", title: "Ada", body: "Done." }]);
 });
 
 test("the same agent's same news at most once in 30 seconds", async () => {

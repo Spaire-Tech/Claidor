@@ -90,8 +90,8 @@ struct FirstRunScreen: View {
 }
 
 /**
- * "What should Simeon call you?": the title (28), one field (300 × 38,
- * corners 10, the words centred at 16) with the note under it, and
+ * "What should we call you?": the title (28), one field (300 × 38,
+ * corners 10, the words centred at 16), and
  * Continue (288 × 36). The field takes the keys after 0.45 s and offers the
  * name the person chose or Google's first name until they type. Return is
  * Continue; it stays dim until there is a name.
@@ -119,10 +119,6 @@ private struct NameScreen: View {
         .accessibilityAddTraits(.isHeader)
       field
         .padding(.top, 36)
-      Text(Onboarding.nameNote)
-        .font(.system(size: 13))
-        .foregroundStyle(look.systemSecondary)
-        .padding(.top, 12)
       FlowButton(label: "Continue", look: look, action: { if ready { submit() } })
         .opacity(ready ? 1 : 0.45)
         .padding(.top, 32)
@@ -240,8 +236,6 @@ extension Look {
   var flowNext: Color { dark ? Color(hex: 0xfafafa) : Color(hex: 0x070707) }
   var flowNextHover: Color { dark ? Color(hex: 0xd5d5d5) : Color(hex: 0x2f2f2f) }
   var flowNextLabel: Color { dark ? Color(hex: 0x141414) : Color(hex: 0xfcfcfc) }
-  /** The system's secondary grey (`rgba(60,60,67,.6)`, `rgba(235,235,245,.6)` on dark): the name's note. */
-  var systemSecondary: Color { dark ? Color(red: 235 / 255, green: 235 / 255, blue: 245 / 255).opacity(0.6) : Color(red: 60 / 255, green: 60 / 255, blue: 67 / 255).opacity(0.6) }
   /** The name field: white (`#1c1c1e` on dark), a faint edge, blue with a ring when it has the keys. */
   var nameField: Color { dark ? Color(hex: 0x1c1c1e) : .white }
   var nameEdge: Color { dark ? Color(red: 235 / 255, green: 235 / 255, blue: 245 / 255).opacity(0.16) : Color(red: 60 / 255, green: 60 / 255, blue: 67 / 255).opacity(0.16) }

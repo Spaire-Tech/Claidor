@@ -21,9 +21,11 @@ from simeon.models import (
     DesktopSession,
     DesktopSubscription,
     DesktopVoiceCall,
+    OAuthAccount,
     SandBox,
     User,
 )
+from simeon.models.user import OAuthPlatform
 from simeon.postgres import AsyncSession
 from simeon.sand.box_hosts import BoxHostError
 from simeon.sand.box_service import BoxBrokerService
@@ -99,6 +101,41 @@ class TestDeleteAccount:
             DELETE, headers={"Authorization": f"Bearer {access}"}
         )
         assert again.status_code == 401
+
+    async def test_an_account_signed_in_with_google_or_apple_is_deleted(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        # 12 October 2026: every iPhone account has a sign-in row, and deleting one answered 500 (the user, saved after
+        # its sign-in rows were removed, took the removed rows back with it); the database kept everything.
+        session.add(
+            OAuthAccount(
+                platform=OAuthPlatform.google,
+                account_id="google-sub-1",
+                account_email=user.email,
+                access_token="token",
+                user_id=user.id,
+            )
+        )
+        await session.commit()
+        access, _ = await _signed_in(client, session, user)
+        # As in production: the request loads the user and its sign-in rows afresh.
+        session.expunge_all()
+        mocker.patch.object(voice_module, "client", return_value=FakeVoice())
+
+        response = await client.delete(
+            DELETE, headers={"Authorization": f"Bearer {access}"}
+        )
+
+        assert response.status_code == 200, response.text
+        session.expire_all()
+        assert await _count(session, OAuthAccount, user) == 0
+        refreshed = await session.get(User, user.id)
+        assert refreshed is not None
+        assert refreshed.deleted_at is not None
 
     async def test_a_live_subscription_ends_first(
         self,
