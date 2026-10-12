@@ -390,7 +390,9 @@ changed price needs no server change.
    (`server/simeon/plans/apple_roots/AppleRootCA-G3.cer`), for the bundle
    id `com.simeonlabs.simeon.ios`, in production and then the sandbox; it
    refuses a purchase tagged with another account or already held by one
-   (409), copies the subscription into `desktop_app_store_subscriptions`
+   (409), unless that account was deleted: then the subscription moves to
+   the account sending it (12 October 2026; the same Apple ID signing up
+   again keeps its plan), copies the subscription into `desktop_app_store_subscriptions`
    (one row per original transaction id), and answers the plan and the
    quota. The app then finishes the transaction. One it could not deliver
    comes back from StoreKit at the next launch and is sent again.
@@ -470,6 +472,10 @@ The migration `desktop_app_store_1012` adds `desktop_app_store_subscriptions`.
 - **`plans.app_store.not_yours`**: the app sent a purchase that belongs to
   another Simeon account (the person is told to sign in with that one or
   use another Apple ID).
+- **`plans.app_store.moved_from_deleted`**: a subscription whose account
+  was deleted moved to the account that sent it (`from_user_ids`). Until
+  12 October 2026 this was refused, and a person who deleted their account
+  and signed up again was held on the plans screen.
 - **`plans.app_store.nobody`**: a notification for a subscription no
   account matches (bought before the account's id was attached, or with
   another app's bundle). **`plans.app_store.not_ours`**: a product id that

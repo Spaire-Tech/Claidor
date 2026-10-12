@@ -353,15 +353,32 @@ async def apply(
 
     owner: User | None
     if user is not None:
-        if (token is not None and token != user.id) or (
-            row is not None and row.user_id != user.id
-        ):
+        others = {
+            other
+            for other in (token, row.user_id if row is not None else None)
+            if other is not None and other != user.id
+        }
+        if others and not await _all_deleted(session, others):
             log.warning(
                 "plans.app_store.not_yours",
                 user_id=str(user.id),
                 original_transaction_id=original,
             )
             raise NotYourPurchase()
+        if others:
+            # The account that bought it was deleted (12 October 2026: the
+            # founder deleted theirs, signed in again with the same Apple ID
+            # and was refused their own subscription): it moves here. Apple
+            # keeps the old account's token on every renewal, so the row is
+            # what says whose it is from now on.
+            log.info(
+                "plans.app_store.moved_from_deleted",
+                user_id=str(user.id),
+                from_user_ids=sorted(str(other) for other in others),
+                original_transaction_id=original,
+            )
+            if row is not None:
+                row.user_id = user.id
         owner = user
     else:
         users = UserRepository.from_session(session)
@@ -413,6 +430,18 @@ async def apply(
         original_transaction_id=original,
     )
     return row
+
+
+async def _all_deleted(session: AsyncSession, user_ids: set[UUID]) -> bool:
+    """Every one of these accounts was deleted (a soft deletion keeps the
+    row). An account that is not on this server is not: its purchase stays
+    refused."""
+    users = UserRepository.from_session(session)
+    for user_id in user_ids:
+        other = await users.get_by_id(user_id, include_deleted=True)
+        if other is None or other.deleted_at is None:
+            return False
+    return True
 
 
 async def _record_trial(

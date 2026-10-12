@@ -663,6 +663,7 @@ struct AccessCover: View {
   @Environment(\.openURL) private var openURL
   @Environment(\.scenePhase) private var scenePhase
   @State private var showsPlans = false
+  @State private var askingSignOut = false
 
   var body: some View {
     let words = PhoneUpgrade.cover(access: store.access, usage: store.usage.summary)
@@ -698,14 +699,28 @@ struct AccessCover: View {
         .buttonStyle(.glassProminent)
         .tint(Ink.primary)
         .frame(maxWidth: 420)
-        .padding(.bottom, 28)
       }
+      // The way out (12 October 2026: the founder was held on this screen with no way to another account): Sign Out,
+      // asked first as everywhere.
+      Button { askingSignOut = true } label: {
+        Text("Sign Out").font(.system(size: 16, weight: .medium)).frame(height: 44).contentShape(.rect)
+      }
+      .buttonStyle(.plain)
+      .foregroundStyle(Ink.secondary)
+      .padding(.top, 8)
+      .padding(.bottom, 20)
     }
     .padding(.horizontal, 24)
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     // All of it takes the touch: nothing under it can be reached.
     .contentShape(.rect)
     .background(Ink.ground)
+    .alert(AccountMenu.signOutTitle, isPresented: $askingSignOut) {
+      Button(AccountMenu.signOutCancel, role: .cancel) {}
+      Button(AccountMenu.signOutConfirm, role: .destructive) { Task { await session.signOut() } }
+    } message: {
+      Text(AccountMenu.signOutLine)
+    }
     .task { await readAgain() }
     .onChange(of: scenePhase) { _, phase in
       if phase == .active { Task { await readAgain() } }

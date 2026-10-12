@@ -552,3 +552,66 @@ class TestWhatOnlyAppleCanDo:
         assert response.json()["appleSubscription"] is True
         # Kept as a billing record, like Stripe's.
         assert len(await _rows(session, user)) == 1
+
+    async def test_a_deleted_accounts_subscription_moves_to_the_new_account(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        user_second: User,
+        transaction: Transaction,
+    ) -> None:
+        # 12 October 2026: the founder deleted their account, signed in again with the same Apple ID, and buying
+        # answered "This purchase belongs to another Simeon account" with no way past the plans.
+        access, _ = await _signed_in(client, session, user)
+        bought = transaction(user, trial=False)
+        response = await client.post(
+            "/desktop/api/billing/apple/transactions",
+            headers={"Authorization": f"Bearer {access}"},
+            json={"signedTransactions": [bought]},
+        )
+        assert response.status_code == 200, response.text
+        deleted = await client.delete(
+            "/desktop/api/account", headers={"Authorization": f"Bearer {access}"}
+        )
+        assert deleted.status_code == 200, deleted.text
+
+        again, _ = await _signed_in(client, session, user_second)
+        response = await client.post(
+            "/desktop/api/billing/apple/transactions",
+            headers={"Authorization": f"Bearer {again}"},
+            json={"signedTransactions": [bought]},
+        )
+
+        assert response.status_code == 200, response.text
+        assert response.json()["plan"]["tier"] == "pro"
+        assert len(await _rows(session, user_second)) == 1
+        assert await _rows(session, user) == []
+        allowance = await resolve_allowance(session, user_second)
+        assert allowance.provider == "app_store"
+
+    async def test_a_live_accounts_subscription_stays_refused(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        user_second: User,
+        transaction: Transaction,
+    ) -> None:
+        # One Apple subscription never unlocks two living accounts.
+        access, _ = await _signed_in(client, session, user)
+        bought = transaction(user, trial=False)
+        await client.post(
+            "/desktop/api/billing/apple/transactions",
+            headers={"Authorization": f"Bearer {access}"},
+            json={"signedTransactions": [bought]},
+        )
+        other, _ = await _signed_in(client, session, user_second)
+        response = await client.post(
+            "/desktop/api/billing/apple/transactions",
+            headers={"Authorization": f"Bearer {other}"},
+            json={"signedTransactions": [bought]},
+        )
+        assert response.status_code == 409
+        assert len(await _rows(session, user)) == 1
+        assert await _rows(session, user_second) == []
