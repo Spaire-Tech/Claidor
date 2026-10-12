@@ -31,8 +31,10 @@ public enum SimeonConfig {
  *    verifier's ASCII text. The uuid is a v4 uuid.
  * 2. The system's sign-in sheet opens
  *    `{api}/loginDeepControl?challenge=…&uuid=…&mode=login&redirectTarget=simeon-ios&provider=…`,
- *    `provider` being the button the person pressed (Apple or Google), so
- *    the server sends the sheet straight to that sign-in.
+ *    `provider` being the button the person pressed, so the server sends
+ *    the sheet straight to that sign-in. Continue with Apple uses Apple's
+ *    own sheet instead since 12 October 2026 (`AppleSignIn`); this is
+ *    Google's way, and the Mac's.
  * 3. Meanwhile the app posts `{uuid, verifier}` to `/auth/poll`: 404 is
  *    "not yet", 200 carries `{accessToken, refreshToken}`. The Mac's
  *    backoff: 1 s growing by 1.2 to 10 s, three errors in a row give up,

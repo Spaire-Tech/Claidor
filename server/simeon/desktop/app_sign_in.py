@@ -58,6 +58,7 @@ from html import escape
 from typing import Any
 from urllib.parse import quote, urlencode, urlparse
 
+import structlog
 from fastapi import Depends, Form, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
@@ -65,10 +66,15 @@ from simeon.auth.dependencies import WebUserOrAnonymous
 from simeon.auth.models import is_user
 from simeon.auth.service import auth as auth_service
 from simeon.config import settings
+from simeon.integrations.apple import native as apple_native
+from simeon.integrations.apple.service import AppleServiceError
+from simeon.integrations.apple.service import apple as apple_service
+from simeon.integrations.loops.service import loops as loops_service
 from simeon.openapi import APITag
 from simeon.plans.service import PlansError
 from simeon.plans.service import plans as plans_service
 from simeon.postgres import AsyncSession, get_db_session
+from simeon.posthog import posthog
 from simeon.routing import APIRouter
 
 from .allowance import BILLING_PATH
@@ -87,6 +93,8 @@ from .sign_in_brand import (
     WORDMARK_PNG_BASE64,
     WORDMARK_WIDTH,
 )
+
+log = structlog.get_logger()
 
 router = APIRouter(tags=["desktop", APITag.private])
 
@@ -111,6 +119,14 @@ NO_STORE = {"Cache-Control": "no-store"}
 #: stay as they are (docs/kept-names.md); this is the name
 #: on a page somebody reads.
 PRODUCT = "Simeon"
+
+
+#: The iPhone app's own name (`SimeonConfig.urlScheme`). Its plans are
+#: sold through Apple's in-app purchase, and Apple does not let an app send
+#: people to buy on the web from inside it (outside the United States), so
+#: its sign-in never takes the billing page's detour: the app shows its own
+#: plans once signed in (`ios/Simeon/PlansSheet.swift`, 12 October 2026).
+IPHONE_TARGET = "simeon-ios"
 
 
 #: The ways in of the iPhone's sign-in screen (9 October 2026): its
@@ -341,7 +357,8 @@ async def login_deep_control(
     just_paid = bool(checkout_session_id) and await _copy_in_checkout(
         session, auth_subject.subject, checkout_session_id or ""
     )
-    if await _needs_a_plan(session, auth_subject.subject):
+    from_the_iphone = (redirectTarget or "").strip().lower() == IPHONE_TARGET
+    if not from_the_iphone and await _needs_a_plan(session, auth_subject.subject):
         return RedirectResponse(
             settings.generate_frontend_url(
                 f"{BILLING_PATH}?plan=standard&return_to={quote(return_to, safe='')}"
@@ -610,6 +627,108 @@ async def _auth_poll(
     if issued is None:
         return JSONResponse({"error": "not_found"}, status_code=404, headers=NO_STORE)
     desktop_session, access, refresh = issued
+    return JSONResponse(
+        {
+            "accessToken": envelope_access_token(desktop_session, access),
+            "refreshToken": refresh,
+        },
+        headers=NO_STORE,
+    )
+
+
+#: The longest an Apple token or code the iPhone sends can be.
+_APPLE_FIELD_MAX = 8_000
+
+
+@router.post("/auth/apple", name="desktop:apple_native")
+async def apple_native_sign_in(
+    request: Request, session: AsyncSession = Depends(get_db_session)
+) -> JSONResponse:
+    """The iPhone's own Sign in with Apple sheet (12 October 2026): the
+    app posts what Apple's sheet gave it, `{identityToken, nonce,
+    authorizationCode?, givenName?, familyName?}`, and gets the pair
+    `/auth/poll` gives, `{accessToken, refreshToken}`, with no browser in
+    between (`simeon.integrations.apple.native`). 400 when Apple's token
+    does not check out; 403 with a sentence when the Apple account cannot
+    be used (its unverified e-mail is another account's, or the account
+    is closed). No billing detour: the app shows its own plans."""
+    try:
+        body = await request.json()
+    except Exception:
+        body = None
+    if not isinstance(body, dict):
+        body = {}
+
+    def field(name: str) -> str:
+        value = body.get(name)
+        return value.strip()[:_APPLE_FIELD_MAX] if isinstance(value, str) else ""
+
+    identity_token, nonce = field("identityToken"), field("nonce")
+    if not identity_token or not nonce:
+        return JSONResponse(
+            {"error": "bad_request", "message": "Sign in with Apple didn't finish."},
+            status_code=400,
+            headers=NO_STORE,
+        )
+    try:
+        profile = await apple_native.decode_identity_token(identity_token, nonce)
+    except apple_native.NativeAppleError as error:
+        return JSONResponse(
+            {"error": "apple_unverified", "message": error.message},
+            status_code=400,
+            headers=NO_STORE,
+        )
+    tokens = await apple_native.exchange_code(field("authorizationCode"))
+    try:
+        user, is_signup = await apple_service.sign_in(
+            session,
+            profile=profile,
+            access_token=tokens.access_token if tokens else "",
+            expires_at=tokens.expires_at if tokens else None,
+            refresh_token=tokens.refresh_token if tokens else None,
+        )
+    except AppleServiceError as error:
+        return JSONResponse(
+            {"error": "apple_account", "message": error.message},
+            status_code=error.status_code,
+            headers=NO_STORE,
+        )
+    if not user.can_authenticate:
+        return JSONResponse(
+            {
+                "error": "account_closed",
+                "message": "This account can't sign in to Simeon.",
+            },
+            status_code=403,
+            headers=NO_STORE,
+        )
+    # Apple gives the name once, the first time this Apple ID signs in to
+    # the app: kept as Google's is (`remember_google_name`), for the agents'
+    # greeting and the app's "What should I call you?".
+    given, family = field("givenName")[:120], field("familyName")[:120]
+    meta = dict(user.meta or {})
+    if given and not meta.get("given_name"):
+        meta["given_name"] = given
+        meta["name"] = " ".join(part for part in (given, family) if part)
+        user.meta = meta
+        session.add(user)
+    if is_signup:
+        posthog.user_signup(user, "apple")
+        await loops_service.user_signup(user)
+    else:
+        posthog.user_login(user, "apple")
+    desktop_session, access, refresh = await desktop.issue_app_session(
+        session,
+        user,
+        user_agent=request.headers.get("User-Agent", ""),
+        client_version=client_version_of(request),
+    )
+    log.info(
+        "desktop.sign_in.apple_native",
+        user_id=str(user.id),
+        signup=is_signup,
+        apple_tokens=tokens is not None,
+    )
     return JSONResponse(
         {
             "accessToken": envelope_access_token(desktop_session, access),
