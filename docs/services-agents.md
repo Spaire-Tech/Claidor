@@ -490,7 +490,11 @@ voice of its gender with it. Faces are given by the apps (`StoreFaces.swift`, on
 change, to every agent with no picture, new or from before), not by the engine: no new host
 bundle is needed. Until an app has run once after an agent is hired, that agent has no
 picture, and the web app (out of this change) draws its butterfly. Mentions in messages are
-the face in a glass pill with the name in the app's blue; names are no longer coloured.
+the face in a glass pill with the name in the app's blue; names are no longer coloured. A tap
+(a click on the Mac, with the pointing hand) on a pill opens that agent's chat: each pill is
+drawn on its own line of words and records where it was drawn (`MentionSpots`), and the tap is
+matched to it (`MentionTaps` on the iPhone, `MentionClicks` on the Mac, both in
+`MessageText.swift`); VoiceOver has an "Open <name>" action for each.
 * **Log lines.** In the apps' trace: `face for <agent>: clay-07`, or `face clay-07 shown on
   <agent>, not saved: <error>` (the host refused; the face shows until the next sign-in, which
   tries again).

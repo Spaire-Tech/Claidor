@@ -633,6 +633,8 @@ struct ListBottomBar: View {
             .contentShape(.circle)
             .glassEffect(.regular, in: .circle)
         }
+        // A menu opened from the bottom of the screen lists its items upwards (the first nearest the button); fixed, New Agent stays on top (the founder, 12 October 2026).
+        .menuOrder(.fixed)
         .accessibilityLabel("New")
       }
     }
