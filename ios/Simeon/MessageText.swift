@@ -68,16 +68,17 @@ enum MentionArt {
   }
 
   /** An agent's face for its mention: its picture in a 1.1 em circle, inside the pill's start. */
-  static func agent(_ picture: AgentPictureSource?, em: CGFloat) -> UIImage {
-    let key = "a|\(picture?.key ?? "-")|\(Int(em * 100))"
+  static func agent(_ picture: AgentPictureSource?, em: CGFloat, dark: Bool) -> UIImage {
+    let key = "a|\(picture?.key ?? "-")|\(Int(em * 100))|\(dark)"
     if let made = cache[key] { return made }
     let side = em * 1.1
     let photo = AgentPictures.image(picture)
+    let blank = UIColor.secondarySystemFill.resolvedColor(with: UITraitCollection(userInterfaceStyle: dark ? .dark : .light))
     let image = padded(width: em * (0.22 + 1.1 + 0.24), height: side) { context in
       let circle = CGRect(x: em * 0.22, y: 0, width: side, height: side)
       context.cgContext.addEllipse(in: circle)
       context.cgContext.clip()
-      if let photo { photo.draw(in: circle) } else { UIColor.secondarySystemFill.setFill(); context.fill(circle) }
+      if let photo { photo.draw(in: circle) } else { blank.setFill(); context.fill(circle) }
     }
     if cache.count > 400 { cache.removeAll() }
     cache[key] = image
@@ -177,7 +178,8 @@ enum InlineText {
       while i < to {
         var j = i + 1
         while j < to, styleKey(styles[j]) == styleKey(styles[i]), links[j] == links[i] { j += 1 }
-        var run = AttributedString(String(characters[i..<j]))
+        // An agent's name does not break at its spaces (`white-space: nowrap`).
+        var run = AttributedString(agent ? String(characters[i..<j]).replacingOccurrences(of: " ", with: "\u{00A0}") : String(characters[i..<j]))
         let style = styles[i]
         run.font = font(style, mention: mention != nil, agent: agent)
         if let mention { run.foregroundColor = mention }
@@ -207,10 +209,11 @@ enum InlineText {
         }
         text = Text("\(text)\(Text(piece(mark.start, mark.end, mention: tint)))")
       case .agent(let id):
-        // The face, the name and the pill's end, each marked for `MentionPills` to draw the glass behind.
+        // The face, the name and the pill's end, each marked for `MentionPills` to draw the glass behind; word joiners and the name's unbreaking spaces keep the pill on one line.
         let picture = mentioning?.agents.first { $0.id == id }?.picture
-        text = Text("\(text)\(Text(Image(uiImage: MentionArt.agent(picture, em: em))).baselineOffset(-0.2 * em).customAttribute(MentionPill()))")
-        text = Text("\(text)\(Text(piece(mark.start, mark.end, mention: Ink.title, agent: true)).customAttribute(MentionPill()))")
+        let joiner = Text(verbatim: "\u{2060}").customAttribute(MentionPill())
+        text = Text("\(text)\(Text(Image(uiImage: MentionArt.agent(picture, em: em, dark: mentioning?.dark ?? false))).baselineOffset(-0.2 * em).customAttribute(MentionPill()))\(joiner)")
+        text = Text("\(text)\(Text(piece(mark.start, mark.end, mention: Ink.title, agent: true)).customAttribute(MentionPill()))\(joiner)")
         text = Text("\(text)\(Text(Image(uiImage: MentionArt.pillEnd(em: em))).baselineOffset(-0.2 * em).customAttribute(MentionPill()))")
       }
       cursor = mark.end
@@ -254,6 +257,9 @@ struct MentionPill: TextAttribute {}
  */
 struct MentionPills: TextRenderer {
   var dark: Bool
+
+  /** The pill reaches a little past the line, and its shadow below it: room to draw them on a block's first and last lines. */
+  var displayPadding: EdgeInsets { EdgeInsets(top: 3, leading: 1, bottom: 3, trailing: 1) }
 
   func draw(layout: Text.Layout, in ctx: inout GraphicsContext) {
     var pills: [CGRect] = []

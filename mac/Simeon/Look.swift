@@ -137,6 +137,9 @@ extension Color {
   init(hex: UInt32, opacity: Double = 1) {
     self.init(.sRGB, red: Double((hex >> 16) & 0xff) / 255, green: Double((hex >> 8) & 0xff) / 255, blue: Double(hex & 0xff) / 255, opacity: opacity)
   }
+
+  /** An sRGB colour from SimeonCore's `RGB` (a brand's mention tint). */
+  init(_ rgb: RGB) { self.init(.sRGB, red: rgb.r, green: rgb.g, blue: rgb.b, opacity: rgb.a) }
 }
 
 /** The faces the window sets: Apple's system font (the window's `-apple-system`), and Suravaram for the sign-in wordmark. */

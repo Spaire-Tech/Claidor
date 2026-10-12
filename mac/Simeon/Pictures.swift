@@ -216,7 +216,11 @@ struct AgentMark: View {
   var body: some View {
     if agent.isGroup, AvatarPictures.image(for: agent) == nil {
       let members = MarkMember.members(of: agent, in: agents)
-      if members.count > 1 && (groupRow || size <= 20) {
+      if members.isEmpty {
+        // A group whose members this app does not know (someone else's room): two people on the quiet disc.
+        AgentPicture(image: nil, size: size)
+          .overlay(Image(systemName: "person.2.fill").font(.system(size: size * 0.34, weight: .medium)).foregroundStyle(.secondary))
+      } else if members.count > 1 && (groupRow || size <= 20) {
         MarkRow(members: members, unit: size)
       } else {
         GroupMark(members: members, size: size)

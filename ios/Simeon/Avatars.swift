@@ -48,10 +48,10 @@ enum AgentPictures {
    * by side at steps of 12.5/20; each later member drawn on top, the one
    * behind cut away around it with a small gap.
    */
-  @MainActor static func groupImage(_ members: [Agent], frame: CGFloat, inRow: Bool) -> UIImage {
+  @MainActor static func groupImage(_ members: [Agent], frame: CGFloat, inRow: Bool, dark: Bool) -> UIImage {
     let overflow = !inRow && members.count > 4
     let shown = inRow || overflow ? Array(members.prefix(3)) : members
-    let key = "g|\(inRow)|\(Int(frame))|" + shown.map { $0.picture?.key ?? $0.id }.joined(separator: ",") + "|\(overflow)"
+    let key = "g|\(inRow)|\(Int(frame))|\(dark)|" + shown.map { $0.picture?.key ?? $0.id }.joined(separator: ",") + "|\(overflow)"
     if let made = groups[key] { return made }
     guard frame >= 1 else { return UIImage() }
     let step = frame * 12.5 / 20
@@ -60,6 +60,7 @@ enum AgentPictures {
       : GroupLayout.slots(count: shown.count + (overflow ? 1 : 0), frame: frame).map { CGRect(x: $0.x, y: $0.y, width: $0.size, height: $0.size) }
     let gap: CGFloat = inRow ? frame * 2.5 / 20 : CGFloat(GroupLayout.gap(frame: frame))
     let size = inRow ? CGSize(width: frame + step * CGFloat(max(shown.count - 1, 0)), height: frame) : CGSize(width: frame, height: frame)
+    let blank = UIColor.secondarySystemFill.resolvedColor(with: UITraitCollection(userInterfaceStyle: dark ? .dark : .light))
     let image = UIGraphicsImageRenderer(size: size, format: .preferred()).image { context in
       let cg = context.cgContext
       for (index, member) in shown.enumerated() {
@@ -77,7 +78,7 @@ enum AgentPictures {
         if let picture = image(of: member) {
           picture.draw(in: rect)
         } else {
-          cg.setFillColor(UIColor.secondarySystemFill.cgColor)
+          cg.setFillColor(blank.cgColor)
           cg.fill(rect)
         }
         cg.restoreGState()
@@ -114,8 +115,8 @@ struct AgentAvatar: View {
 
   var body: some View {
     if agent.isGroup, AgentPictures.image(of: agent) == nil {
-      let shown = members.isEmpty ? [agent] : members
-      if groupInARow { GroupStack(members: shown) } else { GroupCluster(members: shown) }
+      if members.isEmpty { GroupBlank() }
+      else if groupInARow { GroupStack(members: members) } else { GroupCluster(members: members) }
     } else {
       PictureCircle(image: AgentPictures.image(of: agent))
     }
@@ -143,13 +144,14 @@ struct AgentIdAvatar: View {
  */
 struct GroupCluster: View {
   let members: [Agent]
+  @Environment(\.colorScheme) private var scheme
 
   var body: some View {
     GeometryReader { geometry in
       let frame = min(geometry.size.width, geometry.size.height)
       let overflow = members.count > 4
       ZStack(alignment: .topLeading) {
-        Image(uiImage: AgentPictures.groupImage(members, frame: frame, inRow: false))
+        Image(uiImage: AgentPictures.groupImage(members, frame: frame, inRow: false, dark: scheme == .dark))
           .resizable().frame(width: frame, height: frame)
         if overflow, let slot = GroupLayout.slots(count: 4, frame: frame).last {
           Text("+\(members.count - 3)")
@@ -173,10 +175,28 @@ struct GroupCluster: View {
 struct GroupStack: View {
   let members: [Agent]
   var memberSize: Double = 52
+  @Environment(\.colorScheme) private var scheme
 
   var body: some View {
-    let image = AgentPictures.groupImage(members, frame: memberSize, inRow: true)
+    let image = AgentPictures.groupImage(members, frame: memberSize, inRow: true, dark: scheme == .dark)
     Image(uiImage: image).resizable().frame(width: image.size.width, height: image.size.height)
+  }
+}
+
+/** A group whose members this app does not know (someone else's room): two people on the quiet disc. */
+struct GroupBlank: View {
+  var body: some View {
+    Circle().fill(Ink.pillButton)
+      .aspectRatio(1, contentMode: .fit)
+      .overlay {
+        GeometryReader { geometry in
+          Image(systemName: "person.2.fill")
+            .font(.system(size: geometry.size.width * 0.34, weight: .medium))
+            .foregroundStyle(Ink.secondary)
+            .frame(width: geometry.size.width, height: geometry.size.height)
+        }
+      }
+      .accessibilityHidden(true)
   }
 }
 

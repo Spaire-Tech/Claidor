@@ -81,6 +81,9 @@ struct MentionPill: TextAttribute {}
 struct MentionPills: TextRenderer {
   var dark: Bool
 
+  /** The pill reaches a little past the line, and its shadow below it: room to draw them on a block's first and last lines. */
+  var displayPadding: EdgeInsets { EdgeInsets(top: 3, leading: 1, bottom: 3, trailing: 1) }
+
   func draw(layout: Text.Layout, in ctx: inout GraphicsContext) {
     var pills: [CGRect] = []
     for line in layout {
