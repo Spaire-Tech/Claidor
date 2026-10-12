@@ -511,7 +511,7 @@ private struct AgentPage: View {
       .frame(width: contentWidth, alignment: .top)
     }
     .frame(width: contentWidth)
-    // The avatar editor (7b): 6 under the avatar (6 + 96 down the page), centred on it, over everything under it.
+    // The avatar editor (7b): 6 under the avatar (6 + 96 down the page: the head's 3 and the button's 3 above the disc), centred on it, over everything under it.
     .overlay(alignment: .top) {
       if let editor = pane.avatarEditor, editor.agentId == agent.id {
         AvatarEditorPopover(agent: agent, model: editor, width: min(294, contentWidth), look: look) { pane.closeAvatarEditor() }
@@ -629,7 +629,8 @@ private struct PaneHead: View {
         .truncationMode(.tail)
         .frame(maxWidth: contentWidth)
         .frame(height: 28)
-        .padding(.top, 14)
+        // 14 under the disc: the button's square reaches 3 below it.
+        .padding(.top, 11)
       if !agent.isGroup, !agent.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
         Text(agent.title)
           .font(.system(size: 15))
@@ -640,7 +641,8 @@ private struct PaneHead: View {
           .padding(.top, 1)
       }
     }
-    .padding(.top, 6)
+    // 6 above the disc: the button's square reaches 3 above it.
+    .padding(.top, 3)
     .frame(maxWidth: .infinity)
   }
 }
@@ -661,39 +663,52 @@ private struct AvatarTrigger: View {
 
   var body: some View {
     Button { pane.toggleAvatarEditor(for: agent) } label: {
-      ZStack {
-        Circle().fill(look.paneAvatarDisc)
-        if let picture = AvatarPictures.image(for: agent) {
-          Image(nsImage: picture)
-            .resizable()
-            .interpolation(.high)
-            .aspectRatio(contentMode: .fill)
-            .frame(width: 96, height: 96)
-        } else {
-          // A group's members in its 64-point frame, centred in the disc.
-          AgentMark(agent: agent, agents: store.agents, size: 64)
+      // 102 square: the disc 3 in from each side, the pencil in the corner 3 past it, all of it inside the button. Until
+      // 12 October 2026 the pencil hung outside a 96 button that took clicks only on its circle, and most of the pencil
+      // did nothing (the founder: "the pencil button in mac is not fully clickable").
+      ZStack(alignment: .bottomTrailing) {
+        ZStack {
+          Circle().fill(look.paneAvatarDisc)
+          if let picture = AvatarPictures.image(for: agent) {
+            Image(nsImage: picture)
+              .resizable()
+              .interpolation(.high)
+              .aspectRatio(contentMode: .fill)
+              .frame(width: 96, height: 96)
+          } else {
+            // A group's members in its 64-point frame, centred in the disc.
+            AgentMark(agent: agent, agents: store.agents, size: 64)
+          }
+          Circle().strokeBorder(look.paneHairline, lineWidth: 1)
         }
-        Circle().strokeBorder(look.paneHairline, lineWidth: 1)
-      }
-      .frame(width: 96, height: 96)
-      .clipShape(Circle())
-      .overlay(alignment: .bottomTrailing) {
+        .frame(width: 96, height: 96)
+        .clipShape(Circle())
+        .padding(3)
         PencilGlyph()
           .stroke(look.paneInk, style: StrokeStyle(lineWidth: 1.9 * 18 / 24, lineCap: .round, lineJoin: .round))
           .frame(width: 18, height: 18)
           .frame(width: 32, height: 32)
           .background(Circle().fill(hovering ? look.paneFill2 : look.paneFill))
           .background(Circle().fill(look.paneGround).padding(-3))
-          .offset(x: 3, y: 3)
           .animation(.easeInOut(duration: 0.15), value: hovering)
       }
-      .contentShape(Circle())
+      .frame(width: 102, height: 102)
+      .contentShape(AvatarTriggerShape())
     }
     .buttonStyle(.hand)
     .onHover { hovering = $0 }
     .background(WindowSpotReader(spot: pane.avatarTriggerSpot))
     .help("Edit Avatar")
     .accessibilityLabel("Edit agent avatar")
+  }
+}
+
+/** What takes the avatar button's clicks in its 102 square: the disc (3 in from each side) and the pencil's 32-point disc in the corner. */
+private struct AvatarTriggerShape: Shape {
+  func path(in rect: CGRect) -> Path {
+    var path = Path(ellipseIn: rect.insetBy(dx: 3, dy: 3))
+    path.addEllipse(in: CGRect(x: rect.maxX - 32, y: rect.maxY - 32, width: 32, height: 32))
+    return path
   }
 }
 

@@ -451,33 +451,45 @@ private struct FaceCell: View {
 /**
  * Voice (`__simeonVoicePicker`): "Voice" (12/16, semibold, grey), then the
  * Mac's pop-up of the voices by name and a 30-point round play button that
- * plays the voice's sample (stops it when it plays). Hidden while the
- * voices load and when calls are off. A pick is saved at once; refused, it
- * goes back and says "Couldn’t save the voice."
+ * plays the voice's sample (stops it when it plays). A small spinner while
+ * the voices load; hidden when there are none (calls off). A pick is saved
+ * at once; refused, it goes back and says "Couldn’t save the voice."
+ *
+ * Until 12 October 2026 the voices were asked for from a `Group` that was
+ * empty until they came, and SwiftUI starts no task on an empty group: the
+ * picker never showed on the Mac (the founder: "we dont see the voice
+ * picker like in iphone").
  */
 private struct VoicePicker: View {
   let agent: Agent
   let look: Look
   @Environment(AppStore.self) private var store
   @State private var voices: [AppStore.VoiceChoice] = []
+  @State private var loaded = false
   @State private var chosen: String?
   @State private var note: String?
   @State private var player = SamplePlayer()
 
   var body: some View {
-    Group {
-      if !voices.isEmpty {
-        VStack(alignment: .leading, spacing: 6) {
-          Text("Voice")
-            .font(.system(size: 12, weight: .semibold))
+    VStack(alignment: .leading, spacing: 6) {
+      if !loaded || !voices.isEmpty {
+        Text("Voice")
+          .font(.system(size: 12, weight: .semibold))
+          .foregroundStyle(look.inkSecondary)
+          .padding(.horizontal, 2)
+        if let note {
+          Text(note)
+            .font(.system(size: 12))
             .foregroundStyle(look.inkSecondary)
             .padding(.horizontal, 2)
-          if let note {
-            Text(note)
-              .font(.system(size: 12))
-              .foregroundStyle(look.inkSecondary)
-              .padding(.horizontal, 2)
-          }
+        }
+        if voices.isEmpty {
+          ProgressView()
+            .controlSize(.small)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: 30)
+            .accessibilityLabel("Loading voices")
+        } else {
           HStack(spacing: 8) {
             Picker("Voice", selection: Binding(get: { chosen ?? "" }, set: { pick($0) })) {
               ForEach(voices) { voice in Text(voice.name).tag(voice.id) }
@@ -491,7 +503,11 @@ private struct VoicePicker: View {
         }
       }
     }
-    .task(id: agent.id) { await load() }
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .task(id: agent.id) {
+      await load()
+      loaded = true
+    }
     .onDisappear { player.stop() }
   }
 
@@ -516,12 +532,15 @@ private struct VoicePicker: View {
     .accessibilityLabel(voice.map { playing ? "Stop \($0.name)" : "Play \($0.name)" } ?? "Play")
   }
 
+  /** The list as soon as it comes, on the agent's voice while it is listed; then the voice settled for it (one given by its name when it has none). */
   private func load() async {
     let list = await store.voices()
     guard !list.isEmpty else { voices = []; return }
-    let own = await store.ensureVoice(agent.id) ?? AppStore.defaultVoiceId
+    let kept = AgentVoices.kept(agent.voiceId, listed: list) ?? AppStore.defaultVoiceId
+    chosen = list.contains { $0.id == kept } ? kept : list.first?.id
     voices = list
-    chosen = list.contains { $0.id == own } ? own : list.first?.id
+    let own = await store.ensureVoice(agent.id) ?? AppStore.defaultVoiceId
+    if list.contains(where: { $0.id == own }) { chosen = own }
   }
 
   private func pick(_ id: String) {
