@@ -95,6 +95,14 @@ final class SessionController {
    */
   var nameNeeded = false
   @ObservationIgnored private var askedForNotifications = false
+  /**
+   * The hand-off (Simeon made, his introduction begun), out of sight while
+   * the first run shows and after it if the computer is slow: running,
+   * done, or failed with why.
+   */
+  enum HandOff: Equatable { case idle, running, done, failed(String) }
+  private(set) var handOff: HandOff = .idle
+  @ObservationIgnored private var simeonId: String?
   let store = AppStore()
   private let vault = KeychainVault()
   @ObservationIgnored private var api: SimeonAPI?
@@ -129,7 +137,13 @@ final class SessionController {
       phase = .signedIn
       return
     }
-    if vault.read() != nil { await enter() } else { phase = .signedOut(message: nil) }
+    if vault.read() != nil {
+      // Face ID first, when the person turned it on (AppLock.swift).
+      AppLock.shared.appOpened()
+      await enter()
+    } else {
+      phase = .signedOut(message: nil)
+    }
   }
 
   private func makeAPI() -> SimeonAPI {
@@ -225,11 +239,46 @@ final class SessionController {
     if firstRun == .done { askForNotifications() }
   }
 
-  /** The first run is over: Simeon's chat opens (when he was just made), and only now does the phone ask about notifications. */
-  func finishOnboarding(opening agentId: String?) {
-    if let agentId { Notifications.shared.openAgent = agentId }
+  /**
+   * Started as the first run shows: the computer, then Simeon made and his
+   * introduction begun (`AppStore.handOff`), while the person gives a name
+   * and answers the two questions. Once the first run is over his chat
+   * opens, now or when he is made. Again after a failure, with no second
+   * Simeon.
+   */
+  func beginHandOff() {
+    switch handOff {
+    case .running, .done: return
+    default: break
+    }
+    handOff = .running
+    let store = store
+    Task { [weak self] in
+      do {
+        let id = try await store.handOff(ready: {})
+        guard let self else { return }
+        self.simeonId = id
+        self.handOff = .done
+        if self.firstRun == .done, let id { Notifications.shared.openAgent = id }
+      } catch {
+        let unreachable = GatewayError.neverArrived(error) || error is URLError
+        self?.handOff = .failed(unreachable ? Onboarding.unreachable : error.localizedDescription)
+      }
+    }
+  }
+
+  /** The first run is over: the list, with Simeon's chat open as soon as he is made. */
+  func finishOnboarding() {
     firstRun = .done
+    if handOff == .done, let simeonId { Notifications.shared.openAgent = simeonId }
     askForNotifications()
+  }
+
+  /** The first run's notifications screen: Apple's prompt now, then this phone registered; done once the person answers. */
+  func askForNotificationsNow() async {
+    guard let api, !askedForNotifications else { return }
+    askedForNotifications = true
+    await Notifications.shared.start(api: api)
   }
 
   /** Ask for notifications once signed in, and register this phone with Apple and Simeon Labs. */
@@ -240,6 +289,14 @@ final class SessionController {
     Task { await Notifications.shared.start(api: api) }
   }
 
+  /** Signed out, or the account gone: nothing of this sign-in's first run is kept. */
+  private func forgetFirstRun() {
+    firstRun = .done
+    handOff = .idle
+    simeonId = nil
+    AppLock.shared.signedOut()
+  }
+
   private func ended() {
     store.detach()
     Purchases.shared.stop()
@@ -248,7 +305,7 @@ final class SessionController {
     Self.remember(nil)
     api = nil
     askedForNotifications = false
-    firstRun = .done
+    forgetFirstRun()
     phase = .signedOut(message: "Your Simeon sign-in ended. Sign in again.")
   }
 
@@ -436,7 +493,7 @@ final class SessionController {
     Self.remember(nil)
     self.api = nil
     askedForNotifications = false
-    firstRun = .done
+    forgetFirstRun()
     // A plan bought through Apple keeps charging until the person cancels it there.
     phase = .signedOut(message: appleRunsOn ? AccountMenu.deletedApple : AccountMenu.deleted)
     return nil
@@ -451,7 +508,7 @@ final class SessionController {
     Self.remember(nil)
     api = nil
     askedForNotifications = false
-    firstRun = .done
+    forgetFirstRun()
     phase = .signedOut(message: nil)
   }
 }

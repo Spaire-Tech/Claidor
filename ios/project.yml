@@ -77,6 +77,8 @@ targets:
         # (LiveKit, under ElevenLabs' kit) links camera code, and App Store
         # Connect refuses a build without this line (ITMS-90683).
         NSCameraUsageDescription: Simeon's calls with your agents are voice only and never turn on the camera.
+        # The lock the person may turn on in the first run or Settings (AppLock.swift).
+        NSFaceIDUsageDescription: Simeon uses Face ID to unlock the app, so only you can see your agents.
         # A call keeps going with the screen locked.
         UIBackgroundModes: [audio]
         # Loopback and the local network over http, for a build pointed at

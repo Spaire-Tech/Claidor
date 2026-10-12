@@ -1191,42 +1191,14 @@ final class OnboardingTests: XCTestCase {
     XCTAssertEqual(Onboarding.normalizedName("   "), "")
   }
 
-  func testTheStepsInTheMacsOrder() {
-    XCTAssertEqual(OnboardingStep.allCases.map(\.title).filter { !$0.isEmpty }, [
-      "Meet Simeon", "Simeon is your personal Chief of Staff", "Your agents connect to the apps you already use",
-      "They have their own computer and work just like you", "How should Simeon & Co call you?",
+  func testTheStepsInOrder() {
+    XCTAssertEqual(OnboardingStep.allCases.map(\.title), [
+      "What should Simeon call you?", "Unlock Simeon with Face ID", "Let Simeon tell you when work is done",
     ])
-    XCTAssertFalse(OnboardingStep.meet.hasBack)
-    XCTAssertEqual(OnboardingStep.chiefOfStaff.previous, .meet)
-    XCTAssertEqual(OnboardingStep.name.next, .handOff)
     XCTAssertEqual(Onboarding.handOffLine(ready: false), "Setting up your Simeon…")
     XCTAssertEqual(Onboarding.handOffLine(ready: true), "Getting your team ready…")
     XCTAssertEqual(Onboarding.handOffLine(ready: false, percent: 42, sleeping: true), "Setting up your Simeon… 42%")
     XCTAssertEqual(Onboarding.handOffLine(ready: false, sleeping: true), "Waking your computer…")
-  }
-
-  func testTheScenesFitAPhone() {
-    // The Chief of Staff's agents: 300 pt out on a Mac, 50 pt from a 393 pt phone's edge, never nearer Simeon than 104.
-    XCTAssertEqual(Onboarding.crew(width: 1280).map(\.x), [-300, -300, -300, 300, 300, 300])
-    XCTAssertEqual(Onboarding.crew(width: 393)[0].x, -146.5)
-    XCTAssertEqual(Onboarding.crew(width: 180)[3].x, 104)
-    let curve = Onboarding.curve(to: Onboarding.crew[0])
-    XCTAssertEqual(curve.start.x, -60); XCTAssertEqual(curve.end.x, -260); XCTAssertEqual(curve.end.y, -100); XCTAssertEqual(curve.control1.x, -160)
-    // The apps: the one behind the glass swells 1.6 times; the row moves one place each 1.6 s.
-    let resting = Onboarding.orb(0, count: 12, elapsed: 0, width: 393)
-    XCTAssertEqual(resting.x, 0); XCTAssertEqual(resting.size, 120, accuracy: 0.001); XCTAssertEqual(resting.opacity, 1)
-    let moved = Onboarding.orb(1, count: 12, elapsed: 1.6, width: 393)
-    XCTAssertEqual(moved.x, 0, accuracy: 0.001)
-    let far = Onboarding.orb(2, count: 12, elapsed: 0, width: 393)
-    XCTAssertEqual(far.x, 315, accuracy: 0.001); XCTAssertEqual(far.opacity, 0.297, accuracy: 0.01)
-    // The computer: as wide as the phone less 16 pt a side, never past 1.45.
-    XCTAssertEqual(Onboarding.screenScale(width: 393), 361.0 / 441, accuracy: 0.0001)
-    XCTAssertEqual(Onboarding.screenScale(width: 1280), 1.45)
-    let place = Onboarding.cursorPlace(beat: 0, width: 1280)
-    XCTAssertEqual(place.x, -78.3 * 1.45 + 59.8 * 0.66, accuracy: 0.001)
-    XCTAssertEqual(Onboarding.computerFrame(-1).y, 30)
-    XCTAssertEqual(Onboarding.computerFrame(99).pressed, "b-button")
-    XCTAssertEqual(Onboarding.nameSeats(width: 393).map(\.x), [-152.5, 0, 152.5])
   }
 }
 

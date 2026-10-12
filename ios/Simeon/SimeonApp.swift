@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 #if os(iOS)
 import UIKit
 #endif
@@ -128,7 +129,10 @@ struct RootView: View {
     phaseView
       .background(ground)
       // A chat left open behind a locked phone is not being read (AppStore.isForeground).
-      .onChange(of: scenePhase) { _, phase in session.store.isForeground = phase == .active }
+      .onChange(of: scenePhase) { _, phase in
+        session.store.isForeground = phase == .active
+        AppLock.shared.scenePhase(phase)
+      }
   }
 
   /** Under every screen, so a fade between two (the first run and the list) never shows the system's black. */
@@ -153,8 +157,12 @@ struct RootView: View {
         }
       }
       .animation(.easeInOut(duration: 0.35), value: session.firstRun == .needed)
+      // Simeon still being made once the first run is over, or his making failed.
+      .overlay { HandOffNotice() }
       // Refused before the computer was ever reached (`mzn`): the access cover over the first run and the list (ComputerStates.swift).
       .overlay { AccessCoverLayer() }
+      // Face ID, when the person turned it on (AppLock.swift).
+      .overlay { AppLockCover() }
     }
   }
 }
@@ -399,371 +407,242 @@ struct LogoShimmer: View {
 // MARK: - The first run
 
 /**
- * The first run on the phone, in Apple's design: the Mac's flow (Meet
- * Simeon, the Chief of Staff, the apps, the computer, the name, then the
- * hand-off that makes Simeon), its scenes and its motion, with the phone's
- * Continue at the bottom and Back under it. Simeon travels from step to
- * step as on the Mac; each step's words and scene come in over 0.2 s and
- * go in 0.1 s. Only a new account sees it (SessionController.firstRun).
+ * The first run (the founder, 12 October 2026: "simple onboarding … asked
+ * the necessary. no bloated screen", ChatGPT's): the person's name, Face
+ * ID where the phone has it, then the notifications prompt, one screen
+ * each. Simeon is made meanwhile, out of sight (`beginHandOff`); his chat
+ * opens once the first run is over. Only a new account sees it
+ * (SessionController.firstRun).
  */
 struct OnboardingFlow: View {
   @Environment(SessionController.self) private var session
   @Environment(AppStore.self) private var store
-  @Environment(\.accessibilityReduceMotion) private var reduceMotion
-  @State private var step: OnboardingStep = .meet
-  /** Meet's four beats on the Mac's 35 ms clock: Simeon unseen and large; fading in, growing; turning; settled with the words. */
-  @State private var meetBeat = 0
-  @State private var heroShown = false
-  /** The computer's beats, 0.9 s apart (-1: Simeon waits, thinking). */
-  @State private var demoBeat = -1
+  @State private var steps: [OnboardingStep] = [.name]
+  @State private var step: OnboardingStep = .name
   @State private var name = ""
   @State private var nameTouched = false
-  /** Simeon has left (the name, the hand-off) and his exit has played: drawn still from then on. */
+  @State private var enablingFaceID = false
   @FocusState private var nameFocused: Bool
 
   var body: some View {
-    GeometryReader { proxy in
-      let layout = OnboardingLayout(size: proxy.size)
-      ZStack(alignment: .top) {
-        stepView(layout)
-          .id(step)
-          .transition(.asymmetric(insertion: .opacity.animation(.easeOut(duration: 0.2)), removal: .opacity.animation(.easeIn(duration: 0.1))))
-        hero(layout)
-        footer
+    ZStack {
+      switch step {
+      case .name: nameScreen
+      case .faceID: faceIDScreen
+      case .notifications: notificationsScreen
       }
-      .frame(width: proxy.size.width, height: proxy.size.height)
     }
+    .id(step)
+    .transition(.opacity)
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
     .background(Ink.ground.ignoresSafeArea())
-    // The keyboard rises over the scene, as the Mac's window keeps its size while a field has the focus; the name is sent with Return.
-    .ignoresSafeArea(.keyboard)
-    .task(id: step) { await runClock() }
-    .onChange(of: store.hasAgents) { _, has in
-      // Agents turned up (a computer that was still waking): the account was not new after all.
-      if has && step != .handOff { session.finishOnboarding(opening: nil) }
+    .task {
+      session.beginHandOff()
+      let notifications = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus == .notDetermined && Notifications.isOn
+      steps = OnboardingStep.steps(faceID: AppLock.available, notifications: notifications)
     }
   }
 
-  @ViewBuilder
-  private func stepView(_ layout: OnboardingLayout) -> some View {
-    switch step {
-    case .meet:
-      OnboardingTitle(text: OnboardingStep.meet.title, layout: layout, bottom: -134)
-        .opacity(meetBeat >= 3 ? 1 : 0)
-        .offset(y: meetBeat >= 3 ? 0 : 6)
-        .animation(OnboardingMotion.arrive(0.8), value: meetBeat >= 3)
-    case .chiefOfStaff:
-      ChiefOfStaffStep(layout: layout)
-    case .connect:
-      ConnectStep(layout: layout)
-    case .computer:
-      ZStack(alignment: .top) {
-        let k = Onboarding.screenScale(width: Double(layout.width))
-        OnboardingTitle(text: OnboardingStep.computer.title, layout: layout, bottom: -(150 * k + 28))
-        ComputerDemo(beat: demoBeat)
-          .scaleEffect(CGFloat(k) * layout.fit)
-          .position(layout.point(0, 0))
-      }
-    case .name:
-      NameStep(layout: layout, name: $name, touched: $nameTouched, focused: $nameFocused, submit: next)
-    case .handOff:
-      HandOffStep()
-    }
-  }
+  // MARK: The three screens
 
-  // MARK: Simeon
-
-  private struct Place: Equatable {
-    enum Motion { case none, standard, slow, bounce, exit }
-    var x: Double, y: Double, scale: Double, opacity: Double
-    var motion: Motion
-
-    var animation: Animation? {
-      switch motion {
-      case .none: return nil
-      case .standard: return OnboardingMotion.standard
-      case .slow: return OnboardingMotion.slow
-      case .bounce: return OnboardingMotion.bounce
-      case .exit: return OnboardingMotion.exit
+  /** The question at the top: an icon, the title, a line under it. */
+  private func header(_ step: OnboardingStep, @ViewBuilder icon: () -> some View) -> some View {
+    VStack(spacing: 18) {
+      icon()
+      Text(step.title)
+        .font(.system(size: 26, weight: .regular))
+        .foregroundStyle(Ink.primary)
+        .multilineTextAlignment(.center)
+        .fixedSize(horizontal: false, vertical: true)
+        .accessibilityAddTraits(.isHeader)
+      if let detail = step.detail {
+        Text(detail)
+          .font(.system(size: 16))
+          .foregroundStyle(Ink.secondary)
+          .multilineTextAlignment(.center)
+          .fixedSize(horizontal: false, vertical: true)
+          .padding(.top, -6)
       }
     }
+    .padding(.horizontal, 28)
+    .padding(.top, 72)
   }
 
-  /** Where Simeon is on each step (the window's `QBn` placements, the patch's seats). */
-  private func heroPlace(_ layout: OnboardingLayout) -> Place {
-    switch step {
-    case .meet:
-      if meetBeat < 1 { return Place(x: 0, y: Onboarding.heroY, scale: 1.6, opacity: 1, motion: .none) }
-      if meetBeat < 3 { return Place(x: 0, y: Onboarding.heroY, scale: 2.3, opacity: 1, motion: .slow) }
-      return Place(x: 0, y: Onboarding.heroY, scale: 1, opacity: 1, motion: .standard)
-    case .chiefOfStaff:
-      return Place(x: 0, y: Onboarding.heroY, scale: 1, opacity: 1, motion: .standard)
-    case .connect:
-      return Place(x: 0, y: Onboarding.connectY, scale: 1.3, opacity: 1, motion: .standard)
-    case .computer:
-      let cursor = Onboarding.cursorPlace(beat: demoBeat, width: Double(layout.width))
-      return Place(x: cursor.x, y: cursor.y, scale: cursor.scale, opacity: 1, motion: .slow)
-    case .name, .handOff:
-      return Place(x: 0, y: 0, scale: 0.55, opacity: 0, motion: .exit)
+  /** "What should Simeon call you?": one field, the name from Apple or Google already in it; Continue under it. */
+  private var nameScreen: some View {
+    let typed = Onboarding.normalizedName(name)
+    return VStack(spacing: 0) {
+      header(.name) {
+        Image("SignIn/Mark").resizable().renderingMode(.template).scaledToFit().frame(width: 40, height: 40)
+          .foregroundStyle(Ink.primary)
+          .accessibilityHidden(true)
+      }
+      VStack(alignment: .leading, spacing: 2) {
+        Text(Onboarding.nameLabel).font(.system(size: 13)).foregroundStyle(Ink.secondary)
+        TextField("", text: $name)
+          .font(.system(size: 18))
+          .foregroundStyle(Ink.primary)
+          .textContentType(.name)
+          .textInputAutocapitalization(.words)
+          .autocorrectionDisabled()
+          .submitLabel(.continue)
+          .focused($nameFocused)
+          .onSubmit { if !typed.isEmpty { leaveName() } }
+          .onChange(of: name) { _, value in
+            nameTouched = true
+            if value.count > 60 { name = String(value.prefix(60)) }
+          }
+      }
+      .padding(.horizontal, 18)
+      .padding(.vertical, 12)
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(nameFocused ? Ink.primary.opacity(0.45) : Ink.primary.opacity(0.18), lineWidth: 1))
+      .contentShape(.rect)
+      .onTapGesture { nameFocused = true }
+      .padding(.top, 40)
+      Text(Onboarding.nameNote)
+        .font(.system(size: 14))
+        .foregroundStyle(Ink.secondary)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 12)
+        .padding(.horizontal, 4)
+      continueButton(enabled: !typed.isEmpty, action: leaveName)
+        .padding(.top, 28)
+      Spacer()
+    }
+    .frame(maxWidth: 460)
+    .padding(.horizontal, 24)
+    .task {
+      if !nameTouched, name.isEmpty, let suggested = session.suggestedName { name = suggested; nameTouched = false }
+      try? await Task.sleep(nanoseconds: 400_000_000)
+      nameFocused = true
+    }
+    .onChange(of: session.suggestedName) { _, suggested in
+      // The profile answered after the screen came: its name, unless the person typed.
+      if !nameTouched, name.isEmpty, let suggested { name = suggested; nameTouched = false }
     }
   }
 
-  /** Simeon's own face, drawn at its largest (2.3 times the Mac's 80 pt) and scaled down, so it stays sharp at every size; still (no turn, no motion of its own). */
-  private func hero(_ layout: OnboardingLayout) -> some View {
-    let place = heroPlace(layout)
-    let largest: CGFloat = 80 * 2.3
-    return PictureCircle(image: AgentFaces.simeon.flatMap { AgentPictures.image($0) })
-      .frame(width: largest, height: largest)
-      .opacity(step == .meet && !heroShown ? 0 : 1)
-      .scaleEffect(CGFloat(place.scale / 2.3) * layout.fit)
-      .opacity(place.opacity)
-      .position(layout.point(place.x, place.y))
-      .animation(place.animation, value: place)
-      .allowsHitTesting(false)
-      .accessibilityHidden(true)
-  }
-
-  // MARK: Continue and Back
-
-  private var footer: some View {
-    let waiting = step == .meet && meetBeat < 3
-    return VStack(spacing: 8) {
-      Button(action: next) {
-        Text("Continue").font(.system(size: 17, weight: .semibold)).frame(maxWidth: .infinity).frame(height: 50)
+  /** "Unlock Simeon with Face ID": Continue turns it on (iOS asks once whether Simeon may use it), Skip leaves it off. */
+  private var faceIDScreen: some View {
+    VStack(spacing: 0) {
+      header(.faceID) {
+        Image(systemName: AppLock.biometry == .touchID ? "touchid" : "faceid")
+          .font(.system(size: 52, weight: .light))
+          .foregroundStyle(Ink.primary)
+          .accessibilityHidden(true)
       }
-      .buttonStyle(.glassProminent)
-      Button(action: back) {
-        Text("Back").font(.system(size: 17)).frame(maxWidth: .infinity).frame(height: 44).contentShape(.rect)
+      Spacer()
+      continueButton(enabled: !enablingFaceID) {
+        enablingFaceID = true
+        Task {
+          _ = await AppLock.shared.enable()
+          enablingFaceID = false
+          advance()
+        }
+      }
+      Button(action: advance) {
+        Text("Skip").font(.system(size: 17, weight: .medium)).frame(maxWidth: .infinity).frame(height: 48).contentShape(.rect)
       }
       .buttonStyle(.plain)
-      .foregroundStyle(Ink.link)
-      .opacity(step.hasBack ? 1 : 0)
-      .disabled(!step.hasBack)
-    }
-    .frame(maxWidth: 420)
-    .padding(.horizontal, 24)
-    .padding(.bottom, 8)
-    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-    .opacity(step == .handOff || waiting ? 0 : 1)
-    .offset(y: waiting ? 6 : 0)
-    .animation(OnboardingMotion.arrive(0.8), value: waiting)
-    .allowsHitTesting(step != .handOff && !waiting)
-  }
-
-  private func next() {
-    guard let following = step.next else { return }
-    if step == .name {
-      nameFocused = false
-      // Saved as the Mac's name step saves it, without waiting; empty is allowed (asked again later).
-      let typed = name
-      if !Onboarding.normalizedName(typed).isEmpty { session.nameNeeded = false }
-      Task { await store.saveName(typed) }
-    }
-    withAnimation(.easeOut(duration: 0.2)) { step = following }
-  }
-
-  private func back() {
-    guard let previous = step.previous else { return }
-    nameFocused = false
-    withAnimation(.easeOut(duration: 0.2)) { step = previous }
-  }
-
-  /** Each step's clock, started again whenever the step shows. People who reduce motion get the finished picture. */
-  private func runClock() async {
-    func wait(_ ms: UInt64) async -> Bool {
-      try? await Task.sleep(nanoseconds: ms * 1_000_000)
-      return !Task.isCancelled
-    }
-    switch step {
-    case .meet:
-      if reduceMotion { heroShown = true; meetBeat = 3; return }
-      meetBeat = 0; heroShown = false
-      withAnimation(.timingCurve(0.4, 0, 0.2, 1, duration: 1.2)) { heroShown = true }
-      guard await wait(35) else { return }
-      meetBeat = 1
-      guard await wait(525) else { return }
-      meetBeat = 2
-      guard await wait(1_400) else { return }
-      meetBeat = 3
-    case .computer:
-      if reduceMotion { demoBeat = Onboarding.computerFrames.count - 1; return }
-      demoBeat = -1
-      for beat in 0..<Onboarding.computerFrames.count {
-        guard await wait(900) else { return }
-        demoBeat = beat
-      }
-    case .name:
-      if !nameTouched, name.isEmpty, let suggested = session.suggestedName { name = suggested }
-      guard await wait(450) else { return }
-      nameFocused = true
-    default:
-      break
-    }
-  }
-}
-
-/** The Mac's motion for the first run (`scene.ts`'s springs, its exit, and the words' arrival curve). */
-enum OnboardingMotion {
-  static let standard = Animation.interpolatingSpring(mass: 1, stiffness: 175, damping: 26)
-  static let slow = Animation.interpolatingSpring(mass: 1, stiffness: 100, damping: 20)
-  static let bounce = Animation.interpolatingSpring(mass: 1, stiffness: 175, damping: 18.5)
-  static let exit = Animation.timingCurve(0.4, 0, 1, 1, duration: 0.3)
-  static func arrive(_ duration: Double) -> Animation { .timingCurve(0.16, 1, 0.3, 1, duration: duration) }
-}
-
-/**
- * Where the first run's scene sits on this screen: the Mac's stage centre,
- * placed so the tallest step (330 pt above it, 140 below) fits between the
- * top and the buttons; scaled down evenly only on a screen too short for it.
- */
-struct OnboardingLayout {
-  let width: CGFloat
-  let height: CGFloat
-  let originY: CGFloat
-  let fit: CGFloat
-  static let above: CGFloat = 330, below: CGFloat = 140, buttons: CGFloat = 110
-
-  init(size: CGSize) {
-    width = size.width; height = size.height
-    let top: CGFloat = 12
-    let room = max(size.height - Self.buttons - 12 - top, 1)
-    fit = min(1, room / (Self.above + Self.below))
-    originY = top + (room - (Self.above + Self.below) * fit) / 2 + Self.above * fit
-  }
-
-  /** A point of the Mac's stage (from its centre) on this screen. */
-  func point(_ x: Double, _ y: Double) -> CGPoint { CGPoint(x: width / 2 + CGFloat(x) * fit, y: originY + CGFloat(y) * fit) }
-}
-
-/** A step's title, held by its last line `bottom` pt above the stage's centre so a second line grows upwards (the Mac's phone layout); its size follows the width, 22 to 28 pt. */
-struct OnboardingTitle: View {
-  let text: String
-  let layout: OnboardingLayout
-  let bottom: Double
-
-  var body: some View {
-    Text(text)
-      .font(.system(size: min(28, max(22, layout.width * 0.071)), weight: .bold))
-      .multilineTextAlignment(.center)
       .foregroundStyle(Ink.primary)
-      .fixedSize(horizontal: false, vertical: true)
-      .padding(.horizontal, 24)
-      .frame(maxWidth: .infinity)
-      .frame(height: max(0, layout.point(0, bottom).y), alignment: .bottom)
-      .accessibilityAddTraits(.isHeader)
+      .padding(.top, 6)
+      .padding(.bottom, 8)
+    }
+    .frame(maxWidth: 460)
+    .padding(.horizontal, 24)
+  }
+
+  /** "Let Simeon tell you when work is done": Apple's prompt comes over it at once; answered, the first run is over. */
+  private var notificationsScreen: some View {
+    VStack(spacing: 0) {
+      header(.notifications) {
+        Image(systemName: "bell")
+          .font(.system(size: 28, weight: .regular))
+          .foregroundStyle(Color.black)
+          .frame(width: 72, height: 72)
+          .background(Color.white, in: Circle())
+          .accessibilityHidden(true)
+      }
+      Spacer()
+    }
+    .frame(maxWidth: 460)
+    .padding(.horizontal, 24)
+    .task {
+      try? await Task.sleep(nanoseconds: 350_000_000)
+      await session.askForNotificationsNow()
+      advance()
+    }
+  }
+
+  private func continueButton(enabled: Bool, action: @escaping () -> Void) -> some View {
+    Button(action: action) {
+      Text("Continue").font(.system(size: 17, weight: .semibold)).frame(maxWidth: .infinity).frame(height: 52)
+    }
+    .buttonStyle(.glassProminent)
+    .tint(Ink.primary)
+    .foregroundStyle(Ink.ground)
+    .disabled(!enabled)
+    .opacity(enabled ? 1 : 0.45)
+  }
+
+  // MARK: Moving on
+
+  private func leaveName() {
+    nameFocused = false
+    let typed = name
+    if !Onboarding.normalizedName(typed).isEmpty { session.nameNeeded = false }
+    Task { await store.saveName(typed) }
+    advance()
+  }
+
+  /** The next screen of this phone's steps, or the list. */
+  private func advance() {
+    guard let index = steps.firstIndex(of: step), index + 1 < steps.count else {
+      withAnimation(.easeInOut(duration: 0.3)) { session.finishOnboarding() }
+      return
+    }
+    withAnimation(.easeOut(duration: 0.2)) { step = steps[index + 1] }
   }
 }
 
 /**
- * "Simeon is your personal Chief of Staff": six agents, each faint until a
- * blue curve drawn from Simeon's side reaches it (0.9 s each, 0.18 s apart
- * from 0.7 s), then brightening (0.8 s); one line of copy under the title.
+ * Over the list once the first run is over, while Simeon is still being
+ * made (a computer that is slow to wake): one line; if making him failed,
+ * why and Try Again (no second Simeon).
  */
-struct ChiefOfStaffStep: View {
-  let layout: OnboardingLayout
-  @State private var drawn = false
-  @Environment(\.accessibilityReduceMotion) private var reduceMotion
-  private static let line = Color.dynamic(light: "#0a84ff8c", dark: "#64aaffa6")
+struct HandOffNotice: View {
+  @Environment(SessionController.self) private var session
+  @Environment(AppStore.self) private var store
 
   var body: some View {
-    let crew = Onboarding.crew(width: Double(layout.width))
-    ZStack(alignment: .top) {
-      OnboardingTitle(text: OnboardingStep.chiefOfStaff.title, layout: layout, bottom: -262)
-      Text(Onboarding.cooCopy)
-        .font(.system(size: 15))
-        .foregroundStyle(Ink.secondary)
-        .multilineTextAlignment(.center)
-        .padding(.horizontal, 24)
-        .frame(maxWidth: .infinity)
-        .position(layout.point(0, -236))
-        .opacity(drawn ? 1 : 0)
-        .offset(y: drawn ? 0 : 4)
-        .animation(OnboardingMotion.arrive(0.9).delay(0.35), value: drawn)
-      ForEach(Array(crew.enumerated()), id: \.element.id) { index, seat in
-        CrewCurve(seat: seat, layout: layout)
-          .trim(from: 0, to: drawn ? 1 : 0)
-          .stroke(Self.line, style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
-          .animation(.timingCurve(0.4, 0, 0.2, 1, duration: 0.9).delay(Onboarding.lineDelay(index)), value: drawn)
-        VStack(spacing: 8) {
-          PictureCircle(image: AgentFaces.face(id: seat.face).flatMap { AgentPictures.image($0) }).frame(width: 56, height: 56)
-          Text(seat.label).font(.system(size: 12)).foregroundStyle(Ink.secondary).fixedSize()
-        }
-        .opacity(drawn ? 1 : 0.28)
-        .scaleEffect(drawn ? 1 : 0.92)
-        .animation(OnboardingMotion.arrive(0.8).delay(Onboarding.lineDelay(index) + 0.52), value: drawn)
-        .position(layout.point(seat.x, seat.y))
-      }
-    }
-    .accessibilityElement(children: .combine)
-    .onAppear {
-      if reduceMotion {
-        var instant = Transaction()
-        instant.disablesAnimations = true
-        withTransaction(instant) { drawn = true }
-      } else {
-        drawn = true
-      }
-    }
-  }
-}
-
-/** The curve from Simeon's side to one agent (`cooLine`), on the screen. */
-struct CrewCurve: Shape {
-  let seat: Onboarding.Seat
-  let layout: OnboardingLayout
-
-  func path(in rect: CGRect) -> Path {
-    let c = Onboarding.curve(to: seat)
-    let at = { (p: (x: Double, y: Double)) in layout.point(p.x, Onboarding.heroY + p.y) }
-    var path = Path()
-    path.move(to: at(c.start))
-    path.addCurve(to: at(c.end), control1: at(c.control1), control2: at(c.control2))
-    return path
-  }
-}
-
-/**
- * "Your agents connect to the apps you already use" (simeonlabs.com's
- * connector scene): the apps slide behind a glass tile one place every
- * 1.6 s, the one behind the glass swelling so the tile takes its colour,
- * the far ones blurring and thinning, the row fading out at both ends;
- * Simeon sits on the tile.
- */
-struct ConnectStep: View {
-  let layout: OnboardingLayout
-  @State private var start = Date()
-  @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-  var body: some View {
-    let tile = CGFloat(Onboarding.connectTile)
-    ZStack(alignment: .top) {
-      OnboardingTitle(text: OnboardingStep.connect.title, layout: layout, bottom: -160)
-      ZStack {
-        TimelineView(.animation(minimumInterval: 1.0 / 60, paused: reduceMotion)) { context in
-          let elapsed = reduceMotion ? 0 : context.date.timeIntervalSince(start)
-          ZStack {
-            ForEach(Array(Onboarding.connectApps.enumerated()), id: \.element) { index, app in
-              let orb = Onboarding.orb(index, count: Onboarding.connectApps.count, elapsed: elapsed, width: Double(layout.width))
-              ConnectLogo(app: app)
-                .frame(width: CGFloat(orb.size), height: CGFloat(orb.size))
-                .blur(radius: CGFloat(orb.blur))
-                .opacity(orb.opacity)
-                .position(x: layout.width / 2 + CGFloat(orb.x), y: 130)
-            }
+    Group {
+      switch session.handOff {
+      case .running where session.firstRun == .done && !store.hasAgents:
+        ShimmerText(text: Onboarding.gettingReady, font: .system(size: 15, weight: .medium))
+          .padding(.horizontal, 18)
+          .frame(height: 44)
+          .glassEffect(.regular, in: .capsule)
+      case .failed(let why) where session.firstRun == .done:
+        HStack(spacing: 12) {
+          VStack(alignment: .leading, spacing: 2) {
+            Text(Onboarding.failed).font(.system(size: 14, weight: .semibold)).foregroundStyle(Ink.primary)
+            Text(why).font(.system(size: 12)).foregroundStyle(Ink.secondary).lineLimit(2)
           }
-          .frame(width: layout.width, height: 260)
+          Button("Try Again") { session.beginHandOff() }
+            .buttonStyle(.glass)
         }
-        .mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.18), .init(color: .black, location: 0.82), .init(color: .clear, location: 1)], startPoint: .leading, endPoint: .trailing))
-        Color.clear
-          .frame(width: tile, height: tile)
-          .glassEffect(.regular, in: .rect(cornerRadius: tile * 0.235, style: .continuous))
-          .shadow(color: Color(red: 30 / 255, green: 40 / 255, blue: 60 / 255).opacity(0.3), radius: 16, y: 14)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .glassEffect(.regular, in: .rect(cornerRadius: 22, style: .continuous))
+        .padding(.horizontal, 16)
+      default:
+        EmptyView()
       }
-      .frame(width: layout.width, height: 260)
-      .scaleEffect(layout.fit)
-      .position(layout.point(0, Onboarding.connectY))
-      .accessibilityHidden(true)
     }
-    .onAppear { start = Date() }
+    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+    .padding(.bottom, 28)
+    .animation(.easeInOut(duration: 0.25), value: session.handOff)
   }
 }
 
@@ -777,195 +656,6 @@ struct ConnectLogo: View {
       Image(uiImage: image.resolved(scheme)).resizable().interpolation(.high).scaledToFit()
     } else {
       Color.clear
-    }
-  }
-}
-
-/**
- * "They have their own computer and work just like you": the Mac's little
- * screen (441 by 300, its wallpaper and two windows), Simeon as the cursor
- * pressing a tile, another, closing the window and pressing the other's
- * button, a beat every 0.9 s.
- */
-struct ComputerDemo: View {
-  let beat: Int
-
-  var body: some View {
-    let pressed = Onboarding.computerFrame(beat).pressed
-    ZStack(alignment: .topLeading) {
-      Color(red: 0x24 / 255, green: 0x2a / 255, blue: 0x36 / 255)
-      Image("ComputerStep").resizable().scaledToFill().frame(width: 441, height: 300).clipped()
-      DemoWindow(shown: beat >= 0 && beat < 6, x: 29.6, y: 32.4, width: 300, height: 183.9, closePressed: pressed == "a-close") {
-        DemoTile(x: 13.8, y: 89.8, width: 272.4, height: 102.3)
-        DemoTile(x: 13.8, y: 33.2, width: 59.4, height: 44.2)
-        DemoTile(x: 82.9, y: 33.2, width: 59.4, height: 44.2, pressed: pressed == "a-tile-2")
-        DemoTile(x: 153.5, y: 33.2, width: 59.4, height: 44.2)
-        DemoTile(x: 224, y: 33.2, width: 59.4, height: 44.2, pressed: pressed == "a-tile-4")
-      }
-      DemoWindow(shown: beat >= 3, x: 125, y: 73.9, width: 262.7, height: 183.9, closePressed: false) {
-        DemoTile(x: 82.9, y: 38.7, width: 179.7, height: 145.2)
-        DemoTile(x: 6.9, y: 38.6, width: 69, height: 145.5)
-        DemoTile(x: 100.9, y: 56.7, width: 16.6, height: 16.6, fill: .black.opacity(0.1))
-        DemoTile(x: 100.9, y: 89.9, width: 16.6, height: 16.6, fill: .black.opacity(0.1))
-        DemoTile(x: 131.3, y: 62.2, width: 89.9, height: 6.9, fill: .black.opacity(0.1))
-        DemoTile(x: 131.3, y: 87.1, width: 89.9, height: 6.9, fill: .black.opacity(0.1))
-        DemoTile(x: 131.3, y: 102.3, width: 58.1, height: 6.9, fill: .black.opacity(0.1))
-        DemoTile(x: 96.8, y: 125.8, width: 152.1, height: 44.2, fill: Color(red: 4 / 255, green: 4 / 255, blue: 4 / 255).opacity(0.12), pressed: pressed == "b-button")
-      }
-    }
-    .frame(width: 441, height: 300)
-    .clipShape(RoundedRectangle(cornerRadius: 16.59, style: .continuous))
-    .accessibilityHidden(true)
-  }
-}
-
-/** One of the little screen's windows: it opens from 86 % (0.42 s) and closes back to it (0.26 s). */
-struct DemoWindow<Content: View>: View {
-  let shown: Bool
-  let x: CGFloat, y: CGFloat, width: CGFloat, height: CGFloat
-  let closePressed: Bool
-  @ViewBuilder let content: Content
-
-  var body: some View {
-    ZStack(alignment: .topLeading) {
-      Color(red: 0xf2 / 255, green: 0xf2 / 255, blue: 0xf4 / 255)
-      content
-      Rectangle().fill(Color(red: 0x14 / 255, green: 0x14 / 255, blue: 0x14 / 255).opacity(0.1)).frame(width: width, height: 0.75).offset(y: 25)
-      HStack(spacing: 4.6) {
-        Circle().fill(Color(red: 1, green: 0x5f / 255, blue: 0x57 / 255)).frame(width: 7.3, height: 7.3).scaleEffect(closePressed ? 0.72 : 1)
-        Circle().fill(Color(red: 0xfe / 255, green: 0xbc / 255, blue: 0x2e / 255)).frame(width: 7.3, height: 7.3)
-        Circle().fill(Color(red: 0x28 / 255, green: 0xc8 / 255, blue: 0x40 / 255)).frame(width: 7.3, height: 7.3)
-      }
-      .animation(.easeInOut(duration: 0.15), value: closePressed)
-      .offset(x: 8.9, y: 8.5)
-    }
-    .frame(width: width, height: height)
-    .clipShape(RoundedRectangle(cornerRadius: 8.3, style: .continuous))
-    .overlay(RoundedRectangle(cornerRadius: 8.3, style: .continuous).stroke(Color(red: 0x14 / 255, green: 0x14 / 255, blue: 0x14 / 255).opacity(0.1), lineWidth: 0.75))
-    .shadow(color: .black.opacity(0.12), radius: 15, y: 12)
-    .shadow(color: .black.opacity(0.05), radius: 5, y: 4.5)
-    .opacity(shown ? 1 : 0)
-    .scaleEffect(shown ? 1 : 0.86)
-    .animation(shown ? .timingCurve(0.1, 0.9, 0.2, 1, duration: 0.42) : .timingCurve(0.2, 0, 0, 1, duration: 0.26), value: shown)
-    .offset(x: x, y: y)
-  }
-}
-
-/** A tile of a window: white, grey when pressed (and a little smaller), 0.15 s. */
-struct DemoTile: View {
-  let x: CGFloat, y: CGFloat, width: CGFloat, height: CGFloat
-  var fill: Color = .white
-  var pressed = false
-
-  var body: some View {
-    RoundedRectangle(cornerRadius: 5.5, style: .continuous)
-      .fill(pressed ? Color.black.opacity(0.18) : fill)
-      .frame(width: width, height: height)
-      .scaleEffect(pressed ? 0.96 : 1)
-      .animation(.easeInOut(duration: 0.15), value: pressed)
-      .offset(x: x, y: y)
-  }
-}
-
-/**
- * "How should Simeon & Co call you?": three agents bounce in over one white
- * field, the name the server suggests already in it unless the person typed;
- * Return (or Continue) saves it and goes on. Empty is allowed: the app asks
- * again later.
- */
-struct NameStep: View {
-  let layout: OnboardingLayout
-  @Binding var name: String
-  @Binding var touched: Bool
-  var focused: FocusState<Bool>.Binding
-  let submit: () -> Void
-  @State private var arrived = false
-  @Environment(\.colorScheme) private var scheme
-
-  var body: some View {
-    ZStack(alignment: .top) {
-      OnboardingTitle(text: OnboardingStep.name.title, layout: layout, bottom: -150)
-      ForEach(Onboarding.nameSeats(width: Double(layout.width)), id: \.id) { seat in
-        PictureCircle(image: AgentFaces.face(id: seat.face).flatMap { AgentPictures.image($0) })
-          .frame(width: CGFloat(80 * seat.scale), height: CGFloat(80 * seat.scale))
-          .scaleEffect(arrived ? layout.fit : 0.4)
-          .opacity(arrived ? 1 : 0)
-          .animation(OnboardingMotion.bounce, value: arrived)
-          .position(layout.point(seat.x, seat.y))
-          .accessibilityHidden(true)
-      }
-      TextField(Onboarding.namePlaceholder, text: $name)
-        .font(.system(size: 17))
-        .multilineTextAlignment(.center)
-        #if os(iOS)
-        .textContentType(.givenName)
-        .textInputAutocapitalization(.words)
-        #endif
-        .autocorrectionDisabled()
-        .submitLabel(.continue)
-        .onSubmit(submit)
-        .focused(focused)
-        .tint(Color(red: 10 / 255, green: 132 / 255, blue: 1))
-        .padding(.horizontal, 14)
-        .frame(width: min(300, layout.width - 48), height: 44)
-        .background(scheme == .dark ? Color(red: 0x1c / 255, green: 0x1c / 255, blue: 0x1e / 255) : .white, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(focused.wrappedValue ? Color(red: 10 / 255, green: 132 / 255, blue: 1).opacity(0.55) : Ink.primary.opacity(0.16), lineWidth: 1))
-        .shadow(color: .black.opacity(scheme == .dark ? 0.3 : 0.04), radius: 1, y: 1)
-        .onChange(of: name) { _, typed in
-          touched = true
-          if typed.count > 60 { name = String(typed.prefix(60)) }
-        }
-        .position(layout.point(0, 4))
-      Text(Onboarding.nameNote)
-        .font(.system(size: 13))
-        .foregroundStyle(Ink.secondary)
-        .multilineTextAlignment(.center)
-        .padding(.horizontal, 24)
-        .frame(maxWidth: .infinity)
-        .position(layout.point(0, 50))
-    }
-    .onAppear { arrived = true }
-  }
-}
-
-/**
- * The hand-off: one line under the Mac's moving light while the computer
- * answers and Simeon is made ("Setting up your Simeon…", then "Getting
- * your team ready…"), shown at least 1.5 s; then his chat opens. If it
- * fails, why, and Try Again (which does not make a second Simeon).
- */
-struct HandOffStep: View {
-  @Environment(SessionController.self) private var session
-  @Environment(AppStore.self) private var store
-  @State private var ready = false
-  @State private var failure: String?
-  @State private var attempt = 0
-
-  var body: some View {
-    VStack(spacing: 12) {
-      if let failure {
-        Text(Onboarding.failed).font(.system(size: 17, weight: .semibold)).foregroundStyle(Ink.primary)
-        Text(failure).font(.system(size: 13)).foregroundStyle(Ink.danger).multilineTextAlignment(.center)
-        Button("Try Again") { self.failure = nil; attempt += 1 }
-          .buttonStyle(.glass)
-          .padding(.top, 8)
-      } else {
-        // The newest status of any agent's computer says how far its image is, or that it sleeps (`zjn`).
-        let latest = store.latestComputerStatus
-        ShimmerText(text: Onboarding.handOffLine(ready: ready, percent: latest?.isPulling == true ? Int((latest?.pullPercent ?? 0).rounded()) : nil,
-                                                 sleeping: latest?.state == "hibernated"), font: .system(size: 17, weight: .medium))
-      }
-    }
-    .padding(.horizontal, 32)
-    .frame(maxWidth: .infinity, maxHeight: .infinity)
-    .task(id: attempt) {
-      do {
-        let id = try await store.handOff(ready: { ready = true })
-        session.finishOnboarding(opening: id)
-      } catch {
-        let unreachable = GatewayError.neverArrived(error) || error is URLError
-        failure = unreachable ? Onboarding.unreachable : error.localizedDescription
-      }
     }
   }
 }

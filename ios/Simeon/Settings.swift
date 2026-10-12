@@ -9,8 +9,9 @@ import SimeonCore
  * Settings, in the order the founder's reference has it (9 and 11 October
  * 2026): the account and, under it, Usage with its share; Connect apps, as
  * the Mac's sidebar has it; the agents' settings (Auto-review and its rules,
- * the time zone, set automatically or chosen); Notifications, Appearance and
- * Haptics (both switches on until turned off); Privacy Policy, Terms of
+ * the time zone, set automatically or chosen); Notifications, Face ID (where
+ * the phone has it, off until turned on), Appearance and Haptics (both
+ * switches on until turned off); Privacy Policy, Terms of
  * Service and About; Sign Out (asked first) and the mark. Usage opens the
  * Mac's Usage & Billing (UsagePage).
  */
@@ -58,6 +59,11 @@ struct SettingsSheet: View {
           // registers again. Refused in the phone's own Settings, the switch shows off and opens them.
           Toggle("Notifications", isOn: notificationsSwitch)
             .tint(Ink.blue)
+          // Face ID when the app opens and after a quarter of an hour away (AppLock.swift); only on a phone that has it.
+          if AppLock.available {
+            Toggle(AppLock.name, isOn: faceIDSwitch)
+              .tint(Ink.blue)
+          }
           // A menu in the row, not a page of its own: the page slid back while the whole app redrew in the new colours,
           // and the two together stalled (the founder, 11 October 2026: "lags severely always").
           Picker("Appearance", selection: $theme) {
@@ -159,6 +165,22 @@ struct SettingsSheet: View {
   @AppStorage(Notifications.key) private var notificationsOn = true
   @AppStorage(Haptics.key) private var haptics = true
   @State private var notificationsRefused = false
+  @State private var faceIDOn = AppLock.isOn
+
+  private var faceIDSwitch: Binding<Bool> {
+    Binding(
+      get: { faceIDOn },
+      set: { on in
+        if on {
+          // On only once Face ID says it is the owner.
+          Task { faceIDOn = await AppLock.shared.enable() }
+        } else {
+          AppLock.shared.disable()
+          faceIDOn = false
+        }
+      }
+    )
+  }
 
   private var notificationsSwitch: Binding<Bool> {
     Binding(

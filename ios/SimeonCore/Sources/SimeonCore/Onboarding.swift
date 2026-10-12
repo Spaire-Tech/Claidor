@@ -1,40 +1,54 @@
 import Foundation
 
 /**
- * The first run, the Mac's (desktop/scripts/lib/router-renderer-patch.mjs,
- * MEET_*, COO_*, CONNECT_*, COMPUTER_*, NAME_*, and the window's own
- * hand-off): Meet Simeon, the Chief of Staff, the apps, the computer, the
- * person's name, then the hand-off that makes Simeon, their first agent.
- * Done once per account on any device: the host remembers it
- * (`hasSeenOnboarding` in the box's settings, as the Mac and the web window
- * read and write it).
+ * The first run (the founder, 12 October 2026: "simple onboarding … asked
+ * the necessary. no bloated screen", ChatGPT's way): the person's name,
+ * Face ID on the iPhone, then the notifications prompt, each one screen;
+ * meanwhile, out of sight, the hand-off makes Simeon, their first agent
+ * (`AppStore.handOff`). The Mac shows the name alone (its notifications are
+ * asked as the window opens). Done once per account on any device: the host
+ * remembers it (`hasSeenOnboarding` in the box's settings, as the Mac and
+ * the web window read and write it).
+ *
+ * Until 12 October 2026 it was the Mac's six scenes (Meet Simeon, the Chief
+ * of Staff, the apps, the computer, the name, the hand-off).
  */
 public enum OnboardingStep: Int, CaseIterable, Sendable {
-  case meet, chiefOfStaff, connect, computer, name, handOff
+  case name, faceID, notifications
 
   public var title: String {
     switch self {
-    case .meet: return "Meet Simeon"
-    case .chiefOfStaff: return "Simeon is your personal Chief of Staff"
-    case .connect: return "Your agents connect to the apps you already use"
-    case .computer: return "They have their own computer and work just like you"
-    case .name: return "How should Simeon & Co call you?"
-    case .handOff: return ""
+    case .name: return "What should Simeon call you?"
+    case .faceID: return "Unlock Simeon with Face ID"
+    case .notifications: return "Let Simeon tell you when work is done"
     }
   }
 
-  /** The window has no Back on its first two steps (the sign-in and Meet), and the hand-off has none. */
-  public var hasBack: Bool { self != .meet && self != .handOff }
-  public var next: OnboardingStep? { OnboardingStep(rawValue: rawValue + 1) }
-  public var previous: OnboardingStep? { hasBack ? OnboardingStep(rawValue: rawValue - 1) : nil }
+  /** The line under the title. */
+  public var detail: String? {
+    switch self {
+    case .name: return nil
+    case .faceID: return "Keep your agents private on this iPhone."
+    case .notifications: return "Get notified when an agent finishes a task or needs you."
+    }
+  }
+
+  /** The steps a device shows: Face ID only where the phone has it, notifications only while the system has not asked yet. */
+  public static func steps(faceID: Bool, notifications: Bool) -> [OnboardingStep] {
+    var steps: [OnboardingStep] = [.name]
+    if faceID { steps.append(.faceID) }
+    if notifications { steps.append(.notifications) }
+    return steps
+  }
 }
 
 public enum Onboarding {
-  public static let cooCopy = "He hires an agent for every job you hand off."
-  public static let namePlaceholder = "Your name"
-  public static let nameNote = "They’ll use it in chat and on calls. You can change it later."
+  public static let nameLabel = "Name"
+  public static let nameNote = "Your agents use it in chat and on calls."
   public static let failed = "Simeon couldn’t finish setting up"
   public static let unreachable = "Can't reach your computer right now. Check your connection and try again."
+  /** While the hand-off is still going once the first run is over (the list, before Simeon is there). */
+  public static let gettingReady = "Getting Simeon ready…"
 
   /**
    * The hand-off's one line (the window's `jqn`, `Xqn`), from the newest
@@ -50,8 +64,8 @@ public enum Onboarding {
 
   /**
    * The name step's field before the person types (`getNamePrompt`): the
-   * name they chose, else Google's first name; never one made from the
-   * e-mail (`namePromptFromSimeon`).
+   * name they chose, else Google's or Apple's first name; never one made
+   * from the e-mail (`namePromptFromSimeon`).
    */
   public static func suggestedName(profile: JSON) -> String? {
     for key in ["preferredName", "suggestedName"] {
@@ -60,153 +74,9 @@ public enum Onboarding {
     return nil
   }
 
-  /**
-   * Meet's beats on its scene clock (35 ms a tick, `Kjn`, stopping at 60):
-   * 0 unseen, 1 from the first tick (Simeon fades in large), 2 from the 16th
-   * (he turns), 3 from the 56th (he settles, the title and Next rise in).
-   * People who reduce motion start at the last.
-   */
-  public static func meetBeat(elapsed: Double, reduceMotion: Bool = false) -> Int {
-    if reduceMotion { return 3 }
-    let tick = min(60, Int((max(0, elapsed) / 0.035).rounded(.down)))
-    return tick >= 56 ? 3 : tick >= 16 ? 2 : tick >= 1 ? 1 : 0
-  }
-
-  /** When each of Meet's beats begins, in seconds. */
-  public static let meetBeatTimes = [0.035, 0.56, 1.96]
-
-  /**
-   * The computer's beat (`demoBeat`): the scene clock ticks every 0.9 s up
-   * to 8 (`Yjn`), the beat one less, so −1 (thinking under the screen) for
-   * the first 0.9 s, then each of the eight frames. Reduce motion: the last.
-   */
-  public static func computerBeat(elapsed: Double, reduceMotion: Bool = false) -> Int {
-    if reduceMotion { return computerFrames.count - 1 }
-    return min(computerFrames.count, Int((max(0, elapsed) / 0.9).rounded(.down))) - 1
-  }
-
-  /** The demo's first window shows from the first beat until its close button is pressed; the second from the fourth beat on (`Gqn`, `Wqn`). */
-  public static func computerWindows(beat: Int) -> (first: Bool, second: Bool) {
-    (beat >= 0 && beat < 6, beat >= 3)
-  }
-
   /** The name as it is saved: spaces run together, trimmed, at most 60 characters (`__simeonNameStep`). */
   public static func normalizedName(_ typed: String) -> String {
     String(typed.split(whereSeparator: \.isWhitespace).joined(separator: " ").prefix(60))
-  }
-
-  // MARK: The scene, in points about the screen's centre (the window's stage), Simeon an 80 pt avatar scaled.
-
-  /** Where Simeon sits on Meet and on the Chief of Staff step, so Next moves nothing but the words. */
-  public static let heroY = -40.0
-
-  public struct Seat: Sendable, Equatable {
-    public let id: String
-    public let label: String
-    /** The face drawn on the seat (AgentFaces): the seats are the team the Chief of Staff will hire, shown, not made. */
-    public let face: String
-    public let x: Double
-    public let y: Double
-    public let scale: Double
-  }
-
-  /** The Chief of Staff's six agents (`COO_CREW`), at their Mac distance; `crew(width:)` brings them in on a phone. */
-  public static let crew: [Seat] = [
-    Seat(id: "inbox", label: "Inbox", face: "clay-06", x: -300, y: -140, scale: 0.7),
-    Seat(id: "research", label: "Research", face: "clay-20", x: -300, y: -40, scale: 0.7),
-    Seat(id: "travel", label: "Travel", face: "clay-12", x: -300, y: 60, scale: 0.7),
-    Seat(id: "finance", label: "Finance", face: "clay-28", x: 300, y: -140, scale: 0.7),
-    Seat(id: "sales", label: "Sales", face: "clay-22", x: 300, y: -40, scale: 0.7),
-    Seat(id: "content", label: "Content", face: "clay-23", x: 300, y: 60, scale: 0.7),
-  ]
-
-  /** On a screen narrower than 600 pt the agents' centres sit 50 pt from its edge, never nearer Simeon than 104 (`__simeonCooAt`). */
-  public static func crew(width: Double) -> [Seat] {
-    guard width < 600 else { return crew }
-    let side = max(104, min(300, width / 2 - 50))
-    return crew.map { Seat(id: $0.id, label: $0.label, face: $0.face, x: $0.x < 0 ? -side : side, y: $0.y, scale: $0.scale) }
-  }
-
-  /** The blue curve from Simeon's side to an agent's inner edge (`cooLine`), in Simeon's frame: an S of two level tangents. */
-  public static func curve(to seat: Seat) -> (start: (x: Double, y: Double), control1: (x: Double, y: Double), control2: (x: Double, y: Double), end: (x: Double, y: Double)) {
-    let side: Double = seat.x < 0 ? -1 : 1
-    let x1 = side * 60, x2 = seat.x - side * 40, y2 = seat.y - heroY
-    let mid = ((x1 + x2) / 2).rounded()
-    return ((x1, 0), (mid, 0), (mid, y2), (x2, y2))
-  }
-
-  /** Each curve starts drawing 0.7 s in, 0.18 s after the one before; its agent brightens 0.52 s after its curve starts. */
-  public static func lineDelay(_ index: Int) -> Double { 0.7 + Double(index) * 0.18 }
-
-  /** The apps that slide behind the glass, in the site's order (`CONNECT_LOGO_SOURCES`). */
-  public static let connectApps = ["slack", "gmail", "notion", "figma", "linear", "google-drive", "hubspot", "zoom", "linkedin", "google-calendar", "stripe", "salesforce"]
-  public static let connectY = -20.0
-  public static let connectTile = 150.0
-
-  public struct Orb: Sendable, Equatable {
-    /** From the row's centre. */
-    public let x: Double
-    public let size: Double
-    public let blur: Double
-    public let opacity: Double
-  }
-
-  /**
-   * One app of the row at a moment (simeonlabs.com's connector scene, as the
-   * window's `__simeonConnectStep` draws it): the row moves one place every
-   * 1.6 s, in 0.55 s on a cubic ease; the app behind the glass swells, the
-   * far ones blur and thin out.
-   */
-  public static func orb(_ index: Int, count: Int, elapsed: Double, width: Double, tile: Double = connectTile) -> Orb {
-    let size = tile * 0.5, gap = tile * 1.05, lane = gap * Double(count)
-    let period = 1.6, move = 0.55
-    let k = max(0, elapsed) / period
-    let step = k.rounded(.down)
-    let f = min(1, (k - step) * period / move)
-    let ease = f < 0.5 ? 4 * f * f * f : 1 - pow(-2 * f + 2, 3) / 2
-    let shift = (step + ease) * gap
-    var x = (Double(index) * gap - shift).truncatingRemainder(dividingBy: lane)
-    if x < -lane / 2 { x += lane }
-    if x > lane / 2 { x -= lane }
-    let distance = abs(x) / (width / 2)
-    let grow = 1 + 0.6 * max(0, 1 - abs(x) / (gap * 0.6))
-    return Orb(x: x, size: size * grow, blur: max(0, (distance - 0.8) * 22, (grow - 1) * 30), opacity: max(0, min(1, 1.9 - distance)))
-  }
-
-  /** The computer's screen (`ComputerDemo`): a 441 by 300 drawing, 1.45 times on a Mac, as wide as a phone less 16 pt a side. */
-  public static let screenSize = (width: 441.0, height: 300.0)
-  public static func screenScale(width: Double) -> Double { width >= 600 ? 1.45 : min(1.45, (width - 32) / 441) }
-  /** Simeon as the cursor: 0.66 on a Mac's 1.45 screen, in proportion on a phone (`__simeonComputerCursor`). */
-  public static func cursorScale(width: Double) -> Double { screenScale(width: width) * 0.66 / 1.45 }
-
-  /** The demo's beats, 0.9 s apart: where the cursor goes and what it presses (`COMPUTER_DEMO_FRAMES`). */
-  public static let computerFrames: [(x: Double, y: Double, pressed: String?)] = [
-    (-78.3, -62.3, nil), (-78.3, -62.3, "a-tile-2"), (62.8, -62.3, nil), (62.8, -62.3, "a-tile-4"),
-    (-178.4, -105.5, nil), (-178.4, -105.5, "a-close"), (77.4, 71.8, nil), (77.4, 71.8, "b-button"),
-  ]
-
-  /** Before the first beat the cursor waits under the screen's middle, thinking. */
-  public static func computerFrame(_ beat: Int) -> (x: Double, y: Double, pressed: String?) {
-    beat < 0 ? (0, 30, nil) : computerFrames[min(beat, computerFrames.count - 1)]
-  }
-
-  /** Simeon's centre on the computer step: the cursor's point on the scaled screen, his body below and right of it (`U2e`). */
-  public static func cursorPlace(beat: Int, width: Double) -> (x: Double, y: Double, scale: Double) {
-    let frame = computerFrame(beat), k = screenScale(width: width), s = cursorScale(width: width)
-    return (frame.x * k + 59.8 * s, frame.y * k + 58.6 * s, s)
-  }
-
-  /** The name step's three agents over the field (`NAME_SEATS`); on a phone the side ones keep 44 pt from the edge. */
-  public static func nameSeats(width: Double) -> [Seat] {
-    let seats = [
-      Seat(id: "weekly-standup", label: "", face: "clay-24", x: -168, y: -64, scale: 0.62),
-      Seat(id: "invoice-chaser", label: "", face: "clay-07", x: 0, y: -96, scale: 0.72),
-      Seat(id: "sales-forecast", label: "", face: "clay-19", x: 168, y: -64, scale: 0.62),
-    ]
-    guard width < 600 else { return seats }
-    return seats.map { seat in
-      seat.x == 0 ? seat : Seat(id: seat.id, label: seat.label, face: seat.face, x: (seat.x < 0 ? -1 : 1) * min(abs(seat.x), width / 2 - 44), y: seat.y, scale: seat.scale)
-    }
   }
 
   /** Simeon, the person's first agent: the Chief of Staff (`SIMEON_COO_PROFILE`), introduced at once. */

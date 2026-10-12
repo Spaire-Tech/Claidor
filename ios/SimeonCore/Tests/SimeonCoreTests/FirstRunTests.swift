@@ -1,39 +1,15 @@
 import XCTest
 @testable import SimeonCore
 
-/** The Mac's first run (step 6), checked against the window's own numbers. */
+/** The first run (12 October 2026: the name, Face ID, the notifications prompt; Simeon made out of sight). */
 final class FirstRunTests: XCTestCase {
-  func testMeetBeatsFollowTheSceneClock() {
-    XCTAssertEqual(Onboarding.meetBeat(elapsed: 0), 0)
-    XCTAssertEqual(Onboarding.meetBeat(elapsed: 0.034), 0)
-    XCTAssertEqual(Onboarding.meetBeat(elapsed: 0.036), 1)
-    XCTAssertEqual(Onboarding.meetBeat(elapsed: 0.55), 1)
-    XCTAssertEqual(Onboarding.meetBeat(elapsed: 0.561), 2)
-    XCTAssertEqual(Onboarding.meetBeat(elapsed: 1.95), 2)
-    XCTAssertEqual(Onboarding.meetBeat(elapsed: 1.961), 3)
-    XCTAssertEqual(Onboarding.meetBeat(elapsed: 60), 3)
-    XCTAssertEqual(Onboarding.meetBeat(elapsed: 0, reduceMotion: true), 3)
-  }
-
-  func testComputerBeatsAndWindows() {
-    XCTAssertEqual(Onboarding.computerBeat(elapsed: 0), -1)
-    XCTAssertEqual(Onboarding.computerBeat(elapsed: 0.91), 0)
-    XCTAssertEqual(Onboarding.computerBeat(elapsed: 6.31), 6)
-    XCTAssertEqual(Onboarding.computerBeat(elapsed: 100), 7)
-    XCTAssertEqual(Onboarding.computerBeat(elapsed: 0, reduceMotion: true), 7)
-    XCTAssertTrue(Onboarding.computerWindows(beat: -1) == (false, false))
-    XCTAssertTrue(Onboarding.computerWindows(beat: 0) == (true, false))
-    XCTAssertTrue(Onboarding.computerWindows(beat: 3) == (true, true))
-    XCTAssertTrue(Onboarding.computerWindows(beat: 6) == (false, true))
-    XCTAssertEqual(Onboarding.computerFrame(5).pressed, "a-close")
-  }
-
-  func testTheCursorWalksTheScaledScreen() {
-    // The window at its usual size: (62.8, -62.3) on a 1.45 screen, Simeon at 0.66 below and right of his point.
-    let place = Onboarding.cursorPlace(beat: 2, width: 1280)
-    XCTAssertEqual(place.x, 130.528, accuracy: 0.001)
-    XCTAssertEqual(place.y, -51.659, accuracy: 0.001)
-    XCTAssertEqual(place.scale, 0.66, accuracy: 1e-9)
+  func testTheStepsADeviceShows() {
+    XCTAssertEqual(OnboardingStep.steps(faceID: true, notifications: true), [.name, .faceID, .notifications])
+    XCTAssertEqual(OnboardingStep.steps(faceID: false, notifications: true), [.name, .notifications], "a phone without Face ID")
+    XCTAssertEqual(OnboardingStep.steps(faceID: false, notifications: false), [.name], "the Mac, or notifications already decided")
+    XCTAssertEqual(OnboardingStep.name.title, "What should Simeon call you?")
+    XCTAssertNil(OnboardingStep.name.detail)
+    XCTAssertNotNil(OnboardingStep.faceID.detail)
   }
 
   func testTheNameStepSuggestsAChosenNameThenGooglesNeverTheMail() {
@@ -43,11 +19,7 @@ final class FirstRunTests: XCTestCase {
     XCTAssertEqual(Onboarding.normalizedName("  Bass   Fall "), "Bass Fall")
   }
 
-  func testTheSeatsWearFacesFromTheCatalogue() {
-    let seats = Onboarding.crew + Onboarding.nameSeats(width: 1000)
-    for seat in seats { XCTAssertNotNil(AgentFaces.face(id: seat.face), seat.id) }
-    XCTAssertEqual(Set(seats.map(\.face)).count, seats.count)
-    XCTAssertFalse(seats.contains { $0.face == AgentFaces.simeonId })
+  func testSimeonWearsHisOwnFace() {
     XCTAssertEqual(Onboarding.chiefOfStaff(nonce: "n")["avatarShape"], .string(AgentFaces.simeonId))
   }
 
