@@ -20,7 +20,7 @@ settings:
     # The Apple developer team Simeon publishes from: set it here, or in
     # Xcode under Signing & Capabilities, once. Without one the app is
     # signed to run on this Mac only, which is enough to try it.
-    DEVELOPMENT_TEAM: ""
+    DEVELOPMENT_TEAM: "496QXRMJXG"
 packages:
   SimeonCore:
     path: ../ios/SimeonCore

@@ -125,14 +125,16 @@ unoptimised Swift was several times slower). Push notifications still go
 through Apple's sandbox for such a build: the app reads that from its signing
 profile, not from the configuration.
 
-1. In Xcode, open Signing & Capabilities for the Simeon target. Choose the
-   Apple developer team Simeon publishes from, or set `DEVELOPMENT_TEAM`
-   in `project.yml`.
+1. Signing uses the company's Apple developer team, `496QXRMJXG`
+   (`DEVELOPMENT_TEAM` in `project.yml`, set 12 October 2026; the Mac
+   app's `project.yml` has the same). Sign in to that team in Xcode
+   (Settings › Accounts) once.
 2. Plug in the iPhone and Run. The first time, the phone asks you to trust
    the developer (Settings → General → VPN & Device Management).
 3. For TestFlight, choose Product → Archive, then Distribute App → App
-   Store Connect. It lands in the same app record as the Expo builds,
-   because the bundle id is the same. Raise `CURRENT_PROJECT_VERSION` in
+   Store Connect. It lands in the app record "Simeon by SimeonLabs"
+   (Apple ID 6821751771, bundle id `com.simeonlabs.simeon.ios`, made 12
+   October 2026; build 1 is its first). Raise `CURRENT_PROJECT_VERSION` in
    `project.yml` for each upload.
 
 ## Calls, notifications and the computer
