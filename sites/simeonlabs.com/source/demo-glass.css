@@ -60,3 +60,17 @@ html body .sand-onboarding__landing .sand-simeon-mark{
 /* The onboarding's cast as faces, not butterflies (demo-faces.js marks each with its face): a still round picture. */
 html body .sand-simeon-mark[data-face]>svg{display:none!important}
 html body .sand-simeon-mark[data-face]{background:var(--simeon-face) center/cover no-repeat!important;border-radius:50%!important;box-shadow:0 0 0 1px rgba(0,0,0,.06),0 2px 6px rgba(0,0,0,.12)}
+/* The sidebar as the Mac app draws it (Sidebar.swift, SidebarList.swift, Look.swift; the founder, 12 October 2026:
+   "the message sidebar like the real app"): the ground #fafafa with a fainter edge, rows 62 high and 4 apart, the
+   face 46 and 10 before the words, the title in a grey box with its words in the app's blue (11.5, medium), the open
+   chat's row the white card, and the account's initials a 32 disc. */
+html body aside.sand-agents-sidebar{background-color:#fafafa!important;border-right-color:rgba(20,20,20,.06)!important}
+html body .sand-agent-item{min-height:62px!important;height:62px!important;padding:8px!important;gap:10px!important;border-radius:14px!important}
+html body .sand-agent-item+.sand-agent-item{margin-top:4px!important}
+html body .sand-agent-item__avatar{width:46px!important;height:46px!important;flex:none!important}
+html body .sand-agent-item__avatar-disc{transform:scale(1.2778);transform-origin:0 0}
+html body .sand-agent-item__title{gap:10px!important}
+html body .sand-agent-item__title-badge{background:rgba(118,118,128,.12)!important;color:#255a93!important;padding:1px 5px!important;border-radius:4px!important;height:auto!important;min-height:0!important}
+html body .sand-agent-item__title-badge>span{font-size:11.5px!important;font-weight:500!important;line-height:16px!important}
+html body .sand-agents-sidebar__account button,html body .sand-agents-sidebar__account .sand-kit-base-avatar{width:32px!important;height:32px!important}
+html body .sand-agents-sidebar__account .sand-kit-base-avatar{font-size:12px!important}
