@@ -45,8 +45,8 @@ names a person with `%FACE:theo%`; the build fills in the file. In the demo,
 `demo-faces.js` hands each agent its face (`desktop/demo/backend.ts` asks for
 it) and dresses each mention as the apps draw one: the face, then the name in
 the app's blue, in a glass pill (`demo-glass.css`). The demo's onboarding
-shows the faces the apps' first run seats (`Onboarding.swift`, read by
-`faces.py`) and, on its first screen, the SimeonLabs logo lighting up where
+shows the faces the apps' first run seated before it became the short one
+(kept in `faces.py` as `SEATS`) and, on its first screen, the SimeonLabs logo lighting up where
 the butterfly was.
 
 ## What is in the page
