@@ -57,9 +57,11 @@ struct Launch {
 }
 
 /**
- * Signing in, staying signed in, signing out. The sign-in is the Mac's:
- * the system's sign-in sheet on `/loginDeepControl`, `/auth/poll` meanwhile
- * (SimeonCore's SignIn), the pair in the Keychain.
+ * Signing in, staying signed in, signing out. Apple's own sheet
+ * (`AppleSignIn`) and Google's own page (`GoogleSignIn`), each answered
+ * with the pair by Simeon Labs' server; the web sign-in (`SignIn`, the
+ * Mac's) while the server has no Google client for the iPhone. The pair in
+ * the Keychain.
  */
 @MainActor
 @Observable
@@ -171,6 +173,8 @@ final class SessionController {
       guard let profile = try? await api.profile(), let self, self.api === api else { return }
       self.apply(profile: profile)
     }
+    // The free month before the agents: a new account's computer opens on its thirty days, not on the plans.
+    await FreeMonthAsk.ask(backend)
     await store.attach(backend)
     // In-app purchase: renewals and approvals StoreKit delivers, and what this Apple ID already holds, to the server.
     Purchases.shared.start(store: store)
@@ -240,6 +244,7 @@ final class SessionController {
     store.detach()
     Purchases.shared.stop()
     Notifications.shared.forget()
+    FreeMonthAsk.forget()
     Self.remember(nil)
     api = nil
     askedForNotifications = false
@@ -250,8 +255,11 @@ final class SessionController {
   /**
    * The sign-in screen's Continue with Apple or Google. Apple: Apple's own
    * sheet (Face ID), then the pair straight from the server
-   * (`signInWithApple`, 12 October 2026). Google: the web sign-in in the
-   * system's sheet (`provider` on `/loginDeepControl`), and the poll.
+   * (`signInWithApple`, 12 October 2026). Google: Google's own page, then
+   * the pair straight from the server (`signInWithGoogle`, 12 October
+   * 2026: the web page's "Continue as …" after Google's picker was a
+   * duplicate); the web sign-in while the server has no Google client for
+   * the iPhone.
    */
   func signIn(with provider: SignIn.Provider) async {
     if provider == .apple {
@@ -262,6 +270,10 @@ final class SessionController {
     phase = .signingIn
     signingInWith = provider
     defer { signingInWith = nil }
+    if let google = await GoogleSignIn.config(api: launch.api, http: URLSessionClient()) {
+      await signInWithGoogle(google)
+      return
+    }
     let metadata = SignIn.freshMetadata()
     let state = SheetState()
     sheetState = state
@@ -340,6 +352,62 @@ final class SessionController {
     }
   }
 
+  /**
+   * Continue with Google: Google's page in the system's sign-in sheet,
+   * the account picker every time, the code back on the iPhone client's
+   * own scheme, then the code and this sign-in's verifier to
+   * `POST /auth/google`, which answers the pair. Closing the page goes
+   * back to the sign-in screen quietly; a refusal says the server's
+   * sentence.
+   */
+  private func signInWithGoogle(_ config: GoogleSignIn.Config) async {
+    let attempt = GoogleSignIn.freshAttempt()
+    guard let url = GoogleSignIn.authorizeURL(config, attempt: attempt), let scheme = config.callbackScheme else {
+      phase = .signedOut(message: GoogleSignIn.failed)
+      return
+    }
+    let callback: URL
+    do {
+      callback = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<URL, Error>) in
+        let once = ResumeOnce(continuation)
+        let session = ASWebAuthenticationSession(url: url, callback: .customScheme(scheme)) { url, error in
+          if let url { once.resume(returning: url) } else { once.resume(throwing: error ?? ASWebAuthenticationSessionError(.canceledLogin)) }
+        }
+        session.presentationContextProvider = presenter
+        // Safari's cookies: Google knows the person's accounts, and its picker shows them.
+        session.prefersEphemeralWebBrowserSession = false
+        sheet = session
+        if !session.start() { once.resume(throwing: URLError(.cannotLoadFromNetwork)) }
+      }
+    } catch let error as ASWebAuthenticationSessionError where error.code == .canceledLogin {
+      sheet = nil
+      phase = .signedOut(message: nil)
+      return
+    } catch {
+      sheet = nil
+      phase = .signedOut(message: GoogleSignIn.failed)
+      return
+    }
+    sheet = nil
+    switch GoogleSignIn.code(from: callback, attempt: attempt) {
+    case .cancelled:
+      phase = .signedOut(message: nil)
+    case .failed:
+      phase = .signedOut(message: GoogleSignIn.failed)
+    case .code(let code):
+      let outcome = await GoogleSignIn.signIn(api: launch.api, code: code, attempt: attempt, clientVersion: Self.clientVersion, http: URLSessionClient())
+      switch outcome {
+      case .tokens(let pair):
+        vault.write(SessionTokens(pair: pair, nowMs: Date().timeIntervalSince1970 * 1000))
+        finishing = true
+        await enter(holding: true)
+        finishing = false
+      case .refused(let message), .failed(let message):
+        phase = .signedOut(message: message)
+      }
+    }
+  }
+
   /** Settings' Cancel while signing in: the sign-in sheet closed, as its own Cancel does. */
   func cancelSignIn() {
     sheetState?.close(confirmed: false)
@@ -364,6 +432,7 @@ final class SessionController {
     store.detach()
     Purchases.shared.stop()
     await Notifications.shared.stop()
+    FreeMonthAsk.forget()
     Self.remember(nil)
     self.api = nil
     askedForNotifications = false
@@ -378,6 +447,7 @@ final class SessionController {
     Purchases.shared.stop()
     await Notifications.shared.stop()
     await api?.signOut()
+    FreeMonthAsk.forget()
     Self.remember(nil)
     api = nil
     askedForNotifications = false
@@ -519,5 +589,21 @@ final class SheetState: @unchecked Sendable {
       }
       try? await Task.sleep(nanoseconds: 100_000_000)
     }
+  }
+}
+
+/** A continuation resumed at most once: the sign-in sheet's own answer, or its failure to open, whichever comes first. */
+final class ResumeOnce<T: Sendable>: @unchecked Sendable {
+  private let lock = NSLock()
+  private var continuation: CheckedContinuation<T, Error>?
+
+  init(_ continuation: CheckedContinuation<T, Error>) { self.continuation = continuation }
+
+  func resume(returning value: T) {
+    lock.withLock { () -> CheckedContinuation<T, Error>? in defer { continuation = nil }; return continuation }?.resume(returning: value)
+  }
+
+  func resume(throwing error: Error) {
+    lock.withLock { () -> CheckedContinuation<T, Error>? in defer { continuation = nil }; return continuation }?.resume(throwing: error)
   }
 }

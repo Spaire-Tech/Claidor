@@ -179,9 +179,8 @@ struct SignInScreen: View {
   static let terms = URL(string: "https://www.simeonlabs.com/legal/terms-of-service")!
   static let privacy = URL(string: "https://www.simeonlabs.com/legal/privacy-policy")!
 
-  /** What the screen says above the buttons: a sign-in that went wrong, or, once the account is in, that the app is getting ready (the founder, 9 October 2026: the line that said so was missed, and the wait looked like a hang). */
+  /** What the screen says above the buttons: a sign-in that went wrong. While the account loads, the pressed button's spinner says it alone (the founder, 12 October 2026: "if the google icon is already loading, we dont need the text"). */
   private var message: String? {
-    if session.finishing { return "Signing you in…" }
     if case .signedOut(let message) = session.phase { return message }
     return nil
   }
