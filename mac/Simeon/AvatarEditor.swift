@@ -450,8 +450,8 @@ private struct FaceCell: View {
 
 /**
  * Voice (`__simeonVoicePicker`): "Voice" (12/16, semibold, grey), then the
- * Mac's pop-up of the voices by name and a 30-point round play button that
- * plays the voice's sample (stops it when it plays). A small spinner while
+ * voice's field across the row (VoiceMenu) and a 30-point play button in
+ * the same grey that plays the voice's sample (stops it when it plays). A small spinner while
  * the voices load; hidden when there are none (calls off). A pick is saved
  * at once; refused, it goes back and says "Couldn’t save the voice."
  *
@@ -491,13 +491,7 @@ private struct VoicePicker: View {
             .accessibilityLabel("Loading voices")
         } else {
           HStack(spacing: 8) {
-            Picker("Voice", selection: Binding(get: { chosen ?? "" }, set: { pick($0) })) {
-              ForEach(voices) { voice in Text(voice.name).tag(voice.id) }
-            }
-            .labelsHidden()
-            .pickerStyle(.menu)
-            .handCursor()
-            .frame(maxWidth: .infinity)
+            VoiceMenu(voices: voices, chosen: chosen, look: look, pick: pick)
             playButton
           }
         }
@@ -520,11 +514,11 @@ private struct VoicePicker: View {
       if playing { player.stop() } else { player.play(sample, id: voice.id) }
     } label: {
       Image(systemName: playing ? "stop.fill" : "play.fill")
-        .font(.system(size: 10))
+        .font(.system(size: 11))
         .foregroundStyle(look.ink)
         .frame(width: 30, height: 30)
-        .background(Circle().fill(Color(red: 120 / 255, green: 120 / 255, blue: 128 / 255).opacity(look.dark ? 0.24 : 0.12)))
-        .contentShape(Circle())
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(look.rowHover.opacity(0.82)))
+        .contentShape(Rectangle())
     }
     .buttonStyle(.hand)
     .disabled(sample == nil)
@@ -555,6 +549,59 @@ private struct VoicePicker: View {
         note = AvatarEditorWords.voiceNotSaved
       }
     }
+  }
+}
+
+/**
+ * The voice's field (the founder, 12 October 2026: the system pop-up sat
+ * small in the middle of the row, out of proportion with Shuffle and the
+ * play button): the whole row's width, 30 high, round 10, in the grey of the
+ * popover's other buttons (darker under the pointer), the chosen voice's
+ * name at the left and the up-down chevrons at the right. A click opens the
+ * voices, the chosen one ticked.
+ */
+private struct VoiceMenu: View {
+  let voices: [AppStore.VoiceChoice]
+  let chosen: String?
+  let look: Look
+  let pick: (String) -> Void
+  @State private var hovering = false
+
+  var body: some View {
+    let name = voices.first { $0.id == chosen }?.name ?? ""
+    let grey = Color(red: 119 / 255, green: 119 / 255, blue: 119 / 255)
+    Menu {
+      // The voices with the Mac's own tick on the chosen one.
+      Picker("Voice", selection: Binding(get: { chosen ?? "" }, set: { pick($0) })) {
+        ForEach(voices) { voice in Text(voice.name).tag(voice.id) }
+      }
+      .pickerStyle(.inline)
+      .labelsHidden()
+    } label: {
+      HStack(spacing: 6) {
+        Text(name)
+          .font(.system(size: 13))
+          .foregroundStyle(look.ink)
+          .lineLimit(1)
+        Spacer(minLength: 4)
+        Image(systemName: "chevron.up.chevron.down")
+          .font(.system(size: 10, weight: .semibold))
+          .foregroundStyle(look.inkSecondary)
+      }
+      .padding(.horizontal, 12)
+      .frame(maxWidth: .infinity)
+      .frame(height: 30)
+      .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(hovering ? grey.opacity(look.dark ? 0.32 : 0.17) : look.rowHover.opacity(0.82)))
+      .contentShape(Rectangle())
+    }
+    .menuStyle(.button)
+    .buttonStyle(.plain)
+    .menuIndicator(.hidden)
+    .fixedSize(horizontal: false, vertical: true)
+    .frame(maxWidth: .infinity)
+    .handCursor()
+    .onHover { hovering = $0 }
+    .accessibilityLabel("Voice, \(name)")
   }
 }
 
