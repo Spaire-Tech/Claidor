@@ -438,10 +438,11 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .exc-t b{display:block;margin-top:.3cqw;font-size:2.9cqw;line-height:1.14;font-weight:600;letter-spacing:-.02em;color:#fff;text-wrap:balance}
 .exc.lt .exc-t b{color:var(--ink)}
 
-/* The conversation in glass over a card's photo. */
+/* The conversation in glass over a card's photo, in the ads' bubbles (the founder, 12 October 2026: no blue):
+   both sides clear glass with a hint of dark, yours a little lighter, each with one small corner on its own side. */
 .cv{position:absolute;z-index:1;left:50%;top:50%;width:62cqw;transform:translate(-50%,-50%);display:flex;flex-direction:column;gap:1.1cqw;font-size:1.6cqw;line-height:1.3;letter-spacing:-.01em;color:#fff;pointer-events:none}
-.cv p{position:relative;margin:0;max-width:72%;padding:1.2cqw 1.6cqw;border-radius:2cqw;background:rgba(255,255,255,.16);-webkit-backdrop-filter:blur(22px) saturate(1.6);backdrop-filter:blur(22px) saturate(1.6);box-shadow:inset 0 0 0 1px rgba(255,255,255,.32),inset 0 1px 0 rgba(255,255,255,.3),0 1.2cqw 3cqw rgba(0,0,0,.22)}
-.cv p.me{align-self:flex-end;background:rgba(37,90,147,.42);box-shadow:inset 0 0 0 1px rgba(255,255,255,.3),inset 0 1px 0 rgba(255,255,255,.25),0 1.2cqw 3cqw rgba(0,0,0,.22)}
+.cv p{position:relative;margin:0;max-width:72%;padding:1.2cqw 1.6cqw;border-radius:.75cqw 2cqw 2cqw 2cqw;border:1px solid rgba(255,255,255,.32);background:linear-gradient(rgba(255,255,255,.09),rgba(255,255,255,.09)),rgba(12,14,18,.22);-webkit-backdrop-filter:blur(28px) saturate(1.5) brightness(1.15);backdrop-filter:blur(28px) saturate(1.5) brightness(1.15);box-shadow:inset 0 1px 0 rgba(255,255,255,.26),0 1cqw 3.4cqw rgba(0,0,0,.16);text-shadow:0 1px 2px rgba(0,0,0,.12)}
+.cv p.me{align-self:flex-end;border-radius:2cqw 2cqw .75cqw 2cqw;border-color:rgba(255,255,255,.38);background:linear-gradient(rgba(255,255,255,.14),rgba(255,255,255,.14)),rgba(12,14,18,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 1cqw 3.4cqw rgba(0,0,0,.16)}
 .cv .who{display:flex;align-items:center;gap:.7cqw;margin:.4cqw 0 -.2cqw .4cqw;font-size:.82em;color:rgba(255,255,255,.8)}
 .cv .who img{width:2.1cqw;height:2.1cqw;max-width:none;border-radius:50%;object-fit:cover}
 .cv .step{display:flex;align-items:center;gap:.8cqw;margin-left:.6cqw;font-size:.85em;color:rgba(255,255,255,.85)}
@@ -621,7 +622,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .exctl svg{width:24px;height:24px}
 .exctl button:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
 @media (max-width:809.98px){.exrail{gap:12px}.exc{aspect-ratio:4/5.4;border-radius:24px}.exc-t{left:7cqw;right:7cqw;top:7cqw;font-size:3.6cqw}.exc-t b{font-size:6.2cqw;margin-top:.8cqw}
-  .cv,.cv.l,.cv.l.low{left:7cqw;right:7cqw;width:auto;top:27cqw;bottom:auto;transform:none;font-size:2.7cqw;gap:1.5cqw}.cv p,.cv.l p{padding:1.9cqw 2.6cqw;border-radius:3.4cqw;max-width:88%}.cv .who img{width:4cqw;height:4cqw}.cv .step i{width:3cqw;height:3cqw}.cv .step svg{width:1.8cqw;height:1.8cqw}}
+  .cv,.cv.l,.cv.l.low{left:7cqw;right:7cqw;width:auto;top:27cqw;bottom:auto;transform:none;font-size:2.7cqw;gap:1.5cqw}.cv p,.cv.l p{padding:1.9cqw 2.6cqw;border-radius:1.25cqw 3.4cqw 3.4cqw 3.4cqw;max-width:88%}.cv p.me,.cv.l p.me{border-radius:3.4cqw 3.4cqw 1.25cqw 3.4cqw}.cv .who img{width:4cqw;height:4cqw}.cv .step i{width:3cqw;height:3cqw}.cv .step svg{width:1.8cqw;height:1.8cqw}}
 @media (max-width:734px){
   .exrail{gap:14px}
   .exctl{gap:14px;margin-top:22px}.exctl button{width:44px;height:44px}.exctl svg{width:20px;height:20px}
