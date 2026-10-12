@@ -429,7 +429,6 @@ struct UsagePage: View {
   @State private var cancelFailure: String?
   @State private var showsPlans = false
   @State private var plansTier: String?
-  @State private var managingApple = false
 
   var body: some View {
     Form {
@@ -480,7 +479,7 @@ struct UsagePage: View {
           if meters.canCancelTrial {
             Button(cancelling ? "Canceling…" : "Cancel Trial", role: .destructive) {
               // Apple's free week is cancelled in Apple's own sheet.
-              if summary.billedByApple { managingApple = true } else { askingCancel = true }
+              if summary.billedByApple { manageWithApple() } else { askingCancel = true }
             }
             .disabled(cancelling)
             if let cancelFailure {
@@ -515,7 +514,7 @@ struct UsagePage: View {
                   Text("Upgrade to \(next.label)").foregroundStyle(Ink.link)
                 }
               }
-              Button { managingApple = true } label: {
+              Button { manageWithApple() } label: {
                 HStack {
                   Text("Manage Subscription").foregroundStyle(Ink.primary)
                   Spacer()
@@ -579,12 +578,34 @@ struct UsagePage: View {
     .sheet(isPresented: $showsPlans, onDismiss: { Task { await store.refreshUsage() } }) {
       PlansSheet(preselect: plansTier).presentationBackground(Ink.groupedGround)
     }
-    // Apple's own subscription sheet: change, cancel, or end the free week.
-    .manageSubscriptionsSheet(isPresented: $managingApple)
-    .onChange(of: managingApple) { _, showing in
-      if !showing { Task { await store.refreshUsage() } }
+  }
+
+  /**
+   * Apple's own subscription page (change, cancel, or end the free week),
+   * over the whole screen rather than from inside Settings' sheet (12
+   * October 2026: from the sheet it loaded without end, then said "Cannot
+   * Connect"); the App Store's subscriptions page when Apple's cannot be
+   * shown. The usage is read again once it closes.
+   */
+  private func manageWithApple() {
+    Task {
+      let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+      if let scene = scenes.first(where: { $0.activationState == .foregroundActive }) ?? scenes.first {
+        do {
+          try await StoreKit.AppStore.showManageSubscriptions(in: scene)
+          await store.refreshUsage()
+          return
+        } catch {
+          Trace.log("[simeon] manage subscriptions: \(error.localizedDescription)")
+        }
+      }
+      openURL(Self.appStoreSubscriptions)
+      await store.refreshUsage()
     }
   }
+
+  /** The App Store's own page of the Apple ID's subscriptions (Apple's documented link). */
+  static let appStoreSubscriptions = URL(string: "https://apps.apple.com/account/subscriptions")!
 
   /** The App Store's plans, on `tier` when one is asked for (an upgrade). */
   private func choosePlan(_ tier: String?) {
