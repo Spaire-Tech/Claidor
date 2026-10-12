@@ -26,8 +26,9 @@ are safe to repeat). A plan bought in the iPhone app is Apple's: only the
 person can cancel it, in their iPhone's Settings, so the answer says it is
 still running (`appleSubscription`) and the app tells them where. Step 3 is done as far as the providers allow; what
 fails is logged (`desktop.account.delete_incomplete`) to finish by hand.
-Kept, as the policy says: usage and subscription rows (billing records)
-and the trial redemption (one free week per card and per person).
+Kept, as the policy says: usage and subscription rows (billing records),
+the trial redemption and the free month (one trial per card and per
+person; the free month keeps only a hash of the e-mail).
 """
 
 from __future__ import annotations

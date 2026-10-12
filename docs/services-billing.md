@@ -1,8 +1,9 @@
 # What the server does for the app, part 3: plans and billing
 
 Simeon sells three plans to the person who signs in from the Mac: Standard
-($20 a month), Pro ($60) and Max ($200), each with a week of free trial on a
-card, and each with a number of credits a week. Stripe Billing owns the
+($20 a month), Pro ($60) and Max ($200), each with a 30-day free trial on a
+card (seven days until 12 October 2026), and each with a number of credits
+a week. Stripe Billing owns the
 products, the prices, the trial, the subscription, the invoices and the
 usage meters. The server creates the Stripe customer, opens Stripe Checkout
 and Stripe's Customer Portal, keeps one copy of each person's subscription
@@ -13,7 +14,9 @@ covers what a credit is and how the proxy meters one.
 
 The iPhone app sells the same three plans through Apple's in-app purchase
 (12 October 2026): Apple takes the payment and the server keeps a copy of
-what Apple signed. Section 9 says how.
+what Apple signed. Section 9 says how. Its trial is the free month: 30
+days with no card, started by the app at the first sign-in, one per
+person and one per iPhone (section 10).
 
 Nothing here gates anyone until `SIMEON_DESKTOP_BILLING_REQUIRED` is
 `true`. Without it, every person has the free monthly allowance
@@ -28,7 +31,7 @@ unset. The code stays with the inherited shop
 
 | Plan | Monthly | Yearly | Credits a week | Trial |
 |---|---|---|---|---|
-| Standard | $20 | $192 | 3,750,000 | 7 days, 5,000,000 credits once |
+| Standard | $20 | $192 | 3,750,000 | 30 days, 5,000,000 credits once |
 | Pro | $60 | $576 | 12,500,000 | same |
 | Max | $200 | $1,920 | 40,000,000 | same |
 
@@ -87,8 +90,10 @@ was; the public name and statement descriptor are what a person sees.
    tier and an interval. The server makes
    the Stripe customer on first use (kept on `users.stripe_customer_id`),
    finds the price by its lookup key, and opens a Stripe Checkout session:
-   `mode=subscription`, the card always collected, a seven-day trial for a
-   person who never had one, the charge at once for anyone who did,
+   `mode=subscription`, the card always collected, a 30-day trial for a
+   person who never had one (no card trial, no Apple free week, no free
+   month on the iPhone: `free_month.had_trial`), the charge at once for
+   anyone who did,
    `client_reference_id` and `metadata.simeon_user_id` set so the webhook
    can find the person. The browser goes to Stripe's checkout page and
    comes back to the `success_url` with `checkout_session_id` appended.
@@ -155,7 +160,7 @@ was; the public name and statement descriptor are what a person sees.
    offering the download.
 7. **From the site.** "Try it free" opens the billing page with the plan
    chosen. A visitor with no account signs in with Google, saves a card,
-   and the page comes back saying the 7 days have started, with the
+   and the page comes back saying the free month has started, with the
    Download button (`api.simeonlabs.com/desktop/download/mac`) and one
    line: open Simeon and sign in with the same account. The app then finds
    the trial already there and shows no cover. Only a link from the site
@@ -303,8 +308,10 @@ and the Customer Portal configuration by hand (section 2). The migration
   device or in Apple's sandbox yet, and the StoreKit code has not been
   compiled (it was written without Xcode). The server tests sign
   transactions with a test certificate chain, not Apple's.
-- **A second free week through Apple.** Apple decides who gets its free
-  week (once per Apple ID), not the server. A person who had the web's
+- **A second free week through Apple.** The free week was removed from the
+  six products on 12 October 2026 (the free month replaced it, section
+  10); the code still applies one if a product carries it. Apple decides
+  who gets its free week (once per Apple ID), not the server. A person who had the web's
   trial, or Apple's on another Apple ID, gets Apple's free week again and
   the trial's credits with it. StoreKit's server-signed offer eligibility
   (`Product.PurchaseOption.introductoryOfferEligibility`, signed with an
@@ -433,8 +440,9 @@ The migration `desktop_app_store_1012` adds `desktop_app_store_subscriptions`.
 3. **The subscription group and products**: in the app › Monetization ›
    Subscriptions, create the group "Simeon" and the six products of the
    table, each with its price, a display name ("Simeon Pro") and a
-   description ("12,500,000 credits a week"), the free week as its
-   introductory offer, and a review screenshot of the plans sheet.
+   description ("12,500,000 credits a week"), no introductory offer (the
+   free week was removed on 12 October 2026: the free month replaces it,
+   section 10), and a review screenshot of the plans sheet.
 4. **Server notifications**: in the app › App Information › App Store
    Server Notifications, Version 2, set both the production and the
    sandbox URL to `https://api.simeonlabs.com/desktop/apple/notifications`.
@@ -475,3 +483,66 @@ The migration `desktop_app_store_1012` adds `desktop_app_store_subscriptions`.
   the app never reached the server and no notification matched (Restore
   Purchases sends it again); a row with `tier` null means a product id the
   server does not know.
+
+## 10. The free month on the iPhone (12 October 2026)
+
+The founder dropped Apple's free week ("the whole free trial makes it
+complicated"): a person who signs in on the iPhone has 30 days and the
+trial's 5,000,000 credits, with no checkout and no card. When the days or
+the credits run out the app offers the plans sheet. On the web and the Mac
+the trial still takes a card: a browser or a Mac cannot be told apart, an
+iPhone can.
+
+**One per person and one per iPhone** (`server/simeon/plans/free_month.py`):
+
+- the person: no free month, card trial or Apple free week before, by
+  account and by e-mail. The row (`desktop_free_trials`) keeps a SHA-256 of
+  the e-mail, so deleting the account and signing up again with the same
+  address gives no second month;
+- the iPhone: Apple's DeviceCheck (`server/simeon/plans/device_check.py`).
+  Apple keeps two bits per device for the developer team, through deleting
+  the app and signing in with another account; bit 0 means "this iPhone had
+  its free month". The server reads it before a month starts and sets it
+  after.
+
+**The call.** After every sign-in the app sends
+`POST /desktop/api/billing/free-month {deviceToken, development}` (the
+token from `DCDevice.generateToken()`; `development` for a build run from
+Xcode, whose token only Apple's development service knows; the other
+service is asked when Apple does not know the token). The answer is
+always 200: `outcome` (`started`, `running`, `not_needed` for a plan or
+billing off, `had_trial`, `device_used`, `unavailable`), `endsAt`, and the
+quota.
+
+**How it counts.** With no live plan, `resolve_allowance` reads the free
+month: while it runs, status `trialing`, plan name "Free trial", no tier
+and nobody billing it, the window the month and the credits its own. It
+opens the computer, the model calls and app connections like a plan's
+trial. Once over, status `none` with `trialEndsAt` still set, so the app
+says the free month has ended. A plan bought later is a plan like any
+other, with no trial (it is the person's one trial).
+
+**Settings on Render** (the shared environment group the API and the worker read):
+
+| Setting | What |
+|---|---|
+| `SIMEON_APPLE_DEVICECHECK_KEY_ID` | The key's id (developer account › Keys, DeviceCheck ticked) |
+| `SIMEON_APPLE_DEVICECHECK_KEY_VALUE` | The `.p8` file's text, with its BEGIN and END lines |
+| `SIMEON_APPLE_TEAM_ID` | `496QXRMJXG`, already set for Sign in with Apple |
+| `SIMEON_DESKTOP_FREE_TRIAL_TEST_EMAILS` | Optional: e-mails whose free month may start again on an iPhone that had one, to try the first run more than once (delete the account in the app, sign in again) |
+
+Without the DeviceCheck key the iPhone gets no free month (`unavailable`)
+and is offered the plans.
+
+**When it misbehaves:**
+
+- **`free_month.started`**: a month began, with its end and whether it was
+  a test e-mail.
+- **`free_month.device_used`**: the iPhone already had one.
+- **`free_month.device_check_not_configured`**: the key settings are
+  missing.
+- **`free_month.device_check_failed`** with **`device_check.query_refused`**
+  or **`device_check.unknown_token`**: Apple refused the question (a wrong
+  key or team gives 401) or knows the token in neither service.
+- **`free_month.device_mark_failed`**: the month started but Apple did not
+  keep the mark; the account and the e-mail still count it.

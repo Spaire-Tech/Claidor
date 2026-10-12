@@ -20,6 +20,7 @@ from typing import Any
 from uuid import UUID
 
 from simeon.config import settings
+from simeon.desktop.allowance import FREE_TRIAL_PLAN_NAME
 from simeon.desktop.service import desktop
 from simeon.entitlements.tiers import PAID_TIERS, TIER_NAMES
 from simeon.models import User
@@ -29,12 +30,15 @@ from simeon.redis import Redis
 from .pipedream import PipedreamCredentials, PipedreamProvider
 from .provider import Connection, ConnectorProvider
 
-#: The plans that include connections: every plan, and the trial, since
-#: a trial has a card on file (`docs/services-billing.md`). `quota()`
+#: The plans that include connections: every plan, its trial, and the
+#: iPhone app's free month (12 October 2026: the trial is meant to feel
+#: like the plan it turns into, `docs/services-billing.md`). `quota()`
 #: answers one of these names once billing is configured, and « Free »
 #: where it is not (development, a self-hosted server), where the
 #: allowlist below is the only yes.
-ENTITLED_PLANS: frozenset[str] = frozenset(TIER_NAMES[tier] for tier in PAID_TIERS)
+ENTITLED_PLANS: frozenset[str] = frozenset(
+    [*(TIER_NAMES[tier] for tier in PAID_TIERS), FREE_TRIAL_PLAN_NAME]
+)
 
 #: How long one person's list of connections is held. Long enough that
 #: opening the app is one call rather than forty, short enough that a

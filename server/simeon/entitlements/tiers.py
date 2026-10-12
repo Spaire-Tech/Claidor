@@ -246,11 +246,13 @@ _INACTIVE = TierEntitlements(
 )
 
 
-#: What every plan's trial includes: 5,000,000 credits, once, for the
-#: seven days (1,000,000 until 8 October 2026, when the founder found "a
-#: simple onboarding run eats it all": every allowance is five times what
-#: it was, "at least for now"). A shade more than Standard's week, so the
-#: trial feels like the plan it turns into.
+#: What every trial includes: 5,000,000 credits, once, for the whole trial
+#: (1,000,000 until 8 October 2026, when the founder found "a simple
+#: onboarding run eats it all": every allowance is five times what it was,
+#: "at least for now"). The trial was seven days until 12 October 2026 and
+#: is thirty since (`simeon.plans.catalog.TRIAL_DAYS`), with the same
+#: credits: the founder chose them over a month of Standard's weeks. The
+#: iPhone app's free month gives the same (`simeon.plans.free_month`).
 TRIAL_CREDITS = 5_000_000
 
 # Standard, $20 a month: 3,750,000 credits a week (750,000 until 8 October

@@ -11,6 +11,7 @@ from sqlalchemy import func, or_, select, update
 from simeon.kit.repository import RepositoryBase
 from simeon.models import (
     DesktopAppStoreSubscription,
+    DesktopFreeTrial,
     DesktopSubscription,
     DesktopTrialRedemption,
     DesktopUsage,
@@ -119,6 +120,23 @@ class DesktopTrialRedemptionRepository(RepositoryBase[DesktopTrialRedemption]):
             self.get_base_statement()
             .where(func.lower(DesktopTrialRedemption.email) == email.lower())
             .where(DesktopTrialRedemption.user_id != other_than_user)
+            .limit(1)
+        )
+        return await self.get_one_or_none(statement)
+
+
+class DesktopFreeTrialRepository(RepositoryBase[DesktopFreeTrial]):
+    model = DesktopFreeTrial
+
+    async def get_for_user(self, user_id: UUID) -> DesktopFreeTrial | None:
+        statement = self.get_base_statement().where(DesktopFreeTrial.user_id == user_id)
+        return await self.get_one_or_none(statement)
+
+    async def get_for_email_hash(self, email_hash: str) -> DesktopFreeTrial | None:
+        statement = (
+            self.get_base_statement()
+            .where(DesktopFreeTrial.email_hash == email_hash)
+            .order_by(DesktopFreeTrial.created_at.desc())
             .limit(1)
         )
         return await self.get_one_or_none(statement)

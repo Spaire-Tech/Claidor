@@ -24,7 +24,7 @@ from typing import Any
 from simeon.desktop.allowance import billing_required
 from simeon.desktop.service import desktop
 from simeon.models import User
-from simeon.plans.repository import DesktopTrialRedemptionRepository
+from simeon.plans import free_month
 from simeon.plans.service import BilledByApple
 from simeon.plans.service import plans as plans_service
 from simeon.postgres import AsyncSession
@@ -86,10 +86,7 @@ async def sand_access_of(db: AsyncSession, user: User) -> dict[str, Any]:
             "purchaseChannel": SAND_PURCHASE_CHANNEL_IN_APP,
             "blockReason": 0,
         }
-    had_trial = (
-        await DesktopTrialRedemptionRepository.from_session(db).get_for_user(user.id)
-        is not None
-    )
+    had_trial = await free_month.had_trial(db, user)
     return {
         "state": SAND_ACCESS_STATE_PAYMENT_REQUIRED,
         "purchaseChannel": SAND_PURCHASE_CHANNEL_IN_APP,

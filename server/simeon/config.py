@@ -222,6 +222,10 @@ class Settings(BaseSettings):
     DESKTOP_BILLING_REQUIRED: bool = False
     # People who never need a plan, by e-mail (staff, friends).
     DESKTOP_BILLING_EXEMPT_EMAILS: set[str] = set()
+    # E-mails whose free month (`simeon.plans.free_month`) may start again,
+    # on an iPhone that already had one and after an earlier free month:
+    # the founder's test accounts, to try the first run more than once.
+    DESKTOP_FREE_TRIAL_TEST_EMAILS: set[str] = set()
     # Where the Mac app's releases are served from (`simeon.desktop.releases`):
     # the folder that holds `darwin-arm64/latest.json` and the version
     # folders. Unset, the public bucket's `releases/` folder.
@@ -535,6 +539,10 @@ class Settings(BaseSettings):
     # Google
     GOOGLE_CLIENT_ID: str = ""
     GOOGLE_CLIENT_SECRET: str = ""
+    # The iPhone app's own Google client (an OAuth client of type iOS in the
+    # same Google Cloud project): the app signs in with Google itself and
+    # sends the ID token to `POST /auth/google`, whose audience must be this.
+    GOOGLE_IOS_CLIENT_ID: str = ""
 
     # Microsoft — SharePoint and OneDrive as sources for a deal, through
     # Graph. Empty means the connector is not configured on this server,
@@ -617,6 +625,16 @@ class Settings(BaseSettings):
     APPLE_APP_ID: int | None = None
     APPLE_PRODUCT_PREFIX: str = "com.simeonlabs.simeon"
     APPLE_ONLINE_CHECKS: bool = True
+    # Apple's DeviceCheck (`simeon.plans.device_check`): one free month per
+    # iPhone. A key from the developer account (Keys, DeviceCheck ticked):
+    # its id and the .p8 file's text; the team is APPLE_TEAM_ID. Without
+    # them the iPhone app is not offered the free month.
+    APPLE_DEVICECHECK_KEY_ID: str = ""
+    APPLE_DEVICECHECK_KEY_VALUE: str = ""
+    APPLE_DEVICECHECK_BASE: str = "https://api.devicecheck.apple.com"
+    APPLE_DEVICECHECK_DEVELOPMENT_BASE: str = (
+        "https://api.development.devicecheck.apple.com"
+    )
 
     # Mux video
     # Signing key used to mint short-lived JWTs for signed playback URLs

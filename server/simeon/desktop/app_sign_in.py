@@ -35,7 +35,7 @@ would never be called.
        billing page instead (the one thing the web app is for), with
        this very URL as the way back; the
        billing page opens Stripe Checkout, which takes a card, starts
-       the 7-day trial, and returns here with `checkout_session_id`,
+       the 30-day trial, and returns here with `checkout_session_id`,
        which the page copies in before asking, so the gate opens even
        if Stripe's webhook is a few seconds behind. So nobody is signed
        in to the app without a card on file (`docs/services-billing.md`).

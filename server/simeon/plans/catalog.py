@@ -18,8 +18,11 @@ from simeon.entitlements.tiers import PAID_TIERS, TIER_NAMES, TierKey, get_defin
 
 BillingInterval = Literal["month", "year"]
 
-#: Every plan's trial: seven days, card on file, charged on day eight.
-TRIAL_DAYS = 7
+#: Every trial's length: thirty days (seven until 12 October 2026, when the
+#: founder made it a free month). On the web and the Mac the card is on
+#: file and charged on day thirty-one; the iPhone app's free month asks
+#: for no card (`simeon.plans.free_month`).
+TRIAL_DAYS = 30
 
 #: Yearly is 20% off twelve months, in whole dollars: $192, $576, $1,920.
 YEARLY_DISCOUNT = 0.8

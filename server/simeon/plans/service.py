@@ -26,7 +26,7 @@ from simeon.models import DesktopSubscription, DesktopTrialRedemption, User
 from simeon.postgres import AsyncSession
 from simeon.user.repository import UserRepository
 
-from . import catalog
+from . import catalog, free_month
 from .app_store import MANAGE_ON_IPHONE
 from .effective import PlanRow, billed_by_apple, plan_of
 from .repository import (
@@ -202,8 +202,9 @@ class PlansService:
         cancel_url: str | None = None,
     ) -> str:
         """A Stripe Checkout URL that starts the plan: card required, a
-        7-day trial for a first plan, the charge at once for anyone who
-        had one. Returns the URL to send the browser to."""
+        30-day trial for a first plan, the charge at once for anyone who
+        had one (a card trial, Apple's free week, or the iPhone app's free
+        month). Returns the URL to send the browser to."""
         if not settings.STRIPE_SECRET_KEY:
             raise BillingNotConfigured()
         if billed_by_apple(await self.plan_of(session, user)):
@@ -218,11 +219,7 @@ class PlansService:
             raise UnknownPrice(plan_price.lookup_key)
         customer_id = await self.customer_id_for(session, user)
 
-        redemptions = DesktopTrialRedemptionRepository.from_session(session)
-        had_trial = await redemptions.get_for_user(user.id) is not None or (
-            await redemptions.get_for_email(user.email, other_than_user=user.id)
-            is not None
-        )
+        had_trial = await free_month.had_trial(session, user)
 
         success = allowed_return_url(success_url) or settings.generate_frontend_url(
             f"{BILLING_PATH}?upgraded=1"
@@ -248,8 +245,8 @@ class PlansService:
             client_reference_id=str(user.id),
             line_items=[{"price": price.id, "quantity": 1}],
             subscription_data=subscription_data,
-            # The card is taken even for the free week; it is charged on
-            # day eight.
+            # The card is taken even for the trial; it is charged on day
+            # thirty-one.
             payment_method_collection="always",
             allow_promotion_codes=True,
             success_url=success,

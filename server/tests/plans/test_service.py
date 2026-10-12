@@ -18,7 +18,8 @@ from simeon.config import settings
 from simeon.desktop.allowance import resolve_allowance
 from simeon.entitlements.tiers import TierKey
 from simeon.kit.utils import utc_now
-from simeon.models import DesktopUsage, SandBox, User
+from simeon.models import DesktopFreeTrial, DesktopUsage, SandBox, User
+from simeon.plans import free_month
 from simeon.plans.catalog import lookup_key, parse_lookup_key, prices, yearly_cents
 from simeon.plans.repository import (
     DesktopSubscriptionRepository,
@@ -337,7 +338,7 @@ class TestCheckout:
         assert params["client_reference_id"] == str(user.id)
         assert params["line_items"] == [{"price": "price_1", "quantity": 1}]
         assert params["payment_method_collection"] == "always"
-        assert params["subscription_data"]["trial_period_days"] == 7
+        assert params["subscription_data"]["trial_period_days"] == 30
         assert params["subscription_data"]["metadata"]["simeon_tier"] == "pro"
         assert params["success_url"].startswith(
             settings.generate_frontend_url("/billing?x=1")
@@ -345,6 +346,50 @@ class TestCheckout:
         assert params["success_url"].endswith(
             "checkout_session_id={CHECKOUT_SESSION_ID}"
         )
+
+    async def test_after_the_iphone_s_free_month_the_web_gets_no_trial(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+        billing: None,
+        mocker: MockerFixture,
+    ) -> None:
+        """The free month (`simeon.plans.free_month`) is the person's one
+        trial: the plan bought on the web afterwards is charged at once."""
+        now = utc_now()
+        await save_fixture(
+            DesktopFreeTrial(
+                user_id=user.id,
+                email_hash=free_month.email_hash(user.email),
+                starts_at=now - timedelta(days=31),
+                ends_at=now - timedelta(days=1),
+                credits=5_000_000,
+                device_checked=True,
+            )
+        )
+        mocker.patch(
+            "simeon.plans.service.stripe_billing.create_customer",
+            new=AsyncMock(
+                return_value=stripe_lib.Customer.construct_from({"id": "cus_new"}, None)
+            ),
+        )
+        mocker.patch(
+            "simeon.plans.service.stripe_billing.price_by_lookup_key",
+            new=AsyncMock(
+                return_value=stripe_lib.Price.construct_from({"id": "price_1"}, None)
+            ),
+        )
+        create = mocker.patch(
+            "simeon.plans.service.stripe_billing.create_checkout_session",
+            new=AsyncMock(
+                return_value=stripe_lib.checkout.Session.construct_from(
+                    {"id": "cs_3", "url": "https://checkout.stripe.com/c/cs_3"}, None
+                )
+            ),
+        )
+        await plans.create_checkout(session, user, tier=TierKey.standard)
+        assert "trial_period_days" not in create.await_args.kwargs["subscription_data"]
 
     async def test_a_second_plan_gets_no_trial(
         self, session: AsyncSession, user: User, billing: None, mocker: MockerFixture

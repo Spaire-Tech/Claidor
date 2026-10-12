@@ -1,6 +1,6 @@
 """What Stripe says about a person's plan, copied here by webhook.
 
-Stripe Billing owns the products, the prices, the 7-day trial, the
+Stripe Billing owns the products, the prices, the 30-day trial, the
 subscription and the invoices (`docs/services-billing.md`). The server
 keeps one row per person with the subscription's status and dates, written
 by the `customer.subscription.*` and `checkout.session.completed` webhooks
@@ -18,13 +18,18 @@ keeps a copy written from Apple's signed transactions, sent by the app after
 a purchase and by Apple's server notifications (`simeon.plans.app_store`).
 It has the same fields the allowance reads as `DesktopSubscription`, so
 credits, the trial and access work alike whoever bills the plan.
+
+`DesktopFreeTrial` is the free month (12 October 2026): started by the
+iPhone app at a person's first sign-in, no card and no checkout, with the
+trial's credits (`simeon.plans.free_month`). One per person and one per
+iPhone; it counts as the person's one trial everywhere.
 """
 
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
-from sqlalchemy import TIMESTAMP, Boolean, ForeignKey, String, Text, Uuid
+from sqlalchemy import TIMESTAMP, Boolean, ForeignKey, Integer, String, Text, Uuid
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, declared_attr, mapped_column, relationship
 
@@ -231,3 +236,35 @@ class DesktopTrialRedemption(RecordModel):
     )
     stripe_subscription_id: Mapped[str] = mapped_column(String(128), nullable=False)
     note: Mapped[str] = mapped_column(Text, nullable=False, default="")
+
+
+class DesktopFreeTrial(RecordModel):
+    """The free month: 30 days and the trial's credits, started from the
+    iPhone app with no card (12 October 2026). One row per person, ever.
+    The row outlives a deleted account with only a hash of the e-mail, so
+    deleting the account and signing up again with the same address does
+    not start a second one; Apple's DeviceCheck stops a second one on the
+    same iPhone (`simeon.plans.free_month`)."""
+
+    __tablename__ = "desktop_free_trials"
+
+    user_id: Mapped[UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey("users.id", ondelete="set null"),
+        nullable=True,
+        unique=True,
+        index=True,
+    )
+    #: SHA-256 of the lower-cased e-mail (`free_month.email_hash`).
+    email_hash: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    starts_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=False
+    )
+    ends_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False)
+    credits: Mapped[int] = mapped_column(Integer, nullable=False)
+    #: Whether Apple's DeviceCheck said the iPhone had no free month yet
+    #: and now marks it; False only for an e-mail on the test list.
+    device_checked: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+    def live_at(self, now: datetime) -> bool:
+        return self.starts_at <= now < self.ends_at

@@ -31,6 +31,7 @@ from .desktop import (
 )
 from .desktop_billing import (
     DesktopAppStoreSubscription,
+    DesktopFreeTrial,
     DesktopSubscription,
     DesktopTrialRedemption,
 )
@@ -162,6 +163,7 @@ __all__ = [
     "CustomerSession",
     "CustomerSessionCode",
     "DesktopAppStoreSubscription",
+    "DesktopFreeTrial",
     "DesktopAuthCode",
     "DesktopMemoryFile",
     "DesktopSession",

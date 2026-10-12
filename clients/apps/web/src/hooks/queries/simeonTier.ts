@@ -83,7 +83,7 @@ export interface Entitlements {
   monthly_price_cents: number
   /** Credits included each week, Monday to Monday UTC. */
   weekly_credits: number
-  /** Credits the 7-day trial includes, once. */
+  /** Credits the 30-day trial includes, once. */
   trial_credits: number
 }
 

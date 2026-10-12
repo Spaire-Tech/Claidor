@@ -21,7 +21,8 @@ class TestEntitled:
     ) -> None:
         """With no platform organisation configured everybody is « Free »,
         which no plan name matches, so the allowlist is the only yes."""
-        assert ENTITLED_PLANS == frozenset({"Standard", "Pro", "Max"})
+        # Every plan and the iPhone app's free month (12 October 2026).
+        assert ENTITLED_PLANS == frozenset({"Standard", "Pro", "Max", "Free trial"})
         assert await connectors.entitled(session, user) is False
 
         mocker.patch.object(settings, "CONNECTORS_ENTITLED_EMAILS", {user.email})

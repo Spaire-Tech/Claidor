@@ -182,7 +182,7 @@ const AllSet = ({
     else if (fromApp && justPaid) window.location.replace(OPEN_APP_URL)
   }, [returnTo, fromApp, justPaid])
 
-  const started = justPaid && trialing ? 'Your 7 days have started. ' : ''
+  const started = justPaid && trialing ? 'Your free month has started. ' : ''
   return (
     <>
       <section className={styles.set}>

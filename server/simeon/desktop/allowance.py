@@ -15,7 +15,9 @@ Three windows, one shape:
   `DESKTOP_MONTHLY_CREDITS`. Nothing changes for an installation that
   has not switched billing on.
 - **Trial**: `trial_start` to `trial_end` of the trialing subscription,
-  the plan's `trial_credits`, once.
+  the plan's `trial_credits`, once. The free month the iPhone app starts
+  with no card (`simeon.plans.free_month`, 12 October 2026) is a trial
+  too: its thirty days, its credits, once.
 - **A plan** (active, or past due while the card is retried): Monday
   00:00 UTC to the next Monday, the plan's `weekly_credits`. Stripe
   cannot reset a meter weekly, so the week is counted here, from
@@ -43,8 +45,9 @@ from simeon.entitlements.tiers import (
     tier_from_value,
 )
 from simeon.kit.utils import utc_now
-from simeon.models import User
+from simeon.models import DesktopFreeTrial, User
 from simeon.plans.effective import PlanRow, plan_of
+from simeon.plans.repository import DesktopFreeTrialRepository
 from simeon.postgres import AsyncSession
 
 #: `subscriptionStatus` values the app sees. `free` and `none` are ours;
@@ -57,6 +60,9 @@ STATUS_PAST_DUE = "past_due"
 
 #: Where a person goes to choose, change or cancel a plan.
 BILLING_PATH = "/billing"
+
+#: The plan name of the free month (`simeon.plans.free_month`).
+FREE_TRIAL_PLAN_NAME = "Free trial"
 
 
 def billing_required() -> bool:
@@ -118,12 +124,14 @@ class Allowance:
     credits_limit: int
     period_start: datetime
     period_end: datetime
-    #: When the trial ends, while trialing.
+    #: When the trial ends, while trialing; when the free month ended, for
+    #: a person with no plan since (the app says the month is over).
     trial_end: datetime | None = None
     #: Whether the person can still cancel the trial (it is not already
     #: scheduled to end without a charge).
     trial_cancelable: bool = False
-    #: Who bills the plan: `stripe`, `app_store`, or None for free and none.
+    #: Who bills the plan: `stripe`, `app_store`, or None for free, none
+    #: and the free month.
     provider: str | None = None
 
     @property
@@ -164,7 +172,7 @@ def _free(now: datetime) -> Allowance:
     )
 
 
-def _none(now: datetime) -> Allowance:
+def _none(now: datetime, *, trial_ended: datetime | None = None) -> Allowance:
     start, end = week_bounds(now)
     return Allowance(
         plan_name=TIER_NAMES[TierKey.inactive],
@@ -173,6 +181,24 @@ def _none(now: datetime) -> Allowance:
         credits_limit=0,
         period_start=start,
         period_end=end,
+        trial_end=trial_ended,
+    )
+
+
+def free_month_allowance(trial: DesktopFreeTrial, *, now: datetime) -> Allowance:
+    """The free month while it runs: a trial with no tier and no one billing
+    it, so the app shows the trial's credits and offers every plan. Once it
+    has ended, no plan, with the day it ended."""
+    if not trial.live_at(now):
+        return _none(now, trial_ended=trial.ends_at)
+    return Allowance(
+        plan_name=FREE_TRIAL_PLAN_NAME,
+        status=STATUS_TRIALING,
+        tier=None,
+        credits_limit=trial.credits,
+        period_start=trial.starts_at,
+        period_end=trial.ends_at,
+        trial_end=trial.ends_at,
     )
 
 
@@ -222,16 +248,28 @@ async def resolve_allowance(
     session: AsyncSession, user: User, *, now: datetime | None = None
 ) -> Allowance:
     """The person's allowance now: the synced plan rows, by the user's
-    id (Stripe's and Apple's, `plan_of`)."""
+    id (Stripe's and Apple's, `plan_of`); without a live plan, the free
+    month if the person has had one."""
     moment = now or utc_now()
     if not billing_required() or billing_exempt(user):
         return _free(moment)
     subscription = await plan_of(session, user.id, now=moment)
-    return allowance_of(subscription, now=moment)
+    allowance = allowance_of(subscription, now=moment)
+    if not allowance.none:
+        return allowance
+    trial = await DesktopFreeTrialRepository.from_session(session).get_for_user(user.id)
+    if trial is None:
+        return allowance
+    month = free_month_allowance(trial, now=moment)
+    # A plan bought after the free month, since lapsed, is what ended last.
+    if month.none and subscription is not None:
+        return allowance
+    return month
 
 
 __all__ = [
     "BILLING_PATH",
+    "FREE_TRIAL_PLAN_NAME",
     "STATUS_ACTIVE",
     "STATUS_FREE",
     "STATUS_NONE",
@@ -242,6 +280,7 @@ __all__ = [
     "billing_exempt",
     "billing_required",
     "billing_url",
+    "free_month_allowance",
     "month_bounds",
     "resolve_allowance",
     "week_bounds",

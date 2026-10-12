@@ -7,6 +7,8 @@
   after a purchase, a restore or at launch; answers the plan and the quota.
 - `POST /desktop/apple/notifications`: Apple's server notifications
   (version 2), set as the production and sandbox URL in App Store Connect.
+- `POST /desktop/api/billing/free-month`: the free month the app starts
+  after a sign-in, no card (`simeon.plans.free_month`, 12 October 2026).
 
 `simeon.plans.app_store` checks Apple's signatures and keeps the plan;
 `docs/services-billing.md` (section 9) says how it is set up.
@@ -22,7 +24,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from simeon.models import DesktopSession
-from simeon.plans import app_store
+from simeon.plans import app_store, free_month
 from simeon.plans.app_store import AppStoreError
 from simeon.postgres import AsyncSession, get_db_session
 from simeon.routing import APIRouter
@@ -103,6 +105,37 @@ async def apple_transactions(
     return JSONResponse(
         {
             "plan": _plan_json(live[0] if live else (rows[0] if rows else None)),
+            "quota": await desktop.quota(session, user),
+        }
+    )
+
+
+class FreeMonthBody(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    #: `DCDevice.generateToken()`, base64, a few kilobytes.
+    deviceToken: str = Field(min_length=1, max_length=16_000)
+    #: The app's guess at which DeviceCheck service knows its token: a
+    #: build run from Xcode is signed for development.
+    development: bool = False
+
+
+@router.post("/api/billing/free-month", name="desktop:free_month")
+async def start_free_month(
+    body: FreeMonthBody,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    """Start the person's free month if they and this iPhone never had
+    one. Always 200 with what happened (`free_month.Outcome.reason`) and
+    the quota the app shows next."""
+    user = desktop_session.user
+    outcome = await free_month.start(
+        session, user, device_token=body.deviceToken, development=body.development
+    )
+    return JSONResponse(
+        {
+            "outcome": outcome.reason,
+            "endsAt": outcome.trial.ends_at.isoformat() if outcome.trial else None,
             "quota": await desktop.quota(session, user),
         }
     )

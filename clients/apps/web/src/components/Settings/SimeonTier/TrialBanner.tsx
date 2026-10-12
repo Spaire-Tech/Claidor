@@ -17,7 +17,7 @@ const daysLeft = (trialEnd: string | null | undefined): number | null => {
 }
 
 /**
- * Persistent banner shown while the person is on the 7-day trial, counting
+ * Persistent banner shown while the person is on the 30-day trial, counting
  * down to the charge and linking to the billing page. Renders nothing once
  * the trial is converted or expired.
  */

@@ -125,7 +125,7 @@ class Entitlements(Schema):
     )
     trial_credits: int = Field(
         default=0,
-        description="Credits the plan's trial includes, once, for its 7 days.",
+        description="Credits the plan's trial includes, once, for its 30 days.",
     )
 
     @classmethod
