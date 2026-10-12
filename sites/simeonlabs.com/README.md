@@ -2,10 +2,11 @@
 
 The public website, with the Simeon app-window demo playing in the hero.
 
-- `public/` is the site Vercel serves, as built. Nothing in it links anywhere:
-  it is a site to try, every button leads nowhere.
+- `public/` is the site Vercel serves, as built.
 - `source/` is how it is made: `page.html`, `build.py`, the paintings and
-  wordmark (`img/`), the agents' faces and the demo's scroll guard.
+  wordmark (`img/`), who wears which face (`faces.py`), the scripts and styles
+  laid over the demo (`demo-faces.js`, `demo-glass.*`, `demo-gate.js`) and its
+  scroll guard.
 - `vercel.json` tells Vercel there is no install or build step, to serve
   `public/`, and to skip a deploy when nothing under this folder changed.
 
@@ -21,6 +22,29 @@ python3 build.py ../../../desktop/dist/demo
 
 The script needs Playwright's Chromium (it captures the stills the hero shows
 while the app loads). It rewrites `public/` from scratch; commit what it writes.
+Edit `source/`, never `public/` by hand: a hand edit is lost at the next build
+(the Download and plan links, made in `public/` on 11 October 2026, are in
+`page.html` since 12 October).
+
+Without a Mac, the demo `public/app/<digest>/` already holds can stand in for
+`dist/demo`: copy it, delete `scroll-guard.js`, `demo-gate.js`, `demo-faces.js`
+and `demo-glass.*`, and take out of its `index.html` what `build.py` adds (the
+scripts and stylesheet next to `demo-bridge.js`, and the style after the
+`body::before` rule). Built from the same source, the result is the same
+folder byte for byte (checked on 12 October 2026).
+
+## The agents' faces
+
+Every agent on the page and in the demo wears a clay face from the apps'
+catalogue (`ios/SimeonCore/Sources/SimeonCore/Resources/Faces`), with no
+butterflies and no agent colours (the founder, 12 October 2026). `faces.py`
+gives each person the face the apps would give them in one team: Simeon's
+own face for the Chief of Staff, otherwise the face their name's gender has
+fewest of (`AgentFaces.plan`, ported and checked against the Swift). The page
+names a person with `%FACE:theo%`; the build fills in the file. In the demo,
+`demo-faces.js` hands each agent its face (`desktop/demo/backend.ts` asks for
+it) and dresses each mention as the apps draw one: the face, then the name in
+the app's blue, in a glass pill (`demo-glass.css`).
 
 ## What is in the page
 
@@ -44,8 +68,9 @@ edge shared by the wordmark, the headline and the demo.
 - **Pricing** (a free week, Standard $20, Pro $60, Max $200; each card says the week's credits),
   **Questions and answers**, and the closing line.
 
-Nothing links outside the page, except the footer: Privacy and Terms open the legal
-pages, Contact writes to support@simeonlabs.com.
+Download and Download for Mac fetch the Mac app (`api.simeonlabs.com/desktop/download/mac`),
+and each plan's button opens billing with that plan (`app.simeonlabs.com/billing?plan=…`).
+In the footer, Privacy and Terms open the legal pages, Contact writes to support@simeonlabs.com.
 
 ## The legal pages
 

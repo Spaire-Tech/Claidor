@@ -40,3 +40,11 @@ html body .sand-prompt-attach .ui-icon{color:rgba(0,0,0,.78)!important}
 html body .sand-chat-header__identity{pointer-events:none!important}
 /* The demo has no routine behind "Created routine · Monday launch check": the line reads, but opens nothing (6 October 2026). */
 html body .sand-kit-system-event__chip{pointer-events:none!important}
+/* Agents wear faces now, with no colour of their own and no butterfly (the founder, 12 October 2026). A mention
+   is drawn as the Mac and iPhone apps draw it (MentionPills, mac/Simeon/MessageText.swift): the agent's face in a
+   1.1 em circle, then its name in the app's blue at 600, in a clear glass pill. demo-faces.js hands each mention
+   its face (--simeon-face). */
+html body .simeon-agent{--simeon-agent-color:#255a93!important;color:#255a93!important;font-weight:600!important;padding:.06em .5em .06em .18em;margin:0 .04em;border-radius:99px;
+  background:rgba(255,255,255,.62);box-shadow:inset 0 .5px 0 rgba(255,255,255,.95),0 0 0 .5px rgba(0,0,0,.09),0 1px 2px rgba(0,0,0,.06)}
+html body .simeon-agent__mark{width:1.1em!important;height:1.1em!important;margin:0 .26em 0 0!important;vertical-align:-.22em!important;border-radius:50%;
+  background:var(--simeon-face,rgba(0,0,0,.08)) center/cover no-repeat!important}
