@@ -1,6 +1,6 @@
 """The Mac app's releases (`simeon.desktop.releases`): the download
-redirect, the latest-release JSON and the updater's Squirrel answer, with
-the bucket's `latest.json` mocked. No database."""
+redirect, the latest-release JSON, Sparkle's feed and the updater's
+Squirrel answer, with the bucket's `latest.json` mocked. No database."""
 
 import httpx
 import pytest
@@ -12,6 +12,7 @@ from simeon.desktop import releases
 from simeon.desktop.releases import (
     Release,
     download_mac,
+    download_mac_appcast,
     download_mac_latest,
     forget_cached_releases,
     is_newer,
@@ -122,3 +123,10 @@ def test_the_base_url_falls_back_to_the_public_bucket(mocker: MockerFixture) -> 
     )
     assert releases.releases_base_url() == "https://bucket.example/releases"
     public.assert_called_once_with("releases")
+
+
+@pytest.mark.asyncio
+async def test_sparkle_is_sent_to_the_appcast_beside_latest_json() -> None:
+    response = await download_mac_appcast()
+    assert response.status_code == 302
+    assert response.headers["location"] == f"{BASE}/darwin-arm64/appcast.xml"

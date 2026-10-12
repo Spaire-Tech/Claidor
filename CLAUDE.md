@@ -82,8 +82,9 @@ cd runner && npm test
 cd ios/SimeonCore && swift test
 cd ios && xcodegen generate && open Simeon.xcodeproj
 
-# Mac app (mac/README.md, mac/STEPS.md)
+# Mac app (mac/README.md, mac/STEPS.md); a release, signed and notarized (--publish: on the website)
 mac/scripts/build.sh
+mac/scripts/release.sh
 cd mac && xcodegen generate && open SimeonMac.xcodeproj
 
 # Earlier names

@@ -547,7 +547,7 @@ struct ReplyPill: View {
     }
     .padding(EdgeInsets(top: 4, leading: 14, bottom: 4, trailing: 4))
     .frame(height: 36)
-    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+    .liquidGlass(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     .accessibilityElement(children: .contain)
     .accessibilityLabel("Replying to \(reply.line)")
   }

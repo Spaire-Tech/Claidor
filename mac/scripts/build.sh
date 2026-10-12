@@ -28,12 +28,14 @@ fi
 xcodebuild -version | head -1
 major=$(xcodebuild -version | head -1 | sed -E 's/Xcode ([0-9]+).*/\1/')
 if [ "$major" -lt 26 ]; then
-  echo "This needs Xcode 26 or later (Liquid Glass). Update Xcode from the App Store, then run this again."
+  echo "This needs Xcode 26 or later (its SDK has Liquid Glass). Update Xcode from the App Store, then run this again."
   exit 1
 fi
 os=$(sw_vers -productVersion | cut -d. -f1)
-if [ "$os" -lt 26 ]; then
-  echo "Note: this Mac runs macOS $(sw_vers -productVersion). The app builds here, but it opens only on macOS 26 or later."
+if [ "$os" -lt 15 ]; then
+  echo "Note: this Mac runs macOS $(sw_vers -productVersion). The app builds here, but it opens only on macOS 15 or later."
+elif [ "$os" -lt 26 ]; then
+  echo "Note: this Mac runs macOS $(sw_vers -productVersion): the app opens with the plainer look; Liquid Glass shows on macOS 26."
 fi
 
 say "Making the Xcode project"
@@ -63,7 +65,7 @@ if ! xcodebuild -project SimeonMac.xcodeproj -scheme Simeon -configuration Debug
 fi
 echo "Built: mac/build/Build/Products/Debug/Simeon.app"
 
-if [ "$(sw_vers -productVersion | cut -d. -f1)" -ge 26 ]; then
+if [ "$(sw_vers -productVersion | cut -d. -f1)" -ge 15 ]; then
   say "Opening Simeon"
   open -n build/Build/Products/Debug/Simeon.app --args "$@"
 fi

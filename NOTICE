@@ -11,4 +11,7 @@ anthropics/skills, Copyright Anthropic PBC, under the Apache License,
 Version 2.0 (see server/simeon/desktop/skills/NOTICE and each skill's
 LICENSE.txt).
 
-The Mac app (desktop/) carries its own notices: desktop/NOTICE.md.
+The retired Electron Mac app (desktop/) carries its own notices:
+desktop/NOTICE.md. The Swift Mac app (mac/) updates itself with Sparkle
+(https://sparkle-project.org), Copyright the Sparkle Project contributors,
+under the MIT License.

@@ -503,7 +503,7 @@ private struct GlassTile: View {
       .fill(Color.white.opacity(0.4)
         .shadow(.inner(color: .white.opacity(0.95), radius: 2.4, x: 0, y: 3.6))
         .shadow(.inner(color: shade.opacity(0.14), radius: 6.6, x: 0, y: -4.8)))
-      .glassEffect(.regular, in: outer)
+      .liquidGlass(in: outer)
       .overlay {
         RoundedRectangle(cornerRadius: 34, style: .circular)
           .strokeBorder(Color.white.opacity(0.72), lineWidth: 6)
