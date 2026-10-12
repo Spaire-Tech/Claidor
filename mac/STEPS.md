@@ -981,6 +981,10 @@ suggestion (`namePrompt()`), the computer's probe, and the butterfly's
   nothing if agents turn up. Otherwise the window opens. To see it on an account that already
   has agents, launch with `--first-run` (or `SIMEON_FIRST_RUN=1`); its
   hand-off then makes no second Simeon.
+> Replaced on 12 October 2026: the first run is one screen, the name, then
+> the window on Simeon's chat (`mac/Simeon/FirstRun.swift`). What follows is
+> the Electron window's six scenes as they were copied.
+
 - **The frame of every step**: the whole window, the ground colour, things
   placed about its centre. A title (28, `-0.02em`), the step's scene, and
   Next over Back (288 × 36 pills, 12 apart; Next near black, near white on

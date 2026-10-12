@@ -115,7 +115,7 @@ that is off say so; the gates' values are in
 
 | What | Where | Phone | Mac |
 |---|---|---|---|
-| Landing, Meet Simeon, Chief of Staff (six agents and the curves), Connect (the logos behind glass), the computer (1.45×, Simeon as the cursor), your name | patch 1027-1308, 1856-1899 | yes (`OnboardingFlow`, `Onboarding.swift`) | written |
+| Landing, Meet Simeon, Chief of Staff (six agents and the curves), Connect (the logos behind glass), the computer (1.45×, Simeon as the cursor), your name | patch 1027-1308, 1856-1899 | yes (`OnboardingFlow`, `Onboarding.swift`) | replaced 12 October 2026: the name alone (`FirstRun.swift`) |
 | The hand-off: "Waking your computer…", "Setting up your Simeon…", "Getting your team ready…", then Simeon, Chief of Staff, is created and says hello; "Simeon couldn't finish setting up" with Try again | patch 1214-1231 | yes (`HandOffStep`) | written ("Waking your computer…" from the newest status of any agent's computer, as the window; no shipped host reports a sleeping computer, so it is not expected to show) |
 | Whether to show it: `hasSeenOnboarding`, else `countAgents` | `desktop/web/backend.ts` | yes (`FirstRun`) | written |
 | The boot screen: "Setting up Simeon's computer" in a moving light, while the agents are first read | bundle `C0t` | partly (the turning butterfly) | written (`MacSettingUp`) |

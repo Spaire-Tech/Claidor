@@ -463,6 +463,10 @@ a glass button at the bottom and Back under it, the name field with Return
 as Continue, the apps' tile in Liquid Glass. The scenes and their motion are
 the Mac's, from its numbers (`Onboarding.swift`, tested):
 
+> Replaced on 12 October 2026: the first run is the name, Face ID and the
+> notifications prompt, one screen each (`SimeonApp.swift`'s `OnboardingFlow`).
+> The scenes below are no longer drawn.
+
 - Meet Simeon: the butterfly fades in large (1.2 s), grows on the slow
   spring, turns once in depth (1.4 s), then settles at his seat on the
   standard spring while the title and Continue rise in (0.8 s).
@@ -984,12 +988,13 @@ picture's foot.
 Not in the Mac's window either: on the iPhone a plan is bought with Apple's
 in-app purchase (App Review Guideline 3.1.1), not on the web's checkout.
 
-- **Choose your plan** (`Simeon/PlansSheet.swift`): opened by the access
-  cover's button, and by Change Limit and Upgrade in Usage & Billing for a
-  person with no plan or an Apple one. Monthly or yearly, the three plans
-  with the App Store's price, "Start Free Week" while Apple offers it,
-  the price and renewal line, Restore Purchases, the Terms and the Privacy
-  Policy, and "Subscribe on the web" on the US storefront only.
+- **Choose a plan** (`Simeon/PlansSheet.swift`, simplified 12 October
+  2026): opened by the access cover's button, the composer's banner, and
+  Change Limit and Upgrade in Usage & Billing for a person with no plan or
+  an Apple one. The three monthly plans with the App Store's price, the
+  chosen price over Subscribe, Restore Purchases, the renewal sentence,
+  the Terms and the Privacy Policy, and "Subscribe on the web instead" on
+  the US storefront only. No yearly, no free week (the free month).
 - **Buying** (`Simeon/Purchases.swift`): StoreKit 2, the account's id as
   the purchase's `appAccountToken`, every signed transaction sent to the
   server (`POST /desktop/api/billing/apple/transactions`), finished once

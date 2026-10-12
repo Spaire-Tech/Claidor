@@ -66,7 +66,8 @@ the Launch squad. It also runs the scripted call. No account is needed.
 connectors, approvals, secrets, files), for checking them side by side; it
 is never shown on a real account.
 `--onboarding` runs the demo as a new account: no agents, so the first run
-plays (Meet Simeon to the hand-off) and ends in Simeon's chat.
+plays (the name, Face ID where the phone has it, notifications) and ends in
+Simeon's chat.
 `--api=http://127.0.0.1:8000` points the app at another server.
 
 ## Build and run it (a Mac)
@@ -158,9 +159,21 @@ profile, not from the configuration.
   refuses it, so sign with the paid team Simeon publishes from.
 - **The computer**: each agent's own screen, live, through noVNC's client
   (bundled in `Simeon/Computer/`, MPL 2.0) on the box's WebSocket.
+- **Sign-in and the first run** (12 October 2026): Apple's own sheet and
+  Google's own page (`AppleSignIn`, `GoogleSignIn`), each answered with the
+  pair by the server, no web page between; then the free month is asked for
+  with the phone's DeviceCheck token (`FreeMonthAsk.swift`,
+  docs/services-billing.md section 10); then three screens, one question
+  each: the name, Face ID (the lock, `AppLock.swift`), the notifications
+  prompt. Simeon is made out of sight meanwhile; his chat opens at the end.
+  Google needs `SIMEON_GOOGLE_IOS_CLIENT_ID` on the server (an OAuth client
+  of type iOS); until then the app uses the web sign-in.
 - **Plans** are bought in the app with Apple's in-app purchase (StoreKit 2,
-  `Simeon/Purchases.swift`, `Simeon/PlansSheet.swift`); the server checks
-  Apple's signature and starts the plan. The products, the server
+  `Simeon/Purchases.swift`, `Simeon/PlansSheet.swift`): monthly, no free
+  week (the free month is the trial); the server checks Apple's signature
+  and starts the plan. When the credits are spent or the free month is
+  over, the composer's banner and the cover lead to the same sheet
+  (`PhoneUpgrade`). The products, the server
   notifications URL and `SIMEON_APPLE_APP_ID` are set up once in App Store
   Connect and on Render: `docs/services-billing.md`, section 9. To try it,
   sign in on the phone with a sandbox Apple account (Settings › App Store ›
@@ -168,7 +181,7 @@ profile, not from the configuration.
 
 ## What has and has not been checked
 
-- `SimeonCore`'s tests (333 on 12 October 2026) pass on Linux: the chat's rows for every card,
+- `SimeonCore`'s tests (342 on 12 October 2026) pass on Linux: the chat's rows for every card,
   the call protocol against a fake voice, sign-in and tokens, the agents'
   faces (the catalogue's bytes and versions, the choice by gender, least
   used, the same on every device, Shuffle and Reset; `AgentFaceTests`),
