@@ -165,6 +165,8 @@ final class SessionController {
   private func enter(holding: Bool = false) async {
     let api = makeAPI()
     self.api = api
+    // Signed in from here: the lock may close when the app comes back (AppLock.swift), never on this sign-in itself.
+    AppLock.shared.markSignedIn()
     firstRun = .checking
     // The last account seen on this phone, so its initials are there before the profile answers.
     if store.account == nil, let known = Self.rememberedAccount() { store.account = known; personName.value = known.name }
@@ -188,7 +190,13 @@ final class SessionController {
       self.apply(profile: profile)
     }
     // The free month before the agents: a new account's computer opens on its thirty days, not on the plans.
-    await FreeMonthAsk.ask(backend)
+    await FreeMonthAsk.ask(backend) { [weak self] in
+      // The month began after the six seconds: the agents and the access, read again with it.
+      guard let self, self.api === api else { return }
+      await self.store.refreshAccess()
+      await self.store.reloadRoster()
+      await self.recheckFirstRun()
+    }
     await store.attach(backend)
     // In-app purchase: renewals and approvals StoreKit delivers, and what this Apple ID already holds, to the server.
     Purchases.shared.start(store: store)
@@ -253,16 +261,19 @@ final class SessionController {
     }
     handOff = .running
     let store = store
+    // This sign-in's: an answer that comes after a sign-out is not the next account's.
+    let signedIn = api
     Task { [weak self] in
       do {
         let id = try await store.handOff(ready: {})
-        guard let self else { return }
+        guard let self, self.api === signedIn else { return }
         self.simeonId = id
         self.handOff = .done
         if self.firstRun == .done, let id { Notifications.shared.openAgent = id }
       } catch {
+        guard let self, self.api === signedIn else { return }
         let unreachable = GatewayError.neverArrived(error) || error is URLError
-        self?.handOff = .failed(unreachable ? Onboarding.unreachable : error.localizedDescription)
+        self.handOff = .failed(unreachable ? Onboarding.unreachable : error.localizedDescription)
       }
     }
   }
@@ -271,6 +282,8 @@ final class SessionController {
   func finishOnboarding() {
     firstRun = .done
     if handOff == .done, let simeonId { Notifications.shared.openAgent = simeonId }
+    // Failed while the computer refused (no plan yet): tried again now.
+    if case .failed = handOff { beginHandOff() }
     askForNotifications()
   }
 

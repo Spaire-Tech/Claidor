@@ -635,11 +635,16 @@ struct AccessCoverLayer: View {
   @Environment(AppStore.self) private var store
 
   var body: some View {
-    if store.accessBlocked && !store.hasReachedBox && store.access.state != .granted {
+    if store.accessCoverShown {
       AccessCover()
         .transition(.opacity)
     }
   }
+}
+
+extension AppStore {
+  /** The access cover is over the app (the first run's name field keeps the keyboard down meanwhile). */
+  var accessCoverShown: Bool { accessBlocked && !hasReachedBox && access.state != .granted }
 }
 
 /**
@@ -715,6 +720,8 @@ struct AccessCover: View {
     await store.refreshUsage()
     await store.reloadRoster()
     if store.hasReachedBox { await session.recheckFirstRun() }
+    // Simeon's making failed while the computer refused: again, now it may answer.
+    if case .failed = session.handOff, store.access.state == .granted { session.beginHandOff() }
   }
 }
 #endif

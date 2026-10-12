@@ -24,6 +24,11 @@ public enum OnboardingStep: Int, CaseIterable, Sendable {
     }
   }
 
+  /** The title as the phone unlocks: "Unlock Simeon with Touch ID" on an iPhone with a button. */
+  public func title(unlockingWith biometry: String) -> String {
+    self == .faceID ? "Unlock Simeon with \(biometry)" : title
+  }
+
   /** The line under the title. */
   public var detail: String? {
     switch self {

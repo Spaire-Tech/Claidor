@@ -10,6 +10,8 @@ final class FirstRunTests: XCTestCase {
     XCTAssertEqual(OnboardingStep.name.title, "What should Simeon call you?")
     XCTAssertNil(OnboardingStep.name.detail)
     XCTAssertNotNil(OnboardingStep.faceID.detail)
+    XCTAssertEqual(OnboardingStep.faceID.title(unlockingWith: "Touch ID"), "Unlock Simeon with Touch ID", "an iPhone with a button")
+    XCTAssertEqual(OnboardingStep.name.title(unlockingWith: "Touch ID"), "What should Simeon call you?")
   }
 
   func testTheNameStepSuggestsAChosenNameThenGooglesNeverTheMail() {

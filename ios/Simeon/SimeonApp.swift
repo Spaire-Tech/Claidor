@@ -161,8 +161,6 @@ struct RootView: View {
       .overlay { HandOffNotice() }
       // Refused before the computer was ever reached (`mzn`): the access cover over the first run and the list (ComputerStates.swift).
       .overlay { AccessCoverLayer() }
-      // Face ID, when the person turned it on (AppLock.swift).
-      .overlay { AppLockCover() }
     }
   }
 }
@@ -449,7 +447,7 @@ struct OnboardingFlow: View {
   private func header(_ step: OnboardingStep, @ViewBuilder icon: () -> some View) -> some View {
     VStack(spacing: 18) {
       icon()
-      Text(step.title)
+      Text(step.title(unlockingWith: AppLock.name))
         .font(.system(size: 26, weight: .regular))
         .foregroundStyle(Ink.primary)
         .multilineTextAlignment(.center)
@@ -515,11 +513,15 @@ struct OnboardingFlow: View {
     .task {
       if !nameTouched, name.isEmpty, let suggested = session.suggestedName { name = suggested; nameTouched = false }
       try? await Task.sleep(nanoseconds: 400_000_000)
-      nameFocused = true
+      if !store.accessCoverShown { nameFocused = true }
     }
     .onChange(of: session.suggestedName) { _, suggested in
       // The profile answered after the screen came: its name, unless the person typed.
       if !nameTouched, name.isEmpty, let suggested { name = suggested; nameTouched = false }
+    }
+    // The plans cover over the first run (no plan, the free month not started): no keyboard over it; the name's once it lifts.
+    .onChange(of: store.accessCoverShown) { _, shown in
+      if shown { nameFocused = false } else { nameFocused = true }
     }
   }
 

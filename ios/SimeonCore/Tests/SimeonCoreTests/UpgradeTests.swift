@@ -27,11 +27,36 @@ final class UpgradeTests: XCTestCase {
     XCTAssertEqual(PhoneUpgrade.banner(access: granted, usage: trialSpent)?.action, "Upgrade")
     let weekSpent = usage(["subscriptionStatus": "active", "tier": "standard", "creditsLimit": 3_750_000, "creditsUsed": 3_750_000, "creditsRemaining": 0])
     XCTAssertEqual(PhoneUpgrade.banner(access: granted, usage: weekSpent)?.title, "This week’s credits are used")
-    // The server's 402 in the chat, before the summary is read again.
-    XCTAssertEqual(PhoneUpgrade.banner(access: granted, usage: trialLeft, outOfCredits: true)?.title, "You’ve used your free credits")
+    // The server's 402 in the chat, before there is a summary.
     XCTAssertEqual(PhoneUpgrade.banner(access: granted, usage: nil, outOfCredits: true)?.title, "You’re out of credits")
+    // A summary with credits left wins over a card from before a purchase.
+    XCTAssertNil(PhoneUpgrade.banner(access: granted, usage: trialLeft, outOfCredits: true))
+    // A plan with no included credits, its spend used up: only the 402 says so.
+    let noIncluded = usage(["subscriptionStatus": "active", "tier": "standard", "creditsLimit": 0, "creditsUsed": 0, "creditsRemaining": 0])
+    XCTAssertNil(PhoneUpgrade.banner(access: granted, usage: noIncluded))
+    XCTAssertEqual(PhoneUpgrade.banner(access: granted, usage: noIncluded, outOfCredits: true)?.title, "You’re out of credits")
     // No plan: the cover's words over the composer too.
     XCTAssertEqual(PhoneUpgrade.banner(access: paymentRequired, usage: nil)?.action, "See plans")
+  }
+
+  func testTheButtonGoesWhereThePlanWasBought() {
+    let unavailable = SandAccess(state: .unavailable, reason: .unspecified)
+    XCTAssertEqual(PhoneUpgrade.route(access: unavailable, usage: nil, webLinkAllowed: false), .web(SandAccess.page))
+    // No plan: the App Store's plans.
+    XCTAssertEqual(PhoneUpgrade.route(access: paymentRequired, usage: nil, webLinkAllowed: true), .plans(tier: nil))
+    let free = usage(["subscriptionStatus": "trialing", "planName": "Free trial", "creditsLimit": 5_000_000, "creditsUsed": 5_000_000, "creditsRemaining": 0])
+    XCTAssertEqual(PhoneUpgrade.route(access: granted, usage: free, webLinkAllowed: true), .plans(tier: nil), "the free month has no tier")
+    // An Apple plan: the plans, on the one above.
+    let apple = usage(["subscriptionStatus": "active", "tier": "standard", "billedBy": "apple", "creditsLimit": 1, "creditsUsed": 1, "creditsRemaining": 0, "upgradeUrl": "https://app.simeonlabs.com/billing?from=app"])
+    XCTAssertEqual(PhoneUpgrade.route(access: granted, usage: apple, webLinkAllowed: false), .plans(tier: "pro"))
+    // A plan bought on the web: the web where Apple allows the link, else no button (never a second plan from the App Store).
+    let web = usage(["subscriptionStatus": "active", "tier": "pro", "billedBy": "stripe", "creditsLimit": 1, "creditsUsed": 1, "creditsRemaining": 0, "upgradeUrl": "https://app.simeonlabs.com/billing?from=app"])
+    XCTAssertEqual(PhoneUpgrade.route(access: granted, usage: web, webLinkAllowed: true), .web(URL(string: "https://app.simeonlabs.com/billing?from=app")!))
+    XCTAssertEqual(PhoneUpgrade.route(access: granted, usage: web, webLinkAllowed: false), .none)
+    let words = PhoneUpgrade.withoutUpgrade(PhoneUpgrade.banner(access: granted, usage: web)!)
+    XCTAssertEqual(words.title, "This week’s credits are used")
+    XCTAssertEqual(words.body, "They reset on Monday.")
+    XCTAssertNil(words.action)
   }
 
   func testTheServersSentenceForSpentCreditsIsRecognised() throws {

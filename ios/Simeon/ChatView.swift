@@ -692,6 +692,9 @@ struct ChatComposer: View {
   /** Where the draft is kept: the chat's, or its thread's. */
   private var draftKey: String { AppStore.draftScope(agentId, thread: thread) }
 
+  /** A card in this chat carries the server's 402 for spent credits (drawn as the banner, not as a card). */
+  private var outOfCredits: Bool { store.trayList.shown(for: agentId).contains(where: PhoneUpgrade.isOutOfCredits) }
+
   /**
    * "Message" on the iPhone ("Reply" while replying). On the Mac the
    * window's (`T9n`, `x9n`): "Listening…" while dictating, "Reply…" while
@@ -734,7 +737,7 @@ struct ChatComposer: View {
           .accessibilityAddTraits(.updatesFrequently)
           .transition(.opacity)
       }
-      if let words = PhoneUpgrade.banner(access: store.access, usage: store.usage.summary, outOfCredits: store.trayList.shown(for: agentId).contains(where: PhoneUpgrade.isOutOfCredits)) {
+      if let words = PhoneUpgrade.banner(access: store.access, usage: store.usage.summary, outOfCredits: outOfCredits) {
         // No plan, or the credits spent (12 October 2026): why, and the plans; Send waits meanwhile when there is no plan.
         AccessNotice(words: words)
       }
@@ -879,6 +882,12 @@ struct ChatComposer: View {
     .composerPicker(isPresented: $picking) { picked in stage(picked) }
     .onChange(of: dictation.problem) { _, problem in if let problem { store.problem = problem } }
     .onChange(of: reply?.target?.id) { _, id in if id != nil { typing = true } }
+    // The server's 402 just reached this chat: the usage read again (the banner trusts it), at once; a card already there
+    // when the chat opens, read again only when the last read is old (it may be from before a purchase).
+    .onChange(of: outOfCredits, initial: true) { was, now in
+      guard now else { return }
+      Task { if was { await store.loadUsage() } else { await store.refreshUsage() } }
+    }
     #if os(macOS)
     // ⌘L and ⌘I put the cursor here (the Mac's Agent menu).
     .onReceive(NotificationCenter.default.publisher(for: .simeonFocusComposer)) { _ in typing = true }
@@ -2089,16 +2098,24 @@ struct SelectableText: UIViewRepresentable {
 /**
  * The composer's line when this account can't send (`Qvn`, 12 October
  * 2026: the founder's "usage banner saying they're out of usage and that
- * they should upgrade"): its title over its words, and the button that
- * opens the plans (simeonlabs.com for an account no plan can help).
+ * they should upgrade"): its title over its words, and the button, routed
+ * as Settings' Usage & Billing routes its own (`PhoneUpgrade.route`): the
+ * App Store's plans (on the plan above for an Apple plan), the web's page
+ * for a plan bought there where Apple allows the link (else no button, so
+ * the App Store never sells a second plan), simeonlabs.com for an account
+ * no plan can help.
  */
 struct AccessNotice: View {
   let words: SandAccess.Words
   @Environment(\.openURL) private var openURL
   @Environment(AppStore.self) private var store
+  @State private var purchases = Purchases.shared
   @State private var showsPlans = false
+  @State private var plansTier: String?
 
   var body: some View {
+    let route = PhoneUpgrade.route(access: store.access, usage: store.usage.summary, webLinkAllowed: purchases.webLinkAllowed)
+    let words = route == .none ? PhoneUpgrade.withoutUpgrade(self.words) : self.words
     HStack(spacing: 12) {
       VStack(alignment: .leading, spacing: 2) {
         Text(words.title).font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.primary)
@@ -2107,7 +2124,15 @@ struct AccessNotice: View {
       Spacer(minLength: 8)
       if let action = words.action {
         Button(action) {
-          if store.access.state == .unavailable { openURL(SandAccess.page) } else { showsPlans = true }
+          switch route {
+          case .plans(let tier):
+            plansTier = tier
+            showsPlans = true
+          case .web(let url):
+            openURL(url)
+          case .none:
+            break
+          }
         }
         .buttonStyle(.borderedProminent)
         .buttonBorderShape(.capsule)
@@ -2120,7 +2145,7 @@ struct AccessNotice: View {
     // The summary read again when the chat shows the line (the credits, the free month's end), and after the plans close.
     .task { await store.loadUsage() }
     .sheet(isPresented: $showsPlans, onDismiss: { Task { await store.refreshAccess(); await store.refreshUsage() } }) {
-      PlansSheet().presentationBackground(Ink.groupedGround)
+      PlansSheet(preselect: plansTier).presentationBackground(Ink.groupedGround)
     }
   }
 }
