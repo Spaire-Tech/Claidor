@@ -103,6 +103,13 @@ export function createDemoBackend(hooks: DemoBackendHooks) {
   };
   const plain = (text: string) => text.replace(/[*_#`]/g, "").replace(/\s+/g, " ").trim().slice(0, 140);
 
+  /**
+   * The agent's face (the founder, 12 October 2026: no more butterflies): the website hands the demo the
+   * apps' clay faces and their choice of one for each agent (sites/simeonlabs.com/source/demo-faces.js);
+   * a demo opened without it shows no picture.
+   */
+  const face = (row: Row) => (globalThis as { __simeonDemoFace?: (row: Row) => { url: string; version: string } | null }).__simeonDemoFace?.(row) ?? null;
+
   const summary = (row: Row) => {
     const entries = transcripts.get(row.id) ?? [];
     const last = lastText(entries);
@@ -111,7 +118,7 @@ export function createDemoBackend(hooks: DemoBackendHooks) {
     const isUnread = unread.has(row.id) && row.id !== activeAgentId;
     return {
       id: row.id, name: row.name, description: row.description, title: row.title,
-      avatarDataUrl: null, avatarVersion: null, avatarShape: "cloud", avatarColor: row.color,
+      avatarDataUrl: face(row)?.url ?? null, avatarVersion: face(row)?.version ?? null, avatarShape: "cloud", avatarColor: row.color,
       createdAt: at(60 * 24 * 12), updatedAt: time, path: `/demo/${row.id}/store.db`,
       isActive: row.id === activeAgentId,
       isRunning: run != null, isRunningTurn: run != null, isComposingMessage: run?.composing ?? false, isRetrying: false,

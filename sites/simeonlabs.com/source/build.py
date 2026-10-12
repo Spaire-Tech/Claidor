@@ -13,6 +13,7 @@ The demo bundle is desktop/dist/demo, made on a Mac with
 `npm run package` then `node demo/build-demo.mjs` in desktop/.
 """
 import asyncio, glob, hashlib, json, os, re, shutil, sys
+import faces
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
@@ -23,7 +24,9 @@ APP = os.path.abspath(sys.argv[1])
 shutil.rmtree(OUT, ignore_errors=True)
 os.makedirs(f"{OUT}/logos")
 shutil.copytree(f"{HERE}/img", f"{OUT}/img")
-shutil.copytree(f"{HERE}/faces", f"{OUT}/faces")
+# The agents' clay faces, the apps' own catalogue (faces.py says who wears which).
+os.makedirs(f"{OUT}/faces")
+for f in faces.FACES: shutil.copy(f"{faces.CATALOGUE}/{f['file']}", f"{OUT}/faces/{f['file']}")
 shutil.copytree(f"{HERE}/fonts", f"{OUT}/fonts")
 for name in ("favicon.svg", "favicon.ico", "apple-touch-icon.png"): shutil.copy(f"{HERE}/favicons/{name}", f"{OUT}/{name}")
 
@@ -58,32 +61,31 @@ for name in re.findall(r'src="(logos/[^"]+)"', open(f"{HERE}/page.html").read())
     assert os.path.exists(f"{OUT}/{name}") or name == "logos/word.webp", name
 
 shutil.copy(f"{REPO}/desktop/brand/file-icons/word.webp", f"{OUT}/logos/word.webp")
-def mface(f, tint=""):
-    return f'<img src="faces/{f}.png" alt="" style="{"filter:" + tint if tint else ""}">'
-def tag(f, name, color):
-    return f'<span class="sd-m-tag" style="color:{color}"><img src="faces/{f}.png" alt="">{name}</span>'
+def mface(agent):
+    return f'<img src="faces/{faces.face(agent)}.webp" alt="">'
+def tag(agent, name):
+    return f'<span class="sd-m-tag"><img src="faces/{faces.face(agent)}.webp" alt="">{name}</span>'
 PLUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>'
 LINES = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 4.5H6.5A2.5 2.5 0 0 0 4 7v10.5A2.5 2.5 0 0 0 6.5 20H17a2.5 2.5 0 0 0 2.5-2.5V12M18.3 3.7a1.9 1.9 0 0 1 2.7 2.7L13 14.4l-3.6.9.9-3.6z"/></svg>'
 SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>'
 MIC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>'
 CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>'
 # The phone hero: a still of the app, drawn by the page, telling the demo's opening (desktop/demo/scenario.ts):
-# Simeon's launch check. The faces (source/faces/agent-*.png) are the app's own butterfly, drawn by
-# butterflyMarkSvg (desktop/scripts/lib/router-renderer-patch.mjs) in each agent's palette (6 October 2026).
-# Name colours are the top colour of each agent's palette (desktop/source/shared/voice-call/agent-mark.ts).
-rail = "".join(f'<span class="sd-m-av{" sd-m-on" if i == 0 else ""}">{mface("agent-" + f)}</span>' for i, f in enumerate(["simeon"]))
-group = '<span class="sd-m-av sd-m-group">' + mface("agent-simeon") + mface("agent-scout") + mface("agent-iris") + '</span>'
-rail += group + "".join(f'<span class="sd-m-av">{mface("agent-" + f)}</span>' for f in ["theo", "iris", "scout"])
+# Simeon's launch check. Each agent wears its clay face, as the apps give it (faces.py); a mention is its face
+# and its name in the app's blue, as the apps write one (the founder, 12 October 2026: no more butterflies).
+rail = "".join(f'<span class="sd-m-av{" sd-m-on" if i == 0 else ""}">{mface(f)}</span>' for i, f in enumerate(["simeon"]))
+group = '<span class="sd-m-av sd-m-group">' + mface("simeon") + mface("scout") + mface("iris") + '</span>'
+rail += group + "".join(f'<span class="sd-m-av">{mface(f)}</span>' for f in ["theo", "iris", "scout"])
 # The words are the original phone still's, which the founder asked to keep and to show on the
 # laptop too (28 September and 3 October 2026); the laptop's demo plays the same thread.
 MOBILE_HTML = ('<div class="sd-mob" aria-label="Simeon, the chief of staff, talking with you about a launch">'
   '<div class="sd-m-rail"><span class="sd-m-lights"><i></i><i></i><i></i></span>' + rail
   + '<span class="sd-m-fill"></span><span class="sd-m-search">' + SEARCH + '</span><span class="sd-m-new">' + LINES + '</span><span class="sd-m-me">BF</span></div>'
-  '<div class="sd-m-main"><div class="sd-m-head">' + mface("agent-simeon") + '<b>Simeon</b><span class="sd-m-role">Chief of Staff</span></div>'
+  '<div class="sd-m-main"><div class="sd-m-head">' + mface("simeon") + '<b>Simeon</b><span class="sd-m-role">Chief of Staff</span></div>'
   '<div class="sd-m-thread"><div class="sd-m-feed">'
   f'<div class="sd-m-in">Thursday is on track: 12 of 15 launch tickets are done in {chip("linear")}, and the review is Thursday at 2 pm.</div>'
-  '<div class="sd-m-sys">Messages from ' + tag("agent-scout", "Scout", "#997d64") + ' and ' + tag("agent-iris", "Iris", "#5d90a8") + '</div>'
-  '<div class="sd-m-in">' + tag("agent-scout", "Scout", "#997d64") + ' pulled three customer quotes and ' + tag("agent-iris", "Iris", "#5d90a8") + ' closed the last two tickets. The review doc is ready.</div>'
+  '<div class="sd-m-sys">Messages from ' + tag("scout", "Scout") + ' and ' + tag("iris", "Iris") + '</div>'
+  '<div class="sd-m-in">' + tag("scout", "Scout") + ' pulled three customer quotes and ' + tag("iris", "Iris") + ' closed the last two tickets. The review doc is ready.</div>'
   '<div class="sd-m-file"><img src="logos/word.webp" alt="">Launch review.docx</div>'
   '<div class="sd-m-out">Looks great. Send the agenda to Dana and Marcus, and check in like this every Monday.<span class="sd-m-react">&#128077;</span></div>'
   '<div class="sd-m-sys">Created routine <span class="sd-m-clock">' + CLOCK + '</span><b>Monday launch check</b></div>'
@@ -106,9 +108,9 @@ MOBILE_CSS = """/* The phone hero: a still of the app window filling the hero bo
   .sd-m-lights i{width:2.9cqw;height:2.9cqw;border-radius:50%;background:#ff5f57}
   .sd-m-lights i:nth-child(2){background:#febc2e}.sd-m-lights i:nth-child(3){background:#28c840}
   .sd-m-av{position:relative;display:grid;place-items:center;width:15cqw;height:12.4cqw;border-radius:3cqw}
-  .sd-m-av img{width:11cqw;height:11cqw;object-fit:contain}
+  .sd-m-av img{width:11cqw;height:11cqw;border-radius:50%;object-fit:cover}
   .sd-m-on{background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.05)}
-  .sd-m-group img{position:absolute;width:6.6cqw;height:6.6cqw;object-fit:contain}
+  .sd-m-group img{position:absolute;width:6.6cqw;height:6.6cqw;border-radius:50%;object-fit:cover;box-shadow:0 0 0 .5cqw #f4f4f3}
   .sd-m-group img:nth-child(1){top:1.2cqw;left:4.2cqw}.sd-m-group img:nth-child(2){bottom:1.4cqw;left:1.6cqw}.sd-m-group img:nth-child(3){bottom:1.4cqw;right:1.6cqw}
   .sd-m-fill{flex:1}
   /* The rail's three round glass discs, the initials, search and create, as in the demo (demo-glass.css). */
@@ -120,7 +122,7 @@ MOBILE_CSS = """/* The phone hero: a still of the app window filling the hero bo
   .sd-m-search svg,.sd-m-new svg{display:block;width:4.6cqw;height:4.6cqw}
   .sd-m-main{flex:1;min-width:0;display:flex;flex-direction:column}
   .sd-m-head{display:flex;align-items:center;gap:2cqw;padding:4.2cqw 4cqw 3.4cqw;border-bottom:1px solid rgba(0,0,0,.06);font-size:4.2cqw}
-  .sd-m-head img{width:7.4cqw;height:7.4cqw;object-fit:contain}
+  .sd-m-head img{width:7.4cqw;height:7.4cqw;border-radius:50%;object-fit:cover}
   .sd-m-head b{font-weight:500}
   .sd-m-role{font-size:3.3cqw;color:#255a93}
   .sd-m-thread{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding:0 3.6cqw;
@@ -135,8 +137,9 @@ MOBILE_CSS = """/* The phone hero: a still of the app window filling the hero bo
   .sd-m-sys{align-self:center;display:flex;align-items:center;flex-wrap:wrap;justify-content:center;gap:1.2cqw;margin:1.4cqw 0;font-size:3.3cqw;color:#8e8e93}
   .sd-m-sys b{font-weight:500;color:#1d1d1f}
   .sd-m-clock{width:4cqw;height:4cqw;color:#3a3a3c}
-  .sd-m-tag{font-weight:500;white-space:nowrap}
-  .sd-m-tag img{display:inline-block;width:1.44em;height:1.05em;margin:0 .22em 0 .02em;vertical-align:-.18em;object-fit:contain}
+  .sd-m-tag{color:#255a93;font-weight:600;white-space:nowrap;padding:.06em .5em .06em .18em;border-radius:99px;background:rgba(255,255,255,.62);
+    box-shadow:inset 0 .5px 0 rgba(255,255,255,.95),0 0 0 .5px rgba(0,0,0,.09),0 1px 2px rgba(0,0,0,.06)}
+  .sd-m-tag img{display:inline-block;width:1.1em;height:1.1em;margin:0 .26em 0 0;vertical-align:-.22em;border-radius:50%;object-fit:cover}
   .sd-m-in .sd-app{font-size:.96em}
   .sd-m-file{align-self:flex-start;display:flex;align-items:center;gap:2.4cqw;padding:2.4cqw 4cqw 2.4cqw 2.6cqw;border-radius:3.6cqw;background:#e9e9eb;font-size:3.7cqw;
     box-shadow:0 0 0 .5px rgba(20,30,60,.07),0 1px 2px rgba(20,30,60,.04)}
@@ -295,6 +298,7 @@ async def main():
                        ("%APP_JS%", js), ("%APP_CSS%", css)):
         assert page.count(key) == 1, key
         page = page.replace(key, value)
+    page = re.sub(r"%FACE:([a-z-]+)%", lambda m: f"faces/{faces.face(m.group(1))}.webp", page)
     open(f"{OUT}/index.html", "w", encoding="utf-8").write(page)
     shutil.copytree(APP, f"{OUT}/app")
     guard = open(f"{HERE}/scroll-guard.js").read()
@@ -302,9 +306,25 @@ async def main():
     idx = open(f"{OUT}/app/index.html").read()
     idx = idx.replace('<script src="./demo-bridge.js"></script>', '<script src="./scroll-guard.js"></script>\n    <script src="./demo-bridge.js"></script>\n    <script src="./demo-gate.js"></script>', 1)
     shutil.copy(f"{HERE}/demo-gate.js", f"{OUT}/app/demo-gate.js")
+    os.makedirs(f"{OUT}/app/faces")
+    for f in faces.FACES: shutil.copy(f"{faces.CATALOGUE}/{f['file']}", f"{OUT}/app/faces/{f['file']}")
+    demo = ("simeon", "theo", "iris", "scout", "agent-nora")
+    fill = {"/*FACES*/[]": json.dumps([{k: f[k] for k in ("id", "gender", "file", "version")} for f in faces.FACES]),
+            "/*GIVEN*/{}": json.dumps({a: faces.face(a) for a in demo}),
+            "/*SEATS*/{}": json.dumps(faces.SEATS),
+            '/*WOMEN*/""': json.dumps(" ".join(faces.WOMEN)), '/*MEN*/""': json.dumps(" ".join(faces.MEN))}
+    script = open(f"{HERE}/demo-faces.js").read()
+    for key, value in fill.items():
+        assert script.count(key) == 1, key
+        script = script.replace(key, value)
+    open(f"{OUT}/app/demo-faces.js", "w").write(script)
+    idx = idx.replace('<script src="./demo-bridge.js"></script>', '<script src="./demo-faces.js"></script>\n    <script src="./demo-bridge.js"></script>', 1)
+    assert "demo-faces.js" in idx
     # The round Liquid Glass buttons (demo-glass.css and .js), in the demo only.
     idx = idx.replace('<script src="./demo-gate.js"></script>', '<script src="./demo-gate.js"></script>\n    <script src="./demo-glass.js"></script>\n    <link rel="stylesheet" href="./demo-glass.css">', 1)
     for name in ("demo-glass.css", "demo-glass.js"): shutil.copy(f"{HERE}/{name}", f"{OUT}/app/{name}")
+    # The SimeonLabs logo the onboarding shows where the butterfly was (demo-glass.css).
+    shutil.copy(f"{HERE}/simeon-mark.svg", f"{OUT}/app/simeon-mark.svg")
     assert "scroll-guard.js" in idx
     # The sidebar is solid in the page, not glass over a desktop.
     before = 'body::before{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(160deg,#e4e4e7,#d4d4d8)}'

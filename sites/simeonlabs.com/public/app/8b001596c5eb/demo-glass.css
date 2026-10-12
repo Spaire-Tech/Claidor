@@ -1,0 +1,79 @@
+/* The sidebar's two round Liquid Glass buttons (the founder, 5 October 2026): search, and the create button with the
+   founder's compose glyph, the same clear glass disc, like Apple's round glass buttons:
+   a translucent disc, a bright rim along the top edge, a hairline, a soft shadow, the glyph in the label colour.
+   The search bar below them is gone. This sheet rides over the pinned renderer's styles inside the demo bundle,
+   so its rules are !important. */
+html body .sand-agents-sidebar__search{display:none!important}
+html body .sand-agents-sidebar__header{height:60px!important;padding:0 12px 0 0!important}
+html body .sand-agents-sidebar__new-actions{display:flex!important;gap:10px!important;align-items:center!important}
+html body .sand-agents-sidebar__new-actions .sand-kit-icon-button{
+  width:40px!important;height:40px!important;border-radius:999px!important;display:grid!important;place-items:center!important;padding:0!important;
+  color:rgba(0,0,0,.78)!important;
+  background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,255,255,.38))!important;
+  -webkit-backdrop-filter:blur(14px) saturate(1.6)!important;backdrop-filter:blur(14px) saturate(1.6)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 0 0 .75px rgba(255,255,255,.6),inset 0 -1px 1px rgba(0,0,0,.04),0 0 0 .5px rgba(0,0,0,.07),0 1px 3px rgba(0,0,0,.06)!important;
+  transition:transform .18s ease,box-shadow .18s ease,background .18s ease!important}
+html body .sand-agents-sidebar__new-actions .sand-kit-icon-button:hover{transform:scale(1.04)!important}
+html body .sand-agents-sidebar__new-actions .sand-kit-icon-button:active{transform:scale(.97)!important}
+html body .sand-agents-sidebar__new-actions .sand-kit-icon{width:18px!important;height:18px!important;display:block!important}
+html body .sand-agents-sidebar__new-actions .sand-kit-icon svg{width:18px!important;height:18px!important;fill:none!important;stroke:currentColor!important;stroke-width:2!important;stroke-linecap:round!important;stroke-linejoin:round!important}
+/* The account initials as the same glass disc (the founder, 5 October 2026) */
+html body .sand-agents-sidebar__account button{padding:0!important;width:40px!important;height:40px!important;border-radius:999px!important;display:grid!important;place-items:center!important}
+html body .sand-agents-sidebar__account .sand-kit-base-avatar{width:40px!important;height:40px!important;border-radius:999px!important;font-size:13px!important;font-weight:500!important;letter-spacing:.02em!important;color:rgba(0,0,0,.72)!important;
+  background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,255,255,.38))!important;
+  -webkit-backdrop-filter:blur(14px) saturate(1.6)!important;backdrop-filter:blur(14px) saturate(1.6)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 0 0 .75px rgba(255,255,255,.6),inset 0 -1px 1px rgba(0,0,0,.04),0 0 0 .5px rgba(0,0,0,.07),0 1px 3px rgba(0,0,0,.06)!important;
+  transition:transform .18s ease!important}
+html body .sand-agents-sidebar__account .sand-kit-base-avatar>span{display:none!important}
+html body .sand-agents-sidebar__account button:hover .sand-kit-base-avatar{transform:scale(1.04)!important}
+/* The composer's attach button, the same clear glass disc (the founder, 5 October 2026: "the + in the composer too"),
+   at the composer's own size. */
+html body .sand-prompt-attach{width:30px!important;height:30px!important;border-radius:999px!important;color:rgba(0,0,0,.78)!important;
+  background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,255,255,.38))!important;
+  -webkit-backdrop-filter:blur(14px) saturate(1.6)!important;backdrop-filter:blur(14px) saturate(1.6)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 0 0 .75px rgba(255,255,255,.6),inset 0 -1px 1px rgba(0,0,0,.04),0 0 0 .5px rgba(0,0,0,.07),0 1px 3px rgba(0,0,0,.06)!important;
+  transition:transform .18s ease!important}
+html body .sand-prompt-attach:hover{transform:scale(1.04)!important;background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,255,255,.38))!important}
+html body .sand-prompt-attach:active{transform:scale(.97)!important}
+html body .sand-prompt-attach .ui-icon{color:rgba(0,0,0,.78)!important}
+/* The demo keeps the agent pane closed: the chat header's avatar takes no clicks (the founder, 5 October 2026). */
+html body .sand-chat-header__identity{pointer-events:none!important}
+/* The demo has no routine behind "Created routine · Monday launch check": the line reads, but opens nothing (6 October 2026). */
+html body .sand-kit-system-event__chip{pointer-events:none!important}
+/* Agents wear faces now, with no colour of their own and no butterfly (the founder, 12 October 2026). A mention
+   is drawn as the Mac and iPhone apps draw it (MentionPills, mac/Simeon/MessageText.swift): the agent's face in a
+   1.1 em circle, then its name in the app's blue at 600, in a clear glass pill. demo-faces.js hands each mention
+   its face (--simeon-face). */
+html body .simeon-agent{--simeon-agent-color:#255a93!important;color:#255a93!important;font-weight:600!important;padding:.06em .5em .06em .18em;margin:0 .04em;border-radius:99px;
+  background:rgba(255,255,255,.62);box-shadow:inset 0 .5px 0 rgba(255,255,255,.95),0 0 0 .5px rgba(0,0,0,.09),0 1px 2px rgba(0,0,0,.06)}
+html body .simeon-agent__mark{width:1.1em!important;height:1.1em!important;margin:0 .26em 0 0!important;vertical-align:-.22em!important;border-radius:50%;
+  background:var(--simeon-face,rgba(0,0,0,.08)) center/cover no-repeat!important}
+/* The onboarding's first screen shows the SimeonLabs logo in ink where the butterfly was, lighting up once, as the
+   Mac and iPhone apps' sign-in does (LogoShimmer, mac/Simeon/SignInScreen.swift; the founder, 11 October 2026). */
+html body .sand-onboarding__landing .sand-simeon-mark>svg{display:none!important}
+html body .sand-onboarding__landing .sand-simeon-mark{
+  background:linear-gradient(120deg,#1d1d1f 0 40%,#9a9aa0 50%,#1d1d1f 60% 100%) 100% 0/300% 100% no-repeat!important;
+  -webkit-mask:url(simeon-mark.svg) center/86% no-repeat;mask:url(simeon-mark.svg) center/86% no-repeat;
+  animation:simeon-logo-light 1.6s cubic-bezier(.42,0,.58,1) .3s both}
+@keyframes simeon-logo-light{from{background-position:100% 0}to{background-position:0 0}}
+@media (prefers-reduced-motion:reduce){html body .sand-onboarding__landing .sand-simeon-mark{animation:none;background:#1d1d1f!important}}
+/* The onboarding's cast as faces, not butterflies (demo-faces.js marks each with its face): a still round picture. */
+html body .sand-simeon-mark[data-face]>svg{display:none!important}
+html body .sand-simeon-mark[data-face]{background:var(--simeon-face) center/cover no-repeat!important;border-radius:50%!important;box-shadow:0 0 0 1px rgba(0,0,0,.06),0 2px 6px rgba(0,0,0,.12)}
+/* The sidebar as the Mac app draws it (Sidebar.swift, SidebarList.swift, Look.swift; the founder, 12 October 2026:
+   "the message sidebar like the real app"): the ground #fafafa with a fainter edge, rows 62 high and 4 apart, the
+   face 46 and 10 before the words, the title in a grey box with its words in the app's blue (11.5, medium), the open
+   chat's row the white card, and the account's initials a 32 disc. */
+html body aside.sand-agents-sidebar{background-color:#fafafa!important;border-right-color:rgba(20,20,20,.06)!important}
+html body .sand-agent-item{min-height:62px!important;height:62px!important;padding:8px!important;gap:10px!important;border-radius:14px!important}
+html body .sand-agent-item+.sand-agent-item{margin-top:4px!important}
+html body .sand-agent-item__avatar{width:46px!important;height:46px!important;flex:none!important}
+html body .sand-agent-item__avatar-disc{transform:scale(1.2778);transform-origin:0 0}
+html body .sand-agent-item__title{gap:10px!important}
+html body .sand-agent-item__title-badge{background:rgba(118,118,128,.12)!important;color:#255a93!important;padding:1px 5px!important;border-radius:4px!important;height:auto!important;min-height:0!important}
+html body .sand-agent-item__title-badge>span{font-size:11.5px!important;font-weight:500!important;line-height:16px!important}
+html body .sand-agents-sidebar__account button,html body .sand-agents-sidebar__account .sand-kit-base-avatar{width:32px!important;height:32px!important}
+html body .sand-agents-sidebar__account .sand-kit-base-avatar{font-size:12px!important}
+/* The sidebar at 320, not the window's first 280, so every title shows whole (the founder, 12 October 2026: "show the
+   full roles, expand the bar"); the Mac app's sidebar is dragged between 240 and 400 (SidebarLayout). */
+html body .sand-shell{--sand-sidebar-width:320px!important}
