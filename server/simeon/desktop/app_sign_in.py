@@ -69,6 +69,9 @@ from simeon.config import settings
 from simeon.integrations.apple import native as apple_native
 from simeon.integrations.apple.service import AppleServiceError
 from simeon.integrations.apple.service import apple as apple_service
+from simeon.integrations.google import native as google_native
+from simeon.integrations.google.service import GoogleServiceError
+from simeon.integrations.google.service import google as google_service
 from simeon.integrations.loops.service import loops as loops_service
 from simeon.openapi import APITag
 from simeon.plans.service import PlansError
@@ -638,6 +641,90 @@ async def _auth_poll(
 
 #: The longest an Apple token or code the iPhone sends can be.
 _APPLE_FIELD_MAX = 8_000
+
+
+@router.get("/auth/google/config", name="desktop:google_native_config")
+async def google_native_config() -> JSONResponse:
+    """What the iPhone needs to open Google's own sign-in page (12 October
+    2026): its OAuth client, the redirect Google sends the code to, the
+    page and the scopes. `{"google": null}` while the iOS client is not
+    set up; the app then signs in through the web page."""
+    return JSONResponse({"google": google_native.config()}, headers=NO_STORE)
+
+
+@router.post("/auth/google", name="desktop:google_native")
+async def google_native_sign_in(
+    request: Request, session: AsyncSession = Depends(get_db_session)
+) -> JSONResponse:
+    """The iPhone's own Google sign-in (`simeon.integrations.google.native`):
+    the app posts `{code, codeVerifier}` from Google's page and gets the
+    pair `/auth/poll` gives, `{accessToken, refreshToken}`, with no page of
+    ours in between. The account is found or made as the web's Google
+    sign-in does it. 400 when Google refuses the code; 403 with a sentence
+    when the Google account cannot be used here."""
+    try:
+        body = await request.json()
+    except Exception:
+        body = None
+    if not isinstance(body, dict):
+        body = {}
+
+    def field(name: str) -> str:
+        value = body.get(name)
+        return value.strip()[:_APPLE_FIELD_MAX] if isinstance(value, str) else ""
+
+    code, verifier = field("code"), field("codeVerifier")
+    if not code or not verifier:
+        return JSONResponse(
+            {"error": "bad_request", "message": "Google sign-in didn't finish."},
+            status_code=400,
+            headers=NO_STORE,
+        )
+    try:
+        token = await google_native.exchange_code(code, verifier)
+        user, is_signup = await google_service.get_updated_or_create(
+            session, token=token
+        )
+    except google_native.NativeGoogleError as error:
+        return JSONResponse(
+            {"error": "google_unverified", "message": error.message},
+            status_code=400,
+            headers=NO_STORE,
+        )
+    except GoogleServiceError as error:
+        return JSONResponse(
+            {"error": "google_account", "message": error.message},
+            status_code=error.status_code,
+            headers=NO_STORE,
+        )
+    if not user.can_authenticate:
+        return JSONResponse(
+            {
+                "error": "account_closed",
+                "message": "This account can't sign in to Simeon.",
+            },
+            status_code=403,
+            headers=NO_STORE,
+        )
+    if is_signup:
+        posthog.user_signup(user, "google")
+        await loops_service.user_signup(user)
+    else:
+        posthog.user_login(user, "google")
+    desktop_session, access, refresh = await desktop.issue_app_session(
+        session,
+        user,
+        user_agent=request.headers.get("User-Agent", ""),
+        client_version=client_version_of(request),
+    )
+    log.info("desktop.sign_in.google_native", user_id=str(user.id), signup=is_signup)
+    return JSONResponse(
+        {
+            "accessToken": envelope_access_token(desktop_session, access),
+            "refreshToken": refresh,
+        },
+        headers=NO_STORE,
+    )
 
 
 @router.post("/auth/apple", name="desktop:apple_native")
