@@ -11,7 +11,9 @@ settings:
   base:
     SWIFT_VERSION: "5.0"
     MARKETING_VERSION: "0.1.0"
-    CURRENT_PROJECT_VERSION: "1"
+    # Raised for each upload to App Store Connect (build 1 was refused at
+    # processing, 12 October 2026: no camera description, ITMS-90683).
+    CURRENT_PROJECT_VERSION: "2"
     CODE_SIGN_STYLE: Automatic
     # The Apple developer team Simeon publishes from: set it here, or in
     # Xcode under Signing & Capabilities, once (ios/README.md).
@@ -70,6 +72,10 @@ targets:
         NSMicrophoneUsageDescription: Simeon listens when you dictate a message or call an agent.
         NSSpeechRecognitionUsageDescription: Simeon turns what you say into the message you are writing.
         NSPhotoLibraryUsageDescription: Simeon sends the photos you pick to your agent.
+        # Never asked: the app has no camera feature, but the calls' voice kit
+        # (LiveKit, under ElevenLabs' kit) links camera code, and App Store
+        # Connect refuses a build without this line (ITMS-90683).
+        NSCameraUsageDescription: Simeon's calls with your agents are voice only and never turn on the camera.
         # A call keeps going with the screen locked.
         UIBackgroundModes: [audio]
         # Loopback and the local network over http, for a build pointed at

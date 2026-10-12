@@ -134,7 +134,8 @@ profile, not from the configuration.
 3. For TestFlight, choose Product → Archive, then Distribute App → App
    Store Connect. It lands in the app record "Simeon by SimeonLabs"
    (Apple ID 6821751771, bundle id `com.simeonlabs.simeon.ios`, made 12
-   October 2026; build 1 is its first). Raise `CURRENT_PROJECT_VERSION` in
+   October 2026; build 1 was refused at processing for a missing camera
+   description, so build 2 is its first). Raise `CURRENT_PROJECT_VERSION` in
    `project.yml` for each upload.
 
 ## Calls, notifications and the computer
