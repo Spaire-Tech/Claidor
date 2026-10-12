@@ -1,6 +1,7 @@
 import AppKit
 import CoreText
 import SwiftUI
+import SimeonCore
 
 /**
  * The Electron window's colours, light and dark, as its stylesheet computes
