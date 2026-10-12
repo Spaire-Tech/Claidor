@@ -15,7 +15,9 @@ import SimeonCore
  * Each purchase carries the Simeon account's id (`appAccountToken`), so the
  * server never applies it to another account.
  *
- * `AppStore` alone is SimeonCore's store; StoreKit's is `StoreKit.AppStore`.
+ * Both StoreKit and SimeonCore have an `AppStore`, so each is named with
+ * its module here: `SimeonCore.AppStore` (the app's store) and
+ * `StoreKit.AppStore` (Apple's).
  */
 @MainActor
 @Observable
@@ -42,7 +44,7 @@ final class Purchases {
   /** The App Store's country, ISO 3166 alpha-3 ("USA"). */
   private(set) var storefrontCountry: String?
 
-  @ObservationIgnored private weak var store: AppStore?
+  @ObservationIgnored private weak var store: SimeonCore.AppStore?
   @ObservationIgnored private var updates: Task<Void, Never>?
 
   /** The web's billing page may be offered beside the App Store's (the United States only). */
@@ -51,7 +53,7 @@ final class Purchases {
   private init() {}
 
   /** Signed in: listen for what StoreKit delivers outside a purchase (renewals, Ask to Buy approvals, another device's purchase), and send what this Apple ID already holds. */
-  func start(store: AppStore) {
+  func start(store: SimeonCore.AppStore) {
     self.store = store
     updates?.cancel()
     updates = Task { [weak self] in

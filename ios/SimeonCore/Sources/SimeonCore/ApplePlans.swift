@@ -74,8 +74,8 @@ public enum PlansCopy {
   public static let unavailable = "Plans can't be loaded right now. Check your connection and try again."
   public static let pending = "Your purchase is waiting for approval. Simeon starts as soon as it's approved."
   public static let nothingToRestore = "There's no Simeon subscription on this Apple ID to restore."
-  public static let terms = URL(string: "https://simeonlabs.com/terms")!
-  public static let privacy = URL(string: "https://simeonlabs.com/privacy")!
+  public static let termsURL = URL(string: "https://simeonlabs.com/terms")!
+  public static let privacyURL = URL(string: "https://simeonlabs.com/privacy")!
   /** Where an Apple plan is changed or cancelled (also the server's words, `MANAGE_ON_IPHONE`). */
   public static let manageInSettings = "Your plan is billed through Apple. Change or cancel it in Settings › your name › Subscriptions."
 

@@ -78,8 +78,8 @@ struct PlansSheet: View {
                 .foregroundStyle(Ink.link)
             }
             HStack(spacing: 18) {
-              Link("Terms of Service", destination: PlansCopy.terms)
-              Link("Privacy Policy", destination: PlansCopy.privacy)
+              Link("Terms of Service", destination: PlansCopy.termsURL)
+              Link("Privacy Policy", destination: PlansCopy.privacyURL)
             }
             .font(.system(size: 13))
             .foregroundStyle(Ink.tertiary)

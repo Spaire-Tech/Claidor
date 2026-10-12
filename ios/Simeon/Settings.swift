@@ -15,7 +15,7 @@ import SimeonCore
  * Mac's Usage & Billing (UsagePage).
  */
 struct SettingsSheet: View {
-  @Environment(AppStore.self) private var store
+  @Environment(SimeonCore.AppStore.self) private var store
   @Environment(SessionController.self) private var session
   @AppStorage("simeon.theme") private var theme = "system"
   @State private var settings: JSON?
@@ -257,7 +257,7 @@ struct ConnectAppsRow: View {
  */
 struct AgentSettingsSection: View {
   @Binding var settings: JSON?
-  @Environment(AppStore.self) private var store
+  @Environment(SimeonCore.AppStore.self) private var store
 
   /** This device, as the time zone's line names it. */
   private var device: String { AppPlatform.isMac ? "Mac" : "phone" }
@@ -339,7 +339,7 @@ struct AgentSettingsSection: View {
 
 /** The account: the person's name and email, the email copied with a tap. */
 struct AccountPage: View {
-  @Environment(AppStore.self) private var store
+  @Environment(SimeonCore.AppStore.self) private var store
   @State private var copied = false
 
   var body: some View {
@@ -390,7 +390,7 @@ struct AccountPage: View {
  * (the United States); elsewhere they are not shown.
  */
 struct UsagePage: View {
-  @Environment(AppStore.self) private var store
+  @Environment(SimeonCore.AppStore.self) private var store
   @Environment(\.openURL) private var openURL
   @State private var purchases = Purchases.shared
   @State private var opening: String?
@@ -607,7 +607,7 @@ private struct UsageMeterRow: View {
 /** The account's picture when it has one, else its initials: the Mac's account button (mac/Simeon/Sidebar.swift `AccountPicture`). */
 struct AccountFace: View {
   let size: CGFloat
-  @Environment(AppStore.self) private var store
+  @Environment(SimeonCore.AppStore.self) private var store
 
   var body: some View {
     ZStack {
@@ -767,7 +767,7 @@ struct TimeZonePicker: View {
  */
 struct AutoReviewRules: View {
   @Binding var settings: JSON?
-  @Environment(AppStore.self) private var store
+  @Environment(SimeonCore.AppStore.self) private var store
   @State private var wants = ""
   @State private var should = AutoReviewInstructions.Behavior.allow
   @State private var editing: EditingRule?
@@ -928,7 +928,7 @@ struct ConnectAppsSheet: View {
   // Since the Mac's Plugins came over (11 October 2026): the filter has the Mac's Type and Ownership too; a row opens the
   // plugin's page (PluginPage); Add opens the setup page for a plugin that asks for values, and adds a skills-only one at
   // once; the Mac's notice says how each went (ConnectAppsModel.swift, ConnectAppsPages.swift).
-  @Environment(AppStore.self) private var store
+  @Environment(SimeonCore.AppStore.self) private var store
   @Environment(\.dismiss) private var dismiss
   @State private var query = ""
   /** The category the filter keeps, or all of them. */
@@ -1195,7 +1195,7 @@ struct CategoryPage: View {
  * of their own (skills only), and Private, an agent's own skills.
  */
 struct YourPluginsPage: View {
-  @Environment(AppStore.self) private var store
+  @Environment(SimeonCore.AppStore.self) private var store
   @Environment(ConnectAppsModel.self) private var model
   @Environment(\.dismiss) private var dismiss
   @State private var query = ""
@@ -1277,7 +1277,7 @@ struct YourPluginsPage: View {
 /** One installed app on Your plugins; the team's mark beside its name when the team added it (the Mac's `TeamBadge`). */
 struct InstalledRow: View {
   let app: ConnectedApp
-  @Environment(AppStore.self) private var store
+  @Environment(SimeonCore.AppStore.self) private var store
   @Environment(ConnectAppsModel.self) private var model
   /** What the person reads before the sign-in page opens (ConnectConsentSheet). */
   @State private var asking: ConnectConsent?
@@ -1366,7 +1366,7 @@ struct PluginPill: View {
  */
 struct AppRow: View {
   let app: CatalogApp
-  @Environment(AppStore.self) private var store
+  @Environment(SimeonCore.AppStore.self) private var store
   @Environment(ConnectAppsModel.self) private var model
   private var connector: AppConnector { AppConnector.shared }
 
