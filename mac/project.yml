@@ -8,19 +8,25 @@ name: SimeonMac
 options:
   bundleIdPrefix: com.simeonlabs
   deploymentTarget:
-    # Apple's design of this year (Liquid Glass).
-    macOS: "26.0"
+    # Opens on macOS 15 and later (12 October 2026). Apple's design of this
+    # year, Liquid Glass, shows on macOS 26 and later; before it the same
+    # surfaces use the system's material (Simeon/Glass.swift).
+    macOS: "15.0"
   createIntermediateGroups: true
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "0.1.0"
+    # 0.2.0: the first Swift release, after the Electron app's 0.1.2.
+    MARKETING_VERSION: "0.2.0"
     CURRENT_PROJECT_VERSION: "1"
     CODE_SIGN_STYLE: Automatic
     # The Apple developer team Simeon publishes from: set it here, or in
     # Xcode under Signing & Capabilities, once. Without one the app is
     # signed to run on this Mac only, which is enough to try it.
     DEVELOPMENT_TEAM: "496QXRMJXG"
+    # Sparkle's public EdDSA key (Simeon/Updates.swift): empty here, given by
+    # scripts/release.sh from the private key in the release Mac's Keychain.
+    SPARKLE_PUBLIC_KEY: ""
 packages:
   SimeonCore:
     path: ../ios/SimeonCore
@@ -30,6 +36,11 @@ packages:
   ElevenLabs:
     url: https://github.com/elevenlabs/elevenlabs-swift-sdk
     from: 3.4.0
+  # Updates (12 October 2026, Simeon/Updates.swift): Sparkle (MIT), the
+  # feed and the signed release written by scripts/release.sh.
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    from: 2.7.0
 targets:
   Simeon:
     type: application
@@ -64,6 +75,7 @@ targets:
       - package: SimeonCore
         product: SimeonMacCore
       - package: ElevenLabs
+      - package: Sparkle
     info:
       path: Simeon/Info.plist
       properties:
@@ -92,6 +104,13 @@ targets:
         # the stand-in server on this Mac (`SIMEON_API`).
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
+        # Updates (Simeon/Updates.swift): the feed, served by the API from the
+        # release bucket, and the release key's public half. The key is empty
+        # in every build but a release (scripts/release.sh passes it), and a
+        # build without one never updates itself.
+        SUFeedURL: https://api.simeonlabs.com/desktop/download/mac/appcast.xml
+        SUPublicEDKey: $(SPARKLE_PUBLIC_KEY)
+        SUEnableAutomaticChecks: true
     entitlements:
       path: Simeon/Simeon.entitlements
       properties:

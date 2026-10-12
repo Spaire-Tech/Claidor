@@ -66,6 +66,8 @@ struct SimeonMacApp: App {
         .onAppear {
           MacServices.shared.follow(session, window: window, plugins: plugins)
           MacMoveToApplications.askAtLaunch()
+          // Sparkle's daily check, in a released build (Updates.swift).
+          MacUpdates.shared.start()
         }
         // The browser's confirm page opens `simeon://…/open`, which brings the app forward; the poll finishes the sign-in.
         // `…/v1/info?topic=deep-links` shows Deep Links; a plugin's link (`…/v1/plugin/add?id=`) opens Plugins on its page (`qRn`),
@@ -84,7 +86,7 @@ struct SimeonMacApp: App {
 
 /**
  * The Electron app's menus (`application-menu.ts`): Simeon (About Simeon,
- * Services, Hide Simeon, Hide Others, Show All, Quit Simeon), File (Close
+ * Check for Updates… in a released build, Services, Hide Simeon, Hide Others, Show All, Quit Simeon), File (Close
  * Window), Edit (the system's), View (Reload ⌘R, Enter Full Screen), Agent
  * (Call <name>, or a disabled Call Agent with no agent open), Window (the
  * system's). No Help menu's items.
@@ -103,6 +105,10 @@ struct SimeonCommands: Commands {
         account.openAbout()
         // The window closed: it opens, About over it.
         if !NSApp.windows.contains(where: { $0.isVisible && $0.canBecomeMain }) { openWindow(id: "main") }
+      }
+      // Sparkle's own check (Updates.swift), in a released build only.
+      if MacUpdates.shared.available {
+        Button("Check for Updates…") { MacUpdates.shared.checkForUpdates() }
       }
     }
     // File holds Close Window only (`role: "close"`).

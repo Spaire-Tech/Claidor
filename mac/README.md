@@ -24,7 +24,9 @@ the mac app"). Nothing here comes from the iPhone app's screens.
   `desktop/scripts/lib/router-renderer-patch.mjs`). A native app needs
   neither that nor `npm run bootstrap`.
 - **Apple's design.** Apple's buttons, menus, glass and windows of macOS 26,
-  instead of a web page in a frame, in the Electron window's layout.
+  instead of a web page in a frame, in the Electron window's layout. The
+  app opens on macOS 15 and later: on 15 the glass surfaces use the
+  system's plainer material (`Simeon/Glass.swift`, 12 October 2026).
 
 ## How it works
 
@@ -45,7 +47,7 @@ code.
 ## Where the code is
 
 - `mac/project.yml`: XcodeGen makes `SimeonMac.xcodeproj` from it. One macOS
-  app, `Simeon`, needing macOS 26.
+  app, `Simeon`, for macOS 15 and later, built with Xcode 26.
 - `mac/Simeon/`: the app.
   - `SimeonMacApp.swift`: the app, its window, the menus.
   - `MacSession.swift`: signing in, the Keychain, reaching the computer.
@@ -89,18 +91,23 @@ code.
   (`REDIRECT_TARGET` in `server/simeon/desktop/app_sign_in.py`).
 - **At the switch** (done 11 October 2026) it took the Electron app's
   identity: bundle id `com.simeonlabs.simeon` and scheme `simeon`
-  (`project.yml`, `SimeonConfig.macURLScheme`). Still to do: sign it with
-  the same Developer ID team, and have the website's Download button
-  (`/desktop/download/mac`) serve its DMG. People move by downloading the
-  new app once: every packaged Electron build has its updater switched off
-  (`SAND_DISABLE_UPDATES=1`). On a Mac that still has the Electron app,
-  delete it, so `simeon://` links open this one.
+  (`project.yml`, `SimeonConfig.macURLScheme`). It is released with
+  `scripts/release.sh` (below, "Releasing"), signed with the company's
+  Developer ID, and the website's Download button
+  (`/desktop/download/mac`) serves its disk image once it is published.
+  People move by downloading the new app once: every packaged Electron
+  build has its updater switched off (`SAND_DISABLE_UPDATES=1`). On a Mac
+  that still has the Electron app, delete it, so `simeon://` links open
+  this one.
 - **The Keychain item** keeps its name (`com.simeonlabs.simeon.mac`): the
   name is only a label, and keeping it keeps the earlier Swift build's
   sign-in where macOS allows it (otherwise the person signs in once more).
-- **Updates** come with Sparkle, set up at the switch (STEPS step 14,
-  decision 11): its feed written beside `latest.json` in the release
-  bucket, each release signed with a key kept on the founder's Mac.
+- **Updates** come with Sparkle (`Simeon/Updates.swift`, 12 October
+  2026; STEPS step 14, decision 11): its feed written beside `latest.json`
+  in the release bucket and served at
+  `api.simeonlabs.com/desktop/download/mac/appcast.xml`, each release
+  signed with a key kept in the release Mac's Keychain. Simeon › Check for
+  Updates… is in released builds only; a Debug build never updates itself.
 - **Move to Applications** asks only in a release build whose Info.plist
   has `SimeonAskToMoveToApplications` set to true; it is set since the
   switch, so the move puts this app in the Electron app's place.
@@ -119,7 +126,7 @@ mac/scripts/build.sh
 ```
 
 It needs Xcode 26 (and installs XcodeGen with Homebrew if it is missing).
-The app opens only on macOS 26 or later. If the build fails, its errors are
+The app opens on macOS 15 or later (Liquid Glass on 26). If the build fails, its errors are
 copied to the clipboard (and kept in `mac/build/errors.txt`): paste them in
 the chat.
 
@@ -127,6 +134,45 @@ By hand: `cd mac && xcodegen generate && open SimeonMac.xcodeproj`, then
 Run. Without a team in `project.yml` the app is signed to run on this Mac
 only, which is enough to try it; after a rebuild the Mac may ask once
 whether Simeon may read its Keychain item again: Always Allow.
+
+## Releasing (a Mac)
+
+```sh
+mac/scripts/release.sh            # build, sign, notarize: mac/build/release/<version>/
+mac/scripts/release.sh --publish  # the same, then on the website
+```
+
+It makes the Release build for Apple silicon with `MARKETING_VERSION` from
+`project.yml` and the commit count as the build number, exports it for
+Developer ID, has Apple notarize the app and the disk image and staples
+both, writes the update zip, Sparkle's feed (`appcast.xml`) and the record
+(`release.json`), and with `--publish` uploads them to
+`s3://simeonlabs-files-public/releases/darwin-arm64/<version>/`, then
+points `appcast.xml` and `latest.json` at them. The server reads only
+`latest.json` (`server/simeon/desktop/releases.py`), so the Download
+button serves the new disk image within five minutes, and installed apps
+find the update on their next daily check. It refuses uncommitted changes
+and a version already published (raise `MARKETING_VERSION` and commit;
+`--replace` publishes the same version again).
+
+Once per release Mac:
+
+1. Xcode › Settings › Accounts: the team `496QXRMJXG`, and in Manage
+   Certificates a "Developer ID Application" certificate.
+2. An App Store Connect API key (Users and Access › Integrations › App
+   Store Connect API, role Developer), stored for notarizing:
+   `xcrun notarytool store-credentials simeon-notary --key AuthKey_….p8
+   --key-id … --issuer …`.
+3. For `--publish`, the `aws` command line signed in to an account that
+   may write to the bucket (`brew install awscli`, `aws configure`).
+4. Sparkle's key is made in the Keychain by the first run, which also
+   writes a copy to the Desktop: keep it in the password manager and
+   delete the file. A later release from another Mac needs it imported
+   (`generate_keys -f <file>`), or installed apps refuse the update.
+
+Try the disk image from the first run on a clean Mac (or another user
+account) before `--publish`: open it, drag Simeon to Applications, open
+it, sign in, finish the first run.
 
 ## What can and cannot be checked here
 

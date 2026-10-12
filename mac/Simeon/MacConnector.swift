@@ -324,7 +324,7 @@ private struct ConnectConsentDialog: View {
           .frame(maxWidth: .infinity)
           .frame(height: 32)
       }
-      .buttonStyle(.glassProminent)
+      .prominentGlassButton()
       .controlSize(.large)
       .tint(look.yours)
       .handCursor()

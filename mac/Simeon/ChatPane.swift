@@ -226,7 +226,7 @@ struct ChatHeader: View {
             .truncationMode(.tail)
             .padding(.horizontal, 12)
             .frame(height: 26)
-            .glassEffect(.regular, in: .capsule)
+            .liquidGlass(in: .capsule)
             .contentShape(Capsule())
         }
         .buttonStyle(.hand)
@@ -271,7 +271,7 @@ private struct CallButton: View {
         .background(Circle().fill(Color(hex: hovering ? 0x2A2A2A : 0x212121)))
         .overlay(Circle().strokeBorder(Color(hex: 0x2E2E2E), lineWidth: 1))
     } else {
-      button.glassEffect(.regular, in: .circle)
+      button.liquidGlass(in: .circle)
     }
   }
 }

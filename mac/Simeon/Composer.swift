@@ -237,7 +237,7 @@ struct Composer: View {
         .onTapGesture { handle.focus() }
         .pointerStyle(.horizontalText)
     }
-    .glassEffect(.regular, in: shape)
+    .liquidGlass(in: shape)
   }
 
   /** The control at the field's right (`sand-prompt-send`, `…-mic`, `…-voice-chip`). */
@@ -471,7 +471,7 @@ private struct AttachButton: View {
         .contentShape(Circle())
     }
     .buttonStyle(.hand)
-    .glassEffect(.regular.interactive(), in: .circle)
+    .liquidGlass(in: .circle, interactive: true)
     .disabled(full)
     .opacity(full ? 0.4 : 1)
     .help("Attach file")

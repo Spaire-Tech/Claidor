@@ -10,11 +10,16 @@ the server reads (fetched over HTTPS, cached a few minutes); the file URLs
 are built here from the bucket's public address and the version, so the
 URLs inside the index do not matter.
 
-Two routes:
+The routes:
 
 - `GET /desktop/download/mac` sends the browser to the latest `.dmg`
   (302). The website's Download button points here, so the link never
   changes between releases.
+- `GET /desktop/download/mac/appcast.xml` sends Sparkle, the Swift Mac
+  app's updater (`mac/Simeon/Updates.swift`, 12 October 2026), to the
+  `appcast.xml` that `mac/scripts/release.sh` writes beside `latest.json`
+  (302). Sparkle checks the release's EdDSA signature itself; the server
+  only says where the feed is, so the bucket can move without a release.
 - `GET /desktop/api/update/{platform}/{app}/{version}/{machine}/{channel}`
   is what the app's updater asks, in Squirrel.Mac's shape
   (`desktop/source/electron-main/update/update-feed.ts`,
@@ -168,6 +173,14 @@ async def download_mac() -> Response:
             {"error": "Simeon for Mac is not published yet."}, status_code=404
         )
     return RedirectResponse(release.dmg_url, status_code=302)
+
+
+@router.get("/download/mac/appcast.xml", name="desktop:download_mac_appcast")
+async def download_mac_appcast() -> Response:
+    """The Swift Mac app's update feed (Sparkle's appcast), in the bucket."""
+    return RedirectResponse(
+        f"{releases_base_url()}/{PLATFORM}/appcast.xml", status_code=302
+    )
 
 
 @router.get("/download/mac/latest", name="desktop:download_mac_latest")

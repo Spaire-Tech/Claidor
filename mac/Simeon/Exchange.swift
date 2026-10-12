@@ -142,7 +142,7 @@ private struct ExchangeHeader: View {
         .truncationMode(.tail)
         .padding(.horizontal, 12)
         .frame(height: 26)
-        .glassEffect(.regular, in: .capsule)
+        .liquidGlass(in: .capsule)
         .help(name)
     }
   }

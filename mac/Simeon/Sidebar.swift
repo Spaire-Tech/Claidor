@@ -230,7 +230,7 @@ private struct Disc<Content: View>: View {
         .contentShape(Circle())
     }
     .buttonStyle(.hand)
-    .glassEffect(.regular, in: .circle)
+    .liquidGlass(in: .circle)
     .accessibilityLabel(help)
     if tooltip {
       button.help(help)
