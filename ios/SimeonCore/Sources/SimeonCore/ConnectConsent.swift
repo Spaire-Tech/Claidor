@@ -59,22 +59,26 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
       Point(symbol: "checkmark.circle", title: "Check their work", body: "Agents can misread a request or take a step you didn't expect. Look over what they do in \(title), especially at first."),
     ]
 
-    let signIn: String
-    switch route {
-    case .composio:
-      // The app's own sign-in page may name the partner (Google's does, for Simeon has no Google app of its own yet): said here without its name, so the person isn't surprised.
-      signIn = "Simeon connects \(title) through a secure sign-in partner, who keeps its access for your agents. \(title)'s page may show the partner's name. Simeon never sees your password."
-    case .vendor(let host):
-      signIn = "You'll sign in on \(title)'s own page, and \(title) runs this connection from its own server (\(host)). Simeon never sees your password."
-    case .unknown:
-      signIn = "You'll sign in on \(title)'s own page. Simeon never sees your password."
-    }
+    let signIn = Self.signInSentence[key]?.replacingOccurrences(of: "{App}", with: title) ?? Self.signInLine(route, title: title)
     smallPrint = [
       signIn,
       "What your agents read in \(title) becomes part of your chats with them and is sent to the AI models that do the work.",
       "\(title)'s own terms and privacy policy apply to the information it shares with Simeon.",
     ]
     note = Self.notes[key] ?? (Self.money.contains(key) ? "Anything that moves money in \(title) is real. Ask your agents to check with you before they move any." : nil)
+  }
+
+  /** Who handles the sign-in, by the app's route. */
+  static func signInLine(_ route: Route, title: String) -> String {
+    switch route {
+    case .composio:
+      // The app's own sign-in page may name the partner (Google's does, for Simeon has no Google app of its own yet): said here without its name, so the person isn't surprised.
+      return "Simeon connects \(title) through a secure sign-in partner, who keeps its access for your agents. \(title)'s page may show the partner's name. Simeon never sees your password."
+    case .vendor(let host):
+      return "You'll sign in on \(title)'s own page, and \(title) runs this connection from its own server (\(host)). Simeon never sees your password."
+    case .unknown:
+      return "You'll sign in on \(title)'s own page. Simeon never sees your password."
+    }
   }
 
   /** Composio when the catalog names its toolkit or the app is served from Simeon's own apps address; the app's server otherwise. */
@@ -166,6 +170,13 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
   /** Apps whose reach is said another way. */
   static let reachSentence: [String: String] = [
     "linkedin": "Your agents can read your profile and publish posts on {App}.",
+    "link": "Your agents can ask {App} for a one-time card to pay for something you asked them to buy, and read the bank and card accounts you choose to share.",
+  ]
+
+  /** Apps whose sign-in is said another way. */
+  static let signInSentence: [String: String] = [
+    // Link signs in with a code on link.com or in its app, and runs on Simeon's cloud computer (desktop/source/shared/node/link-wallet/).
+    "link": "You'll approve the connection on link.com or in the {App} app; your cloud computer keeps it. Simeon never sees your password or your card numbers.",
   ]
 
   /** Apps where money moves for real. */
@@ -189,5 +200,6 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
     "gmail": "Emails your agents send go out from your own address.",
     "outlook": "Emails your agents send go out from your own address.",
     "docusign": "Envelopes your agents send go out in your name.",
+    "link": "Nothing is paid until you approve the purchase in the Link app, up to $500 each and $500 a day. Each purchase gets its own one-time card, never your real one. US accounts only.",
   ]
 }

@@ -7,6 +7,9 @@ import { isVendorMcpPluginId, vendorMcpServerId } from "../../../shared/node/ven
 import { loadVendorMcpInstalls, removeVendorMcpInstall, upsertVendorMcpInstall } from "../../../shared/node/vendor-mcp/installs.js";
 import { fetchVendorEffectivePlugins, fetchVendorMarketplacePlugins } from "../../../shared/node/vendor-mcp/marketplace.js";
 import { createVendorMcpBackendExec } from "../../../shared/node/vendor-mcp/backend-exec.js";
+import { fillCheckout } from "../../../shared/node/link-wallet/checkout-fill.js";
+import { createLinkCli } from "../../../shared/node/link-wallet/link-cli.js";
+import { createLinkTools } from "../../../shared/node/link-wallet/link-tools.js";
 import { withVendorAccountServers } from "../../../shared/node/vendor-mcp/display.js";
 import { adoptVendorMcpStore, loadVendorMcpStore, serializeVendorMcpStoreForPeer } from "../../../shared/node/vendor-mcp/installs.js";
 import {
@@ -277,7 +280,9 @@ export class McpHostService {
     // store (`vendor-mcp/backend-exec.ts`): the Mac's sign-ins arrive by
     // sync, the web's finish here, and each side refreshes its own.
     // Apps Simeon Labs' server serves take the box's own credential (`vendor-mcp/backend-exec.ts`, `appsToolkit`).
-    const backendMcpExec = createVendorMcpBackendExec({ rootDir: getSandRootDir, fallback: accountBackendMcpExec, canStartAuth: true, getServerAccessToken: async () => { try { const token = await deps.auth.getAccessToken({ backendUrl: getSandInferenceBackendUrl() }); return token.length > 0 ? token : null; } catch { return null; } }, log: deps.log });
+    // Link (Stripe's agent wallet) runs here, on the cloud computer, through its own CLI (`shared/node/link-wallet/`).
+    const linkWallet = createLinkTools({ cli: createLinkCli({ rootDir: getSandRootDir, log: deps.log }), rootDir: getSandRootDir, fillCheckout, log: deps.log });
+    const backendMcpExec = createVendorMcpBackendExec({ rootDir: getSandRootDir, fallback: accountBackendMcpExec, canStartAuth: true, linkWallet, getServerAccessToken: async () => { try { const token = await deps.auth.getAccessToken({ backendUrl: getSandInferenceBackendUrl() }); return token.length > 0 ? token : null; } catch { return null; } }, log: deps.log });
     this.backendMcpExec = backendMcpExec;
     this.accountBackendMcpExec = accountBackendMcpExec;
     this.hostMcp = createHostMcp({

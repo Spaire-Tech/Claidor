@@ -480,6 +480,62 @@ and Ashby connect through Simeon. The provider behind them is never named in the
   build of each app; not yet seen on a device.
 * **Not yet verified.** No sign-in or tool call against the live provider, and nothing on a Mac.
 
+### 7d. Link: purchases and bank accounts
+
+**For the person.** (13 October 2026, the founder: "add stripe/link-cli so that the agents can
+make purchase for the user … and access their banks, read and advise based on it".) Link is
+Stripe's agent wallet. Added from Connect apps like any app, it lets an agent buy something the
+person asked for, and read the bank and card accounts the person chose to share with Link
+(transactions, balances, account details) to answer questions about spending and give advice.
+Nothing is paid until the person approves the purchase in the Link app; each purchase gets its own
+one-time card, never their real one. Purchases work for US and Canadian Link accounts, bank
+reading for US ones.
+
+**How it works.** No server of ours is involved. The engine runs Stripe's own CLI,
+`@stripe/link-cli` 0.27.1, on the person's cloud computer
+(`desktop/source/shared/node/link-wallet/`), as a third kind of app beside the vendors' and the
+ones our server serves (`boxCli` in `vendor-mcp/catalog.ts`; `vendor-mcp/backend-exec.ts`).
+* **Sign-in.** Add runs `link-cli auth login --client-name Simeon` with the four financial
+  source actions; Link answers a page on app.link.com that already carries the code
+  (`/device/setup?code=…`), which the apps open in their sign-in sheet. The person signs in to
+  Link there (or approves in the Link app); the sign-in's watch runs `auth status` every 5 s,
+  which finishes it. The approval screen names "Simeon on <computer>" with Link's generic look:
+  Simeon's own name and logo there need Simeon Labs' registered OAuth client (below).
+* **Where it lives.** The sign-in is one file on the data volume,
+  `/home/box/sand-data/link/auth.json` (0600), so a box update keeps it. The CLI comes with the
+  image (`box/Dockerfile`, `LINK_CLI_VERSION`); a box on an older image installs the same version
+  under `/home/box/sand-data/link/cli` the first time Link is used (about 150 MB, 15 to 35 s).
+  Its install script is skipped: it fetches Stripe's agent skills with npx.
+* **The agents' tools** (`link-tools.ts`): `get_wallet`, `create_purchase` (a spend request
+  with `--request-approval`: Link pushes it to the Link app), `wait_for_approval`,
+  `pay_checkout`, `cancel_purchase`, `list_purchases`, `list_accounts`, `get_balances`,
+  `list_transactions`. The system prompt sends purchases and money questions there.
+* **The card never reaches the agent.** `pay_checkout` has Link write the one-time card to a
+  0600 file, types it into the checkout open in the box's Chrome over DevTools
+  (`checkout-fill.ts`: 127.0.0.1:9223, and 9222+N for window N; card fields in the page and in
+  Stripe's, Shopify's, Braintree's and Adyen's payment frames), deletes the file and answers only
+  which fields it filled. A billing ZIP or name is typed only where the field is plainly the
+  card's, never a shipping address's. For a Stripe checkout that offers it, the Link pay token is
+  set the same way. Every answer is scrubbed of card numbers, security codes and tokens. The
+  agent presses Pay itself after checking the order. A screenshot it takes of the filled form can
+  still show the digits.
+* **Limits (Link's).** $500 a purchase, $500 a day, $20,000 in 30 days; 30 minutes to approve;
+  the card works for 12 hours. Test mode (`test: true` on `create_purchase`) returns a test card
+  and charges nothing.
+* **Log lines.** Box: `[link] installing …` / `[link] installed …` and `[link] purchase
+  requested: <status> <lsrq_…>` in the host log; `link sign-in started with Link's device code`
+  and `link connected` in `vendor-mcp-signin.log` on the data volume.
+* **Later: Simeon's own client.** Stripe asks agent products to register an OAuth client (the
+  Link Agent Wallet application form, redirect `https://api.simeonlabs.com/desktop/apps/link/callback`,
+  settings `SIMEON_LINK_CLIENT_ID` / `SIMEON_LINK_CLIENT_SECRET` on the API service). With it the
+  approval screen carries Simeon's name, and bank reading needs the company's Stripe account (the one Simeon's billing uses)
+  registered for Financial Connections. Only the sign-in changes then: the server holds the
+  tokens and hands the box `LINK_ACCESS_TOKEN`, which the same CLI reads.
+* **Not yet verified.** Tested here: the CLI's sign-in start and status against Link's real
+  server (no account approved), the tools against a scripted CLI, and the filler against Chromium
+  with a fake checkout (a cross-site payment frame, a plain form, the pay-token block). No real
+  Link account, purchase or bank read yet, and nothing on a device.
+
 ## 8. Agent features that touch the server
 
 ### Avatars

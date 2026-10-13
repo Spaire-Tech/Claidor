@@ -44,6 +44,7 @@ import {
   takeVendorMcpPendingAuth,
 } from "./oauth.js";
 import { VendorMcpAuthRequiredError, forgetVendorMcpSession, vendorMcpCallTool, vendorMcpListTools } from "./http-mcp-client.js";
+import type { LinkTools } from "../link-wallet/link-tools.js";
 
 export interface VendorMcpListedServer {
   readonly serverIdentifier: string;
@@ -100,7 +101,16 @@ export interface VendorMcpBackendExecOptions {
    * serves (`appsToolkit` in the catalog); a vendor keeps its own credential.
    */
   readonly getServerAccessToken?: () => Promise<string | null | undefined>;
+  /**
+   * Link, run by `@stripe/link-cli` on the cloud computer (`boxCli` in the
+   * catalog, 13 October 2026): its tools and its device-code sign-in. Only
+   * the box has it; elsewhere the app says where it runs.
+   */
+  readonly linkWallet?: LinkTools;
 }
+
+/** The credential row Link carries once connected: a marker, never a token (the CLI keeps its own sign-in on the data volume). */
+export const LINK_CONNECTED_CLIENT_ID = "simeon-link";
 
 /** The credential row an app our server serves carries once connected: a marker, never a token (the token is always the account's current one). */
 export const APPS_CONNECTED_CLIENT_ID = "simeon-apps";
@@ -131,6 +141,30 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
     try { await options.syncStore?.(); } catch (error) { log(`vendor-mcp store sync skipped: ${errorLabel(error)}`); }
   };
   const isApp = (install: VendorMcpInstall): boolean => vendorMcpConnectorById(install.id)?.appsToolkit != null;
+  const isBoxCli = (install: VendorMcpInstall): boolean => vendorMcpConnectorById(install.id)?.boxCli != null;
+  // Link's "connected", asked of the CLI at most every 20 s for listings (each ask starts it); the sign-in's watch always asks afresh.
+  let linkKnown: { readonly connected: boolean; readonly atMs: number } | undefined;
+  // One ask at a time (each is about 2 s): a listing, a tool call and the watch arriving together share it.
+  let linkAsking: Promise<boolean> | undefined;
+  const linkConnected = async (fresh: boolean): Promise<boolean> => {
+    const wallet = options.linkWallet;
+    if (wallet == null) return false;
+    if (!fresh && linkKnown != null && now() - linkKnown.atMs < 20_000) return linkKnown.connected;
+    linkAsking ??= (async () => {
+      const status = await wallet.signInStatus();
+      linkKnown = { connected: status.authenticated, atMs: now() };
+      return status.authenticated;
+    })().finally(() => { linkAsking = undefined; });
+    return await linkAsking;
+  };
+  const markLink = (install: VendorMcpInstall, connected: boolean): void => {
+    const marked = install.credential?.clientId === LINK_CONNECTED_CLIENT_ID;
+    if (connected && !marked) {
+      if (setVendorMcpCredential(options.rootDir(), install.id, { accessToken: "connected", tokenEndpoint: install.url, clientId: LINK_CONNECTED_CLIENT_ID }, now) != null) options.onCredentialChanged?.(install.id);
+    } else if (!connected && install.credential != null) {
+      if (clearVendorMcpCredential(options.rootDir(), install.id, now)) options.onCredentialChanged?.(install.id);
+    }
+  };
   const serverToken = async (): Promise<string | undefined> => {
     try { const token = await options.getServerAccessToken?.(); return typeof token === "string" && token.length > 0 ? token : undefined; } catch { return undefined; }
   };
@@ -174,6 +208,12 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
   // none: expired, it reads as needsAuth until the owner refreshes and the
   // next sync brings the new token.
   const usableCredential = async (install: VendorMcpInstall): Promise<VendorMcpCredential | undefined> => {
+    if (isBoxCli(install)) {
+      if (options.linkWallet == null) return undefined;
+      const connected = await linkConnected(false);
+      markLink(install, connected);
+      return connected ? { accessToken: "connected", tokenEndpoint: install.url, clientId: LINK_CONNECTED_CLIENT_ID } : undefined;
+    }
     if (isApp(install)) {
       // An app our server serves answers with the account's own bearer; a 401 on its tools means "not connected yet".
       const token = await serverToken();
@@ -202,6 +242,13 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
     const base = { serverIdentifier: install.id, accountLabel: "default" as const, rowServerIdentifier: install.id };
     const credential = await usableCredential(install);
     if (credential == null) return { ...base, status: "needsAuth", tools: [] };
+    if (isBoxCli(install)) {
+      return {
+        ...base,
+        status: "connected",
+        tools: (options.linkWallet?.tools ?? []).map((tool) => ({ name: tool.name, providerIdentifier: install.id, toolName: tool.name, clientKey: install.id, title: tool.title, description: tool.description, inputSchema: tool.inputSchema })),
+      };
+    }
     try {
       const tools = await vendorMcpListTools({ url: install.url, accessToken: credential.accessToken, fetch: fetchImpl });
       if (isApp(install)) markApp(install, true);
@@ -272,6 +319,22 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
     }
   };
 
+  // Link's sign-in: Link's device code, on a link.com page that already carries it, which the apps open in their sign-in sheet; the watch's validateTokens finishes it.
+  const linkAuthStatus = async (id: string, install: VendorMcpInstall, forceReauth: boolean): Promise<VendorMcpAuthStatus> => {
+    if (options.linkWallet == null) return { id, isAvailable: false, requiresAuth: false, hasValidToken: false, authUrl: "", error: "Link runs on Simeon's cloud computer; add it from the iPhone or the Mac app." };
+    if (!forceReauth && await linkConnected(true)) { markLink(install, true); return { id, isAvailable: true, requiresAuth: false, hasValidToken: true, authUrl: "", error: "" }; }
+    linkKnown = undefined;
+    const started = await options.linkWallet.startSignIn(forceReauth);
+    if ("authenticated" in started) { markLink(install, true); return { id, isAvailable: true, requiresAuth: false, hasValidToken: true, authUrl: "", error: "" }; }
+    if ("error" in started) {
+      appendVendorMcpSigninLog(options.rootDir(), `${install.id} sign-in failed to start: ${started.error}`, now);
+      return { id, isAvailable: false, requiresAuth: false, hasValidToken: false, authUrl: "", error: started.error };
+    }
+    markLink(install, false);
+    appendVendorMcpSigninLog(options.rootDir(), `${install.id} sign-in started with Link's device code`, now);
+    return { id, isAvailable: true, requiresAuth: true, hasValidToken: false, authUrl: started.url, error: "" };
+  };
+
   return {
     async listTools(serverIdentifiers: readonly string[]): Promise<readonly unknown[]> {
       await synced();
@@ -302,6 +365,15 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
         return errorResult(`${vendorMcpConnectorById(install.id)?.name ?? install.id} needs authentication before "${args.toolName}" can run. Call AuthenticateMcpServer for it; the user signs in from the connect card.`);
       }
       const plain = args.args instanceof Struct ? args.args.toJson() : args.args;
+      if (isBoxCli(install) && options.linkWallet != null) {
+        try {
+          const record = plain != null && typeof plain === "object" && !Array.isArray(plain) ? plain as Record<string, unknown> : {};
+          const result = await options.linkWallet.call(args.toolName, record);
+          return new McpResult({ result: { case: "success", value: new McpSuccess({ content: [contentItem({ type: "text", text: result.text })], isError: result.isError }) } });
+        } catch (error) {
+          return errorResult(`"${args.toolName}" on Link failed: ${errorLabel(error)}`);
+        }
+      }
       try {
         const result = await vendorMcpCallTool({ url: install.url, accessToken: credential.accessToken, fetch: fetchImpl, name: args.toolName, arguments: plain });
         return new McpResult({
@@ -336,6 +408,7 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
       const install = installFor(vendorPluginId);
       if (install == null) return { id, isAvailable: false, requiresAuth: false, hasValidToken: false, authUrl: "", error: `${connector?.name ?? vendorPluginId} is not installed.` };
       if (isApp(install)) return await appAuthStatus(id, install, args.forceReauth === true);
+      if (isBoxCli(install)) return await linkAuthStatus(id, install, args.forceReauth === true);
       const credential = args.forceReauth === true ? undefined : await usableCredential(install);
       if (credential != null) return { id, isAvailable: true, requiresAuth: false, hasValidToken: true, authUrl: "", error: "" };
       if (!options.canStartAuth) {
@@ -383,6 +456,13 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
       for (const target of targets) {
         const install = installForUrl(target.serverUrl);
         if (install == null) { others.push(target); continue; }
+        if (isBoxCli(install)) {
+          const connected = await linkConnected(true);
+          if (connected && install.credential?.clientId !== LINK_CONNECTED_CLIENT_ID) appendVendorMcpSigninLog(options.rootDir(), `${install.id} connected`, now);
+          markLink(install, connected);
+          vendor.push({ serverUrl: target.serverUrl, accountKey: target.accountKey, hasValidToken: connected });
+          continue;
+        }
         if (isApp(install)) {
           const connected = await appConnected(install);
           if (connected != null) markApp(install, connected);
@@ -400,6 +480,7 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
       const install = installForUrl(args.serverUrl);
       if (install == null) { await fallback.logoutAccount?.(args); return; }
       if (isApp(install)) { await disconnectApp(install); return; }
+      if (isBoxCli(install)) { await options.linkWallet?.signOut(); linkKnown = undefined; markLink(install, false); return; }
       if (install.credential != null) forgetVendorMcpSession(install.url, install.credential.accessToken);
       if (clearVendorMcpCredential(options.rootDir(), install.id, now)) options.onCredentialChanged?.(install.id);
     },
@@ -413,6 +494,7 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
       const install = installForServerId(args.serverId);
       if (install == null) { await fallback.deleteAccount?.(args); return; }
       if (isApp(install)) { await disconnectApp(install); return; }
+      if (isBoxCli(install)) { await options.linkWallet?.signOut(); linkKnown = undefined; markLink(install, false); return; }
       if (install.credential != null) forgetVendorMcpSession(install.url, install.credential.accessToken);
       if (clearVendorMcpCredential(options.rootDir(), install.id, now)) options.onCredentialChanged?.(install.id);
     },

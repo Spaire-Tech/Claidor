@@ -1393,6 +1393,15 @@ final class ConnectConsentTests: XCTestCase {
     XCTAssertEqual(ConnectConsent(app: byToolkit, name: "Notion").route, .composio)
   }
 
+  /** Link (13 October 2026): approval in the Link app, a one-time card, no card number seen. */
+  func testLinkSaysEveryPurchaseWaitsForTheLinkApp() {
+    let link = ConnectConsent(app: CatalogApp(id: "link", name: "link", title: "Link", summary: "Buy what you ask for.", serverURL: "https://link.com/agents"), name: "Link")
+    XCTAssertTrue(link.points[0].body.contains("one-time card"))
+    XCTAssertTrue(link.smallPrint[0].hasPrefix("You'll approve the connection on link.com or in the Link app"))
+    XCTAssertTrue(link.smallPrint[0].contains("never sees your password or your card numbers"))
+    XCTAssertTrue(link.note?.hasPrefix("Nothing is paid until you approve the purchase in the Link app") == true)
+  }
+
   func testTheExtraLayerAndTheUnknown() {
     let shopify = ConnectConsent(app: CatalogApp(id: "shopify", name: "shopify", title: "Shopify", summary: "Orders, products, customers, and your store."), name: "Shopify")
     XCTAssertTrue(shopify.note?.contains("live store") == true)

@@ -51,6 +51,13 @@ export interface VendorMcpConnector {
    * the connectors … white label it"); `url` is our server's address for it.
    */
   readonly appsToolkit?: string;
+  /**
+   * An app run by a command-line program on the person's cloud computer
+   * instead of a server (13 October 2026): Link, Stripe's agent wallet,
+   * through `@stripe/link-cli` (`../link-wallet/`). Its tools and its
+   * device-code sign-in come from the program; `url` is the app's own page.
+   */
+  readonly boxCli?: "link";
 }
 
 /** Our server's MCP address for an app it serves (`/desktop/api/apps/mcp/<toolkit>`). */
@@ -160,6 +167,11 @@ export const VENDOR_MCP_CONNECTORS: readonly VendorMcpConnector[] = [
   app({ id: "gong", name: "Gong", category: G.Sales, description: "Sales calls, transcripts, and deal insights." }, "gong"),
   app({ id: "capsule-crm", name: "Capsule", category: G.Sales, description: "Contacts, opportunities, and tasks in your CRM." }, "capsule_crm"),
   app({ id: "dialpad", name: "Dialpad", category: G.Sales, description: "Calls, texts, contacts, and call summaries." }, "dialpad"),
+  // 13 October 2026, the founder: "add stripe/link-cli so that the agents can
+  // make purchase for the user … and access their banks". Run on the cloud
+  // computer (`boxCli`); purchases for US and Canadian Link accounts, bank
+  // reading for US ones.
+  { id: "link", name: "Link", category: G.Finance, url: "https://link.com/agents", boxCli: "link", description: "Buy what you ask for, with your OK in the Link app for each purchase, and read the bank accounts you share. US only." },
 ];
 
 const byId = new Map(VENDOR_MCP_CONNECTORS.map((item) => [item.id, item]));
