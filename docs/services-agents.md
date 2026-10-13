@@ -469,6 +469,15 @@ and Ashby connect through Simeon. The provider behind them is never named in the
   the provider's sentence (502). Gusto (production pre-approval, security review, QA), Brex
   (credentials issued by its developer support), Docusign (go-live review) and Shopify (app
   review to reach other stores) review an app before it reaches other people's accounts.
+* **"Coming soon" in the apps** (13 October 2026, the founder: "mark a clearer coming soon in
+  those in the apps. they cant be added"). The eight have no Add in the iPhone and Mac apps: their
+  row in Connect apps (Plugins on the Mac), their page and an agent's connect card show a grey
+  "Coming soon" pill, and the row is faded. `GET /desktop/api/apps` names them
+  (`{"available": …, "comingSoon": ["ashby", …]}`): `OWN_APP_NEEDED` less the ones in
+  `SIMEON_COMPOSIO_AUTH_CONFIGS`, so naming an app's own sign-in there brings its Add back with
+  no new build. The apps read it with the catalog (the iPhone) or as Plugins opens (the Mac),
+  and until they have, they hold the same eight (`AppsComingSoon` in SimeonCore). Needs a new
+  build of each app; not yet seen on a device.
 * **Not yet verified.** No sign-in or tool call against the live provider, and nothing on a Mac.
 
 ## 8. Agent features that touch the server

@@ -107,7 +107,10 @@ struct PluginsLayer: View {
       .task(id: plugins.opening) {
         let model = plugins.model
         model.store = store
+        // Which apps can't be added yet, from Simeon Labs' server, while the rest loads.
+        async let soon: Void = store.loadAppsComingSoon()
         await model.load(agentId: window.selected)
+        await soon
         // The servers every 15 s while it is open (`retainServers`).
         while !Task.isCancelled {
           try? await Task.sleep(nanoseconds: 15_000_000_000)
@@ -493,11 +496,16 @@ private struct MarketplaceSection: View {
       SectionHeading(title: title, look: look)
       PluginsGrid(look: look) {
         ForEach(shown.visible) { entry in
-          PluginRow(title: entry.displayName, line: entry.description, team: Plugins.teamMark(entry), look: look,
+          // An app that can't be added yet: dimmed, "Coming soon" in place of Add (`AppsComingSoon`).
+          let soon = !model.installed(entry).isInstalled && model.comingSoon(entry)
+          PluginRow(title: entry.displayName, line: entry.description, team: Plugins.teamMark(entry), look: look, dimmed: soon,
                     icon: { PluginIcon(name: entry.displayName, iconUrl: entry.iconUrl, look: look) },
                     open: { model.path.append(.plugin(entry.id)) }) {
             if model.installed(entry).isInstalled {
               AddedMark(look: look)
+            } else if soon {
+              PluginPill(title: AppsComingSoon.label, kind: .soon, look: look)
+                .accessibilityLabel("\(entry.displayName) is coming soon")
             } else if model.adding == entry.id {
               AddingSpinner(name: entry.displayName, look: look)
             } else {
@@ -700,6 +708,8 @@ private struct PluginRow<Icon: View, Trailing: View>: View {
   let line: String
   let team: String?
   let look: Look
+  /** Faded, for an app that can't be added yet. */
+  var dimmed = false
   @ViewBuilder let icon: Icon
   let open: () -> Void
   @ViewBuilder let trailing: Trailing
@@ -729,6 +739,7 @@ private struct PluginRow<Icon: View, Trailing: View>: View {
           }
           Spacer(minLength: 0)
         }
+        .opacity(dimmed ? 0.6 : 1)
         .contentShape(Rectangle())
       }
       .buttonStyle(.hand)
@@ -822,11 +833,12 @@ private struct SkillTile: View {
 
 /**
  * A pill (26 high, 13 round, padded 10, 12): secondary (the grey, darker
- * under the pointer), primary (the blue with white words) or a team's
- * label (no fill, grey, faded). Faded to 56% while it waits.
+ * under the pointer), primary (the blue with white words), a team's
+ * label (no fill, grey, faded) or Coming soon (the grey, grey words, not a
+ * button). Faded to 56% while it waits.
  */
 private struct PluginPill: View {
-  enum Kind { case secondary, primary, label }
+  enum Kind { case secondary, primary, label, soon }
   let title: String
   let kind: Kind
   var disabled = false
@@ -846,7 +858,7 @@ private struct PluginPill: View {
         .contentShape(Capsule())
     }
     .buttonStyle(.hand)
-    .disabled(disabled || kind == .label)
+    .disabled(disabled || kind == .label || kind == .soon)
     .opacity(disabled || kind == .label ? 0.56 : 1)
     .onHover { hovering = $0 }
     .fixedSize()
@@ -857,6 +869,7 @@ private struct PluginPill: View {
     case .secondary: return look.ink
     case .primary: return Color(hex: 0xfcfcfc)
     case .label: return look.inkSecondary
+    case .soon: return look.inkTertiary
     }
   }
 
@@ -866,6 +879,7 @@ private struct PluginPill: View {
     case .secondary: return live ? look.fillHover : look.pluginPill
     case .primary: return live ? look.link : look.unread
     case .label: return .clear
+    case .soon: return look.pluginPill
     }
   }
 }
@@ -1126,6 +1140,7 @@ private struct PluginPage: View {
           MetaLine(market: entry.marketplace?.displayName, homepage: entry.homepage, look: look)
         } action: {
           PageActionView(action: Plugins.pageAction(installed: installed.isInstalled, mode: mode), adding: model.adding == entry.id, name: entry.displayName, look: look,
+                         comingSoon: !installed.isInstalled && model.comingSoon(entry),
                          add: { model.requestAdd(entry, agentId: window.selected) },
                          remove: {
                            Task {
@@ -1202,12 +1217,13 @@ private struct ServerPage: View {
   }
 }
 
-/** The page's action (`ft`): Add (the blue, or the spinner), Uninstall, the team's label with Remove, or the team's label alone. No question asked. */
+/** The page's action (`ft`): Add (the blue, or the spinner; Coming soon for an app that can't be added yet), Uninstall, the team's label with Remove, or the team's label alone. No question asked. */
 private struct PageActionView: View {
   let action: Plugins.PageAction
   let adding: Bool
   let name: String
   let look: Look
+  var comingSoon = false
   let add: () -> Void
   let remove: () -> Void
   @Environment(PluginsState.self) private var plugins
@@ -1216,7 +1232,9 @@ private struct PageActionView: View {
     let busy = plugins.model.isBusy
     switch action {
     case .add:
-      if adding {
+      if comingSoon {
+        PluginPill(title: AppsComingSoon.label, kind: .soon, look: look).accessibilityLabel("\(name) is coming soon")
+      } else if adding {
         AddingSpinner(name: name, look: look)
       } else {
         PluginPill(title: "Add", kind: .primary, disabled: busy, look: look, action: add).accessibilityLabel("Add \(name)")

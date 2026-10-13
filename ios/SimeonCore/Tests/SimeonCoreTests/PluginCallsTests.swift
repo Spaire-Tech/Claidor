@@ -189,6 +189,34 @@ final class PluginCallsTests: XCTestCase {
     let out = await signedOut.makePluginSetupAgent()
     XCTAssertEqual(out.failure, "Sign in to Simeon first.")
   }
+
+  /** Apps that can't be added yet (the founder, 13 October 2026: "mark a clearer coming soon … they cant be added"). */
+  @MainActor
+  func testAppsThatCantBeAddedYetSayComingSoon() async throws {
+    // Before Simeon Labs' server answers: the apps that need its own sign-in with the company.
+    let store = AppStore()
+    XCTAssertTrue(store.isComingSoon("Xero"))
+    XCTAssertTrue(store.isComingSoon("docusign"))
+    XCTAssertFalse(store.isComingSoon("Gmail"))
+
+    let box = PluginsBox()
+    box.answers["desktopMcp:getCatalog"] = ["plugins": [["id": "xero", "displayName": "Xero"], ["id": "acme", "displayName": "Acme", "comingSoon": true], ["id": "gmail", "displayName": "Gmail"]]]
+    box.answers["server:apps"] = ["available": true, "comingSoon": ["gusto", "Brex"]]
+    await store.attach(box)
+    await store.loadApps()
+    XCTAssertEqual(store.appsComingSoon, ["gusto", "brex"])
+    XCTAssertFalse(store.isComingSoon("Xero"), "its own sign-in is set up on the server: Add is back")
+    XCTAssertTrue(store.isComingSoon("Gusto"))
+    XCTAssertTrue(store.isComingSoon("Acme"), "the catalog's own word holds")
+    XCTAssertFalse(store.isComingSoon("Gmail"))
+
+    // An older server names none: the list stays as it is.
+    box.answers["server:apps"] = ["available": true]
+    await store.loadAppsComingSoon()
+    XCTAssertEqual(store.appsComingSoon, ["gusto", "brex"])
+    XCTAssertNil(AppsComingSoon.from(["available": true]))
+    XCTAssertEqual(AppsComingSoon.from(["comingSoon": []]), [])
+  }
 }
 
 /** A box that writes down each command and answers from a script: `desktopMcp`'s actions by "desktopMcp:<action>". */
@@ -235,6 +263,12 @@ final class PluginsBox: AgentBackend, @unchecked Sendable {
   func routines(_ agentId: String) async throws -> [JSON] { [] }
   func events() -> AsyncStream<BackendEvent> { AsyncStream { _ in } }
   var call: CallEngine? { nil }
-  func server(_ path: String, method: String?, body: JSON?) async throws -> JSON { [:] }
+  /** Simeon Labs' server, answered by "server:<path>". */
+  func server(_ path: String, method: String?, body: JSON?) async throws -> JSON {
+    lock.withLock {
+      log.append(("server:\(path)", body ?? .null))
+      return answers["server:\(path)"] ?? [:]
+    }
+  }
   func screen(_ agentId: String) async throws -> ScreenState { ScreenState(socket: nil, state: "starting") }
 }

@@ -245,6 +245,8 @@ public final class AppStore {
   /** Connected apps, as the box's manager lists them (`desktopMcp listServers`), and the catalog to add more from. */
   public private(set) var apps: [ConnectedApp] = []
   public private(set) var catalog: [CatalogApp] = []
+  /** The apps that can't be added yet (`AppsComingSoon`): the server's list once read. */
+  public private(set) var appsComingSoon: Set<String> = AppsComingSoon.builtIn
 
   public private(set) var backend: AgentBackend?
   @ObservationIgnored private var listening: Task<Void, Never>?
@@ -380,7 +382,7 @@ public final class AppStore {
     backend = nil
     agents = []; transcripts = [:]; chatRows = [:]; runFlags = [:]; steps = [:]; call = nil; callLevels = []; isLive = false; account = nil; usage = .empty; usageReadAt = nil; access = .checking; accessBlocked = false; hasReachedBox = false; openChat = nil
     layoutTask?.cancel(); layoutTask = nil; pendingLayout = []; refreshing = []; caughtUp = [:]
-    pendingAnswers = [:]; answeredApprovals = [:]; localAsks = [:]; trayList = TrayList(); fileLines = [:]; fileReadsAsText = [:]; unreadAfter = [:]; apps = []; catalog = []; pinnedIds = []; routinesByAgent = [:]; sidebarSections = nil
+    pendingAnswers = [:]; answeredApprovals = [:]; localAsks = [:]; trayList = TrayList(); fileLines = [:]; fileReadsAsText = [:]; unreadAfter = [:]; apps = []; catalog = []; appsComingSoon = AppsComingSoon.builtIn; pinnedIds = []; routinesByAgent = [:]; sidebarSections = nil
     streamingOnly = [:]; outbox = [:]; sentOffline = [:]; arrived = []; olderBefore = [:]; loadingOlder = []; paged = []; firstRunAgentId = nil; revealing = [:]
     openThreads = [:]; threadRows = [:]; threadRoots = [:]; loadFailed = []; isDown = false
     computer = ComputerBook(); subagentsByAgent = [:]; pointers = [:]; lastComputerCatchUp = .distantPast
@@ -1412,6 +1414,8 @@ public final class AppStore {
     let needsCatalog = catalog.isEmpty
     async let servers = try? backend.command("desktopMcp", ["action": "listServers", "args": []])
     async let list = needsCatalog ? try? backend.command("desktopMcp", ["action": "getCatalog", "args": []]) : nil
+    // Which apps can't be added yet, from Simeon Labs' server (`AppsComingSoon`).
+    async let soon: Void = needsCatalog ? loadAppsComingSoon() : ()
     if let state = await servers {
       let next = (state["servers"]?.array ?? state.array ?? []).compactMap(ConnectedApp.init)
       if next != apps { apps = next }
@@ -1421,6 +1425,26 @@ public final class AppStore {
       let next = (list.array ?? list["plugins"]?.array ?? []).compactMap(CatalogApp.init)
       if next != catalog { catalog = next }
     }
+    await soon
+  }
+
+  /** Which apps can't be added yet, read from Simeon Labs' server (`AppsComingSoon`); an older server's answer, or none, keeps the list as it is. */
+  public func loadAppsComingSoon() async {
+    guard let backend, let answer = try? await backend.server("apps", method: nil, body: nil),
+          let named = AppsComingSoon.from(answer), named != appsComingSoon else { return }
+    appsComingSoon = named
+  }
+
+  /**
+   * Whether an app can't be added yet: its card says "Coming soon" and has
+   * no Add (`AppsComingSoon`; or the catalog says so, when the server serves
+   * no apps at all). By its id, its name or its title.
+   */
+  public func isComingSoon(_ app: String) -> Bool {
+    let key = app.lowercased()
+    if appsComingSoon.contains(key) { return true }
+    guard let found = catalogApp(named: app) else { return false }
+    return found.comingSoon || appsComingSoon.contains(found.id.lowercased())
   }
 
   /** When the connected apps were last read, so Add does not read them again a moment later. */

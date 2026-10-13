@@ -1423,6 +1423,8 @@ struct AppRow: View {
   var body: some View {
     // A plugin of skills alone has no app to sign in to: it is in once it is added (the Mac's `et`).
     let skillsAdded = model.entry(app.id).map { $0.connectorList.isEmpty && model.installed($0).isInstalled } ?? false
+    // An app that can't be added yet: dimmed, "Coming soon" in place of Add (`AppsComingSoon`).
+    let soon = store.isComingSoon(app.id)
     HStack(spacing: 16) {
       NavigationLink { PluginPage(entryId: app.id) } label: {
         HStack(spacing: 16) {
@@ -1437,10 +1439,12 @@ struct AppRow: View {
           Spacer(minLength: 8)
         }
         .contentShape(.rect)
+        .opacity(soon ? 0.6 : 1)
       }
       .buttonStyle(.plain)
-      if app.comingSoon {
-        Text("Soon").font(.system(size: 13)).foregroundStyle(Ink.tertiary)
+      if soon {
+        PluginPill(title: AppsComingSoon.label, fill: Ink.pillButton, ink: Ink.tertiary)
+          .accessibilityLabel("\(app.title) is coming soon")
       } else if store.isConnected(app.title) || skillsAdded {
         PluginPill(title: "Added", fill: Ink.pillButton, ink: Ink.secondary)
       } else if connector.connecting == app.title || model.adding == app.id {

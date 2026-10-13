@@ -544,8 +544,12 @@ async def apps_available(
     """Whether apps can be connected here. The desktop asks before it offers
     Connect on any app card (`vendor-mcp/apps-availability.ts`): a server
     without this route, or without the provider's key, keeps them Coming
-    soon instead of sending the person nowhere."""
-    return JSONResponse({"available": configured()})
+    soon instead of sending the person nowhere. `comingSoon` names the apps
+    that can't be added yet: those needing Simeon Labs' own app with the
+    company, until it is named in `COMPOSIO_AUTH_CONFIGS` (the iPhone and
+    Mac apps say "Coming soon" on their cards and offer no Add)."""
+    soon = sorted(OWN_APP_NEEDED - set(own_auth_configs()))
+    return JSONResponse({"available": configured(), "comingSoon": soon})
 
 
 @router.post("/api/apps/mcp/{toolkit}", name="desktop:apps_mcp")

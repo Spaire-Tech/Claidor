@@ -92,12 +92,27 @@ class TestAvailability:
         mocker: MockerFixture,
     ) -> None:
         headers = await _signed_in(client, session, user)
+        soon = sorted(apps_module.OWN_APP_NEEDED)
         response = await client.get("/desktop/api/apps", headers=headers)
-        assert response.json() == {"available": True}
+        assert response.json() == {"available": True, "comingSoon": soon}
         mocker.patch.object(settings, "COMPOSIO_API_KEY", "")
         response = await client.get("/desktop/api/apps", headers=headers)
-        assert response.json() == {"available": False}
+        assert response.json() == {"available": False, "comingSoon": soon}
         assert (await client.get("/desktop/api/apps")).status_code == 401
+
+    async def test_an_app_with_our_own_sign_in_is_no_longer_coming_soon(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        # The iPhone and Mac apps offer Add once Simeon Labs' own app is named.
+        mocker.patch.object(settings, "COMPOSIO_AUTH_CONFIGS", {"xero": "ac_x"})
+        headers = await _signed_in(client, session, user)
+        response = await client.get("/desktop/api/apps", headers=headers)
+        assert "xero" not in response.json()["comingSoon"]
+        assert "gusto" in response.json()["comingSoon"]
 
 
 @pytest.mark.asyncio

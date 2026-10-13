@@ -337,6 +337,10 @@ struct ConnectorCard: View {
       Spacer(minLength: 0)
       if isConnected {
         Label("Added", systemImage: "checkmark").font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.secondary).labelStyle(.titleAndIcon)
+      } else if store.isComingSoon(name) {
+        // Not one an agent can be given yet (`AppsComingSoon`).
+        PluginPill(title: AppsComingSoon.label, fill: Ink.pillButton, ink: Ink.tertiary)
+          .accessibilityLabel("\(app?.title ?? name) is coming soon")
       } else if waiting {
         ProgressView().controlSize(.small)
       } else {

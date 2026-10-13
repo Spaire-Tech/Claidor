@@ -624,3 +624,24 @@ public enum Plugins {
     "Then verify with a read-only `git ls-remote` against one of those plugin repositories and tell me whether it worked. Don't change my repositories or any other credentials.",
   ].joined(separator: " ")
 }
+
+/**
+ * Apps that can't be added yet (the founder, 13 October 2026: "mark a
+ * clearer coming soon … they cant be added"): the ones whose sign-in needs
+ * Simeon Labs' own app with that company (Gusto, Xero, Shopify, Brex,
+ * Pipedrive, Docusign, Klaviyo) or takes only a key (Ashby). Their card
+ * says "Coming soon" and has no Add. Simeon Labs' server names them
+ * (`GET /desktop/api/apps`, `comingSoon`), so one whose own app is set up
+ * there can be added at once; until the server answers, this list holds.
+ */
+public enum AppsComingSoon {
+  public static let builtIn: Set<String> = ["gusto", "xero", "shopify", "brex", "pipedrive", "docusign", "klaviyo", "ashby"]
+  /** What the card says in place of Add. */
+  public static let label = "Coming soon"
+
+  /** The server's list, when its answer has one (an older server's has none). */
+  public static func from(_ answer: JSON) -> Set<String>? {
+    guard let list = answer["comingSoon"]?.array else { return nil }
+    return Set(list.compactMap { $0.string?.lowercased() })
+  }
+}

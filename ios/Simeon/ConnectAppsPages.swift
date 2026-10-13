@@ -777,13 +777,14 @@ struct PluginPage: View {
     }
   }
 
-  /** Add (the blue, as the Mac's page has it), the spinner while it is added, or Soon. */
+  /** Add (the blue, as the Mac's page has it), the spinner while it is added, or Coming soon (`AppsComingSoon`). */
   @ViewBuilder
   private func addButton(_ entryId: String) -> some View {
     let app = store.catalog.first { $0.id == entryId }
     let name = app?.title ?? model.entry(entryId)?.displayName ?? entryId
-    if app?.comingSoon == true {
-      Text("Soon").font(.system(size: 13)).foregroundStyle(Ink.tertiary)
+    if app?.comingSoon == true || store.isComingSoon(entryId) {
+      PluginPill(title: AppsComingSoon.label, fill: Ink.pillButton, ink: Ink.tertiary)
+        .accessibilityLabel("\(name) is coming soon")
     } else if model.adding == entryId || connector.connecting == name {
       ProgressView().controlSize(.small).frame(width: 44)
     } else {

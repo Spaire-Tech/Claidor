@@ -430,6 +430,7 @@ final class PluginsModel {
    * skills-only plugin is added at once.
    */
   func requestAdd(_ entry: PluginEntry, agentId: String?) {
+    guard !comingSoon(entry) else { return }
     guard !entry.connectorList.isEmpty else {
       Task { await add(entry, agentId: agentId) }
       return
@@ -437,6 +438,11 @@ final class PluginsModel {
     MacConnector.shared.ask(entry.displayName, store: store) { [weak self] in
       await self?.add(entry, agentId: agentId)
     }
+  }
+
+  /** Whether the plugin's app can't be added yet (`AppsComingSoon`): its row and page say "Coming soon", with no Add. */
+  func comingSoon(_ entry: PluginEntry) -> Bool {
+    store?.isComingSoon(entry.id) ?? AppsComingSoon.builtIn.contains(entry.id.lowercased())
   }
 
   /** The sign-in button: the consent first for a new sign-in (Authenticate, Retry); Reopen opens the waiting page again at once. */

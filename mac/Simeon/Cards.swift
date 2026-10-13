@@ -450,6 +450,16 @@ private struct ConnectorCard: View {
             .padding(.vertical, 6)
             .padding(.horizontal, 12)
             .background(look.addedWash, in: Capsule())
+        } else if store.isComingSoon(name) {
+          // Not one an agent can be given yet (`AppsComingSoon`): no Add.
+          Text(AppsComingSoon.label)
+            .font(.system(size: 13))
+            .foregroundStyle(look.inkTertiary)
+            .padding(.horizontal, 13)
+            .frame(height: 32)
+            .background(look.wash, in: Capsule())
+            .fixedSize()
+            .accessibilityLabel("\(catalog?.title ?? name) is coming soon")
         } else {
           // The consent first, then the app's sign-in in the window (the Apple design pass, `MacConnector`).
           Button { MacConnector.shared.connect(name, store: store) } label: {
