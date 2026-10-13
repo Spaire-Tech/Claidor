@@ -575,6 +575,51 @@ async def mcp_oauth_callback(request: Request) -> RedirectResponse:
     return RedirectResponse(target, status_code=302, headers=NO_STORE)
 
 
+#: Where Simeon's client metadata document lives, beside the callback.
+MCP_OAUTH_CLIENT_PATH = "/desktop/mcp-oauth/client.json"
+
+
+def mcp_oauth_client_document() -> dict[str, Any]:
+    """Simeon as an OAuth client, described at an address of ours (13
+    October 2026). Shopify's and Zendesk's MCP servers register no clients
+    and take none by hand: they read a client from the document its
+    `client_id` names (a client ID metadata document, the MCP
+    specification's 2025-11-25 sign-in). The box sends this address as the
+    client ID (`vendor-mcp/oauth.ts`); the vendor fetches it, checks that
+    the sign-in's return address is listed, and shows the name and logo.
+    A public client: PKCE, no secret. The `client_id` must equal the
+    address the vendor fetched, so both are built from `BASE_URL`, as the
+    box builds its own from the same server address."""
+    base = settings.BASE_URL.rstrip("/")
+    return {
+        "client_id": f"{base}{MCP_OAUTH_CLIENT_PATH}",
+        "client_name": "Simeon",
+        "client_uri": "https://simeonlabs.com",
+        "logo_uri": "https://www.simeonlabs.com/apple-touch-icon.png",
+        "policy_uri": "https://simeonlabs.com/privacy",
+        "tos_uri": "https://simeonlabs.com/terms",
+        # The box's return address, and the Mac's loopback for a vendor
+        # that sends sign-ins only there (`loopbackOnly` in the catalogue).
+        "redirect_uris": [
+            f"{base}/desktop/mcp-oauth/callback",
+            "http://localhost:8787/callback",
+        ],
+        "grant_types": ["authorization_code", "refresh_token"],
+        "response_types": ["code"],
+        "token_endpoint_auth_method": "none",
+    }
+
+
+@router.get(MCP_OAUTH_CLIENT_PATH, name="desktop:mcp_oauth_client")
+async def mcp_oauth_client() -> JSONResponse:
+    """Simeon's client metadata document (`mcp_oauth_client_document`). A
+    vendor may keep it for an hour."""
+    return JSONResponse(
+        mcp_oauth_client_document(),
+        headers={"Cache-Control": "public, max-age=3600"},
+    )
+
+
 # --- the app's half --------------------------------------------------------
 
 

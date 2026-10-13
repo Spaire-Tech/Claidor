@@ -87,6 +87,8 @@ export interface AccountMcpBackendExecOptions {
   /** Called after this side wrote a credential (a finished sign-in, a refresh, a logout). */
   readonly onCredentialChanged?: (serverId: string) => void;
   readonly log?: (message: string) => void;
+  /** Simeon's client metadata document, for a server that registers no clients but reads such documents (`vendor-mcp/oauth.ts`). */
+  readonly clientMetadataUrl?: string;
 }
 
 // Pending sign-ins for custom servers, by state, for this process: the
@@ -272,7 +274,7 @@ export function createAccountMcpBackendExec(options: AccountMcpBackendExecOption
         // A CLIENT_ID in the server's `auth` block is an app the person registered
         // by hand; the sign-in uses it and skips dynamic registration (ledger F-171).
         const clientId = server.config.auth?.CLIENT_ID;
-        const started = await startVendorMcpOAuth({ pluginId: `account-${server.id}`, mcpUrl: server.config.url, redirectUri: args.oauthRedirectUri, fetch: fetchImpl, remember: false, ...(clientId == null || clientId.length === 0 ? {} : { clientId }) });
+        const started = await startVendorMcpOAuth({ pluginId: `account-${server.id}`, mcpUrl: server.config.url, redirectUri: args.oauthRedirectUri, fetch: fetchImpl, remember: false, ...(clientId == null || clientId.length === 0 ? {} : { clientId }), ...(options.clientMetadataUrl == null ? {} : { clientMetadataUrl: options.clientMetadataUrl }) });
         rememberAccountMcpPendingAuth(started.pending, now());
         return { id, isAvailable: true, requiresAuth: true, hasValidToken: false, authUrl: started.authorizationUrl, error: "" };
       } catch (error) {

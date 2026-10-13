@@ -107,6 +107,12 @@ export interface VendorMcpBackendExecOptions {
    * the box has it; elsewhere the app says where it runs.
    */
   readonly linkWallet?: LinkTools;
+  /**
+   * Simeon's client metadata document on Simeon Labs' server
+   * (`hostedMcpOAuthClientUrl`): the client ID for a vendor that registers
+   * no clients but reads such documents (Shopify, Zendesk; `oauth.ts`).
+   */
+  readonly clientMetadataUrl?: string;
 }
 
 /** The credential row Link carries once connected: a marker, never a token (the CLI keeps its own sign-in on the data volume). */
@@ -421,8 +427,9 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
       try {
         // A vendor that sends sign-ins back only to the loopback gets it even from the box: the app that opened the sheet listens there (`loopbackOnly`).
         const redirectUri = connector?.loopbackOnly === true ? MCP_OAUTH_LOOPBACK_CALLBACK_URL : args.oauthRedirectUri;
-        const started = await startVendorMcpOAuth({ pluginId: install.id, mcpUrl: install.url, redirectUri, fetch: fetchImpl, ...(connector?.clientId == null ? {} : { clientId: connector.clientId }) });
-        appendVendorMcpSigninLog(options.rootDir(), `${install.id} sign-in started: client=${started.pending.clientId} registered=${connector?.clientId == null ? "dynamically" : "by us"} secret=${started.pending.clientSecret == null ? "no" : "yes"} return=${redirectUri} authorize=${started.authorizationUrl.split("?")[0]}`, now);
+        const started = await startVendorMcpOAuth({ pluginId: install.id, mcpUrl: install.url, redirectUri, fetch: fetchImpl, ...(connector?.clientId == null ? {} : { clientId: connector.clientId }), ...(options.clientMetadataUrl == null ? {} : { clientMetadataUrl: options.clientMetadataUrl }) });
+        const registered = started.clientSource === "by-us" ? "by us" : started.clientSource === "document" ? "by our document" : "dynamically";
+        appendVendorMcpSigninLog(options.rootDir(), `${install.id} sign-in started: client=${started.pending.clientId} registered=${registered} secret=${started.pending.clientSecret == null ? "no" : "yes"} return=${redirectUri} authorize=${started.authorizationUrl.split("?")[0]}`, now);
         return { id, isAvailable: true, requiresAuth: true, hasValidToken: false, authUrl: started.authorizationUrl, error: "" };
       } catch (error) {
         appendVendorMcpSigninLog(options.rootDir(), `${install.id} sign-in failed to start: ${errorLabel(error)}`, now);

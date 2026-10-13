@@ -229,6 +229,10 @@ export interface McpHostPort { dispose(): void | Promise<void>; listBoxServers(i
 export function hostedMcpOAuthCallbackUrl(backendUrl: string = getSandInferenceBackendUrl()): string {
   return new URL("desktop/mcp-oauth/callback", backendUrl.endsWith("/") ? backendUrl : `${backendUrl}/`).toString();
 }
+/** `…/desktop/mcp-oauth/client.json` on the same server: Simeon's client metadata document, the client ID a vendor that registers no clients reads (Shopify, Zendesk; `vendor-mcp/oauth.ts`). The server builds the document's own `client_id` from the same address. */
+export function hostedMcpOAuthClientUrl(backendUrl: string = getSandInferenceBackendUrl()): string {
+  return new URL("desktop/mcp-oauth/client.json", backendUrl.endsWith("/") ? backendUrl : `${backendUrl}/`).toString();
+}
 export interface McpHostServiceDeps {
   auth: {
     getAccessToken(args: { backendUrl: string }): Promise<string>;
@@ -275,14 +279,14 @@ export class McpHostService {
     // The sign-in starts here too, for the window on the web, and comes
     // back through the server's hosted callback (4 October 2026); the Mac's
     // window starts its own, on its loopback.
-    const accountBackendMcpExec = createAccountMcpBackendExec({ rootDir: getSandRootDir, fallback: simeonBackendMcpExec, canStartAuth: true, log: deps.log });
+    const accountBackendMcpExec = createAccountMcpBackendExec({ rootDir: getSandRootDir, fallback: simeonBackendMcpExec, canStartAuth: true, clientMetadataUrl: hostedMcpOAuthClientUrl(), log: deps.log });
     // Vendor connectors are served here, in the box, from the credential
     // store (`vendor-mcp/backend-exec.ts`): the Mac's sign-ins arrive by
     // sync, the web's finish here, and each side refreshes its own.
     // Apps Simeon Labs' server serves take the box's own credential (`vendor-mcp/backend-exec.ts`, `appsToolkit`).
     // Link (Stripe's agent wallet) runs here, on the cloud computer, through its own CLI (`shared/node/link-wallet/`).
     const linkWallet = createLinkTools({ cli: createLinkCli({ rootDir: getSandRootDir, log: deps.log }), rootDir: getSandRootDir, fillCheckout, log: deps.log });
-    const backendMcpExec = createVendorMcpBackendExec({ rootDir: getSandRootDir, fallback: accountBackendMcpExec, canStartAuth: true, linkWallet, getServerAccessToken: async () => { try { const token = await deps.auth.getAccessToken({ backendUrl: getSandInferenceBackendUrl() }); return token.length > 0 ? token : null; } catch { return null; } }, log: deps.log });
+    const backendMcpExec = createVendorMcpBackendExec({ rootDir: getSandRootDir, fallback: accountBackendMcpExec, canStartAuth: true, linkWallet, clientMetadataUrl: hostedMcpOAuthClientUrl(), getServerAccessToken: async () => { try { const token = await deps.auth.getAccessToken({ backendUrl: getSandInferenceBackendUrl() }); return token.length > 0 ? token : null; } catch { return null; } }, log: deps.log });
     this.backendMcpExec = backendMcpExec;
     this.accountBackendMcpExec = accountBackendMcpExec;
     this.hostMcp = createHostMcp({

@@ -313,7 +313,8 @@ the vendor's own sign-in, and the agent can then use their tools.
   (`productionTurnMcpProjection` in `host/host-runner-composition.ts`).
 
 * **Log lines.** `vendor-mcp-signin.log` (Mac: `~/.simeon/`; box: its data folder), one line
-  per sign-in start (`registered=dynamically` or `registered=by us`, and `return=` the address
+  per sign-in start (`registered=dynamically`, `registered=by us` or `registered=by our
+  document`, and `return=` the address
   the vendor sends the person back to), refusal, token-exchange failure and
   `credential stored`. The connect card itself only says "retry". Box: `[simeon] tool=` lines.
 * **Known limits.** Dropbox gives every self-registered client one shared id and calls it "Self
@@ -340,10 +341,30 @@ the vendor's own sign-in, and the agent can then use their tools.
   known for any of them: whether the maker accepts our hosted return address (as Canva,
   Square, Vercel and Dropbox did not); a refusal shows on the first sign-in, and the fix is
   `loopbackOnly`. Left for later: Figma and Gumroad advertise open registration but may limit
-  who registers; GitHub, HubSpot, Slack, Discord, Zoom and Docusign need an app of ours;
-  Shopify and Zendesk accept only client ID metadata documents; Jira stays on `/v1`, which
-  Atlassian already serves v2's tools from. Google's and Microsoft's apps stay on our apps
-  service (no hosted server for people's own accounts), as do the rest.
+  who registers; GitHub, HubSpot, Slack, Discord, Zoom and Docusign need an app of ours (GitHub,
+  HubSpot and Discord are being registered: their secrets go on the API service only, as
+  `SIMEON_MCP_GITHUB_CLIENT_ID` and `SIMEON_MCP_GITHUB_CLIENT_SECRET`, likewise `HUBSPOT` and
+  `DISCORD`, for a token exchange on the server that is not built yet: a secret never ships in
+  the computer's engine); Jira stays on `/v1`, which Atlassian already serves v2's tools from. Google's and Microsoft's apps
+  stay on our apps service (no hosted server for people's own accounts), as do the rest.
+- **Shopify and Zendesk, through Simeon's client document** (13 October 2026, the founder: "the
+  newer sign-in style that Shopify and Zendesk require"). Their MCP servers
+  (`https://mcp.shopify.com/`, `https://mcp.zendesk.com/mcp`) register no clients and take none
+  made by hand: their metadata says `client_id_metadata_document_supported` and a public
+  client at the token endpoint (the MCP specification's 2025-11-25 sign-in). The client ID is
+  the address of a document describing the client, which the vendor fetches. Simeon Labs'
+  server serves Simeon's at `https://api.simeonlabs.com/desktop/mcp-oauth/client.json`
+  (`mcp_oauth_client_document` in `server/simeon/desktop/app_sign_in.py`: name, logo, privacy
+  and terms pages, the hosted return address and the loopback, no secret); its `client_id` is
+  built from `SIMEON_BASE_URL` and the computer builds the same address from the server it
+  talks to (`hostedMcpOAuthClientUrl` in `host/extensions/mcp/mcp-service.ts`), so the two
+  match. `oauth.ts` sends it only to a vendor with no registration endpoint; a vendor that
+  offers both (Notion, Linear, Granola and others) keeps registering as before. Custom servers
+  added by URL (7b) get the same. Both apps moved in place: Zendesk from our apps service (an
+  install there is moved by `atCatalogAddress`), Shopify out of "Coming soon"
+  (`OWN_APP_NEEDED`, `AppsComingSoon.builtIn`). Shopify's server also answers without a sign-in
+  (business names, domains, sample catalogs) and signs in for the store's own tools; the store
+  is picked on Shopify's page. Not yet run against a real Shopify store or Zendesk account.
 
 ### 7b. Custom MCP servers and account plugins
 
@@ -369,10 +390,10 @@ connect card.
 
 **For the person.** Gmail, Outlook, Google Calendar, Drive, Docs, Sheets, Slides, Tasks, Meet,
 Zoom, Figma, QuickBooks, HubSpot, Salesforce, GitHub, Mailchimp, Gusto, Slack, LinkedIn,
-OneDrive, Trello, Xero, Shopify, Brex, Pipedrive, Docusign and the others marked `app(…)` in
+OneDrive, Trello, Xero, Brex, Pipedrive, Docusign and the others marked `app(…)` in
 `catalog.ts` connect through Simeon. The provider behind them is never named in the app.
-(Asana, Todoist, Intercom, Klaviyo, Ashby, Calendly, Cal.com, Attio, Gorgias and Gong moved to
-their makers' own servers on 13 October 2026; see 7a.)
+(Asana, Todoist, Intercom, Klaviyo, Ashby, Calendly, Cal.com, Attio, Gorgias, Gong, Zendesk and
+Shopify moved to their makers' own servers on 13 October 2026; see 7a.)
 
 **How it works.**
 
@@ -401,7 +422,7 @@ their makers' own servers on 13 October 2026; see 7a.)
 * **Settings on Render.** `SIMEON_COMPOSIO_API_KEY` (optional `SIMEON_COMPOSIO_BASE_URL`), and
   `SIMEON_COMPOSIO_AUTH_CONFIGS`, Simeon Labs' own sign-in per app as JSON
   (`{"xero": "ac_…", "gusto": "ac_…"}`).
-* **Simeon Labs' own sign-in for an app** (needed for the six in Known limits; also what puts
+* **Simeon Labs' own sign-in for an app** (needed for the five in Known limits; also what puts
   Simeon's name on Google's consent screen). 1. Register an OAuth app with the company (its
   developer portal), redirect URI `https://api.simeonlabs.com/desktop/apps/oauth/callback`. 2. In
   the provider's dashboard, Auth Configs, create one for that app with "your own credentials"
@@ -480,18 +501,18 @@ their makers' own servers on 13 October 2026; see 7a.)
   most for the agent's tool calls (`connected_account_ids`); "not connected" is never kept, and
   disconnecting forgets it.
 * **Known limits.** Google's consent screen shows the provider's name until Simeon Labs uses its
-  own Google OAuth app. Gusto, Xero, Shopify, Brex, Pipedrive and Docusign have no sign-in the
-  provider manages (checked 11 October 2026; Klaviyo and Ashby left this list on 13 October for
-  their makers' own servers, 7a): their
+  own Google OAuth app. Gusto, Xero, Brex, Pipedrive and Docusign have no sign-in the
+  provider manages (checked 11 October 2026; Klaviyo, Ashby and Shopify left this list on 13
+  October for their makers' own servers, 7a): their
   link works once Simeon Labs registers its own app with each and names it in
   `SIMEON_COMPOSIO_AUTH_CONFIGS`. Until then a refused link answers 503 and the card says
   "<App> is coming soon in Simeon." (`OWN_APP_NEEDED` in `apps.py`; log line
   `desktop.apps.sign_in_needs_own_app` with the provider's sentence); once named, a refusal is
   the provider's sentence (502). Gusto (production pre-approval, security review, QA), Brex
-  (credentials issued by its developer support), Docusign (go-live review) and Shopify (app
-  review to reach other stores) review an app before it reaches other people's accounts.
+  (credentials issued by its developer support) and Docusign (go-live review) review an app
+  before it reaches other people's accounts.
 * **"Coming soon" in the apps** (13 October 2026, the founder: "mark a clearer coming soon in
-  those in the apps. they cant be added"). The six have no Add in the iPhone and Mac apps: their
+  those in the apps. they cant be added"). The five have no Add in the iPhone and Mac apps: their
   row in Connect apps (Plugins on the Mac), their page and an agent's connect card show a grey
   "Coming soon" pill, and the row is faded. `GET /desktop/api/apps` names them
   (`{"available": …, "comingSoon": ["brex", …]}`): `OWN_APP_NEEDED` less the ones in

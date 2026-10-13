@@ -75,7 +75,9 @@ const G = VENDOR_MCP_GROUP;
  * Our store. Live cards are vendor-hosted remote MCP (http) that advertised
  * dynamic registration on 15 September and still answered here on 19 September.
  * Coming soon is everything the person will look for that cannot Connect yet:
- * no public MCP, or OAuth that needs an app we register.
+ * no public MCP, or OAuth that needs an app we register. Shopify and Zendesk
+ * register no clients at all; they read Simeon from its client metadata
+ * document on our server instead (13 October 2026, `oauth.ts`).
  */
 export const VENDOR_MCP_CONNECTORS: readonly VendorMcpConnector[] = [
   app({ id: "gmail", name: "Gmail", category: G.MailCalendar, description: "Search, read, draft, and manage email." }, "gmail"),
@@ -125,7 +127,7 @@ export const VENDOR_MCP_CONNECTORS: readonly VendorMcpConnector[] = [
   app({ id: "google-tasks", name: "Google Tasks", category: G.Productivity, description: "Tasks and lists in Google." }, "googletasks"),
   app({ id: "trello", name: "Trello", category: G.Productivity, description: "Boards, lists, and cards." }, "trello"),
   app({ id: "xero", name: "Xero", category: G.Finance, description: "Read and write invoices, contacts, reports, and payroll." }, "xero"),
-  app({ id: "shopify", name: "Shopify", category: G.Finance, description: "Orders, products, customers, and your store." }, "shopify"),
+  { id: "shopify", name: "Shopify", category: G.Finance, url: "https://mcp.shopify.com/", description: "Orders, products, customers, and your store." },
   app({ id: "brex", name: "Brex", category: G.Finance, description: "Query expenses, receipts, bills, cards, and travel." }, "brex"),
   app({ id: "pipedrive", name: "Pipedrive", category: G.Sales, description: "Deals, people, and the pipeline." }, "pipedrive"),
   app({ id: "docusign", name: "Docusign", category: G.Sales, description: "Manage envelopes, templates, workflows, and agreements." }, "docusign"),
@@ -145,7 +147,7 @@ export const VENDOR_MCP_CONNECTORS: readonly VendorMcpConnector[] = [
   { id: "calendly", name: "Calendly", category: G.Meetings, url: "https://mcp.calendly.com/", description: "Booking links, scheduled meetings, and invitees." },
   { id: "cal-com", name: "Cal.com", category: G.Meetings, url: "https://mcp.cal.com/mcp", description: "Bookings, event types, and availability." },
   { id: "attio", name: "Attio", category: G.Sales, url: "https://mcp.attio.com/mcp", description: "People, companies, deals, and lists in your CRM." },
-  app({ id: "zendesk", name: "Zendesk", category: G.Sales, description: "Support tickets, customers, and help center." }, "zendesk"),
+  { id: "zendesk", name: "Zendesk", category: G.Sales, url: "https://mcp.zendesk.com/mcp", description: "Support tickets, customers, and help center." },
   app({ id: "microsoft-teams", name: "Microsoft Teams", category: G.Social, description: "Chats, channels, and meetings in Teams." }, "microsoft_teams"),
   app({ id: "discord", name: "Discord", category: G.Social, description: "Your servers, channels, and invites." }, "discord"),
   { id: "mercury", name: "Mercury", category: G.Finance, url: "https://mcp.mercury.com/mcp", description: "Business bank accounts, balances, and transactions. Read-only." },

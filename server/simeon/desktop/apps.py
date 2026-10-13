@@ -98,12 +98,11 @@ NOT_CONFIGURED = "Apps are not switched on for this server yet."
 #: 2026: no managed OAuth for these). Their link works once Simeon Labs
 #: registers its own app with each company and names the auth config in
 #: `COMPOSIO_AUTH_CONFIGS` (docs/services-agents.md, 7c); until then a refused
-#: link is "coming soon" on the card, not the provider's error. Klaviyo and
-#: Ashby left the list on 13 October 2026: the apps reach their makers' own
-#: MCP servers instead, which sign anyone in.
-OWN_APP_NEEDED = frozenset(
-    {"gusto", "xero", "shopify", "brex", "pipedrive", "docusign"}
-)
+#: link is "coming soon" on the card, not the provider's error. Klaviyo,
+#: Ashby and Shopify left the list on 13 October 2026: the apps reach their
+#: makers' own MCP servers instead, which sign anyone in (Shopify reads
+#: Simeon from its client metadata document, `app_sign_in.py`).
+OWN_APP_NEEDED = frozenset({"gusto", "xero", "brex", "pipedrive", "docusign"})
 
 
 def own_auth_configs() -> dict[str, str]:

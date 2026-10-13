@@ -313,3 +313,96 @@ test("a vendor that makes a loopback client public is signed in without a secret
     await dispose();
   }
 });
+
+/** Zendesk's and Shopify's metadata as served on 13 October 2026: no registration endpoint, client metadata documents read, a public client at the token endpoint. */
+function documentVendors(calls) {
+  return async (input, init) => {
+    const url = typeof input === "string" ? input : input.url;
+    const raw = init?.body == null ? null : typeof init.body === "string" ? init.body : init.body.toString();
+    calls.push({ url, method: init?.method ?? "GET", form: raw == null ? undefined : Object.fromEntries(new URLSearchParams(raw)) });
+    if (url === "https://mcp.zendesk.com/.well-known/oauth-protected-resource/mcp") return json({ scopes_supported: ["read", "write"], bearer_methods_supported: ["header"], resource: "https://mcp.zendesk.com/mcp", authorization_servers: ["https://mcp.zendesk.com/mcp/oauth"] });
+    if (url === "https://mcp.zendesk.com/.well-known/oauth-authorization-server/mcp/oauth") return json({ token_endpoint: "https://mcp.zendesk.com/oauth/tokens", grant_types_supported: ["authorization_code", "refresh_token"], issuer: "https://mcp.zendesk.com/mcp/oauth", response_types_supported: ["code"], authorization_response_iss_parameter_supported: true, token_endpoint_auth_methods_supported: ["none"], scopes_supported: ["read", "write"], client_id_metadata_document_supported: true, code_challenge_methods_supported: ["S256"], authorization_endpoint: "https://mcp.zendesk.com/oauth/authorizations/new" });
+    if (url === "https://mcp.zendesk.com/oauth/tokens") return json({ access_token: "zd-token", refresh_token: "zd-refresh", expires_in: 3600 });
+    if (url === "https://mcp.shopify.com/.well-known/oauth-protected-resource") return json({ resource: "https://mcp.shopify.com", authorization_servers: ["https://setup.shopify.com/auth"], scopes_supported: ["read_all_orders", "write_products"], bearer_methods_supported: ["header"] });
+    if (url === "https://setup.shopify.com/.well-known/oauth-authorization-server/auth") return json({ issuer: "https://setup.shopify.com/auth", authorization_endpoint: "https://setup.shopify.com/oauth/authorize", token_endpoint: "https://setup.shopify.com/oauth/token", response_types_supported: ["code"], grant_types_supported: ["authorization_code", "refresh_token"], client_id_metadata_document_supported: true, code_challenge_methods_supported: ["S256"], token_endpoint_auth_methods_supported: ["none"] });
+    return new Response("not found", { status: 404 });
+  };
+}
+
+const CLIENT_DOCUMENT = "https://api.simeonlabs.com/desktop/mcp-oauth/client.json";
+const HOSTED_CALLBACK = "https://api.simeonlabs.com/desktop/mcp-oauth/callback";
+
+test("a vendor that registers no clients but reads client metadata documents signs Simeon in as our document's address (Zendesk, Shopify, 13 October 2026)", async () => {
+  // Zendesk's and Shopify's MCP servers advertise no registration endpoint
+  // and `client_id_metadata_document_supported`: the client ID is the
+  // address of a document describing the client, which the vendor fetches
+  // (server/simeon/desktop/app_sign_in.py serves Simeon's). Public client,
+  // PKCE, no secret, no registration call.
+  const { module, dispose } = await load("source/shared/node/vendor-mcp/oauth.ts", "vendor-oauth-document");
+  try {
+    const calls = [];
+    const fetchImpl = documentVendors(calls);
+    const zendesk = await module.startVendorMcpOAuth({ pluginId: "zendesk", mcpUrl: "https://mcp.zendesk.com/mcp", redirectUri: HOSTED_CALLBACK, clientMetadataUrl: CLIENT_DOCUMENT, fetch: fetchImpl, remember: false });
+    assert.equal(zendesk.clientSource, "document");
+    assert.ok(!calls.some((call) => call.method === "POST"), "nothing is registered");
+    assert.equal(zendesk.pending.clientId, CLIENT_DOCUMENT);
+    assert.equal(zendesk.pending.clientSecret, undefined);
+    const authorize = new URL(zendesk.authorizationUrl);
+    assert.equal(`${authorize.origin}${authorize.pathname}`, "https://mcp.zendesk.com/oauth/authorizations/new");
+    assert.equal(authorize.searchParams.get("client_id"), CLIENT_DOCUMENT);
+    assert.equal(authorize.searchParams.get("redirect_uri"), HOSTED_CALLBACK);
+    assert.equal(authorize.searchParams.get("scope"), "read write");
+    assert.equal(authorize.searchParams.get("resource"), "https://mcp.zendesk.com/mcp");
+    assert.equal(authorize.searchParams.get("code_challenge_method"), "S256");
+    const grant = await module.exchangeVendorMcpCode({ pending: zendesk.pending, code: "c1", fetch: fetchImpl, now: 0 });
+    const exchange = calls.find((call) => call.url === "https://mcp.zendesk.com/oauth/tokens").form;
+    assert.equal(exchange.client_id, CLIENT_DOCUMENT);
+    assert.equal(exchange.client_secret, undefined);
+    assert.equal(exchange.redirect_uri, HOSTED_CALLBACK);
+    assert.equal(grant.clientId, CLIENT_DOCUMENT, "a refresh names the same client");
+    assert.equal(grant.refreshToken, "zd-refresh");
+
+    // Shopify publishes its resource document at the origin and names itself without the slash.
+    const shopify = await module.startVendorMcpOAuth({ pluginId: "shopify", mcpUrl: "https://mcp.shopify.com/", redirectUri: HOSTED_CALLBACK, clientMetadataUrl: CLIENT_DOCUMENT, fetch: fetchImpl, remember: false });
+    assert.equal(shopify.clientSource, "document");
+    const shopifyAuthorize = new URL(shopify.authorizationUrl);
+    assert.equal(`${shopifyAuthorize.origin}${shopifyAuthorize.pathname}`, "https://setup.shopify.com/oauth/authorize");
+    assert.equal(shopifyAuthorize.searchParams.get("client_id"), CLIENT_DOCUMENT);
+    assert.equal(shopifyAuthorize.searchParams.get("resource"), "https://mcp.shopify.com");
+    assert.equal(shopify.pending.tokenEndpoint, "https://setup.shopify.com/oauth/token");
+
+    // Without a document address (or with one a vendor could not fetch safely) it is still "an app we register first".
+    await assert.rejects(() => module.startVendorMcpOAuth({ pluginId: "zendesk", mcpUrl: "https://mcp.zendesk.com/mcp", fetch: fetchImpl, remember: false }), /coming soon/i);
+    await assert.rejects(() => module.startVendorMcpOAuth({ pluginId: "zendesk", mcpUrl: "https://mcp.zendesk.com/mcp", clientMetadataUrl: "http://127.0.0.1:8000/desktop/mcp-oauth/client.json", fetch: fetchImpl, remember: false }), /coming soon/i);
+  } finally {
+    await dispose();
+  }
+});
+
+test("our document is used only where it is the vendor's one way in: a vendor that registers clients keeps registering, one that wants a client key is refused", async () => {
+  const { module, dispose } = await load("source/shared/node/vendor-mcp/oauth.ts", "vendor-oauth-document-choice");
+  try {
+    const { acceptsClientMetadataDocument } = module;
+    assert.equal(acceptsClientMetadataDocument({ client_id_metadata_document_supported: true, token_endpoint_auth_methods_supported: ["none"] }), true);
+    assert.equal(acceptsClientMetadataDocument({ client_id_metadata_document_supported: true }), true, "no methods named: a public client, as RFC 8414 defaults");
+    assert.equal(acceptsClientMetadataDocument({ client_id_metadata_document_supported: true, token_endpoint_auth_methods_supported: ["private_key_jwt"] }), false, "a document client with a key: not ours");
+    assert.equal(acceptsClientMetadataDocument({ token_endpoint_auth_methods_supported: ["none"] }), false);
+
+    // Notion, Linear and others advertise both: dynamic registration, as before the change.
+    const calls = [];
+    const both = async (input, init) => {
+      const url = typeof input === "string" ? input : input.url;
+      calls.push({ url, method: init?.method ?? "GET" });
+      if (url.includes("oauth-protected-resource")) return json({ authorization_servers: ["https://auth.both.example"] });
+      if (url.includes("oauth-authorization-server")) return json({ authorization_endpoint: "https://auth.both.example/authorize", token_endpoint: "https://auth.both.example/token", registration_endpoint: "https://auth.both.example/register", client_id_metadata_document_supported: true, token_endpoint_auth_methods_supported: ["none"] });
+      if (url.endsWith("/register")) return json({ client_id: "registered-client" });
+      return new Response("not found", { status: 404 });
+    };
+    const started = await module.startVendorMcpOAuth({ pluginId: "notion", mcpUrl: "https://mcp.both.example/mcp", clientMetadataUrl: CLIENT_DOCUMENT, fetch: both, remember: false });
+    assert.equal(started.clientSource, "dynamic");
+    assert.equal(started.pending.clientId, "registered-client");
+    assert.ok(calls.some((call) => call.method === "POST" && call.url.endsWith("/register")));
+  } finally {
+    await dispose();
+  }
+});
