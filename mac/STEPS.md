@@ -2574,3 +2574,34 @@ the consent kept:
 Shared in `SimeonCore/Connecting.swift` and `AppStore.beginConnect`, with
 a test (`PluginCallsTests`). Not yet run on a Mac or an iPhone.
 
+### Connectors, as the iPhone's (13 October 2026)
+
+The founder, with Muse's screens: "design the connectors page on iphone
+like this. bigger the logos ... connected become yours ... also in mac
+design it better for it to match iphone. use apple style picker ... for
+the mac consent see screenshot 4th. its wider than ours". Now:
+
+- The iPhone (`ios/Simeon/ConnectorsPage.swift`): "Connectors" in the
+  bar with Back and the filter; "Search connectors"; Apple's segmented
+  control, Available | Yours; Featured as cards (name, what it does, the
+  logo at 64 on the right); every category as one rounded group, four
+  rows and See all ›; each row the logo (40, the logo at 78% of its tile,
+  was 37 at 60%), the name, and Connect in the blue, View once connected,
+  Added, Coming soon. Yours: Apps (state line, Connect or View), plugins of
+  skills alone, Private. The app's page, the setup page and the consent
+  are as before.
+- The Mac (`PluginsWindow.swift`): the same order and words in the
+  overlay, 760 wide: "Connectors" in the middle, the search with the
+  filter, `Picker(.segmented)` for Available | Yours (the Electron
+  window's own tabs are gone); Featured as cards, the rest in rounded
+  groups (white on the panel's grey, a faint fill on dark) with See all ›;
+  rows with the logo at 36, the name, and Connect or View in the blue.
+- The Mac's consent (`MacConnector.swift`): 600 wide (was 440), × at the
+  top left, the logo at 64, Connect across the foot; it no longer stops at
+  640 high, so it scrolls only in a window too short for it.
+- "Plugins" in ⌘K and "/" reads "Connectors"; the empty lines say
+  connectors and Available.
+
+Not yet built or run on a Mac or an iPhone (Linux here: the files parse,
+the core's tests pass).
+

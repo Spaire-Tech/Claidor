@@ -2139,7 +2139,7 @@ struct AccessNotice: View {
       }
       Spacer(minLength: 8)
       if let action = words.action {
-        Button(action) {
+        Button {
           switch route {
           case .plans(let tier):
             plansTier = tier
@@ -2149,6 +2149,9 @@ struct AccessNotice: View {
           case .none:
             break
           }
+        } label: {
+          // The button takes the app's ink (white in the dark): its word the ground's, or it was white on white (13 October 2026).
+          Text(action).foregroundStyle(Ink.ground)
         }
         .buttonStyle(.borderedProminent)
         .buttonBorderShape(.capsule)

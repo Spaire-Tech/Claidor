@@ -11,23 +11,23 @@ import Foundation
 extension Plugins {
   // MARK: Empty lines (`oi`, Yours' sections)
 
-  public static let loadingMarketplace = "Loading the marketplace…"
-  public static let noFilterMatch = "No plugins match the current filters"
-  public static let marketplaceUnavailable = "The marketplace isn't available right now. Check back later."
+  public static let loadingMarketplace = "Loading connectors…"
+  public static let noFilterMatch = "No connectors match the current filters"
+  public static let marketplaceUnavailable = "Connectors aren't available right now. Check back later."
 
-  /** Marketplace with nothing to draw: loading, a filter, a search, or no catalog (a failed read says the same). */
+  /** Available (Marketplace until 13 October 2026, when Plugins became Connectors) with nothing to draw: loading, a filter, a search, or no catalog (a failed read says the same). */
   public static func marketplaceEmpty(loaded: Bool, catalogEmpty: Bool, filterSet: Bool, query: String) -> String {
     let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
     if !loaded && catalogEmpty { return loadingMarketplace }
     if filterSet { return noFilterMatch }
-    if !q.isEmpty { return "No plugins match \"\(q)\"" }
+    if !q.isEmpty { return "No connectors match \"\(q)\"" }
     return marketplaceUnavailable
   }
 
-  /** Yours › Installed with nothing in it. */
+  /** Yours › Apps with nothing in it. */
   public static func installedEmpty(query: String) -> String {
     let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
-    return q.isEmpty ? "Nothing installed yet. Find plugins in the Marketplace tab." : "No installed plugins match \"\(q)\""
+    return q.isEmpty ? "Nothing added yet. Find connectors in Available." : "No connectors you added match \"\(q)\""
   }
 
   /** Yours › Private with nothing in it. */

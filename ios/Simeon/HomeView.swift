@@ -1179,7 +1179,7 @@ struct SearchResults: View {
     if store.usage.summary == nil || store.usage.showsSection {
       list.append(SearchAction(id: "settings:usage", label: "Settings: Usage & Billing", detail: "Settings", symbol: "chart.bar", keywords: ["usage", "billing", "spend", "limit", "on-demand", "plan", "quota"]) { openSheet(.usage) })
     }
-    list.append(SearchAction(id: "overlay:plugins", label: "Plugins", detail: "Connect apps", symbol: "puzzlepiece.extension", keywords: ["plugins", "marketplace", "tools", "skills", "mcp", "connectors", "connect apps", "customize"]) { openSheet(.plugins) })
+    list.append(SearchAction(id: "overlay:plugins", label: "Connectors", detail: "Connect apps", symbol: "puzzlepiece.extension", keywords: ["plugins", "marketplace", "tools", "skills", "mcp", "connectors", "connect apps", "customize"]) { openSheet(.plugins) })
     for (value, name, symbol) in [("system", "System", "circle.lefthalf.filled"), ("light", "Light", "sun.max"), ("dark", "Dark", "moon")] {
       list.append(SearchAction(id: "theme-\(value)", label: "Theme: \(name)", detail: "Settings · Appearance", symbol: symbol, keywords: ["appearance", "mode", "theme"], current: theme == value) { theme = value })
     }

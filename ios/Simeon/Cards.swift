@@ -263,14 +263,16 @@ struct QuestionCardView: View {
 struct ConnectorTile: View {
   let name: String
   var size: CGFloat = 40
+  /** How much of the tile the logo takes: 0.6 in a chat's card, more on Connectors, where it reads as the app's icon (the founder, 13 October 2026: "bigger the logos ... they're too small"). */
+  var logo: CGFloat = 0.6
   @Environment(\.colorScheme) private var scheme
 
   var body: some View {
     let shape = RoundedRectangle(cornerRadius: size * 11 / 40, style: .continuous)
     ZStack {
       shape.fill(Ink.tile)
-      if let logo = MentionArt.connector(name) {
-        Image(uiImage: logo.resolved(scheme)).resizable().scaledToFit().frame(width: size * 0.6, height: size * 0.6)
+      if let art = MentionArt.connector(name) {
+        Image(uiImage: art.resolved(scheme)).resizable().scaledToFit().frame(width: size * logo, height: size * logo)
       } else {
         Text(String(name.prefix(1)).uppercased()).font(.system(size: size * 0.42, weight: .semibold)).foregroundStyle(Ink.tileInitial)
       }

@@ -173,7 +173,7 @@ public enum Jump {
       list.append(Command(id: "settings:usage", label: "Settings: Usage & Billing", icon: "chart-bars",
                           keywords: ["usage", "billing", "spend", "limit", "on-demand", "plan", "quota"], detail: "Settings"))
     }
-    list.append(Command(id: "overlay:plugins", label: "Plugins", icon: "plug", keywords: ["plugins", "marketplace", "tools", "skills", "mcp", "connectors", "customize"]))
+    list.append(Command(id: "overlay:plugins", label: "Connectors", icon: "plug", keywords: ["plugins", "marketplace", "tools", "skills", "mcp", "connectors", "customize"]))
     let themes: [(String, String, String, [String])] = [
       ("system", "Theme: System", "display", ["appearance", "os", "auto", "follow"]),
       ("light", "Theme: Light", "sun", ["appearance", "day", "bright"]),
