@@ -109,10 +109,15 @@ extension Plugins {
 
   public enum SignInState: Equatable, Sendable { case none, waiting, timedOut }
 
-  /** The sign-in button's word (`Qn`): Authenticate, Reopen while the page is waiting, Retry once it has waited ten minutes. */
+  /**
+   * The sign-in button's word (`Qn`): Connect, Reopen while the page is
+   * waiting, Retry once it has waited ten minutes. Connect was Authenticate
+   * until 13 October 2026 (the founder: "should just be a connect button";
+   * `Connecting`).
+   */
   public static func signInButton(_ state: SignInState) -> String {
     switch state {
-    case .none: return "Authenticate"
+    case .none: return Connecting.connect
     case .waiting: return "Reopen"
     case .timedOut: return "Retry"
     }

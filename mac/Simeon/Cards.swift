@@ -383,9 +383,11 @@ struct DraftCardView: View {
  * Apps the agent needs (`sand-connector-card`), one card each, 8 apart:
  * the app's logo on a grey tile (40, 11 round), its name (13 on 18, 500),
  * the agent's reason or else what the app does (60%), how many tools it
- * brings once added (12, 40%); at the right "Added" in green, or Add: since
- * the Apple design pass the iPhone's consent, then the app's sign-in inside
- * the app (`MacConnector`; the Electron app opened the browser).
+ * brings once connected (12, 40%); at the right "Connected" in green, or
+ * Connect ("Added" and Add until 13 October 2026, `Connecting`): since the
+ * Apple design pass the iPhone's consent, then the app added and its
+ * sign-in inside the app in one go (`MacConnector`; the Electron app opened
+ * the browser).
  */
 struct ConnectorCards: View {
   let names: [String]
@@ -443,7 +445,7 @@ private struct ConnectorCard: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         if connected {
-          Text("Added")
+          Text(Connecting.connected)
             .font(.system(size: 14, weight: .medium))
             .tracking(-0.15)
             .foregroundStyle(look.added)
@@ -451,7 +453,7 @@ private struct ConnectorCard: View {
             .padding(.horizontal, 12)
             .background(look.addedWash, in: Capsule())
         } else if store.isComingSoon(name) {
-          // Not one an agent can be given yet (`AppsComingSoon`): no Add.
+          // Not one an agent can be given yet (`AppsComingSoon`): no Connect.
           Text(AppsComingSoon.label)
             .font(.system(size: 13))
             .foregroundStyle(look.inkTertiary)
@@ -464,7 +466,7 @@ private struct ConnectorCard: View {
           // The consent first, then the app's sign-in in the window (the Apple design pass, `MacConnector`).
           Button { MacConnector.shared.connect(name, store: store) } label: {
             Group {
-              if adding { ProgressView().controlSize(.small) } else { Text("Add") }
+              if adding { ProgressView().controlSize(.small) } else { Text(Connecting.connect) }
             }
             .font(.system(size: 13))
             .foregroundStyle(look.ink)
@@ -476,7 +478,7 @@ private struct ConnectorCard: View {
           }
           .buttonStyle(.hand)
           .disabled(MacConnector.shared.connecting != nil)
-          .accessibilityLabel("Add \(name)")
+          .accessibilityLabel("Connect \(name)")
         }
       }
     }

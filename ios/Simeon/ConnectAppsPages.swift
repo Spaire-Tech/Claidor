@@ -140,11 +140,14 @@ struct SkillTile: View {
 }
 
 /**
- * Add, on a Marketplace row and on a plugin's page (the Mac's
- * `requestAdd`): a skills-only plugin is added at once, for Private's
- * agent; the rest ask first (ConnectConsentSheet), then open the setup page
- * when the plugin asks for values, or else install the app and open its
- * sign-in (AppConnector), its skills synced once it is connected.
+ * Connect, on a Marketplace row and on a plugin's page (the Mac's
+ * `requestAdd`; Add until 13 October 2026, `Connecting`): a skills-only
+ * plugin is added at once, for Private's agent; the rest ask first
+ * (ConnectConsentSheet), then open the setup page when the plugin asks for
+ * values, or else install the app and open its sign-in in one go
+ * (AppConnector), its skills synced once it is connected. A sign-in the
+ * person cancels takes the app back out: nothing waits under a second
+ * button in Your plugins.
  */
 struct PluginAddButton<Label: View>: View {
   /** The app's name as the connect knows it (`CatalogApp.title`). */
@@ -171,8 +174,8 @@ struct PluginAddButton<Label: View>: View {
           return
         }
         Task {
-          await connector.connect(name, store: store)
-          if let entry = model.entry(entryId) { await model.connected(entry, name: name) }
+          let end = await connector.connect(name, store: store)
+          await model.connectEnded(model.entry(entryId), name: name, end: end)
         }
       }) { consent in
         ConnectConsentSheet(consent: consent) { confirmed = true }
@@ -726,13 +729,16 @@ struct PluginPage: View {
       Button("Rename") { if let account = renaming { Task { await store.renameAccount(account, to: newName) } }; renaming = nil }
       Button("Cancel", role: .cancel) { renaming = nil }
     }
-    // The sign-in page opens once the sheet has gone.
+    // The sign-in page opens once the sheet has gone; then how it went, as Connect says it.
     .sheet(item: $asking, onDismiss: {
       let account = signingIn
       signingIn = nil
       guard confirmed, let account else { confirmed = false; return }
       confirmed = false
-      Task { await connector.signIn(account, store: store) }
+      Task {
+        let end = await connector.signIn(account, store: store)
+        await model.connectEnded(model.entry(for: account), name: account.name, end: end)
+      }
     }) { consent in
       ConnectConsentSheet(consent: consent) { confirmed = true }
     }
@@ -746,7 +752,7 @@ struct PluginPage: View {
       VStack(alignment: .leading, spacing: 3) {
         Text(shown.name).font(.system(size: 20, weight: .semibold)).foregroundStyle(Ink.primary)
         if let first = shown.accounts.first {
-          Text(connected ? "Connected · \(tools.isEmpty ? first.toolCount : tools.filter { !$0.isDisabled }.count) tools" : "Not signed in")
+          Text(connected ? "Connected · \(tools.isEmpty ? first.toolCount : tools.filter { !$0.isDisabled }.count) tools" : "Not connected")
             .font(.system(size: 13)).foregroundStyle(connected ? Ink.secondary : Ink.danger)
         }
         if let entry = shown.entry {
@@ -777,7 +783,7 @@ struct PluginPage: View {
     }
   }
 
-  /** Add (the blue, as the Mac's page has it), the spinner while it is added, or Coming soon (`AppsComingSoon`). */
+  /** Connect (the blue, as the Mac's page has it; Add until 13 October 2026, `Connecting`), the spinner while it connects, or Coming soon (`AppsComingSoon`). */
   @ViewBuilder
   private func addButton(_ entryId: String) -> some View {
     let app = store.catalog.first { $0.id == entryId }
@@ -789,9 +795,9 @@ struct PluginPage: View {
       ProgressView().controlSize(.small).frame(width: 44)
     } else {
       PluginAddButton(name: name, catalogApp: app, entryId: entryId) {
-        PluginPill(title: "Add", fill: Ink.authenticate, ink: .white)
+        PluginPill(title: Connecting.connect, fill: Ink.authenticate, ink: .white)
       }
-      .accessibilityLabel("Add \(name)")
+      .accessibilityLabel("Connect \(name)")
     }
   }
 
@@ -803,7 +809,7 @@ struct PluginPage: View {
         HStack {
           VStack(alignment: .leading, spacing: 2) {
             Text(account.accountName).font(.system(size: 17))
-            Text(account.status == "connected" ? "Connected" : "Needs sign-in")
+            Text(account.status == "connected" ? Connecting.connected : "Not connected")
               .font(.system(size: 13)).foregroundStyle(account.status == "connected" ? Ink.secondary : Ink.danger)
           }
           Spacer()
@@ -811,7 +817,7 @@ struct PluginPage: View {
             if connector.connecting == account.name {
               ProgressView().controlSize(.small)
             } else {
-              Button("Sign in") {
+              Button(Connecting.connect) {
                 signingIn = account
                 asking = ConnectConsent(app: store.catalogApp(named: account.name), name: account.name)
               }
@@ -836,7 +842,7 @@ struct PluginPage: View {
       if loadingTools && tools.isEmpty {
         HStack { ProgressView(); Text("Loading tools…").foregroundStyle(Ink.secondary) }
       } else if tools.isEmpty {
-        Text(connected ? "No tools listed." : "Sign in to see its tools.").foregroundStyle(Ink.secondary)
+        Text(connected ? "No tools listed." : "Connect it to see its tools.").foregroundStyle(Ink.secondary)
       }
       ForEach(tools) { tool in
         // The switch moves at once and holds until the box answers, so a second tap cannot undo the first.

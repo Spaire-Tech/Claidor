@@ -55,19 +55,29 @@ final class MacConnector {
     Task { await ask.go() }
   }
 
-  /** A chat card's Add (`connectApp`): the consent, then the app's sign-in in the window, closed once the app is connected. */
+  /**
+   * A chat card's Connect (`Connecting`; Add until 13 October 2026): the
+   * consent, then the app added and its sign-in opened in the window in one
+   * go, closed once the app is connected. A sign-in the person cancels takes
+   * the app it added back out, the card's spinner held until that is done.
+   */
   func connect(_ name: String, store: AppStore) {
     ask(name, store: store) { [weak self] in
       guard let self, self.connecting == nil else { return }
       // The card's spinner while the page is asked for.
       self.connecting = name
-      guard let url = await store.connectApp(named: name) else {
+      guard let start = await store.beginConnect(named: name) else {
         self.connecting = nil
         return
       }
-      await self.signIn(url, name: name, store: store) {
+      let end = await self.signIn(start.url, name: name, store: store) {
         await store.loadApps()
         return store.isConnected(name)
+      }
+      if Connecting.undoes(end, start: start) {
+        self.connecting = name
+        await store.undoConnect(start, name: name)
+        if self.connecting == name { self.connecting = nil }
       }
     }
   }
@@ -78,9 +88,12 @@ final class MacConnector {
    * sign-in takes the first one's place. A vendor that only sends sign-ins
    * back to `localhost:8787` (Canva, Square, Vercel, Dropbox) lands on this
    * Mac's own loopback while the sheet is open (`LoopbackSignIn`); with the
-   * Electron app open and listening there, it says so instead.
+   * Electron app open and listening there, it says so instead. How it ended
+   * (`SignInEnd`): a Connect takes back the app it added only when the person
+   * cancelled.
    */
-  func signIn(_ url: URL, name: String, store: AppStore?, done: @escaping @MainActor () async -> Bool) async {
+  @discardableResult
+  func signIn(_ url: URL, name: String, store: AppStore?, done: @escaping @MainActor () async -> Bool) async -> SignInEnd {
     session?.cancel()
     // The replaced sign-in's listener lets go of the address now, not when its wait next wakes.
     catcher?.stop()
@@ -99,9 +112,9 @@ final class MacConnector {
     if let store, let signInState = LoopbackSignIn.state(returningHere: url) {
       guard let listening = await LoopbackCatcher.start(state: signInState, finish: "\(SimeonConfig.macURLScheme)://connected") else {
         store.problem = LoopbackSignIn.busyMessage(name)
-        return
+        return .cancelled
       }
-      guard current == token else { listening.stop(); return }
+      guard current == token else { listening.stop(); return .replaced }
       catcher = listening
       Task { @MainActor in
         if let answer = await listening.answer() {
@@ -121,25 +134,26 @@ final class MacConnector {
     self.session = session
     guard session.start() else {
       NSWorkspace.shared.open(url)
-      // A loopback sign-in in the browser still comes back to this Mac: keep listening while it is done.
-      guard catcher != nil else { return }
+      // In the browser, it may finish there: never taken back. A loopback sign-in still comes back to this Mac: keep listening while it is done.
+      guard catcher != nil else { return .unconfirmed }
       for _ in 0..<150 {
         try? await Task.sleep(nanoseconds: 2_000_000_000)
-        guard current == token else { return }
-        if await done() { return }
+        guard current == token else { return .replaced }
+        if await done() { return .connected }
       }
-      return
+      return .unconfirmed
     }
     for _ in 0..<150 {
       try? await Task.sleep(nanoseconds: 2_000_000_000)
-      guard current == token else { return }
+      guard current == token else { return .replaced }
       if await done() {
         session.cancel()
-        return
+        return .connected
       }
-      if !state.keepGoing() { return }
+      if !state.keepGoing() { return state.ending }
     }
     session.cancel()
+    return .unconfirmed
   }
 }
 
@@ -157,12 +171,19 @@ final class SignInSheetState: @unchecked Sendable {
   private let lock = NSLock()
   private var open = true
   private var pollsLeft = 0
+  private var confirmed = false
 
   func close(confirmed: Bool) {
     lock.withLock {
       open = false
       pollsLeft = confirmed ? 10 : 2
+      self.confirmed = confirmed
     }
+  }
+
+  /** How a sheet that closed before the app was connected ended: the person's Cancel, or closed on the vendor's page (it may still finish). */
+  var ending: SignInEnd {
+    lock.withLock { confirmed ? SignInEnd.unconfirmed : SignInEnd.cancelled }
   }
 
   func keepGoing() -> Bool {

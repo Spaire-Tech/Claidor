@@ -271,7 +271,13 @@ their own MCP servers.
 ### 7a. Vendor MCP connectors
 
 **For the person.** Notion, Linear, Stripe, Dropbox and the other vendor cards connect with
-the vendor's own sign-in, and the agent can then use their tools.
+the vendor's own sign-in, and the agent can then use their tools. Since 13 October 2026 every
+app has one button, **Connect**, on the iPhone and the Mac (rows, pages, chat cards, Your
+plugins): the consent, then the app added on the computer and its sign-in opened in one go;
+"Connected" only once it is signed in. A sign-in the person cancels, or one that never opens,
+takes the app back out, so nothing is left added and not signed in (`SimeonCore/Connecting.swift`,
+`AppStore.beginConnect` and `undoConnect`; `mac/STEPS.md`, "One Connect"). Before, Add said
+"Added" and the sign-in waited in Your plugins under Authenticate.
 
 **How it works.**
 

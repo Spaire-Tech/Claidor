@@ -547,21 +547,32 @@ final class AppConnector {
   private let presenter = SheetPresenter()
   private(set) var connecting: String?
 
-  func connect(_ name: String, store: AppStore) async {
-    guard connecting == nil else { return }
+  /**
+   * Connect (`Connecting`): the app added on the computer and its sign-in
+   * opened at once, in one go; how the sign-in ended, or nil when none
+   * opened (`store.problem` says why). One the person cancelled takes back
+   * the app it added, so nothing is left added and not signed in; the
+   * spinner stays until that is done, so a second Connect can't meet it.
+   */
+  @discardableResult
+  func connect(_ name: String, store: AppStore) async -> SignInEnd? {
+    guard connecting == nil else { return nil }
     connecting = name
     defer { connecting = nil; session = nil }
-    guard let url = await store.connectApp(named: name) else { return }
-    await signIn(url, name: name, store: store) { store.isConnected(name) }
+    guard let start = await store.beginConnect(named: name) else { return store.isConnected(name) ? SignInEnd.connected : nil }
+    let end = await signIn(start.url, name: name, store: store) { store.isConnected(name) }
+    if Connecting.undoes(end, start: start) { await store.undoConnect(start, name: name) }
+    return end
   }
 
-  /** One account of an app already added: its sign-in again (an account that needs it, from the app's page). */
-  func signIn(_ account: ConnectedApp, store: AppStore) async {
-    guard connecting == nil else { return }
+  /** One account of an app already added: its sign-in again (an account that needs it, from the app's page or Your plugins); how it ended. */
+  @discardableResult
+  func signIn(_ account: ConnectedApp, store: AppStore) async -> SignInEnd? {
+    guard connecting == nil else { return nil }
     connecting = account.name
     defer { connecting = nil; session = nil }
-    guard let url = await store.signInURL(account) else { return }
-    await signIn(url, name: account.name, store: store) { store.accounts(of: account.serverId).contains { $0.accountKey == account.accountKey && $0.status == "connected" } }
+    guard let url = await store.signInURL(account) else { return nil }
+    return await signIn(url, name: account.name, store: store) { store.accounts(of: account.serverId).contains { $0.accountKey == account.accountKey && $0.status == "connected" } }
   }
 
   /**
@@ -570,12 +581,12 @@ final class AppConnector {
    * back to `localhost:8787` (Canva, Square, Vercel, Dropbox) lands on this
    * iPhone's own loopback while the sheet is open (`LoopbackSignIn`).
    */
-  private func signIn(_ url: URL, name: String, store: AppStore, done: @escaping () -> Bool) async {
+  private func signIn(_ url: URL, name: String, store: AppStore, done: @escaping () -> Bool) async -> SignInEnd {
     var catcher: LoopbackCatcher?
     if let signInState = LoopbackSignIn.state(returningHere: url) {
       guard let listening = await LoopbackCatcher.start(state: signInState, finish: "\(AppPlatform.urlScheme)://connected") else {
         store.problem = LoopbackSignIn.busyMessage(name)
-        return
+        return .cancelled
       }
       catcher = listening
       Task { @MainActor in
@@ -596,15 +607,16 @@ final class AppConnector {
     self.session = session
     guard session.start() else {
       store.problem = "The sign-in page didn't open. Try again."
-      return
+      return .cancelled
     }
     for _ in 0..<150 {
       try? await Task.sleep(nanoseconds: 2_000_000_000)
       await store.loadApps()
-      if done() { session.cancel(); return }
-      if !state.keepGoing() { return }
+      if done() { session.cancel(); return .connected }
+      if !state.keepGoing() { return state.ending }
     }
     session.cancel()
+    return .unconfirmed
   }
 }
 
@@ -633,9 +645,15 @@ final class SheetState: @unchecked Sendable {
   private let lock = NSLock()
   private var open = true
   private var pollsLeft = 0
+  private var confirmed = false
 
   func close(confirmed: Bool) {
-    lock.withLock { open = false; pollsLeft = confirmed ? 10 : 2 }
+    lock.withLock { open = false; pollsLeft = confirmed ? 10 : 2; self.confirmed = confirmed }
+  }
+
+  /** How a sheet that closed before the app was connected ended: the person's Cancel, or closed on the vendor's page (it may still finish). */
+  var ending: SignInEnd {
+    lock.withLock { confirmed ? SignInEnd.unconfirmed : SignInEnd.cancelled }
   }
 
   func keepGoing() -> Bool {

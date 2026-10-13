@@ -1463,23 +1463,32 @@ public final class AppStore {
     return apps.contains { $0.status == "connected" && ($0.name.lowercased() == key || ($0.pluginId != nil && $0.pluginId == plugin)) }
   }
 
-  /**
-   * Connect an app as the card's Add does on the Mac: install it from the
-   * catalog when it is not there, then start its sign-in; the sign-in's web
-   * address, for the system's sign-in sheet.
-   */
+  /** The sign-in page of an app's Connect (`beginConnect`), for callers that need no more. */
   public func connectApp(named name: String) async -> URL? {
+    await beginConnect(named: name)?.url
+  }
+
+  /**
+   * Connect (`Connecting`): install the app from the catalog when it is not
+   * there, then start its sign-in; the sign-in's web address, for the
+   * system's sign-in sheet, and whether this connect added the app. An app
+   * this connect added whose sign-in then doesn't open is taken back at
+   * once, so nothing stays half added; `problem` says why.
+   */
+  public func beginConnect(named name: String) async -> ConnectStart? {
     guard let backend else { return nil }
     // The box's app events keep the list current, so it is read here only when it never was.
     if catalog.isEmpty || appsLoadedAt == nil { await loadApps() }
     let key = name.lowercased()
     var server = apps.first { $0.name.lowercased() == key || ($0.pluginId != nil && $0.pluginId == catalogApp(named: name)?.id) }
+    var added: String?
     if server == nil, let plugin = catalogApp(named: name) {
       do {
         // The install and the vendor's server id at once (the second only names the server the first makes).
         async let installed = backend.command("desktopMcp", ["action": "installEntry", "args": [["entryId": .string(plugin.id)]]])
         async let vendorId = try? backend.command("desktopMcp", ["action": "vendorServerIdForPlugin", "args": [.string(plugin.id)]])
         let state = try await installed
+        added = plugin.id
         apps = (state["servers"]?.array ?? []).compactMap(ConnectedApp.init)
         appsLoadedAt = Date()
         if let vendor = await vendorId, let id = vendor.text {
@@ -1496,11 +1505,34 @@ public final class AppStore {
     if server.status == "connected" { return nil }
     do {
       let started = try await backend.command("desktopMcp", ["action": "authenticateServer", "args": [.string(server.serverId), .string(server.accountKey), "connector_card"]])
-      return await signInStarted(started, name: name)
+      if let url = await signInStarted(started, name: name) { return ConnectStart(url: url, addedPlugin: added) }
+      // Signed in already: kept, whatever the list says yet.
+      if started["status"]?.string == "already-authenticated" { return nil }
     } catch {
-      problem = "Couldn't connect \(name): \(error.localizedDescription)"
-      return nil
+      problem = Connecting.didntConnect(name, why: PlainWords.error(error.localizedDescription))
     }
+    // No sign-in to open: the app this connect added goes again, unless it turned out signed in already.
+    if let added { await takeBack(added, name: name) }
+    return nil
+  }
+
+  /**
+   * A connect whose sign-in was cancelled (`Connecting.undoes`): the app it
+   * added is uninstalled again (`uninstallPlugin`, as Uninstall on its page
+   * does), so it isn't left added and not signed in. One the computer says
+   * is connected after all is kept.
+   */
+  public func undoConnect(_ start: ConnectStart, name: String) async {
+    guard let plugin = start.addedPlugin else { return }
+    await takeBack(plugin, name: name)
+  }
+
+  private func takeBack(_ plugin: String, name: String) async {
+    guard let backend else { return }
+    await readApps()
+    if isConnected(name) { return }
+    _ = try? await backend.command("desktopMcp", ["action": "uninstallPlugin", "args": [.string(plugin)]])
+    await readApps()
   }
 
   /** The sign-in's page; or, when the box has none to offer, why (it was already signed in, or the app can't sign in here), said rather than silently dropped. */
@@ -1510,7 +1542,7 @@ public final class AppStore {
       await readApps()
       return nil
     }
-    problem = started["message"]?.text ?? "\(name) didn't offer a sign-in."
+    problem = Connecting.didntConnect(name, why: started["message"]?.text)
     return nil
   }
 

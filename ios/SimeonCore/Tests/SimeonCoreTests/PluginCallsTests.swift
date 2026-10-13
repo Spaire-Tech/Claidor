@@ -217,6 +217,63 @@ final class PluginCallsTests: XCTestCase {
     XCTAssertNil(AppsComingSoon.from(["available": true]))
     XCTAssertEqual(AppsComingSoon.from(["comingSoon": []]), [])
   }
+
+  /** One Connect (the founder, 13 October 2026: "should just be a connect button"): added and signed in at once, and nothing left half added. */
+  @MainActor
+  func testConnectAddsAndSignsInAndTakesBackWhatItLeftHalfAdded() async throws {
+    let box = PluginsBox()
+    box.answers["desktopMcp:getCatalog"] = ["plugins": [["id": "linear", "displayName": "Linear"]]]
+    box.answers["desktopMcp:listServers"] = ["servers": []]
+    box.answers["desktopMcp:installEntry"] = ["servers": [["id": "900042", "name": "Linear", "pluginId": "linear", "status": "needsAuth"]]]
+    box.answers["desktopMcp:vendorServerIdForPlugin"] = "900042"
+    box.answers["desktopMcp:authenticateServer"] = ["status": "started", "authorizationUrl": "https://linear.app/oauth"]
+    box.answers["desktopMcp:uninstallPlugin"] = ["removed": true, "state": ["servers": []]]
+    let store = AppStore()
+    await store.attach(box)
+    await store.loadApps()
+
+    // Connect: installed, then its sign-in asked for at once.
+    let started = await store.beginConnect(named: "Linear")
+    let start = try XCTUnwrap(started)
+    XCTAssertEqual(start, ConnectStart(url: URL(string: "https://linear.app/oauth")!, addedPlugin: "linear"))
+    XCTAssertEqual(box.sent("desktopMcp:authenticateServer")?["args"], ["900042", "default", "connector_card"])
+
+    // Cancelled: taken back. One that may still finish is never taken back.
+    XCTAssertTrue(Connecting.undoes(.cancelled, start: start))
+    XCTAssertFalse(Connecting.undoes(.unconfirmed, start: start))
+    XCTAssertFalse(Connecting.undoes(.connected, start: start))
+    XCTAssertFalse(Connecting.undoes(.cancelled, start: ConnectStart(url: start.url, addedPlugin: nil)), "an app that was there before stays")
+    await store.undoConnect(start, name: "Linear")
+    XCTAssertEqual(box.all("desktopMcp:uninstallPlugin"), [["action": "uninstallPlugin", "args": ["linear"]]])
+
+    // Connected as the sheet closed: kept.
+    box.answers["desktopMcp:listServers"] = ["servers": [["id": "900042", "name": "Linear", "pluginId": "linear", "status": "connected"]]]
+    await store.undoConnect(start, name: "Linear")
+    XCTAssertEqual(box.all("desktopMcp:uninstallPlugin").count, 1)
+
+    // A sign-in that doesn't open: what this connect added goes at once, and the line says why.
+    box.answers["desktopMcp:listServers"] = ["servers": []]
+    await store.loadApps()
+    box.answers["desktopMcp:authenticateServer"] = ["status": "not-supported", "message": "Linear is coming soon in Simeon."]
+    let refused = await store.beginConnect(named: "Linear")
+    XCTAssertNil(refused)
+    XCTAssertEqual(store.problem, "Linear didn't connect: Linear is coming soon in Simeon.")
+    XCTAssertEqual(box.all("desktopMcp:uninstallPlugin").count, 2)
+
+    // Signed in already: kept, even before the list says so.
+    box.answers["desktopMcp:authenticateServer"] = ["status": "already-authenticated"]
+    let already = await store.beginConnect(named: "Linear")
+    XCTAssertNil(already)
+    XCTAssertEqual(box.all("desktopMcp:uninstallPlugin").count, 2)
+
+    // The words.
+    XCTAssertEqual(Plugins.signInButton(.none), "Connect")
+    XCTAssertEqual(Connecting.connectedNotice("Linear", skills: 0, error: nil).text, "Connected Linear")
+    XCTAssertEqual(Connecting.connectedNotice("Linear", skills: 2, error: nil).text, "Connected Linear and 2 skills")
+    XCTAssertTrue(Connecting.connectedNotice("Linear", skills: 0, error: "offline").isError)
+    XCTAssertEqual(Connecting.notConnectedNotice("Linear").text, "Linear wasn't connected")
+    XCTAssertEqual(Connecting.didntConnect("Linear", why: nil), "Linear didn't connect. Try again.")
+  }
 }
 
 /** A box that writes down each command and answers from a script: `desktopMcp`'s actions by "desktopMcp:<action>". */

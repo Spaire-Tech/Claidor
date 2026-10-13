@@ -2540,3 +2540,37 @@ and 4 apart, 66 a row (the phone's 80); the butterfly 46 (the phone's 56),
 10 before the text; the title in a grey box (`Look.tag`, `#252527` on
 dark) with its words in our blue, 11.5 medium, 10 after the name (the
 phone's 14 and 13). The rail keeps the window's 54 and 36.
+
+### One Connect (13 October 2026)
+
+The founder: "there is no logic, in the 'add' - then takes you to this
+authenticate button. should just be a connect button … you add it, the
+iframe appears, you say connect, it says added. then you have to go to
+'yours' to authenticate." Measured in the code that day: Add installed the
+app, started its sign-in in the background with any failure dropped
+(`try?` in `PluginsModel.install`), and said "Added"; the Marketplace row
+said "Added" for anything installed, signed in or not; the sign-in then
+waited in Yours under Authenticate. Now, on the Mac and the iPhone, with
+the consent kept:
+
+- One button, Connect, everywhere an app can be connected (the
+  Marketplace row, the plugin's page, a chat card, Yours). It installs the
+  app and opens its sign-in in one go, and the window waits for it
+  (`connectAfterInstall`): "Connected Gmail" once it is, with the skills
+  synced as before.
+- A sign-in the person cancels, or one that never opens, takes the app it
+  added back out (`uninstallPlugin`, as Uninstall does; `Connecting.undoes`,
+  `AppStore.undoConnect`), unless the computer says it connected after
+  all; "Gmail wasn't connected" or why it didn't. One that closed on the
+  vendor's page before the computer said so is kept ("Finishing Gmail's
+  sign-in…"): it may still finish.
+- The Marketplace row says Connected only for an app signed in; an
+  installed app still waiting for its sign-in says Connect (its sign-in
+  only); another state shows its status word; "Added" is left for a plugin
+  of skills alone. Authenticate reads Connect in Yours and on a page.
+- The values a setup page takes are kept whatever the sign-in after it
+  does; that sign-in no longer holds the window busy.
+
+Shared in `SimeonCore/Connecting.swift` and `AppStore.beginConnect`, with
+a test (`PluginCallsTests`). Not yet run on a Mac or an iPhone.
+

@@ -501,18 +501,31 @@ private struct MarketplaceSection: View {
           PluginRow(title: entry.displayName, line: entry.description, team: Plugins.teamMark(entry), look: look, dimmed: soon,
                     icon: { PluginIcon(name: entry.displayName, iconUrl: entry.iconUrl, look: look) },
                     open: { model.path.append(.plugin(entry.id)) }) {
-            if model.installed(entry).isInstalled {
-              AddedMark(look: look)
+            // One Connect (`Connecting`, 13 October 2026): an app shows Connected only once it is signed in.
+            if model.adding == entry.id {
+              AddingSpinner(name: entry.displayName, look: look)
+            } else if model.installed(entry).isInstalled {
+              let server = model.serverState(entry)
+              if entry.connectorList.isEmpty || server == nil {
+                AddedMark(title: "Added", look: look)
+              } else if let server, server.status == "needsAuth" {
+                PluginPill(title: Plugins.signInButton(model.signInState(server, accountKey: server.accountKey)), kind: .secondary, disabled: model.isBusy, look: look) {
+                  model.requestSignIn(server, accountKey: server.accountKey)
+                }
+                .accessibilityLabel("Connect \(entry.displayName)")
+              } else if let server, server.status != "connected" {
+                StatusWord(status: server.status, detail: server.statusDetail, look: look)
+              } else {
+                AddedMark(title: Connecting.connected, look: look)
+              }
             } else if soon {
               PluginPill(title: AppsComingSoon.label, kind: .soon, look: look)
                 .accessibilityLabel("\(entry.displayName) is coming soon")
-            } else if model.adding == entry.id {
-              AddingSpinner(name: entry.displayName, look: look)
             } else {
-              PluginPill(title: "Add", kind: .secondary, disabled: model.isBusy, look: look) {
+              PluginPill(title: Connecting.connect, kind: .secondary, disabled: model.isBusy, look: look) {
                 model.requestAdd(entry, agentId: window.selected)
               }
-              .accessibilityLabel("Add \(entry.displayName)")
+              .accessibilityLabel("Connect \(entry.displayName)")
             }
           }
         }
@@ -901,18 +914,19 @@ private struct AddingSpinner: View {
     .frame(width: 34, height: 26)
     .onAppear { withAnimation(.linear(duration: 0.7).repeatForever(autoreverses: false)) { turning = true } }
     .accessibilityElement()
-    .accessibilityLabel("Adding \(name)")
+    .accessibilityLabel("Connecting \(name)")
   }
 }
 
-/** Added (`di`): a green tick and "Added" at 12 in the faint grey. Not a button. */
+/** Connected (`di`, "Added" until 13 October 2026; still "Added" for a plugin of skills alone): a green tick and its word at 12 in the faint grey. Not a button. */
 private struct AddedMark: View {
+  var title = Connecting.connected
   let look: Look
 
   var body: some View {
     HStack(spacing: 5) {
       Image(systemName: "checkmark").font(.system(size: 10, weight: .semibold)).foregroundStyle(look.success)
-      Text("Added").font(.system(size: 12)).foregroundStyle(look.inkTertiary)
+      Text(title).font(.system(size: 12)).foregroundStyle(look.inkTertiary)
     }
     .padding(EdgeInsets(top: 2, leading: 6, bottom: 2, trailing: 8))
     .frame(height: 20)
@@ -1217,7 +1231,7 @@ private struct ServerPage: View {
   }
 }
 
-/** The page's action (`ft`): Add (the blue, or the spinner; Coming soon for an app that can't be added yet), Uninstall, the team's label with Remove, or the team's label alone. No question asked. */
+/** The page's action (`ft`): Connect (the blue, or the spinner; Coming soon for an app that can't be added yet; Add until 13 October 2026), Uninstall, the team's label with Remove, or the team's label alone. No question asked. */
 private struct PageActionView: View {
   let action: Plugins.PageAction
   let adding: Bool
@@ -1237,7 +1251,7 @@ private struct PageActionView: View {
       } else if adding {
         AddingSpinner(name: name, look: look)
       } else {
-        PluginPill(title: "Add", kind: .primary, disabled: busy, look: look, action: add).accessibilityLabel("Add \(name)")
+        PluginPill(title: Connecting.connect, kind: .primary, disabled: busy, look: look, action: add).accessibilityLabel("Connect \(name)")
       }
     case .uninstall:
       PluginPill(title: "Uninstall", kind: .secondary, disabled: busy, look: look, action: remove)

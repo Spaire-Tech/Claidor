@@ -41,7 +41,7 @@ final class PluginsOverlayTests: XCTestCase {
     XCTAssertEqual(Plugins.tone("initializing"), .tertiary)
     XCTAssertEqual(Plugins.signInKey("Google_Calendar-2"), "googlecalendar2")
     XCTAssertEqual(Plugins.signInKey("gmail--Work"), "gmail--Work")
-    XCTAssertEqual(Plugins.signInButton(.none), "Authenticate")
+    XCTAssertEqual(Plugins.signInButton(.none), "Connect")
     XCTAssertEqual(Plugins.signInButton(.waiting), "Reopen")
     XCTAssertEqual(Plugins.signInButton(.timedOut), "Retry")
   }

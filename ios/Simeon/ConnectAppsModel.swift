@@ -191,13 +191,30 @@ final class ConnectAppsModel {
     signInAfterSetup()
   }
 
-  /** After the phone's own Add of an app: once it is connected, its skills synced as the Mac's Add syncs them, and the Mac's notice. */
-  func connected(_ entry: PluginEntry, name: String) async {
+  /**
+   * After the phone's Connect (`Connecting`): connected, its skills synced as
+   * the Mac's Add syncs them and "Connected Gmail" said; cancelled, "Gmail
+   * wasn't connected" (the app it added is gone again); closed on the
+   * vendor's page before the computer said so, that it is finishing. No
+   * sign-in at all: the store's problem has said why.
+   */
+  func connectEnded(_ entry: PluginEntry?, name: String, end: SignInEnd?) async {
     await refreshPlugins()
     await refreshServers()
-    guard store?.isConnected(name) == true else { return }
-    let synced = await syncSkills(entry, agentId: agentId)
-    show(Plugins.addedNotice(entry.displayName, added: synced.added, failed: [], error: synced.error))
+    let shown = entry?.displayName ?? name
+    switch end {
+    case .connected?:
+      guard store?.isConnected(name) == true else { return }
+      guard let entry else { show(Connecting.connectedNotice(shown, skills: 0, error: nil)); return }
+      let synced = await syncSkills(entry, agentId: agentId)
+      show(Connecting.connectedNotice(shown, skills: synced.added, error: synced.error))
+    case .cancelled?:
+      show(Connecting.notConnectedNotice(shown))
+    case .unconfirmed?:
+      show(Connecting.stillConnectingNotice(shown))
+    case .replaced?, nil:
+      break
+    }
   }
 
   /** `installEntry`; a vendor's own server then has its sign-in opened, once the setup page has gone. */
@@ -220,11 +237,14 @@ final class ConnectAppsModel {
     }
   }
 
-  /** The vendor's sign-in an install left waiting, in the system's sheet (not waited for). */
+  /** The vendor's sign-in an install left waiting, in the system's sheet (not waited for); then how it went, as Connect says it. */
   func signInAfterSetup() {
     guard let account = pendingSignIn, let store else { return }
     pendingSignIn = nil
-    Task { await AppConnector.shared.signIn(account, store: store) }
+    Task {
+      let end = await AppConnector.shared.signIn(account, store: store)
+      await self.connectEnded(account.pluginId.flatMap { self.entry($0) }, name: account.name, end: end)
+    }
   }
 
   /** The skills step (`Is`): the agent's private copies of the plugin's skills dropped, then the box's plugin skills synced. */
@@ -268,7 +288,9 @@ final class ConnectAppsModel {
         adding = setup.entryId
         defer { adding = nil }
         guard await install(setup.entryId, values: values, team: false) else { return }
-        if let entry {
+        if pendingSignIn != nil {
+          // Its sign-in opens once this page has gone (`signInAfterSetup`), and says how it went: not "Added" before it is connected.
+        } else if let entry {
           let synced = await syncSkills(entry, agentId: agentId)
           show(Plugins.addedNotice(name, added: synced.added, failed: [], error: synced.error))
         } else {

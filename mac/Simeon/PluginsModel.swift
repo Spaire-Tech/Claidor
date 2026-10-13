@@ -222,7 +222,15 @@ final class PluginsModel {
 
   // MARK: Add, setup, remove
 
-  /** Add (`Ct`): a skills-only plugin needs an agent; one with values to give opens its setup page; else it is installed and its skills synced. */
+  /**
+   * Add (`Ct`), Connect since 13 October 2026 (`Connecting`): a skills-only
+   * plugin needs an agent; one with values to give opens its setup page;
+   * else it is installed and its sign-in opened at once and waited for
+   * (`connectAfterInstall`): "Connected" only once it is, and a sign-in the
+   * person cancels takes the app back out. Before, the window said "Added"
+   * while the sign-in opened (or silently didn't) on its own, and the app sat
+   * in Yours under Authenticate.
+   */
   func add(_ entry: PluginEntry, agentId: String?) async {
     show(nil)
     let team = effective[entry.id]?.hasTeamConfiguredVariables == true
@@ -242,30 +250,88 @@ final class PluginsModel {
     }
     adding = entry.id
     defer { adding = nil }
+    let addedNow = !installed(entry).isInstalled
     guard await install(entry.id, values: [:], team: team) else { return }
-    let synced = await syncSkills(entry, agentId: agentId)
-    show(Plugins.addedNotice(entry.displayName, added: synced.added, failed: [], error: synced.error))
+    await connectAfterInstall(entry, addedNow: addedNow, agentId: agentId)
   }
 
-  /** `installEntry`; a vendor's own server then opens its sign-in in the browser, as Electron's main process does. */
+  /** `installEntry` (the sign-in is the caller's: `connectAfterInstall`). */
   private func install(_ entryId: String, values: [String: String], team: Bool) async -> Bool {
     busy += 1
     defer { busy -= 1 }
     do {
-      let box = try calls()
-      apply(servers: try await box.install(entryId, values: values, team: team))
+      apply(servers: try await calls().install(entryId, values: values, team: team))
       await refreshPlugins()
-      if let serverId = await box.vendorServerId(entryId),
-         let started = try? await box.signIn(serverId, accountKey: PluginServer.defaultAccount),
-         let url = started["authorizationUrl"]?.text.flatMap(URL.init(string:)) {
-        let name = catalog.first { $0.id == entryId }?.displayName ?? serverId
-        await openSignIn(url, serverId: serverId, accountKey: PluginServer.defaultAccount, name: name)
-      }
       return true
     } catch {
       fail(error)
       return false
     }
+  }
+
+  /**
+   * The sign-in of a plugin just installed, opened in the window and waited
+   * for (`Connecting`): once connected, its skills synced and "Connected
+   * Gmail" said; cancelled, or no sign-in to open, the app this connect
+   * added (`addedNow`) taken back out and why said; closed on the vendor's
+   * page before the computer said so, kept, as it may still finish. A
+   * plugin whose server needs no sign-in is added as before.
+   */
+  private func connectAfterInstall(_ entry: PluginEntry, addedNow: Bool, agentId: String?) async {
+    let name = entry.displayName
+    guard let box = try? calls() else { return }
+    let vendorId = await box.vendorServerId(entry.id)
+    let row = vendorId.flatMap { id in servers.first { $0.id == id } } ?? servers.first { $0.pluginId == entry.id }
+    let needsSignIn = vendorId != nil ? row?.status != "connected" : row?.status == "needsAuth"
+    guard let serverId = vendorId ?? row?.id, needsSignIn else {
+      let synced = await syncSkills(entry, agentId: agentId)
+      show(row?.status == "connected"
+        ? Connecting.connectedNotice(name, skills: synced.added, error: synced.error)
+        : Plugins.addedNotice(name, added: synced.added, failed: [], error: synced.error))
+      return
+    }
+    let accountKey = PluginServer.defaultAccount
+    let answer: JSON
+    do {
+      answer = try await box.signIn(serverId, accountKey: accountKey)
+    } catch {
+      if addedNow { await takeBack(entry, serverId: serverId) }
+      show(Plugins.Notice(isError: true, text: Connecting.didntConnect(name, why: PlainWords.error(error.localizedDescription))))
+      return
+    }
+    if answer["status"]?.string == "already-authenticated" {
+      await refreshServers()
+      let synced = await syncSkills(entry, agentId: agentId)
+      show(Connecting.connectedNotice(name, skills: synced.added, error: synced.error))
+      return
+    }
+    guard let url = answer["authorizationUrl"]?.text.flatMap(URL.init(string:)) else {
+      if addedNow { await takeBack(entry, serverId: serverId) }
+      show(Plugins.Notice(isError: true, text: Connecting.didntConnect(name, why: answer["message"]?.string)))
+      return
+    }
+    switch await openSignInAndWait(url, serverId: serverId, accountKey: accountKey, name: name) {
+    case .connected:
+      let synced = await syncSkills(entry, agentId: agentId)
+      show(Connecting.connectedNotice(name, skills: synced.added, error: synced.error))
+    case .cancelled:
+      if addedNow { await takeBack(entry, serverId: serverId) }
+      show(Connecting.notConnectedNotice(name))
+    case .unconfirmed:
+      show(Connecting.stillConnectingNotice(name))
+    case .replaced:
+      break
+    }
+  }
+
+  /** A connect's app taken back out (`Connecting.undoes`): uninstalled again (`uninstallPlugin`, as Uninstall does), unless the computer says it connected after all. */
+  private func takeBack(_ entry: PluginEntry, serverId: String) async {
+    await refreshServers()
+    if Plugins.accounts(servers, of: serverId).contains(where: { $0.status == "connected" }) { return }
+    guard let removal = try? await calls().uninstallPlugin(entry.id) else { return }
+    apply(servers: removal.servers)
+    await refreshPlugins()
+    await store?.loadApps()
   }
 
   /** The skills step (`Is`): the agent's private copies of the plugin's skills dropped, then the box's plugin skills synced. */
@@ -296,28 +362,31 @@ final class PluginsModel {
     path.append(.setup(entry.id))
   }
 
-  /** The setup page's button (`At`): install with the values, or replace them; then back one page. */
+  /** The setup page's button (`At`): install with the values, or replace them; then back one page, and a new one's sign-in as Connect opens it. */
   func submitSetup(_ values: [String: String], agentId: String?) async {
     guard let setup else { return }
     let entry = catalog.first { $0.id == setup.entryId }
     let name = entry?.displayName ?? "the plugin"
     show(nil)
+    var installedNew = false
     await reporting {
       if setup.editing {
         try await calls().updateInstall(setup.entryId, values: values)
         show(Plugins.setupSavedNotice(name))
       } else {
         guard await install(setup.entryId, values: values, team: false) else { return }
-        if let entry {
-          let synced = await syncSkills(entry, agentId: agentId)
-          show(Plugins.addedNotice(name, added: synced.added, failed: [], error: synced.error))
-        } else {
-          show(Plugins.Notice(isError: false, text: "Added \(name)"))
-        }
+        installedNew = true
       }
       self.setup = nil
       // Back to where Add or Edit Values was pressed, unless the person went back already.
       if path.last == .setup(setup.entryId) { path.removeLast() }
+    }
+    guard installedNew else { return }
+    // Its sign-in, when it has one, outside the busy mark (the window stays usable while the page is open); the values given are kept whatever the sign-in does.
+    if let entry {
+      await connectAfterInstall(entry, addedNow: false, agentId: agentId)
+    } else {
+      show(Plugins.Notice(isError: false, text: "Added \(name)"))
     }
   }
 
@@ -372,7 +441,7 @@ final class PluginsModel {
     return flow.timedOut ? .timedOut : .waiting
   }
 
-  /** The sign-in button: Reopen opens the waiting page again; Authenticate and Retry ask the box for a sign-in (no trigger: the overlay's own). */
+  /** The sign-in button: Reopen opens the waiting page again; Connect (Authenticate until 13 October 2026) and Retry ask the box for a sign-in (no trigger: the overlay's own), and say how it ended as Connect does. */
   func signIn(_ server: PluginServer, accountKey: String) async {
     let key = signInKey(server, accountKey: accountKey)
     if let flow = flows[key], !flow.timedOut {
@@ -389,9 +458,21 @@ final class PluginsModel {
         let opened = Date()
         flows[key] = Flow(url: url, openedAt: opened, timedOut: false)
         expire(key, opened: opened)
-        await openSignIn(url, serverId: server.id, accountKey: accountKey, name: server.name)
+        // The sheet over the window is what the person sees now ("Opened the OAuth flow in your browser" no longer said); how it ends is said once it has.
+        Task { [weak self] in
+          guard let self else { return }
+          switch await self.openSignInAndWait(url, serverId: server.id, accountKey: accountKey, name: server.name) {
+          case .connected: self.show(Connecting.connectedNotice(server.name, skills: 0, error: nil))
+          case .cancelled: self.show(Connecting.notConnectedNotice(server.name))
+          case .unconfirmed: self.show(Connecting.stillConnectingNotice(server.name))
+          case .replaced: break
+          }
+        }
+      } else if status == "already-authenticated" {
+        show(Connecting.connectedNotice(server.name, skills: 0, error: nil))
+      } else {
+        show(Plugins.signInNotice(status: status, message: answer["message"]?.string))
       }
-      show(Plugins.signInNotice(status: status, message: answer["message"]?.string))
       await refreshServers()
     }
   }
@@ -424,6 +505,23 @@ final class PluginsModel {
     }
   }
 
+  /** The same page, waited for: how the sign-in ended (Connect's, `connectAfterInstall`). */
+  private func openSignInAndWait(_ url: URL, serverId: String, accountKey: String, name: String) async -> SignInEnd {
+    let wait = Plugins.signInSpacing - Date().timeIntervalSince(lastOpen)
+    if wait > 0 { try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000)) }
+    lastOpen = Date()
+    return await MacConnector.shared.signIn(url, name: name, store: store) { [weak self] in
+      guard let self else { return true }
+      await self.refreshServers()
+      return Plugins.accounts(self.servers, of: serverId).first { $0.accountKey == accountKey }?.status == "connected"
+    }
+  }
+
+  /** An installed plugin's server, for its Marketplace row (`Connecting`): Connect while it waits for its sign-in, Connected once it is, else its status; never "Added" for an app not signed in. */
+  func serverState(_ entry: PluginEntry) -> PluginServer? {
+    installed(entry).server ?? servers.first { $0.pluginId == entry.id }
+  }
+
   /**
    * Add, the consent first when the plugin brings an app to sign in to
    * (the Apple design pass: the iPhone's step before every connect); a
@@ -445,7 +543,7 @@ final class PluginsModel {
     store?.isComingSoon(entry.id) ?? AppsComingSoon.builtIn.contains(entry.id.lowercased())
   }
 
-  /** The sign-in button: the consent first for a new sign-in (Authenticate, Retry); Reopen opens the waiting page again at once. */
+  /** The sign-in button: the consent first for a new sign-in (Connect, Retry); Reopen opens the waiting page again at once. */
   func requestSignIn(_ server: PluginServer, accountKey: String) {
     if let flow = flows[signInKey(server, accountKey: accountKey)], !flow.timedOut {
       Task { await signIn(server, accountKey: accountKey) }

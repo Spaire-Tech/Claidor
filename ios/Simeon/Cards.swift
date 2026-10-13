@@ -306,7 +306,7 @@ struct ConnectorsCardView: View {
   }
 }
 
-/** One app's card: its tile, its name, why, how many tools it brings once added ("12 tools", as the Mac's), and Add or ✓ Added. */
+/** One app's card: its tile, its name, why, how many tools it brings once connected ("12 tools", as the Mac's), and Connect or ✓ Connected (`Connecting`). */
 struct ConnectorCard: View {
   let name: String
   let reason: String?
@@ -336,7 +336,7 @@ struct ConnectorCard: View {
       }
       Spacer(minLength: 0)
       if isConnected {
-        Label("Added", systemImage: "checkmark").font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.secondary).labelStyle(.titleAndIcon)
+        Label(Connecting.connected, systemImage: "checkmark").font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.secondary).labelStyle(.titleAndIcon)
       } else if store.isComingSoon(name) {
         // Not one an agent can be given yet (`AppsComingSoon`).
         PluginPill(title: AppsComingSoon.label, fill: Ink.pillButton, ink: Ink.tertiary)
@@ -344,9 +344,10 @@ struct ConnectorCard: View {
       } else if waiting {
         ProgressView().controlSize(.small)
       } else {
-        Button("Add") { asking = ConnectConsent(app: app, name: name) }
+        Button(Connecting.connect) { asking = ConnectConsent(app: app, name: name) }
           .buttonStyle(GreyButtonStyle(capsule: true))
           .disabled(connector.connecting != nil)
+          .accessibilityLabel("Connect \(app?.title ?? name)")
       }
     }
     .card()

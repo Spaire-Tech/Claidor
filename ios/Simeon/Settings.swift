@@ -966,13 +966,15 @@ private struct RuleEditor: View {
 /**
  * Connect apps, in the founder's reference (11 October 2026: "no more
  * marketplace - yours"): one page, Marketplace, on the app's ground. At its
- * top Back, the title, and how many apps are installed with the first
+ * top Back, the title, and how many apps are connected with the first
  * three's logos, which opens Your plugins; under them the search and a
  * filter by category. Then the catalog by category, Featured first and the
  * rest A to Z, four of each with View all (the Mac's Plugins:
  * `Plugins.marketplaceLimit`), each app with its logo, name, what it does
- * and Add. Add asks first (ConnectConsentSheet), then installs the app in
- * the box and opens its sign-in in the system's sheet.
+ * and Connect. Connect asks first (ConnectConsentSheet), then installs the
+ * app in the box and opens its sign-in in the system's sheet, in one go
+ * (`Connecting`, 13 October 2026: Add, then Authenticate in Your plugins,
+ * was two steps for one).
  */
 struct ConnectAppsSheet: View {
   // Since the Mac's Plugins came over (11 October 2026): the filter has the Mac's Type and Ownership too; a row opens the
@@ -990,7 +992,7 @@ struct ConnectAppsSheet: View {
     NavigationStack {
       VStack(spacing: 0) {
         PluginsHead(title: "Marketplace", back: { dismiss() }) {
-          NavigationLink { YourPluginsPage() } label: { InstalledPill(apps: store.appsOnce) }
+          NavigationLink { YourPluginsPage() } label: { InstalledPill(apps: store.appsOnce.filter { $0.status == "connected" }) }
             .buttonStyle(.plain)
         }
         HStack(spacing: 10) {
@@ -1138,7 +1140,7 @@ struct PluginsHead<Trailing: View>: View {
   }
 }
 
-/** "4 installed" with the first three apps' logos overlapping, in the control's fill (42 high, 16.4 medium), never cut: it opens Your plugins. */
+/** "4 connected" with the first three connected apps' logos overlapping, in the control's fill (42 high, 16.4 medium), never cut: it opens Your plugins. */
 struct InstalledPill: View {
   let apps: [ConnectedApp]
 
@@ -1154,7 +1156,7 @@ struct InstalledPill: View {
           }
         }
       }
-      Text("\(apps.count) installed").font(.system(size: 16.4, weight: .medium)).foregroundStyle(Ink.primary)
+      Text("\(apps.count) connected").font(.system(size: 16.4, weight: .medium)).foregroundStyle(Ink.primary)
         .lineLimit(1)
         .fixedSize()
     }
@@ -1164,7 +1166,7 @@ struct InstalledPill: View {
     .background(Ink.groupedRow, in: Capsule())
     .contentShape(.capsule)
     .accessibilityElement(children: .ignore)
-    .accessibilityLabel("\(apps.count) installed")
+    .accessibilityLabel("\(apps.count) connected")
     .accessibilityHint("Shows your plugins")
   }
 }
@@ -1237,8 +1239,9 @@ struct CategoryPage: View {
 /**
  * Your plugins (the reference's): the installed apps, each with its logo,
  * its name ("Error" beside it in red when the box says so) and its tools;
- * at the right Added once it is signed in, else Authenticate, which asks
- * first as every connect does, then opens its sign-in. A row opens the
+ * at the right Connected once it is signed in, else Connect (Authenticate
+ * until 13 October 2026), which asks first as every connect does, then
+ * opens its sign-in. A row opens the
  * app's page (PluginPage). Since the Mac's Plugins came over (11 October
  * 2026), as the Mac's Yours: the GitHub banner over them, the filter beside
  * the search (the Mac's Type and Ownership), the plugins added with no app
@@ -1278,7 +1281,7 @@ struct YourPluginsPage: View {
           if showsInstalled {
             PluginsSectionHead(title: "Installed") { EmptyView() }
             if apps.isEmpty && skillsOnly.isEmpty {
-              Text(query.isEmpty || store.appsOnce.isEmpty ? "No apps yet. Add one from the Marketplace." : "No apps match \u{201C}\(query)\u{201D}.")
+              Text(query.isEmpty || store.appsOnce.isEmpty ? "No apps yet. Connect one from the Marketplace." : "No apps match \u{201C}\(query)\u{201D}.")
                 .font(.system(size: 13)).foregroundStyle(Ink.secondary)
                 .padding(.top, 8)
             }
@@ -1346,8 +1349,8 @@ struct InstalledRow: View {
               if let team = teamLabel { TeamBadge(tip: team) }
               if app.status == "error" { Text("Error").font(.system(size: 13)).foregroundStyle(Ink.danger).fixedSize() }
             }
-            Text(app.toolCount > 0 ? (app.toolCount == 1 ? "1 tool" : "\(app.toolCount) tools") : (connected ? "Connected" : "Not signed in"))
-              .font(.system(size: 13)).foregroundStyle(Ink.secondary).lineLimit(1)
+            Text(connected ? (app.toolCount == 1 ? "1 tool" : app.toolCount > 0 ? "\(app.toolCount) tools" : Connecting.connected) : "Not connected")
+              .font(.system(size: 13)).foregroundStyle(connected ? Ink.secondary : Ink.danger).lineLimit(1)
           }
           Spacer(minLength: 0)
         }
@@ -1355,23 +1358,27 @@ struct InstalledRow: View {
       }
       .buttonStyle(.plain)
       if connected {
-        PluginPill(title: "Added", fill: Ink.pillButton, ink: Ink.secondary)
+        PluginPill(title: Connecting.connected, fill: Ink.pillButton, ink: Ink.secondary)
       } else if connector.connecting == app.name {
         ProgressView().controlSize(.small).frame(width: 44)
       } else {
         Button { asking = ConnectConsent(app: store.catalogApp(named: app.name), name: app.name) } label: {
-          PluginPill(title: "Authenticate", fill: Ink.authenticate, ink: .white)
+          PluginPill(title: Connecting.connect, fill: Ink.authenticate, ink: .white)
         }
         .buttonStyle(.plain)
         .disabled(connector.connecting != nil)
+        .accessibilityLabel("Connect \(app.name)")
       }
     }
     .padding(.vertical, 17)
-    // The sign-in page opens once the sheet has gone.
+    // The sign-in page opens once the sheet has gone; then how it went, as Connect says it.
     .sheet(item: $asking, onDismiss: {
       guard confirmed else { return }
       confirmed = false
-      Task { await connector.signIn(app, store: store) }
+      Task {
+        let end = await connector.signIn(app, store: store)
+        await model.connectEnded(model.entry(for: app), name: app.name, end: end)
+      }
     }) { consent in
       ConnectConsentSheet(consent: consent) { confirmed = true }
     }
@@ -1389,7 +1396,7 @@ struct InstalledRow: View {
   }
 }
 
-/** A row's pill (the reference's Add, Added, Authenticate): 13 medium, 26 high, 12 either side, round, never cut. */
+/** A row's pill (the reference's Connect, Connected; Added for a plugin of skills alone): 13 medium, 26 high, 12 either side, round, never cut. */
 struct PluginPill: View {
   let title: String
   let fill: Color
@@ -1410,9 +1417,12 @@ struct PluginPill: View {
 /**
  * One app in the catalog (the reference's, measured): its logo (37), name
  * (16.4, with the Mac's Team mark for a team's marketplace) and what it does
- * in two lines (13), and Add, or Added once it is in. The row opens the
- * plugin's page (PluginPage), as the Mac's Marketplace rows do; Add is the
- * Mac's (PluginAddButton): the consent, then the setup page or the sign-in.
+ * in two lines (13), and Connect, or Connected once it is signed in (Added
+ * for a plugin of skills alone, which has nothing to sign in to). The row
+ * opens the plugin's page (PluginPage), as the Mac's Marketplace rows do;
+ * Connect (PluginAddButton) is the consent, then the setup page or the
+ * sign-in, in one go. An app added before but not signed in says Connect
+ * too, and Connect then only signs it in.
  */
 struct AppRow: View {
   let app: CatalogApp
@@ -1445,15 +1455,17 @@ struct AppRow: View {
       if soon {
         PluginPill(title: AppsComingSoon.label, fill: Ink.pillButton, ink: Ink.tertiary)
           .accessibilityLabel("\(app.title) is coming soon")
-      } else if store.isConnected(app.title) || skillsAdded {
+      } else if store.isConnected(app.title) {
+        PluginPill(title: Connecting.connected, fill: Ink.pillButton, ink: Ink.secondary)
+      } else if skillsAdded {
         PluginPill(title: "Added", fill: Ink.pillButton, ink: Ink.secondary)
       } else if connector.connecting == app.title || model.adding == app.id {
         ProgressView().controlSize(.small).frame(width: 44)
       } else {
         PluginAddButton(name: app.title, catalogApp: app, entryId: app.id) {
-          PluginPill(title: "Add", fill: Ink.pillButton, ink: Ink.primary)
+          PluginPill(title: Connecting.connect, fill: Ink.pillButton, ink: Ink.primary)
         }
-        .accessibilityLabel("Add \(app.title)")
+        .accessibilityLabel("Connect \(app.title)")
       }
     }
     .padding(.vertical, 17)
