@@ -41,6 +41,8 @@ errors — has the word Composio replaced (`scrub`).
 
 from __future__ import annotations
 
+import base64
+import binascii
 import hashlib
 import hmac
 import html
@@ -512,10 +514,37 @@ def _start_signature(expires: int, url: str) -> str:
 def start_url(url: str, *, now: float | None = None) -> str:
     """A link of ours that leads to `url`, signed so it leads nowhere else
     and good for a quarter of an hour: where the sign-in sheet opens, so it
-    names simeonlabs.com."""
+    names simeonlabs.com.
+
+    The address travels as base64url (`t`), letters, digits, `-` and `_`
+    only. Until 13 October 2026 it travelled as itself (`to`), and the apps,
+    adding their `back=` through Apple's `URLComponents.queryItems`, wrote
+    it back with every `+` bare, which a query reads as a space: Google's
+    `scope=a+b` arrived as `scope=a b`, the signature no longer matched,
+    and a Google sign-in opened from the Mac said the link had expired.
+    Nothing in base64url can be rewritten that way."""
     expires = int(now if now is not None else time.time()) + _START_TTL_S
-    query = urlencode({"to": url, "e": expires, "s": _start_signature(expires, url)})
+    target = base64.urlsafe_b64encode(url.encode()).decode().rstrip("=")
+    query = urlencode({"t": target, "e": expires, "s": _start_signature(expires, url)})
     return f"{settings.BASE_URL.rstrip('/')}/desktop/apps/start?{query}"
+
+
+def _start_targets(request: Request) -> list[str]:
+    """The address a start link names, in the forms it may have come in:
+    `t`, or a link made before it (`to`), as sent and with the spaces the
+    apps' rewrite made of its `+` put back."""
+    target = str(request.query_params.get("t", ""))
+    if target:
+        try:
+            return [
+                base64.urlsafe_b64decode(target + "=" * (-len(target) % 4)).decode()
+            ]
+        except (binascii.Error, UnicodeDecodeError, ValueError):
+            return []
+    to = str(request.query_params.get("to", ""))
+    if not to:
+        return []
+    return [to, to.replace(" ", "+")] if " " in to else [to]
 
 
 def _error(message: str, status: int) -> JSONResponse:
@@ -751,10 +780,10 @@ _CONNECTED_PAGE = """<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Simeon</title>
 <style>:root{{color-scheme:light dark}}body{{margin:0;min-height:100vh;display:grid;place-items:center;
 font:16px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;background:#f5f5f7;color:#1d1d1f}}
-@media (prefers-color-scheme:dark){{body{{background:#1c1c1e;color:#f5f5f7}}.card{{background:#2c2c2e}}}}
 .card{{background:#fff;border-radius:18px;padding:36px 40px;text-align:center;max-width:360px;
 box-shadow:0 0 0 .5px rgba(20,30,60,.08),0 1px 2px rgba(20,30,60,.05)}}
-h1{{font-size:20px;font-weight:600;margin:0 0 6px}}p{{margin:0;opacity:.7}}</style></head>
+h1{{font-size:20px;font-weight:600;margin:0 0 6px}}p{{margin:0;opacity:.7}}
+@media (prefers-color-scheme:dark){{body{{background:#1c1c1e;color:#f5f5f7}}.card{{background:#2c2c2e;box-shadow:none}}}}</style></head>
 <body><div class="card"><h1>{title}</h1><p>{body}</p></div></body></html>"""
 
 
@@ -789,20 +818,32 @@ async def apps_connected(request: Request) -> Response:
 
 @router.get("/apps/start", name="desktop:apps_start")
 async def apps_start(request: Request) -> Response:
-    to = str(request.query_params.get("to", ""))
     signature = str(request.query_params.get("s", ""))
     try:
         expires = int(request.query_params.get("e", "0"))
     except ValueError:
         expires = 0
-    if (
-        not to.startswith("https://")
-        or expires < time.time()
-        or not hmac.compare_digest(_start_signature(expires, to), signature)
-    ):
+    to = next(
+        (
+            one
+            for one in _start_targets(request)
+            if one.startswith("https://")
+            and hmac.compare_digest(_start_signature(expires, one), signature)
+        ),
+        None,
+    )
+    # Two refusals, told apart in the log and on the page: a link that was
+    # never ours, or that something changed on its way, and one that is
+    # simply old.
+    if to is None or expires < time.time():
+        expired = to is not None
+        log.info(
+            "desktop.apps.start_refused", reason="expired" if expired else "signature"
+        )
         return HTMLResponse(
             _CONNECTED_PAGE.format(
-                title="That link has expired", body="Go back to Simeon and try again."
+                title="That link has expired" if expired else "That link didn't work",
+                body="Go back to Simeon and try again.",
             ),
             status_code=400,
             headers={"cache-control": "no-store"},

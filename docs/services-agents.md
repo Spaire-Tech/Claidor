@@ -494,6 +494,16 @@ their makers' own servers on 13 October 2026; see 7a.)
   sheet at once. Only the two apps' schemes are kept; a browser's tab (the web app) still ends on
   the page. A vendor's own sign-in (an MCP server's) is not ours to end and is unchanged: the
   sheet closes itself as soon as the computer says it is connected.
+* **"That link has expired" on every Google sign-in** (fixed 13 October 2026). The apps add
+  `back=` through Apple's `URLComponents.queryItems`, which writes the link's values back with
+  every `+` left bare, and a bare `+` in a query reads as a space. The start link carried Google's
+  address as itself (`to=`), so Google's `scope=a+b` arrived as `scope=a b`, the signature failed,
+  and the page said the link had expired (reproduced in `tests/desktop/test_apps.py`). The
+  address now travels as base64url (`t=`), which nothing rewrites; a link made before (`to=`) is
+  still accepted, with its spaces put back. A refused start link writes
+  `desktop.apps.start_refused` with `reason=signature` (changed on its way, or never ours: "That
+  link didn't work") or `reason=expired` (older than 15 minutes). The same page was light text on
+  a white card in dark mode; its dark colours now come last.
 * **Log lines.** Server: `desktop.apps.sign_in_started`, `desktop.apps.upstream_refused`,
   `desktop.apps.upstream_unreachable` (a timeout or dropped connection: `path`, `error`,
   `elapsed_ms`; the app then reads "could not be reached" and Render shows a 200) and
