@@ -218,3 +218,99 @@ final class StoreFaceTests: XCTestCase {
     XCTAssertEqual(AgentFaces.worn(try XCTUnwrap(store.agent(id))), other)
   }
 }
+
+/** The New Agent sheet's pencil (AgentDraft, the founder, 13 October 2026): a face, a picture and a voice chosen before the agent exists. */
+@MainActor
+final class AgentDraftTests: XCTestCase {
+  private static let listed: [AppStore.VoiceChoice] = [("ljX1ZrXuDIIRVcmiVSyR", "Michael"), ("XcXEQzuLXRU9RcfWzEJt", "Veda"), ("s3TPKV1kjDlVtZbl4Ksh", "Adam"), ("WI5pMmcGGS32yI7yttoP", "Amanda"), ("NHRgOEwqx5WZNClv5sat", "Chelsea")].map { AppStore.VoiceChoice(id: $0.0, name: $0.1, sample: nil) }
+  private static let png = Data([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0])
+
+  func testUntouchedTheDraftIsTheFaceTheNameGets() {
+    let draft = AgentDraft(name: "Leo")
+    XCTAssertFalse(draft.chosen)
+    XCTAssertFalse(draft.resettable)
+    XCTAssertEqual(draft.shownFace(agents: []), AgentFaces.preview(name: "Leo", agents: []))
+    XCTAssertEqual(draft.shownFace(agents: [])?.gender, "male")
+    // The editor draws it wearing that face.
+    XCTAssertEqual(AgentFaces.worn(draft.agent(agents: [])), draft.shownFace(agents: []))
+  }
+
+  func testAFacePickedBringsAVoiceOfItsGender() throws {
+    var draft = AgentDraft(name: "Leo")
+    let woman = try XCTUnwrap(AgentFaces.pool.first { $0.gender == "female" })
+    draft.wear(woman, agents: [], voices: Self.listed)
+    XCTAssertTrue(draft.chosen)
+    XCTAssertEqual(draft.shownFace(agents: []), woman)
+    draft.settleVoice(agents: [], voices: Self.listed)
+    // Leo is a man's name; the woman's face picked for him decides his voice.
+    XCTAssertEqual(AgentFaces.voiceGender(draft.voiceId, voices: Self.listed), "female")
+    // A man's face then takes the voice back to a man's.
+    let man = try XCTUnwrap(AgentFaces.pool.first { $0.gender == "male" })
+    draft.wear(man, agents: [], voices: Self.listed)
+    XCTAssertEqual(AgentFaces.voiceGender(draft.voiceId, voices: Self.listed), "male")
+  }
+
+  func testAVoicePickedIsKeptWhileTheFaceAgrees() throws {
+    var draft = AgentDraft(name: "Maya")
+    draft.pickVoice("NHRgOEwqx5WZNClv5sat")
+    draft.settleVoice(agents: [], voices: Self.listed)
+    XCTAssertEqual(draft.voiceId, "NHRgOEwqx5WZNClv5sat")
+    let another = try XCTUnwrap(AgentFaces.pool.last { $0.gender == "female" })
+    draft.wear(another, agents: [], voices: Self.listed)
+    XCTAssertEqual(draft.voiceId, "NHRgOEwqx5WZNClv5sat")
+  }
+
+  func testAPictureIsWornInsteadOfAFaceAndResetGoesBackToTheName() throws {
+    var draft = AgentDraft(name: "Nora")
+    draft.setPicture(Self.png)
+    let agent = draft.agent(agents: [])
+    XCTAssertNil(AgentFaces.worn(agent))
+    guard case .own? = agent.picture else { return XCTFail("the picture should be shown") }
+    XCTAssertTrue(draft.resettable)
+    // A face picked after takes the picture's place.
+    draft.shuffle(gender: "female", agents: [], voices: [])
+    XCTAssertNil(draft.picture)
+    XCTAssertNotNil(AgentFaces.worn(draft.agent(agents: [])))
+    draft.reset(agents: [], voices: [])
+    XCTAssertFalse(draft.resettable)
+    XCTAssertEqual(draft.shownFace(agents: []), AgentFaces.preview(name: "Nora", agents: []))
+  }
+
+  func testShuffleSkipsTheFacesTheTeamWears() throws {
+    let women = AgentFaces.pool.filter { $0.gender == "female" }
+    var team = women.dropLast().enumerated().map { index, face -> Agent in
+      var row = Agent(id: "w\(index)", name: "Agent")
+      row.avatarVersion = face.version
+      return row
+    }
+    team.append(Agent(id: "theo", name: "Theo"))
+    // The name alone already gets the face no one wears; Shuffle from a worn one lands on it too.
+    var draft = AgentDraft(name: "Ava")
+    XCTAssertEqual(draft.shownFace(agents: team), women.last)
+    draft.wear(women[0], agents: team, voices: [])
+    draft.shuffle(gender: "female", agents: team, voices: [])
+    XCTAssertEqual(draft.shownFace(agents: team), women.last)
+  }
+
+  func testCreatingKeepsThePictureAndTheFaceAndNoFaceGoesOverThePicture() async throws {
+    let store = AppStore()
+    await store.attach(DemoBackend(seed: DemoData.seed(), pace: 0.01, call: nil))
+    await store.assignMissingFaces()
+    var draft = AgentDraft(name: "Nora")
+    let man = try XCTUnwrap(AgentFaces.pool.first { $0.gender == "male" })
+    draft.wear(man, agents: store.agents, voices: [])
+    draft.setPicture(Self.png)
+    let created = await store.createAgent(name: "Nora", draft: draft)
+    let id = try XCTUnwrap(created)
+    await store.assignMissingFaces()
+    let made = try XCTUnwrap(store.agent(id))
+    XCTAssertEqual(made.avatarShape, man.id)
+    XCTAssertNil(AgentFaces.worn(made), "the picture stays; no face is put on over it")
+    XCTAssertTrue(made.hasPicture)
+
+    // Nothing chosen: the face its name gets, as before.
+    let made2 = await store.createAgent(name: "Ava", draft: AgentDraft(name: "Ava"))
+    let plain = try XCTUnwrap(made2)
+    XCTAssertEqual(store.agent(plain)?.avatarShape, AgentFaces.preview(name: "Ava", agents: store.agents.filter { $0.id != plain })?.id)
+  }
+}

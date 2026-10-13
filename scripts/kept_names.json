@@ -568,6 +568,19 @@
       ],
       "match": "plotXY polar|poistrim polar|make-polar|\"Phi_approx\",\"polar\"",
       "reason": "highlight.js's own word lists for Maxima, Scheme and Stan name their maths function polar; the Mac app ships the library as the window ships it."
+    },
+    {
+      "kind": "guard",
+      "names": [
+        "grok",
+        "claidor"
+      ],
+      "paths": [
+        "ios/SimeonCore/Sources/SimeonCore/PlainWords.swift",
+        "desktop/source/host/extensions/transcript/agent-run-error.ts"
+      ],
+      "match": "eleven \\?labs|\\(SAND\\|SIMEON\\|CLAIDOR\\)_",
+      "reason": "The filter that keeps what is behind Simeon off the person's screen (PlainWords, simeonFacingProviderError) names the earlier names and setting prefixes it replaces."
     }
   ]
 }

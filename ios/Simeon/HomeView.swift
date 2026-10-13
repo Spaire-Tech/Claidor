@@ -996,7 +996,8 @@ struct ProblemAlert: ViewModifier {
     content.alert("Something went wrong", isPresented: Binding(get: { store.problem != nil }, set: { shown in if !shown && store.problem != nil { store.problem = nil } })) {
       Button("OK", role: .cancel) { store.problem = nil }
     } message: {
-      Text(store.problem ?? "")
+      // What failed, never the words behind it (PlainWords).
+      Text(store.problemShown ?? "")
     }
   }
 }

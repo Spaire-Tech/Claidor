@@ -281,6 +281,7 @@ final class GatewayTests: XCTestCase {
       { _ in HTTPAnswer(status: 200, body: json(#"{"accepted":true}"#)) },
       { _ in HTTPAnswer(status: 200, body: json(#"{"agent":{"id":"agent-9","name":"Nora"}}"#)) },
       { _ in HTTPAnswer(status: 200, body: json(#"{"agent":{"id":"group-1"}}"#)) },
+      { _ in HTTPAnswer(status: 200, body: json(#"{"agent":{"id":"agent-10","name":"Leo"}}"#)) },
     ])
     let api = SimeonAPI(base: URL(string: "https://x")!, clientVersion: "1", vault: vault, http: http)
     let backend = LiveBackend(gateway: Gateway(api: api, http: http))
@@ -298,6 +299,12 @@ final class GatewayTests: XCTestCase {
     // The face the sheet showed is kept on it; the host picks its colour.
     XCTAssertNil(create["avatarColor"])
     XCTAssertEqual(create["avatarShape"], "clay-03")
+    XCTAssertNil(create["voiceId"])
+    // The voice picked with the pencil goes with the agent (AgentDraft).
+    _ = try await backend.createAgent(name: "Leo", face: "clay-04", voiceId: "s3TPKV1kjDlVtZbl4Ksh")
+    let voiced = try JSON.parse(http.sent[4].httpBody!)
+    XCTAssertEqual(voiced["voiceId"], "s3TPKV1kjDlVtZbl4Ksh")
+    XCTAssertEqual(voiced["avatarShape"], "clay-04")
     XCTAssertEqual(create["isKickstartRequested"], true)
     XCTAssertEqual(try JSON.parse(http.sent[3].httpBody!)["memberAgentIds"], ["simeon", "iris"])
   }

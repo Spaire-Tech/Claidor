@@ -303,9 +303,14 @@ public enum ComputerStreamReason {
     return .keep
   }
 
-  /** The notice's words (`noticeText`). */
+  /**
+   * The notice's words (`noticeText`): the lead and the reason when it is
+   * plain (PlainWords); the reason in the screen's own terms (noVNC, the
+   * gateway, a page's script error) and the log's place stay in the log.
+   */
   public static func notice(lead: String, reason: String?, filePath: String?) -> String {
-    [lead, (reason?.isEmpty == false ? reason! : "No reason was reported yet."), filePath.map { "Details: \($0)" }].compactMap { $0 }.joined(separator: " ")
+    let said = reason.map { PlainWords.error($0, fallback: "") } ?? ""
+    return [lead, said.isEmpty ? "Try again in a little while." : said].joined(separator: " ")
   }
 
   /** Under a spinner up 20 s, and in "Can't reach…" at once. */

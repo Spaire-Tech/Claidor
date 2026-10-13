@@ -489,7 +489,15 @@ then given of that gender; in the editor, a face of the other gender than the vo
 voice of its gender with it. Faces are given by the apps (`StoreFaces.swift`, on every roster
 change, to every agent with no picture, new or from before), not by the engine: no new host
 bundle is needed. Until an app has run once after an agent is hired, that agent has no
-picture, and the web app (out of this change) draws its butterfly. Mentions in messages are
+picture, and the web app (out of this change) draws its butterfly. On the iPhone's New Agent
+sheet the face has the agent page's pencil (13 October 2026): the same editor (Faces, Generate,
+Upload, the voice) works on the agent to be (`AgentDraft` in SimeonCore) and nothing is sent until
+Create; then the face and the voice go with `createAgent` (`avatarShape`, `voiceId`) and a
+picture drawn or uploaded right after it, with no face put on over it
+(`AppStore.createAgent(name:draft:)`). A face picked brings a voice of its gender, so a woman's
+face picked for "Leo" speaks with a woman's voice. Untouched, the agent is made as before. The
+Mac makes agents from the new chat's To: line, which shows no face; there the pencil is on the
+agent's pane once it exists. Mentions in messages are
 the face in a glass pill with the name in the app's blue; names are no longer coloured. A tap
 (a click on the Mac, with the pointing hand) on a pill opens that agent's chat: each pill is
 drawn on its own line of words and records where it was drawn (`MentionSpots`), and the tap is

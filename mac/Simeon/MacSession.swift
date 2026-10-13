@@ -221,7 +221,7 @@ final class MacSession {
     do {
       appleRunsOn = try await api.deleteAccount()
     } catch {
-      return error.localizedDescription
+      return PlainWords.error(error.localizedDescription, fallback: "Try again in a little while.")
     }
     store.detach()
     self.api = nil

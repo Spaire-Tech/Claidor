@@ -181,8 +181,9 @@ final class PluginCallsTests: XCTestCase {
     box.answers["createAgent"] = ["ok": true]
     let none = await store.makePluginSetupAgent()
     XCTAssertNil(none.id)
-    XCTAssertEqual(none.failure, "createAgent: no agent in the answer")
-    XCTAssertEqual(Plugins.agentFailedNotice(none.failure ?? "").text, "Couldn't start the agent: createAgent: no agent in the answer")
+    // The gateway's own words never show (PlainWords, 13 October 2026).
+    XCTAssertEqual(none.failure, PlainWords.unavailable)
+    XCTAssertEqual(Plugins.agentFailedNotice(none.failure ?? "").text, "Couldn't start the agent: \(PlainWords.unavailable)")
 
     let signedOut = AppStore()
     let out = await signedOut.makePluginSetupAgent()

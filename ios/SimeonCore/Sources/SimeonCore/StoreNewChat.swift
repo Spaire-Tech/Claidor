@@ -54,6 +54,6 @@ extension AppStore {
   /** The computer's refusal as the window reads it: its "50 is the maximum" is the limit. */
   static func createFailure(_ error: Error) -> CreateFailure {
     let text = (error as? GatewayError)?.message ?? error.localizedDescription
-    return text.contains(NewChat.limitError) ? .limit : .other(text)
+    return text.contains(NewChat.limitError) ? .limit : .other(PlainWords.error(text, fallback: "Couldn’t create the agent. Try again in a little while."))
   }
 }

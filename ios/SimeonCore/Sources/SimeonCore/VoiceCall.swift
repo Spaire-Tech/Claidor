@@ -471,7 +471,9 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
       if lock.withLock({ state?.connectedAt != nil }) {
         log("banner: sdk error: \(message)")
       } else {
-        fail(message.isEmpty ? VoiceCallText.couldNotConnect : message)
+        // The voice service's own words go to the log; the person reads plain ones (PlainWords).
+        log("banner: sdk error before connecting: \(message)")
+        fail(message.isEmpty ? VoiceCallText.couldNotConnect : PlainWords.error(message, fallback: VoiceCallText.couldNotConnect))
       }
     }
   }

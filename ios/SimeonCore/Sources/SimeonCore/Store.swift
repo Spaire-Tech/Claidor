@@ -156,6 +156,8 @@ public final class AppStore {
   @ObservationIgnored public internal(set) var usageReadAt: Date?
   /** Something went wrong that the person should hear about, once. */
   public var problem: String?
+  /** The problem as the person reads it (PlainWords): what failed, never the words behind it. */
+  public var problemShown: String? { problem.map { PlainWords.problem($0) } }
   /** Each chat's first ask to use this Mac still waiting (`entries.find(NNe)`): the Mac's dock above the composer. */
   public private(set) var localAsks: [String: LocalAsk] = [:]
   /** Auto-review approvals answered here, by entry, until the box's own copy says so (the window's `QWn`). */
@@ -1057,7 +1059,7 @@ public final class AppStore {
   public private(set) var composerNotice: ComposerNotice?
 
   public func showComposerNotice(_ text: String, in agentId: String, seconds: Double = 6) {
-    let notice = ComposerNotice(agentId: agentId, text: text)
+    let notice = ComposerNotice(agentId: agentId, text: PlainWords.error(text))
     composerNotice = notice
     Task { @MainActor [weak self] in
       try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
@@ -1564,6 +1566,41 @@ public final class AppStore {
     guard let backend else { return nil }
     do {
       let id = try await backend.createAgent(name: name, face: face?.id)
+      await reloadRoster()
+      return id
+    } catch {
+      problem = "Couldn't create \(name): \(error.localizedDescription)"
+      return nil
+    }
+  }
+
+  /**
+   * New Agent with what the person chose with the pencil (AgentDraft): the
+   * face and the voice go with the agent; a picture drawn or uploaded goes
+   * right after it, and no face is put on over it (a pass giving faces that
+   * already took the new agent finishes first). Nothing chosen: as above.
+   */
+  public func createAgent(name: String, draft: AgentDraft) async -> String? {
+    guard draft.chosen else { return await createAgent(name: name, face: draft.shownFace(agents: agents)) }
+    guard let backend else { return nil }
+    var draft = draft
+    draft.name = name
+    draft.settleVoice(agents: agents, voices: await voices())
+    do {
+      let id = try await backend.createAgent(name: name, face: draft.shownFace(agents: agents)?.id, voiceId: draft.voiceId)
+      if let picture = draft.picture {
+        let claimed = facesSent.contains(id)
+        facesSent.insert(id)
+        if claimed, let givingFaces { await givingFaces.value }
+        do {
+          _ = try await backend.command("setAgentAvatarBytes", ["id": .string(id), "pngBase64": .string(picture.base64EncodedString())])
+          pendingFaces[id] = nil
+        } catch {
+          // Its face then, as any agent with no picture.
+          Trace.mark("picture for new agent \(id) not saved: \(error.localizedDescription)")
+          facesSent.remove(id)
+        }
+      }
       await reloadRoster()
       return id
     } catch {

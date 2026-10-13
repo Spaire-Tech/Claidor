@@ -66,6 +66,13 @@ public struct Tray: Identifiable, Hashable, Sendable {
 
   /** The request id to copy, when there is one. */
   public var copyableRequestId: String? { requestId.flatMap { $0.isEmpty ? nil : $0 } }
+
+  /** The title as the person reads it (PlainWords): nothing behind Simeon named. */
+  public var shownTitle: String { PlainWords.error(title, fallback: "Something went wrong") }
+  /** The words under it (PlainWords): a model company's refusal, a status code, a setting's name give way to a plain sentence. */
+  public var shownDetail: String { PlainWords.error(detail, fallback: PlainWords.noAnswer) }
+  /** Its links, only while its words are its own: a refusal's links lead behind Simeon (a model company's billing page). */
+  public var shownActions: [Action] { PlainWords.isInternal(detail) || PlainWords.isInternal(title) ? [] : actions }
 }
 
 /**

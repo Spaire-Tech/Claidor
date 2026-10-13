@@ -162,7 +162,7 @@ final class ConnectAppsModel {
     }
   }
 
-  private func fail(_ error: Error) { show(Plugins.Notice(isError: true, text: error.localizedDescription)) }
+  private func fail(_ error: Error) { show(Plugins.Notice(isError: true, text: PlainWords.error(error.localizedDescription))) }
 
   /** One of the busy actions, its failure as the notice (`runReportingNotice`). */
   private func reporting(_ work: () async throws -> Void) async {
@@ -238,7 +238,7 @@ final class ConnectAppsModel {
       await loadSkills()
       return (added, nil)
     } catch {
-      return (0, error.localizedDescription)
+      return (0, PlainWords.error(error.localizedDescription))
     }
   }
 

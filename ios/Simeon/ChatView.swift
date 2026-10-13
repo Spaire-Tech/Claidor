@@ -694,6 +694,9 @@ struct ChatComposer: View {
   /** Where the draft is kept: the chat's, or its thread's. */
   private var draftKey: String { AppStore.draftScope(agentId, thread: thread) }
 
+  /** The approaching-limit lines closed (`ApproachingClosed`), kept between launches. */
+  @AppStorage(ApproachingClosed.key) private var approachingClosed = ""
+
   /** A card in this chat carries the server's 402 for spent credits (drawn as the banner, not as a card). */
   private var outOfCredits: Bool { store.trayList.shown(for: agentId).contains(where: PhoneUpgrade.isOutOfCredits) }
 
@@ -742,6 +745,10 @@ struct ChatComposer: View {
       if let words = PhoneUpgrade.banner(access: store.access, usage: store.usage.summary, outOfCredits: outOfCredits) {
         // No plan, or the credits spent (12 October 2026): why, and the plans; Send waits meanwhile when there is no plan.
         AccessNotice(words: words)
+      } else if let near = PhoneUpgrade.approaching(access: store.access, usage: store.usage.summary), !ApproachingClosed.contains(near.key, in: approachingClosed) {
+        // Near the limit (13 October 2026): the same quiet line, which the person can close until the next step.
+        AccessNotice(words: near.words) { withAnimation(.snappy) { approachingClosed = ApproachingClosed.adding(near.key, to: approachingClosed) } }
+          .transition(.opacity)
       }
       #if os(macOS)
       if let ask = store.localAsks[agentId] {
@@ -889,6 +896,11 @@ struct ChatComposer: View {
     .onChange(of: outOfCredits, initial: true) { was, now in
       guard now else { return }
       Task { if was { await store.loadUsage() } else { await store.refreshUsage() } }
+    }
+    // The usage read as the chat opens and as each answer ends (at most every 30 s), so the line near the limit shows in time.
+    .task(id: agentId) { await store.loadUsage() }
+    .onChange(of: store.agent(agentId)?.isRunningTurn ?? false) { was, now in
+      if was && !now { Task { await store.loadUsage() } }
     }
     #if os(macOS)
     // ⌘L and ⌘I put the cursor here (the Mac's Agent menu).
@@ -2109,6 +2121,8 @@ struct SelectableText: UIViewRepresentable {
  */
 struct AccessNotice: View {
   let words: SandAccess.Words
+  /** Close, for the line near the limit (the others stay while they are true). */
+  var close: (() -> Void)? = nil
   @Environment(\.openURL) private var openURL
   @Environment(AppStore.self) private var store
   @State private var purchases = Purchases.shared
@@ -2139,6 +2153,17 @@ struct AccessNotice: View {
         .buttonStyle(.borderedProminent)
         .buttonBorderShape(.capsule)
         .controlSize(.small)
+      }
+      if let close {
+        Button(action: close) {
+          Image(systemName: "xmark").font(.system(size: 11, weight: .semibold)).foregroundStyle(Ink.secondary)
+            .frame(width: 24, height: 24)
+            .frame(width: 44, height: 44)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .padding(.vertical, -12).padding(.trailing, -10)
+        .accessibilityLabel("Close")
       }
     }
     .padding(.horizontal, 14).padding(.vertical, 10)

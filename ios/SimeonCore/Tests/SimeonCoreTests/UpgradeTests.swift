@@ -65,4 +65,38 @@ final class UpgradeTests: XCTestCase {
     let other = try XCTUnwrap(Tray(["id": "t2", "kind": "error", "agentId": "a", "title": "Agent failed to respond", "detail": "Hourly spending budget reached (code 40201)."]))
     XCTAssertFalse(PhoneUpgrade.isOutOfCredits(other), "the hourly brake is not a plan matter")
   }
+
+  /** Near the limit (13 October 2026): a quiet line at 80% and again at 95%, never with the spent banner, closed per step and period. */
+  func testTheLineNearTheLimit() throws {
+    let reset = now.addingTimeInterval(3 * 86_400)
+    let resetIso = ISO8601DateFormatter().string(from: reset)
+    func week(_ used: Int) -> UsageSummary {
+      usage(["subscriptionStatus": "active", "tier": "standard", "creditsLimit": 1_000, "creditsUsed": .number(Double(used)), "creditsRemaining": .number(Double(1_000 - used)), "periodEnd": .string(resetIso)])
+    }
+    let utc = TimeZone(identifier: "UTC")!
+    XCTAssertNil(PhoneUpgrade.approaching(access: granted, usage: week(500), now: now, timeZone: utc))
+    let at80 = try XCTUnwrap(PhoneUpgrade.approaching(access: granted, usage: week(812), now: now, timeZone: utc))
+    XCTAssertEqual(at80.words.title, "You’re approaching your usage limit")
+    XCTAssertEqual(at80.words.body, "You’ve used 81% of this week’s credits. They reset \(PhoneUpgrade.day(reset, now: now, timeZone: utc)).")
+    XCTAssertTrue(at80.words.body.contains("They reset on "))
+    XCTAssertEqual(at80.words.action, "Upgrade")
+    XCTAssertEqual(at80.step, 80)
+    let at95 = try XCTUnwrap(PhoneUpgrade.approaching(access: granted, usage: week(960), now: now, timeZone: utc))
+    XCTAssertEqual(at95.step, 95)
+    XCTAssertNotEqual(at80.key, at95.key)
+    // Spent: the banner says so, not this line.
+    XCTAssertNil(PhoneUpgrade.approaching(access: granted, usage: week(1_000), now: now, timeZone: utc))
+    XCTAssertNil(PhoneUpgrade.approaching(access: paymentRequired, usage: week(900), now: now, timeZone: utc))
+    // The free month: its own words, no reset.
+    let trial = usage(["subscriptionStatus": "trialing", "creditsLimit": 1_000, "creditsUsed": 900, "creditsRemaining": 100])
+    XCTAssertEqual(PhoneUpgrade.approaching(access: granted, usage: trial, now: now, timeZone: utc)?.words.body, "You’ve used 90% of your free credits.")
+    // Where the button goes nowhere, only the words.
+    XCTAssertNil(PhoneUpgrade.withoutUpgrade(at80.words).action)
+    XCTAssertEqual(PhoneUpgrade.withoutUpgrade(at80.words).body, at80.words.body)
+    // Closed at 80%, it comes back at 95%.
+    let kept = ApproachingClosed.adding(at80.key, to: "")
+    XCTAssertTrue(ApproachingClosed.contains(at80.key, in: kept))
+    XCTAssertFalse(ApproachingClosed.contains(at95.key, in: kept))
+    XCTAssertEqual(PhoneUpgrade.day(now.addingTimeInterval(3_600), now: now, timeZone: utc) == "today" || PhoneUpgrade.day(now.addingTimeInterval(3_600), now: now, timeZone: utc) == "tomorrow", true)
+  }
 }

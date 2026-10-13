@@ -219,7 +219,7 @@ final class AvatarEditorModel {
 
   /** The host's words, without Electron's "Error invoking remote method" (`h$n`). */
   static func words(_ error: Error) -> String {
-    (error as? GatewayError)?.message ?? error.localizedDescription
+    PlainWords.problem((error as? GatewayError)?.message ?? error.localizedDescription, fallback: "Couldn’t change the avatar. Try again in a little while.")
   }
 }
 

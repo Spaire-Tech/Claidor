@@ -56,6 +56,54 @@ public enum PhoneUpgrade {
     return SandAccess.Words(title: "You’re out of credits", body: "Choose a plan to keep your agents working.", action: upgrade)
   }
 
+  /**
+   * Near the limit (the founder, 13 October 2026, as Claude says "You’re
+   * approaching your usage limit"; the Electron window never had one): a
+   * quiet line over the composer, not red, once 80% of the credits are used
+   * and again at 95%, while there are credits left and nothing else is said
+   * there (`banner`). Closed, it stays closed for that step of that period.
+   */
+  public struct Approaching: Equatable, Sendable {
+    public let words: SandAccess.Words
+    /** The step crossed: 80, then 95. */
+    public let step: Int
+    /** What closing it remembers: the period's end and the step. */
+    public let key: String
+  }
+
+  public static let approachingTitle = "You’re approaching your usage limit"
+  public static let approachingSteps = [80, 95]
+
+  public static func approaching(access: SandAccess, usage: UsageSummary?, now: Date = Date(), timeZone: TimeZone = .current) -> Approaching? {
+    guard banner(access: access, usage: usage) == nil, let usage, usage.hasNonZeroIncludedLimit, usage.hasAvailableUsage,
+          let percent = usage.usagePercent, percent < 100,
+          let step = approachingSteps.last(where: { percent >= Double($0) }) else { return nil }
+    let used = Int(percent.rounded(.down))
+    let body: String
+    if usage.isTrial {
+      body = "You’ve used \(used)% of your free credits."
+    } else if let reset = usage.resetMs.map({ Date(timeIntervalSince1970: $0 / 1000) }), reset > now {
+      body = "You’ve used \(used)% of this week’s credits. They reset \(day(reset, now: now, timeZone: timeZone))."
+    } else {
+      body = "You’ve used \(used)% of this week’s credits."
+    }
+    return Approaching(words: SandAccess.Words(title: approachingTitle, body: body, action: upgrade), step: step, key: "\(Int(usage.resetMs ?? 0))|\(step)")
+  }
+
+  /** "today", "tomorrow", else "on Monday", in the person's time zone. */
+  static func day(_ date: Date, now: Date, timeZone: TimeZone) -> String {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = timeZone
+    let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: now), to: calendar.startOfDay(for: date)).day ?? 0
+    if days <= 0 { return "today" }
+    if days == 1 { return "tomorrow" }
+    let format = DateFormatter()
+    format.locale = Locale(identifier: "en_US_POSIX")
+    format.timeZone = timeZone
+    format.dateFormat = "EEEE"
+    return "on " + format.string(from: date)
+  }
+
   /** Where the banner's button goes (as Settings' Usage & Billing routes its own). */
   public enum Route: Equatable, Sendable {
     /** The App Store's plans, on the plan above when there is one (an Apple plan's upgrade). */
@@ -81,6 +129,8 @@ public enum PhoneUpgrade {
    */
   public static func withoutUpgrade(_ words: SandAccess.Words) -> SandAccess.Words {
     guard words.action != nil else { return words }
+    // Near the limit, the line says only how much is used.
+    if words.title == approachingTitle { return SandAccess.Words(title: words.title, body: words.body, action: nil) }
     let body = words.title == "This week’s credits are used" ? "They reset on Monday." : "Your agents wait until your plan has credits again."
     return SandAccess.Words(title: words.title, body: body, action: nil)
   }
@@ -88,5 +138,23 @@ public enum PhoneUpgrade {
   /** The server's sentence for spent credits (402, code 40200), as the chat's card carries it. */
   public static func isOutOfCredits(_ tray: Tray) -> Bool {
     tray.detail.contains("(code 40200)") || tray.title.contains("(code 40200)")
+  }
+}
+
+/**
+ * The approaching-limit lines the person closed (`PhoneUpgrade.Approaching`),
+ * one key per period and step, kept as one line of text in the app's
+ * settings; the last twelve are enough.
+ */
+public enum ApproachingClosed {
+  public static let key = "simeon.usage.approachingClosed"
+
+  public static func contains(_ near: String, in kept: String) -> Bool {
+    kept.split(separator: ",").contains { $0 == near }
+  }
+
+  public static func adding(_ near: String, to kept: String) -> String {
+    let keys = kept.split(separator: ",").map(String.init).filter { $0 != near } + [near]
+    return keys.suffix(12).joined(separator: ",")
   }
 }

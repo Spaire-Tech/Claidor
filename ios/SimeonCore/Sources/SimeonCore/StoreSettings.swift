@@ -156,7 +156,7 @@ extension AppStore {
       guard let text = answer["portalUrl"]?.string, text.hasPrefix("https://"), let url = URL(string: text) else { return (nil, fallback) }
       return (url, nil)
     } catch {
-      let message = error.localizedDescription
+      let message = PlainWords.error(error.localizedDescription, fallback: fallback)
       return (nil, message.isEmpty ? fallback : message)
     }
   }

@@ -83,7 +83,8 @@ public enum CallBanner {
     case .working: return call.activity ?? ""
     case .speaking, .listening: return Chat.callClock(call.seconds(now: now))
     case .ended: return call.connectedAt == nil ? VoiceCallText.ended : "\(VoiceCallText.ended) · \(Chat.callClock(call.seconds(now: now)))"
-    case .failed: return call.status.isEmpty ? VoiceCallText.couldNotConnect : call.status
+    // The voice service's own words never show (PlainWords).
+    case .failed: return call.status.isEmpty ? VoiceCallText.couldNotConnect : PlainWords.error(call.status, fallback: VoiceCallText.couldNotConnect)
     }
   }
 

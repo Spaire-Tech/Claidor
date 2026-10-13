@@ -275,7 +275,7 @@ final class SessionController {
       } catch {
         guard let self, self.api === signedIn else { return }
         let unreachable = GatewayError.neverArrived(error) || error is URLError
-        self.handOff = .failed(unreachable ? Onboarding.unreachable : error.localizedDescription)
+        self.handOff = .failed(unreachable ? Onboarding.unreachable : PlainWords.error(error.localizedDescription))
       }
     }
   }
@@ -500,7 +500,7 @@ final class SessionController {
     do {
       appleRunsOn = try await api.deleteAccount()
     } catch {
-      return error.localizedDescription
+      return PlainWords.error(error.localizedDescription, fallback: "Try again in a little while.")
     }
     store.detach()
     Purchases.shared.stop()

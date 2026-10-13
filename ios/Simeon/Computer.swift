@@ -235,7 +235,7 @@ struct ComputerSheet: View {
         screen = next
         if next.socket != nil || next.state == "demo" { return }
       } catch {
-        problem = "The computer didn't answer: \(error.localizedDescription)"
+        problem = PlainWords.problem("The computer didn't answer: \(error.localizedDescription)")
         return
       }
       try? await Task.sleep(nanoseconds: 3_000_000_000)

@@ -211,7 +211,7 @@ final class PluginsModel {
     }
   }
 
-  private func fail(_ error: Error) { show(Plugins.Notice(isError: true, text: error.localizedDescription)) }
+  private func fail(_ error: Error) { show(Plugins.Notice(isError: true, text: PlainWords.error(error.localizedDescription))) }
 
   /** One of the overlay's busy actions, its failure as the notice (`runReportingNotice`). */
   private func reporting(_ work: () async throws -> Void) async {
@@ -279,7 +279,7 @@ final class PluginsModel {
       await loadSkills(agentId)
       return (added, nil)
     } catch {
-      return (0, error.localizedDescription)
+      return (0, PlainWords.error(error.localizedDescription))
     }
   }
 
@@ -463,7 +463,7 @@ final class PluginsModel {
       toolFailures[serverId] = nil
       await refreshServers()
     } catch {
-      toolFailures[serverId] = error.localizedDescription
+      toolFailures[serverId] = PlainWords.error(error.localizedDescription)
       await loadTools(serverId)
     }
   }

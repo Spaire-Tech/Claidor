@@ -77,7 +77,7 @@ struct FirstRunScreen: View {
         made = .some(id)
         if leaving { open(id) }
       } catch {
-        handOffError = (error as? GatewayError)?.message ?? error.localizedDescription
+        handOffError = PlainWords.error((error as? GatewayError)?.message ?? error.localizedDescription)
       }
       handingOff = false
     }

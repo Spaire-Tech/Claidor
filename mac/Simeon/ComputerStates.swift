@@ -588,6 +588,10 @@ struct DiskBanner: View {
 struct AccessNotice: View {
   let words: SandAccess.Words
   let look: Look
+  /** What its button does, when not Simeon Labs' page (the credits' lines open Usage & Billing). */
+  var action: (() -> Void)? = nil
+  /** Close, for the line near the limit (13 October 2026). */
+  var close: (() -> Void)? = nil
   @State private var hovering = false
 
   var body: some View {
@@ -605,7 +609,7 @@ struct AccessNotice: View {
       }
       .frame(maxWidth: .infinity, alignment: .leading)
       if let action = words.action {
-        Button { NSWorkspace.shared.open(SandAccess.page) } label: {
+        Button { if let open = self.action { open() } else { NSWorkspace.shared.open(SandAccess.page) } } label: {
           Text(action)
             .font(.system(size: 12))
             .cssLineHeight(16, size: 12)
@@ -618,6 +622,18 @@ struct AccessNotice: View {
         }
         .buttonStyle(.hand)
         .onHover { inside in withAnimation(.easeOut(duration: 0.12)) { hovering = inside } }
+      }
+      if let close {
+        Button(action: close) {
+          Image(systemName: "xmark")
+            .font(.system(size: 9, weight: .semibold))
+            .foregroundStyle(look.inkSecondary)
+            .frame(width: 20, height: 20)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.hand)
+        .help("Close")
+        .accessibilityLabel("Close")
       }
     }
     .padding(.horizontal, 12)

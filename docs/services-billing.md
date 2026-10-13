@@ -188,6 +188,30 @@ Every metered route reads it before calling a provider (`budget_refusal`,
 They reset on Monday …", "Your trial credits are used up …", "No active
 plan …", each naming `app.simeonlabs.com/billing`.
 
+**What the apps say about the credits** (iPhone and Mac, over the composer,
+grey, never red; `ios/SimeonCore/Sources/SimeonCore/Upgrade.swift`):
+spent ("This week’s credits are used", "You’ve used your free credits",
+with Upgrade), and since 13 October 2026 **near the limit**: "You’re
+approaching your usage limit / You’ve used 81% of this week’s credits. They
+reset on Monday." from 80% of `creditsLimit`, again from 95%
+(`PhoneUpgrade.approaching`). The person can close it; it stays closed for
+that step of that period (`ApproachingClosed`, kept in the app's settings).
+The Electron window never had this line. The apps read the quota as a chat
+opens and as each answer ends, at most every 30 s (`loadUsage`). On the
+iPhone, Upgrade opens the plans (or the web, by the rules of
+`PhoneUpgrade.route`); on the Mac, Settings › Usage & Billing.
+
+**What the apps never say.** No banner, card, alert or notice names what is
+behind Simeon: a model company (its credits, limits or name), a status code,
+a setting's name, an address or the plumbing's words. Since 13 October 2026
+the engine turns such a refusal into "Simeon isn't available at the moment.
+Try again in a little while." (`simeonFacingProviderError`,
+`desktop/source/host/extensions/transcript/agent-run-error.ts`, live once a
+new host bundle is published), and both apps pass every error they show
+through `PlainWords` (`ios/SimeonCore/Sources/SimeonCore/PlainWords.swift`),
+which keeps plain words and replaces the rest. The words themselves stay in
+the log (the computer's `/tmp/sand-host.log`, the apps' trace).
+
 `GET /desktop/api/user/quota` carries the plan to the app. Its first eight
 keys are what every shipped app reads and keep their meaning (`creditsLimit`,
 `creditsUsed`, `creditsRemaining`, `periodStart`, `periodEnd`, …). The keys

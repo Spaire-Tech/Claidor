@@ -17,10 +17,13 @@ import SimeonCore
  * The crop drags and pinches as Apple's own photo crop, with the Mac's zoom
  * (−, a slider from 1 to 5, +), Restart and Set avatar. Under it, Reset
  * face: back to the face the agent was given. A group starts on Upload and
- * has no Faces tab.
+ * has no Faces tab. Opened from the New Agent sheet, it edits the agent to
+ * be (AgentDraft): the same tabs and voice, kept in the sheet until Create.
  */
 struct AvatarEditor: View {
   let agentId: String
+  /** The New Agent sheet's agent to be, when there is no agent yet. */
+  let draft: Binding<AgentDraft>?
   @Environment(AppStore.self) private var store
   @Environment(\.dismiss) private var dismiss
   @State private var model: AvatarEditing
@@ -34,12 +37,26 @@ struct AvatarEditor: View {
 
   init(agentId: String, isGroup: Bool) {
     self.agentId = agentId
+    draft = nil
     _model = State(initialValue: AvatarEditing(agentId: agentId, isGroup: isGroup))
+  }
+
+  /** The pencil on the New Agent sheet: the agent to be's face, picture and voice. */
+  init(draft: Binding<AgentDraft>) {
+    agentId = ""
+    self.draft = draft
+    _model = State(initialValue: AvatarEditing(draft: draft))
+  }
+
+  /** The agent shown: the one being made, else the agent edited. */
+  private var shown: Agent? {
+    if let draft { return draft.wrappedValue.agent(agents: store.agents) }
+    return store.agent(agentId)
   }
 
   var body: some View {
     NavigationStack {
-      if let agent = store.agent(agentId) {
+      if let agent = shown {
         ScrollView {
           VStack(spacing: 20) {
             if model.candidate == nil {
@@ -61,7 +78,7 @@ struct AvatarEditor: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .fixedSize(horizontal: false, vertical: true)
             }
-            if model.candidate == nil, let reset = AvatarEditorWords.reset(agent) {
+            if model.candidate == nil, let reset = resetWords(agent) {
               Button(reset) { model.reset(store: store) }
                 .buttonStyle(PillButtonStyle(primary: false))
                 .disabled(model.saving)
@@ -78,7 +95,9 @@ struct AvatarEditor: View {
         .task {
           guard !agent.isGroup else { return }
           let list = await store.voices()
-          _ = await store.ensureVoice(agent.id)
+          // The agent to be has no voice to settle yet: the picker shows the one it would get (AgentDraft.voice).
+          if draft == nil { _ = await store.ensureVoice(agent.id) }
+          model.voices = list
           voices = list
         }
         .onChange(of: photo) { _, item in
@@ -101,6 +120,12 @@ struct AvatarEditor: View {
     }
   }
 
+  /** "Reset face" while there is something to undo (the agent to be: a face or picture chosen). */
+  private func resetWords(_ agent: Agent) -> String? {
+    if let draft { return draft.wrappedValue.resettable ? "Reset face" : nil }
+    return AvatarEditorWords.reset(agent)
+  }
+
   /** The avatar as it is: the agent's picture, or a group's members. */
   private func preview(_ agent: Agent) -> some View {
     AgentAvatar(agent: agent, members: store.members(of: agent))
@@ -113,7 +138,7 @@ struct AvatarEditor: View {
   private func faces(_ agent: Agent) -> some View {
     let gender = model.gender ?? AvatarEditorWords.gender(agent)
     let worn = AgentFaces.worn(agent)
-    let isChief = Agent.chiefOfStaff(in: store.agents)?.id == agent.id
+    let isChief = draft == nil && Agent.chiefOfStaff(in: store.agents)?.id == agent.id
     // The Chief of Staff can always go back to Simeon's own face; no one else is offered it.
     let simeon: [AgentFace] = isChief && gender == AgentFaces.simeon?.gender ? AgentFaces.simeon.map { [$0] } ?? [] : []
     let shown = simeon + AgentFaces.pool.filter { $0.gender == gender }
@@ -148,12 +173,14 @@ struct AvatarEditor: View {
     .accessibilityElement(children: .contain)
     .accessibilityLabel("Faces")
     if !voices.isEmpty {
-      let current = AgentVoices.kept(agent.voiceId, listed: voices) ?? AppStore.defaultVoiceId
+      let current = draft.flatMap { $0.wrappedValue.voice(agents: store.agents, voices: voices) } ?? AgentVoices.kept(agent.voiceId, listed: voices) ?? AppStore.defaultVoiceId
       let voice = voices.first { $0.id == current } ?? voices.first
       VStack(alignment: .leading, spacing: 6) {
         Text("Voice").font(.system(size: 12, weight: .semibold)).foregroundStyle(Ink.secondary).padding(.horizontal, 2)
         HStack(spacing: 8) {
-          Picker("Voice", selection: Binding(get: { voice?.id ?? current }, set: { id in Task { await store.setVoice(agent.id, id) } })) {
+          Picker("Voice", selection: Binding(get: { voice?.id ?? current }, set: { id in
+            if let draft { draft.wrappedValue.pickVoice(id) } else { Task { await store.setVoice(agent.id, id) } }
+          })) {
             ForEach(voices) { Text($0.name).tag($0.id) }
           }
           .pickerStyle(.menu)
@@ -288,6 +315,10 @@ final class AvatarEditing {
 
   let agentId: String
   let isGroup: Bool
+  /** The agent to be (the New Agent sheet's pencil): changes are kept in it, nothing sent until Create. */
+  let draft: Binding<AgentDraft>?
+  /** The voices listed, for a face picked for the agent to be to bring a voice of its gender. */
+  var voices: [AppStore.VoiceChoice] = []
   var tab: Tab
   var prompt = ""
   var candidate: Candidate?
@@ -304,7 +335,15 @@ final class AvatarEditing {
   init(agentId: String, isGroup: Bool) {
     self.agentId = agentId
     self.isGroup = isGroup
+    draft = nil
     tab = isGroup ? .upload : .faces
+  }
+
+  init(draft: Binding<AgentDraft>) {
+    agentId = ""
+    isGroup = false
+    self.draft = draft
+    tab = .faces
   }
 
   /** A tab (`X`): the picture, the drawing and the error go; the description stays. */
@@ -325,21 +364,31 @@ final class AvatarEditing {
 
   /** A face put on at once (`AppStore.wearFace`: the picture, the face kept, a voice of its gender when it changes). */
   func wear(_ face: AgentFace, store: AppStore) {
+    if let draft { return change(draft) { $0.wear(face, agents: store.agents, voices: voices) } }
     let agentId = agentId
     run { try await store.wearFace(agentId, face) }
   }
 
   /** Shuffle: the next face of `gender` no other agent wears. */
   func shuffle(gender: String, store: AppStore) {
+    if let draft { return change(draft) { $0.shuffle(gender: gender, agents: store.agents, voices: voices) } }
     let agentId = agentId
     run { _ = try await store.shuffleFace(agentId, gender: gender) }
   }
 
-  /** Reset face: back to the face the agent was given. */
+  /** Reset face: back to the face the agent was given (the agent to be: the one its name gets). */
   func reset(store: AppStore) {
     gender = nil
+    if let draft { return change(draft) { $0.reset(agents: store.agents, voices: voices) } }
     let agentId = agentId
     run { _ = try await store.resetFace(agentId) }
+  }
+
+  /** A change to the agent to be: at once, nothing sent. */
+  private func change(_ draft: Binding<AgentDraft>, _ edit: (inout AgentDraft) -> Void) {
+    Haptics.select()
+    error = nil
+    edit(&draft.wrappedValue)
   }
 
   private func run(_ change: @escaping @MainActor () async throws -> Void) {
@@ -396,7 +445,9 @@ final class AvatarEditing {
       }
       let candidate = Candidate(image: fitted, crop: AvatarCrop(width: Double(fitted.size.width), height: Double(fitted.size.height)))
       if closed {
-        if let png = Self.export(candidate) { try? await store.setAvatarImage(agentId, png: png) }
+        if let png = Self.export(candidate) {
+          if let draft { draft.wrappedValue.setPicture(png) } else { try? await store.setAvatarImage(agentId, png: png) }
+        }
       } else {
         self.candidate = candidate
       }
@@ -415,6 +466,13 @@ final class AvatarEditing {
     guard let candidate, !saving else { return }
     guard let png = Self.export(candidate) else {
       error = AvatarEditorWords.exportFailed
+      return
+    }
+    if let draft {
+      // The agent to be wears it; it is sent with the agent at Create.
+      draft.wrappedValue.setPicture(png)
+      Haptics.success()
+      close()
       return
     }
     saving = true
@@ -464,7 +522,7 @@ final class AvatarEditing {
 
   /** The host's words, without the bridge's own (`h$n`). */
   static func words(_ error: Error) -> String {
-    (error as? GatewayError)?.message ?? error.localizedDescription
+    PlainWords.problem((error as? GatewayError)?.message ?? error.localizedDescription, fallback: "Couldn’t change the avatar. Try again in a little while.")
   }
 }
 
