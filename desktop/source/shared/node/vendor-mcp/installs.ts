@@ -1,6 +1,7 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { connectorStoreDir } from "../connector-account-scope.js";
+import { vendorMcpConnectorById } from "./catalog.js";
 
 /**
  * What the vendor's sign-in left us (24 September 2026): a bearer token for
@@ -94,6 +95,23 @@ export function appendVendorMcpSigninLog(rootDir: string, line: string, now: () 
   }
 }
 
+/**
+ * An app that moved from Simeon Labs' apps service to its maker's own server
+ * (13 October 2026: Asana, Todoist, Intercom, Klaviyo, Ashby, Calendly,
+ * Cal.com, Attio, Gorgias, Gong) is read at its new address. The row made
+ * through our apps service carries our address and our "connected" mark,
+ * which mean nothing to the maker's server, so both go: the app asks to be
+ * signed in once, on its maker's page. Rows at any other address are kept as
+ * they are.
+ */
+export function atCatalogAddress(install: VendorMcpInstall): VendorMcpInstall {
+  const connector = vendorMcpConnectorById(install.id);
+  if (connector?.url == null || connector.appsToolkit != null || connector.boxCli != null) return install;
+  if (!/\/desktop\/api\/apps\/mcp\//.test(install.url) || connector.url === install.url) return install;
+  const { credential: _ours, credentialAtMs: _when, ...rest } = install;
+  return { ...rest, url: connector.url, connected: false };
+}
+
 /** The file's rows: installs (id and url) and tombstones (id and removedAtMs, no url). Anything else is dropped. */
 export function parseVendorMcpStore(parsed: unknown): VendorMcpStore {
   const installs: VendorMcpInstall[] = [];
@@ -105,14 +123,14 @@ export function parseVendorMcpStore(parsed: unknown): VendorMcpStore {
     if (typeof row.id !== "string") continue;
     if (typeof row.url === "string") {
       const credential = parseCredential(row.credential);
-      installs.push({
+      installs.push(atCatalogAddress({
         id: row.id,
         url: row.url,
         connected: row.connected === true || credential != null,
         ...(credential == null ? {} : { credential }),
         ...(typeof row.installedAtMs === "number" && Number.isFinite(row.installedAtMs) ? { installedAtMs: row.installedAtMs } : {}),
         ...(typeof row.credentialAtMs === "number" && Number.isFinite(row.credentialAtMs) ? { credentialAtMs: row.credentialAtMs } : {}),
-      });
+      }));
     } else if (typeof row.removedAtMs === "number" && Number.isFinite(row.removedAtMs)) {
       removed.push({ id: row.id, removedAtMs: row.removedAtMs });
     }

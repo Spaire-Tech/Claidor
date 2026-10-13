@@ -85,10 +85,10 @@ export const VENDOR_MCP_CONNECTORS: readonly VendorMcpConnector[] = [
   app({ id: "google-drive", name: "Google Drive", category: G.FilesDocs, description: "Search, read, create, and share files." }, "googledrive"),
   { id: "dropbox", name: "Dropbox", category: G.FilesDocs, url: "https://mcp.dropbox.com/mcp", loopbackOnly: true, description: "Search, read, and organise files." },
   { id: "airtable", name: "Airtable", category: G.Productivity, url: "https://mcp.airtable.com/mcp", description: "Query and update bases, tables, and records." },
-  app({ id: "asana", name: "Asana", category: G.Productivity, description: "Search and update tasks and projects." }, "asana"),
+  { id: "asana", name: "Asana", category: G.Productivity, url: "https://mcp.asana.com/mcp", description: "Search and update tasks and projects." },
   { id: "clickup", name: "ClickUp", category: G.Productivity, url: "https://mcp.clickup.com/mcp", description: "Tasks, docs, and spaces." },
   { id: "monday", name: "monday.com", category: G.Productivity, url: "https://mcp.monday.com/mcp", description: "Boards, items, and the week." },
-  app({ id: "todoist", name: "Todoist", category: G.Productivity, description: "Create, find, and complete tasks and projects." }, "todoist"),
+  { id: "todoist", name: "Todoist", category: G.Productivity, url: "https://ai.todoist.net/mcp", description: "Create, find, and complete tasks and projects." },
   app({ id: "zoom", name: "Zoom", category: G.Meetings, description: "Search meetings, pull transcripts, and work with Zoom Docs." }, "zoom"),
   app({ id: "google-meet", name: "Google Meet", category: G.Meetings, description: "Meetings and recordings in Google." }, "googlemeet"),
   app({ id: "figma", name: "Figma", category: G.Creativity, description: "Read files, frames, and design context." }, "figma"),
@@ -103,7 +103,7 @@ export const VENDOR_MCP_CONNECTORS: readonly VendorMcpConnector[] = [
   app({ id: "quickbooks", name: "QuickBooks", category: G.Finance, description: "Books, invoices, and expenses." }, "quickbooks"),
   app({ id: "hubspot", name: "HubSpot", category: G.Sales, description: "Search and update contacts, companies, deals, and tickets." }, "hubspot"),
   app({ id: "salesforce", name: "Salesforce", category: G.Sales, description: "Leads, accounts, opportunities, and cases." }, "salesforce"),
-  app({ id: "intercom", name: "Intercom", category: G.Sales, description: "Search conversations, contacts, and Help Center articles." }, "intercom"),
+  { id: "intercom", name: "Intercom", category: G.Sales, url: "https://mcp.intercom.com/mcp", description: "Search conversations, contacts, and Help Center articles." },
   { id: "apollo", name: "Apollo", category: G.Sales, url: "https://mcp.apollo.io/mcp", description: "People, accounts, and sequences." },
   { id: "linear", name: "Linear", category: G.Developer, url: "https://mcp.linear.app/mcp", description: "Issues, projects, and cycles." },
   { id: "jira", name: "Jira", category: G.Developer, url: "https://mcp.atlassian.com/v1/mcp", description: "Jira and Confluence, through Atlassian." },
@@ -129,8 +129,8 @@ export const VENDOR_MCP_CONNECTORS: readonly VendorMcpConnector[] = [
   app({ id: "brex", name: "Brex", category: G.Finance, description: "Query expenses, receipts, bills, cards, and travel." }, "brex"),
   app({ id: "pipedrive", name: "Pipedrive", category: G.Sales, description: "Deals, people, and the pipeline." }, "pipedrive"),
   app({ id: "docusign", name: "Docusign", category: G.Sales, description: "Manage envelopes, templates, workflows, and agreements." }, "docusign"),
-  app({ id: "klaviyo", name: "Klaviyo", category: G.Marketing, description: "Manage profiles, segments, campaigns, and flows." }, "klaviyo"),
-  app({ id: "ashby", name: "Ashby", category: G.Hiring, description: "Search candidates, prep interviews, and manage pipeline tasks." }, "ashby"),
+  { id: "klaviyo", name: "Klaviyo", category: G.Marketing, url: "https://mcp.klaviyo.com/mcp", description: "Manage profiles, segments, campaigns, and flows." },
+  { id: "ashby", name: "Ashby", category: G.Hiring, url: "https://mcp.ashbyhq.com/mcp/v1", description: "Search candidates, prep interviews, and manage pipeline tasks." },
   // 3 October 2026, for founders and small businesses ("we're selling to
   // founders"): each one checked that day against Composio's toolkit page
   // (Composio-managed sign-in, so Add works without an app of ours) or, for
@@ -142,9 +142,9 @@ export const VENDOR_MCP_CONNECTORS: readonly VendorMcpConnector[] = [
   app({ id: "kit", name: "Kit", category: G.Marketing, description: "Newsletter subscribers, tags, and broadcasts (ConvertKit)." }, "kit"),
   app({ id: "instagram", name: "Instagram", category: G.Social, description: "Posts, comments, messages, and insights. Business and Creator accounts." }, "instagram"),
   app({ id: "facebook", name: "Facebook Pages", category: G.Social, description: "Your Pages' posts, comments, messages, and insights." }, "facebook"),
-  app({ id: "calendly", name: "Calendly", category: G.Meetings, description: "Booking links, scheduled meetings, and invitees." }, "calendly"),
-  app({ id: "cal-com", name: "Cal.com", category: G.Meetings, description: "Bookings, event types, and availability." }, "cal"),
-  app({ id: "attio", name: "Attio", category: G.Sales, description: "People, companies, deals, and lists in your CRM." }, "attio"),
+  { id: "calendly", name: "Calendly", category: G.Meetings, url: "https://mcp.calendly.com/", description: "Booking links, scheduled meetings, and invitees." },
+  { id: "cal-com", name: "Cal.com", category: G.Meetings, url: "https://mcp.cal.com/mcp", description: "Bookings, event types, and availability." },
+  { id: "attio", name: "Attio", category: G.Sales, url: "https://mcp.attio.com/mcp", description: "People, companies, deals, and lists in your CRM." },
   app({ id: "zendesk", name: "Zendesk", category: G.Sales, description: "Support tickets, customers, and help center." }, "zendesk"),
   app({ id: "microsoft-teams", name: "Microsoft Teams", category: G.Social, description: "Chats, channels, and meetings in Teams." }, "microsoft_teams"),
   app({ id: "discord", name: "Discord", category: G.Social, description: "Your servers, channels, and invites." }, "discord"),
@@ -161,10 +161,10 @@ export const VENDOR_MCP_CONNECTORS: readonly VendorMcpConnector[] = [
   app({ id: "pinterest", name: "Pinterest", category: G.Social, description: "Boards, pins, and their analytics." }, "pinterest"),
   app({ id: "gumroad", name: "Gumroad", category: G.Finance, description: "Products, sales, and subscribers." }, "gumroad"),
   app({ id: "google-classroom", name: "Google Classroom", category: G.Learning, description: "Courses, assignments, students, and grades." }, "google_classroom"),
-  app({ id: "gorgias", name: "Gorgias", category: G.Sales, description: "Support tickets, customers, and replies for your store." }, "gorgias"),
+  { id: "gorgias", name: "Gorgias", category: G.Sales, url: "https://mcp.gorgias.com/mcp", description: "Support tickets, customers, and replies for your store." },
   app({ id: "zoho-desk", name: "Zoho Desk", category: G.Sales, description: "Support tickets, contacts, and agents." }, "zoho_desk"),
   app({ id: "zoho-bigin", name: "Bigin by Zoho", category: G.Sales, description: "Contacts, deals, and pipelines in a small-business CRM." }, "zoho_bigin"),
-  app({ id: "gong", name: "Gong", category: G.Sales, description: "Sales calls, transcripts, and deal insights." }, "gong"),
+  { id: "gong", name: "Gong", category: G.Sales, url: "https://mcp.gong.io/mcp", description: "Sales calls, transcripts, and deal insights." },
   app({ id: "capsule-crm", name: "Capsule", category: G.Sales, description: "Contacts, opportunities, and tasks in your CRM." }, "capsule_crm"),
   app({ id: "dialpad", name: "Dialpad", category: G.Sales, description: "Calls, texts, contacts, and call summaries." }, "dialpad"),
   // 13 October 2026, the founder: "add stripe/link-cli so that the agents can
@@ -172,6 +172,14 @@ export const VENDOR_MCP_CONNECTORS: readonly VendorMcpConnector[] = [
   // computer (`boxCli`); purchases for US and Canadian Link accounts, bank
   // reading for US ones.
   { id: "link", name: "Link", category: G.Finance, url: "https://link.com/agents", boxCli: "link", description: "Buy what you ask for, with your OK in the Link app for each purchase, and read the bank accounts you share. US only." },
+  // 13 October 2026, the founder ("there are plenty of MCPs out there"): two
+  // apps on their makers' own servers, probed that day (401 with OAuth
+  // metadata, open registration, S256). Asana, Todoist, Intercom, Klaviyo,
+  // Ashby, Calendly, Cal.com, Attio, Gorgias and Gong moved from our apps
+  // service to theirs in place, the same day (`installs.ts` moves an install
+  // made through our apps service to the new address).
+  { id: "granola", name: "Granola", category: G.Meetings, url: "https://mcp.granola.ai/mcp", description: "Your meeting notes, transcripts, and folders." },
+  { id: "resend", name: "Resend", category: G.Developer, url: "https://mcp.resend.com", description: "Send email, and manage domains, audiences, and broadcasts." },
 ];
 
 const byId = new Map(VENDOR_MCP_CONNECTORS.map((item) => [item.id, item]));

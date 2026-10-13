@@ -327,6 +327,24 @@ the vendor's own sign-in, and the agent can then use their tools.
   listener was checked against stand-ins for Apple's Network framework on Linux, not run on a
   device.
 
+- **Ten apps moved here from our apps service, and two added** (13 October 2026, the founder:
+  "there are plenty of MCPs out there"). The audit that day probed each app's maker for a
+  hosted MCP server (an unsigned `initialize` answered 401 with OAuth metadata) and read the
+  official MCP registry; nothing was registered anywhere. Ten answered with open registration
+  and S256 and moved in place, keeping their ids: Asana (`mcp.asana.com/mcp`), Todoist
+  (`ai.todoist.net/mcp`), Intercom, Klaviyo, Ashby (`mcp.ashbyhq.com/mcp/v1`), Calendly
+  (`mcp.calendly.com/`), Cal.com, Attio, Gorgias and Gong. Klaviyo and Ashby leave "Coming
+  soon" with it. Granola (`mcp.granola.ai/mcp`) and Resend (`mcp.resend.com`) were appended.
+  Someone who had connected one of the ten through our apps service is moved to the new
+  address and signs in once on the maker's page (`atCatalogAddress` in `installs.ts`). Not yet
+  known for any of them: whether the maker accepts our hosted return address (as Canva,
+  Square, Vercel and Dropbox did not); a refusal shows on the first sign-in, and the fix is
+  `loopbackOnly`. Left for later: Figma and Gumroad advertise open registration but may limit
+  who registers; GitHub, HubSpot, Slack, Discord, Zoom and Docusign need an app of ours;
+  Shopify and Zendesk accept only client ID metadata documents; Jira stays on `/v1`, which
+  Atlassian already serves v2's tools from. Google's and Microsoft's apps stay on our apps
+  service (no hosted server for people's own accounts), as do the rest.
+
 ### 7b. Custom MCP servers and account plugins
 
 **For the person.** The person, or the agent with AddMcpServer, can add an MCP server by URL
@@ -350,9 +368,11 @@ connect card.
 ### 7c. Apps behind Simeon Labs' server
 
 **For the person.** Gmail, Outlook, Google Calendar, Drive, Docs, Sheets, Slides, Tasks, Meet,
-Asana, Todoist, Zoom, Figma, QuickBooks, HubSpot, Salesforce, Intercom, GitHub, Mailchimp,
-Gusto, Slack, LinkedIn, OneDrive, Trello, Xero, Shopify, Brex, Pipedrive, Docusign, Klaviyo
-and Ashby connect through Simeon. The provider behind them is never named in the app.
+Zoom, Figma, QuickBooks, HubSpot, Salesforce, GitHub, Mailchimp, Gusto, Slack, LinkedIn,
+OneDrive, Trello, Xero, Shopify, Brex, Pipedrive, Docusign and the others marked `app(…)` in
+`catalog.ts` connect through Simeon. The provider behind them is never named in the app.
+(Asana, Todoist, Intercom, Klaviyo, Ashby, Calendly, Cal.com, Attio, Gorgias and Gong moved to
+their makers' own servers on 13 October 2026; see 7a.)
 
 **How it works.**
 
@@ -381,7 +401,7 @@ and Ashby connect through Simeon. The provider behind them is never named in the
 * **Settings on Render.** `SIMEON_COMPOSIO_API_KEY` (optional `SIMEON_COMPOSIO_BASE_URL`), and
   `SIMEON_COMPOSIO_AUTH_CONFIGS`, Simeon Labs' own sign-in per app as JSON
   (`{"xero": "ac_…", "gusto": "ac_…"}`).
-* **Simeon Labs' own sign-in for an app** (needed for the eight in Known limits; also what puts
+* **Simeon Labs' own sign-in for an app** (needed for the six in Known limits; also what puts
   Simeon's name on Google's consent screen). 1. Register an OAuth app with the company (its
   developer portal), redirect URI `https://api.simeonlabs.com/desktop/apps/oauth/callback`. 2. In
   the provider's dashboard, Auth Configs, create one for that app with "your own credentials"
@@ -460,8 +480,9 @@ and Ashby connect through Simeon. The provider behind them is never named in the
   most for the agent's tool calls (`connected_account_ids`); "not connected" is never kept, and
   disconnecting forgets it.
 * **Known limits.** Google's consent screen shows the provider's name until Simeon Labs uses its
-  own Google OAuth app. Gusto, Xero, Shopify, Brex, Pipedrive, Docusign and Klaviyo have no
-  sign-in the provider manages, and Ashby takes only an API key (checked 11 October 2026): their
+  own Google OAuth app. Gusto, Xero, Shopify, Brex, Pipedrive and Docusign have no sign-in the
+  provider manages (checked 11 October 2026; Klaviyo and Ashby left this list on 13 October for
+  their makers' own servers, 7a): their
   link works once Simeon Labs registers its own app with each and names it in
   `SIMEON_COMPOSIO_AUTH_CONFIGS`. Until then a refused link answers 503 and the card says
   "<App> is coming soon in Simeon." (`OWN_APP_NEEDED` in `apps.py`; log line
@@ -470,13 +491,13 @@ and Ashby connect through Simeon. The provider behind them is never named in the
   (credentials issued by its developer support), Docusign (go-live review) and Shopify (app
   review to reach other stores) review an app before it reaches other people's accounts.
 * **"Coming soon" in the apps** (13 October 2026, the founder: "mark a clearer coming soon in
-  those in the apps. they cant be added"). The eight have no Add in the iPhone and Mac apps: their
+  those in the apps. they cant be added"). The six have no Add in the iPhone and Mac apps: their
   row in Connect apps (Plugins on the Mac), their page and an agent's connect card show a grey
   "Coming soon" pill, and the row is faded. `GET /desktop/api/apps` names them
-  (`{"available": …, "comingSoon": ["ashby", …]}`): `OWN_APP_NEEDED` less the ones in
+  (`{"available": …, "comingSoon": ["brex", …]}`): `OWN_APP_NEEDED` less the ones in
   `SIMEON_COMPOSIO_AUTH_CONFIGS`, so naming an app's own sign-in there brings its Add back with
   no new build. The apps read it with the catalog (the iPhone) or as Plugins opens (the Mac),
-  and until they have, they hold the same eight (`AppsComingSoon` in SimeonCore). Needs a new
+  and until they have, they hold the same six (`AppsComingSoon` in SimeonCore). Needs a new
   build of each app; not yet seen on a device.
 * **Not yet verified.** No sign-in or tool call against the live provider, and nothing on a Mac.
 

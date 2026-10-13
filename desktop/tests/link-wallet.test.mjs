@@ -300,3 +300,23 @@ test("the Link app signs in with Link's device code, lists its tools once connec
   assert.equal(there.isAvailable, false);
   assert.match(there.error, /cloud computer/);
 });
+
+test("an app that moved from our apps service to its maker's own server is read at the new address and asks to sign in once", async (t) => {
+  const { module, dispose } = await load("source/shared/node/vendor-mcp/installs.ts", "vendor-installs-moved");
+  t.after(dispose);
+  const { parseVendorMcpStore, atCatalogAddress } = module;
+  const marker = { accessToken: "connected", tokenEndpoint: "https://api.simeonlabs.com/desktop/api/apps/asana/status", clientId: "simeon-apps" };
+  const { installs } = parseVendorMcpStore([
+    { id: "asana", url: "https://api.simeonlabs.com/desktop/api/apps/mcp/asana", connected: true, credential: marker, installedAtMs: 5, credentialAtMs: 6 },
+    { id: "gmail", url: "https://api.simeonlabs.com/desktop/api/apps/mcp/gmail", connected: true, credential: marker },
+    { id: "notion", url: "https://mcp.notion.com/mcp", connected: true, credential: { accessToken: "tok", tokenEndpoint: "https://api.notion.com/token", clientId: "c" } },
+  ]);
+  const [asana, gmail, notion] = installs;
+  assert.deepEqual(asana, { id: "asana", url: "https://mcp.asana.com/mcp", connected: false, installedAtMs: 5 }, "Asana's own server, no Composio mark");
+  assert.equal(gmail.url, "https://api.simeonlabs.com/desktop/api/apps/mcp/gmail", "an app still on our service stays");
+  assert.equal(gmail.credential.clientId, "simeon-apps");
+  assert.equal(notion.credential.accessToken, "tok", "a vendor's own sign-in is kept");
+  // A row already at the new address, or one a test wrote at any other address, is left alone.
+  const own = { id: "asana", url: "https://mcp.asana.com/mcp", connected: true, credential: { accessToken: "a", tokenEndpoint: "https://app.asana.com/token", clientId: "x" } };
+  assert.equal(atCatalogAddress(own), own);
+});

@@ -162,6 +162,8 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
     "posthog": "analytics, insights and feature flags",
     "google-ads": "campaigns, ad groups, keywords and results",
     "tiktok-ads": "campaigns, ads, audiences and reports",
+    "granola": "your meeting notes, transcripts and folders",
+    "resend": "your emails, domains, audiences and broadcasts",
   ]
 
   /** Apps the agents can only read (the catalog says so). */
@@ -200,6 +202,7 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
     "gmail": "Emails your agents send go out from your own address.",
     "outlook": "Emails your agents send go out from your own address.",
     "docusign": "Envelopes your agents send go out in your name.",
+    "resend": "Emails your agents send go out from your own domains.",
     "link": "Nothing is paid until you approve the purchase in the Link app, up to $500 each and $500 a day. Each purchase gets its own one-time card, never your real one. US accounts only.",
   ]
 }

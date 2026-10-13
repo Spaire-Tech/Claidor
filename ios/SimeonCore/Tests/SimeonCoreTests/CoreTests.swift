@@ -1402,6 +1402,16 @@ final class ConnectConsentTests: XCTestCase {
     XCTAssertTrue(link.note?.hasPrefix("Nothing is paid until you approve the purchase in the Link app") == true)
   }
 
+  /** Apps on their makers' own servers (13 October 2026): the maker's page and server are named. */
+  func testAnAppOnItsMakersServerSaysSo() {
+    let granola = ConnectConsent(app: CatalogApp(id: "granola", name: "granola", title: "Granola", summary: "", serverURL: "https://mcp.granola.ai/mcp"), name: "Granola")
+    XCTAssertEqual(granola.route, .vendor(host: "mcp.granola.ai"))
+    XCTAssertEqual(granola.points[0].body, "Your agents can read and use your meeting notes, transcripts and folders in Granola.")
+    XCTAssertTrue(granola.smallPrint[0].contains("Granola runs this connection from its own server (mcp.granola.ai)"))
+    let resend = ConnectConsent(app: CatalogApp(id: "resend", name: "resend", title: "Resend", summary: "", serverURL: "https://mcp.resend.com"), name: "Resend")
+    XCTAssertEqual(resend.note, "Emails your agents send go out from your own domains.")
+  }
+
   func testTheExtraLayerAndTheUnknown() {
     let shopify = ConnectConsent(app: CatalogApp(id: "shopify", name: "shopify", title: "Shopify", summary: "Orders, products, customers, and your store."), name: "Shopify")
     XCTAssertTrue(shopify.note?.contains("live store") == true)
