@@ -102,6 +102,12 @@ export interface PurchaseEntryFields {
   readonly purchaseActionUrl?: string;
   readonly purchaseSpendRequestId?: string;
   readonly purchaseOrder?: string;
+  /**
+   * A flight's checkout card only (`flight-booking/flight-booking.ts`): where
+   * Simeon is while paying it after Link approved (paying, verify: the bank
+   * wants the person, booking), or uncertain when the airline never answered.
+   */
+  readonly purchaseStep?: "paying" | "verify" | "booking" | "uncertain";
 }
 
 /** Currencies without minor units (Stripe's list), so 500 JPY is ¥500. */

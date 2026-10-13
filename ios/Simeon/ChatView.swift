@@ -1106,8 +1106,8 @@ struct ChatRowView: View, Equatable {
       UnreadDivider()
     case .bubble(let bubble):
       BubbleView(bubble: bubble, agentId: agentId, inGroup: store.groupIds.contains(agentId))
-    case .flights(_, let card):
-      FlightsCardView(card: card)
+    case .flights(let id, let card):
+      FlightsCardView(card: card, entryId: id, agentId: agentId)
     case .file(let id, let name, let url, let fromPerson):
       FileCardView(entryId: id, name: name, url: url, agentId: agentId, fromPerson: fromPerson)
     case .question(let id, let card):
@@ -1137,7 +1137,9 @@ struct ChatRowView: View, Equatable {
     case .cloudAgent(let id, let bcId):
       CloudAgentCard(entryId: id, bcId: bcId, agentId: agentId)
     case .purchase(let id, let card):
-      PurchaseCardView(entryId: id, agentId: agentId, card: card)
+      PurchaseCardView(entryId: id, agentId: agentId, card: card, openComputer: openComputer)
+    case .flightPassengers(let id, let card):
+      FlightPassengersCardView(entryId: id, agentId: agentId, card: card)
     }
   }
 }

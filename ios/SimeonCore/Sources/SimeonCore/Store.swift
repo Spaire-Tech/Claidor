@@ -1275,13 +1275,40 @@ public final class AppStore {
 
   /**
    * A checkout card still with Link, on screen: the computer makes sure it
-   * is watching Link for it (after a restart nothing is). It never answers
-   * a card; once per card while the app runs.
+   * is watching Link for it (after a restart nothing is), and closes a
+   * flight it was paying when it restarted. It never answers a card; once
+   * per card and state while the app runs.
    */
-  public func keepWatchingPurchase(_ entryId: String, in agentId: String) async {
-    guard !watchedPurchases.contains(entryId), let backend else { return }
-    watchedPurchases.insert(entryId)
+  public func keepWatchingPurchase(_ entryId: String, in agentId: String, state: PurchaseCard.State = .approving) async {
+    let key = "\(entryId)#\(state.rawValue)"
+    guard !watchedPurchases.contains(key), let backend else { return }
+    watchedPurchases.insert(key)
     _ = try? await backend.command("answerPurchase", ["agentId": .string(agentId), "entryId": .string(entryId), "resume": .bool(true)])
+  }
+
+  /** "Book with Simeon" on a flight (`startFlightBooking`): the traveller form in the chat, or why not. */
+  public func startFlightBooking(entryId: String, offerIndex: Int, in agentId: String) async -> FlightBookingAnswer {
+    guard let backend else { return FlightBookingAnswer(message: "Your computer isn't connected.") }
+    do {
+      return FlightBookingAnswer(reply: try await backend.command("startFlightBooking", ["agentId": .string(agentId), "entryId": .string(entryId), "offerIndex": .number(Double(offerIndex))]))
+    } catch {
+      return FlightBookingAnswer(message: error.localizedDescription)
+    }
+  }
+
+  /** The traveller form's Continue (`submitFlightPassengers`): the flight's checkout card, or what to fix. */
+  public func submitFlightPassengers(_ entryId: String, travellers: [Traveller], in agentId: String) async -> FlightBookingAnswer {
+    guard let backend else { return FlightBookingAnswer(message: "Your computer isn't connected.") }
+    do {
+      return FlightBookingAnswer(reply: try await backend.command("submitFlightPassengers", ["agentId": .string(agentId), "entryId": .string(entryId), "passengers": .array(travellers.map(\.json))]))
+    } catch {
+      return FlightBookingAnswer(message: error.localizedDescription)
+    }
+  }
+
+  /** The traveller form's Cancel. */
+  public func cancelFlightPassengers(_ entryId: String, in agentId: String) async {
+    await command("submitFlightPassengers", ["agentId": .string(agentId), "entryId": .string(entryId), "cancel": .bool(true)], failure: "Couldn't cancel the booking")
   }
 
   /** The question card's X (`dismissWidget`). */

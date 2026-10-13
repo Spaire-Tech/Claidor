@@ -289,6 +289,11 @@ class Settings(BaseSettings):
     DUFFEL_ACCESS_TOKEN: str = ""
     DUFFEL_BASE_URL: str = "https://api.duffel.com"
     FLIGHT_SEARCHES_PER_HOUR: int = 30
+    # Booking (simeon/desktop/flight_booking.py, 13 October 2026): the
+    # traveller pays the airline by card through Duffel's card form, which
+    # Duffel switches on per account (help@duffel.com). Orders a person can
+    # place in a day; each one is also one per offer.
+    FLIGHT_BOOKINGS_PER_DAY: int = 6
 
     # Pushes to the person's iPhone go through Expo's push service
     # (simeon/desktop/push.py, 8 October 2026). Expo needs no key of ours

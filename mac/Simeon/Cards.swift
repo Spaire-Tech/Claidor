@@ -1472,6 +1472,7 @@ struct PurchaseCardView: View {
   let card: PurchaseCard
   let look: Look
   @Environment(AppStore.self) private var store
+  @Environment(WindowState.self) private var window
   @Environment(\.openURL) private var openURL
   @State private var picture: NSImage?
   @State private var pictureMissing = false
@@ -1487,29 +1488,31 @@ struct PurchaseCardView: View {
     let shown = card.shown(answered: store.answeredPurchases[entryId])
     VStack(alignment: .leading, spacing: 14) {
       HStack(spacing: 12) {
-        Image(systemName: "cart.fill")
+        Image(systemName: shown.flight == nil ? "cart.fill" : "airplane")
           .font(.system(size: 18))
           .foregroundStyle(ink)
           .frame(width: 44, height: 44)
           .background(fill, in: RoundedRectangle(cornerRadius: 12))
         VStack(alignment: .leading, spacing: 1) {
           HStack(spacing: 6) {
-            Text(PurchaseCard.title).font(.system(size: 15, weight: .semibold)).foregroundStyle(ink)
+            Text(shown.heading).font(.system(size: 15, weight: .semibold)).foregroundStyle(ink)
             if shown.isTest { StatusPill(text: "Test", look: look) }
           }
-          Text(PurchaseCard.headline(agent: store.agent(agentId)?.name ?? "", domain: shown.domain))
+          Text(shown.flight == nil ? PurchaseCard.headline(agent: store.agent(agentId)?.name ?? "", domain: shown.domain) : PurchaseCard.flightHeadline(agent: store.agent(agentId)?.name ?? "", airline: shown.flight?.airline ?? shown.merchant))
             .font(.system(size: 13))
             .foregroundStyle(grey)
             .fixedSize(horizontal: false, vertical: true)
         }
       }
       if shown.waitsOnPerson {
-        Text(PurchaseCard.check)
+        Text(shown.flight == nil ? PurchaseCard.check : PurchaseCard.flightCheck)
           .font(.system(size: 13))
           .foregroundStyle(grey)
           .fixedSize(horizontal: false, vertical: true)
       }
-      if shown.preview != nil {
+      if let flight = shown.flight {
+        MacFlightCheckoutBlock(flight: flight, look: look)
+      } else if shown.preview != nil {
         checkoutPicture(shown)
       } else if !shown.itemsLine.isEmpty {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -1544,8 +1547,10 @@ struct PurchaseCardView: View {
     .background(look.dark ? Color(hex: 0x2c2c2e) : look.theirs, in: RoundedRectangle(cornerRadius: 20))
     .accessibilityElement(children: .contain)
     .accessibilityLabel("\(PurchaseCard.title) at \(shown.domain), \(shown.total)")
-    // A card with Link: the computer keeps watching Link for it (after a restart nothing would).
-    .task(id: card.state) { if card.state == .approving { await store.keepWatchingPurchase(entryId, in: agentId) } }
+    // A card with Link: the computer keeps watching Link for it (after a restart nothing would); a flight it was paying, it closes.
+    .task(id: card.state) {
+      if card.state == .approving || (card.flight != nil && card.state == .approved) { await store.keepWatchingPurchase(entryId, in: agentId, state: card.state) }
+    }
     .task(id: card.preview?.url) {
       guard let image = card.preview else { return }
       if let data = await store.readFile(image.url, agentId: agentId, limit: 24 << 20), let read = NSImage(data: data) { picture = read } else { pictureMissing = true }
@@ -1606,7 +1611,7 @@ struct PurchaseCardView: View {
           pill(PurchaseCard.allow, ground: blue, ink: .white) { Task { await store.answerPurchase(entryId, allow: true, in: agentId) } }
         }
         if shown.isTest {
-          Text(PurchaseCard.testNote).font(.system(size: 12)).foregroundStyle(grey)
+          Text(shown.flight == nil ? PurchaseCard.testNote : PurchaseCard.flightTestNote).font(.system(size: 12)).foregroundStyle(grey)
         }
       }
     } else if let status = shown.status {
@@ -1623,6 +1628,9 @@ struct PurchaseCardView: View {
         }
         if shown.state == .approving, let url = shown.actionURL {
           pill(PurchaseCard.openLink, ground: blue, ink: .white) { openURL(url) }
+        }
+        if shown.waitsOnBank {
+          pill(PurchaseCard.openComputer, ground: blue, ink: .white) { window.openComputer(agentId, helper: nil, store: store) }
         }
       }
     }

@@ -540,6 +540,10 @@ private struct ConnectedLabel: LabelStyle {
  */
 struct FlightsCardView: View {
   let card: FlightsCard
+  /** The card's entry and its agent: what "Book with Simeon" books from. */
+  var entryId = ""
+  var agentId = ""
+  @Environment(AppStore.self) private var store
   @Environment(\.chatWidth) private var width
   @State private var open: OpenFlight?
 
@@ -569,7 +573,17 @@ struct FlightsCardView: View {
     .frame(width: Self.cardWidth(width), alignment: .leading)
     .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
     .modifier(CardEdge(radius: 22))
-    .sheet(item: $open) { flight in FlightDetails(offer: flight.offer, test: card.isTest).macSheetSize(width: 440, height: 600) }
+    .sheet(item: $open) { flight in
+      FlightDetails(offer: flight.offer, test: card.isTest, book: bookAction(flight.id, flight.offer))
+        .macSheetSize(width: 440, height: 600)
+    }
+  }
+
+  /** "Book with Simeon" for one flight; none for a card from before booking. */
+  private func bookAction(_ index: Int, _ offer: FlightOffer) -> (() async -> FlightBookingAnswer)? {
+    guard !offer.offerId.isEmpty, !entryId.isEmpty else { return nil }
+    let store = store, entryId = entryId, agentId = agentId
+    return { await store.startFlightBooking(entryId: entryId, offerIndex: index, in: agentId) }
   }
 
   /** Nearly the chat's width, as Muse's card runs: a bubble's limit would leave the times no room. */
@@ -695,15 +709,21 @@ struct AirlineMark: View {
  * (from and to with the airline's logo, departing and arriving, then the
  * flight, the cabin and the time in the air), the layover between two, a
  * round trip's two ways under their own titles; then the fare's terms. The
- * sheet is as tall as what it holds. No Book button: booking isn't built
- * (the founder had it taken off on 2 October 2026).
+ * sheet is as tall as what it holds. At its foot "Book with Simeon" (13
+ * October 2026): the traveller form goes into the chat and the sheet
+ * closes; a flight from a search before booking has none.
  */
 struct FlightDetails: View {
   let offer: FlightOffer
   var test = false
+  /** "Book with Simeon": the traveller form in the chat, or why not. */
+  var book: (() async -> FlightBookingAnswer)? = nil
   @Environment(\.dismiss) private var dismiss
   @State private var headHeight: CGFloat = 80
   @State private var bodyHeight: CGFloat = 440
+  @State private var footHeight: CGFloat = 0
+  @State private var booking = false
+  @State private var refused: String?
 
   var body: some View {
     let from = offer.from.isEmpty ? (offer.legs.first?.from ?? "") : offer.from
@@ -757,9 +777,33 @@ struct FlightDetails: View {
         .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { bodyHeight = $0 }
       }
       .scrollBounceBehavior(.basedOnSize)
+      if let book {
+        VStack(alignment: .leading, spacing: 8) {
+          if let refused {
+            Text(refused).font(.system(size: 13)).foregroundStyle(Ink.danger).fixedSize(horizontal: false, vertical: true)
+          }
+          Button {
+            Haptics.press()
+            booking = true
+            refused = nil
+            Task {
+              let answer = await book()
+              booking = false
+              if answer.ok { dismiss() } else { refused = answer.message }
+            }
+          } label: {
+            if booking { ProgressView().tint(.white) } else { Text("Book with Simeon") }
+          }
+          .buttonStyle(PillButtonStyle(primary: true))
+          .disabled(booking)
+          .accessibilityHint("Shows the traveller form in the chat")
+        }
+        .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 16)
+        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { footHeight = $0 }
+      }
     }
     .background(Ink.ground)
-    .presentationDetents([.height(headHeight + bodyHeight)])
+    .presentationDetents([.height(headHeight + bodyHeight + footHeight)])
     .presentationDragIndicator(.visible)
   }
 
@@ -1885,6 +1929,8 @@ struct PurchaseCardView: View {
   let entryId: String
   let agentId: String
   let card: PurchaseCard
+  /** A flight's bank check is on the computer: this opens it. */
+  var openComputer: (() -> Void)? = nil
   @Environment(AppStore.self) private var store
   @Environment(\.chatWidth) private var width
   @Environment(\.openURL) private var openURL
@@ -1894,9 +1940,11 @@ struct PurchaseCardView: View {
     VStack(alignment: .leading, spacing: 14) {
       header(shown)
       if shown.waitsOnPerson {
-        Text(PurchaseCard.check).font(.system(size: 13)).foregroundStyle(Ink.fineGrey).fixedSize(horizontal: false, vertical: true)
+        Text(shown.flight == nil ? PurchaseCard.check : PurchaseCard.flightCheck).font(.system(size: 13)).foregroundStyle(Ink.fineGrey).fixedSize(horizontal: false, vertical: true)
       }
-      if let preview = shown.preview {
+      if let flight = shown.flight {
+        FlightCheckoutBlock(flight: flight)
+      } else if let preview = shown.preview {
         CheckoutPicture(image: preview, agentId: agentId, url: shown.url)
       } else if !shown.itemsLine.isEmpty {
         itemsRow(shown)
@@ -1912,22 +1960,24 @@ struct PurchaseCardView: View {
     .frame(width: FlightsCardView.cardWidth(width), alignment: .leading)
     .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
     .modifier(CardEdge(radius: 22))
-    // A card with Link: the computer keeps watching Link for it (after a restart nothing would).
-    .task(id: card.state) { if card.state == .approving { await store.keepWatchingPurchase(entryId, in: agentId) } }
+    // A card with Link: the computer keeps watching Link for it (after a restart nothing would); a flight it was paying, it closes.
+    .task(id: card.state) {
+      if card.state == .approving || (card.flight != nil && card.state == .approved) { await store.keepWatchingPurchase(entryId, in: agentId, state: card.state) }
+    }
   }
 
   private func header(_ shown: PurchaseCard) -> some View {
     HStack(alignment: .center, spacing: 12) {
-      Image(systemName: "cart.fill").font(.system(size: 18)).foregroundStyle(Ink.primary)
+      Image(systemName: shown.flight == nil ? "cart.fill" : "airplane").font(.system(size: 18)).foregroundStyle(Ink.primary)
         .frame(width: 44, height: 44)
         .background(Ink.tile, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).stroke(Ink.tileEdge, lineWidth: 0.5))
       VStack(alignment: .leading, spacing: 2) {
         HStack(spacing: 6) {
-          Text(PurchaseCard.title).font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.theirsText)
+          Text(shown.heading).font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.theirsText)
           if shown.isTest { StatusPill(text: "Test", size: 12) }
         }
-        Text(PurchaseCard.headline(agent: store.agent(agentId)?.name ?? "", domain: shown.domain))
+        Text(shown.flight == nil ? PurchaseCard.headline(agent: store.agent(agentId)?.name ?? "", domain: shown.domain) : PurchaseCard.flightHeadline(agent: store.agent(agentId)?.name ?? "", airline: shown.flight?.airline ?? shown.merchant))
           .font(.system(size: 13)).foregroundStyle(Ink.fineGrey)
           .fixedSize(horizontal: false, vertical: true)
       }
@@ -1986,7 +2036,7 @@ struct PurchaseCardView: View {
           .buttonStyle(PillButtonStyle(primary: true))
         }
         if shown.isTest {
-          Text(PurchaseCard.testNote).font(.system(size: 12)).foregroundStyle(Ink.fineGrey)
+          Text(shown.flight == nil ? PurchaseCard.testNote : PurchaseCard.flightTestNote).font(.system(size: 12)).foregroundStyle(Ink.fineGrey)
         }
       }
     } else if let status = shown.status {
@@ -2003,6 +2053,9 @@ struct PurchaseCardView: View {
         }
         if shown.state == .approving, let url = shown.actionURL {
           Button(PurchaseCard.openLink) { openURL(url) }.buttonStyle(PillButtonStyle(primary: true))
+        }
+        if shown.waitsOnBank, let openComputer {
+          Button(PurchaseCard.openComputer) { openComputer() }.buttonStyle(PillButtonStyle(primary: true))
         }
       }
     }

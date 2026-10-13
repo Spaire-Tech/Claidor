@@ -71,6 +71,7 @@ from .auth import (
 )
 from .capabilities import router as capabilities_router
 from .composio import forward as composio_forward
+from .flight_booking import router as flight_booking_router
 from .flights import router as flights_router
 
 # Straight from the price list rather than through `service`, which
@@ -1461,6 +1462,7 @@ router.include_router(voice_router)
 # the sign-in link, status and disconnect; the provider behind them never named.
 router.include_router(apps_router)
 router.include_router(flights_router)
+router.include_router(flight_booking_router)
 router.include_router(releases_router)
 
 # Pushes to the person's iPhone (`push.py`): the phone registers at

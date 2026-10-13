@@ -67,6 +67,7 @@ import {
 } from "./box-help-tool.js";
 import { createDraftExternalMessageTool, createMarkDraftDeliveredTool, type DraftToolDependencies } from "./draft-message-tool.js";
 import { createSearchFlightsTool, type FlightSearchDependencies } from "./flight-search-tool.js";
+import { createBookFlightTool, type BookFlightDependencies } from "./book-flight-tool.js";
 import { createMarkPurchaseDoneTool, createRequestPurchaseTool, type PurchaseToolDependencies } from "./purchase-tool.js";
 import {
   createGenerateImageTool,
@@ -558,7 +559,7 @@ export interface TurnToolFactories {
   requestBoxHelp?(): TurnTool;
   drafts?(): readonly TurnTool[];
   purchases?(): readonly TurnTool[];
-  flights?(): TurnTool;
+  flights?(): readonly TurnTool[];
   mcpMeta?(dynamicToolRegistry?: DynamicToolRegistry): readonly TurnTool[];
   mcpManagement?(): readonly TurnTool[];
   subagentManagement?(): readonly TurnTool[];
@@ -991,12 +992,17 @@ export function createTurnPurchaseToolFactory(
 
 export interface TurnFlightToolFactoryInput {
   readonly dependencies: FlightSearchDependencies;
+  /** BookFlight (13 October 2026); absent where flights can't be booked. */
+  readonly booking?: BookFlightDependencies;
 }
 
 export function createTurnFlightToolFactory(
   input: TurnFlightToolFactoryInput,
-): () => TurnTool {
-  return () => asTurnTool(createSearchFlightsTool(input.dependencies));
+): () => readonly TurnTool[] {
+  return () => [
+    asTurnTool(createSearchFlightsTool(input.dependencies)),
+    ...(input.booking === undefined ? [] : [asTurnTool(createBookFlightTool(input.booking))]),
+  ];
 }
 
 export function createTurnBoxHelpToolFactory(
@@ -1531,7 +1537,7 @@ export function buildTurnTools(
     const generateImage = factories.generateImage?.();
     if (generateImage !== undefined) tools.push(generateImage);
     const flights = factories.flights?.();
-    if (flights !== undefined) tools.push(flights);
+    if (flights !== undefined) tools.push(...flights);
   }
 
   if (

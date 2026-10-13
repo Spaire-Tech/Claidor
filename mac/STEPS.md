@@ -2627,3 +2627,21 @@ the order.
 
 Not yet built or run on a Mac or an iPhone (Linux here: the files parse,
 the core's tests pass).
+
+### Booking a flight (13 October 2026)
+
+The founder: "we can book thru duffel. all we need is a form. when they
+enter their info then we take care of checkouts thru link etc."
+(docs/services-agents.md §10a). Under a flight in the pane, "Book with
+Simeon" (the blue 36-point pill; the computer's sentence above it when it
+can't): the traveller form goes into the chat and the pane closes. The form
+is a card like the checkout card (420 wide, 20 round): the airline's mark,
+"Travellers" and the route, the date and times, the fare and total, "Add
+traveller details" and the privacy line; the details on a 460 by 620 sheet
+in the grouped form, one section per traveller, Cancel and Continue (Return)
+at its foot. The flight's checkout card has an aeroplane in its tile, the
+flight in a white block (dark: #3a3a3c) where a shop's picture goes, and
+Open the computer while the bank checks the card.
+
+Not yet built or run on a Mac (Linux here: the files parse, the core's
+tests pass).

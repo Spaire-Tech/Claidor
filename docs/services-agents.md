@@ -603,6 +603,8 @@ ones our server serves (`boxCli` in `vendor-mcp/catalog.ts`; `vendor-mcp/backend
   `cancel_purchase`, `list_purchases`, `list_accounts`, `get_balances`, `list_transactions`. No
   Link tool starts a payment: every purchase is a checkout card first (below). The old
   `create_purchase` answers with a pointer to it.
+* **A flight** is booked through the same card with a flight on it, and Simeon, not the agent,
+  pays it once Link approves (§10a).
 * **The checkout card** (13 October 2026, the founder: "we also need a card for each payment …
   like muse"; `shared/node/link-wallet/purchase-card.ts`, `host/runner/tools/purchase-tool.ts`,
   `host/extensions/transcript/purchase-cards.ts`, SimeonCore `PurchaseCard.swift`, the cards in
@@ -1096,7 +1098,7 @@ the API):
 landing before 2") and it answers with a results card of up to four distinct options, fastest
 whole journey first, each opening a panel with each leg, the layover, and the fare's
 cancellation and change terms and bags in plain words, then one short line with its pick.
-Booking is not built; the panel has no Book button.
+Each flight can be booked from there ("Book with Simeon", §10a).
 
 **How it works.**
 
@@ -1147,6 +1149,89 @@ Booking is not built; the panel has no Book button.
 date, `priority`, `airlines`, offers found and shown, `test`, milliseconds), `desktop.flights.upstream_refused` (what
 Duffel answered, in full) and `desktop.flights.rate_limited`. An agent that browsed instead of
 calling the tool shows no `desktop.flights.search` line for that request.
+
+### 10a. Booking a flight
+
+**For the person** (13 October 2026). "Book with Simeon" under a flight (the iPhone's flight
+sheet, the Mac's flight pane), or "book that one" to the agent, puts a traveller form in the
+chat: each traveller's first and last name as on their ID, title, gender, date of birth, email
+and phone, and the passport only when the airline needs it; the first traveller starts with
+what Link knows (name, email, phone). Continue brings the flight's checkout card: the airline,
+the route and times, who flies, the Link card that pays and the total, with Allow and Deny.
+Allow sends it to Link, which asks the person to approve it in the Link app; then Simeon pays
+the airline and books it, and the card ends on "Booked" with the airline's booking reference.
+When the bank wants to check the card (3-D Secure), the card says so and its button opens the
+computer, where the bank's page is.
+
+Nobody holds a Duffel balance: the traveller pays the airline by card through Duffel's card
+payments, with the one-time card Link makes for this booking. **Duffel has to switch card
+payments on for the account** (help@duffel.com, "approval is required to pay using cards").
+Until it does, and always with a `duffel_test_` token, it all runs in Duffel's test mode
+(Duffel Airways, nothing charged; the cards say "Test").
+
+**How it works.**
+
+- Every offer on the search card carries Duffel's `offerId`, and the agent's summary too.
+  The apps' button calls the gateway's `startFlightBooking` (the card's entry and the offer's
+  place on it); the agent's `BookFlight` tool (`host/runner/tools/book-flight-tool.ts`) takes
+  the `offer_id`. Both ask the server for the offer again (`POST /desktop/api/flights/offer`,
+  `server/simeon/desktop/flight_booking.py`: Duffel's prices hold for minutes) and post the
+  form (`flight-passengers`, `shared/node/flight-booking/flight-booking.ts`), from the host for
+  the button (`host/extensions/transcript/flight-bookings.ts`) or from the agent's turn, which
+  then ends.
+- Continue is the gateway's `submitFlightPassengers`. The host checks each traveller as the
+  server will (`checkTravellers`), writes them to a file only the computer's owner reads
+  (`<data folder>/flight-travellers/`, mode 0600, gone after the booking or a day), and keeps
+  only the names in the chat (what Link filled in leaves the form too). It asks for the offer
+  again, checks the person's Link (`checkoutFacts`: connected, limits, which card) and posts
+  the checkout card: the purchase card (§7d) with a `flight` block. Allow, Deny and Link's
+  approval are the purchase card's own.
+- Once Link approves, the agent is not woken to pay: `purchase-cards.ts` hands the card to
+  `flight-bookings.ts`, which stamps where it is (`purchaseStep`: paying, verify, booking):
+  1. the offer again: a total that changed since the approval pays nothing and cancels Link's
+     card;
+  2. a component client key (`POST /desktop/api/flights/client-key`);
+  3. the pay page (`GET /desktop/flights/pay`, `flight_pay.html`) opened in the agent's own
+     Chrome on the computer, the key in the address's fragment (no server sees it); the page
+     holds Duffel's card form (an iframe on `api.duffel.cards`, so the card never reaches
+     Simeon's servers);
+  4. Link's one-time card read to a file only the computer's owner reads, typed into Duffel's
+     form over DevTools (`shared/node/flight-booking/duffel-pay.ts`), and the file deleted. In
+     Duffel's test mode Duffel's own test card (4111 1100 1166 3887, no bank check) is typed
+     instead, because Link's test card is not one Duffel knows; the box log says so;
+  5. the bank check: a 3-D Secure session for that card and offer, made from the page as
+     Duffel's own components make it; most cards pass without a word, some show their bank's
+     page (Evervault's), which the person finishes on the computer;
+  6. the order (`POST /desktop/api/flights/order`): instant, paid by card with the 3-D Secure
+     session, for exactly the offer's total and its travellers. One order per offer per
+     person (a second ask is refused); a refusal is Duffel's own sentence and books nothing;
+     an answer that never came back, on the server or between the computer and the server,
+     is "Not confirmed", never retried, and the agent tells the person to look for the
+     airline's email.
+  The card then shows "Booked" and the booking reference, Link is told how it went, the
+  travellers' file is deleted, and the agent is told in one hidden line.
+- A computer that restarts while paying closes the card honestly when an app shows it:
+  before the order, "nothing was booked" and Link's card is canceled; during the order,
+  "Not confirmed".
+
+**Settings on Render.** `SIMEON_DUFFEL_ACCESS_TOKEN` (the same token as search; it must be
+allowed card payments for live bookings), `SIMEON_FLIGHT_BOOKINGS_PER_DAY` (default 6 orders a
+person a day; client keys four times that).
+
+**When it misbehaves.** Server log: `desktop.flights.offer`, `desktop.flights.client_key`,
+`desktop.flights.order` (order id, booking reference, total, `test`),
+`desktop.flights.order_refused` (Duffel's answer in full) and
+`desktop.flights.upstream_refused`. Box log: `[flight] form`, `[flight] travellers saved`,
+`[flight] Duffel test mode: …`, `[flight] pay page stopped at <stage>: filled …; not found: …;
+the form's fields: …` (the form's field names and labels, never a value: the first live run
+of Duffel's card form says here which field the filler missed), `[flight] card confirmed`,
+`[flight] booked <reference>`, `[flight] not booked: <why>`, `[flight] uncertain`.
+
+**Not verified yet.** Run only against local stand-ins for Duffel's card form, its 3-D Secure
+API and Evervault in Chromium (the filler found every field, by autocomplete and by label, and
+the bank-check path ran), and against Duffel mocked in the server tests. Not yet: Duffel's real
+card form (it needs a client key from Duffel), a Link one-time card through a real bank check,
+and the whole path on an iPhone or a Mac.
 
 ## 11. Simeon, the Chief of Staff
 

@@ -39,6 +39,7 @@ import {
   type PurchaseState,
 } from "../../../shared/node/link-wallet/purchase-card.js";
 import type { LinkTools, SpendAnswer } from "../../../shared/node/link-wallet/link-tools.js";
+import { buildFlightFailedWakePrompt, buildFlightUncertainWakePrompt, purchaseFlightOf } from "../../../shared/node/flight-booking/flight-booking.js";
 
 type PurchaseEntry = TranscriptEntry & PurchaseEntryFields & { readonly message: { readonly type: typeof PURCHASE_MESSAGE_TYPE; readonly purchase: PurchaseCardData } };
 
@@ -89,6 +90,7 @@ export class PurchaseCards {
     const state = purchaseStateOf(current);
     if (args.resume === true) {
       if ((state === "approving" || state === "sending") && current.purchaseSpendRequestId != null && wallet != null) this.watch(args.agentId, args.entryId, current.purchaseSpendRequestId, wallet);
+      if (state === "approved" && purchaseFlightOf(current.message.purchase) != null && this.tm.flightBookings?.isPaying?.(args.agentId, args.entryId) !== true) return await this.flightInterrupted(args.agentId, args.entryId, current, wallet);
       return current;
     }
     if (state !== "review") return current;
@@ -102,6 +104,7 @@ export class PurchaseCards {
       });
       if (!took) return denied;
       this.log(`[purchase] denied on the card ${args.agentId}/${args.entryId}`);
+      this.tm.flightBookings?.flightClosed?.(args.agentId, card);
       this.wake(args.agentId, "purchase-denied", buildPurchaseDeniedWakePrompt(args.entryId, card));
       return denied;
     }
@@ -140,6 +143,7 @@ export class PurchaseCards {
   async markPurchaseDone(args: { readonly agentId: string; readonly entryId: string; readonly outcome: "ordered" | "failed" | "canceled"; readonly order?: string; readonly detail?: string }, wallet: PurchaseWallet | undefined): Promise<{ readonly ok: true; readonly entry: TranscriptEntry } | { readonly ok: false; readonly message: string }> {
     const current = await this.read(args.agentId, args.entryId);
     if (current == null) return { ok: false, message: `No checkout card with entry id "${args.entryId}" in this chat.` };
+    if (purchaseFlightOf(current.message.purchase) != null) return { ok: false, message: "Simeon books flights itself and closes their card; there is nothing to mark. Wait to be told how the booking went." };
     const state = purchaseStateOf(current);
     if (state === "review" || state === "sending" || state === "approving") return { ok: false, message: "This purchase isn't approved yet: nothing to mark. Wait to be woken." };
     if (PURCHASE_FINAL_STATES.has(state)) return { ok: true, entry: current };
@@ -173,7 +177,10 @@ export class PurchaseCards {
         failed = true;
         return { purchaseState: "failed", purchaseNote: plainLinkError(spend.message) };
       });
-      if (failed) this.wake(agentId, "purchase-failed", buildPurchaseClosedWakePrompt(entryId, card, "failed", spend.message));
+      if (failed) {
+        this.tm.flightBookings?.flightClosed?.(agentId, card);
+        this.wake(agentId, "purchase-failed", buildPurchaseClosedWakePrompt(entryId, card, "failed", spend.message));
+      }
       return stamped;
     }
     const state = purchaseStateForLinkStatus(spend.status) ?? "approving";
@@ -200,8 +207,22 @@ export class PurchaseCards {
       return { purchaseState: state, purchaseSpendRequestId: spend.id, purchaseNote: undefined };
     });
     if (!moved) return stamped;
+    if (state === "approved" && purchaseFlightOf(card) != null) {
+      // A flight: Simeon pays the airline itself (`flight-bookings.ts`); the agent is told how it went.
+      const flights = this.tm.flightBookings;
+      if (flights?.payApprovedFlight == null) {
+        await this.stamp(agentId, entryId, () => ({ purchaseState: "failed", purchaseNote: "Flight booking isn't available on this computer." }));
+        void wallet.cancelSpend(spend.id).catch(() => false);
+        return await this.read(agentId, entryId);
+      }
+      void Promise.resolve(flights.payApprovedFlight(agentId, entryId, card, spend.id)).catch((error: unknown) => this.log(`[flight] paying ${agentId}/${entryId} failed: ${error instanceof Error ? error.message : String(error)}`));
+      return stamped;
+    }
     if (state === "approved") this.wake(agentId, "purchase-approved", buildPurchaseApprovedWakePrompt(entryId, card, spend.id));
-    else this.wake(agentId, `purchase-${state}`, buildPurchaseClosedWakePrompt(entryId, card, state));
+    else {
+      this.tm.flightBookings?.flightClosed?.(agentId, card);
+      this.wake(agentId, `purchase-${state}`, buildPurchaseClosedWakePrompt(entryId, card, state));
+    }
     return stamped;
   }
 
@@ -243,6 +264,40 @@ export class PurchaseCards {
         this.watching.delete(key);
       }
     })();
+  }
+
+  /** A change to a checkout card from elsewhere on the host (a flight being paid, `flight-bookings.ts`). */
+  update(agentId: string, entryId: string, change: (entry: PurchaseEntry) => PurchasePatch | null): Promise<TranscriptEntry | null> {
+    return this.stamp(agentId, entryId, change);
+  }
+
+  wakeAgent(agentId: string, source: string, prompt: string): void {
+    this.wake(agentId, source, prompt);
+  }
+
+  /**
+   * An approved flight nobody is paying any more: the computer restarted
+   * while Simeon paid it. Before the order was asked for, nothing was booked
+   * and the one-time card goes; once it was asked for, nobody can say.
+   */
+  private async flightInterrupted(agentId: string, entryId: string, current: PurchaseEntry, wallet: PurchaseWallet | undefined): Promise<TranscriptEntry | null> {
+    const flight = purchaseFlightOf(current.message.purchase);
+    if (flight == null) return current;
+    const booking = current.purchaseStep === "booking";
+    let took = false;
+    const stamped = await this.stamp(agentId, entryId, (entry) => {
+      if (purchaseStateOf(entry) !== "approved") return null;
+      took = true;
+      return booking
+        ? { purchaseState: "failed", purchaseStep: "uncertain", purchaseNote: "The computer restarted while booking, so it isn't certain the flight was booked. Check for the airline's email before trying again." }
+        : { purchaseState: "failed", purchaseStep: undefined, purchaseNote: "The computer restarted before paying; nothing was booked." };
+    });
+    if (!took) return stamped;
+    this.log(`[flight] ${booking ? "uncertain" : "not booked"} after a restart ${agentId}/${entryId}`);
+    if (!booking && wallet != null && current.purchaseSpendRequestId != null) void wallet.cancelSpend(current.purchaseSpendRequestId).catch(() => false);
+    this.tm.flightBookings?.flightClosed?.(agentId, current.message.purchase);
+    this.wake(agentId, booking ? "flight-uncertain" : "flight-failed", booking ? buildFlightUncertainWakePrompt(entryId, flight) : buildFlightFailedWakePrompt(entryId, flight, "the computer restarted before it was paid."));
+    return stamped;
   }
 
   private wake(agentId: string, source: string, prompt: string): void {

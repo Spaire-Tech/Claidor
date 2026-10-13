@@ -73,6 +73,8 @@ public struct FlightOffer: Hashable, Sendable {
   public let from, fromCity, to, toCity, depart, arrive, duration, stops: String
   public let refundable, changeable, bags, returnTimes: String
   public let legs: [FlightLeg]
+  /** Duffel's offer id: what "Book with Simeon" books (13 October 2026); empty on a card from before booking. */
+  public var offerId = ""
 }
 
 public struct FlightLeg: Hashable, Sendable {
@@ -97,7 +99,9 @@ public struct FlightsCard: Hashable, Sendable {
       let legs = (o["legs"]?.array ?? []).filter { $0.object != nil }.map { l in
         FlightLeg(from: s(l["from"]), fromCity: s(l["fromCity"]), to: s(l["to"]), toCity: s(l["toCity"]), depart: s(l["depart"]), arrive: s(l["arrive"]), flight: s(l["flight"]), carrier: s(l["carrier"]), logo: s(l["logo"]), cabin: s(l["cabin"]), duration: s(l["duration"]), layover: s(l["layover"]), heading: s(l["heading"]), departDay: s(l["departDay"]), arriveDay: s(l["arriveDay"]))
       }
-      return FlightOffer(airline: s(o["airline"]), logo: s(o["logo"]), price: s(o["price"]), priceNote: s(o["priceNote"]), date: s(o["date"]), from: s(o["from"]), fromCity: s(o["fromCity"]), to: s(o["to"]), toCity: s(o["toCity"]), depart: s(o["depart"]), arrive: s(o["arrive"]), duration: s(o["duration"]), stops: s(o["stops"]), refundable: s(o["refundable"]), changeable: s(o["changeable"]), bags: s(o["bags"]), returnTimes: s(o["returnTimes"]), legs: legs)
+      var offer = FlightOffer(airline: s(o["airline"]), logo: s(o["logo"]), price: s(o["price"]), priceNote: s(o["priceNote"]), date: s(o["date"]), from: s(o["from"]), fromCity: s(o["fromCity"]), to: s(o["to"]), toCity: s(o["toCity"]), depart: s(o["depart"]), arrive: s(o["arrive"]), duration: s(o["duration"]), stops: s(o["stops"]), refundable: s(o["refundable"]), changeable: s(o["changeable"]), bags: s(o["bags"]), returnTimes: s(o["returnTimes"]), legs: legs)
+      offer.offerId = s(o["offerId"])
+      return offer
     }
     guard !offers.isEmpty else { return nil }
     let subtitle = s(json["subtitle"])
@@ -194,12 +198,14 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
   case cloudAgent(id: String, bcId: String)
   /** A purchase waiting on the person, or how it went (`purchase`, the checkout card). */
   case purchase(id: String, card: PurchaseCard)
+  /** The traveller form for a flight being booked (`flight-passengers`). */
+  case flightPassengers(id: String, card: FlightPassengersCard)
 
   public var id: String {
     switch self {
     case .stamp(let id, _), .unread(let id), .flights(let id, _), .file(let id, _, _, _), .question(let id, _), .draft(let id, _),
          .connectors(let id, _, _, _), .listenerConnect(let id, _, _), .request(let id, _), .teammates(let id, _, _), .voiceCall(let id, _, _, _), .routines(let id, _, _),
-         .notice(let id, _), .failedSend(let id, _), .queuedSend(let id, _), .thread(let id, _, _, _), .cloudAgent(let id, _), .purchase(let id, _): return id
+         .notice(let id, _), .failedSend(let id, _), .queuedSend(let id, _), .thread(let id, _, _, _), .cloudAgent(let id, _), .purchase(let id, _), .flightPassengers(let id, _): return id
     case .bubble(let bubble): return bubble.id
     }
   }
@@ -226,6 +232,7 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
     case .thread: return "thread"
     case .cloudAgent: return "cloud-agent"
     case .purchase: return "purchase"
+    case .flightPassengers: return "flight-passengers"
     }
   }
 
@@ -246,7 +253,7 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
     case .file(_, _, _, let fromPerson): return fromPerson ? .person : .agent(nil)
     case .failedSend, .queuedSend: return .person
     case .thread(_, _, _, let side): return side
-    case .flights, .question, .draft, .connectors, .listenerConnect, .request, .notice, .cloudAgent, .purchase: return .agent(nil)
+    case .flights, .question, .draft, .connectors, .listenerConnect, .request, .notice, .cloudAgent, .purchase, .flightPassengers: return .agent(nil)
     default: return .middle
     }
   }
@@ -644,6 +651,7 @@ public enum Chat {
       return names.isEmpty ? "Connect tools" : "Connect " + names.joined(separator: ", ")
     case "listener-connect": return message["platform"]?.string == "slack" ? "Connect Slack" : "Connect GitHub"
     case "purchase": return message["content"]?.string ?? "Checkout"
+    case "flight-passengers": return message["content"]?.string ?? "Traveller details"
     default: return "Message"
     }
   }
@@ -1036,6 +1044,9 @@ public enum Chat {
         return .cloudAgent(id: entry.id, bcId: bcId)
       case "purchase":
         if let card = PurchaseCard(message: message, entry: entry) { return .purchase(id: entry.id, card: card) }
+        return .notice(id: entry.id, text: message["content"]?.text ?? notShown)
+      case "flight-passengers":
+        if let card = FlightPassengersCard(message: message, entry: entry) { return .flightPassengers(id: entry.id, card: card) }
         return .notice(id: entry.id, text: message["content"]?.text ?? notShown)
       case "local-tool-permission":
         // Waiting, it is the Mac's dock above the composer, not a line; expired, it is gone; answered, one line says how (`_Ln`).

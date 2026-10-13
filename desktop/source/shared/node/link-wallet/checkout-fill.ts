@@ -38,7 +38,7 @@ export type CheckoutFillResult =
   | { readonly ok: false; readonly message: string };
 
 /** The few Playwright calls used here, so a test can hand in the real one and the box finds its own. */
-interface Locator {
+export interface Locator {
   count(): Promise<number>;
   nth(index: number): Locator;
   isVisible(): Promise<boolean>;
@@ -51,7 +51,7 @@ interface Locator {
   evaluate<R>(fn: (element: never, arg: never) => R, arg?: unknown): Promise<R>;
   getAttribute(name: string): Promise<string | null>;
 }
-interface Frame {
+export interface Frame {
   url(): string;
   locator(selector: string): Locator;
   evaluate<R>(fn: (arg: never) => R, arg?: unknown): Promise<R>;
@@ -135,7 +135,7 @@ export function loadBoxPlaywright(): PlaywrightLike {
 const two = (value: number): string => String(value).padStart(2, "0");
 const hostOf = (value: string): string => { try { return new URL(value.includes("://") ? value : `https://${value}`).hostname.replace(/^www\./, ""); } catch { return value.toLowerCase(); } };
 
-async function firstEditable(frame: Frame, selector: string): Promise<Locator | undefined> {
+export async function firstEditable(frame: Frame, selector: string): Promise<Locator | undefined> {
   const all = frame.locator(selector);
   const count = await all.count().catch(() => 0);
   for (let index = 0; index < Math.min(count, 6); index += 1) {
@@ -145,14 +145,14 @@ async function firstEditable(frame: Frame, selector: string): Promise<Locator | 
   return undefined;
 }
 
-async function typeInto(field: Locator, value: string, delay: number): Promise<boolean> {
+export async function typeInto(field: Locator, value: string, delay: number): Promise<boolean> {
   await field.click({ timeout: 5000 }).catch(() => undefined);
   await field.fill("", { timeout: 5000 }).catch(() => undefined);
   await field.pressSequentially(value, { delay, timeout: 20_000 });
   return (await field.inputValue({ timeout: 2000 }).catch(() => "")).replace(/\D/g, "").length > 0 || /[a-z]/i.test(value);
 }
 
-async function choose(field: Locator, options: readonly string[], delay: number): Promise<boolean> {
+export async function choose(field: Locator, options: readonly string[], delay: number): Promise<boolean> {
   const tag = await field.evaluate((element: never) => (element as unknown as { tagName: string }).tagName.toLowerCase()).catch(() => "input");
   if (tag !== "select") return await typeInto(field, options[0] ?? "", delay);
   for (const option of options) {

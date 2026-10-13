@@ -273,6 +273,20 @@ export function createHostGatewayApi(
         deps.extensions.api("mcp")?.linkWallet,
       );
     },
+    // Booking a flight (13 October 2026, flight-bookings.ts): "Book with Simeon" on a flight in the search card, and the traveller form's Continue.
+    startFlightBooking: (args: any) => {
+      markActive("user_action");
+      return method(manager, "startFlightBooking")({
+        agentId: args?.agentId,
+        ...(typeof args?.entryId === "string" ? { entryId: args.entryId } : {}),
+        ...(typeof args?.offerIndex === "number" ? { offerIndex: args.offerIndex } : {}),
+        ...(typeof args?.offerId === "string" ? { offerId: args.offerId } : {}),
+      });
+    },
+    submitFlightPassengers: (args: any) => {
+      markActive("user_action");
+      return method(manager, "submitFlightPassengers")({ agentId: args?.agentId, entryId: args?.entryId, passengers: args?.passengers, cancel: args?.cancel === true });
+    },
     reactToMessage: (args: any) => {
       markActive("user_action");
       method(telemetry.analytics, "trackEvent")("sand.reaction.added", {

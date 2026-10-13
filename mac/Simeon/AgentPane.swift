@@ -393,9 +393,16 @@ private struct PanePage: View {
       VStack(spacing: 0) {
         PaneTopBar(look: look) { pane.close(layout: layout) }
         ScrollView {
-          FlightPage(offer: flight.offer, look: look)
-            .padding(EdgeInsets(top: 6, leading: 20, bottom: 40, trailing: 20))
-            .frame(width: width, alignment: .top)
+          VStack(spacing: 24) {
+            FlightPage(offer: flight.offer, look: look)
+            // "Book with Simeon" (13 October 2026): the traveller form goes into this chat and the pane closes.
+            let parts = flight.key.split(separator: ":", omittingEmptySubsequences: false)
+            if !flight.offer.offerId.isEmpty, let index = parts.last.flatMap({ Int($0) }) {
+              BookFlightButton(agentId: agentId, rowId: parts.dropLast().joined(separator: ":"), index: index, look: look) { pane.close(layout: layout) }
+            }
+          }
+          .padding(EdgeInsets(top: 6, leading: 20, bottom: 40, trailing: 20))
+          .frame(width: width, alignment: .top)
         }
         .scrollIndicators(.automatic)
       }

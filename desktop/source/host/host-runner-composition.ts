@@ -78,6 +78,9 @@ import {
 } from "./sand-activity.js";
 import { connectorCardEmissionToMessage } from "./runner/tools/box-help-tool.js";
 import type { FlightSearchAnswer } from "./runner/tools/flight-search-tool.js";
+import type { BookFlightDependencies } from "./runner/tools/book-flight-tool.js";
+import { getSandRootDir } from "./host-paths.js";
+import { getConfiguredBackendUrl } from "../shared/node/simeon-token.js";
 import { simeonApiData } from "../shared/node/simeon-backend/simeon-api.js";
 import { createRepeatSendGuard } from "./runner/repeat-send-guard.js";
 import { createAgentPromptSession } from "./extensions/inference/extension.js";
@@ -869,6 +872,19 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
   method(extensions.api("transcript"), "setUserFullNameResolver")?.(() => method(auth, "getUserFullName")?.());
   // SearchFlights' searches per turn, so the same search is not run twice in one turn.
   const flightSearchesByTurn = new WeakMap<object, Set<string>>();
+  // Simeon Labs' server as this computer's signed-in person (flight search and booking).
+  const serverAuth = { getAccessToken: async () => { const get = method(auth, "getAccessToken"); if (get === undefined) throw new Error("You are not signed in."); return String(await get()); } };
+  // Booking a flight (13 October 2026, transcript/flight-bookings.ts): the
+  // server's booking doors, the box's Link, each agent's own Chrome on the
+  // box (where Duffel's card form is filled) and the data folder (where the
+  // travellers' details wait between the form and the order).
+  method(extensions.api("transcript"), "setFlightBookingServices")?.({
+    api: (path: string, json: unknown) => simeonApiData(serverAuth, path, { method: "POST", json, signal: AbortSignal.timeout(120_000) }),
+    wallet: () => (extensions.api("mcp") as { linkWallet?: LinkTools }).linkWallet,
+    browserPort: (agentId: string) => 9222 + (boxAgentWindowIndex(extensions.api("forever-box").box as any, agentId) ?? 1),
+    backendUrl: () => getConfiguredBackendUrl(),
+    dataDir: () => getSandRootDir(),
+  });
   const localToolPermission = extensions.api("local-tool-permission");
   const localToolPermissionSurfaces = new Map<string, () => void>();
   const ownedRunners = new Set<Runner>();
@@ -2387,9 +2403,22 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                   if (seen === undefined) flightSearchesByTurn.set(turn, seen = new Set<string>());
                   return seen;
                 })(),
-                search: args => simeonApiData<FlightSearchAnswer>({ getAccessToken: async () => { const get = method(auth, "getAccessToken"); if (get === undefined) throw new Error("You are not signed in."); return String(await get()); } }, "flights/search", { method: "POST", json: args, signal: AbortSignal.timeout(60_000) }),
+                search: args => simeonApiData<FlightSearchAnswer>(serverAuth, "flights/search", { method: "POST", json: args, signal: AbortSignal.timeout(60_000) }),
                 postMessage: (content, timestampMs) => {
                   const update = { type: "send-message" as const, message: { type: "text", content }, timestampMs, ...(turn.ackToken === undefined ? {} : { ackToken: turn.ackToken }) };
+                  if (turn.emitUpdate === undefined) hooks.transport.onUpdate(update);
+                  else turn.emitUpdate(update);
+                  return hooks.transport.lastSentMessageId?.();
+                },
+              },
+              // BookFlight: the traveller form from the agent's turn (the apps' Book button posts the same one).
+              booking: {
+                prepareForm: async (offerId) => {
+                  const prepared = await method(transcript, "prepareFlightForm")?.(offerId) as Awaited<ReturnType<BookFlightDependencies["prepareForm"]>> | undefined;
+                  return prepared ?? { ok: false, message: "Flight booking isn't available on this computer." };
+                },
+                emitForm: (message, timestampMs) => {
+                  const update = { type: "send-message" as const, message: message as unknown as Record<string, unknown> & { type: string }, timestampMs, ...(turn.ackToken === undefined ? {} : { ackToken: turn.ackToken }) };
                   if (turn.emitUpdate === undefined) hooks.transport.onUpdate(update);
                   else turn.emitUpdate(update);
                   return hooks.transport.lastSentMessageId?.();

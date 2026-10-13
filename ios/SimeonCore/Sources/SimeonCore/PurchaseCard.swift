@@ -52,11 +52,24 @@ public struct PurchaseCard: Hashable, Sendable {
   /** Link's approval page, or what Link asks the person to do first. */
   public let actionURL: URL?
   public let order: String?
+  /** A flight's checkout card (13 October 2026, `FlightBooking.swift`): the flight and who flies; Simeon pays it, not the agent. */
+  public let flight: BookedFlight?
+  /** Where Simeon is while paying an approved flight, or that the airline never answered. */
+  public let step: Step?
 
-  public init(merchant: String, domain: String, url: URL?, total: String, items: [Item], cardBrand: String?, cardLast4: String?, preview: ChatImage?, isTest: Bool, state: State, note: String? = nil, actionURL: URL? = nil, order: String? = nil) {
+  public enum Step: String, Sendable {
+    case paying
+    /** The bank wants the person: its check is on the computer. */
+    case verify
+    case booking
+    /** The airline never answered: nobody can say whether it's booked. */
+    case uncertain
+  }
+
+  public init(merchant: String, domain: String, url: URL?, total: String, items: [Item], cardBrand: String?, cardLast4: String?, preview: ChatImage?, isTest: Bool, state: State, note: String? = nil, actionURL: URL? = nil, order: String? = nil, flight: BookedFlight? = nil, step: Step? = nil) {
     self.merchant = merchant; self.domain = domain; self.url = url; self.total = total; self.items = items
     self.cardBrand = cardBrand; self.cardLast4 = cardLast4; self.preview = preview; self.isTest = isTest
-    self.state = state; self.note = note; self.actionURL = actionURL; self.order = order
+    self.state = state; self.note = note; self.actionURL = actionURL; self.order = order; self.flight = flight; self.step = step
   }
 
   init?(message: JSON, entry: Entry) {
@@ -87,12 +100,14 @@ public struct PurchaseCard: Hashable, Sendable {
     self.actionURL = (entry["purchaseActionUrl"]?.text).flatMap(URL.init(string:)).flatMap { $0.scheme == "https" ? $0 : nil }
     let order = entry["purchaseOrder"]?.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     self.order = order.isEmpty ? nil : order
+    self.flight = purchase["flight"].flatMap(BookedFlight.init(json:))
+    self.step = (entry["purchaseStep"]?.text).flatMap(Step.init(rawValue:))
   }
 
   /** The card as the person sees it now: their own answer shows at once, before the computer echoes it. */
   public func shown(answered: State?) -> PurchaseCard {
     guard state == .review, let answered else { return self }
-    return PurchaseCard(merchant: merchant, domain: domain, url: url, total: total, items: items, cardBrand: cardBrand, cardLast4: cardLast4, preview: preview, isTest: isTest, state: answered, note: note, actionURL: actionURL, order: order)
+    return PurchaseCard(merchant: merchant, domain: domain, url: url, total: total, items: items, cardBrand: cardBrand, cardLast4: cardLast4, preview: preview, isTest: isTest, state: answered, note: note, actionURL: actionURL, order: order, flight: flight, step: step)
   }
 
   // MARK: Words
@@ -131,8 +146,27 @@ public struct PurchaseCard: Hashable, Sendable {
   /** The person can answer (Allow, Deny). */
   public var waitsOnPerson: Bool { state == .review }
 
+  /** A flight's card: "Flight". */
+  public static let flightTitle = "Flight"
+  public static let flightCheck = "Check the flight, the travellers' names and the total before you allow it."
+  public static let flightTestNote = "Test mode: a pretend airline, nothing is charged."
+  public static let openComputer = "Open the computer"
+
+  /** "Ada wants to book a flight with Duffel Airways" */
+  public static func flightHeadline(agent: String, airline: String) -> String {
+    let who = agent.trimmingCharacters(in: .whitespacesAndNewlines)
+    return "\(who.isEmpty ? "Your agent" : who) wants to book a flight\(airline.isEmpty ? "" : " with \(airline)")"
+  }
+
+  /** The heading: "Checkout", or "Flight" for a flight. */
+  public var heading: String { flight == nil ? Self.title : Self.flightTitle }
+
+  /** The bank's check waits on the person, on the computer. */
+  public var waitsOnBank: Bool { flight != nil && state == .approved && step == .verify }
+
   /** Where it stands, once answered: the line under the card, and whether it went well. */
   public var status: (label: String, kind: StatusKind)? {
+    if flight != nil, let flightStatus { return flightStatus }
     switch state {
     case .review: return nil
     case .sending: return ("Asking Link…", .working)
@@ -148,8 +182,35 @@ public struct PurchaseCard: Hashable, Sendable {
 
   public enum StatusKind: Sendable { case working, success, danger, neutral }
 
+  /** A flight's own words once Link approved (Simeon pays it): paying, the bank's check, booking, booked, not booked. */
+  private var flightStatus: (label: String, kind: StatusKind)? {
+    switch state {
+    case .approved:
+      switch step {
+      case .verify: return ("Your bank wants to confirm it's you", .working)
+      case .booking: return ("Booking with the airline…", .working)
+      default: return ("Approved · paying the airline", .working)
+      }
+    case .ordered: return ("Booked", .success)
+    case .failed: return step == .uncertain ? ("Not confirmed", .neutral) : ("Not booked", .danger)
+    default: return nil
+    }
+  }
+
   /** The line under the status: the order's number, Link's words, or how long Link waits. */
   public var detail: String? {
+    if flight != nil {
+      switch state {
+      case .approved:
+        return step == .verify ? "Open the computer to finish the check; the booking goes on by itself." : nil
+      case .ordered:
+        return [order.map { "Booking reference \($0)" }, "The airline emails the ticket."].compactMap { $0 }.joined(separator: " · ")
+      case .failed:
+        return note ?? "Nothing was booked."
+      default:
+        break
+      }
+    }
     switch state {
     case .approving:
       return note ?? "Link sent it to your Link app. It waits 30 minutes."
@@ -165,8 +226,8 @@ public struct PurchaseCard: Hashable, Sendable {
     }
   }
 
-  /** In the chat list and a quote: "Checkout at ncvss.com · $80.00". */
-  public var listLine: String { "Checkout at \(domain) · \(total)" }
+  /** In the chat list and a quote: "Checkout at ncvss.com · $80.00", "Flight Seattle to Los Angeles · $361.20". */
+  public var listLine: String { flight.map { "Flight \($0.route) · \(total)" } ?? "Checkout at \(domain) · \(total)" }
 }
 
 private extension String {

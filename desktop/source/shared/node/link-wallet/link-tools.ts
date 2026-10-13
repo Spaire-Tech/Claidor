@@ -162,19 +162,41 @@ export function createLinkTools(options: LinkToolsOptions) {
       return fillAnswer(await options.fillCheckout({ linkPayToken: token, pageHint: checkoutUrl }));
     }
     if (type !== "card") return { text: `This purchase was made for a ${type.replace(/_/g, " ")}, which Simeon can't put into a page.`, isError: true };
-    // The card goes to a file only this computer's root can read, never to the agent; one left by an interrupted payment goes first.
+    const fill = options.fillCheckout;
+    const used = await withCard(id, async (card) => await fill({ card, pageHint: checkoutUrl }));
+    if (!used.ok) return used.answer != null ? answerText(used.answer) : { text: used.message, isError: true };
+    return fillAnswer(used.value);
+  };
+
+  /**
+   * One approved spend request's one-time card, handed to `use` and gone
+   * from disk before this returns. The card goes to a file only this
+   * computer's root can read, never to the agent; one left by an
+   * interrupted payment goes first.
+   */
+  const withCard = async <T>(id: string, use: (card: CheckoutCard) => Promise<T>): Promise<{ readonly ok: true; readonly value: T } | { readonly ok: false; readonly message: string; readonly answer?: LinkCliAnswer }> => {
     const dir = linkDir(options.rootDir());
     try { for (const name of readdirSync(dir)) if (/^card-.*\.json$/.test(name)) rmSync(join(dir, name), { force: true }); } catch { /* no folder yet */ }
     const file = join(dir, `card-${randomUUID()}.json`);
     try {
       const written = await cli.run(["spend-request", "retrieve", id, "--include", "card", "--output-file", file, "--force"]);
-      if (!written.ok) return answerText(written);
+      if (!written.ok) return { ok: false, message: `Link: ${written.message} (${written.code})`, answer: written };
       let card: CheckoutCard;
-      try { card = cardFromFile(JSON.parse(readFileSync(file, "utf8")) as unknown); } catch (error) { return { text: `Link's card could not be read: ${error instanceof Error ? error.message : String(error)}`, isError: true }; }
-      return fillAnswer(await options.fillCheckout({ card, pageHint: checkoutUrl }));
+      try { card = cardFromFile(JSON.parse(readFileSync(file, "utf8")) as unknown); } catch (error) { return { ok: false, message: `Link's card could not be read: ${error instanceof Error ? error.message : String(error)}` }; }
+      rmSync(file, { force: true });
+      return { ok: true, value: await use(card) };
     } finally {
       rmSync(file, { force: true });
     }
+  };
+
+  /** The person as Link knows them, for a form Simeon fills in for them: name, email and phone, nothing else. */
+  const personFacts = async (): Promise<{ readonly name?: string; readonly email?: string; readonly phone?: string } | undefined> => {
+    const answer = await cli.run(["user-info", "retrieve"]);
+    if (!answer.ok || answer.value == null || typeof answer.value !== "object") return undefined;
+    const info = answer.value as Record<string, unknown>;
+    const name = text(info.name) || [text(info.first_name), text(info.last_name)].filter((part) => part.length > 0).join(" ");
+    return { ...(name.length > 0 ? { name } : {}), ...(text(info.email).length > 0 ? { email: text(info.email) } : {}), ...(text(info.phone).length > 0 ? { phone: text(info.phone) } : {}) };
   };
 
   const call = async (name: string, args: Record<string, unknown>): Promise<LinkToolResult> => {
@@ -340,7 +362,7 @@ export function createLinkTools(options: LinkToolsOptions) {
 
   const signOut = async (): Promise<void> => { await cli.run(["auth", "logout"]); };
 
-  return { tools: LINK_TOOLS, call, signInStatus, startSignIn, signOut, checkoutFacts, requestSpend, spendStatus, cancelSpend, reportOutcome };
+  return { tools: LINK_TOOLS, call, signInStatus, startSignIn, signOut, checkoutFacts, requestSpend, spendStatus, cancelSpend, reportOutcome, withCard, personFacts };
 }
 
 export type LinkTools = ReturnType<typeof createLinkTools>;
