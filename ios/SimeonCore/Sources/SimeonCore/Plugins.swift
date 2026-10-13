@@ -628,15 +628,15 @@ public enum Plugins {
 /**
  * Apps that can't be added yet (the founder, 13 October 2026: "mark a
  * clearer coming soon … they cant be added"): the ones whose sign-in needs
- * Simeon Labs' own app with that company (Gusto, Xero, Brex, Pipedrive,
- * Docusign). Their card says "Coming soon" and has no Add.
+ * Simeon Labs' own app with that company (Gusto, Xero, Shopify, Brex,
+ * Pipedrive, Docusign). Their card says "Coming soon" and has no Add.
  * Simeon Labs' server names them (`GET /desktop/api/apps`, `comingSoon`), so
  * one whose own app is set up there can be added at once; until the server
- * answers, this list holds. Klaviyo, Ashby and Shopify left it the same day:
- * their makers' own servers sign anyone in.
+ * answers, this list holds. Klaviyo and Ashby left it the same day: their
+ * makers' own servers sign anyone in.
  */
 public enum AppsComingSoon {
-  public static let builtIn: Set<String> = ["gusto", "xero", "brex", "pipedrive", "docusign"]
+  public static let builtIn: Set<String> = ["gusto", "xero", "shopify", "brex", "pipedrive", "docusign"]
   /** What the card says in place of Add. */
   public static let label = "Coming soon"
 

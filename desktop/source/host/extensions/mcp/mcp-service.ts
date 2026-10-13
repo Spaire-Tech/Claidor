@@ -229,7 +229,7 @@ export interface McpHostPort { dispose(): void | Promise<void>; listBoxServers(i
 export function hostedMcpOAuthCallbackUrl(backendUrl: string = getSandInferenceBackendUrl()): string {
   return new URL("desktop/mcp-oauth/callback", backendUrl.endsWith("/") ? backendUrl : `${backendUrl}/`).toString();
 }
-/** `…/desktop/mcp-oauth/client.json` on the same server: Simeon's client metadata document, the client ID a vendor that registers no clients reads (Shopify; `vendor-mcp/oauth.ts`). The server builds the document's own `client_id` from the same address. */
+/** `…/desktop/mcp-oauth/client.json` on the same server: Simeon's client metadata document, the client ID a vendor that registers no clients reads (`vendor-mcp/oauth.ts`). The server builds the document's own `client_id` from the same address. */
 export function hostedMcpOAuthClientUrl(backendUrl: string = getSandInferenceBackendUrl()): string {
   return new URL("desktop/mcp-oauth/client.json", backendUrl.endsWith("/") ? backendUrl : `${backendUrl}/`).toString();
 }

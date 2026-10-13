@@ -110,7 +110,7 @@ export interface VendorMcpBackendExecOptions {
   /**
    * Simeon's client metadata document on Simeon Labs' server
    * (`hostedMcpOAuthClientUrl`): the client ID for a vendor that registers
-   * no clients but reads such documents (Shopify; `oauth.ts`).
+   * no clients but reads such documents (`oauth.ts`).
    */
   readonly clientMetadataUrl?: string;
 }

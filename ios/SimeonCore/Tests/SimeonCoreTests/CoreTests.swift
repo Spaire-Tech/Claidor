@@ -1410,10 +1410,8 @@ final class ConnectConsentTests: XCTestCase {
     XCTAssertTrue(granola.smallPrint[0].contains("Granola runs this connection from its own server (mcp.granola.ai)"))
     let resend = ConnectConsent(app: CatalogApp(id: "resend", name: "resend", title: "Resend", summary: "", serverURL: "https://mcp.resend.com"), name: "Resend")
     XCTAssertEqual(resend.note, "Emails your agents send go out from your own domains.")
-    // Shopify reads Simeon from its client metadata document (13 October 2026): its maker's server, and it can be added.
-    let shopify = ConnectConsent(app: CatalogApp(id: "shopify", name: "shopify", title: "Shopify", summary: "", serverURL: "https://mcp.shopify.com/"), name: "Shopify")
-    XCTAssertEqual(shopify.route, .vendor(host: "mcp.shopify.com"))
-    XCTAssertFalse(AppsComingSoon.builtIn.contains("shopify"))
+    // Shopify's own server takes only the clients it has approved (13 October 2026): still "Coming soon".
+    XCTAssertTrue(AppsComingSoon.builtIn.contains("shopify"))
   }
 
   func testTheExtraLayerAndTheUnknown() {

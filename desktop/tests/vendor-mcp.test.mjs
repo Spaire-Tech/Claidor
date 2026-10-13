@@ -53,12 +53,12 @@ test("the store is vendor MCPs that can Connect, then Coming soon for the rest",
     assert.equal(vendorMcpConnectorById("mercury")?.url, "https://mcp.mercury.com/mcp");
     const vendors = VENDOR_MCP_CONNECTORS.filter((item) => item.appsToolkit == null);
     const apps = VENDOR_MCP_CONNECTORS.filter((item) => item.appsToolkit != null);
-    // 13 October 2026: Shopify moved in place to its maker's server (Simeon's client document, `oauth.ts`).
-    // Zendesk stays: its own server is per account ({subdomain}.zendesk.com/api/mcp), and mcp.zendesk.com signs nobody in.
-    assert.equal(vendorMcpConnectorById("shopify")?.url, "https://mcp.shopify.com/");
+    // 13 October 2026: Shopify and Zendesk stay with our apps service. Shopify's own server takes only
+    // clients it has approved; Zendesk's is per account ({subdomain}.zendesk.com/api/mcp), and mcp.zendesk.com signs nobody in.
+    assert.equal(vendorMcpConnectorById("shopify")?.appsToolkit, "shopify");
     assert.equal(vendorMcpConnectorById("zendesk")?.appsToolkit, "zendesk");
-    assert.equal(vendors.length, 37);
-    assert.equal(apps.length, 45);
+    assert.equal(vendors.length, 36);
+    assert.equal(apps.length, 46);
     assert.equal(VENDOR_MCP_CONNECTORS.some((item) => item.comingSoon === true), false);
     assert.ok(VENDOR_MCP_CONNECTORS.every((item) => typeof item.url === "string" && item.url.startsWith("https://")));
     assert.ok(apps.every((item) => item.url.endsWith(`/desktop/api/apps/mcp/${item.appsToolkit}`)));
