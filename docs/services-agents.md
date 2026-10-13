@@ -377,6 +377,14 @@ takes the app back out, so nothing is left added and not signed in (`SimeonCore/
   nothing else to build. Its server also answers without a sign-in (business names, domains,
   sample catalogs) and signs in for the store's own tools; the store is picked on Shopify's
   page.
+- **Lovable** (13 October 2026, the founder: "add lovable"): its own server
+  (`https://mcp.lovable.dev`, open registration, a public client, S256, measured that day) takes a
+  hosted sign-in address only once Lovable approves it, and the loopback always
+  (docs.lovable.dev, "Lovable MCP server"), so it is `loopbackOnly`, as Canva is: it connects from
+  the iPhone and the Mac app, not from the web window. Workspaces on Lovable's Enterprise plan
+  must switch third-party MCP clients on. Word and PowerPoint have no app of their own anywhere
+  (no Composio toolkit, no Microsoft server for people's own accounts): their files are
+  OneDrive's and SharePoint's, which agents open, change on their computer and save back.
 - **Zendesk stays on our apps service.** `mcp.zendesk.com` advertises client documents, but
   its authorize page sends everyone to "Help Center Closed" (measured 13 October 2026): it
   behaves as a Zendesk account named "mcp" that nobody can sign in to. Zendesk's own server is
@@ -409,7 +417,8 @@ connect card.
 
 **For the person.** Gmail, Outlook, Google Calendar, Drive, Docs, Sheets, Slides, Tasks, Meet,
 Zoom, Figma, QuickBooks, HubSpot, Salesforce, GitHub, Mailchimp, Gusto, Slack, LinkedIn,
-OneDrive, Trello, Xero, Shopify, Brex, Pipedrive, Docusign and the others marked `app(…)` in
+OneDrive, SharePoint, OneNote, Microsoft To Do, Trello, Xero, Shopify, Brex, Pipedrive, Docusign
+and the others marked `app(…)` in
 `catalog.ts` connect through Simeon. The provider behind them is never named in the app.
 (Asana, Todoist, Intercom, Klaviyo, Ashby, Calendly, Cal.com, Attio, Gorgias and Gong moved to
 their makers' own servers on 13 October 2026; see 7a.)
@@ -522,7 +531,10 @@ their makers' own servers on 13 October 2026; see 7a.)
 * **Known limits.** Google's consent screen shows the provider's name until Simeon Labs uses its
   own Google OAuth app. Gusto, Xero, Shopify, Brex, Pipedrive and Docusign have no sign-in the
   provider manages (checked 11 October 2026; Klaviyo and Ashby left this list on 13 October for
-  their makers' own servers, 7a; Shopify's own server takes only approved clients, 7a): their
+  their makers' own servers, 7a; Shopify's own server takes only approved clients, 7a), nor do
+  OneNote and Microsoft To Do (added 13 October 2026; Composio's toolkit pages say "requires
+  connections to go through your own OAuth app"; Simeon Labs' Microsoft app serves them once
+  registered, with Teams, Outlook, OneDrive and Excel): their
   link works once Simeon Labs registers its own app with each and names it in
   `SIMEON_COMPOSIO_AUTH_CONFIGS`. Until then a refused link answers 503 and the card says
   "<App> is coming soon in Simeon." (`OWN_APP_NEEDED` in `apps.py`; log line

@@ -540,7 +540,7 @@ final class PluginsModel {
 
   /** Whether the plugin's app can't be added yet (`AppsComingSoon`): its row and page say "Coming soon", with no Add. */
   func comingSoon(_ entry: PluginEntry) -> Bool {
-    store?.isComingSoon(entry.id) ?? AppsComingSoon.builtIn.contains(entry.id.lowercased())
+    store?.isComingSoon(entry.id) ?? AppsComingSoon.names(AppsComingSoon.builtIn, entry.id)
   }
 
   /** The sign-in button: the consent first for a new sign-in (Connect, Retry); Reopen opens the waiting page again at once. */

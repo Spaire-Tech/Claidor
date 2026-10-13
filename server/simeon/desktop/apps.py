@@ -102,9 +102,21 @@ NOT_CONFIGURED = "Apps are not switched on for this server yet."
 #: Ashby left the list on 13 October 2026: the apps reach their makers' own
 #: MCP servers instead, which sign anyone in. Shopify's own server reads
 #: Simeon's client document (`app_sign_in.py`) but takes only clients it has
-#: approved, so Shopify stays here until it approves Simeon.
+#: approved, so Shopify stays here until it approves Simeon. OneNote and
+#: Microsoft To Do joined the same day (Composio's toolkit pages: "requires
+#: connections to go through your own OAuth app"); Simeon Labs' Microsoft
+#: app, once registered, serves them with Teams and Outlook.
 OWN_APP_NEEDED = frozenset(
-    {"gusto", "xero", "shopify", "brex", "pipedrive", "docusign"}
+    {
+        "gusto",
+        "xero",
+        "shopify",
+        "brex",
+        "pipedrive",
+        "docusign",
+        "onenote",
+        "microsoft_todo",
+    }
 )
 
 

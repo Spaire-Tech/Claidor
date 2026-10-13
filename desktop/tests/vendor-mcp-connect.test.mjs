@@ -340,7 +340,7 @@ test("a vendor that only takes the loopback is asked for it even when the box st
     const catalog = await load("source/shared/node/vendor-mcp/catalog.ts", "vendor-catalog-loopback");
     try {
       const loopback = catalog.module.VENDOR_MCP_CONNECTORS.filter((connector) => connector.loopbackOnly === true).map((connector) => connector.id).sort();
-      assert.deepEqual(loopback, ["canva", "dropbox", "square", "vercel"]);
+      assert.deepEqual(loopback, ["canva", "dropbox", "lovable", "square", "vercel"]);
     } finally {
       await catalog.dispose();
     }

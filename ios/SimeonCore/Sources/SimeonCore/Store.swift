@@ -1441,10 +1441,9 @@ public final class AppStore {
    * no apps at all). By its id, its name or its title.
    */
   public func isComingSoon(_ app: String) -> Bool {
-    let key = app.lowercased()
-    if appsComingSoon.contains(key) { return true }
+    if AppsComingSoon.names(appsComingSoon, app) { return true }
     guard let found = catalogApp(named: app) else { return false }
-    return found.comingSoon || appsComingSoon.contains(found.id.lowercased())
+    return found.comingSoon || AppsComingSoon.names(appsComingSoon, found.id)
   }
 
   /** When the connected apps were last read, so Add does not read them again a moment later. */

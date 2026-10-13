@@ -1412,6 +1412,15 @@ final class ConnectConsentTests: XCTestCase {
     XCTAssertEqual(resend.note, "Emails your agents send go out from your own domains.")
     // Shopify's own server takes only the clients it has approved (13 October 2026): still "Coming soon".
     XCTAssertTrue(AppsComingSoon.builtIn.contains("shopify"))
+    // The server names an app by Composio's name, the catalog by its own: either finds it.
+    XCTAssertTrue(AppsComingSoon.names(AppsComingSoon.builtIn, "microsoft-to-do"))
+    XCTAssertTrue(AppsComingSoon.names(AppsComingSoon.builtIn, "Microsoft To Do"))
+    XCTAssertTrue(AppsComingSoon.names(["Microsoft_ToDo"], "microsoft-to-do"))
+    XCTAssertFalse(AppsComingSoon.names(AppsComingSoon.builtIn, "Microsoft Teams"))
+    XCTAssertFalse(AppsComingSoon.names(AppsComingSoon.builtIn, ""))
+    let lovable = ConnectConsent(app: CatalogApp(id: "lovable", name: "lovable", title: "Lovable", summary: "", serverURL: "https://mcp.lovable.dev"), name: "Lovable")
+    XCTAssertEqual(lovable.points[0].body, "Your agents can read and use your projects, workspaces and their code in Lovable.")
+    XCTAssertEqual(lovable.route, .vendor(host: "mcp.lovable.dev"))
   }
 
   func testTheExtraLayerAndTheUnknown() {

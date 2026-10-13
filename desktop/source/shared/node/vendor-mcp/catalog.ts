@@ -183,6 +183,15 @@ export const VENDOR_MCP_CONNECTORS: readonly VendorMcpConnector[] = [
   // made through our apps service to the new address).
   { id: "granola", name: "Granola", category: G.Meetings, url: "https://mcp.granola.ai/mcp", description: "Your meeting notes, transcripts, and folders." },
   { id: "resend", name: "Resend", category: G.Developer, url: "https://mcp.resend.com", description: "Send email, and manage domains, audiences, and broadcasts." },
+  // 13 October 2026, the founder ("add those microsoft suite ones basically. add lovable"): SharePoint through our apps service
+  // (Composio signs anyone in); OneNote and Microsoft To Do need Simeon Labs' own Microsoft app first (`OWN_APP_NEEDED`), so they
+  // say "Coming soon" until it is named; Lovable on its own server, which takes a hosted sign-in address only once Lovable approves
+  // it and the loopback always (docs.lovable.dev, "Lovable MCP server"). Word and PowerPoint have no app of their own anywhere:
+  // their files are OneDrive's and SharePoint's.
+  app({ id: "sharepoint", name: "SharePoint", category: G.FilesDocs, description: "Sites, lists, and files in Microsoft 365." }, "share_point"),
+  app({ id: "onenote", name: "OneNote", category: G.FilesDocs, description: "Notebooks, sections, and pages." }, "onenote"),
+  app({ id: "microsoft-to-do", name: "Microsoft To Do", category: G.Productivity, description: "Your tasks and lists in Microsoft To Do." }, "microsoft_todo"),
+  { id: "lovable", name: "Lovable", category: G.Developer, url: "https://mcp.lovable.dev", loopbackOnly: true, description: "Build and change apps and sites by describing them." },
 ];
 
 const byId = new Map(VENDOR_MCP_CONNECTORS.map((item) => [item.id, item]));

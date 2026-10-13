@@ -633,12 +633,24 @@ public enum Plugins {
  * Simeon Labs' server names them (`GET /desktop/api/apps`, `comingSoon`), so
  * one whose own app is set up there can be added at once; until the server
  * answers, this list holds. Klaviyo and Ashby left it the same day: their
- * makers' own servers sign anyone in.
+ * makers' own servers sign anyone in. OneNote and Microsoft To Do joined it
+ * the same day too, until Simeon Labs' Microsoft app is set up.
  */
 public enum AppsComingSoon {
-  public static let builtIn: Set<String> = ["gusto", "xero", "shopify", "brex", "pipedrive", "docusign"]
+  public static let builtIn: Set<String> = ["gusto", "xero", "shopify", "brex", "pipedrive", "docusign", "onenote", "microsoft_todo"]
   /** What the card says in place of Add. */
   public static let label = "Coming soon"
+
+  /** A name as the list matches it: its letters and digits alone, so the server's "microsoft_todo" names the catalog's "microsoft-to-do". */
+  public static func key(_ name: String) -> String {
+    String(name.lowercased().filter { $0.isLetter || $0.isNumber })
+  }
+
+  /** Whether a list names an app, by its id, its name or its title (`key`). */
+  public static func names(_ list: Set<String>, _ app: String) -> Bool {
+    let wanted = key(app)
+    return !wanted.isEmpty && list.contains { key($0) == wanted }
+  }
 
   /** The server's list, when its answer has one (an older server's has none). */
   public static func from(_ answer: JSON) -> Set<String>? {
