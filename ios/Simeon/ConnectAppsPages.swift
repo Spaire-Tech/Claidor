@@ -2,7 +2,7 @@ import SwiftUI
 import SimeonCore
 
 /**
- * Connectors' pages and parts beyond its two lists (ConnectorsPage.swift),
+ * Connectors' pages and parts beyond its two lists (Settings.swift),
  * ported from the Mac's Plugins window
  * (mac/Simeon/PluginsWindow.swift) with its behaviour and words, drawn as
  * the phone's Connect apps is drawn: a plugin's page, the setup page, a
@@ -65,6 +65,23 @@ struct PluginNoticeBar: View {
 
 // MARK: - The filter
 
+/** The filter disc beside the search (the reference's, 42, in the control's fill): its menu, the glyph in blue while something is chosen. */
+struct PluginsFilterDisc<Choices: View>: View {
+  let active: Bool
+  @ViewBuilder var choices: () -> Choices
+
+  var body: some View {
+    Menu { choices() } label: {
+      Image(systemName: "line.3.horizontal.decrease")
+        .font(.system(size: 16, weight: .medium))
+        .foregroundStyle(active ? Ink.blue : Ink.primary)
+        .frame(width: 42, height: 42)
+        .background(Ink.groupedRow, in: Circle())
+    }
+    .accessibilityLabel("Filter connectors")
+  }
+}
+
 /** The Mac's Filter menu (`ii`): Type (All types, Connectors, Skills), then Ownership (All, Team, Public); one choice each. */
 struct PluginFilterPickers: View {
   @Binding var filter: PluginFilter
@@ -106,9 +123,9 @@ struct TeamBadge: View {
   }
 }
 
-/** A skill's tile (the Mac's `SkillTile`): the list mark on the logos' tile, at the rows' size (37) or a page's (56). */
+/** A skill's tile (the Mac's `SkillTile`): the list mark on the logos' tile, at the rows' size (42) or a page's (56). */
 struct SkillTile: View {
-  var size: CGFloat = 37
+  var size: CGFloat = ConnectorLogo.row
 
   var body: some View {
     let shape = RoundedRectangle(cornerRadius: size * 11 / 40, style: .continuous)
@@ -223,23 +240,21 @@ struct SkillsPluginRow: View {
 
   var body: some View {
     NavigationLink { PluginPage(entryId: entry.id) } label: {
-      HStack(spacing: 14) {
-        ConnectorTile(name: entry.displayName, size: ConnectorLook.rowTile, logo: ConnectorLook.logo)
-        VStack(alignment: .leading, spacing: 1) {
+      HStack(spacing: 16) {
+        ConnectorTile(name: entry.displayName, size: ConnectorLogo.row, logo: ConnectorLogo.fill)
+        VStack(alignment: .leading, spacing: 2) {
           HStack(spacing: 6) {
-            Text(entry.displayName).font(.system(size: 17)).foregroundStyle(Ink.primary).lineLimit(1)
+            Text(entry.displayName).font(.system(size: 16.4)).foregroundStyle(Ink.primary).lineLimit(1)
             if let team = Plugins.modeLabel(mode) { TeamBadge(tip: team) }
           }
           Text(Plugins.contributions(entry)).font(.system(size: 13)).foregroundStyle(Ink.secondary).lineLimit(1)
         }
         Spacer(minLength: 0)
-        RowWord(title: "View")
       }
       .contentShape(.rect)
     }
     .buttonStyle(.plain)
-    .padding(.horizontal, 16)
-    .padding(.vertical, 8)
+    .padding(.vertical, 17)
   }
 }
 
@@ -261,15 +276,11 @@ struct PrivateSkillsSection: View {
     }
     if model.agentId == nil || skills.isEmpty {
       Text(Plugins.privateEmpty(agentOpen: model.agentId != nil, query: query))
-        .font(.system(size: 15))
+        .font(.system(size: 13))
         .foregroundStyle(Ink.secondary)
-        .padding(.horizontal, 4)
+        .padding(.top, 8)
     } else {
-      ConnectorsCard {
-        ForEach(Array(skills.enumerated()), id: \.element.id) { index, skill in
-          PrivateSkillRow(skill: skill).rowDivider(index < skills.count - 1)
-        }
-      }
+      ForEach(skills) { skill in PrivateSkillRow(skill: skill) }
     }
   }
 
@@ -299,10 +310,10 @@ struct PrivateSkillRow: View {
   var body: some View {
     HStack(spacing: 12) {
       NavigationLink { SkillPage(skillId: skill.id) } label: {
-        HStack(spacing: 14) {
-          SkillTile(size: ConnectorLook.rowTile)
-          VStack(alignment: .leading, spacing: 1) {
-            Text(skill.name).font(.system(size: 17)).foregroundStyle(Ink.primary).lineLimit(1)
+        HStack(spacing: 16) {
+          SkillTile()
+          VStack(alignment: .leading, spacing: 2) {
+            Text(skill.name).font(.system(size: 16.4)).foregroundStyle(Ink.primary).lineLimit(1)
             Text(skill.subtitle).font(.system(size: 13)).foregroundStyle(Ink.secondary).lineLimit(2)
           }
           Spacer(minLength: 0)
@@ -317,8 +328,7 @@ struct PrivateSkillRow: View {
           .tint(Ink.blue)
       }
     }
-    .padding(.horizontal, 16)
-    .padding(.vertical, 8)
+    .padding(.vertical, 17)
   }
 }
 
@@ -738,7 +748,7 @@ struct PluginPage: View {
 
   private func head(_ shown: Shown, connected: Bool) -> some View {
     HStack(spacing: 14) {
-      ConnectorTile(name: shown.name, size: 56)
+      ConnectorTile(name: shown.name, size: 56, logo: ConnectorLogo.fill)
       VStack(alignment: .leading, spacing: 3) {
         Text(shown.name).font(.system(size: 20, weight: .semibold)).foregroundStyle(Ink.primary)
         if let first = shown.accounts.first {

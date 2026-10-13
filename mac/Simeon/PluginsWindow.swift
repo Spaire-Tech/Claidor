@@ -4,13 +4,12 @@ import SimeonCore
 
 /**
  * Connectors (`overlay:plugins`, K01–K09; "Plugins" until 13 October 2026,
- * when it took the iPhone's design, Muse's: the founder's "in mac design it
- * better for it to match iphone. use apple style picker"): in Settings'
- * place over the whole window (one overlay at a time), the same panel and
- * dim. "Connectors" in the middle, "Search connectors" and the filter, then
- * Apple's segmented control, Available | Yours; the catalog by section in
- * rounded groups, Featured as cards with their logos large, See all ›; each
- * row its logo, name and Connect in the blue, or View; a plugin's page
+ * when it took the iPhone's Connectors: "in mac design it better for it to
+ * match iphone. use apple style picker"): in Settings' place over the whole
+ * window (one overlay at a time), the same panel and dim. "Connectors", the
+ * search in glass with the filter beside it, Available | Yours as Apple's
+ * segmented control in our glass (not the Mac's blue one); the catalog by
+ * section, every app shown, one to a row as on the iPhone; a plugin's page
  * (Add, Uninstall, its accounts, tools, setup values, connectors, skills),
  * a server's page, the setup page, a skill's page; the notice at the
  * bottom. Opened by Connect apps, ⌘K and "/" "Plugins", ⌘⇧M, ⌘⇧W and a
@@ -142,14 +141,14 @@ private struct PluginsPanel: View {
         if let page = model.path.last {
           DetailBar(title: PluginPages.title(page, model: model), look: look) { model.path.removeLast() }
         } else {
-          // The iPhone's: the title in the middle of the bar.
           Text("Connectors")
-            .font(.system(size: 15, weight: .semibold))
+            .font(.system(size: 17, weight: .medium))
+            .tracking(-0.136)
             .foregroundStyle(look.ink)
             .lineLimit(1)
             .frame(height: 24)
-            .frame(maxWidth: .infinity)
-            .padding(EdgeInsets(top: 12, leading: 48, bottom: 2, trailing: 48))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(EdgeInsets(top: 32, leading: 32, bottom: 6, trailing: 32))
             .accessibilityAddTraits(.isHeader)
           PluginsBar(look: look)
         }
@@ -256,37 +255,81 @@ private struct PressScale: ButtonStyle {
 // MARK: - The bar
 
 /**
- * Under the title, as the iPhone has them: "Search connectors" with the
- * filter beside it, then Apple's segmented control, Available | Yours
- * (the founder, 13 October 2026: "use apple style picker, not like we have
- * now"; the tabs were the Electron window's).
+ * Under the title, as the iPhone has them: the search in glass with the
+ * filter beside it, then Available | Yours (GlassSegments); padded 20
+ * above, 32 at the sides, 6 under.
  */
 private struct PluginsBar: View {
   let look: Look
-  @Environment(PluginsState.self) private var plugins
 
   var body: some View {
-    @Bindable var model = plugins.model
-    VStack(spacing: 12) {
+    VStack(spacing: 14) {
       HStack(spacing: 8) {
         PluginsSearch(look: look)
         FilterButton(look: look)
       }
-      Picker("Show", selection: $model.tab) {
-        Text("Available").tag(PluginsModel.Tab.marketplace)
-        Text("Yours").tag(PluginsModel.Tab.yours)
-      }
-      .pickerStyle(.segmented)
-      .labelsHidden()
-      .controlSize(.large)
-      .frame(maxWidth: 320)
-      .accessibilityLabel("Show")
+      GlassSegments(look: look)
     }
-    .padding(EdgeInsets(top: 12, leading: 32, bottom: 4, trailing: 32))
+    .padding(EdgeInsets(top: 20, leading: 32, bottom: 6, trailing: 32))
   }
 }
 
-/** Filter (28, 6 round): grey, darker under the pointer, on the grey while the tab's filter is set; its menu stays open while choosing. */
+/**
+ * Available | Yours, as Apple's segmented control in our glass (the
+ * founder, 13 October 2026: "use apple style picker", and of the Mac's own,
+ * "whats that blue picker"): a capsule of glass (the material before macOS
+ * 26), 34 high and 280 wide; the chosen half a lighter capsule that slides
+ * to it (white and lifted on light, the grey on dark), its word in the ink
+ * at 13 medium, the other at 60%. Chosen on the click.
+ */
+private struct GlassSegments: View {
+  let look: Look
+  @Environment(PluginsState.self) private var plugins
+  @Namespace private var thumb
+
+  var body: some View {
+    HStack(spacing: 0) {
+      segment("Available", .marketplace)
+      segment("Yours", .yours)
+    }
+    .padding(3)
+    .frame(width: 280, height: 34)
+    .liquidGlass(in: Capsule())
+    .accessibilityElement(children: .contain)
+    .accessibilityLabel("Show")
+  }
+
+  private func segment(_ title: String, _ tab: PluginsModel.Tab) -> some View {
+    let model = plugins.model
+    let chosen = model.tab == tab
+    return Button {
+      guard !chosen else { return }
+      withAnimation(.snappy(duration: 0.22)) { model.tab = tab }
+    } label: {
+      Text(title)
+        .font(.system(size: 13, weight: chosen ? .medium : .regular))
+        .foregroundStyle(chosen ? look.ink : look.inkSecondary)
+        .lineLimit(1)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background {
+          if chosen {
+            Capsule()
+              .fill(look.dark ? Color.white.opacity(0.14) : Color.white)
+              .shadow(color: Color(red: 20 / 255, green: 30 / 255, blue: 60 / 255).opacity(look.dark ? 0 : 0.12), radius: 1.5, x: 0, y: 1)
+              .matchedGeometryEffect(id: "chosen", in: thumb)
+          }
+        }
+        .contentShape(Capsule())
+    }
+    .buttonStyle(.hand)
+    // No keyboard ring around a half (the Mac's blue focus ring; the search panel's tabs do the same).
+    .focusable(false)
+    .accessibilityLabel(title)
+    .accessibilityAddTraits(chosen ? [.isButton, .isSelected] : .isButton)
+  }
+}
+
+/** Filter (34, round, in glass, as the sidebar's round buttons): its glyph in grey, in the ink while the tab's filter is set; its menu stays open while choosing. */
 private struct FilterButton: View {
   let look: Look
   @Environment(PluginsState.self) private var plugins
@@ -298,13 +341,13 @@ private struct FilterButton: View {
     let active = !model.filter.isAll
     Button { FilterMenu.show(model: model, under: spot.frame) } label: {
       Image(systemName: "line.3.horizontal.decrease")
-        .font(.system(size: 14, weight: .regular))
+        .font(.system(size: 13, weight: .medium))
         .foregroundStyle(hovering || active ? look.ink : look.inkSecondary)
-        .frame(width: 28, height: 28)
-        .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(active ? look.fillHover : hovering ? look.rowHover : .clear))
-        .contentShape(Rectangle())
+        .frame(width: 34, height: 34)
+        .contentShape(Circle())
     }
     .buttonStyle(.hand)
+    .liquidGlass(in: .circle)
     .onHover { hovering = $0 }
     .background(WindowSpotReader(spot: spot))
     .help("Filter connectors")
@@ -349,7 +392,12 @@ private enum FilterMenu {
   }
 }
 
-/** "Search connectors" (the bar's width, 32 high): the glass, the words at 14; white and lifted (light) or the grey (dark); the blue edge while it has the keys. Follows each key. */
+/**
+ * "Search connectors" (the bar's width, 34 high): a capsule of glass, as the
+ * iPhone's search, the glass and the words in grey, × once something is
+ * typed; no edge when it has the keys (13 October 2026: "what is that
+ * search bar? that has blue underline when you click?"). Follows each key.
+ */
 private struct PluginsSearch: View {
   let look: Look
   @Environment(PluginsState.self) private var plugins
@@ -359,11 +407,11 @@ private struct PluginsSearch: View {
 
   var body: some View {
     @Bindable var model = plugins.model
-    HStack(spacing: 4) {
+    HStack(spacing: 6) {
       Image(systemName: "magnifyingglass")
-        .font(.system(size: 13))
-        .foregroundStyle(look.inkTertiary)
-        .frame(width: 14, height: 14)
+        .font(.system(size: 13, weight: .medium))
+        .foregroundStyle(look.inkSecondary)
+        .frame(width: 16, height: 16)
       TextField("", text: $model.query, prompt: Text("Search connectors").foregroundStyle(look.inkTertiary))
         .textFieldStyle(.plain)
         .font(.system(size: 14))
@@ -371,25 +419,22 @@ private struct PluginsSearch: View {
         .autocorrectionDisabled()
         .focused($focused)
         .accessibilityLabel("Search connectors")
-    }
-    .padding(EdgeInsets(top: 0, leading: 8, bottom: 0, trailing: 4))
-    .frame(maxWidth: .infinity)
-    .frame(height: 32)
-    .background {
-      if look.dark {
-        RoundedRectangle(cornerRadius: 8, style: .continuous).fill(look.rowHover)
-      } else {
-        RoundedRectangle(cornerRadius: 10, style: .continuous)
-          .fill(Color.white)
-          .shadow(color: Color(red: 20 / 255, green: 30 / 255, blue: 60 / 255).opacity(0.09), radius: 0.5)
-          .shadow(color: Color(red: 20 / 255, green: 30 / 255, blue: 60 / 255).opacity(0.05), radius: 1, x: 0, y: 1)
+      if !model.query.isEmpty {
+        Button { model.query = "" } label: {
+          Image(systemName: "xmark.circle.fill")
+            .font(.system(size: 13))
+            .foregroundStyle(look.inkTertiary)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.hand)
+        .accessibilityLabel("Clear search")
       }
     }
-    .overlay {
-      RoundedRectangle(cornerRadius: look.dark ? 8 : 10, style: .continuous)
-        .strokeBorder(focused ? look.unread : .clear, lineWidth: 1)
-    }
-    .contentShape(Rectangle())
+    .padding(.horizontal, 12)
+    .frame(maxWidth: .infinity)
+    .frame(height: 34)
+    .liquidGlass(in: Capsule())
+    .contentShape(Capsule())
     .onTapGesture { focused = true }
     .onChange(of: plugins.searchFocus) { _, _ in
       // And its words picked, as the window's ⌘F selects them.
@@ -409,7 +454,7 @@ extension PluginsSearch {
 
 // MARK: - The list
 
-/** The scroll pane (padded 32 at the sides, 28 under): Available or Yours, drawn afresh at the top for each. */
+/** The scroll pane (padded 22, 32 and 28): Marketplace or Yours, drawn afresh at the top for each tab. */
 private struct PluginsList: View {
   let look: Look
   @Environment(PluginsState.self) private var plugins
@@ -417,10 +462,10 @@ private struct PluginsList: View {
   var body: some View {
     let model = plugins.model
     ScrollView {
-      VStack(alignment: .leading, spacing: 0) {
+      VStack(alignment: .leading, spacing: 24) {
         if model.tab == .marketplace { MarketplaceList(look: look) } else { YoursList(look: look) }
       }
-      .padding(EdgeInsets(top: 0, leading: 32, bottom: 28, trailing: 32))
+      .padding(EdgeInsets(top: 22, leading: 32, bottom: 28, trailing: 32))
       .frame(maxWidth: .infinity, alignment: .leading)
     }
     .scrollIndicators(.automatic)
@@ -428,18 +473,21 @@ private struct PluginsList: View {
   }
 }
 
-/** Available (`ci`): the sections (Featured, then A–Z), or "Results" while searching; each folded at 4 with See all ›. */
+/** Available (`ci`): the sections (Featured, then A–Z), or "Results" while searching; every app of each shown (13 October 2026: "the see all makes no sense"). */
 private struct MarketplaceList: View {
   let look: Look
   @Environment(PluginsState.self) private var plugins
+  @Environment(WindowState.self) private var window
 
   var body: some View {
     let model = plugins.model
     let entries = Plugins.search(model.catalog, model.query).filter { Plugins.keeps($0, model.marketplaceFilter) }
     let searching = !model.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     if entries.isEmpty {
-      YoursEmpty(text: Plugins.marketplaceEmpty(loaded: model.catalogLoaded, catalogEmpty: model.catalog.isEmpty, filterSet: !model.marketplaceFilter.isAll, query: model.query), look: look)
-        .padding(.top, 22)
+      Text(Plugins.marketplaceEmpty(loaded: model.catalogLoaded, catalogEmpty: model.catalog.isEmpty, filterSet: !model.marketplaceFilter.isAll, query: model.query))
+        .font(.system(size: 12))
+        .foregroundStyle(look.inkTertiary)
+        .frame(maxWidth: .infinity, alignment: .leading)
     } else if searching {
       MarketplaceSection(title: "Results", entries: entries, folds: false, look: look)
     } else {
@@ -450,130 +498,59 @@ private struct MarketplaceList: View {
   }
 }
 
-/** A section: its head with See all › while some are folded away, then its apps on one rounded group; Featured's as cards. */
 private struct MarketplaceSection: View {
   let title: String
   let entries: [PluginEntry]
   let folds: Bool
   let look: Look
   @Environment(PluginsState.self) private var plugins
-
-  var body: some View {
-    let model = plugins.model
-    let shown = Plugins.collapse(entries, expanded: model.expanded.contains(title) || !folds, limit: Plugins.marketplaceLimit)
-    let featured = folds && title == Plugins.featured
-    SectionHead(title: title, look: look) {
-      if shown.hidden > 0 { SeeAllButton(look: look) { model.expanded.insert(title) } }
-    }
-    GroupCard(look: look) {
-      ForEach(Array(shown.visible.enumerated()), id: \.element.id) { index, entry in
-        let last = index == shown.visible.count - 1
-        if featured {
-          FeaturedRow(entry: entry, look: look).cardDivider(!last, inset: 16, look: look)
-        } else {
-          EntryRow(entry: entry, look: look).cardDivider(!last, look: look)
-        }
-      }
-    }
-  }
-}
-
-/**
- * One app of the catalog (the iPhone's row): its logo, its name, and at the
- * right Connect in the blue; View once it is connected (its page), Added for
- * a plugin of skills alone, its state while it is neither, Coming soon for
- * an app that can't be added yet. One Connect (`Connecting`, 13 October
- * 2026): an app shows connected only once it is signed in.
- */
-private struct EntryRow: View {
-  let entry: PluginEntry
-  let look: Look
-  @Environment(PluginsState.self) private var plugins
   @Environment(WindowState.self) private var window
 
   var body: some View {
     let model = plugins.model
-    // An app that can't be added yet: dimmed, "Coming soon" in place of Connect (`AppsComingSoon`).
-    let soon = !model.installed(entry).isInstalled && model.comingSoon(entry)
-    GroupRow(title: entry.displayName, team: Plugins.teamMark(entry), look: look, dimmed: soon,
-             icon: { PluginIcon(name: entry.displayName, iconUrl: entry.iconUrl, side: GroupRow<EmptyView, EmptyView>.tile, look: look) },
-             open: { model.path.append(.plugin(entry.id)) }) {
-      if model.adding == entry.id {
-        AddingSpinner(name: entry.displayName, look: look)
-      } else if model.installed(entry).isInstalled {
-        let server = model.serverState(entry)
-        if entry.connectorList.isEmpty || server == nil {
-          RowWord(title: "Added", look: look)
-        } else if let server, server.status == "needsAuth" {
-          RowWord(title: Plugins.signInButton(model.signInState(server, accountKey: server.accountKey)), disabled: model.isBusy, look: look) {
-            model.requestSignIn(server, accountKey: server.accountKey)
+    VStack(alignment: .leading, spacing: 0) {
+      SectionHeading(title: title, look: look)
+      PluginsGrid(look: look) {
+        ForEach(entries) { entry in
+          // An app that can't be added yet: dimmed, "Coming soon" in place of Add (`AppsComingSoon`).
+          let soon = !model.installed(entry).isInstalled && model.comingSoon(entry)
+          PluginRow(title: entry.displayName, line: entry.description, team: Plugins.teamMark(entry), look: look, dimmed: soon,
+                    icon: { PluginIcon(name: entry.displayName, iconUrl: entry.iconUrl, look: look) },
+                    open: { model.path.append(.plugin(entry.id)) }) {
+            // One Connect (`Connecting`, 13 October 2026): an app shows Connected only once it is signed in.
+            if model.adding == entry.id {
+              AddingSpinner(name: entry.displayName, look: look)
+            } else if model.installed(entry).isInstalled {
+              let server = model.serverState(entry)
+              if entry.connectorList.isEmpty || server == nil {
+                AddedMark(title: "Added", look: look)
+              } else if let server, server.status == "needsAuth" {
+                PluginPill(title: Plugins.signInButton(model.signInState(server, accountKey: server.accountKey)), kind: .secondary, disabled: model.isBusy, look: look) {
+                  model.requestSignIn(server, accountKey: server.accountKey)
+                }
+                .accessibilityLabel("Connect \(entry.displayName)")
+              } else if let server, server.status != "connected" {
+                StatusWord(status: server.status, detail: server.statusDetail, look: look)
+              } else {
+                AddedMark(title: Connecting.connected, look: look)
+              }
+            } else if soon {
+              PluginPill(title: AppsComingSoon.label, kind: .soon, look: look)
+                .accessibilityLabel("\(entry.displayName) is coming soon")
+            } else {
+              PluginPill(title: Connecting.connect, kind: .secondary, disabled: model.isBusy, look: look) {
+                model.requestAdd(entry, agentId: window.selected)
+              }
+              .accessibilityLabel("Connect \(entry.displayName)")
+            }
           }
-          .accessibilityLabel("Connect \(entry.displayName)")
-        } else if let server, server.status != "connected" {
-          StatusWord(status: server.status, detail: server.statusDetail, look: look)
-        } else {
-          RowWord(title: "View", look: look) { model.path.append(.plugin(entry.id)) }
-            .accessibilityLabel("View \(entry.displayName)")
         }
-      } else if soon {
-        RowWord(title: AppsComingSoon.label, look: look)
-          .accessibilityLabel("\(entry.displayName) is coming soon")
-      } else {
-        RowWord(title: Connecting.connect, disabled: model.isBusy, look: look) {
-          model.requestAdd(entry, agentId: window.selected)
-        }
-        .accessibilityLabel("Connect \(entry.displayName)")
       }
     }
   }
 }
 
-/** A featured app (the iPhone's Featured, Muse's): its name over what it does, its logo large at the right; it opens its page, where Connect is. */
-private struct FeaturedRow: View {
-  let entry: PluginEntry
-  let look: Look
-  @Environment(PluginsState.self) private var plugins
-  @State private var hovering = false
-
-  var body: some View {
-    let model = plugins.model
-    let connected = model.installed(entry).isInstalled && model.serverState(entry)?.status == "connected"
-    Button { model.path.append(.plugin(entry.id)) } label: {
-      HStack(spacing: 16) {
-        VStack(alignment: .leading, spacing: 3) {
-          HStack(spacing: 6) {
-            Text(entry.displayName)
-              .font(.system(size: 14, weight: .semibold))
-              .foregroundStyle(look.ink)
-              .lineLimit(1)
-            if let team = Plugins.teamMark(entry) { TeamBadge(tip: team, look: look) }
-          }
-          if !entry.description.isEmpty {
-            Text(entry.description)
-              .font(.system(size: 13))
-              .foregroundStyle(look.inkSecondary)
-              .lineLimit(2)
-              .fixedSize(horizontal: false, vertical: true)
-          }
-          if connected {
-            Text(Connecting.connected).font(.system(size: 12)).foregroundStyle(look.inkTertiary).padding(.top, 1)
-          }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        PluginIcon(name: entry.displayName, iconUrl: entry.iconUrl, side: 56, look: look)
-      }
-      .padding(.horizontal, 16)
-      .padding(.vertical, 14)
-      .background(hovering ? look.ink.opacity(0.035) : .clear)
-      .contentShape(Rectangle())
-    }
-    .buttonStyle(.hand)
-    .onHover { hovering = $0 }
-    .accessibilityLabel("Open \(entry.displayName)")
-  }
-}
-
-/** Yours (`ki`, the iPhone's): the GitHub banner, Apps (folded at 6, See all ›), Private (the open agent's skills). */
+/** Yours (`ki`): the GitHub banner, Installed (all of them), Private (the open agent's skills). */
 private struct YoursList: View {
   let look: Look
   @Environment(PluginsState.self) private var plugins
@@ -589,40 +566,38 @@ private struct YoursList: View {
     let agentId = window.selected
     let showsInstalled = filter.isAll || !items.isEmpty
     let showsPrivate = filter.isAll || agentId == nil || !skills.isEmpty
-    let shown = Plugins.collapse(items, expanded: model.expanded.contains("Installed") || !q.isEmpty, limit: Plugins.installedLimit)
-    if !model.authBlocked.isEmpty { GitHubBanner(look: look).padding(.top, 18) }
-    if !showsInstalled && !showsPrivate { YoursEmpty(text: Plugins.noFilterMatch, look: look).padding(.top, 22) }
+    if !model.authBlocked.isEmpty { GitHubBanner(look: look) }
+    if !showsInstalled && !showsPrivate { YoursEmpty(text: Plugins.noFilterMatch, look: look) }
     if showsInstalled {
-      SectionHead(title: "Apps", look: look) {
-        if shown.hidden > 0 { SeeAllButton(look: look) { model.expanded.insert("Installed") } }
-      }
-      if items.isEmpty {
-        YoursEmpty(text: Plugins.installedEmpty(query: q), look: look)
-      } else {
-        GroupCard(look: look) {
-          ForEach(Array(shown.visible.enumerated()), id: \.offset) { index, item in
-            InstalledRow(item: item, look: look).cardDivider(index < shown.visible.count - 1, look: look)
+      VStack(alignment: .leading, spacing: 0) {
+        SectionHeading(title: "Installed", look: look)
+        if items.isEmpty {
+          YoursEmpty(text: Plugins.installedEmpty(query: q), look: look)
+        } else {
+          PluginsGrid(look: look) {
+            ForEach(Array(items.enumerated()), id: \.offset) { _, item in InstalledRow(item: item, look: look) }
           }
         }
       }
     }
     if showsPrivate {
-      SectionHead(title: "Private", look: look) { EmptyView() }
-      if agentId == nil || skills.isEmpty {
-        YoursEmpty(text: Plugins.privateEmpty(agentOpen: agentId != nil, query: q), look: look)
-      } else {
-        GroupCard(look: look) {
-          ForEach(Array(skills.enumerated()), id: \.element.id) { index, skill in
-            GroupRow(title: skill.name, line: skill.subtitle, team: nil, look: look,
-                     icon: { SkillTile(side: GroupRow<EmptyView, EmptyView>.tile, look: look) },
-                     open: { model.path.append(.skill(skill.id)) }) {
-              if skill.source == "workflow" {
-                PluginSwitch(on: skill.isEnabledForAgent, label: "Enable \(skill.name)", look: look) {
-                  Task { await model.setEnabled(skill, agentId: agentId) }
+      VStack(alignment: .leading, spacing: 0) {
+        SectionHeading(title: "Private", look: look)
+        if agentId == nil || skills.isEmpty {
+          YoursEmpty(text: Plugins.privateEmpty(agentOpen: agentId != nil, query: q), look: look)
+        } else {
+          VStack(spacing: 2) {
+            ForEach(skills) { skill in
+              PluginRow(title: skill.name, line: skill.subtitle, team: nil, look: look,
+                        icon: { SkillTile(side: 40, look: look) },
+                        open: { model.path.append(.skill(skill.id)) }) {
+                if skill.source == "workflow" {
+                  PluginSwitch(on: skill.isEnabledForAgent, label: "Enable \(skill.name)", look: look) {
+                    Task { await model.setEnabled(skill, agentId: agentId) }
+                  }
                 }
               }
             }
-            .cardDivider(index < skills.count - 1, look: look)
           }
         }
       }
@@ -630,7 +605,7 @@ private struct YoursList: View {
   }
 }
 
-/** A row of Yours › Apps: a plugin with its first connector's state, or a server of its own; View once it is connected. */
+/** A row of Installed: a plugin with its first connector's state, or a server of its own. */
 private struct InstalledRow: View {
   let item: PluginItem
   let look: Look
@@ -640,45 +615,18 @@ private struct InstalledRow: View {
     let model = plugins.model
     switch item {
     case .plugin(let entry, let mode, let connectors):
-      GroupRow(title: entry.displayName, line: Plugins.contributions(entry), team: Plugins.modeLabel(mode), look: look,
-               icon: { PluginIcon(name: entry.displayName, iconUrl: entry.iconUrl, side: GroupRow<EmptyView, EmptyView>.tile, look: look) },
-               open: { model.path.append(.plugin(entry.id)) }) {
-        if let first = connectors.first {
-          RowState(server: first, look: look) { model.path.append(.plugin(entry.id)) }
-        } else {
-          RowWord(title: "View", look: look) { model.path.append(.plugin(entry.id)) }
-        }
+      PluginRow(title: entry.displayName, line: Plugins.contributions(entry), team: Plugins.modeLabel(mode), look: look,
+                icon: { PluginIcon(name: entry.displayName, iconUrl: entry.iconUrl, look: look) },
+                open: { model.path.append(.plugin(entry.id)) }) {
+        if let first = connectors.first { ServerState(server: first, accountKey: first.accountKey, look: look) }
       }
     case .connector(let server, let mode):
       let entry = Plugins.entry(for: server, in: model.catalog)
-      GroupRow(title: server.name, line: Plugins.contributions(server, catalog: model.catalog), team: Plugins.modeLabel(mode), look: look,
-               icon: { PluginIcon(name: server.name, iconUrl: entry?.iconUrl, side: GroupRow<EmptyView, EmptyView>.tile, look: look) },
-               open: { model.path.append(.installed(server.id)) }) {
-        RowState(server: server, look: look) { model.path.append(.installed(server.id)) }
+      PluginRow(title: server.name, line: Plugins.contributions(server, catalog: model.catalog), team: Plugins.modeLabel(mode), look: look,
+                icon: { PluginIcon(name: server.name, iconUrl: entry?.iconUrl, look: look) },
+                open: { model.path.append(.installed(server.id)) }) {
+        ServerState(server: server, accountKey: server.accountKey, look: look)
       }
-    }
-  }
-}
-
-/** A server's state at a row's end, as the iPhone says it: View once connected, Connect in the blue when it needs its sign-in, else its status word. */
-private struct RowState: View {
-  let server: PluginServer
-  let look: Look
-  let open: () -> Void
-  @Environment(PluginsState.self) private var plugins
-
-  var body: some View {
-    let model = plugins.model
-    if server.status == "connected" {
-      RowWord(title: "View", look: look, action: open)
-        .accessibilityLabel("View \(server.name)")
-    } else if server.status == "needsAuth" {
-      RowWord(title: Plugins.signInButton(model.signInState(server, accountKey: server.accountKey)), disabled: model.isBusy, look: look) {
-        model.requestSignIn(server, accountKey: server.accountKey)
-      }
-      .accessibilityLabel("Connect \(server.name)")
-    } else {
-      StatusWord(status: server.status, detail: server.statusDetail, look: look)
     }
   }
 }
@@ -706,97 +654,56 @@ private struct ServerState: View {
 
 // MARK: - Rows and their parts
 
-/** A section's head (the iPhone's): its name (15 semibold) and at the right what the section offers; 22 over it, 8 under. */
-private struct SectionHead<Trailing: View>: View {
+/** A section's heading (`Hs`, 30): 12 in the faint grey, padded 8, 8 and 6. */
+private struct SectionHeading: View {
   let title: String
   let look: Look
-  @ViewBuilder let trailing: Trailing
 
   var body: some View {
-    HStack(alignment: .firstTextBaseline) {
-      Text(title)
-        .font(.system(size: 15, weight: .semibold))
-        .foregroundStyle(look.ink)
-        .lineLimit(1)
-        .accessibilityAddTraits(.isHeader)
-      Spacer(minLength: 8)
-      trailing
-    }
-    .padding(.horizontal, 4)
-    .padding(.top, 22)
-    .padding(.bottom, 8)
+    Text(title)
+      .font(.system(size: 12))
+      .foregroundStyle(look.inkTertiary)
+      .lineLimit(1)
+      .padding(EdgeInsets(top: 8, leading: 8, bottom: 6, trailing: 8))
+      .frame(height: 30, alignment: .bottomLeading)
+      .accessibilityAddTraits(.isHeader)
   }
 }
 
-/** See all › (Muse's): the rest of the section shown in place. */
-private struct SeeAllButton: View {
-  let look: Look
-  let action: () -> Void
-  @State private var hovering = false
-
-  var body: some View {
-    Button(action: action) {
-      HStack(spacing: 3) {
-        Text("See all")
-        Image(systemName: "chevron.right").font(.system(size: 10, weight: .semibold))
-      }
-      .font(.system(size: 13))
-      .foregroundStyle(hovering ? look.ink : look.inkSecondary)
-      .contentShape(Rectangle())
-    }
-    .buttonStyle(.hand)
-    .onHover { hovering = $0 }
-  }
-}
-
-/** A group of rows on one rounded card (macOS's grouped lists, the iPhone's): white on the panel's grey (light), a faint fill (dark), a hairline edge. */
-private struct GroupCard<Content: View>: View {
+/** One app to a row, as the iPhone lists them (two columns until 13 October 2026), 2 apart. */
+private struct PluginsGrid<Content: View>: View {
   let look: Look
   @ViewBuilder let content: Content
 
   var body: some View {
-    let shape = RoundedRectangle(cornerRadius: 12, style: .continuous)
-    VStack(spacing: 0) { content }
-      .background(shape.fill(look.dark ? look.ink.opacity(0.05) : Color.white))
-      .clipShape(shape)
-      .overlay(shape.strokeBorder(look.ink.opacity(look.dark ? 0.08 : 0.07), lineWidth: 1))
+    LazyVStack(alignment: .leading, spacing: 2) { content }
   }
 }
 
-private extension View {
-  /** The hairline under a group's row but its last, from the name's edge. */
-  func cardDivider(_ shown: Bool, inset: CGFloat = 14 + GroupRow<EmptyView, EmptyView>.tile + 12, look: Look) -> some View {
-    overlay(alignment: .bottom) {
-      if shown { Rectangle().fill(look.ink.opacity(0.08)).frame(height: 0.5).padding(.leading, inset) }
-    }
-  }
-}
-
-/** Yours' and the list's empty lines (12, the faint grey, padded 4 at the sides). */
+/** Yours' empty lines (11 on 14, the faint grey, padded 8 at the sides). */
 private struct YoursEmpty: View {
   let text: String
   let look: Look
 
   var body: some View {
     Text(text)
-      .font(.system(size: 12))
+      .font(.system(size: 11))
       .lineSpacing(3)
       .foregroundStyle(look.inkTertiary)
-      .padding(.horizontal, 4)
+      .padding(.horizontal, 8)
       .frame(maxWidth: .infinity, alignment: .leading)
   }
 }
 
 /**
- * A group's row (the iPhone's): the open part (the logo, 36, then the name
- * at 13 medium with its Team mark, and a line at 12 in grey when it has
- * one) and its control at the right; a faint fill under the pointer.
+ * A row (`fs`, 64, padded 12): the open part (the logo, 12, then the name
+ * at 13 medium with its Team mark and one line at 13 in grey, each cut
+ * short) and its control. No card and no line, as the iPhone's rows and the
+ * sidebar's: a faint fill under the pointer, 12 round.
  */
-private struct GroupRow<Icon: View, Trailing: View>: View {
-  /** The logo's tile. */
-  static var tile: CGFloat { 36 }
+private struct PluginRow<Icon: View, Trailing: View>: View {
   let title: String
-  var line: String? = nil
+  let line: String
   let team: String?
   let look: Look
   /** Faded, for an app that can't be added yet. */
@@ -807,7 +714,7 @@ private struct GroupRow<Icon: View, Trailing: View>: View {
   @State private var hovering = false
 
   var body: some View {
-    HStack(spacing: 10) {
+    HStack(spacing: 12) {
       Button(action: open) {
         HStack(spacing: 12) {
           icon
@@ -820,9 +727,9 @@ private struct GroupRow<Icon: View, Trailing: View>: View {
                 .truncationMode(.tail)
               if let team { TeamBadge(tip: team, look: look) }
             }
-            if let line, !line.isEmpty {
+            if !line.isEmpty {
               Text(line)
-                .font(.system(size: 12))
+                .font(.system(size: 13))
                 .foregroundStyle(look.inkSecondary)
                 .lineLimit(1)
                 .truncationMode(.tail)
@@ -837,45 +744,10 @@ private struct GroupRow<Icon: View, Trailing: View>: View {
       .accessibilityLabel("Open \(title)")
       trailing
     }
-    .padding(.horizontal, 14)
-    .padding(.vertical, 9)
-    .background(hovering ? look.ink.opacity(0.035) : .clear)
+    .padding(12)
+    .frame(height: 64)
+    .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(hovering ? look.rowHover : .clear))
     .onHover { hovering = $0 }
-  }
-}
-
-/** A row's word at the right, as the iPhone's: in the blue when it does something (Connect, View), else in the faint grey (Added, Coming soon). Faded while it waits. */
-private struct RowWord: View {
-  let title: String
-  var disabled = false
-  let look: Look
-  var action: (() -> Void)? = nil
-  @State private var hovering = false
-
-  var body: some View {
-    if let action {
-      Button(action: action) {
-        Text(title)
-          .font(.system(size: 13))
-          .foregroundStyle(look.link.opacity(hovering && !disabled ? 0.75 : 1))
-          .lineLimit(1)
-          .padding(.vertical, 6)
-          .padding(.leading, 8)
-          .contentShape(Rectangle())
-      }
-      .buttonStyle(.hand)
-      .disabled(disabled)
-      .opacity(disabled ? 0.56 : 1)
-      .onHover { hovering = $0 }
-      .fixedSize()
-    } else {
-      Text(title)
-        .font(.system(size: 13))
-        .foregroundStyle(look.inkTertiary)
-        .lineLimit(1)
-        .padding(.leading, 8)
-        .fixedSize()
-    }
   }
 }
 
@@ -899,10 +771,10 @@ private struct TeamBadge: View {
 }
 
 /**
- * An app's icon (`ToolIcon`), as the iPhone draws it on Connectors: its logo
- * large on its tile, as an app's icon (the founder, 13 October 2026: "bigger
- * the logos"), white with a hairline edge (light) or the raised grey (dark);
- * else its first letter. 36 on a row, 56 on a featured card or a page.
+ * An app's icon (`ToolIcon`), as the iPhone draws it: its logo at 76% of
+ * its tile (13 October 2026: "bigger the logos"), the tile white with a
+ * hairline edge (light) or the raised grey (dark); else its first letter.
+ * 40 on a row (11 round), 56 on a page.
  */
 private struct PluginIcon: View {
   let name: String
@@ -920,10 +792,10 @@ private struct PluginIcon: View {
       shape.fill(look.dark ? Color(hex: 0x232325) : Color.white)
       if let image {
         Image(nsImage: image).resizable().interpolation(.high).aspectRatio(contentMode: .fit)
-          .frame(width: side * 0.78, height: side * 0.78)
+          .frame(width: side * 0.76, height: side * 0.76)
       } else {
         Text(String(name.prefix(1)).uppercased())
-          .font(.system(size: side * 0.4, weight: .semibold))
+          .font(.system(size: side * 0.36, weight: .semibold))
           .foregroundStyle(look.inkSecondary)
       }
     }
@@ -944,12 +816,12 @@ private struct SkillTile: View {
 
   var body: some View {
     Image(systemName: "list.bullet.rectangle")
-      .font(.system(size: side <= 40 ? 12 : 18))
-      .foregroundStyle(side <= 40 ? look.inkTertiary : look.ink)
+      .font(.system(size: side == 40 ? 12 : 18))
+      .foregroundStyle(side == 40 ? look.inkTertiary : look.ink)
       .frame(width: side, height: side)
-      .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(look.ink.opacity(side <= 40 ? 0.06 : 0.03)))
+      .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(look.ink.opacity(side == 40 ? 0.06 : 0.03)))
       .overlay {
-        if side > 40 { RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(look.ink.opacity(0.10), lineWidth: 1) }
+        if side != 40 { RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(look.ink.opacity(0.10), lineWidth: 1) }
       }
       .accessibilityHidden(true)
   }
@@ -1026,6 +898,23 @@ private struct AddingSpinner: View {
     .onAppear { withAnimation(.linear(duration: 0.7).repeatForever(autoreverses: false)) { turning = true } }
     .accessibilityElement()
     .accessibilityLabel("Connecting \(name)")
+  }
+}
+
+/** Connected (`di`, "Added" until 13 October 2026; still "Added" for a plugin of skills alone): a green tick and its word at 12 in the faint grey. Not a button. */
+private struct AddedMark: View {
+  var title = Connecting.connected
+  let look: Look
+
+  var body: some View {
+    HStack(spacing: 5) {
+      Image(systemName: "checkmark").font(.system(size: 10, weight: .semibold)).foregroundStyle(look.success)
+      Text(title).font(.system(size: 12)).foregroundStyle(look.inkTertiary)
+    }
+    .padding(EdgeInsets(top: 2, leading: 6, bottom: 2, trailing: 8))
+    .frame(height: 20)
+    .fixedSize()
+    .accessibilityElement(children: .combine)
   }
 }
 

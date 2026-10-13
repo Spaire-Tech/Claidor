@@ -2574,33 +2574,30 @@ the consent kept:
 Shared in `SimeonCore/Connecting.swift` and `AppStore.beginConnect`, with
 a test (`PluginCallsTests`). Not yet run on a Mac or an iPhone.
 
-### Connectors, as the iPhone's (13 October 2026)
+### Connectors, in our design (13 October 2026)
 
-The founder, with Muse's screens: "design the connectors page on iphone
-like this. bigger the logos ... connected become yours ... also in mac
-design it better for it to match iphone. use apple style picker ... for
-the mac consent see screenshot 4th. its wider than ours". Now:
+A first pass copied Muse's screens (bold section titles, rounded groups
+with lines, Featured cards, See all, the Mac's blue segmented control, a
+search field with a blue edge). The founder: "that's not our design ...
+that bold title 'creativity' big title WHY. you went off style", "whats
+that blue picker. what happens to water glass. what is that search bar",
+"the see all makes no sense". So the page is the approved Connect apps
+design again (11 October 2026), with only what was asked:
 
-- The iPhone (`ios/Simeon/ConnectorsPage.swift`): "Connectors" in the
-  bar with Back and the filter; "Search connectors"; Apple's segmented
-  control, Available | Yours; Featured as cards (name, what it does, the
-  logo at 64 on the right); every category as one rounded group, four
-  rows and See all ›; each row the logo (40, the logo at 78% of its tile,
-  was 37 at 60%), the name, and Connect in the blue, View once connected,
-  Added, Coming soon. Yours: Apps (state line, Connect or View), plugins of
-  skills alone, Private. The app's page, the setup page and the consent
-  are as before.
-- The Mac (`PluginsWindow.swift`): the same order and words in the
-  overlay, 760 wide: "Connectors" in the middle, the search with the
-  filter, `Picker(.segmented)` for Available | Yours (the Electron
-  window's own tabs are gone); Featured as cards, the rest in rounded
-  groups (white on the panel's grey, a faint fill on dark) with See all ›;
-  rows with the logo at 36, the name, and Connect or View in the blue.
-- The Mac's consent (`MacConnector.swift`): 600 wide (was 440), × at the
-  top left, the logo at 64, Connect across the foot; it no longer stops at
-  640 high, so it scrolls only in a window too short for it.
-- "Plugins" in ⌘K and "/" reads "Connectors"; the empty lines say
-  connectors and Available.
+- Named Connectors; Yours is no longer a page behind "4 connected" but
+  the second half of Apple's segmented control, Available | Yours ("connected
+  become yours"): on the iPhone the system's own (glass on iOS 26); on the
+  Mac `GlassSegments`, a capsule of our glass with the chosen half a lighter
+  capsule sliding to it, no blue.
+- Every app of each section is shown: no See all, View all or Show N more.
+- The logos larger on their tiles: 42 at 76% on the iPhone's rows (was 37
+  at 60%), 40 at 76% on the Mac's (the Mac's own logo filled its grey tile).
+- The Mac: "Search connectors" as a capsule of glass with no edge when it
+  has the keys, the filter a round glass button beside it (the sidebar's);
+  one app to a row as on the iPhone, no card and no line, a faint fill
+  under the pointer; 760 wide.
+- Kept from the first pass: the Mac's consent at 600 wide with × at the
+  top, not stopping at 640 high; "Connectors" in ⌘K and "/".
 
 Not yet built or run on a Mac or an iPhone (Linux here: the files parse,
 the core's tests pass).
