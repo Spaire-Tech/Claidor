@@ -94,6 +94,8 @@ final class MacConnector {
    */
   @discardableResult
   func signIn(_ url: URL, name: String, store: AppStore?, done: @escaping @MainActor () async -> Bool) async -> SignInEnd {
+    // The sign-in's last page sends the person back to this app (the browser's too, when the sheet won't open).
+    let url = Connecting.returning(url, to: SimeonConfig.macURLScheme)
     session?.cancel()
     // The replaced sign-in's listener lets go of the address now, not when its wait next wakes.
     catcher?.stop()
@@ -124,9 +126,9 @@ final class MacConnector {
       }
     }
     let state = SignInSheetState()
-    // Closed on the vendor's confirm page: look a little longer. Cancelled: two looks, then the buttons are free again.
-    let session = ASWebAuthenticationSession(url: url, callback: .customScheme(SimeonConfig.macURLScheme)) { _, error in
-      state.close(confirmed: (error as? ASWebAuthenticationSessionError)?.code != .canceledLogin)
+    // Closed on the vendor's confirm page, or back on our address: look a little longer. Cancelled, or back saying it didn't work: two looks, then the buttons are free again.
+    let session = ASWebAuthenticationSession(url: url, callback: .customScheme(SimeonConfig.macURLScheme)) { callback, error in
+      state.close(confirmed: (error as? ASWebAuthenticationSessionError)?.code != .canceledLogin && !Connecting.failed(callback))
     }
     session.presentationContextProvider = presenter
     // The person's own browser sign-ins (Google's, Apple's) are kept and used.
@@ -222,24 +224,27 @@ struct ConnectConsentLayer: View {
 }
 
 /**
- * The iPhone's consent (`ConnectConsentSheet`) on the Mac: the app's logo
- * (56) and name (20, semibold), what it does; three points with their
- * symbols in the window's blue (what the agents reach in it, that the person
- * stays in charge, that agents can get things wrong); a hairline; the small
- * print (who handles the sign-in, where the information goes, the app's own
- * terms, and for some apps one more thing). Connect in Apple's prominent
- * glass, in the blue, and Cancel under it. 440 wide, 22 round, scrolling
- * when the window is short. Return connects, Escape cancels.
+ * The consent on the Mac, as Muse's (the founder, 13 October 2026: "its
+ * wider than ours. ours is too thin, therefore we need to scroll down to
+ * see all"): 600 wide, so it all shows at once; × at the top left; the
+ * app's logo (64) and name (22, semibold), what it does; three points with
+ * their symbols in the window's blue (what the agents reach in it, that the
+ * person stays in charge, that agents can get things wrong); a hairline; the
+ * small print (who handles the sign-in, where the information goes, the
+ * app's own terms, and for some apps one more thing); Connect across the
+ * foot in Apple's prominent glass, in the blue. It scrolls only in a window
+ * too short for it. Return connects; Escape, × or a click beside it cancels.
  */
 private struct ConnectConsentDialog: View {
   let consent: ConnectConsent
   let look: Look
   let connect: () -> Void
   let cancel: () -> Void
+  @State private var hoveringClose = false
 
   var body: some View {
-    let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)
-    // As tall as it needs; when the window is too short for it, the words scroll over the buttons.
+    let shape = RoundedRectangle(cornerRadius: 24, style: .continuous)
+    // As tall as it needs; only a window too short for it scrolls the words over the button.
     ViewThatFits(in: .vertical) {
       VStack(spacing: 0) {
         content
@@ -250,13 +255,13 @@ private struct ConnectConsentDialog: View {
         buttons
       }
     }
-    .frame(width: 440)
+    .frame(width: 600)
+    .overlay(alignment: .topLeading) { close }
     .background(look.elevated, in: shape)
     .clipShape(shape)
     .overlay(shape.strokeBorder(look.ink.opacity(0.1), lineWidth: 1))
     .shadow(color: .black.opacity(look.dark ? 0.5 : 0.22), radius: 30, x: 0, y: 12)
-    .frame(maxHeight: 640)
-    .padding(.vertical, 40)
+    .padding(.vertical, 32)
     .background(ViewerKeys(aboveLocks: true) { event in
       let mods = event.modifierFlags.intersection([.command, .shift, .option, .control])
       guard mods.isEmpty else { return false }
@@ -274,16 +279,32 @@ private struct ConnectConsentDialog: View {
     .accessibilityAddTraits(.isModal)
   }
 
+  /** × (28, round), at the top left as Muse's; darker on the grey under the pointer. */
+  private var close: some View {
+    Button(action: cancel) {
+      Image(systemName: "xmark")
+        .font(.system(size: 12, weight: .semibold))
+        .foregroundStyle(hoveringClose ? look.ink : look.inkSecondary)
+        .frame(width: 28, height: 28)
+        .background(Circle().fill(look.ink.opacity(hoveringClose ? 0.1 : 0.06)))
+        .contentShape(Circle())
+    }
+    .buttonStyle(.hand)
+    .onHover { hoveringClose = $0 }
+    .padding(16)
+    .accessibilityLabel("Cancel")
+  }
+
   private var content: some View {
     VStack(spacing: 0) {
-      AppLogoTile(name: consent.title, look: look, side: 56)
+      AppLogoTile(name: consent.title, look: look, side: 64)
         .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
-        .padding(.top, 28)
+        .padding(.top, 36)
         .accessibilityHidden(true)
       Text(consent.title)
-        .font(.system(size: 20, weight: .semibold))
+        .font(.system(size: 22, weight: .semibold))
         .foregroundStyle(look.ink)
-        .padding(.top, 14)
+        .padding(.top, 16)
         .accessibilityAddTraits(.isHeader)
       if !consent.summary.isEmpty {
         Text(consent.summary)
@@ -292,15 +313,15 @@ private struct ConnectConsentDialog: View {
           .multilineTextAlignment(.center)
           .fixedSize(horizontal: false, vertical: true)
           .padding(.top, 6)
-          .padding(.horizontal, 32)
+          .padding(.horizontal, 64)
       }
       VStack(alignment: .leading, spacing: 18) {
         ForEach(Array(consent.points.enumerated()), id: \.offset) { _, point in
-          HStack(alignment: .top, spacing: 14) {
+          HStack(alignment: .top, spacing: 16) {
             Image(systemName: point.symbol)
-              .font(.system(size: 18, weight: .regular))
+              .font(.system(size: 19, weight: .regular))
               .foregroundStyle(look.yours)
-              .frame(width: 26)
+              .frame(width: 28)
               .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
               Text(point.title)
@@ -316,13 +337,14 @@ private struct ConnectConsentDialog: View {
         }
       }
       .frame(maxWidth: .infinity, alignment: .leading)
-      .padding(.horizontal, 28)
-      .padding(.top, 24)
+      .padding(.horizontal, 48)
+      .padding(.top, 26)
       Rectangle()
         .fill(look.ink.opacity(0.1))
         .frame(height: 0.5)
+        .padding(.horizontal, 48)
         .padding(.top, 22)
-      VStack(alignment: .leading, spacing: 10) {
+      VStack(alignment: .leading, spacing: 8) {
         ForEach(consent.smallPrint + (consent.note.map { [$0] } ?? []), id: \.self) { line in
           Text(line)
             .font(.system(size: 12))
@@ -331,36 +353,26 @@ private struct ConnectConsentDialog: View {
         }
       }
       .frame(maxWidth: .infinity, alignment: .leading)
-      .padding(.horizontal, 28)
-      .padding(.vertical, 16)
+      .padding(.horizontal, 48)
+      .padding(.top, 14)
+      .padding(.bottom, 8)
     }
   }
 
   private var buttons: some View {
-    VStack(spacing: 2) {
-      Button(action: connect) {
-        Text("Connect")
-          .font(.system(size: 14, weight: .semibold))
-          .foregroundStyle(Color.white)
-          .frame(maxWidth: .infinity)
-          .frame(height: 32)
-      }
-      .prominentGlassButton()
-      .controlSize(.large)
-      .tint(look.yours)
-      .handCursor()
-      Button(action: cancel) {
-        Text("Cancel")
-          .font(.system(size: 14))
-          .foregroundStyle(look.ink)
-          .frame(maxWidth: .infinity)
-          .frame(height: 32)
-          .contentShape(Rectangle())
-      }
-      .buttonStyle(.hand)
+    Button(action: connect) {
+      Text("Connect")
+        .font(.system(size: 14, weight: .semibold))
+        .foregroundStyle(Color.white)
+        .frame(maxWidth: .infinity)
+        .frame(height: 36)
     }
-    .padding(.horizontal, 28)
-    .padding(.top, 8)
-    .padding(.bottom, 14)
+    .prominentGlassButton()
+    .controlSize(.large)
+    .tint(look.yours)
+    .handCursor()
+    .padding(.horizontal, 48)
+    .padding(.top, 16)
+    .padding(.bottom, 28)
   }
 }

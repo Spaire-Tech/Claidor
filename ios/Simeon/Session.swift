@@ -582,6 +582,7 @@ final class AppConnector {
    * iPhone's own loopback while the sheet is open (`LoopbackSignIn`).
    */
   private func signIn(_ url: URL, name: String, store: AppStore, done: @escaping () -> Bool) async -> SignInEnd {
+    let url = Connecting.returning(url, to: AppPlatform.urlScheme)
     var catcher: LoopbackCatcher?
     if let signInState = LoopbackSignIn.state(returningHere: url) {
       guard let listening = await LoopbackCatcher.start(state: signInState, finish: "\(AppPlatform.urlScheme)://connected") else {
@@ -598,9 +599,9 @@ final class AppConnector {
     }
     defer { catcher?.stop() }
     let state = SheetState()
-    // Closed on the vendor's confirm page: look a little longer. Cancelled: two looks, then the buttons are free again (Cancel used to hold every Add for 20 s).
-    let session = ASWebAuthenticationSession(url: url, callback: .customScheme(AppPlatform.urlScheme)) { _, error in
-      state.close(confirmed: (error as? ASWebAuthenticationSessionError)?.code != .canceledLogin)
+    // Closed on the vendor's confirm page, or back on our address: look a little longer. Cancelled, or back saying it didn't work: two looks, then the buttons are free again (Cancel used to hold every Add for 20 s).
+    let session = ASWebAuthenticationSession(url: url, callback: .customScheme(AppPlatform.urlScheme)) { callback, error in
+      state.close(confirmed: (error as? ASWebAuthenticationSessionError)?.code != .canceledLogin && !Connecting.failed(callback))
     }
     session.presentationContextProvider = presenter
     session.prefersEphemeralWebBrowserSession = false

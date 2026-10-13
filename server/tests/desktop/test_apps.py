@@ -636,38 +636,140 @@ class TestSigningIn:
             == "https://slack.com/oauth/v2/authorize?state=s"
         )
 
-    async def test_a_providers_page_of_its_own_is_kept(
+    async def _connect_through_link_page(
+        self,
+        client: httpx.AsyncClient,
+        headers: dict[str, str],
+        mock: respx.MockRouter,
+        page: str,
+    ) -> str:
+        apps_module._sessions.clear()
+        mock.get(f"{API}/api/v3.1/connected_accounts").mock(return_value=_accounts())
+        mock.post(f"{API}/api/v3.1/tool_router/session").mock(
+            return_value=httpx.Response(201, json={"session_id": "trs_1"})
+        )
+        mock.post(f"{API}/api/v3.1/tool_router/session/trs_1/link").mock(
+            return_value=httpx.Response(
+                201,
+                json={
+                    "link_token": "t",
+                    "redirect_url": page,
+                    "connected_account_id": "ca_2",
+                },
+            )
+        )
+        response = await client.post("/desktop/api/apps/gmail/connect", headers=headers)
+        assert response.status_code == 200, response.text
+        started = await client.get(
+            response.json()["url"].replace(settings.BASE_URL.rstrip("/"), "")
+        )
+        return started.headers["location"]
+
+    async def test_the_providers_connect_page_is_skipped(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User
     ) -> None:
+        """13 October 2026: the hosted page said "Simeon wants to connect"
+        and went on by itself. Asked here as the page asks, the person goes
+        straight to Google's page."""
         headers = await _signed_in(client, session, user)
-        page = "https://connect.composio.dev/link/lk_1"
+        page = "https://connect.composio.dev/link/lk_AbCdEfGhIjKl"
+        link = f"{API}/api/v3.1/internal/connected_accounts/link/lk_AbCdEfGhIjKl"
         with respx.mock(assert_all_called=True) as mock:
-            mock.get(f"{API}/api/v3.1/connected_accounts").mock(
-                return_value=_accounts()
-            )
-            mock.post(f"{API}/api/v3.1/tool_router/session").mock(
-                return_value=httpx.Response(201, json={"session_id": "trs_1"})
-            )
-            mock.post(f"{API}/api/v3.1/tool_router/session/trs_1/link").mock(
+            mock.get(link).mock(
                 return_value=httpx.Response(
-                    201,
+                    200,
                     json={
-                        "link_token": "t",
-                        "redirect_url": page,
-                        "connected_account_id": "ca_2",
+                        "connected_account": {
+                            "id": "ca_2",
+                            "status": "INITIALIZING",
+                            "expected_input_fields": [],
+                        },
+                        "toolkit": {"slug": "gmail", "name": "Gmail"},
+                        "project": {"name": "Simeon"},
+                    },
+                )
+            )
+            started = mock.post(link).mock(
+                return_value=httpx.Response(
+                    200,
+                    json={
+                        "status": "INITIATED",
+                        "redirect_url": "https://accounts.google.com/o/oauth2/auth?state=s",
+                    },
+                )
+            )
+            location = await self._connect_through_link_page(
+                client, headers, mock, page
+            )
+        assert location == "https://accounts.google.com/o/oauth2/auth?state=s"
+        assert json.loads(started.calls[0].request.content) == {"input": {}}
+        # As the page asks it: no key of ours goes with it.
+        assert "x-api-key" not in started.calls[0].request.headers
+
+    async def test_a_providers_page_that_asks_something_is_kept(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        """A shop's or a subdomain's name to type: the page asks it, so it stays."""
+        headers = await _signed_in(client, session, user)
+        page = "https://connect.composio.dev/link/lk_AbCdEfGhIjKl"
+        link = f"{API}/api/v3.1/internal/connected_accounts/link/lk_AbCdEfGhIjKl"
+        with respx.mock(assert_all_called=True) as mock:
+            mock.get(link).mock(
+                return_value=httpx.Response(
+                    200,
+                    json={
+                        "connected_account": {
+                            "status": "INITIALIZING",
+                            "expected_input_fields": [
+                                {"name": "shop", "required": True}
+                            ],
+                        }
                     },
                 )
             )
             mock.get(page).mock(
                 return_value=httpx.Response(200, text="<html>Connect</html>")
             )
-            response = await client.post(
-                "/desktop/api/apps/gmail/connect", headers=headers
+            # No sign-in is started for it: an unmatched POST would fail the mock.
+            location = await self._connect_through_link_page(
+                client, headers, mock, page
             )
-        started = await client.get(
-            response.json()["url"].replace(settings.BASE_URL.rstrip("/"), "")
-        )
-        assert started.headers["location"] == page
+        assert location == page
+
+    async def test_a_providers_page_that_cant_be_asked_is_kept(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _signed_in(client, session, user)
+        page = "https://connect.composio.dev/link/lk_AbCdEfGhIjKl"
+        link = f"{API}/api/v3.1/internal/connected_accounts/link/lk_AbCdEfGhIjKl"
+        for refusal in (
+            httpx.Response(404, json={"error": {"message": "Link session not found"}}),
+            httpx.Response(200, text="not json"),
+        ):
+            with respx.mock(assert_all_called=True) as mock:
+                mock.get(link).mock(return_value=refusal)
+                mock.get(page).mock(
+                    return_value=httpx.Response(200, text="<html>Connect</html>")
+                )
+                location = await self._connect_through_link_page(
+                    client, headers, mock, page
+                )
+            assert location == page
+        with respx.mock(assert_all_called=True) as mock:
+            mock.get(link).mock(
+                return_value=httpx.Response(
+                    200,
+                    json={"connected_account": {"status": "INITIALIZING"}},
+                )
+            )
+            mock.post(link).mock(return_value=httpx.Response(500, json={}))
+            mock.get(page).mock(
+                return_value=httpx.Response(200, text="<html>Connect</html>")
+            )
+            location = await self._connect_through_link_page(
+                client, headers, mock, page
+            )
+        assert location == page
 
     async def test_a_start_link_leads_only_where_it_was_signed_for(
         self, client: httpx.AsyncClient
@@ -685,6 +787,34 @@ class TestSigningIn:
         assert (
             await client.get(old.replace(settings.BASE_URL.rstrip("/"), ""))
         ).status_code == 400
+
+    async def test_the_sign_in_ends_back_in_the_app_that_opened_it(
+        self, client: httpx.AsyncClient
+    ) -> None:
+        """13 October 2026: "the last screen after something is connected
+        makes no sense ... should take us back". The app names itself on our
+        start link; the last page sends the person to it, and the app's
+        sign-in sheet closes on its own address."""
+        good = apps_module.start_url("https://accounts.google.com/o/oauth2/auth?x=1")
+        path = good.replace(settings.BASE_URL.rstrip("/"), "")
+        started = await client.get(path + "&back=simeon-ios")
+        assert started.status_code == 302
+        assert "simeon_apps_back=simeon-ios" in started.headers["set-cookie"]
+        done = await client.get("/desktop/apps/connected?status=success")
+        assert done.status_code == 302
+        assert done.headers["location"] == "simeon-ios://connected"
+        # Once: a later sign-in in a browser's tab ends on the page.
+        assert (await client.get("/desktop/apps/connected")).status_code == 200
+
+        await client.get(path + "&back=simeon")
+        failed = await client.get("/desktop/apps/connected?status=failed")
+        assert failed.headers["location"] == "simeon://connected?status=failed"
+
+        # Only our own apps: any other scheme is never kept.
+        client.cookies.clear()
+        other = await client.get(path + "&back=javascript")
+        assert "set-cookie" not in other.headers
+        assert (await client.get("/desktop/apps/connected")).status_code == 200
 
     async def test_the_landing_page_and_the_callback_are_ours(
         self, client: httpx.AsyncClient

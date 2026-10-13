@@ -43,6 +43,29 @@ public enum Connecting {
     guard let why, !why.isEmpty else { return "\(name) didn't connect. Try again." }
     return "\(name) didn't connect: \(why)"
   }
+
+  /**
+   * Our start link for an app's sign-in (`/desktop/apps/start`, server
+   * `apps.py`) with the app that opens it named (`back`), so the sign-in's
+   * last page sends the person back here and Apple's sheet closes on the
+   * app's own address (the founder, 13 October 2026: "the last screen after
+   * something is connected makes no sense ... should take us back"). A
+   * vendor's own page is left as it is.
+   */
+  public static func returning(_ url: URL, to scheme: String) -> URL {
+    guard url.path.hasSuffix("/desktop/apps/start"),
+          var parts = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return url }
+    var items = (parts.queryItems ?? []).filter { $0.name != "back" }
+    items.append(URLQueryItem(name: "back", value: scheme))
+    parts.queryItems = items
+    return parts.url ?? url
+  }
+
+  /** The sheet closed on the app's own address: whether the sign-in's last page said it didn't work. */
+  public static func failed(_ callback: URL?) -> Bool {
+    guard let callback, let items = URLComponents(url: callback, resolvingAgainstBaseURL: false)?.queryItems else { return false }
+    return items.contains { $0.name == "status" && ["failed", "error"].contains($0.value?.lowercased() ?? "") }
+  }
 }
 
 /** A connect begun (`AppStore.beginConnect`): the sign-in page, and the app this connect added, so a cancelled one can be taken back. */

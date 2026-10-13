@@ -92,6 +92,20 @@ _COMPOSIO_DOMAINS = ("composio.dev", "composio.io")
 _START_TTL_S = 15 * 60
 #: Asking the provider's link where it leads: a quick question, never a wait for the person.
 _LINK_TIMEOUT_S = 5.0
+#: The provider's hosted Connect page, `connect.composio.dev/link/lk_…`
+#: (`provider_page`): the token its page hands on with.
+_LINK_PAGE = re.compile(r"^/link/(lk_[A-Za-z0-9_-]{4,64})/?$")
+#: What the provider's Connect page asks its own backend, without a key,
+#: to find where the sign-in goes (read from the page's script on 13
+#: October 2026; the documented way, `long_redirect_url`, is refused for
+#: the provider's own sign-ins since July 2026).
+_LINK_SESSION = "api/v3.1/internal/connected_accounts/link/{token}"
+#: The apps that open a sign-in and are sent back to once it is done
+#: (`apps_start`, `apps_connected`): the iPhone's scheme and the Mac's,
+#: with the Mac's earlier one.
+_APP_SCHEMES = frozenset({"simeon-ios", "simeon", "simeon-mac"})
+#: Which app opened the sign-in, for the page it ends on.
+_BACK_COOKIE = "simeon_apps_back"
 NOT_CONFIGURED = "Apps are not switched on for this server yet."
 
 #: Apps whose provider lends no sign-in of its own (measured 11 October
@@ -402,15 +416,71 @@ def _is_composio(url: str) -> bool:
     return any(host == one or host.endswith("." + one) for one in _COMPOSIO_DOMAINS)
 
 
+async def _past_link_page(url: str) -> str | None:
+    """Where the provider's hosted Connect page would send the person, asked
+    for here so they never see it (the founder, 13 October 2026: "that
+    simeon wants to connect page makes no sense ... it goes to the page
+    that ends connection immediately without me clicking anything. please
+    remove it as we already have our consent page"). The page does just
+    this when the app asks for nothing (a shop's or a subdomain's name):
+    it reads its link, and with nothing to ask it starts the sign-in at
+    once and goes where that answers. Anything else, or any answer not
+    understood, and the page is kept: it still works, one screen longer."""
+    parts = urlsplit(url)
+    match = _LINK_PAGE.match(parts.path)
+    if not _is_composio(url) or match is None:
+        return None
+    session_url = _api_url(_LINK_SESSION.format(token=match.group(1)))
+    try:
+        async with httpx.AsyncClient(timeout=_LINK_TIMEOUT_S) as client:
+            read = await client.get(session_url, headers={"accept": "application/json"})
+            link = read.json() if read.status_code == 200 else None
+            account = link.get("connected_account") if isinstance(link, dict) else None
+            if not isinstance(account, dict):
+                log.info("desktop.apps.link_kept", reason=f"read {read.status_code}")
+                return None
+            shared = (account.get("experimental") or {}).get("account_type") == "SHARED"
+            if (
+                account.get("status") != "INITIALIZING"
+                or account.get("expected_input_fields")
+                or shared
+            ):
+                # A form to fill, a team account, or a sign-in already under way: the page asks.
+                log.info("desktop.apps.link_kept", reason="the page asks something")
+                return None
+            started = await client.post(
+                session_url, headers={"accept": "application/json"}, json={"input": {}}
+            )
+            answer = started.json() if started.status_code < 300 else None
+    except (httpx.HTTPError, ValueError) as error:
+        log.info("desktop.apps.link_kept", reason=type(error).__name__)
+        return None
+    if not isinstance(answer, dict):
+        log.warning("desktop.apps.link_kept", reason=f"start {started.status_code}")
+        return None
+    to = answer.get("redirect_url")
+    if (
+        not isinstance(to, str)
+        or answer.get("status") != "INITIATED"
+        or urlsplit(to).scheme != "https"
+    ):
+        log.warning("desktop.apps.link_kept", reason=f"start {started.status_code}")
+        return None
+    return to
+
+
 async def provider_page(url: str) -> str:
     """The app's own sign-in page behind the provider's link (white label,
     13 October 2026): the link is asked for where it leads, without
     following it, as the browser would; while it only redirects (as the
     provider's documented `long_redirect_url` does), the person goes
     straight to Google's, Slack's or HubSpot's page and never sees the
-    provider's. A link that is a page of its own (the hosted "Connect" page,
-    branded in the provider's dashboard) is kept as it is, and so is any
-    link when the provider can't be asked."""
+    provider's. The hosted "Connect" page is asked the same way
+    (`_past_link_page`); one that has something to ask is kept as it is,
+    and so is any link when the provider can't be asked."""
+    past = await _past_link_page(url)
+    if past is not None:
+        url = past
     current = url
     for _ in range(4):
         if not _is_composio(current):
@@ -689,8 +759,22 @@ h1{{font-size:20px;font-weight:600;margin:0 0 6px}}p{{margin:0;opacity:.7}}</sty
 
 
 @router.get("/apps/connected", name="desktop:apps_connected")
-async def apps_connected(request: Request) -> HTMLResponse:
+async def apps_connected(request: Request) -> Response:
+    """Where a sign-in ends. Opened from the iPhone or the Mac (`apps_start`
+    kept which), it goes straight back to the app, whose sign-in sheet
+    closes on its own address (the founder, 13 October 2026: "the last
+    screen after something is connected makes no sense ... should take us
+    back"); in a browser's tab it says it is done."""
     failed = str(request.query_params.get("status", "")).lower() in {"failed", "error"}
+    back = request.cookies.get(_BACK_COOKIE, "")
+    if back in _APP_SCHEMES:
+        response = RedirectResponse(
+            f"{back}://connected" + ("?status=failed" if failed else ""),
+            status_code=302,
+            headers={"cache-control": "no-store"},
+        )
+        response.delete_cookie(_BACK_COOKIE, path="/desktop/apps")
+        return response
     title = "That didn't work" if failed else "Connected"
     body = (
         "Go back to Simeon and try again."
@@ -723,7 +807,23 @@ async def apps_start(request: Request) -> Response:
             status_code=400,
             headers={"cache-control": "no-store"},
         )
-    return RedirectResponse(to, status_code=302, headers={"cache-control": "no-store"})
+    response = RedirectResponse(
+        to, status_code=302, headers={"cache-control": "no-store"}
+    )
+    # The app that opened this (`?back=` its scheme, outside the signature: it
+    # only ever names one of ours) is where the sign-in's last page sends the person.
+    back = str(request.query_params.get("back", "")).strip().lower()
+    if back in _APP_SCHEMES:
+        response.set_cookie(
+            _BACK_COOKIE,
+            back,
+            max_age=_START_TTL_S,
+            path="/desktop/apps",
+            secure=settings.BASE_URL.startswith("https://"),
+            httponly=True,
+            samesite="lax",
+        )
+    return response
 
 
 @router.get("/apps/oauth/callback", name="desktop:apps_oauth_callback")

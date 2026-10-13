@@ -474,6 +474,26 @@ their makers' own servers on 13 October 2026; see 7a.)
   a link kept as a page, the provider's hosted page, branded in its dashboard (Project Settings →
   White Labeling → Branding: title "Simeon", our logo; its "Secured by" line goes only with our
   own app). Not yet seen on a live sign-in.
+* **No in-between pages** (13 October 2026, the founder: "that simeon wants to connect page
+  makes no sense ... it goes to the page that ends connection immediately without me clicking
+  anything. please remove it" and "the last screen after something is connected makes no sense
+  ... should take us back"). The provider's managed sign-ins only ever hand out its hosted
+  Connect page (`connect.composio.dev/link/lk_…`; the documented `long_redirect_url` is refused
+  for its managed sign-ins since July 2026). That page, read from its own script, asks its
+  backend about the link (`GET api/v3.1/internal/connected_accounts/link/{token}`, no key) and,
+  when the app asks for nothing, starts the sign-in at once (`POST` the same, `{"input": {}}`)
+  and goes where that answers. The server now does those two calls itself
+  (`_past_link_page`), so the start link leads straight to Google's or Slack's page. An app
+  that asks something (a shop's or a subdomain's name), a team account, or any answer not
+  understood keeps the page, which still works (`desktop.apps.link_kept` says why). The internal
+  calls are undocumented: if the provider changes them, sign-ins fall back to the page, nothing
+  breaks. At the end, the apps add `back=<their scheme>` to our start link (`Connecting.returning`);
+  `/desktop/apps/start` keeps it in a 15-minute cookie on `/desktop/apps`, and
+  `/desktop/apps/connected` then sends the person to `simeon-ios://connected` or
+  `simeon://connected` (`?status=failed` when the provider says so), which closes the sign-in
+  sheet at once. Only the two apps' schemes are kept; a browser's tab (the web app) still ends on
+  the page. A vendor's own sign-in (an MCP server's) is not ours to end and is unchanged: the
+  sheet closes itself as soon as the computer says it is connected.
 * **Log lines.** Server: `desktop.apps.sign_in_started`, `desktop.apps.upstream_refused`,
   `desktop.apps.upstream_unreachable` (a timeout or dropped connection: `path`, `error`,
   `elapsed_ms`; the app then reads "could not be reached" and Render shows a 200) and

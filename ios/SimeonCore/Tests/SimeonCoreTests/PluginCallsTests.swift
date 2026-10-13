@@ -274,6 +274,23 @@ final class PluginCallsTests: XCTestCase {
     XCTAssertEqual(Connecting.notConnectedNotice("Linear").text, "Linear wasn't connected")
     XCTAssertEqual(Connecting.didntConnect("Linear", why: nil), "Linear didn't connect. Try again.")
   }
+
+  /** 13 October 2026: the sign-in's last page sends the person back to the app that opened it, and says when it failed. */
+  func testOurStartLinkNamesTheAppThatOpensIt() {
+    let start = URL(string: "https://api.simeonlabs.com/desktop/apps/start?to=https%3A%2F%2Faccounts.google.com%2Fo&e=1&s=ab")!
+    let back = Connecting.returning(start, to: "simeon-ios")
+    let items = URLComponents(url: back, resolvingAgainstBaseURL: false)!.queryItems!
+    XCTAssertEqual(items.map(\.name), ["to", "e", "s", "back"])
+    XCTAssertEqual(items.last?.value, "simeon-ios")
+    XCTAssertEqual(items.first?.value, "https://accounts.google.com/o", "the signed link is left as it was")
+    XCTAssertEqual(Connecting.returning(back, to: "simeon").query?.components(separatedBy: "back=").count, 2, "named once")
+    let vendor = URL(string: "https://mcp.notion.com/authorize?state=x")!
+    XCTAssertEqual(Connecting.returning(vendor, to: "simeon-ios"), vendor)
+
+    XCTAssertFalse(Connecting.failed(URL(string: "simeon-ios://connected")))
+    XCTAssertTrue(Connecting.failed(URL(string: "simeon-ios://connected?status=failed")))
+    XCTAssertFalse(Connecting.failed(nil))
+  }
 }
 
 /** A box that writes down each command and answers from a script: `desktopMcp`'s actions by "desktopMcp:<action>". */
