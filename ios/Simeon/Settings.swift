@@ -1123,7 +1123,9 @@ enum AppSections {
     let words = query.trimmingCharacters(in: .whitespaces)
     var order: [String] = []
     var apps: [String: [CatalogApp]] = [:]
-    for app in catalog where words.isEmpty || app.title.localizedCaseInsensitiveContains(words) || app.summary.localizedCaseInsensitiveContains(words) {
+    // The section's name finds its apps too ("finance" finds Finance & Money's), as the Mac's search weighs the category.
+    for app in catalog where words.isEmpty || app.title.localizedCaseInsensitiveContains(words) || app.summary.localizedCaseInsensitiveContains(words)
+      || app.category.localizedCaseInsensitiveContains(words) {
       let title = app.category.isEmpty ? "Apps" : app.category
       if apps[title] == nil { order.append(title) }
       apps[title, default: []].append(app)
