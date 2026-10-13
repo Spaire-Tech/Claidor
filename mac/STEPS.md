@@ -2602,3 +2602,28 @@ design again (11 October 2026), with only what was asked:
 Not yet built or run on a Mac or an iPhone (Linux here: the files parse,
 the core's tests pass).
 
+
+### The checkout card (13 October 2026)
+
+The founder: "we also need a card for each payment. like muse screenshot.
+i'll let you make sure we implement this all logically." One card for each
+purchase, before Link is asked for anything (docs/services-agents.md §7d).
+It sits in the chat like the "Your turn on the computer" card: the cart in a
+44-point tile, "Checkout" and "<agent> wants to place an order at
+<site>"; "Check the items, delivery and terms on the shop's page before you
+allow it."; the checkout as the agent left it (16:10, its top, 12 round on
+the Mac, 14 on the iPhone) with "Review order ↗" in glass over its corner;
+the Link card that pays ("Visa •••• 1234", "Pay with Link", the network's
+mark on a small white card); "Total" and the amount; Deny and Allow as the
+36-point pills (grey, blue). A Test pill and "Link's test mode: nothing is
+charged." in test mode. After Allow the buttons give way to where it stands:
+"Asking Link…", "Approve it in the Link app" with Open Link, "Approved ·
+placing your order", then "Ordered · Order #1042 · Arrives …", "Didn't go
+through", "Denied", "Expired" or "Canceled" ("Nothing was paid."). The
+iPhone's card has the flight card's frame (nearly the chat's width, 22
+round); the Mac's is 420 wide, 20 round. The gallery chat (`--gallery`)
+shows one waiting and one ordered; the demo's Allow walks through Link to
+the order.
+
+Not yet built or run on a Mac or an iPhone (Linux here: the files parse,
+the core's tests pass).

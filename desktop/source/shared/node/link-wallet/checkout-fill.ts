@@ -61,6 +61,7 @@ interface Page {
   frames(): Frame[];
   mainFrame(): Frame;
   bringToFront(): Promise<void>;
+  screenshot(options?: Record<string, unknown>): Promise<Uint8Array>;
 }
 interface Browser {
   contexts(): { pages(): Page[] }[];
@@ -173,6 +174,31 @@ async function openPages(playwright: PlaywrightLike, ports: readonly number[]): 
     } catch { /* no Chrome on this port */ }
   }));
   return { browsers, pages };
+}
+
+/**
+ * The checkout as the person will check it on the purchase card: one JPEG
+ * of the tab on the shop's site (the address the agent gave, else its
+ * domain), as it shows now. Nothing on the page is touched. Nothing when no
+ * tab is on that site, so the card never shows another shop's page.
+ */
+export async function captureCheckout(options: { readonly pageHint: string; readonly ports?: readonly number[]; readonly loadPlaywright?: () => PlaywrightLike }): Promise<{ readonly page: string; readonly jpeg: Uint8Array } | undefined> {
+  const hint = options.pageHint.trim();
+  if (hint.length === 0) return undefined;
+  let playwright: PlaywrightLike;
+  try { playwright = (options.loadPlaywright ?? loadBoxPlaywright)(); } catch { return undefined; }
+  const { browsers, pages } = await openPages(playwright, options.ports ?? BOX_CHROME_PORTS);
+  try {
+    const site = hostOf(hint);
+    const byAddress = pages.filter((page) => page.url().includes(hint));
+    const bySite = pages.filter((page) => hostOf(page.url()) === site || hostOf(page.url()).endsWith(`.${site}`));
+    const page = byAddress[0] ?? bySite[0];
+    if (page == null) return undefined;
+    const jpeg = await page.screenshot({ type: "jpeg", quality: 70, timeout: 8000, animations: "disabled", caret: "hide" }).catch(() => undefined);
+    return jpeg == null || jpeg.byteLength === 0 ? undefined : { page: hostOf(page.url()), jpeg };
+  } finally {
+    await Promise.all(browsers.map((browser) => browser.close().catch(() => undefined)));
+  }
 }
 
 async function hasCardFields(page: Page): Promise<boolean> {

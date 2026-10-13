@@ -67,6 +67,7 @@ import {
 } from "./box-help-tool.js";
 import { createDraftExternalMessageTool, createMarkDraftDeliveredTool, type DraftToolDependencies } from "./draft-message-tool.js";
 import { createSearchFlightsTool, type FlightSearchDependencies } from "./flight-search-tool.js";
+import { createMarkPurchaseDoneTool, createRequestPurchaseTool, type PurchaseToolDependencies } from "./purchase-tool.js";
 import {
   createGenerateImageTool,
   type GenerateImageToolDependencies,
@@ -556,6 +557,7 @@ export interface TurnToolFactories {
   screenshot?(): TurnTool;
   requestBoxHelp?(): TurnTool;
   drafts?(): readonly TurnTool[];
+  purchases?(): readonly TurnTool[];
   flights?(): TurnTool;
   mcpMeta?(dynamicToolRegistry?: DynamicToolRegistry): readonly TurnTool[];
   mcpManagement?(): readonly TurnTool[];
@@ -691,6 +693,7 @@ export interface TurnToolsetFactoryInputs {
   readonly fileTransfer?: TurnFileTransferToolFactoryInput;
   readonly requestBoxHelp?: TurnBoxHelpToolFactoryInput;
   readonly drafts?: TurnDraftToolFactoryInput;
+  readonly purchases?: TurnPurchaseToolFactoryInput;
   readonly flights?: TurnFlightToolFactoryInput;
   readonly generateImage?: TurnGenerateImageToolFactoryInput;
   readonly webSearch?: TurnWebSearchToolFactoryInput;
@@ -749,6 +752,10 @@ export interface TurnToolsetHostFactoryProvider {
     turn: TurnToolsetTurnInput,
     props: TurnToolsetBuildProps,
   ) => TurnDraftToolFactoryInput;
+  readonly createPurchaseToolInputs?: (
+    turn: TurnToolsetTurnInput,
+    props: TurnToolsetBuildProps,
+  ) => TurnPurchaseToolFactoryInput;
   readonly createFlightToolInputs?: (
     turn: TurnToolsetTurnInput,
     props: TurnToolsetBuildProps,
@@ -972,6 +979,16 @@ export function createTurnDraftToolFactory(
   return () => [asTurnTool(createDraftExternalMessageTool(input.dependencies)), asTurnTool(createMarkDraftDeliveredTool(input.dependencies))];
 }
 
+export interface TurnPurchaseToolFactoryInput {
+  readonly dependencies: PurchaseToolDependencies;
+}
+
+export function createTurnPurchaseToolFactory(
+  input: TurnPurchaseToolFactoryInput,
+): () => readonly TurnTool[] {
+  return () => [asTurnTool(createRequestPurchaseTool(input.dependencies)), asTurnTool(createMarkPurchaseDoneTool(input.dependencies))];
+}
+
 export interface TurnFlightToolFactoryInput {
   readonly dependencies: FlightSearchDependencies;
 }
@@ -1109,7 +1126,7 @@ export function createTurnToolsetFactories(
 ): Pick<
   TurnToolFactories,
   "task" | "mcpMeta" | "computer" | "browser" | "screenshot"
-  | "fileTransfer" | "requestBoxHelp" | "drafts" | "flights" | "generateImage" | "webSearch" | "webFetch" | "externalAwait"
+  | "fileTransfer" | "requestBoxHelp" | "drafts" | "purchases" | "flights" | "generateImage" | "webSearch" | "webFetch" | "externalAwait"
   | "boxAwait" | "externalShell" | "externalRead" | "boxShell" | "boxRead"
   | "sendMessage" | "sendToAgent" | "reaction" | "createAgent" | "updateAgent" | "updateState"
   | "subagentManagement"
@@ -1143,6 +1160,9 @@ export function createTurnToolsetFactories(
     ...(input.drafts === undefined
       ? {}
       : { drafts: createTurnDraftToolFactory(input.drafts) }),
+    ...(input.purchases === undefined
+      ? {}
+      : { purchases: createTurnPurchaseToolFactory(input.purchases) }),
     ...(input.flights === undefined
       ? {}
       : { flights: createTurnFlightToolFactory(input.flights) }),
@@ -1246,6 +1266,9 @@ export function createTurnToolsetFactoriesForTurn(
     ...(provider.createDraftToolInputs === undefined
       ? {}
       : { drafts: provider.createDraftToolInputs(turn, props) }),
+    ...(provider.createPurchaseToolInputs === undefined
+      ? {}
+      : { purchases: provider.createPurchaseToolInputs(turn, props) }),
     ...(provider.createFlightToolInputs === undefined
       ? {}
       : { flights: provider.createFlightToolInputs(turn, props) }),
@@ -1559,6 +1582,9 @@ export function buildTurnTools(
     if (requestBoxHelp !== undefined) tools.push(requestBoxHelp);
     const drafts = factories.drafts?.();
     if (drafts !== undefined) tools.push(...drafts);
+    // The checkout card needs the browser on the box: the checkout is open there.
+    const purchases = factories.purchases?.();
+    if (purchases !== undefined) tools.push(...purchases);
   }
 
   // The immutable builder only offers the MCP discovery/call pair when the

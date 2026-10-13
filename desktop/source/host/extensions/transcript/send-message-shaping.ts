@@ -234,6 +234,7 @@ export function stripReplyTo<T extends SendMessage>(message: T): T {
       "local-tool-permission",
       "email-draft",
       "slack-draft",
+      "purchase",
     ].includes(message.type)
   )
     return message;
@@ -249,6 +250,7 @@ export function withReplyTo<T extends SendMessage>(
       "local-tool-permission",
       "email-draft",
       "slack-draft",
+      "purchase",
     ].includes(message.type)
   )
     return message;

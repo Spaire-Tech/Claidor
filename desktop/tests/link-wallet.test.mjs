@@ -97,11 +97,15 @@ test("the tools build Link's commands, hide cards and tokens, and sign in with t
   t.after(() => rm(root, { recursive: true, force: true }));
 
   let signedIn = false;
+  let userInfo = { name: "Bass Lee", agent_wallet_spend_limits: { per_transaction: { limit: 50000 }, daily: { limit: 50000, used: 45000, remaining: 5000 }, thirty_day: { limit: 2000000, used: 45000, remaining: 1955000 } }, agent_wallet_verification_requirement: { status: "not_required", action_url: null } };
+  let methods = [{ id: "csmrpd_visa", type: "card", is_default: true, name: "Visa", card_details: { brand: "visa", last4: "1234" } }, { id: "csmrpd_mc", type: "card", is_default: false, name: "Mastercard", card_details: { brand: "mastercard", last4: "5678" } }];
   const fake = fakeCli({
+    "user-info retrieve": () => ({ value: userInfo }),
+    "payment-methods list": () => ({ value: { payment_details: methods } }),
     "auth status": () => ({ value: signedIn ? { authenticated: true, scope: "userinfo:read payment_methods.agentic" } : { authenticated: false, pending: true, verification_url: "https://app.link.com/device/setup?code=warmth-woo-won-charm", phrase: "warmth-woo-won-charm" } }),
     "auth login": { value: [{ verification_url: "https://app.link.com/device/setup?code=warmth-woo-won-charm", phrase: "warmth-woo-won-charm", instruction: "Present the verification_url…" }] },
     "auth logout": { value: { authenticated: false } },
-    "spend-request create": { value: { id: "lsrq_1", status: "pending_approval", credential_type: "card", amount: 3500 } },
+    "spend-request create": { value: { id: "lsrq_1", status: "pending_approval", credential_type: "card", amount: 3500, approval_url: "https://app.link.com/activity/approve/lsrq_1", instruction: "Present the approval_url…" } },
     "spend-request retrieve lsrq_wait": { code: 1, value: { code: "POLLING_TIMEOUT", message: "Polling timed out" } },
     "spend-request retrieve lsrq_1 --include card": (command) => {
       writeFileSync(command[command.indexOf("--output-file") + 1], JSON.stringify({ spend_request_id: "lsrq_1", card: { number: "4242424242424242", cvc: "123", exp_month: 12, exp_year: 2031, billing_address: { name: "Bass Lee", postal_code: "94103" } } }));
@@ -115,7 +119,8 @@ test("the tools build Link's commands, hide cards and tokens, and sign in with t
   const filled = [];
   const link = createLinkTools({ cli, rootDir: () => root, fillCheckout: async (options) => { filled.push(options); return { ok: true, page: "shop.example.com", filled: ["card number", "expiry", "security code"], missing: [] }; } });
 
-  assert.deepEqual(LINK_TOOLS.map((tool) => tool.name), ["get_wallet", "create_purchase", "wait_for_approval", "pay_checkout", "cancel_purchase", "list_purchases", "list_accounts", "get_balances", "list_transactions"]);
+  // No tool starts a payment: purchases begin with the checkout card (RequestPurchase).
+  assert.deepEqual(LINK_TOOLS.map((tool) => tool.name), ["get_wallet", "wait_for_approval", "pay_checkout", "cancel_purchase", "list_purchases", "list_accounts", "get_balances", "list_transactions"]);
   for (const tool of LINK_TOOLS) assert.equal(tool.inputSchema.type, "object", tool.name);
 
   // Sign-in: the page with the code in it, then connected once approved.
@@ -127,16 +132,35 @@ test("the tools build Link's commands, hide cards and tokens, and sign in with t
   signedIn = true;
   assert.deepEqual(await link.signInStatus(), { authenticated: true, pending: false });
 
-  // A purchase: the flags Link takes, an approval asked for, commas out of the item names.
-  const created = await link.call("create_purchase", { merchant_name: "Stripe Press", merchant_url: "https://press.stripe.com", context: "Buying 'Working in Public' from press.stripe.com because the person asked for it; one copy, shipped to their saved address.", amount: 3500, line_items: [{ name: "Working in Public, hardcover", unit_amount: 3500, quantity: 1 }], totals: [{ type: "total", display_text: "Total", amount: 3500 }] });
-  assert.equal(created.isError, false);
-  assert.match(created.text, /Link app/);
+  // The old direct purchase points the agent at the checkout card and asks Link for nothing.
+  const direct = await link.call("create_purchase", { merchant_name: "Stripe Press", merchant_url: "https://press.stripe.com", context: "x".repeat(100), amount: 3500 });
+  assert.equal(direct.isError, true);
+  assert.match(direct.text, /RequestPurchase/);
+  assert.equal(fake.calls.some((call) => call.command[1] === "create"), false);
+
+  // Before the card: the default card, and the limits the amount must fit in (here $50 left today).
+  assert.deepEqual(await link.checkoutFacts({ amount: 3500, currency: "usd" }), { ok: true, paymentMethodId: "csmrpd_visa", card: { brand: "Visa", last4: "1234" }, holder: "Bass Lee" });
+  assert.deepEqual((await link.checkoutFacts({ amount: 3500, currency: "usd", paymentMethodId: "csmrpd_mc" })).card, { brand: "Mastercard", last4: "5678" });
+  const overDay = await link.checkoutFacts({ amount: 6000, currency: "usd" });
+  assert.equal(overDay.ok, false);
+  assert.match(overDay.message, /\$50\.00 the person's Link limits leave today/);
+  assert.match((await link.checkoutFacts({ amount: 60000, currency: "usd" })).message, /limit of \$500\.00 a purchase/);
+  methods = methods.map((method) => ({ ...method, is_default: false }));
+  const which = await link.checkoutFacts({ amount: 3500, currency: "usd" });
+  assert.equal(which.ok, false);
+  assert.match(which.message, /1234, 5678/, "several cards and no default: ask which, by the last four");
+  userInfo = { ...userInfo, agent_wallet_verification_requirement: { status: "identity_verification", action_url: "https://link.com/verify/abc" } };
+  assert.match((await link.checkoutFacts({ amount: 3500, currency: "usd", paymentMethodId: "csmrpd_visa" })).message, /https:\/\/link\.com\/verify\/abc/);
+
+  // At Allow: the flags Link takes, approval asked for, one key per card, commas out of the item names.
+  const spend = await link.requestSpend({ idempotencyKey: "simeon-abc", credentialType: "card", amount: 3500, currency: "usd", context: "Buying 'Working in Public' from press.stripe.com because the person asked for it; one copy, shipped to their saved address.", merchantName: "Stripe Press", merchantUrl: "https://press.stripe.com/checkout", paymentMethodId: "csmrpd_visa", lineItems: [{ name: "Working in Public, hardcover", unitAmount: 3500, quantity: 1 }], totals: [{ type: "total", label: "Total", amount: 3500 }], test: true });
+  assert.deepEqual(spend, { ok: true, id: "lsrq_1", status: "pending_approval", approvalUrl: "https://app.link.com/activity/approve/lsrq_1" });
   const create = fake.calls.find((call) => call.command[1] === "create").command;
-  for (const flag of ["--merchant-name", "--merchant-url", "--context", "--amount", "--request-approval", "--line-item", "--total"]) assert.ok(create.includes(flag), flag);
+  for (const flag of ["--merchant-name", "--merchant-url", "--context", "--amount", "--request-approval", "--line-item", "--total", "--payment-method-id", "--test"]) assert.ok(create.includes(flag), flag);
+  assert.equal(create[create.indexOf("--idempotency-key") + 1], "simeon-abc");
   assert.equal(create[create.indexOf("--line-item") + 1], "name:Working in Public hardcover,unit_amount:3500,quantity:1");
   assert.equal(create[create.indexOf("--credential-type") + 1], "card");
-  assert.equal((await link.call("create_purchase", { context: "x".repeat(100), amount: 100 })).isError, true, "a card purchase names the shop");
-  assert.equal((await link.call("create_purchase", { context: "x".repeat(100), amount: 100, credential_type: "link_pay_token" })).isError, true, "a pay-token purchase names the Stripe account");
+  assert.equal((await link.spendStatus("lsrq_wait", 10)).code, "POLLING_TIMEOUT");
 
   // Waiting runs out without an error, and a card in an answer never reaches the agent.
   const waiting = await link.call("wait_for_approval", { spend_request_id: "lsrq_wait", wait_seconds: 10 });
@@ -238,6 +262,13 @@ test("the filler types the card into a checkout's own fields and its payment fra
   await blank.goto(`${base}/token`);
   const none = await module.fillCheckout({ card, pageHint: `${base}/token`, ports: [port], loadPlaywright: () => playwright });
   assert.equal(none.ok, false);
+
+  // The checkout card's picture: a JPEG of the shop's own tab, never another site's.
+  const shot = await module.captureCheckout({ pageHint: `${base}/checkout`, ports: [port], loadPlaywright: () => playwright });
+  assert.equal(shot?.page, "127.0.0.1");
+  assert.deepEqual([...shot.jpeg.subarray(0, 3)], [0xff, 0xd8, 0xff], "a JPEG");
+  assert.equal(await module.captureCheckout({ pageHint: "https://shop.example.com/checkout", ports: [port], loadPlaywright: () => playwright }), undefined, "no tab on that site, no picture");
+  assert.equal(await checkout.title(), "Shop", "the page is left as it was");
 });
 
 test("the Link app signs in with Link's device code, lists its tools once connected and runs them, in the box only", async (t) => {

@@ -189,6 +189,8 @@ import type {
 import type { AgentRule } from "../packages/proto/generated/agent/v1/agent_rules_pb.js";
 import { HOST_LOG_PREFIX, logHostLine } from "../shared/host-log.js";
 import { configuredSimeonModel } from "./extensions/inference/provider-session.js";
+import { captureCheckout } from "../shared/node/link-wallet/checkout-fill.js";
+import type { LinkTools } from "../shared/node/link-wallet/link-tools.js";
 
 // The model id the composition projects onto the loop (parentModelInfo,
 // the Task tool's child configs, web search). It was the upstream's
@@ -2334,6 +2336,40 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                   emitDraftCard: (message, timestampMs) => post(message as unknown as Record<string, unknown>, timestampMs),
                   markDraftDelivered: (entryId, outcome) => method(extensions.api("transcript"), "markDraftDelivered")?.({ entryId, outcome }) != null,
                   sayInChat: (content, timestampMs) => { post({ type: "text", content }, timestampMs); },
+                },
+              };
+            },
+          }),
+      // RequestPurchase and MarkPurchaseDone: the checkout card (13 October
+      // 2026, shared/node/link-wallet/purchase-card.ts). The person's Link is
+      // the box's (the "link" app's own wallet); the card's Allow and Deny
+      // come back through the gateway (transcript/purchase-cards.ts). Not
+      // for a child or a shared room.
+      ...(isSharedRoomTurn
+        ? {}
+        : {
+            createPurchaseToolInputs: turn => {
+              const wallet = (mcp as { linkWallet?: LinkTools }).linkWallet;
+              return {
+                dependencies: {
+                  checkoutFacts: (request) => wallet?.checkoutFacts(request),
+                  capturePreview: async (checkoutUrl) => {
+                    const shot = await captureCheckout({ pageHint: checkoutUrl });
+                    if (shot == null || typeof hooks.persistImage !== "function") return undefined;
+                    const saved = await hooks.persistImage(shot.jpeg, "image/jpeg") as { fileUrl?: unknown; width?: unknown; height?: unknown } | null | undefined;
+                    if (saved == null || typeof saved.fileUrl !== "string") return undefined;
+                    return { url: saved.fileUrl, ...(typeof saved.width === "number" ? { width: saved.width } : {}), ...(typeof saved.height === "number" ? { height: saved.height } : {}) };
+                  },
+                  emitCard: (message, timestampMs) => {
+                    const update = { type: "send-message" as const, message: message as unknown as Record<string, unknown> & { type: string }, timestampMs, ...(turn.ackToken === undefined ? {} : { ackToken: turn.ackToken }) };
+                    if (turn.emitUpdate === undefined) hooks.transport.onUpdate(update);
+                    else turn.emitUpdate(update);
+                    return hooks.transport.lastSentMessageId?.();
+                  },
+                  markPurchaseDone: async (args) => {
+                    const done = await method(extensions.api("transcript"), "markPurchaseDone")?.({ agentId: session.id, ...args }, wallet) as { ok: true } | { ok: false; message: string } | undefined;
+                    return done ?? { ok: false, message: "The checkout card could not be reached." };
+                  },
                 },
               };
             },

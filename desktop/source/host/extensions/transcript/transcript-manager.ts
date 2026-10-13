@@ -25,6 +25,7 @@ import { AutomationRuntime } from "./automation-runtime.js";
 import { BackgroundWakes } from "./background-wakes.js";
 import { BoxHandoffResume } from "./box-handoff-resume.js";
 import { DraftCards } from "./draft-cards.js";
+import { PurchaseCards } from "./purchase-cards.js";
 import { SandChannelDeliveryUnregisteredError } from "./channel-delivery-unregistered-error.js";
 import { GroupChatGlue } from "./group-chat-glue.js";
 import { PendingWakeRearm } from "./pending-wake-rearm.js";
@@ -158,6 +159,7 @@ export class TranscriptManager {
   readonly sharedRooms = new SharedRooms(this);
   readonly backgroundWakes = new BackgroundWakes(this);
   readonly draftCards = new DraftCards(this);
+  readonly purchaseCards = new PurchaseCards(this);
   readonly pendingWakes = new PendingWakeRearm(this);
   readonly ackObligations = new AckObligations(this);
   readonly upgradeResume = new UpgradeRecreateResume(this);
@@ -633,6 +635,8 @@ const delegations: ReadonlyArray<[string, keyof TranscriptManager]> = [
   ["sendDraft", "draftCards"],
   ["discardDraft", "draftCards"],
   ["markDraftDelivered", "draftCards"],
+  ["answerPurchase", "purchaseCards"],
+  ["markPurchaseDone", "purchaseCards"],
 ];
 
 for (const [method, domain] of delegations) {

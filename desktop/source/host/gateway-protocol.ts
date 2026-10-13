@@ -20,6 +20,7 @@ export const SAND_GATEWAY_COMMANDS = {
   reactToMessage: (api: GatewayApi, body: string) => api.reactToMessage(parseCommandArgs(body)),
   sendDraft: (api: GatewayApi, body: string) => api.sendDraft(parseCommandArgs(body)),
   discardDraft: (api: GatewayApi, body: string) => api.discardDraft(parseCommandArgs(body)),
+  answerPurchase: (api: GatewayApi, body: string) => api.answerPurchase(parseCommandArgs(body)),
   appendConnectorCard: (api: GatewayApi, body: string) => api.appendConnectorCard(parseCommandArgs(body)),
   appendSendMessage: (api: GatewayApi, body: string) => api.appendSendMessage(parseCommandArgs(body)),
   voiceCall: (api: GatewayApi, body: string) => api.voiceCall(parseCommandArgs(body)),

@@ -265,6 +265,14 @@ export function createHostGatewayApi(
       markActive("user_action");
       return method(manager, "discardDraft")({ agentId: args.agentId, entryId: args.entryId });
     },
+    // The checkout card (purchase-cards.ts): Allow asks Link through the box's wallet; `resume` only makes sure a card with Link is watched.
+    answerPurchase: (args: any) => {
+      if (args?.resume !== true) markActive("user_action");
+      return method(manager, "answerPurchase")(
+        { agentId: args.agentId, entryId: args.entryId, allow: args.allow === true, resume: args.resume === true },
+        deps.extensions.api("mcp")?.linkWallet,
+      );
+    },
     reactToMessage: (args: any) => {
       markActive("user_action");
       method(telemetry.analytics, "trackEvent")("sand.reaction.added", {

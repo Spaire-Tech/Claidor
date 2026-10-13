@@ -1136,6 +1136,8 @@ struct ChatRowView: View, Equatable {
       ThreadLinkRow(rootId: rootId, count: count, side: side)
     case .cloudAgent(let id, let bcId):
       CloudAgentCard(entryId: id, bcId: bcId, agentId: agentId)
+    case .purchase(let id, let card):
+      PurchaseCardView(entryId: id, agentId: agentId, card: card)
     }
   }
 }

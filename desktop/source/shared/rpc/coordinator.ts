@@ -104,6 +104,8 @@ export const COORDINATOR_METHOD_TABLE = {
   reactToMessage: { args: "object", reply: "void" },
   sendDraft: { args: "object", reply: "record-or-null" },
   discardDraft: { args: "object", reply: "record-or-null" },
+  // The checkout card's Allow and Deny (13 October 2026, `purchase-cards.ts`).
+  answerPurchase: { args: "object", reply: "record-or-null" },
   appendConnectorCard: { args: "object", reply: "void" },
   appendSendMessage: { args: "object", reply: "record" },
   // The voice channel (1 October 2026): a call opens, relays to, reads and ends here.

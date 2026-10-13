@@ -162,6 +162,10 @@ public final class AppStore {
   public private(set) var localAsks: [String: LocalAsk] = [:]
   /** Auto-review approvals answered here, by entry, until the box's own copy says so (the window's `QWn`). */
   public private(set) var answeredApprovals: [String: String] = [:]
+  /** Checkout cards answered here (Allow is `sending`, Deny `denied`), until the computer's copy says so. */
+  public private(set) var answeredPurchases: [String: PurchaseCard.State] = [:]
+  /** Checkout cards with Link this app asked the computer to keep watching, once each. */
+  @ObservationIgnored private var watchedPurchases: Set<String> = []
   /** The computer's notices ("Agent failed to respond"…), an open agent's drawn over its composer (`hVn`). */
   public private(set) var trayList = TrayList()
   /** Each file card's line once read (`readAttachmentText`, kept for the session as the window keeps it). */
@@ -382,7 +386,7 @@ public final class AppStore {
     backend = nil
     agents = []; transcripts = [:]; chatRows = [:]; runFlags = [:]; steps = [:]; call = nil; callLevels = []; isLive = false; account = nil; usage = .empty; usageReadAt = nil; access = .checking; accessBlocked = false; hasReachedBox = false; openChat = nil
     layoutTask?.cancel(); layoutTask = nil; pendingLayout = []; refreshing = []; caughtUp = [:]
-    pendingAnswers = [:]; answeredApprovals = [:]; localAsks = [:]; trayList = TrayList(); fileLines = [:]; fileReadsAsText = [:]; unreadAfter = [:]; apps = []; catalog = []; appsComingSoon = AppsComingSoon.builtIn; pinnedIds = []; routinesByAgent = [:]; sidebarSections = nil
+    pendingAnswers = [:]; answeredApprovals = [:]; answeredPurchases = [:]; watchedPurchases = []; localAsks = [:]; trayList = TrayList(); fileLines = [:]; fileReadsAsText = [:]; unreadAfter = [:]; apps = []; catalog = []; appsComingSoon = AppsComingSoon.builtIn; pinnedIds = []; routinesByAgent = [:]; sidebarSections = nil
     streamingOnly = [:]; outbox = [:]; sentOffline = [:]; arrived = []; olderBefore = [:]; loadingOlder = []; paged = []; firstRunAgentId = nil; revealing = [:]
     openThreads = [:]; threadRows = [:]; threadRoots = [:]; loadFailed = []; isDown = false
     computer = ComputerBook(); subagentsByAgent = [:]; pointers = [:]; lastComputerCatchUp = .distantPast
@@ -683,6 +687,7 @@ public final class AppStore {
     let ask = LocalAsk.waiting(in: entries)
     if localAsks[agentId] != ask { localAsks[agentId] = ask }
     for entry in entries where pendingAnswers[entry.id] != nil && (entry["respondedValue"]?.text != nil || entry["widgetDismissed"]?.bool == true) { pendingAnswers[entry.id] = nil }
+    for entry in entries where answeredPurchases[entry.id] != nil && (entry["purchaseState"]?.text ?? "review") != "review" { answeredPurchases[entry.id] = nil }
     settleOutbox(agentId, entries)
     if soon { scheduleLayout(agentId) } else { layOut(agentId) }
   }
@@ -1253,6 +1258,30 @@ public final class AppStore {
       problem = "\(failure ?? "That didn't work"): \(error.localizedDescription)"
       return nil
     }
+  }
+
+  /**
+   * Allow or Deny on a checkout card (`answerPurchase`): the card shows the
+   * answer at once; Allow then waits on Link, which asks the person to
+   * approve it in the Link app. A failed answer comes back to the buttons.
+   */
+  public func answerPurchase(_ entryId: String, allow: Bool, in agentId: String) async {
+    guard answeredPurchases[entryId] == nil else { return }
+    answeredPurchases[entryId] = allow ? .sending : .denied
+    if await command("answerPurchase", ["agentId": .string(agentId), "entryId": .string(entryId), "allow": .bool(allow)], failure: allow ? "The purchase didn't go to Link" : "Couldn't deny the purchase") == nil {
+      answeredPurchases[entryId] = nil
+    }
+  }
+
+  /**
+   * A checkout card still with Link, on screen: the computer makes sure it
+   * is watching Link for it (after a restart nothing is). It never answers
+   * a card; once per card while the app runs.
+   */
+  public func keepWatchingPurchase(_ entryId: String, in agentId: String) async {
+    guard !watchedPurchases.contains(entryId), let backend else { return }
+    watchedPurchases.insert(entryId)
+    _ = try? await backend.command("answerPurchase", ["agentId": .string(agentId), "entryId": .string(entryId), "resume": .bool(true)])
   }
 
   /** The question card's X (`dismissWidget`). */

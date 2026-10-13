@@ -192,12 +192,14 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
   case thread(id: String, rootId: String, count: Int, side: Side)
   /** A cloud agent the agent started (`cloud-agent`, its `bcId`): its state read from the host (`getCloudAgentInfo`). */
   case cloudAgent(id: String, bcId: String)
+  /** A purchase waiting on the person, or how it went (`purchase`, the checkout card). */
+  case purchase(id: String, card: PurchaseCard)
 
   public var id: String {
     switch self {
     case .stamp(let id, _), .unread(let id), .flights(let id, _), .file(let id, _, _, _), .question(let id, _), .draft(let id, _),
          .connectors(let id, _, _, _), .listenerConnect(let id, _, _), .request(let id, _), .teammates(let id, _, _), .voiceCall(let id, _, _, _), .routines(let id, _, _),
-         .notice(let id, _), .failedSend(let id, _), .queuedSend(let id, _), .thread(let id, _, _, _), .cloudAgent(let id, _): return id
+         .notice(let id, _), .failedSend(let id, _), .queuedSend(let id, _), .thread(let id, _, _, _), .cloudAgent(let id, _), .purchase(let id, _): return id
     case .bubble(let bubble): return bubble.id
     }
   }
@@ -223,6 +225,7 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
     case .queuedSend: return "queued"
     case .thread: return "thread"
     case .cloudAgent: return "cloud-agent"
+    case .purchase: return "purchase"
     }
   }
 
@@ -243,7 +246,7 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
     case .file(_, _, _, let fromPerson): return fromPerson ? .person : .agent(nil)
     case .failedSend, .queuedSend: return .person
     case .thread(_, _, _, let side): return side
-    case .flights, .question, .draft, .connectors, .listenerConnect, .request, .notice, .cloudAgent: return .agent(nil)
+    case .flights, .question, .draft, .connectors, .listenerConnect, .request, .notice, .cloudAgent, .purchase: return .agent(nil)
     default: return .middle
     }
   }
@@ -640,6 +643,7 @@ public enum Chat {
       let names = message["connectors"]?.array?.compactMap(\.text) ?? []
       return names.isEmpty ? "Connect tools" : "Connect " + names.joined(separator: ", ")
     case "listener-connect": return message["platform"]?.string == "slack" ? "Connect Slack" : "Connect GitHub"
+    case "purchase": return message["content"]?.string ?? "Checkout"
     default: return "Message"
     }
   }
@@ -1030,6 +1034,9 @@ public enum Chat {
       case "cloud-agent":
         guard let bcId = message["bcId"]?.text, !bcId.isEmpty else { return nil }
         return .cloudAgent(id: entry.id, bcId: bcId)
+      case "purchase":
+        if let card = PurchaseCard(message: message, entry: entry) { return .purchase(id: entry.id, card: card) }
+        return .notice(id: entry.id, text: message["content"]?.text ?? notShown)
       case "local-tool-permission":
         // Waiting, it is the Mac's dock above the composer, not a line; expired, it is gone; answered, one line says how (`_Ln`).
         guard let ask = LocalAsk(entry: entry), ask.status != "pending", ask.status != "expired" else { return nil }

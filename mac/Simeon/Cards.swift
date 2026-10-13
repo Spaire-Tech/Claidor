@@ -1455,6 +1455,232 @@ struct ComputerHandoffCard: View {
   }
 }
 
+// MARK: Checkout
+
+/**
+ * The checkout card (13 October 2026; SimeonCore's `PurchaseCard`), the
+ * iPhone's in the Mac's own card: the cart in a 44-point tile, "Checkout"
+ * and who wants to order where; the check-the-details line; the checkout as
+ * the agent left it (16:10, 12 round) with Review order in glass over its
+ * corner; the Link card that pays; the total; Deny and Allow in 36-point
+ * pills. Allowed, it follows the purchase through Link (Open Link while Link
+ * waits on the person) to the order.
+ */
+struct PurchaseCardView: View {
+  let entryId: String
+  let agentId: String
+  let card: PurchaseCard
+  let look: Look
+  @Environment(AppStore.self) private var store
+  @Environment(\.openURL) private var openURL
+  @State private var picture: NSImage?
+  @State private var pictureMissing = false
+  @State private var pictureHover = false
+
+  private var ink: Color { look.dark ? Color(hex: 0xf5f5f7) : Color(hex: 0x1d1d1f) }
+  private var grey: Color { look.dark ? Color(hex: 0x98989d) : Color(hex: 0x6e6e73) }
+  private var fill: Color { look.dark ? Color(hex: 0x3a3a3c) : Color.white }
+  private var blue: Color { look.dark ? Color(hex: 0x2f6db0) : Color(hex: 0x255a93) }
+  private var hairline: Color { look.dark ? Color.white.opacity(0.08) : Color.black.opacity(0.08) }
+
+  var body: some View {
+    let shown = card.shown(answered: store.answeredPurchases[entryId])
+    VStack(alignment: .leading, spacing: 14) {
+      HStack(spacing: 12) {
+        Image(systemName: "cart.fill")
+          .font(.system(size: 18))
+          .foregroundStyle(ink)
+          .frame(width: 44, height: 44)
+          .background(fill, in: RoundedRectangle(cornerRadius: 12))
+        VStack(alignment: .leading, spacing: 1) {
+          HStack(spacing: 6) {
+            Text(PurchaseCard.title).font(.system(size: 15, weight: .semibold)).foregroundStyle(ink)
+            if shown.isTest { StatusPill(text: "Test", look: look) }
+          }
+          Text(PurchaseCard.headline(agent: store.agent(agentId)?.name ?? "", domain: shown.domain))
+            .font(.system(size: 13))
+            .foregroundStyle(grey)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+      }
+      if shown.waitsOnPerson {
+        Text(PurchaseCard.check)
+          .font(.system(size: 13))
+          .foregroundStyle(grey)
+          .fixedSize(horizontal: false, vertical: true)
+      }
+      if shown.preview != nil {
+        checkoutPicture(shown)
+      } else if !shown.itemsLine.isEmpty {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+          Text(shown.itemsLine).font(.system(size: 14)).foregroundStyle(ink).fixedSize(horizontal: false, vertical: true)
+          Spacer(minLength: 0)
+          if let url = shown.url { reviewOrder(url) }
+        }
+      }
+      VStack(spacing: 0) {
+        HStack(spacing: 12) {
+          MacPaymentMark(brand: shown.cardBrand, edge: hairline)
+          VStack(alignment: .leading, spacing: 1) {
+            Text(shown.cardLine ?? "Your Link card").font(.system(size: 14, weight: .medium)).foregroundStyle(ink)
+            Text(PurchaseCard.payWithLink).font(.system(size: 12)).foregroundStyle(grey)
+          }
+          Spacer(minLength: 0)
+        }
+        .padding(.vertical, 9)
+        Rectangle().fill(hairline).frame(height: 1)
+        HStack(alignment: .firstTextBaseline) {
+          Text(PurchaseCard.totalLabel).font(.system(size: 14)).foregroundStyle(grey)
+          Spacer(minLength: 8)
+          Text(shown.total).font(.system(size: 15, weight: .semibold)).foregroundStyle(ink).monospacedDigit()
+        }
+        .padding(.vertical, 9)
+      }
+      footer(shown)
+    }
+    .tracking(-0.15)
+    .padding(16)
+    .frame(maxWidth: 420, alignment: .leading)
+    .background(look.dark ? Color(hex: 0x2c2c2e) : look.theirs, in: RoundedRectangle(cornerRadius: 20))
+    .accessibilityElement(children: .contain)
+    .accessibilityLabel("\(PurchaseCard.title) at \(shown.domain), \(shown.total)")
+    // A card with Link: the computer keeps watching Link for it (after a restart nothing would).
+    .task(id: card.state) { if card.state == .approving { await store.keepWatchingPurchase(entryId, in: agentId) } }
+    .task(id: card.preview?.url) {
+      guard let image = card.preview else { return }
+      if let data = await store.readFile(image.url, agentId: agentId, limit: 24 << 20), let read = NSImage(data: data) { picture = read } else { pictureMissing = true }
+    }
+  }
+
+  @ViewBuilder private func checkoutPicture(_ shown: PurchaseCard) -> some View {
+    ZStack(alignment: .bottomTrailing) {
+      RoundedRectangle(cornerRadius: 12, style: .continuous)
+        .fill(fill)
+        .aspectRatio(16 / 10, contentMode: .fit)
+        .overlay(alignment: .top) {
+          if let picture {
+            Image(nsImage: picture).resizable().interpolation(.high).scaledToFill()
+              .frame(maxWidth: .infinity, alignment: .top)
+              .scaleEffect(pictureHover ? 1.02 : 1, anchor: .top)
+              .animation(.easeOut(duration: 0.3), value: pictureHover)
+          } else if pictureMissing {
+            Image(systemName: "photo").font(.system(size: 18)).foregroundStyle(grey)
+              .frame(maxWidth: .infinity, maxHeight: .infinity)
+          }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(hairline, lineWidth: 1))
+        .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .onHover { pictureHover = $0 && shown.url != nil }
+        .onTapGesture { if let url = shown.url { openURL(url) } }
+      if let url = shown.url {
+        reviewOrder(url).padding(10)
+      }
+    }
+    .accessibilityLabel("The checkout page")
+  }
+
+  /** "Review order ↗" in glass: the shop's own page, where the details and terms are. */
+  private func reviewOrder(_ url: URL) -> some View {
+    Button { openURL(url) } label: {
+      HStack(spacing: 4) {
+        Text(PurchaseCard.reviewOrder)
+        Image(systemName: "arrow.up.right").imageScale(.small)
+      }
+      .font(.system(size: 12, weight: .medium))
+      .foregroundStyle(ink)
+      .padding(.horizontal, 10)
+      .frame(height: 26)
+      .contentShape(Capsule())
+    }
+    .buttonStyle(.hand)
+    .liquidGlass(in: Capsule())
+    .help(url.host ?? url.absoluteString)
+  }
+
+  @ViewBuilder private func footer(_ shown: PurchaseCard) -> some View {
+    if shown.waitsOnPerson {
+      VStack(alignment: .leading, spacing: 8) {
+        HStack(spacing: 8) {
+          pill(PurchaseCard.deny, ground: fill, ink: ink) { Task { await store.answerPurchase(entryId, allow: false, in: agentId) } }
+          pill(PurchaseCard.allow, ground: blue, ink: .white) { Task { await store.answerPurchase(entryId, allow: true, in: agentId) } }
+        }
+        if shown.isTest {
+          Text(PurchaseCard.testNote).font(.system(size: 12)).foregroundStyle(grey)
+        }
+      }
+    } else if let status = shown.status {
+      VStack(alignment: .leading, spacing: 12) {
+        HStack(alignment: .top, spacing: 10) {
+          mark(status.kind).padding(.top, 1)
+          VStack(alignment: .leading, spacing: 2) {
+            Text(status.label).font(.system(size: 14, weight: .medium)).foregroundStyle(ink)
+            if let detail = shown.detail {
+              Text(detail).font(.system(size: 12)).foregroundStyle(grey).fixedSize(horizontal: false, vertical: true)
+            }
+          }
+          Spacer(minLength: 0)
+        }
+        if shown.state == .approving, let url = shown.actionURL {
+          pill(PurchaseCard.openLink, ground: blue, ink: .white) { openURL(url) }
+        }
+      }
+    }
+  }
+
+  @ViewBuilder private func mark(_ kind: PurchaseCard.StatusKind) -> some View {
+    switch kind {
+    case .working: Circle().fill(blue).frame(width: 8, height: 8).frame(width: 15, height: 15)
+    case .success: Image(systemName: "checkmark.circle.fill").font(.system(size: 15)).foregroundStyle(Color(hex: 0x00c972))
+    case .danger: Image(systemName: "xmark.circle.fill").font(.system(size: 15)).foregroundStyle(look.dark ? Color(hex: 0xff5667) : Color(hex: 0xc21d2e))
+    case .neutral: Image(systemName: "minus.circle.fill").font(.system(size: 15)).foregroundStyle(grey)
+    }
+  }
+
+  private func pill(_ title: String, ground: Color, ink: Color, action: @escaping () -> Void) -> some View {
+    Button(action: action) {
+      Text(title)
+        .font(.system(size: 15, weight: .medium))
+        .foregroundStyle(ink)
+        .padding(.horizontal, 16)
+        .frame(maxWidth: .infinity)
+        .frame(height: 36)
+        .background(ground, in: Capsule())
+        .contentShape(Capsule())
+    }
+    .buttonStyle(.hand)
+  }
+}
+
+/** The card's network on a small white card: Visa's word, Mastercard's circles, Amex's blue, else a card. */
+private struct MacPaymentMark: View {
+  let brand: String?
+  let edge: Color
+
+  var body: some View {
+    let name = (brand ?? "").lowercased()
+    ZStack {
+      RoundedRectangle(cornerRadius: 6, style: .continuous).fill(name == "amex" ? Color(red: 0.0, green: 0.44, blue: 0.80) : Color.white)
+      switch name {
+      case "visa":
+        Text("VISA").font(.system(size: 11, weight: .heavy)).italic().foregroundStyle(Color(red: 0.10, green: 0.12, blue: 0.44))
+      case "mastercard":
+        HStack(spacing: -5) {
+          Circle().fill(Color(red: 0.92, green: 0.0, blue: 0.11)).frame(width: 12, height: 12)
+          Circle().fill(Color(red: 0.97, green: 0.62, blue: 0.11).opacity(0.9)).frame(width: 12, height: 12)
+        }
+      case "amex":
+        Text("AMEX").font(.system(size: 9, weight: .heavy)).foregroundStyle(.white)
+      default:
+        Image(systemName: "creditcard.fill").font(.system(size: 12)).foregroundStyle(Color(white: 0.45))
+      }
+    }
+    .frame(width: 40, height: 27)
+    .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(edge, lineWidth: 0.5))
+    .accessibilityHidden(true)
+  }
+}
+
 // MARK: Cloud agents
 
 /**
