@@ -1188,6 +1188,9 @@ struct BubbleView: View {
   @State private var reactionsSeen: Set<String>?
   /** Show more on a long message (the Mac folds one past 664 pt). */
   @State private var expanded = false
+  /** How far the message is pulled to the right to answer it (ReplySwipe), and whether it went far enough. */
+  @State private var replyPull: CGFloat = 0
+  @State private var replyArmed = false
 
   /** What is drawn of the message: 3,000 characters folded, 40,000 open. A message of megabytes (a file or an image pasted as text) laid out whole held the screen still for minutes. */
   private var shown: (text: String, clipped: Bool) { Chat.clipped(bubble.text, limit: expanded ? 40_000 : 3_000) }
@@ -1233,6 +1236,8 @@ struct BubbleView: View {
             Haptics.press()
             messageMenu?.target = MessageTarget(bubble: bubble)
           })
+          // Pulled to the right: answer it, as the menu's Reply does (none in a thread, where the menu has none either).
+          .gesture(ReplySwipe(enabled: thread == nil && reply != nil, pull: pullToReply, ended: letGoOfReply))
           #else
           // On the Mac a message's actions are its right-click menu (mac/Simeon/MacChat.swift); a link card's and a
           // picture's own items come first in theirs. "More emoji" opens over the message.
@@ -1242,12 +1247,44 @@ struct BubbleView: View {
           .padding(.bottom, bubble.reactions.isEmpty ? 0 : 16)
         if let offline = bubble.sentOfflineAtMs { SentOfflineLine(ms: offline) }
       }
+      .overlay(alignment: .leading) {
+        if replyPull > 0 {
+          // The arrow comes in from the left with the message, and fills once far enough.
+          Image(systemName: "arrowshape.turn.up.left.fill")
+            .font(.system(size: 15, weight: .semibold))
+            .foregroundStyle(replyArmed ? Ink.primary : Ink.tertiary)
+            .frame(width: 30, height: 30)
+            .background(Ink.pillButton, in: Circle())
+            .scaleEffect(0.6 + 0.4 * min(1, replyPull / ReplySwipeRule.threshold))
+            .opacity(min(1, replyPull / ReplySwipeRule.threshold))
+            .offset(x: -38)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+        }
+      }
+      .offset(x: replyPull)
       .modifier(PeekShift(moves: bubble.fromPerson))
       if !bubble.fromPerson { Spacer(minLength: 0) }
     }
     .overlay(alignment: .trailing) {
       if let ms = bubble.timestampMs { PeekTime(ms: ms) }
     }
+  }
+
+  /** The message follows the finger to the right, slower past the line; a tap under the finger as it crosses it. */
+  private func pullToReply(_ x: CGFloat) {
+    let line = ReplySwipeRule.threshold
+    replyPull = x <= line ? x : line + (x - line) * 0.3
+    let armed = x >= line
+    if armed && !replyArmed { Haptics.tap() }
+    replyArmed = armed
+  }
+
+  /** Let go: past the line, the composer answers this message; the message springs back either way. */
+  private func letGoOfReply(_ armed: Bool) {
+    if armed { reply?.target = bubble }
+    replyArmed = false
+    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { replyPull = 0 }
   }
 
   @ViewBuilder
@@ -1658,6 +1695,72 @@ struct MessageHold: UIGestureRecognizerRepresentable {
 
   func handleUIGestureRecognizerAction(_ press: UILongPressGestureRecognizer, context: Context) {
     if press.state == .began { action() }
+  }
+}
+
+/**
+ * A message pulled to the right to answer it (the founder, 13 October 2026:
+ * "when you swipe right on a message, its reply to that message. like any
+ * messaging app"): UIKit's pan, starting only for a drag mostly to the
+ * right that does not start at the screen's left edge, alongside the
+ * scroll. The time pull (PeekPan) starts only to the left and the long
+ * press gives way as the finger moves, so neither meets it.
+ */
+struct ReplySwipe: UIGestureRecognizerRepresentable {
+  let enabled: Bool
+  /** How far the finger has gone to the right. */
+  let pull: (CGFloat) -> Void
+  /** Let go: whether it went past the line. */
+  let ended: (Bool) -> Void
+
+  func makeUIGestureRecognizer(context: Context) -> UIPanGestureRecognizer {
+    let pan = UIPanGestureRecognizer()
+    pan.delegate = ReplySwipeRule.shared
+    return pan
+  }
+
+  func updateUIGestureRecognizer(_ pan: UIPanGestureRecognizer, context: Context) {
+    pan.isEnabled = enabled
+  }
+
+  func handleUIGestureRecognizerAction(_ pan: UIPanGestureRecognizer, context: Context) {
+    let x = max(0, pan.translation(in: pan.view).x)
+    switch pan.state {
+    case .began, .changed: pull(x)
+    case .ended: ended(x >= ReplySwipeRule.threshold)
+    default: ended(false)
+    }
+  }
+}
+
+/**
+ * When the reply pull may start, and how it shares the screen: a drag mostly
+ * to the right that starts clear of the left edge; the scroll goes on beside
+ * it; the system's back swipe (from the edge, and from anywhere on iOS 26)
+ * waits for it to give way on a message, so a swipe that starts on a message
+ * answers it and one that starts at the edge or between messages goes back.
+ */
+final class ReplySwipeRule: NSObject, UIGestureRecognizerDelegate {
+  static let shared = ReplySwipeRule()
+  /** How far to pull for the reply (Messages' and WhatsApp's are about this). */
+  static let threshold: CGFloat = 56
+  /** The strip at the screen's left edge left to the back swipe. */
+  static let edge: CGFloat = 32
+
+  func gestureRecognizerShouldBegin(_ recognizer: UIGestureRecognizer) -> Bool {
+    guard let pan = recognizer as? UIPanGestureRecognizer else { return false }
+    let velocity = pan.velocity(in: pan.view)
+    let startX = pan.location(in: nil).x - pan.translation(in: nil).x
+    return velocity.x > 0 && abs(velocity.x) > abs(velocity.y) * 1.5 && startX > Self.edge
+  }
+
+  func gestureRecognizer(_ recognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
+    other.view is UIScrollView
+  }
+
+  func gestureRecognizer(_ recognizer: UIGestureRecognizer, shouldBeRequiredToFailBy other: UIGestureRecognizer) -> Bool {
+    guard other is UIPanGestureRecognizer, !(other.view is UIScrollView), let mine = recognizer.view, let theirs = other.view else { return false }
+    return mine.isDescendant(of: theirs)
   }
 }
 #endif

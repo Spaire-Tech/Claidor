@@ -178,8 +178,14 @@ struct MentionClicks: ViewModifier {
         .onContinuousHover { phase in
           var over = false
           if case .active(let point) = phase { over = spots.agent(at: point) != nil }
+          // The words are selectable, and their I-beam won over the pointer style below: no hand over a mention (the
+          // founder, 13 October 2026). The hand is put up by hand while over a pill and taken down as it leaves.
+          if over && !overPill { NSCursor.pointingHand.push() }
+          if !over && overPill { NSCursor.pop() }
+          if over { NSCursor.pointingHand.set() }
           if over != overPill { overPill = over }
         }
+        .onDisappear { if overPill { NSCursor.pop(); overPill = false } }
         .pointerStyle(overPill ? .link : nil)
         .accessibilityActions {
           ForEach(agents, id: \.self) { id in

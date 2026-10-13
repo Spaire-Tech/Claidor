@@ -160,7 +160,10 @@ struct HomeView: View {
       // system's black (the founder, 11 October 2026: "the darkest background coming up sometimes").
       .containerBackground(Ink.listGround, for: .navigation)
       .navigationDestination(for: String.self) { agentId in
+        // One chat per agent: an agent's name tapped in another's chat replaces the chat on screen, and without its own
+        // identity the screen kept the first chat's state and never opened the second (an empty chat, 13 October 2026).
         ChatView(agentId: agentId, opening: openingCall(for: agentId))
+          .id(agentId)
       }
       .refreshable {
         await store.reloadRoster()
