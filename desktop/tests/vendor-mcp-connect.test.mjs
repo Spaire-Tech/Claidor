@@ -363,29 +363,29 @@ test("a vendor that only takes the loopback is asked for it even when the box st
   }
 });
 
-test("the box signs in to Zendesk as Simeon's client document on Simeon Labs' server, and says so in the sign-in log (13 October 2026)", async () => {
+test("the box signs in to Shopify as Simeon's client document on Simeon Labs' server, and says so in the sign-in log (13 October 2026)", async () => {
   const { module, dispose } = await load("source/shared/node/vendor-mcp/backend-exec.ts", "vendor-backend-document");
   const root = await mkdtemp(path.join(os.tmpdir(), "simeon-vendor-document-"));
   try {
     const { writeFileSync } = await import("node:fs");
-    writeFileSync(path.join(root, "vendor-mcp-installs.json"), JSON.stringify([{ id: "zendesk", url: "https://mcp.zendesk.com/mcp", connected: false }]));
-    const zendesk = async (input) => {
+    writeFileSync(path.join(root, "vendor-mcp-installs.json"), JSON.stringify([{ id: "shopify", url: "https://mcp.shopify.com/", connected: false }]));
+    const shopify = async (input) => {
       const url = typeof input === "string" ? input : input.url;
-      if (url === "https://mcp.zendesk.com/.well-known/oauth-protected-resource/mcp") return new Response(JSON.stringify({ resource: "https://mcp.zendesk.com/mcp", authorization_servers: ["https://mcp.zendesk.com/mcp/oauth"], scopes_supported: ["read", "write"] }), { headers: { "content-type": "application/json" } });
-      if (url === "https://mcp.zendesk.com/.well-known/oauth-authorization-server/mcp/oauth") return new Response(JSON.stringify({ issuer: "https://mcp.zendesk.com/mcp/oauth", authorization_endpoint: "https://mcp.zendesk.com/oauth/authorizations/new", token_endpoint: "https://mcp.zendesk.com/oauth/tokens", token_endpoint_auth_methods_supported: ["none"], client_id_metadata_document_supported: true, code_challenge_methods_supported: ["S256"] }), { headers: { "content-type": "application/json" } });
+      if (url === "https://mcp.shopify.com/.well-known/oauth-protected-resource") return new Response(JSON.stringify({ resource: "https://mcp.shopify.com", authorization_servers: ["https://setup.shopify.com/auth"], scopes_supported: ["read_all_orders", "write_products"] }), { headers: { "content-type": "application/json" } });
+      if (url === "https://setup.shopify.com/.well-known/oauth-authorization-server/auth") return new Response(JSON.stringify({ issuer: "https://setup.shopify.com/auth", authorization_endpoint: "https://setup.shopify.com/oauth/authorize", token_endpoint: "https://setup.shopify.com/oauth/token", token_endpoint_auth_methods_supported: ["none"], client_id_metadata_document_supported: true, code_challenge_methods_supported: ["S256"] }), { headers: { "content-type": "application/json" } });
       return new Response("not found", { status: 404 });
     };
     const hosted = "https://api.simeonlabs.com/desktop/mcp-oauth/callback";
     const document = "https://api.simeonlabs.com/desktop/mcp-oauth/client.json";
-    const exec = module.createVendorMcpBackendExec({ rootDir: () => root, fetch: zendesk, now: () => 1_000, canStartAuth: true, clientMetadataUrl: document });
-    const status = await exec.checkAuthStatus({ serverId: exec.serverIdForPlugin("zendesk"), accountKey: "default", oauthRedirectUri: hosted });
+    const exec = module.createVendorMcpBackendExec({ rootDir: () => root, fetch: shopify, now: () => 1_000, canStartAuth: true, clientMetadataUrl: document });
+    const status = await exec.checkAuthStatus({ serverId: exec.serverIdForPlugin("shopify"), accountKey: "default", oauthRedirectUri: hosted });
     assert.equal(status.requiresAuth, true);
     assert.equal(new URL(status.authUrl).searchParams.get("client_id"), document);
     assert.equal(new URL(status.authUrl).searchParams.get("redirect_uri"), hosted);
-    assert.match(await readFile(path.join(root, "vendor-mcp-signin.log"), "utf8"), /zendesk sign-in started: client=https:\/\/api\.simeonlabs\.com\/desktop\/mcp-oauth\/client\.json registered=by our document secret=no /);
+    assert.match(await readFile(path.join(root, "vendor-mcp-signin.log"), "utf8"), /shopify sign-in started: client=https:\/\/api\.simeonlabs\.com\/desktop\/mcp-oauth\/client\.json registered=by our document secret=no /);
 
-    const without = module.createVendorMcpBackendExec({ rootDir: () => root, fetch: zendesk, now: () => 1_000, canStartAuth: true });
-    const refused = await without.checkAuthStatus({ serverId: without.serverIdForPlugin("zendesk"), accountKey: "default", oauthRedirectUri: hosted });
+    const without = module.createVendorMcpBackendExec({ rootDir: () => root, fetch: shopify, now: () => 1_000, canStartAuth: true });
+    const refused = await without.checkAuthStatus({ serverId: without.serverIdForPlugin("shopify"), accountKey: "default", oauthRedirectUri: hosted });
     assert.match(refused.error, /coming soon/i);
   } finally {
     await rm(root, { recursive: true, force: true });

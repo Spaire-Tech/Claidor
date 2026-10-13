@@ -218,7 +218,7 @@ export async function startVendorMcpOAuth(args: {
    * The address of Simeon's client metadata document on Simeon Labs' server
    * (`…/desktop/mcp-oauth/client.json`, `server/simeon/desktop/app_sign_in.py`),
    * sent as the client ID to a vendor that registers no clients but reads
-   * such documents (Shopify, Zendesk; 13 October 2026). A vendor that
+   * such documents (Shopify; 13 October 2026). A vendor that
    * registers clients keeps doing so: that is what worked before.
    */
   readonly clientMetadataUrl?: string;

@@ -347,24 +347,30 @@ the vendor's own sign-in, and the agent can then use their tools.
   `DISCORD`, for a token exchange on the server that is not built yet: a secret never ships in
   the computer's engine); Jira stays on `/v1`, which Atlassian already serves v2's tools from. Google's and Microsoft's apps
   stay on our apps service (no hosted server for people's own accounts), as do the rest.
-- **Shopify and Zendesk, through Simeon's client document** (13 October 2026, the founder: "the
-  newer sign-in style that Shopify and Zendesk require"). Their MCP servers
-  (`https://mcp.shopify.com/`, `https://mcp.zendesk.com/mcp`) register no clients and take none
-  made by hand: their metadata says `client_id_metadata_document_supported` and a public
-  client at the token endpoint (the MCP specification's 2025-11-25 sign-in). The client ID is
-  the address of a document describing the client, which the vendor fetches. Simeon Labs'
-  server serves Simeon's at `https://api.simeonlabs.com/desktop/mcp-oauth/client.json`
-  (`mcp_oauth_client_document` in `server/simeon/desktop/app_sign_in.py`: name, logo, privacy
-  and terms pages, the hosted return address and the loopback, no secret); its `client_id` is
-  built from `SIMEON_BASE_URL` and the computer builds the same address from the server it
-  talks to (`hostedMcpOAuthClientUrl` in `host/extensions/mcp/mcp-service.ts`), so the two
-  match. `oauth.ts` sends it only to a vendor with no registration endpoint; a vendor that
-  offers both (Notion, Linear, Granola and others) keeps registering as before. Custom servers
-  added by URL (7b) get the same. Both apps moved in place: Zendesk from our apps service (an
-  install there is moved by `atCatalogAddress`), Shopify out of "Coming soon"
-  (`OWN_APP_NEEDED`, `AppsComingSoon.builtIn`). Shopify's server also answers without a sign-in
-  (business names, domains, sample catalogs) and signs in for the store's own tools; the store
-  is picked on Shopify's page. Not yet run against a real Shopify store or Zendesk account.
+- **Shopify, through Simeon's client document** (13 October 2026, the founder: "the newer
+  sign-in style that Shopify and Zendesk require"). Shopify's MCP server
+  (`https://mcp.shopify.com/`) registers no clients and takes none made by hand: its metadata
+  says `client_id_metadata_document_supported` and a public client at the token endpoint (the
+  MCP specification's 2025-11-25 sign-in). The client ID is the address of a document
+  describing the client, which the vendor fetches. Simeon Labs' server serves Simeon's at
+  `https://api.simeonlabs.com/desktop/mcp-oauth/client.json` (`mcp_oauth_client_document` in
+  `server/simeon/desktop/app_sign_in.py`: name, logo, privacy and terms pages, the hosted
+  return address and the loopback, no secret); its `client_id` is built from
+  `SIMEON_BASE_URL` and the computer builds the same address from the server it talks to
+  (`hostedMcpOAuthClientUrl` in `host/extensions/mcp/mcp-service.ts`), so the two match.
+  `oauth.ts` sends it only to a vendor with no registration endpoint; a vendor that offers
+  both (Notion, Linear, Granola and others) keeps registering as before. Custom servers added
+  by URL (7b) get the same. Shopify moved in place and left "Coming soon" (`OWN_APP_NEEDED`,
+  `AppsComingSoon.builtIn`). Its server also answers without a sign-in (business names,
+  domains, sample catalogs) and signs in for the store's own tools; the store is picked on
+  Shopify's page. Not yet run against a real Shopify store.
+- **Zendesk stays on our apps service.** `mcp.zendesk.com` advertises client documents, but
+  its authorize page sends everyone to "Help Center Closed" (measured 13 October 2026): it
+  behaves as a Zendesk account named "mcp" that nobody can sign in to. Zendesk's own server is
+  per account, `https://<subdomain>.zendesk.com/api/mcp` (early access, measured on
+  `support.zendesk.com`: 401 with RFC 9728 metadata, open registration, a public client,
+  S256). Moving Zendesk needs the person's subdomain in the connect sheet before the address
+  is known.
 
 ### 7b. Custom MCP servers and account plugins
 
@@ -392,8 +398,8 @@ connect card.
 Zoom, Figma, QuickBooks, HubSpot, Salesforce, GitHub, Mailchimp, Gusto, Slack, LinkedIn,
 OneDrive, Trello, Xero, Brex, Pipedrive, Docusign and the others marked `app(…)` in
 `catalog.ts` connect through Simeon. The provider behind them is never named in the app.
-(Asana, Todoist, Intercom, Klaviyo, Ashby, Calendly, Cal.com, Attio, Gorgias, Gong, Zendesk and
-Shopify moved to their makers' own servers on 13 October 2026; see 7a.)
+(Asana, Todoist, Intercom, Klaviyo, Ashby, Calendly, Cal.com, Attio, Gorgias, Gong and Shopify
+moved to their makers' own servers on 13 October 2026; see 7a.)
 
 **How it works.**
 

@@ -581,10 +581,10 @@ MCP_OAUTH_CLIENT_PATH = "/desktop/mcp-oauth/client.json"
 
 def mcp_oauth_client_document() -> dict[str, Any]:
     """Simeon as an OAuth client, described at an address of ours (13
-    October 2026). Shopify's and Zendesk's MCP servers register no clients
-    and take none by hand: they read a client from the document its
-    `client_id` names (a client ID metadata document, the MCP
-    specification's 2025-11-25 sign-in). The box sends this address as the
+    October 2026). Shopify's MCP server registers no clients and takes none
+    made by hand: it reads a client from the document its `client_id` names
+    (a client ID metadata document, the MCP specification's 2025-11-25
+    sign-in). The box sends this address as the
     client ID (`vendor-mcp/oauth.ts`); the vendor fetches it, checks that
     the sign-in's return address is listed, and shows the name and logo.
     A public client: PKCE, no secret. The `client_id` must equal the
