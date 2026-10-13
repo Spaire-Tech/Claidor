@@ -129,7 +129,8 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(providers, /export function simeonModelForSession/);
   assert.match(inference, /cheap: true, isSummarizationSession: true/);
   assert.match(turnShell, /cheap: true, isSummarizationSession: true/);
-  assert.match(providers, /providerOptions: \{ openai: \{ strictSchemas: false, \.\.\.openaiOptions \} \}/);
+  // GPT's tool schemas stay non-strict; a Claude call sends no OpenAI options (13 October 2026).
+  assert.match(providers, /providerOptions: wire === "anthropic" \? \{\} : \{ openai: \{ strictSchemas: false, \.\.\.openaiOptions \} \}/);
   assert.match(providers, /from "\.\.\/\.\.\/\.\.\/shared\/node\/simeon-backend\/simeon-api\.js"/);
   assert.match(providers, /export \{ simeonProxyBaseUrl \}/);
   assert.match(await readFile(path.join(repoRoot, "source", "shared", "node", "simeon-backend", "simeon-api.ts"), "utf8"), /SIMEON_PROXY_PREFIX = "desktop\/api\/proxy\/v1"/);

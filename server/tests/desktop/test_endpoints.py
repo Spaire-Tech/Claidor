@@ -17,6 +17,7 @@ from structlog.testing import capture_logs
 
 from simeon.config import settings
 from simeon.desktop import proxy_common as proxy_common_module
+from simeon.desktop.pricing import ModelPolicy
 from simeon.desktop.proxy_common import UPSTREAM_REFUSED
 from simeon.desktop.service import (
     Usage,
@@ -231,13 +232,13 @@ class TestSession:
         summary = await client.get("/desktop/api/user/profile-summary", headers=headers)
         assert summary.json()["data"]["creditItems"][0]["type"] == "free"
 
+        mocker.patch.object(settings, "OPENAI_API_KEY", "")
+        mocker.patch.object(settings, "GEMINI_API_KEY", "")
         models = await client.get("/desktop/api/models/available", headers=headers)
         rows = models.json()["data"]
-        assert {row["modelId"] for row in rows} == {
-            "claude-sonnet-5",
-            "claude-opus-5",
-            "claude-haiku-4-5-20251001",
-        }
+        # Under the OpenAI policy with only Anthropic's key, the fallback
+        # is all there is to offer.
+        assert {row["modelId"] for row in rows} == {"claude-sonnet-5-5"}
         assert all(row["apiFormat"] == "anthropic" for row in rows)
 
     async def test_no_bearer_is_401(self, client: httpx.AsyncClient) -> None:
@@ -486,7 +487,8 @@ class TestProxy:
         model = model_by_id("claude-sonnet-5")
         assert model is not None
         expected = credits_for(model, Usage(input_tokens=100, output_tokens=20))
-        assert expected == 200
+        # (100 + 20 × 5) tokens at Sonnet 5's $2.00, in $3.00 credits.
+        assert expected == 133
         assert quota.json()["data"]["creditsUsed"] == expected
 
     @pytest.mark.parametrize(
@@ -552,7 +554,7 @@ class TestProxy:
                 "/desktop/api/proxy/v1/messages",
                 headers={"Authorization": f"Bearer {access}"},
                 json={
-                    "model": "claude-opus-5",
+                    "model": "claude-sonnet-5-5",
                     "max_tokens": 64,
                     "stream": True,
                     "messages": [],
@@ -568,7 +570,7 @@ class TestProxy:
         row = rows[0]
         assert (row.input_tokens, row.output_tokens) == (120, 57)
         assert (row.cache_creation_tokens, row.cache_read_tokens) == (40, 1000)
-        model = model_by_id("claude-opus-5")
+        model = model_by_id("claude-sonnet-5-5")
         assert model is not None
         assert row.credits == credits_for(
             model,
@@ -783,9 +785,102 @@ class TestTwoProviders:
         by_id = {one["modelId"]: one for one in offered["data"]}
         assert {one["provider"] for one in offered["data"]} == {"anthropic", "openai"}
         # The wire format follows the provider, with no converter between.
-        assert by_id["claude-sonnet-5"]["apiFormat"] == "anthropic"
+        assert by_id["claude-sonnet-5-5"]["apiFormat"] == "anthropic"
+        assert by_id["claude-sonnet-5-5"]["role"] == "fallback"
         assert by_id["gpt-6-sol"]["apiFormat"] == "openai"
+        assert by_id["gpt-6-sol"]["role"] == "primary"
         assert "gpt-5.6-terra" not in by_id, "retired: served, never offered"
+        assert "claude-sonnet-5" not in by_id, "retired: served, never offered"
+
+    async def test_the_setting_moves_who_answers_and_a_person_may_go_first(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        access, _ = await _signed_in(client, session, user)
+        headers = {"Authorization": f"Bearer {access}"}
+        mocker.patch.object(settings, "ANTHROPIC_API_KEY", "sk-anthropic")
+        mocker.patch.object(settings, "OPENAI_API_KEY", "sk-openai")
+
+        async def roles() -> dict[str, str]:
+            offered = (
+                await client.get("/desktop/api/models/available", headers=headers)
+            ).json()
+            return {
+                one["modelId"]: one["role"]
+                for one in offered["data"]
+                if one["role"] != "video"
+            }
+
+        assert await roles() == {
+            "gpt-6-sol": "primary",
+            "gpt-6-luna": "cheap",
+            "claude-sonnet-5-5": "fallback",
+        }
+
+        # Only this person, by e-mail in any case.
+        mocker.patch.object(
+            settings,
+            "DESKTOP_MODELS_BY_EMAIL",
+            {user.email.upper(): ModelPolicy.claude},
+        )
+        assert await roles() == {
+            "claude-sonnet-5-5": "primary",
+            "claude-haiku-5-5": "cheap",
+            "gpt-6-sol": "fallback",
+        }
+
+        # Everyone, with the person's own line winning.
+        mocker.patch.object(settings, "DESKTOP_MODELS_BY_EMAIL", {})
+        mocker.patch.object(settings, "DESKTOP_MODELS", ModelPolicy.claude_opus)
+        assert await roles() == {
+            "claude-opus-5-5": "primary",
+            "claude-haiku-5-5": "cheap",
+            "gpt-6-sol": "fallback",
+        }
+
+    async def test_the_proxy_serves_what_the_person_s_policy_names(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        access, _ = await _signed_in(client, session, user)
+        headers = {"Authorization": f"Bearer {access}"}
+        mocker.patch.object(settings, "ANTHROPIC_API_KEY", "sk-anthropic")
+        mocker.patch.object(settings, "OPENAI_API_KEY", "sk-openai")
+        body = {"model": "claude-haiku-5-5", "max_tokens": 1, "messages": []}
+
+        # Haiku 5.5 does the machinery under a Claude policy only.
+        refused = await client.post(
+            "/desktop/api/proxy/v1/messages", json=body, headers=headers
+        )
+        assert refused.status_code == 400
+        assert (
+            refused.json()["error"]["message"]
+            == "This model is not offered by the desktop app."
+        )
+
+        mocker.patch.object(
+            settings, "DESKTOP_MODELS_BY_EMAIL", {user.email: ModelPolicy.claude}
+        )
+        with respx.mock(assert_all_called=True) as mock:
+            mock.post(f"{settings.DESKTOP_ANTHROPIC_BASE_URL}/v1/messages").mock(
+                return_value=httpx.Response(
+                    200,
+                    json={
+                        "content": [],
+                        "usage": {"input_tokens": 3, "output_tokens": 1},
+                    },
+                )
+            )
+            served = await client.post(
+                "/desktop/api/proxy/v1/messages", json=body, headers=headers
+            )
+        assert served.status_code == 200, served.text
 
     async def test_a_gpt_call_goes_to_openai_in_openai_s_language(
         self,
@@ -1095,13 +1190,16 @@ class TestUsageTally:
         )
 
     def test_credits_weigh_output_and_discount_cached_reads(self) -> None:
-        sonnet = model_by_id("claude-sonnet-5")
-        haiku = model_by_id("claude-haiku-4-5-20251001")
+        sonnet = model_by_id("claude-sonnet-5-5")
+        haiku = model_by_id("claude-haiku-5-5")
         assert sonnet is not None
         assert haiku is not None
         usage = Usage(input_tokens=1000, output_tokens=100, cache_read_tokens=10_000)
-        assert credits_for(sonnet, usage) == 2500
-        assert credits_for(haiku, usage) == 500
+        # $2.00 in, $10.00 out, $0.10 cached on Sonnet 5.5: (1000 + 500 +
+        # 500) tokens at $2.00, in credits of $3.00 per million.
+        assert credits_for(sonnet, usage) == 1333
+        # $0.10, $0.50, $0.01 on Haiku 5.5.
+        assert credits_for(haiku, usage) == 83
 
 
 @pytest.mark.asyncio

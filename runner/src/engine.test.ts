@@ -72,7 +72,7 @@ describe('the request, per wire', () => {
   test('Anthropic Messages carries it as system with a max_tokens', () => {
     const { path: route, body } = buildRequest({ id: 'claude-x', transportApi: 'anthropic-messages', maxTokens: 64_000 }, 'SYS', messages);
     expect(route).toBe('/v1/messages');
-    expect(body).toMatchObject({ model: 'claude-x', system: 'SYS', max_tokens: 8_192 });
+    expect(body).toMatchObject({ model: 'claude-x', system: 'SYS', max_tokens: 16_384 });
   });
   test('chat completions carries it as the system message', () => {
     const { path: route, body } = buildRequest({ id: 'm', transportApi: 'openai-completions', maxTokens: 8_192 }, 'SYS', messages);

@@ -24,6 +24,7 @@ from pydantic_settings import (
     SettingsConfigDict,
 )
 
+from simeon.desktop.pricing import ModelPolicy
 from simeon.enums import TaxProcessor
 from simeon.kit.address import Address, CountryAlpha2
 from simeon.kit.jwk import JWKSFile
@@ -226,6 +227,18 @@ class Settings(BaseSettings):
     # on an iPhone that already had one and after an earlier free month:
     # the founder's test accounts, to try the first run more than once.
     DESKTOP_FREE_TRIAL_TEST_EMAILS: set[str] = set()
+    # Which family answers in the app (`simeon.desktop.pricing.ModelPolicy`,
+    # 13 October 2026): "openai" (GPT-6 Sol answers, Luna does the
+    # machinery, Claude Sonnet 5.5 stands by), "claude" (Claude Sonnet 5.5,
+    # Haiku 5.5, GPT-6 Sol standing by) or "claude-opus" (Opus 5.5 in
+    # Sonnet's place). Every engine reads it from /desktop/api/models/available
+    # within minutes; nothing needs a release. A family whose key is unset
+    # (ANTHROPIC_API_KEY, OPENAI_API_KEY) is offered nothing, and the engine
+    # then answers on whatever is.
+    DESKTOP_MODELS: ModelPolicy = ModelPolicy.openai
+    # The same choice for a few people first, by e-mail, as a JSON object:
+    # {"you@example.com": "claude"}. Everyone else follows DESKTOP_MODELS.
+    DESKTOP_MODELS_BY_EMAIL: dict[str, ModelPolicy] = {}
     # Where the Mac app's releases are served from (`simeon.desktop.releases`):
     # the folder that holds `darwin-arm64/latest.json` and the version
     # folders. Unset, the public bucket's `releases/` folder.

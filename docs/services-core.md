@@ -231,7 +231,7 @@ All are under `/desktop` (`server/simeon/desktop/endpoints.py`,
 | `POST /desktop/api/proxy/v1/voice/calls` | Opens a voice call: `{token, conversation_id, agent_id}` for ElevenLabs Agents (`server/simeon/desktop/voice.py`, `docs/services-agents.md` section 9). |
 | `POST /desktop/api/proxy/v1/voice/calls/{conversation_id}/end` | The app hung up: `{seconds}` in, `{seconds, summary}` out. Bills the call once. |
 | `GET /desktop/api/proxy/v1/voice/voices` | The voice picker's curated list, cached for an hour. |
-| `GET /desktop/api/models/available` | The models offered to the app. |
+| `GET /desktop/api/models/available` | The models offered to the app, with their roles under the person's policy. The box's credential reads it too: the engine follows the roles. |
 | `GET /desktop/api/models/pricing-catalog` | Their prices. |
 | `GET /desktop/api/user/quota` | The person's allowance and usage, for the Usage tab: the plan, the window, the limit, the trial's end, where to change plan (`services-billing.md`, section 4). |
 
@@ -243,20 +243,54 @@ reports is converted to credits and stored as a `desktop_usage` row.
 The catalogue is `MODELS` in `server/simeon/desktop/pricing.py`. One credit is
 one input token at $3.00 per million.
 
-| Model id | Role | Price per million tokens |
-|---|---|---|
-| `gpt-6-sol` | `primary`: the agent loop, every reply the person reads, its subagents (executor, computer and browser use) | $2.00 in, $0.20 cached, $10.00 out |
-| `gpt-6-luna` | `cheap`: summaries, memory, the auto-review classifier, and a step re-run after a rate limit | $0.10 in, $0.01 cached, $0.50 out |
-| `claude-sonnet-5` | `fallback`: only when the primary's provider is down | $3.00 in |
-| `gemini-2.5-flash` | `video`: the watch-video subagents | $0.30 in (to confirm) |
-| `gpt-5.6-terra`, `gpt-5.6-luna` | `retired`: still served to older app builds, never offered | $2.00 / $0.20 in |
-| `gpt-6-astra`, `claude-opus-5`, `claude-haiku-4-5-20251001`, `gemini-2.5-pro` | no role: priced, not offered | |
+**One setting chooses the family** (13 October 2026). `SIMEON_DESKTOP_MODELS`
+picks a policy (`ModelPolicy`, `POLICY_ROLES`), and
+`SIMEON_DESKTOP_MODELS_BY_EMAIL` picks one for a few people first:
 
-`/desktop/api/models/available` lists only models that have a role, are not
-retired, and whose provider has a key on the server. The app's model menu keeps
-only the `primary` row, so there is nothing for the person to choose
-(`desktop/source/electron-main/models/simeon-model-catalog.ts`). The proxy
-refuses any model with no role: "This model is not offered by the desktop app."
+| Policy | `primary`: the agent loop, every reply, its helpers | `cheap`: summaries, memory, safety checks, titles | `fallback`: a step whose provider failed |
+|---|---|---|---|
+| `openai` (the default) | `gpt-6-sol` | `gpt-6-luna` | `claude-sonnet-5-5` |
+| `claude` | `claude-sonnet-5-5` | `claude-haiku-5-5` | `gpt-6-sol` |
+| `claude-opus` | `claude-opus-5-5` | `claude-haiku-5-5` | `gpt-6-sol` |
+
+The engine reads the roles from `/desktop/api/models/available` when the host
+starts and every five minutes after (`simeon-model-roles.ts`), so a change of
+setting reaches every cloud computer within minutes, with no release. Until
+its first read it uses GPT-6 Sol and Luna, which every policy serves; an
+engine built before this change names them whatever the setting says, so the
+Claude policies keep serving GPT-6 Luna as `retired`.
+
+| Model id | Price per million tokens: input, cache write, cache read, output |
+|---|---|
+| `claude-sonnet-5-5` | $2.00, $2.50, $0.10, $10.00 |
+| `claude-opus-5-5` | $4.00, $5.00, $0.20, $20.00 |
+| `claude-haiku-5-5` | $0.10, $0.125, $0.01, $0.50; five times each past a 100,000-token prompt |
+| `gpt-6-sol` | $2.00, nothing, $0.20, $10.00 |
+| `gpt-6-luna` | $0.10, nothing, $0.01, $0.50 |
+| `gemini-2.5-flash` (`video`) | $0.30 in (to confirm) |
+| `gpt-5.6-terra`, `gpt-5.6-luna`, `claude-sonnet-5` (`retired`: served, never offered) | $2.00 / $0.20 / $2.00 in |
+| `gpt-6-astra`, `claude-opus-5`, `claude-haiku-4-5-20251001`, `gemini-2.5-pro` (no role: priced, never served) | |
+
+The Claude prices were read off platform.claude.com on 13 October 2026; the
+earlier Claude rows were listed at older, higher prices until then.
+
+`/desktop/api/models/available` lists only models that have a role under the
+person's policy, are not retired, and whose provider has a key on the server.
+The proxy serves a model with any role under that policy, `retired` included,
+and refuses the rest: "This model is not offered by the desktop app."
+
+**Claude on the wire** (`claude-messages.ts`). The engine writes three things
+the AI SDK's Anthropic provider does not: `output_config.effort` (our levels;
+`none` reads as `low`), `thinking: {type: "adaptive", block_binding:
+{prefix_mismatch_behavior: "drop_block"}}` with the beta header
+`thinking-binding-controls-2026-08-01` (a Claude 5.5 thinking block whose
+earlier prompt changed, after a summary for instance, is dropped rather than
+refused with a 400), and two cache breakpoints: after the system prompt, and
+the top-level `cache_control` that the API moves to each request's last
+block. Thinking blocks go back on later calls with their signatures. When
+Claude fails before it has said anything (overloaded, rate limited, a server
+error, not offered), the step runs once on the fallback and writes
+`[simeon] model-fallback`.
 
 **Effort.** The app sends reasoning effort per call
 (`desktop/source/host/extensions/inference/provider-session.ts`):
@@ -451,7 +485,12 @@ box and `SAND_KEEP_BOX_RUNNING_ON_QUIT=1` always keeps it running
 ### Settings on Render
 
 - `SIMEON_OPENAI_API_KEY`: the OpenAI key. Without it, no OpenAI model is offered.
-- `ANTHROPIC_API_KEY` (or `SIMEON_ANTHROPIC_API_KEY`): Claude, for the fallback.
+- `ANTHROPIC_API_KEY` (or `SIMEON_ANTHROPIC_API_KEY`): Claude. Without it no
+  Claude model is offered, and a Claude policy answers on GPT-6 Sol.
+- `SIMEON_DESKTOP_MODELS`: `openai` (the default), `claude` or `claude-opus`.
+- `SIMEON_DESKTOP_MODELS_BY_EMAIL`: the same choice for a few people first, as
+  JSON: `{"you@example.com": "claude"}`. A value that is not a policy stops
+  the deploy at boot rather than serving the wrong models.
 - `SIMEON_GEMINI_API_KEY`: Gemini, for the video role.
 - `SIMEON_DESKTOP_MONTHLY_CREDITS` (only a server with no billing configured
   reads it), `SIMEON_DESKTOP_HOURLY_CREDITS`: only to change the defaults.
@@ -462,6 +501,8 @@ box and `SAND_KEEP_BOX_RUNNING_ON_QUIT=1` always keeps it running
 - `SAND_SIMEON_REASONING_EFFORT`, `SAND_SIMEON_CHEAP_REASONING_EFFORT`:
   override the effort (`none`, `low`, `medium`, `high`, `xhigh`, `max`).
 - `SAND_SIMEON_MAX_OUTPUT_TOKENS`: the output ceiling per call.
+- `SAND_SIMEON_MODEL`, `SAND_SIMEON_CHEAP_MODEL`, `SAND_SIMEON_FALLBACK_MODEL`:
+  hold a role on one engine whatever the server says (testing only).
 - `SAND_AGENT_MAX_STEPS`, `SAND_HIDDEN_TURN_MAX_STEPS`, `SAND_ROUTINE_MAX_STEPS`:
   the step limits.
 - `SAND_AGENT_MESSAGE_MAX_HOPS`: agent messages in a row.
@@ -474,13 +515,20 @@ box and `SAND_KEEP_BOX_RUNNING_ON_QUIT=1` always keeps it running
   and for capabilities `desktop.search.*`, `desktop.images.*`,
   `desktop.transcription.*`, `desktop.speech.*` and `desktop.video.generate`.
 - In the box, each model call writes a `[simeon] model=… effort=… input=…
-  cached=… output=… tools=… offered=…` line. A failed call writes
-  `[simeon] model-error`. A switch to the cheap model after a rate limit writes
-  `[simeon] model-fallback`.
+  cached=… output=… tools=… offered=…` line; a Claude call adds `written=`,
+  the prompt tokens written to the cache (input counts fresh, cached and
+  written together). A failed call writes `[simeon] model-error`. A step moved
+  to another model writes `[simeon] model-fallback` (GPT to the cheap model
+  after a rate limit; Claude to its fallback). The roles the engine follows
+  are on `[simeon] model-roles primary=… cheap=… fallback=…`, written when
+  they change, or `model-roles unread` when the read fails.
 
 **Not yet verified:** GPT-6 Sol and Luna have not run against OpenAI. The
 spend guards have not run on a Mac. The Gemini prices are marked "to confirm"
-in the code.
+in the code. The Claude path (13 October 2026) has run only against a stubbed
+proxy (`desktop/tests/claude-path.test.mjs`); no request has reached
+Anthropic, and the cost test (`docs/cost-test-set.md`) has not been run on
+it.
 
 ---
 

@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { join } from "node:path";
 
+import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenAI } from "@ai-sdk/openai";
 import { jsonSchema, streamText, tool, type CoreMessage, type LanguageModelV1, type ToolSet } from "ai";
 
@@ -22,6 +23,8 @@ import { simeonProxyBaseUrl } from "../../../shared/node/simeon-backend/simeon-a
 import { getSandRootDir } from "../../host-paths.js";
 import { SandSettingsStore } from "../../../shared/node/settings/sand-settings-store.js";
 import { simeonGeminiEndpoint, streamGeminiGenerateContent, toGeminiRequest, type GeminiDirectTool } from "./gemini-direct-generate.js";
+import { claudeEffortFor, claudeUsage, isClaudeModelId, isClaudeProviderFailure, withClaudeBetaHeader, withClaudeRequestOptions, type ClaudeEffort } from "./claude-messages.js";
+import { simeonModelRoles } from "./simeon-model-roles.js";
 import { configuredSimeonVideoModel, isGeminiVideoModelId } from "../../../shared/video-availability.js";
 import type { LabelMessage, PromptExecutor } from "./sand-labeling.js";
 
@@ -141,12 +144,23 @@ export function setSimeonCredentialSource(source: SimeonCredentialSource | null)
   simeonCredentialSource = source;
 }
 
+// Which model holds each role: a model set in the environment, else the one
+// Simeon Labs' server names (`simeon-model-roles.ts`, 13 October 2026: one
+// server setting moves every engine between GPT-6 and Claude), else GPT-6
+// Sol and Luna, which every policy serves.
 export function configuredSimeonModel(): string {
-  return readSimeonEnv(process.env, "SAND_SIMEON_MODEL")?.trim() || DEFAULT_SIMEON_MODEL;
+  return readSimeonEnv(process.env, "SAND_SIMEON_MODEL")?.trim() || simeonModelRoles().primary || DEFAULT_SIMEON_MODEL;
 }
 
 export function configuredSimeonCheapModel(): string {
-  return readSimeonEnv(process.env, "SAND_SIMEON_CHEAP_MODEL")?.trim() || DEFAULT_SIMEON_CHEAP_MODEL;
+  return readSimeonEnv(process.env, "SAND_SIMEON_CHEAP_MODEL")?.trim() || simeonModelRoles().cheap || DEFAULT_SIMEON_CHEAP_MODEL;
+}
+
+// The model that answers a step when its own provider fails; none until the
+// server names one. GPT-6 Sol under a Claude policy, Claude Sonnet 5.5 under
+// the OpenAI one.
+export function configuredSimeonFallbackModel(): string | undefined {
+  return readSimeonEnv(process.env, "SAND_SIMEON_FALLBACK_MODEL")?.trim() || simeonModelRoles().fallback || undefined;
 }
 
 // The video model (Gemini, `shared/video-availability.ts`) is reached by
@@ -161,8 +175,19 @@ export function isConfiguredSimeonModelId(value: string | undefined): boolean {
   if (!id) return false;
   return id === configuredSimeonModel()
     || id === configuredSimeonCheapModel()
+    || id === configuredSimeonFallbackModel()
     || id === DEFAULT_SIMEON_MODEL
     || id === DEFAULT_SIMEON_CHEAP_MODEL;
+}
+
+// The host names GPT-6 Sol on every turn (`DEFAULT_SAND_MODEL`,
+// host-runner-composition.ts, read once at start). The two defaults name a
+// role, not a model: they resolve to whoever holds it now, so a turn follows
+// the server's policy without the host being rebuilt.
+function followRole(id: string): string {
+  if (id === DEFAULT_SIMEON_MODEL) return configuredSimeonModel();
+  if (id === DEFAULT_SIMEON_CHEAP_MODEL) return configuredSimeonCheapModel();
+  return id;
 }
 
 export type SimeonSessionModelOptions = {
@@ -240,9 +265,9 @@ export function isHelperSimeonSession(options?: SimeonSessionModelOptions): bool
 export function simeonModelForSession(options?: SimeonSessionModelOptions): string {
   if (options?.isVideoSubagent === true) return configuredSimeonVideoModel();
   const named = options?.model?.trim();
-  if (named && isConfiguredSimeonModelId(named)) return named;
+  if (named && isConfiguredSimeonModelId(named)) return followRole(named);
   const sessionModel = options?.modelId?.trim();
-  if (sessionModel && isConfiguredSimeonModelId(sessionModel)) return sessionModel;
+  if (sessionModel && isConfiguredSimeonModelId(sessionModel)) return followRole(sessionModel);
   if (isCheapSimeonSession(options)) return configuredSimeonCheapModel();
   return configuredSimeonModel();
 }
@@ -421,28 +446,54 @@ export const SIMEON_TOOL_IMAGE_DROP_BATCH = 5;
 const TOOL_IMAGE_INTRO = "Image output of the tool call(s) above.";
 const TOOL_IMAGE_DROPPED = "Image output of the tool call(s) above. (Not shown again: only the latest screenshots are kept; take a new one if you need to look.)";
 
+// Which provider's wire a call is written for. OpenAI's Responses wire for
+// every GPT model; Anthropic's Messages wire for Claude (13 October 2026).
+export type SimeonWire = "openai" | "anthropic";
+
+export function simeonWireFor(modelId: string): SimeonWire {
+  return isClaudeModelId(modelId) ? "anthropic" : "openai";
+}
+
+// What Claude's thinking needs back on later calls: the block as it came,
+// signature and all (`claude-messages.ts`). A reasoning part with no
+// signature (GPT's, or one cut off) cannot be sent as thinking and is left
+// out; OpenAI's converter ignores reasoning parts either way.
+function reasoningFor(part: Loose, wire: SimeonWire): Loose[] {
+  if (part?.type === "redacted-reasoning") return wire === "anthropic" && typeof part.data === "string" && part.data.length > 0 ? [{ type: "redacted-reasoning", data: part.data }] : [];
+  if (part?.type !== "reasoning" || typeof part.text !== "string") return [];
+  if (wire === "openai") return [{ type: "reasoning", text: part.text }];
+  return typeof part.signature === "string" && part.signature.length > 0 ? [{ type: "reasoning", text: part.text, signature: part.signature }] : [];
+}
+
 // The host loop appends messages in its own dialect of the AI SDK shape:
 // the upstream app wire metadata under `providerOptions.simeon` (with `undefined` fields
 // the SDK's JSON validator refuses), tool results whose text may be empty and
 // whose images live in `experimental_content`, reasoning parts with signatures.
 // This is the copy the wire sees; the loop keeps its own.
-export function toCoreMessages(messages: readonly ProviderMessage[]): CoreMessage[] {
+export function toCoreMessages(messages: readonly ProviderMessage[], wire: SimeonWire = "openai"): CoreMessage[] {
   const out: Loose[] = [];
   const toolImageMessages: number[] = [];
+  // Claude takes one system prompt, before everything else; the Anthropic
+  // provider throws on a second one after the conversation has started. A
+  // system message the loop adds later travels as the person's side instead.
+  const lateSystem = (text: string) => wire === "anthropic" && out.some((message) => message.role !== "system")
+    ? { role: "user", content: [{ type: "text", text }] }
+    : { role: "system", content: text };
   for (const message of messages) {
     const { role, content } = message;
     if (typeof content === "string") {
-      if (role === "system" || role === "user" || role === "assistant") out.push({ role, content });
+      if (role === "system") out.push(lateSystem(content));
+      else if (role === "user" || role === "assistant") out.push({ role, content });
       continue;
     }
     const parts = content as readonly Loose[];
-    if (role === "system") { out.push({ role, content: partText(parts) }); continue; }
+    if (role === "system") { out.push(lateSystem(partText(parts))); continue; }
     if (role === "user") {
       out.push({ role, content: parts.flatMap((part): Loose[] => part?.type === "text" ? [{ type: "text", text: part.text }] : part?.type === "image" ? [{ type: "image", image: part.image, ...(typeof part.mimeType === "string" ? { mimeType: part.mimeType } : {}) }] : []) });
       continue;
     }
     if (role === "assistant") {
-      out.push({ role, content: parts.flatMap((part): Loose[] => part?.type === "text" ? [{ type: "text", text: part.text }] : part?.type === "tool-call" ? [{ type: "tool-call", toolCallId: part.toolCallId, toolName: part.toolName, args: part.args }] : part?.type === "reasoning" && typeof part.text === "string" ? [{ type: "reasoning", text: part.text }] : []) });
+      out.push({ role, content: parts.flatMap((part): Loose[] => part?.type === "text" ? [{ type: "text", text: part.text }] : part?.type === "tool-call" ? [{ type: "tool-call", toolCallId: part.toolCallId, toolName: part.toolName, args: part.args }] : reasoningFor(part, wire)) });
       continue;
     }
     if (role !== "tool") continue;
@@ -466,7 +517,19 @@ export function toCoreMessages(messages: readonly ProviderMessage[]): CoreMessag
   const droppable = Math.max(0, toolImageMessages.length - SIMEON_KEPT_TOOL_IMAGES);
   const dropped = droppable - (droppable % SIMEON_TOOL_IMAGE_DROP_BATCH);
   for (const index of toolImageMessages.slice(0, dropped)) out[index] = { role: "user", content: [{ type: "text", text: TOOL_IMAGE_DROPPED }] };
-  return out as CoreMessage[];
+  return (wire === "anthropic" ? withoutEmptyContent(out) : out) as CoreMessage[];
+}
+
+// Claude refuses an empty text block and a message with nothing in it, where
+// OpenAI lets both pass; an assistant step that only thought, with a thought
+// that cannot be sent back, would otherwise be one.
+function withoutEmptyContent(messages: readonly Loose[]): Loose[] {
+  return messages.flatMap((message): Loose[] => {
+    if (typeof message.content === "string") return message.content.length > 0 ? [message] : [];
+    if (!Array.isArray(message.content)) return [message];
+    const content = message.content.filter((part: Loose) => part?.type !== "text" || (typeof part.text === "string" && part.text.length > 0));
+    return content.length > 0 ? [{ ...message, content }] : [];
+  });
 }
 
 // The AI SDK (v4) never settles `response` when the first request fails: the
@@ -508,6 +571,10 @@ export interface ModelCallLogLine {
   readonly outcome?: string;
   // Why the call was made, the `x-simeon-call-reason` the usage row carries.
   readonly reason?: string;
+  // Prompt tokens written to the cache on this call. Claude's only: OpenAI
+  // writes its cache for nothing and reports no such number. `input` counts
+  // them too (input = fresh + cached + written). Added 13 October 2026.
+  readonly writtenTokens?: number;
 }
 
 // One line per model call in the host log, so `docker exec … tail
@@ -515,7 +582,7 @@ export interface ModelCallLogLine {
 // the executor wrote nothing and a fifty-minute loop left no trace but
 // the bill.
 export function formatModelCallLogLine(line: ModelCallLogLine): string {
-  return `[simeon] model=${line.model} effort=${line.effort} input=${line.inputTokens} cached=${line.cachedTokens} output=${line.outputTokens} reasoning=${line.reasoningTokens} ms=${line.elapsedMs} tools=${line.tools}${line.offered === undefined ? "" : ` offered=${line.offered}`}${line.budget === undefined ? "" : ` budget=${line.budget}`}${line.prefix === undefined ? "" : ` prefix=${line.prefix}`}${line.outcome === undefined ? "" : ` outcome=${line.outcome}`}${line.reason === undefined ? "" : ` reason=${line.reason}`}`;
+  return `[simeon] model=${line.model} effort=${line.effort} input=${line.inputTokens} cached=${line.cachedTokens} output=${line.outputTokens} reasoning=${line.reasoningTokens} ms=${line.elapsedMs} tools=${line.tools}${line.offered === undefined ? "" : ` offered=${line.offered}`}${line.budget === undefined ? "" : ` budget=${line.budget}`}${line.prefix === undefined ? "" : ` prefix=${line.prefix}`}${line.outcome === undefined ? "" : ` outcome=${line.outcome}`}${line.reason === undefined ? "" : ` reason=${line.reason}`}${line.writtenTokens === undefined ? "" : ` written=${line.writtenTokens}`}`;
 }
 
 /** What a call produced, for the log line and the empty-answer line. */
@@ -596,16 +663,23 @@ function logModelCallError(error: unknown, callInfo: { readonly model: string; r
   modelCallLog(`${HOST_LOG_PREFIX} model-error-schemas ${clipForHostLog(toolSchemaSummary(tools), 6000)}`);
 }
 
-function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: string, onUsage?: (usage: UsageRecord) => void, maxTokens = 0, callInfo?: { readonly model: string; readonly effort: string; readonly budget?: string; readonly prefix?: string; readonly reason?: string }, tools?: ToolSet, messages?: readonly CoreMessage[], onRequestId?: (requestId: string) => void, onCutOff?: () => void) {
+function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: string, onUsage?: (usage: UsageRecord) => void, maxTokens = 0, callInfo?: { readonly model: string; readonly effort: string; readonly budget?: string; readonly prefix?: string; readonly reason?: string }, tools?: ToolSet, messages?: readonly CoreMessage[], onRequestId?: (requestId: string) => void, onCutOff?: () => void, wire: SimeonWire = "openai") {
   const startedAtMs = Date.now();
   const failure = deferred<never>();
   failure.promise.catch(() => undefined);
   const fail = (error: unknown) => failure.reject(asError(error));
   const fullStream = (async function* () {
     let ended = false;
+    let lastType: string | undefined;
     try {
       for await (const part of result.fullStream) {
         if (part.type === "error") { logModelCallError(part.error, callInfo, tools, messages); const next = asError(part.error); fail(next); throw next; }
+        // The loop pins a thinking signature on the reasoning part before it
+        // (tool-stream-executor.ts) and drops one that has none. Claude sends
+        // an empty thinking delta first, which the AI SDK passes on; this
+        // keeps the signature should a block ever come without it.
+        if (wire === "anthropic" && part.type === "reasoning-signature" && lastType !== "reasoning") yield { type: "reasoning" as const, textDelta: "" };
+        lastType = part.type;
         yield part;
       }
       ended = true;
@@ -618,27 +692,33 @@ function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: 
   // tray error names; until 25 September 2026 nothing on this executor
   // ever reported one (F-005).
   if (onRequestId != null) void race(result.response).then((response) => { const id = (response as { id?: unknown } | undefined)?.id; if (typeof id === "string" && id.length > 0) onRequestId(id); }, () => undefined);
-  const metadata = race(result.providerMetadata).then(value => (value?.openai ?? {}) as Record<string, unknown>, () => ({} as Record<string, unknown>));
+  const metadata = race(result.providerMetadata).then(value => ((wire === "anthropic" ? value?.anthropic : value?.openai) ?? {}) as Record<string, unknown>, () => ({} as Record<string, unknown>));
   const toolCalls = race(result.toolCalls).then((calls) => calls as readonly { readonly toolName?: string; readonly args?: unknown }[], () => []);
   const textLength = race(result.text).then((text) => (typeof text === "string" ? text.length : 0), () => 0);
   void race(result.finishReason).then((reason) => { if (reason === "length") { modelCallLog(`${HOST_LOG_PREFIX} model-output-limit model=${callInfo?.model ?? "?"} limit=${configuredSimeonMaxOutputTokens()}`); onCutOff?.(); } }, () => undefined);
-  const extendedUsage = Promise.all([race(result.usage), metadata, toolCalls, textLength]).then(([value, openai, calls, chars]) => {
-    const cached = typeof openai.cachedPromptTokens === "number" ? openai.cachedPromptTokens : 0;
-    const reasoning = typeof openai.reasoningTokens === "number" ? openai.reasoningTokens : 0;
+  const extendedUsage = Promise.all([race(result.usage), metadata, toolCalls, textLength]).then(([value, provider, calls, chars]) => {
+    // OpenAI's prompt count includes its cached part; Anthropic counts fresh,
+    // cached and written tokens apart (`claudeUsage`). The log line's input is
+    // the whole prompt either way.
+    const claude = wire === "anthropic" ? claudeUsage(value.promptTokens, provider) : undefined;
+    const cached = claude?.cacheRead ?? (typeof provider.cachedPromptTokens === "number" ? provider.cachedPromptTokens : 0);
+    const written = claude?.cacheWrite ?? 0;
+    const prompt = claude?.prompt ?? value.promptTokens;
+    const reasoning = typeof provider.reasoningTokens === "number" ? provider.reasoningTokens : 0;
     if (callInfo != null) {
       const outcome = modelCallOutcome(calls.length, chars);
-      modelCallLog(formatModelCallLogLine({ model: callInfo.model, effort: callInfo.effort, inputTokens: value.promptTokens, cachedTokens: cached, outputTokens: value.completionTokens, reasoningTokens: reasoning, elapsedMs: Date.now() - startedAtMs, tools: summarizeToolCalls(calls), offered: Object.keys(tools ?? {}).join(",") || "-", ...(callInfo.budget === undefined ? {} : { budget: callInfo.budget }), ...(callInfo.prefix === undefined ? {} : { prefix: callInfo.prefix }), outcome, ...(callInfo.reason === undefined ? {} : { reason: callInfo.reason }) }));
+      modelCallLog(formatModelCallLogLine({ model: callInfo.model, effort: callInfo.effort, inputTokens: prompt, cachedTokens: cached, outputTokens: value.completionTokens, reasoningTokens: reasoning, elapsedMs: Date.now() - startedAtMs, tools: summarizeToolCalls(calls), offered: Object.keys(tools ?? {}).join(",") || "-", ...(callInfo.budget === undefined ? {} : { budget: callInfo.budget }), ...(callInfo.prefix === undefined ? {} : { prefix: callInfo.prefix }), outcome, ...(callInfo.reason === undefined ? {} : { reason: callInfo.reason }), ...(claude === undefined ? {} : { writtenTokens: written }) }));
       if (outcome === "empty") modelCallLog(formatEmptyAnswerLogLine({ model: callInfo.model, effort: callInfo.effort, ...(callInfo.reason === undefined ? {} : { reason: callInfo.reason }), outputTokens: value.completionTokens, reasoningTokens: reasoning }));
     }
-    return { inputTokens: Math.max(0, value.promptTokens - cached), outputTokens: value.completionTokens, cacheReadTokens: cached, cacheWriteTokens: 0, maxTokens };
+    return { inputTokens: Math.max(0, prompt - cached - written), outputTokens: value.completionTokens, cacheReadTokens: cached, cacheWriteTokens: written, maxTokens };
   });
   if (onUsage != null) void extendedUsage.then(onUsage, () => undefined);
   return { fullStream, response: race(result.response), usage: race(result.usage), extendedUsage, providerMetadata: race(result.providerMetadata), invocationId: Promise.resolve(invocationId) };
 }
 
-function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void, maxTokens = 0, openaiOptions: Record<string, unknown> = {}, callInfo?: { readonly model: string; readonly effort: string; readonly budget?: string }, onRequestId?: (requestId: string) => void, promptCacheKey?: string, onCutOff?: () => void) {
+function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void, maxTokens = 0, openaiOptions: Record<string, unknown> = {}, callInfo?: { readonly model: string; readonly effort: string; readonly budget?: string }, onRequestId?: (requestId: string) => void, promptCacheKey?: string, onCutOff?: () => void, wire: SimeonWire = "openai") {
   const tools = toToolSet(definitions, executeTool);
-  const coreMessages = toCoreMessages(messages);
+  const coreMessages = toCoreMessages(messages, wire);
   const prefixedCallInfo = callInfo === undefined ? undefined : { ...callInfo, prefix: promptPrefixFingerprint(coreMessages, definitions, promptCacheKey) };
   // The host loop's state carries its own system prompt; the router prompt is
   // for the connector-only path, where nothing else says who the agent is.
@@ -653,9 +733,12 @@ function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessag
     toolCallStreaming: true,
     maxTokens: configuredSimeonMaxOutputTokens(),
     maxSteps: tools === undefined || executeTool == null ? 1 : 8,
-    providerOptions: { openai: { strictSchemas: false, ...openaiOptions } },
+    // Claude's effort, thinking and cache breakpoints are written on the way
+    // out (`claudeLanguageModel`), since the Anthropic provider of this AI SDK
+    // knows none of them.
+    providerOptions: wire === "anthropic" ? {} : { openai: { strictSchemas: false, ...openaiOptions } },
   });
-  return settleAiSdkStream(result, invocationId, onUsage, maxTokens, prefixedCallInfo, tools, coreMessages, onRequestId, onCutOff);
+  return settleAiSdkStream(result, invocationId, onUsage, maxTokens, prefixedCallInfo, tools, coreMessages, onRequestId, onCutOff, wire);
 }
 
 // Simeon's metered proxy, on the Responses wire: the one that takes reasoning
@@ -684,6 +767,34 @@ export function withRealModelName(body: unknown): unknown {
 
 function simeonLanguageModel(source: SimeonCredentialSource, id: string, promptCacheKey?: string, callReason?: SimeonCallReason): LanguageModelV1 {
   return createOpenAI({ apiKey: "simeon-desktop-access-token", baseURL: simeonProxyBaseUrl(source.backendUrl), name: "simeon", fetch: simeonAuthenticatedFetch(source, promptCacheKey, callReason) }).responses(sdkModelIdFor(id));
+}
+
+// Claude through the same proxy, on `/v1/messages` (`claude-messages.ts`). The
+// request leaves with the person's bearer, the thinking-binding beta, and the
+// effort, thinking and cache breakpoints the provider cannot write itself.
+function claudeLanguageModel(source: SimeonCredentialSource, id: string, effort: ClaudeEffort, callReason?: SimeonCallReason): LanguageModelV1 {
+  const authenticated = simeonAuthenticatedFetch(source, undefined, callReason);
+  const withOptions: typeof fetch = async (input, init) => await authenticated(input, {
+    ...init,
+    headers: withClaudeBetaHeader(new Headers(init?.headers)),
+    ...(init?.body == null ? {} : { body: withClaudeRequestOptions(init.body, effort) as BodyInit }),
+  });
+  return createAnthropic({ apiKey: "simeon-desktop-access-token", baseURL: simeonProxyBaseUrl(source.backendUrl), fetch: withOptions })(id);
+}
+
+// A step that fails before it has said anything may be answered by another
+// model; one that fails halfway may not, or the person would read its start
+// twice.
+function untilOutput<T extends { readonly fullStream: AsyncIterable<unknown> }>(executor: T): { readonly executor: T; readonly started: () => boolean } {
+  let started = false;
+  const fullStream = (async function* () {
+    for await (const part of executor.fullStream) {
+      const type = (part as { type?: unknown } | null)?.type;
+      if (type !== "step-start" && type !== "step-finish" && type !== "finish" && type !== "error") started = true;
+      yield part;
+    }
+  })();
+  return { executor: { ...executor, fullStream }, started: () => started };
 }
 
 function geminiTools(definitions: readonly Loose[] | undefined): GeminiDirectTool[] | undefined {
@@ -755,7 +866,24 @@ function simeonExecutor(messages: readonly ProviderMessage[], invocationId: stri
   // model that cannot see the video is not an answer to a video question.
   if (isGeminiVideoModelId(requested)) return geminiExecutor(source, messages, invocationId, definitions, executeTool, onUsage, requested, reasoningEffort, budget, onRequestId, callReason);
   const cheap = configuredSimeonCheapModel();
-  const start = (id: string) => aiSdkExecutor(simeonLanguageModel(source, id, promptCacheKey, callReason), messages, invocationId, definitions, executeTool, onUsage, SIMEON_SUMMARIZATION_WINDOW_TOKENS, { reasoningEffort }, { model: id, effort: reasoningEffort, ...(budget === undefined ? {} : { budget: `${budget.limit}${budget.hidden ? " hidden=true" : ""}` }), ...(callReason === undefined ? {} : { reason: callReason }) }, onRequestId, promptCacheKey, budget === undefined ? undefined : () => { budget.cutOffs = (budget.cutOffs ?? 0) + 1; });
+  const start = (id: string) => {
+    const wire = simeonWireFor(id);
+    const callInfo = { model: id, effort: wire === "anthropic" ? claudeEffortFor(reasoningEffort) : reasoningEffort, ...(budget === undefined ? {} : { budget: `${budget.limit}${budget.hidden ? " hidden=true" : ""}` }), ...(callReason === undefined ? {} : { reason: callReason }) };
+    const onCutOff = budget === undefined ? undefined : () => { budget.cutOffs = (budget.cutOffs ?? 0) + 1; };
+    if (wire === "anthropic") return aiSdkExecutor(claudeLanguageModel(source, id, claudeEffortFor(reasoningEffort), callReason), messages, invocationId, definitions, executeTool, onUsage, SIMEON_SUMMARIZATION_WINDOW_TOKENS, {}, callInfo, onRequestId, undefined, onCutOff, wire);
+    return aiSdkExecutor(simeonLanguageModel(source, id, promptCacheKey, callReason), messages, invocationId, definitions, executeTool, onUsage, SIMEON_SUMMARIZATION_WINDOW_TOKENS, { reasoningEffort }, callInfo, onRequestId, promptCacheKey, onCutOff, wire);
+  };
+
+  // Claude answers under a Claude policy (13 October 2026). When Anthropic is
+  // overloaded, rate limits, fails or is not offered, the step runs once on
+  // the fallback the server names (GPT-6 Sol), as long as nothing of it has
+  // reached the person yet. A `[simeon] model-fallback` line says so.
+  if (isClaudeModelId(requested)) {
+    const fallback = configuredSimeonFallbackModel();
+    if (fallback === undefined || isClaudeModelId(fallback) || isGeminiVideoModelId(fallback)) return start(requested);
+    const primary = untilOutput(start(requested));
+    return withCheapRateLimitFallback(primary.executor, () => start(fallback), (error) => modelCallLog(`${HOST_LOG_PREFIX} model-fallback from=${requested} to=${fallback} reason=${clipForHostLog(redactSandAutoReviewInlineSecrets(error instanceof Error ? error.message : String(error)), 300)}`), (error) => !primary.started() && (isClaudeProviderFailure(error) || isModelNotOfferedError(error)));
+  }
 
   const startOrLegacy = (id: string) => {
     const legacy = LEGACY_SIMEON_MODELS[id];

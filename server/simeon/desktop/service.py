@@ -54,6 +54,7 @@ from .pricing import (
     PROVIDER_TOKEN_WEIGHTS,
     DesktopModel,
     DesktopProvider,
+    ModelPolicy,
     ModelRole,
     OpenAIUsageTally,
     SpokenApi,
@@ -63,6 +64,8 @@ from .pricing import (
     UsageTally,
     credits_for,
     model_by_id,
+    models_under,
+    served_model,
     tally_for,
     usage_from_answer,
 )
@@ -164,25 +167,39 @@ def provider_configured(provider: DesktopProvider) -> bool:
     return bool(provider_api_key(provider))
 
 
-def offered_models() -> tuple[DesktopModel, ...]:
-    """The models the app is told about: the ones carrying a role, whose
-    provider Simeon holds a key for.
+def model_policy(user: User | None = None) -> ModelPolicy:
+    """Which family answers this person: their own line in
+    `DESKTOP_MODELS_BY_EMAIL` when there is one, `DESKTOP_MODELS`
+    otherwise. Without a person (a public route), the setting alone."""
+    if user is not None and settings.DESKTOP_MODELS_BY_EMAIL:
+        email = (user.email or "").strip().lower()
+        for listed, policy in settings.DESKTOP_MODELS_BY_EMAIL.items():
+            if listed.strip().lower() == email:
+                return policy
+    return settings.DESKTOP_MODELS
+
+
+def offered_models(user: User | None = None) -> tuple[DesktopModel, ...]:
+    """The models the app is told about: the ones carrying a role under
+    this person's policy (`model_policy`), whose provider Simeon holds a
+    key for.
 
     Two filters, for two different reasons. A provider with no key is not
     offered at all, because a missing key must read as « not available
     here » when the menu is drawn and never as an error at the moment
     somebody sends a message. A model with no role is priced but not part
-    of the current policy — Opus, Haiku and Astra — and stays in `MODELS`
-    only so a saved config still naming one is metered correctly.
+    of the current policy — Opus 5, Haiku 4.5 and Astra — and stays in
+    `MODELS` only so a usage row naming one is metered correctly.
 
-    Note what this means for the fallback: if no Anthropic key is
-    configured, Claude is not offered, and the app will find no fallback
-    to write. That is the honest outcome — a fallback that cannot answer
-    is worse than none — and it is visible here rather than at the moment
-    OpenAI goes down."""
+    Note what this means for the fallback: if the other family's key is
+    not configured, the app finds no fallback to write. That is the honest
+    outcome — a fallback that cannot answer is worse than none — and it is
+    visible here rather than at the moment the primary goes down. Likewise
+    a Claude policy with no Anthropic key offers GPT-6 Sol alone (its
+    fallback), and the engine answers on it."""
     return tuple(
         one
-        for one in MODELS
+        for one in models_under(model_policy(user))
         if one.role is not None
         and one.role is not ModelRole.retired
         and provider_configured(one.provider)
@@ -1163,11 +1180,13 @@ __all__ = [
     "envelope_access_token",
     "is_deep_control_param",
     "model_by_id",
+    "model_policy",
     "month_bounds",
     "offered_models",
     "provider_api_key",
     "provider_base_url",
     "provider_configured",
+    "served_model",
     "tally_for",
     "unwrap_access_token",
     "usage_from_answer",

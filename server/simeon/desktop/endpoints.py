@@ -104,11 +104,12 @@ from .service import (
     SpokenApi,
     Usage,
     desktop,
-    model_by_id,
+    model_policy,
     offered_models,
     provider_api_key,
     provider_base_url,
     provider_configured,
+    served_model,
     set_preferred_name,
     tally_for,
     usage_from_answer,
@@ -585,12 +586,17 @@ async def memory_list(
 
 @router.get("/api/models/available", name="desktop:models")
 async def models_available(
-    desktop_session: DesktopSession = Depends(get_desktop_session),
+    desktop_session: DesktopSession = Depends(get_desktop_or_box_session),
 ) -> JSONResponse:
     """The menu. A provider Simeon holds no key for is not on it: a
     missing key reads as « not available here », never as an error at the
-    moment somebody sends a message."""
-    return _ok([one.available() for one in offered_models()])
+    moment somebody sends a message.
+
+    The box's credential reads it too (13 October 2026): the engine on the
+    person's cloud computer follows the roles here (`ModelPolicy`), and the
+    menu says nothing the model proxy the credential already reaches would
+    not."""
+    return _ok([one.available() for one in offered_models(desktop_session.user)])
 
 
 @router.get("/api/models/pricing-catalog", name="desktop:pricing")
@@ -1102,7 +1108,7 @@ async def proxy_models(
     which is the worst kind of failure to debug.
     """
     return JSONResponse(
-        openai_models_list(offered_models(), SpokenApi.openai_completions)
+        openai_models_list(offered_models(caller.user), SpokenApi.openai_completions)
     )
 
 
@@ -1149,14 +1155,17 @@ async def _proxy(
         return _error("invalid_request_error", "The body is not JSON.", 400)
     if not isinstance(payload, dict):
         return _error("invalid_request_error", "The body must be an object.", 400)
-    model = model_by_id(
-        model_id if model_id is not None else str(payload.get("model", ""))
+    user = caller.user
+    model = served_model(
+        model_id if model_id is not None else str(payload.get("model", "")),
+        model_policy(user),
     )
-    if model is None or model.role is None:
-        # A priced row with no role (Astra at 10x, Opus at 5x, Gemini Pro) is
-        # in the catalogue so an old usage row still means something, not so
-        # a bearer can name it and be served at that price (F-122,
-        # 25 September 2026). What the proxy serves is what it offers.
+    if model is None:
+        # A priced row with no role under this person's policy (Astra at
+        # 10x, Opus 5, Gemini Pro) is in the catalogue so an old usage row
+        # still means something, not so a bearer can name it and be served
+        # at that price (F-122, 25 September 2026). What the proxy serves is
+        # what the policy offers, and what it has retired.
         return _error(
             "invalid_request_error",
             "This model is not offered by the desktop app.",
@@ -1174,7 +1183,6 @@ async def _proxy(
         )
     if not provider_configured(model.provider):
         return _error("api_error", "The model service is not configured.", 503)
-    user = caller.user
     refused = await budget_refusal(session, user)
     if refused is not None:
         return refused

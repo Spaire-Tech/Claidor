@@ -31,10 +31,13 @@ from enum import StrEnum
 from math import ceil
 from typing import Any
 
-#: One credit is one input token on the middle model, Claude Sonnet 5,
-#: which Anthropic prices at $3.00 per million input tokens. Every model's
+#: One credit is $3.00 per million, the input price the catalogue listed
+#: for Claude Sonnet 5 when the unit was set. Every model's
 #: `cost_multiplier` is its own published input price measured in that
 #: unit, so a credit means the same amount of money whoever served it.
+#: The unit stays $3.00 although no model is priced at it any more
+#: (Sonnet 5 is $2.00 since the Claude 5.5 list, 13 October 2026): every
+#: allowance and every usage row since is written in it.
 CREDIT_USD_PER_MILLION_INPUT = 3.00
 
 
@@ -46,7 +49,9 @@ class ModelRole(StrEnum):
     untrustworthy. Instead there is one model they talk to and cheap ones
     for machinery they never see, and the roles are declared here rather
     than in the app so the policy can change with a deploy instead of a
-    release.
+    release. Who holds `primary`, `cheap` and `fallback` is one of the
+    `ModelPolicy` tables below, chosen by a setting; `video` and `retired`
+    are the model's own and hold under every policy.
 
     `primary`  — every reply the person reads.
     `cheap`    — sub-agents, compaction, the memory flush, heartbeats,
@@ -68,6 +73,26 @@ class ModelRole(StrEnum):
     #: rebuilt, but it is never offered and never chosen. GPT-5.6 Terra and
     #: GPT-5.6 Luna since GPT-6 Sol and Luna (28 September 2026).
     retired = "retired"
+
+
+class ModelPolicy(StrEnum):
+    """Which family answers: who holds `primary`, `cheap` and `fallback`
+    (`POLICY_ROLES`). One setting chooses it for everyone,
+    `SIMEON_DESKTOP_MODELS`, and `SIMEON_DESKTOP_MODELS_BY_EMAIL` chooses
+    it for a few people first (13 October 2026, the founder moving from
+    OpenAI to Claude "without losing productivity"). The engine reads the
+    roles from `/api/models/available` and follows them, so a change takes
+    effect within minutes, without a release."""
+
+    #: GPT-6 Sol answers, GPT-6 Luna does the machinery, Claude Sonnet 5.5
+    #: stands by. The policy since 13 September 2026.
+    openai = "openai"
+    #: Claude Sonnet 5.5 answers, Claude Haiku 5.5 does the machinery,
+    #: GPT-6 Sol stands by.
+    claude = "claude"
+    #: As `claude`, with Claude Opus 5.5 answering: for the cost test, and
+    #: for the day the extra intelligence is worth twice the price.
+    claude_opus = "claude-opus"
 
 
 class DesktopProvider(StrEnum):
@@ -131,7 +156,13 @@ class TokenWeights:
 #: The two price lists, as their owners publish them.
 #:
 #: Anthropic (https://www.anthropic.com/pricing): output is 5× input,
-#: a five-minute cache write 1.25×, a cache read 0.1×.
+#: a five-minute cache write 1.25×, a cache read 0.1×. The Claude 5.5 list
+#: (platform.claude.com/docs pricing, read 13 October 2026) keeps output
+#: and the write and halves the read on Sonnet and Opus: $0.10 cached
+#: against $2.00 on Sonnet 5.5, $0.20 against $4.00 on Opus 5.5. Those
+#: two declare it (`DesktopModel.cache_read_weight`); Haiku 5.5's read is
+#: still a tenth ($0.01 against $0.10). The engine only writes
+#: five-minute entries; an hour's entry would cost 2× and is not priced.
 #:
 #: OpenAI (https://developers.openai.com/api/docs/pricing, read
 #: 11 September 2026): a cached input token is 0.1× an uncached one and
@@ -180,6 +211,18 @@ class DesktopModel:
     #: provider's list uses for everything else. Leave it None and the
     #: provider's weights apply unchanged.
     output_weight: float | None = None
+    #: Likewise for a cached read: set only where the model's list prices
+    #: it at another ratio than its provider's (Claude Sonnet 5.5 and Opus
+    #: 5.5, 0.05×).
+    cache_read_weight: float | None = None
+    #: A dearer price for a long prompt: past `long_prompt_tokens` (input,
+    #: cache writes and cache reads together, as the provider counts a
+    #: prompt) every token of the call costs `long_prompt_multiplier` times
+    #: the list. Claude Haiku 5.5 is $0.10 in up to 100,000 tokens and
+    #: $0.50 beyond, and every other number on its list moves by the same
+    #: five.
+    long_prompt_tokens: int | None = None
+    long_prompt_multiplier: float = 1.0
     #: What this model is for. `None` means the model is priced but not
     #: part of the current policy, and `offered_models()` leaves it off
     #: the menu. It stays in `MODELS` so a saved config that still names
@@ -247,12 +290,14 @@ class DesktopModel:
 
     @property
     def weights(self) -> TokenWeights:
-        """This model's price list: its provider's, with the one
-        exception the entry declares."""
+        """This model's price list: its provider's, with the exceptions
+        the entry declares."""
         weights = PROVIDER_TOKEN_WEIGHTS[self.provider]
-        if self.output_weight is None:
-            return weights
-        return replace(weights, output=self.output_weight)
+        if self.output_weight is not None:
+            weights = replace(weights, output=self.output_weight)
+        if self.cache_read_weight is not None:
+            weights = replace(weights, cache_read=self.cache_read_weight)
+        return weights
 
     def available(self) -> dict[str, Any]:
         """The row of `/api/models/available`, as `AvailableServerModel`
@@ -292,42 +337,85 @@ class DesktopModel:
 
 
 #: The catalogue. Everything priced lives here; what is *offered* is the
-#: subset carrying a `role` whose provider has a key
-#: (`simeon.desktop.service.offered_models`). The multipliers are each
-#: model's published input price over $3.00 per million, so the credit
-#: figures of the two providers mean the same money.
+#: subset carrying a role under the policy in force, whose provider has a
+#: key (`models_under`, `simeon.desktop.service.offered_models`). The
+#: multipliers are each model's published input price over $3.00 per
+#: million, so the credit figures of the providers mean the same money.
 #:
-#: The policy, decided 13 September 2026: OpenAI serves everything the
-#: person sees, on cost. Per million tokens, Terra is $2.00 in / $12.00
-#: out against Sonnet's $3.00 / $15.00, and Luna is $0.20 / $1.20 against
-#: Haiku's $0.60 / $3.00. OpenAI also charges nothing to write its cache
-#: where Anthropic charges 1.25x, which for an agent replaying a system
-#: prompt and its tool definitions every turn is money on every message.
-#: One Claude model stays as the fallback because a sole provider means
-#: one outage is a total outage; it costs nothing until the day it is the
-#: only thing that answers.
+#: The roles here are only the ones that hold under every policy: `video`
+#: and `retired`. `primary`, `cheap` and `fallback` are `POLICY_ROLES`.
+#:
+#: The OpenAI policy was decided 13 September 2026, on cost: Claude was
+#: then listed here at Sonnet's $3.00 / $15.00 against Terra's $2.00 /
+#: $12.00. The Claude 5.5 list (13 October 2026) puts Sonnet 5.5 at GPT-6
+#: Sol's own $2.00 / $10.00 with a cached read at half Sol's, and Haiku
+#: 5.5 at GPT-6 Luna's $0.10 / $0.50; what is left between them is the
+#: cache write, which Anthropic charges at 1.25× and OpenAI does not.
+#: Whichever family answers, the other stands by, because a sole provider
+#: means one outage is a total outage.
 MODELS: tuple[DesktopModel, ...] = (
-    # The fallback, and nothing else. Never the default, never shown.
+    # Claude 5.5, 13 October 2026, from platform.claude.com/docs pricing.
+    # Per million tokens: input, five-minute cache write, cache read,
+    # output. Every one has a 1M context and writes up to 128K.
+    #
+    # Sonnet 5.5: $2.00, $2.50, $0.10, $10.00.
+    DesktopModel(
+        "claude-sonnet-5-5",
+        "Claude Sonnet 5.5",
+        "Anthropic's everyday model: fast, capable, the default.",
+        2.00 / CREDIT_USD_PER_MILLION_INPUT,
+        context_window=1_000_000,
+        max_tokens=128_000,
+        cache_read_weight=0.10 / 2.00,
+    ),
+    # Opus 5.5: $4.00, $5.00, $0.20, $20.00.
+    DesktopModel(
+        "claude-opus-5-5",
+        "Claude Opus 5.5",
+        "Anthropic's most capable model, for the hardest work.",
+        4.00 / CREDIT_USD_PER_MILLION_INPUT,
+        context_window=1_000_000,
+        max_tokens=128_000,
+        cache_read_weight=0.20 / 4.00,
+    ),
+    # Haiku 5.5: $0.10, $0.125, $0.01, $0.50 up to a 100,000-token prompt;
+    # $0.50, $0.625, $0.05, $2.50 beyond it.
+    DesktopModel(
+        "claude-haiku-5-5",
+        "Claude Haiku 5.5",
+        "Anthropic's quickest and cheapest model, for simple steps.",
+        0.10 / CREDIT_USD_PER_MILLION_INPUT,
+        context_window=1_000_000,
+        max_tokens=128_000,
+        long_prompt_tokens=100_000,
+        long_prompt_multiplier=5.0,
+    ),
+    # The fallback until 13 October 2026, never called by anything we
+    # built; retired rather than dropped so a request naming it is still
+    # served. $2.00 in, $10.00 out (listed here at $3.00 / $15.00 until
+    # the 5.5 list was read).
     DesktopModel(
         "claude-sonnet-5",
         "Claude Sonnet 5",
-        "The everyday model: fast, capable, the default.",
-        1.0,
-        role=ModelRole.fallback,
+        "Anthropic's previous everyday model.",
+        2.00 / CREDIT_USD_PER_MILLION_INPUT,
+        role=ModelRole.retired,
     ),
-    # No role: priced, so an old saved config naming it still meters
-    # correctly, but off the menu.
+    # No role: priced, so an old usage row naming it still means something,
+    # but neither offered nor served. $5.00 / $25.00 (listed at $15.00 /
+    # $75.00 until 13 October 2026).
     DesktopModel(
         "claude-opus-5",
         "Claude Opus 5",
-        "The most capable model, for the hardest work.",
-        5.0,
+        "Anthropic's previous most capable model.",
+        5.00 / CREDIT_USD_PER_MILLION_INPUT,
     ),
+    # $1.00 / $5.00 (listed at $0.60 / $3.00 until 13 October 2026).
     DesktopModel(
         "claude-haiku-4-5-20251001",
         "Claude Haiku 4.5",
-        "The quickest and cheapest model, for simple steps.",
-        0.2,
+        "Anthropic's previous quick model.",
+        1.00 / CREDIT_USD_PER_MILLION_INPUT,
     ),
     # None of the OpenAI entries below sets `tool_reasoning`, so all three
     # are treated as refusing reasoning alongside function tools. OpenAI,
@@ -350,6 +438,7 @@ MODELS: tuple[DesktopModel, ...] = (
     # Luna $0.10 in, $0.01 cached, $0.50 out (Requesty and VentureBeat,
     # 22 September; openai.com/api/pricing refused this container). Output
     # is 5x input, not the 6x of the GPT-5.6 list; cached reads a tenth.
+    # Their roles are the policy's (`POLICY_ROLES`).
     DesktopModel(
         "gpt-6-sol",
         "GPT-6 Sol",
@@ -358,7 +447,6 @@ MODELS: tuple[DesktopModel, ...] = (
         provider=DesktopProvider.openai,
         context_window=1_050_000,
         output_weight=5.0,
-        role=ModelRole.primary,
     ),
     DesktopModel(
         "gpt-6-luna",
@@ -368,7 +456,6 @@ MODELS: tuple[DesktopModel, ...] = (
         provider=DesktopProvider.openai,
         context_window=1_050_000,
         output_weight=5.0,
-        role=ModelRole.cheap,
     ),
     # $2.00 per million input tokens, output 6x. Retired: served to an app
     # built before GPT-6, never offered.
@@ -448,9 +535,64 @@ MODELS: tuple[DesktopModel, ...] = (
 )
 
 
-def model_by_id(model_id: str) -> DesktopModel | None:
+#: Who answers under each policy. A model named here takes this role in
+#: place of its own; every other model keeps its own (`video`, `retired`
+#: or none).
+#:
+#: A policy also names, as `retired`, the other family's models an engine
+#: built before the switch still calls: such an engine names GPT-6 Sol and
+#: Luna whatever the server says, and must keep being answered until its
+#: box takes the new bundle. Sol is the Claude policies' fallback anyway.
+POLICY_ROLES: dict[ModelPolicy, dict[str, ModelRole]] = {
+    ModelPolicy.openai: {
+        "gpt-6-sol": ModelRole.primary,
+        "gpt-6-luna": ModelRole.cheap,
+        "claude-sonnet-5-5": ModelRole.fallback,
+    },
+    ModelPolicy.claude: {
+        "claude-sonnet-5-5": ModelRole.primary,
+        "claude-haiku-5-5": ModelRole.cheap,
+        "gpt-6-sol": ModelRole.fallback,
+        "gpt-6-luna": ModelRole.retired,
+    },
+    ModelPolicy.claude_opus: {
+        "claude-opus-5-5": ModelRole.primary,
+        "claude-haiku-5-5": ModelRole.cheap,
+        "gpt-6-sol": ModelRole.fallback,
+        "gpt-6-luna": ModelRole.retired,
+        # A conversation the founder moves between the two Claude policies
+        # may still be mid-turn on Sonnet when the setting changes.
+        "claude-sonnet-5-5": ModelRole.retired,
+    },
+}
+
+
+def models_under(policy: ModelPolicy) -> tuple[DesktopModel, ...]:
+    """The catalogue with each model's role under one policy, in
+    catalogue order."""
+    roles = POLICY_ROLES[policy]
+    return tuple(
+        replace(one, role=roles[one.model_id]) if one.model_id in roles else one
+        for one in MODELS
+    )
+
+
+def model_by_id(
+    model_id: str, policy: ModelPolicy = ModelPolicy.openai
+) -> DesktopModel | None:
+    """The catalogue entry, with its role under `policy`. The price is the
+    same under every policy; only the role moves."""
     wanted = model_id.strip()
-    return next((one for one in MODELS if one.model_id == wanted), None)
+    return next((one for one in models_under(policy) if one.model_id == wanted), None)
+
+
+def served_model(model_id: str, policy: ModelPolicy) -> DesktopModel | None:
+    """The model a request names, when the proxy answers it under this
+    policy: any role at all, `retired` included. A priced row with no role
+    is not served (F-122, 25 September 2026): it is in the catalogue so an
+    old usage row still means something, not so a bearer can name it."""
+    model = model_by_id(model_id, policy)
+    return model if model is not None and model.role is not None else None
 
 
 def video_models(models: Sequence[DesktopModel]) -> tuple[DesktopModel, ...]:
@@ -686,7 +828,11 @@ def credits_for(model: DesktopModel, usage: Usage) -> int:
         + usage.cache_creation_tokens * weights.cache_creation
         + usage.cache_read_tokens * weights.cache_read
     )
-    return int(round(weighted * model.cost_multiplier))
+    multiplier = model.cost_multiplier
+    prompt = usage.input_tokens + usage.cache_creation_tokens + usage.cache_read_tokens
+    if model.long_prompt_tokens is not None and prompt > model.long_prompt_tokens:
+        multiplier *= model.long_prompt_multiplier
+    return int(round(weighted * multiplier))
 
 
 @dataclass

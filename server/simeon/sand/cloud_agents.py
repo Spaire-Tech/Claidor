@@ -266,7 +266,9 @@ def available_models_response(rows: list[dict[str, Any]]) -> dict[str, Any]:
 
 @ai_service.unary("AvailableModels", auth="desktop-or-box")
 async def available_models(call: ConnectCall) -> dict[str, Any]:
-    return available_models_response([one.available() for one in offered_models()])
+    return available_models_response(
+        [one.available() for one in offered_models(call.caller.user)]
+    )
 
 
 router = service.router
