@@ -393,11 +393,22 @@ class TestSigningIn:
                 "/desktop/api/apps/gmail/connect", headers=headers
             )
         assert response.status_code == 200, response.text
-        assert response.json() == {
-            "toolkit": "gmail",
-            "connected": False,
-            "url": "https://accounts.google.com/o/oauth2/auth?x=1",
-        }
+        body = response.json()
+        assert body["toolkit"] == "gmail"
+        assert body["connected"] is False
+        # The sign-in starts on our address (white label, 13 October 2026) and leads to Google's page.
+        assert body["url"].startswith(
+            f"{settings.BASE_URL.rstrip('/')}/desktop/apps/start?"
+        )
+        assert "composio" not in body["url"].lower()
+        started = await client.get(
+            body["url"].replace(settings.BASE_URL.rstrip("/"), "")
+        )
+        assert started.status_code == 302
+        assert (
+            started.headers["location"]
+            == "https://accounts.google.com/o/oauth2/auth?x=1"
+        )
         assert json.loads(created.calls[0].request.content) == {
             "user_id": composio_user_id(user)
         }
@@ -476,7 +487,7 @@ class TestSigningIn:
                 "/desktop/api/apps/xero/connect", headers=headers
             )
         assert response.status_code == 200, response.text
-        assert response.json()["url"] == "https://login.xero.com/x"
+        assert "to=https%3A%2F%2Flogin.xero.com%2Fx" in response.json()["url"]
         assert json.loads(created.calls[0].request.content) == {
             "user_id": composio_user_id(user),
             "auth_configs": {"xero": "ac_xero1"},
@@ -549,7 +560,7 @@ class TestSigningIn:
             started = await client.post("/desktop/api/apps/gmail/connect", headers=box)
             gone = await client.delete("/desktop/api/apps/gmail", headers=box)
         assert started.status_code == 200, started.text
-        assert started.json()["url"].startswith("https://accounts.google.com/")
+        assert "to=https%3A%2F%2Faccounts.google.com%2F" in started.json()["url"]
         assert gone.json() == {"toolkit": "gmail", "disconnected": 1}
 
     async def test_status_and_disconnect(
@@ -568,6 +579,97 @@ class TestSigningIn:
         assert status.json() == {"toolkit": "gmail", "connected": True}
         assert gone.json() == {"toolkit": "gmail", "disconnected": 1}
         assert deleted.called
+
+    async def test_the_providers_link_is_followed_to_the_apps_own_page(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _signed_in(client, session, user)
+        short = "https://backend.composio.dev/api/v3/s/abc123"
+        with respx.mock(assert_all_called=True) as mock:
+            mock.get(f"{API}/api/v3.1/connected_accounts").mock(
+                return_value=_accounts()
+            )
+            mock.post(f"{API}/api/v3.1/tool_router/session").mock(
+                return_value=httpx.Response(201, json={"session_id": "trs_1"})
+            )
+            mock.post(f"{API}/api/v3.1/tool_router/session/trs_1/link").mock(
+                return_value=httpx.Response(
+                    201,
+                    json={
+                        "link_token": "t",
+                        "redirect_url": short,
+                        "connected_account_id": "ca_2",
+                    },
+                )
+            )
+            mock.get(short).mock(
+                return_value=httpx.Response(
+                    302,
+                    headers={
+                        "location": "https://slack.com/oauth/v2/authorize?state=s"
+                    },
+                )
+            )
+            response = await client.post(
+                "/desktop/api/apps/slack/connect", headers=headers
+            )
+        url = response.json()["url"]
+        assert "composio" not in url.lower()
+        started = await client.get(url.replace(settings.BASE_URL.rstrip("/"), ""))
+        assert (
+            started.headers["location"]
+            == "https://slack.com/oauth/v2/authorize?state=s"
+        )
+
+    async def test_a_providers_page_of_its_own_is_kept(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _signed_in(client, session, user)
+        page = "https://connect.composio.dev/link/lk_1"
+        with respx.mock(assert_all_called=True) as mock:
+            mock.get(f"{API}/api/v3.1/connected_accounts").mock(
+                return_value=_accounts()
+            )
+            mock.post(f"{API}/api/v3.1/tool_router/session").mock(
+                return_value=httpx.Response(201, json={"session_id": "trs_1"})
+            )
+            mock.post(f"{API}/api/v3.1/tool_router/session/trs_1/link").mock(
+                return_value=httpx.Response(
+                    201,
+                    json={
+                        "link_token": "t",
+                        "redirect_url": page,
+                        "connected_account_id": "ca_2",
+                    },
+                )
+            )
+            mock.get(page).mock(
+                return_value=httpx.Response(200, text="<html>Connect</html>")
+            )
+            response = await client.post(
+                "/desktop/api/apps/gmail/connect", headers=headers
+            )
+        started = await client.get(
+            response.json()["url"].replace(settings.BASE_URL.rstrip("/"), "")
+        )
+        assert started.headers["location"] == page
+
+    async def test_a_start_link_leads_only_where_it_was_signed_for(
+        self, client: httpx.AsyncClient
+    ) -> None:
+        good = apps_module.start_url("https://accounts.google.com/o/oauth2/auth?x=1")
+        path = good.replace(settings.BASE_URL.rstrip("/"), "")
+        assert (await client.get(path)).status_code == 302
+        tampered = path.replace("accounts.google.com", "evil.example.com")
+        refused = await client.get(tampered)
+        assert refused.status_code == 400
+        assert "location" not in refused.headers
+        old = apps_module.start_url(
+            "https://accounts.google.com/o/oauth2/auth?x=1", now=0
+        )
+        assert (
+            await client.get(old.replace(settings.BASE_URL.rstrip("/"), ""))
+        ).status_code == 400
 
     async def test_the_landing_page_and_the_callback_are_ours(
         self, client: httpx.AsyncClient

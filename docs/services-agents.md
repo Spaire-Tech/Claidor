@@ -389,6 +389,22 @@ and Ashby connect through Simeon. The provider behind them is never named in the
   to `SIMEON_COMPOSIO_AUTH_CONFIGS` and redeploy. A sign-in uses a config only when the session
   is given it (the provider's documentation, checked 11 October 2026; before that day the
   server gave none, so a config made in the dashboard alone was never used).
+* **White label without apps of our own** (13 October 2026, the founder: "i dont have money for
+  google so white label composio as best as you can"). Every sign-in now starts on our address,
+  `https://api.simeonlabs.com/desktop/apps/start?…`, a link signed with the server's secret and
+  good for 15 minutes, so the iPhone's and the Mac's sign-in sheet say simeonlabs.com. The server
+  asks the provider's link where it leads (`provider_page`, without following it): while it only
+  redirects, the person goes straight to Google's, Slack's or HubSpot's own page and never sees
+  the provider's; a link that is a page of its own is kept. Log lines
+  `desktop.apps.link_direct` (with the host) and `desktop.apps.link_kept` (with why). The way back
+  is ours too: the provider returns the person to `/desktop/apps/connected`. The connect sheet in
+  the apps no longer names the provider: "Simeon connects Gmail through a secure sign-in partner
+  … Gmail's page may show the partner's name." **What still shows its name:** the app's own
+  consent screen ("Composio wants access to your Google Account") for every app on the
+  provider's managed sign-in, until Simeon Labs registers its own app with that company; and, for
+  a link kept as a page, the provider's hosted page, branded in its dashboard (Project Settings →
+  White Labeling → Branding: title "Simeon", our logo; its "Secured by" line goes only with our
+  own app). Not yet seen on a live sign-in.
 * **Log lines.** Server: `desktop.apps.sign_in_started`, `desktop.apps.upstream_refused`,
   `desktop.apps.upstream_unreachable` (a timeout or dropped connection: `path`, `error`,
   `elapsed_ms`; the app then reads "could not be reached" and Render shows a 200) and

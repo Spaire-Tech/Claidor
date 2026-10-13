@@ -5,10 +5,12 @@ import Foundation
  * 9 October 2026: "when you click on add … before you go to the link to
  * connect"): the app, what the agents will be able to reach in it, that
  * the person stays in charge, that agents can get things wrong, who handles
- * the sign-in (Composio for the apps it serves, the app itself for the
- * rest), where the information goes, and, for some apps, one more thing
- * worth knowing about that app. One template; each app fills it a little
- * differently.
+ * the sign-in (Simeon, through its sign-in partner, for the apps Simeon's
+ * server serves; the app itself for the rest), where the information goes,
+ * and, for some apps, one more thing worth knowing about that app. One
+ * template; each app fills it a little differently. The partner is not
+ * named (the founder, 13 October 2026: "white label composio as best as you
+ * can"); the privacy policy covers it as a provider of app connections.
  */
 public struct ConnectConsent: Identifiable, Equatable, Sendable {
   /** Who handles the sign-in and holds the access. */
@@ -60,7 +62,8 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
     let signIn: String
     switch route {
     case .composio:
-      signIn = "Composio, the service Simeon uses to connect apps, handles the \(title) sign-in and holds its access. Simeon never sees your password."
+      // The app's own sign-in page may name the partner (Google's does, for Simeon has no Google app of its own yet): said here without its name, so the person isn't surprised.
+      signIn = "Simeon connects \(title) through a secure sign-in partner, who keeps its access for your agents. \(title)'s page may show the partner's name. Simeon never sees your password."
     case .vendor(let host):
       signIn = "You'll sign in on \(title)'s own page, and \(title) runs this connection from its own server (\(host)). Simeon never sees your password."
     case .unknown:

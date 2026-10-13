@@ -1377,15 +1377,17 @@ final class ConnectConsentTests: XCTestCase {
     XCTAssertEqual(consent.points[0].body, "Your agents can read and use customers, payments, subscriptions and invoices in Stripe.")
     XCTAssertEqual(consent.route, .vendor(host: "mcp.stripe.com"))
     XCTAssertTrue(consent.smallPrint[0].contains("Stripe's own page"))
-    XCTAssertFalse(consent.smallPrint.joined().contains("Composio"), "only the apps Composio serves name it")
+    XCTAssertFalse(consent.smallPrint.joined().contains("Composio"), "no consent names the sign-in partner")
     XCTAssertEqual(consent.note, "Anything that moves money in Stripe is real. Ask your agents to check with you before they move any.")
   }
 
-  func testComposioIsNamedForTheAppsItServes() {
+  func testTheSignInPartnerIsNeverNamed() {
     let gmail = CatalogApp(id: "gmail", name: "gmail", title: "Gmail", summary: "Search, read, draft, and manage email.", serverURL: "https://api.simeonlabs.com/desktop/api/apps/mcp/gmail")
     let consent = ConnectConsent(app: gmail, name: "Gmail")
     XCTAssertEqual(consent.route, .composio)
-    XCTAssertTrue(consent.smallPrint[0].hasPrefix("Composio, the service Simeon uses to connect apps"))
+    // White label (13 October 2026): the partner is said, not named.
+    XCTAssertTrue(consent.smallPrint[0].hasPrefix("Simeon connects Gmail through a secure sign-in partner"))
+    XCTAssertFalse(([consent.title, consent.summary, consent.note ?? ""] + consent.smallPrint + consent.points.map(\.body)).joined().lowercased().contains("composio"))
     XCTAssertEqual(consent.note, "Emails your agents send go out from your own address.")
     let byToolkit = CatalogApp(id: "notion", name: "notion", title: "Notion", summary: "", composioToolkit: "notion")
     XCTAssertEqual(ConnectConsent(app: byToolkit, name: "Notion").route, .composio)

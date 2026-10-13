@@ -28,6 +28,12 @@ made through it is kept):
 - `GET  /apps/oauth/callback` — the redirect URI to register in a
   provider's console when Simeon Labs brings its own OAuth app, so the
   address bar shows api.simeonlabs.com; forwarded to Composio's callback.
+- `GET  /apps/start` — where every sign-in starts (13 October 2026, the
+  founder: "white label composio as best as you can"): a signed link of
+  ours that sends the browser on to the provider's own sign-in page, so
+  the iPhone's and the Mac's sign-in sheet say simeonlabs.com, and
+  Composio's own link page is skipped whenever it only redirects
+  (`provider_page`).
 
 Every text that reaches a person or the agent — tool descriptions,
 errors — has the word Composio replaced (`scrub`).
@@ -35,12 +41,14 @@ errors — has the word Composio replaced (`scrub`).
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import html
 import json
 import re
 import time
 from typing import Any
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urljoin, urlsplit
 
 import httpx
 import structlog
@@ -77,6 +85,13 @@ _MIN_IMPORTANT = 5
 _PAGE_LIMIT = 1000
 _MAX_PAGES = 5
 COMPOSIO_CALLBACK = "https://backend.composio.dev/api/v3/toolkits/auth/callback"
+#: The provider's own addresses: a sign-in link on one of them is followed
+#: to the app's sign-in page when it only redirects there (`provider_page`).
+_COMPOSIO_DOMAINS = ("composio.dev", "composio.io")
+#: How long a start link of ours is good for (the provider's own lasts about as long).
+_START_TTL_S = 15 * 60
+#: Asking the provider's link where it leads: a quick question, never a wait for the person.
+_LINK_TIMEOUT_S = 5.0
 NOT_CONFIGURED = "Apps are not switched on for this server yet."
 
 #: Apps whose provider lends no sign-in of its own (measured 11 October
@@ -367,6 +382,57 @@ async def sign_in_link(user: User, toolkit: str) -> str:
     return url
 
 
+def _is_composio(url: str) -> bool:
+    host = (urlsplit(url).hostname or "").lower()
+    return any(host == one or host.endswith("." + one) for one in _COMPOSIO_DOMAINS)
+
+
+async def provider_page(url: str) -> str:
+    """The app's own sign-in page behind the provider's link (white label,
+    13 October 2026): the link is asked for where it leads, without
+    following it, as the browser would; while it only redirects (as the
+    provider's documented `long_redirect_url` does), the person goes
+    straight to Google's, Slack's or HubSpot's page and never sees the
+    provider's. A link that is a page of its own (the hosted "Connect" page,
+    branded in the provider's dashboard) is kept as it is, and so is any
+    link when the provider can't be asked."""
+    current = url
+    for _ in range(4):
+        if not _is_composio(current):
+            break
+        try:
+            async with httpx.AsyncClient(
+                timeout=_LINK_TIMEOUT_S, follow_redirects=False
+            ) as client:
+                response = await client.get(current, headers={"accept": "text/html"})
+        except httpx.HTTPError as error:
+            log.info("desktop.apps.link_kept", reason=type(error).__name__)
+            return url
+        location = response.headers.get("location")
+        if response.status_code not in {301, 302, 303, 307, 308} or not location:
+            log.info("desktop.apps.link_kept", reason=f"status {response.status_code}")
+            return url
+        current = urljoin(current, location)
+    if _is_composio(current) or urlsplit(current).scheme != "https":
+        return url
+    log.info("desktop.apps.link_direct", host=urlsplit(current).hostname)
+    return current
+
+
+def _start_signature(expires: int, url: str) -> str:
+    message = f"simeon-apps-start|{expires}|{url}".encode()
+    return hmac.new(settings.SECRET.encode(), message, hashlib.sha256).hexdigest()
+
+
+def start_url(url: str, *, now: float | None = None) -> str:
+    """A link of ours that leads to `url`, signed so it leads nowhere else
+    and good for a quarter of an hour: where the sign-in sheet opens, so it
+    names simeonlabs.com."""
+    expires = int(now if now is not None else time.time()) + _START_TTL_S
+    query = urlencode({"to": url, "e": expires, "s": _start_signature(expires, url)})
+    return f"{settings.BASE_URL.rstrip('/')}/desktop/apps/start?{query}"
+
+
 def _error(message: str, status: int) -> JSONResponse:
     return JSONResponse(
         {"error": {"type": "apps_error", "message": message}}, status_code=status
@@ -569,6 +635,8 @@ async def apps_connect(
         toolkit=toolkit,
         user_id=str(desktop_session.user.id),
     )
+    # Ours first, then the app's own page: the provider's address shows nowhere it can be helped.
+    url = start_url(await provider_page(url))
     return JSONResponse({"toolkit": toolkit, "connected": False, "url": url})
 
 
@@ -614,6 +682,29 @@ async def apps_connected(request: Request) -> HTMLResponse:
         _CONNECTED_PAGE.format(title=html.escape(title), body=html.escape(body)),
         headers={"cache-control": "no-store"},
     )
+
+
+@router.get("/apps/start", name="desktop:apps_start")
+async def apps_start(request: Request) -> Response:
+    to = str(request.query_params.get("to", ""))
+    signature = str(request.query_params.get("s", ""))
+    try:
+        expires = int(request.query_params.get("e", "0"))
+    except ValueError:
+        expires = 0
+    if (
+        not to.startswith("https://")
+        or expires < time.time()
+        or not hmac.compare_digest(_start_signature(expires, to), signature)
+    ):
+        return HTMLResponse(
+            _CONNECTED_PAGE.format(
+                title="That link has expired", body="Go back to Simeon and try again."
+            ),
+            status_code=400,
+            headers={"cache-control": "no-store"},
+        )
+    return RedirectResponse(to, status_code=302, headers={"cache-control": "no-store"})
 
 
 @router.get("/apps/oauth/callback", name="desktop:apps_oauth_callback")
