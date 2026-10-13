@@ -27,6 +27,26 @@ export const ASAR_MEMBERS = Object.freeze({
   boxExecDaemon: "dist/box-exec-daemon/main.cjs",
 });
 
+/**
+ * What a packaged app was built from, written beside it (`<app>.source`) by
+ * `npm run package` once it succeeds: the last commit that touched the
+ * engine's sources. On 13 October 2026 a test failed, so packaging stopped
+ * before it built anything, and the publish took the app left from the build
+ * before and uploaded it under the new commit: the cloud computers ran the
+ * old engine under a new name, without the day's apps.
+ */
+export const SOURCE_STAMP_SUFFIX = ".source";
+/** Where the engine's sources are, for the stamp (relative to desktop/). */
+export const ENGINE_SOURCE_PATHS = Object.freeze(["source", "scripts", "package.json"]);
+
+/** Why a packaged app must not be published as `current`, or null when it may. */
+export function staleAppReason(stamp, current) {
+  const built = typeof stamp === "string" ? stamp.trim() : "";
+  if (built === "") return "The packaged app has no record of what it was built from: run `npm run package` first (it stops, building nothing, when a test fails).";
+  if (built !== current) return `The packaged app was built from ${built.slice(0, 12)}, not the current engine sources ${current.slice(0, 12)}: run \`npm run package\` again (it stops, building nothing, when a test fails).`;
+  return null;
+}
+
 function octal(value, width) {
   return value.toString(8).padStart(width - 1, "0") + "\0";
 }

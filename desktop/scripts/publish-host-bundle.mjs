@@ -13,13 +13,13 @@
 // and the upload is left to the person. The version is the commit the app was
 // built from; a source tree with uncommitted changes is refused
 // (`--allow-dirty` overrides, for a test build only).
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { extractFile } from "@electron/asar";
 
-import { ASAR_MEMBERS, buildHostBundle } from "./lib/host-bundle-publish.mjs";
+import { ASAR_MEMBERS, ENGINE_SOURCE_PATHS, SOURCE_STAMP_SUFFIX, buildHostBundle, staleAppReason } from "./lib/host-bundle-publish.mjs";
 import { resolvePackagedAppArtifacts } from "./lib/packaged-app.mjs";
 import { capture, run } from "./lib/process.mjs";
 
@@ -36,6 +36,11 @@ if (status !== "" && !allowDirty) {
 const version = await capture("git", ["rev-parse", "--short=12", "HEAD"], { cwd: desktopRoot });
 
 const { asarPath } = resolvePackagedAppArtifacts(appPath);
+// The app must be the one built from these sources, not one left from an earlier build (`staleAppReason`).
+const sourceCommit = await capture("git", ["log", "-1", "--format=%H", "--", ...ENGINE_SOURCE_PATHS], { cwd: desktopRoot });
+const stamp = await readFile(`${path.resolve(appPath)}${SOURCE_STAMP_SUFFIX}`, "utf8").catch(() => "");
+const stale = staleAppReason(stamp, sourceCommit);
+if (stale !== null && !allowDirty) throw new Error(stale);
 const bundle = buildHostBundle({
   version,
   hostBytes: extractFile(asarPath, ASAR_MEMBERS.host),

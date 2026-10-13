@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { gunzipSync } from "node:zlib";
 import test from "node:test";
 
-import { buildHostBundle, LATEST_VERSION_FILE } from "../scripts/lib/host-bundle-publish.mjs";
+import { buildHostBundle, LATEST_VERSION_FILE, staleAppReason } from "../scripts/lib/host-bundle-publish.mjs";
 
 // The bundle the cloud computers mount, in the upstream app's layout (29 September 2026).
 function members(tarGz) {
@@ -37,4 +37,11 @@ test("a version that is not a commit id, or a missing file, is refused", () => {
   assert.throws(() => buildHostBundle({ version: "latest", ...files }), /commit id/);
   assert.throws(() => buildHostBundle({ version: "../x", ...files }), /commit id/);
   assert.throws(() => buildHostBundle({ version: "abcdef12", hostBytes: Buffer.alloc(0), boxExecDaemonBytes: Buffer.from("d") }), /both be present/);
+});
+
+test("only an app built from the current engine sources is published (13 October 2026: an old app went out under a new name)", () => {
+  const current = "ccc179cc749f0c4d2e3f4a5b6c7d8e9f0a1b2c3d";
+  assert.equal(staleAppReason(`${current}\n`, current), null);
+  assert.match(staleAppReason("", current), /run `npm run package` first/);
+  assert.match(staleAppReason("804bb90b5ff6aaaabbbbccccddddeeeeffff0000", current), /built from 804bb90b5ff6, not the current engine sources ccc179cc749f/);
 });
