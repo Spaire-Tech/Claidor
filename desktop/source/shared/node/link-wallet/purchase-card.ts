@@ -62,12 +62,17 @@ export interface PurchaseCardChoice {
   readonly isDefault?: boolean;
 }
 
-/** What Link needs to make the one-time card at Allow. A payment method id is Link's opaque id, never a card number. */
+/**
+ * What the wallet needs at Allow (Link's, or Shop's since 14 October 2026:
+ * the field keeps its first name). A payment method id is the wallet's
+ * opaque id (a Link payment method, a Shop saved card or a Shop checkout's
+ * way to pay), never a card number.
+ */
 export interface PurchaseLinkRequest {
   readonly credentialType: "card" | "link_pay_token";
   readonly merchantAccountId?: string;
   readonly paymentMethodId?: string;
-  /** What the person reads in the Link app when approving: 100 characters or more. */
+  /** What the person reads in the Link app (or the Shop app) when approving: 100 characters or more (Shop: at most 500, no links). */
   readonly context: string;
   readonly test: boolean;
 }
@@ -102,6 +107,26 @@ export interface PurchaseCardData {
   /** Link's test mode: a test card, nothing charged. */
   readonly test: boolean;
   readonly link: PurchaseLinkRequest;
+  /**
+   * The wallet that pays (14 October 2026): Link (absent, as every card
+   * before Shop) or Shop. The card names it beside the card that pays
+   * ("· Link by Stripe", "· Shop") and Allow asks it.
+   */
+  readonly wallet?: PurchaseWalletName;
+  /**
+   * A Shop checkout Simeon opened with a Shopify store (`shop-tools.ts`,
+   * `prepare_checkout`), by the handle it is kept under on the computer: the
+   * card's items and totals are Shop's own, and Allow pays it with Shop Pay,
+   * no browser and no second approval.
+   */
+  readonly shopCheckout?: { readonly handle: string };
+}
+
+export type PurchaseWalletName = "link" | "shop";
+
+/** The wallet a card is paid with, as the agent and the person name it. */
+export function purchaseWalletOf(card: Pick<PurchaseCardData, "wallet">): { readonly id: PurchaseWalletName; readonly name: string; readonly app: string } {
+  return card.wallet === "shop" ? { id: "shop", name: "Shop", app: "the Shop app" } : { id: "link", name: "Link", app: "the Link app" };
 }
 
 export interface PurchaseCardMessage {
@@ -180,6 +205,31 @@ export function purchaseLinkContext(given: string, card: Pick<PurchaseCardData, 
 }
 
 /**
+ * What Shop shows the person when they approve (its `context.intent`): 100
+ * to 500 characters, with no links, card details, email or postal
+ * addresses, so the agent's words go without any address and the purchase
+ * is spelled out when they are short.
+ */
+export function purchaseShopIntent(given: string, card: Pick<PurchaseCardData, "merchant" | "total" | "items">): string {
+  const noAddresses = (value: string): string => value
+    .replace(/\bhttps?:\/\/\S+/gi, "")
+    .replace(/\bwww\.\S+/gi, "")
+    .replace(/\S+@\S+\.\S+/g, "")
+    .replace(/\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|net|org|co|io|shop|store|app|us|ca|uk)\b/gi, "")
+    .replace(/\d[\d\s-]{11,}\d/g, "")
+    .replace(/\(\s*\)/g, "")
+    .replace(/\s+([.,;])/g, "$1")
+    .replace(/\s+/g, " ")
+    .trim();
+  const words = noAddresses(given);
+  if (words.length >= 100) return words.slice(0, 500);
+  const items = purchaseItemsLine(card.items);
+  const merchant = noAddresses(card.merchant);
+  const spelled = noAddresses(`${words.length > 0 ? `${words.replace(/[.\s]+$/, "")}. ` : ""}Buying ${items.length > 0 ? items : "the order in the cart"}${merchant.length > 0 ? ` from ${merchant}` : ""} for ${card.total} in total, as the person asked in Simeon, who reviewed and allowed this checkout before Shop was asked.`);
+  return (spelled.length >= 100 ? spelled : `${spelled} Simeon's agent pays on the store's own checkout page.`).slice(0, 500);
+}
+
+/**
  * The person's approval of one checkout card, given in Simeon (14 October
  * 2026): Allow, confirmed with Face ID or Touch ID on their own device. As
  * Muse does ("that tap is the real yes/no"), Simeon hands it to Link as the
@@ -233,19 +283,27 @@ export function purchaseIdempotencyKey(agentId: string, entryId: string, timesta
   return `simeon-${createHash("sha256").update(`${agentId}\u0000${entryId}\u0000${timestampMs ?? 0}`).digest("hex").slice(0, 40)}`;
 }
 
-/** Link's spend-request status as the card's state (`approving` covers created, pending_approval and requires_action). */
+/**
+ * A spend request's status as the card's state: Link's (`approving` covers
+ * created, pending_approval and requires_action) and Shop's (pending, then
+ * approved and consumed once it issued the card).
+ */
 export function purchaseStateForLinkStatus(status: string): PurchaseState | undefined {
   switch (status) {
     case "created":
     case "pending_approval":
     case "requires_action":
+    case "pending":
       return "approving";
     case "approved":
+    case "consumed":
       return "approved";
     case "submitted":
     case "succeeded":
       return "approved";
     case "denied":
+    case "declined":
+    case "rejected":
       return "denied";
     case "expired":
       return "expired";
@@ -266,31 +324,48 @@ export function buildPurchaseDeniedWakePrompt(entryId: string, card: PurchaseCar
   return `[The person pressed Deny on the checkout card for ${describe(card)} (entry ${entryId}). Nothing was paid and Link was never asked. Do not buy it by any route, and do not show the card again unless they ask; leave the cart as it is. If they said why, follow that; otherwise one short line at most.]`;
 }
 
-/** Link approved: the agent pays, places the order once, and reports. */
+/** The wallet approved: the agent pays, places the order once, and reports. */
 export function buildPurchaseApprovedWakePrompt(entryId: string, card: PurchaseCardData, spendRequestId: string): string {
+  const wallet = purchaseWalletOf(card);
   return [
-    `[The person allowed the checkout card for ${describe(card)} (entry ${entryId}) and approved it in Link (spend request ${spendRequestId}${card.test ? ", Link test mode: a test card, nothing is charged" : ""}). Finish the purchase now:`,
-    `1. Check the checkout in the browser still shows the same items, delivery and total. If anything changed, don't pay: call cancel_purchase on Link (CallMcpTool, server "link") with spend_request_id "${spendRequestId}", call MarkPurchaseDone with outcome "canceled" and say what changed.`,
-    `2. Call pay_checkout on Link with spend_request_id "${spendRequestId}" and checkout_url "${card.url}". It types the one-time card into the page; you never see or type card details.`,
-    "3. Have the browser subagent press the page's Place order (or Pay) button once, telling it the person approved this exact order in Simeon and in Link and the card is already filled in, and have it read back the confirmation (order number, delivery estimate).",
+    `[The person allowed the checkout card for ${describe(card)} (entry ${entryId}) and approved it in ${wallet.name} (spend request ${spendRequestId}${card.test ? ", Link test mode: a test card, nothing is charged" : ""}). Finish the purchase now:`,
+    `1. Check the checkout in the browser still shows the same items, delivery and total. If anything changed, don't pay: call cancel_purchase on ${wallet.name} (CallMcpTool, server "${wallet.id}") with spend_request_id "${spendRequestId}", call MarkPurchaseDone with outcome "canceled" and say what changed.`,
+    `2. Call pay_checkout on ${wallet.name} (server "${wallet.id}") with spend_request_id "${spendRequestId}" and checkout_url "${card.url}". It types the one-time card into the page; you never see or type card details.`,
+    `3. Have the browser subagent press the page's Place order (or Pay) button once, telling it the person approved this exact order in Simeon and in ${wallet.name} and the card is already filled in, and have it read back the confirmation (order number, delivery estimate).`,
     `4. Call MarkPurchaseDone with entry_id "${entryId}": outcome "ordered" with the order number once the shop confirms it, or "failed" with one plain sentence. If you can't tell whether the order went through, say exactly that and never press Pay again.`,
     "Then tell the person in one or two lines what was ordered and when it arrives.]",
   ].join("\n");
 }
 
-/** Link denied it, it ran out of time, it was canceled, or Link refused to make the card. */
+/** The wallet denied it, it ran out of time, it was canceled, or the wallet refused to make the card. */
 export function buildPurchaseClosedWakePrompt(entryId: string, card: PurchaseCardData, state: PurchaseState, detail?: string): string {
+  const wallet = purchaseWalletOf(card).name;
   const what = state === "denied"
-    ? "was declined in Link"
+    ? `was declined in ${wallet}`
     : state === "expired"
-      ? "was not approved in Link within 30 minutes and expired"
+      ? `was not approved in ${wallet} within 30 minutes and expired`
       : state === "canceled"
         ? "was canceled"
-        : `could not be set up with Link${detail != null && detail.length > 0 ? `: ${detail}` : ""}`;
+        : `could not be set up with ${wallet}${detail != null && detail.length > 0 ? `: ${detail}` : ""}`;
   return `[The purchase on the checkout card for ${describe(card)} (entry ${entryId}) ${what}. Nothing was paid. Tell the person in one line and wait for them; don't start another purchase unless they ask.]`;
 }
 
 /** Link needs the person to do something first that does not resume by itself (verify, change the card). */
 export function buildPurchaseActionWakePrompt(entryId: string, card: PurchaseCardData, message: string): string {
-  return `[Link needs the person to do something before the purchase on the checkout card for ${describe(card)} (entry ${entryId}) can go ahead: "${message}". The card shows them the link. Once they say it's done, call RequestPurchase again for the same checkout; nothing was paid.]`;
+  return `[${purchaseWalletOf(card).name} needs the person to do something before the purchase on the checkout card for ${describe(card)} (entry ${entryId}) can go ahead: "${message}". The card shows them the link. Once they say it's done, call RequestPurchase again for the same checkout; nothing was paid.]`;
+}
+
+/** A Shop checkout's card: Shop placed the order at Allow; the agent only tells the person. */
+export function buildShopOrderedWakePrompt(entryId: string, card: PurchaseCardData, order: string): string {
+  return `[The person allowed the checkout card for ${describe(card)} (entry ${entryId}) and Shop placed the order with their Shop Pay card (order ${order}). Nothing more to do on the store's site and no MarkPurchaseDone: the card already shows the order. Tell the person in one or two lines what was ordered; the store emails the confirmation and Shop tracks the delivery (search_orders on Shop).]`;
+}
+
+/** A Shop checkout Shop never confirmed: nobody can say whether it was paid. */
+export function buildShopUncertainWakePrompt(entryId: string, card: PurchaseCardData): string {
+  return `[The person allowed the checkout card for ${describe(card)} (entry ${entryId}), but Shop never confirmed whether the order went through. Don't try to buy it again by any route. Tell the person in one line to check the Shop app or their email for the order before anything else.]`;
+}
+
+/** A Shop checkout the store wants the person to finish on its page (`requires_escalation`): the card links it. */
+export function buildShopEscalatedWakePrompt(entryId: string, card: PurchaseCardData, message: string): string {
+  return `[The person allowed the checkout card for ${describe(card)} (entry ${entryId}), but the store needs them to finish a step on its own checkout page before Shop can place the order: "${message}". The card shows them the button for it, and nothing was paid yet. Tell them in one line; you'll be told if the order goes through.]`;
 }

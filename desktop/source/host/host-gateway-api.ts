@@ -265,12 +265,13 @@ export function createHostGatewayApi(
       markActive("user_action");
       return method(manager, "discardDraft")({ agentId: args.agentId, entryId: args.entryId });
     },
-    // The checkout card (purchase-cards.ts): Allow asks Link through the box's wallet, with the card the person picked on it and their approval (Face ID on the device); `resume` only makes sure a card with Link is watched.
+    // The checkout card (purchase-cards.ts): Allow asks the card's wallet (the box's Link, or its Shop) with the card the person picked on it and their approval (Face ID on the device); `resume` only makes sure a card with a wallet is watched.
     answerPurchase: (args: any) => {
       if (args?.resume !== true) markActive("user_action");
+      const mcp = deps.extensions.api("mcp");
       return method(manager, "answerPurchase")(
         { agentId: args.agentId, entryId: args.entryId, allow: args.allow === true, resume: args.resume === true, ...(typeof args?.paymentMethodId === "string" && args.paymentMethodId.length > 0 ? { paymentMethodId: args.paymentMethodId } : {}), ...(args?.approval != null && typeof args.approval === "object" ? { approval: args.approval } : {}) },
-        deps.extensions.api("mcp")?.linkWallet,
+        { ...(mcp?.linkWallet == null ? {} : { link: mcp.linkWallet }), ...(mcp?.shopWallet == null ? {} : { shop: mcp.shopWallet }) },
       );
     },
     // Buy on one product of the products card (14 October 2026): the agent is woken to buy exactly that one.

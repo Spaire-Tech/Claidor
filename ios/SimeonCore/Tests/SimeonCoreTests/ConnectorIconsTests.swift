@@ -8,7 +8,7 @@ final class ConnectorIconsTests: XCTestCase {
     let assets = URL(fileURLWithPath: #filePath)
       .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
       .appendingPathComponent("Simeon/Assets.xcassets/AppIcons")
-    XCTAssertEqual(GeneratedAppIcons.connectors.count, 86)
+    XCTAssertEqual(GeneratedAppIcons.connectors.count, 87)
     for (id, _) in GeneratedAppIcons.connectors {
       let png = assets.appendingPathComponent("\(id).imageset/\(id).png")
       XCTAssertTrue(FileManager.default.fileExists(atPath: png.path), "no app icon for \(id)")

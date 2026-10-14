@@ -52,12 +52,14 @@ export interface VendorMcpConnector {
    */
   readonly appsToolkit?: string;
   /**
-   * An app run by a command-line program on the person's cloud computer
-   * instead of a server (13 October 2026): Link, Stripe's agent wallet,
-   * through `@stripe/link-cli` (`../link-wallet/`). Its tools and its
-   * device-code sign-in come from the program; `url` is the app's own page.
+   * An app run on the person's cloud computer instead of at a server
+   * (13 October 2026): Link, Stripe's agent wallet, through
+   * `@stripe/link-cli` (`../link-wallet/`); since 14 October 2026 Shop,
+   * Shopify's Shop MCP called from the computer with the person's own
+   * sign-in kept there (`../shop-wallet/`). Its tools and its device-code
+   * sign-in come from the computer; `url` is the app's own page.
    */
-  readonly boxCli?: "link";
+  readonly boxCli?: "link" | "shop";
 }
 
 /** Our server's MCP address for an app it serves (`/desktop/api/apps/mcp/<toolkit>`). */
@@ -192,6 +194,9 @@ export const VENDOR_MCP_CONNECTORS: readonly VendorMcpConnector[] = [
   app({ id: "onenote", name: "OneNote", category: G.FilesDocs, description: "Notebooks, sections, and pages." }, "onenote"),
   app({ id: "microsoft-to-do", name: "Microsoft To Do", category: G.Productivity, description: "Your tasks and lists in Microsoft To Do." }, "microsoft_todo"),
   { id: "lovable", name: "Lovable", category: G.Developer, url: "https://mcp.lovable.dev", loopbackOnly: true, description: "Build and change apps and sites by describing them." },
+  // 14 October 2026, the founder ("build the whole shop integration. make sure its the exact flow as link"): Shop, run from the
+  // cloud computer (`boxCli`) against Shop MCP, the person's Shop sign-in kept there. Shopping search works without it.
+  { id: "shop", name: "Shop", category: G.Finance, url: "https://shop.app", boxCli: "shop", description: "Find products across Shopify stores and buy them with your Shop card, with your OK for each purchase. Track your orders." },
 ];
 
 const byId = new Map(VENDOR_MCP_CONNECTORS.map((item) => [item.id, item]));

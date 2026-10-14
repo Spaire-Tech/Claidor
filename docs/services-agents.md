@@ -753,6 +753,98 @@ ones our server serves (`boxCli` in `vendor-mcp/catalog.ts`; `vendor-mcp/backend
   code. No real Link account, purchase or bank read yet, and the cards have not been drawn on a
   device (no Xcode here: parse-checked only).
 
+### 7e. Shop: products, Shop Pay and orders
+
+**For the person.** (14 October 2026, the founder: "build the whole shop integration. make sure
+its the exact flow as link".) Shop is Shopify's shopping app. Added from Connect apps like Link,
+it lets an agent find products across Shopify stores, buy what the person asked for with their
+Shop card, and look up their orders and deliveries. Search works before Shop is connected. A
+purchase goes exactly as with Link: the products card, then the checkout card with the card that
+pays ("Visa •••• 4242 · Shop", the chooser listing their Shop cards), Allow (with Face ID) or
+Deny. Two ways to pay, both Shop's own:
+
+- **A Shopify store, Shop connected:** Simeon opens the checkout with the store through Shop, with
+  the person's saved address and the cheapest delivery; the card shows Shop's own items and
+  totals and the product's photo, and Allow pays it with the Shop Pay card picked on it. No
+  browser, no second app: Shop's docs ask that the person confirm the exact merchant, items,
+  total and way to pay, which the card and Allow are. The card ends on "Ordered" with the order
+  number. When the store wants a step on its own page (`requires_escalation`), the card says
+  "Finish on the store's page" with a button to it, and Simeon watches the checkout until the
+  order is placed.
+- **Any other store, checked out in the computer's browser:** Allow asks Shop for a one-time card
+  for exactly this purchase (a spend request), which the person approves in the Shop app; then
+  the agent's `pay_checkout` types it in, as Link's does, and the agent places the order once.
+
+**How it works.** No server of ours is involved. Shop MCP (`https://mcp.shop.com/`, Shopify,
+launched 13 October 2026) is called from the cloud computer by the engine
+(`desktop/source/shared/node/shop-wallet/`): `shop-mcp.ts` makes one HTTP POST per tool call
+(MCP 2026-07-28; the vendor connectors' client, on 2025-06-18, is refused by Shop with
+"Unsupported protocol version", measured) and holds the person's sign-in; `shop-tools.ts` is the
+agents' tools and the checkout card's Shop steps. It is the second app run on the computer
+(`boxCli: "shop"` in `vendor-mcp/catalog.ts`; `vendor-mcp/backend-exec.ts` serves Link's and
+Shop's tools and sign-ins the same way, the connected marker being `simeon-shop`).
+
+- **Sign-in.** Shop's OAuth device flow at `accounts.shop.app`: `/oauth/device` with scope
+  `personal_agent`, resource `https://mcp.shop.com` and device name "Simeon" (how the connection
+  appears in the person's Shop account); the apps open Shop's page with the code in it, and the
+  watch trades the code for a token at Shop's interval. The token and its refresh token are kept
+  in `<data folder>/shop/auth.json` (0600), refreshed before they expire; a refused refresh signs
+  out. Removing the app revokes both at Shop. The client is Shop's public one (the one Shop's own
+  CLI signs in with); Shop's docs say it is "meant for a shopper's own agent" and that an app
+  others sign in to needs its own client registered with Shop, so once Shop registers Simeon its
+  id goes in `SIMEON_SHOP_CLIENT_ID` on the cloud computer and nothing else changes. Shop also
+  accepts client ID metadata documents; Simeon's (`/desktop/mcp-oauth/client.json`) got a generic
+  error page from Shop's authorize page, as a made-up one did (measured 14 October 2026).
+- **SearchProducts**, every agent's own tool (not a connector's): Shop's catalog searched from the
+  computer with no account (with the person's token once Shop is connected), so products come
+  with real photos and prices before anything is connected. Connector tools run only once their
+  app is connected, which is why search is not left to the "shop" app alone.
+- **The agents' tools** (server "shop"): `search_products` (Shop's `search_catalog`, each result
+  cut to the featured variant's facts: about 1 KB a product instead of 10), `get_product`,
+  `get_account`, `search_orders`, `prepare_checkout`, and `wait_for_approval`, `pay_checkout`,
+  `cancel_purchase` for a spend request. ShowProducts takes a Shop product's `shop_variant_id` and
+  `shop`, so Buy wakes the agent with the variant to check out through Shop.
+- **A Shop checkout.** `prepare_checkout` makes it (`create_checkout`), copies the account's
+  preferred address unchanged into the delivery method and picks the cheapest option
+  (`update_checkout`, the whole document less Shop's own `next`, `signals`, `attribution`), and
+  keeps the checkout's id and `continue_url` (each carries a key to the checkout) in
+  `<data folder>/shop/checkouts.json` (0600, six hours) under a handle (`chk_…`); the agent sees
+  only the handle. RequestPurchase with `shop_checkout` reads it afresh (`get_checkout`) and
+  draws the card from Shop's figures. At Allow, `completeShopCheckout` reads it again, pays
+  nothing when it isn't `ready_for_complete` or its total moved, and sends `complete_checkout`
+  once with the instrument copied exactly as offered plus `selected: true`; an answer that never
+  came back is read again, never sent twice ("Not confirmed" otherwise).
+- **A spend request.** `create_spend_request` with the store's name and origin, the total in its
+  currency as the limit, Shop's totals (shipping as `fulfillment`, a discount negative, one
+  `total`), the saved card picked and an intent of 100 to 500 characters with no addresses
+  (`purchaseShopIntent`); its idempotency key is a UUID made from the card's. The host watches
+  `get_spend_request` every five seconds (never two at once: a read once approved issues the
+  card), `pending` reading as approving and `approved`/`consumed` as approved; one still pending
+  when the watch gives up (35 minutes) is canceled, Link's too. `pay_checkout`
+  takes the issued card from Shop's answer, types it into the page and never writes it to disk;
+  MarkPurchaseDone reports to Shop (`complete_spend_request`).
+- **Which wallet pays.** RequestPurchase asks the one the agent names (`wallet`), else Link when
+  it's connected, else Shop. Link is asked first only when it has a sign-in on the computer (or
+  Shop has none), so a person with only Shop never starts Link's CLI, whose first run installs it.
+  Flights still pay through Link only.
+
+* **Log lines.** Box: `[shop] connected`, `[shop] search: <n> product(s)`, `[shop] checkout
+  chk_… at <shop>: <status>`, `[shop] purchase requested: pending <id>`, `[shop] purchase request
+  refused: <code> …`, `[shop] refresh refused: …`, `[shop] report failed: …`, and on the card
+  `[purchase] allowed <agent>/<entry> with Shop …` or `with Shop checkout (biometric_face):
+  completed`; `shop sign-in started with Shop's device code` and `shop connected` in
+  `vendor-mcp-signin.log`.
+* **Measured on 14 October 2026** against the live server, signed out: `tools/list` (17 tools;
+  the approval tools are named `*_spend_request`, where Shop's docs say `*_approval`), a search
+  through the new tools (three linen shirts with prices, sellers and photos, 0.5 s, 3 KB for the
+  agent), `get_product`, and the start of a device sign-in (Shop's page with its code; not
+  approved). A checkout made signed out came back `requires_escalation` with no way to pay, as
+  Shop's docs say.
+* **Not yet verified.** No Shop account has been signed in: the account, a spend request, a
+  card issued, a Shop checkout paid, and every signed-in answer's shape follow Shop's docs and
+  skill and are tested against a fake Shop (`desktop/tests/shop-wallet.test.mjs`). Nothing has run
+  in the apps on a device.
+
 ## 8. Agent features that touch the server
 
 ### Avatars

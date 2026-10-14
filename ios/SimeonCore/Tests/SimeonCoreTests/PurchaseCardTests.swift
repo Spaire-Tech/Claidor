@@ -103,6 +103,39 @@ final class PurchaseCardTests: XCTestCase {
     XCTAssertEqual(ordered.shown(answered: .denied).state, .ordered)
   }
 
+  /** Shop (14 October 2026): the same card, its row saying Shop, the Shop app asked; a Shop checkout placed at Allow. */
+  func testAShopCardSaysShopAndAShopCheckoutNeedsNoApp() throws {
+    let withShop = Self.message.setting("purchase", Self.message["purchase"]!.setting("wallet", "shop"))
+    guard case .purchase(_, let review) = try XCTUnwrap(Chat.row(for: entry(message: withShop))) else { return XCTFail("not a checkout card") }
+    XCTAssertEqual(review.wallet, .shop)
+    XCTAssertFalse(review.isShopCheckout)
+    XCTAssertEqual(review.walletLabel, "Shop")
+    XCTAssertEqual(review.cardsFooter, PurchaseCard.shopCardsFooter)
+    guard case .purchase(_, let approving) = try XCTUnwrap(Chat.row(for: entry(["purchaseState": "approving", "purchaseActionUrl": "https://shop.app/approvals/abc"], message: withShop))) else { return XCTFail() }
+    XCTAssertEqual(approving.status?.label, "Approve it in the Shop app")
+    XCTAssertEqual(approving.detail, PurchaseCard.shopApprovingDetail)
+    XCTAssertEqual(approving.openWalletLabel, "Open Shop")
+    XCTAssertEqual(approving.walletApp?.label, "Get the Shop app")
+    XCTAssertEqual(approving.actionURL?.absoluteString, "https://shop.app/approvals/abc")
+    XCTAssertEqual(try card(["purchaseState": "sending"]).status?.label, "Asking Link…", "a Link card is as it was")
+    XCTAssertEqual(try card().walletLabel, "Link by Stripe")
+
+    let checkout = withShop.setting("purchase", withShop["purchase"]!.setting("shopCheckout", ["handle": "chk_0123456789ab"]))
+    guard case .purchase(_, let placing) = try XCTUnwrap(Chat.row(for: entry(["purchaseState": "sending"], message: checkout))) else { return XCTFail() }
+    XCTAssertTrue(placing.isShopCheckout)
+    XCTAssertEqual(placing.status?.label, "Placing your order with Shop…")
+    XCTAssertEqual(placing.cardsFooter, PurchaseCard.shopCheckoutCardsFooter)
+    XCTAssertNil(placing.walletApp, "no app to approve in")
+    guard case .purchase(_, let store) = try XCTUnwrap(Chat.row(for: entry(["purchaseState": "approving", "purchaseNote": "Confirm your age on the store's page.", "purchaseActionUrl": "https://shop.app/checkouts/f/abc"], message: checkout))) else { return XCTFail() }
+    XCTAssertEqual(store.status?.label, "Finish on the store's page")
+    XCTAssertEqual(store.detail, "Confirm your age on the store's page.")
+    XCTAssertEqual(store.openWalletLabel, "Open the store's page")
+    guard case .purchase(_, let ordered) = try XCTUnwrap(Chat.row(for: entry(["purchaseState": "ordered", "purchaseOrder": "#1042"], message: checkout))) else { return XCTFail() }
+    XCTAssertEqual(ordered.detail, "Order #1042")
+    // A shop card keeps its wallet when shown with an answer.
+    XCTAssertEqual(review.shown(answered: .sending).wallet, .shop)
+  }
+
   func testACardWithoutItsFactsIsSaidInWords() throws {
     let broken: JSON = ["type": "purchase", "content": "Checkout at ncvss.com · $80.00", "purchase": ["merchant": "NCVSS"]]
     guard case .notice(_, let text) = try XCTUnwrap(Chat.row(for: entry(message: broken))) else { return XCTFail("a notice") }

@@ -85,6 +85,7 @@ STORE_APPS = {
     "link": "com.stripe.link", "granola": "com.granola.ios-prod",
     "sharepoint": "com.microsoft.sharepoint", "onenote": "com.microsoft.onenote",
     "microsoft-to-do": "com.microsoft.to-do", "lovable": "dev.lovable.build",
+    "shop": "com.jadedlabs.arrive",
 }
 
 #: No iOS app of their own: the mark from connector-logos on its ground.

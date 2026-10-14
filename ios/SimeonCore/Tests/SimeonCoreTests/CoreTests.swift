@@ -1482,6 +1482,16 @@ final class ConnectConsentTests: XCTestCase {
     XCTAssertTrue(link.note?.hasPrefix("Nothing is paid until you approve the purchase in the Link app") == true)
   }
 
+  /** Shop (14 October 2026): Shop's own page to connect, Allow before anything is paid, a one-time card elsewhere. */
+  func testShopSaysHowItPays() {
+    let shop = ConnectConsent(app: CatalogApp(id: "shop", name: "shop", title: "Shop", summary: "Find products across Shopify stores.", serverURL: "https://shop.app"), name: "Shop")
+    XCTAssertTrue(shop.points[0].body.contains("pay for what you asked them to buy with your Shop card"))
+    XCTAssertTrue(shop.smallPrint[0].hasPrefix("You'll approve the connection on Shop's own page"))
+    XCTAssertTrue(shop.note?.hasPrefix("Nothing is paid until you press Allow") == true)
+    XCTAssertEqual(ConnectorIcons.id(for: "Shop"), "shop")
+    XCTAssertEqual(ConnectorIcons.id(for: "Shopify"), "shopify", "Shop and Shopify stay apart")
+  }
+
   /** Apps on their makers' own servers (13 October 2026): the maker's page and server are named. */
   func testAnAppOnItsMakersServerSaysSo() {
     let granola = ConnectConsent(app: CatalogApp(id: "granola", name: "granola", title: "Granola", summary: "", serverURL: "https://mcp.granola.ai/mcp"), name: "Granola")

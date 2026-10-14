@@ -1490,8 +1490,9 @@ struct PurchaseCardView: View {
   private var blue: Color { look.dark ? Color(hex: 0x2f6db0) : Color(hex: 0x255a93) }
   private var hairline: Color { look.dark ? Color.white.opacity(0.08) : Color.black.opacity(0.08) }
 
-  /** Review order: the agent's computer, on the checkout. */
+  /** Review order: the agent's computer, on the checkout; for a Shop checkout (14 October 2026), the product's page, since Shop holds the checkout and nothing is open on the computer. */
   private func reviewOrder() {
+    if card.isShopCheckout, let url = card.url { openURL(url); return }
     window.openComputer(agentId, helper: nil, store: store)
   }
 
@@ -1568,15 +1569,15 @@ struct PurchaseCardView: View {
     }
   }
 
-  /** The Link card that pays, as Link names it, with "Link by Stripe" under it; with several cards, a click picks another. */
+  /** The card that pays, as its wallet names it, with "Link by Stripe" (or "Shop") under it; with several cards, a click picks another. */
   @ViewBuilder private func payment(_ shown: PurchaseCard) -> some View {
     let row = HStack(spacing: 12) {
       MacPaymentMark(brand: shown.needsCard ? nil : shown.cardBrand, edge: hairline)
       VStack(alignment: .leading, spacing: 2) {
-        Text(shown.cardLine ?? (shown.needsCard ? PurchaseCard.chooseCard : "Your Link card"))
+        Text(shown.cardLine ?? (shown.needsCard ? PurchaseCard.chooseCard : shown.wallet == .shop ? "Your Shop card" : "Your Link card"))
           .font(.system(size: 14, weight: .medium)).foregroundStyle(shown.needsCard ? blue : ink)
           .lineLimit(1).truncationMode(.middle)
-        MacLinkByStripe(grey: grey)
+        MacLinkByStripe(grey: grey, wallet: shown.wallet)
       }
       Spacer(minLength: 0)
       if shown.canChooseCard {
@@ -1589,7 +1590,7 @@ struct PurchaseCardView: View {
         .buttonStyle(.hand)
         .help(PurchaseCard.chooseCard)
         .popover(isPresented: $choosing, arrowEdge: .bottom) {
-          MacCardChooser(cards: shown.cards, selected: shown.cardId, look: look) { choice in
+          MacCardChooser(cards: shown.cards, selected: shown.cardId, look: look, footer: shown.cardsFooter) { choice in
             store.pickPurchaseCard(entryId, cardId: choice.id)
             choosing = false
           }
@@ -1686,9 +1687,11 @@ struct PurchaseCardView: View {
         }
         if shown.state == .approving {
           HStack(spacing: 8) {
-            pill(PurchaseCard.getLinkApp, ground: shown.actionURL == nil ? blue : fill, ink: shown.actionURL == nil ? .white : ink) { openURL(PurchaseCard.linkAppURL) }
+            if let app = shown.walletApp {
+              pill(app.label, ground: shown.actionURL == nil ? blue : fill, ink: shown.actionURL == nil ? .white : ink) { openURL(app.url) }
+            }
             if let url = shown.actionURL {
-              pill(PurchaseCard.openLink, ground: blue, ink: .white) { openURL(url) }
+              pill(shown.openWalletLabel, ground: blue, ink: .white) { openURL(url) }
             }
           }
         }
@@ -1760,13 +1763,15 @@ private struct MacPaymentMark: View {
 /** "Link by Stripe" with Link's own mark, under the card that pays. */
 private struct MacLinkByStripe: View {
   let grey: Color
+  /** Shop's name and mark for a card Shop pays (14 October 2026). */
+  var wallet: PurchaseCard.Wallet = .link
 
   var body: some View {
     HStack(spacing: 4) {
-      if let mark = NSImage(named: "Brands/link") {
+      if let mark = NSImage(named: wallet == .shop ? "Connectors/shop" : "Brands/link") {
         Image(nsImage: mark).resizable().scaledToFit().frame(width: 12, height: 12).clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
       }
-      Text(PurchaseCard.payWithLink).font(.system(size: 12)).foregroundStyle(grey)
+      Text(wallet == .shop ? PurchaseCard.payWithShop : PurchaseCard.payWithLink).font(.system(size: 12)).foregroundStyle(grey)
     }
     .accessibilityElement(children: .combine)
   }
@@ -1781,6 +1786,7 @@ private struct MacCardChooser: View {
   let cards: [PurchaseCard.Choice]
   let selected: String?
   let look: Look
+  var footer: String = PurchaseCard.cardsFooter
   let pick: (PurchaseCard.Choice) -> Void
   @State private var hovered: String?
 
@@ -1808,7 +1814,7 @@ private struct MacCardChooser: View {
         .buttonStyle(.hand)
         .onHover { hovered = $0 ? card.id : (hovered == card.id ? nil : hovered) }
       }
-      Text(PurchaseCard.cardsFooter).font(.system(size: 11)).foregroundStyle(grey).fixedSize(horizontal: false, vertical: true).padding(.horizontal, 10).padding(.top, 6)
+      Text(footer).font(.system(size: 11)).foregroundStyle(grey).fixedSize(horizontal: false, vertical: true).padding(.horizontal, 10).padding(.top, 6)
     }
     .padding(8)
     .frame(width: 300)

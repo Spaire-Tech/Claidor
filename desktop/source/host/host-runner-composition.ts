@@ -192,8 +192,12 @@ import type {
 import type { AgentRule } from "../packages/proto/generated/agent/v1/agent_rules_pb.js";
 import { HOST_LOG_PREFIX, logHostLine } from "../shared/host-log.js";
 import { configuredSimeonModel } from "./extensions/inference/provider-session.js";
-import { BOX_CHROME_PORTS, captureCheckout } from "../shared/node/link-wallet/checkout-fill.js";
+import { BOX_CHROME_PORTS, captureCheckout, fetchCheckoutIcon } from "../shared/node/link-wallet/checkout-fill.js";
 import type { LinkTools } from "../shared/node/link-wallet/link-tools.js";
+import { linkAuthFile } from "../shared/node/link-wallet/link-cli.js";
+import type { ShopTools } from "../shared/node/shop-wallet/shop-tools.js";
+import { existsSync } from "node:fs";
+import type { WalletCheckoutFacts } from "./runner/tools/purchase-tool.js";
 
 // The model id the composition projects onto the loop (parentModelInfo,
 // the Task tool's child configs, web search). It was the upstream's
@@ -2358,17 +2362,70 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           }),
       // RequestPurchase and MarkPurchaseDone: the checkout card (13 October
       // 2026, shared/node/link-wallet/purchase-card.ts). The person's Link is
-      // the box's (the "link" app's own wallet); the card's Allow and Deny
-      // come back through the gateway (transcript/purchase-cards.ts). Not
-      // for a child or a shared room.
+      // the box's (the "link" app's own wallet), and since 14 October 2026
+      // their Shop too (the "shop" app's, shared/node/shop-wallet/); the
+      // card's Allow and Deny come back through the gateway
+      // (transcript/purchase-cards.ts). Not for a child or a shared room.
       ...(isSharedRoomTurn
         ? {}
         : {
             createPurchaseToolInputs: turn => {
-              const wallet = (mcp as { linkWallet?: LinkTools }).linkWallet;
+              const link = (mcp as { linkWallet?: LinkTools }).linkWallet;
+              const shop = (mcp as { shopWallet?: ShopTools }).shopWallet;
+              const wallets = { ...(link == null ? {} : { link }), ...(shop == null ? {} : { shop }) };
+              // The wallet asked for, else Link when it's connected, else Shop.
+              const facts = async (request: { readonly amount: number; readonly currency: string; readonly paymentMethodId?: string; readonly wallet?: "link" | "shop" }): Promise<WalletCheckoutFacts> => {
+                const { wallet: asked, ...rest } = request;
+                const from = async (name: "link" | "shop"): Promise<WalletCheckoutFacts> => {
+                  const wallet = name === "shop" ? shop : link;
+                  if (wallet == null) return { ok: false, message: `${name === "shop" ? "Shop" : "Link"} isn't on this computer.` };
+                  const answer = await wallet.checkoutFacts(rest);
+                  return answer.ok ? { ...answer, wallet: name } : answer;
+                };
+                if (asked != null) return await from(asked);
+                const notConnected = (answer: WalletCheckoutFacts): boolean => !answer.ok && /isn't connected/.test(answer.message);
+                const neither: WalletCheckoutFacts = { ok: false, message: "Neither Link nor Shop is connected, so nothing can be paid yet. Propose one with ProposeConnector (Link pays at any store; Shop pays with the person's Shop card), or call AuthenticateMcpServer for one that's installed; then call RequestPurchase again." };
+                // Link first when it has a sign-in on this computer (or Shop has none), so a person with only Shop connected never starts Link's CLI (its first run installs it).
+                const linkFirst = link != null && (shop == null || existsSync(linkAuthFile(getSandRootDir())) || !shop.hasSignIn());
+                const [first, second] = linkFirst ? ["link", "shop"] as const : ["shop", "link"] as const;
+                if ((first === "link" ? link : shop) == null) return await from(second);
+                const tried = await from(first);
+                if (tried.ok || !notConnected(tried) || (second === "link" ? link : shop) == null) return tried;
+                const next = await from(second);
+                return notConnected(next) ? neither : next;
+              };
+              // A picture from the web (a Shop product's), kept like the checkout's: images only, at most 4 MB.
+              const persistPicture = async (address: string): Promise<{ url: string; width?: number; height?: number } | undefined> => {
+                if (!/^https:\/\//i.test(address) || typeof hooks.persistImage !== "function") return undefined;
+                try {
+                  const response = await fetch(address, { signal: AbortSignal.timeout(8000), redirect: "follow" });
+                  const type = (response.headers.get("content-type") ?? "").split(";")[0]?.trim().toLowerCase() ?? "";
+                  if (!response.ok || !/^image\/(png|jpeg|gif|webp)$/.test(type)) return undefined;
+                  const bytes = new Uint8Array(await response.arrayBuffer());
+                  if (bytes.byteLength === 0 || bytes.byteLength > 4 * 1024 * 1024) return undefined;
+                  const saved = await hooks.persistImage(bytes, type) as { fileUrl?: unknown; width?: unknown; height?: unknown } | null | undefined;
+                  if (saved == null || typeof saved.fileUrl !== "string") return undefined;
+                  return { url: saved.fileUrl, ...(typeof saved.width === "number" ? { width: saved.width } : {}), ...(typeof saved.height === "number" ? { height: saved.height } : {}) };
+                } catch {
+                  return undefined;
+                }
+              };
               return {
                 dependencies: {
-                  checkoutFacts: (request) => wallet?.checkoutFacts(request),
+                  checkoutFacts: (request) => link == null && shop == null ? undefined : facts(request),
+                  ...(shop == null ? {} : {
+                    shopCheckoutCard: async (handle: string) => {
+                      const card = await shop.shopCheckoutCard(handle);
+                      if (!card.ok) return card;
+                      // The store's own icon for Review order, when its site serves one.
+                      const icon = await fetchCheckoutIcon(`https://${card.domain}/favicon.ico`).catch(() => undefined);
+                      const saved = icon == null || typeof hooks.persistImage !== "function" ? null : await Promise.resolve(hooks.persistImage(icon.bytes, icon.mimeType)).catch(() => null) as { fileUrl?: unknown } | null | undefined;
+                      return typeof saved?.fileUrl === "string" ? { ...card, iconUrl: saved.fileUrl } : card;
+                    },
+                  }),
+                  persistPicture,
+                  // SearchProducts: Shop's catalog, signed out unless the person connected Shop (then with their preferences).
+                  ...(shop == null ? {} : { searchProducts: (args: Record<string, unknown>) => shop.call("search_products", args) }),
                   // The agent's own Chrome first (9222 + its window), then the computer's others.
                   capturePreview: async (checkoutUrl) => {
                     const own = 9222 + (boxAgentWindowIndex(extensions.api("forever-box").box as any, session.id) ?? 1);
@@ -2388,7 +2445,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                     return hooks.transport.lastSentMessageId?.();
                   },
                   markPurchaseDone: async (args) => {
-                    const done = await method(extensions.api("transcript"), "markPurchaseDone")?.({ agentId: session.id, ...args }, wallet) as { ok: true } | { ok: false; message: string } | undefined;
+                    const done = await method(extensions.api("transcript"), "markPurchaseDone")?.({ agentId: session.id, ...args }, wallets) as { ok: true } | { ok: false; message: string } | undefined;
                     return done ?? { ok: false, message: "The checkout card could not be reached." };
                   },
                 },

@@ -549,7 +549,8 @@ export function cardFromFile(value: unknown): CheckoutCard {
   };
 }
 
-function fillAnswer(result: CheckoutFillResult): LinkToolResult {
+/** What the agent is told after a card was typed into a checkout (Link's and Shop's `pay_checkout`). */
+export function fillAnswer(result: CheckoutFillResult): LinkToolResult {
   if (!result.ok) return { text: result.message, isError: true };
   return {
     text: [

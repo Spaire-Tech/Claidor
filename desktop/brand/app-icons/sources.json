@@ -404,6 +404,12 @@
   "app": "Microsoft SharePoint",
   "seller": "Microsoft Corporation"
  },
+ "shop": {
+  "from": "App Store",
+  "bundleId": "com.jadedlabs.arrive",
+  "app": "Shop: Track, Pay, Discover",
+  "seller": "Shopify Inc."
+ },
  "shopify": {
   "from": "App Store",
   "bundleId": "com.jadedpixel.shopify",

@@ -122,7 +122,8 @@ test("RequestPurchase checks Link first, posts the card with the paying card and
     facts = { ok: false, message: "$80.00 is more than the $50.00 the person's Link limits leave today." };
     assert.match(await run(request, ARGS), /leave today/);
     facts = undefined;
-    assert.match(await run(request, ARGS), /Link runs on the cloud computer/);
+    // 14 October 2026: no wallet here at all names both (Link and Shop run on the cloud computer).
+    assert.match(await run(request, ARGS), /Link and Shop run on the cloud computer/);
     facts = { ok: true, paymentMethodId: "csmrpd_visa", card: { brand: "Visa", last4: "1234" } };
     assert.match(await run(request, { ...ARGS, checkout_url: "http://ncvss.com/checkout" }), /https address/);
     assert.match(await run(request, { ...ARGS, credential_type: "link_pay_token" }), /needs merchant_account_id/);
@@ -225,7 +226,7 @@ test("Allow asks Link once, shows Link's approval link, watches Link, and wakes 
     assert.equal(open.entries[0].purchaseState, "ordered");
     assert.equal(open.entries[0].purchaseOrder, "#1042");
     await until(() => wallet.calls.some(([kind]) => kind === "report"), "Link's report");
-    assert.deepEqual(wallet.calls.find(([kind]) => kind === "report")[1], { domain: "ncvss.com", spendRequestId: "lsrq_1", outcome: "success", context: "Arrives Oct 18" });
+    assert.deepEqual(wallet.calls.find(([kind]) => kind === "report")[1], { domain: "ncvss.com", spendRequestId: "lsrq_1", outcome: "success", context: "Arrives Oct 18", order: "#1042" });
     assert.equal(wakes.length, 1, "no second wake");
   } finally {
     await cards.dispose();

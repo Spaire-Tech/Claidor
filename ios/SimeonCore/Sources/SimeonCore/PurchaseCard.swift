@@ -13,6 +13,12 @@ import Foundation
  * The message (`send-message` of type `purchase`) carries what is bought;
  * the entry carries where it stands (`purchaseState` and the fields beside
  * it), which the host stamps.
+ *
+ * Since 14 October 2026 a card may be paid with Shop instead (`wallet`):
+ * the same card, its card row saying "Shop", and Allow either asking Shop
+ * for a one-time card the person approves in the Shop app (exactly as with
+ * Link), or, for a Shopify store's checkout Simeon opened through Shop
+ * (`isShopCheckout`), placing the order at once with their Shop Pay card.
  */
 public struct PurchaseCard: Hashable, Sendable {
   public enum State: String, Sendable {
@@ -26,6 +32,9 @@ public struct PurchaseCard: Hashable, Sendable {
     case approved
     case ordered, failed, denied, expired, canceled
   }
+
+  /** The wallet that pays: Link (every card before 14 October 2026) or Shop. */
+  public enum Wallet: String, Sendable { case link, shop }
 
   public struct Item: Hashable, Sendable {
     public let name: String
@@ -83,6 +92,9 @@ public struct PurchaseCard: Hashable, Sendable {
   public let flight: BookedFlight?
   /** Where Simeon is while paying an approved flight, or that the airline never answered. */
   public let step: Step?
+  public let wallet: Wallet
+  /** A Shopify store's checkout Simeon opened through Shop: Allow places the order, no app to approve in, no browser. */
+  public let isShopCheckout: Bool
 
   public enum Step: String, Sendable {
     case paying
@@ -93,11 +105,12 @@ public struct PurchaseCard: Hashable, Sendable {
     case uncertain
   }
 
-  public init(merchant: String, domain: String, url: URL?, total: String, items: [Item], cardBrand: String?, cardLast4: String?, cardName: String? = nil, cardId: String? = nil, cards: [Choice] = [], preview: ChatImage?, icon: ChatImage? = nil, isTest: Bool, state: State, note: String? = nil, actionURL: URL? = nil, order: String? = nil, flight: BookedFlight? = nil, step: Step? = nil) {
+  public init(merchant: String, domain: String, url: URL?, total: String, items: [Item], cardBrand: String?, cardLast4: String?, cardName: String? = nil, cardId: String? = nil, cards: [Choice] = [], preview: ChatImage?, icon: ChatImage? = nil, isTest: Bool, state: State, note: String? = nil, actionURL: URL? = nil, order: String? = nil, flight: BookedFlight? = nil, step: Step? = nil, wallet: Wallet = .link, isShopCheckout: Bool = false) {
     self.merchant = merchant; self.domain = domain; self.url = url; self.total = total; self.items = items
     self.cardBrand = cardBrand; self.cardLast4 = cardLast4; self.cardName = cardName; self.cardId = cardId; self.cards = cards
     self.preview = preview; self.icon = icon; self.isTest = isTest
     self.state = state; self.note = note; self.actionURL = actionURL; self.order = order; self.flight = flight; self.step = step
+    self.wallet = wallet; self.isShopCheckout = wallet == .shop && isShopCheckout
   }
 
   init?(message: JSON, entry: Entry) {
@@ -142,6 +155,8 @@ public struct PurchaseCard: Hashable, Sendable {
     self.order = order.isEmpty ? nil : order
     self.flight = purchase["flight"].flatMap(BookedFlight.init(json:))
     self.step = (entry["purchaseStep"]?.text).flatMap(Step.init(rawValue:))
+    self.wallet = Wallet(rawValue: text(purchase["wallet"])) ?? .link
+    self.isShopCheckout = self.wallet == .shop && !text(purchase["shopCheckout"]?["handle"]).isEmpty
   }
 
   /**
@@ -152,7 +167,7 @@ public struct PurchaseCard: Hashable, Sendable {
   public func shown(answered: State?, picked: String? = nil) -> PurchaseCard {
     let choice = state == .review ? picked.flatMap { id in cards.first { $0.id == id } } : nil
     guard choice != nil || (state == .review && answered != nil) else { return self }
-    return PurchaseCard(merchant: merchant, domain: domain, url: url, total: total, items: items, cardBrand: choice?.brand ?? cardBrand, cardLast4: choice?.last4 ?? cardLast4, cardName: choice.map(\.name) ?? cardName, cardId: choice?.id ?? cardId, cards: cards, preview: preview, icon: icon, isTest: isTest, state: state == .review ? (answered ?? state) : state, note: choice == nil ? note : nil, actionURL: actionURL, order: order, flight: flight, step: step)
+    return PurchaseCard(merchant: merchant, domain: domain, url: url, total: total, items: items, cardBrand: choice?.brand ?? cardBrand, cardLast4: choice?.last4 ?? cardLast4, cardName: choice.map(\.name) ?? cardName, cardId: choice?.id ?? cardId, cards: cards, preview: preview, icon: icon, isTest: isTest, state: state == .review ? (answered ?? state) : state, note: choice == nil ? note : nil, actionURL: actionURL, order: order, flight: flight, step: step, wallet: wallet, isShopCheckout: isShopCheckout)
   }
 
   // MARK: Words
@@ -172,6 +187,27 @@ public struct PurchaseCard: Hashable, Sendable {
   /** Where Link sends people for its app (Link's own command-line tool shows the same address). */
   public static let linkAppURL = URL(string: "https://link.com/download")!
   public static let testNote = "Link's test mode: nothing is charged."
+
+  // Shop's words (14 October 2026).
+  public static let payWithShop = "Shop"
+  public static let openShop = "Open Shop"
+  public static let getShopApp = "Get the Shop app"
+  public static let shopAppURL = URL(string: "https://shop.app")!
+  public static let openStorePage = "Open the store's page"
+  public static let shopCardsFooter = "Your cards in Shop. Add or remove cards in the Shop app."
+  public static let shopCheckoutCardsFooter = "The ways to pay this store offers you through Shop."
+
+  /** What the card row names beside the card that pays: "Link by Stripe" or "Shop". */
+  public var walletLabel: String { wallet == .shop ? Self.payWithShop : Self.payWithLink }
+  /** The chooser's footer, by wallet. */
+  public var cardsFooter: String { wallet == .link ? Self.cardsFooter : isShopCheckout ? Self.shopCheckoutCardsFooter : Self.shopCardsFooter }
+  /** While the wallet waits on the person: the button that opens its page ("Open Link", "Open Shop", the store's page). */
+  public var openWalletLabel: String { wallet == .link ? Self.openLink : isShopCheckout ? Self.openStorePage : Self.openShop }
+  /** The wallet's app, for someone without it: none for a Shop checkout (the store's page is the step). */
+  public var walletApp: (label: String, url: URL)? {
+    if wallet == .link { return (Self.getLinkApp, Self.linkAppURL) }
+    return isShopCheckout ? nil : (Self.getShopApp, Self.shopAppURL)
+  }
 
   /** "Ada wants to place an order at ncvss.com" */
   public static func headline(agent: String, domain: String) -> String {
@@ -234,8 +270,8 @@ public struct PurchaseCard: Hashable, Sendable {
     if flight != nil, let flightStatus { return flightStatus }
     switch state {
     case .review: return nil
-    case .sending: return ("Asking Link…", .working)
-    case .approving: return ("Approve it in the Link app", .working)
+    case .sending: return (wallet == .link ? "Asking Link…" : isShopCheckout ? "Placing your order with Shop…" : "Asking Shop…", .working)
+    case .approving: return (wallet == .link ? "Approve it in the Link app" : isShopCheckout ? "Finish on the store's page" : "Approve it in the Shop app", .working)
     case .approved: return ("Approved · placing your order", .working)
     case .ordered: return ("Ordered", .success)
     case .failed: return ("Didn't go through", .danger)
@@ -278,7 +314,7 @@ public struct PurchaseCard: Hashable, Sendable {
     }
     switch state {
     case .approving:
-      return note ?? Self.approvingDetail
+      return note ?? (wallet == .link ? Self.approvingDetail : Self.shopApprovingDetail)
     case .ordered:
       let number = order.map { "Order \($0.hasPrefix("#") ? $0 : "#\($0)")" }
       return [number, note].compactMap { $0 }.joined(separator: " · ").nilIfEmpty
@@ -298,6 +334,9 @@ public struct PurchaseCard: Hashable, Sendable {
    * app, with nothing here having said so.
    */
   public static let approvingDetail = "Link sent it to the Link app on your phone. No Link app yet? Get it and sign in once; every purchase after that is one tap. Or open it on link.com with a passkey. It waits 30 minutes."
+
+  /** The same for Shop: it asks in the Shop app, with the account the person connected. */
+  public static let shopApprovingDetail = "Shop sent it to the Shop app on your phone. Approve it there; nothing is paid until you do. No Shop app yet? Get it and sign in with the account you connected."
 
   /** In the chat list and a quote: "Checkout at ncvss.com · $80.00", "Flight Seattle to Los Angeles · $361.20". */
   public var listLine: String { flight.map { "Flight \($0.route) · \(total)" } ?? "Checkout at \(domain) · \(total)" }

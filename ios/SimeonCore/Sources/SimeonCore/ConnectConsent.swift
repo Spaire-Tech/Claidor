@@ -177,12 +177,15 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
   static let reachSentence: [String: String] = [
     "linkedin": "Your agents can read your profile and publish posts on {App}.",
     "link": "Your agents can ask {App} for a one-time card to pay for something you asked them to buy, and read the bank and card accounts you choose to share.",
+    "shop": "Your agents can find products across Shopify stores, pay for what you asked them to buy with your {App} card, and track your orders.",
   ]
 
   /** Apps whose sign-in is said another way. */
   static let signInSentence: [String: String] = [
     // Link signs in with a code on link.com or in its app, and runs on Simeon's cloud computer (desktop/source/shared/node/link-wallet/).
     "link": "You'll approve the connection on link.com or in the {App} app; your cloud computer keeps it. Simeon never sees your password or your card numbers.",
+    // Shop signs in with a code on Shop's own page, and runs from Simeon's cloud computer (desktop/source/shared/node/shop-wallet/).
+    "shop": "You'll approve the connection on {App}'s own page with your {App} account; your cloud computer keeps it. Simeon never sees your password or your card numbers.",
   ]
 
   /** Apps where money moves for real. */
@@ -208,6 +211,7 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
     "docusign": "Envelopes your agents send go out in your name.",
     "resend": "Emails your agents send go out from your own domains.",
     "lovable": "Your agents can change and publish your projects. Published changes go live.",
+    "shop": "Nothing is paid until you press Allow on the purchase. At a Shopify store, Shop then places the order with your Shop card; anywhere else, you approve it in the Shop app and the store gets a one-time card, never your real one.",
     "link": "Nothing is paid until you approve the purchase in the Link app, up to $500 each and $500 a day. Get the Link app on your phone (or add a passkey at link.com): Link approves agents' purchases only there. Each purchase gets its own one-time card, never your real one. US accounts only.",
   ]
 }

@@ -90,5 +90,6 @@ public enum GeneratedAppIcons {
     ("onenote", "OneNote"),
     ("microsoft-to-do", "Microsoft To Do"),
     ("lovable", "Lovable"),
+    ("shop", "Shop"),
   ]
 }

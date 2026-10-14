@@ -1962,8 +1962,9 @@ struct PurchaseCardView: View {
   @Environment(\.openURL) private var openURL
   @State private var choosing = false
 
-  /** Review order: the agent's computer on the checkout; the shop's page only where there is no computer to open. */
+  /** Review order: the agent's computer on the checkout; the shop's page where there is no computer to open, or for a Shop checkout (14 October 2026: Shop holds it, nothing is open on the computer). */
   private func reviewOrder(_ shown: PurchaseCard) -> (() -> Void)? {
+    if shown.isShopCheckout, let url = shown.url { return { openURL(url) } }
     if let openComputer { return openComputer }
     guard let url = shown.url else { return nil }
     return { openURL(url) }
@@ -1999,7 +2000,7 @@ struct PurchaseCardView: View {
     .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
     .modifier(CardEdge(radius: 22))
     .sheet(isPresented: $choosing) {
-      CardChooserSheet(cards: shown.cards, selected: shown.cardId) { choice in
+      CardChooserSheet(cards: shown.cards, selected: shown.cardId, wallet: shown.wallet, footer: shown.cardsFooter) { choice in
         store.pickPurchaseCard(entryId, cardId: choice.id)
         choosing = false
       }
@@ -2045,15 +2046,15 @@ struct PurchaseCardView: View {
     }
   }
 
-  /** The Link card that pays, as Link names it, with "Link by Stripe" under it; with several cards, a tap picks another. */
+  /** The card that pays, as its wallet names it, with "Link by Stripe" (or "Shop") under it; with several cards, a tap picks another. */
   @ViewBuilder private func payment(_ shown: PurchaseCard) -> some View {
     let row = HStack(spacing: 12) {
       PaymentMark(brand: shown.needsCard ? nil : shown.cardBrand)
       VStack(alignment: .leading, spacing: 2) {
-        Text(shown.cardLine ?? (shown.needsCard ? PurchaseCard.chooseCard : "Your Link card"))
+        Text(shown.cardLine ?? (shown.needsCard ? PurchaseCard.chooseCard : shown.wallet == .shop ? "Your Shop card" : "Your Link card"))
           .font(.system(size: 15, weight: .medium)).foregroundStyle(shown.needsCard ? Ink.blue : Ink.theirsText)
           .lineLimit(1).truncationMode(.middle)
-        LinkByStripe()
+        LinkByStripe(wallet: shown.wallet)
       }
       Spacer(minLength: 0)
       if shown.canChooseCard {
@@ -2118,9 +2119,11 @@ struct PurchaseCardView: View {
         }
         if shown.state == .approving {
           HStack(spacing: 8) {
-            Button(PurchaseCard.getLinkApp) { openURL(PurchaseCard.linkAppURL) }.buttonStyle(PillButtonStyle(primary: shown.actionURL == nil))
+            if let app = shown.walletApp {
+              Button(app.label) { openURL(app.url) }.buttonStyle(PillButtonStyle(primary: shown.actionURL == nil))
+            }
             if let url = shown.actionURL {
-              Button(PurchaseCard.openLink) { openURL(url) }.buttonStyle(PillButtonStyle(primary: true))
+              Button(shown.openWalletLabel) { openURL(url) }.buttonStyle(PillButtonStyle(primary: true))
             }
           }
         }
@@ -2278,14 +2281,16 @@ struct ShopIcon: View {
   }
 }
 
-/** "Link by Stripe" with Link's own mark, under the card that pays (as Link writes it in Muse's card). */
+/** "Link by Stripe" with Link's own mark, under the card that pays (as Link writes it in Muse's card); "Shop" with Shop's for a card Shop pays (14 October 2026). */
 struct LinkByStripe: View {
+  var wallet: PurchaseCard.Wallet = .link
+
   var body: some View {
     HStack(spacing: 5) {
-      if let mark = UIImage(named: "Brands/link") {
+      if let mark = UIImage(named: wallet == .shop ? "Connectors/shop" : "Brands/link") {
         Image(uiImage: mark).resizable().scaledToFit().frame(width: 14, height: 14).clipShape(RoundedRectangle(cornerRadius: 3.5, style: .continuous))
       }
-      Text(PurchaseCard.payWithLink).font(.system(size: 13)).foregroundStyle(Ink.fineGrey)
+      Text(wallet == .shop ? PurchaseCard.payWithShop : PurchaseCard.payWithLink).font(.system(size: 13)).foregroundStyle(Ink.fineGrey)
     }
     .accessibilityElement(children: .combine)
   }
@@ -2300,6 +2305,8 @@ struct LinkByStripe: View {
 struct CardChooserSheet: View {
   let cards: [PurchaseCard.Choice]
   let selected: String?
+  var wallet: PurchaseCard.Wallet = .link
+  var footer: String = PurchaseCard.cardsFooter
   let pick: (PurchaseCard.Choice) -> Void
 
   var body: some View {
@@ -2326,12 +2333,12 @@ struct CardChooserSheet: View {
             .accessibilityAddTraits(card.id == selected ? .isSelected : [])
           }
         } footer: {
-          Text(PurchaseCard.cardsFooter)
+          Text(footer)
         }
       }
       .navigationTitle(PurchaseCard.cardsTitle)
       .navigationBarTitleDisplayMode(.inline)
-      .toolbar { ToolbarItem(placement: .topBarTrailing) { LinkByStripe() } }
+      .toolbar { ToolbarItem(placement: .topBarTrailing) { LinkByStripe(wallet: wallet) } }
     }
   }
 }
