@@ -109,6 +109,39 @@ final class PurchaseCardTests: XCTestCase {
     XCTAssertEqual(text, "Checkout at ncvss.com · $80.00")
   }
 
+  /** Allow confirmed on the device (14 October 2026): who, when and how, for Link to take as the approval. */
+  @MainActor
+  func testAllowCarriesTheApprovalGivenInSimeon() async throws {
+    let card = try card()
+    XCTAssertEqual(PurchaseApproval.reason(for: card), "Approve $80.00 at ncvss.com")
+    let store = AppStore()
+    let faceID = PurchaseApproval.Confirmed(method: "biometric_face", deviceType: "mobile")
+    XCTAssertNil(store.purchaseApproval(faceID), "no account id: Link asks in its app")
+    store.account = Account(name: "Bass Fall", email: "bass@simeonlabs.com", id: "8a6b0b0e-user")
+    let at = Date(timeIntervalSince1970: 1_760_430_000)
+    let approval = try XCTUnwrap(store.purchaseApproval(faceID, at: at))
+    XCTAssertEqual(approval.json, ["approvedAt": 1_760_430_000, "userId": "8a6b0b0e-user", "authenticationMethod": "biometric_face", "deviceType": "mobile", "userName": "Bass Fall"])
+    let passcode = try XCTUnwrap(store.purchaseApproval(PurchaseApproval.Confirmed(method: nil, deviceType: nil), at: at))
+    XCTAssertEqual(passcode.json, ["approvedAt": 1_760_430_000, "userId": "8a6b0b0e-user", "userName": "Bass Fall"], "a passcode or a Mac: no how, no device")
+
+    // The demo's computer, as Link taking it: approved at once, no Link app step, then ordered.
+    await store.attach(DemoBackend(seed: DemoData.seed(gallery: true), pace: 0.01, call: nil))
+    store.account = Account(name: "Bass Fall", email: "bass@simeonlabs.com", id: "8a6b0b0e-user")
+    await store.open("cards")
+    func shown(_ id: String) -> PurchaseCard? {
+      for row in store.rows(for: "cards") { if case .purchase(let rowId, let card) = row, rowId == id { return card.shown(answered: store.answeredPurchases[id]) } }
+      return nil
+    }
+    await store.answerPurchase("x12p", allow: true, confirmed: faceID, in: "cards")
+    var states: [PurchaseCard.State] = []
+    for _ in 0..<400 where shown("x12p")?.state != .ordered {
+      if let state = shown("x12p")?.state, states.last != state { states.append(state) }
+      try await Task.sleep(nanoseconds: 5_000_000)
+    }
+    XCTAssertEqual(shown("x12p")?.order, "1044", "the approval in Simeon path")
+    XCTAssertFalse(states.contains(.approving), "never waits on the Link app")
+  }
+
   @MainActor
   func testDenyAndAllowGoToTheComputer() async throws {
     let store = AppStore()

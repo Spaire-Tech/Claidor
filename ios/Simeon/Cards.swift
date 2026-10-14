@@ -2089,7 +2089,12 @@ struct PurchaseCardView: View {
           .buttonStyle(PillButtonStyle(primary: false))
           Button(PurchaseCard.allow) {
             Haptics.press()
-            Task { await store.answerPurchase(entryId, allow: true, in: agentId) }
+            // Face ID first (14 October 2026): this Allow is the approval Link is handed, as Muse's is; cancelled, nothing is allowed.
+            let reason = PurchaseApproval.reason(for: shown)
+            Task {
+              guard let confirmed = await PurchaseApproval.confirm(reason: reason) else { return }
+              await store.answerPurchase(entryId, allow: true, confirmed: confirmed, in: agentId)
+            }
           }
           .buttonStyle(PillButtonStyle(primary: true))
           .disabled(shown.needsCard)

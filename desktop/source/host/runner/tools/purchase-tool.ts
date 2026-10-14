@@ -118,7 +118,7 @@ export function createShowProductsTool(deps: PurchaseToolDependencies) {
   });
 }
 
-export const PURCHASE_SHOWN_NOTE = "Nothing has been paid and Link has not been asked yet. The person checks the card (Review order opens your computer's screen on the checkout), picks the Link card that pays on it, and presses Allow or Deny; Allow sends it to Link, which asks them to approve it in the Link app, and you are woken once Link approves (then you pay with pay_checkout and place the order) or when they say no. Stop here: say nothing more this turn, don't ask which card or for a go-ahead in chat, and don't touch the checkout until you are woken.";
+export const PURCHASE_SHOWN_NOTE = "Nothing has been paid and Link has not been asked yet. The person checks the card (Review order opens your computer's screen on the checkout), picks the Link card that pays on it, and presses Allow (confirmed with Face ID, which Link takes as the approval; when Link won't, it asks them in the Link app) or Deny; you are woken once Link approves (then you pay with pay_checkout and place the order) or when they say no. Stop here: say nothing more this turn, don't ask which card or for a go-ahead in chat, and don't touch the checkout until you are woken.";
 
 export function purchaseCardFromArgs(args: z.infer<typeof requestPurchaseParameters>, facts: Extract<CheckoutFacts, { ok: true }>, preview: (NonNullable<PurchaseCardData["preview"]> & { readonly iconUrl?: string }) | undefined): PurchaseCardMessage | string {
   const url = args.checkout_url.includes("://") ? args.checkout_url : `https://${args.checkout_url}`;

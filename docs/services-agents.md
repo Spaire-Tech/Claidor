@@ -662,13 +662,30 @@ ones our server serves (`boxCli` in `vendor-mcp/catalog.ts`; `vendor-mcp/backend
      won't let an agent pay with … Choose another card."), and the apps give the buttons back. The
      host then makes the spend request with that card, stamps it on the card (`purchaseCard`,
      `purchasePaymentMethodId`, so every device shows it), one request per card
-     (`--idempotency-key` from the card, so a second tap or device asks Link nothing). Link asks
-     the person in the Link app, and the card shows "Approve it in the Link app" with Get the
-     Link app (`https://link.com/download`, the address Link's own CLI shows) and Open Link
-     (Link's approval page). **Link approves an agent's purchase only in its app or on link.com
-     with a passkey**, never by a sign-in alone (link.com: "Approve spend requests by downloading
-     the mobile app or adding a passkey"); the founder was sent to sign in and then told to get the
-     app, with nothing here having said so, so the card says it first. The host, not the agent,
+     (`--idempotency-key` from the card, so a second tap or device asks Link nothing).
+     * **Approved in Simeon** (14 October 2026, as Muse: "that tap is the real yes/no"). Allow
+       asks for Face ID or Touch ID on the device first (the passcode or the Mac's password when
+       those can't; cancelled, nothing is allowed; SimeonCore `PurchaseApproval.swift`), and
+       carries who approved (the Simeon account id and name), when, and how. The host hands that
+       to Link as the approval: `spend-request create --approve --approval-detail
+       '{approved_at, approval_method: "click", app_name: "Simeon", external_user_id,
+       external_user_name, device_type: "mobile", authentication_method: "biometric_face",
+       agent_log_id: <entry>, external_session_id: <agent>}'` (Link's delegated approval, the
+       CLI's undocumented `--approve`, which posts to `/spend-requests/create_delegated`), with
+       its own idempotency key (`<card's>-approved`). Link answering approved, the agent is woken
+       to pay at once: no Link app, no sign-in page. An approval more than ten minutes off, or
+       without an account id, is not handed on.
+     * **Link refusing it** (Simeon may need Link's approval as a partner for this: the
+       registered client below): the host makes the same request the old way
+       (`--request-approval`, the card's own key) and logs `[link] approval in Simeon refused:
+       <code> <Link's words>; asking in the Link app`. A CLI that died twice on the delegated
+       request makes nothing the other way (the first may yet stand at Link). Link then asks the
+       person in the Link app, and the card shows "Approve it in the Link app" with Get the Link
+       app (`https://link.com/download`, the address Link's own CLI shows) and Open Link (Link's
+       approval page). **Link itself approves an agent's purchase only in its app or on link.com
+       with a passkey**, never by a sign-in alone (link.com: "Approve spend requests by
+       downloading the mobile app or adding a passkey"); the founder was sent to sign in and then
+       told to get the app, with nothing here having said so, so the card says it first. The host, not the agent,
      watches Link (`spend-request retrieve` waiting two minutes a look, up to Link's 30 minutes),
      so waiting costs no model calls. An app showing such a card asks the host to keep watching
      it (`resume`), which never answers a card.
@@ -710,7 +727,9 @@ ones our server serves (`boxCli` in `vendor-mcp/catalog.ts`; `vendor-mcp/backend
   a test card and charges nothing; the card shows a Test pill.
 * **Log lines.** Box: `[link] installing …` / `[link] installed …` and `[link] purchase
   requested: <status> <lsrq_…>` in the host log; `[simeon] [purchase] allowed <agent>/<entry>:
-  <status> <lsrq_…>`, `[purchase] denied on the card …`, `[purchase] ordered …`,
+  <status> <lsrq_…>` (with ` (approved in Simeon, biometric_face)` and `, Link took it` or
+  `, Link asks in its app`), `[link] purchase approved in Simeon: <status> <lsrq_…>`, `[link]
+  approval in Simeon refused: …`, `[purchase] denied on the card …`, `[purchase] ordered …`,
   `[purchase] card not taken <agent>/<entry>: <why>`, `[purchase] buy pressed on product <n> …`
   and `[purchase] watching <lsrq_…> failed: <code>` for the cards; for a card without its
   picture, `[simeon] [purchase] no picture: <why> (<agent>)` (no checkout address, no Chrome

@@ -408,6 +408,11 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
         later(5) { [weak self] in self?.stamp(agentId, entryId) { $0.setting("purchaseStep", "verify") } }
         later(8) { [weak self] in self?.stamp(agentId, entryId) { $0.setting("purchaseStep", "booking") } }
         later(10) { [weak self] in self?.stamp(agentId, entryId) { $0.setting("purchaseState", "ordered").setting("purchaseStep", Optional<JSON>.none).setting("purchaseOrder", "RZPNX8").setting("purchaseNote", "Booked with Delta Air Lines") } }
+      } else if args["allow"]?.bool == true, args["approval"]?.object != nil {
+        // Approved in Simeon (Face ID): Link takes it, no Link app step.
+        stamp(agentId, entryId) { $0.setting("purchaseState", "sending") }
+        later(0.6) { [weak self] in self?.stamp(agentId, entryId) { $0.setting("purchaseState", "approved") } }
+        later(3) { [weak self] in self?.stamp(agentId, entryId) { $0.setting("purchaseState", "ordered").setting("purchaseOrder", "1044").setting("purchaseNote", "Arrives Thu, Oct 18") } }
       } else if args["allow"]?.bool == true {
         let picked = args["paymentMethodId"]?.text
         let choice = lock.withLock { transcripts[agentId]?.first { $0.id == entryId }?["message"]?["purchase"]?["cards"]?.array?.first { $0["id"]?.text == picked } }

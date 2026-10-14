@@ -32,6 +32,8 @@ import {
   buildPurchaseApprovedWakePrompt,
   buildPurchaseClosedWakePrompt,
   buildPurchaseDeniedWakePrompt,
+  linkApprovalDetails,
+  purchaseApprovalFrom,
   purchaseIdempotencyKey,
   purchaseStateForLinkStatus,
   type PurchaseCardData,
@@ -98,7 +100,7 @@ export class PurchaseCards {
    * again before the card is taken; a card Link won't let an agent use
    * leaves the card waiting with a line saying so.
    */
-  async answerPurchase(args: { readonly agentId: string; readonly entryId: string; readonly allow?: boolean; readonly resume?: boolean; readonly paymentMethodId?: string }, wallet: PurchaseWallet | undefined): Promise<TranscriptEntry | null> {
+  async answerPurchase(args: { readonly agentId: string; readonly entryId: string; readonly allow?: boolean; readonly resume?: boolean; readonly paymentMethodId?: string; readonly approval?: unknown }, wallet: PurchaseWallet | undefined): Promise<TranscriptEntry | null> {
     const current = await this.read(args.agentId, args.entryId);
     if (current == null) return null;
     const state = purchaseStateOf(current);
@@ -138,6 +140,9 @@ export class PurchaseCards {
     });
     if (!took) return sending;
     const paymentMethodId = picked.paymentMethodId;
+    // The person's Allow, confirmed on their device (Face ID, Touch ID), handed to Link as the approval (14 October 2026); without one, Link asks in its app.
+    const approval = purchaseApprovalFrom(args.approval, this.now());
+    if (args.approval != null && approval == null) this.log(`[purchase] ${args.agentId}/${args.entryId}: an approval without an account or out of time; Link asks in its app`);
     const spend = await wallet.requestSpend({
       idempotencyKey: purchaseIdempotencyKey(args.agentId, args.entryId, current.timestampMs),
       credentialType: card.link.credentialType,
@@ -151,8 +156,9 @@ export class PurchaseCards {
       lineItems: card.items,
       totals: card.totals,
       test: card.test,
+      ...(approval == null ? {} : { approval: linkApprovalDetails(approval, { agentId: args.agentId, entryId: args.entryId }) }),
     }).catch((error: unknown): SpendAnswer => ({ ok: false, code: "LINK_FAILED", message: error instanceof Error ? error.message : String(error) }));
-    this.log(`[purchase] allowed ${args.agentId}/${args.entryId}: ${spend.ok ? `${spend.status} ${spend.id}` : `failed ${spend.code}`}`);
+    this.log(`[purchase] allowed ${args.agentId}/${args.entryId}${approval == null ? "" : approval.authenticationMethod == null ? " (approved in Simeon)" : ` (approved in Simeon, ${approval.authenticationMethod})`}: ${spend.ok ? `${spend.status} ${spend.id}${spend.approvedInSimeon === true ? ", Link took it" : approval == null ? "" : ", Link asks in its app"}` : `failed ${spend.code}`}`);
     return await this.apply(args.agentId, args.entryId, spend, wallet);
   }
 

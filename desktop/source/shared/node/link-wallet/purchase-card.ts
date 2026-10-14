@@ -179,6 +179,55 @@ export function purchaseLinkContext(given: string, card: Pick<PurchaseCardData, 
   return spelled.length >= 100 ? spelled : `${spelled} Simeon's agent placed the order on the shop's own checkout page.`;
 }
 
+/**
+ * The person's approval of one checkout card, given in Simeon (14 October
+ * 2026): Allow, confirmed with Face ID or Touch ID on their own device. As
+ * Muse does ("that tap is the real yes/no"), Simeon hands it to Link as the
+ * approval (Link's delegated approval, `spend-request create --approve
+ * --approval-detail`), so Link makes the one-time card without asking again
+ * in the Link app. Link may refuse that for Simeon; the purchase is then
+ * asked of the person in the Link app, as before.
+ */
+export interface PurchaseApproval {
+  /** When the person approved, unix seconds, from their device. */
+  readonly approvedAt: number;
+  /** How they confirmed it on the device: Face ID, Touch ID; none when the device has neither (its passcode, or nothing). */
+  readonly authenticationMethod?: "biometric_face" | "biometric_fingerprint";
+  /** "mobile" from the iPhone; none from the Mac. */
+  readonly deviceType?: "mobile" | "web";
+  /** The person's account on Simeon Labs' server. */
+  readonly userId: string;
+  readonly userName?: string;
+}
+
+/** An approval as the apps send it (`answerPurchase`'s `approval`), or undefined when it isn't one: no account id, or a time more than ten minutes from now. */
+export function purchaseApprovalFrom(value: unknown, nowMs: number): PurchaseApproval | undefined {
+  if (value == null || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const record = value as Record<string, unknown>;
+  const at = typeof record.approvedAt === "number" && Number.isFinite(record.approvedAt) ? Math.round(record.approvedAt) : NaN;
+  const userId = typeof record.userId === "string" ? record.userId.trim() : "";
+  if (!Number.isFinite(at) || Math.abs(at * 1000 - nowMs) > 10 * 60_000 || userId.length === 0 || userId.length > 200) return undefined;
+  const method = record.authenticationMethod === "biometric_face" || record.authenticationMethod === "biometric_fingerprint" ? record.authenticationMethod : undefined;
+  const device = record.deviceType === "mobile" || record.deviceType === "web" ? record.deviceType : undefined;
+  const name = typeof record.userName === "string" ? record.userName.trim().slice(0, 120) : "";
+  return { approvedAt: at, userId, ...(method == null ? {} : { authenticationMethod: method }), ...(device == null ? {} : { deviceType: device }), ...(name.length > 0 ? { userName: name } : {}) };
+}
+
+/** Link's `approval_details` for one approval: Simeon, a click, who and when, and how they confirmed it; the card's entry as the agent's log. */
+export function linkApprovalDetails(approval: PurchaseApproval, card: { readonly agentId: string; readonly entryId: string }): Record<string, string | number> {
+  return {
+    approved_at: approval.approvedAt,
+    approval_method: "click",
+    app_name: "Simeon",
+    external_user_id: approval.userId,
+    ...(approval.userName == null ? {} : { external_user_name: approval.userName }),
+    ...(approval.deviceType == null ? {} : { device_type: approval.deviceType }),
+    ...(approval.authenticationMethod == null ? {} : { authentication_method: approval.authenticationMethod }),
+    agent_log_id: card.entryId,
+    external_session_id: card.agentId,
+  };
+}
+
 /** Link's idempotency key for one card: the same Allow pressed twice (or from two devices) asks Link once. */
 export function purchaseIdempotencyKey(agentId: string, entryId: string, timestampMs: number | undefined): string {
   return `simeon-${createHash("sha256").update(`${agentId}\u0000${entryId}\u0000${timestampMs ?? 0}`).digest("hex").slice(0, 40)}`;

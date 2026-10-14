@@ -1270,17 +1270,25 @@ public final class AppStore {
    * answer at once; Allow then waits on Link, which asks the person to
    * approve it in the Link app. A failed answer comes back to the buttons.
    */
-  public func answerPurchase(_ entryId: String, allow: Bool, in agentId: String) async {
+  public func answerPurchase(_ entryId: String, allow: Bool, confirmed: PurchaseApproval.Confirmed? = nil, in agentId: String) async {
     guard answeredPurchases[entryId] == nil else { return }
     answeredPurchases[entryId] = allow ? .sending : .denied
     var args: JSON = ["agentId": .string(agentId), "entryId": .string(entryId), "allow": .bool(allow)]
     // The card picked on the card rides with Allow (14 October 2026); the computer checks it with Link first.
     if allow, let picked = pickedPurchaseCards[entryId] { args = args.setting("paymentMethodId", .string(picked)) }
+    // Allow confirmed on this device (Face ID): the computer hands it to Link as the approval, so no Link app is asked.
+    if allow, let confirmed, let approval = purchaseApproval(confirmed) { args = args.setting("approval", approval.json) }
     let reply = await command("answerPurchase", args, failure: allow ? "The purchase didn't go to Link" : "Couldn't deny the purchase")
     // Not taken (no answer, or the card still waits: Link refused the card picked, which its line says): the buttons are back.
     if reply == nil || (reply?.object != nil && (reply?["purchaseState"]?.text ?? "review") == "review") {
       answeredPurchases[entryId] = nil
     }
+  }
+
+  /** The approval Allow carries, once the device confirmed it: who (this account), when, how. Nil without an account id (Link then asks in its app). */
+  public func purchaseApproval(_ confirmed: PurchaseApproval.Confirmed, at date: Date = Date()) -> PurchaseApproval? {
+    guard let id = account?.id, !id.isEmpty else { return nil }
+    return PurchaseApproval(approvedAt: date, authenticationMethod: confirmed.method, deviceType: confirmed.deviceType, userId: id, userName: account?.name)
   }
 
   /** A Link card picked on a checkout card, before Allow: the card shows it at once; Allow carries it. */

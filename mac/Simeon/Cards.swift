@@ -1657,7 +1657,14 @@ struct PurchaseCardView: View {
       VStack(alignment: .leading, spacing: 8) {
         HStack(spacing: 8) {
           pill(PurchaseCard.deny, ground: fill, ink: ink) { Task { await store.answerPurchase(entryId, allow: false, in: agentId) } }
-          pill(PurchaseCard.allow, ground: blue, ink: .white) { Task { await store.answerPurchase(entryId, allow: true, in: agentId) } }
+          // Touch ID (or the Mac's password) first, 14 October 2026: this Allow is the approval Link is handed; cancelled, nothing is allowed.
+          pill(PurchaseCard.allow, ground: blue, ink: .white) {
+            let reason = PurchaseApproval.reason(for: shown)
+            Task {
+              guard let confirmed = await PurchaseApproval.confirm(reason: reason) else { return }
+              await store.answerPurchase(entryId, allow: true, confirmed: confirmed, in: agentId)
+            }
+          }
             .disabled(shown.needsCard)
             .opacity(shown.needsCard ? 0.45 : 1)
         }

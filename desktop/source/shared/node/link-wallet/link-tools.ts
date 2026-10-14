@@ -317,22 +317,44 @@ export function createLinkTools(options: LinkToolsOptions) {
     return { ok: true, paymentMethodId: text(method.id), card: cardOf(method), cards, ...holder };
   };
 
-  /** At Allow: the spend request for one checkout card, with Link's approval asked of the person. */
+  /**
+   * At Allow: the spend request for one checkout card. With the person's
+   * approval given in Simeon (`approval`, Link's `approval_details`), Link is
+   * handed it as the approval (`--approve`, Link's delegated approval, as
+   * Muse does), so no Link app is needed. When Link refuses that for Simeon,
+   * the request is made again asking the person in the Link app, as before
+   * 14 October 2026. Each way has its own idempotency key, so neither replays
+   * the other; a delegated request whose answer was lost (the CLI died) is
+   * asked once more with its own key rather than made a second way.
+   */
   const requestSpend = async (request: SpendRequestInput): Promise<SpendAnswer> => {
-    const command = ["spend-request", "create", "--credential-type", request.credentialType, "--amount", String(request.amount), "--currency", request.currency.toLowerCase() || "usd", "--context", request.context, "--request-approval", "--idempotency-key", request.idempotencyKey];
-    if (request.credentialType === "link_pay_token") {
-      if ((request.merchantAccountId ?? "").length === 0) return { ok: false, code: "MISSING_MERCHANT_ACCOUNT", message: "A Link pay token needs the checkout's merchant account." };
-      command.push("--merchant-account-id", request.merchantAccountId as string);
-    } else {
-      command.push("--merchant-name", request.merchantName, "--merchant-url", request.merchantUrl);
+    if (request.credentialType === "link_pay_token" && (request.merchantAccountId ?? "").length === 0) return { ok: false, code: "MISSING_MERCHANT_ACCOUNT", message: "A Link pay token needs the checkout's merchant account." };
+    const command = (delegated: boolean): string[] => {
+      const args = ["spend-request", "create", "--credential-type", request.credentialType, "--amount", String(request.amount), "--currency", request.currency.toLowerCase() || "usd", "--context", request.context];
+      if (delegated) args.push("--approve", "--approval-detail", JSON.stringify(request.approval), "--idempotency-key", `${request.idempotencyKey}-approved`);
+      else args.push("--request-approval", "--idempotency-key", request.idempotencyKey);
+      if (request.credentialType === "link_pay_token") args.push("--merchant-account-id", request.merchantAccountId as string);
+      else args.push("--merchant-name", request.merchantName, "--merchant-url", request.merchantUrl);
+      if ((request.paymentMethodId ?? "").length > 0) args.push("--payment-method-id", request.paymentMethodId as string);
+      for (const item of request.lineItems) args.push("--line-item", linkPairs({ name: item.name, unit_amount: item.unitAmount, quantity: item.quantity, description: item.description }));
+      for (const total of request.totals) args.push("--total", linkPairs({ type: total.type, display_text: total.label, amount: total.amount }));
+      if (request.test && request.credentialType !== "link_pay_token") args.push("--test");
+      args.push("--metadata", `source:${LINK_CLIENT_NAME}`);
+      return args;
+    };
+    if (request.approval != null) {
+      let delegated = spendAnswer(await cli.run(command(true), { timeoutMs: 90_000 }));
+      if (!delegated.ok && delegated.code === "LINK_CLI_FAILED") delegated = spendAnswer(await cli.run(command(true), { timeoutMs: 90_000 }));
+      if (delegated.ok) {
+        log(`[link] purchase approved in Simeon: ${delegated.status} ${delegated.id}`);
+        return { ...delegated, approvedInSimeon: true };
+      }
+      // A CLI that never answered, twice: say so, and make nothing more (the first may yet stand at Link).
+      if (delegated.code === "LINK_CLI_FAILED" || delegated.code === "LINK_UNAVAILABLE") return delegated;
+      // Link's own refusal (Simeon not allowed to approve for the person, a field it wants): ask in the Link app instead.
+      log(`[link] approval in Simeon refused: ${delegated.code} ${(delegated.message.split("\n")[0] ?? "").slice(0, 200)}; asking in the Link app`);
     }
-    if ((request.paymentMethodId ?? "").length > 0) command.push("--payment-method-id", request.paymentMethodId as string);
-    for (const item of request.lineItems) command.push("--line-item", linkPairs({ name: item.name, unit_amount: item.unitAmount, quantity: item.quantity, description: item.description }));
-    for (const total of request.totals) command.push("--total", linkPairs({ type: total.type, display_text: total.label, amount: total.amount }));
-    if (request.test && request.credentialType !== "link_pay_token") command.push("--test");
-    command.push("--metadata", `source:${LINK_CLIENT_NAME}`);
-    const answer = await cli.run(command, { timeoutMs: 90_000 });
-    const spend = spendAnswer(answer);
+    const spend = spendAnswer(await cli.run(command(false), { timeoutMs: 90_000 }));
     if (spend.ok) log(`[link] purchase requested: ${spend.status} ${spend.id}`);
     return spend;
   };
@@ -419,6 +441,8 @@ export interface SpendRequestInput {
   readonly lineItems: readonly { readonly name: string; readonly quantity: number; readonly unitAmount?: number; readonly description?: string }[];
   readonly totals: readonly { readonly type: string; readonly label: string; readonly amount: number }[];
   readonly test: boolean;
+  /** The person's approval given in Simeon, as Link's `approval_details` (`linkApprovalDetails`): Link is asked to take it as the approval. */
+  readonly approval?: Readonly<Record<string, string | number>>;
 }
 
 /** A spend request as the checkout card needs it: its id and status, where the person approves, and what Link asks of them. */
@@ -428,6 +452,8 @@ export type SpendAnswer =
     readonly id: string;
     readonly status: string;
     readonly approvalUrl?: string;
+    /** Link took the person's approval given in Simeon (no Link app asked). */
+    readonly approvedInSimeon?: boolean;
     /** `requires_action`: Link's sentence, its page, and whether it resumes by itself (`auto_resume`). */
     readonly action?: { readonly message: string; readonly url?: string; readonly resumes: boolean };
   }

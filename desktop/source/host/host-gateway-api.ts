@@ -265,11 +265,11 @@ export function createHostGatewayApi(
       markActive("user_action");
       return method(manager, "discardDraft")({ agentId: args.agentId, entryId: args.entryId });
     },
-    // The checkout card (purchase-cards.ts): Allow asks Link through the box's wallet, with the card the person picked on it; `resume` only makes sure a card with Link is watched.
+    // The checkout card (purchase-cards.ts): Allow asks Link through the box's wallet, with the card the person picked on it and their approval (Face ID on the device); `resume` only makes sure a card with Link is watched.
     answerPurchase: (args: any) => {
       if (args?.resume !== true) markActive("user_action");
       return method(manager, "answerPurchase")(
-        { agentId: args.agentId, entryId: args.entryId, allow: args.allow === true, resume: args.resume === true, ...(typeof args?.paymentMethodId === "string" && args.paymentMethodId.length > 0 ? { paymentMethodId: args.paymentMethodId } : {}) },
+        { agentId: args.agentId, entryId: args.entryId, allow: args.allow === true, resume: args.resume === true, ...(typeof args?.paymentMethodId === "string" && args.paymentMethodId.length > 0 ? { paymentMethodId: args.paymentMethodId } : {}), ...(args?.approval != null && typeof args.approval === "object" ? { approval: args.approval } : {}) },
         deps.extensions.api("mcp")?.linkWallet,
       );
     },

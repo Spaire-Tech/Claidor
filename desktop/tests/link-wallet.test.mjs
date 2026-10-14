@@ -237,6 +237,73 @@ test("the tools build Link's commands, hide cards and tokens, and sign in with t
   assert.throws(() => cardFromFile({ card: { number: "4242", cvc: "1" } }));
 });
 
+test("Allow approved in Simeon is handed to Link as the approval; Link refusing it asks in the Link app; a CLI that never answers makes nothing twice", async (t) => {
+  const tools = await load("source/shared/node/link-wallet/link-tools.ts", "link-tools-approve");
+  const runner = await load("source/shared/node/link-wallet/link-cli.ts", "link-cli-approve");
+  const card = await load("source/shared/node/link-wallet/purchase-card.ts", "purchase-card-approve");
+  t.after(tools.dispose);
+  t.after(runner.dispose);
+  t.after(card.dispose);
+  const root = await mkdtemp(path.join(os.tmpdir(), "simeon-link-approve-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const { linkApprovalDetails, purchaseApprovalFrom } = card.module;
+
+  // The apps' approval: an account, a time near now; Face ID named as Link names it.
+  const now = 1_760_430_000_000;
+  const approval = purchaseApprovalFrom({ approvedAt: now / 1000, authenticationMethod: "biometric_face", deviceType: "mobile", userId: "8a6b0b0e-user", userName: "Bass Fall" }, now);
+  assert.deepEqual(linkApprovalDetails(approval, { agentId: "nora", entryId: "t3s1" }), { approved_at: now / 1000, approval_method: "click", app_name: "Simeon", external_user_id: "8a6b0b0e-user", external_user_name: "Bass Fall", device_type: "mobile", authentication_method: "biometric_face", agent_log_id: "t3s1", external_session_id: "nora" });
+  assert.equal(purchaseApprovalFrom({ approvedAt: now / 1000 }, now), undefined, "no account, no approval");
+  assert.equal(purchaseApprovalFrom({ approvedAt: now / 1000 - 3600, userId: "u" }, now), undefined, "an hour old, no approval");
+  assert.equal(purchaseApprovalFrom({ approvedAt: now / 1000, userId: "u", authenticationMethod: "retina" }, now).authenticationMethod, undefined, "only Link's own words for how");
+
+  let delegatedAnswer = { value: [{ id: "lsrq_9", status: "approved", credential_type: "card" }] };
+  const fake = fakeCli({
+    "spend-request create": (command) => command.includes("--approve") ? delegatedAnswer : { value: [{ id: "lsrq_10", status: "pending_approval", approval_url: "https://app.link.com/activity/approve/lsrq_10" }] },
+  });
+  const cli = runner.module.createLinkCli({ rootDir: () => root, env: {}, exists: () => true, exec: fake.exec });
+  const lines = [];
+  const link = tools.module.createLinkTools({ cli, rootDir: () => root, log: (line) => lines.push(line) });
+  const base = { idempotencyKey: "simeon-abc", credentialType: "card", amount: 247, currency: "usd", context: "x".repeat(120), merchantName: "Gumroad", merchantUrl: "https://gumroad.com/checkout", paymentMethodId: "csmrpd_mc", lineItems: [{ name: "Practice Book", unitAmount: 223, quantity: 1 }], totals: [{ type: "total", label: "Total", amount: 247 }], test: false, approval: linkApprovalDetails(approval, { agentId: "nora", entryId: "t3s1" }) };
+  const creates = () => fake.calls.filter((call) => call.command[1] === "create").map((call) => call.command);
+
+  // Link takes it: approved at once, no Link app, one request.
+  const taken = await link.requestSpend(base);
+  assert.deepEqual(taken, { ok: true, id: "lsrq_9", status: "approved", approvedInSimeon: true });
+  const [sent] = creates();
+  assert.ok(sent.includes("--approve"));
+  assert.ok(!sent.includes("--request-approval"), "nothing asked in the Link app");
+  assert.equal(sent[sent.indexOf("--idempotency-key") + 1], "simeon-abc-approved", "its own key");
+  assert.deepEqual(JSON.parse(sent[sent.indexOf("--approval-detail") + 1]), base.approval);
+  assert.match(lines.at(-1), /purchase approved in Simeon: approved lsrq_9/);
+
+  // Link refuses Simeon's approval: the same purchase is asked in the Link app, with the card's own key.
+  fake.calls.length = 0;
+  delegatedAnswer = { code: 1, value: { code: "permission_denied", message: "This client cannot approve spend requests." } };
+  const asked = await link.requestSpend(base);
+  assert.deepEqual(asked, { ok: true, id: "lsrq_10", status: "pending_approval", approvalUrl: "https://app.link.com/activity/approve/lsrq_10" });
+  const [first, second] = creates();
+  assert.ok(first.includes("--approve"));
+  assert.ok(second.includes("--request-approval") && !second.includes("--approve"));
+  assert.equal(second[second.indexOf("--idempotency-key") + 1], "simeon-abc");
+  assert.ok(lines.some((line) => /approval in Simeon refused: permission_denied This client cannot approve spend requests\.; asking in the Link app/.test(line)));
+
+  // The CLI dies both times: nothing is made the other way (the first may yet stand at Link).
+  fake.calls.length = 0;
+  delegatedAnswer = { code: 2, value: null };
+  const lost = await link.requestSpend(base);
+  assert.equal(lost.ok, false);
+  assert.equal(lost.code, "LINK_CLI_FAILED");
+  assert.equal(creates().length, 2);
+  assert.ok(creates().every((command) => command.includes("--approve")), "asked again the same way, never in the Link app");
+
+  // No approval from the apps: as before, asked in the Link app only.
+  fake.calls.length = 0;
+  const { approval: _none, ...withoutApproval } = base;
+  await link.requestSpend(withoutApproval);
+  assert.equal(creates().length, 1);
+  assert.ok(creates()[0].includes("--request-approval"));
+});
+
 const chromiumPath = process.env.SIMEON_CHROMIUM ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
 
 test("the filler types the card into a checkout's own fields and its payment frame, and leaves shipping alone", { skip: !existsSync(chromiumPath) && "no Chromium on this machine (set SIMEON_CHROMIUM)" }, async (t) => {

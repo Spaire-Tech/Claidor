@@ -349,6 +349,38 @@ test("ShowProducts posts the products card; Buy marks the product and wakes the 
   }
 });
 
+test("Allow approved with Face ID: Link is handed the approval and, taking it, the agent is woken to pay with no Link app", async () => {
+  const tool = await load("source/host/runner/tools/purchase-tool.ts", "purchase-tool-approve");
+  const cards = await load("source/host/extensions/transcript/purchase-cards.ts", "purchase-cards-approve");
+  try {
+    let message;
+    await run(tool.module.createRequestPurchaseTool({ checkoutFacts: () => Promise.resolve({ ok: true, paymentMethodId: "csmrpd_visa", card: { brand: "Visa", last4: "1234" } }), capturePreview: async () => undefined, emitCard: (posted) => { message = posted; return "t3s1"; }, markPurchaseDone: async () => ({ ok: true }) }), ARGS);
+    const now = Date.now();
+    const { tm, open, wakes } = fakeManager(message);
+    const lines = [];
+    const purchases = new cards.module.PurchaseCards(tm, { retryDelayMs: 0, log: (line) => lines.push(line), now: () => now });
+    const wallet = fakeWallet({ ok: true, id: "lsrq_5", status: "approved", approvedInSimeon: true });
+    await purchases.answerPurchase({ agentId: "a1", entryId: "t3s1", allow: true, approval: { approvedAt: Math.round(now / 1000), authenticationMethod: "biometric_face", deviceType: "mobile", userId: "u-1", userName: "Bass Fall" } }, wallet);
+    const [, sent] = wallet.calls.find(([kind]) => kind === "create");
+    assert.deepEqual(sent.approval, { approved_at: Math.round(now / 1000), approval_method: "click", app_name: "Simeon", external_user_id: "u-1", external_user_name: "Bass Fall", device_type: "mobile", authentication_method: "biometric_face", agent_log_id: "t3s1", external_session_id: "a1" });
+    assert.equal(open.entries[0].purchaseState, "approved", "no Link app step");
+    await until(() => wakes.length === 1, "the wake");
+    assert.equal(wakes[0].source, "purchase-approved");
+    assert.ok(lines.some((line) => /allowed a1\/t3s1 \(approved in Simeon, biometric_face\): approved lsrq_5, Link took it/.test(line)));
+
+    // An approval out of time is not handed on: Link asks in its app.
+    const second = fakeManager(message);
+    const later = new cards.module.PurchaseCards(second.tm, { retryDelayMs: 0, log: () => undefined, now: () => now });
+    const wallet2 = fakeWallet({ ok: true, id: "lsrq_6", status: "pending_approval" }, [{ ok: true, id: "lsrq_6", status: "denied" }]);
+    await later.answerPurchase({ agentId: "a1", entryId: "t3s1", allow: true, approval: { approvedAt: Math.round(now / 1000) - 3600, userId: "u-1" } }, wallet2);
+    assert.equal(wallet2.calls.find(([kind]) => kind === "create")[1].approval, undefined);
+    await until(() => second.wakes.length === 1, "the decline");
+  } finally {
+    await cards.dispose();
+    await tool.dispose();
+  }
+});
+
 test("Deny asks Link nothing; a decline in Link closes the card; a closed chat's card is updated in its own transcript", async () => {
   const tool = await load("source/host/runner/tools/purchase-tool.ts", "purchase-tool-3");
   const cards = await load("source/host/extensions/transcript/purchase-cards.ts", "purchase-cards-2");
