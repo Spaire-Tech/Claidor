@@ -1025,37 +1025,68 @@ WEB_SEARCH_CALL_MODEL = DesktopModel(
     provider=DesktopProvider.openai,
 )
 
-#: What OpenAI charges for `gpt-image-1`, per million tokens: text going
-#: in, reference images going in, and the picture coming out.
+#: What OpenAI charges for GPT Image 2.5 (both of its models), per
+#: million tokens: text going in, reference images going in, and the
+#: picture coming out. Read off its model pages on 14 October 2026
+#: (developers.openai.com/api/docs/models/gpt-image-2.5-flare and
+#: -sunburst); the same as GPT Image 2.
 IMAGE_USD_PER_MILLION_TEXT_INPUT = 5.00
-IMAGE_USD_PER_MILLION_IMAGE_INPUT = 10.00
-IMAGE_USD_PER_MILLION_IMAGE_OUTPUT = 40.00
+IMAGE_USD_PER_MILLION_IMAGE_INPUT = 8.00
+IMAGE_USD_PER_MILLION_IMAGE_OUTPUT = 30.00
+#: The same for `gpt-image-1`, the model before them, kept for the
+#: account OpenAI will not serve the new ones yet (`LEGACY_IMAGE_MODEL`).
+LEGACY_IMAGE_USD_PER_MILLION_IMAGE_INPUT = 10.00
+LEGACY_IMAGE_USD_PER_MILLION_IMAGE_OUTPUT = 40.00
 
-IMAGE_MODEL_ID = "gpt-image-1"
+#: GPT Image 2.5 (8 September 2026) comes as two models at one price.
+#: Flare, "fast, high-quality everyday image generation", draws a new
+#: picture; Sunburst, "our most capable model", which OpenAI recommends
+#: "for workflows where editing precision matters most", edits one (a
+#: call with reference images). Until 14 October 2026 both were
+#: `gpt-image-1`.
+IMAGE_MODEL_ID = "gpt-image-2.5-flare"
+IMAGE_EDIT_MODEL_ID = "gpt-image-2.5-sunburst"
+LEGACY_IMAGE_MODEL_ID = "gpt-image-1"
 IMAGE_MAX_PROMPT_CHARACTERS = 32_000
 IMAGE_MAX_REFERENCE_IMAGES = 4
 #: OpenAI's own ceiling on one reference image.
 IMAGE_MAX_REFERENCE_BYTES = 50 * 1024 * 1024
 
-#: Pictures as a catalogue entry. Tokens, as OpenAI reports them, with
-#: the picture's own tokens as output at their own price. A reference
-#: image's tokens cost twice a text token's and `image_usage` folds them
-#: into the input count at that ratio, so one row still adds up.
-IMAGE_MODEL = DesktopModel(
-    IMAGE_MODEL_ID,
-    "OpenAI image",
-    "Draws a picture from a description.",
-    IMAGE_USD_PER_MILLION_TEXT_INPUT / CREDIT_USD_PER_MILLION_INPUT,
-    provider=DesktopProvider.openai,
-    output_weight=IMAGE_USD_PER_MILLION_IMAGE_OUTPUT / IMAGE_USD_PER_MILLION_TEXT_INPUT,
+
+def _image_model(model_id: str, label: str, image_output_usd: float) -> DesktopModel:
+    """Pictures as a catalogue entry. Tokens, as OpenAI reports them,
+    with the picture's own tokens as output at their own price. A
+    reference image's tokens cost more than a text token's and
+    `image_usage` folds them into the input count at that ratio, so one
+    row still adds up."""
+    return DesktopModel(
+        model_id,
+        label,
+        "Draws a picture from a description.",
+        IMAGE_USD_PER_MILLION_TEXT_INPUT / CREDIT_USD_PER_MILLION_INPUT,
+        provider=DesktopProvider.openai,
+        output_weight=image_output_usd / IMAGE_USD_PER_MILLION_TEXT_INPUT,
+    )
+
+
+IMAGE_MODEL = _image_model(
+    IMAGE_MODEL_ID, "OpenAI image", IMAGE_USD_PER_MILLION_IMAGE_OUTPUT
+)
+IMAGE_EDIT_MODEL = _image_model(
+    IMAGE_EDIT_MODEL_ID, "OpenAI image edit", IMAGE_USD_PER_MILLION_IMAGE_OUTPUT
+)
+LEGACY_IMAGE_MODEL = _image_model(
+    LEGACY_IMAGE_MODEL_ID,
+    "OpenAI image (earlier)",
+    LEGACY_IMAGE_USD_PER_MILLION_IMAGE_OUTPUT,
 )
 
 
-def image_usage(payload: Any) -> Usage:
-    """The usage of one `gpt-image-1` answer: `input_tokens` split by
+def image_usage(payload: Any, model: DesktopModel = IMAGE_MODEL) -> Usage:
+    """The usage of one image answer: `input_tokens` split by
     `input_tokens_details` into text and image, `output_tokens` for the
-    picture. Image input is weighed at its own price by counting each of
-    its tokens as the number of text tokens it costs."""
+    picture. Image input is weighed at the model's own price by counting
+    each of its tokens as the number of text tokens it costs."""
     if not isinstance(payload, dict):
         return Usage()
     details = payload.get("input_tokens_details")
@@ -1063,7 +1094,12 @@ def image_usage(payload: Any) -> Usage:
     text = _number(details, "text_tokens") if isinstance(details, dict) else 0
     if text == 0 and image == 0:
         text = _number(payload, "input_tokens")
-    ratio = IMAGE_USD_PER_MILLION_IMAGE_INPUT / IMAGE_USD_PER_MILLION_TEXT_INPUT
+    image_input_usd = (
+        LEGACY_IMAGE_USD_PER_MILLION_IMAGE_INPUT
+        if model.model_id == LEGACY_IMAGE_MODEL_ID
+        else IMAGE_USD_PER_MILLION_IMAGE_INPUT
+    )
+    ratio = image_input_usd / IMAGE_USD_PER_MILLION_TEXT_INPUT
     return Usage(
         input_tokens=text + ceil(image * ratio),
         output_tokens=_number(payload, "output_tokens"),

@@ -685,7 +685,7 @@ sentence.
 `setAgentAvatarBytes`, which writes `avatar.png` in the agent's folder and refuses an empty
 payload, one over 5 MB, or one that is not an image. **Generate** posts to
 `POST /desktop/api/proxy/v1/images/generations` (`server/simeon/desktop/capabilities.py`, model
-`gpt-image-1`) at low quality (`electron-main/adapters/avatar-images.ts`); the result is
+`gpt-image-2.5-flare` since 14 October 2026, `gpt-image-1` before) at low quality (`electron-main/adapters/avatar-images.ts`); the result is
 cropped and saved by the same upload path. The roster reads the picture into every row
 (`readAgentAvatarForSummary` in `host/extensions/session/session-summaries.ts`), and an avatar
 change made by the agent itself redraws the roster (`onAvatarChanged`).

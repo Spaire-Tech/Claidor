@@ -369,7 +369,7 @@ line. This means the server and the app can be deployed in either order.
 | Capability | Model | Price |
 |---|---|---|
 | Web search | `gpt-5.6-luna` with OpenAI's hosted `web_search` tool, one non-streaming call | tokens, plus $0.01 per search |
-| Images | `gpt-image-1`, quality `medium` unless asked (avatars `low`) | $5 text in, $10 image in, $40 image out, per million tokens |
+| Images | `gpt-image-2.5-flare` for a new picture, `gpt-image-2.5-sunburst` when editing one (a call with reference images); quality `medium` unless asked (avatars `low`). If OpenAI will not serve the new model to the account, the same call is made once on `gpt-image-1` and a `desktop.images.model_unavailable` line is logged | $5 text in, $8 image in, $30 image out, per million tokens (`gpt-image-1`: $10 image in, $40 out) |
 | Transcription | `gpt-4o-mini-transcribe` | $0.003 per minute of audio; 25 MB upload limit |
 | Speech | `gpt-4o-mini-tts`, voice `alloy` | $15 per million characters; 4,000 characters a call |
 
