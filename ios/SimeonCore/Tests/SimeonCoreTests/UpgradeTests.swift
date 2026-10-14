@@ -59,6 +59,34 @@ final class UpgradeTests: XCTestCase {
     XCTAssertNil(words.action)
   }
 
+  /** The trial's first charge failed (14 October 2026): the card is mended where it is, never a second plan from the App Store. */
+  func testAFailedPaymentAsksForTheCardNotAPlan() throws {
+    let stripe = usage(["subscriptionStatus": "none", "creditsLimit": 0, "creditsUsed": 0, "creditsRemaining": 0, "paymentFailed": true, "billedBy": "stripe", "upgradeUrl": "https://app.simeonlabs.com/billing?from=app"])
+    XCTAssertTrue(stripe.paymentFailed)
+    XCTAssertEqual(stripe.upgrade?.label, "Update card")
+    let words = PhoneUpgrade.cover(access: paymentRequired, usage: stripe)
+    XCTAssertEqual(words.title, "Your payment didn’t go through")
+    XCTAssertEqual(words.body, "Update your card to keep your agents working.")
+    XCTAssertEqual(words.action, "Update card")
+    XCTAssertEqual(PhoneUpgrade.banner(access: paymentRequired, usage: stripe), words)
+    XCTAssertEqual(PhoneUpgrade.route(access: paymentRequired, usage: stripe, webLinkAllowed: true), .web(URL(string: "https://app.simeonlabs.com/billing?from=app")!))
+    XCTAssertEqual(PhoneUpgrade.route(access: paymentRequired, usage: stripe, webLinkAllowed: false), .none)
+    let quiet = PhoneUpgrade.withoutUpgrade(words)
+    XCTAssertEqual(quiet.body, words.body, "no link, but still the reason")
+    XCTAssertNil(quiet.action)
+
+    let apple = usage(["subscriptionStatus": "none", "creditsLimit": 0, "paymentFailed": true, "billedBy": "apple", "upgradeUrl": "https://app.simeonlabs.com/billing?from=app"])
+    XCTAssertEqual(PhoneUpgrade.cover(access: paymentRequired, usage: apple).action, "Update payment")
+    XCTAssertEqual(PhoneUpgrade.route(access: paymentRequired, usage: apple, webLinkAllowed: false), .web(PhoneUpgrade.appleBilling))
+
+    // Without the flag, as before: the plans.
+    let none = usage(["subscriptionStatus": "none", "creditsLimit": 0, "upgradeUrl": "https://app.simeonlabs.com/billing?from=app"])
+    XCTAssertFalse(none.paymentFailed)
+    XCTAssertEqual(none.upgrade?.label, "Choose a plan")
+    XCTAssertEqual(PhoneUpgrade.cover(access: paymentRequired, usage: none).action, "See plans")
+    XCTAssertEqual(PhoneUpgrade.route(access: paymentRequired, usage: none, webLinkAllowed: true), .plans(tier: nil))
+  }
+
   func testTheServersSentenceForSpentCreditsIsRecognised() throws {
     let card = try XCTUnwrap(Tray(["id": "t1", "kind": "error", "agentId": "a", "title": "Agent failed to respond", "detail": "Your trial credits are used up (code 40200). Choose a plan at https://app.simeonlabs.com/billing?from=app to keep going."]))
     XCTAssertTrue(PhoneUpgrade.isOutOfCredits(card))

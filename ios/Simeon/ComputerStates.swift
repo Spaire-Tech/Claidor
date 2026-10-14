@@ -664,9 +664,16 @@ struct AccessCover: View {
   @Environment(\.scenePhase) private var scenePhase
   @State private var showsPlans = false
   @State private var askingSignOut = false
+  @State private var purchases = Purchases.shared
 
   var body: some View {
-    let words = PhoneUpgrade.cover(access: store.access, usage: store.usage.summary)
+    let summary = store.usage.summary
+    // A failed payment (14 October 2026) goes where the card is (`PhoneUpgrade.route`): Apple's payment page, or the
+    // web's billing page where Apple allows the link, else no button.
+    let failed = store.access.state == .paymentRequired && summary?.paymentFailed == true
+    let mend = failed ? PhoneUpgrade.route(access: store.access, usage: summary, webLinkAllowed: purchases.webLinkAllowed) : .none
+    let cover = PhoneUpgrade.cover(access: store.access, usage: summary)
+    let words = failed && mend == .none ? PhoneUpgrade.withoutUpgrade(cover) : cover
     VStack(spacing: 0) {
       Spacer(minLength: 24)
       LogoShimmer().frame(width: 46, height: 46)
@@ -688,7 +695,13 @@ struct AccessCover: View {
       Spacer(minLength: 24)
       if let action = words.action {
         Button {
-          if store.access.state == .paymentRequired { showsPlans = true } else { openURL(SandAccess.page) }
+          if failed {
+            if case .web(let url) = mend { openURL(url) }
+          } else if store.access.state == .paymentRequired {
+            showsPlans = true
+          } else {
+            openURL(SandAccess.page)
+          }
         } label: {
           Text(action)
             .font(.system(size: 17, weight: .semibold))

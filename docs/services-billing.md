@@ -179,14 +179,42 @@ counts: a live plan (the bigger if two are live), else the Stripe row.
 |---|---|---|---|
 | Billing not required, or an exempt e-mail | calendar month | `SIMEON_DESKTOP_MONTHLY_CREDITS` | `free` |
 | Trialing | `trial_start` to `trial_end` | the plan's `trial_credits` | `trialing` |
-| Active or past due | Monday to Monday | the plan's `weekly_credits` | `active`, `past_due` |
+| Active, or past due after a paid period | Monday to Monday | the plan's `weekly_credits` | `active`, `past_due` |
 | No plan (none, cancelled, unpaid, incomplete) | the week | 0 | `none` |
+| The first charge after the trial failed | the week | 0 | `none`, with `paymentFailed: true` |
+
+**A failed first charge is no plan** (14 October 2026). When the trial
+ends and the card is refused, Stripe marks the subscription `past_due` and
+retries the card for a while; Apple, with its billing grace period on, does
+the same. Until then `past_due` counted, so a person whose card never paid
+had the plan anyway (the founder's own test). Now a `past_due` subscription
+whose current period is the first one after the trial
+(`DesktopSubscription.unpaid_after_trial`: `current_period_start` within a
+day of `trial_end`; for Apple, a `past_due` row whose latest transaction is
+still the free week's) gives no allowance. The quota says so
+(`paymentFailed: true`, `billedBy` naming who holds the card), the proxy's
+refusal says "Your payment didn't go through … Update your card at
+app.simeonlabs.com/billing" (for Apple: "… in your Apple Account
+settings"), and the cloud computer is refused with the same sentence. The
+subscription itself stays Stripe's: the web billing page shows it as past
+due with "Update your card", and a second checkout is still refused. Once a
+retried charge goes through, the webhook writes `active` and the plan
+starts. A renewal that fails after a paid month keeps the plan while the
+card is retried, as before.
+
+Two dashboard settings go with it: in Stripe, Billing › Revenue recovery ›
+Retries, "If all retries for a payment fail" should be **Cancel the
+subscription** (so a card that never pays ends the subscription instead of
+leaving it past due), and the customer e-mails for failed payments should
+be on; in App Store Connect, the app's Billing Grace Period, if it is on,
+should be for paid-to-paid renewals only.
 
 Every metered route reads it before calling a provider (`budget_refusal`,
 `server/simeon/desktop/proxy_common.py`) and refuses with `402`, code
 `40200`, and a sentence that says which: "This week's credits are used …
-They reset on Monday …", "Your trial credits are used up …", "No active
-plan …", each naming `app.simeonlabs.com/billing`.
+They reset on Monday …", "Your trial credits are used up …", "Your payment
+didn't go through …", "No active plan …", each naming
+`app.simeonlabs.com/billing` (but Apple's failed payment).
 
 **What the apps say about the credits** (iPhone and Mac, over the composer,
 grey, never red; `ios/SimeonCore/Sources/SimeonCore/Upgrade.swift`):
@@ -431,7 +459,9 @@ changed price needs no server change.
    notification is caught up.
 5. **How a row counts.** Before its expiry: `trialing` in the free week,
    `active` after. Past it while Apple retries the charge in its billing
-   grace period: `past_due`, which still counts. Refunded or revoked:
+   grace period: `past_due`, which still counts after a paid period, and
+   not after the free week, when nothing was paid yet (section 4).
+   Refunded or revoked:
    `canceled` at once. Each row counts until its expiry (or the grace
    period's end) plus 12 hours, so a renewal Apple has not told the server
    about yet does not cut anyone off. Apple's free week counts as the

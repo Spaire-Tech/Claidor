@@ -890,6 +890,10 @@ class DesktopService:
             "billedBy": {"app_store": "apple", "stripe": "stripe"}.get(
                 allowance.provider or ""
             ),
+            # No plan because the first charge after the trial failed (14
+            # October 2026): the app asks for the card to be updated, with
+            # whoever bills it (`billedBy`), instead of offering a plan.
+            "paymentFailed": allowance.payment_failed,
         }
 
     async def profile_summary(

@@ -16,7 +16,7 @@ from simeon.desktop.allowance import (
 )
 from simeon.desktop.proxy_common import quota_exhausted_response
 from simeon.desktop.service import desktop
-from simeon.entitlements.tiers import tier_from_value
+from simeon.entitlements.tiers import TierKey, tier_from_value
 from simeon.kit.utils import utc_now
 from simeon.models import DesktopSubscription, DesktopUsage, User
 from simeon.plans.catalog import lookup_key
@@ -66,6 +66,41 @@ async def _person_with_plan(
         synced_at=now,
         raw={},
         **trial,
+    )
+    await save_fixture(row)
+    return row
+
+
+async def _after_the_trial(
+    save_fixture: SaveFixture,
+    mocker: MockerFixture,
+    user: User,
+    *,
+    status: str,
+    months_paid: int,
+) -> DesktopSubscription:
+    """Billing on, and a Pro subscription whose 30-day trial is over, as
+    Stripe's webhook writes it: `trial_end` stays set, and the first
+    period after the trial starts at it, to the second. `months_paid` is
+    how many monthly periods were charged before the current one."""
+    billing_on(mocker)
+    now = utc_now()
+    period_start = now - timedelta(days=2)
+    trial_end = period_start - timedelta(days=30 * months_paid)
+    row = DesktopSubscription(
+        user_id=user.id,
+        stripe_customer_id="cus_test",
+        stripe_subscription_id="sub_test",
+        status=status,
+        tier="pro",
+        price_lookup_key=lookup_key(TierKey.pro, "month"),
+        billing_interval="month",
+        current_period_start=period_start,
+        current_period_end=period_start + timedelta(days=30),
+        trial_start=trial_end - timedelta(days=30),
+        trial_end=trial_end,
+        synced_at=now,
+        raw={},
     )
     await save_fixture(row)
     return row
@@ -145,6 +180,61 @@ class TestResolveAllowance:
         assert allowance.status == "past_due"
         assert allowance.credits_limit == 3_750_000
         assert allowance.paid
+
+    async def test_a_failed_first_charge_after_the_trial_is_no_plan(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        """The founder's own test (14 October 2026): the trial ended, the
+        card was refused, and the plan started anyway. Stripe marks the
+        subscription `past_due` and retries; nothing was ever paid, so
+        there is no plan, and the app is told the card failed."""
+        row = await _after_the_trial(
+            save_fixture, mocker, user, status="past_due", months_paid=0
+        )
+        assert row.unpaid_after_trial
+        assert row.billable, "the subscription is still Stripe's: no second checkout"
+        allowance = await resolve_allowance(session, user)
+        assert allowance.none
+        assert allowance.credits_limit == 0
+        assert allowance.payment_failed
+        assert allowance.provider == "stripe"
+        assert not allowance.paid
+        assert await desktop.exhausted(session, user)
+
+    async def test_once_the_retried_charge_goes_through_the_plan_starts(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        await _after_the_trial(
+            save_fixture, mocker, user, status="active", months_paid=0
+        )
+        allowance = await resolve_allowance(session, user)
+        assert allowance.status == "active"
+        assert allowance.credits_limit == 12_500_000
+        assert not allowance.payment_failed
+
+    async def test_a_failed_renewal_after_a_paid_month_keeps_the_week(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        row = await _after_the_trial(
+            save_fixture, mocker, user, status="past_due", months_paid=1
+        )
+        assert not row.unpaid_after_trial
+        allowance = await resolve_allowance(session, user)
+        assert allowance.status == "past_due"
+        assert allowance.credits_limit == 12_500_000
+        assert not allowance.payment_failed
 
     async def test_a_trial_gets_its_own_window_and_credits(
         self,
@@ -314,6 +404,36 @@ class TestQuotaAndRefusal:
         body = quota_exhausted_response(allowance).body.decode()
         assert "This week's credits are used (code 40200)" in body
         assert "Monday" in body
+
+    async def test_a_failed_card_is_told_to_update_it(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        await _after_the_trial(
+            save_fixture, mocker, user, status="past_due", months_paid=0
+        )
+        quota = await desktop.quota(session, user)
+        assert quota["subscriptionStatus"] == "none"
+        assert quota["creditsLimit"] == 0
+        assert quota["paymentFailed"] is True
+        assert quota["billedBy"] == "stripe"
+        assert quota["hasPaidCredits"] is False
+        allowance = await desktop.allowance(session, user)
+        body = bytes(quota_exhausted_response(allowance).body).decode()
+        assert "Your payment didn't go through (code 40200)" in body
+        assert "Update your card at" in body
+        assert "/billing" in body
+
+    async def test_a_person_with_no_plan_is_not_told_their_card_failed(
+        self, session: AsyncSession, user: User, mocker: MockerFixture
+    ) -> None:
+        billing_on(mocker)
+        quota = await desktop.quota(session, user)
+        assert quota["paymentFailed"] is False
+        assert quota["billedBy"] is None
 
     async def test_the_free_refusal_still_says_the_month(self) -> None:
         body = quota_exhausted_response(None).body.decode()

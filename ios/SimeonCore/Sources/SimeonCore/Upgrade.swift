@@ -7,7 +7,8 @@ import Foundation
  * Store's plans, or the web for a plan bought there (`route`).
  *
  * - The cover over the app, when the computer refuses the account (no plan):
- *   the free month over, or never had (`cover`).
+ *   the free month over, or never had, or the first charge after the trial
+ *   failed (`cover`).
  * - The banner over the composer: the free month's credits used, a paid
  *   week's credits used, or no plan (`banner`).
  *
@@ -19,10 +20,22 @@ import Foundation
 public enum PhoneUpgrade {
   public static let seePlans = "See plans"
   public static let upgrade = "Upgrade"
+  public static let paymentFailedTitle = "Your payment didn’t go through"
+  public static let updateCard = "Update card"
+  public static let updatePayment = "Update payment"
+  /** Apple's own page for the Apple Account's payment method (Apple's advice for a failed renewal). */
+  public static let appleBilling = URL(string: "https://apps.apple.com/account/billing")!
 
   /** The cover's words when the computer refuses the account. */
   public static func cover(access: SandAccess, usage: UsageSummary?) -> SandAccess.Words {
     guard access.state == .paymentRequired else { return access.cover }
+    // The trial's first charge failed (14 October 2026): the plan is there, the card is not; no plan to choose.
+    if let usage, usage.paymentFailed {
+      if usage.billedByApple {
+        return SandAccess.Words(title: paymentFailedTitle, body: "Update your payment method with Apple to keep your agents working.", action: updatePayment)
+      }
+      return SandAccess.Words(title: paymentFailedTitle, body: "Update your card to keep your agents working.", action: updateCard)
+    }
     if usage?.hasEndedTrial == true {
       return SandAccess.Words(title: "Your free month has ended", body: "Choose a plan to keep your agents working.", action: seePlans)
     }
@@ -116,6 +129,13 @@ public enum PhoneUpgrade {
 
   public static func route(access: SandAccess, usage: UsageSummary?, webLinkAllowed: Bool) -> Route {
     if access.state == .unavailable { return .web(SandAccess.page) }
+    // A failed payment is mended where the card is: Apple's payment page, or the web's billing page where Apple
+    // allows the link (never the App Store's plans, which would sell a second plan).
+    if let usage, usage.paymentFailed {
+      if usage.billedByApple { return .web(appleBilling) }
+      guard webLinkAllowed, let url = usage.upgrade?.url else { return .none }
+      return .web(url)
+    }
     guard let usage, let plan = usage.managePlan else { return .plans(tier: nil) }
     if usage.billedByApple { return .plans(tier: plan.nextTier?.tier) }
     guard webLinkAllowed, let url = usage.upgrade?.url else { return .none }
@@ -129,8 +149,8 @@ public enum PhoneUpgrade {
    */
   public static func withoutUpgrade(_ words: SandAccess.Words) -> SandAccess.Words {
     guard words.action != nil else { return words }
-    // Near the limit, the line says only how much is used.
-    if words.title == approachingTitle { return SandAccess.Words(title: words.title, body: words.body, action: nil) }
+    // Near the limit, the line says only how much is used; a failed payment, only that the card needs updating.
+    if words.title == approachingTitle || words.title == paymentFailedTitle { return SandAccess.Words(title: words.title, body: words.body, action: nil) }
     let body = words.title == "This week’s credits are used" ? "They reset on Monday." : "Your agents wait until your plan has credits again."
     return SandAccess.Words(title: words.title, body: body, action: nil)
   }

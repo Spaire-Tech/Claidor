@@ -209,11 +209,23 @@ async def require_a_plan(call: ConnectCall) -> None:
     the cover goes, with nothing to restart (`docs/services-billing.md`)."""
     allowance = await desktop.allowance(call.db, call.caller.user)
     if allowance.none:
-        log.info("sand.box.ensure.no_plan", user=str(call.caller.user_id))
-        raise ConnectError(
-            "permission_denied",
-            f"No active plan. Choose one at {billing_url()}.",
+        log.info(
+            "sand.box.ensure.no_plan",
+            user=str(call.caller.user_id),
+            payment_failed=allowance.payment_failed,
         )
+        if not allowance.payment_failed:
+            message = f"No active plan. Choose one at {billing_url()}."
+        elif allowance.provider == "app_store":
+            message = (
+                "Your payment didn't go through. Update your payment method "
+                "in your Apple Account settings."
+            )
+        else:
+            message = (
+                f"Your payment didn't go through. Update your card at {billing_url()}."
+            )
+        raise ConnectError("permission_denied", message)
 
 
 @service.unary("EnsureSandBox")
