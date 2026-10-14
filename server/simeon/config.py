@@ -249,6 +249,16 @@ class Settings(BaseSettings):
     # error at the moment somebody sends a message.
     DESKTOP_ANTHROPIC_BASE_URL: str = "https://api.anthropic.com"
     DESKTOP_OPENAI_BASE_URL: str = "https://api.openai.com"
+    # Where Claude is reached (`simeon.desktop.bedrock`, 14 October 2026):
+    # "anthropic" (api.anthropic.com on ANTHROPIC_API_KEY) or "bedrock"
+    # (Claude in Amazon Bedrock, so AWS credits pay for it), signed with the
+    # access key below, which should be allowed bedrock-mantle:CreateInference
+    # and nothing else. A Bedrock call that is not answered with a 200 is
+    # made once more on ANTHROPIC_API_KEY when it is set.
+    DESKTOP_CLAUDE_VIA: Literal["anthropic", "bedrock"] = "anthropic"
+    DESKTOP_BEDROCK_REGION: str = "us-west-2"
+    DESKTOP_BEDROCK_ACCESS_KEY_ID: str = ""
+    DESKTOP_BEDROCK_SECRET_ACCESS_KEY: str = ""
     # Sharing (simeon/sand/sharing.py, 25 September 2026): how long an
     # invite link opens the room, and how many joins one person may try
     # a minute before `/sand/share-rooms/join` answers `rate-limited`.

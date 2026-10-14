@@ -48,6 +48,7 @@ from .allowance import (
     resolve_allowance,
     week_bounds,
 )
+from .bedrock import bedrock_configured
 from .memory_merge import is_accepted_memory_name, merge_memory_file
 from .pricing import (
     MODELS,
@@ -164,6 +165,10 @@ def provider_base_url(provider: DesktopProvider) -> str:
 
 
 def provider_configured(provider: DesktopProvider) -> bool:
+    """A key to call the provider with. Claude counts as configured on
+    Bedrock alone (`simeon.desktop.bedrock`), with no Anthropic key."""
+    if provider is DesktopProvider.anthropic and bedrock_configured():
+        return True
     return bool(provider_api_key(provider))
 
 

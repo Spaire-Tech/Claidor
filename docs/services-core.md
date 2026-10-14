@@ -498,6 +498,21 @@ box and `SAND_KEEP_BOX_RUNNING_ON_QUIT=1` always keeps it running
 - `ANTHROPIC_API_KEY` (or `SIMEON_ANTHROPIC_API_KEY`): Claude. Without it no
   Claude model is offered, and a Claude policy answers on GPT-6 Sol.
 - `SIMEON_DESKTOP_MODELS`: `openai` (the default), `claude` or `claude-opus`.
+- `SIMEON_DESKTOP_CLAUDE_VIA`: `anthropic` (the default) or `bedrock`, Claude
+  in Amazon Bedrock so AWS credits pay for it (14 October 2026,
+  `server/simeon/desktop/bedrock.py`). With `bedrock`, a Claude call goes to
+  `bedrock-mantle.{region}.api.aws/anthropic/v1/messages`: the same request
+  and event stream, the model named `anthropic.claude-…`, signed with
+  `SIMEON_DESKTOP_BEDROCK_ACCESS_KEY_ID` and
+  `SIMEON_DESKTOP_BEDROCK_SECRET_ACCESS_KEY` (an AWS user allowed
+  `bedrock-mantle:CreateInference` and nothing else) in
+  `SIMEON_DESKTOP_BEDROCK_REGION` (default `us-west-2`, beside Render's
+  Oregon). Bedrock alone is enough to offer Claude. When Bedrock does not
+  answer with a 200 (refused, not enabled, overloaded, unreachable), the same
+  call is made once on `ANTHROPIC_API_KEY` if it is set, and
+  `desktop.proxy.bedrock_fallback` logs Bedrock's status and words. The
+  first use of each Claude model on the AWS account turns it on; AWS may ask
+  for the use case once. Not verified: no call has reached Bedrock yet.
 - `SIMEON_DESKTOP_MODELS_BY_EMAIL`: the same choice for a few people first, as
   JSON: `{"you@example.com": "claude"}`. A value that is not a policy stops
   the deploy at boot rather than serving the wrong models.
@@ -521,7 +536,8 @@ box and `SAND_KEEP_BOX_RUNNING_ON_QUIT=1` always keeps it running
 
 - On the server, read `desktop.proxy.upstream_refused` first. It holds the
   provider's own sentence explaining the refusal. Also check
-  `desktop.proxy.upstream_unreachable` and `desktop.proxy.usage_not_recorded`,
+  `desktop.proxy.upstream_unreachable`, `desktop.proxy.usage_not_recorded`
+  and, with Claude on Bedrock, `desktop.proxy.bedrock_fallback`,
   and for capabilities `desktop.search.*`, `desktop.images.*`,
   `desktop.transcription.*`, `desktop.speech.*` and `desktop.video.generate`.
 - In the box, each model call writes a `[simeon] model=… effort=… input=…

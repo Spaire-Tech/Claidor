@@ -69,6 +69,12 @@ from .auth import (
     get_desktop_session,
     get_proxy_caller,
 )
+from .bedrock import (
+    bedrock_body,
+    bedrock_configured,
+    bedrock_headers,
+    bedrock_messages_url,
+)
 from .capabilities import router as capabilities_router
 from .composio import forward as composio_forward
 from .flight_booking import router as flight_booking_router
@@ -1193,6 +1199,24 @@ async def _proxy(
     url = f"{provider_base_url(model.provider)}{upstream_path or wire.upstream_path}"
     headers = wire.headers(request)
     body = wire.body(payload, raw, model)
+    # Where the call is sent, in order: Claude through Bedrock first when it
+    # is chosen (`simeon.desktop.bedrock`), the provider itself otherwise or
+    # after it. A later address is tried only when an earlier one did not
+    # answer with a 200.
+    attempts: list[tuple[str, dict[str, str], bytes]] = [(url, headers, body)]
+    if spoken is SpokenApi.anthropic_messages and bedrock_configured():
+        bedrock_url = bedrock_messages_url()
+        bedrock_request_body = bedrock_body(payload)
+        forwarded = {key: value for key, value in headers.items() if key != "x-api-key"}
+        attempts = [
+            (
+                bedrock_url,
+                bedrock_headers(bedrock_url, bedrock_request_body, forwarded),
+                bedrock_request_body,
+            )
+        ]
+        if provider_api_key(DesktopProvider.anthropic):
+            attempts.append((url, headers, body))
     user_id, session_id = user.id, caller.session_id
     reason = call_reason(request)
     if spoken is SpokenApi.gemini_generate_content:
@@ -1244,7 +1268,22 @@ async def _proxy(
 
     if not stream:
         async with httpx.AsyncClient(timeout=_timeout()) as client:
-            upstream = await client.post(url, headers=headers, content=body)
+            for attempt_url, attempt_headers, attempt_body in attempts[:-1]:
+                try:
+                    upstream = await client.post(
+                        attempt_url, headers=attempt_headers, content=attempt_body
+                    )
+                except httpx.HTTPError as error:
+                    _log_bedrock_fallback(model, None, str(error).encode())
+                    continue
+                if upstream.status_code == 200:
+                    break
+                _log_bedrock_fallback(model, upstream.status_code, upstream.content)
+            else:
+                last_url, last_headers, last_body = attempts[-1]
+                upstream = await client.post(
+                    last_url, headers=last_headers, content=last_body
+                )
         usage = Usage()
         try:
             answer = upstream.json()
@@ -1263,17 +1302,29 @@ async def _proxy(
         return JSONResponse(answer, status_code=upstream.status_code)
 
     client = httpx.AsyncClient(timeout=_timeout())
-    upstream_request = client.build_request("POST", url, headers=headers, content=body)
-    try:
-        upstream = await client.send(upstream_request, stream=True)
-    except httpx.HTTPError as error:
-        await client.aclose()
-        log.warning(
-            "desktop.proxy.upstream_unreachable",
-            provider=model.provider.value,
-            error=str(error),
+    for index, (attempt_url, attempt_headers, attempt_body) in enumerate(attempts):
+        last = index == len(attempts) - 1
+        upstream_request = client.build_request(
+            "POST", attempt_url, headers=attempt_headers, content=attempt_body
         )
-        return _error("api_error", "The model service could not be reached.", 502)
+        try:
+            upstream = await client.send(upstream_request, stream=True)
+        except httpx.HTTPError as error:
+            if not last:
+                _log_bedrock_fallback(model, None, str(error).encode())
+                continue
+            await client.aclose()
+            log.warning(
+                "desktop.proxy.upstream_unreachable",
+                provider=model.provider.value,
+                error=str(error),
+            )
+            return _error("api_error", "The model service could not be reached.", 502)
+        if upstream.status_code == 200 or last:
+            break
+        refusal_body = await upstream.aread()
+        await upstream.aclose()
+        _log_bedrock_fallback(model, upstream.status_code, refusal_body)
 
     if upstream.status_code != 200:
         # An error is small and not an event stream: read it, meter
@@ -1313,6 +1364,18 @@ async def _proxy(
         status_code=200,
         media_type=upstream.headers.get("content-type", "text/event-stream"),
         headers={"cache-control": "no-store"},
+    )
+
+
+def _log_bedrock_fallback(
+    model: DesktopModel, status: int | None, content: bytes
+) -> None:
+    """Bedrock did not answer, and the call goes to the Anthropic key."""
+    log.warning(
+        "desktop.proxy.bedrock_fallback",
+        model=model.model_id,
+        status=status,
+        preview=content[:500].decode(errors="replace"),
     )
 
 
