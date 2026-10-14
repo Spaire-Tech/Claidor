@@ -87,6 +87,33 @@ final class UpgradeTests: XCTestCase {
     XCTAssertEqual(PhoneUpgrade.route(access: paymentRequired, usage: none, webLinkAllowed: true), .plans(tier: nil))
   }
 
+  /** The Mac (14 October 2026): the web's 30-day trial with a card, not the homepage. */
+  func testTheMacSendsANewAccountToTheWebsTrial() {
+    let fresh = SandAccess(state: .paymentRequired, reason: .freeTrialAvailable)
+    let none = usage(["subscriptionStatus": "none", "creditsLimit": 0, "upgradeUrl": "https://app.simeonlabs.com/billing?from=app"])
+    let words = MacUpgrade.cover(access: fresh, usage: none)
+    XCTAssertEqual(words.title, "Start your free trial to send messages")
+    XCTAssertEqual(words.action, "Start Free Trial")
+    XCTAssertEqual(MacUpgrade.destination(access: fresh, usage: none), URL(string: "https://app.simeonlabs.com/billing?from=app")!)
+    XCTAssertEqual(MacUpgrade.destination(access: fresh, usage: nil), MacUpgrade.billing, "before the quota is read")
+    XCTAssertNotEqual(MacUpgrade.destination(access: fresh, usage: nil), SandAccess.page)
+
+    let hadOne = SandAccess(state: .paymentRequired, reason: .none)
+    XCTAssertEqual(MacUpgrade.cover(access: hadOne, usage: none).title, "Simeon needs a plan")
+    let over = usage(["subscriptionStatus": "none", "creditsLimit": 0, "trialEndsAt": "2026-10-01T00:00:00+00:00"])
+    XCTAssertEqual(MacUpgrade.cover(access: hadOne, usage: over).title, "Your free month has ended")
+
+    let failed = usage(["subscriptionStatus": "none", "creditsLimit": 0, "paymentFailed": true, "billedBy": "stripe", "upgradeUrl": "https://app.simeonlabs.com/billing?from=app"])
+    XCTAssertEqual(MacUpgrade.cover(access: hadOne, usage: failed).action, "Update card")
+    let appleFailed = usage(["subscriptionStatus": "none", "creditsLimit": 0, "paymentFailed": true, "billedBy": "apple"])
+    XCTAssertEqual(MacUpgrade.destination(access: hadOne, usage: appleFailed), PhoneUpgrade.appleBilling)
+
+    // An account no plan can help keeps the window's words and Simeon Labs' page.
+    let unavailable = SandAccess(state: .unavailable, reason: .notOffered)
+    XCTAssertEqual(MacUpgrade.cover(access: unavailable, usage: nil), unavailable.cover)
+    XCTAssertEqual(MacUpgrade.destination(access: unavailable, usage: nil), SandAccess.page)
+  }
+
   func testTheServersSentenceForSpentCreditsIsRecognised() throws {
     let card = try XCTUnwrap(Tray(["id": "t1", "kind": "error", "agentId": "a", "title": "Agent failed to respond", "detail": "Your trial credits are used up (code 40200). Choose a plan at https://app.simeonlabs.com/billing?from=app to keep going."]))
     XCTAssertTrue(PhoneUpgrade.isOutOfCredits(card))

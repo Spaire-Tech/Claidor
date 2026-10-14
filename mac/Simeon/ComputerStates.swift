@@ -812,16 +812,23 @@ struct ComputerUpdatePill: View {
  * The whole window when this account was refused before its computer was
  * ever reached (`mzn`): the sign-in's logo and "Simeon", the tagline,
  * then what this account needs (14/20 over 13/18 at 60%) and its button
- * (40 high, the sign-in's black in both themes) to Simeon Labs' page.
+ * (40 high, the sign-in's black in both themes). With no plan, the button
+ * opens the web's plans page, where a new account starts its 30-day trial
+ * with a card (14 October 2026, the founder's choice; it opened
+ * simeonlabs.com, where nothing starts one: `MacUpgrade`). Under it, the
+ * account this Mac is signed in to and Sign Out, asked first as everywhere
+ * (the founder could not tell which account it was, nor leave it).
  */
 struct AccessCover: View {
   let access: SandAccess
   @Environment(AppStore.self) private var store
+  @Environment(MacSession.self) private var session
   @Environment(\.colorScheme) private var scheme
+  @State private var askingSignOut = false
 
   var body: some View {
     let look = Look(scheme)
-    let words = access.cover
+    let words = MacUpgrade.cover(access: access, usage: store.usage.summary)
     ZStack {
       look.ground
       VStack(spacing: 0) {
@@ -858,7 +865,7 @@ struct AccessCover: View {
         .frame(maxWidth: 400)
         .padding(.top, 39)
         if let action = words.action {
-          Button { NSWorkspace.shared.open(SandAccess.page) } label: {
+          Button { NSWorkspace.shared.open(MacUpgrade.destination(access: access, usage: store.usage.summary)) } label: {
             Text(action)
               .font(.system(size: 18))
               .foregroundStyle(look.signInLabel)
@@ -870,12 +877,31 @@ struct AccessCover: View {
           .buttonStyle(.hand)
           .padding(.top, 24)
         }
+        VStack(spacing: 6) {
+          if let email = store.account?.email, !email.isEmpty {
+            Text("Signed in as \(email)")
+              .font(.system(size: 12))
+              .foregroundStyle(look.inkSecondary)
+              .textSelection(.enabled)
+          }
+          Button { askingSignOut = true } label: {
+            Text("Sign Out").font(.system(size: 13)).foregroundStyle(look.inkSecondary).underline()
+          }
+          .buttonStyle(.hand)
+        }
+        .padding(.top, 28)
       }
       .offset(y: 40)
     }
     .ignoresSafeArea()
+    .alert(AccountMenu.signOutTitle, isPresented: $askingSignOut) {
+      Button(AccountMenu.signOutCancel, role: .cancel) {}
+      Button(AccountMenu.signOutConfirm, role: .destructive) { Task { await session.signOut() } }
+    } message: {
+      Text(AccountMenu.signOutLine)
+    }
     // Access fixed on the web shows here when the window comes forward: read again, and the agents with it (the window's own reads
-    // are not running under the cover).
+    // are not running under the cover); the plan's state with them, for the words and the button's page.
     .task { await readAgain() }
     .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
       Task { await readAgain() }
@@ -884,6 +910,7 @@ struct AccessCover: View {
 
   private func readAgain() async {
     await store.refreshAccess()
+    await store.refreshUsage()
     await store.reloadRoster()
   }
 }

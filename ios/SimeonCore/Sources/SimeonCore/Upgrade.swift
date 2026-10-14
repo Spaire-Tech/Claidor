@@ -162,6 +162,44 @@ public enum PhoneUpgrade {
 }
 
 /**
+ * What the Mac says when this account has no plan (the cover over the
+ * window, and the line over the composer), and where its button goes (14
+ * October 2026). The founder chose the web for the Mac: the plans page,
+ * where the 30-day trial starts with a card (the iPhone starts its free
+ * month itself, no card). Until then the Mac showed the window's own
+ * "Start your free month" and its button opened simeonlabs.com, where
+ * nothing starts a trial.
+ */
+public enum MacUpgrade {
+  /** The web's plans page, from the app: it sends the person back to the app afterwards. The quota's `upgradeUrl` when there is one. */
+  public static let billing = URL(string: "https://app.simeonlabs.com/billing?from=app")!
+
+  public static func cover(access: SandAccess, usage: UsageSummary?) -> SandAccess.Words {
+    guard access.state == .paymentRequired else { return access.cover }
+    if let usage, usage.paymentFailed {
+      if usage.billedByApple {
+        return SandAccess.Words(title: PhoneUpgrade.paymentFailedTitle, body: "Update your payment method with Apple to keep your agents working.", action: PhoneUpgrade.updatePayment)
+      }
+      return SandAccess.Words(title: PhoneUpgrade.paymentFailedTitle, body: "Update your card to keep your agents working.", action: PhoneUpgrade.updateCard)
+    }
+    if access.reason == .freeTrialAvailable {
+      return SandAccess.Words(title: "Start your free trial to send messages", body: "30 days free, then your plan. Add a card on the web; cancel anytime.", action: "Start Free Trial")
+    }
+    if usage?.hasEndedTrial == true {
+      return SandAccess.Words(title: "Your free month has ended", body: "Choose a plan to keep your agents working.", action: PhoneUpgrade.seePlans)
+    }
+    return SandAccess.Words(title: "Simeon needs a plan", body: "Choose a plan on the web to send messages.", action: PhoneUpgrade.seePlans)
+  }
+
+  /** Where the button goes: the web's plans page (Apple's payment page for a failed charge Apple bills); Simeon Labs' page for an account no plan can help. */
+  public static func destination(access: SandAccess, usage: UsageSummary?) -> URL {
+    guard access.state == .paymentRequired else { return SandAccess.page }
+    if let usage, usage.paymentFailed, usage.billedByApple { return PhoneUpgrade.appleBilling }
+    return usage?.upgrade?.url ?? billing
+  }
+}
+
+/**
  * The approaching-limit lines the person closed (`PhoneUpgrade.Approaching`),
  * one key per period and step, kept as one line of text in the app's
  * settings; the last twelve are enough.

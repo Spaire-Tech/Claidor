@@ -112,12 +112,17 @@ struct Composer: View {
     // Over the field and as wide, 8 apart: whether this account may use Simeon (`Qvn`, step 13; sending waits under
     // it), then the agent's first waiting ask to use this Mac (`BLn`, step 14; an agent's chat only).
     .above(gap: 8) {
-      let notice = store.access.notice
+      // With no plan, the Mac's words and the web's plans page (`MacUpgrade`, 14 October 2026), not simeonlabs.com.
+      let notice = store.access.notice.map { _ in MacUpgrade.cover(access: store.access, usage: store.usage.summary) }
       let credits = notice == nil ? creditsLine : nil
       let ask = agentId == NewChatState.draftKey ? nil : store.localAsks[agentId]
       if notice != nil || credits != nil || ask != nil {
         VStack(spacing: 8) {
-          if let notice { AccessNotice(words: notice, look: look) }
+          if let notice {
+            AccessNotice(words: notice, look: look, action: {
+              _ = NSWorkspace.shared.open(MacUpgrade.destination(access: store.access, usage: store.usage.summary))
+            })
+          }
           if let credits {
             AccessNotice(words: credits.words, look: look, action: { settings.open(.usage) }, close: credits.key == nil ? nil : { closeApproaching(credits.key) })
           }

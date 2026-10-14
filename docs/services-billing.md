@@ -229,6 +229,21 @@ opens and as each answer ends, at most every 30 s (`loadUsage`). On the
 iPhone, Upgrade opens the plans (or the web, by the rules of
 `PhoneUpgrade.route`); on the Mac, Settings › Usage & Billing.
 
+**The Mac with no plan** (14 October 2026). The iPhone starts the free
+month itself at first sign-in; the Mac does not. An account with no plan
+gets the cover over the Mac's window (`AccessCover`, `MacUpgrade` in
+`ios/SimeonCore/Sources/SimeonCore/Upgrade.swift`): one that never had a
+trial reads "Start your free trial to send messages / 30 days free, then
+your plan. Add a card on the web; cancel anytime." and Start Free Trial
+opens the plans page (`upgradeUrl`, `app.simeonlabs.com/billing?from=app`),
+where Stripe's checkout takes a card and starts the 30-day trial (the
+founder's choice that day); one that had its trial reads "Simeon needs a
+plan" with See plans to the same page; a failed payment reads "Your payment
+didn't go through" with Update card. The cover names the account it is
+signed in to and has Sign Out. Until then the window's own words said
+"Start your free month", and every button opened simeonlabs.com, where
+nothing starts a trial.
+
 **What the apps never say.** No banner, card, alert or notice names what is
 behind Simeon: a model company (its credits, limits or name), a status code,
 a setting's name, an address or the plumbing's words. Since 13 October 2026
