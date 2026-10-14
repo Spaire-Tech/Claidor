@@ -288,7 +288,7 @@ export function createLinkTools(options: LinkToolsOptions) {
         if (typeof remaining === "number" && request.amount > remaining) return { ok: false, message: `${money(request.amount)} is more than the ${money(remaining)} the person's Link limits leave ${label}. Tell them; nothing was asked of Link.` };
       }
     }
-    const listed = methods.ok && methods.value != null && typeof methods.value === "object" ? records((methods.value as Record<string, unknown>).payment_details) : [];
+    const listed = methods.ok ? paymentMethodsOf(methods.value) : [];
     const wanted = request.paymentMethodId?.trim() ?? "";
     const method = wanted.length > 0
       ? listed.find((item) => text(item.id) === wanted)
@@ -297,6 +297,13 @@ export function createLinkTools(options: LinkToolsOptions) {
     if (method == null) {
       if (listed.length === 0) return { ok: false, message: "The person has no card in Link yet. Ask them to add one in the Link app or at link.com, then call RequestPurchase again." };
       return { ok: false, message: `The person has ${listed.length} cards in Link and none is the default: ask which one (by its last four digits: ${listed.map((item) => cardOf(item).last4).filter((last4) => last4.length > 0).join(", ")}), then pass its id from get_wallet as payment_method_id.` };
+    }
+    // Link marks a card agents can't pay with (`capabilities.agentic_payments`); asking Link anyway fails only after the person pressed Allow.
+    const refused = agenticRefusal(method);
+    if (refused != null) {
+      const card = cardOf(method);
+      const others = listed.filter((item) => item !== method && agenticRefusal(item) == null).map((item) => cardOf(item).last4).filter((last4) => last4.length > 0);
+      return { ok: false, message: `Link says the ${card.brand}${card.last4.length > 0 ? ` ending ${card.last4}` : ""} can't be used for purchases by an agent${refused.length > 0 ? ` (${refused})` : ""}. ${others.length > 0 ? `Ask the person whether to use the card ending ${others.join(" or ")} instead, then pass its id from get_wallet as payment_method_id.` : "Ask them to add another card in the Link app or at link.com, then call RequestPurchase again."} Nothing was asked of Link.` };
     }
     return { ok: true, paymentMethodId: text(method.id), card: cardOf(method), ...(text(info.name).length > 0 ? { holder: text(info.name) } : {}) };
   };
@@ -420,6 +427,21 @@ function spendAnswer(answer: LinkCliAnswer): SpendAnswer {
     ...(approvalUrl.startsWith("https://") ? { approvalUrl } : {}),
     ...(status === "requires_action" ? { action: { message: text(next?.display_message) || "Link needs something from you before it can approve this.", ...(actionUrl.startsWith("https://") ? { url: actionUrl } : {}), resumes: text(next?.resolution) === "auto_resume" } } : {}),
   };
+}
+
+/** The person's payment methods from `payment-methods list`: the CLI prints the list itself; Link's own API wraps it in `payment_details`. */
+function paymentMethodsOf(value: unknown): Record<string, unknown>[] {
+  if (Array.isArray(value)) return records(value);
+  return value != null && typeof value === "object" ? records((value as Record<string, unknown>).payment_details) : [];
+}
+
+/** Why Link won't let an agent pay with this method ("" when it gives no reason), or undefined when it may. */
+function agenticRefusal(method: Record<string, unknown>): string | undefined {
+  const capabilities = method.capabilities != null && typeof method.capabilities === "object" ? method.capabilities as Record<string, unknown> : undefined;
+  const agentic = capabilities?.agentic_payments != null && typeof capabilities.agentic_payments === "object" ? capabilities.agentic_payments as Record<string, unknown> : undefined;
+  if (agentic?.eligible !== false) return undefined;
+  const reasons = Array.isArray(agentic.ineligibility_reasons) ? agentic.ineligibility_reasons.map((reason) => text(reason).replace(/_/g, " ")).filter((reason) => reason.length > 0) : [];
+  return reasons.join(", ");
 }
 
 const BRANDS: Record<string, string> = { visa: "Visa", mastercard: "Mastercard", amex: "Amex", american_express: "Amex", discover: "Discover", diners: "Diners Club", jcb: "JCB", unionpay: "UnionPay" };

@@ -47,6 +47,9 @@ test("the runner reads Link's answers: the last state of a poll, an error object
   const { parseLinkCliOutput, readLinkCliAnswer, createLinkCli, LINK_CLI_VERSION } = module;
   assert.deepEqual(parseLinkCliOutput('[\n {"authenticated": false, "pending": true},\n {"authenticated": true}\n]'), { authenticated: true });
   assert.deepEqual(parseLinkCliOutput('link-cli: a newer version\n{"id":"lsrq_1"}'), { id: "lsrq_1" });
+  // A list is kept whole: `payment-methods list` prints the cards themselves (14 October 2026: read as states, only the last card came back).
+  assert.deepEqual(parseLinkCliOutput('[{"id":"csmrpd_a"},{"id":"csmrpd_b"}]', { list: true }), [{ id: "csmrpd_a" }, { id: "csmrpd_b" }]);
+  assert.deepEqual(readLinkCliAnswer({ code: 0, stdout: "[]", stderr: "" }, { list: true }), { ok: true, value: [] });
   assert.deepEqual(readLinkCliAnswer({ code: 1, stdout: '{"code":"NOT_AUTHENTICATED","message":"Not authenticated."}', stderr: "" }), { ok: false, code: "NOT_AUTHENTICATED", message: "Not authenticated." });
   // An error object printed with exit 0 is still an error.
   assert.equal(readLinkCliAnswer({ code: 0, stdout: '{"code":"NOT_AUTHENTICATED","message":"Not authenticated.","cta":{}}', stderr: "" }).ok, false);
@@ -101,11 +104,14 @@ test("the tools build Link's commands, hide cards and tokens, and sign in with t
   let methods = [{ id: "csmrpd_visa", type: "card", is_default: true, name: "Visa", card_details: { brand: "visa", last4: "1234" } }, { id: "csmrpd_mc", type: "card", is_default: false, name: "Mastercard", card_details: { brand: "mastercard", last4: "5678" } }];
   const fake = fakeCli({
     "user-info retrieve": () => ({ value: userInfo }),
-    "payment-methods list": () => ({ value: { payment_details: methods } }),
+    "payment-methods list": () => ({ value: methods }),
     "auth status": () => ({ value: signedIn ? { authenticated: true, scope: "userinfo:read payment_methods.agentic" } : { authenticated: false, pending: true, verification_url: "https://app.link.com/device/setup?code=warmth-woo-won-charm", phrase: "warmth-woo-won-charm" } }),
     "auth login": { value: [{ verification_url: "https://app.link.com/device/setup?code=warmth-woo-won-charm", phrase: "warmth-woo-won-charm", instruction: "Present the verification_url…" }] },
     "auth logout": { value: { authenticated: false } },
-    "spend-request create": { value: { id: "lsrq_1", status: "pending_approval", credential_type: "card", amount: 3500, approval_url: "https://app.link.com/activity/approve/lsrq_1", instruction: "Present the approval_url…" } },
+    // As the CLI prints them: a list command its list, a streamed step (create, retrieve, auth) its states as one array.
+    "shipping-address list": { value: [{ id: "csmrsa_home", city: "San Francisco", postal_code: "94103", is_default: true }, { id: "csmrsa_work", city: "Oakland", postal_code: "94607", is_default: false }] },
+    "spend-request list": { value: [{ id: "lsrq_old", status: "approved" }, { id: "lsrq_1", status: "pending_approval" }] },
+    "spend-request create": { value: [{ id: "lsrq_1", status: "pending_approval", credential_type: "card", amount: 3500, approval_url: "https://app.link.com/activity/approve/lsrq_1", instruction: "Present the approval_url…" }] },
     "spend-request retrieve lsrq_wait": { code: 1, value: { code: "POLLING_TIMEOUT", message: "Polling timed out" } },
     "spend-request retrieve lsrq_1 --include card": (command) => {
       writeFileSync(command[command.indexOf("--output-file") + 1], JSON.stringify({ spend_request_id: "lsrq_1", card: { number: "4242424242424242", cvc: "123", exp_month: 12, exp_year: 2031, billing_address: { name: "Bass Lee", postal_code: "94103" } } }));
@@ -141,6 +147,20 @@ test("the tools build Link's commands, hide cards and tokens, and sign in with t
   // Before the card: the default card, and the limits the amount must fit in (here $50 left today).
   assert.deepEqual(await link.checkoutFacts({ amount: 3500, currency: "usd" }), { ok: true, paymentMethodId: "csmrpd_visa", card: { brand: "Visa", last4: "1234" }, holder: "Bass Lee" });
   assert.deepEqual((await link.checkoutFacts({ amount: 3500, currency: "usd", paymentMethodId: "csmrpd_mc" })).card, { brand: "Mastercard", last4: "5678" });
+  // The wallet shows every card and address, not the last of each.
+  const wallet = JSON.parse((await link.call("get_wallet", {})).text);
+  assert.deepEqual(wallet.payment_methods.map((method) => method.id), ["csmrpd_visa", "csmrpd_mc"]);
+  assert.deepEqual(wallet.shipping_addresses.map((address) => address.id), ["csmrsa_home", "csmrsa_work"]);
+  // One card, the default (the founder's wallet, 14 October 2026): it pays.
+  const allCards = methods;
+  methods = [{ id: "csmrpd_rh", type: "card", is_default: true, name: "Robinhood Cash Card", card_details: { brand: "visa", last4: "2862" } }];
+  assert.deepEqual(await link.checkoutFacts({ amount: 248, currency: "usd" }), { ok: true, paymentMethodId: "csmrpd_rh", card: { brand: "Visa", last4: "2862" }, holder: "Bass Lee" });
+  // A card Link won't let an agent pay with is said before the checkout card, with the one that can.
+  methods = [{ ...allCards[0], capabilities: { agentic_payments: { eligible: false, ineligibility_reasons: ["unsupported_funding_type"] } } }, allCards[1]];
+  const ineligible = await link.checkoutFacts({ amount: 3500, currency: "usd" });
+  assert.equal(ineligible.ok, false);
+  assert.match(ineligible.message, /Visa ending 1234 can't be used for purchases by an agent \(unsupported funding type\)\. Ask the person whether to use the card ending 5678 instead/);
+  methods = allCards;
   const overDay = await link.checkoutFacts({ amount: 6000, currency: "usd" });
   assert.equal(overDay.ok, false);
   assert.match(overDay.message, /\$50\.00 the person's Link limits leave today/);
@@ -176,6 +196,7 @@ test("the tools build Link's commands, hide cards and tokens, and sign in with t
   const retrieved = await link.call("list_purchases", {});
   assert.doesNotMatch(JSON.stringify(scrubLinkSecrets({ card: { number: "4242424242424242", cvc: "123", last4: "4242" } })), /4242424242424242|"123"/);
   assert.equal(retrieved.isError, false);
+  assert.deepEqual(JSON.parse(retrieved.text).map((purchase) => purchase.id), ["lsrq_old", "lsrq_1"], "every purchase, not the last");
 
   // Not connected: the agent is told to start the sign-in, not given Link's raw words.
   const accounts = await link.call("list_accounts", {});

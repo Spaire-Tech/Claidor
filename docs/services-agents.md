@@ -625,7 +625,8 @@ ones our server serves (`boxCli` in `vendor-mcp/catalog.ts`; `vendor-mcp/backend
      before paying. The agent tells the person what the order is (Order, Delivery, Price, Terms).
   2. `RequestPurchase` checks the person's Link (connected, nothing to verify, the amount within
      their per-purchase, daily and 30-day limits, the card that pays: the one asked for, else the
-     default or only one), takes a JPEG of the checkout tab over DevTools (`captureCheckout`,
+     default or only one, and not one Link marks unusable by agents,
+     `capabilities.agentic_payments.eligible: false`), takes a JPEG of the checkout tab over DevTools (`captureCheckout`,
      only a tab on the shop's own site) and posts the card: Checkout, "<agent> wants to place an
      order at <site>", the picture with Review order, "Visa •••• 1234 · Pay with Link", the
      total, Deny and Allow. The turn ends there, as after a question. Nothing is asked of Link yet.
@@ -650,6 +651,12 @@ ones our server serves (`boxCli` in `vendor-mcp/catalog.ts`; `vendor-mcp/backend
   set the same way. Every answer is scrubbed of card numbers, security codes and tokens. The
   agent presses Pay itself after checking the order. A screenshot it takes of the filled form can
   still show the digits.
+* **The CLI's answers.** Run with `--format json`, a list command (`payment-methods list`,
+  `shipping-address list`, `spend-request list`) prints the list itself as an array; a step that
+  streams (`auth login` and `status`, `spend-request create` and `retrieve`) prints its states as
+  one array, of which the last is where it ended (`LINK_LIST_COMMANDS` in `link-cli.ts`). Until
+  14 October 2026 every array was read as states, so the card list came back as its last card,
+  and `RequestPurchase` answered "The person has no card in Link yet" before every checkout.
 * **Limits (Link's).** $500 a purchase, $500 a day, $20,000 in 30 days; 30 minutes to approve;
   the card works for 12 hours. `RequestPurchase` reads the person's own limits first and says
   which one a total breaks before any card. Test mode (`test: true` on `RequestPurchase`) returns

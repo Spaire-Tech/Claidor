@@ -62,23 +62,35 @@ const defaultExec: LinkCliExec = (file, args, options) => new Promise((resolve) 
   });
 });
 
-/** The last JSON value a command printed: a command that polls prints an array of states, the last one is where it ended. */
-export function parseLinkCliOutput(stdout: string): unknown {
+/**
+ * The commands whose answer is a list, printed as a JSON array of records
+ * (`payment-methods list` is the cards themselves, not an object holding
+ * them). Every other array a command prints is the states of a step that
+ * streams (`auth login`, `spend-request create` and `retrieve`: the CLI
+ * prints all of their states as one array). Until 14 October 2026 every
+ * array was read as states, so a list came back as its last record: the
+ * person's last card only, and "no card in Link" before every checkout.
+ */
+export const LINK_LIST_COMMANDS: ReadonlySet<string> = new Set(["payment-methods list", "shipping-address list", "spend-request list"]);
+
+/** The JSON value a command printed: a list whole (`list`), else of a streamed step's states the last, where it ended. */
+export function parseLinkCliOutput(stdout: string, options: { readonly list?: boolean } = {}): unknown {
   const text = stdout.trim();
   if (text.length === 0) return undefined;
   try {
     const value = JSON.parse(text) as unknown;
+    if (options.list === true) return value;
     return Array.isArray(value) && value.length > 0 && value.every((item) => item != null && typeof item === "object" && !Array.isArray(item)) ? value[value.length - 1] : value;
   } catch {
     // A notice printed before the JSON (an update line): the JSON is from the first brace or bracket on.
     const start = text.search(/^[[{]/m);
     if (start <= 0) return undefined;
-    try { return parseLinkCliOutput(text.slice(start)); } catch { return undefined; }
+    try { return parseLinkCliOutput(text.slice(start), options); } catch { return undefined; }
   }
 }
 
-export function readLinkCliAnswer(result: LinkCliRunResult): LinkCliAnswer {
-  const value = parseLinkCliOutput(result.stdout);
+export function readLinkCliAnswer(result: LinkCliRunResult, options: { readonly list?: boolean } = {}): LinkCliAnswer {
+  const value = parseLinkCliOutput(result.stdout, options);
   const record = value != null && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : undefined;
   const failed = result.code !== 0 || (record != null && typeof record.code === "string" && typeof record.message === "string" && Object.keys(record).every((key) => ["code", "message", "cta", "fieldErrors", "retryable"].includes(key)));
   if (!failed) return { ok: true, value };
@@ -150,7 +162,7 @@ export function createLinkCli(options: LinkCliOptions) {
       cwd: dir,
       timeoutMs: runOptions.timeoutMs ?? 60_000,
     });
-    return readLinkCliAnswer(result);
+    return readLinkCliAnswer(result, { list: LINK_LIST_COMMANDS.has(args.slice(0, 2).join(" ")) });
   };
 
   return {
