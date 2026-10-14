@@ -277,10 +277,17 @@ picks a policy (`ModelPolicy`, `POLICY_ROLES`), and
 
 The engine reads the roles from `/desktop/api/models/available` when the host
 starts and every five minutes after (`simeon-model-roles.ts`), so a change of
-setting reaches every cloud computer within minutes, with no release. Until
-its first read it uses GPT-6 Sol and Luna, which every policy serves; an
-engine built before this change names them whatever the setting says, so the
-Claude policies keep serving GPT-6 Luna as `retired`.
+setting reaches every cloud computer within minutes, with no release. The
+last answer is kept on the box's data volume (`model-roles.json`) and taken
+back when the host starts, and until a first read succeeds the host asks
+again every five seconds (14 October 2026). Before that, a computer that
+woke up used GPT-6 Sol and Luna until its first read, which failed while the
+box's sign-in was not there yet and was retried only thirty seconds later:
+under the Claude policy the first messages after a wake went to GPT. Only a
+computer that has never read the roles now uses GPT-6 Sol and Luna, which
+every policy serves; an engine built before 13 October names them whatever
+the setting says, so the Claude policies keep serving GPT-6 Luna as
+`retired`.
 
 | Model id | Price per million tokens: input, cache write, cache read, output |
 |---|---|
@@ -569,7 +576,8 @@ box and `SAND_KEEP_BOX_RUNNING_ON_QUIT=1` always keeps it running
   to another model writes `[simeon] model-fallback` (GPT to the cheap model
   after a rate limit; Claude to its fallback). The roles the engine follows
   are on `[simeon] model-roles primary=… cheap=… fallback=…`, written when
-  they change, or `model-roles unread` when the read fails.
+  they change, `model-roles remembered …` when the host starts on the kept
+  ones, or `model-roles unread` when the read fails.
 
 **Not yet verified:** GPT-6 Sol and Luna have not run against OpenAI. The
 spend guards have not run on a Mac. The Gemini prices are marked "to confirm"

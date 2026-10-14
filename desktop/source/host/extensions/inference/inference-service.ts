@@ -7,7 +7,7 @@ import { createSimeonSandInference } from "./inference-session.js";
 import type { SandInferenceProvider } from "../../../shared/inference-router.js";
 import type { PromptExecutor } from "./sand-labeling.js";
 import { createProviderPromptSession, setSimeonCredentialSource } from "./provider-session.js";
-import { startSimeonModelRoles } from "./simeon-model-roles.js";
+import { SIMEON_MODEL_ROLES_FILE, startSimeonModelRoles } from "./simeon-model-roles.js";
 import { getSandRootDir } from "../../host-paths.js";
 export interface HostInferenceOptions {
   auth: { getAccessToken(...args: unknown[]): Promise<string>; getMachineId(): string };
@@ -19,8 +19,8 @@ export function createHostInference(options: HostInferenceOptions) {
   const { auth, experiments, settings } = options;
   const routerSettings = new SandSettingsStore(join(getSandRootDir(), "settings.json"));
   setSimeonCredentialSource({ getAccessToken: () => auth.getAccessToken() });
-  // Which models answer is the server's to say (13 October 2026).
-  startSimeonModelRoles({ getAccessToken: () => auth.getAccessToken() });
+  // Which models answer is the server's to say (13 October 2026), kept on the data volume so a restart follows it from the first call (14 October 2026).
+  startSimeonModelRoles({ getAccessToken: () => auth.getAccessToken(), rememberIn: join(getSandRootDir(), SIMEON_MODEL_ROLES_FILE) });
   const cursor = createSimeonSandInference({
     getAccessToken: auth.getAccessToken,
     getMachineId: auth.getMachineId,

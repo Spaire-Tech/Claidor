@@ -19,6 +19,7 @@
  *   failure after output does not.
  */
 import assert from "node:assert/strict";
+import { readFileSync, writeFileSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -165,6 +166,52 @@ test("the roles are read off the server's model list, and the defaults hold unti
   } finally {
     await dispose();
   }
+});
+
+test("the roles read are kept on the data volume, so a computer that starts again follows Claude from its first call", async () => {
+  // 14 October 2026: after a wake the founder's first messages went to GPT-6 Sol and Luna until the first read, 30 s later.
+  await withProxy(async () => Response.json({ code: 0, data: [
+    { modelId: "claude-sonnet-5-5", role: "primary", provider: "anthropic", transportApi: "anthropic-messages" },
+    { modelId: "claude-haiku-5-5", role: "cheap", provider: "anthropic", transportApi: "anthropic-messages" },
+    { modelId: "gpt-6-sol", role: "fallback", provider: "openai", transportApi: "openai-responses" },
+  ] }), async (api, _requests, lines) => {
+    const file = path.join(process.env.SAND_DATA_ROOT, api.SIMEON_MODEL_ROLES_FILE);
+    await api.refreshSimeonModelRoles({ getAccessToken: async () => "simeon_da_token", rememberIn: file });
+    assert.deepEqual(JSON.parse(readFileSync(file, "utf8")), CLAUDE_ROLES);
+
+    // The host starts again: nothing read yet, the kept roles hold at once.
+    api.setSimeonModelRolesForTest({});
+    assert.equal(api.configuredSimeonModel(), "gpt-6-sol");
+    assert.deepEqual(api.recallSimeonModelRoles(file), CLAUDE_ROLES);
+    assert.equal(api.configuredSimeonModel(), "claude-sonnet-5-5");
+    assert.equal(api.configuredSimeonCheapModel(), "claude-haiku-5-5");
+    assert.ok(lines.includes("[simeon] model-roles remembered primary=claude-sonnet-5-5 cheap=claude-haiku-5-5 fallback=gpt-6-sol"), lines.join("\n"));
+
+    // A read in this run wins over the file; a file that holds nothing usable is left alone.
+    api.setSimeonModelRolesForTest({ primary: "gpt-6-sol" });
+    api.recallSimeonModelRoles(file);
+    assert.equal(api.configuredSimeonModel(), "gpt-6-sol");
+    writeFileSync(file, "not json");
+    api.setSimeonModelRolesForTest({});
+    assert.equal(api.recallSimeonModelRoles(file), undefined);
+    assert.equal(api.configuredSimeonModel(), "gpt-6-sol");
+    assert.equal(api.recallSimeonModelRoles(path.join(process.env.SAND_DATA_ROOT, "missing.json")), undefined);
+  });
+
+  // Started while the server can't be read (the box's sign-in not there yet): the kept roles answer the first call.
+  await withProxy(async () => new Response("down", { status: 503 }), async (api) => {
+    const file = path.join(process.env.SAND_DATA_ROOT, api.SIMEON_MODEL_ROLES_FILE);
+    writeFileSync(file, JSON.stringify(CLAUDE_ROLES));
+    api.setSimeonModelRolesForTest({});
+    const stop = api.startSimeonModelRoles({ getAccessToken: async () => "simeon_da_token", rememberIn: file });
+    try {
+      assert.equal(api.configuredSimeonModel(), "claude-sonnet-5-5");
+      assert.equal(api.configuredSimeonCheapModel(), "claude-haiku-5-5");
+      assert.equal(api.SIMEON_MODEL_ROLES_FIRST_RETRY_MS, 5_000);
+    } finally {
+      stop();
+    }
+  });
 });
 
 test("a turn follows the primary role; the cheap and helper sessions follow theirs; the environment still wins", async () => {
