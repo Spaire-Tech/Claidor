@@ -329,6 +329,16 @@ model and per reason:
 cd server && uv run python -m scripts.desktop_usage_report someone@example.com --hours 48
 ```
 
+Add `--calls` to list every call, oldest first, with the time since the
+previous call to the same model, what the model read back from its stored copy
+of the prompt ("reused") and what it had to store again ("stored"). A Claude
+call that stored 10,000 tokens or more again carries a note: more than five
+minutes since that model's last call means Claude had let its copy go
+(Anthropic keeps it five minutes after its last use); within five minutes it
+means the start of the request changed, or the call belonged to another chat.
+On Render it runs in the API service's Shell, from `/app/server`:
+`uv run python -m scripts.desktop_usage_report someone@example.com --hours 24 --calls`.
+
 **What the prompt keeps stable.** The system prompt puts the parts that change
 while a conversation goes on last: the channels, the teammates, the list of
 routines, the connected apps' instructions and the discovery notice

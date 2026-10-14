@@ -55,6 +55,11 @@ thirty tasks without moving anyone else:
 5. Compare dollars, pass count and the cached share. On Claude, `cached ÷
    input` should climb after each turn's first call; `written=` on the
    `model=` line is what each call paid to write the cache (1.25x input).
+   Claude keeps that copy five minutes after its last use, so on Claude
+   send each task within five minutes of the last answer, or the run
+   measures the wait instead of the change. The report's `--calls` list
+   shows the gap before every call and notes each call that stored its
+   prompt again, with the reason.
 
 A `[simeon] model-fallback from=claude-…` line means a step ran on GPT-6 Sol
 because Claude failed; read the reason on the line before counting that task.
