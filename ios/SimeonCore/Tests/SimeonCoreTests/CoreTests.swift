@@ -24,6 +24,28 @@ final class ScriptedHTTP: HTTPClient, @unchecked Sendable {
   var sent: [URLRequest] { lock.lock(); defer { lock.unlock() }; return requests }
 }
 
+/** A server whose first answer never comes (the request times out); the next requests get the scripted answers. */
+final class Unanswered: HTTPClient, @unchecked Sendable {
+  private let rest: ScriptedHTTP
+  private let lock = NSLock()
+  private var first = true
+  private var timedOut: [URLRequest] = []
+
+  init(then answers: [(URLRequest) -> HTTPAnswer]) { rest = ScriptedHTTP(answers) }
+
+  func send(_ request: URLRequest) async throws -> HTTPAnswer {
+    let isFirst: Bool = lock.withLock {
+      defer { first = false }
+      if first { timedOut.append(request) }
+      return first
+    }
+    if isFirst { throw URLError(.timedOut) }
+    return try await rest.send(request)
+  }
+
+  var sent: [URLRequest] { lock.withLock { timedOut } + rest.sent }
+}
+
 func json(_ text: String) -> Data { Data(text.utf8) }
 
 final class SignInTests: XCTestCase {
@@ -193,6 +215,44 @@ final class TokenTests: XCTestCase {
     XCTAssertEqual(sent[1].httpMethod, "DELETE")
     XCTAssertEqual(sent[1].url?.path, "/desktop/api/account")
     XCTAssertEqual(sent[1].value(forHTTPHeaderField: "authorization"), "Bearer t")
+  }
+
+  /**
+   * 14 October 2026: the delete outlasted URLSession's minute, the app said it failed, and the server went on and
+   * deleted the account. Now the delete waits five minutes, and when no answer comes the server is asked.
+   */
+  func testADeleteWhoseAnswerNeverCameIsCheckedWithTheServer() async throws {
+    let vault = MemoryVault(SessionTokens(accessToken: "t", refreshToken: "r", expiresAtMs: 9e15))
+    let http = Unanswered(then: [
+      { _ in HTTPAnswer(status: 200, body: json(#"{"email":"a@b.c"}"#)) },
+      { _ in HTTPAnswer(status: 401) },
+    ])
+    let api = SimeonAPI(base: URL(string: "https://api.example.com")!, clientVersion: "1", vault: vault, http: http)
+    let ended = Flag()
+    await api.onSessionEnded { ended.set() }
+    let appleRunsOn = try await api.deleteAccount(checkEvery: 0)
+    XCTAssertFalse(appleRunsOn)
+    XCTAssertNil(vault.read())
+    XCTAssertFalse(ended.value, "the account's end is the delete's answer, not a sign-out")
+    let sent = http.sent
+    XCTAssertEqual(sent.map(\.httpMethod), ["DELETE", "GET", "GET"])
+    XCTAssertEqual(sent[0].timeoutInterval, SimeonAPI.deleteTimeout)
+    XCTAssertEqual(sent[1].url?.path, "/desktop/api/user/profile")
+  }
+
+  func testADeleteWhoseAnswerNeverCameAndTheAccountIsStillThereSaysSo() async {
+    let vault = MemoryVault(SessionTokens(accessToken: "t", refreshToken: "r", expiresAtMs: 9e15))
+    let present: (URLRequest) -> HTTPAnswer = { _ in HTTPAnswer(status: 200, body: json(#"{"email":"a@b.c"}"#)) }
+    let http = Unanswered(then: Array(repeating: present, count: 6))
+    let api = SimeonAPI(base: URL(string: "https://api.example.com")!, clientVersion: "1", vault: vault, http: http)
+    do {
+      try await api.deleteAccount(checkEvery: 0)
+      XCTFail("still there")
+    } catch {
+      XCTAssertTrue(error is URLError)
+    }
+    XCTAssertNotNil(vault.read(), "still signed in, so trying again works")
+    XCTAssertEqual(http.sent.count, 7)
   }
 
   func testASpentPairEndsTheSession() async {

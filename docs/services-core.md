@@ -185,10 +185,32 @@ reached, nothing else is done, the server answers `503` with the sentence the
 app shows ("… Try again in a few minutes."), and the person is still signed
 in. Both steps are safe to repeat.
 
+**"It said it failed, and the account was deleted anyway"** (the founder, 14
+October 2026). Two things together. The delete takes a while (Stripe, the
+container and its volumes, one call per connected app and per call
+transcript), and the apps waited one minute (URLSession's default) before
+saying "The request timed out." And removing the container dropped the app's
+connection, so within seconds the app asked for its computer again
+(`EnsureSandBox`), which rebuilt the container the delete had just removed and
+held locks on the person's sessions, stalling the delete further. Now:
+
+- Before step 1 the delete takes the person's ensure lock, the one
+  `EnsureSandBox` takes (`_hold_the_computer`), so the reconnect is told the
+  computer is still starting and tries again; by then the sessions are gone and
+  it is signed out. If a computer is being started when the delete begins, the
+  delete waits up to 30 seconds, then answers `503` "Your agents' computer is
+  starting. Try again in a few minutes." having done nothing.
+- The apps wait five minutes for the answer (`SimeonAPI.deleteTimeout`). If it
+  still does not come (or a gateway answers 502/504), they ask the server
+  whether the account is gone (`/desktop/api/user/profile` refused with 401)
+  for about half a minute before saying anything.
+- A call made before the delete and refused after it no longer turns "Your
+  account was deleted." into "Your Simeon sign-in ended."
+
 When it misbehaves:
 
-- `desktop.account.delete_blocked step=subscription|computer`: the step that
-  stopped it, with the error.
+- `desktop.account.delete_blocked step=subscription|computer|computer_starting`:
+  the step that stopped it, with the error.
 - `desktop.account.delete_incomplete incomplete=[…]`: an app sign-in, a call
   transcript or a skill archive the provider would not delete. The account is
   gone; finish those by hand at the provider.

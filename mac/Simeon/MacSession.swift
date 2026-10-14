@@ -201,6 +201,8 @@ final class MacSession {
 
   /** The server ended the sign-in (its refresh was refused): back to the sign-in screen (`SandAuthSignInExpiredError`). */
   private func ended() {
+    // Already signed out (Delete Account, Log Out): a late refusal of an earlier call does not replace what the sign-in screen says.
+    guard api != nil else { return }
     store.detach()
     api = nil
     phase = .signedOut(message: "Your Simeon sign-in expired. Sign in again.")
@@ -217,14 +219,16 @@ final class MacSession {
    */
   func deleteAccount() async -> String? {
     guard let api else { return "Sign in to Simeon first." }
+    // When the answer never came but the account went (`SimeonAPI.deleteAccount`), the plan read before says whether Apple bills one.
+    let applePlan = billedByApple
     let appleRunsOn: Bool
     do {
-      appleRunsOn = try await api.deleteAccount()
+      appleRunsOn = try await api.deleteAccount() || applePlan
     } catch {
       return PlainWords.error(error.localizedDescription, fallback: "Try again in a little while.")
     }
-    store.detach()
     self.api = nil
+    store.detach()
     // A plan bought in the iPhone app keeps charging until the person cancels it with Apple.
     phase = .signedOut(message: appleRunsOn ? AccountMenu.deletedApple : AccountMenu.deleted)
     return nil

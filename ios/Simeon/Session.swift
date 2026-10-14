@@ -313,6 +313,9 @@ final class SessionController {
   }
 
   private func ended() {
+    // Already signed out here (Delete Account, Sign Out): a call made before, refused after, changes nothing and
+    // does not replace what the sign-in screen says (14 October 2026: "Your account was deleted" became "sign-in ended").
+    guard api != nil else { return }
     store.detach()
     Purchases.shared.stop()
     Notifications.shared.forget()
@@ -496,19 +499,22 @@ final class SessionController {
   /** Settings › Delete Account: nil once the account is gone (and the app signed out), else why not. */
   func deleteAccount() async -> String? {
     guard let api else { return "Sign in to Simeon first." }
+    // When the answer never came but the account went (`SimeonAPI.deleteAccount`), the plan read before says whether Apple bills one.
+    let applePlan = store.usage.summary?.billedByApple == true
     let appleRunsOn: Bool
     do {
-      appleRunsOn = try await api.deleteAccount()
+      appleRunsOn = try await api.deleteAccount() || applePlan
     } catch {
       return PlainWords.error(error.localizedDescription, fallback: "Try again in a little while.")
     }
+    // First, before anything waits: a late refusal of a call made before the delete is not a sign-out (`ended`).
+    self.api = nil
     store.detach()
     Purchases.shared.stop()
     await Notifications.shared.stop()
     FreeMonthAsk.forget()
     NotificationPictures.forget()
     Self.remember(nil)
-    self.api = nil
     askedForNotifications = false
     forgetFirstRun()
     // A plan bought through Apple keeps charging until the person cancels it there.

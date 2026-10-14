@@ -5,16 +5,19 @@ anonymised; a step that must succeed and cannot leaves the rest undone."""
 
 from __future__ import annotations
 
+from datetime import timedelta
 from typing import Any
 from uuid import UUID
 
 import httpx
 import pytest
 from pytest_mock import MockerFixture
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 
+from simeon.config import settings
 from simeon.desktop import account_deletion
 from simeon.desktop import voice as voice_module
+from simeon.kit.db.postgres import create_async_engine
 from simeon.kit.utils import utc_now
 from simeon.models import (
     DesktopMemoryFile,
@@ -30,6 +33,7 @@ from simeon.postgres import AsyncSession
 from simeon.sand.box_hosts import BoxHostError
 from simeon.sand.box_service import BoxBrokerService
 from tests.desktop.test_endpoints import _signed_in
+from tests.fixtures.database import get_database_url
 from tests.sand.test_box_broker import FakeBoxHost, _ensure, host  # noqa: F401
 
 DELETE = "/desktop/api/account"
@@ -212,6 +216,59 @@ class TestDeleteAccount:
         refreshed = await session.get(User, user.id)
         assert refreshed is not None
         assert refreshed.deleted_at is None
+
+    async def test_a_computer_being_started_holds_the_delete_back(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        worker_id: str,
+        mocker: MockerFixture,
+    ) -> None:
+        """14 October 2026: removing the container drops the app's
+        connection, and the app's reconnect rebuilt the computer while the
+        delete ran, stalling it past the app's patience. The delete now
+        holds the lock the reconnect takes: here another connection holds
+        it (a computer being started), and the delete waits, then says to
+        try again, having done nothing."""
+        access, _ = await _signed_in(client, session, user)
+        session.add(
+            DesktopMemoryFile(user_id=user.id, name="MEMORY.md", content="Likes tea.")
+        )
+        await session.commit()
+        mocker.patch.object(account_deletion, "ENSURE_LOCK_WAIT", timedelta(0))
+        mocker.patch.object(account_deletion, "ENSURE_LOCK_POLL", 0.01)
+        engine = create_async_engine(
+            dsn=get_database_url(worker_id),
+            application_name="test_other",
+            pool_size=1,
+            pool_recycle=settings.DATABASE_POOL_RECYCLE_SECONDS,
+        )
+        try:
+            async with engine.connect() as other, other.begin():
+                await other.execute(
+                    text("SELECT pg_advisory_xact_lock(hashtext(:key))"),
+                    {"key": f"sand-box-ensure:{user.id}"},
+                )
+                held = await client.delete(
+                    DELETE, headers={"Authorization": f"Bearer {access}"}
+                )
+        finally:
+            await engine.dispose()
+
+        assert held.status_code == 503, held.text
+        assert "is starting" in held.json()["error"]["message"]
+        session.expire_all()
+        assert await _count(session, DesktopMemoryFile, user) == 1
+
+        # The computer started (the other side let go): the delete goes through.
+        mocker.patch.object(voice_module, "client", FakeVoice)
+        response = await client.delete(
+            DELETE, headers={"Authorization": f"Bearer {access}"}
+        )
+        assert response.status_code == 200, response.text
+        session.expire_all()
+        assert await _count(session, DesktopMemoryFile, user) == 0
 
     async def test_signed_out_is_refused(self, client: httpx.AsyncClient) -> None:
         response = await client.delete(DELETE)

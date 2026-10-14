@@ -68,8 +68,13 @@ public actor SimeonAPI {
 
   private func sessionEnded() {
     vault.write(nil)
-    onEnded?()
+    // While the account is being deleted, a call refused because its sessions just went is the delete, not a
+    // sign-out: the delete's own answer says what happened (`deleteAccount`).
+    if !deleting { onEnded?() }
   }
+
+  /** The account is being deleted (`deleteAccount`). */
+  private var deleting = false
 
   /** A live access token, refreshed first when the hour is nearly up. Nil when signed out. */
   public func accessToken() async -> String? {
@@ -106,9 +111,10 @@ public actor SimeonAPI {
   }
 
   /** One `/desktop/api/…` call, in the app's envelope (`{code, data}`), the way `simeon-api.ts` reads it on the Mac. */
-  public func data(_ path: String, method: String? = nil, json: JSON? = nil) async throws -> JSON {
+  public func data(_ path: String, method: String? = nil, json: JSON? = nil, timeout: TimeInterval? = nil) async throws -> JSON {
     var request = URLRequest(url: url(Self.desktopPrefix + path))
     request.httpMethod = method ?? (json == nil ? "GET" : "POST")
+    if let timeout { request.timeoutInterval = timeout }
     if let json {
       request.httpBody = try json.data()
       request.setValue("application/json", forHTTPHeaderField: "content-type")
@@ -208,13 +214,56 @@ public actor SimeonAPI {
    * is signed out. Then the pair is forgotten. Throws the server's own
    * sentence when a step could not be done (try again later). True when a
    * plan bought in the iPhone app runs on: only the person can cancel it,
-   * with Apple.
+   * with Apple (false when the answer never came back; the caller knows
+   * from the usage summary).
+   *
+   * The delete can take minutes (Stripe, the computer and its volumes, each
+   * app and call transcript at its provider), so it waits five minutes
+   * rather than URLSession's one (14 October 2026: the app said it failed
+   * while the server went on and deleted the account). If the answer still
+   * does not come, the server is asked whether the account is gone: a
+   * session refused (401) means it is.
    */
   @discardableResult
-  public func deleteAccount() async throws -> Bool {
-    let answer = try await data("account", method: "DELETE")
-    vault.write(nil)
-    return answer["appleSubscription"]?.bool == true
+  public func deleteAccount(checkEvery: UInt64 = 5_000_000_000) async throws -> Bool {
+    guard vault.read() != nil else { throw SimeonAPIError(message: "Sign in to Simeon first.", status: 401) }
+    deleting = true
+    defer { deleting = false }
+    do {
+      let answer = try await data("account", method: "DELETE", timeout: Self.deleteTimeout)
+      vault.write(nil)
+      return answer["appleSubscription"]?.bool == true
+    } catch let answered as SimeonAPIError where !Self.deleteUnsettled.contains(answered.status) {
+      // The server answered (a 503 is its own "couldn't be deleted right now"): the account is still there.
+      throw answered
+    } catch {
+      // No answer (timed out, cut off), a gateway's timeout, or the session already refused: ask.
+      guard await accountGone(tries: Self.deleteChecks, every: checkEvery) else { throw error }
+      vault.write(nil)
+      return false
+    }
+  }
+
+  /** How long the delete is waited for. */
+  public static let deleteTimeout: TimeInterval = 300
+  /** How many times the server is asked whether the account went, after a delete whose answer never came. */
+  static let deleteChecks = 6
+  /** Statuses that leave the delete's outcome unknown: none, the session refused, a gateway that stopped waiting. */
+  static let deleteUnsettled: Set<Int> = [0, 401, 502, 504]
+
+  /** Whether this sign-in's account is gone: its session refused (401), or its refresh refused. Asked a few times, the delete may still be finishing. */
+  private func accountGone(tries: Int, every: UInt64) async -> Bool {
+    for attempt in 0..<tries {
+      if attempt > 0 { try? await Task.sleep(nanoseconds: every) }
+      guard let token = await accessToken() else { return true }
+      var request = URLRequest(url: url(Self.desktopPrefix + "user/profile"))
+      request.setValue("Bearer \(token)", forHTTPHeaderField: "authorization")
+      request.setValue("application/json", forHTTPHeaderField: "accept")
+      for (name, value) in clientHeaders { request.setValue(value, forHTTPHeaderField: name) }
+      guard let answer = try? await http.send(request) else { continue }
+      if answer.status == 401 { return true }
+    }
+    return false
   }
 
   /** Signs this phone's session out on the server and forgets the pair. */
