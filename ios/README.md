@@ -172,6 +172,18 @@ profile, not from the configuration.
   a chat clears its notifications.
 - **The computer**: each agent's own screen, live, through noVNC's client
   (bundled in `Simeon/Computer/`, MPL 2.0) on the box's WebSocket.
+- **Connectors** (14 October 2026, the founder's reference: ChatGPT's
+  Plugins): Apple's bar with the title's menu (Available or Yours) and the
+  filter, each category's name with › over its first four apps (the name
+  opens all of them), + on each row, the search floating at the bottom
+  (`Settings.swift` `ConnectAppsSheet`, `ConnectorsList.swift`). Every
+  connector shows its own app icon (`Assets.xcassets/AppIcons`): 74 from the
+  apps' own App Store listings, 12 with no iOS app drawn from their marks in
+  `desktop/brand/connector-logos`. `python3 ios/scripts/app_icons.py` builds
+  the icons and `GeneratedAppIcons.swift` from the catalogue, and fails when
+  a connector has none; `… fetch` takes them again (where each came from:
+  `desktop/brand/app-icons/sources.json`). `ConnectorIcons` finds an icon by
+  any of an app's names ("monday.com", "Facebook Pages", "Excel").
 - **Sign-in and the first run** (12 October 2026): Apple's own sheet and
   Google's own page (`AppleSignIn`, `GoogleSignIn`), each answered with the
   pair by the server, no web page between; then the free month is asked for

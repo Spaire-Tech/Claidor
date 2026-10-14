@@ -506,9 +506,10 @@ struct AppLogoTile: View {
     .clipShape(RoundedRectangle(cornerRadius: side * 11 / 40))
   }
 
-  /** The app's mark (`Connectors/<slug>`), or the brand's. */
+  /** The app's mark (`Connectors/<slug>`, else by the connector's id: "monday.com" is `monday`, 14 October 2026), or the brand's. */
   static func logo(_ name: String) -> NSImage? {
     if let image = NSImage(named: "Connectors/\(CatalogApp.slug(name))") { return image }
+    if let id = ConnectorIcons.id(for: name), let image = NSImage(named: "Connectors/\(id)") { return image }
     if let brand = Brands.mentions.first(where: { $0.name.lowercased() == name.lowercased() }) { return NSImage(named: "Brands/\(brand.key)") }
     return nil
   }

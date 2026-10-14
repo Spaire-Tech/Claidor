@@ -253,23 +253,45 @@ struct QuestionCardView: View {
 
 // MARK: - Connected apps
 
-/** An app's tile: its mark on white, 40 pt with 11 pt corners (`.sand-tool-icon`). */
 /**
- * An app's logo on its tile: white in light, dark in dark mode, with the
- * logo's dark version where the app has one (GitHub's and Intercom's from
- * Composio's dark theme, Mercury's from its own file; the others' marks read
- * on a dark tile as they are). make-assets.mjs writes the pairs.
+ * An app's tile. A connector's is its own app icon, whole (AppIcons, from
+ * ios/scripts/app_icons.py; 14 October 2026). Any other app's is its logo on
+ * a tile, white in light and dark in dark mode, with the logo's dark version
+ * where the app has one (GitHub's and Intercom's from Composio's dark theme,
+ * Mercury's from its own file; the others' marks read on a dark tile as they
+ * are). make-assets.mjs writes those pairs.
  */
 struct ConnectorTile: View {
   let name: String
   var size: CGFloat = 40
   /** How much of the tile the logo takes: 0.6 in a chat's card, more on Connectors, where it reads as the app's icon (the founder, 13 October 2026: "bigger the logos ... they're too small"). */
   var logo: CGFloat = 0.6
+  /** The catalogue's id, when the caller has it; the name finds it otherwise. */
+  var id: String? = nil
   @Environment(\.colorScheme) private var scheme
 
   var body: some View {
+    // A connector's own app icon, the logo filling the tile with an app icon's corners (14 October 2026, the founder's
+    // reference: "full logo"); the hairline keeps a black icon on the dark ground in view.
+    if let icon = MentionArt.appIcon(id: id, name: name) {
+      let shape = RoundedRectangle(cornerRadius: size * ConnectorLogo.iconCorner, style: .continuous)
+      Image(uiImage: icon)
+        .resizable()
+        .interpolation(.high)
+        .scaledToFill()
+        .frame(width: size, height: size)
+        .clipShape(shape)
+        .overlay(shape.stroke(Ink.tileEdge, lineWidth: 0.5))
+        .accessibilityHidden(true)
+    } else {
+      markTile
+    }
+  }
+
+  /** An app with no icon of its own (a plugin from a marketplace): its mark on the tile, or its first letter. */
+  private var markTile: some View {
     let shape = RoundedRectangle(cornerRadius: size * 11 / 40, style: .continuous)
-    ZStack {
+    return ZStack {
       shape.fill(Ink.tile)
       if let art = MentionArt.connector(name) {
         Image(uiImage: art.resolved(scheme)).resizable().scaledToFit().frame(width: size * logo, height: size * logo)

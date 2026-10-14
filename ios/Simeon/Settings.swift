@@ -964,66 +964,59 @@ private struct RuleEditor: View {
 }
 
 /**
- * Connectors, in the founder's reference (11 October 2026: "no more
- * marketplace - yours"), on the app's ground. At its top Back and the
- * title; under them the search and the filter, then Apple's segmented
- * control, Available | Yours (13 October 2026: "connected become yours",
- * "use apple style picker"; Yours was a page of its own behind "4
- * connected"). Available is the catalog by category, Featured first and the
- * rest A to Z, every app of each shown ("the see all makes no sense"), each
- * with its logo (larger on its tile since that day: "bigger the logos"),
- * name, what it does and Connect. Connect asks first (ConnectConsentSheet),
- * then installs the app in the box and opens its sign-in, in one go
- * (`Connecting`). Yours is what the person added (YoursList).
+ * Connectors, as the founder's reference has them (14 October 2026,
+ * ChatGPT's Plugins: "this is how i need you to design connectors in
+ * mobile. full logo"), on the app's ground. Apple's bar: the round Back,
+ * the title in the middle with its menu (Available or Yours, which was
+ * Apple's segmented control under the search until then), and the filter
+ * (the Mac's Type and Ownership). Available is the catalog by category,
+ * Featured first and the rest A to Z: each category's name with › over its
+ * first four apps, the name opening all of them (ConnectorCategoryPage);
+ * a search shows every match. Each app has its own icon (AppIcons), its
+ * name, what it does in a line, and +, which asks first
+ * (ConnectConsentSheet), then installs the app in the box and opens its
+ * sign-in, in one go (`Connecting`). Yours is what the person added
+ * (YoursList). The search floats at the bottom.
  */
 struct ConnectAppsSheet: View {
-  // Since the Mac's Plugins came over (11 October 2026): the filter has the Mac's Type and Ownership too; a row opens the
-  // plugin's page (PluginPage); Connect opens the setup page for a plugin that asks for values, and adds a skills-only one at
-  // once; the Mac's notice says how each went (ConnectAppsModel.swift, ConnectAppsPages.swift).
+  // Since the Mac's Plugins came over (11 October 2026): a row opens the plugin's page (PluginPage); + opens the setup page
+  // for a plugin that asks for values, and adds a skills-only one at once; the Mac's notice says how each went
+  // (ConnectAppsModel.swift, ConnectAppsPages.swift).
   @Environment(SimeonCore.AppStore.self) private var store
   @Environment(\.dismiss) private var dismiss
   @State private var query = ""
   @State private var tab: ConnectorsTab = .available
-  /** The category the filter keeps, or all of them. */
-  @State private var category: String?
   /** What the Mac's Plugins window knows and does, for this opening (ConnectAppsModel). */
   @State private var model = ConnectAppsModel()
 
   var body: some View {
     NavigationStack {
-      VStack(spacing: 0) {
-        PluginsHead(title: "Connectors", back: { dismiss() }) { EmptyView() }
-        HStack(spacing: 10) {
-          PluginsSearchField(text: $query)
-          filterMenu
-        }
-        .padding(.horizontal, 18)
-        .padding(.top, 10)
-        Picker("Show", selection: $tab) {
-          ForEach(ConnectorsTab.allCases, id: \.self) { tab in Text(tab.title).tag(tab) }
-        }
-        .pickerStyle(.segmented)
-        .padding(.horizontal, 18)
-        .padding(.top, 12)
-        ScrollView {
-          LazyVStack(alignment: .leading, spacing: 0) {
-            switch tab {
-            case .available: available
-            case .yours: YoursList(query: query)
-            }
+      ScrollView {
+        LazyVStack(alignment: .leading, spacing: 0) {
+          switch tab {
+          case .available: available
+          case .yours: YoursList(query: query)
           }
-          .padding(.horizontal, 18)
-          .padding(.top, 4)
-          .padding(.bottom, 28)
         }
-        .scrollDismissesKeyboard(.immediately)
-        .refreshable {
-          await store.loadApps()
-          await model.load()
-        }
+        .padding(.horizontal, 16)
+        .padding(.bottom, 12)
       }
+      .scrollDismissesKeyboard(.immediately)
+      .refreshable {
+        await store.loadApps()
+        await model.load()
+      }
+      .safeAreaInset(edge: .bottom) { ConnectorsSearchPill(text: $query) }
       .background(Ink.ground.ignoresSafeArea())
-      .toolbar(.hidden, for: .navigationBar)
+      .navigationBarTitleDisplayMode(.inline)
+      .toolbar {
+        ToolbarItem(placement: .topBarLeading) {
+          Button { dismiss() } label: { Image(systemName: "chevron.left") }
+            .accessibilityLabel("Back")
+        }
+        ToolbarItem(placement: .principal) { titleMenu }
+        ToolbarItem(placement: .topBarTrailing) { filterMenu }
+      }
       .task { await store.loadApps() }
       .task {
         model.store = store
@@ -1043,60 +1036,68 @@ struct ConnectAppsSheet: View {
     .presentationBackground(Ink.ground)
   }
 
-  /** Available: every category with all its apps (Featured first), or what the search and the filter keep. */
+  /** Available: each category's name and its first apps (Featured first), or every app the search and the filter keep. */
   @ViewBuilder
   private var available: some View {
-    let sections = self.sections
+    let sections = connectorSections(store.catalog, query: query, model: model)
+    let searching = !query.trimmingCharacters(in: .whitespaces).isEmpty
     if store.catalog.isEmpty {
-      HStack(spacing: 10) { ProgressView(); Text("Loading apps…").font(.system(size: 13)).foregroundStyle(Ink.secondary) }
-        .padding(.top, 28)
+      HStack(spacing: 10) { ProgressView(); Text("Loading apps…").font(.system(size: 15)).foregroundStyle(Ink.secondary) }
+        .padding(.top, 24)
     } else if sections.isEmpty {
-      Text(query.isEmpty ? Plugins.noFilterMatch : "No apps match \u{201C}\(query)\u{201D}.").font(.system(size: 13)).foregroundStyle(Ink.secondary)
-        .padding(.top, 28)
+      Text(query.isEmpty ? Plugins.noFilterMatch : "No apps match \u{201C}\(query)\u{201D}.").font(.system(size: 15)).foregroundStyle(Ink.secondary)
+        .padding(.top, 24)
     }
     ForEach(sections) { section in
-      PluginsSectionHead(title: section.title) { EmptyView() }
-      ForEach(section.apps) { app in AppRow(app: app) }
+      ConnectorsSectionLink(title: section.title)
+      ForEach(searching ? section.apps : Array(section.apps.prefix(ConnectorsPreview.count))) { app in AppRow(app: app) }
     }
   }
 
-  /** The filter (the reference's button beside the search): the Mac's Type and Ownership, then on Available every category, or one. */
-  private var filterMenu: some View {
-    PluginsFilterDisc(active: tab == .available ? category != nil || !model.marketplaceFilter.isAll : !model.yoursFilter.isAll) {
-      switch tab {
-      case .available:
-        PluginFilterPickers(filter: $model.marketplaceFilter)
-        Section("Category") {
-          Picker("Category", selection: $category) {
-            Text("All apps").tag(String?.none)
-            ForEach(AppSections.make(store.catalog, query: "").map(\.title), id: \.self) { title in
-              Text(title).tag(String?.some(title))
-            }
-          }
-        }
-      case .yours:
-        PluginFilterPickers(filter: $model.yoursFilter)
+  /** The title (the reference's "Plugins ⌄"): what is shown, and its menu, Available or Yours. */
+  private var titleMenu: some View {
+    Menu {
+      Picker("Show", selection: $tab) {
+        ForEach(ConnectorsTab.allCases, id: \.self) { tab in Text(tab.title).tag(tab) }
       }
+    } label: {
+      HStack(spacing: 5) {
+        Text(tab.heading).font(.system(size: 17, weight: .semibold))
+        Image(systemName: "chevron.down").font(.system(size: 13, weight: .semibold))
+      }
+      .foregroundStyle(Ink.primary)
+      .contentShape(.rect)
     }
+    .accessibilityLabel("Show")
+    .accessibilityValue(tab.title)
   }
 
-  private var sections: [AppSections.Section] {
-    let all = AppSections.make(store.catalog, query: query)
-    let filter = model.marketplaceFilter
-    // The Mac's filter (`nt`) on each app's catalog entry; an app the box's catalog does not list is kept by All alone.
-    let kept = filter.isAll ? all : all.compactMap { section -> AppSections.Section? in
-      let apps = section.apps.filter { app in model.entry(app.id).map { Plugins.keeps($0, filter) } ?? false }
-      return apps.isEmpty ? nil : AppSections.Section(title: section.title, apps: apps)
+  /** The filter, in Apple's bar: the Mac's Type and Ownership, for what is shown; its glyph in blue while something is chosen. */
+  private var filterMenu: some View {
+    Menu {
+      switch tab {
+      case .available: PluginFilterPickers(filter: $model.marketplaceFilter)
+      case .yours: PluginFilterPickers(filter: $model.yoursFilter)
+      }
+    } label: {
+      Image(systemName: "line.3.horizontal.decrease")
+        .foregroundStyle((tab == .available ? model.marketplaceFilter.isAll : model.yoursFilter.isAll) ? Ink.primary : Ink.blue)
     }
-    guard let category else { return kept }
-    return kept.filter { $0.title == category }
+    .accessibilityLabel("Filter connectors")
   }
 }
 
-/** A connector's logo on Connectors' rows: 42, the mark at 76% of its tile (was 37 at 60%; the founder, 13 October 2026: "bigger the logos we have cause they're too small"). */
+/**
+ * A connector's logo on Connectors' rows: 44, the app's own icon filling it
+ * with an app icon's corners (14 October 2026, the founder's reference:
+ * "full logo"); a mark on a tile, at 76%, for an app with no icon of its own
+ * (was 37 at 60%; 13 October 2026: "bigger the logos").
+ */
 enum ConnectorLogo {
-  static let row: CGFloat = 42
+  static let row: CGFloat = 44
   static let fill: CGFloat = 0.76
+  /** An app icon's corner, as the Home Screen draws it, for its side. */
+  static let iconCorner: CGFloat = 0.2237
 }
 
 /** Connectors' two halves (13 October 2026: "connected become yours"): what can be added, and what the person has. */
@@ -1106,6 +1107,14 @@ enum ConnectorsTab: CaseIterable {
   var title: String {
     switch self {
     case .available: "Available"
+    case .yours: "Yours"
+    }
+  }
+
+  /** The bar's title for it. */
+  var heading: String {
+    switch self {
+    case .available: "Connectors"
     case .yours: "Yours"
     }
   }
@@ -1140,82 +1149,6 @@ enum AppSections {
 }
 
 /**
- * A page's head, measured on the founder's reference (11 October 2026): the
- * round Back (42) on the left, the title beside it (16.4 medium), and what
- * the page puts at the right, kept whole (the title gives way first).
- */
-struct PluginsHead<Trailing: View>: View {
-  let title: String
-  let back: () -> Void
-  @ViewBuilder var trailing: () -> Trailing
-
-  var body: some View {
-    HStack(spacing: 14) {
-      Button(action: back) {
-        Image(systemName: "chevron.left")
-          .font(.system(size: 16, weight: .semibold))
-          .foregroundStyle(Ink.primary)
-          .frame(width: 42, height: 42)
-          .background(Ink.groupedRow, in: Circle())
-          .contentShape(.circle)
-      }
-      .buttonStyle(.plain)
-      .accessibilityLabel("Back")
-      Text(title).font(.system(size: 16.4, weight: .medium)).foregroundStyle(Ink.primary).lineLimit(1)
-        .accessibilityAddTraits(.isHeader)
-      Spacer(minLength: 8)
-      trailing()
-        .fixedSize()
-        .layoutPriority(1)
-    }
-    .padding(.horizontal, 18)
-    .padding(.top, 18)
-  }
-}
-
-/** The search, in the control's fill, round (40 high, 15): "Search connectors". */
-struct PluginsSearchField: View {
-  @Binding var text: String
-
-  var body: some View {
-    HStack(spacing: 10) {
-      Image(systemName: "magnifyingglass").font(.system(size: 16, weight: .medium)).foregroundStyle(Ink.secondary)
-      TextField("Search connectors", text: $text)
-        .font(.system(size: 15))
-        .textInputAutocapitalization(.never)
-        .autocorrectionDisabled()
-        .submitLabel(.search)
-      if !text.isEmpty {
-        Button { text = "" } label: {
-          Image(systemName: "xmark.circle.fill").font(.system(size: 16)).foregroundStyle(Ink.tertiary)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Clear search")
-      }
-    }
-    .padding(.horizontal, 16)
-    .frame(height: 40)
-    .background(Ink.groupedRow, in: Capsule())
-  }
-}
-
-/** A section's head: its name in the faint grey (13), and what the section offers at the right (13); 21 over it, 4 under. */
-struct PluginsSectionHead<Trailing: View>: View {
-  let title: String
-  @ViewBuilder var trailing: () -> Trailing
-
-  var body: some View {
-    HStack {
-      Text(title).font(.system(size: 13)).foregroundStyle(Ink.tertiary).accessibilityAddTraits(.isHeader)
-      Spacer()
-      trailing().font(.system(size: 13)).foregroundStyle(Ink.secondary)
-    }
-    .padding(.top, 21)
-    .padding(.bottom, 4)
-  }
-}
-
-/**
  * Yours (Your plugins until 13 October 2026, a page of its own then; now
  * Connectors' second half): the installed apps, each with its logo, its
  * name ("Error" beside it in red when the box says so) and its tools; at
@@ -1242,13 +1175,13 @@ struct YoursList: View {
     let showsPrivate = filter.isAll || model.agentId == nil || !skills.isEmpty
     if !model.authBlocked.isEmpty { GitHubBanner().padding(.top, 8) }
     if !showsInstalled && !showsPrivate {
-      Text(Plugins.noFilterMatch).font(.system(size: 13)).foregroundStyle(Ink.secondary).padding(.top, 21)
+      Text(Plugins.noFilterMatch).font(.system(size: 15)).foregroundStyle(Ink.secondary).padding(.top, 24)
     }
     if showsInstalled {
-      PluginsSectionHead(title: "Installed") { EmptyView() }
+      ConnectorsSectionTitle(title: "Installed") { EmptyView() }
       if apps.isEmpty && skillsOnly.isEmpty {
-        Text(q.isEmpty || store.appsOnce.isEmpty ? "No apps yet. Connect one from Available." : "No apps match \u{201C}\(q)\u{201D}.")
-          .font(.system(size: 13)).foregroundStyle(Ink.secondary)
+        Text(q.isEmpty || store.appsOnce.isEmpty ? "No apps yet. Add one from Available." : "No apps match \u{201C}\(q)\u{201D}.")
+          .font(.system(size: 15)).foregroundStyle(Ink.secondary)
           .padding(.top, 8)
       }
       ForEach(apps) { app in InstalledRow(app: app) }
@@ -1292,38 +1225,37 @@ struct InstalledRow: View {
 
   var body: some View {
     let connected = app.status == "connected"
-    HStack(spacing: 12) {
+    HStack(spacing: 8) {
       NavigationLink { PluginPage(app: app) } label: {
-        HStack(spacing: 16) {
+        HStack(spacing: 14) {
           ConnectorTile(name: app.name, size: ConnectorLogo.row, logo: ConnectorLogo.fill)
           VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 8) {
-              Text(app.name).font(.system(size: 16.4)).foregroundStyle(Ink.primary).lineLimit(1)
+              Text(app.name).font(.system(size: 17)).foregroundStyle(Ink.primary).lineLimit(1)
               if let team = teamLabel { TeamBadge(tip: team) }
               if app.status == "error" { Text("Error").font(.system(size: 13)).foregroundStyle(Ink.danger).fixedSize() }
             }
             Text(connected ? (app.toolCount == 1 ? "1 tool" : app.toolCount > 0 ? "\(app.toolCount) tools" : Connecting.connected) : "Not connected")
-              .font(.system(size: 13)).foregroundStyle(connected ? Ink.secondary : Ink.danger).lineLimit(1)
+              .font(.system(size: 15)).foregroundStyle(connected ? Ink.secondary : Ink.danger).lineLimit(1)
           }
-          Spacer(minLength: 0)
+          Spacer(minLength: 4)
         }
         .contentShape(.rect)
       }
       .buttonStyle(.plain)
       if connected {
-        PluginPill(title: Connecting.connected, fill: Ink.pillButton, ink: Ink.secondary)
+        ConnectorMark.added()
       } else if connector.connecting == app.name {
-        ProgressView().controlSize(.small).frame(width: 44)
+        ConnectorMark.busy()
       } else {
-        Button { asking = ConnectConsent(app: store.catalogApp(named: app.name), name: app.name) } label: {
-          PluginPill(title: Connecting.connect, fill: Ink.authenticate, ink: .white)
-        }
-        .buttonStyle(.plain)
-        .disabled(connector.connecting != nil)
-        .accessibilityLabel("Connect \(app.name)")
+        // Added but not signed in: + signs it in, after the same question as every connect.
+        Button { asking = ConnectConsent(app: store.catalogApp(named: app.name), name: app.name) } label: { ConnectorMark.plus() }
+          .buttonStyle(.plain)
+          .disabled(connector.connecting != nil)
+          .accessibilityLabel("Connect \(app.name)")
       }
     }
-    .padding(.vertical, 17)
+    .padding(.vertical, 13.5)
     // The sign-in page opens once the sheet has gone; then how it went, as Connect says it.
     .sheet(item: $asking, onDismiss: {
       guard confirmed else { return }
@@ -1368,14 +1300,14 @@ struct PluginPill: View {
 }
 
 /**
- * One app in the catalog (the reference's, measured): its logo (37), name
- * (16.4, with the Mac's Team mark for a team's marketplace) and what it does
- * in two lines (13), and Connect, or Connected once it is signed in (Added
- * for a plugin of skills alone, which has nothing to sign in to). The row
- * opens the plugin's page (PluginPage), as the Mac's Marketplace rows do;
- * Connect (PluginAddButton) is the consent, then the setup page or the
- * sign-in, in one go. An app added before but not signed in says Connect
- * too, and Connect then only signs it in.
+ * One app in the catalog (the founder's reference, 14 October 2026): its own
+ * icon (44), its name (17, with the Mac's Team mark for a team's
+ * marketplace) and what it does in a line (15), and + at the right, a tick
+ * once it is signed in (or added, for a plugin of skills alone, which has
+ * nothing to sign in to). The row opens the plugin's page (PluginPage), as
+ * the Mac's Marketplace rows do; + (PluginAddButton) is the consent, then the
+ * setup page or the sign-in, in one go. An app added before but not signed
+ * in shows + too, and + then only signs it in.
  */
 struct AppRow: View {
   let app: CatalogApp
@@ -1386,41 +1318,37 @@ struct AppRow: View {
   var body: some View {
     // A plugin of skills alone has no app to sign in to: it is in once it is added (the Mac's `et`).
     let skillsAdded = model.entry(app.id).map { $0.connectorList.isEmpty && model.installed($0).isInstalled } ?? false
-    // An app that can't be added yet: dimmed, "Coming soon" in place of Add (`AppsComingSoon`).
+    // An app that can't be added yet: dimmed, "Coming soon" in place of + (`AppsComingSoon`).
     let soon = store.isComingSoon(app.id)
-    HStack(spacing: 16) {
+    HStack(spacing: 8) {
       NavigationLink { PluginPage(entryId: app.id) } label: {
-        HStack(spacing: 16) {
-          ConnectorTile(name: app.title, size: ConnectorLogo.row, logo: ConnectorLogo.fill)
+        HStack(spacing: 14) {
+          ConnectorTile(name: app.title, size: ConnectorLogo.row, logo: ConnectorLogo.fill, id: app.id)
           VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 6) {
-              Text(app.title).font(.system(size: 16.4)).foregroundStyle(Ink.primary).lineLimit(1)
+              Text(app.title).font(.system(size: 17)).foregroundStyle(Ink.primary).lineLimit(1)
               if let team = model.entry(app.id).flatMap({ Plugins.teamMark($0) }) { TeamBadge(tip: team) }
             }
-            if !app.summary.isEmpty { Text(app.summary).font(.system(size: 13)).foregroundStyle(Ink.secondary).lineLimit(2) }
+            if !app.summary.isEmpty { Text(app.summary).font(.system(size: 15)).foregroundStyle(Ink.secondary).lineLimit(1) }
           }
-          Spacer(minLength: 8)
+          Spacer(minLength: 4)
         }
         .contentShape(.rect)
         .opacity(soon ? 0.6 : 1)
       }
       .buttonStyle(.plain)
       if soon {
-        PluginPill(title: AppsComingSoon.label, fill: Ink.pillButton, ink: Ink.tertiary)
+        ConnectorMark.soon()
           .accessibilityLabel("\(app.title) is coming soon")
-      } else if store.isConnected(app.title) {
-        PluginPill(title: Connecting.connected, fill: Ink.pillButton, ink: Ink.secondary)
-      } else if skillsAdded {
-        PluginPill(title: "Added", fill: Ink.pillButton, ink: Ink.secondary)
+      } else if store.isConnected(app.title) || skillsAdded {
+        ConnectorMark.added()
       } else if connector.connecting == app.title || model.adding == app.id {
-        ProgressView().controlSize(.small).frame(width: 44)
+        ConnectorMark.busy()
       } else {
-        PluginAddButton(name: app.title, catalogApp: app, entryId: app.id) {
-          PluginPill(title: Connecting.connect, fill: Ink.pillButton, ink: Ink.primary)
-        }
-        .accessibilityLabel("Connect \(app.title)")
+        PluginAddButton(name: app.title, catalogApp: app, entryId: app.id) { ConnectorMark.plus() }
+          .accessibilityLabel("Connect \(app.title)")
       }
     }
-    .padding(.vertical, 17)
+    .padding(.vertical, 13.5)
   }
 }

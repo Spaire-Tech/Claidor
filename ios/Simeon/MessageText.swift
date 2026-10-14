@@ -94,12 +94,19 @@ enum MentionArt {
     return image
   }
 
-  /** A connected app's mark for a card's tile (`Connectors/<slug>`), or a brand's, or nil. */
+  /** A connected app's mark for a card's tile (`Connectors/<slug>`, else by the connector's id: "monday.com" is `monday`), or a brand's, or nil. */
   static func connector(_ name: String) -> UIImage? {
     let slug = CatalogApp.slug(name)
     if let image = UIImage(named: "Connectors/\(slug)") { return image }
+    if let id = ConnectorIcons.id(for: name), let image = UIImage(named: "Connectors/\(id)") { return image }
     if let brand = Brands.mentions.first(where: { $0.name.lowercased() == name.lowercased() }) { return UIImage(named: "Brands/\(brand.key)") }
     return nil
+  }
+
+  /** A connector's own app icon (`AppIcons/<id>`, the logo filling the tile, 14 October 2026), by its id or any of its names; nil for an app that is not a connector. */
+  static func appIcon(id: String? = nil, name: String) -> UIImage? {
+    guard let key = id.flatMap(ConnectorIcons.id(for:)) ?? ConnectorIcons.id(for: name) else { return nil }
+    return UIImage(named: "AppIcons/\(key)")
   }
 
   private static func padded(width: CGFloat, height: CGFloat, draw: (UIGraphicsImageRendererContext) -> Void) -> UIImage {
