@@ -602,8 +602,12 @@ ones our server serves (`boxCli` in `vendor-mcp/catalog.ts`; `vendor-mcp/backend
   source actions; Link answers a page on app.link.com that already carries the code
   (`/device/setup?code=…`), which the apps open in their sign-in sheet. The person signs in to
   Link there (or approves in the Link app); the sign-in's watch runs `auth status` every 5 s,
-  which finishes it. The approval screen names "Simeon on <computer>" with Link's generic look:
-  Simeon's own name and logo there need Simeon Labs' registered OAuth client (below).
+  which finishes it. The approval screen names "Simeon on your cloud computer" with Link's
+  generic look and "Link hasn't verified Simeon…": the CLI writes "<client name> on
+  <hostname>", and a box's hostname is its container's id ("Simeon on 81e167da4ad7" until 14
+  October 2026), so `auth login` runs with a file Node loads first that answers
+  `LINK_DEVICE_LABEL` for the hostname (`link-cli.ts`). Simeon's own name and logo there, and no
+  warning, need Simeon Labs' registered OAuth client (below).
 * **Where it lives.** The sign-in is one file on the data volume,
   `/home/box/sand-data/link/auth.json` (0600), so a box update keeps it. The CLI comes with the
   image (`box/Dockerfile`, `LINK_CLI_VERSION`); a box on an older image installs the same version

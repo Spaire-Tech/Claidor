@@ -15,7 +15,7 @@
 // object with `code` and `message` and exit code 1 (measured on 0.27.1).
 
 import { execFile } from "node:child_process";
-import { chmodSync, existsSync, mkdirSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 
 /** The pinned CLI: published by Stripe on 12 October 2026, run here on Node 22 (the box's) the next day. */
@@ -23,6 +23,22 @@ export const LINK_CLI_VERSION = "0.27.1";
 export const LINK_CLI_PACKAGE = "@stripe/link-cli";
 /** The name the person sees in the Link app when they approve the connection. */
 export const LINK_CLIENT_NAME = "Simeon";
+/**
+ * The computer as Link names it when the person approves the connection:
+ * "Simeon on your cloud computer". The CLI writes "<client name> on
+ * <os.hostname()>" (0.27.1, `buildDeviceCodeForm`), and a cloud computer's
+ * hostname is its container's id: the founder saw "Simeon on 81e167da4ad7"
+ * (14 October 2026). For `auth login` only, a file Node loads first
+ * (`NODE_OPTIONS --require`) answers this name for the hostname.
+ */
+export const LINK_DEVICE_LABEL = "your cloud computer";
+export const LINK_DEVICE_LABEL_FILE = "device-label.cjs";
+const DEVICE_LABEL_SOURCE = `// Written by Simeon (link-cli.ts): the name Link shows for this computer when the person approves the connection.
+const os = require("node:os");
+const label = process.env.SIMEON_LINK_DEVICE_LABEL;
+if (label) { os.hostname = () => label; require("node:module").syncBuiltinESMExports(); }
+`;
+
 /** What the sign-in asks for besides payments: the person's transactions, balances and account details (Link's financial insights, US accounts). */
 export const LINK_SOURCE_ACTIONS = ["read_link_transactions", "read_external_transactions", "read_balances", "read_source_details"] as const;
 
@@ -156,9 +172,10 @@ export function createLinkCli(options: LinkCliOptions) {
     mkdirSync(dir, { recursive: true, mode: 0o700 });
     try { chmodSync(dir, 0o700); } catch { /* best effort */ }
     const [file, ...lead] = command as [string, ...string[]];
+    const signIn = args[0] === "auth" && args[1] === "login";
     const result = await exec(file, [...lead, ...args, "--auth", linkAuthFile(options.rootDir()), "--format", "json"], {
       // No update notices, no skill install, and a home of its own on the data volume (HOME may be gone from a box command's environment).
-      env: { ...env, HOME: dir, NO_UPDATE_NOTIFIER: "1", LINK_CLI_SKIP_SKILL_INSTALL: "1", npm_config_update_notifier: "false" },
+      env: { ...env, HOME: dir, NO_UPDATE_NOTIFIER: "1", LINK_CLI_SKIP_SKILL_INSTALL: "1", npm_config_update_notifier: "false", ...(signIn ? deviceLabelEnv(dir, env, log) : {}) },
       cwd: dir,
       timeoutMs: runOptions.timeoutMs ?? 60_000,
     });
@@ -175,3 +192,16 @@ export function createLinkCli(options: LinkCliOptions) {
 }
 
 export type LinkCli = ReturnType<typeof createLinkCli>;
+
+/** The sign-in's environment for `LINK_DEVICE_LABEL`; none when the file can't be written (Link then shows the container's id, as before). */
+function deviceLabelEnv(dir: string, env: NodeJS.ProcessEnv, log: (message: string) => void): Record<string, string> {
+  const file = join(dir, LINK_DEVICE_LABEL_FILE);
+  try {
+    writeFileSync(file, DEVICE_LABEL_SOURCE, { mode: 0o600 });
+  } catch (error) {
+    log(`[link] device label not set: ${error instanceof Error ? error.message : String(error)}`);
+    return {};
+  }
+  const preload = `--require ${JSON.stringify(file)}`;
+  return { SIMEON_LINK_DEVICE_LABEL: LINK_DEVICE_LABEL, NODE_OPTIONS: [env.NODE_OPTIONS?.trim(), preload].filter((part) => part != null && part.length > 0).join(" ") };
+}

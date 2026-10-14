@@ -82,6 +82,21 @@ test("the runner reads Link's answers: the last state of a poll, an error object
   assert.equal(status.env.NO_UPDATE_NOTIFIER, "1");
   assert.equal(status.env.HOME, path.join(root, "link"));
 
+  // The sign-in names the computer "your cloud computer" in Link, not its container's id (14 October 2026); no other command is touched.
+  await cli.run(["auth", "login", "--client-name", "Simeon"]);
+  const login = ran.at(-1);
+  const preload = path.join(root, "link", "device-label.cjs");
+  assert.equal(login.env.SIMEON_LINK_DEVICE_LABEL, "your cloud computer");
+  assert.equal(login.env.NODE_OPTIONS, `--require ${JSON.stringify(preload)}`);
+  assert.equal(status.env.NODE_OPTIONS, undefined);
+  assert.equal(status.env.SIMEON_LINK_DEVICE_LABEL, undefined);
+  // Node answers that name for the hostname an ES module imports, as the CLI does (`import { hostname } from "os"`).
+  const probe = path.join(root, "probe.mjs");
+  writeFileSync(probe, 'import { hostname } from "os";\nconsole.log(`Simeon on ${hostname()}`);\n');
+  const { execFileSync } = await import("node:child_process");
+  const probed = execFileSync(process.execPath, [probe], { env: { PATH: process.env.PATH, NODE_OPTIONS: login.env.NODE_OPTIONS, SIMEON_LINK_DEVICE_LABEL: login.env.SIMEON_LINK_DEVICE_LABEL }, encoding: "utf8" });
+  assert.equal(probed.trim(), "Simeon on your cloud computer");
+
   // The image's copy wins, and no install runs.
   files.add("/usr/local/bin/link-cli");
   ran.length = 0;

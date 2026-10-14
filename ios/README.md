@@ -184,6 +184,16 @@ profile, not from the configuration.
   a connector has none; `… fetch` takes them again (where each came from:
   `desktop/brand/app-icons/sources.json`). `ConnectorIcons` finds an icon by
   any of an app's names ("monday.com", "Facebook Pages", "Excel").
+- **App names in messages** (`Mentions.find`, `GeneratedBrands.swift`): the
+  Mac window's 75 spellings, and since 14 October 2026 the 36 connectors added
+  after it plus "Facebook Pages" and "TikTok Ads"
+  (`ios/scripts/connector-mentions.json`, iPhone and Mac only), each in its
+  colour with its logo. A name that is also an everyday word (Link, Kit,
+  Square, Ramp, Capsule, Mercury, Apollo, Gong) is not marked as a sentence's
+  first word ("Link your account"). `node ios/scripts/make-assets.mjs` draws
+  the logos into `Assets.xcassets/Brands`, copies them to the Mac's, and
+  writes the Swift list (`CHROMIUM=` the Chromium binary when it is not at
+  `/opt/pw-browsers/chromium`).
 - **Sign-in and the first run** (12 October 2026): Apple's own sheet and
   Google's own page (`AppleSignIn`, `GoogleSignIn`), each answered with the
   pair by the server, no web page between; then the free month is asked for

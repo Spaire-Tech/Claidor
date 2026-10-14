@@ -928,6 +928,23 @@ final class MarkdownTests: XCTestCase {
     XCTAssertEqual(id, "theo")
   }
 
+  /** The connectors added after the Mac window's list (14 October 2026): Link coloured mid-sentence, never as a sentence's first word; LinkedIn stays LinkedIn; another spelling of an app keeps its logo. */
+  func testConnectorNamesAndEverydayWords() {
+    func named(_ text: String) -> [String] {
+      Mentions.find(in: text, agents: []).compactMap { match in
+        guard case .brand(let brand) = match.kind else { return nil }
+        return "\((text as NSString).substring(with: NSRange(location: match.location, length: match.length)))=\(brand.key)"
+      }
+    }
+    XCTAssertEqual(named("Your Link wallet checks out; re-add it in the Link app."), ["Link=link", "Link=link"])
+    XCTAssertEqual(named("Link your Google Calendar first. Then Square and Ramp."), ["Google Calendar=google-calendar", "Square=square", "Ramp=ramp"])
+    XCTAssertEqual(named("1. Link the card\n- **Square** is next\n\"Kit\" sends it"), [])
+    XCTAssertEqual(named("Post on LinkedIn, Facebook Pages and TikTok Ads, then OneDrive and monday.com."), ["LinkedIn=linkedin", "Facebook Pages=facebook", "TikTok Ads=tiktok", "OneDrive=onedrive", "monday.com=monday"])
+    XCTAssertEqual(named("Granola, Resend and Microsoft To Do."), ["Granola=granola", "Resend=resend", "Microsoft To Do=microsoft-to-do"])
+    // An app whose name is not an everyday word is marked anywhere, first word included.
+    XCTAssertEqual(named("Stripe charged it."), ["Stripe=stripe"])
+  }
+
   func testAvasChatIsQuickInTheCore() {
     // The chat that froze on the founder's iPhone (8 October 2026), as he pasted it: the core's part is a few milliseconds.
     let lines = [
