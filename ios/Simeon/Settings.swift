@@ -613,14 +613,18 @@ struct UsagePage: View {
     showsPlans = true
   }
 
-  /** Stripe's page for the plan above (`update_confirm`) or its front page; "Opening…" while it is asked for, the failure under the rows. */
+  /**
+   * Stripe's page for the plan above (`update_confirm`) or its front page, in
+   * the app and back in it when done (`BillingPage`, 14 October 2026; it
+   * ended on the web's billing page, which asks to sign in); "Opening…"
+   * while it is asked for, the failure under the rows.
+   */
   private func open(_ which: String, flow: String?, tier: String?) {
     guard opening == nil else { return }
     opening = which
     failure = nil
     Task {
-      let answer = await store.billingPortal(flow: flow, tier: tier)
-      if let url = answer.url { openURL(url) } else { failure = answer.message ?? "Couldn’t open billing. Try again." }
+      failure = await BillingPage.shared.open(flow: flow, tier: tier, store: store, openURL: openURL)
       opening = nil
     }
   }

@@ -220,14 +220,17 @@ private struct ManagePlanCard: View {
     }
   }
 
-  /** Stripe's page for the plan above (`update_confirm`) or its front page, in the browser. */
+  /**
+   * Stripe's page for the plan above (`update_confirm`) or its front page, in
+   * the app and back in it when done (`MacBillingPage`, 14 October 2026; it
+   * ended on the web's billing page, which asks to sign in).
+   */
   private func open(_ which: String, flow: String?, tier: String?) {
     guard opening == nil else { return }
     opening = which
     failure = nil
     Task {
-      let answer = await store.billingPortal(flow: flow, tier: tier)
-      if let url = answer.url { NSWorkspace.shared.open(url) } else { failure = answer.message ?? "Couldn’t open billing. Try again." }
+      failure = await MacBillingPage.shared.open(flow: flow, tier: tier, store: store)
       opening = nil
     }
   }

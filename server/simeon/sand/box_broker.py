@@ -35,6 +35,7 @@ import structlog
 from fastapi import Depends, Request
 from fastapi.responses import JSONResponse
 
+from simeon.config import settings
 from simeon.desktop.allowance import billing_url
 from simeon.desktop.auth import get_desktop_session
 from simeon.desktop.service import desktop
@@ -200,20 +201,31 @@ async def _still_starting(call: ConnectCall, error: BaseException) -> ConnectErr
 # --- the RPCs -----------------------------------------------------------------------
 
 
-async def require_a_plan(call: ConnectCall) -> None:
+async def require_a_plan(call: ConnectCall, *, reaching: bool = False) -> None:
     """With billing required and no plan, no box: `permission_denied`
     with no hint header, which the Mac's host connector reads as access
     denied (`box-host-connector.ts`), so the window shows its access
     cover with the words `GetSandAccessStatus` gives and keeps asking
     for the box; once the plan is on Stripe the next ask succeeds and
-    the cover goes, with nothing to restart (`docs/services-billing.md`)."""
+    the cover goes, with nothing to restart (`docs/services-billing.md`).
+
+    Reaching the box (`EnsureSandBox`, `reaching`) is let through since
+    14 October 2026 while `DESKTOP_COMPUTER_WITHOUT_PLAN` is on: the apps
+    then show the account's agents and chats, hold sending (the access
+    state is still payment required) and say why over the composer, and
+    every metered call is still refused with 402. A rebuild still waits
+    for a plan."""
     allowance = await desktop.allowance(call.db, call.caller.user)
     if allowance.none:
+        allowed = reaching and settings.DESKTOP_COMPUTER_WITHOUT_PLAN
         log.info(
             "sand.box.ensure.no_plan",
             user=str(call.caller.user_id),
             payment_failed=allowance.payment_failed,
+            allowed=allowed,
         )
+        if allowed:
+            return
         if not allowance.payment_failed:
             message = f"No active plan. Choose one at {billing_url()}."
         elif allowance.provider == "app_store":
@@ -230,7 +242,7 @@ async def require_a_plan(call: ConnectCall) -> None:
 
 @service.unary("EnsureSandBox")
 async def ensure_sand_box(call: ConnectCall) -> dict[str, Any]:
-    await require_a_plan(call)
+    await require_a_plan(call, reaching=True)
     try:
         box = await broker.ensure(call.db, call.caller)
     except (BoxHostError, BoxBrokerRefused) as error:

@@ -112,7 +112,9 @@ struct Composer: View {
     // Over the field and as wide, 8 apart: whether this account may use Simeon (`Qvn`, step 13; sending waits under
     // it), then the agent's first waiting ask to use this Mac (`BLn`, step 14; an agent's chat only).
     .above(gap: 8) {
-      // With no plan, the Mac's words and the web's plans page (`MacUpgrade`, 14 October 2026), not simeonlabs.com.
+      // With no plan, the Mac's words and the web's plans page (`MacUpgrade`, 14 October 2026), not simeonlabs.com; a card
+      // that failed, Stripe's card page in the app. The window stays open meanwhile and Send waits (the founder: "still
+      // access to the app. just cant send message").
       let notice = store.access.notice.map { _ in MacUpgrade.cover(access: store.access, usage: store.usage.summary) }
       let credits = notice == nil ? creditsLine : nil
       let ask = agentId == NewChatState.draftKey ? nil : store.localAsks[agentId]
@@ -120,7 +122,14 @@ struct Composer: View {
         VStack(spacing: 8) {
           if let notice {
             AccessNotice(words: notice, look: look, action: {
-              _ = NSWorkspace.shared.open(MacUpgrade.destination(access: store.access, usage: store.usage.summary))
+              switch MacUpgrade.route(access: store.access, usage: store.usage.summary) {
+              case .portal(let flow, let tier):
+                Task { if let failure = await MacBillingPage.shared.open(flow: flow, tier: tier, store: store) { store.problem = failure } }
+              case .web(let url):
+                _ = NSWorkspace.shared.open(url)
+              case .plans, .none:
+                break
+              }
             })
           }
           if let credits {

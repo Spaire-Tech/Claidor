@@ -4,13 +4,19 @@ import Foundation
  * What the iPhone says when this account can't send (the founder, 12
  * October 2026: "we have the usage banner saying they're out of usage and
  * that they should upgrade"), and where it sends the person: the App
- * Store's plans, or the web for a plan bought there (`route`).
+ * Store's plans, or Stripe's own page for a plan bought on the web
+ * (`route`).
  *
- * - The cover over the app, when the computer refuses the account (no plan):
- *   the free month over, or never had, or the first charge after the trial
- *   failed (`cover`).
  * - The banner over the composer: the free month's credits used, a paid
- *   week's credits used, or no plan (`banner`).
+ *   week's credits used, or no plan: the free month over, or never had, or
+ *   the first charge after the trial failed (`banner`). Since 14 October
+ *   2026 (the founder: "still access to the app. just cant send message.
+ *   and explain the reason below") the app stays open with no plan: the
+ *   server lets the account reach its computer, Send waits, and this line
+ *   says why.
+ * - The cover over the app, only when the computer refuses the account
+ *   (the server's `DESKTOP_COMPUTER_WITHOUT_PLAN` off), in the same words
+ *   (`cover`).
  *
  * The server's 402 for spent credits (code 40200, `proxy_common.py`) also
  * reaches the chat as a red "Agent failed to respond" card; the iPhone draws
@@ -23,6 +29,9 @@ public enum PhoneUpgrade {
   public static let paymentFailedTitle = "Your payment didn’t go through"
   public static let updateCard = "Update card"
   public static let updatePayment = "Update payment"
+  /** Under the title of a failed payment: why Send waits. */
+  public static let paymentFailedCard = "You can’t send messages until your card is updated."
+  public static let paymentFailedApple = "You can’t send messages until your Apple payment method is updated."
   /** Apple's own page for the Apple Account's payment method (Apple's advice for a failed renewal). */
   public static let appleBilling = URL(string: "https://apps.apple.com/account/billing")!
 
@@ -31,15 +40,16 @@ public enum PhoneUpgrade {
     guard access.state == .paymentRequired else { return access.cover }
     // The trial's first charge failed (14 October 2026): the plan is there, the card is not; no plan to choose.
     if let usage, usage.paymentFailed {
+      // An Apple plan goes to the plans (the founder, 14 October 2026), which say the payment failed and link to Apple's page.
       if usage.billedByApple {
-        return SandAccess.Words(title: paymentFailedTitle, body: "Update your payment method with Apple to keep your agents working.", action: updatePayment)
+        return SandAccess.Words(title: paymentFailedTitle, body: paymentFailedApple, action: seePlans)
       }
-      return SandAccess.Words(title: paymentFailedTitle, body: "Update your card to keep your agents working.", action: updateCard)
+      return SandAccess.Words(title: paymentFailedTitle, body: paymentFailedCard, action: updateCard)
     }
     if usage?.hasEndedTrial == true {
-      return SandAccess.Words(title: "Your free month has ended", body: "Choose a plan to keep your agents working.", action: seePlans)
+      return SandAccess.Words(title: "Your free month has ended", body: "Choose a plan to send messages again.", action: seePlans)
     }
-    return SandAccess.Words(title: "Choose a plan to start", body: "Simeon needs a plan on this account.", action: seePlans)
+    return SandAccess.Words(title: "Choose a plan to start", body: "You can send messages once this account has a plan.", action: seePlans)
   }
 
   /**
@@ -121,25 +131,43 @@ public enum PhoneUpgrade {
   public enum Route: Equatable, Sendable {
     /** The App Store's plans, on the plan above when there is one (an Apple plan's upgrade). */
     case plans(tier: String?)
-    /** A plan bought on the web is changed there (where Apple allows the link); simeonlabs.com for an account no plan can help. */
+    /**
+     * Stripe's own page for a plan bought on the web, asked for with the
+     * app's sign-in (`/desktop/api/billing/portal`) and shown in the app,
+     * back in it when done (14 October 2026): the web's billing page asked
+     * the person to sign in again first, which the founder found confusing.
+     * `payment_method` for a card that failed, `update_confirm` with the
+     * plan above for an upgrade, else its front page.
+     */
+    case portal(flow: String?, tier: String?)
+    /** simeonlabs.com for an account no plan can help; Apple's payment page; the web's plans page (the Mac). */
     case web(URL)
     /** A plan bought on the web, where Apple allows no link to it: no button (the App Store would sell a second plan). */
     case none
   }
 
+  public static let paymentMethodFlow = "payment_method"
+  public static let upgradeFlow = "update_confirm"
+
   public static func route(access: SandAccess, usage: UsageSummary?, webLinkAllowed: Bool) -> Route {
     if access.state == .unavailable { return .web(SandAccess.page) }
-    // A failed payment is mended where the card is: Apple's payment page, or the web's billing page where Apple
-    // allows the link (never the App Store's plans, which would sell a second plan).
+    // A failed payment: Stripe's card page for a plan bought on the web where Apple allows the link (never the App
+    // Store's plans, which would sell a second plan); the plans for an Apple plan, which link to Apple's payment page.
     if let usage, usage.paymentFailed {
-      if usage.billedByApple { return .web(appleBilling) }
-      guard webLinkAllowed, let url = usage.upgrade?.url else { return .none }
-      return .web(url)
+      if usage.billedByApple { return .plans(tier: nil) }
+      return webLinkAllowed ? .portal(flow: paymentMethodFlow, tier: nil) : .none
     }
     guard let usage, let plan = usage.managePlan else { return .plans(tier: nil) }
     if usage.billedByApple { return .plans(tier: plan.nextTier?.tier) }
-    guard webLinkAllowed, let url = usage.upgrade?.url else { return .none }
-    return .web(url)
+    guard webLinkAllowed else { return .none }
+    // A plan bought on the web: Stripe's confirmation of the plan above, else its front page.
+    if let next = plan.nextTier { return .portal(flow: upgradeFlow, tier: next.tier) }
+    return .portal(flow: nil, tier: nil)
+  }
+
+  /** The plans say this above the plans when an Apple plan's payment failed (`appleBilling`). */
+  public static func applePaymentFailed(_ usage: UsageSummary?) -> Bool {
+    usage?.paymentFailed == true && usage?.billedByApple == true
   }
 
   /**
@@ -162,13 +190,15 @@ public enum PhoneUpgrade {
 }
 
 /**
- * What the Mac says when this account has no plan (the cover over the
- * window, and the line over the composer), and where its button goes (14
- * October 2026). The founder chose the web for the Mac: the plans page,
- * where the 30-day trial starts with a card (the iPhone starts its free
- * month itself, no card). Until then the Mac showed the window's own
- * "Start your free month" and its button opened simeonlabs.com, where
- * nothing starts a trial.
+ * What the Mac says when this account has no plan (the line over the
+ * composer, and the cover over the window when the computer refuses the
+ * account), and where its button goes (14 October 2026). The founder chose
+ * the web for the Mac: the plans page, where the 30-day trial starts with
+ * a card (the iPhone starts its free month itself, no card). Until then the
+ * Mac showed the window's own "Start your free month" and its button opened
+ * simeonlabs.com, where nothing starts a trial. A card that failed goes to
+ * Stripe's card page in the app (`PhoneUpgrade.Route.portal`), not the
+ * web's billing page, which asked to sign in first.
  */
 public enum MacUpgrade {
   /** The web's plans page, from the app: it sends the person back to the app afterwards. The quota's `upgradeUrl` when there is one. */
@@ -178,24 +208,30 @@ public enum MacUpgrade {
     guard access.state == .paymentRequired else { return access.cover }
     if let usage, usage.paymentFailed {
       if usage.billedByApple {
-        return SandAccess.Words(title: PhoneUpgrade.paymentFailedTitle, body: "Update your payment method with Apple to keep your agents working.", action: PhoneUpgrade.updatePayment)
+        return SandAccess.Words(title: PhoneUpgrade.paymentFailedTitle, body: PhoneUpgrade.paymentFailedApple, action: PhoneUpgrade.updatePayment)
       }
-      return SandAccess.Words(title: PhoneUpgrade.paymentFailedTitle, body: "Update your card to keep your agents working.", action: PhoneUpgrade.updateCard)
+      return SandAccess.Words(title: PhoneUpgrade.paymentFailedTitle, body: PhoneUpgrade.paymentFailedCard, action: PhoneUpgrade.updateCard)
     }
     if access.reason == .freeTrialAvailable {
       return SandAccess.Words(title: "Start your free trial to send messages", body: "30 days free, then your plan. Add a card on the web; cancel anytime.", action: "Start Free Trial")
     }
     if usage?.hasEndedTrial == true {
-      return SandAccess.Words(title: "Your free month has ended", body: "Choose a plan to keep your agents working.", action: PhoneUpgrade.seePlans)
+      return SandAccess.Words(title: "Your free month has ended", body: "Choose a plan to send messages again.", action: PhoneUpgrade.seePlans)
     }
     return SandAccess.Words(title: "Simeon needs a plan", body: "Choose a plan on the web to send messages.", action: PhoneUpgrade.seePlans)
   }
 
-  /** Where the button goes: the web's plans page (Apple's payment page for a failed charge Apple bills); Simeon Labs' page for an account no plan can help. */
-  public static func destination(access: SandAccess, usage: UsageSummary?) -> URL {
-    guard access.state == .paymentRequired else { return SandAccess.page }
-    if let usage, usage.paymentFailed, usage.billedByApple { return PhoneUpgrade.appleBilling }
-    return usage?.upgrade?.url ?? billing
+  /**
+   * Where the button goes: Stripe's card page in the app for a card that
+   * failed, Apple's payment page for a charge Apple bills, else the web's
+   * plans page; Simeon Labs' page for an account no plan can help.
+   */
+  public static func route(access: SandAccess, usage: UsageSummary?) -> PhoneUpgrade.Route {
+    guard access.state == .paymentRequired else { return .web(SandAccess.page) }
+    if let usage, usage.paymentFailed {
+      return usage.billedByApple ? .web(PhoneUpgrade.appleBilling) : .portal(flow: PhoneUpgrade.paymentMethodFlow, tier: nil)
+    }
+    return .web(usage?.upgrade?.url ?? billing)
   }
 }
 

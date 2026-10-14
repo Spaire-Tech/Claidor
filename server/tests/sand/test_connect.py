@@ -269,7 +269,8 @@ class TestLaunchPreflights:
 class TestSandAccessWithBilling:
     """With billing required, the window's access cover: `GetSandAccessStatus`
     gives it its words and `EnsureSandBox` refuses the box until a plan is
-    there (`simeon/sand/dashboard.py`, `simeon/sand/box_broker.py`)."""
+    there (`simeon/sand/dashboard.py`, `simeon/sand/box_broker.py`), unless
+    `DESKTOP_COMPUTER_WITHOUT_PLAN` lets it through (14 October 2026)."""
 
     async def test_no_plan_offers_the_trial_and_refuses_the_box(
         self,
@@ -287,6 +288,9 @@ class TestSandAccessWithBilling:
             "/simeon.v1.DashboardService/GetSandAccessStatus", json={}, headers=headers
         )
         assert status.json() == {"state": 3, "purchaseChannel": 1, "blockReason": 6}
+        mocker.patch(
+            "simeon.sand.box_broker.settings.DESKTOP_COMPUTER_WITHOUT_PLAN", False
+        )
         ensure = await client.post(
             "/simeon.v1.ComputerService/EnsureSandBox", json={}, headers=headers
         )
@@ -295,6 +299,36 @@ class TestSandAccessWithBilling:
         assert "/billing" in ensure.json()["message"]
         # No hint header: that is what the Mac reads as access denied.
         assert "x-automation-failure-hint" not in ensure.headers
+
+    async def test_no_plan_still_reaches_its_computer(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        """14 October 2026: the apps stay open with sending held, so the
+        computer is not refused for want of a plan; past the plan check the
+        broker answers (here: no host configured), never permission_denied.
+        The access status still says payment required, which holds sending."""
+        from tests.desktop.test_allowance import billing_on
+
+        billing_on(mocker)
+        access, _ = await _signed_in(client, session, user)
+        headers = {"Authorization": f"Bearer {access}"}
+        status = await client.post(
+            "/simeon.v1.DashboardService/GetSandAccessStatus", json={}, headers=headers
+        )
+        assert status.json()["state"] == 3
+        ensure = await client.post(
+            "/simeon.v1.ComputerService/EnsureSandBox", json={}, headers=headers
+        )
+        assert ensure.json().get("code") != "permission_denied", ensure.text
+        recreate = await client.post(
+            "/simeon.v1.ComputerService/RecreateSandBox", json={}, headers=headers
+        )
+        # A rebuild still waits for a plan.
+        assert recreate.json()["code"] == "permission_denied", recreate.text
 
     async def test_after_a_trial_the_cover_says_check_access(
         self,

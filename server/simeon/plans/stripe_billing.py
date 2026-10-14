@@ -99,6 +99,19 @@ class StripeBilling:
     ) -> stripe_lib.PaymentMethod:
         return await stripe_lib.PaymentMethod.retrieve_async(payment_method_id)
 
+    async def retrieve_customer(self, customer_id: str) -> stripe_lib.Customer:
+        return await stripe_lib.Customer.retrieve_async(customer_id)
+
+    async def retrieve_invoice(self, invoice_id: str) -> stripe_lib.Invoice:
+        return await stripe_lib.Invoice.retrieve_async(invoice_id)
+
+    async def pay_invoice(
+        self, invoice_id: str, *, payment_method: str
+    ) -> stripe_lib.Invoice:
+        return await stripe_lib.Invoice.pay_async(
+            invoice_id, payment_method=payment_method
+        )
+
     async def create_meter_event(
         self,
         *,

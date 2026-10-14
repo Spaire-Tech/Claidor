@@ -372,13 +372,23 @@ async def set_name(
     return _ok(desktop.user_payload(user))
 
 
+#: The apps' own URL schemes: the Mac's `simeon`, the iPhone's
+#: `simeon-ios` (`SimeonConfig.urlScheme`).
+APP_SCHEMES = ("simeon", "simeon-ios")
+
+
 class PortalBody(BaseModel):
     """The app's Manage plan card: `flow` `update_confirm` with a `tier`
-    for an upgrade, nothing for the portal's front page."""
+    for an upgrade, nothing for the portal's front page; `payment_method`
+    for a card that failed (the banner over the composer). `back` names
+    the app that asks (its URL scheme): Stripe's page then ends on
+    `/desktop/billing/back`, which hands the person to the app, instead of
+    the web's billing page, which asks them to sign in (14 October 2026)."""
 
     model_config = ConfigDict(extra="ignore")
     flow: Literal["update_confirm", "cancel", "payment_method"] | None = None
     tier: str | None = None
+    back: Literal["simeon", "simeon-ios"] | None = None
 
 
 @router.post("/api/billing/portal", name="desktop:billing_portal")
@@ -394,13 +404,59 @@ async def billing_portal(
     tier = tier_from_value(body.tier) if body.tier else None
     if body.flow == "update_confirm" and (tier is None or tier not in PAID_TIERS):
         return _fail(400, "That plan is not one of ours.", status=400)
+    back = (
+        settings.generate_external_url(
+            f"/desktop/billing/back?{urlencode({'to': body.back})}"
+        )
+        if body.back
+        else None
+    )
     try:
         url = await plans_service.create_portal(
-            session, desktop_session.user, flow=body.flow, tier=tier
+            session,
+            desktop_session.user,
+            flow=body.flow,
+            tier=tier,
+            return_url=back,
+            back_when_done=back is not None,
         )
     except PlansError as error:
         return _fail(error.status_code, error.message, status=error.status_code)
     return _ok({"portalUrl": url})
+
+
+@router.post("/api/billing/settle", name="desktop:billing_settle")
+async def billing_settle(
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    """Asked by the app as Stripe's card page closes after a failed
+    payment: the unpaid plan charged now on the card just saved
+    (`PlansService.settle_unpaid`). `paid` says whether the plan is on."""
+    try:
+        paid = await plans_service.settle_unpaid(session, desktop_session.user)
+    except PlansError as error:
+        return _fail(error.status_code, error.message, status=error.status_code)
+    return _ok({"paid": paid})
+
+
+@router.get("/billing/back", name="desktop:billing_back", response_model=None)
+async def billing_back(to: str | None = Query(default=None)) -> RedirectResponse:
+    """Where Stripe's page ends when the app opened it (`PortalBody.back`):
+    on to the app's own link, which closes the app's sign-in sheet the page
+    was shown in, or brings the app forward from a browser. Anything but
+    one of the apps' schemes goes to the web's billing page."""
+    if to in APP_SCHEMES:
+        return RedirectResponse(
+            f"{to}://app/v1/open",
+            status_code=302,
+            headers={"Cache-Control": "no-store"},
+        )
+    return RedirectResponse(
+        settings.generate_frontend_url("/billing"),
+        status_code=302,
+        headers={"Cache-Control": "no-store"},
+    )
 
 
 @router.get("/api/user/quota", name="desktop:quota")

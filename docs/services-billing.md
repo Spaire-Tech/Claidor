@@ -153,7 +153,17 @@ was; the public name and statement descriptor are what a person sees.
    keeps asking for its box; once the plan is on Stripe the next ask
    succeeds and the cover goes, with nothing to restart or sign in to
    again. Metered calls get the same answer meanwhile: `402`, code
-   `40200`, naming the billing page. Every link the app opens carries
+   `40200`, naming the billing page. **Since 14 October 2026 the box is
+   not refused for want of a plan** (`DESKTOP_COMPUTER_WITHOUT_PLAN`, on by
+   default; section 6): the founder, signed in to an account whose payment
+   had failed, was held on the cover, and its Update card opened the web's
+   sign-in page ("what should happen, is still access to the app. just cant
+   send message. and explain the reason below"). Now the apps open as
+   usual with the account's agents and chats; `GetSandAccessStatus` still
+   says payment required, so Send waits and the line over the composer
+   says why, with the button (section 4, "No plan in the apps"). A rebuild
+   (`RecreateSandBox`) still waits for a plan. Turned off, the cover comes
+   back as before. Every link the app opens carries
    `from=app` (the cover, Usage & Billing's `upgradeUrl`, a served
    error): the page afterwards says "Go back to Simeon" and brings the
    app forward on its own link (`simeon://app/v1/open`) instead of
@@ -195,7 +205,9 @@ still the free week's) gives no allowance. The quota says so
 (`paymentFailed: true`, `billedBy` naming who holds the card), the proxy's
 refusal says "Your payment didn't go through … Update your card at
 app.simeonlabs.com/billing" (for Apple: "… in your Apple Account
-settings"), and the cloud computer is refused with the same sentence. The
+settings"), and the apps hold Send with that reason over the composer (the
+cloud computer is refused with the same sentence only when
+`DESKTOP_COMPUTER_WITHOUT_PLAN` is off). The
 subscription itself stays Stripe's: the web billing page shows it as past
 due with "Update your card", and a second checkout is still refused. Once a
 retried charge goes through, the webhook writes `active` and the plan
@@ -228,6 +240,38 @@ The Electron window never had this line. The apps read the quota as a chat
 opens and as each answer ends, at most every 30 s (`loadUsage`). On the
 iPhone, Upgrade opens the plans (or the web, by the rules of
 `PhoneUpgrade.route`); on the Mac, Settings › Usage & Billing.
+
+**No plan in the apps** (14 October 2026). With no plan, a failed payment
+included, the iPhone and the Mac open as usual: the agents, their chats
+and the computer are all there, Send waits (`SandAccess.pausesSending`),
+and the line over the composer, grey like the credits' line, says why
+(`PhoneUpgrade.banner`, `MacUpgrade.cover`):
+
+| Account | Title / words | Button, iPhone | Button, Mac |
+|---|---|---|---|
+| Card failed, plan bought on the web | "Your payment didn’t go through" / "You can’t send messages until your card is updated." | Update card: Stripe's card form (where Apple allows the link; else no button) | Update card: Stripe's card form |
+| Payment failed, plan bought on the iPhone | "… / You can’t send messages until your Apple payment method is updated." | See plans: the plans, with a line over them and Update payment (Apple's page) | Update payment: Apple's page |
+| Free month over | "Your free month has ended" / "Choose a plan to send messages again." | See plans | See plans: the web's plans page |
+| Never had a plan | "Choose a plan to start" (iPhone), "Start your free trial to send messages" or "Simeon needs a plan" (Mac) | See plans | the web's plans page |
+
+Stripe's page opens **in the app**, not the web: the app asks
+`POST /desktop/api/billing/portal` with `flow` (`payment_method` for the
+card form, `update_confirm` and the plan above for an upgrade) and `back`
+(its URL scheme, `simeon-ios` or `simeon`), and shows the link in Apple's
+sign-in sheet (`BillingPage` on the iPhone, `MacBillingPage` on the Mac).
+The link already carries the person, so there is no sign-in on the way;
+until then every button opened `app.simeonlabs.com/billing`, which asked
+the person to sign in again. Stripe's page ends on
+`/desktop/billing/back?to=<scheme>` (also as soon as the card is saved,
+through the flow's `after_completion`), which hands over to the app's own
+link and closes the sheet. After a failed payment the app then asks
+`POST /desktop/api/billing/settle` (`PlansService.settle_unpaid`): the
+subscription is moved to the card just saved (a checkout put the old card
+on the subscription itself, and Stripe keeps retrying that one), its open
+invoice is charged now instead of at Stripe's next retry, and the copy is
+updated, so the line goes and Send comes back at once. A card refused
+again leaves everything as it was. Settings' Manage Plan and the credits'
+Upgrade for a plan bought on the web open the same page the same way.
 
 **The Mac with no plan** (14 October 2026). The iPhone starts the free
 month itself at first sign-in; the Mac does not. An account with no plan
@@ -310,6 +354,7 @@ spend (section 8).
 |---|---|---|
 | `SIMEON_DESKTOP_BILLING_REQUIRED` | API, worker | `true` once the catalogue is on Stripe and the portal is configured. Unset: no billing, free monthly allowance. |
 | `SIMEON_DESKTOP_BILLING_EXEMPT_EMAILS` | API | Staff and friends, as a JSON list of e-mails; they stay on the free month. |
+| `SIMEON_DESKTOP_COMPUTER_WITHOUT_PLAN` | API | `true` (the default): an account with no plan still reaches its cloud computer, so the apps stay open with Send held (section 3, item 6). `false`: the computer is refused and the apps show the full-screen cover, as before 14 October 2026. Every metered call is refused either way. |
 | `SIMEON_STRIPE_SECRET_KEY`, `SIMEON_STRIPE_PUBLISHABLE_KEY` | API, worker | Stripe keys. |
 | `SIMEON_STRIPE_WEBHOOK_SECRET` | API | The Stripe webhook for `https://api.simeonlabs.com/v1/integrations/stripe/webhook`. Besides the `payment_intent.*`, `setup_intent.*`, `charge.*` and `refund.*` events it already carries, add `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`. |
 | `SIMEON_STRIPE_CREDITS_METER_EVENT`, `SIMEON_STRIPE_BOX_SECONDS_METER_EVENT` | API, worker | Only to rename the meters; the defaults are `simeon_credits` and `simeon_box_seconds`. |
@@ -339,9 +384,14 @@ and the Customer Portal configuration by hand (section 2). The migration
   ended at once. **`plans.trial.card_unreadable`**: the card could not be
   read, so the check passed the person.
 - **`plans.trial.cancelled`**: the app's Cancel trial button worked.
-- **`sand.box.ensure.no_plan`**: the window asked for its box without a
-  plan and was shown the cover; one line per ask, so a person stuck on
-  the cover shows up as a run of them.
+- **`sand.box.ensure.no_plan`**: an app asked for its box without a
+  plan; `allowed=True` when it was let through (the app open with Send
+  held), `allowed=False` when it was refused and shown the cover. One line
+  per ask.
+- **`plans.settle`**: after Stripe's card page closed in the app, whether
+  the unpaid plan is now paid (`paid`). **`plans.settle.declined`**: the
+  card just saved was refused too, with Stripe's code; the person still
+  sees "Your payment didn't go through".
 - **`plans.report_usage.done`**: the five-minute report, with how many
   credit and box events were sent and how many people were skipped.
   **`plans.usage.credits_not_sent`** and **`plans.usage.box_not_sent`**:

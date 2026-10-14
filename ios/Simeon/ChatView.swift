@@ -2223,10 +2223,12 @@ struct SelectableText: UIViewRepresentable {
  * 2026: the founder's "usage banner saying they're out of usage and that
  * they should upgrade"): its title over its words, and the button, routed
  * as Settings' Usage & Billing routes its own (`PhoneUpgrade.route`): the
- * App Store's plans (on the plan above for an Apple plan), the web's page
- * for a plan bought there where Apple allows the link (else no button, so
- * the App Store never sells a second plan), simeonlabs.com for an account
- * no plan can help.
+ * App Store's plans (on the plan above for an Apple plan), Stripe's own
+ * page in the app for a plan bought on the web where Apple allows the link
+ * (`BillingPage`; else no button, so the App Store never sells a second
+ * plan), simeonlabs.com for an account no plan can help. Since 14 October
+ * 2026 it is also the whole of what a failed payment or no plan shows: the
+ * app stays open and Send waits.
  */
 struct AccessNotice: View {
   let words: SandAccess.Words
@@ -2237,6 +2239,8 @@ struct AccessNotice: View {
   @State private var purchases = Purchases.shared
   @State private var showsPlans = false
   @State private var plansTier: String?
+  /** Stripe's page is being asked for. */
+  @State private var opening = false
 
   var body: some View {
     let route = PhoneUpgrade.route(access: store.access, usage: store.usage.summary, webLinkAllowed: purchases.webLinkAllowed)
@@ -2253,6 +2257,12 @@ struct AccessNotice: View {
           case .plans(let tier):
             plansTier = tier
             showsPlans = true
+          case .portal(let flow, let tier):
+            Task {
+              opening = true
+              if let failure = await BillingPage.shared.open(flow: flow, tier: tier, store: store, openURL: openURL) { store.problem = failure }
+              opening = false
+            }
           case .web(let url):
             openURL(url)
           case .none:
@@ -2262,6 +2272,7 @@ struct AccessNotice: View {
           // The button takes the app's ink (white in the dark): its word the ground's, or it was white on white (13 October 2026).
           Text(action).foregroundStyle(Ink.ground)
         }
+        .disabled(opening)
         .buttonStyle(.borderedProminent)
         .buttonBorderShape(.capsule)
         .controlSize(.small)

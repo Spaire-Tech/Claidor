@@ -627,6 +627,54 @@ final class AppConnector {
   }
 }
 
+/**
+ * Stripe's own page for a plan bought on the web (14 October 2026, the
+ * founder: Update card "takes me to the sign in page of simeon. not good"):
+ * asked for with the app's sign-in (`AppStore.billingPortal`) and shown in
+ * the system's sign-in sheet over the app, not the web's billing page. The
+ * page ends on the app's own link (`/desktop/billing/back`), which closes
+ * the sheet; after a failed payment the plan is then charged on the card
+ * just saved, and the plan and the access read again, so Send comes back.
+ * Safari when the sheet can't open.
+ */
+@MainActor
+final class BillingPage {
+  static let shared = BillingPage()
+  private var session: ASWebAuthenticationSession?
+  private let presenter = SheetPresenter()
+
+  /** Opens the page; nil when it opened, else why not. */
+  func open(flow: String?, tier: String?, store: AppStore, openURL: OpenURLAction) async -> String? {
+    guard session == nil else { return nil }
+    let paymentFailed = store.usage.summary?.paymentFailed == true
+    let answer = await store.billingPortal(flow: flow, tier: tier, back: AppPlatform.urlScheme)
+    guard let url = answer.url else { return answer.message ?? "Couldn’t open billing. Try again." }
+    let finished: Bool
+    do {
+      _ = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<URL, Error>) in
+        let once = ResumeOnce(continuation)
+        let sheet = ASWebAuthenticationSession(url: url, callback: .customScheme(AppPlatform.urlScheme)) { url, error in
+          if let url { once.resume(returning: url) } else { once.resume(throwing: error ?? ASWebAuthenticationSessionError(.canceledLogin)) }
+        }
+        sheet.presentationContextProvider = presenter
+        sheet.prefersEphemeralWebBrowserSession = false
+        session = sheet
+        if !sheet.start() {
+          openURL(url)
+          once.resume(throwing: URLError(.cannotLoadFromNetwork))
+        }
+      }
+      finished = true
+    } catch {
+      // Closed before the end: nothing to charge; the plan is read again all the same.
+      finished = false
+    }
+    session = nil
+    await store.settleAfterCardPage(paymentFailed: paymentFailed && finished)
+    return nil
+  }
+}
+
 /** Where the sign-in sheet shows: the app's window. */
 final class SheetPresenter: NSObject, ASWebAuthenticationPresentationContextProviding {
   func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {

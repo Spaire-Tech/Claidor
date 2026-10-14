@@ -815,7 +815,11 @@ struct ComputerUpdatePill: View {
  * (40 high, the sign-in's black in both themes). With no plan, the button
  * opens the web's plans page, where a new account starts its 30-day trial
  * with a card (14 October 2026, the founder's choice; it opened
- * simeonlabs.com, where nothing starts one: `MacUpgrade`). Under it, the
+ * simeonlabs.com, where nothing starts one: `MacUpgrade`); a card that
+ * failed, Stripe's card page in the app. Since that day the server lets an
+ * account with no plan reach its computer, so this shows only when that is
+ * switched off (`DESKTOP_COMPUTER_WITHOUT_PLAN`): the window stays open and
+ * the line over the composer says why Send waits. Under it, the
  * account this Mac is signed in to and Sign Out, asked first as everywhere
  * (the founder could not tell which account it was, nor leave it).
  */
@@ -865,7 +869,19 @@ struct AccessCover: View {
         .frame(maxWidth: 400)
         .padding(.top, 39)
         if let action = words.action {
-          Button { NSWorkspace.shared.open(MacUpgrade.destination(access: access, usage: store.usage.summary)) } label: {
+          Button {
+            switch MacUpgrade.route(access: access, usage: store.usage.summary) {
+            case .portal(let flow, let tier):
+              Task {
+                if let failure = await MacBillingPage.shared.open(flow: flow, tier: tier, store: store) { store.problem = failure }
+                await readAgain()
+              }
+            case .web(let url):
+              NSWorkspace.shared.open(url)
+            case .plans, .none:
+              break
+            }
+          } label: {
             Text(action)
               .font(.system(size: 18))
               .foregroundStyle(look.signInLabel)

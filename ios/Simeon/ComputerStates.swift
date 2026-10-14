@@ -655,7 +655,10 @@ extension AppStore {
  * bought there lifts the cover at once. An account no plan can help gets
  * Simeon Labs' page. Read again when it shows and each time the app comes
  * forward: the first run, which could not be decided while the computer
- * refused, is decided then.
+ * refused, is decided then. Since 14 October 2026 the server lets an
+ * account with no plan reach its computer, so this shows only when that is
+ * switched off (`DESKTOP_COMPUTER_WITHOUT_PLAN`); the app stays open and
+ * the line over the composer says why Send waits.
  */
 struct AccessCover: View {
   @Environment(AppStore.self) private var store
@@ -668,8 +671,8 @@ struct AccessCover: View {
 
   var body: some View {
     let summary = store.usage.summary
-    // A failed payment (14 October 2026) goes where the card is (`PhoneUpgrade.route`): Apple's payment page, or the
-    // web's billing page where Apple allows the link, else no button.
+    // A failed payment (14 October 2026) goes where the card is (`PhoneUpgrade.route`): the plans for an Apple plan,
+    // Stripe's card page in the app where Apple allows the link, else no button.
     let failed = store.access.state == .paymentRequired && summary?.paymentFailed == true
     let mend = failed ? PhoneUpgrade.route(access: store.access, usage: summary, webLinkAllowed: purchases.webLinkAllowed) : .none
     let cover = PhoneUpgrade.cover(access: store.access, usage: summary)
@@ -696,7 +699,19 @@ struct AccessCover: View {
       if let action = words.action {
         Button {
           if failed {
-            if case .web(let url) = mend { openURL(url) }
+            switch mend {
+            case .plans:
+              showsPlans = true
+            case .portal(let flow, let tier):
+              Task {
+                if let failure = await BillingPage.shared.open(flow: flow, tier: tier, store: store, openURL: openURL) { store.problem = failure }
+                await readAgain()
+              }
+            case .web(let url):
+              openURL(url)
+            case .none:
+              break
+            }
           } else if store.access.state == .paymentRequired {
             showsPlans = true
           } else {

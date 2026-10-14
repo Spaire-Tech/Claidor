@@ -221,6 +221,14 @@ class Settings(BaseSettings):
     # self-hosted server). Production sets it once the Stripe catalogue is
     # in place (`docs/services-billing.md`).
     DESKTOP_BILLING_REQUIRED: bool = False
+    # Whether an account with no plan (a failed payment, a trial or plan
+    # that ended) still reaches its own cloud computer, so the apps show
+    # its agents and chats with sending held and the reason over the
+    # composer (the founder, 14 October 2026: "still access to the app.
+    # just cant send message"). Every metered call stays refused with 402
+    # either way. False: the computer is refused too, and the apps show
+    # their full-screen cover, as before (`box_broker.require_a_plan`).
+    DESKTOP_COMPUTER_WITHOUT_PLAN: bool = True
     # People who never need a plan, by e-mail (staff, friends).
     DESKTOP_BILLING_EXEMPT_EMAILS: set[str] = set()
     # E-mails whose free month (`simeon.plans.free_month`) may start again,

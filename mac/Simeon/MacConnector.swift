@@ -159,6 +159,60 @@ final class MacConnector {
   }
 }
 
+/**
+ * Stripe's own page for a plan bought on the web (14 October 2026, the
+ * founder: Update card "takes me to the sign in page of simeon. not good"),
+ * the iPhone's `BillingPage`: asked for with the app's sign-in
+ * (`AppStore.billingPortal`) and shown in Apple's sign-in sheet on the
+ * window, not the web's billing page. The page ends on the app's own link
+ * (`/desktop/billing/back`), which closes the sheet; after a failed payment
+ * the plan is then charged on the card just saved, and the plan and the
+ * access read again, so Send comes back. The browser when the sheet can't
+ * open (the plan is read again when the window comes forward).
+ */
+@MainActor
+final class MacBillingPage {
+  static let shared = MacBillingPage()
+  private var session: ASWebAuthenticationSession?
+  private let presenter = MacSignInPresenter()
+
+  /** Opens the page; nil when it opened, else why not. */
+  func open(flow: String?, tier: String?, store: AppStore) async -> String? {
+    guard session == nil else { return nil }
+    let paymentFailed = store.usage.summary?.paymentFailed == true
+    let answer = await store.billingPortal(flow: flow, tier: tier, back: SimeonConfig.macURLScheme)
+    guard let url = answer.url else { return answer.message ?? "Couldn’t open billing. Try again." }
+    let finished = await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
+      let once = BillingSheetEnd(continuation)
+      let sheet = ASWebAuthenticationSession(url: url, callback: .customScheme(SimeonConfig.macURLScheme)) { callback, _ in
+        once.end(callback != nil)
+      }
+      sheet.presentationContextProvider = presenter
+      sheet.prefersEphemeralWebBrowserSession = false
+      session = sheet
+      if !sheet.start() {
+        NSWorkspace.shared.open(url)
+        once.end(false)
+      }
+    }
+    session = nil
+    await store.settleAfterCardPage(paymentFailed: paymentFailed && finished)
+    return nil
+  }
+}
+
+/** The billing sheet's end, said once: whether it came back on the app's link. */
+private final class BillingSheetEnd: @unchecked Sendable {
+  private let lock = NSLock()
+  private var continuation: CheckedContinuation<Bool, Never>?
+
+  init(_ continuation: CheckedContinuation<Bool, Never>) { self.continuation = continuation }
+
+  func end(_ finished: Bool) {
+    lock.withLock { () -> CheckedContinuation<Bool, Never>? in defer { continuation = nil }; return continuation }?.resume(returning: finished)
+  }
+}
+
 /** Where the sign-in sheet shows: the app's window. */
 final class MacSignInPresenter: NSObject, ASWebAuthenticationPresentationContextProviding {
   func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
