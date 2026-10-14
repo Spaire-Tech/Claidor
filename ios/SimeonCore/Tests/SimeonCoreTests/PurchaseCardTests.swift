@@ -42,10 +42,48 @@ final class PurchaseCardTests: XCTestCase {
     XCTAssertEqual(Chat.cardText(Self.message), "Checkout at ncvss.com · $80.00", "a quote or a thread's name")
   }
 
+  /** The founder's six Link cards (14 October 2026): picked on the card with each one's mark and name, never in a typed question. */
+  func testThePersonPicksTheCardOnTheCard() throws {
+    let cards: JSON = [["id": "csmrpd_chime", "brand": "Visa", "last4": "0995", "name": "Chime Credit Builder"], ["id": "csmrpd_mc", "brand": "Mastercard", "last4": "1005", "name": "Mastercard Debit"], ["id": "csmrpd_rh", "brand": "Visa", "last4": "2862", "name": "Robinhood Cash"]]
+    let none = Self.message.setting("purchase", Self.message["purchase"]!.setting("card", nil).setting("cards", cards).setting("icon", ["url": "file:///home/box/sand-data/agents/a1/assets/icon.png"]))
+    guard case .purchase(_, let open) = try XCTUnwrap(Chat.row(for: entry(message: none))) else { return XCTFail("not a checkout card") }
+    XCTAssertNil(open.cardLine)
+    XCTAssertTrue(open.needsCard, "Allow waits for a pick")
+    XCTAssertTrue(open.canChooseCard)
+    XCTAssertEqual(open.cards.map(\.line), ["Chime Credit Builder •••• 0995", "Mastercard Debit •••• 1005", "Robinhood Cash •••• 2862"])
+    XCTAssertEqual(open.icon?.url, "file:///home/box/sand-data/agents/a1/assets/icon.png", "the shop's icon for Review order")
+
+    // Picked here: shown at once, and no longer waiting for a pick.
+    let picked = open.shown(answered: nil, picked: "csmrpd_mc")
+    XCTAssertEqual(picked.cardLine, "Mastercard Debit •••• 1005")
+    XCTAssertEqual(picked.cardBrand, "Mastercard")
+    XCTAssertEqual(picked.cardId, "csmrpd_mc")
+    XCTAssertFalse(picked.needsCard)
+    XCTAssertEqual(open.shown(answered: nil, picked: "not-offered"), open, "only a card the card offered")
+
+    // Taken by the computer: its stamp wins on every device.
+    guard case .purchase(_, let taken) = try XCTUnwrap(Chat.row(for: entry(["purchaseState": "approving", "purchasePaymentMethodId": "csmrpd_rh", "purchaseCard": ["brand": "Visa", "last4": "2862", "name": "Robinhood Cash"]], message: none))) else { return XCTFail() }
+    XCTAssertEqual(taken.cardLine, "Robinhood Cash •••• 2862")
+    XCTAssertEqual(taken.cardId, "csmrpd_rh")
+    XCTAssertFalse(taken.canChooseCard, "no switching once allowed")
+
+    // Link refused the pick: the card still waits, with its line.
+    guard case .purchase(_, let refused) = try XCTUnwrap(Chat.row(for: entry(["purchaseNote": "Link won't let an agent pay with the Chime Credit Builder ending 0995. Choose another card."], message: none))) else { return XCTFail() }
+    XCTAssertTrue(refused.waitsOnPerson)
+    XCTAssertEqual(refused.reviewNote, "Link won't let an agent pay with the Chime Credit Builder ending 0995. Choose another card.")
+    XCTAssertNil(refused.shown(answered: nil, picked: "csmrpd_mc").reviewNote, "a new pick clears it")
+
+    // A name that already says the last four, and no name at all.
+    XCTAssertEqual(PurchaseCard.Choice(id: "a", brand: "Visa", last4: "4242", name: "Visa 4242").line, "Visa 4242")
+    XCTAssertEqual(PurchaseCard.Choice(id: "b", brand: "Amex", last4: "0005").line, "Amex •••• 0005")
+  }
+
   func testEachStateSaysWhereItStands() throws {
     let approving = try card(["purchaseState": "approving", "purchaseActionUrl": "https://app.link.com/activity/approve/lsrq_1"])
     XCTAssertEqual(approving.status?.label, "Approve it in the Link app")
-    XCTAssertEqual(approving.detail, "Link sent it to your Link app. It waits 30 minutes.")
+    XCTAssertEqual(approving.detail, PurchaseCard.approvingDetail)
+    XCTAssertTrue(approving.detail?.contains("Get it and sign in once") == true, "says the Link app is needed, before Link's own page does")
+    XCTAssertEqual(PurchaseCard.linkAppURL.absoluteString, "https://link.com/download")
     XCTAssertEqual(approving.actionURL?.absoluteString, "https://app.link.com/activity/approve/lsrq_1")
     XCTAssertFalse(approving.waitsOnPerson)
 
@@ -82,9 +120,13 @@ final class PurchaseCardTests: XCTestCase {
     }
     XCTAssertEqual(shown("x12p")?.state, .review)
     XCTAssertEqual(shown("x12q")?.state, .ordered)
+    XCTAssertEqual(shown("x12p")?.cardLine, "Visa Signature •••• 1234")
+    // Another of the person's cards, picked on the card: it rides with Allow.
+    store.pickPurchaseCard("x12p", cardId: "csmrpd_demo_mc")
     await store.answerPurchase("x12p", allow: true, in: "cards")
     for _ in 0..<200 where shown("x12p")?.state != .ordered { try await Task.sleep(nanoseconds: 5_000_000) }
     XCTAssertEqual(shown("x12p")?.state, .ordered, "Link asked, approved, the order placed (the demo's box)")
+    XCTAssertEqual(shown("x12p")?.cardLine, "Mastercard Debit •••• 1005", "the card picked paid")
     XCTAssertNil(store.answeredPurchases["x12p"], "the computer's own copy took over")
   }
 }

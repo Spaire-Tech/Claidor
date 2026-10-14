@@ -1941,24 +1941,36 @@ struct UnreadDivider: View {
 /**
  * The checkout card (13 October 2026; SimeonCore's `PurchaseCard`): one for
  * each purchase an agent wants to make. The shop, the checkout as the agent
- * left it with Review order over it, the Link card that pays, the total,
- * then Deny and Allow. Once allowed it follows the purchase: asking Link,
- * Open Link while Link waits for the person's approval, then the order. In
- * the flight card's frame (nearly the chat's width, 22 pt corners) with the
- * hand-off card's pills.
+ * left it with Review order over it (wearing the shop's icon; it opens the
+ * agent's computer on that checkout, where the cart is, 14 October 2026:
+ * the shop's page on this phone had an empty cart), the Link card that pays
+ * with "Link by Stripe" under it (another of the person's cards can be
+ * picked there), the total, then Deny and Allow. Once allowed it follows the
+ * purchase: asking Link, then the Link app (Get the Link app, or Open Link
+ * for a passkey) while Link waits for the person's approval, then the
+ * order. In the flight card's frame (nearly the chat's width, 22 pt
+ * corners) with the hand-off card's pills.
  */
 struct PurchaseCardView: View {
   let entryId: String
   let agentId: String
   let card: PurchaseCard
-  /** A flight's bank check is on the computer: this opens it. */
+  /** The agent's computer, full screen: Review order, and a flight's bank check. */
   var openComputer: (() -> Void)? = nil
   @Environment(AppStore.self) private var store
   @Environment(\.chatWidth) private var width
   @Environment(\.openURL) private var openURL
+  @State private var choosing = false
+
+  /** Review order: the agent's computer on the checkout; the shop's page only where there is no computer to open. */
+  private func reviewOrder(_ shown: PurchaseCard) -> (() -> Void)? {
+    if let openComputer { return openComputer }
+    guard let url = shown.url else { return nil }
+    return { openURL(url) }
+  }
 
   var body: some View {
-    let shown = card.shown(answered: store.answeredPurchases[entryId])
+    let shown = card.shown(answered: store.answeredPurchases[entryId], picked: store.pickedPurchaseCards[entryId])
     VStack(alignment: .leading, spacing: 14) {
       header(shown)
       if shown.waitsOnPerson {
@@ -1967,12 +1979,16 @@ struct PurchaseCardView: View {
       if let flight = shown.flight {
         FlightCheckoutBlock(flight: flight)
       } else if let preview = shown.preview {
-        CheckoutPicture(image: preview, agentId: agentId, url: shown.url)
+        CheckoutPicture(image: preview, icon: shown.icon, agentId: agentId, review: reviewOrder(shown))
       } else if !shown.itemsLine.isEmpty {
         itemsRow(shown)
       }
       VStack(spacing: 0) {
         payment(shown).padding(.vertical, 10)
+        if let note = shown.reviewNote {
+          Text(note).font(.system(size: 13)).foregroundStyle(Ink.danger).fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading).padding(.bottom, 8)
+        }
         Rectangle().fill(Ink.hairline).frame(height: 1)
         total(shown).padding(.vertical, 10)
       }
@@ -1982,6 +1998,14 @@ struct PurchaseCardView: View {
     .frame(width: FlightsCardView.cardWidth(width), alignment: .leading)
     .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
     .modifier(CardEdge(radius: 22))
+    .sheet(isPresented: $choosing) {
+      CardChooserSheet(cards: shown.cards, selected: shown.cardId) { choice in
+        store.pickPurchaseCard(entryId, cardId: choice.id)
+        choosing = false
+      }
+      .presentationDetents([.medium, .large])
+      .presentationDragIndicator(.visible)
+    }
     // A card with Link: the computer keeps watching Link for it (after a restart nothing would); a flight it was paying, it closes.
     .task(id: card.state) {
       if card.state == .approving || (card.flight != nil && card.state == .approved) { await store.keepWatchingPurchase(entryId, in: agentId, state: card.state) }
@@ -2007,30 +2031,42 @@ struct PurchaseCardView: View {
     }
   }
 
-  /** No picture of the checkout: what is bought, and the shop's page. */
+  /** No picture of the checkout: what is bought, and Review order (the agent's computer on the checkout). */
   private func itemsRow(_ shown: PurchaseCard) -> some View {
     HStack(alignment: .firstTextBaseline, spacing: 8) {
       Text(shown.itemsLine).font(.system(size: 15)).foregroundStyle(Ink.theirsText).fixedSize(horizontal: false, vertical: true)
       Spacer(minLength: 0)
-      if let url = shown.url {
-        Button { openURL(url) } label: {
-          Label(PurchaseCard.reviewOrder, systemImage: "arrow.up.right").font(.system(size: 13, weight: .medium)).labelStyle(TrailingIconLabel())
+      if let review = reviewOrder(shown) {
+        Button(action: review) {
+          Label(PurchaseCard.reviewOrder, systemImage: "arrow.up.left.and.arrow.down.right").font(.system(size: 13, weight: .medium)).labelStyle(TrailingIconLabel())
         }
         .buttonStyle(GreyButtonStyle(height: 28, capsule: true))
       }
     }
   }
 
-  private func payment(_ shown: PurchaseCard) -> some View {
-    HStack(spacing: 12) {
-      PaymentMark(brand: shown.cardBrand)
-      VStack(alignment: .leading, spacing: 1) {
-        Text(shown.cardLine ?? "Your Link card").font(.system(size: 15, weight: .medium)).foregroundStyle(Ink.theirsText)
-        Text(PurchaseCard.payWithLink).font(.system(size: 13)).foregroundStyle(Ink.fineGrey)
+  /** The Link card that pays, as Link names it, with "Link by Stripe" under it; with several cards, a tap picks another. */
+  @ViewBuilder private func payment(_ shown: PurchaseCard) -> some View {
+    let row = HStack(spacing: 12) {
+      PaymentMark(brand: shown.needsCard ? nil : shown.cardBrand)
+      VStack(alignment: .leading, spacing: 2) {
+        Text(shown.cardLine ?? (shown.needsCard ? PurchaseCard.chooseCard : "Your Link card"))
+          .font(.system(size: 15, weight: .medium)).foregroundStyle(shown.needsCard ? Ink.blue : Ink.theirsText)
+          .lineLimit(1).truncationMode(.middle)
+        LinkByStripe()
       }
       Spacer(minLength: 0)
+      if shown.canChooseCard {
+        Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Ink.tertiary)
+      }
     }
-    .accessibilityElement(children: .combine)
+    if shown.canChooseCard {
+      Button { Haptics.tap(); choosing = true } label: { row.contentShape(Rectangle()) }
+        .buttonStyle(.plain)
+        .accessibilityLabel(shown.cardLine.map { "Pays with \($0). Choose another card" } ?? PurchaseCard.chooseCard)
+    } else {
+      row.accessibilityElement(children: .combine)
+    }
   }
 
   private func total(_ shown: PurchaseCard) -> some View {
@@ -2056,6 +2092,8 @@ struct PurchaseCardView: View {
             Task { await store.answerPurchase(entryId, allow: true, in: agentId) }
           }
           .buttonStyle(PillButtonStyle(primary: true))
+          .disabled(shown.needsCard)
+          .opacity(shown.needsCard ? 0.45 : 1)
         }
         if shown.isTest {
           Text(shown.flight == nil ? PurchaseCard.testNote : PurchaseCard.flightTestNote).font(.system(size: 12)).foregroundStyle(Ink.fineGrey)
@@ -2073,8 +2111,13 @@ struct PurchaseCardView: View {
           }
           Spacer(minLength: 0)
         }
-        if shown.state == .approving, let url = shown.actionURL {
-          Button(PurchaseCard.openLink) { openURL(url) }.buttonStyle(PillButtonStyle(primary: true))
+        if shown.state == .approving {
+          HStack(spacing: 8) {
+            Button(PurchaseCard.getLinkApp) { openURL(PurchaseCard.linkAppURL) }.buttonStyle(PillButtonStyle(primary: shown.actionURL == nil))
+            if let url = shown.actionURL {
+              Button(PurchaseCard.openLink) { openURL(url) }.buttonStyle(PillButtonStyle(primary: true))
+            }
+          }
         }
         if shown.waitsOnBank, let openComputer {
           Button(PurchaseCard.openComputer) { openComputer() }.buttonStyle(PillButtonStyle(primary: true))
@@ -2116,6 +2159,11 @@ struct PaymentMark: View {
         }
       case "amex":
         Text("AMEX").font(.system(size: 10, weight: .heavy)).foregroundStyle(.white)
+      case "discover":
+        HStack(spacing: 1) {
+          Text("DISC").font(.system(size: 8, weight: .heavy)).foregroundStyle(Color(white: 0.15))
+          Circle().fill(Color(red: 0.95, green: 0.45, blue: 0.10)).frame(width: 7, height: 7)
+        }
       default:
         Image(systemName: "creditcard.fill").font(.system(size: 14)).foregroundStyle(Color(white: 0.45))
       }
@@ -2135,17 +2183,20 @@ struct TrailingIconLabel: LabelStyle {
 
 /**
  * The checkout as the agent left it, read from the computer: its top, 16:10,
- * with Review order in glass over its corner (the shop's own page, where the
- * person checks the details and terms). Tapping the picture opens it too.
+ * with Review order in glass over its corner, wearing the shop's icon. It
+ * opens the agent's computer on that checkout (14 October 2026: the shop's
+ * page on this phone had an empty cart, the cart being in the computer's
+ * browser), as Muse's does. Tapping the picture opens it too.
  */
 struct CheckoutPicture: View {
   let image: ChatImage
+  var icon: ChatImage? = nil
   let agentId: String
-  let url: URL?
+  let review: (() -> Void)?
   @Environment(AppStore.self) private var store
-  @Environment(\.openURL) private var openURL
   @State private var loaded: UIImage?
   @State private var missing = false
+  @State private var iconImage: UIImage?
 
   var body: some View {
     ZStack(alignment: .bottomTrailing) {
@@ -2164,18 +2215,21 @@ struct CheckoutPicture: View {
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Ink.hairline, lineWidth: 1))
         .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .onTapGesture { if let url { openURL(url) } }
-      if let url {
-        Button { openURL(url) } label: {
-          Label(PurchaseCard.reviewOrder, systemImage: "arrow.up.right")
-            .labelStyle(TrailingIconLabel())
-            .font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.primary)
-            .padding(.horizontal, 12).frame(height: 32)
-            .contentShape(Capsule())
+        .onTapGesture { review?() }
+      if let review {
+        Button(action: review) {
+          HStack(spacing: 7) {
+            ShopIcon(image: iconImage, size: 22)
+            Text(PurchaseCard.reviewOrder).font(.system(size: 14, weight: .medium)).foregroundStyle(Ink.primary)
+            Image(systemName: "arrow.up.left.and.arrow.down.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(Ink.secondary)
+          }
+          .padding(.leading, 5).padding(.trailing, 12).frame(height: 34)
+          .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .glassEffect(.regular, in: .capsule)
         .padding(10)
+        .accessibilityLabel("Review order on the computer")
       }
     }
     .animation(.easeOut(duration: 0.2), value: loaded == nil)
@@ -2188,6 +2242,259 @@ struct CheckoutPicture: View {
       let thumbnail = await full.byPreparingThumbnail(ofSize: CGSize(width: full.size.width * scale, height: full.size.height * scale)) ?? full
       ChatImages.keep(thumbnail, under: [image.url])
       loaded = thumbnail
+    }
+    .task(id: icon?.url) {
+      guard let icon else { return }
+      if let kept = ChatImages.image(for: [icon.url]) { iconImage = kept; return }
+      guard let data = await GalleryTile.bytes(icon, agentId: agentId, store: store), let read = UIImage(data: data) else { return }
+      ChatImages.keep(read, under: [icon.url])
+      iconImage = read
+    }
+  }
+}
+
+/** The shop's icon in a small white circle (Review order wears it); a globe when the shop gave none. */
+struct ShopIcon: View {
+  let image: UIImage?
+  var size: CGFloat = 22
+
+  var body: some View {
+    ZStack {
+      Circle().fill(Color.white)
+      if let image {
+        Image(uiImage: image).resizable().interpolation(.high).scaledToFit().padding(size * 0.14).clipShape(Circle())
+      } else {
+        Image(systemName: "globe").font(.system(size: size * 0.55)).foregroundStyle(Color(white: 0.45))
+      }
+    }
+    .frame(width: size, height: size)
+    .overlay(Circle().stroke(Color.black.opacity(0.08), lineWidth: 0.5))
+    .accessibilityHidden(true)
+  }
+}
+
+/** "Link by Stripe" with Link's own mark, under the card that pays (as Link writes it in Muse's card). */
+struct LinkByStripe: View {
+  var body: some View {
+    HStack(spacing: 5) {
+      if let mark = UIImage(named: "Brands/link") {
+        Image(uiImage: mark).resizable().scaledToFit().frame(width: 14, height: 14).clipShape(RoundedRectangle(cornerRadius: 3.5, style: .continuous))
+      }
+      Text(PurchaseCard.payWithLink).font(.system(size: 13)).foregroundStyle(Ink.fineGrey)
+    }
+    .accessibilityElement(children: .combine)
+  }
+}
+
+/**
+ * The person's Link cards, to pick the one that pays (14 October 2026): each
+ * with its network's mark, its name in Link and its last four, the one that
+ * pays now ticked. As Link lists them; Link gives no picture of each card's
+ * art, so the network's mark stands for it.
+ */
+struct CardChooserSheet: View {
+  let cards: [PurchaseCard.Choice]
+  let selected: String?
+  let pick: (PurchaseCard.Choice) -> Void
+
+  var body: some View {
+    NavigationStack {
+      List {
+        Section {
+          ForEach(cards) { card in
+            Button { Haptics.tap(); pick(card) } label: {
+              HStack(spacing: 14) {
+                PaymentMark(brand: card.brand)
+                VStack(alignment: .leading, spacing: 2) {
+                  Text(card.name ?? card.brand).font(.system(size: 16, weight: .medium)).foregroundStyle(Ink.primary).lineLimit(1)
+                  Text(card.last4.isEmpty ? card.brand : "\(card.brand) •••• \(card.last4)").font(.system(size: 13)).foregroundStyle(Ink.secondary)
+                }
+                Spacer(minLength: 0)
+                if card.id == selected {
+                  Image(systemName: "checkmark").font(.system(size: 15, weight: .semibold)).foregroundStyle(Ink.blue)
+                }
+              }
+              .padding(.vertical, 4)
+              .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(card.id == selected ? .isSelected : [])
+          }
+        } footer: {
+          Text(PurchaseCard.cardsFooter)
+        }
+      }
+      .navigationTitle(PurchaseCard.cardsTitle)
+      .navigationBarTitleDisplayMode(.inline)
+      .toolbar { ToolbarItem(placement: .topBarTrailing) { LinkByStripe() } }
+    }
+  }
+}
+
+
+// MARK: - Products
+
+/**
+ * The products card (14 October 2026; SimeonCore's `ProductsCard`), as Muse
+ * shows what it is about to buy: each product's picture, name, seller and
+ * price in a row of the agent's card. A tap opens it, with "Buy with
+ * <agent>" (the agent is woken to buy exactly that one, through the checkout
+ * card) and "View website".
+ */
+struct ProductsCardView: View {
+  let entryId: String
+  let agentId: String
+  let card: ProductsCard
+  @Environment(AppStore.self) private var store
+  @Environment(\.chatWidth) private var width
+  @State private var open: ProductsCard.Product?
+
+  var body: some View {
+    let shown = card.shown(pressed: store.pressedProducts[entryId])
+    VStack(spacing: 0) {
+      ForEach(shown.products) { product in
+        Button { Haptics.tap(); open = product } label: {
+          ProductRow(product: product, agentId: agentId, buying: shown.buying == product.index)
+        }
+        .buttonStyle(.plain)
+        if product.index != shown.products.last?.index {
+          Rectangle().fill(Ink.hairline).frame(height: 1).padding(.leading, 14)
+        }
+      }
+    }
+    .frame(width: FlightsCardView.cardWidth(width), alignment: .leading)
+    .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+    .modifier(CardEdge(radius: 22))
+    .sheet(item: $open) { product in
+      ProductSheet(product: product, agentId: agentId, agentName: store.agent(agentId)?.name ?? "", buying: card.shown(pressed: store.pressedProducts[entryId]).buying == product.index) {
+        Haptics.press()
+        open = nil
+        Task { await store.buyProduct(entryId, index: product.index, in: agentId) }
+      }
+      .presentationDetents([.large])
+      .presentationDragIndicator(.visible)
+    }
+  }
+}
+
+/** One product in the card: its picture, its name on two lines, who sells it, its price; "Buying" once Buy was pressed. */
+private struct ProductRow: View {
+  let product: ProductsCard.Product
+  let agentId: String
+  let buying: Bool
+
+  var body: some View {
+    HStack(alignment: .center, spacing: 14) {
+      ProductPicture(url: product.imageURL, agentId: agentId)
+        .frame(width: 96, height: 96)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+      VStack(alignment: .leading, spacing: 3) {
+        Text(product.title).font(.system(size: 16, weight: .semibold)).foregroundStyle(Ink.theirsText).lineLimit(2).multilineTextAlignment(.leading)
+        Text(product.byline).font(.system(size: 14)).foregroundStyle(Ink.fineGrey).lineLimit(1)
+        HStack(spacing: 8) {
+          if let price = product.price { Text(price).font(.system(size: 15)).foregroundStyle(Ink.fineGrey).monospacedDigit() }
+          if buying { StatusPill(text: ProductsCard.buyingLabel, size: 12) }
+        }
+      }
+      Spacer(minLength: 0)
+    }
+    .padding(14)
+    .contentShape(Rectangle())
+    .accessibilityElement(children: .combine)
+    .accessibilityHint("Opens it, with Buy and View website")
+  }
+}
+
+/** A product's own picture from its shop, filling its frame; a bag while it loads or when the shop gave none. */
+private struct ProductPicture: View {
+  let url: URL?
+  let agentId: String
+  var fit = false
+  @Environment(AppStore.self) private var store
+  @State private var loaded: UIImage?
+
+  var body: some View {
+    ZStack {
+      Rectangle().fill(Ink.field)
+      if let loaded {
+        if fit { Image(uiImage: loaded).resizable().scaledToFit() } else { Image(uiImage: loaded).resizable().scaledToFill() }
+      } else {
+        Image(systemName: "bag").font(.system(size: 22)).foregroundStyle(Ink.tertiary)
+      }
+    }
+    .clipped()
+    .accessibilityHidden(true)
+    .task(id: url) {
+      guard let url else { return }
+      if let kept = ChatImages.image(for: [url.absoluteString]) { loaded = kept; return }
+      guard let data = await GalleryTile.bytes(ChatImage(url: url.absoluteString), agentId: agentId, store: store), let full = UIImage(data: data) else { return }
+      let scale = min(1, 1200 / max(full.size.width, 1))
+      let picture = await full.byPreparingThumbnail(ofSize: CGSize(width: full.size.width * scale, height: full.size.height * scale)) ?? full
+      ChatImages.keep(picture, under: [url.absoluteString])
+      loaded = picture
+    }
+  }
+}
+
+/**
+ * One product, opened (Muse's sheet): its picture large, who sells it, its
+ * name and price, then "Buy with <agent>" in the blue and "View website"
+ * plain under it.
+ */
+private struct ProductSheet: View {
+  let product: ProductsCard.Product
+  let agentId: String
+  let agentName: String
+  let buying: Bool
+  let buy: () -> Void
+  @Environment(\.openURL) private var openURL
+  @Environment(\.dismiss) private var dismiss
+
+  var body: some View {
+    VStack(spacing: 0) {
+      ScrollView {
+        VStack(alignment: .leading, spacing: 18) {
+          ProductPicture(url: product.imageURL, agentId: agentId, fit: true)
+            .frame(maxWidth: .infinity)
+            .frame(height: 300)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+          VStack(alignment: .leading, spacing: 6) {
+            Text(product.byline).font(.system(size: 15)).foregroundStyle(Ink.secondary)
+            Text(product.title).font(.system(size: 24, weight: .semibold)).foregroundStyle(Ink.primary).fixedSize(horizontal: false, vertical: true)
+            if let price = product.price { Text(price).font(.system(size: 18, weight: .medium)).foregroundStyle(Ink.primary).monospacedDigit() }
+            if let detail = product.detail { Text(detail).font(.system(size: 15)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true).padding(.top, 4) }
+          }
+        }
+        .padding(.horizontal, 20).padding(.top, 24)
+      }
+      VStack(spacing: 6) {
+        Button(action: buy) {
+          Text(buying ? ProductsCard.buyingLabel : ProductsCard.buyLabel(agent: agentName))
+            .font(.system(size: 17, weight: .semibold)).foregroundStyle(.white)
+            .frame(maxWidth: .infinity).frame(height: 52)
+            .background(Ink.bubbleMine.opacity(buying ? 0.5 : 1), in: Capsule())
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .disabled(buying)
+        Button { openURL(product.url) } label: {
+          Text(ProductsCard.viewWebsite).font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.primary)
+            .frame(maxWidth: .infinity).frame(height: 48).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+      }
+      .padding(.horizontal, 20).padding(.bottom, 12).padding(.top, 8)
+    }
+    .background(Ink.groupedGround.ignoresSafeArea())
+    .overlay(alignment: .topTrailing) {
+      Button { dismiss() } label: {
+        Image(systemName: "xmark").font(.system(size: 15, weight: .semibold)).foregroundStyle(Ink.primary)
+          .frame(width: 36, height: 36).contentShape(Circle())
+      }
+      .buttonStyle(.plain)
+      .glassEffect(.regular, in: .circle)
+      .padding(14)
+      .accessibilityLabel("Close")
     }
   }
 }

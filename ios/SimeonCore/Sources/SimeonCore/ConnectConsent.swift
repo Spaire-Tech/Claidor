@@ -208,6 +208,6 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
     "docusign": "Envelopes your agents send go out in your name.",
     "resend": "Emails your agents send go out from your own domains.",
     "lovable": "Your agents can change and publish your projects. Published changes go live.",
-    "link": "Nothing is paid until you approve the purchase in the Link app, up to $500 each and $500 a day. Each purchase gets its own one-time card, never your real one. US accounts only.",
+    "link": "Nothing is paid until you approve the purchase in the Link app, up to $500 each and $500 a day. Get the Link app on your phone (or add a passkey at link.com): Link approves agents' purchases only there. Each purchase gets its own one-time card, never your real one. US accounts only.",
   ]
 }

@@ -624,20 +624,51 @@ ones our server serves (`boxCli` in `vendor-mcp/catalog.ts`; `vendor-mcp/backend
   `host/extensions/transcript/purchase-cards.ts`, SimeonCore `PurchaseCard.swift`, the cards in
   `ios/Simeon/Cards.swift` and `mac/Simeon/Cards.swift`). The path, adapted from Muse's payment
   rules to our tools (the system prompt's purchase lines):
+  0. **The products card** (14 October 2026, the founder after Muse: "it shows the card of what
+     its about to buy. You click buy with muse"; `product-card.ts`, `ShowProducts` in
+     `purchase-tool.ts`, SimeonCore `ProductsCard.swift`). Once the agent has found what to buy
+     on the shop's own pages, `ShowProducts` posts each product's picture (its own `og:image`,
+     https only), name, seller and price as the shop writes it. A tap opens it with "Buy with
+     <agent>" and "View website". Buy (gateway `buyProduct`) marks that product on the card
+     (`productsBuying`, so a double tap or a second device wakes nobody again) and wakes the agent
+     with exactly which one, its page and price, to buy it the way below.
   1. A browser subagent opens the shop, fills the cart and the delivery details (from
      `get_wallet`: the sole or default address, name, email, phone) and stops at the last step
-     before paying. The agent tells the person what the order is (Order, Delivery, Price, Terms).
+     before paying, leaving that tab open. The agent tells the person what the order is (Order,
+     Delivery, Price, Terms). It never asks which card pays.
   2. `RequestPurchase` checks the person's Link (connected, nothing to verify, the amount within
-     their per-purchase, daily and 30-day limits, the card that pays: the one asked for, else the
-     default or only one, and not one Link marks unusable by agents,
-     `capabilities.agentic_payments.eligible: false`), takes a JPEG of the checkout tab over DevTools (`captureCheckout`,
-     only a tab on the shop's own site) and posts the card: Checkout, "<agent> wants to place an
-     order at <site>", the picture with Review order, "Visa •••• 1234 · Pay with Link", the
-     total, Deny and Allow. The turn ends there, as after a question. Nothing is asked of Link yet.
-  3. Deny: the card says Denied and the agent is told once. Allow (gateway `answerPurchase`): the
-     host makes the spend request, one per card (`--idempotency-key` from the card, so a second
-     tap or device asks Link nothing), Link asks the person in the Link app, and the card shows
-     "Approve it in the Link app" with Open Link (Link's approval page). The host, not the agent,
+     their per-purchase, daily and 30-day limits, and their cards: those Link marks unusable by
+     agents, `capabilities.agentic_payments.eligible: false`, are left out), takes a JPEG of the
+     checkout tab (`captureCheckout`, below) with the shop's icon, and posts the card: Checkout,
+     "<agent> wants to place an order at <site>", the picture with Review order (wearing the
+     shop's icon), "Mastercard Debit •••• 1005" (the card's name in Link) over "Link by Stripe",
+     the total, Deny and Allow. The turn ends there, as after a question. Nothing is asked of
+     Link yet.
+     * **Review order** opens the agent's computer on the checkout, where the cart is (iPhone:
+       the computer full screen; Mac: the computer pane), as Muse's opens its browser. Until 14
+       October 2026 it opened the shop's address on the phone, whose cart is empty: the cart
+       lives in the computer's Chrome.
+     * **The card that pays** is the one the agent was told, else the default or only usable one.
+       With several usable cards the card lists them all (`purchase.cards`: Link's opaque ids,
+       network, last four, name), and a tap on the card row picks another (iPhone: a sheet; Mac: a
+       popover), each with its network's mark. With several and no default, Allow waits for a
+       pick ("Choose the card that pays"). The founder's six cards with no default had the agent
+       ask in a typed question until 14 October 2026. Link's CLI gives no picture of each card's
+       art (its payment method has `name`, `nickname`, `card_details.brand` and `last4`), so the
+       network's mark stands for it.
+  3. Deny: the card says Denied and the agent is told once. Allow (gateway `answerPurchase`, with
+     the card picked on this device as `paymentMethodId`): a pick the card offered is checked with
+     Link again (`checkoutFacts`); one Link refuses leaves the card waiting with a line ("Link
+     won't let an agent pay with … Choose another card."), and the apps give the buttons back. The
+     host then makes the spend request with that card, stamps it on the card (`purchaseCard`,
+     `purchasePaymentMethodId`, so every device shows it), one request per card
+     (`--idempotency-key` from the card, so a second tap or device asks Link nothing). Link asks
+     the person in the Link app, and the card shows "Approve it in the Link app" with Get the
+     Link app (`https://link.com/download`, the address Link's own CLI shows) and Open Link
+     (Link's approval page). **Link approves an agent's purchase only in its app or on link.com
+     with a passkey**, never by a sign-in alone (link.com: "Approve spend requests by downloading
+     the mobile app or adding a passkey"); the founder was sent to sign in and then told to get the
+     app, with nothing here having said so, so the card says it first. The host, not the agent,
      watches Link (`spend-request retrieve` waiting two minutes a look, up to Link's 30 minutes),
      so waiting costs no model calls. An app showing such a card asks the host to keep watching
      it (`resume`), which never answers a card.
@@ -646,11 +677,23 @@ ones our server serves (`boxCli` in `vendor-mcp/catalog.ts`; `vendor-mcp/backend
      approved this exact order; subagents may press it only then), `MarkPurchaseDone` with the
      order number. The card shows Ordered (or Didn't go through), and Link gets `report` with the
      outcome. Declined in Link, expired or canceled: the card says so and the agent is told.
+* **The checkout's picture** (`captureCheckout`, `box-chrome-tabs.ts`). The tab is found in
+  Chrome's own list of tabs (`http://127.0.0.1:<port>/json/list`), the agent's own Chrome first
+  (9222 + its window), only a tab on the shop's own site, and taken over that one tab's DevTools
+  socket (`Page.captureScreenshot`); a tab that doesn't draw is brought to the front once and
+  taken again. The shop's icon is the one Chrome lists for that tab (PNG, JPEG, GIF, WebP or ICO,
+  up to 256 KB, never SVG). Until 14 October 2026 it went through Playwright, which the host
+  found only where the computer's image put it, and which attaches to every tab of a Chrome, so
+  one tab Chrome had put to sleep held the connection: the founder's Gumroad card came without
+  its picture, and nothing said why. Each reason now has its line (below).
 * **The card never reaches the agent.** `pay_checkout` has Link write the one-time card to a
   0600 file, types it into the checkout open in the box's Chrome over DevTools
   (`checkout-fill.ts`: 127.0.0.1:9223, and 9222+N for window N; card fields in the page and in
   Stripe's, Shopify's, Braintree's and Adyen's payment frames), deletes the file and answers only
-  which fields it filled. A billing ZIP or name is typed only where the field is plainly the
+  which fields it filled. Playwright connects only to the Chromes that have the checkout open,
+  after waking any tab Chrome put to sleep there (the browser helper does the same), and is
+  found where the image put it or, failing that, Simeon's own copy beside the browser helper
+  (`/tmp/.sand-browser/playwright-core-*`). A billing ZIP or name is typed only where the field is plainly the
   card's, never a shipping address's. For a Stripe checkout that offers it, the Link pay token is
   set the same way. Every answer is scrubbed of card numbers, security codes and tokens. The
   agent presses Pay itself after checking the order. A screenshot it takes of the filled form can
@@ -667,8 +710,12 @@ ones our server serves (`boxCli` in `vendor-mcp/catalog.ts`; `vendor-mcp/backend
   a test card and charges nothing; the card shows a Test pill.
 * **Log lines.** Box: `[link] installing …` / `[link] installed …` and `[link] purchase
   requested: <status> <lsrq_…>` in the host log; `[simeon] [purchase] allowed <agent>/<entry>:
-  <status> <lsrq_…>`, `[purchase] denied on the card …`, `[purchase] ordered …` and
-  `[purchase] watching <lsrq_…> failed: <code>` for the card; `link sign-in started with Link's
+  <status> <lsrq_…>`, `[purchase] denied on the card …`, `[purchase] ordered …`,
+  `[purchase] card not taken <agent>/<entry>: <why>`, `[purchase] buy pressed on product <n> …`
+  and `[purchase] watching <lsrq_…> failed: <code>` for the cards; for a card without its
+  picture, `[simeon] [purchase] no picture: <why> (<agent>)` (no checkout address, no Chrome
+  answered on ports …, no tab on <site> (open: <sites>), the tab … didn't draw, nowhere to keep
+  it); `link sign-in started with Link's
   device code` and `link connected` in `vendor-mcp-signin.log` on the data volume.
 * **Later: Simeon's own client.** Stripe asks agent products to register an OAuth client (the
   Link Agent Wallet application form, redirect `https://api.simeonlabs.com/desktop/apps/link/callback`,
@@ -678,10 +725,11 @@ ones our server serves (`boxCli` in `vendor-mcp/catalog.ts`; `vendor-mcp/backend
   tokens and hands the box `LINK_ACCESS_TOKEN`, which the same CLI reads.
 * **Not yet verified.** Tested here: the CLI's sign-in start and status against Link's real
   server (no account approved), the tools and the card's whole path (Deny, Allow, a double
-  Allow, Link's approval, decline and refusal, the order, a card in a chat that isn't open)
-  against a scripted CLI (`desktop/tests/purchase-card.test.mjs`), the filler and the checkout
-  picture against Chromium with a fake checkout, and the card's model and the demo's Allow in
-  SimeonCore's tests. The flags and answer shapes were read from `@stripe/link-cli` 0.27.1's own
+  Allow, Link's approval, decline and refusal, the order, a card in a chat that isn't open, the
+  card picked on the card and one Link refuses, the products card's Buy) against a scripted CLI
+  (`desktop/tests/purchase-card.test.mjs`), the filler and the checkout picture (now over one
+  tab's DevTools socket) against Chromium with a fake checkout, and the cards' models, a pick,
+  Buy and the demo's Allow in SimeonCore's tests. The flags and answer shapes were read from `@stripe/link-cli` 0.27.1's own
   code. No real Link account, purchase or bank read yet, and the cards have not been drawn on a
   device (no Xcode here: parse-checked only).
 

@@ -192,7 +192,7 @@ import type {
 import type { AgentRule } from "../packages/proto/generated/agent/v1/agent_rules_pb.js";
 import { HOST_LOG_PREFIX, logHostLine } from "../shared/host-log.js";
 import { configuredSimeonModel } from "./extensions/inference/provider-session.js";
-import { captureCheckout } from "../shared/node/link-wallet/checkout-fill.js";
+import { BOX_CHROME_PORTS, captureCheckout } from "../shared/node/link-wallet/checkout-fill.js";
 import type { LinkTools } from "../shared/node/link-wallet/link-tools.js";
 
 // The model id the composition projects onto the loop (parentModelInfo,
@@ -2369,12 +2369,17 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
               return {
                 dependencies: {
                   checkoutFacts: (request) => wallet?.checkoutFacts(request),
+                  // The agent's own Chrome first (9222 + its window), then the computer's others.
                   capturePreview: async (checkoutUrl) => {
-                    const shot = await captureCheckout({ pageHint: checkoutUrl });
-                    if (shot == null || typeof hooks.persistImage !== "function") return undefined;
+                    const own = 9222 + (boxAgentWindowIndex(extensions.api("forever-box").box as any, session.id) ?? 1);
+                    const note = (line: string) => logHostLine(`${HOST_LOG_PREFIX} [purchase] ${line} (${session.id})`);
+                    const shot = await captureCheckout({ pageHint: checkoutUrl, ports: [own, ...BOX_CHROME_PORTS.filter((port) => port !== own)], log: note });
+                    if (shot == null) return undefined;
+                    if (typeof hooks.persistImage !== "function") { note("no picture: nowhere to keep it"); return undefined; }
                     const saved = await hooks.persistImage(shot.jpeg, "image/jpeg") as { fileUrl?: unknown; width?: unknown; height?: unknown } | null | undefined;
-                    if (saved == null || typeof saved.fileUrl !== "string") return undefined;
-                    return { url: saved.fileUrl, ...(typeof saved.width === "number" ? { width: saved.width } : {}), ...(typeof saved.height === "number" ? { height: saved.height } : {}) };
+                    if (saved == null || typeof saved.fileUrl !== "string") { note("no picture: it couldn't be kept"); return undefined; }
+                    const icon = shot.icon == null ? null : await Promise.resolve(hooks.persistImage(shot.icon.bytes, shot.icon.mimeType)).catch(() => null) as { fileUrl?: unknown } | null | undefined;
+                    return { url: saved.fileUrl, ...(typeof saved.width === "number" ? { width: saved.width } : {}), ...(typeof saved.height === "number" ? { height: saved.height } : {}), ...(typeof icon?.fileUrl === "string" ? { iconUrl: icon.fileUrl } : {}) };
                   },
                   emitCard: (message, timestampMs) => {
                     const update = { type: "send-message" as const, message: message as unknown as Record<string, unknown> & { type: string }, timestampMs, ...(turn.ackToken === undefined ? {} : { ackToken: turn.ackToken }) };

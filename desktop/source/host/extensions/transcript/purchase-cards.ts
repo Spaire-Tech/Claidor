@@ -40,14 +40,16 @@ import {
 } from "../../../shared/node/link-wallet/purchase-card.js";
 import type { LinkTools, SpendAnswer } from "../../../shared/node/link-wallet/link-tools.js";
 import { buildFlightFailedWakePrompt, buildFlightUncertainWakePrompt, purchaseFlightOf } from "../../../shared/node/flight-booking/flight-booking.js";
+import { PRODUCTS_MESSAGE_TYPE, buildProductBuyWakePrompt, type ProductCardItem, type ProductsEntryFields } from "../../../shared/node/link-wallet/product-card.js";
 
 type PurchaseEntry = TranscriptEntry & PurchaseEntryFields & { readonly message: { readonly type: typeof PURCHASE_MESSAGE_TYPE; readonly purchase: PurchaseCardData } };
+type ProductsEntry = TranscriptEntry & ProductsEntryFields & { readonly message: { readonly type: typeof PRODUCTS_MESSAGE_TYPE; readonly products: readonly ProductCardItem[] } };
 
 /** A change to the card's fields; a field set to undefined is removed. */
 type PurchasePatch = { readonly [K in keyof PurchaseEntryFields]?: PurchaseEntryFields[K] | undefined };
 
 /** The Link wallet's steps this side uses (`link-tools.ts`). */
-export type PurchaseWallet = Pick<LinkTools, "requestSpend" | "spendStatus" | "cancelSpend" | "reportOutcome">;
+export type PurchaseWallet = Pick<LinkTools, "requestSpend" | "spendStatus" | "cancelSpend" | "reportOutcome"> & Partial<Pick<LinkTools, "checkoutFacts">>;
 
 /** Link gives the person 30 minutes to approve; the watch stops a little after. */
 const WATCH_LIMIT_MS = 35 * 60_000;
@@ -57,6 +59,12 @@ const WATCH_STEP_SECONDS = 120;
 export function isPurchaseEntry(entry: unknown): entry is PurchaseEntry {
   const record = entry as { kind?: unknown; message?: { type?: unknown; purchase?: unknown } } | null | undefined;
   return record?.kind === "send-message" && record.message?.type === PURCHASE_MESSAGE_TYPE && record.message.purchase != null && typeof record.message.purchase === "object";
+}
+
+/** The products card (`product-card.ts`). */
+export function isProductsEntry(entry: unknown): entry is ProductsEntry {
+  const record = entry as { kind?: unknown; message?: { type?: unknown; products?: unknown } } | null | undefined;
+  return record?.kind === "send-message" && record.message?.type === PRODUCTS_MESSAGE_TYPE && Array.isArray(record.message.products);
 }
 
 export function purchaseStateOf(entry: PurchaseEntry): PurchaseState {
@@ -83,8 +91,14 @@ export class PurchaseCards {
     this.log = options.log ?? ((line) => logHostLine(`${HOST_LOG_PREFIX} ${line}`));
   }
 
-  /** The person's Allow or Deny on a card, or an app asking that a card with Link is watched (`resume`). */
-  async answerPurchase(args: { readonly agentId: string; readonly entryId: string; readonly allow?: boolean; readonly resume?: boolean }, wallet: PurchaseWallet | undefined): Promise<TranscriptEntry | null> {
+  /**
+   * The person's Allow or Deny on a card, or an app asking that a card with
+   * Link is watched (`resume`). Allow carries the card they picked on it
+   * (`paymentMethodId`, one of the card's own `cards`), checked with Link
+   * again before the card is taken; a card Link won't let an agent use
+   * leaves the card waiting with a line saying so.
+   */
+  async answerPurchase(args: { readonly agentId: string; readonly entryId: string; readonly allow?: boolean; readonly resume?: boolean; readonly paymentMethodId?: string }, wallet: PurchaseWallet | undefined): Promise<TranscriptEntry | null> {
     const current = await this.read(args.agentId, args.entryId);
     if (current == null) return null;
     const state = purchaseStateOf(current);
@@ -113,14 +127,17 @@ export class PurchaseCards {
       this.wake(args.agentId, "purchase-failed", buildPurchaseClosedWakePrompt(args.entryId, card, "failed", "Link isn't available on this computer"));
       return failed;
     }
+    const picked = await this.pickedCard(args, current, wallet);
+    if (!picked.ok) return picked.entry;
     // Sending first, so a second Allow (another device, a double tap) finds the card taken; only the Allow that took it asks Link.
     let took = false;
     const sending = await this.stamp(args.agentId, args.entryId, (entry) => {
       if (purchaseStateOf(entry) !== "review") return null;
       took = true;
-      return { purchaseState: "sending" };
+      return { purchaseState: "sending", purchaseNote: undefined, ...(picked.change ?? {}) };
     });
     if (!took) return sending;
+    const paymentMethodId = picked.paymentMethodId;
     const spend = await wallet.requestSpend({
       idempotencyKey: purchaseIdempotencyKey(args.agentId, args.entryId, current.timestampMs),
       credentialType: card.link.credentialType,
@@ -130,13 +147,63 @@ export class PurchaseCards {
       merchantName: card.merchant,
       merchantUrl: card.url,
       ...(card.link.merchantAccountId == null ? {} : { merchantAccountId: card.link.merchantAccountId }),
-      ...(card.link.paymentMethodId == null ? {} : { paymentMethodId: card.link.paymentMethodId }),
+      ...(paymentMethodId == null ? {} : { paymentMethodId }),
       lineItems: card.items,
       totals: card.totals,
       test: card.test,
     }).catch((error: unknown): SpendAnswer => ({ ok: false, code: "LINK_FAILED", message: error instanceof Error ? error.message : String(error) }));
     this.log(`[purchase] allowed ${args.agentId}/${args.entryId}: ${spend.ok ? `${spend.status} ${spend.id}` : `failed ${spend.code}`}`);
     return await this.apply(args.agentId, args.entryId, spend, wallet);
+  }
+
+  /**
+   * Which Link card pays at Allow: the one the person picked on the card when
+   * it is one the card offered and Link still lets an agent use it, else the
+   * card's own. A pick Link refuses, or none on a card that asks for one,
+   * leaves the card waiting with a line for the person.
+   */
+  private async pickedCard(args: { readonly agentId: string; readonly entryId: string; readonly paymentMethodId?: string }, current: PurchaseEntry, wallet: PurchaseWallet): Promise<{ readonly ok: true; readonly paymentMethodId?: string; readonly change?: PurchasePatch } | { readonly ok: false; readonly entry: TranscriptEntry | null }> {
+    const card = current.message.purchase;
+    const own = current.purchasePaymentMethodId ?? card.link.paymentMethodId;
+    const asked = args.paymentMethodId?.trim() ?? "";
+    const offered = asked.length > 0 ? (card.cards ?? []).find((one) => one.id === asked) : undefined;
+    const keepWaiting = async (note: string): Promise<{ readonly ok: false; readonly entry: TranscriptEntry | null }> => {
+      this.log(`[purchase] card not taken ${args.agentId}/${args.entryId}: ${note}`);
+      return { ok: false, entry: await this.stamp(args.agentId, args.entryId, (entry) => purchaseStateOf(entry) !== "review" ? null : { purchaseNote: note }) };
+    };
+    if (offered == null || offered.id === own) {
+      if (asked.length > 0 && offered == null) this.log(`[purchase] ${args.agentId}/${args.entryId}: a card the checkout card didn't offer was asked for; its own pays`);
+      if ((own ?? "").length === 0 && (card.cards ?? []).length > 1) return await keepWaiting("Choose the card that pays, then press Allow.");
+      return { ok: true, ...((own ?? "").length === 0 ? {} : { paymentMethodId: own }) };
+    }
+    if (wallet.checkoutFacts != null) {
+      const facts = await wallet.checkoutFacts({ amount: card.amount, currency: card.currency, paymentMethodId: offered.id }).catch((error: unknown) => ({ ok: false as const, message: error instanceof Error ? error.message : String(error) }));
+      if (!facts.ok) return await keepWaiting(/can't be used for purchases by an agent/.test(facts.message) ? `Link won't let an agent pay with the ${offered.name || offered.brand} ending ${offered.last4}. Choose another card.` : "Link couldn't check that card. Try again, or choose another.");
+    }
+    return { ok: true, paymentMethodId: offered.id, change: { purchasePaymentMethodId: offered.id, purchaseCard: { brand: offered.brand, last4: offered.last4, ...(offered.name == null || offered.name.length === 0 ? {} : { name: offered.name }) } } };
+  }
+
+  /**
+   * "Buy" on one product of a products card (14 October 2026): the card marks
+   * it, and the agent is woken to buy exactly that one through the checkout
+   * card. The same product pressed again (a double tap, a second device)
+   * wakes nobody.
+   */
+  async buyProduct(args: { readonly agentId: string; readonly entryId: string; readonly index: number }): Promise<TranscriptEntry | null> {
+    const current = await this.readAs(args.agentId, args.entryId, isProductsEntry);
+    if (current == null) return null;
+    const product = Number.isInteger(args.index) ? current.message.products[args.index] : undefined;
+    if (product == null) return current;
+    let took = false;
+    const stamped = await this.stampAs(args.agentId, args.entryId, isProductsEntry, (entry) => {
+      if (entry.productsBuying === args.index) return null;
+      took = true;
+      return { productsBuying: args.index };
+    });
+    if (!took) return stamped;
+    this.log(`[purchase] buy pressed on product ${args.index} ${args.agentId}/${args.entryId} (${product.domain})`);
+    this.wake(args.agentId, "product-buy", buildProductBuyWakePrompt(args.entryId, product));
+    return stamped;
   }
 
   /** The agent's word after paying: ordered (with the order's number), failed, or canceled. */
@@ -310,21 +377,29 @@ export class PurchaseCards {
     return this.tm.sessions?.activeSession?.id === agentId ? this.tm.sessions.activeSession : (this.tm.sessions?.liveSessions?.get(agentId) ?? null);
   }
 
-  private async read(agentId: string, entryId: string): Promise<PurchaseEntry | null> {
+  private read(agentId: string, entryId: string): Promise<PurchaseEntry | null> {
+    return this.readAs(agentId, entryId, isPurchaseEntry);
+  }
+
+  private async readAs<E>(agentId: string, entryId: string, is: (entry: unknown) => entry is E): Promise<E | null> {
     if (this.tm.sessions?.isAgentGone?.(agentId) === true) return null;
     const live = this.liveSession(agentId);
     const entries: unknown[] = live != null
       ? live.db.getTranscriptEntries()
       : await Promise.resolve(this.tm.sessionStore?.readAgentTranscriptEntries?.(agentId) ?? []);
     const found = entries.find((entry) => (entry as { id?: unknown }).id === entryId);
-    return isPurchaseEntry(found) ? found : null;
+    return is(found) ? found : null;
   }
 
   /** Writes a change to the card in its agent's transcript and sends it to the apps; null from `change` leaves it as it is. */
-  private async stamp(agentId: string, entryId: string, change: (entry: PurchaseEntry) => PurchasePatch | null): Promise<TranscriptEntry | null> {
+  private stamp(agentId: string, entryId: string, change: (entry: PurchaseEntry) => PurchasePatch | null): Promise<TranscriptEntry | null> {
+    return this.stampAs(agentId, entryId, isPurchaseEntry, change);
+  }
+
+  private async stampAs<E extends TranscriptEntry>(agentId: string, entryId: string, is: (entry: unknown) => entry is E, change: (entry: E) => Readonly<Record<string, unknown>> | null): Promise<TranscriptEntry | null> {
     let result: TranscriptEntry | null = null;
     const applyTo = (entry: TranscriptEntry): TranscriptEntry => {
-      if (!isPurchaseEntry(entry)) return entry;
+      if (!is(entry)) return entry;
       const patch = change(entry);
       if (patch == null) return entry;
       const next = { ...entry } as Record<string, unknown>;
@@ -337,7 +412,7 @@ export class PurchaseCards {
     const live = this.liveSession(agentId);
     if (live != null) {
       const current = (live.db.getTranscriptEntries() as TranscriptEntry[]).find((entry) => entry.id === entryId);
-      if (!isPurchaseEntry(current)) return null;
+      if (!is(current)) return null;
       const next = applyTo(current);
       if (next === current) return current;
       live.db.updateTranscriptEntry(entryId, () => next);
@@ -350,7 +425,7 @@ export class PurchaseCards {
       if (typeof withDb !== "function") return null;
       result = await withDb.call(this.tm.sessionStore, agentId, (db: { getTranscriptEntries(): TranscriptEntry[]; updateTranscriptEntry(id: string, update: (entry: TranscriptEntry) => TranscriptEntry): void }) => {
         const current = db.getTranscriptEntries().find((entry) => entry.id === entryId);
-        if (!isPurchaseEntry(current)) return null;
+        if (!is(current)) return null;
         const next = applyTo(current);
         if (next !== current) db.updateTranscriptEntry(entryId, () => next);
         return next;

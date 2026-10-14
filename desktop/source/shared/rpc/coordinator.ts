@@ -106,6 +106,8 @@ export const COORDINATOR_METHOD_TABLE = {
   discardDraft: { args: "object", reply: "record-or-null" },
   // The checkout card's Allow and Deny (13 October 2026, `purchase-cards.ts`).
   answerPurchase: { args: "object", reply: "record-or-null" },
+  // Buy on the products card (14 October 2026, `purchase-cards.ts`).
+  buyProduct: { args: "object", reply: "record-or-null" },
   // Booking a flight (13 October 2026, `flight-bookings.ts`): `{ ok, entryId }` or `{ ok: false, message }`.
   startFlightBooking: { args: "object", reply: "record" },
   submitFlightPassengers: { args: "object", reply: "record" },

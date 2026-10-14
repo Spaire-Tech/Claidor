@@ -567,6 +567,10 @@ private struct TranscriptRow: View {
       PurchaseCardView(entryId: id, agentId: agentId, card: card, look: look)
         .frame(maxWidth: limit(420), alignment: .leading)
         .padding(.top, startsGroup ? 12 : 0)
+    case .products(let id, let card):
+      ProductsCardView(entryId: id, agentId: agentId, card: card, look: look)
+        .frame(maxWidth: limit(420), alignment: .leading)
+        .padding(.top, startsGroup ? 12 : 0)
     case .flightPassengers(let id, let card):
       FlightPassengersCardView(entryId: id, agentId: agentId, card: card, look: look)
         .frame(maxWidth: limit(420), alignment: .leading)

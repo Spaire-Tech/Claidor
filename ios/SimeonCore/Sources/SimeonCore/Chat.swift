@@ -198,6 +198,8 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
   case cloudAgent(id: String, bcId: String)
   /** A purchase waiting on the person, or how it went (`purchase`, the checkout card). */
   case purchase(id: String, card: PurchaseCard)
+  /** What an agent found to buy, each with Buy and View website (`products`). */
+  case products(id: String, card: ProductsCard)
   /** The traveller form for a flight being booked (`flight-passengers`). */
   case flightPassengers(id: String, card: FlightPassengersCard)
 
@@ -205,7 +207,7 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
     switch self {
     case .stamp(let id, _), .unread(let id), .flights(let id, _), .file(let id, _, _, _), .question(let id, _), .draft(let id, _),
          .connectors(let id, _, _, _), .listenerConnect(let id, _, _), .request(let id, _), .teammates(let id, _, _), .voiceCall(let id, _, _, _), .routines(let id, _, _),
-         .notice(let id, _), .failedSend(let id, _), .queuedSend(let id, _), .thread(let id, _, _, _), .cloudAgent(let id, _), .purchase(let id, _), .flightPassengers(let id, _): return id
+         .notice(let id, _), .failedSend(let id, _), .queuedSend(let id, _), .thread(let id, _, _, _), .cloudAgent(let id, _), .purchase(let id, _), .products(let id, _), .flightPassengers(let id, _): return id
     case .bubble(let bubble): return bubble.id
     }
   }
@@ -232,6 +234,7 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
     case .thread: return "thread"
     case .cloudAgent: return "cloud-agent"
     case .purchase: return "purchase"
+    case .products: return "products"
     case .flightPassengers: return "flight-passengers"
     }
   }
@@ -253,7 +256,7 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
     case .file(_, _, _, let fromPerson): return fromPerson ? .person : .agent(nil)
     case .failedSend, .queuedSend: return .person
     case .thread(_, _, _, let side): return side
-    case .flights, .question, .draft, .connectors, .listenerConnect, .request, .notice, .cloudAgent, .purchase, .flightPassengers: return .agent(nil)
+    case .flights, .question, .draft, .connectors, .listenerConnect, .request, .notice, .cloudAgent, .purchase, .products, .flightPassengers: return .agent(nil)
     default: return .middle
     }
   }
@@ -651,6 +654,7 @@ public enum Chat {
       return names.isEmpty ? "Connect tools" : "Connect " + names.joined(separator: ", ")
     case "listener-connect": return message["platform"]?.string == "slack" ? "Connect Slack" : "Connect GitHub"
     case "purchase": return message["content"]?.string ?? "Checkout"
+    case "products": return message["content"]?.string ?? "Products"
     case "flight-passengers": return message["content"]?.string ?? "Traveller details"
     default: return "Message"
     }
@@ -1044,6 +1048,9 @@ public enum Chat {
         return .cloudAgent(id: entry.id, bcId: bcId)
       case "purchase":
         if let card = PurchaseCard(message: message, entry: entry) { return .purchase(id: entry.id, card: card) }
+        return .notice(id: entry.id, text: message["content"]?.text ?? notShown)
+      case "products":
+        if let card = ProductsCard(message: message, entry: entry) { return .products(id: entry.id, card: card) }
         return .notice(id: entry.id, text: message["content"]?.text ?? notShown)
       case "flight-passengers":
         if let card = FlightPassengersCard(message: message, entry: entry) { return .flightPassengers(id: entry.id, card: card) }

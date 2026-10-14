@@ -265,13 +265,18 @@ export function createHostGatewayApi(
       markActive("user_action");
       return method(manager, "discardDraft")({ agentId: args.agentId, entryId: args.entryId });
     },
-    // The checkout card (purchase-cards.ts): Allow asks Link through the box's wallet; `resume` only makes sure a card with Link is watched.
+    // The checkout card (purchase-cards.ts): Allow asks Link through the box's wallet, with the card the person picked on it; `resume` only makes sure a card with Link is watched.
     answerPurchase: (args: any) => {
       if (args?.resume !== true) markActive("user_action");
       return method(manager, "answerPurchase")(
-        { agentId: args.agentId, entryId: args.entryId, allow: args.allow === true, resume: args.resume === true },
+        { agentId: args.agentId, entryId: args.entryId, allow: args.allow === true, resume: args.resume === true, ...(typeof args?.paymentMethodId === "string" && args.paymentMethodId.length > 0 ? { paymentMethodId: args.paymentMethodId } : {}) },
         deps.extensions.api("mcp")?.linkWallet,
       );
+    },
+    // Buy on one product of the products card (14 October 2026): the agent is woken to buy exactly that one.
+    buyProduct: (args: any) => {
+      markActive("user_action");
+      return method(manager, "buyProduct")({ agentId: args?.agentId, entryId: args?.entryId, index: typeof args?.index === "number" ? args.index : -1 });
     },
     // Booking a flight (13 October 2026, flight-bookings.ts): "Book with Simeon" on a flight in the search card, and the traveller form's Continue.
     startFlightBooking: (args: any) => {

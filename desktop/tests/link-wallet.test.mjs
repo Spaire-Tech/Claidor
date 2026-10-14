@@ -159,9 +159,10 @@ test("the tools build Link's commands, hide cards and tokens, and sign in with t
   assert.match(direct.text, /RequestPurchase/);
   assert.equal(fake.calls.some((call) => call.command[1] === "create"), false);
 
-  // Before the card: the default card, and the limits the amount must fit in (here $50 left today).
-  assert.deepEqual(await link.checkoutFacts({ amount: 3500, currency: "usd" }), { ok: true, paymentMethodId: "csmrpd_visa", card: { brand: "Visa", last4: "1234" }, holder: "Bass Lee" });
-  assert.deepEqual((await link.checkoutFacts({ amount: 3500, currency: "usd", paymentMethodId: "csmrpd_mc" })).card, { brand: "Mastercard", last4: "5678" });
+  // Before the card: the default card, every card the person may switch to on the card (14 October 2026), and the limits the amount must fit in (here $50 left today).
+  const bothCards = [{ id: "csmrpd_visa", brand: "Visa", last4: "1234", name: "Visa", isDefault: true }, { id: "csmrpd_mc", brand: "Mastercard", last4: "5678", name: "Mastercard", isDefault: false }];
+  assert.deepEqual(await link.checkoutFacts({ amount: 3500, currency: "usd" }), { ok: true, paymentMethodId: "csmrpd_visa", card: { brand: "Visa", last4: "1234", name: "Visa" }, cards: bothCards, holder: "Bass Lee" });
+  assert.deepEqual((await link.checkoutFacts({ amount: 3500, currency: "usd", paymentMethodId: "csmrpd_mc" })).card, { brand: "Mastercard", last4: "5678", name: "Mastercard" });
   // The wallet shows every card and address, not the last of each.
   const wallet = JSON.parse((await link.call("get_wallet", {})).text);
   assert.deepEqual(wallet.payment_methods.map((method) => method.id), ["csmrpd_visa", "csmrpd_mc"]);
@@ -169,12 +170,20 @@ test("the tools build Link's commands, hide cards and tokens, and sign in with t
   // One card, the default (the founder's wallet, 14 October 2026): it pays.
   const allCards = methods;
   methods = [{ id: "csmrpd_rh", type: "card", is_default: true, name: "Robinhood Cash Card", card_details: { brand: "visa", last4: "2862" } }];
-  assert.deepEqual(await link.checkoutFacts({ amount: 248, currency: "usd" }), { ok: true, paymentMethodId: "csmrpd_rh", card: { brand: "Visa", last4: "2862" }, holder: "Bass Lee" });
-  // A card Link won't let an agent pay with is said before the checkout card, with the one that can.
+  assert.deepEqual(await link.checkoutFacts({ amount: 248, currency: "usd" }), { ok: true, paymentMethodId: "csmrpd_rh", card: { brand: "Visa", last4: "2862", name: "Robinhood Cash Card" }, cards: [{ id: "csmrpd_rh", brand: "Visa", last4: "2862", name: "Robinhood Cash Card", isDefault: true }], holder: "Bass Lee" });
+  // A default Link won't let an agent pay with: the one that can pays, and it is never offered on the card.
   methods = [{ ...allCards[0], capabilities: { agentic_payments: { eligible: false, ineligibility_reasons: ["unsupported_funding_type"] } } }, allCards[1]];
   const ineligible = await link.checkoutFacts({ amount: 3500, currency: "usd" });
-  assert.equal(ineligible.ok, false);
-  assert.match(ineligible.message, /Visa ending 1234 can't be used for purchases by an agent \(unsupported funding type\)\. Ask the person whether to use the card ending 5678 instead/);
+  assert.equal(ineligible.ok, true);
+  assert.equal(ineligible.paymentMethodId, "csmrpd_mc");
+  assert.deepEqual(ineligible.cards.map((card) => card.id), ["csmrpd_mc"]);
+  // Named by the agent, it is refused before the checkout card, pointing at the card's own chooser.
+  const named = await link.checkoutFacts({ amount: 3500, currency: "usd", paymentMethodId: "csmrpd_visa" });
+  assert.equal(named.ok, false);
+  assert.match(named.message, /Visa ending 1234 can't be used for purchases by an agent \(unsupported funding type\)\. Leave payment_method_id out/);
+  // No card an agent can use: said before the card.
+  methods = allCards.map((method) => ({ ...method, capabilities: { agentic_payments: { eligible: false } } }));
+  assert.match((await link.checkoutFacts({ amount: 3500, currency: "usd" })).message, /none of the person's cards can be used/);
   methods = allCards;
   const overDay = await link.checkoutFacts({ amount: 6000, currency: "usd" });
   assert.equal(overDay.ok, false);
@@ -182,8 +191,9 @@ test("the tools build Link's commands, hide cards and tokens, and sign in with t
   assert.match((await link.checkoutFacts({ amount: 60000, currency: "usd" })).message, /limit of \$500\.00 a purchase/);
   methods = methods.map((method) => ({ ...method, is_default: false }));
   const which = await link.checkoutFacts({ amount: 3500, currency: "usd" });
-  assert.equal(which.ok, false);
-  assert.match(which.message, /1234, 5678/, "several cards and no default: ask which, by the last four");
+  assert.equal(which.ok, true, "several cards and no default: the person picks on the card, never in a typed question");
+  assert.equal(which.paymentMethodId, "");
+  assert.deepEqual(which.cards.map((card) => card.last4), ["1234", "5678"]);
   userInfo = { ...userInfo, agent_wallet_verification_requirement: { status: "identity_verification", action_url: "https://link.com/verify/abc" } };
   assert.match((await link.checkoutFacts({ amount: 3500, currency: "usd", paymentMethodId: "csmrpd_visa" })).message, /https:\/\/link\.com\/verify\/abc/);
 

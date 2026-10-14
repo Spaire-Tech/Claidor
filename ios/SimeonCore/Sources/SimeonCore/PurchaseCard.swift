@@ -4,9 +4,11 @@ import Foundation
  * The checkout card (13 October 2026): one for each purchase an agent wants
  * to make, before any money is asked for (the host's
  * `shared/node/link-wallet/purchase-card.ts`). The person checks the shop,
- * the picture of its checkout, the Link card that pays and the total, and
- * presses Allow or Deny. Allow sends it to Link, which asks them to approve
- * it in the Link app; the card follows it there and to the order.
+ * the picture of its checkout (Review order opens the agent's computer on
+ * it), the Link card that pays (another of their cards can be picked on it)
+ * and the total, and presses Allow or Deny. Allow sends it to Link, which
+ * asks them to approve it in the Link app; the card follows it there and to
+ * the order.
  *
  * The message (`send-message` of type `purchase`) carries what is bought;
  * the entry carries where it stands (`purchaseState` and the fields beside
@@ -31,6 +33,24 @@ public struct PurchaseCard: Hashable, Sendable {
     public let detail: String?
   }
 
+  /** One of the person's Link cards an agent may pay with: the card's chooser (14 October 2026). */
+  public struct Choice: Hashable, Sendable, Identifiable {
+    /** Link's opaque payment method id (never a card number). */
+    public let id: String
+    public let brand: String
+    public let last4: String
+    /** Its name in Link: "Chime Credit Builder". */
+    public let name: String?
+    public let isDefault: Bool
+
+    public init(id: String, brand: String, last4: String, name: String? = nil, isDefault: Bool = false) {
+      self.id = id; self.brand = brand; self.last4 = last4; self.name = name; self.isDefault = isDefault
+    }
+
+    /** "Mastercard Debit •••• 1005": the name in Link (or the network) and the last four. */
+    public var line: String { PurchaseCard.cardLine(brand: brand, last4: last4, name: name) ?? "Card" }
+  }
+
   public let merchant: String
   /** The checkout's site, "ncvss.com". */
   public let domain: String
@@ -39,11 +59,18 @@ public struct PurchaseCard: Hashable, Sendable {
   /** "$80.00" */
   public let total: String
   public let items: [Item]
-  /** "Visa", "1234": the Link card that pays. */
+  /** "Visa", "1234", "Mastercard Debit": the Link card that pays; none while the person still picks one. */
   public let cardBrand: String?
   public let cardLast4: String?
+  public let cardName: String?
+  /** Which of `cards` pays (Link's id), when Link named one. */
+  public let cardId: String?
+  /** The person's Link cards an agent may pay with, when there are several: the card's chooser. */
+  public let cards: [Choice]
   /** The checkout as it looked when the agent asked. */
   public let preview: ChatImage?
+  /** The shop's own icon, which Review order wears. */
+  public let icon: ChatImage?
   /** Link's test mode: a test card, nothing charged. */
   public let isTest: Bool
   public let state: State
@@ -66,9 +93,10 @@ public struct PurchaseCard: Hashable, Sendable {
     case uncertain
   }
 
-  public init(merchant: String, domain: String, url: URL?, total: String, items: [Item], cardBrand: String?, cardLast4: String?, preview: ChatImage?, isTest: Bool, state: State, note: String? = nil, actionURL: URL? = nil, order: String? = nil, flight: BookedFlight? = nil, step: Step? = nil) {
+  public init(merchant: String, domain: String, url: URL?, total: String, items: [Item], cardBrand: String?, cardLast4: String?, cardName: String? = nil, cardId: String? = nil, cards: [Choice] = [], preview: ChatImage?, icon: ChatImage? = nil, isTest: Bool, state: State, note: String? = nil, actionURL: URL? = nil, order: String? = nil, flight: BookedFlight? = nil, step: Step? = nil) {
     self.merchant = merchant; self.domain = domain; self.url = url; self.total = total; self.items = items
-    self.cardBrand = cardBrand; self.cardLast4 = cardLast4; self.preview = preview; self.isTest = isTest
+    self.cardBrand = cardBrand; self.cardLast4 = cardLast4; self.cardName = cardName; self.cardId = cardId; self.cards = cards
+    self.preview = preview; self.icon = icon; self.isTest = isTest
     self.state = state; self.note = note; self.actionURL = actionURL; self.order = order; self.flight = flight; self.step = step
   }
 
@@ -88,11 +116,23 @@ public struct PurchaseCard: Hashable, Sendable {
       let detail = text(item["description"])
       return Item(name: name, quantity: max(1, item["quantity"]?.int ?? 1), detail: detail.isEmpty ? nil : detail)
     }
-    let brand = text(purchase["card"]?["brand"])
-    let last4 = text(purchase["card"]?["last4"])
+    // The card picked on the card at Allow (stamped by the host) wins over the one it was made with.
+    let paying = entry["purchaseCard"]?.object != nil ? entry["purchaseCard"] : purchase["card"]
+    let brand = text(paying?["brand"])
+    let last4 = text(paying?["last4"])
+    let name = text(paying?["name"])
     self.cardBrand = brand.isEmpty ? nil : brand
     self.cardLast4 = last4.isEmpty ? nil : last4
+    self.cardName = name.isEmpty ? nil : name
+    let chosen = text(entry["purchasePaymentMethodId"]).isEmpty ? text(purchase["link"]?["paymentMethodId"]) : text(entry["purchasePaymentMethodId"])
+    self.cardId = chosen.isEmpty ? nil : chosen
+    self.cards = (purchase["cards"]?.array ?? []).compactMap { card in
+      let id = text(card["id"]), last4 = text(card["last4"]), name = text(card["name"])
+      guard !id.isEmpty else { return nil }
+      return Choice(id: id, brand: text(card["brand"]).isEmpty ? "Card" : text(card["brand"]), last4: last4, name: name.isEmpty ? nil : name, isDefault: card["isDefault"]?.bool ?? false)
+    }
     self.preview = purchase["preview"].flatMap(ChatImage.init)
+    self.icon = purchase["icon"].flatMap(ChatImage.init)
     self.isTest = purchase["test"]?.bool ?? false
     self.state = State(rawValue: entry["purchaseState"]?.text ?? "") ?? .review
     let note = entry["purchaseNote"]?.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -104,10 +144,15 @@ public struct PurchaseCard: Hashable, Sendable {
     self.step = (entry["purchaseStep"]?.text).flatMap(Step.init(rawValue:))
   }
 
-  /** The card as the person sees it now: their own answer shows at once, before the computer echoes it. */
-  public func shown(answered: State?) -> PurchaseCard {
-    guard state == .review, let answered else { return self }
-    return PurchaseCard(merchant: merchant, domain: domain, url: url, total: total, items: items, cardBrand: cardBrand, cardLast4: cardLast4, preview: preview, isTest: isTest, state: answered, note: note, actionURL: actionURL, order: order, flight: flight, step: step)
+  /**
+   * The card as the person sees it now: the card they picked on it (before
+   * Allow, on this device), and their own answer at once, before the
+   * computer echoes it.
+   */
+  public func shown(answered: State?, picked: String? = nil) -> PurchaseCard {
+    let choice = state == .review ? picked.flatMap { id in cards.first { $0.id == id } } : nil
+    guard choice != nil || (state == .review && answered != nil) else { return self }
+    return PurchaseCard(merchant: merchant, domain: domain, url: url, total: total, items: items, cardBrand: choice?.brand ?? cardBrand, cardLast4: choice?.last4 ?? cardLast4, cardName: choice.map(\.name) ?? cardName, cardId: choice?.id ?? cardId, cards: cards, preview: preview, icon: icon, isTest: isTest, state: state == .review ? (answered ?? state) : state, note: choice == nil ? note : nil, actionURL: actionURL, order: order, flight: flight, step: step)
   }
 
   // MARK: Words
@@ -115,11 +160,17 @@ public struct PurchaseCard: Hashable, Sendable {
   public static let title = "Checkout"
   public static let check = "Check the items, delivery and terms on the shop's page before you allow it."
   public static let reviewOrder = "Review order"
-  public static let payWithLink = "Pay with Link"
+  public static let payWithLink = "Link by Stripe"
+  public static let chooseCard = "Choose the card that pays"
+  public static let cardsTitle = "Pay with"
+  public static let cardsFooter = "Your cards in Link. Add or remove cards in the Link app or at link.com."
   public static let totalLabel = "Total"
   public static let deny = "Deny"
   public static let allow = "Allow"
   public static let openLink = "Open Link"
+  public static let getLinkApp = "Get the Link app"
+  /** Where Link sends people for its app (Link's own command-line tool shows the same address). */
+  public static let linkAppURL = URL(string: "https://link.com/download")!
   public static let testNote = "Link's test mode: nothing is charged."
 
   /** "Ada wants to place an order at ncvss.com" */
@@ -128,15 +179,29 @@ public struct PurchaseCard: Hashable, Sendable {
     return "\(who.isEmpty ? "Your agent" : who) wants to place an order at \(domain)"
   }
 
-  /** "Visa •••• 1234"; the brand alone, or nil, when Link gave less. */
-  public var cardLine: String? {
-    switch (cardBrand, cardLast4) {
-    case let (brand?, last4?): return "\(brand) •••• \(last4)"
-    case let (brand?, nil): return brand
+  /** "Mastercard Debit •••• 1005": the card's name in Link (else its network) and its last four; nil when Link gave nothing. */
+  public var cardLine: String? { Self.cardLine(brand: cardBrand, last4: cardLast4, name: cardName) }
+
+  static func cardLine(brand: String?, last4: String?, name: String?) -> String? {
+    let named = name?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+    // A name that already says the last four ("Visa 1234") is shown as it is.
+    if let named, let last4, named.contains(last4) { return named }
+    switch (named ?? brand, last4) {
+    case let (title?, last4?): return "\(title) •••• \(last4)"
+    case let (title?, nil): return title
     case let (nil, last4?): return "Card •••• \(last4)"
     default: return nil
     }
   }
+
+  /** The person can switch the card that pays, on the card, before Allow (a flight's card too). */
+  public var canChooseCard: Bool { waitsOnPerson && cards.count > 1 }
+
+  /** No card pays yet: Allow waits for the person to pick one. */
+  public var needsCard: Bool { waitsOnPerson && cardLast4 == nil && cardBrand == nil && cards.count > 1 }
+
+  /** A line for the person while the card waits on them (Link refused the card they picked, or none was picked). */
+  public var reviewNote: String? { state == .review ? note : nil }
 
   /** "Linen shirt ×2, Case": what is bought, for a card without a picture. */
   public var itemsLine: String {
@@ -213,7 +278,7 @@ public struct PurchaseCard: Hashable, Sendable {
     }
     switch state {
     case .approving:
-      return note ?? "Link sent it to your Link app. It waits 30 minutes."
+      return note ?? Self.approvingDetail
     case .ordered:
       let number = order.map { "Order \($0.hasPrefix("#") ? $0 : "#\($0)")" }
       return [number, note].compactMap { $0 }.joined(separator: " · ").nilIfEmpty
@@ -225,6 +290,14 @@ public struct PurchaseCard: Hashable, Sendable {
       return nil
     }
   }
+
+  /**
+   * While Link waits for the person (14 October 2026): Link approves every
+   * agent purchase in its own app, or on link.com with a passkey, never by a
+   * sign-in alone; the founder was sent to sign in and then told to get the
+   * app, with nothing here having said so.
+   */
+  public static let approvingDetail = "Link sent it to the Link app on your phone. No Link app yet? Get it and sign in once; every purchase after that is one tap. Or open it on link.com with a passkey. It waits 30 minutes."
 
   /** In the chat list and a quote: "Checkout at ncvss.com · $80.00", "Flight Seattle to Los Angeles · $361.20". */
   public var listLine: String { flight.map { "Flight \($0.route) · \(total)" } ?? "Checkout at \(domain) · \(total)" }

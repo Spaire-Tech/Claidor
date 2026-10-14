@@ -1138,6 +1138,8 @@ struct ChatRowView: View, Equatable {
       CloudAgentCard(entryId: id, bcId: bcId, agentId: agentId)
     case .purchase(let id, let card):
       PurchaseCardView(entryId: id, agentId: agentId, card: card, openComputer: openComputer)
+    case .products(let id, let card):
+      ProductsCardView(entryId: id, agentId: agentId, card: card)
     case .flightPassengers(let id, let card):
       FlightPassengersCardView(entryId: id, agentId: agentId, card: card)
     }

@@ -14,8 +14,10 @@
 // `billing` / `cc-name`), never a shipping address's.
 
 import { execFileSync } from "node:child_process";
+import { existsSync, readdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join } from "node:path";
+import { activateTab, hostOfAddress, listTabsOn, tabCommand, tabsShowing, wakeSleepingTabs, type BoxChromeTab } from "./box-chrome-tabs.js";
 
 export interface CheckoutCard {
   readonly number: string;
@@ -121,19 +123,47 @@ const FRAME_ONLY: Partial<Record<FieldKind, string>> = {
   "billing ZIP": any(['input[name="postal"]', 'input[name="postalCode"]', 'input[name="zip"]', 'input[autocomplete="postal-code"]', 'input[data-elements-stable-field-name="postalCode"]']),
 };
 
-/** playwright-core from wherever the box image put it (as the host's browser driver finds it, `sand-browser-driver-source.ts`). */
-export function loadBoxPlaywright(): PlaywrightLike {
-  const roots = ["/node_modules", ...String(process.env.NODE_PATH ?? "").split(":"), "/usr/local/lib/node_modules", "/usr/lib/node_modules", "/workspace/node_modules"];
+/**
+ * Where the browser helper writes Simeon's own copy of playwright-core on the
+ * computer, one folder per version (`SAND_BROWSER_DRIVER_BOX_DIR` and
+ * `SAND_BROWSER_PLAYWRIGHT_BOX_DIR` in `host/runner/tools/`): the computer's
+ * image may carry none, and the helper has run before any checkout.
+ */
+export const BOX_BROWSER_HELPER_DIR = "/tmp/.sand-browser";
+
+/** Simeon's own copies of playwright-core the browser helper left on this computer, newest first. */
+function ownPlaywrightCopies(dir: string): string[] {
+  try {
+    return readdirSync(dir).filter((name) => name.startsWith("playwright-core-") && existsSync(join(dir, name, "lib", "playwright-core.cjs"))).sort().reverse().map((name) => join(dir, name, "lib", "playwright-core.cjs"));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * playwright-core from wherever the box image put it, else Simeon's own copy
+ * beside the browser helper (as the helper itself finds it,
+ * `sand-browser-driver-source.ts`). Until 14 October 2026 only the image's
+ * places were tried, so on an image without one the card was never typed in.
+ */
+export function loadBoxPlaywright(helperDir: string = BOX_BROWSER_HELPER_DIR): PlaywrightLike {
+  const roots = [process.env.SAND_PLAYWRIGHT_NODE_MODULES ?? "", "/node_modules", ...String(process.env.NODE_PATH ?? "").split(":"), "/workspace/node_modules", "/home/box/node_modules", "/usr/local/lib/node_modules", "/usr/lib/node_modules", "/opt/node_modules"];
   try { roots.push(execFileSync("npm", ["root", "-g"], { encoding: "utf8", timeout: 5000, stdio: ["ignore", "pipe", "ignore"] }).trim()); } catch { /* not on the PATH */ }
   let lastError: unknown;
   for (const root of roots.filter((item) => item.length > 0)) {
-    try { return createRequire(join(root, "noop.js"))("playwright-core") as PlaywrightLike; } catch (error) { lastError = error; }
+    try { return createRequire(join(root.replace(/\/+$/, ""), "noop.js"))("playwright-core") as PlaywrightLike; } catch (error) { lastError = error; }
+  }
+  for (const library of ownPlaywrightCopies(helperDir)) {
+    try {
+      const bundled = createRequire(library)(library) as { core?: PlaywrightLike };
+      if (bundled.core?.chromium != null) return bundled.core;
+    } catch (error) { lastError = error; }
   }
   throw new Error(`playwright-core is not on this computer (${lastError instanceof Error ? lastError.message : String(lastError)})`);
 }
 
 const two = (value: number): string => String(value).padStart(2, "0");
-const hostOf = (value: string): string => { try { return new URL(value.includes("://") ? value : `https://${value}`).hostname.replace(/^www\./, ""); } catch { return value.toLowerCase(); } };
+const hostOf = hostOfAddress;
 
 export async function firstEditable(frame: Frame, selector: string): Promise<Locator | undefined> {
   const all = frame.locator(selector);
@@ -176,29 +206,87 @@ async function openPages(playwright: PlaywrightLike, ports: readonly number[]): 
   return { browsers, pages };
 }
 
+/** The checkout's picture for the purchase card, with the shop's own icon when Chrome has one. */
+export interface CheckoutPicture {
+  /** The tab's site, "gumroad.com". */
+  readonly page: string;
+  readonly jpeg: Uint8Array;
+  /** The shop's icon (Review order wears it), as the shop serves it. */
+  readonly icon?: { readonly bytes: Uint8Array; readonly mimeType: string };
+}
+
+const ICON_TYPES: Readonly<Record<string, string>> = { "image/png": "image/png", "image/jpeg": "image/jpeg", "image/gif": "image/gif", "image/webp": "image/webp", "image/x-icon": "image/x-icon", "image/vnd.microsoft.icon": "image/x-icon", "image/ico": "image/x-icon" };
+
+/** The shop's icon from the address Chrome lists for its tab: a small picture the apps can draw (no SVG), or nothing. */
+export async function fetchCheckoutIcon(address: string | undefined, fetchImpl: typeof fetch = fetch): Promise<CheckoutPicture["icon"]> {
+  if (address == null || !/^https:\/\//i.test(address)) return undefined;
+  try {
+    const response = await fetchImpl(address, { signal: AbortSignal.timeout(4000), redirect: "follow" });
+    if (!response.ok) return undefined;
+    const type = ICON_TYPES[(response.headers.get("content-type") ?? "").split(";")[0]?.trim().toLowerCase() ?? ""];
+    if (type == null) return undefined;
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    return bytes.byteLength > 0 && bytes.byteLength <= 256 * 1024 ? { bytes, mimeType: type } : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * The checkout as the person will check it on the purchase card: one JPEG
  * of the tab on the shop's site (the address the agent gave, else its
- * domain), as it shows now. Nothing on the page is touched. Nothing when no
- * tab is on that site, so the card never shows another shop's page.
+ * domain), as it shows now, from the agent's own Chrome first (`ports` in
+ * order). Taken over that tab's own DevTools socket (`box-chrome-tabs.ts`);
+ * a tab that doesn't draw (behind another, or asleep) is brought to the
+ * front once and taken again. Nothing on the page is touched. Nothing when
+ * no tab is on that site, so the card never shows another shop's page; each
+ * reason goes to `log`.
  */
-export async function captureCheckout(options: { readonly pageHint: string; readonly ports?: readonly number[]; readonly loadPlaywright?: () => PlaywrightLike }): Promise<{ readonly page: string; readonly jpeg: Uint8Array } | undefined> {
+export async function captureCheckout(options: { readonly pageHint: string; readonly ports?: readonly number[]; readonly log?: (line: string) => void; readonly fetchImpl?: typeof fetch }): Promise<CheckoutPicture | undefined> {
+  const log = options.log ?? (() => undefined);
   const hint = options.pageHint.trim();
-  if (hint.length === 0) return undefined;
-  let playwright: PlaywrightLike;
-  try { playwright = (options.loadPlaywright ?? loadBoxPlaywright)(); } catch { return undefined; }
-  const { browsers, pages } = await openPages(playwright, options.ports ?? BOX_CHROME_PORTS);
-  try {
-    const site = hostOf(hint);
-    const byAddress = pages.filter((page) => page.url().includes(hint));
-    const bySite = pages.filter((page) => hostOf(page.url()) === site || hostOf(page.url()).endsWith(`.${site}`));
-    const page = byAddress[0] ?? bySite[0];
-    if (page == null) return undefined;
-    const jpeg = await page.screenshot({ type: "jpeg", quality: 70, timeout: 8000, animations: "disabled", caret: "hide" }).catch(() => undefined);
-    return jpeg == null || jpeg.byteLength === 0 ? undefined : { page: hostOf(page.url()), jpeg };
-  } finally {
-    await Promise.all(browsers.map((browser) => browser.close().catch(() => undefined)));
+  if (hint.length === 0) { log("no picture: no checkout address"); return undefined; }
+  const ports = options.ports ?? BOX_CHROME_PORTS;
+  const tabs = await listTabsOn(ports);
+  if (tabs.length === 0) { log(`no picture: no Chrome answered on ${ports.length === 1 ? `port ${ports[0]}` : `ports ${ports[0]}–${ports[ports.length - 1]}`}`); return undefined; }
+  const showing = tabsShowing(tabs, hint);
+  if (showing.length === 0) { log(`no picture: no tab on ${hostOf(hint)} (open: ${[...new Set(tabs.map((tab) => hostOf(tab.url)))].slice(0, 8).join(", ") || "none"})`); return undefined; }
+  for (const tab of showing.slice(0, 2)) {
+    const jpeg = await screenshotTab(tab);
+    if (jpeg == null) { log(`no picture: the tab on ${hostOf(tab.url)} (port ${tab.port}) didn't draw`); continue; }
+    const icon = await fetchCheckoutIcon(tab.faviconUrl, options.fetchImpl);
+    return { page: hostOf(tab.url), jpeg, ...(icon == null ? {} : { icon }) };
   }
+  return undefined;
+}
+
+async function screenshotTab(tab: BoxChromeTab): Promise<Uint8Array | undefined> {
+  const take = async (): Promise<Uint8Array | undefined> => {
+    const shot = await tabCommand<{ data?: unknown }>(tab, "Page.captureScreenshot", { format: "jpeg", quality: 70 }, 8000);
+    if (typeof shot?.data !== "string" || shot.data.length === 0) return undefined;
+    const jpeg = new Uint8Array(Buffer.from(shot.data, "base64"));
+    return jpeg[0] === 0xff && jpeg[1] === 0xd8 ? jpeg : undefined;
+  };
+  const first = await take();
+  if (first != null) return first;
+  await activateTab(tab);
+  await new Promise((resolve) => setTimeout(resolve, 400));
+  return await take();
+}
+
+/**
+ * The DevTools ports whose Chrome has the checkout open, woken for
+ * Playwright: it attaches to every tab of a Chrome it connects to, and one
+ * Chrome put to sleep (Memory Saver, after half an hour waiting on Link) held
+ * the connection until it timed out. All of `ports` when no tab shows it.
+ */
+async function checkoutPorts(hint: string, ports: readonly number[]): Promise<readonly number[]> {
+  if (hint.length === 0) return ports;
+  const showing = tabsShowing(await listTabsOn(ports), hint);
+  if (showing.length === 0) return ports;
+  const chosen = [...new Set(showing.map((tab) => tab.port))];
+  await Promise.all(chosen.map((port) => wakeSleepingTabs(port)));
+  return chosen;
 }
 
 async function hasCardFields(page: Page): Promise<boolean> {
@@ -221,10 +309,10 @@ export async function fillCheckout(options: FillCheckoutOptions): Promise<Checko
   if (options.card == null && options.linkPayToken == null) return { ok: false, message: "Nothing to fill in." };
   let playwright: PlaywrightLike;
   try { playwright = (options.loadPlaywright ?? loadBoxPlaywright)(); } catch (error) { return { ok: false, message: `The browser can't be reached from here: ${error instanceof Error ? error.message : String(error)}` }; }
-  const { browsers, pages } = await openPages(playwright, options.ports ?? BOX_CHROME_PORTS);
+  const hint = options.pageHint?.trim() ?? "";
+  const { browsers, pages } = await openPages(playwright, await checkoutPorts(hint, options.ports ?? BOX_CHROME_PORTS));
   try {
     if (pages.length === 0) return { ok: false, message: "No browser is open on this computer. Open the checkout page first." };
-    const hint = options.pageHint?.trim() ?? "";
     // The tab whose address holds the agent's words, else any tab on that site (shop.example.com, checkout.shop.example.com).
     const byAddress = hint.length === 0 ? [] : pages.filter((page) => page.url().includes(hint));
     const bySite = hint.length === 0 ? [] : pages.filter((page) => hostOf(page.url()) === hostOf(hint) || hostOf(page.url()).endsWith(`.${hostOf(hint)}`));

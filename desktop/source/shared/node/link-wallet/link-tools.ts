@@ -44,7 +44,7 @@ export const LINK_TOOLS: readonly LinkToolDefinition[] = [
   {
     name: "get_wallet",
     title: "Link wallet",
-    description: "The person's Link wallet before a purchase: their name, email and phone (for the checkout's contact fields), spending limits (cents; null means none), anything Link needs them to do first (agent_wallet_verification_requirement.action_url: send them that link), their payment methods (an id is what RequestPurchase takes as payment_method_id) and saved shipping addresses. Use a sole or default address or card; ask the person when there are several and none is the default. When you show an address or card to the person, show only the city, the ZIP or the last four digits.",
+    description: "The person's Link wallet before a purchase: their name, email and phone (for the checkout's contact fields), spending limits (cents; null means none), anything Link needs them to do first (agent_wallet_verification_requirement.action_url: send them that link), their payment methods (an id is what RequestPurchase takes as payment_method_id) and saved shipping addresses. Use a sole or default address; ask the person when there are several and none is the default. Never ask which card pays: RequestPurchase's card lets them choose among their cards (pass payment_method_id only when they named one). When you show an address or card to the person, show only the city, the ZIP or the last four digits.",
     inputSchema: object({}),
   },
   {
@@ -289,23 +289,32 @@ export function createLinkTools(options: LinkToolsOptions) {
       }
     }
     const listed = methods.ok ? paymentMethodsOf(methods.value) : [];
+    // The cards an agent may pay with, for the checkout card's own chooser (14 October 2026: the person picks there, with each card's mark, not in a typed question).
+    const usable = listed.filter((item) => text(item.id).length > 0 && agenticRefusal(item) == null);
+    const cards = usable.map((item): LinkCardChoice => ({ id: text(item.id), ...cardOf(item), isDefault: item.is_default === true }));
+    const holder = text(info.name).length > 0 ? { holder: text(info.name) } : {};
     const wanted = request.paymentMethodId?.trim() ?? "";
     const method = wanted.length > 0
       ? listed.find((item) => text(item.id) === wanted)
       : listed.find((item) => item.is_default === true) ?? (listed.length === 1 ? listed[0] : undefined);
-    if (wanted.length > 0 && method == null) return { ok: false, message: `Link has no payment method "${wanted}" for this person. Call get_wallet for their methods.` };
-    if (method == null) {
-      if (listed.length === 0) return { ok: false, message: "The person has no card in Link yet. Ask them to add one in the Link app or at link.com, then call RequestPurchase again." };
-      return { ok: false, message: `The person has ${listed.length} cards in Link and none is the default: ask which one (by its last four digits: ${listed.map((item) => cardOf(item).last4).filter((last4) => last4.length > 0).join(", ")}), then pass its id from get_wallet as payment_method_id.` };
+    if (wanted.length > 0 && method == null) return { ok: false, message: `Link has no payment method "${wanted}" for this person. Call get_wallet for their methods, or leave payment_method_id out: the card lets them choose.` };
+    if (listed.length === 0) return { ok: false, message: "The person has no card in Link yet. Ask them to add one in the Link app or at link.com, then call RequestPurchase again." };
+    if (usable.length === 0) {
+      const named = listed.map((item) => cardOf(item)).map((card) => `${card.name || card.brand}${card.last4.length > 0 ? ` ending ${card.last4}` : ""}`);
+      return { ok: false, message: `Link says none of the person's cards can be used for purchases by an agent (${named.join(", ")}). Ask them to add another card in the Link app or at link.com, then call RequestPurchase again. Nothing was asked of Link.` };
+    }
+    // No card named and no default, or the default is one Link won't let an agent use: the person picks on the card.
+    if (method == null || (wanted.length === 0 && agenticRefusal(method) != null)) {
+      if (usable.length === 1) return { ok: true, paymentMethodId: cards[0]!.id, card: cardOf(usable[0]!), cards, ...holder };
+      return { ok: true, paymentMethodId: "", card: { brand: "", last4: "", name: "" }, cards, ...holder };
     }
     // Link marks a card agents can't pay with (`capabilities.agentic_payments`); asking Link anyway fails only after the person pressed Allow.
     const refused = agenticRefusal(method);
     if (refused != null) {
       const card = cardOf(method);
-      const others = listed.filter((item) => item !== method && agenticRefusal(item) == null).map((item) => cardOf(item).last4).filter((last4) => last4.length > 0);
-      return { ok: false, message: `Link says the ${card.brand}${card.last4.length > 0 ? ` ending ${card.last4}` : ""} can't be used for purchases by an agent${refused.length > 0 ? ` (${refused})` : ""}. ${others.length > 0 ? `Ask the person whether to use the card ending ${others.join(" or ")} instead, then pass its id from get_wallet as payment_method_id.` : "Ask them to add another card in the Link app or at link.com, then call RequestPurchase again."} Nothing was asked of Link.` };
+      return { ok: false, message: `Link says the ${card.name || card.brand}${card.last4.length > 0 ? ` ending ${card.last4}` : ""} can't be used for purchases by an agent${refused.length > 0 ? ` (${refused})` : ""}. Leave payment_method_id out and call RequestPurchase again: the card lets the person choose among the cards Link allows. Nothing was asked of Link.` };
     }
-    return { ok: true, paymentMethodId: text(method.id), card: cardOf(method), ...(text(info.name).length > 0 ? { holder: text(info.name) } : {}) };
+    return { ok: true, paymentMethodId: text(method.id), card: cardOf(method), cards, ...holder };
   };
 
   /** At Allow: the spend request for one checkout card, with Link's approval asked of the person. */
@@ -377,8 +386,24 @@ export type LinkTools = ReturnType<typeof createLinkTools>;
 /** Link's cap on one purchase, in US cents (README, 0.27.1). */
 export const LINK_MAX_PURCHASE_CENTS = 50_000;
 
+/** One card in the person's Link an agent may pay with, as the checkout card's chooser shows it. */
+export interface LinkCardChoice {
+  /** Link's opaque payment method id (never a card number). */
+  readonly id: string;
+  readonly brand: string;
+  readonly last4: string;
+  /** The card's name in Link: its nickname, else Link's own ("Chime Credit Builder"); "" when Link gives none. */
+  readonly name: string;
+  readonly isDefault: boolean;
+}
+
+/**
+ * Before a checkout card. `paymentMethodId` is "" when the person picks on
+ * the card (several cards and no default, or a default agents can't use);
+ * `cards` are the ones they can pick from.
+ */
 export type CheckoutFacts =
-  | { readonly ok: true; readonly paymentMethodId: string; readonly card: { readonly brand: string; readonly last4: string }; readonly holder?: string }
+  | { readonly ok: true; readonly paymentMethodId: string; readonly card: { readonly brand: string; readonly last4: string; readonly name: string }; readonly cards: readonly LinkCardChoice[]; readonly holder?: string }
   | { readonly ok: false; readonly message: string };
 
 export interface SpendRequestInput {
@@ -446,13 +471,14 @@ function agenticRefusal(method: Record<string, unknown>): string | undefined {
 
 const BRANDS: Record<string, string> = { visa: "Visa", mastercard: "Mastercard", amex: "Amex", american_express: "Amex", discover: "Discover", diners: "Diners Club", jcb: "JCB", unionpay: "UnionPay" };
 
-/** A Link payment method as the card names it: "Visa" and "1234" (`card_details`), else the method's own name. */
-function cardOf(method: Record<string, unknown>): { readonly brand: string; readonly last4: string } {
+/** A Link payment method as the card names it: "Visa" and "1234" (`card_details`), else the method's own name, and its name in Link. */
+function cardOf(method: Record<string, unknown>): { readonly brand: string; readonly last4: string; readonly name: string } {
   const details = (method.card_details ?? method.bank_account_details) as Record<string, unknown> | undefined;
   const brand = text(details?.brand).toLowerCase();
   return {
     brand: BRANDS[brand] ?? (brand.length > 0 ? brand.charAt(0).toUpperCase() + brand.slice(1) : text(method.nickname) || text(method.name) || "Card"),
     last4: text(details?.last4).replace(/\D/g, "").slice(-4),
+    name: (text(method.nickname).trim() || text(method.name).trim()).slice(0, 60),
   };
 }
 

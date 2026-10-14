@@ -101,6 +101,12 @@ test("the form, the travellers' checks and the flight's checkout card", async ()
     assert.equal(card.purchase.test, true);
     assert.equal(card.purchase.link.test, true);
     assert.equal(card.purchase.link.paymentMethodId, "csmrpd_visa");
+    assert.equal(card.purchase.cards, undefined, "one card: nothing to choose");
+    // Several cards and no default (14 October 2026): the flight's card offers them all, as every checkout card does.
+    const chooser = module.flightCheckoutCard({ offer: OFFER, formEntryId: "t2s1", travellers: good.travellers, card: { brand: "", last4: "" }, cards: [{ id: "csmrpd_visa", brand: "Visa", last4: "4242", name: "Visa Signature", isDefault: false }, { id: "csmrpd_mc", brand: "Mastercard", last4: "1005", name: "Mastercard Debit", isDefault: false }] });
+    assert.equal(chooser.purchase.card, undefined);
+    assert.equal(chooser.purchase.link.paymentMethodId, undefined);
+    assert.deepEqual(chooser.purchase.cards.map((one) => one.id), ["csmrpd_visa", "csmrpd_mc"]);
     assert.ok(card.purchase.link.context.length >= 100);
     assert.match(card.purchase.link.context, /Seattle to Los Angeles on Duffel Airways.*Amelia Earhart/);
     assert.deepEqual(card.purchase.flight.travellers, ["Amelia Earhart"]);

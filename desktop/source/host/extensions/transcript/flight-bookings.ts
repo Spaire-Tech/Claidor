@@ -196,7 +196,7 @@ export class FlightBookings {
         return { ok: false, message: said };
       }
       this.saveTravellers(args.agentId, args.entryId, { offerId: offer.offerId, travellers: checked.travellers, savedAtMs: Date.now() });
-      const card = flightCheckoutCard({ offer, formEntryId: args.entryId, travellers: checked.travellers, card: facts.card, ...(facts.paymentMethodId.length === 0 ? {} : { paymentMethodId: facts.paymentMethodId }) });
+      const card = flightCheckoutCard({ offer, formEntryId: args.entryId, travellers: checked.travellers, card: facts.card, ...(facts.paymentMethodId.length === 0 ? {} : { paymentMethodId: facts.paymentMethodId }), ...((facts.cards ?? []).length > 1 ? { cards: facts.cards } : {}) });
       const appended = await this.append(args.agentId, card as unknown as Record<string, unknown>);
       if (appended == null) {
         this.forgetTravellers(args.agentId, args.entryId);

@@ -166,6 +166,10 @@ public final class AppStore {
   public private(set) var answeredPurchases: [String: PurchaseCard.State] = [:]
   /** Checkout cards with Link this app asked the computer to keep watching, once each. */
   @ObservationIgnored private var watchedPurchases: Set<String> = []
+  /** The Link card picked on a checkout card here (its id), until Allow carries it to the computer. */
+  public private(set) var pickedPurchaseCards: [String: String] = [:]
+  /** Buy pressed here on a products card (the product's place), until the computer's copy says so. */
+  public private(set) var pressedProducts: [String: Int] = [:]
   /** The computer's notices ("Agent failed to respond"…), an open agent's drawn over its composer (`hVn`). */
   public private(set) var trayList = TrayList()
   /** Each file card's line once read (`readAttachmentText`, kept for the session as the window keeps it). */
@@ -386,7 +390,7 @@ public final class AppStore {
     backend = nil
     agents = []; transcripts = [:]; chatRows = [:]; runFlags = [:]; steps = [:]; call = nil; callLevels = []; isLive = false; account = nil; usage = .empty; usageReadAt = nil; access = .checking; accessBlocked = false; hasReachedBox = false; openChat = nil
     layoutTask?.cancel(); layoutTask = nil; pendingLayout = []; refreshing = []; caughtUp = [:]
-    pendingAnswers = [:]; answeredApprovals = [:]; answeredPurchases = [:]; watchedPurchases = []; localAsks = [:]; trayList = TrayList(); fileLines = [:]; fileReadsAsText = [:]; unreadAfter = [:]; apps = []; catalog = []; appsComingSoon = AppsComingSoon.builtIn; pinnedIds = []; routinesByAgent = [:]; sidebarSections = nil
+    pendingAnswers = [:]; answeredApprovals = [:]; answeredPurchases = [:]; watchedPurchases = []; pickedPurchaseCards = [:]; pressedProducts = [:]; localAsks = [:]; trayList = TrayList(); fileLines = [:]; fileReadsAsText = [:]; unreadAfter = [:]; apps = []; catalog = []; appsComingSoon = AppsComingSoon.builtIn; pinnedIds = []; routinesByAgent = [:]; sidebarSections = nil
     streamingOnly = [:]; outbox = [:]; sentOffline = [:]; arrived = []; olderBefore = [:]; loadingOlder = []; paged = []; firstRunAgentId = nil; revealing = [:]
     openThreads = [:]; threadRows = [:]; threadRoots = [:]; loadFailed = []; isDown = false
     computer = ComputerBook(); subagentsByAgent = [:]; pointers = [:]; lastComputerCatchUp = .distantPast
@@ -688,6 +692,7 @@ public final class AppStore {
     if localAsks[agentId] != ask { localAsks[agentId] = ask }
     for entry in entries where pendingAnswers[entry.id] != nil && (entry["respondedValue"]?.text != nil || entry["widgetDismissed"]?.bool == true) { pendingAnswers[entry.id] = nil }
     for entry in entries where answeredPurchases[entry.id] != nil && (entry["purchaseState"]?.text ?? "review") != "review" { answeredPurchases[entry.id] = nil }
+    for entry in entries where pressedProducts[entry.id] != nil && entry["productsBuying"]?.int == pressedProducts[entry.id] { pressedProducts[entry.id] = nil }
     settleOutbox(agentId, entries)
     if soon { scheduleLayout(agentId) } else { layOut(agentId) }
   }
@@ -1268,8 +1273,31 @@ public final class AppStore {
   public func answerPurchase(_ entryId: String, allow: Bool, in agentId: String) async {
     guard answeredPurchases[entryId] == nil else { return }
     answeredPurchases[entryId] = allow ? .sending : .denied
-    if await command("answerPurchase", ["agentId": .string(agentId), "entryId": .string(entryId), "allow": .bool(allow)], failure: allow ? "The purchase didn't go to Link" : "Couldn't deny the purchase") == nil {
+    var args: JSON = ["agentId": .string(agentId), "entryId": .string(entryId), "allow": .bool(allow)]
+    // The card picked on the card rides with Allow (14 October 2026); the computer checks it with Link first.
+    if allow, let picked = pickedPurchaseCards[entryId] { args = args.setting("paymentMethodId", .string(picked)) }
+    let reply = await command("answerPurchase", args, failure: allow ? "The purchase didn't go to Link" : "Couldn't deny the purchase")
+    // Not taken (no answer, or the card still waits: Link refused the card picked, which its line says): the buttons are back.
+    if reply == nil || (reply?.object != nil && (reply?["purchaseState"]?.text ?? "review") == "review") {
       answeredPurchases[entryId] = nil
+    }
+  }
+
+  /** A Link card picked on a checkout card, before Allow: the card shows it at once; Allow carries it. */
+  public func pickPurchaseCard(_ entryId: String, cardId: String) {
+    pickedPurchaseCards[entryId] = cardId
+  }
+
+  /**
+   * "Buy with <agent>" on one product of a products card (`buyProduct`): the
+   * card marks it at once, and the agent is woken to buy exactly that one.
+   * A failed press comes back to the button.
+   */
+  public func buyProduct(_ entryId: String, index: Int, in agentId: String) async {
+    guard pressedProducts[entryId] != index else { return }
+    pressedProducts[entryId] = index
+    if await command("buyProduct", ["agentId": .string(agentId), "entryId": .string(entryId), "index": .number(Double(index))], failure: "Couldn't tell your agent to buy it") == nil {
+      pressedProducts[entryId] = nil
     }
   }
 

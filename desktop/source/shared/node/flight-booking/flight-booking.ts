@@ -282,8 +282,10 @@ export function flightCheckoutCard(args: {
   readonly offer: FlightOfferFacts;
   readonly formEntryId: string;
   readonly travellers: readonly FlightTraveller[];
-  readonly card: { readonly brand: string; readonly last4: string };
+  readonly card: { readonly brand: string; readonly last4: string; readonly name?: string };
   readonly paymentMethodId?: string;
+  /** The person's Link cards an agent may pay with: with several, the card's chooser (as on every checkout card). */
+  readonly cards?: readonly { readonly id: string; readonly brand: string; readonly last4: string; readonly name?: string; readonly isDefault?: boolean }[];
 }): PurchaseCardMessage {
   const flight = flightBlock(args.offer);
   const names = travellerNames(args.travellers);
@@ -303,7 +305,8 @@ export function flightCheckoutCard(args: {
     total,
     items,
     totals: [{ type: "total", label: "Total", amount: args.offer.amountMinor }],
-    ...(args.card.brand.length > 0 || args.card.last4.length > 0 ? { card: args.card } : {}),
+    ...(args.card.brand.length > 0 || args.card.last4.length > 0 ? { card: { brand: args.card.brand, last4: args.card.last4, ...((args.card.name ?? "").length > 0 ? { name: args.card.name } : {}) } } : {}),
+    ...((args.cards ?? []).length > 1 ? { cards: (args.cards ?? []).map((one) => ({ id: one.id, brand: one.brand, last4: one.last4, ...((one.name ?? "").length > 0 ? { name: one.name } : {}), ...(one.isDefault === true ? { isDefault: true } : {}) })) } : {}),
     test: args.offer.test,
     link: {
       credentialType: "card",

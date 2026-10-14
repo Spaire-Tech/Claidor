@@ -21,6 +21,7 @@ export const SAND_GATEWAY_COMMANDS = {
   sendDraft: (api: GatewayApi, body: string) => api.sendDraft(parseCommandArgs(body)),
   discardDraft: (api: GatewayApi, body: string) => api.discardDraft(parseCommandArgs(body)),
   answerPurchase: (api: GatewayApi, body: string) => api.answerPurchase(parseCommandArgs(body)),
+  buyProduct: (api: GatewayApi, body: string) => api.buyProduct(parseCommandArgs(body)),
   startFlightBooking: (api: GatewayApi, body: string) => api.startFlightBooking(parseCommandArgs(body)),
   submitFlightPassengers: (api: GatewayApi, body: string) => api.submitFlightPassengers(parseCommandArgs(body)),
   appendConnectorCard: (api: GatewayApi, body: string) => api.appendConnectorCard(parseCommandArgs(body)),

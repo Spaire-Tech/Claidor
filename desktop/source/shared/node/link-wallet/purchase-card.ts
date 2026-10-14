@@ -53,6 +53,15 @@ export interface PurchaseTotalLine {
   readonly amount: number;
 }
 
+/** One card in the checkout card's chooser. */
+export interface PurchaseCardChoice {
+  readonly id: string;
+  readonly brand: string;
+  readonly last4: string;
+  readonly name?: string;
+  readonly isDefault?: boolean;
+}
+
 /** What Link needs to make the one-time card at Allow. A payment method id is Link's opaque id, never a card number. */
 export interface PurchaseLinkRequest {
   readonly credentialType: "card" | "link_pay_token";
@@ -77,10 +86,19 @@ export interface PurchaseCardData {
   readonly total: string;
   readonly items: readonly PurchaseItem[];
   readonly totals: readonly PurchaseTotalLine[];
-  /** The Link card that pays: "Visa", "1234". */
-  readonly card?: { readonly brand: string; readonly last4: string };
+  /** The Link card that pays: "Visa", "1234", its name in Link ("Mastercard Debit"); none when the person picks on the card. */
+  readonly card?: { readonly brand: string; readonly last4: string; readonly name?: string };
+  /**
+   * The person's Link cards an agent may pay with, when there are several
+   * (14 October 2026): the card's chooser, each with its network's mark. The
+   * pick rides with Allow (`answerPurchase`'s `paymentMethodId`); ids are
+   * Link's opaque ones, never card numbers.
+   */
+  readonly cards?: readonly PurchaseCardChoice[];
   /** The checkout as it looked when the card was made (a picture in the agent's folder). */
   readonly preview?: { readonly url: string; readonly width?: number; readonly height?: number };
+  /** The shop's own icon, which Review order wears (a picture in the agent's folder). */
+  readonly icon?: { readonly url: string };
   /** Link's test mode: a test card, nothing charged. */
   readonly test: boolean;
   readonly link: PurchaseLinkRequest;
@@ -100,6 +118,9 @@ export interface PurchaseEntryFields {
   readonly purchaseNote?: string;
   /** Where the person approves (Link's approval page) or does what Link asks first. */
   readonly purchaseActionUrl?: string;
+  /** The card the person picked on the card at Allow, when it isn't the one the card was made with. */
+  readonly purchasePaymentMethodId?: string;
+  readonly purchaseCard?: { readonly brand: string; readonly last4: string; readonly name?: string };
   readonly purchaseSpendRequestId?: string;
   readonly purchaseOrder?: string;
   /**
