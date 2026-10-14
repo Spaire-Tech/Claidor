@@ -740,7 +740,8 @@ ones our server serves (`boxCli` in `vendor-mcp/catalog.ts`; `vendor-mcp/backend
   Link Agent Wallet application form, redirect `https://api.simeonlabs.com/desktop/apps/link/callback`,
   settings `SIMEON_LINK_CLIENT_ID` / `SIMEON_LINK_CLIENT_SECRET` on the API service). With it the
   approval screen carries Simeon's name, and bank reading needs the company's Stripe account (the one Simeon's billing uses)
-  registered for Financial Connections. Only the sign-in changes then: the server holds the
+  registered for Financial Connections (registered and approved, 14 October 2026, the founder). The
+  application was sent; no client yet, and the server's side of this sign-in is not built. Only the sign-in changes then: the server holds the
   tokens and hands the box `LINK_ACCESS_TOKEN`, which the same CLI reads.
 * **Not yet verified.** Tested here: the CLI's sign-in start and status against Link's real
   server (no account approved), the tools and the card's whole path (Deny, Allow, a double
