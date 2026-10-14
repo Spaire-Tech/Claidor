@@ -168,7 +168,8 @@ The Electron app and the web app have no button yet. In order:
 
 1. The subscription ends now at Stripe (`stripe_billing.cancel_subscription`).
 2. Each cloud computer the person ever had is removed with both of its volumes
-   (`/workspace` and the data folder).
+   (`/workspace` and the data folder), then its backups in the backup bucket
+   (`box_store.delete_user`; a failure there is reported, not blocking).
 3. The apps signed in through the apps provider are disconnected there, and
    each call's transcript is deleted at the voice provider.
 4. The person's rows go (`account_repository.py`: memory, call records,
@@ -782,6 +783,54 @@ routes. Other desktop routes refuse it. A refresh never accepts it.
 the migration log that `WatchSandBoxMigration` streams is also in Redis, so
 more than one API process can serve boxes.
 
+**Backups** (14 October 2026, `server/simeon/sand/box_store.py`), the upstream
+app's own design, switched on by `SIMEON_BOX_STORE_BUCKET`:
+
+- The host in the box backs itself up (`box-store-sync` in
+  `desktop/source/host/extensions/box-store-sync/`): every two minutes, and
+  five seconds after an agent's turn ends, it copies the agents' data
+  (`/home/box/sand-data`), the workspace, the app sign-ins (`cli-config`) and
+  Chrome's cookies, saved logins and site data (the whole Chrome profile only
+  when idle, at most every 15 minutes) to S3. Each file is stored once under
+  its sha256 (`blobs/`), with one `manifest.json` naming what goes where. The
+  box never deletes anything.
+- It asks the server for presigned S3 URLs over the upstream's agent-store
+  calls on `simeon.v1.CloudAgentService`: `MintAgentStoreToken` (a one-hour
+  token naming the person's store, sent back as `x-agent-store-token`), then
+  `PresignAgentStoreReads` and `PresignAgentStoreWrites`. A write with a
+  condition (`If-None-Match: *` or `If-Match`) carries a second, conflict URL
+  where the box keeps its copy when the condition fails, so nothing is lost.
+  The bytes go straight between the box and S3, never through the API.
+- A store belongs to one person: its id is derived from the person and the
+  box (`store-<uuid>`), and every key lives under
+  `box-stores/<user id>/`. Delete Account removes that prefix.
+- The box is told (`box_env`): `SAND_BOX_STORE_SYNC=1`, its store
+  (`SAND_BOX_STORE_ID`) and the bucket's address, which the host adds to its
+  allowlist of presigned-URL hosts (`SIMEON_AGENT_STORE_BUCKET_HOSTS`). Every
+  container made with backups on carries the label `com.simeonlabs.box-store`;
+  an idle box made before is replaced on its volumes once (`stale_store`), as
+  a box on an older host program is.
+- Restoring, the upstream's order: before a container is replaced, the API
+  asks the box to bring its backup up to date (`POST /api/snapshotBoxStoreNow`,
+  30 seconds). The new container is told to copy the backup in before its
+  host starts (`SIMEON_BOX_STORE_RESTORE` with a new
+  `SIMEON_BOX_STORE_RESTORE_ID`; the host runs `host-main.cjs --box-copy-in`,
+  `desktop/source/host/box/box-store-restore.ts`), once per container:
+  - `always` after that backup succeeded, since Chrome and the app sign-ins
+    live outside the two volumes;
+  - `fresh` otherwise, only onto an empty agents folder and only when a backup
+    exists (or S3 could not say), so a container lost with its volumes kept
+    never trades newer files for an older backup.
+  A failed copy stops the host and the supervisor starts it again; after three
+  failures it starts without the backup, with backups paused in that container
+  so its empty folders never replace the backup.
+- The computer's three actions, as upstream: **Update** brings the backup up
+  to date and swaps the container on the same files; **Recover computer**
+  (`ForceRecreateSandBox`) backs up as far as the box answers, wipes the
+  agents' data and boots from the backup; a **reset**
+  (`RecreateSandBox` with `preserveData: false`) wipes the files and the
+  backup together.
+
 ### Settings on Render
 
 Put these in the environment group that both the API and the worker read,
@@ -798,6 +847,9 @@ because the worker runs the sleeper and the wake. Full steps are in
 | `SIMEON_BOX_IDLE_HIBERNATE_AFTER` | `PT30M`; `PT0S` never sleeps |
 | `SIMEON_BOX_MEMORY_LIMIT_MB`, `SIMEON_BOX_CPU_LIMIT` | `4096`, `2.0`; `0` means no limit |
 | `SIMEON_BOX_MAX_RUNNING` | `3`; `0` means no limit |
+| `SIMEON_BOX_STORE_BUCKET` | the backup bucket's name; empty: no backups |
+| `SIMEON_BOX_STORE_REGION` | the bucket's region, `us-west-2` by default |
+| `SIMEON_BOX_STORE_ACCESS_KEY_ID`, `_SECRET_ACCESS_KEY` | a key with `s3:GetObject`, `s3:PutObject`, `s3:DeleteObject` and `s3:ListBucket` on that bucket only (ListBucket makes a missing file read 404, which the box needs) |
 
 Leave `SIMEON_BOX_HOST_ADDRESS` and `SIMEON_BOX_PUBLIC_URL_TEMPLATE` empty so
 the API proxies the ports itself.
@@ -835,6 +887,13 @@ settings is not read (`desktop/source/shared/box-runtime.ts`).
   - `sand.box.proxy.refused` and `sand.box.proxy.unreachable` cover the proxy.
 - For the bundle: `sand.box.bundle.version` shows a new version was read, and
   `sand.box.bundle.pointer_unread` shows the version file could not be read.
+- For backups: `sand.box.store` (with `restore=always|fresh|none`) for every
+  container made with backups on; `sand.box.store.flush` with `flushed=` before
+  a container is replaced; `sand.box_store.head_failed` when S3 could not say
+  whether a backup exists; `sand.box.store.clear_failed` when a reset could not
+  empty the backup. In the box, `[box-store-restore]` and `[box-store-sync]`
+  lines in `/tmp/sand-host.log`, and the copy itself in `/tmp/sand-copy-in.log`
+  (`[box-copy-in] result outcome=hydrated`).
 - On the worker: `sand.box.hibernated`, `sand.box.sleeper`,
   `sand.box.sleep.failed`, `sand.box.woken`, `sand.box.wake.deferred`.
 - In the box, `/tmp/sand-host.log`:
@@ -845,7 +904,9 @@ settings is not read (`desktop/source/shared/box-runtime.ts`).
 
 **Not yet verified:** the cloud computer has been tested against two real
 Docker Engines, but has not run in the packaged app on a Mac. Sleep and wake
-have not run against the production VM.
+have not run against the production VM. Backups have been tested against a
+local S3 and with the engine's tests, not yet on a real computer with a real
+bucket; old files in the bucket are never cleaned up yet (the box only adds).
 
 ## 5. The Mac app's releases
 

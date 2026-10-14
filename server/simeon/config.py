@@ -415,6 +415,22 @@ class Settings(BaseSettings):
     # when every accepting server is full, one more is refused with the
     # SAND_BOX_BLOCKED hold and a retry-after. Zero: no limit.
     BOX_MAX_RUNNING: int = 3
+    # Backups of each cloud computer, the upstream app's way (14 October
+    # 2026, `simeon/sand/box_store.py`): the box copies its data,
+    # workspace, Chrome session and app sign-ins to this S3 bucket every
+    # two minutes, and a box made fresh copies them back before its host
+    # starts. Empty: no backups, as before. The key needs s3:GetObject,
+    # s3:PutObject, s3:DeleteObject and s3:ListBucket on the bucket
+    # (ListBucket makes a missing object read 404, which the box needs).
+    BOX_STORE_BUCKET: str = ""
+    BOX_STORE_REGION: str = "us-west-2"
+    BOX_STORE_ACCESS_KEY_ID: str = ""
+    BOX_STORE_SECRET_ACCESS_KEY: str = ""
+    BOX_STORE_PREFIX: str = "box-stores"
+    # Tests only (a local S3): the bucket's own address otherwise.
+    BOX_STORE_ENDPOINT_URL: str | None = None
+    # How long a presigned URL and the box's store token last.
+    BOX_STORE_URL_TTL: timedelta = timedelta(hours=1)
 
     # Apps through Composio (simeon/desktop/composio.py). One key for the
     # whole of Simeon, held here and nowhere else: the desktop app never

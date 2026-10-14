@@ -106,6 +106,37 @@ class TestDeleteAccount:
         )
         assert again.status_code == 401
 
+    @pytest.mark.parametrize("fails", [False, True])
+    async def test_the_computers_backups_go_too(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        host: FakeBoxHost,  # noqa: F811
+        mocker: MockerFixture,
+        fails: bool,
+    ) -> None:
+        access, _ = await _signed_in(client, session, user)
+        assert (await _ensure(client, access)).status_code == 200
+        mocker.patch.object(settings, "BOX_STORE_BUCKET", "simeon-backups")
+        delete_user = mocker.patch.object(
+            account_deletion.box_store,
+            "delete_user",
+            side_effect=RuntimeError("S3 refused") if fails else None,
+            return_value=7,
+        )
+
+        response = await client.delete(
+            DELETE, headers={"Authorization": f"Bearer {access}"}
+        )
+
+        assert response.status_code == 200, response.text
+        delete_user.assert_called_once_with(user.id)
+        # A backup S3 would not delete does not stop the rest: it is said,
+        # and logged to finish by hand.
+        incomplete = response.json()["incomplete"]
+        assert incomplete == (["computer backups (S3 refused)"] if fails else [])
+
     async def test_an_account_signed_in_with_google_or_apple_is_deleted(
         self,
         client: httpx.AsyncClient,

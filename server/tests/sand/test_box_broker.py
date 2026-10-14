@@ -98,7 +98,13 @@ class FakeBoxHost:
             "host_sha256": self.expected_host_sha256,
         }
         return ProvisionedBox(
-            box_id, "10.0.0.7", ports, spec.image, "abc", self.expected_host_sha256
+            box_id,
+            "10.0.0.7",
+            ports,
+            spec.image,
+            "abc",
+            self.expected_host_sha256,
+            box_store=spec.labels.get("com.simeonlabs.box-store"),
         )
 
     async def inspect(self, provider_box_id: str) -> ProvisionedBox | None:
@@ -112,6 +118,7 @@ class FakeBoxHost:
             box["spec"].image,
             "abc",
             box["host_sha256"],
+            box_store=box["spec"].labels.get("com.simeonlabs.box-store"),
         )
 
     async def run_state(self, provider_box_id: str) -> Any:
@@ -611,6 +618,186 @@ class TestRecreate:
         assert all(m["operationId"] == operation for m in messages)
         assert messages[0]["offsetKey"] == "1" and messages[1]["offsetKey"] == "2"
         assert messages[0]["atMs"].isdigit()
+
+
+@pytest.fixture
+def backups(mocker: MockerFixture) -> Any:
+    """Backups on (`box_store.py`), S3 answered by the test: `backups.has`
+    is what `has_backup` says, `backups.flushes` the boxes asked to back up
+    now and `backups.flushed` their answer, `backups.cleared` the resets."""
+
+    class Backups:
+        has: bool | None = False
+        flushed = True
+        flushes: list[str] = []
+        cleared: list[str] = []
+
+    state = Backups()
+    mocker.patch.object(settings, "BOX_STORE_BUCKET", "simeon-backups")
+    mocker.patch.object(
+        box_service.box_store, "has_backup", side_effect=lambda user_id: state.has
+    )
+    mocker.patch.object(
+        box_service.box_store,
+        "clear_box_store",
+        side_effect=lambda user_id: state.cleared.append(str(user_id)) or 0,
+    )
+
+    async def flush(url: str, token: str) -> bool:
+        state.flushes.append(url)
+        return state.flushed
+
+    box_service.set_flush_for_tests(flush)
+    yield state
+    box_service.set_flush_for_tests(None)
+
+
+def _restore_of(spec: BoxSpec) -> str | None:
+    # The copy helper's own switch is the host's to set, for its run only.
+    assert "SAND_BOX_STORE_COPY_IN" not in spec.extra_env
+    restore = spec.extra_env.get("SIMEON_BOX_STORE_RESTORE")
+    if restore is not None:
+        assert spec.extra_env["SIMEON_BOX_STORE_RESTORE_ID"]
+    return restore
+
+
+@pytest.mark.asyncio
+class TestBackups:
+    async def test_a_new_computer_backs_up_and_restores_only_what_exists(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        host: FakeBoxHost,
+        backups: Any,
+    ) -> None:
+        access, _ = await _signed_in(client, session, user)
+        await _ensure(client, access)
+        spec = host.created[0]
+        assert spec.labels == {"com.simeonlabs.box-store": "1"}
+        assert spec.extra_env["SAND_BOX_STORE_SYNC"] == "1"
+        assert spec.extra_env[
+            "SAND_BOX_STORE_ID"
+        ] == box_service.box_store.box_source_id(user.id)
+        assert spec.extra_env["SIMEON_AGENT_STORE_BUCKET_HOSTS"].startswith(
+            "simeon-backups.s3."
+        )
+        # No backup yet: nothing to copy in.
+        assert _restore_of(spec) is None
+
+        # The container lost, its volumes kept: a backup exists, so the box
+        # copies it in, but only onto an empty data folder ("fresh").
+        backups.has = True
+        host.boxes.clear()
+        await _ensure(client, access)
+        assert _restore_of(host.created[1]) == "fresh"
+        # S3 could not say: the same, failing closed.
+        backups.has = None
+        host.boxes.clear()
+        await _ensure(client, access)
+        assert _restore_of(host.created[2]) == "fresh"
+        assert backups.flushes == []
+
+    async def test_a_computer_made_before_backups_is_replaced_on_its_volumes(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        host: FakeBoxHost,
+        mocker: MockerFixture,
+    ) -> None:
+        access, _ = await _signed_in(client, session, user)
+        body = (await _ensure(client, access)).json()
+        old = next(iter(host.boxes))
+        assert host.created[0].labels == {}
+
+        mocker.patch.object(settings, "BOX_STORE_BUCKET", "simeon-backups")
+        mocker.patch.object(box_service.box_store, "has_backup", return_value=False)
+        flushes: list[str] = []
+
+        async def flush(url: str, token: str) -> bool:
+            flushes.append(url)
+            return True
+
+        box_service.set_flush_for_tests(flush)
+        try:
+            again = (await _ensure(client, access)).json()
+            assert again["podId"] == body["podId"]
+            assert len(host.created) == 2
+            assert host.removed[-1] == (old, [])
+            assert host.created[1].labels == {"com.simeonlabs.box-store": "1"}
+            assert host.created[1].workspace_volume == host.created[0].workspace_volume
+            # The old one kept no backup: it is not asked for one.
+            assert flushes == []
+            await _ensure(client, access)
+            assert len(host.created) == 2
+        finally:
+            box_service.set_flush_for_tests(None)
+
+    async def test_update_backs_up_first_then_restores_onto_the_new_container(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        host: FakeBoxHost,
+        backups: Any,
+    ) -> None:
+        access, _ = await _signed_in(client, session, user)
+        await _ensure(client, access)
+        auth = {"Authorization": f"Bearer {access}"}
+        updated = await client.post(
+            RECREATE, json={"preserveData": True, "force": False}, headers=auth
+        )
+        assert updated.json()["started"] is True
+        assert len(backups.flushes) == 1
+        assert host.removed[-1][1] == []
+        assert _restore_of(host.created[-1]) == "always"
+
+        # The box could not finish its backup: its volumes are the carrier,
+        # and only an empty data folder is filled from the last backup.
+        backups.flushed = False
+        backups.has = True
+        await client.post(
+            RECREATE, json={"preserveData": True, "force": False}, headers=auth
+        )
+        assert len(backups.flushes) == 2
+        assert _restore_of(host.created[-1]) == "fresh"
+        assert backups.cleared == []
+
+    async def test_recover_boots_from_the_backup_and_reset_wipes_it(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        host: FakeBoxHost,
+        backups: Any,
+    ) -> None:
+        access, _ = await _signed_in(client, session, user)
+        first = (await _ensure(client, access)).json()
+        auth = {"Authorization": f"Bearer {access}"}
+        prefix = f"simeon-box-{UUID(first['podId']).hex}"
+
+        # "Recover computer": backed up as far as the box answers, the
+        # agents' data wiped, the computer booted from the backup.
+        backups.flushed = False
+        forced = await client.post(FORCE_RECREATE, json={}, headers=auth)
+        assert forced.json()["started"] is True
+        assert len(backups.flushes) == 1
+        assert host.removed[-1][1] == [f"{prefix}-data"]
+        assert _restore_of(host.created[-1]) == "always"
+        assert backups.cleared == []
+
+        # A reset: the files and the backup go together, nothing comes back.
+        backups.has = True
+        reset = await client.post(
+            RECREATE, json={"preserveData": False, "force": False}, headers=auth
+        )
+        assert reset.json()["started"] is True
+        assert len(backups.flushes) == 1
+        assert host.removed[-1][1] == [f"{prefix}-workspace", f"{prefix}-data"]
+        assert backups.cleared == [str(user.id)]
+        assert _restore_of(host.created[-1]) is None
+        assert host.created[-1].extra_env["SAND_BOX_STORE_SYNC"] == "1"
 
 
 @pytest.mark.asyncio

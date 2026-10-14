@@ -18,6 +18,11 @@ import {
   startBoxExecDaemonProcess,
   type OwnedBoxExecDaemon,
 } from "./box/exec-daemon-process.js";
+import {
+  restoreBoxStoreFromEnv,
+  spawnBoxCopyIn,
+  type BoxStoreRestoreOutcome,
+} from "./box/box-store-restore.js";
 
 export const BOX_COPY_IN_ARG = "--box-copy-in";
 export const BOX_COPY_IN_EXIT_FAILED = 1;
@@ -79,6 +84,8 @@ export interface ProcessCrashGuards {
 
 export interface HostMainDependencies {
   executeBoxCopyInFromEnv(): Promise<number>;
+  /** The box's backup copied in once per container, when the server asks (`box-store-restore.ts`). */
+  restoreBoxStore?(): Promise<BoxStoreRestoreOutcome>;
   installProcessCrashGuards(options: { scope: "sand-host" }): ProcessCrashGuards;
   installInvariantReporter(reporter: (report: unknown) => void): void;
   pinHostDiagnosticsReporter(reporter: (diagnostic: unknown) => void): void;
@@ -129,6 +136,12 @@ export function createProductionHostMainDependencies(
   const useExistingBoxExecDaemon = process.env.SAND_USE_EXISTING_BOX_EXEC_DAEMON === "1";
   return {
     executeBoxCopyInFromEnv: ports.executeBoxCopyInFromEnv,
+    restoreBoxStore: () => restoreBoxStoreFromEnv({
+      env: process.env,
+      sandRoot: getSandRootDir(),
+      runCopyIn: env => spawnBoxCopyIn(env),
+      log: message => (ports.log ?? console).log(message),
+    }),
     installProcessCrashGuards: options => installProcessCrashGuards(options),
     installInvariantReporter: reporter => { void installInvariantReporter(reporter); },
     pinHostDiagnosticsReporter: reporter => pinHostDiagnosticsReporter(
@@ -210,6 +223,14 @@ export async function main(
   reportLockOutcome(lockResult, deps.getSandRootDir(), log);
 
   const hostLock = lockResult.lock;
+  // The backup first, as the upstream app copies it in before its host
+  // starts; a failed copy stops the host so the supervisor tries again.
+  const restore = await deps.restoreBoxStore?.();
+  if (restore?.kind === "failed") {
+    hostLock.release();
+    processControl.exit(BOX_COPY_IN_EXIT_FAILED);
+    return;
+  }
   let boxExecDaemon: OwnedBoxExecDaemon | undefined;
   const host = deps.createHost();
   crashGuards.setReporter((error, kind) => {

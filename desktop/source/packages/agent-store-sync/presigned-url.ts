@@ -66,8 +66,23 @@ const BCS_AGENT_STORE_BUCKET_HOSTS = [
   "agent-stores.s3.amazonaws.com",
 ];
 
+// Simeon Labs' server keeps the backups in its own bucket (14 October 2026,
+// `server/simeon/sand/box_store.py`) and names the bucket's address to the
+// box (`SIMEON_AGENT_STORE_BUCKET_HOSTS`, read here as `SAND_…` after the
+// host's alias copy; comma-separated). Only S3 addresses are taken, and
+// every URL still passes the S3 and private-host checks above.
+export const AGENT_STORE_BUCKET_HOSTS_ENV = "SAND_AGENT_STORE_BUCKET_HOSTS";
+
+export function agentStoreBucketHosts(env: Record<string, string | undefined> = process.env): readonly string[] {
+  const extra = (env[AGENT_STORE_BUCKET_HOSTS_ENV] ?? env.SIMEON_AGENT_STORE_BUCKET_HOSTS ?? "")
+    .split(",")
+    .map(host => host.trim().toLowerCase())
+    .filter(host => host.length > 0 && isAwsS3Hostname(host));
+  return [...BCS_AGENT_STORE_BUCKET_HOSTS, ...extra];
+}
+
 function createBcsPresignedUrlValidator(): (url: URL) => void {
-  return createHostAllowlistValidator(BCS_AGENT_STORE_BUCKET_HOSTS);
+  return createHostAllowlistValidator(agentStoreBucketHosts());
 }
 
 function isLocalAgentStoreBackendUrl(backendUrl: string): boolean {

@@ -5,7 +5,9 @@ projection; this module is the wire. Field names are the generated
 protos' JSON spellings (`background_composer_pb.ts`, `simeon_pb.ts`),
 and enums travel as integers, which protobuf JSON accepts.
 
-Sixteen methods of the first service and one of the second. `GetTeams`
+Sixteen methods of the first service and one of the second, and since
+14 October 2026 the agent store's three, which the box's backups use
+(`box_store.py`). `GetTeams`
 and `GetTeamAdminSettingsOrEmptyIfNotInTeam` are `DashboardService`
 (`dashboard.py`, `skill_registry.py`) and are not here.
 """
@@ -16,6 +18,7 @@ from typing import Any
 
 from simeon.desktop.service import offered_models
 
+from . import box_store
 from .cloud_agents_service import cloud_agents
 from .connect import ConnectCall, ConnectService
 
@@ -268,6 +271,35 @@ def available_models_response(rows: list[dict[str, Any]]) -> dict[str, Any]:
 async def available_models(call: ConnectCall) -> dict[str, Any]:
     return available_models_response(
         [one.available() for one in offered_models(call.caller.user)]
+    )
+
+
+# --- the agent store: the box's backups (`box_store.py`) -------------------------
+
+#: Where the host sends the store token (`bcs-transport.ts`).
+AGENT_STORE_TOKEN_HEADER = "x-agent-store-token"
+
+
+def _store_token(call: ConnectCall) -> str:
+    return call.request.headers.get(AGENT_STORE_TOKEN_HEADER, "").strip()
+
+
+@service.unary("MintAgentStoreToken", auth="desktop-or-box")
+async def mint_agent_store_token(call: ConnectCall) -> dict[str, Any]:
+    return box_store.mint(call.caller.user_id, call.message)
+
+
+@service.unary("PresignAgentStoreReads", auth="desktop-or-box")
+async def presign_agent_store_reads(call: ConnectCall) -> dict[str, Any]:
+    return box_store.presign_reads(
+        call.caller.user_id, _store_token(call), call.message
+    )
+
+
+@service.unary("PresignAgentStoreWrites", auth="desktop-or-box")
+async def presign_agent_store_writes(call: ConnectCall) -> dict[str, Any]:
+    return box_store.presign_writes(
+        call.caller.user_id, _store_token(call), call.message
     )
 
 
