@@ -1285,10 +1285,18 @@ public final class AppStore {
     }
   }
 
-  /** The approval Allow carries, once the device confirmed it: who (this account), when, how. Nil without an account id (Link then asks in its app). */
+  /**
+   * The approval Allow carries, once the device confirmed it: who (this
+   * account: its id on Simeon Labs' server, else its e-mail), when, how. Nil
+   * only when nobody is signed in (Link then asks in its app). Until 14
+   * October 2026 it needed the id, which a name saved in the app dropped
+   * (`saveName`), so Allow went out without the approval.
+   */
   public func purchaseApproval(_ confirmed: PurchaseApproval.Confirmed, at date: Date = Date()) -> PurchaseApproval? {
-    guard let id = account?.id, !id.isEmpty else { return nil }
-    return PurchaseApproval(approvedAt: date, authenticationMethod: confirmed.method, deviceType: confirmed.deviceType, userId: id, userName: account?.name)
+    guard let account else { return nil }
+    let who = account.id.flatMap { $0.isEmpty ? nil : $0 } ?? account.email.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !who.isEmpty else { return nil }
+    return PurchaseApproval(approvedAt: date, authenticationMethod: confirmed.method, deviceType: confirmed.deviceType, userId: who, userName: account.name.isEmpty ? nil : account.name)
   }
 
   /** A Link card picked on a checkout card, before Allow: the card shows it at once; Allow carries it. */

@@ -220,14 +220,14 @@ final class SessionController {
 
   private static let accountKey = "simeon.account"
 
-  /** The account's name and e-mail on this phone (not a secret: what Settings shows), for its initials at the next launch. */
+  /** The account's name, e-mail and id on this phone (not a secret: what Settings shows, and who approves a purchase), for the next launch before the profile answers. */
   private static func remember(_ account: Account?) {
-    if let account { UserDefaults.standard.set(["name": account.name, "email": account.email], forKey: accountKey) } else { UserDefaults.standard.removeObject(forKey: accountKey) }
+    if let account { UserDefaults.standard.set(["name": account.name, "email": account.email, "id": account.id ?? ""], forKey: accountKey) } else { UserDefaults.standard.removeObject(forKey: accountKey) }
   }
 
   private static func rememberedAccount() -> Account? {
     guard let saved = UserDefaults.standard.dictionary(forKey: accountKey) as? [String: String], let name = saved["name"], let email = saved["email"] else { return nil }
-    return Account(name: name, email: email)
+    return Account(name: name, email: email, id: saved["id"].flatMap { $0.isEmpty ? nil : $0 })
   }
 
   /**

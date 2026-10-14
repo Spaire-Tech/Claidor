@@ -116,7 +116,10 @@ final class PurchaseCardTests: XCTestCase {
     XCTAssertEqual(PurchaseApproval.reason(for: card), "Approve $80.00 at ncvss.com")
     let store = AppStore()
     let faceID = PurchaseApproval.Confirmed(method: "biometric_face", deviceType: "mobile")
-    XCTAssertNil(store.purchaseApproval(faceID), "no account id: Link asks in its app")
+    XCTAssertNil(store.purchaseApproval(faceID), "nobody signed in: Link asks in its app")
+    // An account known by its e-mail only (remembered from an older launch): it still approves, as that e-mail.
+    store.account = Account(name: "Bass Fall", email: "bass@simeonlabs.com")
+    XCTAssertEqual(store.purchaseApproval(faceID)?.userId, "bass@simeonlabs.com")
     store.account = Account(name: "Bass Fall", email: "bass@simeonlabs.com", id: "8a6b0b0e-user")
     let at = Date(timeIntervalSince1970: 1_760_430_000)
     let approval = try XCTUnwrap(store.purchaseApproval(faceID, at: at))
@@ -140,6 +143,19 @@ final class PurchaseCardTests: XCTestCase {
     }
     XCTAssertEqual(shown("x12p")?.order, "1044", "the approval in Simeon path")
     XCTAssertFalse(states.contains(.approving), "never waits on the Link app")
+  }
+
+  /** A name saved in the app keeps who the account is (its id dropped, Allow went out without the approval, 14 October 2026). */
+  @MainActor
+  func testSavingANameKeepsTheAccountsId() async throws {
+    let store = AppStore()
+    await store.attach(DemoBackend(seed: DemoData.seed(gallery: true), pace: 0.01, call: nil))
+    store.account = Account(name: "Bass Fall", email: "bass@simeonlabs.com", id: "8a6b0b0e-user")
+    await store.saveName("Bass")
+    XCTAssertEqual(store.account?.name, "Bass")
+    XCTAssertEqual(store.account?.id, "8a6b0b0e-user")
+    _ = await store.saveNameReporting("Bassirou")
+    XCTAssertEqual(store.account?.id, "8a6b0b0e-user")
   }
 
   @MainActor
