@@ -17,7 +17,7 @@ import dataclasses
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager, nullcontext
 from typing import Any, cast
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import httpx
 import pytest
@@ -31,7 +31,9 @@ from starlette.websockets import WebSocketDisconnect
 from websockets.asyncio.server import serve
 
 from simeon.config import settings
-from simeon.models import SandBox, User
+from simeon.desktop.service import DesktopUnauthenticated, desktop
+from simeon.kit.db.postgres import create_async_engine, create_async_sessionmaker
+from simeon.models import DesktopSession, SandBox, User
 from simeon.postgres import AsyncSession
 from simeon.sand import box_hosts, box_proxy, box_service
 from simeon.sand.box_hosts import (
@@ -49,6 +51,7 @@ from simeon.sand.box_service import (
 )
 from simeon.sand.connect import decode_stream_frames
 from tests.desktop.test_endpoints import _signed_in
+from tests.fixtures.database import get_database_url
 
 ENSURE = "/simeon.v1.ComputerService/EnsureSandBox"
 RECREATE = "/simeon.v1.ComputerService/RecreateSandBox"
@@ -517,6 +520,81 @@ class TestEnsureSandBox:
         box_access = await _box_access_token(client, access)
         response = await _ensure(client, box_access)
         assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("committed_first", [False, True])
+async def test_the_new_computer_renews_its_credential_while_ensure_still_waits(
+    worker_id: str, host: FakeBoxHost, committed_first: bool
+) -> None:
+    """15 October 2026: a computer rebuilt for a new engine copies its
+    backup in before anything else, renewing its credential at once
+    (`box-copy-in.ts`). The credential was written on the request's
+    session, saved only when `ensure` ended, after the box answered: the
+    copy was refused (401) three times and the box started without its
+    backup. Here the box renews from its own connection the moment it is
+    created, while the request is still open, as on Render; without the
+    app's sessionmaker (the old way) it is refused."""
+    engine = create_async_engine(
+        dsn=get_database_url(worker_id),
+        application_name=f"test_{worker_id}_box",
+        pool_size=settings.DATABASE_POOL_SIZE,
+        pool_recycle=settings.DATABASE_POOL_RECYCLE_SECONDS,
+    )
+    sessionmaker = create_async_sessionmaker(engine)
+    user_id = uuid4()
+    renewals: list[str] = []
+    create = host.create
+
+    async def create_and_copy_in(spec: BoxSpec) -> ProvisionedBox:
+        provisioned = await create(spec)
+        credential = dict(line.split("=", 1) for line in spec.environment())[
+            "SAND_INFERENCE_RENEWAL_CREDENTIAL"
+        ]
+        async with sessionmaker() as box_side:
+            try:
+                await desktop.renew_box_access(box_side, credential)
+                renewals.append("renewed")
+            except DesktopUnauthenticated:
+                renewals.append("refused")
+        return provisioned
+
+    host.create = create_and_copy_in  # type: ignore[method-assign]
+    try:
+        # A person signed in earlier: committed, as every caller is.
+        async with sessionmaker() as earlier:
+            person = User(id=user_id, email=f"{user_id.hex}@example.com")
+            earlier.add(person)
+            await earlier.flush()
+            parent, _, _ = await desktop.issue_app_session(earlier, person)
+            parent_id = parent.id
+            await earlier.commit()
+        async with sessionmaker() as request_db:
+            caller = await request_db.get(DesktopSession, parent_id)
+            assert caller is not None
+            box = await box_service.broker.ensure(
+                request_db,
+                caller,
+                committed=sessionmaker if committed_first else None,
+            )
+            assert box.credential_session_id is not None
+            await request_db.commit()
+        assert renewals == (["renewed"] if committed_first else ["refused"])
+        # Once the request has ended the credential works either way.
+        async with sessionmaker() as later:
+            row = await later.get(DesktopSession, box.credential_session_id)
+            assert row is not None
+            assert not row.is_revoked
+    finally:
+        async with sessionmaker() as cleanup:
+            for table in ("sand_boxes", "desktop_sessions", "users"):
+                column = "id" if table == "users" else "user_id"
+                await cleanup.execute(
+                    text(f"DELETE FROM {table} WHERE {column} = :id"),
+                    {"id": user_id},
+                )
+            await cleanup.commit()
+        await engine.dispose()
 
 
 @pytest.mark.asyncio

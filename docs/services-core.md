@@ -836,6 +836,16 @@ app's own design, switched on by `SIMEON_BOX_STORE_BUCKET`:
   A failed copy stops the host and the supervisor starts it again; after three
   failures it starts without the backup, with backups paused in that container
   so its empty folders never replace the backup.
+- The new container's credential is committed before the container starts
+  (15 October 2026, `BoxBrokerService._mint_credential`). Until then it was
+  written in the ensure request's own transaction, saved only when the request
+  ended, after the box answered (up to `BOX_READY_TIMEOUT`); the box's first
+  act, the copy, renewed with a credential the server could not see yet, and
+  every rebuild for a new engine ended in three refused copies
+  (`[box-copy-in] result outcome=failed … renewal failed (HTTP 401)`), about a
+  minute of "connecting", and a box without its Chrome sign-ins and with
+  backups paused. `tests/sand/test_box_broker.py` renews from a second
+  connection while ensure is still open.
 - The computer's three actions, as upstream: **Update** brings the backup up
   to date and swaps the container on the same files; **Recover computer**
   (`ForceRecreateSandBox`) backs up as far as the box answers, wipes the

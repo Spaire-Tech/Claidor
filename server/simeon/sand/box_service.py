@@ -39,6 +39,7 @@ from simeon.desktop.tokens import (
     BOX_CREDENTIAL_PREFIXES,
 )
 from simeon.kit.crypto import generate_token_hash_pair, get_token_hash
+from simeon.kit.db.postgres import AsyncSessionMaker
 from simeon.kit.utils import generate_uuid, utc_now
 from simeon.models import DesktopSession, SandBox
 from simeon.postgres import AsyncSession
@@ -446,10 +447,34 @@ class BoxBrokerService:
         return f"simeon-box-{box_id.hex}-workspace", f"simeon-box-{box_id.hex}-data"
 
     async def _mint_credential(
-        self, db: AsyncSession, parent: DesktopSession
-    ) -> tuple[DesktopSession, str]:
+        self,
+        db: AsyncSession,
+        parent: DesktopSession,
+        committed: AsyncSessionMaker | None = None,
+    ) -> tuple[UUID, str]:
+        """A new credential for the box about to start, and its row's id.
+
+        Written and committed on a session of its own where the app gives
+        one (`committed`), before the container starts (15 October 2026).
+        Written on the request's session, it was saved only when the
+        request ended, and `ensure` ends only after the box answers, up to
+        `BOX_READY_TIMEOUT` later. The box's first act is to copy its
+        backup in with that credential (`box-copy-in.ts`), so every copy
+        was refused (401, "Sand inference-credential renewal failed"),
+        three times, until the box gave up and started without its backup:
+        its Chrome sign-ins lost and its backups paused. The test client
+        gives no sessionmaker and keeps the request's session."""
         try:
-            return await desktop.issue_box_credential(db, parent)
+            if committed is None:
+                row, credential = await desktop.issue_box_credential(db, parent)
+                return row.id, credential
+            async with committed() as fresh:
+                own = await fresh.get(DesktopSession, parent.id)
+                if own is None:
+                    raise DesktopUnauthenticated("This desktop session has expired.")
+                row, credential = await desktop.issue_box_credential(fresh, own)
+                await fresh.commit()
+                return row.id, credential
         except DesktopUnauthenticated as error:
             raise BoxBrokerRefused("unauthenticated", error.message)
 
@@ -483,6 +508,7 @@ class BoxBrokerService:
         box: SandBox,
         *,
         restore: str | None = None,
+        committed: AsyncSessionMaker | None = None,
     ) -> None:
         """A new container for the row. With backups on (`box_store.py`)
         it backs itself up, and copies the last backup in before its host
@@ -501,8 +527,8 @@ class BoxBrokerService:
                 restore = None if has is False else "fresh"
             extra_env = box_store.box_env(parent.user_id, restore=restore)
             labels = {box_store.LABEL: box_store.LABEL_VALUE}
-        credential_row, credential = await self._mint_credential(db, parent)
-        box.credential_session_id = credential_row.id
+        credential_id, credential = await self._mint_credential(db, parent, committed)
+        box.credential_session_id = credential_id
         box.gateway_token = box.gateway_token or secrets.token_hex(32)
         box.network_token = box.network_token or secrets.token_hex(32)
         workspace, data = self.volumes(box.id)
@@ -563,10 +589,17 @@ class BoxBrokerService:
                 return False
             await asyncio.sleep(self.ready_poll)
 
-    async def ensure(self, db: AsyncSession, caller: DesktopSession) -> SandBox:
+    async def ensure(
+        self,
+        db: AsyncSession,
+        caller: DesktopSession,
+        *,
+        committed: AsyncSessionMaker | None = None,
+    ) -> SandBox:
         """`EnsureSandBox`: the person's box, created, started or reused,
         with its URLs stamped. Raises `BoxBrokerRefused` (a Connect code
-        and a sentence) and `BoxHostError`."""
+        and a sentence) and `BoxHostError`. `committed` writes a new box's
+        credential before the box starts (`_mint_credential`)."""
         parent = await self._parent_of(db, caller)
         # One ensure per person at a time (Render, 4 October 2026). The page,
         # the Mac app and its helper all ask within seconds of each other,
@@ -652,7 +685,9 @@ class BoxBrokerService:
                 )
                 if state is not None:
                     await host.remove(box.provider_box_id, volumes=[])
-                await self._create(db, host, parent, box, restore=restore)
+                await self._create(
+                    db, host, parent, box, restore=restore, committed=committed
+                )
                 created = True
             elif state == "stopped":
                 await self.check_capacity(repository, host, box)
@@ -682,7 +717,7 @@ class BoxBrokerService:
                     await host.remove(box.provider_box_id, volumes=[])
                     box.gateway_token = ""
                     box.network_token = ""
-                    await self._create(db, host, parent, box)
+                    await self._create(db, host, parent, box, committed=committed)
                     created = True
         else:
             if box is not None:
@@ -704,7 +739,7 @@ class BoxBrokerService:
             host = await self.place(repository, box)
             box.provider = host.name
             try:
-                await self._create(db, host, parent, box)
+                await self._create(db, host, parent, box, committed=committed)
             except BoxHostError:
                 # A brand-new box that did not come up leaves nothing
                 # behind: the host removed its container, and its two
@@ -769,6 +804,7 @@ class BoxBrokerService:
         redis: Redis,
         preserve_data: bool,
         force: bool,
+        committed: AsyncSessionMaker | None = None,
     ) -> RecreateOutcome:
         """`RecreateSandBox` and `ForceRecreateSandBox`: the container is
         replaced now, on the same volumes (`preserve_data`) or on fresh
@@ -855,7 +891,9 @@ class BoxBrokerService:
                 restore = "always"
             elif backups and not preserve_data:
                 restore = "never"
-            await self._create(db, host, parent, box, restore=restore)
+            await self._create(
+                db, host, parent, box, restore=restore, committed=committed
+            )
             self.stamp_urls(box)
             box.last_ensured_at = utc_now()
             box.last_active_at = box.last_ensured_at

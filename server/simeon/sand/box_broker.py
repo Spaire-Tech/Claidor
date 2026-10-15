@@ -39,6 +39,7 @@ from simeon.config import settings
 from simeon.desktop.allowance import billing_url
 from simeon.desktop.auth import get_desktop_session
 from simeon.desktop.service import desktop
+from simeon.kit.db.postgres import AsyncSessionMaker
 from simeon.models import DesktopSession
 from simeon.openapi import APITag
 from simeon.postgres import AsyncSession, get_db_session
@@ -240,11 +241,18 @@ async def require_a_plan(call: ConnectCall, *, reaching: bool = False) -> None:
         raise ConnectError("permission_denied", message)
 
 
+def _committed(call: ConnectCall) -> AsyncSessionMaker | None:
+    """The app's sessionmaker, for the new box's credential: committed
+    before the box starts, since the box uses it at once
+    (`BoxBrokerService._mint_credential`). The test client has none."""
+    return getattr(call.request.state, "async_sessionmaker", None)
+
+
 @service.unary("EnsureSandBox")
 async def ensure_sand_box(call: ConnectCall) -> dict[str, Any]:
     await require_a_plan(call, reaching=True)
     try:
-        box = await broker.ensure(call.db, call.caller)
+        box = await broker.ensure(call.db, call.caller, committed=_committed(call))
     except (BoxHostError, BoxBrokerRefused) as error:
         log.warning(
             "sand.box.ensure.refused", user=str(call.caller.user_id), error=str(error)
@@ -285,6 +293,7 @@ async def recreate_sand_box(call: ConnectCall) -> dict[str, Any]:
             redis=call.redis,
             preserve_data=preserve is not False,
             force=force is True,
+            committed=_committed(call),
         )
     except BoxBrokerRefused as error:
         raise connect_error_for(error)
@@ -298,7 +307,12 @@ async def force_recreate_sand_box(call: ConnectCall) -> dict[str, Any]:
     await require_a_plan(call)
     try:
         outcome = await broker.recreate(
-            call.db, call.caller, redis=call.redis, preserve_data=False, force=True
+            call.db,
+            call.caller,
+            redis=call.redis,
+            preserve_data=False,
+            force=True,
+            committed=_committed(call),
         )
     except BoxBrokerRefused as error:
         raise connect_error_for(error)
