@@ -252,12 +252,21 @@ export function browserToolParameters(schema: BrowserShapedTool<unknown>["schema
   return z.object(shape).passthrough();
 }
 
-export function adaptBrowserTool<Context>(tool: BrowserShapedTool<Context>) {
+/**
+ * OpenPage's one argument, typed and required on the wire (15 October 2026).
+ * It is the main agent's own tool; the helpers' browser tools keep their
+ * untyped shape above, which they have run on since September.
+ */
+export function openPageToolParameters(schema: BrowserShapedTool<unknown>["schema"]): ZodTypeAny {
+  return z.object({ url: z.string().describe(schema.describe?.url ?? "The full address to open.") });
+}
+
+export function adaptBrowserTool<Context>(tool: BrowserShapedTool<Context>, parameters: ZodTypeAny = browserToolParameters(tool.schema)) {
   return createSandLoopTool<Record<string, unknown>, unknown>({
     id: tool.id,
     name: tool.name,
     description: tool.description,
-    parameters: browserToolParameters(tool.schema),
+    parameters,
     execute: (args, meta) => tool.execute(meta.context as unknown as Context, args, {
       toolCallId: meta.toolCallId,
       ...(meta.stateHandler === undefined ? {} : { stateHandler: meta.stateHandler }),

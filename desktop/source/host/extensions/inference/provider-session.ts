@@ -442,6 +442,13 @@ function partText(parts: readonly Loose[]): string {
 // count at Infinity, so a smaller SIMEON_KEPT_TOOL_IMAGES can be tried again
 // on purpose. Pictures the person attached are never dropped either way.
 export const SIMEON_KEPT_TOOL_IMAGES = Number.POSITIVE_INFINITY;
+// The agent's own Screenshot pictures are another matter (15 October 2026):
+// its conversation lasts for days, where a helper's ends with its task, and
+// each look is a fresh picture of the same screen. The latest three stay;
+// older ones go five at a time, so the cached start of the conversation
+// changes once per five pictures, not on every one.
+export const SIMEON_KEPT_AGENT_SCREENSHOTS = 3;
+export const SIMEON_AGENT_SCREENSHOT_TOOL_NAME = "Screenshot";
 export const SIMEON_TOOL_IMAGE_DROP_BATCH = 5;
 const TOOL_IMAGE_INTRO = "Image output of the tool call(s) above.";
 const TOOL_IMAGE_DROPPED = "Image output of the tool call(s) above. (Not shown again: only the latest screenshots are kept; take a new one if you need to look.)";
@@ -473,6 +480,7 @@ function reasoningFor(part: Loose, wire: SimeonWire): Loose[] {
 export function toCoreMessages(messages: readonly ProviderMessage[], wire: SimeonWire = "openai"): CoreMessage[] {
   const out: Loose[] = [];
   const toolImageMessages: number[] = [];
+  const agentScreenshotMessages: number[] = [];
   // Claude takes one system prompt, before everything else; the Anthropic
   // provider throws on a second one after the conversation has started. A
   // system message the loop adds later travels as the person's side instead.
@@ -498,10 +506,15 @@ export function toCoreMessages(messages: readonly ProviderMessage[], wire: Simeo
     }
     if (role !== "tool") continue;
     const images: Loose[] = [];
+    let onlyAgentScreenshots = true;
     const results = parts.flatMap((part): Loose[] => {
       if (part?.type !== "tool-result") return [];
       const rendered: readonly Loose[] = Array.isArray(part.experimental_content) ? part.experimental_content : Array.isArray(part.content) ? part.content : [];
-      for (const item of rendered) if (item?.type === "image" && typeof item.data === "string") images.push({ type: "image", image: item.data, ...(typeof item.mimeType === "string" ? { mimeType: item.mimeType } : {}) });
+      for (const item of rendered) {
+        if (item?.type !== "image" || typeof item.data !== "string") continue;
+        images.push({ type: "image", image: item.data, ...(typeof item.mimeType === "string" ? { mimeType: item.mimeType } : {}) });
+        if (part.toolName !== SIMEON_AGENT_SCREENSHOT_TOOL_NAME) onlyAgentScreenshots = false;
+      }
       const text = typeof part.result === "string" ? part.result : part.result === undefined ? partText(rendered) : undefined;
       const result = text === undefined ? part.result : text.length > 0 ? text : images.length > 0 ? "(the tool returned an image; it follows as an attachment)" : "(no output)";
       return [{ type: "tool-result", toolCallId: part.toolCallId, toolName: part.toolName, result, ...(part.isError === true ? { isError: true } : {}) }];
@@ -510,13 +523,15 @@ export function toCoreMessages(messages: readonly ProviderMessage[], wire: Simeo
     // The Responses wire takes no images inside a function output; the person's
     // model must still see the screenshot, so it follows as the next user turn.
     if (images.length > 0) {
-      toolImageMessages.push(out.length);
+      (onlyAgentScreenshots ? agentScreenshotMessages : toolImageMessages).push(out.length);
       out.push({ role: "user", content: [{ type: "text", text: TOOL_IMAGE_INTRO }, ...images] });
     }
   }
-  const droppable = Math.max(0, toolImageMessages.length - SIMEON_KEPT_TOOL_IMAGES);
-  const dropped = droppable - (droppable % SIMEON_TOOL_IMAGE_DROP_BATCH);
-  for (const index of toolImageMessages.slice(0, dropped)) out[index] = { role: "user", content: [{ type: "text", text: TOOL_IMAGE_DROPPED }] };
+  for (const [messages, kept] of [[toolImageMessages, SIMEON_KEPT_TOOL_IMAGES], [agentScreenshotMessages, SIMEON_KEPT_AGENT_SCREENSHOTS]] as const) {
+    const droppable = Math.max(0, messages.length - kept);
+    const dropped = droppable - (droppable % SIMEON_TOOL_IMAGE_DROP_BATCH);
+    for (const index of messages.slice(0, dropped)) out[index] = { role: "user", content: [{ type: "text", text: TOOL_IMAGE_DROPPED }] };
+  }
   return (wire === "anthropic" ? withoutEmptyContent(out) : out) as CoreMessage[];
 }
 

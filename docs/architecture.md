@@ -259,7 +259,7 @@ In the host (inside the box):
 | `SAND_MEMORY_SYNC=0` | Turn memory sync off. |
 | `SAND_LISTENER_RELAY_SERVED=0`, `SAND_SHARING_SERVED=0`, `SAND_CHANNELS_SERVED=0`, `SAND_VIDEO_SUBAGENT_SERVED=0` | Turn a served feature back to "coming soon". |
 | `SAND_SIMEON_VIDEO_MODEL` | Model for the video subagents. |
-| `SAND_AGENT_SCREENSHOT_TOOL=1` | Offer the agent's Screenshot tool (off by default). |
+| `SAND_AGENT_SCREENSHOT_TOOL=0` | Withhold the agent's own Screenshot tool (offered by default since 15 October 2026; `docs/services-agents.md` §13). |
 | `SAND_FEATURE_GATE_OVERRIDES` | Force feature gates, e.g. `sand_teach_by_demonstration=1`. |
 
 Every `SAND_SIMEON_*` switch is also read under its earlier name,

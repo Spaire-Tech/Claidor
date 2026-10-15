@@ -76,7 +76,7 @@ test("a Task child owns its conversation state and settles into its own transcri
   assert.equal((composition.match(/=> remoteBoxAvailable/g) ?? []).length, 2);
   assert.match(composition, /if \(remoteBoxAvailable\) \{\n\s*const browserUseOffered/);
   assert.doesNotMatch(composition, /"isAvailable"\)\?\.\(\) !== false/, "no Promise compared to false");
-  assert.match(composition, /isBrowserUseSubagentEnabled: \(\) => method\(experiments, "isBrowserUseSubagentEnabled"\)\?\.\(\) === true,\n\s*screenshotToolOffered: \(\) => AGENT_SCREENSHOT_TOOL,\n\s*resolveBoxBrowser: \(\) => \{/);
+  assert.match(composition, /isBrowserUseSubagentEnabled: \(\) => method\(experiments, "isBrowserUseSubagentEnabled"\)\?\.\(\) === true,\n\s*screenshotToolOffered: \(\) => AGENT_SCREENSHOT_TOOL,\n(?:\s*\/\/.*\n\s*openPageToolOffered: .*\n)?\s*resolveBoxBrowser: \(\) => \{/);
   const { module, dispose } = await load("source/packages/agent/tools/task-subagent-preparation.ts", "task-preparation");
   try {
     assert.equal(typeof module.resolveTaskSubagentConfig, "function");
@@ -93,8 +93,10 @@ test("a Task child owns its conversation state and settles into its own transcri
 test("the brief follows the tools it has and carries the founder's voice, and a report is a file", async () => {
   const { module, dispose } = await load("source/host/runner/system-prompt.ts", "system-prompt");
   try {
-    assert.equal(module.AGENT_SCREENSHOT_TOOL_OFFERED, false);
-    const prompt = module.DEFAULT_SAND_SYSTEM_PROMPT;
+    // On by default since 15 October 2026 (tests/agent-browser-handoff.test.mjs);
+    // the brief without it is the one checked here.
+    assert.equal(module.AGENT_SCREENSHOT_TOOL_OFFERED, process.env.SAND_AGENT_SCREENSHOT_TOOL?.trim() !== "0");
+    const prompt = module.buildSandBaseSystemPrompt({ cloudAgentsEnabled: true, screenshotToolOffered: false });
     assert.match(prompt, /## Voice\nTalk like a warm, sharp friend — not a help desk\. Use plain words and contractions\./, "the founder's paragraph, verbatim");
     assert.match(prompt, /Never dump tool names, prompts, or architecture unless they ask how to use you\./);
     assert.match(prompt, /## Documents you make\nA report, plan, guide, memo, deck or spreadsheet the user asked for is a file, not a long chat reply: write a \.docx, \.pptx or \.xlsx/);

@@ -73,6 +73,8 @@ export interface PromptCollectorHost<Context = unknown> {
   isBrowserUseSubagentEnabled?: (() => boolean) | undefined;
   resolveBoxBrowser?: (() => { readonly display: string; readonly cdpUrl: string } | null) | undefined;
   screenshotToolOffered?: (() => boolean) | undefined;
+  /** The agent's own OpenPage is in its request (`turn-toolset.ts`, the main-agent block). */
+  openPageToolOffered?: (() => boolean) | undefined;
   getConversationId?: (() => string) | undefined;
   getAutomationStatusReminder?: ((firingAutomationId?: string) => string | null) | undefined;
   uploadAttachmentsIntoBox?: ((paths: readonly string[], names?: ReadonlyMap<string, string>) => Promise<ReadonlyMap<string, string>>) | undefined;
@@ -273,6 +275,16 @@ export function createPromptCollectorGlue<Context = unknown>(host: PromptCollect
     const screenshotSentence = screenshotOffered
       ? "You hold the read-only Screenshot tool to see its current screen, confirm where a flow landed, or check on a running subagent."
       : "You have no Screenshot tool of your own in this build: to see the screen, dispatch a computerUse subagent (its report and its screenshots are how you see the desktop) or ask a running one to take a shot.";
+    // 15 October 2026: the founder's Apple sign-in took 3 minutes. The agent
+    // sent a browserUse subagent just to open the page, slept 45 s and 40 s
+    // waiting on it, then sent another to check. OpenPage opens it directly.
+    const openPageOffered = host.openPageToolOffered?.() === true;
+    const handOffLines = [
+      ...(openPageOffered ? [
+        "- Your one browser step of your own is OpenPage: it opens an address in your Chrome, in front on your desktop, and does nothing else (no clicking, typing or reading). When the person has to act on a page themselves (a sign-in, 2FA, a captcha, an approval), call OpenPage with the address and then request_box_help in the same turn: no subagent to open it first, and none to check it opened. Once they hand the computer back, dispatch the subagent to carry on.",
+      ] : []),
+      "- To wait for a subagent, end your turn: its result wakes you the moment it finishes. Never sleep with AwaitShell to wait for one.",
+    ];
     return [
       "## The box desktop",
       ...(browserUseOffered ? [
@@ -283,12 +295,13 @@ export function createPromptCollectorGlue<Context = unknown>(host: PromptCollect
         "You have your own desktop on the box (your screen alone — see Your box), with a browser. " + screenshotSentence + " You cannot click, move, type, press keys, scroll, or wait on the desktop yourself. Delegate every desktop interaction to a computerUse subagent; like any Task it runs in the background, so you keep working and are revived with its result. Do not bypass this boundary with Shell-driven GUI automation such as xdotool, or by driving the box browser from Shell — no CDP attach, no Playwright, Puppeteer, or `websocket-client`, no `/json/new`, no cookie-DB scraping, and no page JS eval over DevTools. Browser and GUI work goes through `computerUse` (and `browserUse` only when Task actually offers that type).",
         "- Reach for the computerUse subagent for browsing, signing in to sites, and GUI apps; logins and files persist in the box across turns, so a sign-in is a one-time step.",
       ]),
+      ...handOffLines,
       "- Scope it tight — a narrow, well-defined task is your main defense against a subagent that stalls or wanders. Break a big GUI goal into the smallest concrete step(s) and dispatch those one at a time; several tightly-scoped dispatches beat one broad, open-ended objective. It runs headless and can't ask you follow-ups, so each task must stand on its own: the exact step, the specifics it needs (which site or account, exact values to enter, which button to land on), what \"done\" looks like and where to stop, and what to report back. A vague or sprawling task is how it gets lost. When you know the destination URL — one the user pasted, or one you can construct (a site's search/filter URL like `https://www.amazon.com/s?k=bread+flour`) — put that exact URL in the task, as specific as the site's query params allow, so the subagent opens it directly instead of clicking through the site to rebuild it.",
       browserUseOffered ? "- For bulk or structured data, don't type it in by hand: generate the file with Shell (e.g. a CSV), inspect it with Read when useful, then have the subagent import or upload it, far faster and more reliable than entering values one by one." : "- For bulk or structured data, don't type it in by hand: generate the file with Shell (e.g. a CSV), inspect it with Read when useful, then have the computerUse subagent import or upload it, far faster and more reliable than entering values one by one.",
       "- If it's running long or might be looping, look in with CheckSubagent rather than waiting it out; MessageSubagent redirects a stuck one mid-run (point it at the right element, or tell it the user just signed in) and StopSubagent aborts one that's wedged. When it returns, read its report before acting — if it stopped short or hit a step only the user can do, that's your cue to follow up or hand off the box.",
       "- You share your desktop's single screen with the computerUse subagent, so only one runs at a time; while one is running, leave the screen to it and limit yourself to checking in with CheckSubagent rather than clicking or typing. (The user's other agents have their own desktops, so their work never appears on yours.)",
       "- When a subagent reports that the browser or the desktop isn't working, tell the user in plain words (\"the browser on my computer isn't working right now\") and never pass on the names of the programs, libraries, or ports behind it.",
-      "- When a step needs the user (a login, 2FA, captcha, or payment, or a form that asks for their own details: a quote, a booking, an application), hand them the box with request_box_help directly — don't first ask with a question widget (or in prose) whether to hand it over, since the tool is itself both the handoff and the ask: it surfaces the box with a hand-back button and shows your instruction, so a \"hand you the box now?\" widget is just redundant friction. Pass one short instruction (no paragraph) like \"Sign in to your Google account\" (you never see their password); once they hand it back, dispatch the subagent again to continue.",
+      "- When a step needs the user (a login, 2FA, captcha, or payment, or a form that asks for their own details: a quote, a booking, an application), hand them the box with request_box_help directly — don't first ask with a question widget (or in prose) whether to hand it over, since the tool is itself both the handoff and the ask: it surfaces the box with a hand-back button and shows your instruction, so a \"hand you the box now?\" widget is just redundant friction. Pass one short instruction (no paragraph) like \"Sign in to your Google account\" (you never see their password); once they hand it back, dispatch the subagent again to continue." + (openPageOffered ? " If the page isn't open on your desktop yet, open it with OpenPage first, in the same turn." : ""),
     ].join("\n");
   }
 

@@ -43,6 +43,14 @@ const AWAIT_TOOL_MODEL_NAME_SHELL_ONLY = "AwaitShell";
 const WAITING_FOR_SUBAGENT_DESCRIPTION = "Set this to true if you are waiting for subagent(s) to complete. Remember you should NOT be doing this and instead end your turn or do parallel work.";
 const WAITING_FOR_SUBAGENT_ERROR = "You should NOT wait for subagents to complete. End your turn instead; completions are queued, or do parallel work.";
 const WAKE_REASON_CONTEXT_INJECTION = "context_injection";
+/**
+ * A sleep released because a helper (subagent) of this agent finished
+ * (15 October 2026). The agent slept the whole 45 s and then 40 s while its
+ * browser helper had already finished: a helper's result is queued for the
+ * end of the turn, and nothing ended the sleep (the founder's Apple sign-in,
+ * 85 of its 177 s).
+ */
+const WAKE_REASON_HELPER_SETTLED = "helper_settled";
 
 type AwaitResourceAccessor = ResourceAccessor<RemoteExecManager>;
 
@@ -63,6 +71,24 @@ interface AwaitOptions {
   readonly requireBlockUntilMs?: boolean;
   readonly defaultSubagentType?: string;
   readonly defaultModelId?: string;
+  /** This agent's helpers: a sleep without a task id ends when one finishes. */
+  readonly helperSettledSignal?: HelperSettledSignal;
+}
+
+export interface HelperSettledSignal {
+  hasRunningHelpers(): boolean;
+  onHelperSettled(listener: () => void): () => void;
+}
+
+/**
+ * The options for a subagent's AwaitShell: its sleep never ends on a helper
+ * settling. The helpers are its parent's, a subagent is one of them itself,
+ * and a sibling finishing says nothing about what it is waiting on.
+ */
+export function withoutHelperSettledSignal<Options extends { readonly helperSettledSignal?: HelperSettledSignal }>(options: Options): Omit<Options, "helperSettledSignal"> {
+  const { helperSettledSignal, ...rest } = options;
+  void helperSettledSignal;
+  return rest;
 }
 
 interface AwaitExecutionMeta {
@@ -113,16 +139,21 @@ function throwIfAborted(ctx: Context): void {
   if (ctx.signal.aborted) throw new ToolCallAbortedError();
 }
 
-function sleepOrAbort(ctx: Context, milliseconds: number, signal: AwaitExecutionMeta["contextInjectionSignal"]): Promise<"timeout" | "steer_release"> {
+function sleepOrAbort(ctx: Context, milliseconds: number, signal: AwaitExecutionMeta["contextInjectionSignal"], helpers?: HelperSettledSignal): Promise<"timeout" | "steer_release" | "helper_settled"> {
   throwIfAborted(ctx);
   if (signal?.hasPendingUserInjections()) return Promise.resolve("steer_release");
+  // Only a sleep taken while a helper runs ends with it: a sleep for its own
+  // sake (a page loading in the agent's shell) keeps its full length.
+  const watchHelpers = helpers !== undefined && helpers.hasRunningHelpers();
   return new Promise((resolve, reject) => {
     let timeout: ReturnType<typeof setTimeout> | undefined;
     let unsubscribe: (() => void) | undefined;
+    let unsubscribeHelpers: (() => void) | undefined;
     const cleanup = () => {
       if (timeout !== undefined) clearTimeout(timeout);
       ctx.signal.removeEventListener("abort", onAbort);
       unsubscribe?.();
+      unsubscribeHelpers?.();
     };
     const onAbort = () => {
       cleanup();
@@ -137,6 +168,12 @@ function sleepOrAbort(ctx: Context, milliseconds: number, signal: AwaitExecution
       cleanup();
       resolve("steer_release");
     });
+    if (watchHelpers) {
+      unsubscribeHelpers = helpers.onHelperSettled(() => {
+        cleanup();
+        resolve("helper_settled");
+      });
+    }
   });
 }
 
@@ -361,8 +398,9 @@ export function createAwaitTool(resourceAccessor: AwaitResourceAccessor, options
       const startMs = Date.now();
       if (taskId.length === 0) {
         if (blockUntilMs === 0) throw new Error("Must pass a task id or wait for a nonzero duration.");
-        const outcome = await sleepOrAbort(toolCtx, blockUntilMs, meta.contextInjectionSignal);
-        return new AwaitResult({ result: { case: "success", value: new AwaitSuccess({ awaitResult: { case: "complete", value: new AwaitTaskComplete({ taskId: "", runtimeMs: BigInt(Date.now() - startMs), outputFilePath: "", outputLength: 0n, regexRequested: false, ...(outcome === "steer_release" ? { wakeReason: WAKE_REASON_CONTEXT_INJECTION } : {}) }) } }) } });
+        const outcome = await sleepOrAbort(toolCtx, blockUntilMs, meta.contextInjectionSignal, options.helperSettledSignal);
+        const wakeReason = outcome === "steer_release" ? WAKE_REASON_CONTEXT_INJECTION : outcome === "helper_settled" ? WAKE_REASON_HELPER_SETTLED : undefined;
+        return new AwaitResult({ result: { case: "success", value: new AwaitSuccess({ awaitResult: { case: "complete", value: new AwaitTaskComplete({ taskId: "", runtimeMs: BigInt(Date.now() - startMs), outputFilePath: "", outputLength: 0n, regexRequested: false, ...(wakeReason === undefined ? {} : { wakeReason }) }) } }) } });
       }
       const regexRequested = typeof raw.pattern === "string" && raw.pattern.trim().length > 0;
       const matcher = regexMatcher(raw.pattern);
@@ -426,7 +464,11 @@ export function createAwaitTool(resourceAccessor: AwaitResourceAccessor, options
       const normalized = normalizeResult(output.result);
       if (normalized.case === "complete") {
         const value = normalized.value;
-        if (!value.taskId) return createStringResult(value.wakeReason === WAKE_REASON_CONTEXT_INJECTION ? "Slept briefly. Sleep released early: a new user message is arriving." : "Slept briefly.");
+        if (!value.taskId) {
+          if (value.wakeReason === WAKE_REASON_CONTEXT_INJECTION) return createStringResult("Slept briefly. Sleep released early: a new user message is arriving.");
+          if (value.wakeReason === WAKE_REASON_HELPER_SETTLED) return createStringResult(`Sleep released early after ${value.runtimeMs.toString()}ms: a subagent you started has finished. End your turn now; its result is delivered to you right after.`);
+          return createStringResult("Slept briefly.");
+        }
         return createStringResult(`Task completed in ${value.runtimeMs.toString()}ms with exit code: ${value.exitCode ?? "unknown"}.\noutput_file_path: ${value.outputFilePath}\noutput_length: ${value.outputLength.toString()}`);
       }
       if (normalized.case === "stillRunning") return createStringResult(`Task still running after ${normalized.value.runtimeMs.toString()}ms...\noutput_file_path: ${normalized.value.outputFilePath}\noutput_length: ${normalized.value.outputLength.toString()}`);

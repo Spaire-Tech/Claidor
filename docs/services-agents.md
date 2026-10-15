@@ -4,7 +4,8 @@ This page covers the features where Simeon Labs' server (`server/`, Python packa
 at `https://api.simeonlabs.com`) works for the Simeon app (`desktop/`) beyond sign-in and the
 model proxy: cloud agents, routines and listeners, sharing, messaging channels, video, skill
 publish, connectors, a few agent features (avatars, group chats, auto-review, drafts), voice
-calls, flight search, and notifications on the person's iPhone.
+calls, flight search, notifications on the person's iPhone, and how the agent opens a page,
+sees its screen and waits on its helpers.
 
 Conventions used below:
 
@@ -1586,3 +1587,83 @@ notifications are unchanged.
 **Not yet verified.** No push has reached a real iPhone: the tests replace Expo with a fake,
 and the host's half ran in tests, not in a cloud computer. The iPhone app's side is built
 separately.
+
+## 13. The agent's computer: opening a page, seeing the screen, waiting on helpers
+
+**For the person (15 October 2026).** The founder's Apple sign-in took 3 minutes and 17 model
+calls for what is one step: open the sign-in page and hand the computer over. The agent had
+no way to open a page or look at its own screen, so it sent a browser helper (a `browserUse`
+subagent) to open the page, slept 45 seconds and then 40 seconds waiting on it although the
+helper had finished long before, and sent another helper to check. Now:
+
+- **OpenPage.** The agent opens an address in its own Chrome, in front on its desktop, with one
+  tool call, and hands the computer over with `request_box_help` in the same turn. It clicks,
+  types and reads nothing; every other browser step still goes to the helper.
+- **Screenshot.** The agent has its read-only Screenshot tool again, to see its own screen
+  without sending a helper to look.
+- **No more long sleeps on a helper.** A sleep (`AwaitShell` with no task id) taken while a
+  helper runs now ends the moment a helper finishes, and tells the agent to end its turn; the
+  helper's result follows at once. The brief also says plainly: to wait for a helper, end the
+  turn.
+- **Each helper browser step is quicker.** The browser driver no longer starts `npm` on every
+  step (130 to 660 ms each, measured on Linux).
+
+This needs no server change and no setting on Render: it is all in the engine, and reaches the
+cloud computers when the founder's agent publishes a new host bundle.
+
+**How it works.**
+
+- OpenPage: `createSandOpenPageTool` in `host/runner/tools/sand-browser-tools.ts`, offered only
+  to the main agent, next to `request_box_help` (`turn-toolset.ts`, the
+  `!host.isSubagentRunner && host.remoteBoxHasDesktop` block). It accepts one `http(s)://`
+  address and refuses anything else before touching the computer. It runs the driver's
+  `navigate` on the agent's own tab (the same tab its `browserUse` helper drives, so the helper
+  picks up where the person left off), with `front: true` (the driver calls
+  `page.bringToFront()`) and no screenshot. On the wire its `url` is a required string
+  (`openPageToolParameters` in `sand-loop-tool.ts`); the helper's browser tools keep their
+  shape. The brief's lines are in `prompt-collector-glue.ts` (the box desktop section, only
+  when the tool is offered: `openPageToolOffered`), and `request_box_help`'s description says
+  to open the page first.
+- Screenshot: `AGENT_SCREENSHOT_TOOL_OFFERED` in `host/runner/system-prompt.ts`, now on unless
+  `SAND_AGENT_SCREENSHOT_TOOL=0`. It was withheld on 24 September 2026 after OpenAI answered
+  `server_error` to every request that carried it; the cause found the next day (the tool's
+  schema went on the wire in the wrong shape) was fixed in `sand-loop-tool.ts`, and the tool
+  had stayed off since. Its pictures are kept few: in the conversation the model is sent
+  (`toCoreMessages`, `host/extensions/inference/provider-session.ts`), only the latest three
+  Screenshot pictures stay; older ones become a line of text, five at a time, so the cached
+  start of the conversation changes once per five pictures. Helpers' screenshots and pictures
+  the person sends are not touched.
+- The sleep: `AwaitShell` gets the runner's helpers (`helperSettledSignal` in
+  `host-runner-composition.ts`, `createBoxAwaitToolInputs`); `subagent-runtime.ts` tells its
+  listeners each time a helper settles; `packages/agent/tools/core/await.ts` ends the sleep
+  then. A sleep taken with no helper running keeps its full length, and so does every sleep a
+  helper takes itself (`withoutHelperSettledSignal`, `turn-toolset.ts`: a sibling finishing
+  says nothing about what a helper is waiting on).
+- The driver: `requirePlaywright` in `host/runner/tools/sand-browser-driver-source.ts` tries the
+  usual folders first and asks `npm root -g` only when they have no playwright-core, once per
+  step. The order of the places tried is unchanged (the image's copy, then npm's global folder,
+  then the copy the host writes beside the driver).
+
+**Switches.** `SAND_AGENT_SCREENSHOT_TOOL=0` withholds Screenshot. Like every app switch it
+reaches only a local Docker computer; a cloud computer keeps the default, so to take
+Screenshot away from cloud agents, publish the previous host bundle. OpenPage has no switch.
+
+**When it misbehaves.** Box log, `/tmp/sand-host.log`:
+
+- `[simeon] tool=OpenPage id=…` with its outcome, then `[simeon] tool=request_box_help` in the
+  same turn. An OpenPage error reads like a browser helper's ("The browser on this computer
+  isn't ready yet…").
+- `[simeon] subagent=settled id=… type=browserUse status=…` followed, within a second, by the
+  agent's `AwaitShell` result "Sleep released early after …ms: a subagent you started has
+  finished". A sleep that still runs its full length with a helper running points at the
+  wiring above.
+- `[simeon] tool=Screenshot` lines. If every turn of every agent fails with `server_error`
+  right after a new host bundle, it is the September failure again: publish the previous bundle
+  and report it.
+
+**Not yet verified.** None of this has run in a cloud computer or been seen in the app on a
+Mac or an iPhone. The tests (`desktop/tests/agent-browser-handoff.test.mjs`,
+`desktop/tests/helper-sleep-release.test.mjs`) run the tools against a fake computer, the sleep
+against a fake helper, and the real driver against a fake Chrome and a fake `npm`. Whether
+the model uses OpenPage and hands over in one turn is up to the model, and is only known from
+a real sign-in.

@@ -121,7 +121,8 @@ export function buildSandSubagentSystemPrompt(args: { readonly subagentType?: st
 
 /** Bisect switch, 24 September 2026: the agent's own read-only Screenshot tool (OpenAI answered server_error at sequence 0 to every request that carried it; why is not established). The composition withholds the tool and the brief follows this one value (F-016, F-320). */
 /** 25 September 2026: the tool went on the wire in the Sand shape (its Zod `parameters` object serialised as the schema), which is the one thing that distinguished it from RestartMcpServers; `sand-loop-tool.ts` now sends a JSON schema. `SAND_AGENT_SCREENSHOT_TOOL=1` (forwarded into the box) offers it again; it stays off until a turn with it is read on a Mac. */
-export const AGENT_SCREENSHOT_TOOL_OFFERED = process.env.SAND_AGENT_SCREENSHOT_TOOL?.trim() === "1";
+/** 15 October 2026: on by default. Without it the agent could not see its own screen and sent a helper to look (the founder's Apple sign-in: a helper to open the page, another to check it). Its pictures are kept few in the agent's conversation (`provider-session.ts`, SIMEON_KEPT_AGENT_SCREENSHOTS). `SAND_AGENT_SCREENSHOT_TOOL=0` withholds it again. */
+export const AGENT_SCREENSHOT_TOOL_OFFERED = process.env.SAND_AGENT_SCREENSHOT_TOOL?.trim() !== "0";
 export interface SandBaseSystemPromptOptions { readonly cloudAgentsEnabled: boolean; /** The agent's own read-only Screenshot tool is in its request (host-runner-composition.ts, AGENT_SCREENSHOT_TOOL). */ readonly screenshotToolOffered?: boolean; /** The watchVideo / videoReview subagents are registered (`resolveSubagentConfigs`, `isVideoSubagentServed`); defaults to the served switch. */ readonly videoSubagentOffered?: boolean }
 export function buildSandBaseSystemPrompt(options2: SandBaseSystemPromptOptions): string {
   const { cloudAgentsEnabled } = options2;

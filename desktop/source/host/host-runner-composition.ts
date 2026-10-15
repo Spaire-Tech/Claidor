@@ -1466,6 +1466,8 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           // reaches the prompt so it and the Task configs agree (F-028).
           isBrowserUseSubagentEnabled: () => method(experiments, "isBrowserUseSubagentEnabled")?.() === true,
           screenshotToolOffered: () => AGENT_SCREENSHOT_TOOL,
+          // OpenPage rides on the browser inputs, bound with the box tools (createBrowserToolInputs).
+          openPageToolOffered: () => createTurnToolProjections !== undefined,
           resolveBoxBrowser: () => {
             const index = boxAgentWindowIndex(remoteBoxForPrompt as any, session.id);
             return index === undefined ? null : { display: `:${index}`, cdpUrl: `http://127.0.0.1:${9222 + index}` };
@@ -2539,6 +2541,16 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           enableSubagentAwaiting: false,
           defaultBlockUntilMs: 30_000,
           enableJobCompletionNotifications: true,
+          // A sleep taken while this agent's helper runs ends when the helper
+          // does (15 October 2026: two sleeps ran their full 45 s and 40 s
+          // after the helper had finished, half of an Apple sign-in).
+          helperSettledSignal: {
+            hasRunningHelpers: () =>
+              (builtRunner as { hasRunningSubagents?: () => boolean } | undefined)?.hasRunningSubagents?.() === true,
+            onHelperSettled: (listener: () => void) =>
+              (builtRunner as { onSubagentSettled?: (listener: () => void) => () => void } | undefined)
+                ?.onSubagentSettled?.(listener) ?? (() => {}),
+          },
         },
       }),
       createExternalReadToolInputs: (_turn, props): TurnReadToolFactoryInput => ({

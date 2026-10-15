@@ -826,6 +826,11 @@ export class SandAgentRunner<T = unknown> {
     return this.subagents.hasRunningSubagents();
   }
 
+  /** Called each time one of this agent's subagents settles; returns the unsubscribe. */
+  onSubagentSettled(listener: () => void): () => void {
+    return this.subagents.onSubagentSettled(listener);
+  }
+
   getSubagentOutline(id: string): Promise<readonly unknown[]> {
     return this.subagents.getSubagentOutline(id);
   }
