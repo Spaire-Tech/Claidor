@@ -69,7 +69,6 @@ export interface HostMainHost {
   prepareForUpgrade(): Promise<unknown>;
   getLocalExecBridge(): unknown;
   getWebAuthnBridge(): unknown;
-  getTabViews(): unknown;
   reportProcessCrash(error: unknown, kind: string): void;
   reportInvariantViolation(report: unknown): void;
   reportHostDiagnostic(diagnostic: unknown): void;
@@ -110,7 +109,6 @@ export interface HostMainDependencies {
     tls?: unknown;
     localExec: unknown;
     webauthn: unknown;
-    tabView?: unknown;
     onCommandError(report: unknown): void;
     onCommandComplete(report: unknown): void;
   }): Promise<StartedGateway>;
@@ -264,7 +262,6 @@ export async function main(
       ...(gatewayConfig.tls === undefined ? {} : { tls: gatewayConfig.tls }),
       localExec: host.getLocalExecBridge(),
       webauthn: host.getWebAuthnBridge(),
-      tabView: host.getTabViews(),
       onCommandError: report => host.reportGatewayCommandError(report),
       onCommandComplete: report => host.reportGatewayCommandSuccess(report)
     });

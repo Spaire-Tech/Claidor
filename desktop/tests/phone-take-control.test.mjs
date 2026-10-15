@@ -1,6 +1,7 @@
 /**
- * The phone's browser view, engine side (15 October 2026): the agent's tab
- * streamed on `GET /tab-view`, and the two buttons under it. Take control
+ * The phone's whole computer, engine side (15 October 2026): what a tap
+ * focused (`typingFocus`, for the phone's keyboard) and the two buttons
+ * under the screen. Take control
  * stops a working agent and makes the computer the person's until they hand
  * it back, which resumes the agent with its own sentence; Stop task stops the
  * agent and its helpers, and a stopped helper's result does not wake it.
@@ -27,54 +28,6 @@ async function load(entry, name) {
   }
 }
 
-const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-test("GET /tab-view streams the agent's tab as server-sent events, with the gateway's token, and closing it gives the tab back", async () => {
-  const gateway = await load("source/host/gateway-server.ts", "gateway-tab-view");
-  const opened = [];
-  const closed = [];
-  let sink;
-  const tabView = {
-    async open(agentId, request, given) {
-      opened.push({ agentId, request });
-      if (agentId === "no-browser") return { ok: false, reason: "no-browser" };
-      sink = given;
-      setTimeout(() => { void sink.send({ type: "tab", url: "https://appleid.apple.com/", title: "Sign in" }); void sink.send({ type: "frame", jpeg: "AAAA", width: 390, height: 700 }); }, 10);
-      return { ok: true, close: (reason) => closed.push(reason) };
-    },
-  };
-  const server = await gateway.startGatewayServer({ api: { getAgentAvatar: async () => ({}) }, subscribe: () => () => {}, getHealth: () => ({}), startedAt: 0, authToken: "secret", tabView });
-  const base = `http://127.0.0.1:${server.port}`;
-  try {
-    assert.equal((await fetch(`${base}/tab-view?agent=a1`)).status, 401, "the gateway's token is required");
-    assert.equal((await fetch(`${base}/tab-view`, { headers: { authorization: "Bearer secret" } })).status, 400);
-    const unavailable = await fetch(`${base}/tab-view?agent=no-browser`, { headers: { authorization: "Bearer secret" } });
-    assert.equal(await unavailable.text(), 'data: {"type":"closed","reason":"no-browser"}\n\n', "no browser: one closed event, then the end");
-
-    const controller = new AbortController();
-    const response = await fetch(`${base}/tab-view?agent=a1&width=390&height=700&control=1`, { headers: { authorization: "Bearer secret" }, signal: controller.signal });
-    assert.equal(response.status, 200);
-    assert.equal(response.headers.get("content-type"), "text/event-stream");
-    assert.equal(response.headers.get("content-encoding"), null, "pictures are not gzipped");
-    assert.deepEqual(opened.at(-1), { agentId: "a1", request: { width: 390, height: 700, control: true } });
-    const reader = response.body.getReader();
-    let text = "";
-    while (!text.includes('"type":"frame"')) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      text += new TextDecoder().decode(value);
-    }
-    assert.match(text, /data: \{"type":"tab","url":"https:\/\/appleid\.apple\.com\/","title":"Sign in"\}\n\n/);
-    assert.match(text, /data: \{"type":"frame","jpeg":"AAAA","width":390,"height":700\}\n\n/);
-    controller.abort();
-    for (let i = 0; i < 100 && closed.length === 0; i += 1) await wait(10);
-    assert.deepEqual(closed, ["viewer-closed"], "the phone going away closes the view");
-    await assert.rejects(sink.send({ type: "frame", jpeg: "B", width: 1, height: 1 }), "a picture for a viewer gone fails, so the engine stops");
-  } finally {
-    await server.close();
-  }
-});
-
 function fakeApi(handlers) {
   return new Proxy({}, { get: (_target, name) => handlers[name] ?? (() => undefined) });
 }
@@ -92,8 +45,8 @@ async function gatewayApi({ working, pending = null }) {
     stopAgentTask: async (id) => { calls.push(["stopAgentTask", id]); return { stopped: true }; },
   });
   const extensions = { api: (id) => id === "session" ? session : id === "transcript" ? manager : fakeApi({}) };
-  const tabViews = { input: async (id, value) => { calls.push(["tabInput", id, value]); return { ok: true, focus: "password" }; } };
-  const api = module.createHostGatewayApi({ extensions, hostEvents: { emit() {} }, decorateForeverBoxStatus: (s) => s, getHealth: () => ({ isBusy: false }), kickstartIfPending: async () => false, requestDiskSaverAudit: async () => false, releaseAgentBox: async () => {}, handleDesktopMcpAuthCompletion: async () => {}, forgetLocalToolPermission() {}, tabViews });
+  const typingFocus = async (id) => { calls.push(["typingFocus", id]); return { focus: "password" }; };
+  const api = module.createHostGatewayApi({ extensions, hostEvents: { emit() {} }, decorateForeverBoxStatus: (s) => s, getHealth: () => ({ isBusy: false }), kickstartIfPending: async () => false, requestDiskSaverAudit: async () => false, releaseAgentBox: async () => {}, handleDesktopMcpAuthCompletion: async () => {}, forgetLocalToolPermission() {}, typingFocus });
   return { api, calls };
 }
 
@@ -108,8 +61,8 @@ test("Take control stops a working agent and hands the person the computer; an i
   const idle = await gatewayApi({ working: false });
   assert.deepEqual(await idle.api.takeComputerControl({ id: "a1" }), { handoff: false });
   assert.deepEqual(idle.calls, [["isAgentWorking", "a1"]], "nothing stopped, no hand-off");
-  assert.deepEqual(await idle.api.tabViewInput({ id: "a1", input: { kind: "tap", x: 1, y: 2 } }), { ok: true, focus: "password" });
-  assert.deepEqual(idle.calls.at(-1), ["tabInput", "a1", { kind: "tap", x: 1, y: 2 }]);
+  assert.deepEqual(await idle.api.typingFocus({ id: "a1" }), { focus: "password" });
+  assert.deepEqual(idle.calls.at(-1), ["typingFocus", "a1"]);
 });
 
 test("Stop task ends an open hand-off without waking the agent, then stops it", async () => {
@@ -119,7 +72,7 @@ test("Stop task ends an open hand-off without waking the agent, then stops it", 
   const host = await src("host/sand-host.ts");
   assert.match(host, /if \(event\.trigger === "stopped"\) return;\n\s*await optionalMethod\(this\.transcript, "resumeAfterBoxHandoff"\)/, "a stopped hand-off resumes nothing");
   const protocol = await src("host/gateway-protocol.ts");
-  for (const command of ["tabViewInput", "takeComputerControl", "stopAgentTask"]) assert.match(protocol, new RegExp(`${command}: \\(api: GatewayApi, body: string\\) => api\\.${command}\\(parseCommandArgs\\(body\\)\\)`));
+  for (const command of ["typingFocus", "takeComputerControl", "stopAgentTask"]) assert.match(protocol, new RegExp(`${command}: \\(api: GatewayApi, body: string\\) => api\\.${command}\\(parseCommandArgs\\(body\\)\\)`));
 });
 
 test("a hand-off the person started ends as taken-back; Stop task's ends as cancelled", async () => {

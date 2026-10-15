@@ -3,7 +3,7 @@ import { createServer as createHttpServer, type IncomingMessage, type ServerResp
 import { createServer as createHttpsServer } from "node:https";
 import { constants as zlibConstants, createGzip, gzip } from "node:zlib";
 import { errorMessage } from "../shared/errors.js";
-import { GATEWAY_API_PREFIX, GATEWAY_AUTH_SCHEME, GATEWAY_AVATARS_PATH, GATEWAY_EVENTS_PATH, GATEWAY_HEALTH_PATH, GATEWAY_MINT_DEDUPE_HEADER, GATEWAY_SLIM_AVATARS_HEADER, GATEWAY_TAB_VIEW_PATH, GATEWAY_TRACEPARENT_HEADER } from "../shared/gateway-wire.js";
+import { GATEWAY_API_PREFIX, GATEWAY_AUTH_SCHEME, GATEWAY_AVATARS_PATH, GATEWAY_EVENTS_PATH, GATEWAY_HEALTH_PATH, GATEWAY_MINT_DEDUPE_HEADER, GATEWAY_SLIM_AVATARS_HEADER, GATEWAY_TRACEPARENT_HEADER } from "../shared/gateway-wire.js";
 import { GATEWAY_LOCAL_EXEC_REQUESTS_PATH, GATEWAY_LOCAL_EXEC_RESPONSES_PATH } from "../shared/local-exec-gateway.js";
 import { parseTraceparent } from "../shared/observability/send-trace.js";
 import { GATEWAY_WEBAUTHN_REQUESTS_PATH, GATEWAY_WEBAUTHN_RESPONSES_PATH } from "../shared/webauthn-gateway.js";
@@ -31,8 +31,6 @@ export interface GatewayServerDeps {
   readonly onEventStreamClosed?: () => void; readonly onDesktopContact?: () => void;
   readonly localExec?: { registerProvider(listener: (frame: unknown) => void): () => void; submitResponses(batch: unknown): void };
   readonly webauthn?: { registerProvider(listener: (frame: unknown) => void): () => void; submitResponses(batch: unknown): void };
-  /** The agents' Chrome tabs on the phone (`host/box/tab-view.ts`). */
-  readonly tabView?: { open(agentId: string, request: { width: number; height: number; control: boolean }, sink: { send(event: unknown): Promise<void> }): Promise<{ ok: true; close(reason?: string): void } | { ok: false; reason: string }> };
 }
 
 export async function routeCommand(deps: GatewayServerDeps, method: string, body: string, res: ServerResponse, req: IncomingMessage): Promise<void> { if (!Object.hasOwn(SAND_GATEWAY_COMMANDS, method)) return respondError(res, 404, `unknown gateway method: ${method}`); const table = clientWantsSlimAvatars(req) ? SAND_GATEWAY_SLIM_COMMANDS : SAND_GATEWAY_COMMANDS; const handler = (table as Record<string, (api: unknown, body: string) => unknown>)[method]; if (handler == null) return respondError(res, 404, `unknown gateway method: ${method}`); const requestId = headerValue(req, GATEWAY_REQUEST_ID_HEADER); const { traceparent: _parent, ...traceIds } = commandTrace(req); const startedAt = Date.now(); let result: unknown; try { result = await handler(deps.api, body); } catch (error) { if (deps.onCommandError != null && statusForCommandError(error) >= 500) { try { deps.onCommandError({ method, ...classifyGatewayCommandError(error), durationMs: Date.now() - startedAt, requestId, ...traceIds }); } catch {} } throw error; } if (deps.onCommandComplete != null) { try { deps.onCommandComplete({ method, durationMs: Date.now() - startedAt, requestId, ...traceIds }); } catch {} } respondJson(res, result, req); }
@@ -42,35 +40,6 @@ export function parseSubscribedChannels(url: URL): Set<string> | undefined { con
 function handleEvents(deps: GatewayServerDeps, req: IncomingMessage, res: ServerResponse, channels?: Set<string>): void { const slim = clientWantsSlimAvatars(req); res.on("close", () => deps.onEventStreamClosed?.()); openSseStream(req, res, (write) => deps.subscribe((event) => { if (channels != null && !channels.has(event.channel)) return; write(JSON.stringify(slim ? stripInlineAvatarsFromEvent(event) : event)); })); }
 const DATA_URL_PATTERN = /^data:([a-z0-9.+/-]+);base64,(.*)$/i; const AVATAR_NO_EXECUTE_HEADERS = { "content-disposition": "attachment", "x-content-type-options": "nosniff", "content-security-policy": "default-src 'none'; sandbox" };
 async function handleAvatarImage(deps: GatewayServerDeps, req: IncomingMessage, res: ServerResponse, url: URL): Promise<void> { if (req.headers["sec-fetch-site"] === "cross-site") return respondError(res, 403, "cross-site avatar loads are not allowed"); const agentId = decodeURIComponent(url.pathname.slice(GATEWAY_AVATARS_PATH.length + 1)); if (agentId.length === 0) return respondError(res, 404, "missing agent id"); const avatar = await deps.api.getAgentAvatar({ id: agentId }) as { dataUrl?: string | null; version?: string | null }; const match = avatar.dataUrl == null ? null : DATA_URL_PATTERN.exec(avatar.dataUrl); if (avatar.version == null || match?.[1] == null || match[2] == null) return respondError(res, 404, "agent has no avatar"); const requested = url.searchParams.get("v"); if (requested != null && requested !== avatar.version) return respondError(res, 404, "no such avatar version"); const etag = `"${avatar.version}"`; const cache = requested != null ? { "cache-control": "private, max-age=31536000, immutable", etag } : { "cache-control": "no-store", etag }; if (req.headers["if-none-match"] === etag) { res.writeHead(304, cache); res.end(); return; } const bytes = Buffer.from(match[2], "base64"); res.writeHead(200, { ...cache, ...AVATAR_NO_EXECUTE_HEADERS, "content-type": match[1], "content-length": bytes.byteLength }); res.end(bytes); }
-/**
- * `GET /tab-view?agent=<id>&width=<points>&height=<points>&control=1`: the
- * agent's tab as server-sent events (`tab`, `frame`, `closed`), for as long
- * as the request stays open; closing it gives the tab back. Not gzipped: the
- * pictures are JPEG already, and each is acknowledged to Chrome only once it
- * is written, so a slow phone gets fewer of them, not a queue.
- */
-async function handleTabView(deps: GatewayServerDeps, req: IncomingMessage, res: ServerResponse, url: URL): Promise<void> {
-  if (deps.tabView == null) return respondError(res, 404, "tab view not available");
-  const agentId = url.searchParams.get("agent") ?? "";
-  if (agentId.length === 0) return respondError(res, 400, "missing agent");
-  const width = Number(url.searchParams.get("width") ?? "390"), height = Number(url.searchParams.get("height") ?? "700");
-  res.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache, no-transform", connection: "keep-alive", "x-accel-buffering": "no" });
-  let gone = false;
-  const write = (text: string): Promise<void> => new Promise((resolve, reject) => {
-    if (gone || res.destroyed || res.writableEnded) return reject(new Error("the viewer has gone"));
-    res.write(text, (error) => error == null ? resolve() : reject(error));
-  });
-  const opened = await deps.tabView.open(agentId, { width, height, control: url.searchParams.get("control") === "1" }, { send: (event) => write(`data: ${JSON.stringify(event)}\n\n`) });
-  if (!opened.ok) {
-    await write(`data: ${JSON.stringify({ type: "closed", reason: opened.reason })}\n\n`).catch(() => undefined);
-    res.end();
-    return;
-  }
-  const heartbeat = setInterval(() => { void write(":ping\n\n").catch(() => undefined); }, SSE_HEARTBEAT_MS);
-  const finish = (): void => { if (gone) return; gone = true; clearInterval(heartbeat); opened.close("viewer-closed"); };
-  res.on("close", finish);
-  if (res.destroyed) finish();
-}
 function handleBridgeRequests(bridge: GatewayServerDeps["localExec"] | GatewayServerDeps["webauthn"], missing: string, req: IncomingMessage, res: ServerResponse): void { if (bridge == null) return respondError(res, 404, missing); openSseStream(req, res, (write) => bridge.registerProvider((frame) => write(JSON.stringify(frame)))); }
 function handleBridgeResponses(bridge: GatewayServerDeps["localExec"] | GatewayServerDeps["webauthn"], missing: string, body: string, res: ServerResponse): void { if (bridge == null) return respondError(res, 404, missing); bridge.submitResponses(body.length > 0 ? JSON.parse(body) : {}); respondJson(res, { ok: true }); }
 
@@ -81,11 +50,11 @@ export async function handleRequest(deps: GatewayServerDeps, req: IncomingMessag
   // Mac's probes send it: local-docker-host-connector.ts, host-supervisor.ts).
   if (req.method === "GET" && url.pathname === GATEWAY_HEALTH_PATH && deps.authToken != null && !isAuthorized(req, deps.authToken)) return respondError(res, 401, "unauthorized");
   if (req.method === "GET" && url.pathname === GATEWAY_HEALTH_PATH) { const health = deps.getHealth(); return respondJson(res, { ok: true, pid: process.pid, isBusy: health.isBusy, ...(health.busyOnlyAwaitingApproval === undefined ? {} : { busyOnlyAwaitingApproval: health.busyOnlyAwaitingApproval }), activeAgentId: health.activeAgentId, startedAt: deps.startedAt, lastBusyAtMs: health.lastBusyAtMs }); }
-  const events = req.method === "GET" && url.pathname === GATEWAY_EVENTS_PATH; const prepare = req.method === "POST" && url.pathname === GATEWAY_PREPARE_UPGRADE_PATH; const avatar = req.method === "GET" && url.pathname.startsWith(`${GATEWAY_AVATARS_PATH}/`); const localRequests = req.method === "GET" && url.pathname === GATEWAY_LOCAL_EXEC_REQUESTS_PATH; const localResponses = req.method === "POST" && url.pathname === GATEWAY_LOCAL_EXEC_RESPONSES_PATH; const webRequests = req.method === "GET" && url.pathname === GATEWAY_WEBAUTHN_REQUESTS_PATH; const webResponses = req.method === "POST" && url.pathname === GATEWAY_WEBAUTHN_RESPONSES_PATH; const command = req.method === "POST" && url.pathname.startsWith(`${GATEWAY_API_PREFIX}/`); const tabView = req.method === "GET" && url.pathname === GATEWAY_TAB_VIEW_PATH;
-  if (!(events || prepare || avatar || localRequests || localResponses || webRequests || webResponses || command || tabView)) return respondError(res, 404, `not found: ${req.method} ${url.pathname}`);
+  const events = req.method === "GET" && url.pathname === GATEWAY_EVENTS_PATH; const prepare = req.method === "POST" && url.pathname === GATEWAY_PREPARE_UPGRADE_PATH; const avatar = req.method === "GET" && url.pathname.startsWith(`${GATEWAY_AVATARS_PATH}/`); const localRequests = req.method === "GET" && url.pathname === GATEWAY_LOCAL_EXEC_REQUESTS_PATH; const localResponses = req.method === "POST" && url.pathname === GATEWAY_LOCAL_EXEC_RESPONSES_PATH; const webRequests = req.method === "GET" && url.pathname === GATEWAY_WEBAUTHN_REQUESTS_PATH; const webResponses = req.method === "POST" && url.pathname === GATEWAY_WEBAUTHN_RESPONSES_PATH; const command = req.method === "POST" && url.pathname.startsWith(`${GATEWAY_API_PREFIX}/`);
+  if (!(events || prepare || avatar || localRequests || localResponses || webRequests || webResponses || command)) return respondError(res, 404, `not found: ${req.method} ${url.pathname}`);
   if ((localRequests || localResponses) && deps.authToken == null) return respondError(res, 401, "local-exec requires gateway authentication"); if ((webRequests || webResponses) && deps.authToken == null) return respondError(res, 401, "webauthn requires gateway authentication"); if (deps.authToken != null && !isAuthorized(req, deps.authToken)) return respondError(res, 401, "unauthorized");
   if (prepare) return respondJson(res, deps.prepareForUpgrade != null ? await deps.prepareForUpgrade() : { quiescing: false, runningTurns: 0 }); if (localRequests || localResponses) deps.onDesktopContact?.();
-  if (localRequests) return handleBridgeRequests(deps.localExec, "local-exec channel not enabled", req, res); if (localResponses) return handleBridgeResponses(deps.localExec, "local-exec channel not enabled", await readBody(req), res); if (webRequests) return handleBridgeRequests(deps.webauthn, "webauthn channel not enabled", req, res); if (webResponses) return handleBridgeResponses(deps.webauthn, "webauthn channel not enabled", await readBody(req), res); if (events) return handleEvents(deps, req, res, parseSubscribedChannels(url)); if (avatar) return handleAvatarImage(deps, req, res, url); if (tabView) return handleTabView(deps, req, res, url);
+  if (localRequests) return handleBridgeRequests(deps.localExec, "local-exec channel not enabled", req, res); if (localResponses) return handleBridgeResponses(deps.localExec, "local-exec channel not enabled", await readBody(req), res); if (webRequests) return handleBridgeRequests(deps.webauthn, "webauthn channel not enabled", req, res); if (webResponses) return handleBridgeResponses(deps.webauthn, "webauthn channel not enabled", await readBody(req), res); if (events) return handleEvents(deps, req, res, parseSubscribedChannels(url)); if (avatar) return handleAvatarImage(deps, req, res, url);
   return routeCommand(deps, url.pathname.slice(GATEWAY_API_PREFIX.length + 1), await readBody(req), res, req);
 }
 

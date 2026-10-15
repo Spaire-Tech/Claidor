@@ -27,7 +27,7 @@ import { withBotBlockDetection } from "./runner/bot-block-detection.js";
 import { withSiteVisitTracking, type ActionAuditor } from "./runner/site-visit-tracking.js";
 import type { ErasedProductionBoxGeneratedPorts } from "./box/production.js";
 import { SandHostEventBus } from "./host-event-bus.js";
-import { TabViews } from "./box/tab-view.js";
+import { createTypingFocus } from "./box/typing-focus.js";
 import {
   loadInitialTranscriptResiliently,
   type InitialTranscriptLoader
@@ -103,7 +103,7 @@ export interface SandHostRuntime {
     requestDiskSaverAudit(agentId: string): Promise<boolean>;
     releaseAgentBox(agentId: string): Promise<void>;
     forgetLocalToolPermission(agentId: string): void;
-    tabViews?: TabViews;
+    typingFocus?: (agentId: string) => Promise<{ focus: string }>;
   }): HostGatewayDependencies;
   readonly isAgentLimitError?: (error: unknown) => boolean;
   readonly buildIdentityFallback?: string;
@@ -252,8 +252,8 @@ export class SandHost {
   private hostExtensions: HostExtensionRegistry | undefined;
   private rosterBookkeeping: HostRosterBookkeeping | undefined;
   private runnerComposition: HostRunnerComposition | undefined;
-  /** The agents' tabs on the phone (`box/tab-view.ts`), made when the gateway first asks. */
-  private tabViews: TabViews | undefined;
+  /** What a tap on the phone's whole computer focused (`box/typing-focus.ts`), made when the gateway first asks. */
+  private typingFocus: ((agentId: string) => Promise<{ focus: string }>) | undefined;
   private lastBusyAtMs: number;
 
   constructor(readonly runtime: SandHostRuntime) {
@@ -680,24 +680,24 @@ export class SandHost {
       requestDiskSaverAudit: agentId => this.requestDiskSaverAudit(agentId),
       releaseAgentBox: agentId => this.releaseAgentBox(agentId),
       forgetLocalToolPermission: agentId => this.forgetLocalToolPermission(agentId),
-      tabViews: this.getTabViews()
+      typingFocus: agentId => this.getTypingFocus()(agentId)
     }));
   }
 
   /**
-   * The agents' Chrome tabs streamed to the phone (15 October 2026). Each
-   * agent's Chrome listens on DevTools' port for its display, which the
-   * cloud computer gives it (`getAgentWindowIndex`; 1 on a computer of its
-   * own).
+   * What a tap on the phone's whole computer focused (15 October 2026), so
+   * the phone opens its keyboard on a text field. Each agent's Chrome
+   * listens on DevTools' port for its display, which the cloud computer
+   * gives it (`getAgentWindowIndex`; 1 on a computer of its own).
    */
-  getTabViews(): TabViews {
-    this.tabViews ??= new TabViews({
+  getTypingFocus(): (agentId: string) => Promise<{ focus: string }> {
+    this.typingFocus ??= createTypingFocus({
       displayFor: agentId => {
         const box = this.hostExtensions?.api("forever-box")?.box as { getAgentWindowIndex?(id: string): number | undefined } | undefined;
         return box?.getAgentWindowIndex?.(agentId);
       }
     });
-    return this.tabViews;
+    return this.typingFocus;
   }
 
   forgetLocalToolPermission(agentId: string): void {
@@ -767,7 +767,6 @@ export class SandHost {
   }
 
   async dispose(): Promise<void> {
-    this.tabViews?.closeAll();
     const extensions = this.hostExtensions;
     if (extensions == null) return;
 

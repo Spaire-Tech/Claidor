@@ -54,6 +54,7 @@ import type {
   TurnComputerToolFactoryInput,
   TurnMcpManagementToolFactoryInput,
   TurnReadToolFactoryInput,
+  TurnSubagentManagementToolFactoryInput,
   TurnToolsetBuildProps,
   TurnWebFetchToolFactoryInput,
   TurnWebSearchToolFactoryInput,
@@ -2721,6 +2722,20 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
             }
           : {}
         ),
+        // CheckSubagent, MessageSubagent and StopSubagent (15 October 2026).
+        // The prompt ("The box desktop", prompt-collector-glue.ts) tells the
+        // agent to look in on a running helper with them, but they reached the
+        // toolset only through the loop's build props, which never carry the
+        // host's dependencies: never offered, and Claude, told to, called
+        // CheckSubagent anyway and the run failed. The toolset offers them to
+        // the main agent only (`buildTurnTools`).
+        ...(dependencies.subagentManagement === undefined
+          ? {}
+          : {
+              createSubagentManagementToolInputs: (): TurnSubagentManagementToolFactoryInput => ({
+                controller: dependencies.subagentManagement as SubagentManagementController<unknown>,
+              }),
+            }),
       };
       const state = dependencies.state;
       if (state === undefined) return provider;

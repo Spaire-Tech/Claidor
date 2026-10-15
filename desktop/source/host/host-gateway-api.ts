@@ -41,10 +41,8 @@ export interface HostGatewayDependencies {
   releaseAgentBox(agentId: string): Promise<void>;
   handleDesktopMcpAuthCompletion(completion: unknown): Promise<void>;
   forgetLocalToolPermission(agentId: string): void;
-  /** The agents' tabs on the phone (`host/box/tab-view.ts`); absent where the host has none. */
-  readonly tabViews?: {
-    input(agentId: string, value: unknown): Promise<Record<string, unknown>>;
-  };
+  /** What a tap on the phone's whole computer focused (`host/box/typing-focus.ts`); absent where the host has none. */
+  readonly typingFocus?: (agentId: string) => Promise<{ focus: string }>;
   readonly now?: () => number;
 }
 
@@ -662,11 +660,11 @@ export function createHostGatewayApi(
         args.id,
         args.trigger ?? "button"
       ),
-    // The phone's browser view (15 October 2026, `host/box/tab-view.ts`).
-    tabViewInput: async (args: any) =>
-      deps.tabViews == null
-        ? { ok: false, reason: "no-view" }
-        : await deps.tabViews.input(String(args.id ?? ""), args.input),
+    // The phone's keyboard on the whole computer (15 October 2026, `host/box/typing-focus.ts`).
+    typingFocus: async (args: any) =>
+      deps.typingFocus == null
+        ? { focus: "" }
+        : await deps.typingFocus(String(args.id ?? "")),
     /**
      * Take control while the agent works: its run and helpers stop (it
      * would fight the person for the page) and the computer is the person's
