@@ -34,12 +34,14 @@
     { "name": "Ramp", "key": "ramp", "logo": "connector-logos/ramp.svg", "color": "#E4F222", "ordinaryWord": true },
     { "name": "Resend", "key": "resend", "logo": "connector-logos/resend.png", "color": "#000000" },
     { "name": "SharePoint", "key": "sharepoint", "logo": "connector-logos/sharepoint.svg", "color": "#038489" },
+    { "name": "Shop", "key": "shop", "logo": "connector-logos/shop.png", "color": "#5433EB", "ordinaryWord": true },
     { "name": "Square", "key": "square", "logo": "connector-logos/square.svg", "color": "#000000", "ordinaryWord": true },
     { "name": "Wix", "key": "wix", "logo": "connector-logos/wix.svg", "color": "#000000", "mono": true },
     { "name": "Zoho Desk", "key": "zoho-desk", "logo": "connector-logos/zoho-desk.svg", "color": "#E42527" }
   ],
   "aliases": [
     { "name": "Facebook Pages", "key": "facebook" },
-    { "name": "TikTok Ads", "key": "tiktok" }
+    { "name": "TikTok Ads", "key": "tiktok" },
+    { "name": "Shop Pay", "key": "shop" }
   ]
 }

@@ -6,7 +6,7 @@
  *
  * Writes, from desktop/brand (the files the Mac window embeds):
  * - ios/Simeon/Assets.xcassets/Brands/<key>: the 72 app logos a message
- *   names (app-logos/, apps.json), then the 36 connectors added since
+ *   names (app-logos/, apps.json), then the 37 connectors added since
  *   (ios/scripts/connector-mentions.json, from connector-logos/; the web
  *   window does not read that list). The one-colour ones are templates, so
  *   the app tints them in the name's colour, as the Mac masks them. The

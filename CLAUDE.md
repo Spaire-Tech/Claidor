@@ -55,6 +55,12 @@ skills, connectors, avatars, approvals). Running the box servers:
   upstream renderer (`desktop/NOTICE.md`). Change it only through
   `desktop/scripts/lib/router-renderer-patch.mjs`, whose record carries every
   touched file's hash.
+- **A new connector is named in the chat in its colour, with its logo.** With
+  its catalogue entry (`desktop/source/shared/node/vendor-mcp/catalog.ts`),
+  add a line to `ios/scripts/connector-mentions.json` (name, key, logo,
+  colour) and run `node ios/scripts/make-assets.mjs`; keep only its new
+  `Brands/<key>` logos and the `GeneratedBrands.swift` rows from the run.
+  `desktop/tests/connector-chat-colours.test.mjs` fails otherwise.
 - **Server code:** never call `session.commit()` in request code (the session
   commits at the end of the request; see `server/CLAUDE.md`).
 - **Git:** no model names in commits or pull requests. PR bodies follow
