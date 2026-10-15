@@ -305,6 +305,8 @@ struct ChatMessages: View {
   @State private var dividerSeen = false
   @State private var dividerDismissed = false
   @State private var settled = false
+  /** The person moved the chat (a drag, a jump to a quote or a search hit): the opening stops holding it at its end. */
+  @State private var leftEnd = false
   /** How many of the newest rows are drawn: a long chat opened at its end drew every message above it first, and stood still. More come in as you scroll up. 24 fill a screen and more; 40 made each chat open slower than it needed to. */
   @State private var window = ChatMessages.firstWindow
   /** The top of the drawn rows (the spinner over them) is on screen. */
@@ -339,8 +341,10 @@ struct ChatMessages: View {
               // row appears at once, seen or not.
               .onScrollVisibilityChange(threshold: 0.5) { visible in if topInSight != visible { topInSight = visible } }
               .onDisappear { topInSight = false }
-              .task(id: [hidden, topInSight ? 1 : 0]) {
-                guard topInSight else { return }
+              // Not before the chat has settled at its end: on the first layout the view still sits at the top, and loading
+              // from there moved every row before the chat reached its end.
+              .task(id: [hidden, topInSight ? 1 : 0, settled || leftEnd ? 1 : 0]) {
+                guard topInSight, settled || leftEnd else { return }
                 if hidden > 0 { window += ChatMessages.firstWindow }
                 else if thread == nil, store.olderBefore[agentId] != nil { await store.loadOlder(agentId) }
               }
@@ -376,6 +380,7 @@ struct ChatMessages: View {
       .onAppear {
         let lit = glow
         actions?.jump = { id in
+          leftEnd = true
           reveal(id) { withAnimation(.snappy) { reader.scrollTo(id, anchor: .center) } }
           lit.id = id
           Task { @MainActor in
@@ -397,7 +402,7 @@ struct ChatMessages: View {
       .onScrollGeometryChange(for: Bool.self) { geometry in
         geometry.contentSize.height > geometry.containerSize.height && geometry.visibleRect.minY < 300
       } action: { _, nearTop in
-        guard nearTop else { return }
+        guard nearTop, settled || leftEnd else { return }
         if allRows.count > window { window += ChatMessages.firstWindow } else if thread == nil, store.olderBefore[agentId] != nil { Task { await store.loadOlder(agentId) } }
       }
       .onScrollGeometryChange(for: Bool.self) { geometry in
@@ -405,6 +410,20 @@ struct ChatMessages: View {
       } action: { _, bottom in
         if atBottom != bottom { atBottom = bottom }
         if bottom && unseen != 0 { unseen = 0 }
+      }
+      // A chat opens at its end (15 October 2026, the founder: "the messages don't always open at the bottom ... they open at
+      // random places"). `defaultScrollAnchor` alone placed the view once, on the first layout, before the rows had their
+      // widths and heights (and, for a chat still on its way from the computer, before it had rows), and it stayed wherever
+      // that left it. So the end is asked for again while the rows settle, until the person moves the chat themselves.
+      .onScrollPhaseChange { _, phase in
+        if phase == .interacting && !leftEnd { leftEnd = true }
+      }
+      .task { await holdAtEnd(reader) }
+      .onChange(of: [all.count, rows.count]) { _, _ in
+        // Rows came after the chat opened (its lines from the computer, older ones above them, more of them drawn): still at
+        // its end, as an opening would be, until the person has moved it.
+        guard !leftEnd else { return }
+        Task { await holdAtEnd(reader) }
       }
       // New rows at the bottom: drawn too (the window grows by them), and counted on the pill when you are reading further up. Older lines loaded at the top are neither.
       .onChange(of: all.last?.id) { old, _ in
@@ -460,6 +479,15 @@ struct ChatMessages: View {
     .task {
       try? await Task.sleep(nanoseconds: 700_000_000)
       settled = true
+    }
+  }
+
+  /** To the chat's end now and a few times over its first second, as the rows take their sizes; never once the person has moved it or a search hit is being shown. */
+  private func holdAtEnd(_ reader: ScrollViewProxy) async {
+    for pause: UInt64 in [0, 50, 150, 300, 500] {
+      if pause > 0 { try? await Task.sleep(nanoseconds: pause * 1_000_000) }
+      guard !Task.isCancelled, !leftEnd, store.revealing[agentId] == nil else { return }
+      reader.scrollTo(Self.bottomId, anchor: .bottom)
     }
   }
 
