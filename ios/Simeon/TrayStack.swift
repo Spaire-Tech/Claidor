@@ -26,7 +26,7 @@ struct TrayStack: View {
           HStack {
             Spacer()
             Button("Clear all") { Task { await store.clearTrays() } }
-              .buttonStyle(.plain)
+              .buttonStyle(.tactile)
               .font(.system(size: 12, weight: .medium))
               .foregroundStyle(Ink.secondary)
           }
@@ -98,7 +98,7 @@ private struct TrayCard: View {
             Image(systemName: copied ? "checkmark" : "doc.on.doc").font(.system(size: 12, weight: .medium)).frame(width: 24, height: 24)
               .tapRoom(EdgeInsets(top: 10, leading: 8, bottom: 10, trailing: 1))
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.tactile)
           .foregroundStyle(Ink.secondary)
           .accessibilityLabel("Copy request ID")
           .help("Copy request ID")
@@ -107,7 +107,7 @@ private struct TrayCard: View {
           Image(systemName: "xmark").font(.system(size: 12, weight: .medium)).frame(width: 24, height: 24)
             .tapRoom(EdgeInsets(top: 10, leading: 1, bottom: 10, trailing: 10))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
         .foregroundStyle(Ink.secondary)
         .accessibilityLabel("Dismiss notification")
         .help("Dismiss notification")

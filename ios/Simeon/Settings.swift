@@ -56,6 +56,7 @@ struct SettingsSheet: View {
           // registers again. Refused in the phone's own Settings, the switch shows off and opens them.
           Toggle("Notifications", isOn: notificationsSwitch)
             .tint(Ink.blue)
+            .onChange(of: notificationsOn) { _, _ in Haptics.select() }
           // Face ID when the app opens and after a quarter of an hour away (AppLock.swift); only on a phone that has it.
           if AppLock.available {
             Toggle(AppLock.name, isOn: faceIDSwitch)
@@ -70,8 +71,11 @@ struct SettingsSheet: View {
           }
           .pickerStyle(.menu)
           .tint(Ink.secondary)
+          .onChange(of: theme) { _, _ in Haptics.select() }
           Toggle("Haptics", isOn: $haptics)
             .tint(Ink.blue)
+            // Turned on, it is felt at once: the way to tell it works.
+            .onChange(of: haptics) { _, on in if on { Haptics.success() } }
         }
         .listRowBackground(Ink.groupedRow)
         Section {
@@ -472,7 +476,7 @@ struct UsagePage: View {
               Button(upgrade.label) {
                 if apple { choosePlan(summary.managePlan?.nextTier?.tier) } else { openURL(upgrade.url) }
               }
-              .buttonStyle(PillButtonStyle(primary: true))
+              .buttonStyle(Tactile(look: PillButtonStyle(primary: true)))
             }
             .padding(.vertical, 4)
           }
@@ -1246,7 +1250,7 @@ struct InstalledRow: View {
         }
         .contentShape(.rect)
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.tactile)
       if connected {
         ConnectorMark.added()
       } else if connector.connecting == app.name {
@@ -1254,7 +1258,7 @@ struct InstalledRow: View {
       } else {
         // Added but not signed in: + signs it in, after the same question as every connect.
         Button { asking = ConnectConsent(app: store.catalogApp(named: app.name), name: app.name) } label: { ConnectorMark.plus() }
-          .buttonStyle(.plain)
+          .buttonStyle(.tactile)
           .disabled(connector.connecting != nil)
           .accessibilityLabel("Connect \(app.name)")
       }
@@ -1340,7 +1344,7 @@ struct AppRow: View {
         .contentShape(.rect)
         .opacity(soon ? 0.6 : 1)
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.tactile)
       if soon {
         ConnectorMark.soon()
           .accessibilityLabel("\(app.title) is coming soon")

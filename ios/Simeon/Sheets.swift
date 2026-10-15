@@ -70,7 +70,7 @@ struct NewAgentSheet: View {
               .frame(width: 44, height: 44)
               .contentShape(.circle)
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.tactile)
           .accessibilityLabel("Edit agent avatar")
           .offset(x: 2, y: 2)
         }
@@ -95,7 +95,7 @@ struct NewAgentSheet: View {
           Text("Couldn’t create the agent. Try again.").font(.system(size: 14)).foregroundStyle(Ink.danger).multilineTextAlignment(.center).padding(.horizontal, 16).padding(.bottom, 8)
         }
         Button(busy ? "Creating…" : "Create", action: create)
-          .buttonStyle(PhonePrimaryStyle())
+          .buttonStyle(Tactile(look: PhonePrimaryStyle()))
           .disabled(trimmed.isEmpty || busy)
           .padding(.horizontal, 16).padding(.bottom, 16)
       }
@@ -192,7 +192,7 @@ struct NewGroupSheet: View {
                 .frame(height: 64)
                 .contentShape(Rectangle())
               }
-              .buttonStyle(.plain)
+              .buttonStyle(.tactile)
               .accessibilityAddTraits(on ? .isSelected : [])
             }
           }
@@ -206,7 +206,7 @@ struct NewGroupSheet: View {
         ToolbarItem(placement: .leadingBar) { CloseButton() }
         ToolbarItem(placement: .trailingBar) {
           Button(busy ? "Creating…" : "Next", action: create)
-            .buttonStyle(PhonePrimaryStyle(small: true))
+            .buttonStyle(Tactile(look: PhonePrimaryStyle(small: true)))
             .disabled(picked.count < 2 || busy)
         }
       }

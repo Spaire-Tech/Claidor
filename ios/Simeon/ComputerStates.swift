@@ -504,7 +504,7 @@ private struct ComputerPills: View {
             ProgressPill(title: RebuildWords.title(kind), subtitle: steps.steps.indices.contains(steps.activeIndex) ? steps.steps[steps.activeIndex].label : nil,
                          progress: steps.progress)
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.tactile)
           .accessibilityLabel(RebuildWords.bannerLabel)
           .transition(.move(edge: .top).combined(with: .opacity))
         }
@@ -613,7 +613,7 @@ struct ComputerDiskBanner: View {
             .contentShape(.capsule)
             .fixedSize()
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
         .disabled(launching)
       }
       .padding(.horizontal, 14)
@@ -733,7 +733,7 @@ struct AccessCover: View {
       Button { askingSignOut = true } label: {
         Text("Sign Out").font(.system(size: 16, weight: .medium)).frame(height: 44).contentShape(.rect)
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.tactile)
       .foregroundStyle(Ink.secondary)
       .padding(.top, 8)
       .padding(.bottom, 20)

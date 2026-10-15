@@ -16,7 +16,9 @@ import WebKit
  *   page under it (the mouse wheel); a press held a moment then dragged
  *   holds the button down (text selection, a slider); two fingers pinch
  *   and move the picture. The sheet cannot be swiped away meanwhile: the
- *   checkmark hands the computer back.
+ *   checkmark hands the computer back. After each click the sheet asks
+ *   what it focused (`onClick`), and with the keyboard up the spot tapped
+ *   is kept in sight above it.
  *
  * noVNC draws the screen (`LiveScreen.page`) and never sees a touch: the
  * web view takes none, and the gestures reach noVNC as the mouse events
@@ -28,6 +30,8 @@ struct ZoomScreen: UIViewRepresentable {
   let control: Bool
   @Binding var phase: String
   let link: ScreenLink
+  /** A click was sent (in control): the sheet asks the computer what it focused. */
+  var onClick: () -> Void = {}
 
   static let maximumZoom: CGFloat = 4
   /** A double tap while watching zooms this far in. */
@@ -57,10 +61,12 @@ struct ZoomScreen: UIViewRepresentable {
     scroller.delegate = context.coordinator
     context.coordinator.install(on: scroller)
     context.coordinator.setControl(control)
+    context.coordinator.onClick = onClick
     return scroller
   }
 
   func updateUIView(_ scroller: ScreenScroller, context: Context) {
+    context.coordinator.onClick = onClick
     context.coordinator.setControl(control)
     guard context.coordinator.web.viewOnly == control else { return }
     context.coordinator.web.viewOnly = !control
@@ -76,6 +82,7 @@ struct ZoomScreen: UIViewRepresentable {
     /** The page's own: its messages (the picture's phase, the clipboard) and its loading. */
     let web: LiveScreen.Coordinator
     let link: ScreenLink
+    var onClick: () -> Void = {}
     private weak var scroller: ScreenScroller?
     private var control = false
     private let tap = UITapGestureRecognizer()
@@ -150,7 +157,10 @@ struct ZoomScreen: UIViewRepresentable {
 
     @objc private func tapped(_ recognizer: UITapGestureRecognizer) {
       guard control, recognizer.state == .ended, let at = point(recognizer) else { return }
+      Haptics.tap()
       link.click(at: at)
+      if let scroller { scroller.lastTap = recognizer.location(in: scroller.screen) }
+      onClick()
     }
 
     @objc private func dragged(_ recognizer: UIPanGestureRecognizer) {
@@ -177,7 +187,7 @@ struct ZoomScreen: UIViewRepresentable {
       guard control, let at = point(recognizer) else { return }
       switch recognizer.state {
       case .began:
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        Haptics.press()
         link.pointer("down", at: at)
       case .changed:
         link.pointer("move", at: at)
@@ -201,6 +211,8 @@ final class ScreenScroller: UIScrollView {
   let screen = UIView()
   private var fittedFor: CGSize = .zero
   private var keyboardOverlap: CGFloat = 0
+  /** Where the last click landed, in the picture's points: kept in sight above the keyboard. */
+  var lastTap: CGPoint?
 
   init(web: WKWebView) {
     self.web = web
@@ -248,6 +260,20 @@ final class ScreenScroller: UIScrollView {
     setContentOffset(CGPoint(x: -contentInset.left, y: -contentInset.top), animated: animated)
   }
 
+  /**
+   * The spot last tapped (the field typed into) moved into the part of the
+   * view the keyboard leaves free, when it is not there already.
+   */
+  func reveal(_ point: CGPoint) {
+    let spot = screen.convert(point, to: self)
+    let free = bounds.height - keyboardOverlap
+    guard free > 60 else { return }
+    if spot.y >= contentOffset.y + 12 && spot.y <= contentOffset.y + free - 32 { return }
+    let lowest = -contentInset.top
+    let highest = max(lowest, contentSize.height + contentInset.bottom - bounds.height)
+    setContentOffset(CGPoint(x: contentOffset.x, y: min(max(spot.y - free * 0.4, lowest), highest)), animated: true)
+  }
+
   /** The picture in the middle while it is smaller than the view; the keyboard's height more below it. */
   func center() {
     let dx = max(0, (bounds.width - screen.frame.width) / 2)
@@ -261,11 +287,14 @@ final class ScreenScroller: UIScrollView {
     let mine = convert(bounds, to: window)
     keyboardOverlap = max(0, mine.maxY - end.minY)
     center()
+    if keyboardOverlap > 0, let lastTap { reveal(lastTap) }
   }
 
   @objc private func keyboardHidden(_ notification: Notification) {
     keyboardOverlap = 0
     center()
+    // Not zoomed: the picture goes back to the middle.
+    if zoomScale <= 1.01 { recenter(animated: true) }
   }
 }
 #endif

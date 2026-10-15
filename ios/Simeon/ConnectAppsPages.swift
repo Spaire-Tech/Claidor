@@ -47,7 +47,7 @@ struct PluginNoticeBar: View {
             .frame(width: 28, height: 28)
             .contentShape(.rect)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
         .accessibilityLabel("Dismiss")
       }
       .padding(.leading, 14)
@@ -146,7 +146,7 @@ struct PluginAddButton<Label: View>: View {
 
   var body: some View {
     Button(action: add) { label() }
-      .buttonStyle(.plain)
+      .buttonStyle(.tactile)
       .disabled(connector.connecting != nil || model.isBusy)
       // The setup page or the sign-in opens once the consent has gone.
       .sheet(item: $asking, onDismiss: {
@@ -206,7 +206,7 @@ struct GitHubBanner: View {
       } label: {
         PluginPill(title: model.launchingFix ? "Opening…" : "Fix with agent", fill: Ink.pillButton, ink: Ink.primary)
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.tactile)
       .disabled(model.launchingFix)
     }
     .padding(14)
@@ -237,7 +237,7 @@ struct SkillsPluginRow: View {
       }
       .contentShape(.rect)
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.tactile)
     .padding(.vertical, 13.5)
   }
 }
@@ -559,7 +559,7 @@ struct PluginMetaLine: View {
             }
             .contentShape(.rect)
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.tactile)
         }
       }
       .font(.system(size: 13))
@@ -805,7 +805,7 @@ struct PluginPage: View {
                 signingIn = account
                 asking = ConnectConsent(app: store.catalogApp(named: account.name), name: account.name)
               }
-              .buttonStyle(GreyButtonStyle(capsule: true))
+              .buttonStyle(Tactile(look: GreyButtonStyle(capsule: true)))
               .disabled(connector.connecting != nil)
             }
           }
@@ -864,7 +864,7 @@ struct PluginPage: View {
           Text("Setup Values").foregroundStyle(Ink.primary)
           Spacer()
           Button("Edit Values") { model.editValues(entry) }
-            .buttonStyle(GreyButtonStyle(capsule: true))
+            .buttonStyle(Tactile(look: GreyButtonStyle(capsule: true)))
             .disabled(model.isBusy)
         }
       }

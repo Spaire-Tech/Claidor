@@ -80,7 +80,7 @@ struct AvatarEditor: View {
             }
             if model.candidate == nil, let reset = resetWords(agent) {
               Button(reset) { model.reset(store: store) }
-                .buttonStyle(PillButtonStyle(primary: false))
+                .buttonStyle(Tactile(look: PillButtonStyle(primary: false)))
                 .disabled(model.saving)
             }
           }
@@ -151,7 +151,7 @@ struct AvatarEditor: View {
       Button { model.shuffle(gender: gender, store: store) } label: {
         Label(AvatarEditorWords.shuffle, systemImage: "shuffle").font(.system(size: 14, weight: .medium))
       }
-      .buttonStyle(PillButtonStyle(primary: false))
+      .buttonStyle(Tactile(look: PillButtonStyle(primary: false)))
       .fixedSize()
       .disabled(model.saving)
     }
@@ -164,7 +164,7 @@ struct AvatarEditor: View {
             .overlay(Circle().stroke(worn == face ? Ink.blue : .clear, lineWidth: 2))
             .contentShape(.circle)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
         .disabled(model.saving)
         .accessibilityLabel(face.gender == "female" ? "A woman's face" : "A man's face")
         .accessibilityAddTraits(worn == face ? .isSelected : [])
@@ -198,7 +198,7 @@ struct AvatarEditor: View {
               .background(Ink.pill, in: Circle())
               .contentShape(.circle)
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.tactile)
           .disabled(voice?.sample == nil)
           .opacity(voice?.sample == nil ? 0.4 : 1)
           .accessibilityLabel(playing == voice?.id ? "Stop \(voice?.name ?? "")" : "Play \(voice?.name ?? "")")
@@ -237,7 +237,7 @@ struct AvatarEditor: View {
         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Ink.edge, lineWidth: 1))
       PulsingDisc().accessibilityLabel("Generating avatar")
       Button("Generating\u{2026}") {}
-        .buttonStyle(PillButtonStyle(primary: false))
+        .buttonStyle(Tactile(look: PillButtonStyle(primary: false)))
         .disabled(true)
     } else {
       TextField("Describe your avatar\u{2026}", text: Binding(get: { model.prompt }, set: { model.prompt = $0 }), axis: .vertical)
@@ -253,7 +253,7 @@ struct AvatarEditor: View {
         describing = false
         model.generate(store: store)
       }
-      .buttonStyle(PillButtonStyle(primary: true))
+      .buttonStyle(Tactile(look: PillButtonStyle(primary: true)))
       .disabled(model.prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
     }
   }
@@ -269,7 +269,7 @@ struct AvatarEditor: View {
       PhotosPicker(selection: $photo, matching: .images) {
         Label("Choose a photo", systemImage: "photo").frame(maxWidth: .infinity)
       }
-      .buttonStyle(PillButtonStyle(primary: false))
+      .buttonStyle(Tactile(look: PillButtonStyle(primary: false)))
     }
   }
 }
@@ -566,9 +566,9 @@ private struct CropView: View {
         }
         HStack(spacing: 10) {
           Button("Restart") { model.restart() }
-            .buttonStyle(PillButtonStyle(primary: false))
+            .buttonStyle(Tactile(look: PillButtonStyle(primary: false)))
           Button(model.saving ? "Saving\u{2026}" : "Set avatar") { model.setPicture(store: store, close: close) }
-            .buttonStyle(PillButtonStyle(primary: true))
+            .buttonStyle(Tactile(look: PillButtonStyle(primary: true)))
         }
         .disabled(model.saving)
       }
@@ -635,7 +635,7 @@ private struct CropView: View {
         .frame(width: 36, height: 36)
         .contentShape(.rect)
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.tactile)
     .accessibilityLabel(label)
   }
 }

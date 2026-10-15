@@ -531,7 +531,7 @@ struct CodeBlockView: View {
           .padding(.horizontal, 12).padding(.bottom, 8).padding(.top, 2)
           .contentShape(.rect)
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.tactile)
     }
     }
     .frame(maxWidth: .infinity, alignment: .leading)
@@ -542,7 +542,7 @@ struct CodeBlockView: View {
         Image(systemName: copied ? "checkmark" : "doc.on.doc").font(.system(size: 11, weight: .medium)).foregroundStyle(Ink.secondary)
           .frame(width: 24, height: 24).tapRoom(10)
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.tactile)
       .padding(4)
       .accessibilityLabel(copied ? "Copied" : "Copy code")
       #if os(macOS)

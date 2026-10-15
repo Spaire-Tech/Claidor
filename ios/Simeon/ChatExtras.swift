@@ -231,7 +231,7 @@ struct LinkCard: View {
       .modifier(CardEdge(radius: 14))
       .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.tactile)
     .frame(maxWidth: .infinity, alignment: fromPerson ? .trailing : .leading)
     .accessibilityLabel("Link, \(found?.title.isEmpty == false ? found!.title : urlHost)")
     #if os(macOS)
@@ -288,7 +288,7 @@ struct ThreadLinkRow: View {
         .padding(.horizontal, 10).padding(.vertical, 4)
         .tapRoom(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.tactile)
       .onHover { hovering = $0 }
       .accessibilityLabel("View thread, \(label)")
       if !mine { Spacer(minLength: 0) }
@@ -325,7 +325,7 @@ struct ThreadBreadcrumb: View {
         }
         .contentShape(.rect)
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.tactile)
       .accessibilityLabel("Back to \(agent?.name ?? "")")
       Image(systemName: "chevron.right").font(.system(size: 9, weight: .semibold)).foregroundStyle(.tertiary)
         .accessibilityHidden(true)
@@ -333,7 +333,7 @@ struct ThreadBreadcrumb: View {
         Text(store.threadTitle(rootId, in: agentId)).font(.system(size: 13, weight: .medium)).foregroundStyle(.primary).lineLimit(1)
           .contentShape(.rect)
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.tactile)
       .accessibilityLabel("View conversation details")
     }
     .padding(.horizontal, 6)
@@ -412,7 +412,7 @@ struct CloudAgentCard: View {
           .font(.system(size: 14, weight: .semibold)).foregroundStyle(Ink.primary).lineLimit(2)
         if let pull {
           Button { openURL(pull) } label: { title }
-            .buttonStyle(.plain)
+            .buttonStyle(.tactile)
             .help("Open the pull request")
         } else {
           title
@@ -430,7 +430,7 @@ struct CloudAgentCard: View {
           if let number = info.pullRequestNumber {
             if let pull {
               Button { openURL(pull) } label: { Text("PR #\(number)").font(.system(size: 12, weight: .medium)).foregroundStyle(Ink.link) }
-                .buttonStyle(.plain)
+                .buttonStyle(.tactile)
                 .help("Open the pull request")
             } else {
               Text("PR #\(number)").font(.system(size: 12)).foregroundStyle(Ink.tertiary)
@@ -515,7 +515,7 @@ struct QueuedSendRow: View {
         Text("Cancel").foregroundStyle(Ink.primary)
           .padding(.horizontal, 6).frame(minHeight: 32).contentShape(.rect)
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.tactile)
     }
     .font(.system(size: 12, weight: .medium))
     .accessibilityElement(children: .contain)

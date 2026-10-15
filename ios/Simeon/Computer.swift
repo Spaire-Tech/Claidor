@@ -7,28 +7,28 @@ import SimeonCore
 
 #if os(iOS)
 /**
- * An agent's own computer on the phone (the Mac's Computer panel). Since 15
- * October 2026 it opens on the agent's browser tab alone, at the phone's
- * size (`BrowserPane`), and shows the whole computer when there is no tab
- * or the person asks for it: `ensureForeverBox` for the agent, then its
- * stream through Simeon Labs' proxy, drawn by noVNC (bundled, MPL 2.0,
- * `Computer/NOVNC-LICENSE.txt`), fitted to the phone and pinched up to four
- * times larger (`ZoomScreen`, ComputerZoom.swift). Both are laid out alike:
- * what is happening at the top with the way out at its right (the
- * checkmark hands the computer back while the person is in control), and
- * at the foot one big blue Take control, with Stop task while the agent
- * works. The founder, after an Apple sign-in on the earlier layout, with the
- * hand among three icons: "that hand icon should be the main thing, not an
- * option." Taking control while the agent works stops it; handing back
- * resumes it. Either opens in control while the agent waits on the person.
- * The keyboard types into the computer and the clipboard pastes from the
- * phone or copies to it. The sheet is always dark, as a screen's surround
- * is. The computer's own screen stays 1280 by 800: the agents click by that
- * size (`host/box/box-monitor-layout.ts`). Closing it closes the stream.
- * While helpers work on the computer, the one shown is named under the
- * screen and the others are listed under it (`HelperStrip`,
- * ComputerPreview.swift); a helper's screen is a new connection, as on the
- * Mac.
+ * An agent's own computer on the phone (the Mac's Computer panel):
+ * `ensureForeverBox` for the agent, then its stream through Simeon Labs'
+ * proxy, drawn by noVNC (bundled, MPL 2.0, `Computer/NOVNC-LICENSE.txt`),
+ * fitted to the phone and pinched up to four times larger (`ZoomScreen`,
+ * ComputerZoom.swift). What is happening at the top with the way out at its
+ * right (the checkmark hands the computer back while the person is in
+ * control), and at the foot one big blue Take control, with Stop task while
+ * the agent works. The founder, after an Apple sign-in on the earlier
+ * layout, with the hand among three icons: "that hand icon should be the
+ * main thing, not an option." Taking control while the agent works stops
+ * it; handing back resumes it. It opens in control while the agent waits on
+ * the person. In control a tap is a click, and the keyboard follows it: a
+ * tap on a text field brings the phone's keyboard up, of that field's kind,
+ * and a tap anywhere else puts it away (`typingFocus`, 15 October 2026).
+ * The clipboard pastes from the phone or copies to it. The sheet is always
+ * dark, as a screen's surround is. The computer's own screen stays 1280 by
+ * 800: the agents click by that size (`host/box/box-monitor-layout.ts`).
+ * Closing it closes the stream. While helpers work on the computer, the one
+ * shown is named under the screen and the others are listed under it
+ * (`HelperStrip`, ComputerPreview.swift); a helper's screen is a new
+ * connection, as on the Mac. (A view of the agent's browser tab alone was
+ * tried the same day and taken out: the founder, "it doesn't do anything".)
  */
 struct ComputerSheet: View {
   let agentId: String
@@ -46,49 +46,35 @@ struct ComputerSheet: View {
   @State private var helper: String?
   /** The computer's status and helpers are read while the sheet shows (`watchComputer`). */
   @State private var watching = false
-  /** The whole computer instead of the agent's browser tab (15 October 2026): no tab to show, or the person asked for it. */
-  @State private var showsWholeComputer = false
-  /** The browser view found no tab to show (the computer's engine has no tab view, or Chrome has no tab): its button is not offered again. */
-  @State private var browserUnavailable = false
   @State private var stopping = false
+  /** The kind of field the last tap focused: the keyboard comes up to match it. */
+  @State private var field: TypingField = .text
+  /** Which tap the focus was last asked for: an answer for an earlier tap is not acted on. */
+  @State private var focusAsked = 0
 
-  /**
-   * The agent's browser tab first, alone and at the phone's size
-   * (`BrowserPane`); the whole computer when there is no tab or the person
-   * asks for it. Either opens in control while the agent waits on the person.
-   */
   var body: some View {
-    Group {
-      if showsWholeComputer {
-        computer
-      } else {
-        BrowserPane(agentId: agentId, opensInControl: waitingOnPerson, noBrowser: { browserUnavailable = true }) { inControl in
-          if inControl { control = true }
-          showsWholeComputer = true
-        }
+    computer
+      .background(Color.black)
+      .environment(\.colorScheme, .dark)
+      .presentationDetents([.large])
+      .presentationBackground(.black)
+      .onAppear {
+        guard !watching else { return }
+        watching = true
+        store.watchComputer(agentId)
       }
-    }
-    .background(Color.black)
-    .environment(\.colorScheme, .dark)
-    .presentationDetents([.large])
-    .presentationBackground(.black)
-    .onAppear {
-      guard !watching else { return }
-      watching = true
-      store.watchComputer(agentId)
-    }
-    .onDisappear {
-      guard watching else { return }
-      watching = false
-      store.unwatchComputer(agentId)
-    }
+      .onDisappear {
+        guard watching else { return }
+        watching = false
+        store.unwatchComputer(agentId)
+      }
   }
 
   /**
    * The whole computer, drawn by noVNC and zoomable (`ZoomScreen`); its
-   * connection opens only while it shows. Laid out as the browser view: what
-   * is happening at the top with the way out at its right, the screen
-   * across the space between, and at the foot one big blue Take control
+   * connection opens only while it shows. What is happening at the top with
+   * the way out at its right, the screen across the space between, and at
+   * the foot one big blue Take control
    * (with Stop task while the agent works), or, in control, Skip step
    * (while the agent waits on the person) and the clipboard and keyboard.
    */
@@ -112,17 +98,9 @@ struct ComputerSheet: View {
         .padding(.horizontal, 64)
         .animation(.easeOut(duration: 0.2), value: note)
         HStack {
-          if !browserUnavailable {
-            Button { showsWholeComputer = false } label: {
-              Image(systemName: "safari").font(.system(size: 18, weight: .medium)).foregroundStyle(.white)
-                .frame(width: 48, height: 48)
-            }
-            .buttonStyle(GlassDisc())
-            .accessibilityLabel("Show the browser")
-          }
           Spacer(minLength: 0)
           if control {
-            Button { typing = false; Task { await store.handBackComputer(agentId); dismiss() } } label: {
+            Button { typing = false; Haptics.success(); Task { await store.handBackComputer(agentId); dismiss() } } label: {
               Image(systemName: "checkmark").font(.system(size: 19, weight: .semibold)).foregroundStyle(.white)
                 .frame(width: 48, height: 48)
             }
@@ -143,7 +121,7 @@ struct ComputerSheet: View {
       ZStack {
         Color.black
         if let socket = screen?.socket {
-          ZoomScreen(socket: socket, control: control, phase: $phase, link: link)
+          ZoomScreen(socket: socket, control: control, phase: $phase, link: link) { focusAfterTap() }
             // A helper's screen is a new connection (`{stageKey}:{url}`).
             .id("\(focused ?? "setup"):\(socket.absoluteString)")
         }
@@ -183,7 +161,14 @@ struct ComputerSheet: View {
     // The screen keeps its size when the keyboard comes up (a new size would undo the zoom); the picture moves above it instead.
     .ignoresSafeArea(.keyboard)
     // The keyboard itself: what is typed goes to the computer, key by key.
-    .background { KeyCatcher(isActive: $typing, type: { link.type($0) }, delete: { link.key(0xff08) }).frame(width: 0, height: 0) }
+    // Return may send a form and move the focus: the computer is asked again.
+    .background {
+      KeyCatcher(isActive: $typing, field: field, type: { text in
+        link.type(text)
+        if text == "\n" { focusAfterTap() }
+      }, delete: { link.key(0xff08) })
+      .frame(width: 0, height: 0)
+    }
     // In control the sheet stays until the checkmark hands the computer back.
     .interactiveDismissDisabled(control)
     .task(id: attempt) { await load() }
@@ -200,7 +185,7 @@ struct ComputerSheet: View {
     if control {
       HStack(spacing: 12) {
         if waitingOnPerson {
-          Button { typing = false; Task { await store.handBackComputer(agentId, skip: true); dismiss() } } label: {
+          Button { typing = false; Haptics.tap(); Task { await store.handBackComputer(agentId, skip: true); dismiss() } } label: {
             Text("Skip step").font(.system(size: 17, weight: .medium)).foregroundStyle(.white)
               .padding(.horizontal, 26).frame(height: 54)
               .background(Color(white: 0.17), in: Capsule())
@@ -218,7 +203,7 @@ struct ComputerSheet: View {
               .frame(width: 58, height: 54).contentShape(.rect)
           }
           .accessibilityLabel("Clipboard")
-          Button { typing.toggle() } label: {
+          Button { Haptics.tap(); typing.toggle() } label: {
             Image(systemName: typing ? "keyboard.chevron.compact.down" : "keyboard").font(.system(size: 19, weight: .medium)).foregroundStyle(.white)
               .frame(width: 58, height: 54).contentShape(.rect)
           }
@@ -244,6 +229,7 @@ struct ComputerSheet: View {
 
   /** Take control: the computer is the person's at once; a working agent is stopped meanwhile (handing back resumes it). */
   private func takeControl() {
+    Haptics.press()
     control = true
     Task {
       if await store.takeComputerControl(agentId) { show("\(store.agent(agentId)?.name ?? "The agent") is paused while you're in control.") }
@@ -251,11 +237,36 @@ struct ComputerSheet: View {
   }
 
   private func stopTask() {
+    Haptics.press()
     stopping = true
     Task {
       let stopped = await store.stopAgentTask(agentId)
       stopping = false
       show(stopped ? "Stopped." : "Nothing was running.")
+    }
+  }
+
+  /**
+   * After a click in control (or Return), the computer says what has the
+   * keyboard's focus (`typingFocus`): a text field brings the phone's
+   * keyboard up, of its kind; anything else puts it away. The founder: "when
+   * you click on somewhere that you should type, the keyboard to open too.
+   * and when you click elsewhere, the keyboard goes away." Only the last
+   * tap's answer counts. An engine without the question answers nothing,
+   * and the keyboard stays as it was (its button still works).
+   */
+  private func focusAfterTap() {
+    focusAsked += 1
+    let asked = focusAsked
+    Task {
+      guard let focused = await store.typingFocus(agentId), asked == focusAsked, control else { return }
+      if focused.takesTyping {
+        field = focused
+        if !typing { Haptics.select() }
+        typing = true
+      } else {
+        typing = false
+      }
     }
   }
 
@@ -269,8 +280,9 @@ struct ComputerSheet: View {
 
   /** The phone's clipboard onto the computer's, pasted where its cursor is. */
   private func pasteFromPhone() {
-    guard let text = UIPasteboard.general.string, !text.isEmpty else { show("Your phone's clipboard is empty."); return }
+    guard let text = UIPasteboard.general.string, !text.isEmpty else { Haptics.warning(); show("Your phone's clipboard is empty."); return }
     control = true
+    Haptics.tap()
     link.paste(text)
     show("Pasted from your phone.")
   }
@@ -283,6 +295,7 @@ struct ComputerSheet: View {
       try? await Task.sleep(nanoseconds: 600_000_000)
       if link.clipboard.isEmpty { show("Nothing was copied on the computer."); return }
       UIPasteboard.general.string = link.clipboard
+      Haptics.tap()
       show("Copied to your phone.")
     }
   }
@@ -318,6 +331,45 @@ struct ComputerSheet: View {
       try? await Task.sleep(nanoseconds: 3_000_000_000)
     }
     problem = "The computer is taking too long to start."
+  }
+}
+
+/** The blue Take control: the main button under the agent's computer. */
+struct TakeControlButton: View {
+  let enabled: Bool
+  let action: () -> Void
+
+  /** iOS's own blue (systemBlue in the dark): the one thing to press. */
+  static let blue = Color(red: 0.039, green: 0.518, blue: 1.0)
+
+  var body: some View {
+    Button(action: action) {
+      Label("Take control", systemImage: "hand.point.up.left.fill")
+        .font(.system(size: 18, weight: .semibold)).foregroundStyle(.white)
+        .frame(maxWidth: .infinity).frame(height: 56)
+        .background(Self.blue, in: Capsule())
+        .contentShape(Capsule())
+    }
+    .buttonStyle(.plain)
+    .disabled(!enabled)
+    .opacity(enabled ? 1 : 0.5)
+  }
+}
+
+/** Stop task, beside Take control while the agent works: the agent and its helpers stop. */
+struct StopTaskButton: View {
+  let busy: Bool
+  let action: () -> Void
+
+  var body: some View {
+    Button(action: action) {
+      Text("Stop task").font(.system(size: 17, weight: .medium)).foregroundStyle(.white)
+        .padding(.horizontal, 24).frame(height: 56)
+        .background(Color(white: 0.17), in: Capsule())
+        .contentShape(Capsule())
+    }
+    .buttonStyle(.plain)
+    .disabled(busy)
   }
 }
 
@@ -620,8 +672,22 @@ final class ScreenLink {
  */
 struct KeyCatcher: UIViewRepresentable {
   @Binding var isActive: Bool
+  /** The kind of field it types into: the keyboard matches it (an email's @, numbers). */
+  var field: TypingField = .text
   let type: (String) -> Void
   let delete: () -> Void
+
+  /** The phone's keyboard for a field. Numbers and phone numbers keep a Return key (the phone pad has none), to send the form. */
+  static func keyboard(for field: TypingField) -> UIKeyboardType {
+    switch field {
+    case .email: return .emailAddress
+    case .url: return .URL
+    case .search: return .webSearch
+    case .number, .tel: return .numbersAndPunctuation
+    case .password: return .asciiCapable
+    case .text, .none: return .default
+    }
+  }
 
   func makeUIView(context: Context) -> Catcher {
     let view = Catcher()
@@ -634,6 +700,12 @@ struct KeyCatcher: UIViewRepresentable {
   func updateUIView(_ view: Catcher, context: Context) {
     view.onType = type
     view.onDelete = delete
+    let keyboard = Self.keyboard(for: field)
+    if view.keyboardType != keyboard {
+      view.keyboardType = keyboard
+      // Already up: it changes to the new kind in place.
+      if view.isFirstResponder { view.reloadInputViews() }
+    }
     if isActive && !view.isFirstResponder { DispatchQueue.main.async { view.becomeFirstResponder() } }
     if !isActive && view.isFirstResponder { DispatchQueue.main.async { view.resignFirstResponder() } }
   }
@@ -648,6 +720,7 @@ struct KeyCatcher: UIViewRepresentable {
     func insertText(_ text: String) { onType(text) }
     func deleteBackward() { onDelete() }
 
+    var keyboardType: UIKeyboardType = .default
     // Typed as it is: no corrections, no capitals added, no smart quotes.
     var autocorrectionType: UITextAutocorrectionType = .no
     var autocapitalizationType: UITextAutocapitalizationType = .none

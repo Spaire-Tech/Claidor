@@ -312,7 +312,7 @@ private struct NetworkNode: View {
       .frame(width: 120)
       .contentShape(Rectangle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.tactile)
     .accessibilityLabel("\(agent.name) details")
     .accessibilityValue(caption.text)
     .accessibilityAddTraits(selected ? .isSelected : [])
@@ -533,7 +533,7 @@ private struct ChartAgentCard: View {
       }
     }
     Button(agent.isGroup ? "Open room" : "Open chat") { openChat(agent.id) }
-      .buttonStyle(GreyButtonStyle(capsule: true))
+      .buttonStyle(Tactile(look: GreyButtonStyle(capsule: true)))
   }
 }
 
@@ -603,7 +603,7 @@ private struct ChartMembershipCard: View {
       ChartMemberMarks(members: store.members(of: group))
     }
     Button("Open room") { openChat(group.id) }
-      .buttonStyle(GreyButtonStyle(capsule: true))
+      .buttonStyle(Tactile(look: GreyButtonStyle(capsule: true)))
   }
 }
 
@@ -636,7 +636,7 @@ private struct ChartExchangeCard: View {
           } else if failed {
             Text(AgentNetwork.couldNotLoad).font(.system(size: 13)).foregroundStyle(Ink.tertiary)
             Button("Retry") { attempt += 1 }
-              .buttonStyle(GreyButtonStyle(capsule: true))
+              .buttonStyle(Tactile(look: GreyButtonStyle(capsule: true)))
           } else {
             Text(AgentNetwork.noMessages).font(.system(size: 13)).foregroundStyle(Ink.tertiary)
           }

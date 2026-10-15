@@ -43,7 +43,7 @@ struct FlightPassengersCardView: View {
             Haptics.press()
             filling = true
           }
-          .buttonStyle(PillButtonStyle(primary: true))
+          .buttonStyle(Tactile(look: PillButtonStyle(primary: true)))
           Text(FlightPassengersCard.privacy).font(.system(size: 12)).foregroundStyle(Ink.fineGrey).fixedSize(horizontal: false, vertical: true)
         }
       case .saved, .canceled:

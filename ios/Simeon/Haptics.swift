@@ -59,3 +59,44 @@ struct CallHaptics: ViewModifier {
     }
   }
 }
+
+/**
+ * Every button's light tap (15 October 2026). The founder: "it needs to be
+ * haptic. we have a whole haptic toggle, that i dont feel anywhere.
+ * literally." Until then a handful of moments gave one (a message sent or
+ * held, a reaction) and no button did. A button in one of the app's styles
+ * now taps as its action runs, never on the touch alone, so a scroll that
+ * starts on a button stays still; Settings › Haptics turns it off with the
+ * rest. Each style keeps its own look: `Tactile(look:)` only adds the tap.
+ */
+struct Tactile<Look: ButtonStyle>: PrimitiveButtonStyle {
+  let look: Look
+
+  func makeBody(configuration: Configuration) -> some View {
+    Button(role: configuration.role) {
+      Haptics.tap()
+      configuration.trigger()
+    } label: {
+      configuration.label
+    }
+    .buttonStyle(look)
+  }
+}
+
+/** `.plain` with the light tap (SwiftUI's plain style is a primitive one, so it is wrapped on its own). */
+struct TactilePlain: PrimitiveButtonStyle {
+  func makeBody(configuration: Configuration) -> some View {
+    Button(role: configuration.role) {
+      Haptics.tap()
+      configuration.trigger()
+    } label: {
+      configuration.label
+    }
+    .buttonStyle(.plain)
+  }
+}
+
+extension PrimitiveButtonStyle where Self == TactilePlain {
+  /** `.plain`, with the light tap. */
+  static var tactile: TactilePlain { TactilePlain() }
+}

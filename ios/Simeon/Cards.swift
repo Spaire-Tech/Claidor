@@ -87,7 +87,7 @@ struct CloseDisc: View {
       Image(systemName: "xmark").font(.system(size: 15, weight: .semibold)).foregroundStyle(Ink.primary)
         .frame(width: 40, height: 40)
     }
-    .buttonStyle(GlassDisc())
+    .buttonStyle(Tactile(look: GlassDisc()))
     .accessibilityLabel("Close")
   }
 }
@@ -176,7 +176,7 @@ struct QuestionCardView: View {
           Image(systemName: "xmark").font(.system(size: 11, weight: .semibold)).foregroundStyle(Ink.secondary)
             .frame(width: 32, height: 32).contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
         .accessibilityLabel("Dismiss")
       }
       VStack(spacing: 0) {
@@ -196,7 +196,7 @@ struct QuestionCardView: View {
             .padding(8)
             .contentShape(Rectangle())
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.tactile)
         }
       }
       if card.allowsOwnAnswer {
@@ -212,7 +212,7 @@ struct QuestionCardView: View {
             .submitLabel(.send)
             .onSubmit { give(own) }
           if !own.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            Button("Submit") { give(own) }.buttonStyle(BlueButtonStyle())
+            Button("Submit") { give(own) }.buttonStyle(Tactile(look: BlueButtonStyle()))
           }
         }
       }
@@ -369,7 +369,7 @@ struct ConnectorCard: View {
         ProgressView().controlSize(.small)
       } else {
         Button(Connecting.connect) { asking = ConnectConsent(app: app, name: name) }
-          .buttonStyle(GreyButtonStyle(capsule: true))
+          .buttonStyle(Tactile(look: GreyButtonStyle(capsule: true)))
           .disabled(connector.connecting != nil)
           .accessibilityLabel("Connect \(app?.title ?? name)")
       }
@@ -467,7 +467,7 @@ struct ConnectConsentSheet: View {
         Button { dismiss() } label: {
           Text("Cancel").font(.system(size: 17)).foregroundStyle(Ink.primary).frame(maxWidth: .infinity).frame(height: 44).contentShape(.rect)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
       }
       .padding(.horizontal, 24)
       .padding(.top, 10)
@@ -522,7 +522,7 @@ struct ListenerConnectCard: View {
             opening = false
           }
         }
-        .buttonStyle(BlueButtonStyle())
+        .buttonStyle(Tactile(look: BlueButtonStyle()))
       }
     }
     .card()
@@ -587,7 +587,7 @@ struct FlightsCardView: View {
       VStack(spacing: 0) {
         ForEach(Array(card.offers.enumerated()), id: \.offset) { index, offer in
           Button { open = OpenFlight(id: index, offer: offer) } label: { FlightRow(offer: offer) }
-            .buttonStyle(FlightRowStyle())
+            .buttonStyle(Tactile(look: FlightRowStyle()))
         }
       }
       .padding(.horizontal, 6).padding(.vertical, 6)
@@ -816,7 +816,7 @@ struct FlightDetails: View {
           } label: {
             if booking { ProgressView().tint(.white) } else { Text("Book with Simeon") }
           }
-          .buttonStyle(PillButtonStyle(primary: true))
+          .buttonStyle(Tactile(look: PillButtonStyle(primary: true)))
           .disabled(booking)
           .accessibilityHint("Shows the traveller form in the chat")
         }
@@ -956,13 +956,13 @@ struct DraftCardView: View {
         if editable {
           HStack(spacing: 8) {
             Button(isEmail ? "Send email" : "Send message") { send() }
-              .buttonStyle(BlueButtonStyle())
+              .buttonStyle(Tactile(look: BlueButtonStyle()))
               .disabled(isEmail && !validAddresses)
             Button("Discard") {
               busy = true
               Task { await store.discardDraft(entryId, in: agentId); busy = false }
             }
-            .buttonStyle(GreyButtonStyle())
+            .buttonStyle(Tactile(look: GreyButtonStyle()))
             if busy { ProgressView().controlSize(.small) }
           }
           .disabled(busy)
@@ -1175,7 +1175,7 @@ struct FileCardView: View {
           // this Mac. An icon with no tooltip, "Save <name>" to VoiceOver.
           if !fromPerson {
             Button { save() } label: { Image(systemName: "arrow.down.circle").font(.system(size: 15)).foregroundStyle(Ink.secondary) }
-              .buttonStyle(.plain)
+              .buttonStyle(.tactile)
               .accessibilityLabel("Save \(name)")
           }
           #else
@@ -1294,7 +1294,7 @@ struct ApprovalDisclosure: View {
         .foregroundStyle(Ink.secondary)
         .contentShape(.rect)
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.tactile)
       if open {
         ApprovalCode(shown: AutoReviewCard.clip(text), full: text)
       }
@@ -1329,7 +1329,7 @@ struct ApprovalCode: View {
         Image(systemName: copied ? "checkmark" : "doc.on.doc").font(.system(size: 11, weight: .medium)).foregroundStyle(Ink.secondary)
           .frame(width: 24, height: 24).tapRoom(10)
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.tactile)
       .padding(4)
       .accessibilityLabel(copied ? "Copied" : "Copy code")
       #if os(macOS)
@@ -1399,9 +1399,9 @@ struct RequestCardView: View {
       }
       if pending {
         HStack(spacing: 8) {
-          Button("Allow once") { resolve(requestId, "approved", rule: proposedRule) }.buttonStyle(BlueButtonStyle())
-          Button("Always allow") { resolve(requestId, "always", rule: proposedRule) }.buttonStyle(GreyButtonStyle())
-          Button("Deny") { resolve(requestId, "denied", rule: proposedRule) }.buttonStyle(GreyButtonStyle())
+          Button("Allow once") { resolve(requestId, "approved", rule: proposedRule) }.buttonStyle(Tactile(look: BlueButtonStyle()))
+          Button("Always allow") { resolve(requestId, "always", rule: proposedRule) }.buttonStyle(Tactile(look: GreyButtonStyle()))
+          Button("Deny") { resolve(requestId, "denied", rule: proposedRule) }.buttonStyle(Tactile(look: GreyButtonStyle()))
         }
         .disabled(busy)
       }
@@ -1454,7 +1454,7 @@ struct RequestCardView: View {
           secret = ""
           run { await store.submitSecret(value, entryId: entryId, in: agentId) }
         }
-        .buttonStyle(BlueButtonStyle())
+        .buttonStyle(Tactile(look: BlueButtonStyle()))
         .disabled(busy || secret.trimmingCharacters(in: .whitespaces).isEmpty)
       }
     }
@@ -1462,8 +1462,8 @@ struct RequestCardView: View {
   }
 
   /**
-   * "Your turn on the computer" (patch HANDOFF_CARD_SOURCE): a white
-   * computer tile, the status, the instruction, the screen as it was when
+   * "Your turn on the computer" (patch HANDOFF_CARD_SOURCE): a computer
+   * tile, the status, the instruction, the screen as it was when
    * the agent asked, Take over / I'm done / Skip. It waits while the
    * computer says this request is pending (`Obn`); before its status is
    * read, while the line has no answer yet.
@@ -1477,9 +1477,12 @@ struct RequestCardView: View {
     let snapshot = waiting ? pending?.snapshotDataUrl.flatMap(Self.picture) : nil
     return VStack(alignment: .leading, spacing: 12) {
       HStack(spacing: 12) {
-        Image(systemName: "display").font(.system(size: 19)).foregroundStyle(Ink.primary)
+        // The cards' own tile, light or dark with the theme (15 October 2026: on a fixed white tile
+        // the monitor, drawn in the theme's ink, vanished in the dark).
+        Image(systemName: "display").font(.system(size: 19, weight: .medium)).foregroundStyle(Ink.primary)
           .frame(width: 44, height: 44)
-          .background(Color.white.opacity(0.92), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+          .background(Ink.tile, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+          .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).stroke(Ink.tileEdge, lineWidth: 0.5))
         VStack(alignment: .leading, spacing: 2) {
           Text(waiting ? "Your turn on the computer" : "Computer").font(.system(size: 15, weight: .semibold)).foregroundStyle(Ink.primary)
           HStack(spacing: 6) {
@@ -1499,14 +1502,14 @@ struct RequestCardView: View {
             .aspectRatio(ComputerScreen.width / ComputerScreen.height, contentMode: .fit)
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
         .accessibilityLabel("Take over the computer")
       }
       if waiting {
         VStack(spacing: 6) {
           HStack(spacing: 8) {
-            Button("Take over", action: openComputer).buttonStyle(PillButtonStyle(primary: true))
-            Button("I’m done") { run { await store.handBackComputer(agentId) } }.buttonStyle(PillButtonStyle(primary: false))
+            Button("Take over", action: openComputer).buttonStyle(Tactile(look: PillButtonStyle(primary: true)))
+            Button("I’m done") { run { await store.handBackComputer(agentId) } }.buttonStyle(Tactile(look: PillButtonStyle(primary: false)))
               .disabled(busy)
           }
           Button { run { await store.handBackComputer(agentId, skip: true) } } label: {
@@ -1514,12 +1517,12 @@ struct RequestCardView: View {
               .frame(maxWidth: .infinity, minHeight: 32)
               .contentShape(.rect)
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.tactile)
           .disabled(busy)
           .help("Cancel this request without doing the step; the agent continues without it")
         }
       } else {
-        Button("Open computer", action: openComputer).buttonStyle(PillButtonStyle(primary: false))
+        Button("Open computer", action: openComputer).buttonStyle(Tactile(look: PillButtonStyle(primary: false)))
       }
     }
     .card(radius: 18, padding: 14)
@@ -1625,7 +1628,7 @@ struct TeammatesLine: View {
         }
       } else {
         Button { if let peer = peers.first { open(peer) } } label: { chip }
-          .buttonStyle(.plain)
+          .buttonStyle(.tactile)
       }
     }
     .sheet(item: $shown) { route in
@@ -1792,7 +1795,7 @@ struct VoiceCallLine: View {
       }
       .contentShape(.rect)
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.tactile)
     .sheet(isPresented: $open) { CallRecordSheet(seconds: seconds, lines: lines).macSheetSize(width: 420, height: 560) }
   }
 }
@@ -1832,7 +1835,7 @@ struct CallRecordRow: View {
         }
         .contentShape(.rect)
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.tactile)
       .accessibilityValue(recap == nil ? "" : open ? "expanded" : "collapsed")
       if open, let recap {
         Text(recap)
@@ -1905,7 +1908,7 @@ struct RoutinesLine: View {
         Text("\(verb) \(routines.count == 1 ? "routine" : "routines")")
         ForEach(Array(routines.enumerated()), id: \.offset) { index, routine in
           if index > 0 { Text("and") }
-          Button { openRoutine(routine.id) } label: { chip(Text(routine.name), trailing: false) }.buttonStyle(.plain)
+          Button { openRoutine(routine.id) } label: { chip(Text(routine.name), trailing: false) }.buttonStyle(.tactile)
         }
       }
     }
@@ -2041,7 +2044,7 @@ struct PurchaseCardView: View {
         Button(action: review) {
           Label(PurchaseCard.reviewOrder, systemImage: "arrow.up.left.and.arrow.down.right").font(.system(size: 13, weight: .medium)).labelStyle(TrailingIconLabel())
         }
-        .buttonStyle(GreyButtonStyle(height: 28, capsule: true))
+        .buttonStyle(Tactile(look: GreyButtonStyle(height: 28, capsule: true)))
       }
     }
   }
@@ -2063,7 +2066,7 @@ struct PurchaseCardView: View {
     }
     if shown.canChooseCard {
       Button { Haptics.tap(); choosing = true } label: { row.contentShape(Rectangle()) }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
         .accessibilityLabel(shown.cardLine.map { "Pays with \($0). Choose another card" } ?? PurchaseCard.chooseCard)
     } else {
       row.accessibilityElement(children: .combine)
@@ -2087,7 +2090,7 @@ struct PurchaseCardView: View {
             Haptics.tap()
             Task { await store.answerPurchase(entryId, allow: false, in: agentId) }
           }
-          .buttonStyle(PillButtonStyle(primary: false))
+          .buttonStyle(Tactile(look: PillButtonStyle(primary: false)))
           Button(PurchaseCard.allow) {
             Haptics.press()
             // Face ID first (14 October 2026): this Allow is the approval Link is handed, as Muse's is; cancelled, nothing is allowed.
@@ -2097,7 +2100,7 @@ struct PurchaseCardView: View {
               await store.answerPurchase(entryId, allow: true, confirmed: confirmed, in: agentId)
             }
           }
-          .buttonStyle(PillButtonStyle(primary: true))
+          .buttonStyle(Tactile(look: PillButtonStyle(primary: true)))
           .disabled(shown.needsCard)
           .opacity(shown.needsCard ? 0.45 : 1)
         }
@@ -2120,15 +2123,15 @@ struct PurchaseCardView: View {
         if shown.state == .approving {
           HStack(spacing: 8) {
             if let app = shown.walletApp {
-              Button(app.label) { openURL(app.url) }.buttonStyle(PillButtonStyle(primary: shown.actionURL == nil))
+              Button(app.label) { openURL(app.url) }.buttonStyle(Tactile(look: PillButtonStyle(primary: shown.actionURL == nil)))
             }
             if let url = shown.actionURL {
-              Button(shown.openWalletLabel) { openURL(url) }.buttonStyle(PillButtonStyle(primary: true))
+              Button(shown.openWalletLabel) { openURL(url) }.buttonStyle(Tactile(look: PillButtonStyle(primary: true)))
             }
           }
         }
         if shown.waitsOnBank, let openComputer {
-          Button(PurchaseCard.openComputer) { openComputer() }.buttonStyle(PillButtonStyle(primary: true))
+          Button(PurchaseCard.openComputer) { openComputer() }.buttonStyle(Tactile(look: PillButtonStyle(primary: true)))
         }
       }
     }
@@ -2234,7 +2237,7 @@ struct CheckoutPicture: View {
           .padding(.leading, 5).padding(.trailing, 12).frame(height: 34)
           .contentShape(Capsule())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
         .glassEffect(.regular, in: .capsule)
         .padding(10)
         .accessibilityLabel("Review order on the computer")
@@ -2329,7 +2332,7 @@ struct CardChooserSheet: View {
               .padding(.vertical, 4)
               .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.tactile)
             .accessibilityAddTraits(card.id == selected ? .isSelected : [])
           }
         } footer: {
@@ -2368,7 +2371,7 @@ struct ProductsCardView: View {
         Button { Haptics.tap(); open = product } label: {
           ProductRow(product: product, agentId: agentId, buying: shown.buying == product.index)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
         if product.index != shown.products.last?.index {
           Rectangle().fill(Ink.hairline).frame(height: 1).padding(.leading, 14)
         }
@@ -2487,13 +2490,13 @@ private struct ProductSheet: View {
             .background(Ink.bubbleMine.opacity(buying ? 0.5 : 1), in: Capsule())
             .contentShape(Capsule())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
         .disabled(buying)
         Button { openURL(product.url) } label: {
           Text(ProductsCard.viewWebsite).font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.primary)
             .frame(maxWidth: .infinity).frame(height: 48).contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
       }
       .padding(.horizontal, 20).padding(.bottom, 12).padding(.top, 8)
     }
@@ -2503,7 +2506,7 @@ private struct ProductSheet: View {
         Image(systemName: "xmark").font(.system(size: 15, weight: .semibold)).foregroundStyle(Ink.primary)
           .frame(width: 36, height: 36).contentShape(Circle())
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.tactile)
       .glassEffect(.regular, in: .circle)
       .padding(14)
       .accessibilityLabel("Close")

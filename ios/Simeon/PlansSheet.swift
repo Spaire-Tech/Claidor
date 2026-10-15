@@ -221,7 +221,7 @@ private struct PlanRow: View {
       .padding(.vertical, 14)
       .contentShape(.rect)
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.tactile)
     .accessibilityAddTraits(selected ? .isSelected : [])
   }
 }

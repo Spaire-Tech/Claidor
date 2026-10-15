@@ -44,11 +44,11 @@ struct RosterCard: View {
           .frame(height: 36)
         } else {
           Button("Retry") { Task { await store.retryRoster() } }
-            .buttonStyle(GreyButtonStyle(height: 36, capsule: true))
+            .buttonStyle(Tactile(look: GreyButtonStyle(height: 36, capsule: true)))
         }
         if canRecover, let recover {
           Button(recovering ? "Recovering\u{2026}" : "Recover computer") { recover() }
-            .buttonStyle(GreyButtonStyle(height: 36, capsule: true))
+            .buttonStyle(Tactile(look: GreyButtonStyle(height: 36, capsule: true)))
             .disabled(recovering)
         }
       }

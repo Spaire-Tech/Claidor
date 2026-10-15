@@ -125,26 +125,18 @@ extension AppStore {
     _ = try? await backend?.command("handBackForeverBox", ["id": .string(agentId), "trigger": .string(skip ? "dismissed" : "button")])
   }
 
-  // MARK: The agent's tab on the phone (15 October 2026)
+  // MARK: The whole computer on the phone (15 October 2026)
 
-  /** The agent's Chrome tab, streamed while the view shows it (`host/box/tab-view.ts`). */
-  public func tabView(_ agentId: String, width: Int, height: Int, control: Bool) -> AsyncStream<TabViewEvent> {
-    guard let backend else {
-      return AsyncStream { continuation in
-        continuation.yield(.closed(reason: "unavailable"))
-        continuation.finish()
-      }
-    }
-    return backend.tabView(agentId, width: width, height: height, control: control)
-  }
-
-  /** The person's taps and keys on the agent's tab, in order (`tabViewInput`). */
-  public func tabInputs(_ agentId: String) -> TabInputQueue {
-    let backend = self.backend
-    return TabInputQueue { input in
-      guard let backend else { throw GatewayError(message: "tabViewInput: no computer", refused: true) }
-      return try await backend.command("tabViewInput", ["id": .string(agentId), "input": input])
-    }
+  /**
+   * What the person's tap on the computer focused (`typingFocus`,
+   * host/box/typing-focus.ts): the field's kind, for the phone's keyboard,
+   * or `.none` for nothing to type into. Nil when the computer did not say
+   * (an engine without the question, no answer): the keyboard is then left
+   * as it is.
+   */
+  public func typingFocus(_ agentId: String) async -> TypingField? {
+    guard let backend, let answer = try? await backend.command("typingFocus", ["id": .string(agentId)]), let focus = answer["focus"]?.string else { return nil }
+    return TypingField(rawValue: focus) ?? .text
   }
 
   /**
@@ -242,4 +234,18 @@ extension AppStore {
       break
     }
   }
+}
+
+/**
+ * The field a tap on the computer focused, as the computer's Chrome names
+ * it (`host/box/typing-focus.ts`): an input's type, `text` for a text area
+ * or an editable block, `none` for nothing to type into. A kind the phone
+ * does not know is typed into as text.
+ */
+public enum TypingField: String, Sendable, Equatable {
+  case none = ""
+  case text, email, password, search, tel, url, number
+
+  /** The phone's keyboard comes up for it. */
+  public var takesTyping: Bool { self != .none }
 }

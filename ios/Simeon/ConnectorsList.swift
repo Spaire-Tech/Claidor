@@ -82,7 +82,7 @@ struct ConnectorsSearchPill: View {
         Button { text = "" } label: {
           Image(systemName: "xmark.circle.fill").font(.system(size: 17)).foregroundStyle(Ink.tertiary)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
         .accessibilityLabel("Clear search")
       }
     }

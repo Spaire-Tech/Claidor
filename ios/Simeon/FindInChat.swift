@@ -53,7 +53,7 @@ struct ChatFindBar: View {
       .accessibilityLabel("Next match")
       Button("Done", action: close).font(.system(size: 17, weight: .semibold))
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.tactile)
     .foregroundStyle(Ink.primary)
     .padding(.horizontal, 16)
     .padding(.vertical, 6)

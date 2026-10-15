@@ -91,7 +91,7 @@ struct ChatView: View {
               .frame(width: 180, height: 44)
               .contentShape(.rect)
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.tactile)
           .accessibilityHidden(true)
         }
         .sharedBackgroundVisibility(.hidden)
@@ -806,7 +806,7 @@ struct ChatComposer: View {
             Image(systemName: "xmark").font(.system(size: 11, weight: .bold)).foregroundStyle(Ink.secondary)
               .frame(width: 32, height: 32).contentShape(.circle)
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.tactile)
           .accessibilityLabel("Cancel reply")
         }
         .padding(.leading, 14).padding(.trailing, 4)
@@ -821,7 +821,7 @@ struct ChatComposer: View {
           Image(systemName: "plus").font(.system(size: 19, weight: .regular)).foregroundStyle(Ink.primary)
             .frame(width: 40, height: 40)
         }
-        .buttonStyle(GlassDisc())
+        .buttonStyle(Tactile(look: GlassDisc()))
         .accessibilityLabel("Attach")
         HStack(alignment: .bottom, spacing: 4) {
           TextField(placeholder, text: $draft, axis: .vertical)
@@ -868,7 +868,7 @@ struct ChatComposer: View {
               .transition(.scale(scale: 0.6).combined(with: .opacity))
             }
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.tactile)
           .frame(width: 36, height: 36)
           .padding(.trailing, 2).padding(.bottom, 2)
           .animation(.easeOut(duration: 0.2), value: mode)
@@ -1256,7 +1256,7 @@ struct BubbleView: View {
             .padding(.horizontal, 8).padding(.top, 4)
             .tapRoom(EdgeInsets(top: 10, leading: 0, bottom: 0, trailing: 0))
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.tactile)
           .frame(maxWidth: ChatMetrics.bubbleMax(width), alignment: bubble.fromPerson ? .trailing : .leading)
           .accessibilityLabel(threadOfTarget == nil ? "Jump to replied message" : "Open reply thread")
         }
@@ -1396,7 +1396,7 @@ struct BubbleView: View {
       .padding(.vertical, 4)
       .contentShape(.rect)
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.tactile)
   }
 
   @ViewBuilder
@@ -1914,13 +1914,13 @@ struct NewMessagesPill: View {
         .frame(height: 34)
         .contentShape(.rect)
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.tactile)
       Button(action: dismiss) {
         Image(systemName: "xmark").font(.system(size: 10, weight: .semibold)).foregroundStyle(Ink.secondary)
           .frame(width: 30, height: 34)
           .contentShape(.rect)
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.tactile)
       .accessibilityLabel("Dismiss new messages")
     }
     .padding(.trailing, 4)
@@ -1942,7 +1942,7 @@ struct FailedSendRow: View {
       Button { Task { await store.resend(nonce, in: agentId) } } label: { action("Resend") }
       Button { store.discardFailed(nonce, in: agentId) } label: { action("Delete") }
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.tactile)
     .font(.system(size: 12, weight: .medium))
     .accessibilityElement(children: .contain)
     .accessibilityLabel("Failed message actions")
@@ -2054,7 +2054,7 @@ struct MessageActionsSheet: View {
                 .background(Ink.pill, in: Circle())
                 .contentShape(.circle)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.tactile)
           }
           Button { choosingEmoji = true } label: {
             Image(systemName: "face.smiling").font(.system(size: 22)).foregroundStyle(Ink.secondary)
@@ -2065,7 +2065,7 @@ struct MessageActionsSheet: View {
               .background(Ink.pill, in: Circle())
               .contentShape(.circle)
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.tactile)
           .accessibilityLabel("Another reaction")
         }
         // Inside a thread every message answers it: no Reply, no new thread.
@@ -2107,7 +2107,7 @@ struct MessageActionsSheet: View {
           .frame(height: 54)
           .contentShape(.rect)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
       }
     }
     .background(Ink.pill, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
@@ -2312,7 +2312,7 @@ struct AccessNotice: View {
             .frame(width: 44, height: 44)
             .contentShape(.rect)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
         .padding(.vertical, -12).padding(.trailing, -10)
         .accessibilityLabel("Close")
       }

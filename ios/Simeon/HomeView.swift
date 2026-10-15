@@ -440,7 +440,7 @@ private struct AgentList<Actions: View>: View {
           Text(searching ? "No results" : filter == .unread ? "No unread chats" : "No saved agents yet.").font(.system(size: 15.6)).foregroundStyle(Ink.secondary)
           if !searching && rows.hiddenCount > 0 {
             Button("Show Hidden Agents") { showsHidden = true }
-              .buttonStyle(GreyButtonStyle())
+              .buttonStyle(Tactile(look: GreyButtonStyle()))
           }
         }
       }
@@ -601,7 +601,7 @@ struct ListBottomBar: View {
             Image(systemName: "xmark.circle.fill").font(.system(size: 17)).foregroundStyle(Ink.tertiary)
               .frame(width: 30, height: 30).tapRoom(7)
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.tactile)
           .accessibilityLabel("Clear search")
         } else {
           Button { dictation.isListening ? dictation.stop() : dictation.start { text in query = text } } label: {
@@ -609,7 +609,7 @@ struct ListBottomBar: View {
               .foregroundStyle(dictation.isListening ? Ink.danger : Ink.secondary)
               .frame(width: 30, height: 30).tapRoom(7)
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.tactile)
           .accessibilityLabel(dictation.isListening ? "Stop dictation" : "Dictate")
         }
       }
@@ -624,7 +624,7 @@ struct ListBottomBar: View {
           Image(systemName: "xmark").font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.primary)
             .frame(width: 48, height: 48)
         }
-        .buttonStyle(GlassDisc())
+        .buttonStyle(Tactile(look: GlassDisc()))
         .accessibilityLabel("Close search")
       } else {
         Menu {
@@ -687,7 +687,7 @@ struct PinGrid<Actions: View>: View {
     Button { open(agent.id) } label: {
       PinTile(agent: agent, members: members[agent.id] ?? []).equatable()
     }
-    .buttonStyle(PinPress())
+    .buttonStyle(Tactile(look: PinPress()))
     .contextMenu { menu(agent) } preview: { ChatPeek(agentId: agent.id).environment(store) }
     .draggable(agent.id) {
       AgentAvatar(agent: agent, members: members[agent.id] ?? []).frame(width: 72, height: 72)
@@ -1108,7 +1108,7 @@ struct SearchResults: View {
                 .background(tab == item ? AnyShapeStyle(Ink.primary) : AnyShapeStyle(Color(.tertiarySystemFill)), in: Capsule())
                 .contentShape(Capsule())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.tactile)
             .accessibilityAddTraits(tab == item ? .isSelected : [])
           }
         }
@@ -1392,7 +1392,7 @@ struct SearchRow<Leading: View>: View {
       .padding(.vertical, 4)
       .contentShape(.rect)
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.tactile)
   }
 }
 

@@ -113,7 +113,7 @@ struct SectionHeaderRow: View {
       .frame(minHeight: 30)
       .contentShape(.rect)
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.tactile)
     .accessibilityLabel(section.name)
     .accessibilityValue(section.isCollapsed ? "Folded, \(section.agents.count) agents" : "Open")
     .accessibilityHint(section.isCollapsed ? "Opens the section" : "Folds the section")
@@ -244,7 +244,7 @@ struct SelectionBar: View {
           .contentShape(.circle)
           .glassEffect(.regular, in: .circle)
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.tactile)
       .disabled(ids.isEmpty)
       .accessibilityLabel(AgentDeletion.menuLabel(count: ids.count))
     }
