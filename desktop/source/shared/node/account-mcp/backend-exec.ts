@@ -19,6 +19,7 @@
 import { Struct } from "@bufbuild/protobuf";
 import { McpResult, McpSuccess } from "../../../packages/proto/generated/agent/v1/mcp_exec_pb.js";
 import { contentItem, errorResult } from "../vendor-mcp/backend-exec.js";
+import { PENDING_SIGN_IN_LOST_MESSAGE, savePendingSignIn, takeSavedPendingSignIn } from "../mcp/pending-sign-ins-file.js";
 import { VendorMcpAuthRequiredError, forgetVendorMcpSession, vendorMcpCallTool, vendorMcpListTools } from "../vendor-mcp/http-mcp-client.js";
 import {
   exchangeVendorMcpCode,
@@ -100,11 +101,13 @@ const pendingAccountMcpAuths = new Map<string, { readonly pending: VendorMcpOAut
 export function rememberAccountMcpPendingAuth(pending: VendorMcpOAuthPending, now = Date.now()): void {
   for (const [state, entry] of pendingAccountMcpAuths) if (now - entry.startedAtMs > VENDOR_MCP_PENDING_AUTH_TTL_MS) pendingAccountMcpAuths.delete(state);
   pendingAccountMcpAuths.set(pending.state, { pending, startedAtMs: now });
+  savePendingSignIn("account", pending, now, VENDOR_MCP_PENDING_AUTH_TTL_MS);
 }
 
 export function takeAccountMcpPendingAuth(state: string, now = Date.now()): VendorMcpOAuthPending | undefined {
+  const saved = takeSavedPendingSignIn("account", state, now, VENDOR_MCP_PENDING_AUTH_TTL_MS);
   const entry = pendingAccountMcpAuths.get(state);
-  if (entry == null) return undefined;
+  if (entry == null) return saved;
   pendingAccountMcpAuths.delete(state);
   return now - entry.startedAtMs > VENDOR_MCP_PENDING_AUTH_TTL_MS ? undefined : entry.pending;
 }
@@ -289,8 +292,13 @@ export function createAccountMcpBackendExec(options: AccountMcpBackendExecOption
     async completeOAuth(args: { stateId: string; code: string }): Promise<void> {
       const pending = takeAccountMcpPendingAuth(args.stateId, now());
       if (pending == null) {
-        if (fallback.completeOAuth == null) throw new Error("No pending sign-in matches this callback.");
-        return fallback.completeOAuth(args);
+        // The last stop is the server's own sign-ins (`CompleteMcpOAuth`),
+        // which Simeon Labs' server does not hold: its refusal ("is not
+        // served…", or "Waiting for a model credential" while the box
+        // starts) meant nothing to the person (15 October 2026).
+        if (fallback.completeOAuth == null) throw new Error(PENDING_SIGN_IN_LOST_MESSAGE);
+        try { return await fallback.completeOAuth(args); }
+        catch { throw new Error(PENDING_SIGN_IN_LOST_MESSAGE); }
       }
       const serverId = pending.pluginId.replace(/^account-/, "");
       const grant = await exchangeVendorMcpCode({ pending, code: args.code, fetch: fetchImpl, now: now() });

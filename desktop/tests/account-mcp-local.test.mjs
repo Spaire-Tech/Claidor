@@ -298,7 +298,7 @@ test("a 401 from a custom server yields requiresAuth with an auth URL on the Mac
     assert.equal(macStore.credentials[String(serverId)].accessToken, "bearer-1");
     assert.equal(macStore.credentials[String(serverId)].refreshToken, "refresh-1");
     assert.equal(readStore(boxRoot).credentials[String(serverId)], undefined);
-    await assert.rejects(() => mac.completeOAuth({ stateId: state, code: "code-ok" }), /No pending sign-in/, "a state is single use");
+    await assert.rejects(() => mac.completeOAuth({ stateId: state, code: "code-ok" }), /connect the app again/, "a state is single use");
 
     // Now the Mac lists and calls with the bearer, the auth watch sees a valid token, and the row carries a slot.
     const after = await mac.checkAuthStatus({ serverId, accountKey: "default", oauthRedirectUri: "http://localhost:8787/callback" });

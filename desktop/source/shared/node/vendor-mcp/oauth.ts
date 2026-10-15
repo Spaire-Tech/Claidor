@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 
 import { MCP_OAUTH_LOOPBACK_CALLBACK_URL } from "../mcp/mcp-oauth-loopback.js";
+import { savePendingSignIn, takeSavedPendingSignIn } from "../mcp/pending-sign-ins-file.js";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value != null && !Array.isArray(value);
@@ -30,11 +31,14 @@ const pendingVendorMcpAuths = new Map<string, { readonly pending: VendorMcpOAuth
 export function rememberVendorMcpPendingAuth(pending: VendorMcpOAuthPending, now = Date.now()): void {
   for (const [state, entry] of pendingVendorMcpAuths) if (now - entry.startedAtMs > VENDOR_MCP_PENDING_AUTH_TTL_MS) pendingVendorMcpAuths.delete(state);
   pendingVendorMcpAuths.set(pending.state, { pending, startedAtMs: now });
+  savePendingSignIn("vendor", pending, now, VENDOR_MCP_PENDING_AUTH_TTL_MS);
 }
 
 export function takeVendorMcpPendingAuth(state: string, now = Date.now()): VendorMcpOAuthPending | undefined {
+  // The disk copy goes either way; it answers alone after a host restart.
+  const saved = takeSavedPendingSignIn("vendor", state, now, VENDOR_MCP_PENDING_AUTH_TTL_MS);
   const entry = pendingVendorMcpAuths.get(state);
-  if (entry == null) return undefined;
+  if (entry == null) return saved;
   pendingVendorMcpAuths.delete(state);
   return now - entry.startedAtMs > VENDOR_MCP_PENDING_AUTH_TTL_MS ? undefined : entry.pending;
 }
