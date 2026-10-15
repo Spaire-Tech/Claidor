@@ -1761,3 +1761,77 @@ tests (`desktop/tests/tab-view.test.mjs`, `desktop/tests/phone-take-control.test
 viewer against a fake Chrome and the commands against fakes of the session; SimeonCore's tests
 (`TabViewTests.swift`) run the stream's parsing, the touch mapping and the input order on
 Linux. The iPhone's view (`BrowserPane.swift`) has not been compiled here (no Xcode).
+
+## 15. The whole computer on the phone: zoom, the mouse, and the lag
+
+**For the person (15 October 2026).** The whole computer (what the phone shows when there is
+no browser tab, or after the screen button in the browser view) is now laid out like the
+browser view, and is usable with fingers:
+
+- **The screen fills the space** between the top and the buttons, fitted to the phone, and
+  **pinches up to four times larger**. Watching, one finger moves the zoomed picture and a
+  double tap zooms in on a spot (and back out).
+- **Take control is the big blue button**, with **Stop task** beside it while the agent works;
+  both do what they do under the browser view (§14). The hand among three icons is gone. The
+  view opens in control when the agent asks for the person, and switches to control if it asks
+  while the person watches.
+- **In control:** a tap is a click where the finger was; a drag scrolls the page under it; a
+  press held for a moment (the phone taps back) then dragged holds the mouse button down, for
+  selecting text or a slider; two fingers zoom and move the picture. The keyboard and the
+  clipboard are at the foot; when the keyboard is up the picture can be moved above it. The
+  sheet cannot be swiped away while in control: the ✓ hands the computer back.
+- The browser button at the top left goes back to the browser view.
+
+**The lag, measured.** On the same software the cloud computer runs (Xvfb at 1280 by 800,
+picom, x11vnc 0.9.16, websockify; `box/test/screen-latency.py`), the time from a change on the
+screen to the VNC viewer's update:
+
+| | a letter appears | after 3 s idle | a 2-pixel caret | worst |
+|---|---|---|---|---|
+| as the image was (`x11vnc -noxdamage`, `picom --no-use-damage`) | 156 ms | 134 ms | 574 ms | 1.75 s |
+| as `box/` is now (both use X DAMAGE) | 28 ms | 37 ms | 40 ms | 45 ms |
+
+The slow case is watching the agent work: small changes (a caret, a tick, a focus ring) took
+up to 1.75 s to show. While the person types through the viewer, x11vnc already looks at once
+(60 to 90 ms on the old flags). picom repainting only what changed also used a tenth of the
+CPU (0.07 s against 0.76 s for 200 changes), and every rectangle drawn read back right on the
+root window, which the agent's screenshots read. Tuning the running x11vnc from the engine
+instead (`x11vnc -R nonap`, `wait:5`, `defer:5`) helped only halfway (a letter 81 ms, a caret
+330 ms) and tripled its CPU while watched (1.5% to 5% of a core), so it was not done.
+
+Two more causes, fixed:
+
+- **The server compressed every screen update again.** uvicorn's per-message deflate, on by
+  default, deflated pictures that are already JPEG or zlib: 10.6 ms of CPU for a 150 KB update,
+  0% saved. The API now runs with `--ws-per-message-deflate false` (`server/Dockerfile`; the
+  box proxy is the only WebSocket the API serves), and the proxy asks the box for none either
+  (`compression=None`, `server/simeon/sand/box_proxy.py`).
+- **noVNC guessed what a touch meant** (a drag moved the mouse with its button held). The
+  phone's own gestures now decide, and reach noVNC as the mouse events a desktop browser sends
+  (`simeonClick`, `simeonWheel`, `simeonPointer` in the page; `ZoomScreen`,
+  `ios/Simeon/ComputerZoom.swift`). One wheel event per 50 pixels: noVNC turns the wheel at most
+  once per event.
+
+**What reaches people when.**
+
+- The iPhone view: with the next iPhone build.
+- The server change: with the next deploy of the API (automatic from main).
+- The screen server change: only on Simeon's own image (`box/`), once it is published and
+  pinned (`SIMEON_BOX_IMAGE`, `SIMEON_BOX_IMAGE_DIGEST`, `box/README.md`). The cloud computers in
+  service run the image the server pins by default, the earlier maker's build; which flags its
+  x11vnc and picom run with is not known from here. To see, on a running box:
+  `ps -eo args | grep -E "[x]11vnc|[p]icom"`. If they show `-noxdamage` and
+  `--no-use-damage`, the table above is the lag people get until the image is switched.
+
+**Known limits.** Sideways scrolling does not reach the computer (x11vnc 0.9.16 does not pass
+the wheel's buttons 6 and 7 on, measured), so a drag scrolls up and down only. There is no
+right click. The network path phone, Render, box was not measured.
+
+**Not yet verified.** Nothing here has run on an iPhone or in a cloud computer, and the iPhone
+code has not been compiled (no Xcode here). The page's mouse functions ran for real: the app's
+own page with the bundled noVNC, in Chromium at a phone's size, against a VNC server
+(`desktop/tests/phone-computer-mouse.test.mjs`: a tap in the middle of the picture clicks
+(640, 400), 100 pixels of drag are two wheel turns, a held drag holds the button), and by hand
+against x11vnc on Xvfb, where the same clicks, turns and drag arrived as X button events at the
+same pixels. The screen server's flags were measured as above, not run in a built image (its
+smoke test was not run here).

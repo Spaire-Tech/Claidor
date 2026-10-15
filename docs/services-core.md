@@ -693,7 +693,11 @@ for both HTTP and WebSocket (`server/simeon/sand/box_proxy.py`). The ports are
 passes only with the box's network token, sent as the `network_token` query
 parameter or the `x-anyrun-network-token` header. Inside the box, the host runs
 the same token check in front of the screen stream
-(`desktop/source/host/box-stream-guard.ts`).
+(`desktop/source/host/box-stream-guard.ts`). WebSockets are passed on without
+per-message deflate on either side (`--ws-per-message-deflate false` in
+`server/Dockerfile`, `compression=None` towards the box): the screen's pictures
+are already compressed, and deflating them cost about 10 ms per update for
+nothing (`docs/services-agents.md` §15).
 
 **Placement across several servers.** `SIMEON_BOX_HOSTS` lists the box servers
 as JSON:

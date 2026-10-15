@@ -388,6 +388,8 @@ async def _proxy_ws(
             additional_headers=headers,
             max_size=None,
             open_timeout=15,
+            # The screen's pictures are already compressed; deflate costs time and saves nothing.
+            compression=None,
         )
     except Exception as error:
         log.warning(

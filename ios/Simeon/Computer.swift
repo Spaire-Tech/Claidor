@@ -7,23 +7,28 @@ import SimeonCore
 
 #if os(iOS)
 /**
- * An agent's own screen on the cloud computer (the Mac's Computer panel):
- * `ensureForeverBox` for the agent, then its stream through Simeon Labs'
- * proxy, drawn by noVNC (bundled, MPL 2.0, `Computer/NOVNC-LICENSE.txt`)
- * scaled to fit. Laid out as the founder's reference lays out its own (the
- * screenshot, 9 October 2026): what is happening at the top ("You're in
- * control") with Done at its right, the screen across the phone's whole
- * width, and at the foot Skip step (while the agent waits on the person)
- * beside one capsule of the clipboard, the keyboard and the hand. The hand
- * takes over and gives back: taken over, a tap is a click and a drag moves
- * the mouse. The keyboard types into the computer and the clipboard pastes
- * from the phone or copies to it; either takes over. The sheet is always
- * dark, as a screen's surround is. The computer's own screen stays 1280 by
- * 800: the agents click by that size (`host/box/box-monitor-layout.ts`).
- * Closing it closes the stream. While helpers work on the computer, the one
- * shown is named under the screen and the others are listed under it
- * (`HelperStrip`, ComputerPreview.swift); a helper's screen is a new
- * connection, as on the Mac.
+ * An agent's own computer on the phone (the Mac's Computer panel). Since 15
+ * October 2026 it opens on the agent's browser tab alone, at the phone's
+ * size (`BrowserPane`), and shows the whole computer when there is no tab
+ * or the person asks for it: `ensureForeverBox` for the agent, then its
+ * stream through Simeon Labs' proxy, drawn by noVNC (bundled, MPL 2.0,
+ * `Computer/NOVNC-LICENSE.txt`), fitted to the phone and pinched up to four
+ * times larger (`ZoomScreen`, ComputerZoom.swift). Both are laid out alike:
+ * what is happening at the top with the way out at its right (the
+ * checkmark hands the computer back while the person is in control), and
+ * at the foot one big blue Take control, with Stop task while the agent
+ * works. The founder, after an Apple sign-in on the earlier layout, with the
+ * hand among three icons: "that hand icon should be the main thing, not an
+ * option." Taking control while the agent works stops it; handing back
+ * resumes it. Either opens in control while the agent waits on the person.
+ * The keyboard types into the computer and the clipboard pastes from the
+ * phone or copies to it. The sheet is always dark, as a screen's surround
+ * is. The computer's own screen stays 1280 by 800: the agents click by that
+ * size (`host/box/box-monitor-layout.ts`). Closing it closes the stream.
+ * While helpers work on the computer, the one shown is named under the
+ * screen and the others are listed under it (`HelperStrip`,
+ * ComputerPreview.swift); a helper's screen is a new connection, as on the
+ * Mac.
  */
 struct ComputerSheet: View {
   let agentId: String
@@ -43,6 +48,7 @@ struct ComputerSheet: View {
   @State private var watching = false
   /** The whole computer instead of the agent's browser tab (15 October 2026): no tab to show, or the person asked for it. */
   @State private var showsWholeComputer = false
+  @State private var stopping = false
 
   /**
    * The agent's browser tab first, alone and at the phone's size
@@ -76,7 +82,14 @@ struct ComputerSheet: View {
     }
   }
 
-  /** The whole computer, drawn by noVNC; its connection opens only while it shows. */
+  /**
+   * The whole computer, drawn by noVNC and zoomable (`ZoomScreen`); its
+   * connection opens only while it shows. Laid out as the browser view: what
+   * is happening at the top with the way out at its right, the screen
+   * across the space between, and at the foot one big blue Take control
+   * (with Stop task while the agent works), or, in control, Skip step
+   * (while the agent waits on the person) and the clipboard and keyboard.
+   */
   @ViewBuilder
   private var computer: some View {
     let name = store.agent(agentId)?.name ?? "The agent"
@@ -85,35 +98,48 @@ struct ComputerSheet: View {
     let focused = ComputerHelper.focused(helpers, asked: helper)
     let shownHelper = helpers.first { $0.subagentId == focused }
     VStack(spacing: 0) {
-      // The top: what is happening, and Done (the hand back, as "I'm done" was).
       ZStack {
         VStack(spacing: 2) {
           Text(control ? "You're in control" : "\(name)'s computer")
             .font(.system(size: 17, weight: .semibold)).foregroundStyle(.white)
-          Text(note ?? (control ? "Tap to click, drag to move" : live ? "Tap the hand to take over" : "Watching"))
+          Text(note ?? (control ? "Tap to click · pinch to zoom" : live ? "Pinch to zoom" : "Watching"))
             .font(.system(size: 15)).foregroundStyle(.white.opacity(0.55))
             .contentTransition(.opacity)
         }
         .lineLimit(1)
-        .padding(.horizontal, 60)
+        .padding(.horizontal, 64)
         .animation(.easeOut(duration: 0.2), value: note)
         HStack {
-          Spacer(minLength: 0)
-          Button { Task { await store.handBackComputer(agentId); dismiss() } } label: {
-            Image(systemName: "checkmark").font(.system(size: 19, weight: .semibold)).foregroundStyle(.white)
+          Button { showsWholeComputer = false } label: {
+            Image(systemName: "safari").font(.system(size: 18, weight: .medium)).foregroundStyle(.white)
               .frame(width: 48, height: 48)
           }
           .buttonStyle(GlassDisc())
-          .accessibilityLabel("I'm done with the computer")
+          .accessibilityLabel("Show the browser")
+          Spacer(minLength: 0)
+          if control {
+            Button { typing = false; Task { await store.handBackComputer(agentId); dismiss() } } label: {
+              Image(systemName: "checkmark").font(.system(size: 19, weight: .semibold)).foregroundStyle(.white)
+                .frame(width: 48, height: 48)
+            }
+            .buttonStyle(GlassDisc())
+            .accessibilityLabel("I'm done, hand it back")
+          } else {
+            Button { dismiss() } label: {
+              Image(systemName: "xmark").font(.system(size: 17, weight: .semibold)).foregroundStyle(.white)
+                .frame(width: 48, height: 48)
+            }
+            .buttonStyle(GlassDisc())
+            .accessibilityLabel("Close")
+          }
         }
       }
-      .padding(.horizontal, 16).padding(.top, 22).padding(.bottom, 16)
+      .padding(.horizontal, 16).padding(.top, 22).padding(.bottom, 12)
       .background(Color(white: 0.11))
-      Spacer(minLength: 12)
       ZStack {
         Color.black
         if let socket = screen?.socket {
-          LiveScreen(socket: socket, viewOnly: !control, phase: $phase, link: link)
+          ZoomScreen(socket: socket, control: control, phase: $phase, link: link)
             // A helper's screen is a new connection (`{stageKey}:{url}`).
             .id("\(focused ?? "setup"):\(socket.absoluteString)")
         }
@@ -128,11 +154,12 @@ struct ComputerSheet: View {
             ProgressView().tint(.white)
             Text(status).font(.system(size: 14)).foregroundStyle(.white.opacity(0.75))
           }
+          .allowsHitTesting(false)
         }
       }
-      .aspectRatio(1280.0 / 800.0, contentMode: .fit)
-      .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-      .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(.white.opacity(0.08), lineWidth: 0.5))
+      .frame(maxWidth: .infinity, maxHeight: .infinity)
+      .clipped()
+      .padding(.top, 8)
       if let shownHelper {
         Text(shownHelper.title)
           .font(.system(size: 13)).foregroundStyle(.white.opacity(0.6))
@@ -145,65 +172,87 @@ struct ComputerSheet: View {
           .padding(.horizontal, 16)
           .padding(.top, 12)
       }
-      Spacer(minLength: 12)
       controls(live: live)
+        .padding(.top, 12)
         .padding(.bottom, 10)
     }
+    // The screen keeps its size when the keyboard comes up (a new size would undo the zoom); the picture moves above it instead.
+    .ignoresSafeArea(.keyboard)
+    // The keyboard itself: what is typed goes to the computer, key by key.
+    .background { KeyCatcher(isActive: $typing, type: { link.type($0) }, delete: { link.key(0xff08) }).frame(width: 0, height: 0) }
+    // In control the sheet stays until the checkmark hands the computer back.
+    .interactiveDismissDisabled(control)
     .task(id: attempt) { await load() }
     // The agent waits on the person: the computer opens theirs to use.
     .onAppear { if waitingOnPerson { control = true } }
+    .onChange(of: waitingOnPerson) { _, waiting in if waiting { control = true } }
     // Another helper's screen: its picture is on its way again.
     .onChange(of: focused) { _, _ in phase = "starting" }
   }
 
-  /** Skip step while the agent waits on the person; the clipboard, the keyboard and the hand. */
+  /** Watching: Stop task (while the agent works) and Take control. In control: Skip step (while the agent waits on the person), the clipboard and the keyboard. */
+  @ViewBuilder
   private func controls(live: Bool) -> some View {
-    HStack(spacing: 12) {
-      if waitingOnPerson {
-        Button { Task { await store.handBackComputer(agentId, skip: true); dismiss() } } label: {
-          Text("Skip step").font(.system(size: 17, weight: .medium)).foregroundStyle(.white)
-            .padding(.horizontal, 26).frame(height: 54)
-            .background(Color(white: 0.17), in: Capsule())
-            .contentShape(Capsule())
+    if control {
+      HStack(spacing: 12) {
+        if waitingOnPerson {
+          Button { typing = false; Task { await store.handBackComputer(agentId, skip: true); dismiss() } } label: {
+            Text("Skip step").font(.system(size: 17, weight: .medium)).foregroundStyle(.white)
+              .padding(.horizontal, 26).frame(height: 54)
+              .background(Color(white: 0.17), in: Capsule())
+              .contentShape(Capsule())
+          }
+          .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
+        Spacer(minLength: 0)
+        HStack(spacing: 0) {
+          Menu {
+            Button { pasteFromPhone() } label: { Label("Paste from Phone", systemImage: "doc.on.clipboard") }
+            Button { copyToPhone() } label: { Label("Copy to Phone", systemImage: "doc.on.doc") }
+          } label: {
+            Image(systemName: "doc.on.clipboard").font(.system(size: 19, weight: .medium)).foregroundStyle(.white)
+              .frame(width: 58, height: 54).contentShape(.rect)
+          }
+          .accessibilityLabel("Clipboard")
+          Button { typing.toggle() } label: {
+            Image(systemName: typing ? "keyboard.chevron.compact.down" : "keyboard").font(.system(size: 19, weight: .medium)).foregroundStyle(.white)
+              .frame(width: 58, height: 54).contentShape(.rect)
+          }
+          .buttonStyle(.plain)
+          .accessibilityLabel(typing ? "Hide keyboard" : "Keyboard")
+        }
+        .padding(.horizontal, 6)
+        .background(Color(white: 0.17), in: Capsule())
+        .disabled(!live)
+        .opacity(live ? 1 : 0.45)
       }
-      HStack(spacing: 0) {
-        Menu {
-          Button { pasteFromPhone() } label: { Label("Paste from Phone", systemImage: "doc.on.clipboard") }
-          Button { copyToPhone() } label: { Label("Copy to Phone", systemImage: "doc.on.doc") }
-        } label: {
-          Image(systemName: "doc.on.clipboard").font(.system(size: 19, weight: .medium)).foregroundStyle(.white)
-            .frame(width: 58, height: 54).contentShape(.rect)
+      .padding(.horizontal, 16)
+    } else {
+      HStack(spacing: 12) {
+        if store.agent(agentId)?.isRunning == true {
+          StopTaskButton(busy: stopping) { stopTask() }
         }
-        .accessibilityLabel("Clipboard")
-        Button { control = true; typing.toggle() } label: {
-          Image(systemName: typing ? "keyboard.chevron.compact.down" : "keyboard").font(.system(size: 19, weight: .medium)).foregroundStyle(.white)
-            .frame(width: 58, height: 54).contentShape(.rect)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(typing ? "Hide keyboard" : "Keyboard")
-        Button {
-          control.toggle()
-          if !control { typing = false }
-        } label: {
-          Image(systemName: control ? "hand.point.up.left.fill" : "hand.point.up.left").font(.system(size: 19, weight: .medium))
-            .foregroundStyle(control ? Color.black : Color.white)
-            .frame(width: 44, height: 44)
-            .background(Color.white.opacity(control ? 1 : 0), in: Circle())
-            .frame(width: 58, height: 54).contentShape(.rect)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(control ? "Give control back" : "Take over")
+        TakeControlButton(enabled: live) { takeControl() }
       }
-      .padding(.horizontal, 6)
-      .background(Color(white: 0.17), in: Capsule())
-      .disabled(!live)
-      .opacity(live ? 1 : 0.45)
-      // The keyboard itself: what is typed goes to the computer, key by key.
-      .background { KeyCatcher(isActive: $typing, type: { link.type($0) }, delete: { link.key(0xff08) }).frame(width: 0, height: 0) }
+      .padding(.horizontal, 16)
     }
-    .animation(.easeOut(duration: 0.15), value: control)
+  }
+
+  /** Take control: the computer is the person's at once; a working agent is stopped meanwhile (handing back resumes it). */
+  private func takeControl() {
+    control = true
+    Task {
+      if await store.takeComputerControl(agentId) { show("\(store.agent(agentId)?.name ?? "The agent") is paused while you're in control.") }
+    }
+  }
+
+  private func stopTask() {
+    stopping = true
+    Task {
+      let stopped = await store.stopAgentTask(agentId)
+      stopping = false
+      show(stopped ? "Stopped." : "Nothing was running.")
+    }
   }
 
   /** The agent has handed the computer over and waits ("Your turn on the computer" not yet answered). */
@@ -512,6 +561,14 @@ extension LiveScreen {
       window.simeonKey=function(k){key(k)};
       window.simeonPaste=function(t){if(!rfb)return;rfb.viewOnly=false;rfb.clipboardPasteFrom(t);key(CTRL,"ControlLeft",true);key(0x76,"KeyV");key(CTRL,"ControlLeft",false)};
       window.simeonCopy=function(){key(CTRL,"ControlLeft",true);key(0x63,"KeyC");key(CTRL,"ControlLeft",false)};
+      // The phone's own gestures as the computer's mouse (`ZoomScreen`): the events noVNC reads from a desktop browser, at the page's points.
+      function canvas(){return rfb?document.querySelector("#screen canvas"):null}
+      function mouse(type,x,y,buttons){var c=canvas();if(c)c.dispatchEvent(new MouseEvent(type,{clientX:x,clientY:y,button:0,buttons:buttons,bubbles:true,cancelable:true,view:window}))}
+      window.simeonClick=function(x,y){mouse("mousemove",x,y,0);mouse("mousedown",x,y,1);mouse("mouseup",x,y,0)};
+      window.simeonPointer=function(kind,x,y){mouse(kind==="down"?"mousedown":kind==="up"?"mouseup":"mousemove",x,y,kind==="up"?0:1)};
+      // One wheel event per 50 pixels: noVNC turns the wheel once per event at most (measured against this bundle).
+      window.simeonWheel=function(x,y,dx,dy){var c=canvas();if(!c)return;function turn(ax,ay){c.dispatchEvent(new WheelEvent("wheel",{clientX:x,clientY:y,deltaX:ax,deltaY:ay,deltaMode:0,bubbles:true,cancelable:true,view:window}))}
+        for(var i=Math.round(Math.abs(dy)/50);i>0;i--)turn(0,dy>0?50:-50);for(var j=Math.round(Math.abs(dx)/50);j>0;j--)turn(dx>0?50:-50,0)};
       window.simeonClose=function(){closed=true;if(rfb)rfb.disconnect()};
       open();
     })();
@@ -531,8 +588,18 @@ final class ScreenLink {
   func key(_ keysym: Int) { run("window.simeonKey(\(keysym))") }
   func paste(_ text: String) { run("window.simeonPaste(\(Self.quoted(text)))") }
   func copy() { run("window.simeonCopy()") }
+  /** A click where the person tapped, in the page's points (the phone's whole computer, `ZoomScreen`). */
+  func click(at point: CGPoint) { run("window.simeonClick && window.simeonClick(\(Self.number(point.x)),\(Self.number(point.y)))") }
+  /** The button held ("down"), moved with ("move") and let go ("up"). */
+  func pointer(_ kind: String, at point: CGPoint) { run("window.simeonPointer && window.simeonPointer(\(Self.quoted(kind)),\(Self.number(point.x)),\(Self.number(point.y)))") }
+  /** The mouse wheel at a point, in the computer's pixels: a positive `dy` scrolls the page down. */
+  func wheel(at point: CGPoint, dx: CGFloat, dy: CGFloat) {
+    run("window.simeonWheel && window.simeonWheel(\(Self.number(point.x)),\(Self.number(point.y)),\(Self.number(dx)),\(Self.number(dy)))")
+  }
 
   private func run(_ script: String) { view?.evaluateJavaScript(script) }
+
+  private static func number(_ value: CGFloat) -> String { String(format: "%.1f", Double(value)) }
 
   /** A string as JavaScript reads it. */
   static func quoted(_ text: String) -> String {

@@ -77,6 +77,8 @@ struct BrowserPane: View {
       control = true
       push(.control(true))
     }
+    // In control the sheet stays until the checkmark hands the computer back.
+    .interactiveDismissDisabled(control)
   }
 
   // MARK: The top: what is happening, the page's address, and the way out
@@ -233,32 +235,13 @@ struct BrowserPane: View {
     } else {
       HStack(spacing: 12) {
         if store.agent(agentId)?.isRunning == true {
-          Button { stopTask() } label: {
-            Text("Stop task").font(.system(size: 17, weight: .medium)).foregroundStyle(.white)
-              .padding(.horizontal, 24).frame(height: 56)
-              .background(Color(white: 0.17), in: Capsule())
-              .contentShape(Capsule())
-          }
-          .buttonStyle(.plain)
-          .disabled(working)
+          StopTaskButton(busy: working) { stopTask() }
         }
-        Button { takeControl() } label: {
-          Label("Take control", systemImage: "hand.point.up.left.fill")
-            .font(.system(size: 18, weight: .semibold)).foregroundStyle(.white)
-            .frame(maxWidth: .infinity).frame(height: 56)
-            .background(Self.blue, in: Capsule())
-            .contentShape(Capsule())
-        }
-        .buttonStyle(.plain)
-        .disabled(picture == nil)
-        .opacity(picture == nil ? 0.5 : 1)
+        TakeControlButton(enabled: picture != nil) { takeControl() }
       }
       .padding(.horizontal, 16)
     }
   }
-
-  /** iOS's own blue (systemBlue in the dark): the one thing to press. */
-  static let blue = Color(red: 0.039, green: 0.518, blue: 1.0)
 
   /** The agent asked for the person and waits ("Your turn on the computer" not yet answered). */
   private var waitingOnPerson: Bool {
@@ -385,6 +368,45 @@ struct BrowserPane: View {
         problem = "Lost the connection to the computer."
       }
     }
+  }
+}
+
+/** The blue Take control: the main button under the agent's page and under its whole computer. */
+struct TakeControlButton: View {
+  let enabled: Bool
+  let action: () -> Void
+
+  /** iOS's own blue (systemBlue in the dark): the one thing to press. */
+  static let blue = Color(red: 0.039, green: 0.518, blue: 1.0)
+
+  var body: some View {
+    Button(action: action) {
+      Label("Take control", systemImage: "hand.point.up.left.fill")
+        .font(.system(size: 18, weight: .semibold)).foregroundStyle(.white)
+        .frame(maxWidth: .infinity).frame(height: 56)
+        .background(Self.blue, in: Capsule())
+        .contentShape(Capsule())
+    }
+    .buttonStyle(.plain)
+    .disabled(!enabled)
+    .opacity(enabled ? 1 : 0.5)
+  }
+}
+
+/** Stop task, beside Take control while the agent works: the agent and its helpers stop. */
+struct StopTaskButton: View {
+  let busy: Bool
+  let action: () -> Void
+
+  var body: some View {
+    Button(action: action) {
+      Text("Stop task").font(.system(size: 17, weight: .medium)).foregroundStyle(.white)
+        .padding(.horizontal, 24).frame(height: 56)
+        .background(Color(white: 0.17), in: Capsule())
+        .contentShape(Capsule())
+    }
+    .buttonStyle(.plain)
+    .disabled(busy)
   }
 }
 #endif
