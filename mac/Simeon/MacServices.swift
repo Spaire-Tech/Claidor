@@ -281,6 +281,13 @@ final class MacServices {
    * page, after the sign-in when it came before.
    */
   func handle(_ url: URL) {
+    // A connected app's sign-in the browser finished (the sheet could not
+    // open): the app hands it to its computer (`AppReturnSignIn`).
+    if url.scheme == SimeonConfig.macURLScheme, let answer = AppReturnSignIn.answer(url) {
+      NSApp.activate()
+      if let store = session?.store { Task { await store.finishLoopbackSignIn(answer, name: "the app") } }
+      return
+    }
     guard let link = DeepLink.parse(url.absoluteString, schemes: [SimeonConfig.macURLScheme]) else { return }
     let canonical = link.canonical(scheme: SimeonConfig.macURLScheme)
     if let last = lastLink, last.link == canonical, Date().timeIntervalSince(last.at) < 2 { return }

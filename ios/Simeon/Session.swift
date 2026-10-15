@@ -604,9 +604,20 @@ final class AppConnector {
       }
     }
     defer { catcher?.stop() }
+    // A sign-in that returns through Simeon Labs' server comes back to this
+    // app, which finishes it on its own computer: never the web page, which
+    // used whichever account the browser held (`AppReturnSignIn`).
+    if let returning = AppReturnSignIn.state(returningViaServer: url) {
+      await store.sendSignInBack(state: returning, scheme: AppPlatform.urlScheme)
+    }
     let state = SheetState()
     // Closed on the vendor's confirm page, or back on our address: look a little longer. Cancelled, or back saying it didn't work: two looks, then the buttons are free again (Cancel used to hold every Add for 20 s).
     let session = ASWebAuthenticationSession(url: url, callback: .customScheme(AppPlatform.urlScheme)) { callback, error in
+      if let answer = AppReturnSignIn.answer(callback) {
+        Task { @MainActor in await store.finishLoopbackSignIn(answer, name: name) }
+        state.close(confirmed: answer.error == nil)
+        return
+      }
       state.close(confirmed: (error as? ASWebAuthenticationSessionError)?.code != .canceledLogin && !Connecting.failed(callback))
     }
     session.presentationContextProvider = presenter

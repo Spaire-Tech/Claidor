@@ -295,9 +295,18 @@ takes the app back out, so nothing is left added and not signed in (`SimeonCore/
   document is missing (Atlassian answers 404 to it from some networks).
 - Where the vendor sends the person back. The Electron Mac signs in on the Mac, through its
   loopback (`http://localhost:8787/callback`). The iPhone, the Mac app in Swift and the web
-  start the sign-in in the computer, which asks for Simeon Labs' hosted page
-  (`https://api.simeonlabs.com/desktop/mcp-oauth/callback`, then `/app/connected.html`, which
-  hands the code to the computer). Canva, Square, Vercel and Dropbox refuse that address
+  start the sign-in in the computer, which asks for Simeon Labs' hosted address
+  (`https://api.simeonlabs.com/desktop/mcp-oauth/callback`). Since 15 October 2026 the iPhone
+  and the Mac app name the sign-in to the server before their sheet opens
+  (`POST /desktop/api/mcp-oauth/return`, `server/simeon/desktop/mcp_oauth_return.py`), and the
+  callback sends the vendor's answer straight back to the app (`simeon-ios://mcp-oauth?…`,
+  `simeon://mcp-oauth?…`); the sheet closes on it and the app hands the code to its own
+  computer (`AppReturnSignIn.swift`). Before, the callback always went on to the web app's
+  `/app/connected.html`, which finished it on the computer of whichever account Safari was
+  signed in to, and failed when that was not the app's (the founder, signed in with Apple:
+  "why it needs the web account? When all this came from the app"). A sign-in no app named
+  (the web app's) still goes to that page; the log line is
+  `desktop.mcp_oauth.return_registered`. Canva, Square, Vercel and Dropbox refuse that address
   (`loopbackOnly` in `catalog.ts`), so the computer asks them for the loopback, and the iPhone
   and the Mac app in Swift listen there while their sign-in sheet is open
   (`ios/SimeonCore/Sources/SimeonCore/LoopbackSignIn.swift`): the code goes to the computer

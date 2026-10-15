@@ -78,10 +78,12 @@ from simeon.plans.service import PlansError
 from simeon.plans.service import plans as plans_service
 from simeon.postgres import AsyncSession, get_db_session
 from simeon.posthog import posthog
+from simeon.redis import Redis, get_redis
 from simeon.routing import APIRouter
 
 from .allowance import BILLING_PATH
 from .endpoints import client_version_of, sign_in_url
+from .mcp_oauth_return import APP_RETURN_HOST, app_return_for
 from .service import (
     DesktopUnauthenticated,
     desktop,
@@ -552,7 +554,9 @@ _MCP_OAUTH_PARAMS = ("state", "code", "error", "error_description")
 
 
 @router.get("/desktop/mcp-oauth/callback", name="desktop:mcp_oauth_callback")
-async def mcp_oauth_callback(request: Request) -> RedirectResponse:
+async def mcp_oauth_callback(
+    request: Request, redis: Redis = Depends(get_redis)
+) -> RedirectResponse:
     """Where a connected app's sign-in started from Simeon on the web comes
     back (4 October 2026). On a Mac the app registers
     `http://localhost:8787/callback` with the vendor and listens there
@@ -569,6 +573,15 @@ async def mcp_oauth_callback(request: Request) -> RedirectResponse:
         for name, value in request.query_params.multi_items()
         if name in _MCP_OAUTH_PARAMS
     ]
+    # Started from the iPhone or Mac app: back to the app, which finishes it
+    # on its own computer (`mcp_oauth_return.py`), never through the web.
+    scheme = await app_return_for(redis, request.query_params.get("state", ""))
+    if scheme is not None:
+        return RedirectResponse(
+            f"{scheme}://{APP_RETURN_HOST}?{urlencode(kept)}",
+            status_code=302,
+            headers=NO_STORE,
+        )
     target = f"{settings.FRONTEND_BASE_URL.rstrip('/')}/app/connected.html"
     if kept:
         target = f"{target}?{urlencode(kept)}"

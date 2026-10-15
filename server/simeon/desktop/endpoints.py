@@ -79,6 +79,7 @@ from .capabilities import router as capabilities_router
 from .composio import forward as composio_forward
 from .flight_booking import router as flight_booking_router
 from .flights import router as flights_router
+from .mcp_oauth_return import router as mcp_oauth_return_router
 
 # Straight from the price list rather than through `service`, which
 # re-exports only what it uses itself — a name it merely passed through
@@ -1600,6 +1601,10 @@ router.include_router(push_router)
 # app sign-ins, the transcripts, the rows, every session; the user anonymised.
 router.include_router(account_deletion_router)
 router.include_router(app_store_router)
+
+# A connected app's sign-in finished by the app that opened it, not the web
+# page (`mcp_oauth_return.py`).
+router.include_router(mcp_oauth_return_router)
 
 
 # Apps through Composio: the app's six calls, forwarded with Simeon's

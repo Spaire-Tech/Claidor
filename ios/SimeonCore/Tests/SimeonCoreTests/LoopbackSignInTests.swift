@@ -111,6 +111,11 @@ final class SignInBox: AgentBackend, @unchecked Sendable {
     lock.withLock { sent.append(args) }
     return [:]
   }
-  func server(_ path: String, method: String?, body: JSON?) async throws -> JSON { [:] }
+  private var asked: [String] = []
+  var serverCalls: [String] { lock.withLock { asked } }
+  func server(_ path: String, method: String?, body: JSON?) async throws -> JSON {
+    lock.withLock { asked.append("\(method ?? "GET") \(path) \(body.map { String(describing: $0) } ?? "")") }
+    return [:]
+  }
   func screen(_ agentId: String) async throws -> ScreenState { ScreenState(socket: nil, state: "starting") }
 }
