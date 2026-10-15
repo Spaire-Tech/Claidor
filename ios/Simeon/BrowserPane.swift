@@ -28,6 +28,8 @@ struct BrowserPane: View {
   let opensInControl: Bool
   /** The whole computer instead; true when the person is in control, so it opens theirs too. */
   let showComputer: (Bool) -> Void
+  /** The computer shows no browser tab (an engine without the tab view, or no Chrome tab): the browser button goes. */
+  let noBrowser: () -> Void
 
   @Environment(AppStore.self) private var store
   @Environment(\.dismiss) private var dismiss
@@ -49,9 +51,10 @@ struct BrowserPane: View {
   @State private var dragged: CGSize?
   @State private var working = false
 
-  init(agentId: String, opensInControl: Bool, showComputer: @escaping (Bool) -> Void) {
+  init(agentId: String, opensInControl: Bool, noBrowser: @escaping () -> Void, showComputer: @escaping (Bool) -> Void) {
     self.agentId = agentId
     self.opensInControl = opensInControl
+    self.noBrowser = noBrowser
     self.showComputer = showComputer
     _control = State(initialValue: opensInControl)
   }
@@ -350,7 +353,12 @@ struct BrowserPane: View {
     switch reason {
     case "no-browser", "no-tab", "tab-unreachable", "unavailable":
       // No tab to show (a desktop app, the demo, an older computer): the whole computer.
-      if sawPicture { problem = "The page isn't available any more." } else { showComputer(control) }
+      if sawPicture {
+        problem = "The page isn't available any more."
+      } else {
+        noBrowser()
+        showComputer(control)
+      }
     case "replaced":
       problem = "This page opened on another device."
     case "tab-closed":

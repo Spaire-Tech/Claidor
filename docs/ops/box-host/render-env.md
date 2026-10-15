@@ -180,8 +180,15 @@ On the Mac, after `cd desktop && npm run package`, with the `aws` command
 line signed in to an account that can write the folder:
 
 ```
-SIMEON_HOST_BUNDLE_S3=s3://<bucket>/host-bundles npm run publish:host-bundle
+SIMEON_HOST_BUNDLE_S3=s3://simeon-host-bundles/host-bundles npm run publish:host-bundle
 ```
+
+Simeon's cloud computers read `s3://simeon-host-bundles/host-bundles`
+(checked 15 October 2026: its pointer named `39f816750c81`, the version a
+cloud computer's log showed running). `simeonlabs-files-public/host-bundles`
+is not it: it holds a 4 October bundle and one of 15 October that no
+computer reads. After publishing, the pointer must name the new commit:
+`curl -s https://simeon-host-bundles.s3.amazonaws.com/host-bundles/sand-host-bundle-latest.version`.
 
 It refuses a build with uncommitted changes (the version is the commit).
 The folder must be readable over plain HTTPS without credentials (the same

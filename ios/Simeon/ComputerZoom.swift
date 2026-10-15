@@ -123,6 +123,12 @@ struct ZoomScreen: UIViewRepresentable {
 
     func scrollViewDidZoom(_ scrollView: UIScrollView) { (scrollView as? ScreenScroller)?.center() }
 
+    /** Zoomed back out: the picture returns to the middle. */
+    func scrollViewDidEndZooming(_ scrollView: UIScrollView, with view: UIView?, atScale scale: CGFloat) {
+      guard scale <= 1.01, let scroller = scrollView as? ScreenScroller else { return }
+      scroller.recenter(animated: true)
+    }
+
     @objc private func zoomTapped(_ recognizer: UITapGestureRecognizer) {
       guard let scroller, recognizer.state == .ended else { return }
       if scroller.zoomScale > 1.01 {
@@ -229,8 +235,17 @@ final class ScreenScroller: UIScrollView {
       screen.frame = CGRect(origin: .zero, size: size)
       web.frame = screen.bounds
       contentSize = size
+      center()
+      // The margins alone leave the picture at the top: it starts in the middle.
+      recenter(animated: false)
+      return
     }
     center()
+  }
+
+  /** Back to the middle (zoom 1): the margins above and beside the picture are scrolled to. */
+  func recenter(animated: Bool) {
+    setContentOffset(CGPoint(x: -contentInset.left, y: -contentInset.top), animated: animated)
   }
 
   /** The picture in the middle while it is smaller than the view; the keyboard's height more below it. */

@@ -243,8 +243,15 @@ this one.
 The cloud boxes run the host from the packaged app. After `npm run package`:
 
 ```sh
-SIMEON_HOST_BUNDLE_S3=s3://<bucket>/host-bundles npm run publish:host-bundle
+SIMEON_HOST_BUNDLE_S3=s3://simeon-host-bundles/host-bundles npm run publish:host-bundle
 ```
+
+Simeon's cloud computers read `s3://simeon-host-bundles/host-bundles`
+(checked 15 October 2026: its pointer named `39f816750c81`, the version a
+cloud computer's log showed running). `simeonlabs-files-public/host-bundles`
+is not it: it holds a 4 October bundle and one of 15 October that no
+computer reads. After publishing, the pointer must name the new commit:
+`curl -s https://simeon-host-bundles.s3.amazonaws.com/host-bundles/sand-host-bundle-latest.version`.
 
 `scripts/publish-host-bundle.mjs` takes `dist/host/host-main.cjs` and
 `dist/box-exec-daemon/main.cjs` out of the packaged `app.asar` and writes, in

@@ -48,6 +48,8 @@ struct ComputerSheet: View {
   @State private var watching = false
   /** The whole computer instead of the agent's browser tab (15 October 2026): no tab to show, or the person asked for it. */
   @State private var showsWholeComputer = false
+  /** The browser view found no tab to show (the computer's engine has no tab view, or Chrome has no tab): its button is not offered again. */
+  @State private var browserUnavailable = false
   @State private var stopping = false
 
   /**
@@ -60,7 +62,7 @@ struct ComputerSheet: View {
       if showsWholeComputer {
         computer
       } else {
-        BrowserPane(agentId: agentId, opensInControl: waitingOnPerson) { inControl in
+        BrowserPane(agentId: agentId, opensInControl: waitingOnPerson, noBrowser: { browserUnavailable = true }) { inControl in
           if inControl { control = true }
           showsWholeComputer = true
         }
@@ -110,12 +112,14 @@ struct ComputerSheet: View {
         .padding(.horizontal, 64)
         .animation(.easeOut(duration: 0.2), value: note)
         HStack {
-          Button { showsWholeComputer = false } label: {
-            Image(systemName: "safari").font(.system(size: 18, weight: .medium)).foregroundStyle(.white)
-              .frame(width: 48, height: 48)
+          if !browserUnavailable {
+            Button { showsWholeComputer = false } label: {
+              Image(systemName: "safari").font(.system(size: 18, weight: .medium)).foregroundStyle(.white)
+                .frame(width: 48, height: 48)
+            }
+            .buttonStyle(GlassDisc())
+            .accessibilityLabel("Show the browser")
           }
-          .buttonStyle(GlassDisc())
-          .accessibilityLabel("Show the browser")
           Spacer(minLength: 0)
           if control {
             Button { typing = false; Task { await store.handBackComputer(agentId); dismiss() } } label: {
