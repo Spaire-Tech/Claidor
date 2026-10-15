@@ -172,6 +172,8 @@ struct ComputerSheet: View {
     // In control the sheet stays until the checkmark hands the computer back.
     .interactiveDismissDisabled(control)
     .task(id: attempt) { await load() }
+    // In control: the computer's Chrome is made ready to see the taps, so the first one opens the keyboard too.
+    .task(id: control) { if control { await store.prepareTypingFocus(agentId) } }
     // The agent waits on the person: the computer opens theirs to use.
     .onAppear { if waitingOnPerson { control = true } }
     .onChange(of: waitingOnPerson) { _, waiting in if waiting { control = true } }

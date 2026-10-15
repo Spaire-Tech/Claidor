@@ -4,7 +4,8 @@ import XCTest
 /**
  * The phone's whole computer, its core (15 October 2026): Take control and
  * Stop task ask the host, and after a tap the phone asks what it focused
- * (`typingFocus`) to open the right keyboard or put it away.
+ * (`typingFocus`) to open the right keyboard or put it away; taking control
+ * makes the computer ready to see the taps (`prepare`).
  */
 final class ComputerControlTests: XCTestCase {
   @MainActor
@@ -46,10 +47,24 @@ final class ComputerControlTests: XCTestCase {
   }
 
   @MainActor
+  func testTakingControlMakesTheComputerReadyForTheTaps() async {
+    let backend = ComputerCommandBackend()
+    let store = AppStore()
+    await store.attach(backend)
+    await store.prepareTypingFocus("a1")
+    XCTAssertEqual(backend.commands.last?.method, "typingFocus")
+    XCTAssertEqual(backend.commands.last?.args, ["id": "a1", "prepare": true])
+    // An engine without the question: nothing happens.
+    await store.prepareTypingFocus("older-engine")
+    XCTAssertEqual(backend.commands.count, 2)
+  }
+
+  @MainActor
   func testWithoutAComputerNothingIsAsked() async {
     let store = AppStore()
     let focus = await store.typingFocus("a1")
     XCTAssertNil(focus)
+    await store.prepareTypingFocus("a1")
   }
 }
 

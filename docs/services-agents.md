@@ -1710,20 +1710,39 @@ engine side (`host/box/tab-view.ts`, `GET /tab-view`, `tabViewInput`) is gone wi
 
 **How it works.**
 
-- After each click the phone asks `typingFocus` (`host/box/typing-focus.ts`). The engine waits
-  200 ms for the click to reach Chrome (it goes by the screen's own connection), then asks the
-  agent's Chrome on its DevTools port (`9222` plus the agent's display): the page that has the
-  keyboard's focus (`document.hasFocus()`) answers, in every frame of that page, what its
-  focused element takes (`Runtime.enable` names each frame's own JavaScript world, so a frame of
+- When the person takes control, the phone asks `typingFocus` with `prepare`
+  (`host/box/typing-focus.ts`): every frame of every page of the agent's Chrome, on its
+  DevTools port (`9222` plus the agent's display), is given a listener that notes the time of
+  each real press in it, of the mouse or of a key. After each click (and after Return) the
+  phone asks `typingFocus`. The engine waits 200 ms for the click to reach Chrome (it goes by
+  the screen's own connection), then asks every frame: the frame with the newest press, newer
+  than any press already used, is where the finger landed, and its focused element decides.
+  Every frame answers in its own JavaScript world (`Runtime.enable` names each, so a frame of
   another address on the same site answers too: Apple's sign-in form on appleid.apple.com is a
   frame from idmsa.apple.com); a frame of another site, which Chrome runs in a process of its
   own, answers through its own DevTools target. The answer is an input's type (`text`,
   `email`, `password`, `search`, `tel`, `url`, `number`), `text` for a text area or an
-  editable block, or nothing (a button, a read-only field, the page itself). Measured against
-  a real Chromium, 8 to 26 ms per answer (`desktop/tests/typing-focus.test.mjs`).
+  editable block, or nothing (a button, a read-only field, the page itself). No new press
+  seen: Chrome is asked twice more, 250 ms apart (a tap still on its way), then the tap landed
+  in no page (Chrome's own bars, another program) and the answer is nothing. A page loaded
+  since the last question has no listener yet: among those pages, the one with a field that
+  Chrome says a real press just reached (`navigator.userActivation.isActive`, which lasts five
+  seconds) answers.
+- Why the press, not which page "has the focus" (the first version, the same day, asked
+  `document.hasFocus()`): the agent's browser helper drives Chrome through Playwright
+  (`chromium.connectOverCDP`, `sand-browser-driver-source.ts`), which turns focus emulation on
+  in every page it attaches to, so every tab, those behind included, says it has the focus and
+  is visible. Measured with a real Chrome window (Xvfb, xfwm4, Playwright attached as the
+  helper attaches, clicks as X events as x11vnc sends them): the first version answered 2 taps
+  in 4 wrong, taking a tab behind for the one in front; this one answered 21 in 21 right
+  (fields, buttons, Chrome's own bars, switching tabs, a page loaded since, Return moving to
+  the password field and Return sending a form), with and without `prepare`. An answer took
+  8 to 20 ms after the 200 ms wait when a press was seen, and about 0.73 s in all when none
+  was (the two looks again). The same cases run headless in `desktop/tests/typing-focus.test.mjs`.
 - The phone (`ComputerSheet`, `Computer.swift`; `ZoomScreen`, `ComputerZoom.swift`) acts on
   the last tap's answer only; SimeonCore's `AppStore.typingFocus` returns nil when the engine
-  does not know the question, and the keyboard then stays as it was.
+  does not know the question, and the keyboard then stays as it was;
+  `AppStore.prepareTypingFocus` is sent each time control begins.
 - Take control is `takeComputerControl`: when the agent is working it stops it (as Stop task)
   and opens a hand-off the person started (`source: "person"`). Handing back ends it as
   `taken-back`, which resumes the agent with its own sentence
@@ -1738,13 +1757,19 @@ engine side (`host/box/tab-view.ts`, `GET /tab-view`, `tabViewInput`) is gone wi
 
 **Switches.** None. It reaches the cloud computers with the next host bundle, and the iPhone
 with the next build. An engine without `typingFocus` answers it with "unknown gateway method";
-the phone then leaves the keyboard alone.
+the phone then leaves the keyboard alone. The first engine with it (15 October, `d5e92243`)
+ignores `prepare` and answers by `document.hasFocus()`.
 
 **When it misbehaves.** Box log, `/tmp/sand-host.log`:
 
-- `[simeon] typing-focus agent=… focus=email|text|…|none ms=N` after each tap. `focus=none`
-  on a field: the tap reached Chrome after the 200 ms (a slow connection), or the field is in
-  something that is not a web page.
+- `[simeon] typing-focus prepared agent=… port=… ms=N` when the person takes control.
+- `[simeon] typing-focus agent=… port=… focus=email|text|…|none by=press|unwatched|none
+  frames=N ms=N` after each tap. `by=press`: a listener saw the tap, and `focus` is that
+  frame's. `by=unwatched`: a page loaded since the last question, which a press just reached.
+  `by=none`: no page saw a press: the tap landed in Chrome's own bars or another program, or
+  reached Chrome later than about 0.7 s after the question (a slow connection). `frames=0`: no Chrome on that
+  port (the agent's display is not the one expected). No line at all after a tap: the engine
+  on the computer is older than this, or the phone build is.
 - Take control: `[simeon] take-control agent=… working=false` (the agent was idle: nothing
   stopped, no hand-off) or `working=true handoff=started|already-pending`. Stop task:
   `[simeon] stop-task agent=… stopped=true|false handoff-ended=true|false`. The interrupt and
@@ -1756,7 +1781,8 @@ windows (a passkey or permission prompt) and other programs answer nothing, and 
 button opens the keyboard for them.
 
 **Not yet verified.** None of this has run in a cloud computer or on an iPhone. The engine's
-tests click into a real Chromium (`typing-focus.test.mjs`) and run the commands against fakes
+tests click into a real Chromium, with the helper's Playwright attached for one
+(`typing-focus.test.mjs`), and run the commands against fakes
 of the session (`phone-take-control.test.mjs`); SimeonCore's tests (`ComputerControlTests.swift`)
 run the questions on Linux. The iPhone's views have been syntax-checked here, not compiled (no
 Xcode).

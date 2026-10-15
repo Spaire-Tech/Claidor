@@ -45,7 +45,7 @@ async function gatewayApi({ working, pending = null }) {
     stopAgentTask: async (id) => { calls.push(["stopAgentTask", id]); return { stopped: true }; },
   });
   const extensions = { api: (id) => id === "session" ? session : id === "transcript" ? manager : fakeApi({}) };
-  const typingFocus = async (id) => { calls.push(["typingFocus", id]); return { focus: "password" }; };
+  const typingFocus = async (id, prepare) => { calls.push(["typingFocus", id, prepare]); return { focus: prepare ? "" : "password" }; };
   const api = module.createHostGatewayApi({ extensions, hostEvents: { emit() {} }, decorateForeverBoxStatus: (s) => s, getHealth: () => ({ isBusy: false }), kickstartIfPending: async () => false, requestDiskSaverAudit: async () => false, releaseAgentBox: async () => {}, handleDesktopMcpAuthCompletion: async () => {}, forgetLocalToolPermission() {}, typingFocus });
   return { api, calls };
 }
@@ -62,7 +62,10 @@ test("Take control stops a working agent and hands the person the computer; an i
   assert.deepEqual(await idle.api.takeComputerControl({ id: "a1" }), { handoff: false });
   assert.deepEqual(idle.calls, [["isAgentWorking", "a1"]], "nothing stopped, no hand-off");
   assert.deepEqual(await idle.api.typingFocus({ id: "a1" }), { focus: "password" });
-  assert.deepEqual(idle.calls.at(-1), ["typingFocus", "a1"]);
+  assert.deepEqual(idle.calls.at(-1), ["typingFocus", "a1", false]);
+  // Taking control makes the agent's Chrome ready for the taps.
+  assert.deepEqual(await idle.api.typingFocus({ id: "a1", prepare: true }), { focus: "" });
+  assert.deepEqual(idle.calls.at(-1), ["typingFocus", "a1", true]);
 });
 
 test("Stop task ends an open hand-off without waking the agent, then stops it", async () => {

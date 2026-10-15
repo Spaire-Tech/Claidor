@@ -41,8 +41,8 @@ export interface HostGatewayDependencies {
   releaseAgentBox(agentId: string): Promise<void>;
   handleDesktopMcpAuthCompletion(completion: unknown): Promise<void>;
   forgetLocalToolPermission(agentId: string): void;
-  /** What a tap on the phone's whole computer focused (`host/box/typing-focus.ts`); absent where the host has none. */
-  readonly typingFocus?: (agentId: string) => Promise<{ focus: string }>;
+  /** What a tap on the phone's whole computer focused (`host/box/typing-focus.ts`), or with `prepare` the agent's Chrome made ready for the taps; absent where the host has none. */
+  readonly typingFocus?: (agentId: string, prepare?: boolean) => Promise<{ focus: string }>;
   readonly now?: () => number;
 }
 
@@ -660,11 +660,11 @@ export function createHostGatewayApi(
         args.id,
         args.trigger ?? "button"
       ),
-    // The phone's keyboard on the whole computer (15 October 2026, `host/box/typing-focus.ts`).
+    // The phone's keyboard on the whole computer (15 October 2026, `host/box/typing-focus.ts`); `prepare` when the person takes control.
     typingFocus: async (args: any) =>
       deps.typingFocus == null
         ? { focus: "" }
-        : await deps.typingFocus(String(args.id ?? "")),
+        : await deps.typingFocus(String(args.id ?? ""), args.prepare === true),
     /**
      * Take control while the agent works: its run and helpers stop (it
      * would fight the person for the page) and the computer is the person's

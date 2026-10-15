@@ -103,7 +103,7 @@ export interface SandHostRuntime {
     requestDiskSaverAudit(agentId: string): Promise<boolean>;
     releaseAgentBox(agentId: string): Promise<void>;
     forgetLocalToolPermission(agentId: string): void;
-    typingFocus?: (agentId: string) => Promise<{ focus: string }>;
+    typingFocus?: (agentId: string, prepare?: boolean) => Promise<{ focus: string }>;
   }): HostGatewayDependencies;
   readonly isAgentLimitError?: (error: unknown) => boolean;
   readonly buildIdentityFallback?: string;
@@ -253,7 +253,7 @@ export class SandHost {
   private rosterBookkeeping: HostRosterBookkeeping | undefined;
   private runnerComposition: HostRunnerComposition | undefined;
   /** What a tap on the phone's whole computer focused (`box/typing-focus.ts`), made when the gateway first asks. */
-  private typingFocus: ((agentId: string) => Promise<{ focus: string }>) | undefined;
+  private typingFocus: ((agentId: string, prepare?: boolean) => Promise<{ focus: string }>) | undefined;
   private lastBusyAtMs: number;
 
   constructor(readonly runtime: SandHostRuntime) {
@@ -680,7 +680,7 @@ export class SandHost {
       requestDiskSaverAudit: agentId => this.requestDiskSaverAudit(agentId),
       releaseAgentBox: agentId => this.releaseAgentBox(agentId),
       forgetLocalToolPermission: agentId => this.forgetLocalToolPermission(agentId),
-      typingFocus: agentId => this.getTypingFocus()(agentId)
+      typingFocus: (agentId, prepare) => this.getTypingFocus()(agentId, prepare)
     }));
   }
 
@@ -690,7 +690,7 @@ export class SandHost {
    * listens on DevTools' port for its display, which the cloud computer
    * gives it (`getAgentWindowIndex`; 1 on a computer of its own).
    */
-  getTypingFocus(): (agentId: string) => Promise<{ focus: string }> {
+  getTypingFocus(): (agentId: string, prepare?: boolean) => Promise<{ focus: string }> {
     this.typingFocus ??= createTypingFocus({
       displayFor: agentId => {
         const box = this.hostExtensions?.api("forever-box")?.box as { getAgentWindowIndex?(id: string): number | undefined } | undefined;

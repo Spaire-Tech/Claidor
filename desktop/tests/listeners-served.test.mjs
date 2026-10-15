@@ -152,6 +152,9 @@ test("the fire consumer polls a fire, runs it for its event, completes it and ac
     assert.equal(fired[0].runUuid, FIRE.id);
     assert.deepEqual(fired[0].event, { source: "slack", channel: "#eng", sender: "@U_ALICE", text: "<@U_BOT> ship it", isMention: true, ts: "1.0", threadTs: "0.9", timestampMs: 1_790_000_000_000 });
     assert.deepEqual(state.completions, [{ runUuid: FIRE.id, status: "succeeded" }]);
+    // The server records the completion before its answer reaches the consumer, which only then
+    // owes the ack (15 October 2026: under the whole suite's load the poll went out first).
+    await until(() => consumer.states.get(FIRE.id)?.phase === "reported");
     await consumer.tick();
     const polls = state.calls.filter((call) => call.path === "/sand/automation-events/poll");
     assert.deepEqual(polls.at(-1).body, { ackRunUuids: [FIRE.id] }, "the completion is acked on the next poll");

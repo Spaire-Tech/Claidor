@@ -6,15 +6,33 @@
  * away." The phone draws the computer's screen as pixels (noVNC) and cannot
  * see what is under the finger; the agent's Chrome can.
  *
- * After the tap, the page that has the keyboard's focus is asked what its
- * focused element is (DevTools, on the port of the agent's display), in
- * every frame of that page: a sign-in form usually sits in a frame from
- * another address (Apple's on appleid.apple.com does), and the page itself
- * only knows "a frame". A frame of another site runs in a process of its
- * own and is asked through its own DevTools target.
+ * Each frame of each page of the agent's Chrome (DevTools, on the port of
+ * the agent's display) is given a listener that notes when a real press, of
+ * the mouse or of a key, lands in it, and says what its own focused element
+ * takes. After a tap the frame with the newest press, newer than any already
+ * used, is the one the finger landed in, and its focused element decides
+ * the keyboard; after Return (which may move the focus on, to a password
+ * field), the frame it was typed in. A sign-in
+ * form usually sits in a frame from another address (Apple's on
+ * appleid.apple.com does); each frame answers for itself, and a frame of
+ * another site, which Chrome runs in a process of its own, through its own
+ * DevTools target.
  *
- * Only web pages are seen: Chrome's address bar and other programs answer
- * "", and the phone keeps its keyboard button for them.
+ * Asking Chrome which page "has the focus" was not enough (the first
+ * version, the same day): the agent's browser helper drives Chrome through
+ * Playwright, which turns focus emulation on in every page it attaches to,
+ * so every tab, those behind included, says it has the focus and is
+ * visible, and a tab behind could answer for the one in front (measured:
+ * Xvfb, xfwm4, a real Chrome window, Playwright attached, clicks as X
+ * events: 2 taps in 4 answered wrong).
+ *
+ * A press not seen (the page loaded since Chrome was last asked, so it had
+ * no listener yet): among the pages that got their listener just now, the
+ * one Chrome says a real press just reached (its user activation), newest
+ * first. `prepare` gives every page its listener before the first tap (the
+ * phone asks when the person takes control). Only web pages are seen:
+ * Chrome's address bar, its tab strip and other programs answer "", and the
+ * phone keeps its keyboard button for them.
  */
 import WebSocketModule from "ws";
 import { HOST_LOG_PREFIX, logHostLine } from "../../shared/host-log.js";
@@ -23,32 +41,47 @@ import { HOST_LOG_PREFIX, logHostLine } from "../../shared/host-log.js";
 export const TYPING_FOCUS_CDP_PORT_BASE = 9222;
 /** How long the tap gets to reach Chrome (it goes by the screen's own connection) before Chrome is asked. */
 export const TYPING_FOCUS_SETTLE_MS = 200;
+/** No new press seen yet: Chrome is asked again after this long, for a tap still on its way (the screen's connection is not the question's). */
+export const TYPING_FOCUS_RETRY_MS = 250;
+/** How many times it is asked again before the answer is that the tap landed in no page. */
+export const TYPING_FOCUS_RETRIES = 2;
 
 /** The keyboard the phone opens: an input's type, "text" for a text area or an editable block, "" for none. */
 export type TypingFocus = "" | "text" | "email" | "password" | "search" | "tel" | "url" | "number";
 const KEYBOARDS = new Set<TypingFocus>(["text", "email", "password", "search", "tel", "url", "number"]);
 
 /**
- * Run in each frame: null when the frame does not have the focus, "frame"
- * when the focus is in a frame inside it, else the keyboard its focused
- * element takes. Same-origin frames are looked into here; another origin's
- * answers for itself.
+ * Run in each frame (its own JavaScript world). The first time, it leaves a
+ * listener that notes the time of every press in the frame, of the mouse or
+ * of a key (capture, on the window: before the page's own handlers), kept
+ * while the page lives. It answers with that time, whether the listener is
+ * new, and what the frame's focused element takes: an input's type, "text",
+ * "frame" when the focus is in a frame inside it, or "".
  */
 export const TYPING_FOCUS_EXPRESSION = `(() => {
-  if (!document.hasFocus()) return null;
-  let e = document.activeElement;
-  for (let depth = 0; e && e.tagName === "IFRAME" && depth < 8; depth++) {
-    let inner = null;
-    try { inner = e.contentDocument; } catch (error) { inner = null; }
-    if (!inner) return "frame";
-    e = inner.activeElement;
+  const key = Symbol.for("simeon.typing-focus");
+  let mark = window[key];
+  const fresh = mark === undefined;
+  if (fresh) {
+    mark = { pressedAt: 0 };
+    Object.defineProperty(window, key, { value: mark, enumerable: false, configurable: true });
+    const note = () => { mark.pressedAt = Date.now(); };
+    window.addEventListener("pointerdown", note, true);
+    window.addEventListener("mousedown", note, true);
+    window.addEventListener("keydown", note, true);
   }
-  if (!e || e.tagName === "BODY" || e.tagName === "HTML") return "";
-  if (e.disabled || e.readOnly) return "";
-  if (e.isContentEditable || e.tagName === "TEXTAREA") return "text";
-  if (e.tagName !== "INPUT") return "";
-  const type = (e.getAttribute("type") || "text").toLowerCase();
-  return ["text", "email", "password", "search", "tel", "url", "number"].includes(type) ? type : "";
+  const kind = (() => {
+    const e = document.activeElement;
+    if (!e || e.tagName === "BODY" || e.tagName === "HTML") return "";
+    if (e.tagName === "IFRAME" || e.tagName === "FRAME") return "frame";
+    if (e.disabled || e.readOnly) return "";
+    if (e.isContentEditable || e.tagName === "TEXTAREA") return "text";
+    if (e.tagName !== "INPUT") return "";
+    const type = (e.getAttribute("type") || "text").toLowerCase();
+    return ["text", "email", "password", "search", "tel", "url", "number"].includes(type) ? type : "";
+  })();
+  const activated = navigator.userActivation ? navigator.userActivation.isActive : false;
+  return { kind, pressedAt: mark.pressedAt, fresh, focused: document.hasFocus(), activated, born: performance.timeOrigin };
 })()`;
 
 interface CdpSocket {
@@ -203,15 +236,31 @@ export async function listFocusTargets(port: number, create: CdpSocketFactory = 
   }
 }
 
-type FrameAnswer = TypingFocus | "frame" | null;
-
-function asAnswer(value: unknown): FrameAnswer {
-  if (value === null || value === "frame" || value === "") return value as FrameAnswer;
-  return typeof value === "string" && KEYBOARDS.has(value as TypingFocus) ? value as TypingFocus : "";
+/** One frame's answer (`TYPING_FOCUS_EXPRESSION`), and the page or frame target it came from. */
+export interface FrameReport {
+  readonly target: string;
+  readonly kind: TypingFocus | "frame";
+  /** When a press, of the mouse or of a key, last landed in the frame (the computer's clock), 0 for none since its listener came. */
+  readonly pressedAt: number;
+  /** Its listener came with this very question: a press before it was not seen. */
+  readonly fresh: boolean;
+  readonly focused: boolean;
+  /** A real press or key reached the frame (or a frame inside it) in the last few seconds (`navigator.userActivation.isActive`, Chrome's five). */
+  readonly activated: boolean;
+  /** When its document was made (`performance.timeOrigin`). */
+  readonly born: number;
 }
 
-/** The answer of every frame in the target's process (each frame's own JavaScript world). */
-async function answersOf(target: FocusTarget, create: CdpSocketFactory): Promise<FrameAnswer[]> {
+function asReport(target: string, value: unknown): FrameReport | undefined {
+  if (value == null || typeof value !== "object") return undefined;
+  const record = value as Record<string, unknown>;
+  const kind = record.kind === "frame" || (typeof record.kind === "string" && KEYBOARDS.has(record.kind as TypingFocus)) ? record.kind as TypingFocus | "frame" : "";
+  const number = (field: unknown): number => typeof field === "number" && Number.isFinite(field) ? field : 0;
+  return { target, kind, pressedAt: number(record.pressedAt), fresh: record.fresh === true, focused: record.focused === true, activated: record.activated === true, born: number(record.born) };
+}
+
+/** Every frame's answer in the target's process (each frame's own JavaScript world). */
+async function reportsOf(target: FocusTarget, create: CdpSocketFactory): Promise<FrameReport[]> {
   let connection: CdpConnection | undefined;
   try {
     connection = await CdpConnection.open(target.socketUrl, create);
@@ -223,12 +272,12 @@ async function answersOf(target: FocusTarget, create: CdpSocketFactory): Promise
     // Chrome names every existing frame's world before it answers this.
     await connection.send("Runtime.enable");
     const ids = contexts.length > 0 ? contexts : [undefined];
-    const answers = await Promise.all(ids.map(async (contextId) => {
+    const reports = await Promise.all(ids.map(async (contextId) => {
       const result = await connection!.send<{ result?: { value?: unknown } }>("Runtime.evaluate", { expression: TYPING_FOCUS_EXPRESSION, returnByValue: true, ...(contextId === undefined ? {} : { contextId }) }).catch(() => undefined);
-      return asAnswer(result?.result?.value ?? null);
+      return asReport(target.id, result?.result?.value);
     }));
     await connection.send("Runtime.disable").catch(() => undefined);
-    return answers;
+    return reports.filter((report): report is FrameReport => report !== undefined);
   } catch {
     return [];
   } finally {
@@ -236,34 +285,82 @@ async function answersOf(target: FocusTarget, create: CdpSocketFactory): Promise
   }
 }
 
-/** The keyboard the focused element takes, from the answers of the frames: one that names one, else none. */
-function keyboardIn(answers: readonly FrameAnswer[]): TypingFocus | "frame" | null {
-  const keyboard = answers.find((answer): answer is TypingFocus => answer !== null && answer !== "frame" && answer !== "");
-  if (keyboard !== undefined) return keyboard;
-  if (answers.includes("frame")) return "frame";
-  return answers.some((answer) => answer !== null) ? "" : null;
+/** Every frame of every page and of every other site's frame, each with its listener from now on. */
+async function allReports(targets: readonly FocusTarget[], create: CdpSocketFactory): Promise<FrameReport[]> {
+  return (await Promise.all(targets.map((target) => reportsOf(target, create)))).flat();
+}
+
+/** The keyboard a frame's own answer asks for ("frame": the focus went on into a frame inside it, which answers for itself). */
+const keyboardOf = (report: FrameReport): TypingFocus => report.kind === "frame" ? "" : report.kind;
+
+/** The frame a press newer than `after` landed in, the newest; undefined when none did. */
+export function pressedFrame(reports: readonly FrameReport[], after: number): FrameReport | undefined {
+  let newest: FrameReport | undefined;
+  for (const report of reports) {
+    if (report.pressedAt > after && (newest === undefined || report.pressedAt > newest.pressedAt)) newest = report;
+  }
+  return newest;
+}
+
+/**
+ * No press seen: it landed in a page that had no listener yet (loaded since
+ * Chrome was last asked). Among the frames that got theirs with this
+ * question, one Chrome says a real press just reached, focused, with a
+ * field, the newest document first; else none. (A field the agent left
+ * focused in a tab behind is focused too, under the helper's focus
+ * emulation, but no press reached it in the last seconds.)
+ */
+export function unwatchedKeyboard(reports: readonly FrameReport[]): TypingFocus {
+  const candidates = reports.filter((report) => report.fresh && report.activated && report.focused && keyboardOf(report) !== "");
+  candidates.sort((a, b) => b.born - a.born);
+  return candidates[0] === undefined ? "" : keyboardOf(candidates[0]);
 }
 
 export interface TypingFocusOptions {
   readonly listTargets?: (port: number) => Promise<FocusTarget[]>;
   readonly createSocket?: CdpSocketFactory;
+  readonly retryMs?: number;
+  readonly retries?: number;
 }
 
-/** What the Chrome on `port` has the keyboard's focus in, now. */
-export async function readTypingFocus(port: number, options: TypingFocusOptions = {}): Promise<TypingFocus> {
+export interface TypingFocusReading {
+  readonly focus: TypingFocus;
+  /** How it was found: the frame a press landed in, a page with no listener yet, or nothing to go by. */
+  readonly by: "press" | "unwatched" | "none";
+  readonly frames: number;
+  /** The newest press seen (the computer's clock), for the next question to go past. */
+  readonly lastPressAt: number;
+}
+
+/**
+ * What the tap that came after `after` focused, in the Chrome on `port`.
+ * Every frame keeps its listener from here on.
+ */
+export async function readTypingFocus(port: number, options: TypingFocusOptions & { readonly after?: number } = {}): Promise<TypingFocusReading> {
   const create = options.createSocket ?? defaultSocket;
-  const targets = await (options.listTargets ?? ((value: number) => listFocusTargets(value, create)))(port);
-  const pages = targets.filter((target) => target.type === "page");
-  for (const page of pages) {
-    const found = keyboardIn(await answersOf(page, create));
-    if (found === null) continue;
-    if (found !== "frame") return found;
-    // The focus is in a frame of another site, which answers in its own process.
-    const frames = targets.filter((target) => target.type === "iframe");
-    const inner = keyboardIn((await Promise.all(frames.map((frame) => answersOf(frame, create)))).flat());
-    return inner === null || inner === "frame" ? "" : inner;
+  const after = options.after ?? 0;
+  const list = options.listTargets ?? ((value: number) => listFocusTargets(value, create));
+  const first = await allReports(await list(port), create);
+  let reports = first;
+  let pressed = pressedFrame(reports, after);
+  // The tap may still be on its way: again, a moment later.
+  for (let retry = 0; pressed === undefined && retry < (options.retries ?? TYPING_FOCUS_RETRIES); retry += 1) {
+    await new Promise((resolve) => setTimeout(resolve, options.retryMs ?? TYPING_FOCUS_RETRY_MS));
+    reports = await allReports(await list(port), create);
+    pressed = pressedFrame(reports, after);
   }
-  return "";
+  const lastPressAt = Math.max(after, ...reports.map((report) => report.pressedAt));
+  if (pressed !== undefined) return { focus: keyboardOf(pressed), by: "press", frames: reports.length, lastPressAt };
+  // The listeners that came with the first question mark the pages the tap could not be seen in.
+  const focus = unwatchedKeyboard(first);
+  return { focus, by: focus === "" ? "none" : "unwatched", frames: reports.length, lastPressAt };
+}
+
+/** Gives every frame of the Chrome on `port` its listener, so the next tap is seen; the newest press so far. */
+export async function prepareTypingFocus(port: number, options: TypingFocusOptions = {}): Promise<number> {
+  const create = options.createSocket ?? defaultSocket;
+  const reports = await allReports(await (options.listTargets ?? ((value: number) => listFocusTargets(value, create)))(port), create);
+  return Math.max(0, ...reports.map((report) => report.pressedAt));
 }
 
 export interface TypingFocusesOptions extends TypingFocusOptions {
@@ -274,17 +371,29 @@ export interface TypingFocusesOptions extends TypingFocusOptions {
   readonly log?: (line: string) => void;
 }
 
-/** `typingFocus` on the gateway: the agent's Chrome asked, once the tap has had time to land. */
-export function createTypingFocus(options: TypingFocusesOptions): (agentId: string) => Promise<{ focus: TypingFocus }> {
+/**
+ * `typingFocus` on the gateway: the agent's Chrome asked, once the tap has
+ * had time to land; `prepare` (the person takes control) only gives every
+ * page its listener. The newest press used is kept per Chrome, so an earlier
+ * tap is never taken for this one.
+ */
+export function createTypingFocus(options: TypingFocusesOptions): (agentId: string, prepare?: boolean) => Promise<{ focus: TypingFocus }> {
   const log = options.log ?? logHostLine;
-  return async (agentId) => {
+  const seen = new Map<number, number>();
+  return async (agentId, prepare = false) => {
     const display = options.displayFor(agentId) ?? 1;
     const port = (options.portFor ?? ((index: number) => TYPING_FOCUS_CDP_PORT_BASE + index))(display);
+    const startedAt = Date.now();
+    if (prepare) {
+      seen.set(port, Math.max(seen.get(port) ?? 0, await prepareTypingFocus(port, options)));
+      log(`${HOST_LOG_PREFIX} typing-focus prepared agent=${agentId} port=${port} ms=${Date.now() - startedAt}`);
+      return { focus: "" };
+    }
     const settleMs = options.settleMs ?? TYPING_FOCUS_SETTLE_MS;
     if (settleMs > 0) await new Promise((resolve) => setTimeout(resolve, settleMs));
-    const startedAt = Date.now();
-    const focus = await readTypingFocus(port, options);
-    log(`${HOST_LOG_PREFIX} typing-focus agent=${agentId} focus=${focus || "none"} ms=${Date.now() - startedAt}`);
-    return { focus };
+    const reading = await readTypingFocus(port, { ...options, after: seen.get(port) ?? 0 });
+    seen.set(port, Math.max(seen.get(port) ?? 0, reading.lastPressAt));
+    log(`${HOST_LOG_PREFIX} typing-focus agent=${agentId} port=${port} focus=${reading.focus || "none"} by=${reading.by} frames=${reading.frames} ms=${Date.now() - startedAt}`);
+    return { focus: reading.focus };
   };
 }

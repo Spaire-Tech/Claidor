@@ -140,6 +140,15 @@ extension AppStore {
   }
 
   /**
+   * The person takes control: the computer's Chrome is made ready to see
+   * their taps (`typingFocus` with `prepare`), so the first tap's field is
+   * known too. Nothing comes back; an engine without it does no harm.
+   */
+  public func prepareTypingFocus(_ agentId: String) async {
+    _ = try? await backend?.command("typingFocus", ["id": .string(agentId), "prepare": true])
+  }
+
+  /**
    * Take control (`takeComputerControl`): a working agent is stopped and the
    * computer is the person's until they hand it back; true when that
    * started a hand-off (handing back then resumes the agent).
