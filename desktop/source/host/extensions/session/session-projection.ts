@@ -28,4 +28,36 @@ function cardText(object: unknown, key: string): string | null { const value = o
 function cardPreviewText(message: Record<string, unknown>): string | null { switch (message.type) { case "widget": return cardText(message.widget, "prompt") ?? "Has a question for you"; case "secret-request": return cardText(message.secretRequest, "label") ?? "Needs a secret from you"; case "email-draft": return cardText(message.draft, "subject") ?? cardText(message.draft, "body") ?? "Drafted an email"; case "slack-draft": return cardText(message.draft, "body") ?? "Drafted a Slack message"; case "permission-request": return cardText(message.permission, "title") ?? "Needs your permission"; case "auto-review-approval": { const summary = cardText(message.approval, "summary"); return summary == null ? "Needs your approval" : `Approval required: ${summary}`; } case "local-tool-permission": { const target = cardText(message.ask, "target"); return target == null ? "Needs your permission" : `Permission required: ${target}`; } case "connector": { const name = cardText(message, "connector"); return name == null ? "Connect an app" : message.variant === "connected" ? `${name} connected` : `Connect ${name}`; } case "connectors": { const names = Array.isArray(message.connectors) ? message.connectors.filter((name): name is string => typeof name === "string" && name.length > 0) : []; return names.length > 0 ? `Connect ${names.join(", ")}` : "Connect tools"; } case "listener-connect": return `Connect ${message.platform === "slack" ? "Slack" : "GitHub"}`; case "cloud-agent": return cardText(message, "title") ?? "Cloud agent"; case "purchase": return cardText(message, "content") ?? "Checkout"; } return null; }
 export function lastMessagePreviewText(message: Record<string, unknown>): string { if(message.type==="text")return previewText(message.content);if(message.type==="attachment"&&typeof message.url==="string"&&isLinkAttachmentMessage(message as unknown as AttachmentMessage))return`Sent a link · ${message.url}`;if(message.type==="attachment")return`Sent an attachment · ${classifyAttachment({fileName:message.file_name,urlOrPath:message.url})}`;const card=cardPreviewText(message);if(card!=null)return previewText(card);if(typeof message.title==="string")return previewText(message.title);if(typeof message.label==="string")return previewText(message.label);return "Sent a message"; }
 export function getLastMessageFromTranscript(entries: readonly Record<string, unknown>[]): { id: string; preview: string } | null { for(let i=entries.length-1;i>=0;i--){const entry=entries[i];if(entry?.kind!=="send-message"||typeof entry.id!=="string"||entry.message==null||typeof entry.message!=="object")continue;return{id:entry.id,preview:lastMessagePreviewText(entry.message as Record<string,unknown>)}}return null; }
-export function getLastEntryFromTranscript(entries: readonly Record<string, unknown>[]): Record<string, unknown> | null { const visible=entries.filter((entry)=>entry.hidden!==true&&entry.branched!==true);for(let i=visible.length-1;i>=0;i--){const entry=visible[i];if(entry==null||entry.peerAgentId!=null)continue;const call=entry.kind==="event"?voiceCallLineText(entry.event):null;if(call!=null)return{kind:"text",text:call};if(entry.kind==="send-message"&&entry.message&&typeof entry.message==="object"){const msg=entry.message as Record<string,unknown>;if(msg.type==="text")return{kind:"text",text:String(msg.content??"")};if(msg.type==="widget"){const widget=msg.widget as Record<string,unknown>|undefined,prompt=typeof widget?.prompt==="string"?widget.prompt:"Question";return{kind:"text",text:entry.respondedValue==null?prompt:`${prompt} — ${String(entry.respondedValue)}`}}if(msg.type==="attachment"&&typeof msg.url==="string"&&isLinkAttachmentMessage(msg as unknown as AttachmentMessage))return{kind:"link",url:msg.url};return msg.type==="attachment"?buildAttachmentLastEntry(visible,i):{kind:"text",text:lastMessagePreviewText(msg)}}if(entry.kind==="message"&&typeof entry.content==="string"&&entry.content.length>0)return{kind:"text",text:entry.content};if(entry.kind==="user-attachment")return buildAttachmentLastEntry(visible,i)}return null; }
+/**
+ * Who a line in the chat list's preview is between, when it is not the agent
+ * and the person (15 October 2026; the founder: "when two agents talk to each
+ * other, the chat preview shows as if its talking to me"). The chat folds
+ * these as "Messaged Theo" and "Message from Theo"; the preview says "To
+ * Theo: …" and "From Theo: …". A group's member, or another person in a
+ * shared room, is named as the speaker ("Theo: …"). Lines of a call written
+ * before calls were one line (a `voice-call:` peer named for the person) are
+ * the person's and stay as they were. The text stays a `text` entry, so every
+ * window draws it as before.
+ */
+function speakerOf(entry: Record<string, unknown>): string {
+  const party = (value: unknown): { id: string; name: string } | null => {
+    if (value == null || typeof value !== "object") return null;
+    const record = value as Record<string, unknown>;
+    return { id: typeof record.id === "string" ? record.id : "", name: typeof record.name === "string" ? record.name.trim() : "" };
+  };
+  if (entry.kind === "send-message") {
+    const author = party(entry.author);
+    return author != null && author.name.length > 0 ? `${author.name}: ` : "";
+  }
+  const to = party(entry.toAgent), from = party(entry.fromAgent);
+  const peer = to ?? from;
+  if (peer != null) {
+    if (peer.id.startsWith("voice-call:")) return "";
+    const name = peer.name.length > 0 ? peer.name : "another agent";
+    return to != null ? `To ${name}: ` : `From ${name}: `;
+  }
+  const person = party(entry.fromUser);
+  return person != null && person.name.length > 0 ? `${person.name}: ` : "";
+}
+const spoken = (entry: Record<string, unknown>, text: string): string => text.length === 0 ? text : speakerOf(entry) + text;
+export function getLastEntryFromTranscript(entries: readonly Record<string, unknown>[]): Record<string, unknown> | null { const visible=entries.filter((entry)=>entry.hidden!==true&&entry.branched!==true);for(let i=visible.length-1;i>=0;i--){const entry=visible[i];if(entry==null||entry.peerAgentId!=null)continue;const call=entry.kind==="event"?voiceCallLineText(entry.event):null;if(call!=null)return{kind:"text",text:call};if(entry.kind==="send-message"&&entry.message&&typeof entry.message==="object"){const msg=entry.message as Record<string,unknown>;if(msg.type==="text")return{kind:"text",text:spoken(entry,String(msg.content??""))};if(msg.type==="widget"){const widget=msg.widget as Record<string,unknown>|undefined,prompt=typeof widget?.prompt==="string"?widget.prompt:"Question";return{kind:"text",text:entry.respondedValue==null?prompt:`${prompt} — ${String(entry.respondedValue)}`}}if(msg.type==="attachment"&&typeof msg.url==="string"&&isLinkAttachmentMessage(msg as unknown as AttachmentMessage))return{kind:"link",url:msg.url};return msg.type==="attachment"?buildAttachmentLastEntry(visible,i):{kind:"text",text:lastMessagePreviewText(msg)}}if(entry.kind==="message"&&typeof entry.content==="string"&&entry.content.length>0)return{kind:"text",text:spoken(entry,entry.content)};if(entry.kind==="user-attachment")return buildAttachmentLastEntry(visible,i)}return null; }

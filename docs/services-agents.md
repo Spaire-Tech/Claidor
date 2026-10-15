@@ -1859,3 +1859,34 @@ own page with the bundled noVNC, in Chromium at a phone's size, against a VNC se
 against x11vnc on Xvfb, where the same clicks, turns and drag arrived as X button events at the
 same pixels. The screen server's flags were measured as above, not run in a built image (its
 smoke test was not run here).
+
+## 16. The chat list's preview when agents talk to each other
+
+**For the person (15 October 2026).** The founder: "When two agents talk to each other, the
+chat preview shows as if its talking to me." An agent's chat keeps what it sent another agent
+and what that agent sent back; the chat folds them as "Messaged Theo" and "Message from Theo",
+but the line under the agent's name in the list showed the bare text, as if said to the person.
+Now the list says who it was between:
+
+- what the agent sent another agent, or posted in a group: "To Theo: Can you check the venue?",
+  "To Launch squad: Ready.";
+- what another agent sent it: "From Theo: Booked for Thursday.";
+- in a group chat or a shared room, who said the last line: "Theo: Venue confirmed.",
+  "Dana: Looks good".
+
+The agent's own messages to the person and the person's own stay as they were, and so do the
+lines of a call written before calls were one line.
+
+**How it works.** The engine picks each agent's last line for the roster
+(`getLastEntryFromTranscript`, `host/extensions/session/session-projection.ts`) and now puts the
+speaker before the text: `toAgent` is "To …", `fromAgent` "From …", a group line's `author` and
+a shared room's `fromUser` the name. It stays a `text` entry, so the iPhone, the Mac app and
+the web app draw it with no change of their own. The phone's offline demo already left these
+lines out of its previews and named group speakers.
+
+**Switches.** None. It reaches every app with the next host bundle. The rows' last lines are
+kept in the engine's memory only (`extrasCache`, `agent-session.ts`), so the new engine works
+every row out again when it starts and the list shows the new lines at once.
+
+**Not yet verified.** Not seen on an iPhone or a Mac. The engine's test
+(`desktop/tests/session-projection-last-entry.test.mjs`) runs the lines through the function.

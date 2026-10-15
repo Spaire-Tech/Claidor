@@ -90,3 +90,29 @@ test("a card's preview is what it says, never its type's name (a question card's
     await dispose();
   }
 });
+
+test("agents talking to each other read as that in the chat list, not as if said to the person", async () => {
+  const { module, dispose } = await loadProjection();
+  try {
+    const last = (...entries) => module.getLastEntryFromTranscript(entries)?.text;
+    const asked = { id: "u1", kind: "message", role: "user", content: "Plan the launch" };
+    const toTheo = { id: "a1", kind: "message", role: "assistant", content: "Can you **check** the venue?", toAgent: { id: "theo", name: "Theo", kind: "agent" } };
+    const fromTheo = { id: "u2", kind: "message", role: "user", content: "Booked for Thursday.", fromAgent: { id: "theo", name: "Theo" } };
+    // The founder, 15 October 2026: "the chat preview shows as if its talking to me".
+    assert.equal(last(asked, toTheo), "To Theo: Can you **check** the venue?");
+    assert.equal(last(asked, toTheo, fromTheo), "From Theo: Booked for Thursday.");
+    assert.equal(last(asked, toTheo, fromTheo, { id: "s1", kind: "send-message", message: { type: "text", content: "The venue is booked." } }), "The venue is booked.", "the agent's own message to the person stays as it is");
+    assert.equal(last(asked), "Plan the launch", "and so does the person's");
+    // A post the agent made in a group, as its own chat keeps it ("Messaged Launch squad").
+    assert.equal(last({ id: "a2", kind: "message", role: "assistant", content: "Ready.", toAgent: { id: "g1", name: "Launch squad", kind: "group" } }), "To Launch squad: Ready.");
+    assert.equal(last({ id: "a3", kind: "message", role: "assistant", content: "Hi", toAgent: { id: "x" } }), "To another agent: Hi");
+    // A group's members and another person in a shared room are named.
+    assert.equal(last({ id: "g2", kind: "send-message", message: { type: "text", content: "Venue confirmed." }, author: { id: "theo", name: "Theo" } }), "Theo: Venue confirmed.");
+    assert.equal(last({ id: "r1", kind: "message", role: "user", content: "Looks good", fromUser: { name: "Dana", authId: "a" } }), "Dana: Looks good");
+    // A call written before calls were one line was the person's, and an empty line stays empty.
+    assert.equal(last({ id: "c1", kind: "message", role: "user", content: "What's on today?", fromAgent: { id: "voice-call:abc123:42", name: "Bass" } }), "What's on today?");
+    assert.equal(last({ id: "g3", kind: "send-message", message: { type: "text", content: "" }, author: { id: "theo", name: "Theo" } }), "");
+  } finally {
+    await dispose();
+  }
+});
