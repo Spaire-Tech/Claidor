@@ -429,6 +429,42 @@ function toToolSet(definitions: readonly Loose[] | undefined, executeTool?: Rout
   return Object.keys(tools).length === 0 ? undefined : tools;
 }
 
+/**
+ * A tool the model made up (15 October 2026: Claude called `CheckSubagent`
+ * while a helper ran) failed the whole run: the AI SDK refuses a call it has
+ * no tool for (`NoSuchToolError`) before the agent's loop, which answers one
+ * ("Tool not found: …", `executeDeferredToolCall`), ever sees it. Any name
+ * the SDK looks up is found; the request still offers only the real tools
+ * (the SDK lists the set's own keys). Where the SDK runs the tools itself
+ * (`executes`), the made-up one answers that it does not exist.
+ */
+export function answeringUnknownTools(tools: ToolSet | undefined, executes: boolean): ToolSet | undefined {
+  if (tools === undefined) return undefined;
+  const made = new Map<string, ToolSet[string]>();
+  const unknown = (name: string) => {
+    let found = made.get(name);
+    if (found === undefined) {
+      const madeTool: any = { parameters: jsonSchema({ type: "object" }) };
+      if (executes) madeTool.execute = async () => unknownToolAnswer(name, Object.keys(tools));
+      found = tool(madeTool) as ToolSet[string];
+      made.set(name, found);
+    }
+    return found;
+  };
+  return new Proxy(tools, {
+    get(target, name, receiver) {
+      // Symbols and anything every object has (`then` too, should the set ever be awaited) stay as they are.
+      if (typeof name !== "string" || name in target || name === "then" || name === "toJSON") return Reflect.get(target, name, receiver);
+      return unknown(name);
+    },
+  });
+}
+
+/** The loop's own words for it (`executeDeferredToolCall`), so the model reads the same thing on either path. */
+export function unknownToolAnswer(name: string, available: readonly string[]): string {
+  return `Tool not found: ${name}. Available tools: ${available.join(", ")}`;
+}
+
 function partText(parts: readonly Loose[]): string {
   return parts.filter(part => part?.type === "text" && typeof part.text === "string").map(part => part.text as string).join("\n");
 }
@@ -732,7 +768,7 @@ function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: 
 }
 
 function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void, maxTokens = 0, openaiOptions: Record<string, unknown> = {}, callInfo?: { readonly model: string; readonly effort: string; readonly budget?: string }, onRequestId?: (requestId: string) => void, promptCacheKey?: string, onCutOff?: () => void, wire: SimeonWire = "openai") {
-  const tools = toToolSet(definitions, executeTool);
+  const tools = answeringUnknownTools(toToolSet(definitions, executeTool), executeTool != null);
   const coreMessages = toCoreMessages(messages, wire);
   const prefixedCallInfo = callInfo === undefined ? undefined : { ...callInfo, prefix: promptPrefixFingerprint(coreMessages, definitions, promptCacheKey) };
   // The host loop's state carries its own system prompt; the router prompt is

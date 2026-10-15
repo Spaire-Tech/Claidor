@@ -579,6 +579,14 @@ box and `SAND_KEEP_BOX_RUNNING_ON_QUIT=1` always keeps it running
   are on `[simeon] model-roles primary=… cheap=… fallback=…`, written when
   they change, `model-roles remembered …` when the host starts on the kept
   ones, or `model-roles unread` when the read fails.
+- A tool the model makes up no longer fails the run (15 October 2026: Claude
+  called `CheckSubagent`, and the box log read `[sand][turn] agent run failed
+  … NoSuchToolError … unavailable tool 'CheckSubagent'`). The call now
+  reaches the agent's loop, which answers `Tool not found: <name>. Available
+  tools: …`, and the model goes on with a real one; the step's line shows it
+  as `tools=CheckSubagent(…)`. Connector calls the AI SDK runs itself get the
+  same answer. Only the real tools are ever offered
+  (`answeringUnknownTools`, `desktop/tests/unknown-tool-call.test.mjs`).
 
 **Not yet verified:** GPT-6 Sol and Luna have not run against OpenAI. The
 spend guards have not run on a Mac. The Gemini prices are marked "to confirm"
