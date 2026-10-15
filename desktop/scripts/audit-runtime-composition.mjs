@@ -137,6 +137,9 @@ const runtimeSpecs = Object.freeze({
       installInvariantReporter: ["clean-provider", "source/shared/invariant.ts#installInvariantReporter", "installInvariantReporter((report)"],
       pinHostDiagnosticsReporter: ["clean-provider", "source/host/host-diagnostics.ts#pinHostDiagnosticsReporter", "pinHostDiagnosticsReporter((diagnostic)"],
       acquireHostLock: ["clean-provider", "source/host/host-lock.ts#acquireHostLock", "await acquireHostLock()"],
+      // The backup copied in before the host starts (14 October 2026); the
+      // upstream ran it from its image, so its artifact anchor is the lock it follows.
+      restoreBoxStore: ["clean-provider", "source/host/box/box-store-restore.ts#restoreBoxStoreFromEnv", "await acquireHostLock()"],
       startBoxExecDaemon: ["clean-provider", "source/host/box/exec-daemon-process.ts#startBoxExecDaemonProcess", "await acquireHostLock()"],
       getSandRootDir: ["clean-provider", "source/host/host-paths.ts#getSandRootDir", "getSandRootDir()}"],
       createHost: ["clean-provider-needs-explicit-ports", "source/host/sand-host.ts#createProductionSandHost", "new SandHost()"],
@@ -763,6 +766,22 @@ async function checksumPinnedRendererVerdict(outputRoot, requireOutputs, declara
     verdict,
     blockers,
   };
+}
+
+/**
+ * Each runtime's catalog against its contract, from the source alone (no
+ * build artifacts): the drift `npm run package` refuses, found by `npm test`
+ * on any machine. Empty when they match.
+ */
+export async function runtimeCatalogDrift() {
+  const drift = [];
+  for (const [runtimeName, spec] of Object.entries(runtimeSpecs)) {
+    const sourceText = await readFile(path.join(repoRoot, spec.entrypoint), "utf8");
+    const contract = interfaceMembers(sourceText, spec.entrypoint, spec.contract).map(member => member.name).sort();
+    const catalog = Object.keys(spec.requirements).sort();
+    if (JSON.stringify(catalog) !== JSON.stringify(contract)) drift.push({ runtime: runtimeName, contract, catalog });
+  }
+  return drift;
 }
 
 export async function assertCleanRuntimeClosures({ outputRoot, runtimes = null, composition = runtimeComposition }) {

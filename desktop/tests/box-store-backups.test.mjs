@@ -172,3 +172,8 @@ test("presigned URLs: the upstream's bucket and the one the server names, nothin
     if (before === undefined) delete process.env.SAND_AGENT_STORE_BUCKET_HOSTS; else process.env.SAND_AGENT_STORE_BUCKET_HOSTS = before;
   }
 });
+
+test("the packaging audit's catalog names every part of the host's start, restore included", async () => {
+  const { runtimeCatalogDrift } = await import(pathToFileURL(path.join(repoRoot, "scripts/audit-runtime-composition.mjs")).href);
+  assert.deepEqual(await runtimeCatalogDrift(), []);
+});
