@@ -264,9 +264,16 @@ the next plugin sync.
 
 ## 7. Connectors
 
-The Connect apps sheet lists 52 connectors (`shared/node/vendor-mcp/catalog.ts`): 21 are the
-vendor's own MCP servers and 31 are apps served by Simeon Labs' server. People can also add
-their own MCP servers.
+The Connect apps sheet lists 87 connectors (`shared/node/vendor-mcp/catalog.ts`, 15 October
+2026): 38 are the vendor's own MCP servers and 49 are apps served by Simeon Labs' server.
+People can also add their own MCP servers.
+
+Every agent's brief names all of them (`SIMEON_CONNECTOR_NAMES` in
+`host/runner/system-prompt.ts`, about 330 tokens, read from the prompt cache), with the rule
+that a service on the list is never called one without a connector and is offered as a
+connector before the computer's browser. Until then the brief named only the connected ones
+and gave Instagram as an example of a service with no connector, and Simeon told the founder
+so. The proposal card's button is Connect, and the brief and the tools say so.
 
 ### 7a. Vendor MCP connectors
 

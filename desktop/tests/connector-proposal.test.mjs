@@ -87,6 +87,28 @@ test("the proposal reaches the transcript as a connector card without a server i
     await dispose();
   }
   const prompt = await src("host/runner/system-prompt.ts");
-  assert.match(prompt, /propose it with ProposeConnector: the user sees a card with the service, your one-line reason and an Add button/);
+  assert.match(prompt, /propose it with ProposeConnector: the user sees a card with the service, your one-line reason and a Connect button/);
   assert.doesNotMatch(prompt, /name it in plain text and ask; once the user agrees, install it/);
+});
+
+// 15 October 2026: Simeon told the founder there was no Instagram connector
+// and offered the computer's browser; the connector was in the catalogue all
+// along. Every agent's brief names every connector, and no line names one as
+// a service without a connector.
+test("every agent's brief names every connector in Simeon's catalogue", async () => {
+  const { module, dispose } = await load("source/host/runner/system-prompt.ts", "system-prompt");
+  const catalogue = await load("source/shared/node/vendor-mcp/catalog.ts", "vendor-catalog");
+  try {
+    const brief = module.DEFAULT_SAND_SYSTEM_PROMPT;
+    const offered = catalogue.module.VENDOR_MCP_CONNECTORS.filter((item) => item.comingSoon !== true);
+    assert.ok(offered.length > 50, `the catalogue has its connectors: ${offered.length}`);
+    for (const item of offered) assert.ok(brief.includes(item.name), `the brief names ${item.name}`);
+    assert.match(brief, /never say there is no connector for it, and offer the connector before the box's browser/);
+    assert.doesNotMatch(brief, /chat apps \([^)]*Instagram/, "Instagram is not given as a service without a connector");
+    assert.doesNotMatch(brief, /an Add button/, "the card's button is Connect");
+    assert.equal(module.SAND_SYSTEM_PROMPT_CLOUD_AGENTS_DISABLED.includes(module.SIMEON_CONNECTOR_NAMES), true, "the brief without cloud agents names them too");
+  } finally {
+    await dispose();
+    await catalogue.dispose();
+  }
 });
