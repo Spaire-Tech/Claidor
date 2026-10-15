@@ -6,6 +6,7 @@ export const BROWSER_USE_SUBAGENT_DESCRIPTION = [
   "Prefer it over computerUse for browser-only work: page snapshots give it exact element targets, so it is faster and more reliable than pixel clicking, and it shares the box browser's persistent logins.",
   "Use computerUse instead when the task needs the desktop itself (GUI apps, file dialogs, drag interactions) or a site that defeats DOM automation.",
   "It runs in the background like any Task: you are notified when it finishes, so do not poll or await it.",
+  "It works in your own browser tab, so only one browserUse or computerUse subagent can run at a time: put the whole form or flow in one task, and wait for its result before you send the next.",
   "It runs headless and cannot ask follow-ups, so give it a tightly-scoped, self-contained task with the specifics it needs (site, exact values), explicit success criteria, and what to report back.",
   "It cannot act as the user: if a step needs a human (a password, 2FA, a captcha, a payment, or a form asking for the user's own details) it stops and reports back, so you can hand the user the box with request_box_help and dispatch it again to continue.",
 ].join(" ");

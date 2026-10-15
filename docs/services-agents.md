@@ -1615,6 +1615,21 @@ helper had finished long before, and sent another helper to check. Now:
   (`createSubagentManagementToolInputs` in `host-runner-composition.ts`;
   `desktop/tests/subagent-tools-offered.test.mjs`). A tool the model makes up no longer fails
   the run either: it is answered "Tool not found" (`docs/services-core.md`).
+- **One helper on the screen at a time** (later the same day). The founder asked the agent to
+  fill in httpbin's practice form; the ticks came out right and the typed fields scrambled
+  (the telephone read `7350SP%M_`), the form open in two tabs, and the agent wrote "a couple of
+  them overlapped and typed over each other". A computerUse helper already held the screen
+  while it ran; a browserUse helper did not, and every browser helper acts in the agent's own
+  tab (its default view is the agent's), so two at once clicked and typed into the same fields.
+  Now a browserUse helper holds the screen too, against another browser or computer helper; a
+  second one is refused with a sentence the agent can act on ("…only one can run at a time:
+  wait for its result…, or stop it with StopSubagent first"), a helper sent again to continue
+  takes the screen again, and the screen is let go when a helper settles, whatever its outcome
+  (`SCREEN_BUSY`, `createOrResumeSession` in `host/runner/agent-adapters.ts`;
+  `desktop/tests/screen-helper-one-at-a-time.test.mjs`). The helper's description says so,
+  and to put a whole form in one task. Two helpers had been running because Claude refused
+  their requests ("the browser helpers kept crashing", `docs/services-core.md`, "`tool_use` ids
+  were found without `tool_result` blocks"), and the agent sent more.
 
 This needs no server change and no setting on Render: it is all in the engine, and reaches the
 cloud computers when the founder's agent publishes a new host bundle.
