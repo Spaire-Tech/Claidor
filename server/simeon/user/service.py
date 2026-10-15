@@ -292,7 +292,13 @@ class UserService:
 
         update_dict: dict[str, Any] = {}
 
-        update_dict["email"] = anonymize_email_for_deletion(user.email)
+        # The account's own id goes into the hash (15 October 2026): every
+        # e-mail is unique, deleted rows included, so the same address
+        # deleted a second time (deleted, signed up again, deleted again)
+        # collided with the first and the deletion failed. Nothing reads the
+        # value back; the free month keeps its own hash of the e-mail
+        # (`DesktopFreeTrial.email_hash`).
+        update_dict["email"] = anonymize_email_for_deletion(f"{user.id}:{user.email}")
 
         if user.avatar_url:
             update_dict["avatar_url"] = None

@@ -120,6 +120,28 @@ class TestRequestDeletion:
         assert len(result.blocking_organizations) == 1
         assert user.deleted_at is None
 
+    async def test_the_same_address_deleted_twice(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """An address deleted, signed up with again and deleted again (the
+        founder, 15 October 2026: `ix_users_email_case_insensitive`)."""
+        email = user.email
+        first = await user_service.request_deletion(session, user)
+        assert first.deleted is True
+        await session.flush()
+        again = User(email=email)
+        await save_fixture(again)
+
+        second = await user_service.request_deletion(session, again)
+        await session.flush()
+
+        assert second.deleted is True
+        assert again.email.endswith("@anonymized.invalid")
+        assert again.email != user.email
+
     async def test_anonymization(
         self,
         session: AsyncSession,

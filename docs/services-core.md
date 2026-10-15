@@ -222,6 +222,15 @@ When it misbehaves:
   `Instance '<OAuthAccount …>' has been deleted`). The rows were rolled back
   after steps 1 to 3 had happened, so such an account lost its computer and
   apps but stayed. Deleting it again now finishes it.
+- `Unhandled exception … ix_users_email_case_insensitive` on `DELETE
+  /desktop/api/account` (15 October 2026, 14:40 PT): an address deleted,
+  signed up with again and deleted again. Step 5 replaced the e-mail with a
+  hash of it, and every e-mail is unique, deleted rows included, so the second
+  deletion collided with the first and was rolled back. The hash now takes the
+  account's id too (`soft_delete_user`; `tests/user/test_service.py`,
+  `test_the_same_address_deleted_twice`). The free month keeps its own hash
+  of the address (`DesktopFreeTrial.email_hash`), unchanged, so deleting and
+  signing up again still starts no second free month.
 
 **Not yet verified:** a deletion from the packaged iPhone or Mac app against
 `api.simeonlabs.com`.
@@ -587,6 +596,30 @@ box and `SAND_KEEP_BOX_RUNNING_ON_QUIT=1` always keeps it running
   as `tools=CheckSubagent(…)`. Connector calls the AI SDK runs itself get the
   same answer. Only the real tools are ever offered
   (`answeringUnknownTools`, `desktop/tests/unknown-tool-call.test.mjs`).
+- **"`tool_use` ids were found without `tool_result` blocks immediately
+  after"** (`desktop.proxy.upstream_refused`, status 400; the founder's form,
+  15 October 2026, three times in a row). Claude takes a step's results as
+  the very next message, every `tool_result` first in it, before any text or
+  picture. The loop keeps each result as a message of its own and puts a
+  result's screenshot after it as a user message; the AI SDK merges them in
+  that order, so with two calls in one step and a screenshot from the first,
+  the second's result came after the picture and Claude refused the
+  conversation, and every later step of it. The server put the computer to
+  sleep at 15:17 PT after its 30 idle minutes (nothing running, no app
+  attached), before the refusals at 15:19, so the sleep did not cut the form
+  off. Now, on Claude's wire only (`pairedForClaude`, `provider-session.ts`),
+  each step's results follow it at once in the order of its calls; a call
+  with no result (a run stopped mid-step) is answered "This tool call was
+  interrupted…" as an error, so the agent looks before it repeats it; a
+  result with no call is left out. A conversation already in that shape is
+  sent byte for byte as before (`desktop/tests/claude-tool-results.test.mjs`,
+  which builds the request with the AI SDK's own Claude provider and checks
+  it against Claude's rules). In the box, a repair writes `[simeon]
+  claude-tool-results repaired reordered=… interrupted=… dropped=…`; a refused
+  call writes `[simeon] model-error-messages` with the conversation's shape
+  (`tool:tool-result` and `user:text+image` in order). The stored
+  conversation is not rewritten: it is put in order each time it is sent, so
+  a conversation that broke before this engine works again with it.
 
 **Not yet verified:** GPT-6 Sol and Luna have not run against OpenAI. The
 spend guards have not run on a Mac. The Gemini prices are marked "to confirm"

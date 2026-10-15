@@ -568,7 +568,60 @@ export function toCoreMessages(messages: readonly ProviderMessage[], wire: Simeo
     const dropped = droppable - (droppable % SIMEON_TOOL_IMAGE_DROP_BATCH);
     for (const index of messages.slice(0, dropped)) out[index] = { role: "user", content: [{ type: "text", text: TOOL_IMAGE_DROPPED }] };
   }
-  return (wire === "anthropic" ? withoutEmptyContent(out) : out) as CoreMessage[];
+  return (wire === "anthropic" ? pairedForClaude(withoutEmptyContent(out)) : out) as CoreMessage[];
+}
+
+/** What Claude reads for a call that has no result: the run stopped, or the computer restarted, before the tool answered. */
+export const TOOL_CALL_INTERRUPTED = "This tool call was interrupted before it returned (the run stopped, or the computer restarted), so what it did is unknown. Look at the current state before you repeat it.";
+
+// Claude's rule for tool results (platform.claude.com, "Handle tool calls"):
+// the results of an assistant step's calls are the very next message, and in
+// it every `tool_result` comes first, before any text or picture; a result
+// with no call before it is refused too. The loop keeps each result as a
+// message of its own and, above, puts a result's screenshot after it as a
+// user message; the AI SDK merges them into one message in that order, so
+// with two calls in a step and a screenshot from the first, the second's
+// result came after the picture. Claude refused it, and every later request
+// of that conversation (15 October 2026, the founder's form: "`tool_use` ids
+// were found without `tool_result` blocks immediately after", three times).
+// Here each step's results follow it at once, in the order of its calls; a
+// call with no result (a run cut off mid-step) is answered as interrupted,
+// and a result with no call is left out. Text and pictures keep their order
+// after the results. A conversation already in that shape is sent unchanged.
+function pairedForClaude(messages: readonly Loose[]): Loose[] {
+  const results = new Map<string, Loose>();
+  for (const message of messages) {
+    if (message.role !== "tool" || !Array.isArray(message.content)) continue;
+    for (const part of message.content) if (part?.type === "tool-result" && typeof part.toolCallId === "string" && !results.has(part.toolCallId)) results.set(part.toolCallId, part);
+  }
+  const out: Loose[] = [];
+  const placed = new Set<string>();
+  let interrupted = 0;
+  for (const message of messages) {
+    // A result goes right after the step that called it, below.
+    if (message.role === "tool") continue;
+    out.push(message);
+    if (message.role !== "assistant" || !Array.isArray(message.content)) continue;
+    const calls = message.content.filter((part: Loose) => part?.type === "tool-call" && typeof part.toolCallId === "string");
+    if (calls.length === 0) continue;
+    out.push({
+      role: "tool",
+      content: calls.map((call: Loose) => {
+        const found = placed.has(call.toolCallId) ? undefined : results.get(call.toolCallId);
+        if (found !== undefined) {
+          placed.add(call.toolCallId);
+          return found;
+        }
+        interrupted += 1;
+        return { type: "tool-result", toolCallId: call.toolCallId, toolName: call.toolName, result: TOOL_CALL_INTERRUPTED, isError: true };
+      }),
+    });
+  }
+  const shape = (list: readonly Loose[]) => list.flatMap((message) => message.role === "tool" && Array.isArray(message.content) ? message.content.map((part: Loose) => `result:${String(part?.toolCallId)}`) : [String(message.role)]).join(" ");
+  const dropped = results.size - placed.size;
+  const reordered = shape(out) !== shape(messages);
+  if (interrupted > 0 || dropped > 0 || reordered) modelCallLog(`${HOST_LOG_PREFIX} claude-tool-results repaired reordered=${reordered} interrupted=${interrupted} dropped=${dropped}`);
+  return out;
 }
 
 // Claude refuses an empty text block and a message with nothing in it, where
