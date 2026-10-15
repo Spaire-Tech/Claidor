@@ -2,97 +2,177 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Each agent has its own computer</title>
+<title>Each teammate has its own computer</title>
 <script src="./support.js"></script>
 </head>
 <body>
 <x-dc>
 <helmet>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&amp;family=Inter:wght@400;500;600;700&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500&amp;family=Inter:wght@400;500;600;700&amp;display=swap">
 <style>
 body{margin:0}
-.hl{font-family:"Newsreader",Georgia,serif;font-weight:400}
-.ui{font-family:"Inter",-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;color:#141414;-webkit-font-smoothing:antialiased;letter-spacing:-.01em}
-.disc{width:44px;height:44px;border-radius:22px;background:#fff;box-shadow:0 0 0 .5px rgba(20,20,20,.1),0 2px 10px rgba(20,20,20,.08);display:flex;align-items:center;justify-content:center}
-.thread{display:flex;flex-direction:column;gap:10px;padding:0 16px}
-.them{align-self:flex-start;max-width:290px;background:#e9e9eb;color:#1d1d1f;border-radius:18px;padding:8px 12px;font-size:17px;line-height:23px}
-.me{align-self:flex-end;max-width:290px;background:#255a93;color:#fcfcfc;border-radius:18px;padding:10px 15px;font-size:17px;line-height:24px}
-.stamp{text-align:center;font-size:12px;color:rgba(20,20,20,.6)}
-.col{flex:1;min-width:0;display:flex;flex-direction:column;gap:16px}
-.colh{display:flex;align-items:baseline;gap:10px;font-size:30px;font-weight:600;padding:0 4px 2px}
-.colh span{font-weight:500;color:rgba(20,20,20,.45)}
-.deal{background:#fff;border-radius:18px;box-shadow:0 0 0 1px rgba(20,20,20,.1),0 2px 6px rgba(20,20,20,.05);padding:20px 24px;display:flex;flex-direction:column;gap:6px}
-.deal b{font-size:30px;font-weight:600}
-.deal span{font-size:25px;color:rgba(20,20,20,.55)}
+.hl{font-family:"Geist",-apple-system,"Helvetica Neue",sans-serif;font-weight:400}
+.ui{font-family:"Inter",-apple-system,"SF Pro Text",system-ui,sans-serif;color:#141414;-webkit-font-smoothing:antialiased;letter-spacing:-0.01em}
+.glass{background:rgba(255,255,255,0.8);box-shadow:0 0 0 0.5px rgba(20,20,20,0.12),0 6px 18px rgba(20,20,20,0.10)}
+.them{align-self:flex-start;max-width:325px;box-sizing:border-box;background:#e9e9eb;color:#1d1d1f;border-radius:18px;padding:8px 12px;font-size:18px;line-height:24px;box-shadow:0 0 0 0.5px rgba(20,30,60,0.07),0 1px 1px rgba(0,0,0,0.04)}
+.me{align-self:flex-end;max-width:325px;box-sizing:border-box;background:#255a93;color:#fcfcfc;border-radius:18px;padding:10px 15px;font-size:18px;line-height:25px}
+.stamp{align-self:center;font-size:12px;color:rgba(20,20,20,0.6);margin-bottom:2px}
+.tab{position:relative;display:flex;align-items:center;gap:8px;width:196px;height:34px;padding:0 12px;box-sizing:border-box;font-size:12px;color:#444746;white-space:nowrap;overflow:hidden}
+.tab+.tab:before{content:"";position:absolute;left:0;top:10px;width:1px;height:14px;background:#a8adb6}
+.tab.on{background:#ffffff;color:#1f1f1f;border-radius:10px 10px 0 0}
+.tab.on+.tab:before{display:none}
+.fav{width:16px;height:16px;border-radius:4px;flex:none;display:flex;align-items:center;justify-content:center}
+.plan{flex:1;border-radius:16px;padding:22px 22px 20px;box-sizing:border-box;background:#ffffff;box-shadow:0 0 0 1px #e7e5e0}
+.plan .nm{font-size:15px;font-weight:600}
+.plan .pr{display:flex;align-items:baseline;gap:6px;margin-top:10px}
+.plan .pr b{font-size:44px;font-weight:600;letter-spacing:-0.03em;line-height:48px}
+.plan .pr span{font-size:13px;color:#6b6b6b}
+.plan .ds{font-size:13px;line-height:18px;color:#6b6b6b;margin-top:6px}
+.plan .bt{height:36px;border-radius:18px;margin-top:16px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;box-shadow:0 0 0 1px #d9d6cf}
+.plan ul{list-style:none;margin:16px 0 0;padding:0;font-size:13px;line-height:24px;color:#2a2a2a}
+.plan li{display:flex;align-items:center;gap:8px}
+.plan li:before{content:"";width:14px;height:14px;flex:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14' fill='none' stroke='%232f6b3b' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 7.3l2.6 2.6L11 4.4'/%3E%3C/svg%3E") center/14px no-repeat}
+.face{position:absolute;border-radius:50%;object-fit:cover;box-shadow:0 30px 70px rgba(0,0,0,0.18)}
 </style>
 </helmet>
-<div style="position: relative; width: 1320px; height: 2868px; overflow: hidden; background: #eef2fb">
-  <img src="/_blob/52e02805b2665fb91d2b6d31b350c205" alt="" aria-hidden="true" style="position: absolute; left: -774px; top: 0; width: 2868px; height: 2868px">
+<div style="position: relative; width: 1320px; height: 2868px; overflow: hidden; background: {{ground}}">
 
+  <h1 class="hl" style="position: absolute; left: 80px; right: 80px; top: 250px; margin: 0; text-align: center; font-size: 110px; line-height: 1.08; letter-spacing: -0.035em; color: #141414">Each teammate has<br>its own computer</h1>
 
-  <h1 class="hl" style="position: absolute; left: 80px; right: 80px; top: 250px; margin: 0; text-align: center; font-size: 108px; line-height: 1.06; letter-spacing: -0.02em; color: #16213a">Each agent has<br>its own computer</h1>
+  <div style="position: absolute; left: 196px; top: 640px; width: 928px; height: 1962px; border-radius: 150px; background: #111112; box-shadow: 0 60px 120px rgba(0,0,0,0.16), inset 0 0 0 3px #2c2c2e">
+    <div style="position: absolute; left: 22px; top: 22px; width: 884px; height: 1918px; border-radius: 128px; overflow: hidden; background: #ffffff">
+      <div class="ui" style="zoom: 2.25; width: 393px; height: 852px; position: relative">
 
-  <div style="position: absolute; left: 129px; top: 700px; width: 1061px; height: 1900px; border-radius: 104px; overflow: hidden; background: #ffffff; box-shadow: 0 40px 120px rgba(30,50,100,0.22), 0 0 0 1px rgba(30,50,100,0.06)">
-    <div class="ui" style="zoom: 2.7; width: 393px; height: 704px; position: relative">
-      <div style="position: relative; height: 104px">
-        <div class="disc" style="position: absolute; left: 14px; top: 14px"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#141414" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></div>
-        <div class="disc" style="position: absolute; right: 14px; top: 14px"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#255a93" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"></path></svg></div>
-        <div style="position: absolute; left: 0; right: 0; top: 8px; display: flex; flex-direction: column; align-items: center; gap: 4px">
-          <img src="/_blob/642b059cd07dfa9066bc38e9ec7fb6fa" alt="" style="width: 52px; height: 52px; display: block">
-          <div style="font-size: 13px; font-weight: 500; padding: 4px 12px; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 .5px rgba(20,20,20,.1), 0 2px 8px rgba(20,20,20,.08)">Theo</div>
+        <div style="position: absolute; left: 0; top: 0; width: 393px; height: 54px">
+          <div style="position: absolute; left: 0; top: 17px; width: 150px; text-align: center; font-size: 17px; font-weight: 600; letter-spacing: -0.02em">9:41</div>
+          <div style="position: absolute; left: 134px; top: 11px; width: 125px; height: 37px; border-radius: 19px; background: #000000"></div>
+          <div style="position: absolute; right: 30px; top: 21px; display: flex; align-items: center; gap: 6px">
+            <svg aria-hidden="true" width="18" height="12" viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1" fill="#141414"></rect><rect x="5" y="5.5" width="3" height="6.5" rx="1" fill="#141414"></rect><rect x="10" y="3" width="3" height="9" rx="1" fill="#141414"></rect><rect x="15" y="0" width="3" height="12" rx="1" fill="#141414"></rect></svg>
+            <svg aria-hidden="true" width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="#141414" stroke-width="1.9" stroke-linecap="round"><path d="M1.2 4.2a10 10 0 0 1 13.6 0"></path><path d="M3.8 7a6.2 6.2 0 0 1 8.4 0"></path><path d="M6.5 9.7a2.4 2.4 0 0 1 3 0"></path></svg>
+            <svg aria-hidden="true" width="27" height="13" viewBox="0 0 27 13"><rect x="0.5" y="0.5" width="23" height="12" rx="3.8" fill="none" stroke="#141414" stroke-opacity="0.35"></rect><rect x="2" y="2" width="20" height="9" rx="2.4" fill="#141414"></rect><path d="M25 4.5v4a2 2 0 0 0 0-4z" fill="#141414" fill-opacity="0.4"></path></svg>
+          </div>
         </div>
-      </div>
-      <div class="thread">
-        <div class="stamp">Today 10:04</div>
-        <div class="me">Move Northwind to Call booked and invite Priya for Tuesday.</div>
-        <div class="them">On it. You can watch me work.</div>
-        <div style="height: 290px"></div>
-        <div style="display: flex; align-items: center; gap: 8px; height: 36px; padding-left: 8px">
-          <img src="/_blob/642b059cd07dfa9066bc38e9ec7fb6fa" alt="" style="width: 28px; height: 28px; display: block; transform: scaleX(-1)">
-          <span style="font-size: 15px; font-weight: 500; color: rgba(20,20,20,0.6)">Updating the deal in HubSpot</span>
-          <span style="font-size: 12px; color: rgba(20,20,20,0.4)">0:42</span>
+
+        <div class="glass" style="position: absolute; left: 16px; top: 54px; width: 44px; height: 44px; border-radius: 22px; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#141414" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></div>
+        <div class="glass" style="position: absolute; right: 16px; top: 54px; width: 96px; height: 44px; border-radius: 22px; display: flex; align-items: center; justify-content: space-around; padding: 0 6px; box-sizing: border-box">
+          <svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#141414" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="M15.5 15.5L20 20"></path></svg>
+          <svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="#141414"><path d="M6.6 3.2c.6-.5 1.5-.4 2 .2l2.2 2.9c.4.6.4 1.4-.1 1.9l-1.4 1.5a12.5 12.5 0 0 0 5 5l1.5-1.4c.5-.5 1.3-.5 1.9-.1l2.9 2.2c.6.5.7 1.4.2 2l-1.3 1.6c-.7.8-1.8 1.2-2.9.9C10.4 18.4 5.6 13.6 4.1 7.4c-.3-1.1.1-2.2.9-2.9z"></path></svg>
         </div>
-      </div>
-      <div style="position: absolute; left: 12px; right: 12px; bottom: 16px; height: 46px; border-radius: 23px; box-shadow: inset 0 0 0 1px rgba(20,20,20,0.12); display: flex; align-items: center; gap: 10px; padding: 0 8px; font-size: 17px; color: rgba(20,20,20,0.45)">
-        <div style="width: 32px; height: 32px; border-radius: 16px; background: rgba(118,118,128,0.12); display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#141414" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></div>
-        <span style="flex: 1">Message</span>
-        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(20,20,20,0.55)" stroke-width="2" stroke-linecap="round"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"></path></svg>
-        <span style="width: 4px"></span>
+        <img src="/_blob/4f98be378af0a5fef6a673526e812766" alt="Iris" style="position: absolute; left: 162px; top: 48px; width: 68px; height: 68px; border-radius: 34px; display: block; object-fit: cover">
+        <div class="glass" style="position: absolute; left: 0; right: 0; top: 112px; margin: 0 auto; width: max-content; height: 34px; padding: 0 12px; border-radius: 17px; display: flex; align-items: center; font-size: 15px; font-weight: 500">Iris</div>
+
+        <div style="position: absolute; left: 16px; right: 16px; top: 170px; display: flex; flex-direction: column; gap: 8px">
+          <div class="stamp">Today 10:04 AM</div>
+          <div class="me" style="width: 279px; /*fit*/">Compare pricing for our top 5 competitors.</div>
+          <div class="them" style="width: 307px; /*fit*/ margin-top: 6px">On it. I’m going through their sites on my computer now.</div>
+        </div>
+
+        <div class="glass" style="position: absolute; left: 12px; top: 770px; width: 40px; height: 40px; border-radius: 20px; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#141414" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></div>
+        <div class="glass" style="position: absolute; left: 60px; right: 12px; top: 770px; height: 40px; border-radius: 20px; display: flex; align-items: center; padding: 0 12px 0 16px; box-sizing: border-box">
+          <span style="flex: 1; font-size: 17px; color: rgba(20,20,20,0.4)">Message</span>
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(20,20,20,0.6)" stroke-width="2" stroke-linecap="round"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"></path></svg>
+        </div>
+        <div style="position: absolute; left: 129px; bottom: 8px; width: 135px; height: 5px; border-radius: 3px; background: #141414"></div>
       </div>
     </div>
   </div>
 
-  <div class="ui" style="position: absolute; left: 52px; top: 1400px; width: 1216px; height: 760px; border-radius: 56px; overflow: hidden; background: #1b1a20; box-shadow: 0 30px 90px rgba(30,50,100,0.3), 0 0 0 1px rgba(30,50,100,0.06)">
-    <img src="/_blob/f07d3383a3f24645c2bc2457ee110f52" alt="" aria-hidden="true" style="position: absolute; inset: 0; width: 1216px; height: 760px; object-fit: cover">
-    <div style="position: absolute; left: 64px; top: 44px; width: 1088px; height: 592px; border-radius: 22px; overflow: hidden; background: #f7f7f8; box-shadow: 0 24px 60px rgba(0,0,0,0.4)">
-      <div style="height: 62px; background: #ececee; display: flex; align-items: center; gap: 22px; padding: 0 22px; border-bottom: 1px solid rgba(20,20,20,0.08)">
-        <div style="display: flex; gap: 9px"><span style="width: 14px; height: 14px; border-radius: 7px; background: #ff5f57"></span><span style="width: 14px; height: 14px; border-radius: 7px; background: #febc2e"></span><span style="width: 14px; height: 14px; border-radius: 7px; background: #28c840"></span></div>
-        <div style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 18px; border-radius: 12px; background: #ffffff; font-size: 23px; font-weight: 500"><img src="/_blob/c6d8f365d966636ce84c01fafbf2245a" alt="" style="width: 26px; height: 26px">Deals · Q4 pipeline</div>
-      </div>
-      <div style="display: flex; gap: 30px; padding: 30px 34px">
-        <div class="col">
-          <div class="colh">Contacted<span>9</span></div>
-          <div class="deal"><b>Sofia Marin</b><span>Orchard</span></div>
-          <div class="deal"><b>Ben Adler</b><span>Kestrel Labs</span></div>
-          <div class="deal" style="background: transparent; box-shadow: inset 0 0 0 3px rgba(37,90,147,0.3)"><b style="color: transparent">Priya Nair</b><span style="color: transparent">Northwind</span></div>
-        </div>
-        <div class="col">
-          <div class="colh">Call booked<span>4</span></div>
-          <div class="deal"><b>Tom Reilly</b><span>Halcyon</span></div>
-          <div class="deal" style="transform: rotate(-3deg) translate(-34px, 6px); box-shadow: 0 0 0 4px #255a93, 0 22px 48px rgba(20,30,60,0.3)"><b>Priya Nair</b><span>Northwind · Tue 11:00</span></div>
+  <!-- The screen: an aluminium edge round a black bezel -->
+  <div style="position: absolute; left: 110px; top: 1520px; width: 1100px; height: 708px; box-sizing: border-box; padding: 4px; border-radius: 38px; background: linear-gradient(to bottom, #e4e5e7, #b8babd); box-shadow: 0 50px 100px rgba(0,0,0,0.22)">
+    <div style="height: 100%; box-sizing: border-box; padding: 20px 18px; border-radius: 34px; background: #0a0a0b">
+      <div class="ui" style="position: relative; width: 1056px; height: 660px; border-radius: 12px; overflow: hidden; background: #1b1b1d">
+        <div style="zoom: 0.916667; position: relative; width: 1152px; height: 720px">
+          <img src="/_blob/561ddf654c5050ef3f615ee9400b6cc4" alt="" style="position: absolute; inset: 0; width: 1152px; height: 720px; object-fit: cover; display: block">
+
+          <!-- Chrome, light, on the agent's own profile -->
+          <div style="position: absolute; left: 56px; top: 34px; width: 1040px; height: 686px; border-radius: 10px 10px 0 0; overflow: hidden; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.35), 0 24px 70px rgba(0,0,0,0.55)">
+            <div style="position: relative; height: 42px; background: #dfe4ec; display: flex; align-items: flex-end; padding-left: 10px">
+              <div class="tab on"><span class="fav" style="background: #2f6b3b"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M5 8.6C2.6 8.6 1.6 6.6 1.9 4.4 4.1 4 6.6 4.9 6.9 7.4M5 8.6c0-2.6 1-4.6 3.3-6" fill="none" stroke="#ffffff" stroke-width="1.3" stroke-linecap="round"></path></svg></span><span style="flex: 1; overflow: hidden">Pricing · Orchard</span><span style="color: #5f6368; font-size: 13px">×</span></div>
+              <div class="tab"><span class="fav" style="background: #1a1a1a; color: #ffffff; font-size: 10px; font-weight: 700">K</span>Plans – Kestrel</div>
+              <div class="tab"><span class="fav" style="background: #5b5bd6; color: #ffffff; font-size: 10px; font-weight: 700">H</span>Pricing | Halcyon</div>
+              <div class="tab"><span class="fav" style="background: #1e8e3e"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="#ffffff" stroke-width="1.2"><rect x="1.5" y="1.5" width="7" height="7" rx="0.6"></rect><path d="M1.5 4h7M1.5 6.5h7M4.2 4v4.5"></path></svg></span>Competitor pricing</div>
+              <div style="width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; color: #444746; font-size: 20px; font-weight: 300">+</div>
+              <div style="position: absolute; right: 6px; top: 0; height: 34px; display: flex; align-items: center; gap: 2px">
+                <svg width="38" height="30" viewBox="0 0 38 30"><path d="M14 15h10" stroke="#444746" stroke-width="1.2"></path></svg>
+                <svg width="38" height="30" viewBox="0 0 38 30"><rect x="14.5" y="10.5" width="9" height="9" rx="1" fill="none" stroke="#444746" stroke-width="1.2"></rect></svg>
+                <svg width="38" height="30" viewBox="0 0 38 30"><path d="M14.5 10.5l9 9M23.5 10.5l-9 9" stroke="#444746" stroke-width="1.2"></path></svg>
+              </div>
+            </div>
+            <div style="height: 44px; background: #ffffff; display: flex; align-items: center; gap: 4px; padding: 0 10px; box-shadow: 0 1px 0 #ececec">
+              <svg width="30" height="30" viewBox="0 0 30 30" fill="none" stroke="#474747" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15H9M14 10l-5 5 5 5"></path></svg>
+              <svg width="30" height="30" viewBox="0 0 30 30" fill="none" stroke="#b9b9b9" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 15h12M16 10l5 5-5 5"></path></svg>
+              <svg width="30" height="30" viewBox="0 0 30 30" fill="none" stroke="#474747" stroke-width="1.7" stroke-linecap="round"><path d="M20.5 15a5.5 5.5 0 1 1-1.6-3.9M19.2 8.6v3.2H16"></path></svg>
+              <div style="flex: 1; height: 34px; margin: 0 8px; border-radius: 17px; background: #eef1f6; display: flex; align-items: center; gap: 10px; padding: 0 14px; font-size: 14px; color: #1f1f1f">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#474747" stroke-width="1.4" stroke-linecap="round"><path d="M2.5 5h6M11.5 5h2M2.5 11h2M7.5 11h6"></path><circle cx="10" cy="5" r="1.6"></circle><circle cx="6" cy="11" r="1.6"></circle></svg>
+                <span style="flex: 1">orchard.com<span style="color: #6b6f76">/pricing</span></span>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#474747" stroke-width="1.3" stroke-linejoin="round"><path d="M8 2l1.8 3.8 4.1.5-3 2.8.8 4.1L8 11.2l-3.7 2 .8-4.1-3-2.8 4.1-.5z"></path></svg>
+              </div>
+              <img src="/_blob/4f98be378af0a5fef6a673526e812766" alt="" style="width: 26px; height: 26px; border-radius: 13px; object-fit: cover; display: block; margin: 0 6px">
+              <svg width="20" height="30" viewBox="0 0 20 30" fill="#474747"><circle cx="10" cy="9" r="1.6"></circle><circle cx="10" cy="15" r="1.6"></circle><circle cx="10" cy="21" r="1.6"></circle></svg>
+            </div>
+
+            <!-- orchard.com/pricing -->
+            <div style="position: relative; height: 600px; background: #fbfaf7">
+              <div style="height: 60px; display: flex; align-items: center; padding: 0 44px; gap: 30px; font-size: 14px; color: #3a3a3a">
+                <div style="display: flex; align-items: center; gap: 8px; font-size: 20px; font-weight: 700; letter-spacing: -0.03em; color: #141414; margin-right: auto"><span style="width: 24px; height: 24px; border-radius: 12px; background: #2f6b3b; display: flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 10 10"><path d="M5 8.6C2.6 8.6 1.6 6.6 1.9 4.4 4.1 4 6.6 4.9 6.9 7.4M5 8.6c0-2.6 1-4.6 3.3-6" fill="none" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round"></path></svg></span>orchard</div>
+                <span>Product</span><span>Customers</span><span style="color: #141414; font-weight: 600">Pricing</span><span>Docs</span>
+                <span style="margin-left: 14px">Sign in</span>
+                <span style="height: 34px; padding: 0 16px; border-radius: 17px; background: #141414; color: #ffffff; font-weight: 600; display: flex; align-items: center">Start free</span>
+              </div>
+              <div style="text-align: center; margin-top: 22px; font-size: 38px; font-weight: 600; letter-spacing: -0.035em; color: #141414">Pricing that grows with you</div>
+              <div style="text-align: center; margin-top: 8px; font-size: 15px; color: #6b6b6b">Every plan includes unlimited projects and support around the clock.</div>
+              <div style="margin: 18px auto 0; width: max-content; display: flex; padding: 3px; border-radius: 16px; background: #eeece6; font-size: 13px; font-weight: 500">
+                <span style="padding: 5px 14px; border-radius: 13px; background: #ffffff; box-shadow: 0 1px 2px rgba(0,0,0,0.12)">Monthly</span>
+                <span style="padding: 5px 14px; color: #6b6b6b">Yearly <span style="color: #2f6b3b">−20%</span></span>
+              </div>
+
+              <div style="display: flex; gap: 18px; margin: 26px 56px 0">
+                <div class="plan">
+                  <div class="nm">Starter</div>
+                  <div class="pr"><b>$12</b><span>per seat / month</span></div>
+                  <div class="ds">For small teams getting started.</div>
+                  <div class="bt">Start free</div>
+                  <ul><li>Up to 10 seats</li><li>Core reports</li><li>Email support</li></ul>
+                </div>
+                <div class="plan" style="box-shadow: 0 0 0 1.5px #2f6b3b, 0 10px 30px rgba(47,107,59,0.12)">
+                  <div style="display: flex; align-items: center; justify-content: space-between"><span class="nm">Growth</span><span style="font-size: 11px; font-weight: 600; color: #2f6b3b; background: #e5efe6; padding: 3px 9px; border-radius: 10px">Most popular</span></div>
+                  <div class="pr"><b><span style="background: #b9d3f7; color: #141414; font-size: 44px; border-radius: 2px">$24</span></b><span>per seat / month</span></div>
+                  <div class="ds">For teams that run on reports.</div>
+                  <div class="bt" style="background: #2f6b3b; color: #ffffff; box-shadow: none">Start free trial</div>
+                  <ul><li>Unlimited seats</li><li>Advanced reports</li><li>SSO included</li></ul>
+                </div>
+                <div class="plan">
+                  <div class="nm">Business</div>
+                  <div class="pr"><b>$39</b><span>per seat / month</span></div>
+                  <div class="ds">For companies with many teams.</div>
+                  <div class="bt">Talk to sales</div>
+                  <ul><li>Audit log</li><li>Custom roles</li><li>A dedicated manager</li></ul>
+                </div>
+              </div>
+
+              <!-- Iris's pointer, as the app draws it -->
+              <svg aria-hidden="true" width="30" height="30" viewBox="0 0 24 24" style="position: absolute; left: 470px; top: 320px; filter: drop-shadow(0 1.5px 2px rgba(0,0,0,0.4))"><path d="M3 3l17.5 6.6-7.6 2.4-2.4 7.6z" fill="#111111" stroke="#ffffff" stroke-width="1.6" stroke-linejoin="round"></path></svg>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-    <img src="/_blob/642b059cd07dfa9066bc38e9ec7fb6fa" alt="" aria-hidden="true" style="position: absolute; left: 1000px; top: 352px; width: 104px; height: 104px; transform: rotate(-18deg); filter: drop-shadow(0 8px 12px rgba(0,0,0,0.35))">
-    <div style="position: absolute; left: 28px; bottom: 26px; display: flex; align-items: center; gap: 12px; height: 62px; padding: 0 26px; border-radius: 31px; background: rgba(255,255,255,0.92); font-size: 25px; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,0.2)"><span style="width: 12px; height: 12px; border-radius: 6px; background: #00c972"></span>Theo’s computer<span style="font-weight: 500; color: rgba(20,20,20,0.5)">Live</span></div>
-    <div style="position: absolute; right: 28px; bottom: 26px; display: flex; align-items: center; height: 62px; padding: 0 30px; border-radius: 31px; background: #255a93; color: #ffffff; font-size: 25px; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,0.25)">Take over</div>
   </div>
+
+  <div class="glass ui" style="position: absolute; left: 0; right: 0; top: 1484px; margin: 0 auto; width: max-content; height: 72px; padding: 0 30px 0 12px; border-radius: 36px; display: flex; align-items: center; gap: 14px; background: rgba(255,255,255,0.92)">
+    <img src="/_blob/4f98be378af0a5fef6a673526e812766" alt="" style="width: 50px; height: 50px; border-radius: 25px; object-fit: cover; display: block">
+    <span style="font-size: 30px; font-weight: 600; letter-spacing: -0.02em">Iris’s computer</span>
+    <span style="display: flex; align-items: center; gap: 8px; font-size: 26px; font-weight: 600; color: #1a9c55"><span style="width: 12px; height: 12px; border-radius: 6px; background: #1fbf63"></span>Live</span>
+  </div>
+
+  <img class="face" src="/_blob/4f98be378af0a5fef6a673526e812766" alt="" aria-hidden="true" style="left: -170px; top: 1075px; width: 330px; height: 330px">
+  <img class="face" src="/_blob/0078749b09d5078060f0dbd39428d7a5" alt="" aria-hidden="true" style="left: 1150px; top: 2400px; width: 300px; height: 300px">
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1320,"height":2868}}'>
+<script type="text/x-dc" data-dc-script data-props='{"ground":{"editor":"color","default":"#F2F2F2","options":["#FFFFFF","#F5F5F5","#F2F2F2","#ECECEC"]},"$preview":{"width":1320,"height":2868}}'>
 class Component extends DCLogic {
   renderVals() {
-    return {};
+    return { ground: this.props.ground ?? '#F2F2F2' };
   }
 }
 </script>
