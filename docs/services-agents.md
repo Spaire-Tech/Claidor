@@ -1667,3 +1667,97 @@ Mac or an iPhone. The tests (`desktop/tests/agent-browser-handoff.test.mjs`,
 against a fake helper, and the real driver against a fake Chrome and a fake `npm`. Whether
 the model uses OpenPage and hands over in one turn is up to the model, and is only known from
 a real sign-in.
+
+## 14. The agent's browser on the phone: Take control and Stop task
+
+**For the person (15 October 2026).** On the iPhone, the computer opened as the whole 1280 by
+800 screen shrunk to the phone's width, with a small hand among three icons to take over. The
+founder, after the Apple sign-in: "that computer was so hard to use i was lost. extremely
+laggy too. that hand icon should be the main thing, not an option." Now, laid out as Muse lays
+out its own:
+
+- **Just the page.** Opening the computer shows the agent's own Chrome tab, alone: its address
+  at the top (with a lock for `https`), the page under it. While the person is in control the
+  page is laid out at the phone's own size, as a phone's browser would show it, so its buttons
+  and fields are the size of a phone's. Pop-ups the page opens (a "Sign in with Apple" window)
+  are followed, and the view goes back when they close.
+- **Take control is the main button.** A big blue Take control at the foot. If the agent is
+  working, Take control stops it (and its helpers) at once, so it never fights the person for
+  the mouse; the ✓ at the top right hands the computer back and the agent carries on with the
+  task from where things stand, told that the person took over meanwhile.
+- **Stop task**, beside it while the agent works: stops the agent and every helper it sent,
+  and nothing wakes it again until the person writes.
+- **It opens in control when the agent asks for the person** (`request_box_help`: a sign-in, a
+  code), and switches to control by itself if the agent asks while the person watches. ✓ hands
+  it back; Skip step declines the step, as before.
+- **In control:** a tap is a click, a drag scrolls, the keyboard comes up by itself when a tap
+  lands in a field (and goes when it lands elsewhere), Return is Enter, and the clipboard
+  button pastes the phone's clipboard into the page.
+- **The whole computer** is still one tap away (the screen button at the top left), and is
+  what opens when there is no tab to show (the agent works in a desktop app, an older engine,
+  the demo).
+
+On the iPhone only; the Mac's computer window is unchanged.
+
+**How it works.**
+
+- The engine streams the tab itself, from Chrome's DevTools port in the computer (`9222` plus
+  the agent's display; `host/box/tab-view.ts`): `Page.startScreencast` (JPEG, quality 60, at
+  twice the phone's size), each picture acknowledged only once it is written to the phone's
+  connection, so a slow network slows the pictures instead of queueing them. The tab is the
+  agent's own (`/tmp/.sand-browser/views-<display>.json`, which the browser helper writes),
+  else Chrome's visible tab, else its first. In control, `Emulation.setDeviceMetricsOverride`
+  lays the page out at the phone's size (scale 2, mobile); it is cleared when control ends or
+  the phone closes the view (Chrome also clears it when the connection drops). The desktop's
+  user agent stays.
+- The phone's connection is `GET {gateway}/tab-view?agent=…&width=…&height=…&control=0|1`
+  through the server's box proxy (`/sand-box/{id}/p/1340/…`, no new port), with the gateway's
+  token: server-sent events `tab` (address and title), `frame` (the JPEG and the page's size in
+  CSS pixels) and `closed` (why), never gzipped, a ping every 15 seconds. One view per agent: a
+  second phone's view closes the first ("replaced").
+- Touches go back one at a time on `tabViewInput` (`Input.dispatchMouseEvent`,
+  `Input.insertText`, `Input.dispatchKeyEvent`); the phone sends them in order and merges
+  scrolls and typing that pile up while one is on its way (`TabInputQueue`, SimeonCore
+  `TabView.swift`). A tap answers with what took the keyboard, which raises the phone's.
+- Take control is `takeComputerControl`: when the agent is working it stops it (as Stop task)
+  and opens a hand-off the person started (`source: "person"`). Handing back ends it as
+  `taken-back`, which resumes the agent with its own sentence
+  (`host/extensions/transcript/box-handoff-resume.ts`). When the agent is idle, nothing is
+  stopped and no hand-off opens.
+- Stop task is `stopAgentTask` (`AgentLifecycle.stopAgentTask`): an open hand-off ends as
+  `stopped` (the agent is not resumed), then every run and helper is interrupted, and helpers'
+  results that arrive while it stops are dropped (`CompletionRevivals.stoppingAgentIds`).
+- The phone: `ios/Simeon/BrowserPane.swift` inside `ComputerSheet` (`Computer.swift`).
+
+**Switches.** None. It reaches the cloud computers with the next host bundle, and the iPhone
+with the next build. An engine without it answers `/tab-view` with 404, and the phone opens the
+whole computer as before.
+
+**When it misbehaves.** Box log, `/tmp/sand-host.log`:
+
+- `[simeon] tab-view open agent=… tab=<host> control=… size=WxH`, and when it ends
+  `[simeon] tab-view closed agent=… reason=… frames=N`. `frames=0` with the phone on
+  "Opening the page…" means Chrome sent no picture: check the tab is not minimized.
+- `[simeon] tab-view unavailable agent=… reason=no-browser|no-tab|tab-unreachable`: no
+  DevTools port answered, Chrome had no tab, or the tab's socket refused; the phone shows the
+  whole computer.
+- `[simeon] tab-view could not attach …` with Chrome's own error.
+- `[simeon] tab-view control agent=… on=true|false` when the person takes control or the view
+  hands it back; `[simeon] tab-view followed a pop-up …`.
+- Take control: `[simeon] take-control agent=… working=false` (the agent was idle: nothing
+  stopped, no hand-off) or `working=true handoff=started|already-pending`. Stop task:
+  `[simeon] stop-task agent=… stopped=true|false handoff-ended=true|false`. The interrupt and
+  any helper result dropped meanwhile also go to the structured telemetry with
+  `reason=stopped_by_person`.
+
+**Known limits.** The phone's keyboard covers the bottom of the page (the page keeps its size,
+so it is not laid out again under the person's fingers). Chrome's own windows (a passkey
+prompt, a permission prompt) are not part of the page's picture: use the whole computer for
+those. All of a person's agents share one Chrome, so only pop-ups opened by the shown tab are
+followed. While the person only watches, the page is the desktop's, shrunk.
+
+**Not yet verified.** None of this has run in a cloud computer or on an iPhone. The engine's
+tests (`desktop/tests/tab-view.test.mjs`, `desktop/tests/phone-take-control.test.mjs`) run the
+viewer against a fake Chrome and the commands against fakes of the session; SimeonCore's tests
+(`TabViewTests.swift`) run the stream's parsing, the touch mapping and the input order on
+Linux. The iPhone's view (`BrowserPane.swift`) has not been compiled here (no Xcode).

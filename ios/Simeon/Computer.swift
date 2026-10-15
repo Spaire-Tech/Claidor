@@ -41,8 +41,44 @@ struct ComputerSheet: View {
   @State private var helper: String?
   /** The computer's status and helpers are read while the sheet shows (`watchComputer`). */
   @State private var watching = false
+  /** The whole computer instead of the agent's browser tab (15 October 2026): no tab to show, or the person asked for it. */
+  @State private var showsWholeComputer = false
 
+  /**
+   * The agent's browser tab first, alone and at the phone's size
+   * (`BrowserPane`); the whole computer when there is no tab or the person
+   * asks for it. Either opens in control while the agent waits on the person.
+   */
   var body: some View {
+    Group {
+      if showsWholeComputer {
+        computer
+      } else {
+        BrowserPane(agentId: agentId, opensInControl: waitingOnPerson) { inControl in
+          if inControl { control = true }
+          showsWholeComputer = true
+        }
+      }
+    }
+    .background(Color.black)
+    .environment(\.colorScheme, .dark)
+    .presentationDetents([.large])
+    .presentationBackground(.black)
+    .onAppear {
+      guard !watching else { return }
+      watching = true
+      store.watchComputer(agentId)
+    }
+    .onDisappear {
+      guard watching else { return }
+      watching = false
+      store.unwatchComputer(agentId)
+    }
+  }
+
+  /** The whole computer, drawn by noVNC; its connection opens only while it shows. */
+  @ViewBuilder
+  private var computer: some View {
     let name = store.agent(agentId)?.name ?? "The agent"
     let live = screen?.socket != nil && phase == "connected"
     let helpers = store.computerHelpers(agentId)
@@ -113,21 +149,9 @@ struct ComputerSheet: View {
       controls(live: live)
         .padding(.bottom, 10)
     }
-    .background(Color.black)
-    .environment(\.colorScheme, .dark)
-    .presentationDetents([.large])
-    .presentationBackground(.black)
     .task(id: attempt) { await load() }
-    .onAppear {
-      guard !watching else { return }
-      watching = true
-      store.watchComputer(agentId)
-    }
-    .onDisappear {
-      guard watching else { return }
-      watching = false
-      store.unwatchComputer(agentId)
-    }
+    // The agent waits on the person: the computer opens theirs to use.
+    .onAppear { if waitingOnPerson { control = true } }
     // Another helper's screen: its picture is on its way again.
     .onChange(of: focused) { _, _ in phase = "starting" }
   }

@@ -121,6 +121,11 @@ export class BoxHandoffResume {
     if (trigger === "dismissed") {
       prompt =
         "[The user dismissed your box help request without doing the step you asked for. Treat it as declined: do not assume the step happened, and do not immediately request the box again for the same step. Continue the task without it if you can — skip the step or find another way. If the task cannot proceed without it, send the user a brief message saying what is blocked, then stop and wait for their reply.]";
+    } else if (trigger === "taken-back") {
+      // The person took control while the agent worked (Take control on the
+      // phone stopped its run, 15 October 2026) and has handed it back.
+      prompt =
+        "[The user took over your computer while you were working (that stopped your run) and has now handed it back. Look at the current state of the box desktop first (your Screenshot tool when you hold one, or a computerUse subagent's screenshot): they may have done part of the task, fixed something, or moved somewhere else. Then carry on with the task they gave you from where things now stand. Do not tell them what they did or that you are checking; say nothing until the task has a result for them or needs them again.]";
     } else if (trigger === "viewer-closed") {
       prompt =
         "[The user closed the box desktop viewer without explicitly handing control back, so they may or may not have finished the step you asked for. Start by checking the current state of the box desktop (a computerUse subagent's screenshot, or your Screenshot tool when you hold one). If the step is clearly done, continue the task. If you can't tell, send the user a brief message asking whether they finished so you can keep going.]";

@@ -159,9 +159,19 @@ public protocol AgentBackend: AnyObject, Sendable {
   func dashboard(_ method: String, _ message: JSON) async throws -> JSON
   /** What was said in a recording (dictation, `transcribeAudio`). */
   func transcribe(audio: Data, mimeType: String) async throws -> String
+  /** The agent's Chrome tab, streamed (`GET /tab-view`, host/box/tab-view.ts); it ends with `.closed`. */
+  func tabView(_ agentId: String, width: Int, height: Int, control: Bool) -> AsyncStream<TabViewEvent>
 }
 
 extension AgentBackend {
+  /** No tab where nothing streams one (the demo): the view shows the whole computer instead. */
+  public func tabView(_ agentId: String, width: Int, height: Int, control: Bool) -> AsyncStream<TabViewEvent> {
+    AsyncStream { continuation in
+      continuation.yield(.closed(reason: "unavailable"))
+      continuation.finish()
+    }
+  }
+
   /** No dictation where nothing transcribes (the window's "Voice transcription source is unavailable."). */
   public func transcribe(audio: Data, mimeType: String) async throws -> String {
     throw SimeonAPIError(message: "Voice transcription source is unavailable.", status: 0)
@@ -298,6 +308,17 @@ public final class LiveBackend: AgentBackend, @unchecked Sendable {
     guard let vnc = status["vncUrl"]?.text else { return ScreenState(socket: nil, state: state, percent: percent) }
     let connection = try await gateway.currentConnection()
     return ScreenState(socket: connection.screenSocket(for: vnc), state: state, percent: percent)
+  }
+
+  public func tabView(_ agentId: String, width: Int, height: Int, control: Bool) -> AsyncStream<TabViewEvent> {
+    #if canImport(Darwin)
+    return gateway.tabView(agentId: agentId, width: width, height: height, control: control)
+    #else
+    return AsyncStream { continuation in
+      continuation.yield(.closed(reason: "unavailable"))
+      continuation.finish()
+    }
+    #endif
   }
 
   public func screenSocket(_ vncUrl: String) async -> URL? {

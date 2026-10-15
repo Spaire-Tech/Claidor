@@ -36,19 +36,23 @@ final class AppReturnSignInTests: XCTestCase {
     XCTAssertNil(AppReturnSignIn.answer(nil))
   }
 
+  @MainActor
   func testTheAppNamesTheSignInToTheServer() async {
     let backend = SignInBox()
     let store = AppStore()
     await store.attach(backend)
     let sent = await store.sendSignInBack(state: "vendor-stripe-Ab_9", scheme: "simeon-ios")
     XCTAssertTrue(sent)
-    XCTAssertEqual(backend.serverCalls.count, 1)
-    XCTAssertTrue(backend.serverCalls[0].hasPrefix("POST mcp-oauth/return"))
-    XCTAssertTrue(backend.serverCalls[0].contains("vendor-stripe-Ab_9"))
-    XCTAssertTrue(backend.serverCalls[0].contains("simeon-ios"))
+    // Attaching also reads the app list from the server (`GET apps`); the sign-in is named once.
+    let returns = backend.serverCalls.filter { $0.contains("mcp-oauth/return") }
+    XCTAssertEqual(returns.count, 1)
+    XCTAssertTrue(returns[0].hasPrefix("POST mcp-oauth/return"))
+    XCTAssertTrue(returns[0].contains("vendor-stripe-Ab_9"))
+    XCTAssertTrue(returns[0].contains("simeon-ios"))
     store.detach()
   }
 
+  @MainActor
   func testWithoutAComputerNothingIsNamed() async {
     let store = AppStore()
     let sent = await store.sendSignInBack(state: "s", scheme: "simeon-ios")

@@ -7,3 +7,5 @@ export const GATEWAY_MINT_DEDUPE_HEADER = "x-sand-mint-dedupe";
 export const GATEWAY_TRACEPARENT_HEADER = "traceparent";
 export const GATEWAY_AVATARS_PATH = "/avatars";
 export const GATEWAY_NETWORK_TOKEN_HEADER = "x-anyrun-network-token";
+/** The agent's Chrome tab streamed to the phone, as server-sent events (`host/box/tab-view.ts`). */
+export const GATEWAY_TAB_VIEW_PATH = "/tab-view";

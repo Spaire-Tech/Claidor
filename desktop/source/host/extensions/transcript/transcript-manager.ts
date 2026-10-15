@@ -561,6 +561,8 @@ const delegations: ReadonlyArray<[string, keyof TranscriptManager]> = [
   ["requestDiskSaverAudit", "agentLifecycle"],
   ["cloneAgent", "agentLifecycle"],
   ["deleteAgent", "agentLifecycle"],
+  ["isAgentWorking", "agentLifecycle"],
+  ["stopAgentTask", "agentLifecycle"],
   ["deleteAgents", "agentLifecycle"],
   ["updateAgent", "agentLifecycle"],
   ["setAgentUnread", "agentLifecycle"],

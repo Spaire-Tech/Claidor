@@ -27,6 +27,7 @@ import { withBotBlockDetection } from "./runner/bot-block-detection.js";
 import { withSiteVisitTracking, type ActionAuditor } from "./runner/site-visit-tracking.js";
 import type { ErasedProductionBoxGeneratedPorts } from "./box/production.js";
 import { SandHostEventBus } from "./host-event-bus.js";
+import { TabViews } from "./box/tab-view.js";
 import {
   loadInitialTranscriptResiliently,
   type InitialTranscriptLoader
@@ -102,6 +103,7 @@ export interface SandHostRuntime {
     requestDiskSaverAudit(agentId: string): Promise<boolean>;
     releaseAgentBox(agentId: string): Promise<void>;
     forgetLocalToolPermission(agentId: string): void;
+    tabViews?: TabViews;
   }): HostGatewayDependencies;
   readonly isAgentLimitError?: (error: unknown) => boolean;
   readonly buildIdentityFallback?: string;
@@ -250,6 +252,8 @@ export class SandHost {
   private hostExtensions: HostExtensionRegistry | undefined;
   private rosterBookkeeping: HostRosterBookkeeping | undefined;
   private runnerComposition: HostRunnerComposition | undefined;
+  /** The agents' tabs on the phone (`box/tab-view.ts`), made when the gateway first asks. */
+  private tabViews: TabViews | undefined;
   private lastBusyAtMs: number;
 
   constructor(readonly runtime: SandHostRuntime) {
@@ -486,6 +490,8 @@ export class SandHost {
         event.resolution
       );
       await this.emitForeverBox(event.agentId);
+      // Stop task ends the hand-off and leaves the agent stopped (15 October 2026).
+      if (event.trigger === "stopped") return;
       await optionalMethod(this.transcript, "resumeAfterBoxHandoff")?.(
         event.agentId,
         event.trigger
@@ -673,8 +679,25 @@ export class SandHost {
       kickstartIfPending: agentId => this.kickstartIfPending(agentId),
       requestDiskSaverAudit: agentId => this.requestDiskSaverAudit(agentId),
       releaseAgentBox: agentId => this.releaseAgentBox(agentId),
-      forgetLocalToolPermission: agentId => this.forgetLocalToolPermission(agentId)
+      forgetLocalToolPermission: agentId => this.forgetLocalToolPermission(agentId),
+      tabViews: this.getTabViews()
     }));
+  }
+
+  /**
+   * The agents' Chrome tabs streamed to the phone (15 October 2026). Each
+   * agent's Chrome listens on DevTools' port for its display, which the
+   * cloud computer gives it (`getAgentWindowIndex`; 1 on a computer of its
+   * own).
+   */
+  getTabViews(): TabViews {
+    this.tabViews ??= new TabViews({
+      displayFor: agentId => {
+        const box = this.hostExtensions?.api("forever-box")?.box as { getAgentWindowIndex?(id: string): number | undefined } | undefined;
+        return box?.getAgentWindowIndex?.(agentId);
+      }
+    });
+    return this.tabViews;
   }
 
   forgetLocalToolPermission(agentId: string): void {
@@ -744,6 +767,7 @@ export class SandHost {
   }
 
   async dispose(): Promise<void> {
+    this.tabViews?.closeAll();
     const extensions = this.hostExtensions;
     if (extensions == null) return;
 

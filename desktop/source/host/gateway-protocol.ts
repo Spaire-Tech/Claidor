@@ -115,6 +115,10 @@ export const SAND_GATEWAY_COMMANDS = {
   prepareBoxForRecreate: (api: GatewayApi) => api.prepareBoxForRecreate(),
   resumeBoxAfterRecreate: (api: GatewayApi, body: string) => api.resumeBoxAfterRecreate(parseCommandArgs(body)),
   handBackForeverBox: (api: GatewayApi, body: string) => api.handBackForeverBox(parseCommandArgs(body)),
+  // The phone's browser view (15 October 2026): a tap or a key on the agent's tab, Take control, Stop task.
+  tabViewInput: (api: GatewayApi, body: string) => api.tabViewInput(parseCommandArgs(body)),
+  takeComputerControl: (api: GatewayApi, body: string) => api.takeComputerControl(parseCommandArgs(body)),
+  stopAgentTask: (api: GatewayApi, body: string) => api.stopAgentTask(parseCommandArgs(body)),
   startTeachRecording: (api: GatewayApi, body: string) => api.startTeachRecording(parseCommandArgs(body)),
   stopTeachRecording: (api: GatewayApi, body: string) => api.stopTeachRecording(parseCommandArgs(body)),
   getTeachRecordingStatus: (api: GatewayApi) => api.getTeachRecordingStatus(),

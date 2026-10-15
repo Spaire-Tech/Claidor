@@ -9,6 +9,7 @@ import {
   searchPluginsForGateway,
 } from "./host-plugin-gateway.js";
 import { executeRoutedAgentTool as runRoutedAgentTool } from "./extensions/transcript/routed-agent-tools.js";
+import { HOST_LOG_PREFIX, logHostLine } from "../shared/host-log.js";
 
 export const HOST_CAPABILITIES = [
   "orderedReplicasV1",
@@ -40,6 +41,10 @@ export interface HostGatewayDependencies {
   releaseAgentBox(agentId: string): Promise<void>;
   handleDesktopMcpAuthCompletion(completion: unknown): Promise<void>;
   forgetLocalToolPermission(agentId: string): void;
+  /** The agents' tabs on the phone (`host/box/tab-view.ts`); absent where the host has none. */
+  readonly tabViews?: {
+    input(agentId: string, value: unknown): Promise<Record<string, unknown>>;
+  };
   readonly now?: () => number;
 }
 
@@ -657,6 +662,45 @@ export function createHostGatewayApi(
         args.id,
         args.trigger ?? "button"
       ),
+    // The phone's browser view (15 October 2026, `host/box/tab-view.ts`).
+    tabViewInput: async (args: any) =>
+      deps.tabViews == null
+        ? { ok: false, reason: "no-view" }
+        : await deps.tabViews.input(String(args.id ?? ""), args.input),
+    /**
+     * Take control while the agent works: its run and helpers stop (it
+     * would fight the person for the page) and the computer is the person's
+     * until they hand it back, which resumes the agent ("taken-back"). An
+     * agent with nothing running is not disturbed: the person just has the
+     * page, and handing it back changes nothing.
+     */
+    takeComputerControl: async (args: any) => {
+      const id = String(args.id ?? "");
+      if (!method(manager, "isAgentWorking")(id)) {
+        logHostLine(`${HOST_LOG_PREFIX} take-control agent=${id} working=false`);
+        return { handoff: false };
+      }
+      await method(manager, "stopAgentTask")(id);
+      const started = method(deps.extensions.api("session"), "startHandoff")({
+        agentId: id,
+        instruction: "You took control of the computer.",
+        source: "person"
+      });
+      logHostLine(`${HOST_LOG_PREFIX} take-control agent=${id} working=true handoff=${started?.kind ?? "none"}`);
+      return { handoff: started?.kind === "started" || started?.kind === "already-pending" };
+    },
+    /** Stop task: the run and its helpers stop, and a hand-off still open ends without waking the agent. */
+    stopAgentTask: async (args: any) => {
+      const id = String(args.id ?? "");
+      const session = deps.extensions.api("session");
+      const handoff = method(session, "pendingHandoff")(id) != null;
+      if (handoff) {
+        await method(session, "endHandoff")(id, "stopped");
+      }
+      const result = await method(manager, "stopAgentTask")(id);
+      logHostLine(`${HOST_LOG_PREFIX} stop-task agent=${id} stopped=${result?.stopped === true} handoff-ended=${handoff}`);
+      return result;
+    },
 
     startTeachRecording: (args: any) =>
       method(deps.extensions.api("teach-recording"), "start")(args),

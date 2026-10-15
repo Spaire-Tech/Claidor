@@ -125,6 +125,45 @@ extension AppStore {
     _ = try? await backend?.command("handBackForeverBox", ["id": .string(agentId), "trigger": .string(skip ? "dismissed" : "button")])
   }
 
+  // MARK: The agent's tab on the phone (15 October 2026)
+
+  /** The agent's Chrome tab, streamed while the view shows it (`host/box/tab-view.ts`). */
+  public func tabView(_ agentId: String, width: Int, height: Int, control: Bool) -> AsyncStream<TabViewEvent> {
+    guard let backend else {
+      return AsyncStream { continuation in
+        continuation.yield(.closed(reason: "unavailable"))
+        continuation.finish()
+      }
+    }
+    return backend.tabView(agentId, width: width, height: height, control: control)
+  }
+
+  /** The person's taps and keys on the agent's tab, in order (`tabViewInput`). */
+  public func tabInputs(_ agentId: String) -> TabInputQueue {
+    let backend = self.backend
+    return TabInputQueue { input in
+      guard let backend else { throw GatewayError(message: "tabViewInput: no computer", refused: true) }
+      return try await backend.command("tabViewInput", ["id": .string(agentId), "input": input])
+    }
+  }
+
+  /**
+   * Take control (`takeComputerControl`): a working agent is stopped and the
+   * computer is the person's until they hand it back; true when that
+   * started a hand-off (handing back then resumes the agent).
+   */
+  public func takeComputerControl(_ agentId: String) async -> Bool {
+    guard let backend, let answer = try? await backend.command("takeComputerControl", ["id": .string(agentId)]) else { return false }
+    return answer["handoff"]?.bool ?? false
+  }
+
+  /** Stop task (`stopAgentTask`): the agent's run and its helpers stop; an open hand-off ends without waking it. */
+  @discardableResult
+  public func stopAgentTask(_ agentId: String) async -> Bool {
+    guard let backend, let answer = try? await backend.command("stopAgentTask", ["id": .string(agentId)]) else { return false }
+    return answer["stopped"]?.bool ?? false
+  }
+
   /** The address of a screen the host gave (its loopback page), through Simeon Labs' proxy. */
   public func screenSocket(_ vncUrl: String) async -> URL? {
     await backend?.screenSocket(vncUrl)

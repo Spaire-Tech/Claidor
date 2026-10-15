@@ -522,6 +522,47 @@ export class AgentLifecycle {
     }
   }
 
+  /** The agent's turn is running, or one of its helpers is. */
+  isAgentWorking(agentId: string): boolean {
+    if (this.tm.runLifecycle.runningAgentIds().has(agentId)) return true;
+    const runner = this.tm.runnerRegistry.runners.get(agentId);
+    return runner?.hasRunningSubagents?.() === true;
+  }
+
+  /**
+   * Stop task (15 October 2026): the person stops what the agent is doing,
+   * from the phone. Its turn and every helper are interrupted, as deleting
+   * an agent does, but the agent stays; a stopped helper's result does not
+   * wake it again (`CompletionRevivals.stoppingAgentIds`), so it stays
+   * stopped until the person writes to it.
+   */
+  async stopAgentTask(agentId: string): Promise<{ readonly stopped: boolean }> {
+    const revivals = this.tm.backgroundWakes.completionRevivals;
+    revivals.stoppingAgentIds.add(agentId);
+    try {
+      const runner = this.tm.runnerRegistry.runners.get(agentId);
+      const groupRunner = this.tm.runnerRegistry.activeGroupMemberRunners.get(agentId);
+      const wasInFlight = this.tm.runLifecycle.runningAgentIds().has(agentId);
+      const hadHelpers = runner?.hasRunningSubagents?.() === true;
+      const hadGroup = groupRunner?.interruptAll("stopped by the person") ?? false;
+      const hadActiveRun = (runner?.interruptAll("stopped by the person") ?? false) || hadGroup;
+      this.tm.telemetry.reportTurnInterrupt({
+        conversationId: agentId,
+        reason: "stopped_by_person",
+        hadActiveRun,
+        wasInFlight,
+      });
+      await this.tm.runLifecycle.drainExclusiveRuns(agentId);
+      await runner?.drainBackgroundSubagents();
+      await groupRunner?.drainBackgroundSubagents();
+      this.tm.backgroundWakes.pendingSubagentCompletions.delete(agentId);
+      await this.tm.roster.emitAgentUpdate(agentId);
+      return { stopped: hadActiveRun || wasInFlight || hadHelpers };
+    } finally {
+      revivals.stoppingAgentIds.delete(agentId);
+    }
+  }
+
   async interruptAgentForDeletion(agentId: string): Promise<void> {
     this.tm.sessions.deletedAgentIds.add(agentId);
     this.tm.ackObligations.markAckObligationLost(agentId, "agent_deleted");
