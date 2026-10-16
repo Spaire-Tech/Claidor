@@ -1327,7 +1327,6 @@ struct ComputerHandoffCard: View {
   let look: Look
   @Environment(AppStore.self) private var store
   @Environment(WindowState.self) private var window
-  @State private var pulse = false
   @State private var snapshotHover = false
 
   private var ink: Color { look.dark ? Color(hex: 0xf5f5f7) : Color(hex: 0x1d1d1f) }
@@ -1352,14 +1351,7 @@ struct ComputerHandoffCard: View {
             .font(.system(size: 15, weight: .semibold))
             .foregroundStyle(ink)
           HStack(spacing: 6) {
-            Circle()
-              .fill(waiting ? blue : grey)
-              .frame(width: 7, height: 7)
-              .background {
-                if waiting {
-                  Circle().stroke(blue.opacity(pulse ? 0 : 0.35), lineWidth: pulse ? 10 : 0)
-                }
-              }
+            HandoffDot(waiting: waiting, blue: blue, grey: grey)
             Text(waiting ? "Waiting for you" : outcome)
               .font(.system(size: 13))
               .foregroundStyle(grey)
@@ -1423,10 +1415,6 @@ struct ComputerHandoffCard: View {
     .background(look.dark ? Color(hex: 0x2c2c2e) : look.theirs, in: RoundedRectangle(cornerRadius: 20))
     .accessibilityElement(children: .contain)
     .accessibilityLabel(waiting ? "Your turn on the computer" : "Computer")
-    .onAppear {
-      guard waiting else { return }
-      withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) { pulse = true }
-    }
   }
 
   /** Take over, the snapshot and Open computer: the computer over the window (trigger `handoff`), which starts it. */
@@ -1453,6 +1441,36 @@ struct ComputerHandoffCard: View {
         .contentShape(Capsule())
     }
     .buttonStyle(.hand)
+  }
+}
+
+/**
+ * The card's dot, blue with a ring that breathes while it waits. The ring's
+ * animation is its own (`.animation(_:value:)`), as the iPhone's
+ * `PulsingDot`. Until 16 October 2026 it started with `withAnimation(…
+ * .repeatForever)` in the card's `onAppear`, which repeats whatever else
+ * changes in that update too: in the founder's recording the rows above the
+ * card kept moving and vanishing, from the card's arrival on.
+ */
+private struct HandoffDot: View {
+  let waiting: Bool
+  let blue: Color
+  let grey: Color
+  @State private var pulse = false
+
+  var body: some View {
+    Circle()
+      .fill(waiting ? blue : grey)
+      .frame(width: 7, height: 7)
+      .background {
+        if waiting {
+          Circle()
+            .stroke(blue.opacity(pulse ? 0 : 0.35), lineWidth: pulse ? 10 : 0)
+            .animation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true), value: pulse)
+        }
+      }
+      .onAppear { if waiting { pulse = true } }
+      .onChange(of: waiting) { _, now in if now { pulse = true } }
   }
 }
 
