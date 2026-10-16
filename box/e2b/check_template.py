@@ -10,6 +10,8 @@ the agents' engine does not), and prints, as JSON:
 
 - how long the computer took to be made and the desktop to come up;
 - disk, memory and the machine id inside it;
+- that the packages the engine loads from outside its bundle are there
+  (`engine_libraries: found`; anything else is an `error`);
 - that its screen port refuses a request without the traffic token and
   answers one with it;
 - how long freezing and waking take, several times, and how far the
@@ -35,6 +37,17 @@ from e2b import AsyncSandbox
 
 ROUNDS = 3
 PAUSED_FOR_S = 20
+# The packages the engine loads from outside its bundle (box/deps), found the
+# way it finds them: from /, through NODE_PATH alone. Without piscina the
+# engine stops at start-up (16 October 2026).
+ENGINE_LIBRARIES = (
+    "cd / && NODE_PATH=/home/box/deps node -e '"
+    "try { for (const p of "
+    '["piscina", "tree-sitter", "tree-sitter-bash", "web-tree-sitter", "node-gyp-build", "node-addon-api"]'
+    ') require.resolve(p); require("piscina"); console.log("found"); } '
+    'catch (e) { console.log(String(e.message).split("\\n")[0]); }'
+    "'"
+)
 
 
 async def run(sandbox: Any, cmd: str, timeout: float = 60) -> str:
@@ -76,6 +89,7 @@ async def check(name: str) -> dict[str, Any]:
         report["disk"] = await run(sandbox, "df -h / | tail -1")
         report["memory"] = await run(sandbox, "free -m | sed -n 2p")
         report["machine_id_set"] = len(await run(sandbox, "cat /etc/machine-id")) == 32
+        report["engine_libraries"] = await run(sandbox, ENGINE_LIBRARIES)
 
         screen = f"https://{sandbox.get_host(6080)}/vnc.html"
         async with httpx.AsyncClient(timeout=15) as client:
@@ -110,6 +124,11 @@ async def check(name: str) -> dict[str, Any]:
         report["box_doctor"] = (
             await run(sandbox, "/usr/local/bin/box-doctor 2>&1 | tail -25 || true")
         ).splitlines()
+        if report["engine_libraries"] != "found":
+            report["error"] = (
+                "the engine's libraries are not in the template "
+                f"({report['engine_libraries']}): build it again from today's box/"
+            )
     except Exception as error:
         report["error"] = f"{type(error).__name__}: {error}"
     finally:

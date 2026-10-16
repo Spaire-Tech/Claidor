@@ -1,10 +1,11 @@
 {
   "name": "simeon-box-deps",
   "private": true,
-  "description": "The add-ons the host loads from /home/box/deps (SAND_TREE_SITTER_NODE_DEPS), compiled in the image against its Node. Versions match desktop/package.json.",
+  "description": "What the host loads from /home/box/deps (NODE_PATH, SAND_TREE_SITTER_NODE_DEPS): every package its build leaves outside host-main.cjs (EXTERNAL in desktop/scripts/simeon-ignition-activation.mjs) except electron, the add-ons compiled in the image against its Node. Versions match desktop/package.json.",
   "dependencies": {
     "node-addon-api": "8.5.0",
     "node-gyp-build": "4.8.4",
+    "piscina": "4.9.0",
     "tree-sitter": "0.21.1",
     "tree-sitter-bash": "0.21.0",
     "web-tree-sitter": "0.21.0"

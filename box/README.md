@@ -21,7 +21,7 @@ what runs inside, and the small contract the host relies on.
 | `sand-wallpaper`, `sand-wallpaper-tone.mjs` | `bin/`, `wallpapers/` | The wallpaper, painted by time of day in the person's time zone. Since 9 October 2026 every tone is the founder's photograph (a river under a storm at sunset, 1280 by 800): a JPEG under the `.png` names the script reads, which `hsetroot` loads by its content (checked with imlib2 1.12.1). The host also points the earlier maker's image at the same picture (`desktop/source/host/extensions/wallpaper`). |
 | `box-doctor` | `bin/` | One PASS or FAIL line per check and a summary, what the agent reads when its box acts up. |
 | `ensure-machine-id`, `link-chrome-session` | `bin/` | One machine id that survives a new container on the same volume; a fork window's Chrome sharing the primary profile's sign-ins. |
-| `deps/` | `box/deps/` | `package.json` and its lock: the add-ons the host loads (`tree-sitter`, `tree-sitter-bash`, `web-tree-sitter`), versions as in `desktop/package.json`. |
+| `deps/` | `box/deps/` | `package.json` and its lock: every package the host's build leaves outside `host-main.cjs` (`piscina`, which it loads at start-up, and the add-ons `tree-sitter`, `tree-sitter-bash`, `web-tree-sitter`), versions as in `desktop/package.json`. `desktop/tests/box-image-host-deps.test.mjs` fails when they drift. |
 | `test/smoke.sh` | `box/test/` | Runs the whole box on a Linux machine without Docker and checks the contract (40 checks). |
 | `test/screen-latency.py` | `box/test/` | Times a change on the screen to the VNC viewer's update, for x11vnc and picom flags given (15 October 2026: why `simeon-desktop` lets both use X DAMAGE). |
 

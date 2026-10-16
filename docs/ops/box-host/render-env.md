@@ -206,6 +206,16 @@ computer did not come up; the old one is made again on box2),
 On E2B's free plan a computer can run at most an hour before E2B freezes it
 (each freeze resets that); Pro allows 24 hours.
 
+**"Setting up" never ends, `sand.box.ensure.not_ready` after 90 s.** The
+desktop is up but the engine is not. Inside the computer (`e2b sandbox
+connect <id>` with E2B's command line), `tail /tmp/sand-host.log` and
+`box-doctor`. `Cannot
+find module 'piscina'` (and `FAIL host-libraries`) means the template was
+built before 16 October 2026, when `box/deps` gained the packages the engine
+loads from outside its bundle: run step 2 again. A computer the server no
+longer knows (its entry was taken out) freezes itself within the hour; kill
+it (`e2b sandbox kill <id>`, or in E2B's dashboard).
+
 ## The API's size
 
 Every message and every screen frame between an app and its computer

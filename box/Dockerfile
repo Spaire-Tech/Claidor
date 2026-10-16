@@ -130,6 +130,10 @@ RUN set -eux \
 # node_modules folder, so Node finds tree-sitter's own dependency
 # (node-gyp-build) only through NODE_PATH; the box runs with it set, and so
 # does the check below (measured on the founder's Mac, 5 October 2026).
+# The engine also requires piscina by name when it loads, before anything
+# else: without it, it exits at once with "Cannot find module 'piscina'"
+# (E2B, 16 October 2026). The last check loads it from / the way the engine
+# does, through NODE_PATH alone.
 ENV SAND_TREE_SITTER_NODE_DEPS=/home/box/deps \
     NODE_PATH=/home/box/deps
 COPY box/deps/package.json box/deps/package-lock.json /tmp/deps/
@@ -138,6 +142,7 @@ RUN set -eux \
     && cp -R /tmp/deps/node_modules/. /home/box/deps/ \
     && node -e 'const P = require("/home/box/deps/tree-sitter"), B = require("/home/box/deps/tree-sitter-bash"); const p = new P(); p.setLanguage(B); if (p.parse("echo hi").rootNode.type !== "program") process.exit(1)' \
     && cd / && npm cache clean --force && rm -rf /tmp/deps \
+    && node -e 'const { Piscina } = require("piscina"); if (typeof Piscina !== "function") process.exit(1)' \
     && chown -R box:box /home/box/deps
 
 # --- Wallpapers and our scripts ---------------------------------------------

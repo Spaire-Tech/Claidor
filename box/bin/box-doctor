@@ -25,6 +25,10 @@ if [[ "$id" =~ ^[0-9a-f]{32}$ ]] && [ "$(cat /var/lib/dbus/machine-id 2>/dev/nul
 if v="$(google-chrome-stable --version 2>/dev/null)"; then report PASS chrome "$v"; else report FAIL chrome "google-chrome-stable --version failed"; fi
 
 if node -v >/dev/null 2>&1; then report PASS node "$(node -v)"; else report FAIL node "node is missing"; fi
+# The packages the engine's build leaves outside host-main.cjs (box/deps):
+# without piscina the engine stops at start-up (E2B, 16 October 2026).
+host_libraries=(piscina tree-sitter tree-sitter-bash web-tree-sitter node-gyp-build node-addon-api)
+if missing="$(cd / && NODE_PATH="${NODE_PATH:-/home/box/deps}" node -e 'const m = process.argv.slice(1).filter(p => { try { require.resolve(p); return false; } catch { return true; } }); process.stdout.write(m.join(", ")); process.exit(m.length ? 1 : 0)' "${host_libraries[@]}" 2>/dev/null)"; then report PASS host-libraries "${host_libraries[*]} found through NODE_PATH"; else report FAIL host-libraries "not found through NODE_PATH: ${missing:-node failed} (the image's /home/box/deps is out of date)"; fi
 
 if [ -f /home/box/sand-host/host-main.cjs ]; then report PASS host-bundle "/home/box/sand-host/host-main.cjs ($(cat /home/box/sand-host/version 2>/dev/null || echo 'no version file'))"; else report FAIL host-bundle "no /home/box/sand-host/host-main.cjs mounted"; fi
 if [ -f /home/box/box-exec-daemon/main.cjs ]; then report PASS exec-daemon-bundle "/home/box/box-exec-daemon/main.cjs"; else report FAIL exec-daemon-bundle "no /home/box/box-exec-daemon/main.cjs mounted"; fi
