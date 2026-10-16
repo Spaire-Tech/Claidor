@@ -324,9 +324,19 @@ the AI SDK's Anthropic provider does not: `output_config.effort` (our levels;
 {prefix_mismatch_behavior: "drop_block"}}` with the beta header
 `thinking-binding-controls-2026-08-01` (a Claude 5.5 thinking block whose
 earlier prompt changed, after a summary for instance, is dropped rather than
-refused with a 400), and two cache breakpoints: after the system prompt, and
+refused with a 400), and the cache breakpoints: after the system prompt, and
 the top-level `cache_control` that the API moves to each request's last
-block. Thinking blocks go back on later calls with their signatures. When
+block. An agent's own conversation (call reasons `chat`, `first_message`,
+`wake`, `agent_wake`, `nudge`, `routine`, `background`) is kept for an hour
+since 16 October 2026: the system prompt and the person's last two messages
+carry `ttl: "1h"`, and the steps inside one answer keep the five-minute
+top-level breakpoint; helpers, summaries, memory, the safety check and voice
+keep five minutes. Before, the first answer after any pause read the whole
+conversation fresh (about 97,000 tokens; 5 to 8 s for that call, against 2.7
+to 3.4 s read back). An hour's write costs 2× an input token against 1.25×;
+the server prices it from `usage.cache_creation.ephemeral_1h_input_tokens`
+(`pricing.py`). Bedrock takes the same breakpoints. Thinking blocks go back
+on later calls with their signatures. When
 Claude fails before it has said anything (overloaded, rate limited, a server
 error, not offered), the step runs once on the fallback and writes
 `[simeon] model-fallback`.

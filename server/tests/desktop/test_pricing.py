@@ -246,6 +246,59 @@ class TestPriceTable:
                 50_000 * read / credit
             )
 
+    def test_an_hours_cache_write_costs_twice_an_input_token(self) -> None:
+        # 16 October 2026: an agent's own conversation is kept for an hour
+        # (the engine's `claude-messages.ts`), at $4.00 a million on Sonnet
+        # 5.5 against $2.50 for five minutes.
+        sonnet = model_by_id("claude-sonnet-5-5")
+        assert sonnet is not None
+        credit = CREDIT_USD_PER_MILLION_INPUT
+        mixed = Usage(cache_creation_tokens=50_000, cache_creation_1h_tokens=30_000)
+        assert credits_for(sonnet, mixed) == round(
+            (20_000 * 2.50 + 30_000 * 4.00) / credit
+        )
+        # A split larger than the total is read as the total.
+        over = Usage(cache_creation_tokens=10_000, cache_creation_1h_tokens=99_000)
+        assert credits_for(sonnet, over) == round(10_000 * 4.00 / credit)
+        # Providers without an hour's write price none.
+        gpt = model_by_id("gpt-6-sol")
+        assert gpt is not None
+        assert (
+            credits_for(
+                gpt, Usage(cache_creation_tokens=1_000, cache_creation_1h_tokens=1_000)
+            )
+            == 0
+        )
+
+    def test_the_hours_writes_are_read_off_anthropics_usage(self) -> None:
+        usage = Usage.from_payload(
+            {
+                "input_tokens": 12,
+                "output_tokens": 3,
+                "cache_creation_input_tokens": 900,
+                "cache_read_input_tokens": 96_000,
+                "cache_creation": {
+                    "ephemeral_5m_input_tokens": 300,
+                    "ephemeral_1h_input_tokens": 600,
+                },
+            }
+        )
+        assert usage == Usage(
+            input_tokens=12,
+            output_tokens=3,
+            cache_creation_tokens=900,
+            cache_read_tokens=96_000,
+            cache_creation_1h_tokens=600,
+        )
+        tally = tally_for(SpokenApi.anthropic_messages)
+        tally.feed(
+            b'data: {"type":"message_start","message":{"usage":{"input_tokens":12,'
+            b'"output_tokens":1,"cache_creation_input_tokens":900,'
+            b'"cache_read_input_tokens":96000,"cache_creation":'
+            b'{"ephemeral_5m_input_tokens":300,"ephemeral_1h_input_tokens":600}}}}\n\n'
+        )
+        assert tally.finish().cache_creation_1h_tokens == 600
+
     def test_haiku_5_5_costs_five_times_past_a_100k_prompt(self) -> None:
         haiku = model_by_id("claude-haiku-5-5")
         assert haiku is not None

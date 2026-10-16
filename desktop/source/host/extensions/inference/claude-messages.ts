@@ -22,8 +22,15 @@
  * - **Caching.** Nothing is cached unless the request says where. One
  *   breakpoint after the system prompt (tools come before it, so it covers
  *   both) and the top-level `cache_control`, which the API moves to the last
- *   block of each request itself. A five-minute entry costs 1.25x to write
- *   and 0.05x to read on Sonnet and Opus 5.5 (`pricing.py`).
+ *   block of each request itself. A five-minute entry costs 1.25x to write;
+ *   an hour's costs 2x; a read is a fraction of an input token (`pricing.py`).
+ *   The agent's own conversation (`CLAUDE_HOUR_CACHE_REASONS`) keeps its
+ *   instructions and the conversation up to the person's last two messages
+ *   for an hour, and the steps inside one answer for five minutes
+ *   (`withHourCache`, 16 October 2026). Until then everything lived five
+ *   minutes, so the first answer after any pause read the whole ~97,000
+ *   tokens fresh: 5 to 8 s for that call in the founder's log, against 2.7
+ *   to 3.4 s for a call that read them back.
  * - **Sampling.** Temperature, top_p and top_k are not sent with thinking.
  */
 import { isProviderRateLimitError } from "../../../shared/provider-rate-limit.js";
@@ -44,13 +51,27 @@ export function claudeEffortFor(effort: string | undefined): ClaudeEffort {
 }
 
 const EPHEMERAL = { type: "ephemeral" } as const;
+const ONE_HOUR = { type: "ephemeral", ttl: "1h" } as const;
+/** The API's limit of cache breakpoints in one request, the top-level one included. */
+const MAX_CACHE_BREAKPOINTS = 4;
+
+/**
+ * The calls of an agent's own conversation, which a person comes back to
+ * after minutes: their saved copy is kept for an hour. Helpers (computer,
+ * browser, video), summaries, memory, the safety check and voice calls
+ * run seconds apart and keep the five-minute copy, which costs less to
+ * write.
+ */
+export const CLAUDE_HOUR_CACHE_REASONS: ReadonlySet<string> = new Set([
+  "chat", "first_message", "wake", "agent_wake", "nudge", "routine", "background",
+]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value != null && typeof value === "object" && !Array.isArray(value);
 }
 
 /** The request body as Claude needs it: effort, thinking that survives a rewritten prompt, cache breakpoints, no sampling knobs. */
-export function withClaudeRequestOptions(body: unknown, effort: ClaudeEffort): unknown {
+export function withClaudeRequestOptions(body: unknown, effort: ClaudeEffort, options?: { readonly holdForAnHour?: boolean }): unknown {
   if (typeof body !== "string") return body;
   let parsed: unknown;
   try { parsed = JSON.parse(body); } catch { return body; }
@@ -61,6 +82,10 @@ export function withClaudeRequestOptions(body: unknown, effort: ClaudeEffort): u
   delete next.temperature;
   delete next.top_p;
   delete next.top_k;
+  if (options?.holdForAnHour === true) {
+    const held = withHourCache(next);
+    if (held !== undefined) return JSON.stringify(held);
+  }
   if (typeof next.system === "string" && next.system.length > 0) {
     next.system = [{ type: "text", text: next.system, cache_control: EPHEMERAL }];
   } else if (Array.isArray(next.system) && next.system.length > 0) {
@@ -71,6 +96,66 @@ export function withClaudeRequestOptions(body: unknown, effort: ClaudeEffort): u
   }
   if (next.cache_control === undefined) next.cache_control = EPHEMERAL;
   return JSON.stringify(next);
+}
+
+function hasCacheControl(value: unknown): boolean {
+  if (Array.isArray(value)) return value.some(hasCacheControl);
+  return isRecord(value) && value.cache_control !== undefined;
+}
+
+/** A message the person (or a wake) sent: a user message with words and no tool results. */
+function isPersonMessage(message: unknown): message is Record<string, unknown> {
+  if (!isRecord(message) || message.role !== "user") return false;
+  const content = message.content;
+  if (typeof content === "string") return content.length > 0;
+  return Array.isArray(content) && content.length > 0
+    && !content.some((block) => isRecord(block) && block.type === "tool_result");
+}
+
+/** The message with an hour's breakpoint on its last block. */
+function heldMessage(message: Record<string, unknown>): Record<string, unknown> {
+  const content = typeof message.content === "string"
+    ? [{ type: "text", text: message.content }]
+    : (message.content as unknown[]).map((block) => isRecord(block) ? { ...block } : block);
+  const last = content.at(-1);
+  if (isRecord(last)) last.cache_control = ONE_HOUR;
+  return { ...message, content };
+}
+
+/**
+ * The hour's breakpoints: after the system prompt (and the tools before
+ * it), on the person's last message and on the one before it, so the next
+ * message after a pause reads the conversation back from either however
+ * many steps the last answer took; then the top-level five-minute
+ * breakpoint for the steps inside the answer. An hour's entry must come
+ * before a five-minute one, there are four breakpoints at most, and the
+ * top-level one may not land on a block that carries an hour's (both 400s),
+ * so it is left out when the person's message is the last block. A request
+ * that already carries a breakpoint is left to the five-minute shape.
+ */
+function withHourCache(next: Record<string, unknown>): Record<string, unknown> | undefined {
+  const messages = next.messages;
+  if (!Array.isArray(messages) || next.cache_control !== undefined) return undefined;
+  if (hasCacheControl(next.tools) || hasCacheControl(next.system)) return undefined;
+  if (messages.some((message) => isRecord(message) && hasCacheControl(message.content))) return undefined;
+  let used = 0;
+  if (typeof next.system === "string" && next.system.length > 0) {
+    next.system = [{ type: "text", text: next.system, cache_control: ONE_HOUR }];
+    used += 1;
+  } else if (Array.isArray(next.system) && next.system.length > 0) {
+    const blocks = next.system.map((block) => isRecord(block) ? { ...block } : block);
+    const last = blocks.at(-1);
+    if (isRecord(last)) { last.cache_control = ONE_HOUR; used += 1; }
+    next.system = blocks;
+  }
+  const people = messages.flatMap((message, index) => isPersonMessage(message) ? [index] : []);
+  // The system prompt's, two messages' and the top-level one: four at most.
+  const held = people.slice(-Math.min(2, MAX_CACHE_BREAKPOINTS - 1 - used));
+  const rewritten = [...messages];
+  for (const index of held) rewritten[index] = heldMessage(rewritten[index] as Record<string, unknown>);
+  next.messages = rewritten;
+  if (held.at(-1) !== messages.length - 1) next.cache_control = EPHEMERAL;
+  return next;
 }
 
 /** Adds the thinking-binding beta to whatever `anthropic-beta` the request already carries. */

@@ -151,6 +151,8 @@ class TokenWeights:
     output: float
     cache_creation: float
     cache_read: float
+    #: An hour's cache write; zero where a provider has none.
+    cache_creation_1h: float = 0.0
 
 
 #: The two price lists, as their owners publish them.
@@ -161,8 +163,10 @@ class TokenWeights:
 #: and the write and halves the read on Sonnet and Opus: $0.10 cached
 #: against $2.00 on Sonnet 5.5, $0.20 against $4.00 on Opus 5.5. Those
 #: two declare it (`DesktopModel.cache_read_weight`); Haiku 5.5's read is
-#: still a tenth ($0.01 against $0.10). The engine only writes
-#: five-minute entries; an hour's entry would cost 2× and is not priced.
+#: still a tenth ($0.01 against $0.10). An hour's entry costs 2× to write;
+#: the engine writes them for an agent's own conversation since 16 October
+#: 2026 (`claude-messages.ts`), and Anthropic reports them apart
+#: (`usage.cache_creation.ephemeral_1h_input_tokens`).
 #:
 #: OpenAI (https://developers.openai.com/api/docs/pricing, read
 #: 11 September 2026): a cached input token is 0.1× an uncached one and
@@ -180,7 +184,7 @@ class TokenWeights:
 #: single constant with a test behind it.
 PROVIDER_TOKEN_WEIGHTS: dict[DesktopProvider, TokenWeights] = {
     DesktopProvider.anthropic: TokenWeights(
-        output=5.0, cache_creation=1.25, cache_read=0.1
+        output=5.0, cache_creation=1.25, cache_read=0.1, cache_creation_1h=2.0
     ),
     DesktopProvider.openai: TokenWeights(
         output=6.0, cache_creation=0.0, cache_read=0.1
@@ -651,18 +655,30 @@ class Usage:
     output_tokens: int = 0
     cache_creation_tokens: int = 0
     cache_read_tokens: int = 0
+    #: Of `cache_creation_tokens`, those written for an hour (2× on
+    #: Anthropic's list rather than 1.25×). Priced, not stored.
+    cache_creation_1h_tokens: int = 0
 
     @classmethod
     def from_payload(cls, usage: Any) -> Usage:
-        """Anthropic's `usage` object."""
+        """Anthropic's `usage` object. `cache_creation` splits the writes
+        by how long they are kept."""
         if not isinstance(usage, dict):
             return cls()
 
+        written = _number(usage, "cache_creation_input_tokens")
+        split = usage.get("cache_creation")
+        hour = (
+            _number(split, "ephemeral_1h_input_tokens")
+            if isinstance(split, dict)
+            else 0
+        )
         return cls(
             input_tokens=_number(usage, "input_tokens"),
             output_tokens=_number(usage, "output_tokens"),
-            cache_creation_tokens=_number(usage, "cache_creation_input_tokens"),
+            cache_creation_tokens=written,
             cache_read_tokens=_number(usage, "cache_read_input_tokens"),
+            cache_creation_1h_tokens=min(hour, written),
         )
 
     @classmethod
@@ -822,10 +838,12 @@ def credits_for(model: DesktopModel, usage: Usage) -> int:
     provider's, so a GPT token and a Claude token cost what they actually
     cost and the monthly figure keeps meaning one thing."""
     weights = model.weights
+    hour = min(usage.cache_creation_1h_tokens, usage.cache_creation_tokens)
     weighted = (
         usage.input_tokens
         + usage.output_tokens * weights.output
-        + usage.cache_creation_tokens * weights.cache_creation
+        + (usage.cache_creation_tokens - hour) * weights.cache_creation
+        + hour * weights.cache_creation_1h
         + usage.cache_read_tokens * weights.cache_read
     )
     multiplier = model.cost_multiplier
@@ -885,6 +903,7 @@ class UsageTally(SSEUsageTally):
                 started = Usage.from_payload(message.get("usage"))
                 self.usage.input_tokens = started.input_tokens
                 self.usage.cache_creation_tokens = started.cache_creation_tokens
+                self.usage.cache_creation_1h_tokens = started.cache_creation_1h_tokens
                 self.usage.cache_read_tokens = started.cache_read_tokens
                 self.usage.output_tokens = max(
                     self.usage.output_tokens, started.output_tokens
@@ -898,6 +917,8 @@ class UsageTally(SSEUsageTally):
                 self.usage.input_tokens = delta.input_tokens
             if delta.cache_creation_tokens:
                 self.usage.cache_creation_tokens = delta.cache_creation_tokens
+            if delta.cache_creation_1h_tokens:
+                self.usage.cache_creation_1h_tokens = delta.cache_creation_1h_tokens
             if delta.cache_read_tokens:
                 self.usage.cache_read_tokens = delta.cache_read_tokens
 

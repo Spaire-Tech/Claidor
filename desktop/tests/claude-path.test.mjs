@@ -260,8 +260,12 @@ test("a Claude call carries effort, thinking that survives a rewritten prompt, c
     assert.equal(sent.body.max_tokens, 32_000);
     assert.deepEqual(sent.body.output_config, { effort: "high" });
     assert.deepEqual(sent.body.thinking, { type: "adaptive", block_binding: { prefix_mismatch_behavior: "drop_block" } });
-    assert.deepEqual(sent.body.cache_control, { type: "ephemeral" });
-    assert.deepEqual(sent.body.system, [{ type: "text", text: "You are Simeon.", cache_control: { type: "ephemeral" } }]);
+    // The agent's own conversation is kept for an hour (16 October 2026):
+    // the instructions, and the person's message, which is the last block
+    // here, so the top-level five-minute breakpoint is left out.
+    assert.equal(sent.body.cache_control, undefined);
+    assert.deepEqual(sent.body.system, [{ type: "text", text: "You are Simeon.", cache_control: { type: "ephemeral", ttl: "1h" } }]);
+    assert.deepEqual(sent.body.messages.at(-1).content.at(-1).cache_control, { type: "ephemeral", ttl: "1h" });
     for (const knob of ["temperature", "top_p", "top_k", "prompt_cache_key", "reasoning"]) assert.equal(knob in sent.body, false, knob);
 
     // The signature reaches the loop on a reasoning part it can pin it to.
@@ -288,6 +292,9 @@ test("the cheap role runs on Haiku at low effort", async () => {
     assert.equal(requests[0].body.model, "claude-haiku-5-5");
     assert.deepEqual(requests[0].body.output_config, { effort: "low" });
     assert.equal(requests[0].headers.get("x-simeon-call-reason"), "cheap");
+    // Cheap work keeps the five-minute copy.
+    assert.deepEqual(requests[0].body.cache_control, { type: "ephemeral" });
+    assert.equal(JSON.stringify(requests[0].body).includes('"ttl"'), false);
   });
 });
 
@@ -364,6 +371,71 @@ test("what counts as Claude's provider failing", async () => {
     const rewritten = JSON.parse(api.withClaudeRequestOptions(JSON.stringify({ model: "claude-haiku-5-5", system: [{ type: "text", text: "a" }, { type: "text", text: "b" }], temperature: 0, messages: [] }), "low"));
     assert.deepEqual(rewritten.system, [{ type: "text", text: "a" }, { type: "text", text: "b", cache_control: { type: "ephemeral" } }]);
     assert.equal("temperature" in rewritten, false);
+  } finally {
+    await dispose();
+  }
+});
+
+const HOUR = { type: "ephemeral", ttl: "1h" };
+const hold = (api, body) => JSON.parse(api.withClaudeRequestOptions(JSON.stringify(body), "high", { holdForAnHour: true }));
+const marks = (body) => JSON.stringify(body).match(/"cache_control"/g)?.length ?? 0;
+
+test("an agent's conversation is kept for an hour: instructions and the person's last two messages; the steps of an answer for five minutes", async () => {
+  const { module: api, dispose } = await load();
+  try {
+    const turn = [
+      { role: "user", content: [{ type: "text", text: "first" }] },
+      { role: "assistant", content: [{ type: "text", text: "ok" }] },
+      { role: "user", content: [{ type: "text", text: "second" }] },
+      { role: "assistant", content: [{ type: "tool_use", id: "t1", name: "Shell", input: {} }] },
+      { role: "user", content: [{ type: "tool_result", tool_use_id: "t1", content: "done" }, { type: "text", text: "a reminder after the result" }] },
+      { role: "assistant", content: [{ type: "text", text: "and" }] },
+      { role: "user", content: [{ type: "text", text: "third" }] },
+      { role: "assistant", content: [{ type: "tool_use", id: "t2", name: "Shell", input: {} }] },
+      { role: "user", content: [{ type: "tool_result", tool_use_id: "t2", content: "done" }] },
+    ];
+    const sent = hold(api, { model: "claude-sonnet-5-5", system: "You are Simeon.", tools: [{ name: "Shell" }], messages: turn });
+    assert.deepEqual(sent.system, [{ type: "text", text: "You are Simeon.", cache_control: HOUR }]);
+    // The person's last two messages; a tool round with a reminder is not one.
+    assert.equal(sent.messages[0].content[0].cache_control, undefined);
+    assert.deepEqual(sent.messages[2].content[0].cache_control, HOUR);
+    assert.equal(sent.messages[4].content.at(-1).cache_control, undefined);
+    assert.deepEqual(sent.messages[6].content[0].cache_control, HOUR);
+    // The step inside the answer: the top-level five minutes, after the hour's.
+    assert.deepEqual(sent.cache_control, { type: "ephemeral" });
+    assert.equal(marks(sent), 4, "four breakpoints at most");
+    assert.equal(sent.tools[0].cache_control, undefined);
+    // Nothing else changes: the same words, in the same order.
+    const plain = (body) => JSON.stringify(body, (key, value) => key === "cache_control" ? undefined : value);
+    assert.equal(plain(sent.messages), plain(turn));
+  } finally {
+    await dispose();
+  }
+});
+
+test("the first call of a turn ends on the person's message: its hour's breakpoint stands alone, without the top-level one", async () => {
+  const { module: api, dispose } = await load();
+  try {
+    const sent = hold(api, { model: "claude-sonnet-5-5", system: [{ type: "text", text: "a" }, { type: "text", text: "b" }], messages: [{ role: "user", content: "hi" }] });
+    assert.deepEqual(sent.system, [{ type: "text", text: "a" }, { type: "text", text: "b", cache_control: HOUR }]);
+    assert.deepEqual(sent.messages, [{ role: "user", content: [{ type: "text", text: "hi", cache_control: HOUR }] }]);
+    assert.equal(sent.cache_control, undefined);
+  } finally {
+    await dispose();
+  }
+});
+
+test("a request that already carries a breakpoint, and every other call, keep the five-minute shape", async () => {
+  const { module: api, dispose } = await load();
+  try {
+    const marked = hold(api, { model: "claude-sonnet-5-5", system: "s", messages: [{ role: "user", content: [{ type: "text", text: "hi", cache_control: { type: "ephemeral" } }] }] });
+    assert.deepEqual(marked.system, [{ type: "text", text: "s", cache_control: { type: "ephemeral" } }]);
+    assert.deepEqual(marked.cache_control, { type: "ephemeral" });
+    assert.equal(JSON.stringify(marked).includes('"ttl"'), false);
+    const helper = JSON.parse(api.withClaudeRequestOptions(JSON.stringify({ model: "claude-sonnet-5-5", system: "s", messages: [{ role: "user", content: "click" }] }), "low"));
+    assert.equal(JSON.stringify(helper).includes('"ttl"'), false);
+    for (const reason of ["chat", "first_message", "wake", "agent_wake", "nudge", "routine", "background"]) assert.ok(api.CLAUDE_HOUR_CACHE_REASONS.has(reason), reason);
+    for (const reason of ["computer", "browser", "video", "helper", "summary", "memory", "safety", "cheap", "voice"]) assert.ok(!api.CLAUDE_HOUR_CACHE_REASONS.has(reason), reason);
   } finally {
     await dispose();
   }

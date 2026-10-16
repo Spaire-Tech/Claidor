@@ -23,7 +23,7 @@ import { simeonProxyBaseUrl } from "../../../shared/node/simeon-backend/simeon-a
 import { getSandRootDir } from "../../host-paths.js";
 import { SandSettingsStore } from "../../../shared/node/settings/sand-settings-store.js";
 import { simeonGeminiEndpoint, streamGeminiGenerateContent, toGeminiRequest, type GeminiDirectTool } from "./gemini-direct-generate.js";
-import { claudeEffortFor, claudeUsage, isClaudeModelId, isClaudeProviderFailure, withClaudeBetaHeader, withClaudeRequestOptions, type ClaudeEffort } from "./claude-messages.js";
+import { CLAUDE_HOUR_CACHE_REASONS, claudeEffortFor, claudeUsage, isClaudeModelId, isClaudeProviderFailure, withClaudeBetaHeader, withClaudeRequestOptions, type ClaudeEffort } from "./claude-messages.js";
 import { simeonModelRoles } from "./simeon-model-roles.js";
 import { configuredSimeonVideoModel, isGeminiVideoModelId } from "../../../shared/video-availability.js";
 import type { LabelMessage, PromptExecutor } from "./sand-labeling.js";
@@ -875,13 +875,15 @@ function simeonLanguageModel(source: SimeonCredentialSource, id: string, promptC
 
 // Claude through the same proxy, on `/v1/messages` (`claude-messages.ts`). The
 // request leaves with the person's bearer, the thinking-binding beta, and the
-// effort, thinking and cache breakpoints the provider cannot write itself.
+// effort, thinking and cache breakpoints the provider cannot write itself;
+// an agent's own conversation keeps its saved copy for an hour.
 function claudeLanguageModel(source: SimeonCredentialSource, id: string, effort: ClaudeEffort, callReason?: SimeonCallReason): LanguageModelV1 {
   const authenticated = simeonAuthenticatedFetch(source, undefined, callReason);
+  const holdForAnHour = callReason !== undefined && CLAUDE_HOUR_CACHE_REASONS.has(callReason);
   const withOptions: typeof fetch = async (input, init) => await authenticated(input, {
     ...init,
     headers: withClaudeBetaHeader(new Headers(init?.headers)),
-    ...(init?.body == null ? {} : { body: withClaudeRequestOptions(init.body, effort) as BodyInit }),
+    ...(init?.body == null ? {} : { body: withClaudeRequestOptions(init.body, effort, { holdForAnHour }) as BodyInit }),
   });
   return createAnthropic({ apiKey: "simeon-desktop-access-token", baseURL: simeonProxyBaseUrl(source.backendUrl), fetch: withOptions })(id);
 }
