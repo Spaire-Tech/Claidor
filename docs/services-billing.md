@@ -65,7 +65,7 @@ test key first, then the live key.
 
 | On Stripe | Found by | What |
 |---|---|---|
-| Product × 3 | `metadata.simeon_tier` = `standard`, `pro`, `max` | "Simeon Standard", "Simeon Pro", "Simeon Max", with the weekly and trial credits in metadata. |
+| Product × 3 | `metadata.simeon_tier` = `standard`, `pro`, `max` | "Simeon Standard", "Simeon Pro", "Simeon Max", with the weekly and trial credits in metadata, and the app's icon as their picture (`https://simeonlabs.com/img/simeon-icon.png`, so Checkout shows it beside the plan's name, not a grey square). |
 | Price × 6 | `lookup_key` = `simeon_<tier>_<month\|year>` | Recurring, USD, tax inclusive. Monthly at the list price, yearly at twenty percent off. A changed amount archives the old price and moves the lookup key to the new one. |
 | Billing Meter × 2 | `event_name` = `simeon_credits`, `simeon_box_seconds` | Sum of `payload.value`, by `stripe_customer_id`. What a person used, for Stripe's dashboard and, later, for on-demand prices. |
 
@@ -78,6 +78,24 @@ in Stripe, Settings → Billing → Customer portal, allow cancelling,
 switching between the six prices, and updating the card, and set the
 business name people see. The legal name on the account can stay what it
 was; the public name and statement descriptor are what a person sees.
+
+**E-mails about payments** (16 October 2026). Simeon sends none of its own
+for plans. A plan bought in the iPhone app is Apple's: Apple e-mails the
+receipt, the renewals and any billing problem to the person's Apple
+Account. A plan bought on the Mac or the website is Stripe's, and Stripe
+sends its own e-mails once they are switched on, in live mode (test mode
+sends none), to the e-mail on the Stripe customer (the account's, set at
+checkout):
+
+- Settings → Business → Customer emails: **Successful payments** (the
+  receipt for each payment, renewals included) and **Refunds**.
+- Settings → Billing → Subscriptions and emails: failed payments (with a
+  link to update the card), upcoming renewals, expiring cards, trial
+  ending and cancellations. Stripe also sends a trial reminder before any
+  trial longer than seven days ends, whatever this page says.
+- Settings → Business → Branding: the icon (the same picture), the logo
+  and the colour, which Checkout, the Customer Portal and these e-mails
+  all use.
 
 ## 3. How a person gets a plan
 

@@ -36,6 +36,12 @@ structlog.configure(processors=[_drop_all])
 logging.config.dictConfig({"version": 1, "disable_existing_loggers": True})
 
 
+#: Each plan's picture on Stripe's checkout page and in its emails (the app's
+#: icon, served by the website). Without one, Checkout shows a grey square
+#: beside "Simeon Standard" (the founder, 16 October 2026).
+PRODUCT_IMAGE = "https://simeonlabs.com/img/simeon-icon.png"
+
+
 def _dollars(cents: int) -> str:
     return f"${cents / 100:,.0f}" if cents % 100 == 0 else f"${cents / 100:,.2f}"
 
@@ -112,6 +118,7 @@ def run(dry_run: bool = typer.Option(False, "--dry-run")) -> None:
                     name=spec.name,
                     description=spec.description,
                     metadata=metadata,
+                    images=[PRODUCT_IMAGE],
                     statement_descriptor=settings.STRIPE_STATEMENT_DESCRIPTOR[:22],
                 )
                 product_ids[spec.tier.value] = created.id
@@ -121,6 +128,7 @@ def run(dry_run: bool = typer.Option(False, "--dry-run")) -> None:
             existing.name != spec.name
             or (existing.description or "") != spec.description
             or any(existing.metadata.get(k) != v for k, v in metadata.items())
+            or list(existing.get("images") or []) != [PRODUCT_IMAGE]
         )
         typer.echo(
             f"  product  {spec.name}: {'update' if changed else 'unchanged'} ({existing.id})"
@@ -131,6 +139,7 @@ def run(dry_run: bool = typer.Option(False, "--dry-run")) -> None:
                 name=spec.name,
                 description=spec.description,
                 metadata=metadata,
+                images=[PRODUCT_IMAGE],
             )
 
     for price_spec in catalog.prices():
