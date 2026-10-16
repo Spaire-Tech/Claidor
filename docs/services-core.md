@@ -809,7 +809,10 @@ computer hibernated to a snapshot. What differs from Docker:
   else. A listed person's computer on another server moves at their next
   idle `EnsureSandBox`: backup brought up to date, the old computer stopped
   (not removed), the new one made with the backup copied in
-  (`sand.box.moved`).
+  (`sand.box.moved`). If the new one does not come up (a template not
+  built yet), the person's computer is made again where it was, on its own
+  files with a fresh credential, and no move is tried for 30 minutes
+  (`sand.box.move_failed`).
 
 Setting it up on Render and GitHub: `docs/ops/box-host/render-env.md`, "E2B".
 

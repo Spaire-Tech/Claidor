@@ -517,6 +517,47 @@ class TestOnE2B:
         assert (await _ensure(client, access)).status_code == 200
         assert len(e2b.created) == 1
 
+    async def test_a_move_that_fails_leaves_a_working_computer_where_it_was(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        fleet: tuple[FakeBoxHost, E2BBoxHost],
+        e2b: FakeE2B,
+        dials: list[tuple[str, dict[str, str]]],
+        backups: Any,
+    ) -> None:
+        """16 October 2026: listed on E2B before its template was built.
+        Asking for the new computer's credential replaced the old one's, so
+        the old computer is made again on box2, on its own files, and the
+        move is not tried again at once."""
+        docker, cloud = fleet
+        cloud.users = ()
+        access, _ = await _signed_in(client, session, user)
+        assert (await _ensure(client, access)).status_code == 200
+        before = await _box_of(session, user)
+        old = before.provider_box_id
+        old_credential = before.credential_session_id
+
+        cloud.users = (user.email.lower(),)
+        e2b.create_error = SandboxNotFoundException("template simeon-box not found")
+        assert (await _ensure(client, access)).status_code == 200
+        session.expunge_all()
+        after = await _box_of(session, user)
+        assert after.provider == "us-west-1"
+        assert after.provider_box_id != old
+        assert after.credential_session_id not in (None, old_credential)
+        assert (old, []) in docker.removed
+        assert len(docker.created) == 2
+        assert docker.created[1].workspace_volume == docker.created[0].workspace_volume
+        assert e2b.boxes == {}
+
+        # Held: the next EnsureSandBox does not try E2B again.
+        e2b.create_error = None
+        assert (await _ensure(client, access)).status_code == 200
+        assert e2b.created == []
+        box_service._move_held.clear()
+
     async def test_no_move_without_an_up_to_date_backup(
         self,
         client: httpx.AsyncClient,

@@ -198,7 +198,9 @@ things, once:
 `SIMEON_BOX_HOST_PROVIDER` stays `docker`. To go back, take the person off
 `users` (or the entry out of the list): their next EnsureSandBox makes a
 computer on Docker again and copies the backup in. The log lines are
-`sand.box.moved`, `sand.box.move_deferred`, `sand.box.e2b.created`,
+`sand.box.moved`, `sand.box.move_deferred`, `sand.box.move_failed` (the new
+computer did not come up; the old one is made again on box2),
+`sand.box.e2b.created`,
 `sand.box.keep_alive_failed` and, as before, `sand.box.hibernated`.
 
 On E2B's free plan a computer can run at most an hour before E2B freezes it

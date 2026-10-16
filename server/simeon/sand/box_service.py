@@ -430,6 +430,15 @@ async def image_for(db: AsyncSession, user_id: UUID) -> str:
     return box_image_reference()
 
 
+# --- moving between servers ---------------------------------------------------
+
+#: After a move that failed, how long a box stays where it is before the
+#: next try, so a server that cannot make computers (an E2B template not
+#: built) is not asked again at every EnsureSandBox. Per API process.
+MOVE_HOLD_S = 30 * 60.0
+_move_held: dict[UUID, float] = {}
+
+
 # --- the running clock --------------------------------------------------------
 #
 # The meter (`plans.report_usage`) sends each box's running seconds from
@@ -700,6 +709,9 @@ class BoxBrokerService:
         where they were, and the new box copies the backup in. The server it
         moved to, or None when it stays (not listed elsewhere, busy, or no
         backup to carry its files)."""
+        held = _move_held.get(box.id)
+        if held is not None and time.monotonic() < held:
+            return None
         hosts = await resolve_box_hosts()
         listed = await self._listed_on(db, parent.user_id, hosts)
         if not listed or any(h.name == host.name for h in listed):
@@ -735,9 +747,25 @@ class BoxBrokerService:
                 return None
         await self.check_capacity(repository, target, box)
         old = (host.name, box.provider_box_id)
-        await self._create(
-            db, target, parent, box, restore="always", committed=committed
-        )
+        try:
+            await self._create(
+                db, target, parent, box, restore="always", committed=committed
+            )
+        except BoxHostError as error:
+            # The new computer did not come up (16 October 2026: a template
+            # not built yet). Asking for its credential replaced the old
+            # computer's, so the old one is made again where it was, with a
+            # fresh credential and its files (the caller's next step, as for
+            # any dead credential), and no move is tried again for a while.
+            log.warning(
+                "sand.box.move_failed",
+                box=str(box.id),
+                to=target.name,
+                error=str(error),
+            )
+            box.credential_session_id = None
+            _move_held[box.id] = time.monotonic() + MOVE_HOLD_S
+            return None
         log.info(
             "sand.box.moved",
             box=str(box.id),
