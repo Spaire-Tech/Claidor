@@ -44,6 +44,7 @@ from simeon.kit.utils import generate_uuid, utc_now
 from simeon.models import DesktopSession, SandBox
 from simeon.postgres import AsyncSession
 from simeon.redis import Redis
+from simeon.user.repository import UserRepository
 
 from . import box_store
 from .box_hosts import (
@@ -377,6 +378,29 @@ async def is_attached(redis: Redis, box_id: UUID) -> bool:
         return True
 
 
+# --- the image -------------------------------------------------------------------
+
+
+async def image_for(db: AsyncSession, user_id: UUID) -> str:
+    """The image a person's box runs: `SIMEON_BOX_IMAGE_TRIAL` for the
+    accounts in `SIMEON_BOX_IMAGE_TRIAL_USERS` (an e-mail address or a user
+    id each), the pinned image (`box_image_reference`) for everyone else."""
+    trial = settings.BOX_IMAGE_TRIAL.strip()
+    listed = {
+        entry.strip().lower()
+        for entry in settings.BOX_IMAGE_TRIAL_USERS.split(",")
+        if entry.strip()
+    }
+    if trial and listed:
+        if str(user_id).lower() in listed:
+            return trial
+        if any("@" in entry for entry in listed):
+            user = await UserRepository.from_session(db).get_by_id(user_id)
+            if user is not None and user.email.lower() in listed:
+                return trial
+    return box_image_reference()
+
+
 # --- the running clock --------------------------------------------------------
 #
 # The meter (`plans.report_usage`) sends each box's running seconds from
@@ -568,12 +592,15 @@ class BoxBrokerService:
         box.gateway_token = box.gateway_token or secrets.token_hex(32)
         box.network_token = box.network_token or secrets.token_hex(32)
         workspace, data = self.volumes(box.id)
+        image = await image_for(db, parent.user_id)
+        if image != box_image_reference():
+            log.info("sand.box.image_trial", box=str(box.id), image=image)
         spec = BoxSpec(
             name=f"simeon-box-{box.id.hex}",
             gateway_token=box.gateway_token,
             renewal_credential=credential,
             backend_url=settings.BASE_URL,
-            image=box_image_reference(),
+            image=image,
             workspace_volume=workspace,
             data_volume=data,
             memory_mb=max(settings.BOX_MEMORY_LIMIT_MB, 0),
@@ -672,7 +699,7 @@ class BoxBrokerService:
             if state is not None and credential_live:
                 current = await host.inspect(box.provider_box_id)
                 if current is not None:
-                    stale_image = current.image != box_image_reference()
+                    stale_image = current.image != await image_for(db, parent.user_id)
                     stale_store = (
                         box_store.enabled()
                         and current.box_store != box_store.LABEL_VALUE

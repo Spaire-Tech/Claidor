@@ -388,6 +388,14 @@ class Settings(BaseSettings):
     BOX_IMAGE_DIGEST: str = (
         "322c3a9031d61e210a05400dd74c82bbb1fdb42db315a8cf5ab39368c2f0c1c8"
     )
+    # Another image tried on a few accounts before everyone (16 October
+    # 2026): the people in BOX_IMAGE_TRIAL_USERS (comma-separated e-mail
+    # addresses or user ids) get BOX_IMAGE_TRIAL, a full reference
+    # (`repo@sha256:…`); everyone else keeps the image above. Taking a
+    # person off the list puts them back on it at their next idle
+    # EnsureSandBox, their files copied back from the backup. Empty: nobody.
+    BOX_IMAGE_TRIAL: str = ""
+    BOX_IMAGE_TRIAL_USERS: str = ""
     # A .tar or .tar.gz with `host/host-main.cjs` and
     # `box-exec-daemon/main.cjs` (what `npm run package` builds into
     # desktop/dist), uploaded into the container before it starts. Empty:

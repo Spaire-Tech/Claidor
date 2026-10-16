@@ -297,6 +297,57 @@ class TestEnsureSandBox:
         await _ensure(client, access)
         assert len(host.created) == 2
 
+    async def test_a_trial_image_goes_only_to_the_people_listed(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        user_second: User,
+        host: FakeBoxHost,
+        mocker: MockerFixture,
+    ) -> None:
+        """16 October 2026: our own image tried on one account first."""
+        trial = "ghcr.io/example/simeon-box@sha256:" + "a" * 64
+        mocker.patch.object(settings, "BOX_IMAGE_TRIAL", trial)
+        mocker.patch.object(
+            settings, "BOX_IMAGE_TRIAL_USERS", f" {user.email.upper()} , other@x.com"
+        )
+        access, _ = await _signed_in(client, session, user)
+        other, _ = await _signed_in(client, session, user_second)
+        await _ensure(client, access)
+        await _ensure(client, other)
+        assert [spec.image for spec in host.created] == [
+            trial,
+            box_hosts.box_image_reference(),
+        ]
+        # Steady: neither is replaced on the next ensure.
+        await _ensure(client, access)
+        await _ensure(client, other)
+        assert len(host.created) == 2
+
+        # Off the list: back on the pinned image, on the same volumes.
+        mocker.patch.object(settings, "BOX_IMAGE_TRIAL_USERS", "")
+        await _ensure(client, access)
+        assert len(host.created) == 3
+        assert host.created[2].image == box_hosts.box_image_reference()
+        assert host.created[2].workspace_volume == host.created[0].workspace_volume
+
+    async def test_a_trial_by_user_id(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        host: FakeBoxHost,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch.object(
+            settings, "BOX_IMAGE_TRIAL", "ghcr.io/x/y@sha256:" + "b" * 64
+        )
+        mocker.patch.object(settings, "BOX_IMAGE_TRIAL_USERS", str(user.id))
+        access, _ = await _signed_in(client, session, user)
+        await _ensure(client, access)
+        assert host.created[0].image == settings.BOX_IMAGE_TRIAL
+
     async def test_no_host_is_one_sentence_as_unavailable(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User
     ) -> None:

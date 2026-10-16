@@ -815,6 +815,18 @@ published, the switch is the two settings above (and `SIMEON_BOX_IMAGE` in
 the Mac's internal Docker path); every box is replaced on its next
 `EnsureSandBox`, its workspace and data kept.
 
+**Trying an image on a few accounts first** (16 October 2026). With
+`SIMEON_BOX_IMAGE_TRIAL` (a full `repo@sha256:…` reference) and
+`SIMEON_BOX_IMAGE_TRIAL_USERS` (comma-separated e-mail addresses or user
+ids), only the people listed get that image (`box_service.image_for`):
+their box is replaced at its next idle `EnsureSandBox`, on the same volumes,
+with the backup copied back; everyone else stays on the pinned image. Taking
+a person off the list (or emptying either setting) puts them back on the
+pinned image the same way. The log line is `sand.box.image_trial`. The Docker
+server pulls an image only when it does not have it, so an image in a
+private registry is pulled once by hand on each server (`docker login`, then
+`docker pull` of the exact reference) before anyone is listed.
+
 **The host bundle channel.**
 
 - `SIMEON_BOX_HOST_BUNDLE_URL` names either a folder or a single `.tgz`.
@@ -918,6 +930,7 @@ because the worker runs the sleeper and the wake. Full steps are in
 | `SIMEON_BOX_DOCKER_TLS_CA`, `_CERT`, `_KEY` | paths to the secret files, e.g. `/etc/secrets/ca.pem` |
 | `SIMEON_BOX_HOST_BUNDLE_URL` | the public HTTPS folder of host bundles |
 | `SIMEON_BOX_IMAGE`, `SIMEON_BOX_IMAGE_DIGEST` | defaults; change only with a checked image |
+| `SIMEON_BOX_IMAGE_TRIAL`, `SIMEON_BOX_IMAGE_TRIAL_USERS` | empty; another image for the accounts listed only (above) |
 | `SIMEON_BOX_IDLE_HIBERNATE_AFTER` | `PT30M`; `PT0S` never sleeps |
 | `SIMEON_BOX_MEMORY_LIMIT_MB`, `SIMEON_BOX_CPU_LIMIT` | `4096`, `2.0`; `0` means no limit |
 | `SIMEON_BOX_MAX_RUNNING` | `3`; `0` means no limit |
