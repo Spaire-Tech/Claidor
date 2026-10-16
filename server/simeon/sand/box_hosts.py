@@ -220,23 +220,46 @@ class BoxHost(Protocol):
 # --- docker ------------------------------------------------------------------
 
 
+#: The files the host loads from its own folder, beside host-main.cjs: the
+#: bundle's `host/<path>` (desktop/scripts/lib/host-bundle-publish.mjs,
+#: HOST_COMPANIONS). A Docker box mounts host-main.cjs over an image whose
+#: folder already holds them, so they are not needed there; an E2B computer
+#: from Simeon's own image has only what is written into it (16 October
+#: 2026: every agent turn failed for want of agent-store-worker.cjs).
+HOST_COMPANIONS = (
+    "agent-isolation/agent-store-worker.cjs",
+    "agent-isolation/transcript-mirror-worker.cjs",
+    "extensions/box-store-sync/box-store-vacuum-worker.cjs",
+    "extensions/content-search/search-index-worker.cjs",
+)
+
+
 class HostBundle:
     """The host bundle uploaded into a new container: `host/host-main.cjs`
     to `/home/box/sand-host/host-main.cjs` and `box-exec-daemon/main.cjs`
     to `/home/box/box-exec-daemon/main.cjs`, the two paths the Mac
-    bind-mounts. Read once from `SIMEON_BOX_HOST_BUNDLE_URL` (a tar or
-    tar.gz) and kept in memory."""
+    bind-mounts, and the host's own files (`host/<path>`, HOST_COMPANIONS)
+    when the bundle has them. Read once from `SIMEON_BOX_HOST_BUNDLE_URL` (a
+    tar or tar.gz) and kept in memory."""
 
     HOST_MAIN = "host/host-main.cjs"
     BOX_EXEC_DAEMON = "box-exec-daemon/main.cjs"
 
-    def __init__(self, host_main: bytes, box_exec_daemon: bytes) -> None:
+    def __init__(
+        self,
+        host_main: bytes,
+        box_exec_daemon: bytes,
+        companions: dict[str, bytes] | None = None,
+    ) -> None:
         self.host_main = host_main
         self.box_exec_daemon = box_exec_daemon
+        #: `<path under the host's folder>` -> bytes, HOST_COMPANIONS only.
+        self.companions = dict(companions or {})
 
     @classmethod
     def from_tar(cls, data: bytes) -> HostBundle:
         members: dict[str, bytes] = {}
+        companions: dict[str, bytes] = {}
         with tarfile.open(fileobj=io.BytesIO(data), mode="r:*") as archive:
             for member in archive.getmembers():
                 name = member.name.lstrip("./")
@@ -245,13 +268,36 @@ class HostBundle:
                         extracted = archive.extractfile(member)
                         if extracted is not None:
                             members[wanted] = extracted.read()
+                # Only the names the host looks for: nothing else in the
+                # archive is ever written into a computer.
+                for companion in HOST_COMPANIONS:
+                    if name == f"host/{companion}":
+                        extracted = archive.extractfile(member)
+                        if extracted is not None:
+                            companions[companion] = extracted.read()
         missing = [n for n in (cls.HOST_MAIN, cls.BOX_EXEC_DAEMON) if n not in members]
         if missing:
             raise BoxHostError(
                 f"The host bundle is missing {', '.join(missing)}; "
                 "build it with `npm run package` in desktop/ and publish desktop/dist."
             )
-        return cls(members[cls.HOST_MAIN], members[cls.BOX_EXEC_DAEMON])
+        return cls(members[cls.HOST_MAIN], members[cls.BOX_EXEC_DAEMON], companions)
+
+    @property
+    def missing_companions(self) -> list[str]:
+        """HOST_COMPANIONS this bundle lacks (one published before 16
+        October 2026 has none)."""
+        return [c for c in HOST_COMPANIONS if not self.companions.get(c)]
+
+    @property
+    def folder_sha256(self) -> str:
+        """host-main.cjs and the host's own files together: a worker can
+        change while host-main.cjs stays the same."""
+        digest = hashlib.sha256(self.host_main)
+        for companion in HOST_COMPANIONS:
+            digest.update(b"\0" + companion.encode() + b"\0")
+            digest.update(self.companions.get(companion, b""))
+        return digest.hexdigest()
 
     @property
     def host_sha256(self) -> str:

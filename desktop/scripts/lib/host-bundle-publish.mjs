@@ -26,6 +26,22 @@ export const ASAR_MEMBERS = Object.freeze({
   host: "dist/host/host-main.cjs",
   boxExecDaemon: "dist/box-exec-daemon/main.cjs",
 });
+/**
+ * The files the host loads from its own folder, beside host-main.cjs (16
+ * October 2026), as `host/<path>` in the bundle and `dist/host/<path>` in
+ * the app. A Docker box mounts host-main.cjs over an image whose folder
+ * already holds them; Simeon's own image (box/, E2B) has none, and every
+ * agent turn there failed with "Cannot find module
+ * '/home/box/sand-host/agent-isolation/agent-store-worker.cjs'". The server
+ * (`server/simeon/sand/box_hosts.py`, HOST_COMPANIONS) writes these into an
+ * E2B computer and makes none from a bundle without them.
+ */
+export const HOST_COMPANIONS = Object.freeze([
+  "agent-isolation/agent-store-worker.cjs",
+  "agent-isolation/transcript-mirror-worker.cjs",
+  "extensions/box-store-sync/box-store-vacuum-worker.cjs",
+  "extensions/content-search/search-index-worker.cjs",
+]);
 
 /**
  * What a packaged app was built from, written beside it (`<app>.source`) by
@@ -86,16 +102,24 @@ export function sha256(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
 }
 
-/** The two publishable files for one version. */
-export function buildHostBundle({ version, hostBytes, boxExecDaemonBytes }) {
+/**
+ * The two publishable files for one version. `companions` maps each of
+ * HOST_COMPANIONS to its bytes; all of them are required.
+ */
+export function buildHostBundle({ version, hostBytes, boxExecDaemonBytes, companions }) {
   if (!VERSION_PATTERN.test(version)) {
     throw new Error(`version must be a commit id (7-40 lowercase hex), got ${JSON.stringify(version)}`);
   }
   if (hostBytes.length === 0 || boxExecDaemonBytes.length === 0) {
     throw new Error("the host and the exec daemon must both be present");
   }
+  const missing = HOST_COMPANIONS.filter((name) => !(companions?.[name]?.length > 0));
+  if (missing.length > 0) {
+    throw new Error(`the host's own files must be present: ${missing.join(", ")}`);
+  }
   const tarball = deterministicTarGz([
     [BUNDLE_MEMBERS.host, hostBytes],
+    ...HOST_COMPANIONS.map((name) => [`host/${name}`, companions[name]]),
     [BUNDLE_MEMBERS.boxExecDaemon, boxExecDaemonBytes],
   ]);
   return {

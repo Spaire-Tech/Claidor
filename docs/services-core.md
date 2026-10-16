@@ -867,6 +867,15 @@ server pulls an image only when it does not have it, so an image in a
 private registry is pulled once by hand on each server (`docker login`, then
 `docker pull` of the exact reference) before anyone is listed.
 
+Do not list anyone with Simeon's own image (`box/`) yet. Its exec daemon
+(`desktop/source/box-exec-daemon/`) cannot write files (the agents' Write
+and Edit tools) or run the computer's own connectors (MCP), and refuses
+paths outside `/workspace`. This was measured on 16 October 2026 with
+today's engine; the details are in `docs/ops/box-host/render-env.md`
+(E2B). The image's
+folder for the host also holds only what is written into it, so the engine
+must be one published with its workers (`HOST_COMPANIONS`).
+
 **The host bundle channel.**
 
 - `SIMEON_BOX_HOST_BUNDLE_URL` names either a folder or a single `.tgz`.

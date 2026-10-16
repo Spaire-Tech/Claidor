@@ -161,8 +161,25 @@ Render outbound addresses in its firewall the same way.
 
 An entry with `"kind": "e2b"` is E2B's service instead of a Docker server
 (`server/simeon/sand/box_e2b.py`, 16 October 2026): each computer is a small
-virtual machine, frozen whole when idle and back in about a second. Three
-things, once:
+virtual machine, frozen whole when idle and back in about a second.
+
+**Not ready: list nobody on an E2B entry yet.** The template is built from
+Simeon's own image (`box/`), and its exec daemon
+(`desktop/source/box-exec-daemon/`) does less than the one in box2's image.
+Measured on 16 October 2026, running `box/` with today's engine and the
+engine's own client: shell, reading, the screen and agent windows work, but
+the daemon answers "Unsupported ExecServerMessage case" for file writes
+(`writeArgs`: the agents' Write and Edit tools), for the computer's own
+connectors (`mcpArgs`, `mcpStateExecArgs`; `loadMcpServers` is a stub), and
+for list, search and delete. It also refuses any path outside `/workspace`,
+so the engine's own files under `/home/box` (window assignments, uploads)
+fail with `BoxShellUnavailableError ... Path escapes configured workspace
+root: /`. On E2B on 16 October the computer started but no message went
+through and its screen stayed empty. Docker on box2 runs the upstream image,
+whose daemon does all of this. Until the daemon is finished (or the template
+is made from box2's image), E2B stays switched off.
+
+When it is ready, three things, once:
 
 1. **The key.** `E2B_API_KEY` (or `SIMEON_E2B_API_KEY`) in the shared
    environment group, so the API and the worker both have it: the worker's
@@ -212,9 +229,14 @@ connect <id>` with E2B's command line), `tail /tmp/sand-host.log` and
 `box-doctor`. `Cannot
 find module 'piscina'` (and `FAIL host-libraries`) means the template was
 built before 16 October 2026, when `box/deps` gained the packages the engine
-loads from outside its bundle: run step 2 again. A computer the server no
-longer knows (its entry was taken out) freezes itself within the hour; kill
-it (`e2b sandbox kill <id>`, or in E2B's dashboard).
+loads from outside its bundle: run step 2 again. `Cannot find module
+'/home/box/sand-host/agent-isolation/agent-store-worker.cjs'` means the
+engine was published before the bundle carried its workers (same day); the
+server now makes no E2B computer from such a bundle
+(`sand.box.e2b.bundle_incomplete`) and the person stays on box2: publish
+the engine again. A computer the server no longer knows (its entry was taken
+out) freezes itself within the hour; kill it (`e2b sandbox kill <id>`, or in
+E2B's dashboard).
 
 ## The API's size
 

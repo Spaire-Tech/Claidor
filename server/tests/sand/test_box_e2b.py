@@ -31,6 +31,7 @@ from simeon.redis import Redis
 from simeon.sand import box_e2b, box_hosts, box_proxy, box_service
 from simeon.sand.box_e2b import E2BBoxHost, env_file, machine_id_of
 from simeon.sand.box_hosts import (
+    HOST_COMPANIONS,
     BoxBlocked,
     BoxHostError,
     BoxHostUnavailable,
@@ -46,7 +47,10 @@ from tests.sand.test_box_sleep import _box_of, health
 
 __all__ = ["backups", "health"]
 
-BUNDLE = HostBundle(b"// host", b"// exec daemon")
+WORKERS = {name: f"// {name}".encode() for name in HOST_COMPANIONS}
+BUNDLE = HostBundle(b"// host", b"// exec daemon", WORKERS)
+#: One published before 16 October 2026: host-main.cjs and the exec daemon.
+OLD_BUNDLE = HostBundle(b"// host", b"// exec daemon")
 
 
 class FakeE2B:
@@ -210,7 +214,7 @@ class TestE2BHost:
         assert opts["metadata"] == {
             "simeon_box": "simeon-box-" + "ab" * 16,
             "image": "e2b:simeon-box",
-            "host_sha256": BUNDLE.host_sha256,
+            "host_sha256": BUNDLE.folder_sha256,
             "box_store": "1",
         }
         assert sdk.api == [{"api_key": "e2b_test"}]
@@ -222,6 +226,13 @@ class TestE2BHost:
         assert "export SAND_INFERENCE_RENEWAL_CREDENTIAL='simeon_db_x'" in env
         assert files["/etc/machine-id"] == ("ab" * 16 + "\n", "root")
         assert files["/home/box/sand-host/host-main.cjs"] == (b"// host", "root")
+        # The host's workers beside it (16 October 2026: without them every
+        # agent turn failed), in folders made first.
+        for name in HOST_COMPANIONS:
+            assert files[f"/home/box/sand-host/{name}"] == (WORKERS[name], "root")
+        made_folders = box["commands"][0][0]
+        assert "/home/box/sand-host/agent-isolation" in made_folders
+        assert "/home/box/sand-host/extensions/content-search" in made_folders
         assert files["/home/box/box-exec-daemon/main.cjs"] == (
             b"// exec daemon",
             "root",
@@ -236,7 +247,7 @@ class TestE2BHost:
         assert made.host_address == "e2b.app"
         assert made.ports == {1340: 1340, 6080: 6080, 6081: 6081, 8790: 8790}
         assert made.image == "e2b:simeon-box"
-        assert made.host_sha256 == BUNDLE.host_sha256
+        assert made.host_sha256 == BUNDLE.folder_sha256
         assert made.box_store == "1"
         assert made.host_meta == {"kind": "e2b", "traffic_token": "traffic-sbx1"}
 
@@ -254,6 +265,23 @@ class TestE2BHost:
         with pytest.raises(BoxHostUnavailable):
             await host.create(_spec())
         assert sdk.created == []
+
+    async def test_an_engine_without_its_workers_makes_nothing(self) -> None:
+        sdk = FakeE2B()
+        host = E2BBoxHost(name="e2b-1", template="t", bundle=OLD_BUNDLE, sdk=sdk)
+        with pytest.raises(BoxHostUnavailable, match="agent-store-worker.cjs"):
+            await host.create(_spec())
+        assert sdk.created == []
+
+    def test_a_new_worker_alone_is_a_new_host(self) -> None:
+        changed = HostBundle(
+            b"// host",
+            b"// exec daemon",
+            {**WORKERS, HOST_COMPANIONS[0]: b"// another worker"},
+        )
+        assert changed.host_sha256 == BUNDLE.host_sha256
+        assert changed.folder_sha256 != BUNDLE.folder_sha256
+        assert _host(FakeE2B()).expected_host_sha256 == BUNDLE.folder_sha256
 
     async def test_sleep_wake_state_remove_and_keep_alive(self) -> None:
         sdk = FakeE2B()
@@ -276,7 +304,7 @@ class TestE2BHost:
         assert read is not None
         assert (read.image, read.host_sha256, read.box_store) == (
             "e2b:simeon-box",
-            BUNDLE.host_sha256,
+            BUNDLE.folder_sha256,
             "1",
         )
         # A read never carries the traffic token: E2B gives it only at create.
@@ -555,6 +583,32 @@ class TestOnE2B:
         # Held: the next EnsureSandBox does not try E2B again.
         e2b.create_error = None
         assert (await _ensure(client, access)).status_code == 200
+        assert e2b.created == []
+        box_service._move_held.clear()
+
+    async def test_an_engine_published_without_its_workers_moves_nobody(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        fleet: tuple[FakeBoxHost, E2BBoxHost],
+        e2b: FakeE2B,
+        dials: list[tuple[str, dict[str, str]]],
+        backups: Any,
+    ) -> None:
+        """16 October 2026: the computer made on E2B had host-main.cjs alone
+        and failed every agent turn. With such a bundle no E2B computer is
+        made, and the person keeps one on box2."""
+        docker, cloud = fleet
+        cloud.users = ()
+        access, _ = await _signed_in(client, session, user)
+        assert (await _ensure(client, access)).status_code == 200
+
+        cloud.users = (user.email.lower(),)
+        cloud.bundle = OLD_BUNDLE
+        assert (await _ensure(client, access)).status_code == 200
+        session.expunge_all()
+        assert (await _box_of(session, user)).provider == "us-west-1"
         assert e2b.created == []
         box_service._move_held.clear()
 

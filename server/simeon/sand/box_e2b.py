@@ -79,7 +79,8 @@ NAME_KEY = "simeon_box"
 START_SCRIPT = "/usr/local/bin/start-simeon-vm"
 ENV_FILE = "/run/simeon/box.env"
 SEED_FILE = "/run/simeon/seed"
-HOST_MAIN = "/home/box/sand-host/host-main.cjs"
+HOST_DIR = "/home/box/sand-host"
+HOST_MAIN = f"{HOST_DIR}/host-main.cjs"
 EXEC_DAEMON_MAIN = "/home/box/box-exec-daemon/main.cjs"
 
 #: How long a box stays awake if the sleeper stops pushing its timeout out
@@ -183,7 +184,9 @@ class E2BBoxHost:
 
     @property
     def expected_host_sha256(self) -> str | None:
-        return self.bundle.host_sha256 if self.bundle is not None else None
+        # The whole folder written into the VM, not host-main.cjs alone: a
+        # new worker replaces the box as a new host program does.
+        return self.bundle.folder_sha256 if self.bundle is not None else None
 
     def _api(self) -> dict[str, Any]:
         api: dict[str, Any] = {}
@@ -222,10 +225,21 @@ class E2BBoxHost:
                 "Simeon's cloud computer on E2B needs the host bundle; set "
                 "SIMEON_BOX_HOST_BUNDLE_URL."
             )
+        missing = self.bundle.missing_companions
+        if missing:
+            # A computer without the host's workers starts, then fails every
+            # agent turn (16 October 2026). None is made: a move to E2B
+            # fails and the person keeps the computer they have.
+            log.warning("sand.box.e2b.bundle_incomplete", missing=missing)
+            raise BoxHostUnavailable(
+                "The published engine predates Simeon's own cloud computer: it "
+                f"lacks {', '.join(missing)}. Publish the engine again "
+                "(desktop: npm run package, then npm run publish:host-bundle)."
+            )
         metadata = {
             NAME_KEY: spec.name,
             "image": self.image_reference,
-            "host_sha256": self.bundle.host_sha256,
+            "host_sha256": self.bundle.folder_sha256,
         }
         store = spec.labels.get(box_store.LABEL)
         if store:
@@ -263,10 +277,15 @@ class E2BBoxHost:
 
     async def _boot(self, sandbox: Any, spec: BoxSpec) -> None:
         assert self.bundle is not None
+        folders = sorted(
+            {HOST_DIR, "/home/box/box-exec-daemon", "/run/simeon"}
+            | {
+                f"{HOST_DIR}/{companion.rsplit('/', 1)[0]}"
+                for companion in self.bundle.companions
+            }
+        )
         await sandbox.commands.run(
-            "mkdir -p /run/simeon /home/box/sand-host /home/box/box-exec-daemon",
-            user="root",
-            timeout=30,
+            f"mkdir -p {' '.join(folders)}", user="root", timeout=30
         )
         await sandbox.files.write(ENV_FILE, env_file(spec.environment()), user="root")
         await sandbox.files.write(SEED_FILE, secrets.token_bytes(64), user="root")
@@ -274,6 +293,9 @@ class E2BBoxHost:
             "/etc/machine-id", machine_id_of(spec.name) + "\n", user="root"
         )
         await sandbox.files.write(HOST_MAIN, self.bundle.host_main, user="root")
+        # The host's own files beside it (HOST_COMPANIONS): its workers.
+        for companion, data in sorted(self.bundle.companions.items()):
+            await sandbox.files.write(f"{HOST_DIR}/{companion}", data, user="root")
         await sandbox.files.write(
             EXEC_DAEMON_MAIN, self.bundle.box_exec_daemon, user="root"
         )

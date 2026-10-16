@@ -19,7 +19,7 @@ import { fileURLToPath } from "node:url";
 
 import { extractFile } from "@electron/asar";
 
-import { ASAR_MEMBERS, ENGINE_SOURCE_PATHS, SOURCE_STAMP_SUFFIX, buildHostBundle, staleAppReason } from "./lib/host-bundle-publish.mjs";
+import { ASAR_MEMBERS, ENGINE_SOURCE_PATHS, HOST_COMPANIONS, SOURCE_STAMP_SUFFIX, buildHostBundle, staleAppReason } from "./lib/host-bundle-publish.mjs";
 import { resolvePackagedAppArtifacts } from "./lib/packaged-app.mjs";
 import { capture, run } from "./lib/process.mjs";
 
@@ -45,6 +45,8 @@ const bundle = buildHostBundle({
   version,
   hostBytes: extractFile(asarPath, ASAR_MEMBERS.host),
   boxExecDaemonBytes: extractFile(asarPath, ASAR_MEMBERS.boxExecDaemon),
+  // The host's workers, from its folder in the app (HOST_COMPANIONS).
+  companions: Object.fromEntries(HOST_COMPANIONS.map((name) => [name, extractFile(asarPath, `dist/host/${name}`)])),
 });
 
 const out = path.join(desktopRoot, "dist", "host-bundle");
