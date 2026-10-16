@@ -818,13 +818,18 @@ async def load_host_bundle(url: str) -> HostBundle | None:
     return await _fetch_bundle(f"{base}/{HOST_BUNDLE_PREFIX}-{version}.tgz")
 
 
+#: In an entry's `users`: every person (17 October 2026, E2B for everyone).
+EVERYONE = "*"
+
+
 @dataclass(frozen=True)
 class BoxHostEntry:
     """One box server in `SIMEON_BOX_HOSTS`: `kind` "docker" (the default,
     with `docker_host`) or "e2b" (with `template`, default
-    `SIMEON_E2B_TEMPLATE`). `users` (e-mail addresses or user ids), when
-    given, is who may have a computer there, and those people have theirs
-    nowhere else (`BoxBrokerService.place`); `idle_minutes` is how long a
+    `SIMEON_E2B_TEMPLATE`). `users` (e-mail addresses or user ids, or
+    `EVERYONE`), when given, is who has their computer there; when it has
+    no room, theirs is made on a server that names nobody
+    (`BoxBrokerService.place`) and moved back later; `idle_minutes` is how long a
     computer there stays awake unused (default
     `SIMEON_BOX_IDLE_HIBERNATE_AFTER`)."""
 

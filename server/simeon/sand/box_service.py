@@ -51,6 +51,7 @@ from .box_e2b import KIND as E2B_KIND
 from .box_e2b import TRAFFIC_HEADER as E2B_TRAFFIC_HEADER
 from .box_hosts import (
     EGRESS_TUNNEL_PORT,
+    EVERYONE,
     FORK_NOVNC_PORT,
     GATEWAY_PORT,
     PRIMARY_NOVNC_PORT,
@@ -681,11 +682,11 @@ class BoxBrokerService:
         db: AsyncSession | AsyncReadSession, user_id: UUID, hosts: list[BoxHost]
     ) -> list[BoxHost]:
         """The servers that name this person in their `users`
-        (`SIMEON_BOX_HOSTS`): theirs, and only theirs."""
+        (`SIMEON_BOX_HOSTS`), or everyone (`EVERYONE`): theirs."""
         listing = [host for host in hosts if getattr(host, "users", ())]
         if not listing:
             return []
-        names = {str(user_id).lower()}
+        names = {str(user_id).lower(), EVERYONE}
         if any("@" in user for host in listing for user in getattr(host, "users")):
             user = await UserRepository.from_session(db).get_by_id(user_id)
             if user is not None:
@@ -719,7 +720,22 @@ class BoxBrokerService:
         targets = [h for h in listed if h.accepting]
         if not targets:
             return None
-        target = targets[0]
+        # Room is looked for before anything is stopped: a full server
+        # leaves the computer working where it is, and the next start tries
+        # again (17 October 2026, E2B for everyone, 20 at once at most).
+        target: BoxHost | None = None
+        for candidate in targets:
+            if await self._has_room(repository, candidate, box):
+                target = candidate
+                break
+        if target is None:
+            log.info(
+                "sand.box.move_deferred",
+                box=str(box.id),
+                to=",".join(h.name for h in targets),
+                reason="full",
+            )
+            return None
         if not box_store.enabled():
             log.warning(
                 "sand.box.move_skipped",
@@ -745,7 +761,6 @@ class BoxBrokerService:
                     "sand.box.move_skipped", box=str(box.id), reason="no backup"
                 )
                 return None
-        await self.check_capacity(repository, target, box)
         old = (host.name, box.provider_box_id)
         try:
             await self._create(
@@ -1251,18 +1266,24 @@ class BoxBrokerService:
             retry_after_s=CAPACITY_RETRY_AFTER_S,
         )
 
-    async def place(self, repository: SandBoxRepository, box: SandBox) -> BoxHost:
-        """The server a new box is made on: of the accepting servers with
-        room, the one with the largest share of its limit free (a server
-        with no limit counts as all free). None with room: the upstream app's
-        blocked hold, the same one a full single server gave."""
+    @staticmethod
+    async def _has_room(
+        repository: SandBoxRepository, host: BoxHost, box: SandBox
+    ) -> bool:
+        limit = host.max_running
+        if limit <= 0:
+            return True
+        return await repository.count_awake(host.name, excluding=box.id) < limit
+
+    @staticmethod
+    async def _roomiest(
+        repository: SandBoxRepository, box: SandBox, hosts: list[BoxHost]
+    ) -> BoxHost | None:
+        """Of the accepting servers with room, the one with the largest share
+        of its limit free (a server with no limit counts as all free)."""
         best: BoxHost | None = None
         best_free = -1.0
-        hosts = await resolve_box_hosts()
-        # A person named on servers' `users` is placed there and only there;
-        # everyone else on the servers that name nobody.
-        listed = await self._listed_on(repository.session, box.user_id, hosts)
-        for host in listed or [h for h in hosts if not getattr(h, "users", ())]:
+        for host in hosts:
             if not host.accepting:
                 continue
             limit = host.max_running
@@ -1272,6 +1293,31 @@ class BoxBrokerService:
             free = 1.0 if limit <= 0 else (limit - awake) / limit
             if free > best_free:
                 best, best_free = host, free
+        return best
+
+    async def place(self, repository: SandBoxRepository, box: SandBox) -> BoxHost:
+        """The server a new box is made on (`_roomiest`). A person named on
+        servers' `users` (or everyone, `EVERYONE`) is placed there; when
+        none of those is accepting with room, on the servers that name
+        nobody (`sand.box.placed_fallback`), and the box moves over at a
+        later start (`_move_if_listed`). Everyone else goes on the servers
+        that name nobody. None with room: the upstream app's blocked hold,
+        the same one a full single server gave."""
+        hosts = await resolve_box_hosts()
+        listed = await self._listed_on(repository.session, box.user_id, hosts)
+        unlisted = [h for h in hosts if not getattr(h, "users", ())]
+        best = await self._roomiest(repository, box, listed or unlisted)
+        if best is None and listed and unlisted:
+            best = await self._roomiest(repository, box, unlisted)
+            if best is not None:
+                log.warning(
+                    "sand.box.placed_fallback",
+                    box=str(box.id),
+                    user=str(box.user_id),
+                    wanted=",".join(h.name for h in listed),
+                    reason=("full" if any(h.accepting for h in listed) else "closed"),
+                    server=best.name,
+                )
         if best is None:
             log.warning(
                 "sand.box.capacity.refused", box=str(box.id), user=str(box.user_id)

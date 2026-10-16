@@ -815,14 +815,18 @@ computer hibernated to a snapshot. What differs from Docker:
   computer's traffic token (`e2b-traffic-access-token`, kept in
   `sand_boxes.host_meta`); E2B refuses its ports to anyone without it. The
   app never sees E2B: it reaches every computer through the API's proxy.
-- **Who.** An entry's `users` lists who has their computer there, and nowhere
-  else. A listed person's computer on another server moves at their next
-  idle `EnsureSandBox`: backup brought up to date, the old computer stopped
-  (not removed), the new one made with the backup copied in
-  (`sand.box.moved`). If the new one does not come up (a template not
-  built yet), the person's computer is made again where it was, on its own
-  files with a fresh credential, and no move is tried for 30 minutes
-  (`sand.box.move_failed`).
+- **Who.** An entry's `users` lists who has their computer there, or `["*"]`
+  for everyone. A listed person's computer on another server moves at their
+  next idle `EnsureSandBox` when there is room: backup brought up to date,
+  the old computer stopped (not removed), the new one made with the backup
+  copied in (`sand.box.moved`). If the new one does not come up (a template
+  not built yet), the person's computer is made again where it was, on its
+  own files with a fresh credential, and no move is tried for 30 minutes
+  (`sand.box.move_failed`). While the entry is full or closed, new
+  computers go to a server that names nobody (`sand.box.placed_fallback`)
+  and move over later; an existing one stays where it is, working
+  (`sand.box.move_deferred reason=full`). A person taken off `users` keeps
+  the computer they have.
 
 Setting it up on Render and GitHub: `docs/ops/box-host/render-env.md`, "E2B".
 
