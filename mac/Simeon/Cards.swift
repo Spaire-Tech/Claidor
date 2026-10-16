@@ -1312,8 +1312,10 @@ struct AirlineMark: View {
  * round) with a screen, "Your turn on the computer" (15, 600) over "Waiting
  * for you" beside a pulsing blue dot; the agent's instruction (15 on 21);
  * then Take over in the blue beside a grey I'm done, and Skip as a quiet
- * line under them. Once settled: "Computer" and what happened (Done,
- * Answered, Skipped), the instruction in grey, and Open computer. While it
+ * line under them. Once settled: "Computer" with what happened in a pill at
+ * its right, as the email card has its state (Done and Answered in green,
+ * Skipped in blue, Canceled in red; the founder, 16 October 2026), the
+ * instruction in grey, and Open computer. While it
  * waits, the screen's snapshot (when the computer sent one) sits over the
  * buttons; it, Take over and Open computer open the computer over the
  * window (step 13). It waits while the computer carries this request or
@@ -1337,7 +1339,6 @@ struct ComputerHandoffCard: View {
   var body: some View {
     let state = HandoffCardState.of(requestId: requestId, instruction: instruction, resolution: resolution, status: store.computer.status(agentId))
     let waiting = state.waiting
-    let outcome = state.outcome
     let words = state.instruction.trimmingCharacters(in: .whitespacesAndNewlines)
     VStack(alignment: .leading, spacing: 14) {
       HStack(spacing: 12) {
@@ -1346,16 +1347,25 @@ struct ComputerHandoffCard: View {
           .foregroundStyle(ink)
           .frame(width: 44, height: 44)
           .background(fill, in: RoundedRectangle(cornerRadius: 12))
-        VStack(alignment: .leading, spacing: 1) {
-          Text(waiting ? "Your turn on the computer" : "Computer")
+        if waiting {
+          VStack(alignment: .leading, spacing: 1) {
+            Text("Your turn on the computer")
+              .font(.system(size: 15, weight: .semibold))
+              .foregroundStyle(ink)
+            HStack(spacing: 6) {
+              HandoffDot(waiting: true, blue: blue, grey: grey)
+              Text("Waiting for you")
+                .font(.system(size: 13))
+                .foregroundStyle(grey)
+            }
+          }
+        } else {
+          Text("Computer")
             .font(.system(size: 15, weight: .semibold))
             .foregroundStyle(ink)
-          HStack(spacing: 6) {
-            HandoffDot(waiting: waiting, blue: blue, grey: grey)
-            Text(waiting ? "Waiting for you" : outcome)
-              .font(.system(size: 13))
-              .foregroundStyle(grey)
-          }
+            .frame(maxWidth: .infinity, alignment: .leading)
+          let tint = Self.tint(state.ending, look: look)
+          StatusPill(text: state.outcome, look: look, dot: tint, ink: tint, wash: tint.opacity(look.dark ? 0.2 : 0.1), large: true)
         }
       }
       if !words.isEmpty {
@@ -1414,7 +1424,16 @@ struct ComputerHandoffCard: View {
     .frame(maxWidth: 380, alignment: .leading)
     .background(look.dark ? Color(hex: 0x2c2c2e) : look.theirs, in: RoundedRectangle(cornerRadius: 20))
     .accessibilityElement(children: .contain)
-    .accessibilityLabel(waiting ? "Your turn on the computer" : "Computer")
+    .accessibilityLabel(waiting ? "Your turn on the computer" : "Computer, \(state.outcome)")
+  }
+
+  /** What happened, in its colour: Done and Answered green, Skipped blue, Canceled red. */
+  static func tint(_ ending: HandoffOutcome, look: Look) -> Color {
+    switch ending {
+    case .done, .answered: return look.added
+    case .skipped: return look.link
+    case .canceled: return look.danger
+    }
   }
 
   /** Take over, the snapshot and Open computer: the computer over the window (trigger `handoff`), which starts it. */

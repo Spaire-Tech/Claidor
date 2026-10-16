@@ -142,21 +142,53 @@ public struct ComputerHelper: Identifiable, Equatable, Sendable {
  * instruction and snapshot then), and also while the entry has no
  * resolution (the window alone says "Done" for an unanswered request
  * whenever the status is unreadable: step 13's decision 3); settled, what
- * happened (`handed_back` Done, `replied` Answered, `dismissed` Skipped,
- * anything else Done).
+ * happened (`HandoffOutcome`).
  */
 public struct HandoffCardState: Equatable, Sendable {
   public let waiting: Bool
   public let instruction: String
   /** The screen when the agent asked (`data:image/webp;base64,…`), only while waiting on this request. */
   public let snapshotDataUrl: String?
-  public let outcome: String
+  public let ending: HandoffOutcome
+  /** What happened, in words: "Done", "Answered", "Skipped" or "Canceled". */
+  public var outcome: String { ending.label }
 
   public static func of(requestId: String, instruction: String, resolution: String?, status: BoxStatus?) -> HandoffCardState {
     let pending = status?.handoff.flatMap { $0.requestId == requestId ? $0 : nil }
-    let outcome = ["handed_back": "Done", "replied": "Answered", "dismissed": "Skipped"][resolution ?? ""] ?? "Done"
     return HandoffCardState(waiting: pending != nil || resolution == nil, instruction: pending?.instruction ?? instruction,
-                            snapshotDataUrl: pending?.snapshotDataUrl, outcome: outcome)
+                            snapshotDataUrl: pending?.snapshotDataUrl, ending: HandoffOutcome(resolution: resolution))
+  }
+}
+
+/**
+ * How a hand-off ended, from the word the engine wrote on its line
+ * (`boxResolution`): the person's I'm done (`completed`, and the older
+ * `handed_back`) is Done, a reply is Answered, Skip (`dismissed`, also a
+ * request another one replaced) is Skipped, and Stop task (`cancelled`) is
+ * Canceled. Before 16 October 2026 the engine wrote `completed` for Skip
+ * too, so those older Skips still read Done. The cards show Done and
+ * Answered in green, Skipped in blue, Canceled in red (the founder, 16
+ * October 2026: every ending read "Done").
+ */
+public enum HandoffOutcome: String, Equatable, Sendable {
+  case done, answered, skipped, canceled
+
+  public init(resolution: String?) {
+    switch resolution {
+    case "replied": self = .answered
+    case "dismissed": self = .skipped
+    case "cancelled", "canceled": self = .canceled
+    default: self = .done
+    }
+  }
+
+  public var label: String {
+    switch self {
+    case .done: return "Done"
+    case .answered: return "Answered"
+    case .skipped: return "Skipped"
+    case .canceled: return "Canceled"
+    }
   }
 }
 

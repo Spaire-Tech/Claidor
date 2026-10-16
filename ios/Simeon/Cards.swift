@@ -115,19 +115,21 @@ struct GlassDisc: ButtonStyle {
   }
 }
 
-/** A grey pill with a dot: "Dismissed", "Ready to send", "Sent". */
+/** A grey pill with a dot: "Dismissed", "Ready to send", "Sent"; or in a colour of its own (the computer card's Done, Skipped, Canceled). */
 struct StatusPill: View {
   let text: String
   var dot: Color = Ink.tertiary
+  var ink: Color = Ink.secondary
+  var wash: Color = Ink.pill
   var size: CGFloat = 13
 
   var body: some View {
     HStack(spacing: 6) {
       Circle().fill(dot).frame(width: 6, height: 6)
-      Text(text).font(.system(size: size, weight: .medium)).foregroundStyle(Ink.secondary).lineLimit(1)
+      Text(text).font(.system(size: size, weight: .medium)).foregroundStyle(ink).lineLimit(1)
     }
     .padding(.horizontal, 8).padding(.vertical, 2)
-    .background(Ink.pill, in: Capsule())
+    .background(wash, in: Capsule())
   }
 }
 
@@ -1473,7 +1475,7 @@ struct RequestCardView: View {
     let known = store.computer.readState(agentId) == .known
     let waiting = known ? pending?.requestId == requestId : resolution == nil
     let shownInstruction = waiting ? (pending?.instruction ?? instruction) : instruction
-    let done = ["handed_back": "Done", "replied": "Answered", "dismissed": "Skipped"][resolution ?? "handed_back"] ?? "Done"
+    let ending = HandoffOutcome(resolution: resolution)
     let snapshot = waiting ? pending?.snapshotDataUrl.flatMap(Self.picture) : nil
     return VStack(alignment: .leading, spacing: 12) {
       HStack(spacing: 12) {
@@ -1483,14 +1485,23 @@ struct RequestCardView: View {
           .frame(width: 44, height: 44)
           .background(Ink.tile, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
           .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).stroke(Ink.tileEdge, lineWidth: 0.5))
-        VStack(alignment: .leading, spacing: 2) {
-          Text(waiting ? "Your turn on the computer" : "Computer").font(.system(size: 15, weight: .semibold)).foregroundStyle(Ink.primary)
-          HStack(spacing: 6) {
-            PulsingDot(active: waiting)
-            Text(waiting ? "Waiting for you" : done).font(.system(size: 13)).foregroundStyle(Ink.secondary)
+        if waiting {
+          VStack(alignment: .leading, spacing: 2) {
+            Text("Your turn on the computer").font(.system(size: 15, weight: .semibold)).foregroundStyle(Ink.primary)
+            HStack(spacing: 6) {
+              PulsingDot(active: true)
+              Text("Waiting for you").font(.system(size: 13)).foregroundStyle(Ink.secondary)
+            }
           }
+          Spacer(minLength: 0)
+        } else {
+          // Settled: what happened in a pill at the right, as the email card has its state (16 October 2026):
+          // Done and Answered in green, Skipped in blue, Canceled in red.
+          Text("Computer").font(.system(size: 15, weight: .semibold)).foregroundStyle(Ink.primary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+          let tint = Self.tint(ending)
+          StatusPill(text: ending.label, dot: tint, ink: tint, wash: tint.opacity(0.12)).fixedSize()
         }
-        Spacer(minLength: 0)
       }
       if !shownInstruction.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
         Text(shownInstruction.trimmingCharacters(in: .whitespacesAndNewlines)).font(.system(size: 15)).foregroundStyle(waiting ? Ink.primary : Ink.secondary).fixedSize(horizontal: false, vertical: true)
@@ -1526,6 +1537,15 @@ struct RequestCardView: View {
       }
     }
     .card(radius: 18, padding: 14)
+  }
+
+  /** What happened, in its colour: Done and Answered green, Skipped blue, Canceled red. */
+  static func tint(_ ending: HandoffOutcome) -> Color {
+    switch ending {
+    case .done, .answered: return Ink.success
+    case .skipped: return Ink.link
+    case .canceled: return Ink.danger
+    }
   }
 
   /** The screen the agent saw when it asked (`data:image/webp;base64,…`), decoded once. */
