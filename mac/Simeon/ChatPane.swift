@@ -303,14 +303,17 @@ private struct Transcript: View {
   @State private var position = ScrollPosition(edge: .bottom)
   @State private var pinned = true
   @State private var userScrolling = false
+  /** Until when a change of the chat's width is still settling: its rows rewrap, and the scroll view's corrections are not the person scrolling. */
+  @State private var resizedUntil = Date.distantPast
   /** Rows that arrived while pinned, coming in. */
   @State private var arrivals = Arrivals()
 
-  /** How the window measures the bottom: the gap under what shows, the content's height, the view's. */
+  /** How the window measures the bottom: the gap under what shows, the content's height, the view's height and width. */
   struct Bottom: Equatable {
     let gap: CGFloat
     let height: CGFloat
     let container: CGFloat
+    let width: CGFloat
   }
 
   var body: some View {
@@ -344,6 +347,10 @@ private struct Transcript: View {
           }
           ActivitySlot(agent: agent, line: activity, look: look)
         }
+        // A new width (the agent's pane, the sidebar's rail, the window) rewraps every row at once, never
+        // animated: under the pane's slide, the rows that came into view faded in from nothing and the
+        // chat stood empty for a moment (16 October 2026).
+        .animation(nil, value: width)
         .scrollTargetLayout()
         .padding(.horizontal, 16)
         .padding(.top, (threadRoot == nil ? 116 : 44) + (store.diskPressure == nil ? 0 : control.bannerHeight))
@@ -375,11 +382,14 @@ private struct Transcript: View {
         }
       }
       .defaultScrollAnchor(.bottom, for: .initialOffset)
+      // While at the newest, a change of size keeps the bottom where it is; else the scroll view keeps the top,
+      // and opening or closing the agent's pane, which rewraps every row, carried the chat away from the newest.
+      .defaultScrollAnchor(pinned ? UnitPoint.bottom : nil, for: .sizeChanges)
       .onScrollPhaseChange { _, phase in
         userScrolling = phase == .tracking || phase == .interacting || phase == .decelerating
       }
       .onScrollGeometryChange(for: Bottom.self) { geometry in
-        Bottom(gap: geometry.contentSize.height - geometry.visibleRect.maxY, height: geometry.contentSize.height, container: geometry.containerSize.height)
+        Bottom(gap: geometry.contentSize.height - geometry.visibleRect.maxY, height: geometry.contentSize.height, container: geometry.containerSize.height, width: geometry.containerSize.width)
       } action: { old, new in
         follow(old, new)
       }
@@ -388,16 +398,23 @@ private struct Transcript: View {
 
   /** The window's pin (`lht`, 4 points) and its smooth follow while pinned. */
   private func follow(_ old: Bottom, _ new: Bottom) {
-    let same = abs(new.height - old.height) < 0.5 && abs(new.container - old.container) < 0.5
+    let resized = abs(new.width - old.width) >= 0.5
+    if resized { resizedUntil = Date().addingTimeInterval(0.6) }
+    let settling = Date() < resizedUntil
+    let same = abs(new.height - old.height) < 0.5 && abs(new.container - old.container) < 0.5 && !resized
     if new.gap <= 4 {
       pinned = true
-    } else if new.gap > old.gap + 0.5 && (userScrolling || same) {
-      // Scrolled away: by the trackpad, or a wheel's smooth scroll whatever phase it reports.
+    } else if new.gap > old.gap + 0.5 && (userScrolling || (same && !settling)) {
+      // Scrolled away: by the trackpad, or a wheel's smooth scroll whatever phase it reports. Not the
+      // scroll view correcting itself while a new width settles (16 October 2026: opening and closing the
+      // agent's pane let go of the newest).
       pinned = false
     }
     // Longer content, or a smaller window, keeps the newest in view while pinned.
     guard pinned, !same else { return }
-    if new.height > old.height && old.height > old.container {
+    if resized || settling {
+      position.scrollTo(edge: .bottom)
+    } else if new.height > old.height && old.height > old.container {
       withAnimation(.smooth(duration: 0.3)) { position.scrollTo(edge: .bottom) }
     } else {
       position.scrollTo(edge: .bottom)
