@@ -3,15 +3,23 @@
 Run by `.github/workflows/e2b_template.yml` with `E2B_API_KEY` from the
 repository's secrets; or on a machine with the repository and the key:
 
-    E2B_API_KEY=… python box/e2b/build_template.py [name] [--dry-run]
+    E2B_API_KEY=… python box/e2b/build_template.py [name] [--from-box] [--dry-run]
 
-The template is `box/Dockerfile` as it is, built by E2B into a small
-virtual machine, with two differences that matter to a VM made from a
-snapshot (`server/simeon/sand/box_e2b.py`):
+The template is box2's own image (BOX2_IMAGE, the one `SIMEON_BOX_IMAGE`
+and `SIMEON_BOX_IMAGE_DIGEST` pin for Docker), built by E2B into a small
+virtual machine. It is the image the agents work on today: its folder for
+the host already holds the host's workers and libraries, and its exec daemon
+writes files and runs the computer's own connectors, which Simeon's own image
+(`box/`) does not yet do (16 October 2026, docs/ops/box-host/render-env.md).
+`--from-box` builds `box/Dockerfile` instead.
 
-- nothing of ours starts in it: the image's ENTRYPOINT is left out, and
-  each new computer is started by the server with `start-simeon-vm` once
-  its own settings, machine id and fresh randomness are written in;
+Either way, two things differ from Docker, for a VM made from a snapshot
+(`server/simeon/sand/box_e2b.py`):
+
+- nothing starts in it on its own: each new computer is started by the
+  server with `start-simeon-vm` (box/bin/, put into box2's image here) once
+  its own settings, machine id and fresh randomness are written in, and that
+  runs the image's own start as Docker runs its ENTRYPOINT;
 - `/etc/machine-id` is emptied, so no two computers share one.
 
 `--dry-run` prints the steps E2B would run, without the key.
@@ -20,6 +28,7 @@ snapshot (`server/simeon/sand/box_e2b.py`):
 from __future__ import annotations
 
 import asyncio
+import base64
 import os
 import sys
 from pathlib import Path
@@ -28,6 +37,15 @@ from e2b import AsyncTemplate
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_NAME = "simeon-box"
+#: box2's image, exactly as Docker runs it (server/simeon/config.py,
+#: BOX_IMAGE and BOX_IMAGE_DIGEST; server/tests/sand/test_box_e2b.py checks
+#: the two agree).
+BOX2_IMAGE = (
+    "public.ecr.aws/k0i0n2g5/cursorenvironments/universal@sha256:"
+    "322c3a9031d61e210a05400dd74c82bbb1fdb42db315a8cf5ab39368c2f0c1c8"
+)
+#: Nobody's identity in the template; each computer gets its own.
+EMPTY_MACHINE_ID = ": > /etc/machine-id && rm -f /var/lib/dbus/machine-id"
 #: What each computer gets; E2B bills per second while it runs. The same
 #: as a Docker computer today (`SIMEON_BOX_MEMORY_LIMIT_MB`, `_CPU_LIMIT`).
 CPU_COUNT = int(os.environ.get("SIMEON_E2B_CPUS", "2"))
@@ -59,27 +77,50 @@ def box_ignore_patterns() -> list[str]:
     return [line.strip() for line in lines if line.strip() and not line.startswith("#")]
 
 
-def template() -> AsyncTemplate:
-    built = (
-        AsyncTemplate(
-            file_context_path=str(ROOT), file_ignore_patterns=box_ignore_patterns()
-        )
-        .from_dockerfile(dockerfile_without_entrypoint())
-        .run_cmd(": > /etc/machine-id && rm -f /var/lib/dbus/machine-id", user="root")
+def install_start_script() -> str:
+    """`box/bin/start-simeon-vm`, written into the image by one command (no
+    file upload, so no ignore rules to get wrong)."""
+    script = (ROOT / "box" / "bin" / "start-simeon-vm").read_bytes()
+    encoded = base64.b64encode(script).decode()
+    return (
+        f"echo {encoded} | base64 -d > /usr/local/bin/start-simeon-vm"
+        " && chmod 755 /usr/local/bin/start-simeon-vm"
     )
+
+
+def template(from_box: bool = False) -> AsyncTemplate:
+    if from_box:
+        built = (
+            AsyncTemplate(
+                file_context_path=str(ROOT), file_ignore_patterns=box_ignore_patterns()
+            )
+            .from_dockerfile(dockerfile_without_entrypoint())
+            .run_cmd(EMPTY_MACHINE_ID, user="root")
+        )
+    else:
+        built = (
+            AsyncTemplate()
+            .from_image(BOX2_IMAGE)
+            .run_cmd(f"{install_start_script()} && {EMPTY_MACHINE_ID}", user="root")
+        )
     return built  # type: ignore[return-value]
 
 
 async def main(argv: list[str]) -> int:
     name = next((a for a in argv if not a.startswith("--")), DEFAULT_NAME)
+    from_box = "--from-box" in argv
     if "--dry-run" in argv:
-        print(AsyncTemplate.to_dockerfile(template()))
+        print(AsyncTemplate.to_dockerfile(template(from_box)))
         return 0
     if not os.environ.get("E2B_API_KEY"):
         print("E2B_API_KEY is not set", file=sys.stderr)
         return 2
+    print(
+        f"building {name} from {'box/Dockerfile' if from_box else BOX2_IMAGE}",
+        flush=True,
+    )
     info = await AsyncTemplate.build(
-        template(),
+        template(from_box),
         name,
         cpu_count=CPU_COUNT,
         memory_mb=MEMORY_MB,

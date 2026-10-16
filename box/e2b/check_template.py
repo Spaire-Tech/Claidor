@@ -5,19 +5,21 @@ Run by `.github/workflows/e2b_template.yml` after a build, or by hand:
     E2B_API_KEY=… python box/e2b/check_template.py [name]
 
 It makes one test computer the way the server does (`box_e2b.py`), but
-with no person's settings and no host bundle (so the desktop starts and
-the agents' engine does not), and prints, as JSON:
+with no person's settings and no host bundle (the desktop starts; on box2's
+image, the image's own copy of the engine starts too, without a sign-in),
+and prints, as JSON:
 
 - how long the computer took to be made and the desktop to come up;
 - disk, memory and the machine id inside it;
 - that the packages the engine loads from outside its bundle are there
-  (`engine_libraries: found`; anything else is an `error`);
+  (`engine_libraries: found`; anything else is an `error`), and whether the
+  host's workers are in the image (`host_workers`);
 - that its screen port refuses a request without the traffic token and
   answers one with it;
 - how long freezing and waking take, several times, and how far the
   computer's clock is from ours after each wake;
-- `box-doctor` (the engine's checks fail without the bundle; the desktop's
-  should pass).
+- `box-doctor` on Simeon's image (the engine's checks fail without the
+  bundle; the desktop's should pass); box2's image has none.
 
 The test computer is removed at the end, whatever happened.
 """
@@ -37,16 +39,24 @@ from e2b import AsyncSandbox
 
 ROUNDS = 3
 PAUSED_FOR_S = 20
-# The packages the engine loads from outside its bundle (box/deps), found the
-# way it finds them: from /, through NODE_PATH alone. Without piscina the
-# engine stops at start-up (16 October 2026).
+# piscina, which the engine loads at start-up from outside its bundle, found
+# the way the engine finds it: from its own folder (box2's image keeps it in
+# /home/box/sand-host/node_modules) or through NODE_PATH (/home/box/deps in
+# Simeon's image), with the image's node (box2's runs the engine with
+# /exec-daemon/node). Without it the engine stops at once (16 October 2026).
 ENGINE_LIBRARIES = (
-    "cd / && NODE_PATH=/home/box/deps node -e '"
-    "try { for (const p of "
-    '["piscina", "tree-sitter", "tree-sitter-bash", "web-tree-sitter", "node-gyp-build", "node-addon-api"]'
-    ') require.resolve(p); require("piscina"); console.log("found"); } '
+    "cd /home/box/sand-host 2>/dev/null || cd /; "
+    "N=$(command -v node || echo /exec-daemon/node); "
+    "NODE_PATH=/home/box/deps \"$N\" -e '"
+    'try { require("piscina"); console.log("found"); } '
     'catch (e) { console.log(String(e.message).split("\\n")[0]); }'
     "'"
+)
+#: Where the host's workers come from: box2's image holds them; on Simeon's
+#: own image the server writes them from the engine bundle.
+HOST_WORKERS = (
+    "if [ -f /home/box/sand-host/agent-isolation/agent-store-worker.cjs ]; "
+    "then echo 'in the image'; else echo 'written by the server'; fi"
 )
 
 
@@ -90,6 +100,7 @@ async def check(name: str) -> dict[str, Any]:
         report["memory"] = await run(sandbox, "free -m | sed -n 2p")
         report["machine_id_set"] = len(await run(sandbox, "cat /etc/machine-id")) == 32
         report["engine_libraries"] = await run(sandbox, ENGINE_LIBRARIES)
+        report["host_workers"] = await run(sandbox, HOST_WORKERS)
 
         screen = f"https://{sandbox.get_host(6080)}/vnc.html"
         async with httpx.AsyncClient(timeout=15) as client:
@@ -121,13 +132,19 @@ async def check(name: str) -> dict[str, Any]:
             )
             sandbox = woken
         report["freeze_and_wake"] = rounds
+        # Simeon's image has a doctor; box2's image has none.
         report["box_doctor"] = (
-            await run(sandbox, "/usr/local/bin/box-doctor 2>&1 | tail -25 || true")
+            await run(
+                sandbox,
+                "if [ -x /usr/local/bin/box-doctor ]; then "
+                "/usr/local/bin/box-doctor 2>&1 | tail -25; "
+                "else echo 'no box-doctor in this image'; fi",
+            )
         ).splitlines()
         if report["engine_libraries"] != "found":
             report["error"] = (
                 "the engine's libraries are not in the template "
-                f"({report['engine_libraries']}): build it again from today's box/"
+                f"({report['engine_libraries']}): build the template again"
             )
     except Exception as error:
         report["error"] = f"{type(error).__name__}: {error}"

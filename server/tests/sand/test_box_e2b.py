@@ -61,6 +61,8 @@ class FakeE2B:
         self.created: list[dict[str, Any]] = []
         self.calls: list[tuple[str, str]] = []
         self.fail_boot = False
+        #: The template holds the host's workers, as box2's image does.
+        self.image_workers = False
         self.busy_connects = 0
         self.create_error: BaseException | None = None
         self.api: list[dict[str, Any]] = []
@@ -88,6 +90,9 @@ class FakeE2B:
                 if fake.fail_boot and "start-simeon-vm" in cmd:
                     raise RuntimeError("the VM refused the command")
                 box["commands"].append((cmd, user))
+                if "agent-store-worker.cjs ]" in cmd:
+                    found = "image" if fake.image_workers else "bundle"
+                    return SimpleNamespace(exit_code=0, stdout=f"{found}\n", stderr="")
                 return SimpleNamespace(exit_code=0, stdout="", stderr="")
 
         return SimpleNamespace(
@@ -230,7 +235,7 @@ class TestE2BHost:
         # agent turn failed), in folders made first.
         for name in HOST_COMPANIONS:
             assert files[f"/home/box/sand-host/{name}"] == (WORKERS[name], "root")
-        made_folders = box["commands"][0][0]
+        made_folders = " ".join(cmd for cmd, _ in box["commands"])
         assert "/home/box/sand-host/agent-isolation" in made_folders
         assert "/home/box/sand-host/extensions/content-search" in made_folders
         assert files["/home/box/box-exec-daemon/main.cjs"] == (
@@ -266,12 +271,42 @@ class TestE2BHost:
             await host.create(_spec())
         assert sdk.created == []
 
-    async def test_an_engine_without_its_workers_makes_nothing(self) -> None:
+    async def test_an_engine_without_its_workers_leaves_nothing_on_a_bare_template(
+        self,
+    ) -> None:
         sdk = FakeE2B()
         host = E2BBoxHost(name="e2b-1", template="t", bundle=OLD_BUNDLE, sdk=sdk)
         with pytest.raises(BoxHostUnavailable, match="agent-store-worker.cjs"):
             await host.create(_spec())
-        assert sdk.created == []
+        # The template had no workers: the computer is removed, never started.
+        assert sdk.boxes == {}
+        assert ("kill", "sbx1") in sdk.calls
+
+    async def test_on_box2s_image_only_what_docker_mounts_is_written(self) -> None:
+        """16 October 2026: the template is box2's own image, whose host
+        folder holds the workers already; as on Docker, only host-main.cjs
+        and the exec daemon are put in, and an engine published before the
+        bundle carried workers is fine."""
+        sdk = FakeE2B()
+        sdk.image_workers = True
+        host = E2BBoxHost(name="e2b-1", template="t", bundle=OLD_BUNDLE, sdk=sdk)
+        made = await host.create(_spec())
+        box = sdk.boxes[made.provider_box_id]
+        written = sorted(path for path in box["files"] if path.startswith("/home/box/"))
+        assert written == [
+            "/home/box/box-exec-daemon/main.cjs",
+            "/home/box/sand-host/host-main.cjs",
+        ]
+        assert "setsid -f /usr/local/bin/start-simeon-vm" in box["commands"][-1][0]
+
+        # A bundle with workers does not write over the image's either.
+        sdk = FakeE2B()
+        sdk.image_workers = True
+        made = await _host(sdk).create(_spec())
+        assert not any(
+            "agent-isolation" in path
+            for path in sdk.boxes[made.provider_box_id]["files"]
+        )
 
     def test_a_new_worker_alone_is_a_new_host(self) -> None:
         changed = HostBundle(
@@ -597,8 +632,9 @@ class TestOnE2B:
         backups: Any,
     ) -> None:
         """16 October 2026: the computer made on E2B had host-main.cjs alone
-        and failed every agent turn. With such a bundle no E2B computer is
-        made, and the person keeps one on box2."""
+        and failed every agent turn. With such a bundle and a template
+        without workers, no E2B computer is kept, and the person keeps one
+        on box2."""
         docker, cloud = fleet
         cloud.users = ()
         access, _ = await _signed_in(client, session, user)
@@ -609,7 +645,7 @@ class TestOnE2B:
         assert (await _ensure(client, access)).status_code == 200
         session.expunge_all()
         assert (await _box_of(session, user)).provider == "us-west-1"
-        assert e2b.created == []
+        assert e2b.boxes == {}
         box_service._move_held.clear()
 
     async def test_no_move_without_an_up_to_date_backup(
@@ -753,3 +789,21 @@ async def test_the_proxy_dials_e2b_with_the_boxes_traffic_token(
     assert headers["e2b-traffic-access-token"] == "traffic-sbx1"
     # The API's own host never reaches E2B's proxy, which routes by it.
     assert headers["host"] == "1340-sbx1.e2b.app"
+
+
+def test_the_template_is_the_image_box2_runs() -> None:
+    """box/e2b/build_template.py builds E2B's template from the same image
+    Docker runs on box2 (16 October 2026)."""
+    import importlib.util
+    from pathlib import Path
+
+    path = Path(__file__).resolve().parents[3] / "box" / "e2b" / "build_template.py"
+    spec = importlib.util.spec_from_file_location("build_template", path)
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    assert (
+        module.BOX2_IMAGE
+        == f"{settings.BOX_IMAGE.split(':')[0]}@sha256:{settings.BOX_IMAGE_DIGEST}"
+    )

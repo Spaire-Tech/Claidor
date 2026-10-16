@@ -163,34 +163,42 @@ An entry with `"kind": "e2b"` is E2B's service instead of a Docker server
 (`server/simeon/sand/box_e2b.py`, 16 October 2026): each computer is a small
 virtual machine, frozen whole when idle and back in about a second.
 
-**Not ready: list nobody on an E2B entry yet.** The template is built from
-Simeon's own image (`box/`), and its exec daemon
-(`desktop/source/box-exec-daemon/`) does less than the one in box2's image.
-Measured on 16 October 2026, running `box/` with today's engine and the
-engine's own client: shell, reading, the screen and agent windows work, but
-the daemon answers "Unsupported ExecServerMessage case" for file writes
-(`writeArgs`: the agents' Write and Edit tools), for the computer's own
-connectors (`mcpArgs`, `mcpStateExecArgs`; `loadMcpServers` is a stub), and
-for list, search and delete. It also refuses any path outside `/workspace`,
-so the engine's own files under `/home/box` (window assignments, uploads)
-fail with `BoxShellUnavailableError ... Path escapes configured workspace
-root: /`. On E2B on 16 October the computer started but no message went
-through and its screen stayed empty. Docker on box2 runs the upstream image,
-whose daemon does all of this. Until the daemon is finished (or the template
-is made from box2's image), E2B stays switched off.
+**The template is box2's own image** (16 October 2026): the pinned
+`SIMEON_BOX_IMAGE@SIMEON_BOX_IMAGE_DIGEST`, built by E2B into a VM, plus
+`start-simeon-vm`. Each new computer gets what Docker gives one on box2:
+the same settings, `host-main.cjs` over the image's own and the exec
+daemon's folder, then the image's own start (`/usr/local/bin/start-sand-box`,
+in `/`). The image's folder for the host already holds the host's workers,
+libraries and scripts, and its exec daemon writes files and runs the
+computer's own connectors.
 
-When it is ready, three things, once:
+Simeon's own image (`box/`, `build_template.py --from-box`) is not ready
+for anyone. Measured on 16 October 2026 with today's engine and the
+engine's own client: its exec daemon (`desktop/source/box-exec-daemon/`)
+answers "Unsupported ExecServerMessage case" for file writes (`writeArgs`:
+the agents' Write and Edit tools), for the computer's own connectors
+(`mcpArgs`, `mcpStateExecArgs`; `loadMcpServers` is a stub), and for list,
+search and delete. It also refuses any path outside `/workspace`, so the
+engine's own files under `/home/box` fail with `BoxShellUnavailableError
+... Path escapes configured workspace root: /`. That is what the first E2B
+computers (built from `box/`) showed: no message went through, and the
+screen stayed empty.
+
+Three things, once:
 
 1. **The key.** `E2B_API_KEY` (or `SIMEON_E2B_API_KEY`) in the shared
    environment group, so the API and the worker both have it: the worker's
    sleeper freezes computers and keeps awake ones awake.
 2. **The template**, from a Mac with this repository: `git pull`, then
    `bash box/e2b/build-and-check.sh`. It asks for the E2B key without
-   showing it, builds `box/` into the template `simeon-box` on E2B's
-   machines, then makes one test computer and prints what it measured
-   (start, freeze and wake times, the clock after a wake, disk, memory) and
-   removes it. (Or GitHub → Actions → **E2B template**, with the repository
-   secret `E2B_API_KEY`.) It must end with the measurements and no `error`.
+   showing it, has E2B build box2's image into the template `simeon-box`
+   (E2B downloads it from Amazon's public registry; this can take a while),
+   then makes one test computer and prints what it measured (start, freeze
+   and wake times, the clock after a wake, disk, memory,
+   `engine_libraries`, `host_workers`) and removes it. (Or GitHub → Actions
+   → **E2B template**, with the repository secret `E2B_API_KEY`.) It must
+   end with the measurements, `"engine_libraries": "found"`,
+   `"host_workers": "in the image"`, and no `error`.
 3. **The entry**, added to `SIMEON_BOX_HOSTS` in the shared group:
 
 ```
@@ -225,18 +233,17 @@ On E2B's free plan a computer can run at most an hour before E2B freezes it
 
 **"Setting up" never ends, `sand.box.ensure.not_ready` after 90 s.** The
 desktop is up but the engine is not. Inside the computer (`e2b sandbox
-connect <id>` with E2B's command line), `tail /tmp/sand-host.log` and
-`box-doctor`. `Cannot
-find module 'piscina'` (and `FAIL host-libraries`) means the template was
-built before 16 October 2026, when `box/deps` gained the packages the engine
-loads from outside its bundle: run step 2 again. `Cannot find module
+connect <id>` with E2B's command line), `tail /tmp/sand-supervisor.log
+/tmp/sand-host.log`. `Cannot find module 'piscina'` or `Cannot find module
 '/home/box/sand-host/agent-isolation/agent-store-worker.cjs'` means the
-engine was published before the bundle carried its workers (same day); the
-server now makes no E2B computer from such a bundle
-(`sand.box.e2b.bundle_incomplete`) and the person stays on box2: publish
-the engine again. A computer the server no longer knows (its entry was taken
-out) freezes itself within the hour; kill it (`e2b sandbox kill <id>`, or in
-E2B's dashboard).
+template was built from `box/` (before 16 October 2026, or with
+`--from-box`): run step 2 again. With a template that lacks the workers and
+an engine published without them, the server makes no E2B computer
+(`sand.box.e2b.bundle_incomplete`) and the person stays on box2. The log
+line `sand.box.e2b.created` says where the workers came from (`workers=image`
+on box2's image). A computer the server no longer knows (its entry was
+taken out) freezes itself within the hour; kill it (`e2b sandbox kill
+<id>`, or in E2B's dashboard).
 
 ## The API's size
 

@@ -57,6 +57,7 @@ from simeon.config import settings
 from . import box_store
 from .box_hosts import (
     BOX_PORTS,
+    HOST_COMPANIONS,
     BoxBlocked,
     BoxHostError,
     BoxHostUnavailable,
@@ -225,17 +226,6 @@ class E2BBoxHost:
                 "Simeon's cloud computer on E2B needs the host bundle; set "
                 "SIMEON_BOX_HOST_BUNDLE_URL."
             )
-        missing = self.bundle.missing_companions
-        if missing:
-            # A computer without the host's workers starts, then fails every
-            # agent turn (16 October 2026). None is made: a move to E2B
-            # fails and the person keeps the computer they have.
-            log.warning("sand.box.e2b.bundle_incomplete", missing=missing)
-            raise BoxHostUnavailable(
-                "The published engine predates Simeon's own cloud computer: it "
-                f"lacks {', '.join(missing)}. Publish the engine again "
-                "(desktop: npm run package, then npm run publish:host-bundle)."
-            )
         metadata = {
             NAME_KEY: spec.name,
             "image": self.image_reference,
@@ -257,7 +247,10 @@ class E2BBoxHost:
         except Exception as error:
             raise _host_error("start a new computer", error) from error
         try:
-            await self._boot(sandbox, spec)
+            workers = await self._boot(sandbox, spec)
+        except BoxHostError:
+            await self._kill_quietly(sandbox.sandbox_id)
+            raise
         except Exception as error:
             # Nothing half-made is left behind, as on Docker.
             await self._kill_quietly(sandbox.sandbox_id)
@@ -267,6 +260,7 @@ class E2BBoxHost:
             sandbox=sandbox.sandbox_id,
             name=spec.name,
             template=self.template,
+            workers=workers,
         )
         return self._provisioned(
             sandbox.sandbox_id,
@@ -275,26 +269,52 @@ class E2BBoxHost:
             sandbox.traffic_access_token,
         )
 
-    async def _boot(self, sandbox: Any, spec: BoxSpec) -> None:
+    async def _boot(self, sandbox: Any, spec: BoxSpec) -> str:
+        """Writes the person's settings and the host, then starts the stack.
+        Answers where the host's workers come from: "image" or "bundle"."""
         assert self.bundle is not None
-        folders = sorted(
-            {HOST_DIR, "/home/box/box-exec-daemon", "/run/simeon"}
-            | {
-                f"{HOST_DIR}/{companion.rsplit('/', 1)[0]}"
-                for companion in self.bundle.companions
-            }
+        # box2's image (the template since 16 October 2026) holds the host's
+        # folder already, as on Docker, where only host-main.cjs is mounted
+        # over it; Simeon's own image holds nothing there, and the workers
+        # come from the bundle (HOST_COMPANIONS).
+        found = await sandbox.commands.run(
+            f"mkdir -p {HOST_DIR} /home/box/box-exec-daemon /run/simeon && "
+            f"if [ -f {HOST_DIR}/{HOST_COMPANIONS[0]} ]; then echo image; "
+            "else echo bundle; fi",
+            user="root",
+            timeout=30,
         )
-        await sandbox.commands.run(
-            f"mkdir -p {' '.join(folders)}", user="root", timeout=30
-        )
+        workers = "image" if "image" in str(getattr(found, "stdout", "")) else "bundle"
+        companions = self.bundle.companions if workers == "bundle" else {}
+        if workers == "bundle":
+            missing = self.bundle.missing_companions
+            if missing:
+                # Without its workers the host starts, then fails every
+                # agent turn (16 October 2026). The computer is removed: a
+                # move to E2B fails and the person keeps the one they have.
+                log.warning("sand.box.e2b.bundle_incomplete", missing=missing)
+                raise BoxHostUnavailable(
+                    "This E2B template has no host workers and the published "
+                    f"engine lacks {', '.join(missing)}. Build the template "
+                    "from box2's image (box/e2b/build-and-check.sh), or publish "
+                    "the engine again (desktop: npm run package, then npm run "
+                    "publish:host-bundle)."
+                )
+            folders = sorted(
+                {f"{HOST_DIR}/{name.rsplit('/', 1)[0]}" for name in companions}
+            )
+            await sandbox.commands.run(
+                f"mkdir -p {' '.join(folders)}", user="root", timeout=30
+            )
         await sandbox.files.write(ENV_FILE, env_file(spec.environment()), user="root")
         await sandbox.files.write(SEED_FILE, secrets.token_bytes(64), user="root")
         await sandbox.files.write(
             "/etc/machine-id", machine_id_of(spec.name) + "\n", user="root"
         )
+        # What Docker mounts: host-main.cjs over the image's own, and the
+        # exec daemon's folder.
         await sandbox.files.write(HOST_MAIN, self.bundle.host_main, user="root")
-        # The host's own files beside it (HOST_COMPANIONS): its workers.
-        for companion, data in sorted(self.bundle.companions.items()):
+        for companion, data in sorted(companions.items()):
             await sandbox.files.write(f"{HOST_DIR}/{companion}", data, user="root")
         await sandbox.files.write(
             EXEC_DAEMON_MAIN, self.bundle.box_exec_daemon, user="root"
@@ -307,6 +327,7 @@ class E2BBoxHost:
             user="root",
             timeout=30,
         )
+        return workers
 
     async def inspect(self, provider_box_id: str) -> ProvisionedBox | None:
         try:
