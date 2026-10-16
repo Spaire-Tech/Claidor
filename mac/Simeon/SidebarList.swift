@@ -683,8 +683,8 @@ struct AgentRow: View {
             .background(look.tag, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
         }
         Spacer(minLength: 0)
-        if !renaming && !agent.hasUnread, let time = agent.lastActivityAt {
-          Text(Chat.listTime(Date(timeIntervalSince1970: time / 1000)))
+        if !renaming && !agent.hasUnread, let time = Chat.listTime(ms: agent.lastActivityAt) {
+          Text(time)
             .font(.system(size: 12))
             .foregroundStyle(look.inkTertiary)
             .lineLimit(1)

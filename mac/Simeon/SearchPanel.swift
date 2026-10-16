@@ -608,8 +608,8 @@ private struct ResultRow: View {
         .font(.system(size: 12))
         .foregroundStyle(look.inkTertiary)
         .fixedSize()
-    } else if let date = row.dateMs {
-      Text(Chat.listTime(Date(timeIntervalSince1970: date / 1000)))
+    } else if let date = Chat.listTime(ms: row.dateMs) {
+      Text(date)
         .font(.system(size: 12))
         .foregroundStyle(look.inkTertiary)
         .fixedSize()

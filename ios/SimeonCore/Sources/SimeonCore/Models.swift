@@ -123,7 +123,9 @@ public struct Agent: Identifiable, Hashable, Sendable {
       isGroup: json["isGroup"]?.bool ?? false,
       memberIds: json["memberIds"]?.array?.compactMap(\.text) ?? [],
       lastMessagePreview: json["lastMessagePreview"]?.text,
-      lastActivityAt: json["lastActivityAt"]?.double ?? json["updatedAt"]?.double,
+      // The host sends 0 for a chat with no activity yet: that is no time, and
+      // the row goes by when it was made, as the window's (`updatedAt`) does.
+      lastActivityAt: json["lastActivityAt"]?.double.flatMap { $0 > 0 ? $0 : nil } ?? json["updatedAt"]?.double.flatMap { $0 > 0 ? $0 : nil },
       hasUnread: json["hasUnread"]?.bool ?? false,
       // Whole messages, as the Dock counts them (`Math.floor`).
       unreadCount: json["unreadCount"]?.double.flatMap { $0.isFinite && abs($0) < 1e15 ? Int($0.rounded(.down)) : nil } ?? 0,

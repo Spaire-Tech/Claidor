@@ -799,8 +799,8 @@ private struct ExchangeCard: View {
           Text(author?.name ?? line.authorName ?? "Unknown")
             .font(.system(size: 11, weight: .medium))
             .foregroundStyle(look.ink)
-          if let ms = line.timestampMs {
-            Text(Chat.listTime(Date(timeIntervalSince1970: ms / 1000)))
+          if let time = Chat.listTime(ms: line.timestampMs) {
+            Text(time)
               .font(.system(size: 11))
               .foregroundStyle(look.ink.opacity(0.30))
           }

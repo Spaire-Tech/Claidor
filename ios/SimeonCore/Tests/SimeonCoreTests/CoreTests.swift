@@ -570,6 +570,24 @@ final class ChatTests: XCTestCase {
     XCTAssertEqual(spaced(Chat.stampText(today.addingTimeInterval(-86_400 * 3), now: today, calendar: calendar, locale: locale)), "Sun, Oct 4 7:06 PM")
     XCTAssertEqual(Chat.listTime(today.addingTimeInterval(-86_400 * 30), now: today, calendar: calendar, locale: locale), "9/7")
   }
+
+  /** A chat with no activity yet came as 0 and was shown as "12/31/69" (16 October 2026). */
+  func testNoTimeIsNotNineteenSixtyNine() {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = TimeZone(identifier: "America/Los_Angeles")!
+    let locale = Locale(identifier: "en_US")
+    let today = Date(timeIntervalSince1970: 1_791_400_000)
+    XCTAssertNil(Chat.listTime(ms: 0, now: today, calendar: calendar, locale: locale))
+    XCTAssertNil(Chat.listTime(ms: nil, now: today, calendar: calendar, locale: locale))
+    XCTAssertNil(Chat.listTime(ms: -1, now: today, calendar: calendar, locale: locale))
+    XCTAssertNil(Chat.listTime(ms: Double.nan, now: today, calendar: calendar, locale: locale))
+    XCTAssertEqual(Chat.listTime(ms: (today.timeIntervalSince1970 - 86_400) * 1000, now: today, calendar: calendar, locale: locale), "Yesterday")
+
+    // The row goes by when the chat was made, as the window's does.
+    XCTAssertEqual(Agent(json: ["id": "a", "name": "A", "lastActivityAt": 0, "updatedAt": 5_000])!.lastActivityAt, 5_000)
+    XCTAssertNil(Agent(json: ["id": "a", "name": "A", "lastActivityAt": 0, "updatedAt": 0])!.lastActivityAt)
+    XCTAssertEqual(Agent(json: ["id": "a", "name": "A", "lastActivityAt": 7_000, "updatedAt": 5_000])!.lastActivityAt, 7_000)
+  }
 }
 
 final class ButterflyAndPaletteTests: XCTestCase {

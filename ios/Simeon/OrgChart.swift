@@ -678,8 +678,8 @@ private struct ChartExchangeCard: View {
           Text(author?.name ?? line.authorName ?? "Unknown")
             .font(.system(size: 13, weight: .medium))
             .foregroundStyle(Ink.primary)
-          if let ms = line.timestampMs {
-            Text(Chat.listTime(Date(timeIntervalSince1970: ms / 1000)))
+          if let time = Chat.listTime(ms: line.timestampMs) {
+            Text(time)
               .font(.system(size: 12))
               .foregroundStyle(Ink.primary.opacity(0.30))
           }

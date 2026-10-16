@@ -1131,6 +1131,17 @@ public enum Chat {
     return formatter("Mdyy").string(from: date)
   }
 
+  /**
+   * `listTime` from milliseconds, and nothing for a missing time, as `l5e`
+   * returns "" for one (`n <= 0`). The host sends 0 for a chat with no
+   * activity yet, which was shown as time zero: "12/31/69" in California
+   * (the founder, 16 October 2026).
+   */
+  public static func listTime(ms: Double?, now: Date = Date(), calendar: Calendar = .current, locale: Locale = .current) -> String? {
+    guard let ms, ms.isFinite, ms > 0 else { return nil }
+    return listTime(Date(timeIntervalSince1970: ms / 1000), now: now, calendar: calendar, locale: locale)
+  }
+
   /** A message's own time, shown when the chat is pulled sideways ("10:15 AM"). */
   public static func clockText(_ date: Date, calendar: Calendar = .current, locale: Locale = .current) -> String {
     formatter("jmm", calendar: calendar, locale: locale).string(from: date)

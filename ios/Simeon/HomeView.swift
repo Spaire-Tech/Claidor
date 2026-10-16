@@ -1311,7 +1311,7 @@ struct SearchResults: View {
     let hit = found.item
     let agent = store.agent(hit.agentId)
     let line = [hit.routine.isEnabled ? hit.routine.summary : "Paused", agent?.name].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
-    return SearchRow(title: SearchText.bold(hit.routine.name, found.hits), subtitle: line, trailing: hit.date.map { Chat.listTime(Date(timeIntervalSince1970: $0 / 1000)) }) {
+    return SearchRow(title: SearchText.bold(hit.routine.name, found.hits), subtitle: line, trailing: Chat.listTime(ms: hit.date)) {
       SearchTile(symbol: "clock")
     } action: { openRoutine(hit) }
   }
