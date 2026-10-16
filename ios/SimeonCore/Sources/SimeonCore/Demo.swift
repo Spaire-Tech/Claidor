@@ -431,10 +431,11 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
       guard let index = args["index"]?.int else { break }
       stamp(agentId, entryId) { $0.setting("productsBuying", .number(Double(index))) }
     case "handBackForeverBox":
-      // The host writes "completed" for both buttons (box-handoff-service.ts `decideBoxHandBack`), so the card says "Done" either way.
+      // As the host writes it (box-handoff-service.ts `decideBoxHandBack`): Skip "dismissed" (the card's Skipped), I'm done "completed" (Done).
+      let resolution = args["trigger"]?.string == "dismissed" ? "dismissed" : "completed"
       lock.withLock {
         for (index, entry) in (transcripts[agentId] ?? []).enumerated() where entry["boxRequestId"] != nil && entry["boxResolution"] == nil {
-          if let updated = Entry(entry.raw.setting("boxResolution", "completed")) { transcripts[agentId]?[index] = updated; pendingEmits.append((agentId, updated)) }
+          if let updated = Entry(entry.raw.setting("boxResolution", .string(resolution))) { transcripts[agentId]?[index] = updated; pendingEmits.append((agentId, updated)) }
         }
       }
       flush()

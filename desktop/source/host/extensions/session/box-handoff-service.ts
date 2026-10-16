@@ -18,9 +18,13 @@ export interface BoxHandoffDeps {
 /**
  * How a hand-off ends. "stopped" is Stop task (the agent is not resumed);
  * the person handing back a computer they took over themselves is
- * "taken-back", which resumes the agent with its own sentence.
+ * "taken-back", which resumes the agent with its own sentence. The
+ * resolution is written on the request's line (`boxResolution`) and the
+ * apps' card shows it: "completed" Done, "dismissed" Skipped (the person's
+ * Skip; it was "completed", so every Skip read Done, 16 October 2026),
+ * "cancelled" Canceled.
  */
-export function decideBoxHandBack(pending: PendingHandoff | undefined, trigger: HandoffTrigger): { kind: "none" } | { kind: "end"; requestId: string; resolution: string; trigger: string } { if (pending == null) return { kind: "none" }; if (typeof trigger === "string") { const ended = pending.source === "person" && trigger === "button" ? "taken-back" : trigger; return { kind: "end", requestId: pending.requestId, resolution: trigger === "cancel" || trigger === "stopped" ? "cancelled" : "completed", trigger: ended }; } return { kind: "end", requestId: pending.requestId, resolution: trigger.resolution ?? "completed", trigger: trigger.trigger ?? "unknown" }; }
+export function decideBoxHandBack(pending: PendingHandoff | undefined, trigger: HandoffTrigger): { kind: "none" } | { kind: "end"; requestId: string; resolution: string; trigger: string } { if (pending == null) return { kind: "none" }; if (typeof trigger === "string") { const ended = pending.source === "person" && trigger === "button" ? "taken-back" : trigger; return { kind: "end", requestId: pending.requestId, resolution: trigger === "cancel" || trigger === "stopped" ? "cancelled" : trigger === "dismissed" ? "dismissed" : "completed", trigger: ended }; } return { kind: "end", requestId: pending.requestId, resolution: trigger.resolution ?? "completed", trigger: trigger.trigger ?? "unknown" }; }
 export class BoxHandoffService {
   private readonly pending = new Map<string, PendingHandoff>();
   constructor(readonly deps: BoxHandoffDeps) {}

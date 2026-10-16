@@ -83,6 +83,7 @@ test("a hand-off the person started ends as taken-back; Stop task's ends as canc
   assert.deepEqual(decideBoxHandBack({ requestId: "r", instruction: "x", source: "person" }, "button"), { kind: "end", requestId: "r", resolution: "completed", trigger: "taken-back" });
   assert.deepEqual(decideBoxHandBack({ requestId: "r", instruction: "x" }, "button"), { kind: "end", requestId: "r", resolution: "completed", trigger: "button" }, "the agent's own hand-off is unchanged");
   assert.deepEqual(decideBoxHandBack({ requestId: "r", instruction: "x", source: "person" }, "stopped"), { kind: "end", requestId: "r", resolution: "cancelled", trigger: "stopped" });
+  assert.deepEqual(decideBoxHandBack({ requestId: "r", instruction: "x" }, "dismissed"), { kind: "end", requestId: "r", resolution: "dismissed", trigger: "dismissed" }, "Skip is written as skipped, not done (16 October 2026)");
   const ended = [];
   const service = new BoxHandoffService({ onEnded: (event) => { ended.push(event); } });
   service.start({ agentId: "a1", instruction: "You took control of the computer.", source: "person" });

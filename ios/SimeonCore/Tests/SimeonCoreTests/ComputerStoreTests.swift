@@ -367,10 +367,13 @@ final class ComputerWireTests: XCTestCase {
     // Another request on the computer: this one keeps its own words and no picture.
     XCTAssertNil(HandoffCardState.of(requestId: "r1", instruction: "x", resolution: nil, status: other).snapshotDataUrl)
 
-    for (resolution, outcome) in [("handed_back", "Done"), ("replied", "Answered"), ("dismissed", "Skipped"), ("completed", "Done")] {
+    // Every word the engine writes, older and newer: Stop task is Canceled, not Done (16 October 2026).
+    for (resolution, outcome, ending) in [("handed_back", "Done", HandoffOutcome.done), ("completed", "Done", .done), ("replied", "Answered", .answered),
+                                         ("dismissed", "Skipped", .skipped), ("cancelled", "Canceled", .canceled), ("anything", "Done", .done)] {
       let settled = HandoffCardState.of(requestId: "r1", instruction: "x", resolution: resolution, status: plain)
       XCTAssertFalse(settled.waiting, resolution)
       XCTAssertEqual(settled.outcome, outcome, resolution)
+      XCTAssertEqual(settled.ending, ending, resolution)
     }
     // Resolved in the chat but still on the computer: waiting, as the window has it.
     XCTAssertTrue(HandoffCardState.of(requestId: "r1", instruction: "x", resolution: "completed", status: asking).waiting)

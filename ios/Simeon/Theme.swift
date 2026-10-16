@@ -130,6 +130,8 @@ enum Ink {
   static let newLine = Color.dynamic(light: "#1a73d9", dark: "#4a9bf5")
   /** A call in progress, on the list (`--sand-fill-success`). */
   static let live = Color(RGB(hex: "#00c972"))
+  /** Done in words, readable on a card (the Mac's `added`): a computer hand-off that ended well. */
+  static let success = Color.dynamic(light: "#009957", dark: "#38d591")
   static let danger = Color.dynamic(light: "#c21d2e", dark: "#ff5667")
   /** The Mac's call banner: the card, the red End, the orange of a muted mic. */
   static let callCard = Color.dynamic(light: "#ffffff", dark: "#2a2a2d")
