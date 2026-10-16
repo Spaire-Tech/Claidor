@@ -1243,8 +1243,9 @@ struct InstalledRow: View {
               if let team = teamLabel { TeamBadge(tip: team) }
               if app.status == "error" { Text("Error").font(.system(size: 13)).foregroundStyle(Ink.danger).fixedSize() }
             }
-            Text(connected ? (app.toolCount == 1 ? "1 tool" : app.toolCount > 0 ? "\(app.toolCount) tools" : Connecting.connected) : "Not connected")
-              .font(.system(size: 15)).foregroundStyle(connected ? Ink.secondary : Ink.danger).lineLimit(1)
+            let line = connected ? (app.toolCount == 1 ? "1 tool" : app.toolCount > 0 ? "\(app.toolCount) tools" : Connecting.connected) : "Not connected"
+            Text(line)
+              .font(.system(size: 15)).foregroundStyle(!connected ? Ink.danger : line == Connecting.connected ? Ink.success : Ink.secondary).lineLimit(1)
           }
           Spacer(minLength: 4)
         }

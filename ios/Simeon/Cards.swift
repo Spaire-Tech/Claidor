@@ -362,7 +362,8 @@ struct ConnectorCard: View {
       }
       Spacer(minLength: 0)
       if isConnected {
-        Label(Connecting.connected, systemImage: "checkmark").font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.secondary).labelStyle(.titleAndIcon)
+        // Green, word and tick (the founder, 16 October 2026).
+        Label(Connecting.connected, systemImage: "checkmark").font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.success).labelStyle(.titleAndIcon)
       } else if store.isComingSoon(name) {
         // Not one an agent can be given yet (`AppsComingSoon`).
         PluginPill(title: AppsComingSoon.label, fill: Ink.pillButton, ink: Ink.tertiary)
@@ -513,7 +514,7 @@ struct ListenerConnectCard: View {
       }
       Spacer(minLength: 0)
       if connected == true {
-        Label("Connected", systemImage: "checkmark.circle.fill").font(.system(size: 12, weight: .medium)).foregroundStyle(Ink.primary).labelStyle(ConnectedLabel())
+        Label("Connected", systemImage: "checkmark.circle.fill").font(.system(size: 12, weight: .medium)).foregroundStyle(Ink.success).labelStyle(ConnectedLabel())
       } else if connected == nil || opening {
         ProgressView().controlSize(.small).accessibilityLabel("Checking connection status")
       } else {
@@ -538,11 +539,11 @@ struct ListenerConnectCard: View {
   }
 }
 
-/** The green check beside "Connected". */
+/** The green check beside the green "Connected". */
 private struct ConnectedLabel: LabelStyle {
   func makeBody(configuration: Configuration) -> some View {
     HStack(spacing: 4) {
-      configuration.icon.foregroundStyle(Ink.live)
+      configuration.icon.foregroundStyle(Ink.success)
       configuration.title
     }
   }

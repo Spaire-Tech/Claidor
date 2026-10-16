@@ -105,10 +105,11 @@ enum ConnectorMark {
       .contentShape(.rect)
   }
 
+  /** In green, as "Connected" is (the founder, 16 October 2026). */
   static func added() -> some View {
     Image(systemName: "checkmark")
       .font(.system(size: 17, weight: .medium))
-      .foregroundStyle(Ink.secondary)
+      .foregroundStyle(Ink.success)
       .frame(width: 44, height: 44)
       .accessibilityLabel(Connecting.connected)
   }

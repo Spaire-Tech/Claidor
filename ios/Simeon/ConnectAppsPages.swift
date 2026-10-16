@@ -794,7 +794,7 @@ struct PluginPage: View {
           VStack(alignment: .leading, spacing: 2) {
             Text(account.accountName).font(.system(size: 17))
             Text(account.status == "connected" ? Connecting.connected : "Not connected")
-              .font(.system(size: 13)).foregroundStyle(account.status == "connected" ? Ink.secondary : Ink.danger)
+              .font(.system(size: 13)).foregroundStyle(account.status == "connected" ? Ink.success : Ink.danger)
           }
           Spacer()
           if account.status != "connected" {
