@@ -166,12 +166,14 @@ things, once:
 
 1. **The key.** `E2B_API_KEY` (or `SIMEON_E2B_API_KEY`) in the shared
    environment group, so the API and the worker both have it: the worker's
-   sleeper freezes computers and keeps awake ones awake. Also as the GitHub
-   repository secret `E2B_API_KEY`, for the template build.
-2. **The template.** GitHub → Actions → **E2B template** → Run workflow. It
-   builds `box/` into the template `simeon-box` and then makes one test
-   computer and prints what it measured (start, freeze and wake times, the
-   clock after a wake, disk, memory). The last step must be green.
+   sleeper freezes computers and keeps awake ones awake.
+2. **The template**, from a Mac with this repository: `git pull`, then
+   `bash box/e2b/build-and-check.sh`. It asks for the E2B key without
+   showing it, builds `box/` into the template `simeon-box` on E2B's
+   machines, then makes one test computer and prints what it measured
+   (start, freeze and wake times, the clock after a wake, disk, memory) and
+   removes it. (Or GitHub → Actions → **E2B template**, with the repository
+   secret `E2B_API_KEY`.) It must end with the measurements and no `error`.
 3. **The entry**, added to `SIMEON_BOX_HOSTS` in the shared group:
 
 ```
